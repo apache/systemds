@@ -38,7 +38,7 @@ class RowMax(Fusion):
         super().__init__("RowMax")
         self.split = split
 
-    def fuse(
+    def transform(
         self,
         modalities: List[Modality],
     ):

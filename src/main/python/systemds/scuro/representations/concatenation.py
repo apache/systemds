@@ -37,7 +37,7 @@ class Concatenation(Fusion):
         super().__init__("Concatenation")
         self.padding = padding
 
-    def fuse(self, modalities: List[Modality]):
+    def transform(self, modalities: List[Modality]):
         if len(modalities) == 1:
             return np.array(modalities[0].data)
 

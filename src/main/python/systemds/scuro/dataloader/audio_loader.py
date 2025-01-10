@@ -18,31 +18,22 @@
 # under the License.
 #
 # -------------------------------------------------------------
+from typing import List, Optional
 
-from typing import List
-
-
-from systemds.scuro.modality.modality import Modality
-from systemds.scuro.representations.utils import pad_sequences
-
-from systemds.scuro.representations.fusion import Fusion
+import librosa
+from systemds.scuro.dataloader.base_loader import BaseLoader
 
 
-class Sum(Fusion):
-    def __init__(self):
-        """
-        Combines modalities using colum-wise sum
-        """
-        super().__init__("Sum")
+class AudioLoader(BaseLoader):
+    def __init__(
+        self,
+        source_path: str,
+        indices: List[str],
+        chunk_size: Optional[int] = None,
+    ):
+        super().__init__(source_path, indices, chunk_size)
 
-    def transform(self, modalities: List[Modality]):
-        max_emb_size = self.get_max_embedding_size(modalities)
-
-        data = pad_sequences(modalities[0].data, maxlen=max_emb_size, dtype="float32")
-
-        for m in range(1, len(modalities)):
-            data += pad_sequences(
-                modalities[m].data, maxlen=max_emb_size, dtype="float32"
-            )
-
-        return data
+    def extract(self, file: str):
+        self.file_sanity_check(file)
+        audio, sr = librosa.load(file)
+        self.data.append(audio)

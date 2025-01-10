@@ -18,27 +18,35 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from typing import List
+from functools import reduce
+from operator import or_
 
+from systemds.scuro.modality.modality import Modality
 from systemds.scuro.modality.type import ModalityType
 
 
-class Modality:
+class TransformedModality(Modality):
 
-    def __init__(self, modality_type: ModalityType):
+    def __init__(self, modality_type: ModalityType, transformation):
         """
         Parent class of the different Modalities (unimodal & multimodal)
-        :param modality_type: Type of the modality
+        :param modality_type: Type of the original modality(ies)
+        :param transformation: Representation to be applied on the modality
         """
-        self.type = modality_type
-        self.data = None
-        self.data_type = None
-        self.cost = None
-        self.shape = None
-        self.schema = {}
+        super().__init__(modality_type)
+        self.transformation = transformation
 
-    def get_modality_names(self) -> List[str]:
+    def combine(self, other, fusion_method):
         """
-        Extracts the individual unimodal modalities for a given transformed modality.
+        Combines two or more modalities with each other using a dedicated fusion method
+        :param other: The modality to be combined
+        :param fusion_method: The fusion method to be used to combine modalities
         """
-        return [modality.name for modality in ModalityType if modality in self.type]
+        fused_modality = TransformedModality(
+            reduce(or_, (o.type for o in other), self.type), fusion_method
+        )
+        modalities = [self]
+        modalities.extend(other)
+        fused_modality.data = fusion_method.transform(modalities)
+
+        return fused_modality

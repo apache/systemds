@@ -18,20 +18,19 @@
 # under the License.
 #
 # -------------------------------------------------------------
-import collections
-import json
-from datetime import datetime
-
+from systemds.scuro.representations.bert import Bert
+from systemds.scuro.representations.resnet import ResNet
+from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
 from systemds.scuro.representations.average import Average
 from systemds.scuro.representations.concatenation import Concatenation
-from systemds.scuro.modality.aligned_modality import AlignedModality
-from systemds.scuro.modality.text_modality import TextModality
-from systemds.scuro.modality.video_modality import VideoModality
-from systemds.scuro.modality.audio_modality import AudioModality
-from systemds.scuro.representations.unimodal import Pickle, JSON, HDF5, NPY
+from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.models.discrete_model import DiscreteModel
 from systemds.scuro.aligner.task import Task
 from systemds.scuro.aligner.dr_search import DRSearch
+
+from systemds.scuro.dataloader.audio_loader import AudioLoader
+from systemds.scuro.dataloader.text_loader import TextLoader
+from systemds.scuro.dataloader.video_loader import VideoLoader
 
 
 class CustomTask(Task):
@@ -49,18 +48,32 @@ labels = []
 train_indices = []
 val_indices = []
 
+all_indices = []
+
 video_path = ""
 audio_path = ""
 text_path = ""
 
-# Load modalities (audio, video, text)
-video = VideoModality(video_path, HDF5(), train_indices)
-audio = AudioModality(audio_path, Pickle(), train_indices)
-text = TextModality(text_path, NPY(), train_indices)
 
-video.read_all()
-audio.read_all()
-text.read_all()
+# Define dataloaders
+video_data_loader = VideoLoader(video_path, all_indices, chunk_size=10)
+text_data_loader = TextLoader(text_path, all_indices)
+audio_data_loader = AudioLoader(audio_path, all_indices)
+
+# Load modalities (audio, video, text)
+video = UnimodalModality(video_data_loader, "VIDEO")
+audio = UnimodalModality(audio_data_loader, "AUDIO")
+text = UnimodalModality(text_data_loader, "TEXT")
+
+# Define unimodal representations
+r_v = ResNet()
+r_a = MelSpectrogram()
+r_t = Bert()
+
+# Transform raw unimodal data
+video.apply_representation(r_v)
+audio.apply_representation(r_a)
+text.apply_representation(r_t)
 
 modalities = [text, audio, video]
 

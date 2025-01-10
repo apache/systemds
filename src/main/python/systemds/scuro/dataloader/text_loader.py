@@ -18,31 +18,27 @@
 # under the License.
 #
 # -------------------------------------------------------------
-
-from typing import List
-
-
-from systemds.scuro.modality.modality import Modality
-from systemds.scuro.representations.utils import pad_sequences
-
-from systemds.scuro.representations.fusion import Fusion
+from systemds.scuro.dataloader.base_loader import BaseLoader
+from typing import Optional, Pattern, List
+import re
 
 
-class Sum(Fusion):
-    def __init__(self):
-        """
-        Combines modalities using colum-wise sum
-        """
-        super().__init__("Sum")
+class TextLoader(BaseLoader):
+    def __init__(
+        self,
+        source_path: str,
+        indices: List[str],
+        chunk_size: Optional[int] = None,
+        prefix: Optional[Pattern[str]] = None,
+    ):
+        super().__init__(source_path, indices, chunk_size)
+        self.prefix = prefix
 
-    def transform(self, modalities: List[Modality]):
-        max_emb_size = self.get_max_embedding_size(modalities)
-
-        data = pad_sequences(modalities[0].data, maxlen=max_emb_size, dtype="float32")
-
-        for m in range(1, len(modalities)):
-            data += pad_sequences(
-                modalities[m].data, maxlen=max_emb_size, dtype="float32"
-            )
-
-        return data
+    def extract(self, file: str):
+        self.file_sanity_check(file)
+        with open(file) as text_file:
+            for i, line in enumerate(text_file):
+                if self.prefix:
+                    line = re.sub(self.prefix, "", line)
+                line = line.replace("\n", "")
+                self.data.append(line)

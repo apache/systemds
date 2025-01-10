@@ -18,7 +18,6 @@
 # under the License.
 #
 # -------------------------------------------------------------
-import nltk
 import numpy as np
 from nltk import word_tokenize
 
@@ -43,24 +42,24 @@ class GloVe(UnimodalRepresentation):
         self.glove_path = glove_path
         self.output_file = output_file
 
-    def parse_all(self, filepath, indices):
+    def transform(self, data):
         glove_embeddings = load_glove_embeddings(self.glove_path)
-        segments = read_data_from_file(filepath, indices)
 
-        embeddings = {}
-        for k, v in segments.items():
-            tokens = word_tokenize(v.lower())
-            embeddings[k] = np.mean(
-                [
-                    glove_embeddings[token]
-                    for token in tokens
-                    if token in glove_embeddings
-                ],
-                axis=0,
+        embeddings = []
+        for sentences in data:
+            tokens = word_tokenize(sentences.lower())
+            embeddings.append(
+                np.mean(
+                    [
+                        glove_embeddings[token]
+                        for token in tokens
+                        if token in glove_embeddings
+                    ],
+                    axis=0,
+                )
             )
 
         if self.output_file is not None:
-            save_embeddings(embeddings, self.output_file)
+            save_embeddings(np.array(embeddings), self.output_file)
 
-        embeddings = np.array(list(embeddings.values()))
-        return embeddings
+        return np.array(embeddings)

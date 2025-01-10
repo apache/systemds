@@ -52,10 +52,8 @@ forward = function(matrix[double] X)
 backward = function(matrix[double] dout, matrix[double] X)
     return (matrix[double] dX) {
   /*
-   * Computes the backward pass for a ReLU nonlinearity layer.
-   *
-   * Essentially performs a pass-through of the upstream gradient
-   * for cells > 0.
+   * Computes the backward pass for a GELU nonlinearity layer, via 
+   * its tanh approximation.
    *
    * Inputs:
    *  - dout: Gradient wrt `out` from upstream, of same shape as `X`.
@@ -64,5 +62,9 @@ backward = function(matrix[double] dout, matrix[double] X)
    * Outputs:
    *  - dX: Gradient wrt `X`, of same shape as `X`.
    */
-   dX = (X > 0) * dout
+   a = sqrt(2 / pi)
+   b = 0.044715
+   T = tanh(a * (X + b * X^3))
+   dT = 1 - T^2
+   dX = dout * (0.5 * (1 + T) + 0.5 * X * dT * a * (1 + 3 * b * X^2))
 }

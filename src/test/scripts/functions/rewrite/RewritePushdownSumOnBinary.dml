@@ -19,15 +19,30 @@
 #
 #-------------------------------------------------------------
 
-A = rand(rows=$1, cols=$2, seed=1);
-B = rand(rows=$1, cols=$2, seed=2);
-C = rand(rows=$1, cols=$2, seed=3);
-D = rand(rows=$1, cols=$2, seed=4);
+# Required parameters
+A = matrix(0.5, rows=$1, cols=$2);
+B = matrix(0.5, rows=$1, cols=$2);
+C = matrix(0.5, rows=$1, cols=$2);
+D = matrix(0.5, rows=$1, cols=$2);
 
+# Set defaults for optional parameters
+rowsV = ifdef($5, 0)
+colsV = ifdef($6, 0)
+
+# Original matrix tests
 r1 = sum(A*B + C*D);
 r2 = r1;
 
-print("r1="+r1+", r2="+r2);
+# Vector tests
+if (rowsV != 0 & colsV != 0) {
+    V = matrix(0.5, rows=rowsV, cols=colsV);
+    r3 = sum(A + V);
+    r4 = r3;
+}
+
 write(r1, $3);
 write(r2, $4);
-
+if (rowsV != 0 & colsV != 0) {
+    write(r3, $5);
+    write(r4, $6);
+}

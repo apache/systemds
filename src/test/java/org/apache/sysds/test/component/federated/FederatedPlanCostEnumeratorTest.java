@@ -51,7 +51,10 @@ public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
 
 	@Test
 	public void testFederatedPlanCostEnumerator2() { runTest("FederatedPlanCostEnumeratorTest2.dml"); }
-	
+
+	@Test
+	public void testFederatedPlanCostEnumerator3() { runTest("FederatedPlanCostEnumeratorTest3.dml"); }
+
 	// Todo: Need to write test scripts for the federated version
 	private void runTest( String scriptFilename ) {
 		int index = scriptFilename.lastIndexOf(".dml");

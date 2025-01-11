@@ -83,7 +83,6 @@ public class RewriterClusteringTest {
 		int pruneDataSubexrBiggerThan = 1000;
 		int maxCostSamples = 50;
 
-		long startTime = System.currentTimeMillis();
 		AtomicLong generatedExpressions = new AtomicLong(0);
 		AtomicLong evaluatedExpressions = new AtomicLong(0);
 		AtomicLong failures = new AtomicLong(0);

@@ -254,7 +254,7 @@ public class CodeGenTests {
 	@Test
 	public void codeGen() {
 		try {
-			List<String> lines = Files.readAllLines(Paths.get(RewriteAutomaticallyGenerated.FILE_PATH_CONDITIONAL));
+			List<String> lines = Files.readAllLines(Paths.get(RewriteAutomaticallyGenerated.FILE_PATH_MB));
 			RewriterRuleSet ruleSet = RewriterRuleSet.deserialize(lines, ctx);
 
 			RewriterRuntimeUtils.printUnknowns = false;

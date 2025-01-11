@@ -80,6 +80,8 @@ public class RewriterRule extends AbstractRewriterRule {
 		if (!requireCostCheck)
 			return false;
 
+		List<RewriterStatement> roots = toRoots == null ? List.of(toRoot) : toRoots;
+
 		boolean integrateSparsityInCosts = isConditionalMultiRule() || RewriterCostEstimator.doesHaveAnImpactOnOptimalExpression(costs, true, false, 20);
 
 		MutableObject<RewriterAssertions> assertionRef = new MutableObject<>(assertions);
@@ -87,7 +89,7 @@ public class RewriterRule extends AbstractRewriterRule {
 		toCosts = getStmt2AsList().stream().map(root -> RewriterCostEstimator.getRawCostFunction(root, ctx, assertionRef, !integrateSparsityInCosts)).collect(Collectors.toList());
 
 		fromCost = RewriterSparsityEstimator.rollupSparsities(fromCost, RewriterSparsityEstimator.estimateAllNNZ(fromRoot, ctx), ctx);
-		toCosts = IntStream.range(0, toCosts.size()).mapToObj(i -> RewriterSparsityEstimator.rollupSparsities(toCosts.get(i), RewriterSparsityEstimator.estimateAllNNZ(toRoots.get(i), ctx), ctx)).collect(Collectors.toList());
+		toCosts = IntStream.range(0, toCosts.size()).mapToObj(i -> RewriterSparsityEstimator.rollupSparsities(toCosts.get(i), RewriterSparsityEstimator.estimateAllNNZ(roots.get(i), ctx), ctx)).collect(Collectors.toList());
 
 		return requireCostCheck;
 	}

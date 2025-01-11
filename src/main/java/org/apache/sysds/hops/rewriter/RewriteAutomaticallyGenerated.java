@@ -17,6 +17,7 @@ public class RewriteAutomaticallyGenerated extends HopRewriteRule {
 	public static final String FILE_PATH = "/Users/janniklindemann/Dev/MScThesis/rules.rl";
 	public static final String VALIDATED_FILE_PATH = "/Users/janniklindemann/Dev/MScThesis/rules_validated.rl";
 	public static final String RAW_FILE_PATH = "/Users/janniklindemann/Dev/MScThesis/raw_rules.rl";
+	public static final String FILE_PATH_MB = "/Users/janniklindemann/Dev/MScThesis/rules_mb.rl";
 	public static RewriteAutomaticallyGenerated existingRewrites;
 
 	private Function<Hop, Hop> rewriteFn;

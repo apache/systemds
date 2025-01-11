@@ -24,8 +24,7 @@ import java.util.Map;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Objects;
-import java.util.Queue;
-import java.util.LinkedList;
+import java.util.LinkedHashMap;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -58,16 +57,12 @@ public class FederatedPlanCostEnumerator {
 
 		// Return the minimum cost plan for the root node
 		FedPlan optimalPlan = getMinCostRootFedPlan(rootHop.getHopID(), memoTable);
-		memoTable.pruneMemoTable();
 
 		// Detect conflicts in the federated plans where different FedPlans have different FederatedOutput types
-		List<Pair<Long, List<FedPlan>>> conflictFedPlanList = detectConflictFedPlan(optimalPlan, memoTable);
-		
-		// Resolve these conflicts to ensure a consistent federated output type across the plan
-		FederatedPlanCostEstimator.resolveConflictFedPlan(optimalPlan, memoTable, conflictFedPlanList);
+		double additionalTotalCost = detectAndResolveConflictFedPlan(optimalPlan, memoTable);
 
 		// Optionally print the federated plan tree if requested
-		if (printTree) memoTable.printFedPlanTree(optimalPlan);
+		if (printTree) FederatedMemoTablePrinter.printFedPlanTree(optimalPlan, memoTable, additionalTotalCost);
 
 		return optimalPlan;
 	}
@@ -120,6 +115,10 @@ public class FederatedPlanCostEnumerator {
 			FedPlan lOutPlan = memoTable.addFedPlan(hop, FederatedOutput.LOUT, planChilds);
 			FederatedPlanCostEstimator.computeFederatedPlanCost(lOutPlan, memoTable);
 		}
+
+		// Prune MemoTable for hop.
+		memoTable.pruneFedPlan(hop.getHopID(), FederatedOutput.LOUT);
+		memoTable.pruneFedPlan(hop.getHopID(), FederatedOutput.FOUT);
 	}
 
 	/**
@@ -149,62 +148,87 @@ public class FederatedPlanCostEnumerator {
 	}
 
 	/**
-	 * Detects conflicts in federated plans starting from the root plan.
+	 * Detects and resolves conflicts in federated plans starting from the root plan.
 	 * This function performs a breadth-first search (BFS) to traverse the federated plan tree.
-	 * It identifies conflicts where the same plan ID has different federated output types
-	 * and returns a list of such conflicts, each represented by a plan ID and its conflicting parent plans.
+	 * It identifies conflicts where the same plan ID has different federated output types.
+	 * For each conflict, it records the plan ID and its conflicting parent plans.
+	 * The function ensures that each plan ID is associated with a consistent federated output type
+	 * by resolving these conflicts iteratively.
+	 *
+	 * The process involves:
+	 * - Using a map to track conflicts, associating each plan ID with its federated output type
+	 *   and a list of parent plans.
+	 * - Storing detected conflicts in a linked map, each entry containing a plan ID and its
+	 *   conflicting parent plans.
+	 * - Performing BFS traversal starting from the root plan, checking each child plan for conflicts.
+	 * - If a conflict is detected (i.e., a plan ID has different output types), the conflicting plan
+	 *   is removed from the BFS queue and added to the conflict map to prevent duplicate calculations.
+	 * - Resolving conflicts by ensuring a consistent federated output type across the plan.
+	 * - Re-running BFS with resolved conflicts to ensure all inconsistencies are addressed.
 	 *
 	 * @param rootPlan The root federated plan from which to start the conflict detection.
 	 * @param memoTable The memoization table used to retrieve pruned federated plans.
-	 * @return A list of pairs, each containing a plan ID and a list of parent plans that have conflicting federated outputs.
+	 * @return The cumulative additional cost for resolving conflicts.
 	 */
-	private static List<Pair<Long, List<FedPlan>>> detectConflictFedPlan(FedPlan rootPlan, FederatedMemoTable memoTable) {
+	private static double detectAndResolveConflictFedPlan(FedPlan rootPlan, FederatedMemoTable memoTable) {
 		// Map to track conflicts: maps a plan ID to its federated output type and list of parent plans
 		Map<Long, Pair<FederatedOutput, List<FedPlan>>> conflictCheckMap = new HashMap<>();
-		// List to store detected conflicts, each with a plan ID and its conflicting parent plans
-		List<Pair<Long, List<FedPlan>>> conflictFedPlanList = new ArrayList<>();
 
-		// Queue for BFS traversal starting from the root plan
-		Queue<FedPlan> bfsQueue = new LinkedList<>();
-		bfsQueue.add(rootPlan);
+		// LinkedMap to store detected conflicts, each with a plan ID and its conflicting parent plans
+		LinkedHashMap<Long, List<FedPlan>> conflictLinkedMap = new LinkedHashMap<>();
 
-		// Perform BFS to detect conflicts in federated plans
-		while (!bfsQueue.isEmpty()) {
-			FedPlan currentPlan = bfsQueue.poll();
+		// LinkedMap for BFS traversal starting from the root plan (Do not use value (boolean))
+		LinkedHashMap<FedPlan, Boolean> bfsLinkedMap = new LinkedHashMap<>();
+		bfsLinkedMap.put(rootPlan, true);
 
-			// Iterate over each child plan of the current plan
-			for (Pair<Long, FederatedOutput> childPlanPair : currentPlan.getChildFedPlans()) {
-				FedPlan childFedPlan = memoTable.getFedPlanAfterPrune(childPlanPair.getLeft(), childPlanPair.getRight());
+		// Array to store cumulative additional cost for resolving conflicts
+		double[] cumulativeAdditionalCost = new double[]{0.0};
 
-				// Check if the child plan ID is already in the conflict check map
-				if (conflictCheckMap.containsKey(childPlanPair.getLeft())) {
-					// Retrieve the existing conflict pair for the child plan
-					Pair<FederatedOutput, List<FedPlan>> conflictFedPlanPair = conflictCheckMap.get(childPlanPair.getLeft());
-					// Add the current plan to the list of parent plans
-					conflictFedPlanPair.getRight().add(currentPlan);
+		while (!bfsLinkedMap.isEmpty()) {
+			// Perform BFS to detect conflicts in federated plans
+			while (!bfsLinkedMap.isEmpty()) {
+				FedPlan currentPlan = bfsLinkedMap.keySet().iterator().next();
+				bfsLinkedMap.remove(currentPlan);
 
-					// If the federated output type differs, a conflict is detected
-					if (conflictFedPlanPair.getLeft() != childPlanPair.getRight()) {
-						// Add the conflict to the conflict list
-						conflictFedPlanList.add(new ImmutablePair<>(childPlanPair.getLeft(), conflictFedPlanPair.getRight()));
-						// Add the child plan to the BFS queue for further exploration
-						// Todo: Unsure whether to skip or continue traversal when encountering the same Hop ID with different FederatedOutput types
-						bfsQueue.add(childFedPlan);
+				// Iterate over each child plan of the current plan
+				for (Pair<Long, FederatedOutput> childPlanPair : currentPlan.getChildFedPlans()) {
+					FedPlan childFedPlan = memoTable.getFedPlanAfterPrune(childPlanPair);
+
+					// Check if the child plan ID is already visited
+					if (conflictCheckMap.containsKey(childPlanPair.getLeft())) {
+						// Retrieve the existing conflict pair for the child plan
+						Pair<FederatedOutput, List<FedPlan>> conflictChildPlanPair = conflictCheckMap.get(childPlanPair.getLeft());
+						// Add the current plan to the list of parent plans
+						conflictChildPlanPair.getRight().add(currentPlan);
+
+						// If the federated output type differs, a conflict is detected
+						if (conflictChildPlanPair.getLeft() != childPlanPair.getRight()) {
+							// If this is the first detection, remove conflictChildFedPlan from the BFS queue and add it to the conflict linked map (queue)
+							// If the existing FedPlan is not removed from the bfsqueue or both actions are performed, duplicate calculations for the same FedPlan and its children occur
+							if (!conflictLinkedMap.containsKey(childPlanPair.getLeft())) {
+								conflictLinkedMap.put(childPlanPair.getLeft(), conflictChildPlanPair.getRight());
+								bfsLinkedMap.remove(childFedPlan);
+							}
+						}
+					} else {
+						// If no conflict exists, create a new entry in the conflict check map
+						List<FedPlan> parentFedPlanList = new ArrayList<>();
+						parentFedPlanList.add(currentPlan);
+
+						// Map the child plan ID to its output type and list of parent plans
+						conflictCheckMap.put(childPlanPair.getLeft(), new ImmutablePair<>(childPlanPair.getRight(), parentFedPlanList));
+						// Add the child plan to the BFS queue
+						bfsLinkedMap.put(childFedPlan, true);
 					}
-				} else {
-					// If no conflict exists, create a new entry in the conflict check map
-					List<FedPlan> parentFedPlanList = new ArrayList<>();
-					parentFedPlanList.add(currentPlan);
-
-					// Map the child plan ID to its output type and list of parent plans
-					conflictCheckMap.put(childPlanPair.getLeft(), new ImmutablePair<>(childPlanPair.getRight(), parentFedPlanList));
-					// Add the child plan to the BFS queue
-					bfsQueue.add(childFedPlan);
 				}
 			}
+			// Resolve these conflicts to ensure a consistent federated output type across the plan
+			// Re-run BFS with resolved conflicts
+			bfsLinkedMap = FederatedPlanCostEstimator.resolveConflictFedPlan(memoTable, conflictLinkedMap, cumulativeAdditionalCost);
+			conflictLinkedMap.clear();
 		}
 
-		// Return the list of detected conflicts
-		return conflictFedPlanList;
+		// Return the cumulative additional cost for resolving conflicts
+		return cumulativeAdditionalCost[0];
 	}
 }

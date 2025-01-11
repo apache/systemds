@@ -70,13 +70,9 @@ public class FederatedMemoTable {
 	/**
 	 * Retrieves the minimum cost child plan considering the parent's output type.
 	 * The cost is calculated using getParentViewCost to account for potential type mismatches.
-	 * 
-	 * @param childHopID ?
-	 * @param childFedOutType ?
-	 * @return ?
 	 */
-	public FedPlan getMinCostFedPlan(long hopID, FederatedOutput fedOutType) {
-		FedPlanVariants fedPlanVariantList = hopMemoTable.get(new ImmutablePair<>(hopID, fedOutType));
+	public FedPlan getMinCostFedPlan(Pair<Long, FederatedOutput> fedPlanPair) {
+		FedPlanVariants fedPlanVariantList = hopMemoTable.get(fedPlanPair);
 		return fedPlanVariantList._fedPlanVariants.stream()
 				.min(Comparator.comparingDouble(FedPlan::getTotalCost))
 				.orElse(null);
@@ -86,9 +82,19 @@ public class FederatedMemoTable {
 		return hopMemoTable.get(new ImmutablePair<>(hopID, fedOutType));
 	}
 
+	public FedPlanVariants getFedPlanVariants(Pair<Long, FederatedOutput> fedPlanPair) {
+		return hopMemoTable.get(fedPlanPair);
+	}
+
 	public FedPlan getFedPlanAfterPrune(long hopID, FederatedOutput fedOutType) {
 		// Todo: Consider whether to verify if pruning has been performed
 		FedPlanVariants fedPlanVariantList = hopMemoTable.get(new ImmutablePair<>(hopID, fedOutType));
+		return fedPlanVariantList._fedPlanVariants.get(0);
+	}
+
+	public FedPlan getFedPlanAfterPrune(Pair<Long, FederatedOutput> fedPlanPair) {
+		// Todo: Consider whether to verify if pruning has been performed
+		FedPlanVariants fedPlanVariantList = hopMemoTable.get(fedPlanPair);
 		return fedPlanVariantList._fedPlanVariants.get(0);
 	}
 
@@ -104,128 +110,14 @@ public class FederatedMemoTable {
 	}
 
 	/**
-	 * Prunes all entries in the memo table, retaining only the minimum-cost
-	 * FedPlan for each entry.
-	 */
-	public void pruneMemoTable() {
-		for (Map.Entry<Pair<Long, FederatedOutput>, FedPlanVariants> entry : hopMemoTable.entrySet()) {
-			List<FedPlan> fedPlanList = entry.getValue().getFedPlanVariants();
-			if (fedPlanList.size() > 1) {
-				// Find the FedPlan with the minimum cost
-				FedPlan minCostPlan = fedPlanList.stream()
-							.min(Comparator.comparingDouble(FedPlan::getTotalCost))
-						.orElse(null);
-
-				// Retain only the minimum cost plan
-				fedPlanList.clear();
-				fedPlanList.add(minCostPlan);
-			}
-		}
-	}
-
-	// Todo: Separate print functions from FederatedMemoTable
-	/**
-	 * Recursively prints a tree representation of the DAG starting from the given root FedPlan.
-	 * Includes information about hopID, fedOutType, TotalCost, SelfCost, and NetCost for each node.
+	 * Prunes the specified entry in the memo table, retaining only the minimum-cost
+	 * FedPlan for the given Hop ID and federated output type.
 	 *
-	 * @param rootFedPlan The starting point FedPlan to print
+	 * @param hopID The ID of the Hop to prune
+	 * @param federatedOutput The federated output type associated with the Hop
 	 */
-	public void printFedPlanTree(FedPlan rootFedPlan) {
-		Set<FedPlan> visited = new HashSet<>();
-		printFedPlanTreeRecursive(rootFedPlan, visited, 0, true);
-	}
-
-	/**
-	 * Helper method to recursively print the FedPlan tree.
-	 *
-	 * @param plan  The current FedPlan to print
-	 * @param visited Set to keep track of visited FedPlans (prevents cycles)
-	 * @param depth   The current depth level for indentation
-	 * @param isLast  Whether this node is the last child of its parent
-	 */
-	private void printFedPlanTreeRecursive(FedPlan plan, Set<FedPlan> visited, int depth, boolean isLast) {
-		if (plan == null || visited.contains(plan)) {
-			return;
-		}
-
-		visited.add(plan);
-
-		Hop hop = plan.getHopRef();
-		StringBuilder sb = new StringBuilder();
-
-		// Add FedPlan information
-		sb.append(String.format("(%d) ", plan.getHopRef().getHopID()))
-				.append(plan.getHopRef().getOpString())
-				.append(" [")
-				.append(plan.getFedOutType())
-				.append("]");
-
-		StringBuilder childs = new StringBuilder();
-		childs.append(" (");
-		boolean childAdded = false;
-		for( Hop input : hop.getInput()){
-			childs.append(childAdded?",":"");
-			childs.append(input.getHopID());
-			childAdded = true;
-		}
-		childs.append(")");
-		if( childAdded )
-			sb.append(childs.toString());
-		 
-		 
-		sb.append(String.format(" {Total: %.1f, Self: %.1f, Net: %.1f}",
-				plan.getTotalCost(),
-				plan.getSelfCost(),
-				plan.getNetTransferCost()));
-
-		// Add matrix characteristics
-		sb.append(" [")
-			.append(hop.getDim1()).append(", ")
-			.append(hop.getDim2()).append(", ")
-			.append(hop.getBlocksize()).append(", ")
-			.append(hop.getNnz());
-
-		if (hop.getUpdateType().isInPlace()) {
-			sb.append(", ").append(hop.getUpdateType().toString().toLowerCase());
-		}
-		sb.append("]");
-
-		// Add memory estimates
-		sb.append(" [")
-			.append(OptimizerUtils.toMB(hop.getInputMemEstimate())).append(", ")
-			.append(OptimizerUtils.toMB(hop.getIntermediateMemEstimate())).append(", ")
-			.append(OptimizerUtils.toMB(hop.getOutputMemEstimate())).append(" -> ")
-			.append(OptimizerUtils.toMB(hop.getMemEstimate())).append("MB]");
-
-		// Add reblock and checkpoint requirements
-		if (hop.requiresReblock() && hop.requiresCheckpoint()) {
-			sb.append(" [rblk, chkpt]");
-		} else if (hop.requiresReblock()) {
-			sb.append(" [rblk]");
-		} else if (hop.requiresCheckpoint()) {
-			sb.append(" [chkpt]");
-		}
-
-		// Add execution type
-		if (hop.getExecType() != null) {
-			sb.append(", ").append(hop.getExecType());
-		}
-
-		System.out.println(sb);
-
-		// Process child nodes
-		List<Pair<Long, FederatedOutput>> childRefs = plan.getChildFedPlans();
-		for (int i = 0; i < childRefs.size(); i++) {
-			Pair<Long, FederatedOutput> childRef = childRefs.get(i);
-			FedPlanVariants childVariants = getFedPlanVariants(childRef.getLeft(), childRef.getRight());
-			if (childVariants == null || childVariants.getFedPlanVariants().isEmpty())
-				continue;
-
-			boolean isLastChild = (i == childRefs.size() - 1);
-			for (FedPlan childPlan : childVariants.getFedPlanVariants()) {
-				printFedPlanTreeRecursive(childPlan, visited, depth + 1, isLastChild);
-			}
-		}
+	public void pruneFedPlan(long hopID, FederatedOutput federatedOutput) {
+		hopMemoTable.get(new ImmutablePair<>(hopID, federatedOutput)).prune();
 	}
 
 	/**
@@ -262,6 +154,20 @@ public class FederatedMemoTable {
 
 		public void addFedPlan(FedPlan fedPlan) {_fedPlanVariants.add(fedPlan);}
 		public List<FedPlan> getFedPlanVariants() {return _fedPlanVariants;}
+		public boolean isEmpty() {return _fedPlanVariants.isEmpty();}
+
+		public void prune() {
+			if (_fedPlanVariants.size() > 1) {
+				// Find the FedPlan with the minimum cost
+				FedPlan minCostPlan = _fedPlanVariants.stream()
+						.min(Comparator.comparingDouble(FedPlan::getTotalCost))
+						.orElse(null);
+
+				// Retain only the minimum cost plan
+				_fedPlanVariants.clear();
+				_fedPlanVariants.add(minCostPlan);
+			}
+		}
 	}
 
 	/**

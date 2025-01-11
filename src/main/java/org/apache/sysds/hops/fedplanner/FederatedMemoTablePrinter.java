@@ -3,9 +3,7 @@ package org.apache.sysds.hops.fedplanner;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.hops.fedplanner.FederatedMemoTable.FedPlan;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
-import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 
 import java.util.HashSet;
 import java.util.List;
@@ -21,48 +19,11 @@ public class FederatedMemoTablePrinter {
      * @param memoTable The memoization table containing FedPlan variants
      * @param additionalTotalCost The additional cost to be printed once
      */
-    public static void printFedPlanTree(FederatedMemoTable.FedPlan rootFedPlan, Set<Hop> rootHopStatSet,
-                                        FederatedMemoTable memoTable, double additionalTotalCost) {
+    public static void printFedPlanTree(FederatedMemoTable.FedPlan rootFedPlan, FederatedMemoTable memoTable,
+                                        double additionalTotalCost) {
         System.out.println("Additional Cost: " + additionalTotalCost);
-        Set<Long> visited = new HashSet<>();
+        Set<FederatedMemoTable.FedPlan> visited = new HashSet<>();
         printFedPlanTreeRecursive(rootFedPlan, memoTable, visited, 0);
-        
-        for (Hop hop : rootHopStatSet) {
-            FedPlan plan = memoTable.getFedPlanAfterPrune(hop.getHopID(), FederatedOutput.LOUT);
-            printNotReferencedFedPlanRecursive(plan, memoTable, visited, 1);
-        }
-    }
-
-        /**
-     * Helper method to recursively print the FedPlan tree.
-     *
-     * @param plan  The current FedPlan to print
-     * @param visited Set to keep track of visited FedPlans (prevents cycles)
-     * @param depth   The current depth level for indentation
-     */
-    private static void printNotReferencedFedPlanRecursive(FederatedMemoTable.FedPlan plan, FederatedMemoTable memoTable,
-                                           Set<Long> visited, int depth) {
-        long hopID = plan.getHopRef().getHopID();
-
-        if (visited.contains(hopID)) {
-            return;
-        }
-
-        visited.add(hopID);
-        printFedPlan(plan, depth, true);
-
-        // Process child nodes
-        List<Pair<Long, FEDInstruction.FederatedOutput>> childFedPlanPairs = plan.getChildFedPlans();
-        for (int i = 0; i < childFedPlanPairs.size(); i++) {
-            Pair<Long, FEDInstruction.FederatedOutput> childFedPlanPair = childFedPlanPairs.get(i);
-            FederatedMemoTable.FedPlanVariants childVariants = memoTable.getFedPlanVariants(childFedPlanPair);
-            if (childVariants == null || childVariants.isEmpty())
-                continue;
-
-            for (FederatedMemoTable.FedPlan childPlan : childVariants.getFedPlanVariants()) {
-                printNotReferencedFedPlanRecursive(childPlan, memoTable, visited, depth + 1);
-            }
-        }
     }
 
     /**
@@ -73,83 +34,40 @@ public class FederatedMemoTablePrinter {
      * @param depth   The current depth level for indentation
      */
     private static void printFedPlanTreeRecursive(FederatedMemoTable.FedPlan plan, FederatedMemoTable memoTable,
-                                           Set<Long> visited, int depth) {
-        long hopID = 0;
-
-        if (depth == 0) {
-            hopID = -1;
-        } else {
-            hopID = plan.getHopRef().getHopID();
-        }
-
-        if (visited.contains(hopID)) {
+                                           Set<FederatedMemoTable.FedPlan> visited, int depth) {
+        if (plan == null || visited.contains(plan)) {
             return;
         }
 
-        visited.add(hopID);
-        printFedPlan(plan, depth, false);
+        visited.add(plan);
 
-        // Process child nodes
-        List<Pair<Long, FEDInstruction.FederatedOutput>> childFedPlanPairs = plan.getChildFedPlans();
-        for (int i = 0; i < childFedPlanPairs.size(); i++) {
-            Pair<Long, FEDInstruction.FederatedOutput> childFedPlanPair = childFedPlanPairs.get(i);
-            FederatedMemoTable.FedPlanVariants childVariants = memoTable.getFedPlanVariants(childFedPlanPair);
-            if (childVariants == null || childVariants.isEmpty())
-                continue;
-
-            for (FederatedMemoTable.FedPlan childPlan : childVariants.getFedPlanVariants()) {
-                printFedPlanTreeRecursive(childPlan, memoTable, visited, depth + 1);
-            }
-        }
-    }
-
-    private static void printFedPlan(FederatedMemoTable.FedPlan plan, int depth, boolean isNotReferenced) {
+        Hop hop = plan.getHopRef();
         StringBuilder sb = new StringBuilder();
-        Hop hop = null;
 
-        if (depth == 0){
-            sb.append("(R) ROOT [Root]");
-        } else {
-            hop = plan.getHopRef();
-            // Add FedPlan information
-            sb.append(String.format("(%d) ", hop.getHopID()))
-                    .append(hop.getOpString())
-                    .append(" [");
-
-            if (isNotReferenced) {
-                sb.append("NRef");
-            } else{
-                sb.append(plan.getFedOutType());
-            }
-            sb.append("]");
-        }
+        // Add FedPlan information
+        sb.append(String.format("(%d) ", plan.getHopRef().getHopID()))
+                .append(plan.getHopRef().getOpString())
+                .append(" [")
+                .append(plan.getFedOutType())
+                .append("]");
 
         StringBuilder childs = new StringBuilder();
         childs.append(" (");
-
         boolean childAdded = false;
-        for (Pair<Long, FederatedOutput> childPair : plan.getChildFedPlans()){
+        for( Hop input : hop.getInput()){
             childs.append(childAdded?",":"");
-            childs.append(childPair.getLeft());
+            childs.append(input.getHopID());
             childAdded = true;
         }
-        
         childs.append(")");
-
         if( childAdded )
             sb.append(childs.toString());
 
-        if (depth == 0){
-            sb.append(String.format(" {Total: %.1f}", plan.getCumulativeCost()));
-            System.out.println(sb);
-            return;
-        }
 
-        sb.append(String.format(" {Total: %.1f, Self: %.1f, Net: %.1f, Weight: %.1f}",
-                plan.getCumulativeCost(),
+        sb.append(String.format(" {Total: %.1f, Self: %.1f, Net: %.1f}",
+                plan.getTotalCost(),
                 plan.getSelfCost(),
-                plan.getForwardingCost(),
-                plan.getWeight()));
+                plan.getNetTransferCost()));
 
         // Add matrix characteristics
         sb.append(" [")
@@ -185,5 +103,18 @@ public class FederatedMemoTablePrinter {
         }
 
         System.out.println(sb);
+
+        // Process child nodes
+        List<Pair<Long, FEDInstruction.FederatedOutput>> childFedPlanPairs = plan.getChildFedPlans();
+        for (int i = 0; i < childFedPlanPairs.size(); i++) {
+            Pair<Long, FEDInstruction.FederatedOutput> childFedPlanPair = childFedPlanPairs.get(i);
+            FederatedMemoTable.FedPlanVariants childVariants = memoTable.getFedPlanVariants(childFedPlanPair);
+            if (childVariants == null || childVariants.isEmpty())
+                continue;
+
+            for (FederatedMemoTable.FedPlan childPlan : childVariants.getFedPlanVariants()) {
+                printFedPlanTreeRecursive(childPlan, memoTable, visited, depth + 1);
+            }
+        }
     }
 }

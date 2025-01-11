@@ -23,8 +23,11 @@ import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.cost.ComputeCost;
 import org.apache.sysds.hops.fedplanner.FederatedMemoTable.FedPlan;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
+
+import java.util.LinkedHashMap;
 import java.util.NoSuchElementException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Cost estimator for federated execution plans.
@@ -64,11 +67,11 @@ public class FederatedPlanCostEstimator {
 		}
 		
 		// Step 2: Process each child plan and add their costs
-		for (Pair<Long, FederatedOutput> planRefMeta : currentPlan.getChildFedPlans()) {
+		for (Pair<Long, FederatedOutput> childPlanPair : currentPlan.getChildFedPlans()) {
 			// Find minimum cost child plan considering federation type compatibility
 			// Note: This approach might lead to suboptimal or wrong solutions when a child has multiple parents
 			// because we're selecting child plans independently for each parent
-			FedPlan planRef = memoTable.getMinCostFedPlan(planRefMeta.getLeft(), planRefMeta.getRight());
+			FedPlan planRef = memoTable.getMinCostFedPlan(childPlanPair);
 
 			// Add child plan cost (includes network transfer cost if federation types differ)
 			totalCost += planRef.getTotalCost() + planRef.getCondNetTransferCost(currentPlan.getFedOutType());
@@ -82,44 +85,46 @@ public class FederatedPlanCostEstimator {
 	 * Resolves conflicts in federated plans where different plans have different FederatedOutput types.
 	 * This function traverses the list of conflicting plans in reverse order to ensure that conflicts
 	 * are resolved from the bottom-up, allowing for consistent federated output types across the plan.
+	 * It calculates additional costs for each potential resolution and updates the cumulative additional cost.
 	 *
-	 * @param currentPlan The current FedPlan being evaluated for conflicts.
 	 * @param memoTable The FederatedMemoTable containing all federated plan variants.
-	 * @param conflictFedPlanList A list of pairs, each containing a plan ID and a list of parent plans
-	 *                            that have conflicting federated outputs.
+	 * @param conflictFedPlanLinkedMap A map of plan IDs to lists of parent plans with conflicting federated outputs.
+	 * @param cumulativeAdditionalCost An array to store the cumulative additional cost incurred by resolving conflicts.
+	 * @return A LinkedHashMap of resolved federated plans, marked with a boolean indicating resolution status.
 	 */
-	public static void resolveConflictFedPlan(FedPlan currentPlan, FederatedMemoTable memoTable, List<Pair<Long, List<FedPlan>>> conflictFedPlanList) {
-		// Traverse the conflictFedPlanList in reverse order after BFS to resolve conflicts
-		for (int i = conflictFedPlanList.size() - 1; i >= 0; i--) {
-			Pair<Long, List<FedPlan>> conflictFedPlanPair = conflictFedPlanList.get(i);
-			
-			// Retrieve the conflicting federated plans for LOUT and FOUT types
-			FedPlan confilctLOutFedPlan = memoTable.getFedPlanAfterPrune(conflictFedPlanPair.getLeft(), FederatedOutput.LOUT);
-			FedPlan confilctFOutFedPlan = memoTable.getFedPlanAfterPrune(conflictFedPlanPair.getLeft(), FederatedOutput.FOUT);
+	public static LinkedHashMap<FedPlan, Boolean> resolveConflictFedPlan(FederatedMemoTable memoTable, LinkedHashMap<Long, List<FedPlan>> conflictFedPlanLinkedMap, double[] cumulativeAdditionalCost) {
+		// LinkedHashMap to store resolved federated plans for BFS traversal.
+		LinkedHashMap<FedPlan, Boolean> resolvedFedPlanLinkedMap = new LinkedHashMap<>();
 
-			double lOutCost = 0;
-			double fOutCost = 0;
-			
+		// Traverse the conflictFedPlanList in reverse order after BFS to resolve conflicts
+		for (Map.Entry<Long, List<FedPlan>> conflictFedPlanPair : conflictFedPlanLinkedMap.entrySet()) {
+			long conflictHopID = conflictFedPlanPair.getKey();
+			List<FedPlan> conflictParentFedPlans = conflictFedPlanPair.getValue();
+
+			// Retrieve the conflicting federated plans for LOUT and FOUT types
+			FedPlan confilctLOutFedPlan = memoTable.getFedPlanAfterPrune(conflictHopID, FederatedOutput.LOUT);
+			FedPlan confilctFOutFedPlan = memoTable.getFedPlanAfterPrune(conflictHopID, FederatedOutput.FOUT);
+
+			// Variables to store additional costs for LOUT and FOUT types
+			double lOutAdditionalCost = 0;
+			double fOutAdditionalCost = 0;
+
 			// Flags to check if the plan involves network transfer
 			// Network transfer cost is calculated only once, even if it occurs multiple times
 			boolean isLOutNetTransfer = false;
 			boolean isFOutNetTransfer = false; 
 
+			// Determine the optimal federated output type based on the calculated costs
 			FederatedOutput optimalFedOutType;
-			
+
 			// Iterate over each parent federated plan in the current conflict pair
-			for (FedPlan conflictParentFedPlan : conflictFedPlanPair.getValue()) {
+			for (FedPlan conflictParentFedPlan : conflictParentFedPlans) {
 				// Find the calculated FedOutType of the child plan
-				Pair<Long, FederatedOutput> cacluatedCurrentPlan = conflictParentFedPlan.getChildFedPlans().stream()
-					.filter(pair -> pair.getLeft().equals(currentPlan.getHopID()))
+				Pair<Long, FederatedOutput> cacluatedConflictPlanPair = conflictParentFedPlan.getChildFedPlans().stream()
+					.filter(pair -> pair.getLeft().equals(conflictHopID))
 					.findFirst()
-					.orElseThrow(() -> new NoSuchElementException("No matching pair found for ID: " + currentPlan.getHopID()));
-				
-				// Accumulate the total costs for both LOUT and FOUT
-				// Total cost includes compute and memory access, but not network transfer cost
-				lOutCost += conflictParentFedPlan.getTotalCost();
-				fOutCost += conflictParentFedPlan.getTotalCost();
-				
+					.orElseThrow(() -> new NoSuchElementException("No matching pair found for ID: " + conflictHopID));
+							
 				// CASE 1. Calculated LOUT / Parent LOUT / Current LOUT: Total cost remains unchanged.
 				// CASE 2. Calculated LOUT / Parent FOUT / Current LOUT: Total cost remains unchanged, subtract net cost, add net cost later.
 				// CASE 3. Calculated FOUT / Parent LOUT / Current LOUT: Change total cost, subtract net cost.
@@ -130,11 +135,10 @@ public class FederatedPlanCostEstimator {
 				// CASE 8. Calculated FOUT / Parent FOUT / Current FOUT: Total cost remains unchanged.
 				
 				// Adjust LOUT, FOUT costs based on the calculated plan's output type
-				if (cacluatedCurrentPlan.getRight() == FederatedOutput.LOUT) {
+				if (cacluatedConflictPlanPair.getRight() == FederatedOutput.LOUT) {
 					// When changing from calculated LOUT to current FOUT, subtract the existing LOUT total cost and add the FOUT total cost
 					// When maintaining calculated LOUT to current LOUT, the total cost remains unchanged.
-					fOutCost -= confilctLOutFedPlan.getTotalCost();
-					fOutCost += confilctFOutFedPlan.getTotalCost();
+					fOutAdditionalCost += confilctFOutFedPlan.getTotalCost() - confilctLOutFedPlan.getTotalCost();
 
 					if (conflictParentFedPlan.getFedOutType() == FederatedOutput.LOUT) {
 						// (CASE 1) Previously, calculated was LOUT and parent was LOUT, so no network transfer cost occurred
@@ -144,50 +148,56 @@ public class FederatedPlanCostEstimator {
 						// Previously, calculated was LOUT and parent was FOUT, so network transfer cost occurred
                     	// (CASE 2) If maintaining calculated LOUT to current LOUT, subtract existing network transfer cost and calculate later
 						isLOutNetTransfer = true;
-						lOutCost -= confilctLOutFedPlan.getNetTransferCost();
+						lOutAdditionalCost -= confilctLOutFedPlan.getNetTransferCost();
+
 						// (CASE 6) If changing from calculated LOUT to current FOUT, no network transfer cost occurs, so subtract it
-						fOutCost -= confilctLOutFedPlan.getNetTransferCost();
+						fOutAdditionalCost -= confilctLOutFedPlan.getNetTransferCost();
 					}
 				} else {
-					lOutCost -= confilctFOutFedPlan.getTotalCost();
-					lOutCost += confilctLOutFedPlan.getTotalCost();
+					lOutAdditionalCost += confilctLOutFedPlan.getTotalCost() - confilctFOutFedPlan.getTotalCost();
 
 					if (conflictParentFedPlan.getFedOutType() == FederatedOutput.FOUT) {
 						isLOutNetTransfer = true;
 					} else {
 						isFOutNetTransfer = true;
-						lOutCost -= confilctLOutFedPlan.getNetTransferCost();
-						fOutCost -= confilctLOutFedPlan.getNetTransferCost();
+						lOutAdditionalCost -= confilctLOutFedPlan.getNetTransferCost();
+						fOutAdditionalCost -= confilctLOutFedPlan.getNetTransferCost();
 					}
 				}
 			}
 
 			// Add network transfer costs if applicable
 			if (isLOutNetTransfer) {
-				lOutCost += confilctLOutFedPlan.getNetTransferCost();
+				lOutAdditionalCost += confilctLOutFedPlan.getNetTransferCost();
 			}
 			if (isFOutNetTransfer) {
-				fOutCost += confilctFOutFedPlan.getNetTransferCost();
+				fOutAdditionalCost += confilctFOutFedPlan.getNetTransferCost();
 			}
 
 			// Determine the optimal federated output type based on the calculated costs
-			if (lOutCost < fOutCost) {
+			if (lOutAdditionalCost <= fOutAdditionalCost) {
 				optimalFedOutType = FederatedOutput.LOUT;
+				cumulativeAdditionalCost[0] += lOutAdditionalCost;
+				resolvedFedPlanLinkedMap.put(confilctLOutFedPlan, true);
 			} else {
 				optimalFedOutType = FederatedOutput.FOUT;
+				cumulativeAdditionalCost[0] += fOutAdditionalCost;
+				resolvedFedPlanLinkedMap.put(confilctFOutFedPlan, true);
 			}    
 
 			// Update only the optimal federated output type, not the cost itself or recursively
-			for (FedPlan conflictParentFedPlan : conflictFedPlanPair.getValue()) {
+			for (FedPlan conflictParentFedPlan : conflictParentFedPlans) {
 				for (Pair<Long, FederatedOutput> childPlanPair : conflictParentFedPlan.getChildFedPlans()) {
-					if (childPlanPair.getLeft() == currentPlan.getHopID() && childPlanPair.getRight() != optimalFedOutType) {
+					if (childPlanPair.getLeft() == conflictHopID && childPlanPair.getRight() != optimalFedOutType) {
 						int index = conflictParentFedPlan.getChildFedPlans().indexOf(childPlanPair);
 						conflictParentFedPlan.getChildFedPlans().set(index, 
 							Pair.of(childPlanPair.getLeft(), optimalFedOutType));
+						break;
 					}
 				}
 			}
 		}
+		return resolvedFedPlanLinkedMap;
 	}
 	
 	/**

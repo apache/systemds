@@ -346,6 +346,10 @@ public abstract class RewriterStatement {
 			return this;
 		}
 
+		public boolean match() {
+			return matchRoot.match(this);
+		}
+
 		public boolean isDebug() {
 			return debug;
 		}

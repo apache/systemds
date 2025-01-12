@@ -318,6 +318,334 @@ public class RewriterNormalFormTests {
 	}
 
 	@Test
+	public void testFuseLogNzBinaryOperation() {
+		RewriterStatement stmt1 = RewriterUtils.parse("*(!=(A,0.0), log(A, a))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("log_nz(A, a)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testSimplifyNotOverComparisons() {
+		RewriterStatement stmt1 = RewriterUtils.parse("!(>(A,B))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("<=(A,B)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
+
+		assert match(stmt1, stmt2);
+	}
+
+	///// DYNAMIC SIMPLIFICATIONS //////
+
+	@Test
+	public void testRemoveEmptyRightIndexing() {
+		// We do not directly support the specification of nnz, but we can emulate such a matrix by multiplying with 0
+		RewriterStatement stmt1 = RewriterUtils.parse("rowVec(*(A, 0.0))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("rowVec(const(A, 0.0))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testRemoveUnnecessaryRightIndexing() {
+		RewriterStatement stmt1 = RewriterUtils.parse("[](rowVec(A), 1, nrow(A), 1, 1)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("rowVec(A)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testRemoveUnnecessaryReorgOperation3() {
+		RewriterStatement stmt1 = RewriterUtils.parse("t(rowVec(colVec(A)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("rowVec(colVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testRemoveUnnecessaryOuterProduct() {
+		RewriterStatement stmt1 = RewriterUtils.parse("*(A, %*%(colVec(B), const(t(colVec(B)), 1.0)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("*(A, colVec(B))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testRemoveUnnecessaryIfElseOperation() {
+		// Ifelse is not directly supported yet but only on scalars. Thus, we will our index expression syntax to reflect that statement
+		// Note that we "cheated" here a bit as we index using nrow(A) and ncol(A). We would not get a match if we used nrow(B)...
+		RewriterStatement stmt1 = RewriterUtils.parse("_m($1:_idx(1, nrow(A)), $2:_idx(1, ncol(A)), ifelse(TRUE, [](A, $1, $2), [](B, $1, $2)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE");
+		RewriterStatement stmt2 = RewriterUtils.parse("A", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testFuseDatagenAndReorgOperation() {
+		RewriterStatement stmt1 = RewriterUtils.parse("t(rand(i, 1, 0.0, 1.0))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("rand(1, i, 0.0, 1.0)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testSimplifyColwiseAggregate() {
+		RewriterStatement stmt1 = RewriterUtils.parse("colSums(colVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("colVec(A)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testSimplifyColwiseAggregate2() {
+		RewriterStatement stmt1 = RewriterUtils.parse("colSums(rowVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("cast.MATRIX(rowVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testSimplifyRowwiseAggregate() {
+		RewriterStatement stmt1 = RewriterUtils.parse("rowSums(rowVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("rowVec(A)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testSimplifyRowwiseAggregate2() {
+		RewriterStatement stmt1 = RewriterUtils.parse("rowSums(colVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("cast.MATRIX(colVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testSimplifyColSumsMVMult() {
+		RewriterStatement stmt1 = RewriterUtils.parse("colSums(*(A, colVec(B)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("%*%(t(colVec(B)), A)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testSimplifyRowSumsMVMult() {
+		RewriterStatement stmt1 = RewriterUtils.parse("rowSums(*(A, rowVec(B)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("%*%(A, rowVec(B))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testSimplifyUnnecessaryAggregate() {
+		RewriterStatement stmt1 = RewriterUtils.parse("sum(rowVec(colVec(A)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("as.scalar(A)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testSimplifyEmptyAggregate() {
+		// We emulate an empty matrix by multiplying by zero
+		RewriterStatement stmt1 = RewriterUtils.parse("sum(*(A, 0.0))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("0.0", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testSimplifyEmptyReorgOperation() {
+		// We emulate an empty matrix by multiplying by zero
+		RewriterStatement stmt1 = RewriterUtils.parse("t(*(A, 0.0))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("const(t(A), 0.0)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testSimplifyEmptyMatrixMult() {
+		// We emulate an empty matrix by multiplying by zero
+		// Note that we pass the dimension info of the matrix multiply to get the same e-class assertions
+		RewriterStatement stmt1 = RewriterUtils.parse("%*%(*(A, 0.0), B)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("const(%*%(A, B), 0.0)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testSimplifyEmptyMatrixMult2() {
+		RewriterStatement stmt1 = RewriterUtils.parse("%*%(A, cast.MATRIX(1.0))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("A", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testSimplifyScalarMatrixMult() {
+		RewriterStatement stmt1 = RewriterUtils.parse("%*%(A, cast.MATRIX(a))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("*(A, as.scalar(cast.MATRIX(a)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testSimplifyDistributiveMatrixMult() {
+		RewriterStatement stmt1 = RewriterUtils.parse("+(%*%(A, B), %*%(A, C))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("%*%(A, +(B, C)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	// Note that we did not implement the overloaded diag(A) operation as we defined diag(A) as setting all other entries to zero (which is not how it is actually handled by SystemDS)
+	// In this case, we obtain the same rewrite, even though the diag operation is different
+	@Test
+	public void testSimplifySumDiagToTrace() {
+		RewriterStatement stmt1 = RewriterUtils.parse("sum(diag(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("trace(A)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	// Note that we did not implement the overloaded diag(A) operation as we defined diag(A) as setting all other entries to zero (which is not how it is actually handled by SystemDS)
+	// In this case, we obtain the same equivalence, but in case of our implementation the rewrite would not be beneficial
+	@Test
+	public void testPushdownBinaryOperationOnDiag() {
+		RewriterStatement stmt1 = RewriterUtils.parse("*(diag(A), a)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("diag(*(A, a))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testPushdownSumOnAdditiveBinary() {
+		RewriterStatement stmt1 = RewriterUtils.parse("sum(+(A, B))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("+(sum(A), sum(B))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		// We need to assert that the dimensions are the same, which we currently cannot do implicitly through an expression
+		stmt2.givenThatEqualDimensions(stmt2.getChild(0, 0), stmt2.getChild(1, 0), ctx);
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testSimplifyDotProductSum() {
+		// We do not explicitly support A^2
+		RewriterStatement stmt1 = RewriterUtils.parse("cast.MATRIX(sum(*(rowVec(A), rowVec(A))))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("%*%(t(rowVec(A)), rowVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testFuseSumSquared() {
+		// We do not explicitly support A^2
+		RewriterStatement stmt1 = RewriterUtils.parse("sum(*(A, A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("sumSq(A)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testFuseAxpyBinaryOperationChain() {
+		RewriterStatement stmt1 = RewriterUtils.parse("+(A, *(a, B))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("+*(A, a, B)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testFuseAxpyBinaryOperationChain2() {
+		RewriterStatement stmt1 = RewriterUtils.parse("-(A, *(a, B))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("-*(A, a, B)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testReorderMinusMatrixMult() {
+		RewriterStatement stmt1 = RewriterUtils.parse("%*%(-(t(A)), B)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("-(%*%(t(A), B))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testSimplifySumMatrixMult() {
+		RewriterStatement stmt1 = RewriterUtils.parse("sum(%*%(A, B))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("sum(*(t(colSums(A)), rowSums(B)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testSimplifyEmptyBinaryOperation() {
+		RewriterStatement stmt1 = RewriterUtils.parse("*(A, const(A, 0.0))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("const(A, 0.0)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testSimplifyEmptyBinaryOperation2() {
+		RewriterStatement stmt1 = RewriterUtils.parse("+(A, const(A, 0.0))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("A", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testSimplifyEmptyBinaryOperation3() {
+		RewriterStatement stmt1 = RewriterUtils.parse("-(A, const(A, 0.0))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("A", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testSimplifyScalarMVBinaryOperation() {
+		RewriterStatement stmt1 = RewriterUtils.parse("*(A, rowVec(colVec(B)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("*(A, as.scalar(B))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
+	public void testSimplifyNnzComputation() {
+		RewriterStatement stmt1 = RewriterUtils.parse("sum(!=(A, 0.0))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("_nnz(A)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	// We only support concrete literals (which is a current limitation of this framework)
+	@Test
+	public void testSimplifyNrowNcolComputation() {
+		// We simulate a matrix with known dimensions by doing a concrete left-indexing
+		RewriterStatement stmt1 = RewriterUtils.parse("nrow([](A, 1, 5, 1, 5))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1,5", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("5", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1,5", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	// We only support concrete literals (which is a current limitation of this framework)
+	@Test
+	public void testSimplifyNrowNcolComputation2() {
+		// We simulate a matrix with known dimensions by doing a concrete left-indexing
+		RewriterStatement stmt1 = RewriterUtils.parse("ncol([](A, 1, 5, 1, 5))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1,5", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("5", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1,5", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	// We only support concrete literals (which is a current limitation of this framework)
+	@Test
+	public void testSimplifyNrowNcolComputation3() {
+		// We simulate a matrix with known dimensions by doing a concrete left-indexing
+		RewriterStatement stmt1 = RewriterUtils.parse("length([](A, 1, 5, 1, 5))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1,5", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("25", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1,25", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+
+		assert match(stmt1, stmt2);
+	}
+
+	@Test
 	public void testAdditionMatrix1() {
 		RewriterStatement stmt1 = RewriterUtils.parse("*(A, %*%(rowVec(B), const([](B, 1, 1, 1, 1), 1.0)))", ctx, "MATRIX:A,B", "LITERAL_FLOAT:1.0", "LITERAL_INT:1");
 		RewriterStatement stmt2 = RewriterUtils.parse("*(A, rowVec(B))", ctx, "MATRIX:A,B");

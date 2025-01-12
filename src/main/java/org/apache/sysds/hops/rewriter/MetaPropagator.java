@@ -323,6 +323,7 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 				case "-*(MATRIX,FLOAT,MATRIX)":
 				case "*2(MATRIX)":
 				case "sq(MATRIX)":
+				case "!(MATRIX)":
 					root.unsafePutMeta("nrow", root.getChild(0).getMeta("nrow"));
 					root.unsafePutMeta("ncol", root.getChild(0).getMeta("ncol"));
 					return null;

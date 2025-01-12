@@ -887,6 +887,17 @@ public abstract class RewriterStatement {
 	}
 
 	// This can only be called from the root expression to add a new assertion manually
+	public RewriterStatement givenThatEqualDimensions(RewriterStatement stmt1, RewriterStatement stmt2, final RuleContext ctx) {
+		getAssertions(ctx).addEqualityAssertion(stmt1.getNRow(), stmt2.getNRow(), this);
+		getAssertions(ctx).addEqualityAssertion(stmt1.getNCol(), stmt2.getNCol(), this);
+		return this;
+	}
+
+	// This can only be called from the root expression to add a new assertion manually
+	public RewriterStatement givenThatEqual(RewriterStatement stmt1, RewriterStatement stmt2, final RuleContext ctx) {
+		return givenThatEqual(stmt1, stmt2, this, ctx);
+	}
+
 	public RewriterStatement givenThatEqual(RewriterStatement stmt1, RewriterStatement stmt2, RewriterStatement exprRoot, final RuleContext ctx) {
 		getAssertions(ctx).addEqualityAssertion(stmt1, stmt2, exprRoot);
 		return this;

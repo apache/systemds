@@ -100,7 +100,6 @@ public class BuiltinSQRTMatrixTest extends AutomatedTestBase {
 	public void testSQRTMatrixDMLSquareMatrixSize1x1() {
 		runSQRTMatrix(true, ExecType.CP, "DML", 1);
 	}
-	/*
 
 	@Test
 	public void testSQRTMatrixDMLSquareMatrixSize2x2() {
@@ -146,7 +145,6 @@ public class BuiltinSQRTMatrixTest extends AutomatedTestBase {
 	public void testSQRTMatrixDMLPSDMatrixSize3x3() {
 		runSQRTMatrix(true, ExecType.CP, "DML", 10);
 	}
-	*/
 
 
 	private void runSQRTMatrix(boolean defaultProb, ExecType instType, String strategy, int test_case) {
@@ -170,8 +168,8 @@ public class BuiltinSQRTMatrixTest extends AutomatedTestBase {
 					break;
 				case 2: // arbitrary square matrix of dimension 2x2
 					double[][] X2 = {
-							{1, 2},
-							{3, 4},
+							{1, 1},
+							{0, 1},
 					};
 					X = X2;
 					break;

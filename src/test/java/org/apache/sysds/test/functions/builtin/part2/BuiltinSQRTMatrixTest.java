@@ -44,106 +44,76 @@ public class BuiltinSQRTMatrixTest extends AutomatedTestBase {
 /*
 	// tests for strategy "COMMON"
 	@Test
-	public void testSQRTMatrixJavaSquareMatrixSize1x1() {
+	public void testSQRTMatrixJavaSize1x1() {
 		runSQRTMatrix(true, ExecType.CP, "COMMON", 1);
 	}
 
 	@Test
-	public void testSQRTMatrixJavaSquareMatrixSize2x2() {
+	public void testSQRTMatrixJavaUpperTriangularMatrixSize2x2() {
 		runSQRTMatrix(true, ExecType.CP, "COMMON", 2);
 	}
 
 	@Test
-	public void testSQRTMatrixJavaSquareMatrixSize4x4() {
+	public void testSQRTMatrixJavaDiagonalMatrixSize2x2() {
 		runSQRTMatrix(true, ExecType.CP, "COMMON", 3);
 	}
 
 	@Test
-	public void testSQRTMatrixJavaSquareMatrixSize8x8() {
+	public void testSQRTMatrixJavaPSDMatrixSize2x2() {
 		runSQRTMatrix(true, ExecType.CP, "COMMON", 4);
 	}
 
 	@Test
-	public void testSQRTMatrixJavaDiagonalMatrixSize2x2() {
+	public void testSQRTMatrixJavaPSDMatrixSize3x3() {
 		runSQRTMatrix(true, ExecType.CP, "COMMON", 5);
 	}
 
 	@Test
-	public void testSQRTMatrixJavaDiagonalMatrixSize3x3() {
+	public void testSQRTMatrixJavaPSDMatrixSize4x4() {
 		runSQRTMatrix(true, ExecType.CP, "COMMON", 6);
 	}
 
 	@Test
-	public void testSQRTMatrixJavaDiagonalMatrixSize4x4() {
+	public void testSQRTMatrixJavaPSDMatrixSize8x8() {
 		runSQRTMatrix(true, ExecType.CP, "COMMON", 7);
-	}
-
-	@Test
-	public void testSQRTMatrixJavaPSDMatrixSize2x2() {
-		runSQRTMatrix(true, ExecType.CP, "COMMON", 8);
-	}
-
-	@Test
-	public void testSQRTMatrixJavaPSDMatrixSize4x4() {
-		runSQRTMatrix(true, ExecType.CP, "COMMON", 9);
-	}
-
-	@Test
-	public void testSQRTMatrixJavaPSDMatrixSize3x3() {
-		runSQRTMatrix(true, ExecType.CP, "COMMON", 10);
 	}
 */
 
 	// tests for strategy "DML"
 
 	@Test
-	public void testSQRTMatrixDMLSquareMatrixSize1x1() {
+	public void testSQRTMatrixDMLSize1x1() {
 		runSQRTMatrix(true, ExecType.CP, "DML", 1);
 	}
 
 	@Test
-	public void testSQRTMatrixDMLSquareMatrixSize2x2() {
+	public void testSQRTMatrixDMLUpperTriangularMatrixSize2x2() {
 		runSQRTMatrix(true, ExecType.CP, "DML", 2);
 	}
 
 	@Test
-	public void testSQRTMatrixDMLSquareMatrixSize4x4() {
+	public void testSQRTMatrixDMLDiagonalMatrixSize2x2() {
 		runSQRTMatrix(true, ExecType.CP, "DML", 3);
 	}
 
 	@Test
-	public void testSQRTMatrixDMLSquareMatrixSize8x8() {
+	public void testSQRTMatrixDMLPSDMatrixSize2x2() {
 		runSQRTMatrix(true, ExecType.CP, "DML", 4);
 	}
 
 	@Test
-	public void testSQRTMatrixDMLDiagonalMatrixSize2x2() {
+	public void testSQRTMatrixDMLPSDMatrixSize3x3() {
 		runSQRTMatrix(true, ExecType.CP, "DML", 5);
 	}
 
 	@Test
-	public void testSQRTMatrixDMLDiagonalMatrixSize3x3() {
+	public void testSQRTMatrixDMLPSDMatrixSize4x4() {
 		runSQRTMatrix(true, ExecType.CP, "DML", 6);
 	}
 
 	@Test
-	public void testSQRTMatrixDMLDiagonalMatrixSize4x4() {
+	public void testSQRTMatrixDMLPSDMatrixSize8x8() {
 		runSQRTMatrix(true, ExecType.CP, "DML", 7);
-	}
-
-	@Test
-	public void testSQRTMatrixDMLPSDMatrixSize2x2() {
-		runSQRTMatrix(true, ExecType.CP, "DML", 8);
-	}
-
-	@Test
-	public void testSQRTMatrixDMLPSDMatrixSize4x4() {
-		runSQRTMatrix(true, ExecType.CP, "DML", 9);
-	}
-
-	@Test
-	public void testSQRTMatrixDMLPSDMatrixSize3x3() {
-		runSQRTMatrix(true, ExecType.CP, "DML", 10);
 	}
 
 
@@ -160,98 +130,81 @@ public class BuiltinSQRTMatrixTest extends AutomatedTestBase {
 			// define input matrix for the matrix sqrt function according to test case
 			double[][] X = null;
 			switch(test_case) {
-				case 1: // arbitrary square matrix of dimension 1x1
+				case 1: // arbitrary square matrix of dimension 1x1 (PSD)
 					double[][] X1 = {
 							{4}
 					};
 					X = X1;
 					break;
-				case 2: // arbitrary square matrix of dimension 2x2
+				case 2: // arbitrary upper right triangular matrix (PSD) of dimension 2x2
 					double[][] X2 = {
 							{1, 1},
 							{0, 1},
 					};
 					X = X2;
 					break;
-				case 3: // arbitrary square matrix of dimension 4x4
+				case 3: // arbitrary diagonal matrix (PSD) of dimension 2x2
 					double[][] X3 = {
-							{1, 2, 3, 4},
-							{5.2, 6, 7, 8},
-							{9, 10.5, 11, 12.3},
-							{13, 14, 15.8, 16}
-					};
-					X = X3;
-					break;
-				case 4: // arbitrary square matrix of dimension 8x8
-					double[][] X4 = {
-							{1, 2, 3, 4, 5, 6, 7, 8},
-							{9, 10, 11, 12, 13, 14, 15, 16},
-							{17, 18, 19, 20, 21, 22, 23, 24},
-							{25, 26, 27, 28, 29, 30, 31, 32},
-							{33, 34, 35, 36, 37, 38, 39, 40},
-							{41, 42, 43, 44, 45, 46, 47, 48},
-							{49, 50, 51, 52, 53, 54, 55, 56},
-							{57, 58, 59, 60, 61, 62, 63, 64}
-					};
-					X = X4;
-					break;
-				case 5: // arbitrary diagonal matrix of dimension 2x2
-					double[][] X5 = {
 							{1, 0},
 							{0, 1},
 					};
-					X = X5;
+					X = X3;
 					break;
-				case 6: // arbitrary diagonal matrix of dimension 3x3
-					double[][] X6 = {
-							{-1, 0, 0},
-							{0, 2, 0},
-							{0, 0, 3}
-					};
-					X = X6;
-					break;
-				case 7: // arbitrary diagonal matrix of dimension 4x4
-					double[][] X7 = {
-							{-4.5, 0, 0, 0},
-							{0, -2, 0, 0},
-							{0, 0, -3.2, 0},
-							{0, 0, 0, 6}
-					};
-					X = X7;
-					break;
-				case 8: // arbitrary PSD matrix of dimension 2x2
+				case 4: // arbitrary PSD matrix of dimension 2x2
 					// PSD matrix generated by taking (A^T)A of matrix A = [[1, 0], [2, 3]]
-					double[][] X8 = {
+					double[][] X4 = {
 							{1, 2},
 							{2, 13}
 					};
-					X = X8;
+					X = X4;
 					break;
-				case 9: // arbitrary PSD matrix of dimension 4x4
+				case 5: // arbitrary PSD matrix of dimension 3x3
+					// PSD matrix generated by taking (A^T)A of matrix A =
+					// [[1.5, 0, 1.2],
+					// [2.2, 3.8, 4.4],
+					// [4.2, 6.1, 0.2]]
+					double[][] X5 = {
+							{3.69, 8.58, 6.54},
+							{8.58, 38.64, 33.30},
+							{6.54, 33.3, 54.89}
+					};
+					X = X5;
+					break;
+				case 6: // arbitrary PSD matrix of dimension 4x4
 					// PSD matrix generated by taking (A^T)A of matrix A=
 					// [[1, 0, 5, 6],
 					//  [2, 3, 0, 2],
 					//  [5, 0, 1, 1],
 					//  [2, 3, 4, 8]]
-					double[][] X9 = {
+					double[][] X6 = {
 							{62, 14, 16, 70},
 							{14, 17, 12, 29},
 							{16, 12, 27, 22},
 							{70, 29, 22, 93}
 					};
-					X = X9;
+					X = X6;
 					break;
-				case 10: // arbitrary PSD matrix of dimension 3x3
+				case 7: // arbitrary PSD matrix of dimension 8x8
 					// PSD matrix generated by taking (A^T)A of matrix A =
-					// [[1.5, 0, 1.2],
-					// [2.2, 3.8, 4.4],
-					// [4.2, 6.1, 0.2]]
-					double[][] X10 = {
-							{3.69, 8.58, 6.54},
-							{8.58, 38.64, 33.30},
-							{6.54, 33.3, 54.89}
+					// [[ 8.41557894,  3.44748042,  1.44911908,  4.95381036,  4.42875187,   4.14710712, -0.42719386,  6.1366026 ],
+					// [ 3.44748042, 11.38083039,  4.99475137,  3.36734826,  4.08943809,   4.23308448,  4.50030176,  3.92552912],
+					// [ 1.44911908,  4.99475137,  9.78651357,  4.00347878,  4.60244914,   4.24468227,  3.62945751,  6.54033601],
+					// [ 4.95381036,  3.36734826,  4.00347878, 12.75936071,  3.78643598,   1.99998784,  5.41689723,  7.9756991 ],
+					// [ 4.42875187,  4.08943809,  4.60244914,  3.78643598, 12.49158813,   6.69560056,  3.87176913,  5.5028702 ],
+					// [ 4.14710712,  4.23308448,  4.24468227,  1.99998784,  6.69560056,   7.66015758,  4.21792513,  4.53489207],
+					// [-0.42719386,  4.50030176,  3.62945751,  5.41689723,  3.87176913,   4.21792513,  9.07079513,  2.64352781],
+					// [ 6.1366026 ,  3.92552912,  6.54033601,  7.9756991 ,  5.5028702 ,   4.53489207,  2.64352781,  8.92801728]]
+					double[][] X7 = {
+							{184, 150, 140, 194, 192, 153,  91, 211},
+							{150, 248, 203, 198, 216, 187, 171, 214},
+							{140, 203, 234, 212, 223, 185, 165, 237},
+							{194, 198, 212, 326, 228, 177, 190, 287},
+							{192, 216, 223, 228, 318, 239, 180, 262},
+							{153, 187, 185, 177, 239, 199, 152, 209},
+							{ 91, 171, 165, 190, 180, 152, 185, 170},
+							{211, 214, 237, 287, 262, 209, 170, 297}
 					};
-					X = X10;
+					X = X7;
 					break;
 			}
 

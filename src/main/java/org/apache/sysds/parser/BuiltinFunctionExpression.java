@@ -1283,8 +1283,7 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			if ( id.getDim2() == -1 || id.getDim1() != id.getDim2() ) {
 				raiseValidateError("det requires a square matrix as first argument.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
-			//output.setDataType(DataType.SCALAR);
-			output.setDataType(DataType.MATRIX);
+			output.setDataType(DataType.SCALAR);
 			output.setDimensions(0, 0);
 			output.setBlocksize(0);
 			output.setValueType(ValueType.FP64); 

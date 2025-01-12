@@ -10,7 +10,6 @@ import java.util.function.Function;
 
 public class RewriterNormalFormTests {
 	private static RuleContext ctx;
-	//private static Function<RewriterStatement, RewriterStatement> converter;
 	private static Function<RewriterStatement, RewriterStatement> canonicalConverter;
 
 	@BeforeClass

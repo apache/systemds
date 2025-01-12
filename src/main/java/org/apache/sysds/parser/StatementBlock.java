@@ -896,6 +896,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 						case SCALAR:
 							break;
 						case MATRIX:
+							break;
 						case TENSOR:
 						case FRAME:
 						case LIST:

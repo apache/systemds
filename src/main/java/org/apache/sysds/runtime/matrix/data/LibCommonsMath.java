@@ -80,7 +80,7 @@ public class LibCommonsMath
 	}
 	
 	public static boolean isSupportedUnaryOperation( String opcode ) {
-		return ( opcode.equals("inverse") || opcode.equals("cholesky") || opcode.equals("sqrtMatrixJava") );
+		return ( opcode.equals("inverse") || opcode.equals("cholesky") || opcode.equals("sqrt_matrix_java") );
 	}
 	
 	public static boolean isSupportedMultiReturnOperation( String opcode ) {
@@ -111,7 +111,7 @@ public class LibCommonsMath
 			return computeMatrixInverse(matrixInput);
 		else if (opcode.equals("cholesky"))
 			return computeCholesky(matrixInput);
-		else if (opcode.equals("sqrtMatrixJava"))
+		else if (opcode.equals("sqrt_matrix_java"))
 			return computeSqrt(inj);
 		return null;
 	}

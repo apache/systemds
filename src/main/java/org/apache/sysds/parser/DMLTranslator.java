@@ -2757,7 +2757,6 @@ public class DMLTranslator
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(),
 				target.getValueType(), OpOp1.valueOf(source.getOpCode().name()), expr);
 			break;
-
 		case OUTER:
 			if( !(expr3 instanceof LiteralOp) )
 				throw new HopsException("Operator for outer builtin function must be a constant: "+expr3);

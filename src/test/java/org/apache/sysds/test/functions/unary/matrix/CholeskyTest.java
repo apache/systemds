@@ -101,7 +101,7 @@ public class CholeskyTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME+ TEST_NAME +  ".dml";
-			programArgs = new String[]{"-args", input("A"), output("D") };
+			programArgs = new String[]{"-explain","-args", input("A"), output("D") };
 			
 			double[][] A = getRandomMatrix(rows, cols, 0, 1, sparsity, 10);
 			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1);

@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -58,6 +59,11 @@ public class UnaryMatrixCPInstruction extends UnaryCPInstruction {
 			CacheableData.isBelowCachingThreshold(retBlock)) ? null : 
 			getCacheLineageItem(inObj.getCacheLineage());
 		ec.setMatrixOutputAndLineage(output, retBlock, lin);
+		// if op code is det set scalar/ double, else 
+		if (getOpcode().equals("det")){
+			var temp = ScalarObjectFactory.createScalarObject(ValueType.FP64, retBlock.get(0,0));
+			ec.setVariable(output.getName(), temp);
+		}
 	}
 	
 	public LineageItem getCacheLineageItem(LineageItem input) {

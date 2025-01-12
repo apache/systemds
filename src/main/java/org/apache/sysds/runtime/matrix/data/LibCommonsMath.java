@@ -619,10 +619,6 @@ public class LibCommonsMath
 		// Perform LU decomposition
     	LUDecomposition ludecompose = new LUDecomposition(in);
     
-    	// Check for singular matrix
-    	if (ludecompose.getDeterminant() == 0) {
-        throw new DMLRuntimeException("Determinant computation failed: matrix is singular (det = 0).");
-    	}
 		// MatrixBlock for representing the determinant (1x1 matrix)
     	MatrixBlock determinantResult = new MatrixBlock(1, 1, false);
     	determinantResult.set(0, 0, ludecompose.getDeterminant());  

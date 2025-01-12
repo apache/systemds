@@ -542,6 +542,7 @@ public interface Types {
 
 		public boolean isScalarOutput() {
 			return this == CAST_AS_SCALAR
+				|| this == DET
 				|| this == NROW || this == NCOL
 				|| this == LENGTH || this == EXISTS
 				|| this == IQM || this == LINEAGE
@@ -563,6 +564,7 @@ public interface Types {
 				case CUMPROD:         return "ucum*";
 				case CUMSUM:          return "ucumk+";
 				case CUMSUMPROD:      return "ucumk+*";
+				case DET:             return "det";
 				case DETECTSCHEMA:    return "detectSchema";
 				case MULT2:           return "*2";
 				case NOT:             return "!";

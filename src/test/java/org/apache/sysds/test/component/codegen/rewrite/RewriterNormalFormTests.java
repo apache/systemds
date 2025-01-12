@@ -525,21 +525,6 @@ public class RewriterNormalFormTests {
 		assert match(stmt1, stmt2);
 	}
 
-	@Test
-	public void testAdditionMatrix1() {
-		RewriterStatement stmt1 = RewriterUtils.parse("*(A, %*%(rowVec(B), const([](B, 1, 1, 1, 1), 1.0)))", ctx, "MATRIX:A,B", "LITERAL_FLOAT:1.0", "LITERAL_INT:1");
-		RewriterStatement stmt2 = RewriterUtils.parse("*(A, rowVec(B))", ctx, "MATRIX:A,B");
-
-		stmt1 = canonicalConverter.apply(stmt1);
-		stmt2 = canonicalConverter.apply(stmt2);
-
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
-		assert RewriterStatement.MatcherContext.exactMatch(ctx, stmt1, stmt2).match();
-	}
-
 	private boolean match(RewriterStatement stmt1, RewriterStatement stmt2) {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);

@@ -26,8 +26,7 @@ X = read($1)
 S = $2
 
 if (S == "COMMON") {
-    #A = sqrtMatrixJava(X)
-    print("Filler to avoid exception");
+    A = sqrt_matrix_java(X)
 } else if (S == "DML") {
     A = matrixSqrt(X)
 } else {

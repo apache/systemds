@@ -41,7 +41,6 @@ public class BuiltinSQRTMatrixTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"C"}));
 	}
 
-/*
 	// tests for strategy "COMMON"
 	@Test
 	public void testSQRTMatrixJavaSize1x1() {
@@ -52,6 +51,7 @@ public class BuiltinSQRTMatrixTest extends AutomatedTestBase {
 	public void testSQRTMatrixJavaUpperTriangularMatrixSize2x2() {
 		runSQRTMatrix(true, ExecType.CP, "COMMON", 2);
 	}
+
 
 	@Test
 	public void testSQRTMatrixJavaDiagonalMatrixSize2x2() {
@@ -77,10 +77,8 @@ public class BuiltinSQRTMatrixTest extends AutomatedTestBase {
 	public void testSQRTMatrixJavaPSDMatrixSize8x8() {
 		runSQRTMatrix(true, ExecType.CP, "COMMON", 7);
 	}
-*/
 
 	// tests for strategy "DML"
-
 	@Test
 	public void testSQRTMatrixDMLSize1x1() {
 		runSQRTMatrix(true, ExecType.CP, "DML", 1);
@@ -139,7 +137,7 @@ public class BuiltinSQRTMatrixTest extends AutomatedTestBase {
 				case 2: // arbitrary upper right triangular matrix (PSD) of dimension 2x2
 					double[][] X2 = {
 							{1, 1},
-							{0, 1},
+							{1, 1},
 					};
 					X = X2;
 					break;

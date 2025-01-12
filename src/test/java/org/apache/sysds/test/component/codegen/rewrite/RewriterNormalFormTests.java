@@ -126,8 +126,8 @@ public class RewriterNormalFormTests {
 	@Test
 	public void testPushdownCSETransposeScalarOperation() {
 		// Introduce a dummy instruction * as I don't support the assignment operator
-		RewriterStatement stmt1 = RewriterUtils.parse("*(t(A), t(^(A,2.0)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:1.0,2.0");
-		RewriterStatement stmt2 = RewriterUtils.parse("*(t(A), ^(t(A),2.0))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:1.0,2.0");
+		RewriterStatement stmt1 = RewriterUtils.parse("*(t(A), t(sq(A)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:1.0,2.0");
+		RewriterStatement stmt2 = RewriterUtils.parse("*(t(A), sq(t(A)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:1.0,2.0");
 
 		assert match(stmt1, stmt2);
 	}
@@ -406,8 +406,7 @@ public class RewriterNormalFormTests {
 
 	@Test
 	public void testSimplifyDotProductSum() {
-		// We do not explicitly support A^2
-		RewriterStatement stmt1 = RewriterUtils.parse("cast.MATRIX(sum(*(rowVec(A), rowVec(A))))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt1 = RewriterUtils.parse("cast.MATRIX(sum(sq(rowVec(A))))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 		RewriterStatement stmt2 = RewriterUtils.parse("%*%(t(rowVec(A)), rowVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 
 		assert match(stmt1, stmt2);
@@ -415,8 +414,7 @@ public class RewriterNormalFormTests {
 
 	@Test
 	public void testFuseSumSquared() {
-		// We do not explicitly support A^2
-		RewriterStatement stmt1 = RewriterUtils.parse("sum(*(A, A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt1 = RewriterUtils.parse("sum(sq(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 		RewriterStatement stmt2 = RewriterUtils.parse("sumSq(A)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 
 		assert match(stmt1, stmt2);

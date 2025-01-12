@@ -326,6 +326,7 @@ public enum Builtins {
 	STFT("stft", false, ReturnType.MULTI_RETURN),
 	SQRT("sqrt", false),
 	SQRT_MATRIX("matrixSqrt", true),
+	SQRT_MATRIX_JAVA("sqrt_matrix_java", false, ReturnType.SINGLE_RETURN),
 	SUM("sum", false),
 	SVD("svd", false, ReturnType.MULTI_RETURN),
 	TABLE("table", "ctable", false),

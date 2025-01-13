@@ -184,7 +184,7 @@ public class CompressedEncode {
 		Array<T> a = (Array<T>) in.getColumn(colId - 1);
 		boolean containsNull = a.containsNull();
 		estimateRCDMapSize(c);
-		Map<T, Integer> map = a.getRecodeMap(c._estNumDistincts, pool);
+		Map<T, Integer> map = a.getRecodeMap(c._estNumDistincts, pool, k / in.getNumColumns() );
 
 		List<ColumnEncoder> r = c.getEncoders();
 		r.set(0, new ColumnEncoderRecode(colId, (HashMap<Object, Integer>) map));
@@ -236,7 +236,7 @@ public class CompressedEncode {
 		}
 
 		final int rlen = a.size();
-		if(k > 1 && rlen > ROW_PARALLELIZATION_THRESHOLD) {
+		if(k / in.getNumColumns() > 1 && rlen > ROW_PARALLELIZATION_THRESHOLD) {
 			BinEncodeParallel(a, b, nulls, m, rlen);
 		}
 		else {
@@ -252,9 +252,8 @@ public class CompressedEncode {
 	private void BinEncodeParallel(Array<?> a, ColumnEncoderBin b, boolean nulls, final AMapToData m, final int rlen)
 		throws InterruptedException, ExecutionException {
 		final List<Future<?>> tasks = new ArrayList<>();
-		final int blockSize = Math.max(ROW_PARALLELIZATION_THRESHOLD / 2, rlen + k / k);
-		// final ExecutorService pool = CommonThreadPool.get(k);
-		// try {
+		final int tk = k / in.getNumColumns();
+		final int blockSize = Math.max(ROW_PARALLELIZATION_THRESHOLD / 2, rlen + tk / tk);
 
 		for(int i = 0; i < rlen; i += blockSize) {
 			final int start = i;
@@ -268,10 +267,7 @@ public class CompressedEncode {
 		}
 		for(Future<?> t : tasks)
 			t.get();
-		// }
-		// finally {
-		// pool.shutdown();
-		// }
+
 	}
 
 	private void binEncodeWithNulls(Array<?> a, ColumnEncoderBin b, AMapToData m, int l, int u) {
@@ -342,7 +338,7 @@ public class CompressedEncode {
 		int colId = c._colID;
 		Array<T> a = (Array<T>) in.getColumn(colId - 1);
 		estimateRCDMapSize(c);
-		Map<T, Integer> map = a.getRecodeMap(c._estNumDistincts, pool);
+		Map<T, Integer> map = a.getRecodeMap(c._estNumDistincts, pool, k / in.getNumColumns() );
 		boolean containsNull = a.containsNull();
 		int domain = map.size();
 
@@ -399,7 +395,7 @@ public class CompressedEncode {
 		else {
 			boolean containsNull = a.containsNull();
 			estimateRCDMapSize(c);
-			Map<T, Integer> map = a.getRecodeMap(c._estNumDistincts, pool);
+			Map<T, Integer> map = a.getRecodeMap(c._estNumDistincts, pool, k / in.getNumColumns() );
 			double[] vals = new double[map.size() + (containsNull ? 1 : 0)];
 			if(containsNull)
 				vals[map.size()] = Double.NaN;
@@ -441,7 +437,7 @@ public class CompressedEncode {
 
 		final AMapToData m = MapToFactory.create(nRow, si + (containsNull ? 1 : 0));
 
-		if(k > 1 && nRow > ROW_PARALLELIZATION_THRESHOLD)
+		if(k / in.getNumColumns() > 1 && nRow > ROW_PARALLELIZATION_THRESHOLD)
 			return CreateMappingParallel(a, map, containsNull, si, nRow, m);
 		else
 			return createMappingSingleThread(a, map, containsNull, si, nRow, m);
@@ -449,7 +445,8 @@ public class CompressedEncode {
 
 	private <T> AMapToData CreateMappingParallel(Array<T> a, Map<T, Integer> map, boolean containsNull, final int si,
 		final int nRow, final AMapToData m) throws InterruptedException, ExecutionException {
-		final int blkz = Math.max(ROW_PARALLELIZATION_THRESHOLD / 2, (nRow + k) / k);
+		final int tk = k / in.getNumColumns();
+		final int blkz = Math.max(ROW_PARALLELIZATION_THRESHOLD / 2, (nRow + tk) / tk);
 
 		List<Future<?>> tasks = new ArrayList<>();
 

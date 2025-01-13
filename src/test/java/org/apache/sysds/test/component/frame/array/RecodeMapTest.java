@@ -64,7 +64,7 @@ public class RecodeMapTest {
 			Logger.getLogger(Array.class).setLevel(Level.DEBUG);
 			Array<String> a = ArrayFactory.create(FrameArrayTests.generateRandomStringNUnique(1000, 324, 10));
 
-			Map<String, Integer> rcm = a.getRecodeMap(10, CommonThreadPool.get(10));
+			Map<String, Integer> rcm = a.getRecodeMap(10, CommonThreadPool.get(10), 10);
 			assertTrue(rcm.size() == 10);
 			final List<LoggingEvent> log = LoggingUtils.reinsert(appender);
 			assertTrue(log.size() >= 1);
@@ -85,8 +85,8 @@ public class RecodeMapTest {
 			Logger.getLogger(Array.class).setLevel(Level.DEBUG);
 			Array<String> a = ArrayFactory.create(FrameArrayTests.generateRandomStringNUnique(1000, 324, 500));
 
-			Map<String, Integer> rcm = a.getRecodeMap(10, CommonThreadPool.get(10));
-			Map<String, Integer> rcm2 = a.getRecodeMap(10, null);
+			Map<String, Integer> rcm = a.getRecodeMap(10, CommonThreadPool.get(10), 10);
+			Map<String, Integer> rcm2 = a.getRecodeMap(10, null, -1);
 			assertTrue(Math.abs(rcm.size() -  500)  < 100);
 
 			assertTrue(rcm.size() == rcm2.size());

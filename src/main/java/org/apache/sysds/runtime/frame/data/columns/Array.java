@@ -108,7 +108,7 @@ public abstract class Array<T> implements Writable {
 	 */
 	public synchronized final Map<T, Integer> getRecodeMap(int estimate) {
 		try {
-			return getRecodeMap(estimate, null);
+			return getRecodeMap(estimate, null, -1);
 		}
 		catch(Exception e) {
 			throw new RuntimeException(e);
@@ -122,11 +122,12 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @param estimate the estimated number of unique values in this array.
 	 * @param pool     An executor pool to be used for parallel execution (Note this method does not shutdown the pool)
+	 * @param k 		 Parallelization degree allowed
 	 * @return A recode map
 	 * @throws ExecutionException   if the parallel execution fails
 	 * @throws InterruptedException if the parallel execution fails
 	 */
-	public synchronized final Map<T, Integer> getRecodeMap(int estimate, ExecutorService pool)
+	public synchronized final Map<T, Integer> getRecodeMap(int estimate, ExecutorService pool, int k)
 		throws InterruptedException, ExecutionException {
 		// probe cache for existing map
 		Map<T, Integer> map;
@@ -162,7 +163,7 @@ public abstract class Array<T> implements Writable {
 		final int s = size();
 		int k = OptimizerUtils.getTransformNumThreads();
 		Map<T, Integer> ret;
-		if(pool == null || s < ROW_PARALLELIZATION_THRESHOLD)
+		if(k <= 1 || pool == null || s < ROW_PARALLELIZATION_THRESHOLD)
 			ret = createRecodeMap(estimate, 0, s);
 		else
 			ret = parallelCreateRecodeMap(estimate, pool, s, k);

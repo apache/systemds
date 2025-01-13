@@ -503,7 +503,8 @@ public class FederatedStatistics {
 		return new ArrayList<>(workerDataObjects.values());
 	}
 
-	public static void addEvent(EventModel event) {
+	public synchronized static void addEvent(EventModel event) { 
+		// synchronized, because multiple requests can be handled concurrently
 		workerEvents.add(event);
 	}
 

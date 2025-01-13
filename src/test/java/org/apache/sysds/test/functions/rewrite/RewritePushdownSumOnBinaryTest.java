@@ -37,6 +37,7 @@ public class RewritePushdownSumOnBinaryTest extends AutomatedTestBase
 
 	private static final int rows = 1000;
 	private static final int cols = 1;
+	private static final double eps = 1e-8;
 
 	@Override
 	public void setUp() {
@@ -87,9 +88,9 @@ public class RewritePushdownSumOnBinaryTest extends AutomatedTestBase
 			// Compare matrices
 			long expect = Math.round(0.5 * rows);
 			HashMap<CellIndex, Double> dmlfile1 = readDMLScalarFromOutputDir("R1");
-			Assert.assertEquals(expect, dmlfile1.get(new CellIndex(1, 1)), expect * 0.01);
+			Assert.assertEquals(expect, dmlfile1.get(new CellIndex(1, 1)), eps);
 			HashMap<CellIndex, Double> dmlfile2 = readDMLScalarFromOutputDir("R2");
-			Assert.assertEquals(expect, dmlfile2.get(new CellIndex(1, 1)), expect * 0.01);
+			Assert.assertEquals(expect, dmlfile2.get(new CellIndex(1, 1)), eps);
 		} finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
 		}
@@ -113,9 +114,9 @@ public class RewritePushdownSumOnBinaryTest extends AutomatedTestBase
 
 			long expect = Math.round(500); // Expected value for 0.5 + 0.5
 			HashMap<CellIndex, Double> dmlfile3 = readDMLScalarFromOutputDir("R3");
-			Assert.assertEquals(expect, dmlfile3.get(new CellIndex(1,1)), expect*0.01);
+			Assert.assertEquals(expect, dmlfile3.get(new CellIndex(1,1)), eps);
 			HashMap<CellIndex, Double> dmlfile4 = readDMLScalarFromOutputDir("R4");
-			Assert.assertEquals(expect, dmlfile4.get(new CellIndex(1,1)), expect*0.01);
+			Assert.assertEquals(expect, dmlfile4.get(new CellIndex(1,1)), eps);
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;

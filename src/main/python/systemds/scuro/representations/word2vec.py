@@ -21,10 +21,9 @@
 import numpy as np
 
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
-from systemds.scuro.representations.utils import read_data_from_file, save_embeddings
+from systemds.scuro.representations.utils import save_embeddings
 from gensim.models import Word2Vec
 from nltk.tokenize import word_tokenize
-import nltk
 
 
 def get_embedding(sentence, model):
@@ -44,22 +43,20 @@ class W2V(UnimodalRepresentation):
         self.window = window
         self.output_file = output_file
 
-    def parse_all(self, filepath, indices):
-        segments = read_data_from_file(filepath, indices)
-        embeddings = {}
-        t = [word_tokenize(s.lower()) for s in segments.values()]
+    def transform(self, data):
+        t = [word_tokenize(s.lower()) for s in data]
         model = Word2Vec(
             sentences=t,
             vector_size=self.vector_size,
             window=self.window,
             min_count=self.min_count,
         )
-
-        for k, v in segments.items():
-            tokenized_words = word_tokenize(v.lower())
-            embeddings[k] = get_embedding(tokenized_words, model)
+        embeddings = []
+        for sentences in data:
+            tokens = word_tokenize(sentences.lower())
+            embeddings.append(get_embedding(tokens, model))
 
         if self.output_file is not None:
-            save_embeddings(embeddings, self.output_file)
+            save_embeddings(np.array(embeddings), self.output_file)
 
-        return np.array(list(embeddings.values()))
+        return np.array(embeddings)

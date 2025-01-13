@@ -379,6 +379,13 @@ public class IntegerArray extends Array<Integer> {
 	}
 
 	@Override
+	protected int addValRecodeMap(HashMapToInt<Integer> map, int id, int i) {
+		if( map.putIfAbsentI(_data[i], id) == -1) 
+			id++;
+		return id;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_size * 5 + 2);
 		sb.append(super.toString() + ":[");

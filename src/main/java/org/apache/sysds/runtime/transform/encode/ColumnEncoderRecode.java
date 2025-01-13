@@ -59,7 +59,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		this(-1);
 	}
 
-	protected ColumnEncoderRecode(int colID, HashMap<Object, Integer> rcdMap) {
+	protected ColumnEncoderRecode(int colID, Map<Object, Integer> rcdMap) {
 		super(colID);
 		_rcdMap = rcdMap;
 	}
@@ -304,14 +304,25 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 
 		// create compact meta data representation
 		StringBuilder sb = new StringBuilder(); // for reuse
-		int rowID = 0;
-		for(Entry<Object, Integer> e : _rcdMap.entrySet()) {
-			meta.set(rowID++, _colID - 1, // 1-based
-				constructRecodeMapEntry(e.getKey(), e.getValue(), sb));
-		}
-		meta.getColumnMetadata(_colID - 1).setNumDistinct(getNumDistinctValues());
+		final Inc rowID = new Inc();
+	
+		final int colIDCorrected = _colID - 1;
+		_rcdMap.forEach( (k,v) -> {
+			meta.set(rowID.i(), colIDCorrected, // 1-based
+				constructRecodeMapEntry(k, v, sb));
+		});
+		// for(Entry<Object, Integer> e : _rcdMap.entrySet()) {
+		// }
+		meta.getColumnMetadata(colIDCorrected).setNumDistinct(getNumDistinctValues());
 
 		return meta;
+	}
+
+	private static class Inc{
+		int i = 0; 
+		public int i(){
+			return i++;
+		}
 	}
 
 	/**

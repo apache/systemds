@@ -232,21 +232,21 @@ public class MapToChar extends AMapToData {
 	public int[] getCounts(int[] ret) {
 		final int h = (_data.length) % 8;
 		for(int i = 0; i < h; i++)
-			ret[_data[i]]++;
+			ret[getIndex(i)]++;
 		getCountsBy8P(ret, h, _data.length);
 		return ret;
 	}
 
 	private void getCountsBy8P(int[] ret, int s, int e) {
 		for(int i = s; i < e; i += 8) {
-			ret[_data[i]]++;
-			ret[_data[i + 1]]++;
-			ret[_data[i + 2]]++;
-			ret[_data[i + 3]]++;
-			ret[_data[i + 4]]++;
-			ret[_data[i + 5]]++;
-			ret[_data[i + 6]]++;
-			ret[_data[i + 7]]++;
+			ret[getIndex(i)]++;
+			ret[getIndex(i + 1)]++;
+			ret[getIndex(i + 2)]++;
+			ret[getIndex(i + 3)]++;
+			ret[getIndex(i + 4)]++;
+			ret[getIndex(i + 5)]++;
+			ret[getIndex(i + 6)]++;
+			ret[getIndex(i + 7)]++;
 		}
 	}
 

@@ -23,8 +23,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
@@ -669,9 +667,9 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	protected Map<String, Integer> createRecodeMap(int estimate, ExecutorService pool, int k) throws InterruptedException, ExecutionException {
+	protected HashMapToInt<String> createRecodeMap(int estimate, ExecutorService pool, int k) throws InterruptedException, ExecutionException {
 		try {
-			Map<String, Integer> map = new HashMap<>((int) Math.min((long) estimate * 2, size()));
+			HashMapToInt<String> map = new HashMapToInt<String>((int) Math.min((long) estimate * 2, size()));
 			for(int i = 0; i < size(); i++) {
 				Object val = get(i);
 				if(val != null) {

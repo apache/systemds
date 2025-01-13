@@ -23,7 +23,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Map;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
@@ -434,7 +433,7 @@ public class HashIntegerArray extends Array<Object> implements IHashArray {
 	}
 
 	@Override
-	protected int addValRecodeMap(Map<Object, Integer> map, int id, int i) {
+	protected int addValRecodeMap(HashMapToInt<Object> map, int id, int i) {
 		Integer val = Integer.valueOf(getInt(i));
 		Integer v = map.putIfAbsent(val, id);
 		if(v == null)
@@ -443,12 +442,12 @@ public class HashIntegerArray extends Array<Object> implements IHashArray {
 	}
 
 	@Override
-	public void setM(Map<Object, Integer> map, AMapToData m, int i) {
+	public void setM(HashMapToInt<Object> map, AMapToData m, int i) {
 		m.set(i, map.get(Integer.valueOf(getInt(i))).intValue() - 1);
 	}
 
 	@Override
-	public void setM(Map<Object, Integer> map, int si, AMapToData m, int i) {
+	public void setM(HashMapToInt<Object> map, int si, AMapToData m, int i) {
 		final Integer v = Integer.valueOf(getInt(i));
 		m.set(i, map.get(v).intValue() - 1);
 	}

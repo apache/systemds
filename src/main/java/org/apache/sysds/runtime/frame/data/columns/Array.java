@@ -53,7 +53,7 @@ public abstract class Array<T> implements Writable {
 	public static int ROW_PARALLELIZATION_THRESHOLD = 10000;
 
 	/** A soft reference to a memorization of this arrays mapping, used in transformEncode */
-	protected SoftReference<Map<T, Integer>> _rcdMapCache = null;
+	protected SoftReference<Map<T,Integer>> _rcdMapCache = null;
 
 	/** The current allocated number of elements in this Array */
 	protected int _size;
@@ -73,7 +73,7 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @return The cached recode map
 	 */
-	public final SoftReference<Map<T, Integer>> getCache() {
+	public final SoftReference<Map<T,Integer>> getCache() {
 		return _rcdMapCache;
 	}
 
@@ -82,7 +82,7 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @param m The element to cache.
 	 */
-	public final void setCache(SoftReference<Map<T, Integer>> m) {
+	public final void setCache(SoftReference<Map<T,Integer>> m) {
 		_rcdMapCache = m;
 	}
 
@@ -121,16 +121,16 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @param estimate the estimated number of unique values in this array.
 	 * @param pool     An executor pool to be used for parallel execution (Note this method does not shutdown the pool)
-	 * @param k 		 Parallelization degree allowed
+	 * @param k        Parallelization degree allowed
 	 * @return A recode map
 	 * @throws ExecutionException   if the parallel execution fails
 	 * @throws InterruptedException if the parallel execution fails
 	 */
-	public synchronized final Map<T, Integer> getRecodeMap(int estimate, ExecutorService pool, int k)
+	public synchronized final Map<T,Integer> getRecodeMap(int estimate, ExecutorService pool, int k)
 		throws InterruptedException, ExecutionException {
 		// probe cache for existing map
-		Map<T, Integer> map;
-		SoftReference<Map<T, Integer>> tmp = getCache();
+		Map<T,Integer> map;
+		SoftReference<Map<T,Integer>> tmp = getCache();
 		map = (tmp != null) ? tmp.get() : null;
 		if(map != null)
 			return map;
@@ -152,17 +152,17 @@ public abstract class Array<T> implements Writable {
 	 * @param estimate The estimate number of unique values inside this array.
 	 * @param pool     The thread pool to use for parallel creation of recode map (can be null). (Note this method does
 	 *                 not shutdown the pool)
-	 * @param k	       The allowed degree of parallelism
+	 * @param k        The allowed degree of parallelism
 	 * @return The recode map created.
 	 * @throws ExecutionException   if the parallel execution fails
 	 * @throws InterruptedException if the parallel execution fails
 	 */
-	protected Map<T, Integer> createRecodeMap(int estimate, ExecutorService pool, int k)
+	protected HashMapToInt<T> createRecodeMap(int estimate, ExecutorService pool, int k)
 		throws InterruptedException, ExecutionException {
 		final boolean debug = LOG.isDebugEnabled();
 		final Timing t = debug ? new Timing() : null;
 		final int s = size();
-		final Map<T, Integer> ret;
+		final HashMapToInt<T> ret;
 		if(k <= 1 || pool == null || s < ROW_PARALLELIZATION_THRESHOLD)
 			ret = createRecodeMap(estimate, 0, s);
 		else
@@ -175,21 +175,21 @@ public abstract class Array<T> implements Writable {
 		return ret;
 	}
 
-	private Map<T, Integer> parallelCreateRecodeMap(int estimate, ExecutorService pool, final int s, int k)
+	private HashMapToInt<T> parallelCreateRecodeMap(int estimate, ExecutorService pool, final int s, int k)
 		throws InterruptedException, ExecutionException {
 
 		final int blk = Math.max(ROW_PARALLELIZATION_THRESHOLD / 2, (s + k) / k);
-		final List<Future<Map<T, Integer>>> tasks = new ArrayList<>();
+		final List<Future<HashMapToInt<T>>> tasks = new ArrayList<>();
 		for(int i = blk; i < s; i += blk) { // start at blk for the other threads
 			final int start = i;
 			final int end = Math.min(i + blk, s);
 			tasks.add(pool.submit(() -> createRecodeMap(estimate, start, end)));
 		}
 		// make the initial map thread local allocation.
-		final Map<T, Integer> map = new HashMap<>((int) (estimate * 1.3));
+		final HashMapToInt<T> map = new HashMapToInt<T>((int) (estimate * 1.3));
 		createRecodeMap(map, 0, blk);
 		for(int i = 0; i < tasks.size(); i++) { // merge with other threads work.
-			final Map<T, Integer> map2 = tasks.get(i).get();
+			final HashMapToInt<T> map2 = tasks.get(i).get();
 			mergeRecodeMaps(map, map2);
 		}
 		return map;
@@ -216,22 +216,22 @@ public abstract class Array<T> implements Writable {
 		}
 	}
 
-	private Map<T, Integer> createRecodeMap(final int estimate, final int s, final int e) {
+	protected HashMapToInt<T> createRecodeMap(final int estimate, final int s, final int e) {
 		// * 1.3 because we hashMap has a load factor of 1.75
-		final Map<T, Integer> map = new HashMap<>((int) (Math.min((long) estimate, (e - s)) * 1.3));
+		final HashMapToInt<T> map = new HashMapToInt<>((int) (Math.min((long) estimate, (e - s)) * 1.3));
 		return createRecodeMap(map, s, e);
 	}
 
-	private Map<T, Integer> createRecodeMap(Map<T, Integer> map, final int s, final int e) {
+	protected HashMapToInt<T> createRecodeMap(HashMapToInt<T> map, final int s, final int e) {
 		int id = 1;
 		for(int i = s; i < e; i++)
 			id = addValRecodeMap(map, id, i);
 		return map;
 	}
 
-	protected int addValRecodeMap(Map<T, Integer> map, int id, int i) {
+	protected int addValRecodeMap(HashMapToInt<T> map, int id, int i) {
 		final T val = getInternal(i);
-		if(val != null && map.putIfAbsent(val, id) == null) 
+		if(val != null && map.putIfAbsentI(val, id) == -1)
 			id++;
 		return id;
 	}
@@ -1040,8 +1040,8 @@ public abstract class Array<T> implements Writable {
 	 * @param m   The MapToData to set the value part of the Map from
 	 * @param i   The index to set in m
 	 */
-	public void setM(Map<T, Integer> map, AMapToData m, int i) {
-		m.set(i, map.get(getInternal(i)).intValue() - 1);
+	public void setM(HashMapToInt<T> map, AMapToData m, int i) {
+		m.set(i, map.getI(getInternal(i)) - 1);
 	}
 
 	/**
@@ -1053,17 +1053,17 @@ public abstract class Array<T> implements Writable {
 	 * @param m   The MapToData to set the value part of the Map from
 	 * @param i   The index to set in m
 	 */
-	public void setM(Map<T, Integer> map, int si, AMapToData m, int i) {
-		try {
-			final T v = getInternal(i);
-			if(v != null)
-				m.set(i, map.get(v).intValue() - 1);
-			else
-				m.set(i, si);
-		}
-		catch(Exception e) {
-			String error = "expected: " + getInternal(i) + " to be in map: " + map;
-			throw new RuntimeException(error, e);
-		}
+	public void setM(HashMapToInt<T> map, int si, AMapToData m, int i) {
+		// try {
+		final T v = getInternal(i);
+		if(v != null)
+			m.set(i, map.getI(v) - 1);
+		else
+			m.set(i, si);
+		// }
+		// catch(Exception e) {
+		// String error = "expected: " + getInternal(i) + " to be in map: " + map;
+		// throw new RuntimeException(error, e);
+		// }
 	}
 }

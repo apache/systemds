@@ -27,7 +27,6 @@ import org.apache.sysds.performance.generators.ConstFrame;
 import org.apache.sysds.performance.generators.IGenerate;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
-import org.apache.sysds.runtime.frame.data.lib.FrameLibCompress;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 import org.apache.sysds.test.TestUtils;
@@ -49,7 +48,7 @@ public class Transform extends APerfTest<Object, FrameBlock> {
 	}
 
 	public void run() throws Exception {
-		// execute(() -> te(), () -> clear(), "Normal");
+		execute(() -> te(), () -> clear(), "Normal");
 		execute(() -> tec(), () -> clear(), "Compressed");
 	}
 

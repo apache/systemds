@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.frame.data.columns;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Map;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -468,12 +467,12 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@Override
-	public void setM(Map<T, Integer> map, AMapToData m, int i) {
+	public void setM(HashMapToInt<T> map, AMapToData m, int i) {
 		_a.setM(map, m, i);
 	}
 
 	@Override
-	public void setM(Map<T, Integer> map, int si, AMapToData m, int i) {
+	public void setM(HashMapToInt<T> map, int si, AMapToData m, int i) {
 		if(_n.get(i))
 			_a.setM(map, si, m, i);
 		else
@@ -481,7 +480,7 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@Override
-	protected int addValRecodeMap(Map<T, Integer> map, int id, int i) {
+	protected int addValRecodeMap(HashMapToInt<T> map, int id, int i) {
 		if(_n.get(i))
 			id = _a.addValRecodeMap(map, id, i);
 		return id;

@@ -52,6 +52,7 @@ import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.ACompressedArray;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.DDCArray;
+import org.apache.sysds.runtime.frame.data.columns.HashMapToInt;
 import org.apache.sysds.runtime.frame.data.compress.ArrayCompressionStatistics;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderBin.BinMethod;
@@ -184,16 +185,18 @@ public class CompressedEncode {
 		Array<T> a = (Array<T>) in.getColumn(colId - 1);
 		boolean containsNull = a.containsNull();
 		estimateRCDMapSize(c);
-		Map<T, Integer> map = a.getRecodeMap(c._estNumDistincts, pool, k / in.getNumColumns() );
+		HashMapToInt<T> map = (HashMapToInt<T>) a.getRecodeMap(c._estNumDistincts, pool, k / in.getNumColumns());
 
 		List<ColumnEncoder> r = c.getEncoders();
-		r.set(0, new ColumnEncoderRecode(colId, (HashMap<Object, Integer>) map));
+		r.set(0, new ColumnEncoderRecode(colId, (HashMapToInt<Object>) map));
 		int domain = map.size();
 		if(containsNull && domain == 0)
 			return new ColGroupEmpty(ColIndexFactory.create(1));
 		IColIndex colIndexes = ColIndexFactory.create(0, domain);
-		if(domain == 1 && !containsNull)
+		if(domain == 1 && !containsNull){
+			nnz.addAndGet(in.getNumRows());
 			return ColGroupConst.create(colIndexes, new double[] {1});
+		}
 
 		ADictionary d = new IdentityDictionary(colIndexes.size(), containsNull);
 		AMapToData m = createMappingAMapToData(a, map, containsNull);
@@ -338,14 +341,32 @@ public class CompressedEncode {
 		int colId = c._colID;
 		Array<T> a = (Array<T>) in.getColumn(colId - 1);
 		estimateRCDMapSize(c);
-		Map<T, Integer> map = a.getRecodeMap(c._estNumDistincts, pool, k / in.getNumColumns() );
+		HashMapToInt<T> map = (HashMapToInt<T>) a.getRecodeMap(c._estNumDistincts, pool, k / in.getNumColumns());
 		boolean containsNull = a.containsNull();
 		int domain = map.size();
 
 		// int domain = c.getDomainSize();
 		IColIndex colIndexes = ColIndexFactory.create(1);
-		if(domain == 1)
+		if(domain == 0 && containsNull){
+			return new ColGroupEmpty(colIndexes);
+		}
+		if(domain == 1 && !containsNull){
+			nnz.addAndGet(in.getNumRows());
 			return ColGroupConst.create(colIndexes, new double[] {1});
+		}
+		ADictionary d = createRecodeDictionary(containsNull, domain);
+
+		AMapToData m = createMappingAMapToData(a, map, containsNull);
+
+		List<ColumnEncoder> r = c.getEncoders();
+		r.set(0, new ColumnEncoderRecode(colId, (HashMapToInt<Object>) map));
+		AColGroup ret = ColGroupDDC.create(colIndexes, d, m, null);
+
+		nnz.addAndGet(ret.getNumberNonZeros(in.getNumRows()));
+		return ret;
+	}
+
+	private ADictionary createRecodeDictionary(boolean containsNull, int domain) {
 		MatrixBlock incrementing = new MatrixBlock(domain + (containsNull ? 1 : 0), 1, false);
 		for(int i = 0; i < domain; i++)
 			incrementing.set(i, 0, i + 1);
@@ -353,14 +374,7 @@ public class CompressedEncode {
 			incrementing.set(domain, 0, Double.NaN);
 
 		ADictionary d = MatrixBlockDictionary.create(incrementing);
-
-		AMapToData m = createMappingAMapToData(a, map, containsNull);
-
-		List<ColumnEncoder> r = c.getEncoders();
-		r.set(0, new ColumnEncoderRecode(colId, (HashMap<Object, Integer>) map));
-		AColGroup ret =  ColGroupDDC.create(colIndexes, d, m, null);
-		nnz.addAndGet(ret.getNumberNonZeros(in.getNumRows()));
-		return ret;
+		return d;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -395,7 +409,7 @@ public class CompressedEncode {
 		else {
 			boolean containsNull = a.containsNull();
 			estimateRCDMapSize(c);
-			Map<T, Integer> map = a.getRecodeMap(c._estNumDistincts, pool, k / in.getNumColumns() );
+			HashMapToInt<T> map = (HashMapToInt<T>) a.getRecodeMap(c._estNumDistincts, pool, k / in.getNumColumns());
 			double[] vals = new double[map.size() + (containsNull ? 1 : 0)];
 			if(containsNull)
 				vals[map.size()] = Double.NaN;
@@ -428,7 +442,7 @@ public class CompressedEncode {
 		return ret;
 	}
 
-	private <T> AMapToData createMappingAMapToData(Array<T> a, Map<T, Integer> map, boolean containsNull)
+	private <T> AMapToData createMappingAMapToData(Array<T> a, HashMapToInt<T> map, boolean containsNull)
 		throws Exception {
 		final int si = map.size();
 		final int nRow = in.getNumRows();
@@ -443,7 +457,7 @@ public class CompressedEncode {
 			return createMappingSingleThread(a, map, containsNull, si, nRow, m);
 	}
 
-	private <T> AMapToData CreateMappingParallel(Array<T> a, Map<T, Integer> map, boolean containsNull, final int si,
+	private <T> AMapToData CreateMappingParallel(Array<T> a, HashMapToInt<T> map, boolean containsNull, final int si,
 		final int nRow, final AMapToData m) throws InterruptedException, ExecutionException {
 		final int tk = k / in.getNumColumns();
 		final int blkz = Math.max(ROW_PARALLELIZATION_THRESHOLD / 2, (nRow + tk) / tk);
@@ -469,7 +483,7 @@ public class CompressedEncode {
 
 	}
 
-	private <T> AMapToData createMappingSingleThread(Array<T> a, Map<T, Integer> map, boolean containsNull, final int si,
+	private <T> AMapToData createMappingSingleThread(Array<T> a, HashMapToInt<T> map, boolean containsNull, final int si,
 		final int nRow, final AMapToData m) {
 		if(containsNull)
 			return createMappingAMapToDataWithNull(a, map, si, m, 0, nRow);
@@ -477,14 +491,14 @@ public class CompressedEncode {
 			return createMappingAMapToDataNoNull(a, map, m, 0, nRow);
 	}
 
-	private static <T> AMapToData createMappingAMapToDataNoNull(Array<T> a, Map<T, Integer> map, AMapToData m, int start,
+	private static <T> AMapToData createMappingAMapToDataNoNull(Array<T> a, HashMapToInt<T> map, AMapToData m, int start,
 		int end) {
 		for(int i = start; i < end; i++)
 			a.setM(map, m, i);
 		return m;
 	}
 
-	private static <T> AMapToData createMappingAMapToDataWithNull(Array<T> a, Map<T, Integer> map, int si, AMapToData m,
+	private static <T> AMapToData createMappingAMapToDataWithNull(Array<T> a, HashMapToInt<T> map, int si, AMapToData m,
 		int start, int end) {
 		for(int i = start; i < end; i++)
 			a.setM(map, si, m, i);
@@ -518,8 +532,13 @@ public class CompressedEncode {
 		int domain = (int) CEHash.getK();
 		boolean nulls = a.containsNull();
 		IColIndex colIndexes = ColIndexFactory.create(0, 1);
-		if(domain == 1 && !nulls)
+		if(domain == 0 && nulls){
+			return new ColGroupEmpty(colIndexes);
+		}
+		if(domain == 1 && !nulls){
+			nnz.addAndGet(in.getNumRows());
 			return ColGroupConst.create(colIndexes, new double[] {1});
+		}
 
 		MatrixBlock incrementing = new MatrixBlock(domain + (nulls ? 1 : 0), 1, false);
 		for(int i = 0; i < domain; i++)
@@ -542,8 +561,13 @@ public class CompressedEncode {
 		int domain = (int) CEHash.getK();
 		boolean nulls = a.containsNull();
 		IColIndex colIndexes = ColIndexFactory.create(0, domain);
-		if(domain == 1 && !nulls)
+		if(domain == 0 && nulls){
+			return new ColGroupEmpty(ColIndexFactory.create(1));
+		}
+		if(domain == 1 && !nulls){
+			nnz.addAndGet(in.getNumRows());
 			return ColGroupConst.create(colIndexes, new double[] {1});
+		}
 		ADictionary d = new IdentityDictionary(colIndexes.size(), nulls);
 		AMapToData m = createHashMappingAMapToData(a, domain, nulls);
 		AColGroup ret = ColGroupDDC.create(colIndexes, d, m, null);

@@ -161,7 +161,9 @@ public class MultiColumnEncoder implements Encoder {
 			}
 		}
 		catch(Exception ex) {
-			throw new DMLRuntimeException("Failed transform-encode frame with encoder:\n" + this, ex);
+			String st = this.toString();
+			st = st.substring(0, Math.min(st.length(), 1000));
+			throw new DMLRuntimeException("Failed transform-encode frame with encoder:\n" + st, ex);
 		}
 	}
 

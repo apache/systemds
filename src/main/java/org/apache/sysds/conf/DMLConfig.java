@@ -201,7 +201,7 @@ public class DMLConfig
 		_defaultVals.put(FLOATING_POINT_PRECISION, "double" );
 		_defaultVals.put(USE_SSL_FEDERATED_COMMUNICATION, "false");
 		_defaultVals.put(DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT, "10");
-		_defaultVals.put(FEDERATED_TIMEOUT,      "-1");
+		_defaultVals.put(FEDERATED_TIMEOUT,      "86400"); // default 1 day compute timeout.
 		_defaultVals.put(FEDERATED_PLANNER,      FederatedPlanner.RUNTIME.name());
 		_defaultVals.put(FEDERATED_PAR_CONN,     "-1"); // vcores
 		_defaultVals.put(FEDERATED_PAR_INST,     "-1"); // vcores

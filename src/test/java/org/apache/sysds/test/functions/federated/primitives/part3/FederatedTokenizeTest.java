@@ -79,6 +79,7 @@ public class FederatedTokenizeTest extends AutomatedTestBase {
 
 	private void runAggregateOperationTest(ExecMode execMode) {
 		setExecMode(execMode);
+		setOutputBuffering(true);
 
 		String TEST_NAME = TEST_NAME1;
 

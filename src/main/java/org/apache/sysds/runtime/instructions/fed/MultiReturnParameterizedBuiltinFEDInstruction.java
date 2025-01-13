@@ -35,6 +35,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.fedplanner.FTypes;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.PickByCount;
@@ -47,10 +48,10 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
-import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -175,6 +176,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 				try {
 					FederatedResponse response = responseFuture.get();
 					MultiColumnEncoder encoder = (MultiColumnEncoder) response.getData()[0];
+
 					// merge this encoder into a composite encoder
 					synchronized(finalGlobalEncoder) {
 						finalGlobalEncoder.mergeAt(encoder, columnOffset, (int) (range.getBeginDims()[0] + 1));
@@ -378,24 +380,30 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
-			FrameBlock fb = ((FrameObject) data[0]).acquireReadAndRelease();
+			try{
 
-			// offset is applied on the Worker to shift the local encoders to their respective column
-			_encoder.applyColumnOffset();
-			// apply transformation
-			//MatrixBlock mbout = _encoder.apply(fb, OptimizerUtils.getTransformNumThreads());
-			// FIXME: Enabling multithreading intermittently hangs
-			MatrixBlock mbout = _encoder.apply(fb, 1);
-
-			// create output matrix object
-			MatrixObject mo = ExecutionContext.createMatrixObject(mbout);
-
-			// add it to the list of variables
-			ec.setVariable(String.valueOf(_outputID), mo);
-
-			// return id handle
-			return new FederatedResponse(
-				ResponseType.SUCCESS_EMPTY, mbout.getNonZeros());
+				FrameBlock fb = ((FrameObject) data[0]).acquireReadAndRelease();
+	
+				// offset is applied on the Worker to shift the local encoders to their respective column
+				_encoder.applyColumnOffset();
+				// apply transformation
+				MatrixBlock mbout = _encoder.apply(fb, OptimizerUtils.getTransformNumThreads());
+				// FIXME: Enabling multithreading intermittently hangs
+				// MatrixBlock mbout = _encoder.apply(fb, 1);
+	
+				// create output matrix object
+				MatrixObject mo = ExecutionContext.createMatrixObject(mbout);
+	
+				// add it to the list of variables
+				ec.setVariable(String.valueOf(_outputID), mo);
+	
+				// return id handle
+				return new FederatedResponse(
+					ResponseType.SUCCESS_EMPTY, mbout.getNonZeros());
+			}
+			catch(Exception e){
+				return new FederatedResponse(ResponseType.ERROR);
+			}
 		}
 
 		@Override

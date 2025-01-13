@@ -927,6 +927,7 @@ public class RewriterUtils {
 				if (!child.trueInstruction().equals("_idx")
 						&& !child.trueInstruction().equals("_m")
 						&& !child.trueInstruction().equals("idxExpr")
+						&& !child.trueInstruction().equals("rand")
 						//&& !child.trueInstruction().equals("argList")
 						&& !child.trueInstruction().equals("_EClass")) {
 					RewriterStatement cpy = child.copyNode();

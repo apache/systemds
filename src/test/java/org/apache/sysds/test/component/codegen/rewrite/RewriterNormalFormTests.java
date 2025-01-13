@@ -226,8 +226,8 @@ public class RewriterNormalFormTests {
 	@Test
 	public void testRemoveEmptyRightIndexing() {
 		// We do not directly support the specification of nnz, but we can emulate such a matrix by multiplying with 0
-		RewriterStatement stmt1 = RewriterUtils.parse("rowVec(*(A, 0.0))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
-		RewriterStatement stmt2 = RewriterUtils.parse("rowVec(const(A, 0.0))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
+		RewriterStatement stmt1 = RewriterUtils.parse("[](*(A, 0.0), 1, nrow(A), 1, 1)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("const(rowVec(A), 0.0)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
 
 		assert match(stmt1, stmt2);
 	}

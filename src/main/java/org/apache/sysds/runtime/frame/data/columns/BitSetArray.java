@@ -107,26 +107,26 @@ public class BitSetArray extends ABooleanArray {
 	@Override
 	public void setNullsFromString(int rl, int ru, Array<String> value) {
 
-		final boolean unsafe = ru % 64 != 0 || rl % 64 != 0;
+		// final boolean unsafe = ru % 64 != 0 || rl % 64 != 0;
 		// ensure that it is safe to modify the values in the ranges.
 
-		if(unsafe) {
-			// find rl rounded up to start safe
-			final int rl64 = Math.min((rl / 64 + 1) * 64, ru);
-			final int ru64 = (ru / 64) * 64;
+		// if(unsafe) {
+		// find rl rounded up to start safe
+		final int rl64 = Math.min((rl / 64 + 1) * 64, ru);
+		final int ru64 = (ru / 64) * 64;
 
-			for(int i = rl; i < rl64; i++)
-				unsafeSet(i, value.get(i) != null);
-			for(int i = rl64; i < ru64; i++)
-				set(i, value.get(i) != null);
-			for(int i = ru64; i < ru; i++)
-				unsafeSet(i, value.get(i) != null);
-		}
-		else {
-			// safe all the way
-			for(int i = rl; i < ru; i++)
-				set(i, value.get(i) != null);
-		}
+		for(int i = rl; i < rl64; i++)
+			set(i, value.get(i) != null);
+		for(int i = rl64; i < ru64; i++)
+			unsafeSet(i, value.get(i) != null);
+		for(int i = ru64; i < ru; i++)
+			set(i, value.get(i) != null);
+		// }
+		// else {
+		// // safe all the way
+		// for(int i = rl; i < ru; i++)
+		// set(i, value.get(i) != null);
+		// }
 	}
 
 	private void unsafeSet(int index, boolean value) {

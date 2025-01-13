@@ -128,6 +128,7 @@ public class RowVectorComparisonTest extends AutomatedTestBase
 	{	
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		ExecMode platformOld = setExecMode(instType);
+		setOutputBuffering(true);
 		
 		try
 		{

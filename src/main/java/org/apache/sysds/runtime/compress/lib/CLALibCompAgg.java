@@ -418,8 +418,38 @@ public class CLALibCompAgg {
 
 	private static void decompressingAggregate(CompressedMatrixBlock m1, MatrixBlock ret, AggregateUnaryOperator op,
 		MatrixIndexes indexesIn, boolean inCP) throws Exception {
-		List<Future<MatrixBlock>> rtasks = generateUnaryAggregateOverlappingFutures(m1, ret, op);
-		reduceFutures(rtasks, ret, op, true);
+		if(op.getNumThreads() > 1){
+
+			List<Future<MatrixBlock>> rtasks = generateUnaryAggregateOverlappingFutures(m1, ret, op);
+			reduceFutures(rtasks, ret, op, true);
+		}
+		else{
+			final int nCol = m1.getNumColumns();
+			final int nRow = m1.getNumRows();
+			final List<AColGroup> groups = m1.getColGroups();
+			final boolean shouldFilter = CLALibUtils.shouldPreFilter(groups);
+
+			final UAOverlappingTask t;
+			if(shouldFilter) {
+				final double[] constV = new double[nCol];
+				final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(groups, constV);
+				final AColGroup cRet = ColGroupConst.create(constV);
+				filteredGroups.add(cRet);
+				t = new UAOverlappingTask(filteredGroups, ret, 0, nRow, op, nCol);
+			}
+			else {
+				t = new UAOverlappingTask(groups, ret, 0, nRow, op, nCol);
+			}
+			if(op.indexFn instanceof ReduceAll)
+				ret.set(0,0,t.call().get(0,0));
+			else if(op.indexFn instanceof ReduceRow) {
+				final boolean isPlus = op.aggOp.increOp.fn instanceof Mean || op.aggOp.increOp.fn 	instanceof KahanFunction;
+				final BinaryOperator bop = isPlus ? new BinaryOperator(Plus.getPlusFnObject()) : op.	aggOp.increOp;
+				LibMatrixBincell.bincellOpInPlace(ret, t.call(), bop);
+			}
+			else // reduce cols just get the tasks done.
+				t.call();
+		}
 	}
 
 	private static void reduceFutures(List<Future<MatrixBlock>> futures, MatrixBlock ret, AggregateUnaryOperator op,

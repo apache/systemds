@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
@@ -76,6 +77,8 @@ public class CompressedEncode {
 
 	private final boolean inputContainsCompressed;
 
+	private final AtomicLong nnz = new AtomicLong();
+
 	private CompressedEncode(MultiColumnEncoder enc, FrameBlock in, int k) {
 		this.enc = enc;
 		this.in = in;
@@ -98,10 +101,10 @@ public class CompressedEncode {
 	private MatrixBlock apply() throws Exception {
 		try {
 			final List<ColumnEncoderComposite> encoders = enc.getColumnEncoders();
-			final List<AColGroup> groups = singleThread(encoders); //isParallel() ? multiThread(encoders) : singleThread(encoders);
+			final List<AColGroup> groups = isParallel() ? multiThread(encoders) : singleThread(encoders);
 			final int cols = shiftGroups(groups);
 			final MatrixBlock mb = new CompressedMatrixBlock(in.getNumRows(), cols, -1, false, groups);
-			mb.recomputeNonZeros(k);
+			mb.setNonZeros(nnz.get());
 			logging(mb);
 			return mb;
 		}
@@ -181,7 +184,7 @@ public class CompressedEncode {
 		Array<T> a = (Array<T>) in.getColumn(colId - 1);
 		boolean containsNull = a.containsNull();
 		estimateRCDMapSize(c);
-		Map<T, Integer> map = a.getRecodeMap(c._estNumDistincts, CommonThreadPool.get(k));
+		Map<T, Integer> map = a.getRecodeMap(c._estNumDistincts, pool);
 
 		List<ColumnEncoder> r = c.getEncoders();
 		r.set(0, new ColumnEncoderRecode(colId, (HashMap<Object, Integer>) map));
@@ -194,8 +197,9 @@ public class CompressedEncode {
 
 		ADictionary d = new IdentityDictionary(colIndexes.size(), containsNull);
 		AMapToData m = createMappingAMapToData(a, map, containsNull);
-
-		return ColGroupDDC.create(colIndexes, d, m, null);
+		AColGroup ret = ColGroupDDC.create(colIndexes, d, m, null);
+		nnz.addAndGet(ret.getNumberNonZeros(in.getNumRows()));
+		return ret;
 	}
 
 	private AColGroup bin(ColumnEncoderComposite c) throws InterruptedException, ExecutionException {
@@ -212,6 +216,7 @@ public class CompressedEncode {
 		m = binEncode(a, b, containsNull);
 
 		AColGroup ret = ColGroupDDC.create(colIndexes, d, m, null);
+		nnz.addAndGet(ret.getNumberNonZeros(in.getNumRows()));
 		return ret;
 	}
 
@@ -248,25 +253,25 @@ public class CompressedEncode {
 		throws InterruptedException, ExecutionException {
 		final List<Future<?>> tasks = new ArrayList<>();
 		final int blockSize = Math.max(ROW_PARALLELIZATION_THRESHOLD / 2, rlen + k / k);
-		final ExecutorService pool = CommonThreadPool.get(k);
-		try {
+		// final ExecutorService pool = CommonThreadPool.get(k);
+		// try {
 
-			for(int i = 0; i < rlen; i += blockSize) {
-				final int start = i;
-				final int end = Math.min(rlen, i + blockSize);
-				tasks.add(pool.submit(() -> {
-					if(nulls)
-						binEncodeWithNulls(a, b, m, start, end);
-					else
-						binEncodeNoNull(a, b, m, start, end);
-				}));
-			}
-			for(Future<?> t : tasks)
-				t.get();
+		for(int i = 0; i < rlen; i += blockSize) {
+			final int start = i;
+			final int end = Math.min(rlen, i + blockSize);
+			tasks.add(pool.submit(() -> {
+				if(nulls)
+					binEncodeWithNulls(a, b, m, start, end);
+				else
+					binEncodeNoNull(a, b, m, start, end);
+			}));
 		}
-		finally {
-			pool.shutdown();
-		}
+		for(Future<?> t : tasks)
+			t.get();
+		// }
+		// finally {
+		// pool.shutdown();
+		// }
 	}
 
 	private void binEncodeWithNulls(Array<?> a, ColumnEncoderBin b, AMapToData m, int l, int u) {
@@ -328,6 +333,7 @@ public class CompressedEncode {
 		final AMapToData m;
 		m = binEncode(a, b, containsNull);
 		AColGroup ret = ColGroupDDC.create(colIndexes, d, m, null);
+		nnz.addAndGet(ret.getNumberNonZeros(in.getNumRows()));
 		return ret;
 	}
 
@@ -336,7 +342,7 @@ public class CompressedEncode {
 		int colId = c._colID;
 		Array<T> a = (Array<T>) in.getColumn(colId - 1);
 		estimateRCDMapSize(c);
-		Map<T, Integer> map = a.getRecodeMap(c._estNumDistincts, CommonThreadPool.get(k));
+		Map<T, Integer> map = a.getRecodeMap(c._estNumDistincts, pool);
 		boolean containsNull = a.containsNull();
 		int domain = map.size();
 
@@ -356,8 +362,9 @@ public class CompressedEncode {
 
 		List<ColumnEncoder> r = c.getEncoders();
 		r.set(0, new ColumnEncoderRecode(colId, (HashMap<Object, Integer>) map));
-		return ColGroupDDC.create(colIndexes, d, m, null);
-
+		AColGroup ret =  ColGroupDDC.create(colIndexes, d, m, null);
+		nnz.addAndGet(ret.getNumberNonZeros(in.getNumRows()));
+		return ret;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -384,13 +391,15 @@ public class CompressedEncode {
 			double[] vals = (double[]) a.changeType(ValueType.FP64).get();
 
 			MatrixBlock col = new MatrixBlock(a.size(), 1, vals);
-			col.recomputeNonZeros(1);
+			long nz = col.recomputeNonZeros(1);
+
+			nnz.addAndGet(nz);
 			return ColGroupUncompressed.create(colIndexes, col, false);
 		}
 		else {
 			boolean containsNull = a.containsNull();
 			estimateRCDMapSize(c);
-			Map<T, Integer> map = a.getRecodeMap(c._estNumDistincts, CommonThreadPool.get(k));
+			Map<T, Integer> map = a.getRecodeMap(c._estNumDistincts, pool);
 			double[] vals = new double[map.size() + (containsNull ? 1 : 0)];
 			if(containsNull)
 				vals[map.size()] = Double.NaN;
@@ -398,7 +407,9 @@ public class CompressedEncode {
 			map.forEach((k, v) -> vals[v.intValue() - 1] = UtilFunctions.objectToDouble(t, k));
 			ADictionary d = Dictionary.create(vals);
 			AMapToData m = createMappingAMapToData(a, map, containsNull);
-			return ColGroupDDC.create(colIndexes, d, m, null);
+			AColGroup ret = ColGroupDDC.create(colIndexes, d, m, null);
+			nnz.addAndGet(ret.getNumberNonZeros(in.getNumRows()));
+			return ret;
 		}
 	}
 
@@ -415,8 +426,10 @@ public class CompressedEncode {
 				vals[i] = dict.getAsDouble(i);
 
 		ADictionary d = Dictionary.create(vals);
+		AColGroup ret = ColGroupDDC.create(colIndexes, d, aDDC.getMap(), null);
 
-		return ColGroupDDC.create(colIndexes, d, aDDC.getMap(), null);
+		nnz.addAndGet(ret.getNumberNonZeros(in.getNumRows()));
+		return ret;
 	}
 
 	private <T> AMapToData createMappingAMapToData(Array<T> a, Map<T, Integer> map, boolean containsNull)
@@ -439,30 +452,23 @@ public class CompressedEncode {
 		final int blkz = Math.max(ROW_PARALLELIZATION_THRESHOLD / 2, (nRow + k) / k);
 
 		List<Future<?>> tasks = new ArrayList<>();
-		// make a thread local pool.
-		// this pool is independent of the potential generally shared pool
-		ExecutorService pool = CommonThreadPool.get(k);
-		try {
-			for(int i = 0; i < nRow; i += blkz) {
-				final int start = i;
-				final int end = Math.min(nRow, i + blkz);
 
-				tasks.add(pool.submit(() -> {
-					if(containsNull)
-						return createMappingAMapToDataWithNull(a, map, si, m, start, end);
-					else
-						return createMappingAMapToDataNoNull(a, map, m, start, end);
+		for(int i = 0; i < nRow; i += blkz) {
+			final int start = i;
+			final int end = Math.min(nRow, i + blkz);
 
-				}));
-			}
+			tasks.add(pool.submit(() -> {
+				if(containsNull)
+					return createMappingAMapToDataWithNull(a, map, si, m, start, end);
+				else
+					return createMappingAMapToDataNoNull(a, map, m, start, end);
 
-			for(Future<?> t : tasks)
-				t.get();
-			return m;
+			}));
 		}
-		finally {
-			pool.shutdown();
-		}
+
+		for(Future<?> t : tasks)
+			t.get();
+		return m;
 
 	}
 

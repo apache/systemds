@@ -208,7 +208,7 @@ public class CompressedFrameBlockFactory {
 		Timing time = LOG.isDebugEnabled() ? new Timing(true) : null;
 		if(s.bestType != null && s.shouldCompress) {
 			if(s.bestType == FrameArrayType.DDC)
-				compressedColumns[i] = DDCArray.compressToDDC(a);
+				compressedColumns[i] = DDCArray.compressToDDC(a, s.nUnique);
 			else
 				throw new RuntimeException("Unsupported frame compression encoding : " + s.bestType);
 		}

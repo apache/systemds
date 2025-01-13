@@ -20,7 +20,9 @@
 package org.apache.sysds.runtime.frame.data.columns;
 
 import java.io.Serializable;
+import java.util.AbstractSet;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -32,13 +34,12 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 	static final int MAXIMUM_CAPACITY = 1 << 30;
 	static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
-
-	static class Node<K> {
+	static class Node<K> implements Entry<K, Integer> {
 		final K key;
 		int value;
 		Node<K> next;
 
-		Node( K key, int value, Node<K> next) {
+		Node(K key, int value, Node<K> next) {
 			this.key = key;
 			this.value = value;
 			this.next = next;
@@ -46,6 +47,21 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 
 		public final void setNext(Node<K> n) {
 			next = n;
+		}
+
+		@Override
+		public K getKey() {
+			return key;
+		}
+
+		@Override
+		public Integer getValue() {
+			return value;
+		}
+
+		@Override
+		public Integer setValue(Integer value) {
+			return this.value = value;
 		}
 	}
 
@@ -58,12 +74,9 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 		alloc(Math.max(capacity, 16));
 	}
 
-
-
-
 	@SuppressWarnings({"unchecked"})
 	protected void alloc(int size) {
-		Node<K>[] tmp = (Node<K>[])new Node[size];
+		Node<K>[] tmp = (Node<K>[]) new Node[size];
 		buckets = tmp;
 	}
 
@@ -102,15 +115,16 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 		final int ix = hash(key);
 		Node<K> b = buckets[ix];
 		if(b != null) {
-			do{
+			do {
 				if(b.key.equals(key))
 					return b.value;
-			} while((b = b.next) != null);
+			}
+			while((b = b.next) != null);
 		}
 		return -1;
 	}
 
-	public int hash(K key){
+	public int hash(K key) {
 		return Math.abs(key.hashCode()) % buckets.length;
 	}
 
@@ -123,8 +137,8 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 			return null;
 	}
 
-	@Override 
-	public Integer putIfAbsent(K key, Integer value){
+	@Override
+	public Integer putIfAbsent(K key, Integer value) {
 		int i = putIfAbsentI(key, value);
 		if(i != -1)
 			return i;
@@ -132,22 +146,21 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 			return null;
 	}
 
-	public int putIfAbsentI(K key, int value){
+	public int putIfAbsentI(K key, int value) {
 		final int ix = hash(key);
 		Node<K> b = buckets[ix];
-		if( b == null)
+		if(b == null)
 			return createBucket(ix, key, value);
-		else 
+		else
 			return putIfAbsentBucket(ix, key, value);
 	}
 
-
 	private int putIfAbsentBucket(int ix, K key, int value) {
 		Node<K> b = buckets[ix];
-		while(true){
+		while(true) {
 			if(b.key.equals(key))
 				return b.value;
-			if(b.next == null){
+			if(b.next == null) {
 				b.next = new Node<>(key, value, null);
 				size++;
 				return -1;
@@ -166,21 +179,21 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 	}
 
 	private int createBucket(int ix, K key, int value) {
-		buckets[ix] = new Node<K>(key, value, null );
+		buckets[ix] = new Node<K>(key, value, null);
 		size++;
 		return -1;
 	}
 
 	private int addToBucket(int ix, K key, int value) {
 		Node<K> b = buckets[ix];
-		while(true){
+		while(true) {
 
-			if(b.key.equals(key)){
+			if(b.key.equals(key)) {
 				int tmp = b.value;
 				b.value = value;
 				return tmp;
 			}
-			if(b.next == null){
+			if(b.next == null) {
 				b.next = new Node<>(key, value, null);
 				size++;
 				return -1;
@@ -215,15 +228,15 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 	}
 
 	@Override
-	public Set<Entry<K, Integer>> entrySet() {
-		throw new UnsupportedOperationException("Unimplemented method 'entrySet'");
+	public Set<Map.Entry<K, Integer>> entrySet() {
+		return new EntrySet();
 	}
 
-	@Override 
+	@Override
 	public void forEach(BiConsumer<? super K, ? super Integer> action) {
-		for(Node<K> n : buckets){
-			if(n != null){
-				do{
+		for(Node<K> n : buckets) {
+			if(n != null) {
+				do {
 					action.accept(n.key, n.value);
 				}
 				while((n = n.next) != null);
@@ -231,13 +244,68 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 		}
 	}
 
-	@Override 
-	public String toString(){
+	@Override
+	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		this.forEach((k,v) -> {
-			sb.append("("+k +"→" + v+")");
+		this.forEach((k, v) -> {
+			sb.append("(" + k + "→" + v + ")");
 		});
 		return sb.toString();
+	}
+
+	private final class EntrySet extends AbstractSet<Map.Entry<K, Integer>> {
+
+		@Override
+		public int size() {
+			return size;
+		}
+
+		@Override
+		public Iterator<Entry<K, Integer>> iterator() {
+			return new EntryIterator();
+		}
+
+	}
+
+	private final class EntryIterator implements Iterator<Entry<K, Integer>> {
+		Node<K> next;
+		int bucketId = 0;
+
+		protected EntryIterator() {
+			for(; bucketId < buckets.length; bucketId++) {
+				if(buckets[bucketId] != null) {
+					next = buckets[bucketId];
+					break;
+				}
+			}
+		}
+
+		@Override
+		public boolean hasNext() {
+			return next != null;
+		}
+
+		@Override
+		public Entry<K, Integer> next() {
+
+			Node<K> e = next;
+
+			if(e.next != null)
+				next = e.next;
+			else {
+				for(; ++bucketId < buckets.length; bucketId++) {
+					if(buckets[bucketId] != null) {
+						next = buckets[bucketId];
+						break;
+					}
+				}
+				if(bucketId == buckets.length)
+					next = null;
+			}
+
+			return e;
+		}
+
 	}
 
 }

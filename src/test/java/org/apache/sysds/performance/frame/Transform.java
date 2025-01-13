@@ -88,11 +88,25 @@ public class Transform extends APerfTest<Object, FrameBlock> {
 
 	public static void main(String[] args) throws Exception {
 		int k = InfrastructureAnalyzer.getLocalParallelism();
+		FrameBlock in;
+
 		for(int i = 1; i < 1000; i *= 10) {
 
-			FrameBlock in = TestUtils.generateRandomFrameBlock(100000 * i, new ValueType[] {ValueType.UINT4}, 32);
+			in = TestUtils.generateRandomFrameBlock(100000 * i, new ValueType[] {ValueType.UINT4}, 32);
+
+			System.out.println("Without null");
+			run(k, in);
+
+			System.out.println("Compressed without null");
+			FrameLibCompress.compress(in, k);
+			run(k, in);
+
+			in = TestUtils.generateRandomFrameBlock(100000 * i, new ValueType[] {ValueType.UINT4}, 32, 0.5);
+
+			System.out.println("With null");
 
 			run(k, in);
+			System.out.println("Compressed with null");
 			FrameLibCompress.compress(in, k);
 			run(k, in);
 
@@ -101,10 +115,22 @@ public class Transform extends APerfTest<Object, FrameBlock> {
 					ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4},
 				32);
 
+			System.out.println("10 col without null");
 			run10(k, in);
+			System.out.println("10 col compressed without null");
 			FrameLibCompress.compress(in, k);
 			run10(k, in);
 
+			in = TestUtils.generateRandomFrameBlock(
+				100000 * i, new ValueType[] {ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4,
+					ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4},
+				32, 0.5);
+
+			System.out.println("10 col with null");
+			run10(k, in);
+			System.out.println("10 col Compressed with null");
+			FrameLibCompress.compress(in, k);
+			run10(k, in);
 		}
 
 		System.exit(0); // forcefully stop.
@@ -139,7 +165,8 @@ public class Transform extends APerfTest<Object, FrameBlock> {
 			+ "\n{id:10, method:equi-width, numbins:4}," //
 			+ "],  dummycode:[1,2,3,4,5,6,7,8,9,10]}").run();
 		new Transform(300, gen, k, "{ids:true, hash:[1,2,3,4,5,6,7,8,9,10], K:10}").run();
-		new Transform(300, gen, k, "{ids:true, hash:[1,2,3,4,5,6,7,8,9,10], K:10, dummycode:[1,2,3,4,5,6,7,8,9,10]}").run();
+		new Transform(300, gen, k, "{ids:true, hash:[1,2,3,4,5,6,7,8,9,10], K:10, dummycode:[1,2,3,4,5,6,7,8,9,10]}")
+			.run();
 	}
 
 	private static void run(int k, FrameBlock in) throws Exception {

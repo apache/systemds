@@ -21,6 +21,6 @@
    <!-- The timeout of the federated tests to initialize the federated matrixes -->
    <sysds.federated.initialization.timeout>30</sysds.federated.initialization.timeout>
    <!-- The timeout of each instruction sent to federated workers -->
-   <sysds.federated.timeout>128</sysds.federated.timeout>
+   <sysds.federated.timeout>16</sysds.federated.timeout>
    <sysds.local.spark>true</sysds.local.spark>
 </root>

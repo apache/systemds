@@ -51,6 +51,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -61,6 +62,7 @@ import org.apache.spark.network.server.TransportServer;
 import org.apache.spark.util.LongAccumulator;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.parser.Statement.FederatedPSScheme;
 import org.apache.sysds.parser.Statement.PSFrequency;
@@ -241,13 +243,16 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		try {
 			// Launch the worker threads and wait for completion
-			for (Future<Void> ret : es.invokeAll(threads))
-				ret.get(); //error handling
+			for (Future<Void> ret : es.invokeAll(threads, ConfigurationManager.getFederatedTimeout(), TimeUnit.SECONDS)){
+				if(!ret.isDone())
+					throw new RuntimeException("Failed federated execution");
+				// ret.get(); //error handling
+			}
 			// Fetch the final model from ps
 			ec.setVariable(output.getName(), ps.getResult());
 			if (DMLScript.STATISTICS)
 				ParamServStatistics.accExecutionTime((long) ParamServStatistics.getExecutionTimer().stop());
-		} catch (InterruptedException | ExecutionException e) {
+		} catch (Exception e) {
 			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: unknown error: ", e);
 		} finally {
 			es.shutdownNow();

@@ -140,8 +140,7 @@ public class MapToCharPByte extends AMapToData {
 		out.writeByte(MAP_TYPE.CHAR_BYTE.ordinal());
 		out.writeInt(getUnique());
 		out.writeInt(_data_c.length);
-		for(int i = 0; i < _data_c.length; i++)
-			out.writeChar(_data_c[i]);
+		MapToChar.writeChars(out, _data_c);
 		out.write(_data_b);
 	}
 

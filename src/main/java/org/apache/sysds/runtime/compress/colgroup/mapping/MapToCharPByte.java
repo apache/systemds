@@ -142,8 +142,7 @@ public class MapToCharPByte extends AMapToData {
 		out.writeInt(_data_c.length);
 		for(int i = 0; i < _data_c.length; i++)
 			out.writeChar(_data_c[i]);
-		for(int i = 0; i < _data_c.length; i++)
-			out.writeByte(_data_b[i]);
+		out.write(_data_b);
 	}
 
 	protected static MapToCharPByte readFields(DataInput in) throws IOException {

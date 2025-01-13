@@ -91,9 +91,9 @@ public class RecodeMapTest {
 
 			assertTrue(rcm.size() == rcm2.size());
 
-			for(String k : rcm.keySet()){
+			rcm.forEach((k,v) ->{
 				assertEquals(rcm.get(k), rcm2.get(k));
-			}
+			});
 			final List<LoggingEvent> log = LoggingUtils.reinsert(appender);
 			assertTrue(log.size() >= 1);
 		}

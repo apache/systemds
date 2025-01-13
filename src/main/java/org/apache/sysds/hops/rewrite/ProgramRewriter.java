@@ -89,6 +89,8 @@ public class ProgramRewriter{
 				_dagRuleSet.add( new RewriteCommonSubexpressionElimination()     );
 			if( OptimizerUtils.ALLOW_AUTO_VECTORIZATION )
 				_dagRuleSet.add( new RewriteIndexingVectorization()              ); //dependency: cse, simplifications
+			//if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION)
+			//	_dagRuleSet.add( new RewriteNonScalarPrint() 					 );
 			_dagRuleSet.add( new RewriteInjectSparkPReadCheckpointing()          ); //dependency: reblock
 			
 			//add statement block rewrite rules
@@ -136,6 +138,7 @@ public class ProgramRewriter{
 				_dagRuleSet.add( new RewriteAlgebraicSimplificationDynamic()      ); //dependencies: cse
 				_dagRuleSet.add( new RewriteAlgebraicSimplificationStatic()       ); //dependencies: cse
 			}
+			_dagRuleSet.add( new RewriteNonScalarPrint() 					  	  );
 		}
 		
 		// cleanup after all rewrites applied 

@@ -19,12 +19,30 @@
 #
 #-------------------------------------------------------------
 
+
 # Generate matrix
-A = matrix(1, rows=10, cols=10)
+type = $1
+A = matrix("1 2 3 4 5 6 7 8 9", rows=3, cols=3)
+A_list = list(1, 2, 3)
+
+if(type==1){    # standard matrix case
+    print(A)
+}
+else if(type==2){  # standard frame case
+    A_frame = as.frame(A)
+    print(A_frame)
+}
+else if(type==3){   # standard list case
+    print(A_list)
+}
+else if(type==4){   # slice row from matrix
+    A_row = A[1,]
+    print(A_row)    # print(A[1,]) produces incorrect output
+}
+else if(type==5){   # slice column from matrix
+    A_col = A[,1]
+    print(A_col)
+}
 
 
-#print(toString(A))
-print(A)
 
-# Write the result matrix R
-write(A, $1)

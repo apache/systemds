@@ -1,13 +1,14 @@
 package org.apache.sysds.test.functions.rewrite;
 
-import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.utils.Statistics;
+import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.HashMap;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 
 public class RewriteNonScalarPrintTest extends AutomatedTestBase {
 
@@ -17,7 +18,6 @@ public class RewriteNonScalarPrintTest extends AutomatedTestBase {
 	private static final String TEST_CLASS_DIR =
 		TEST_DIR + RewriteNonScalarPrintTest.class.getSimpleName() + "/";
 
-	private static final double eps = Math.pow(10, -10);
 
 	@Override
 	public void setUp() {
@@ -26,34 +26,85 @@ public class RewriteNonScalarPrintTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testNonScalarPrint() {
-		testRewriteNonScalarPrint(true);
+	public void testNonScalarPrintMatrix() {
+		testRewriteNonScalarPrint(1);
 	}
 
-	private void testRewriteNonScalarPrint(boolean rewrites){
-		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		try{
+	@Test
+	public void testNonScalarPrintFrame() {
+		testRewriteNonScalarPrint(2);
+	}
+
+	@Test
+	public void testNonScalarPrintList() {
+		testRewriteNonScalarPrint(3);
+	}
+
+	@Test
+	public void testNonScalarPrintMatrixRow() {
+		testRewriteNonScalarPrint(4);
+	}
+
+	@Test
+	public void testNonScalarPrintMatrixCol() {
+		testRewriteNonScalarPrint(5);
+	}
+
+	private void testRewriteNonScalarPrint(int ID) {
+		//Save original System.out
+		PrintStream originalOut = System.out;
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		System.setOut(new PrintStream(baos));
+
+		try {
+
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-stats", "-args", output("R")};
-			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = getRCmd(inputDir(), expectedDir());
-
-			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
-
+			programArgs = new String[] {"-stats", "-args", String.valueOf(ID), output("R")};
 			runTest(true, false, null, -1);
-			runRScript(true);
 
-			//compare matrices
-			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
-			HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromExpectedDir("R");
-			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-
-		} finally {
-			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
+			// Everything printed so far goes into 'baos'.
 		}
+		finally {
+			//Restore original System.out so future prints go to console
+			System.setOut(originalOut);
+		}
+
+		//Convert captured output to string
+		String fullOutput = baos.toString();
+
+		//Extract or remove "SystemDS Statistics:"
+		int idxStats = fullOutput.indexOf("SystemDS Statistics:");
+		String userOutput = (idxStats >= 0) ? fullOutput.substring(0, idxStats) : fullOutput;
+
+		String toString = "toString";
+		long numtoString = Statistics.getCPHeavyHitterCount(toString);
+
+		if(ID == 1) {
+			Assert.assertTrue(
+				userOutput.contains("1.000 2.000 3.000\n" + "4.000 5.000 6.000\n" + "7.000 8.000 9.000") &&
+					numtoString == 1);
+		}
+		else if(ID == 2) {
+			Assert.assertTrue(userOutput.contains(
+				"# FRAME: nrow = 3, ncol = 3\n" + "# C1 C2 C3\n" + "# INT32 INT32 INT32\n" + "1 2 3\n" + "4 5 6\n" +
+					"7 8 9") && numtoString == 1);
+		}
+		else if(ID == 3) {
+			Assert.assertTrue(userOutput.contains("[1, 2, 3]") && numtoString == 1);
+		}
+		else if(ID == 4) {
+			Assert.assertTrue(userOutput.contains("1.000 2.000 3.000\n") && numtoString == 1);
+		}
+		else if(ID == 5) {
+			Assert.assertTrue(userOutput.contains("1.000\n" + "4.000\n" + "7.000") && numtoString == 1);
+		}
+
+		//Print the entire output
+		System.out.println(fullOutput);
 	}
+
 }

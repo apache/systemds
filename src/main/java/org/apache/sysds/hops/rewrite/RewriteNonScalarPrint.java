@@ -19,23 +19,60 @@
 
 package org.apache.sysds.hops.rewrite;
 
+import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.Hop;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 public class RewriteNonScalarPrint extends HopRewriteRule{
 
 
 	@Override
-	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state){
-		return null;
+	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
+		if(roots != null) {
+			for(Hop h : roots)
+				rewriteHopDAG(h, state);
+		}
+		return roots;
 	}
 
 	@Override
-	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state){
-		return null;
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
+		if(root != null)
+			rewritePrintNonScalar(root);
+		return root;
 	}
 
+	private void rewritePrintNonScalar(Hop hop) {
+		// Recurse on inputs
+		//for(Hop c : hop.getInput())
+		//	rewritePrintNonScalar(c);
 
+		// Check if hop is a unary PRINT op
+		if(HopRewriteUtils.isUnary(hop, Types.OpOp1.PRINT)) {
+			// Check if child is non-scalar
+			Hop child = hop.getInput().get(0);
+			//System.out.println(child);
+			//System.out.println("Child type: " + child.getDataType()
+			//	+ ", dims: " + child.getDim1() + "x" + child.getDim2());
+
+			if(!child.getDataType().isScalar()) {
+				// We do the same thing as fixNonScalarPrint:
+				LinkedHashMap<String, Hop> args = new LinkedHashMap<>();
+				args.put("target", child);
+
+				// create toString hop
+				Hop toStringOp = HopRewriteUtils.createParameterizedBuiltinOp(child, args,
+					Types.ParamBuiltinOp.TOSTRING);
+
+				// Replace child with toString in hop
+				HopRewriteUtils.replaceChildReference(hop, child, toStringOp, 0);
+
+				// optional debug/log
+				LOG.debug("Applied non-scalar print rewrite on hop ID = " + hop.getHopID());
+			}
+		}
+	}
 
 }

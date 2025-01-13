@@ -205,10 +205,11 @@ public abstract class Array<T> implements Writable {
 	 * @param target The target object to merge the two maps into
 	 * @param from   The Map to take entries from.
 	 */
-	protected static <T> void mergeRecodeMaps(Map<T, Integer> target, Map<T, Integer> from) {
+	protected static <T> void mergeRecodeMaps(HashMapToInt<T> target, HashMapToInt<T> from) {
 		final List<T> fromEntriesOrdered = new ArrayList<>(Collections.nCopies(from.size(), null));
-		for(Map.Entry<T, Integer> e : from.entrySet())
-			fromEntriesOrdered.set(e.getValue() - 1, e.getKey());
+		from.forEach((k,v) -> {
+			fromEntriesOrdered.set(v - 1, k);
+		});
 		int id = target.size();
 		for(T e : fromEntriesOrdered) {
 			if(target.putIfAbsent(e, id) == null)

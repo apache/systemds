@@ -139,13 +139,12 @@ public class MapToChar extends AMapToData {
 
 	}
 
-
 	protected static void writeChars(DataOutput out, char[] _data_c) throws IOException {
 		final int BS = 100;
 		if(_data_c.length > BS) {
 			final byte[] buff = new byte[BS * 2];
 			for(int i = 0; i < _data_c.length;) {
-				i = writeCharsBlock(out,_data_c, BS, buff, i);
+				i = writeCharsBlock(out, _data_c, BS, buff, i);
 			}
 		}
 		else {
@@ -154,7 +153,8 @@ public class MapToChar extends AMapToData {
 		}
 	}
 
-	private static int writeCharsBlock(DataOutput out, char[] _data_c, final int BS, final byte[] buff, int i) throws IOException {
+	private static int writeCharsBlock(DataOutput out, char[] _data_c, final int BS, final byte[] buff, int i)
+		throws IOException {
 		if(i + BS <= _data_c.length) {
 			for(int o = 0; o < BS; o++) {
 				IOUtilFunctions.shortToBa(_data_c[i++], buff, o * 2);
@@ -260,7 +260,6 @@ public class MapToChar extends AMapToData {
 		}
 	}
 
-
 	@Override
 	public AMapToData resize(int unique) {
 		final int size = _data.length;
@@ -335,7 +334,6 @@ public class MapToChar extends AMapToData {
 
 		return new MapToChar(getUnique(), ret);
 	}
-
 
 	@Override
 	public boolean equals(AMapToData e) {

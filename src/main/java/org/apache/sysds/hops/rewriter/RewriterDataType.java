@@ -318,11 +318,17 @@ public class RewriterDataType extends RewriterStatement {
 
 					// Now, match those statements
 					mCtx.currentStatement = ncolEquivThat;
-					if (!ncolEquiv.match(mCtx))
+					if (!ncolEquiv.match(mCtx)) {
+						if (mCtx.isDebug())
+							System.out.println("MismatchNcolEquiv: " + ncolEquiv + " <=> " + ncolEquivThat);
 						return false;
+					}
 					mCtx.currentStatement = nrowEquivThat;
-					if (!nrowEquiv.match(mCtx))
+					if (!nrowEquiv.match(mCtx)) {
+						if (mCtx.isDebug())
+							System.out.println("MismatchNrowEquiv: " + nrowEquiv + " <=> " + nrowEquivThat);
 						return false;
+					}
 				}
 			}
 		}
@@ -331,6 +337,8 @@ public class RewriterDataType extends RewriterStatement {
 		if (assoc == null) {
 			if (!mCtx.allowDuplicatePointers && mCtx.getDependencyMap().containsValue(stmt)) {
 				mCtx.setFirstMismatch(this, stmt);
+				if (mCtx.isDebug())
+					System.out.println("MismatchAssocNull: " + stmt);
 				return false; // Then the statement variable is already associated with another variable
 			}
 			mCtx.getDependencyMap().put(this, stmt);

@@ -1,5 +1,6 @@
 package org.apache.sysds.hops.rewriter;
 
+import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 
 import java.util.ArrayList;
@@ -862,7 +863,9 @@ public class RewriterRuleCollection {
 
 					RewriterStatement aRef = stmt.getChild(0, 1, 0);
 					RewriterStatement bRef = stmt.getChild(1, 1, 0);
-					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNCol(), bRef.getNRow(), match.getNewExprRoot());
+					RewriterAssertions assertions = match.getNewExprRoot().getAssertions(ctx);
+					assertions.addEqualityAssertion(aRef.getNCol(), bRef.getNRow(), match.getNewExprRoot());
+					assertions.update(match.getNewExprRoot());
 				}, true) // Assumes it will never collide
 				.apply(hooks.get(5).getId(), stmt -> {
 					UUID id = UUID.randomUUID();
@@ -1041,14 +1044,6 @@ public class RewriterRuleCollection {
 				.parseGlobalVars("LITERAL_INT:1")
 				.withParsedStatement("rowSums(A)", hooks)
 				.toParsedStatement("$3:_m($1:_idx(1, nrow(A)), 1, sum($4:_m($2:_idx(1, ncol(A)), 1, [](A, $1, $2))))", hooks)
-				.iff(match -> {
-					RewriterStatement meta = (RewriterStatement) match.getMatchRoot().getOperands().get(0).getMeta("ncol");
-
-					if (meta == null)
-						throw new IllegalArgumentException("Column meta should not be null: " + match.getMatchRoot().getOperands().get(0).toString(ctx));
-
-					return !meta.isLiteral() || ((long)meta.getLiteral()) != 1;
-				}, true)
 				.apply(hooks.get(1).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
 				.apply(hooks.get(2).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true)
 				.apply(hooks.get(3).getId(), stmt -> {
@@ -1071,14 +1066,6 @@ public class RewriterRuleCollection {
 				.parseGlobalVars("LITERAL_INT:1")
 				.withParsedStatement("colSums(A)", hooks)
 				.toParsedStatement("$3:_m(1, $1:_idx(1, ncol(A)), sum($4:_m($2:_idx(1, nrow(A)), 1, [](A, $2, $1))))", hooks)
-				.iff(match -> {
-					RewriterStatement meta = (RewriterStatement) match.getMatchRoot().getOperands().get(0).getMeta("ncol");
-
-					if (meta == null)
-						throw new IllegalArgumentException("Column meta should not be null: " + match.getMatchRoot().getOperands().get(0).toString(ctx));
-
-					return !meta.isLiteral() || ((long)meta.getLiteral()) != 1;
-				}, true)
 				.apply(hooks.get(1).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
 				.apply(hooks.get(2).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true)
 				.apply(hooks.get(3).getId(), stmt -> {

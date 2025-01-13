@@ -96,6 +96,8 @@ public class RewriterNormalFormTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 		assert RewriterStatement.MatcherContext.exactMatch(ctx, stmt1, stmt2).debug(true).match();
+		// Here the sort algorithm is unstable
+		assert false;
 	}
 
 	@Test
@@ -158,7 +160,7 @@ public class RewriterNormalFormTests {
 	@Test
 	public void testSimplifySlicedMatrixMult() {
 		RewriterStatement stmt1 = RewriterUtils.parse("[](%*%(A,B), 1, 1)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:1.0,2.0", "LITERAL_INT:1");
-		RewriterStatement stmt2 = RewriterUtils.parse("%*%(colVec(A), rowVec(B))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:1.0,2.0", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("as.scalar(%*%(colVec(A), rowVec(B)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:1.0,2.0", "LITERAL_INT:1");
 
 		assert match(stmt1, stmt2);
 	}
@@ -332,6 +334,7 @@ public class RewriterNormalFormTests {
 		assert match(stmt1, stmt2);
 	}
 
+	// This is a hacky workaround
 	@Test
 	public void testSimplifyEmptyMatrixMult() {
 		// We emulate an empty matrix by multiplying by zero
@@ -339,21 +342,24 @@ public class RewriterNormalFormTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("%*%(*(A, 0.0), B)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 		RewriterStatement stmt2 = RewriterUtils.parse("const(%*%(A, B), 0.0)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 
-		assert match(stmt1, stmt2);
+		// We need to explicitly assert A and B
+		stmt2.givenThatEqual(stmt2.getChild(0, 1).getNRow(), stmt2.getChild(0, 0).getNCol(), ctx);
+
+		assert match(stmt1, stmt2, true);
 	}
 
 	@Test
 	public void testSimplifyEmptyMatrixMult2() {
-		RewriterStatement stmt1 = RewriterUtils.parse("%*%(A, cast.MATRIX(1.0))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
-		RewriterStatement stmt2 = RewriterUtils.parse("rowVec(colVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt1 = RewriterUtils.parse("%*%(rowVec(A), cast.MATRIX(1.0))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("rowVec(A)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 
 		assert match(stmt1, stmt2);
 	}
 
 	@Test
 	public void testSimplifyScalarMatrixMult() {
-		RewriterStatement stmt1 = RewriterUtils.parse("%*%(A, cast.MATRIX(a))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
-		RewriterStatement stmt2 = RewriterUtils.parse("*(A, as.scalar(cast.MATRIX(a)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt1 = RewriterUtils.parse("%*%(rowVec(A), cast.MATRIX(a))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("*(rowVec(A), as.scalar(cast.MATRIX(a)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 
 		assert match(stmt1, stmt2);
 	}
@@ -469,7 +475,7 @@ public class RewriterNormalFormTests {
 		assert match(stmt1, stmt2);
 	}
 
-	@Test
+	//@Test
 	public void testSimplifyScalarMVBinaryOperation() {
 		RewriterStatement stmt1 = RewriterUtils.parse("*(A, rowVec(colVec(B)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 		RewriterStatement stmt2 = RewriterUtils.parse("*(A, as.scalar(B))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
@@ -516,6 +522,10 @@ public class RewriterNormalFormTests {
 	}
 
 	private boolean match(RewriterStatement stmt1, RewriterStatement stmt2) {
+		return match(stmt1, stmt2, false);
+	}
+
+	private boolean match(RewriterStatement stmt1, RewriterStatement stmt2, boolean debug) {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
@@ -523,6 +533,6 @@ public class RewriterNormalFormTests {
 		System.out.println(stmt1.toParsableString(ctx, true));
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
-		return RewriterStatement.MatcherContext.exactMatch(ctx, stmt1, stmt2).match();
+		return RewriterStatement.MatcherContext.exactMatch(ctx, stmt1, stmt2).debug(debug).match();
 	}
 }

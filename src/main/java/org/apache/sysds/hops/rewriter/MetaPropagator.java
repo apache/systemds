@@ -240,18 +240,18 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 
 					if (ints[0] != null && ints[1] != null) {
 						String literalString = Long.toString(ints[1] - ints[0] + 1);
-						root.unsafePutMeta("nrow", RewriterUtils.parse(literalString, ctx, "LITERAL_INT:" + literalString));
+						root.unsafePutMeta("nrow", RewriterUtils.foldConstants(RewriterUtils.parse(literalString, ctx, "LITERAL_INT:" + literalString), ctx));
 					} else {
 						HashMap<String, RewriterStatement> subStmts = new HashMap<>();
 						subStmts.put("i1", root.getOperands().get(2));
 						subStmts.put("i0", root.getOperands().get(1));
 
 						if (ints[0] != null) {
-							root.unsafePutMeta("nrow", RewriterUtils.parse("+(argList(i1, " + (1 - ints[0]) + "))", ctx, subStmts, "LITERAL_INT:" + (1 - ints[0])));
+							root.unsafePutMeta("nrow", RewriterUtils.foldConstants(RewriterUtils.parse("+(argList(i1, " + (1 - ints[0]) + "))", ctx, subStmts, "LITERAL_INT:" + (1 - ints[0])), ctx));
 						} else if (ints[1] != null) {
-							root.unsafePutMeta("nrow", RewriterUtils.parse("+(argList(" + (ints[1] + 1) + ", -(i0)))", ctx, subStmts, "LITERAL_INT:" + (ints[1] + 1)));
+							root.unsafePutMeta("nrow", RewriterUtils.foldConstants(RewriterUtils.parse("+(argList(" + (ints[1] + 1) + ", -(i0)))", ctx, subStmts, "LITERAL_INT:" + (ints[1] + 1)), ctx));
 						} else {
-							root.unsafePutMeta("nrow", RewriterUtils.parse("+(argList(+(argList(i1, -(i0))), 1))", ctx, subStmts, "LITERAL_INT:1"));
+							root.unsafePutMeta("nrow", RewriterUtils.foldConstants(RewriterUtils.parse("+(argList(i1, -(i0), 1))", ctx, subStmts, "LITERAL_INT:1"), ctx));
 						}
 					}
 
@@ -262,11 +262,11 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 						subStmts.put("i3", root.getOperands().get(4));
 						subStmts.put("i2", root.getOperands().get(3));
 						if (ints[2] != null) {
-							root.unsafePutMeta("ncol", RewriterUtils.parse("+(argList(i3, " + (1 - ints[2]) + "))", ctx, subStmts, "LITERAL_INT:" + (1 - ints[2])));
+							root.unsafePutMeta("ncol", RewriterUtils.foldConstants(RewriterUtils.parse("+(argList(i3, " + (1 - ints[2]) + "))", ctx, subStmts, "LITERAL_INT:" + (1 - ints[2])), ctx));
 						} else if (ints[3] != null) {
-							root.unsafePutMeta("ncol", RewriterUtils.parse("+(argList(" + (ints[3] + 1) + ", -(i2)))", ctx, subStmts, "LITERAL_INT:" + (ints[3] + 1)));
+							root.unsafePutMeta("ncol", RewriterUtils.foldConstants(RewriterUtils.parse("+(argList(" + (ints[3] + 1) + ", -(i2)))", ctx, subStmts, "LITERAL_INT:" + (ints[3] + 1)), ctx));
 						} else {
-							root.unsafePutMeta("ncol", RewriterUtils.parse("+(argList(+(argList(i3, -(i2))), 1))", ctx, subStmts, "LITERAL_INT:1"));
+							root.unsafePutMeta("ncol", RewriterUtils.foldConstants(RewriterUtils.parse("+(argList(i3, -(i2), 1))", ctx, subStmts, "LITERAL_INT:1"), ctx));
 						}
 					}
 

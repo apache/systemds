@@ -21,7 +21,7 @@
 import os
 from abc import ABC, abstractmethod
 from typing import List, Optional, Union
-
+import numpy as np
 
 class BaseLoader(ABC):
     def __init__(
@@ -35,6 +35,9 @@ class BaseLoader(ABC):
         (otherwise please provide your own Dataloader that knows about the file name convention)
         """
         self.data = []
+        self.metadata = (
+            {}
+        )  # TODO: check what the index should be for storing the metadata (file_name, counter, ...)
         self.source_path = source_path
         self.indices = indices
         self.chunk_size = chunk_size
@@ -78,7 +81,15 @@ class BaseLoader(ABC):
     @abstractmethod
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         pass
-
+    
+    def create_timestamps(self, frequency, sample_length, start_datetime=None):
+        start_time = start_datetime if start_datetime is not None else np.datetime64('1970-01-01T00:00:00.000000')
+        time_increment = 1 / frequency
+        time_increments_array = np.arange(sample_length) * np.timedelta64(int(time_increment * 1e6))
+        timestamps = start_time + time_increments_array
+        return timestamps
+        
+        
     def file_sanity_check(self, file):
         """
         Checks if the file can be found is not empty

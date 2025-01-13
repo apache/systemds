@@ -31,11 +31,12 @@ class Modality:
         :param modality_type: Type of the modality
         """
         self.type = modality_type
+        self.schema = modality_type.get_schema()
         self.data = None
         self.data_type = None
         self.cost = None
         self.shape = None
-        self.schema = {}
+        self.data_index = None
 
     def get_modality_names(self) -> List[str]:
         """

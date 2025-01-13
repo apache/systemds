@@ -18,7 +18,36 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from enum import Enum, Flag, auto
+from enum import Flag, auto
+
+
+class ModalitySchemas:
+    TEXT_SCHEMA = {"type": "string", "length": "int"}
+
+    AUDIO_SCHEMA = {
+        "timestamp": "array",
+        "type": "float32",
+        "sample_rate": "integer",
+        "length": "integer",
+    }
+
+    VIDEO_SCHEMA = {
+        "timestamp": "array",
+        "type": "object",
+        "fps": "integer",
+        "length": "integer",
+        "width": "integer",
+        "height": "integer",
+        "num_channels": "integer",
+    }
+
+    @classmethod
+    def get(cls, name):
+        return getattr(cls, f"{name}_SCHEMA", None)
+
+    @classmethod
+    def add_schema(cls, name, schema):
+        setattr(cls, f"{name}_SCHEMA", schema)
 
 
 class ModalityType(Flag):
@@ -26,6 +55,5 @@ class ModalityType(Flag):
     AUDIO = auto()
     VIDEO = auto()
 
-    # def __init__(self, value, name):
-    #     self._value_ = value
-    #     self.name = name
+    def get_schema(self):
+        return ModalitySchemas.get(self.name)

@@ -769,6 +769,17 @@ public class RewriterRuleCollection {
 				.build()
 		);
 
+		// cast.FLOAT
+		rules.add(new RewriterRuleBuilder(ctx, "")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:a")
+				.parseGlobalVars("MATRIX:A")
+				.parseGlobalVars("LITERAL_INT:1")
+				.withParsedStatement("cast.FLOAT(A)", hooks)
+				.toParsedStatement("[](A, 1, 1)", hooks)
+				.build()
+		);
+
 		// Const
 		rules.add(new RewriterRuleBuilder(ctx, "Expand const matrix")
 				.setUnidirectional(true)

@@ -48,7 +48,7 @@ public class Transform extends APerfTest<Object, FrameBlock> {
 	}
 
 	public void run() throws Exception {
-		execute(() -> te(), () -> clear(), "Normal");
+		// execute(() -> te(), () -> clear(), "Normal");
 		execute(() -> tec(), () -> clear(), "Compressed");
 	}
 

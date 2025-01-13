@@ -224,7 +224,8 @@ public class CoCodeGreedy extends AColumnCoCoder {
 				final int maxCombined = c1i.getNumVals() * c2i.getNumVals();
 
 				if(maxCombined < 0 // int overflow
-					|| maxCombined > c1i.getNumRows()) // higher combined than number of rows.
+					|| maxCombined > c1i.getNumRows() // higher than number of rows
+					|| maxCombined > 100000) // higher than 100k ... then lets not precalculate it.
 					return null;
 
 				final IColIndex c = _c1._indexes.combine(_c2._indexes);

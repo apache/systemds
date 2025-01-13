@@ -1285,9 +1285,7 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			}
 			output.setDataType(DataType.SCALAR);
 			output.setDimensions(0, 0);
-			//output.setBlocksize(0);
-			output.setBlocksize(ConfigurationManager.getBlocksize()); 
-			//output.setValueType(id.getValueType());
+			output.setBlocksize(0);
 			output.setValueType(ValueType.FP64); 
 			break;
 

@@ -14,7 +14,7 @@ import java.util.function.BiFunction;
 // For now, we assume that _argList() will have one unique parent
 public class TopologicalSort {
 	public static boolean DEBUG = false;
-	private static final Set<String> SORTABLE_ARGLIST_OPS = Set.of("+", "-", "*", "_idxExpr", "_EClass");
+	private static final Set<String> SORTABLE_ARGLIST_OPS = Set.of("+", "-", "*", "_idxExpr", "_EClass", "rand");
 	private static final Set<String> SORTABLE_OPS = Set.of("==", "!=");
 
 	// TODO: Sort doesn't work if we have sth like _EClass(argList(nrow(U), nrow(V)), as the lowest address will be nrow, ncol and not U, V
@@ -30,14 +30,12 @@ public class TopologicalSort {
 		}, ctx);
 	}
 
+	// TODO: Fails for E_Classes in DataTypes (matrix) if they do not occur elsewhere
 	public static void sort(RewriterStatement root, BiFunction<RewriterStatement, RewriterStatement, Boolean> isArrangable, final RuleContext ctx) {
 		List<RewriterStatement> uncertainParents = setupOrderFacts(root, isArrangable, ctx);
 
-		//Set<UnorderedSet> lowestUncertainties = findLowestUncertainties(root);
-		//setupAddresses(lowestUncertainties);
 		buildAddresses(root, ctx);
 		resolveAmbiguities(root, ctx, uncertainParents);
-		// TODO: Propagate address priorities and thus implicit orderings up the DAG
 		resetAddresses(uncertainParents);
 
 		int factCtr = 0;
@@ -52,8 +50,6 @@ public class TopologicalSort {
 				System.out.println("Lowest uncertainties: " + lowestUncertainties);
 			}
 
-			// TODO: Don't introduce the facts to the lowest uncertainties but their leaves first
-			// TODO: This avoids stuff like argList(ncol(U), ncol(V))
 			factCtr = introduceFacts(lowestUncertainties, factCtr);
 			buildAddresses(root, ctx);
 
@@ -68,7 +64,6 @@ public class TopologicalSort {
 
 			resolveAmbiguities(root, ctx, uncertainParents);
 			resetAddresses(uncertainParents);
-			// TODO: Propagate address priorities and thus implicit orderings up the DAG
 
 			lowestUncertainties = findLowestUncertainties(root);
 			ctr++;

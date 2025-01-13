@@ -1793,7 +1793,12 @@ public class RewriterUtils {
 					return argList.get(0);
 				else if (argList.isEmpty())
 					return neutral;
-			}
+			} /*else if (argList.size() == 2 && ConstantFoldingFunctions.isNegNeutral(argList.get(literals[0]).getLiteral(), stmt.trueInstruction())) {
+				RewriterStatement neutral = argList.get(literals[0]);
+				argList.remove(literals[0]);
+
+				return new RewriterInstruction("-", ctx, argList.get(0));
+			}*/
 		}
 
 		if (literals.length < 2)

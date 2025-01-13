@@ -265,8 +265,11 @@ public class RewriterInstruction extends RewriterStatement {
 				for (int i = 0; i < s; i++) {
 					mCtx.currentStatement = inst.operands.get(i);
 
-					if (!operands.get(i).match(mCtx))
+					if (!operands.get(i).match(mCtx)) {
+						if (mCtx.isDebug())
+							System.out.println("Mismatch: " + operands.get(i) + " <=> " + inst.operands.get(i));
 						return false;
+					}
 				}
 
 				mCtx.getInternalReferences().put(this, stmt);

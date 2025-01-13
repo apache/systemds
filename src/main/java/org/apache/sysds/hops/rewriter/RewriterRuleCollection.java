@@ -758,6 +758,17 @@ public class RewriterRuleCollection {
 	public static void expandStreamingExpressions(final List<RewriterRule> rules, final RuleContext ctx) {
 		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();
 
+		// cast.MATRIX
+		rules.add(new RewriterRuleBuilder(ctx, "Expand const matrix")
+				.setUnidirectional(true)
+				.parseGlobalVars("FLOAT:a")
+				.parseGlobalVars("MATRIX:A")
+				.parseGlobalVars("LITERAL_INT:1")
+				.withParsedStatement("cast.MATRIX(a)", hooks)
+				.toParsedStatement("$4:_m(1, 1, a)", hooks)
+				.build()
+		);
+
 		// Const
 		rules.add(new RewriterRuleBuilder(ctx, "Expand const matrix")
 				.setUnidirectional(true)
@@ -970,7 +981,7 @@ public class RewriterRuleCollection {
 				.parseGlobalVars("INT:n,m")
 				.parseGlobalVars("FLOAT:a,b")
 				.withParsedStatement("rand(n, m, a, b)", hooks)
-				.toParsedStatement("$3:_m($1:_idx(1, n), $2:_idx(1, m), +(a, *(+(b, -(a)), rand($1, $2))))", hooks)
+				.toParsedStatement("$3:_m($1:_idx(1, n), $2:_idx(1, m), +(a, *(+(b, -(a)), rand(argList($1,$2)))))", hooks)
 				.apply(hooks.get(1).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
 				.apply(hooks.get(2).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true)
 				.apply(hooks.get(3).getId(), stmt -> {
@@ -1406,9 +1417,7 @@ public class RewriterRuleCollection {
 				.build()
 		);
 
-
-		// TODO: Deal with boolean or int matrices
-		rules.add(new RewriterRuleBuilder(ctx, "_m(i::<const>, j::<const>, v) => cast.MATRIX(v)")
+		/*rules.add(new RewriterRuleBuilder(ctx, "_m(i::<const>, j::<const>, v) => cast.MATRIX(v)")
 				.setUnidirectional(true)
 				.parseGlobalVars("MATRIX:A,B")
 				.parseGlobalVars("INT:i,j")
@@ -1424,7 +1433,7 @@ public class RewriterRuleCollection {
 					return matching;
 				}, true)
 				.build()
-		);
+		);*/
 
 		rules.add(new RewriterRuleBuilder(ctx, "_idx(a,a) => a")
 				.setUnidirectional(true)
@@ -1493,7 +1502,6 @@ public class RewriterRuleCollection {
 		);
 
 		RewriterUtils.buildBinaryPermutations(List.of("FLOAT"), (t1, t2) -> {
-			// TODO: This probably first requires pulling out invariants of this idxExpr
 			rules.add(new RewriterRuleBuilder(ctx, "*(sum(_idxExpr(i, ...)), sum(_idxExpr(j, ...))) => _idxExpr(i, _idxExpr(j, sum(*(...)))")
 					.setUnidirectional(true)
 					.parseGlobalVars("MATRIX:A,B")
@@ -1719,6 +1727,17 @@ public class RewriterRuleCollection {
 					.parseGlobalVars(t3 + ":c")
 					.withParsedStatement("*(c, +(a, b))")
 					.toParsedStatement("+(*(c, a), *(c, b))")
+					.build()
+			);
+		});
+
+		List.of("FLOAT", "INT").forEach(t -> {
+			rules.add(new RewriterRuleBuilder(ctx, "-(a) => *(-1.0, a)")
+					.setUnidirectional(true)
+					.parseGlobalVars(t + ":a")
+					.parseGlobalVars("LITERAL_" + t + ":-1")
+					.withParsedStatement("-(a)")
+					.toParsedStatement("*(-1, a)")
 					.build()
 			);
 		});

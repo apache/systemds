@@ -339,6 +339,9 @@ public class RewriterDataType extends RewriterStatement {
 			return true;
 		}
 
+		if (mCtx.isDebug())
+			System.out.println("MismatchAssoc: " + stmt + " <=> " + assoc);
+
 		mCtx.setFirstMismatch(this, stmt);
 		return false;
 	}

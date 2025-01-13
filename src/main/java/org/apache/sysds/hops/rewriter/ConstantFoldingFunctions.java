@@ -54,6 +54,15 @@ public class ConstantFoldingFunctions {
 		return false;
 	}
 
+	public static boolean isNegNeutral(Object num, String op) {
+		switch (op) {
+			case "*":
+				return num.equals(-1L) || num.equals(-1.0D);
+		}
+
+		return false;
+	}
+
 	public static boolean cancelOutNary(String op, List<RewriterStatement> stmts) {
 		Set<Integer> toRemove = new HashSet<>();
 		switch (op) {

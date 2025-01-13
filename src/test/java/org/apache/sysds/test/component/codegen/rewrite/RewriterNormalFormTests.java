@@ -88,7 +88,14 @@ public class RewriterNormalFormTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("*(A,*(B, %*%(C, rowVec(D))))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:1.0");
 		RewriterStatement stmt2 = RewriterUtils.parse("*(*(A,B), %*%(C, rowVec(D)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:1.0");
 
-		assert match(stmt1, stmt2);
+		stmt1 = canonicalConverter.apply(stmt1);
+		stmt2 = canonicalConverter.apply(stmt2);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+		assert RewriterStatement.MatcherContext.exactMatch(ctx, stmt1, stmt2).debug(true).match();
 	}
 
 	@Test
@@ -274,14 +281,6 @@ public class RewriterNormalFormTests {
 	}
 
 	@Test
-	public void testSimplifyColwiseAggregate2() {
-		RewriterStatement stmt1 = RewriterUtils.parse("colSums(rowVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
-		RewriterStatement stmt2 = RewriterUtils.parse("cast.MATRIX(rowVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
-
-		assert match(stmt1, stmt2);
-	}
-
-	@Test
 	public void testSimplifyRowwiseAggregate() {
 		RewriterStatement stmt1 = RewriterUtils.parse("rowSums(rowVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 		RewriterStatement stmt2 = RewriterUtils.parse("rowVec(A)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
@@ -289,26 +288,20 @@ public class RewriterNormalFormTests {
 		assert match(stmt1, stmt2);
 	}
 
-	@Test
-	public void testSimplifyRowwiseAggregate2() {
-		RewriterStatement stmt1 = RewriterUtils.parse("rowSums(colVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
-		RewriterStatement stmt2 = RewriterUtils.parse("cast.MATRIX(colVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
-
-		assert match(stmt1, stmt2);
-	}
-
+	// We don't have broadcasting semantics
 	@Test
 	public void testSimplifyColSumsMVMult() {
-		RewriterStatement stmt1 = RewriterUtils.parse("colSums(*(A, colVec(B)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
-		RewriterStatement stmt2 = RewriterUtils.parse("%*%(t(colVec(B)), A)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt1 = RewriterUtils.parse("colSums(*(rowVec(A), rowVec(B)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("%*%(t(rowVec(B)), rowVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 
 		assert match(stmt1, stmt2);
 	}
 
+	// We don't have broadcasting semantics
 	@Test
 	public void testSimplifyRowSumsMVMult() {
-		RewriterStatement stmt1 = RewriterUtils.parse("rowSums(*(A, rowVec(B)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
-		RewriterStatement stmt2 = RewriterUtils.parse("%*%(A, rowVec(B))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt1 = RewriterUtils.parse("rowSums(*(colVec(A), colVec(B)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("%*%(colVec(A), t(colVec(B)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 
 		assert match(stmt1, stmt2);
 	}

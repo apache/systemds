@@ -347,7 +347,7 @@ public abstract class RewriterStatement {
 		}
 
 		public boolean match() {
-			return matchRoot.match(this);
+			return thisExpressionRoot.match(this);
 		}
 
 		public boolean isDebug() {

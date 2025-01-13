@@ -263,6 +263,7 @@ public class RewriterContextSettings {
 
 		builder.append("rand(INT,INT,FLOAT,FLOAT)::MATRIX\n"); // Args: rows, cols, min, max
 		builder.append("rand(INT,INT)::FLOAT\n"); // Just to make it possible to say that random is dependent on both matrix indices
+		builder.append("rand(INT...)::FLOAT\n");
 		builder.append("matrix(INT,INT,INT)::MATRIX\n");
 
 		builder.append("trace(MATRIX)::FLOAT\n");

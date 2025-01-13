@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 public class Transform extends APerfTest<Object, FrameBlock> {
 
@@ -41,32 +42,33 @@ public class Transform extends APerfTest<Object, FrameBlock> {
 		this.k = k;
 		this.spec = spec;
 		FrameBlock in = gen.take();
-		System.out.println("Transform Encode Perf: rows: " + in.getNumRows() + " schema:" + Arrays.toString(in.getSchema()));
+		System.out
+			.println("Transform Encode Perf: rows: " + in.getNumRows() + " schema:" + Arrays.toString(in.getSchema()));
 		System.out.println(spec);
 	}
 
 	public void run() throws Exception {
 		execute(() -> te(), () -> clear(), "Normal");
 		execute(() -> tec(), () -> clear(), "Compressed");
-		execute(() -> te(), () -> clear(), "Normal");
-		execute(() -> tec(), () -> clear(), "Compressed");
+		// execute(() -> te(), () -> clear(), "Normal");
+		// execute(() -> tec(), () -> clear(), "Compressed");
 	}
 
-	private void te(){
+	private void te() {
 		FrameBlock in = gen.take();
 		MultiColumnEncoder enc = EncoderFactory.createEncoder(spec, in.getNumColumns());
 		enc.encode(in, k);
 		ret.add(null);
 	}
 
-	private void tec(){
+	private void tec() {
 		FrameBlock in = gen.take();
 		MultiColumnEncoder enc = EncoderFactory.createEncoder(spec, in.getNumColumns());
 		enc.encode(in, k, true);
 		ret.add(null);
 	}
 
-	private void clear(){
+	private void clear() {
 		clearRDCCache(gen.take());
 	}
 
@@ -75,29 +77,64 @@ public class Transform extends APerfTest<Object, FrameBlock> {
 		return "";
 	}
 
-
-		/**
+	/**
 	 * Forcefully clear recode cache of underlying arrays
 	 */
-	public void clearRDCCache(FrameBlock f){
+	public void clearRDCCache(FrameBlock f) {
 		for(Array<?> a : f.getColumns())
 			a.setCache(null);
 	}
 
-
 	public static void main(String[] args) throws Exception {
-		for(int i = 1; i < 100; i *= 10){
+		int k = InfrastructureAnalyzer.getLocalParallelism();
+		for(int i = 1; i < 100; i *= 10) {
 
-			FrameBlock in = TestUtils.generateRandomFrameBlock(100000 * i , new ValueType[]{ValueType.UINT4}, 32);
-			System.out.println(Arrays.toString(in.getColumnNames()));
+			FrameBlock in = TestUtils.generateRandomFrameBlock(100000 * i, new ValueType[] {ValueType.UINT4}, 32);
+
 			ConstFrame gen = new ConstFrame(in);
-			// passthrough
-			new Transform(300, gen, 16, "{}").run();
-			new Transform(300, gen, 16, "{ids:true, recode:[1]}").run();
-			new Transform(300, gen, 16, "{ids:true, bin:[{id:1, method:equi-width, numbins:4}]}").run();
-			new Transform(300, gen, 16, "{ids:true, bin:[{id:1, method:equi-width, numbins:4}], dummycode:[1]}").run();
-			new Transform(300, gen, 16, "{ids:true, hash:[1], K:10}").run();
-			new Transform(300, gen, 16, "{ids:true, hash:[1], K:10, dummycode:[1]}").run();
+			// // passthrough
+			new Transform(300, gen, k, "{}").run();
+			new Transform(300, gen, k, "{ids:true, recode:[1]}").run();
+			new Transform(300, gen, k, "{ids:true, bin:[{id:1, method:equi-width, numbins:4}]}").run();
+			new Transform(300, gen, k, "{ids:true, bin:[{id:1, method:equi-width, numbins:4}], dummycode:[1]}").run();
+			new Transform(300, gen, k, "{ids:true, hash:[1], K:10}").run();
+			new Transform(300, gen, k, "{ids:true, hash:[1], K:10, dummycode:[1]}").run();
+
+			in = TestUtils.generateRandomFrameBlock(
+				100000 * i, new ValueType[] {ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4,
+					ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4},
+				32);
+
+			gen = new ConstFrame(in);
+			new Transform(300, gen, k, "{}").run();
+			new Transform(300, gen, k, "{ids:true, recode:[1,2,3,4,5,6,7,8,9,10]}").run();
+			new Transform(300, gen, k, "{ids:true, bin:[" //
+				+ "\n{id:1, method:equi-width, numbins:4}," //
+				+ "\n{id:2, method:equi-width, numbins:4}," //
+				+ "\n{id:3, method:equi-width, numbins:4}," //
+				+ "\n{id:4, method:equi-width, numbins:4}," //
+				+ "\n{id:5, method:equi-width, numbins:4}," //
+				+ "\n{id:6, method:equi-width, numbins:4}," //
+				+ "\n{id:7, method:equi-width, numbins:4}," //
+				+ "\n{id:8, method:equi-width, numbins:4}," //
+				+ "\n{id:9, method:equi-width, numbins:4}," //
+				+ "\n{id:10, method:equi-width, numbins:4}," //
+				+ "]}").run();
+			new Transform(300, gen, k, "{ids:true, bin:[" //
+				+ "\n{id:1, method:equi-width, numbins:4}," //
+				+ "\n{id:2, method:equi-width, numbins:4}," //
+				+ "\n{id:3, method:equi-width, numbins:4}," //
+				+ "\n{id:4, method:equi-width, numbins:4}," //
+				+ "\n{id:5, method:equi-width, numbins:4}," //
+				+ "\n{id:6, method:equi-width, numbins:4}," //
+				+ "\n{id:7, method:equi-width, numbins:4}," //
+				+ "\n{id:8, method:equi-width, numbins:4}," //
+				+ "\n{id:9, method:equi-width, numbins:4}," //
+				+ "\n{id:10, method:equi-width, numbins:4}," //
+				+ "],  dummycode:[1,2,3,4,5,6,7,8,9,10]}").run();
+			new Transform(300, gen, k, "{ids:true, hash:[1,2,3,4,5,6,7,8,9,10], K:10}").run();
+			new Transform(300, gen, k, "{ids:true, hash:[1,2,3,4,5,6,7,8,9,10], K:10, dummycode:[1,2,3,4,5,6,7,8,9,10]}").run();
+
 		}
 
 		System.exit(0); // forcefully stop.

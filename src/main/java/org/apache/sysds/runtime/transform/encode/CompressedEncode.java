@@ -98,7 +98,7 @@ public class CompressedEncode {
 	private MatrixBlock apply() throws Exception {
 		try {
 			final List<ColumnEncoderComposite> encoders = enc.getColumnEncoders();
-			final List<AColGroup> groups = isParallel() ? multiThread(encoders) : singleThread(encoders);
+			final List<AColGroup> groups = singleThread(encoders); //isParallel() ? multiThread(encoders) : singleThread(encoders);
 			final int cols = shiftGroups(groups);
 			final MatrixBlock mb = new CompressedMatrixBlock(in.getNumRows(), cols, -1, false, groups);
 			mb.recomputeNonZeros(k);

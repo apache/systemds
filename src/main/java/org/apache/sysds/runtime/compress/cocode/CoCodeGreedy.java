@@ -65,7 +65,7 @@ public class CoCodeGreedy extends AColumnCoCoder {
 
 		final List<ColIndexes> workSet = new ArrayList<>(inputColumns.size());
 		k = k <= 0 ? InfrastructureAnalyzer.getLocalParallelism() : k;
-		final ExecutorService pool = CommonThreadPool.get(k);
+		final ExecutorService pool = k > 1 ? CommonThreadPool.get(k) : null;
 		try {
 			for(int i = 0; i < inputColumns.size(); i++) {
 				CompressedSizeInfoColGroup g = inputColumns.get(i);
@@ -183,7 +183,8 @@ public class CoCodeGreedy extends AColumnCoCoder {
 			return ret;
 		}
 		finally {
-			pool.shutdown();
+			if(pool != null)
+				pool.shutdown();
 		}
 	}
 
@@ -195,8 +196,12 @@ public class CoCodeGreedy extends AColumnCoCoder {
 				for(int j = i + 1; j < size; j++)
 					tasks.add(new CombineTask(workSet.get(i), workSet.get(j)));
 
-			for(Future<Object> t : pool.invokeAll(tasks))
-				t.get();
+			if(pool != null)
+				for(Future<Object> t : pool.invokeAll(tasks))
+					t.get();
+			else 
+				for(CombineTask t: tasks)
+					t.call();
 		}
 		catch(Exception e) {
 			throw new DMLCompressionException("Failed parallelize first level all join all", e);

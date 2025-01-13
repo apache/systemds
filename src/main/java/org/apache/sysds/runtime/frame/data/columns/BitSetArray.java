@@ -107,7 +107,7 @@ public class BitSetArray extends ABooleanArray {
 	@Override
 	public void setNullsFromString(int rl, int ru, Array<String> value) {
 
-		final boolean unsafe = ru % 64 != 0 || rl % 64 != 0;
+		final boolean unsafe = ru % 64 != 63 || rl % 64 != 0;
 		// ensure that it is safe to modify the values in the ranges.
 
 		if(unsafe) {

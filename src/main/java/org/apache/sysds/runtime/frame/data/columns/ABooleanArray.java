@@ -59,7 +59,7 @@ public abstract class ABooleanArray extends Array<Boolean> {
 
 
 	@Override
-	protected Map<Boolean, Integer> createRecodeMap(int estimate, ExecutorService pool) {
+	protected Map<Boolean, Integer> createRecodeMap(int estimate, ExecutorService pool, int k) {
 		Map<Boolean, Integer> map = new HashMap<>();
 		int id = 1;
 		for(int i = 0; i < size() && id <= 2; i++) {

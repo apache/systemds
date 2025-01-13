@@ -34,7 +34,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
@@ -137,7 +136,7 @@ public abstract class Array<T> implements Writable {
 			return map;
 
 		// construct recode map
-		map = createRecodeMap(estimate, pool);
+		map = createRecodeMap(estimate, pool, k);
 
 		// put created map into cache
 		setCache(new SoftReference<>(map));
@@ -153,22 +152,23 @@ public abstract class Array<T> implements Writable {
 	 * @param estimate The estimate number of unique values inside this array.
 	 * @param pool     The thread pool to use for parallel creation of recode map (can be null). (Note this method does
 	 *                 not shutdown the pool)
+	 * @param k	       The allowed degree of parallelism
 	 * @return The recode map created.
 	 * @throws ExecutionException   if the parallel execution fails
 	 * @throws InterruptedException if the parallel execution fails
 	 */
-	protected Map<T, Integer> createRecodeMap(int estimate, ExecutorService pool)
+	protected Map<T, Integer> createRecodeMap(int estimate, ExecutorService pool, int k)
 		throws InterruptedException, ExecutionException {
-		Timing t = new Timing();
+		final boolean debug = LOG.isDebugEnabled();
+		final Timing t = debug ? new Timing() : null;
 		final int s = size();
-		int k = OptimizerUtils.getTransformNumThreads();
-		Map<T, Integer> ret;
+		final Map<T, Integer> ret;
 		if(k <= 1 || pool == null || s < ROW_PARALLELIZATION_THRESHOLD)
 			ret = createRecodeMap(estimate, 0, s);
 		else
 			ret = parallelCreateRecodeMap(estimate, pool, s, k);
 
-		if(LOG.isDebugEnabled()) {
+		if(debug) {
 			String base = "CreateRecodeMap estimate: %10d actual %10d time: %10.5f";
 			LOG.debug(String.format(base, estimate, ret.size(), t.stop()));
 		}
@@ -230,12 +230,9 @@ public abstract class Array<T> implements Writable {
 	}
 
 	protected int addValRecodeMap(Map<T, Integer> map, int id, int i) {
-		T val = getInternal(i);
-		if(val != null) {
-			Integer v = map.putIfAbsent(val, id);
-			if(v == null)
-				id++;
-		}
+		final T val = getInternal(i);
+		if(val != null && map.putIfAbsent(val, id) == null) 
+			id++;
 		return id;
 	}
 

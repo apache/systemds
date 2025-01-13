@@ -669,7 +669,7 @@ public class StringArray extends Array<String> {
 	}
 
 	@Override
-	protected Map<String, Integer> createRecodeMap(int estimate, ExecutorService pool) throws InterruptedException, ExecutionException {
+	protected Map<String, Integer> createRecodeMap(int estimate, ExecutorService pool, int k) throws InterruptedException, ExecutionException {
 		try {
 			Map<String, Integer> map = new HashMap<>((int) Math.min((long) estimate * 2, size()));
 			for(int i = 0; i < size(); i++) {
@@ -682,7 +682,7 @@ public class StringArray extends Array<String> {
 			return map;
 		}
 		catch(Exception e) {
-			return super.createRecodeMap(estimate, pool);
+			return super.createRecodeMap(estimate, pool, k);
 		}
 	}
 

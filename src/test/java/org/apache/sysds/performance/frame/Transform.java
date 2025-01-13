@@ -113,11 +113,11 @@ public class Transform extends APerfTest<Object, FrameBlock> {
 					ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4},
 				32);
 
-			// System.out.println("10 col without null");
-			// run10(k, in);
-			System.out.println("10 col compressed without null");
-			in = FrameLibCompress.compress(in, k);
+			System.out.println("10 col without null");
 			run10(k, in);
+			// System.out.println("10 col compressed without null");
+			// in = FrameLibCompress.compress(in, k);
+			// run10(k, in);
 
 			in = TestUtils.generateRandomFrameBlock(
 				100000 * i, new ValueType[] {ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4,

@@ -178,9 +178,9 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	}
 
 	@Override
-	protected Map<T, Integer> createRecodeMap(int estimate, ExecutorService pool)
+	protected Map<T, Integer> createRecodeMap(int estimate, ExecutorService pool, int k)
 		throws InterruptedException, ExecutionException {
-		return dict.createRecodeMap(estimate, pool);
+		return dict.createRecodeMap(estimate, pool, k);
 	}
 
 	@Override

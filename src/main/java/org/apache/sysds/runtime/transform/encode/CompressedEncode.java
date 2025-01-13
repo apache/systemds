@@ -531,6 +531,7 @@ public class CompressedEncode {
 
 		AMapToData m = createHashMappingAMapToData(a, domain, nulls);
 		AColGroup ret = ColGroupDDC.create(colIndexes, d, m, null);
+		nnz.addAndGet(ret.getNumberNonZeros(in.getNumRows()));
 		return ret;
 	}
 
@@ -545,7 +546,9 @@ public class CompressedEncode {
 			return ColGroupConst.create(colIndexes, new double[] {1});
 		ADictionary d = new IdentityDictionary(colIndexes.size(), nulls);
 		AMapToData m = createHashMappingAMapToData(a, domain, nulls);
-		return ColGroupDDC.create(colIndexes, d, m, null);
+		AColGroup ret = ColGroupDDC.create(colIndexes, d, m, null);
+		nnz.addAndGet(ret.getNumberNonZeros(in.getNumRows()));
+		return ret;
 	}
 
 	@SuppressWarnings("unchecked")

@@ -157,6 +157,14 @@ public class MultiColumnEncoder implements Encoder {
 				MatrixBlock out = apply(in, k);
 				t1 = System.nanoTime();
 				LOG.debug("Elapsed time for apply phase: "+ ((double) t1 - t0) / 1000000 + " ms");
+
+				if(LOG.isDebugEnabled()) {
+					LOG.debug("Transform Encode output mem size: " + out.getInMemorySize());
+					LOG.debug(String.format("Transform Encode output rows     : %10d", out.getNumRows()));
+					LOG.debug(String.format("Transform Encode output cols     : %10d", out.getNumColumns()));
+					LOG.debug(String.format("Transform Encode output sparsity : %10.5f", out.getSparsity()));
+					LOG.debug(String.format("Transform Encode output nnz      : %10d", out.getNonZeros()));
+				}
 				return out;
 			}
 		}

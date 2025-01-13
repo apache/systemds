@@ -28,7 +28,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 
@@ -342,10 +341,15 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		super.writeExternal(out);
 		out.writeInt(_rcdMap.size());
 		
-		for(Entry<Object, Integer> e : _rcdMap.entrySet()) {
-			out.writeUTF(e.getKey().toString());
-			out.writeInt(e.getValue());
-		}
+		_rcdMap.forEach((k, v)-> {
+			try{
+				out.writeUTF(k.toString());
+				out.writeInt(v);
+			}
+			catch(Exception e){
+				throw new RuntimeException(e);
+			}
+		});
 	}
 
 	@Override

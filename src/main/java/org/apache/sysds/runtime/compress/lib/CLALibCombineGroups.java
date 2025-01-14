@@ -229,6 +229,8 @@ public final class CLALibCombineGroups {
 			ret = combineUC(combinedColumns, a, b);
 
 		try {
+			if(!CompressedMatrixBlock.debug)
+				return ret;
 			double sumCombined = ret.getSum(nRow);
 			double sumIndividualA = a.getSum(nRow);
 			double sumIndividualB = b.getSum(nRow);

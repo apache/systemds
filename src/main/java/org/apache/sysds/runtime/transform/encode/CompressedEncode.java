@@ -616,7 +616,8 @@ public class CompressedEncode {
 			else
 				ret.add(g);
 		}
-		ret.add(combine(ucg));
+		if(ucg.size() > 0)
+			ret.add(combine(ucg));
 		nnz.addAndGet(ret.get(ret.size()-1).getNumberNonZeros(in.getNumRows()));
 		mb.allocateColGroupList(ret);
 	}

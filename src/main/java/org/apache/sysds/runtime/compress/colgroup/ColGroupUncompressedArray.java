@@ -69,7 +69,7 @@ public class ColGroupUncompressedArray extends AColGroup {
 
 	@Override
 	public AColGroup copyAndSet(IColIndex colIndexes) {
-		throw new UnsupportedOperationException("Unimplemented method 'copyAndSet'");
+		return new ColGroupUncompressedArray(array, id, colIndexes);	
 	}
 
 	@Override

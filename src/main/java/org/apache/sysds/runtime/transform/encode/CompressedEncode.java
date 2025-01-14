@@ -401,7 +401,6 @@ public class CompressedEncode {
 
 		if(a.getValueType() != ValueType.BOOLEAN // if not booleans
 			&& (stats == null || !stats.shouldCompress || stats.valueType != a.getValueType())) {
-			LOG.error("Create temporary Uncompressed ColumnGroupArray");
 			return new ColGroupUncompressedArray(a, c._colID - 1, colIndexes);
 		}
 		else {
@@ -617,8 +616,6 @@ public class CompressedEncode {
 			else
 				ret.add(g);
 		}	
-		LOG.error(ucg);
-		LOG.error(ret);
 		if(ucg.size() > 0){
 			ret.add(combine(ucg));
 			nnz.addAndGet(ret.get(ret.size()-1).getNumberNonZeros(in.getNumRows()));

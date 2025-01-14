@@ -27,6 +27,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  * Special sideways compressed column group not supposed to be used outside of the compressed transform encode.
  */
 public class ColGroupUncompressedArray extends ColGroupUncompressed {
+	private static final long serialVersionUID = -825423333043292199L;
 
 	public final Array<?> array;
 	public final int id; // columnID

@@ -622,6 +622,7 @@ public class CompressedEncode {
 	}
 
 	private AColGroup combine(List<ColGroupUncompressedArray> ucg) {
+		LOG.error(ucg);
 		IColIndex combinedCols = ColIndexFactory.combine(ucg);
 
 		ucg.sort((a,b) -> Integer.compare(a.id,b.id));

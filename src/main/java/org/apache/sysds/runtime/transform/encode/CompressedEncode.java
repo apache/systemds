@@ -615,17 +615,17 @@ public class CompressedEncode {
 				ucg.add((ColGroupUncompressedArray) g);
 			else
 				ret.add(g);
-		}
+		}	
+		LOG.error(ucg);
+		LOG.error(ret);
 		if(ucg.size() > 0){
 			ret.add(combine(ucg));
 			nnz.addAndGet(ret.get(ret.size()-1).getNumberNonZeros(in.getNumRows()));
 		}
-		LOG.error(ret);
 		mb.allocateColGroupList(ret);
 	}
 
 	private AColGroup combine(List<ColGroupUncompressedArray> ucg) {
-		LOG.error(ucg);
 		IColIndex combinedCols = ColIndexFactory.combine(ucg);
 
 		ucg.sort((a,b) -> Integer.compare(a.id,b.id));

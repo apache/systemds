@@ -995,7 +995,7 @@ public class RewriterRuleCollection {
 				.parseGlobalVars("INT:n,m")
 				.parseGlobalVars("FLOAT:a,b")
 				.withParsedStatement("rand(n, m, a, b)", hooks)
-				.toParsedStatement("$3:_m($1:_idx(1, n), $2:_idx(1, m), +(a, *(+(b, -(a)), rand(argList($1,$2)))))", hooks)
+				.toParsedStatement("$3:_m($1:_idx(1, n), $2:_idx(1, m), +(a, $4:*(+(b, -(a)), rand(argList($1,$2)))))", hooks)
 				.apply(hooks.get(1).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
 				.apply(hooks.get(2).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true)
 				.apply(hooks.get(3).getId(), stmt -> {
@@ -1004,6 +1004,9 @@ public class RewriterRuleCollection {
 					stmt.getOperands().get(0).unsafePutMeta("ownerId", id);
 					stmt.getOperands().get(1).unsafePutMeta("ownerId", id);
 				}, true)
+				/*.apply(hooks.get(4).getId(), stmt -> {
+					stmt.getOperands().set(0, RewriterUtils.foldConstants(stmt.getChild(0), ctx));
+				}, true)*/
 				.build()
 		);
 
@@ -1702,11 +1705,9 @@ public class RewriterRuleCollection {
 				}, true)
 				.build()
 		);
-
-		// TODO: Distributive law
 	}
 
-	public static void buildElementWiseAlgebraicCanonicalization(final List<RewriterRule> rules, final RuleContext ctx) {
+	public static List<RewriterRule> buildElementWiseAlgebraicCanonicalization(final List<RewriterRule> rules, final RuleContext ctx) {
 		RewriterUtils.buildTernaryPermutations(List.of("FLOAT", "INT", "BOOL"), (t1, t2, t3) -> {
 			rules.add(new RewriterRuleBuilder(ctx, "*(+(a, b), c) => +(*(a, c), *(b, c))")
 					.setUnidirectional(true)
@@ -1729,6 +1730,21 @@ public class RewriterRuleCollection {
 			);
 		});
 
+		/*List.of("FLOAT", "INT").forEach(t -> {
+			rules.add(new RewriterRuleBuilder(ctx, "-(a) => *(-1.0, a)")
+					.setUnidirectional(true)
+					.parseGlobalVars(t + ":a")
+					.parseGlobalVars("LITERAL_" + t + ":-1")
+					.withParsedStatement("-(a)")
+					.toParsedStatement("*(-1, a)")
+					.build()
+			);
+		});*/
+
+		return rules;
+	}
+
+	public static List<RewriterRule> replaceNegation(final List<RewriterRule> rules, final RuleContext ctx) {
 		List.of("FLOAT", "INT").forEach(t -> {
 			rules.add(new RewriterRuleBuilder(ctx, "-(a) => *(-1.0, a)")
 					.setUnidirectional(true)
@@ -1739,6 +1755,8 @@ public class RewriterRuleCollection {
 					.build()
 			);
 		});
+
+		return rules;
 	}
 
 	@Deprecated

@@ -55,6 +55,9 @@ public class ConstantFoldingFunctions {
 	}
 
 	public static boolean isNegNeutral(Object num, String op) {
+		if (num == null)
+			return false;
+
 		switch (op) {
 			case "*":
 				return num.equals(-1L) || num.equals(-1.0D);

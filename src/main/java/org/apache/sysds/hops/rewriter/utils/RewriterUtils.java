@@ -1465,6 +1465,8 @@ public class RewriterUtils {
 		canonicalFormCreator.add("EXPAND ARBITRARY MATRICES", expandArbitraryMatrices);
 		canonicalFormCreator.add("PUSHDOWN STREAM SELECTIONS", streamSelectPushdown);
 		canonicalFormCreator.add("FOLD CONSTANTS", new RewriterHeuristic(t -> foldConstants(t, ctx)));
+		//canonicalFormCreator.add("CANON ALGB", new RewriterHeuristic(new RewriterRuleSet(ctx, RewriterRuleCollection.buildElementWiseAlgebraicCanonicalization(new ArrayList<>(), ctx))));
+		canonicalFormCreator.add("REPLACE NEGATIONS", new RewriterHeuristic(new RewriterRuleSet(ctx, RewriterRuleCollection.replaceNegation(new ArrayList<>(), ctx))));
 		canonicalFormCreator.add("PUSHDOWN STREAM SELECTIONS", streamSelectPushdown);
 		canonicalFormCreator.add("FLATTEN OPERATIONS", flattenOperations);
 
@@ -1491,8 +1493,6 @@ public class RewriterUtils {
 				System.out.println(t.toParsableString(ctx));
 				return true;
 			}, debug);
-
-			// TODO: Do this in a loop until nothing is found anymore
 
 			for (int i = 0; i < 2; i++) {
 				RewriterUtils.mergeArgLists(stmt, ctx);
@@ -1525,8 +1525,6 @@ public class RewriterUtils {
 			stmt = stmt.getAssertions(ctx).cleanupEClasses(stmt);
 			unfoldExpressions(stmt, ctx);
 			stmt.prepareForHashing();
-
-			// TODO: After this, stuff like CSE, A-A = 0, etc. must still be applied
 
 			if (debug)
 				System.out.println("PRE1:   " + stmt.toParsableString(ctx, false));

@@ -345,7 +345,7 @@ public class RewriterNormalFormTests {
 		// We need to explicitly assert A and B
 		stmt2.givenThatEqual(stmt2.getChild(0, 1).getNRow(), stmt2.getChild(0, 0).getNCol(), ctx);
 
-		assert match(stmt1, stmt2, true);
+		assert match(stmt1, stmt2);
 	}
 
 	@Test

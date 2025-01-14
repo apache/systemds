@@ -236,13 +236,12 @@ public class CompressedEncode {
 		final ColumnEncoderBin b = (ColumnEncoderBin) r.get(0);
 		b.build(in);
 		final boolean containsNull = b.containsNull;
-		final IColIndex colIndexes = ColIndexFactory.create(1);
 
 		ADictionary d = createIncrementingVector(b._numBin, containsNull);
 		final AMapToData m;
 		m = binEncode(a, b, containsNull);
 
-		AColGroup ret = ColGroupDDC.create(colIndexes, d, m, null);
+		AColGroup ret = ColGroupDDC.create(SINGLE_COL_TMP_INDEX, d, m, null);
 		nnz.addAndGet(ret.getNumberNonZeros(in.getNumRows()));
 		return ret;
 	}
@@ -369,14 +368,11 @@ public class CompressedEncode {
 		boolean containsNull = a.containsNull();
 		int domain = map.size();
 
-		// int domain = c.getDomainSize();
-		IColIndex colIndexes = ColIndexFactory.create(1);
-		if(domain == 0 && containsNull) {
-			return new ColGroupEmpty(colIndexes);
-		}
+		if(domain == 0 && containsNull)
+			return new ColGroupEmpty(SINGLE_COL_TMP_INDEX);
 		if(domain == 1 && !containsNull) {
 			nnz.addAndGet(in.getNumRows());
-			return ColGroupConst.create(colIndexes, new double[] {1});
+			return ColGroupConst.create(SINGLE_COL_TMP_INDEX, new double[] {1});
 		}
 		ADictionary d = createRecodeDictionary(containsNull, domain);
 
@@ -384,7 +380,7 @@ public class CompressedEncode {
 
 		List<ColumnEncoder> r = c.getEncoders();
 		r.set(0, new ColumnEncoderRecode(colId, (HashMapToInt<Object>) map));
-		AColGroup ret = ColGroupDDC.create(colIndexes, d, m, null);
+		AColGroup ret = ColGroupDDC.create(SINGLE_COL_TMP_INDEX, d, m, null);
 
 		nnz.addAndGet(ret.getNumberNonZeros(in.getNumRows()));
 		return ret;
@@ -552,13 +548,11 @@ public class CompressedEncode {
 		ColumnEncoderFeatureHash CEHash = (ColumnEncoderFeatureHash) c.getEncoders().get(0);
 		int domain = (int) CEHash.getK();
 		boolean nulls = a.containsNull();
-		IColIndex colIndexes = ColIndexFactory.create(0, 1);
-		if(domain == 0 && nulls) {
-			return new ColGroupEmpty(colIndexes);
-		}
+		if(domain == 0 && nulls)
+			return new ColGroupEmpty(SINGLE_COL_TMP_INDEX);
 		if(domain == 1 && !nulls) {
 			nnz.addAndGet(in.getNumRows());
-			return ColGroupConst.create(colIndexes, new double[] {1});
+			return ColGroupConst.create(SINGLE_COL_TMP_INDEX, new double[] {1});
 		}
 
 		MatrixBlock incrementing = new MatrixBlock(domain + (nulls ? 1 : 0), 1, false);
@@ -570,7 +564,7 @@ public class CompressedEncode {
 		ADictionary d = MatrixBlockDictionary.create(incrementing);
 
 		AMapToData m = createHashMappingAMapToData(a, domain, nulls);
-		AColGroup ret = ColGroupDDC.create(colIndexes, d, m, null);
+		AColGroup ret = ColGroupDDC.create(SINGLE_COL_TMP_INDEX, d, m, null);
 		nnz.addAndGet(ret.getNumberNonZeros(in.getNumRows()));
 		return ret;
 	}

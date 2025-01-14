@@ -620,6 +620,7 @@ public class CompressedEncode {
 			ret.add(combine(ucg));
 			nnz.addAndGet(ret.get(ret.size()-1).getNumberNonZeros(in.getNumRows()));
 		}
+		LOG.error(ret);
 		mb.allocateColGroupList(ret);
 	}
 

@@ -639,6 +639,7 @@ public class CompressedEncode {
 			combinedNNZ = putInto(ucg, db, 0, nrow, 0, ncol);
 
 		nnz.addAndGet(combinedNNZ);
+		ret.setNonZeros(combinedNNZ);
 		return ColGroupUncompressed.create(ret, combinedCols);
 	}
 

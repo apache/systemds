@@ -18,7 +18,12 @@
 # under the License.
 #
 # -------------------------------------------------------------
+from functools import reduce
+from operator import or_
+
+
 from systemds.scuro.dataloader.base_loader import BaseLoader
+from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.modality.type import ModalityType
@@ -34,12 +39,12 @@ class UnimodalModality(Modality):
         """
         super().__init__(modality_type)
         self.data_loader = data_loader
+        self.join_modality = None
 
     def extract_raw_data(self):
         """
         Uses the data loader to read the raw data from a specified location
         and stores the data in the data location.
-        TODO: schema
         """
         self.data = self.data_loader.load()
 
@@ -47,8 +52,11 @@ class UnimodalModality(Modality):
         new_modality = TransformedModality(self.type, representation)
         new_modality.data = []
 
-        if self.data_loader.chunk_size:
-            while self.data_loader.next_chunk < self.data_loader.num_chunks:
+        if self.data_loader.get_chunk_size():
+            while (
+                self.data_loader.get_next_chunk_number()
+                < self.data_loader.get_num_total_chunks()
+            ):
                 self.extract_raw_data()
                 new_modality.data.extend(representation.transform(self.data))
         else:
@@ -57,3 +65,16 @@ class UnimodalModality(Modality):
             new_modality.data = representation.transform(self.data)
 
         return new_modality
+
+    def join(self, other, join_condition):
+        joined_modality = JoinedModality(
+            reduce(or_, other.type, self.type), self, other, join_condition
+        )
+
+        if (
+            not self.data_loader.get_chunk_size()
+            and not other.data_loader.get_chunk_size()
+        ):
+            joined_modality.execute()
+
+        return joined_modality

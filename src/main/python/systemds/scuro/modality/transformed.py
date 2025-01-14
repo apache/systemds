@@ -22,12 +22,11 @@ from functools import reduce
 from operator import or_
 
 from systemds.scuro.modality.modality import Modality
-from systemds.scuro.modality.type import ModalityType
 
 
 class TransformedModality(Modality):
 
-    def __init__(self, modality_type: ModalityType, transformation):
+    def __init__(self, modality_type, transformation):
         """
         Parent class of the different Modalities (unimodal & multimodal)
         :param modality_type: Type of the original modality(ies)
@@ -35,6 +34,7 @@ class TransformedModality(Modality):
         """
         super().__init__(modality_type)
         self.transformation = transformation
+        self.data = []
 
     def combine(self, other, fusion_method):
         """

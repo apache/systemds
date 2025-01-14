@@ -18,26 +18,3 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from typing import List, Optional, Union
-
-import librosa
-from systemds.scuro.dataloader.base_loader import BaseLoader
-
-
-class AudioLoader(BaseLoader):
-    def __init__(
-        self,
-        source_path: str,
-        indices: List[str],
-        chunk_size: Optional[int] = None,
-    ):
-        super().__init__(source_path, indices, chunk_size)
-
-    def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
-        self.file_sanity_check(file)
-        audio, sr = librosa.load(file)
-        self.metadata[file] = {"sample_rate": sr, "length": audio.shape[0]}
-        self.metadata[file]["timestamp"] = self.create_timestamps(
-            self.metadata[file]["sample_rate"], self.metadata[file]["length"]
-        )
-        self.data.append(audio)

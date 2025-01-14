@@ -23,6 +23,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, Union
 import numpy as np
 
+
 class BaseLoader(ABC):
     def __init__(
         self, source_path: str, indices: List[str], chunk_size: Optional[int] = None
@@ -40,20 +41,34 @@ class BaseLoader(ABC):
         )  # TODO: check what the index should be for storing the metadata (file_name, counter, ...)
         self.source_path = source_path
         self.indices = indices
-        self.chunk_size = chunk_size
-        self.next_chunk = 0
+        self._next_chunk = 0
+        self._num_chunks = 1
+        self._chunk_size = None
 
-        if self.chunk_size:
-            self.num_chunks = int(len(self.indices) / self.chunk_size)
+        if chunk_size:
+            self.update_chunk_size(chunk_size)
 
     def load(self):
         """
         Takes care of loading the raw data either chunk wise (if chunk size is defined) or all at once
         """
-        if self.chunk_size:
+        if self._chunk_size:
             return self._load_next_chunk()
 
         return self._load(self.indices)
+
+    def update_chunk_size(self, new_chunk_size):
+        self._chunk_size = new_chunk_size
+        self._num_chunks = int(len(self.indices) / self._chunk_size)
+
+    def get_chunk_size(self):
+        return self._chunk_size
+
+    def get_next_chunk_number(self):
+        return self._next_chunk
+
+    def get_num_total_chunks(self):
+        return self._num_chunks
 
     def _load_next_chunk(self):
         """
@@ -61,9 +76,11 @@ class BaseLoader(ABC):
         """
         self.data = []
         next_chunk_indices = self.indices[
-            self.next_chunk * self.chunk_size : (self.next_chunk + 1) * self.chunk_size
+            self._next_chunk
+            * self._chunk_size : (self._next_chunk + 1)
+            * self._chunk_size
         ]
-        self.next_chunk += 1
+        self._next_chunk += 1
         return self._load(next_chunk_indices)
 
     def _load(self, indices: List[str]):
@@ -81,15 +98,21 @@ class BaseLoader(ABC):
     @abstractmethod
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         pass
-    
+
     def create_timestamps(self, frequency, sample_length, start_datetime=None):
-        start_time = start_datetime if start_datetime is not None else np.datetime64('1970-01-01T00:00:00.000000')
+        start_time = (
+            start_datetime
+            if start_datetime is not None
+            else np.datetime64("1970-01-01T00:00:00.000000")
+        )
         time_increment = 1 / frequency
-        time_increments_array = np.arange(sample_length) * np.timedelta64(int(time_increment * 1e6))
+        time_increments_array = np.arange(sample_length) * np.timedelta64(
+            int(time_increment * 1e6)
+        )
         timestamps = start_time + time_increments_array
-        return timestamps
-        
-        
+
+        return timestamps.astype(np.int64)
+
     def file_sanity_check(self, file):
         """
         Checks if the file can be found is not empty

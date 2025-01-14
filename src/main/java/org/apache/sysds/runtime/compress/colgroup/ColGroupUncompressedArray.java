@@ -50,4 +50,10 @@ public class ColGroupUncompressedArray extends ColGroupUncompressed {
 		return MatrixBlock.estimateSizeInMemory(array.size(),1,array.size()) + 80;
 	}
 
+
+	@Override 
+	public String toString(){
+		return "UncompressedArrayGroup: " + id + " " + _colIndexes;
+	}
+
 }

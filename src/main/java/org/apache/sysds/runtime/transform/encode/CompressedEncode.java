@@ -37,7 +37,7 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressedArray;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
@@ -104,7 +104,9 @@ public class CompressedEncode {
 			final List<ColumnEncoderComposite> encoders = enc.getColumnEncoders();
 			final List<AColGroup> groups = isParallel() ? multiThread(encoders) : singleThread(encoders);
 			final int cols = shiftGroups(groups);
-			final MatrixBlock mb = new CompressedMatrixBlock(in.getNumRows(), cols, -1, false, groups);
+			final CompressedMatrixBlock mb = new CompressedMatrixBlock(in.getNumRows(), cols, -1, false, groups);
+
+			combineUncompressed(mb);
 			mb.setNonZeros(nnz.get());
 			logging(mb);
 			return mb;
@@ -193,7 +195,7 @@ public class CompressedEncode {
 		if(containsNull && domain == 0)
 			return new ColGroupEmpty(ColIndexFactory.create(1));
 		IColIndex colIndexes = ColIndexFactory.create(0, domain);
-		if(domain == 1 && !containsNull){
+		if(domain == 1 && !containsNull) {
 			nnz.addAndGet(in.getNumRows());
 			return ColGroupConst.create(colIndexes, new double[] {1});
 		}
@@ -347,10 +349,10 @@ public class CompressedEncode {
 
 		// int domain = c.getDomainSize();
 		IColIndex colIndexes = ColIndexFactory.create(1);
-		if(domain == 0 && containsNull){
+		if(domain == 0 && containsNull) {
 			return new ColGroupEmpty(colIndexes);
 		}
-		if(domain == 1 && !containsNull){
+		if(domain == 1 && !containsNull) {
 			nnz.addAndGet(in.getNumRows());
 			return ColGroupConst.create(colIndexes, new double[] {1});
 		}
@@ -397,14 +399,7 @@ public class CompressedEncode {
 
 		if(a.getValueType() != ValueType.BOOLEAN // if not booleans
 			&& (stats == null || !stats.shouldCompress || stats.valueType != a.getValueType())) {
-			// stats.valueType;
-			double[] vals = (double[]) a.changeType(ValueType.FP64).get();
-
-			MatrixBlock col = new MatrixBlock(a.size(), 1, vals);
-			long nz = col.recomputeNonZeros(1);
-
-			nnz.addAndGet(nz);
-			return ColGroupUncompressed.create(colIndexes, col, false);
+			return new ColGroupUncompressedArray(a, c._colID - 1,colIndexes);
 		}
 		else {
 			boolean containsNull = a.containsNull();
@@ -532,10 +527,10 @@ public class CompressedEncode {
 		int domain = (int) CEHash.getK();
 		boolean nulls = a.containsNull();
 		IColIndex colIndexes = ColIndexFactory.create(0, 1);
-		if(domain == 0 && nulls){
+		if(domain == 0 && nulls) {
 			return new ColGroupEmpty(colIndexes);
 		}
-		if(domain == 1 && !nulls){
+		if(domain == 1 && !nulls) {
 			nnz.addAndGet(in.getNumRows());
 			return ColGroupConst.create(colIndexes, new double[] {1});
 		}
@@ -561,10 +556,10 @@ public class CompressedEncode {
 		int domain = (int) CEHash.getK();
 		boolean nulls = a.containsNull();
 		IColIndex colIndexes = ColIndexFactory.create(0, domain);
-		if(domain == 0 && nulls){
+		if(domain == 0 && nulls) {
 			return new ColGroupEmpty(ColIndexFactory.create(1));
 		}
-		if(domain == 1 && !nulls){
+		if(domain == 1 && !nulls) {
 			nnz.addAndGet(in.getNumRows());
 			return ColGroupConst.create(colIndexes, new double[] {1});
 		}
@@ -607,6 +602,25 @@ public class CompressedEncode {
 		int estDistCount = SampleEstimatorFactory.distinctCount(freq, nRow, sampleSize,
 			SampleEstimatorFactory.EstimationType.HassAndStokes);
 		c._estNumDistincts = estDistCount;
+	}
+
+	private void combineUncompressed(CompressedMatrixBlock mb) {
+
+		List<ColGroupUncompressedArray> ucg = new ArrayList<>();
+		List<AColGroup> ret = new ArrayList<>();
+		for(AColGroup g : mb.getColGroups()) {
+			if(g instanceof ColGroupUncompressedArray)
+				ucg.add((ColGroupUncompressedArray) g);
+			else
+				ret.add(g);
+		}
+		ret.add(combine(ucg));
+		nnz.addAndGet(ret.get(ret.size()-1).getNumberNonZeros(in.getNumRows()));
+		mb.allocateColGroupList(ret);
+	}
+
+	private AColGroup combine(List<ColGroupUncompressedArray> ucg) {
+		throw new NotImplementedException("Should combine " + ucg.size());
 	}
 
 	private void logging(MatrixBlock mb) {

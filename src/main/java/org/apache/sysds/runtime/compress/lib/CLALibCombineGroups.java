@@ -149,7 +149,6 @@ public final class CLALibCombineGroups {
 		else {
 			return combineNSingleAtATime(groups, nRows);
 		}
-
 	}
 
 	@SuppressWarnings("unchecked")

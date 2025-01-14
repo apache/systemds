@@ -383,6 +383,7 @@ public class ColumnEncoderBagOfWords extends ColumnEncoder {
 		out.writeInt(_tokenDictionary == null ? 0 : _tokenDictionary.size());
 		if(_tokenDictionary != null)
 			for(Map.Entry<Object, Integer> e : _tokenDictionary.entrySet()) {
+				System.out.println(e);
 				out.writeUTF((String) e.getKey());
 				out.writeInt(e.getValue());
 			}

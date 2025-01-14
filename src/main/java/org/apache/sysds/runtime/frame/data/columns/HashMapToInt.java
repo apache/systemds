@@ -31,47 +31,13 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 
 	private static final long serialVersionUID = 3624988207265L;
 	static final int DEFAULT_INITIAL_CAPACITY = 1 << 4;
-	static final int MAXIMUM_CAPACITY = 1 << 30;
 	static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
-	static class Node<K> implements Entry<K, Integer> {
-		final K key;
-		int value;
-		Node<K> next;
-
-		Node(K key, int value, Node<K> next) {
-			this.key = key;
-			this.value = value;
-			this.next = next;
-		}
-
-		public final void setNext(Node<K> n) {
-			next = n;
-		}
-
-		@Override
-		public K getKey() {
-			return key;
-		}
-
-		@Override
-		public Integer getValue() {
-			return value;
-		}
-
-		@Override
-		public Integer setValue(Integer value) {
-			return this.value = value;
-		}
-	}
-
 	protected Node<K>[] buckets;
-	int size;
-	// protected List<List<K>> keys;
-	// protected int[][] values;
+	protected int size;
 
 	public HashMapToInt(int capacity) {
-		alloc(Math.max(capacity, 16));
+		alloc(Math.max(capacity, DEFAULT_INITIAL_CAPACITY));
 	}
 
 	@SuppressWarnings({"unchecked"})
@@ -98,7 +64,14 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 
 	@Override
 	public boolean containsValue(Object value) {
-		throw new UnsupportedOperationException("Unimplemented method 'containsValue'");
+		if(value instanceof Integer) {
+			for(Entry<K, Integer> v : this.entrySet()) {
+				if(v.getValue().equals(value))
+					return true;
+			}
+		}
+		return false;
+
 	}
 
 	@Override
@@ -161,7 +134,7 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 			if(b.key.equals(key))
 				return b.value;
 			if(b.next == null) {
-				b.next = new Node<>(key, value, null);
+				b.setNext(new Node<>(key, value, null));
 				size++;
 				return -1;
 			}
@@ -189,12 +162,12 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 		while(true) {
 
 			if(b.key.equals(key)) {
-				int tmp = b.value;
-				b.value = value;
+				int tmp = b.getValue();
+				b.setValue(value);
 				return tmp;
 			}
 			if(b.next == null) {
-				b.next = new Node<>(key, value, null);
+				b.setNext(new Node<>(key, value, null));
 				size++;
 				return -1;
 			}
@@ -246,11 +219,42 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb = new StringBuilder(size()*3);
 		this.forEach((k, v) -> {
 			sb.append("(" + k + "→" + v + ")");
 		});
 		return sb.toString();
+	}
+
+	private static class Node<K> implements Entry<K, Integer> {
+		final K key;
+		int value;
+		Node<K> next;
+
+		Node(K key, int value, Node<K> next) {
+			this.key = key;
+			this.value = value;
+			this.next = next;
+		}
+
+		public final void setNext(Node<K> n) {
+			next = n;
+		}
+
+		@Override
+		public K getKey() {
+			return key;
+		}
+
+		@Override
+		public Integer getValue() {
+			return value;
+		}
+
+		@Override
+		public Integer setValue(Integer value) {
+			return this.value = value;
+		}
 	}
 
 	private final class EntrySet extends AbstractSet<Map.Entry<K, Integer>> {
@@ -299,7 +303,7 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 						break;
 					}
 				}
-				if(bucketId == buckets.length)
+				if(bucketId >= buckets.length)
 					next = null;
 			}
 

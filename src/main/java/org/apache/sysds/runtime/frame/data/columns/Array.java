@@ -53,7 +53,7 @@ public abstract class Array<T> implements Writable {
 	public static int ROW_PARALLELIZATION_THRESHOLD = 10000;
 
 	/** A soft reference to a memorization of this arrays mapping, used in transformEncode */
-	protected SoftReference<Map<T,Integer>> _rcdMapCache = null;
+	protected SoftReference<Map<T, Integer>> _rcdMapCache = null;
 
 	/** The current allocated number of elements in this Array */
 	protected int _size;
@@ -73,7 +73,7 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @return The cached recode map
 	 */
-	public final SoftReference<Map<T,Integer>> getCache() {
+	public final SoftReference<Map<T, Integer>> getCache() {
 		return _rcdMapCache;
 	}
 
@@ -82,7 +82,7 @@ public abstract class Array<T> implements Writable {
 	 * 
 	 * @param m The element to cache.
 	 */
-	public final void setCache(SoftReference<Map<T,Integer>> m) {
+	public final void setCache(SoftReference<Map<T, Integer>> m) {
 		_rcdMapCache = m;
 	}
 
@@ -126,11 +126,11 @@ public abstract class Array<T> implements Writable {
 	 * @throws ExecutionException   if the parallel execution fails
 	 * @throws InterruptedException if the parallel execution fails
 	 */
-	public synchronized final Map<T,Integer> getRecodeMap(int estimate, ExecutorService pool, int k)
+	public synchronized final Map<T, Integer> getRecodeMap(int estimate, ExecutorService pool, int k)
 		throws InterruptedException, ExecutionException {
 		// probe cache for existing map
-		Map<T,Integer> map;
-		SoftReference<Map<T,Integer>> tmp = getCache();
+		Map<T, Integer> map;
+		SoftReference<Map<T, Integer>> tmp = getCache();
 		map = (tmp != null) ? tmp.get() : null;
 		if(map != null)
 			return map;
@@ -207,12 +207,12 @@ public abstract class Array<T> implements Writable {
 	 */
 	protected static <T> void mergeRecodeMaps(HashMapToInt<T> target, HashMapToInt<T> from) {
 		final List<T> fromEntriesOrdered = new ArrayList<>(Collections.nCopies(from.size(), null));
-		from.forEach((k,v) -> {
+		from.forEach((k, v) -> {
 			fromEntriesOrdered.set(v - 1, k);
 		});
 		int id = target.size();
 		for(T e : fromEntriesOrdered) {
-			if(target.putIfAbsent(e, id) == null)
+			if(target.putIfAbsentI(e, id) == -1)
 				id++;
 		}
 	}

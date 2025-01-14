@@ -632,19 +632,19 @@ public class CompressedEncode {
 		final DenseBlock db = ret.getDenseBlock();
 		final int nrow = in.getNumRows();
 		final int ncol = combinedCols.size();
+		final long combinedNNZ;
 		if(isParallel() && (long) nrow * ncol > 10000 && nrow > 512)
-			parallelPutInto(ucg, db, nrow, ncol);
+			combinedNNZ = parallelPutInto(ucg, db, nrow, ncol);
 		else
-			putInto(ucg, db, 0, nrow, 0, ncol);
+			combinedNNZ = putInto(ucg, db, 0, nrow, 0, ncol);
 
-		ret.recomputeNonZeros(k);
-
+		nnz.addAndGet(combinedNNZ);
 		return ColGroupUncompressed.create(ret, combinedCols);
 	}
 
-	private void parallelPutInto(List<ColGroupUncompressedArray> ucg, DenseBlock db, int nrow, int ncol)
+	private long parallelPutInto(List<ColGroupUncompressedArray> ucg, DenseBlock db, int nrow, int ncol)
 		throws InterruptedException, ExecutionException {
-		List<Future<?>> tasks = new ArrayList<>();
+		List<Future<Long>> tasks = new ArrayList<>();
 
 		final int iblk = Math.max(512, nrow / k);
 		final int jblk = Math.min(128, ncol);
@@ -655,23 +655,26 @@ public class CompressedEncode {
 				int sj = j;
 				int ej = Math.min(ncol, jblk + j);
 				tasks.add(pool.submit(() -> {
-					putInto(ucg, db, si, ei, sj, ej);
+					return putInto(ucg, db, si, ei, sj, ej);
 				}));
 			}
 		}
-
-		for(Future<?> t : tasks)
-			t.get();
+		long nnz = 0;
+		for(Future<Long> t : tasks)
+			nnz += t.get();
+		return nnz;
 	}
 
-	private void putInto(List<ColGroupUncompressedArray> ucg, DenseBlock db, int il, int iu, int jl, int ju) {
+	private long putInto(List<ColGroupUncompressedArray> ucg, DenseBlock db, int il, int iu, int jl, int ju) {
+		long nnz = 0;
 		for(int i = il; i < iu; i++) {
 			final double[] rval = db.values(i);
 			final int off = db.pos(i);
 			for(int j = jl; j < ju; j++) {
-				rval[off + j] = ucg.get(j).array.getAsDouble(i);
+				nnz += (rval[off + j] = ucg.get(j).array.getAsDouble(i)) == 0.0 ? 1 : 0;
 			}
 		}
+		return nnz;
 	}
 
 	private void logging(MatrixBlock mb) {

@@ -180,6 +180,8 @@ public class CompressedEncode {
 			ColumnEncoderComposite c = encoders.get(i);
 			Array<?> a = in.getColumn(c._colID - 1);
 			if(c.isPassThrough() && !(a instanceof ACompressedArray) && uncompressedPassThrough(a)){
+				// if this encoder was part of the uncompressed encoders.
+				// do not shift the column indexes because we combined all uncompressed columnGroups.
 				ucCols.appendValue(curCols++);
 			}
 			else {
@@ -654,6 +656,7 @@ public class CompressedEncode {
 	}
 
 	private AColGroup combine(List<ColGroupUncompressedArray> ucg) throws InterruptedException, ExecutionException {
+		final Timing t = new Timing();
 		IColIndex combinedCols = ColIndexFactory.create(ucg.size());
 
 		ucg.sort((a, b) -> Integer.compare(a.id, b.id));
@@ -670,7 +673,9 @@ public class CompressedEncode {
 
 		nnz.addAndGet(combinedNNZ);
 		ret.setNonZeros(combinedNNZ);
-
+		if(LOG.isDebugEnabled())
+			LOG.debug("Combining of : " + ucg.size() + " uncompressed columns Time:" + t);
+		
 		return ColGroupUncompressed.create(ret, combinedCols);
 	}
 

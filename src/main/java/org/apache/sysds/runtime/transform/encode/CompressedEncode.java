@@ -641,6 +641,8 @@ public class CompressedEncode {
 			}
 		}
 
+		ret.recomputeNonZeros(k);
+
 		return ColGroupUncompressed.create(ret, combinedCols);
 	}
 

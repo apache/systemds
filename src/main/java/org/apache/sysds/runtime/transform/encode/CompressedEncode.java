@@ -620,6 +620,7 @@ public class CompressedEncode {
 	}
 
 	private AColGroup combine(List<ColGroupUncompressedArray> ucg) {
+		IColIndex combinedCols = ColIndexFactory.combine(ucg);
 		throw new NotImplementedException("Should combine " + ucg.size());
 	}
 

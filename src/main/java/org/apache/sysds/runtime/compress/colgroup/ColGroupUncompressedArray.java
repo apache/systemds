@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.frame.data.columns.Array;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
  * Special sideways Compressed column group not supposed to be used outside of the compressed transform encode. 
@@ -36,5 +37,17 @@ public class ColGroupUncompressedArray extends ColGroupUncompressed {
 		this.id = id;
 	}
 
+
+	@Override 
+	public int getNumValues(){
+		return array.size();
+	}
+
+
+	@Override
+	public long estimateInMemorySize(){
+		// not accurate estimate, but guaranteed larger.
+		return MatrixBlock.estimateSizeInMemory(array.size(),1,array.size()) + 80;
+	}
 
 }

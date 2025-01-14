@@ -82,6 +82,8 @@ public class CompressedEncode {
 
 	private final AtomicLong nnz = new AtomicLong();
 
+	private static final IColIndex SINGLE_COL_TMP_INDEX = ColIndexFactory.create(1);
+
 	private CompressedEncode(MultiColumnEncoder enc, FrameBlock in, int k) {
 		this.enc = enc;
 		this.in = in;
@@ -107,8 +109,6 @@ public class CompressedEncode {
 			final List<AColGroup> groups = isParallel() ? multiThread(encoders) : singleThread(encoders);
 			final int cols = shiftGroups(groups);
 			final CompressedMatrixBlock mb = new CompressedMatrixBlock(in.getNumRows(), cols, -1, false, groups);
-
-			combineUncompressed(mb);
 			mb.setNonZeros(nnz.get());
 			logging(mb);
 			return mb;
@@ -125,16 +125,36 @@ public class CompressedEncode {
 
 	private List<AColGroup> singleThread(List<ColumnEncoderComposite> encoders) throws Exception {
 		List<AColGroup> groups = new ArrayList<>(encoders.size());
-		for(ColumnEncoderComposite c : encoders)
-			groups.add(encode(c));
+		List<ColGroupUncompressedArray> ucg = new ArrayList<>();
+		for(ColumnEncoderComposite c : encoders) {
+			AColGroup g = encode(c);
+			if(g instanceof ColGroupUncompressedArray)
+				ucg.add((ColGroupUncompressedArray) g);
+			else
+				groups.add(g);
+		}
+		if(ucg.size() > 0) {
+			groups.add(combine(ucg));
+		}
 		return groups;
 	}
 
 	private List<AColGroup> multiThread(List<ColumnEncoderComposite> encoders) throws Exception {
 		final List<Future<AColGroup>> tasks = new ArrayList<>(encoders.size());
-		for(ColumnEncoderComposite c : encoders)
-			tasks.add(pool.submit(() -> encode(c)));
+		final List<Future<AColGroup>> ucgTasks = new ArrayList<>();
+		for(ColumnEncoderComposite c : encoders) {
+
+			Array<?> a = in.getColumn(c._colID - 1);
+			if(c.isPassThrough() && !(a instanceof ACompressedArray) && uncompressedPassThrough(a))
+				ucgTasks.add(pool.submit(() -> encode(c)));
+			else
+				tasks.add(pool.submit(() -> encode(c)));
+		}
 		final List<AColGroup> groups = new ArrayList<>(encoders.size());
+		if(!ucgTasks.isEmpty()) {
+			groups.add(combineFutures(ucgTasks));
+		}
+
 		for(Future<AColGroup> t : tasks)
 			groups.add(t.get());
 		return groups;
@@ -383,44 +403,48 @@ public class CompressedEncode {
 
 	@SuppressWarnings("unchecked")
 	private <T> AColGroup passThrough(ColumnEncoderComposite c) throws Exception {
-
-		final IColIndex colIndexes = ColIndexFactory.create(1);
-		final int colId = c._colID;
-		final Array<T> a = (Array<T>) in.getColumn(colId - 1);
+		final int colId = c._colID - 1;
+		final Array<T> a = (Array<T>) in.getColumn(colId);
 		if(a instanceof ACompressedArray)
-			return passThroughCompressed(colIndexes, a);
+			return passThroughCompressed(a);
+		else if(uncompressedPassThrough(a))
+			return new ColGroupUncompressedArray(a, colId, SINGLE_COL_TMP_INDEX);
 		else
-			return passThroughNormal(c, colIndexes, a);
+			return compressingPassThrough(c, a);
 	}
 
-	private <T> AColGroup passThroughNormal(ColumnEncoderComposite c, final IColIndex colIndexes, final Array<T> a)
+	private <T> AColGroup compressingPassThrough(ColumnEncoderComposite c, final Array<T> a)
 		throws InterruptedException, ExecutionException, Exception {
-		// Take a small sample
-		ArrayCompressionStatistics stats = !inputContainsCompressed ? //
-			a.statistics(Math.min(1000, a.size())) : null;
-
-		if(a.getValueType() != ValueType.BOOLEAN // if not booleans
-			&& (stats == null || !stats.shouldCompress || stats.valueType != a.getValueType())) {
-			return new ColGroupUncompressedArray(a, c._colID - 1, colIndexes);
-		}
-		else {
-			boolean containsNull = a.containsNull();
-			estimateRCDMapSize(c);
-			HashMapToInt<T> map = (HashMapToInt<T>) a.getRecodeMap(c._estNumDistincts, pool, k / in.getNumColumns());
-			double[] vals = new double[map.size() + (containsNull ? 1 : 0)];
-			if(containsNull)
-				vals[map.size()] = Double.NaN;
-			ValueType t = a.getValueType();
-			map.forEach((k, v) -> vals[v.intValue() - 1] = UtilFunctions.objectToDouble(t, k));
-			ADictionary d = Dictionary.create(vals);
-			AMapToData m = createMappingAMapToData(a, map, containsNull);
-			AColGroup ret = ColGroupDDC.create(colIndexes, d, m, null);
-			nnz.addAndGet(ret.getNumberNonZeros(in.getNumRows()));
-			return ret;
-		}
+		boolean containsNull = a.containsNull();
+		estimateRCDMapSize(c);
+		HashMapToInt<T> map = (HashMapToInt<T>) a.getRecodeMap(c._estNumDistincts, pool, k / in.getNumColumns());
+		double[] vals = new double[map.size() + (containsNull ? 1 : 0)];
+		if(containsNull)
+			vals[map.size()] = Double.NaN;
+		ValueType t = a.getValueType();
+		map.forEach((k, v) -> vals[v.intValue() - 1] = UtilFunctions.objectToDouble(t, k));
+		ADictionary d = Dictionary.create(vals);
+		AMapToData m = createMappingAMapToData(a, map, containsNull);
+		AColGroup ret = ColGroupDDC.create(SINGLE_COL_TMP_INDEX, d, m, null);
+		nnz.addAndGet(ret.getNumberNonZeros(in.getNumRows()));
+		return ret;
 	}
 
-	private <T> AColGroup passThroughCompressed(final IColIndex colIndexes, final Array<T> a) {
+	private <T> boolean uncompressedPassThrough(final Array<T> a) {
+
+		if(a.getValueType() != ValueType.BOOLEAN) {
+
+			ArrayCompressionStatistics stats = !inputContainsCompressed ? //
+				a.statistics(Math.min(1000, a.size())) : null;
+			return stats == null // if some columns already are compressed then most likely we do not need to
+				|| !stats.shouldCompress // if we should compress ... lets
+				|| stats.valueType != a.getValueType(); // if the compression says change value type, then do not do it.
+		}
+
+		return false;// if not booleans
+	}
+
+	private <T> AColGroup passThroughCompressed(final Array<T> a) {
 		// only DDC possible currently.
 		DDCArray<?> aDDC = (DDCArray<?>) a;
 		Array<?> dict = aDDC.getDict();
@@ -433,7 +457,7 @@ public class CompressedEncode {
 				vals[i] = dict.getAsDouble(i);
 
 		ADictionary d = Dictionary.create(vals);
-		AColGroup ret = ColGroupDDC.create(colIndexes, d, aDDC.getMap(), null);
+		AColGroup ret = ColGroupDDC.create(SINGLE_COL_TMP_INDEX, d, aDDC.getMap(), null);
 
 		nnz.addAndGet(ret.getNumberNonZeros(in.getNumRows()));
 		return ret;
@@ -606,21 +630,12 @@ public class CompressedEncode {
 		c._estNumDistincts = estDistCount;
 	}
 
-	private void combineUncompressed(CompressedMatrixBlock mb) throws InterruptedException, ExecutionException {
-
-		List<ColGroupUncompressedArray> ucg = new ArrayList<>();
-		List<AColGroup> ret = new ArrayList<>();
-		for(AColGroup g : mb.getColGroups()) {
-			if(g instanceof ColGroupUncompressedArray)
-				ucg.add((ColGroupUncompressedArray) g);
-			else
-				ret.add(g);
+	private AColGroup combineFutures(List<Future<AColGroup>> ucgTasks) throws InterruptedException, ExecutionException {
+		List<ColGroupUncompressedArray> ucg = new ArrayList<>(ucgTasks.size());
+		for(Future<AColGroup> g : ucgTasks) {
+			ucg.add((ColGroupUncompressedArray) g.get());
 		}
-		if(ucg.size() > 0) {
-			ret.add(combine(ucg));
-			nnz.addAndGet(ret.get(ret.size() - 1).getNumberNonZeros(in.getNumRows()));
-		}
-		mb.allocateColGroupList(ret);
+		return combine(ucg);
 	}
 
 	private AColGroup combine(List<ColGroupUncompressedArray> ucg) throws InterruptedException, ExecutionException {
@@ -640,6 +655,7 @@ public class CompressedEncode {
 
 		nnz.addAndGet(combinedNNZ);
 		ret.setNonZeros(combinedNNZ);
+
 		return ColGroupUncompressed.create(ret, combinedCols);
 	}
 

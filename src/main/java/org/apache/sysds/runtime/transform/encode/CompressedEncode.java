@@ -37,6 +37,7 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressedArray;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
@@ -48,6 +49,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
 import org.apache.sysds.runtime.compress.utils.Util;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.ACompressedArray;
 import org.apache.sysds.runtime.frame.data.columns.Array;
@@ -621,7 +623,20 @@ public class CompressedEncode {
 
 	private AColGroup combine(List<ColGroupUncompressedArray> ucg) {
 		IColIndex combinedCols = ColIndexFactory.combine(ucg);
-		throw new NotImplementedException("Should combine " + ucg.size());
+
+		ucg.sort((a,b) -> Integer.compare(a.id,b.id));
+		MatrixBlock ret = new MatrixBlock(in.getNumRows(), combinedCols.size(), false);
+		ret.allocateDenseBlock();
+		DenseBlock db = ret.getDenseBlock();
+		for(int i =0; i < in.getNumRows(); i++){
+			double[] rval = db.values(i);
+			int off = db.pos(i);
+			for(int j = 0; j < combinedCols.size(); j++){
+				rval[off + j] = ucg.get(j).array.getAsDouble(i);
+			}
+		}
+
+		return ColGroupUncompressed.create(ret, combinedCols);
 	}
 
 	private void logging(MatrixBlock mb) {

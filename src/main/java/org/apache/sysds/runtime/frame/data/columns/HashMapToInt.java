@@ -93,7 +93,7 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 	@Override
 	@SuppressWarnings({"unchecked"})
 	public boolean containsKey(Object key) {
-		return get((K) key) != -1;
+		return getI((K) key) != -1;
 	}
 
 	@Override

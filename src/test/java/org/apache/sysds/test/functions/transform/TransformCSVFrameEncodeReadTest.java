@@ -21,9 +21,6 @@ package org.apache.sysds.test.functions.transform;
 
 import static org.junit.Assert.fail;
 
-import java.io.File;
-import java.util.Scanner;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;

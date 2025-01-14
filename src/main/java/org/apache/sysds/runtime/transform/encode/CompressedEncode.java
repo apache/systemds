@@ -48,6 +48,7 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -133,9 +134,9 @@ public class CompressedEncode {
 			else
 				groups.add(g);
 		}
-		if(ucg.size() > 0) {
+		if(ucg.size() > 0)
 			groups.add(combine(ucg));
-		}
+		
 		return groups;
 	}
 
@@ -152,7 +153,7 @@ public class CompressedEncode {
 		}
 		final List<AColGroup> groups = new ArrayList<>(encoders.size());
 		if(!ucgTasks.isEmpty()) {
-			groups.add(combineFutures(ucgTasks));
+			tasks.add(pool.submit(() -> combineFutures(ucgTasks)));
 		}
 
 		for(Future<AColGroup> t : tasks)
@@ -167,12 +168,32 @@ public class CompressedEncode {
 	 * @return The total number of columns contained.
 	 */
 	private int shiftGroups(List<AColGroup> groups) {
-		int cols = groups.get(0).getColIndices().size();
-		for(int i = 1; i < groups.size(); i++) {
-			groups.set(i, groups.get(i).shiftColIndices(cols));
-			cols += groups.get(i).getColIndices().size();
+
+		int curCols = 0;
+		int curGroup = 0;
+		final List<ColumnEncoderComposite> encoders = enc.getColumnEncoders();
+		final IntArrayList ucCols = new IntArrayList();
+
+		// ColIndexFactory.create
+		for(int i = 0; i < encoders.size(); i++ ){
+			// for each encoder ...
+			ColumnEncoderComposite c = encoders.get(i);
+			Array<?> a = in.getColumn(c._colID - 1);
+			if(c.isPassThrough() && !(a instanceof ACompressedArray) && uncompressedPassThrough(a)){
+				ucCols.appendValue(curCols++);
+			}
+			else {
+				AColGroup g = groups.get(curGroup);
+				groups.set( curGroup, g.shiftColIndices(curCols));
+				curCols += g.getColIndices().size();
+			}
 		}
-		return cols;
+		if( ucCols.size() > 0){
+			int i = groups.size()-1;
+			AColGroup g =groups.get(i);
+			groups.set(i, g.copyAndSet(ColIndexFactory.create(ucCols)));
+		}
+		return curCols;
 	}
 
 	private AColGroup encode(ColumnEncoderComposite c) throws Exception {
@@ -633,7 +654,7 @@ public class CompressedEncode {
 	}
 
 	private AColGroup combine(List<ColGroupUncompressedArray> ucg) throws InterruptedException, ExecutionException {
-		IColIndex combinedCols = ColIndexFactory.combine(ucg);
+		IColIndex combinedCols = ColIndexFactory.create(ucg.size());
 
 		ucg.sort((a, b) -> Integer.compare(a.id, b.id));
 		MatrixBlock ret = new MatrixBlock(in.getNumRows(), combinedCols.size(), false);

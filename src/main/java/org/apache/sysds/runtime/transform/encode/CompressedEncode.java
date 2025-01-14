@@ -606,7 +606,7 @@ public class CompressedEncode {
 		c._estNumDistincts = estDistCount;
 	}
 
-	private void combineUncompressed(CompressedMatrixBlock mb) {
+	private void combineUncompressed(CompressedMatrixBlock mb) throws InterruptedException, ExecutionException {
 
 		List<ColGroupUncompressedArray> ucg = new ArrayList<>();
 		List<AColGroup> ret = new ArrayList<>();
@@ -615,32 +615,63 @@ public class CompressedEncode {
 				ucg.add((ColGroupUncompressedArray) g);
 			else
 				ret.add(g);
-		}	
-		if(ucg.size() > 0){
+		}
+		if(ucg.size() > 0) {
 			ret.add(combine(ucg));
-			nnz.addAndGet(ret.get(ret.size()-1).getNumberNonZeros(in.getNumRows()));
+			nnz.addAndGet(ret.get(ret.size() - 1).getNumberNonZeros(in.getNumRows()));
 		}
 		mb.allocateColGroupList(ret);
 	}
 
-	private AColGroup combine(List<ColGroupUncompressedArray> ucg) {
+	private AColGroup combine(List<ColGroupUncompressedArray> ucg) throws InterruptedException, ExecutionException {
 		IColIndex combinedCols = ColIndexFactory.combine(ucg);
 
-		ucg.sort((a,b) -> Integer.compare(a.id,b.id));
+		ucg.sort((a, b) -> Integer.compare(a.id, b.id));
 		MatrixBlock ret = new MatrixBlock(in.getNumRows(), combinedCols.size(), false);
 		ret.allocateDenseBlock();
-		DenseBlock db = ret.getDenseBlock();
-		for(int i =0; i < in.getNumRows(); i++){
-			double[] rval = db.values(i);
-			int off = db.pos(i);
-			for(int j = 0; j < combinedCols.size(); j++){
-				rval[off + j] = ucg.get(j).array.getAsDouble(i);
-			}
-		}
+		final DenseBlock db = ret.getDenseBlock();
+		final int nrow = in.getNumRows();
+		final int ncol = combinedCols.size();
+		if(isParallel() && (long) nrow * ncol > 10000 && nrow > 512)
+			parallelPutInto(ucg, db, nrow, ncol);
+		else
+			putInto(ucg, db, 0, nrow, 0, ncol);
 
 		ret.recomputeNonZeros(k);
 
 		return ColGroupUncompressed.create(ret, combinedCols);
+	}
+
+	private void parallelPutInto(List<ColGroupUncompressedArray> ucg, DenseBlock db, int nrow, int ncol)
+		throws InterruptedException, ExecutionException {
+		List<Future<?>> tasks = new ArrayList<>();
+
+		final int iblk = Math.max(512, nrow / k);
+		final int jblk = Math.min(128, ncol);
+		for(int i = 0; i < nrow; i += iblk) {
+			int si = i;
+			int ei = Math.min(nrow, iblk + i);
+			for(int j = 0; j < ncol; j += jblk) {
+				int sj = j;
+				int ej = Math.min(ncol, jblk + j);
+				tasks.add(pool.submit(() -> {
+					putInto(ucg, db, si, ei, sj, ej);
+				}));
+			}
+		}
+
+		for(Future<?> t : tasks)
+			t.get();
+	}
+
+	private void putInto(List<ColGroupUncompressedArray> ucg, DenseBlock db, int il, int iu, int jl, int ju) {
+		for(int i = il; i < iu; i++) {
+			final double[] rval = db.values(i);
+			final int off = db.pos(i);
+			for(int j = jl; j < ju; j++) {
+				rval[off + j] = ucg.get(j).array.getAsDouble(i);
+			}
+		}
 	}
 
 	private void logging(MatrixBlock mb) {

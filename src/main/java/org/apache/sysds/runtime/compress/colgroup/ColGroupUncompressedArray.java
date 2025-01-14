@@ -24,35 +24,32 @@ import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
- * Special sideways Compressed column group not supposed to be used outside of the compressed transform encode. 
+ * Special sideways compressed column group not supposed to be used outside of the compressed transform encode.
  */
 public class ColGroupUncompressedArray extends ColGroupUncompressed {
-	
+
 	public final Array<?> array;
 	public final int id; // columnID
 
-	public ColGroupUncompressedArray(Array<?> data, int id, IColIndex colIndexes){
+	public ColGroupUncompressedArray(Array<?> data, int id, IColIndex colIndexes) {
 		super(null, colIndexes);
 		this.array = data;
 		this.id = id;
 	}
 
-
-	@Override 
-	public int getNumValues(){
+	@Override
+	public int getNumValues() {
 		return array.size();
 	}
 
-
 	@Override
-	public long estimateInMemorySize(){
+	public long estimateInMemorySize() {
 		// not accurate estimate, but guaranteed larger.
-		return MatrixBlock.estimateSizeInMemory(array.size(),1,array.size()) + 80;
+		return MatrixBlock.estimateSizeInMemory(array.size(), 1, array.size()) + 80;
 	}
 
-
-	@Override 
-	public String toString(){
+	@Override
+	public String toString() {
 		return "UncompressedArrayGroup: " + id + " " + _colIndexes;
 	}
 

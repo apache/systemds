@@ -21,7 +21,6 @@ package org.apache.sysds.test.functions.compress.wordembedding;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.File;
 
@@ -36,12 +35,11 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.apache.sysds.test.functions.compress.table.CompressedTableOverwriteTest;
 import org.junit.Test;
 
 public class wordEmbeddingUseCase extends AutomatedTestBase {
 
-	protected static final Log LOG = LogFactory.getLog(CompressedTableOverwriteTest.class.getName());
+	protected static final Log LOG = LogFactory.getLog(wordEmbeddingUseCase.class.getName());
 
 	private final static String TEST_DIR = "functions/compress/wordembedding/";
 

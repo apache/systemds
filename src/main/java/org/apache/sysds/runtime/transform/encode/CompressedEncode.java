@@ -61,7 +61,6 @@ import org.apache.sysds.runtime.frame.data.columns.HashMapToInt;
 import org.apache.sysds.runtime.frame.data.compress.ArrayCompressionStatistics;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderBin.BinMethod;
-import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.stats.Timing;
 
@@ -92,7 +91,7 @@ public class CompressedEncode {
 		this.in = in;
 		this.k = k;
 		// this.pool = k > 1 && CommonThreadPool.useParallelismOnThread() ? CommonThreadPool.get(k) : null;
-		this.pool =  null;
+		this.pool = null;
 		this.inputContainsCompressed = containsCompressed(in);
 	}
 
@@ -204,7 +203,6 @@ public class CompressedEncode {
 	private AColGroup encode(ColumnEncoderComposite c) throws Exception {
 		final Timing t = new Timing();
 		AColGroup g = executeEncode(c);
-
 		if(LOG.isDebugEnabled())
 			LOG.debug(String.format("Encode: columns: %4d estimateDistinct: %6d distinct: %6d size: %6d time: %10f",
 				c._colID, c._estNumDistincts, g.getNumValues(), g.estimateInMemorySize(), t.stop()));

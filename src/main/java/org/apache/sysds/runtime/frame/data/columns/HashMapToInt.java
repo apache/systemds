@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
+import org.apache.sysds.common.Types.ValueType;
+
 public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable {
 
 	private static final long serialVersionUID = 3624988207265L;
@@ -268,6 +270,21 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 				while((n = n.next) != null);
 			}
 		}
+	}
+
+	@SuppressWarnings({"unchecked"})
+	public Array<K> inverse(ValueType t ) {
+		final Array<K> ar;
+
+		if(containsKey(null))
+			ar = (Array<K>) ArrayFactory.allocateOptional(t, size());
+		else
+			ar = (Array<K>) ArrayFactory.allocate(t, size());
+
+		forEach((k, v) -> {
+			ar.set(v, k);
+		});
+		return ar;
 	}
 
 	@Override

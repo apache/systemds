@@ -154,17 +154,7 @@ public class DDCArray<T> extends ACompressedArray<T> {
 			final AMapToData md = m.resize(rcd.size());
 
 			// Allocate the correct dictionary output
-			final Array<T> ar;
-			if(rcd.containsKey(null))
-				ar = (Array<T>) ArrayFactory.allocateOptional(arr.getValueType(), rcd.size());
-			else
-				ar = (Array<T>) ArrayFactory.allocate(arr.getValueType(), rcd.size());
-
-			// Set elements in the Dictionary array --- much smaller.
-			// This inverts the mapping such that the value
-			// is the index in the dictionary
-			for(Entry<T, Integer> e : rcd.entrySet())
-				ar.set(e.getValue(), e.getKey());
+			final Array<T> ar = rcd.inverse(arr.getValueType());
 
 			return new DDCArray<>(ar, md);
 		}

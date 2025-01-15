@@ -970,7 +970,7 @@ public abstract class Array<T> implements Writable {
 			&& distinctFound * 100 >= samplesTaken * 60; // More than 60 % distinct
 	}
 
-	protected int setAndAddToDict(HashMapToInt<T> rcd, AMapToData m, int i, Integer id) {
+	protected int setAndAddToDict(HashMapToInt<T> rcd, AMapToData m, int i, int id) {
 		final T val = getInternal(i);
 		final int v = rcd.putIfAbsentI(val, id);
 		if(v == -1) {

@@ -139,7 +139,7 @@ public class DDCArray<T> extends ACompressedArray<T> {
 			final int t = getTryThreshold(arr.getValueType(), s, arr.getInMemorySize());
 
 			// One pass algorithm...
-			final HashMapToInt<T> rcd = new HashMapToInt<T>(estimateUnique);
+			final HashMapToInt<T> rcd = new HashMapToInt<T>(estimateUnique == Integer.MAX_VALUE ?  16 : estimateUnique);
 			// map should guarantee to be able to hold the distinct values.
 			final AMapToData m = MapToFactory.create(s, Math.min(t, estimateUnique));
 			Integer id = 0;

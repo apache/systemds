@@ -39,7 +39,7 @@ public class Transform extends APerfTest<Object, FrameBlock> {
 	private final String spec;
 
 	public Transform(int N, IGenerate<FrameBlock> gen, int k, String spec) {
-		super(N, gen);
+		super(N,2, gen);
 		this.k = k;
 		this.spec = spec;
 		FrameBlock in = gen.take();
@@ -88,8 +88,8 @@ public class Transform extends APerfTest<Object, FrameBlock> {
 		int k = InfrastructureAnalyzer.getLocalParallelism();
 		FrameBlock in;
 
-		for(int i = 1; i < 1000; i *= 10) {
-			int rows = 100000 * i;
+		// for(int i = 1; i < 1000; i *= 10) {
+			int rows = 100000 * 100;
 			in = TestUtils.generateRandomFrameBlock(rows, new ValueType[] {ValueType.UINT4}, 32);
 
 			System.out.println("Without null");
@@ -129,16 +129,16 @@ public class Transform extends APerfTest<Object, FrameBlock> {
 			System.out.println("10 col Compressed with null");
 			in = FrameLibCompress.compress(in, k);
 			run10(k, in);
-		}
+		// }
 
 		System.exit(0); // forcefully stop.
 	}
 
 	private static void run10(int k, FrameBlock in) throws Exception {
 		ConstFrame gen = new ConstFrame(in);
-		new Transform(30, gen, k, "{}").run();
-		new Transform(30, gen, k, "{ids:true, recode:[1,2,3,4,5,6,7,8,9,10]}").run();
-		new Transform(30, gen, k, "{ids:true, bin:[" //
+		new Transform(10, gen, k, "{}").run();
+		new Transform(10, gen, k, "{ids:true, recode:[1,2,3,4,5,6,7,8,9,10]}").run();
+		new Transform(10, gen, k, "{ids:true, bin:[" //
 			+ "\n{id:1, method:equi-width, numbins:4}," //
 			+ "\n{id:2, method:equi-width, numbins:4}," //
 			+ "\n{id:3, method:equi-width, numbins:4}," //
@@ -150,7 +150,7 @@ public class Transform extends APerfTest<Object, FrameBlock> {
 			+ "\n{id:9, method:equi-width, numbins:4}," //
 			+ "\n{id:10, method:equi-width, numbins:4}," //
 			+ "]}").run();
-		new Transform(30, gen, k, "{ids:true, bin:[" //
+		new Transform(10, gen, k, "{ids:true, bin:[" //
 			+ "\n{id:1, method:equi-width, numbins:4}," //
 			+ "\n{id:2, method:equi-width, numbins:4}," //
 			+ "\n{id:3, method:equi-width, numbins:4}," //
@@ -162,20 +162,20 @@ public class Transform extends APerfTest<Object, FrameBlock> {
 			+ "\n{id:9, method:equi-width, numbins:4}," //
 			+ "\n{id:10, method:equi-width, numbins:4}," //
 			+ "],  dummycode:[1,2,3,4,5,6,7,8,9,10]}").run();
-		new Transform(30, gen, k, "{ids:true, hash:[1,2,3,4,5,6,7,8,9,10], K:10}").run();
-		new Transform(30, gen, k, "{ids:true, hash:[1,2,3,4,5,6,7,8,9,10], K:10, dummycode:[1,2,3,4,5,6,7,8,9,10]}")
+		new Transform(10, gen, k, "{ids:true, hash:[1,2,3,4,5,6,7,8,9,10], K:10}").run();
+		new Transform(10, gen, k, "{ids:true, hash:[1,2,3,4,5,6,7,8,9,10], K:10, dummycode:[1,2,3,4,5,6,7,8,9,10]}")
 			.run();
 	}
 
 	private static void run(int k, FrameBlock in) throws Exception {
 		ConstFrame gen = new ConstFrame(in);
 		// // passthrough
-		new Transform(30, gen, k, "{}").run();
-		new Transform(30, gen, k, "{ids:true, recode:[1]}").run();
-		new Transform(30, gen, k, "{ids:true, bin:[{id:1, method:equi-width, numbins:4}]}").run();
-		new Transform(30, gen, k, "{ids:true, bin:[{id:1, method:equi-width, numbins:4}], dummycode:[1]}").run();
-		new Transform(30, gen, k, "{ids:true, hash:[1], K:10}").run();
-		new Transform(30, gen, k, "{ids:true, hash:[1], K:10, dummycode:[1]}").run();
+		new Transform(10, gen, k, "{}").run();
+		new Transform(10, gen, k, "{ids:true, recode:[1]}").run();
+		new Transform(10, gen, k, "{ids:true, bin:[{id:1, method:equi-width, numbins:4}]}").run();
+		new Transform(10, gen, k, "{ids:true, bin:[{id:1, method:equi-width, numbins:4}], dummycode:[1]}").run();
+		new Transform(10, gen, k, "{ids:true, hash:[1], K:10}").run();
+		new Transform(10, gen, k, "{ids:true, hash:[1], K:10, dummycode:[1]}").run();
 	}
 
 }

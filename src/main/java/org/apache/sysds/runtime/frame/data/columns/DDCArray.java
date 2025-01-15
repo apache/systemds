@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.frame.data.columns;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
@@ -126,7 +125,6 @@ public class DDCArray<T> extends ACompressedArray<T> {
 	 * @param estimateUnique The estimated number of unique values
 	 * @return Either a compressed version or the original.
 	 */
-	@SuppressWarnings("unchecked")
 	public static <T> Array<T> compressToDDC(Array<T> arr, int estimateUnique) {
 		try {
 

@@ -166,9 +166,24 @@ public class MapToByte extends AMapToData {
 
 	@Override
 	public int[] getCounts(int[] ret) {
-		for(int i = 0; i < _data.length; i++)
+		final int h = (_data.length) % 8;
+		for(int i = 0; i < h; i++)
 			ret[_data[i] & 0xFF]++;
+		getCountsBy8P(ret, h, _data.length);
 		return ret;
+	}
+
+	private void getCountsBy8P(int[] ret, int s, int e) {
+		for(int i = s; i < e; i += 8) {
+			ret[_data[i] & 0xFF]++;
+			ret[_data[i + 1] & 0xFF]++;
+			ret[_data[i + 2] & 0xFF]++;
+			ret[_data[i + 3] & 0xFF]++;
+			ret[_data[i + 4] & 0xFF]++;
+			ret[_data[i + 5] & 0xFF]++;
+			ret[_data[i + 6] & 0xFF]++;
+			ret[_data[i + 7] & 0xFF]++;
+		}
 	}
 
 	@Override

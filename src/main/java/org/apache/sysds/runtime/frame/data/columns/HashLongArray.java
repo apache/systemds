@@ -27,6 +27,7 @@ import java.util.Arrays;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -101,11 +102,6 @@ public class HashLongArray extends Array<Object> implements IHashArray {
 	@Override
 	public void set(int index, double value) {
 		_data[index] = (long) value;
-	}
-
-	@Override
-	public void set(int rl, int ru, Array<Object> value) {
-		set(rl, ru, value, 0);
 	}
 
 	@Override
@@ -430,6 +426,16 @@ public class HashLongArray extends Array<Object> implements IHashArray {
 	@Override
 	public boolean possiblyContainsNaN() {
 		return false;
+	}
+
+	@Override
+	public void setM(HashMapToInt<Object> map, AMapToData m, int i) {
+		m.set(i, map.get(Long.valueOf(getLong(i))) - 1);
+	}
+
+	@Override
+	public void setM(HashMapToInt<Object> map, int si, AMapToData m, int i) {
+		m.set(i, map.get(Long.valueOf(getLong(i))) - 1);
 	}
 
 	@Override

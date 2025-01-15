@@ -94,7 +94,9 @@ public interface ColGroupIO {
 			}
 			ret += grp.getExactSizeOnDisk();
 		}
-		LOG.error(" duplicate dicts on exact Size on Disk : " + (colGroups.size() - dicts.size()) );
+		if(LOG.isWarnEnabled())
+			LOG.warn(" duplicate dicts on exact Size on Disk : " + (colGroups.size() - dicts.size()) );
+		
 		return ret;
 	}
 

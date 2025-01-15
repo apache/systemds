@@ -236,7 +236,7 @@ public class RecompilationTest extends AutomatedTestBase {
 		// original compilation used for comparison
 		Program expectedProgram = ResourceCompiler.compile(HOME+"mm_test.dml", nvargs);
 		Program recompiledProgram = runTest(precompiledProgram, expectedProgram, driverMemory, numberExecutors, executorMemory);
-		System.out.println(Explain.explain(recompiledProgram));
+
 		Optional<Instruction> mmInstruction = ((BasicProgramBlock) recompiledProgram.getProgramBlocks().get(0)).getInstructions().stream()
 				.filter(inst -> (Objects.equals(expectedSparkExecType, inst instanceof SPInstruction) && Objects.equals(inst.getOpcode(), expectedOpcode)))
 				.findFirst();

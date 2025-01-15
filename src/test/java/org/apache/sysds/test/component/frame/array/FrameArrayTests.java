@@ -80,6 +80,7 @@ public class FrameArrayTests {
 	@Parameters
 	public static Collection<Object[]> data() {
 		ArrayList<Object[]> tests = new ArrayList<>();
+		FrameBlock.debug = true;
 
 		try {
 			int[] seeds = new int[] {1, 6, 123, 232};
@@ -467,7 +468,7 @@ public class FrameArrayTests {
 			ArrayCompressionStatistics s = (a.size() < 1000) ? //
 				a.statistics(a.size()) : a.statistics(1000);
 			assertNotNull(s); // not ever allowed to be null!!
-			if(a.getValueType() != ValueType.BOOLEAN || a.containsNull()) 
+			if(a.getValueType() != ValueType.BOOLEAN || a.containsNull())
 				assertTrue(s.toString(), s.compressedSizeEstimate <= s.originalSize);
 			else // not true if we do some other compression scheme. but in general Boolean makes it bigger.
 				assertTrue(s.toString(), s.compressedSizeEstimate >= s.originalSize);
@@ -532,11 +533,17 @@ public class FrameArrayTests {
 
 	@Test
 	public void testSliceStart() {
-		int size = a.size();
-		if(size <= 1)
-			return;
-		Array<?> aa = a.slice(0, a.size() - 2);
-		compare(aa, a, 0);
+		try {
+			int size = a.size();
+			if(size <= 1)
+				return;
+			Array<?> aa = a.slice(0, a.size() - 2);
+			compare(aa, a, 0);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	@Test
@@ -2146,11 +2153,14 @@ public class FrameArrayTests {
 	@Test
 	public void createRecodeMap() {
 		if(a.size() < 500) {
-			Map<?, Long> m = a.getRecodeMap();
+			Map<?, Integer> m = a.getRecodeMap();
 			for(int i = 0; i < a.size(); i++) {
-				Object v = a.get(i);
+				Object v = a.getInternal(i);
 				if(v != null) {
-					assertTrue(m.containsKey(v));
+					if(!m.containsKey(v)) {
+						fail("For Array Class:" + a.getClass().getSimpleName() + " Recode map  " + m + " did not contain key "
+							+ v);
+					}
 				}
 			}
 		}
@@ -2159,7 +2169,6 @@ public class FrameArrayTests {
 	@Test
 	public void extractDouble() {
 		try {
-
 			double[] ret = new double[a.size()];
 			a.extractDouble(ret, 0, a.size());
 			for(int i = 0; i < a.size(); i++) {

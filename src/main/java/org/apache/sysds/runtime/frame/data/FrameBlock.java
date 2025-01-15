@@ -769,7 +769,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 				out.writeUTF(getColumnName(j));
 				_colmeta[j].write(out);
 			}
-			if(type >= 0 && nRow > 0) // if allocated write column data
+			if(type > 0 && nRow > 0) // if allocated write column data
 				_coldata[j].write(out);
 		}
 	}
@@ -910,7 +910,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 				size += IOUtilFunctions.getUTFSize(getColumnName(j));
 				size += _colmeta[j].getExactSerializedSize();
 			}
-			if(type >= 0)
+			if(type > 0)
 				size += _coldata[j].getExactSerializedSize();
 		}
 		return size;
@@ -1267,8 +1267,8 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	 * @param col is the column # from frame data which contains Recode map generated earlier.
 	 * @return map of token and code for every element in the input column of a frame containing Recode map
 	 */
-	public Map<Object, Long> getRecodeMap(int col) {
-		return _coldata[col].getRecodeMap();
+	public Map<Object, Integer> getRecodeMap(int col) {
+		return _coldata[col].getRecodeMap(4);
 	}
 
 	@Override

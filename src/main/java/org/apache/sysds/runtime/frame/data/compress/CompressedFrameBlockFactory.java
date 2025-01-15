@@ -140,6 +140,7 @@ public class CompressedFrameBlockFactory {
 	private Array<?> allocateCorrectedType(int i) {
 		final ArrayCompressionStatistics s = stats[i];
 		final Array<?> a = in.getColumn(i);
+		
 		if(s.valueType != a.getValueType())
 			return ArrayFactory.allocate(s.valueType, a.size(), s.containsNull);
 		else
@@ -207,7 +208,7 @@ public class CompressedFrameBlockFactory {
 		Timing time = LOG.isDebugEnabled() ? new Timing(true) : null;
 		if(s.bestType != null && s.shouldCompress) {
 			if(s.bestType == FrameArrayType.DDC)
-				compressedColumns[i] = DDCArray.compressToDDC(a);
+				compressedColumns[i] = DDCArray.compressToDDC(a, s.sampledAllRows ? s.nUnique : Integer.MAX_VALUE);
 			else
 				throw new RuntimeException("Unsupported frame compression encoding : " + s.bestType);
 		}
@@ -226,11 +227,8 @@ public class CompressedFrameBlockFactory {
 			for(int i = 0; i < compressedColumns.length; i++) {
 				if(in.getColumn(i) instanceof ACompressedArray)
 					sb.append(String.format("Col: %3d, %s\n", i, "Column is already compressed"));
-				else if(stats[i].shouldCompress)
-					sb.append(String.format("Col: %3d, %s\n", i, stats[i]));
 				else
-					sb.append(String.format("Col: %3d, No Compress, Type: %s", //
-						i, in.getColumn(i).getClass().getSimpleName()));
+					sb.append(String.format("Col: %3d, %s\n", i, stats[i]));
 			}
 			LOG.debug(sb);
 		}

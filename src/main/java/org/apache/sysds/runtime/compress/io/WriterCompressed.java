@@ -57,6 +57,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.util.HDFSTool;
 
 public final class WriterCompressed extends MatrixWriter {
 
@@ -146,7 +147,7 @@ public final class WriterCompressed extends MatrixWriter {
 		}
 
 		fs = IOUtilFunctions.getFileSystem(new Path(fname), job);
-
+	
 		int k = OptimizerUtils.getParallelBinaryWriteParallelism();
 
 		k =  Math.min(k, (int)(src.getInMemorySize() /  InfrastructureAnalyzer.getBlockSize(fs)));
@@ -213,8 +214,6 @@ public final class WriterCompressed extends MatrixWriter {
 		throws IOException {
 		try {
 			final CompressedMatrixBlock cmb = (CompressedMatrixBlock) mb;
-
-			setupWrite();
 			final Path path = new Path(fname);
 			Writer w = generateWriter(job, path, fs);
 			for(int bc = 0; bc * blen < clen; bc++) {// column blocks
@@ -244,7 +243,6 @@ public final class WriterCompressed extends MatrixWriter {
 	private void writeMultiBlockCompressedParallel(MatrixBlock b, final int rlen, final int clen, final int blen, int k)
 		throws IOException {
 
-		setupWrite();
 		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
 			final ArrayList<Callable<Object>> tasks = new ArrayList<>();
@@ -265,7 +263,8 @@ public final class WriterCompressed extends MatrixWriter {
 			final int colBlocks = (int) Math.ceil((double) clen / blen );
 			final int nBlocks = (int) Math.ceil((double) rlen / blen);
 			final int blocksPerThread = Math.max(1, nBlocks * colBlocks / k );
-
+			HDFSTool.deleteFileIfExistOnHDFS(new Path(fname + ".dict"), job);
+			
 			int i = 0;
 			for(int bc = 0; bc * blen < clen; bc++) {// column blocks
 				final int sC = bc * blen;
@@ -305,13 +304,6 @@ public final class WriterCompressed extends MatrixWriter {
 		finally {
 			pool.shutdown();
 		}
-	}
-
-	private void setupWrite() throws IOException {
-		// final Path path = new Path(fname);
-		// final JobConf job = ConfigurationManager.getCachedJobConf();
-		// HDFSTool.deleteFileIfExistOnHDFS(path, job);
-		// HDFSTool.createDirIfNotExistOnHDFS(path, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 	}
 
 	private Path getPath(int id) {
@@ -397,6 +389,7 @@ public final class WriterCompressed extends MatrixWriter {
 		public Object call() throws Exception {
 
 			Path p = new Path(fname + ".dict", IOUtilFunctions.getPartFileName(id));
+			HDFSTool.deleteFileIfExistOnHDFS(p, job);
 			try(Writer w = SequenceFile.createWriter(job, Writer.file(p), //
 				Writer.bufferSize(4096), //
 				Writer.keyClass(DictWritable.K.class), //

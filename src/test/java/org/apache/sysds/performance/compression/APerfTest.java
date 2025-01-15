@@ -36,10 +36,22 @@ public abstract class APerfTest<T, G> {
 	/** Default Repetitions */
 	protected final int N;
 
+	/** Warmup iterations */
+	protected final int W;
+
 	protected APerfTest(int N, IGenerate<G> gen) {
 		ret = new ArrayList<>(N);
 		this.gen = gen;
 		this.N = N;
+		this.W = 10;
+	}
+
+
+	protected APerfTest(int N, int W, IGenerate<G> gen) {
+		ret = new ArrayList<>(N);
+		this.gen = gen;
+		this.N = N;
+		this.W = 10;
 	}
 
 	protected void execute(F f, String name) throws InterruptedException {
@@ -53,7 +65,7 @@ public abstract class APerfTest<T, G> {
 	}
 
 	protected void execute(F f, F c, F b, String name) throws InterruptedException {
-		warmup(f, 10);
+		warmup(f, W);
 		gen.generate(N);
 		ret.clear();
 		double[] times = TimingUtils.time(f, c, b, N, gen);

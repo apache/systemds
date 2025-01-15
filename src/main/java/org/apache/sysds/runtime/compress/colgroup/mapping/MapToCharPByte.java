@@ -37,7 +37,7 @@ public class MapToCharPByte extends AMapToData {
 
 	private static final long serialVersionUID = 6315708056775476541L;
 
-	public static final int max = (0xFFFF + 1) * 128 -1;
+	public static final int max = (0xFFFF + 1) * 128 - 1;
 	private final char[] _data_c;
 	private final byte[] _data_b; // next byte after the char
 
@@ -100,7 +100,7 @@ public class MapToCharPByte extends AMapToData {
 	}
 
 	@Override
-	public void set(int l, int u, int off, AMapToData tm){
+	public void set(int l, int u, int off, AMapToData tm) {
 		for(int i = l; i < u; i++, off++) {
 			set(i, tm.getIndex(off));
 		}
@@ -140,10 +140,8 @@ public class MapToCharPByte extends AMapToData {
 		out.writeByte(MAP_TYPE.CHAR_BYTE.ordinal());
 		out.writeInt(getUnique());
 		out.writeInt(_data_c.length);
-		for(int i = 0; i < _data_c.length; i++)
-			out.writeChar(_data_c[i]);
-		for(int i = 0; i < _data_c.length; i++)
-			out.writeByte(_data_b[i]);
+		MapToChar.writeChars(out, _data_c);
+		out.write(_data_b);
 	}
 
 	protected static MapToCharPByte readFields(DataInput in) throws IOException {
@@ -169,12 +167,26 @@ public class MapToCharPByte extends AMapToData {
 			set(i, d[i]);
 	}
 
-
 	@Override
 	public int[] getCounts(int[] ret) {
-		for(int i = 0; i < size(); i++)
-			ret[getIndex(i)]++;
+		final int h = (size()) % 8;
+		for(int i = 0; i < h; i++)
+			ret[_data_c[i] + ((int) _data_b[i] << 16)]++;
+		getCountsBy8P(ret, h, size());
 		return ret;
+	}
+
+	private void getCountsBy8P(int[] ret, int s, int e) {
+		for(int i = s; i < e; i += 8) {
+			ret[getIndex(i)]++;
+			ret[getIndex(i + 1)]++;
+			ret[getIndex(i + 2)]++;
+			ret[getIndex(i + 3)]++;
+			ret[getIndex(i + 4)]++;
+			ret[getIndex(i + 5)]++;
+			ret[getIndex(i + 6)]++;
+			ret[getIndex(i + 7)]++;
+		}
 	}
 
 	@Override
@@ -263,7 +275,6 @@ public class MapToCharPByte extends AMapToData {
 
 	}
 
-
 	@Override
 	public boolean equals(AMapToData e) {
 		return e instanceof MapToCharPByte && //
@@ -325,7 +336,6 @@ public class MapToCharPByte extends AMapToData {
 		c[r + 6] += values[getIndex(r + 6)];
 		c[r + 7] += values[getIndex(r + 7)];
 	}
-
 
 	@Override
 	public void decompressToRange(double[] c, int rl, int ru, int offR, double[] values) {

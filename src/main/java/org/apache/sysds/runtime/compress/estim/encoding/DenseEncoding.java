@@ -247,7 +247,7 @@ public class DenseEncoding extends AEncode {
 	private final void combineDenseWIthHashMapPByteOut(final AMapToData lm, final AMapToData rm, final int size,
 		final int nVL, final MapToCharPByte ret, HashMapLongInt m) {
 		for(int r = 0; r < size; r++)
-			addValHashMapCharByte(lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, ret);
+			addValHashMapCharByte(calculateID(lm, rm, nVL, r), r, m, ret);
 	}
 
 	private final void combineDenseWIthHashMapCharOut(final AMapToData lm, final AMapToData rm, final int size,
@@ -261,7 +261,7 @@ public class DenseEncoding extends AEncode {
 	private final void combineDenseWIthHashMapCharOutGeneric(final AMapToData lm, final AMapToData rm, final int size,
 		final int nVL, final MapToChar ret, HashMapLongInt m) {
 		for(int r = 0; r < size; r++)
-			addValHashMapChar(lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, ret);
+			addValHashMapChar(calculateID(lm, rm, nVL, r), r, m, ret);
 	}
 
 	private final void combineDenseWIthHashMapAllChar(final AMapToData lm, final AMapToData rm, final int size,
@@ -276,43 +276,27 @@ public class DenseEncoding extends AEncode {
 	protected final void combineDenseWithHashMapGeneric(final AMapToData lm, final AMapToData rm, final int size,
 		final int nVL, final AMapToData ret, HashMapLongInt m) {
 		for(int r = 0; r < size; r++)
-			addValHashMap(lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, ret);
+			addValHashMap(calculateID(lm, rm, nVL, r), r, m, ret);
 	}
 
 	protected final DenseEncoding combineDenseWithMapToData(final AMapToData lm, final AMapToData rm, final int size,
 		final int nVL, final AMapToData ret, final int maxUnique, final AMapToData m) {
-		if(m instanceof MapToChar)
-			return combineDenseWithMapToDataToChar(lm, rm, size, nVL, ret, maxUnique, (MapToChar) m);
-		else
-			return combineDenseWithMapToDataGeneric(lm, rm, size, nVL, ret, maxUnique, m);
-
-	}
-
-	protected final DenseEncoding combineDenseWithMapToDataToChar(final AMapToData lm, final AMapToData rm,
-		final int size, final int nVL, final AMapToData ret, final int maxUnique, final MapToChar m) {
 		int newUID = 1;
-		for(int r = 0; r < size; r++)
-			newUID = addValMapToDataChar(lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, newUID, ret);
+		newUID = addValRange(lm, rm, size, nVL, ret, m, newUID, 0, size);
 		ret.setUnique(newUID - 1);
 		return new DenseEncoding(ret);
+
 	}
 
-	protected final DenseEncoding combineDenseWithMapToDataGeneric(final AMapToData lm, final AMapToData rm,
-		final int size, final int nVL, final AMapToData ret, final int maxUnique, final AMapToData m) {
-		int newUID = 1;
-		for(int r = 0; r < size; r++)
-			newUID = addValMapToData(lm.getIndex(r) + rm.getIndex(r) * nVL, r, m, newUID, ret);
-		ret.setUnique(newUID - 1);
-		return new DenseEncoding(ret);
+	private int addValRange(final AMapToData lm, final AMapToData rm, final int size, final int nVL,
+		final AMapToData ret, final AMapToData m, int newUID, int start, int end) {
+		for(int r = start; r < end; r++)
+			newUID = addValMapToData(calculateID(lm, rm, nVL, r), r, m, newUID, ret);
+		return newUID;
 	}
 
-	protected static int addValMapToDataChar(final int nv, final int r, final MapToChar map, int newId,
-		final AMapToData d) {
-		int mv = map.getIndex(nv);
-		if(mv == 0)
-			mv = map.setAndGet(nv, newId++);
-		d.set(r, mv - 1);
-		return newId;
+	private int calculateID(final AMapToData lm, final AMapToData rm, final int nVL, int r) {
+		return lm.getIndex(r) + rm.getIndex(r) * nVL;
 	}
 
 	protected static int addValMapToData(final int nv, final int r, final AMapToData map, int newId,

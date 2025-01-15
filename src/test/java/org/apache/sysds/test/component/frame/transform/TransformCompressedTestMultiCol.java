@@ -24,14 +24,19 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.lib.FrameLibCompress;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.transform.encode.CompressedEncode;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,6 +51,9 @@ public class TransformCompressedTestMultiCol {
 	private final int k;
 
 	public TransformCompressedTestMultiCol(FrameBlock data, int k) {
+		Thread.currentThread().setName("test_transformThread");
+		Logger.getLogger(CommonThreadPool.class.getName()).setLevel(Level.OFF);
+		CompressedEncode.ROW_PARALLELIZATION_THRESHOLD = 10;
 		this.data = data;
 		this.k = k;
 	}
@@ -56,7 +64,7 @@ public class TransformCompressedTestMultiCol {
 		final int[] threads = new int[] {1, 4};
 		try {
 
-			ValueType[] kPlusCols = new ValueType[1002];
+			ValueType[] kPlusCols = new ValueType[100];
 
 			Arrays.fill(kPlusCols, ValueType.BOOLEAN);
 
@@ -77,6 +85,12 @@ public class TransformCompressedTestMultiCol {
 
 				TestUtils.generateRandomFrameBlock(5, kPlusCols, 322),
 				TestUtils.generateRandomFrameBlock(1020, kPlusCols, 322),
+				FrameLibCompress.compress(TestUtils.generateRandomFrameBlock(1030, new ValueType[] {
+					ValueType.UINT4, ValueType.BOOLEAN, ValueType.UINT4}, 231, 0.0), 2),
+				FrameLibCompress.compress(TestUtils.generateRandomFrameBlock(1030, new ValueType[] {
+					ValueType.UINT4, ValueType.BOOLEAN, ValueType.UINT4}, 231, 0.5), 2),
+					
+	
 
 			};
 			blocks[2].ensureAllocatedColumns(20);
@@ -152,6 +166,7 @@ public class TransformCompressedTestMultiCol {
 			MultiColumnEncoder encoderNormal = EncoderFactory.createEncoder(spec, data.getColumnNames(),
 				data.getNumColumns(), meta);
 			MatrixBlock outNormal = encoderNormal.encode(data, k);
+
 
 			TestUtils.compareMatrices(outNormal, outCompressed, 0, "Not Equal after apply");
 

@@ -60,11 +60,6 @@ public abstract class ACompressedArray<T> extends Array<T> {
 	}
 
 	@Override
-	public void set(int rl, int ru, Array<T> value, int rlSrc) {
-		throw new DMLCompressionException("Invalid to set value in CompressedArray");
-	}
-
-	@Override
 	public void setNz(int rl, int ru, Array<T> value) {
 		throw new DMLCompressionException("Invalid to set value in CompressedArray");
 	}

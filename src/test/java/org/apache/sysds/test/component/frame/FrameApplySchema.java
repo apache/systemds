@@ -53,9 +53,9 @@ import org.mockito.Mockito;
 public class FrameApplySchema {
 	protected static final Log LOG = LogFactory.getLog(FrameApplySchema.class.getName());
 
-	static {
-		FrameLibApplySchema.PAR_ROW_THRESHOLD = 10;
-	}
+	// static {
+	// 	FrameLibApplySchema.PAR_ROW_THRESHOLD = 10;
+	// }
 
 	@Test
 	public void testApplySchemaStringToBoolean() {

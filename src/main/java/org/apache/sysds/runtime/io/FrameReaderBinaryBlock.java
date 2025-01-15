@@ -31,6 +31,8 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.ArrayWrapper;
+import org.apache.sysds.runtime.frame.data.columns.DDCArray;
 
 /**
  * Single-threaded frame binary block reader.
@@ -58,6 +60,9 @@ public class FrameReaderBinaryBlock extends FrameReader {
 
 		// core read (sequential/parallel)
 		readBinaryBlockFrameFromHDFS(path, job, fs, ret, rlen, clen);
+		
+		readBinaryDictionariesFromHDFS(new Path(fname + ".dict"), job, fs, ret);
+
 		return ret;
 	}
 
@@ -114,6 +119,29 @@ public class FrameReaderBinaryBlock extends FrameReader {
 		}
 	}
 
+	protected static void readBinaryDictionariesFromHDFS(Path path, JobConf job, FileSystem fs, FrameBlock ret) {
+		try{
+			if(fs.exists(path)){
+				LongWritable key = new LongWritable();
+				ArrayWrapper value = new ArrayWrapper(null);
+				SequenceFile.Reader reader = new SequenceFile.Reader(job, SequenceFile.Reader.file(path));
+				try{
+					while(reader.next(key,value)){
+						int colId = (int)key.get();
+						DDCArray<?> a = (DDCArray<?>) ret.getColumn(colId);
+						ret.setColumn(colId, a.setDict(value._a));
+					}
+				}
+				finally{
+					IOUtilFunctions.closeSilently(reader);
+				}
+			}
+		}
+		catch(IOException e){
+			throw new DMLRuntimeException("Failed to read Frame Dictionaries", e);
+		}
+	}
+
 	/**
 	 * Specific functionality of FrameReaderBinaryBlock, mostly used for testing.
 	 * 
@@ -143,4 +171,7 @@ public class FrameReaderBinaryBlock extends FrameReader {
 
 		return value;
 	}
+
+
+
 }

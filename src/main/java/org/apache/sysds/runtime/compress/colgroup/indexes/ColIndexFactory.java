@@ -126,7 +126,7 @@ public interface ColIndexFactory {
 			return ArrayIndex.estimateInMemorySizeStatic(nCol);
 	}
 
-	public static IColIndex combine(List<AColGroup> gs) {
+	public static IColIndex combine(List<? extends AColGroup> gs) {
 		int numCols = 0;
 		for(AColGroup g : gs)
 			numCols += g.getNumCols();

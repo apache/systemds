@@ -348,6 +348,7 @@ public class CompressedMatrixBlockFactory {
 				LOG.info("Threshold was set to : " + threshold + " but it was above original " + _stats.originalCost);
 				LOG.info("Original size       : " + _stats.originalSize);
 				LOG.info("single col size     : " + _stats.estimatedSizeCols);
+				LOG.debug(String.format("--compressed size:   %16d", _stats.originalSize));
 				if(!(costEstimator instanceof MemoryCostEstimator)) {
 					LOG.info("original cost      : " + _stats.originalCost);
 					LOG.info("single col cost    : " + _stats.estimatedCostCols);

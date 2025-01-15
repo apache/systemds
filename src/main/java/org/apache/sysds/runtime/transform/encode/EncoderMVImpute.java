@@ -325,7 +325,7 @@ public class EncoderMVImpute extends LegacyEncoder {
 			int colID = _colList[j];
 			String mvVal = UtilFunctions.unquote(meta.getColumnMetadata(colID - 1).getMvValue());
 			if(_rcList.contains(colID)) {
-				Long mvVal2 = meta.getRecodeMap(colID - 1).get(mvVal);
+				Integer mvVal2 = meta.getRecodeMap(colID - 1).get(mvVal);
 				if(mvVal2 == null)
 					throw new RuntimeException(
 						"Missing recode value for impute value '" + mvVal + "' (colID=" + colID + ").");

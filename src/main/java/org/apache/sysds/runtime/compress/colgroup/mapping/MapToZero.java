@@ -110,8 +110,7 @@ public class MapToZero extends AMapToData {
 
 	@Override
 	public int[] getCounts(int[] ret) {
-		final int sz = size();
-		ret[0] = sz;
+		ret[0] = size();
 		return ret;
 	}
 

@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.frame.data.lib.FrameUtil;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.MemoryEstimates;
 
 public class CharArray extends Array<Character> {
 
@@ -98,11 +99,6 @@ public class CharArray extends Array<Character> {
 	public void setFromOtherType(int rl, int ru, Array<?> value) {
 		for(int i = rl; i <= ru; i++)
 			_data[i] = value.get(i).toString().charAt(0);
-	}
-
-	@Override
-	public void set(int rl, int ru, Array<Character> value) {
-		set(rl, ru, value, 0);
 	}
 
 	@Override
@@ -375,6 +371,17 @@ public class CharArray extends Array<Character> {
 	@Override
 	public boolean possiblyContainsNaN() {
 		return false;
+	}
+
+	@Override
+	public long getInMemorySize() {
+		return estimateInMemorySize(_size);
+	}
+
+	public static long estimateInMemorySize(int nRow) {
+		long size = baseMemoryCost(); // object header + object reference
+		size += MemoryEstimates.charArrayCost(nRow);
+		return size;
 	}
 
 	@Override

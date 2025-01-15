@@ -87,9 +87,10 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 	public int getI(K key) {
 		final int ix = hash(key);
 		Node<K> b = buckets[ix];
+		final boolean keyNull = key == null;
 		if(b != null) {
 			do {
-				if(b.key.equals(key))
+				if((keyNull && b.key == null) || (b.key != null && b.key.equals(key)))
 					return b.value;
 			}
 			while((b = b.next) != null);
@@ -98,6 +99,8 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 	}
 
 	public int hash(K key) {
+		if(key == null)
+			return 0;
 		return Math.abs(key.hashCode()) % buckets.length;
 	}
 
@@ -130,8 +133,9 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 
 	private int putIfAbsentBucket(int ix, K key, int value) {
 		Node<K> b = buckets[ix];
+		final boolean keyNull = key == null;
 		while(true) {
-			if(b.key.equals(key))
+			if((keyNull && b.key == null) || (b.key != null && b.key.equals(key)))
 				return b.value;
 			if(b.next == null) {
 				b.setNext(new Node<>(key, value, null));
@@ -159,9 +163,9 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 
 	private int addToBucket(int ix, K key, int value) {
 		Node<K> b = buckets[ix];
+		final boolean keyNull = key == null;
 		while(true) {
-
-			if(b.key.equals(key)) {
+			if((keyNull && b.key == null) || (b.key != null && b.key.equals(key))){
 				int tmp = b.getValue();
 				b.setValue(value);
 				return tmp;

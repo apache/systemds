@@ -22,8 +22,6 @@ package org.apache.sysds.runtime.frame.data.columns;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -141,7 +139,7 @@ public class DDCArray<T> extends ACompressedArray<T> {
 			final int t = getTryThreshold(arr.getValueType(), s, arr.getInMemorySize());
 
 			// One pass algorithm...
-			final Map<T, Integer> rcd = new HashMap<>();
+			final HashMapToInt<T> rcd = new HashMapToInt<T>(estimateUnique);
 			// map should guarantee to be able to hold the distinct values.
 			final AMapToData m = MapToFactory.create(s, Math.min(t, estimateUnique));
 			Integer id = 0;
@@ -157,7 +155,7 @@ public class DDCArray<T> extends ACompressedArray<T> {
 
 			// Allocate the correct dictionary output
 			final Array<T> ar;
-			if(rcd.keySet().contains(null))
+			if(rcd.containsKey(null))
 				ar = (Array<T>) ArrayFactory.allocateOptional(arr.getValueType(), rcd.size());
 			else
 				ar = (Array<T>) ArrayFactory.allocate(arr.getValueType(), rcd.size());

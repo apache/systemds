@@ -216,7 +216,7 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 			Node<K>[] tmp = (Node<K>[]) new Node[buckets.length * 2];
 			Node<K>[] oldBuckets = buckets;
 			buckets = tmp;
-			size = nullV == -1 ? 0 : 1;
+			size = (nullV == -1) ? 0 : 1;
 			for(Node<K> n : oldBuckets) {
 				if(n != null)
 					do {

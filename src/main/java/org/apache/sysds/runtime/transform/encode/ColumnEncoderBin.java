@@ -356,6 +356,9 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	}
 
 	public void computeBins(double min, double max) {
+		if(min == max){
+			_numBin = 1;
+		}
 		// ensure allocated internal transformation metadata
 		if(_binMins == null || _binMaxs == null) {
 			_binMins = new double[_numBin];

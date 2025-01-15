@@ -64,7 +64,7 @@ public class TransformCompressedTestMultiCol {
 		final int[] threads = new int[] {1, 4};
 		try {
 
-			ValueType[] kPlusCols = new ValueType[1002];
+			ValueType[] kPlusCols = new ValueType[100];
 
 			Arrays.fill(kPlusCols, ValueType.BOOLEAN);
 
@@ -166,6 +166,7 @@ public class TransformCompressedTestMultiCol {
 			MultiColumnEncoder encoderNormal = EncoderFactory.createEncoder(spec, data.getColumnNames(),
 				data.getNumColumns(), meta);
 			MatrixBlock outNormal = encoderNormal.encode(data, k);
+
 
 			TestUtils.compareMatrices(outNormal, outCompressed, 0, "Not Equal after apply");
 

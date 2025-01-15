@@ -27,6 +27,7 @@ import org.apache.sysds.performance.generators.ConstFrame;
 import org.apache.sysds.performance.generators.IGenerate;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
+import org.apache.sysds.runtime.frame.data.lib.FrameLibCompress;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 import org.apache.sysds.test.TestUtils;
@@ -48,7 +49,7 @@ public class Transform extends APerfTest<Object, FrameBlock> {
 	}
 
 	public void run() throws Exception {
-		// execute(() -> te(), () -> clear(), "Normal");
+		execute(() -> te(), () -> clear(), "Normal");
 		execute(() -> tec(), () -> clear(), "Compressed");
 	}
 
@@ -88,46 +89,46 @@ public class Transform extends APerfTest<Object, FrameBlock> {
 		FrameBlock in;
 
 		for(int i = 1; i < 1000; i *= 10) {
+			int rows = 100000 * i;
+			in = TestUtils.generateRandomFrameBlock(rows, new ValueType[] {ValueType.UINT4}, 32);
 
-			// in = TestUtils.generateRandomFrameBlock(100000 * i, new ValueType[] {ValueType.UINT4}, 32);
+			System.out.println("Without null");
+			run(k, in);
 
-			// System.out.println("Without null");
-			// run(k, in);
+			System.out.println("Compressed without null");
+			in = FrameLibCompress.compress(in, k);
+			run(k, in);
 
-			// System.out.println("Compressed without null");
-			// in = FrameLibCompress.compress(in, k);
-			// run(k, in);
+			in = TestUtils.generateRandomFrameBlock(rows, new ValueType[] {ValueType.UINT4}, 32, 0.5);
 
-			// in = TestUtils.generateRandomFrameBlock(100000 * i, new ValueType[] {ValueType.UINT4}, 32, 0.5);
+			System.out.println("With null");
 
-			// System.out.println("With null");
-
-			// run(k, in);
-			// System.out.println("Compressed with null");
-			// in = FrameLibCompress.compress(in, k);
-			// run(k, in);
+			run(k, in);
+			System.out.println("Compressed with null");
+			in = FrameLibCompress.compress(in, k);
+			run(k, in);
 
 			in = TestUtils.generateRandomFrameBlock(
-				100000 * i, new ValueType[] {ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4,
+				rows, new ValueType[] {ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4,
 					ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4},
 				32);
 
 			System.out.println("10 col without null");
 			run10(k, in);
-			// System.out.println("10 col compressed without null");
-			// in = FrameLibCompress.compress(in, k);
-			// run10(k, in);
+			System.out.println("10 col compressed without null");
+			in = FrameLibCompress.compress(in, k);
+			run10(k, in);
 
 			in = TestUtils.generateRandomFrameBlock(
-				100000 * i, new ValueType[] {ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4,
+				rows, new ValueType[] {ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4,
 					ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4, ValueType.UINT4},
 				32, 0.5);
 
-			// System.out.println("10 col with null");
-			// run10(k, in);
-			// System.out.println("10 col Compressed with null");
-			// in = FrameLibCompress.compress(in, k);
-			// run10(k, in);
+			System.out.println("10 col with null");
+			run10(k, in);
+			System.out.println("10 col Compressed with null");
+			in = FrameLibCompress.compress(in, k);
+			run10(k, in);
 		}
 
 		System.exit(0); // forcefully stop.
@@ -135,46 +136,46 @@ public class Transform extends APerfTest<Object, FrameBlock> {
 
 	private static void run10(int k, FrameBlock in) throws Exception {
 		ConstFrame gen = new ConstFrame(in);
-		new Transform(300, gen, k, "{}").run();
-		// new Transform(300, gen, k, "{ids:true, recode:[1,2,3,4,5,6,7,8,9,10]}").run();
-		// new Transform(300, gen, k, "{ids:true, bin:[" //
-		// 	+ "\n{id:1, method:equi-width, numbins:4}," //
-		// 	+ "\n{id:2, method:equi-width, numbins:4}," //
-		// 	+ "\n{id:3, method:equi-width, numbins:4}," //
-		// 	+ "\n{id:4, method:equi-width, numbins:4}," //
-		// 	+ "\n{id:5, method:equi-width, numbins:4}," //
-		// 	+ "\n{id:6, method:equi-width, numbins:4}," //
-		// 	+ "\n{id:7, method:equi-width, numbins:4}," //
-		// 	+ "\n{id:8, method:equi-width, numbins:4}," //
-		// 	+ "\n{id:9, method:equi-width, numbins:4}," //
-		// 	+ "\n{id:10, method:equi-width, numbins:4}," //
-		// 	+ "]}").run();
-		// new Transform(300, gen, k, "{ids:true, bin:[" //
-		// 	+ "\n{id:1, method:equi-width, numbins:4}," //
-		// 	+ "\n{id:2, method:equi-width, numbins:4}," //
-		// 	+ "\n{id:3, method:equi-width, numbins:4}," //
-		// 	+ "\n{id:4, method:equi-width, numbins:4}," //
-		// 	+ "\n{id:5, method:equi-width, numbins:4}," //
-		// 	+ "\n{id:6, method:equi-width, numbins:4}," //
-		// 	+ "\n{id:7, method:equi-width, numbins:4}," //
-		// 	+ "\n{id:8, method:equi-width, numbins:4}," //
-		// 	+ "\n{id:9, method:equi-width, numbins:4}," //
-		// 	+ "\n{id:10, method:equi-width, numbins:4}," //
-		// 	+ "],  dummycode:[1,2,3,4,5,6,7,8,9,10]}").run();
-		// new Transform(300, gen, k, "{ids:true, hash:[1,2,3,4,5,6,7,8,9,10], K:10}").run();
-		// new Transform(300, gen, k, "{ids:true, hash:[1,2,3,4,5,6,7,8,9,10], K:10, dummycode:[1,2,3,4,5,6,7,8,9,10]}")
-		// 	.run();
+		new Transform(30, gen, k, "{}").run();
+		new Transform(30, gen, k, "{ids:true, recode:[1,2,3,4,5,6,7,8,9,10]}").run();
+		new Transform(30, gen, k, "{ids:true, bin:[" //
+			+ "\n{id:1, method:equi-width, numbins:4}," //
+			+ "\n{id:2, method:equi-width, numbins:4}," //
+			+ "\n{id:3, method:equi-width, numbins:4}," //
+			+ "\n{id:4, method:equi-width, numbins:4}," //
+			+ "\n{id:5, method:equi-width, numbins:4}," //
+			+ "\n{id:6, method:equi-width, numbins:4}," //
+			+ "\n{id:7, method:equi-width, numbins:4}," //
+			+ "\n{id:8, method:equi-width, numbins:4}," //
+			+ "\n{id:9, method:equi-width, numbins:4}," //
+			+ "\n{id:10, method:equi-width, numbins:4}," //
+			+ "]}").run();
+		new Transform(30, gen, k, "{ids:true, bin:[" //
+			+ "\n{id:1, method:equi-width, numbins:4}," //
+			+ "\n{id:2, method:equi-width, numbins:4}," //
+			+ "\n{id:3, method:equi-width, numbins:4}," //
+			+ "\n{id:4, method:equi-width, numbins:4}," //
+			+ "\n{id:5, method:equi-width, numbins:4}," //
+			+ "\n{id:6, method:equi-width, numbins:4}," //
+			+ "\n{id:7, method:equi-width, numbins:4}," //
+			+ "\n{id:8, method:equi-width, numbins:4}," //
+			+ "\n{id:9, method:equi-width, numbins:4}," //
+			+ "\n{id:10, method:equi-width, numbins:4}," //
+			+ "],  dummycode:[1,2,3,4,5,6,7,8,9,10]}").run();
+		new Transform(30, gen, k, "{ids:true, hash:[1,2,3,4,5,6,7,8,9,10], K:10}").run();
+		new Transform(30, gen, k, "{ids:true, hash:[1,2,3,4,5,6,7,8,9,10], K:10, dummycode:[1,2,3,4,5,6,7,8,9,10]}")
+			.run();
 	}
 
 	private static void run(int k, FrameBlock in) throws Exception {
 		ConstFrame gen = new ConstFrame(in);
 		// // passthrough
-		// new Transform(300, gen, k, "{}").run();
-		// new Transform(300, gen, k, "{ids:true, recode:[1]}").run();
-		// new Transform(300, gen, k, "{ids:true, bin:[{id:1, method:equi-width, numbins:4}]}").run();
-		// new Transform(300, gen, k, "{ids:true, bin:[{id:1, method:equi-width, numbins:4}], dummycode:[1]}").run();
-		// new Transform(300, gen, k, "{ids:true, hash:[1], K:10}").run();
-		// new Transform(300, gen, k, "{ids:true, hash:[1], K:10, dummycode:[1]}").run();
+		new Transform(30, gen, k, "{}").run();
+		new Transform(30, gen, k, "{ids:true, recode:[1]}").run();
+		new Transform(30, gen, k, "{ids:true, bin:[{id:1, method:equi-width, numbins:4}]}").run();
+		new Transform(30, gen, k, "{ids:true, bin:[{id:1, method:equi-width, numbins:4}], dummycode:[1]}").run();
+		new Transform(30, gen, k, "{ids:true, hash:[1], K:10}").run();
+		new Transform(30, gen, k, "{ids:true, hash:[1], K:10, dummycode:[1]}").run();
 	}
 
 }

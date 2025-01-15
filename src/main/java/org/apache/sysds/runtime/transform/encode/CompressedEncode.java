@@ -480,7 +480,8 @@ public class CompressedEncode {
 		return ret;
 	}
 
-	private <T> double[] passThroughCompressedCreateDict(final Array<T> a, Array<?> dict, final int dSize) throws InterruptedException, ExecutionException {
+	private <T> double[] passThroughCompressedCreateDict(final Array<T> a, Array<?> dict, final int dSize)
+		throws InterruptedException, ExecutionException {
 		final double[] vals;
 		final boolean nulls = a.containsNull();
 		if(dict.getValueType() == ValueType.FP64 && !nulls) {
@@ -507,11 +508,12 @@ public class CompressedEncode {
 		return vals;
 	}
 
-	private void passThroughTransferNoNulls(Array<?> dict, final int dSize, DoubleArray converted) throws InterruptedException, ExecutionException {
-		if(isParallel() && dSize > 10000){
-			final int blkz = Math.min(10000 , (dSize + k) / k);
+	private void passThroughTransferNoNulls(Array<?> dict, final int dSize, DoubleArray converted)
+		throws InterruptedException, ExecutionException {
+		if(isParallel() && dSize > 10000) {
+			final int blkz = Math.min(10000, (dSize + k) / k);
 			final List<Future<?>> tasks = new ArrayList<>();
-			for(int i = 0; i < dSize ; i += blkz){
+			for(int i = 0; i < dSize; i += blkz) {
 				int si = i;
 				int ei = Math.min(dSize, i + blkz);
 				tasks.add(pool.submit(() -> {
@@ -746,14 +748,20 @@ public class CompressedEncode {
 		return nnz;
 	}
 
-	private long putInto(List<ColGroupUncompressedArray> ucg, DenseBlock db, int il, int iu, int jl, int ju) {
+	private final long putInto(List<ColGroupUncompressedArray> ucg, DenseBlock db, int il, int iu, int jl, int ju) {
 		long nnz = 0;
 		for(int i = il; i < iu; i++) {
 			final double[] rval = db.values(i);
 			final int off = db.pos(i);
-			for(int j = jl; j < ju; j++) {
-				nnz += (rval[off + j] = ucg.get(j).array.getAsNaNDouble(i)) == 0.0 ? 1 : 0;
-			}
+			nnz = putIntoRowBlock(ucg, jl, ju, nnz, i, rval, off);
+		}
+		return nnz;
+	}
+
+	private final long putIntoRowBlock(List<ColGroupUncompressedArray> ucg, int jl, int ju, long nnz, int i,
+		final double[] rval, final int off) {
+		for(int j = jl; j < ju; j++) {
+			nnz += (rval[off + j] = ucg.get(j).array.getAsNaNDouble(i)) == 0.0 ? 1 : 0;
 		}
 		return nnz;
 	}

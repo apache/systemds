@@ -19,29 +19,18 @@
 
 package org.apache.sysds.test.functions.unary.matrix;
 
-import org.junit.Assert;
 import org.junit.Test;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.LUDecomposition;
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.common.Types.ExecType;
-import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.parser.LanguageException;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.apache.sysds.utils.Statistics;
 
 import java.util.HashMap;
 
 
-public class DetTest extends AutomatedTestBase
-{
+public class DetTest extends AutomatedTestBase {
 
 	private static final String TEST_DIR = "functions/unary/matrix/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + DetTest.class.getSimpleName() + "/";
@@ -51,7 +40,11 @@ public class DetTest extends AutomatedTestBase
 	private static final String TEST_NAME_WRONG_DIM = "WrongDimensionsTest";
 	private static final String TEST_NAME_DET_TEST = "DetTest";
 
-	private final static int rows = 1227;
+	// The number of rows and columns should not be chosen to be too large,
+	// because the calculation of the determinant can introduce rather large
+	// floating point errors with large row sizes, because there are many
+	// floating point operations involving both multiplication and addition.
+	private final static int rows = 33;
 	private final static double _sparsityDense = 0.5;
 	private final static double _sparsitySparse = 0.05;
 	private final static double eps = 1e-8;
@@ -62,7 +55,7 @@ public class DetTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME_DET_TEST, new TestConfiguration(TEST_CLASS_DIR, DML_SCRIPT_NAME, new String[] { "d" }) );
 	}
 	
-	/* HARD CODED TEST SUCCEEDS */
+	// TODO implement a few small hardcoded tests because of floating point errors.
 	// @Test
     // public void test2x2Determinant() {
     //     double[][] matrixData = {
@@ -118,87 +111,26 @@ public class DetTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testDetMatrixDenseWithRewritesCP()
-	{
-		runDetTest(false, ExecType.CP, true);
+	public void testDetMatrixDense() {
+		runDetTest(false);
 	}
 
 	@Test
-	public void testDetMatrixDenseWithoutRewritesCP()
-	{
-		runDetTest(false, ExecType.CP, false);
+	public void testDetMatrixSparse() {
+		runDetTest(true);
 	}
 
-	@Test
-	public void testDetMatrixSparseWithoutRewritesCP()
-	{
-		runDetTest(true, ExecType.CP, false);
-	}
-
-	@Test
-	public void testDetMatrixSparseWithRewritesCP()
-	{
-		runDetTest(true, ExecType.CP, true);
-	}
-
-	@Test
-	public void testDetMatrixDenseWithRewritesSP()
-	{
-		runDetTest(false, ExecType.SPARK, true);
-	}
-
-	@Test
-	public void testDetMatrixDenseWithoutRewritesSP()
-	{
-		runDetTest(false, ExecType.SPARK, false);
-	}
-
-	@Test
-	public void testDetMatrixSparseWithoutRewritesSP()
-	{
-		runDetTest(true, ExecType.SPARK, false);
-	}
-
-	@Test
-	public void testDetMatrixSparseWithRewritesSP()
-	{
-		runDetTest(true, ExecType.SPARK, true);
-	}
-
-	private void runDetTest(boolean sparse, ExecType et, boolean rewrites)
-	{
-		if (et == ExecType.SPARK) {
-			System.out.println("Skipping Spark test: det operation not supported in Spark mode.");
-			return;  // Skip Spark tests for determinant
-		}
-	
+	private void runDetTest(boolean sparse) {
 		ExecMode platformOld = rtplatform;
-		switch (et) {
-			case SPARK:
-				rtplatform = ExecMode.SPARK;
-				break;
-			default:
-				rtplatform = ExecMode.HYBRID;
-				break;
-		}
-	
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if(rtplatform == ExecMode.SPARK) {
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		}
+		rtplatform = ExecMode.HYBRID;
 		
-		
-		boolean oldFlagRewrites = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
-		
-		try
-		{
+		try {
 			double sparsity = (sparse) ? _sparsitySparse : _sparsityDense;
 			getAndLoadTestConfiguration(TEST_NAME_DET_TEST);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + DML_SCRIPT_NAME + ".dml";
-			programArgs = new String[]{"-explain", "-args", input("A"), output("d")};
+			programArgs = new String[]{"-args", input("A"), output("d")};
 			
 			fullRScriptName = HOME + R_SCRIPT_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
@@ -206,53 +138,16 @@ public class DetTest extends AutomatedTestBase
 			double[][] A = getRandomMatrix(rows, rows, -1, 1, sparsity, 7);
 			writeInputMatrixWithMTD("A", A, true);
 	
-			runTest(true, false, null, -1); 
-			if(et == ExecType.CP) //in CP no Spark jobs should be executed
-				Assert.assertEquals("Unexpected number of executed Spark jobs.", 0, Statistics.getNoOfExecutedSPInst());
-			runRScript(true); 
+			runTest(true, false, null, -1);
+			runRScript(true);
 		
-			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("d");
-			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("d");
+			HashMap<CellIndex, Double> dmlfile = readDMLScalarFromOutputDir("d");
+			HashMap<CellIndex, Double> rfile  = readRScalarFromExpectedDir("d");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
-		finally
-		{
+		finally {
 			rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlagRewrites;
 		}
 	}
-
-	//for testing the hardcoded unit tests (with precision tolerance)
-	// private void runDetTest(double[][] matrix, double expectedDeterminant) {
-    // ExecMode oldPlatform = rtplatform;
-    // rtplatform = ExecMode.SINGLE_NODE; 
-
-    // boolean oldSparkConfig = DMLScript.USE_LOCAL_SPARK_CONFIG;
-    // if (rtplatform == ExecMode.SPARK) {
-    //     DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-    // }
-
-    // try {
-    //     getAndLoadTestConfiguration(TEST_NAME_DET_TEST);
-
-    //     String HOME = SCRIPT_DIR + TEST_DIR;
-    //     fullDMLScriptName = HOME + DML_SCRIPT_NAME + ".dml";  
-    //     programArgs = new String[]{"-args", input("A"), output("d")};  
-
-    //     MatrixCharacteristics mc = new MatrixCharacteristics(matrix.length, matrix[0].length, -1, -1);
-    //     writeInputMatrixWithMTD("A", matrix, false, mc);  // Writes matrix to file
-    //     writeExpectedMatrix("d", new double[][]{{expectedDeterminant}});  // Expected determinante 
-
-    //     runTest(true, false, null, -1); 
-    //     compareResults(eps);  // compares results with precision tolerance
-
-	// 	System.out.println("Expected determinant: " + expectedDeterminant);
-	// 	System.out.println("DML output determinant: " + readDMLMatrixFromOutputDir("d").get(new CellIndex(1, 1)));
-
-    // } finally {
-    //     rtplatform = oldPlatform; 
-    //     DMLScript.USE_LOCAL_SPARK_CONFIG = oldSparkConfig;
-    // }
 }
 

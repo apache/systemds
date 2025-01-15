@@ -54,7 +54,9 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.ACompressedArray;
 import org.apache.sysds.runtime.frame.data.columns.Array;
+import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.apache.sysds.runtime.frame.data.columns.DDCArray;
+import org.apache.sysds.runtime.frame.data.columns.DoubleArray;
 import org.apache.sysds.runtime.frame.data.columns.HashMapToInt;
 import org.apache.sysds.runtime.frame.data.compress.ArrayCompressionStatistics;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -136,7 +138,7 @@ public class CompressedEncode {
 		}
 		if(ucg.size() > 0)
 			groups.add(combine(ucg));
-		
+
 		return groups;
 	}
 
@@ -175,24 +177,24 @@ public class CompressedEncode {
 		final IntArrayList ucCols = new IntArrayList();
 
 		// ColIndexFactory.create
-		for(int i = 0; i < encoders.size(); i++ ){
+		for(int i = 0; i < encoders.size(); i++) {
 			// for each encoder ...
 			ColumnEncoderComposite c = encoders.get(i);
 			Array<?> a = in.getColumn(c._colID - 1);
-			if(c.isPassThrough() && !(a instanceof ACompressedArray) && uncompressedPassThrough(a)){
+			if(c.isPassThrough() && !(a instanceof ACompressedArray) && uncompressedPassThrough(a)) {
 				// if this encoder was part of the uncompressed encoders.
 				// do not shift the column indexes because we combined all uncompressed columnGroups.
 				ucCols.appendValue(curCols++);
 			}
 			else {
 				AColGroup g = groups.get(curGroup);
-				groups.set( curGroup, g.shiftColIndices(curCols));
+				groups.set(curGroup, g.shiftColIndices(curCols));
 				curCols += g.getColIndices().size();
 			}
 		}
-		if( ucCols.size() > 0){
-			int i = groups.size()-1;
-			AColGroup g =groups.get(i);
+		if(ucCols.size() > 0) {
+			int i = groups.size() - 1;
+			AColGroup g = groups.get(i);
 			groups.set(i, g.copyAndSet(ColIndexFactory.create(ucCols)));
 		}
 		return curCols;
@@ -463,23 +465,65 @@ public class CompressedEncode {
 		return false;// if not booleans
 	}
 
-	private <T> AColGroup passThroughCompressed(final Array<T> a) {
+	private <T> AColGroup passThroughCompressed(final Array<T> a) throws InterruptedException, ExecutionException {
 		// only DDC possible currently.
 		DDCArray<?> aDDC = (DDCArray<?>) a;
 		Array<?> dict = aDDC.getDict();
-		double[] vals = new double[dict.size()];
-		if(a.containsNull())
-			for(int i = 0; i < dict.size(); i++)
-				vals[i] = dict.getAsNaNDouble(i);
-		else
-			for(int i = 0; i < dict.size(); i++)
-				vals[i] = dict.getAsDouble(i);
+		final int dSize = dict.size();
+
+		final double[] vals = passThroughCompressedCreateDict(a, dict, dSize);
 
 		ADictionary d = Dictionary.create(vals);
 		AColGroup ret = ColGroupDDC.create(SINGLE_COL_TMP_INDEX, d, aDDC.getMap(), null);
 
 		nnz.addAndGet(ret.getNumberNonZeros(in.getNumRows()));
 		return ret;
+	}
+
+	private <T> double[] passThroughCompressedCreateDict(final Array<T> a, Array<?> dict, final int dSize) throws InterruptedException, ExecutionException {
+		final double[] vals;
+		final boolean nulls = a.containsNull();
+		if(dict.getValueType() == ValueType.FP64 && !nulls) {
+			DoubleArray converted = ((DoubleArray) dict);
+			vals = converted.get();
+		}
+		else if(!nulls) {
+			DoubleArray converted = ArrayFactory.create(new double[dSize]);
+			passThroughTransferNoNulls(dict, dSize, converted);
+			vals = converted.get();
+		}
+		else {
+			vals = passThroughTransferNulls(dict, dSize);
+		}
+		return vals;
+	}
+
+	private double[] passThroughTransferNulls(Array<?> dict, final int dSize) {
+		final double[] vals;
+		vals = new double[dSize];
+		for(int i = 0; i < dSize; i++) {
+			vals[i] = dict.getAsNaNDouble(i);
+		}
+		return vals;
+	}
+
+	private void passThroughTransferNoNulls(Array<?> dict, final int dSize, DoubleArray converted) throws InterruptedException, ExecutionException {
+		if(isParallel() && dSize > 10000){
+			final int blkz = Math.min(10000 , (dSize + k) / k);
+			final List<Future<?>> tasks = new ArrayList<>();
+			for(int i = 0; i < dSize ; i += blkz){
+				int si = i;
+				int ei = Math.min(dSize, i + blkz);
+				tasks.add(pool.submit(() -> {
+					dict.changeType(converted, si, ei);
+				}));
+			}
+			for(Future<?> t : tasks)
+				t.get();
+		}
+		else {
+			dict.changeType(converted, 0, dSize);
+		}
 	}
 
 	private <T> AMapToData createMappingAMapToData(Array<T> a, HashMapToInt<T> map, boolean containsNull)
@@ -674,8 +718,8 @@ public class CompressedEncode {
 		nnz.addAndGet(combinedNNZ);
 		ret.setNonZeros(combinedNNZ);
 		if(LOG.isDebugEnabled())
-			LOG.debug("Combining of : " + ucg.size() + " uncompressed columns Time:" + t);
-		
+			LOG.debug("Combining of : " + ucg.size() + " uncompressed columns Time: " + t.stop());
+
 		return ColGroupUncompressed.create(ret, combinedCols);
 	}
 
@@ -708,7 +752,7 @@ public class CompressedEncode {
 			final double[] rval = db.values(i);
 			final int off = db.pos(i);
 			for(int j = jl; j < ju; j++) {
-				nnz += (rval[off + j] = ucg.get(j).array.getAsDouble(i)) == 0.0 ? 1 : 0;
+				nnz += (rval[off + j] = ucg.get(j).array.getAsNaNDouble(i)) == 0.0 ? 1 : 0;
 			}
 		}
 		return nnz;

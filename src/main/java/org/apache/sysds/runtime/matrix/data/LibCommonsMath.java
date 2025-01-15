@@ -563,18 +563,53 @@ public class LibCommonsMath
 
 		final int useBuildinStrategy = 0;
 		final int useGaussianStrategy = 1;
-		int computationStrategy = useBuildinStrategy;
+		final int useBareissStrategy = 2;
+		int computationStrategy = useBareissStrategy;
 
-		MatrixBlock determinantResult = new MatrixBlock(1, 1, false);
+		double determinant = 0;
 		switch (computationStrategy) {
 			case useGaussianStrategy:
 				// TODO Implement Gaussian strategy
 				break;
+			case useBareissStrategy:
+				int n = in.getRowDimension();
+				int sign = 1;
+				for (int k = 0; k < n - 1; k++) {
+					if (0 == in.getEntry(k, k)) {
+						boolean found = false;
+						for (int m = k + 1; m < n; m++) {
+							if (0 == in.getEntry(m, k)) { continue; }
+							found = true;
+							sign = -1*sign;
+							double[] tmp = in.getRow(m);
+							in.setRow(m, in.getRow(k));
+							in.setRow(k, tmp);
+							break;
+						}
+						if (!found) {
+							in.getEntry(n - 1, n - 1);
+							break;
+						}
+					}
+
+					for (int i = k + 1; i < n; i++) {
+						for (int j = k + 1; j < n; j++) {
+							double den = (0 == k) ? 1 : in.getEntry(k-1, k-1);
+							double num = in.getEntry(i, j)*in.getEntry(k, k) - in.getEntry(i, k)*in.getEntry(k, j);
+							in.setEntry(i, j, num/den);
+						}
+					}
+				}
+				determinant = sign * in.getEntry(n - 1, n - 1);
+				break;
 			case useBuildinStrategy:
 			default:
 				LUDecomposition ludecompose = new LUDecomposition(in);
-				determinantResult.set(0, 0, ludecompose.getDeterminant());
+				determinant = ludecompose.getDeterminant();
 		}
+
+		MatrixBlock determinantResult = new MatrixBlock(1, 1, false);
+		determinantResult.set(0, 0, determinant);
 		return determinantResult;
 	}
 

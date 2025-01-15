@@ -91,7 +91,8 @@ public class CompressedEncode {
 		this.enc = enc;
 		this.in = in;
 		this.k = k;
-		this.pool = k > 1 && CommonThreadPool.useParallelismOnThread() ? CommonThreadPool.get(k) : null;
+		// this.pool = k > 1 && CommonThreadPool.useParallelismOnThread() ? CommonThreadPool.get(k) : null;
+		this.pool =  null;
 		this.inputContainsCompressed = containsCompressed(in);
 	}
 
@@ -203,6 +204,7 @@ public class CompressedEncode {
 	private AColGroup encode(ColumnEncoderComposite c) throws Exception {
 		final Timing t = new Timing();
 		AColGroup g = executeEncode(c);
+
 		if(LOG.isDebugEnabled())
 			LOG.debug(String.format("Encode: columns: %4d estimateDistinct: %6d distinct: %6d size: %6d time: %10f",
 				c._colID, c._estNumDistincts, g.getNumValues(), g.estimateInMemorySize(), t.stop()));
@@ -240,7 +242,7 @@ public class CompressedEncode {
 		r.set(0, new ColumnEncoderRecode(colId, (HashMapToInt<Object>) map));
 		int domain = map.size();
 		if(containsNull && domain == 0)
-			return new ColGroupEmpty(ColIndexFactory.create(1));
+			return new ColGroupEmpty(SINGLE_COL_TMP_INDEX);
 		IColIndex colIndexes = ColIndexFactory.create(0, domain);
 		if(domain == 1 && !containsNull) {
 			nnz.addAndGet(in.getNumRows());
@@ -761,7 +763,7 @@ public class CompressedEncode {
 	private final long putIntoRowBlock(List<ColGroupUncompressedArray> ucg, int jl, int ju, long nnz, int i,
 		final double[] rval, final int off) {
 		for(int j = jl; j < ju; j++) {
-			nnz += (rval[off + j] = ucg.get(j).array.getAsNaNDouble(i)) == 0.0 ? 1 : 0;
+			nnz += (rval[off + j] = ucg.get(j).array.getAsNaNDouble(i)) == 0.0 ? 0 : 1;
 		}
 		return nnz;
 	}

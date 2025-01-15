@@ -175,6 +175,7 @@ public class TransformCompressedTestSingleCol {
 
 			MatrixBlock outMeta1 = ec.apply(data, k);
 
+
 			TestUtils.compareMatrices(outNormal, outMeta1, 0, "Not Equal after apply");
 
 			MultiColumnEncoder ec2 = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(),

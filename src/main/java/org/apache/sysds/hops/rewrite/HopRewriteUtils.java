@@ -1392,6 +1392,25 @@ public class HopRewriteUtils {
 		return ret;
 	}
 
+	public static boolean isSequenceSizeOfA(Hop hop, Hop A)
+	{
+		boolean ret = false;
+		
+		if( hop instanceof DataGenOp )
+		{
+			DataGenOp dgop = (DataGenOp) hop;
+			if( dgop.getOp() == OpOpDG.SEQ ){
+				Hop from = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_FROM));
+				Hop to = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_TO));
+				Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
+				ret = (from instanceof LiteralOp && getIntValueSafe((LiteralOp) from) == 1) &&
+					(to instanceof LiteralOp && getIntValueSafe((LiteralOp) to) == A.getDim(0)) &&
+					(incr instanceof LiteralOp && getIntValueSafe((LiteralOp)incr)==1);
+			}
+		}
+		
+		return ret;
+	}
 
 	public static Hop getBasic1NSequenceMax(Hop hop) {
 		if( isDataGenOp(hop, OpOpDG.SEQ) ) {

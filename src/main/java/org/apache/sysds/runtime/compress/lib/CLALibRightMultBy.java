@@ -28,7 +28,6 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -43,8 +42,6 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
-import org.apache.sysds.utils.DMLCompressionStatistics;
-import org.apache.sysds.utils.stats.Timing;
 
 public final class CLALibRightMultBy {
 	private static final Log LOG = LogFactory.getLog(CLALibRightMultBy.class.getName());
@@ -189,15 +186,8 @@ public final class CLALibRightMultBy {
 			constV = mmTemp.isEmpty() ? null : mmTemp.getDenseBlockValues();
 		}
 
-		final Timing time = new Timing(true);
-
 		ret = asyncRet(f);
-		CLALibDecompress.decompressDenseMultiThread(ret, retCg, constV, 0, k, true);
-
-		if(DMLScript.STATISTICS) {
-			final double t = time.stop();
-			DMLCompressionStatistics.addDecompressTime(t, k);
-		}
+		CLALibDecompress.decompressDense(ret, retCg, constV, 0, k, true);
 
 		return ret;
 	}

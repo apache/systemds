@@ -68,12 +68,7 @@ public class IntegerArray extends Array<Integer> {
 	public void set(int index, String value) {
 		set(index, parseInt(value));
 	}
-
-	@Override
-	public void set(int rl, int ru, Array<Integer> value) {
-		set(rl, ru, value, 0);
-	}
-
+	
 	@Override
 	public void setFromOtherType(int rl, int ru, Array<?> value) {
 		final ValueType vt = value.getValueType();
@@ -381,6 +376,13 @@ public class IntegerArray extends Array<Integer> {
 	@Override
 	public boolean possiblyContainsNaN() {
 		return false;
+	}
+
+	@Override
+	protected int addValRecodeMap(HashMapToInt<Integer> map, int id, int i) {
+		if( map.putIfAbsentI(_data[i], id) == -1) 
+			id++;
+		return id;
 	}
 
 	@Override

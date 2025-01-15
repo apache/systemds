@@ -149,10 +149,6 @@ public class RaggedArray<T> extends Array<T> {
 			throw new NotImplementedException("Unimplemented method 'setFromOtherType'");
 	}
 
-	@Override
-	public void set(int rl, int ru, Array<T> value) {
-		set(rl, ru, value, 0);
-	}
 
 	@Override
 	public void set(int rl, int ru, Array<T> value, int rlSrc) {
@@ -307,7 +303,7 @@ public class RaggedArray<T> extends Array<T> {
 		return _a.changeTypeCharacter(retA, l, u);
 	}
 
-	@Override 
+	@Override
 	public Array<?> changeTypeWithNulls(ValueType t) {
 		throw new NotImplementedException("Not Implemented ragged array with nulls");
 	}

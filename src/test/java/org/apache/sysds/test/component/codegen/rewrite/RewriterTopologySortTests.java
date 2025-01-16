@@ -225,4 +225,20 @@ public class RewriterTopologySortTests {
 		assert "*(argList(a,a,sum(b)))".equals(parsableString);
 	}
 
+	@Test
+	public void test2() {
+		RewriterStatement stmt1 = RewriterUtils.parse("+(argList(_EClass(argList(1, ncol(A), ncol(B))), _EClass(argList(nrow(C),nrow(B),nrow(A)))))", ctx, "MATRIX:A,B,C", "LITERAL_INT:1", "LITERAL_FLOAT:1.0");
+		RewriterStatement stmt2 = RewriterUtils.parse("+(argList(_EClass(argList(1, ncol(A), ncol(B))), _EClass(argList(nrow(A),nrow(C),nrow(B)))))", ctx, "MATRIX:A,B,C", "LITERAL_INT:1", "LITERAL_FLOAT:1.0");
+
+		TopologicalSort.sort(stmt1, ctx);
+		TopologicalSort.sort(stmt2, ctx);
+
+		System.out.println("==========");
+		System.out.println(stmt1.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+
+		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
+	}
+
 }

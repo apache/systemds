@@ -2,6 +2,7 @@ package org.apache.sysds.test.component.codegen.rewrite;
 
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RuleContext;
+import org.apache.sysds.hops.rewriter.TopologicalSort;
 import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -96,8 +97,6 @@ public class RewriterNormalFormTests {
 		System.out.println("==========");
 		System.out.println(stmt2.toParsableString(ctx, true));
 		assert RewriterStatement.MatcherContext.exactMatch(ctx, stmt1, stmt2).debug(true).match();
-		// Here the sort algorithm is unstable
-		assert false;
 	}
 
 	@Test
@@ -344,8 +343,9 @@ public class RewriterNormalFormTests {
 
 		// We need to explicitly assert A and B
 		stmt2.givenThatEqual(stmt2.getChild(0, 1).getNRow(), stmt2.getChild(0, 0).getNCol(), ctx);
+		stmt2.recomputeAssertions();
 
-		assert match(stmt1, stmt2);
+		assert match(stmt1, stmt2, true);
 	}
 
 	@Test

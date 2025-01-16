@@ -1529,15 +1529,14 @@ public class RewriterUtils {
 			if (debug)
 				System.out.println("PRE1:   " + stmt.toParsableString(ctx, false));
 
-			//RewriterUtils.topologicalSort(stmt, ctx, (el, parent) -> el.isArgumentList() && parent != null && Set.of("+", "-", "*", "_idxExpr").contains(parent.trueInstruction()));
-			//stmt = stmt.getAssertions(ctx).buildEquivalences(stmt);
-			//System.out.println(stmt.getAssertions(ctx));
+			stmt.compress();
+			TopologicalSort.sort(stmt, ctx);
+			// Somehow it is unstable if we only compress and sort once
+			stmt.compress();
 			TopologicalSort.sort(stmt, ctx);
 
 			if (debug)
 				System.out.println("FINAL1: " + stmt.toParsableString(ctx, false));
-
-			stmt.compress();
 
 			return stmt;
 		};

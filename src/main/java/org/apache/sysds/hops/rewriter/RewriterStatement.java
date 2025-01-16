@@ -655,46 +655,6 @@ public abstract class RewriterStatement {
 		return recomputeHashCodes(true, ctx);
 	}
 
-	// TODO: Rework if necessary
-	public boolean matchSubexpr(MatcherContext ctx, List<MatchingSubexpression> matches, Function<MatchingSubexpression, Boolean> iff) {
-		/*
-
-		ctx.reset();
-		boolean foundMatch = match(ctx);
-		//boolean foundMatch = match(ctx, root, dependencyMap, literalsCanBeVariables, ignoreLiteralValues, links, ruleLinks, allowDuplicatePointers, allowPropertyScan, allowTypeHierarchy);
-
-		if (foundMatch) {
-			MatchingSubexpression match = ctx.toMatch();
-			if (iff == null || iff.apply(match)) {
-				matches.add(match);
-
-				if (ctx.terminateOnFirstMatch)
-					return true;
-			} else {
-				foundMatch = false;
-			}
-		}
-
-		int idx = 0;
-
-		if (ctx.matchRoot.getOperands() != null && ctx.matchRoot instanceof RewriterInstruction) {
-			for (RewriterStatement stmt : ctx.matchRoot.getOperands()) {
-				ctx.matchRoot = stmt;
-				if (matchSubexpr(ctx, matches, iff)) {
-					//TODO
-					foundMatch = true;
-
-					if (findFirst)
-						return true;
-				}
-				idx++;
-			}
-		}
-
-		return foundMatch;*/
-		throw new NotImplementedException();
-	}
-
 	public void prepareForHashing() {
 		resetRefCtrs();
 		computeRefCtrs();
@@ -1216,8 +1176,8 @@ public abstract class RewriterStatement {
 		if (literal == null)
 			throw new IllegalArgumentException();
 
-		if (literal instanceof Double) {
-			return new RewriterDataType().as(literal.toString()).ofType("FLOAT").asLiteral(literal).consolidate(ctx);
+		if (literal instanceof Double) { // We need to differentiate between -0.0 and 0.0 because otherwise this may leed to bugs
+			return new RewriterDataType().as(literal.toString()).ofType("FLOAT").asLiteral(((Double) literal).doubleValue() == -0.0 ? 0.0 : literal).consolidate(ctx);
 		} else if (literal instanceof Long) {
 			return new RewriterDataType().as(literal.toString()).ofType("INT").asLiteral(literal).consolidate(ctx);
 		} else if (literal instanceof Boolean)  {

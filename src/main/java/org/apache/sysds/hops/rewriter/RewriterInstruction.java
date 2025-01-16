@@ -139,8 +139,6 @@ public class RewriterInstruction extends RewriterStatement {
 		for (RewriterStatement operand : operands)
 			operand.consolidate(ctx);
 
-		//getResult(ctx).consolidate(ctx);
-
 		hashCode = Objects.hash(rid, refCtr, instr, getResultingDataType(ctx), operands);
 		consolidated = true;
 
@@ -149,7 +147,6 @@ public class RewriterInstruction extends RewriterStatement {
 	@Override
 	public int recomputeHashCodes(boolean recursively, final RuleContext ctx) {
 		if (recursively) {
-			//result.recomputeHashCodes(true, ctx);
 			operands.forEach(op -> op.recomputeHashCodes(true, ctx));
 		}
 

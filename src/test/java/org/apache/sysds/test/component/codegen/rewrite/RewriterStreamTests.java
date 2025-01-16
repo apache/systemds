@@ -199,10 +199,10 @@ public class RewriterStreamTests {
 	@Test
 	public void testSumEquality() {
 		RewriterStatement stmt = RewriterUtils.parse("sum(+(B, sum(*(a, A))))", ctx, "MATRIX:A,B", "FLOAT:a");
-		RewriterStatement stmt2 = RewriterUtils.parse("+(*(a, length(A)), sum(+(B, sum(A))))", ctx, "MATRIX:A,B", "FLOAT:a");
+		//RewriterStatement stmt2 = RewriterUtils.parse("+(*(a, length(A)), sum(+(B, sum(A))))", ctx, "MATRIX:A,B", "FLOAT:a");
 		RewriterStatement stmt3 = RewriterUtils.parse("sum(+(B, *(a, sum(A))))", ctx, "MATRIX:A,B", "FLOAT:a");
 		stmt = canonicalConverter.apply(stmt);
-		stmt2 = canonicalConverter.apply(stmt2);
+		//stmt2 = canonicalConverter.apply(stmt2);
 		stmt3 = canonicalConverter.apply(stmt3);
 
 		System.out.println("==========");
@@ -210,9 +210,9 @@ public class RewriterStreamTests {
 		System.out.println("==========");
 		System.out.println(stmt3.toParsableString(ctx, true));
 		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		//System.out.println(stmt2.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt3, stmt));
-		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
+		//assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
 	@Test

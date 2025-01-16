@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.hops.rewriter;
 
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -14,7 +33,10 @@ import java.util.function.BiFunction;
 // For now, we assume that _argList() will have one unique parent
 public class TopologicalSort {
 	public static boolean DEBUG = false;
-	private static final Set<String> SORTABLE_ARGLIST_OPS = Set.of("+", "-", "*", "_idxExpr", "_EClass", "rand");
+
+	// All of these operators are sortable with argument lists (e.g. +(argList(1, 2, 3))
+	private static final Set<String> SORTABLE_ARGLIST_OPS = Set.of("+", "-", "*", "_idxExpr", "_EClass", "rand", "_dummy");
+	// All of these operators are sortable but have their operands directly as children (e.g. ==(a,b))
 	private static final Set<String> SORTABLE_OPS = Set.of("==", "!=");
 
 	// TODO: Sort doesn't work if we have sth like _EClass(argList(nrow(U), nrow(V)), as the lowest address will be nrow, ncol and not U, V
@@ -32,6 +54,32 @@ public class TopologicalSort {
 
 	// TODO: Fails for E_Classes in DataTypes (matrix) if they do not occur elsewhere
 	public static void sort(RewriterStatement root, BiFunction<RewriterStatement, RewriterStatement, Boolean> isArrangable, final RuleContext ctx) {
+		// First, we setup an artificial root node to be able to sort E-Classes that are only included as meta-info not directly in the operand structure
+		Set<RewriterStatement> hiddenEClasses = new HashSet<>();
+		root.forEachPostOrder((stmt, pred) -> {
+			if (stmt instanceof RewriterDataType && !stmt.isLiteral() && stmt.getResultingDataType(ctx).equals("MATRIX")) {
+				System.out.println("===");
+				System.out.println(stmt.toParsableString(ctx));
+				System.out.println(stmt.getNRow());
+				System.out.println(stmt.getNCol());
+
+				if (stmt.getNRow().isInstruction() && stmt.getNRow().trueInstruction().equals("_EClass"))
+					hiddenEClasses.add(stmt.getNRow());
+
+				if (stmt.getNCol().isInstruction() && stmt.getNCol().trueInstruction().equals("_EClass"))
+					hiddenEClasses.add(stmt.getNCol());
+			}
+		}, true);
+
+		RewriterStatement oldRoot = root;
+
+		if (!hiddenEClasses.isEmpty()) {
+			RewriterStatement argList = new RewriterInstruction().withInstruction("argList").withOps(hiddenEClasses.toArray(RewriterStatement[]::new));
+			RewriterStatement dummy = new RewriterInstruction().withInstruction("_dummy").withOps(argList);
+			root = new RewriterInstruction().withInstruction("_root").withOps(root, dummy);
+			System.out.println("RT: " + root.toParsableString(ctx));
+		}
+
 		List<RewriterStatement> uncertainParents = setupOrderFacts(root, isArrangable, ctx);
 
 		buildAddresses(root, ctx);
@@ -74,10 +122,12 @@ public class TopologicalSort {
 
 		// At the end
 		if (DEBUG)
-			System.out.println("Before construction: " + root.toParsableString(ctx));
-		constructNewDAG(root, ctx);
+			System.out.println("Before construction: " + oldRoot.toParsableString(ctx));
+		constructNewDAG(oldRoot, ctx);
 		if (DEBUG)
-			System.out.println("After construction: " + root.toParsableString(ctx));
+			System.out.println("After construction: " + oldRoot.toParsableString(ctx));
+
+		System.out.println("RT2: " + root.toParsableString(ctx));
 	}
 
 	// Returns all uncertain parents ordered in post order (elements without uncertain sub-DAGs come first in the list)
@@ -94,9 +144,6 @@ public class TopologicalSort {
 			nameCtr.increment();
 			boolean arrangable = isArrangable.apply(el, pred.getParent());
 
-			//if (arrangable && el.refCtr > 1)
-			//	throw new IllegalArgumentException("Expecting unique parents for arrangable items!\n" + root.toParsableString(ctx, true) + "\n" + el.toParsableString(ctx));
-
 			el.unsafePutMeta("_arrangable", arrangable);
 		}, false);
 
@@ -107,12 +154,7 @@ public class TopologicalSort {
 
 			boolean arrangable = (boolean) el.getMeta("_arrangable");
 
-			HashMap<Object, Integer> facts = new HashMap<>();
-			HashMap<Object, MutableInt> votes = new HashMap<>();
-
 			List<Object> knownOrder = new ArrayList<>();
-			el.unsafePutMeta("_facts", facts);
-			el.unsafePutMeta("_votes", votes);
 			el.unsafePutMeta("_knownOrder", knownOrder);
 
 			if (arrangable) {
@@ -121,9 +163,8 @@ public class TopologicalSort {
 				boolean containsUnorderedSet = false;
 
 				List<RewriterStatement> currSet = new ArrayList<>();
-				currSet.add(el.getOperands().get(0)); // TODO: What happens if operands size is 0? Should it be arrangable then?
+				currSet.add(el.getOperands().get(0));
 
-				// TODO: What happens if an unordered set only contains one instance?
 				for (int i = 1; i < el.getOperands().size(); i++) {
 					if (compare(el.getOperands().get(i-1), el.getOperands().get(i), ctx) != 0) {
 						if (currSet.size() == 1) {
@@ -196,10 +237,6 @@ public class TopologicalSort {
 			if (stmt.getMeta("_fact") == null)
 				stmt.unsafePutMeta("_fact", factCtr++);
 		}
-		/*for (UnorderedSet set : sets)
-			for (RewriterStatement stmt : set.contents)
-				if (stmt.getMeta("_fact") == null)
-					stmt.unsafePutMeta("_fact", factCtr++);*/
 
 		return factCtr;
 	}
@@ -342,7 +379,6 @@ public class TopologicalSort {
 	}
 
 	private static boolean tryResolveUncertainties(UnorderedSet set, final RuleContext ctx) {
-
 		set.contents.sort((el1, el2) -> compare(el1, el2, ctx)); // We assume that every statement has an address, as it is uncertain
 
 		RewriterStatement compareTo = set.contents.get(0);

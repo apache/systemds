@@ -111,10 +111,10 @@ public class ReadWriteListTest extends AutomatedTestBase {
 			double val1 = HDFSTool.readDoubleFromHDFSFile(output("R1"));
 			
 			//check no crc files
-			// I have removed this check since i modified the removal of .crc files to a remove on close
-			// File[] files = new File(output("L")).listFiles();
-			// LOG.error(Arrays.toString(files));
-			// Assert.assertFalse(Arrays.stream(files).anyMatch(f -> f.getName().endsWith(".crc")));
+			//disabled due to delete on exist, but for temporary validation via delete
+			//File[] files = new File(output("L")).listFiles();
+			//LOG.error(Arrays.toString(files));
+			//Assert.assertFalse(Arrays.stream(files).anyMatch(f -> f.getName().endsWith(".crc")));
 			
 			//run read
 			fullDMLScriptName = HOME + TEST_NAME2 + ".dml";

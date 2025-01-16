@@ -171,6 +171,10 @@ public class DMLScript
 	public static String _uuid = IDHandler.createDistributedUniqueID();
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
 
+	public static Function<DMLProgram, Boolean> preHopInterceptor = null; // Intercepts HOPs before they are rewritten
+	public static Function<DMLProgram, Boolean> hopInterceptor = null; // Intercepts HOPs after they are rewritten
+	public static BiConsumer<Long, Long> runtimeMetricsInterceptor = null;
+
 	///////////////////////////////
 	// public external interface
 	////////
@@ -422,8 +426,6 @@ public class DMLScript
 		setGlobalFlags(dmlconf);
 	}
 
-	public static Function<DMLProgram, Boolean> hopInterceptor = null;
-	public static BiConsumer<Long, Long> runtimeMetricsInterceptor = null;
 	/**
 	 * The running body of DMLScript execution. This method should be called after execution properties have been correctly set,
 	 * and customized parameters have been put into _argVals
@@ -462,6 +464,9 @@ public class DMLScript
 		
 		//init working directories (before usage by following compilation steps)
 		initHadoopExecution( ConfigurationManager.getDMLConfig() );
+
+		if (preHopInterceptor != null && !preHopInterceptor.apply(prog))
+			return;
 
 		long startMillis1 = System.currentTimeMillis();
 		//Step 5: rewrite HOP DAGs (incl IPA and memory estimates)

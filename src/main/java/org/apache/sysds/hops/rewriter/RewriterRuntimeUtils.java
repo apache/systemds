@@ -62,11 +62,12 @@ public class RewriterRuntimeUtils {
 	private static boolean setupComplete = false;
 
 	private static HashMap<String, Integer> unknownOps = new HashMap<>();
-	private static long totalCPUTime = 0L;
+	/*private static long totalCPUTime = 0L;
 	private static long evaluatedExpressions = 0L;
-	private static long failures = 0L;
+	private static long failures = 0L;*/
 	private static boolean ENFORCE_FLOAT_OBSERVATIONS = true; // To force every data type to float
 	private static boolean OBSERVE_SELECTIONS = false;
+	private static boolean OBSERVE_RAND = false;
 
 	public static void setupIfNecessary() {
 		if (setupComplete)
@@ -84,9 +85,8 @@ public class RewriterRuntimeUtils {
 
 			// Setup default context
 			RuleContext ctx = RewriterUtils.buildDefaultContext();
-			Function<RewriterStatement, RewriterStatement> converter = RewriterUtils.buildCanonicalFormConverter(ctx, false);
+			//Function<RewriterStatement, RewriterStatement> converter = RewriterUtils.buildCanonicalFormConverter(ctx, false);
 
-			RewriterDatabase db = new RewriterDatabase();
 			RewriterDatabase exactExprDB = new RewriterDatabase();
 
 			if (readDB) {
@@ -97,57 +97,18 @@ public class RewriterRuntimeUtils {
 				}
 			}
 
-			List<RewriterStatement> equivalentStatements = new ArrayList<>();
+			RewriterRuntimeUtils.attachPreHopInterceptor(prog -> {
+				RewriterRuntimeUtils.forAllUniqueTranslatableStatements(prog, 4, mstmt -> {}, exactExprDB, ctx);
+				return true; // We will continue to extract the rewritten hop
+			});
 
 			RewriterRuntimeUtils.attachHopInterceptor(prog -> {
-				long startMillis = System.currentTimeMillis();
-				RewriterRuntimeUtils.forAllUniqueTranslatableStatements(prog, 4, mstmt -> {
-					//List<RewriterStatement> subtrees = RewriterUtils.generateSubtrees(mstmt, new HashMap<>(), ctx);
-					/*List<RewriterStatement> subtrees = List.of(mstmt);
-					for (RewriterStatement stmt : subtrees) {
-						try {
-							stmt = ctx.metaPropagator.apply(stmt);
-							if (!exactExprDB.insertEntry(ctx, stmt))
-								continue;
-							System.out.println("RawStmt: " + stmt.toString(ctx));
-							RewriterStatement cpy = stmt.nestedCopyOrInject(new HashMap<>(), el -> null);
-							RewriterStatement tmp = cpy;
-							cpy = stmt;
-							stmt = tmp;
-							evaluatedExpressions++;
-							System.out.println("Stmt: " + stmt.toString(ctx));
-							stmt = converter.apply(stmt);
-							System.out.println();
-							System.out.println("===================================");
-							System.out.println("Canonical form: " + stmt.toString(ctx));
-
-							RewriterStatement oldEntry = db.insertOrReturn(ctx, stmt);
-
-							if (oldEntry == null) {
-								List<RewriterStatement> expr = new ArrayList<>();
-								expr.add(cpy);
-								stmt.unsafePutMeta("equivalentExpressions", expr);
-							} else {
-								List<RewriterStatement> eStmts = (List<RewriterStatement>) oldEntry.getMeta("equivalentExpressions");
-								eStmts.add(cpy);
-
-								if (eStmts.size() == 2)
-									equivalentStatements.add(oldEntry);
-
-								System.out.println("Found equivalent statement!");
-							}
-						} catch (Exception e) {
-							e.printStackTrace();
-							failures++;
-						}
-					}*/
-				}, exactExprDB, ctx);
-				totalCPUTime += System.currentTimeMillis() - startMillis;
-				return false;
+				RewriterRuntimeUtils.forAllUniqueTranslatableStatements(prog, 4, mstmt -> {}, exactExprDB, ctx);
+				return false; // Then we cancel the excecution to save time
 			});
 
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-				System.out.println("===== ALL EQUIVALENCES =====");
+				/*System.out.println("===== ALL EQUIVALENCES =====");
 
 				for (RewriterStatement eStmt : equivalentStatements) {
 					System.out.println();
@@ -169,7 +130,7 @@ public class RewriterRuntimeUtils {
 
 				List<Map.Entry<String, Integer>> list = unknownOps.entrySet().stream().sorted(Map.Entry.comparingByValue(Comparator.reverseOrder())).collect(Collectors.toList());
 				for (int i = 0; i < 100 && i < list.size(); i++)
-					System.out.println(list.get(i).getKey() + "\t>> " + list.get(i).getValue());
+					System.out.println(list.get(i).getKey() + "\t>> " + list.get(i).getValue());*/
 
 				if (writeDB) {
 					try (BufferedWriter writer = new BufferedWriter(new FileWriter(dbFile))) {
@@ -190,10 +151,12 @@ public class RewriterRuntimeUtils {
 		DMLScript.hopInterceptor = null;
 	}
 
-	// TODO: Make more flexible regarding program structure
-	public static void forAllHops(DMLProgram program, Consumer<Hop> consumer) {
-		for (StatementBlock sb : program.getStatementBlocks())
-			sb.getHops().forEach(consumer);
+	public static void attachPreHopInterceptor(Function<DMLProgram, Boolean> interceptor) {
+		DMLScript.preHopInterceptor = interceptor;
+	}
+
+	public static void detachPreHopInterceptor() {
+		DMLScript.preHopInterceptor = null;
 	}
 
 	public static RewriterStatement buildDAGFromHop(Hop hop, int maxDepth, boolean mindDataCharacteristics, final RuleContext ctx) {
@@ -214,7 +177,6 @@ public class RewriterRuntimeUtils {
 			Long ncol = (Long) stmt.getMeta("_actualNCol");
 			int matType = 0;
 
-			// TODO: what if matrix consists of one single element?
 			if (nrow != null && nrow == 1L) {
 				matType = 1;
 			} else if (ncol != null && ncol == 1L) {
@@ -241,7 +203,6 @@ public class RewriterRuntimeUtils {
 					Long ncol = (Long) child.getMeta("_actualNCol");
 					int matType = 0;
 
-					// TODO: what if matrix consists of one single element?
 					if (nrow != null && nrow == 1L) {
 						matType = 1;
 					} else if (ncol != null && ncol == 1L) {
@@ -668,7 +629,7 @@ public class RewriterRuntimeUtils {
 					return false;
 			}
 
-			if (fixedSize && !childStmt.getResultingDataType(ctx).equals(stmt.getOperands().get(ctr).getResultingDataType(ctx)))
+			if (fixedSize && !RewriterUtils.convertImplicitly(childStmt.getResultingDataType(ctx), ENFORCE_FLOAT_OBSERVATIONS).equals(stmt.getOperands().get(ctr).getResultingDataType(ctx)))
 				throw new IllegalArgumentException("Different data type than expected: "  + stmt.toString(ctx) + "; [" + ctr + "] " + childStmt.toString(ctx) + " ::" + childStmt.getResultingDataType(ctx));
 
 			children.add(childStmt);
@@ -927,11 +888,14 @@ public class RewriterRuntimeUtils {
 
 		switch(op.getOpString()) {
 			case "dg(rand)":
-				interestingHops.add(op.getParam("rows"));
-				interestingHops.add(op.getParam("cols"));
-				interestingHops.add(op.getParam("min"));
-				interestingHops.add(op.getParam("max"));
-				return RewriterUtils.parse("rand(i1, i2, f1, f2)", ctx, matrixDefs, floatDefs, intDefs, boolDefs).rename(op.getName());
+				if (OBSERVE_RAND) {
+					interestingHops.add(op.getParam("rows"));
+					interestingHops.add(op.getParam("cols"));
+					interestingHops.add(op.getParam("min"));
+					interestingHops.add(op.getParam("max"));
+					return RewriterUtils.parse("rand(i1, i2, f1, f2)", ctx, matrixDefs, floatDefs, intDefs, boolDefs).rename(op.getName());
+				}
+				return null;
 		}
 
 		return null;

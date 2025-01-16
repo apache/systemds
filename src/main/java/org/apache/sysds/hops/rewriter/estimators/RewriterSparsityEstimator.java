@@ -119,6 +119,7 @@ public class RewriterSparsityEstimator {
 			case "log_nz(MATRIX)":
 			case "*2(MATRIX)":
 			case "sq(MATRIX)":
+			case "t(MATRIX)":
 				return RewriterStatement.nnz(stmt.getChild(0), ctx);
 			case "1-*(MATRIX,MATRIX)":
 				return StatementUtils.length(ctx, stmt);

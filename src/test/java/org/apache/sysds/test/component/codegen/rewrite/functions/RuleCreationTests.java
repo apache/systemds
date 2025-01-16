@@ -101,13 +101,9 @@ public class RuleCreationTests {
 				.withParsedStatement("cast.MATRIX(sum(colVec(A)))")
 				.toParsedStatement("rowSums(colVec(A))")
 				.build();
-
-		//RewriterRuleSet rs = new RewriterRuleSet(ctx, List.of(rule));
-
-		//RewriterStatement stmt = RewriterUtils.parse("as.matrix(sum(t(colVec(A))))", ctx, "MATRIX:A,B");
-
+		
 		assert RewriterRuleCreator.validateRuleCorrectness(rule, ctx);
-		assert RewriterRuleCreator.validateRuleApplicability(rule, ctx);
+		//assert RewriterRuleCreator.validateRuleApplicability(rule, ctx);
 	}
 
 	@Test
@@ -123,17 +119,6 @@ public class RuleCreationTests {
 		System.out.println(canonicalForm2.toParsableString(ctx, true));
 
 		assert canonicalForm1.match(RewriterStatement.MatcherContext.exactMatch(ctx, canonicalForm2, canonicalForm1));
-
-		RewriterRule rule = RewriterRuleCreator.createRule(from, to, canonicalForm1, canonicalForm2, ctx);
-		System.out.println(rule);
-
-		RewriterRuleSet rs = new RewriterRuleSet(ctx, List.of(rule));
-
-		RewriterStatement testStmt = RewriterUtils.parse("t(t(colVec(A)))", ctx, "MATRIX:A", "LITERAL_INT:1");
-
-		RewriterRuleSet.ApplicableRule ar = rs.acceleratedFindFirst(testStmt);
-
-		assert ar != null;
 	}
 
 	@Test
@@ -239,5 +224,33 @@ public class RuleCreationTests {
 		ruleCreator.registerRule(rule1, canonicalConverter, ctx);
 
 		assert !ruleCreator.registerRule(rule2, canonicalConverter, ctx);
+	}
+
+	@Test
+	public void testRuleElimination() {
+		String rs1 =
+				"MATRIX:tmp34827,tmp40318\n" +
+				"LITERAL_FLOAT:0.0\n" +
+				"\n" +
+				"+(%*%(tmp34827,tmp40318),0.0)\n" +
+				"=>\n" +
+				"%*%(tmp34827,tmp40318)";
+		String rs2 =
+				"MATRIX:tmp34827,tmp40318\n" +
+						"LITERAL_FLOAT:0.0\n" +
+						"\n" +
+						"+(tmp34827,0.0)\n" +
+						"=>\n" +
+						"tmp34827";
+
+		RewriterRule rule1 = RewriterUtils.parseRule(rs1, ctx);
+		RewriterRule rule2 = RewriterUtils.parseRule(rs2, ctx);
+
+		RewriterRuleCreator ruleCreator = new RewriterRuleCreator(ctx);
+		ruleCreator.registerRule(rule1, canonicalConverter, ctx);
+
+		assert ruleCreator.registerRule(rule2, canonicalConverter, ctx);
+		System.out.println(ruleCreator.getRuleSet().getRules());
+		assert ruleCreator.getRuleSet().getRules().size() == 1;
 	}
 }

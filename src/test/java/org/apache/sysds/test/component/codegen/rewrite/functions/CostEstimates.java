@@ -1,6 +1,7 @@
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
 import org.apache.commons.lang3.mutable.MutableObject;
+import org.apache.sysds.hops.rewriter.RewriterRule;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
@@ -9,9 +10,13 @@ import org.apache.sysds.hops.rewriter.RuleContext;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import scala.Tuple2;
+import scala.Tuple3;
 
+import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
+
+import static org.apache.arrow.flatbuf.Type.List;
 
 public class CostEstimates {
 	private static RuleContext ctx;
@@ -316,6 +321,28 @@ public class CostEstimates {
 		RewriterStatement stmt2 = RewriterUtils.parse("%*%(colSums(colVec(A)),B)", ctx, "MATRIX:A,B", "LITERAL_INT:1");
 		long cost1 = RewriterCostEstimator.estimateCost(stmt1, ctx);
 		long cost2 = RewriterCostEstimator.estimateCost(stmt2, ctx);
+		System.out.println("Cost1: " + cost1);
+		System.out.println("Cost2: " + cost2);
+		assert cost1 < cost2;
+	}
+
+	@Test
+	public void test18() {
+		String ruleStr =
+				"MATRIX:tmp55220\n" +
+				"FLOAT:tmp23781\n" +
+				"\n" +
+				"/(t(tmp55220),tmp23781)\n" +
+				"=>\n" +
+				"t(/(tmp55220,tmp23781))";
+
+		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
+
+		List<Tuple3<List<Number>, Long, Long>> cmp = RewriterCostEstimator.compareCosts(rule.getStmt1(), rule.getStmt2(), rule.getStmt1().getAssertions(ctx), ctx, false, 0, false);
+
+		System.out.println(cmp);
+		long cost1 = RewriterCostEstimator.estimateCost(rule.getStmt1(), ctx);
+		long cost2 = RewriterCostEstimator.estimateCost(rule.getStmt2(), ctx);
 		System.out.println("Cost1: " + cost1);
 		System.out.println("Cost2: " + cost2);
 		assert cost1 < cost2;

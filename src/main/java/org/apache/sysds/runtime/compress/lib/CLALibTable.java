@@ -103,6 +103,11 @@ public class CLALibTable {
 	private static int constructInitialMapping(int[] map, MatrixBlock A, int k) {
 		if(A.isEmpty() || A.isInSparseFormat())
 			throw new DMLRuntimeException("not supported empty or sparse construction of seq table");
+		if(A instanceof CompressedMatrixBlock) {
+			// throw new NotImplementedException();
+			LOG.warn("Decompression of right side input to CLALibTable, please implement alternative.");
+			A = CompressedMatrixBlock.getUncompressed(A);
+		}
 
 		ExecutorService pool = CommonThreadPool.get(k);
 		try {
@@ -136,11 +141,6 @@ public class CLALibTable {
 
 		int maxCol = 0;
 		boolean containsNull = false;
-		if(A instanceof CompressedMatrixBlock) {
-			// throw new NotImplementedException();
-			LOG.warn("Decompression of right side input to CLALibTable, please implement alternative.");
-			A = CompressedMatrixBlock.getUncompressed(A);
-		}
 
 		final double[] aVals = A.getDenseBlockValues();
 

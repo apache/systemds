@@ -195,12 +195,8 @@ public class RewriterCodeGen {
 		recursivelyBuildMatchingSequence(from, sb, "hi", ctx, indentation, vars, allowedMultiRefs, allowCombinations);
 
 		if (fromCost != null) {
-			//System.out.println("FromCost: " + fromCost.toParsableString(ctx));
-			//System.out.println("ToCost: " + toCost.toParsableString(ctx));
-
 			List<StringBuilder> msb = new ArrayList<>();
 			msb.add(new StringBuilder());
-			//StringBuilder msb2 = new StringBuilder();
 			Set<Tuple2<String, String>> requirements = new HashSet<>();
 
 			buildCostFnRecursively(fromCost, vars, ctx, msb.get(0), requirements);
@@ -251,10 +247,6 @@ public class RewriterCodeGen {
 			sb.append("double[] costs = new double[");
 			sb.append(msb.size());
 			sb.append("];\n");
-			/*indent(indentation, sb);
-			sb.append("double[] costTo = new double[");
-			sb.append(msb.size()-1);
-			sb.append("];\n");*/
 
 			for (int i = 0; i < msb.size(); i++) {
 				indent(indentation, sb);
@@ -263,14 +255,6 @@ public class RewriterCodeGen {
 				sb.append("] = ");
 				sb.append(msb.get(i));
 				sb.append(";\n");
-
-				/*indent(indentation, sb);
-				sb.append('\n');
-				indent(indentation, sb);
-				sb.append("if ( costTo" + i + " < costFrom ) {\n");
-				buildNewHop(name, from, tos.get(i-1), sb, combinedAssertions, vars, ctx, indentation+1, maintainRewriteStats);
-				indent(indentation, sb);
-				sb.append("}\n\n");*/
 			}
 
 			indent(indentation, sb);
@@ -294,58 +278,6 @@ public class RewriterCodeGen {
 		} else {
 			buildNewHop(name, from, tos.get(0), sb, combinedAssertions, vars, ctx, indentation, maintainRewriteStats);
 		}
-
-
-		/*sb.append('\n');
-		indent(indentation, sb);
-		sb.append("// Now, we start building the new Hop\n");
-
-		if (DEBUG) {
-			//indent(indentation, sb);
-			//sb.append("System.out.println(\"Applying rewrite: " + name + "\");\n");
-			indent(indentation, sb);
-			sb.append("DMLExecutor.println(\"Applying rewrite: " + name + "\");\n");
-		}
-
-		if (maintainRewriteStats) {
-			indent(indentation, sb);
-			sb.append("Statistics.applyGeneratedRewrite(\"" + name + "\");\n");
-		}
-
-		Set<RewriterStatement> activeStatements = buildRewrite(to, sb, combinedAssertions, vars, ctx, indentation);
-
-		String newRoot = vars.get(to);
-
-		sb.append('\n');
-		indent(indentation, sb);
-		sb.append("Hop newRoot = " + newRoot + ";\n");
-		indent(indentation, sb);
-		sb.append("if ( " + newRoot + ".getValueType() != hi.getValueType() ) {\n");
-		indent(indentation + 1, sb);
-		sb.append("newRoot = castIfNecessary(newRoot, hi);\n");
-		indent(indentation + 1, sb);
-		sb.append("if ( newRoot == null )\n");
-		indent(indentation + 2, sb);
-		sb.append("return hi;\n");
-		indent(indentation, sb);
-		sb.append("}\n");
-
-
-		sb.append('\n');
-		indent(indentation, sb);
-		sb.append("ArrayList<Hop> parents = new ArrayList<>(hi.getParent());\n\n");
-		indent(indentation, sb);
-		sb.append("for ( Hop p : parents )\n");
-		indent(indentation + 1, sb);
-		sb.append("HopRewriteUtils.replaceChildReference(p, hi, newRoot);\n\n");
-
-		indent(indentation, sb);
-		sb.append("// Remove old unreferenced Hops\n");
-		removeUnreferencedHops(from, activeStatements, sb, vars, ctx, indentation);
-		sb.append('\n');
-
-		indent(indentation, sb);
-		sb.append("return newRoot;\n");*/
 	}
 
 	private static void buildNewHop(String rewriteName, RewriterStatement from, RewriterStatement to, StringBuilder sb, RewriterAssertions combinedAssertions, Map<RewriterStatement, String> vars, final RuleContext ctx, int indentation, boolean maintainRewriteStats) {
@@ -356,8 +288,6 @@ public class RewriterCodeGen {
 		sb.append('\n');
 
 		if (DEBUG) {
-			//indent(indentation, sb);
-			//sb.append("System.out.println(\"Applying rewrite: " + name + "\");\n");
 			indent(indentation, sb);
 			sb.append("DMLExecutor.println(\"Applying rewrite: " + rewriteName + "\");\n");
 		}
@@ -435,7 +365,6 @@ public class RewriterCodeGen {
 		indent(indentation + 1, sb);
 		sb.append("}\n\n");
 		indent(indentation + 1, sb);
-		//sb.append("return HopRewriteUtils.createUnary(newRoot" + ", cast);\n");
 		sb.append("return new UnaryOp(\"tmp\", oldRoot.getDataType(), oldRoot.getValueType(), cast, newRoot);\n");
 		indent(indentation, sb);
 		sb.append("}\n");
@@ -657,19 +586,6 @@ public class RewriterCodeGen {
 			indent(indentation, sb);
 			sb.append("if ( " + lVar + ".getDataType() != " + types[0]);
 			sb.append("|| !" + lVar + ".getValueType().isNumeric()");
-
-			/*for (int i = 1; i < types.length; i++) {
-				if (i == 1) {
-					sb.append(" || (" + lVar + ".getValueType() != " + types[1]);
-					continue;
-				}
-
-				sb.append(" && " + lVar + ".getValueType() != " + types[i]);
-
-				if (i == types.length - 1)
-					sb.append(')');
-			}*/
-
 			sb.append(" )\n");
 
 			indent(indentation + 1, sb);
@@ -684,7 +600,6 @@ public class RewriterCodeGen {
 		}
 
 		// Check if we have to ensure a single reference to this object
-		// TODO: This check is not entirely correct
 		if (cur.isInstruction() && !allowedMultiRefs.contains(cur)) {
 			if (allowCombinations && !allowedMultiRefs.contains(cur)) {
 				indent(indentation, sb);
@@ -737,22 +652,12 @@ public class RewriterCodeGen {
 
 			// Check if the instruction matches
 			indent(indentation, sb);
-			sb.append("if ( " + cCurVar + ".getOp() != " + opCode);
-			sb.append(" || !" + cCurVar + ".getValueType().isNumeric()");
-			//String[] types = CodeGenUtils.getReturnType(cur, ctx);
-			//sb.append(" || " + cCurVar + ".getDataType() != " + types[0]);
-
-			/*for (int i = 1; i < types.length; i++) {
-				if (i == 1) {
-					sb.append(" || (" + cCurVar + ".getValueType() != " + types[1]);
-					continue;
-				}
-
-				sb.append(" && " + cCurVar + ".getValueType() != " + types[i]);
-
-				if (i == types.length - 1)
-					sb.append(')');
-			}*/
+			if (opCode != null) {
+				sb.append("if ( " + cCurVar + ".getOp() != " + opCode);
+				sb.append(" || !" + cCurVar + ".getValueType().isNumeric()");
+			} else {
+				sb.append("if ( !" + cCurVar + ".getValueType().isNumeric()");
+			}
 
 			sb.append(" )\n");
 			indent(indentation + 1, sb);
@@ -771,18 +676,6 @@ public class RewriterCodeGen {
 			String[] types = CodeGenUtils.getReturnType(cur, ctx);
 			sb.append("if ( " + curVar + ".getDataType() != " + types[0]);
 			sb.append(" || !" + curVar + ".getValueType().isNumeric()");
-
-			/*for (int i = 1; i < types.length; i++) {
-				if (i == 1) {
-					sb.append(" || (" + curVar + ".getValueType() != " + types[1]);
-					continue;
-				}
-
-				sb.append(" && " + curVar + ".getValueType() != " + types[i]);
-
-				if (i == types.length - 1)
-					sb.append(')');
-			}*/
 
 			if (cur.isRowVector()) {
 				sb.append(" || " + curVar + ".getDim2() != 1L");
@@ -821,17 +714,11 @@ public class RewriterCodeGen {
 				continue;
 			}
 
-			//if (stmt.isLiteral() || stmt.isInstruction()) {
-				// Build the variable definition
-				String name = resolveOperand(cur, i, sb, curVar, ctx, indentation);
-				map.put(stmt, name);
-				sb.append('\n');
-				recursivelyBuildMatchingSequence(stmt, sb, name, ctx, indentation, map, allowedMultiRefs, allowCombinations);
-			/*} else {
-				String name = resolveOperand(cur, i, sb, curVar, ctx, indentation);
-				map.put(stmt, name);
-				sb.append('\n');
-			}*/
+			// Build the variable definition
+			String name = resolveOperand(cur, i, sb, curVar, ctx, indentation);
+			map.put(stmt, name);
+			sb.append('\n');
+			recursivelyBuildMatchingSequence(stmt, sb, name, ctx, indentation, map, allowedMultiRefs, allowCombinations);
 		}
 	}
 

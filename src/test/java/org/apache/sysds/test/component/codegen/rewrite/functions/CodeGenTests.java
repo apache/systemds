@@ -252,6 +252,21 @@ public class CodeGenTests {
 	}
 
 	@Test
+	public void testLiteral() {
+		String ruleStr = "MATRIX:A\n" +
+				"\n" +
+				"-(+(A, $1:literal.FLOAT()), $2:literal.FLOAT())\n" +
+				"=>\n" +
+				"+(A, -($1, $2))";
+		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
+		RewriterRuleSet rs = new RewriterRuleSet(ctx, List.of(rule));
+		rs.determineConditionalApplicability();
+		RewriterCodeGen.DEBUG = false;
+		String code = rs.toJavaCode("GeneratedRewriteClass", false, true, true, false);
+		System.out.println(code);
+	}
+
+	@Test
 	public void codeGen() {
 		try {
 			List<String> lines = Files.readAllLines(Paths.get(RewriteAutomaticallyGenerated.FILE_PATH_MB));

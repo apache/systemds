@@ -331,6 +331,7 @@ public class RewriterContextSettings {
 		builder.append("+*(MATRIX,FLOAT,MATRIX)::MATRIX\n");
 		builder.append("-*(MATRIX,FLOAT,MATRIX)::MATRIX\n");
 		builder.append("*2(MATRIX)::MATRIX\n");
+
 		for (String t : SCALARS) {
 			builder.append("ifelse(BOOL," + t + "," + t + ")::" + t + "\n");
 		}
@@ -373,10 +374,7 @@ public class RewriterContextSettings {
 			builder.append("_idxExpr(INT...," + t + ")::" + t + "*\n");
 			builder.append("_idxExpr(INT...," + t + "*)::" + t + "*\n");
 		});
-		//builder.append("_idxExpr(INT,FLOAT...)::FLOAT*\n");
 		builder.append("_idx(INT,INT)::INT\n");
-		//builder.append("_nrow()::INT\n");
-		//builder.append("_ncol()::INT\n");
 
 		ALL_TYPES.forEach(t -> builder.append("_map(FLOAT...," + t + ")::" + t + "\n"));
 		ALL_TYPES.forEach(t -> builder.append("_reduce(FLOAT...," + t + ")::" + t + "\n"));
@@ -386,15 +384,10 @@ public class RewriterContextSettings {
 		ALL_TYPES.forEach(t -> builder.append("_EClass(" + t + "...)::" + t + "\n"));
 		ALL_TYPES.forEach(t -> builder.append("_backRef." + t + "()::" + t + "\n"));
 
-		builder.append("f(FLOAT,FLOAT)::FLOAT"); // Some testing function that is not commutative
+		for (String s : SCALARS)
+			builder.append("literal." + s + "()::" + s + "\n");
 
-		/*builder.append("_map(INT,INT,FLOAT)::MATRIX\n");
-		builder.append("_matIdx(MATRIX)::IDX[MATRIX]\n");
-		builder.append("_nextRowIdx(MATRIX)::INT\n");
-		builder.append("_nextColIdx(MATRIX)::INT\n");
-		builder.append("_next(IDX[MATRIX])::FLOAT\n");
-
-		builder.append("_get(MATRIX,INT,INT)::FLOAT\n");*/
+		builder.append("f(FLOAT,FLOAT)::FLOAT\n"); // Some testing function that is not commutative
 
 		return builder.toString();
 	}
@@ -402,14 +395,6 @@ public class RewriterContextSettings {
 		String ctxString = getDefaultContextString();
 
 		RuleContext ctx = RuleContext.createContext(ctxString);
-
-		/*ctx.customStringRepr.put("_idx(INT,INT)", (stmt, mctx) -> {
-			return stmt.trueInstruction() + "(" + String.join(", ", stmt.getOperands().stream().map(el -> el.toString(mctx)).collect(Collectors.toList())) + ") [" + stmt.getMeta("idxId") + "]";
-		});
-
-		ctx.customStringRepr.put("_m(INT,INT,FLOAT)", (stmt, mctx) -> {
-			return stmt.trueInstruction() + "["  + stmt.getMeta("ownerId") + "](" + String.join(", ", stmt.getOperands().stream().map(el -> el.toString(mctx)).collect(Collectors.toList())) + ")";
-		});*/
 
 		// Meta instruction resolver
 		ctx.customStringRepr.put("_lower(INT)", (stmt, mctx) -> {

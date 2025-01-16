@@ -14,11 +14,11 @@ public class CodeGenUtils {
 	public static String getSpecialOpCheck(RewriterStatement stmt, final RuleContext ctx, String hopVar) {
 		if (!stmt.isInstruction())
 			return null;
-		//Types.AggOp.SUM
-		//HopRewriteUtils.is
 		switch (stmt.trueInstruction()) {
 			case "%*%":
 				return "HopRewriteUtils.isMatrixMultiply(" + hopVar + ")";
+			//case "literal.FLOAT":
+			//	return "(" + hopVar + " instanceof LiteralOp && ((LiteralOp) " + hopVar + ")";
 		}
 
 		return null;
@@ -186,6 +186,8 @@ public class CodeGenUtils {
 						throw new IllegalArgumentException();
 
 					return "Types.OpOp3.MINUS_MULT";
+				case "literal.FLOAT":
+					return null; // There is no opcheck on literals
 			}
 		}
 
@@ -250,6 +252,11 @@ public class CodeGenUtils {
 
 			case "const":
 				return "DataGenOp";
+
+			case "literal.FLOAT":
+			case "literal.INT":
+			case "literal.BOOL":
+				return "LiteralOp";
 		}
 
 		throw new NotImplementedException(stmt.trueTypedInstruction(ctx));

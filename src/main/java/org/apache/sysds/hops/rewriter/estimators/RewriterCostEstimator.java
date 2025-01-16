@@ -1008,6 +1008,10 @@ public class RewriterCostEstimator {
 				return 2;
 			case "cast.FLOAT":
 				return 1;
+			case "literal.FLOAT":
+			case "literal.INT":
+			case "literal.BOOL":
+				return 0;
 		}
 
 		throw new IllegalArgumentException("Unknown instruction: " + op);

@@ -348,4 +348,26 @@ public class CostEstimates {
 		System.out.println("Cost2: " + cost2);
 		assert cost1 == cost2;
 	}
+
+	@Test
+	public void test19() {
+		String ruleStr =
+				"MATRIX:tmp14587,tmp76084\n" +
+				"FLOAT:one_over_sqrt_two_pi\n" +
+				"\n" +
+				"*(tmp14587,/(one_over_sqrt_two_pi,tmp76084))\n" +
+				"=>\n" +
+				"/(*(one_over_sqrt_two_pi,tmp14587),tmp76084)";
+
+		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
+
+		List<Tuple3<List<Number>, Long, Long>> cmp = RewriterCostEstimator.compareCosts(rule.getStmt1(), rule.getStmt2(), rule.getStmt1().getAssertions(ctx), ctx, false, 0, false);
+
+		System.out.println(cmp);
+		long cost1 = RewriterCostEstimator.estimateCost(rule.getStmt1(), ctx);
+		long cost2 = RewriterCostEstimator.estimateCost(rule.getStmt2(), ctx);
+		System.out.println("Cost1: " + cost1);
+		System.out.println("Cost2: " + cost2);
+		assert cost1 == cost2;
+	}
 }

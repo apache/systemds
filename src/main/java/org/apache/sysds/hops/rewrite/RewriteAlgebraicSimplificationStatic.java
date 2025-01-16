@@ -198,6 +198,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			//hi = removeUnecessaryPPred(hop, hi, i);            //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 
 			hi = fixNonScalarPrint(hop, hi, i);                  //e.g., print(m) -> print(toString(m))
+			hi = fuseSeqAndTableExpand(hi);
 
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
 			if( !descendFirst )
@@ -2194,5 +2195,25 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				iter.remove();
 			}
 		}
+	}
+
+	private static Hop fuseSeqAndTableExpand(Hop hi) {
+
+		if(hi instanceof TernaryOp) {
+			TernaryOp thop = (TernaryOp) hi;
+			thop.getOp();
+			if(thop.getOp() == OpOp3.CTABLE) {
+				Hop input1 = thop.getInput(0);
+				Hop input2 = thop.getInput(1);
+				// Hop input3 = thop.getInput().size() == 3 ? thop.getInput(2) : null;
+
+				if(HopRewriteUtils.isSequenceSizeOfA(input1, input2)) {
+					Hop literal = new LiteralOp(input1.getDim1());
+					HopRewriteUtils.replaceChildReference(hi, input1, literal);
+				}
+			}
+
+		}
+		return hi;
 	}
 }

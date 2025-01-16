@@ -1397,7 +1397,7 @@ public class HopRewriteUtils {
 	{
 		boolean ret = false;
 		
-		if((hop instanceof DataGenOp) && hop.getExecType() == ExecType.CP && A.getExecType() != ExecType.CP ) {
+		if((hop instanceof DataGenOp)) {
 			DataGenOp dgop = (DataGenOp) hop;
 			if(dgop.getOp() == OpOpDG.SEQ) {
 				Hop from = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_FROM));

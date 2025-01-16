@@ -651,7 +651,9 @@ public class TernaryOp extends MultiThreadedHop
 			{
 				Hop input1 = getInput().get(0);
 				Hop input2 = getInput().get(1);
-				if( input1.getDataType() == DataType.MATRIX && input2.getDataType() == DataType.MATRIX )
+				if( (input1.getDataType() == DataType.MATRIX 
+					|| input1.getDataType() == DataType.SCALAR )
+					 && input2.getDataType() == DataType.MATRIX )
 				{
 					//probe rewrite on left input
 					if( left && input1 instanceof DataGenOp )
@@ -662,6 +664,9 @@ public class TernaryOp extends MultiThreadedHop
 							ret = (incr instanceof LiteralOp && HopRewriteUtils.getDoubleValue((LiteralOp)incr)==1)
 								  || dgop.getIncrementValue()==1.0; //set by recompiler
 						}
+					}
+					if( left && input1 instanceof LiteralOp){
+						ret = true;
 					}
 					//probe rewrite on right input
 					if( !left && input2 instanceof DataGenOp )

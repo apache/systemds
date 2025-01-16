@@ -102,7 +102,7 @@ public class WordEmbeddingUseCase extends AutomatedTestBase {
 			writeBinaryWithMTD("W", W);
 
 			runTest(null);
-
+			
 			MatrixBlock R = TestUtils.readBinary(output("R"));
 
 			analyzeResult(X, W, R, l);

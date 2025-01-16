@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -49,28 +50,28 @@ public class CLALibTable {
 		// empty constructor
 	}
 
-	public static MatrixBlock tableSeqOperations(int seqHeight, MatrixBlock A, int nColOut){
+	public static MatrixBlock tableSeqOperations(int seqHeight, MatrixBlock A, int nColOut) {
 
 		int k = InfrastructureAnalyzer.getLocalParallelism();
-		try{
+		try {
 
 			final int[] map = new int[seqHeight];
 			int maxCol = constructInitialMapping(map, A, k);
 			boolean containsNull = maxCol < 0;
 			maxCol = Math.abs(maxCol);
-	
+
 			if(nColOut == -1)
 				nColOut = maxCol;
 			else if(nColOut < maxCol)
 				throw new DMLRuntimeException("invalid nColOut, requested: " + nColOut + " but have to be : " + maxCol);
-	
+
 			final int nNulls = containsNull ? correctNulls(map, nColOut) : 0;
 			if(nColOut == 0) // edge case of empty zero dimension block.
 				return new MatrixBlock(seqHeight, 0, 0.0);
 			return createCompressedReturn(map, nColOut, seqHeight, nNulls, containsNull, k);
 		}
-		catch(Exception e){
-			throw new RuntimeException("Failed table seq operator",e);
+		catch(Exception e) {
+			throw new RuntimeException("Failed table seq operator", e);
 		}
 	}
 
@@ -108,16 +109,16 @@ public class CLALibTable {
 
 			int blkz = Math.max((map.length / k), 1000);
 			List<Future<Integer>> tasks = new ArrayList<>();
-			for(int i = 0; i < map.length; i+= blkz){
+			for(int i = 0; i < map.length; i += blkz) {
 				final int start = i;
 				final int end = Math.min(i + blkz, map.length);
 				tasks.add(pool.submit(() -> partialMapping(map, A, start, end)));
 			}
 
 			int maxCol = 0;
-			for( Future<Integer> f :  tasks){
+			for(Future<Integer> f : tasks) {
 				int tmp = f.get();
-				if(Math.abs(tmp) >Math.abs(maxCol))
+				if(Math.abs(tmp) > Math.abs(maxCol))
 					maxCol = tmp;
 			}
 			return maxCol;
@@ -135,6 +136,12 @@ public class CLALibTable {
 
 		int maxCol = 0;
 		boolean containsNull = false;
+		if(A instanceof CompressedMatrixBlock) {
+			// throw new NotImplementedException();
+			LOG.warn("Decompression of right side input to CLALibTable, please implement alternative.");
+			A = CompressedMatrixBlock.getUncompressed(A);
+		}
+
 		final double[] aVals = A.getDenseBlockValues();
 
 		for(int i = start; i < end; i++) {

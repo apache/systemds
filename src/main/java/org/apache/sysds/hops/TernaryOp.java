@@ -21,7 +21,6 @@ package org.apache.sysds.hops;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
-import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOp3;
 import org.apache.sysds.common.Types.OpOpDG;
@@ -35,6 +34,7 @@ import org.apache.sysds.lops.CentralMoment;
 import org.apache.sysds.lops.CoVariance;
 import org.apache.sysds.lops.Ctable;
 import org.apache.sysds.lops.Lop;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.LopsException;
 import org.apache.sysds.lops.PickByCount;
 import org.apache.sysds.lops.SortKeys;

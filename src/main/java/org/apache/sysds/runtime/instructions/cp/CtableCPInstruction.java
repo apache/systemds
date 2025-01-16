@@ -89,7 +89,7 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		MatrixBlock matBlock1 = input1.isMatrix() ? ec.getMatrixInput(input1): null;
+		MatrixBlock matBlock1 =! _isExpand ? ec.getMatrixInput(input1): null;
 		MatrixBlock matBlock2 = null, wtBlock=null;
 		double cst1, cst2;
 		
@@ -111,11 +111,7 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 			if( !sparse )
 				resultBlock = new MatrixBlock((int)outputDim1, (int)outputDim2, false); 
 		}
-		if( _isExpand ){
-			if(matBlock1 != null)
-				resultBlock = new MatrixBlock( matBlock1.getNumRows(), Integer.MAX_VALUE, true );
-		}
-		
+
 		switch(ctableOp) {
 			case CTABLE_TRANSFORM: //(VECTOR)
 				// F=ctable(A,B,W)

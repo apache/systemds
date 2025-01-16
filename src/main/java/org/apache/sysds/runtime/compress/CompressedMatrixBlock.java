@@ -53,6 +53,7 @@ import org.apache.sysds.runtime.compress.lib.CLALibDecompress;
 import org.apache.sysds.runtime.compress.lib.CLALibMMChain;
 import org.apache.sysds.runtime.compress.lib.CLALibMatrixMult;
 import org.apache.sysds.runtime.compress.lib.CLALibMerge;
+import org.apache.sysds.runtime.compress.lib.CLALibReshape;
 import org.apache.sysds.runtime.compress.lib.CLALibRexpand;
 import org.apache.sysds.runtime.compress.lib.CLALibScalar;
 import org.apache.sysds.runtime.compress.lib.CLALibSlice;
@@ -1279,6 +1280,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	@Override 
 	public MatrixBlock transpose(int k) {
 		return getUncompressed().transpose(k);
+	}
+
+	@Override 
+	public MatrixBlock reshape(int rows,int cols, boolean byRow){
+		return CLALibReshape.reshape(this, rows, cols, byRow);
 	}
 
 	@Override

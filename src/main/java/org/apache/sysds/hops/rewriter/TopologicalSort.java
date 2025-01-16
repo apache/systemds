@@ -39,7 +39,6 @@ public class TopologicalSort {
 	// All of these operators are sortable but have their operands directly as children (e.g. ==(a,b))
 	private static final Set<String> SORTABLE_OPS = Set.of("==", "!=");
 
-	// TODO: Sort doesn't work if we have sth like _EClass(argList(nrow(U), nrow(V)), as the lowest address will be nrow, ncol and not U, V
 	public static void sort(RewriterStatement root, final RuleContext ctx) {
 		sort(root, (el, parent) -> {
 			if (!el.isInstruction())
@@ -52,17 +51,11 @@ public class TopologicalSort {
 		}, ctx);
 	}
 
-	// TODO: Fails for E_Classes in DataTypes (matrix) if they do not occur elsewhere
 	public static void sort(RewriterStatement root, BiFunction<RewriterStatement, RewriterStatement, Boolean> isArrangable, final RuleContext ctx) {
 		// First, we setup an artificial root node to be able to sort E-Classes that are only included as meta-info not directly in the operand structure
 		Set<RewriterStatement> hiddenEClasses = new HashSet<>();
 		root.forEachPostOrder((stmt, pred) -> {
 			if (stmt instanceof RewriterDataType && !stmt.isLiteral() && stmt.getResultingDataType(ctx).equals("MATRIX")) {
-				System.out.println("===");
-				System.out.println(stmt.toParsableString(ctx));
-				System.out.println(stmt.getNRow());
-				System.out.println(stmt.getNCol());
-
 				if (stmt.getNRow().isInstruction() && stmt.getNRow().trueInstruction().equals("_EClass"))
 					hiddenEClasses.add(stmt.getNRow());
 
@@ -77,7 +70,6 @@ public class TopologicalSort {
 			RewriterStatement argList = new RewriterInstruction().withInstruction("argList").withOps(hiddenEClasses.toArray(RewriterStatement[]::new));
 			RewriterStatement dummy = new RewriterInstruction().withInstruction("_dummy").withOps(argList);
 			root = new RewriterInstruction().withInstruction("_root").withOps(root, dummy);
-			System.out.println("RT: " + root.toParsableString(ctx));
 		}
 
 		List<RewriterStatement> uncertainParents = setupOrderFacts(root, isArrangable, ctx);
@@ -126,8 +118,6 @@ public class TopologicalSort {
 		constructNewDAG(oldRoot, ctx);
 		if (DEBUG)
 			System.out.println("After construction: " + oldRoot.toParsableString(ctx));
-
-		System.out.println("RT2: " + root.toParsableString(ctx));
 	}
 
 	// Returns all uncertain parents ordered in post order (elements without uncertain sub-DAGs come first in the list)

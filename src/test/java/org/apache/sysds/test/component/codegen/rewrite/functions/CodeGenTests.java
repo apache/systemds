@@ -267,8 +267,23 @@ public class CodeGenTests {
 	}
 
 	@Test
+	public void testCFold() {
+		String ruleStr = "LITERAL_FLOAT:1.0,2.0\n" +
+				"\n" +
+				"+(1.0,1.0)\n" +
+				"=>\n" +
+				"2.0";
+		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
+		RewriterRuleSet rs = new RewriterRuleSet(ctx, List.of(rule));
+		rs.determineConditionalApplicability();
+		RewriterCodeGen.DEBUG = false;
+		String code = rs.toJavaCode("GeneratedRewriteClass", false, true, true, false);
+		System.out.println(code);
+	}
+
+	@Test
 	public void codeGen() {
-		List<String> files = List.of(RewriteAutomaticallyGenerated.FILE_PATH, RewriteAutomaticallyGenerated.FILE_PATH_CONDITIONAL);
+		List<String> files = List.of(RewriteAutomaticallyGenerated.VALIDATED_FILE_PATH, RewriteAutomaticallyGenerated.FILE_PATH_CONDITIONAL);
 		String targetPath = "/Users/janniklindemann/Dev/MScThesis/other/GeneratedRewriteClass.java";
 
 		try {

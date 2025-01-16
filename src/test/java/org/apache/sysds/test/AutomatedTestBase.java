@@ -113,10 +113,13 @@ import scala.Tuple4;
  */
 public abstract class AutomatedTestBase {
 	protected static final boolean BENCHMARK = true;
-	protected static final int BENCHMARK_WARMUP_RUNS = 1;
+	protected static final int BENCHMARK_WARMUP_RUNS = 0;
 	protected static final int BENCHMARK_REPETITIONS = 1;
-	protected static final boolean ALLOW_GENERATED_REWRITES = false;
+	protected static final boolean ALLOW_GENERATED_REWRITES = true;
 	protected static final String BASE_DATA_DIR = "/Users/janniklindemann/Dev/MScThesis/NGramAnalysis/";
+
+
+	///// THESE SHOULD NOT BE MODIFIED /////
 	private static String currentTestName = "";
 	private static int currentTestRun = -1;
 	private static boolean benchmark_run = false;

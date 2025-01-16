@@ -557,31 +557,35 @@ public class RewriterCodeGen {
 				String literalStr = cur.getLiteral().toString();
 
 				if (enforceRootDataType) {
-					sb.append("LiteralOp " + name + ";");
+					sb.append("LiteralOp " + name + ";\n");
 					indent(indentation, sb);
 					sb.append("switch (hi.getValueType()) {\n");
 					indent(indentation+1, sb);
-					sb.append("case Types.ValueType.FP64:\n");
+					sb.append("case FP64:\n");
 					indent(indentation+2, sb);
 					sb.append(name);
 					sb.append(" = new LiteralOp( " + cur.floatLiteral() + " );\n");
 					indent(indentation+2, sb);
 					sb.append("break;\n");
 					indent(indentation+1, sb);
-					sb.append("case Types.ValueType.INT64:\n");
+					sb.append("case INT64:\n");
 					indent(indentation+2, sb);
 					sb.append(name);
 					sb.append(" = new LiteralOp( " + cur.intLiteral(true) + " );\n");
 					indent(indentation+2, sb);
 					sb.append("break;\n");
 					indent(indentation+1, sb);
-					sb.append("case Types.ValueType.BOOLEAN:\n");
+					sb.append("case BOOLEAN:\n");
 					indent(indentation+2, sb);
 					sb.append(name);
 					sb.append(" = new LiteralOp( " + cur.boolLiteral() + " );\n");
 					indent(indentation+2, sb);
 					sb.append("break;\n");
-					indent(indentation, sb);
+					indent(indentation+1, sb);
+					sb.append("default:\n");
+					indent(indentation+2, sb);
+					sb.append("return hi;\n");
+					indent(indentation+1, sb);
 					sb.append("}\n");
 				} else {
 					sb.append("LiteralOp " + name + " = new LiteralOp( " + literalStr + " );\n");

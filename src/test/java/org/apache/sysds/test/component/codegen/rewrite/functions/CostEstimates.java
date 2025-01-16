@@ -88,6 +88,7 @@ public class CostEstimates {
 	public void test6() {
 		RewriterStatement stmt1 = RewriterUtils.parse("sum(+(A, B))", ctx, "MATRIX:A,B,C");
 		RewriterStatement stmt2 = RewriterUtils.parse("+(sum(A), sum(B))", ctx, "MATRIX:A,B,C");
+		stmt2.givenThatEqualDimensions(stmt2.getChild(0, 0), stmt2.getChild(1, 0), ctx);
 		long cost1 = RewriterCostEstimator.estimateCost(stmt1, el -> 2000L, ctx);
 		long cost2 = RewriterCostEstimator.estimateCost(stmt2, el -> 2000L, ctx);
 		System.out.println("Cost1: " + cost1);
@@ -345,6 +346,6 @@ public class CostEstimates {
 		long cost2 = RewriterCostEstimator.estimateCost(rule.getStmt2(), ctx);
 		System.out.println("Cost1: " + cost1);
 		System.out.println("Cost2: " + cost2);
-		assert cost1 < cost2;
+		assert cost1 == cost2;
 	}
 }

@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -103,11 +102,14 @@ public class CLALibTable {
 	private static int constructInitialMapping(int[] map, MatrixBlock A, int k) {
 		if(A.isEmpty() || A.isInSparseFormat())
 			throw new DMLRuntimeException("not supported empty or sparse construction of seq table");
+		final MatrixBlock Ac;
 		if(A instanceof CompressedMatrixBlock) {
 			// throw new NotImplementedException();
 			LOG.warn("Decompression of right side input to CLALibTable, please implement alternative.");
-			A = CompressedMatrixBlock.getUncompressed(A);
+			Ac = ((CompressedMatrixBlock) A).getUncompressed("rexpand", k);
 		}
+		else
+			Ac = A;
 
 		ExecutorService pool = CommonThreadPool.get(k);
 		try {
@@ -117,7 +119,7 @@ public class CLALibTable {
 			for(int i = 0; i < map.length; i += blkz) {
 				final int start = i;
 				final int end = Math.min(i + blkz, map.length);
-				tasks.add(pool.submit(() -> partialMapping(map, A, start, end)));
+				tasks.add(pool.submit(() -> partialMapping(map, Ac, start, end)));
 			}
 
 			int maxCol = 0;

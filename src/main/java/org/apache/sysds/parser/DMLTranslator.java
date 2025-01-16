@@ -2749,6 +2749,7 @@ public class DMLTranslator
 			break;
 
 		case INVERSE:
+		case SQRT_MATRIX_JAVA:
 		case CHOLESKY:
 		case TYPEOF:
 		case DETECTSCHEMA:

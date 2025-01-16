@@ -34,7 +34,6 @@ import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.CentralMoment;
 import org.apache.sysds.lops.CoVariance;
 import org.apache.sysds.lops.Ctable;
-import org.apache.sysds.lops.Data;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.LopsException;
 import org.apache.sysds.lops.PickByCount;
@@ -274,8 +273,6 @@ public class TernaryOp extends MultiThreadedHop
 		// F=ctable(A,B,W)
 		
 		DataType dt1 = getInput().get(0).getDataType(); 
-		
-
 		DataType dt2 = getInput().get(1).getDataType(); 
 		DataType dt3 = getInput().get(2).getDataType(); 
 		Ctable.OperationTypes ternaryOpOrig = Ctable.findCtableOperationByInputDataTypes(dt1, dt2, dt3);
@@ -283,10 +280,7 @@ public class TernaryOp extends MultiThreadedHop
 		// Compute lops for all inputs
 		Lop[] inputLops = new Lop[getInput().size()];
 		for(int i=0; i < getInput().size(); i++) {
-			if(i == 0 && HopRewriteUtils.isSequenceSizeOfA(getInput(0), getInput(1)))
-				inputLops[i] = Data.createLiteralLop(ValueType.INT64, "" +getInput(1).getDim(0));
-			else
-				inputLops[i] = getInput().get(i).constructLops();
+			inputLops[i] = getInput().get(i).constructLops();
 		}
 		
 		ExecType et = optFindExecType();

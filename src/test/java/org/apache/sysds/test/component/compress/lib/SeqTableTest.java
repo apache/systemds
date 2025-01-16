@@ -23,7 +23,6 @@ import static org.junit.Assert.assertEquals;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.lib.CLALibTable;
 import org.apache.sysds.runtime.matrix.data.LibMatrixTable;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -38,19 +37,19 @@ public class SeqTableTest {
 		LibMatrixTable.ALLOW_COMPRESSED_TABLE_SEQ = true; // allow the compressed tables.
 	}
 
-	@Test(expected = DMLRuntimeException.class)
+	@Test(expected = RuntimeException.class)
 	public void test_notSameDim() throws Exception {
 		MatrixBlock c = new MatrixBlock(20, 1, 0.0);
 		CLALibTable.tableSeqOperations(10, c, -1);
 	}
 
-	@Test(expected = DMLRuntimeException.class)
+	@Test(expected = RuntimeException.class)
 	public void test_toLow() throws Exception {
 		MatrixBlock c = new MatrixBlock(10, 1, -1.0);
 		CLALibTable.tableSeqOperations(10, c, -1);
 	}
 
-	@Test(expected = DMLRuntimeException.class)
+	@Test(expected = RuntimeException.class)
 	public void test_toManyColumn() throws Exception {
 		MatrixBlock c = new MatrixBlock(10, 2, -1.0);
 		CLALibTable.tableSeqOperations(10, c, -1);

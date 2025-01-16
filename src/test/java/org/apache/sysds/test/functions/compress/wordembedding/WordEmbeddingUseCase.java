@@ -37,9 +37,9 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
-public class wordEmbeddingUseCase extends AutomatedTestBase {
+public class WordEmbeddingUseCase extends AutomatedTestBase {
 
-	protected static final Log LOG = LogFactory.getLog(wordEmbeddingUseCase.class.getName());
+	protected static final Log LOG = LogFactory.getLog(WordEmbeddingUseCase.class.getName());
 
 	private final static String TEST_DIR = "functions/compress/wordembedding/";
 
@@ -80,8 +80,7 @@ public class wordEmbeddingUseCase extends AutomatedTestBase {
 		wordEmb(100, 200, 5, 2, ExecType.CP, "01");
 	}
 
-
-	public void wordEmb(int rows, int unique, int l, int embeddingSize,  ExecType instType, String name) {
+	public void wordEmb(int rows, int unique, int l, int embeddingSize, ExecType instType, String name) {
 
 		OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND = true;
 		Types.ExecMode platformOld = setExecMode(instType);
@@ -91,9 +90,9 @@ public class wordEmbeddingUseCase extends AutomatedTestBase {
 		try {
 			super.setOutputBuffering(true);
 			loadTestConfiguration(getTestConfiguration(getTestName()));
-			fullDMLScriptName = SCRIPT_DIR +  getTestClassDir() + name + ".dml";
+			fullDMLScriptName = SCRIPT_DIR + getTestClassDir() + name + ".dml";
 
-			programArgs = new String[] {"-stats", "100", "-args", input("X"), input("W"), "" + l, output("R")};
+			programArgs = new String[] {"-stats", "100", "-explain", "-args", input("X"), input("W"), "" + l, output("R")};
 
 			MatrixBlock X = TestUtils.generateTestMatrixBlock(rows, 1, 1, unique + 1, 1.0, 32);
 			X = TestUtils.floor(X);
@@ -118,17 +117,17 @@ public class wordEmbeddingUseCase extends AutomatedTestBase {
 		}
 	}
 
-	private void analyzeResult(MatrixBlock X, MatrixBlock W, MatrixBlock R, int l){
-		for(int i = 0; i < X.getNumRows(); i++){
+	private void analyzeResult(MatrixBlock X, MatrixBlock W, MatrixBlock R, int l) {
+		for(int i = 0; i < X.getNumRows(); i++) {
 			// for each row in X, it should embed with a W, in accordance to what value it used
 
 			// the entry to look into W. // as in row
-			int e = UtilFunctions.toInt(X.get(i,0)) -1;
+			int e = UtilFunctions.toInt(X.get(i, 0)) - 1;
 			int rowR = i / l;
 			int offR = i % l;
-			
-			for(int j = 0; j < W.getNumColumns(); j++){
-				assertEquals(R.get(rowR, offR* W.getNumColumns() + j), W.get(e, j), 0.0);
+
+			for(int j = 0; j < W.getNumColumns(); j++) {
+				assertEquals(R.get(rowR, offR * W.getNumColumns() + j), W.get(e, j), 0.0);
 			}
 		}
 	}

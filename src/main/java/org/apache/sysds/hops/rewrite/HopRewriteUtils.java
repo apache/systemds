@@ -25,6 +25,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOp2;
@@ -1396,16 +1397,15 @@ public class HopRewriteUtils {
 	{
 		boolean ret = false;
 		
-		if( hop instanceof DataGenOp )
-		{
+		if((hop instanceof DataGenOp) && hop.getExecType() == ExecType.CP && A.getExecType() != ExecType.CP ) {
 			DataGenOp dgop = (DataGenOp) hop;
-			if( dgop.getOp() == OpOpDG.SEQ ){
+			if(dgop.getOp() == OpOpDG.SEQ) {
 				Hop from = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_FROM));
 				Hop to = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_TO));
 				Hop incr = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_INCR));
 				ret = (from instanceof LiteralOp && getIntValueSafe((LiteralOp) from) == 1) &&
 					(to instanceof LiteralOp && getIntValueSafe((LiteralOp) to) == A.getDim(0)) &&
-					(incr instanceof LiteralOp && getIntValueSafe((LiteralOp)incr)==1);
+					(incr instanceof LiteralOp && getIntValueSafe((LiteralOp) incr) == 1);
 			}
 		}
 		

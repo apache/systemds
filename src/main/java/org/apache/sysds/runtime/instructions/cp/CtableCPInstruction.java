@@ -89,11 +89,9 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 	
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		MatrixBlock matBlock1 = null;
+		MatrixBlock matBlock1 = input1.isMatrix() ? ec.getMatrixInput(input1): null;
 		MatrixBlock matBlock2 = null, wtBlock=null;
 		double cst1, cst2;
-		if(!input1.isScalar())
-			matBlock1 = ec.getMatrixInput(input1.getName());
 		
 		CTableMap resultMap = new CTableMap(EntryType.INT);
 		MatrixBlock resultBlock = null;
@@ -135,8 +133,13 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 				// F = ctable(seq,A) or F = ctable(seq,B,1)
 				matBlock2 = ec.getMatrixInput(input2.getName());
 				cst1 = ec.getScalarInput(input3).getDoubleValue();
+				final int seqLength;
+				if(input1.getDataType() == DataType.MATRIX)
+					seqLength = ec.getMatrixInput(input1).getNumRows();
+				else
+					seqLength = (int) input1.getLiteral().getLongValue();
 				// only resultBlock.rlen known, resultBlock.clen set in operation
-				resultBlock = LibMatrixTable.tableSeqOperations((int)input1.getLiteral().getLongValue(), matBlock2, cst1, resultBlock, true);
+				resultBlock = LibMatrixTable.tableSeqOperations(seqLength, matBlock2, cst1, resultBlock, true);
 				break;
 			case CTABLE_TRANSFORM_HISTOGRAM: //(VECTOR)
 				// F=ctable(A,1) or F = ctable(A,1,1)

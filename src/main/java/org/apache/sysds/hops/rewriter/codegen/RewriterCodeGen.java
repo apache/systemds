@@ -6,6 +6,8 @@ import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.UnaryOp;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.sysds.hops.rewriter.RewriteAutomaticallyGenerated;
+import org.apache.sysds.hops.rewriter.RewriterRuleSet;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.RewriterDataType;
@@ -15,6 +17,10 @@ import org.apache.sysds.hops.rewriter.RuleContext;
 import org.codehaus.janino.SimpleCompiler;
 import scala.Tuple2;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,6 +33,29 @@ import java.util.stream.Collectors;
 
 public class RewriterCodeGen {
 	public static boolean DEBUG = true;
+
+	public static String generateRewritesFromFiles(List<String> filePaths, String targetFile, boolean optimize, final RuleContext ctx) throws IOException {
+		return generateRewritesFromFiles(filePaths, targetFile, optimize, 2, true, true, ctx);
+	}
+
+	public static String generateRewritesFromFiles(List<String> filePaths, String targetFile, boolean optimize, int maxOptimizationDepth, boolean includePackageInfo, boolean maintainStatistics, final RuleContext ctx) throws IOException {
+		List<String> lines = new ArrayList<>();
+
+		for (String path : filePaths) {
+			lines.addAll(Files.readAllLines(Paths.get(path)));
+		}
+
+		RewriterRuleSet ruleSet = RewriterRuleSet.deserialize(lines, ctx);
+		String javaCode = ruleSet.toJavaCode("GeneratedRewriteClass", optimize, maxOptimizationDepth, includePackageInfo, true, maintainStatistics);
+
+		try (FileWriter writer = new FileWriter(targetFile)) {
+			writer.write(javaCode);
+		} catch (IOException e) {
+			throw e;
+		}
+
+		return javaCode;
+	}
 
 	public static Function<Hop, Hop> compileRewrites(String className, List<Tuple2<String, RewriterRule>> rewrites, final RuleContext ctx, boolean ignoreErrors, boolean printErrors) throws Exception {
 		String code = generateClass(className, rewrites, false, false, ctx, ignoreErrors, printErrors);
@@ -265,7 +294,7 @@ public class RewriterCodeGen {
 			for (int i = 1; i < msb.size(); i++) {
 				indent(indentation+1, sb);
 				sb.append("case " + i + ": {");
-				buildNewHop(name, from, tos.get(i-1), sb, combinedAssertions, vars, ctx, indentation+2, maintainRewriteStats);
+				buildNewHop(name, from, tos.get(i-1), sb, combinedAssertions, new HashMap<>(vars), ctx, indentation+2, maintainRewriteStats);
 				indent(indentation+1, sb);
 				sb.append("}\n");
 			}

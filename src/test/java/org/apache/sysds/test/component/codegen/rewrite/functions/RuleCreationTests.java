@@ -101,9 +101,9 @@ public class RuleCreationTests {
 				.withParsedStatement("cast.MATRIX(sum(colVec(A)))")
 				.toParsedStatement("rowSums(colVec(A))")
 				.build();
-		
+
 		assert RewriterRuleCreator.validateRuleCorrectness(rule, ctx);
-		//assert RewriterRuleCreator.validateRuleApplicability(rule, ctx);
+		assert !RewriterRuleCreator.validateRuleApplicability(rule, ctx);
 	}
 
 	@Test

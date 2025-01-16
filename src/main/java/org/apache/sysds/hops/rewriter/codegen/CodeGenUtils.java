@@ -1,6 +1,7 @@
 package org.apache.sysds.hops.rewriter.codegen;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
@@ -69,6 +70,8 @@ public class CodeGenUtils {
 					return "Types.OpOp1.MULT2";
 				case "cast.MATRIX":
 					return "Types.OpOp1.CAST_AS_MATRIX";
+				case "cast.FLOAT":
+					return "Types.OpOp1.CAST_AS_SCALAR";
 				case "const":
 					return "Types.OpOpDG.RAND";
 			}
@@ -203,6 +206,7 @@ public class CodeGenUtils {
 			case "round":
 			case "*2":
 			case "cast.MATRIX":
+			case "cast.FLOAT":
 			case "nrow":
 			case "ncol":
 				return "UnaryOp";

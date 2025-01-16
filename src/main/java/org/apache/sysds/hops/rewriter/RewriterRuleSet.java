@@ -335,8 +335,14 @@ public class RewriterRuleSet {
 			currentLines.clear();
 		}
 
-		for (RewriterRule rule : rules)
-			rule.determineConditionalApplicability();
+		for (RewriterRule rule : rules) {
+			try {
+				rule.determineConditionalApplicability();
+			} catch (Exception e) {
+				System.err.println("Error while determining the conditional ability of " + rule.toString());
+				e.printStackTrace();
+			}
+		}
 
 		return new RewriterRuleSet(ctx, rules);
 	}

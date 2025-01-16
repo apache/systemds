@@ -268,30 +268,14 @@ public class CodeGenTests {
 
 	@Test
 	public void codeGen() {
+		List<String> files = List.of(RewriteAutomaticallyGenerated.FILE_PATH, RewriteAutomaticallyGenerated.FILE_PATH_CONDITIONAL);
+		String targetPath = "/Users/janniklindemann/Dev/MScThesis/other/GeneratedRewriteClass.java";
+
 		try {
-			List<String> lines = Files.readAllLines(Paths.get(RewriteAutomaticallyGenerated.FILE_PATH_MB));
-			RewriterRuleSet ruleSet = RewriterRuleSet.deserialize(lines, ctx);
-
-			RewriterRuntimeUtils.printUnknowns = false;
-			/*Set<RewriterRule> invalid_unoptimized = ruleSet.generateCodeAndTest(false, true);
-			Set<RewriterRule> invalid_optimized = ruleSet.generateCodeAndTest(true, true);
-			System.out.println("========== DIFF ===========");
-			invalid_optimized.removeAll(invalid_unoptimized);
-			for (RewriterRule rule : invalid_optimized) {
-				System.out.println(rule);
-			}*/
-
+			// This is to specify that the generated code should print to the console if it modifies the DAG
+			// This should be disabled when generating production code
 			RewriterCodeGen.DEBUG = true;
-			String javaCode = ruleSet.toJavaCode("GeneratedRewriteClass", true, 2, true, true, true);
-			String filePath = "/Users/janniklindemann/Dev/MScThesis/other/GeneratedRewriteClass.java";
-
-			try (FileWriter writer = new FileWriter(filePath)) {
-				writer.write(javaCode);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-
-			//System.out.println(javaCode);
+			RewriterCodeGen.generateRewritesFromFiles(files, targetPath, true, ctx);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

@@ -480,6 +480,10 @@ public class TernaryOp extends MultiThreadedHop
 	}
 	
 
+	public ExecType findExecTypeTernaryOp(){
+		return _etype == null ? optFindExecType(OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE) : _etype;
+	}
+
 	@Override
 	protected ExecType optFindExecType(boolean transitive) 
 	{

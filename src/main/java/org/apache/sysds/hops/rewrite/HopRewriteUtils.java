@@ -25,7 +25,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOp2;
@@ -1397,7 +1396,7 @@ public class HopRewriteUtils {
 	{
 		boolean ret = false;
 		
-		if((hop instanceof DataGenOp)) {
+		if((hop instanceof DataGenOp) ) {
 			DataGenOp dgop = (DataGenOp) hop;
 			if(dgop.getOp() == OpOpDG.SEQ) {
 				Hop from = dgop.getInput().get(dgop.getParamIndex(Statement.SEQ_FROM));

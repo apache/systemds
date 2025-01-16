@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.compress.wordembedding;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 
@@ -80,6 +81,31 @@ public class WordEmbeddingUseCase extends AutomatedTestBase {
 		wordEmb(100, 200, 5, 2, ExecType.CP, "01");
 	}
 
+	@Test
+	public void testWordEmbSP() {
+		wordEmb(10, 2, 2, 2, ExecType.SPARK, "01");
+	}
+
+	@Test
+	public void testWordEmb_mediumSP() {
+		wordEmb(100, 30, 4, 3, ExecType.SPARK, "01");
+	}
+
+	@Test
+	public void testWordEmb_bigWordsSP() {
+		wordEmb(10, 2, 2, 10, ExecType.SPARK, "01");
+	}
+
+	@Test
+	public void testWordEmb_longSentencesSP() {
+		wordEmb(100, 30, 5, 2, ExecType.SPARK, "01");
+	}
+
+	@Test
+	public void testWordEmb_moreUniqueWordsThanSentencesSP() {
+		wordEmb(100, 200, 5, 2, ExecType.SPARK, "01");
+	}
+
 	public void wordEmb(int rows, int unique, int l, int embeddingSize, ExecType instType, String name) {
 
 		OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND = true;
@@ -101,11 +127,15 @@ public class WordEmbeddingUseCase extends AutomatedTestBase {
 			MatrixBlock W = TestUtils.generateTestMatrixBlock(unique, embeddingSize, 1.0, -1, 1, 32);
 			writeBinaryWithMTD("W", W);
 
-			runTest(null);
+			String r = runTest(null).toString();
 			
 			MatrixBlock R = TestUtils.readBinary(output("R"));
 
 			analyzeResult(X, W, R, l);
+
+			if( instType == ExecType.CP && heavyHittersContainsString("seq")){
+				fail("cp should not have seq instruction\n" + r);
+			}
 
 		}
 		catch(Exception e) {

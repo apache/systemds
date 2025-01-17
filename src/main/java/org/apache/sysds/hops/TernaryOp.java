@@ -651,6 +651,7 @@ public class TernaryOp extends MultiThreadedHop
 		
 		try
 		{
+
 			if( getInput().size()==2 || (getInput().size()==3 && getInput().get(2).getDataType()==DataType.SCALAR) )
 			{
 				Hop input1 = getInput().get(0);

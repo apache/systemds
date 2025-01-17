@@ -27,19 +27,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.sysds.common.Types.AggOp;
-import org.apache.sysds.common.Types.DataType;
-import org.apache.sysds.common.Types.Direction;
-import org.apache.sysds.common.Types.ExecType;
-import org.apache.sysds.common.Types.OpOp1;
-import org.apache.sysds.common.Types.OpOp2;
-import org.apache.sysds.common.Types.OpOp3;
-import org.apache.sysds.common.Types.OpOpDG;
-import org.apache.sysds.common.Types.OpOpData;
-import org.apache.sysds.common.Types.OpOpN;
-import org.apache.sysds.common.Types.ParamBuiltinOp;
-import org.apache.sysds.common.Types.ReOrgOp;
-import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
@@ -53,8 +40,21 @@ import org.apache.sysds.hops.ParameterizedBuiltinOp;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.UnaryOp;
+import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.common.Types.OpOp1;
+import org.apache.sysds.common.Types.OpOp2;
+import org.apache.sysds.common.Types.OpOp3;
+import org.apache.sysds.common.Types.OpOpDG;
+import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.common.Types.OpOpN;
+import org.apache.sysds.common.Types.ParamBuiltinOp;
+import org.apache.sysds.common.Types.ReOrgOp;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.Statement;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
 
 /**
  * Rule: Algebraic Simplifications. Simplifies binary expressions
@@ -2200,10 +2200,11 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 
 	private static Hop fuseSeqAndTableExpand(Hop hi) {
 
-		if(hi instanceof TernaryOp ) {
+		if(TernaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES && hi instanceof TernaryOp ) {
 			TernaryOp thop = (TernaryOp) hi;
 			thop.getOp();
-			if(thop.getOp() == OpOp3.CTABLE && thop.findExecTypeTernaryOp() == ExecType.CP) {
+			boolean rightInputSize = thop.getInput().size()==2  || thop.getInput().size()==3;
+			if(rightInputSize && thop.getOp() == OpOp3.CTABLE && thop.findExecTypeTernaryOp() == ExecType.CP) {
 				Hop input1 = thop.getInput(0);
 				Hop input2 = thop.getInput(1);
 				// Hop input3 = thop.getInput().size() == 3 ? thop.getInput(2) : null;

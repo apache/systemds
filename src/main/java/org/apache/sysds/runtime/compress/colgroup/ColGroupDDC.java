@@ -945,12 +945,12 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 				for(int rc = cl; rc < cu; rc++, pos++) {
 					final int idx = _data.getIndex(rc);
 					if(idx != nVal)
-						values2[_colIndexes.get(idx)] += values[pos];
+						values2[pos2 + _colIndexes.get(idx)] += values[pos];
 				}
 			}
 			else {
 				for(int rc = cl; rc < cu; rc++, pos++)
-					values2[_colIndexes.get(_data.getIndex(rc))] += values[pos];
+					values2[pos2 + _colIndexes.get(_data.getIndex(rc))] += values[pos];
 			}
 		}
 	}
@@ -959,7 +959,7 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 		int cl, int cu) {
 		IdentityDictionary a = (IdentityDictionary) _dict;
 
-		final int firstCol = _colIndexes.get(0);
+		final int firstCol = pos2 + _colIndexes.get(0);
 		pos += cl; // left side matrix position offset.
 		if(a.withEmpty()) {
 			final int nVal = _dict.getNumberOfValues(_colIndexes.size()) - 1;

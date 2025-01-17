@@ -22,5 +22,5 @@
 # DML script that tests read COG
 
 A = read($1, format="cog");
-x = sum(A)
+x = sum(A);
 write(x, $2);

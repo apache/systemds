@@ -1,8 +1,8 @@
 package org.apache.sysds.test.functions.io.cog;
 
-public class ReadCOGTestMultipleBands extends ReadCOGTest {
+public class ReadCOGTestMultipleBandsByte extends ReadCOGTest {
     private final static String TEST_NAME = "ReadCOGTest";
-    public final static String TEST_CLASS_DIR = TEST_DIR + ReadCOGTestMultipleBands.class.getSimpleName() + "/";
+    public final static String TEST_CLASS_DIR = TEST_DIR + ReadCOGTestMultipleBandsByte.class.getSimpleName() + "/";
 
     protected String getTestName() {
         return TEST_NAME;

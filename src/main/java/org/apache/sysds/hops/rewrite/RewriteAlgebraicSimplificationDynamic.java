@@ -30,6 +30,7 @@ import java.util.List;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOp3;
@@ -209,6 +210,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
 			if( !descendFirst )
 				rule_AlgebraicSimplification(hi, descendFirst);
+
+			hi = fuseSeqAndTableExpand(hi);
 		}
 
 		hop.setVisited();
@@ -2910,6 +2913,26 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				LOG.debug("Applied MMCBind Zero algebraic simplification (line " + hi.getBeginLine() + ").");
 				return newMM;
 			}
+		}
+		return hi;
+	}
+
+
+	private static Hop fuseSeqAndTableExpand(Hop hi) {
+
+		if(TernaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES && hi instanceof TernaryOp ) {
+			TernaryOp thop = (TernaryOp) hi;
+			thop.getOp();
+
+			if(thop.isSequenceRewriteApplicable(true) && thop.findExecTypeTernaryOp() == ExecType.CP && 
+				thop.getInput(1).getForcedExecType() != Types.ExecType.FED) {
+				Hop input1 = thop.getInput(0);
+				if(input1 instanceof DataGenOp){
+					Hop literal = new LiteralOp("seq(1, "+input1.getDim1() +")");
+					HopRewriteUtils.replaceChildReference(hi, input1, literal);
+				}
+			}
+
 		}
 		return hi;
 	}

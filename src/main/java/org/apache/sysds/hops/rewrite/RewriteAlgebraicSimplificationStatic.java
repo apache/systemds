@@ -42,7 +42,6 @@ import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.UnaryOp;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.Direction;
-import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOp3;
@@ -199,7 +198,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			//hi = removeUnecessaryPPred(hop, hi, i);            //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 
 			hi = fixNonScalarPrint(hop, hi, i);                  //e.g., print(m) -> print(toString(m))
-			hi = fuseSeqAndTableExpand(hi);
 
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
 			if( !descendFirst )
@@ -2196,23 +2194,5 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				iter.remove();
 			}
 		}
-	}
-
-	private static Hop fuseSeqAndTableExpand(Hop hi) {
-
-		if(TernaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES && hi instanceof TernaryOp ) {
-			TernaryOp thop = (TernaryOp) hi;
-			thop.getOp();
-
-			if(thop.isSequenceRewriteApplicable(true) && thop.findExecTypeTernaryOp() == ExecType.CP) {
-				Hop input1 = thop.getInput(0);
-				if(input1 instanceof DataGenOp){
-					Hop literal = new LiteralOp("seq(1, "+input1.getDim1() +")");
-					HopRewriteUtils.replaceChildReference(hi, input1, literal);
-				}
-			}
-
-		}
-		return hi;
 	}
 }

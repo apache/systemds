@@ -64,7 +64,7 @@ public final class CLALibRexpand {
 	}
 
 	public static MatrixBlock rexpand(int seqHeight, MatrixBlock A, int nColOut) {
-		return rexpand(seqHeight, A, nColOut);
+		return rexpand(seqHeight, A, nColOut, 1);
 	}
 
 	public static MatrixBlock rexpand(int seqHeight, MatrixBlock A, int nColOut, int k) {

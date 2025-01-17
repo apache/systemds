@@ -20,6 +20,7 @@
 package org.apache.sysds.test.component.compress.lib;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -56,9 +57,16 @@ public class SeqTableTest {
 
 	@Test
 	public void test_All_NaN() throws Exception {
-		MatrixBlock c = new MatrixBlock(10, 1, Double.NaN);
-		MatrixBlock ret = CLALibRexpand.rexpand(10, c);
-		assertEquals(0, ret.getNumColumns());
+		try{
+
+			MatrixBlock c = new MatrixBlock(10, 1, Double.NaN);
+			MatrixBlock ret = CLALibRexpand.rexpand(10, c);
+			assertEquals(0, ret.getNumColumns());
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	@Test

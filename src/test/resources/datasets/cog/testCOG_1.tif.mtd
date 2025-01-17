@@ -1,7 +1,5 @@
 { 
     "data_type": "matrix"
     ,"format": "cog"
-    ,"rows": 748
-    ,"cols": 5
     ,"description": { "author": "SystemDS" } 
 }

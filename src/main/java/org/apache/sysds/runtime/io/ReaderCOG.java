@@ -229,7 +229,6 @@ public class ReaderCOG extends MatrixReader{
         int[] tileOffsets = null;
         int[] bytesPerTile = null;
         int compression = -1;
-        Number noDataIndicator = null;
 
         // Set the attributes correctly from the IFD tags
         for (IFDTag ifd : cogHeader.getIFD()) {
@@ -272,8 +271,6 @@ public class ReaderCOG extends MatrixReader{
                 case Compression:
                     compression = ifd.getData()[0].intValue();
                     break;
-                case GDALNoData:
-                    noDataIndicator = ifd.getData()[0];
             }
         }
 
@@ -291,7 +288,6 @@ public class ReaderCOG extends MatrixReader{
         int currentBand = 0;
 
         MatrixBlock outputMatrix = createOutputMatrixBlock(rows, cols * bands, rows, estnnz, true, true);
-
         for (int currenTileIdx = 0; currenTileIdx < actualAmountTiles; currenTileIdx++) {
             int bytesToRead = (tileOffsets[currenTileIdx] - totalBytesRead) + bytesPerTile[currenTileIdx];
             // Mark the current position in the stream
@@ -337,9 +333,6 @@ public class ReaderCOG extends MatrixReader{
                                 break;
                         }
 
-                        if (noDataIndicator != null && value == noDataIndicator.doubleValue()) {
-                            value = Double.NaN;
-                        }
                         bytesRead += sampleLength;
                         outputMatrix.set((currentTileRow * tileLength) + currentRow,
                                 (currentTileCol * tileWidth * bands) + (pixelsRead * bands) + bandIdx,

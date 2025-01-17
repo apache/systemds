@@ -1355,13 +1355,8 @@ public class RewriterUtils {
 
 		visited.put(is, mList);
 
-		//if (totalSubsets == 0)
-			//return List.of();
-
 		List<List<RewriterStatement>> mOptions = indices.stream().map(i -> generateSubtrees(stmt.getOperands().get(i), visited, ctx, maxCombinations)).collect(Collectors.toList());
 		List<RewriterStatement> out = new ArrayList<>();
-		//System.out.println("Stmt: " + stmt.toParsableString(ctx));
-		//System.out.println("mOptions: " + mOptions);
 
 		for (int subsetMask = 0; subsetMask < totalSubsets; subsetMask++) {
 			List<List<RewriterStatement>> mOptionCpy = new ArrayList<>(mOptions);
@@ -1369,7 +1364,17 @@ public class RewriterUtils {
 			for (int i = 0; i < n; i++) {
 				// Check if the i-th child is included in the current subset
 				if ((subsetMask & (1 << i)) == 0) {
-					RewriterDataType mT = new RewriterDataType().as("tmp" + rd.nextInt(100000)).ofType(stmt.getOperands().get(indices.get(i)).getResultingDataType(ctx));
+					String dt = stmt.getOperands().get(indices.get(i)).getResultingDataType(ctx);
+					String namePrefix = "tmp";
+					if (dt.equals("MATRIX"))
+						namePrefix = "M";
+					else if (dt.equals("FLOAT"))
+						namePrefix = "f";
+					else if (dt.equals("INT"))
+						namePrefix = "i";
+					else if (dt.equals("BOOL"))
+						namePrefix = "b";
+					RewriterDataType mT = new RewriterDataType().as(namePrefix + rd.nextInt(100000)).ofType(dt);
 					mT.consolidate(ctx);
 					mOptionCpy.set(i, List.of(mT));
 				}

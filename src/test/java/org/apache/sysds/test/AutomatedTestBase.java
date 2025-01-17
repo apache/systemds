@@ -112,7 +112,7 @@ import scala.Tuple4;
  *
  */
 public abstract class AutomatedTestBase {
-	protected static final boolean BENCHMARK = true;
+	protected static final boolean BENCHMARK = false;
 	protected static final int BENCHMARK_WARMUP_RUNS = 0;
 	protected static final int BENCHMARK_REPETITIONS = 1;
 	protected static final boolean ALLOW_GENERATED_REWRITES = true;

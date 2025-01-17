@@ -45,4 +45,17 @@ public class SubtreeGeneratorTest {
 
 		assert subtrees.size() == 3;
 	}
+
+	@Test
+	public void test3() {
+		RewriterStatement stmt = RewriterUtils.parse("-(+(1.0,A),B)", ctx, "LITERAL_FLOAT:1.0", "MATRIX:A,B");
+		List<RewriterStatement> subtrees = RewriterUtils.generateSubtrees(stmt, ctx, 100);
+
+		for (RewriterStatement sub : subtrees) {
+			System.out.println("==========");
+			System.out.println(sub.toParsableString(ctx, true));
+		}
+
+		assert subtrees.size() == 3;
+	}
 }

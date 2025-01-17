@@ -283,7 +283,8 @@ public class CodeGenTests {
 
 	@Test
 	public void codeGen() {
-		List<String> files = List.of(RewriteAutomaticallyGenerated.VALIDATED_FILE_PATH, RewriteAutomaticallyGenerated.FILE_PATH_CONDITIONAL);
+		//List<String> files = List.of(RewriteAutomaticallyGenerated.VALIDATED_FILE_PATH, RewriteAutomaticallyGenerated.FILE_PATH_CONDITIONAL);
+		List<String> files = List.of(RewriteAutomaticallyGenerated.FILE_PATH_MB);
 		String targetPath = "/Users/janniklindemann/Dev/MScThesis/other/GeneratedRewriteClass.java";
 
 		try {

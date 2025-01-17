@@ -124,11 +124,37 @@ public class ReaderCOG extends MatrixReader{
 
                 int tagCount = cogHeader.parseByteArray(tag, 4, 4, false, false, false).intValue();
 
-                int tagValue = cogHeader.parseByteArray(tag, 4, 8, false, false, false).intValue();
                 Number[] tagData = new Number[tagCount];
+                int tagValue = cogHeader.parseByteArray(tag, 4, 8, false, false, false).intValue();
 
-                // If the data in total is larger than 4 bytes it is an offset to the actual data
-                if (dataType.getSize() * tagCount > 4) {
+                if (dataType.getSize() * tagCount <= 4) {
+                    for (int j = 0; j < tagCount; j++) {
+                        switch(dataType) {
+                            case BYTE:
+                            case ASCII:
+                            case SHORT:
+                            case LONG:
+                            case UNDEFINED:
+                                tagData[j] = cogHeader.parseByteArray(tag, dataType.getSize(), 8 + j * dataType.getSize(), false, false, false);
+                                break;
+                            case RATIONAL:
+                                throw new DMLRuntimeException("Data type RATIONAL cannot fit in 4 bytes");
+                            case SBYTE:
+                            case SSHORT:
+                            case SLONG:
+                                tagData[j] = cogHeader.parseByteArray(tag, dataType.getSize(), 8 + j * dataType.getSize(), false, true, false);
+                                break;
+                            case SRATIONAL:
+                                throw new DMLRuntimeException("Data type SRATIONAL cannot fit in 4 bytes");
+                            case FLOAT:
+                                tagData[j] = cogHeader.parseByteArray(tag, dataType.getSize(), 8 + j * dataType.getSize(), true, false, false);
+                                break;
+                            case DOUBLE:
+                                throw new DMLRuntimeException("Data type DOUBLE cannot fit in 4 bytes");
+                        }
+                    }
+                } else {
+                    // If the data in total is larger than 4 bytes it is an offset to the actual data
                     // Read the data from the offset
                     // tagValue = offset, just assigning this for better readability
                     int offset = tagValue;
@@ -184,8 +210,6 @@ public class ReaderCOG extends MatrixReader{
                     } catch (IOException e) {
                         throw new DMLRuntimeException(e);
                     }
-                } else { // If the data fits in the 4 bytes
-                    tagData[0] = tagValue;
                 }
                 // Read the tag ID and get the corresponding tag from the dictionary (enum)
                 IFDTagDictionary tagDictionary = IFDTagDictionary.valueOf(tagId);
@@ -256,7 +280,18 @@ public class ReaderCOG extends MatrixReader{
                     tileOffsets = Arrays.stream(ifd.getData()).mapToInt(Number::intValue).toArray();
                     break;
                 case TileByteCounts:
-                    bytesPerTile = Arrays.stream(ifd.getData()).mapToInt(Number::intValue).toArray();
+                    if (ifd.getData() != null) {
+                        bytesPerTile = Arrays.stream(ifd.getData()).mapToInt(Number::intValue).toArray();
+                    } else {
+                        bytesPerTile = new int[tileOffsets.length];
+                        for (int tile = 0; tile < tileOffsets.length; tile++) {
+                            int bits = 0;
+                            for (int band = 0; band < bands; band++) {
+                                bits += bitsPerSample[band];
+                            }
+                            bytesPerTile[tile] = tileWidth * tileLength * (bits / 8);
+                        }
+                    }
                     break;
                 case SampleFormat:
                     int dataCount = ifd.getDataCount();

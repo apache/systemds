@@ -1084,7 +1084,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		}
 		else if( getInput1().getDataType() == DataType.LIST ) {
 			ListObject lo = ec.getListObject(getInput1().getName());
-			ListWriter.writeListToHDFS(lo, fname, fmtStr, _formatProperties);
+			int blen = Integer.parseInt(getInput4().getName());
+			ListWriter.writeListToHDFS(lo, fname, fmtStr, new FileFormatProperties(blen));
 		}
 	}
 

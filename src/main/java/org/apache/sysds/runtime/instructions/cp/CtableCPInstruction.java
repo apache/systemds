@@ -40,21 +40,23 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 	private final CPOperand _outDim2;
 	private final boolean _isExpand;
 	private final boolean _ignoreZeros;
+	private final int _k;
 
 	private CtableCPInstruction(CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String outputDim1, boolean dim1Literal, String outputDim2, boolean dim2Literal, boolean isExpand,
-			boolean ignoreZeros, String opcode, String istr) {
+			boolean ignoreZeros, String opcode, String istr, int k) {
 		super(CPType.Ctable, null, in1, in2, in3, out, opcode, istr);
 		_outDim1 = new CPOperand(outputDim1, ValueType.FP64, DataType.SCALAR, dim1Literal);
 		_outDim2 = new CPOperand(outputDim2, ValueType.FP64, DataType.SCALAR, dim2Literal);
 		_isExpand = isExpand;
 		_ignoreZeros = ignoreZeros;
+		_k = k;
 	}
 
 	public static CtableCPInstruction parseInstruction(String inst)
 	{
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(inst);
-		InstructionUtils.checkNumFields ( parts, 7 );
+		InstructionUtils.checkNumFields ( parts, 8 );
 		
 		String opcode = parts[0];
 		
@@ -76,8 +78,10 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 		CPOperand out = new CPOperand(parts[6]);
 		boolean ignoreZeros = Boolean.parseBoolean(parts[7]);
 
+		int k = Integer.parseInt(parts[8]);
+
 		// ctable does not require any operator, so we simply pass-in a dummy operator with null functionobject
-		return new CtableCPInstruction(in1, in2, in3, out, dim1Fields[0], Boolean.parseBoolean(dim1Fields[1]), dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), isExpand, ignoreZeros, opcode, inst);
+		return new CtableCPInstruction(in1, in2, in3, out, dim1Fields[0], Boolean.parseBoolean(dim1Fields[1]), dim2Fields[0], Boolean.parseBoolean(dim2Fields[1]), isExpand, ignoreZeros, opcode, inst, k);
 	}
 
 	private Ctable.OperationTypes findCtableOperation() {
@@ -130,7 +134,7 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 				// ignore first argument
 				matBlock2 = ec.getMatrixInput(input2.getName());
 				cst1 = ec.getScalarInput(input3).getDoubleValue();
-				resultBlock = LibMatrixReorg.fusedSeqRexpand(matBlock2.getNumRows(), matBlock2, cst1, resultBlock, true);
+				resultBlock = LibMatrixReorg.fusedSeqRexpand(matBlock2.getNumRows(), matBlock2, cst1, resultBlock, true, _k);
 				break;
 			case CTABLE_TRANSFORM_HISTOGRAM: //(VECTOR)
 				// F=ctable(A,1) or F = ctable(A,1,1)

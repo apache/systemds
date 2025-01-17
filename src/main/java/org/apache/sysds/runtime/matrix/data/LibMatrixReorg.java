@@ -1017,10 +1017,10 @@ public class LibMatrixReorg {
 					+ A.getNumColumns());
 
 		if(!Double.isNaN(w)) {
-			if(CLALibRexpand.compressedTableSeq() && w == 1)
+			if((CLALibRexpand.compressedTableSeq() || A instanceof CompressedMatrixBlock) && w == 1)
 				return CLALibRexpand.rexpand(seqHeight, A, updateClen ? -1 : ret.getNumColumns(), k);
 			else
-				return fusedSeqRexpandSparseBlock(seqHeight, A, w, ret, updateClen);
+				return fusedSeqRexpandSparseBlock(seqHeight, A, w, ret, updateClen, k);
 		}
 		else {
 			if(ret == null) {
@@ -1041,9 +1041,8 @@ public class LibMatrixReorg {
 	}
 
 	private static MatrixBlock fusedSeqRexpandSparseBlock(final int rlen, final MatrixBlock A, final double w, MatrixBlock ret,
-		boolean updateClen) {
+		boolean updateClen, int k ) {
 
-		int maxCol = 0;
 		// prepare allocation of CSR sparse block
 		final int[] rowPointers = new int[rlen + 1];
 		final int[] indexes = new int[rlen];
@@ -1053,11 +1052,18 @@ public class LibMatrixReorg {
 		// (because input values of 0 are invalid and have to result in errors)
 		// resultBlock guaranteed to be allocated for table expand
 		// each row in resultBlock will be allocated and will contain exactly one value
+		boolean containsNull = false;
+		int maxCol = 0;
+
 		for(int i = 0; i < rlen; i++) {
-			maxCol = rexpandSingleRow(i, A.get(i, 0), w, maxCol, indexes, values);
+			int c = rexpandSingleRow(i, A.get(i, 0), w, indexes, values);
+			if(c < 0)
+				containsNull = true;
+			else 
+				maxCol = Math.max(c, maxCol);
 			rowPointers[i] = i;
 		}
-
+	
 		rowPointers[rlen] = rlen;
 
 		if(ret == null) {
@@ -1072,7 +1078,9 @@ public class LibMatrixReorg {
 		// construct sparse CSR block from filled arrays
 		ret.sparseBlock = new SparseBlockCSR(rowPointers, indexes, values, rlen);
 		// compact all the null entries.
-		((SparseBlockCSR) ret.sparseBlock).compact();
+		if(containsNull){
+			((SparseBlockCSR) ret.sparseBlock).compact();
+		}
 		ret.setNonZeros(ret.sparseBlock.size());
 
 		updateClenRexpand(ret, maxCol, updateClen);
@@ -1086,11 +1094,11 @@ public class LibMatrixReorg {
 			ret.clen = maxCol;
 	}
 
-	public static int rexpandSingleRow(int row, double v2, double w, int maxCol, int[] retIx, double[] retVals) {
+	public static int rexpandSingleRow(int row, double v2, double w,  int[] retIx, double[] retVals) {
 		// If any of the values are NaN (i.e., missing) then
 		// we skip this tuple, proceed to the next tuple
 		if(Double.isNaN(v2))
-			return maxCol;
+			return -1;
 
 		// safe casts to long for consistent behavior with indexing
 		int col = UtilFunctions.toInt(v2);
@@ -1102,7 +1110,7 @@ public class LibMatrixReorg {
 		retVals[row] = w;
 
 		// maintain max seen col
-		return Math.max(maxCol, col);
+		return col;
 	}
 
 	/**

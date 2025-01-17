@@ -307,7 +307,7 @@ public class TernaryOp extends MultiThreadedHop
 		}
 		
 		Ctable ternary = new Ctable(inputLops, ternaryOp,
-			getDataType(), getValueType(), ignoreZeros, outputEmptyBlocks, et);
+			getDataType(), getValueType(), ignoreZeros, outputEmptyBlocks, et, OptimizerUtils.getConstrainedNumThreads(getMaxNumThreads()));
 		
 		ternary.getOutputParameters().setDimensions(getDim1(), getDim2(), getBlocksize(), -1);
 		setLineNumbers(ternary);

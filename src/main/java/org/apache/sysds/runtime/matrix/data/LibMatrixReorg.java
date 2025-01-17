@@ -975,7 +975,7 @@ public class LibMatrixReorg {
 	 * 
 	 * @param seqHeight  A sequence vector height.
 	 * @param A          The MatrixBlock vector to encode.
-	 * @param w          The weight matrix to multiply on output cells.
+	 * @param w          The weight scalar to multiply on output cells.
 	 * @param ret        The output MatrixBlock, does not have to be used, but depending on updateClen determine the
 	 *                   output size.
 	 * @param updateClen Update clen, if set to true, ignore dimensions of ret, otherwise use the column dimension of

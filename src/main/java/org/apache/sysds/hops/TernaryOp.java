@@ -641,7 +641,7 @@ public class TernaryOp extends MultiThreadedHop
 		return ret;
 	}
 	
-	private boolean isSequenceRewriteApplicable( boolean left ) 
+	public boolean isSequenceRewriteApplicable( boolean left ) 
 	{
 		boolean ret = false;
 		
@@ -651,7 +651,6 @@ public class TernaryOp extends MultiThreadedHop
 		
 		try
 		{
-
 			if( getInput().size()==2 || (getInput().size()==3 && getInput().get(2).getDataType()==DataType.SCALAR) )
 			{
 				Hop input1 = getInput().get(0);
@@ -670,7 +669,7 @@ public class TernaryOp extends MultiThreadedHop
 								  || dgop.getIncrementValue()==1.0; //set by recompiler
 						}
 					}
-					if( left && input1 instanceof LiteralOp){
+					if( left && input1 instanceof LiteralOp && ((LiteralOp)input1).getStringValue().contains("seq(")){
 						ret = true;
 					}
 					//probe rewrite on right input

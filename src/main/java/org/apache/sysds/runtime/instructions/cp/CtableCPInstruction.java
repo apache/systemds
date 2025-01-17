@@ -127,15 +127,10 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 				break;
 			case CTABLE_EXPAND_SCALAR_WEIGHT: //(VECTOR)
 				// F = ctable(seq,A) or F = ctable(seq,B,1)
+				// ignore first argument
 				matBlock2 = ec.getMatrixInput(input2.getName());
 				cst1 = ec.getScalarInput(input3).getDoubleValue();
-				final int seqLength;
-				if(input1.getDataType() == DataType.MATRIX)
-					seqLength = ec.getMatrixInput(input1).getNumRows();
-				else
-					seqLength = (int) input1.getLiteral().getLongValue();
-				// only resultBlock.rlen known, resultBlock.clen set in operation
-				resultBlock = LibMatrixReorg.fusedSeqRexpand(seqLength, matBlock2, cst1, resultBlock, true);
+				resultBlock = LibMatrixReorg.fusedSeqRexpand(matBlock2.getNumRows(), matBlock2, cst1, resultBlock, true);
 				break;
 			case CTABLE_TRANSFORM_HISTOGRAM: //(VECTOR)
 				// F=ctable(A,1) or F = ctable(A,1,1)

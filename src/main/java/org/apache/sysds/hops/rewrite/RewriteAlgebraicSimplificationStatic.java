@@ -2203,14 +2203,11 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		if(TernaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES && hi instanceof TernaryOp ) {
 			TernaryOp thop = (TernaryOp) hi;
 			thop.getOp();
-			boolean rightInputSize = thop.getInput().size()==2  || thop.getInput().size()==3;
-			if(rightInputSize && thop.getOp() == OpOp3.CTABLE && thop.findExecTypeTernaryOp() == ExecType.CP) {
-				Hop input1 = thop.getInput(0);
-				Hop input2 = thop.getInput(1);
-				// Hop input3 = thop.getInput().size() == 3 ? thop.getInput(2) : null;
 
-				if(HopRewriteUtils.isSequenceSizeOfA(input1, input2)) {
-					Hop literal = new LiteralOp(input1.getDim1());
+			if(thop.isSequenceRewriteApplicable(true) && thop.findExecTypeTernaryOp() == ExecType.CP) {
+				Hop input1 = thop.getInput(0);
+				if(input1 instanceof DataGenOp){
+					Hop literal = new LiteralOp("seq(1, "+input1.getDim1() +")");
 					HopRewriteUtils.replaceChildReference(hi, input1, literal);
 				}
 			}

@@ -19,10 +19,10 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
-import org.apache.sysds.lops.Ctable;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.lops.Ctable;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -30,7 +30,7 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.CTableMap;
-import org.apache.sysds.runtime.matrix.data.LibMatrixTable;
+import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.LongLongDoubleHashMap.EntryType;
@@ -135,7 +135,7 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 				else
 					seqLength = (int) input1.getLiteral().getLongValue();
 				// only resultBlock.rlen known, resultBlock.clen set in operation
-				resultBlock = LibMatrixTable.tableSeqOperations(seqLength, matBlock2, cst1, resultBlock, true);
+				resultBlock = LibMatrixReorg.fusedSeqRexpand(seqLength, matBlock2, cst1, resultBlock, true);
 				break;
 			case CTABLE_TRANSFORM_HISTOGRAM: //(VECTOR)
 				// F=ctable(A,1) or F = ctable(A,1,1)

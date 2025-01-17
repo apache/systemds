@@ -132,6 +132,9 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 			case CTABLE_EXPAND_SCALAR_WEIGHT: //(VECTOR)
 				// F = ctable(seq,A) or F = ctable(seq,B,1)
 				// ignore first argument
+				if(input1.getDataType() == DataType.MATRIX){
+					LOG.warn("rewrite for table expand not activated please fix");
+				}
 				matBlock2 = ec.getMatrixInput(input2.getName());
 				cst1 = ec.getScalarInput(input3).getDoubleValue();
 				resultBlock = LibMatrixReorg.fusedSeqRexpand(matBlock2.getNumRows(), matBlock2, cst1, resultBlock, true, _k);
@@ -153,7 +156,7 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 				throw new DMLRuntimeException("Encountered an invalid ctable operation ("+ctableOp+") while executing instruction: " + this.toString());
 		}
 		
-		if(input1.getDataType() == DataType.MATRIX)
+		if(input1.getDataType() == DataType.MATRIX && ctableOp != Ctable.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT )
 			ec.releaseMatrixInput(input1.getName());
 		if(input2.getDataType() == DataType.MATRIX)
 			ec.releaseMatrixInput(input2.getName());

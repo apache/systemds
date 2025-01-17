@@ -4,21 +4,32 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.io.cog.*;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.util.CommonThreadPool;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 
-public class ReaderCOG extends MatrixReader{
+public class ReaderCOGParallel extends MatrixReader{
     protected final FileFormatPropertiesCOG _props;
     private int totalBytesRead = 0;
+    final private int _numThreads;
 
-    public ReaderCOG(FileFormatPropertiesCOG props) {
+    public ReaderCOGParallel(FileFormatPropertiesCOG props) {
         _props = props;
+        _numThreads = OptimizerUtils.getParallelBinaryReadParallelism();
     }
     @Override
     public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz) throws IOException, DMLRuntimeException {
@@ -290,122 +301,196 @@ public class ReaderCOG extends MatrixReader{
         int currentTileRow = 0;
         int currentBand = 0;
 
-        MatrixBlock outputMatrix = createOutputMatrixBlock(rows, cols * bands, rows, estnnz, true, false);
+        ExecutorService pool = CommonThreadPool.get(_numThreads);
 
-        for (int currenTileIdx = 0; currenTileIdx < actualAmountTiles; currenTileIdx++) {
-            int bytesToRead = (tileOffsets[currenTileIdx] - totalBytesRead) + bytesPerTile[currenTileIdx];
-            // Mark the current position in the stream
-            // This is used to reset the stream to this position after reading the data
-            // Valid until bytesToRead + 1 bytes are read
-            bis.mark(bytesToRead + 1);
-            // Read until offset is reached
-            readBytes(bis, tileOffsets[currenTileIdx] - totalBytesRead);
-            byte[] currentTileData = readBytes(bis, bytesPerTile[currenTileIdx]);
+        MatrixBlock outputMatrix = createOutputMatrixBlock(rows, cols * bands, rows, estnnz, true, true);
+        // outputMatrix = new MatrixBlock(rows, cols * bands, false);
 
-            // Reset the stream to the beginning of the next tile
-            try {
-                bis.reset();
-                totalBytesRead -= bytesToRead;
-            } catch (IOException e) {
-                throw new DMLRuntimeException(e);
-            }
-
-            // TODO: If the tile is compressed, decompress the currentTileData here
-
-            int pixelsRead = 0;
-            int bytesRead = 0;
-            int currentRow = 0;
-            if (planarConfiguration == 1) {
-                // Interleaved
-                // RGBRGBRGB
-                while (currentRow < tileLength && pixelsRead < tileWidth) {
-                    for (int bandIdx = 0; bandIdx < bands; bandIdx++) {
-                        double value = 0;
-                        int sampleLength = bitsPerSample[bandIdx] / 8;
-
-                        switch (sampleFormat[bandIdx]) {
-                            case UNSIGNED_INTEGER:
-                            case UNDEFINED:
-                                // According to the standard, this should be handled as not being there -> 1 (unsigned integer)
-                                value = cogHeader.parseByteArray(currentTileData, sampleLength, bytesRead, false, false, false).doubleValue();
-                                break;
-                            case SIGNED_INTEGER:
-                                value = cogHeader.parseByteArray(currentTileData, sampleLength, bytesRead, false, true, false).doubleValue();
-                                break;
-                            case FLOATING_POINT:
-                                value = cogHeader.parseByteArray(currentTileData, sampleLength, bytesRead, true, false, false).doubleValue();
-                                break;
-                        }
-
-                        if (noDataIndicator != null && value == noDataIndicator.doubleValue()) {
-                            value = Double.NaN;
-                        }
-                        bytesRead += sampleLength;
-                        outputMatrix.set((currentTileRow * tileLength) + currentRow,
-                                (currentTileCol * tileWidth * bands) + (pixelsRead * bands) + bandIdx,
-                                value);
-                    }
-
-                    pixelsRead++;
-                    if (pixelsRead >= tileWidth) {
-                        pixelsRead = 0;
-                        currentRow++;
-                    }
+        try {
+            ArrayList<Callable<MatrixBlock>> tasks = new ArrayList<>();
+            for (int currenTileIdx = 0; currenTileIdx < actualAmountTiles; currenTileIdx++) {
+                // TODO this might also be included in the parallel task, but be aware of synchronization issues
+                int bytesToRead = (tileOffsets[currenTileIdx] - totalBytesRead) + bytesPerTile[currenTileIdx];
+                bis.mark(bytesToRead + 1);
+                readBytes(bis, tileOffsets[currenTileIdx] - totalBytesRead);
+                byte[] currentTileData = readBytes(bis, bytesPerTile[currenTileIdx]);
+                try {
+                    bis.reset();
+                    totalBytesRead -= bytesToRead;
+                } catch (IOException e) {
+                    throw new DMLRuntimeException(e);
                 }
-            } else if (planarConfiguration == 2 && calculatedAmountTiles * bands == tileOffsets.length) {
-                // If every band is stored in different tiles, so first one R, second one G and so on
-                // RRRGGGBBB
-                // TODO: Currently this doesn't seem standardized properly, there are still open GitHub issues about that
-                // e.g.: https://github.com/cogeotiff/cog-spec/issues/17
-                // if something changes in the standard, this may need to be adjusted, interleaved is discouraged in COG though
-                if (currenTileIdx - (currentBand * calculatedAmountTiles) >= calculatedAmountTiles) {
+
+                TileProcessor tileProcessor = new TileProcessor(currentTileData, currentTileRow, currentTileCol,
+                        tileWidth, tileLength, bands, bitsPerSample, sampleFormat, cogHeader, outputMatrix,
+                        planarConfiguration, _numThreads<=actualAmountTiles);
+                tasks.add(tileProcessor);
+
+                currentTileCol++;
+                if (currentTileCol >= tileCols) {
                     currentTileCol = 0;
-                    currentTileRow = 0;
-                    currentBand++;
+                    currentTileRow++;
                 }
-
-                int sampleLength = bitsPerSample[currentBand] / 8;
-
-                while (currentRow < tileLength && pixelsRead < tileWidth) {
-                    double value = 0;
-
-                    switch (sampleFormat[currentBand]) {
-                        case UNSIGNED_INTEGER:
-                        case UNDEFINED:
-                            // According to the standard, this should be handled as not being there -> 1 (unsigned integer)
-                            value = cogHeader.parseByteArray(currentTileData, sampleLength, bytesRead, false, false, false).doubleValue();
-                            break;
-                        case SIGNED_INTEGER:
-                            value = cogHeader.parseByteArray(currentTileData, sampleLength, bytesRead, false, true, false).doubleValue();
-                            break;
-                        case FLOATING_POINT:
-                            value = cogHeader.parseByteArray(currentTileData, sampleLength, bytesRead, true, false, false).doubleValue();
-                            break;
-                    }
-                    bytesRead += sampleLength;
-                    outputMatrix.set((currentTileRow * tileLength) + currentRow,
-                            (currentTileCol * tileWidth * bands) + (pixelsRead * bands) + currentBand,
-                            value);
-                    pixelsRead++;
-                    if (pixelsRead >= tileWidth) {
-                        pixelsRead = 0;
-                        currentRow++;
-                    }
-                }
-            } else {
-                throw new DMLRuntimeException("Unsupported Planar Configuration: " + planarConfiguration);
             }
 
-            currentTileCol++;
-            if (currentTileCol >= tileCols) {
-                currentTileCol = 0;
-                currentTileRow++;
+            try {
+                for (Future<MatrixBlock> result : pool.invokeAll(tasks)) {
+                    result.get();
+                }
+            } catch (Exception e) {
+                throw new IOException("Error during parallel task execution.", e);
             }
 
+        } catch (IOException e) {
+            throw new IOException("Thread pool issue or file reading error.", e);
+        } finally {
+            pool.shutdown();
         }
+
+        // TODO: If the tile is compressed, decompress the currentTileData here
 
         outputMatrix.examSparsity();
         return outputMatrix;
+    }
+
+    public class TileProcessor implements Callable<MatrixBlock> {
+
+        private final byte[] tileData;
+        private final int tileRow;
+        private final int tileCol;
+        private final int tileWidth;
+        private final int tileLength;
+        private final int bands;
+        private final int[] bitsPerSample;
+        private final SampleFormatDataTypes[] sampleFormat;
+        private final COGHeader cogHeader;
+        private final MatrixBlock _dest;
+        private final int planarConfiguration;
+        private final boolean sparse;
+        private final boolean sync;
+
+        public TileProcessor(byte[] tileData, int tileRow, int tileCol, int tileWidth, int tileLength,
+                             int bands, int[] bitsPerSample, SampleFormatDataTypes[] sampleFormat, COGHeader cogHeader,
+                             MatrixBlock dest, int planarConfiguration, boolean sync) {
+            this.tileData = tileData;
+            this.tileRow = tileRow;
+            this.tileCol = tileCol;
+            this.tileWidth = tileWidth;
+            this.tileLength = tileLength;
+            this.bands = bands;
+            this.bitsPerSample = bitsPerSample;
+            this.sampleFormat = sampleFormat;
+            this.cogHeader = cogHeader;
+            this._dest = dest;
+            this.planarConfiguration = planarConfiguration;
+            this.sparse = _dest.isInSparseFormat();
+            this.sync = sync;
+        }
+
+        @Override
+        public MatrixBlock call() throws Exception {
+            if (planarConfiguration==1) {
+                processTileByPixel();
+            }
+            else if (planarConfiguration==2){ // && calculatedAmountTiles * bands == tileOffsets.length){
+                processTileByBand();
+            }
+            else{
+                throw new DMLRuntimeException("Unsupported Planar Configuration: " + planarConfiguration);
+            }
+            return _dest;
+        }
+
+        private void processTileByPixel() {
+            int pixelsRead = 0;
+            int bytesRead = 0;
+            int currentRow = 0;
+
+            MatrixBlock tileMatrix = new MatrixBlock(tileLength, tileWidth, sparse);
+
+            if( sparse ) {
+                tileMatrix.allocateAndResetSparseBlock(true, SparseBlock.Type.CSR);
+                tileMatrix.getSparseBlock().allocate(0,  tileLength*tileWidth);
+            }
+
+            while (currentRow < tileLength && pixelsRead < tileWidth) {
+                for (int bandIdx = 0; bandIdx < bands; bandIdx++) {
+                    double value = 0;
+                    int sampleLength = bitsPerSample[bandIdx] / 8;
+
+                    switch (sampleFormat[bandIdx]) {
+                        case UNSIGNED_INTEGER:
+                        case UNDEFINED:
+                            value = cogHeader.parseByteArray(tileData, sampleLength, bytesRead, false, false, false).doubleValue();
+                            break;
+                        case SIGNED_INTEGER:
+                            value = cogHeader.parseByteArray(tileData, sampleLength, bytesRead, false, true, false).doubleValue();
+                            break;
+                        case FLOATING_POINT:
+                            value = cogHeader.parseByteArray(tileData, sampleLength, bytesRead, true, false, false).doubleValue();
+                            break;
+                    }
+
+                    tileMatrix.set(currentRow, (pixelsRead * bands) + bandIdx, value);
+
+                    pixelsRead++;
+                    if (pixelsRead >= tileWidth) {
+                        pixelsRead = 0;
+                        currentRow++;
+                    }
+                    bytesRead += sampleLength;
+                }
+            }
+
+            try {
+                if (sparse) {
+                    SparseBlock sblock = _dest.getSparseBlock();
+
+                    if (sblock instanceof SparseBlockMCSR && sblock.get(tileRow * tileLength) != null) {
+                        if (sync) {
+                            synchronized (sblock.get(tileRow * tileLength)) {
+                                _dest.appendToSparse(
+                                        tileMatrix,
+                                        (tileRow * tileLength),
+                                        (tileCol * tileWidth * bands));
+                            }
+                        } else {
+                            for (int i = 0; i < tileLength; i++)
+                                synchronized (sblock.get(tileRow * tileLength + i)) {
+                                    _dest.appendRowToSparse(sblock, tileMatrix, i,
+                                            tileRow * tileLength,
+                                            tileCol * tileWidth * bands, true);
+                                }
+                        }
+                    } else {
+                        synchronized (_dest) {
+                            _dest.appendToSparse(
+                                    tileMatrix,
+                                    (tileRow * tileLength),
+                                    (tileCol * tileWidth * bands));
+                        }
+                    }
+                }
+
+
+                        else {
+                    _dest.appendToSparse(
+                            tileMatrix,
+                            (tileRow * tileLength),
+                            (tileCol * tileWidth * bands));
+                        }
+            } catch (RuntimeException e) {
+                        throw new RuntimeException("Error hereee   " + Integer.toString(tileRow)+"," +Integer.toString(tileCol)+"," +Integer.toString(pixelsRead)+"," +Integer.toString(currentRow),  e);
+            }
+                }
+
+
+
+
+        private void processTileByBand() {
+            // TODO implement for band wise reading planar configuration == 2
+        }
+
     }
 
     /**
@@ -415,6 +500,7 @@ public class ReaderCOG extends MatrixReader{
      * @param length
      * @return
      */
+
     private byte[] readBytes(BufferedInputStream bis, int length) {
         byte[] header = new byte[length];
         try {

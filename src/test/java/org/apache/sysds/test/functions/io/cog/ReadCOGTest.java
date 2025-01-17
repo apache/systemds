@@ -15,20 +15,29 @@ import java.util.HashMap;
 public abstract class ReadCOGTest extends COGTestBase {
     protected abstract int getId();
 
-    @Test
-    public void testCOG_Seq_CP() {
-        runReadCOGTest(getId(), getResult(), Types.ExecMode.SINGLE_NODE, false);
-    }
-
     protected String getInputCOGFileName() {
         return "testCOG_" + getId();
     }
 
     protected abstract double getResult();
+
     @Test
-    public void testCOG_Parallel_CP() {
+    public void testCOG_Seq_CP() {
+        runReadCOGTest(getId(), getResult(), Types.ExecMode.SINGLE_NODE, false);
+    }
+    @Test
+    public void testCOG_Parallel_CP1() {
         runReadCOGTest(getId(), getResult(), Types.ExecMode.SINGLE_NODE, true);
     }
+
+    @Test
+    public void testCOG_Parallel_CP() {
+        runReadCOGTest(getId(), getResult(), Types.ExecMode.HYBRID, true);
+    }
+
+    // TODO: Spark
+
+
 
     protected void runReadCOGTest(int testNumber, double result, Types.ExecMode platform, boolean parallel) {
         Types.ExecMode oldPlatform = rtplatform;

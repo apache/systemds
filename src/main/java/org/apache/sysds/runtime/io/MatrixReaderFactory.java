@@ -132,7 +132,8 @@ public class MatrixReaderFactory {
 			case COG:
 				FileFormatPropertiesCOG fileFormatPropertiesCOG = props.formatProperties != null ? (FileFormatPropertiesCOG) props.formatProperties : new FileFormatPropertiesCOG();
 				// TODO: Implement parallel reader
-				reader = new ReaderCOG(fileFormatPropertiesCOG);
+				reader = (par & mcsr) ?
+						new ReaderCOGParallel(fileFormatPropertiesCOG) : new ReaderCOG(fileFormatPropertiesCOG);
 				break;
 
 			case COMPRESSED:

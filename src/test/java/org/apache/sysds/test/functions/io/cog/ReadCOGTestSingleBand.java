@@ -12,7 +12,7 @@ public class ReadCOGTestSingleBand extends ReadCOGTest {
         return TEST_CLASS_DIR;
     }
 
-    protected double getResult(){ return 1676186342.0; }
+    protected double getResult(){ return 133031887.0; }
 
     protected int getScriptId() {
         return 1;

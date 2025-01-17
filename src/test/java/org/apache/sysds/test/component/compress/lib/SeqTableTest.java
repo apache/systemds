@@ -23,8 +23,7 @@ import static org.junit.Assert.assertEquals;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.lib.CLALibTable;
-import org.apache.sysds.runtime.matrix.data.LibMatrixTable;
+import org.apache.sysds.runtime.compress.lib.CLALibRexpand;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
@@ -34,31 +33,31 @@ public class SeqTableTest {
 	protected static final Log LOG = LogFactory.getLog(SeqTableTest.class.getName());
 
 	static{
-		LibMatrixTable.ALLOW_COMPRESSED_TABLE_SEQ = true; // allow the compressed tables.
+		CLALibRexpand.ALLOW_COMPRESSED_TABLE_SEQ = true; // allow the compressed tables.
 	}
 
 	@Test(expected = RuntimeException.class)
 	public void test_notSameDim() throws Exception {
 		MatrixBlock c = new MatrixBlock(20, 1, 0.0);
-		CLALibTable.tableSeqOperations(10, c, -1);
+		CLALibRexpand.rexpand(10, c);
 	}
 
 	@Test(expected = RuntimeException.class)
 	public void test_toLow() throws Exception {
 		MatrixBlock c = new MatrixBlock(10, 1, -1.0);
-		CLALibTable.tableSeqOperations(10, c, -1);
+		CLALibRexpand.rexpand(10, c);
 	}
 
 	@Test(expected = RuntimeException.class)
 	public void test_toManyColumn() throws Exception {
 		MatrixBlock c = new MatrixBlock(10, 2, -1.0);
-		CLALibTable.tableSeqOperations(10, c, -1);
+		CLALibRexpand.rexpand(10, c);
 	}
 
 	@Test
 	public void test_All_NaN() throws Exception {
 		MatrixBlock c = new MatrixBlock(10, 1, Double.NaN);
-		MatrixBlock ret = CLALibTable.tableSeqOperations(10, c, -1);
+		MatrixBlock ret = CLALibRexpand.rexpand(10, c);
 		assertEquals(0, ret.getNumColumns());
 	}
 
@@ -66,7 +65,7 @@ public class SeqTableTest {
 	public void test_One_NaN() throws Exception {
 		MatrixBlock c = new MatrixBlock(10, 1, 1.0);
 		c.set(3, 1, Double.NaN);
-		MatrixBlock ret = CLALibTable.tableSeqOperations(10, c, -1);
+		MatrixBlock ret = CLALibRexpand.rexpand(10, c);
 		assertEquals(1, ret.getNumColumns());
 		MatrixBlock expected = new MatrixBlock(10, 1, 1.0);
 		expected.set(3, 1, 0.0);
@@ -76,7 +75,7 @@ public class SeqTableTest {
 	@Test
 	public void test_all_one() throws Exception {
 		MatrixBlock c = new MatrixBlock(10, 1, 1.0);
-		MatrixBlock ret = CLALibTable.tableSeqOperations(10, c, 1);
+		MatrixBlock ret = CLALibRexpand.rexpand(10, c, 1);
 		assertEquals(1, ret.getNumColumns());
 		TestUtils.compareMatrices(c, ret, 0);
 	}

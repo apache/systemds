@@ -5364,7 +5364,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public MatrixBlock ctableSeqOperations(MatrixValue thatMatrix, double thatScalar, MatrixBlock ret,
 		boolean updateClen) {
 		MatrixBlock that = checkType(thatMatrix);
-		return LibMatrixTable.tableSeqOperations(this.getNumRows(), that, thatScalar, ret, updateClen);
+		return LibMatrixReorg.fusedSeqRexpand(this.getNumRows(), that, thatScalar, ret, updateClen, 1);
 	}
 
 	/**

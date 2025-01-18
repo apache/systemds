@@ -197,7 +197,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = simplifyNotOverComparisons(hop, hi, i);         //e.g., !(A>B) -> (A<=B)
 			//hi = removeUnecessaryPPred(hop, hi, i);            //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 
-			hi = fixNonScalarPrint(hop, hi, i);                  //e.g., print(m) -> print(toString(m))
 
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
 			if( !descendFirst )
@@ -2126,20 +2125,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				hi = newHop;
 				LOG.debug("Applied simplifyNotOverComparisons (line " + hi.getBeginLine() + ")");
 			}
-		}
-
-		return hi;
-	}
-
-	private static Hop fixNonScalarPrint(Hop parent, Hop hi, int pos) {
-		if(HopRewriteUtils.isUnary(parent, OpOp1.PRINT) && !hi.getDataType().isScalar()) {
-			LinkedHashMap<String, Hop> args = new LinkedHashMap<>();
-			args.put("target", hi);
-			Hop newHop = HopRewriteUtils.createParameterizedBuiltinOp(
-					hi, args, ParamBuiltinOp.TOSTRING);
-			HopRewriteUtils.replaceChildReference(parent, hi, newHop, pos);
-			hi = newHop;
-			LOG.debug("Applied fixNonScalarPrint (line " + hi.getBeginLine() + ")");
 		}
 
 		return hi;

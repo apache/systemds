@@ -894,11 +894,11 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 					DataType outputDatatype = expression.getOutput().getDataType();
 					switch (outputDatatype) {
 						case SCALAR:
-							break;
 						case MATRIX:
-						case TENSOR:
 						case FRAME:
 						case LIST:
+							break;
+						case TENSOR:
 							pstmt.raiseValidateError("Print statements can only print scalars. To print a " + outputDatatype + ", please wrap it in a toString() function.", conditional);
 						default:
 							pstmt.raiseValidateError("Print statements can only print scalars. Input datatype was: " + outputDatatype, conditional);

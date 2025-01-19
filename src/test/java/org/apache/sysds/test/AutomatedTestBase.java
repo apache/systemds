@@ -62,6 +62,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
+import org.apache.sysds.hops.rewriter.RewriteAutomaticallyGenerated;
 import org.apache.sysds.hops.rewriter.RewriterRuntimeUtils;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.compile.Dag;
@@ -113,8 +114,8 @@ import scala.Tuple4;
  */
 public abstract class AutomatedTestBase {
 	protected static final boolean BENCHMARK = false;
-	protected static final int BENCHMARK_WARMUP_RUNS = 0;
-	protected static final int BENCHMARK_REPETITIONS = 1;
+	protected static final int BENCHMARK_WARMUP_RUNS = 10;
+	protected static final int BENCHMARK_REPETITIONS = 5;
 	protected static final boolean ALLOW_GENERATED_REWRITES = true;
 	protected static final String BASE_DATA_DIR = "/Users/janniklindemann/Dev/MScThesis/NGramAnalysis/";
 
@@ -1477,18 +1478,26 @@ public abstract class AutomatedTestBase {
 				currentTestRun++;
 			}
 
+			benchmark_run = false;
+
 			int totalReps = BENCHMARK_WARMUP_RUNS + BENCHMARK_REPETITIONS;
 			
 			for (int i = 0; i < totalReps; i++) {
 				out.clear();
 				Statistics.reset();
 
+				if (i == BENCHMARK_WARMUP_RUNS) {
+					RewriteAutomaticallyGenerated.totalTimeNanos = 0;
+					RewriteAutomaticallyGenerated.callCount = 0;
+					RewriteAutomaticallyGenerated.maxTimeNanos = -1;
+				}
 				benchmark_run = BENCHMARK && i >= BENCHMARK_WARMUP_RUNS;
 				Statistics.recordAppliedGeneratedRewrites(benchmark_run);
-				if (benchmark_run)
+				if (benchmark_run) {
 					Statistics.setCurrentTestName(currentTestName);
-				else
+				} else {
 					Statistics.setCurrentTestName("");
+				}
 
 				Thread t = new Thread(
 						() -> out.add(runTestWithTimeout(newWay, exceptionExpected, expectedException, errMessage, maxSparkInst)),

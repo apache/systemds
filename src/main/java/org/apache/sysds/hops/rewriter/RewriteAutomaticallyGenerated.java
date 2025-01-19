@@ -21,6 +21,9 @@ public class RewriteAutomaticallyGenerated extends HopRewriteRule {
 	public static RewriteAutomaticallyGenerated existingRewrites;
 
 	private Function<Hop, Hop> rewriteFn;
+	public static long totalTimeNanos = 0;
+	public static long callCount = 0;
+	public static long maxTimeNanos = -1;
 
 	public RewriteAutomaticallyGenerated() {
 		// Try to read the file
@@ -44,6 +47,7 @@ public class RewriteAutomaticallyGenerated extends HopRewriteRule {
 		if( roots == null || rewriteFn == null )
 			return roots;
 
+		long startNanos = System.nanoTime();
 		/*System.out.println("Rewriting DAGs...");
 		StackTraceElement[] ste = Thread.currentThread().getStackTrace();
 		System.out.println("Caller:\t" + ste[2]);
@@ -59,6 +63,12 @@ public class RewriteAutomaticallyGenerated extends HopRewriteRule {
 		for( Hop h : roots )
 			rule_apply( h, true );
 
+		long diff = System.nanoTime() - startNanos;
+		totalTimeNanos += diff;
+		callCount++;
+		if (maxTimeNanos == -1 || maxTimeNanos < diff)
+			maxTimeNanos = diff;
+
 		//System.out.println("Generated rewrites took " + (System.currentTimeMillis() - startMillis) + "ms");
 
 		return roots;
@@ -69,7 +79,7 @@ public class RewriteAutomaticallyGenerated extends HopRewriteRule {
 		if( root == null || rewriteFn == null )
 			return root;
 
-		//long startMillis = System.currentTimeMillis();
+		long startNanos = System.nanoTime();
 
 		//one pass rewrite-descend (rewrite created pattern)
 		rule_apply( root, false );
@@ -80,6 +90,11 @@ public class RewriteAutomaticallyGenerated extends HopRewriteRule {
 		rule_apply( root, true );
 
 		//System.out.println("Generated rewrites took " + (System.currentTimeMillis() - startMillis) + "ms");
+		long diff = System.nanoTime() - startNanos;
+		totalTimeNanos += diff;
+		callCount++;
+		if (maxTimeNanos == -1 || maxTimeNanos < diff)
+			maxTimeNanos = diff;
 
 		return root;
 	}

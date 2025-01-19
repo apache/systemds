@@ -1,0 +1,186 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("nn/layers/affine.dml") as affine
+source("nn/layers/multi_attention.dml") as attention
+source("nn/layers/dropout.dml") as dropout
+source("nn/layers/batch_norm1d.dml") as batch_norm
+source("nn/layers/tanh.dml") as tanh
+source("nn/layers/gelu.dml") as gelu
+
+linear_tensor_forward = function(matrix[double] X, matrix[double] W, matrix[double] b, int B, int C)
+  return (matrix[double] out) {
+  /* 
+   * Helper function for computing linear layer with tensor input, of shape (A, B*C) 
+   */
+  A = nrow(X)
+  C_new = ncol(W)
+  out = affine::forward(matrix(X, rows=A*B, cols=C), W, b)
+  out = matrix(out, rows=A, cols=B*C_new)
+}
+
+layer_norm_forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta, double epsilon, int B, int C)
+  return (matrix[double] out, matrix[double] cache_mean, matrix[double] cache_var, matrix[double] cache_norm) {
+  /*
+   * Helper function for computing layer norm via 1D batch norm with tensor input, of shpae (A, B*C)
+   */
+  A = nrow(X)
+  batch_norm_input = t(matrix(X, rows=A*B, cols=C))
+  # EMA matrices are unused and thus empty matrices will be provided
+  emas_mat = matrix(0, rows=1, cols=A*B)
+  [batch_norm_out, unused1, unused2, cache_mean, cache_var, cache_norm] = batch_norm::forward(
+    batch_norm_input, t(gamma), t(beta), "train", emas_mat, emas_mat, 0.0, epsilon)
+  out = matrix(t(batch_norm_out), rows=A, cols=B*C)
+}
+
+forward = function(matrix[double] states,
+      int H, int T, int d, int I,
+      matrix[double] W_Q, matrix[double] b_Q, 
+      matrix[double] W_K, matrix[double] b_K, 
+      matrix[double] W_V, matrix[double] b_V,
+      matrix[double] W_context, matrix[double] b_context, 
+      matrix[double] W_intermediate, matrix[double] b_intermediate, 
+      matrix[double] W_out, matrix[double] b_out, 
+      double dropout_p_attention, 
+      double dropout_p_output,
+      double epsilon_ln,
+      matrix[double] gamma_ln1, matrix[double] beta_ln1,
+      matrix[double] gamma_ln2, matrix[double] beta_ln2,
+      string activation)
+    return (matrix[double] out_states, matrix[double] attention,
+      list[unknown] outputs,
+      matrix[double] dropout_mask_attention, 
+      matrix[double] dropout_mask_output_1,
+      matrix[double] dropout_mask_output_2,
+      matrix[double] cache_mean_ln1, matrix[double] cache_var_ln1, matrix[double] cache_norm_ln1,
+      matrix[double] cache_mean_ln2, matrix[double] cache_var_ln2, matrix[double] cache_norm_ln2) {
+  /*
+   * Computes the forward pass for a layer of the BERT transformer architecture.
+   *
+   * Inputs (B: Batch size, T: Sequence length, D: Embedding length, H: Heads):
+   * - states: Hidden states, of shape (B, T*D).
+   * - H: Head count.
+   * - T: Sequence length.
+   * - d: Embedding length of single token per head with d*H = D.
+   * - I: Intemediate embedding length.
+   * - W_Q: Weights for linear query layer, of shape (D, D).
+   * - b_Q: Biases for linear query layer, of shape (1, D).
+   * - W_K: Weights for linear key layer, of shape (D, D).
+   * - b_K: Biases for linear key layer, of shape (1, D).
+   * - W_V: Weights for linear value layer, of shape (D, D).
+   * - b_V: Biases for linear value layer, of shape (1, D).
+   * - W_context: Weights for linear output layer on context, of shape (D, D).
+   * - b_context: Biases for linear output layer on context, of shape (1, D).
+   * - W_intermediate: Weights for intermediate linear layer, of shape (D, I).
+   * - b_intermediate: Biases for intermediate linear layer, of shape (1, I).
+   * - W_out: Weights for last linear output layer, of shape (D, D).
+   * - b_out: Biases for last linear output layer, of shape (1, D).
+   * - dropout_p_attention: Probability for dropout on attention.
+   * - dropout_p_output: Probability for dropout on output.
+   * - epsilon_ln: Epsilon value for layer norm.
+   * - gamma_ln1: Gamma params for layer norm 1, of shape (1, D).
+   * - beta_ln1: Beta params for layer norm 1, of shape (1, D).
+   * - gamma_ln2: Gamma params for layer norm 2, of shape (1, D).
+   * - beta_ln2: Beta params for layer norm 2, of shape (1, D).
+   * - activation: String specifying type of activation to use.
+   *     Can be tanh or gelu.
+   *
+   * Outputs:
+   * - out_states: Token output states, of shape (B, T*D)
+   * - attention: Attention values for keys & querys, of shape (B, H*T*T)
+   * - outputs: List of relevant outputs for backward pass with following
+   *     order/content:
+   *   -> 1: Output of linear query layer, of shape (B, T*D).
+   *   -> 2: Output of linear key layer, of shape (B, T*D).
+   *   -> 3: Output of linear value layer, of shape (B, T*D).
+   *   -> 4: Output context of attention layer, of shape (B, T*D).
+   *   -> 5: Output attention of attention layer, of shape (B, T*D).
+   *   -> 6: Output of residual pass 1, of shape (B, T*D).
+   *   -> 7: Output of layer norm 1, of shape (B, T*D).
+   *   -> 8: Output of intermediate linear layer, of shape (B, T*I).
+   *   -> 9: Output of activation layer, of shape (B, T*I).
+   *   -> 10: Output of residual pass 2, of shape (B, T*D).
+   * - dropout_mask_attention: Dropout mask used on attention, of shape (B, H*T*T)
+   * - dropout_mask_output_1: Dropout mask used on attention output, of shape (B, T*D)
+   * - dropout_mask_output_2: Dropout mask used on attention output, of shape (B, T*D)
+   * - cache_mean_ln1: Cached mean from layer norm 1, of shape (1, B*T)
+   * - cache_var_ln1: Cached mean from layer norm 1, of shape (1, B*T)
+   * - cache_norm_ln1: Cached mean from layer norm 1, of shape (1, B*T)
+   * - cache_mean_ln2: Cached mean from layer norm 2, of shape (1, B*T)
+   * - cache_var_ln2: Cached mean from layer norm 2, of shape (1, B*T)
+   * - cache_norm_ln2: Cached mean from layer norm 2, of shape (1, B*T)
+   */
+  # Embedding dim
+  D = d * H
+
+  # Linear layers for Q, K, V
+  Q = linear_tensor_forward(states, W_Q, b_Q, T, D)  # Shape (B, T*D)
+  K = linear_tensor_forward(states, W_K, b_K, T, D)  # Shape (B, T*D)
+  V = linear_tensor_forward(states, W_V, b_V, T, D)  # Shape (B, T*D)
+
+  # Multi-head self attention
+  [context, attention, dropout_mask_attention] = attention::forward(Q, K, V, H, T, d, dropout_p_attention)
+  # Shapes (B, T*D), (B, H*T*T), (B, H*T*T)
+  outputs = list(Q, K, V, context, attention)
+
+  # Linear layer on attention output (output layer)
+  out_states = linear_tensor_forward(context, W_context, b_context, T, D)  # Shape (B, T*D)
+  # Dropout on output 1
+  dropout_mask_output_1 = matrix(0, 1, 1)
+  if (dropout_p_output > 0.0) {
+    [out_states, dropout_mask_output_1] = dropout::forward(out_states, dropout_p_output, -1)
+  }
+
+  # Residual pass 1
+  out_states = out_states + states  # Shapes (B, T*D).
+  outputs = append(outputs, out_states)
+  # Layer norm 1 for each token
+  [out_states, cache_mean_ln1, cache_var_ln1, cache_norm_ln1] = layer_norm_forward(
+    out_states, gamma_ln1, beta_ln1, epsilon_ln, T, D)
+  outputs = append(outputs, out_states)
+
+  # Save out_states for residual pass
+  out_states_identity = out_states
+  # Linear layer of intermediate part
+  out_states = linear_tensor_forward(out_states, W_intermediate, b_intermediate, T, D)  # Shape (B, T*I)
+  outputs = append(outputs, out_states)
+  # Activation
+  if (activation == "gelu") {
+    out_states = gelu::forward(out_states)
+  } else if (activation == "tanh") {
+    out_states = tanh::forward(out_states)
+  }
+  outputs = append(outputs, out_states)
+
+  # Final linear output layer
+  out_states = linear_tensor_forward(out_states, W_out, b_out, T, I)  # Shape (B, T*D)
+  # Dropout on output 2
+  dropout_mask_output_2 = matrix(0, 1, 1)
+  if (dropout_p_output > 0.0) {
+    [out_states, dropout_mask_output_2] = dropout::forward(out_states, dropout_p_output, -1)
+  }
+  # Residual pass 2
+  out_states = out_states + out_states_identity
+  outputs = append(outputs, out_states)
+  # Layer norm 2 for each token
+  [out_states, cache_mean_ln2, cache_var_ln2, cache_norm_ln2] = layer_norm_forward(
+    out_states, gamma_ln2, beta_ln2, epsilon_ln, T, D)
+}

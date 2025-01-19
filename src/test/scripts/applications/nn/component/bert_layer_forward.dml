@@ -1,0 +1,92 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/layers/bert_layer.dml") as bert_layer
+
+debug = as.logical(as.integer($1))
+
+B = as.integer($2)
+T = as.integer($3)
+D = as.integer($4)
+H = as.integer($5)
+d = as.integer($6)
+I = as.integer($7)
+
+dropout_p_attention = 0.0
+dropout_p_output = 0.0
+epsilon_ln = 1e-012
+activation = $8
+
+states = matrix(read($9, format="csv"), rows=B, cols=T*D) #
+
+W_Q = matrix(read($10, format="csv"), rows=D, cols=D)
+b_Q = matrix(read($11, format="csv"), rows=1, cols=D)
+W_K = matrix(read($12, format="csv"), rows=D, cols=D)
+b_K = matrix(read($13, format="csv"), rows=1, cols=D)
+W_V = matrix(read($14, format="csv"), rows=D, cols=D)
+b_V = matrix(read($15, format="csv"), rows=1, cols=D)
+W_context = matrix(read($16, format="csv"), rows=D, cols=D)
+b_context = matrix(read($17, format="csv"), rows=1, cols=D)
+W_intermediate = matrix(read($18, format="csv"), rows=D, cols=I)
+b_intermediate = matrix(read($19, format="csv"), rows=1, cols=I)
+W_out = matrix(read($20, format="csv"), rows=I, cols=D)
+b_out = matrix(read($21, format="csv"), rows=1, cols=D)
+
+gamma_ln1 = matrix(read($22, format="csv"), rows=1, cols=D)
+beta_ln1 = matrix(read($23, format="csv"), rows=1, cols=D)
+gamma_ln2 = matrix(read($24, format="csv"), rows=1, cols=D)
+beta_ln2 = matrix(read($25, format="csv"), rows=1, cols=D)
+
+expected_out_states = read($26, format="csv")
+expected_attention = read($27, format="csv")
+
+[out_states, attention, outputs, dropout_mask_attention, dropout_mask_output_1, dropout_mask_output_2, cache_mean_ln1,
+  cache_var_ln1, cache_norm_ln1, cache_mean_ln2, cache_var_ln2, cache_norm_ln2] = bert_layer::forward(states,
+    H, T, d, I,
+    W_Q,  b_Q, 
+    W_K,  b_K, 
+    W_V,  b_V,
+    W_context,  b_context, 
+    W_intermediate,  b_intermediate, 
+    W_out,  b_out, 
+    dropout_p_attention, 
+    dropout_p_output,
+    epsilon_ln,
+    gamma_ln1,  beta_ln1,
+    gamma_ln2,  beta_ln2,
+    activation
+)
+
+if (debug) {
+    print(toString(out_states))
+    print(toString(attention))
+}
+
+states_error = max(abs(expected_out_states - out_states))
+attention_error = max(abs(expected_attention - attention))
+
+if (debug) {
+    print(states_error)
+    print(attention_error)
+}
+
+write(states_error, $28, format="text")
+write(attention_error, $29, format="text")

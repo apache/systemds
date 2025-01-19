@@ -56,7 +56,7 @@ def numpy_to_matrix_block(sds, np_arr: np.array):
     else:
         arr = np_arr.ravel().astype(np.float64)
         value_type = jvm.org.apache.sysds.common.Types.ValueType.FP64
-    buf = bytearray(arr.tobytes())
+    buf = arr.tobytes()
 
     # Send data to java.
     try:
@@ -90,8 +90,10 @@ def convert_column(jvm, rows, j, col_type, pd_col, fb, col_name):
     :param j: The current column index.
     :param col_type: The ValueType of the column.
     :param pd_col: The pandas column to convert.
+    :param fb: The FrameBlock to add the column to.
+    :param col_name: The name of the column.
     """
-    if col_type == jvm.org.apache.sysds.common.Types.ValueType.STRING:
+    if pd_col.dtype == "string" or pd_col.dtype == "object":
         byte_data = bytearray()
         for value in pd_col.astype(str):
             encoded_value = value.encode("utf-8")
@@ -99,7 +101,7 @@ def convert_column(jvm, rows, j, col_type, pd_col, fb, col_name):
             byte_data.extend(encoded_value)
     else:
         col_data = pd_col.fillna("").to_numpy()
-        byte_data = bytearray(col_data.tobytes())
+        byte_data = col_data.tobytes()
 
     converted_array = jvm.org.apache.sysds.runtime.util.Py4jConverterUtils.convert(
         byte_data, rows, col_type
@@ -121,49 +123,60 @@ def pandas_to_frame_block(sds, pd_df: pd.DataFrame):
 
     jvm: JVMView = sds.java_gateway.jvm
     java_gate: JavaGateway = sds.java_gateway
+    jc_ValueType = jvm.org.apache.sysds.common.Types.ValueType
 
     # pandas type mapping to systemds Valuetypes
     data_type_mapping = {
-        np.dtype(np.object_): jvm.org.apache.sysds.common.Types.ValueType.STRING,
-        np.dtype(np.int64): jvm.org.apache.sysds.common.Types.ValueType.INT64,
-        np.dtype(np.float64): jvm.org.apache.sysds.common.Types.ValueType.FP64,
-        np.dtype(np.bool_): jvm.org.apache.sysds.common.Types.ValueType.BOOLEAN,
-        np.dtype("<M8[ns]"): jvm.org.apache.sysds.common.Types.ValueType.STRING,
-        np.dtype(np.int32): jvm.org.apache.sysds.common.Types.ValueType.INT32,
-        np.dtype(np.float32): jvm.org.apache.sysds.common.Types.ValueType.FP32,
-        np.dtype(np.uint8): jvm.org.apache.sysds.common.Types.ValueType.UINT8,
-        np.dtype(np.str_): jvm.org.apache.sysds.common.Types.ValueType.CHARACTER,
+        "object": jc_ValueType.STRING,
+        "int64": jc_ValueType.INT64,
+        "float64": jc_ValueType.FP64,
+        "bool": jc_ValueType.BOOLEAN,
+        "string": jc_ValueType.STRING,
+        "int32": jc_ValueType.INT32,
+        "float32": jc_ValueType.FP32,
+        "uint8": jc_ValueType.UINT8,
     }
-    schema = []
-    col_names = []
 
-    for col_name, dtype in dict(pd_df.dtypes).items():
+    # schema and j_valueTypeArray are essentially doubled but accessing a Java array is costly,
+    # while also being necessary for FrameBlock, so we create one for Python and one for Java.
+    col_names = []
+    schema = []
+    j_valueTypeArray = java_gate.new_array(jc_ValueType, cols)
+    for i, (col_name, dtype) in enumerate(dict(pd_df.dtypes).items()):
         col_names.append(col_name)
-        if dtype in data_type_mapping.keys():
-            schema.append(data_type_mapping[dtype])
+        type_key = str(dtype)
+        if type_key in data_type_mapping:
+            schema.append(data_type_mapping[type_key])
+            j_valueTypeArray[i] = data_type_mapping[type_key]
         else:
-            schema.append(jvm.org.apache.sysds.common.Types.ValueType.STRING)
+            schema.append(jc_ValueType.STRING)
+            j_valueTypeArray[i] = jc_ValueType.STRING
+
     try:
-        jc_ValueType = jvm.org.apache.sysds.common.Types.ValueType
         jc_String = jvm.java.lang.String
         jc_FrameBlock = jvm.org.apache.sysds.runtime.frame.data.FrameBlock
-        j_valueTypeArray = java_gate.new_array(jc_ValueType, len(schema))
 
         # execution speed increases with optimized code when the number of rows exceeds 4
         if rows > 4:
-            for i in range(len(schema)):
-                j_valueTypeArray[i] = schema[i]
-
             fb = jc_FrameBlock(j_valueTypeArray, rows)
 
+            # We use .submit() with explicit .result() calling to properly propagate exceptions
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                executor.map(
-                    lambda j, col_name: convert_column(
-                        jvm, rows, j, schema[j], pd_df[col_name], fb, col_name
-                    ),
-                    range(len(col_names)),
-                    col_names,
-                )
+                futures = [
+                    executor.submit(
+                        convert_column,
+                        jvm,
+                        rows,
+                        j,
+                        schema[j],
+                        pd_df[col_name],
+                        fb,
+                        col_name,
+                    )
+                    for j, col_name in enumerate(col_names)
+                ]
+                for future in concurrent.futures.as_completed(futures):
+                    future.result()
 
             return fb
         else:
@@ -171,7 +184,6 @@ def pandas_to_frame_block(sds, pd_df: pd.DataFrame):
             j_colNameArray = java_gate.new_array(jc_String, len(col_names))
 
             for j, col_name in enumerate(col_names):
-                j_valueTypeArray[j] = schema[j]
                 j_colNameArray[j] = str(col_names[j])
                 col_data = pd_df[col_name].fillna("").to_numpy(dtype=str)
 

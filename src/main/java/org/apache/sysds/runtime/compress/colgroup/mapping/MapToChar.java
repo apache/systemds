@@ -135,27 +135,37 @@ public class MapToChar extends AMapToData {
 		out.writeByte(MAP_TYPE.CHAR.ordinal());
 		out.writeInt(getUnique());
 		out.writeInt(_data.length);
+		writeChars(out, _data);
+
+	}
+
+	protected static void writeChars(DataOutput out, char[] _data_c) throws IOException {
 		final int BS = 100;
-		if(_data.length > BS) {
+		if(_data_c.length > BS) {
 			final byte[] buff = new byte[BS * 2];
-			for(int i = 0; i < _data.length;) {
-				if(i + BS <= _data.length) {
-					for(int o = 0; o < BS; o++) {
-						IOUtilFunctions.shortToBa(_data[i++], buff, o * 2);
-					}
-					out.write(buff);
-				}
-				else {// remaining.
-					for(; i < _data.length; i++)
-						out.writeChar(_data[i]);
-				}
+			for(int i = 0; i < _data_c.length;) {
+				i = writeCharsBlock(out, _data_c, BS, buff, i);
 			}
 		}
 		else {
-			for(int i = 0; i < _data.length; i++)
-				out.writeChar(_data[i]);
+			for(int i = 0; i < _data_c.length; i++)
+				out.writeChar(_data_c[i]);
 		}
+	}
 
+	private static int writeCharsBlock(DataOutput out, char[] _data_c, final int BS, final byte[] buff, int i)
+		throws IOException {
+		if(i + BS <= _data_c.length) {
+			for(int o = 0; o < BS; o++) {
+				IOUtilFunctions.shortToBa(_data_c[i++], buff, o * 2);
+			}
+			out.write(buff);
+		}
+		else {// remaining.
+			for(; i < _data_c.length; i++)
+				out.writeChar(_data_c[i]);
+		}
+		return i;
 	}
 
 	protected static MapToChar readFields(DataInput in) throws IOException {
@@ -230,9 +240,24 @@ public class MapToChar extends AMapToData {
 
 	@Override
 	public int[] getCounts(int[] ret) {
-		for(int i = 0; i < _data.length; i++)
-			ret[_data[i]]++;
+		final int h = (_data.length) % 8;
+		for(int i = 0; i < h; i++)
+			ret[getIndex(i)]++;
+		getCountsBy8P(ret, h, _data.length);
 		return ret;
+	}
+
+	private void getCountsBy8P(int[] ret, int s, int e) {
+		for(int i = s; i < e; i += 8) {
+			ret[getIndex(i)]++;
+			ret[getIndex(i + 1)]++;
+			ret[getIndex(i + 2)]++;
+			ret[getIndex(i + 3)]++;
+			ret[getIndex(i + 4)]++;
+			ret[getIndex(i + 5)]++;
+			ret[getIndex(i + 6)]++;
+			ret[getIndex(i + 7)]++;
+		}
 	}
 
 	@Override
@@ -309,7 +334,6 @@ public class MapToChar extends AMapToData {
 
 		return new MapToChar(getUnique(), ret);
 	}
-
 
 	@Override
 	public boolean equals(AMapToData e) {

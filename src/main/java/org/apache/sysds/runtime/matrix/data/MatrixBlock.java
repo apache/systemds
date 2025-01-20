@@ -1413,15 +1413,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	/**
 	 * Recompute the number of nonZero values in parallel
 	 * 
-	 * @param k the paralelization degree
+	 * @param k the parallelization degree
 	 * @return the number of non zeros
 	 */
 	public long recomputeNonZeros(int k) {
-		if(sparse && sparseBlock!=null)
+		// fallback to single thread if k <= 1, small matrix, or sparse. 
+		if(k <= 1 || ((long) rlen * clen < 10000) || (sparse && sparseBlock!=null))
 			return recomputeNonZeros();
 		else if(!sparse && denseBlock!=null){
-			if((long) rlen * clen < 10000)
-				return recomputeNonZeros();
 			final ExecutorService pool = CommonThreadPool.get(k);
 			try {
 				List<Future<Long>> f = new ArrayList<>();
@@ -1451,7 +1450,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 
 			}
 			catch(Exception e) {
-				LOG.warn("Failed Parallel non zero count fallback to singlethread");
+				LOG.warn("Failed Parallel non zero count fallback to single thread");
 				return recomputeNonZeros();
 			}
 			finally {

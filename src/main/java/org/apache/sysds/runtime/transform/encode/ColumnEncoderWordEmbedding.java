@@ -35,7 +35,7 @@ import java.io.ObjectOutput;
 
 public class ColumnEncoderWordEmbedding extends ColumnEncoder {
 	private MatrixBlock _wordEmbeddings;
-	private Map<Object, Long> _rcdMap;
+	private Map<Object, Integer> _rcdMap;
 	private HashMap<String, double[]> _embMap;
 
 	public ColumnEncoderWordEmbedding() {
@@ -45,8 +45,8 @@ public class ColumnEncoderWordEmbedding extends ColumnEncoder {
 	}
 
 	@SuppressWarnings("unused")
-	private long lookupRCDMap(Object key) {
-		return _rcdMap.getOrDefault(key, -1L);
+	private Integer lookupRCDMap(Object key) {
+		return _rcdMap.getOrDefault(key, -1);
 	}
 
 	//domain size is equal to the number columns of the embeddings column thats equal to length of an embedding vector
@@ -58,6 +58,7 @@ public class ColumnEncoderWordEmbedding extends ColumnEncoder {
 	public int getNrDistinctEmbeddings(){
 		return _wordEmbeddings.getNumRows();
 	}
+	
 	protected ColumnEncoderWordEmbedding(int colID) {
 		super(colID);
 	}
@@ -138,9 +139,9 @@ public class ColumnEncoderWordEmbedding extends ColumnEncoder {
 		super.writeExternal(out);
 		out.writeInt(_rcdMap.size());
 
-		for(Map.Entry<Object, Long> e : _rcdMap.entrySet()) {
+		for(Map.Entry<Object, Integer> e : _rcdMap.entrySet()) {
 			out.writeUTF(e.getKey().toString());
-			out.writeLong(e.getValue());
+			out.writeInt(e.getValue());
 		}
 		_wordEmbeddings.write(out);
 	}
@@ -151,7 +152,7 @@ public class ColumnEncoderWordEmbedding extends ColumnEncoder {
 		int size = in.readInt();
 		for(int j = 0; j < size; j++) {
 			String key = in.readUTF();
-			Long value = in.readLong();
+			Integer value = in.readInt();
 			_rcdMap.put(key, value);
 		}
 		_wordEmbeddings.readExternal(in);

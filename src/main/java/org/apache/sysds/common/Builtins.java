@@ -325,6 +325,8 @@ public enum Builtins {
 	STEPLM("steplm",true, ReturnType.MULTI_RETURN),
 	STFT("stft", false, ReturnType.MULTI_RETURN),
 	SQRT("sqrt", false),
+	SQRT_MATRIX("sqrtMatrix", true),
+	SQRT_MATRIX_JAVA("sqrtMatrixJava", false, ReturnType.SINGLE_RETURN),
 	SUM("sum", false),
 	SVD("svd", false, ReturnType.MULTI_RETURN),
 	TABLE("table", "ctable", false),

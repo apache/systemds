@@ -24,7 +24,7 @@ import numpy as np
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 import torch
 from transformers import BertTokenizer, BertModel
-from systemds.scuro.representations.utils import read_data_from_file, save_embeddings
+from systemds.scuro.representations.utils import save_embeddings
 
 
 class Bert(UnimodalRepresentation):
@@ -34,8 +34,7 @@ class Bert(UnimodalRepresentation):
         self.avg_layers = avg_layers
         self.output_file = output_file
 
-    def parse_all(self, filepath, indices):
-        data = read_data_from_file(filepath, indices)
+    def transform(self, data):
 
         model_name = "bert-base-uncased"
         tokenizer = BertTokenizer.from_pretrained(
@@ -47,13 +46,10 @@ class Bert(UnimodalRepresentation):
         else:
             model = BertModel.from_pretrained(model_name)
 
-        embeddings = self.create_embeddings(list(data.values()), model, tokenizer)
+        embeddings = self.create_embeddings(data, model, tokenizer)
 
         if self.output_file is not None:
-            data = {}
-            for i in range(0, embeddings.shape[0]):
-                data[indices[i]] = embeddings[i]
-            save_embeddings(data, self.output_file)
+            save_embeddings(embeddings, self.output_file)
 
         return embeddings
 
@@ -74,9 +70,6 @@ class Bert(UnimodalRepresentation):
             else:
                 cls_embedding = outputs.last_hidden_state[:, 0, :].squeeze().numpy()
             embeddings.append(cls_embedding)
-
-        if self.output_file is not None:
-            save_embeddings(embeddings, self.output_file)
 
         embeddings = np.array(embeddings)
         return embeddings.reshape((embeddings.shape[0], embeddings.shape[-1]))

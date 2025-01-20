@@ -38,6 +38,7 @@ import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.HDFSTool;
+import org.apache.sysds.utils.stats.Timing;
 
 /**
  * Multi-threaded frame text csv reader.
@@ -54,7 +55,8 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 			FrameBlock dest, ValueType[] schema, String[] names, long rlen, long clen) 
 		throws IOException
 	{
-		int numThreads = OptimizerUtils.getParallelTextReadParallelism();
+		Timing time = new Timing(true);
+		final int numThreads = OptimizerUtils.getParallelTextReadParallelism();
 		
 		TextInputFormat informat = new TextInputFormat();
 		informat.configure(job);
@@ -62,29 +64,35 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		if(HDFSTool.isDirectory(fs, path))
 			splits = IOUtilFunctions.sortInputSplits(splits);
 
-		ExecutorService pool = CommonThreadPool.get(numThreads);
-		try {
-			// get number of threads pool to use the common thread pool.
 			
-			//compute num rows per split
-			ArrayList<CountRowsTask> tasks = new ArrayList<>();
-			for( int i=0; i<splits.length; i++ )
-				tasks.add(new CountRowsTask(splits[i], informat, job, _props.hasHeader() && i==0));
-			List<Future<Long>> cret = pool.invokeAll(tasks);
+		final ExecutorService pool = CommonThreadPool.get(numThreads);
+		try {
+			if(splits.length == 1){
+				new ReadRowsTask(splits[0], informat, job, dest, 0, true).call();
+				return;
+			}
 
+			//compute num rows per split
+			ArrayList<Future<Long>> cret = new ArrayList<>();
+			for( int i=0; i<splits.length - 1; i++ ) // all but last split
+				cret.add(pool.submit(new CountRowsTask(splits[i], informat, job, _props.hasHeader() && i==0)));
+		
+			LOG.debug("Spawned all row counting tasks CSV : " + time.stop());
 			//compute row offset per split via cumsum on row counts
 			long offset = 0;
-			List<Long> offsets = new ArrayList<>();
-			for( Future<Long> count : cret ) {
-				offsets.add(offset);
-				offset += count.get();
+			ArrayList<Future<Object>> tasks2 = new ArrayList<>();
+			for( int i=0; i<splits.length -1; i++ ){
+				long tmp = cret.get(i).get(); // ensure the subsequent task has a thread to use.
+				tasks2.add(pool.submit(new ReadRowsTask(splits[i], informat, job, dest, (int) offset, i==0)));
+				offset += tmp;
 			}
-			
+			tasks2.add(pool.submit(new ReadRowsTask(splits[splits.length-1], informat, job, dest, (int) offset, splits.length==1)));
+
+			LOG.debug("Spawned all reading tasks CSV : " + time.stop());
 			//read individual splits
-			ArrayList<ReadRowsTask> tasks2 = new ArrayList<>();
-			for( int i=0; i<splits.length; i++ )
-				tasks2.add( new ReadRowsTask(splits[i], informat, job, dest, offsets.get(i).intValue(), i==0));
-			CommonThreadPool.invokeAndShutdown(pool, tasks2);
+			for(Future<Object> a : tasks2)
+				a.get();
+			LOG.debug("Finished Reading CSV : " + time.stop());
 		} 
 		catch (Exception e) {
 			throw new IOException("Failed parallel read of text csv input.", e);
@@ -137,6 +145,7 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 		private JobConf _job;
 		private boolean _hasHeader;
 
+
 		public CountRowsTask(InputSplit split, TextInputFormat informat, JobConf job, boolean hasHeader) {
 			_split = split;
 			_informat = informat;
@@ -146,7 +155,8 @@ public class FrameReaderTextCSVParallel extends FrameReaderTextCSV
 
 		@Override
 		public Long call() throws Exception {
-			return countLinesInSplit(_split, _informat, _job, _hasHeader);
+			long count =  countLinesInSplit(_split, _informat, _job, _hasHeader);
+			return count;
 		}
 	}
 

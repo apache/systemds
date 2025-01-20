@@ -149,7 +149,6 @@ public final class CLALibCombineGroups {
 		else {
 			return combineNSingleAtATime(groups, nRows);
 		}
-
 	}
 
 	@SuppressWarnings("unchecked")
@@ -214,10 +213,12 @@ public final class CLALibCombineGroups {
 		IColIndex combinedColumns = ColIndexFactory.combine(a, b);
 
 		// try to recompress a and b if uncompressed
-		if(a instanceof ColGroupUncompressed)
+		if( (a instanceof ColGroupUncompressed) && (b instanceof ColGroupUncompressed)){
+			// do not try to compress if both are uncompressed
+		}
+		else if(a instanceof ColGroupUncompressed)
 			a = a.recompress();
-
-		if(b instanceof ColGroupUncompressed)
+		else if(b instanceof ColGroupUncompressed)
 			b = b.recompress();
 
 		long maxEst = (long) a.getNumValues() * b.getNumValues();
@@ -229,6 +230,8 @@ public final class CLALibCombineGroups {
 			ret = combineUC(combinedColumns, a, b);
 
 		try {
+			if(!CompressedMatrixBlock.debug)
+				return ret;
 			double sumCombined = ret.getSum(nRow);
 			double sumIndividualA = a.getSum(nRow);
 			double sumIndividualB = b.getSum(nRow);

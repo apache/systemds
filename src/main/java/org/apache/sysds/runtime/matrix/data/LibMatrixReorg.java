@@ -1016,11 +1016,12 @@ public class LibMatrixReorg {
 				"Invalid input A in table(seq(1, nrow(A)), A, w): A should only have one column but has: "
 					+ A.getNumColumns());
 
-		if(!Double.isNaN(w)) {
+		if(!Double.isNaN(w) && w != 0) {
 			if((CLALibRexpand.compressedTableSeq() || A instanceof CompressedMatrixBlock) && w == 1)
 				return CLALibRexpand.rexpand(seqHeight, A, updateClen ? -1 : ret.getNumColumns(), k);
-			else
-				return fusedSeqRexpandSparseBlock(seqHeight, A, w, ret, updateClen, k);
+			else{
+				return fusedSeqRexpandSparse(seqHeight, A, w, ret, updateClen);
+			}
 		}
 		else {
 			if(ret == null) {
@@ -1040,22 +1041,58 @@ public class LibMatrixReorg {
 
 	}
 
-	private static MatrixBlock fusedSeqRexpandSparseBlock(final int rlen, final MatrixBlock A, final double w, MatrixBlock ret,
-		boolean updateClen, int k ) {
-
+	private static MatrixBlock fusedSeqRexpandSparse(int seqHeight, MatrixBlock A, double w, MatrixBlock ret, boolean updateClen) {
+		if(ret == null) {
+			ret = new MatrixBlock();
+			updateClen = true;
+		}
+		final int rlen = seqHeight;
 		// prepare allocation of CSR sparse block
 		final int[] rowPointers = new int[rlen + 1];
 		final int[] indexes = new int[rlen];
 		final double[] values = new double[rlen];
 
-		// sparse-unsafe table execution
-		// (because input values of 0 are invalid and have to result in errors)
-		// resultBlock guaranteed to be allocated for table expand
-		// each row in resultBlock will be allocated and will contain exactly one value
+		ret.rlen = rlen;
+		// assign the output
+		ret.sparse = true;
+		ret.denseBlock = null;
+		// construct sparse CSR block from filled arrays
+		SparseBlockCSR csr = new SparseBlockCSR(rowPointers, indexes, values, rlen);
+		ret.sparseBlock = csr;
+		int blkz = Math.min(1024, rlen);
+		int maxcol = 0;
+		boolean containsNull = false;
+		for(int i = 0; i < rlen; i += blkz) {
+			// blocked execution for earlier JIT compilation
+			int t = fusedSeqRexpandSparseBlock(csr, A, w, i, Math.min(i + blkz, rlen));
+			if(t < 0) {
+				t = Math.abs(t);
+				containsNull = true;
+			}
+			maxcol = Math.max(t, maxcol);
+		}
+
+		if(containsNull)
+			csr.compact();
+
+		rowPointers[rlen] = rlen;
+		ret.setNonZeros(ret.sparseBlock.size());
+		if(updateClen)
+			ret.setNumColumns(maxcol);
+		return ret;
+	}
+
+	private static int fusedSeqRexpandSparseBlock(final SparseBlockCSR csr, final MatrixBlock A, final double w, int rl, int ru) {
+
+		// prepare allocation of CSR sparse block
+		final int[] rowPointers = csr.rowPointers();
+		final int[] indexes = csr.indexes();
+		final double[] values = csr.values();
+
 		boolean containsNull = false;
 		int maxCol = 0;
 
-		for(int i = 0; i < rlen; i++) {
+		for(int i = rl; i < ru; i++) {
 			int c = rexpandSingleRow(i, A.get(i, 0), w, indexes, values);
 			if(c < 0)
 				containsNull = true;
@@ -1064,27 +1101,7 @@ public class LibMatrixReorg {
 			rowPointers[i] = i;
 		}
 	
-		rowPointers[rlen] = rlen;
-
-		if(ret == null) {
-			ret = new MatrixBlock();
-			updateClen = true;
-		}
-
-		ret.rlen = rlen;
-		// assign the output
-		ret.sparse = true;
-		ret.denseBlock = null;
-		// construct sparse CSR block from filled arrays
-		ret.sparseBlock = new SparseBlockCSR(rowPointers, indexes, values, rlen);
-		// compact all the null entries.
-		if(containsNull){
-			((SparseBlockCSR) ret.sparseBlock).compact();
-		}
-		ret.setNonZeros(ret.sparseBlock.size());
-
-		updateClenRexpand(ret, maxCol, updateClen);
-		return ret;
+		return containsNull ? -maxCol: maxCol;
 	}
 
 	private static void updateClenRexpand(MatrixBlock ret, int maxCol, boolean updateClen) {

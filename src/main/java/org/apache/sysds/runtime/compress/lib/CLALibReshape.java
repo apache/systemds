@@ -59,7 +59,7 @@ public class CLALibReshape {
 		this.rows = rows;
 		this.cols = cols;
 		this.rowwise = rowwise;
-		this.pool = k >= 1 ? CommonThreadPool.get(k) : null;
+		this.pool = k > 1 ? CommonThreadPool.get(k) : null;
 	}
 
 	public static MatrixBlock reshape(CompressedMatrixBlock in, int rows, int cols, boolean rowwise) {
@@ -161,7 +161,7 @@ public class CLALibReshape {
 
 	private boolean shouldItBeCompressedOutputs() {
 		// The number of rows in the reshaped allocations is fairly large.
-		return rlen > COMPRESSED_RESHAPE_THRESHOLD &&
+		return rlen > COMPRESSED_RESHAPE_THRESHOLD && rowwise &&
 			// the reshape is a clean multiplier of number of rows, meaning each column group cleanly reshape into x others
 			(double) rlen / rows % 1.0 == 0.0;
 	}

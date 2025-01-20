@@ -23,14 +23,19 @@ import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.lib.FrameLibCompress;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.transform.encode.CompressedEncode;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,6 +50,9 @@ public class TransformCompressedTestSingleCol {
 	private final int k;
 
 	public TransformCompressedTestSingleCol(FrameBlock data, int k) {
+		Thread.currentThread().setName("test_transformThread");
+		Logger.getLogger(CommonThreadPool.class.getName()).setLevel(Level.OFF);
+		CompressedEncode.ROW_PARALLELIZATION_THRESHOLD = 10;
 		this.data = data;
 		this.k = k;
 	}
@@ -59,6 +67,12 @@ public class TransformCompressedTestSingleCol {
 				TestUtils.generateRandomFrameBlock(100, new ValueType[] {ValueType.UINT4}, 231, 0.2),
 				TestUtils.generateRandomFrameBlock(100, new ValueType[] {ValueType.UINT4}, 231, 1.0),
 				TestUtils.generateRandomFrameBlock(100, new ValueType[] {ValueType.UINT4}, 231, 1.0),
+
+				FrameLibCompress
+					.compress(TestUtils.generateRandomFrameBlock(103, new ValueType[] {ValueType.UINT4}, 231, 1.0), 2),
+				FrameLibCompress
+					.compress(TestUtils.generateRandomFrameBlock(235, new ValueType[] {ValueType.UINT4}, 23132, 0.0), 2),
+
 				// Above block size of number of unique elements
 				TestUtils.generateRandomFrameBlock(1200, new ValueType[] {ValueType.FP32}, 231, 0.1),};
 
@@ -146,7 +160,7 @@ public class TransformCompressedTestSingleCol {
 			MultiColumnEncoder encoderNormal = EncoderFactory.createEncoder(spec, data.getColumnNames(),
 				data.getNumColumns(), meta);
 			MatrixBlock outNormal = encoderNormal.encode(data, k);
-	
+
 			MultiColumnEncoder encoderCompressed = EncoderFactory.createEncoder(spec, data.getColumnNames(),
 				data.getNumColumns(), meta);
 			MatrixBlock outCompressed = encoderCompressed.encode(data, k, true);
@@ -158,14 +172,15 @@ public class TransformCompressedTestSingleCol {
 
 			MultiColumnEncoder ec = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(),
 				encoderCompressed.getMetaData(null));
-			
+
 			MatrixBlock outMeta1 = ec.apply(data, k);
+
 
 			TestUtils.compareMatrices(outNormal, outMeta1, 0, "Not Equal after apply");
 
 			MultiColumnEncoder ec2 = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(),
 				encoderNormal.getMetaData(null));
-			
+
 			MatrixBlock outMeta12 = ec2.apply(data, k);
 			TestUtils.compareMatrices(outNormal, outMeta12, 0, "Not Equal after apply2");
 

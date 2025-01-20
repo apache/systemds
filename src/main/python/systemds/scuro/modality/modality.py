@@ -18,41 +18,27 @@
 # under the License.
 #
 # -------------------------------------------------------------
+from typing import List
 
-from systemds.scuro.representations.representation import Representation
+from systemds.scuro.modality.type import ModalityType
 
 
 class Modality:
 
-    def __init__(
-        self,
-        representation: Representation,
-        start_index: int = 0,
-        modality_name="",
-        train_indices=None,
-    ):
+    def __init__(self, modality_type: ModalityType):
         """
-        Parent class of the different Modalities
-        :param representation: Specifies how the data should be represented for a specific modality
-        :param start_index: Defines the first index used for the alignment
-        :param modality_name: Name of the modality
-        :param train_indices: List of indices used for train-test split
+        Parent class of the different Modalities (unimodal & multimodal)
+        :param modality_type: Type of the modality
         """
-        self.representation = representation
-        self.start_index = start_index
-        self.name = modality_name
+        self.type = modality_type
         self.data = None
-        self.train_indices = train_indices
+        self.data_type = None
+        self.cost = None
+        self.shape = None
+        self.schema = {}
 
-    def read_chunk(self):
+    def get_modality_names(self) -> List[str]:
         """
-        Extracts a data chunk of the modality according to the window size specified in params
+        Extracts the individual unimodal modalities for a given transformed modality.
         """
-        raise NotImplementedError
-
-    def read_all(self, indices):
-        """
-        Implemented for every unique modality to read all samples from a specified format
-        :param indices: List of indices to be read
-        """
-        pass
+        return [modality.name for modality in ModalityType if modality in self.type]

@@ -27,6 +27,7 @@ import java.util.Arrays;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -101,11 +102,6 @@ public class HashIntegerArray extends Array<Object> implements IHashArray {
 	@Override
 	public void set(int index, double value) {
 		_data[index] = (int) value;
-	}
-
-	@Override
-	public void set(int rl, int ru, Array<Object> value) {
-		set(rl, ru, value, 0);
 	}
 
 	@Override
@@ -370,7 +366,8 @@ public class HashIntegerArray extends Array<Object> implements IHashArray {
 		else if(s instanceof Integer)
 			return (Integer) s;
 		else
-			throw new NotImplementedException("not supported parsing: " + s + " of class: " + s.getClass().getSimpleName());
+			throw new NotImplementedException(
+				"not supported parsing: " + s + " of class: " + s.getClass().getSimpleName());
 	}
 
 	public static int parseHashInt(String s) {
@@ -433,6 +430,26 @@ public class HashIntegerArray extends Array<Object> implements IHashArray {
 	@Override
 	public boolean possiblyContainsNaN() {
 		return false;
+	}
+
+	@Override
+	protected int addValRecodeMap(HashMapToInt<Object> map, int id, int i) {
+		Integer val = Integer.valueOf(getInt(i));
+		Integer v = map.putIfAbsent(val, id);
+		if(v == null)
+			id++;
+		return id;
+	}
+
+	@Override
+	public void setM(HashMapToInt<Object> map, AMapToData m, int i) {
+		m.set(i, map.get(Integer.valueOf(getInt(i))).intValue() - 1);
+	}
+
+	@Override
+	public void setM(HashMapToInt<Object> map, int si, AMapToData m, int i) {
+		final Integer v = Integer.valueOf(getInt(i));
+		m.set(i, map.get(v).intValue() - 1);
 	}
 
 	@Override

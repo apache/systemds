@@ -2336,6 +2336,15 @@ public class TestUtils {
 		return generateRandomFrameBlock(rows, schema, random);
 	}
 
+	/**
+	 * Generate a random FrameBlock
+	 * 
+	 * @param rows       The number of rows in the block
+	 * @param schema     The schema (also determines the number of columns)
+	 * @param seed       The seed for the random generators
+	 * @param nullChance The percentage of values that are null. (0 is no nulls, while 1 is all null)
+	 * @return A new FrameBlock
+	 */
 	public static FrameBlock generateRandomFrameBlock(int rows, ValueType[] schema, long seed, double nullChance){
 		Random random = (seed == -1) ? TestUtils.random : new Random(seed);
 

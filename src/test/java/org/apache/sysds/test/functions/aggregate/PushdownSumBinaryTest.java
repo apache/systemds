@@ -25,10 +25,8 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
-import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -89,39 +87,24 @@ public class PushdownSumBinaryTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testPushDownSumPlusNoRewriteSP() {
+	public void testPushDownSumPlusBroadcastSP() {
 		runPushdownSumOnBinaryTest(TEST_NAME1, false, ExecType.SPARK);
 	}
 	
 	@Test
-	public void testPushDownSumMinusNoRewriteSP() {
+	public void testPushDownSumMinusBroadcastSP() {
 		runPushdownSumOnBinaryTest(TEST_NAME2, false, ExecType.SPARK);
 	}
-		
-	/**
-	 * 
-	 * @param testname
-	 * @param type
-	 * @param sparse
-	 * @param instType
-	 */
+	
 	private void runPushdownSumOnBinaryTest( String testname, boolean equiDims, ExecType instType) 
 	{
 		//rtplatform for MR
-		ExecMode platformOld = rtplatform;
-		switch( instType ){
-			case SPARK: rtplatform = ExecMode.SPARK; break;
-			default: rtplatform = ExecMode.HYBRID; break;
-		}
-	
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == ExecMode.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+		ExecMode platformOld = setExecMode(instType);
 			
 		try
 		{
 			//determine script and function name
-			String TEST_NAME = testname;			
+			String TEST_NAME = testname;
 			String TEST_CACHE_DIR = TEST_CACHE_ENABLED ? TEST_NAME + "_" + String.valueOf(equiDims) + "/" : "";
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
@@ -150,13 +133,10 @@ public class PushdownSumBinaryTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			
 			String lopcode = TEST_NAME.equals(TEST_NAME1) ? "+" : "-";
-			String opcode = equiDims ? lopcode : Instruction.SP_INST_PREFIX+"map"+lopcode;
-			Assert.assertTrue("Non-applied rewrite", Statistics.getCPHeavyHitterOpCodes().contains(opcode));	
+			Assert.assertTrue("Non-applied rewrite", Statistics.getCPHeavyHitterOpCodes().contains(lopcode));
 		}
-		finally
-		{
-			rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		finally {
+			resetExecMode(platformOld);
 		}
 	}
 }

@@ -276,12 +276,10 @@ public class Data extends Lop
 		OutputParameters oparams = getOutputParameters();
 		if ( _op.isWrite() ) {
 			sb.append( OPERAND_DELIMITOR );
-			FileFormat fmt = null;
-			if ( getDataType() == DataType.MATRIX || getDataType() == DataType.FRAME )
-				fmt = oparams.getFormat();
-			else // scalars will always be written in text format
-				fmt = FileFormat.TEXT;
-
+			// scalars will always be written in text format
+			FileFormat fmt = getDataType().isScalar() ?
+				FileFormat.TEXT : oparams.getFormat();
+			
 			//format literal or variable
 			Lop fmtLop = _inputParams.get(DataExpression.FORMAT_TYPE);
 			String fmtLabel = (fmt!=FileFormat.UNKNOWN) ? fmt.toString() : fmtLop.getOutputParameters().getLabel();

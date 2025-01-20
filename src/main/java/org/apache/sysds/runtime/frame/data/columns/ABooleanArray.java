@@ -19,8 +19,7 @@
 
 package org.apache.sysds.runtime.frame.data.columns;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ExecutorService;
 
 public abstract class ABooleanArray extends Array<Boolean> {
 
@@ -55,14 +54,15 @@ public abstract class ABooleanArray extends Array<Boolean> {
 	 * @param value The string array to set from.
 	 */
 	public abstract void setNullsFromString(int rl, int ru, Array<String> value);
-	
+
+
 	@Override
-	protected Map<Boolean, Long> createRecodeMap() {
-		Map<Boolean, Long> map = new HashMap<>();
-		long id = 1;
+	protected HashMapToInt<Boolean> createRecodeMap(int estimate, ExecutorService pool, int k) {
+		HashMapToInt<Boolean> map = new HashMapToInt<Boolean>(2);
+		int id = 1;
 		for(int i = 0; i < size() && id <= 2; i++) {
-			Long v = map.putIfAbsent(get(i), id);
-			if(v == null)
+			int v = map.putIfAbsentI(get(i), id);
+			if(v == -1)
 				id++;
 		}
 		return map;

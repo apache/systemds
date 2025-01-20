@@ -80,19 +80,26 @@ public class TransformCompressedTestLogger {
 			// FrameBlock outNormalMD = encoderNormal.getMetaData(null);
 
 			final List<LoggingEvent> log = LoggingUtils.reinsert(appender);
-			assertTrue(log.get(3).getMessage().toString().contains("Compression ratio"));
+
+			boolean containsCompressionRationMessage = false;
+			for(LoggingEvent l : log) {
+				containsCompressionRationMessage |= l.getMessage().toString().contains("Compression ratio");
+			}
+
+			assertTrue(containsCompressionRationMessage);
+
 			TestUtils.compareMatrices(outNormal, outCompressed, 0, "Not Equal after apply");
 
 			MultiColumnEncoder ec = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(),
 				encoderCompressed.getMetaData(null));
-			
+
 			MatrixBlock outMeta1 = ec.apply(data, 1);
 
 			TestUtils.compareMatrices(outNormal, outMeta1, 0, "Not Equal after apply");
 
 			MultiColumnEncoder ec2 = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(),
 				encoderNormal.getMetaData(null));
-			
+
 			MatrixBlock outMeta12 = ec2.apply(data, 1);
 			TestUtils.compareMatrices(outNormal, outMeta12, 0, "Not Equal after apply2");
 		}

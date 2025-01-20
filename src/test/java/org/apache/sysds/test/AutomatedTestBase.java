@@ -116,7 +116,7 @@ public abstract class AutomatedTestBase {
 	protected static final boolean BENCHMARK = true;
 	protected static final int BENCHMARK_WARMUP_RUNS = 0;
 	protected static final int BENCHMARK_REPETITIONS = 1;
-	protected static final boolean ALLOW_GENERATED_REWRITES = true;
+	protected static final boolean ALLOW_GENERATED_REWRITES = false;
 	protected static final String BASE_DATA_DIR = "/Users/janniklindemann/Dev/MScThesis/NGramAnalysis/";
 
 

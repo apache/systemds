@@ -318,16 +318,6 @@ public class RewriterCodeGen {
 		sb.append(to.toParsableString(ctx));
 		sb.append('\n');
 
-		if (DEBUG) {
-			indent(indentation, sb);
-			sb.append("DMLExecutor.println(\"Applying rewrite: " + rewriteName + "\");\n");
-		}
-
-		if (maintainRewriteStats) {
-			indent(indentation, sb);
-			sb.append("Statistics.applyGeneratedRewrite(\"" + rewriteName + "\");\n");
-		}
-
 		Set<RewriterStatement> activeStatements = buildRewrite(to, sb, combinedAssertions, vars, ctx, indentation);
 
 		String newRoot = vars.get(to);
@@ -359,6 +349,16 @@ public class RewriterCodeGen {
 		sb.append("// Remove old unreferenced Hops\n");
 		removeUnreferencedHops(from, activeStatements, sb, vars, ctx, indentation);
 		sb.append('\n');
+
+		if (DEBUG) {
+			indent(indentation, sb);
+			sb.append("DMLExecutor.println(\"Applying rewrite: " + rewriteName + "\");\n");
+		}
+
+		if (maintainRewriteStats) {
+			indent(indentation, sb);
+			sb.append("Statistics.applyGeneratedRewrite(\"" + rewriteName + "\");\n");
+		}
 
 		indent(indentation, sb);
 		sb.append("return newRoot;\n");

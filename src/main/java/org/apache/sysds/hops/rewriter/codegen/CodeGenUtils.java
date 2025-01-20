@@ -8,6 +8,8 @@ import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RuleContext;
 
 import javax.annotation.Nullable;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -195,6 +197,28 @@ public class CodeGenUtils {
 		}
 
 		throw new NotImplementedException(stmt.trueInstruction());
+	}
+
+	/**
+	 *
+	 * @param stmt the statement
+	 * @param ctx the context
+	 * @return a list of operand indices that must be matched
+	 */
+	public static List<Integer> matchingDimRequirement(RewriterStatement stmt, final RuleContext ctx) {
+		switch (stmt.trueInstruction()) {
+			case "1-*":
+				return List.of(0, 1);
+			case "+*":
+			case "-*":
+				return List.of(0, 2);
+			default:
+				return Collections.emptyList();
+		}
+	}
+
+	public static boolean opRequiresBinaryBroadcastingMatch(RewriterStatement stmt, final RuleContext ctx) {
+		return getOpClass(stmt, ctx).equals("BinaryOp") && stmt.getChild(0).getResultingDataType(ctx).equals("MATRIX") && stmt.getChild(1).getResultingDataType(ctx).equals("MATRIX");
 	}
 
 	public static String getOpClass(RewriterStatement stmt, final RuleContext ctx) {

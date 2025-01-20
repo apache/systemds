@@ -138,6 +138,7 @@ public class RewriterRuleCreator {
 			}
 		}
 
+
 		if (validateCorrectness) {
 			// Now, we validate the rule by executing it in the system
 			if (!validateRuleCorrectnessAndGains(rule, ctx))
@@ -188,6 +189,14 @@ public class RewriterRuleCreator {
 			}
 		}
 
+		// Check if rule is expansive (e.g. expands itself leading to an infinite loop)
+		RewriterRuleSet testSet = new RewriterRuleSet(ctx, List.of(rule));
+		testSet.accelerate();
+		RewriterStatement mProbe = rule.getStmt2();
+		if (testSet.acceleratedFindFirst(mProbe) != null)
+			throw new IllegalArgumentException("Expansive rule detected!");
+
+
 		activeRules.removeAll(rulesToRemove);
 
 		// Now, we include the rule to the system
@@ -195,6 +204,7 @@ public class RewriterRuleCreator {
 		activeRules.add(rule);
 
 		ruleSet.accelerate();
+
 		return true;
 	}
 

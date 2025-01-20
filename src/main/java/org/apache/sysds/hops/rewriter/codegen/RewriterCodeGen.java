@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.AbstractCollection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -106,6 +107,7 @@ public class RewriterCodeGen {
 		msb.append("import org.apache.sysds.common.Types;\n");
 		msb.append("import org.apache.sysds.hops.rewrite.HopRewriteUtils;\n");
 		msb.append("import org.apache.sysds.hops.rewriter.dml.DMLExecutor;\n");
+		msb.append("import org.apache.sysds.hops.rewriter.RewriterRuntimeUtils;\n");
 		msb.append("\n");
 		msb.append("public class " + className + " implements Function {\n\n");
 
@@ -596,10 +598,30 @@ public class RewriterCodeGen {
 			return varCtr;
 		} else {
 			String opClass = CodeGenUtils.getOpClass(cur, ctx);
-			String constructor = CodeGenUtils.getHopConstructor(cur, assertions, vars, ctx, cur.getOperands().stream().map(vars::get).toArray(String[]::new));
+			String[] operandRefs = cur.getOperands().stream().map(vars::get).toArray(String[]::new);
+
+			if (CodeGenUtils.opRequiresBinaryBroadcastingMatch(cur, ctx)) {
+				// Then we need to validate that broadcasting still works after rearranging
+				indent(indentation, sb);
+				sb.append("if ( !RewriterRuntimeUtils.validateBinaryBroadcasting(" + operandRefs[0] + ", " + operandRefs[1] + ") )\n");
+				indent(indentation+1, sb);
+				sb.append("return hi;\n");
+			} else {
+				List<Integer> matchingDims = CodeGenUtils.matchingDimRequirement(cur, ctx);
+
+				if (!matchingDims.isEmpty()) {
+					// Then we need to validate that broadcasting still works after rearranging
+					sb.append("if ( !RewriterRuntimeUtils.hasMatchingDims(" + matchingDims.stream().map(idx -> operandRefs[idx]).collect(Collectors.joining(", ")) + ") )\n");
+					indent(indentation+1, sb);
+					sb.append("return hi;\n");
+				}
+			}
+
+			String constructor = CodeGenUtils.getHopConstructor(cur, assertions, vars, ctx, operandRefs);
 			String name = "v"  + (varCtr++);
 			indent(indentation, sb);
 			sb.append(opClass + " " + name + " = " + constructor + ";\n");
+
 			vars.put(cur, name);
 		}
 

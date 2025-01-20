@@ -253,4 +253,20 @@ public class RuleCreationTests {
 		System.out.println(ruleCreator.getRuleSet().getRules());
 		assert ruleCreator.getRuleSet().getRules().size() == 1;
 	}
+
+	@Test
+	public void testExpansiveRule() {
+		String rs1 =
+				"MATRIX:A,B\n" +
+						"LITERAL_FLOAT:0.0\n" +
+						"\n" +
+						"+*(A,0.0,B)\n" +
+						"=>\n" +
+						"+*(A,0.0,!=(B,B))";
+
+		RewriterRule rule1 = RewriterUtils.parseRule(rs1, ctx);
+
+		RewriterRuleCreator ruleCreator = new RewriterRuleCreator(ctx);
+		assert !ruleCreator.registerRule(rule1, canonicalConverter, ctx);
+	}
 }

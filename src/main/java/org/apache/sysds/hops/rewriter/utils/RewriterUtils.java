@@ -2021,6 +2021,10 @@ public class RewriterUtils {
 					return true;
 				}
 
+				if (cur.getId().contains("_")) {
+					cur.rename(getVarname(varnames, isMatrix? matrixVarCtr : scalarVarCtr, isMatrix));
+				}
+
 				try {
 					UUID.fromString(cur.getId());
 					// If it could parse, then we should rename

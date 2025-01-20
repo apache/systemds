@@ -13,6 +13,7 @@ import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.UnaryOp;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.hops.rewriter.dml.DMLExecutor;
 import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import org.apache.sysds.parser.DMLProgram;
@@ -962,5 +963,55 @@ public class RewriterRuntimeUtils {
 			ex.printStackTrace();
 			return false;
 		}
+	}
+
+
+	/**
+	 * Validates matrix dimensions to ensure that broadcasting still works afer the transformation
+	 * @param hop1 the first HOP
+	 * @param hop2 the second HOP
+	 * @return if the new binary op would work in terms of broadcasting
+	 */
+	public static boolean validateBinaryBroadcasting(Hop hop1, Hop hop2) {
+		if (hop1.isMatrix() && hop2.isMatrix()) {
+			if (!hop1.dimsKnown() || !hop2.dimsKnown())
+				return false;
+
+			if (hop1.getDim1() == hop2.getDim1()) {
+				if (hop1.getDim2() == hop2.getDim2())
+					return true; // Then both dimensions match
+
+				return hop2.getDim2() == 1; // Otherwise we require a column vector
+			} else if (hop1.getDim2() == hop2.getDim2()) {
+				return hop2.getDim1() == 1; // We require a row vector
+			}
+
+			// At least one dimension must match
+			return false;
+		}
+
+		return true;
+	}
+
+	public static boolean hasMatchingDims(Hop hop1, Hop hop2) {
+		return hop1.dimsKnown() && hop2.dimsKnown() && hop1.getDim1() == hop2.getDim1() && hop1.getDim2() == hop2.getDim2();
+	}
+
+	public static boolean hasMatchingDims(Hop... hops) {
+		if (hops.length < 2)
+			return true;
+
+		for (Hop hop : hops)
+			if (!hop.dimsKnown())
+				return false;
+
+		long dim1 = hops[0].getDim1();
+		long dim2 = hops[0].getDim2();
+
+		for (int i = 1; i < hops.length; i++)
+			if (hops[i].getDim1() != dim1 && hops[i].getDim2() != dim2)
+				return false;
+
+		return true;
 	}
 }

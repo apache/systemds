@@ -37,6 +37,8 @@ public class DMLCodeGenerator {
 		printAsBinary.add("*");
 		printAsBinary.add("/");
 		printAsBinary.add("^");
+		printAsBinary.add("&");
+		printAsBinary.add("|");
 		printAsBinary.add("==");
 		printAsBinary.add("!=");
 		printAsBinary.add(">");

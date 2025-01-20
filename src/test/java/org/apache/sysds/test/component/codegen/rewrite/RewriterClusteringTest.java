@@ -76,7 +76,7 @@ public class RewriterClusteringTest {
 	public static void testExpressionClustering() {
 		boolean useData = true;
 		boolean useSystematic = true;
-		boolean pruneNovelExpressions = true; // To drop all "irrelevant" statements (those that don't appear in the data set)
+		boolean pruneNovelExpressions = false; // To drop all "irrelevant" statements (those that don't appear in the data set)
 		boolean useRandomLarge = false;
 		int systematicSearchDepth = 3;
 		int BATCH_SIZE = 1000;
@@ -176,6 +176,10 @@ public class RewriterClusteringTest {
 							//System.out.println("Found equivalent statement!");
 						}*/
 					} catch (Exception e) {
+						try {
+							System.err.println("Error from expression: " + subExpr.toParsableString(ctx));
+						} catch (Exception e2) {
+						}
 						e.printStackTrace();
 						failures.incrementAndGet();
 					}
@@ -205,6 +209,7 @@ public class RewriterClusteringTest {
 				indices.parallelStream().forEach(idx -> {
 					if (ctr2.incrementAndGet() % 10 == 0)
 						System.out.println("Done: " + (mBATCH * BATCH_SIZE + ctr2.intValue()) + " / " + (mBATCH * BATCH_SIZE + maxSize));
+
 
 					List<RewriterAlphabetEncoder.Operand> ops = RewriterAlphabetEncoder.decodeOrderedStatements(idx);
 					List<RewriterStatement> stmts = RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, true);
@@ -345,13 +350,22 @@ public class RewriterClusteringTest {
 			}
 		}
 
+		System.out.println("Rule creation complete!");
+
 		allRules.sort(Comparator.comparing(Tuple4::_3));
+
+		System.out.println("Rules sorted!");
 
 		RewriterRuleCreator ruleCreator = new RewriterRuleCreator(ctx);
 		List<RewriterRule> conditionalRules = new ArrayList<>();
 
+		mCtr = 0;
+
 		//for (Tuple4<RewriterRule, Long, Long, Integer> t : allRules) {
 		for (Tuple4<RewriterRule, Long, Integer, Boolean> t : allRules) {
+			if (++mCtr % 100 == 0)
+				System.out.println("Registering rule: " + mCtr + " / " + allRules.size());
+
 			try {
 				// First, without validating correctness
 				// This might throw out some fallback options if a rule turns out to be incorrect but we there is a huge performance benefit
@@ -365,6 +379,8 @@ public class RewriterClusteringTest {
 			}
 		}
 
+		System.out.println("Writing raw to files...");
+
 		allRules = null;
 
 		RewriterRuleSet rawRuleSet = ruleCreator.getRuleSet();
@@ -375,6 +391,8 @@ public class RewriterClusteringTest {
 			ex.printStackTrace();
 		}
 
+		System.out.println("Throwing out incorrect rules...");
+
 		ruleCreator.throwOutInvalidRules(true, false);
 
 		try (FileWriter writer = new FileWriter(RewriteAutomaticallyGenerated.VALIDATED_FILE_PATH)) {
@@ -383,9 +401,10 @@ public class RewriterClusteringTest {
 			ex.printStackTrace();
 		}
 
+		System.out.println("Throwing out non-applicable rules...");
 		ruleCreator.throwOutInvalidRules(false, true);
 
-
+		System.out.println("Writing results...");
 
 		try (FileWriter writer = new FileWriter(RewriteAutomaticallyGenerated.FILE_PATH)) {
 			String serialized = ruleCreator.getRuleSet().serialize(ctx);

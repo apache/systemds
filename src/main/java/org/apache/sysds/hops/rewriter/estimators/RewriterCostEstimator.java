@@ -213,7 +213,7 @@ public class RewriterCostEstimator {
 		MutableInt ctr = new MutableInt();
 
 		if (nums.size() > 16) {
-			System.err.println("Could not properly sample!");
+			System.err.println("Could not properly sample: " + statements);
 			return out;
 		}
 

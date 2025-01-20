@@ -564,13 +564,93 @@ public class LibCommonsMath
 		final int useBuildinStrategy = 0;
 		final int useGaussianStrategy = 1;
 		final int useBareissStrategy = 2;
+		final int useLaplaceStrategy = 3;
 		int computationStrategy = useBareissStrategy;
 
 		double determinant = 0;
 		switch (computationStrategy) {
 			case useGaussianStrategy:
-				// TODO Implement Gaussian strategy
+				double[][] matrix = in.getData();
+				int size = in.getRowDimension();
+				determinant = 1.0;
+				int swapCount = 0;
+
+				// create upper triangular matrix
+				for (int pivotCol = 0; pivotCol < size; pivotCol++) {
+		
+					// Find a non-zero pivot in current column
+					boolean nonZeroPivotFound = false;
+					for (int pivotRow = pivotCol; pivotRow < size; pivotRow++) {
+						if (Math.abs(matrix[pivotRow][pivotCol]) > 1e-9) { // small epsilon for fp comparison
+							System.out.println("Found non-zero pivot at row " + pivotRow + ", column " + pivotCol);
+		
+							// Swap rows if necessary to move pivot to diagonal position
+							if (pivotRow != pivotCol) {
+								//System.out.println("Swapping Rows " + pivotCol + " and " + pivotRow);
+								double[] tempRow = matrix[pivotRow];
+								matrix[pivotRow] = matrix[pivotCol];
+								matrix[pivotCol] = tempRow;
+								swapCount = swapCount + 1;
+							}
+							nonZeroPivotFound = true;
+							break;
+						}
+					}
+	
+					if (!nonZeroPivotFound) {
+						determinant = 0; // if no valid pivot found, det = 0
+						break;
+					}
+		
+					// eliminate entries below pivot
+					for (int row = pivotCol + 1; row < size; row++) {
+						double factor = matrix[row][pivotCol] / matrix[pivotCol][pivotCol];
+		
+						// update the row using the elimination factor
+						for (int col = pivotCol; col < size; col++) {
+							matrix[row][col] = matrix[row][col] - (factor * matrix[pivotCol][col]);
+						}
+					}
+				}
+			
+				// Calculate product of diagonal elements
+				for (int i = 0; i < size; i++) {
+					determinant = determinant * matrix[i][i];
+				}		
+				if (swapCount % 2 != 0) {
+					determinant = -determinant;
+				}
 				break;
+
+			case useLaplaceStrategy:
+				int length = in.getRowDimension();
+				Array2DRowRealMatrix matrixIn = in;
+
+				// Base case 2x2 matrix: det(A) = a*d−b*c
+				if (length == 2) {
+					determinant = matrixIn.getEntry(0, 0) * matrixIn.getEntry(1, 1) - matrixIn.getEntry(0, 1) * matrixIn.getEntry(1, 0);
+					break;  
+				}
+			
+				for (int col = 0; col < length; col++) {			
+					// Build submatrix
+					Array2DRowRealMatrix subMatrix = new Array2DRowRealMatrix(length - 1, length - 1);
+					for (int i = 1; i < length; i++) {
+						int subMatrixCol = 0;
+						for (int j = 0; j < length; j++) {
+							if (j == col) continue;  // Skip current column
+							subMatrix.setEntry(i - 1, subMatrixCol, matrixIn.getEntry(i, j));
+							subMatrixCol++;
+						}
+					}
+			
+					// Cofactor: (-1)^( row + col) * elem * determinant of submatrix
+					int sign = (col % 2 == 0) ? 1 : -1;  // sign odd col negative
+					double subDeterminant = computeDeterminant(subMatrix).get(0, 0); 
+					determinant = determinant + (sign * matrixIn.getEntry(0, col) * subDeterminant);
+				}
+				break;
+
 			case useBareissStrategy:
 				int n = in.getRowDimension();
 				int sign = 1;

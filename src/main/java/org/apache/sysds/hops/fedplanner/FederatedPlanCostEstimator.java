@@ -61,7 +61,7 @@ public class FederatedPlanCostEstimator {
 			totalCost = computeCurrentCost(currentHop);
 			currentPlan.setSelfCost(totalCost);
 			// Calculate potential network transfer cost if federation type changes
-			currentPlan.setNetTransferCost(computeHopNetworkAccessCost(currentHop.getOutputMemEstimate()));
+			currentPlan.setForwardingCost(computeHopNetworkAccessCost(currentHop.getOutputMemEstimate()));
 		} else {
 			totalCost = currentPlan.getSelfCost();
 		}
@@ -74,7 +74,7 @@ public class FederatedPlanCostEstimator {
 			FedPlan planRef = memoTable.getMinCostFedPlan(childPlanPair);
 
 			// Add child plan cost (includes network transfer cost if federation types differ)
-			totalCost += planRef.getTotalCost() + planRef.getCondNetTransferCost(currentPlan.getFedOutType());
+			totalCost += planRef.getTotalCost() + planRef.getCondForwardingCost(currentPlan.getFedOutType());
 		}
 		
 		// Step 3: Set final cumulative cost including current node
@@ -111,8 +111,8 @@ public class FederatedPlanCostEstimator {
 
 			// Flags to check if the plan involves network transfer
 			// Network transfer cost is calculated only once, even if it occurs multiple times
-			boolean isLOutNetTransfer = false;
-			boolean isFOutNetTransfer = false; 
+			boolean isLOutForwarding = false;
+			boolean isFOutForwarding = false;
 
 			// Determine the optimal federated output type based on the calculated costs
 			FederatedOutput optimalFedOutType;
@@ -143,35 +143,35 @@ public class FederatedPlanCostEstimator {
 					if (conflictParentFedPlan.getFedOutType() == FederatedOutput.LOUT) {
 						// (CASE 1) Previously, calculated was LOUT and parent was LOUT, so no network transfer cost occurred
 						// (CASE 5) If changing from calculated LOUT to current FOUT, network transfer cost occurs, but calculated later
-						isFOutNetTransfer = true;
+						isFOutForwarding = true;
 					} else {
 						// Previously, calculated was LOUT and parent was FOUT, so network transfer cost occurred
                     	// (CASE 2) If maintaining calculated LOUT to current LOUT, subtract existing network transfer cost and calculate later
-						isLOutNetTransfer = true;
-						lOutAdditionalCost -= confilctLOutFedPlan.getNetTransferCost();
+						isLOutForwarding = true;
+						lOutAdditionalCost -= confilctLOutFedPlan.setForwardingCost();
 
 						// (CASE 6) If changing from calculated LOUT to current FOUT, no network transfer cost occurs, so subtract it
-						fOutAdditionalCost -= confilctLOutFedPlan.getNetTransferCost();
+						fOutAdditionalCost -= confilctLOutFedPlan.setForwardingCost();
 					}
 				} else {
 					lOutAdditionalCost += confilctLOutFedPlan.getTotalCost() - confilctFOutFedPlan.getTotalCost();
 
 					if (conflictParentFedPlan.getFedOutType() == FederatedOutput.FOUT) {
-						isLOutNetTransfer = true;
+						isLOutForwarding = true;
 					} else {
-						isFOutNetTransfer = true;
-						lOutAdditionalCost -= confilctLOutFedPlan.getNetTransferCost();
-						fOutAdditionalCost -= confilctLOutFedPlan.getNetTransferCost();
+						isFOutForwarding = true;
+						lOutAdditionalCost -= confilctLOutFedPlan.setForwardingCost();
+						fOutAdditionalCost -= confilctLOutFedPlan.setForwardingCost();
 					}
 				}
 			}
 
 			// Add network transfer costs if applicable
-			if (isLOutNetTransfer) {
-				lOutAdditionalCost += confilctLOutFedPlan.getNetTransferCost();
+			if (isLOutForwarding) {
+				lOutAdditionalCost += confilctLOutFedPlan.setForwardingCost();
 			}
-			if (isFOutNetTransfer) {
-				fOutAdditionalCost += confilctFOutFedPlan.getNetTransferCost();
+			if (isFOutForwarding) {
+				fOutAdditionalCost += confilctFOutFedPlan.setForwardingCost();
 			}
 
 			// Determine the optimal federated output type based on the calculated costs

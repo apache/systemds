@@ -20,7 +20,6 @@
 package org.apache.sysds.hops.fedplanner;
 
 import org.apache.sysds.hops.Hop;
-import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
@@ -29,8 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * A Memoization Table for managing federated plans (FedPlan) based on combinations of Hops and fedOutTypes.
@@ -127,12 +124,12 @@ public class FederatedMemoTable {
 	public static class HopCommon {
 		protected final Hop hopRef;         // Reference to the associated Hop
 		protected double selfCost;          // Current execution cost (compute + memory access)
-		protected double netTransferCost;   // Network transfer cost
+		protected double forwardingCost;   // Network transfer cost
 
 		protected HopCommon(Hop hopRef) {
 			this.hopRef = hopRef;
 			this.selfCost = 0;
-			this.netTransferCost = 0;
+			this.forwardingCost = 0;
 		}
 	}
 
@@ -175,7 +172,7 @@ public class FederatedMemoTable {
 	 * This class contains:
 	 * 1. selfCost: Cost of current hop (compute + input/output memory access)
 	 * 2. totalCost: Cumulative cost including this plan and all child plans
-	 * 3. netTransferCost: Network transfer cost for this plan to parent plan.
+	 * 3. forwardingCost: Network transfer cost for this plan to parent plan.
 	 * 
 	 * FedPlan is linked to FedPlanVariants, which in turn uses HopCommon to manage common properties and costs.
 	 */
@@ -192,14 +189,15 @@ public class FederatedMemoTable {
 
 		public void setTotalCost(double totalCost) {this.totalCost = totalCost;}
 		public void setSelfCost(double selfCost) {fedPlanVariants.hopCommon.selfCost = selfCost;}
-		public void setNetTransferCost(double netTransferCost) {fedPlanVariants.hopCommon.netTransferCost = netTransferCost;}
-		
+		public void setForwardingCost(double forwardingCost) {fedPlanVariants.hopCommon.forwardingCost = forwardingCost;}
+		public void applyIterationWeight(int iteration) {totalCost *= iteration;}
+
 		public Hop getHopRef() {return fedPlanVariants.hopCommon.hopRef;}
 		public long getHopID() {return fedPlanVariants.hopCommon.hopRef.getHopID();}
 		public FederatedOutput getFedOutType() {return fedPlanVariants.fedOutType;}
 		public double getTotalCost() {return totalCost;}
 		public double getSelfCost() {return fedPlanVariants.hopCommon.selfCost;}
-		public double getNetTransferCost() {return fedPlanVariants.hopCommon.netTransferCost;}
+		public double setForwardingCost() {return fedPlanVariants.hopCommon.forwardingCost;}
 		public List<Pair<Long, FederatedOutput>> getChildFedPlans() {return childFedPlans;}
 
 		/**
@@ -208,9 +206,9 @@ public class FederatedMemoTable {
 		 * @param parentFedOutType The federated output type of the parent plan.
 		 * @return The conditional network transfer cost.
 		 */
-		public double getCondNetTransferCost(FederatedOutput parentFedOutType) {
+		public double getCondForwardingCost(FederatedOutput parentFedOutType) {
 			if (parentFedOutType == getFedOutType()) return 0;
-			return fedPlanVariants.hopCommon.netTransferCost;
+			return fedPlanVariants.hopCommon.forwardingCost;
 		}
 	}
 }

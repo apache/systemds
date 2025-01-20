@@ -31,6 +31,16 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.fedplanner.FederatedMemoTable.FedPlan;
 import org.apache.sysds.hops.fedplanner.FederatedMemoTable.FedPlanVariants;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.ForStatement;
+import org.apache.sysds.parser.ForStatementBlock;
+import org.apache.sysds.parser.FunctionStatement;
+import org.apache.sysds.parser.FunctionStatementBlock;
+import org.apache.sysds.parser.IfStatement;
+import org.apache.sysds.parser.IfStatementBlock;
+import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.parser.WhileStatement;
+import org.apache.sysds.parser.WhileStatementBlock;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 
 /**
@@ -39,16 +49,91 @@ import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
  * to compute their costs.
  */
 public class FederatedPlanCostEnumerator {
+	public static void enumerateProgram(DMLProgram prog) {
+		for(StatementBlock sb : prog.getStatementBlocks())
+			enumerateStatementBlock(sb);
+	}
+
+	/**
+	 * Recursively enumerates federated execution plans for a given statement block.
+	 * This method processes each type of statement block (If, For, While, Function, and generic)
+	 * to determine the optimal federated plan.
+	 * 
+	 * @param sb The statement block to enumerate.
+	 */
+	public static void enumerateStatementBlock(StatementBlock sb) {
+		// While enumerating the program, recursively determine the optimal FedPlan and MemoTable
+		// for each statement block and statement.
+		// 1. How to recursively integrate optimal FedPlans and MemoTables across statements and statement blocks?
+			// 1) Is it determined using the same dynamic programming approach, or simply by summing the minimal plans?
+		// 2. Is there a need to share the MemoTable? Are there data/hop dependencies between statements?
+		// 3. How to predict the number of iterations for For and While loops?
+			// 1) If from/to/increment are constants: Calculations can be done at compile time.
+			// 2) If they are variables: Use default values at compile time, adjust at runtime, or predict using ML models.
+
+		if (sb instanceof IfStatementBlock) {
+			IfStatementBlock isb = (IfStatementBlock) sb;
+			IfStatement istmt = (IfStatement)isb.getStatement(0);
+
+			enumerateFederatedPlanCost(isb.getPredicateHops());
+
+			for (StatementBlock csb : istmt.getIfBody())
+				enumerateStatementBlock(csb);
+			for (StatementBlock csb : istmt.getElseBody())
+				enumerateStatementBlock(csb);
+
+			// Todo: 1. apply iteration weight to csbFedPlans (if: 0.5, else: 0.5)
+			// Todo: 2. Merge predFedPlans
+		} else if (sb instanceof ForStatementBlock) { //incl parfor
+			ForStatementBlock fsb = (ForStatementBlock) sb;
+
+			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
+
+			enumerateFederatedPlanCost(fsb.getFromHops());
+			enumerateFederatedPlanCost(fsb.getToHops());
+			enumerateFederatedPlanCost(fsb.getIncrementHops());
+
+			for (StatementBlock csb : fstmt.getBody())
+				enumerateStatementBlock(csb);
+
+			// Todo: 1. get(predict) # of Iterations
+			// Todo: 2. apply iteration weight to csbFedPlans
+			// Todo: 3. Merge csbFedPlans and predFedPlans
+		} else if (sb instanceof WhileStatementBlock) {
+			WhileStatementBlock wsb = (WhileStatementBlock) sb;
+			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
+			enumerateFederatedPlanCost(wsb.getPredicateHops());
+
+			ArrayList<FedPlan> csbFedPlans = new ArrayList<>();
+			for (StatementBlock csb : wstmt.getBody())
+				enumerateStatementBlock(csb);
+
+			// Todo: 1. get(predict) # of Iterations
+			// Todo: 2. apply iteration weight to csbFedPlans
+			// Todo: 3. Merge csbFedPlans and predFedPlans
+		} else  if (sb instanceof FunctionStatementBlock) {
+			FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
+			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
+			for (StatementBlock csb : fstmt.getBody())
+				enumerateStatementBlock(csb);
+
+			// Todo: 1. Merge csbFedPlans
+		} else { //generic (last-level)
+			if( sb.getHops() != null )
+				for( Hop c : sb.getHops() )
+					enumerateFederatedPlanCost(c);
+		}
+	}
+
 	/**
 	 * Entry point for federated plan enumeration. This method creates a memo table
 	 * and returns the minimum cost plan for the entire Directed Acyclic Graph (DAG).
 	 * It also resolves conflicts where FedPlans have different FederatedOutput types.
 	 * 
 	 * @param rootHop The root Hop node from which to start the plan enumeration.
-	 * @param printTree A boolean flag indicating whether to print the federated plan tree.
 	 * @return The optimal FedPlan with the minimum cost for the entire DAG.
 	 */
-	public static FedPlan enumerateFederatedPlanCost(Hop rootHop, boolean printTree) {
+	public static FedPlan enumerateFederatedPlanCost(Hop rootHop) {
 		// Create new memo table to store all plan variants
 		FederatedMemoTable memoTable = new FederatedMemoTable();
 
@@ -61,8 +146,8 @@ public class FederatedPlanCostEnumerator {
 		// Detect conflicts in the federated plans where different FedPlans have different FederatedOutput types
 		double additionalTotalCost = detectAndResolveConflictFedPlan(optimalPlan, memoTable);
 
-		// Optionally print the federated plan tree if requested
-		if (printTree) FederatedMemoTablePrinter.printFedPlanTree(optimalPlan, memoTable, additionalTotalCost);
+		// Print the federated plan tree if requested
+		FederatedMemoTablePrinter.printFedPlanTree(optimalPlan, memoTable, additionalTotalCost);
 
 		return optimalPlan;
 	}

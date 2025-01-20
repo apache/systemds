@@ -45,7 +45,7 @@ public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {}
-	
+
 	@Test
 	public void testFederatedPlanCostEnumerator1() { runTest("FederatedPlanCostEnumeratorTest1.dml"); }
 
@@ -54,6 +54,21 @@ public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
 
 	@Test
 	public void testFederatedPlanCostEnumerator3() { runTest("FederatedPlanCostEnumeratorTest3.dml"); }
+
+	@Test
+	public void testFederatedPlanCostEnumerator4() { runTest("FederatedPlanCostEnumeratorTest4.dml"); }
+
+	@Test
+	public void testFederatedPlanCostEnumerator5() { runTest("FederatedPlanCostEnumeratorTest5.dml"); }
+
+	@Test
+	public void testFederatedPlanCostEnumerator6() { runTest("FederatedPlanCostEnumeratorTest6.dml"); }
+
+	@Test
+	public void testFederatedPlanCostEnumerator7() { runTest("FederatedPlanCostEnumeratorTest7.dml"); }
+
+	@Test
+	public void testFederatedPlanCostEnumerator8() { runTest("FederatedPlanCostEnumeratorTest4.dml"); }
 
 	// Todo: Need to write test scripts for the federated version
 	private void runTest( String scriptFilename ) {
@@ -80,8 +95,7 @@ public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
 			dmlt.rewriteHopsDAG(prog);
 			dmlt.constructLops(prog);
 
-			Hop hops = prog.getStatementBlocks().get(0).getHops().get(0);
-			FederatedPlanCostEnumerator.enumerateFederatedPlanCost(hops, true);
+			FederatedPlanCostEnumerator.enumerateProgram(prog);
 		}
 		catch (IOException e) {
 			e.printStackTrace();

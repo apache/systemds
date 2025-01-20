@@ -22,13 +22,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.cost.ComputeCost;
 import org.apache.sysds.hops.fedplanner.FederatedMemoTable.FedPlan;
-import org.apache.sysds.hops.fedplanner.FederatedMemoTable.FedPlanVariants;
-import org.apache.sysds.hops.fedplanner.FederatedMemoTable.HopCommon;
-import org.apache.sysds.hops.fedplanner.FederatedPlanCostEnumerator.ConflictMergeResolveInfo;
-import org.apache.sysds.hops.fedplanner.FederatedMemoTable.ConflictedFedPlanVariants;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.NoSuchElementException;
 import java.util.List;
@@ -47,138 +42,43 @@ public class FederatedPlanCostEstimator {
 	// Network bandwidth for data transfers between federated sites (1 Gbps)
 	private static final double DEFAULT_MBS_NETWORK_BANDWIDTH = 125.0;
 
-	public static void getChildCosts(HopCommon hopCommon, FederatedMemoTable memoTable, double[][] childCumulativeCost, double[] childForwardingCost) {
-		List<Hop> inputHops = hopCommon.hopRef.getInput();
-		
-		for (int i = 0; i < inputHops.size(); i++) {
-			long childHopID = inputHops.get(i).getHopID();
-			
-			FedPlan childLOutFedPlan = memoTable.getFedPlanAfterPrune(childHopID, FederatedOutput.LOUT);
-			FedPlan childFOutFedPlan = memoTable.getFedPlanAfterPrune(childHopID, FederatedOutput.FOUT);
+	/**
+	 * Computes total cost of federated plan by:
+	 * 1. Computing current node cost (if not cached)
+	 * 2. Adding minimum-cost child plans
+	 * 3. Including network transfer costs when needed
+	 *
+	 * @param currentPlan Plan to compute cost for
+	 * @param memoTable Table containing all plan variants
+	 */
+	public static void computeFederatedPlanCost(FedPlan currentPlan, FederatedMemoTable memoTable) {
+		double totalCost;
+		Hop currentHop = currentPlan.getHopRef();
 
-			childCumulativeCost[i][0] = childLOutFedPlan.getCumulativeCost();
-			childCumulativeCost[i][1] = childFOutFedPlan.getCumulativeCost();
-			childForwardingCost[i] = childLOutFedPlan.getForwardingCost();
-		}
-	}
-
-	public static void getConflictedChildCosts(HopCommon hopCommon, FederatedMemoTable memoTable, List<ConflictMergeResolveInfo> conflictMergeResolveInfos, 
-												double[][][] childCumulativeCost, int[][][] childForwardingBitMap, double[] childForwardingCost) {
-		List<Hop> inputHops = hopCommon.hopRef.getInput();
-		int numConflictCombinations = 1 << conflictMergeResolveInfos.size();
-
-		for (int i = 0; i < inputHops.size(); i++) {
-			long childHopID = inputHops.get(i).getHopID();
-			
-			FedPlanVariants childLOutVariants = memoTable.getFedPlanVariants(childHopID, FederatedOutput.LOUT);
-			FedPlanVariants childFOutVariants = memoTable.getFedPlanVariants(childHopID, FederatedOutput.FOUT);
-			
-			childForwardingCost[i] = childLOutVariants.getForwardingCost();
-
-			if (childLOutVariants instanceof ConflictedFedPlanVariants) {
-				FedPlan childLOutFedPlan = childLOutVariants.getFedPlanVariants().get(0);
-				FedPlan childFOutFedPlan = childFOutVariants.getFedPlanVariants().get(0);
-
-				for (int j = 0; j < numConflictCombinations; j++) {
-					childCumulativeCost[j][i][0] = childLOutFedPlan.getCumulativeCost();
-					childCumulativeCost[j][i][1] = childFOutFedPlan.getCumulativeCost();
-				}	
-			}
-			else {
-				ConflictedFedPlanVariants conflictedChildLOutVariants = (ConflictedFedPlanVariants) childLOutVariants;
-				ConflictedFedPlanVariants conflictedChildFOutVariants = (ConflictedFedPlanVariants) childFOutVariants;
-
-				computeConflictedChildCosts(conflictMergeResolveInfos, conflictedChildLOutVariants, childCumulativeCost, childForwardingBitMap, i, 0);
-				computeConflictedChildCosts(conflictMergeResolveInfos, conflictedChildFOutVariants, childCumulativeCost, childForwardingBitMap, i, 1);
-			}
-		}
-	}
-
-	private static void computeConflictedChildCosts(List<ConflictMergeResolveInfo> conflictInfos, ConflictedFedPlanVariants conflictedChildVariants, 
-										double[][][] childCumulativeCost, int[][][] childForwardingBitMap, int childIdx, int fedOutTypeIdx){
-		int i = 0, j = 0;
-		int pLen = conflictInfos.size();
-		int cLen = conflictedChildVariants.conflictInfos.size();
-		int numConflictCombinations = 1 << conflictInfos.size();
-
-		// Step 1: 공통 제약 조건과 비공통 자식 위치 계산
-		List<CommonConstraint> common = new ArrayList<>();
-		List<Integer> nonCommonChildPos = new ArrayList<>();
-
-		while (i < pLen && j < cLen) {
-			long pHopID = conflictInfos.get(i).getConflictedHopID();
-			long cHopID = conflictedChildVariants.conflictInfos.get(j).getConflictedHopID();
-
-			if (pHopID == cHopID) {
-				int pBitPos = pLen - 1 - i;
-				int cBitPos = cLen - 1 - j;
-				common.add(new CommonConstraint(pHopID, pBitPos, cBitPos));
-				i++;
-				j++;
-			} else if (pHopID < cHopID) {
-				i++;
-			} else {
-				int cBitPos = cLen - 1 - j;
-				nonCommonChildPos.add(cBitPos);
-				j++;
-			}
-		}
-
-		int restNumBits = nonCommonChildPos.size();
-		for (int parentIdx = 0; parentIdx < numConflictCombinations; parentIdx++) {
-			// 공통 제약 조건을 기반으로 baseChildIdx 계산
-			int baseChildIdx = 0;
-			for (CommonConstraint cc : common) {
-				int bit = (parentIdx >> cc.pBitPos) & 1;
-				baseChildIdx |= (bit << cc.cBitPos);
-			}
-
-			// 최소 비용을 가진 자식 인덱스 찾기
-			double minChildCost = Double.MAX_VALUE;
-			int minChildIdx = -1;
-			for (int restValue = 0; restValue < (1 << restNumBits); restValue++) {
-				int temp = 0;
-				for (int bitIdx = 0; bitIdx < restNumBits; bitIdx++) {
-					if (((restValue >> bitIdx) & 1) == 1) {
-						temp |= (1 << nonCommonChildPos.get(bitIdx));
-					}
-				}
-				int tempChildIdx = baseChildIdx | temp;
-				if (conflictedChildVariants.cumulativeCost[tempChildIdx][0] < minChildCost) {
-					minChildCost = conflictedChildVariants.cumulativeCost[tempChildIdx][0];
-					minChildIdx = tempChildIdx;
-				}
-			}
-
-			// 자식의 isForwardBitMap을 부모의 비트 위치로 변환
-			int childForwardBitMap = conflictedChildVariants.forwardingBitMap[minChildIdx][0];
-			int convertedBitmask = 0;
-			for (CommonConstraint cc : common) {
-				int childBit = (childForwardBitMap >> cc.cBitPos) & 1;
-				if (childBit == 1) {
-					convertedBitmask |= (1 << cc.pBitPos);
-				}
-			}
-
-			childCumulativeCost[parentIdx][childIdx][fedOutTypeIdx] = minChildCost;
-			childForwardingBitMap[parentIdx][childIdx][fedOutTypeIdx] = convertedBitmask;
-		}
-	} 
-
-	// Todo: (최적화) 추후에 MemoTable retrieve 하지 않게 최적화 가능
-	public static double computeForwardingMergeCost(int parentBitmask, int childBitmask, List<ConflictMergeResolveInfo> conflictInfos, FederatedMemoTable memoTable){
-		int overlappingBits = parentBitmask & childBitmask;
-		double overlappingForwardingCost = 0.0;
-
-		int pLen = conflictInfos.size();
-		for (int b = 0; b < pLen; b++) {
-			int bitPos = pLen - 1 - b;
-			if ((overlappingBits & (1 << bitPos)) != 0) {
-				overlappingForwardingCost += memoTable.getFedPlanVariants(conflictInfos.get(b).getConflictedHopID(), FederatedOutput.LOUT).getForwardingCost();
-			}
+		// Step 1: Calculate current node costs if not already computed
+		if (currentPlan.getSelfCost() == 0) {
+			// Compute cost for current node (computation + memory access)
+			totalCost = computeCurrentCost(currentHop);
+			currentPlan.setSelfCost(totalCost);
+			// Calculate potential network transfer cost if federation type changes
+			currentPlan.setForwardingCost(computeHopNetworkAccessCost(currentHop.getOutputMemEstimate()));
+		} else {
+			totalCost = currentPlan.getSelfCost();
 		}
 		
-		return overlappingForwardingCost;
+		// Step 2: Process each child plan and add their costs
+		for (Pair<Long, FederatedOutput> childPlanPair : currentPlan.getChildFedPlans()) {
+			// Find minimum cost child plan considering federation type compatibility
+			// Note: This approach might lead to suboptimal or wrong solutions when a child has multiple parents
+			// because we're selecting child plans independently for each parent
+			FedPlan planRef = memoTable.getMinCostFedPlan(childPlanPair);
+
+			// Add child plan cost (includes network transfer cost if federation types differ)
+			totalCost += planRef.getTotalCost() + planRef.getCondForwardingCost(currentPlan.getFedOutType());
+		}
+		
+		// Step 3: Set final cumulative cost including current node
+		currentPlan.setTotalCost(totalCost);
 	}
 
 	/**
@@ -211,8 +111,8 @@ public class FederatedPlanCostEstimator {
 
 			// Flags to check if the plan involves network transfer
 			// Network transfer cost is calculated only once, even if it occurs multiple times
-			boolean isLOutNetTransfer = false;
-			boolean isFOutNetTransfer = false; 
+			boolean isLOutForwarding = false;
+			boolean isFOutForwarding = false;
 
 			// Determine the optimal federated output type based on the calculated costs
 			FederatedOutput optimalFedOutType;
@@ -238,40 +138,40 @@ public class FederatedPlanCostEstimator {
 				if (cacluatedConflictPlanPair.getRight() == FederatedOutput.LOUT) {
 					// When changing from calculated LOUT to current FOUT, subtract the existing LOUT total cost and add the FOUT total cost
 					// When maintaining calculated LOUT to current LOUT, the total cost remains unchanged.
-					fOutAdditionalCost += confilctFOutFedPlan.getCumulativeCost() - confilctLOutFedPlan.getCumulativeCost();
+					fOutAdditionalCost += confilctFOutFedPlan.getTotalCost() - confilctLOutFedPlan.getTotalCost();
 
 					if (conflictParentFedPlan.getFedOutType() == FederatedOutput.LOUT) {
 						// (CASE 1) Previously, calculated was LOUT and parent was LOUT, so no network transfer cost occurred
 						// (CASE 5) If changing from calculated LOUT to current FOUT, network transfer cost occurs, but calculated later
-						isFOutNetTransfer = true;
+						isFOutForwarding = true;
 					} else {
 						// Previously, calculated was LOUT and parent was FOUT, so network transfer cost occurred
                     	// (CASE 2) If maintaining calculated LOUT to current LOUT, subtract existing network transfer cost and calculate later
-						isLOutNetTransfer = true;
-						lOutAdditionalCost -= confilctLOutFedPlan.getForwardingCost();
+						isLOutForwarding = true;
+						lOutAdditionalCost -= confilctLOutFedPlan.setForwardingCost();
 
 						// (CASE 6) If changing from calculated LOUT to current FOUT, no network transfer cost occurs, so subtract it
-						fOutAdditionalCost -= confilctLOutFedPlan.getForwardingCost();
+						fOutAdditionalCost -= confilctLOutFedPlan.setForwardingCost();
 					}
 				} else {
-					lOutAdditionalCost += confilctLOutFedPlan.getCumulativeCost() - confilctFOutFedPlan.getCumulativeCost();
+					lOutAdditionalCost += confilctLOutFedPlan.getTotalCost() - confilctFOutFedPlan.getTotalCost();
 
 					if (conflictParentFedPlan.getFedOutType() == FederatedOutput.FOUT) {
-						isLOutNetTransfer = true;
+						isLOutForwarding = true;
 					} else {
-						isFOutNetTransfer = true;
-						lOutAdditionalCost -= confilctLOutFedPlan.getForwardingCost();
-						fOutAdditionalCost -= confilctLOutFedPlan.getForwardingCost();
+						isFOutForwarding = true;
+						lOutAdditionalCost -= confilctLOutFedPlan.setForwardingCost();
+						fOutAdditionalCost -= confilctLOutFedPlan.setForwardingCost();
 					}
 				}
 			}
 
 			// Add network transfer costs if applicable
-			if (isLOutNetTransfer) {
-				lOutAdditionalCost += confilctLOutFedPlan.getForwardingCost();
+			if (isLOutForwarding) {
+				lOutAdditionalCost += confilctLOutFedPlan.setForwardingCost();
 			}
-			if (isFOutNetTransfer) {
-				fOutAdditionalCost += confilctFOutFedPlan.getForwardingCost();
+			if (isFOutForwarding) {
+				fOutAdditionalCost += confilctFOutFedPlan.setForwardingCost();
 			}
 
 			// Determine the optimal federated output type based on the calculated costs
@@ -299,36 +199,14 @@ public class FederatedPlanCostEstimator {
 		}
 		return resolvedFedPlanLinkedMap;
 	}
-
-	// Todo: (구현) forwarding bitmap을 본 뒤, merge cost 일일히 type에 따라 계산해야함.
-	public static double computeMergeCost(List<ConflictMergeResolveInfo> conflictMergeResolveInfos, FederatedMemoTable memoTable){
-		double mergeCost = 0;
-
-		for (ConflictMergeResolveInfo conflictInfo: conflictMergeResolveInfos){
-			int numOfMergedHops = conflictInfo.getNumOfMergedHops();
-			
-			if (numOfMergedHops != 0){
-				double selfCost = memoTable.getFedPlanVariants(conflictInfo.getConflictedHopID(), FederatedOutput.LOUT).getSelfCost();
-				mergeCost += selfCost * numOfMergedHops;
-			}
-		}
-
-		return mergeCost;
-	}
-
-	public static void computeHopCost(HopCommon hopCommon){
-		Hop hop = hopCommon.hopRef;
-		hopCommon.setSelfCost(computeSelfCost(hop));
-		hopCommon.setForwardingCost(computeHopForwardingCost(hop.getOutputMemEstimate()));
-	}
-
+	
 	/**
 	 * Computes the cost for the current Hop node.
 	 * 
 	 * @param currentHop The Hop node whose cost needs to be computed
 	 * @return The total cost for the current node's operation
 	 */
-	private static double computeSelfCost(Hop currentHop){
+	private static double computeCurrentCost(Hop currentHop){
 		double computeCost = ComputeCost.getHOPComputeCost(currentHop);
 		double inputAccessCost = computeHopMemoryAccessCost(currentHop.getInputMemEstimate());
 		double ouputAccessCost = computeHopMemoryAccessCost(currentHop.getOutputMemEstimate());
@@ -356,19 +234,7 @@ public class FederatedPlanCostEstimator {
 	 * @param memSize Size of data to be transferred (in bytes)
 	 * @return Time cost for network transfer (in seconds)
 	 */
-	private static double computeHopForwardingCost(double memSize) {
+	private static double computeHopNetworkAccessCost(double memSize) {
 		return memSize / (1024*1024) / DEFAULT_MBS_NETWORK_BANDWIDTH;
-	}
-
-	public static class CommonConstraint {
-		long name;
-		int pBitPos;
-		int cBitPos;
-
-		CommonConstraint(long name, int pBitPos, int cBitPos) {
-			this.name = name;
-			this.pBitPos = pBitPos;
-			this.cBitPos = cBitPos;
-		}
 	}
 }

@@ -565,7 +565,7 @@ public class LibCommonsMath
 		final int useGaussianStrategy = 1;
 		final int useBareissStrategy = 2;
 		final int useLaplaceStrategy = 3;
-		int computationStrategy = useBareissStrategy;
+		int computationStrategy = useLaplaceStrategy;
 
 		double determinant = 0;
 		switch (computationStrategy) {
@@ -624,30 +624,29 @@ public class LibCommonsMath
 
 			case useLaplaceStrategy:
 				int length = in.getRowDimension();
-				Array2DRowRealMatrix matrixIn = in;
 
-				// Base case 2x2 matrix: det(A) = a*d−b*c
+				// base case 2x2 matrix
 				if (length == 2) {
-					determinant = matrixIn.getEntry(0, 0) * matrixIn.getEntry(1, 1) - matrixIn.getEntry(0, 1) * matrixIn.getEntry(1, 0);
-					break;  
+					determinant = in.getEntry(0, 0) * in.getEntry(1, 1) - in.getEntry(0, 1) * in.getEntry(1, 0);
+					break;
 				}
-			
-				for (int col = 0; col < length; col++) {			
+
+				// laplace expansion
+				for (int col = 0; col < length; col++) {
 					// Build submatrix
 					Array2DRowRealMatrix subMatrix = new Array2DRowRealMatrix(length - 1, length - 1);
-					for (int i = 1; i < length; i++) {
-						int subMatrixCol = 0;
+					for (int i = 1; i < length; i++) { // Skip first row
+						int subCol = 0;
 						for (int j = 0; j < length; j++) {
-							if (j == col) continue;  // Skip current column
-							subMatrix.setEntry(i - 1, subMatrixCol, matrixIn.getEntry(i, j));
-							subMatrixCol++;
+							if (j == col) continue; // Skip current col
+							subMatrix.setEntry(i - 1, subCol, in.getEntry(i, j));
+							subCol++;
 						}
 					}
-			
-					// Cofactor: (-1)^( row + col) * elem * determinant of submatrix
-					int sign = (col % 2 == 0) ? 1 : -1;  // sign odd col negative
+					// recusive determinant calculation
+					int sign = (col % 2 == 0) ? 1 : -1; 
 					double subDeterminant = computeDeterminant(subMatrix).get(0, 0); 
-					determinant = determinant + (sign * matrixIn.getEntry(0, col) * subDeterminant);
+					determinant = determinant + sign * in.getEntry(0, col) * subDeterminant;
 				}
 				break;
 

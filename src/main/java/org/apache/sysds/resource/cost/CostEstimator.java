@@ -822,7 +822,7 @@ public class CostEstimator
 					SparkCostUtils.getMatMulChainInstTime(mmchaininst, input1, input2, input3, output, driverMetrics, executorMetrics);
 		} else if (inst instanceof CtableSPInstruction) {
 			CtableSPInstruction tableInst = (CtableSPInstruction) inst;
-			VarStats input1 = getStats(tableInst.input1.getName());
+			VarStats input1 = getStatsWithDefaultScalar(tableInst.input1.getName());
 			VarStats input2 = getStatsWithDefaultScalar(tableInst.input2.getName());
 			VarStats input3 = getStatsWithDefaultScalar(tableInst.input3.getName());
 			double loadTime = loadRDDStatsAndEstimateTime(input1) +

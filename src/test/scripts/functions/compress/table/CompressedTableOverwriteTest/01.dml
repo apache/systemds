@@ -1,0 +1,53 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+print("Start Test")
+
+X = rand(rows=$rows,cols=1, min=0, max=$unique, sparsity=$sparsity)
+X = floor(X)
+X = X + 1
+
+for(i in 1:$unique){ # ensure all unique values are used.
+    X[i,1] = i
+}
+
+# transform encode path to table command
+F = as.frame(X)
+spec = "{ids:true, dummycode:[1]}"
+[Xt, M] = transformencode(target=F, spec=spec)
+
+
+Xa = table(seq(1, nrow(X)), X)
+
+X_diff = Xt - Xa
+s = max(X_diff) + min(X_diff)
+print(s)
+if(s != 0){
+    # print(toString(t(Xt),sparse=TRUE))
+    # print(toString(t(Xa), sparse=TRUE))
+    # print(toString(X_diff, sparse=TRUE))
+    print(toString(X_diff))
+    print(toString(Xt))
+    print(toString(Xa))
+    print("Failed, the output did not contain the same values after table")
+}
+else 
+    print("Success, the output contained the same values after table")

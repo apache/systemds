@@ -29,7 +29,6 @@ import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
-import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -97,11 +96,9 @@ public class ReshapeCPInstruction extends UnaryCPInstruction {
 			int rows = (int) ec.getScalarInput(_opRows).getLongValue(); //save cast
 			int cols = (int) ec.getScalarInput(_opCols).getLongValue(); //save cast
 			BooleanObject byRow = (BooleanObject) ec.getScalarInput(_opByRow.getName(), ValueType.BOOLEAN, _opByRow.isLiteral());
-
 			//execute operations
-			MatrixBlock out = new MatrixBlock();
-			LibMatrixReorg.reshape(in, out, rows, cols, byRow.getBooleanValue(), -1);
-
+			MatrixBlock out = in.reshape(rows, cols, byRow.getBooleanValue());
+			
 			//set output and release inputs
 			ec.releaseMatrixInput(input1.getName());
 			ec.setMatrixOutput(output.getName(), out);

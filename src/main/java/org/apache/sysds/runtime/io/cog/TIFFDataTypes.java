@@ -12,7 +12,10 @@ public enum TIFFDataTypes {
     SLONG(9),
     SRATIONAL(10),
     FLOAT(11),
-    DOUBLE(12);
+    DOUBLE(12),
+    LONG8(16),
+    SLONG8(17),
+    IFD8(18);
 
     private final int value;
 
@@ -41,6 +44,9 @@ public enum TIFFDataTypes {
             case RATIONAL:
             case SRATIONAL:
             case DOUBLE:
+            case LONG8:
+            case SLONG8:
+            case IFD8:
                 return 8;
             default:
                 return 0;

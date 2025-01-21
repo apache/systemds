@@ -333,7 +333,7 @@ public class ReaderCOG extends MatrixReader{
         if (ifdOffset > 8) {
             // Read the metadata from the current position to the IFD offset
             // -8 because the offset is calculated from the beginning of the file
-            byte[] metadata = readBytes(bis, ifdOffset - 8);
+            byte[] metadata = readBytes(bis, ifdOffset - (cogHeader.isBigTIFF() ? 16 : 8));
             cogHeader.setGDALMetadata(new String(metadata));
         }
 
@@ -360,8 +360,8 @@ public class ReaderCOG extends MatrixReader{
             readBytes(bis, nextIFDOffset - (firstIFD ? 0 : totalBytesRead));
 
             // Read the number of tags in the IFD and initialize the array
-            numberOfTagsRaw = readBytes(bis, 2);
-            numberOfTags = cogHeader.parseByteArray(numberOfTagsRaw, 2, 0, false, false, false).intValue();
+            numberOfTagsRaw = readBytes(bis, cogHeader.isBigTIFF() ? 8 : 2);
+            numberOfTags = cogHeader.parseByteArray(numberOfTagsRaw, cogHeader.isBigTIFF() ? 8 : 2, 0, false, false, false).intValue();
             ifdTags = new IFDTag[numberOfTags];
 
             // Read the tags
@@ -371,7 +371,7 @@ public class ReaderCOG extends MatrixReader{
                 // 2 bytes data type
                 // 4 bytes data count
                 // 4 bytes data value (can also be offset)
-                byte[] tag = readBytes(bis, 12);
+                byte[] tag = readBytes(bis, cogHeader.isBigTIFF() ? 20 : 12);
                 int tagId = cogHeader.parseByteArray(tag, 2, 0, false, false, false).intValue();
 
                 int tagType = cogHeader.parseByteArray(tag, 2, 2, false, false, false).intValue();
@@ -397,6 +397,9 @@ public class ReaderCOG extends MatrixReader{
                             case SBYTE:
                             case SSHORT:
                             case SLONG:
+                            case LONG8:
+                            case SLONG8:
+                            case IFD8:
                                 tagData[j] = cogHeader.parseByteArray(tag, dataType.getSize(), cogHeader.isBigTIFF() ? 12 : 8 + j * dataType.getSize(), false, true, false);
                                 break;
                             case SRATIONAL:
@@ -446,6 +449,9 @@ public class ReaderCOG extends MatrixReader{
                             case SBYTE:
                             case SSHORT:
                             case SLONG:
+                            case LONG8:
+                            case SLONG8:
+                            case IFD8:
                                 tagData[j] = cogHeader.parseByteArray(data, dataType.getSize(), j * dataType.getSize(), false, true, false);
                                 break;
                             case SRATIONAL:

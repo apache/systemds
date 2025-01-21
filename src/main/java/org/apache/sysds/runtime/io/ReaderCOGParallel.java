@@ -304,7 +304,7 @@ public class ReaderCOGParallel extends MatrixReader{
         ExecutorService pool = CommonThreadPool.get(_numThreads);
 
         MatrixBlock outputMatrix = createOutputMatrixBlock(rows, cols * bands, rows, estnnz, true, true);
-        // outputMatrix = new MatrixBlock(rows, cols * bands, false);
+        //outputMatrix = new MatrixBlock(rows, cols * bands, false);
 
         try {
             ArrayList<Callable<MatrixBlock>> tasks = new ArrayList<>();
@@ -321,7 +321,7 @@ public class ReaderCOGParallel extends MatrixReader{
                     throw new DMLRuntimeException(e);
                 }
 
-                TileProcessor tileProcessor = new TileProcessor(currentTileData, currentTileRow, currentTileCol,
+                TileProcessor tileProcessor = new TileProcessor(cols * bands, currentTileData, currentTileRow, currentTileCol,
                         tileWidth, tileLength, bands, bitsPerSample, sampleFormat, cogHeader, outputMatrix,
                         planarConfiguration, _numThreads<=actualAmountTiles);
                 tasks.add(tileProcessor);
@@ -336,6 +336,10 @@ public class ReaderCOGParallel extends MatrixReader{
             try {
                 for (Future<MatrixBlock> result : pool.invokeAll(tasks)) {
                     result.get();
+                }
+
+                if (outputMatrix.isInSparseFormat() && tileWidth < cols) {
+                    sortSparseRowsParallel(outputMatrix, rows, _numThreads, pool);
                 }
             } catch (Exception e) {
                 throw new IOException("Error during parallel task execution.", e);
@@ -355,6 +359,7 @@ public class ReaderCOGParallel extends MatrixReader{
 
     public class TileProcessor implements Callable<MatrixBlock> {
 
+        private final int clen;
         private final byte[] tileData;
         private final int tileRow;
         private final int tileCol;
@@ -369,9 +374,10 @@ public class ReaderCOGParallel extends MatrixReader{
         private final boolean sparse;
         private final boolean sync;
 
-        public TileProcessor(byte[] tileData, int tileRow, int tileCol, int tileWidth, int tileLength,
+        public TileProcessor(int clen, byte[] tileData, int tileRow, int tileCol, int tileWidth, int tileLength,
                              int bands, int[] bitsPerSample, SampleFormatDataTypes[] sampleFormat, COGHeader cogHeader,
                              MatrixBlock dest, int planarConfiguration, boolean sync) {
+            this.clen = clen;
             this.tileData = tileData;
             this.tileRow = tileRow;
             this.tileCol = tileCol;
@@ -406,11 +412,11 @@ public class ReaderCOGParallel extends MatrixReader{
             int bytesRead = 0;
             int currentRow = 0;
 
-            MatrixBlock tileMatrix = new MatrixBlock(tileLength, tileWidth, sparse);
+            MatrixBlock tileMatrix = new MatrixBlock(tileLength, tileWidth*bands, sparse);
 
             if( sparse ) {
                 tileMatrix.allocateAndResetSparseBlock(true, SparseBlock.Type.CSR);
-                tileMatrix.getSparseBlock().allocate(0,  tileLength*tileWidth);
+                tileMatrix.getSparseBlock().allocate(0,  tileLength*tileWidth*bands);
             }
 
             while (currentRow < tileLength && pixelsRead < tileWidth) {
@@ -430,8 +436,12 @@ public class ReaderCOGParallel extends MatrixReader{
                             value = cogHeader.parseByteArray(tileData, sampleLength, bytesRead, true, false, false).doubleValue();
                             break;
                     }
-
-                    tileMatrix.set(currentRow, (pixelsRead * bands) + bandIdx, value);
+                    try {
+                        tileMatrix.set(currentRow, (pixelsRead * bands) + bandIdx, value);
+                    }
+                    catch (Exception e) {
+                        throw new RuntimeException("Error hereee   " + Integer.toString(currentRow)+"," +Integer.toString((pixelsRead * bands) + bandIdx)+"," +Integer.toString(tileLength)+"," +Integer.toString(tileWidth*bands),  e);
+                    }
 
                     pixelsRead++;
                     if (pixelsRead >= tileWidth) {
@@ -443,42 +453,41 @@ public class ReaderCOGParallel extends MatrixReader{
             }
 
             try {
+                int rowOffset = tileRow * tileLength;
+                int colOffset = tileCol * tileWidth * bands;
                 if (sparse) {
+                    // if outputMatrix is sparse apply synchronisation if tiles are more narrow then outputMatrix
                     SparseBlock sblock = _dest.getSparseBlock();
-
-                    if (sblock instanceof SparseBlockMCSR && sblock.get(tileRow * tileLength) != null) {
-                        if (sync) {
-                            synchronized (sblock.get(tileRow * tileLength)) {
-                                _dest.appendToSparse(
-                                        tileMatrix,
-                                        (tileRow * tileLength),
-                                        (tileCol * tileWidth * bands));
-                            }
-                        } else {
+                    if (tileWidth < clen) {
+                        if (sblock instanceof SparseBlockMCSR && sblock.get(rowOffset) != null) {
                             for (int i = 0; i < tileLength; i++)
-                                synchronized (sblock.get(tileRow * tileLength + i)) {
-                                    _dest.appendRowToSparse(sblock, tileMatrix, i,
-                                            tileRow * tileLength,
-                                            tileCol * tileWidth * bands, true);
+                                synchronized (sblock.get(rowOffset + i)) {
+                                _dest.appendRowToSparse(sblock, tileMatrix, i,
+                                        rowOffset,
+                                        colOffset, true);
                                 }
                         }
-                    } else {
-                        synchronized (_dest) {
-                            _dest.appendToSparse(
-                                    tileMatrix,
-                                    (tileRow * tileLength),
-                                    (tileCol * tileWidth * bands));
+                        else{
+                            synchronized (_dest) {
+                                _dest.appendToSparse(
+                                        tileMatrix,
+                                        rowOffset,
+                                        colOffset);
+                            }
                         }
                     }
+                    else {
+                        _dest.appendToSparse(
+                                tileMatrix,
+                                rowOffset,
+                                colOffset);
+                    }
                 }
-
-
-                        else {
-                    _dest.appendToSparse(
-                            tileMatrix,
-                            (tileRow * tileLength),
-                            (tileCol * tileWidth * bands));
-                        }
+                else {
+                    _dest.copy(rowOffset, rowOffset + tileLength - 1,
+                            colOffset, colOffset + (tileWidth * bands) -1,
+                            tileMatrix, false);
+                }
             } catch (RuntimeException e) {
                         throw new RuntimeException("Error hereee   " + Integer.toString(tileRow)+"," +Integer.toString(tileCol)+"," +Integer.toString(pixelsRead)+"," +Integer.toString(currentRow),  e);
             }

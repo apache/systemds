@@ -904,8 +904,9 @@ public class TestUtils {
 			}
 		}
 
-		for(int i = 0; i < rows; i++) {
-			for(int j = 0; j < cols; j++) {
+		
+		for(int j = 0; j < cols; j++) {
+			for(int i = 0; i < rows; i++) {
 				final Object a = expected.get(i, j);
 				final Object b = actual.get(i, j);
 				if(a == null)

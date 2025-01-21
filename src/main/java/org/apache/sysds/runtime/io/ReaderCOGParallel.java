@@ -476,18 +476,18 @@ public class ReaderCOGParallel extends MatrixReader{
                             break;
                     }
                     try {
+                        bytesRead += sampleLength;
                         tileMatrix.set(currentRow, (pixelsRead * bands) + bandIdx, value);
                     }
                     catch (Exception e) {
-                        throw new RuntimeException("Error hereee   " + Integer.toString(currentRow)+"," +Integer.toString((pixelsRead * bands) + bandIdx)+"," +Integer.toString(tileLength)+"," +Integer.toString(tileWidth*bands),  e);
+                        throw new RuntimeException("Error here   " + Integer.toString(currentRow)+"," +Integer.toString((pixelsRead * bands) + bandIdx)+"," +Integer.toString(tileLength)+"," +Integer.toString(tileWidth*bands),  e);
                     }
+                }
 
-                    pixelsRead++;
-                    if (pixelsRead >= tileWidth) {
-                        pixelsRead = 0;
-                        currentRow++;
-                    }
-                    bytesRead += sampleLength;
+                pixelsRead++;
+                if (pixelsRead >= tileWidth) {
+                    pixelsRead = 0;
+                    currentRow++;
                 }
             }
 

@@ -810,6 +810,10 @@ public class TestUtils {
 			new double[][]{actualMatrix}, 1, expectedMatrix.length, epsilon);
 	}
 
+	public static void compareMatrices(double[] expectedMatrix, double[] actualMatrix, double epsilon, String message) {
+		compareMatrices(new double[][]{expectedMatrix},
+			new double[][]{actualMatrix}, 1, expectedMatrix.length, epsilon, message);
+	}
 
 	public static void compareMatrices(double[][] expectedMatrix, double[][] actualMatrix, int rows, int cols,
 		double epsilon) {

@@ -24,15 +24,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
-import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.functionobjects.ValueFunction;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
-import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.utils.MemoryEstimates;
 
 /**
@@ -40,16 +33,18 @@ import org.apache.sysds.utils.MemoryEstimates;
  * group. The primary reason for its introduction was to provide an entry point for specialization such as shared
  * dictionaries, which require additional information.
  */
-public class QDictionary extends ADictionary {
+public class QDictionary extends ACachingMBDictionary {
 
 	private static final long serialVersionUID = 2100501253343438897L;
 
 	protected double _scale;
 	protected byte[] _values;
+	protected int _nCol;
 
-	protected QDictionary(byte[] values, double scale) {
+	protected QDictionary(byte[] values, double scale, int nCol) {
 		_values = values;
 		_scale = scale;
+		_nCol = nCol;
 	}
 
 	@Override
@@ -127,53 +122,13 @@ public class QDictionary extends ADictionary {
 		return res;
 	}
 
-	@Override
-	public double[] aggregateRowsWithDefault(Builtin fn, double[] defaultTuple) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public double[] aggregateRowsWithReference(Builtin fn, double[] reference) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public QDictionary applyScalarOp(ScalarOperator op) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public IDictionary applyScalarOpAndAppend(ScalarOperator op, double v0, int nCol) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public IDictionary applyUnaryOp(UnaryOperator op) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public IDictionary applyUnaryOpAndAppend(UnaryOperator op, double v0, int nCol) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public IDictionary applyScalarOpWithReference(ScalarOperator op, double[] reference, double[] newReference) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public IDictionary applyUnaryOpWithReference(UnaryOperator op, double[] reference, double[] newReference) {
-		throw new NotImplementedException();
-	}
-
 	private int size() {
 		return _values.length;
 	}
 
 	@Override
 	public QDictionary clone() {
-		return new QDictionary(_values.clone(), _scale);
+		return new QDictionary(_values.clone(), _scale, _nCol);
 	}
 
 	@Override
@@ -183,6 +138,7 @@ public class QDictionary extends ADictionary {
 		out.writeInt(_values.length);
 		for(int i = 0; i < _values.length; i++)
 			out.writeByte(_values[i]);
+		out.writeInt(_nCol);
 	}
 
 	public static QDictionary read(DataInput in) throws IOException {
@@ -192,12 +148,13 @@ public class QDictionary extends ADictionary {
 		for(int i = 0; i < numVals; i++) {
 			values[i] = in.readByte();
 		}
-		return new QDictionary(values, scale);
+		int nCol = in.readInt();
+		return new QDictionary(values, scale, nCol);
 	}
 
 	@Override
 	public long getExactSizeOnDisk() {
-		return 1 + 8 + 4 + size();
+		return 1 + 8 + 4 + size() + 4;
 	}
 
 	@Override
@@ -219,47 +176,12 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public double[] sumAllRowsToDoubleWithDefault(double[] defaultTuple) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public double[] sumAllRowsToDoubleWithReference(double[] reference) {
-		throw new NotImplementedException();
-	}
-
-	@Override
 	public double[] sumAllRowsToDoubleSq(int nrColumns) {
 		final int numVals = getNumberOfValues(nrColumns);
 		double[] ret = new double[numVals];
 		for(int k = 0; k < numVals; k++)
 			ret[k] = sumRowSq(k, nrColumns);
 		return ret;
-	}
-
-	@Override
-	public double[] sumAllRowsToDoubleSqWithDefault(double[] defaultTuple) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public double[] sumAllRowsToDoubleSqWithReference(double[] reference) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public double[] productAllRowsToDouble(int nCol) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public double[] productAllRowsToDoubleWithDefault(double[] defaultTuple) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public double[] productAllRowsToDoubleWithReference(double[] reference) {
-		throw new NotImplementedException();
 	}
 
 	private double sumRow(int k, int nrColumns) {
@@ -282,46 +204,6 @@ public class QDictionary extends ADictionary {
 		for(int i = 0; i < nrColumns; i++)
 			res += (_values[valOff + i] * _values[valOff + i]) * _scale * _scale;
 		return res;
-	}
-
-	@Override
-	public void colSum(double[] c, int[] counts, IColIndex colIndexes) {
-		throw new NotImplementedException("Not Implemented");
-	}
-
-	@Override
-	public void colSumSq(double[] c, int[] counts, IColIndex colIndexes) {
-		throw new NotImplementedException("Not Implemented");
-	}
-
-	@Override
-	public void colProduct(double[] res, int[] counts, IColIndex colIndexes) {
-		throw new NotImplementedException("Not Implemented");
-	}
-
-	@Override
-	public void colProductWithReference(double[] res, int[] counts, IColIndex colIndexes, double[] reference) {
-		throw new NotImplementedException("Not Implemented");
-	}
-
-	@Override
-	public void colSumSqWithReference(double[] c, int[] counts, IColIndex colIndexes, double[] reference) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public double sum(int[] counts, int ncol) {
-		throw new NotImplementedException("Not Implemented");
-	}
-
-	@Override
-	public double sumSq(int[] counts, int ncol) {
-		throw new NotImplementedException("Not Implemented");
-	}
-
-	@Override
-	public double sumSqWithReference(int[] counts, double[] reference) {
-		throw new NotImplementedException("Not Implemented");
 	}
 
 	public String getString(int colIndexes) {
@@ -350,19 +232,7 @@ public class QDictionary extends ADictionary {
 			}
 			orgOffset += previousNumberOfColumns - idxEnd + idxStart;
 		}
-		return new QDictionary(newDictValues, _scale);
-	}
-
-	@Override
-	public boolean containsValue(double pattern) {
-		if(Double.isNaN(pattern) || Double.isInfinite(pattern))
-			return false;
-		throw new NotImplementedException("Not contains value on Q Dictionary");
-	}
-
-	@Override
-	public boolean containsValueWithReference(double pattern, double[] reference) {
-		throw new NotImplementedException();
+		return new QDictionary(newDictValues, _scale, _nCol);
 	}
 
 	@Override
@@ -398,258 +268,34 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public long getNumberNonZerosWithReference(int[] counts, double[] reference, int nRows) {
-		throw new NotImplementedException("not implemented yet");
-	}
-
-	@Override
-	public void addToEntry(double[] v, int fr, int to, int nCol) {
-		throw new NotImplementedException("Not implemented yet");
-	}
-
-	@Override
-	public void addToEntry(double[] v, int fr, int to, int nCol, int rep) {
-		throw new NotImplementedException("Not implemented yet");
-	}
-
-	@Override
-	public void addToEntryVectorized(double[] v, int f1, int f2, int f3, int f4, int f5, int f6, int f7, int f8, int t1,
-		int t2, int t3, int t4, int t5, int t6, int t7, int t8, int nCol) {
-		throw new NotImplementedException("Not implemented yet");
-	}
-
-	@Override
 	public DictType getDictType() {
 		return DictType.UInt8;
 	}
 
 	@Override
-	public IDictionary subtractTuple(double[] tuple) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public MatrixBlockDictionary getMBDict(int nCol) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public void aggregateCols(double[] c, Builtin fn, IColIndex colIndexes) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public void aggregateColsWithReference(double[] c, Builtin fn, IColIndex colIndexes, double[] reference,
-		boolean def) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public IDictionary scaleTuples(int[] scaling, int nCol) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public IDictionary preaggValuesFromDense(int numVals, IColIndex colIndexes, IColIndex aggregateColumns, double[] b,
-		int cut) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public IDictionary replace(double pattern, double replace, int nCol) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public IDictionary replaceWithReference(double pattern, double replace, double[] reference) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public void product(double[] ret, int[] counts, int nCol) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public void productWithDefault(double[] ret, int[] counts, double[] def, int defCount) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public void productWithReference(double[] ret, int[] counts, double[] reference, int refCount) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public IDictionary binOpLeft(BinaryOperator op, double[] v, IColIndex colIndexes) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public IDictionary binOpLeftAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public IDictionary binOpRight(BinaryOperator op, double[] v, IColIndex colIndexes) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public IDictionary binOpRightAndAppend(BinaryOperator op, double[] v, IColIndex colIndexes) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public IDictionary binOpRight(BinaryOperator op, double[] v) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public IDictionary binOpLeftWithReference(BinaryOperator op, double[] v, IColIndex colIndexes, double[] reference,
-		double[] newReference) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public IDictionary binOpRightWithReference(BinaryOperator op, double[] v, IColIndex colIndexes, double[] reference,
-		double[] newReference) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public CM_COV_Object centralMoment(CM_COV_Object ret, ValueFunction fn, int[] counts, int nRows) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public CM_COV_Object centralMomentWithDefault(CM_COV_Object ret, ValueFunction fn, int[] counts, double def,
-		int nRows) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public CM_COV_Object centralMomentWithReference(CM_COV_Object ret, ValueFunction fn, int[] counts, double reference,
-		int nRows) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public IDictionary rexpandCols(int max, boolean ignore, boolean cast, int nCol) {
-		throw new NotImplementedException();
-		// byte[] newDictValues = new byte[_values.length * max];
-		// for(int i = 0, offset = 0; i < _values.length; i++, offset += max) {
-		// int val = _values[i] - 1;
-		// newDictValues[offset + val] = 1;
-		// }
-
-		// return new QDictionary(newDictValues, 1.0);
-	}
-
-	@Override
-	public IDictionary rexpandColsWithReference(int max, boolean ignore, boolean cast, int reference) {
-		throw new NotImplementedException();
-	}
-
-	@Override
 	public double getSparsity() {
-		return 1;
-	}
-
-	@Override
-	public void multiplyScalar(double v, double[] ret, int off, int dictIdx, IColIndex cols) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public void TSMMWithScaling(int[] counts, IColIndex rows, IColIndex cols, MatrixBlock ret) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public void MMDict(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public void MMDictDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public void MMDictSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public void TSMMToUpperTriangle(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public void TSMMToUpperTriangleDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public void TSMMToUpperTriangleSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight,
-		MatrixBlock result) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public void TSMMToUpperTriangleScaling(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
-		MatrixBlock result) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public void TSMMToUpperTriangleDenseScaling(double[] left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
-		MatrixBlock result) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public void TSMMToUpperTriangleSparseScaling(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, int[] scale,
-		MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
 	@Override
 	public boolean equals(IDictionary o) {
-		throw new NotImplementedException();
+		return getMBDict().equals(o);
 	}
 
 	@Override
-	public IDictionary cbind(IDictionary that, int nCol) {
-		throw new NotImplementedException();
+	public MatrixBlockDictionary getMBDict() {
+		return getMBDict(_nCol);
 	}
 
 	@Override
-	public IDictionary reorder(int[] reorder) {
-		throw new NotImplementedException();
+	public MatrixBlockDictionary createMBDict(int nCol) {
+		MatrixBlock mb = new MatrixBlock(_values.length / nCol, nCol, false);
+		mb.allocateDenseBlock();
+		double[] dbv = mb.getDenseBlockValues();
+		for(int i = 0; i < _values.length; i++)
+			dbv[i] = _values[i] * _scale;
+		mb.recomputeNonZeros();
+		return new MatrixBlockDictionary(mb);
 	}
 
-	@Override
-	public void MMDictScaling(IDictionary right, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
-		int[] scaling) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public void MMDictScalingDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
-		int[] scaling) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public void MMDictScalingSparse(SparseBlock left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result,
-		int[] scaling) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public IDictionary append(double[] row) {
-		throw new NotImplementedException();
-	}
 }

@@ -72,12 +72,18 @@ public class DictionaryTests {
 	private final int nCol;
 	private final IDictionary a;
 	private final IDictionary b;
+	private final double[] ref;
 
 	public DictionaryTests(IDictionary a, IDictionary b, int nRow, int nCol) {
 		this.nRow = nRow;
 		this.nCol = nCol;
 		this.a = a;
 		this.b = b;
+
+		ref = new double[nCol];
+		for(int i = 0; i < ref.length; i++) {
+			ref[i] = 0.232415 * i;
+		}
 	}
 
 	@Parameters
@@ -468,14 +474,14 @@ public class DictionaryTests {
 
 	@Test
 	public void sumSq() {
-		try{
+		try {
 
 			int[] counts = getCounts(nRow, 2323);
 			double as = a.sumSq(counts, nCol);
 			double bs = b.sumSq(counts, nCol);
 			assertEquals(as, bs, 0.0001);
 		}
-		catch(Exception e){
+		catch(Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
@@ -738,6 +744,41 @@ public class DictionaryTests {
 			double aa = a.aggregate(0, fn);
 			double bb = b.aggregate(0, fn);
 			assertEquals(aa, bb, 0.0);
+		}
+		catch(NotImplementedException ee) {
+			throw ee;
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void maxWithRef() {
+		aggregateWithRef(Builtin.getBuiltinFnObject(BuiltinCode.MAX));
+	}
+
+	@Test
+	public void minWithRef() {
+		aggregateWithRef(Builtin.getBuiltinFnObject(BuiltinCode.MIN));
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void cMaxWithRef() {
+		aggregateWithRef(Builtin.getBuiltinFnObject(BuiltinCode.CUMMAX));
+		throw new NotImplementedException();
+	}
+
+	private void aggregateWithRef(Builtin fn) {
+		try {
+
+			double aa = a.aggregateWithReference(0, fn, ref, true);
+			double bb = b.aggregateWithReference(0, fn, ref, true);
+			assertEquals(aa, bb, 0.0);
+			double aa2 = a.aggregateWithReference(0, fn, ref, false);
+			double bb2 = b.aggregateWithReference(0, fn, ref, false);
+			assertEquals(aa2, bb2, 0.0);
 		}
 		catch(NotImplementedException ee) {
 			throw ee;
@@ -1061,7 +1102,9 @@ public class DictionaryTests {
 		double[] def = TestUtils.generateTestVector(nCol, 1, 10, 1.0, 3215213);
 		double[] aa = a.sumAllRowsToDoubleWithDefault(def);
 		double[] bb = b.sumAllRowsToDoubleWithDefault(def);
-		TestUtils.compareMatrices(aa, bb, 0.001);
+
+		String errm = a.getClass().getSimpleName() + " " + b.getClass().getSimpleName();
+		TestUtils.compareMatrices(aa, bb, 0.001, errm);
 	}
 
 	@Test
@@ -1109,23 +1152,85 @@ public class DictionaryTests {
 	}
 
 	@Test
-	public void aggColsMax() {
-		IColIndex cols = ColIndexFactory.create(2, nCol + 2);
-		Builtin m = Builtin.getBuiltinFnObject(BuiltinCode.MAX);
+	public void aggRows() {
+		Builtin m = Builtin.getBuiltinFnObject(BuiltinCode.MIN);
 
-		double[] aa = new double[nCol + 3];
-		a.aggregateCols(aa, m, cols);
-		double[] bb = new double[nCol + 3];
-		b.aggregateCols(bb, m, cols);
+		double[] aa = a.aggregateRows(m, nCol);
+		double[] bb = b.aggregateRows(m, nCol);
+
+		TestUtils.compareMatrices(aa, bb, 0.001);
+
+		aa = a.aggregateRowsWithDefault(m, ref);
+		bb = b.aggregateRowsWithDefault(m, ref);
+
+		TestUtils.compareMatrices(aa, bb, 0.001);
+		aa = a.aggregateRowsWithReference(m, ref);
+		bb = b.aggregateRowsWithReference(m, ref);
 
 		TestUtils.compareMatrices(aa, bb, 0.001);
 	}
 
 	@Test
-	public void getValue() {
-		int nCell = nCol * a.getNumberOfValues(nCol);
-		for(int i = 0; i < nCell; i++)
-			assertEquals(a.getValue(i), b.getValue(i), 0.0000);
+	public void getInMemorySize() {
+		a.getInMemorySize();
+		b.getInMemorySize();
+	}
+
+	@Test
+	public void aggColsMax() {
+		IColIndex cols = ColIndexFactory.create(2, nCol + 2);
+		Builtin m = Builtin.getBuiltinFnObject(BuiltinCode.MAX);
+
+		double[] aa;
+		double[] bb;
+
+		aa = new double[nCol + 3];
+		bb = new double[nCol + 3];
+		a.aggregateCols(aa, m, cols);
+		b.aggregateCols(bb, m, cols);
+		TestUtils.compareMatrices(aa, bb, 0.001);
+		
+		aa = new double[nCol + 3];
+		bb = new double[nCol + 3];
+		a.aggregateColsWithReference(aa, m,cols,  ref, true);
+		b.aggregateColsWithReference(bb, m, cols, ref, true);
+		TestUtils.compareMatrices(aa, bb, 0.001);
+
+		aa = new double[nCol + 3];
+		bb = new double[nCol + 3];
+		a.aggregateColsWithReference(aa, m,cols,  ref, false);
+		b.aggregateColsWithReference(bb, m, cols, ref, false);
+		TestUtils.compareMatrices(aa, bb, 0.001);
+	}
+
+	@Test
+	public void getValue1() {
+		try {
+			int nCell = nCol * a.getNumberOfValues(nCol);
+			for(int i = 0; i < nCell; i++)
+				assertEquals(a.getValue(i), b.getValue(i), 0.0000);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void getValue2() {
+		try {
+
+			String errm = a.getClass().getSimpleName() + " " + b.getClass().getSimpleName();
+			for(int i = 0; i < nRow; i++) {
+				for(int j = 0; j < nCol; j++) {
+					assertEquals(errm, a.getValue(i, j, nCol), b.getValue(i, j, nCol), 0.0000);
+				}
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	@Test
@@ -1141,7 +1246,8 @@ public class DictionaryTests {
 		double[] bb = new double[nCol + 3];
 		b.colSum(bb, counts, cols);
 
-		TestUtils.compareMatrices(aa, bb, 0.001);
+		String errm = a.getClass().getSimpleName() + " vs " + b.getClass().getSimpleName();
+		TestUtils.compareMatrices(aa, bb, 0.001, errm);
 	}
 
 	@Test

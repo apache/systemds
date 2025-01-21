@@ -72,7 +72,6 @@ public interface DictionaryFactory {
 			default:
 				return MatrixBlockDictionary.read(in);
 		}
-
 	}
 
 	public static long getInMemorySize(int nrValues, int nrColumns, double tupleSparsity, boolean lossy) {

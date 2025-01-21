@@ -473,6 +473,7 @@ public class CustomDictionaryTest {
 		assertEquals(Dictionary.create(new double[] {//
 			1, 2, 4, 6,}), d);
 	}
+
 	public void IdentityDictionaryEquals() {
 		IDictionary a = new IdentityDictionary(10);
 		IDictionary b = new IdentityDictionary(10);
@@ -514,4 +515,25 @@ public class CustomDictionaryTest {
 		assertFalse(a.equals(b));
 	}
 
+	@Test(expected = Exception.class)
+	public void invalidIdentity() {
+		new IdentityDictionary(-1);
+	}
+
+	@Test(expected = Exception.class)
+	public void invalidIdentity2() {
+		new IdentityDictionary(-1, true);
+	}
+
+	@Test
+	public void withEmpty() {
+		assertTrue(new IdentityDictionary(10, true).withEmpty());
+		assertFalse(new IdentityDictionary(10, false).withEmpty());
+	}
+
+	@Test
+	public void memorySizeIdentitySameAtDifferentSizes() {
+		assertTrue(new IdentityDictionary(10, true).getInMemorySize()//
+			== new IdentityDictionary(1000, true).getInMemorySize());
+	}
 }

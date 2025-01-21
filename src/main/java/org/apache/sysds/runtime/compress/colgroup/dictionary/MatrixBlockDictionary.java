@@ -128,7 +128,7 @@ public class MatrixBlockDictionary extends ADictionary {
 		if(_data.isInSparseFormat()) {
 			LOG.warn("Inefficient call to getValues for a MatrixBlockDictionary because it was sparse");
 			throw new DMLCompressionException("Should not call this function");
-			// _data.sparseToDense();
+
 		}
 		return _data.getDenseBlockValues();
 	}
@@ -2266,9 +2266,18 @@ public class MatrixBlockDictionary extends ADictionary {
 		final MathContext cont = MathContext.DECIMAL128;
 		final int nCol = _data.getNumColumns();
 		final int nRow = _data.getNumRows();
+
+		
+		final double[] values;
 		// force dense ... if this ever is a bottleneck i will be surprised
-		_data.sparseToDense();
-		final double[] values = _data.getDenseBlockValues();
+		if(_data.isInSparseFormat()){
+			MatrixBlock tmp = new MatrixBlock();
+			tmp.copy(_data);
+			tmp.sparseToDense();
+			values = tmp.getDenseBlockValues();
+		}
+		else
+			values = _data.getDenseBlockValues();
 		BigDecimal tmp = BigDecimal.ONE;
 		int off = 0;
 		for(int i = 0; i < nRow; i++) {

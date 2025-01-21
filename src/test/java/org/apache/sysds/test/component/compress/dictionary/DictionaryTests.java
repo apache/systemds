@@ -97,6 +97,9 @@ public class DictionaryTests {
 			addAll(tests, new double[] {1, 2, 3, 4, 5, 6}, 2);
 			addAll(tests, new double[] {1, 2.2, 3.3, 4.4, 5.5, 6.6}, 3);
 
+			addSparse(tests, -10, 10, 10, 100, 0.1, 321);
+			addSparse(tests, -10, 10, 2, 100, 0.04, 321);
+
 			tests.add(new Object[] {new IdentityDictionary(2), Dictionary.create(new double[] {1, 0, 0, 1}), 2, 2});
 			tests.add(new Object[] {new IdentityDictionary(2, true), //
 				Dictionary.create(new double[] {1, 0, 0, 1, 0, 0}), 3, 2});
@@ -201,7 +204,7 @@ public class DictionaryTests {
 					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, //
 					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, //
 					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
-				}), //
+				}).getMBDict(20), //
 				21, 20});
 
 			create(tests, 30, 300, 0.2);
@@ -239,6 +242,19 @@ public class DictionaryTests {
 			Dictionary.create(vals), //
 			MatrixBlockDictionary.createDictionary(vals, cols, true), //
 			vals.length / cols, cols});
+	}
+
+	private static void addSparse(List<Object[]> tests, double min, double max, int rows, int cols, double sparsity,
+		int seed) {
+
+		MatrixBlock mb = TestUtils.generateTestMatrixBlock(rows, cols, min, max, sparsity, seed);
+
+		MatrixBlock mb2 = new MatrixBlock();
+		mb2.copy(mb);
+		mb2.sparseToDense();
+		double[] dbv = mb2.getDenseBlockValues();
+
+		tests.add(new Object[] {MatrixBlockDictionary.create(mb), Dictionary.create(dbv), rows, cols});
 	}
 
 	@Test
@@ -1189,16 +1205,16 @@ public class DictionaryTests {
 		a.aggregateCols(aa, m, cols);
 		b.aggregateCols(bb, m, cols);
 		TestUtils.compareMatrices(aa, bb, 0.001);
-		
+
 		aa = new double[nCol + 3];
 		bb = new double[nCol + 3];
-		a.aggregateColsWithReference(aa, m,cols,  ref, true);
+		a.aggregateColsWithReference(aa, m, cols, ref, true);
 		b.aggregateColsWithReference(bb, m, cols, ref, true);
 		TestUtils.compareMatrices(aa, bb, 0.001);
 
 		aa = new double[nCol + 3];
 		bb = new double[nCol + 3];
-		a.aggregateColsWithReference(aa, m,cols,  ref, false);
+		a.aggregateColsWithReference(aa, m, cols, ref, false);
 		b.aggregateColsWithReference(bb, m, cols, ref, false);
 		TestUtils.compareMatrices(aa, bb, 0.001);
 	}
@@ -1310,7 +1326,7 @@ public class DictionaryTests {
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			DataOutputStream fos = new DataOutputStream(bos);
 			a.write(fos);
-
+			assertEquals(a.getExactSizeOnDisk(), fos.size());
 			// Serialize in
 			ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
 			DataInputStream fis = new DataInputStream(bis);
@@ -1336,6 +1352,7 @@ public class DictionaryTests {
 			DataOutputStream fos = new DataOutputStream(bos);
 			b.write(fos);
 
+			assertEquals(b.getExactSizeOnDisk(), fos.size());
 			// Serialize in
 			ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
 			DataInputStream fis = new DataInputStream(bis);

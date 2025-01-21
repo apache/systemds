@@ -565,7 +565,7 @@ public class LibCommonsMath
 		final int useGaussianStrategy = 1;
 		final int useBareissStrategy = 2;
 		final int useLaplaceStrategy = 3;
-		int computationStrategy = useLaplaceStrategy;
+		int computationStrategy = useBuildinStrategy;
 
 		double determinant = 0;
 		switch (computationStrategy) {
@@ -576,17 +576,17 @@ public class LibCommonsMath
 				int swapCount = 0;
 
 				// create upper triangular matrix
-				for (int pivotCol = 0; pivotCol < size; pivotCol++) {
+				for (int pivotRow = 0; pivotRow < size; pivotRow++) {
 
 					// Find a non-zero pivot in current column
 					boolean nonZeroPivotFound = false;
-					for (int pivotRow = pivotCol; pivotRow < size; pivotRow++) {
-						if (Math.abs(matrix[pivotRow][pivotCol]) > 1e-9) { // small epsilon for fp comparison
+					for (int swapRow = pivotRow; swapRow < size; swapRow++) {
+						if (Math.abs(matrix[swapRow][pivotRow]) > 1e-9) { // small epsilon for fp comparison
 							// Swap rows if necessary to move pivot to diagonal position
-							if (pivotRow != pivotCol) {
-								double[] tempRow = matrix[pivotRow];
-								matrix[pivotRow] = matrix[pivotCol];
-								matrix[pivotCol] = tempRow;
+							if (swapRow != pivotRow) {
+								double[] tempRow = matrix[swapRow];
+								matrix[swapRow] = matrix[pivotRow];
+								matrix[pivotRow] = tempRow;
 								swapCount = swapCount + 1;
 							}
 							nonZeroPivotFound = true;
@@ -602,12 +602,12 @@ public class LibCommonsMath
 					}
 
 					// eliminate entries below pivot
-					for (int row = pivotCol + 1; row < size; row++) {
-						double factor = matrix[row][pivotCol] / matrix[pivotCol][pivotCol];
+					for (int row = pivotRow + 1; row < size; row++) {
+						double factor = matrix[row][pivotRow] / matrix[pivotRow][pivotRow];
 
 						// update the row using the elimination factor
-						for (int col = pivotCol; col < size; col++) {
-							matrix[row][col] = matrix[row][col] - (factor * matrix[pivotCol][col]);
+						for (int col = pivotRow; col < size; col++) {
+							matrix[row][col] = matrix[row][col] - (factor * matrix[pivotRow][col]);
 						}
 					}
 				}

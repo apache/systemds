@@ -577,16 +577,13 @@ public class LibCommonsMath
 
 				// create upper triangular matrix
 				for (int pivotCol = 0; pivotCol < size; pivotCol++) {
-		
+
 					// Find a non-zero pivot in current column
 					boolean nonZeroPivotFound = false;
 					for (int pivotRow = pivotCol; pivotRow < size; pivotRow++) {
 						if (Math.abs(matrix[pivotRow][pivotCol]) > 1e-9) { // small epsilon for fp comparison
-							System.out.println("Found non-zero pivot at row " + pivotRow + ", column " + pivotCol);
-		
 							// Swap rows if necessary to move pivot to diagonal position
 							if (pivotRow != pivotCol) {
-								//System.out.println("Swapping Rows " + pivotCol + " and " + pivotRow);
 								double[] tempRow = matrix[pivotRow];
 								matrix[pivotRow] = matrix[pivotCol];
 								matrix[pivotCol] = tempRow;
@@ -596,27 +593,29 @@ public class LibCommonsMath
 							break;
 						}
 					}
-	
+
 					if (!nonZeroPivotFound) {
-						determinant = 0; // if no valid pivot found, det = 0
+						// one diagonal element is 0, therefore the multiplication of the
+						// diagonal elements would be zero aswell
+						determinant = 0;
 						break;
 					}
-		
+
 					// eliminate entries below pivot
 					for (int row = pivotCol + 1; row < size; row++) {
 						double factor = matrix[row][pivotCol] / matrix[pivotCol][pivotCol];
-		
+
 						// update the row using the elimination factor
 						for (int col = pivotCol; col < size; col++) {
 							matrix[row][col] = matrix[row][col] - (factor * matrix[pivotCol][col]);
 						}
 					}
 				}
-			
+
 				// Calculate product of diagonal elements
 				for (int i = 0; i < size; i++) {
 					determinant = determinant * matrix[i][i];
-				}		
+				}
 				if (swapCount % 2 != 0) {
 					determinant = -determinant;
 				}
@@ -633,6 +632,10 @@ public class LibCommonsMath
 
 				// laplace expansion
 				for (int col = 0; col < length; col++) {
+					if (in.getEntry(0, col) == 0) {
+						// multiplication with zero results in zero
+						continue;
+					}
 					// Build submatrix
 					Array2DRowRealMatrix subMatrix = new Array2DRowRealMatrix(length - 1, length - 1);
 					for (int i = 1; i < length; i++) { // Skip first row
@@ -645,7 +648,7 @@ public class LibCommonsMath
 					}
 					// recusive determinant calculation
 					int sign = (col % 2 == 0) ? 1 : -1; 
-					double subDeterminant = computeDeterminant(subMatrix).get(0, 0); 
+					double subDeterminant = computeDeterminant(subMatrix).get(0, 0);
 					determinant = determinant + sign * in.getEntry(0, col) * subDeterminant;
 				}
 				break;

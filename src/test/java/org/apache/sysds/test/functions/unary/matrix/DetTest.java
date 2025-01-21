@@ -45,7 +45,7 @@ public class DetTest extends AutomatedTestBase {
 	// floating point errors with large row sizes, because there are many
 	// floating point operations involving both multiplication and addition.
 	private final static int rows = 33;
-	private final static double _sparsityDense = 0.5;
+	private final static double _sparsityDense = 0.7;
 	private final static double _sparsitySparse = 0.05;
 	private final static double eps = 1e-8;
 	

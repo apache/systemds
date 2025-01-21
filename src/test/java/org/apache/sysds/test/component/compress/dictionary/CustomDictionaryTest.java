@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.utils.DblArray;
@@ -472,4 +473,45 @@ public class CustomDictionaryTest {
 		assertEquals(Dictionary.create(new double[] {//
 			1, 2, 4, 6,}), d);
 	}
+	public void IdentityDictionaryEquals() {
+		IDictionary a = new IdentityDictionary(10);
+		IDictionary b = new IdentityDictionary(10);
+		assertTrue(a.equals(b));
+	}
+
+	@Test
+	public void IdentityDictionaryNotEquals() {
+		IDictionary a = new IdentityDictionary(10);
+		IDictionary b = new IdentityDictionary(11);
+		assertFalse(a.equals(b));
+	}
+
+	@Test
+	public void IdentityDictionaryNotEquals2() {
+		IDictionary a = new IdentityDictionary(10);
+		IDictionary b = new IdentityDictionary(11, false);
+		assertFalse(a.equals(b));
+	}
+
+	@Test
+	public void IdentityDictionaryEquals2() {
+		IDictionary a = new IdentityDictionary(11, false);
+		IDictionary b = new IdentityDictionary(11, false);
+		assertTrue(a.equals(b));
+	}
+
+	@Test
+	public void IdentityDictionaryEquals2v() {
+		IDictionary a = new IdentityDictionary(11);
+		IDictionary b = new IdentityDictionary(11, false);
+		assertTrue(a.equals(b));
+	}
+
+	@Test
+	public void IdentityDictionaryNotEquals3() {
+		IDictionary a = new IdentityDictionary(11, true);
+		IDictionary b = new IdentityDictionary(11, false);
+		assertFalse(a.equals(b));
+	}
+
 }

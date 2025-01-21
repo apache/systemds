@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -38,9 +40,9 @@ import org.apache.sysds.test.functions.builtin.part1.BuiltinDistTest;
 import org.junit.Assert;
 import org.junit.Test;
 
-
 public class CompressByBinTest extends AutomatedTestBase {
 
+	protected static final Log LOG = LogFactory.getLog(CompressByBinTest.class.getName());
 
 	private final static String TEST_NAME = "compressByBins";
 	private final static String TEST_DIR = "functions/compress/matrixByBin/";
@@ -52,41 +54,48 @@ public class CompressByBinTest extends AutomatedTestBase {
 
 	private final static int nbins = 10;
 
-	//private final static int[] dVector = new int[cols];
+	// private final static int[] dVector = new int[cols];
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"X"}));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"X"}));
 	}
 
 	@Test
-	public void testCompressBinsMatrixWidthCP() { runCompress(Types.ExecType.CP, ColumnEncoderBin.BinMethod.EQUI_WIDTH); }
+	public void testCompressBinsMatrixWidthCP() {
+		runCompress(Types.ExecType.CP, ColumnEncoderBin.BinMethod.EQUI_WIDTH);
+	}
 
 	@Test
-	public void testCompressBinsMatrixHeightCP() { runCompress(Types.ExecType.CP, ColumnEncoderBin.BinMethod.EQUI_HEIGHT); }
+	public void testCompressBinsMatrixHeightCP() {
+		runCompress(Types.ExecType.CP, ColumnEncoderBin.BinMethod.EQUI_HEIGHT);
+	}
 
 	@Test
-	public void testCompressBinsFrameWidthCP() { runCompressFrame(Types.ExecType.CP, ColumnEncoderBin.BinMethod.EQUI_WIDTH); }
+	public void testCompressBinsFrameWidthCP() {
+		runCompressFrame(Types.ExecType.CP, ColumnEncoderBin.BinMethod.EQUI_WIDTH);
+	}
 
 	@Test
-	public void testCompressBinsFrameHeightCP() { runCompressFrame(Types.ExecType.CP, ColumnEncoderBin.BinMethod.EQUI_HEIGHT); }
+	public void testCompressBinsFrameHeightCP() {
+		runCompressFrame(Types.ExecType.CP, ColumnEncoderBin.BinMethod.EQUI_HEIGHT);
+	}
 
-	private void runCompress(Types.ExecType instType, ColumnEncoderBin.BinMethod binMethod)
-	{
+	private void runCompress(Types.ExecType instType, ColumnEncoderBin.BinMethod binMethod) {
 		Types.ExecMode platformOld = setExecMode(instType);
 
-		try
-		{
+		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", input("X"), Boolean.toString(binMethod == ColumnEncoderBin.BinMethod.EQUI_WIDTH),output("meta"), output("res")};
+			programArgs = new String[] {"-stats","-args", input("X"),
+				Boolean.toString(binMethod == ColumnEncoderBin.BinMethod.EQUI_WIDTH), output("meta"), output("res")};
 
 			double[][] X = generateMatrixData(binMethod);
 			writeInputMatrixWithMTD("X", X, true);
 
-			runTest(true, false, null, -1);
+			runTest(null);
 
 			checkMetaFile(DataConverter.convertToMatrixBlock(X), binMethod);
 
@@ -99,24 +108,23 @@ public class CompressByBinTest extends AutomatedTestBase {
 		}
 	}
 
-	private void runCompressFrame(Types.ExecType instType, ColumnEncoderBin.BinMethod binMethod)
-	{
+	private void runCompressFrame(Types.ExecType instType, ColumnEncoderBin.BinMethod binMethod) {
 		Types.ExecMode platformOld = setExecMode(instType);
 
-		try
-		{
+		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain", "-args", input("X"), Boolean.toString(binMethod == ColumnEncoderBin.BinMethod.EQUI_WIDTH) , output("meta"), output("res")};
+			programArgs = new String[] {"-explain", "-args", input("X"),
+				Boolean.toString(binMethod == ColumnEncoderBin.BinMethod.EQUI_WIDTH), output("meta"), output("res")};
 
 			Types.ValueType[] schema = new Types.ValueType[cols];
 			Arrays.fill(schema, Types.ValueType.FP32);
 			FrameBlock Xf = generateFrameData(binMethod, schema);
 			writeInputFrameWithMTD("X", Xf, false, schema, Types.FileFormat.CSV);
 
-			runTest(true, false, null, -1);
+			runTest(null);
 
 			checkMetaFile(Xf, binMethod);
 
@@ -132,14 +140,15 @@ public class CompressByBinTest extends AutomatedTestBase {
 	private double[][] generateMatrixData(ColumnEncoderBin.BinMethod binMethod) {
 		double[][] X;
 		if(binMethod == ColumnEncoderBin.BinMethod.EQUI_WIDTH) {
-			//generate actual dataset
+			// generate actual dataset
 			X = getRandomMatrix(rows, cols, -100, 100, 1, 7);
 			// make sure that bins in [-100, 100]
 			for(int i = 0; i < cols; i++) {
 				X[0][i] = -100;
 				X[1][i] = 100;
 			}
-		} else if(binMethod == ColumnEncoderBin.BinMethod.EQUI_HEIGHT) {
+		}
+		else if(binMethod == ColumnEncoderBin.BinMethod.EQUI_HEIGHT) {
 			X = new double[rows][cols];
 			for(int c = 0; c < cols; c++) {
 				double[] vals = new Random().doubles(nbins).toArray();
@@ -150,7 +159,8 @@ public class CompressByBinTest extends AutomatedTestBase {
 						j++;
 				}
 			}
-		} else
+		}
+		else
 			throw new RuntimeException("Invalid binning method.");
 
 		return X;
@@ -164,9 +174,10 @@ public class CompressByBinTest extends AutomatedTestBase {
 
 			for(int i = 0; i < cols; i++) {
 				Xf.set(0, i, -100);
-				Xf.set(rows-1, i, 100);
+				Xf.set(rows - 1, i, 100);
 			}
-		} else if(binMethod == ColumnEncoderBin.BinMethod.EQUI_HEIGHT) {
+		}
+		else if(binMethod == ColumnEncoderBin.BinMethod.EQUI_HEIGHT) {
 			Xf = new FrameBlock();
 			for(int c = 0; c < schema.length; c++) {
 				double[] vals = new Random().doubles(nbins).toArray();
@@ -180,14 +191,16 @@ public class CompressByBinTest extends AutomatedTestBase {
 				Xf.appendColumn(f);
 			}
 
-		} else
+		}
+		else
 			throw new RuntimeException("Invalid binning method.");
 
 		return Xf;
 	}
 
-	private void checkMetaFile(CacheBlock<?> X, ColumnEncoderBin.BinMethod binningType) throws IOException{
+	private void checkMetaFile(CacheBlock<?> X, ColumnEncoderBin.BinMethod binningType) throws IOException {
 		FrameBlock outputMeta = readDMLFrameFromHDFS("meta", Types.FileFormat.CSV);
+
 		Assert.assertEquals(nbins, outputMeta.getNumRows());
 
 		double[] binStarts = new double[nbins];
@@ -201,9 +214,10 @@ public class CompressByBinTest extends AutomatedTestBase {
 					Assert.assertEquals(i, binStart, 0.0);
 					j++;
 				}
-			} else {
+			}
+			else {
 				binStarts[c] = Double.parseDouble(((String) outputMeta.getColumn(c).get(0)).split("·")[0]);
-				binEnds[c] = Double.parseDouble(((String) outputMeta.getColumn(c).get(nbins-1)).split("·")[1]);
+				binEnds[c] = Double.parseDouble(((String) outputMeta.getColumn(c).get(nbins - 1)).split("·")[1]);
 			}
 		}
 

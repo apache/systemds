@@ -12,6 +12,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.zip.DataFormatException;
 
 public class ReaderCOG extends MatrixReader{
     protected final FileFormatPropertiesCOG _props;
@@ -342,6 +343,10 @@ public class ReaderCOG extends MatrixReader{
             }
 
             // TODO: If the tile is compressed, decompress the currentTileData here
+
+            if (compression == 8) {
+                currentTileData = COGCompressionUtils.decompressDeflate(currentTileData);
+            }
 
             int pixelsRead = 0;
             int bytesRead = 0;

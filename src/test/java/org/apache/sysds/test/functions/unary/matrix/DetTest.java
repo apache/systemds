@@ -54,44 +54,6 @@ public class DetTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME_WRONG_DIM, new TestConfiguration(TEST_CLASS_DIR, DML_SCRIPT_NAME, new String[] { "d" }));
 		addTestConfiguration(TEST_NAME_DET_TEST, new TestConfiguration(TEST_CLASS_DIR, DML_SCRIPT_NAME, new String[] { "d" }) );
 	}
-	
-	// TODO implement a few small hardcoded tests because of floating point errors.
-	// @Test
-    // public void test2x2Determinant() {
-    //     double[][] matrixData = {
-    //         {1, 2},
-    //         {3, 4}
-    //     };
-    //     double expectedDeterminant = -2;
-
-    //     MatrixBlock inputMatrixBlock = DataConverter.convertToMatrixBlock(matrixData);
-    //     MatrixBlock result = computeDeterminant(inputMatrixBlock);
-    //     double actualDeterminant = result.get(0, 0);
-
-    //     Assert.assertEquals("Determinant calculation failed", expectedDeterminant, actualDeterminant, 1e-8);
-    // }
-    // --------- hard coded/ copied function from LibCommonsMath
-    // private static MatrixBlock computeDeterminant(MatrixBlock in) {
-    //     if (in.getNumRows() != in.getNumColumns()) {
-    //         throw new RuntimeException(
-    //             "Determinant can only be computed for a square matrix. Input matrix is rectangular (rows="
-    //                 + in.getNumRows() + ", cols=" + in.getNumColumns() + ")");
-    //     }
-    //     Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(in);
-    //     LUDecomposition ludecompose = new LUDecomposition(matrixInput);
-    //     MatrixBlock determinantResult = new MatrixBlock(1, 1, false);
-    //     determinantResult.set(0, 0, ludecompose.getDeterminant());
-    //     return determinantResult;
-    // }
-
-	// --------- hard coded test calling commonsmathlib
-	// @Test
-    // public void testDeterminant2x2Matrix() {
-    //     runDetTest(new double[][]{
-    //         {1, 2},
-    //         {3, 4}
-    //     }, -2);  // Expected determinant: 1*4 - 2*3 = -2
-    // }
 
 	@Test
 	public void testWrongDimensions() {

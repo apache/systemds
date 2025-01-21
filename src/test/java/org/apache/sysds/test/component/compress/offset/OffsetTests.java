@@ -58,7 +58,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(value = Parameterized.class)
 public class OffsetTests {
-	static{
+	static {
 		CompressedMatrixBlock.debug = true;
 	}
 
@@ -77,6 +77,10 @@ public class OffsetTests {
 		for(OFF_TYPE t : OFF_TYPE.values()) {
 			tests.add(new Object[] {new int[] {}, t});
 			tests.add(new Object[] {new int[] {1, 2}, t});
+			tests.add(new Object[] {new int[] {1, 3, 5, 7}, t});
+			tests.add(new Object[] {new int[] {2, 3, 6, 7}, t});
+			tests.add(new Object[] {new int[] {2, 5, 10, 12}, t});
+			tests.add(new Object[] {new int[] {2, 6, 8, 14}, t});
 			tests.add(new Object[] {new int[] {2, 142}, t});
 			tests.add(new Object[] {new int[] {142, 421}, t});
 			tests.add(new Object[] {new int[] {1, 1023}, t});
@@ -563,6 +567,46 @@ public class OffsetTests {
 	}
 
 	@Test
+	public void slice1_2() {
+		slice(1, 2);
+	}
+
+	@Test
+	public void slice3_4() {
+		slice(3, 4);
+	}
+
+	@Test
+	public void sliceRange() {
+		for(int i = 0; i < 100; i++) {
+			// not allowed to slice smaller or equal range.
+			// slice(i, i - 1);
+			// slice(i, i);
+			slice(i, i + 1);
+			slice(i, i + 2);
+			slice(i, i + 3);
+		}
+	}
+
+	@Test
+	public void sliceRange256() {
+		slice(250, 260);
+		slice(254, 260);
+		slice(254, 257);
+		slice(255, 257);
+		slice(255, 256);
+	}
+
+	@Test
+	public void sliceRange2x256() {
+		slice(250 * 2, 260 * 2);
+		slice(254 * 2, 260 * 2);
+		slice(254 * 2, 257 * 2);
+		slice(255 * 2, 257 * 2);
+		slice(255 * 2, 256 * 2);
+	}
+
+	@Test
 	public void sliceToLast() {
 		if(data.length > 1)
 			slice(0, data[data.length - 1]);
@@ -580,11 +624,6 @@ public class OffsetTests {
 	}
 
 	@Test
-	public void verify() {
-		o.verify(o.getSize());
-	}
-
-	@Test
 	public void slice1to4() {
 		slice(1, 4);
 	}
@@ -594,7 +633,7 @@ public class OffsetTests {
 		if(data.length > 1) {
 			int n = data[data.length - 1];
 			for(int i = 0; i < n && i < 100; i++) {
-				for(int j = i; j < n + 1 && j < 100; j++) {
+				for(int j = i+1; j < n + 1 && j < 100; j++) {
 					slice(i, j, false);
 				}
 			}
@@ -624,12 +663,28 @@ public class OffsetTests {
 				int i = 0;
 				while(i < data.length && data[i] < l)
 					i++;
+					
+				if(! (a.offsetSlice instanceof OffsetEmpty)){
+					int t = 0;
+					final int lasstSliceOffset = a.offsetSlice.getOffsetToLast();
+					while(data[i] < u) {
+						assertEquals(data[i] - l, it.value());
+						if(lasstSliceOffset > it.value())
+							it.next();
+						i++;
+						t++;
+					}
 
-				while(data[i] < u) {
-					assertEquals(data[i] - l, it.value());
-					if(a.offsetSlice.getOffsetToLast() > it.value())
-						it.next();
-					i++;
+					int sliceSize = a.offsetSlice.getSize();
+					if(sliceSize != t) {
+						fail("Slice size is not equal to elements that should have been sliced:\n" + sliceSize + " vs " + t
+							+ "\n" + a + "\nrange: " + l + " " + u + "\ninput " + o);
+					}
+				}
+				else {
+					if( i < data.length){
+						assertTrue(data[i] >= u);
+					}
 				}
 			}
 		}
@@ -639,6 +694,14 @@ public class OffsetTests {
 		}
 
 	}
+
+
+	@Test
+	public void verify() {
+		o.verify(o.getSize());
+	}
+
+
 
 	@Test
 	public void append() {

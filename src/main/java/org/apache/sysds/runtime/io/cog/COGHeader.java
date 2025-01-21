@@ -153,7 +153,7 @@ public class COGHeader {
                     break;
                 case Compression:
                     // TODO: After implementing decompression, change this so compressed images are actually supported
-                    if (tag.getData()[0].intValue() != 1) {
+                    if (tag.getData()[0].intValue() != 1 && tag.getData()[0].intValue() != 8) {
                         return "Unsupported compression: " + tag.getData()[0];
                     }
                     break;

@@ -12,6 +12,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.zip.DataFormatException;
 
 public class ReaderCOG extends MatrixReader{
     protected final FileFormatPropertiesCOG _props;
@@ -124,11 +125,37 @@ public class ReaderCOG extends MatrixReader{
 
                 int tagCount = cogHeader.parseByteArray(tag, 4, 4, false, false, false).intValue();
 
-                int tagValue = cogHeader.parseByteArray(tag, 4, 8, false, false, false).intValue();
                 Number[] tagData = new Number[tagCount];
+                int tagValue = cogHeader.parseByteArray(tag, 4, 8, false, false, false).intValue();
 
-                // If the data in total is larger than 4 bytes it is an offset to the actual data
-                if (dataType.getSize() * tagCount > 4) {
+                if (dataType.getSize() * tagCount <= 4) {
+                    for (int j = 0; j < tagCount; j++) {
+                        switch(dataType) {
+                            case BYTE:
+                            case ASCII:
+                            case SHORT:
+                            case LONG:
+                            case UNDEFINED:
+                                tagData[j] = cogHeader.parseByteArray(tag, dataType.getSize(), 8 + j * dataType.getSize(), false, false, false);
+                                break;
+                            case RATIONAL:
+                                throw new DMLRuntimeException("Data type RATIONAL cannot fit in 4 bytes");
+                            case SBYTE:
+                            case SSHORT:
+                            case SLONG:
+                                tagData[j] = cogHeader.parseByteArray(tag, dataType.getSize(), 8 + j * dataType.getSize(), false, true, false);
+                                break;
+                            case SRATIONAL:
+                                throw new DMLRuntimeException("Data type SRATIONAL cannot fit in 4 bytes");
+                            case FLOAT:
+                                tagData[j] = cogHeader.parseByteArray(tag, dataType.getSize(), 8 + j * dataType.getSize(), true, false, false);
+                                break;
+                            case DOUBLE:
+                                throw new DMLRuntimeException("Data type DOUBLE cannot fit in 4 bytes");
+                        }
+                    }
+                } else {
+                    // If the data in total is larger than 4 bytes it is an offset to the actual data
                     // Read the data from the offset
                     // tagValue = offset, just assigning this for better readability
                     int offset = tagValue;
@@ -184,8 +211,6 @@ public class ReaderCOG extends MatrixReader{
                     } catch (IOException e) {
                         throw new DMLRuntimeException(e);
                     }
-                } else { // If the data fits in the 4 bytes
-                    tagData[0] = tagValue;
                 }
                 // Read the tag ID and get the corresponding tag from the dictionary (enum)
                 IFDTagDictionary tagDictionary = IFDTagDictionary.valueOf(tagId);
@@ -229,7 +254,6 @@ public class ReaderCOG extends MatrixReader{
         int[] tileOffsets = null;
         int[] bytesPerTile = null;
         int compression = -1;
-        Number noDataIndicator = null;
 
         // Set the attributes correctly from the IFD tags
         for (IFDTag ifd : cogHeader.getIFD()) {
@@ -257,7 +281,18 @@ public class ReaderCOG extends MatrixReader{
                     tileOffsets = Arrays.stream(ifd.getData()).mapToInt(Number::intValue).toArray();
                     break;
                 case TileByteCounts:
-                    bytesPerTile = Arrays.stream(ifd.getData()).mapToInt(Number::intValue).toArray();
+                    if (ifd.getData() != null) {
+                        bytesPerTile = Arrays.stream(ifd.getData()).mapToInt(Number::intValue).toArray();
+                    } else {
+                        bytesPerTile = new int[tileOffsets.length];
+                        for (int tile = 0; tile < tileOffsets.length; tile++) {
+                            int bits = 0;
+                            for (int band = 0; band < bands; band++) {
+                                bits += bitsPerSample[band];
+                            }
+                            bytesPerTile[tile] = tileWidth * tileLength * (bits / 8);
+                        }
+                    }
                     break;
                 case SampleFormat:
                     int dataCount = ifd.getDataCount();
@@ -272,8 +307,6 @@ public class ReaderCOG extends MatrixReader{
                 case Compression:
                     compression = ifd.getData()[0].intValue();
                     break;
-                case GDALNoData:
-                    noDataIndicator = ifd.getData()[0];
             }
         }
 
@@ -312,6 +345,10 @@ public class ReaderCOG extends MatrixReader{
 
             // TODO: If the tile is compressed, decompress the currentTileData here
 
+            if (compression == 8) {
+                currentTileData = COGCompressionUtils.decompressDeflate(currentTileData);
+            }
+
             int pixelsRead = 0;
             int bytesRead = 0;
             int currentRow = 0;
@@ -337,9 +374,6 @@ public class ReaderCOG extends MatrixReader{
                                 break;
                         }
 
-                        if (noDataIndicator != null && value == noDataIndicator.doubleValue()) {
-                            value = Double.NaN;
-                        }
                         bytesRead += sampleLength;
                         outputMatrix.set((currentTileRow * tileLength) + currentRow,
                                 (currentTileCol * tileWidth * bands) + (pixelsRead * bands) + bandIdx,

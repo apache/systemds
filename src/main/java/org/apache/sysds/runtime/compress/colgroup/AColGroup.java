@@ -23,20 +23,27 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
+import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.SliceResult;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.lib.CLALibCombineGroups;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -164,13 +171,31 @@ public abstract class AColGroup implements Serializable {
 	/**
 	 * Decompress a range of rows into a dense block
 	 * 
-	 * @param db Sparse Target block
+	 * @param db Dense target block
 	 * @param rl Row to start at
 	 * @param ru Row to end at
 	 */
 	public final void decompressToDenseBlock(DenseBlock db, int rl, int ru) {
 		decompressToDenseBlock(db, rl, ru, 0, 0);
 	}
+
+	/**
+	 * Decompress a range of rows into a dense transposed block.
+	 * 
+	 * @param db Dense target block
+	 * @param rl Row in this column group to start at.
+	 * @param ru Row in this column group to end at.
+	 */
+	public abstract void decompressToDenseBlockTransposed(DenseBlock db, int rl, int ru);
+
+	/**
+	 * Decompress the column group to the sparse transposed block. Note that the column groups would only need to
+	 * decompress into specific sub rows of the Sparse block
+	 * 
+	 * @param sb      Sparse target block
+	 * @param nColOut The number of columns in the sb.
+	 */
+	public abstract void decompressToSparseBlockTransposed(SparseBlockMCSR sb, int nColOut);
 
 	/**
 	 * Serializes column group to data output.
@@ -320,7 +345,7 @@ public abstract class AColGroup implements Serializable {
 	 * 
 	 * @param db   Target DenseBlock
 	 * @param rl   Row to start decompression from
-	 * @param ru   Row to end decompression at
+	 * @param ru   Row to end decompression at (not inclusive)
 	 * @param offR Row offset into the target to decompress
 	 * @param offC Column offset into the target to decompress
 	 */
@@ -334,7 +359,7 @@ public abstract class AColGroup implements Serializable {
 	 * 
 	 * @param sb   Target SparseBlock
 	 * @param rl   Row to start decompression from
-	 * @param ru   Row to end decompression at
+	 * @param ru   Row to end decompression at (not inclusive)
 	 * @param offR Row offset into the target to decompress
 	 * @param offC Column offset into the target to decompress
 	 */
@@ -349,7 +374,7 @@ public abstract class AColGroup implements Serializable {
 	 * @return The new Column Group or null that is the result of the matrix multiplication.
 	 */
 	public final AColGroup rightMultByMatrix(MatrixBlock right) {
-		return rightMultByMatrix(right, null);
+		return rightMultByMatrix(right, null, 1);
 	}
 
 	/**
@@ -360,9 +385,25 @@ public abstract class AColGroup implements Serializable {
 	 * @param right   The MatrixBlock on the right of this matrix multiplication
 	 * @param allCols A pre-materialized list of all col indexes, that can be shared across all column groups if use
 	 *                full, can be set to null.
+	 * @param k       The parallelization degree allowed internally in this operation.
 	 * @return The new Column Group or null that is the result of the matrix multiplication.
 	 */
-	public abstract AColGroup rightMultByMatrix(MatrixBlock right, IColIndex allCols);
+	public abstract AColGroup rightMultByMatrix(MatrixBlock right, IColIndex allCols, int k);
+
+	/**
+	 * Right side Matrix multiplication, iterating though this column group and adding to the ret
+	 * 
+	 * @param right Right side matrix to multiply with.
+	 * @param ret   The return matrix to add results to
+	 * @param rl    The row of this column group to multiply from
+	 * @param ru    The row of this column group to multiply to (not inclusive)
+	 * @param crl   The right hand side column lower
+	 * @param cru   The right hand side column upper
+	 * @param nRows The number of rows in this column group
+	 */
+	public void rightDecompressingMult(MatrixBlock right, MatrixBlock ret, int rl, int ru, int nRows, int crl, int cru){
+		throw new NotImplementedException("not supporting right Decompressing Multiply on class: " + this.getClass().getSimpleName());
+	}
 
 	/**
 	 * Do a transposed self matrix multiplication on the left side t(x) %*% x. but only with this column group.
@@ -671,11 +712,31 @@ public abstract class AColGroup implements Serializable {
 	/**
 	 * Recompress this column group into a new column group of the given type.
 	 * 
-	 * @param ct The compressionType that the column group should morph into
+	 * @param ct   The compressionType that the column group should morph into
+	 * @param nRow The number of rows in this columngroup.
 	 * @return A new column group
 	 */
-	public AColGroup morph(CompressionType ct) {
-		throw new NotImplementedException();
+	public AColGroup morph(CompressionType ct, int nRow) {
+		if(ct == getCompType())
+			return this;
+		else if(ct == CompressionType.DDCFOR)
+			return this; // it does not make sense to change to FOR.
+		else if(ct == CompressionType.UNCOMPRESSED) {
+			AColGroup cgMoved = this.copyAndSet(ColIndexFactory.create(_colIndexes.size()));
+			final long nnz = getNumberNonZeros(nRow);
+			MatrixBlock newDict = new MatrixBlock(nRow, _colIndexes.size(), nnz);
+			newDict.allocateBlock();
+			if(newDict.isInSparseFormat())
+				cgMoved.decompressToSparseBlock(newDict.getSparseBlock(), 0, nRow);
+			else
+				cgMoved.decompressToDenseBlock(newDict.getDenseBlock(), 0, nRow);
+			newDict.setNonZeros(nnz);
+			AColGroup cgUC = ColGroupUncompressed.create(newDict);
+			return cgUC.copyAndSet(_colIndexes);
+		}
+		else {
+			throw new NotImplementedException("Morphing from : " + getCompType() + " to " + ct + " is not implemented");
+		}
 	}
 
 	/**
@@ -690,10 +751,11 @@ public abstract class AColGroup implements Serializable {
 	 * Combine this column group with another
 	 * 
 	 * @param other The other column group to combine with.
+	 * @param nRow  The number of rows in both column groups.
 	 * @return A combined representation as a column group.
 	 */
-	public AColGroup combine(AColGroup other) {
-		return CLALibCombineGroups.combine(this, other);
+	public AColGroup combine(AColGroup other, int nRow) {
+		return CLALibCombineGroups.combine(this, other, nRow);
 	}
 
 	/**
@@ -744,6 +806,13 @@ public abstract class AColGroup implements Serializable {
 		else
 			denseSelection(selection, points, ret, rl, ru);
 	}
+	
+	/**
+	 * Get an approximate sparsity of this column group
+	 * 
+	 * @return the approximate sparsity of this columngroup
+	 */
+	public abstract double getSparsity();
 
 	/**
 	 * Sparse selection (left matrix multiply)
@@ -766,6 +835,142 @@ public abstract class AColGroup implements Serializable {
 	 * @param ru        the row to end at in the selection matrix (not inclusive)
 	 */
 	protected abstract void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru);
+
+	/**
+	 * Method to determine if the columnGroup have the same index structure as another. Note that the column indexes and
+	 * dictionaries are allowed to be different.
+	 * 
+	 * @param that the other column group
+	 * @return if the index is the same.
+	 */
+	public boolean sameIndexStructure(AColGroup that) {
+		return false;
+	}
+
+	/**
+	 * C bind the list of column groups with this column group. the list of elements provided in the index of each list
+	 * is guaranteed to have the same index structures
+	 * 
+	 * @param nRow  The number of rows contained in all right and this column group.
+	 * @param nCol  The number of columns to shift the right hand side column groups over when combining, this should
+	 *              only effect the column indexes
+	 * @param right The right hand side column groups to combine. NOTE only the index offset of the second nested list
+	 *              should be used. The reason for providing this nested list is to avoid redundant allocations in
+	 *              calling methods.
+	 * @return A combined compressed column group of the same type as this!.
+	 */
+	public AColGroup combineWithSameIndex(int nRow, int nCol, List<AColGroup> right) {
+		// default decompress... nasty !
+
+		IColIndex combinedColIndex = combineColIndexes(nCol, right);
+
+		MatrixBlock decompressTarget = new MatrixBlock(nRow, combinedColIndex.size(), false);
+
+		decompressTarget.allocateDenseBlock();
+		DenseBlock db = decompressTarget.getDenseBlock();
+		final int nColInThisGroup = _colIndexes.size();
+		this.copyAndSet(ColIndexFactory.create(nColInThisGroup)).decompressToDenseBlock(db, 0, nRow);
+
+		for(int i = 0; i < right.size(); i++) {
+			right.get(i).copyAndSet(ColIndexFactory.create(i * nColInThisGroup, i * nColInThisGroup + nColInThisGroup))
+				.decompressToDenseBlock(db, 0, nRow);
+		}
+
+		decompressTarget.setNonZeros(nRow * combinedColIndex.size());
+
+		CompressedSizeInfoColGroup ci = new CompressedSizeInfoColGroup(ColIndexFactory.create(combinedColIndex.size()),
+			nRow, nRow, CompressionType.DDC);
+		CompressedSizeInfo csi = new CompressedSizeInfo(ci);
+
+		CompressionSettings cs = new CompressionSettingsBuilder().create();
+		return ColGroupFactory.compressColGroups(decompressTarget, csi, cs).get(0).copyAndSet(combinedColIndex);
+	}
+
+	/**
+	 * C bind the given column group to this.
+	 * 
+	 * @param nRow  The number of rows contained in the right and this column group.
+	 * @param nCol  The number of columns in this.
+	 * @param right The column group to c-bind.
+	 * @return a new combined column groups.
+	 */
+	public AColGroup combineWithSameIndex(int nRow, int nCol, AColGroup right) {
+
+		IColIndex combinedColIndex = _colIndexes.combine(right._colIndexes.shift(nCol));
+
+		MatrixBlock decompressTarget = new MatrixBlock(nRow, combinedColIndex.size(), false);
+
+		decompressTarget.allocateDenseBlock();
+		DenseBlock db = decompressTarget.getDenseBlock();
+		final int nColInThisGroup = _colIndexes.size();
+		this.copyAndSet(ColIndexFactory.create(nColInThisGroup)).decompressToDenseBlock(db, 0, nRow);
+
+		right.copyAndSet(ColIndexFactory.create(nColInThisGroup, nColInThisGroup + nColInThisGroup))
+			.decompressToDenseBlock(db, 0, nRow);
+
+		decompressTarget.setNonZeros(nRow * combinedColIndex.size());
+
+		CompressedSizeInfoColGroup ci = new CompressedSizeInfoColGroup(ColIndexFactory.create(combinedColIndex.size()),
+			nRow, nRow, CompressionType.DDC);
+		CompressedSizeInfo csi = new CompressedSizeInfo(ci);
+
+		CompressionSettings cs = new CompressionSettingsBuilder().create();
+		return ColGroupFactory.compressColGroups(decompressTarget, csi, cs).get(0).copyAndSet(combinedColIndex);
+		// throw new NotImplementedException("Combine of : " + this.getClass().getSimpleName() + " not implemented");
+	}
+
+	protected IColIndex combineColIndexes(final int nCol, List<AColGroup> right) {
+		IColIndex combinedColIndex = _colIndexes;
+		for(int i = 0; i < right.size(); i++)
+			combinedColIndex = combinedColIndex.combine(right.get(i).getColIndices().shift(nCol * i + nCol));
+		return combinedColIndex;
+	}
+
+	/**
+	 * This method returns a list of column groups that are naive splits of this column group as if it is reshaped.
+	 * 
+	 * This means the column groups rows are split into x number of other column groups where x is the multiplier.
+	 * 
+	 * The indexes are assigned round robbin to each of the output groups, meaning the first index is assigned.
+	 * 
+	 * If for instance the 4. column group is split by a 2 multiplier and there was 5 columns in total originally. The
+	 * output becomes 2 column groups at column index 4 and one at 9.
+	 * 
+	 * If possible the split column groups should reuse pointers back to the original dictionaries!
+	 * 
+	 * @param multiplier The number of column groups to split into
+	 * @param nRow       The number of rows in this column group in case the underlying column group does not know
+	 * @param nColOrg    The number of overall columns in the host CompressedMatrixBlock.
+	 * @return a list of split column groups
+	 */
+	public abstract AColGroup[] splitReshape(final int multiplier, final int nRow, final int nColOrg);
+
+	/**
+	 * This method returns a list of column groups that are naive splits of this column group as if it is reshaped.
+	 * 
+	 * This means the column groups rows are split into x number of other column groups where x is the multiplier.
+	 * 
+	 * The indexes are assigned round robbin to each of the output groups, meaning the first index is assigned.
+	 * 
+	 * If for instance the 4. column group is split by a 2 multiplier and there was 5 columns in total originally. The
+	 * output becomes 2 column groups at column index 4 and one at 9.
+	 * 
+	 * If possible the split column groups should reuse pointers back to the original dictionaries!
+	 * 
+	 * This specific variation is pushing down the parallelization given via the executor service provided. If not
+	 * overwritten the default is to call the normal split reshape
+	 * 
+	 * @param multiplier The number of column groups to split into
+	 * @param nRow       The number of rows in this column group in case the underlying column group does not know
+	 * @param nColOrg    The number of overall columns in the host CompressedMatrixBlock
+	 * @param pool       The executor service to submit parallel tasks to
+	 * @throws Exception In case there is an error we throw the exception out instead of handling it
+	 * @return a list of split column groups
+	 */
+	public AColGroup[] splitReshapePushDown(final int multiplier, final int nRow, final int nColOrg,
+		final ExecutorService pool) throws Exception {
+		return splitReshape(multiplier, nRow, nColOrg);
+	}
 
 	@Override
 	public String toString() {

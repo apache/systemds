@@ -12,6 +12,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.zip.DataFormatException;
 
 public class ReaderCOG extends MatrixReader{
     protected final FileFormatPropertiesCOG _props;
@@ -27,32 +28,37 @@ public class ReaderCOG extends MatrixReader{
         FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
 
         BufferedInputStream bis = new BufferedInputStream(fs.open(path));
-        return readCOG(bis, rlen, clen, blen, estnnz);
+        return readCOG(bis, estnnz);
     }
 
     @Override
     public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz) throws IOException, DMLRuntimeException {
         BufferedInputStream bis = new BufferedInputStream(is);
-        return readCOG(bis, rlen, clen, blen, estnnz);
+        return readCOG(bis, estnnz);
     }
 
-    private MatrixBlock readCOG(BufferedInputStream bis, long rlen, long clen, int blen, long estnnz) {
+    /**
+     * Reads a COG file from a BufferedInputStream.
+     * Not handling number of columns or rows, as this can be inferred from the data, but
+     * may be used in the future for validation or possibly removed as a requirement for COG.
+     * Specific to COG files, normal TIFFs will break because they aren't tiled, only
+     * tiled data is supported.
+     * @param bis
+     * @return
+     */
+    private MatrixBlock readCOG(BufferedInputStream bis, long estnnz) throws IOException {
         // Read first 4 bytes to determine byte order and make sure it is a valid TIFF
         byte[] header = readBytes(bis, 4);
 
 
-        // First read the byte order
-        // TODO: Make this nicer, maybe in the COGHeader class as a static method?
+        // Read the byte order
         boolean littleEndian = false;
         if ((header[0] & 0xFF) == 0x4D && (header[1] & 0xFF) == 0x4D) {
-            // TODO: Remove this
-            System.out.println("Big-Endian detected (MM)");
+            littleEndian = false;
         } else if ((header[0] & 0xFF) == 0x49 && (header[1] & 0xFF) == 0x49) {
-            // TODO: Remove this
-            System.out.println("Little-Endian detected (II)");
             littleEndian = true;
         } else {
-            throw new RuntimeException("Invalid Byte-Order");
+            throw new DMLRuntimeException("Invalid Byte-Order");
         }
 
         // Create COGHeader object, initialize with the correct byte order
@@ -61,7 +67,7 @@ public class ReaderCOG extends MatrixReader{
         // Check magic number (42), otherwise this is not a valid TIFF
         int magic = cogHeader.parseByteArray(header, 2, 2, false, false, false).intValue();
         if (magic != 42) {
-            throw new RuntimeException("Invalid Magic Number");
+            throw new DMLRuntimeException("Invalid Magic Number");
         }
 
         // Read offset of the first IFD
@@ -95,9 +101,7 @@ public class ReaderCOG extends MatrixReader{
         // Read the IFDs, always read the first one
         // The nextIFDOffset ist 0 if there is no next IFD
         while (nextIFDOffset != 0 || firstIFD) {
-            // TODO: Find out what data this is
-            // For some reason there is data between the IFDs. And I don't know what data or why.
-            // Let's ignore it for now and find out later
+            // There can be data in-between IFDs, we need to skip that
             // Read until the next IFD, discard any data until then
             readBytes(bis, nextIFDOffset - (firstIFD ? 0 : totalBytesRead));
 
@@ -121,11 +125,37 @@ public class ReaderCOG extends MatrixReader{
 
                 int tagCount = cogHeader.parseByteArray(tag, 4, 4, false, false, false).intValue();
 
-                int tagValue = cogHeader.parseByteArray(tag, 4, 8, false, false, false).intValue();
                 Number[] tagData = new Number[tagCount];
+                int tagValue = cogHeader.parseByteArray(tag, 4, 8, false, false, false).intValue();
 
-                // If the data in total is larger than 4 bytes it is an offset to the actual data
-                if (dataType.getSize() * tagCount > 4) {
+                if (dataType.getSize() * tagCount <= 4) {
+                    for (int j = 0; j < tagCount; j++) {
+                        switch(dataType) {
+                            case BYTE:
+                            case ASCII:
+                            case SHORT:
+                            case LONG:
+                            case UNDEFINED:
+                                tagData[j] = cogHeader.parseByteArray(tag, dataType.getSize(), 8 + j * dataType.getSize(), false, false, false);
+                                break;
+                            case RATIONAL:
+                                throw new DMLRuntimeException("Data type RATIONAL cannot fit in 4 bytes");
+                            case SBYTE:
+                            case SSHORT:
+                            case SLONG:
+                                tagData[j] = cogHeader.parseByteArray(tag, dataType.getSize(), 8 + j * dataType.getSize(), false, true, false);
+                                break;
+                            case SRATIONAL:
+                                throw new DMLRuntimeException("Data type SRATIONAL cannot fit in 4 bytes");
+                            case FLOAT:
+                                tagData[j] = cogHeader.parseByteArray(tag, dataType.getSize(), 8 + j * dataType.getSize(), true, false, false);
+                                break;
+                            case DOUBLE:
+                                throw new DMLRuntimeException("Data type DOUBLE cannot fit in 4 bytes");
+                        }
+                    }
+                } else {
+                    // If the data in total is larger than 4 bytes it is an offset to the actual data
                     // Read the data from the offset
                     // tagValue = offset, just assigning this for better readability
                     int offset = tagValue;
@@ -179,21 +209,14 @@ public class ReaderCOG extends MatrixReader{
                         bis.reset();
                         totalBytesRead -= bytesToRead;
                     } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        throw new DMLRuntimeException(e);
                     }
-                } else { // If the data fits in the 4 bytes
-                    tagData[0] = tagValue;
                 }
                 // Read the tag ID and get the corresponding tag from the dictionary (enum)
                 IFDTagDictionary tagDictionary = IFDTagDictionary.valueOf(tagId);
 
-                // Currently we'll just throw away any tag that doesn't fit here
-                if (tagDictionary == null) {
-                    String doSomething = "?????";
-                }
-
                 // Create the constructed IFDTag object and store it in the array
-                IFDTag ifdTag = new IFDTag(tagDictionary, (short) tagType, tagCount, tagData);
+                IFDTag ifdTag = new IFDTag(tagDictionary != null ? tagDictionary : IFDTagDictionary.Unknown, (short) tagType, tagCount, tagData);
                 ifdTags[i] = ifdTag;
             }
             if (firstIFD) {
@@ -213,12 +236,13 @@ public class ReaderCOG extends MatrixReader{
         // Certain options are not supported, and we need to filter out some non-standard options
         String isCompatible = COGHeader.isCompatible(cogHeader.getIFD());
         if (!isCompatible.equals("")) {
-            throw new RuntimeException("Incompatible COG file: " + isCompatible);
+            throw new DMLRuntimeException("Incompatible COG file: " + isCompatible);
         }
 
-        // TODO: Actually read image data
-        // We can get this from the tile offsets and tile byte counts
+        // TODO: Currently only reads the first image which is the full resolution image
+        // In the future, this could be extended to read the overviews as well
 
+        // Prepare everything for reading the actual image data
         int rows = -1;
         int cols = -1;
         int bands = -1;
@@ -231,57 +255,75 @@ public class ReaderCOG extends MatrixReader{
         int[] bytesPerTile = null;
         int compression = -1;
 
+        // Set the attributes correctly from the IFD tags
         for (IFDTag ifd : cogHeader.getIFD()) {
             IFDTagDictionary tag = ifd.getTagId();
-            if (tag == IFDTagDictionary.ImageWidth) {
-                cols = ifd.getData()[0].intValue();
-            } else if (tag == IFDTagDictionary.ImageLength) {
-                rows = ifd.getData()[0].intValue();
-            }
-            // = Number of bands effectively
-            else if (tag == IFDTagDictionary.SamplesPerPixel) {
-                bands = ifd.getData()[0].intValue();
-            } else if (tag == IFDTagDictionary.BitsPerSample) {
-                bitsPerSample = Arrays.stream(ifd.getData()).mapToInt(Number::intValue).toArray();
-            } else if (tag == IFDTagDictionary.TileWidth) {
-                tileWidth = ifd.getData()[0].intValue();
-            } else if (tag == IFDTagDictionary.TileLength) {
-                tileLength = ifd.getData()[0].intValue();
-            } else if (tag == IFDTagDictionary.TileOffsets) {
-                tileOffsets = Arrays.stream(ifd.getData()).mapToInt(Number::intValue).toArray();
-            } else if (tag == IFDTagDictionary.TileByteCounts) {
-                bytesPerTile = Arrays.stream(ifd.getData()).mapToInt(Number::intValue).toArray();
-            } else if (tag == IFDTagDictionary.SampleFormat) {
-                int dataCount = ifd.getDataCount();
-                sampleFormat = new SampleFormatDataTypes[dataCount];
-                for (int i = 0; i < dataCount; i++) {
-                    sampleFormat[i] = SampleFormatDataTypes.valueOf(ifd.getData()[i].intValue());
-                }
-            } else if (tag == IFDTagDictionary.PlanarConfiguration) {
-                planarConfiguration = ifd.getData()[0].intValue();
-            } else if (tag == IFDTagDictionary.Compression) {
-                compression = ifd.getData()[0].intValue();
+            switch (tag) {
+                case ImageWidth:
+                    cols = ifd.getData()[0].intValue();
+                    break;
+                case ImageLength:
+                    rows = ifd.getData()[0].intValue();
+                    break;
+                case SamplesPerPixel:
+                    bands = ifd.getData()[0].intValue();
+                    break;
+                case BitsPerSample:
+                    bitsPerSample = Arrays.stream(ifd.getData()).mapToInt(Number::intValue).toArray();
+                    break;
+                case TileWidth:
+                    tileWidth = ifd.getData()[0].intValue();
+                    break;
+                case TileLength:
+                    tileLength = ifd.getData()[0].intValue();
+                    break;
+                case TileOffsets:
+                    tileOffsets = Arrays.stream(ifd.getData()).mapToInt(Number::intValue).toArray();
+                    break;
+                case TileByteCounts:
+                    if (ifd.getData() != null) {
+                        bytesPerTile = Arrays.stream(ifd.getData()).mapToInt(Number::intValue).toArray();
+                    } else {
+                        bytesPerTile = new int[tileOffsets.length];
+                        for (int tile = 0; tile < tileOffsets.length; tile++) {
+                            int bits = 0;
+                            for (int band = 0; band < bands; band++) {
+                                bits += bitsPerSample[band];
+                            }
+                            bytesPerTile[tile] = tileWidth * tileLength * (bits / 8);
+                        }
+                    }
+                    break;
+                case SampleFormat:
+                    int dataCount = ifd.getDataCount();
+                    sampleFormat = new SampleFormatDataTypes[dataCount];
+                    for (int i = 0; i < dataCount; i++) {
+                        sampleFormat[i] = SampleFormatDataTypes.valueOf(ifd.getData()[i].intValue());
+                    }
+                    break;
+                case PlanarConfiguration:
+                    planarConfiguration = ifd.getData()[0].intValue();
+                    break;
+                case Compression:
+                    compression = ifd.getData()[0].intValue();
+                    break;
             }
         }
-        // ensure correctness
-        assert (rows % tileLength == 0);
-        assert (cols % tileWidth == 0);
-        double sum = 0;
 
         // number of tiles for Width and Length
         int tileCols = cols / tileWidth;
         int tileRows = rows / tileLength;
 
-        // total number of tiles for COG in overview
+        // total number of tiles if every tile contains all bands
         int calculatedAmountTiles = tileCols * tileRows;
+        // actual given number of tiles, longer for PlanarConfiguration=2
         int actualAmountTiles = tileOffsets.length;
 
         int currentTileCol = 0;
         int currentTileRow = 0;
         int currentBand = 0;
 
-        MatrixBlock outputMatrix = new MatrixBlock(rows, cols * bands, false);
-
+        MatrixBlock outputMatrix = createOutputMatrixBlock(rows, cols * bands, rows, estnnz, true, true);
         for (int currenTileIdx = 0; currenTileIdx < actualAmountTiles; currenTileIdx++) {
             int bytesToRead = (tileOffsets[currenTileIdx] - totalBytesRead) + bytesPerTile[currenTileIdx];
             // Mark the current position in the stream
@@ -297,10 +339,14 @@ public class ReaderCOG extends MatrixReader{
                 bis.reset();
                 totalBytesRead -= bytesToRead;
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new DMLRuntimeException(e);
             }
 
             // TODO: If the tile is compressed, decompress the currentTileData here
+
+            if (compression == 8) {
+                currentTileData = COGCompressionUtils.decompressDeflate(currentTileData);
+            }
 
             int pixelsRead = 0;
             int bytesRead = 0;
@@ -326,47 +372,11 @@ public class ReaderCOG extends MatrixReader{
                                 value = cogHeader.parseByteArray(currentTileData, sampleLength, bytesRead, true, false, false).doubleValue();
                                 break;
                         }
+
                         bytesRead += sampleLength;
                         outputMatrix.set((currentTileRow * tileLength) + currentRow,
                                 (currentTileCol * tileWidth * bands) + (pixelsRead * bands) + bandIdx,
                                 value);
-                        // pixelsRead, currentRow
-
-                    }
-
-                    pixelsRead++;
-                    if (pixelsRead >= tileWidth) {
-                        pixelsRead = 0;
-                        currentRow++;
-                    }
-                }
-            } else if (planarConfiguration == 2 && calculatedAmountTiles == tileOffsets.length) {
-                // If all bands are stored within a single tile
-                // The other case would be that a single tile only has a single band
-                while (currentRow < tileLength && pixelsRead < tileWidth) {
-                    for (int bandIdx = 0; bandIdx < bands; bandIdx++) {
-                        double value = 0;
-                        int sampleLength = bitsPerSample[bandIdx] / 8;
-
-                        switch (sampleFormat[bandIdx]) {
-                            case UNSIGNED_INTEGER:
-                            case UNDEFINED:
-                                // According to the standard, this should be handled as not being there -> 1 (unsigned integer)
-                                value = cogHeader.parseByteArray(currentTileData, sampleLength, bytesRead, false, false, false).doubleValue();
-                                break;
-                            case SIGNED_INTEGER:
-                                value = cogHeader.parseByteArray(currentTileData, sampleLength, bytesRead, false, true, false).doubleValue();
-                                break;
-                            case FLOATING_POINT:
-                                value = cogHeader.parseByteArray(currentTileData, sampleLength, bytesRead, true, false, false).doubleValue();
-                                break;
-                        }
-                        bytesRead += sampleLength;
-                        outputMatrix.set((currentTileRow * tileLength) + currentRow,
-                                (currentTileCol * tileWidth * bands) + (pixelsRead * bands) + bandIdx,
-                                value);
-                        // pixelsRead, currentRow
-
                     }
 
                     pixelsRead++;
@@ -377,8 +387,10 @@ public class ReaderCOG extends MatrixReader{
                 }
             } else if (planarConfiguration == 2 && calculatedAmountTiles * bands == tileOffsets.length) {
                 // If every band is stored in different tiles, so first one R, second one G and so on
-                // The other case would be that a single tile has all bands
-                // I am not sure which one is actually anticipated by COG, so both will be supported
+                // RRRGGGBBB
+                // TODO: Currently this doesn't seem standardized properly, there are still open GitHub issues about that
+                // e.g.: https://github.com/cogeotiff/cog-spec/issues/17
+                // if something changes in the standard, this may need to be adjusted, interleaved is discouraged in COG though
                 if (currenTileIdx - (currentBand * calculatedAmountTiles) >= calculatedAmountTiles) {
                     currentTileCol = 0;
                     currentTileRow = 0;
@@ -386,8 +398,6 @@ public class ReaderCOG extends MatrixReader{
                 }
 
                 int sampleLength = bitsPerSample[currentBand] / 8;
-                pixelsRead = 0;
-                currentRow = 0;
 
                 while (currentRow < tileLength && pixelsRead < tileWidth) {
                     double value = 0;
@@ -416,7 +426,7 @@ public class ReaderCOG extends MatrixReader{
                     }
                 }
             } else {
-                throw new RuntimeException("Unsupported Planar Configuration: " + planarConfiguration);
+                throw new DMLRuntimeException("Unsupported Planar Configuration: " + planarConfiguration);
             }
 
             currentTileCol++;
@@ -427,6 +437,7 @@ public class ReaderCOG extends MatrixReader{
 
         }
 
+        outputMatrix.examSparsity();
         return outputMatrix;
     }
 
@@ -443,7 +454,7 @@ public class ReaderCOG extends MatrixReader{
             bis.read(header);
             totalBytesRead += length;
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new DMLRuntimeException(e);
         }
         return header;
     }

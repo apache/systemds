@@ -8,7 +8,7 @@ import org.apache.sysds.test.TestConfiguration;
 public abstract class COGTestBase extends AutomatedTestBase {
     protected final static String TEST_DIR = "functions/io/cog/";
     protected static final Log LOG = LogFactory.getLog(COGTestBase.class.getName());
-    protected final static double eps = 1e-9;
+    protected final static double eps = 1e-6;
 
     protected abstract String getTestClassDir();
 

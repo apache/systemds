@@ -21,6 +21,6 @@
 
 # DML script that tests read COG
 
-Y = read($1, format="cog", naStrings=["NA", "null", "nan"]);
-total = sum(Y);
-write(as.scalar(total), $2);
+A = read($1, format="cog");
+x = sum(A);
+write(x, $2);

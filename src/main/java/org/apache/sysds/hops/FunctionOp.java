@@ -183,39 +183,37 @@ public class FunctionOp extends MultiThreadedHop
 				// upper-triangular and lower-triangular matrices
 				long outputH = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 0.5);
 				long outputR = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 0.5);
-				return outputH+outputR; 
-			}
-			else if ( getFunctionName().equalsIgnoreCase("lu") ) {
+				return outputH + outputR;
+			} else if (getFunctionName().equalsIgnoreCase("lu")) {
 				// upper-triangular and lower-triangular matrices
-				long outputP = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0/getOutputs().get(1).getDim2());
+				long outputP = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0 / getOutputs().get(1).getDim2());
 				long outputL = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 0.5);
 				long outputU = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 0.5);
-				return outputL+outputU+outputP; 
-			}
-			else if ( getFunctionName().equalsIgnoreCase("eigen") ) {
+				return outputL + outputU + outputP;
+			} else if (getFunctionName().equalsIgnoreCase("eigen")) {
 				long outputVectors = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
 				long outputValues = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), 1, 1.0);
-				return outputVectors+outputValues; 
-			}
-			else if ( getFunctionName().equalsIgnoreCase("fft") ) {
+				return outputVectors + outputValues;
+			} else if (getFunctionName().equalsIgnoreCase("fft")) {
 				long outputRe = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
 				long outputIm = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0);
-				return outputRe+outputIm;
-			}
-			else if ( getFunctionName().equalsIgnoreCase("ifft") ) {
+				return outputRe + outputIm;
+			} else if (getFunctionName().equalsIgnoreCase("ifft")) {
 				long outputRe = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
 				long outputIm = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0);
-				return outputRe+outputIm;
-			}
-			else if ( getFunctionName().equalsIgnoreCase("fft_linearized") ) {
+				return outputRe + outputIm;
+			} else if (getFunctionName().equalsIgnoreCase("fft_linearized")) {
 				long outputRe = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
 				long outputIm = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0);
-				return outputRe+outputIm;
-			}
-			else if ( getFunctionName().equalsIgnoreCase("ifft_linearized") ) {
+				return outputRe + outputIm;
+			} else if (getFunctionName().equalsIgnoreCase("ifft_linearized")) {
 				long outputRe = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
 				long outputIm = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0);
-				return outputRe+outputIm;
+				return outputRe + outputIm;
+			} else if ( getFunctionName().equalsIgnoreCase("img_transform_matrix")) {
+				long outputRe = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
+				long outputIm = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0);
+				return outputRe + outputIm;
 			}
 			else if ( getFunctionName().equalsIgnoreCase("stft") ) {
 				long outputRe = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
@@ -290,9 +288,8 @@ public class FunctionOp extends MultiThreadedHop
 			}
 			else if ( getFunctionName().equalsIgnoreCase("ifft_linearized") ) {
 				// 2 matrices of size same as the input
-				return 2*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0);
-			}
-			else if ( getFunctionName().equalsIgnoreCase("stft") ) {
+				return 2 * OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0);
+			} else if ( getFunctionName().equalsIgnoreCase("stft") ) {
 				// 2 matrices of size same as the input
 				return 2*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0);
 			}

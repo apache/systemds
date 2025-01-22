@@ -80,13 +80,13 @@ if (debug) {
     print(toString(attention))
 }
 
-context_error = max(abs(expected_out_states - out_states))
+states_error = max(abs(expected_out_states - out_states))
 attention_error = max(abs(expected_attention - attention))
 
 if (debug) {
-    print(context_error)
+    print(states_error)
     print(attention_error)
 }
 
-write(context_error, $28, format="text")
+write(states_error, $28, format="text")
 write(attention_error, $29, format="text")

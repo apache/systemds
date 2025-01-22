@@ -135,9 +135,11 @@ public class LibMatrixDatagen
 		RandomMatrixGenerator rgen = null;
 		switch (pdf) {
 			case UNIFORM:
+			case CB_UNIFORM:
 				rgen = new RandomMatrixGenerator(pdf, r, c, blen, sp, min, max);
 				break;
 			case NORMAL:
+			case CB_NORMAL:
 				rgen = new RandomMatrixGenerator(pdf, r, c, blen, sp);
 				break;
 			case POISSON:
@@ -469,7 +471,8 @@ public class LibMatrixDatagen
 				case UNIFORM: valuePRNG = new UniformPRNGenerator(); break;
 				case NORMAL:  valuePRNG = new NormalPRNGenerator(); break;
 				case POISSON: valuePRNG = new PoissonPRNGenerator(); break;
-				case CB_UNIFORM: valuePRNG = new PhiloxCBPRNGenerator(); break;
+				case CB_UNIFORM: valuePRNG = new PhiloxUniformCBPRNGenerator(); break;
+				case CB_NORMAL: valuePRNG = new PhiloxNormalCBPRNGenerator(); break;
 				default:
 					throw new DMLRuntimeException("Unsupported distribution function for Rand: " + rgen._pdf);
 			}

@@ -28,7 +28,7 @@ public class RandomMatrixGenerator {
 	 * Types of Probability density functions
 	 */
 	public enum PDF {
-		NORMAL, UNIFORM, POISSON, CB_UNIFORM
+		NORMAL, UNIFORM, POISSON, CB_UNIFORM, CB_NORMAL
 	}
 
 	PDF _pdf;
@@ -164,7 +164,11 @@ public class RandomMatrixGenerator {
 			_valuePRNG = new PoissonPRNGenerator(_mean);
 			break;
 		case CB_UNIFORM:
-			_valuePRNG = new PhiloxCBPRNGenerator();
+			_valuePRNG = new PhiloxUniformCBPRNGenerator();
+			break;
+		case CB_NORMAL:
+			_valuePRNG = new PhiloxNormalCBPRNGenerator();
+			break;
 		default:
 			throw new DMLRuntimeException("Unsupported probability density function");
 		}

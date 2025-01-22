@@ -20,20 +20,20 @@
 
 package org.apache.sysds.runtime.util;
 
-public class PhiloxCBPRNGenerator extends CounterBasedPRNGenerator {
+public class PhiloxUniformCBPRNGenerator extends CounterBasedPRNGenerator {
 
     // Constants for Philox
-    public static final long PHILOX_M4x64_0_hi = 0xD2E7470EE14C6C93L >>> 32;
-    public static final long PHILOX_M4x64_0_lo = 0xD2E7470EE14C6C93L & 0xFFFFFFFFL;
-    public static final long PHILOX_M4x64_1_hi = 0xCA5A826395121157L >>> 32;
-    public static final long PHILOX_M4x64_1_lo = 0xCA5A826395121157L & 0xFFFFFFFFL;
-    public static final long PHILOX_W64_0 = 0x9E3779B97F4A7C15L;
-    public static final long PHILOX_W64_1 = 0xBB67AE8584CAA73BL;
-    private static final double ULONG_TO_11 = (1.0 / Long.MAX_VALUE);
+    private static final long PHILOX_M4x64_0_hi = 0xD2E7470EE14C6C93L >>> 32;
+    private static final long PHILOX_M4x64_0_lo = 0xD2E7470EE14C6C93L & 0xFFFFFFFFL;
+    private static final long PHILOX_M4x64_1_hi = 0xCA5A826395121157L >>> 32;
+    private static final long PHILOX_M4x64_1_lo = 0xCA5A826395121157L & 0xFFFFFFFFL;
+    private static final long PHILOX_W64_0 = 0x9E3779B97F4A7C15L;
+    private static final long PHILOX_W64_1 = 0xBB67AE8584CAA73BL;
+    private static final double LONG_TO_01 = 0.5 / Long.MAX_VALUE;
 
     // Default number of rounds
-    public static final int PHILOX4x64_DEFAULT_ROUNDS = 10;
-    long[] seed;
+    private static final int PHILOX4x64_DEFAULT_ROUNDS = 10;
+    private long[] seed;
 
     public void setSeed(long sd) {
         this.seed = new long[2];
@@ -41,6 +41,13 @@ public class PhiloxCBPRNGenerator extends CounterBasedPRNGenerator {
         this.seed[1] = sd;
     }
 
+    /**
+     * Generate a sequence of random doubles using the Philox4x64 counter-based PRNG.
+     *
+     * @param ctr  The start counter to use for the PRNG
+     * @param size The number of doubles to generate
+     * @return An array of random doubles distributed uniformly between 0 and 1
+     */
     public double[] getDoubles(long[] ctr, int size) {
         // Ensure the key is correct size
         if (this.seed.length != 2) {
@@ -167,7 +174,7 @@ public class PhiloxCBPRNGenerator extends CounterBasedPRNGenerator {
         }
         double[] double_result = new double[result.length];
         for (int i = 0; i < result.length; i++) {
-            double_result[i] = result[i];
+            double_result[i] = result[i] * LONG_TO_01 + .5;
         }
         return double_result;
     }

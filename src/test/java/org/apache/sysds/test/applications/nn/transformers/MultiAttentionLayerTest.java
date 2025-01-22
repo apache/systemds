@@ -119,7 +119,7 @@ public class MultiAttentionLayerTest extends AutomatedTestBase {
 			if (isForward) {
 				double contextMaxError = (Double) readDMLScalarFromOutputDir("context_error").values().toArray()[0];
 				assert contextMaxError < precision;
-				double attentionMaxError = (Double) readDMLScalarFromOutputDir("context_error").values().toArray()[0];
+				double attentionMaxError = (Double) readDMLScalarFromOutputDir("attention_error").values().toArray()[0];
 				assert attentionMaxError < precision;
 			} else {
 				double dqueryMaxError = (Double) readDMLScalarFromOutputDir("dquery_error").values().toArray()[0];

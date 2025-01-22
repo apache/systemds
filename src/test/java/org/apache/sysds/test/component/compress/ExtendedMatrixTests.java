@@ -200,6 +200,8 @@ public class ExtendedMatrixTests extends CompressedTestBase {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return;
 			double ret1 = cmb.prod();
+			LOG.error(ret1);
+			LOG.error(cmb);
 			double ret2 = mb.prod();
 			boolean res;
 			if(_cs != null && (_cs.lossy || overlappingType == OverLapping.SQUASH))

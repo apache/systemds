@@ -28,7 +28,7 @@ mask = is.nan(X)
 #Perform the KNN imputation
 result = imputeByKNN(X = X, method = $2)
 result2 = imputeByKNN(X = X, method = $3)
-result3 = imputeByKNN(X = X, method = $4, seed = $5, sample_frac = $6)
+result3 = imputeByKNN(X = X, method = $4, seed = $5, sampleFrac = $6)
 
 #Get the imputed value
 I = (mask[,2] == 1);

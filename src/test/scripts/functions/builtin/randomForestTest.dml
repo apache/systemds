@@ -37,8 +37,8 @@ jspec = "{ids: true, bin: ["
 [X,D] = transformencode(target=F, spec=jspec);
 
 R = matrix(1, rows=1, cols=ncol(X)+1);
-M = randomForest(X=X, y=Y, ctypes=R, num_trees=num_trees, seed=7,
-  max_depth=depth, min_leaf=num_leafs, impurity=impurity, verbose=TRUE);
+M = randomForest(X=X, y=Y, ctypes=R, numTrees=num_trees, seed=7,
+  maxDepth=depth, minLeaf=num_leafs, impurity=impurity, verbose=TRUE);
 randomForestPredict(X=X, y=Y, ctypes=R, M=M, verbose=TRUE);
 
 write(M, $7);

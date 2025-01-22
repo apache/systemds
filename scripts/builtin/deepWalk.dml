@@ -28,7 +28,7 @@
 # d       embedding size
 # gamma   walks per vertex
 # t       walk length
-# alpha   learning rate
+# lr      learning rate
 # beta    factor for decreasing learning rate
 # ------------------------------------------------------------------------------------
 #
@@ -40,7 +40,7 @@
 source("scripts/staging/entity-resolution/primitives/postprocessing.dml") as post;
 
 m_deepWalk = function(Matrix[Double] Graph, Integer w, Integer d,
-  Integer gamma, Integer t, Double alpha=0.025, Double beta=0.9)
+  Integer gamma, Integer t, Double lr=0.025, Double beta=0.9)
   return(Matrix[Double] Phi)
 {
   word_count = nrow(Graph)
@@ -60,10 +60,10 @@ m_deepWalk = function(Matrix[Double] Graph, Integer w, Integer d,
     vocab_shuffled = sample(word_count, word_count, FALSE)
     for (node_idx in 1:length(vocab_shuffled)) {
       random_walk = randomWalk(Graph, as.scalar(vocab_shuffled[node_idx]), t)
-      [Phi, Theta] = skipGram(Phi, Theta, T, random_walk, w, alpha)
+      [Phi, Theta] = skipGram(Phi, Theta, T, random_walk, w, lr)
     }
     # decreasing learning rate
-    alpha = alpha * beta
+    lr = lr * beta
   }
 }
 
@@ -93,7 +93,7 @@ randomWalk = function(Matrix[Double] Graph, Integer start_vertex, Integer walk_l
 }
 
 skipGram = function(Matrix[double] Phi, Matrix[double] Theta,
-  Matrix[double] Tree, Matrix[double] walk, Integer window_size, Double alpha)
+  Matrix[double] Tree, Matrix[double] walk, Integer window_size, Double lr)
   return(Matrix[double] Phi_new, Matrix[double] Theta_new)
 {
   Phi_new = Phi
@@ -110,21 +110,21 @@ skipGram = function(Matrix[double] Phi, Matrix[double] Theta,
       left_neighbors = walk[min_val:(w_i-1)]
       for (u_k in 1:nrow(left_neighbors)) {
         [Phi_new, Theta_new] = update(Phi_new, Theta_new,
-          Tree, tree_depth, as.scalar(left_neighbors[u_k]), as.scalar(walk[w_i]), alpha)
+          Tree, tree_depth, as.scalar(left_neighbors[u_k]), as.scalar(walk[w_i]), lr)
       }
     }
     if (w_i != nrow(walk)) {
       right_neighbors = walk[(w_i+1):max_val]
       for (u_k in 1:nrow(right_neighbors)) {
         [Phi_new, Theta_new] = update(Phi_new, Theta_new,
-          Tree, tree_depth, as.scalar(right_neighbors[u_k]), as.scalar(walk[w_i]), alpha)
+          Tree, tree_depth, as.scalar(right_neighbors[u_k]), as.scalar(walk[w_i]), lr)
       }
     }
   }
 }
 
 update = function(Matrix[double] Phi, Matrix[double] Theta,
-  Matrix[double] Tree, Integer tree_depth, Integer u, Integer v, Double alpha)
+  Matrix[double] Tree, Integer tree_depth, Integer u, Integer v, Double lr)
   return (Matrix[double] Phi_new, Matrix[double] Theta_new)
 {
   Phi_new = Phi
@@ -138,13 +138,13 @@ update = function(Matrix[double] Phi, Matrix[double] Theta,
   # compute negative gradient for Theta update
   neg_gradient = outer(gradients, Phi[v,], "*");
   for (i in 1:nrow(gradients))
-    Theta_new[as.scalar(path_to_u[i])] = Theta_new[as.scalar(path_to_u[i])] + alpha * neg_gradient[i]
+    Theta_new[as.scalar(path_to_u[i])] = Theta_new[as.scalar(path_to_u[i])] + lr * neg_gradient[i]
 
   # compute negative gradient for Phi update
   P = table(seq(1,tree_depth), path_to_u[1:tree_depth], tree_depth, nrow(Theta));
   target_theta = P %*% Theta;
   neg_gradient = t(gradients) %*% target_theta
-  Phi_new[v] = Phi_new[v] + alpha * neg_gradient
+  Phi_new[v] = Phi_new[v] + lr * neg_gradient
 }
 
 computeGradients = function(Integer u, Integer v, Matrix[double] Theta,

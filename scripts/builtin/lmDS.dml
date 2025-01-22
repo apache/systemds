@@ -23,25 +23,24 @@
 #
 # INPUT:
 # --------------------------------------------------------------------------------------
-# X        Matrix of feature vectors.
-# y        1-column matrix of response values.
-# icpt     Intercept presence, shifting and rescaling the columns of X
-# reg      Regularization constant (lambda) for L2-regularization. set to nonzero
-#          for highly dependant/sparse/numerous features
-# tol      Tolerance (epsilon) conjugate gradient procedure terminates early if L2
-#          norm of the beta-residual is less than tolerance * its initial norm
-# maxi     Maximum number of conjugate gradient iterations. 0 = no maximum
-# verbose  If TRUE print messages are activated
+# X          Matrix of feature vectors.
+# y          1-column matrix of response values.
+# intercept  Intercept presence, shifting and rescaling the columns of X
+# reg        Regularization constant (lambda) for L2-regularization. set to nonzero
+#            for highly dependant/sparse/numerous features
+# tol        Tolerance (epsilon) conjugate gradient procedure terminates early if L2
+#            norm of the beta-residual is less than tolerance * its initial norm
+# verbose    If TRUE print messages are activated
 # --------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # ---------------------------------------------------------------
-# B     The model fit beta that can be used as input in lmPredict
+# B          The model fit beta that can be used as input in lmPredict
 # ---------------------------------------------------------------
 
-m_lmDS = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
+m_lmDS = function(Matrix[Double] X, Matrix[Double] y, Integer intercept = 0,
     Double reg = 1e-7, Boolean verbose = TRUE) return (Matrix[Double] B) {
-  intercept_status = icpt
+  intercept_status = intercept
   regularization = reg
 
   n = nrow(X)

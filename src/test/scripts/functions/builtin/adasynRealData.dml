@@ -44,7 +44,7 @@ if( upsample ) {
   [Xtrain,Ytrain] = adasyn(X=Xtrain, Y=Ytrain, k=$4, seed=7);
 }
 
-B = multiLogReg(X=Xtrain, Y=Ytrain, icpt=2);
+B = multiLogReg(X=Xtrain, Y=Ytrain, intercept=2);
 [P,yhat,acc] = multiLogRegPredict(X=Xtest, Y=Ytest, B=B);
 print("accuracy: "+acc)
 

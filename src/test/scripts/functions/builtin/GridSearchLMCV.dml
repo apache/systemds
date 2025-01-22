@@ -22,7 +22,7 @@
 l2norm = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) 
   return (Matrix[Double] loss)
 {
-  yhat = lmPredict(X=X, B=B, ytest=y)
+  yhat = lmPredict(X=X, B=B, Ytest=y)
   loss = as.matrix(sum((y - yhat)^2));
 }
 
@@ -35,7 +35,7 @@ ytrain = y[1:N,];
 Xtest = X[(N+1):nrow(X),];
 ytest = y[(N+1):nrow(X),];
 
-params = list("icpt","reg", "tol", "maxi");
+params = list("intercept","reg", "tol", "maxIter");
 # paramRanges = list(seq(0,1,2),10^seq(0,-4), 10^seq(-6,-12), 10^seq(1,3));
 paramRanges = list(seq(0,1),10^seq(0,0), 10^seq(-6,-6), 10^seq(1,2));
 [B1, opt] = gridSearch(X=Xtrain, y=ytrain, train="lm", predict="l2norm",

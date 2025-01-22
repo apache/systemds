@@ -29,9 +29,9 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def gmmPredict(X: Matrix,
-               weight: Matrix,
-               mu: Matrix,
-               precisions_cholesky: Matrix,
+               W: Matrix,
+               Mu: Matrix,
+               Precisions: Matrix,
                **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
      Prediction function for a Gaussian Mixture Model (gmm).
@@ -40,11 +40,11 @@ def gmmPredict(X: Matrix,
     
     
     :param X: Dataset input to predict the labels from
-    :param weight: Weight of learned model:
+    :param W: Weights of learned model:
         A matrix whose [i,k]th entry is the probability
         that observation i in the test data belongs to the kth class
-    :param mu: Fitted clusters mean
-    :param precisions_cholesky: Fitted precision matrix for each mixture
+    :param Mu: Fitted clusters mean
+    :param Precisions: Fitted precision cholesky matrix for each mixture
     :param model: "VVV": unequal variance (full),each component has its own general covariance matrix
         "EEE": equal variance (tied), all components share the same general covariance matrix
         "VVI": spherical, unequal volume (diag), each component has its own diagonal
@@ -54,7 +54,7 @@ def gmmPredict(X: Matrix,
     :return: Probability of the predictions given the X input dataset
     """
 
-    params_dict = {'X': X, 'weight': weight, 'mu': mu, 'precisions_cholesky': precisions_cholesky}
+    params_dict = {'X': X, 'W': W, 'Mu': Mu, 'Precisions': Precisions}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')

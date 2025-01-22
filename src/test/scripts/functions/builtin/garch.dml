@@ -21,7 +21,7 @@
 
 X = read($X)
 
-[fitted_X, fitted_var_hist, a0, arch_coef, var_coef] = garch(X=X, kmax=$kmax, momentum=$momentum, start_stepsize=$start_stepsize, end_stepsize=$end_stepsize, start_vicinity=$start_vicinity, end_vicinity=$end_vicinity, sim_seed=54321, verbose=FALSE)
+[fitted_X, fitted_var_hist, a0, arch_coef, var_coef] = garch(X=X, iter=$kmax, momentum=$momentum, startStepsize=$start_stepsize, endStepsize=$end_stepsize, startVicinity=$start_vicinity, endVicinity=$end_vicinity, seed=54321, verbose=FALSE)
 mean_residual_error = matrix(sum(fitted_X - X) / nrow(fitted_X), rows=1, cols=1)
 
 write(mean_residual_error, $model)

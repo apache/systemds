@@ -35,7 +35,7 @@
 # D               seasonal differencing order
 # Q               seasonal MA order
 # s               period in terms of number of time-steps
-# include_mean    If the mean should be included
+# includeMean    If the mean should be included
 # solver          solver, is either "cg" or "jacobi"
 # -------------------------------------------------------------------------------------------
 #
@@ -45,7 +45,7 @@
 # -------------------------------------------------------------------------------------------------
 
 m_outlierByArima = function(Matrix[Double] X, Double k = 3, Integer repairMethod = 1, Integer p=0, Integer d=0,
-  Integer q=0, Integer P=0, Integer D=0, Integer Q=0, Integer s=1, Boolean include_mean=FALSE, String solver="jacobi")
+  Integer q=0, Integer P=0, Integer D=0, Integer Q=0, Integer s=1, Boolean includeMean=FALSE, String solver="jacobi")
   return(Matrix[Double] X_corrected)
 {
   outlierFilter = as.matrix(0)
@@ -58,7 +58,7 @@ m_outlierByArima = function(Matrix[Double] X, Double k = 3, Integer repairMethod
 
   # TODO replace by ARIMA once fully supported, LM only emulated the AR part
   model = lm(X=features, y=X_adapted)
-  y_hat = lmPredict(X=features, B=model, ytest=matrix(0,1,1))
+  y_hat = lmPredict(X=features, B=model, Ytest=matrix(0,1,1))
 
   upperBound = sd(X) + k * y_hat
   lowerBound = sd(X) - k * y_hat

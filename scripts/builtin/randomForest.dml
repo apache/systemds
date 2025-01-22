@@ -41,7 +41,7 @@
 #    [4, 5, 1, 7, 0, 2, 0, 2, 0, 1, 0, 0, 0, 0]]  (2nd tree)
 #    |(L1)| |  (L2)   | |        (L3)         |
 #
-#   With feature sampling (feature_frac < 1), each tree is
+#   With feature sampling (featureFrac < 1), each tree is
 #   prefixed by a one-hot vector of sampled features
 #   (e.g., [1,1,1,0] if we sampled a,b,c of the four features)
 #
@@ -52,16 +52,16 @@
 # y               Label matrix in recoded/binned representation
 # ctypes          Row-Vector of column types [1 scale/ordinal, 2 categorical]
 #                 of shape 1-by-(ncol(X)+1), where the last entry is the y type
-# num_trees       Number of trees to be learned in the random forest model
-# sample_frac     Sample fraction of examples for each tree in the forest
-# feature_frac    Sample fraction of features for each tree in the forest
-# max_depth       Maximum depth of the learned tree (stopping criterion)
-# min_leaf        Minimum number of samples in leaf nodes (stopping criterion)
-# min_split       Minimum number of samples in leaf for attempting a split
-# max_features    Parameter controlling the number of features used as split
-#                 candidates at tree nodes: m = ceil(num_features^max_features)
-# max_values      Parameter controlling the number of values per feature used
-#                 as split candidates: nb = ceil(num_values^max_values)
+# numTrees        Number of trees to be learned in the random forest model
+# sampleFrac      Sample fraction of examples for each tree in the forest
+# featureFrac     Sample fraction of features for each tree in the forest
+# maxDepth        Maximum depth of the learned tree (stopping criterion)
+# minLeaf         Minimum number of samples in leaf nodes (stopping criterion)
+# minSplit        Minimum number of samples in leaf for attempting a split
+# maxFeatures     Parameter controlling the number of features used as split
+#                 candidates at tree nodes: m = ceil(numFeatures^maxFeatures)
+# maxValues       Parameter controlling the number of values per feature used
+#                 as split candidates: nb = ceil(num_values^maxValues)
 # impurity        Impurity measure: entropy, gini (default), rss (regression)
 # seed            Fixed seed for randomization of samples and split candidates
 # verbose         Flag indicating verbose debug output
@@ -73,9 +73,9 @@
 # ------------------------------------------------------------------------------
 
 m_randomForest = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] ctypes,
-    Int num_trees = 16, Double sample_frac = 0.1, Double feature_frac = 1.0,
-    Int max_depth = 10, Int min_leaf = 20, Int min_split = 50,
-    Double max_features = 0.5, Double max_values = 1.0,
+    Int numTrees = 16, Double sampleFrac = 0.1, Double featureFrac = 1.0,
+    Int maxDepth = 10, Int minLeaf = 20, Int minSplit = 50,
+    Double maxFeatures = 0.5, Double maxValues = 1.0,
     String impurity = "gini", Int seed = -1, Boolean verbose = FALSE)
   return(Matrix[Double] M)
 {
@@ -83,8 +83,8 @@ m_randomForest = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
 
   # validation and initialization of reproducible seeds
   if(verbose) {
-    print("randomForest: initialize with num_trees=" + num_trees + ", sample_frac=" + sample_frac
-      + ", feature_frac=" + feature_frac + ", impurity=" + impurity + ", seed=" + seed + ".");
+    print("randomForest: initialize with numTrees=" + numTrees + ", sampleFrac=" + sampleFrac
+      + ", featureFrac=" + featureFrac + ", impurity=" + impurity + ", seed=" + seed + ".");
   }
   if(ncol(ctypes) != ncol(X)+1)
     stop("randomForest: inconsistent num features (incl. label) and col types: "+ncol(X)+" vs "+ncol(ctypes)+".");
@@ -96,20 +96,20 @@ m_randomForest = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
     stop("randomForest: y contains only one class label.");
 
   lseed = as.integer(ifelse(seed!=-1, seed, as.scalar(rand(rows=1,cols=1,min=0, max=1e9))));
-  randSeeds = rand(rows = 3 * num_trees, cols = 1, seed=lseed, min=0, max=1e9);
+  randSeeds = rand(rows = 3 * numTrees, cols = 1, seed=lseed, min=0, max=1e9);
 
   # training of num_tree decision trees
-  M = matrix(0, rows=num_trees, cols=2*(2^max_depth-1));
-  F = matrix(1, rows=num_trees, cols=ncol(X));
-  parfor(i in 1:num_trees) {
+  M = matrix(0, rows=numTrees, cols=2*(2^maxDepth-1));
+  F = matrix(1, rows=numTrees, cols=ncol(X));
+  parfor(i in 1:numTrees) {
     if( verbose )
-      print("randomForest: start training tree "+i+"/"+num_trees+".");
+      print("randomForest: start training tree "+i+"/"+numTrees+".");
 
     # step 1: sample data
     Xi = X; yi = y;
-    if( sample_frac < 1.0 ) {
+    if( sampleFrac < 1.0 ) {
       si1 = as.integer(as.scalar(randSeeds[3*(i-1)+1,1]));
-      I1 = rand(rows=nrow(X), cols=1, seed=si1) <= sample_frac;
+      I1 = rand(rows=nrow(X), cols=1, seed=si1) <= sampleFrac;
       if( sum(I1) <= 1 ) # min 2 tuples
         I1[1:2,] = matrix(1,2,1);
       Xi = removeEmpty(target=X, margin="rows", select=I1);
@@ -117,9 +117,9 @@ m_randomForest = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
     }
 
     # step 2: sample features
-    if( feature_frac < 1.0 ) {
+    if( featureFrac < 1.0 ) {
       si2 = as.integer(as.scalar(randSeeds[3*(i-1)+2,1]));
-      I2 = rand(rows=ncol(X), cols=1, seed=si2) <= feature_frac;
+      I2 = rand(rows=ncol(X), cols=1, seed=si2) <= featureFrac;
       Xi = removeEmpty(target=Xi, margin="cols", select=I2);
       F[i,] = t(I2);
     }
@@ -130,8 +130,8 @@ m_randomForest = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
     # step 3: train decision tree
     t2 = time();
     si3 = as.integer(as.scalar(randSeeds[3*(i-1)+3,1]));
-    Mtemp = decisionTree(X=Xi, y=yi, ctypes=ctypes, max_depth=max_depth, min_split=min_split,
-      min_leaf=min_leaf, max_features=max_features, max_values=max_values,
+    Mtemp = decisionTree(X=Xi, y=yi, ctypes=ctypes, maxDepth=maxDepth, minSplit=minSplit,
+      minLeaf=minLeaf, maxFeatures=maxFeatures, maxValues=maxValues,
       impurity=impurity, seed=si3, verbose=verbose);
     M[i,1:length(Mtemp)] = matrix(Mtemp, rows=1, cols=length(Mtemp));
     if( verbose )
@@ -140,6 +140,6 @@ m_randomForest = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
   M = cbind(F, M);
 
   if(verbose) {
-    print("randomForest: trained ensemble with num_trees="+num_trees+" in "+(time()-t1)/1e9+" seconds.");
+    print("randomForest: trained ensemble with numTrees="+numTrees+" in "+(time()-t1)/1e9+" seconds.");
   }
 }

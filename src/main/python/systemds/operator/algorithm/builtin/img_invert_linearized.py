@@ -28,19 +28,19 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
-def img_invert_linearized(img_in: Matrix,
-                          max_value: float):
+def img_invert_linearized(img: Matrix,
+                          maxValue: float):
     """
      This is an image data augmentation function. It inverts an image.It can handle one or multiple images 
     
     
     
-    :param img_in: Input matrix/image (every row of the matrix represents a linearized image)
-    :param max_value: The maximum value pixels can have
+    :param img: Input matrix/image (every row of the matrix represents a linearized image)
+    :param maxValue: The maximum value pixels can have
     :return: Output images (every row of the matrix represents a linearized image)
     """
 
-    params_dict = {'img_in': img_in, 'max_value': max_value}
-    return Matrix(img_in.sds_context,
+    params_dict = {'img': img, 'maxValue': maxValue}
+    return Matrix(img.sds_context,
         'img_invert_linearized',
         named_input_nodes=params_dict)

@@ -26,25 +26,25 @@
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------
-# X        Location to read the matrix of feature vectors
-# Y        Location to read the matrix with category labels
-# icpt     Intercept presence, shifting and rescaling X columns: 0 = no intercept,
-#          no shifting, no rescaling; 1 = add intercept, but neither shift nor
-#          rescale X; 2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
-# tol      tolerance ("epsilon")
-# reg      regularization parameter (lambda = 1/C); intercept is not regularized
-# maxi     max. number of outer (Newton) iterations
-# maxii    max. number of inner (conjugate gradient) iterations, 0 = no max
-# verbose  flag specifying if logging information should be printed
+# X             Location to read the matrix of feature vectors
+# Y             Location to read the matrix with category labels
+# intercept     Intercept presence, shifting and rescaling X columns: 0 = no intercept,
+#               no shifting, no rescaling; 1 = add intercept, but neither shift nor
+#               rescale X; 2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
+# tol           tolerance ("epsilon")
+# reg           regularization parameter (lambda = 1/C); intercept is not regularized
+# maxIter       max. number of outer (Newton) iterations
+# maxInnerIter  max. number of inner (conjugate gradient) iterations, 0 = no max
+# verbose       flag specifying if logging information should be printed
 # ---------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # --------------------------------------------------------------------------------------
-# betas  regression betas as output for prediction
+# betas         regression betas as output for prediction
 # --------------------------------------------------------------------------------------
 
-m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2, 
-  Double tol=1e-6, Double reg=1.0, Int maxi=100, Int maxii=20, Boolean verbose=TRUE)
+m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int intercept = 2,
+  Double tol=1e-6, Double reg=1.0, Int maxIter=100, Int maxInnerIter=20, Boolean verbose=TRUE)
   return(Matrix[Double] betas)
 {
   eta0 = 0.0001;
@@ -67,7 +67,7 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2,
   }
 
   # Introduce the intercept, shift and rescale the columns of X if needed
-  if (icpt == 1 | icpt == 2) { # add the intercept column
+  if (intercept == 1 | intercept == 2) { # add the intercept column
     if(N == nrow(X))
       N = nrow(X)
     X = cbind (X, matrix (1, N, 1));
@@ -75,10 +75,10 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2,
   }
 
   scale_lambda = matrix (1, D, 1);
-  if (icpt == 1 | icpt == 2)
+  if (intercept == 1 | intercept == 2)
     scale_lambda [D, 1] = 0;
 
-  if (icpt == 2)  # scale-&-shift X columns to mean 0, variance 1
+  if (intercept == 2)  # scale-&-shift X columns to mean 0, variance 1
   {                           # Important assumption: X [, D] = matrix (1, N, 1)
     avg_X_cols = t(colSums(X)) / N;
     var_X_cols = (t(colSums (X ^ 2)) - N * (avg_X_cols ^ 2)) / (N - 1);
@@ -126,20 +126,20 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2,
   obj = N * log (K + 1);  ### obj = - sum (Y * LT) + sum (log (rowSums (exp_LT))) + 0.5 * sum (lambda * (B_new ^ 2));
 
   Grad = t(X) %*% (P [, 1:K] - Y [, 1:K]);
-  if (icpt == 2)
+  if (intercept == 2)
     Grad = diag (scale_X) %*% Grad + shift_X %*% Grad [D, ];
   
   Grad = Grad + lambda * B;
   norm_Grad = sqrt (sum (Grad ^ 2));
   norm_Grad_initial = norm_Grad;
 
-  if (maxii == 0) 
-    maxii = D * K;
+  if (maxInnerIter == 0)
+    maxInnerIter = D * K;
 
   iter = 1;
 
   # boolean for convergence check
-  converge = (norm_Grad < tol) | (iter > maxi);
+  converge = (norm_Grad < tol) | (iter > maxIter);
   if(verbose)
     print ("-- Initially:  Objective = " + obj + ",  Gradient Norm = " + norm_Grad + ",  Trust Delta = " + delta);
 
@@ -158,7 +158,7 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2,
     P_1K = P [, 1:K]
     while (! innerconverge)
     {
-      if (icpt == 2) {
+      if (intercept == 2) {
         ssX_V = diag (scale_X) %*% V;
         ssX_V [D, ] = ssX_V [D, ] + t(shift_X) %*% V;
       } 
@@ -168,7 +168,7 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2,
       Q = P_1K * (X %*% ssX_V);
       HV = t(X) %*% (Q - P_1K * (rowSums (Q) %*% matrix (1, 1, K)));
 
-      if (icpt == 2)
+      if (intercept == 2)
         HV = diag (scale_X) %*% HV + shift_X %*% HV [D, ];
 
       HV = HV + lambda * V;
@@ -198,14 +198,14 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2,
         innerconverge = TRUE;
       }
       inneriter = inneriter + 1;
-      innerconverge = innerconverge | (inneriter > maxii);
+      innerconverge = innerconverge | (inneriter > maxInnerIter);
     }
     # END TRUST REGION SUB-PROBLEM
     # compute rho, update B, obtain delta
     gs = sum (S * Grad);
     qk = - 0.5 * (gs - sum (S * R));
     B_new = B + S;
-    if (icpt == 2) {
+    if (intercept == 2) {
       ssX_B_new = diag (scale_X) %*% B_new;
       ssX_B_new [D, ] = ssX_B_new [D, ] + t(shift_X) %*% B_new;
     } 
@@ -255,7 +255,7 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2,
       B = B_new;
       P = P_new;
       Grad = t(X) %*% (P [, 1:K] - Y [, 1:K]);
-      if (icpt == 2)
+      if (intercept == 2)
         Grad = diag (scale_X) %*% Grad + shift_X %*% Grad [D, ];
 
       Grad = Grad + lambda * B;
@@ -267,13 +267,13 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2,
             + snorm + ",  Gradient Norm = " + norm_Grad);
     }
     iter = iter + 1;
-    converge = ((norm_Grad < (tol * norm_Grad_initial)) | (iter > maxi) |
+    converge = ((norm_Grad < (tol * norm_Grad_initial)) | (iter > maxIter) |
       ((is_trust_boundary_reached == 0) & (abs (actred) < (abs (obj) + abs (obj_new)) * 1e-14)));
     if (verbose & converge) 
       print ("Termination / Convergence condition satisfied.");
   }
 
-  if (icpt == 2) {
+  if (intercept == 2) {
     betas = diag (scale_X) %*% B;
     betas[D,] = betas[D,] + t(shift_X) %*% B;
   }

@@ -23,6 +23,6 @@ m = ifdef($m, 10000);
 n = ifdef($n, 10);
 X = rand(rows=m, cols=n);
 Y = X %*% rand(rows=n, cols=1);
-w = lm(X=X, y=Y, icpt=2, tol=1e-8, reg=0.1, maxi=20);
+w = lm(X=X, y=Y, intercept=2, tol=1e-8, reg=0.1, maxIter=20);
 print(sum(w));
 

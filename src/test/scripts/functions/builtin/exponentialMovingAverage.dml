@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 X = read($F, data_type="frame", format="csv", header=FALSE)
-Z = ema(X=X, search_iterations=$search_iterations, mode=$mode, freq=$freq, alpha=$alpha, 
+Z = ema(X=X, iter=$search_iterations, mode=$mode, freq=$freq, alpha=$alpha,
   beta=$beta, gamma=$gamma)
 
 write(Z, $O, format = "csv")

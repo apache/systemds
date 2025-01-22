@@ -46,12 +46,12 @@ X = scale(X=X, center=TRUE, scale=TRUE);
 # train regression model with different hyperparameters
 for (i in 1:10) {
   reg = 1e-3 + (0 * 0.001);
-  B = lm(X=Xtrain, y=ytrain, icpt=1, reg=reg, tol=1e-9, verbose=TRUE);
+  B = lm(X=Xtrain, y=ytrain, intercept=1, reg=reg, tol=1e-9, verbose=TRUE);
   # TODO: find the best beta
 }
 
 # model evaluation on test split
-yhat = lmPredict(X=Xtest, B=B, icpt=1, ytest=ytest, verbose=TRUE);
+yhat = lmPredict(X=Xtest, B=B, intercept=1, Ytest=ytest, verbose=TRUE);
 
 # write trained model and meta data
 write(B, $out)

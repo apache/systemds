@@ -29,7 +29,7 @@
 # tol      target convergence tolerance
 # M        history length
 # tau      regularization component
-# maxi     maximum number of iterations until convergence
+# maxIter  maximum number of iterations until convergence
 # verbose  if the builtin should be verbose
 # -----------------------------------------------------------------------------------
 #
@@ -39,7 +39,7 @@
 # --------------------------------------------------------------------------------
 
 m_lasso = function(Matrix[Double] X, Matrix[Double] y, Double tol = 1e-15, 
-  Integer M = 5, Double tau = 1, Integer maxi = 100, Boolean verbose = TRUE)
+  Integer M = 5, Double tau = 1, Integer maxIter = 100, Boolean verbose = TRUE)
   return(Matrix[Double] w)
 {
   n = nrow(X)
@@ -68,7 +68,7 @@ m_lasso = function(Matrix[Double] X, Matrix[Double] y, Double tol = 1e-15,
   inactive_set = matrix(1, rows=m, cols=1)
   iter = 0
   continue = TRUE
-  while(iter < maxi & continue) {
+  while(iter < maxIter & continue) {
     dw = matrix(0, rows=m, cols=1)
     dg = matrix(0, rows=m, cols=1)
     relChangeObj = -1.0

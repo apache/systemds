@@ -26,32 +26,32 @@
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------------
-# X      1-column matrix of x values knots. It is assumed that x values are
-#        monotonically increasing and there is no duplicates points in X
-# Y      1-column matrix of corresponding y values knots
-# inp_x  the given input x, for which the cspline will find predicted y
-# mode   Specifies the method for cspline (DS - Direct Solve, CG - Conjugate Gradient)
-# tol    Tolerance (epsilon); conjugate graduent procedure terminates early if
-#        L2 norm of the beta-residual is less than tolerance * its initial norm
-# maxi   Maximum number of conjugate gradient iterations, 0 = no maximum
+# X        1-column matrix of x values knots. It is assumed that x values are
+#          monotonically increasing and there is no duplicates points in X
+# Y        1-column matrix of corresponding y values knots
+# xPred    the given input x, for which the cspline will find predicted y
+# mode     Specifies the method for cspline (DS - Direct Solve, CG - Conjugate Gradient)
+# tol      Tolerance (epsilon); conjugate graduent procedure terminates early if
+#          L2 norm of the beta-residual is less than tolerance * its initial norm
+# maxIter  Maximum number of conjugate gradient iterations, 0 = no maximum
 # ---------------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # ---------------------------------------------------------------------------------------------------
-# pred_Y  Predicted value
-# K       Matrix of k parameters
+# pred_Y   Predicted value
+# K        Matrix of k parameters
 # ---------------------------------------------------------------------------------------------------
 
-m_cspline = function(Matrix[Double] X, Matrix[Double] Y, Double inp_x, 
-String mode = "DS", Double tol = -1.0, Integer maxi = -1)
+m_cspline = function(Matrix[Double] X, Matrix[Double] Y, Double xPred,
+String mode = "DS", Double tol = -1.0, Integer maxIter = -1)
   return (Matrix[Double] pred_Y, Matrix[Double] K)
 {
-  if( mode == "CG" & maxi != -1 & tol != -1.0)
+  if( mode == "CG" & maxIter != -1 & tol != -1.0)
   {
-    [pred_Y, K] = csplineCG(X=X, Y=Y, inp_x=inp_x, tol=tol, maxi=maxi);
+    [pred_Y, K] = csplineCG(X=X, Y=Y, xPred=xPred, tol=tol, maxIter=maxIter);
   }
   else 
   {    
-    [pred_Y, K] = csplineDS(X=X, Y=Y, inp_x=inp_x);
+    [pred_Y, K] = csplineDS(X=X, Y=Y, xPred=xPred);
   }
 }

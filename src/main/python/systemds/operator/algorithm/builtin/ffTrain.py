@@ -30,8 +30,8 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def ffTrain(X: Matrix,
             Y: Matrix,
-            out_activation: str,
-            loss_fcn: str,
+            outActivation: str,
+            lossFn: str,
             **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
      This builtin function trains simple feed-forward neural network. The architecture of the
@@ -42,21 +42,21 @@ def ffTrain(X: Matrix,
     
     :param X: Training data
     :param Y: Labels/Target values
-    :param batch_size: Batch size
+    :param batchSize: Batch size
     :param epochs: Number of epochs
-    :param learning_rate: Learning rate
-    :param out_activation: User specified output activation function. Possible values:
+    :param lr: Learning rate
+    :param outActivation: User specified output activation function. Possible values:
         "sigmoid", "relu", "lrelu", "tanh", "softmax", "logits" (no activation).
-    :param loss_fcn: User specified loss function. Possible values:
+    :param lossFn: User specified loss function. Possible values:
         "l1", "l2", "log_loss", "logcosh_loss", "cel" (cross-entropy loss).
     :param shuffle: Flag which indicates if dataset should be shuffled or not
-    :param validation_split: Fraction of training set used as validation set
+    :param validationSplit: Fraction of training set used as validation set
     :param seed: Seed for model initialization
     :param verbose: Flag which indicates if function should print to stdout
     :return: Trained model which can be used in ffPredict
     """
 
-    params_dict = {'X': X, 'Y': Y, 'out_activation': out_activation, 'loss_fcn': loss_fcn}
+    params_dict = {'X': X, 'Y': Y, 'outActivation': outActivation, 'lossFn': lossFn}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,
         'ffTrain',

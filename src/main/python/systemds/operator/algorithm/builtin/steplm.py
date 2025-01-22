@@ -39,12 +39,12 @@ def steplm(X: Matrix,
     
      .. code-block:: 
     
-       return: Matrix of regression parameters (the betas) and its size depend on icpt input value:
-               OUTPUT SIZE:   OUTPUT CONTENTS:                HOW TO PREDICT Y FROM X AND B:
-       icpt=0: ncol(X)   x 1  Betas for X only                Y ~ X %*% B[1:ncol(X), 1], or just X %*% B
-       icpt=1: ncol(X)+1 x 1  Betas for X and intercept       Y ~ X %*% B[1:ncol(X), 1] + B[ncol(X)+1, 1]
-       icpt=2: ncol(X)+1 x 2  Col.1: betas for X & intercept  Y ~ X %*% B[1:ncol(X), 1] + B[ncol(X)+1, 1]
-                              Col.2: betas for shifted/rescaled X and intercept
+       return: Matrix of regression parameters (the betas) and its size depend on intercept input value:
+                    OUTPUT SIZE:   OUTPUT CONTENTS:                HOW TO PREDICT Y FROM X AND B:
+       intercept=0: ncol(X)   x 1  Betas for X only                Y ~ X %*% B[1:ncol(X), 1], or just X %*% B
+       intercept=1: ncol(X)+1 x 1  Betas for X and intercept       Y ~ X %*% B[1:ncol(X), 1] + B[ncol(X)+1, 1]
+       intercept=2: ncol(X)+1 x 2  Col.1: betas for X & intercept  Y ~ X %*% B[1:ncol(X), 1] + B[ncol(X)+1, 1]
+                                   Col.2: betas for shifted/rescaled X and intercept
     
      In addition, in the last run of linear regression some statistics are provided in CSV format, one comma-separated
      name-value pair per each line, as follows:
@@ -53,15 +53,15 @@ def steplm(X: Matrix,
     
     :param X: Matrix X of feature vectors
     :param Y: Single-column Matrix Y of response values
-    :param icpt: Intercept presence, shifting and rescaling the columns of X:
+    :param intercept: Intercept presence, shifting and rescaling the columns of X:
         0 = no intercept, no shifting, no rescaling;
         1 = add intercept, but neither shift nor rescale X;
         2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
     :param reg: Regularization parameter, 0 for no penalty
     :param tol: Tolerance threshold to train until achieved
-    :param maxi: Maximum iterations 0 means until tolerance is reached
+    :param maxIter: Maximum iterations 0 means until tolerance is reached
     :param verbose: Indicator for verbose debug output
-    :return: Matrix of regression parameters (the betas) and its size depend on icpt input value.
+    :return: Matrix of regression parameters (the betas) and its size depend on intercept input value.
     :return: Matrix of selected features ordered as computed by the algorithm.
     """
 

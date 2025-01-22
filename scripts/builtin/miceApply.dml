@@ -28,7 +28,7 @@
 # INPUT:
 # --------------------------------------------------------------------------------------
 # X          Data Matrix (Recoded Matrix for categorical features)
-# mtea       A meta matrix with each rows storing values 1) mask of original matrix, 
+# meta       A meta matrix with each rows storing values 1) mask of original matrix,
 #              2) information of columns with missing values on  original data 0 for no missing value in column and 1 otherwise
 #              3) dist values in each columns in original data 1 for continuous columns and colMax for categorical
 # threshold  confidence value [0, 1] for robust imputation, values will only be imputed
@@ -105,7 +105,7 @@ m_miceApply = function(Matrix[Double] X, Matrix[Double] meta, Double threshold, 
       test_Y = slice2a[,in_c]
       beta = as.matrix(betaList[in_c])
       # learn a regression line
-      pred = lmPredict(X=test_X, B=beta, ytest= matrix(0,1,1), icpt=1, verbose = FALSE)
+      pred = lmPredict(X=test_X, B=beta, Ytest= matrix(0,1,1), intercept=1, verbose = FALSE)
       # imputing missing column values (assumes Mask_Filled being 0/1-matrix)
       R = removeEmpty(target=Mask_Filled[1:n, in_c] * seq(1,n), margin="rows");
       # TODO modify removeEmpty to return zero row and n columns

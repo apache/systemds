@@ -38,7 +38,7 @@ jspec1 = read("code/exp/adult_spec1.json", data_type="scalar", value_type="strin
 # model training
 y = X0[,ncol(X0)]
 X = X0[,2:(ncol(X0)-1)]
-B = multiLogReg(X=X, Y=y, icpt=2, verbose=TRUE)
+B = multiLogReg(X=X, Y=y, intercept=2, verbose=TRUE)
 
 # Predicting
 [m, pred, acc] = multiLogRegPredict(X=X, B=B, Y=y, verbose=TRUE)

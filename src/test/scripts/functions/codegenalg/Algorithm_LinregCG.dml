@@ -21,6 +21,6 @@
 
 X = read($X);
 Y = read($Y);
-w = lmCG(X=X, y=Y, icpt=$icpt, tol=$tol, reg=$reg, maxi=$maxi);
+w = lmCG(X=X, y=Y, intercept=$icpt, tol=$tol, reg=$reg, maxIter=$maxi);
 write(w, $B);
 

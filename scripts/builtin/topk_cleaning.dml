@@ -21,16 +21,52 @@
 
 # This function cleans top-K item (where K is given as input)for a given list of users.
 # metaData[3, ncol(X)] : metaData[1] stores mask, metaData[2] stores schema, metaData[3] stores FD mask
-
+#
+# INPUT:
+# ----------------------------------------------------------------------------------------
+# dataTrain         Frame[Unknown]
+# dataTest          Frame[Unknown]
+# metaData          Frame[Unknown]
+# primitives        Frame[Unknown]
+# parameters        Frame[Unknown]
+# refSol            Frame[Unknown]
+# evaluationFunc    String
+# evalFunHp         Matrix[Double]
+# topK              Integer
+# resourceVal       Integer
+# maxIter           Integer
+# lq                Double
+# uq                Double
+# sample            Double
+# expectedIncrease  Double
+# seed              Integer
+# cv                Boolean
+# cvk               Integer
+# isLastLabel       Boolean
+# rowCount          Integer
+# correctTypos      Boolean
+# enablePruning     Boolean
+# ----------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------
+# topKPipelines     ---
+# topKHyperParams   ---
+# topKScores        ---
+# dirtyScore        ---
+# evalFunHp         ---
+# applyFunc         ---
+# ----------------------------------------------------------------------------------------
 source("scripts/pipelines/scripts/utils.dml") as utils;
 source("scripts/pipelines/scripts/enumerateLogical.dml") as lg;
 source("scripts/builtin/bandit.dml") as bandit;
 
-f_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = as.frame("NULL"), Frame[Unknown] metaData = as.frame("NULL"), Frame[Unknown] primitives,
-  Frame[Unknown] parameters, Frame[String] refSol = as.frame("NaN"), String evaluationFunc, Matrix[Double] evalFunHp, Integer topK = 5, Integer resource_val = 20,
-  Integer max_iter = 10, Double lq = 0.1, Double uq=0.7, Double sample = 1.0, Double expectedIncrease=1.0, Integer seed = -1, Boolean cv=TRUE, Integer cvk = 2, 
-  Boolean isLastLabel = TRUE, Integer rowCount = 3700,
-  Boolean correctTypos=FALSE, Boolean enablePruning = FALSE)
+f_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = as.frame("NULL"),
+  Frame[Unknown] metaData = as.frame("NULL"), Frame[Unknown] primitives, Frame[Unknown] parameters,
+  Frame[String] refSol = as.frame("NaN"), String evaluationFunc, Matrix[Double] evalFunHp, Integer topK = 5,
+  Integer resourceVal = 20, Integer maxIter = 10, Double lq = 0.1, Double uq=0.7, Double sample = 1.0,
+  Double expectedIncrease=1.0, Integer seed = -1, Boolean cv=TRUE, Integer cvk = 2, Boolean isLastLabel = TRUE,
+  Integer rowCount = 3700, Boolean correctTypos=FALSE, Boolean enablePruning = FALSE)
   return (Frame[Unknown] topKPipelines, Matrix[Double] topKHyperParams, Matrix[Double] topKScores,
     Double dirtyScore, Matrix[Double] evalFunHp, Frame[Unknown] applyFunc)
 {
@@ -114,16 +150,16 @@ f_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   print("-- Cleaning - Enum Logical Pipelines: ");
   print("---- Data Dimension before Cleaning: "+ nrow(eXtrain) + ", " + ncol(eXtrain));
   [bestLogical, bestHp, con, refChanges, acc] = lg::enumerateLogical(X=eXtrain, y=eYtrain, Xtest=eXtest, ytest=eYtest,
-  initial_population=logical, refSol=refSol, seed = seed,  max_iter=max_iter, metaList = metaList,
+  initial_population=logical, refSol=refSol, seed = seed,  max_iter=maxIter, metaList = metaList,
   evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, primitives=primitives, param=parameters,
   dirtyScore = (dirtyScore + expectedIncrease), cv=cv, cvk=cvk, verbose=TRUE, ctx=ctx)
   t6 = time(); print("---- finalized in: "+(t6-t5)/1e9+"s");
   topKPipelines = as.frame("NULL"); topKHyperParams = matrix(0,0,0); topKScores = matrix(0,0,0); applyFunc = as.frame("NULL")
   # write(acc, output+"/acc.csv", format="csv")
   # stop("end of enumlp")
-  [topKPipelines, topKHyperParams, topKScores, applyFunc] = bandit(X_train=eXtrain, Y_train=eYtrain, X_test=eXtest, Y_test=eYtest,  metaList=metaList,
+  [topKPipelines, topKHyperParams, topKScores, applyFunc] = bandit(X=eXtrain, Y=eYtrain, Xtest=eXtest, Ytest=eYtest,  metaList=metaList,
     evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, lp=bestLogical, lpHp=bestHp, primitives=primitives, param=parameters, baseLineScore=dirtyScore,
-    k=topK, R=resource_val, cv=cv, cvk=cvk, ref=refChanges, seed=seed, enablePruning = enablePruning, verbose=TRUE);  
+    k=topK, R=resourceVal, cv=cv, cvk=cvk, ref=refChanges, seed=seed, enablePruning = enablePruning, verbose=TRUE);
   t7 = time(); print("-- Cleaning - Enum Physical Pipelines: "+(t7-t6)/1e9+"s");
 }
 

@@ -27,5 +27,5 @@ print("kmeans")
 
 [data, Centering, ScaleFactor] = scale(X, TRUE, TRUE)
 # terminates with result
-[Y_n, C_n] = kmeans(X=data, k=16, runs= 1, max_iter=as.integer($4), eps= 1e-17, seed= 13, is_verbose=TRUE)
+[Y_n, C_n] = kmeans(X=data, k=16, runs= 1, maxIter=as.integer($4), tol= 1e-17, seed= 13, verbose=TRUE)
 print(sum(Y_n))

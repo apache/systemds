@@ -28,12 +28,12 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
-def img_translate(img_in: Matrix,
-                  offset_x: float,
-                  offset_y: float,
-                  out_w: int,
-                  out_h: int,
-                  fill_value: float):
+def img_translate(img: Matrix,
+                  offsetX: float,
+                  offsetY: float,
+                  w: int,
+                  h: int,
+                  value: float):
     """
      The Image Translate function translates the image.
      Optionally resizes the image (without scaling).
@@ -41,16 +41,16 @@ def img_translate(img_in: Matrix,
     
     
     
-    :param img_in: Input image as 2D matrix with top left corner at [1, 1]
-    :param offset_x: The distance to move the image in x direction
-    :param offset_y: The distance to move the image in y direction
-    :param out_w: Width of the output image
-    :param out_h: Height of the output image
-    :param fill_value: The background of the image
+    :param img: Input image as 2D matrix with top left corner at [1, 1]
+    :param offsetX: The distance to move the image in x direction
+    :param offsetY: The distance to move the image in y direction
+    :param w: Width of the output image
+    :param h: Height of the output image
+    :param value: The background of the image
     :return: Output image as 2D matrix with top left corner at [1, 1]
     """
 
-    params_dict = {'img_in': img_in, 'offset_x': offset_x, 'offset_y': offset_y, 'out_w': out_w, 'out_h': out_h, 'fill_value': fill_value}
-    return Matrix(img_in.sds_context,
+    params_dict = {'img': img, 'offsetX': offsetX, 'offsetY': offsetY, 'w': w, 'h': h, 'value': value}
+    return Matrix(img.sds_context,
         'img_translate',
         named_input_nodes=params_dict)

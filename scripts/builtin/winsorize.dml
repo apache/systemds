@@ -35,14 +35,14 @@
 # -----------------------------------------------------------------------------------
 
 m_winsorize = function(Matrix[Double] X, Double ql = 0.05, Double qu = 0.95, Boolean verbose) 
-return (Matrix[Double] Y, Matrix[Double] qLower, Matrix[Double] qUpper) {
-  qLower = matrix(0, rows=1, cols=ncol(X))
-  qUpper = matrix(0, rows=1, cols=ncol(X))
+return (Matrix[Double] Y, Matrix[Double] QL, Matrix[Double] QU) {
+  QL = matrix(0, rows=1, cols=ncol(X))
+  QU = matrix(0, rows=1, cols=ncol(X))
   Xtemp = replace(target=X, pattern=NaN, replacement=0)
   parfor(i in 1:ncol(X), check=0) {
-    qLower[1,i] = quantile(Xtemp[,i], ql)
-    qUpper[1,i] = quantile(Xtemp[,i], qu)
+    QL[1,i] = quantile(Xtemp[,i], ql)
+    QU[1,i] = quantile(Xtemp[,i], qu)
   }
-  Y = winsorizeApply(X, qLower, qUpper)
+  Y = winsorizeApply(X, QL, QU)
 }
 

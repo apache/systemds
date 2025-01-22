@@ -24,7 +24,7 @@
 # INPUT:
 # ------------------------------------------------------------------------------------------
 # X           Matrix of feature vectors.
-# thresh      The threshold for to drop
+# threshold   The threshold for to drop
 # ------------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -32,10 +32,10 @@
 # Xp     Matrix of feature vectors with <= thresh variance.
 # -------------------------------------------------------------------------------------
 
-m_selectByVarThresh = function(Matrix[Double] X, Double thresh = 0)
+m_selectByVarThresh = function(Matrix[Double] X, Double threshold = 0)
   return (Matrix[Double] Xp, Matrix[Double] I)
 {
   # drop feature with <= thresh variance, by default drop constants
-  I = (colVars(X) > thresh);
+  I = (colVars(X) > threshold);
   Xp = removeEmpty(target=X, margin="cols", select=I);
 }

@@ -30,6 +30,6 @@ else {
     ranges=list(list(0, 0), list($rows / 2, $cols), list($rows / 2, 0), list($rows, $cols)))
 }
 
-model = msvm(X=X,  Y=Y, intercept = FALSE, epsilon = 1e-12, reg = 1, maxIterations = 100, verbose = FALSE)
+model = msvm(X=X,  Y=Y, intercept = FALSE, tol = 1e-12, reg = 1, maxIter = 100, verbose = FALSE)
 
 write(model, $out)

@@ -28,8 +28,8 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
-def sherlock(X_train: Matrix,
-             y_train: Matrix):
+def sherlock(X: Matrix,
+             Y: Matrix):
     """
      This function implements training phase of Sherlock: A Deep Learning Approach to Semantic Data Type Detection
     
@@ -42,8 +42,8 @@ def sherlock(X_train: Matrix,
     
     
     
-    :param X_train: matrix of feature vectors
-    :param y_train: matrix Y of class labels of semantic data type
+    :param X: matrix of feature vectors
+    :param Y: matrix Y of class labels of semantic data type
     :return: weights (parameters) matrices for character distributions
     :return: biases vectors for character distributions
     :return: weights (parameters) matrices for word embeddings
@@ -56,41 +56,41 @@ def sherlock(X_train: Matrix,
     :return: biases vectors for combining all trained features (final)
     """
 
-    params_dict = {'X_train': X_train, 'y_train': y_train}
+    params_dict = {'X': X, 'Y': Y}
     
-    vX_0 = Matrix(X_train.sds_context, '')
-    vX_1 = Matrix(X_train.sds_context, '')
-    vX_2 = Matrix(X_train.sds_context, '')
-    vX_3 = Matrix(X_train.sds_context, '')
-    vX_4 = Matrix(X_train.sds_context, '')
-    vX_5 = Matrix(X_train.sds_context, '')
-    vX_6 = Matrix(X_train.sds_context, '')
-    vX_7 = Matrix(X_train.sds_context, '')
-    vX_8 = Matrix(X_train.sds_context, '')
-    vX_9 = Matrix(X_train.sds_context, '')
-    vX_10 = Matrix(X_train.sds_context, '')
-    vX_11 = Matrix(X_train.sds_context, '')
-    vX_12 = Matrix(X_train.sds_context, '')
-    vX_13 = Matrix(X_train.sds_context, '')
-    vX_14 = Matrix(X_train.sds_context, '')
-    vX_15 = Matrix(X_train.sds_context, '')
-    vX_16 = Matrix(X_train.sds_context, '')
-    vX_17 = Matrix(X_train.sds_context, '')
-    vX_18 = Matrix(X_train.sds_context, '')
-    vX_19 = Matrix(X_train.sds_context, '')
-    vX_20 = Matrix(X_train.sds_context, '')
-    vX_21 = Matrix(X_train.sds_context, '')
-    vX_22 = Matrix(X_train.sds_context, '')
-    vX_23 = Matrix(X_train.sds_context, '')
-    vX_24 = Matrix(X_train.sds_context, '')
-    vX_25 = Matrix(X_train.sds_context, '')
-    vX_26 = Matrix(X_train.sds_context, '')
-    vX_27 = Matrix(X_train.sds_context, '')
-    vX_28 = Matrix(X_train.sds_context, '')
-    vX_29 = Matrix(X_train.sds_context, '')
+    vX_0 = Matrix(X.sds_context, '')
+    vX_1 = Matrix(X.sds_context, '')
+    vX_2 = Matrix(X.sds_context, '')
+    vX_3 = Matrix(X.sds_context, '')
+    vX_4 = Matrix(X.sds_context, '')
+    vX_5 = Matrix(X.sds_context, '')
+    vX_6 = Matrix(X.sds_context, '')
+    vX_7 = Matrix(X.sds_context, '')
+    vX_8 = Matrix(X.sds_context, '')
+    vX_9 = Matrix(X.sds_context, '')
+    vX_10 = Matrix(X.sds_context, '')
+    vX_11 = Matrix(X.sds_context, '')
+    vX_12 = Matrix(X.sds_context, '')
+    vX_13 = Matrix(X.sds_context, '')
+    vX_14 = Matrix(X.sds_context, '')
+    vX_15 = Matrix(X.sds_context, '')
+    vX_16 = Matrix(X.sds_context, '')
+    vX_17 = Matrix(X.sds_context, '')
+    vX_18 = Matrix(X.sds_context, '')
+    vX_19 = Matrix(X.sds_context, '')
+    vX_20 = Matrix(X.sds_context, '')
+    vX_21 = Matrix(X.sds_context, '')
+    vX_22 = Matrix(X.sds_context, '')
+    vX_23 = Matrix(X.sds_context, '')
+    vX_24 = Matrix(X.sds_context, '')
+    vX_25 = Matrix(X.sds_context, '')
+    vX_26 = Matrix(X.sds_context, '')
+    vX_27 = Matrix(X.sds_context, '')
+    vX_28 = Matrix(X.sds_context, '')
+    vX_29 = Matrix(X.sds_context, '')
     output_nodes = [vX_0, vX_1, vX_2, vX_3, vX_4, vX_5, vX_6, vX_7, vX_8, vX_9, vX_10, vX_11, vX_12, vX_13, vX_14, vX_15, vX_16, vX_17, vX_18, vX_19, vX_20, vX_21, vX_22, vX_23, vX_24, vX_25, vX_26, vX_27, vX_28, vX_29, ]
 
-    op = MultiReturn(X_train.sds_context, 'sherlock', output_nodes, named_input_nodes=params_dict)
+    op = MultiReturn(X.sds_context, 'sherlock', output_nodes, named_input_nodes=params_dict)
 
     vX_0._unnamed_input_nodes = [op]
     vX_1._unnamed_input_nodes = [op]

@@ -91,7 +91,7 @@ doErrorSample = function(Matrix[Double] eX, Matrix[Double] eY, Double lq, Double
     filterMask = matrix(1, rows=nrow(eY), cols=1)
   else {
     # # # prepare feature vector for NB
-    beta = multiLogReg(X=eX, Y=eY, icpt=1, reg=1e-3, tol=1e-6,  maxi=20, maxii=20, verbose=FALSE);
+    beta = multiLogReg(X=eX, Y=eY, intercept=1, reg=1e-3, tol=1e-6,  maxIter=20, maxInnerIter=20, verbose=FALSE);
     [trainProbs, yhat, accuracy] = multiLogRegPredict(eX, beta, eY, FALSE)
 
  

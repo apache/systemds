@@ -48,9 +48,9 @@ def als(X: Matrix,
         + 0.5 * reg * (sum (U ^ 2 * row_nonzeros)
         + sum (V ^ 2 * col_nonzeros))
     :param reg: Regularization parameter, no regularization if 0.0
-    :param maxi: Maximum number of iterations
+    :param maxIter: Maximum number of iterations
     :param check: Check for convergence after every iteration, i.e., updating U and V once
-    :param thr: Assuming check is set to TRUE, the algorithm stops and convergence is declared
+    :param threshold: Assuming check is set to TRUE, the algorithm stops and convergence is declared
         if the decrease in loss in any two consecutive iterations falls below this threshold;
         if check is FALSE thr is ignored
     :param seed: The seed to random parts of the algorithm

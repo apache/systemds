@@ -22,8 +22,8 @@
 X = read($1) # Training data
 y = read($2) # response values
 p = read($3) # random data to predict
-w = lmDS(X = X, y = y, icpt = 1, reg = 1e-12)
-p = lmPredict(X = X, B = w, ytest=matrix(0,1,1), icpt = 1)
+w = lmDS(X = X, y = y, intercept = 1, reg = 1e-12)
+p = lmPredict(X = X, B = w, Ytest=matrix(0,1,1), intercept = 1)
 p2 = glmPredict(X = X, B = w, dfam=1, link=1, vpow=0.0, lpow=1.0);
 
 if( sum(abs(p2-p) > 1e8) !=0 )

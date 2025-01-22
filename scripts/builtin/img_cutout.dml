@@ -23,12 +23,12 @@
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------------
-# img_in      Input image as 2D matrix with top left corner at [1, 1]
+# img         Input image as 2D matrix with top left corner at [1, 1]
 # x           Column index of the top left corner of the rectangle (starting at 1)
 # y           Row index of the top left corner of the rectangle (starting at 1)
-# width       Width of the rectangle (must be positive)
-# height      Height of the rectangle (must be positive)
-# fill_value  The value to set for the rectangle
+# w           Width of the rectangle (must be positive)
+# h           Height of the rectangle (must be positive)
+# value       The value to set for the rectangle
 # ---------------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -36,23 +36,23 @@
 # img_out  Output image as 2D matrix with top left corner at [1, 1]
 # ------------------------------------------------------------------------------------------
 
-m_img_cutout = function(Matrix[Double] img_in, Integer x, Integer y, Integer width, Integer height, Double fill_value) return (Matrix[Double] img_out) {
-  rows = nrow(img_in)
-  cols = ncol(img_in)
+m_img_cutout = function(Matrix[Double] img, Integer x, Integer y, Integer w, Integer h, Double value) return (Matrix[Double] img_out) {
+  rows = nrow(img)
+  cols = ncol(img)
 
-  if (width < 1 | height < 1) {
-    print("Invalid width or height. Returning input")
-    img_out = img_in
+  if (w < 1 | h < 1) {
+    print("Invalid w or h. Returning input")
+    img_out = img
   } else {
-    end_x = x + width - 1
-    end_y = y + height - 1
+    end_x = x + w - 1
+    end_y = y + h - 1
 
     start_x = max(1, x)
     start_y = max(1, y)
     end_x = min(cols, end_x)
     end_y = min(rows, end_y)
 
-    img_out = matrix(img_in, rows=rows, cols=cols)
-    img_out[start_y:end_y, start_x:end_x] = matrix(fill_value, rows=(end_y-start_y+1), cols=(end_x-start_x+1))
+    img_out = matrix(img, rows=rows, cols=cols)
+    img_out[start_y:end_y, start_x:end_x] = matrix(value, rows=(end_y-start_y+1), cols=(end_x-start_x+1))
   }
 }

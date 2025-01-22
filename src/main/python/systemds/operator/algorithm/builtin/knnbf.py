@@ -38,7 +38,7 @@ def knnbf(X: Matrix,
     
     :param X: ---
     :param T: ---
-    :param k_value: ---
+    :param k: ---
     :return: ---
     """
 

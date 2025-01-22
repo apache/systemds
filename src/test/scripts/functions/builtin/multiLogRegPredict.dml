@@ -24,7 +24,7 @@ Y = read($2) # response values
 X_test = read($3) # random data to predict
 Y_test = read($4) # random data labels
 
-w = multiLogReg(X=X,  Y=Y, icpt=2, tol=0.00000001, reg=1.0, maxi=100, maxii=0, verbose=FALSE)
+w = multiLogReg(X=X,  Y=Y, intercept=2, tol=0.00000001, reg=1.0, maxIter=100, maxInnerIter=0, verbose=FALSE)
 [prob, y, accuracy] = multiLogRegPredict(X=X_test, B=w, Y=Y_test, verbose=TRUE)
 acc = matrix(accuracy, 1, 1)
 write(acc, $5)

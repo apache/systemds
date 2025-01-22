@@ -38,12 +38,12 @@ def lmCG(X: Matrix,
     
     :param X: Matrix of feature vectors.
     :param y: 1-column matrix of response values.
-    :param icpt: Intercept presence, shifting and rescaling the columns of X
+    :param intercept: Intercept presence, shifting and rescaling the columns of X
     :param reg: Regularization constant (lambda) for L2-regularization. set to nonzero
         for highly dependant/sparse/numerous features
     :param tol: Tolerance (epsilon) conjugate gradient procedure terminates early if L2
         norm of the beta-residual is less than tolerance * its initial norm
-    :param maxi: Maximum number of conjugate gradient iterations. 0 = no maximum
+    :param maxIter: Maximum number of conjugate gradient iterations. 0 = no maximum
     :param verbose: If TRUE print messages are activated
     :return: The model fit beta that can be used as input in lmPredict
     """

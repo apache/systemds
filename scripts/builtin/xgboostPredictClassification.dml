@@ -26,15 +26,15 @@
 # -------------------------------------------------------------------------------------
 # X              Matrix of feature vectors we want to predict (X_test)
 # M              The model created at xgboost
-# learning_rate  The learning rate used in the model
+# lr             The learning rate used in the model
 # -------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # -----------------------------------------------------------------------------
-# P     The predictions of the samples using the given xgboost model. (y_prediction)
+# P              The predictions of the samples using the given xgboost model. (y_prediction)
 # -----------------------------------------------------------------------------
 
-m_xgboostPredictClassification = function(Matrix[Double] X, Matrix[Double] M, Double learning_rate = 0.3)
+m_xgboostPredictClassification = function(Matrix[Double] X, Matrix[Double] M, Double lr = 0.3)
   return (Matrix[Double] P) {
 
   nr_trees = max(M[2,])
@@ -62,7 +62,7 @@ m_xgboostPredictClassification = function(Matrix[Double] X, Matrix[Double] M, Do
         log_odds = 0
       else
         log_odds = log(odds / (1 - odds))
-      x = (log_odds + learning_rate * sum(output_values))
+      x = (log_odds + lr * sum(output_values))
       e = 2.7182818284
 
       current_prediction[entry,] = e^x / (1 + e^x)

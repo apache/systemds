@@ -27,15 +27,15 @@
 # ------------------------------------------------------------------------------------------
 # X                 Training data
 # Y                 Labels/Target values
-# batch_size        Batch size
+# batchSize         Batch size
 # epochs            Number of epochs
-# learning_rate     Learning rate
-# out_activation    User specified output activation function. Possible values:
+# lr                Learning rate
+# outActivation     User specified output activation function. Possible values:
 #                   "sigmoid", "relu", "lrelu", "tanh", "softmax", "logits" (no activation).
-# loss_fcn          User specified loss function. Possible values:
+# lossFn            User specified loss function. Possible values:
 #                   "l1", "l2", "log_loss", "logcosh_loss", "cel" (cross-entropy loss).
 # shuffle           Flag which indicates if dataset should be shuffled or not
-# validation_split  Fraction of training set used as validation set
+# validationSplit   Fraction of training set used as validation set
 # seed              Seed for model initialization
 # verbose           Flag which indicates if function should print to stdout
 # ------------------------------------------------------------------------------------------
@@ -65,9 +65,9 @@ source("nn/layers/softmax.dml") as softmax
 
 source("nn/optim/sgd_nesterov.dml") as sgd_nesterov
 
-m_ffTrain = function(Matrix[double] X, Matrix[double] Y, Integer batch_size=64, 
-  Integer epochs=20, Double learning_rate=0.003, String out_activation, 
-  String loss_fcn, Boolean shuffle=FALSE, Double validation_split = 0.0, 
+m_ffTrain = function(Matrix[double] X, Matrix[double] Y, Integer batchSize=64,
+  Integer epochs=20, Double lr=0.003, String outActivation,
+  String lossFn, Boolean shuffle=FALSE, Double validationSplit = 0.0,
   Integer seed=-1, Boolean verbose=FALSE) 
   return (List[unknown] model)
 {
@@ -81,9 +81,9 @@ m_ffTrain = function(Matrix[double] X, Matrix[double] Y, Integer batch_size=64,
   }
 
   validation = FALSE
-  if(validation_split > 0.0) {
+  if(validationSplit > 0.0) {
     validation = TRUE
-    [X_train, Y_train, X_val, Y_val] = val_split(X, Y, validation_split)
+    [X_train, Y_train, X_val, Y_val] = val_split(X, Y, validationSplit)
     N = nrow(X_train)
   } else {
     X_train = X
@@ -97,7 +97,6 @@ m_ffTrain = function(Matrix[double] X, Matrix[double] Y, Integer batch_size=64,
   [W2, b2] = affine::init(H1, t, seed)
 
   # Initialize SGD
-  lr = learning_rate
   mu = 0 
   decay = 0.99 
   vW1 = sgd_nesterov::init(W1)
@@ -105,9 +104,9 @@ m_ffTrain = function(Matrix[double] X, Matrix[double] Y, Integer batch_size=64,
   vW2 = sgd_nesterov::init(W2) 
   vb2 = sgd_nesterov::init(b2)
 
-  iters = ceil(N / batch_size)
+  iters = ceil(N / batchSize)
 
-  batch = batch_size
+  batch = batchSize
   for (e in 1:epochs) {
     loss = 0
     val_loss = 0
@@ -125,17 +124,17 @@ m_ffTrain = function(Matrix[double] X, Matrix[double] Y, Integer batch_size=64,
       # such that appropriate functions are applied. This is
       # advantage for the user which does not have to pass model 
       # and activation function as two arguments in predict method.
-      layers = list(W1=W1, b1=b1, W2=W2, b2=b2, activation=out_activation)
+      layers = list(W1=W1, b1=b1, W2=W2, b2=b2, activation=outActivation)
       cache = ff_pass::feedForward(X=X_batch, layers=layers)
 
       # Distinguish two cases when loss is calculated from the raw output
       # or from the output of the activation function.
-      if (out_activation != "logits") {
-        loss = loss + loss_forward(as.matrix(cache["outs2"]), Y_batch, loss_fcn)
-        dout2 = loss_backward(as.matrix(cache["outs2"]), Y_batch, loss_fcn)
+      if (outActivation != "logits") {
+        loss = loss + loss_forward(as.matrix(cache["outs2"]), Y_batch, lossFn)
+        dout2 = loss_backward(as.matrix(cache["outs2"]), Y_batch, lossFn)
       } else {
-        loss =  loss + loss_forward(as.matrix(cache["out2"]), Y_batch, loss_fcn)
-        dout2 = loss_backward(as.matrix(cache["out2"]), Y_batch, loss_fcn)
+        loss =  loss + loss_forward(as.matrix(cache["out2"]), Y_batch, lossFn)
+        dout2 = loss_backward(as.matrix(cache["out2"]), Y_batch, lossFn)
       }
 
       [dW1, db1, dW2, db2] = feed_backward(X_batch, layers, cache, dout2)
@@ -147,10 +146,10 @@ m_ffTrain = function(Matrix[double] X, Matrix[double] Y, Integer batch_size=64,
 
       if(validation) {
         cache = ff_pass::feedForward(X=X_val, layers=layers)
-        if (out_activation != "logits")
-          val_loss = val_loss + loss_forward(as.matrix(cache["outs2"]), Y_val, loss_fcn)
+        if (outActivation != "logits")
+          val_loss = val_loss + loss_forward(as.matrix(cache["outs2"]), Y_val, lossFn)
         else
-          val_loss = val_loss + loss_forward(as.matrix(cache["out2"]), Y_val, loss_fcn)
+          val_loss = val_loss + loss_forward(as.matrix(cache["out2"]), Y_val, lossFn)
       }
     }
     
@@ -163,7 +162,7 @@ m_ffTrain = function(Matrix[double] X, Matrix[double] Y, Integer batch_size=64,
       print("Epoch: " + e + ", Train loss: " + loss/iters)
     }
   }
-  model = list(W1=W1, b1=b1, W2=W2, b2=b2, activation=out_activation)
+  model = list(W1=W1, b1=b1, W2=W2, b2=b2, activation=outActivation)
 }
 
 
@@ -198,32 +197,32 @@ apply_activation_backward = function(Matrix[double] dout, Matrix[double] X, Stri
   }
 }
 
-loss_forward = function(Matrix[double] prediction, Matrix[double] target, String loss_fcn)
+loss_forward = function(Matrix[double] prediction, Matrix[double] target, String lossFn)
   return(Double loss)
 {
-  if (loss_fcn == "l1") {
+  if (lossFn == "l1") {
     loss = l1_loss::forward(prediction, target)
-  } else if(loss_fcn == "l2") {
+  } else if(lossFn == "l2") {
     loss = l2_loss::forward(prediction, target)
-  } else if(loss_fcn == "log_loss") {
+  } else if(lossFn == "log_loss") {
     loss = log_loss::forward(prediction, target)
-  } else if(loss_fcn == "logcosh_loss") {
+  } else if(lossFn == "logcosh_loss") {
     loss = logcosh_loss::forward(prediction, target)
   } else {
     loss = cel::forward(prediction, target)
   }
 }
 
-loss_backward = function(Matrix[double] prediction, Matrix[double] target, String loss_fcn)
+loss_backward = function(Matrix[double] prediction, Matrix[double] target, String lossFn)
   return(Matrix[Double] dout)
 {
-  if (loss_fcn == "l1") {
+  if (lossFn == "l1") {
     dout = l1_loss::backward(prediction, target)
-  } else if(loss_fcn == "l2") {
+  } else if(lossFn == "l2") {
     dout = l2_loss::backward(prediction, target)
-  } else if(loss_fcn == "log_loss") {
+  } else if(lossFn == "log_loss") {
     dout = log_loss::backward(prediction, target)
-  } else if(loss_fcn == "logcosh_loss") {
+  } else if(lossFn == "logcosh_loss") {
     dout = logcosh_loss::backward(prediction, target)
   } else {
     dout = cel::backward(prediction, target)

@@ -28,16 +28,16 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
-def img_transform(img_in: Matrix,
-                  out_w: int,
-                  out_h: int,
+def img_transform(img: Matrix,
+                  w: int,
+                  h: int,
                   a: float,
                   b: float,
                   c: float,
                   d: float,
                   e: float,
                   f: float,
-                  fill_value: float):
+                  value: float):
     """
      The Image Transform function applies an affine transformation to an image.
      Optionally resizes the image (without scaling).
@@ -45,15 +45,15 @@ def img_transform(img_in: Matrix,
     
     
     
-    :param img_in: Input image as 2D matrix with top left corner at [1, 1]
-    :param out_w: Width of the output image
-    :param out_h: Height of the output image
+    :param img: Input image as 2D matrix with top left corner at [1, 1]
+    :param w: Width of the output image
+    :param h: Height of the output image
     :param a,b,c,d,e,f: The first two rows of the affine matrix in row-major order
-    :param fill_value: The background of the image
+    :param value: The background of the image
     :return: Output image as 2D matrix with top left corner at [1, 1]
     """
 
-    params_dict = {'img_in': img_in, 'out_w': out_w, 'out_h': out_h, 'a': a, 'b': b, 'c': c, 'd': d, 'e': e, 'f': f, 'fill_value': fill_value}
-    return Matrix(img_in.sds_context,
+    params_dict = {'img': img, 'w': w, 'h': h, 'a': a, 'b': b, 'c': c, 'd': d, 'e': e, 'f': f, 'value': value}
+    return Matrix(img.sds_context,
         'img_transform',
         named_input_nodes=params_dict)

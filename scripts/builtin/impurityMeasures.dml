@@ -28,7 +28,7 @@
 # Y        Target vector containing 0 and 1 values.
 # R        Vector indicating whether a feature is categorical or continuous.
 #          1 denotes a continuous feature, 2 denotes a categorical feature.
-# n_bins   Number of bins for binning in case of scale features.
+# n        Number of bins for binning in case of scale features.
 # method   String indicating the method to use; either "entropy" or "gini".
 # --------------------------------------------------------------------------
 #
@@ -44,7 +44,7 @@
 #        the better the split.
 # ------------------------------------------------------------------------
 
-m_impurityMeasures = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] R, Integer n_bins = 20, String method)
+m_impurityMeasures = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] R, Integer n = 20, String method)
   return (Matrix[Double] IM)
 {
   if (method != "entropy" & method != "gini") {
@@ -55,8 +55,8 @@ m_impurityMeasures = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double]
 
   parfor (i in 1:ncol(X)) {
     if (as.scalar(R[,i]) == 1) {
-      binned_feature = applyBinning(X[,i], n_bins)
-      IM[,i] = getImpurityMeasure(binned_feature, Y, n_bins, method)
+      binned_feature = applyBinning(X[,i], n)
+      IM[,i] = getImpurityMeasure(binned_feature, Y, n, method)
     } else {
       IM[,i] = getImpurityMeasure(X[,i], Y, max(X[,i]), method)
     }

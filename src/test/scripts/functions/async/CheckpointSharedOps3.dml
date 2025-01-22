@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 X = rand(rows=1000, cols=150, seed=42); #sp_rand
-[U, V] = alsCG(X=X, reg=0.0, maxi=10, verbose=FALSE);
+[U, V] = alsCG(X=X, reg=0.0, maxIterations=10, verbose=FALSE);
 
 print(sum(U %*% V));
 R = sum(U %*% V);

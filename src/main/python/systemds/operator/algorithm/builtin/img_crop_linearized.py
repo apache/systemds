@@ -28,29 +28,29 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
-def img_crop_linearized(img_in: Matrix,
+def img_crop_linearized(img: Matrix,
                         w: int,
                         h: int,
-                        x_offset: int,
-                        y_offset: int,
-                        s_cols: int,
-                        s_rows: int):
+                        offsetX: int,
+                        offsetY: int,
+                        sW: int,
+                        sH: int):
     """
      The img_crop_linearized cuts out a rectangular section of multiple linearized images.
     
     
     
-    :param img_in: Linearized input images as 2D matrix
+    :param img: Linearized input images as 2D matrix
     :param w: The width of the subregion required
     :param h: The height of the subregion required
-    :param x_offset: The horizontal offset for the center of the crop region
-    :param y_offset: The vertical offset for the center of the crop region
-    :param s_cols: Width of a single image
-    :param s_rows: Height of a single image
+    :param offsetX: The horizontal offset for the center of the crop region
+    :param offsetY: The vertical offset for the center of the crop region
+    :param sW: Width of a single image
+    :param sH: Height of a single image
     :return: Cropped images as linearized 2D matrix
     """
 
-    params_dict = {'img_in': img_in, 'w': w, 'h': h, 'x_offset': x_offset, 'y_offset': y_offset, 's_cols': s_cols, 's_rows': s_rows}
-    return Matrix(img_in.sds_context,
+    params_dict = {'img': img, 'w': w, 'h': h, 'offsetX': offsetX, 'offsetY': offsetY, 'sW': sW, 'sH': sH}
+    return Matrix(img.sds_context,
         'img_crop_linearized',
         named_input_nodes=params_dict)

@@ -21,5 +21,5 @@
 
 X = read($1)
 y = read($2)
-C = lm(X = X, y = y, icpt = 0, reg = 1e-12)
+C = lm(X = X, y = y, intercept = 0, reg = 1e-12)
 write(C, $3)

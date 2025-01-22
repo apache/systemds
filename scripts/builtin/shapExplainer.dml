@@ -30,17 +30,17 @@
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------
-# model_function  The function of the model to be evaluated as a String. This function has to take a matrix of samples
+# model           The function of the model to be evaluated as a String. This function has to take a matrix of samples
 #                 and return a vector of predictions.
 #                 It might be usefull to wrap the model into a function the takes and returns the desired shapes and
 #                 use this wrapper here.
-# model_args      Arguments in order for the model, if desired. This will be prepended by the created instances-matrix.
-# x_instances     Multiple instances as rows for which to compute the shapley values.
-# X_bg            The background dataset from which to pull the random samples to perform Monte Carlo integration.
-# n_permutations  The number of permutaions. Defaults to 10. Theoretical 1 should already be enough for models with up
+# modelArgs       Arguments in order for the model, if desired. This will be prepended by the created instances-matrix.
+# X               Multiple instances as rows for which to compute the shapley values.
+# Xbg             The background dataset from which to pull the random samples to perform Monte Carlo integration.
+# nPermutations   The number of permutaions. Defaults to 10. Theoretical 1 should already be enough for models with up
 #                 to second order interaction effects.
-# n_samples       Number of samples from X_bg used for marginalization.
-# remove_non_var  EXPERIMENTAL: If set, for every instance the varaince of each feature is checked against this feature in the
+# nSamples        Number of samples from Xbg used for marginalization.
+# removeNonVar    EXPERIMENTAL: If set, for every instance the varaince of each feature is checked against this feature in the
 #                 background data. If it does not change, we do not run any model cals for it.
 # seed            A seed, in case the sampling has to be deterministic.
 # verbose         A boolean to enable logging of each step of the function.
@@ -51,75 +51,75 @@
 # S              Matrix holding the shapley values along the cols, one row per instance.
 # expected       Double holding the average prediction of all instances.
 # -----------------------------------------------------------------------------
-s_shapExplainer = function(String model_function, list[unknown] model_args, Matrix[Double] x_instances,
-    Matrix[Double] X_bg, Integer n_permutations = 10, Integer n_samples = 100, Integer remove_non_var=0,
+s_shapExplainer = function(String model, list[unknown] modelArgs, Matrix[Double] X,
+    Matrix[Double] Xbg, Integer nPermutations = 10, Integer nSamples = 100, Integer removeNonVar=0,
     Matrix[Double] partitions=as.matrix(-1), Integer seed = -1, Integer verbose = 0)
   return (Matrix[Double] row_phis, Double expected)
 {
-  u_printShapMessage("Parallel Permutation Explainer for "+nrow(x_instances)+" rows.", verbose)
-  u_printShapMessage("Number of Features: "+ncol(x_instances), verbose )
-  total_preds=ncol(x_instances)*2*n_permutations*n_samples*nrow(x_instances)
-  u_printShapMessage("Number of predictions: "+toString(total_preds)+" in "+nrow(x_instances)+
+  u_printShapMessage("Parallel Permutation Explainer for "+nrow(X)+" rows.", verbose)
+  u_printShapMessage("Number of Features: "+ncol(X), verbose )
+  total_preds=ncol(X)*2*nPermutations*nSamples*nrow(X)
+  u_printShapMessage("Number of predictions: "+toString(total_preds)+" in "+nrow(X)+
     " parallel cals.", verbose )
 
   #start with all features
-  features=u_range(1, ncol(x_instances))
+  features=u_range(1, ncol(X))
 
   #handle partitions
   if(sum(partitions) != -1){
-    if(remove_non_var != 0){
+    if(removeNonVar != 0){
       stop("shapley_permutations_by_row:ERROR: Can't use n_non_varying_inds and partitions at the same time.")
     }
     features=removePartitionsFromFeatures(features, partitions)
-    reduced_total_preds=ncol(features)*2*n_permutations*n_samples*nrow(x_instances)
+    reduced_total_preds=ncol(features)*2*nPermutations*nSamples*nrow(X)
     u_printShapMessage("Using Partitions reduces number of features to "+ncol(features)+".", verbose )
     u_printShapMessage("Total number of predictions reduced by "+(total_preds-reduced_total_preds)/total_preds+" to "+reduced_total_preds+".", verbose )
   }
 
   #lengths and offsets
-  total_features = ncol(x_instances)
+  total_features = ncol(X)
   perm_length = ncol(features)
-  full_mask_offset = perm_length * 2 * n_samples
+  full_mask_offset = perm_length * 2 * nSamples
   n_partition_features = total_features - perm_length
 
-  #sample from X_bg
-  u_printShapMessage("Sampling from X_bg", verbose )
-  # could use new samples for each permutation by sampling n_samples*n_permutations
-  X_bg_samples = u_sample_with_potential_replace(X_bg=X_bg, samples=n_samples, seed=seed )
-  row_phis     = matrix(0, rows=nrow(x_instances), cols=total_features)
-  expected_m   = matrix(0, rows=nrow(x_instances), cols=1)
+  #sample from Xbg
+  u_printShapMessage("Sampling from Xbg", verbose )
+  # could use new samples for each permutation by sampling nSamples*nPermutations
+  X_bg_samples = u_sample_with_potential_replace(Xbg=Xbg, nSamples=nSamples, seed=seed )
+  row_phis     = matrix(0, rows=nrow(X), cols=total_features)
+  expected_m   = matrix(0, rows=nrow(X), cols=1)
 
   #prepare masks for all permutations, since it stays the same for every row
   u_printShapMessage("Preparing reusable intermediate masks.", verbose )
-  permutations = matrix(0, rows=n_permutations, cols=perm_length)
-  masks_for_permutations = matrix(0, rows=perm_length*2*n_permutations*n_samples, cols=total_features)
+  permutations = matrix(0, rows=nPermutations, cols=perm_length)
+  masks_for_permutations = matrix(0, rows=perm_length*2*nPermutations*nSamples, cols=total_features)
 
-  parfor (i in 1:n_permutations, check=0){
+  parfor (i in 1:nPermutations, check=0){
     #shuffle features to get permutation
     permutations[i] = t(u_shuffle(t(features)))
     perm_mask = prepare_mask_for_permutation(permutation=permutations[i], partitions=partitions)
 
     offset_masks = (i-1) * full_mask_offset + 1
-    masks_for_permutations[offset_masks:offset_masks+full_mask_offset-1]=prepare_full_mask(perm_mask, n_samples)
+    masks_for_permutations[offset_masks:offset_masks+full_mask_offset-1]=prepare_full_mask(perm_mask, nSamples)
   }
 
   #replicate background and mask it, since it also can stay the same for every row
-  # could use new samples for each permutation by sampling n_samples*n_permutations and telling this function about it
+  # could use new samples for each permutation by sampling nSamples*nPermutations and telling this function about it
   masked_bg_for_permutations = prepare_masked_X_bg(masks_for_permutations, X_bg_samples, 0)
   u_printShapMessage("Computing phis in parallel.", verbose )
 
   #enable spark execution for parfor if desired
   #TODO allow spark mode via parameter?
-  #parfor (i in 1:nrow(x_instances), opt=CONSTRAINED, mode=REMOTE_SPARK){
+  #parfor (i in 1:nrow(X), opt=CONSTRAINED, mode=REMOTE_SPARK){
 
-  parfor (i in 1:nrow(x_instances)){
-    if(remove_non_var == 1){
+  parfor (i in 1:nrow(X)){
+    if(removeNonVar == 1){
       # try to remove inds that do not vary from the background
-      non_var_inds = get_non_varying_inds(x_instances[i], X_bg_samples)
+      non_var_inds = get_non_varying_inds(X[i], X_bg_samples)
       # only remove if more than 2 features remain, less then two breaks removal procedure
-      if (ncol(x_instances) > length(non_var_inds)+2){
+      if (ncol(X) > length(non_var_inds)+2){
         #remove samples and masks for non varying features
-        [i_masks_for_permutations, i_masked_bg_for_permutations] = remove_inds(masks_for_permutations, masked_bg_for_permutations, permutations, non_var_inds, n_samples)
+        [i_masks_for_permutations, i_masked_bg_for_permutations] = remove_inds(masks_for_permutations, masked_bg_for_permutations, permutations, non_var_inds, nSamples)
       }else{
         # we would remove all but two features, whichs breaks the removal algorithm
         non_var_inds = as.matrix(-1)
@@ -133,16 +133,16 @@ s_shapExplainer = function(String model_function, list[unknown] model_args, Matr
     }
 
     #apply masks and bg data for all permutations at once
-    X_test = apply_full_mask(x_instances[i], i_masks_for_permutations, i_masked_bg_for_permutations)
+    X_test = apply_full_mask(X[i], i_masks_for_permutations, i_masked_bg_for_permutations)
 
     #generate args for call to model
-    X_arg = append(list(X=X_test), model_args)
+    X_arg = append(list(X=X_test), modelArgs)
 
     #call model
-    P = eval(model_function, X_arg)
+    P = eval(model, X_arg)
 
-    #compute means, deviding n_rows by n_samples
-    P = compute_means_from_predictions(P=P, n_samples=n_samples)
+    #compute means, deviding n_rows by nSamples
+    P = compute_means_from_predictions(P=P, n_samples=nSamples)
 
     #compute phis
     [phis, e] = compute_phis_from_prediction_means(P=P, permutations=permutations, non_var_inds=non_var_inds, n_partition_features=n_partition_features)
@@ -162,21 +162,21 @@ s_shapExplainer = function(String model_function, list[unknown] model_args, Matr
 # INPUT:
 # -----------------------------------------------------------------------------
 # x     One single instance.
-# X_bg  Background dataset.
+# Xbg  Background dataset.
 # -----------------------------------------------------------------------------
 # OUTPUT:
 # -----------------------------------------------------------------------------
 # non_varying_inds A row-vector with all the indices that do not vary from the background dataset.
 # -----------------------------------------------------------------------------
-get_non_varying_inds = function(Matrix[Double] x, Matrix[Double] X_bg)
+get_non_varying_inds = function(Matrix[Double] x, Matrix[Double] Xbg)
 return (Matrix[Double] non_varying_inds){
   #from numpy.isclose but adapted to fit MSE of shap, which is within the same scale
   rtol = 1e-04
   atol = 1e-05
 
   # compute distance metrics
-  diff = colMaxs(abs(X_bg -x))
-  rdist = atol + rtol * colMaxs(abs(X_bg))
+  diff = colMaxs(abs(Xbg -x))
+  rdist = atol + rtol * colMaxs(abs(Xbg))
 
   non_varying_inds = (diff <= rdist)
   # translate to indices
@@ -531,55 +531,55 @@ return (Matrix[Double] short_features){
 ########################
 
 
-# Samples from the background data X_bg.
+# Samples from the background data Xbg.
 # The function first uses all background samples without replacement, but if more samples are requested than
-# available in X_bg, it shuffles X_bg and pulls more samples from it, making it sampling with replacement.
+# available in Xbg, it shuffles Xbg and pulls more samples from it, making it sampling with replacement.
 # TODO: Might be replacable by other builtin for sampling in the future
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------
-# X_bg            Matrix of background data
-# samples         Number of total samples
-# always_shuffle  Boolean to enable reshuffleing of X_bg, defaults to false.
-# seed            A seed for the shuffleing etc.
+# Xbg            Matrix of background data
+# nSamples        Number of total samples
+# shuffle         Boolean to enable reshuffling of Xbg, defaults to false.
+# seed            A seed for the shuffling etc.
 # ---------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # -----------------------------------------------------------------------------
-# X_sample        New Matrix containing #samples, from X_bg, potentially with replacement.
+# X_sample        New Matrix containing #samples, from Xbg, potentially with replacement.
 # -----------------------------------------------------------------------------
-u_sample_with_potential_replace = function(Matrix[Double] X_bg, Integer samples, Boolean always_shuffle = 0, Integer seed)
+u_sample_with_potential_replace = function(Matrix[Double] Xbg, Integer nSamples, Boolean shuffle = 0, Integer seed)
 return (Matrix[Double] X_sample){
-  number_of_bg_samples = nrow(X_bg)
+  number_of_bg_samples = nrow(Xbg)
 
   # expect to not use all from background and subsample from it
   num_of_full_X_bg = 0
-  num_of_remainder_samples = samples
+  num_of_remainder_samples = nSamples
 
   # shuffle background if desired
-  if(always_shuffle) {
-  X_bg = u_shuffle(X_bg)
+  if(shuffle) {
+  Xbg = u_shuffle(Xbg)
   }
 
   # list to store references to generated matrices so we can rbind them in one call
   samples_list = list()
 
   # in case we need more than in the background data, use it multiple times with replacement
-  if(samples >= number_of_bg_samples)  {
-    u_printShapMessage("WARN: More samples ("+toString(samples)+") are requested than available in the background dataset ("+toString(number_of_bg_samples)+"). Using replacement", 1)
+  if(nSamples >= number_of_bg_samples)  {
+    u_printShapMessage("WARN: More samples ("+toString(nSamples)+") are requested than available in the background dataset ("+toString(number_of_bg_samples)+"). Using replacement", 1)
 
     # get number of full sets of background by integer division
-    num_of_full_X_bg = samples %/% number_of_bg_samples
+    num_of_full_X_bg = nSamples %/% number_of_bg_samples
     # get remaining samples using modulo
-    num_of_remainder_samples = samples %% number_of_bg_samples
+    num_of_remainder_samples = nSamples %% number_of_bg_samples
 
     #use background data once
-    samples_list = append(samples_list, X_bg)
+    samples_list = append(samples_list, Xbg)
 
     if(num_of_full_X_bg > 1){
       # add shuffled versions of background data
       for (i in 1:num_of_full_X_bg-1){
-      samples_list = append(samples_list, u_shuffle(X_bg))
+      samples_list = append(samples_list, u_shuffle(Xbg))
       }
     }
   }
@@ -593,7 +593,7 @@ return (Matrix[Double] X_sample){
     R_cont = table(random_samples_indices, random_samples_indices, number_of_bg_samples, number_of_bg_samples)
 
     #pick samples by multiplication with contingency table of indices and removing empty rows
-    samples_list = append(samples_list, removeEmpty(target=t(t(X_bg) %*% R_cont), margin="rows"))
+    samples_list = append(samples_list, removeEmpty(target=t(t(Xbg) %*% R_cont), margin="rows"))
   }
 
 
@@ -658,17 +658,17 @@ return (Matrix[Double] range){
 # INPUT:
 # -----------------------------------------------------------------------------
 # M        Matrix where rows will be replicated.
-# n_times  Number of replications.
+# n        Number of replications.
 # -----------------------------------------------------------------------------
 #
 # OUTPUT:
 # -----------------------------------------------------------------------------
 # M         Matrix of replicated rows.
 # -----------------------------------------------------------------------------
-u_repeatRows = function(Matrix[Double] M, Integer n_times)
+u_repeatRows = function(Matrix[Double] M, Integer n)
 return(Matrix[Double] M){
   #get indices for new rows (e.g. 1,1,1,2,2,2 for 2 rows, each replicated 3 times)
-  indices = ceil(seq(1,nrow(M)*n_times,1) / n_times)
+  indices = ceil(seq(1,nrow(M)*n,1) / n)
 
   #to one hot, so we get a replication matrix R
   R = toOneHot(indices, nrow(M))
@@ -691,36 +691,36 @@ return(Matrix[Double] M){
 # INPUT:
 # -----------------------------------------------------------------------------
 # M        Matrix where rows will be replicated.
-# n_times  Number of replications.
+# n        Number of replications.
 # -----------------------------------------------------------------------------
 #
 # OUTPUT:
 # -----------------------------------------------------------------------------
 # M         Matrix of replicated rows.
 # -----------------------------------------------------------------------------
-u_repeatMatrix = function(Matrix[Double] M, Integer n_times)
+u_repeatMatrix = function(Matrix[Double] M, Integer n)
 return(Matrix[Double] M){
   n_rows=nrow(M)
   n_cols=ncol(M)
   #reshape to row vector
   M = matrix(M, rows=1, cols=length(M))
   #replicate via outer product
-  M = matrix(1, rows=n_times, cols=1) %*% M
+  M = matrix(1, rows=n, cols=1) %*% M
   #reshape to get matrix
-  M = matrix(M, rows=n_rows*n_times, cols=n_cols)
+  M = matrix(M, rows=n_rows*n, cols=n_cols)
 }
 
 # Like repeatMatrix(), but alows to define parts of matrix as blocks to replicate n-rows as a block.
-u_repeatMatrixBlocks = function(Matrix[Double] M, Integer rows_per_block, Integer n_times)
+u_repeatMatrixBlocks = function(Matrix[Double] M, Integer rowsPerBlock, Integer n)
 return(Matrix[Double] M){
   n_rows=nrow(M)
   n_cols=ncol(M)
   #reshape to row vector
-  M = matrix(M, rows=n_rows/rows_per_block, cols=n_cols*rows_per_block)
+  M = matrix(M, rows=n_rows/rowsPerBlock, cols=n_cols*rowsPerBlock)
   #repeat block rows
-  M = u_repeatRows(M, n_times)
+  M = u_repeatRows(M, n)
   #reshape to get matrix
-  M = matrix(M, rows=n_rows*n_times, cols=n_cols)
+  M = matrix(M, rows=n_rows*n, cols=n_cols)
 }
 
 #utility function to print with shap-explainer-tag

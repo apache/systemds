@@ -45,7 +45,7 @@ def shortestPath(G: Matrix,
         The values of G can be 0/1 (just specifying whether the nodes
         are connected or not) or integer values (representing the weight
         of the edges or the distances between nodes, 0 if not connected).
-    :param maxi: Integer max number of iterations accepted (0 for FALSE, i.e.
+    :param maxIter: Integer max number of iterations accepted (0 for FALSE, i.e.
         max number of iterations not defined)
     :param sourceNode: node index to calculate the shortest paths to all other nodes.
     :param verbose: flag for verbose debug output

@@ -24,17 +24,17 @@
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------------
-# img_in      Linearized input images as 2D matrix with top left corner at [1, 1]
-# shear_x     Shearing factor for horizontal shearing
-# shear_y     Shearing factor for vertical shearing
-# fill_value   The background color revealed by the shearing
+# img      Linearized input images as 2D matrix with top left corner at [1, 1]
+# shearX   Shearing factor for horizontal shearing
+# shearY   Shearing factor for vertical shearing
+# value    The background color revealed by the shearing
 # ---------------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # ------------------------------------------------------------------------------------------
-# img_out     Output images in linearized form as 2D matrix with top left corner at [1, 1]
+# img_out  Output images in linearized form as 2D matrix with top left corner at [1, 1]
 # ------------------------------------------------------------------------------------------
 
-m_img_shear_linearized = function(Matrix[Double] img_in, Double shear_x, Double shear_y, Double fill_value, Integer s_cols, Integer s_rows) return (Matrix[Double] img_out) {
-  img_out = img_transform_linearized(img_in, s_cols, s_rows, 1, shear_x, 0, shear_y, 1, 0, fill_value, s_cols, s_rows)
+m_img_shear_linearized = function(Matrix[Double] img, Double shearX, Double shearY, Double value, Integer sW, Integer sH) return (Matrix[Double] img_out) {
+  img_out = img_transform_linearized(img, sW, sH, 1, shearX, 0, shearY, 1, 0, value, sW, sH)
 }

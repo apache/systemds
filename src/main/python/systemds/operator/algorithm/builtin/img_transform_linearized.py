@@ -28,18 +28,18 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
-def img_transform_linearized(img_in: Matrix,
-                             out_w: int,
-                             out_h: int,
+def img_transform_linearized(img: Matrix,
+                             w: int,
+                             h: int,
                              a: float,
                              b: float,
                              c: float,
                              d: float,
                              e: float,
                              f: float,
-                             fill_value: float,
-                             s_cols: int,
-                             s_rows: int):
+                             value: float,
+                             sW: int,
+                             sH: int):
     """
      The Linearized Image Transform function applies an affine transformation to linearized images.
      Optionally resizes the image (without scaling).
@@ -47,15 +47,15 @@ def img_transform_linearized(img_in: Matrix,
     
     
     
-    :param img_in: Linearized input images as 2D matrix with top left corner at [1, 1]
-    :param out_w: Width of the output matrix
-    :param out_h: Height of the output matrix
+    :param img: Linearized input images as 2D matrix with top left corner at [1, 1]
+    :param w: Width of the output matrix
+    :param h: Height of the output matrix
     :param a,b,c,d,e,f: The first two rows of the affine matrix in row-major order
-    :param fill_value: The background of an image
+    :param value: The background of an image
     :return: Output images in linearized form as 2D matrix with top left corner at [1, 1]
     """
 
-    params_dict = {'img_in': img_in, 'out_w': out_w, 'out_h': out_h, 'a': a, 'b': b, 'c': c, 'd': d, 'e': e, 'f': f, 'fill_value': fill_value, 's_cols': s_cols, 's_rows': s_rows}
-    return Matrix(img_in.sds_context,
+    params_dict = {'img': img, 'w': w, 'h': h, 'a': a, 'b': b, 'c': c, 'd': d, 'e': e, 'f': f, 'value': value, 'sW': sW, 'sH': sH}
+    return Matrix(img.sds_context,
         'img_transform_linearized',
         named_input_nodes=params_dict)

@@ -51,7 +51,7 @@ model = lenetTrain(images, labels, images_val, labels_val, C, Hin, Win, 128, 3,
                                                 0.007, 0.9, 0.95, 5e-04, TRUE, -1)
 
 # Predict on the training set to test capacity of the network
-probs = lenetPredict(model=model, X=images, C=C, Hin=Hin, Win=Win)
+probs = lenetPredict(model=model, X=images, c=C, h=Hin, w=Win)
 
 # Accuracy
 correct_pred = rowIndexMax(probs) == rowIndexMax(labels)

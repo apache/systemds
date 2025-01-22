@@ -47,7 +47,7 @@ class TestGMM(unittest.TestCase):
             n_gaussian = 4
 
             [_, _, _, _, mu, precision_cholesky, weight] = gmm(
-                features, n_components=n_gaussian, seed=10
+                features, nComponents=n_gaussian, seed=10
             )
 
             model = sds_train.list(mu, precision_cholesky, weight)

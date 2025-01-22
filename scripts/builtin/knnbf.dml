@@ -25,7 +25,7 @@
 # --------------------------
 # X        ---
 # T        ---
-# k_value  ---
+# k        ---
 # --------------------------
 #
 # OUTPUT:
@@ -33,18 +33,18 @@
 # NNR    ---
 # ------------------------
 
-m_knnbf = function(Matrix[Double] X, Matrix[Double] T, Integer k_value = 5) 
+m_knnbf = function(Matrix[Double] X, Matrix[Double] T, Integer k = 5)
   return(Matrix[Double] NNR)
 {
   num_records = nrow(X);
   num_queries = nrow(T);
 
   D = matrix(0, rows = num_records, cols = num_queries);
-  NNR = matrix(0, rows = num_queries, cols = k_value);
+  NNR = matrix(0, rows = num_queries, cols = k);
 
   parfor(i in 1 : num_queries) {
     D[ , i] = calculateDistance(X, T[i, ]);
-    NNR[i, ] = sortAndGetK(D[ , i], k_value);
+    NNR[i, ] = sortAndGetK(D[ , i], k);
   }
 }
 

@@ -38,11 +38,11 @@ y_test = y[(numTrSamples+numValSamples+2):nrow(X),];
 params = list("reg");
 paramRanges = matrix("0 20", rows=1, cols=2);
 
-[bestWeights, optHyperParams] = hyperband(X_train=X_train, y_train=y_train,
-  X_val=X_val, y_val=y_val, params=params, paramRanges=paramRanges);
+[bestWeights, optHyperParams] = hyperband(X=X_train, Y=y_train,
+  Xtest=X_val, Ytest=y_val, params=params, paramRanges=paramRanges);
 
 paramRanges2 = list(10^seq(0,-4))
-trainArgs = list(X=X_train, y=y_train, icpt=0, reg=-1, tol=1e-9, maxi=0, verbose=FALSE);
+trainArgs = list(X=X_train, y=y_train, intercept=0, reg=-1, tol=1e-9, maxIter=0, verbose=FALSE);
 [bestWeights, optHyperParams2] = gridSearch(X=X_train, y=y_train, numB=ncol(X),
   train="lm", predict="l2norm", trainArgs=trainArgs, params=params, paramValues=paramRanges2);
 

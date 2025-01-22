@@ -47,7 +47,7 @@ def outlierByArima(X: Matrix,
     :param D: seasonal differencing order
     :param Q: seasonal MA order
     :param s: period in terms of number of time-steps
-    :param include_mean: If the mean should be included
+    :param includeMean: If the mean should be included
     :param solver: solver, is either "cg" or "jacobi"
     :return: Matrix X with no outliers
     """

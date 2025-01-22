@@ -42,7 +42,7 @@ def cvlm(X: Matrix,
     :param X: Recorded Data set into matrix
     :param y: 1-column matrix of response values.
     :param k: Number of subsets needed, It should always be more than 1 and less than nrow(X)
-    :param icpt: Intercept presence, shifting and rescaling the columns of X
+    :param intercept: Intercept presence, shifting and rescaling the columns of X
     :param reg: Regularization constant (lambda) for L2-regularization. set to nonzero for
         highly dependant/sparse/numerous features
     :return: Response values

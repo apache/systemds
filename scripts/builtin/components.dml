@@ -26,16 +26,16 @@
 #
 # INPUT:
 # -----------------------------------------------------------------------------------------------
-# X        Location to read the matrix of feature vectors
-# Y        Location to read the matrix with category labels
-# icpt     Intercept presence, shifting and rescaling X columns: 0 = no intercept,
-#          no shifting, no rescaling; 1 = add intercept, but neither shift nor rescale X;
-#          2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
-# tol      tolerance ("epsilon")
-# reg      regularization parameter (lambda = 1/C); intercept is not regularized
-# maxi     max. number of outer (Newton) iterations
-# maxii    max. number of inner (conjugate gradient) iterations, 0 = no max
-# verbose  flag specifying if logging information should be printed
+# X             Location to read the matrix of feature vectors
+# Y             Location to read the matrix with category labels
+# intercept     Intercept presence, shifting and rescaling X columns: 0 = no intercept,
+#               no shifting, no rescaling; 1 = add intercept, but neither shift nor rescale X;
+#               2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
+# tol           tolerance ("epsilon")
+# reg           regularization parameter (lambda = 1/C); intercept is not regularized
+# maxIter       max. number of outer (Newton) iterations
+# maxInnerIter  max. number of inner (conjugate gradient) iterations, 0 = no max
+# verbose       flag specifying if logging information should be printed
 # -----------------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -43,7 +43,7 @@
 # betas  regression betas as output for prediction
 # ----------------------------------------------------------------------------------------------------
 
-m_components = function(Matrix[Double] G, Integer maxi = 0, Boolean verbose = TRUE) 
+m_components = function(Matrix[Double] G, Integer maxIter = 0, Boolean verbose = TRUE)
   return (Matrix[Double] C) 
 {
   # best effort check for symmetry (not exact but fast)
@@ -58,7 +58,7 @@ m_components = function(Matrix[Double] G, Integer maxi = 0, Boolean verbose = TR
   iter = 1;
 
   # iterative computation of connected components
-  while( diff > 0 & (maxi==0 | iter<=maxi) ) {
+  while( diff > 0 & (maxIter==0 | iter<=maxIter) ) {
     u = max(rowMaxs(G * t(c)), c);
     diff = sum(u != c)
     c = u; # update assignment

@@ -24,9 +24,9 @@
 # INPUT:
 # ------------------------
 # X      ---
-# mask   ---
-# ql     ---
-# qu     ---
+# Mask   ---
+# QL     ---
+# QU     ---
 # ------------------------
 #
 # OUTPUT:
@@ -35,15 +35,15 @@
 # M     ---
 # ------------------------
 
-f_fixInvalidLengthsApply = function(Frame[Unknown] X, Matrix[Double] mask, Matrix[Double] qLow, Matrix[Double] qUp)
+f_fixInvalidLengthsApply = function(Frame[Unknown] X, Matrix[Double] Mask, Matrix[Double] QL, Matrix[Double] QU)
 return (Frame[Unknown] X)
 {
 
   length = map(X, "x -> x.length()")
   length = as.matrix(length)
-  length = replace(target = (length * mask), pattern = NaN, replacement = 0)
-  M = ( length < qLow  | length > qUp)
-  # # # check if mask vector has 1 in more than one column
+  length = replace(target = (length * Mask), pattern = NaN, replacement = 0)
+  M = ( length < QL  | length > QU)
+  # # # check if Mask vector has 1 in more than one column
   # # # this indicates that two values are being swapped and can be fixed
   rowCountSwap = rowSums(M)  >= 2 
   rowCountDangling = rowSums(M) > 0 & rowSums(M) < 2
@@ -64,7 +64,7 @@ return (Frame[Unknown] X)
       tmp = X[rowIdx, id1]
       X[rowIdx, id1] = X[rowIdx, id2]
       X[rowIdx, id2] = tmp
-      # # remove the mask for fixed entries
+      # # remove the Mask for fixed entries
       M[rowIdx, id1] = 0
       M[rowIdx, id2] = 0
     }
@@ -82,7 +82,7 @@ return (Frame[Unknown] X)
       colIdx = removeEmpty(target = colIds[rowIdx], margin="cols")
       id1 = as.scalar(colIdx[1, 1])
       X[rowIdx, id1] = ""
-      # # remove the mask for fixed entries
+      # # remove the Mask for fixed entries
       M[rowIdx, id1] = 0
     }
   }

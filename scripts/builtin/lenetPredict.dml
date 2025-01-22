@@ -24,11 +24,11 @@
 # INPUT:
 # ---------------------------------------------------------------------------------------------
 # model       Trained LeNet model
-# X           Input data matrix, of shape (N, C*Hin*Win)
-# C           Number of input channels
-# Hin         Input height
-# Win         Input width
-# batch_size  Batch size
+# X           Input data matrix, of shape (N, c*h*w)
+# c           Number of input channels
+# h           Input height
+# w           Input width
+# batchSize   Batch size
 # ---------------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -38,8 +38,8 @@
 
 source("nn/layers/lenetForwardPass.dml") as lenet_fw
 
-s_lenetPredict = function(list[unknown] model, Matrix[Double] X, Integer C,
-  Integer Hin, Integer Win, Integer batch_size = 128)
+s_lenetPredict = function(list[unknown] model, Matrix[Double] X, Integer c,
+  Integer h, Integer w, Integer batchSize = 128)
   return (Matrix[Double] probs)
 {
   N = nrow(X)
@@ -61,14 +61,14 @@ s_lenetPredict = function(list[unknown] model, Matrix[Double] X, Integer C,
 
   # Compute predictions over mini-batches
   probs = matrix(0, rows=N, cols=K)
-  iters = ceil(N / batch_size)
+  iters = ceil(N / batchSize)
   for(i in 1:iters) {
     # Get next batch
-    beg = ((i-1) * batch_size) %% N + 1
-    end = min(N, beg + batch_size - 1)
+    beg = ((i-1) * batchSize) %% N + 1
+    end = min(N, beg + batchSize - 1)
     X_batch = X[beg:end,]
 
-    pred = lenet_fw::lenetForward(X_batch, C, Hin, Win, model, TRUE)
+    pred = lenet_fw::lenetForward(X_batch, c, h, w, model, TRUE)
 
     # Store predictions
     probs[beg:end,] = as.matrix(pred["probs"])

@@ -26,7 +26,7 @@ print("")
 print("MLogReg")
 
 X = scale(X=X, scale=TRUE, center=TRUE);
-B = multiLogReg(X=X, Y=Y, verbose=FALSE, maxi=3, maxii=2, icpt=0);
+B = multiLogReg(X=X, Y=Y, verbose=FALSE, maxIter=3, maxInnerIter=2, intercept=0);
 
 [nn, P, acc] = multiLogRegPredict(X=X, B=B, Y=Y)
 [nn, C] = confusionMatrix(P, Y)

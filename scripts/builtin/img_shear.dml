@@ -24,10 +24,10 @@
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------------
-# img_in      Input image as 2D matrix with top left corner at [1, 1]
-# shear_x     Shearing factor for horizontal shearing
-# shear_y     Shearing factor for vertical shearing
-# fill_value  The background color revealed by the shearing
+# img      Input image as 2D matrix with top left corner at [1, 1]
+# shearX   Shearing factor for horizontal shearing
+# shearY   Shearing factor for vertical shearing
+# value    The background color revealed by the shearing
 # ---------------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -35,6 +35,6 @@
 # img_out  Output image as 2D matrix with top left corner at [1, 1]
 # ------------------------------------------------------------------------------------------
 
-m_img_shear = function(Matrix[Double] img_in, Double shear_x, Double shear_y, Double fill_value) return (Matrix[Double] img_out) {
-  img_out = img_transform(img_in, ncol(img_in), nrow(img_in), 1, shear_x, 0, shear_y, 1, 0, fill_value)
+m_img_shear = function(Matrix[Double] img, Double shearX, Double shearY, Double value) return (Matrix[Double] img_out) {
+  img_out = img_transform(img, ncol(img), nrow(img), 1, shearX, 0, shearY, 1, 0, value)
 }

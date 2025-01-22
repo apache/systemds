@@ -28,24 +28,24 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
-def img_mirror_linearized(img_matrix: Matrix,
-                          horizontal_axis: bool,
-                          original_rows: int,
-                          original_cols: int):
+def img_mirror_linearized(img: Matrix,
+                          horizontal: bool,
+                          sH: int,
+                          sW: int):
     """
      This function has  the same functionality with img_mirror but it handles multiple images at
      the same time. Each row of the input and output matrix represents a linearized image/matrix
      It flips an image on the X (horizontal) or Y (vertical) axis.
     
     
-    :param img_matrix: Input matrix/image (every row represents a linearized matrix/image)
-    :param horizontal_axis: flip either in X or Y axis
-    :param original_rows: number of rows in the original 2-D images
-    :param original_cols: number of cols in the original 2-D images
+    :param img: Input matrix/image (every row represents a linearized matrix/image)
+    :param horizontal: flip either in X or Y axis
+    :param sH: Height of a single image
+    :param sW: Width of a single image
     :return: Output matrix/image  (every row represents a linearized matrix/image)
     """
 
-    params_dict = {'img_matrix': img_matrix, 'horizontal_axis': horizontal_axis, 'original_rows': original_rows, 'original_cols': original_cols}
-    return Matrix(img_matrix.sds_context,
+    params_dict = {'img': img, 'horizontal': horizontal, 'sH': sH, 'sW': sW}
+    return Matrix(img.sds_context,
         'img_mirror_linearized',
         named_input_nodes=params_dict)

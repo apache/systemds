@@ -873,7 +873,7 @@ public class DictionaryTests {
 		compare(a, b, a.getNumberOfValues(nCol), nCol);
 	}
 
-	private static void compare(IDictionary a, IDictionary b, int nRow, int nCol) {
+	protected static void compare(IDictionary a, IDictionary b, int nRow, int nCol) {
 		try {
 			if(a == null && b == null)
 				return;
@@ -1368,5 +1368,11 @@ public class DictionaryTests {
 			e.printStackTrace();
 			throw e;
 		}
+	}
+
+	@Test
+	public void replaceNan() {
+		compare(a.replace(Double.NaN, 0, nCol),
+			 b.replace(Double.NaN, 0, nCol), nRow, nCol);
 	}
 }

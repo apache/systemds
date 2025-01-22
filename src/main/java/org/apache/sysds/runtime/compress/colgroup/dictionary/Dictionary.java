@@ -932,7 +932,7 @@ public class Dictionary extends ACachingMBDictionary {
 						if(colsWithNan.contains(j))
 							retV[cell] = 0;
 						else if(Util.eq(_values[cell], Double.NaN))
-							retV[cell] = replace;
+							retV[cell] = replace - reference[j];
 						else
 							retV[cell] = _values[cell];
 					}
@@ -946,9 +946,9 @@ public class Dictionary extends ACachingMBDictionary {
 					for(int j = 0; j < nCol; j++) {
 						final int cell = off + j;
 						if(Util.eq(_values[cell], Double.NaN))
-							retV[cell] = replace;
+							retV[cell] = replace - reference[j];
 						else
-							retV[cell] = _values[cell];
+							retV[cell] = _values[cell] ;
 					}
 				}
 				return create(retV);
@@ -1192,25 +1192,8 @@ public class Dictionary extends ACachingMBDictionary {
 	public boolean equals(IDictionary o) {
 		if(o instanceof Dictionary)
 			return Arrays.equals(_values, ((Dictionary) o)._values);
-		else if(o instanceof AIdentityDictionary)
-			return ((AIdentityDictionary) o).equals(this);
-		else if(o instanceof MatrixBlockDictionary) {
-			final MatrixBlock mb = ((MatrixBlockDictionary) o).getMatrixBlock();
-			if(mb.isEmpty()) {
-				for(int i = 0; i < _values.length; i++) {
-					if(_values[i] != 0)
-						return false;
-				}
-				return true;
-			}
-			else if(mb.isInSparseFormat())
-				return mb.getSparseBlock().equals(_values, mb.getNumColumns());
-			final double[] dv = mb.getDenseBlockValues();
-			return Arrays.equals(_values, dv);
-		}
-		else if(o instanceof AIdentityDictionary) {
+		else if (o != null)
 			return o.equals(this);
-		}
 		return false;
 	}
 

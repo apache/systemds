@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.compress.dictionary;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -37,6 +38,7 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.PlaceHolderDict;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
@@ -535,5 +537,62 @@ public class CustomDictionaryTest {
 	public void memorySizeIdentitySameAtDifferentSizes() {
 		assertTrue(new IdentityDictionary(10, true).getInMemorySize()//
 			== new IdentityDictionary(1000, true).getInMemorySize());
+	}
+
+	@Test
+	public void replaceNan() {
+		IDictionary a = Dictionary.create(new double[] {1, 2, Double.NaN, Double.NaN});
+		IDictionary b = ((Dictionary) a).getMBDict(2);
+		a = a.replace(Double.NaN, -1, 2);
+		b = b.replace(Double.NaN, -1, 2);
+		DictionaryTests.compare(a, b, 2, 2);
+	}
+
+	@Test
+	public void replaceNanWithReference() {
+		IDictionary a = Dictionary.create(new double[] {1, 2, Double.NaN, Double.NaN});
+		IDictionary b = ((Dictionary) a).getMBDict(2);
+		double[] ref1 = new double[]{3,Double.NaN};
+		a = a.replaceWithReference(Double.NaN, -1, ref1);
+		double[] ref2 = new double[]{3,Double.NaN};
+		b = b.replaceWithReference(Double.NaN, -1, ref2);
+		DictionaryTests.compare(a, b, 2, 2);
+		assertArrayEquals(ref1, ref2, 0.01);
+	}
+
+	@Test
+	public void replaceNanWithReference2() {
+		IDictionary a = Dictionary.create(new double[] {1, 2, Double.NaN, Double.NaN});
+		IDictionary b = ((Dictionary) a).getMBDict(2);
+		double[] ref1 = new double[]{3,52};
+		a = a.replaceWithReference(Double.NaN, -1, ref1);
+		double[] ref2 = new double[]{3,52};
+		b = b.replaceWithReference(Double.NaN, -1, ref2);
+		DictionaryTests.compare(a, b, 2, 2);
+		double[] ref3 = new double[]{3,52};
+		IDictionary ab = a.replaceWithReference(Double.NaN, -1, ref3);
+		DictionaryTests.compare(a, ab, 2, 2);
+		assertArrayEquals(ref1, ref2, 0.01);
+		assertArrayEquals(ref1, ref3, 0.01);
+	}
+
+	@Test 
+	public void equalsNot(){
+		IDictionary a = Dictionary.create(new double[]{1});
+		assertFalse(a.equals( new PlaceHolderDict(1)));
+	}
+
+	@Test 
+	public void equalsNotEmptyDict(){
+		IDictionary a = Dictionary.create(new double[]{1});
+		IDictionary b = MatrixBlockDictionary.create(new MatrixBlock(1, 1, 0.0), false);
+		assertFalse(a.equals( b));
+	}
+
+	@Test 
+	public void equalsNotEmptyDictDifferentSize(){
+		IDictionary a = Dictionary.createNoCheck(new double[]{0});
+		IDictionary b = MatrixBlockDictionary.create(new MatrixBlock(100, 100, 0.0), false);
+		assertFalse(a.equals(b));
 	}
 }

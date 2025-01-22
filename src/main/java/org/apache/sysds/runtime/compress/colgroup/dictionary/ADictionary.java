@@ -54,7 +54,7 @@ public abstract class ADictionary implements IDictionary, Serializable {
 
 	@Override
 	public final boolean equals(Object o) {
-		if(o instanceof IDictionary)
+		if(o != null &&  o instanceof IDictionary)
 			return equals((IDictionary) o);
 		return false;
 	}

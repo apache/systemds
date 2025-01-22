@@ -82,9 +82,9 @@ public class MatrixBlockDictionary extends ADictionary {
 			throw new DMLCompressionException("Invalid construction of dictionary with null array");
 		else if(mb.getNumRows() == 0 || mb.getNumColumns() == 0)
 			throw new DMLCompressionException("Invalid construction of dictionary with zero rows and/or cols array");
+		else if(mb.isEmpty())
+			return null;
 		else if(check) {
-			if(mb.isEmpty())
-				return null;
 			mb.examSparsity(true);
 			if(mb.isInSparseFormat() && mb.getSparseBlock() instanceof SparseBlockMCSR) {
 				// make CSR sparse block to make it smaller.
@@ -2140,7 +2140,7 @@ public class MatrixBlockDictionary extends ADictionary {
 					int j = 0;
 					for(int k = apos; k < alen; k++) {
 						final double v = avals[k];
-						retV[off++] = Util.eq(Double.NaN, v) ? replace -reference[j] : v;
+						retV[off++] = Util.eq(Double.NaN, v) ? replace - reference[j] : v;
 					}
 				}
 			}
@@ -2149,7 +2149,7 @@ public class MatrixBlockDictionary extends ADictionary {
 				for(int i = 0; i < nRow; i++) {
 					for(int j = 0; j < nCol; j++) {
 						final double v = values[off];
-						retV[off++] = Util.eq(Double.NaN, v) ? replace -reference[j] : v;
+						retV[off++] = Util.eq(Double.NaN, v) ? replace - reference[j] : v;
 					}
 				}
 			}
@@ -2267,10 +2267,9 @@ public class MatrixBlockDictionary extends ADictionary {
 		final int nCol = _data.getNumColumns();
 		final int nRow = _data.getNumRows();
 
-		
 		final double[] values;
 		// force dense ... if this ever is a bottleneck i will be surprised
-		if(_data.isInSparseFormat()){
+		if(_data.isInSparseFormat()) {
 			MatrixBlock tmp = new MatrixBlock();
 			tmp.copy(_data);
 			tmp.sparseToDense();
@@ -2511,7 +2510,9 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public boolean equals(IDictionary o) {
-		if(o instanceof MatrixBlockDictionary)
+		if(o == null)
+			return false;
+		else if(o instanceof MatrixBlockDictionary)
 			return _data.equals(((MatrixBlockDictionary) o)._data);
 		else if(o instanceof Dictionary) {
 			double[] dVals = ((Dictionary) o)._values;
@@ -2529,10 +2530,10 @@ public class MatrixBlockDictionary extends ADictionary {
 			final double[] dv = _data.getDenseBlockValues();
 			return Arrays.equals(dv, dVals);
 		}
-		else if (o != null)
-			return o.equals(this);
 
-		return false;
+		// fallback
+		return o.equals(this);
+
 	}
 
 	@Override

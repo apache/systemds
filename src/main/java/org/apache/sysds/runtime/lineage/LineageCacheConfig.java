@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.instructions.cp.BinaryScalarScalarCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.FrameIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ListIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MatrixIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.fed.ComputationFEDInstruction;
@@ -268,7 +269,8 @@ public class LineageCacheConfig
 			|| inst instanceof GPUInstruction
 			|| inst instanceof ComputationSPInstruction)
 			&& !(inst instanceof ListIndexingCPInstruction)
-			&& !(inst instanceof BinaryScalarScalarCPInstruction);
+			&& !(inst instanceof BinaryScalarScalarCPInstruction)
+			&& !(inst instanceof FrameIndexingCPInstruction);
 		boolean rightCPOp = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
 			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec))
 			|| (inst.getOpcode().startsWith("spoof"))

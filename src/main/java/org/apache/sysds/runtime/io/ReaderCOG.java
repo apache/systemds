@@ -66,171 +66,16 @@ public class ReaderCOG extends MatrixReader{
 
         // Check magic number (42), otherwise this is not a valid TIFF
         int magic = cogHeader.parseByteArray(header, 2, 2, false, false, false).intValue();
-        if (magic != 42) {
+        if (magic == 42) {
+            cogHeader.setBigTIFF(false);
+        } else if (magic == 43) {
+            cogHeader.setBigTIFF(true);
+        } else {
             throw new DMLRuntimeException("Invalid Magic Number");
         }
 
-        // Read offset of the first IFD
-        // Usually this is 8 (right after the header) we are at right now
-        // With COG, GDAL usually writes some metadata before the IFD
-        byte[] ifdOffsetRaw = readBytes(bis, 4);
-        int ifdOffset = cogHeader.parseByteArray(ifdOffsetRaw, 4, 0, false, false, false).intValue();
+        readCOGHeader(bis, cogHeader);
 
-        // If the IFD offset is larger than 8, read that and store it in the COGHeader
-        // This is the GDAL metadata
-        if (ifdOffset > 8) {
-            // Read the metadata from the current position to the IFD offset
-            // -8 because the offset is calculated from the beginning of the file
-            byte[] metadata = readBytes(bis, ifdOffset - 8);
-            cogHeader.setGDALMetadata(new String(metadata));
-        }
-
-        // If we read the first IFD, we handle it somewhat differently
-        // See the if-statement below
-        boolean firstIFD = true;
-        // Is used at the end of the while loop to determine if there is another IFD
-        byte[] nextIFDOffsetRaw;
-        int nextIFDOffset = 0;
-
-        // Used in the beginning of the while loop to read the number of tags in the IFD
-        byte[] numberOfTagsRaw;
-        int numberOfTags;
-        // Array to store the IFD tags, initialized after the number of tags were read
-        IFDTag[] ifdTags;
-
-        // Read the IFDs, always read the first one
-        // The nextIFDOffset ist 0 if there is no next IFD
-        while (nextIFDOffset != 0 || firstIFD) {
-            // There can be data in-between IFDs, we need to skip that
-            // Read until the next IFD, discard any data until then
-            readBytes(bis, nextIFDOffset - (firstIFD ? 0 : totalBytesRead));
-
-            // Read the number of tags in the IFD and initialize the array
-            numberOfTagsRaw = readBytes(bis, 2);
-            numberOfTags = cogHeader.parseByteArray(numberOfTagsRaw, 2, 0, false, false, false).intValue();
-            ifdTags = new IFDTag[numberOfTags];
-
-            // Read the tags
-            for (int i = 0; i < numberOfTags; i++) {
-                // Read the tag fully (12 bytes long)
-                // 2 bytes tag ID
-                // 2 bytes data type
-                // 4 bytes data count
-                // 4 bytes data value (can also be offset)
-                byte[] tag = readBytes(bis, 12);
-                int tagId = cogHeader.parseByteArray(tag, 2, 0, false, false, false).intValue();
-
-                int tagType = cogHeader.parseByteArray(tag, 2, 2, false, false, false).intValue();
-                TIFFDataTypes dataType = TIFFDataTypes.valueOf(tagType);
-
-                int tagCount = cogHeader.parseByteArray(tag, 4, 4, false, false, false).intValue();
-
-                Number[] tagData = new Number[tagCount];
-                int tagValue = cogHeader.parseByteArray(tag, 4, 8, false, false, false).intValue();
-
-                if (dataType.getSize() * tagCount <= 4) {
-                    for (int j = 0; j < tagCount; j++) {
-                        switch(dataType) {
-                            case BYTE:
-                            case ASCII:
-                            case SHORT:
-                            case LONG:
-                            case UNDEFINED:
-                                tagData[j] = cogHeader.parseByteArray(tag, dataType.getSize(), 8 + j * dataType.getSize(), false, false, false);
-                                break;
-                            case RATIONAL:
-                                throw new DMLRuntimeException("Data type RATIONAL cannot fit in 4 bytes");
-                            case SBYTE:
-                            case SSHORT:
-                            case SLONG:
-                                tagData[j] = cogHeader.parseByteArray(tag, dataType.getSize(), 8 + j * dataType.getSize(), false, true, false);
-                                break;
-                            case SRATIONAL:
-                                throw new DMLRuntimeException("Data type SRATIONAL cannot fit in 4 bytes");
-                            case FLOAT:
-                                tagData[j] = cogHeader.parseByteArray(tag, dataType.getSize(), 8 + j * dataType.getSize(), true, false, false);
-                                break;
-                            case DOUBLE:
-                                throw new DMLRuntimeException("Data type DOUBLE cannot fit in 4 bytes");
-                        }
-                    }
-                } else {
-                    // If the data in total is larger than 4 bytes it is an offset to the actual data
-                    // Read the data from the offset
-                    // tagValue = offset, just assigning this for better readability
-                    int offset = tagValue;
-                    // data length = tagCount * data type size
-                    int totalSize = tagCount * dataType.getSize();
-
-                    // Calculate the number of bytes to read in order to reset our reader
-                    // after going to that offset
-                    int bytesToRead = (offset - totalBytesRead) + totalSize;
-
-                    // Mark the current position in the stream
-                    // This is used to reset the stream to this position after reading the data
-                    // Valid until bytesToRead + 1 bytes are read
-                    bis.mark(bytesToRead + 1);
-                    // Read until offset is reached
-                    readBytes(bis, offset - totalBytesRead);
-                    // Read actual data
-                    byte[] data = readBytes(bis, totalSize);
-
-                    // Read the data with the given size of the data type
-                    for (int j = 0; j < tagCount; j++) {
-                        switch (dataType) {
-                            // All unsigned non-floating point values
-                            case BYTE:
-                            case ASCII:
-                            case SHORT:
-                            case LONG:
-                            case UNDEFINED:
-                                tagData[j] = cogHeader.parseByteArray(data, dataType.getSize(), j * dataType.getSize(), false, false, false);
-                                break;
-                            case RATIONAL:
-                                tagData[j] = cogHeader.parseByteArray(data, dataType.getSize(), j * dataType.getSize(), false, false, true);
-                                break;
-                            case SBYTE:
-                            case SSHORT:
-                            case SLONG:
-                                tagData[j] = cogHeader.parseByteArray(data, dataType.getSize(), j * dataType.getSize(), false, true, false);
-                                break;
-                            case SRATIONAL:
-                                tagData[j] = cogHeader.parseByteArray(data, dataType.getSize(), j * dataType.getSize(), false, true, true);
-                                break;
-                            case FLOAT:
-                            case DOUBLE:
-                                tagData[j] = cogHeader.parseByteArray(data, dataType.getSize(), j * dataType.getSize(), true, false, false);
-                                break;
-                        }
-                    }
-
-                    // Reset the stream to the beginning of the next tag
-                    try {
-                        bis.reset();
-                        totalBytesRead -= bytesToRead;
-                    } catch (IOException e) {
-                        throw new DMLRuntimeException(e);
-                    }
-                }
-                // Read the tag ID and get the corresponding tag from the dictionary (enum)
-                IFDTagDictionary tagDictionary = IFDTagDictionary.valueOf(tagId);
-
-                // Create the constructed IFDTag object and store it in the array
-                IFDTag ifdTag = new IFDTag(tagDictionary != null ? tagDictionary : IFDTagDictionary.Unknown, (short) tagType, tagCount, tagData);
-                ifdTags[i] = ifdTag;
-            }
-            if (firstIFD) {
-                // If this is the first IFD, set it as the main IFD in the COGHeader
-                cogHeader.setIFD(ifdTags.clone());
-                firstIFD = false;
-            } else {
-                // If this is not the first IFD, add it as an additional IFD
-                cogHeader.addAdditionalIFD(ifdTags.clone());
-            }
-            // Read the offset to the next IFD. If it is 0, there is no next IFD
-            nextIFDOffsetRaw = readBytes(bis, 4);
-            nextIFDOffset = cogHeader.parseByteArray(nextIFDOffsetRaw, 4, 0, false, false, false).intValue();
-        }
 
         // Check compatibility of the file with our reader
         // Certain options are not supported, and we need to filter out some non-standard options
@@ -458,5 +303,200 @@ public class ReaderCOG extends MatrixReader{
             throw new DMLRuntimeException(e);
         }
         return header;
+    }
+
+    private byte[] readBytes(BufferedInputStream bis, long length) {
+        if (length > Integer.MAX_VALUE) {
+            throw new DMLRuntimeException("Cannot read more than Integer.MAX_VALUE bytes at once");
+        }
+        return readBytes(bis, (int) length);
+    }
+
+    /**
+     * Reads the COG header from the BufferedInputStream.
+     * *MUST* have littleEndian and bigTIFF set correctly before calling this method
+     * @param bis
+     * @param cogHeader
+     * @return filled COGHeader object
+     */
+    private COGHeader readCOGHeader(BufferedInputStream bis, COGHeader cogHeader) {
+        // Read offset of the first IFD
+        // Usually this is 8 (right after the header) we are at right now
+        // With COG, GDAL usually writes some metadata before the IFD
+        short ifdOffsetSize = 4;
+        // BigTIFF allows for differently sized offsets
+        if (cogHeader.isBigTIFF()) {
+            byte[] offsetSize = readBytes(bis, 2);
+            ifdOffsetSize = cogHeader.parseByteArray(offsetSize, 2, 0, false, false, false).shortValue();
+            readBytes(bis, 2); // Skip the next 2 bytes
+        }
+
+        byte[] ifdOffsetRaw = readBytes(bis, ifdOffsetSize);
+        long ifdOffset = cogHeader.parseByteArray(ifdOffsetRaw, ifdOffsetSize, 0, false, false, false).intValue();
+
+        // If the IFD offset is larger than 8, read that and store it in the COGHeader
+        // This is the GDAL metadata
+        if (ifdOffset > 8) {
+            // Read the metadata from the current position to the IFD offset
+            // -8 because the offset is calculated from the beginning of the file
+            byte[] metadata = readBytes(bis, ifdOffset - (cogHeader.isBigTIFF() ? 16 : 8));
+            cogHeader.setGDALMetadata(new String(metadata));
+        }
+
+        // If we read the first IFD, we handle it somewhat differently
+        // See the if-statement below
+        boolean firstIFD = true;
+        // Is used at the end of the while loop to determine if there is another IFD
+        byte[] nextIFDOffsetRaw;
+        int nextIFDOffset = 0;
+
+        // Used in the beginning of the while loop to read the number of tags in the IFD
+        byte[] numberOfTagsRaw;
+        int numberOfTags;
+        // Array to store the IFD tags, initialized after the number of tags were read
+        IFDTag[] ifdTags;
+        int tagCountLength = cogHeader.isBigTIFF() ? 8 : 4;
+        int tagDataLength = cogHeader.isBigTIFF() ? 8 : 4;
+
+        // Read the IFDs, always read the first one
+        // The nextIFDOffset ist 0 if there is no next IFD
+        while (nextIFDOffset != 0 || firstIFD) {
+            // There can be data in-between IFDs, we need to skip that
+            // Read until the next IFD, discard any data until then
+            readBytes(bis, nextIFDOffset - (firstIFD ? 0 : totalBytesRead));
+
+            // Read the number of tags in the IFD and initialize the array
+            numberOfTagsRaw = readBytes(bis, cogHeader.isBigTIFF() ? 8 : 2);
+            numberOfTags = cogHeader.parseByteArray(numberOfTagsRaw, cogHeader.isBigTIFF() ? 8 : 2, 0, false, false, false).intValue();
+            ifdTags = new IFDTag[numberOfTags];
+
+            // Read the tags
+            for (int i = 0; i < numberOfTags; i++) {
+                // Read the tag fully (12 bytes long)
+                // 2 bytes tag ID
+                // 2 bytes data type
+                // 4 bytes data count
+                // 4 bytes data value (can also be offset)
+                byte[] tag = readBytes(bis, cogHeader.isBigTIFF() ? 20 : 12);
+                int tagId = cogHeader.parseByteArray(tag, 2, 0, false, false, false).intValue();
+
+                int tagType = cogHeader.parseByteArray(tag, 2, 2, false, false, false).intValue();
+                TIFFDataTypes dataType = TIFFDataTypes.valueOf(tagType);
+
+                int tagCount = cogHeader.parseByteArray(tag, tagCountLength, 4, false, false, false).intValue();
+
+                Number[] tagData = new Number[tagCount];
+                long tagValue = cogHeader.parseByteArray(tag, tagDataLength, cogHeader.isBigTIFF() ? 12 : 8, false, false, false).longValue();
+
+                if (dataType.getSize() * tagCount <= tagDataLength) {
+                    for (int j = 0; j < tagCount; j++) {
+                        switch(dataType) {
+                            case BYTE:
+                            case ASCII:
+                            case SHORT:
+                            case LONG:
+                            case UNDEFINED:
+                                tagData[j] = cogHeader.parseByteArray(tag, dataType.getSize(), cogHeader.isBigTIFF() ? 12 : 8 + j * dataType.getSize(), false, false, false);
+                                break;
+                            case RATIONAL:
+                                throw new DMLRuntimeException("Data type RATIONAL cannot fit in 4 bytes");
+                            case SBYTE:
+                            case SSHORT:
+                            case SLONG:
+                            case LONG8:
+                            case SLONG8:
+                            case IFD8:
+                                tagData[j] = cogHeader.parseByteArray(tag, dataType.getSize(), cogHeader.isBigTIFF() ? 12 : 8 + j * dataType.getSize(), false, true, false);
+                                break;
+                            case SRATIONAL:
+                                throw new DMLRuntimeException("Data type SRATIONAL cannot fit in 4 bytes");
+                            case FLOAT:
+                                tagData[j] = cogHeader.parseByteArray(tag, dataType.getSize(), cogHeader.isBigTIFF() ? 12 : 8 + j * dataType.getSize(), true, false, false);
+                                break;
+                            case DOUBLE:
+                                throw new DMLRuntimeException("Data type DOUBLE cannot fit in 4 bytes");
+                        }
+                    }
+                } else {
+                    // If the data in total is larger than 4 bytes it is an offset to the actual data
+                    // Read the data from the offset
+                    // tagValue = offset, just assigning this for better readability
+                    long offset = tagValue;
+                    // data length = tagCount * data type size
+                    int totalSize = tagCount * dataType.getSize();
+
+                    // Calculate the number of bytes to read in order to reset our reader
+                    // after going to that offset
+                    long bytesToRead = (offset - totalBytesRead) + totalSize;
+
+                    // Mark the current position in the stream
+                    // This is used to reset the stream to this position after reading the data
+                    // Valid until bytesToRead + 1 bytes are read
+                    bis.mark((int) bytesToRead + 1);
+                    // Read until offset is reached
+                    readBytes(bis, offset - totalBytesRead);
+                    // Read actual data
+                    byte[] data = readBytes(bis, totalSize);
+
+                    // Read the data with the given size of the data type
+                    for (int j = 0; j < tagCount; j++) {
+                        switch (dataType) {
+                            // All unsigned non-floating point values
+                            case BYTE:
+                            case ASCII:
+                            case SHORT:
+                            case LONG:
+                            case UNDEFINED:
+                                tagData[j] = cogHeader.parseByteArray(data, dataType.getSize(), j * dataType.getSize(), false, false, false);
+                                break;
+                            case RATIONAL:
+                                tagData[j] = cogHeader.parseByteArray(data, dataType.getSize(), j * dataType.getSize(), false, false, true);
+                                break;
+                            case SBYTE:
+                            case SSHORT:
+                            case SLONG:
+                            case LONG8:
+                            case SLONG8:
+                            case IFD8:
+                                tagData[j] = cogHeader.parseByteArray(data, dataType.getSize(), j * dataType.getSize(), false, true, false);
+                                break;
+                            case SRATIONAL:
+                                tagData[j] = cogHeader.parseByteArray(data, dataType.getSize(), j * dataType.getSize(), false, true, true);
+                                break;
+                            case FLOAT:
+                            case DOUBLE:
+                                tagData[j] = cogHeader.parseByteArray(data, dataType.getSize(), j * dataType.getSize(), true, false, false);
+                                break;
+                        }
+                    }
+
+                    // Reset the stream to the beginning of the next tag
+                    try {
+                        bis.reset();
+                        totalBytesRead -= bytesToRead;
+                    } catch (IOException e) {
+                        throw new DMLRuntimeException(e);
+                    }
+                }
+                // Read the tag ID and get the corresponding tag from the dictionary (enum)
+                IFDTagDictionary tagDictionary = IFDTagDictionary.valueOf(tagId);
+
+                // Create the constructed IFDTag object and store it in the array
+                IFDTag ifdTag = new IFDTag(tagDictionary != null ? tagDictionary : IFDTagDictionary.Unknown, (short) tagType, tagCount, tagData);
+                ifdTags[i] = ifdTag;
+            }
+            if (firstIFD) {
+                // If this is the first IFD, set it as the main IFD in the COGHeader
+                cogHeader.setIFD(ifdTags.clone());
+                firstIFD = false;
+            } else {
+                // If this is not the first IFD, add it as an additional IFD
+                cogHeader.addAdditionalIFD(ifdTags.clone());
+            }
+            // Read the offset to the next IFD. If it is 0, there is no next IFD
+            nextIFDOffsetRaw = readBytes(bis, 4);
+            nextIFDOffset = cogHeader.parseByteArray(nextIFDOffsetRaw, 4, 0, false, false, false).intValue();
+        }
+        return cogHeader;
     }
 }

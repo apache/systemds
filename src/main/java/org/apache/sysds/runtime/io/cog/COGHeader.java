@@ -8,6 +8,7 @@ public class COGHeader {
     private boolean isLittleEndian;
     private String GDALMetadata;
     private IFDTag[] IFD;
+    private boolean isBigTIFF;
     // Do we even need this or will we throw it away?
     // If we keep this and write it again, we also need to write the additional images
     // So this could very likely not make the cut
@@ -61,6 +62,14 @@ public class COGHeader {
 
     public String getGDALMetadata() {
         return GDALMetadata;
+    }
+
+    public void setBigTIFF(boolean isBigTIFF) {
+        this.isBigTIFF = isBigTIFF;
+    }
+
+    public boolean isBigTIFF() {
+        return isBigTIFF;
     }
 
     /**
@@ -117,6 +126,8 @@ public class COGHeader {
                 return isSigned ? (short)buffer.getShort() : Short.toUnsignedInt(buffer.getShort());
             case 4:
                 return isSigned ? (int)buffer.getInt() : Integer.toUnsignedLong(buffer.getInt());
+            case 8:
+                return isSigned ? (long)buffer.getLong() : buffer.getLong();
             default:
                 throw new IllegalArgumentException("Unsupported length: " + length);
         }

@@ -88,9 +88,6 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 					//e.g., for(i in a:b){s = s + as.scalar(X[i,2])} -> s = sum(X[a:b,2])
 					sb = vectorizeScalarAggregate(sb, csb, from, to, incr, iterVar);
 					
-					//e.g., for(i in a:b){s = s + X[i,2]} -> s = sum(X[a:b,2])
-					sb = vectorizeScalarAggregate2(sb, csb, from, to, incr, iterVar);
-					
 					//e.g., for(i in a:b){X[i,2] = Y[i,1] + Z[i,3]} -> X[a:b,2] = Y[a:b,1] + Z[a:b,3];
 					sb = vectorizeElementwiseBinary(sb, csb, from, to, incr, iterVar);
 					

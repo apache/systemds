@@ -23,6 +23,7 @@ import java.util.HashMap;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.common.Types.ExecType;

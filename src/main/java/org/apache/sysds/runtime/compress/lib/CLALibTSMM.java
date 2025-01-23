@@ -52,8 +52,15 @@ public final class CLALibTSMM {
 	 * @param k   The parallelization degree allowed
 	 */
 	public static void leftMultByTransposeSelf(CompressedMatrixBlock cmb, MatrixBlock ret, int k) {
+
 		final List<AColGroup> groups = cmb.getColGroups();
+
 		final int numColumns = cmb.getNumColumns();
+		if(groups.size() >= numColumns) {
+			MatrixBlock m = cmb.getUncompressed("TSMM to many columngroups", k);
+			LibMatrixMult.matrixMultTransposeSelf(m, ret, true, k);
+			return;
+		}
 		final int numRows = cmb.getNumRows();
 		final boolean shouldFilter = CLALibUtils.shouldPreFilter(groups);
 		final boolean overlapping = cmb.isOverlapping();
@@ -63,8 +70,10 @@ public final class CLALibTSMM {
 			tsmmColGroups(filteredGroups, ret, numRows, overlapping, k);
 			addCorrectionLayer(filteredGroups, ret, numRows, numColumns, constV);
 		}
-		else
+		else {
+
 			tsmmColGroups(groups, ret, numRows, overlapping, k);
+		}
 
 		ret.setNonZeros(LibMatrixMult.copyUpperToLowerTriangle(ret));
 		ret.examSparsity();
@@ -77,10 +86,7 @@ public final class CLALibTSMM {
 		addCorrectionLayer(constV, filteredColSum, nRows, retV);
 	}
 
-	public static void addCorrectionLayer(double[] constV, double[] correctedSum, int nRow, double[] ret) {
-		outerProductUpperTriangle(constV, correctedSum, ret);
-		outerProductUpperTriangleWithScaling(correctedSum, constV, nRow, ret);
-	}
+
 
 	private static void tsmmColGroups(List<AColGroup> groups, MatrixBlock ret, int nRows, boolean overlapping, int k) {
 		if(k <= 1)
@@ -108,7 +114,7 @@ public final class CLALibTSMM {
 	}
 
 	private static void tsmmColGroupsMultiThread(List<AColGroup> groups, MatrixBlock ret, int nRows, int k) {
-		final ExecutorService pool = CommonThreadPool.get(k);		
+		final ExecutorService pool = CommonThreadPool.get(k);
 		try {
 			final ArrayList<Callable<MatrixBlock>> tasks = new ArrayList<>((groups.size() * (1 + groups.size())) / 2);
 			for(int i = 0; i < groups.size(); i++) {
@@ -123,31 +129,19 @@ public final class CLALibTSMM {
 		catch(InterruptedException | ExecutionException e) {
 			throw new DMLRuntimeException(e);
 		}
-		finally{
+		finally {
 			pool.shutdown();
 		}
 	}
 
-	private static void outerProductUpperTriangle(final double[] leftRowSum, final double[] rightColumnSum,
-		final double[] result) {
-		for(int row = 0; row < leftRowSum.length; row++) {
-			final int offOut = rightColumnSum.length * row;
-			final double vLeft = leftRowSum[row];
-			for(int col = row; col < rightColumnSum.length; col++) {
-				result[offOut + col] += vLeft * rightColumnSum[col];
-			}
-		}
-	}
-
-	private static void outerProductUpperTriangleWithScaling(final double[] leftRowSum, final double[] rightColumnSum,
-		final int scale, final double[] result) {
-		// note this scaling is a bit different since it is encapsulating two scalar multiplications via an addition in
-		// the outer loop.
-		for(int row = 0; row < leftRowSum.length; row++) {
-			final int offOut = rightColumnSum.length * row;
-			final double vLeft = leftRowSum[row] + rightColumnSum[row] * scale;
-			for(int col = row; col < rightColumnSum.length; col++) {
-				result[offOut + col] += vLeft * rightColumnSum[col];
+	public static void addCorrectionLayer(double[] constV, double[] filteredColSum, int nRow, double[] ret) {
+		final int nColRow = constV.length;
+		for(int row = 0; row < nColRow; row++){
+			int offOut = nColRow * row;
+			final double v1l = constV[row];
+			final double v2l = filteredColSum[row] + constV[row] * nRow;
+			for(int col = row; col < nColRow; col++){
+				ret[offOut + col] += v1l * filteredColSum[col]  + v2l * constV[col];
 			}
 		}
 	}

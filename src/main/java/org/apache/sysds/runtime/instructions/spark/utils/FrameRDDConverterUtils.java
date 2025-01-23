@@ -90,10 +90,7 @@ public class FrameRDDConverterUtils
  			JavaRDD<String> tmp = input.values()
 					.map(new TextToStringFunction());
 			String tmpStr = tmp.first();
-			boolean metaHeader = tmpStr.startsWith(TfUtils.TXMTD_MVPREFIX) 
-					|| tmpStr.startsWith(TfUtils.TXMTD_NDPREFIX);
-			tmpStr = (metaHeader) ? tmpStr.substring(tmpStr.indexOf(delim)+1) : tmpStr;
-			long rlen = tmp.count() - (hasHeader ? 1 : 0) - (metaHeader ? 2 : 0);
+			long rlen = tmp.count() ;
 			long clen = IOUtilFunctions.splitCSV(tmpStr, delim).length;
 			mc.set(rlen, clen, mc.getBlocksize(), -1);
 		}
@@ -582,14 +579,14 @@ public class FrameRDDConverterUtils
 					_colnames = row.split(_delim);
 					continue;
 				}
-				if( row.startsWith(TfUtils.TXMTD_MVPREFIX) ) {
-					_mvMeta = Arrays.asList(Arrays.copyOfRange(IOUtilFunctions.splitCSV(row, _delim), 1, (int)_clen+1));
-					continue;
-				}
-				else if( row.startsWith(TfUtils.TXMTD_NDPREFIX) ) {
-					_ndMeta = Arrays.asList(Arrays.copyOfRange(IOUtilFunctions.splitCSV(row, _delim), 1, (int)_clen+1));
-					continue;
-				}
+				// if( row.startsWith(TfUtils.TXMTD_MVPREFIX) ) {
+				// 	_mvMeta = Arrays.asList(Arrays.copyOfRange(IOUtilFunctions.splitCSV(row, _delim), 1, (int)_clen+1));
+				// 	continue;
+				// }
+				// else if( row.startsWith(TfUtils.TXMTD_NDPREFIX) ) {
+				// 	_ndMeta = Arrays.asList(Arrays.copyOfRange(IOUtilFunctions.splitCSV(row, _delim), 1, (int)_clen+1));
+				// 	continue;
+				// }
 				
 				//adjust row index for header and meta data
 				rowix += (_hasHeader ? 0 : 1) - ((_mvMeta == null) ? 0 : 2);
@@ -670,18 +667,18 @@ public class FrameRDDConverterUtils
 					ret.add(sb.toString());
 					sb.setLength(0); //reset
 				}
-				if( !blk.isColumnMetadataDefault() ) {
-					sb.append(TfUtils.TXMTD_MVPREFIX + _props.getDelim());
-					for( int j=0; j<blk.getNumColumns(); j++ )
-						sb.append(blk.getColumnMetadata(j).getMvValue() + ((j<blk.getNumColumns()-1)?_props.getDelim():""));
-					ret.add(sb.toString());
-					sb.setLength(0); //reset
-					sb.append(TfUtils.TXMTD_NDPREFIX + _props.getDelim());
-					for( int j=0; j<blk.getNumColumns(); j++ )
-						sb.append(blk.getColumnMetadata(j).getNumDistinct() + ((j<blk.getNumColumns()-1)?_props.getDelim():""));
-					ret.add(sb.toString());
-					sb.setLength(0); //reset		
-				}
+				// if( !blk.isColumnMetadataDefault() ) {
+				// 	sb.append(TfUtils.TXMTD_MVPREFIX + _props.getDelim());
+				// 	for( int j=0; j<blk.getNumColumns(); j++ )
+				// 		sb.append(blk.getColumnMetadata(j).getMvValue() + ((j<blk.getNumColumns()-1)?_props.getDelim():""));
+				// 	ret.add(sb.toString());
+				// 	sb.setLength(0); //reset
+				// 	sb.append(TfUtils.TXMTD_NDPREFIX + _props.getDelim());
+				// 	for( int j=0; j<blk.getNumColumns(); j++ )
+				// 		sb.append(blk.getColumnMetadata(j).getNumDistinct() + ((j<blk.getNumColumns()-1)?_props.getDelim():""));
+				// 	ret.add(sb.toString());
+				// 	sb.setLength(0); //reset		
+				// }
 			}
 		
 			//handle Frame block data

@@ -294,12 +294,33 @@ public class COGHeader {
         return cogHeader;
     }
 
+    /**
+     * Parses the data of an IFD entry from a byte array. Can throw an error if something is not expected,
+     * e.g. when a broken TIFF causes the data size to differ from what is expected.
+     * @param tagCount Number of tags that should be present
+     * @param rawData Raw data where the tags can be found
+     * @param dataType Data Type, used for size calculation
+     * @param cogHeader COGHeader is used for properly parsing the byte array with the correct data type etc.
+     * @param maxSize Should be set to 0 if no other value is useful! Throws an error when the data is too large for the header field
+     * @return
+     */
     private static Number[] parseTagData(int tagCount, byte[] rawData, TIFFDataTypes dataType, COGHeader cogHeader, int maxSize) {
         return parseTagData(tagCount, rawData, dataType, cogHeader, maxSize, 0);
     }
 
+    /**
+     * Parses the data of an IFD entry from a byte array. Can throw an error if something is not expected,
+     * e.g. when a broken TIFF causes the data size to differ from what is expected.
+     * @param tagCount Number of tags that should be present
+     * @param rawData Raw data where the tags can be found
+     * @param dataType Data Type, used for size calculation
+     * @param cogHeader COGHeader is used for properly parsing the byte array with the correct data type etc.
+     * @param maxSize Should be set to 0 if no other value is useful! Throws an error when the data is too large for the header field
+     * @param offset (Optional) offset where to start reading, e.g. when giving in whole tag
+     * @return
+     */
     private static Number[] parseTagData(int tagCount, byte[] rawData, TIFFDataTypes dataType, COGHeader cogHeader, int maxSize, int offset) {
-        if (maxSize > 0 && dataType.getSize() > maxSize) {
+        if (maxSize > 0 && dataType.getSize() * tagCount > maxSize) {
             throw new DMLRuntimeException("Error while parsing. Data type " + dataType.toString() + " cannot fit into " + maxSize + " bytes");
         }
         Number[] tagData = new Number[tagCount];

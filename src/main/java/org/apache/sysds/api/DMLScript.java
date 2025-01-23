@@ -52,6 +52,7 @@ import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
+import org.apache.sysds.hops.rewriter.RewriteAutomaticallyGenerated;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DMLTranslator;
@@ -519,6 +520,7 @@ public class DMLScript
 			if(ec != null && ec instanceof SparkExecutionContext)
 				((SparkExecutionContext) ec).close();
 			LOG.info("END DML run " + getDateTime() );
+			System.out.println("GenRTime: " + RewriteAutomaticallyGenerated.totalTimeNanos / 1000000D + "ms");
 		}
 	}
 

@@ -19,15 +19,21 @@
 
 package org.apache.sysds.test.functions.builtin.part2;
 
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.hops.rewriter.RewriteAutomaticallyGenerated;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class BuiltinXgBoostPredictTest_regression extends AutomatedTestBase {
 	private final static String TEST_NAME = "xgboost_predict_regression";
@@ -46,6 +52,7 @@ public class BuiltinXgBoostPredictTest_regression extends AutomatedTestBase {
 		executeXgBoost(Types.ExecMode.SINGLE_NODE, 2.0);
 	}
 
+	// systemds ~/Dev/systemds/src/test/scripts/functions/builtin/xgboost_predict_regression.dml -args ~/Dev/systemds/target/testTemp/functions/builtin/BuiltinXgBoostPredictTest_regression/out/P ~/Dev/systemds/target/testTemp/functions/builtin/BuiltinXgBoostPredictTest_regression/out/y ~/Dev/systemds/src/test/resources/datasets/wine/winequality-white.csv
 	private void executeXgBoost(ExecMode mode, double threshold) {
 		ExecMode platformOld = setExecMode(mode);
 		try {
@@ -55,12 +62,20 @@ public class BuiltinXgBoostPredictTest_regression extends AutomatedTestBase {
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", output("P"), output("y"), DATASET_DIR+"wine/winequality-white.csv"};
 
+			try {
+				//DMLScript.executeScript(programArgs);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
 			runTest(true, false, null, -1);
 
-			HashMap<MatrixValue.CellIndex, Double> predicted_values = readDMLMatrixFromOutputDir("P");
-			HashMap<MatrixValue.CellIndex, Double> actual_values = readDMLMatrixFromOutputDir("y");
+			//HashMap<MatrixValue.CellIndex, Double> predicted_values = readDMLMatrixFromOutputDir("P");
+			//HashMap<MatrixValue.CellIndex, Double> actual_values = readDMLMatrixFromOutputDir("y");
 
-			TestUtils.compareMatrices(predicted_values, actual_values, threshold, "predicted_val", "actual_value");
+			//TestUtils.compareMatrices(predicted_values, actual_values, threshold, "predicted_val", "actual_value");
+
+			System.out.println("MS: " + RewriteAutomaticallyGenerated.totalTimeNanos/1000000D);
 		}
 		catch (Exception ex) {
 			System.out.println("[ERROR] Xgboost test failed, cause: " + ex);

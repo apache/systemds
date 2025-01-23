@@ -264,7 +264,6 @@ public class ReaderCOGParallel extends MatrixReader{
         int[] tileOffsets = null;
         int[] bytesPerTile = null;
         int compression = -1;
-        Number noDataIndicator = null;
 
         // Set the attributes correctly from the IFD tags
         for (IFDTag ifd : cogHeader.getIFD()) {
@@ -318,8 +317,6 @@ public class ReaderCOGParallel extends MatrixReader{
                 case Compression:
                     compression = ifd.getData()[0].intValue();
                     break;
-                case GDALNoData:
-                    noDataIndicator = ifd.getData()[0];
             }
         }
 
@@ -339,12 +336,14 @@ public class ReaderCOGParallel extends MatrixReader{
         ExecutorService pool = CommonThreadPool.get(_numThreads);
 
         MatrixBlock outputMatrix = createOutputMatrixBlock(rows, cols * bands, rows, estnnz, true, true);
-        //outputMatrix = new MatrixBlock(rows, cols * bands, false);
 
         try {
             ArrayList<Callable<MatrixBlock>> tasks = new ArrayList<>();
+            // Principle: We're reading all tiles in sequence as I/O likely won't benefit from parallel reads
+            // in most cases.
+            // Then: Process the read tile data in parallel
             for (int currenTileIdx = 0; currenTileIdx < actualAmountTiles; currenTileIdx++) {
-                // TODO this might also be included in the parallel task, but be aware of synchronization issues
+                // First read the bytes for the new tile
                 int bytesToRead = (tileOffsets[currenTileIdx] - totalBytesRead) + bytesPerTile[currenTileIdx];
                 bis.mark(bytesToRead + 1);
                 readBytes(bis, tileOffsets[currenTileIdx] - totalBytesRead);
@@ -362,6 +361,7 @@ public class ReaderCOGParallel extends MatrixReader{
 
                 TileProcessor tileProcessor;
                 if (planarConfiguration == 1) {
+                    // Every band is in the same tile, e.g. RGBRGBRGB
                      tileProcessor = new TileProcessor(cols * bands, currentTileData, currentTileRow, currentTileCol,
                             tileWidth, tileLength, bands, bitsPerSample, sampleFormat, cogHeader, outputMatrix,
                             planarConfiguration, _numThreads<=actualAmountTiles);
@@ -371,7 +371,10 @@ public class ReaderCOGParallel extends MatrixReader{
                         currentTileCol = 0;
                         currentTileRow++;
                     }
-                } else {
+                } else if (planarConfiguration == 2) {
+                    // Every band is in a different tile, e.g. RRRGGGBBB
+                    // Note here that first all tiles from a single band are present
+                    // after that all tiles from the next band are present and so on (so they don't interleave)
                     if (currenTileIdx - (currentBand * calculatedAmountTiles) >= calculatedAmountTiles) {
                         currentTileCol = 0;
                         currentTileRow = 0;
@@ -388,6 +391,8 @@ public class ReaderCOGParallel extends MatrixReader{
                         currentTileCol = 0;
                         currentTileRow++;
                     }
+                } else {
+                    throw new DMLRuntimeException("Unsupported Planar Configuration: " + planarConfiguration);
                 }
                 tasks.add(tileProcessor);
             }
@@ -517,13 +522,9 @@ public class ReaderCOGParallel extends MatrixReader{
                             value = cogHeader.parseByteArray(tileData, sampleLength, bytesRead, true, false, false).doubleValue();
                             break;
                     }
-                    try {
-                        bytesRead += sampleLength;
-                        tileMatrix.set(currentRow, (pixelsRead * bands) + bandIdx, value);
-                    }
-                    catch (Exception e) {
-                        throw new RuntimeException("Error here   " + Integer.toString(currentRow)+"," +Integer.toString((pixelsRead * bands) + bandIdx)+"," +Integer.toString(tileLength)+"," +Integer.toString(tileWidth*bands),  e);
-                    }
+
+                    bytesRead += sampleLength;
+                    tileMatrix.set(currentRow, (pixelsRead * bands) + bandIdx, value);
                 }
 
                 pixelsRead++;
@@ -605,13 +606,9 @@ public class ReaderCOGParallel extends MatrixReader{
                         value = cogHeader.parseByteArray(tileData, sampleLength, bytesRead, true, false, false).doubleValue();
                         break;
                 }
-                try {
-                    bytesRead += sampleLength;
-                    tileMatrix.set(currentRow, (pixelsRead * bands) + band, value);
-                }
-                catch (Exception e) {
-                    throw new RuntimeException("Error here   " + Integer.toString(currentRow)+"," +Integer.toString((pixelsRead * bands) + band)+"," +Integer.toString(tileLength)+"," +Integer.toString(tileWidth*bands),  e);
-                }
+
+                bytesRead += sampleLength;
+                tileMatrix.set(currentRow, (pixelsRead * bands) + band, value);
 
                 pixelsRead++;
                 if (pixelsRead >= tileWidth) {

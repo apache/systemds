@@ -138,11 +138,13 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 					&& right.getInput(0) instanceof IndexingOp )
 				{
 					IndexingOp ix = (IndexingOp)right.getInput(0);
-					if( checkItervarIndexing(ix, itervar, true) ){
+					if( ix.isRowLowerEqualsUpper() && ix.getInput(1) instanceof DataOp
+						&& ix.getInput(1).getName().equals(itervar) ){
 						leftScalar = true;
 						rowIx = true;
 					}
-					else if( checkItervarIndexing(ix, itervar, false) ){
+					else if( ix.isColLowerEqualsUpper() && ix.getInput(3) instanceof DataOp
+						&& ix.getInput(3).getName().equals(itervar) ){
 						leftScalar = true;
 						rowIx = false;
 					}
@@ -155,11 +157,13 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 					&& left.getInput(0) instanceof IndexingOp )
 				{
 					IndexingOp ix = (IndexingOp)left.getInput(0);
-					if( checkItervarIndexing(ix, itervar, true) ){
+					if( ix.isRowLowerEqualsUpper() && ix.getInput(1) instanceof DataOp
+						&& ix.getInput(1).getName().equals(itervar) ){
 						rightScalar = true;
 						rowIx = true;
 					}
-					else if( checkItervarIndexing(ix, itervar, false) ){
+					else if( ix.isColLowerEqualsUpper() && ix.getInput(3) instanceof DataOp
+						&& ix.getInput(3).getName().equals(itervar) ){
 						rightScalar = true;
 						rowIx = false;
 					}
@@ -381,12 +385,6 @@ public class RewriteForLoopVectorization extends StatementBlockRewriteRule
 		}
 		
 		return ret;
-	}
-	
-	private static boolean checkItervarIndexing(IndexingOp ix, String itervar, boolean row) {
-		return ix.isRowLowerEqualsUpper() 
-			&& ix.getInput(row?1:3) instanceof DataOp
-			&& ix.getInput(row?1:3).getName().equals(itervar);
 	}
 	
 	private static boolean[] checkLeftAndRightIndexing(LeftIndexingOp lix, IndexingOp rix, String itervar) {

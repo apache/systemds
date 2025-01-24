@@ -23,7 +23,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -47,11 +46,24 @@ public class QDictionary extends ACachingMBDictionary {
 		_nCol = nCol;
 	}
 
+	public static QDictionary create(byte[] values, double scale, int nCol, boolean check) {
+		if(scale == 0)
+			return null;
+		if(check) {
+			boolean containsOnlyZero = true;
+			for(int i = 0; i < values.length && containsOnlyZero; i++) {
+				if(values[i] != 0)
+					containsOnlyZero = false;
+			}
+			if(containsOnlyZero)
+				return null;
+		}
+		return new QDictionary(values, scale, nCol);
+	}
+
 	@Override
 	public double[] getValues() {
-		if(_values == null) {
-			return new double[0];
-		}
+
 		double[] res = new double[_values.length];
 		for(int i = 0; i < _values.length; i++) {
 			res[i] = getValue(i);
@@ -67,18 +79,6 @@ public class QDictionary extends ACachingMBDictionary {
 	@Override
 	public final double getValue(int r, int c, int nCol) {
 		return _values[r * nCol + c] * _scale;
-	}
-
-	public byte getValueByte(int i) {
-		return _values[i];
-	}
-
-	public byte[] getValuesByte() {
-		return _values;
-	}
-
-	public double getScale() {
-		return _scale;
 	}
 
 	@Override
@@ -100,26 +100,6 @@ public class QDictionary extends ACachingMBDictionary {
 		for(int i = 0; i < len; i++)
 			ret = fn.execute(ret, getValue(i));
 		return ret;
-	}
-
-	@Override
-	public double aggregateWithReference(double init, Builtin fn, double[] reference, boolean def) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public double[] aggregateRows(Builtin fn, final int nCol) {
-		if(nCol == 1)
-			return getValues();
-		final int nRows = _values.length / nCol;
-		double[] res = new double[nRows];
-		for(int i = 0; i < nRows; i++) {
-			final int off = i * nCol;
-			res[i] = _values[off];
-			for(int j = off + 1; j < off + nCol; j++)
-				res[i] = fn.execute(res[i], _values[j] * _scale);
-		}
-		return res;
 	}
 
 	private int size() {
@@ -159,7 +139,7 @@ public class QDictionary extends ACachingMBDictionary {
 
 	@Override
 	public int getNumberOfValues(int nCol) {
-		return (_values == null) ? 0 : _values.length / nCol;
+		return _values.length / nCol;
 	}
 
 	@Override
@@ -185,10 +165,7 @@ public class QDictionary extends ACachingMBDictionary {
 	}
 
 	private double sumRow(int k, int nrColumns) {
-		if(_values == null)
-			return 0;
 		int valOff = k * nrColumns;
-
 		int res = 0;
 		for(int i = 0; i < nrColumns; i++) {
 			res += _values[valOff + i];
@@ -197,8 +174,6 @@ public class QDictionary extends ACachingMBDictionary {
 	}
 
 	private double sumRowSq(int k, int nrColumns) {
-		if(_values == null)
-			return 0;
 		int valOff = k * nrColumns;
 		double res = 0.0;
 		for(int i = 0; i < nrColumns; i++)
@@ -213,11 +188,6 @@ public class QDictionary extends ACachingMBDictionary {
 			sb.append((i) % (colIndexes) == colIndexes - 1 ? "\n" : " ");
 		}
 		return sb.toString();
-	}
-
-	public Dictionary makeDoubleDictionary() {
-		double[] doubleValues = getValues();
-		return Dictionary.create(doubleValues);
 	}
 
 	public IDictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
@@ -274,7 +244,11 @@ public class QDictionary extends ACachingMBDictionary {
 
 	@Override
 	public double getSparsity() {
-		throw new NotImplementedException();
+		int nnz = 0;
+		for(int i = 0; i < _values.length; i++) {
+			nnz += _values[i] == 0 ? 0 : 1;
+		}
+		return (double) nnz / _values.length;
 	}
 
 	@Override

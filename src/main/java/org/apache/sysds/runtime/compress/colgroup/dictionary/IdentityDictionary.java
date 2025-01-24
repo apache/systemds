@@ -51,8 +51,18 @@ public class IdentityDictionary extends AIdentityDictionary {
 	 * 
 	 * @param nRowCol The number of rows and columns in this identity matrix.
 	 */
-	public IdentityDictionary(int nRowCol) {
+	private IdentityDictionary(int nRowCol) {
 		super(nRowCol);
+	}
+
+	/**
+	 * Create an identity matrix dictionary. It behaves as if allocated a Sparse Matrix block but exploits that the
+	 * structure is known to have certain properties.
+	 * 
+	 * @param nRowCol The number of rows and columns in this identity matrix.
+	 */
+	public static IDictionary create(int nRowCol) {
+		return create(nRowCol, false);
 	}
 
 	/**
@@ -62,8 +72,25 @@ public class IdentityDictionary extends AIdentityDictionary {
 	 * @param nRowCol   The number of rows and columns in this identity matrix.
 	 * @param withEmpty If the matrix should contain an empty row in the end.
 	 */
-	public IdentityDictionary(int nRowCol, boolean withEmpty) {
+	private IdentityDictionary(int nRowCol, boolean withEmpty) {
 		super(nRowCol, withEmpty);
+	}
+
+	/**
+	 * Create an identity matrix dictionary, It behaves as if allocated a Sparse Matrix block but exploits that the
+	 * structure is known to have certain properties.
+	 * 
+	 * @param nRowCol   The number of rows and columns in this identity matrix.
+	 * @param withEmpty If the matrix should contain an empty row in the end.
+	 */
+	public static IDictionary create(int nRowCol, boolean withEmpty) {
+		if(nRowCol == 1) {
+			if(withEmpty)
+				return new Dictionary(new double[] {1, 0});
+			else
+				return new Dictionary(new double[] {1});
+		}
+		return new IdentityDictionary(nRowCol, withEmpty);
 	}
 
 	@Override
@@ -128,7 +155,6 @@ public class IdentityDictionary extends AIdentityDictionary {
 			c[idx] = fn.execute(c[idx], 1);
 		}
 	}
-
 
 	@Override
 	public IDictionary binOpRight(BinaryOperator op, double[] v, IColIndex colIndexes) {
@@ -233,7 +259,6 @@ public class IdentityDictionary extends AIdentityDictionary {
 		}
 	}
 
-
 	@Override
 	public double sum(int[] counts, int ncol) {
 		// number of rows, change this.
@@ -255,7 +280,7 @@ public class IdentityDictionary extends AIdentityDictionary {
 		if(idxStart == 0 && idxEnd == nRowCol)
 			return new IdentityDictionary(nRowCol, withEmpty);
 		else
-			return new IdentityDictionarySlice(nRowCol, withEmpty, idxStart, idxEnd);
+			return IdentityDictionarySlice.create(nRowCol, withEmpty, idxStart, idxEnd);
 	}
 
 	@Override
@@ -265,6 +290,8 @@ public class IdentityDictionary extends AIdentityDictionary {
 
 	@Override
 	public int[] countNNZZeroColumns(int[] counts) {
+		if(withEmpty)
+			return Arrays.copyOf(counts, nRowCol); // one less.
 		return counts; // interesting ... but true.
 	}
 
@@ -322,27 +349,24 @@ public class IdentityDictionary extends AIdentityDictionary {
 		v[t8 * nCol + f8] += 1;
 	}
 
-	@Override 
-	public MatrixBlockDictionary getMBDict(){
+	@Override
+	public MatrixBlockDictionary getMBDict() {
 		return getMBDict(nRowCol);
 	}
 
 	@Override
 	public MatrixBlockDictionary createMBDict(int nCol) {
-
 		if(withEmpty) {
 			final SparseBlock sb = SparseBlockFactory.createIdentityMatrixWithEmptyRow(nRowCol);
 			final MatrixBlock identity = new MatrixBlock(nRowCol + 1, nRowCol, nRowCol, sb);
 			return new MatrixBlockDictionary(identity);
 		}
 		else {
-
 			final SparseBlock sb = SparseBlockFactory.createIdentityMatrix(nRowCol);
 			final MatrixBlock identity = new MatrixBlock(nRowCol, nRowCol, nRowCol, sb);
 			return new MatrixBlockDictionary(identity);
 		}
 	}
-
 
 	@Override
 	public void write(DataOutput out) throws IOException {
@@ -403,7 +427,7 @@ public class IdentityDictionary extends AIdentityDictionary {
 	@Override
 	public void MMDictDense(double[] left, IColIndex rowsLeft, IColIndex colsRight, MatrixBlock result) {
 		// similar to fused transpose left into right locations.
-	
+
 		final int leftSide = rowsLeft.size();
 		final int colsOut = result.getNumColumns();
 		final int commonDim = Math.min(left.length / leftSide, nRowCol);
@@ -430,7 +454,6 @@ public class IdentityDictionary extends AIdentityDictionary {
 			}
 		}
 	}
-
 
 	@Override
 	public boolean equals(IDictionary o) {

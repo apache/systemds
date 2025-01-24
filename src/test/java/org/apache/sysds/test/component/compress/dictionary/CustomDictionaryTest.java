@@ -22,7 +22,10 @@ package org.apache.sysds.test.component.compress.dictionary;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
@@ -37,8 +40,10 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionarySlice;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.PlaceHolderDict;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.QDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
@@ -477,66 +482,66 @@ public class CustomDictionaryTest {
 	}
 
 	public void IdentityDictionaryEquals() {
-		IDictionary a = new IdentityDictionary(10);
-		IDictionary b = new IdentityDictionary(10);
+		IDictionary a = IdentityDictionary.create(10);
+		IDictionary b = IdentityDictionary.create(10);
 		assertTrue(a.equals(b));
 	}
 
 	@Test
 	public void IdentityDictionaryNotEquals() {
-		IDictionary a = new IdentityDictionary(10);
-		IDictionary b = new IdentityDictionary(11);
+		IDictionary a = IdentityDictionary.create(10);
+		IDictionary b = IdentityDictionary.create(11);
 		assertFalse(a.equals(b));
 	}
 
 	@Test
 	public void IdentityDictionaryNotEquals2() {
-		IDictionary a = new IdentityDictionary(10);
-		IDictionary b = new IdentityDictionary(11, false);
+		IDictionary a = IdentityDictionary.create(10);
+		IDictionary b = IdentityDictionary.create(11, false);
 		assertFalse(a.equals(b));
 	}
 
 	@Test
 	public void IdentityDictionaryEquals2() {
-		IDictionary a = new IdentityDictionary(11, false);
-		IDictionary b = new IdentityDictionary(11, false);
+		IDictionary a = IdentityDictionary.create(11, false);
+		IDictionary b = IdentityDictionary.create(11, false);
 		assertTrue(a.equals(b));
 	}
 
 	@Test
 	public void IdentityDictionaryEquals2v() {
-		IDictionary a = new IdentityDictionary(11);
-		IDictionary b = new IdentityDictionary(11, false);
+		IDictionary a = IdentityDictionary.create(11);
+		IDictionary b = IdentityDictionary.create(11, false);
 		assertTrue(a.equals(b));
 	}
 
 	@Test
 	public void IdentityDictionaryNotEquals3() {
-		IDictionary a = new IdentityDictionary(11, true);
-		IDictionary b = new IdentityDictionary(11, false);
+		IDictionary a = IdentityDictionary.create(11, true);
+		IDictionary b = IdentityDictionary.create(11, false);
 		assertFalse(a.equals(b));
 	}
 
 	@Test(expected = Exception.class)
 	public void invalidIdentity() {
-		new IdentityDictionary(-1);
+		IdentityDictionary.create(-1);
 	}
 
 	@Test(expected = Exception.class)
 	public void invalidIdentity2() {
-		new IdentityDictionary(-1, true);
+		IdentityDictionary.create(-1, true);
 	}
 
 	@Test
 	public void withEmpty() {
-		assertTrue(new IdentityDictionary(10, true).withEmpty());
-		assertFalse(new IdentityDictionary(10, false).withEmpty());
+		assertTrue(((IdentityDictionary) IdentityDictionary.create(10, true)).withEmpty());
+		assertFalse(((IdentityDictionary) IdentityDictionary.create(10, false)).withEmpty());
 	}
 
 	@Test
 	public void memorySizeIdentitySameAtDifferentSizes() {
-		assertTrue(new IdentityDictionary(10, true).getInMemorySize()//
-			== new IdentityDictionary(1000, true).getInMemorySize());
+		assertTrue(IdentityDictionary.create(10, true).getInMemorySize()//
+			== IdentityDictionary.create(1000, true).getInMemorySize());
 	}
 
 	@Test
@@ -552,9 +557,9 @@ public class CustomDictionaryTest {
 	public void replaceNanWithReference() {
 		IDictionary a = Dictionary.create(new double[] {1, 2, Double.NaN, Double.NaN});
 		IDictionary b = ((Dictionary) a).getMBDict(2);
-		double[] ref1 = new double[]{3,Double.NaN};
+		double[] ref1 = new double[] {3, Double.NaN};
 		a = a.replaceWithReference(Double.NaN, -1, ref1);
-		double[] ref2 = new double[]{3,Double.NaN};
+		double[] ref2 = new double[] {3, Double.NaN};
 		b = b.replaceWithReference(Double.NaN, -1, ref2);
 		DictionaryTests.compare(a, b, 2, 2);
 		assertArrayEquals(ref1, ref2, 0.01);
@@ -564,35 +569,77 @@ public class CustomDictionaryTest {
 	public void replaceNanWithReference2() {
 		IDictionary a = Dictionary.create(new double[] {1, 2, Double.NaN, Double.NaN});
 		IDictionary b = ((Dictionary) a).getMBDict(2);
-		double[] ref1 = new double[]{3,52};
+		double[] ref1 = new double[] {3, 52};
 		a = a.replaceWithReference(Double.NaN, -1, ref1);
-		double[] ref2 = new double[]{3,52};
+		double[] ref2 = new double[] {3, 52};
 		b = b.replaceWithReference(Double.NaN, -1, ref2);
 		DictionaryTests.compare(a, b, 2, 2);
-		double[] ref3 = new double[]{3,52};
+		double[] ref3 = new double[] {3, 52};
 		IDictionary ab = a.replaceWithReference(Double.NaN, -1, ref3);
 		DictionaryTests.compare(a, ab, 2, 2);
 		assertArrayEquals(ref1, ref2, 0.01);
 		assertArrayEquals(ref1, ref3, 0.01);
 	}
 
-	@Test 
-	public void equalsNot(){
-		IDictionary a = Dictionary.create(new double[]{1});
-		assertFalse(a.equals( new PlaceHolderDict(1)));
+	@Test
+	public void equalsNot() {
+		IDictionary a = Dictionary.create(new double[] {1});
+		assertFalse(a.equals(new PlaceHolderDict(1)));
 	}
 
-	@Test 
-	public void equalsNotEmptyDict(){
-		IDictionary a = Dictionary.create(new double[]{1});
+	@Test
+	public void equalsNotEmptyDict() {
+		IDictionary a = Dictionary.create(new double[] {1});
 		IDictionary b = MatrixBlockDictionary.create(new MatrixBlock(1, 1, 0.0), false);
-		assertFalse(a.equals( b));
+		assertFalse(a.equals(b));
 	}
 
-	@Test 
-	public void equalsNotEmptyDictDifferentSize(){
-		IDictionary a = Dictionary.createNoCheck(new double[]{0});
+	@Test
+	public void equalsNotEmptyDictDifferentSize() {
+		IDictionary a = Dictionary.createNoCheck(new double[] {0});
 		IDictionary b = MatrixBlockDictionary.create(new MatrixBlock(100, 100, 0.0), false);
 		assertFalse(a.equals(b));
+	}
+
+	@Test
+	public void zeroScale() {
+		assertNull(QDictionary.create(null, 0, 10, true));
+		assertNull(QDictionary.create(new byte[] {1, 2, 3}, 0, 10, true));
+		assertNull(QDictionary.create(new byte[] {0, 0, 0}, 2.3, 1, true));
+		assertNotNull(QDictionary.create(new byte[] {0, 0, 0}, 2.3, 1, false));
+	}
+
+	@Test
+	public void notEqualsSlice() {
+
+		assertNotEquals(//
+			IdentityDictionarySlice.create(10, true, 1, 4), //
+			IdentityDictionarySlice.create(10, true, 2, 4));
+
+		assertNotEquals(//
+			IdentityDictionarySlice.create(10, true, 1, 4), //
+			IdentityDictionarySlice.create(10, true, 1, 5));
+
+		assertNotEquals(//
+			IdentityDictionarySlice.create(10, true, 1, 4), //
+			IdentityDictionarySlice.create(10, false, 1, 4));
+
+		assertNotEquals(//
+			IdentityDictionarySlice.create(10, true, 1, 4), //
+			IdentityDictionarySlice.create(9, true, 1, 4));
+
+		assertNotEquals(//
+			IdentityDictionarySlice.create(10, true, 1, 4), //
+			IdentityDictionarySlice.create(9, true, 0, 9));
+	}
+
+	@Test
+	public void createDictionary() {
+		assertTrue(IdentityDictionarySlice.create(1, true, 0, 1) instanceof Dictionary);
+		assertTrue(IdentityDictionarySlice.create(1, false, 0, 1) instanceof Dictionary);
+		assertThrows(RuntimeException.class, () -> IdentityDictionarySlice.create(1, true, 1, 0));
+		assertThrows(RuntimeException.class, () -> IdentityDictionarySlice.create(1, true, 0, 0));
+		assertThrows(RuntimeException.class, () -> IdentityDictionarySlice.create(1, true, -13, 0));
+		assertThrows(RuntimeException.class, () -> IdentityDictionarySlice.create(10, true, 4, 11));
 	}
 }

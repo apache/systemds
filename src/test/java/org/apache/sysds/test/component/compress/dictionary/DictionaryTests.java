@@ -19,7 +19,9 @@
 
 package org.apache.sysds.test.component.compress.dictionary;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -33,16 +35,19 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Random;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.QDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ArrayIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -60,8 +65,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-
-import scala.util.Random;
 
 @RunWith(value = Parameterized.class)
 public class DictionaryTests {
@@ -97,18 +100,22 @@ public class DictionaryTests {
 			addAll(tests, new double[] {1, 2, 3, 4, 5, 6}, 2);
 			addAll(tests, new double[] {1, 2.2, 3.3, 4.4, 5.5, 6.6}, 3);
 
+			addQDict(tests, new byte[] {2, 4, 6, 8}, 2.0, 1);
+			addQDict(tests, new byte[] {44, 44, 110, 12, 32, 14, 25, 2}, 2.0, 2);
+			addQDict(tests, new byte[] {44, 44, 0, 12, 32, 0, 25, 2}, 2.0, 2);
+
 			addSparse(tests, -10, 10, 10, 100, 0.1, 321);
 			addSparse(tests, -10, 10, 2, 100, 0.04, 321);
 
-			tests.add(new Object[] {new IdentityDictionary(2), Dictionary.create(new double[] {1, 0, 0, 1}), 2, 2});
-			tests.add(new Object[] {new IdentityDictionary(2, true), //
+			tests.add(new Object[] {IdentityDictionary.create(2), Dictionary.create(new double[] {1, 0, 0, 1}), 2, 2});
+			tests.add(new Object[] {IdentityDictionary.create(2, true), //
 				Dictionary.create(new double[] {1, 0, 0, 1, 0, 0}), 3, 2});
-			tests.add(new Object[] {new IdentityDictionary(3), //
+			tests.add(new Object[] {IdentityDictionary.create(3), //
 				Dictionary.create(new double[] {1, 0, 0, 0, 1, 0, 0, 0, 1}), 3, 3});
-			tests.add(new Object[] {new IdentityDictionary(3, true), //
+			tests.add(new Object[] {IdentityDictionary.create(3, true), //
 				Dictionary.create(new double[] {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0}), 4, 3});
 
-			tests.add(new Object[] {new IdentityDictionary(4), //
+			tests.add(new Object[] {IdentityDictionary.create(4), //
 				Dictionary.create(new double[] {//
 					1, 0, 0, 0, //
 					0, 1, 0, 0, //
@@ -116,14 +123,34 @@ public class DictionaryTests {
 					0, 0, 0, 1,//
 				}), 4, 4});
 
-			tests.add(new Object[] {new IdentityDictionary(4).sliceOutColumnRange(1, 4, 4), //
+			tests.add(new Object[] {IdentityDictionary.create(4)//
+				.sliceOutColumnRange(1, 4, 4), //
 				Dictionary.create(new double[] {//
 					0, 0, 0, //
 					1, 0, 0, //
 					0, 1, 0, //
 					0, 0, 1,//
 				}), 4, 3});
-			tests.add(new Object[] {new IdentityDictionary(4, true), //
+
+			tests.add(new Object[] {IdentityDictionary.create(4)//
+				.sliceOutColumnRange(1, 3, 4), //
+				Dictionary.create(new double[] {//
+					0, 0, //
+					1, 0, //
+					0, 1, //
+					0, 0,//
+				}), 4, 2});
+
+			tests.add(new Object[] {IdentityDictionary.create(4)//
+				.sliceOutColumnRange(1, 2, 4), //
+				Dictionary.create(new double[] {//
+					0, //
+					1, //
+					0, //
+					0, //
+				}), 4, 1});
+
+			tests.add(new Object[] {IdentityDictionary.create(4, true), //
 				Dictionary.create(new double[] {//
 					1, 0, 0, 0, //
 					0, 1, 0, 0, //
@@ -132,7 +159,18 @@ public class DictionaryTests {
 					0, 0, 0, 0}),
 				5, 4});
 
-			tests.add(new Object[] {new IdentityDictionary(4, true).sliceOutColumnRange(1, 4, 4), //
+			tests.add(new Object[] {IdentityDictionary.create(4, true)//
+				.sliceOutColumnRange(0, 2, 4),
+				Dictionary.create(new double[] {//
+					1, 0, //
+					0, 1, //
+					0, 0, //
+					0, 0, //
+					0, 0}),
+				5, 2});
+
+			tests.add(new Object[] {IdentityDictionary.create(4, true)//
+				.sliceOutColumnRange(1, 4, 4), //
 				Dictionary.create(new double[] {//
 					0, 0, 0, //
 					1, 0, 0, //
@@ -140,7 +178,27 @@ public class DictionaryTests {
 					0, 0, 1, //
 					0, 0, 0}),
 				5, 3});
-			tests.add(new Object[] {new IdentityDictionary(4, true), //
+
+			tests.add(new Object[] {IdentityDictionary.create(4, true)//
+				.sliceOutColumnRange(1, 2, 4), //
+				Dictionary.create(new double[] {//
+					0, //
+					1, //
+					0, //
+					0, //
+					0,}),
+				5, 1});
+
+			tests.add(new Object[] {IdentityDictionary.create(4, true)//
+				.sliceOutColumnRange(1, 3, 4), //
+				Dictionary.create(new double[] {//
+					0, 0, //
+					1, 0, //
+					0, 1, //
+					0, 0, //
+					0, 0,}),
+				5, 2});
+			tests.add(new Object[] {IdentityDictionary.create(4, true), //
 				Dictionary.create(new double[] {//
 					1, 0, 0, 0, //
 					0, 1, 0, 0, //
@@ -149,14 +207,14 @@ public class DictionaryTests {
 					0, 0, 0, 0}).getMBDict(4),
 				5, 4});
 
-			tests.add(new Object[] {new IdentityDictionary(20, false), //
+			tests.add(new Object[] {IdentityDictionary.create(20, false), //
 				MatrixBlockDictionary.create(//
 					new MatrixBlock(20, 20, 20L, //
 						SparseBlockFactory.createIdentityMatrix(20)),
 					false),
 				20, 20});
 
-			tests.add(new Object[] {new IdentityDictionary(20, false), //
+			tests.add(new Object[] {IdentityDictionary.create(20, false), //
 				Dictionary.create(new double[] {//
 					1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
 					0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
@@ -181,7 +239,7 @@ public class DictionaryTests {
 				}), //
 				20, 20});
 
-			tests.add(new Object[] {new IdentityDictionary(20, true), //
+			tests.add(new Object[] {IdentityDictionary.create(20, true), //
 				Dictionary.create(new double[] {//
 					1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
 					0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, //
@@ -242,6 +300,11 @@ public class DictionaryTests {
 			Dictionary.create(vals), //
 			MatrixBlockDictionary.createDictionary(vals, cols, true), //
 			vals.length / cols, cols});
+	}
+
+	private static void addQDict(List<Object[]> tests, byte[] is, double d, int i) {
+		ADictionary qd = QDictionary.create(is, d, i, true);
+		tests.add(new Object[] {qd, qd.getMBDict(i), is.length / i, i});
 	}
 
 	private static void addSparse(List<Object[]> tests, double min, double max, int rows, int cols, double sparsity,
@@ -1128,7 +1191,7 @@ public class DictionaryTests {
 		double[] def = TestUtils.generateTestVector(nCol, 1, 10, 1.0, 3215213);
 		double[] aa = a.sumAllRowsToDoubleWithReference(def);
 		double[] bb = b.sumAllRowsToDoubleWithReference(def);
-		TestUtils.compareMatrices(aa, bb, 0.001);
+		TestUtils.compareMatrices(aa, bb, 0.001, "\n" + a + "\n" + b);
 	}
 
 	@Test
@@ -1372,7 +1435,54 @@ public class DictionaryTests {
 
 	@Test
 	public void replaceNan() {
-		compare(a.replace(Double.NaN, 0, nCol),
-			 b.replace(Double.NaN, 0, nCol), nRow, nCol);
+		compare(a.replace(Double.NaN, 0, nCol), b.replace(Double.NaN, 0, nCol), nRow, nCol);
+	}
+
+	@Test
+	public void getNNzCounts() {
+		int counts[] = new int[nRow];
+		Random r = new Random(321);
+		for(int i = 0; i < nRow; i++) {
+			counts[i] = r.nextInt(100);
+		}
+		long annz = a.getNumberNonZeros(counts, nCol);
+		long bnnz = b.getNumberNonZeros(counts, nCol);
+		assertEquals(annz, bnnz);
+	}
+
+	@Test
+	public void getNNzCountsColumns() {
+		try {
+			int counts[] = new int[nRow];
+			Random r = new Random(3213);
+			for(int i = 0; i < nRow; i++) {
+				counts[i] = r.nextInt(100);
+			}
+			int[] annz = a.countNNZZeroColumns(counts);
+			int[] bnnz = b.countNNZZeroColumns(counts);
+			assertArrayEquals(annz, bnnz);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testGetString() {
+		// get strings only criteria is not to crash.
+		a.getString(nCol);
+		b.getString(nCol);
+	}
+
+	@Test
+	public void testClone() {
+		IDictionary ca = a.clone();
+		assertFalse(ca == a);
+		assertEquals(ca, a);
+
+		IDictionary cb = b.clone();
+		assertFalse(cb == b);
+		assertEquals(cb, b);
 	}
 }

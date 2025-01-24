@@ -49,10 +49,32 @@ public class IdentityDictionarySlice extends AIdentityDictionary {
 	 */
 	public IdentityDictionarySlice(int nRowCol, boolean withEmpty, int l, int u) {
 		super(nRowCol, withEmpty);
-		if(u > nRowCol || l < 0 || l >= u)
-			throw new DMLRuntimeException("Invalid slice Identity: " + nRowCol + " range: " + l + "--" + u);
 		this.l = l;
 		this.u = u;
+	}
+
+	/**
+	 * Create a Identity matrix dictionary slice (if other groups are not more applicable). It behaves as if allocated a
+	 * Sparse Matrix block but exploits that the structure is known to have certain properties.
+	 * 
+	 * @param nRowCol   the number of rows and columns in this identity matrix.
+	 * @param withEmpty If the matrix should contain an empty row in the end.
+	 * @param l         the index lower to start at
+	 * @param u         the index upper to end at (not inclusive)
+	 */
+	public static IDictionary create(int nRowCol, boolean withEmpty, int l, int u) {
+		if(u > nRowCol || l < 0 || l >= u)
+			throw new DMLRuntimeException("Invalid slice Identity: " + nRowCol + " range: " + l + "--" + u);
+		if(nRowCol == 1) {
+			if(withEmpty)
+				return new Dictionary(new double[] {1, 0});
+			else
+				return new Dictionary(new double[] {1});
+		}
+		else if(l == 0 && u == nRowCol)
+			return IdentityDictionary.create(nRowCol, withEmpty);
+		else
+			return new IdentityDictionarySlice(nRowCol, withEmpty, l, u);
 	}
 
 	@Override
@@ -96,9 +118,15 @@ public class IdentityDictionarySlice extends AIdentityDictionary {
 
 	@Override
 	public double[] aggregateRows(Builtin fn, int nCol) {
-		double[] ret = new double[nRowCol];
-		Arrays.fill(ret, l, u, fn.execute(1, 0));
-		return ret;
+		double[] ret = new double[nRowCol + (withEmpty ? 1 : 0)];
+		if(l + 1 == u) {
+			ret[l] = 1;
+			return ret;
+		}
+		else {
+			Arrays.fill(ret, l, u, fn.execute(1, 0));
+			return ret;
+		}
 	}
 
 	@Override
@@ -139,19 +167,16 @@ public class IdentityDictionarySlice extends AIdentityDictionary {
 
 	@Override
 	public double[] sumAllRowsToDoubleWithReference(double[] reference) {
-		double[] ret = new double[getNumberOfValues(reference.length)];
+		final double[] ret = new double[getNumberOfValues(reference.length)];
 		double refSum = 0;
 		for(int i = 0; i < reference.length; i++)
 			refSum += reference[i];
-		for(int i = 0; i < ret.length; i++) {
-			if(i < l || i > u)
-				ret[i] = refSum;
-			else
-				ret[i] = 1 + refSum;
-		}
-
-		if(withEmpty)
-			ret[ret.length - 1] += -1;
+		for(int i = 0; i < l; i++)
+			ret[i] = refSum;
+		for(int i = l; i < u; i++)
+			ret[i] = 1 + refSum;
+		for(int i = u; i < ret.length; i++)
+			ret[i] = refSum;
 		return ret;
 	}
 
@@ -180,9 +205,8 @@ public class IdentityDictionarySlice extends AIdentityDictionary {
 
 	@Override
 	public double sum(int[] counts, int ncol) {
-		int end = withEmpty && u == ncol ? u - 1 : u;
 		double s = 0.0;
-		for(int i = l; i < end; i++)
+		for(int i = l; i < u; i++)
 			s += counts[i];
 		return s;
 	}
@@ -241,7 +265,7 @@ public class IdentityDictionarySlice extends AIdentityDictionary {
 	public boolean equals(IDictionary o) {
 		if(o instanceof IdentityDictionarySlice) {
 			IdentityDictionarySlice os = ((IdentityDictionarySlice) o);
-			return os.nRowCol == nRowCol && os.l == l && os.u == u;
+			return os.nRowCol == nRowCol && os.l == l && os.u == u && withEmpty == os.withEmpty;
 		}
 		else if(o instanceof IdentityDictionary)
 			return false;
@@ -249,14 +273,14 @@ public class IdentityDictionarySlice extends AIdentityDictionary {
 			return getMBDict().equals(o);
 	}
 
-	@Override 
-	public MatrixBlockDictionary getMBDict(){
+	@Override
+	public MatrixBlockDictionary getMBDict() {
 		return getMBDict(nRowCol);
 	}
 
 	@Override
 	public MatrixBlockDictionary createMBDict(int nCol) {
-		MatrixBlock identity = new MatrixBlock(nRowCol + (withEmpty ?  1 : 0), u - l, true);
+		MatrixBlock identity = new MatrixBlock(nRowCol + (withEmpty ? 1 : 0), u - l, true);
 		for(int i = l; i < u; i++)
 			identity.set(i, i - l, 1.0);
 		return new MatrixBlockDictionary(identity);

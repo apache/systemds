@@ -1580,7 +1580,7 @@ public class MatrixBlockDictionary extends ADictionary {
 				final int aix[] = sb.indexes(i);
 				for(int j = apos; j < alen; j++) {
 
-					ret[aix[i]] += counts[i];
+					ret[aix[j]] += counts[i];
 				}
 			}
 		}

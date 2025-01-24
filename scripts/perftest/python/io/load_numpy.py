@@ -28,7 +28,12 @@ setup = "\n".join(
     [
         "from systemds.script_building.script import DMLScript",
         "import numpy as np",
-        "array = np.loadtxt(src, delimiter=',')",
+        "import os",
+        "if os.path.isdir(src):",
+        "    files = [os.path.join(src, f) for f in os.listdir(src)]",
+        "    array = np.concatenate([np.loadtxt(f, delimiter=',') for f in files])",
+        "else:",
+        "    array = np.loadtxt(src, delimiter=',')",
         "if dtype is not None:",
         "    array = array.astype(dtype)",
     ]

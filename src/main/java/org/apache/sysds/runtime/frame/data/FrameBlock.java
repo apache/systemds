@@ -555,6 +555,12 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		reset(0, true);
 	}
 
+	public void setRow(int c, Object[] row) {
+		for (int i = 0; i < row.length; i++) {
+			set(c, i, row[i]);
+		}
+	}
+
 	/**
 	 * Append a row to the end of the data frame, where all row fields are boxed objects according to the schema.
 	 *
@@ -752,6 +758,41 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		_coldata[c] = column;
 		_msize = -1;
 	}
+
+	public void appendColumnChunk(int c, Array<?> chunk) {
+		if (_coldata == null) {
+			_coldata = new Array[getNumColumns()];
+		}
+
+		if (_coldata[c] == null) {
+			_coldata[c] = chunk;
+			_nRow = chunk.size();
+		} else {
+			_coldata[c] = ArrayFactory.append(_coldata[c], chunk);
+			_nRow += chunk.size();
+		}
+
+		_msize = -1;
+	}
+
+	public void setColumnChunk(int colIndex, Array<?> chunk, int offset, int colSize) {
+		if (_coldata == null) {
+			_coldata = new Array[getNumColumns()];
+			_nRow = colSize;
+		}
+
+		if (_coldata[colIndex] == null) {
+			_coldata[colIndex] = ArrayFactory.allocate(chunk.getValueType(), _nRow);
+		}
+
+		if (_coldata[colIndex].getValueType() != chunk.getValueType()) {
+			throw new DMLRuntimeException("ValueType mismatch in setColumnChunk: expected " +
+					_coldata[colIndex].getValueType() + " but got " + chunk.getValueType());
+		}
+
+		ArrayFactory.set(_coldata[colIndex], chunk, offset, offset + chunk.size() - 1, _nRow);
+	}
+
 
 	@Override
 	public void write(DataOutput out) throws IOException {

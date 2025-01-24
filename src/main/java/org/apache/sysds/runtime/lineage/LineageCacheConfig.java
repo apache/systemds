@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.lineage;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.AggBinaryOp;
@@ -49,26 +50,26 @@ public class LineageCacheConfig
 	//-------------CACHING LOGIC RELATED CONFIGURATIONS--------------//
 
 	private static final String[] OPCODES = new String[] {
-		"tsmm", "ba+*", "*", "/", "+", "||", "nrow", "ncol", "round", "exp", "log",
-		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof", "isna",
-		"uamean", "max", "min", "ifelse", "-", "sqrt", "<", ">", "uak+", "<=",
-		"^", "uamax", "uark+", "uacmean", "eigen","ctable", "ctableexpand", "replace",
-		"^2", "*2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort",
-		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm", "lowertri", "1-*",
-		"prefetch", "mapmm", "contains", "mmchain", "mapmmchain", "+*", "==", "rmempty",
-		"conv2d_bias_add", "relu_maxpooling", "maxpooling", "batch_norm2d", "avgpooling",
+		Opcodes.TSMM.getName(), Opcodes.MMULT.getName(), Opcodes.MULT.getName(), Opcodes.DIV.getName(), Opcodes.PLUS.getName(), Opcodes.OR.getName(), Opcodes.NROW.getName(), Opcodes.NCOL.getName(), Opcodes.ROUND.getName(), Opcodes.EXP.getName(), Opcodes.LOG.getName(),
+		"rightIndex", "leftIndex", Opcodes.GROUPEDAGG.getName(), Opcodes.TRANSPOSE.getName(), Opcodes.SOLVE.getName(), Opcodes.SPOOF.getName(), Opcodes.ISNA.getName(),
+		Opcodes.UAMEAN.getName(), Opcodes.MAX.getName(), Opcodes.MIN.getName(), Opcodes.IFELSE.getName(), Opcodes.MINUS.getName(), Opcodes.SQRT.getName(), Opcodes.LESS.getName(), Opcodes.GREATER.getName(), Opcodes.UAKP.getName(), Opcodes.LESSEQUAL.getName(),
+		Opcodes.POW.getName(), Opcodes.UAMAX.getName(), Opcodes.UARKP.getName(), Opcodes.UACMEAN.getName(), Opcodes.EIGEN.getName(),Opcodes.CTABLE.getName(), Opcodes.CTABLEEXPAND.getName(), Opcodes.REPLACE.getName(),
+		Opcodes.POW2.getName(), Opcodes.MULT2.getName(), Opcodes.UACKP.getName(), Opcodes.TAKPM.getName(), Opcodes.UACSQKP.getName(), Opcodes.UARKP.getName(), Opcodes.NP.getName(), Opcodes.UARIMAX.getName(), Opcodes.QSORT.getName(),
+		Opcodes.QPICK.getName(), Opcodes.TRANSFORMAPPLY.getName(), Opcodes.UARMAX.getName(), Opcodes.NP.getName(), Opcodes.MINUSMULT.getName(), "castdtm", Opcodes.LOWERTRI.getName(), Opcodes.MINUS1_MULT.getName(),
+		Opcodes.PREFETCH.getName(), "mapmm", Opcodes.CONTAINS.getName(), Opcodes.MMCHAIN.getName(), "mapmmchain", Opcodes.PM.getName(), Opcodes.EQUAL.getName(), Opcodes.RMEMPTY.getName(),
+		Opcodes.CONV2D_BIAS_ADD.getName(), Opcodes.RELU_MAXPOOLING.getName(), Opcodes.MAXPOOLING.getName(), Opcodes.BATCH_NORM2D.getName(), Opcodes.AVGPOOLING.getName(),
 		"softmax"
 		//TODO: Reuse everything.
 	};
 
 	// Relatively expensive instructions. Most include shuffles.
 	private static final String[] PERSIST_OPCODES1 = new String[] {
-		"cpmm", "rmm", "pmm", "zipmm", "rev", "roll", "rshape", "rsort", "-", "*", "+",
-		"/", "%%", "%/%", "1-*", "^", "^2", "*2", "==", "!=", "<", ">",
-		"<=", ">=", "&&", "||", "xor", "max", "min", "rmempty", "rappend",
-		"gappend", "galignedappend", "rbind", "cbind", "nmin", "nmax",
-		"n+", "ctable", "ucumack+", "ucumac*", "ucumacmin", "ucumacmax",
-		"qsort", "qpick"
+		"cpmm", "rmm", Opcodes.PMM.getName(), "zipmm", Opcodes.REV.getName(), Opcodes.ROLL.getName(), Opcodes.RESHAPE.getName(), Opcodes.SORT.getName(), Opcodes.MINUS.getName(), Opcodes.MULT.getName(), Opcodes.PLUS.getName(),
+		Opcodes.DIV.getName(), Opcodes.MODULUS.getName(), Opcodes.INTDIV.getName(), Opcodes.MINUS1_MULT.getName(), Opcodes.POW.getName(), Opcodes.POW2.getName(), Opcodes.MULT2.getName(), Opcodes.EQUAL.getName(), Opcodes.NOTEQUAL.getName(), Opcodes.LESS.getName(), Opcodes.GREATER.getName(),
+		Opcodes.LESSEQUAL.getName(), Opcodes.GREATEREQUAL.getName(), Opcodes.AND.getName(), Opcodes.OR.getName(), Opcodes.XOR.getName(), Opcodes.MAX.getName(), Opcodes.MIN.getName(), Opcodes.RMEMPTY.getName(), "rappend",
+		"gappend", "galignedappend", Opcodes.RBIND.getName(), Opcodes.CBIND.getName(), Opcodes.NMIN.getName(), Opcodes.NMAX.getName(),
+		Opcodes.NP.getName(), Opcodes.CTABLE.getName(), "ucumack+", "ucumac*", "ucumacmin", "ucumacmax",
+		Opcodes.QSORT.getName(), Opcodes.QPICK.getName()
 	};
 
 	// Relatively inexpensive instructions.
@@ -77,7 +78,7 @@ public class LineageCacheConfig
 	};
 
 	private static final String[] GPU_OPCODE_HEAVY = new String[] {
-		"conv2d_bias_add", "relu_maxpooling", "maxpooling", "batch_norm2d", "avgpooling"  //DNN OPs
+		Opcodes.CONV2D_BIAS_ADD.getName(), Opcodes.RELU_MAXPOOLING.getName(), Opcodes.MAXPOOLING.getName(), Opcodes.BATCH_NORM2D.getName(), Opcodes.AVGPOOLING.getName()  //DNN OPs
 	};
 
 	private static String[] REUSE_OPCODES  = new String[] {};
@@ -270,8 +271,8 @@ public class LineageCacheConfig
 			&& !(inst instanceof ListIndexingCPInstruction)
 			&& !(inst instanceof BinaryScalarScalarCPInstruction);
 		boolean rightCPOp = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
-			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec))
-			|| (inst.getOpcode().startsWith("spoof"))
+			|| (inst.getOpcode().equals(Opcodes.APPEND.getName()) && isVectorAppend(inst, ec))
+			|| (inst.getOpcode().startsWith(Opcodes.SPOOF.getName()))
 			|| (inst instanceof DataGenCPInstruction) && ((DataGenCPInstruction) inst).isMatrixCall());
 		boolean rightSPOp = isReusableRDDType(inst);
 		boolean updateInplace = (inst instanceof MatrixIndexingCPInstruction)

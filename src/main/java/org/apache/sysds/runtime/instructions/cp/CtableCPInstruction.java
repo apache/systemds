@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.lops.Ctable;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
@@ -58,10 +59,10 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 		String opcode = parts[0];
 		
 		//handle opcode
-		if ( !(opcode.equalsIgnoreCase("ctable") || opcode.equalsIgnoreCase("ctableexpand")) ) {
+		if ( !(opcode.equalsIgnoreCase(Opcodes.CTABLE.getName()) || opcode.equalsIgnoreCase(Opcodes.CTABLEEXPAND.getName())) ) {
 			throw new DMLRuntimeException("Unexpected opcode in TertiaryCPInstruction: " + inst);
 		}
-		boolean isExpand = opcode.equalsIgnoreCase("ctableexpand");
+		boolean isExpand = opcode.equalsIgnoreCase(Opcodes.CTABLEEXPAND.getName());
 		
 		//handle operands
 		CPOperand in1 = new CPOperand(parts[1]);

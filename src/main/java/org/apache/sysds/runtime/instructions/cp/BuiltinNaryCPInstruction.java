@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.OpOpN;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -68,25 +69,25 @@ public abstract class BuiltinNaryCPInstruction extends CPInstruction
 				inputOperands[i-1] = new CPOperand(parts[i]);
 		}
 		
-		if( "printf".equals(opcode) || "list".equals(opcode)) {
+		if( Opcodes.PRINTF.getName().equals(opcode) || Opcodes.LIST.getName().equals(opcode)) {
 			ValueFunction func = Builtin.getBuiltinFnObject(opcode);
 			return new ScalarBuiltinNaryCPInstruction(
 				new SimpleOperator(func), opcode, str, outputOperand, inputOperands);
 		}
-		else if( opcode.equals("cbind") || opcode.equals("rbind") ) {
+		else if( opcode.equals(Opcodes.CBIND.getName()) || opcode.equals(Opcodes.RBIND.getName()) ) {
 			return new MatrixBuiltinNaryCPInstruction(
 				null, opcode, str, outputOperand, inputOperands);
 		}
-		else if( opcode.equals("nmin") || opcode.equals("nmax") ) {
+		else if( opcode.equals(Opcodes.NMIN.getName()) || opcode.equals(Opcodes.NMAX.getName()) ) {
 			ValueFunction func = Builtin.getBuiltinFnObject(opcode.substring(1));
 			return new MatrixBuiltinNaryCPInstruction(
 				new SimpleOperator(func), opcode, str, outputOperand, inputOperands);
 		}
-		else if( opcode.equals("n+") ) {
+		else if( opcode.equals(Opcodes.NP.getName()) ) {
 			return new MatrixBuiltinNaryCPInstruction(
 				new SimpleOperator(Plus.getPlusFnObject()), opcode, str, outputOperand, inputOperands);
 		}
-		else if( opcode.equals("n*") ) {
+		else if( opcode.equals(Opcodes.NM.getName()) ) {
 			return new MatrixBuiltinNaryCPInstruction(
 					new SimpleOperator(Multiply.getMultiplyFnObject()), opcode, str, outputOperand, inputOperands);
 		}

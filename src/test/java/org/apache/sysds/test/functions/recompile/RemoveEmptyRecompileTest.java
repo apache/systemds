@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.recompile;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -270,18 +271,18 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 		switch(type){
 			//for sum, literal replacement of unary aggregates applies
 			case SUM:         return "rlit";//return "uak+";
-			case ROUND:       return "round";
-			case TRANSPOSE:   return "r'";
+			case ROUND:       return Opcodes.ROUND.getName();
+			case TRANSPOSE:   return Opcodes.TRANSPOSE.getName();
 			case MULT_LEFT:
-			case MULT_RIGHT:  return "*";
+			case MULT_RIGHT:  return Opcodes.MULT.getName();
 			case PLUS_LEFT:
-			case PLUS_RIGHT:  return "+";
+			case PLUS_RIGHT:  return Opcodes.PLUS.getName();
 			case MINUS_LEFT:
-			case MINUS_RIGHT: return "-";
+			case MINUS_RIGHT: return Opcodes.MINUS.getName();
 			case MM_LEFT:
-			case MM_RIGHT:    return "ba+*";		
-			case RIX:         return RightIndex.OPCODE;
-			case LIX:         return LeftIndex.OPCODE;
+			case MM_RIGHT:    return Opcodes.MMULT.getName();
+			case RIX:         return Opcodes.RIGHT_INDEX.getName();
+			case LIX:         return Opcodes.LEFT_INDEX.getName();
 		}
 		return null;
 	}

@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.resource;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.resource.cost.CPCostUtils;
 import org.apache.sysds.resource.cost.VarStats;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
@@ -38,489 +39,489 @@ public class CPCostUtilsTest {
 	@Test
 	public void testUnaryIsnaInstNFLOP() {
 		long expectedValue = 1000 * 1000;
-		testUnaryInstNFLOP("isna", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.ISNA.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testUnaryIsnanInstNFLOP() {
 		long expectedValue = 1000 * 1000;
-		testUnaryInstNFLOP("isnan", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.ISNAN.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testUnaryIsinfInstNFLOP() {
 		long expectedValue = 1000 * 1000;
-		testUnaryInstNFLOP("isinf", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.ISINF.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testUnaryCeilInstNFLOP() {
 		long expectedValue = 1000 * 1000;
-		testUnaryInstNFLOP("ceil", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.CEIL.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testUnaryFloorInstNFLOP() {
 		long expectedValue = 1000 * 1000;
-		testUnaryInstNFLOP("floor", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.FLOOR.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testAbsInstNFLOPDefaultSparsity() {
 		long expectedValue = 1000 * 1000;
-		testUnaryInstNFLOP("abs", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.ABS.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testAbsInstNFLOPSparse() {
 		long expectedValue = (long) (0.5 * 1000 * 1000);
-		testUnaryInstNFLOP("abs", 0.5, 0.5, expectedValue);
+		testUnaryInstNFLOP(Opcodes.ABS.getName(), 0.5, 0.5, expectedValue);
 	}
 
 	@Test
 	public void testRoundInstNFLOPDefaultSparsity() {
 		long expectedValue = 1000 * 1000;
-		testUnaryInstNFLOP("round", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.ROUND.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testRoundInstNFLOPSparse() {
 		long expectedValue = (long) (0.5 * 1000 * 1000);
-		testUnaryInstNFLOP("round", 0.5, 0.5, expectedValue);
+		testUnaryInstNFLOP(Opcodes.ROUND.getName(), 0.5, 0.5, expectedValue);
 	}
 
 	@Test
 	public void testSignInstNFLOPDefaultSparsity() {
 		long expectedValue = 1000 * 1000;
-		testUnaryInstNFLOP("sign", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.SIGN.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testSignInstNFLOPSparse() {
 		long expectedValue = (long) (0.5 * 1000 * 1000);
-		testUnaryInstNFLOP("sign", 0.5, 0.5, expectedValue);
+		testUnaryInstNFLOP(Opcodes.SIGN.getName(), 0.5, 0.5, expectedValue);
 	}
 
 	@Test
 	public void testSpropInstNFLOPDefaultSparsity() {
 		long expectedValue = 2 * 1000 * 1000;
-		testUnaryInstNFLOP("sprop", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.SPROP.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testSpropInstNFLOPSparse() {
 		long expectedValue = (long) (2 * 0.5 * 1000 * 1000);
-		testUnaryInstNFLOP("sprop", 0.5, 0.5, expectedValue);
+		testUnaryInstNFLOP(Opcodes.SPROP.getName(), 0.5, 0.5, expectedValue);
 	}
 
 	@Test
 	public void testSqrtInstNFLOPDefaultSparsity() {
 		long expectedValue = 2 * 1000 * 1000;
-		testUnaryInstNFLOP("sqrt", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.SQRT.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testSqrtInstNFLOPSparse() {
 		long expectedValue = (long) (2 * 0.5 * 1000 * 1000);
-		testUnaryInstNFLOP("sqrt", 0.5, 0.5, expectedValue);
+		testUnaryInstNFLOP(Opcodes.SQRT.getName(), 0.5, 0.5, expectedValue);
 	}
 
 	@Test
 	public void testExpInstNFLOPDefaultSparsity() {
 		long expectedValue = 18 * 1000 * 1000;
-		testUnaryInstNFLOP("exp", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.EXP.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testExpInstNFLOPSparse() {
 		long expectedValue = (long) (18 * 0.5 * 1000 * 1000);
-		testUnaryInstNFLOP("exp", 0.5, 0.5, expectedValue);
+		testUnaryInstNFLOP(Opcodes.EXP.getName(), 0.5, 0.5, expectedValue);
 	}
 
 	@Test
 	public void testSigmoidInstNFLOPDefaultSparsity() {
 		long expectedValue = 21 * 1000 * 1000;
-		testUnaryInstNFLOP("sigmoid", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.SIGMOID.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testSigmoidInstNFLOPSparse() {
 		long expectedValue = (long) (21 * 0.5 * 1000 * 1000);
-		testUnaryInstNFLOP("sigmoid", 0.5, 0.5, expectedValue);
+		testUnaryInstNFLOP(Opcodes.SIGMOID.getName(), 0.5, 0.5, expectedValue);
 	}
 
 	@Test
 	public void testPlogpInstNFLOPDefaultSparsity() {
 		long expectedValue = 32 * 1000 * 1000;
-		testUnaryInstNFLOP("plogp", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.PLOGP.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testPlogpInstNFLOPSparse() {
 		long expectedValue = (long) (32 * 0.5 * 1000 * 1000);
-		testUnaryInstNFLOP("plogp", 0.5, 0.5, expectedValue);
+		testUnaryInstNFLOP(Opcodes.PLOGP.getName(), 0.5, 0.5, expectedValue);
 	}
 
 	@Test
 	public void testPrintInstNFLOP() {
 		long expectedValue = 1000 * 1000;
-		testUnaryInstNFLOP("print", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.PRINT.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testAssertInstNFLOP() {
 		long expectedValue = 1000 * 1000;
-		testUnaryInstNFLOP("assert", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.ASSERT.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testSinInstNFLOPDefaultSparsity() {
 		long expectedValue = 18 * 1000 * 1000;
-		testUnaryInstNFLOP("sin", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.SIN.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testSinInstNFLOPSparse() {
 		long expectedValue = (long) (18 * 0.5 * 1000 * 1000);
-		testUnaryInstNFLOP("sin", 0.5, 0.5, expectedValue);
+		testUnaryInstNFLOP(Opcodes.SIN.getName(), 0.5, 0.5, expectedValue);
 	}
 
 	@Test
 	public void testCosInstNFLOPDefaultSparsity() {
 		long expectedValue = 22 * 1000 * 1000;
-		testUnaryInstNFLOP("cos", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.COS.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testCosInstNFLOPSparse() {
 		long expectedValue = (long) (22 * 0.5 * 1000 * 1000);
-		testUnaryInstNFLOP("cos", 0.5, 0.5, expectedValue);
+		testUnaryInstNFLOP(Opcodes.COS.getName(), 0.5, 0.5, expectedValue);
 	}
 
 	@Test
 	public void testTanInstNFLOPDefaultSparsity() {
 		long expectedValue = 42 * 1000 * 1000;
-		testUnaryInstNFLOP("tan", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.TAN.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testTanInstNFLOPSparse() {
 		long expectedValue = (long) (42 * 0.5 * 1000 * 1000);
-		testUnaryInstNFLOP("tan", 0.5, 0.5, expectedValue);
+		testUnaryInstNFLOP(Opcodes.TAN.getName(), 0.5, 0.5, expectedValue);
 	}
 
 	@Test
 	public void testAsinInstNFLOP() {
 		long expectedValue = 93 * 1000 * 1000;
-		testUnaryInstNFLOP("asin", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.ASIN.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testSinhInstNFLOP() {
 		long expectedValue = 93 * 1000 * 1000;
-		testUnaryInstNFLOP("sinh", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.SINH.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testAcosInstNFLOP() {
 		long expectedValue = 103 * 1000 * 1000;
-		testUnaryInstNFLOP("acos", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.ACOS.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testCoshInstNFLOP() {
 		long expectedValue = 103 * 1000 * 1000;
-		testUnaryInstNFLOP("cosh", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.COSH.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testAtanInstNFLOP() {
 		long expectedValue = 40 * 1000 * 1000;
-		testUnaryInstNFLOP("atan", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.ATAN.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testTanhInstNFLOP() {
 		long expectedValue = 40 * 1000 * 1000;
-		testUnaryInstNFLOP("tanh", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.TANH.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testUcumkPlusInstNFLOPDefaultSparsity() {
 		long expectedValue = 1000 * 1000;
-		testUnaryInstNFLOP("ucumk+", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.UCUMKP.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testUcumkPlusInstNFLOPSparse() {
 		long expectedValue = (long) (0.5 * 1000 * 1000);
-		testUnaryInstNFLOP("ucumk+", 0.5, 0.5, expectedValue);
+		testUnaryInstNFLOP(Opcodes.UCUMKP.getName(), 0.5, 0.5, expectedValue);
 	}
 
 	@Test
 	public void testUcumMinInstNFLOPDefaultSparsity() {
 		long expectedValue = 1000 * 1000;
-		testUnaryInstNFLOP("ucummin", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.UCUMMIN.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testUcumMinInstNFLOPSparse() {
 		long expectedValue = (long) (0.5 * 1000 * 1000);
-		testUnaryInstNFLOP("ucummin", 0.5, 0.5, expectedValue);
+		testUnaryInstNFLOP(Opcodes.UCUMMIN.getName(), 0.5, 0.5, expectedValue);
 	}
 
 	@Test
 	public void testUcumMaxInstNFLOPDefaultSparsity() {
 		long expectedValue = 1000 * 1000;
-		testUnaryInstNFLOP("ucummax", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.UCUMMAX.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testUcumMaxInstNFLOPSparse() {
 		long expectedValue = (long) (0.5 * 1000 * 1000);
-		testUnaryInstNFLOP("ucummax", 0.5, 0.5, expectedValue);
+		testUnaryInstNFLOP(Opcodes.UCUMMAX.getName(), 0.5, 0.5, expectedValue);
 	}
 
 	@Test
 	public void testUcumMultInstNFLOPDefaultSparsity() {
 		long expectedValue = 1000 * 1000;
-		testUnaryInstNFLOP("ucum*", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.UCUMM.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testUcumMultInstNFLOPSparse() {
 		long expectedValue = (long) (0.5 * 1000 * 1000);
-		testUnaryInstNFLOP("ucum*", 0.5, 0.5, expectedValue);
+		testUnaryInstNFLOP(Opcodes.UCUMM.getName(), 0.5, 0.5, expectedValue);
 	}
 
 	@Test
 	public void testUcumkPlusMultInstNFLOPDefaultSparsity() {
 		long expectedValue = 2 * 1000 * 1000;
-		testUnaryInstNFLOP("ucumk+*", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.UCUMKPM.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testUcumkPlusMultInstNFLOPSparse() {
 		long expectedValue = (long) (2 * 0.5 * 1000 * 1000);
-		testUnaryInstNFLOP("ucumk+*", 0.5, 0.5, expectedValue);
+		testUnaryInstNFLOP(Opcodes.UCUMKPM.getName(), 0.5, 0.5, expectedValue);
 	}
 
 	@Test
 	public void testStopInstNFLOP() {
 		long expectedValue = 0;
-		testUnaryInstNFLOP("stop", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.STOP.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testTypeofInstNFLOP() {
 		long expectedValue = 1000 * 1000;
-		testUnaryInstNFLOP("typeof", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.TYPEOF.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testInverseInstNFLOPDefaultSparsity() {
 		long expectedValue = (long) ((4.0 / 3.0) * (1000 * 1000) * (1000 * 1000) * (1000 * 1000));
-		testUnaryInstNFLOP("inverse", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.INVERSE.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testInverseInstNFLOPSparse() {
 		long expectedValue = (long) ((4.0 / 3.0) * (1000 * 1000) * (0.5 * 1000 * 1000) * (0.5 *1000 * 1000));
-		testUnaryInstNFLOP("inverse", 0.5, 0.5, expectedValue);
+		testUnaryInstNFLOP(Opcodes.INVERSE.getName(), 0.5, 0.5, expectedValue);
 	}
 
 	@Test
 	public void testCholeskyInstNFLOPDefaultSparsity() {
 		long expectedValue = (long) ((1.0 / 3.0) * (1000 * 1000) * (1000 * 1000) * (1000 * 1000));
-		testUnaryInstNFLOP("cholesky", -1, -1, expectedValue);
+		testUnaryInstNFLOP(Opcodes.CHOLESKY.getName(), -1, -1, expectedValue);
 	}
 
 	@Test
 	public void testCholeskyInstNFLOPSparse() {
 		long expectedValue = (long) ((1.0 / 3.0) * (1000 * 1000) * (0.5 * 1000 * 1000) * (0.5 *1000 * 1000));
-		testUnaryInstNFLOP("cholesky", 0.5, 0.5, expectedValue);
+		testUnaryInstNFLOP(Opcodes.CHOLESKY.getName(), 0.5, 0.5, expectedValue);
 	}
 
 	@Test
 	public void testLogInstNFLOP() {
 		long expectedValue = 32 * 1000 * 1000;
-		testBuiltinInstNFLOP("log", -1, expectedValue);
+		testBuiltinInstNFLOP(Opcodes.LOG.getName(), -1, expectedValue);
 	}
 
 	@Test
 	public void testLogNzInstNFLOPDefaultSparsity() {
 		long expectedValue = 32 * 1000 * 1000;
-		testBuiltinInstNFLOP("log_nz", -1, expectedValue);
+		testBuiltinInstNFLOP(Opcodes.LOGNZ.getName(), -1, expectedValue);
 	}
 
 	@Test
 	public void testLogNzInstNFLOPSparse() {
 		long expectedValue = (long) (32 * 0.5 * 1000 * 1000);
-		testBuiltinInstNFLOP("log_nz", 0.5, expectedValue);
+		testBuiltinInstNFLOP(Opcodes.LOGNZ.getName(), 0.5, expectedValue);
 	}
 
 	@Test
 	public void testNrowInstNFLOP() {
 		long expectedValue = 10L;
-		testAggregateUnaryInstNFLOP("nrow", expectedValue);
+		testAggregateUnaryInstNFLOP(Opcodes.NROW.getName(), expectedValue);
 	}
 
 	@Test
 	public void testNcolInstNFLOP() {
 		long expectedValue = 10L;
-		testAggregateUnaryInstNFLOP("ncol", expectedValue);
+		testAggregateUnaryInstNFLOP(Opcodes.NCOL.getName(), expectedValue);
 	}
 
 	@Test
 	public void testLengthInstNFLOP() {
 		long expectedValue = 10L;
-		testAggregateUnaryInstNFLOP("length", expectedValue);
+		testAggregateUnaryInstNFLOP(Opcodes.LENGTH.getName(), expectedValue);
 	}
 
 	@Test
 	public void testExistsInstNFLOP() {
 		long expectedValue = 10L;
-		testAggregateUnaryInstNFLOP("exists", expectedValue);
+		testAggregateUnaryInstNFLOP(Opcodes.EXISTS.getName(), expectedValue);
 	}
 
 	@Test
 	public void testLineageInstNFLOP() {
 		long expectedValue = 10L;
-		testAggregateUnaryInstNFLOP("lineage", expectedValue);
+		testAggregateUnaryInstNFLOP(Opcodes.LINEAGE.getName(), expectedValue);
 	}
 
 	@Test
 	public void testUakInstNFLOP() {
 		long expectedValue = 4 * 1000 * 1000;
-		testAggregateUnaryInstNFLOP("uak+", expectedValue);
+		testAggregateUnaryInstNFLOP(Opcodes.UAKP.getName(), expectedValue);
 	}
 
 	@Test
 	public void testUarkInstNFLOP() {
 		long expectedValue = 4L * 2000 * 2000;
-		testAggregateUnaryRowInstNFLOP("uark+", -1, expectedValue);
-		testAggregateUnaryRowInstNFLOP("uark+", 0.5, expectedValue);
+		testAggregateUnaryRowInstNFLOP(Opcodes.UARKP.getName(), -1, expectedValue);
+		testAggregateUnaryRowInstNFLOP(Opcodes.UARKP.getName(), 0.5, expectedValue);
 	}
 
 	@Test
 	public void testUackInstNFLOP() {
 		long expectedValue = 4L * 3000 * 3000;
-		testAggregateUnaryColInstNFLOP("uack+", -1, expectedValue);
-		testAggregateUnaryColInstNFLOP("uack+", 0.5, expectedValue);
+		testAggregateUnaryColInstNFLOP(Opcodes.UACKP.getName(), -1, expectedValue);
+		testAggregateUnaryColInstNFLOP(Opcodes.UACKP.getName(), 0.5, expectedValue);
 	}
 
 	@Test
 	public void testUasqkInstNFLOP() {
 		long expectedValue = 5L * 1000 * 1000;
-		testAggregateUnaryInstNFLOP("uasqk+", expectedValue);
+		testAggregateUnaryInstNFLOP(Opcodes.UASQKP.getName(), expectedValue);
 	}
 
 	@Test
 	public void testUarsqkInstNFLOP() {
 		long expectedValue = 5L * 2000 * 2000;
-		testAggregateUnaryRowInstNFLOP("uarsqk+", -1, expectedValue);
-		testAggregateUnaryRowInstNFLOP("uarsqk+", 0.5, expectedValue);
+		testAggregateUnaryRowInstNFLOP(Opcodes.UARSQKP.getName(), -1, expectedValue);
+		testAggregateUnaryRowInstNFLOP(Opcodes.UARSQKP.getName(), 0.5, expectedValue);
 	}
 
 	@Test
 	public void testUacsqkInstNFLOP() {
 		long expectedValue = 5L * 3000 * 3000;
-		testAggregateUnaryColInstNFLOP("uacsqk+", -1, expectedValue);
-		testAggregateUnaryColInstNFLOP("uacsqk+", 0.5, expectedValue);
+		testAggregateUnaryColInstNFLOP(Opcodes.UACSQKP.getName(), -1, expectedValue);
+		testAggregateUnaryColInstNFLOP(Opcodes.UACSQKP.getName(), 0.5, expectedValue);
 	}
 
 	@Test
 	public void testUameanInstNFLOP() {
 		long expectedValue = 7L * 1000 * 1000;
-		testAggregateUnaryInstNFLOP("uamean", expectedValue);
+		testAggregateUnaryInstNFLOP(Opcodes.UAMEAN.getName(), expectedValue);
 	}
 
 	@Test
 	public void testUarmeanInstNFLOP() {
 		long expectedValue = 7L * 2000 * 2000;
-		testAggregateUnaryRowInstNFLOP("uarmean", -1, expectedValue);
-		testAggregateUnaryRowInstNFLOP("uarmean", 0.5, expectedValue);
+		testAggregateUnaryRowInstNFLOP(Opcodes.UARMEAN.getName(), -1, expectedValue);
+		testAggregateUnaryRowInstNFLOP(Opcodes.UARMEAN.getName(), 0.5, expectedValue);
 	}
 
 	@Test
 	public void testUacmeanInstNFLOP() {
 		long expectedValue = 7L * 3000 * 3000;
-		testAggregateUnaryColInstNFLOP("uacmean", -1, expectedValue);
-		testAggregateUnaryColInstNFLOP("uacmean", 0.5, expectedValue);
+		testAggregateUnaryColInstNFLOP(Opcodes.UACMEAN.getName(), -1, expectedValue);
+		testAggregateUnaryColInstNFLOP(Opcodes.UACMEAN.getName(), 0.5, expectedValue);
 	}
 
 	@Test
 	public void testUavarInstNFLOP() {
 		long expectedValue = 14L * 1000 * 1000;
-		testAggregateUnaryInstNFLOP("uavar", expectedValue);
+		testAggregateUnaryInstNFLOP(Opcodes.UAVAR.getName(), expectedValue);
 	}
 
 	@Test
 	public void testUarvarInstNFLOP() {
 		long expectedValue = 14L * 2000 * 2000;
-		testAggregateUnaryRowInstNFLOP("uarvar", -1, expectedValue);
-		testAggregateUnaryRowInstNFLOP("uarvar", 0.5, expectedValue);
+		testAggregateUnaryRowInstNFLOP(Opcodes.UARVAR.getName(), -1, expectedValue);
+		testAggregateUnaryRowInstNFLOP(Opcodes.UARVAR.getName(), 0.5, expectedValue);
 	}
 
 	@Test
 	public void testUacvarInstNFLOP() {
 		long expectedValue = 14L * 3000 * 3000;
-		testAggregateUnaryColInstNFLOP("uacvar", -1, expectedValue);
-		testAggregateUnaryColInstNFLOP("uacvar", 0.5, expectedValue);
+		testAggregateUnaryColInstNFLOP(Opcodes.UACVAR.getName(), -1, expectedValue);
+		testAggregateUnaryColInstNFLOP(Opcodes.UACVAR.getName(), 0.5, expectedValue);
 	}
 
 	@Test
 	public void testUamaxInstNFLOP() {
 		long expectedValue = 1000 * 1000;
-		testAggregateUnaryInstNFLOP("uamax", expectedValue);
+		testAggregateUnaryInstNFLOP(Opcodes.UAMAX.getName(), expectedValue);
 	}
 
 	@Test
 	public void testUarmaxInstNFLOP() {
 		long expectedValue = 2000 * 2000;
-		testAggregateUnaryRowInstNFLOP("uarmax", -1, expectedValue);
-		testAggregateUnaryRowInstNFLOP("uarmax", 0.5, expectedValue);
+		testAggregateUnaryRowInstNFLOP(Opcodes.UARMAX.getName(), -1, expectedValue);
+		testAggregateUnaryRowInstNFLOP(Opcodes.UARMAX.getName(), 0.5, expectedValue);
 	}
 
 	@Test
 	public void testUarimaxInstNFLOP() {
 		long expectedValue = 2000 * 2000;
-		testAggregateUnaryRowInstNFLOP("uarimax", -1, expectedValue);
-		testAggregateUnaryRowInstNFLOP("uarimax", 0.5, expectedValue);
+		testAggregateUnaryRowInstNFLOP(Opcodes.UARIMAX.getName(), -1, expectedValue);
+		testAggregateUnaryRowInstNFLOP(Opcodes.UARIMAX.getName(), 0.5, expectedValue);
 	}
 
 	@Test
 	public void testUacmaxInstNFLOP() {
 		long expectedValue = 3000 * 3000;
-		testAggregateUnaryColInstNFLOP("uacmax", -1, expectedValue);
-		testAggregateUnaryColInstNFLOP("uacmax", 0.5, expectedValue);
+		testAggregateUnaryColInstNFLOP(Opcodes.UACMAX.getName(), -1, expectedValue);
+		testAggregateUnaryColInstNFLOP(Opcodes.UACMAX.getName(), 0.5, expectedValue);
 	}
 
 	@Test
 	public void testUaminInstNFLOP() {
 		long expectedValue = 1000 * 1000;
-		testAggregateUnaryInstNFLOP("uamin", expectedValue);
+		testAggregateUnaryInstNFLOP(Opcodes.UAMIN.getName(), expectedValue);
 	}
 
 	@Test
 	public void testUarminInstNFLOP() {
 		long expectedValue = 2000 * 2000;
-		testAggregateUnaryRowInstNFLOP("uarmin", -1, expectedValue);
-		testAggregateUnaryRowInstNFLOP("uarmin", 0.5, expectedValue);
+		testAggregateUnaryRowInstNFLOP(Opcodes.UARMIN.getName(), -1, expectedValue);
+		testAggregateUnaryRowInstNFLOP(Opcodes.UARMIN.getName(), 0.5, expectedValue);
 	}
 
 	@Test
 	public void testUariminInstNFLOP() {
 		long expectedValue = 2000 * 2000;
-		testAggregateUnaryRowInstNFLOP("uarimin", -1, expectedValue);
-		testAggregateUnaryRowInstNFLOP("uarimin", 0.5, expectedValue);
+		testAggregateUnaryRowInstNFLOP(Opcodes.UARIMIN.getName(), -1, expectedValue);
+		testAggregateUnaryRowInstNFLOP(Opcodes.UARIMIN.getName(), 0.5, expectedValue);
 	}
 
 	@Test
 	public void testUacminInstNFLOP() {
 		long expectedValue = 3000 * 3000;
-		testAggregateUnaryColInstNFLOP("uacmin", -1, expectedValue);
-		testAggregateUnaryColInstNFLOP("uacmin", 0.5, expectedValue);
+		testAggregateUnaryColInstNFLOP(Opcodes.UACMIN.getName(), -1, expectedValue);
+		testAggregateUnaryColInstNFLOP(Opcodes.UACMIN.getName(), 0.5, expectedValue);
 	}
 
 	// HELPERS

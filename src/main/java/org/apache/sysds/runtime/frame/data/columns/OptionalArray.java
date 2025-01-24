@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
@@ -496,7 +497,7 @@ public class OptionalArray<T> extends Array<T> {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_size + 2);
-		sb.append(super.toString()).append("<").append(_a.getClass().getSimpleName()).append(">:[");
+		sb.append(super.toString()).append(Opcodes.LESS.getName()).append(_a.getClass().getSimpleName()).append(">:[");
 		for(int i = 0; i < _size - 1; i++)
 			sb.append(get(i)).append(",");
 		sb.append(get(_size - 1));

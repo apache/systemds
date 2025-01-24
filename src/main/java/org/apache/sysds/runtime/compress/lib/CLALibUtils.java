@@ -148,7 +148,7 @@ public final class CLALibUtils {
 	 */
 	protected static boolean shouldPreFilterMorphOrRef(List<AColGroup> groups) {
 		for(AColGroup g : groups)
-			if(g instanceof AMorphingMMColGroup || g instanceof IFrameOfReferenceGroup)
+			if(g instanceof AMorphingMMColGroup || g instanceof IFrameOfReferenceGroup || g instanceof ColGroupConst)
 				return true;
 		return false;
 	}

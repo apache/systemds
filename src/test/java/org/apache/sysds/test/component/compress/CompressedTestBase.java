@@ -1163,7 +1163,7 @@ public abstract class CompressedTestBase extends TestBase {
 			TestUtils.compareMatricesBitAvgDistance(expected, result, (long) (27000 * toleranceMultiplier),
 				(long) (1024 * toleranceMultiplier), bufferedToString);
 
-		if(result.getNonZeros() < expected.getNonZeros())
+		if(result.getNonZeros() != -1 && expected.getNonZeros() != -1 && result.getNonZeros() < expected.getNonZeros())
 			fail("Nonzero is to low guarantee at least equal or higher " + result.getNonZeros() + " vs "
 				+ expected.getNonZeros());
 

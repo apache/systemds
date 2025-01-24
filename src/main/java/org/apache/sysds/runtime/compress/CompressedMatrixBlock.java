@@ -26,8 +26,10 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -42,9 +44,11 @@ import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.ADictBasedColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupIO;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.lib.CLALibAppend;
 import org.apache.sysds.runtime.compress.lib.CLALibBinaryCellOp;
 import org.apache.sysds.runtime.compress.lib.CLALibCMOps;
@@ -99,14 +103,13 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	private static final Log LOG = LogFactory.getLog(CompressedMatrixBlock.class.getName());
 	private static final long serialVersionUID = 73193720143154058L;
 
-	/**
-	 * Debugging flag for Compressed Matrices
-	 */
+	/** Debugging flag for Compressed Matrices */
 	public static boolean debug = false;
 
-	/**
-	 * Column groups
-	 */
+	/** Disallow caching of uncompressed Block */
+	public static boolean allowCachingUncompressed = true;
+
+	/** Column groups */
 	protected transient List<AColGroup> _colGroups;
 
 	/**
@@ -118,6 +121,9 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	 * Soft reference to a decompressed version of this matrix block.
 	 */
 	protected transient SoftReference<MatrixBlock> decompressedVersion;
+
+	/** Cached Memory size */
+	protected transient long cachedMemorySize = -1;
 
 	public CompressedMatrixBlock() {
 		super(true);
@@ -169,7 +175,9 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		clen = uncompressedMatrixBlock.getNumColumns();
 		sparse = false;
 		nonZeros = uncompressedMatrixBlock.getNonZeros();
-		decompressedVersion = new SoftReference<>(uncompressedMatrixBlock);
+		if(!(uncompressedMatrixBlock instanceof CompressedMatrixBlock)) {
+			decompressedVersion = new SoftReference<>(uncompressedMatrixBlock);
+		}
 	}
 
 	/**
@@ -189,6 +197,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		this.nonZeros = nnz;
 		this.overlappingColGroups = overlapping;
 		this._colGroups = groups;
+		getInMemorySize(); // cache memory size
 	}
 
 	@Override
@@ -204,6 +213,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	 * @param cg The column group to use after.
 	 */
 	public void allocateColGroup(AColGroup cg) {
+		cachedMemorySize = -1;
 		_colGroups = new ArrayList<>(1);
 		_colGroups.add(cg);
 	}
@@ -270,6 +280,12 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 		ret = CLALibDecompress.decompress(this, k);
 
+		if(ret.getNonZeros() <= 0) {
+			LOG.warn("Decompress incorrectly set nnz to 0 or -1");
+			ret.recomputeNonZeros(k);
+		}
+		ret.examSparsity(k);
+
 		// Set soft reference to the decompressed version
 		decompressedVersion = new SoftReference<>(ret);
 
@@ -290,7 +306,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	 * @return The cached decompressed matrix, if it does not exist return null
 	 */
 	public MatrixBlock getCachedDecompressed() {
-		if(decompressedVersion != null) {
+		if( allowCachingUncompressed && decompressedVersion != null) {
 			final MatrixBlock mb = decompressedVersion.get();
 			if(mb != null) {
 				DMLCompressionStatistics.addDecompressCacheCount();
@@ -302,6 +318,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	public CompressedMatrixBlock squash(int k) {
+		cachedMemorySize = -1;
 		return CLALibSquash.squash(this, k);
 	}
 
@@ -377,12 +394,27 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	 * @return an upper bound on the memory used to store this compressed block considering class overhead.
 	 */
 	public long estimateCompressedSizeInMemory() {
-		long total = baseSizeInMemory();
 
-		for(AColGroup grp : _colGroups)
-			total += grp.estimateInMemorySize();
+		if(cachedMemorySize <= -1L) {
 
-		return total;
+			long total = baseSizeInMemory();
+			// take into consideration duplicate dictionaries
+			Set<IDictionary> dicts = new HashSet<>();
+			for(AColGroup grp : _colGroups){
+				if(grp instanceof ADictBasedColGroup){
+					IDictionary dg = ((ADictBasedColGroup) grp).getDictionary();
+					if(dicts.contains(dg))
+						total -= dg.getInMemorySize();
+					dicts.add(dg);
+				}
+				total += grp.estimateInMemorySize();
+			}
+			cachedMemorySize = total;
+			return total;
+
+		}
+		else
+			return cachedMemorySize;
 	}
 
 	public static long baseSizeInMemory() {
@@ -392,6 +424,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		total += 8; // Col Group Ref
 		total += 8; // v reference
 		total += 8; // soft reference to decompressed version
+		total += 8; // long cached memory size
 		total += 1 + 7; // Booleans plus padding
 
 		total += 40; // Col Group Array List
@@ -431,6 +464,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
+		cachedMemorySize = -1;
 		// deserialize compressed block
 		rlen = in.readInt();
 		clen = in.readInt();
@@ -736,8 +770,22 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public boolean isEmptyBlock(boolean safe) {
-		final long nonZeros = getNonZeros();
-		return _colGroups == null || nonZeros == 0 || (nonZeros == -1 && recomputeNonZeros() == 0);
+		if(nonZeros > 1)
+			return false;
+		else if(_colGroups == null || nonZeros == 0)
+			return true;
+		else{
+			if(nonZeros == -1){
+				// try to use column groups
+				for(AColGroup g : _colGroups)
+					if(!g.isEmpty())
+						return false;
+				// Otherwise recompute non zeros.
+				recomputeNonZeros();
+			}
+
+			return getNonZeros() == 0;
+		}
 	}
 
 	@Override
@@ -1045,6 +1093,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	private void copyCompressedMatrix(CompressedMatrixBlock that) {
+		cachedMemorySize = -1;
 		this.rlen = that.getNumRows();
 		this.clen = that.getNumColumns();
 		this.sparseBlock = null;
@@ -1059,7 +1108,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	public SoftReference<MatrixBlock> getSoftReferenceToDecompressed() {
-		return decompressedVersion;
+		return allowCachingUncompressed ? decompressedVersion : null;
 	}
 
 	public void clearSoftReferenceToDecompressed() {

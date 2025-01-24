@@ -19,11 +19,15 @@
 
 package org.apache.sysds.test.component.frame.transform;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -119,8 +123,8 @@ public class TransformCompressedTestMultiCol {
 		test("{dummycode:[C1,C2,C3]}");
 	}
 
-	@Test 
-	public void testDummyCodeV2(){
+	@Test
+	public void testDummyCodeV2() {
 		test("{ids:true, dummycode:[1,2,3]}");
 	}
 
@@ -169,16 +173,19 @@ public class TransformCompressedTestMultiCol {
 
 
 			TestUtils.compareMatrices(outNormal, outCompressed, 0, "Not Equal after apply");
-
+			meta = encoderNormal.getMetaData(meta);
 			MultiColumnEncoder ec2 = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(),
 				encoderNormal.getMetaData(null));
-			
+
+			FrameBlock metaBack = ec2.getMetaData(null);
+			compareMeta(metaBack, meta);
 			MatrixBlock outMeta12 = ec2.apply(data, k);
+
 			TestUtils.compareMatrices(outNormal, outMeta12, 0, "Not Equal after apply2");
 
 			MultiColumnEncoder ec = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(),
 				encoderCompressed.getMetaData(null));
-			
+
 			MatrixBlock outMeta1 = ec.apply(data, k);
 			TestUtils.compareMatrices(outNormal, outMeta1, 0, "Not Equal after apply");
 
@@ -186,6 +193,25 @@ public class TransformCompressedTestMultiCol {
 		catch(Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
+		}
+	}
+
+	private void compareMeta(FrameBlock e, FrameBlock a){
+		try{
+			assertEquals(e.getNumRows(), a.getNumRows());
+			if(e.getNumRows()>0){
+				for(int i = 0; i < e.getNumColumns(); i++){
+					Map<?, Integer> em = e.getColumn(i).getRecodeMap();
+					Map<?, Integer> am = a.getColumn(i).getRecodeMap();
+					for(Entry<?, Integer> eme : em.entrySet()){
+							assertTrue(am.containsKey(eme.getKey()));
+							assertEquals(eme.getValue(), am.get(eme.getKey()));
+					}
+				}
+			}
+		}
+		catch(Exception ex){
+			throw new RuntimeException(e.toString(), ex);
 		}
 	}
 }

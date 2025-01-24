@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -83,9 +84,9 @@ public class RewriteSimplifyLowerTriExtractionTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			if(rewrites)
-				Assert.assertTrue(heavyHittersContainsString("lowertri"));
+				Assert.assertTrue(heavyHittersContainsString(Opcodes.LOWERTRI.getName()));
 			else
-				Assert.assertTrue(heavyHittersContainsString("rdiag") && heavyHittersContainsString("ucumk+"));
+				Assert.assertTrue(heavyHittersContainsString(Opcodes.DIAG.getName()) && heavyHittersContainsString(Opcodes.UCUMKP.getName()));
 
 		}
 		finally {

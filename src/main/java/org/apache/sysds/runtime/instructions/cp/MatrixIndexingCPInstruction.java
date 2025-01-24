@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.lops.LeftIndex;
 import org.apache.sysds.lops.RightIndex;
 import org.apache.sysds.common.Types.DataType;
@@ -56,7 +57,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 		boolean inRange = ix.rowStart < mo.getNumRows() && ix.colStart < mo.getNumColumns();
 		
 		//right indexing
-		if( opcode.equalsIgnoreCase(RightIndex.OPCODE) )
+		if( opcode.equalsIgnoreCase(Opcodes.RIGHT_INDEX.getName()) )
 		{
 			if( output.isScalar() && inRange ) { //SCALAR out
 				MatrixBlock matBlock = mo.acquireReadAndRelease();
@@ -94,7 +95,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 			}
 		}
 		//left indexing
-		else if ( opcode.equalsIgnoreCase(LeftIndex.OPCODE))
+		else if ( opcode.equalsIgnoreCase(Opcodes.LEFT_INDEX.getName()))
 		{
 			UpdateType updateType = mo.getUpdateType();
 			if(DMLScript.STATISTICS) {

@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.cp;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -81,30 +82,30 @@ public class AggregateUnaryCPInstruction extends UnaryCPInstruction {
 			return new AggregateUnaryCPInstruction(new SimpleOperator(Builtin.getBuiltinFnObject(opcode)),
 				in1, out, AUType.valueOf(opcode.toUpperCase()), opcode, str);
 		} 
-		else if(opcode.equalsIgnoreCase("uacd")
-				|| opcode.equalsIgnoreCase("uacdr")
-				|| opcode.equalsIgnoreCase("uacdc")){
+		else if(opcode.equalsIgnoreCase(Opcodes.UACD.getName())
+				|| opcode.equalsIgnoreCase(Opcodes.UACDR.getName())
+				|| opcode.equalsIgnoreCase(Opcodes.UACDC.getName())){
 			AggregateUnaryOperator aggun = InstructionUtils.parseBasicAggregateUnaryOperator(opcode,
 					Integer.parseInt(parts[3]));
 			return new AggregateUnaryCPInstruction(aggun, in1, out, AUType.COUNT_DISTINCT, opcode, str);
 		}
-		else if(opcode.equalsIgnoreCase("uacdap")
-				|| opcode.equalsIgnoreCase("uacdapr")
-				|| opcode.equalsIgnoreCase("uacdapc")){
+		else if(opcode.equalsIgnoreCase(Opcodes.UACDAP.getName())
+				|| opcode.equalsIgnoreCase(Opcodes.UACDAPR.getName())
+				|| opcode.equalsIgnoreCase(Opcodes.UACDAPC.getName())){
 			AggregateUnaryOperator aggun = InstructionUtils.parseBasicAggregateUnaryOperator(opcode,
 					Integer.parseInt(parts[3]));
 			return new AggregateUnaryCPInstruction(aggun, in1, out, AUType.COUNT_DISTINCT_APPROX,
 					opcode, str);
 		}
-		else if(opcode.equalsIgnoreCase("uarimax") || opcode.equalsIgnoreCase("uarimin")){
+		else if(opcode.equalsIgnoreCase(Opcodes.UARIMAX.getName()) || opcode.equalsIgnoreCase(Opcodes.UARIMIN.getName())){
 			// parse with number of outputs
 			AggregateUnaryOperator aggun = InstructionUtils
 				.parseAggregateUnaryRowIndexOperator(opcode, Integer.parseInt(parts[4]), Integer.parseInt(parts[3]));
 			return new AggregateUnaryCPInstruction(aggun, in1, out, AUType.DEFAULT, opcode, str);
 		}
-		else if(opcode.equalsIgnoreCase("unique")
-				|| opcode.equalsIgnoreCase("uniquer")
-				|| opcode.equalsIgnoreCase("uniquec")){
+		else if(opcode.equalsIgnoreCase(Opcodes.UNIQUE.getName())
+				|| opcode.equalsIgnoreCase(Opcodes.UNIQUER.getName())
+				|| opcode.equalsIgnoreCase(Opcodes.UNIQUEC.getName())){
 			AggregateUnaryOperator aggun = InstructionUtils.parseBasicAggregateUnaryOperator(opcode,
 					Integer.parseInt(parts[3]));
 			return new AggregateUnaryCPInstruction(aggun, in1, out, AUType.UNIQUE, opcode, str);

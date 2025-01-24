@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.lops.LeftIndex;
 import org.apache.sysds.lops.RightIndex;
 import org.apache.sysds.common.Types.DataType;
@@ -76,7 +77,7 @@ public abstract class IndexingCPInstruction extends UnaryCPInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		
-		if ( opcode.equalsIgnoreCase(RightIndex.OPCODE) ) {
+		if ( opcode.equalsIgnoreCase(Opcodes.RIGHT_INDEX.getName()) ) {
 			if ( parts.length == 7 ) {
 				CPOperand in, rl, ru, cl, cu, out;
 				in = new CPOperand(parts[1]);
@@ -98,7 +99,7 @@ public abstract class IndexingCPInstruction extends UnaryCPInstruction {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
 			}
 		} 
-		else if ( opcode.equalsIgnoreCase(LeftIndex.OPCODE)) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.LEFT_INDEX.getName())) {
 			if ( parts.length == 8 ) {
 				CPOperand lhsInput, rhsInput, rl, ru, cl, cu, out;
 				lhsInput = new CPOperand(parts[1]);

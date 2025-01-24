@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.lops.LeftIndex;
 import org.apache.sysds.lops.RightIndex;
 import org.apache.commons.lang3.tuple.Pair;
@@ -49,7 +50,7 @@ public final class ListIndexingCPInstruction extends IndexingCPInstruction {
 		ScalarObject ru = ec.getScalarInput(rowUpper);
 		
 		//right indexing
-		if( opcode.equalsIgnoreCase(RightIndex.OPCODE) ) {
+		if( opcode.equalsIgnoreCase(Opcodes.RIGHT_INDEX.getName()) ) {
 			ListObject list = (ListObject) ec.getVariable(input1.getName());
 			
 			//execute right indexing operation and set output
@@ -63,7 +64,7 @@ public final class ListIndexingCPInstruction extends IndexingCPInstruction {
 			}
 		}
 		//left indexing
-		else if ( opcode.equalsIgnoreCase(LeftIndex.OPCODE)) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.LEFT_INDEX.getName())) {
 			ListObject lin = (ListObject) ec.getVariable(input1.getName());
 			
 			//execute right indexing operation and set output

@@ -42,6 +42,7 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.util.random.SamplingUtils;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.OpOpDG;
@@ -239,7 +240,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			// 7 operands: range, size, replace, seed, blen, outvar
 			InstructionUtils.checkNumFields ( str, 6 );
 		}
-		else if ( opcode.equalsIgnoreCase(DataGen.FRAME_OPCODE) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.FRAME.getName()) ) {
 			method = OpOpDG.FRAMEINIT;
 			InstructionUtils.checkNumFields ( str, 6 );
 		}

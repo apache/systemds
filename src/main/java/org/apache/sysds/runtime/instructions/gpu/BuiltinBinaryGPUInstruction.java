@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.gpu;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;

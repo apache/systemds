@@ -19,6 +19,7 @@
 
 package org.apache.sysds.lops;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.common.Types.DataType;
@@ -231,7 +232,7 @@ public class PartialAggregate extends Lop
 			ret = InstructionUtils.concatOperands(ret, _aggtype.name());
 		else if ( getExecType() == ExecType.CP || getExecType() == ExecType.FED ){
 			ret = InstructionUtils.concatOperands(ret, Integer.toString(_numThreads));
-			if ( getOpcode().equalsIgnoreCase("uarimin") || getOpcode().equalsIgnoreCase("uarimax") )
+			if ( getOpcode().equalsIgnoreCase(Opcodes.UARIMIN.getName()) || getOpcode().equalsIgnoreCase(Opcodes.UARIMAX.getName()) )
 				ret = InstructionUtils.concatOperands(ret, "1");
 			if ( getExecType() == ExecType.FED )
 				ret = InstructionUtils.concatOperands(ret, _fedOutput.name());
@@ -249,49 +250,49 @@ public class PartialAggregate extends Lop
 				// except that they also produce correction values along with partial
 				// sums.
 				if( dir == Direction.RowCol )
-					return "uak+";
+					return Opcodes.UAKP.getName();
 				else if( dir == Direction.Row )
-					return "uark+";
+					return Opcodes.UARKP.getName();
 				else if( dir == Direction.Col )
-					return "uack+";
+					return Opcodes.UACKP.getName();
 				break;
 			}
 
 			case SUM_SQ: {
 				if( dir == Direction.RowCol )
-					return "uasqk+";
+					return Opcodes.UASQKP.getName();
 				else if( dir == Direction.Row )
-					return "uarsqk+";
+					return Opcodes.UARSQKP.getName();
 				else if( dir == Direction.Col )
-					return "uacsqk+";
+					return Opcodes.UACSQKP.getName();
 				break;
 			}
 
 			case MEAN: {
 				if( dir == Direction.RowCol )
-					return "uamean";
+					return Opcodes.UAMEAN.getName();
 				else if( dir == Direction.Row )
-					return "uarmean";
+					return Opcodes.UARMEAN.getName();
 				else if( dir == Direction.Col )
-					return "uacmean";
+					return Opcodes.UACMEAN.getName();
 				break;
 			}
 
 			case VAR: {
 				if( dir == Direction.RowCol )
-					return "uavar";
+					return Opcodes.UAVAR.getName();
 				else if( dir == Direction.Row )
-					return "uarvar";
+					return Opcodes.UARVAR.getName();
 				else if( dir == Direction.Col )
-					return "uacvar";
+					return Opcodes.UACVAR.getName();
 				break;
 			}
 
 			case PROD: {
 				switch( dir ) {
-					case RowCol: return "ua*";
-					case Row:    return "uar*";
-					case Col:    return "uac*";
+					case RowCol: return Opcodes.UAM.getName();
+					case Row:    return Opcodes.UARM.getName();
+					case Col:    return Opcodes.UACM.getName();
 				}
 			}
 			
@@ -305,47 +306,47 @@ public class PartialAggregate extends Lop
 			
 			case MAX: {
 				if( dir == Direction.RowCol )
-					return "uamax";
+					return Opcodes.UAMAX.getName();
 				else if( dir == Direction.Row )
-					return "uarmax";
+					return Opcodes.UARMAX.getName();
 				else if( dir == Direction.Col )
-					return "uacmax";
+					return Opcodes.UACMAX.getName();
 				break;
 			}
 			
 			case MIN: {
 				if( dir == Direction.RowCol )
-					return "uamin";
+					return Opcodes.UAMIN.getName();
 				else if( dir == Direction.Row )
-					return "uarmin";
+					return Opcodes.UARMIN.getName();
 				else if( dir == Direction.Col )
-					return "uacmin";
+					return Opcodes.UACMIN.getName();
 				break;
 			}
 			
 			case MAXINDEX:{
 				if( dir == Direction.Row )
-					return "uarimax";
+					return Opcodes.UARIMAX.getName();
 				break;
 			}
 			
 			case MININDEX: {
 				if( dir == Direction.Row )
-					return "uarimin";
+					return Opcodes.UARIMIN.getName();
 				break;
 			}
 			
 			case TRACE: {
 				if( dir == Direction.RowCol )
-					return "uaktrace";
+					return Opcodes.UAKTRACE.getName();
 				break;
 			}
 
 			case COUNT_DISTINCT: {
 				switch (dir) {
-					case RowCol: return "uacd";
-					case Row: return "uacdr";
-					case Col: return "uacdc";
+					case RowCol: return Opcodes.UACD.getName();
+					case Row: return Opcodes.UACDR.getName();
+					case Col: return Opcodes.UACDAPC.getName();
 					default:
 						throw new LopsException("PartialAggregate.getOpcode() - "
 								+ "Unknown aggregate direction: " + dir);
@@ -354,9 +355,9 @@ public class PartialAggregate extends Lop
 
 			case COUNT_DISTINCT_APPROX: {
 				switch (dir) {
-					case RowCol: return "uacdap";
-					case Row: return "uacdapr";
-					case Col: return "uacdapc";
+					case RowCol: return Opcodes.UACDAP.getName();
+					case Row: return Opcodes.UACDAPR.getName();
+					case Col: return Opcodes.UACDAPC.getName();
 					default:
 						throw new LopsException("PartialAggregate.getOpcode() - "
 								+ "Unknown aggregate direction: " + dir);
@@ -365,9 +366,9 @@ public class PartialAggregate extends Lop
 
 			case UNIQUE: {
 				switch (dir) {
-					case RowCol: return "unique";
-					case Row: return "uniquer";
-					case Col: return "uniquec";
+					case RowCol: return Opcodes.UNIQUE.getName();
+					case Row: return Opcodes.UNIQUER.getName();
+					case Col: return Opcodes.UNIQUEC.getName();
 					default:
 						throw new LopsException("PartialAggregate.getOpcode() - "
 								+ "Unknown aggregate direction: " + dir);

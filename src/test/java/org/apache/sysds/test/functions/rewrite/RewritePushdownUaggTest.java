@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.rewrite;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -132,13 +133,13 @@ public class RewritePushdownUaggTest extends AutomatedTestBase
 			//check matrix mult existence
 			String check = null;
 			if( testname.equals(TEST_NAME1) ) //colsums
-				check = rewrites ? "uark+" : "uack+";
+				check = rewrites ? Opcodes.UARKP.getName() : Opcodes.UACKP.getName();
 			else if( testname.equals(TEST_NAME2) ) //rowsums
-				check = rewrites ? "uack+" : "uark+";
+				check = rewrites ? Opcodes.UACKP.getName() : Opcodes.UARKP.getName();
 			else if( testname.equals(TEST_NAME3) ) //colmins
-				check = rewrites ? "uarmin" : "uacmin";
+				check = rewrites ? Opcodes.UARMIN.getName() : Opcodes.UACMIN.getName();
 			else if( testname.equals(TEST_NAME4) ) //rowmins
-				check = rewrites ? "uacmin" : "uarmin";
+				check = rewrites ? Opcodes.UACMIN.getName() : Opcodes.UARMIN.getName();
 
 			String gpuCheck = "gpu_" + check;
 			boolean containsOpcode = Statistics.getCPHeavyHitterOpCodes().contains(check) || Statistics.getCPHeavyHitterOpCodes().contains(gpuCheck);

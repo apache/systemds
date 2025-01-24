@@ -25,6 +25,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.OpOpDG;
 import org.apache.sysds.common.Types.ValueType;
@@ -213,26 +214,26 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		String[] s = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = s[0];
 
-		if(opcode.equalsIgnoreCase(DataGen.RAND_OPCODE)) {
+		if(opcode.equalsIgnoreCase(Opcodes.RANDOM.getName())) {
 			method = OpOpDG.RAND;
 			InstructionUtils.checkNumFields(s, 10, 11);
 		}
-		else if(opcode.equalsIgnoreCase(DataGen.SEQ_OPCODE)) {
+		else if(opcode.equalsIgnoreCase(Opcodes.SEQUENCE.getName())) {
 			method = OpOpDG.SEQ;
 			// 8 operands: rows, cols, blen, from, to, incr, outvar
 			InstructionUtils.checkNumFields(s, 7);
 		}
-		else if(opcode.equalsIgnoreCase(DataGen.SAMPLE_OPCODE)) {
+		else if(opcode.equalsIgnoreCase(Opcodes.SAMPLE.getName())) {
 			method = OpOpDG.SAMPLE;
 			// 7 operands: range, size, replace, seed, blen, outvar
 			InstructionUtils.checkNumFields(s, 6);
 		}
-		else if(opcode.equalsIgnoreCase(DataGen.TIME_OPCODE)) {
+		else if(opcode.equalsIgnoreCase(Opcodes.TIME.getName())) {
 			method = OpOpDG.TIME;
 			// 1 operand: outvar
 			InstructionUtils.checkNumFields(s, 1);
 		}
-		else if(opcode.equalsIgnoreCase(DataGen.FRAME_OPCODE)) {
+		else if(opcode.equalsIgnoreCase(Opcodes.FRAME.getName())) {
 			method = OpOpDG.FRAMEINIT;
 			InstructionUtils.checkNumFields(s, 5);
 		}

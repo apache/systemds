@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -104,9 +105,9 @@ public class RewriteFuseBinarySubDAGToUnaryOperationTest extends AutomatedTestBa
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			if (rewrites)
-				Assert.assertTrue(heavyHittersContainsString("sprop") || heavyHittersContainsString("sigmoid"));
+				Assert.assertTrue(heavyHittersContainsString(Opcodes.SPROP.getName()) || heavyHittersContainsString(Opcodes.SIGMOID.getName()));
 			else
-				Assert.assertFalse(heavyHittersContainsString("sprop") || heavyHittersContainsString("sigmoid"));
+				Assert.assertFalse(heavyHittersContainsString(Opcodes.SPROP.getName()) || heavyHittersContainsString(Opcodes.SIGMOID.getName()));
 
 
 		}

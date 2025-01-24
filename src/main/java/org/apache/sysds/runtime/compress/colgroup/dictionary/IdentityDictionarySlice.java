@@ -61,6 +61,7 @@ public class IdentityDictionarySlice extends AIdentityDictionary {
 	 * @param withEmpty If the matrix should contain an empty row in the end.
 	 * @param l         the index lower to start at
 	 * @param u         the index upper to end at (not inclusive)
+	 * @return a Dictionary instance.
 	 */
 	public static IDictionary create(int nRowCol, boolean withEmpty, int l, int u) {
 		if(u > nRowCol || l < 0 || l >= u)

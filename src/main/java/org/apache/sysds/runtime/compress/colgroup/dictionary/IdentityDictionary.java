@@ -60,6 +60,7 @@ public class IdentityDictionary extends AIdentityDictionary {
 	 * structure is known to have certain properties.
 	 * 
 	 * @param nRowCol The number of rows and columns in this identity matrix.
+	 * @return a Dictionary instance.
 	 */
 	public static IDictionary create(int nRowCol) {
 		return create(nRowCol, false);
@@ -82,6 +83,7 @@ public class IdentityDictionary extends AIdentityDictionary {
 	 * 
 	 * @param nRowCol   The number of rows and columns in this identity matrix.
 	 * @param withEmpty If the matrix should contain an empty row in the end.
+	 * @return a Dictionary instance.
 	 */
 	public static IDictionary create(int nRowCol, boolean withEmpty) {
 		if(nRowCol == 1) {

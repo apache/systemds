@@ -184,7 +184,7 @@ public class COGHeader {
         if (cogHeader.isBigTIFF()) {
             byte[] offsetSize = byteReader.readBytes(2);
             ifdOffsetSize = cogHeader.parseByteArray(offsetSize, 2, 0, false, false, false).shortValue();
-            byteReader.readBytes(2); // Skip the next 2 bytes
+            byteReader.skipBytes(2); // Skip the next 2 bytes
         }
 
         byte[] ifdOffsetRaw = byteReader.readBytes(ifdOffsetSize);
@@ -219,7 +219,7 @@ public class COGHeader {
         while (nextIFDOffset != 0 || firstIFD) {
             // There can be data in-between IFDs, we need to skip that
             // Read until the next IFD, discard any data until then
-            byteReader.readBytes(nextIFDOffset - (firstIFD ? 0 : byteReader.getTotalBytesRead()));
+            byteReader.skipBytes(nextIFDOffset - (firstIFD ? 0 : byteReader.getTotalBytesRead()));
 
             // Read the number of tags in the IFD and initialize the array
             numberOfTagsRaw = byteReader.readBytes(cogHeader.isBigTIFF() ? 8 : 2);

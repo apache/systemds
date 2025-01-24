@@ -65,4 +65,16 @@ public class COGByteReader {
             throw new DMLRuntimeException(e);
         }
     }
+
+    public void skipBytes(int n) throws DMLRuntimeException {
+        try {
+            long skipped = bis.skip(n);
+            if (skipped != n) {
+                throw new DMLRuntimeException("Could not skip " + n + " bytes, only skipped " + skipped + " bytes");
+            }
+            totalBytesRead += n;
+        } catch (IOException e) {
+            throw new DMLRuntimeException(e);
+        }
+    }
 }

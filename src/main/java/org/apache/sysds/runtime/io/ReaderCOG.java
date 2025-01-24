@@ -74,6 +74,15 @@ public class ReaderCOG extends MatrixReader{
         int currentTileRow = 0;
         int currentBand = 0;
 
+        boolean tilesFullySequential = true;
+        for (int i = 1; i < cogP.getTileOffsets().length; i++) {
+            if (cogP.getTileOffsets()[i] < cogP.getTileOffsets()[i - 1]) {
+                tilesFullySequential = false;
+                break;
+            }
+        }
+
+
         MatrixBlock outputMatrix = createOutputMatrixBlock(cogP.getRows(), cogP.getCols() * cogP.getBands(), cogP.getRows(), estnnz, true, false);
 
         for (int currenTileIdx = 0; currenTileIdx < actualAmountTiles; currenTileIdx++) {
@@ -81,13 +90,17 @@ public class ReaderCOG extends MatrixReader{
             // Mark the current position in the stream
             // This is used to reset the stream to this position after reading the data
             // Valid until bytesToRead + 1 bytes are read
-            byteReader.mark(bytesToRead);
+            // Only necessary if we might need to jump back in the stream (when tiles are not fully sequential)
+            if (!tilesFullySequential) {
+                byteReader.mark(bytesToRead);
+            }
             // Read until offset is reached
-            byteReader.readBytes(cogP.getTileOffsets()[currenTileIdx] - byteReader.getTotalBytesRead());
+            byteReader.skipBytes(cogP.getTileOffsets()[currenTileIdx] - byteReader.getTotalBytesRead());
             byte[] currentTileData = byteReader.readBytes(cogP.getBytesPerTile()[currenTileIdx]);
 
-            // Reset the stream to the beginning of the next tile
-            byteReader.reset();
+            if (!tilesFullySequential) {
+                byteReader.reset();
+            }
 
             // TODO: If the tile is compressed, decompress the currentTileData here
 

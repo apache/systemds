@@ -88,7 +88,14 @@ public class ReaderCOGParallel extends MatrixReader{
 
         estnnz = cogP.getRows() * cogP.getCols() * cogP.getBands();
         MatrixBlock outputMatrix = createOutputMatrixBlock(cogP.getRows(), cogP.getCols() * cogP.getBands(), cogP.getRows(), estnnz, true, true);
-        //MatrixBlock outputMatrix = new MatrixBlock(cogP.getRows(), cogP.getCols() * cogP.getBands(), false);
+
+        boolean tilesFullySequential = true;
+        for (int i = 1; i < cogP.getTileOffsets().length; i++) {
+            if (cogP.getTileOffsets()[i] < cogP.getTileOffsets()[i - 1]) {
+                tilesFullySequential = false;
+                break;
+            }
+        }
 
         try {
             ArrayList<Callable<MatrixBlock>> tasks = new ArrayList<>();
@@ -98,11 +105,16 @@ public class ReaderCOGParallel extends MatrixReader{
             for (int currenTileIdx = 0; currenTileIdx < actualAmountTiles; currenTileIdx++) {
                 // First read the bytes for the new tile
                 int bytesToRead = (cogP.getTileOffsets()[currenTileIdx] - byteReader.getTotalBytesRead()) + cogP.getBytesPerTile()[currenTileIdx];
-                byteReader.mark(bytesToRead);
-                byteReader.readBytes(cogP.getTileOffsets()[currenTileIdx] - byteReader.getTotalBytesRead());
+                // Only necessary if we might need to jump back in the stream (when tiles are not fully sequential)
+                if (!tilesFullySequential) {
+                    byteReader.mark(bytesToRead);
+                }
+                byteReader.skipBytes(cogP.getTileOffsets()[currenTileIdx] - byteReader.getTotalBytesRead());
                 byte[] currentTileData = byteReader.readBytes(cogP.getBytesPerTile()[currenTileIdx]);
 
-                byteReader.reset();
+                if (!tilesFullySequential) {
+                    byteReader.reset();
+                }
 
                 if (cogP.getCompression() == 8) {
                     currentTileData = COGCompressionUtils.decompressDeflate(currentTileData);

@@ -1,8 +1,8 @@
 package org.apache.sysds.test.functions.io.cog;
 
-public class ReadCOGTestNTilesNBandsUInt16PC1ComNoneRectBIGTIFF extends ReadCOGTest {
+public class ReadCOGTestNTilesNBandsUInt16PC2ComNoneRectBIGTIFF extends ReadCOGTest {
     private final static String TEST_NAME = "ReadCOGTest";
-    public final static String TEST_CLASS_DIR = TEST_DIR + ReadCOGTestNTilesNBandsUInt16PC1ComNoneRectBIGTIFF.class.getSimpleName() + "/";
+    public final static String TEST_CLASS_DIR = TEST_DIR + ReadCOGTestNTilesNBandsUInt16PC2ComNoneRectBIGTIFF.class.getSimpleName() + "/";
 
     protected String getTestName() {
         return TEST_NAME;

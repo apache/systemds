@@ -86,7 +86,9 @@ public class ReaderCOGParallel extends MatrixReader{
 
         ExecutorService pool = CommonThreadPool.get(_numThreads);
 
+        estnnz = cogP.getRows() * cogP.getCols() * cogP.getBands();
         MatrixBlock outputMatrix = createOutputMatrixBlock(cogP.getRows(), cogP.getCols() * cogP.getBands(), cogP.getRows(), estnnz, true, true);
+        //MatrixBlock outputMatrix = new MatrixBlock(cogP.getRows(), cogP.getCols() * cogP.getBands(), false);
 
         try {
             ArrayList<Callable<MatrixBlock>> tasks = new ArrayList<>();
@@ -287,29 +289,12 @@ public class ReaderCOGParallel extends MatrixReader{
                 if (sparse) {
                     // if outputMatrix is sparse apply synchronisation if tiles are more narrow then outputMatrix
                     SparseBlock sblock = _dest.getSparseBlock();
-                    if (tileWidth < clen) {
-                        if (sblock instanceof SparseBlockMCSR && sblock.get(rowOffset) != null) {
-                            for (int i = 0; i < tileLength; i++)
-                                synchronized (sblock.get(rowOffset + i)) {
-                                    _dest.appendRowToSparse(sblock, tileMatrix, i,
-                                            rowOffset,
-                                            colOffset, true);
-                                }
+                    for (int i = 0; i < tileLength; i++) {
+                        synchronized (sblock.get(rowOffset + i)) {
+                            _dest.appendRowToSparse(sblock, tileMatrix, i,
+                                    rowOffset,
+                                    colOffset, true);
                         }
-                        else{
-                            synchronized (_dest) {
-                                _dest.appendToSparse(
-                                        tileMatrix,
-                                        rowOffset,
-                                        colOffset);
-                            }
-                        }
-                    }
-                    else {
-                        _dest.appendToSparse(
-                                tileMatrix,
-                                rowOffset,
-                                colOffset);
                     }
                 }
                 else {
@@ -396,9 +381,13 @@ public class ReaderCOGParallel extends MatrixReader{
                     }
                 }
                 else {
-                    _dest.copy(rowOffset, rowOffset + tileLength - 1,
-                            colOffset, colOffset + (tileWidth * bands) -1,
-                            tileMatrix, false);
+                    for (int i = 0; i < tileLength; i++) {
+                        for (int j = 0; j < tileWidth * bands; j++) {
+                            if (tileMatrix.get(i, j) != 0) {
+                                _dest.set(rowOffset + i, colOffset + j, tileMatrix.get(i, j));
+                            }
+                        }
+                    }
                 }
             } catch (RuntimeException e) {
                 throw new DMLRuntimeException("Error while processing tile", e);

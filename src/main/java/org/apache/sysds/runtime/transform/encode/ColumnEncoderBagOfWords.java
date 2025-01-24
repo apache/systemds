@@ -48,7 +48,7 @@ import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 public class ColumnEncoderBagOfWords extends ColumnEncoder {
 
 	public static int NUM_SAMPLES_MAP_ESTIMATION = 16000;
-	private Map<Object, Long> _tokenDictionary; // switched from int to long to reuse code from RecodeEncoder
+	private Map<Object, Integer> _tokenDictionary; // switched from int to long to reuse code from RecodeEncoder
 	private HashSet<Object> _tokenDictionaryPart = null;
 	protected String _seperatorRegex = "\\s+"; // whitespace
 	protected boolean _caseSensitive = false;
@@ -74,11 +74,11 @@ public class ColumnEncoderBagOfWords extends ColumnEncoder {
 		_caseSensitive = enc._caseSensitive;
 	}
 
-	public void setTokenDictionary(HashMap<Object, Long> dict){
+	public void setTokenDictionary(HashMap<Object, Integer> dict){
 		_tokenDictionary = dict;
 	}
 
-	public Map<Object, Long> getTokenDictionary() {
+	public Map<Object, Integer> getTokenDictionary() {
 		return _tokenDictionary;
 	}
 
@@ -218,7 +218,7 @@ public class ColumnEncoderBagOfWords extends ColumnEncoder {
 					if(!token.isEmpty()){
 						tokenSetPerRow.add(token);
 						if(!_tokenDictionary.containsKey(token))
-							_tokenDictionary.put(token, (long) i++);
+							_tokenDictionary.put(token, i++);
 					}
 			_nnzPerRow[r] = tokenSetPerRow.size();
 			_nnz += tokenSetPerRow.size();
@@ -297,7 +297,7 @@ public class ColumnEncoderBagOfWords extends ColumnEncoder {
 					int i = 0;
 					for (Map.Entry<String, Integer> entry : counter.entrySet()) {
 						String token = entry.getKey();
-						columnValuePairs[i] = new Pair((int) (outputCol + _tokenDictionary.getOrDefault(token, 0L) - 1), entry.getValue());
+						columnValuePairs[i] = new Pair((int) (outputCol + _tokenDictionary.getOrDefault(token, 0) - 1), entry.getValue());
 						// if token is not included columnValuePairs[i] is overwritten in the next iteration
 						i += _tokenDictionary.containsKey(token) ? 1 : 0;
 					}
@@ -363,7 +363,7 @@ public class ColumnEncoderBagOfWords extends ColumnEncoder {
 	public FrameBlock getMetaData(FrameBlock out) {
 		int rowID = 0;
 		StringBuilder sb = new StringBuilder();
-		for(Map.Entry<Object, Long> e : _tokenDictionary.entrySet()) {
+		for(Map.Entry<Object, Integer> e : _tokenDictionary.entrySet()) {
 			out.set(rowID++, _colID - 1, constructRecodeMapEntry(e.getKey(), e.getValue(), sb));
 		}
 		return out;
@@ -382,9 +382,10 @@ public class ColumnEncoderBagOfWords extends ColumnEncoder {
 
 		out.writeInt(_tokenDictionary == null ? 0 : _tokenDictionary.size());
 		if(_tokenDictionary != null)
-			for(Map.Entry<Object, Long> e : _tokenDictionary.entrySet()) {
+			for(Map.Entry<Object, Integer> e : _tokenDictionary.entrySet()) {
+				System.out.println(e);
 				out.writeUTF((String) e.getKey());
-				out.writeLong(e.getValue());
+				out.writeInt(e.getValue());
 			}
 	}
 
@@ -395,7 +396,7 @@ public class ColumnEncoderBagOfWords extends ColumnEncoder {
 		_tokenDictionary = new HashMap<>(size * 4 / 3);
 		for(int j = 0; j < size; j++) {
 			String key = in.readUTF();
-			Long value = in.readLong();
+			Integer value = in.readInt();
 			_tokenDictionary.put(key, value);
 		}
 	}
@@ -476,11 +477,11 @@ public class ColumnEncoderBagOfWords extends ColumnEncoder {
 		@Override
 		public Object call() {
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			Map<Object, Long> tokenDictionary = _encoder._tokenDictionary;
+			Map<Object, Integer> tokenDictionary = _encoder._tokenDictionary;
 			for(Object tokenSet : _partialMaps.values()){
 				( (HashSet<?>) tokenSet).forEach(token -> {
 					if(!tokenDictionary.containsKey(token))
-						tokenDictionary.put(token, (long) tokenDictionary.size() + 1);
+						tokenDictionary.put(token, tokenDictionary.size() + 1);
 				});
 			}
 			for (long nnzPartial : _encoder._nnzPartials)

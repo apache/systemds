@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.PlaceHolderDict;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -93,7 +94,7 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 		int[] cachedCounts) {
 		if(dict == null)
 			return new ColGroupEmpty(colIndices);
-		else if(data.getUnique() == 1) {
+		else if(data.getUnique() == 1 && !(dict instanceof PlaceHolderDict)) {
 			MatrixBlock mb = dict.getMBDict(colIndices.size()).getMatrixBlock().slice(0, 0);
 			return ColGroupSDCSingleZeros.create(colIndices, numRows, MatrixBlockDictionary.create(mb), offsets, null);
 		}

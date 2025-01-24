@@ -237,7 +237,7 @@ public final class CLALibDecompress {
 			if(ret.isInSparseFormat()) 
 				decompressSparseSingleThread(ret, filteredGroups, nRows, blklen);
 			else 
-				decompressDenseSingleThread(ret, filteredGroups, nRows, blklen, constV, eps, nonZeros, overlapping);
+				decompressDenseSingleThread(ret, filteredGroups, nRows, blklen, constV, eps, overlapping);
 		}
 		else if(ret.isInSparseFormat()) 
 			decompressSparseMultiThread(ret, filteredGroups, nRows, blklen, k);
@@ -294,7 +294,7 @@ public final class CLALibDecompress {
 	}
 
 	private static void decompressDenseSingleThread(MatrixBlock ret, List<AColGroup> filteredGroups, int rlen,
-		int blklen, double[] constV, double eps, long nonZeros, boolean overlapping) {
+		int blklen, double[] constV, double eps, boolean overlapping) {
 
 		final DenseBlock db = ret.getDenseBlock();
 		final int nCol = ret.getNumColumns();
@@ -308,21 +308,19 @@ public final class CLALibDecompress {
 		}
 	}
 
-	// private static void decompressDenseMultiThread(MatrixBlock ret, List<AColGroup> groups, double[] constV, int k,
-	// boolean overlapping) {
-	// final int nRows = ret.getNumRows();
-	// final double eps = getEps(constV);
-	// final int blklen = Math.max(nRows / k, 512);
-	// decompressDenseMultiThread(ret, groups, nRows, blklen, constV, eps, k, overlapping);
-	// }
-
-	protected static void decompressDenseMultiThread(MatrixBlock ret, List<AColGroup> groups, double[] constV,
+	public static void decompressDense(MatrixBlock ret, List<AColGroup> groups, double[] constV,
 		double eps, int k, boolean overlapping) {
 
 		Timing time = new Timing(true);
 		final int nRows = ret.getNumRows();
 		final int blklen = Math.max(nRows / k, 512);
-		decompressDenseMultiThread(ret, groups, nRows, blklen, constV, eps, k, overlapping);
+		if( k > 1)
+			decompressDenseMultiThread(ret, groups, nRows, blklen, constV, eps, k, overlapping);
+		else
+			decompressDenseSingleThread(ret, groups, nRows, blklen, constV, eps, overlapping);
+		
+		ret.recomputeNonZeros(k);
+		
 		if(DMLScript.STATISTICS) {
 			final double t = time.stop();
 			DMLCompressionStatistics.addDecompressTime(t, k);
@@ -367,7 +365,6 @@ public final class CLALibDecompress {
 			for(int i = 0; i < rlen; i += blklen)
 				tasks.add(new DecompressSparseTask(filteredGroups, ret, i, Math.min(i + blklen, rlen)));
 
-			LOG.error("tasks:" + tasks);
 			for(Future<Object> rt : pool.invokeAll(tasks))
 				rt.get();
 		}

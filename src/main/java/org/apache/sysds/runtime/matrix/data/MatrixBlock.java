@@ -1413,15 +1413,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	/**
 	 * Recompute the number of nonZero values in parallel
 	 * 
-	 * @param k the paralelization degree
+	 * @param k the parallelization degree
 	 * @return the number of non zeros
 	 */
 	public long recomputeNonZeros(int k) {
-		if(sparse && sparseBlock!=null)
+		// fallback to single thread if k <= 1, small matrix, or sparse. 
+		if(k <= 1 || ((long) rlen * clen < 10000) || (sparse && sparseBlock!=null))
 			return recomputeNonZeros();
 		else if(!sparse && denseBlock!=null){
-			if((long) rlen * clen < 10000)
-				return recomputeNonZeros();
 			final ExecutorService pool = CommonThreadPool.get(k);
 			try {
 				List<Future<Long>> f = new ArrayList<>();
@@ -1451,7 +1450,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 
 			}
 			catch(Exception e) {
-				LOG.warn("Failed Parallel non zero count fallback to singlethread");
+				LOG.warn("Failed Parallel non zero count fallback to single thread");
 				return recomputeNonZeros();
 			}
 			finally {
@@ -5352,46 +5351,20 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 
 	/**
+	 * D = ctable(seq,A,w)
+	 * <p>
+	 * this = seq; thatMatrix = A; thatScalar = w; ret = D
+	 *
 	 * @param thatMatrix matrix value
 	 * @param thatScalar scalar double
-	 * @param ret result matrix block
+	 * @param ret        result matrix block that is the weight to multiply into the table output
 	 * @param updateClen when this matrix already has the desired number of columns updateClen can be set to false
 	 * @return result matrix block
 	 */
-	public MatrixBlock ctableSeqOperations(MatrixValue thatMatrix, double thatScalar, MatrixBlock ret, boolean updateClen) {
+	public MatrixBlock ctableSeqOperations(MatrixValue thatMatrix, double thatScalar, MatrixBlock ret,
+		boolean updateClen) {
 		MatrixBlock that = checkType(thatMatrix);
-		CTable ctable = CTable.getCTableFnObject();
-		double w = thatScalar;
-		
-		//prepare allocation of CSR sparse block
-		int[] rptr = new int[rlen+1];
-		int[] indexes = new int[rlen];
-		double[] values = new double[rlen];
-		
-		//sparse-unsafe ctable execution
-		//(because input values of 0 are invalid and have to result in errors)
-		//resultBlock guaranteed to be allocated for ctableexpand
-		//each row in resultBlock will be allocated and will contain exactly one value
-		int maxCol = 0;
-		for( int i=0; i<rlen; i++ ) {
-			double v2 = that.get(i, 0);
-			maxCol = ctable.execute(i+1, v2, w, maxCol, indexes, values);
-			rptr[i] = i;
-		}
-		rptr[rlen] = rlen;
-
-		//construct sparse CSR block from filled arrays
-		ret.sparseBlock = new SparseBlockCSR(rptr, indexes, values, rlen);
-		((SparseBlockCSR)ret.sparseBlock).compact();
-		ret.setNonZeros(ret.sparseBlock.size());
-		
-		//update meta data (initially unknown number of columns)
-		//note: nnz maintained in ctable (via quickset)
-		if(updateClen) {
-			ret.clen = maxCol;
-		}
-
-		return ret;
+		return LibMatrixReorg.fusedSeqRexpand(this.getNumRows(), that, thatScalar, ret, updateClen, 1);
 	}
 
 	/**

@@ -136,10 +136,10 @@ public class ColumnEncoderSerializationTest extends AutomatedTestBase
 		MultiColumnEncoder encoderIn = EncoderFactory.createEncoder(spec, cnames, frame.getNumColumns(), null);
 		if(type == TransformType.BOW){
 			List<ColumnEncoderBagOfWords> encs = encoderIn.getColumnEncoders(ColumnEncoderBagOfWords.class);
-			HashMap<Object, Long> dict = new HashMap<>();
-			dict.put("val1", 1L);
-			dict.put("val2", 2L);
-			dict.put("val3", 300L);
+			HashMap<Object, Integer> dict = new HashMap<>();
+			dict.put("val1", 1);
+			dict.put("val2", 2);
+			dict.put("val3", 300);
 			encs.forEach(e -> e.setTokenDictionary(dict));
 		}
 		MultiColumnEncoder encoderOut;
@@ -165,7 +165,7 @@ public class ColumnEncoderSerializationTest extends AutomatedTestBase
 			List<ColumnEncoderBagOfWords> encsIn = encoderIn.getColumnEncoders(ColumnEncoderBagOfWords.class);
 			List<ColumnEncoderBagOfWords> encsOut = encoderOut.getColumnEncoders(ColumnEncoderBagOfWords.class);
 			for (int i = 0; i < encsIn.size(); i++) {
-				Map<Object, Long> eOutDict = encsOut.get(i).getTokenDictionary();
+				Map<Object, Integer> eOutDict = encsOut.get(i).getTokenDictionary();
 				encsIn.get(i).getTokenDictionary().forEach((k,v) -> {
 					assert v.equals(eOutDict.get(k));
 				});

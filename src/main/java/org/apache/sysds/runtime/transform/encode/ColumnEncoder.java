@@ -29,10 +29,8 @@ import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 
 import org.apache.commons.logging.Log;
@@ -41,8 +39,8 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -62,6 +60,9 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	protected int _colID;
 	protected ArrayList<Integer> _sparseRowsWZeros = null;
 	protected int[] sparseRowPointerOffset = null;	// offsets created by bag of words encoders (multiple nnz)
+	// protected ArrayList<Integer> _sparseRowsWZeros = null;
+
+	protected boolean containsZeroOut = false;
 	protected long _estMetaSize = 0;
 	protected int _estNumDistincts = 0;
 	protected int _nBuildPartitions = 0;
@@ -147,8 +148,7 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	protected abstract double[] getCodeCol(CacheBlock<?> in, int startInd, int rowEnd, double[] tmp);
 
 	protected void applySparse(CacheBlock<?> in, MatrixBlock out, int outputCol, int rowStart, int blk){
-		boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
-		mcsr = false; //force CSR for transformencode
+		boolean mcsr = out.getSparseBlock() instanceof SparseBlockMCSR;
 		int index = _colID - 1;
 		// Apply loop tiling to exploit CPU caches
 		int rowEnd = getEndIndex(in.getNumRows(), rowStart, blk);
@@ -425,20 +425,17 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 		return new ColumnApplyTask<>(this, in, out, outputCol, startRow, blk);
 	}
 
-	public Set<Integer> getSparseRowsWZeros(){
-		if (_sparseRowsWZeros != null) {
-			return new HashSet<>(_sparseRowsWZeros);
-		}
-		else
-			return null;
-	}
-
 	protected void addSparseRowsWZeros(List<Integer> sparseRowsWZeros){
 		synchronized (this){
 			if(_sparseRowsWZeros == null)
 				_sparseRowsWZeros = new ArrayList<>();
 			_sparseRowsWZeros.addAll(sparseRowsWZeros);
 		}
+	
+	}
+
+	protected boolean containsZeroOut(){
+		return containsZeroOut;
 	}
 
 	protected void setBuildRowBlocksPerColumn(int nPart) {

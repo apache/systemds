@@ -706,7 +706,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			case MATRIX: {
 				String fname = createUniqueFilename();
 				MatrixObject obj = new MatrixObject(getInput1().getValueType(), fname);
-				setCacheableDataFields(obj);
+				setCacheableDataFields(obj, getInput1().getName());
 				obj.setUpdateType(_updateType);
 				obj.setMarkForLinCache(true);
 				ec.setVariable(getInput1().getName(), obj);
@@ -717,14 +717,14 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			case TENSOR: {
 				String fname = createUniqueFilename();
 				TensorObject obj = new TensorObject(getInput1().getValueType(), fname);
-				setCacheableDataFields(obj);
+				setCacheableDataFields(obj, getInput1().getName());
 				ec.setVariable(getInput1().getName(), obj);
 				break;
 			}
 			case FRAME: {
 				String fname = createUniqueFilename();
 				FrameObject fobj = new FrameObject(fname);
-				setCacheableDataFields(fobj);
+				setCacheableDataFields(fobj, getInput1().getName());
 				if( _schema != null )
 					fobj.setSchema(_schema); //after metadata
 				ec.setVariable(getInput1().getName(), fobj);
@@ -757,13 +757,14 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		return fname;
 	}
 
-	private void setCacheableDataFields(CacheableData<?> obj){
+	private void setCacheableDataFields(CacheableData<?> obj, String varname){
 		//clone metadata because it is updated on copy-on-write, otherwise there
 		//is potential for hidden side effects between variables.
 		obj.setMetaData((MetaData)metadata.clone());
 		obj.enableCleanup(!getInput1().getName()
 			.startsWith(org.apache.sysds.lops.Data.PREAD_PREFIX));
 		obj.setFileFormatProperties(_formatProperties);
+		obj.setPersistentRead(varname.startsWith(org.apache.sysds.lops.Data.PREAD_PREFIX));
 	}
 
 	/**
@@ -960,7 +961,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 
 	/**
 	 * Handler for CastAsFrameVariable instruction
-   *
+	 *
 	 * @param ec execution context
 	 */
 	private void processCastAsFrameVariableInstruction(ExecutionContext ec){
@@ -1018,6 +1019,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	 * @param ec execution context
 	 */
 	private void processCopyInstruction(ExecutionContext ec) {
+		
 		// get source variable
 		Data dd = ec.getVariable(getInput1().getName());
 
@@ -1084,7 +1086,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		}
 		else if( getInput1().getDataType() == DataType.LIST ) {
 			ListObject lo = ec.getListObject(getInput1().getName());
-			ListWriter.writeListToHDFS(lo, fname, fmtStr, _formatProperties);
+			int blen = Integer.parseInt(getInput4().getName());
+			ListWriter.writeListToHDFS(lo, fname, fmtStr, new FileFormatProperties(blen));
 		}
 	}
 
@@ -1141,9 +1144,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			try {
 				FileFormat fmt = ((MetaDataFormat)mo.getMetaData()).getFileFormat();
 				DataCharacteristics dc = (mo.getMetaData()).getDataCharacteristics();
-				if( fmt == FileFormat.CSV
-					&& !getInput1().getName().startsWith(org.apache.sysds.lops.Data.PREAD_PREFIX) )
-				{
+				if( fmt == FileFormat.CSV && !mo.isPersistentRead() ) {
 					WriterTextCSV writer = new WriterTextCSV((FileFormatPropertiesCSV)fprop);
 					writer.addHeaderToCSV(mo.getFileName(), fname, dc.getRows(), dc.getCols());
 				}

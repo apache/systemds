@@ -312,6 +312,7 @@ public enum Builtins {
 	SLICEFINDER("slicefinder", true), //TODO remove
 	SLICELINE("sliceLine", true),
 	SLICELINE_DEBUG("sliceLineDebug", true),
+	SLICELINE_EXTRACT("sliceLineExtract", true),
 	SKEWNESS("skewness", true),
 	SMAPE("smape", true),
 	SMOTE("smote", true),

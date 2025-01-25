@@ -24,6 +24,7 @@ source("nn/layers/multi_attention.dml") as attention
 source("nn/layers/dropout.dml") as dropout
 source("nn/layers/batch_norm1d.dml") as batch_norm
 source("nn/layers/tanh.dml") as tanh
+source("nn/layers/gelu.dml") as gelu
 
 linear_tensor_forward = function(matrix[double] X, matrix[double] W, matrix[double] b, int B, int C)
   return (matrix[double] out) {
@@ -99,7 +100,7 @@ forward = function(matrix[double] states,
    * - gamma_ln2: Gamma params for layer norm 2, of shape (1, D).
    * - beta_ln2: Beta params for layer norm 2, of shape (1, D).
    * - activation: String specifying type of activation to use.
-   *     Can be tanh or (TODO add gelu).
+   *     Can be tanh or gelu.
    *
    * Outputs:
    * - out_states: Token output states, of shape (B, T*D)
@@ -145,8 +146,9 @@ forward = function(matrix[double] states,
   # Linear layer of intermediate part
   out_states = linear_tensor_forward(out_states, W_intermediate, b_intermediate, T, D)  # Shape (B, T*I)
   # Activation
-  # TODO add GELU once added
-  if (activation == "tanh") {
+  if (activation == "gelu") {
+    out_states = gelu::forward(out_states)
+  } else if (activation == "tanh") {
     out_states = tanh::forward(out_states)
   }
 

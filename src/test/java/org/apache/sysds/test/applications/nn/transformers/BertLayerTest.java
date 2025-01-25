@@ -36,8 +36,14 @@ public class BertLayerTest extends AutomatedTestBase{
 	}
 
 	@Test
-	public void testBertLayerForwardNormal() {
+	public void testBertLayerForwardNormalTanh() {
 		runBertLayerTest("test1", 5, 4, 6, 2, 3, 7, "tanh", 0, TEST_NAME_FORWARD, 
+            1e-5, true);
+	}
+
+	@Test
+	public void testBertLayerForwardNormalGelu() {
+		runBertLayerTest("test2", 4, 4, 8, 2, 4, 7, "gelu", 0, TEST_NAME_FORWARD, 
             1e-5, true);
 	}
 

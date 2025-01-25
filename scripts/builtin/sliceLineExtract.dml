@@ -19,48 +19,42 @@
 #
 #-------------------------------------------------------------
 
-# This builtin function takes the outputs of SliceLine and the
-# original transformencode meta data in order to print a human-
-# readable debug output of the resulting top-k slices.
+# This builtin function takes the outputs of SliceLine and allows
+#
 #
 # INPUT:
 # ------------------------------------------------------------------------------
+# X       Feature matrix in recoded/binned representation
+# e       Error vector of trained model
 # TK      top-k slices (k x ncol(X) if successful)
 # TKC     score, total/max error, size of slices (k x 4)
-# tfmeta  transformencode meta data
-# tfspec  transform specification
+# k2      fist k2 slices to extract with k2 <= k
 # ------------------------------------------------------------------------------
 #
 # OUTPUT:
 # ------------------------------------------------------------------------------
-# S     debug output collected as a string
+# Xtk     Selected rows from X which belong to k2 top slices
+# etk     Selected rows from e which belong to k2 top slices
 # ------------------------------------------------------------------------------
 
-m_sliceLineDebug = function(Matrix[Double] TK,
-  Matrix[Double] TKC, Frame[Unknown] tfmeta, String tfspec)
-  return(Matrix[Double] S)
+m_sliceLineExtract = function(Matrix[Double] X, Matrix[Double] e,
+  Matrix[Double] TK, Matrix[Double] TKC, Integer k2 = -1)
+  return(Matrix[Double] Xtk, Matrix[Double] etk)
 {
-  print("\nsliceLineDebug: input\n"+toString(TK)+"\n"+toString(TKC)+"\n"+toString(tfmeta));
+  # check valid parameters
+  if( k2 > nrow(TK) )
+    stop("sliceLineExtract: invalid number of slices to extract: "+k2+" > "+nrow(TK)).
+  if( k2 <= 0 )
+    k2 = nrow(TK);
 
-  # prepare essential decoding info
-  N = colnames(tfmeta);
-  TKsafe = TK + (TK==0); # for vectorized decoding
-  FTK = transformdecode(target=TKsafe, meta=tfmeta, spec=tfspec);
-
-  # actual debug output
-  for(i in 1:nrow(TK)) {
-    TKi = TK[i,]; FTKi = FTK[i,];
-    print("-- Slice #"+i+": score="+as.scalar(TKC[i,1])+", size="+as.scalar(TKC[i,4]));
-    print("---- avg error="+as.scalar(TKC[i,2]/TKC[i,4])+", max error="+as.scalar(TKC[i,3]));
-    pred = "";
-    for(j in 1:ncol(TKi)) {
-        if( as.scalar(TKi[1,j]) != 0 ) {
-           tmp = as.scalar(N[1,j]) + " = " + as.scalar(FTK[i,j]);
-           pred = ifelse(pred=="", tmp, pred+" AND "+tmp);
-        }
-    }
-    print("---- predicate: "+pred);
+  # extract first k2 slices from X and e
+  I = matrix(0, k2, nrow(X));
+  parfor(i in 1:k2) {
+    I[i,] = t(rowSums(X == TK[i,]) == sum(TK[i,]))
   }
-  S = TK;
+  I = t(colSums(I)); #union
+
+  Xtk = removeEmpty(target=X, margin="rows", select=I);
+  etk = removeEmpty(target=e, margin="rows", select=I);
 }
 

@@ -216,3 +216,153 @@ forward = function(matrix[double] states,
   [out_states, cache_mean_ln2, cache_var_ln2, cache_norm_ln2] = layer_norm_forward(
     out_states, gamma_ln2, beta_ln2, epsilon_ln, T, D)
 }
+
+backward = function(matrix[double] dout_states,
+      matrix[double] dropout_mask_attention,
+      matrix[double] dropout_mask_output_1,
+      matrix[double] dropout_mask_output_2,
+      matrix[double] cache_mean_ln1, matrix[double] cache_var_ln1, matrix[double] cache_norm_ln1,
+      matrix[double] cache_mean_ln2, matrix[double] cache_var_ln2, matrix[double] cache_norm_ln2,
+      list[unknown] outputs,
+      matrix[double] states,
+      int H, int T, int d, int I,
+      matrix[double] W_Q, matrix[double] b_Q,
+      matrix[double] W_K, matrix[double] b_K,
+      matrix[double] W_V, matrix[double] b_V,
+      matrix[double] W_context, matrix[double] b_context,
+      matrix[double] W_intermediate, matrix[double] b_intermediate,
+      matrix[double] W_out, matrix[double] b_out,
+      double dropout_p_attention,
+      double dropout_p_output,
+      double epsilon_ln,
+      matrix[double] gamma_ln1, matrix[double] beta_ln1,
+      matrix[double] gamma_ln2, matrix[double] beta_ln2,
+      string activation)
+    return (matrix[double] din_states
+      matrix[double] dW_Q, matrix[double] db_Q,
+      matrix[double] dW_K, matrix[double] db_K,
+      matrix[double] dW_V, matrix[double] db_V,
+      matrix[double] dW_context, matrix[double] db_context,
+      matrix[double] dW_intermediate, matrix[double] db_intermediate,
+      matrix[double] dW_out, matrix[double] db_out,
+      matrix[double] dgamma_ln1, matrix[double] dbeta_ln1,
+      matrix[double] dgamma_ln2, matrix[double] dbeta_ln2) {
+  /*
+   * Computes the backward pass for a layer of the BERT transformer architecture.
+   *
+   * Inputs (B: Batch size, T: Sequence length, D: Embedding length, H: Heads):
+   * - dout_states: Gradients w.r.t. output states, of shape (B, T*D)
+   * - dropout_mask_attention: Dropout mask used on attention, of shape (B, H*T*T)
+   * - dropout_mask_output_1: Dropout mask used on attention output, of shape (B, T*D)
+   * - dropout_mask_output_2: Dropout mask used on attention output, of shape (B, T*D)
+   * - cache_mean_ln1: Cached mean from layer norm 1, of shape (1, B*T)
+   * - cache_var_ln1: Cached mean from layer norm 1, of shape (1, B*T)
+   * - cache_norm_ln1: Cached mean from layer norm 1, of shape (1, B*T)
+   * - cache_mean_ln2: Cached mean from layer norm 2, of shape (1, B*T)
+   * - cache_var_ln2: Cached mean from layer norm 2, of shape (1, B*T)
+   * - cache_norm_ln2: Cached mean from layer norm 2, of shape (1, B*T)
+   * - outputs: list of relevant outputs from forward pass
+   *     with the following order/content:
+   *   -> 1: Output of linear query layer, of shape (B, T*D).
+   *   -> 2: Output of linear key layer, of shape (B, T*D).
+   *   -> 3: Output of linear value layer, of shape (B, T*D).
+   *   -> 4: Output context of attention layer, of shape (B, T*D).
+   *   -> 5: Output attention of attention layer, of shape (B, T*D).
+   *   -> 6: Output of residual pass 1, of shape (B, T*D).
+   *   -> 7: Output of layer norm 1, of shape (B, T*D).
+   *   -> 8: Output of intermediate linear layer, of shape (B, T*I).
+   *   -> 9: Output of activation layer, of shape (B, T*I).
+   *   -> 10: Output of residual pass 2, of shape (B, T*D).
+   * - states: Hidden states, of shape (B, T*D).
+   * - H: Head count.
+   * - T: Sequence length.
+   * - d: Embedding length of single token per head with d*H = D.
+   * - I: Intemediate embedding length.
+   * - W_Q: Weights for linear query layer, of shape (D, D).
+   * - b_Q: Biases for linear query layer, of shape (1, D).
+   * - W_K: Weights for linear key layer, of shape (D, D).
+   * - b_K: Biases for linear key layer, of shape (1, D).
+   * - W_V: Weights for linear value layer, of shape (D, D).
+   * - b_V: Biases for linear value layer, of shape (1, D).
+   * - W_context: Weights for linear output layer on context, of shape (D, D).
+   * - b_context: Biases for linear output layer on context, of shape (1, D).
+   * - W_intermediate: Weights for intermediate linear layer, of shape (D, I).
+   * - b_intermediate: Biases for intermediate linear layer, of shape (1, I).
+   * - W_out: Weights for last linear output layer, of shape (D, D).
+   * - b_out: Biases for last linear output layer, of shape (1, D).
+   * - dropout_p_attention: Probability for dropout on attention.
+   * - dropout_p_output: Probability for dropout on output.
+   * - epsilon_ln: Epsilon value for layer norm.
+   * - gamma_ln1: Gamma params for layer norm 1, of shape (1, D).
+   * - beta_ln1: Beta params for layer norm 1, of shape (1, D).
+   * - gamma_ln2: Gamma params for layer norm 2, of shape (1, D).
+   * - beta_ln2: Beta params for layer norm 2, of shape (1, D).
+   * - activation: String specifying type of activation to use.
+   *     Can be tanh or gelu.
+   *
+   * Outputs:
+   * - din_states: Gradients w.r.t. hidden input states, of shape (B, T*D).
+   * - W_Q: Gradients w.r.t. weights for linear query layer, of shape (D, D).
+   * - b_Q: Gradients w.r.t. biases for linear query layer, of shape (1, D).
+   * - W_K: Gradients w.r.t. weights for linear key layer, of shape (D, D).
+   * - b_K: Gradients w.r.t. biases for linear key layer, of shape (1, D).
+   * - W_V: Gradients w.r.t. weights for linear value layer, of shape (D, D).
+   * - b_V: Gradients w.r.t. biases for linear value layer, of shape (1, D).
+   * - W_context: Gradients w.r.t. weights for linear output layer on context, of shape (D, D).
+   * - b_context: Gradients w.r.t. biases for linear output layer on context, of shape (1, D).
+   * - W_intermediate: Gradients w.r.t. weights for intermediate linear layer, of shape (D, I).
+   * - b_intermediate: Gradients w.r.t. biases for intermediate linear layer, of shape (1, I).
+   * - W_out: Gradients w.r.t. weights for last linear output layer, of shape (D, D).
+   * - b_out: Gradients w.r.t. biases for last linear output layer, of shape (1, D).
+   */
+  # Embedding dim
+  D = d * H
+
+  # Layer norm 2 for each token
+  [dout_states, dgamma_ln2, dbeta_ln2] = layer_norm_forward(
+    dout_states, cache_mean_ln2, cache_var_ln2, cache_norm_ln2, as.matrix(outputs[10]), gamma_ln2, beta_ln2, epsilon_ln, T, D)
+  # Save dout_states for residual pass
+  dout_states_identity_2 = dout_states
+  # Dropout on output 2
+  if (dropout_p_output > 0.0) {
+    dout_states = dropout::backward(dout_states, matrix(0, 1, 1), dropout_p_output, dropout_mask_output_2)
+  }
+  # Final linear output layer
+  [dout_states, dW_out, db_out] = linear_tensor_backward(dout_states, as.matrix(outputs[9]), W_out, b_out, T, D, I)
+
+  # Activation
+  if (activation == "gelu") {
+    dout_states = gelu::backward(dout_states, as.matrix(outputs[8]))
+  } else if (activation == "tanh") {
+    dout_states = tanh::backward(dout_states, as.matrix(outputs[8]))
+  }
+  # Linear layer of intermediate part
+  [dout_states, dW_intermediate, db_intermediate] = linear_tensor_backward(dout_states, as.matrix(outputs[7]), W_intermediate,
+    b_intermediate, T, I, D)
+  # Residual pass 2
+  dout_states = dout_states + dout_states_identity_2
+
+  # Layer norm 1 for each token
+  [dout_states, dgamma_ln1, dbeta_ln1] = layer_norm_forward(
+    dout_states, cache_mean_ln1, cache_var_ln1, cache_norm_ln1, as.matrix(outputs[6]), gamma_ln1, beta_ln1, epsilon_ln, T, D)
+  # Save dout_states for residual pass
+  dout_states_identity_1 = dout_states
+
+  # Dropout on output 1
+  if (dropout_p_output > 0.0) {
+    dout_states = dropout::backward(dout_states, matrix(0, 1, 1), dropout_p_output, dropout_mask_output_1)
+  }
+  # Linear layer on attention output (output layer)
+  [dcontext, dW_context, db_context] = linear_tensor_backward(dout_states, as.matrix(outputs[4]), W_context, b_context, T, D, D)
+
+  # Multi-head self attention
+  [dQ, dK, dV] = attention::backward(dcontext, dropout_mask_attention, as.matrix(outputs[5]), as.matrix(outputs[1]),
+    as.matrix(outputs[2]), as.matrix(outputs[3]), H, T, d, dropout_p_attention)
+
+  # Linear layers for Q, K, V
+  [dstates_Q, dW_Q, db_Q] = linear_tensor_backward(dQ, states, W_Q, b_Q, T, D, D)
+  [dstates_K, dW_K, db_K] = linear_tensor_backward(dK, states, W_K, b_K, T, D, D)
+  [dstates_V, dW_V, db_V] = linear_tensor_backward(dV, states, W_V, b_V, T, D, D)
+  # Add paths + residual pass 1
+  din_states = dstates_Q + dstates_K + dstates_V + dout_states_identity_1
+}

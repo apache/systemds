@@ -37,6 +37,17 @@ linear_tensor_forward = function(matrix[double] X, matrix[double] W, matrix[doub
   out = matrix(out, rows=A, cols=B*C_new)
 }
 
+linear_tensor_backward = function(matrix[double] dout, matrix[double] X, matrix[double] W, matrix[double] b, int B,
+    int C_out, int C_in)
+  return (matrix[double] dX, matrix[double] dW, matrix[double] db) {
+  /*
+   * Helper function for computing linear layer with tensor input, of shape (A, B*C)
+   */
+  A = nrow(X)
+  [dX, dW, db] = affine::forward(matrix(dout, rows=A*B, cols=C_out), matrix(X, rows=A*B, cols=C_in), W, b)
+  dX = matrix(out, rows=A, cols=B*C_in)
+}
+
 layer_norm_forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta, double epsilon, int B, int C)
   return (matrix[double] out, matrix[double] cache_mean, matrix[double] cache_var, matrix[double] cache_norm) {
   /*
@@ -49,6 +60,27 @@ layer_norm_forward = function(matrix[double] X, matrix[double] gamma, matrix[dou
   [batch_norm_out, unused1, unused2, cache_mean, cache_var, cache_norm] = batch_norm::forward(
     batch_norm_input, t(gamma), t(beta), "train", emas_mat, emas_mat, 0.0, epsilon)
   out = matrix(t(batch_norm_out), rows=A, cols=B*C)
+}
+
+layer_norm_backward = function(matrix[double] dout, matrix[double] cache_mean, matrix[double] cache_var,
+    matrix[double] cache_norm, matrix[double] X, matrix[double] gamma, matrix[double] beta, double epsilon, int B, int C)
+  return (matrix[double] dX, matrix[double] dgamma, matrix[double] dbeta) {
+  /*
+   * Helper function for computing layer norm via 1D batch norm with tensor input, of shpae (A, B*C)
+   */
+  A = nrow(X)
+  batch_norm_input = t(matrix(X, rows=A*B, cols=C))
+  batch_norm_doutput = t(matrix(dout, rows=A*B, cols=C))
+  # EMA matrices, updated EMA matrices and out matrix are unused and thus empty matrices will be provided
+  empty_mat = matrix(0, rows=1, cols=1)
+  [batch_norm_dX, batch_norm_dgamma, batch_norm_dbeta] = batch_norm::backward(
+    batch_norm_doutput,
+    empty_mat, empty_mat, empty_mat,
+    cache_mean, cache_var, cache_norm,
+    batch_norm_input, t(gamma), t(beta), "train", empty_mat, empty_mat, 0.0, epsilon)
+  dX = matrix(t(batch_norm_dX), rows=A, cols=B*C)
+  dgamma = t(batch_norm_dgamma)
+  dbeta = t(batch_norm_dbeta)
 }
 
 forward = function(matrix[double] states,

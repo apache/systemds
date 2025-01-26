@@ -21,11 +21,14 @@
 package org.apache.sysds.runtime.matrix.data;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -614,23 +617,19 @@ public class LibMatrixDatagen
 	private static void genFullyDense(DenseBlock c, int blockrows, int blockcols, int rowoffset, int coloffset, 
 		double min, double range, IPRNGenerator valuePRNG, long[] ctr)
 	{
+		Iterator<Double> rngStream;
 		if (valuePRNG instanceof PRNGenerator) {
-			for(int i = rowoffset; i < rowoffset+blockrows; i++) {
-				double[] cvals = c.values(i);
-				int cix = c.pos(i, coloffset);
-				for(int j = 0; j < blockcols; j++)
-					cvals[cix+j] = min + (range * ((PRNGenerator)valuePRNG).nextDouble());
-			}
+			rngStream = Stream.generate(() -> min + (range * ((PRNGenerator) valuePRNG).nextDouble())).iterator();
+		} else if (valuePRNG instanceof CounterBasedPRNGenerator) {
+			rngStream = Arrays.stream(((CounterBasedPRNGenerator)valuePRNG).getDoubles(ctr, blockrows * blockcols)).map(i -> min + (range * i)).iterator();
 		} else {
-			double[] randomDoubles = ((CounterBasedPRNGenerator)valuePRNG).getDoubles(ctr, blockrows * blockcols);
-			int index = 0;
-			for (int i = rowoffset; i < rowoffset + blockrows; i++) {
-				double[] cvals = c.values(i);
-				int cix = c.pos(i, coloffset);
-				for (int j = 0; j < blockcols; j++) {
-					cvals[cix + j] = min + (range * randomDoubles[index]);
-					index++;
-				}
+			throw new DMLRuntimeException("Unsupported PRNGenerator for fully dense generation");
+		}
+		for (int i = rowoffset; i < rowoffset + blockrows; i++) {
+			double[] cvals = c.values(i);
+			int cix = c.pos(i, coloffset);
+			for (int j = 0; j < blockcols; j++) {
+				cvals[cix + j] = rngStream.next();
 			}
 		}
 	}

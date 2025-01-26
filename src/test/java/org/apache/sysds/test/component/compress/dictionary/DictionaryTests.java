@@ -58,8 +58,13 @@ import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
+import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -847,6 +852,16 @@ public class DictionaryTests {
 			bb = b.binOpLeft(op, vals, cols);
 			compare(aa, bb, nRow, nCol);
 
+			double[] app = TestUtils.generateTestVector(nCol, 0, 10, 1.0, 33);
+
+			aa = a.binOpLeftAndAppend(op, app, cols);
+			bb = b.binOpLeftAndAppend(op, app, cols);
+			compare(aa, bb, nRow + 1, nCol);
+
+			aa = a.binOpRightAndAppend(op, app, cols);
+			bb = b.binOpRightAndAppend(op, app, cols);
+			compare(aa, bb, nRow + 1, nCol);
+
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -1513,7 +1528,13 @@ public class DictionaryTests {
 		a.colProduct(aa, counts, cols);
 		double[] bb = new double[nCol + 3];
 		b.colProduct(bb, counts, cols);
+		TestUtils.compareMatrices(aa, bb, 0.001);
 
+		double[] ref = TestUtils.generateTestVector(nCol, 0, 10, 1, 3215555);
+		aa = new double[nCol + 3];
+		a.colProductWithReference(aa, counts, cols, ref);
+		bb = new double[nCol + 3];
+		b.colProductWithReference(bb, counts, cols, ref);
 		TestUtils.compareMatrices(aa, bb, 0.001);
 	}
 
@@ -1531,6 +1552,7 @@ public class DictionaryTests {
 
 		TestUtils.compareMatricesBitAvgDistance(//
 			aRet, bRet, 10, 10, "Not Equivalent values from product");
+
 	}
 
 	private static int[] getCounts(int nRows, int seed) {
@@ -1670,5 +1692,83 @@ public class DictionaryTests {
 		IDictionary cb = b.clone();
 		assertFalse(cb == b);
 		assertEquals(cb, b);
+	}
+
+	@Test
+	public void round() {
+		unaryOp(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.ROUND)));
+	}
+
+	@Test
+	public void mod() {
+		unaryOp(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.ABS)));
+	}
+
+	@Test
+	public void floor() {
+		unaryOp(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.FLOOR)));
+	}
+
+	@Test
+	public void sin() {
+		unaryOp(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.SIN)));
+	}
+
+	@Test
+	public void cos() {
+		unaryOp(new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.COS)));
+	}
+
+	public void unaryOp(UnaryOperator op) {
+		IDictionary aa;
+		IDictionary bb;
+
+		aa = a.applyUnaryOp(op);
+		bb = b.applyUnaryOp(op);
+		compare(aa, bb, nCol);
+
+		aa = a.applyUnaryOpAndAppend(op, 32, nCol);
+		bb = b.applyUnaryOpAndAppend(op, 32, nCol);
+		compare(aa, bb, nCol);
+
+		double[] ref1 = TestUtils.generateTestVector(nCol, 0, 10, 1, 333);
+		double[] ref2 = TestUtils.generateTestVector(nCol, 0, 10, 1, 32);
+		aa = a.applyUnaryOpWithReference(op, ref1, ref2);
+		bb = b.applyUnaryOpWithReference(op, ref1, ref2);
+		compare(aa, bb, nCol);
+	}
+
+	@Test
+	public void plus() {
+		scalarOp(new RightScalarOperator(Plus.getPlusFnObject(), 1));
+	}
+
+	@Test
+	public void mult() {
+		scalarOp(new RightScalarOperator(Multiply.getMultiplyFnObject(), 1));
+	}
+
+	@Test
+	public void div() {
+		scalarOp(new RightScalarOperator(Divide.getDivideFnObject(), 1));
+	}
+
+	public void scalarOp(ScalarOperator op) {
+		IDictionary aa;
+		IDictionary bb;
+
+		aa = a.applyScalarOp(op);
+		bb = b.applyScalarOp(op);
+		compare(aa, bb, nCol);
+
+		aa = a.applyScalarOpAndAppend(op, 32, nCol);
+		bb = b.applyScalarOpAndAppend(op, 32, nCol);
+		compare(aa, bb, nCol);
+
+		double[] ref1 = TestUtils.generateTestVector(nCol, 0, 10, 1, 3213);
+		double[] ref2 = TestUtils.generateTestVector(nCol, 0, 10, 1, 23232);
+		aa = a.applyScalarOpWithReference(op, ref1, ref2);
+		bb = b.applyScalarOpWithReference(op, ref1, ref2);
+		compare(aa, bb, nCol);
 	}
 }

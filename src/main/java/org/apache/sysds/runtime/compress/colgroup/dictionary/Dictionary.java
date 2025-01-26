@@ -289,7 +289,7 @@ public class Dictionary extends ACachingMBDictionary {
 		final int lenV = colIndexes.size();
 		for(int i = 0; i < _values.length; i++)
 			retVals[i] = fn.execute(_values[i], v[colIndexes.get(i % lenV)]);
-		for(int i = _values.length; i < _values.length; i++)
+		for(int i = _values.length; i < retVals.length; i++)
 			retVals[i] = fn.execute(0, v[colIndexes.get(i % lenV)]);
 
 		return create(retVals);
@@ -329,7 +329,7 @@ public class Dictionary extends ACachingMBDictionary {
 		final int lenV = colIndexes.size();
 		for(int i = 0; i < _values.length; i++)
 			retVals[i] = fn.execute(v[colIndexes.get(i % lenV)], _values[i]);
-		for(int i = _values.length; i < _values.length; i++)
+		for(int i = _values.length; i < retVals.length; i++)
 			retVals[i] = fn.execute(v[colIndexes.get(i % lenV)], 0);
 
 		return create(retVals);

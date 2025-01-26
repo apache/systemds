@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -36,6 +35,7 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.RangeIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.SingleIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.TwoIndex;
 import org.apache.sysds.runtime.compress.utils.Util;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
@@ -1495,6 +1495,8 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public boolean containsValueWithReference(double pattern, double[] reference) {
+		if(Double.isNaN(pattern))
+			return super.containsValueWithReference(pattern, reference);
 		if(_data.isInSparseFormat()) {
 			final SparseBlock sb = _data.getSparseBlock();
 			for(int i = 0; i < _data.getNumRows(); i++) {
@@ -2059,9 +2061,8 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public IDictionary replaceWithReference(double pattern, double replace, double[] reference) {
-		if(Util.eq(pattern, Double.NaN)) {
+		if(Util.eq(pattern, Double.NaN))
 			return replaceWithReferenceNan(replace, reference);
-		}
 
 		final int nRow = _data.getNumRows();
 		final int nCol = _data.getNumColumns();
@@ -2108,27 +2109,19 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	private IDictionary replaceWithReferenceNan(double replace, double[] reference) {
-
+		final Set<Integer> colsWithNan = Dictionary.getColsWithNan(replace, reference);
 		final int nRow = _data.getNumRows();
 		final int nCol = _data.getNumColumns();
+		if(colsWithNan != null && colsWithNan.size() == nCol && replace == 0)
+			return null;
+
 		final MatrixBlock ret = new MatrixBlock(nRow, nCol, false);
 		ret.allocateDenseBlock();
-
-		Set<Integer> colsWithNan = null;
-		for(int i = 0; i < reference.length; i++) {
-			if(Util.eq(reference[i], Double.NaN)) {
-				if(colsWithNan == null)
-					colsWithNan = new HashSet<>();
-				colsWithNan.add(i);
-				reference[i] = replace;
-			}
-		}
+		final double[] retV = ret.getDenseBlockValues();
 
 		if(colsWithNan == null) {
-
-			final double[] retV = ret.getDenseBlockValues();
-			int off = 0;
 			if(_data.isInSparseFormat()) {
+				final DenseBlock db = ret.getDenseBlock();
 				final SparseBlock sb = _data.getSparseBlock();
 				for(int i = 0; i < nRow; i++) {
 					if(sb.isEmpty(i))
@@ -2137,30 +2130,22 @@ public class MatrixBlockDictionary extends ADictionary {
 					final int apos = sb.pos(i);
 					final int alen = sb.size(i) + apos;
 					final double[] avals = sb.values(i);
+					final int[] aix = sb.indexes(i);
 					int j = 0;
+					int off = db.pos(i);
 					for(int k = apos; k < alen; k++) {
 						final double v = avals[k];
-						retV[off++] = Util.eq(Double.NaN, v) ? replace - reference[j] : v;
+						retV[off + aix[k]] = Util.eq(Double.NaN, v) ? replace - reference[j] : v;
 					}
 				}
 			}
 			else {
 				final double[] values = _data.getDenseBlockValues();
-				for(int i = 0; i < nRow; i++) {
-					for(int j = 0; j < nCol; j++) {
-						final double v = values[off];
-						retV[off++] = Util.eq(Double.NaN, v) ? replace - reference[j] : v;
-					}
-				}
+				Dictionary.replaceWithReferenceNanDenseWithoutNanCols(replace, reference, nRow, nCol, retV, values);
 			}
 
-			ret.recomputeNonZeros();
-			ret.examSparsity();
-			return MatrixBlockDictionary.create(ret);
 		}
 		else {
-
-			final double[] retV = ret.getDenseBlockValues();
 			if(_data.isInSparseFormat()) {
 				final SparseBlock sb = _data.getSparseBlock();
 				for(int i = 0; i < nRow; i++) {
@@ -2170,10 +2155,10 @@ public class MatrixBlockDictionary extends ADictionary {
 					final int apos = sb.pos(i);
 					final int alen = sb.size(i) + apos;
 					final double[] avals = sb.values(i);
-					final int[] aidx = sb.indexes(i);
+					final int[] aix = sb.indexes(i);
 					for(int k = apos; k < alen; k++) {
-						final int c = aidx[k];
-						final int outIdx = off + aidx[k];
+						final int c = aix[k];
+						final int outIdx = off + aix[k];
 						final double v = avals[k];
 						if(colsWithNan.contains(c))
 							retV[outIdx] = 0;
@@ -2185,27 +2170,16 @@ public class MatrixBlockDictionary extends ADictionary {
 				}
 			}
 			else {
-				int off = 0;
 				final double[] values = _data.getDenseBlockValues();
-				for(int i = 0; i < nRow; i++) {
-					for(int j = 0; j < nCol; j++) {
-						final double v = values[off];
 
-						if(colsWithNan.contains(j))
-							retV[off++] = 0;
-						else if(Util.eq(v, Double.NaN))
-							retV[off++] = replace - reference[j];
-						else
-							retV[off++] = v;
-					}
-				}
+				Dictionary.replaceWithReferenceNanDenseWithNanCols(replace, reference, nRow, nCol, colsWithNan, values,
+					retV);
 			}
-
-			ret.recomputeNonZeros();
-			ret.examSparsity();
-			return MatrixBlockDictionary.create(ret);
 		}
 
+		ret.recomputeNonZeros();
+		ret.examSparsity();
+		return MatrixBlockDictionary.create(ret);
 	}
 
 	@Override
@@ -2277,6 +2251,7 @@ public class MatrixBlockDictionary extends ADictionary {
 		}
 		else
 			values = _data.getDenseBlockValues();
+
 		BigDecimal tmp = BigDecimal.ONE;
 		int off = 0;
 		for(int i = 0; i < nRow; i++) {
@@ -2284,6 +2259,10 @@ public class MatrixBlockDictionary extends ADictionary {
 				final double v = values[off++] + reference[j];
 				if(v == 0) {
 					ret[0] = 0;
+					return;
+				}
+				else if(!Double.isFinite(v)) {
+					ret[0] = v;
 					return;
 				}
 				tmp = tmp.multiply(new BigDecimal(v).pow(counts[i], cont), cont);
@@ -2294,7 +2273,8 @@ public class MatrixBlockDictionary extends ADictionary {
 		if(Math.abs(tmp.doubleValue()) == 0)
 			ret[0] = 0;
 		else if(!Double.isInfinite(ret[0]))
-			ret[0] = new BigDecimal(ret[0]).multiply(tmp, MathContext.DECIMAL128).doubleValue();
+			ret[0] = new BigDecimal(ret[0]).multiply(tmp, cont).doubleValue();
+
 	}
 
 	@Override

@@ -106,6 +106,7 @@ public class DictionaryTests {
 
 			addSparse(tests, -10, 10, 10, 100, 0.1, 321);
 			addSparse(tests, -10, 10, 2, 100, 0.04, 321);
+			addSparseWithNan(tests, 1, 10, 100, 100, 0.1, 321);
 
 			tests.add(new Object[] {IdentityDictionary.create(2), Dictionary.create(new double[] {1, 0, 0, 1}), 2, 2});
 			tests.add(new Object[] {IdentityDictionary.create(2, true), //
@@ -320,6 +321,20 @@ public class DictionaryTests {
 		tests.add(new Object[] {MatrixBlockDictionary.create(mb), Dictionary.create(dbv), rows, cols});
 	}
 
+	private static void addSparseWithNan(List<Object[]> tests, double min, double max, int rows, int cols,
+		double sparsity, int seed) {
+
+		MatrixBlock mb = TestUtils.generateTestMatrixBlock(rows, cols, min, max, sparsity, seed);
+
+		mb = TestUtils.floor(mb);
+		mb = mb.replaceOperations(null, min, Double.NaN);
+		MatrixBlock mb2 = new MatrixBlock();
+		mb2.copy(mb);
+		mb2.sparseToDense();
+		double[] dbv = mb2.getDenseBlockValues();
+		tests.add(new Object[] {MatrixBlockDictionary.create(mb), Dictionary.create(dbv), rows, cols});
+	}
+
 	@Test
 	public void sum() {
 		int[] counts = getCounts(nRow, 1324);
@@ -422,19 +437,26 @@ public class DictionaryTests {
 	}
 
 	public void productWithReference(double retV, double[] reference) {
-		// Shared
-		final int[] counts = getCounts(nRow, 1324);
+		try {
 
-		// A
-		final double[] aRet = new double[] {retV};
-		a.productWithReference(aRet, counts, reference, nCol);
+			// Shared
+			final int[] counts = getCounts(nRow, 1324);
 
-		// B
-		final double[] bRet = new double[] {retV};
-		b.productWithReference(bRet, counts, reference, nCol);
+			// A
+			final double[] aRet = new double[] {retV};
+			a.productWithReference(aRet, counts, reference, nCol);
 
-		TestUtils.compareMatricesBitAvgDistance(//
-			aRet, bRet, 10, 10, "Not Equivalent values from product");
+			// B
+			final double[] bRet = new double[] {retV};
+			b.productWithReference(bRet, counts, reference, nCol);
+
+			TestUtils.compareMatricesBitAvgDistance(//
+				aRet, bRet, 10, 10, "Not Equivalent values from product");
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	@Test
@@ -487,6 +509,119 @@ public class DictionaryTests {
 		final IDictionary bRep = b.replaceWithReference(v, rep, reference);
 		assertEquals(aRep.getValue(r, c, nCol), bRep.getValue(r, c, nCol), 0.0000001);
 		assertNotEquals(before, aRep.getValue(r, c, nCol), 0.00001);
+	}
+
+	@Test
+	public void replaceNaN() {
+		IDictionary ar = a.replace(Double.NaN, 0, nCol);
+		IDictionary br = b.replace(Double.NaN, 0, nCol);
+		compare(ar, br, nCol);
+	}
+
+	@Test
+	public void replaceNaNWithRef() {
+		double[] ref1 = new double[nCol];
+		IDictionary ar = a.replaceWithReference(Double.NaN, 1, ref1);
+		double[] ref2 = new double[nCol];
+		IDictionary br = b.replaceWithReference(Double.NaN, 1, ref2);
+		compare(ar, br, nCol);
+	}
+
+	@Test
+	public void replaceNaNWithRef12() {
+		double[] ref1 = new double[nCol];
+		Arrays.fill(ref1, 1.2);
+		IDictionary ar = a.replaceWithReference(Double.NaN, 1, ref1);
+		double[] ref2 = new double[nCol];
+		Arrays.fill(ref2, 1.2);
+		IDictionary br = b.replaceWithReference(Double.NaN, 1, ref2);
+		compare(ar, br, nCol);
+	}
+
+	@Test
+	public void replaceNaNWithRefNaN() {
+		double[] ref1 = new double[nCol];
+		ref1[0] = Double.NaN;
+		IDictionary ar = a.replaceWithReference(Double.NaN, 1, ref1);
+		double[] ref2 = new double[nCol];
+		ref2[0] = Double.NaN;
+		IDictionary br = b.replaceWithReference(Double.NaN, 1, ref2);
+		compare(ar, br, nCol);
+	}
+
+	@Test
+	public void replaceNaNWithRefNaN12() {
+		try {
+
+			double[] ref1 = new double[nCol];
+			Arrays.fill(ref1, 1.2);
+			ref1[0] = Double.NaN;
+			IDictionary ar = a.replaceWithReference(Double.NaN, 1, ref1);
+			double[] ref2 = new double[nCol];
+			Arrays.fill(ref2, 1.2);
+			ref2[0] = Double.NaN;
+			IDictionary br = b.replaceWithReference(Double.NaN, 1, ref2);
+			compare(ar, br, nCol);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void replaceNaNWithRefNaN12ColGT2() {
+		try {
+			if(nCol > 2) {
+				double[] ref1 = new double[nCol];
+				Arrays.fill(ref1, 1.2);
+				ref1[1] = Double.NaN;
+				IDictionary ar = a.replaceWithReference(Double.NaN, 1, ref1);
+				double[] ref2 = new double[nCol];
+				Arrays.fill(ref2, 1.2);
+				ref2[1] = Double.NaN;
+				IDictionary br = b.replaceWithReference(Double.NaN, 1, ref2);
+				compare(ar, br, nCol);
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void replaceNaNWithRefNaNAllRefNaN() {
+		try {
+			double[] ref1 = new double[nCol];
+			Arrays.fill(ref1, Double.NaN);
+			IDictionary ar = a.replaceWithReference(Double.NaN, 1, ref1);
+			double[] ref2 = new double[nCol];
+			Arrays.fill(ref2, Double.NaN);
+			IDictionary br = b.replaceWithReference(Double.NaN, 1, ref2);
+			compare(ar, br, nCol);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void replaceNaNWithRefNaNAllRefNaNToZero() {
+		try {
+			double[] ref1 = new double[nCol];
+			Arrays.fill(ref1, Double.NaN);
+			IDictionary ar = a.replaceWithReference(Double.NaN, 0, ref1);
+			double[] ref2 = new double[nCol];
+			Arrays.fill(ref2, Double.NaN);
+			IDictionary br = b.replaceWithReference(Double.NaN, 0, ref2);
+			compare(ar, br, nCol);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	@Test
@@ -659,7 +794,7 @@ public class DictionaryTests {
 	public void opRightMinus() {
 		BinaryOperator op = new BinaryOperator(Minus.getMinusFnObject());
 		double[] vals = TestUtils.generateTestVector(nCol, -1, 1, 1.0, 132L);
-		opRight(op, vals, ColIndexFactory.create(0, nCol));
+		binOp(op, vals, ColIndexFactory.create(0, nCol));
 	}
 
 	@Test
@@ -673,7 +808,7 @@ public class DictionaryTests {
 	public void opRightMinusZero() {
 		BinaryOperator op = new BinaryOperator(Minus.getMinusFnObject());
 		double[] vals = new double[nCol];
-		opRight(op, vals, ColIndexFactory.create(0, nCol));
+		binOp(op, vals, ColIndexFactory.create(0, nCol));
 	}
 
 	@Test
@@ -681,22 +816,37 @@ public class DictionaryTests {
 		BinaryOperator op = new BinaryOperator(Divide.getDivideFnObject());
 		double[] vals = new double[nCol];
 		Arrays.fill(vals, 1);
-		opRight(op, vals, ColIndexFactory.create(0, nCol));
+		binOp(op, vals, ColIndexFactory.create(0, nCol));
 	}
 
 	@Test
 	public void opRightDiv() {
 		BinaryOperator op = new BinaryOperator(Divide.getDivideFnObject());
 		double[] vals = TestUtils.generateTestVector(nCol, -1, 1, 1.0, 232L);
-		opRight(op, vals, ColIndexFactory.create(0, nCol));
+		binOp(op, vals, ColIndexFactory.create(0, nCol));
 	}
 
-	private void opRight(BinaryOperator op, double[] vals, IColIndex cols) {
+	private void binOp(BinaryOperator op, double[] vals, IColIndex cols) {
 		try {
 
 			IDictionary aa = a.binOpRight(op, vals, cols);
 			IDictionary bb = b.binOpRight(op, vals, cols);
 			compare(aa, bb, nRow, nCol);
+
+			double[] ref = TestUtils.generateTestVector(nCol, 0, 10, 1.0, 33);
+			double[] newRef = TestUtils.generateTestVector(nCol, 0, 10, 1.0, 321);
+			aa = a.binOpRightWithReference(op, vals, cols, ref, newRef);
+			bb = b.binOpRightWithReference(op, vals, cols, ref, newRef);
+			compare(aa, bb, nRow, nCol);
+
+			aa = a.binOpLeftWithReference(op, vals, cols, ref, newRef);
+			bb = b.binOpLeftWithReference(op, vals, cols, ref, newRef);
+			compare(aa, bb, nRow, nCol);
+
+			aa = a.binOpLeft(op, vals, cols);
+			bb = b.binOpLeft(op, vals, cols);
+			compare(aa, bb, nRow, nCol);
+
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -932,8 +1082,17 @@ public class DictionaryTests {
 	}
 
 	private static void compare(IDictionary a, IDictionary b, int nCol) {
-		assertEquals(a.getNumberOfValues(nCol), b.getNumberOfValues(nCol));
-		compare(a, b, a.getNumberOfValues(nCol), nCol);
+		try {
+
+			if(a == null && b == null) {
+				return; // all good.
+			}
+			assertEquals(a.getNumberOfValues(nCol), b.getNumberOfValues(nCol));
+			compare(a, b, a.getNumberOfValues(nCol), nCol);
+		}
+		catch(NullPointerException e) {
+			fail("both outputs are not null: " + a + " vs " + b);
+		}
 	}
 
 	protected static void compare(IDictionary a, IDictionary b, int nRow, int nCol) {
@@ -1218,6 +1377,19 @@ public class DictionaryTests {
 	}
 
 	@Test
+	public void sumAllColsSqWithReference() {
+		double[] def = TestUtils.generateTestVector(nCol, 1, 10, 1.0, 3215213);
+		final int[] counts = getCounts(nRow, 1324);
+
+		double[] aa = new double[nCol];
+		double[] bb = new double[nCol];
+
+		a.colSumSqWithReference(aa, counts, ColIndexFactory.create(nCol), def);
+		b.colSumSqWithReference(bb, counts, ColIndexFactory.create(nCol), def);
+		TestUtils.compareMatrices(aa, bb, 0.001);
+	}
+
+	@Test
 	public void aggColsMin() {
 		IColIndex cols = ColIndexFactory.create(2, nCol + 2);
 		Builtin m = Builtin.getBuiltinFnObject(BuiltinCode.MIN);
@@ -1447,7 +1619,21 @@ public class DictionaryTests {
 		}
 		long annz = a.getNumberNonZeros(counts, nCol);
 		long bnnz = b.getNumberNonZeros(counts, nCol);
+
+		long annzR = a.getNumberNonZerosWithReference(counts, new double[nCol], nRow);
+		long bnnzR = a.getNumberNonZerosWithReference(counts, new double[nCol], nRow);
 		assertEquals(annz, bnnz);
+		assertEquals(annzR, bnnz);
+		assertEquals(annzR, bnnzR);
+	}
+
+	@Test
+	public void getNNzCountsWithRef() {
+		int counts[] = getCounts(nRow, 231);
+		double[] ref = TestUtils.generateTestVector(nCol, -1, -1, 0.5, 23);
+		long annzR = a.getNumberNonZerosWithReference(counts, ref, nRow);
+		long bnnzR = a.getNumberNonZerosWithReference(counts, ref, nRow);
+		assertEquals(annzR, bnnzR);
 	}
 
 	@Test

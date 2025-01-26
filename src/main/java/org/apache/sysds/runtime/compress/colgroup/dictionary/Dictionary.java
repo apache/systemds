@@ -726,6 +726,8 @@ public class Dictionary extends ACachingMBDictionary {
 
 	@Override
 	public boolean containsValueWithReference(double pattern, double[] reference) {
+		if(Double.isNaN(pattern))
+			return super.containsValueWithReference(pattern, reference);
 		final int nCol = reference.length;
 		for(int i = 0; i < _values.length; i++)
 			if(_values[i] + reference[i % nCol] == pattern)
@@ -913,46 +915,7 @@ public class Dictionary extends ACachingMBDictionary {
 		final int nCol = reference.length;
 		final int nRow = _values.length / nCol;
 		if(Util.eq(pattern, Double.NaN)) {
-			Set<Integer> colsWithNan = null;
-			for(int i = 0; i < reference.length; i++) {
-				if(Util.eq(reference[i], Double.NaN)) {
-					if(colsWithNan == null)
-						colsWithNan = new HashSet<>();
-					colsWithNan.add(i);
-					reference[i] = replace;
-				}
-			}
-
-			if(colsWithNan != null) {
-				final double[] retV = new double[_values.length];
-				for(int i = 0; i < nRow; i++) {
-					final int off = i * reference.length;
-					for(int j = 0; j < nCol; j++) {
-						final int cell = off + j;
-						if(colsWithNan.contains(j))
-							retV[cell] = 0;
-						else if(Util.eq(_values[cell], Double.NaN))
-							retV[cell] = replace - reference[j];
-						else
-							retV[cell] = _values[cell];
-					}
-				}
-				return create(retV);
-			}
-			else {
-				final double[] retV = new double[_values.length];
-				for(int i = 0; i < nRow; i++) {
-					final int off = i * reference.length;
-					for(int j = 0; j < nCol; j++) {
-						final int cell = off + j;
-						if(Util.eq(_values[cell], Double.NaN))
-							retV[cell] = replace - reference[j];
-						else
-							retV[cell] = _values[cell] ;
-					}
-				}
-				return create(retV);
-			}
+			return replaceWithReferenceNaN(replace, reference, nCol, nRow);
 		}
 		else {
 			final double[] retV = new double[_values.length];
@@ -966,6 +929,62 @@ public class Dictionary extends ACachingMBDictionary {
 				}
 			}
 			return create(retV);
+		}
+	}
+
+	private IDictionary replaceWithReferenceNaN(double replace, double[] reference, final int nCol, final int nRow) {
+		final Set<Integer> colsWithNan = getColsWithNan(replace, reference);
+		final double[] retV;
+		if(colsWithNan != null) {
+			if(colsWithNan.size() == nCol && replace == 0)
+				return null;
+			retV = new double[_values.length];
+			replaceWithReferenceNanDenseWithNanCols(replace, reference, nRow, nCol, colsWithNan, _values, retV);
+		}
+		else {
+			retV = new double[_values.length];
+			replaceWithReferenceNanDenseWithoutNanCols(replace, reference, nRow, nCol, retV, _values);
+		}
+		return create(retV);
+	}
+
+	protected static Set<Integer> getColsWithNan(double replace, double[] reference) {
+		Set<Integer> colsWithNan = null;
+		for(int i = 0; i < reference.length; i++) {
+			if(Util.eq(reference[i], Double.NaN)) {
+				if(colsWithNan == null)
+					colsWithNan = new HashSet<>();
+				colsWithNan.add(i);
+				reference[i] = replace;
+			}
+		}
+		return colsWithNan;
+	}
+
+	protected static void replaceWithReferenceNanDenseWithoutNanCols(final double replace, final double[] reference,
+		final int nRow, final int nCol, final double[] retV, final double[] values) {
+		int off = 0;
+		for(int i = 0; i < nRow; i++) {
+			for(int j = 0; j < nCol; j++) {
+				final double v = values[off];
+				retV[off++] = Util.eq(Double.NaN, v) ? replace - reference[j] : v;
+			}
+		}
+	}
+
+	protected static void replaceWithReferenceNanDenseWithNanCols(final double replace, final double[] reference,
+		final int nRow, final int nCol, Set<Integer> colsWithNan, final double[] values, final double[] retV) {
+		int off = 0;
+		for(int i = 0; i < nRow; i++) {
+			for(int j = 0; j < nCol; j++) {
+				final double v = values[off];
+				if(colsWithNan.contains(j))
+					retV[off++] = 0;
+				else if(Util.eq(v, Double.NaN))
+					retV[off++] = replace - reference[j];
+				else
+					retV[off++] = v;
+			}
 		}
 	}
 
@@ -1024,15 +1043,20 @@ public class Dictionary extends ACachingMBDictionary {
 		if(ret[0] == 0)
 			return;
 		final MathContext cont = MathContext.DECIMAL128;
-		final int len = counts.length;
+		final int nRow = counts.length;
 		final int nCol = reference.length;
+
 		BigDecimal tmp = BigDecimal.ONE;
 		int off = 0;
-		for(int i = 0; i < len; i++) {
+		for(int i = 0; i < nRow; i++) {
 			for(int j = 0; j < nCol; j++) {
 				final double v = _values[off++] + reference[j];
 				if(v == 0) {
 					ret[0] = 0;
+					return;
+				}
+				else if(!Double.isFinite(v)) {
+					ret[0] = v;
 					return;
 				}
 				tmp = tmp.multiply(new BigDecimal(v).pow(counts[i], cont), cont);
@@ -1044,6 +1068,7 @@ public class Dictionary extends ACachingMBDictionary {
 			ret[0] = 0;
 		else if(!Double.isInfinite(ret[0]))
 			ret[0] = new BigDecimal(ret[0]).multiply(tmp, MathContext.DECIMAL128).doubleValue();
+
 	}
 
 	@Override
@@ -1192,7 +1217,7 @@ public class Dictionary extends ACachingMBDictionary {
 	public boolean equals(IDictionary o) {
 		if(o instanceof Dictionary)
 			return Arrays.equals(_values, ((Dictionary) o)._values);
-		else if (o != null)
+		else if(o != null)
 			return o.equals(this);
 		return false;
 	}
@@ -1219,7 +1244,7 @@ public class Dictionary extends ACachingMBDictionary {
 		return ret;
 	}
 
-	@Override 
+	@Override
 	protected IDictionary rightMMPreAggSparseSelectedCols(int numVals, SparseBlock b, IColIndex thisCols,
 		IColIndex aggregateColumns) {
 
@@ -1264,7 +1289,7 @@ public class Dictionary extends ACachingMBDictionary {
 		retIdx = 0;
 	}
 
-	@Override 
+	@Override
 	protected IDictionary rightMMPreAggSparseAllColsRight(int numVals, SparseBlock b, IColIndex thisCols,
 		int nColRight) {
 		final int thisColsSize = thisCols.size();
@@ -1291,14 +1316,13 @@ public class Dictionary extends ACachingMBDictionary {
 		return Dictionary.create(ret);
 	}
 
-	private  void SparseAdd(int sPos, int sEnd, double[] ret, int offOut, int[] sIdx, double[] sVals, double v) {
+	private void SparseAdd(int sPos, int sEnd, double[] ret, int offOut, int[] sIdx, double[] sVals, double v) {
 		if(v != 0) {
 			for(int k = sPos; k < sEnd; k++) { // cols right with value
 				ret[offOut + sIdx[k]] += v * sVals[k];
 			}
 		}
 	}
-
 
 	@Override
 	public IDictionary append(double[] row) {
@@ -1307,6 +1331,5 @@ public class Dictionary extends ACachingMBDictionary {
 		System.arraycopy(row, 0, retV, _values.length, row.length);
 		return new Dictionary(retV);
 	}
-
 
 }

@@ -2,11 +2,9 @@ package org.apache.sysds.test.component.matrix;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.math3.random.Well1024a;
 import org.apache.sysds.runtime.matrix.data.LibMatrixDatagen;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -42,46 +40,6 @@ public class LibMatrixDatagenTest {
 	}
 
 	@Test
-	@Ignore
-	public void testGenerateUniformMatrixFasterUsingCounterBased() {
-		MatrixBlock mbPhilox = new MatrixBlock();
-		RandomMatrixGenerator rgenPhilox = new RandomMatrixGenerator(RandomMatrixGenerator.PDF.CB_UNIFORM, 1000, 1000, 100, 1, 0., 1.);
-		long philoxStartTime = System.currentTimeMillis();
-		LibMatrixDatagen.generateRandomMatrix(mbPhilox, rgenPhilox, null, 0L);
-		long philoxEndTime = System.currentTimeMillis();
-
-		RandomMatrixGenerator rgenDefault = new RandomMatrixGenerator(RandomMatrixGenerator.PDF.UNIFORM, 1000, 1000, 100, 1, 0., 1.);
-		MatrixBlock mbDefault = new MatrixBlock();
-		long defaultStartTime = System.currentTimeMillis();
-		LibMatrixDatagen.generateRandomMatrix(mbDefault, rgenDefault, new Well1024a(), 0L);
-		long defaultEndTime = System.currentTimeMillis();
-
-		System.out.println("Time taken by Philox (in ms): " + (philoxEndTime - philoxStartTime));
-		System.out.println("Time taken by Default (in ms): " + (defaultEndTime - defaultStartTime));
-		System.out.println("Philox is faster than default: " + ((philoxEndTime - philoxStartTime) < (defaultEndTime - defaultStartTime)));
-	}
-
-	@Test
-	@Ignore
-	public void testGenerateNormalMatrixFasterUsingCounterBased() {
-		MatrixBlock mbPhilox = new MatrixBlock();
-		RandomMatrixGenerator rgenPhilox = new RandomMatrixGenerator(RandomMatrixGenerator.PDF.CB_NORMAL, 1000, 1000, 100, 1, 0., 1.);
-		long philoxStartTime = System.currentTimeMillis();
-		LibMatrixDatagen.generateRandomMatrix(mbPhilox, rgenPhilox, null, 0L);
-		long philoxEndTime = System.currentTimeMillis();
-
-		RandomMatrixGenerator rgenDefault = new RandomMatrixGenerator(RandomMatrixGenerator.PDF.NORMAL, 1000, 1000, 100, 1, 0., 1.);
-		MatrixBlock mbDefault = new MatrixBlock();
-		long defaultStartTime = System.currentTimeMillis();
-		LibMatrixDatagen.generateRandomMatrix(mbDefault, rgenDefault, new Well1024a(), 0L);
-		long defaultEndTime = System.currentTimeMillis();
-
-		System.out.println("Time taken by Philox (in ms): " + (philoxEndTime - philoxStartTime));
-		System.out.println("Time taken by Default (in ms): " + (defaultEndTime - defaultStartTime));
-		System.out.println("Philox is faster than default: " + ((philoxEndTime - philoxStartTime) < (defaultEndTime - defaultStartTime)));
-	}
-
-	@Test
 	public void testGenerateUniformMatrixPhiloxShouldHaveGoodStatistics() {
 		MatrixBlock mb = new MatrixBlock();
 		RandomMatrixGenerator rgen = new RandomMatrixGenerator(RandomMatrixGenerator.PDF.CB_UNIFORM, 1000, 1000, 100, 1, 0., 1.);
@@ -90,5 +48,9 @@ public class LibMatrixDatagenTest {
 		double mean = mb.mean();
 		assertEquals("Mean should be 0.5", 0.5, mean, 0.001);
 
+		double[] bv = mb.getDenseBlockValues();
+		assertEquals(1000 * 1000, bv.length);
+		double variance = Arrays.stream(bv).map(x -> Math.pow(x - mean, 2)).sum() / bv.length;
+		assertEquals("Variance should be 1", 0.0833, variance, 0.001);
 	}
 }

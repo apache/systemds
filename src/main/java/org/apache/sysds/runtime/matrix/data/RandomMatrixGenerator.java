@@ -20,7 +20,12 @@
 package org.apache.sysds.runtime.matrix.data;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.util.*;
+import org.apache.sysds.runtime.util.IPRNGenerator;
+import org.apache.sysds.runtime.util.NormalPRNGenerator;
+import org.apache.sysds.runtime.util.PhiloxNormalCBPRNGenerator;
+import org.apache.sysds.runtime.util.PhiloxUniformCBPRNGenerator;
+import org.apache.sysds.runtime.util.PoissonPRNGenerator;
+import org.apache.sysds.runtime.util.UniformPRNGenerator;
 
 public class RandomMatrixGenerator {
 

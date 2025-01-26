@@ -66,6 +66,7 @@ forward = function(matrix[double] states,
       matrix[double] gamma_ln2, matrix[double] beta_ln2,
       string activation)
     return (matrix[double] out_states, matrix[double] attention,
+      list[unknown] outputs,
       matrix[double] dropout_mask_attention, 
       matrix[double] dropout_mask_output_1,
       matrix[double] dropout_mask_output_2,
@@ -105,6 +106,18 @@ forward = function(matrix[double] states,
    * Outputs:
    * - out_states: Token output states, of shape (B, T*D)
    * - attention: Attention values for keys & querys, of shape (B, H*T*T)
+   * - outputs: List of relevant outputs for backward pass with following
+   *     order/content:
+   *   -> 1: Output of linear query layer, of shape (B, T*D).
+   *   -> 2: Output of linear key layer, of shape (B, T*D).
+   *   -> 3: Output of linear value layer, of shape (B, T*D).
+   *   -> 4: Output context of attention layer, of shape (B, T*D).
+   *   -> 5: Output attention of attention layer, of shape (B, T*D).
+   *   -> 6: Output of residual pass 1, of shape (B, T*D).
+   *   -> 7: Output of layer norm 1, of shape (B, T*D).
+   *   -> 8: Output of intermediate linear layer, of shape (B, T*I).
+   *   -> 9: Output of activation layer, of shape (B, T*I).
+   *   -> 10: Output of residual pass 2, of shape (B, T*D).
    * - dropout_mask_attention: Dropout mask used on attention, of shape (B, H*T*T)
    * - dropout_mask_output_1: Dropout mask used on attention output, of shape (B, T*D)
    * - dropout_mask_output_2: Dropout mask used on attention output, of shape (B, T*D)
@@ -126,6 +139,7 @@ forward = function(matrix[double] states,
   # Multi-head self attention
   [context, attention, dropout_mask_attention] = attention::forward(Q, K, V, H, T, d, dropout_p_attention)
   # Shapes (B, T*D), (B, H*T*T), (B, H*T*T)
+  outputs = list(Q, K, V, context, attention)
 
   # Linear layer on attention output (output layer)
   out_states = linear_tensor_forward(context, W_context, b_context, T, D)  # Shape (B, T*D)
@@ -137,20 +151,24 @@ forward = function(matrix[double] states,
 
   # Residual pass 1
   out_states = out_states + states  # Shapes (B, T*D).
+  outputs = append(outputs, out_states)
   # Layer norm 1 for each token
   [out_states, cache_mean_ln1, cache_var_ln1, cache_norm_ln1] = layer_norm_forward(
     out_states, gamma_ln1, beta_ln1, epsilon_ln, T, D)
+  outputs = append(outputs, out_states)
 
   # Save out_states for residual pass
   out_states_identity = out_states
   # Linear layer of intermediate part
   out_states = linear_tensor_forward(out_states, W_intermediate, b_intermediate, T, D)  # Shape (B, T*I)
+  outputs = append(outputs, out_states)
   # Activation
   if (activation == "gelu") {
     out_states = gelu::forward(out_states)
   } else if (activation == "tanh") {
     out_states = tanh::forward(out_states)
   }
+  outputs = append(outputs, out_states)
 
   # Final linear output layer
   out_states = linear_tensor_forward(out_states, W_out, b_out, T, I)  # Shape (B, T*D)
@@ -161,6 +179,7 @@ forward = function(matrix[double] states,
   }
   # Residual pass 2
   out_states = out_states + out_states_identity
+  outputs = append(outputs, out_states)
   # Layer norm 2 for each token
   [out_states, cache_mean_ln2, cache_var_ln2, cache_norm_ln2] = layer_norm_forward(
     out_states, gamma_ln2, beta_ln2, epsilon_ln, T, D)

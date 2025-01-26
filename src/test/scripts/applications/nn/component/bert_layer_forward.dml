@@ -58,7 +58,7 @@ beta_ln2 = matrix(read($25, format="csv"), rows=1, cols=D)
 expected_out_states = read($26, format="csv")
 expected_attention = read($27, format="csv")
 
-[out_states, attention, dropout_mask_attention, dropout_mask_output_1, dropout_mask_output_2, cache_mean_ln1,
+[out_states, attention, outputs, dropout_mask_attention, dropout_mask_output_1, dropout_mask_output_2, cache_mean_ln1,
   cache_var_ln1, cache_norm_ln1, cache_mean_ln2, cache_var_ln2, cache_norm_ln2] = bert_layer::forward(states,
     H, T, d, I,
     W_Q,  b_Q, 

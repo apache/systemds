@@ -238,7 +238,7 @@ backward = function(matrix[double] dout_states,
       matrix[double] gamma_ln1, matrix[double] beta_ln1,
       matrix[double] gamma_ln2, matrix[double] beta_ln2,
       string activation)
-    return (matrix[double] din_states
+    return (matrix[double] din_states,
       matrix[double] dW_Q, matrix[double] db_Q,
       matrix[double] dW_K, matrix[double] db_K,
       matrix[double] dW_V, matrix[double] db_V,

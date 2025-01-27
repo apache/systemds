@@ -170,9 +170,7 @@ public class Py4jConverterUtilsTest {
 		ByteBuffer buffer = ByteBuffer.allocate(4 + strings[0].length() + 4 + strings[1].length());
 		buffer.order(ByteOrder.LITTLE_ENDIAN);
 		for(String s : strings) {
-			buffer.order(ByteOrder.BIG_ENDIAN);
 			buffer.putInt(s.length());
-			buffer.order(ByteOrder.LITTLE_ENDIAN);
 			buffer.put(s.getBytes(StandardCharsets.UTF_8));
 		}
 		Array<?> result = Py4jConverterUtils.convert(buffer.array(), numElements, Types.ValueType.STRING);

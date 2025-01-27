@@ -108,8 +108,10 @@ def convert(jvm, fb, idx, num_elements, value_type, pd_series, conversion="colum
         )
         fb.setColumn(idx, converted_array)
     elif conversion == "row":
-        converted_array = jvm.org.apache.sysds.runtime.util.Py4jConverterUtils.convertRow(
-            byte_data, num_elements, value_type
+        converted_array = (
+            jvm.org.apache.sysds.runtime.util.Py4jConverterUtils.convertRow(
+                byte_data, num_elements, value_type
+            )
         )
         fb.setRow(idx, converted_array)
 
@@ -163,12 +165,18 @@ def pandas_to_frame_block(sds, pd_df: pd.DataFrame):
         # execution speed increases with optimized code when the number of rows exceeds 4
         if rows > 4:
             # Row conversion if more columns than rows and all columns have the same type, otherwise column
-            conversion_type = "row" if cols > rows and len(set(pd_df.dtypes)) == 1 else "column"
+            conversion_type = (
+                "row" if cols > rows and len(set(pd_df.dtypes)) == 1 else "column"
+            )
             if conversion_type == "row":
                 pd_df = pd_df.transpose()
-                col_names = pd_df.columns.tolist()   # re-calculate col names
+                col_names = pd_df.columns.tolist()  # re-calculate col names
 
-            fb = jc_FrameBlock(j_valueTypeArray, j_colNameArray, rows if conversion_type == "column" else None)
+            fb = jc_FrameBlock(
+                j_valueTypeArray,
+                j_colNameArray,
+                rows if conversion_type == "column" else None,
+            )
             if conversion_type == "row":
                 fb.ensureAllocatedColumns(rows)
 

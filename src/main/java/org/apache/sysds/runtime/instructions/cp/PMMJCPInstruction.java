@@ -45,7 +45,7 @@ public class PMMJCPInstruction extends ComputationCPInstruction {
 		CPOperand in3 = new CPOperand(parts[3]);
 		CPOperand out = new CPOperand(parts[4]);
 		int k = Integer.parseInt(parts[5]);
-		if(!opcode.equalsIgnoreCase(Opcodes.PMM.getName()))
+		if(!opcode.equalsIgnoreCase(Opcodes.PMM.toString()))
 			throw new DMLRuntimeException("Unknown opcode while parsing an PMMJCPInstruction: " + str);
 		else
 			return new PMMJCPInstruction(new Operator(true), in1, in2, in3, out, k, opcode, str);

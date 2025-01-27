@@ -53,7 +53,7 @@ public class BuiltinRaSelectionTest extends AutomatedTestBase
 				{7.0, 8.0},
 				{9.0, 10.0}};
 		int select_col = 1;
-		String op = Opcodes.GREATER.getName();
+		String op = Opcodes.GREATER.toString();
 		double val = 4.0;
 
 		runRaSelectionTest(X, select_col, op, val);
@@ -68,7 +68,7 @@ public class BuiltinRaSelectionTest extends AutomatedTestBase
 				{7.0, 8.0, 9.0}
 		};
 		int select_col = 1;
-		String op = Opcodes.GREATEREQUAL.getName();
+		String op = Opcodes.GREATEREQUAL.toString();
 		double val = 4.0;
 
 		runRaSelectionTest(X, select_col, op, val);
@@ -82,7 +82,7 @@ public class BuiltinRaSelectionTest extends AutomatedTestBase
 				{5.0, 6.0, 7.0, 8.0}
 		};
 		int select_col = 2;
-		String op = Opcodes.LESS.getName();
+		String op = Opcodes.LESS.toString();
 		double val = 7.0;
 
 		runRaSelectionTest(X, select_col, op, val);
@@ -99,7 +99,7 @@ public class BuiltinRaSelectionTest extends AutomatedTestBase
 				{1.0, 6.0, 8.0}
 		};
 		int select_col = 1;
-		String op = Opcodes.LESSEQUAL.getName();
+		String op = Opcodes.LESSEQUAL.toString();
 		double val = 4.0;
 
 		runRaSelectionTest(X, select_col, op, val);
@@ -114,7 +114,7 @@ public class BuiltinRaSelectionTest extends AutomatedTestBase
 				{9.0, 10.0, 11.0, 12.0}
 		};
 		int select_col = 4;
-		String op = Opcodes.EQUAL.getName();
+		String op = Opcodes.EQUAL.toString();
 		double val = 8.0;
 
 		runRaSelectionTest(X, select_col, op, val);
@@ -130,7 +130,7 @@ public class BuiltinRaSelectionTest extends AutomatedTestBase
 				{13.0, 14.0, 15.0, 16.0}
 		};
 		int select_col = 2;
-		String op = Opcodes.NOTEQUAL.getName();
+		String op = Opcodes.NOTEQUAL.toString();
 		double val = 10.0;
 
 		runRaSelectionTest(X, select_col, op, val);
@@ -165,9 +165,9 @@ public class BuiltinRaSelectionTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Expected");
 			
 			//additional assertions
-			if( !op.equals(Opcodes.EQUAL.getName()) )
+			if( !op.equals(Opcodes.EQUAL.toString()) )
 				Assert.assertEquals(1, Statistics.getCPHeavyHitterCount(op));
-			String otherOp = op.equals(Opcodes.NOTEQUAL.getName()) ? Opcodes.GREATER.getName() : Opcodes.NOTEQUAL.getName();
+			String otherOp = op.equals(Opcodes.NOTEQUAL.toString()) ? Opcodes.GREATER.toString() : Opcodes.NOTEQUAL.toString();
 			Assert.assertFalse(heavyHittersContainsString(otherOp));
 		}
 		finally {

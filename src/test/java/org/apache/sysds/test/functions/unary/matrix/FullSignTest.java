@@ -167,11 +167,11 @@ public class FullSignTest extends AutomatedTestBase
 			
 			//check generated opcode
 			if( instType == ExecType.CP ) {
-				Assert.assertTrue("Missing opcode: sign", Statistics.getCPHeavyHitterOpCodes().contains(Opcodes.SIGN.getName()) ||
+				Assert.assertTrue("Missing opcode: sign", Statistics.getCPHeavyHitterOpCodes().contains(Opcodes.SIGN.toString()) ||
 						Statistics.getCPHeavyHitterOpCodes().contains("gpu_sign") );
 			}
 			else if ( instType == ExecType.SPARK )
-				Assert.assertTrue("Missing opcode: "+Instruction.SP_INST_PREFIX+Opcodes.SIGN.getName(), Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+Opcodes.SIGN.getName()));
+				Assert.assertTrue("Missing opcode: "+Instruction.SP_INST_PREFIX+Opcodes.SIGN.toString(), Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+Opcodes.SIGN.toString()));
 		}
 		finally {
 			rtplatform = platformOld;

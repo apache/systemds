@@ -104,7 +104,7 @@ public class RewriteSimplifyRowColSumMVMultTest extends AutomatedTestBase
 			
 			//check matrix mult existence
 			String gpuBa = "gpu_ba+*";
-			String ba = Opcodes.MMULT.getName();
+			String ba = Opcodes.MMULT.toString();
 			boolean isMatmultPresent = Statistics.getCPHeavyHitterOpCodes().contains(ba) ||  Statistics.getCPHeavyHitterOpCodes().contains(gpuBa);
 			Assert.assertTrue( isMatmultPresent == rewrites );
 		}

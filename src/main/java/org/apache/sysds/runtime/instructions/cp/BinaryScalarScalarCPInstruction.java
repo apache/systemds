@@ -73,7 +73,7 @@ public class BinaryScalarScalarCPInstruction extends BinaryCPInstruction {
 			}
 			else { //all boolean
 				//NOTE: boolean-boolean arithmetic treated as double for consistency with R
-				if( opcode.equals(Opcodes.AND.getName()) || opcode.equals(Opcodes.OR.getName()) || opcode.equals(Opcodes.XOR.getName()) )
+				if( opcode.equals(Opcodes.AND.toString()) || opcode.equals(Opcodes.OR.toString()) || opcode.equals(Opcodes.XOR.toString()) )
 					sores = new BooleanObject( dop.fn.execute(so1.getBooleanValue(), so2.getBooleanValue()) );
 				else
 					sores = new DoubleObject( dop.fn.execute(so1.getDoubleValue(), so2.getDoubleValue()) );

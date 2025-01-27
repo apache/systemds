@@ -145,9 +145,9 @@ public class RewriteSimplifyWeightedSigmoidMMChainsTest extends AutomatedTestBas
 			TestUtils.compareMatrices(dmlfile, rfile, 1e-8, "Stat-DML", "Stat-R");
 
 			if(rewrites)
-				Assert.assertTrue(heavyHittersContainsString(Opcodes.WSIGMOID.getName()));
+				Assert.assertTrue(heavyHittersContainsString(Opcodes.WSIGMOID.toString()));
 			else
-				Assert.assertFalse(heavyHittersContainsString(Opcodes.WSIGMOID.getName()));
+				Assert.assertFalse(heavyHittersContainsString(Opcodes.WSIGMOID.toString()));
 
 		}
 		finally {

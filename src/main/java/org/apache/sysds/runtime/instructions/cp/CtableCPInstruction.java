@@ -59,10 +59,10 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 		String opcode = parts[0];
 		
 		//handle opcode
-		if ( !(opcode.equalsIgnoreCase(Opcodes.CTABLE.getName()) || opcode.equalsIgnoreCase(Opcodes.CTABLEEXPAND.getName())) ) {
+		if ( !(opcode.equalsIgnoreCase(Opcodes.CTABLE.toString()) || opcode.equalsIgnoreCase(Opcodes.CTABLEEXPAND.toString())) ) {
 			throw new DMLRuntimeException("Unexpected opcode in TertiaryCPInstruction: " + inst);
 		}
-		boolean isExpand = opcode.equalsIgnoreCase(Opcodes.CTABLEEXPAND.getName());
+		boolean isExpand = opcode.equalsIgnoreCase(Opcodes.CTABLEEXPAND.toString());
 		
 		//handle operands
 		CPOperand in1 = new CPOperand(parts[1]);

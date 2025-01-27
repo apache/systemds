@@ -107,7 +107,7 @@ public class RewriteSimplifyBushyBinaryOperationTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		
 			if( ID == 1 && rewrites ) //check mmchain, enabled by bushy join 
-				Assert.assertTrue(heavyHittersContainsString(Opcodes.MMCHAIN.getName()));
+				Assert.assertTrue(heavyHittersContainsString(Opcodes.MMCHAIN.toString()));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;

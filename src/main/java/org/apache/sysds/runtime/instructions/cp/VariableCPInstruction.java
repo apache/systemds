@@ -190,36 +190,36 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	}
 
 	private static VariableOperationCode getVariableOperationCode ( String str ) {
-		if ( str.equalsIgnoreCase(Opcodes.CREATEVAR.getName()))
+		if ( str.equalsIgnoreCase(Opcodes.CREATEVAR.toString()))
 			return VariableOperationCode.CreateVariable;
-		else if ( str.equalsIgnoreCase(Opcodes.ASSIGNVAR.getName()))
+		else if ( str.equalsIgnoreCase(Opcodes.ASSIGNVAR.toString()))
 			return VariableOperationCode.AssignVariable;
-		else if ( str.equalsIgnoreCase(Opcodes.CPVAR.getName()))
+		else if ( str.equalsIgnoreCase(Opcodes.CPVAR.toString()))
 			return VariableOperationCode.CopyVariable;
-		else if ( str.equalsIgnoreCase(Opcodes.MVVAR.getName()))
+		else if ( str.equalsIgnoreCase(Opcodes.MVVAR.toString()))
 			return VariableOperationCode.MoveVariable;
-		else if ( str.equalsIgnoreCase(Opcodes.RMVAR.getName()) )
+		else if ( str.equalsIgnoreCase(Opcodes.RMVAR.toString()) )
 			return VariableOperationCode.RemoveVariable;
-		else if ( str.equalsIgnoreCase(Opcodes.RMFILEVAR.getName()) )
+		else if ( str.equalsIgnoreCase(Opcodes.RMFILEVAR.toString()) )
 			return VariableOperationCode.RemoveVariableAndFile;
-		else if ( str.equalsIgnoreCase(Opcodes.CAST_AS_SCALAR.getName()) )
+		else if ( str.equalsIgnoreCase(Opcodes.CAST_AS_SCALAR.toString()) )
 			return VariableOperationCode.CastAsScalarVariable;
-		else if ( str.equalsIgnoreCase(Opcodes.CAST_AS_MATRIX.getName()) )
+		else if ( str.equalsIgnoreCase(Opcodes.CAST_AS_MATRIX.toString()) )
 			return VariableOperationCode.CastAsMatrixVariable;
 		else if ( str.equalsIgnoreCase(OpOp1.CAST_AS_FRAME.toString()) 
-			|| str.equalsIgnoreCase(Opcodes.CAST_AS_FRAME_VAR.getName()))
+			|| str.equalsIgnoreCase(Opcodes.CAST_AS_FRAME_VAR.toString()))
 			return VariableOperationCode.CastAsFrameVariable;
-		else if ( str.equalsIgnoreCase(Opcodes.CAST_AS_LIST.getName()) )
+		else if ( str.equalsIgnoreCase(Opcodes.CAST_AS_LIST.toString()) )
 			return VariableOperationCode.CastAsListVariable;
-		else if ( str.equalsIgnoreCase(Opcodes.CAST_AS_DOUBLE.getName()) )
+		else if ( str.equalsIgnoreCase(Opcodes.CAST_AS_DOUBLE.toString()) )
 			return VariableOperationCode.CastAsDoubleVariable;
-		else if ( str.equalsIgnoreCase(Opcodes.CAST_AS_INT.getName()) )
+		else if ( str.equalsIgnoreCase(Opcodes.CAST_AS_INT.toString()) )
 			return VariableOperationCode.CastAsIntegerVariable;
-		else if ( str.equalsIgnoreCase(Opcodes.CAST_AS_BOOLEAN.getName()) )
+		else if ( str.equalsIgnoreCase(Opcodes.CAST_AS_BOOLEAN.toString()) )
 			return VariableOperationCode.CastAsBooleanVariable;
-		else if ( str.equalsIgnoreCase(Opcodes.WRITE.getName()) )
+		else if ( str.equalsIgnoreCase(Opcodes.WRITE.toString()) )
 			return VariableOperationCode.Write;
-		else if ( str.equalsIgnoreCase(Opcodes.READ.getName()) )
+		else if ( str.equalsIgnoreCase(Opcodes.READ.toString()) )
 			return VariableOperationCode.Read;
 		else if ( str.equalsIgnoreCase("setfilename") )
 			return VariableOperationCode.SetFileName;
@@ -1279,7 +1279,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		StringBuilder sb = InstructionUtils.getStringBuilder();
 		sb.append("CP");
 		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(Opcodes.RMVAR.getName());
+		sb.append(Opcodes.RMVAR);
 		for( String varName : varNames ) {
 			sb.append(Lop.OPERAND_DELIMITOR);
 			sb.append(varName);
@@ -1289,17 +1289,17 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 
 	public static Instruction prepareCopyInstruction(String srcVar, String destVar) {
 		return parseInstruction(
-			InstructionUtils.concatOperands("CP", Opcodes.CPVAR.getName(), srcVar, destVar));
+			InstructionUtils.concatOperands("CP", Opcodes.CPVAR.toString(), srcVar, destVar));
 	}
 
 	public static Instruction prepMoveInstruction(String srcVar, String destFileName, String format) {
 		return parseInstruction(
-			InstructionUtils.concatOperands("CP", Opcodes.MVVAR.getName(), srcVar, destFileName, format));
+			InstructionUtils.concatOperands("CP", Opcodes.MVVAR.toString(), srcVar, destFileName, format));
 	}
 
 	public static Instruction prepMoveInstruction(String srcVar, String destVar) {
 		return parseInstruction(
-			InstructionUtils.concatOperands("CP", Opcodes.MVVAR.getName(), srcVar, destVar));
+			InstructionUtils.concatOperands("CP", Opcodes.MVVAR.toString(), srcVar, destVar));
 	}
 
 	private static String getBasicCreatevarString(String varName, String fileName, boolean fNameOverride, DataType dt, String format) {
@@ -1311,7 +1311,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		// Constant CREATEVAR_FILE_NAME_VAR_POS is used to find a position of filename within a string generated through this function.
 		// If this position of filename within this string changes then constant CREATEVAR_FILE_NAME_VAR_POS to be updated.
 		return InstructionUtils.concatOperands(
-			"CP", Opcodes.CREATEVAR.getName(), varName, fileName, String.valueOf(lfNameOverride), dt.toString(), format);
+			"CP", Opcodes.CREATEVAR.toString(), varName, fileName, String.valueOf(lfNameOverride), dt.toString(), format);
 	}
 
 	public static Instruction prepCreatevarInstruction(String varName, String fileName, boolean fNameOverride, String format) {

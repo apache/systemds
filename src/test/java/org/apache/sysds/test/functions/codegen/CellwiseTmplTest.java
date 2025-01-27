@@ -504,21 +504,21 @@ public class CellwiseTmplTest extends AutomatedTestBase
 				Assert.assertTrue(heavyHittersContainsSubString(
 						"spoofCell", "sp_spoofCell", "spoofMA", "sp_spoofMA", "gpu_spoofCUDACell"));
 			if( testname.equals(TEST_NAME7) ) //ensure matrix mult is fused
-				Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.TSMM.getName()));
+				Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.TSMM.toString()));
 			else if( testname.equals(TEST_NAME10) ) //ensure min/max is fused
-				Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.UAMIN.getName(),Opcodes.UAMAX.getName()));
+				Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.UAMIN.toString(),Opcodes.UAMAX.toString()));
 			else if( testname.equals(TEST_NAME11) ) //ensure replace is fused
-				Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.REPLACE.getName()));
+				Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.REPLACE.toString()));
 			else if( testname.equals(TEST_NAME15) )
-				Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.UACMIN.getName()));
+				Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.UACMIN.toString()));
 			else if( testname.equals(TEST_NAME16) )
-				Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.UACKP.getName()));
+				Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.UACKP.toString()));
 			else if( testname.equals(TEST_NAME17) )
-				Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.XOR.getName()));
+				Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.XOR.toString()));
 			else if( testname.equals(TEST_NAME22) )
 				Assert.assertTrue(!heavyHittersContainsSubString("seq"));
 			else if( testname.equals(TEST_NAME23) || testname.equals(TEST_NAME24) )
-				Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.MIN.getName(),Opcodes.NMIN.getName()));
+				Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.MIN.toString(),Opcodes.NMIN.toString()));
 		}
 		finally {
 			resetExecMode(platformOld);

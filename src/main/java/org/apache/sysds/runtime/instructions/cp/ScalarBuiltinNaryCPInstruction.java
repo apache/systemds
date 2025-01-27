@@ -49,7 +49,7 @@ public class ScalarBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction imp
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		if( Opcodes.PRINTF.getName().equals(getOpcode()) ) {
+		if( Opcodes.PRINTF.toString().equals(getOpcode()) ) {
 			List<ScalarObject> scalarObjects = new ArrayList<>();
 			for (CPOperand input : inputs) {
 				ScalarObject so = ec.getScalarInput(input);

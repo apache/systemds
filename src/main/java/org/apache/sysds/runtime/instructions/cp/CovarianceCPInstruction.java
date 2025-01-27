@@ -41,7 +41,7 @@ public class CovarianceCPInstruction extends BinaryCPInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
-		if( !opcode.equalsIgnoreCase(Opcodes.COV.getName()) )
+		if( !opcode.equalsIgnoreCase(Opcodes.COV.toString()) )
 			throw new DMLRuntimeException("CovarianceCPInstruction.parseInstruction():: Unknown opcode " + opcode);
 		
 		InstructionUtils.checkNumFields(parts, 4, 5); //w/o opcode

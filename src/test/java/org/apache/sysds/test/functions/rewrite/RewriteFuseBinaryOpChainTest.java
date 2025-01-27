@@ -170,7 +170,7 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 			
 			if( testname.equals(TEST_NAME5) ) {
 				//check for common subexpression elimination at lop level (independent of rewrites)
-				Assert.assertTrue(Statistics.getCPHeavyHitterCount(Opcodes.QSORT.getName()) == 1);
+				Assert.assertTrue(Statistics.getCPHeavyHitterCount(Opcodes.QSORT.toString()) == 1);
 			}
 		}
 		finally {

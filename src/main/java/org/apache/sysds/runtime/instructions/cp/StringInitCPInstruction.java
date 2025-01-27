@@ -60,7 +60,7 @@ public class StringInitCPInstruction extends UnaryCPInstruction {
 
 	public static StringInitCPInstruction parseInstruction(String str) {
 		String opcode = InstructionUtils.getOpCode(str);
-		if( !opcode.equals(Opcodes.STRINGINIT.getName()) )
+		if( !opcode.equals(Opcodes.STRINGINIT.toString()) )
 			throw new DMLRuntimeException("Unsupported opcode: "+opcode);
 		//parse instruction
 		String[] s = InstructionUtils.getInstructionPartsWithValueType ( str );

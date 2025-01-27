@@ -48,7 +48,7 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction {
 	public static QuantilePickCPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		if ( !opcode.equalsIgnoreCase(Opcodes.QPICK.getName()) )
+		if ( !opcode.equalsIgnoreCase(Opcodes.QPICK.toString()) )
 			throw new DMLRuntimeException("Unknown opcode while parsing a QuantilePickCPInstruction: " + str);
 		//instruction parsing
 		if( parts.length == 4 ) {

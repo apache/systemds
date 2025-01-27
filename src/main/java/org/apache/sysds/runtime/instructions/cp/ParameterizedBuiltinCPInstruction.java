@@ -117,21 +117,21 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 
 		// determine the appropriate value function
 		ValueFunction func = null;
-		if(opcode.equalsIgnoreCase(Opcodes.CDF.getName())) {
+		if(opcode.equalsIgnoreCase(Opcodes.CDF.toString())) {
 			if(paramsMap.get("dist") == null)
 				throw new DMLRuntimeException("Invalid distribution: " + str);
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode, paramsMap.get("dist"));
 			// Determine appropriate Function Object based on opcode
 			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.INVCDF.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.INVCDF.toString())) {
 			if(paramsMap.get("dist") == null)
 				throw new DMLRuntimeException("Invalid distribution: " + str);
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode, paramsMap.get("dist"));
 			// Determine appropriate Function Object based on opcode
 			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.GROUPEDAGG.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.GROUPEDAGG.toString())) {
 			// check for mandatory arguments
 			String fnStr = paramsMap.get("fn");
 			if(fnStr == null)
@@ -145,19 +145,19 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			Operator op = InstructionUtils.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
 			return new ParameterizedBuiltinCPInstruction(op, paramsMap, out, opcode, str);
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.RMEMPTY.getName()) || opcode.equalsIgnoreCase(Opcodes.REPLACE.getName()) ||
-			opcode.equalsIgnoreCase(Opcodes.REXPAND.getName()) || opcode.equalsIgnoreCase(Opcodes.LOWERTRI.getName()) ||
-			opcode.equalsIgnoreCase(Opcodes.UPPERTRI.getName()) ) {
+		else if(opcode.equalsIgnoreCase(Opcodes.RMEMPTY.toString()) || opcode.equalsIgnoreCase(Opcodes.REPLACE.toString()) ||
+			opcode.equalsIgnoreCase(Opcodes.REXPAND.toString()) || opcode.equalsIgnoreCase(Opcodes.LOWERTRI.toString()) ||
+			opcode.equalsIgnoreCase(Opcodes.UPPERTRI.toString()) ) {
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 			return new ParameterizedBuiltinCPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 		}
-		else if(opcode.equals(Opcodes.TRANSFORMAPPLY.getName()) || opcode.equals(Opcodes.TRANSFORMDECODE.getName())
-			|| opcode.equalsIgnoreCase(Opcodes.CONTAINS.getName()) || opcode.equals(Opcodes.TRANSFORMCOLMAP.getName())
-			|| opcode.equals(Opcodes.TRANSFORMMETA.getName()) || opcode.equals(Opcodes.TOKENIZE.getName())
-			|| opcode.equals(Opcodes.TOSTRING.getName()) || opcode.equals(Opcodes.NVLIST.getName()) || opcode.equals(Opcodes.AUTODIFF.getName())) {
+		else if(opcode.equals(Opcodes.TRANSFORMAPPLY.toString()) || opcode.equals(Opcodes.TRANSFORMDECODE.toString())
+			|| opcode.equalsIgnoreCase(Opcodes.CONTAINS.toString()) || opcode.equals(Opcodes.TRANSFORMCOLMAP.toString())
+			|| opcode.equals(Opcodes.TRANSFORMMETA.toString()) || opcode.equals(Opcodes.TOKENIZE.toString())
+			|| opcode.equals(Opcodes.TOSTRING.toString()) || opcode.equals(Opcodes.NVLIST.toString()) || opcode.equals(Opcodes.AUTODIFF.toString())) {
 			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
 		}
-		else if(Opcodes.PARAMSERV.getName().equals(opcode)) {
+		else if(Opcodes.PARAMSERV.toString().equals(opcode)) {
 			return new ParamservBuiltinCPInstruction(null, paramsMap, out, opcode, str);
 		}
 		else {
@@ -170,26 +170,26 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 	public void processInstruction(ExecutionContext ec) {
 		String opcode = getOpcode();
 		ScalarObject sores = null;
-		if(opcode.equalsIgnoreCase(Opcodes.CDF.getName())) {
+		if(opcode.equalsIgnoreCase(Opcodes.CDF.toString())) {
 			SimpleOperator op = (SimpleOperator) _optr;
 			double result = op.fn.execute(params);
 			sores = new DoubleObject(result);
 			ec.setScalarOutput(output.getName(), sores);
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.INVCDF.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.INVCDF.toString())) {
 			SimpleOperator op = (SimpleOperator) _optr;
 			double result = op.fn.execute(params);
 			sores = new DoubleObject(result);
 			ec.setScalarOutput(output.getName(), sores);
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.AUTODIFF.getName()))
+		else if(opcode.equalsIgnoreCase(Opcodes.AUTODIFF.toString()))
 		{
 			ArrayList<Data> lineage = (ArrayList<Data>) ec.getListObject(params.get("lineage")).getData();
 			MatrixObject mo = ec.getMatrixObject(params.get("output"));
 			ListObject diffs = AutoDiff.getBackward(mo, lineage, ExecutionContextFactory.createContext());
 			ec.setVariable(output.getName(), diffs);
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.GROUPEDAGG.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.GROUPEDAGG.toString())) {
 			// acquire locks
 			MatrixBlock target = ec.getMatrixInput(params.get(Statement.GAGG_TARGET));
 			MatrixBlock groups = ec.getMatrixInput(params.get(Statement.GAGG_GROUPS));
@@ -215,7 +215,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 				ec.releaseMatrixInput(params.get(Statement.GAGG_WEIGHTS));
 
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.RMEMPTY.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.RMEMPTY.toString())) {
 			String margin = params.get("margin");
 			if(!(margin.equals("rows") || margin.equals("cols")))
 				throw new DMLRuntimeException("Unspupported margin identifier '" + margin + "'.");
@@ -248,7 +248,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 					ec.releaseMatrixInput(params.get("select"));
 			}
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.CONTAINS.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.CONTAINS.toString())) {
 			String varName = params.get("target");
 			int k = Integer.parseInt(params.get("k")); //num threads
 			MatrixBlock target = ec.getMatrixInput(varName);
@@ -263,7 +263,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 				ec.releaseMatrixInput(params.get("pattern"));
 			ec.setScalarOutput(output.getName(), new BooleanObject(ret));
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.REPLACE.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.REPLACE.toString())) {
 			if(ec.isFrameObject(params.get("target"))){
 				FrameBlock target = ec.getFrameInput(params.get("target"));
 				String pattern = params.get("pattern");
@@ -284,16 +284,16 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 				targetObj.release();
 			}
 		}
-		else if(opcode.equals(Opcodes.LOWERTRI.getName()) || opcode.equals(Opcodes.UPPERTRI.getName())) {
+		else if(opcode.equals(Opcodes.LOWERTRI.toString()) || opcode.equals(Opcodes.UPPERTRI.toString())) {
 			MatrixBlock target = ec.getMatrixInput(params.get("target"));
-			boolean lower = opcode.equals(Opcodes.LOWERTRI.getName());
+			boolean lower = opcode.equals(Opcodes.LOWERTRI.toString());
 			boolean diag = Boolean.parseBoolean(params.get("diag"));
 			boolean values = Boolean.parseBoolean(params.get("values"));
 			MatrixBlock ret = target.extractTriangular(new MatrixBlock(), lower, diag, values);
 			ec.setMatrixOutput(output.getName(), ret);
 			ec.releaseMatrixInput(params.get("target"));
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.REXPAND.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.REXPAND.toString())) {
 			// acquire locks
 			MatrixBlock target = ec.getMatrixInput(params.get("target"));
 
@@ -309,7 +309,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			ec.setMatrixOutput(output.getName(), ret);
 			ec.releaseMatrixInput(params.get("target"));
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.TOKENIZE.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.TOKENIZE.toString())) {
 			// acquire locks
 			FrameBlock data = ec.getFrameInput(params.get("target"));
 
@@ -322,7 +322,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			ec.setFrameOutput(output.getName(), fbout);
 			ec.releaseFrameInput(params.get("target"));
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.TRANSFORMAPPLY.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.TRANSFORMAPPLY.toString())) {
 			// acquire locks
 			FrameBlock data = ec.getFrameInput(params.get("target"));
 			FrameBlock meta = ec.getFrameInput(params.get("meta"));
@@ -341,7 +341,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			if(params.get("embedding") != null)
 				ec.releaseMatrixInput(params.get("embedding"));
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.TRANSFORMDECODE.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.TRANSFORMDECODE.toString())) {
 			// acquire locks
 			MatrixBlock data = ec.getMatrixInput(params.get("target"));
 			FrameBlock meta = ec.getFrameInput(params.get("meta"));
@@ -358,7 +358,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			ec.releaseMatrixInput(params.get("target"));
 			ec.releaseFrameInput(params.get("meta"));
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.TRANSFORMCOLMAP.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.TRANSFORMCOLMAP.toString())) {
 			// acquire locks
 			FrameBlock meta = ec.getFrameInput(params.get("target"));
 			String[] colNames = meta.getColumnNames();
@@ -372,7 +372,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			ec.setMatrixOutput(output.getName(), mbout);
 			ec.releaseFrameInput(params.get("target"));
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.TRANSFORMMETA.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.TRANSFORMMETA.toString())) {
 			// get input spec and path
 			String spec = getParameterMap().get("spec");
 			String path = getParameterMap().get(ParameterizedBuiltinFunctionExpression.TF_FN_PARAM_MTD);
@@ -390,7 +390,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			// release locks
 			ec.setFrameOutput(output.getName(), meta);
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.TOSTRING.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.TOSTRING.toString())) {
 			// handle input parameters
 			int rows = (getParam("rows") != null) ? Integer.parseInt(getParam("rows")) : TOSTRING_MAXROWS;
 			int cols = (getParam("cols") != null) ? Integer.parseInt(getParam("cols")) : TOSTRING_MAXCOLS;
@@ -432,7 +432,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			}
 			ec.setScalarOutput(output.getName(), new StringObject(out));
 		}
-		else if(opcode.equals(Opcodes.NVLIST.getName())) {
+		else if(opcode.equals(Opcodes.NVLIST.toString())) {
 			// obtain all input data objects and names in insertion order
 			List<Data> data = params.values().stream()
 				.map(d -> ec.containsVariable(d) ? ec.getVariable(d) :
@@ -489,13 +489,13 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 	@Override
 	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 		String opcode = getOpcode();
-		if(opcode.equalsIgnoreCase(Opcodes.CONTAINS.getName())) {
+		if(opcode.equalsIgnoreCase(Opcodes.CONTAINS.toString())) {
 			CPOperand target = getTargetOperand();
 			CPOperand pattern = getFP64Literal("pattern");
 			return Pair.of(output.getName(),
 				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, pattern)));
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.GROUPEDAGG.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.GROUPEDAGG.toString())) {
 			CPOperand target = getTargetOperand();
 			CPOperand groups = new CPOperand(params.get(Statement.GAGG_GROUPS), ValueType.FP64, DataType.MATRIX);
 			String wt = params.containsKey(Statement.GAGG_WEIGHTS) ? params.get(Statement.GAGG_WEIGHTS) : String
@@ -508,7 +508,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			return Pair.of(output.getName(),
 				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, groups, weights, fn, ngroups)));
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.RMEMPTY.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.RMEMPTY.toString())) {
 			CPOperand target = getTargetOperand();
 			CPOperand margin = getStringLiteral("margin");
 			String sl = params.containsKey("select") ? params.get("select") : String.valueOf(-1);
@@ -516,14 +516,14 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			return Pair.of(output.getName(),
 				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, margin, select)));
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.REPLACE.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.REPLACE.toString())) {
 			CPOperand target = getTargetOperand();
 			CPOperand pattern = getFP64Literal("pattern");
 			CPOperand replace = getFP64Literal("replacement");
 			return Pair.of(output.getName(),
 				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, pattern, replace)));
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.REXPAND.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.REXPAND.toString())) {
 			CPOperand target = getTargetOperand();
 			CPOperand max = getFP64Literal("max");
 			CPOperand dir = getStringLiteral("dir");
@@ -532,22 +532,22 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			return Pair.of(output.getName(),
 				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, max, dir, cast, ignore)));
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.LOWERTRI.getName()) || opcode.equalsIgnoreCase(Opcodes.UPPERTRI.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.LOWERTRI.toString()) || opcode.equalsIgnoreCase(Opcodes.UPPERTRI.toString())) {
 			CPOperand target = getTargetOperand();
-			CPOperand lower = getBoolLiteral(Opcodes.LOWERTRI.getName());
+			CPOperand lower = getBoolLiteral(Opcodes.LOWERTRI.toString());
 			CPOperand diag = getBoolLiteral("diag");
 			CPOperand values = getBoolLiteral("values");
 			return Pair.of(output.getName(),
 				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, lower, diag, values)));
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.TRANSFORMDECODE.getName()) || opcode.equalsIgnoreCase(Opcodes.TRANSFORMAPPLY.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.TRANSFORMDECODE.toString()) || opcode.equalsIgnoreCase(Opcodes.TRANSFORMAPPLY.toString())) {
 			CPOperand target = new CPOperand(params.get("target"), ValueType.FP64, DataType.FRAME);
 			CPOperand meta = getLiteral("meta", ValueType.UNKNOWN, DataType.FRAME);
 			CPOperand spec = new CPOperand(params.get("spec"), ValueType.STRING, DataType.SCALAR);
 			return Pair.of(output.getName(),
 				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, meta, spec)));
 		}
-		else if (opcode.equalsIgnoreCase(Opcodes.NVLIST.getName()) || opcode.equalsIgnoreCase(Opcodes.AUTODIFF.getName())) {
+		else if (opcode.equalsIgnoreCase(Opcodes.NVLIST.toString()) || opcode.equalsIgnoreCase(Opcodes.AUTODIFF.toString())) {
 			List<String> names = new ArrayList<>(params.keySet());
 			CPOperand[] listOperands = names.stream().map(n -> ec.containsVariable(params.get(n)) 
 					? new CPOperand(n, ec.getVariable(params.get(n))) 

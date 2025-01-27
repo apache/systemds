@@ -38,7 +38,7 @@ import org.apache.sysds.common.Types.ValueType;
  */
 public class UAggOuterChain extends Lop 
 {
-	public static final String OPCODE = Opcodes.UAGGOUTERCHAIN.getName();
+	public static final String OPCODE = Opcodes.UAGGOUTERCHAIN.toString();
 
 	//outer operation
 	private AggOp _uaggOp = null;

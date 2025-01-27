@@ -35,72 +35,72 @@ public class MatrixAggKernelTest {
 	
 	@Test
 	public void testDenseKahanSum() {
-		testMatrixAggregation(Opcodes.UAKP.getName(), Opcodes.UARKP.getName(), Opcodes.UACKP.getName(), 0.95);
+		testMatrixAggregation(Opcodes.UAKP.toString(), Opcodes.UARKP.toString(), Opcodes.UACKP.toString(), 0.95);
 	}
 	
 	@Test
 	public void testSparseKahanSum() {
-		testMatrixAggregation(Opcodes.UAKP.getName(), Opcodes.UARKP.getName(), Opcodes.UACKP.getName(), 0.1);
+		testMatrixAggregation(Opcodes.UAKP.toString(), Opcodes.UARKP.toString(), Opcodes.UACKP.toString(), 0.1);
 	}
 	
 	@Test
 	public void testDenseSum() {
-		testMatrixAggregation(Opcodes.UAP.getName(), Opcodes.UARP.getName(), Opcodes.UACP.getName(), 0.95);
+		testMatrixAggregation(Opcodes.UAP.toString(), Opcodes.UARP.toString(), Opcodes.UACP.toString(), 0.95);
 	}
 	
 	@Test
 	public void testSparseSum() {
-		testMatrixAggregation(Opcodes.UAP.getName(), Opcodes.UARP.getName(), Opcodes.UACP.getName(), 0.1);
+		testMatrixAggregation(Opcodes.UAP.toString(), Opcodes.UARP.toString(), Opcodes.UACP.toString(), 0.1);
 	}
 	
 	@Test
 	public void testDenseSqSum() {
-		testMatrixAggregation(Opcodes.UASQKP.getName(), Opcodes.UARSQKP.getName(), Opcodes.UACSQKP.getName(), 0.95);
+		testMatrixAggregation(Opcodes.UASQKP.toString(), Opcodes.UARSQKP.toString(), Opcodes.UACSQKP.toString(), 0.95);
 	}
 	
 	@Test
 	public void testSparseSqSum() {
-		testMatrixAggregation(Opcodes.UASQKP.getName(), Opcodes.UARSQKP.getName(), Opcodes.UACSQKP.getName(), 0.1);
+		testMatrixAggregation(Opcodes.UASQKP.toString(), Opcodes.UARSQKP.toString(), Opcodes.UACSQKP.toString(), 0.1);
 	}
 	
 	@Test
 	public void testDenseMean() {
-		testMatrixAggregation(Opcodes.UAMEAN.getName(), Opcodes.UARMEAN.getName(), Opcodes.UACMEAN.getName(), 0.95);
+		testMatrixAggregation(Opcodes.UAMEAN.toString(), Opcodes.UARMEAN.toString(), Opcodes.UACMEAN.toString(), 0.95);
 	}
 	
 	@Test
 	public void testSparseMean() {
-		testMatrixAggregation(Opcodes.UAMEAN.getName(), Opcodes.UARMEAN.getName(), Opcodes.UACMEAN.getName(), 0.1);
+		testMatrixAggregation(Opcodes.UAMEAN.toString(), Opcodes.UARMEAN.toString(), Opcodes.UACMEAN.toString(), 0.1);
 	}
 	
 	@Test
 	public void testDenseVar() {
-		testMatrixAggregation(Opcodes.UAVAR.getName(), Opcodes.UARVAR.getName(), Opcodes.UACVAR.getName(), 0.95);
+		testMatrixAggregation(Opcodes.UAVAR.toString(), Opcodes.UARVAR.toString(), Opcodes.UACVAR.toString(), 0.95);
 	}
 	
 	@Test
 	public void testSparseVar() {
-		testMatrixAggregation(Opcodes.UAVAR.getName(), Opcodes.UARVAR.getName(), Opcodes.UACVAR.getName(), 0.1);
+		testMatrixAggregation(Opcodes.UAVAR.toString(), Opcodes.UARVAR.toString(), Opcodes.UACVAR.toString(), 0.1);
 	}
 	
 	@Test
 	public void testDenseMin() {
-		testMatrixAggregation(Opcodes.UAMIN.getName(), Opcodes.UARMIN.getName(), Opcodes.UACMIN.getName(), 0.95);
+		testMatrixAggregation(Opcodes.UAMIN.toString(), Opcodes.UARMIN.toString(), Opcodes.UACMIN.toString(), 0.95);
 	}
 	
 	@Test
 	public void testSparseMin() {
-		testMatrixAggregation(Opcodes.UAMIN.getName(), Opcodes.UARMIN.getName(), Opcodes.UACMIN.getName(), 0.1);
+		testMatrixAggregation(Opcodes.UAMIN.toString(), Opcodes.UARMIN.toString(), Opcodes.UACMIN.toString(), 0.1);
 	}
 	
 	@Test
 	public void testDenseMax() {
-		testMatrixAggregation(Opcodes.UAMAX.getName(), Opcodes.UARMAX.getName(), Opcodes.UACMAX.getName(), 0.95);
+		testMatrixAggregation(Opcodes.UAMAX.toString(), Opcodes.UARMAX.toString(), Opcodes.UACMAX.toString(), 0.95);
 	}
 	
 	@Test
 	public void testSparseMax() {
-		testMatrixAggregation(Opcodes.UAMAX.getName(), Opcodes.UARMAX.getName(), Opcodes.UACMAX.getName(), 0.1);
+		testMatrixAggregation(Opcodes.UAMAX.toString(), Opcodes.UARMAX.toString(), Opcodes.UACMAX.toString(), 0.1);
 	}
 
 	private void testMatrixAggregation(String opcode1, String opcode2, String opcode3, double sp) {

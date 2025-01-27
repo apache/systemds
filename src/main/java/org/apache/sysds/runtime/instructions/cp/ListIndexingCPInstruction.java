@@ -50,7 +50,7 @@ public final class ListIndexingCPInstruction extends IndexingCPInstruction {
 		ScalarObject ru = ec.getScalarInput(rowUpper);
 		
 		//right indexing
-		if( opcode.equalsIgnoreCase(Opcodes.RIGHT_INDEX.getName()) ) {
+		if( opcode.equalsIgnoreCase(Opcodes.RIGHT_INDEX.toString()) ) {
 			ListObject list = (ListObject) ec.getVariable(input1.getName());
 			
 			//execute right indexing operation and set output
@@ -64,7 +64,7 @@ public final class ListIndexingCPInstruction extends IndexingCPInstruction {
 			}
 		}
 		//left indexing
-		else if ( opcode.equalsIgnoreCase(Opcodes.LEFT_INDEX.getName())) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.LEFT_INDEX.toString())) {
 			ListObject lin = (ListObject) ec.getVariable(input1.getName());
 			
 			//execute right indexing operation and set output

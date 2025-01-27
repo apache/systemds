@@ -29,7 +29,7 @@ import org.apache.sysds.common.Types.ValueType;
 
 public class PickByCount extends Lop 
 {
-	public static final String OPCODE = Opcodes.QPICK.getName();
+	public static final String OPCODE = Opcodes.QPICK.toString();
 	
 	public enum OperationTypes {
 		VALUEPICK, 

@@ -98,7 +98,7 @@ public class CacheEvictionTest extends LineageBase {
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R_lru = readDMLMatrixFromOutputDir("R");
 			long hitCount_lru = LineageCacheStatistics.getInstHits();
-			long colmeanCount_lru = Statistics.getCPHeavyHitterCount(Opcodes.UACMEAN.getName());
+			long colmeanCount_lru = Statistics.getCPHeavyHitterCount(Opcodes.UACMEAN.toString());
 			
 			// costnsize scheme (computationTime/Size)
 			proArgs.clear();
@@ -113,7 +113,7 @@ public class CacheEvictionTest extends LineageBase {
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R_costnsize= readDMLMatrixFromOutputDir("R");
 			long hitCount_cs = LineageCacheStatistics.getInstHits();
-			long colmeanCount_cs = Statistics.getCPHeavyHitterCount(Opcodes.UACMEAN.getName());
+			long colmeanCount_cs = Statistics.getCPHeavyHitterCount(Opcodes.UACMEAN.toString());
 			
 			// Compare results
 			Lineage.setLinReuseNone();

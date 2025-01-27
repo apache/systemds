@@ -86,7 +86,7 @@ public class CoVariance extends Lop
 		StringBuilder sb = InstructionUtils.getStringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( Opcodes.COV.getName() );
+		sb.append( Opcodes.COV.toString() );
 		sb.append( OPERAND_DELIMITOR );
 
 		sb.append( getInputs().get(0).prepInputOperand(input1));

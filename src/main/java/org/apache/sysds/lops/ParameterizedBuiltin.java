@@ -100,7 +100,7 @@ public class ParameterizedBuiltin extends Lop
 		{
 			case CDF:
 			case INVCDF:
-				sb.append( (_operation == ParamBuiltinOp.CDF ? Opcodes.CDF.getName() : Opcodes.INVCDF.getName()) );
+				sb.append( (_operation == ParamBuiltinOp.CDF ? Opcodes.CDF : Opcodes.INVCDF) );
 				sb.append( OPERAND_DELIMITOR );
 				
 				for ( String s : _inputParams.keySet() ) 
@@ -116,7 +116,7 @@ public class ParameterizedBuiltin extends Lop
 				break;
 				
 			case RMEMPTY:
-				sb.append(Opcodes.RMEMPTY.getName());
+				sb.append(Opcodes.RMEMPTY);
 				sb.append(OPERAND_DELIMITOR);
 				
 				for ( String s : _inputParams.keySet() ) {
@@ -138,21 +138,21 @@ public class ParameterizedBuiltin extends Lop
 				break;
 			
 			case LOWER_TRI: {
-				sb.append( Opcodes.LOWERTRI.getName() );
+				sb.append( Opcodes.LOWERTRI );
 				sb.append( OPERAND_DELIMITOR );
 				compileGenericParamMap(sb, _inputParams);
 				break;
 			}
 			
 			case UPPER_TRI: {
-				sb.append( Opcodes.UPPERTRI.getName() );
+				sb.append( Opcodes.UPPERTRI );
 				sb.append( OPERAND_DELIMITOR );
 				compileGenericParamMap(sb, _inputParams);
 				break;
 			}
 			
 			case REXPAND:
-				sb.append(Opcodes.REXPAND.getName());
+				sb.append(Opcodes.REXPAND);
 				sb.append(OPERAND_DELIMITOR);
 				
 				for ( String s : _inputParams.keySet() ) {
@@ -187,19 +187,19 @@ public class ParameterizedBuiltin extends Lop
 				break;
 			}
 			case AUTODIFF: {
-				sb.append(Opcodes.AUTODIFF.getName()); //opcode
+				sb.append(Opcodes.AUTODIFF.toString()); //opcode
 				sb.append(OPERAND_DELIMITOR);
 				compileGenericParamMap(sb, _inputParams);
 				break;
 			}
 			case LIST: {
-				sb.append(Opcodes.NVLIST.getName()); //opcode
+				sb.append(Opcodes.NVLIST.toString()); //opcode
 				sb.append(OPERAND_DELIMITOR);
 				compileGenericParamMap(sb, _inputParams);
 				break;
 			}
 			case TOSTRING: {
-				sb.append(Opcodes.TOSTRING.getName()); //opcode
+				sb.append(Opcodes.TOSTRING.toString()); //opcode
 				sb.append(OPERAND_DELIMITOR);
 				compileGenericParamMap(sb, _inputParams);
 				break;

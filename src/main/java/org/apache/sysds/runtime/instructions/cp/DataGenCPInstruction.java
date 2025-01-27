@@ -214,26 +214,26 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		String[] s = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = s[0];
 
-		if(opcode.equalsIgnoreCase(Opcodes.RANDOM.getName())) {
+		if(opcode.equalsIgnoreCase(Opcodes.RANDOM.toString())) {
 			method = OpOpDG.RAND;
 			InstructionUtils.checkNumFields(s, 10, 11);
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.SEQUENCE.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.SEQUENCE.toString())) {
 			method = OpOpDG.SEQ;
 			// 8 operands: rows, cols, blen, from, to, incr, outvar
 			InstructionUtils.checkNumFields(s, 7);
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.SAMPLE.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.SAMPLE.toString())) {
 			method = OpOpDG.SAMPLE;
 			// 7 operands: range, size, replace, seed, blen, outvar
 			InstructionUtils.checkNumFields(s, 6);
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.TIME.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.TIME.toString())) {
 			method = OpOpDG.TIME;
 			// 1 operand: outvar
 			InstructionUtils.checkNumFields(s, 1);
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.FRAME.getName())) {
+		else if(opcode.equalsIgnoreCase(Opcodes.FRAME.toString())) {
 			method = OpOpDG.FRAMEINIT;
 			InstructionUtils.checkNumFields(s, 5);
 		}

@@ -93,9 +93,9 @@ public class RewriteSimplifyEmptyColMeansTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			if(rewrites)
-				Assert.assertFalse(heavyHittersContainsString(Opcodes.UACMEAN.getName()) && heavyHittersContainsString("-"));
+				Assert.assertFalse(heavyHittersContainsString(Opcodes.UACMEAN.toString()) && heavyHittersContainsString(Opcodes.MINUS.toString()));
 			else
-				Assert.assertTrue(heavyHittersContainsString(Opcodes.UACMEAN.getName()) && heavyHittersContainsString("-"));
+				Assert.assertTrue(heavyHittersContainsString(Opcodes.UACMEAN.toString()) && heavyHittersContainsString(Opcodes.MINUS.toString()));
 
 		}
 		finally {

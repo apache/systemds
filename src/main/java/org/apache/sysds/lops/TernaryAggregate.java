@@ -31,8 +31,8 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 public class TernaryAggregate extends Lop 
 {
-	public static final String OPCODE_RC = Opcodes.TAKPM.getName();
-	public static final String OPCODE_C = Opcodes.TACKPM.getName();
+	public static final String OPCODE_RC = Opcodes.TAKPM.toString();
+	public static final String OPCODE_C = Opcodes.TACKPM.toString();
 	
 	//NOTE: currently only used for ta+*
 	//private AggOp _aggOp = null;

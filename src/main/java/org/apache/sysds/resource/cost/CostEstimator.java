@@ -444,7 +444,7 @@ public class CostEstimator
 					VarStats colLower = getStatsWithDefaultScalar(idxInst.getColLower().getName());
 					VarStats colUpper = getStatsWithDefaultScalar(idxInst.getColUpper().getName());
 					CPCostUtils.assignOutputMemoryStats(inst, output, input, weights, rowLower, rowUpper, colLower, colUpper);
-				} else if (inst instanceof ReorgCPInstruction && inst.getOpcode().equals(Opcodes.SORT.getName())) {
+				} else if (inst instanceof ReorgCPInstruction && inst.getOpcode().equals(Opcodes.SORT.toString())) {
 					ReorgCPInstruction reorgInst = (ReorgCPInstruction) inst;
 					VarStats ixRet = getStatsWithDefaultScalar(reorgInst.getIxRet().getName());
 					CPCostUtils.assignOutputMemoryStats(inst, output, input, ixRet);
@@ -683,7 +683,7 @@ public class CostEstimator
 					input2 = getStats(ixdinst.input2.getName());
 				}
 
-				if (ixdinst.getOpcode().equals(Opcodes.LEFT_INDEX.getName())) {
+				if (ixdinst.getOpcode().equals(Opcodes.LEFT_INDEX.toString())) {
 					loadTime += loadRDDStatsAndEstimateTime(input2);
 				} else { // mapLeftIndex
 					loadTime += loadBroadcastVarStatsAndEstimateTime(input2);
@@ -712,7 +712,7 @@ public class CostEstimator
 				SparkCostUtils.assignOutputRDDStats(inst, output, input);
 				output.rddStats.cost = loadTime + SparkCostUtils.getUnaryInstTime(uinst.getOpcode(), input, output, executorMetrics);
 			} else if (uinst instanceof ReorgSPInstruction || inst instanceof MatrixReshapeSPInstruction) {
-				if (uinst instanceof ReorgSPInstruction && uinst.getOpcode().equals(Opcodes.SORT.getName())) {
+				if (uinst instanceof ReorgSPInstruction && uinst.getOpcode().equals(Opcodes.SORT.toString())) {
 					ReorgSPInstruction reorgInst = (ReorgSPInstruction) inst;
 					VarStats ixRet = getStatsWithDefaultScalar(reorgInst.getIxRet().getName());
 					SparkCostUtils.assignOutputRDDStats(inst, output, input, ixRet);

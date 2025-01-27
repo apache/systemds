@@ -133,13 +133,13 @@ public class RewritePushdownUaggTest extends AutomatedTestBase
 			//check matrix mult existence
 			String check = null;
 			if( testname.equals(TEST_NAME1) ) //colsums
-				check = rewrites ? Opcodes.UARKP.getName() : Opcodes.UACKP.getName();
+				check = rewrites ? Opcodes.UARKP.toString() : Opcodes.UACKP.toString();
 			else if( testname.equals(TEST_NAME2) ) //rowsums
-				check = rewrites ? Opcodes.UACKP.getName() : Opcodes.UARKP.getName();
+				check = rewrites ? Opcodes.UACKP.toString() : Opcodes.UARKP.toString();
 			else if( testname.equals(TEST_NAME3) ) //colmins
-				check = rewrites ? Opcodes.UARMIN.getName() : Opcodes.UACMIN.getName();
+				check = rewrites ? Opcodes.UARMIN.toString() : Opcodes.UACMIN.toString();
 			else if( testname.equals(TEST_NAME4) ) //rowmins
-				check = rewrites ? Opcodes.UACMIN.getName() : Opcodes.UARMIN.getName();
+				check = rewrites ? Opcodes.UACMIN.toString() : Opcodes.UARMIN.toString();
 
 			String gpuCheck = "gpu_" + check;
 			boolean containsOpcode = Statistics.getCPHeavyHitterOpCodes().contains(check) || Statistics.getCPHeavyHitterOpCodes().contains(gpuCheck);

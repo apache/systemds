@@ -30,7 +30,7 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 public class WeightedSquaredLoss extends Lop 
 {
 	public static final String OPCODE = "mapwsloss";
-	public static final String OPCODE_CP = Opcodes.WSLOSS.getName();
+	public static final String OPCODE_CP = Opcodes.WSLOSS.toString();
 	private int _numThreads = 1;
 
 	public enum WeightsType {

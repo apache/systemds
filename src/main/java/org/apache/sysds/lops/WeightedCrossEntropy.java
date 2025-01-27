@@ -30,7 +30,7 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 public class WeightedCrossEntropy extends Lop 
 {
 	public static final String OPCODE = "mapwcemm";
-	public static final String OPCODE_CP = Opcodes.WCEMM.getName();
+	public static final String OPCODE_CP = Opcodes.WCEMM.toString();
 	private int _numThreads = 1;
 
 	public enum WCeMMType {

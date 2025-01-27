@@ -40,7 +40,7 @@ public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction {
 		String opcode = parts[0]; 
 		
 		//check supported opcode
-		if( !opcode.equalsIgnoreCase(Opcodes.CM.getName()) ) {
+		if( !opcode.equalsIgnoreCase(Opcodes.CM.toString()) ) {
 			throw new DMLRuntimeException("Unsupported opcode "+opcode);
 		}
 		

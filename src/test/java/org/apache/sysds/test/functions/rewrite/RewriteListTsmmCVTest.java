@@ -132,7 +132,7 @@ public class RewriteListTsmmCVTest extends AutomatedTestBase
 				//boolean expectedReuse = lineage && instType == ExecType.CP;
 				boolean expectedReuse = lineage;
 				String[] codes = (instType==ExecType.CP) ?
-					new String[]{Opcodes.RBIND.getName(),Opcodes.TSMM.getName(), Opcodes.MMULT.getName(), Opcodes.NP.getName()} :
+					new String[]{Opcodes.RBIND.toString(),Opcodes.TSMM.toString(), Opcodes.MMULT.toString(), Opcodes.NP.toString()} :
 					new String[]{"sp_append","sp_tsmm","sp_mapmm","sp_n+"};
 				Assert.assertTrue(!heavyHittersContainsString(codes[0]));
 				Assert.assertEquals( (expectedReuse ? 7 : 7*6), //per fold

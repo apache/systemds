@@ -113,10 +113,10 @@ public class OperatorOrderingUtils
 			|| lop instanceof CoVariance || lop instanceof MMTSJ || lop.isAllOutputsCP());
 		boolean isPrefetched = lop.getOutputs().size() == 1
 			&& lop.getOutputs().get(0) instanceof UnaryCP
-			&& ((UnaryCP) lop.getOutputs().get(0)).getOpCode().equalsIgnoreCase(Opcodes.PREFETCH.getName());
+			&& ((UnaryCP) lop.getOutputs().get(0)).getOpCode().equalsIgnoreCase(Opcodes.PREFETCH.toString());
 		boolean col2Bc = isCollectForBroadcast(lop);
 		boolean prefetch = (lop instanceof UnaryCP) &&
-			((UnaryCP) lop).getOpCode().equalsIgnoreCase(Opcodes.PREFETCH.getName());
+			((UnaryCP) lop).getOpCode().equalsIgnoreCase(Opcodes.PREFETCH.toString());
 		return (rightSpLop || col2Bc || prefetch) && !isPrefetched;
 	}
 
@@ -124,9 +124,9 @@ public class OperatorOrderingUtils
 		boolean rightGpuLop = lop.isExecGPU() && lop.isAllOutputsCP();
 		boolean isPrefetched = lop.isExecGPU() && lop.getOutputs().size() == 1
 			&& lop.getOutputs().get(0) instanceof UnaryCP
-			&& ((UnaryCP) lop.getOutputs().get(0)).getOpCode().equalsIgnoreCase(Opcodes.PREFETCH.getName());
+			&& ((UnaryCP) lop.getOutputs().get(0)).getOpCode().equalsIgnoreCase(Opcodes.PREFETCH.toString());
 		boolean prefetch = (lop instanceof UnaryCP) &&
-			((UnaryCP) lop).getOpCode().equalsIgnoreCase(Opcodes.PREFETCH.getName());
+			((UnaryCP) lop).getOpCode().equalsIgnoreCase(Opcodes.PREFETCH.toString());
 		return (rightGpuLop || prefetch) && !isPrefetched;
 	}
 

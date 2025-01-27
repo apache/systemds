@@ -234,7 +234,7 @@ public class RewriteEliminateRemoveEmptyTest extends AutomatedTestBase
 			}
 
 			if( rewrites && !select ) {
-				boolean noRmempty = heavyHittersContainsSubString(Opcodes.RMEMPTY.getName());
+				boolean noRmempty = heavyHittersContainsSubString(Opcodes.RMEMPTY.toString());
 				Assert.assertFalse(noRmempty);
 			}
 		} 

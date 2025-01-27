@@ -843,7 +843,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			Pointer x, Pointer hx, Pointer cx, Pointer wPointer,  // input
 			String outputName, String cyName,  					 // output
 			String rnnMode, boolean return_sequences, int N, int M, int D, int T) throws DMLRuntimeException {
-		boolean hasCarry = rnnMode.equalsIgnoreCase(Opcodes.LSTM.getName());
+		boolean hasCarry = rnnMode.equalsIgnoreCase(Opcodes.LSTM.toString());
 		// Get output pointers
 		Pointer cudnnYPointer = gCtx.allocate(instName, (long) N *T*M*sizeOfDataType, false);
 		Pointer hyPointer = !return_sequences ? getDenseOutputPointer(ec, gCtx, instName, outputName, N, M) : gCtx.allocate(instName,

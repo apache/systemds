@@ -98,7 +98,7 @@ public class AsyncBroadcastTest extends AutomatedTestBase {
 			//assert called and successful early broadcast counts
 			long expected_numBC = 1;
 			long expected_successBC = 1;
-			long numBC = Statistics.getCPHeavyHitterCount(Opcodes.BROADCAST.getName());
+			long numBC = Statistics.getCPHeavyHitterCount(Opcodes.BROADCAST.toString());
 			Assert.assertTrue("Violated Broadcast instruction count: "+numBC, numBC == expected_numBC);
 			long successBC = SparkStatistics.getAsyncBroadcastCount();
 			Assert.assertTrue("Violated successful Broadcast count: "+successBC, successBC == expected_successBC);

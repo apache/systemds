@@ -48,62 +48,62 @@ public class FullSortedOuterCompareTest extends AutomatedTestBase
 
 	@Test
 	public void testLessIncreasingCP() {
-		runMatrixVectorCellwiseOperationTest(Opcodes.LESS.getName(), true, ExecType.CP);
+		runMatrixVectorCellwiseOperationTest(Opcodes.LESS.toString(), true, ExecType.CP);
 	}
 	
 	@Test
 	public void testLessEqualsIncreasingCP() {
-		runMatrixVectorCellwiseOperationTest(Opcodes.LESSEQUAL.getName(), true, ExecType.CP);
+		runMatrixVectorCellwiseOperationTest(Opcodes.LESSEQUAL.toString(), true, ExecType.CP);
 	}
 	
 	@Test
 	public void testGreaterIncreasingCP() {
-		runMatrixVectorCellwiseOperationTest(Opcodes.GREATER.getName(), true, ExecType.CP);
+		runMatrixVectorCellwiseOperationTest(Opcodes.GREATER.toString(), true, ExecType.CP);
 	}
 	
 	@Test
 	public void testGreaterEqualsIncreasingCP() {
-		runMatrixVectorCellwiseOperationTest(Opcodes.GREATEREQUAL.getName(), true, ExecType.CP);
+		runMatrixVectorCellwiseOperationTest(Opcodes.GREATEREQUAL.toString(), true, ExecType.CP);
 	}
 	
 	@Test
 	public void testEqualsIncreasingCP() {
-		runMatrixVectorCellwiseOperationTest(Opcodes.EQUAL.getName(), true, ExecType.CP);
+		runMatrixVectorCellwiseOperationTest(Opcodes.EQUAL.toString(), true, ExecType.CP);
 	}
 	
 	@Test
 	public void testNotEqualsIncreasingCP() {
-		runMatrixVectorCellwiseOperationTest(Opcodes.NOTEQUAL.getName(), true, ExecType.CP);
+		runMatrixVectorCellwiseOperationTest(Opcodes.NOTEQUAL.toString(), true, ExecType.CP);
 	}
 
 	@Test
 	public void testLessIncreasingSP() {
-		runMatrixVectorCellwiseOperationTest(Opcodes.LESS.getName(), true, ExecType.SPARK);
+		runMatrixVectorCellwiseOperationTest(Opcodes.LESS.toString(), true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testLessEqualsIncreasingSP() {
-		runMatrixVectorCellwiseOperationTest(Opcodes.LESSEQUAL.getName(), true, ExecType.SPARK);
+		runMatrixVectorCellwiseOperationTest(Opcodes.LESSEQUAL.toString(), true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testGreaterIncreasingSP() {
-		runMatrixVectorCellwiseOperationTest(Opcodes.GREATER.getName(), true, ExecType.SPARK);
+		runMatrixVectorCellwiseOperationTest(Opcodes.GREATER.toString(), true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testGreaterEqualsIncreasingSP() {
-		runMatrixVectorCellwiseOperationTest(Opcodes.GREATEREQUAL.getName(), true, ExecType.SPARK);
+		runMatrixVectorCellwiseOperationTest(Opcodes.GREATEREQUAL.toString(), true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testEqualsIncreasingSP() {
-		runMatrixVectorCellwiseOperationTest(Opcodes.EQUAL.getName(), true, ExecType.SPARK);
+		runMatrixVectorCellwiseOperationTest(Opcodes.EQUAL.toString(), true, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testNotEqualsIncreasingSP() {
-		runMatrixVectorCellwiseOperationTest(Opcodes.NOTEQUAL.getName(), true, ExecType.SPARK);
+		runMatrixVectorCellwiseOperationTest(Opcodes.NOTEQUAL.toString(), true, ExecType.SPARK);
 	}
 	
 	private void runMatrixVectorCellwiseOperationTest( String otype, boolean incr, ExecType et)

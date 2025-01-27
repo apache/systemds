@@ -118,8 +118,8 @@ public class QuaternaryOperator extends Operator
 	 */
 	public QuaternaryOperator( WUMMType wt, String op ) {
 		this(null, null, null, null, wt, 
-			op.equals(Opcodes.POW2.getName()) ? Power2.getPower2FnObject() :
-			op.equals(Opcodes.MULT2.getName()) ? Multiply2.getMultiply2FnObject() :
+			op.equals(Opcodes.POW2.toString()) ? Power2.getPower2FnObject() :
+			op.equals(Opcodes.MULT2.toString()) ? Multiply2.getMultiply2FnObject() :
 			Builtin.getBuiltinFnObject(op), 0);
 	}
 

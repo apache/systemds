@@ -137,15 +137,15 @@ public class LinearizerMaxParallelism extends IDagLinearizer
 	private static boolean isDistributedOp(Lop lop) {
 		return lop.isExecSpark()
 			|| (lop instanceof UnaryCP
-			&& (((UnaryCP) lop).getOpCode().equalsIgnoreCase(Opcodes.PREFETCH.getName())
-			|| ((UnaryCP) lop).getOpCode().equalsIgnoreCase(Opcodes.BROADCAST.getName())));
+			&& (((UnaryCP) lop).getOpCode().equalsIgnoreCase(Opcodes.PREFETCH.toString())
+			|| ((UnaryCP) lop).getOpCode().equalsIgnoreCase(Opcodes.BROADCAST.toString())));
 	}
 
 	private static boolean isGPUOp(Lop lop) {
 		return lop.isExecGPU()
 			|| (lop instanceof UnaryCP
-			&& (((UnaryCP) lop).getOpCode().equalsIgnoreCase(Opcodes.PREFETCH.getName())
-			|| ((UnaryCP) lop).getOpCode().equalsIgnoreCase(Opcodes.BROADCAST.getName())));
+			&& (((UnaryCP) lop).getOpCode().equalsIgnoreCase(Opcodes.PREFETCH.toString())
+			|| ((UnaryCP) lop).getOpCode().equalsIgnoreCase(Opcodes.BROADCAST.toString())));
 	}
 
 	@SuppressWarnings("unused")

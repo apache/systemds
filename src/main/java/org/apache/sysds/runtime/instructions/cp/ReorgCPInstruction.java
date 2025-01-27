@@ -101,29 +101,29 @@ public class ReorgCPInstruction extends UnaryCPInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		
-		if ( opcode.equalsIgnoreCase(Opcodes.TRANSPOSE.getName()) ) {
+		if ( opcode.equalsIgnoreCase(Opcodes.TRANSPOSE.toString()) ) {
 			InstructionUtils.checkNumFields(str, 2, 3);
 			in.split(parts[1]);
 			out.split(parts[2]);
 			int k = Integer.parseInt(parts[3]);
 			return new ReorgCPInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject(), k), in, out, opcode, str);
 		} 
-		else if ( opcode.equalsIgnoreCase(Opcodes.REV.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.REV.toString()) ) {
 			parseUnaryInstruction(str, in, out); //max 2 operands
 			return new ReorgCPInstruction(new ReorgOperator(RevIndex.getRevIndexFnObject()), in, out, opcode, str);
 		}
-		else if (opcode.equalsIgnoreCase(Opcodes.ROLL.getName())) {
+		else if (opcode.equalsIgnoreCase(Opcodes.ROLL.toString())) {
 			InstructionUtils.checkNumFields(str, 3);
 			in.split(parts[1]);
 			out.split(parts[3]);
 			CPOperand shift = new CPOperand(parts[2]);
 			return new ReorgCPInstruction(new ReorgOperator(new RollIndex(0)), in, out, shift, opcode, str);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.DIAG.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.DIAG.toString()) ) {
 			parseUnaryInstruction(str, in, out); //max 2 operands
 			return new ReorgCPInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, opcode, str);
 		} 
-		else if ( opcode.equalsIgnoreCase(Opcodes.SORT.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.SORT.toString()) ) {
 			InstructionUtils.checkNumFields(str, 5,6);
 			in.split(parts[1]);
 			out.split(parts[5]);

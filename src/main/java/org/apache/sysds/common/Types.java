@@ -574,16 +574,16 @@ public interface Types {
 				case CAST_AS_DOUBLE:  return "castvtd";
 				case CAST_AS_INT:     return "castvti";
 				case CAST_AS_BOOLEAN: return "castvtb";
-				case CUMMAX:          return Opcodes.UCUMMAX.getName();
-				case CUMMIN:          return Opcodes.UCUMMIN.getName();
-				case CUMPROD:         return Opcodes.UCUMM.getName();
-				case CUMSUM:          return Opcodes.UCUMKP.getName();
-				case CUMSUMPROD:      return Opcodes.UCUMKPM.getName();
-				case DETECTSCHEMA:    return Opcodes.DETECTSCHEMA.getName();
-				case MULT2:           return Opcodes.MULT2.getName();
-				case NOT:             return Opcodes.NOT.getName();
-				case POW2:            return Opcodes.POW2.getName();
-				case TYPEOF:          return Opcodes.TYPEOF.getName();
+				case CUMMAX:          return Opcodes.UCUMMAX.toString();
+				case CUMMIN:          return Opcodes.UCUMMIN.toString();
+				case CUMPROD:         return Opcodes.UCUMM.toString();
+				case CUMSUM:          return Opcodes.UCUMKP.toString();
+				case CUMSUMPROD:      return Opcodes.UCUMKPM.toString();
+				case DETECTSCHEMA:    return Opcodes.DETECTSCHEMA.toString();
+				case MULT2:           return Opcodes.MULT2.toString();
+				case NOT:             return Opcodes.NOT.toString();
+				case POW2:            return Opcodes.POW2.toString();
+				case TYPEOF:          return Opcodes.TYPEOF.toString();
 				default:              return name().toLowerCase();
 			}
 		}
@@ -643,35 +643,35 @@ public interface Types {
 		@Override
 		public String toString() {
 			switch(this) {
-				case PLUS:         return Opcodes.PLUS.getName();
-				case MINUS:        return Opcodes.MINUS.getName();
-				case MINUS_NZ:     return Opcodes.MINUS_NZ.getName();
-				case MINUS1_MULT:  return Opcodes.MINUS1_MULT.getName();
-				case MULT:         return Opcodes.MULT.getName();
-				case DIV:          return Opcodes.DIV.getName();
-				case MODULUS:      return Opcodes.MODULUS.getName();
-				case INTDIV:       return Opcodes.INTDIV.getName();
-				case LESSEQUAL:    return Opcodes.LESSEQUAL.getName();
-				case LESS:         return Opcodes.LESS.getName();
-				case GREATEREQUAL: return Opcodes.GREATEREQUAL.getName();
-				case GREATER:      return Opcodes.GREATER.getName();
-				case EQUAL:        return Opcodes.EQUAL.getName();
-				case NOTEQUAL:     return Opcodes.NOTEQUAL.getName();
-				case OR:           return Opcodes.OR.getName();
-				case AND:          return Opcodes.AND.getName();
-				case POW:          return Opcodes.POW.getName();
+				case PLUS:         return Opcodes.PLUS.toString();
+				case MINUS:        return Opcodes.MINUS.toString();
+				case MINUS_NZ:     return Opcodes.MINUS_NZ.toString();
+				case MINUS1_MULT:  return Opcodes.MINUS1_MULT.toString();
+				case MULT:         return Opcodes.MULT.toString();
+				case DIV:          return Opcodes.DIV.toString();
+				case MODULUS:      return Opcodes.MODULUS.toString();
+				case INTDIV:       return Opcodes.INTDIV.toString();
+				case LESSEQUAL:    return Opcodes.LESSEQUAL.toString();
+				case LESS:         return Opcodes.LESS.toString();
+				case GREATEREQUAL: return Opcodes.GREATEREQUAL.toString();
+				case GREATER:      return Opcodes.GREATER.toString();
+				case EQUAL:        return Opcodes.EQUAL.toString();
+				case NOTEQUAL:     return Opcodes.NOTEQUAL.toString();
+				case OR:           return Opcodes.OR.toString();
+				case AND:          return Opcodes.AND.toString();
+				case POW:          return Opcodes.POW.toString();
 				case IQM:          return "IQM";
-				case MOMENT:       return Opcodes.CM.getName();
-				case BITWAND:      return Opcodes.BITWAND.getName();
-				case BITWOR:       return Opcodes.BITWOR.getName();
-				case BITWXOR:      return Opcodes.BITWXOR.getName();
-				case BITWSHIFTL:   return Opcodes.BITWSHIFTL.getName();
-				case BITWSHIFTR:   return Opcodes.BITWSHIFTR.getName();
-				case DROP_INVALID_TYPE: return Opcodes.DROPINVALIDTYPE.getName();
-				case DROP_INVALID_LENGTH: return Opcodes.DROPINVALIDLENGTH.getName();
-				case FRAME_ROW_REPLICATE: return Opcodes.FREPLICATE.getName();
-				case VALUE_SWAP: return Opcodes.VALUESWAP.getName();
-				case APPLY_SCHEMA: return Opcodes.APPLYSCHEMA.getName();
+				case MOMENT:       return Opcodes.CM.toString();
+				case BITWAND:      return Opcodes.BITWAND.toString();
+				case BITWOR:       return Opcodes.BITWOR.toString();
+				case BITWXOR:      return Opcodes.BITWXOR.toString();
+				case BITWSHIFTL:   return Opcodes.BITWSHIFTL.toString();
+				case BITWSHIFTR:   return Opcodes.BITWSHIFTR.toString();
+				case DROP_INVALID_TYPE: return Opcodes.DROPINVALIDTYPE.toString();
+				case DROP_INVALID_LENGTH: return Opcodes.DROPINVALIDLENGTH.toString();
+				case FRAME_ROW_REPLICATE: return Opcodes.FREPLICATE.toString();
+				case VALUE_SWAP: return Opcodes.VALUESWAP.toString();
+				case APPLY_SCHEMA: return Opcodes.APPLYSCHEMA.toString();
 				default:           return name().toLowerCase();
 			}
 		}
@@ -720,10 +720,10 @@ public interface Types {
 		@Override
 		public String toString() {
 			switch(this) {
-				case MOMENT:     return Opcodes.CM.getName();
-				case PLUS_MULT:  return Opcodes.PM.getName();
-				case MINUS_MULT: return Opcodes.MINUSMULT.getName();
-				case MAP:          return Opcodes.MAP.getName();
+				case MOMENT:     return Opcodes.CM.toString();
+				case PLUS_MULT:  return Opcodes.PM.toString();
+				case MINUS_MULT: return Opcodes.MINUSMULT.toString();
+				case MAP:          return Opcodes.MAP.toString();
 				default:         return name().toLowerCase();
 			}
 		}
@@ -774,9 +774,9 @@ public interface Types {
 		@Override
 		public String toString() {
 			switch(this) {
-				case DIAG:    return Opcodes.DIAG.getName();
-				case TRANS:   return Opcodes.TRANSPOSE.getName();
-				case RESHAPE: return Opcodes.RESHAPE.getName();
+				case DIAG:    return Opcodes.DIAG.toString();
+				case TRANS:   return Opcodes.TRANSPOSE.toString();
+				case RESHAPE: return Opcodes.RESHAPE.toString();
 				default:      return name().toLowerCase();
 			}
 		}
@@ -842,7 +842,7 @@ public interface Types {
 				case TRANSIENTREAD:   return "TRead";
 				case TRANSIENTWRITE:  return "TWrite";
 				case FUNCTIONOUTPUT:  return "FunOut";
-				case SQLREAD:         return Opcodes.SQL.getName();
+				case SQLREAD:         return Opcodes.SQL.toString();
 				case FEDERATED:       return "Fed";
 				default:              return "Invalid";
 			}

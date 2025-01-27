@@ -30,7 +30,7 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 public class WeightedDivMM extends Lop 
 {
 	public static final String OPCODE = "mapwdivmm";
-	public static final String OPCODE_CP = Opcodes.WDIVMM.getName();
+	public static final String OPCODE_CP = Opcodes.WDIVMM.toString();
 	private int _numThreads = 1;
 
 	public enum WDivMMType {

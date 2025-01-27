@@ -54,7 +54,7 @@ public class Lineage {
 	}
 	
 	public void trace(Instruction inst, ExecutionContext ec) {
-		if (inst.getOpcode().equalsIgnoreCase(Opcodes.TOSTRING.getName()))
+		if (inst.getOpcode().equalsIgnoreCase(Opcodes.TOSTRING.toString()))
 			//Silently skip toString. TODO: trace toString
 			return;
 

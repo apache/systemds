@@ -217,37 +217,37 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 	protected AggregateUnaryOperator getUnaryOperator(AggType aggType, int threads) {
 		switch(aggType) {
 			case SUM:
-				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAKP.getName(), threads);
+				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAKP.toString(), threads);
 			case ROW_SUMS:
-				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARKP.getName(), threads);
+				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARKP.toString(), threads);
 			case COL_SUMS:
-				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACKP.getName(), threads);
+				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACKP.toString(), threads);
 			case SUM_SQ:
-				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UASQKP.getName(), threads);
+				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UASQKP.toString(), threads);
 			case ROW_SUMS_SQ:
-				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARSQKP.getName(), threads);
+				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARSQKP.toString(), threads);
 			case COL_SUMS_SQ:
-				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACSQKP.getName(), threads);
+				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACSQKP.toString(), threads);
 			case MAX:
-				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMAX.getName(), threads);
+				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMAX.toString(), threads);
 			case ROW_MAXS:
-				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARMAX.getName(), threads);
+				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARMAX.toString(), threads);
 			case COL_MAXS:
-				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACMAX.getName(), threads);
+				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACMAX.toString(), threads);
 			case MIN:
-				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMIN.getName(), threads);
+				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMIN.toString(), threads);
 			case ROW_MINS:
-				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARMIN.getName(), threads);
+				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARMIN.toString(), threads);
 			case COL_MINS:
-				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACMIN.getName(), threads);
+				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACMIN.toString(), threads);
 			case MEAN:
-				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMEAN.getName(), threads);
+				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMEAN.toString(), threads);
 			case ROW_MEAN:
-				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARMEAN.getName(), threads);
+				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARMEAN.toString(), threads);
 			case COL_MEAN:
-				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACMEAN.getName(), threads);
+				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACMEAN.toString(), threads);
 			case PRODUCT:
-				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAM.getName(), threads);
+				return InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAM.toString(), threads);
 			default:
 				throw new NotImplementedException("Not Supported Aggregate Unary operator in test");
 		}

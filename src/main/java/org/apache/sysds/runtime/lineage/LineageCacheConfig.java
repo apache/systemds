@@ -51,26 +51,26 @@ public class LineageCacheConfig
 	//-------------CACHING LOGIC RELATED CONFIGURATIONS--------------//
 
 	private static final String[] OPCODES = new String[] {
-		Opcodes.TSMM.getName(), Opcodes.MMULT.getName(), Opcodes.MULT.getName(), Opcodes.DIV.getName(), Opcodes.PLUS.getName(), Opcodes.OR.getName(), Opcodes.NROW.getName(), Opcodes.NCOL.getName(), Opcodes.ROUND.getName(), Opcodes.EXP.getName(), Opcodes.LOG.getName(),
-		"rightIndex", "leftIndex", Opcodes.GROUPEDAGG.getName(), Opcodes.TRANSPOSE.getName(), Opcodes.SOLVE.getName(), Opcodes.SPOOF.getName(), Opcodes.ISNA.getName(),
-		Opcodes.UAMEAN.getName(), Opcodes.MAX.getName(), Opcodes.MIN.getName(), Opcodes.IFELSE.getName(), Opcodes.MINUS.getName(), Opcodes.SQRT.getName(), Opcodes.LESS.getName(), Opcodes.GREATER.getName(), Opcodes.UAKP.getName(), Opcodes.LESSEQUAL.getName(),
-		Opcodes.POW.getName(), Opcodes.UAMAX.getName(), Opcodes.UARKP.getName(), Opcodes.UACMEAN.getName(), Opcodes.EIGEN.getName(),Opcodes.CTABLE.getName(), Opcodes.CTABLEEXPAND.getName(), Opcodes.REPLACE.getName(),
-		Opcodes.POW2.getName(), Opcodes.MULT2.getName(), Opcodes.UACKP.getName(), Opcodes.TAKPM.getName(), Opcodes.UACSQKP.getName(), Opcodes.UARKP.getName(), Opcodes.NP.getName(), Opcodes.UARIMAX.getName(), Opcodes.QSORT.getName(),
-		Opcodes.QPICK.getName(), Opcodes.TRANSFORMAPPLY.getName(), Opcodes.UARMAX.getName(), Opcodes.NP.getName(), Opcodes.MINUSMULT.getName(), "castdtm", Opcodes.LOWERTRI.getName(), Opcodes.MINUS1_MULT.getName(),
-		Opcodes.PREFETCH.getName(), "mapmm", Opcodes.CONTAINS.getName(), Opcodes.MMCHAIN.getName(), "mapmmchain", Opcodes.PM.getName(), Opcodes.EQUAL.getName(), Opcodes.RMEMPTY.getName(),
-		Opcodes.CONV2D_BIAS_ADD.getName(), Opcodes.RELU_MAXPOOLING.getName(), Opcodes.MAXPOOLING.getName(), Opcodes.BATCH_NORM2D.getName(), Opcodes.AVGPOOLING.getName(),
+		Opcodes.TSMM.toString(), Opcodes.MMULT.toString(), Opcodes.MULT.toString(), Opcodes.DIV.toString(), Opcodes.PLUS.toString(), Opcodes.OR.toString(), Opcodes.NROW.toString(), Opcodes.NCOL.toString(), Opcodes.ROUND.toString(), Opcodes.EXP.toString(), Opcodes.LOG.toString(),
+		"rightIndex", "leftIndex", Opcodes.GROUPEDAGG.toString(), Opcodes.TRANSPOSE.toString(), Opcodes.SOLVE.toString(), Opcodes.SPOOF.toString(), Opcodes.ISNA.toString(),
+		Opcodes.UAMEAN.toString(), Opcodes.MAX.toString(), Opcodes.MIN.toString(), Opcodes.IFELSE.toString(), Opcodes.MINUS.toString(), Opcodes.SQRT.toString(), Opcodes.LESS.toString(), Opcodes.GREATER.toString(), Opcodes.UAKP.toString(), Opcodes.LESSEQUAL.toString(),
+		Opcodes.POW.toString(), Opcodes.UAMAX.toString(), Opcodes.UARKP.toString(), Opcodes.UACMEAN.toString(), Opcodes.EIGEN.toString(),Opcodes.CTABLE.toString(), Opcodes.CTABLEEXPAND.toString(), Opcodes.REPLACE.toString(),
+		Opcodes.POW2.toString(), Opcodes.MULT2.toString(), Opcodes.UACKP.toString(), Opcodes.TAKPM.toString(), Opcodes.UACSQKP.toString(), Opcodes.UARKP.toString(), Opcodes.NP.toString(), Opcodes.UARIMAX.toString(), Opcodes.QSORT.toString(),
+		Opcodes.QPICK.toString(), Opcodes.TRANSFORMAPPLY.toString(), Opcodes.UARMAX.toString(), Opcodes.NP.toString(), Opcodes.MINUSMULT.toString(), "castdtm", Opcodes.LOWERTRI.toString(), Opcodes.MINUS1_MULT.toString(),
+		Opcodes.PREFETCH.toString(), "mapmm", Opcodes.CONTAINS.toString(), Opcodes.MMCHAIN.toString(), "mapmmchain", Opcodes.PM.toString(), Opcodes.EQUAL.toString(), Opcodes.RMEMPTY.toString(),
+		Opcodes.CONV2D_BIAS_ADD.toString(), Opcodes.RELU_MAXPOOLING.toString(), Opcodes.MAXPOOLING.toString(), Opcodes.BATCH_NORM2D.toString(), Opcodes.AVGPOOLING.toString(),
 		"softmax"
 		//TODO: Reuse everything.
 	};
 
 	// Relatively expensive instructions. Most include shuffles.
 	private static final String[] PERSIST_OPCODES1 = new String[] {
-		"cpmm", "rmm", Opcodes.PMM.getName(), "zipmm", Opcodes.REV.getName(), Opcodes.ROLL.getName(), Opcodes.RESHAPE.getName(), Opcodes.SORT.getName(), Opcodes.MINUS.getName(), Opcodes.MULT.getName(), Opcodes.PLUS.getName(),
-		Opcodes.DIV.getName(), Opcodes.MODULUS.getName(), Opcodes.INTDIV.getName(), Opcodes.MINUS1_MULT.getName(), Opcodes.POW.getName(), Opcodes.POW2.getName(), Opcodes.MULT2.getName(), Opcodes.EQUAL.getName(), Opcodes.NOTEQUAL.getName(), Opcodes.LESS.getName(), Opcodes.GREATER.getName(),
-		Opcodes.LESSEQUAL.getName(), Opcodes.GREATEREQUAL.getName(), Opcodes.AND.getName(), Opcodes.OR.getName(), Opcodes.XOR.getName(), Opcodes.MAX.getName(), Opcodes.MIN.getName(), Opcodes.RMEMPTY.getName(), "rappend",
-		"gappend", "galignedappend", Opcodes.RBIND.getName(), Opcodes.CBIND.getName(), Opcodes.NMIN.getName(), Opcodes.NMAX.getName(),
-		Opcodes.NP.getName(), Opcodes.CTABLE.getName(), "ucumack+", "ucumac*", "ucumacmin", "ucumacmax",
-		Opcodes.QSORT.getName(), Opcodes.QPICK.getName()
+		"cpmm", "rmm", Opcodes.PMM.toString(), "zipmm", Opcodes.REV.toString(), Opcodes.ROLL.toString(), Opcodes.RESHAPE.toString(), Opcodes.SORT.toString(), Opcodes.MINUS.toString(), Opcodes.MULT.toString(), Opcodes.PLUS.toString(),
+		Opcodes.DIV.toString(), Opcodes.MODULUS.toString(), Opcodes.INTDIV.toString(), Opcodes.MINUS1_MULT.toString(), Opcodes.POW.toString(), Opcodes.POW2.toString(), Opcodes.MULT2.toString(), Opcodes.EQUAL.toString(), Opcodes.NOTEQUAL.toString(), Opcodes.LESS.toString(), Opcodes.GREATER.toString(),
+		Opcodes.LESSEQUAL.toString(), Opcodes.GREATEREQUAL.toString(), Opcodes.AND.toString(), Opcodes.OR.toString(), Opcodes.XOR.toString(), Opcodes.MAX.toString(), Opcodes.MIN.toString(), Opcodes.RMEMPTY.toString(), "rappend",
+		"gappend", "galignedappend", Opcodes.RBIND.toString(), Opcodes.CBIND.toString(), Opcodes.NMIN.toString(), Opcodes.NMAX.toString(),
+		Opcodes.NP.toString(), Opcodes.CTABLE.toString(), "ucumack+", "ucumac*", "ucumacmin", "ucumacmax",
+		Opcodes.QSORT.toString(), Opcodes.QPICK.toString()
 	};
 
 	// Relatively inexpensive instructions.
@@ -79,7 +79,7 @@ public class LineageCacheConfig
 	};
 
 	private static final String[] GPU_OPCODE_HEAVY = new String[] {
-		Opcodes.CONV2D_BIAS_ADD.getName(), Opcodes.RELU_MAXPOOLING.getName(), Opcodes.MAXPOOLING.getName(), Opcodes.BATCH_NORM2D.getName(), Opcodes.AVGPOOLING.getName()  //DNN OPs
+		Opcodes.CONV2D_BIAS_ADD.toString(), Opcodes.RELU_MAXPOOLING.toString(), Opcodes.MAXPOOLING.toString(), Opcodes.BATCH_NORM2D.toString(), Opcodes.AVGPOOLING.toString()  //DNN OPs
 	};
 
 	private static String[] REUSE_OPCODES  = new String[] {};
@@ -273,8 +273,8 @@ public class LineageCacheConfig
 			&& !(inst instanceof BinaryScalarScalarCPInstruction)
 			&& !(inst instanceof FrameIndexingCPInstruction);
 		boolean rightCPOp = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
-			|| (inst.getOpcode().equals(Opcodes.APPEND.getName()) && isVectorAppend(inst, ec))
-			|| (inst.getOpcode().startsWith(Opcodes.SPOOF.getName()))
+			|| (inst.getOpcode().equals(Opcodes.APPEND.toString()) && isVectorAppend(inst, ec))
+			|| (inst.getOpcode().startsWith(Opcodes.SPOOF.toString()))
 			|| (inst instanceof DataGenCPInstruction) && ((DataGenCPInstruction) inst).isMatrixCall());
 		boolean rightSPOp = isReusableRDDType(inst);
 		boolean updateInplace = (inst instanceof MatrixIndexingCPInstruction)

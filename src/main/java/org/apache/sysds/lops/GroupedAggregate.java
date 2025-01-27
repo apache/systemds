@@ -159,7 +159,7 @@ public class GroupedAggregate extends Lop
 		}
 		else if( getExecType()==ExecType.SPARK ) {
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( Opcodes.BROADCAST.getName() );
+			sb.append( Opcodes.BROADCAST.toString() );
 			sb.append( Lop.NAME_VALUE_SEPARATOR );
 			sb.append( _broadcastGroups );	
 		}

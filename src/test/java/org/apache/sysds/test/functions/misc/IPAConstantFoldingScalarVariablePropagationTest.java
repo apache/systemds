@@ -130,7 +130,7 @@ public class IPAConstantFoldingScalarVariablePropagationTest extends AutomatedTe
 			
 			//check successful constant folding of entire expressions
 			if( testname.equals(TEST_NAME3) && IPA_SECOND_CHANCE ) {
-				Assert.assertTrue(Statistics.getCPHeavyHitterCount(Opcodes.FLOOR.getName())==2);
+				Assert.assertTrue(Statistics.getCPHeavyHitterCount(Opcodes.FLOOR.toString())==2);
 				Assert.assertTrue(Statistics.getCPHeavyHitterCount("castvti")==2);
 			}
 		}

@@ -59,7 +59,7 @@ public class ReshapeCPInstruction extends UnaryCPInstruction {
 		CPOperand in4 = new CPOperand(parts[4]);
 		CPOperand in5 = new CPOperand(parts[5]);
 		CPOperand out = new CPOperand(parts[6]);
-		if(!opcode.equalsIgnoreCase(Opcodes.RESHAPE.getName()))
+		if(!opcode.equalsIgnoreCase(Opcodes.RESHAPE.toString()))
 			throw new DMLRuntimeException("Unknown opcode while parsing an ReshapeInstruction: " + str);
 		else
 			return new ReshapeCPInstruction(new Operator(true), in1, in2, in3, in4, in5, out, opcode, str);

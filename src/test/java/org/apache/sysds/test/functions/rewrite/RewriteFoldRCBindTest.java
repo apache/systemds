@@ -94,8 +94,8 @@ public class RewriteFoldRCBindTest extends AutomatedTestBase
 			//check for applied rewrites
 			if( rewrites ) {
 				Assert.assertTrue(!heavyHittersContainsString("append")
-					&& Statistics.getCPHeavyHitterCount(Opcodes.CBIND.getName()) <= 1
-					&& Statistics.getCPHeavyHitterCount(Opcodes.RBIND.getName()) <= 1);
+					&& Statistics.getCPHeavyHitterCount(Opcodes.CBIND.toString()) <= 1
+					&& Statistics.getCPHeavyHitterCount(Opcodes.RBIND.toString()) <= 1);
 			}
 		}
 		finally {

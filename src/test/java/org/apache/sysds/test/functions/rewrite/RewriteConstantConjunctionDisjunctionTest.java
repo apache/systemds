@@ -72,7 +72,7 @@ public class RewriteConstantConjunctionDisjunctionTest extends AutomatedTestBase
 			Assert.assertEquals(
 				"Expected boolean simplification result does not match",
 				expected, ret, 0.0001);
-			Assert.assertFalse(heavyHittersContainsString(Opcodes.NOT.getName()));
+			Assert.assertFalse(heavyHittersContainsString(Opcodes.NOT.toString()));
 		}
 		finally {
 			resetExecMode(platformOld);

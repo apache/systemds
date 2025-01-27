@@ -256,7 +256,7 @@ public class Data extends Lop
 			sb.append( "CP" );
 		sb.append( OPERAND_DELIMITOR );
 		if (_op.isRead()) {
-			sb.append( Opcodes.READ.getName() );
+			sb.append( Opcodes.READ.toString() );
 			sb.append( OPERAND_DELIMITOR );
 			sb.append ( this.prepInputOperand(input1) );
 		}
@@ -409,7 +409,7 @@ public class Data extends Lop
 			StringBuilder sb = InstructionUtils.getStringBuilder();
 			sb.append( "CP" );
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( Opcodes.CREATEVAR.getName() );
+			sb.append( Opcodes.CREATEVAR.toString() );
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( outputLabel );
 			sb.append( OPERAND_DELIMITOR );

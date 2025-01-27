@@ -81,7 +81,7 @@ public class RewriteForLoopRemovalTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 			
 			//check for applied rewrite (which enabled CSE of sum)
-			long cnt = Statistics.getCPHeavyHitterCount(Opcodes.UAKP.getName());
+			long cnt = Statistics.getCPHeavyHitterCount(Opcodes.UAKP.toString());
 			long expected = rewrites ? 1 : 2;
 			Assert.assertEquals(expected, cnt);
 		}

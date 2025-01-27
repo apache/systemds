@@ -39,10 +39,10 @@ public class ReorgMapFunction implements PairFunction<Tuple2<MatrixIndexes, Matr
 	private IndexFunction _indexFnObject = null;
 	
 	public ReorgMapFunction(String opcode) {
-		if(opcode.equalsIgnoreCase(Opcodes.TRANSPOSE.getName())) {
+		if(opcode.equalsIgnoreCase(Opcodes.TRANSPOSE.toString())) {
 			_indexFnObject = SwapIndex.getSwapIndexFnObject();
 		}
-		else if(opcode.equalsIgnoreCase(Opcodes.DIAG.getName())) { //diagM2V
+		else if(opcode.equalsIgnoreCase(Opcodes.DIAG.toString())) { //diagM2V
 			_indexFnObject = DiagIndex.getDiagIndexFnObject(false);
 		}
 		else {

@@ -31,7 +31,7 @@ public class WeightedSigmoid extends Lop
 {
 
 	public static final String OPCODE = "mapwsigmoid";
-	public static final String OPCODE_CP = Opcodes.WSIGMOID.getName();
+	public static final String OPCODE_CP = Opcodes.WSIGMOID.toString();
 	private int _numThreads = 1;
 
 	public enum WSigmoidType {

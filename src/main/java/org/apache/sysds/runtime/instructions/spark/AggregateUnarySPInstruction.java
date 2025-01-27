@@ -102,7 +102,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in;
 
 		//filter input blocks for trace
-		if( getOpcode().equalsIgnoreCase(Opcodes.UAKTRACE.getName()) )
+		if( getOpcode().equalsIgnoreCase("uaktrace") )
 			out = out.filter(new FilterDiagMatrixBlocksFunction());
 
 		//execute unary aggregate operation

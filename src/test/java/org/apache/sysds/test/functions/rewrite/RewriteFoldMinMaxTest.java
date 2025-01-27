@@ -93,9 +93,9 @@ public class RewriteFoldMinMaxTest extends AutomatedTestBase
 			
 			//check for applied rewrites
 			if( rewrites ) {
-				Assert.assertTrue(!heavyHittersContainsString(Opcodes.MIN.getName()) && !heavyHittersContainsString(Opcodes.MAX.getName())
-					&& (!testname.equals(TEST_NAME1) || Statistics.getCPHeavyHitterCount(Opcodes.NMIN.getName()) == 1)
-					&& (!testname.equals(TEST_NAME2) || Statistics.getCPHeavyHitterCount(Opcodes.NMAX.getName()) == 1));
+				Assert.assertTrue(!heavyHittersContainsString(Opcodes.MIN.toString()) && !heavyHittersContainsString(Opcodes.MAX.toString())
+					&& (!testname.equals(TEST_NAME1) || Statistics.getCPHeavyHitterCount(Opcodes.NMIN.toString()) == 1)
+					&& (!testname.equals(TEST_NAME2) || Statistics.getCPHeavyHitterCount(Opcodes.NMAX.toString()) == 1));
 			}
 		}
 		finally {

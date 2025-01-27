@@ -117,9 +117,9 @@ public class UDFBackwardsCompatibilityTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 			
 			if( TEST_NAME.equals(TEST_NAME2) ) //check nary cbind
-				Assert.assertEquals(1, Statistics.getCPHeavyHitterCount(Opcodes.CBIND.getName()));
+				Assert.assertEquals(1, Statistics.getCPHeavyHitterCount(Opcodes.CBIND.toString()));
 			if( vectorData && vectorize ) //check eliminated reshape
-				Assert.assertFalse(heavyHittersContainsString(Opcodes.RESHAPE.getName()));
+				Assert.assertFalse(heavyHittersContainsString(Opcodes.RESHAPE.toString()));
 		}
 		finally {
 			rtplatform = platformOld;

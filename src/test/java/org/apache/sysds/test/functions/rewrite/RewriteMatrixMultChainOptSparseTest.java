@@ -89,11 +89,11 @@ public class RewriteMatrixMultChainOptSparseTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			if(rewrites) {
-				Assert.assertTrue(heavyHittersContainsSubString(Opcodes.MMCHAIN.getName()) ||
+				Assert.assertTrue(heavyHittersContainsSubString(Opcodes.MMCHAIN.toString()) ||
 					heavyHittersContainsSubString("sp_mapmmchain"));
 			}
 			else {
-				Assert.assertFalse(heavyHittersContainsSubString(Opcodes.MMCHAIN.getName()) ||
+				Assert.assertFalse(heavyHittersContainsSubString(Opcodes.MMCHAIN.toString()) ||
 						heavyHittersContainsSubString("sp_mapmmchain"));
 			}
 		}

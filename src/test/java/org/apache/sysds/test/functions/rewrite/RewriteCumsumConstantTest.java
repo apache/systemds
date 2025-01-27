@@ -114,7 +114,7 @@ public class RewriteCumsumConstantTest extends AutomatedTestBase
 			//check for applied rewrites
 			if( rewrites && cols==1 ) { //sequence only for col vectors
 				Assert.assertTrue(!heavyHittersContainsString("rand")
-					&& !heavyHittersContainsString(Opcodes.UCUMKP.getName()));
+					&& !heavyHittersContainsString(Opcodes.UCUMKP.toString()));
 			}
 		}
 		finally {

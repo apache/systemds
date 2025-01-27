@@ -31,7 +31,7 @@ import org.apache.sysds.common.Types.ValueType;
 public class SortKeys extends Lop 
 {
 	
-	public static final String OPCODE = Opcodes.QSORT.getName(); //quantile sort
+	public static final String OPCODE = Opcodes.QSORT.toString(); //quantile sort
 	
 	public enum OperationTypes { 
 		WithWeights, 

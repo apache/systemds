@@ -271,18 +271,18 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 		switch(type){
 			//for sum, literal replacement of unary aggregates applies
 			case SUM:         return "rlit";//return "uak+";
-			case ROUND:       return Opcodes.ROUND.getName();
-			case TRANSPOSE:   return Opcodes.TRANSPOSE.getName();
+			case ROUND:       return Opcodes.ROUND.toString();
+			case TRANSPOSE:   return Opcodes.TRANSPOSE.toString();
 			case MULT_LEFT:
-			case MULT_RIGHT:  return Opcodes.MULT.getName();
+			case MULT_RIGHT:  return Opcodes.MULT.toString();
 			case PLUS_LEFT:
-			case PLUS_RIGHT:  return Opcodes.PLUS.getName();
+			case PLUS_RIGHT:  return Opcodes.PLUS.toString();
 			case MINUS_LEFT:
-			case MINUS_RIGHT: return Opcodes.MINUS.getName();
+			case MINUS_RIGHT: return Opcodes.MINUS.toString();
 			case MM_LEFT:
-			case MM_RIGHT:    return Opcodes.MMULT.getName();
-			case RIX:         return Opcodes.RIGHT_INDEX.getName();
-			case LIX:         return Opcodes.LEFT_INDEX.getName();
+			case MM_RIGHT:    return Opcodes.MMULT.toString();
+			case RIX:         return Opcodes.RIGHT_INDEX.toString();
+			case LIX:         return Opcodes.LEFT_INDEX.toString();
 		}
 		return null;
 	}

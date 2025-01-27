@@ -99,6 +99,6 @@ public class RewriteMergeBlocksTest extends AutomatedTestBase
 		HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
 		TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		Assert.assertTrue(expectedMerge == 
-			heavyHittersContainsSubString(Opcodes.MMCHAIN.getName()));
+			heavyHittersContainsSubString(Opcodes.MMCHAIN.toString()));
 	}
 }

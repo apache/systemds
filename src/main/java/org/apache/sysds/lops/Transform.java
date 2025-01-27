@@ -107,26 +107,26 @@ public class Transform extends Lop
 		switch(_operation) {
 			case TRANS:
 				// Transpose a matrix
-				return Opcodes.TRANSPOSE.getName();
+				return Opcodes.TRANSPOSE.toString();
 			
 			case REV:
 				// Transpose a matrix
-				return Opcodes.REV.getName();
+				return Opcodes.REV.toString();
 
 			case ROLL:
-				return Opcodes.ROLL.getName();
+				return Opcodes.ROLL.toString();
 
 			case DIAG:
 				// Transform a vector into a diagonal matrix
-				return Opcodes.DIAG.getName();
+				return Opcodes.DIAG.toString();
 			
 			case RESHAPE:
 				// Transform a vector into a diagonal matrix
-				return Opcodes.RESHAPE.getName();
+				return Opcodes.RESHAPE.toString();
 			
 			case SORT:
 				// Transform a matrix into a sorted matrix 
-				return Opcodes.SORT.getName();
+				return Opcodes.SORT.toString();
 			
 			default:
 				throw new UnsupportedOperationException(printErrorLocation() 

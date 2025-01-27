@@ -79,7 +79,7 @@ public class RewritePullupAbsTest extends AutomatedTestBase
 			Assert.assertEquals(expect, dmlfile1.get(new CellIndex(1,1)), 1e-8);
 			//check rewrite application
 			int expect2 = rewrites ? 1 : 2;
-			Assert.assertEquals(expect2, Statistics.getCPHeavyHitterCount(Opcodes.ABS.getName()));
+			Assert.assertEquals(expect2, Statistics.getCPHeavyHitterCount(Opcodes.ABS.toString()));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;

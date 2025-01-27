@@ -879,7 +879,7 @@ public class LineageCache
 		synchronized( _cache )
 		{
 			// If prefetching a persisted rdd, reduce the score of the persisted rdd by one hit count
-			if (instLI.getOpcode().equals(Opcodes.PREFETCH.getName()) && probeRDDDistributed(instLI.getInputs()[0])) {
+			if (instLI.getOpcode().equals(Opcodes.PREFETCH.toString()) && probeRDDDistributed(instLI.getInputs()[0])) {
 				LineageCacheEntry e = _cache.get(instLI.getInputs()[0]);
 				if (e.getRDDObject().getNumReferences() < 1) //no other rdd consumer
 					e.updateScore(false);
@@ -1267,7 +1267,7 @@ public class LineageCache
 
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		double nflops = 0;
-		String instop= inst.getOpcode().contains(Opcodes.SPOOF.getName()) ? "spoof" : inst.getOpcode();
+		String instop= inst.getOpcode().contains(Opcodes.SPOOF.toString()) ? "spoof" : inst.getOpcode();
 		CPType cptype = Opcodes.getCPTypeByOpcode(instop);
 		//TODO: All other relevant instruction types.
 		switch (cptype)
@@ -1318,10 +1318,10 @@ public class LineageCache
 				MatrixObject mo1 = ec.getMatrixObject(((ComputationCPInstruction)inst).input1);
 				long r1 = mo1.getNumRows();
 				long c1 = mo1.getNumColumns();
-				if (inst.getOpcode().equalsIgnoreCase(Opcodes.MULT.getName()) || inst.getOpcode().equalsIgnoreCase(Opcodes.DIV.getName()))
+				if (inst.getOpcode().equalsIgnoreCase(Opcodes.MULT.toString()) || inst.getOpcode().equalsIgnoreCase(Opcodes.DIV.toString()))
 					// considering the dimensions of inputs and the output are same 
 					nflops = r1 * c1; 
-				else if (inst.getOpcode().equalsIgnoreCase(Opcodes.SOLVE.getName()))
+				else if (inst.getOpcode().equalsIgnoreCase(Opcodes.SOLVE.toString()))
 					nflops = r1 * c1 * c1;
 				break;
 			}
@@ -1346,7 +1346,7 @@ public class LineageCache
 				long r1 = ec.getMatrixObject(params.get(Statement.GAGG_TARGET)).getNumRows();
 				String fn = params.get(Statement.GAGG_FN);
 				double xga = 0;
-				if (opcode.equalsIgnoreCase(Opcodes.GROUPEDAGG.getName())) {
+				if (opcode.equalsIgnoreCase(Opcodes.GROUPEDAGG.toString())) {
 					if (fn.equalsIgnoreCase("sum"))
 						xga = 4;
 					else if(fn.equalsIgnoreCase("count"))
@@ -1487,7 +1487,7 @@ public class LineageCache
 
 		LineageCacheStatistics.incrementSavedComputeTime(e._computeTime);
 		if (e.isGPUObject()) LineageCacheStatistics.incrementGpuHits();
-		if (inst.getOpcode().equals(Opcodes.PREFETCH.getName()) && DMLScript.USE_ACCELERATOR)
+		if (inst.getOpcode().equals(Opcodes.PREFETCH.toString()) && DMLScript.USE_ACCELERATOR)
 			LineageCacheStatistics.incrementGpuPrefetch();
 		if (e.isRDDPersist()) {
 			if (SparkExecutionContext.isRDDCached(e.getRDDObject().getRDD().id()))
@@ -1497,7 +1497,7 @@ public class LineageCache
 		}
 		if (e.isMatrixValue() || e.isScalarValue()) {
 			if (inst instanceof ComputationSPInstruction
-				|| (inst.getOpcode().equals(Opcodes.PREFETCH.getName()) && !DMLScript.USE_ACCELERATOR))
+				|| (inst.getOpcode().equals(Opcodes.PREFETCH.toString()) && !DMLScript.USE_ACCELERATOR))
 				// Single_block Spark instructions (sync/async) and prefetch
 				LineageCacheStatistics.incrementSparkCollectHits();
 			else

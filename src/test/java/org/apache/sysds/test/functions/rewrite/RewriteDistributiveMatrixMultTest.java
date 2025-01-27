@@ -89,7 +89,7 @@ public class RewriteDistributiveMatrixMultTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			//check matrix mult existence
-			String ba = Opcodes.MMULT.getName();
+			String ba = Opcodes.MMULT.toString();
 			long numMatMul = Statistics.getCPHeavyHitterCount(ba);
 
 			if(rewrites == true) {

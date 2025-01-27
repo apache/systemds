@@ -30,7 +30,7 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 public class PMMJ extends Lop 
 {
 	
-	public static final String OPCODE = Opcodes.PMM.getName();
+	public static final String OPCODE = Opcodes.PMM.toString();
 	
 	public enum CacheType {
 		LEFT,

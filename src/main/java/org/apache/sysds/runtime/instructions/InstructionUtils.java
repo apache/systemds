@@ -315,167 +315,167 @@ public class InstructionUtils {
 	{
 		AggregateUnaryOperator aggun = null;
 		
-		if ( opcode.equalsIgnoreCase(Opcodes.UAKP.getName()) ) {
+		if ( opcode.equalsIgnoreCase(Opcodes.UAKP.toString()) ) {
 			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), numThreads);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UARKP.getName()) ) { // RowSums
+		else if ( opcode.equalsIgnoreCase(Opcodes.UARKP.toString()) ) { // RowSums
 			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
 		} 
-		else if ( opcode.equalsIgnoreCase(Opcodes.UACKP.getName()) ) { // ColSums
+		else if ( opcode.equalsIgnoreCase(Opcodes.UACKP.toString()) ) { // ColSums
 			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.LASTROW);
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), numThreads);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UASQKP.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UASQKP.toString()) ) {
 			AggregateOperator agg = new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject(), CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), numThreads);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UARSQKP.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UARSQKP.toString()) ) {
 			// RowSums
 			AggregateOperator agg = new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject(), CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UACSQKP.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UACSQKP.toString()) ) {
 			// ColSums
 			AggregateOperator agg = new AggregateOperator(0, KahanPlusSq.getKahanPlusSqFnObject(), CorrectionLocationType.LASTROW);
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), numThreads);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UAMEAN.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UAMEAN.toString()) ) {
 			// Mean
 			AggregateOperator agg = new AggregateOperator(0, Mean.getMeanFnObject(), CorrectionLocationType.LASTTWOCOLUMNS);
 			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), numThreads);
 		} 
-		else if ( opcode.equalsIgnoreCase(Opcodes.UARMEAN.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UARMEAN.toString()) ) {
 			// RowMeans
 			AggregateOperator agg = new AggregateOperator(0, Mean.getMeanFnObject(), CorrectionLocationType.LASTTWOCOLUMNS);
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
 		} 
-		else if ( opcode.equalsIgnoreCase(Opcodes.UACMEAN.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UACMEAN.toString()) ) {
 			// ColMeans
 			AggregateOperator agg = new AggregateOperator(0, Mean.getMeanFnObject(), CorrectionLocationType.LASTTWOROWS);
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), numThreads);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UAVAR.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UAVAR.toString()) ) {
 			// Variance
 			CM varFn = CM.getCMFnObject(AggregateOperationTypes.VARIANCE);
 			CorrectionLocationType cloc = CorrectionLocationType.LASTFOURCOLUMNS;
 			AggregateOperator agg = new AggregateOperator(0, varFn, cloc);
 			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), numThreads);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UARVAR.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UARVAR.toString()) ) {
 			// RowVariances
 			CM varFn = CM.getCMFnObject(AggregateOperationTypes.VARIANCE);
 			CorrectionLocationType cloc = CorrectionLocationType.LASTFOURCOLUMNS;
 			AggregateOperator agg = new AggregateOperator(0, varFn, cloc);
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UACVAR.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UACVAR.toString()) ) {
 			// ColVariances
 			CM varFn = CM.getCMFnObject(AggregateOperationTypes.VARIANCE);
 			CorrectionLocationType cloc = CorrectionLocationType.LASTFOURROWS;
 			AggregateOperator agg = new AggregateOperator(0, varFn, cloc);
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), numThreads);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UAP.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UAP.toString()) ) {
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), numThreads);
 		} 
-		else if ( opcode.equalsIgnoreCase(Opcodes.UARP.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UARP.toString()) ) {
 			// RowSums
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
 		} 
-		else if ( opcode.equalsIgnoreCase(Opcodes.UACP.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UACP.toString()) ) {
 			// ColSums
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), numThreads);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UAM.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UAM.toString()) ) {
 			AggregateOperator agg = new AggregateOperator(1, Multiply.getMultiplyFnObject());
 			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), numThreads);
 		} 
-		else if ( opcode.equalsIgnoreCase(Opcodes.UARM.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UARM.toString()) ) {
 			AggregateOperator agg = new AggregateOperator(1, Multiply.getMultiplyFnObject());
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
 		} 
-		else if ( opcode.equalsIgnoreCase(Opcodes.UACM.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UACM.toString()) ) {
 			AggregateOperator agg = new AggregateOperator(1, Multiply.getMultiplyFnObject());
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), numThreads);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UAMAX.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UAMAX.toString()) ) {
 			AggregateOperator agg = new AggregateOperator(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject("max"));
 			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), numThreads);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UAMIN.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UAMIN.toString()) ) {
 			AggregateOperator agg = new AggregateOperator(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject("min"));
 			aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), numThreads);
 		} 
-		else if ( opcode.equalsIgnoreCase(Opcodes.UATRACE.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UATRACE.toString()) ) {
 			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 			aggun = new AggregateUnaryOperator(agg, ReduceDiag.getReduceDiagFnObject(), numThreads);
 		} 
-		else if ( opcode.equalsIgnoreCase(Opcodes.UAKTRACE.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UAKTRACE.toString()) ) {
 			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceDiag.getReduceDiagFnObject(), numThreads);
 		} 		
-		else if ( opcode.equalsIgnoreCase(Opcodes.UARMAX.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UARMAX.toString()) ) {
 			AggregateOperator agg = new AggregateOperator(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject("max"));
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
 		}
-		else if (opcode.equalsIgnoreCase(Opcodes.UARIMAX.getName()) ) {
+		else if (opcode.equalsIgnoreCase(Opcodes.UARIMAX.toString()) ) {
 			AggregateOperator agg = new AggregateOperator(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject("maxindex"), CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UARMIN.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UARMIN.toString()) ) {
 			AggregateOperator agg = new AggregateOperator(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject("min"));
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
 		}
-		else if (opcode.equalsIgnoreCase(Opcodes.UARIMIN.getName()) ) {
+		else if (opcode.equalsIgnoreCase(Opcodes.UARIMIN.toString()) ) {
 			AggregateOperator agg = new AggregateOperator(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject("minindex"), CorrectionLocationType.LASTCOLUMN);
 			aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UACMAX.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UACMAX.toString()) ) {
 			AggregateOperator agg = new AggregateOperator(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject("max"));
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), numThreads);
 		} 
-		else if ( opcode.equalsIgnoreCase(Opcodes.UACMIN.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UACMIN.toString()) ) {
 			AggregateOperator agg = new AggregateOperator(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject("min"));
 			aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), numThreads);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UACD.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UACD.toString()) ) {
 			aggun = new CountDistinctOperator(AggregateUnaryCPInstruction.AUType.COUNT_DISTINCT,
 					Direction.RowCol, ReduceAll.getReduceAllFnObject());
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UACDR.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UACDR.toString()) ) {
 			aggun = new CountDistinctOperator(AggregateUnaryCPInstruction.AUType.COUNT_DISTINCT,
 					Direction.Row, ReduceCol.getReduceColFnObject());
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UACDC.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UACDC.toString()) ) {
 			aggun = new CountDistinctOperator(AggregateUnaryCPInstruction.AUType.COUNT_DISTINCT,
 					Direction.Col, ReduceRow.getReduceRowFnObject());
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UACDAP.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UACDAP.toString()) ) {
 			aggun = new CountDistinctOperator(AggregateUnaryCPInstruction.AUType.COUNT_DISTINCT_APPROX,
 					Direction.RowCol, ReduceAll.getReduceAllFnObject());
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UACDAPR.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UACDAPR.toString()) ) {
 			aggun = new CountDistinctOperator(AggregateUnaryCPInstruction.AUType.COUNT_DISTINCT_APPROX,
 					Direction.Row, ReduceCol.getReduceColFnObject());
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UACDAPC.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UACDAPC.toString()) ) {
 			aggun = new CountDistinctOperator(AggregateUnaryCPInstruction.AUType.COUNT_DISTINCT_APPROX,
 					Direction.Col, ReduceRow.getReduceRowFnObject());
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UNIQUE.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UNIQUE.toString()) ) {
 			AggregateOperator agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("unique"));
 			aggun = new UnarySketchOperator(agg, ReduceAll.getReduceAllFnObject(), Direction.RowCol, numThreads);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UNIQUER.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UNIQUER.toString()) ) {
 			AggregateOperator agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("unique"));
 			aggun = new UnarySketchOperator(agg, ReduceCol.getReduceColFnObject(), Direction.Row, numThreads);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.UNIQUEC.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.UNIQUEC.toString()) ) {
 			AggregateOperator agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("unique"));
 			aggun = new UnarySketchOperator(agg, ReduceRow.getReduceRowFnObject(), Direction.Col, numThreads);
 		}
@@ -486,11 +486,11 @@ public class InstructionUtils {
 	public static AggregateUnaryOperator parseAggregateUnaryRowIndexOperator(String opcode, int numOutputs, int numThreads) {
 		AggregateUnaryOperator aggun = null;
 		AggregateOperator agg = null;
-		if (opcode.equalsIgnoreCase(Opcodes.UARIMAX.getName()) )
+		if (opcode.equalsIgnoreCase(Opcodes.UARIMAX.toString()) )
 			agg = new AggregateOperator(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject("maxindex"),
 				numOutputs == 1 ? CorrectionLocationType.LASTCOLUMN : CorrectionLocationType.NONE);
 
-		else if (opcode.equalsIgnoreCase(Opcodes.UARIMIN.getName()) )
+		else if (opcode.equalsIgnoreCase(Opcodes.UARIMIN.toString()) )
 			agg = new AggregateOperator(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject("minindex"),
 				numOutputs == 1 ? CorrectionLocationType.LASTCOLUMN : CorrectionLocationType.NONE);
 
@@ -503,10 +503,10 @@ public class InstructionUtils {
 	}
 	
 	public static AggregateTernaryOperator parseAggregateTernaryOperator(String opcode, int numThreads) {
-		CorrectionLocationType corr = opcode.equalsIgnoreCase(Opcodes.TAKPM.getName()) ?
+		CorrectionLocationType corr = opcode.equalsIgnoreCase(Opcodes.TAKPM.toString()) ?
 			CorrectionLocationType.LASTCOLUMN : CorrectionLocationType.LASTROW;
 		AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), corr);
-		IndexFunction ixfun = opcode.equalsIgnoreCase(Opcodes.TAKPM.getName()) ?
+		IndexFunction ixfun = opcode.equalsIgnoreCase(Opcodes.TAKPM.toString()) ?
 			ReduceAll.getReduceAllFnObject() : ReduceRow.getReduceRowFnObject();
 		
 		return new AggregateTernaryOperator(Multiply.getMultiplyFnObject(), agg, ixfun, numThreads);
@@ -560,13 +560,13 @@ public class InstructionUtils {
 	public static AggregateUnaryOperator parseBasicCumulativeAggregateUnaryOperator(UnaryOperator uop) {
 		Builtin f = (Builtin)uop.fn;
 		if( f.getBuiltinCode()==BuiltinCode.CUMSUM ) 
-			return parseBasicAggregateUnaryOperator(Opcodes.UACKP.getName()) ;
+			return parseBasicAggregateUnaryOperator(Opcodes.UACKP.toString()) ;
 		else if( f.getBuiltinCode()==BuiltinCode.CUMPROD ) 
-			return parseBasicAggregateUnaryOperator(Opcodes.UACM.getName()) ;
+			return parseBasicAggregateUnaryOperator(Opcodes.UACM.toString()) ;
 		else if( f.getBuiltinCode()==BuiltinCode.CUMMIN ) 
-			return parseBasicAggregateUnaryOperator(Opcodes.UACMIN.getName()) ;
+			return parseBasicAggregateUnaryOperator(Opcodes.UACMIN.toString()) ;
 		else if( f.getBuiltinCode()==BuiltinCode.CUMMAX ) 
-			return parseBasicAggregateUnaryOperator(Opcodes.UACMAX.getName() ) ;
+			return parseBasicAggregateUnaryOperator(Opcodes.UACMAX.toString() ) ;
 		else if( f.getBuiltinCode()==BuiltinCode.CUMSUMPROD ) 
 			return parseBasicAggregateUnaryOperator("uack+*" ) ;
 		throw new RuntimeException("Unsupported cumulative aggregate unary operator: "+f.getBuiltinCode());
@@ -588,13 +588,13 @@ public class InstructionUtils {
 	}
 	
 	public static UnaryOperator parseUnaryOperator(String opcode) {
-		return opcode.equals(Opcodes.NOT.getName()) ?
+		return opcode.equals(Opcodes.NOT.toString()) ?
 			new UnaryOperator(Not.getNotFnObject()) :
 			new UnaryOperator(Builtin.getBuiltinFnObject(opcode));
 	}
 
 	public static UnaryOperator parseUnaryOperator(String opcode, int k) {
-		return opcode.equals(Opcodes.NOT.getName()) ?
+		return opcode.equals(Opcodes.NOT.toString()) ?
 			new UnaryOperator(Not.getNotFnObject(), k) :
 			new UnaryOperator(Builtin.getBuiltinFnObject(opcode), k);
 	}
@@ -628,65 +628,65 @@ public class InstructionUtils {
 
 	public static BinaryOperator parseBinaryOperator(String opcode)
 	{
-		if(opcode.equalsIgnoreCase(Opcodes.EQUAL.getName()))
+		if(opcode.equalsIgnoreCase(Opcodes.EQUAL.toString()))
 			return new BinaryOperator(Equals.getEqualsFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.NOTEQUAL.getName()))
+		else if(opcode.equalsIgnoreCase(Opcodes.NOTEQUAL.toString()))
 			return new BinaryOperator(NotEquals.getNotEqualsFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.LESS.getName()))
+		else if(opcode.equalsIgnoreCase(Opcodes.LESS.toString()))
 			return new BinaryOperator(LessThan.getLessThanFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.GREATER.getName()))
+		else if(opcode.equalsIgnoreCase(Opcodes.GREATER.toString()))
 			return new BinaryOperator(GreaterThan.getGreaterThanFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.LESSEQUAL.getName()))
+		else if(opcode.equalsIgnoreCase(Opcodes.LESSEQUAL.toString()))
 			return new BinaryOperator(LessThanEquals.getLessThanEqualsFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.GREATEREQUAL.getName()))
+		else if(opcode.equalsIgnoreCase(Opcodes.GREATEREQUAL.toString()))
 			return new BinaryOperator(GreaterThanEquals.getGreaterThanEqualsFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.AND.getName()))
+		else if(opcode.equalsIgnoreCase(Opcodes.AND.toString()))
 			return new BinaryOperator(And.getAndFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.OR.getName()))
+		else if(opcode.equalsIgnoreCase(Opcodes.OR.toString()))
 			return new BinaryOperator(Or.getOrFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.XOR.getName()))
+		else if(opcode.equalsIgnoreCase(Opcodes.XOR.toString()))
 			return new BinaryOperator(Xor.getXorFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.BITWAND.getName()))
+		else if(opcode.equalsIgnoreCase(Opcodes.BITWAND.toString()))
 			return new BinaryOperator(BitwAnd.getBitwAndFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.BITWOR.getName()))
+		else if(opcode.equalsIgnoreCase(Opcodes.BITWOR.toString()))
 			return new BinaryOperator(BitwOr.getBitwOrFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.BITWXOR.getName()))
+		else if(opcode.equalsIgnoreCase(Opcodes.BITWXOR.toString()))
 			return new BinaryOperator(BitwXor.getBitwXorFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.BITWSHIFTL.getName()))
+		else if(opcode.equalsIgnoreCase(Opcodes.BITWSHIFTL.toString()))
 			return new BinaryOperator(BitwShiftL.getBitwShiftLFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.BITWSHIFTR.getName()))
+		else if(opcode.equalsIgnoreCase(Opcodes.BITWSHIFTR.toString()))
 			return new BinaryOperator(BitwShiftR.getBitwShiftRFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.PLUS.getName()))
+		else if(opcode.equalsIgnoreCase(Opcodes.PLUS.toString()))
 			return new BinaryOperator(Plus.getPlusFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.MINUS.getName()))
+		else if(opcode.equalsIgnoreCase(Opcodes.MINUS.toString()))
 			return new BinaryOperator(Minus.getMinusFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.MULT.getName()))
+		else if(opcode.equalsIgnoreCase(Opcodes.MULT.toString()))
 			return new BinaryOperator(Multiply.getMultiplyFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.MINUS1_MULT.getName()))
+		else if(opcode.equalsIgnoreCase(Opcodes.MINUS1_MULT.toString()))
 			return new BinaryOperator(Minus1Multiply.getMinus1MultiplyFnObject());
-		else if ( opcode.equalsIgnoreCase(Opcodes.MULT2.getName()) )
+		else if ( opcode.equalsIgnoreCase(Opcodes.MULT2.toString()) )
 			return new BinaryOperator(Multiply2.getMultiply2FnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.DIV.getName()))
+		else if(opcode.equalsIgnoreCase(Opcodes.DIV.toString()))
 			return new BinaryOperator(Divide.getDivideFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.MODULUS.getName()))
+		else if(opcode.equalsIgnoreCase(Opcodes.MODULUS.toString()))
 			return new BinaryOperator(Modulus.getFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.INTDIV.getName()))
+		else if(opcode.equalsIgnoreCase(Opcodes.INTDIV.toString()))
 			return new BinaryOperator(IntegerDivide.getFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.POW.getName()))
+		else if(opcode.equalsIgnoreCase(Opcodes.POW.toString()))
 			return new BinaryOperator(Power.getPowerFnObject());
-		else if ( opcode.equalsIgnoreCase(Opcodes.POW2.getName()) )
+		else if ( opcode.equalsIgnoreCase(Opcodes.POW2.toString()) )
 			return new BinaryOperator(Power2.getPower2FnObject());
-		else if ( opcode.equalsIgnoreCase(Opcodes.MAX.getName()) )
+		else if ( opcode.equalsIgnoreCase(Opcodes.MAX.toString()) )
 			return new BinaryOperator(Builtin.getBuiltinFnObject("max"));
-		else if ( opcode.equalsIgnoreCase(Opcodes.MIN.getName()) )
+		else if ( opcode.equalsIgnoreCase(Opcodes.MIN.toString()) )
 			return new BinaryOperator(Builtin.getBuiltinFnObject("min"));
-		else if( opcode.equalsIgnoreCase(Opcodes.DROPINVALIDTYPE.getName()))
+		else if( opcode.equalsIgnoreCase(Opcodes.DROPINVALIDTYPE.toString()))
 			return new BinaryOperator(Builtin.getBuiltinFnObject("dropInvalidType"));
-		else if( opcode.equalsIgnoreCase(Opcodes.DROPINVALIDLENGTH.getName()))
+		else if( opcode.equalsIgnoreCase(Opcodes.DROPINVALIDLENGTH.toString()))
 			return new BinaryOperator(Builtin.getBuiltinFnObject("dropInvalidLength"));
-		else if( opcode.equalsIgnoreCase(Opcodes.VALUESWAP.getName()))
+		else if( opcode.equalsIgnoreCase(Opcodes.VALUESWAP.toString()))
 			return new BinaryOperator(Builtin.getBuiltinFnObject("valueSwap"));
-		else if( opcode.equalsIgnoreCase(Opcodes.FREPLICATE.getName()))
+		else if( opcode.equalsIgnoreCase(Opcodes.FREPLICATE.toString()))
 			return new BinaryOperator(Builtin.getBuiltinFnObject("freplicate"));
 
 		throw new RuntimeException("Unknown binary opcode " + opcode);
@@ -697,8 +697,8 @@ public class InstructionUtils {
 	}
 	
 	public static TernaryOperator parseTernaryOperator(String opcode, int numThreads) {
-		return new TernaryOperator(opcode.equals(Opcodes.PM.getName()) ? PlusMultiply.getFnObject() :
-			opcode.equals(Opcodes.MINUSMULT.getName()) ? MinusMultiply.getFnObject() : IfElse.getFnObject(), numThreads);
+		return new TernaryOperator(opcode.equals(Opcodes.PM.toString()) ? PlusMultiply.getFnObject() :
+			opcode.equals(Opcodes.MINUSMULT.toString()) ? MinusMultiply.getFnObject() : IfElse.getFnObject(), numThreads);
 	}
 	
 	/**
@@ -729,131 +729,131 @@ public class InstructionUtils {
 		// TODO add Multithreaded threads to Scalar operations.
 
 		//commutative operators
-		if ( opcode.equalsIgnoreCase(Opcodes.PLUS.getName()) ){
+		if ( opcode.equalsIgnoreCase(Opcodes.PLUS.toString()) ){
 			return new RightScalarOperator(Plus.getPlusFnObject(), constant); 
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.MULT.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.MULT.toString()) ) {
 			return new RightScalarOperator(Multiply.getMultiplyFnObject(), constant);
 		} 
 		//non-commutative operators
-		else if ( opcode.equalsIgnoreCase(Opcodes.MINUS.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.MINUS.toString()) ) {
 			if(arg1IsScalar)
 				return new LeftScalarOperator(Minus.getMinusFnObject(), constant);
 			else return new RightScalarOperator(Minus.getMinusFnObject(), constant);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.MINUS_NZ.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.MINUS_NZ.toString()) ) {
 			//no support for left scalar yet
 			return new RightScalarOperator(MinusNz.getMinusNzFnObject(), constant);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.DIV.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.DIV.toString()) ) {
 			if(arg1IsScalar)
 				return new LeftScalarOperator(Divide.getDivideFnObject(), constant);
 			else return new RightScalarOperator(Divide.getDivideFnObject(), constant);
 		}  
-		else if ( opcode.equalsIgnoreCase(Opcodes.MODULUS.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.MODULUS.toString()) ) {
 			if(arg1IsScalar)
 				return new LeftScalarOperator(Modulus.getFnObject(), constant);
 			else return new RightScalarOperator(Modulus.getFnObject(), constant);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.INTDIV.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.INTDIV.toString()) ) {
 			if(arg1IsScalar)
 				return new LeftScalarOperator(IntegerDivide.getFnObject(), constant);
 			else return new RightScalarOperator(IntegerDivide.getFnObject(), constant);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.POW.getName()) ){
+		else if ( opcode.equalsIgnoreCase(Opcodes.POW.toString()) ){
 			if(arg1IsScalar)
 				return new LeftScalarOperator(Power.getPowerFnObject(), constant);
 			else return new RightScalarOperator(Power.getPowerFnObject(), constant);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.MAX.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.MAX.toString()) ) {
 			return new RightScalarOperator(Builtin.getBuiltinFnObject("max"), constant);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.MIN.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.MIN.toString()) ) {
 			return new RightScalarOperator(Builtin.getBuiltinFnObject("min"), constant);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.LOG.getName()) || opcode.equalsIgnoreCase(Opcodes.LOGNZ.getName()) ){
+		else if ( opcode.equalsIgnoreCase(Opcodes.LOG.toString()) || opcode.equalsIgnoreCase(Opcodes.LOGNZ.toString()) ){
 			if( arg1IsScalar )
 				return new LeftScalarOperator(Builtin.getBuiltinFnObject(opcode), constant);
 			return new RightScalarOperator(Builtin.getBuiltinFnObject(opcode), constant);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.GREATER.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.GREATER.toString()) ) {
 			if(arg1IsScalar)
 				return new LeftScalarOperator(GreaterThan.getGreaterThanFnObject(), constant);
 			return new RightScalarOperator(GreaterThan.getGreaterThanFnObject(), constant);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.GREATEREQUAL.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.GREATEREQUAL.toString()) ) {
 			if(arg1IsScalar)
 				return new LeftScalarOperator(GreaterThanEquals.getGreaterThanEqualsFnObject(), constant);
 			return new RightScalarOperator(GreaterThanEquals.getGreaterThanEqualsFnObject(), constant);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.LESS.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.LESS.toString()) ) {
 			if(arg1IsScalar)
 				return new LeftScalarOperator(LessThan.getLessThanFnObject(), constant);
 			return new RightScalarOperator(LessThan.getLessThanFnObject(), constant);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.LESSEQUAL.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.LESSEQUAL.toString()) ) {
 			if(arg1IsScalar)
 				return new LeftScalarOperator(LessThanEquals.getLessThanEqualsFnObject(), constant);
 			return new RightScalarOperator(LessThanEquals.getLessThanEqualsFnObject(), constant);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.EQUAL.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.EQUAL.toString()) ) {
 			if(arg1IsScalar)
 				return new LeftScalarOperator(Equals.getEqualsFnObject(), constant);
 			return new RightScalarOperator(Equals.getEqualsFnObject(), constant);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.NOTEQUAL.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.NOTEQUAL.toString()) ) {
 			if(arg1IsScalar)
 				return new LeftScalarOperator(NotEquals.getNotEqualsFnObject(), constant);
 			return new RightScalarOperator(NotEquals.getNotEqualsFnObject(), constant);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.AND.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.AND.toString()) ) {
 			return arg1IsScalar ?
 				new LeftScalarOperator(And.getAndFnObject(), constant) :
 				new RightScalarOperator(And.getAndFnObject(), constant);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.OR.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.OR.toString()) ) {
 			return arg1IsScalar ?
 				new LeftScalarOperator(Or.getOrFnObject(), constant) :
 				new RightScalarOperator(Or.getOrFnObject(), constant);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.XOR.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.XOR.toString()) ) {
 			return arg1IsScalar ?
 				new LeftScalarOperator(Xor.getXorFnObject(), constant) :
 				new RightScalarOperator(Xor.getXorFnObject(), constant);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.BITWAND.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.BITWAND.toString()) ) {
 			return arg1IsScalar ?
 				new LeftScalarOperator(BitwAnd.getBitwAndFnObject(), constant) :
 				new RightScalarOperator(BitwAnd.getBitwAndFnObject(), constant);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.BITWOR.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.BITWOR.toString()) ) {
 			return arg1IsScalar ?
 				new LeftScalarOperator(BitwOr.getBitwOrFnObject(), constant) :
 				new RightScalarOperator(BitwOr.getBitwOrFnObject(), constant);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.BITWXOR.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.BITWXOR.toString()) ) {
 			return arg1IsScalar ?
 				new LeftScalarOperator(BitwXor.getBitwXorFnObject(), constant) :
 				new RightScalarOperator(BitwXor.getBitwXorFnObject(), constant);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.BITWSHIFTL.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.BITWSHIFTL.toString()) ) {
 			return arg1IsScalar ?
 				new LeftScalarOperator(BitwShiftL.getBitwShiftLFnObject(), constant) :
 				new RightScalarOperator(BitwShiftL.getBitwShiftLFnObject(), constant);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.BITWSHIFTR.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.BITWSHIFTR.toString()) ) {
 			return arg1IsScalar ?
 				new LeftScalarOperator(BitwShiftR.getBitwShiftRFnObject(), constant) :
 				new RightScalarOperator(BitwShiftR.getBitwShiftRFnObject(), constant);
 		}
 		//operations that only exist for performance purposes (all unary or commutative operators)
-		else if ( opcode.equalsIgnoreCase(Opcodes.MULT2.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.MULT2.toString()) ) {
 			return new RightScalarOperator(Multiply2.getMultiply2FnObject(), constant);
 		} 
-		else if ( opcode.equalsIgnoreCase(Opcodes.POW2.getName()) ){
+		else if ( opcode.equalsIgnoreCase(Opcodes.POW2.toString()) ){
 			return new RightScalarOperator(Power2.getPower2FnObject(), constant);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.MINUS1_MULT.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.MINUS1_MULT.toString()) ) {
 			return new RightScalarOperator(Minus1Multiply.getMinus1MultiplyFnObject(), constant);
 		}
 		
@@ -869,61 +869,61 @@ public class InstructionUtils {
 	}
 
 	public static BinaryOperator parseExtendedBinaryOperator(String opcode) {
-		if(opcode.equalsIgnoreCase(Opcodes.EQUAL.getName()) || opcode.equalsIgnoreCase("map=="))
+		if(opcode.equalsIgnoreCase(Opcodes.EQUAL.toString()) || opcode.equalsIgnoreCase("map=="))
 			return new BinaryOperator(Equals.getEqualsFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.NOTEQUAL.getName()) || opcode.equalsIgnoreCase("map!="))
+		else if(opcode.equalsIgnoreCase(Opcodes.NOTEQUAL.toString()) || opcode.equalsIgnoreCase("map!="))
 			return new BinaryOperator(NotEquals.getNotEqualsFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.LESS.getName()) || opcode.equalsIgnoreCase("map<"))
+		else if(opcode.equalsIgnoreCase(Opcodes.LESS.toString()) || opcode.equalsIgnoreCase("map<"))
 			return new BinaryOperator(LessThan.getLessThanFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.GREATER.getName()) || opcode.equalsIgnoreCase("map>"))
+		else if(opcode.equalsIgnoreCase(Opcodes.GREATER.toString()) || opcode.equalsIgnoreCase("map>"))
 			return new BinaryOperator(GreaterThan.getGreaterThanFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.LESSEQUAL.getName()) || opcode.equalsIgnoreCase("map<="))
+		else if(opcode.equalsIgnoreCase(Opcodes.LESSEQUAL.toString()) || opcode.equalsIgnoreCase("map<="))
 			return new BinaryOperator(LessThanEquals.getLessThanEqualsFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.GREATEREQUAL.getName()) || opcode.equalsIgnoreCase("map>="))
+		else if(opcode.equalsIgnoreCase(Opcodes.GREATEREQUAL.toString()) || opcode.equalsIgnoreCase("map>="))
 			return new BinaryOperator(GreaterThanEquals.getGreaterThanEqualsFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.AND.getName()) || opcode.equalsIgnoreCase("map&&"))
+		else if(opcode.equalsIgnoreCase(Opcodes.AND.toString()) || opcode.equalsIgnoreCase("map&&"))
 			return new BinaryOperator(And.getAndFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.OR.getName()) || opcode.equalsIgnoreCase("map||"))
+		else if(opcode.equalsIgnoreCase(Opcodes.OR.toString()) || opcode.equalsIgnoreCase("map||"))
 			return new BinaryOperator(Or.getOrFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.XOR.getName()) || opcode.equalsIgnoreCase("mapxor"))
+		else if(opcode.equalsIgnoreCase(Opcodes.XOR.toString()) || opcode.equalsIgnoreCase("mapxor"))
 			return new BinaryOperator(Xor.getXorFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.BITWAND.getName()) || opcode.equalsIgnoreCase("mapbitwAnd"))
+		else if(opcode.equalsIgnoreCase(Opcodes.BITWAND.toString()) || opcode.equalsIgnoreCase("mapbitwAnd"))
 			return new BinaryOperator(BitwAnd.getBitwAndFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.BITWOR.getName()) || opcode.equalsIgnoreCase("mapbitwOr"))
+		else if(opcode.equalsIgnoreCase(Opcodes.BITWOR.toString()) || opcode.equalsIgnoreCase("mapbitwOr"))
 			return new BinaryOperator(BitwOr.getBitwOrFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.BITWXOR.getName()) || opcode.equalsIgnoreCase("mapbitwXor"))
+		else if(opcode.equalsIgnoreCase(Opcodes.BITWXOR.toString()) || opcode.equalsIgnoreCase("mapbitwXor"))
 			return new BinaryOperator(BitwXor.getBitwXorFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.BITWSHIFTL.getName()) || opcode.equalsIgnoreCase("mapbitwShiftL"))
+		else if(opcode.equalsIgnoreCase(Opcodes.BITWSHIFTL.toString()) || opcode.equalsIgnoreCase("mapbitwShiftL"))
 			return new BinaryOperator(BitwShiftL.getBitwShiftLFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.BITWSHIFTR.getName()) || opcode.equalsIgnoreCase("mapbitwShiftR"))
+		else if(opcode.equalsIgnoreCase(Opcodes.BITWSHIFTR.toString()) || opcode.equalsIgnoreCase("mapbitwShiftR"))
 			return new BinaryOperator(BitwShiftR.getBitwShiftRFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.PLUS.getName()) || opcode.equalsIgnoreCase("map+"))
+		else if(opcode.equalsIgnoreCase(Opcodes.PLUS.toString()) || opcode.equalsIgnoreCase("map+"))
 			return new BinaryOperator(Plus.getPlusFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.MINUS.getName()) || opcode.equalsIgnoreCase("map-"))
+		else if(opcode.equalsIgnoreCase(Opcodes.MINUS.toString()) || opcode.equalsIgnoreCase("map-"))
 			return new BinaryOperator(Minus.getMinusFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.MULT.getName()) || opcode.equalsIgnoreCase("map*"))
+		else if(opcode.equalsIgnoreCase(Opcodes.MULT.toString()) || opcode.equalsIgnoreCase("map*"))
 			return new BinaryOperator(Multiply.getMultiplyFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.MINUS1_MULT.getName()) || opcode.equalsIgnoreCase("map1-*"))
+		else if(opcode.equalsIgnoreCase(Opcodes.MINUS1_MULT.toString()) || opcode.equalsIgnoreCase("map1-*"))
 			return new BinaryOperator(Minus1Multiply.getMinus1MultiplyFnObject());
-		else if ( opcode.equalsIgnoreCase(Opcodes.MULT2.getName()) )
+		else if ( opcode.equalsIgnoreCase(Opcodes.MULT2.toString()) )
 			return new BinaryOperator(Multiply2.getMultiply2FnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.DIV.getName()) || opcode.equalsIgnoreCase("map/"))
+		else if(opcode.equalsIgnoreCase(Opcodes.DIV.toString()) || opcode.equalsIgnoreCase("map/"))
 			return new BinaryOperator(Divide.getDivideFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.MODULUS.getName()) || opcode.equalsIgnoreCase("map%%"))
+		else if(opcode.equalsIgnoreCase(Opcodes.MODULUS.toString()) || opcode.equalsIgnoreCase("map%%"))
 			return new BinaryOperator(Modulus.getFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.INTDIV.getName()) || opcode.equalsIgnoreCase("map%/%"))
+		else if(opcode.equalsIgnoreCase(Opcodes.INTDIV.toString()) || opcode.equalsIgnoreCase("map%/%"))
 			return new BinaryOperator(IntegerDivide.getFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.POW.getName()) || opcode.equalsIgnoreCase("map^"))
+		else if(opcode.equalsIgnoreCase(Opcodes.POW.toString()) || opcode.equalsIgnoreCase("map^"))
 			return new BinaryOperator(Power.getPowerFnObject());
-		else if ( opcode.equalsIgnoreCase(Opcodes.POW2.getName()) )
+		else if ( opcode.equalsIgnoreCase(Opcodes.POW2.toString()) )
 			return new BinaryOperator(Power2.getPower2FnObject());
-		else if ( opcode.equalsIgnoreCase(Opcodes.MAX.getName()) || opcode.equalsIgnoreCase("mapmax") )
+		else if ( opcode.equalsIgnoreCase(Opcodes.MAX.toString()) || opcode.equalsIgnoreCase("mapmax") )
 			return new BinaryOperator(Builtin.getBuiltinFnObject("max"));
-		else if ( opcode.equalsIgnoreCase(Opcodes.MIN.getName()) || opcode.equalsIgnoreCase("mapmin") )
+		else if ( opcode.equalsIgnoreCase(Opcodes.MIN.toString()) || opcode.equalsIgnoreCase("mapmin") )
 			return new BinaryOperator(Builtin.getBuiltinFnObject("min"));
-		else if ( opcode.equalsIgnoreCase(Opcodes.DROPINVALIDLENGTH.getName()) || opcode.equalsIgnoreCase("mapdropInvalidLength") )
+		else if ( opcode.equalsIgnoreCase(Opcodes.DROPINVALIDLENGTH.toString()) || opcode.equalsIgnoreCase("mapdropInvalidLength") )
 			return new BinaryOperator(Builtin.getBuiltinFnObject("dropInvalidLength"));
-		else if ( opcode.equalsIgnoreCase(Opcodes.VALUESWAP.getName()) || opcode.equalsIgnoreCase("mapValueSwap") )
+		else if ( opcode.equalsIgnoreCase(Opcodes.VALUESWAP.toString()) || opcode.equalsIgnoreCase("mapValueSwap") )
 			return new BinaryOperator(Builtin.getBuiltinFnObject("valueSwap"));
 
 		throw new DMLRuntimeException("Unknown binary opcode " + opcode);
@@ -1040,21 +1040,21 @@ public class InstructionUtils {
 
 	public static CorrectionLocationType deriveAggregateOperatorCorrectionLocation(String opcode)
 	{
-		if ( opcode.equalsIgnoreCase(Opcodes.UAKP.getName()) || opcode.equalsIgnoreCase(Opcodes.UARKP.getName()) ||
-				opcode.equalsIgnoreCase(Opcodes.UASQKP.getName()) || opcode.equalsIgnoreCase(Opcodes.UARSQKP.getName()) ||
-				opcode.equalsIgnoreCase(Opcodes.UATRACE.getName()) || opcode.equalsIgnoreCase(Opcodes.UAKTRACE.getName()) )
+		if ( opcode.equalsIgnoreCase(Opcodes.UAKP.toString()) || opcode.equalsIgnoreCase(Opcodes.UARKP.toString()) ||
+				opcode.equalsIgnoreCase(Opcodes.UASQKP.toString()) || opcode.equalsIgnoreCase(Opcodes.UARSQKP.toString()) ||
+				opcode.equalsIgnoreCase(Opcodes.UATRACE.toString()) || opcode.equalsIgnoreCase(Opcodes.UAKTRACE.toString()) )
 			return CorrectionLocationType.LASTCOLUMN;
-		else if ( opcode.equalsIgnoreCase(Opcodes.UACKP.getName()) || opcode.equalsIgnoreCase(Opcodes.UACSQKP.getName()) )
+		else if ( opcode.equalsIgnoreCase(Opcodes.UACKP.toString()) || opcode.equalsIgnoreCase(Opcodes.UACSQKP.toString()) )
 			return CorrectionLocationType.LASTROW;
-		else if ( opcode.equalsIgnoreCase(Opcodes.UAMEAN.getName()) || opcode.equalsIgnoreCase(Opcodes.UARMEAN.getName()) )
+		else if ( opcode.equalsIgnoreCase(Opcodes.UAMEAN.toString()) || opcode.equalsIgnoreCase(Opcodes.UARMEAN.toString()) )
 			return CorrectionLocationType.LASTTWOCOLUMNS;
-		else if ( opcode.equalsIgnoreCase(Opcodes.UACMEAN.getName()) )
+		else if ( opcode.equalsIgnoreCase(Opcodes.UACMEAN.toString()) )
 			return CorrectionLocationType.LASTTWOROWS;
-		else if ( opcode.equalsIgnoreCase(Opcodes.UAVAR.getName()) || opcode.equalsIgnoreCase(Opcodes.UARVAR.getName()) )
+		else if ( opcode.equalsIgnoreCase(Opcodes.UAVAR.toString()) || opcode.equalsIgnoreCase(Opcodes.UARVAR.toString()) )
 			return CorrectionLocationType.LASTFOURCOLUMNS;
-		else if ( opcode.equalsIgnoreCase(Opcodes.UACVAR.getName()) )
+		else if ( opcode.equalsIgnoreCase(Opcodes.UACVAR.toString()) )
 			return CorrectionLocationType.LASTFOURROWS;
-		else if (opcode.equalsIgnoreCase(Opcodes.UARIMAX.getName()) || opcode.equalsIgnoreCase(Opcodes.UARIMIN.getName()) )
+		else if (opcode.equalsIgnoreCase(Opcodes.UARIMAX.toString()) || opcode.equalsIgnoreCase(Opcodes.UARIMIN.toString()) )
 			return CorrectionLocationType.LASTCOLUMN;
 		
 		return CorrectionLocationType.NONE;

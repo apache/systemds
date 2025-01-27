@@ -56,14 +56,14 @@ public class ScalarIOTest extends AutomatedTestBase
 		runTest(true, false, null, -1);
 		
 		int int_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1,1)).intValue();
-		Assert.assertEquals("Values not equal: " + int_scalar + Opcodes.NOTEQUAL.getName() + int_out_scalar, int_scalar, int_out_scalar);
+		Assert.assertEquals("Values not equal: " + int_scalar + Opcodes.NOTEQUAL.toString() + int_out_scalar, int_scalar, int_out_scalar);
 		
 		// Invoke the DML script that does computations and then writes scalar to HDFS
 		fullDMLScriptName = HOME + "ScalarComputeWrite.dml";
 		runTest(true, false, null, -1);
 		
 		int_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1,1)).intValue();
-		Assert.assertEquals("Computation test for Integers failed: Values not equal: " + int_scalar + Opcodes.NOTEQUAL.getName() + int_out_scalar, int_scalar, int_out_scalar);
+		Assert.assertEquals("Computation test for Integers failed: Values not equal: " + int_scalar + Opcodes.NOTEQUAL.toString() + int_out_scalar, int_scalar, int_out_scalar);
 	}
 
 	@Test
@@ -76,14 +76,14 @@ public class ScalarIOTest extends AutomatedTestBase
 		runTest(true, false, null, -1);
 		
 		Double double_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1,1)).doubleValue();
-		Assert.assertEquals("Values not equal: " + double_scalar + Opcodes.NOTEQUAL.getName() + double_out_scalar, double_scalar, double_out_scalar);
+		Assert.assertEquals("Values not equal: " + double_scalar + Opcodes.NOTEQUAL.toString() + double_out_scalar, double_scalar, double_out_scalar);
 
 		// Invoke the DML script that does computations and then writes scalar to HDFS
 		fullDMLScriptName = HOME + "ScalarComputeWrite.dml";
 		runTest(true, false, null, -1);
 		
 		double_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1,1)).doubleValue();
-		Assert.assertEquals("Computation test for Integers failed: Values not equal: " + double_scalar + Opcodes.NOTEQUAL.getName() + double_out_scalar, double_scalar, double_out_scalar);
+		Assert.assertEquals("Computation test for Integers failed: Values not equal: " + double_scalar + Opcodes.NOTEQUAL.toString() + double_out_scalar, double_scalar, double_out_scalar);
 	}
 
 	@Test
@@ -97,7 +97,7 @@ public class ScalarIOTest extends AutomatedTestBase
 
 		boolean boolean_out_scalar = TestUtils.readDMLBoolean(output(OUT_FILE));
 		
-		Assert.assertEquals("Values not equal: " + boolean_scalar + Opcodes.NOTEQUAL.getName() + boolean_out_scalar, boolean_scalar, boolean_out_scalar);
+		Assert.assertEquals("Values not equal: " + boolean_scalar + Opcodes.NOTEQUAL.toString() + boolean_out_scalar, boolean_scalar, boolean_out_scalar);
 	}
 
 	@Test
@@ -111,7 +111,7 @@ public class ScalarIOTest extends AutomatedTestBase
 
 		String string_out_scalar = TestUtils.readDMLString(output(OUT_FILE));
 		
-		Assert.assertEquals("Values not equal: " + string_scalar + Opcodes.NOTEQUAL.getName() + string_out_scalar, string_scalar, string_out_scalar);
+		Assert.assertEquals("Values not equal: " + string_scalar + Opcodes.NOTEQUAL.toString() + string_out_scalar, string_scalar, string_out_scalar);
 	}
 	
 	@Test

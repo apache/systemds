@@ -158,7 +158,7 @@ public class IPAFunctionInliningTest extends AutomatedTestBase
 		
 			//check for incorrect operation replication
 			if( testName.equals(TEST_NAME6) )
-				Assert.assertTrue(Statistics.getCPHeavyHitterCount(Opcodes.PRINT.getName())==1);
+				Assert.assertTrue(Statistics.getCPHeavyHitterCount(Opcodes.PRINT.toString())==1);
 		}
 		finally {
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;

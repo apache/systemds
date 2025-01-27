@@ -93,7 +93,7 @@ public class ReuseAsyncOpTest extends AutomatedTestBase {
 			HashMap<MatrixValue.CellIndex, Double> R = readDMLScalarFromOutputDir("R");
 			long numTsmm = Statistics.getCPHeavyHitterCount("sp_tsmm");
 			long numMapmm = Statistics.getCPHeavyHitterCount("sp_mapmm");
-			long numPrefetch = Statistics.getCPHeavyHitterCount(Opcodes.PREFETCH.getName());
+			long numPrefetch = Statistics.getCPHeavyHitterCount(Opcodes.PREFETCH.toString());
 
 			proArgs.clear();
 			proArgs.add("-explain");
@@ -111,7 +111,7 @@ public class ReuseAsyncOpTest extends AutomatedTestBase {
 			HashMap<MatrixValue.CellIndex, Double> R_reused = readDMLScalarFromOutputDir("R");
 			long numTsmm_r = Statistics.getCPHeavyHitterCount("sp_tsmm");
 			long numMapmm_r = Statistics.getCPHeavyHitterCount("sp_mapmm");
-			long numPrefetch_r = Statistics.getCPHeavyHitterCount(Opcodes.PREFETCH.getName());
+			long numPrefetch_r = Statistics.getCPHeavyHitterCount(Opcodes.PREFETCH.toString());
 
 			//compare matrices
 			boolean matchVal = TestUtils.compareMatrices(R, R_reused, 1e-6, "Origin", "withPrefetch");

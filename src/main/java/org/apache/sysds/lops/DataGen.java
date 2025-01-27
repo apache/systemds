@@ -343,7 +343,7 @@ public class DataGen extends Lop
 		
 		ExecType et = getExecType();
 		return InstructionUtils.concatOperands(
-			et.toString(), Opcodes.SEQUENCE.getName(),
+			et.toString(), Opcodes.SEQUENCE.toString(),
 			String.valueOf(getOutputParameters().getNumRows()),
 			String.valueOf(getOutputParameters().getNumCols()),
 			String.valueOf(getOutputParameters().getBlocksize()),

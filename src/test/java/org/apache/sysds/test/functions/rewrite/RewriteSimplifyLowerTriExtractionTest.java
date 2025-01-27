@@ -84,9 +84,9 @@ public class RewriteSimplifyLowerTriExtractionTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			if(rewrites)
-				Assert.assertTrue(heavyHittersContainsString(Opcodes.LOWERTRI.getName()));
+				Assert.assertTrue(heavyHittersContainsString(Opcodes.LOWERTRI.toString()));
 			else
-				Assert.assertTrue(heavyHittersContainsString(Opcodes.DIAG.getName()) && heavyHittersContainsString(Opcodes.UCUMKP.getName()));
+				Assert.assertTrue(heavyHittersContainsString(Opcodes.DIAG.toString()) && heavyHittersContainsString(Opcodes.UCUMKP.toString()));
 
 		}
 		finally {

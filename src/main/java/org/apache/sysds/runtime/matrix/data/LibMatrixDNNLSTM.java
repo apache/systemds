@@ -273,10 +273,10 @@ public class LibMatrixDNNLSTM {
 		int M = params.M;
 
 		//init Operators
-		BinaryOperator plus = InstructionUtils.parseBinaryOperator(Opcodes.PLUS.getName(),k);
-		BinaryOperator emult = InstructionUtils.parseBinaryOperator(Opcodes.MULT.getName(),k);
-		UnaryOperator tanh =  InstructionUtils.parseUnaryOperator(Opcodes.TANH.getName(),k);
-		UnaryOperator  sigmoid =  InstructionUtils.parseUnaryOperator(Opcodes.SIGMOID.getName(),k);
+		BinaryOperator plus = InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString(),k);
+		BinaryOperator emult = InstructionUtils.parseBinaryOperator(Opcodes.MULT.toString(),k);
+		UnaryOperator tanh =  InstructionUtils.parseUnaryOperator(Opcodes.TANH.toString(),k);
+		UnaryOperator  sigmoid =  InstructionUtils.parseUnaryOperator(Opcodes.SIGMOID.toString(),k);
 		AggregateBinaryOperator mmult = InstructionUtils.getMatMultOperator(k);
 
 		//iterate time steps
@@ -345,13 +345,13 @@ public class LibMatrixDNNLSTM {
 		int M = params.M;
 
 		//init Operators
-		BinaryOperator plus = parseBinaryOperator(Opcodes.PLUS.getName(),k);
-		BinaryOperator emult = parseBinaryOperator(Opcodes.MULT.getName(),k);
-		ScalarOperator exp2 = parseScalarBinaryOperator(Opcodes.POW2.getName(),false, 0.0, k);
-		ScalarOperator minus = parseScalarBinaryOperator(Opcodes.MINUS.getName(),true, 1.0, k);
-		UnaryOperator tanh = parseUnaryOperator(Opcodes.TANH.getName(), k);
-		UnaryOperator sprop = parseUnaryOperator(Opcodes.SPROP.getName(), k);
-		AggregateUnaryOperator colsum = parseBasicAggregateUnaryOperator(Opcodes.UACKP.getName(),k);
+		BinaryOperator plus = parseBinaryOperator(Opcodes.PLUS.toString(),k);
+		BinaryOperator emult = parseBinaryOperator(Opcodes.MULT.toString(),k);
+		ScalarOperator exp2 = parseScalarBinaryOperator(Opcodes.POW2.toString(),false, 0.0, k);
+		ScalarOperator minus = parseScalarBinaryOperator(Opcodes.MINUS.toString(),true, 1.0, k);
+		UnaryOperator tanh = parseUnaryOperator(Opcodes.TANH.toString(), k);
+		UnaryOperator sprop = parseUnaryOperator(Opcodes.SPROP.toString(), k);
+		AggregateUnaryOperator colsum = parseBasicAggregateUnaryOperator(Opcodes.UACKP.toString(),k);
 		ReorgOperator transpose =  new ReorgOperator(SwapIndex.getSwapIndexFnObject(), k);
 		AggregateBinaryOperator mmult = InstructionUtils.getMatMultOperator(k);
 

@@ -297,9 +297,9 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 			runTest(true, error != null, error, -1);
 	
 			if( testName.equals(TEST_NAMES[17]) )
-				Assert.assertTrue(heavyHittersContainsString(Opcodes.PRINT.getName()));
+				Assert.assertTrue(heavyHittersContainsString(Opcodes.PRINT.toString()));
 			if( evalRewrite && !testName.equals(TEST_NAMES[28]) )
-				Assert.assertTrue(!heavyHittersContainsString(Opcodes.EVAL.getName()));
+				Assert.assertTrue(!heavyHittersContainsString(Opcodes.EVAL.toString()));
 		}
 		finally {
 			OptimizerUtils.ALLOW_EVAL_FCALL_REPLACEMENT = oldFlag;

@@ -86,12 +86,12 @@ public class RewriteSimplifyConstantSortTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			if(rewrites) {
-				Assert.assertFalse(heavyHittersContainsString(Opcodes.SORT.getName()));
+				Assert.assertFalse(heavyHittersContainsString(Opcodes.SORT.toString()));
 				if(ID == 2)
 					Assert.assertTrue(heavyHittersContainsString("seq"));
 			}
 			else
-				Assert.assertTrue(heavyHittersContainsString(Opcodes.SORT.getName()));
+				Assert.assertTrue(heavyHittersContainsString(Opcodes.SORT.toString()));
 
 		}
 		finally {

@@ -84,7 +84,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 	
 	public DnnCPInstruction(CPOperand in, CPOperand in2, CPOperand out, String opcode, String istr, int numThreads, double intermediateMemoryBudget) {
 		this(in, in2, null, out, null, null, null, null, numThreads, intermediateMemoryBudget, opcode, istr);
-		if( !(opcode.equals(Opcodes.BIAS_ADD.getName()) || opcode.equals(Opcodes.RELU_BACKWARD.getName()) || opcode.equals(Opcodes.BIAS_MULTIPLY.getName()) ) ) {
+		if( !(opcode.equals(Opcodes.BIAS_ADD.toString()) || opcode.equals(Opcodes.RELU_BACKWARD.toString()) || opcode.equals(Opcodes.BIAS_MULTIPLY.toString()) ) ) {
 			throw new DMLRuntimeException("Incorrect usage. Expected the opcode to be bias_add or bias_multiply or relu_backward, but found " + opcode);
 		}
 	}
@@ -144,8 +144,8 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		if (opcode.equalsIgnoreCase(Opcodes.MAXPOOLING.getName()) || opcode.equalsIgnoreCase(Opcodes.RELU_MAXPOOLING.getName()) ||
-			opcode.equalsIgnoreCase(Opcodes.AVGPOOLING.getName())) {
+		if (opcode.equalsIgnoreCase(Opcodes.MAXPOOLING.toString()) || opcode.equalsIgnoreCase(Opcodes.RELU_MAXPOOLING.toString()) ||
+			opcode.equalsIgnoreCase(Opcodes.AVGPOOLING.toString())) {
 			InstructionUtils.checkNumFields(parts, 16);
 			// stride1, stride2, padding1, padding2
 			// input_shape1, input_shape2, input_shape3, input_shape4,
@@ -174,11 +174,11 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			return new DnnCPInstruction(in, out, opcode, str, stride,
 					padding, input_shape, filter_shape, k, Double.parseDouble(parts[16]));
 		} 
-		else if (opcode.equalsIgnoreCase(Opcodes.MAXPOOLING_BACKWARD.getName()) || opcode.equalsIgnoreCase(Opcodes.RELU_MAXPOOLING_BACKWARD.getName())
-				|| opcode.equalsIgnoreCase(Opcodes.AVGPOOLING_BACKWARD.getName())
-				|| opcode.equalsIgnoreCase(Opcodes.CONV2D.getName())
-				|| opcode.equalsIgnoreCase(Opcodes.CONV2D_BACKWARD_FILTER.getName())
-				|| opcode.equalsIgnoreCase(Opcodes.CONV2D_BACKWARD_DATA.getName())) {
+		else if (opcode.equalsIgnoreCase(Opcodes.MAXPOOLING_BACKWARD.toString()) || opcode.equalsIgnoreCase(Opcodes.RELU_MAXPOOLING_BACKWARD.toString())
+				|| opcode.equalsIgnoreCase(Opcodes.AVGPOOLING_BACKWARD.toString())
+				|| opcode.equalsIgnoreCase(Opcodes.CONV2D.toString())
+				|| opcode.equalsIgnoreCase(Opcodes.CONV2D_BACKWARD_FILTER.toString())
+				|| opcode.equalsIgnoreCase(Opcodes.CONV2D_BACKWARD_DATA.toString())) {
 			InstructionUtils.checkNumFields(parts, 17);
 			// dout, stride1, stride2, padding1, padding2
 			// input_shape1, input_shape2, input_shape3, input_shape4,
@@ -208,7 +208,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			return new DnnCPInstruction(in, in2, out, opcode, str, stride,
 					padding, input_shape, filter_shape, k, Double.parseDouble(parts[17]));
 		}
-		else if (opcode.equalsIgnoreCase(Opcodes.CONV2D_BIAS_ADD.getName())) {
+		else if (opcode.equalsIgnoreCase(Opcodes.CONV2D_BIAS_ADD.toString())) {
 			InstructionUtils.checkNumFields(parts, 18);
 			// dout, stride1, stride2, padding1, padding2
 			// input_shape1, input_shape2, input_shape3, input_shape4,
@@ -239,7 +239,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			return new DnnCPInstruction(in, in2, in3, out, opcode, str, stride,
 					padding, input_shape, filter_shape, k, Double.parseDouble(parts[18]));
 		}
-		else if (opcode.equalsIgnoreCase(Opcodes.BIAS_ADD.getName()) || opcode.equals(Opcodes.RELU_BACKWARD.getName()) || opcode.equalsIgnoreCase(Opcodes.BIAS_MULTIPLY.getName()) ) {
+		else if (opcode.equalsIgnoreCase(Opcodes.BIAS_ADD.toString()) || opcode.equals(Opcodes.RELU_BACKWARD.toString()) || opcode.equalsIgnoreCase(Opcodes.BIAS_MULTIPLY.toString()) ) {
 			InstructionUtils.checkNumFields(parts, 5);
 			CPOperand in = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
@@ -247,7 +247,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			int k = Integer.parseInt(parts[4]);
 			return new DnnCPInstruction(in, in2, out, opcode, str, k, Double.parseDouble(parts[5]));
 		}
-		else if (opcode.equalsIgnoreCase(Opcodes.BATCH_NORM2D.getName())) {
+		else if (opcode.equalsIgnoreCase(Opcodes.BATCH_NORM2D.toString())) {
 			InstructionUtils.checkNumFields(parts, 14);
 			CPOperand in1 = new CPOperand(parts[1]); // image
 			CPOperand in2 = new CPOperand(parts[2]); // scale
@@ -266,7 +266,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			
 			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, in7, in8, out, out2, out3, out4, out5, opcode, str, 0);
 		}
-		else if (opcode.equalsIgnoreCase(Opcodes.BATCH_NORM2D_BACKWARD.getName())) {
+		else if (opcode.equalsIgnoreCase(Opcodes.BATCH_NORM2D_BACKWARD.toString())) {
 			InstructionUtils.checkNumFields(parts, 10);
 			CPOperand in1 = new CPOperand(parts[1]); // image
 			CPOperand in2 = new CPOperand(parts[2]); // dout
@@ -280,7 +280,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			// int threads = Integer.parseInt(parts[10]);
 			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, null, null, out, out2, out3, null, null, opcode, str, 0);
 		}
-		else if (opcode.equalsIgnoreCase(Opcodes.LSTM.getName())) {
+		else if (opcode.equalsIgnoreCase(Opcodes.LSTM.toString())) {
 			InstructionUtils.checkNumFields(parts, 12);
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
@@ -295,7 +295,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			CPOperand out5 = new CPOperand(parts[11]);
 			// int threads = Integer.parseInt(parts[12]);
 			return new DnnCPInstruction(in1, in2, in3, in4, in5, in6, null, null, out1, out2, out3, out4, out5, opcode, str, 0);
-		} if(opcode.equalsIgnoreCase(Opcodes.LSTM_BACKWARD.getName())){
+		} if(opcode.equalsIgnoreCase(Opcodes.LSTM_BACKWARD.toString())){
 			InstructionUtils.checkNumFields(parts, 17);
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
@@ -539,38 +539,38 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		
-		if (instOpcode.equalsIgnoreCase(Opcodes.BIAS_ADD.getName())) {
+		if (instOpcode.equalsIgnoreCase(Opcodes.BIAS_ADD.toString())) {
 			processBiasAddInstruction(ec);
 			return;
 		}
-		else if (instOpcode.equalsIgnoreCase(Opcodes.BIAS_MULTIPLY.getName())) {
+		else if (instOpcode.equalsIgnoreCase(Opcodes.BIAS_MULTIPLY.toString())) {
 			processBiasMultiplyInstruction(ec);
 			return;
 		}
-		else if (instOpcode.equalsIgnoreCase(Opcodes.RELU_BACKWARD.getName())) {
+		else if (instOpcode.equalsIgnoreCase(Opcodes.RELU_BACKWARD.toString())) {
 			processReluBackwardInstruction(ec);
 			return;
 		}
-		else if (instOpcode.equalsIgnoreCase(Opcodes.BATCH_NORM2D.getName())) {
+		else if (instOpcode.equalsIgnoreCase(Opcodes.BATCH_NORM2D.toString())) {
 			processBatchNorm2dInstruction(ec);
 			return;
 		}
-		else if (instOpcode.equalsIgnoreCase(Opcodes.BATCH_NORM2D_BACKWARD.getName())) {
+		else if (instOpcode.equalsIgnoreCase(Opcodes.BATCH_NORM2D_BACKWARD.toString())) {
 			processBatchNorm2dBackwardInstruction(ec);
 			return;
 		}
-		else if (instOpcode.equalsIgnoreCase(Opcodes.LSTM.getName())) {
+		else if (instOpcode.equalsIgnoreCase(Opcodes.LSTM.toString())) {
 			processLSTMInstruction(ec, false);
 			return;
 		}
-		else if (instOpcode.equalsIgnoreCase(Opcodes.LSTM_BACKWARD.getName())) {
+		else if (instOpcode.equalsIgnoreCase(Opcodes.LSTM_BACKWARD.toString())) {
 			processLSTMInstruction(ec, true);
 			return;
 		}
 		
 		// acquire inputs
 		MatrixBlock outputBlock = null;
-		MatrixBlock matBlock = instOpcode.equalsIgnoreCase(Opcodes.AVGPOOLING_BACKWARD.getName()) ? null : ec.getMatrixInput(input1.getName());
+		MatrixBlock matBlock = instOpcode.equalsIgnoreCase(Opcodes.AVGPOOLING_BACKWARD.toString()) ? null : ec.getMatrixInput(input1.getName());
 		int pad_h = getScalarInput(ec, _padding, 0);
 		int pad_w = getScalarInput(ec, _padding, 1);
 		int stride_h = getScalarInput(ec, _stride, 0);
@@ -590,38 +590,38 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		
 		DnnParameters params = new DnnParameters(N, C, H, W, K, R, S, stride_h, stride_w, pad_h, pad_w, _numThreads);
 		params.enableNative = NativeHelper.isNativeLibraryLoaded();
-		if (instOpcode.equalsIgnoreCase(Opcodes.MAXPOOLING.getName()) || instOpcode.equalsIgnoreCase(Opcodes.RELU_MAXPOOLING.getName()) ||
-			instOpcode.equalsIgnoreCase(Opcodes.AVGPOOLING.getName())) {
+		if (instOpcode.equalsIgnoreCase(Opcodes.MAXPOOLING.toString()) || instOpcode.equalsIgnoreCase(Opcodes.RELU_MAXPOOLING.toString()) ||
+			instOpcode.equalsIgnoreCase(Opcodes.AVGPOOLING.toString())) {
 			if(matBlock.isEmpty()) {
 				outputBlock = new MatrixBlock(N, C*P*Q, true);
 			}
 			else {
 				outputBlock = new MatrixBlock(N, C*P*Q, false).allocateBlock();
 				
-				PoolingType poolType = (instOpcode.equalsIgnoreCase(Opcodes.MAXPOOLING.getName()) || instOpcode.equalsIgnoreCase(Opcodes.RELU_MAXPOOLING.getName())) ? PoolingType.MAX : PoolingType.AVG;
-				if(instOpcode.equalsIgnoreCase(Opcodes.RELU_MAXPOOLING.getName()))
+				PoolingType poolType = (instOpcode.equalsIgnoreCase(Opcodes.MAXPOOLING.toString()) || instOpcode.equalsIgnoreCase(Opcodes.RELU_MAXPOOLING.toString())) ? PoolingType.MAX : PoolingType.AVG;
+				if(instOpcode.equalsIgnoreCase(Opcodes.RELU_MAXPOOLING.toString()))
 					params.minValForMaxPoolOperations = 0;
 				LibMatrixDNN.pooling(matBlock, outputBlock, params, poolType);
 			}
 		}
-		else if (instOpcode.equalsIgnoreCase(Opcodes.MAXPOOLING_BACKWARD.getName()) || instOpcode.equalsIgnoreCase(Opcodes.RELU_MAXPOOLING_BACKWARD.getName()) ||
-				instOpcode.equalsIgnoreCase(Opcodes.AVGPOOLING_BACKWARD.getName())) {
+		else if (instOpcode.equalsIgnoreCase(Opcodes.MAXPOOLING_BACKWARD.toString()) || instOpcode.equalsIgnoreCase(Opcodes.RELU_MAXPOOLING_BACKWARD.toString()) ||
+				instOpcode.equalsIgnoreCase(Opcodes.AVGPOOLING_BACKWARD.toString())) {
 			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
-			boolean isEmpty = instOpcode.equalsIgnoreCase(Opcodes.AVGPOOLING_BACKWARD.getName()) ? dout.isEmpty() : (matBlock.isEmpty() || dout.isEmpty());
+			boolean isEmpty = instOpcode.equalsIgnoreCase(Opcodes.AVGPOOLING_BACKWARD.toString()) ? dout.isEmpty() : (matBlock.isEmpty() || dout.isEmpty());
 			if(isEmpty) {
 				outputBlock = new MatrixBlock(N, C*H*W, true);
 			}
 			else {
-				PoolingType poolType = (instOpcode.equalsIgnoreCase(Opcodes.MAXPOOLING_BACKWARD.getName()) || instOpcode.equalsIgnoreCase(Opcodes.RELU_MAXPOOLING_BACKWARD.getName())) ? PoolingType.MAX : PoolingType.AVG;
+				PoolingType poolType = (instOpcode.equalsIgnoreCase(Opcodes.MAXPOOLING_BACKWARD.toString()) || instOpcode.equalsIgnoreCase(Opcodes.RELU_MAXPOOLING_BACKWARD.toString())) ? PoolingType.MAX : PoolingType.AVG;
 				outputBlock = (poolType == PoolingType.MAX ) ? new MatrixBlock(N, C*H*W, true).allocateBlock() : new MatrixBlock(N, C*H*W, false).allocateBlock();
-				boolean performReLUBackward = instOpcode.equalsIgnoreCase(Opcodes.RELU_MAXPOOLING_BACKWARD.getName());
+				boolean performReLUBackward = instOpcode.equalsIgnoreCase(Opcodes.RELU_MAXPOOLING_BACKWARD.toString());
 				if(performReLUBackward)
 					params.minValForMaxPoolOperations = 0;
 				LibMatrixDNN.poolingBackward(matBlock, dout, outputBlock, params, performReLUBackward, poolType);
 			}
 			ec.releaseMatrixInput(_in2.getName());
 		}
-		else if (instOpcode.equalsIgnoreCase(Opcodes.CONV2D.getName())) {
+		else if (instOpcode.equalsIgnoreCase(Opcodes.CONV2D.toString())) {
 			resetNumThreads(params, C*R*S, P*Q, matBlock.getNonZeros() / (matBlock.getNumRows()*matBlock.getNumColumns()));
 			MatrixBlock filter = ec.getMatrixInput(_in2.getName());
 			if(filter.isEmpty() || matBlock.isEmpty()) {
@@ -641,7 +641,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			}
 			ec.releaseMatrixInput(_in2.getName());
 		}
-		else if (instOpcode.equalsIgnoreCase(Opcodes.CONV2D_BIAS_ADD.getName())) {
+		else if (instOpcode.equalsIgnoreCase(Opcodes.CONV2D_BIAS_ADD.toString())) {
 			resetNumThreads(params, C*R*S, P*Q, matBlock.getNonZeros() / (matBlock.getNumRows()*matBlock.getNumColumns()));
 			MatrixBlock filter = ec.getMatrixInput(_in3.getName());
 			MatrixBlock bias = ec.getMatrixInput(_in2.getName());
@@ -678,7 +678,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			}
 			ec.releaseMatrixInput(_in3.getName(), _in2.getName());
 		}
-		else if (instOpcode.equalsIgnoreCase(Opcodes.CONV2D_BACKWARD_FILTER.getName())) {
+		else if (instOpcode.equalsIgnoreCase(Opcodes.CONV2D_BACKWARD_FILTER.toString())) {
 			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
 			if(dout.isEmpty() || matBlock.isEmpty()) {
 				outputBlock = new MatrixBlock(K, C*R*S, true);
@@ -692,7 +692,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 			}
 			ec.releaseMatrixInput(_in2.getName());
 		}
-		else if (instOpcode.equalsIgnoreCase(Opcodes.CONV2D_BACKWARD_DATA.getName())) {
+		else if (instOpcode.equalsIgnoreCase(Opcodes.CONV2D_BACKWARD_DATA.toString())) {
 			MatrixBlock dout = ec.getMatrixInput(_in2.getName());
 			if(dout.isEmpty() || matBlock.isEmpty()) {
 				outputBlock = new MatrixBlock(N, C * H * W, true);
@@ -711,7 +711,7 @@ public class DnnCPInstruction extends UnaryCPInstruction {
 		}
 		
 		// release inputs/outputs
-		if(!instOpcode.equalsIgnoreCase(Opcodes.AVGPOOLING_BACKWARD.getName()))
+		if(!instOpcode.equalsIgnoreCase(Opcodes.AVGPOOLING_BACKWARD.toString()))
 			ec.releaseMatrixInput(input1.getName());
 		ec.setMatrixOutput(getOutputVariableName(), outputBlock);
 	}

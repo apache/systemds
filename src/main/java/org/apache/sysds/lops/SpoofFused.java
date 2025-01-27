@@ -107,7 +107,7 @@ public class SpoofFused extends Lop
 		StringBuilder sb = InstructionUtils.getStringBuilder();
 		sb.append( getExecType() );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( Opcodes.SPOOF.getName() );
+		sb.append( Opcodes.SPOOF );
 
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( _api);

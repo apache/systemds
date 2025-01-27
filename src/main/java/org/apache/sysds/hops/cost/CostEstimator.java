@@ -208,7 +208,7 @@ public abstract class CostEstimator
 			String optype = inst.getOpcode();
 			String[] parts = InstructionUtils.getInstructionParts(inst.toString());
 			
-			if( optype.equals(Opcodes.CREATEVAR.getName()) ) {
+			if( optype.equals(Opcodes.CREATEVAR.toString()) ) {
 				if( parts.length<10 )
 					return;
 				String varname = parts[1];
@@ -219,19 +219,19 @@ public abstract class CostEstimator
 				VarStats vs = new VarStats(rlen, clen, blen, nnz, false);
 				stats.put(varname, vs);
 			}
-			else if ( optype.equals(Opcodes.CPVAR.getName()) ) {
+			else if ( optype.equals(Opcodes.CPVAR.toString()) ) {
 				String varname = parts[1];
 				String varname2 = parts[2];
 				VarStats vs = stats.get(varname);
 				stats.put(varname2, vs);
 			}
-			else if ( optype.equals(Opcodes.MVVAR.getName()) ) {
+			else if ( optype.equals(Opcodes.MVVAR.toString()) ) {
 				String varname = parts[1];
 				String varname2 = parts[2];
 				VarStats vs = stats.remove(varname);
 				stats.put(varname2, vs);
 			}
-			else if( optype.equals(Opcodes.RMVAR.getName()) ) {
+			else if( optype.equals(Opcodes.RMVAR.toString()) ) {
 				String varname = parts[1];
 				stats.remove(varname);
 			}
@@ -320,7 +320,7 @@ public abstract class CostEstimator
 				else if( inst instanceof AggregateUnaryCPInstruction ) {
 					String[] parts = InstructionUtils.getInstructionParts(inst.toString());
 					String opcode = parts[0];
-					if( opcode.equals(Opcodes.CM.getName()) )
+					if( opcode.equals(Opcodes.CM.toString()) )
 						attr = new String[]{parts[parts.length-2]};
 				}
 			}
@@ -356,14 +356,14 @@ public abstract class CostEstimator
 			//ParameterizedBuiltinCPInstruction pinst = (ParameterizedBuiltinCPInstruction) inst;
 			String[] parts = InstructionUtils.getInstructionParts(inst.toString());
 			String opcode = parts[0];
-			if( opcode.equals(Opcodes.GROUPEDAGG.getName()) ) {
+			if( opcode.equals(Opcodes.GROUPEDAGG.toString()) ) {
 				HashMap<String,String> paramsMap = ParameterizedBuiltinCPInstruction.constructParameterMap(parts);
 				String fn = paramsMap.get("fn");
 				String order = paramsMap.get("order");
 				AggregateOperationTypes type = CMOperator.getAggOpType(fn, order);
 				attr = new String[]{String.valueOf(type.ordinal())};
 			}
-			else if( opcode.equals(Opcodes.RMEMPTY.getName()) ) {
+			else if( opcode.equals(Opcodes.RMEMPTY.toString()) ) {
 				HashMap<String,String> paramsMap = ParameterizedBuiltinCPInstruction.constructParameterMap(parts);
 				attr = new String[]{String.valueOf(paramsMap.get("margin").equals("rows")?0:1)};
 			}

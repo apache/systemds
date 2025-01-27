@@ -31,7 +31,7 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 public class WeightedUnaryMM extends Lop 
 {
 	public static final String OPCODE = "mapwumm";
-	public static final String OPCODE_CP = Opcodes.WUMM.getName();
+	public static final String OPCODE_CP = Opcodes.WUMM.toString();
 
 	public enum WUMMType {
 		MULT,

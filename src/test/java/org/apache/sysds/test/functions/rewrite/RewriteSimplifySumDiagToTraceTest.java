@@ -84,9 +84,9 @@ public class RewriteSimplifySumDiagToTraceTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			if(rewrites)
-				Assert.assertTrue(heavyHittersContainsString(Opcodes.UAKTRACE.getName()));
+				Assert.assertTrue(heavyHittersContainsString(Opcodes.UAKTRACE.toString()));
 			else
-				Assert.assertTrue(heavyHittersContainsString(Opcodes.DIAG.getName()));
+				Assert.assertTrue(heavyHittersContainsString(Opcodes.DIAG.toString()));
 
 		}
 		finally {

@@ -1147,7 +1147,7 @@ public class HopRewriteUtils {
 	
 	public static boolean isTransformEncode(Hop hop){
 		return hop instanceof FunctionOp 
-			&& (((FunctionOp)hop).getFunctionName().equalsIgnoreCase(Opcodes.TRANSFORMENCODE.getName()));
+			&& (((FunctionOp)hop).getFunctionName().equalsIgnoreCase(Opcodes.TRANSFORMENCODE.toString()));
 	}
 
 	public static boolean isBinaryMatrixColVectorOperation(Hop hop) {

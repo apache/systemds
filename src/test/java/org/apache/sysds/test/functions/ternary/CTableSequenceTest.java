@@ -200,7 +200,7 @@ public class CTableSequenceTest extends AutomatedTestBase {
 			int expectedNumCompiled = ((et==ExecType.CP) ? 2 : 4)+(withAgg ? 1 : 0);
 			checkNumCompiledSparkInst(expectedNumCompiled);
 			Assert.assertEquals(left & rewrite,
-				heavyHittersContainsSubString(Opcodes.CTABLEEXPAND.getName()));
+				heavyHittersContainsSubString(Opcodes.CTABLEEXPAND.toString()));
 		}
 		finally {
 			rtplatform = platformOld;

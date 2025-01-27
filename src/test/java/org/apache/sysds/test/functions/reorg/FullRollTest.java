@@ -97,14 +97,14 @@ public class FullRollTest extends AutomatedTestBase {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = false;
 			programArgs = new String[]{"-stats", "-explain", "-args", input("A"), output("B")};
 			runTest(true, false, null, -1);
-			boolean opcodeCP = Statistics.getCPHeavyHitterOpCodes().contains(Opcodes.ROLL.getName());
+			boolean opcodeCP = Statistics.getCPHeavyHitterOpCodes().contains(Opcodes.ROLL.toString());
 			
 			// Run test SP
 			rtplatform = ExecMode.SPARK;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			programArgs = new String[]{"-stats", "-explain", "-args", input("A"), output("C")};
 			runTest(true, false, null, -1);
-			boolean opcodeSP = Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX + Opcodes.ROLL.getName());
+			boolean opcodeSP = Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX + Opcodes.ROLL.toString());
 			
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfileCP = readDMLMatrixFromOutputDir("B");

@@ -112,7 +112,7 @@ public class RewriteElementwiseMultChainOptimizationAllTest extends AutomatedTes
 			
 			//check for presence of power operator, if we did a rewrite
 			if( rewrites ) {
-				Assert.assertTrue(heavyHittersContainsSubString(Opcodes.POW2.getName()));
+				Assert.assertTrue(heavyHittersContainsSubString(Opcodes.POW2.toString()));
 			}
 		}
 		finally {

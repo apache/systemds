@@ -207,7 +207,7 @@ public class RDDAggregateUtils
 	}
 	
 	public static double max(JavaPairRDD<MatrixIndexes, MatrixBlock> in) {
-		AggregateUnaryOperator auop = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMAX.getName());
+		AggregateUnaryOperator auop = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMAX.toString());
 		MatrixBlock tmp = aggStable(in.map(new RDDUAggFunction2(auop, -1)), auop.aggOp);
 		return tmp.get(0, 0);
 	}

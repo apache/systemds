@@ -183,7 +183,7 @@ public class RewriteCTableToRExpandTest extends AutomatedTestBase
 			
 			//check for applied rewrite
 			Assert.assertEquals(Boolean.valueOf(test==1 || test==2 || unknownTests),
-				Boolean.valueOf(heavyHittersContainsSubString(Opcodes.REXPAND.getName())));
+				Boolean.valueOf(heavyHittersContainsSubString(Opcodes.REXPAND.toString())));
 		}
 		finally {
 			resetExecMode(platformOld);

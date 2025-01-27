@@ -66,7 +66,7 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 		ArrayList<CPOperand> outputs = new ArrayList<>();
 		String opcode = parts[0];
 
-		if(opcode.equalsIgnoreCase(Opcodes.TRANSFORMENCODE.getName())) {
+		if(opcode.equalsIgnoreCase(Opcodes.TRANSFORMENCODE.toString())) {
 			// one input and two outputs
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);

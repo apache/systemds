@@ -262,7 +262,7 @@ public class TernaryAggregateTest extends AutomatedTestBase
 			//check for rewritten patterns in statistics output
 			if( rewrites ) {
 				String opcode = ((et == ExecType.SPARK) ? Instruction.SP_INST_PREFIX : "") + 
-					(((testname.equals(TEST_NAME1) || vectors ) ? Opcodes.TAKPM.getName() : Opcodes.TACKPM.getName()));
+					(((testname.equals(TEST_NAME1) || vectors ) ? Opcodes.TAKPM.toString() : Opcodes.TACKPM.toString()));
 				Assert.assertEquals(Boolean.TRUE,
 						Boolean.valueOf(Statistics.getCPHeavyHitterOpCodes().contains(opcode)));
 			}

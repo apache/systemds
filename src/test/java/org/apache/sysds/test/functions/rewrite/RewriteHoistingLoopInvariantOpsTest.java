@@ -105,8 +105,8 @@ public class RewriteHoistingLoopInvariantOpsTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			
 			//check applied code motion rewrites (moved sum and - from 10 to 1)
-			Assert.assertEquals(rewrites?1:10, Statistics.getCPHeavyHitterCount(Opcodes.UAKP.getName()));
-			Assert.assertEquals(rewrites?1:10, Statistics.getCPHeavyHitterCount(Opcodes.MINUS.getName()));
+			Assert.assertEquals(rewrites?1:10, Statistics.getCPHeavyHitterCount(Opcodes.UAKP.toString()));
+			Assert.assertEquals(rewrites?1:10, Statistics.getCPHeavyHitterCount(Opcodes.MINUS.toString()));
 		}
 		finally {
 			OptimizerUtils.ALLOW_CODE_MOTION = rewritesOld;

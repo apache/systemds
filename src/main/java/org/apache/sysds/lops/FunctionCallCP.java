@@ -132,7 +132,7 @@ public class FunctionCallCP extends Lop
 		}
 
 		if(getExecType().equals(ExecType.CP)){
-			if(!(_fname.toLowerCase().equals(Opcodes.REMOVE.getName()))){
+			if(!(_fname.toLowerCase().equals(Opcodes.REMOVE.toString()))){
 				sb.append(Lop.OPERAND_DELIMITOR);
 				sb.append(_numThreads);
 			}

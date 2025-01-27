@@ -409,7 +409,7 @@ public class RaggedArray<T> extends Array<T> {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_size + 2);
-		sb.append(super.toString()).append(Opcodes.LESS.getName());
+		sb.append(super.toString()).append(Opcodes.LESS.toString());
 		sb.append(_a.getClass().getSimpleName()).append(">:[");
 		for(int i = 0; i < _size - 1; i++)
 			sb.append(get(i)).append(",");

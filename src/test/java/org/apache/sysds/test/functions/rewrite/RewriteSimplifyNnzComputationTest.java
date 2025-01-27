@@ -95,9 +95,9 @@ public class RewriteSimplifyNnzComputationTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			if(rewrites)
-				Assert.assertFalse(heavyHittersContainsString(Opcodes.NOTEQUAL.getName()));
+				Assert.assertFalse(heavyHittersContainsString(Opcodes.NOTEQUAL.toString()));
 			else
-				Assert.assertTrue(heavyHittersContainsString(Opcodes.NOTEQUAL.getName()));
+				Assert.assertTrue(heavyHittersContainsString(Opcodes.NOTEQUAL.toString()));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;

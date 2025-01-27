@@ -60,7 +60,7 @@ public class Sql extends Lop {
 		// TODO spark
 		sb.append("CP");
 		sb.append(OPERAND_DELIMITOR);
-		sb.append(Opcodes.SQL.getName());
+		sb.append(Opcodes.SQL);
 		sb.append(OPERAND_DELIMITOR);
 		Lop inLop = _inputParams.get(SQL_CONN);
 		boolean literal = (inLop instanceof Data && ((Data) inLop).isLiteral());

@@ -43,42 +43,42 @@ public class RewriteRemoveComparisonChainsTest extends AutomatedTestBase
 
 	@Test
 	public void testComparisonGt0() {
-		runComparisonChainTest( Opcodes.GREATER.getName(), 0, false );
+		runComparisonChainTest( Opcodes.GREATER.toString(), 0, false );
 	}
 	
 	@Test
 	public void testComparisonGt0Rewrites() {
-		runComparisonChainTest( Opcodes.GREATER.getName(), 0, true );
+		runComparisonChainTest( Opcodes.GREATER.toString(), 0, true );
 	}
 	
 	@Test
 	public void testComparisonLte1() {
-		runComparisonChainTest( Opcodes.LESSEQUAL.getName(), 1, false );
+		runComparisonChainTest( Opcodes.LESSEQUAL.toString(), 1, false );
 	}
 	
 	@Test
 	public void testComparisonLte1Rewrites() {
-		runComparisonChainTest( Opcodes.LESSEQUAL.getName(), 1, true );
+		runComparisonChainTest( Opcodes.LESSEQUAL.toString(), 1, true );
 	}
 	
 	@Test
 	public void testComparisonEq0() {
-		runComparisonChainTest( Opcodes.EQUAL.getName(), 0, false );
+		runComparisonChainTest( Opcodes.EQUAL.toString(), 0, false );
 	}
 	
 	@Test
 	public void testComparisonEq0Rewrites() {
-		runComparisonChainTest( Opcodes.EQUAL.getName(), 0, true );
+		runComparisonChainTest( Opcodes.EQUAL.toString(), 0, true );
 	}
 	
 	@Test
 	public void testComparisonNeq1() {
-		runComparisonChainTest( Opcodes.NOTEQUAL.getName(), 1, false );
+		runComparisonChainTest( Opcodes.NOTEQUAL.toString(), 1, false );
 	}
 	
 	@Test
 	public void testComparisonNeq1Rewrites() {
-		runComparisonChainTest( Opcodes.NOTEQUAL.getName(), 1, true );
+		runComparisonChainTest( Opcodes.NOTEQUAL.toString(), 1, true );
 	}
 
 	private void runComparisonChainTest( String op, int compare, boolean rewrites )
@@ -97,7 +97,7 @@ public class RewriteRemoveComparisonChainsTest extends AutomatedTestBase
 			//check for applied rewrites
 			Assert.assertEquals(rewrites, heavyHittersContainsString("uaggouterchain"));
 			if( compare == 1 && rewrites )
-				Assert.assertTrue(!heavyHittersContainsString(Opcodes.EQUAL.getName()));
+				Assert.assertTrue(!heavyHittersContainsString(Opcodes.EQUAL.toString()));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;

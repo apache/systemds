@@ -40,25 +40,25 @@ public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction {
 		FrameBlock inBlock1 = ec.getFrameInput(input1.getName());
 		FrameBlock inBlock2 = ec.getFrameInput(input2.getName());
 		
-		if(getOpcode().equals(Opcodes.DROPINVALIDTYPE.getName())) {
+		if(getOpcode().equals(Opcodes.DROPINVALIDTYPE.toString())) {
 			// Perform computation using input frames, and produce the result frame
 			FrameBlock retBlock = inBlock1.dropInvalidType(inBlock2);
 			// Attach result frame with FrameBlock associated with output_name
 			ec.setFrameOutput(output.getName(), retBlock);
 		}
-		else if(getOpcode().equals(Opcodes.VALUESWAP.getName())) {
+		else if(getOpcode().equals(Opcodes.VALUESWAP.toString())) {
 			// Perform computation using input frames, and produce the result frame
 			FrameBlock retBlock = inBlock1.valueSwap(inBlock2);
 			// Attach result frame with FrameBlock associated with output_name
 			ec.setFrameOutput(output.getName(), retBlock);
 		}
-		else if(getOpcode().equals(Opcodes.FREPLICATE.getName())) {
+		else if(getOpcode().equals(Opcodes.FREPLICATE.toString())) {
 			// Perform computation using input frames, and produce the result frame
 			FrameBlock retBlock = inBlock1.frameRowReplication(inBlock2);
 			// Attach result frame with FrameBlock associated with output_name
 			ec.setFrameOutput(output.getName(), retBlock);
 		}
-		else if(getOpcode().equals(Opcodes.APPLYSCHEMA.getName())) {
+		else if(getOpcode().equals(Opcodes.APPLYSCHEMA.toString())) {
 			final int k = ((MultiThreadedOperator)_optr).getNumThreads();
 			final FrameBlock out = FrameLibApplySchema.applySchema(inBlock1, inBlock2, k);
 			ec.setFrameOutput(output.getName(), out);

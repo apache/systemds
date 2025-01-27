@@ -244,7 +244,7 @@ public class AlgorithmAutoEncoder extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlb3, rb3, eps, "Stat-DML", "Stat-R");
 			TestUtils.compareMatrices(dmlb4, rb4, eps, "Stat-DML", "Stat-R");
 			
-			Assert.assertTrue(heavyHittersContainsSubString(Opcodes.SPOOF.getName())
+			Assert.assertTrue(heavyHittersContainsSubString(Opcodes.SPOOF.toString())
 				|| heavyHittersContainsSubString("sp_spoof"));
 		}
 		finally {

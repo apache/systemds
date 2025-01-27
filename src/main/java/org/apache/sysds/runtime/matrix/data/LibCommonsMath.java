@@ -81,7 +81,7 @@ public class LibCommonsMath
 	}
 	
 	public static boolean isSupportedUnaryOperation( String opcode ) {
-		return ( opcode.equals(Opcodes.INVERSE.getName()) || opcode.equals(Opcodes.CHOLESKY.getName()) );
+		return ( opcode.equals(Opcodes.INVERSE.toString()) || opcode.equals(Opcodes.CHOLESKY.toString()) );
 	}
 	
 	public static boolean isSupportedMultiReturnOperation( String opcode ) {
@@ -103,14 +103,14 @@ public class LibCommonsMath
 	}
 	
 	public static boolean isSupportedMatrixMatrixOperation( String opcode ) {
-		return ( opcode.equals(Opcodes.SOLVE.getName()) );
+		return ( opcode.equals(Opcodes.SOLVE.toString()) );
 	}
 		
 	public static MatrixBlock unaryOperations(MatrixBlock inj, String opcode) {
 		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(inj);
-		if(opcode.equals(Opcodes.INVERSE.getName()))
+		if(opcode.equals(Opcodes.INVERSE.toString()))
 			return computeMatrixInverse(matrixInput);
-		else if (opcode.equals(Opcodes.CHOLESKY.getName()))
+		else if (opcode.equals(Opcodes.CHOLESKY.toString()))
 			return computeCholesky(matrixInput);
 		return null;
 	}
@@ -135,27 +135,27 @@ public class LibCommonsMath
 	}
 
 	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode, int threads, long seed) {
-		if(opcode.equals(Opcodes.QR.getName()))
+		if(opcode.equals(Opcodes.QR.toString()))
 			return computeQR(in);
 		else if (opcode.equals("qr2"))
 			return computeQR2(in, threads);
-		else if (opcode.equals(Opcodes.LU.getName()))
+		else if (opcode.equals(Opcodes.LU.toString()))
 			return computeLU(in);
-		else if (opcode.equals(Opcodes.EIGEN.getName()))
+		else if (opcode.equals(Opcodes.EIGEN.toString()))
 			return computeEigen(in);
 		else if (opcode.equals("eigen_lanczos"))
 			return computeEigenLanczos(in, threads, seed);
 		else if (opcode.equals("eigen_qr"))
 			return computeEigenQR(in, threads);
-		else if (opcode.equals(Opcodes.SVD.getName()))
+		else if (opcode.equals(Opcodes.SVD.toString()))
 			return computeSvd(in);
-		else if (opcode.equals(Opcodes.FFT.getName()))
+		else if (opcode.equals(Opcodes.FFT.toString()))
 			return computeFFT(in, threads);
-		else if (opcode.equals(Opcodes.IFFT.getName()))
+		else if (opcode.equals(Opcodes.IFFT.toString()))
 			return computeIFFT(in, threads);
-		else if (opcode.equals(Opcodes.FFT_LINEARIZED.getName()))
+		else if (opcode.equals(Opcodes.FFT_LINEARIZED.toString()))
 			return computeFFT_LINEARIZED(in, threads);
-		else if (opcode.equals(Opcodes.IFFT_LINEARIZED.getName()))
+		else if (opcode.equals(Opcodes.IFFT_LINEARIZED.toString()))
 			return computeIFFT_LINEARIZED(in, threads);
 		return null;
 	}
@@ -177,7 +177,7 @@ public class LibCommonsMath
 	}
 
 	public static MatrixBlock matrixMatrixOperations(MatrixBlock in1, MatrixBlock in2, String opcode) {
-		if(opcode.equals(Opcodes.SOLVE.getName())) {
+		if(opcode.equals(Opcodes.SOLVE.toString())) {
 			if (in1.getNumRows() != in1.getNumColumns())
 				throw new DMLRuntimeException("The A matrix, in solve(A,b) should have squared dimensions.");
 			return computeSolve(in1, in2);

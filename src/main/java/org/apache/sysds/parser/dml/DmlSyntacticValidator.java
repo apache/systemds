@@ -498,9 +498,9 @@ public class DmlSyntacticValidator implements DmlListener {
 	public void exitFunctionCallAssignmentStatement(FunctionCallAssignmentStatementContext ctx) {
 
 		Set<String> printStatements = new  HashSet<>();
-		printStatements.add(Opcodes.PRINT.getName());
-		printStatements.add(Opcodes.STOP.getName());
-		printStatements.add(Opcodes.ASSERT.getName());
+		printStatements.add(Opcodes.PRINT.toString());
+		printStatements.add(Opcodes.STOP.toString());
+		printStatements.add(Opcodes.ASSERT.toString());
 
 		Set<String> outputStatements = new HashSet<>();
 		outputStatements.add("write");
@@ -1502,7 +1502,7 @@ public class DmlSyntacticValidator implements DmlListener {
 				return;
 			}
 		} else if (numParams > 1) {
-			if (Opcodes.STOP.getName().equals(functionName)) {
+			if (Opcodes.STOP.toString().equals(functionName)) {
 				notifyErrorListeners("stop() function cannot have more than 1 parameter", ctx.start);
 				return;
 			}

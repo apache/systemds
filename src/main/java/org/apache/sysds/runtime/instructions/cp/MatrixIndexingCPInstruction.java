@@ -57,7 +57,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 		boolean inRange = ix.rowStart < mo.getNumRows() && ix.colStart < mo.getNumColumns();
 		
 		//right indexing
-		if( opcode.equalsIgnoreCase(Opcodes.RIGHT_INDEX.getName()) )
+		if( opcode.equalsIgnoreCase(Opcodes.RIGHT_INDEX.toString()) )
 		{
 			if( output.isScalar() && inRange ) { //SCALAR out
 				MatrixBlock matBlock = mo.acquireReadAndRelease();
@@ -95,7 +95,7 @@ public final class MatrixIndexingCPInstruction extends IndexingCPInstruction {
 			}
 		}
 		//left indexing
-		else if ( opcode.equalsIgnoreCase(Opcodes.LEFT_INDEX.getName()))
+		else if ( opcode.equalsIgnoreCase(Opcodes.LEFT_INDEX.toString()))
 		{
 			UpdateType updateType = mo.getUpdateType();
 			if(DMLScript.STATISTICS) {

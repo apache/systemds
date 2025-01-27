@@ -69,25 +69,25 @@ public abstract class BuiltinNaryCPInstruction extends CPInstruction
 				inputOperands[i-1] = new CPOperand(parts[i]);
 		}
 		
-		if( Opcodes.PRINTF.getName().equals(opcode) || Opcodes.LIST.getName().equals(opcode)) {
+		if( Opcodes.PRINTF.toString().equals(opcode) || Opcodes.LIST.toString().equals(opcode)) {
 			ValueFunction func = Builtin.getBuiltinFnObject(opcode);
 			return new ScalarBuiltinNaryCPInstruction(
 				new SimpleOperator(func), opcode, str, outputOperand, inputOperands);
 		}
-		else if( opcode.equals(Opcodes.CBIND.getName()) || opcode.equals(Opcodes.RBIND.getName()) ) {
+		else if( opcode.equals(Opcodes.CBIND.toString()) || opcode.equals(Opcodes.RBIND.toString()) ) {
 			return new MatrixBuiltinNaryCPInstruction(
 				null, opcode, str, outputOperand, inputOperands);
 		}
-		else if( opcode.equals(Opcodes.NMIN.getName()) || opcode.equals(Opcodes.NMAX.getName()) ) {
+		else if( opcode.equals(Opcodes.NMIN.toString()) || opcode.equals(Opcodes.NMAX.toString()) ) {
 			ValueFunction func = Builtin.getBuiltinFnObject(opcode.substring(1));
 			return new MatrixBuiltinNaryCPInstruction(
 				new SimpleOperator(func), opcode, str, outputOperand, inputOperands);
 		}
-		else if( opcode.equals(Opcodes.NP.getName()) ) {
+		else if( opcode.equals(Opcodes.NP.toString()) ) {
 			return new MatrixBuiltinNaryCPInstruction(
 				new SimpleOperator(Plus.getPlusFnObject()), opcode, str, outputOperand, inputOperands);
 		}
-		else if( opcode.equals(Opcodes.NM.getName()) ) {
+		else if( opcode.equals(Opcodes.NM.toString()) ) {
 			return new MatrixBuiltinNaryCPInstruction(
 					new SimpleOperator(Multiply.getMultiplyFnObject()), opcode, str, outputOperand, inputOperands);
 		}

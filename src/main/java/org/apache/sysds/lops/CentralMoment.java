@@ -84,14 +84,14 @@ public class CentralMoment extends Lop
 		StringBuilder sb = InstructionUtils.getStringBuilder();
 		if( input3 == null ) {
 			InstructionUtils.concatOperands(sb,
-				getExecType().toString(), Opcodes.CM.getName(),
+				getExecType().toString(), Opcodes.CM.toString(),
 				getInputs().get(0).prepInputOperand(input1),
 				getInputs().get(1).prepScalarInputOperand(getExecType()),
 				prepOutputOperand(output));
 		}
 		else {
 			InstructionUtils.concatOperands(sb,
-				getExecType().toString(), Opcodes.CM.getName(),
+				getExecType().toString(), Opcodes.CM.toString(),
 				getInputs().get(0).prepInputOperand(input1),
 				getInputs().get(1).prepInputOperand(input2),
 				getInputs().get(2).prepScalarInputOperand(getExecType()),

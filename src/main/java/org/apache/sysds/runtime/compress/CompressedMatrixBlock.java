@@ -685,19 +685,19 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public double max() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMAX.getName(), 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMAX.toString(), 1);
 		return aggregateUnaryOperations(op, null, 1000, null).get(0, 0);
 	}
 
 	@Override
 	public double min() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMIN.getName(), 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMIN.toString(), 1);
 		return aggregateUnaryOperations(op, null, 1000, null).get(0, 0);
 	}
 
 	@Override
 	public double sum() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAKP.getName(), 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAKP.toString(), 1);
 		return aggregateUnaryOperations(op, null, 1000, null).get(0, 0);
 	}
 
@@ -713,19 +713,19 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public double sumSq() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UASQKP.getName(), 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UASQKP.toString(), 1);
 		return aggregateUnaryOperations(op, null, 1000, null).get(0, 0);
 	}
 
 	@Override
 	public double prod() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAM.getName(), 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAM.toString(), 1);
 		return aggregateUnaryOperations(op, null, 1000, null).get(0, 0);
 	}
 
 	@Override
 	public double mean() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMEAN.getName(), 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMEAN.toString(), 1);
 		return aggregateUnaryOperations(op, null, 1000, null).get(0, 0);
 	}
 

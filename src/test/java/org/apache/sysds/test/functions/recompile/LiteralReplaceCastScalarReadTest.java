@@ -85,10 +85,10 @@ public class LiteralReplaceCastScalarReadTest extends AutomatedTestBase
 			runTest(true, false, null, -1); 
 		
 			//CHECK cast replacement and sum replacement
-			Assert.assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains(Opcodes.CAST_AS_INT.getName()));
-			Assert.assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains(Opcodes.CAST_AS_DOUBLE.getName()));
-			Assert.assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains(Opcodes.CAST_AS_BOOLEAN.getName()));
-			Assert.assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains(Opcodes.UAKP.getName())); //sum
+			Assert.assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains(Opcodes.CAST_AS_INT.toString()));
+			Assert.assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains(Opcodes.CAST_AS_DOUBLE.toString()));
+			Assert.assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains(Opcodes.CAST_AS_BOOLEAN.toString()));
+			Assert.assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains(Opcodes.UAKP.toString())); //sum
 		}
 		finally {
 			OptimizerUtils.ALLOW_CONSTANT_FOLDING = oldCF;

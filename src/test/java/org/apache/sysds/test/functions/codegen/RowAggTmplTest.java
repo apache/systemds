@@ -830,33 +830,33 @@ public class RowAggTmplTest extends AutomatedTestBase
 			
 			//ensure full aggregates for certain patterns
 			if( testname.equals(TEST_NAME15) )
-				Assert.assertFalse(heavyHittersContainsSubString(Opcodes.UARKP.getName()));
+				Assert.assertFalse(heavyHittersContainsSubString(Opcodes.UARKP.toString()));
 			if( testname.equals(TEST_NAME17) )
-				Assert.assertFalse(heavyHittersContainsSubString(Opcodes.RIGHT_INDEX.getName()));
+				Assert.assertFalse(heavyHittersContainsSubString(Opcodes.RIGHT_INDEX.toString()));
 			if( testname.equals(TEST_NAME28) || testname.equals(TEST_NAME45) )
 				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2)
 					&& !heavyHittersContainsSubString("sp_spoofRA", 2));
 			if( testname.equals(TEST_NAME30) )
 				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2)
-					&& !heavyHittersContainsSubString(Opcodes.RIGHT_INDEX.getName()));
+					&& !heavyHittersContainsSubString(Opcodes.RIGHT_INDEX.toString()));
 			if( testname.equals(TEST_NAME31) )
 				Assert.assertFalse(heavyHittersContainsSubString("spoofRA", 2));
 			if( testname.equals(TEST_NAME35) )
 				Assert.assertTrue(!heavyHittersContainsSubString("spoofRA", 2)
-					&& !heavyHittersContainsSubString(Opcodes.CBIND.getName()));
+					&& !heavyHittersContainsSubString(Opcodes.CBIND.toString()));
 			if( testname.equals(TEST_NAME36) )
-				Assert.assertFalse(heavyHittersContainsSubString(Opcodes.XOR.getName()));
+				Assert.assertFalse(heavyHittersContainsSubString(Opcodes.XOR.toString()));
 			if( testname.equals(TEST_NAME41) )
 				Assert.assertFalse(heavyHittersContainsSubString("seq"));
 			if( testname.equals(TEST_NAME42) )
-				Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.MIN.getName(),Opcodes.NMIN.getName())
-					&& !heavyHittersContainsSubString(Opcodes.SPOOF.getName(), 2));
+				Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.MIN.toString(),Opcodes.NMIN.toString())
+					&& !heavyHittersContainsSubString(Opcodes.SPOOF.toString(), 2));
 			if( testname.equals(TEST_NAME44) )
-				Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.MAXPOOLING.getName())
-					&& !heavyHittersContainsSubString(Opcodes.SPOOF.getName(), 2));
+				Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.MAXPOOLING.toString())
+					&& !heavyHittersContainsSubString(Opcodes.SPOOF.toString(), 2));
 			if( testname.equals(TEST_NAME46) )
-				Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.CONV2D.getName())
-					&& !heavyHittersContainsSubString(Opcodes.SPOOF.getName(), 2));
+				Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.CONV2D.toString())
+					&& !heavyHittersContainsSubString(Opcodes.SPOOF.toString(), 2));
 		}
 		finally {
 			resetExecMode(platformOld);

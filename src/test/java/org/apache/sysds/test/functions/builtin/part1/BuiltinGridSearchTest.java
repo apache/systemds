@@ -175,7 +175,7 @@ public class BuiltinGridSearchTest extends AutomatedTestBase
 			
 			//correct handling of verbose flag
 			if( verbose ) // 2 prints outside, if verbose more
-				Assert.assertTrue(Statistics.getCPHeavyHitterCount(Opcodes.PRINT.getName())>100);
+				Assert.assertTrue(Statistics.getCPHeavyHitterCount(Opcodes.PRINT.toString())>100);
 			
 			//Assert.assertEquals(0, Statistics.getNoOfExecutedSPInst());
 			//TODO analyze influence of multiple subsequent tests

@@ -541,10 +541,10 @@ public class FullVectorVectorCellwiseOperationTest extends AutomatedTestBase
 			String opcoder = null;
 			switch( type )
 			{
-				case ADDITION: opcode = Opcodes.PLUS.getName(); opcoder="+";  break;
-				case SUBTRACTION: opcode = Opcodes.MINUS.getName();  opcoder="-"; break;
-				case MULTIPLICATION: opcode=Opcodes.MULT.getName();  opcoder="mult"; break;
-				case LESS_THAN: opcode=Opcodes.LESS.getName(); opcoder="lt"; break;
+				case ADDITION: opcode = Opcodes.PLUS.toString(); opcoder="+";  break;
+				case SUBTRACTION: opcode = Opcodes.MINUS.toString();  opcoder="-"; break;
+				case MULTIPLICATION: opcode=Opcodes.MULT.toString();  opcoder="mult"; break;
+				case LESS_THAN: opcode=Opcodes.LESS.toString(); opcoder="lt"; break;
 			}
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);

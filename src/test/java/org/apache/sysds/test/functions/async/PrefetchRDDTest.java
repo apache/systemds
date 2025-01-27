@@ -120,7 +120,7 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 				|| testname.equalsIgnoreCase(TEST_NAME+"5"))
 				expected_numPF = 0;
 			//long expected_successPF = !testname.equalsIgnoreCase(TEST_NAME+"3") ? 1 : 0;
-			long numPF = Statistics.getCPHeavyHitterCount(Opcodes.PREFETCH.getName());
+			long numPF = Statistics.getCPHeavyHitterCount(Opcodes.PREFETCH.toString());
 			Assert.assertTrue("Violated Prefetch instruction count: "+numPF, numPF == expected_numPF);
 			//long successPF = SparkStatistics.getAsyncPrefetchCount();
 			//Assert.assertTrue("Violated successful Prefetch count: "+successPF, successPF == expected_successPF);

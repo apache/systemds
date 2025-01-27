@@ -100,43 +100,43 @@ public class DnnTransform extends Lop
 		switch(operation) {
 				
 		case MAX_POOL:
-			return Opcodes.MAXPOOLING.getName();
+			return Opcodes.MAXPOOLING.toString();
 			
 		case RELU_MAX_POOL:
-			return Opcodes.RELU_MAXPOOLING.getName();
+			return Opcodes.RELU_MAXPOOLING.toString();
 			
 		case RELU_MAX_POOL_BACKWARD:
-			return Opcodes.RELU_MAXPOOLING_BACKWARD.getName();
+			return Opcodes.RELU_MAXPOOLING_BACKWARD.toString();
 			
 		case RELU_BACKWARD:
-			return Opcodes.RELU_BACKWARD.getName();
+			return Opcodes.RELU_BACKWARD.toString();
 			
 		case MAX_POOL_BACKWARD:
-			return Opcodes.MAXPOOLING_BACKWARD.getName();
+			return Opcodes.MAXPOOLING_BACKWARD.toString();
 		
 		case AVG_POOL:
-			return Opcodes.AVGPOOLING.getName();
+			return Opcodes.AVGPOOLING.toString();
 			
 		case AVG_POOL_BACKWARD:
-			return Opcodes.AVGPOOLING_BACKWARD.getName();
+			return Opcodes.AVGPOOLING_BACKWARD.toString();
 		
 		case CONV2D:
-			return Opcodes.CONV2D.getName();
+			return Opcodes.CONV2D.toString();
 		
 		case CONV2D_BIAS_ADD:
-			return Opcodes.CONV2D_BIAS_ADD.getName();
+			return Opcodes.CONV2D_BIAS_ADD.toString();
 		
 		case BIASADD:
-			return Opcodes.BIAS_ADD.getName();
+			return Opcodes.BIAS_ADD.toString();
 		
 		case BIASMULT:
-			return Opcodes.BIAS_MULTIPLY.getName();
+			return Opcodes.BIAS_MULTIPLY.toString();
 			
 		case CONV2D_BACKWARD_FILTER:
-			return Opcodes.CONV2D_BACKWARD_FILTER.getName();
+			return Opcodes.CONV2D_BACKWARD_FILTER.toString();
 			
 		case CONV2D_BACKWARD_DATA:
-			return Opcodes.CONV2D_BACKWARD_DATA.getName();
+			return Opcodes.CONV2D_BACKWARD_DATA.toString();
 			
 		case CHANNEL_SUMS:
 			return "channel_sums";

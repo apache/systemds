@@ -163,7 +163,7 @@ public class RewriteSimplifyWeightedUnaryMMTest extends AutomatedTestBase {
 			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 			HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromExpectedDir("R");
 			TestUtils.compareMatrices(dmlfile, rfile, 1e-8, "Stat-DML", "Stat-R");
-			Assert.assertTrue(heavyHittersContainsString(Opcodes.WUMM.getName())==rewrites);
+			Assert.assertTrue(heavyHittersContainsString(Opcodes.WUMM.toString())==rewrites);
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag1;

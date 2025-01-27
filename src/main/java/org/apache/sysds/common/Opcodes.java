@@ -17,11 +17,11 @@ public enum Opcodes {
 
     UAKP("uak+", CPType.AggregateUnary),
 	UARKP("uark+", CPType.AggregateUnary),
-    UACKP( "uack+", CPType.AggregateUnary),
-    UASQKP( "uasqk+", CPType.AggregateUnary),
-    UARSQKP( "uarsqk+", CPType.AggregateUnary),
-	UACSQKP( "uacsqk+", CPType.AggregateUnary),
-	UAMEAN( "uamean", CPType.AggregateUnary),
+    UACKP("uack+", CPType.AggregateUnary),
+    UASQKP("uasqk+", CPType.AggregateUnary),
+    UARSQKP("uarsqk+", CPType.AggregateUnary),
+	UACSQKP("uacsqk+", CPType.AggregateUnary),
+	UAMEAN("uamean", CPType.AggregateUnary),
     UARMEAN("uarmean", CPType.AggregateUnary),
     UACMEAN("uacmean", CPType.AggregateUnary),
     UAVAR("uavar", CPType.AggregateUnary),
@@ -285,7 +285,6 @@ public enum Opcodes {
 
     SQL("sql", CPType.Sql);
 
-
     // Constructor
     Opcodes(String name, CPType type) {
         this._name = name;
@@ -301,12 +300,13 @@ public enum Opcodes {
     // Initialize lookup map
     static {
         for (Opcodes op : EnumSet.allOf(Opcodes.class)) {
-            _lookupMap.put(op.getName(), op);
+            _lookupMap.put(op.toString(), op);
         }
     }
 
     // Getters
-    public String getName() {
+    @Override
+    public String toString() {
         return _name;
     }
 
@@ -316,13 +316,10 @@ public enum Opcodes {
 
     public static CPType getCPTypeByOpcode(String opcode) {
         for (Opcodes op : Opcodes.values()) {
-            if (op.getName().equalsIgnoreCase(opcode.trim())) {
+            if (op.toString().equalsIgnoreCase(opcode.trim())) {
                 return op.getType();
             }
         }
         return null;
     }
-
-
-
 }

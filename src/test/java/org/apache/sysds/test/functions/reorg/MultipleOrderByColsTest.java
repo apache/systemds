@@ -195,7 +195,7 @@ public class MultipleOrderByColsTest extends AutomatedTestBase
 			
 			//check for applied rewrite
 			if( testname.equals(TEST_NAME2) && !ixret )
-				Assert.assertTrue(Statistics.getCPHeavyHitterCount(Opcodes.SORT.getName())==1);
+				Assert.assertTrue(Statistics.getCPHeavyHitterCount(Opcodes.SORT.toString())==1);
 		}
 		finally {
 			rtplatform = platformOld;

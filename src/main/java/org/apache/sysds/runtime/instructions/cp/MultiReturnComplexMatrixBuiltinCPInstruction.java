@@ -79,7 +79,7 @@ public class MultiReturnComplexMatrixBuiltinCPInstruction extends ComputationCPI
 		// first part is always the opcode
 		String opcode = parts[0];
 
-		if(parts.length == 6 && opcode.equalsIgnoreCase(Opcodes.IFFT.getName())) {
+		if(parts.length == 6 && opcode.equalsIgnoreCase(Opcodes.IFFT.toString())) {
 			// one input and two outputs
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
@@ -89,7 +89,7 @@ public class MultiReturnComplexMatrixBuiltinCPInstruction extends ComputationCPI
 
 			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, in2, outputs, opcode, str, threads);
 		}
-		else if(parts.length == 5 && opcode.equalsIgnoreCase(Opcodes.IFFT.getName())) {
+		else if(parts.length == 5 && opcode.equalsIgnoreCase(Opcodes.IFFT.toString())) {
 			// one input and two outputs
 			CPOperand in1 = new CPOperand(parts[1]);
 			outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
@@ -98,7 +98,7 @@ public class MultiReturnComplexMatrixBuiltinCPInstruction extends ComputationCPI
 
 			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, outputs, opcode, str, threads);
 		}
-		else if(parts.length == 6 && opcode.equalsIgnoreCase(Opcodes.IFFT_LINEARIZED.getName())) {
+		else if(parts.length == 6 && opcode.equalsIgnoreCase(Opcodes.IFFT_LINEARIZED.toString())) {
 			// one input and two outputs
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
@@ -108,7 +108,7 @@ public class MultiReturnComplexMatrixBuiltinCPInstruction extends ComputationCPI
 
 			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, in2, outputs, opcode, str, threads);
 		}
-		else if(parts.length == 5 && opcode.equalsIgnoreCase(Opcodes.IFFT_LINEARIZED.getName())) {
+		else if(parts.length == 5 && opcode.equalsIgnoreCase(Opcodes.IFFT_LINEARIZED.toString())) {
 			// one input and two outputs
 			CPOperand in1 = new CPOperand(parts[1]);
 			outputs.add(new CPOperand(parts[2], ValueType.FP64, DataType.MATRIX));
@@ -117,7 +117,7 @@ public class MultiReturnComplexMatrixBuiltinCPInstruction extends ComputationCPI
 
 			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, outputs, opcode, str, threads);
 		}
-		else if(parts.length == 7 && opcode.equalsIgnoreCase(Opcodes.STFT.getName())) {
+		else if(parts.length == 7 && opcode.equalsIgnoreCase(Opcodes.STFT.toString())) {
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand windowSize = new CPOperand(parts[2]);
 			CPOperand overlap = new CPOperand(parts[3]);
@@ -128,7 +128,7 @@ public class MultiReturnComplexMatrixBuiltinCPInstruction extends ComputationCPI
 			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, null, windowSize, overlap, outputs, opcode,
 				str, threads);
 		}
-		else if(parts.length == 8 && opcode.equalsIgnoreCase(Opcodes.STFT.getName())) {
+		else if(parts.length == 8 && opcode.equalsIgnoreCase(Opcodes.STFT.toString())) {
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand windowSize = new CPOperand(parts[3]);
@@ -140,7 +140,7 @@ public class MultiReturnComplexMatrixBuiltinCPInstruction extends ComputationCPI
 			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, in2, windowSize, overlap, outputs, opcode,
 				str, threads);
 		}
-		else if ( opcode.equalsIgnoreCase(Opcodes.RCM.getName()) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.RCM.toString()) ) {
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			outputs.add ( new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX) );
@@ -160,9 +160,9 @@ public class MultiReturnComplexMatrixBuiltinCPInstruction extends ComputationCPI
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		if(getOpcode().equals(Opcodes.STFT.getName()) && input2 == null)
+		if(getOpcode().equals(Opcodes.STFT.toString()) && input2 == null)
 			processSTFTInstruction(ec);
-		else if(getOpcode().equals(Opcodes.STFT.getName()))
+		else if(getOpcode().equals(Opcodes.STFT.toString()))
 			processSTFTTwoInstruction(ec);
 		else if(input2 == null)
 			processOneInputInstruction(ec);

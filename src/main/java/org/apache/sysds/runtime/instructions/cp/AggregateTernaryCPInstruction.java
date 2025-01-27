@@ -44,7 +44,7 @@ public class AggregateTernaryCPInstruction extends ComputationCPInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
-		if(opcode.equalsIgnoreCase(Opcodes.TAKPM.getName()) || opcode.equalsIgnoreCase(Opcodes.TACKPM.getName())) {
+		if(opcode.equalsIgnoreCase(Opcodes.TAKPM.toString()) || opcode.equalsIgnoreCase(Opcodes.TACKPM.toString())) {
 			InstructionUtils.checkNumFields(parts, 5);
 
 			CPOperand in1 = new CPOperand(parts[1]);

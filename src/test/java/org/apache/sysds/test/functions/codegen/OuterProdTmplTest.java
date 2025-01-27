@@ -242,7 +242,7 @@ public class OuterProdTmplTest extends AutomatedTestBase
 				Assert.assertTrue(heavyHittersContainsSubString("spoofOP")
 						|| heavyHittersContainsSubString("sp_spoofOP"));
 				if( testname.equals(TEST_NAME9) )
-					Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.NOTEQUAL.getName()));
+					Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.NOTEQUAL.toString()));
 			}
 		}
 		finally {

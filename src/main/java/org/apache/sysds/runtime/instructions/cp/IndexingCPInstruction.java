@@ -77,7 +77,7 @@ public abstract class IndexingCPInstruction extends UnaryCPInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		
-		if ( opcode.equalsIgnoreCase(Opcodes.RIGHT_INDEX.getName()) ) {
+		if ( opcode.equalsIgnoreCase(Opcodes.RIGHT_INDEX.toString()) ) {
 			if ( parts.length == 7 ) {
 				CPOperand in, rl, ru, cl, cu, out;
 				in = new CPOperand(parts[1]);
@@ -99,7 +99,7 @@ public abstract class IndexingCPInstruction extends UnaryCPInstruction {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
 			}
 		} 
-		else if ( opcode.equalsIgnoreCase(Opcodes.LEFT_INDEX.getName())) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.LEFT_INDEX.toString())) {
 			if ( parts.length == 8 ) {
 				CPOperand lhsInput, rhsInput, rl, ru, cl, cu, out;
 				lhsInput = new CPOperand(parts[1]);

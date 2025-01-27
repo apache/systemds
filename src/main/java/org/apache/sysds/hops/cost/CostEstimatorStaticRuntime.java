@@ -282,7 +282,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		
 		//NOTE: all instruction types that are equivalent in CP and MR are only
 		//included in CP to prevent redundancy
-		CPType cptype = Opcodes.valueOf(optype).getType();
+		CPType cptype = Opcodes.getCPTypeByOpcode(optype);
 		if( cptype != null ) //for CP Ops and equivalent MR ops
 		{
 			//general approach: count of floating point *, /, +, -, ^, builtin ;
@@ -290,7 +290,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 			{
 			
 				case AggregateBinary: //opcodes: ba+*, cov
-					if( optype.equals(Opcodes.MMULT.getName()) ) { //matrix mult
+					if( optype.equals(Opcodes.MMULT.toString()) ) { //matrix mult
 						//reduction by factor 2 because matrix mult better than
 						//average flop count
 						if( !leftSparse && !rightSparse )
@@ -302,7 +302,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 						else //leftSparse && rightSparse
 							return 2 * (d1m * d1n * d1s * d2n * d2s) /2;
 					}
-					else if( optype.equals(Opcodes.COV.getName()) ) {
+					else if( optype.equals(Opcodes.COV.toString()) ) {
 						//note: output always scalar, d3 used as weights block
 						//if( allExists ), same runtime for 2 and 3 inputs
 						return 23 * d1m; //(11+3*k+)
@@ -329,7 +329,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					
 					if( optype.equals("nrow") || optype.equals("ncol") || optype.equals("length") )
 						return DEFAULT_NFLOP_NOOP;
-					else if( optype.equals( Opcodes.CM.getName() ) ) {
+					else if( optype.equals( Opcodes.CM.toString() ) ) {
 						double xcm = 1;
 						switch( Integer.parseInt(args[0]) ) {
 							case 0: xcm=1; break; //count
@@ -341,26 +341,26 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 						}
 						return (leftSparse) ? xcm * (d1m * d1s + 1) : xcm * d1m;
 					}
-					else if( optype.equals(Opcodes.UATRACE.getName()) || optype.equals(Opcodes.UAKTRACE.getName()) )
+					else if( optype.equals(Opcodes.UATRACE.toString()) || optype.equals(Opcodes.UAKTRACE.toString()) )
 						return 2 * d1m * d1n;
-					else if( optype.equals(Opcodes.UAP.getName()) || optype.equals(Opcodes.UARP.getName()) || optype.equals(Opcodes.UACP.getName())  ){
+					else if( optype.equals(Opcodes.UAP.toString()) || optype.equals(Opcodes.UARP.toString()) || optype.equals(Opcodes.UACP.toString())  ){
 						//sparse safe operations
 						if( !leftSparse ) //dense
 							return d1m * d1n;
 						else //sparse
 							return d1m * d1n * d1s;
 					}
-					else if( optype.equals(Opcodes.UAKP.getName()) || optype.equals(Opcodes.UARKP.getName()) || optype.equals(Opcodes.UACKP.getName()))
+					else if( optype.equals(Opcodes.UAKP.toString()) || optype.equals(Opcodes.UARKP.toString()) || optype.equals(Opcodes.UACKP.toString()))
 						return 4 * d1m * d1n; //1*k+
-					else if( optype.equals(Opcodes.UASQKP.getName()) || optype.equals(Opcodes.UARSQKP.getName()) || optype.equals(Opcodes.UACSQKP.getName()))
+					else if( optype.equals(Opcodes.UASQKP.toString()) || optype.equals(Opcodes.UARSQKP.toString()) || optype.equals(Opcodes.UACSQKP.toString()))
 						return 5 * d1m * d1n; // +1 for multiplication to square term
-					else if( optype.equals(Opcodes.UAMEAN.getName()) || optype.equals(Opcodes.UARMEAN.getName()) || optype.equals(Opcodes.UACMEAN.getName()))
+					else if( optype.equals(Opcodes.UAMEAN.toString()) || optype.equals(Opcodes.UARMEAN.toString()) || optype.equals(Opcodes.UACMEAN.toString()))
 						return 7 * d1m * d1n; //1*k+
-					else if( optype.equals(Opcodes.UAVAR.getName()) || optype.equals(Opcodes.UARVAR.getName()) || optype.equals(Opcodes.UACVAR.getName()))
+					else if( optype.equals(Opcodes.UAVAR.toString()) || optype.equals(Opcodes.UARVAR.toString()) || optype.equals(Opcodes.UACVAR.toString()))
 						return 14 * d1m * d1n;
-					else if(   optype.equals(Opcodes.UAMAX.getName()) || optype.equals(Opcodes.UARMAX.getName()) || optype.equals(Opcodes.UACMAX.getName())
-						|| optype.equals(Opcodes.UAMIN.getName()) || optype.equals(Opcodes.UARMIN.getName()) || optype.equals(Opcodes.UACMIN.getName())
-						|| optype.equals(Opcodes.UARIMAX.getName()) || optype.equals(Opcodes.UAM.getName()) )
+					else if(   optype.equals(Opcodes.UAMAX.toString()) || optype.equals(Opcodes.UARMAX.toString()) || optype.equals(Opcodes.UACMAX.toString())
+						|| optype.equals(Opcodes.UAMIN.toString()) || optype.equals(Opcodes.UARMIN.toString()) || optype.equals(Opcodes.UACMIN.toString())
+						|| optype.equals(Opcodes.UARIMAX.toString()) || optype.equals(Opcodes.UAM.toString()) )
 						return d1m * d1n;
 					
 					return 0;
@@ -369,10 +369,10 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					//max, min, solve, ==, !=, <, >, <=, >=  
 					//note: all relational ops are not sparsesafe
 					//note: covers scalar-scalar, scalar-matrix, matrix-matrix
-					if( optype.equals("+") || optype.equals("-") //sparse safe
+					if( optype.equals(Opcodes.PLUS.toString()) || optype.equals(Opcodes.MINUS.toString()) //sparse safe
 						&& ( leftSparse || rightSparse ) )
 						return d1m*d1n*d1s + d2m*d2n*d2s;
-					else if( optype.equals(Opcodes.SOLVE.getName()) ) //see also MultiReturnBuiltin
+					else if( optype.equals(Opcodes.SOLVE.toString()) ) //see also MultiReturnBuiltin
 						return d1m * d1n * d1n; //for 1kx1k ~ 1GFLOP -> 0.5s
 					else
 						return d3m*d3n;
@@ -381,7 +381,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					return 2 * d1m * d1n;
 					
 				case Ctable: //opcodes: ctable
-					if( optype.equals(Opcodes.CTABLE.getName()) ){
+					if( optype.equals(Opcodes.CTABLE.toString()) ){
 						if( leftSparse )
 							return d1m * d1n * d1s; //add
 						else 
@@ -399,17 +399,17 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					
 				case Unary: //opcodes: exp, abs, sin, cos, tan, sign, sqrt, plogp, print, round, sprop, sigmoid
 					//TODO add cost functions for commons math builtins: inverse, cholesky
-					if( optype.equals(Opcodes.PRINT.getName()) ) //scalar only
+					if( optype.equals(Opcodes.PRINT.toString()) ) //scalar only
 						return 1;
 					else
 					{
 						double xbu = 1; //default for all ops
-						if( optype.equals(Opcodes.PLOGP.getName()) ) xbu = 2;
-						else if( optype.equals(Opcodes.ROUND.getName()) ) xbu = 4;
+						if( optype.equals(Opcodes.PLOGP.toString()) ) xbu = 2;
+						else if( optype.equals(Opcodes.ROUND.toString()) ) xbu = 4;
 						
-						if( optype.equals(Opcodes.SIN.getName()) || optype.equals(Opcodes.TAN.getName()) || optype.equals(Opcodes.ROUND.getName())
-							|| optype.equals(Opcodes.ABS.getName()) || optype.equals(Opcodes.SQRT.getName()) || optype.equals(Opcodes.SPROP.getName())
-							|| optype.equals(Opcodes.SIGMOID.getName()) || optype.equals(Opcodes.SIGN.getName()) ) //sparse-safe
+						if( optype.equals(Opcodes.SIN.toString()) || optype.equals(Opcodes.TAN.toString()) || optype.equals(Opcodes.ROUND.toString())
+							|| optype.equals(Opcodes.ABS.toString()) || optype.equals(Opcodes.SQRT.toString()) || optype.equals(Opcodes.SPROP.toString())
+							|| optype.equals(Opcodes.SIGMOID.toString()) || optype.equals(Opcodes.SIGN.toString()) ) //sparse-safe
 						{
 							if( leftSparse ) //sparse
 								return xbu * d1m * d1n * d1s;	
@@ -452,7 +452,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 						return DEFAULT_NFLOP_NOOP;
 			
 				case Rand: //opcodes: rand, seq
-					if( optype.equals(Opcodes.RANDOM.getName()) ){
+					if( optype.equals(Opcodes.RANDOM.toString()) ){
 						int nflopRand = 32; //per random number
 						switch(Integer.parseInt(args[0])) {
 							case 0: return DEFAULT_NFLOP_NOOP; //empty matrix
@@ -481,18 +481,18 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 				case MultiReturnBuiltin: //opcodes: qr, lu, eigen, svd
 					//note: they all have cubic complexity, the scaling factor refers to commons.math
 					double xf = 2; //default e.g, qr
-					if( optype.equals(Opcodes.EIGEN.getName()) )
+					if( optype.equals(Opcodes.EIGEN.toString()) )
 						xf = 32;
-					else if ( optype.equals(Opcodes.LU.getName()) )
+					else if ( optype.equals(Opcodes.LU.toString()) )
 						xf = 16;
-					else if ( optype.equals(Opcodes.SVD.getName()))
+					else if ( optype.equals(Opcodes.SVD.toString()))
 						xf = 32;	// TODO - assuming worst case for now
 					return xf * d1m * d1n * d1n; //for 1kx1k ~ 2GFLOP -> 1s
 					
 				case ParameterizedBuiltin: //opcodes: cdf, invcdf, groupedagg, rmempty
-					if( optype.equals(Opcodes.CDF.getName()) || optype.equals(Opcodes.INVCDF.getName()))
+					if( optype.equals(Opcodes.CDF.toString()) || optype.equals(Opcodes.INVCDF.toString()))
 						return DEFAULT_NFLOP_UNKNOWN; //scalar call to commons.math
-					else if( optype.equals(Opcodes.GROUPEDAGG.getName()) ){
+					else if( optype.equals(Opcodes.GROUPEDAGG.toString()) ){
 						double xga = 1;
 						switch( Integer.parseInt(args[0]) ) {
 							case 0: xga=4; break; //sum, see uk+
@@ -505,7 +505,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 						}						
 						return 2 * d1m + xga * d1m; //scan for min/max, groupedagg
 					}	
-					else if( optype.equals(Opcodes.RMEMPTY.getName()) ){
+					else if( optype.equals(Opcodes.RMEMPTY.toString()) ){
 						switch(Integer.parseInt(args[0])){
 							case 0: //remove rows
 								return ((leftSparse) ? d1m : d1m * Math.ceil(1.0d/d1s)/2) +
@@ -532,11 +532,11 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					return 0;
 					
 				case MatrixIndexing: //opcodes: rightIndex, leftIndex
-					if( optype.equals(Opcodes.LEFT_INDEX.getName()) ){
+					if( optype.equals(Opcodes.LEFT_INDEX.toString()) ){
 						return DEFAULT_NFLOP_CP * ((leftSparse)? d1m*d1n*d1s : d1m*d1n)
 						       + 2 * DEFAULT_NFLOP_CP * ((rightSparse)? d2m*d2n*d2s : d2m*d2n );
 					}
-					else if( optype.equals(Opcodes.RIGHT_INDEX.getName()) ){
+					else if( optype.equals(Opcodes.RIGHT_INDEX.toString()) ){
 						return DEFAULT_NFLOP_CP * ((leftSparse)? d2m*d2n*d2s : d2m*d2n );
 					}
 					return 0;

@@ -53,7 +53,7 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
-		if(!opcode.equalsIgnoreCase(Opcodes.MMULT.getName())) {
+		if(!opcode.equalsIgnoreCase(Opcodes.MMULT.toString())) {
 			throw new DMLRuntimeException("AggregateBinaryInstruction.parseInstruction():: Unknown opcode " + opcode);
 		}
 

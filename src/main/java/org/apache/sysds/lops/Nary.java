@@ -117,9 +117,9 @@ public class Nary extends Lop {
 				//need to differentiate from binary min/max operations
 				return "n"+operationType.name().toLowerCase();
 			case PLUS:
-				return Opcodes.NP.getName();
+				return Opcodes.NP.toString();
 			case MULT:
-				return Opcodes.NM.getName();
+				return Opcodes.NM.toString();
 			default:
 				throw new UnsupportedOperationException(
 					"Nary operation type (" + operationType + ") is not defined.");

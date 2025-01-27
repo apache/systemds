@@ -73,8 +73,7 @@ public class CPInstructionParser extends InstructionParser {
 		if ( str == null || str.isEmpty() )
 			return null;
 		CPType cptype = InstructionUtils.getCPType(str);
-		//CPType cptype = Opcodes.getCPTypeByOpcode(str);
-		if ( cptype == null ) 
+		if ( cptype == null )
 			throw new DMLRuntimeException("Unable derive cptype for instruction: " + str);
 		CPInstruction cpinst = parseSingleInstruction(cptype, str);
 		if ( cpinst == null )
@@ -168,7 +167,7 @@ public class CPInstructionParser extends InstructionParser {
 			
 			case Builtin: 
 				String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-				if(parts[0].equals(Opcodes.LOG.getName()) || parts[0].equals(Opcodes.LOGNZ.getName())) {
+				if(parts[0].equals(Opcodes.LOG.toString()) || parts[0].equals(Opcodes.LOGNZ.toString())) {
 					if(InstructionUtils.isInteger(parts[3])) // B=log(A), y=log(x)
 						// We exploit the fact the number of threads is specified as an integer at parts 3.
 						return UnaryCPInstruction.parseInstruction(str);

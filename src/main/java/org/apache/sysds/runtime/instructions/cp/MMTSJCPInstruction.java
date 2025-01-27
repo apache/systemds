@@ -48,7 +48,7 @@ public class MMTSJCPInstruction extends UnaryCPInstruction {
 		MMTSJType titype = MMTSJType.valueOf(parts[3]);
 		int k = Integer.parseInt(parts[4]);
 		
-		if(!opcode.equalsIgnoreCase(Opcodes.TSMM.getName()))
+		if(!opcode.equalsIgnoreCase(Opcodes.TSMM.toString()))
 			throw new DMLRuntimeException("Unknown opcode while parsing an MMTSJCPInstruction: " + str);
 		else
 			return new MMTSJCPInstruction(new Operator(true), in1, titype, out, k, opcode, str);

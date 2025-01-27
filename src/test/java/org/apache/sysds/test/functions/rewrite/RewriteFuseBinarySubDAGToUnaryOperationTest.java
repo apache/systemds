@@ -105,9 +105,9 @@ public class RewriteFuseBinarySubDAGToUnaryOperationTest extends AutomatedTestBa
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			if (rewrites)
-				Assert.assertTrue(heavyHittersContainsString(Opcodes.SPROP.getName()) || heavyHittersContainsString(Opcodes.SIGMOID.getName()));
+				Assert.assertTrue(heavyHittersContainsString(Opcodes.SPROP.toString()) || heavyHittersContainsString(Opcodes.SIGMOID.toString()));
 			else
-				Assert.assertFalse(heavyHittersContainsString(Opcodes.SPROP.getName()) || heavyHittersContainsString(Opcodes.SIGMOID.getName()));
+				Assert.assertFalse(heavyHittersContainsString(Opcodes.SPROP.toString()) || heavyHittersContainsString(Opcodes.SIGMOID.toString()));
 
 
 		}

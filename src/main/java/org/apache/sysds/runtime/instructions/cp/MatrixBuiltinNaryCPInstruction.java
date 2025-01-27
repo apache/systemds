@@ -48,8 +48,8 @@ public class MatrixBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction imp
 		List<FrameBlock> frames = ec.getFrameInputs(inputs);
 		
 		CacheBlock<?> outBlock = null;
-		if( Opcodes.CBIND.getName().equals(getOpcode()) || Opcodes.RBIND.getName().equals(getOpcode()) ) {
-			boolean cbind = Opcodes.CBIND.getName().equals(getOpcode());
+		if( Opcodes.CBIND.toString().equals(getOpcode()) || Opcodes.RBIND.toString().equals(getOpcode()) ) {
+			boolean cbind = Opcodes.CBIND.toString().equals(getOpcode());
 			if(frames.size() == 0 ) { //matrix/scalar
 	 			//robustness for empty lists: create 0-by-0 matrix block
 				outBlock = matrices.size() == 0 ? new MatrixBlock(0, 0, 0) : 
@@ -63,7 +63,7 @@ public class MatrixBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction imp
 					outBlock = ((FrameBlock)outBlock).append(frames.get(i), cbind);
 			}
 		}
-		else if( ArrayUtils.contains(new String[]{Opcodes.NMIN.getName(), Opcodes.NMAX.getName(), Opcodes.NP.getName(), Opcodes.NM.getName()}, getOpcode()) ) {
+		else if( ArrayUtils.contains(new String[]{Opcodes.NMIN.toString(), Opcodes.NMAX.toString(), Opcodes.NP.toString(), Opcodes.NM.toString()}, getOpcode()) ) {
 			outBlock = MatrixBlock.naryOperations(_optr, matrices.toArray(new MatrixBlock[0]),
 				scalars.toArray(new ScalarObject[0]), new MatrixBlock());
 		}

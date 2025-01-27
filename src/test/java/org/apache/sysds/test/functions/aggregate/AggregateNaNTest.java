@@ -90,22 +90,22 @@ public class AggregateNaNTest extends AutomatedTestBase
 	
 	@Test
 	public void testRowIndexMaxDenseNaN() {
-		runNaNRowIndexMxxTest(Opcodes.UARIMAX.getName(), false);
+		runNaNRowIndexMxxTest(Opcodes.UARIMAX.toString(), false);
 	}
 	
 	@Test
 	public void testRowIndexMaxSparseNaN() {
-		runNaNRowIndexMxxTest(Opcodes.UARIMAX.getName(), true);
+		runNaNRowIndexMxxTest(Opcodes.UARIMAX.toString(), true);
 	}
 	
 	@Test
 	public void testRowIndexMinDenseNaN() {
-		runNaNRowIndexMxxTest(Opcodes.UARIMIN.getName(), false);
+		runNaNRowIndexMxxTest(Opcodes.UARIMIN.toString(), false);
 	}
 	
 	@Test
 	public void testRowIndexMinSparseNaN() {
-		runNaNRowIndexMxxTest(Opcodes.UARIMIN.getName(), true);
+		runNaNRowIndexMxxTest(Opcodes.UARIMIN.toString(), true);
 	}
 	
 	private void runNaNAggregateTest(int type, boolean sparse) {

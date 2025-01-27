@@ -240,10 +240,10 @@ public class LineageItemUtils {
 			LineageItem out = operands.get(roots[0].getHopID());
 			if( roots.length > 1 ) { //multi-agg
 				LineageItem[] outputs = Arrays.stream(roots)
-					.map(h -> new LineageItem("", Opcodes.CAST_AS_MATRIX.getName(),
+					.map(h -> new LineageItem("", Opcodes.CAST_AS_MATRIX.toString(),
 						new LineageItem[]{operands.get(h.getHopID())}))
 					.toArray(LineageItem[]::new);
-				out = new LineageItem("", Opcodes.CBIND.getName(), outputs);
+				out = new LineageItem("", Opcodes.CBIND.toString(), outputs);
 			}
 			
 			//cache to avoid reconstruction
@@ -280,13 +280,13 @@ public class LineageItemUtils {
 		String name = Dag.getNextUniqueVarname(root.getDataType());
 		
 		if (root instanceof ReorgOp)
-			li = new LineageItem(name, Opcodes.TRANSPOSE.getName(), LIinputs);
+			li = new LineageItem(name, Opcodes.TRANSPOSE.toString(), LIinputs);
 		else if (root instanceof UnaryOp) {
 			String opcode = ((UnaryOp) root).getOp().toString();
 			li = new LineageItem(name, opcode, LIinputs);
 		}
 		else if (root instanceof AggBinaryOp)
-			li = new LineageItem(name, Opcodes.MMULT.getName(), LIinputs);
+			li = new LineageItem(name, Opcodes.MMULT.toString(), LIinputs);
 		else if (root instanceof BinaryOp)
 			li = new LineageItem(name, ((BinaryOp)root).getOp().toString(), LIinputs);
 		else if (root instanceof TernaryOp) {
@@ -303,7 +303,7 @@ public class LineageItemUtils {
 			li = new LineageItem(name, "rightIndex", LIinputs);
 		else if (root instanceof ParameterizedBuiltinOp) {
 			String opcode = ((ParameterizedBuiltinOp) root).getOp().toString();
-			if (opcode.equalsIgnoreCase(Opcodes.REPLACE.getName()))
+			if (opcode.equalsIgnoreCase(Opcodes.REPLACE.toString()))
 				li = new LineageItem(name, opcode, LIinputs);
 		}
 		else if (root instanceof SpoofFusedOp)
@@ -577,7 +577,7 @@ public class LineageItemUtils {
 				continue;
 			count++;
 			if ((ins instanceof ComputationSPInstruction && !ins.getOpcode().equals("chkpoint"))
-				|| ins.getOpcode().equals(Opcodes.PREFETCH.getName()))
+				|| ins.getOpcode().equals(Opcodes.PREFETCH.toString()))
 				hasSPInst = true;
 			if (ins instanceof ComputationCPInstruction && ((ComputationCPInstruction) ins).hasFrameInput())
 				hasFrameInput = true;

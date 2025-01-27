@@ -144,7 +144,7 @@ public class RewriteNaryMultTest extends AutomatedTestBase
 			//check for applied nary plus
 			String prefix = et == ExecType.SPARK ? "sp_" : "";
 			if( rewrites && !name.equals(TEST_NAME2) )
-                Assert.assertEquals(1, Statistics.getCPHeavyHitterCount(prefix + Opcodes.NM.getName()));
+                Assert.assertEquals(1, Statistics.getCPHeavyHitterCount(prefix + Opcodes.NM.toString()));
 			else
 				Assert.assertTrue(Statistics.getCPHeavyHitterCount(prefix+"*")>=1);
 		}

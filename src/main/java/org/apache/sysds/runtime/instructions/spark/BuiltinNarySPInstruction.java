@@ -96,9 +96,9 @@ public class BuiltinNarySPInstruction extends SPInstruction implements LineageTr
 		boolean inputIsMatrix = inputs[0].isMatrix();
 
 		
-		if( getOpcode().equals("cbind") || getOpcode().equals("rbind") ) {
+		if( getOpcode().equals(Opcodes.CBIND.getName()) || getOpcode().equals(Opcodes.RBIND.getName()) ) {
 			//compute output characteristics
-			boolean cbind = getOpcode().equals("cbind");
+			boolean cbind = getOpcode().equals(Opcodes.CBIND.getName());
 			dcout = computeAppendOutputDataCharacteristics(sec, inputs, cbind);
 			if(inputIsMatrix){
 				//get consolidated input via union over shifted and padded inputs
@@ -165,7 +165,7 @@ public class BuiltinNarySPInstruction extends SPInstruction implements LineageTr
 				return;
 			}
 		}
-		else if( ArrayUtils.contains(new String[]{"nmin","nmax","n+","n*"}, getOpcode()) ) {
+		else if( ArrayUtils.contains(new String[]{Opcodes.NMIN.getName(),Opcodes.NMAX.getName(),Opcodes.NP.getName(),Opcodes.NM.getName()}, getOpcode()) ) {
 			//compute output characteristics
 			dcout = computeMinMaxOutputDataCharacteristics(sec, inputs);
 			

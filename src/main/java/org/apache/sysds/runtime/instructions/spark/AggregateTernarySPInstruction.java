@@ -47,7 +47,7 @@ public class AggregateTernarySPInstruction extends ComputationSPInstruction {
 	public static AggregateTernarySPInstruction parseInstruction( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		if ( opcode.equalsIgnoreCase("tak+*") || opcode.equalsIgnoreCase("tack+*") ) {
+		if ( opcode.equalsIgnoreCase(Opcodes.TAKPM.getName()) || opcode.equalsIgnoreCase(Opcodes.TACKPM.getName()) ) {
 			InstructionUtils.checkNumFields( parts, 4 );
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);

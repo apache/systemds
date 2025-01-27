@@ -82,3 +82,10 @@ Binary Operations
 ```bash
 java -jar -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html -XX:+UseNUMA target/systemds-3.3.0-SNAPSHOT-perf.jar 1006 500
 ```
+
+
+transform encode 
+
+```bash
+java -jar -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html -XX:+UseNUMA target/systemds-3.3.0-SNAPSHOT-perf.jar 1007
+```

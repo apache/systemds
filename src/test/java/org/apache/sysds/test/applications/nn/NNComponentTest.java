@@ -124,6 +124,11 @@ public class NNComponentTest extends TestFolder {
 		run("resnet_bottleneck.dml");
 	}
 
+	@Test
+	public void gelu() {
+		run("gelu.dml");
+	}
+
 	@Override
 	protected void run(String name) {
 		super.run("component/" + name);

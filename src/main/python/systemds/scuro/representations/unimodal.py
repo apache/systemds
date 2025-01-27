@@ -29,7 +29,7 @@ class UnimodalRepresentation(Representation):
         """
         super().__init__(name)
 
-    def parse_all(self, file_path, indices):
+    def transform(self, data):
         raise f"Not implemented for {self.name}"
 
 

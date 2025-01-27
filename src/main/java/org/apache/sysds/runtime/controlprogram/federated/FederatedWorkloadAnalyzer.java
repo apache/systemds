@@ -32,7 +32,7 @@ import org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 
 public class FederatedWorkloadAnalyzer {
-	protected static final Log LOG = LogFactory.getLog(FederatedWorkerHandler.class.getName());
+	protected static final Log LOG = LogFactory.getLog(FederatedWorkloadAnalyzer.class.getName());
 
 	/** Frequency value for how many instructions before we do a pass for compression */
 	private static final int compressRunFrequency = 10;
@@ -49,7 +49,6 @@ public class FederatedWorkloadAnalyzer {
 	}
 
 	public void incrementWorkload(ExecutionContext ec, long tid, Instruction ins) {
-		LOG.error("Increment Workload  " + tid + " " + ins + "\n" + this);
 		if(ins instanceof ComputationCPInstruction)
 			incrementWorkload(ec, tid, (ComputationCPInstruction) ins);
 		// currently we ignore everything that is not CP instructions

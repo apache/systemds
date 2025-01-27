@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
+
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -28,7 +30,6 @@ import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.concurrent.Callable;
 
-import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.lops.Lop;
@@ -36,7 +37,6 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.Array;
-import org.apache.sysds.runtime.frame.data.columns.StringArray;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.stats.TransformStatistics;
 
@@ -59,6 +59,10 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	// b) column min/max (for partial build)
 	private double _colMins = -1f;
 	private double _colMaxs = -1f;
+
+	protected boolean containsNull = false;
+
+	protected boolean checkedForNull = false;
 
 	public ColumnEncoderBin() {
 		super(-1);
@@ -131,6 +135,15 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			computeEqualHeightBins(vals, false);
 		}
 
+		if(in instanceof FrameBlock){
+			final Array<?> c = ((FrameBlock )in).getColumn(_colID - 1);
+			containsNull = c.containsNull();
+			checkedForNull = true;
+		}
+		else {
+			checkedForNull = true;
+		}
+
 		if(DMLScript.STATISTICS)
 			TransformStatistics.incBinningBuildTime(System.nanoTime()-t0);
 	}
@@ -188,7 +201,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		final Array<?> c = in.getColumn(_colID - 1);
 		final double mi = _binMins[0];
 		final double mx = _binMaxs[_binMaxs.length-1];
-		if(!(c instanceof StringArray) && !c.containsNull())
+		if(!containsNull && checkedForNull)
 			for(int i = startInd; i < endInd; i++)
 				codes[i - startInd] = getCodeIndex(c.getAsDouble(i), mi, mx);
 		else 
@@ -209,14 +222,23 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			return getCodeIndexEQHeight(inVal);
 	}
 
-	private final double getEqWidth(double inVal, double min, double max) {
+	protected final double getEqWidth(double inVal, double min, double max) {
 		if(max == min)
 			return 1;
-		if(_numBin <= 0)
-			throw new RuntimeException("Invalid num bins");
-		final int code = (int)(Math.ceil((inVal - min) / (max - min) * _numBin) );
+		return getEqWidthUnsafe(inVal, min, max);
+	}
+
+	protected final int getEqWidthUnsafe(double inVal){
+		final double min = _binMins[0];
+		final double max = _binMaxs[_binMaxs.length - 1];
+		return getEqWidthUnsafe(inVal, min, max);
+	}
+
+	protected final int getEqWidthUnsafe(double inVal, double min, double max){
+		final int code =  (int)(Math.ceil((inVal - min) / (max - min) * _numBin));
 		return code > _numBin ? _numBin : code < 1 ? 1 : code;
 	}
+
 
 	private final double getCodeIndexEQHeight(double inVal){
 		if(_binMaxs.length <= 10) 
@@ -253,9 +275,17 @@ public class ColumnEncoderBin extends ColumnEncoder {
 
 	private static double[] getMinMaxOfCol(CacheBlock<?> in, int colID, int startRow, int blockSize) {
 		// derive bin boundaries from min/max per column
+		final int end = getEndIndex(in.getNumRows(), startRow, blockSize);
+		if(in instanceof FrameBlock){
+			FrameBlock inf = (FrameBlock) in;
+			if(startRow == 0 && blockSize == -1)
+				return inf.getColumn(colID -1).minMax();
+			else
+				return inf.getColumn(colID - 1).minMax(startRow, end);
+		}
+
 		double min = Double.POSITIVE_INFINITY;
 		double max = Double.NEGATIVE_INFINITY;
-		final int end = getEndIndex(in.getNumRows(), startRow, blockSize);
 		for(int i = startRow; i < end; i++) {
 			final double inVal = in.getDoubleNaN(i, colID - 1);
 			if(!Double.isNaN(inVal)){
@@ -274,17 +304,12 @@ public class ColumnEncoderBin extends ColumnEncoder {
 
 	private static double[] extractDoubleColumn(CacheBlock<?> in, int colID, int startRow, int blockSize) {
 		int endRow = getEndIndex(in.getNumRows(), startRow, blockSize);
-		double[] vals = new double[endRow - startRow];
 		final int cid = colID -1;
+		double[] vals = new double[endRow - startRow];
 		if(in instanceof FrameBlock) {
 			// FrameBlock optimization
 			Array<?> a = ((FrameBlock) in).getColumn(cid);
-			for(int i = startRow; i < endRow; i++) {
-				double inVal = a.getAsNaNDouble(i);
-				if(Double.isNaN(inVal))
-					continue;
-				vals[i - startRow] = inVal;
-			}
+			return a.extractDouble(vals, startRow, endRow);
 		}
 		else {
 			for(int i = startRow; i < endRow; i++) {
@@ -331,6 +356,9 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	}
 
 	public void computeBins(double min, double max) {
+		if(min == max){
+			_numBin = 1;
+		}
 		// ensure allocated internal transformation metadata
 		if(_binMins == null || _binMaxs == null) {
 			_binMins = new double[_numBin];

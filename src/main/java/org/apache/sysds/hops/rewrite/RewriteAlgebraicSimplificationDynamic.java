@@ -30,6 +30,7 @@ import java.util.List;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOp3;
@@ -209,6 +210,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
 			if( !descendFirst )
 				rule_AlgebraicSimplification(hi, descendFirst);
+
+			hi = fuseSeqAndTableExpand(hi);
 		}
 
 		hop.setVisited();
@@ -381,30 +384,28 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		
 		return hi;
 	}
-	
-	private static Hop removeUnnecessaryReorgOperation(Hop parent, Hop hi, int pos)
-	{
-		if( hi instanceof ReorgOp ) 
-		{
+
+	private static Hop removeUnnecessaryReorgOperation(Hop parent, Hop hi, int pos) {
+		if( hi instanceof ReorgOp ) {
 			ReorgOp rop = (ReorgOp) hi;
-			Hop input = hi.getInput(0); 
+			Hop input = hi.getInput(0);
 			boolean apply = false;
-			
-			//equal dims of reshape input and output -> no need for reshape because 
+
+			//equal dims of reshape input and output -> no need for reshape because
 			//byrow always refers to both input/output and hence gives the same result
 			apply |= (rop.getOp()==ReOrgOp.RESHAPE && HopRewriteUtils.isEqualSize(hi, input));
-			
-			//1x1 dimensions of transpose/reshape -> no need for reorg 	
-			apply |= ((rop.getOp()==ReOrgOp.TRANS || rop.getOp()==ReOrgOp.RESHAPE) 
-					&& rop.getDim1()==1 && rop.getDim2()==1);
-			
+
+			//1x1 dimensions of transpose/reshape/roll -> no need for reorg
+			apply |= ((rop.getOp()==ReOrgOp.TRANS || rop.getOp()==ReOrgOp.RESHAPE
+					|| rop.getOp()==ReOrgOp.ROLL) && rop.getDim1()==1 && rop.getDim2()==1);
+
 			if( apply ) {
 				HopRewriteUtils.replaceChildReference(parent, hi, input, pos);
 				hi = input;
 				LOG.debug("Applied removeUnnecessaryReorg.");
 			}
 		}
-		
+
 		return hi;
 	}
 	
@@ -1356,44 +1357,78 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	 * @param pos position
 	 * @return high-level operator
 	 */
-	private static Hop pushdownSumOnAdditiveBinary(Hop parent, Hop hi, int pos) 
+	private static Hop pushdownSumOnAdditiveBinary(Hop parent, Hop hi, int pos)
 	{
 		//all patterns headed by full sum over binary operation
 		if(    hi instanceof AggUnaryOp //full sum root over binaryop
-			&& ((AggUnaryOp)hi).getDirection()==Direction.RowCol
-			&& ((AggUnaryOp)hi).getOp() == AggOp.SUM 
-			&& hi.getInput(0) instanceof BinaryOp   
-			&& hi.getInput(0).getParent().size()==1 ) //single parent
+				&& ((AggUnaryOp)hi).getDirection()==Direction.RowCol
+				&& ((AggUnaryOp)hi).getOp() == AggOp.SUM
+				&& hi.getInput(0) instanceof BinaryOp
+				&& hi.getInput(0).getParent().size()==1 ) //single parent
 		{
 			BinaryOp bop = (BinaryOp) hi.getInput(0);
 			Hop left = bop.getInput(0);
 			Hop right = bop.getInput(1);
-			
-			if( HopRewriteUtils.isEqualSize(left, right)  //dims(A) == dims(B)
-				&& left.getDataType() == DataType.MATRIX
-				&& right.getDataType() == DataType.MATRIX )
+
+			if( left.getDataType() == DataType.MATRIX
+					&& right.getDataType() == DataType.MATRIX )
 			{
 				OpOp2 applyOp = ( bop.getOp() == OpOp2.PLUS //pattern a: sum(A+B)->sum(A)+sum(B)
 						|| bop.getOp() == OpOp2.MINUS )     //pattern b: sum(A-B)->sum(A)-sum(B)
 						? bop.getOp() : null;
-				
-				if( applyOp != null ) {
-					//create new subdag sum(A) bop sum(B)
-					AggUnaryOp sum1 = HopRewriteUtils.createSum(left);
-					AggUnaryOp sum2 = HopRewriteUtils.createSum(right);
-					BinaryOp newBin = HopRewriteUtils.createBinary(sum1, sum2, applyOp);
 
-					//rewire new subdag
-					HopRewriteUtils.replaceChildReference(parent, hi, newBin, pos);
-					HopRewriteUtils.cleanupUnreferenced(hi, bop);
-					
-					hi = newBin;
-					
-					LOG.debug("Applied pushdownSumOnAdditiveBinary (line "+hi.getBeginLine()+").");
+				if( applyOp != null ) {
+					if (HopRewriteUtils.isEqualSize(left, right)) {
+						//create new subdag sum(A) bop sum(B) for equal-sized matrices
+						AggUnaryOp sum1 = HopRewriteUtils.createSum(left);
+						AggUnaryOp sum2 = HopRewriteUtils.createSum(right);
+						BinaryOp newBin = HopRewriteUtils.createBinary(sum1, sum2, applyOp);
+						//rewire new subdag
+						HopRewriteUtils.replaceChildReference(parent, hi, newBin, pos);
+						HopRewriteUtils.cleanupUnreferenced(hi, bop);
+
+						hi = newBin;
+
+						LOG.debug("Applied pushdownSumOnAdditiveBinary (line "+hi.getBeginLine()+").");
+					}
+					// Check if right operand is a vector (has dimension of 1 in either rows or columns)
+					else if (right.getDim1() == 1 || right.getDim2() == 1) {
+						AggUnaryOp sum1 = HopRewriteUtils.createSum(left);
+						AggUnaryOp sum2 = HopRewriteUtils.createSum(right);
+
+						// Row vector case (1 x n)
+						if (right.getDim1() == 1) {
+							// Create nrow(A) operation using dimensions
+							UnaryOp nRows = HopRewriteUtils.createUnary(left, OpOp1.NROW);
+							BinaryOp scaledSum = HopRewriteUtils.createBinary(nRows, sum2, OpOp2.MULT);
+							BinaryOp newBin = HopRewriteUtils.createBinary(sum1, scaledSum, applyOp);
+							//rewire new subdag
+							HopRewriteUtils.replaceChildReference(parent, hi, newBin, pos);
+							HopRewriteUtils.cleanupUnreferenced(hi, bop);
+
+							hi = newBin;
+
+							LOG.debug("Applied pushdownSumOnAdditiveBinary with row vector (line "+hi.getBeginLine()+").");
+						}
+						// Column vector case (n x 1)
+						else if (right.getDim2() == 1) {
+							// Create ncol(A) operation using dimensions
+							UnaryOp nCols = HopRewriteUtils.createUnary(left, OpOp1.NCOL);
+							BinaryOp scaledSum = HopRewriteUtils.createBinary(nCols, sum2, OpOp2.MULT);
+							BinaryOp newBin = HopRewriteUtils.createBinary(sum1, scaledSum, applyOp);
+							//rewire new subdag
+							HopRewriteUtils.replaceChildReference(parent, hi, newBin, pos);
+							HopRewriteUtils.cleanupUnreferenced(hi, bop);
+
+							hi = newBin;
+
+							LOG.debug("Applied pushdownSumOnAdditiveBinary with column vector (line "+hi.getBeginLine()+").");
+						}
+					}
 				}
 			}
 		}
-	
+
 		return hi;
 	}
 
@@ -2878,6 +2913,26 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				LOG.debug("Applied MMCBind Zero algebraic simplification (line " + hi.getBeginLine() + ").");
 				return newMM;
 			}
+		}
+		return hi;
+	}
+
+
+	private static Hop fuseSeqAndTableExpand(Hop hi) {
+
+		if(TernaryOp.ALLOW_CTABLE_SEQUENCE_REWRITES && hi instanceof TernaryOp ) {
+			TernaryOp thop = (TernaryOp) hi;
+			thop.getOp();
+
+			if(thop.isSequenceRewriteApplicable(true) && thop.findExecTypeTernaryOp() == ExecType.CP && 
+				thop.getInput(1).getForcedExecType() != Types.ExecType.FED) {
+				Hop input1 = thop.getInput(0);
+				if(input1 instanceof DataGenOp){
+					Hop literal = new LiteralOp("seq(1, "+input1.getDim1() +")");
+					HopRewriteUtils.replaceChildReference(hi, input1, literal);
+				}
+			}
+
 		}
 		return hi;
 	}

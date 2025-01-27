@@ -28,6 +28,7 @@ import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -52,6 +53,7 @@ import org.apache.sysds.runtime.compress.lib.CLALibDecompress;
 import org.apache.sysds.runtime.compress.lib.CLALibMMChain;
 import org.apache.sysds.runtime.compress.lib.CLALibMatrixMult;
 import org.apache.sysds.runtime.compress.lib.CLALibMerge;
+import org.apache.sysds.runtime.compress.lib.CLALibReshape;
 import org.apache.sysds.runtime.compress.lib.CLALibRexpand;
 import org.apache.sysds.runtime.compress.lib.CLALibScalar;
 import org.apache.sysds.runtime.compress.lib.CLALibSlice;
@@ -88,6 +90,7 @@ import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.utils.DMLCompressionStatistics;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
@@ -311,6 +314,35 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			for(AColGroup g : _colGroups)
 				nnz += g.getNumberNonZeros(rlen);
 			nonZeros = nnz;
+		}
+
+		if(nonZeros == 0) // If there is no nonzeros then reallocate into single empty column group.
+			allocateColGroup(ColGroupEmpty.create(getNumColumns()));
+
+		return nonZeros;
+	}
+
+	@Override
+	public long recomputeNonZeros(int k) {
+		if(k <= 1 || isOverlapping() || _colGroups.size() <= 1)
+			return recomputeNonZeros();
+
+		final ExecutorService pool = CommonThreadPool.get(k);
+		try {
+			List<Future<Long>> tasks = new ArrayList<>();
+			for(AColGroup g : _colGroups)
+				tasks.add(pool.submit(() -> g.getNumberNonZeros(rlen)));
+
+			long nnz = 0;
+			for(Future<Long> t : tasks)
+				nnz += t.get();
+			nonZeros = nnz;
+		}
+		catch(Exception e) {
+			throw new DMLRuntimeException("Failed to count non zeros", e);
+		}
+		finally {
+			pool.shutdown();
 		}
 
 		if(nonZeros == 0) // If there is no nonzeros then reallocate into single empty column group.
@@ -1248,6 +1280,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	@Override 
 	public MatrixBlock transpose(int k) {
 		return getUncompressed().transpose(k);
+	}
+
+	@Override 
+	public MatrixBlock reshape(int rows,int cols, boolean byRow){
+		return CLALibReshape.reshape(this, rows, cols, byRow);
 	}
 
 	@Override

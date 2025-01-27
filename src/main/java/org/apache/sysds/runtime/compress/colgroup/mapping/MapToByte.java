@@ -95,18 +95,17 @@ public class MapToByte extends AMapToData {
 	}
 
 	@Override
-	public void set(int l, int u, int off, AMapToData tm){
-		if(tm instanceof MapToByte){
-			MapToByte tbm = (MapToByte)tm;
+	public void set(int l, int u, int off, AMapToData tm) {
+		if(tm instanceof MapToByte) {
+			MapToByte tbm = (MapToByte) tm;
 			byte[] tbv = tbm._data;
 			for(int i = l; i < u; i++, off++) {
-				_data[i]  =  tbv[off];
+				_data[i] = tbv[off];
 			}
 		}
-		else{
-
+		else {
 			for(int i = l; i < u; i++, off++) {
-				_data[i]  =   (byte)tm.getIndex(off);
+				_data[i] = (byte) tm.getIndex(off);
 			}
 		}
 	}
@@ -167,9 +166,24 @@ public class MapToByte extends AMapToData {
 
 	@Override
 	public int[] getCounts(int[] ret) {
-		for(int i = 0; i < _data.length; i++)
+		final int h = (_data.length) % 8;
+		for(int i = 0; i < h; i++)
 			ret[_data[i] & 0xFF]++;
+		getCountsBy8P(ret, h, _data.length);
 		return ret;
+	}
+
+	private void getCountsBy8P(int[] ret, int s, int e) {
+		for(int i = s; i < e; i += 8) {
+			ret[_data[i] & 0xFF]++;
+			ret[_data[i + 1] & 0xFF]++;
+			ret[_data[i + 2] & 0xFF]++;
+			ret[_data[i + 3] & 0xFF]++;
+			ret[_data[i + 4] & 0xFF]++;
+			ret[_data[i + 5] & 0xFF]++;
+			ret[_data[i + 6] & 0xFF]++;
+			ret[_data[i + 7] & 0xFF]++;
+		}
 	}
 
 	@Override
@@ -320,7 +334,6 @@ public class MapToByte extends AMapToData {
 		c[r + 6] += values[getIndex(r + 6)];
 		c[r + 7] += values[getIndex(r + 7)];
 	}
-
 
 	@Override
 	public void decompressToRange(double[] c, int rl, int ru, int offR, double[] values) {

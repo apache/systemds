@@ -1759,6 +1759,19 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			output.setDimensions(in.getDim1(), in.getDim2());
 			output.setBlocksize(in.getBlocksize());
 			break;
+
+		case SQRT_MATRIX_JAVA:
+
+			checkNumParameters(1);
+			checkMatrixParam(getFirstExpr());
+			output.setDataType(DataType.MATRIX);
+			output.setValueType(ValueType.FP64);
+			Identifier sqrt = getFirstExpr().getOutput();
+			if(sqrt.dimsKnown() && sqrt.getDim1() != sqrt.getDim2())
+				raiseValidateError("Input to sqrtMatrix() must be square matrix -- given: a " + sqrt.getDim1() + "x" + sqrt.getDim2() + " matrix.", conditional);
+			output.setDimensions( sqrt.getDim1(),  sqrt.getDim2());
+			output.setBlocksize( sqrt.getBlocksize());
+			break;
 		
 		case CHOLESKY:
 		{
@@ -1974,8 +1987,8 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 		case DECOMPRESS:
 			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND){
 				checkNumParameters(1);
-				checkMatrixParam(getFirstExpr());
-				output.setDataType(DataType.MATRIX);
+				checkMatrixFrameParam(getFirstExpr());
+				output.setDataType(getFirstExpr().getOutput().getDataType());
 				output.setDimensions(id.getDim1(), id.getDim2());
 				output.setBlocksize (id.getBlocksize());
 				output.setValueType(id.getValueType());

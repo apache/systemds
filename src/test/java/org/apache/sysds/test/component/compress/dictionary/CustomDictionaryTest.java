@@ -642,4 +642,10 @@ public class CustomDictionaryTest {
 		assertThrows(RuntimeException.class, () -> IdentityDictionarySlice.create(1, true, -13, 0));
 		assertThrows(RuntimeException.class, () -> IdentityDictionarySlice.create(10, true, 4, 11));
 	}
+
+
+	@Test 
+	public void notEqualsObject(){
+		assertNotEquals(Dictionary.create(new double[]{1.1,2.2,3.3}), new Object());
+	}
 }

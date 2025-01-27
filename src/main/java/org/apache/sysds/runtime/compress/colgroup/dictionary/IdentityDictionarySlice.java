@@ -151,7 +151,7 @@ public class IdentityDictionarySlice extends AIdentityDictionary {
 
 	@Override
 	public double[] sumAllRowsToDouble(int nrColumns) {
-		double[] ret = new double[nRowCol];
+		double[] ret = new double[nRowCol + (withEmpty ? 1 : 0)];
 		Arrays.fill(ret, l, u, 1.0);
 		return ret;
 	}
@@ -183,19 +183,29 @@ public class IdentityDictionarySlice extends AIdentityDictionary {
 
 	@Override
 	public double[] sumAllRowsToDoubleSq(int nrColumns) {
-		double[] ret = new double[nRowCol];
+		double[] ret = new double[nRowCol + (withEmpty ? 1 : 0)];
 		Arrays.fill(ret, l, u, 1);
 		return ret;
 	}
 
 	@Override
 	public double[] productAllRowsToDouble(int nCol) {
-		return new double[nRowCol];
+		double[] ret = new double[nRowCol + (withEmpty ? 1 : 0)];
+		if(u - l - 1 == 0)
+			ret[l] =  1;
+		return ret;
 	}
 
 	@Override
 	public double[] productAllRowsToDoubleWithDefault(double[] defaultTuple) {
-		return new double[nRowCol];
+		int nVal = nRowCol + (withEmpty ? 1 : 0);
+		double[] ret = new double[nVal + 1];
+		if(u - l - 1 == 0)
+			ret[l] =  1;
+		ret[nVal] = defaultTuple[0];
+		for(int i = 1; i < defaultTuple.length; i++)
+			ret[nVal] *= defaultTuple[i];
+		return ret;
 	}
 
 	@Override

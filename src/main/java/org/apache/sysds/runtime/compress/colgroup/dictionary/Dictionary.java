@@ -465,9 +465,9 @@ public class Dictionary extends ACachingMBDictionary {
 		final double[] ret = new double[numVals + 1];
 		for(int k = 0; k < numVals; k++)
 			ret[k] = prodRow(k, nCol);
-		ret[ret.length - 1] = defaultTuple[0];
+		ret[numVals] = defaultTuple[0];
 		for(int i = 1; i < nCol; i++)
-			ret[ret.length - 1] *= defaultTuple[i];
+			ret[numVals] *= defaultTuple[i];
 		return ret;
 	}
 
@@ -522,9 +522,10 @@ public class Dictionary extends ACachingMBDictionary {
 
 	private double prodRow(int k, int nrColumns) {
 		final int valOff = k * nrColumns;
+		final int end = valOff + nrColumns;
 		double res = _values[valOff];
-		for(int i = 1; i < nrColumns; i++)
-			res *= _values[valOff + i];
+		for(int i = valOff + 1; i < end && res != 0; i++) // early abort on zero
+			res *= _values[i];
 		return res;
 	}
 

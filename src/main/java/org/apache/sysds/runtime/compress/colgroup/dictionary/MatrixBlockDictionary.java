@@ -41,6 +41,8 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
 import org.apache.sysds.runtime.data.SparseBlockFactory;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.data.SparseRow;
+import org.apache.sysds.runtime.data.SparseRowScalar;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.Divide;
@@ -1143,17 +1145,31 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	private final void productAllRowsToDouble(double[] ret, int nCol) {
+		final int nRow = _data.getNumRows();
+
 		if(_data.isInSparseFormat()) {
 			SparseBlock sb = _data.getSparseBlock();
-			for(int i = 0; i < _data.getNumRows(); i++) {
-				if(!sb.isEmpty(i) && sb.size(i) == nCol) {
+			for(int i = 0; i < nRow; i++) {
+				if(!sb.isEmpty(i)) {
 					// if not equal to nCol ... skip
 					final int apos = sb.pos(i);
 					final int alen = sb.size(i) + apos;
+					final int[] aix = sb.indexes(i);
 					final double[] avals = sb.values(i);
 					ret[i] = 1;
-					for(int j = apos; j < alen; j++) {
+					int pj = 0;
+					// many extra cases to handle NaN...
+					for(int j = apos; j < alen && !Double.isNaN(ret[i]); j++) {
+						if(aix[j] - pj >= 1) {
+							ret[i] = 0;
+							break;
+						}
 						ret[i] *= avals[j];
+						pj = aix[j];
+					}
+
+					if(!Double.isNaN(ret[i]) && sb.size(i) != nCol) {
+						ret[i] = 0;
 					}
 				}
 				else
@@ -1163,9 +1179,9 @@ public class MatrixBlockDictionary extends ADictionary {
 		else {
 			double[] values = _data.getDenseBlockValues();
 			int off = 0;
-			for(int k = 0; k < _data.getNumRows(); k++) {
+			for(int k = 0; k < nRow; k++) {
 				ret[k] = 1;
-				for(int j = 0; j < _data.getNumColumns(); j++) {
+				for(int j = 0; j < nCol && ret[k] != 0; j++) { // early abort on zero
 					final double v = values[off++];
 					ret[k] *= v;
 				}
@@ -1175,11 +1191,12 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public double[] productAllRowsToDoubleWithDefault(double[] defaultTuple) {
-		double[] ret = new double[_data.getNumRows() + 1];
+		final int nRow = _data.getNumRows();
+		double[] ret = new double[nRow + 1];
 		productAllRowsToDouble(ret, defaultTuple.length);
-		ret[_data.getNumRows()] = defaultTuple[0];
+		ret[nRow] = defaultTuple[0];
 		for(int j = 1; j < defaultTuple.length; j++)
-			ret[_data.getNumRows()] *= defaultTuple[j];
+			ret[nRow] *= defaultTuple[j];
 
 		return ret;
 	}
@@ -1289,7 +1306,7 @@ public class MatrixBlockDictionary extends ADictionary {
 					final int[] aix = sb.indexes(i);
 					final double[] avals = sb.values(i);
 					for(int j = apos; j < alen; j++) {
-						c[colIndexes.get(aix[j])] += count * avals[j] * avals[j];
+						c[colIndexes.get(aix[j])] += avals[j] * avals[j] * count;
 					}
 				}
 			}
@@ -1847,12 +1864,12 @@ public class MatrixBlockDictionary extends ADictionary {
 				if(!sbThis.isEmpty(i)) {
 					sbRet.set(i, sbThis.get(i), true);
 
-					final int count = scaling[i];
+					final int sc = scaling[i];
 					final int apos = sbRet.pos(i);
 					final int alen = sbRet.size(i) + apos;
 					final double[] avals = sbRet.values(i);
 					for(int j = apos; j < alen; j++)
-						avals[j] = count * avals[j];
+						avals[j] = sc * avals[j];
 				}
 			}
 			retBlock.setNonZeros(_data.getNonZeros());
@@ -2594,30 +2611,25 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public IDictionary append(double[] row) {
-		if(_data.isEmpty()) {
-			throw new NotImplementedException();
-		}
-		else if(_data.isInSparseFormat()) {
+		if(_data.isInSparseFormat()) {
 			final int nRow = _data.getNumRows();
-			if(_data.getSparseBlock() instanceof SparseBlockMCSR) {
-				MatrixBlock mb = new MatrixBlock(_data.getNumRows() + 1, _data.getNumColumns(), true);
-				mb.allocateBlock();
-				SparseBlock sb = mb.getSparseBlock();
-				SparseBlockMCSR s = (SparseBlockMCSR) _data.getSparseBlock();
-
-				for(int i = 0; i < _data.getNumRows(); i++)
-					sb.set(i, s.get(i), false);
-
-				for(int i = 0; i < row.length; i++)
-					sb.set(nRow, i, row[i]);
-
-				mb.examSparsity();
-				return new MatrixBlockDictionary(mb);
-
+			final int nCol = _data.getNumColumns();
+			SparseRow sr = null;
+			for(int i = 0; i < row.length; i++) {
+				if(row[i] != 0) {
+					if(sr == null)
+						sr = new SparseRowScalar(i, row[i]);
+					else
+						sr = sr.append(i, row[i]);
+				}
 			}
-			else {
-				throw new NotImplementedException("Not implemented append for CSR");
-			}
+			MatrixBlock mb = new MatrixBlock(_data.getNumRows() + 1, _data.getNumColumns(), true);
+			mb.allocateBlock();
+			SparseBlock sb = mb.getSparseBlock();
+			mb.copy(0, nRow, 0, nCol, _data, false);
+			sb.set(nRow, sr, false);
+			mb.examSparsity();
+			return new MatrixBlockDictionary(mb);
 
 		}
 		else {

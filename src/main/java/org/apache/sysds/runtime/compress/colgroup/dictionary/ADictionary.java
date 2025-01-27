@@ -54,7 +54,7 @@ public abstract class ADictionary implements IDictionary, Serializable {
 
 	@Override
 	public final boolean equals(Object o) {
-		if(o != null &&  o instanceof IDictionary)
+		if(o != null && o instanceof IDictionary)
 			return equals((IDictionary) o);
 		return false;
 	}
@@ -279,8 +279,8 @@ public abstract class ADictionary implements IDictionary, Serializable {
 
 	@Override
 	public boolean containsValueWithReference(double pattern, double[] reference) {
-		if(Double.isNaN(pattern)){
-			for(int i = 0 ; i < reference.length; i++)
+		if(Double.isNaN(pattern)) {
+			for(int i = 0; i < reference.length; i++)
 				if(Double.isNaN(reference[i]))
 					return true;
 			return containsValue(pattern);

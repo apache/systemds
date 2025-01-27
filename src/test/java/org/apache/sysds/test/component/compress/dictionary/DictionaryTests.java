@@ -1771,4 +1771,92 @@ public class DictionaryTests {
 		bb = b.applyScalarOpWithReference(op, ref1, ref2);
 		compare(aa, bb, nCol);
 	}
+
+	@Test
+	public void scaleTuples() {
+		IDictionary aa;
+		IDictionary bb;
+
+		int[] scale = TestUtils.generateTestIntVector(nRow, 1, 10, 1, 3213);
+		aa = a.scaleTuples(scale, nCol);
+		bb = b.scaleTuples(scale, nCol);
+		compare(aa, bb, nCol);
+	}
+
+	// productAllRowsToDouble
+	@Test
+	public void productRows() {
+		double[] aa;
+		double[] bb;
+		String err = a.getClass().getSimpleName() + " " + b.getClass().getSimpleName();
+		// int[] scale = TestUtils.generateTestIntVector(nRow, 1, 10, 1, 3213);
+		aa = a.productAllRowsToDouble(nCol);
+		bb = b.productAllRowsToDouble(nCol);
+		assertArrayEquals(err, aa, bb, 0.0000001);
+
+		double[] def = TestUtils.generateTestVector(nCol, 1, 10, 1, 3216245);
+		aa = a.productAllRowsToDoubleWithDefault(def);
+		bb = b.productAllRowsToDoubleWithDefault(def);
+		assertArrayEquals(err, aa, bb, 0.0000001);
+
+		double[] ref = TestUtils.generateTestVector(nCol, 1, 10, 1, 3216245);
+		aa = a.productAllRowsToDoubleWithReference(ref);
+		bb = b.productAllRowsToDoubleWithReference(ref);
+		assertArrayEquals(err, aa, bb, 0.0000001);
+	}
+
+	@Test
+	public void appendRow() {
+		double[] r = TestUtils.generateTestVector(nCol, 1, 10, 0.9, 2222);
+		IDictionary aa = a.append(r);
+		IDictionary bb = b.append(r);
+
+		compare(aa, bb, nCol);
+
+		for(int i = 0; i < nCol; i++) {
+			assertEquals(r[i], aa.getValue(nRow, i, nCol), 0.0);
+			assertEquals(r[i], bb.getValue(nRow, i, nCol), 0.0);
+		}
+	}
+
+	@Test
+	public void colSumSq() {
+		double[] aa = new double[nCol + 2];
+		double[] bb = new double[nCol + 2];
+		int[] counts = getCounts(nRow, 321652);
+		a.colSumSq(aa, counts, ColIndexFactory.create(nCol));
+		b.colSumSq(bb, counts, ColIndexFactory.create(nCol));
+		assertArrayEquals(aa, bb, 0.0000001);
+	}
+
+	@Test
+	public void multiplyScalar() {
+		double[] aa = new double[(nCol + 1) * 4];
+		double[] bb = new double[(nCol + 1) * 4];
+		Random r = new Random(3222);
+		for(int i = 0; i < 10; i++) {
+			int di = r.nextInt(nRow);
+			int ur = r.nextInt(4);
+			a.multiplyScalar(32, aa, ur, di, ColIndexFactory.create(nCol).shift(1));
+			b.multiplyScalar(32, bb, ur, di, ColIndexFactory.create(nCol).shift(1));
+		}
+		assertArrayEquals(aa, bb, 0.0000001);
+
+	}
+
+	@Test 
+	public void subtractTuple(){
+		double[] r = TestUtils.generateTestVector(nCol, 1, 10, 0.9, 222);
+		IDictionary aa = a.subtractTuple(r);
+		IDictionary bb = b.subtractTuple(r);
+
+		compare(aa, bb, nCol);
+	}
+
+	@Test 
+	public void cbind(){
+		IDictionary aa = a.cbind(b, nCol);
+		IDictionary bb = b.cbind(a, nCol);
+		compare(aa, bb, nCol * 2);
+	}
 }

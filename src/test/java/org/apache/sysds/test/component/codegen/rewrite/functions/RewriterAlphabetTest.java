@@ -19,7 +19,7 @@
 
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
-import org.apache.sysds.hops.rewriter.RewriterAlphabetEncoder;
+import org.apache.sysds.hops.rewriter.utils.RewriterSearchUtils;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
@@ -45,7 +45,7 @@ public class RewriterAlphabetTest {
 	public void testDecode1() {
 		int l = 27;
 		int n = 5;
-		int[] digits = RewriterAlphabetEncoder.fromBaseNNumber(l, n);
+		int[] digits = RewriterSearchUtils.fromBaseNNumber(l, n);
 		assert digits.length == 3 && digits[0] == 1 && digits[1] == 0 && digits[2] == 2;
 	}
 
@@ -53,7 +53,7 @@ public class RewriterAlphabetTest {
 	public void testDecode2() {
 		int l = 5;
 		int n = 5;
-		int[] digits = RewriterAlphabetEncoder.fromBaseNNumber(l, n);
+		int[] digits = RewriterSearchUtils.fromBaseNNumber(l, n);
 		System.out.println(Arrays.toString(digits));
 		assert digits.length == 2 && digits[0] == 1 && digits[1] == 0;
 	}
@@ -63,8 +63,8 @@ public class RewriterAlphabetTest {
 		int[] digits = new int[] { 1, 0, 2 };
 		int[] digits2 = new int[] {4, 4, 4};
 		int n = 5;
-		int l = RewriterAlphabetEncoder.toBaseNNumber(digits, n);
-		int l2 = RewriterAlphabetEncoder.toBaseNNumber(digits2, n);
+		int l = RewriterSearchUtils.toBaseNNumber(digits, n);
+		int l2 = RewriterSearchUtils.toBaseNNumber(digits2, n);
 		System.out.println(l);
 		System.out.println(Integer.toBinaryString(l));
 		System.out.println(l2);
@@ -74,16 +74,16 @@ public class RewriterAlphabetTest {
 
 	@Test
 	public void testRandomStatementGeneration() {
-		System.out.println(RewriterAlphabetEncoder.getMaxSearchNumberForNumOps(3));
+		System.out.println(RewriterSearchUtils.getMaxSearchNumberForNumOps(3));
 		int ctr = 0;
 		for (int i = 0; i < 20; i++) {
-			List<RewriterAlphabetEncoder.Operand> ops = RewriterAlphabetEncoder.decodeOrderedStatements(i);
+			List<RewriterSearchUtils.Operand> ops = RewriterSearchUtils.decodeOrderedStatements(i);
 			//System.out.println("Idx: " + i);
 			//System.out.println(ops);
 			//System.out.println(RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, false).size());
-			for (RewriterStatement stmt : RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, true)) {
+			for (RewriterStatement stmt : RewriterSearchUtils.buildAllPossibleDAGs(ops, ctx, true)) {
 				System.out.println("Base: " + stmt.toParsableString(ctx));
-				for (RewriterStatement sstmt : RewriterAlphabetEncoder.buildAssertionVariations(stmt, ctx, true)) {
+				for (RewriterStatement sstmt : RewriterSearchUtils.buildAssertionVariations(stmt, ctx, true)) {
 					canonicalConverter.apply(sstmt);
 					System.out.println(sstmt.toParsableString(ctx));
 					//System.out.println("Raw: " + sstmt);
@@ -99,13 +99,13 @@ public class RewriterAlphabetTest {
 	public void testRandomStatementGeneration2() {
 		int ctr = 0;
 		//for (int i = 0; i < 20; i++) {
-			List<RewriterAlphabetEncoder.Operand> ops = List.of(RewriterAlphabetEncoder.instructionAlphabet[3], RewriterAlphabetEncoder.instructionAlphabet[16], RewriterAlphabetEncoder.instructionAlphabet[6]);
+			List<RewriterSearchUtils.Operand> ops = List.of(RewriterSearchUtils.instructionAlphabet[3], RewriterSearchUtils.instructionAlphabet[16], RewriterSearchUtils.instructionAlphabet[6]);
 			//System.out.println("Idx: " + i);
 			//System.out.println(ops);
 			//System.out.println(RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, false).size());
-			for (RewriterStatement stmt : RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, true)) {
+			for (RewriterStatement stmt : RewriterSearchUtils.buildAllPossibleDAGs(ops, ctx, true)) {
 				System.out.println("Base: " + stmt.toParsableString(ctx));
-				for (RewriterStatement sstmt : RewriterAlphabetEncoder.buildVariations(stmt, ctx)) {
+				for (RewriterStatement sstmt : RewriterSearchUtils.buildVariations(stmt, ctx)) {
 					canonicalConverter.apply(sstmt);
 					System.out.println(sstmt.toParsableString(ctx));
 					//System.out.println("Raw: " + sstmt);

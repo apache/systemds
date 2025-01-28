@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.hops.rewriter.estimators;
 
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -56,13 +75,8 @@ public class RewriterCostEstimator {
 
 			int mDiff = Long.signum(t._2() - t._3());
 
-			if (diff != mDiff && Math.abs(t._2() - t._3() - last._2() + last._3()) > costThreshhold) {
-				/*System.out.println("Found dependency: ");
-				System.out.println(diff + " != " + mDiff);
-				System.out.println(t);
-				System.out.println(last);*/
+			if (diff != mDiff && Math.abs(t._2() - t._3() - last._2() + last._3()) > costThreshhold)
 				return true;
-			}
 		}
 
 		return false;
@@ -118,33 +132,20 @@ public class RewriterCostEstimator {
 
 	public static List<Tuple2<List<Number>, List<Long>>> compareCosts(List<RewriterStatement> statements, RewriterAssertions jointAssertions, final RuleContext ctx, boolean sample, int sampleSize) {
 		List<Map<RewriterStatement, RewriterStatement>> estimates = statements.stream().map(stmt -> RewriterSparsityEstimator.estimateAllNNZ(stmt, ctx)).collect(Collectors.toList());
-		//Map<RewriterStatement, RewriterStatement> estimates2 = RewriterSparsityEstimator.estimateAllNNZ(stmt2, ctx);
 
 		MutableObject<RewriterAssertions> assertionRef = new MutableObject<>(jointAssertions);
 		List<RewriterStatement> costFns = statements.stream().map(stmt -> getRawCostFunction(stmt, ctx, assertionRef, false)).collect(Collectors.toList());
-		//RewriterStatement costFn2 = getRawCostFunction(stmt2, ctx, assertionRef, false);
 
 		for (int i = 0; i < estimates.size(); i++) {
 			costFns.set(i, RewriterSparsityEstimator.rollupSparsities(costFns.get(i), estimates.get(i), ctx));
 		}
 
-		//costFn1 = RewriterSparsityEstimator.rollupSparsities(costFn1, estimates1, ctx);
-		//costFn2 = RewriterSparsityEstimator.rollupSparsities(costFn2, estimates2, ctx);
-
-		//final RewriterStatement fCostFn1 = costFn1;
-		//final RewriterStatement fCostFn2 = costFn2;
-
 		long[] dimVals = new long[] {10, 5000};
 		double[] sparsities = new double[] {1.0D, 0.000001D};
 
-
-		//costFn1.unsafePutMeta("_assertions", jointAssertions);
 		Map<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
 		List<RewriterStatement> costFnCpys = costFns.stream().map(fn -> fn.nestedCopy(false, createdObjects)).collect(Collectors.toList());
-		//RewriterStatement costFn1Cpy = costFn1.nestedCopy(true, createdObjects);
-		//RewriterStatement costFn2Cpy = costFn2.nestedCopy(false, createdObjects);
 		RewriterAssertions jointAssertionsCpy = RewriterAssertions.copy(jointAssertions, createdObjects, false);
-		//costFn2Cpy.unsafePutMeta("_assertions", costFn1Cpy.getAssertions(ctx));
 
 		Set<RewriterStatement> dimsToPopulate = new HashSet<>();
 		Set<RewriterStatement> nnzsToPopulate = new HashSet<>();
@@ -239,11 +240,7 @@ public class RewriterCostEstimator {
 
 			Map<RewriterStatement, RewriterStatement> mCreatedObjects = new HashMap<>();
 			List<RewriterStatement> mCostFnCpys = costFns.stream().map(cpy -> cpy.nestedCopy(false, mCreatedObjects)).collect(Collectors.toList());
-			//System.out.println("CostFnCpy: " + mCostFnCpys);
-			//RewriterStatement mCpy1 = fCostFn1.nestedCopy(false, mCreatedObjects);
-			//RewriterStatement mCpy2 = fCostFn2.nestedCopy(false, mCreatedObjects);
 			RewriterAssertions mAssertionsCpy = RewriterAssertions.copy(jointAssertions, mCreatedObjects, false);
-			//mCpy2.unsafePutMeta("_assertions", mCpy1.getAssertions(ctx));
 
 			List<Long> mCosts = mCostFnCpys.stream().map(mCpy -> {
 				try {
@@ -263,7 +260,6 @@ public class RewriterCostEstimator {
 						if (literal == null) {
 							double sparsity = (double) stack[fSparsityStart + sCtr.getAndIncrement()];
 							literal = (long) Math.ceil(sparsity * tpl._1 * tpl._2);
-							//System.out.println("populated nnz with: " + literal);
 							replace.put(nnz.getChild(0), literal);
 						}
 
@@ -275,55 +271,7 @@ public class RewriterCostEstimator {
 				}
 			}).collect(Collectors.toList());
 
-			/*long mCost1 = computeCostFunction(mCpy1, el -> {
-				Long literal = replace.get(el);
-
-				if (literal == null) {
-					literal = (Long) stack[dimCtr.getAndIncrement()];
-					//System.out.println("populated size with: " + literal);
-					replace.put(el, literal);
-				}
-
-				return literal;
-			}, (nnz, tpl) -> {
-				Long literal = replace.get(nnz.getChild(0));
-
-				if (literal == null) {
-					double sparsity = (double) stack[fSparsityStart + sCtr.getAndIncrement()];
-					literal = (long)Math.ceil(sparsity * tpl._1 * tpl._2);
-					//System.out.println("populated nnz with: " + literal);
-					replace.put(nnz.getChild(0), literal);
-				}
-
-				return literal;
-			}, mAssertionsCpy, ctx);
-			long mCost2 = computeCostFunction(mCpy2, el -> {
-				Long literal = replace.get(el);
-
-				if (literal == null) {
-					literal = (Long) stack[dimCtr.getAndIncrement()];
-					//System.out.println("populated size with: " + literal);
-					replace.put(el, literal);
-				}
-
-				return literal;
-			}, (nnz, tpl) -> {
-				Long literal = replace.get(nnz.getChild(0));
-
-				if (literal == null) {
-					double sparsity = (double) stack[fSparsityStart + sCtr.getAndIncrement()];
-					literal = (long)Math.ceil(sparsity * tpl._1 * tpl._2);
-					//System.out.println("populated nnz with: " + literal);
-					replace.put(nnz.getChild(0), literal);
-				}
-
-				return literal;
-			}, mAssertionsCpy, ctx);*/
-
 			out.add(new Tuple2<>(new ArrayList<>(Arrays.asList(stack)), mCosts));
-
-			//System.out.println(Arrays.toString(stack) + " cost1: " + mCost1);
-			//System.out.println(Arrays.toString(stack) + " cost2: " + mCost2);
 
 			return true;
 		});
@@ -349,13 +297,10 @@ public class RewriterCostEstimator {
 		long[] dimVals = new long[] {10, 5000};
 		double[] sparsities = new double[] {1.0D, 0.05D};
 
-
-		//costFn1.unsafePutMeta("_assertions", jointAssertions);
 		Map<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
 		RewriterStatement costFn1Cpy = costFn1.nestedCopy(true, createdObjects);
 		RewriterStatement costFn2Cpy = costFn2.nestedCopy(false, createdObjects);
 		RewriterAssertions jointAssertionsCpy = RewriterAssertions.copy(jointAssertions, createdObjects, false);
-		//costFn2Cpy.unsafePutMeta("_assertions", costFn1Cpy.getAssertions(ctx));
 
 		Set<RewriterStatement> dimsToPopulate = new HashSet<>();
 		Set<RewriterStatement> nnzsToPopulate = new HashSet<>();
@@ -406,7 +351,6 @@ public class RewriterCostEstimator {
 			numCombinations *= sparsityList.size();
 		}
 
-		// TODO: What if cartesian product too big?
 		Set<Integer> samples = new HashSet<>();
 
 		if (sample) {
@@ -448,14 +392,12 @@ public class RewriterCostEstimator {
 			RewriterStatement mCpy1 = fCostFn1.nestedCopy(false, mCreatedObjects);
 			RewriterStatement mCpy2 = fCostFn2.nestedCopy(false, mCreatedObjects);
 			RewriterAssertions mAssertionsCpy = RewriterAssertions.copy(jointAssertions, mCreatedObjects, false);
-			//mCpy2.unsafePutMeta("_assertions", mCpy1.getAssertions(ctx));
 
 			long mCost1 = computeCostFunction(mCpy1, el -> {
 				Long literal = replace.get(el);
 
 				if (literal == null) {
 					literal = (Long) stack[dimCtr.getAndIncrement()];
-					//System.out.println("populated size with: " + literal);
 					replace.put(el, literal);
 				}
 
@@ -466,7 +408,6 @@ public class RewriterCostEstimator {
 				if (literal == null) {
 					double sparsity = (double) stack[fSparsityStart + sCtr.getAndIncrement()];
 					literal = (long)Math.ceil(sparsity * tpl._1 * tpl._2);
-					//System.out.println("populated nnz with: " + literal);
 					replace.put(nnz.getChild(0), literal);
 				}
 
@@ -477,7 +418,6 @@ public class RewriterCostEstimator {
 
 				if (literal == null) {
 					literal = (Long) stack[dimCtr.getAndIncrement()];
-					//System.out.println("populated size with: " + literal);
 					replace.put(el, literal);
 				}
 
@@ -488,7 +428,6 @@ public class RewriterCostEstimator {
 				if (literal == null) {
 					double sparsity = (double) stack[fSparsityStart + sCtr.getAndIncrement()];
 					literal = (long)Math.ceil(sparsity * tpl._1 * tpl._2);
-					//System.out.println("populated nnz with: " + literal);
 					replace.put(nnz.getChild(0), literal);
 				}
 
@@ -496,9 +435,6 @@ public class RewriterCostEstimator {
 			}, mAssertionsCpy, ctx);
 
 			out.add(new Tuple3<>(new ArrayList<>(Arrays.asList(stack)), mCost1, mCost2));
-
-			//System.out.println(Arrays.toString(stack) + " cost1: " + mCost1);
-			//System.out.println(Arrays.toString(stack) + " cost2: " + mCost2);
 
 			return !returnOnDifference || mCost1 == mCost2;
 		});
@@ -583,7 +519,6 @@ public class RewriterCostEstimator {
 		costFn = assertions.update(costFn);
 		Map<RewriterStatement, RewriterStatement> estimations = RewriterSparsityEstimator.estimateAllNNZ(costFn, ctx);
 		RewriterSparsityEstimator.rollupSparsities(costFn, estimations, ctx);
-		// TODO: Something makes this necessary
 		costFn = RewriterUtils.foldConstants(costFn, ctx);
 
 		return costFn;
@@ -683,11 +618,10 @@ public class RewriterCostEstimator {
 
 		costFn.forEachPreOrder(cur -> {
 			if (cur.isInstruction())
-				((RewriterInstruction) cur).refreshReturnType(ctx);
+				cur.refreshReturnType(ctx);
 
 			return true;
 		}, false);
-		//((RewriterInstruction)costFn).refreshReturnType(ctx);
 
 		costFn = RewriterUtils.foldConstants(costFn, ctx);
 
@@ -748,12 +682,10 @@ public class RewriterCostEstimator {
 				map.put("nnzB", RewriterStatement.nnz(instr.getChild(1), ctx, treatAsDense));
 				// Rough estimation
 				cost = RewriterUtils.parse("*(argList(min(nnzA, nnzB), ncolA, +(argList(mulCost, sumCost))))", ctx, map);
-				//assertions.addEqualityAssertion(map.get("ncolA"), map.get("nrowB"));
 				overhead.add(MALLOC_COST);
 				break;
 			case "t":
 			case "rev":
-				//map.put("A", instr.getChild(0));
 				cost = RewriterStatement.nnz(instr.getChild(0), ctx, treatAsDense);//RewriterUtils.parse("_nnz(A)", ctx, map);
 				overhead.add(MALLOC_COST);
 				break;
@@ -771,8 +703,7 @@ public class RewriterCostEstimator {
 				map.put("nrowA", instr.getChild(0).getNRow());
 				map.put("nnzA", RewriterStatement.nnz(instr.getChild(0), ctx, treatAsDense));
 				map.put("A", instr.getChild(0));
-				cost = RewriterUtils.parse("min(nnzA, nrowA)", ctx, map);//map.get("nrowA");
-				//assertions.addEqualityAssertion(map.get("nrowA"), map.get("ncolA"));
+				cost = RewriterUtils.parse("min(nnzA, nrowA)", ctx, map);
 				overhead.add(MALLOC_COST);
 				break;
 			case "cast.MATRIX":
@@ -788,12 +719,10 @@ public class RewriterCostEstimator {
 				map.put("nnzA", RewriterStatement.nnz(instr.getChild(0), ctx, treatAsDense));
 				map.put("nnzB", RewriterStatement.nnz(instr.getChild(1), ctx, treatAsDense));
 				cost = RewriterUtils.parse("+(argList(nnzA, nnzB))", ctx, map);
-				//assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(1).getNCol());
 				overhead.add(MALLOC_COST);
 				break;
 			case "rand":
-				//map.put("A", instr);
-				cost = RewriterStatement.nnz(instr, ctx, treatAsDense);//RewriterUtils.parse("_nnz(A)", ctx, map);
+				cost = RewriterStatement.nnz(instr, ctx, treatAsDense);
 				overhead.add(MALLOC_COST);
 				break;
 			case "1-*":
@@ -801,10 +730,7 @@ public class RewriterCostEstimator {
 				RewriterStatement mulCost = atomicOpCostStmt("*", ctx);
 				RewriterStatement sparsityAwareMul = RewriterStatement.multiArgInstr(ctx, "*", mulCost, StatementUtils.min(ctx, RewriterStatement.nnz(instr.getChild(0), ctx, treatAsDense), RewriterStatement.nnz(instr.getChild(1), ctx, treatAsDense)));
 				RewriterStatement oneMinus = RewriterStatement.multiArgInstr(ctx, "*", subtractionCost, instr.getNCol(), instr.getNRow());
-				//RewriterStatement sum = RewriterStatement.multiArgInstr(ctx, "+", subtractionCost, mulCost);
 				cost = RewriterStatement.multiArgInstr(ctx, "+", oneMinus, sparsityAwareMul);
-				//assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(1).getNCol());
-				//assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(1).getNRow());
 				overhead.add(MALLOC_COST);
 				break;
 			case "+*":
@@ -812,8 +738,6 @@ public class RewriterCostEstimator {
 				mulCost = atomicOpCostStmt("*", ctx);
 				RewriterStatement sum = RewriterStatement.multiArgInstr(ctx, "+", additionCost, mulCost);
 				cost = RewriterStatement.multiArgInstr(ctx, "*", sum, StatementUtils.min(ctx, RewriterStatement.nnz(instr.getChild(0), ctx, treatAsDense), RewriterStatement.nnz(instr.getChild(2), ctx, treatAsDense)));
-				//assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(2).getNCol());
-				//assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(2).getNRow());
 				overhead.add(MALLOC_COST + 50); // To make it worse than 1-*
 				break;
 			case "-*":
@@ -821,8 +745,6 @@ public class RewriterCostEstimator {
 				mulCost = atomicOpCostStmt("*", ctx);
 				sum = RewriterStatement.multiArgInstr(ctx, "+", subtractionCost, mulCost);
 				cost = RewriterStatement.multiArgInstr(ctx, "*", sum, StatementUtils.min(ctx, RewriterStatement.nnz(instr.getChild(0), ctx, treatAsDense), RewriterStatement.nnz(instr.getChild(2), ctx, treatAsDense)));
-				//assertions.addEqualityAssertion(instr.getChild(0).getNCol(), instr.getChild(2).getNCol());
-				//assertions.addEqualityAssertion(instr.getChild(0).getNRow(), instr.getChild(2).getNRow());
 				overhead.add(MALLOC_COST + 50); // To make it worse than 1-*
 				break;
 			case "*2":
@@ -858,6 +780,7 @@ public class RewriterCostEstimator {
 			case "const":
 			case "rowVec":
 			case "colVec":
+			case "cellMat":
 				cost = RewriterStatement.literal(ctx, 0L);
 				break;
 		}
@@ -943,14 +866,10 @@ public class RewriterCostEstimator {
 				return uniqueCosts.get(uniqueCosts.size()-1);
 			case "trace(MATRIX)":
 				uniqueCosts.add(StatementUtils.min(ctx, RewriterStatement.nnz(instr.getChild(0), ctx, treatAsDense), instr.getChild(0).getNRow()));
-				//assertions.addEqualityAssertion(map.get("nrowA"), map.get("ncolA"));
 				return uniqueCosts.get(uniqueCosts.size()-1);
 			case "[](MATRIX,INT,INT)":
 				return RewriterStatement.literal(ctx, 0L);
 			case "cast.FLOAT(MATRIX)":
-				//uniqueCosts.add(map.get("nrowA"));
-				//assertions.addEqualityAssertion(map.get("nrowA"), map.get("ncolA"));
-				//assertions.addEqualityAssertion(map.get("nrowA"), RewriterStatement.literal(ctx, 1L));
 				return RewriterStatement.literal(ctx, INSTRUCTION_OVERHEAD);
 			case "const(MATRIX,FLOAT)":
 			case "_nnz(MATRIX)":

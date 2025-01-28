@@ -1,12 +1,28 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.hops.rewriter;
 
-import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -50,35 +66,20 @@ public class RewriterHeuristic implements RewriterHeuristicTransformation {
 
 		RuleContext.currentContext = ruleSet.getContext();
 
-		//current.forEachPostOrderWithDuplicates(RewriterUtils.propertyExtractor(desiredProperties, ruleSet.getContext()));
-
 		if (handler != null && !handler.apply(currentStmt, null))
 			return currentStmt;
-
-		//if (!(currentStmt instanceof RewriterInstruction))
-			//return currentStmt;
-
-		//RewriterInstruction current = (RewriterInstruction) currentStmt;
 
 		RewriterRuleSet.ApplicableRule rule;
 		if (accelerated)
 			rule = ruleSet.acceleratedFindFirst(currentStmt);
 		else
-			throw new NotImplementedException("Must use accelerated mode");//rule = ruleSet.findFirstApplicableRule(current);
+			throw new NotImplementedException("Must use accelerated mode");
 
 		if (rule != null)
 			foundRewrite.setValue(true);
 
 		for (int i = 0; i < 500 && rule != null; i++) {
-			//System.out.println("Pre-apply: " + rule.rule.getName());
-			/*if (currentStmt.toParsableString(ruleSet.getContext()).equals("%*%(X,[](B,1,ncol(X),1,ncol(B)))"))
-				System.out.println("test");*/
-			/*System.out.println("Expr: " + rule.matches.get(0).getExpressionRoot().toParsableString(ruleSet.getContext()));
-			System.out.println("At: " + rule.matches.get(0).getMatchRoot().toParsableString(ruleSet.getContext()));*/
 			currentStmt = rule.rule.apply(rule.matches.get(0), currentStmt, rule.forward, false);
-			//System.out.println("Now: " + currentStmt.toParsableString(ruleSet.getContext()));
-
-			//transforms.add(currentStmt.toParsableString(ruleSet.getContext()));
 
 			if (handler != null && !handler.apply(currentStmt, rule.rule)) {
 				rule = null;
@@ -93,7 +94,7 @@ public class RewriterHeuristic implements RewriterHeuristicTransformation {
 			if (accelerated)
 				rule = ruleSet.acceleratedFindFirst(currentStmt);
 			else
-				throw new IllegalArgumentException("Must use accelerated mode!");//rule = ruleSet.findFirstApplicableRule(current);
+				throw new IllegalArgumentException("Must use accelerated mode!");
 		}
 
 		if (rule != null)

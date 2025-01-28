@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.hops.rewriter;
 
 import org.apache.commons.lang3.function.TriFunction;
@@ -24,7 +43,6 @@ public class RewriterInstruction extends RewriterStatement {
 	private String id;
 	private String returnType;
 	private String instr;
-	//private RewriterDataType result = new RewriterDataType();
 	private ArrayList<RewriterStatement> operands = new ArrayList<>();
 	private Function<List<RewriterStatement>, Long> costFunction = null;
 	private boolean consolidated = false;
@@ -282,7 +300,6 @@ public class RewriterInstruction extends RewriterStatement {
 	public RewriterStatement copyNode() {
 		RewriterInstruction mCopy = new RewriterInstruction();
 		mCopy.instr = instr;
-		//mCopy.result = (RewriterDataType)result.copyNode();
 		mCopy.id = id;
 		mCopy.costFunction = costFunction;
 		mCopy.consolidated = consolidated;
@@ -309,7 +326,6 @@ public class RewriterInstruction extends RewriterStatement {
 
 		RewriterInstruction mCopy = new RewriterInstruction();
 		mCopy.instr = instr;
-		//mCopy.result = (RewriterDataType)result.copyNode();
 		mCopy.id = id;
 		mCopy.costFunction = costFunction;
 		mCopy.consolidated = consolidated;
@@ -325,7 +341,6 @@ public class RewriterInstruction extends RewriterStatement {
 
 		for (int i = 0; i < operands.size(); i++)
 			mCopy.operands.add(operands.get(i).nestedCopyOrInject(copiedObjects, injector, mCopy, i));
-		//operands.forEach(op -> mCopy.operands.add(op.nestedCopyOrInject(copiedObjects, injector)));
 
 		return mCopy;
 	}
@@ -355,7 +370,6 @@ public class RewriterInstruction extends RewriterStatement {
 	public RewriterStatement clone() {
 		RewriterInstruction mClone = new RewriterInstruction();
 		mClone.instr = instr;
-		//mClone.result = (RewriterDataType)result.clone();
 		mClone.id = id;
 		ArrayList<RewriterStatement> clonedOperands = new ArrayList<>(operands.size());
 
@@ -369,23 +383,6 @@ public class RewriterInstruction extends RewriterStatement {
 		mClone.meta = meta;
 		return mClone;
 	}
-
-	/*public void injectData(final RuleContext ctx, RewriterInstruction origData) {
-		instr = origData.instr;
-		result = (RewriterDataType)origData.getResult(ctx).copyNode();
-		operands = new ArrayList<>(origData.operands);
-		costFunction = origData.costFunction;
-		meta = origData.meta;
-	}*/
-
-	/*public RewriterInstruction withLinks(DualHashBidiMap<RewriterStatement, RewriterStatement> links) {
-		this.links = links;
-		return this;
-	}
-
-	public DualHashBidiMap<RewriterStatement, RewriterStatement> getLinks() {
-		return links;
-	}*/
 
 	@Override
 	public List<RewriterStatement> getOperands() {
@@ -478,19 +475,6 @@ public class RewriterInstruction extends RewriterStatement {
 		return this;
 	}
 
-	/*public RewriterDataType getResult(final RuleContext ctx) {
-		if (this.result.getType() == null) {
-			String type = ctx.instrTypes.get(typedInstruction(ctx));
-
-			if (type == null)
-				throw new IllegalArgumentException("Type mapping cannot be found for instruction: " + type);
-
-			this.result.ofType(type);
-		}
-
-		return this.result;
-	}*/
-
 	public String typedInstruction(final RuleContext ctx) {
 		return typedInstruction(this.instr, false, ctx);
 	}
@@ -555,7 +539,6 @@ public class RewriterInstruction extends RewriterStatement {
 		}
 
 		sb.append(')');
-		//sb.append("::" + getResultingDataType(ctx));
 
 		return maxRefId;
 	}
@@ -574,9 +557,6 @@ public class RewriterInstruction extends RewriterStatement {
 
 		String instrName = meta == null ? instr : meta.getOrDefault("trueName", instr).toString();
 
-		/*if (operands.size() == 2 && ctx.writeAsBinaryInstruction.contains(instrName))
-			return "(" + operands.get(0) + " " + instrName + " " + operands.get(1) + ")";*/
-
 		StringBuilder builder = new StringBuilder();
 		builder.append(instrName);
 		builder.append("(");
@@ -586,9 +566,7 @@ public class RewriterInstruction extends RewriterStatement {
 			builder.append(operands.get(i).toString(ctx));
 		}
 		builder.append(")");
-		//if (builder.toString().equals("ncol(B::MATRIX)"))
-			return builder.toString() + "[" + System.identityHashCode(this) + "]";
-		//return builder.toString() + "::" + getResultingDataType(ctx);
+		return builder + "[" + System.identityHashCode(this) + "]";
 	}
 
 	@Override
@@ -623,10 +601,6 @@ public class RewriterInstruction extends RewriterStatement {
 	}
 
 	public String trueInstruction() {
-		// Legacy code
-		/*Object trueInstrObj = getMeta("trueInstr");
-		if (trueInstrObj != null && trueInstrObj instanceof String)
-			return (String)trueInstrObj;*/
 		return instr;
 	}
 

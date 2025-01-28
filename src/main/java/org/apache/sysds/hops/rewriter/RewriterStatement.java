@@ -55,57 +55,6 @@ public abstract class RewriterStatement {
 
 	protected HashMap<String, Object> meta = null;
 
-	static RewriterStatementLink resolveNode(RewriterStatementLink link, DualHashBidiMap<RewriterStatementLink, RewriterStatementLink> links) {
-		if (links == null)
-			return link;
-
-		RewriterStatementLink next = links.getOrDefault(link, link);
-		while (!next.equals(link)) {
-			link = next;
-			next = links.getOrDefault(next, next);
-		}
-		return next;
-	}
-
-	static void insertLinks(DualHashBidiMap<RewriterStatementLink, RewriterStatementLink> links, Map<RewriterStatementLink, RewriterStatementLink> inserts) {
-		inserts.forEach((key, value) -> insertLink(links, key, value));
-	}
-
-	static void insertLink(DualHashBidiMap<RewriterStatementLink, RewriterStatementLink> links, RewriterStatementLink key, RewriterStatementLink value) {
-		RewriterStatementLink origin = links.removeValue(key);
-		RewriterStatementLink dest = links.remove(value);
-		origin = origin != null ? origin : key;
-		dest = dest != null ? dest : value;
-
-		//System.out.println(" + " + origin.stmt.toStringWithLinking(links) + " -> " + dest.stmt.toStringWithLinking(links));
-
-		if (origin != dest)
-			links.put(origin, dest);
-	}
-
-	/*private static final Map<Object, RewriterStatement> allLiterals = new ConcurrentHashMap<>();
-
-	public static RewriterStatement newLiteral(Object literal, final RuleContext ctx) {
-		RewriterStatement mLiteral = allLiterals.get(literal);
-		if (mLiteral != null)
-			return mLiteral;
-
-		String type;
-		if (literal instanceof Long)
-			type = "INT";
-		else if (literal instanceof Double)
-			type = "FLOAT";
-		else if (literal instanceof Boolean)
-			type = "BOOL";
-		else
-			throw new IllegalArgumentException();
-
-		RewriterStatement stmt = new RewriterDataType().as(UUID.randomUUID().toString()).ofType(type).asLiteral(literal).consolidate(ctx);
-		allLiterals.put(literal, stmt);
-
-		return stmt;
-	}*/
-
 
 	public static class MatchingSubexpression {
 		private final RewriterStatement expressionRoot;
@@ -345,21 +294,6 @@ public abstract class RewriterStatement {
 			return firstMismatch;
 		}
 
-		/*public MatcherContext createCheckpoint() {
-			MatcherContext checkpoint = new MatcherContext(ctx, matchRoot, statementsCanBeVariables, literalsCanBeVariables, ignoreLiteralValues, allowDuplicatePointers, allowPropertyScan, allowTypeHierarchy, terminateOnFirstMatch, ruleLinks);
-			checkpoint.matchParent = matchParent;
-			checkpoint.matchParentIndex = matchParentIndex;
-			if (dependencyMap != null)
-				checkpoint.dependencyMap = new HashMap<>(dependencyMap);
-			if (links != null)
-				checkpoint.links = new ArrayList<>(links);
-			if (internalReferences != null)
-				checkpoint.internalReferences = new HashMap<>(internalReferences);
-			if (subMatches != null)
-				checkpoint.subMatches = new ArrayList<>(subMatches);
-			return checkpoint;
-		}*/
-
 		public MatcherContext debug(boolean debug) {
 			this.debug = debug;
 			return this;
@@ -593,7 +527,6 @@ public abstract class RewriterStatement {
 		return nestedCopy(copyAssertions, new HashMap<>());
 	}
 
-	// TODO: This does not copy the associations if they exist
 	public RewriterStatement nestedCopy(boolean copyAssertions, Map<RewriterStatement, RewriterStatement> createdObjects) {
 		RewriterStatement cpy = nestedCopyOrInject(createdObjects, el -> null);
 
@@ -609,17 +542,11 @@ public abstract class RewriterStatement {
 
 		return cpy;
 	}
-	//String toStringWithLinking(int dagId, DualHashBidiMap<RewriterStatementLink, RewriterStatementLink> links);
 
 	// Returns the root of the matching sub-statement, null if there is no match
 	public abstract boolean match(MatcherContext matcherContext);
 
-	/*public boolean match(final RuleContext ctx, RewriterStatement stmt, HashMap<RewriterStatement, RewriterStatement> dependencyMap, boolean literalsCanBeVariables, boolean ignoreLiteralValues, List<RewriterRule.ExplicitLink> links, final Map<RewriterStatement, RewriterRule.LinkObject> ruleLinks, boolean allowDuplicatePointers, boolean allowPropertyScan, boolean allowTypeHierarchy) {
-		return match(new MatcherContext(ctx, stmt, dependencyMap, literalsCanBeVariables, ignoreLiteralValues, links, ruleLinks, allowDuplicatePointers, allowPropertyScan, allowTypeHierarchy, new HashMap<>()));
-	}*/
-
 	public abstract int recomputeHashCodes(boolean recursively, final RuleContext ctx);
-	//public abstract long getCost();
 	public abstract RewriterStatement simplify(final RuleContext ctx);
 	public abstract RewriterStatement as(String id);
 	public abstract String toString(final RuleContext ctx);
@@ -688,8 +615,6 @@ public abstract class RewriterStatement {
 	}
 
 	protected void computeRefCtrs() {
-		/*if (isArgumentList())
-			return;*/
 		refCtr++;
 		if (refCtr < 2 && getOperands() != null)
 			getOperands().forEach(RewriterStatement::computeRefCtrs);
@@ -702,9 +627,6 @@ public abstract class RewriterStatement {
 	}
 
 	protected int computeIds(int id) {
-		/*if (rid != 0 || isArgumentList())
-			return id;*/
-
 		rid = id++;
 
 		if (getOperands() != null) {
@@ -779,11 +701,6 @@ public abstract class RewriterStatement {
 
 		consumer.accept(this, parent, pIdx);
 	}
-
-	/*@Override
-	public int compareTo(@NotNull RewriterStatement o) {
-		return Long.compare(getCost(), o.getCost());
-	}*/
 
 	public void putMeta(String key, Object value) {
 		if (isConsolidated())
@@ -1034,15 +951,9 @@ public abstract class RewriterStatement {
 
 	// This may create cycles if visited objects are not tracked
 	public void forEachMetaObject(BiConsumer<RewriterStatement, RewriterPredecessor> consumer) {
-		//RewriterStatement ncol = getNCol();
-		//RewriterStatement nrow = getNRow();
 		RewriterStatement backref = getBackRef();
 		RewriterAssertions assertions = (RewriterAssertions) getMeta("_assertions");
 
-		/*if (ncol != null)
-			consumer.accept(ncol, new RewriterPredecessor(this, "ncol"));
-		if (nrow != null)
-			consumer.accept(nrow, new RewriterPredecessor(this, "nrow"));*/
 		if (backref != null)
 			consumer.accept(backref, new RewriterPredecessor(this, "_backRef"));
 		if (assertions != null)
@@ -1050,25 +961,9 @@ public abstract class RewriterStatement {
 	}
 
 	public void updateMetaObjects(Function<RewriterStatement, RewriterStatement> f) {
-		//RewriterStatement ncol = getNCol();
-		//RewriterStatement nrow = getNRow();
 		RewriterStatement backref = getBackRef();
 
 		RewriterStatement mNew;
-
-		/*if (ncol != null) {
-			mNew = f.apply(ncol);
-
-			if (ncol != mNew)
-				unsafePutMeta("ncol", ncol);
-		}
-
-		if (nrow != null) {
-			mNew = f.apply(nrow);
-
-			if (nrow != mNew)
-				unsafePutMeta("nrow", nrow);
-		}*/
 
 		if (backref != null) {
 			mNew = f.apply(backref);
@@ -1085,10 +980,7 @@ public abstract class RewriterStatement {
 
 	protected void nestedCopyOrInjectMetaStatements(Map<RewriterStatement, RewriterStatement> copiedObjects, TriFunction<RewriterStatement, RewriterStatement, Integer, RewriterStatement> injector) {
 		if (getNCol() != null) {
-			//RewriterStatement oldNCol = getNCol();
-			//RewriterStatement newNCol = oldNCol.nestedCopyOrInject(copiedObjects, injector, this, -1);
 			unsafePutMeta("ncol", getNCol().nestedCopyOrInject(copiedObjects, injector, this, -1));
-			//System.out.println("Copied meta: " + oldNCol + " => " + getNCol().toString() + " (from " + this + ")");
 		}
 
 		if (getNRow() != null)
@@ -1165,20 +1057,6 @@ public abstract class RewriterStatement {
 
 	public static RewriterStatement castFloat(final RuleContext ctx, RewriterStatement stmt) {
 		return new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("cast.FLOAT").withOps(stmt).consolidate(ctx);
-	}
-
-	public static RewriterStatement castMatrix(final RuleContext ctx, RewriterStatement stmt) {
-		return new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("cast.MATRIX").withOps(stmt).consolidate(ctx);
-	}
-
-	public static RewriterStatement ensureFloat(final RuleContext ctx, RewriterStatement stmt) {
-		if (stmt.getResultingDataType(ctx).equals("FLOAT"))
-			return stmt;
-
-		if (stmt.isLiteral())
-			return literal(ctx, stmt.floatLiteral());
-
-		return castFloat(ctx, stmt);
 	}
 
 	public static RewriterStatement nnz(RewriterStatement of, final RuleContext ctx) {

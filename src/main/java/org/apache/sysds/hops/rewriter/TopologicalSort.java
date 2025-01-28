@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.BiFunction;
 
-// For now, we assume that _argList() will have one unique parent
+// We assume that _argList() will have one unique parent
 public class TopologicalSort {
 	public static boolean DEBUG = false;
 
@@ -211,12 +211,6 @@ public class TopologicalSort {
 		return uncertainParents;
 	}
 
-	/*private static void setupAddresses(Set<UnorderedSet> sets) {
-		for (UnorderedSet set : sets)
-			for (RewriterStatement stmt : set.contents)
-				stmt.unsafePutMeta("_addresses", new ArrayList<>());
-	}*/
-
 	private static int introduceFacts(Collection<UnorderedSet> sets, int factCtr) {
 		for (RewriterStatement stmt : allChildren(sets)) {
 			if (stmt.isLiteral())
@@ -395,9 +389,6 @@ public class TopologicalSort {
 		for (int i = 1; i < set.contents.size(); i++) {
 			if (compareTo.equals(set.contents.get(i)))
 				continue; // Ignore same instances
-
-			//String compAddress = getAddress(compareTo);
-			//String mAddress = getAddress(set.contents.get(i));
 
 			if (compare(set.contents.get(i), compareTo, ctx) == 0)
 				return false; // Then there are still some ambiguities

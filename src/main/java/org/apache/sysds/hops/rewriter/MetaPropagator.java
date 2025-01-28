@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.hops.rewriter;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -17,33 +36,20 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 		this.ctx = ctx;
 	}
 
-	// TODO: Maybe automatically recompute hash codes?
 	public RewriterStatement apply(RewriterStatement root) {
-		//System.out.println("Propagating...");
-		//System.out.println("--> " + root.toParsableString(ctx));
 		RewriterAssertions assertions = root.getAssertions(ctx);
 		MutableObject<RewriterStatement> out = new MutableObject<>(root);
 		HashMap<Object, RewriterStatement> literalMap = new HashMap<>();
 
 		root.forEachPostOrderWithDuplicates((el, parent, pIdx) -> {
-			//System.out.println("mAssertions: " + assertions);
-			/*System.out.println("Assessing: " + el.toParsableString(ctx));
-			if (parent != null)
-				System.out.println("With parent: " + parent.toParsableString(ctx));*/
 			RewriterStatement toSet = propagateDims(el, parent, pIdx, assertions);
 
 			if (toSet != null && toSet != el) {
-				/*System.out.println("Set: " + toSet);
-				System.out.println("Old: " + el);
-				System.out.println("Parent: " + parent);
-				System.out.println("PIdx: " + pIdx);*/
 				el = toSet;
 				if (parent == null)
 					out.setValue(toSet);
 				else
 					parent.getOperands().set(pIdx, toSet);
-
-				//System.out.println("New parent: " + parent.toParsableString(ctx));
 			}
 
 			// Assert
@@ -69,8 +75,6 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 			validate(el);
 		});
 
-		//System.out.println("Propagation done!");
-
 		return out.getValue();
 	}
 
@@ -94,16 +98,7 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 				if (ret == null)
 					return null;
 
-				//return ret;
-
 				RewriterStatement asserted = assertions != null ? assertions.getAssertionStatement(ret, parent) : null;
-
-				/*System.out.println("New assertion!");
-				System.out.println("Old: " + ret);
-				System.out.println("NewInstr: " + asserted.trueInstruction());
-				System.out.println("New: " + asserted);
-				System.out.println("All assertions: " + assertions);*/
-				//System.out.println("Asserted: " + asserted  + " (" + (asserted != ret) + ")");
 
 				if (asserted == null)
 					return ret;
@@ -121,23 +116,13 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 
 			if (ncol == null) {
 				root.unsafePutMeta("ncol", new RewriterInstruction().withInstruction("ncol").withOps(root).as(UUID.randomUUID().toString()).consolidate(ctx));
-			} /*else {
-				RewriterStatement asserted = assertions != null ? assertions.getAssertionStatement(ncol, null) : null;
-
-				if (asserted != null && asserted != ncol)
-					root.unsafePutMeta("ncol", asserted);
-			}*/
+			}
 
 			RewriterStatement nrow = root.getNRow();
 
 			if (nrow == null) {
 				root.unsafePutMeta("nrow", new RewriterInstruction().withInstruction("nrow").withOps(root).as(UUID.randomUUID().toString()).consolidate(ctx));
-			} /*else {
-				RewriterStatement asserted = assertions != null ? assertions.getAssertionStatement(nrow, null) : null;
-
-				if (asserted != null && asserted != ncol)
-					root.unsafePutMeta("nrow", asserted);
-			}*/
+			}
 
 			return null;
 		}
@@ -155,7 +140,7 @@ public class MetaPropagator implements Function<RewriterStatement, RewriterState
 					root.unsafePutMeta("nrow", new RewriterDataType().ofType("INT").as("1").asLiteral(1L).consolidate(ctx));
 					return null;
 				case "argList":
-					// TODO: We assume argLists always occur if the matrix properties don't change (for now)
+					// We assume argLists always occur if the matrix properties don't change
 					root.unsafePutMeta("nrow", firstMatrixStatement.get().getMeta("nrow"));
 					root.unsafePutMeta("ncol", firstMatrixStatement.get().getMeta("ncol"));
 					return null;

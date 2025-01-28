@@ -1,6 +1,25 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.hops.rewriter.estimators;
 
-import org.apache.sysds.hops.rewriter.ConstantFoldingFunctions;
+import org.apache.sysds.hops.rewriter.utils.ConstantFoldingUtils;
 import org.apache.sysds.hops.rewriter.RewriterInstruction;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RuleContext;
@@ -10,24 +29,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class RewriterSparsityEstimator {
-
-	/*public static RewriterStatement getCanonicalized(RewriterStatement instr, final RuleContext ctx) {
-		RewriterStatement cpy = instr.copyNode();
-		Map<RewriterStatement, RewriterStatement> mmap = new HashMap<>();
-
-		for (int i = 0; i < cpy.getOperands().size(); i++) {
-			RewriterStatement existing = mmap.get(cpy.getOperands().get(i));
-
-			if (existing != null) {
-				cpy.getOperands().set(i, existing);
-			} else {
-				RewriterStatement mDat = new RewriterDataType().as(UUID.randomUUID().toString()).ofType(cpy.getOperands().get(i).getResultingDataType(ctx)).consolidate(ctx);
-			}
-		}
-
-		RewriterUtils.prepareForSparsityEstimation();
-	}*/
-
 	public static RewriterStatement rollupSparsities(RewriterStatement sparsityEstimate, Map<RewriterStatement, RewriterStatement> sparsityMap, final RuleContext ctx) {
 		sparsityEstimate.forEachPreOrder(cur -> {
 			for (int i = 0; i < cur.getOperands().size(); i++) {
@@ -72,11 +73,11 @@ public class RewriterSparsityEstimator {
 			case "*(MATRIX,MATRIX)":
 				return StatementUtils.min(ctx, RewriterStatement.nnz(stmt.getChild(0), ctx), RewriterStatement.nnz(stmt.getChild(1), ctx));
 			case "*(MATRIX,FLOAT)":
-				if (stmt.getChild(1).isLiteral() && ConstantFoldingFunctions.overwritesLiteral(((Double) stmt.getChild(1).getLiteral()), "*", ctx) != null)
+				if (stmt.getChild(1).isLiteral() && ConstantFoldingUtils.overwritesLiteral(((Double) stmt.getChild(1).getLiteral()), "*", ctx) != null)
 					return RewriterStatement.literal(ctx, 0L);
 				return RewriterStatement.nnz(stmt.getChild(0), ctx);
 			case "*(FLOAT,MATRIX)":
-				if (stmt.getChild(0).isLiteral() && ConstantFoldingFunctions.overwritesLiteral(((Double) stmt.getChild(0).getLiteral()), "*", ctx) != null)
+				if (stmt.getChild(0).isLiteral() && ConstantFoldingUtils.overwritesLiteral(((Double) stmt.getChild(0).getLiteral()), "*", ctx) != null)
 					return RewriterStatement.literal(ctx, 0L);
 				return RewriterStatement.nnz(stmt.getChild(1), ctx);
 			case "+(MATRIX,MATRIX)":
@@ -84,12 +85,12 @@ public class RewriterSparsityEstimator {
 				return StatementUtils.min(ctx, RewriterStatement.multiArgInstr(ctx, "+", RewriterStatement.nnz(stmt.getChild(0), ctx), RewriterStatement.nnz(stmt.getChild(1), ctx)), StatementUtils.length(ctx, stmt));
 			case "+(MATRIX,FLOAT)":
 			case "-(MATRIX,FLOAT)":
-				if (stmt.getChild(1).isLiteral() && ConstantFoldingFunctions.isNeutralElement(stmt.getChild(1).getLiteral(), "+"))
+				if (stmt.getChild(1).isLiteral() && ConstantFoldingUtils.isNeutralElement(stmt.getChild(1).getLiteral(), "+"))
 					return RewriterStatement.nnz(stmt.getChild(0), ctx);
 				return StatementUtils.length(ctx, stmt);
 			case "+(FLOAT,MATRIX)":
 			case "-(FLOAT,MATRIX)":
-				if (stmt.getChild(0).isLiteral() && ConstantFoldingFunctions.isNeutralElement(stmt.getChild(0).getLiteral(), "+"))
+				if (stmt.getChild(0).isLiteral() && ConstantFoldingUtils.isNeutralElement(stmt.getChild(0).getLiteral(), "+"))
 					return RewriterStatement.nnz(stmt.getChild(1), ctx);
 				return StatementUtils.length(ctx, stmt);
 			case "!=(MATRIX,MATRIX)":
@@ -107,7 +108,7 @@ public class RewriterSparsityEstimator {
 			case "/(MATRIX,MATRIX)":
 				return RewriterStatement.nnz(stmt.getChild(0), ctx);
 			case "/(FLOAT,MATRIX)":
-				if (stmt.getChild(0).isLiteral() && ConstantFoldingFunctions.isNeutralElement(stmt.getChild(0).getLiteral(), "+"))
+				if (stmt.getChild(0).isLiteral() && ConstantFoldingUtils.isNeutralElement(stmt.getChild(0).getLiteral(), "+"))
 					return RewriterStatement.literal(ctx, 0L);
 				return StatementUtils.length(ctx, stmt);
 
@@ -125,7 +126,7 @@ public class RewriterSparsityEstimator {
 				return StatementUtils.length(ctx, stmt);
 			case "+*(MATRIX,FLOAT,MATRIX)":
 			case "-*(MATRIX,FLOAT,MATRIX)":
-				if (stmt.getChild(1).isLiteral() && ConstantFoldingFunctions.isNeutralElement(stmt.getChild(1).getLiteral(), "+"))
+				if (stmt.getChild(1).isLiteral() && ConstantFoldingUtils.isNeutralElement(stmt.getChild(1).getLiteral(), "+"))
 					return RewriterStatement.nnz(stmt.getChild(0), ctx);
 				return StatementUtils.min(ctx, RewriterStatement.multiArgInstr(ctx, "+", RewriterStatement.nnz(stmt.getChild(0), ctx), RewriterStatement.nnz(stmt.getChild(2), ctx)), StatementUtils.length(ctx, stmt));
 		}

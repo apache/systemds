@@ -1,6 +1,28 @@
-package org.apache.sysds.hops.rewriter;
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 
-import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
+package org.apache.sysds.hops.rewriter.utils;
+
+import org.apache.sysds.hops.rewriter.RewriterDataType;
+import org.apache.sysds.hops.rewriter.RewriterInstruction;
+import org.apache.sysds.hops.rewriter.RewriterStatement;
+import org.apache.sysds.hops.rewriter.RuleContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,7 +34,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class RewriterAlphabetEncoder {
+public class RewriterSearchUtils {
 	public static final List<String> ALL_TYPES = List.of("MATRIX", "FLOAT");
 	public static final List<String> SCALAR = List.of("FLOAT");
 	public static final List<String> MATRIX = List.of("MATRIX");
@@ -228,7 +250,6 @@ public class RewriterAlphabetEncoder {
 			return Collections.emptyList();
 
 		List<RewriterStatement> out = new ArrayList<>();
-		//out.add(root);
 
 		for (int i = 0; i < interestingLeaves.size(); i++) {
 			RewriterStatement to = interestingLeaves.get(i);
@@ -253,12 +274,12 @@ public class RewriterAlphabetEncoder {
 		if (operands == null)
 			return Collections.emptyList();
 
-		RewriterAlphabetEncoder.ctx = ctx;
+		RewriterSearchUtils.ctx = ctx;
 
 		List<RewriterStatement> allStmts = recursivelyFindAllCombinations(operands, null, ALL_TYPES);
 
 		if (rename)
-			allStmts.forEach(RewriterAlphabetEncoder::rename);
+			allStmts.forEach(RewriterSearchUtils::rename);
 
 		if (ctx.metaPropagator != null)
 			allStmts = allStmts.stream().map(stmt -> ctx.metaPropagator.apply(stmt)).collect(Collectors.toList());
@@ -335,8 +356,7 @@ public class RewriterAlphabetEncoder {
 					RewriterStatement stmt = buildStmt(operands.get(0), stack);
 					possibleStmts.add(stmt);
 				} catch (Exception e) {
-					// Might fail, as there could be wrong types
-					//e.printStackTrace();
+					// Might fail as there could be wrong types
 				}
 				return true; // Should continue
 			});
@@ -410,21 +430,6 @@ public class RewriterAlphabetEncoder {
 			}
 		}
 
-		/*if (op.op.equals("!=0")) {
-			stmt.withInstruction("!=").addOp(stack[0]).addOp(RewriterStatement.literal(ctx, 0.0D));
-		} else if (op.op.equals("0!=")) {
-			stmt.withInstruction("!=").addOp(RewriterStatement.literal(ctx, 0.0D)).addOp(stack[0]);
-		} else if (op.op.equals("fncol") || op.op.equals("fnrow") || op.op.equals("flength")) {
-			String actualOp = op.op.substring(1);
-			stmt.withInstruction(actualOp).withOps(stack).consolidate(ctx);
-			stmt = (RewriterInstruction) RewriterStatement.castFloat(ctx, stmt);
-		} else if (op.op.equals("*sum")) {
-			RewriterStatement old = stmt.withInstruction("sum").withOps(stack[0]).consolidate(ctx);
-			stmt = new RewriterInstruction("*", ctx, old, stack[1]);
-		} else {
-			stmt.withInstruction(op.op).withOps(stack);
-		}*/
-
 		stmt.consolidate(ctx);
 		return stmt;
 	}
@@ -449,12 +454,8 @@ public class RewriterAlphabetEncoder {
 	public static List<Operand> decodeOrderedStatements(int stmt) {
 		int[] instructions = fromBaseNNumber(stmt, instructionAlphabet.length);
 		List<Operand> out = new ArrayList<>(instructions.length);
-		//System.out.println("StmtIdx: " + stmt);
 
 		for (int i = 0; i < instructions.length; i++) {
-			/*System.out.println("Idx: " + i);
-			System.out.println("digits[" + i + "]: " + instructions[i]);
-			System.out.println("As op: " + instructionAlphabet[instructions[i]]);*/
 			Operand toAdd = instructionAlphabet[instructions[i]];
 			if (toAdd == null)
 				return null;
@@ -468,26 +469,13 @@ public class RewriterAlphabetEncoder {
 		if (l == 0)
 			return new int[0];
 
-		// We put 1 as the last bit to signalize end of sequence
-		/*int m = Integer.numberOfTrailingZeros(Integer.highestOneBit(l));
-		int maxRepr = 1 << (m - 1);
-		l = l ^ (1 << m);
-
-		System.out.println("Bin: " + Integer.toBinaryString(l));
-		System.out.println("m: " + m);
-		System.out.println("l: " + l);*/
-
 		int numDigits = (int)(Math.log(l) / Math.log(n)) + 1;
 		int[] digits = new int[numDigits];
 
 		for (int i = numDigits - 1; i >= 0; i--) {
-			//System.out.println(l + " % " + n);
 			digits[i] = l % n;
 			l = l / n;
 		}
-
-		/*System.out.println("numDigits: " + numDigits);
-		System.out.println("digits[0]: " + digits[0]);*/
 
 		return digits;
 	}
@@ -498,16 +486,11 @@ public class RewriterAlphabetEncoder {
 
 		int multiplicator = 1;
 		int out = 0;
-		//int maxPossible = 0;
 
 		for (int i = digits.length - 1; i >= 0; i--) {
 			out += multiplicator * digits[i];
-			//maxPossible += multiplicator * (n - 1);
 			multiplicator *= n;
 		}
-
-		/*int m = Integer.numberOfTrailingZeros(Integer.highestOneBit(maxPossible));
-		out |= (1 << m);*/
 
 		return out;
 	}

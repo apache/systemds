@@ -21,8 +21,8 @@ package org.apache.sysds.test.component.codegen.rewrite;
 
 import org.apache.commons.collections.list.SynchronizedList;
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.sysds.hops.rewriter.RewriteAutomaticallyGenerated;
-import org.apache.sysds.hops.rewriter.RewriterAlphabetEncoder;
+import org.apache.sysds.hops.rewriter.generated.RewriteAutomaticallyGenerated;
+import org.apache.sysds.hops.rewriter.utils.RewriterSearchUtils;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertionUtils;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
@@ -39,9 +39,7 @@ import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
 import org.apache.sysds.hops.rewriter.TopologicalSort;
 import scala.Tuple2;
-import scala.Tuple3;
 import scala.Tuple4;
-import scala.Tuple5;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -215,7 +213,7 @@ public class RewriterClusteringTest {
 		if (useSystematic) {
 			long MAX_MILLIS = 12000000; // Should be bound by number of ops
 			//int BATCH_SIZE = 400;
-			int maxN = RewriterAlphabetEncoder.getMaxSearchNumberForNumOps(systematicSearchDepth);
+			int maxN = RewriterSearchUtils.getMaxSearchNumberForNumOps(systematicSearchDepth);
 			System.out.println("MaxN: " + maxN);
 			long startMillis = System.currentTimeMillis();
 
@@ -230,15 +228,15 @@ public class RewriterClusteringTest {
 						System.out.println("Done: " + (mBATCH * BATCH_SIZE + ctr2.intValue()) + " / " + (mBATCH * BATCH_SIZE + maxSize));
 
 
-					List<RewriterAlphabetEncoder.Operand> ops = RewriterAlphabetEncoder.decodeOrderedStatements(idx);
-					List<RewriterStatement> stmts = RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, true);
+					List<RewriterSearchUtils.Operand> ops = RewriterSearchUtils.decodeOrderedStatements(idx);
+					List<RewriterStatement> stmts = RewriterSearchUtils.buildAllPossibleDAGs(ops, ctx, true);
 					long actualCtr = 0;
 
 					for (RewriterStatement dag : stmts) {
 						List<RewriterStatement> expanded = new ArrayList<>();
 						expanded.add(dag);
 						//expanded.addAll(RewriterAlphabetEncoder.buildAssertionVariations(dag, ctx, false));
-						expanded.addAll(RewriterAlphabetEncoder.buildVariations(dag, ctx));
+						expanded.addAll(RewriterSearchUtils.buildVariations(dag, ctx));
 						actualCtr += expanded.size();
 						for (RewriterStatement stmt : expanded) {
 							try {
@@ -279,7 +277,7 @@ public class RewriterClusteringTest {
 			if (useRandomLarge) {
 				// Now we will just do random sampling for a few rounds
 				Random rd = new Random(42);
-				int nMaxN = RewriterAlphabetEncoder.getMaxSearchNumberForNumOps(4);
+				int nMaxN = RewriterSearchUtils.getMaxSearchNumberForNumOps(4);
 				for (int batch = 0; batch < 200 && System.currentTimeMillis() - startMillis < MAX_MILLIS && batch * BATCH_SIZE < maxN; batch++) {
 					List<Integer> indices = IntStream.range(batch * BATCH_SIZE, (batch + 1) * BATCH_SIZE - 1).boxed().map(v -> maxN + rd.nextInt(nMaxN)).collect(Collectors.toList());
 					//Collections.shuffle(indices);
@@ -290,15 +288,15 @@ public class RewriterClusteringTest {
 						if (ctr2.incrementAndGet() % 10 == 0)
 							System.out.println("Done: " + (mBATCH * BATCH_SIZE + ctr2.intValue()) + " / " + (mBATCH * BATCH_SIZE + maxSize));
 
-						List<RewriterAlphabetEncoder.Operand> ops = RewriterAlphabetEncoder.decodeOrderedStatements(idx);
-						List<RewriterStatement> stmts = RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, true);
+						List<RewriterSearchUtils.Operand> ops = RewriterSearchUtils.decodeOrderedStatements(idx);
+						List<RewriterStatement> stmts = RewriterSearchUtils.buildAllPossibleDAGs(ops, ctx, true);
 						long actualCtr = 0;
 
 						for (RewriterStatement dag : stmts) {
 							List<RewriterStatement> expanded = new ArrayList<>();
 							expanded.add(dag);
 							//expanded.addAll(RewriterAlphabetEncoder.buildAssertionVariations(dag, ctx, true));
-							expanded.addAll(RewriterAlphabetEncoder.buildVariations(dag, ctx));
+							expanded.addAll(RewriterSearchUtils.buildVariations(dag, ctx));
 							actualCtr += expanded.size();
 							for (RewriterStatement stmt : expanded) {
 								try {

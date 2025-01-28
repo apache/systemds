@@ -1,12 +1,25 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.hops.rewriter.codegen;
 
-
-import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.Hop;
-import org.apache.sysds.hops.LiteralOp;
-import org.apache.sysds.hops.UnaryOp;
-import org.apache.sysds.hops.rewrite.HopRewriteUtils;
-import org.apache.sysds.hops.rewriter.RewriteAutomaticallyGenerated;
 import org.apache.sysds.hops.rewriter.RewriterRuleSet;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
@@ -14,6 +27,7 @@ import org.apache.sysds.hops.rewriter.RewriterDataType;
 import org.apache.sysds.hops.rewriter.RewriterRule;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RuleContext;
+import org.apache.sysds.hops.rewriter.utils.CodeGenUtils;
 import org.codehaus.janino.SimpleCompiler;
 import scala.Tuple2;
 
@@ -23,7 +37,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.AbstractCollection;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -88,8 +101,28 @@ public class RewriterCodeGen {
 	public static String generateClass(String className, List<Tuple2<String, RewriterRule>> rewrites, boolean optimize, int maxOptimizationDepth, boolean includePackageInfo, final RuleContext ctx, boolean ignoreErrors, boolean printErrors, boolean maintainRewriteStats) {
 		StringBuilder msb = new StringBuilder();
 
-		if (includePackageInfo)
+		if (includePackageInfo) {
+			// Include license
+			msb.append("/*\n" +
+					" * Licensed to the Apache Software Foundation (ASF) under one\n" +
+					" * or more contributor license agreements.  See the NOTICE file\n" +
+					" * distributed with this work for additional information\n" +
+					" * regarding copyright ownership.  The ASF licenses this file\n" +
+					" * to you under the Apache License, Version 2.0 (the\n" +
+					" * \"License\"); you may not use this file except in compliance\n" +
+					" * with the License.  You may obtain a copy of the License at\n" +
+					" *\n" +
+					" *   http://www.apache.org/licenses/LICENSE-2.0\n" +
+					" *\n" +
+					" * Unless required by applicable law or agreed to in writing,\n" +
+					" * software distributed under the License is distributed on an\n" +
+					" * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n" +
+					" * KIND, either express or implied.  See the License for the\n" +
+					" * specific language governing permissions and limitations\n" +
+					" * under the License.\n" +
+					" */\n\n");
 			msb.append("package org.apache.sysds.hops.rewriter;\n\n");
+		}
 
 		msb.append("import java.util.ArrayList;\n");
 		msb.append("import java.util.function.Function;\n");
@@ -365,40 +398,26 @@ public class RewriterCodeGen {
 	}
 
 	private static void buildTypeCastFunction(StringBuilder sb, int indentation) {
-		indent(indentation, sb);
-		sb.append("private static Hop castIfNecessary(Hop newRoot, Hop oldRoot) {\n");
-		indent(indentation + 1, sb);
-		sb.append("Types.OpOp1 cast = null;\n");
-		indent(indentation + 1, sb);
-		sb.append("switch ( oldRoot.getValueType().toExternalString() ) {\n");
-		indent(indentation + 2, sb);
-		sb.append("case \"DOUBLE\":\n"); //Types.ValueType.FP64.toExternalString()
-		indent(indentation + 3, sb);
-		sb.append("cast = Types.OpOp1.CAST_AS_DOUBLE;\n");
-		indent(indentation + 3, sb);
-		sb.append("break;\n");
-		indent(indentation + 2, sb);
-		sb.append("case \"INT\":\n"); //Types.ValueType.FP64.toExternalString()
-		indent(indentation + 3, sb);
-		sb.append("cast = Types.OpOp1.CAST_AS_INT;\n");
-		indent(indentation + 3, sb);
-		sb.append("break;\n");
-		indent(indentation + 2, sb);
-		sb.append("case \"BOOLEAN\":\n"); //Types.ValueType.FP64.toExternalString()
-		indent(indentation + 3, sb);
-		sb.append("cast = Types.OpOp1.CAST_AS_BOOLEAN;\n");
-		indent(indentation + 3, sb);
-		sb.append("break;\n");
-		indent(indentation + 2, sb);
-		sb.append("default:\n");
-		indent(indentation + 3, sb);
-		sb.append("return null;\n");
-		indent(indentation + 1, sb);
-		sb.append("}\n\n");
-		indent(indentation + 1, sb);
-		sb.append("return new UnaryOp(\"tmp\", oldRoot.getDataType(), oldRoot.getValueType(), cast, newRoot);\n");
-		indent(indentation, sb);
-		sb.append("}\n");
+		String str = "private static Hop castIfNecessary(Hop newRoot, Hop oldRoot) {\n" +
+				"\tTypes.OpOp1 cast = null;\n" +
+				"\tswitch ( oldRoot.getValueType().toExternalString() ) {\n" +
+				"\t\tcase \"DOUBLE\":\n" +
+				"\t\t\tcast = Types.OpOp1.CAST_AS_DOUBLE;\n" +
+				"\t\t\tbreak;\n" +
+				"\t\tcase \"INT\":\n" +
+				"\t\t\tcast = Types.OpOp1.CAST_AS_INT;\n" +
+				"\t\t\tbreak;\n" +
+				"\t\tcase \"BOOLEAN\":\n" +
+				"\t\t\tcast = Types.OpOp1.CAST_AS_BOOLEAN;\n" +
+				"\t\t\tbreak;\n" +
+				"\t\tdefault:\n" +
+				"\t\t\treturn null;\n" +
+				"\t}\n" +
+				"\n" +
+				"\treturn new UnaryOp(\"tmp\", oldRoot.getDataType(), oldRoot.getValueType(), cast, newRoot);\n" +
+				"}\n";
+
+		sb.append(indentMultilineString(str, indentation));
 	}
 
 	private static void buildMinIdxFunction(StringBuilder sb, int indentation) {
@@ -527,8 +546,6 @@ public class RewriterCodeGen {
 	private static Set<RewriterStatement> buildRewrite(RewriterStatement newRoot, StringBuilder sb, RewriterAssertions assertions, Map<RewriterStatement, String> vars, final RuleContext ctx, int indentation) {
 		Set<RewriterStatement> visited = new HashSet<>();
 		recursivelyBuildNewHop(sb, newRoot, assertions, vars, ctx, indentation, 1, visited, newRoot.getResultingDataType(ctx).equals("FLOAT"));
-		//indent(indentation, sb);
-		//sb.append("hi = " + vars.get(newRoot) + ";\n");
 
 		return visited;
 	}
@@ -778,7 +795,6 @@ public class RewriterCodeGen {
 	}
 
 	private static String resolveOperand(RewriterStatement stmt, int idx, StringBuilder sb, String curVar, final RuleContext ctx, int indentation) {
-		//RewriterStatement child = stmt.getChild(idx);
 		String name = curVar + "_" + idx;
 		indent(indentation, sb);
 		sb.append("Hop " + name + " = " + curVar + ".getInput(" + idx + ");\n");

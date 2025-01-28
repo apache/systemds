@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.hops.rewriter.utils;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -5,8 +24,6 @@ import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.logging.log4j.util.TriConsumer;
-import org.apache.spark.internal.config.R;
-import org.apache.sysds.hops.rewriter.ConstantFoldingFunctions;
 import org.apache.sysds.hops.rewriter.MetaPropagator;
 import org.apache.sysds.hops.rewriter.RewriterContextSettings;
 import org.apache.sysds.hops.rewriter.RewriterDataType;
@@ -54,21 +71,18 @@ public class RewriterUtils {
 		return el -> {
 			if (el instanceof RewriterInstruction) {
 				Set<String> properties = ((RewriterInstruction) el).getProperties(ctx);
-				String trueInstr = ((RewriterInstruction)el).trueTypedInstruction(ctx);
-				//if (properties != null) {
-					for (String desiredProperty : desiredProperties) {
-						if (trueInstr.equals(desiredProperty) || (properties != null && properties.contains(desiredProperty))) {
-							System.out.println("Found property: " + desiredProperty + " (for " + el + ")");
-							String oldInstr = ((RewriterInstruction) el).changeConsolidatedInstruction(desiredProperty, ctx);
-							if (el.getMeta("trueInstr") == null) {
-								el.unsafePutMeta("trueInstr", oldInstr);
-								el.unsafePutMeta("trueName", oldInstr);
-							}
-							break;
-							//System.out.println("Property found: " + desiredProperty);
+				String trueInstr = el.trueTypedInstruction(ctx);
+				for (String desiredProperty : desiredProperties) {
+					if (trueInstr.equals(desiredProperty) || (properties != null && properties.contains(desiredProperty))) {
+						System.out.println("Found property: " + desiredProperty + " (for " + el + ")");
+						String oldInstr = ((RewriterInstruction) el).changeConsolidatedInstruction(desiredProperty, ctx);
+						if (el.getMeta("trueInstr") == null) {
+							el.unsafePutMeta("trueInstr", oldInstr);
+							el.unsafePutMeta("trueName", oldInstr);
 						}
+						break;
 					}
-				//}
+				}
 			}
 			return true;
 		};
@@ -1785,12 +1799,12 @@ public class RewriterUtils {
 		int[] literals = IntStream.range(0, argList.size()).filter(i -> argList.get(i).isLiteral()).toArray();
 
 		if (literals.length == 1) {
-			RewriterStatement overwrite = ConstantFoldingFunctions.overwritesLiteral((Number)argList.get(literals[0]).getLiteral(), stmt.trueInstruction(), ctx);
+			RewriterStatement overwrite = ConstantFoldingUtils.overwritesLiteral((Number)argList.get(literals[0]).getLiteral(), stmt.trueInstruction(), ctx);
 			if (overwrite != null)
 				return overwrite;
 
 			// Check if is neutral element
-			if (ConstantFoldingFunctions.isNeutralElement(argList.get(literals[0]).getLiteral(), stmt.trueInstruction())) {
+			if (ConstantFoldingUtils.isNeutralElement(argList.get(literals[0]).getLiteral(), stmt.trueInstruction())) {
 				RewriterStatement neutral = argList.get(literals[0]);
 				argList.remove(literals[0]);
 
@@ -1811,7 +1825,7 @@ public class RewriterUtils {
 
 		String rType = stmt.getResultingDataType(ctx);
 
-		BiFunction<Number, RewriterStatement, Number> foldingFunction = ConstantFoldingFunctions.foldingBiFunction(stmt.trueInstruction(), rType);
+		BiFunction<Number, RewriterStatement, Number> foldingFunction = ConstantFoldingUtils.foldingBiFunction(stmt.trueInstruction(), rType);
 
 		RewriterDataType foldedLiteral = new RewriterDataType();
 		Number val = null;
@@ -1820,7 +1834,7 @@ public class RewriterUtils {
 			val = foldingFunction.apply(val, argList.get(literal));
 
 
-		RewriterStatement overwrite = ConstantFoldingFunctions.overwritesLiteral(val, stmt.trueInstruction(), ctx);
+		RewriterStatement overwrite = ConstantFoldingUtils.overwritesLiteral(val, stmt.trueInstruction(), ctx);
 		if (overwrite != null)
 			return overwrite;
 
@@ -1828,10 +1842,10 @@ public class RewriterUtils {
 
 		argList.removeIf(RewriterStatement::isLiteral);
 
-		if (argList.isEmpty() || !ConstantFoldingFunctions.isNeutralElement(foldedLiteral.getLiteral(), stmt.trueInstruction()))
+		if (argList.isEmpty() || !ConstantFoldingUtils.isNeutralElement(foldedLiteral.getLiteral(), stmt.trueInstruction()))
 			argList.add(foldedLiteral);
 
-		ConstantFoldingFunctions.cancelOutNary(stmt.trueInstruction(), argList);
+		ConstantFoldingUtils.cancelOutNary(stmt.trueInstruction(), argList);
 
 		if (argList.size() == 1)
 			return argList.get(0);

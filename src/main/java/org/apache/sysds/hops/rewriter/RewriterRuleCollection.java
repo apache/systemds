@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.hops.rewriter;
 
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
@@ -13,355 +32,6 @@ import static org.apache.sysds.hops.rewriter.RewriterContextSettings.ALL_TYPES;
 import static org.apache.sysds.hops.rewriter.RewriterContextSettings.SCALARS;
 
 public class RewriterRuleCollection {
-
-	// Anything that can be substituted with 'a == b'
-	public static void addEqualitySubstitutions(final List<RewriterRule> rules, final RuleContext ctx) {
-		RewriterUtils.buildBinaryPermutations(List.of("MATRIX", "FLOAT", "INT", "BOOL"), (t1, t2) -> {
-			rules.add(new RewriterRuleBuilder(ctx)
-					.parseGlobalVars(t1 + ":A")
-					.parseGlobalVars(t2 + ":B")
-					.withParsedStatement("==(A,B)")
-					.toParsedStatement("!(!=(A,B))")
-					.build()
-			);
-
-			rules.add(new RewriterRuleBuilder(ctx)
-					.parseGlobalVars(t1 + ":A")
-					.parseGlobalVars(t2 + ":B")
-					.withParsedStatement("==(A,B)")
-					.toParsedStatement("&(>=(A,B), <=(A,B))")
-					.build()
-			);
-
-			rules.add(new RewriterRuleBuilder(ctx)
-					.parseGlobalVars(t1 + ":A")
-					.parseGlobalVars(t2 + ":B")
-					.withParsedStatement("==(A,B)")
-					.toParsedStatement("!(&(>(A,B), <(A,B)))")
-					.build()
-			);
-
-			rules.add(new RewriterRuleBuilder(ctx)
-					.parseGlobalVars(t1 + ":A")
-					.parseGlobalVars(t2 + ":B")
-					.parseGlobalVars("LITERAL_FLOAT:0")
-					.withParsedStatement("==(A,B)")
-					.toParsedStatement("==(+(A,-(B)),0)")
-					.build()
-			);
-
-			rules.add(new RewriterRuleBuilder(ctx)
-					.parseGlobalVars(t1 + ":A")
-					.parseGlobalVars(t2 + ":B")
-					.parseGlobalVars("LITERAL_FLOAT:0")
-					.withParsedStatement("==(A,B)")
-					.toParsedStatement("==(+(-(A),B),0)")
-					.build()
-			);
-		});
-
-		ALL_TYPES.forEach(t -> {
-			if (t.equals("MATRIX")) {
-				rules.add(new RewriterRuleBuilder(ctx)
-						.setUnidirectional(true)
-						.parseGlobalVars(t + ":A")
-						.parseGlobalVars("LITERAL_INT:1")
-						.withParsedStatement("==(A,A)")
-						.toParsedStatement("matrix(1, nrow(A), ncol(A))")
-						.build()
-				);
-
-				rules.add(new RewriterRuleBuilder(ctx)
-						.setUnidirectional(true)
-						.parseGlobalVars("INT:r,c")
-						.parseGlobalVars("LITERAL_INT:1")
-						.withParsedStatement("matrix(1, r, c)")
-						.toParsedStatement("==($1:_rdMATRIX(r, c),$1)")
-						.build()
-				);
-			} else {
-				rules.add(new RewriterRuleBuilder(ctx)
-						.setUnidirectional(true)
-						.parseGlobalVars(t + ":A")
-						.parseGlobalVars("LITERAL_BOOL:TRUE")
-						.withParsedStatement("==(A,A)")
-						.toParsedStatement("TRUE")
-						.build()
-				);
-
-				rules.add(new RewriterRuleBuilder(ctx)
-						.setUnidirectional(true)
-						.parseGlobalVars("LITERAL_BOOL:TRUE")
-						.withParsedStatement("TRUE")
-						.toParsedStatement("==($1:_rd" + t + "(),$1)")
-						.build()
-				);
-			}
-		});
-	}
-
-	public static void addBooleAxioms(final List<RewriterRule> rules, final RuleContext ctx) {
-		// Identity axioms
-		rules.add(new RewriterRuleBuilder(ctx)
-				.parseGlobalVars("BOOL:a")
-				.parseGlobalVars("LITERAL_BOOL:FALSE")
-				.withParsedStatement("a")
-				.toParsedStatement("|(a, FALSE)")
-				.build()
-		);
-
-		rules.add(new RewriterRuleBuilder(ctx)
-				.parseGlobalVars("BOOL:a")
-				.parseGlobalVars("LITERAL_BOOL:TRUE")
-				.withParsedStatement("a")
-				.toParsedStatement("&(a, TRUE)")
-				.build()
-		);
-
-		// Domination axioms
-		rules.add(new RewriterRuleBuilder(ctx)
-				.setUnidirectional(true)
-				.parseGlobalVars("BOOL:a")
-				.parseGlobalVars("LITERAL_BOOL:TRUE")
-				.withParsedStatement("TRUE")
-				.toParsedStatement("|(_anyBool(), TRUE)")
-				.build()
-		);
-
-		rules.add(new RewriterRuleBuilder(ctx)
-				.setUnidirectional(true)
-				.parseGlobalVars("BOOL:a")
-				.parseGlobalVars("LITERAL_BOOL:TRUE")
-				.withParsedStatement("|(a, TRUE)")
-				.toParsedStatement("TRUE")
-				.build()
-		);
-
-		rules.add(new RewriterRuleBuilder(ctx)
-				.setUnidirectional(true)
-				.parseGlobalVars("BOOL:a")
-				.parseGlobalVars("LITERAL_BOOL:FALSE")
-				.withParsedStatement("FALSE")
-				.toParsedStatement("&(_anyBool(), FALSE)")
-				.build()
-		);
-
-		rules.add(new RewriterRuleBuilder(ctx)
-				.setUnidirectional(true)
-				.parseGlobalVars("BOOL:a")
-				.parseGlobalVars("LITERAL_BOOL:FALSE")
-				.withParsedStatement("&(a, FALSE)")
-				.toParsedStatement("FALSE")
-				.build()
-		);
-
-		// Idempotence axioms
-		rules.add(new RewriterRuleBuilder(ctx)
-				.parseGlobalVars("BOOL:a")
-				.withParsedStatement("a")
-				.toParsedStatement("|(a, a)")
-				.build()
-		);
-
-		rules.add(new RewriterRuleBuilder(ctx)
-				.parseGlobalVars("BOOL:a")
-				.withParsedStatement("a")
-				.toParsedStatement("&(a, a)")
-				.build()
-		);
-
-		// Commutativity
-		rules.add(new RewriterRuleBuilder(ctx)
-				.parseGlobalVars("BOOL:a,b")
-				.withParsedStatement("|(a, b)")
-				.toParsedStatement("|(b, a)")
-				.build()
-		);
-
-		rules.add(new RewriterRuleBuilder(ctx)
-				.parseGlobalVars("BOOL:a,b")
-				.withParsedStatement("&(a, b)")
-				.toParsedStatement("&(b, a)")
-				.build()
-		);
-
-		// Associativity
-		rules.add(new RewriterRuleBuilder(ctx)
-				.parseGlobalVars("BOOL:a,b,c")
-				.withParsedStatement("|(|(a, b), c)")
-				.toParsedStatement("|(a, |(b, c))")
-				.build()
-		);
-
-		rules.add(new RewriterRuleBuilder(ctx)
-				.parseGlobalVars("BOOL:a,b,c")
-				.withParsedStatement("&(&(a, b), c)")
-				.toParsedStatement("&(a, &(b, c))")
-				.build()
-		);
-
-		// Distributivity
-		rules.add(new RewriterRuleBuilder(ctx)
-				.parseGlobalVars("BOOL:a,b,c")
-				.withParsedStatement("&(a, |(b, c))")
-				.toParsedStatement("|(&(a, b), &(a, c))")
-				.build()
-		);
-
-		rules.add(new RewriterRuleBuilder(ctx)
-				.parseGlobalVars("BOOL:a,b,c")
-				.withParsedStatement("&(&(a, b), c)")
-				.toParsedStatement("&(a, &(b, c))")
-				.build()
-		);
-
-		// Complementation
-		rules.add(new RewriterRuleBuilder(ctx)
-				.setUnidirectional(true)
-				.parseGlobalVars("LITERAL_BOOL:TRUE")
-				.withParsedStatement("TRUE")
-				.toParsedStatement("|($1:_anyBool(), !($1))")
-				.build()
-		);
-
-		rules.add(new RewriterRuleBuilder(ctx)
-				.setUnidirectional(true)
-				.parseGlobalVars("BOOL:a")
-				.parseGlobalVars("LITERAL_BOOL:TRUE")
-				.withParsedStatement("|(a, !(a))")
-				.toParsedStatement("TRUE")
-				.build()
-		);
-
-		rules.add(new RewriterRuleBuilder(ctx)
-				.setUnidirectional(true)
-				.parseGlobalVars("LITERAL_BOOL:FALSE")
-				.withParsedStatement("FALSE")
-				.toParsedStatement("&($1:_anyBool(), !($1))")
-				.build()
-		);
-
-		rules.add(new RewriterRuleBuilder(ctx)
-				.setUnidirectional(true)
-				.parseGlobalVars("BOOL:a")
-				.parseGlobalVars("LITERAL_BOOL:FALSE")
-				.withParsedStatement("&(a, !(a))")
-				.toParsedStatement("FALSE")
-				.build()
-		);
-
-		// Double negation
-		rules.add(new RewriterRuleBuilder(ctx)
-				.parseGlobalVars("BOOL:a")
-				.withParsedStatement("a")
-				.toParsedStatement("!(!(a))")
-				.build()
-		);
-
-
-		/*RewriterUtils.buildBinaryPermutations(List.of("MATRIX", "FLOAT", "INT", "BOOL"), (t1, t2) -> {
-			boolean isBool = t1.equals("BOOL") && t2.equals("BOOL");
-			// Identity axioms
-			rules.add(new RewriterRuleBuilder(ctx)
-					.parseGlobalVars(t1 + ":A")
-					.parseGlobalVars(t2 + ":B")
-					.parseGlobalVars("LITERAL_FLOAT:0")
-					.withParsedStatement("!=(A,0)")
-					.toParsedStatement("!(!=(A,B))")
-					.build()
-			);
-		});*/
-	}
-
-	public static void addImplicitBoolLiterals(final List<RewriterRule> rules, final RuleContext ctx) {
-		rules.add(new RewriterRuleBuilder(ctx)
-				.parseGlobalVars("LITERAL_BOOL:TRUE")
-				.parseGlobalVars("LITERAL_INT:1")
-				.withParsedStatement("TRUE")
-				.toParsedStatement("<(_lower(1), 1)")
-				.build()
-		);
-
-		rules.add(new RewriterRuleBuilder(ctx)
-				.parseGlobalVars("LITERAL_BOOL:TRUE")
-				.parseGlobalVars("LITERAL_INT:1")
-				.withParsedStatement("TRUE")
-				.toParsedStatement(">(_higher(1), 1)")
-				.build()
-		);
-
-		rules.add(new RewriterRuleBuilder(ctx)
-				.parseGlobalVars("LITERAL_BOOL:FALSE")
-				.parseGlobalVars("LITERAL_INT:1")
-				.withParsedStatement("FALSE")
-				.toParsedStatement("<(_higher(1), 1)")
-				.build()
-		);
-
-		rules.add(new RewriterRuleBuilder(ctx)
-				.parseGlobalVars("LITERAL_BOOL:FALSE")
-				.parseGlobalVars("LITERAL_INT:1")
-				.withParsedStatement("FALSE")
-				.toParsedStatement(">(_lower(1), 1)")
-				.build()
-		);
-	}
-
-	public static RewriterHeuristic getHeur(final RuleContext ctx) {
-		ArrayList<RewriterRule> preparationRules = new ArrayList<>();
-
-		RewriterUtils.buildBinaryPermutations(ALL_TYPES, (t1, t2) -> {
-			Stream.of("&", "|").forEach(expr -> {
-				preparationRules.add(new RewriterRuleBuilder(ctx)
-						.setUnidirectional(true)
-						.parseGlobalVars(t1 + ":a")
-						.parseGlobalVars(t2 + ":b")
-						.withParsedStatement(expr + "(a, b)")
-						.toParsedStatement(expr + "(_asVar(a), b)")
-						.iff(match -> match.getMatchRoot().getOperands().get(0).isLiteral()
-								|| (match.getMatchRoot().getOperands().get(0).isInstruction()
-								&& match.getMatchRoot().getOperands().get(0).trueInstruction().startsWith("_")
-								&& !match.getMatchRoot().getOperands().get(0).trueInstruction().equals("_asVar")), true)
-						.build()
-				);
-				preparationRules.add(new RewriterRuleBuilder(ctx)
-						.setUnidirectional(true)
-						.parseGlobalVars(t1 + ":a")
-						.parseGlobalVars(t2 + ":b")
-						.withParsedStatement(expr + "(a, b)")
-						.toParsedStatement(expr + "(a, _asVar(b))")
-						.iff(match -> match.getMatchRoot().getOperands().get(1).isLiteral()
-								|| (match.getMatchRoot().getOperands().get(1).isInstruction()
-								&& match.getMatchRoot().getOperands().get(1).trueInstruction().startsWith("_")
-								&& !match.getMatchRoot().getOperands().get(1).trueInstruction().equals("_asVar")), true)
-						.build()
-				);
-			});
-		});
-
-		ALL_TYPES.forEach(t -> preparationRules.add((new RewriterRuleBuilder(ctx)
-				.setUnidirectional(true)
-				.parseGlobalVars(t + ":a")
-				.withParsedStatement("!(a)")
-				.toParsedStatement("!(_asVar(a))")
-				.iff(match -> match.getMatchRoot().getOperands().get(0).isLiteral()
-						|| (match.getMatchRoot().getOperands().get(0).isInstruction()
-						&& match.getMatchRoot().getOperands().get(0).trueInstruction().startsWith("_")
-						&& !match.getMatchRoot().getOperands().get(0).trueInstruction().equals("_asVar")), true)
-				.build()
-		)));
-
-		RewriterRuleSet rs = new RewriterRuleSet(ctx, preparationRules);
-		rs.accelerate();
-
-		return new RewriterHeuristic(rs, true);
-	}
-
-
-
-	////////// ACTUAL RULES START HERE //////////
-
-
 	public static void substituteEquivalentStatements(final List<RewriterRule> rules, final RuleContext ctx) {
 		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();
 
@@ -485,16 +155,6 @@ public class RewriterRuleCollection {
 				.build()
 		);
 
-		// TODO
-		/*rules.add(new RewriterRuleBuilder(ctx, "replace(A, a, b) => A")
-				.setUnidirectional(true)
-				.parseGlobalVars("MATRIX:A")
-				.parseGlobalVars("LITERAL_FLOAT:0.0")
-				.withParsedStatement("_nnz(A)")
-				.toParsedStatement("sum(!=(A,0.0))")
-				.build()
-		);*/
-
 		SCALARS.forEach(t -> {
 			rules.add(new RewriterRuleBuilder(ctx, "log_nz(A, a) => *(!=(A, 0.0), *(log(A), inv(log(a)))")
 					.setUnidirectional(true)
@@ -603,8 +263,6 @@ public class RewriterRuleCollection {
 					.parseGlobalVars(t2 + ":b")
 					.withParsedStatement("-(+(a, b))", hooks)
 					.toParsedStatement("$1:+(-(a), -(b))", hooks)
-					/*.iff(match -> {System.out.println("Parent: " + match.getPredecessor().getParent()); System.out.println("Is Meta: " + match.getPredecessor().isMetaObject()); System.out.println("Child: " + match.getMatchRoot()); return true;}, true)
-							.apply(hooks.get(1).getId(), (t, match) -> {System.out.println("New: " + t); System.out.println("New Assertions: " + match.getNewExprRoot().getAssertions(ctx));}, true)*/
 					.build()
 			);
 
@@ -646,7 +304,6 @@ public class RewriterRuleCollection {
 	}
 
 	public static void canonicalizeBooleanStatements(final List<RewriterRule> rules, final RuleContext ctx) {
-		// TODO: Constant folding, but maybe not as successive rules
 		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();
 
 		RewriterUtils.buildBinaryPermutations(ALL_TYPES, (t1, t2) -> {
@@ -751,7 +408,6 @@ public class RewriterRuleCollection {
 					.build()
 			);
 
-			// TODO: Introduce e-class
 			/*rules.add(new RewriterRuleBuilder(ctx,  "==(a, b) => isZero(+(a, -(b)))")
 					.setUnidirectional(true)
 					.parseGlobalVars(t1 + ":a")
@@ -804,8 +460,6 @@ public class RewriterRuleCollection {
 					UUID id = UUID.randomUUID();
 					stmt.unsafePutMeta("ownerId", id);
 					stmt.getChild(0).unsafePutMeta("ownerId", id);
-
-					//RewriterStatement aRef = stmt.getChild(0, 1, 0);
 				}, true) // Assumes it will never collide
 				.build()
 		);
@@ -829,25 +483,6 @@ public class RewriterRuleCollection {
 				}, true) // Assumes it will never collide
 				.build()
 		);
-
-		// Const
-		/*rules.add(new RewriterRuleBuilder(ctx, "Expand const matrix")
-				.setUnidirectional(true)
-				.parseGlobalVars("MATRIX:A")
-				.parseGlobalVars("FLOAT:a")
-				.parseGlobalVars("LITERAL_INT:1")
-				.withParsedStatement("const(A, a)", hooks)
-				.toParsedStatement("$4:_m($1:_idx(1, nrow(A)), $2:_idx(1, ncol(A)), a)", hooks)
-				.apply(hooks.get(1).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
-				.apply(hooks.get(2).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
-				.apply(hooks.get(4).getId(), (stmt, match) -> {
-					UUID id = UUID.randomUUID();
-					stmt.unsafePutMeta("ownerId", id);
-					stmt.getChild(0).unsafePutMeta("ownerId", id);
-					stmt.getChild(1).unsafePutMeta("ownerId", id);
-				}, true) // Assumes it will never collide
-				.build()
-		);*/
 
 
 		// Matrix Multiplication
@@ -887,9 +522,6 @@ public class RewriterRuleCollection {
 				.parseGlobalVars("LITERAL_INT:1")
 				.withParsedStatement("$1:ElementWiseInstruction(A,B)", hooks)
 				.toParsedStatement("$7:_m($2:_idx(1, $5:nrow(A)), $3:_idx(1, $6:ncol(A)), $4:ElementWiseInstruction([](A, $2, $3), [](B, $2, $3)))", hooks)
-				/*.iff(match -> {
-					return !match.getMatchRoot().isInstruction() || match.getMatchRoot().trueInstruction().equals("_m");
-				}, true)*/
 				.link(hooks.get(1).getId(), hooks.get(4).getId(), RewriterStatement::transferMeta)
 				.apply(hooks.get(2).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
 				.apply(hooks.get(3).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true)
@@ -902,17 +534,9 @@ public class RewriterRuleCollection {
 					// Now we assert that nrow(A) = nrow(B) and ncol(A) = ncol(B)
 					RewriterStatement aRef = stmt.getChild(2, 0, 0);
 					RewriterStatement bRef = stmt.getChild(2, 1, 0);
-					/*System.out.println("aNRow: " + aRef.getNRow());
-					System.out.println("bNRow: " + bRef.getNRow());
-					System.out.println("HERE1: " + match.getNewExprRoot().toParsableString(ctx));*/
 					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNRow(), bRef.getNRow(), match.getNewExprRoot());
 					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNCol(), bRef.getNCol(), match.getNewExprRoot());
-					/*System.out.println(match.getNewExprRoot().getAssertions(ctx).getAssertions(aRef.getNRow()));
-					System.out.println(match.getMatchRoot());
-					System.out.println("HERE2: " + match.getNewExprRoot().toParsableString(ctx));*/
 				}, true) // Assumes it will never collide
-				//.apply(hooks.get(5).getId(), stmt -> stmt.unsafePutMeta("dontExpand", true), true)
-				//.apply(hooks.get(6).getId(), stmt -> stmt.unsafePutMeta("dontExpand", true), true)
 				.build()
 		);
 
@@ -944,14 +568,9 @@ public class RewriterRuleCollection {
 					UUID id = UUID.randomUUID();
 					stmt.unsafePutMeta("ownerId", id);
 					stmt.getOperands().get(0).unsafePutMeta("ownerId", id);
-					//stmt.getOperands().get(1).unsafePutMeta("ownerId", id);
 
 					// Assert that the matrix is squared
 					RewriterStatement aRef = stmt.getChild(0, 1, 0);
-					/*System.out.println("NewRoot: " + match.getNewExprRoot());
-					System.out.println("aRef: " + aRef);
-					System.out.println("nRow: " + aRef.getNRow());
-					System.out.println("nCol: " + aRef.getNCol());*/
 					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNRow(), aRef.getNCol(), match.getNewExprRoot());
 				}, true)
 				.build()
@@ -1009,9 +628,6 @@ public class RewriterRuleCollection {
 					stmt.getOperands().get(0).unsafePutMeta("ownerId", id);
 					stmt.getOperands().get(1).unsafePutMeta("ownerId", id);
 				}, true)
-				/*.apply(hooks.get(4).getId(), stmt -> {
-					stmt.getOperands().set(0, RewriterUtils.foldConstants(stmt.getChild(0), ctx));
-				}, true)*/
 				.build()
 		);
 
@@ -1097,7 +713,6 @@ public class RewriterRuleCollection {
 				.build()
 		);
 
-		// TODO: Continue
 		// Scalars dependent on matrix to index streams
 		rules.add(new RewriterRuleBuilder(ctx)
 				.setUnidirectional(true)
@@ -1120,9 +735,8 @@ public class RewriterRuleCollection {
 				.build()
 		);
 
-		// TODO: Handle nrow / ncol equivalence (maybe need some kind of E-Graph after all)
 		// diag(A) -> _m($1:_idx(1, nrow(A)), 1, [](A, $1, $1))
-		rules.add(new RewriterRuleBuilder(ctx)
+		/*rules.add(new RewriterRuleBuilder(ctx)
 				.setUnidirectional(true)
 				.parseGlobalVars("MATRIX:A")
 				.parseGlobalVars("LITERAL_INT:1")
@@ -1138,7 +752,7 @@ public class RewriterRuleCollection {
 					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNRow(), aRef.getNCol(), match.getNewExprRoot());
 				}, true)
 				.build()
-		);
+		);*/
 
 		// cast.MATRIX(a) => _m(1, 1, a)
 		for (String t : List.of("INT", "BOOL", "FLOAT")) {
@@ -1164,16 +778,7 @@ public class RewriterRuleCollection {
 				.parseGlobalVars("LITERAL_INT:1")
 				.withParsedStatement("A", hooks)
 				.toParsedStatement("$3:_m($1:_idx(1, nrow(A)), $2:_idx(1, ncol(A)), [](A, $1, $2))", hooks)
-				.iff(match -> {
-					// TODO: Does not work like this bc cyclic references
-					/*RewriterStatement root = match.getMatchRoot();
-					RewriterStatement parent = match.getMatchParent();
-					// TODO: This check has to be extended to any meta expression
-					return !(root.isInstruction() && root.trueInstruction().equals("_m"))
-							&& (parent == null || (!parent.trueInstruction().equals("[]") && !parent.trueInstruction().equals("ncol") && !parent.trueInstruction().equals("nrow")));*/
-					//System.out.println("HERE");
-					return match.getMatchRoot().getMeta("dontExpand") == null && !(match.getMatchRoot().isInstruction() && match.getMatchRoot().trueInstruction().equals("_m"));
-				}, true)
+				.iff(match -> match.getMatchRoot().getMeta("dontExpand") == null && !(match.getMatchRoot().isInstruction() && match.getMatchRoot().trueInstruction().equals("_m")), true)
 				.apply(hooks.get(1).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
 				.apply(hooks.get(2).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true)
 				.apply(hooks.get(3).getId(), stmt -> {
@@ -1183,14 +788,10 @@ public class RewriterRuleCollection {
 					stmt.getOperands().get(1).unsafePutMeta("ownerId", id);
 					RewriterStatement A = stmt.getChild(0, 1, 0);
 					A.unsafePutMeta("dontExpand", true);
-					// TODO:
-					//System.out.println("A: " + A);
-					//System.out.println("ncol: " + A.getNCol());
 					if (A.getNRow().isInstruction() && A.getNRow().trueInstruction().equals("nrow") && A.getNRow().getChild(0) == stmt)
 						A.getNRow().getOperands().set(0, A);
 					if (A.getNCol().isInstruction() && A.getNCol().trueInstruction().equals("ncol") && A.getNCol().getChild(0) == stmt)
 						A.getNCol().getOperands().set(0, A);
-					//System.out.println("newNRow: " + A.getNRow());
 				}, true)
 				.build()
 		);
@@ -1201,7 +802,6 @@ public class RewriterRuleCollection {
 		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();
 
 		// ifelse merging
-		// TODO: Permutations e.g. ==(l2, l1) etc.
 		rules.add(new RewriterRuleBuilder(ctx)
 				.setUnidirectional(true)
 				.parseGlobalVars("FLOAT:a,b,c,d")
@@ -1380,10 +980,10 @@ public class RewriterRuleCollection {
 				.toParsedStatement("$2:_m(_idx(1, +(+(k, 1), -(j))), _idx(1, +(+(m, 1), -(l))), v)", hooks) // Assuming that selections are valid
 				.linkUnidirectional(hooks.get(1).getId(), hooks.get(2).getId(), lnk -> {
 					// TODO: Big issue when having multiple references to the same sub-dag
-					// BUT: This should usually not happen if indices are never referenced
 					RewriterStatement.transferMeta(lnk);
 
 					for (int idx = 0; idx < 2; idx++) {
+						// TODO: MultiRef
 						RewriterStatement oldRef = lnk.oldStmt.getOperands().get(idx);
 						RewriterStatement newRef = lnk.newStmt.get(0).getChild(idx);
 						RewriterStatement mStmtC = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("+").withOps(newRef.getChild(1, 1, 0), RewriterStatement.literal(ctx, -1L)).consolidate(ctx);
@@ -1421,24 +1021,6 @@ public class RewriterRuleCollection {
 				}, true)
 				.build()
 		);
-
-		/*rules.add(new RewriterRuleBuilder(ctx, "_m(i::<const>, j::<const>, v) => cast.MATRIX(v)")
-				.setUnidirectional(true)
-				.parseGlobalVars("MATRIX:A,B")
-				.parseGlobalVars("INT:i,j")
-				.parseGlobalVars("FLOAT:v")
-				.withParsedStatement("_m(i, j, v)", hooks)
-				.toParsedStatement("cast.MATRIX(v)", hooks)
-				.iff(match -> {
-					List<RewriterStatement> ops = match.getMatchRoot().getOperands();
-
-					boolean matching = (!ops.get(0).isInstruction() || !ops.get(0).trueInstruction().equals("_idx") || ops.get(0).getMeta("ownerId") != match.getMatchRoot().getMeta("ownerId"))
-							&& (!ops.get(1).isInstruction() || !ops.get(1).trueInstruction().equals("_idx") || ops.get(1).getMeta("ownerId") != match.getMatchRoot().getMeta("ownerId"));
-
-					return matching;
-				}, true)
-				.build()
-		);*/
 
 		rules.add(new RewriterRuleBuilder(ctx, "_idx(a,a) => a")
 				.setUnidirectional(true)
@@ -1836,200 +1418,39 @@ public class RewriterRuleCollection {
 		});
 
 		RewriterUtils.buildBinaryPermutations(List.of("MATRIX", "INT", "FLOAT", "BOOL"), (t1, t2) -> {
-			//if (RewriterUtils.convertibleType(t1, t2) != null) {
-				rules.add(new RewriterRuleBuilder(ctx, "Flatten fusable binary operator")
-						.setUnidirectional(true)
-						.parseGlobalVars(t1 + ":A")
-						.parseGlobalVars(t2 + ":B")
-						.withParsedStatement("$1:FusableBinaryOperator(A,B)", hooks)
-						.toParsedStatement("$2:FusedOperator(argList(A,B))", hooks)
-						.link(hooks.get(1).getId(), hooks.get(2).getId(), RewriterStatement::transferMeta)
-						.build());
-
-				rules.add(new RewriterRuleBuilder(ctx, "Flatten fusable binary operator")
-						.setUnidirectional(true)
-						.parseGlobalVars(t1 + "...:A")
-						.parseGlobalVars(t2 + ":B")
-						.withParsedStatement("$1:FusableBinaryOperator($2:FusedOperator(A), B)", hooks)
-						.toParsedStatement("$3:FusedOperator(argList(A, B))", hooks)
-						.iff(match -> {
-							return match.getMatchRoot().trueInstruction().equals(match.getMatchRoot().getOperands().get(0).trueInstruction());
-						}, true)
-						.link(hooks.get(2).getId(), hooks.get(3).getId(), RewriterStatement::transferMeta)
-						.build());
-
-				rules.add(new RewriterRuleBuilder(ctx, "Flatten fusable binary operator")
-						.setUnidirectional(true)
-						.parseGlobalVars(t1 + "...:A")
-						.parseGlobalVars(t2 + ":B")
-						.withParsedStatement("$1:FusableBinaryOperator(B, $2:FusedOperator(A))", hooks)
-						.toParsedStatement("$3:FusedOperator(argList(B, A))", hooks)
-						.iff(match -> {
-							return match.getMatchRoot().trueInstruction().equals(match.getMatchRoot().getOperands().get(0).trueInstruction());
-						}, true)
-						.link(hooks.get(2).getId(), hooks.get(3).getId(), RewriterStatement::transferMeta)
-						.build());
-			//}
-		});
-
-	}
-
-	@Deprecated
-	public static void collapseStreamingExpressions(final List<RewriterRule> rules, final RuleContext ctx) {
-
-		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();
-
-		rules.add(new RewriterRuleBuilder(ctx)
-				.setUnidirectional(true)
-				.parseGlobalVars("MATRIX:A,B")
-				.parseGlobalVars("LITERAL_INT:1")
-				.parseGlobalVars("INT:i,j")
-				.parseGlobalVars("FLOAT:v")
-				.withParsedStatement("sum(_m(_idx(1, nrow(A)), 1, sum(_m(_idx(1, ncol(A)), 1, [](A, i, j)))))", hooks)
-				.toParsedStatement("sum(A)", hooks)
-				.build()
-		);
-
-		RewriterUtils.buildBinaryPermutations(List.of("INT", "FLOAT", "BOOL"), (t1, t2) -> {
-			rules.add(new RewriterRuleBuilder(ctx)
+			rules.add(new RewriterRuleBuilder(ctx, "Flatten fusable binary operator")
 					.setUnidirectional(true)
-					.parseGlobalVars("MATRIX:A,B")
-					.parseGlobalVars("INT:i,j")
-					.parseGlobalVars("FLOAT:v1,v2")
-					.withParsedStatement("$3:_m(i, j, $1:ElementWiseInstruction(v1, v2))", hooks)
-					.toParsedStatement("$2:ElementWiseInstruction($4:_m(i, j, v1), $5:_m(i, j, v2))", hooks)
+					.parseGlobalVars(t1 + ":A")
+					.parseGlobalVars(t2 + ":B")
+					.withParsedStatement("$1:FusableBinaryOperator(A,B)", hooks)
+					.toParsedStatement("$2:FusedOperator(argList(A,B))", hooks)
 					.link(hooks.get(1).getId(), hooks.get(2).getId(), RewriterStatement::transferMeta)
-					.linkManyUnidirectional(hooks.get(3).getId(), List.of(hooks.get(4).getId(), hooks.get(5).getId()), link -> {
-						RewriterStatement.transferMeta(link);
+					.build());
 
-						// Now detach the reference for the second matrix stream
-
-						UUID newId = UUID.randomUUID();
-						link.newStmt.get(1).unsafePutMeta("ownerId", newId);
-						RewriterStatement idxI = link.newStmt.get(1).getOperands().get(0).copyNode();
-						RewriterStatement idxJ = link.newStmt.get(1).getOperands().get(1).copyNode();
-						UUID oldIId = (UUID)idxI.getMeta("idxId");
-						UUID oldJId = (UUID)idxJ.getMeta("idxId");
-						idxI.unsafePutMeta("idxId", UUID.randomUUID());
-						idxI.unsafePutMeta("ownerId", newId);
-						idxJ.unsafePutMeta("idxId", UUID.randomUUID());
-						idxJ.unsafePutMeta("ownerId", newId);
-
-						RewriterUtils.replaceReferenceAware(link.newStmt.get(1), stmt -> {
-							UUID idxId = (UUID) stmt.getMeta("idxId");
-							if (idxId != null) {
-								if (idxId.equals(oldIId))
-									return idxI;
-								else if (idxId.equals(oldJId))
-									return idxJ;
-							}
-
-							return null;
-						});
+			rules.add(new RewriterRuleBuilder(ctx, "Flatten fusable binary operator")
+					.setUnidirectional(true)
+					.parseGlobalVars(t1 + "...:A")
+					.parseGlobalVars(t2 + ":B")
+					.withParsedStatement("$1:FusableBinaryOperator($2:FusedOperator(A), B)", hooks)
+					.toParsedStatement("$3:FusedOperator(argList(A, B))", hooks)
+					.iff(match -> {
+						return match.getMatchRoot().trueInstruction().equals(match.getMatchRoot().getOperands().get(0).trueInstruction());
 					}, true)
-					.build()
-			);
+					.link(hooks.get(2).getId(), hooks.get(3).getId(), RewriterStatement::transferMeta)
+					.build());
+
+			rules.add(new RewriterRuleBuilder(ctx, "Flatten fusable binary operator")
+					.setUnidirectional(true)
+					.parseGlobalVars(t1 + "...:A")
+					.parseGlobalVars(t2 + ":B")
+					.withParsedStatement("$1:FusableBinaryOperator(B, $2:FusedOperator(A))", hooks)
+					.toParsedStatement("$3:FusedOperator(argList(B, A))", hooks)
+					.iff(match -> {
+						return match.getMatchRoot().trueInstruction().equals(match.getMatchRoot().getOperands().get(0).trueInstruction());
+					}, true)
+					.link(hooks.get(2).getId(), hooks.get(3).getId(), RewriterStatement::transferMeta)
+					.build());
 		});
 
-
-
-		rules.add(new RewriterRuleBuilder(ctx)
-				.setUnidirectional(true)
-				.parseGlobalVars("MATRIX:A,B")
-				.parseGlobalVars("INT:a,b,c,d")
-				.parseGlobalVars("FLOAT:v")
-				.parseGlobalVars("LITERAL_INT:1")
-				.withParsedStatement("_m($1:_idx(a, b), $2:_idx(c, d), [](A, $1, $2))", hooks)
-				.toParsedStatement("A", hooks)
-				.iff(match -> {
-					RewriterStatement A = match.getMatchRoot().getOperands().get(2).getOperands().get(0);
-					RewriterStatement a = match.getMatchRoot().getOperands().get(0).getOperands().get(0);
-					RewriterStatement b = match.getMatchRoot().getOperands().get(0).getOperands().get(1);
-					RewriterStatement c = match.getMatchRoot().getOperands().get(1).getOperands().get(0);
-					RewriterStatement d = match.getMatchRoot().getOperands().get(1).getOperands().get(1);
-
-					if (a.isLiteral() && ((long)a.getLiteral()) == 1
-						&& b == A.getMeta("nrow")
-						&& c.isLiteral() && ((long)c.getLiteral()) == 1
-						&& d == A.getMeta("ncol")) {
-						return true;
-					}
-
-					return false;
-				}, true)
-				.build()
-		);
-
-		rules.add(new RewriterRuleBuilder(ctx)
-				.setUnidirectional(true)
-				.parseGlobalVars("MATRIX:A,B")
-				.parseGlobalVars("INT:a,b,c,d")
-				.parseGlobalVars("FLOAT:v")
-				.parseGlobalVars("LITERAL_INT:1")
-				.withParsedStatement("_m($1:_idx(a, b), $2:_idx(c, d), [](A, $1, $2))", hooks)
-				.toParsedStatement("$3:[](A, a, b, c, d)", hooks)
-				.build()
-		);
-
-		/*rules.add(new RewriterRuleBuilder(ctx)
-				.setUnidirectional(true)
-				.parseGlobalVars("MATRIX:A,B")
-				.parseGlobalVars("LITERAL_INT:1")
-				.parseGlobalVars("INT:i,j")
-				.parseGlobalVars("FLOAT:v")
-				.withParsedStatement("_m(i, j, sum($1:ElementWiseInstruction(A, B)))", hooks)
-				.toParsedStatement("sum(A)", hooks)
-				.build()
-		);*/
-
-
-
-		// TODO: The rule below only hold true for i = _idx(1, nrow(i)) and j = _idx(1, ncol(i))
-		rules.add(new RewriterRuleBuilder(ctx)
-				.setUnidirectional(true)
-				.parseGlobalVars("MATRIX:A,B")
-				.parseGlobalVars("INT:i,j")
-				.parseGlobalVars("FLOAT:v")
-				.withParsedStatement("_m(i, j, [](A, j, i))", hooks)
-				.toParsedStatement("t(A)", hooks)
-				.build()
-		);
-
-		rules.add(new RewriterRuleBuilder(ctx)
-				.setUnidirectional(true)
-				.parseGlobalVars("MATRIX:A,B")
-				.parseGlobalVars("INT:i,j")
-				.parseGlobalVars("FLOAT:v")
-				.withParsedStatement("_m(i, j, [](A, i, i))", hooks)
-				.toParsedStatement("diag(A)", hooks)
-				.build()
-		);
-
-		rules.add(new RewriterRuleBuilder(ctx)
-				.setUnidirectional(true)
-				.parseGlobalVars("MATRIX:A,B")
-				.parseGlobalVars("INT:i,j")
-				.parseGlobalVars("FLOAT:v")
-				.withParsedStatement("_m(i, j, [](A, j, j))", hooks)
-				.toParsedStatement("diag(A)", hooks)
-				.build()
-		);
 	}
-
-	public static void assertCollapsed(final List<RewriterRule> rules, final RuleContext ctx) {
-		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();
-		rules.add(new RewriterRuleBuilder(ctx)
-				.setUnidirectional(true)
-				.parseGlobalVars("MATRIX:A,B")
-				.parseGlobalVars("INT:i,j")
-				.parseGlobalVars("FLOAT:v")
-				.withParsedStatement("_m(i, j, v)", hooks)
-				.toParsedStatement("$1:_m(i, j, v)", hooks)
-				.iff(match -> {
-					throw new IllegalArgumentException("Could not eliminate stream expression: " + match.getMatchRoot().toString(ctx));
-				}, true)
-				.build()
-		);
-	}
-
 }

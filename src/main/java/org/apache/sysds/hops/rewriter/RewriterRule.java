@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.hops.rewriter;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -21,7 +40,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class RewriterRule extends AbstractRewriterRule {
+public class RewriterRule {
 
 	private final RuleContext ctx;
 	private final String name;
@@ -194,8 +213,8 @@ public class RewriterRule extends AbstractRewriterRule {
 
 	public RewriterStatement applyForward(RewriterStatement.MatchingSubexpression match, RewriterStatement rootNode, boolean inplace, boolean updateTypes, MutableObject<Tuple3<RewriterStatement, RewriterStatement, Integer>> modificationHandle) {
 		if (inplace)
-			throw new NotImplementedException("Inplace operations are currently not working");
-		RewriterStatement out = inplace ? applyInplace(match, rootNode, toRoot, applyStmt1ToStmt2 == null ? Collections.emptyList() : applyStmt1ToStmt2) : apply(match, rootNode, toRoot, modificationHandle, applyStmt1ToStmt2 == null ? Collections.emptyList() : applyStmt1ToStmt2);
+			throw new NotImplementedException("Inplace operations have been removed");
+		RewriterStatement out = apply(match, rootNode, toRoot, modificationHandle, applyStmt1ToStmt2 == null ? Collections.emptyList() : applyStmt1ToStmt2);
 		if (updateTypes)
 			updateTypes(out, ctx);
 		return out;
@@ -207,17 +226,12 @@ public class RewriterRule extends AbstractRewriterRule {
 
 	public RewriterStatement applyBackward(RewriterStatement.MatchingSubexpression match, RewriterStatement rootNode, boolean inplace, boolean updateTypes, MutableObject<Tuple3<RewriterStatement, RewriterStatement, Integer>> modificationHandle) {
 		if (inplace)
-			throw new NotImplementedException("Inplace operations are currently not working");
-		RewriterStatement out = inplace ? applyInplace(match, rootNode, fromRoot, applyStmt2ToStmt1 == null ? Collections.emptyList() : applyStmt2ToStmt1) : apply(match, rootNode, fromRoot, modificationHandle, applyStmt2ToStmt1 == null ? Collections.emptyList() : applyStmt2ToStmt1);
+			throw new NotImplementedException("Inplace operations have been removed");
+		RewriterStatement out = apply(match, rootNode, fromRoot, modificationHandle, applyStmt2ToStmt1 == null ? Collections.emptyList() : applyStmt2ToStmt1);
 		if (updateTypes)
 			updateTypes(out, ctx);
 		return out;
 	}
-
-	/*@Override
-	public boolean matchStmt1(RewriterStatement stmt, ArrayList<RewriterStatement.MatchingSubexpression> arr, boolean findFirst) {
-		return getStmt1().matchSubexpr(ctx, stmt, null, -1, arr, new HashMap<>(), true, false, findFirst, null, linksStmt1ToStmt2, true, true, false, iff1to2);
-	}*/
 
 	public RewriterStatement.MatchingSubexpression matchSingleStmt1(RewriterStatement exprRoot, RewriterStatement.RewriterPredecessor pred, RewriterStatement stmt, boolean allowImplicitTypeConversions) {
 		RewriterStatement.MatcherContext mCtx = new RewriterStatement.MatcherContext(ctx, stmt, pred, exprRoot, getStmt1(), true, true, false, true, true, false, true, false, false, allowImplicitTypeConversions, linksStmt1ToStmt2);
@@ -233,11 +247,6 @@ public class RewriterRule extends AbstractRewriterRule {
 
 		return null;
 	}
-
-	/*@Override
-	public boolean matchStmt2(RewriterStatement stmt, ArrayList<RewriterStatement.MatchingSubexpression> arr, boolean findFirst) {
-		return getStmt2().matchSubexpr(ctx, stmt, null, -1, arr, new HashMap<>(), true, false, findFirst, null, linksStmt2ToStmt1, true, true, false, iff2to1);
-	}*/
 
 	public RewriterStatement.MatchingSubexpression matchSingleStmt2(RewriterStatement exprRoot, RewriterStatement.RewriterPredecessor pred, RewriterStatement stmt, boolean allowImplicitTypeConversions) {
 		RewriterStatement.MatcherContext mCtx = new RewriterStatement.MatcherContext(ctx, stmt, pred, exprRoot, getStmt2(), true, true, false, true, true, false, true, false, false, allowImplicitTypeConversions, linksStmt2ToStmt1);
@@ -261,8 +270,7 @@ public class RewriterRule extends AbstractRewriterRule {
 	}
 
 	private RewriterStatement apply(RewriterStatement.MatchingSubexpression match, RewriterStatement rootInstruction, RewriterStatement dest, MutableObject<Tuple3<RewriterStatement, RewriterStatement, Integer>> modificationHandle, List<Tuple2<RewriterStatement, BiConsumer<RewriterStatement, RewriterStatement.MatchingSubexpression>>> applyFunction) {
-		if (match.getPredecessor().isRoot() /*|| match.getMatchParent() == match.getMatchRoot()*/) {
-			//System.out.println("As root");
+		if (match.getPredecessor().isRoot()) {
 			final Map<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
 			RewriterStatement cpy = dest.nestedCopyOrInject(createdObjects, obj -> {
 				RewriterStatement assoc = match.getAssocs().get(obj);
@@ -310,29 +318,16 @@ public class RewriterRule extends AbstractRewriterRule {
 			}
 
 			if (assertions != null) {
-				// TODO: Maybe there is a better way?
 				if (!cpy.isLiteral())
 					cpy.unsafePutMeta("_assertions", assertions);
-				//System.out.println("Put: " + assertions);
 			}
-
-			/*RewriterAssertions assertions = (RewriterAssertions) match.getExpressionRoot().getMeta("_assertions");
-
-			if (assertions != null) {
-				//assertions = RewriterAssertions.copy(assertions, createdObjects, true);
-				cpy.unsafePutMeta("_assertions", assertions);
-			}*/
 
 			match.getLinks().forEach(lnk -> lnk.newStmt.replaceAll(createdObjects::get));
 			match.getLinks().forEach(lnk -> lnk.transferFunction.accept(lnk));
-			//RewriterAssertions assertions = RewriterAssertions.ofExpression(cpy, ctx);
-			//cpy.unsafePutMeta("_assertions", assertions);
 			applyFunction.forEach(t -> t._2.accept(createdObjects.get(t._1), match));
 
 			if (postProcessor != null)
 				postProcessor.accept(cpy);
-
-			//cpy = assertions.buildEquivalences(cpy);
 
 			if (ctx.metaPropagator != null) {
 				RewriterStatement mNew = ctx.metaPropagator.apply(cpy);
@@ -349,8 +344,6 @@ public class RewriterRule extends AbstractRewriterRule {
 
 			modificationHandle.setValue(new Tuple3<>(cpy, null, -1));
 
-			//cpy.unsafePutMeta("_assertions", match.getExpressionRoot().getMeta("_assertions"));
-
 			return cpy;
 		}
 
@@ -359,8 +352,6 @@ public class RewriterRule extends AbstractRewriterRule {
 			if (obj2.equals(match.getMatchRoot())) {
 				RewriterStatement cpy = dest.nestedCopyOrInject(createdObjects, obj -> {
 					RewriterStatement assoc = match.getAssocs().get(obj);
-					/*for (Map.Entry<RewriterStatement, RewriterStatement> mAssoc : match.getAssocs().entrySet())
-						System.out.println(mAssoc.getKey() + " -> " + mAssoc.getValue());*/
 					if (assoc != null) {
 						RewriterStatement assocCpy = createdObjects.get(assoc);
 						if (assocCpy == null) {
@@ -369,14 +360,12 @@ public class RewriterRule extends AbstractRewriterRule {
 						}
 						return assocCpy;
 					}
-					//System.out.println("ObjInner: " + obj);
 					return null;
 				});
 				createdObjects.put(obj2, cpy);
 				modificationHandle.setValue(new Tuple3<>(cpy, parent, pIdx));
 				return cpy;
 			}
-			//System.out.println("Obj: " + obj2);
 			return null;
 		});
 		RewriterStatement tmp = cpy2.simplify(ctx);
@@ -385,26 +374,13 @@ public class RewriterRule extends AbstractRewriterRule {
 
 		match.setNewExprRoot(cpy2);
 
-		//System.out.println("NEWASS: " + cpy2.getMeta("_assertions"));
-
-		/*RewriterAssertions assertions = (RewriterAssertions) match.getExpressionRoot().getMeta("_assertions");
-
-		if (assertions != null) {
-			assertions = RewriterAssertions.copy(assertions, createdObjects, true);
-			cpy2.unsafePutMeta("_assertions", assertions);
-		}*/
-
 		match.getLinks().forEach(lnk -> lnk.newStmt.replaceAll(createdObjects::get));
 		cpy2.prepareForHashing();
 		match.getLinks().forEach(lnk -> lnk.transferFunction.accept(lnk));
-		//RewriterAssertions assertions = RewriterAssertions.ofExpression(cpy2, ctx);
-		//cpy2.unsafePutMeta("_assertions", assertions);
 		applyFunction.forEach(t -> t._2.accept(createdObjects.get(t._1), match));
 
 		if (postProcessor != null)
 			postProcessor.accept(cpy2);
-
-		//cpy2 = assertions.buildEquivalences(cpy2);
 
 		if (ctx.metaPropagator != null) {
 			RewriterStatement mNew = ctx.metaPropagator.apply(cpy2);
@@ -420,63 +396,6 @@ public class RewriterRule extends AbstractRewriterRule {
 		cpy2.recomputeHashCodes(ctx);
 
 		return cpy2;
-	}
-
-	// TODO: ApplyInplace is currently not working
-	private RewriterStatement applyInplace(RewriterStatement.MatchingSubexpression match, RewriterStatement rootInstruction, RewriterStatement dest, List<Tuple2<RewriterStatement, BiConsumer<RewriterStatement, RewriterStatement.MatchingSubexpression>>> applyFunction) {
-		if (match.getPredecessor().isRoot() /*|| match.getMatchParent() == match.getMatchRoot()*/) {
-			final Map<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
-			RewriterStatement cpy = dest.nestedCopyOrInject(createdObjects, obj -> match.getAssocs().get(obj));
-			RewriterStatement cpy2 = cpy.simplify(ctx);
-			if (cpy2 != null)
-				cpy = cpy2;
-
-			match.getLinks().forEach(lnk -> lnk.newStmt.replaceAll(createdObjects::get));
-			match.getLinks().forEach(lnk -> lnk.transferFunction.accept(lnk));
-			//RewriterAssertions assertions = RewriterAssertions.ofExpression(cpy, ctx);
-			//cpy.unsafePutMeta("_assertions", assertions);
-			applyFunction.forEach(t -> t._2.accept(createdObjects.get(t._1), match));
-
-			if (postProcessor != null)
-				postProcessor.accept(cpy);
-
-			//cpy = assertions.buildEquivalences(cpy);
-
-			if (ctx.metaPropagator != null)
-				cpy = ctx.metaPropagator.apply(cpy);
-
-			cpy.prepareForHashing();
-			cpy.recomputeHashCodes(ctx);
-
-			//if (match.getExpressionRoot() == match.getMatchRoot())
-			//	cpy.unsafePutMeta("_assertions", rootInstruction.getMeta("_assertions"));
-			return cpy;
-		}
-
-		final Map<RewriterStatement, RewriterStatement> createdObjects = new HashMap<>();
-		// TODO
-		//match.getMatchParent().getOperands().set(match.getRootIndex(), dest.nestedCopyOrInject(createdObjects, obj -> match.getAssocs().get(obj)));
-		/*RewriterStatement out = rootInstruction.simplify(ctx);
-		if (out != null)
-			out = rootInstruction;*/
-
-		match.getLinks().forEach(lnk -> lnk.newStmt.replaceAll(createdObjects::get));
-		match.getLinks().forEach(lnk -> lnk.transferFunction.accept(lnk));
-		//RewriterAssertions assertions = RewriterAssertions.ofExpression(rootInstruction, ctx);
-		//rootInstruction.unsafePutMeta("_assertions", assertions);
-		applyFunction.forEach(t -> t._2.accept(createdObjects.get(t._1), match));
-
-		if (postProcessor != null)
-			postProcessor.accept(rootInstruction);
-
-		//rootInstruction = assertions.buildEquivalences(rootInstruction);
-
-		if (ctx.metaPropagator != null)
-			rootInstruction = ctx.metaPropagator.apply(rootInstruction);
-
-		rootInstruction.prepareForHashing();
-		rootInstruction.recomputeHashCodes(ctx);
-		return rootInstruction;
 	}
 
 	public String toString() {
@@ -505,8 +424,6 @@ public class RewriterRule extends AbstractRewriterRule {
 			}
 		}
 		String stmt2 = sb.toString();
-		//String stmt1 = fromRoot.toParsableString(ctx, varDefs, allowedMultiReferences);
-		//String stmt2 = toRoot.toParsableString(ctx, varDefs, allowedMultiReferences);
 		String multiRefDefs = "";
 
 		if (!allowedMultiReferences.isEmpty()) {
@@ -520,77 +437,6 @@ public class RewriterRule extends AbstractRewriterRule {
 		else
 			return multiRefDefs + defs + "\n" + stmt1 + "\n=>\n{\n" + stmt2 + "}";
 	}
-
-	// TODO: Rework
-	public List<RewriterRule> createNonGenericRules(Map<String, Set<String>> funcMappings) {
-		/*Set<IdentityRewriterStatement> visited = new HashSet<>();
-		List<Tuple2<RewriterStatement, Set<String>>> matches = new ArrayList<>();
-
-		RewriterStatement from = fromRoot.nestedCopyOrInject(new HashMap<>(), stmt -> null);
-
-		from.forEachPreOrderWithDuplicates(stmt -> {
-			IdentityRewriterStatement identity = new IdentityRewriterStatement(stmt);
-			if (!visited.add(identity))
-				return false;
-
-			if (!(stmt instanceof RewriterInstruction))
-				return true;
-
-
-			Set<String> implementations = funcMappings.get(((RewriterInstruction)stmt).trueTypedInstruction(ctx));
-
-			if (implementations != null && !implementations.isEmpty())
-				matches.add(new Tuple2<>(stmt, implementations));
-
-			return true;
-		});
-
-		Set<List<String>> permutations = Sets.cartesianProduct(matches.stream().map(t -> t._2).collect(Collectors.toList()));
-
-		List<RewriterRule> rules = new ArrayList<>();
-
-		for (List<String> permutation : permutations) {
-			for (int i = 0; i < permutation.size(); i++) {
-				((RewriterInstruction)matches.get(i)._1).unsafeSetInstructionName(permutation.get(i));
-			}
-			RewriterStatement cpy = from.nestedCopyOrInject(new HashMap<>(), stmt -> null);
-			ArrayList<RewriterStatement.MatchingSubexpression> mmatches = new ArrayList<>();
-
-			this.matchStmt1((RewriterInstruction)cpy, mmatches, true);
-			if (mmatches.isEmpty()) {
-				System.out.println("Skipping rule: " + cpy);
-				continue;
-			}
-			rules.add(new RewriterRule(ctx, name, cpy, this.apply(mmatches.get(0), (RewriterInstruction) cpy, true, true), true, new HashMap<>(), new HashMap<>()));
-		}
-
-		return rules;*/
-		throw new NotImplementedException();
-	}
-
-	/*static class IdentityRewriterStatement {
-		public RewriterStatement stmt;
-
-		@Deprecated
-		public IdentityRewriterStatement(RewriterStatement stmt) {
-			this.stmt = stmt;
-		}
-
-		@Override
-		public int hashCode() {
-			return System.identityHashCode(stmt);
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			return (obj instanceof IdentityRewriterStatement && ((IdentityRewriterStatement)obj).stmt == stmt);
-		}
-
-		@Override
-		public String toString() {
-			return stmt.toString() + "[" + hashCode() + "]";
-		}
-	}*/
 
 	public static class LinkObject {
 		List<RewriterStatement> stmt;
@@ -616,7 +462,6 @@ public class RewriterRule extends AbstractRewriterRule {
 			return sb.toString();
 		}
 
-		// TODO: Change
 		@Override
 		public boolean equals(Object o) {
 			return o instanceof LinkObject && ((LinkObject)o).stmt == stmt;

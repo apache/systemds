@@ -19,7 +19,7 @@
 
 package org.apache.sysds.test.component.codegen.rewrite;
 
-import org.apache.sysds.hops.rewriter.RewriteAutomaticallyGenerated;
+import org.apache.sysds.hops.rewriter.generated.RewriteAutomaticallyGenerated;
 import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.RewriterRule;
 import org.apache.sysds.hops.rewriter.RewriterRuleCreator;
@@ -28,7 +28,6 @@ import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
 import org.junit.BeforeClass;
-import org.junit.Test;
 
 import java.io.FileWriter;
 import java.io.IOException;

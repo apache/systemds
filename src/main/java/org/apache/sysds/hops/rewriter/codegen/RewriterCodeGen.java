@@ -20,11 +20,11 @@
 package org.apache.sysds.hops.rewriter.codegen;
 
 import org.apache.sysds.hops.Hop;
-import org.apache.sysds.hops.rewriter.RewriterRuleSet;
+import org.apache.sysds.hops.rewriter.rule.RewriterRuleSet;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.RewriterDataType;
-import org.apache.sysds.hops.rewriter.RewriterRule;
+import org.apache.sysds.hops.rewriter.rule.RewriterRule;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RuleContext;
 import org.apache.sysds.hops.rewriter.utils.CodeGenUtils;

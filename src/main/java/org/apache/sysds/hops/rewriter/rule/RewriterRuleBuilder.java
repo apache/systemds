@@ -17,8 +17,12 @@
  * under the License.
  */
 
-package org.apache.sysds.hops.rewriter;
+package org.apache.sysds.hops.rewriter.rule;
 
+import org.apache.sysds.hops.rewriter.RewriterDataType;
+import org.apache.sysds.hops.rewriter.RewriterInstruction;
+import org.apache.sysds.hops.rewriter.RewriterStatement;
+import org.apache.sysds.hops.rewriter.RuleContext;
 import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import scala.Tuple2;
 

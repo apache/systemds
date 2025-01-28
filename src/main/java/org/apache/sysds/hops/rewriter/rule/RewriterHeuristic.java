@@ -17,10 +17,13 @@
  * under the License.
  */
 
-package org.apache.sysds.hops.rewriter;
+package org.apache.sysds.hops.rewriter.rule;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.sysds.hops.rewriter.RewriterInstruction;
+import org.apache.sysds.hops.rewriter.RewriterStatement;
+import org.apache.sysds.hops.rewriter.RuleContext;
 
 import javax.annotation.Nullable;
 import java.util.function.BiFunction;

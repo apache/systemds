@@ -17,10 +17,12 @@
  * under the License.
  */
 
-package org.apache.sysds.hops.rewriter;
+package org.apache.sysds.hops.rewriter.rule;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.mutable.MutableObject;
+import org.apache.sysds.hops.rewriter.RewriterStatement;
+import org.apache.sysds.hops.rewriter.RuleContext;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertionUtils;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
@@ -439,8 +441,8 @@ public class RewriterRule {
 	}
 
 	public static class LinkObject {
-		List<RewriterStatement> stmt;
-		Consumer<ExplicitLink> transferFunction;
+		public List<RewriterStatement> stmt;
+		public Consumer<ExplicitLink> transferFunction;
 
 		public LinkObject() {
 			stmt = new ArrayList<>(2);
@@ -474,9 +476,9 @@ public class RewriterRule {
 	}
 
 	public static class ExplicitLink {
-		final RewriterStatement oldStmt;
-		List<RewriterStatement> newStmt;
-		final Consumer<ExplicitLink> transferFunction;
+		public final RewriterStatement oldStmt;
+		public List<RewriterStatement> newStmt;
+		public final Consumer<ExplicitLink> transferFunction;
 
 		public ExplicitLink(RewriterStatement oldStmt, List<RewriterStatement> newStmt, Consumer<ExplicitLink> transferFunction) {
 			this.oldStmt = oldStmt;

@@ -17,16 +17,17 @@
  * under the License.
  */
 
-package org.apache.sysds.hops.rewriter;
+package org.apache.sysds.hops.rewriter.rule;
 
+import org.apache.sysds.hops.rewriter.RewriterInstruction;
+import org.apache.sysds.hops.rewriter.RewriterStatement;
+import org.apache.sysds.hops.rewriter.RuleContext;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 import static org.apache.sysds.hops.rewriter.RewriterContextSettings.ALL_TYPES;
 import static org.apache.sysds.hops.rewriter.RewriterContextSettings.SCALARS;

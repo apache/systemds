@@ -23,7 +23,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.function.TriFunction;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.sysds.hops.rewriter.RewriterInstruction;
-import org.apache.sysds.hops.rewriter.RewriterRule;
+import org.apache.sysds.hops.rewriter.rule.RewriterRule;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;

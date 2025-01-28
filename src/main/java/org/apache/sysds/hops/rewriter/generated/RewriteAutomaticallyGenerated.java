@@ -22,7 +22,7 @@ package org.apache.sysds.hops.rewriter.generated;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.rewrite.HopRewriteRule;
 import org.apache.sysds.hops.rewrite.ProgramRewriteStatus;
-import org.apache.sysds.hops.rewriter.RewriterRuleSet;
+import org.apache.sysds.hops.rewriter.rule.RewriterRuleSet;
 import org.apache.sysds.hops.rewriter.RuleContext;
 import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 

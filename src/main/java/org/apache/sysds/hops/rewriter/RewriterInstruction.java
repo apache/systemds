@@ -21,6 +21,7 @@ package org.apache.sysds.hops.rewriter;
 
 import org.apache.commons.lang3.function.TriFunction;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
+import org.apache.sysds.hops.rewriter.rule.RewriterRule;
 import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 
 import java.util.ArrayList;
@@ -619,7 +620,7 @@ public class RewriterInstruction extends RewriterStatement {
 		return ret;
 	}
 
-	void unsafeSetInstructionName(String str) {
+	public void unsafeSetInstructionName(String str) {
 		this.instr = str;
 	}
 

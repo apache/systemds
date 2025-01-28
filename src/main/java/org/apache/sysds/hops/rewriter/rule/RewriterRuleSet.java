@@ -17,11 +17,14 @@
  * under the License.
  */
 
-package org.apache.sysds.hops.rewriter;
+package org.apache.sysds.hops.rewriter.rule;
 
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.rewriter.RewriterInstruction;
+import org.apache.sysds.hops.rewriter.RewriterStatement;
+import org.apache.sysds.hops.rewriter.RuleContext;
 import org.apache.sysds.hops.rewriter.codegen.RewriterCodeGen;
 import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import scala.Tuple2;

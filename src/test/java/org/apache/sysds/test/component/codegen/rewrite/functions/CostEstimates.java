@@ -20,7 +20,7 @@
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
 import org.apache.commons.lang3.mutable.MutableObject;
-import org.apache.sysds.hops.rewriter.RewriterRule;
+import org.apache.sysds.hops.rewriter.rule.RewriterRule;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
@@ -34,8 +34,6 @@ import scala.Tuple3;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
-
-import static org.apache.arrow.flatbuf.Type.List;
 
 public class CostEstimates {
 	private static RuleContext ctx;

@@ -19,7 +19,7 @@
 
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
-import org.apache.sysds.hops.rewriter.RewriterRule;
+import org.apache.sysds.hops.rewriter.rule.RewriterRule;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;

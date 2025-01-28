@@ -26,6 +26,7 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.util.TriConsumer;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
+import org.apache.sysds.hops.rewriter.rule.RewriterRule;
 import org.apache.sysds.hops.rewriter.utils.StatementUtils;
 import scala.Tuple2;
 
@@ -461,7 +462,7 @@ public abstract class RewriterStatement {
 	// Performs a nested copy until a condition is met
 	public abstract RewriterStatement nestedCopyOrInject(Map<RewriterStatement, RewriterStatement> copiedObjects, TriFunction<RewriterStatement, RewriterStatement, Integer, RewriterStatement> injector, RewriterStatement parent, int pIdx);
 	// Returns the new maxRefId
-	abstract int toParsableString(StringBuilder builder, Map<RewriterStatement, Integer> refs, int maxRefId, Map<String, Set<String>> vars, Set<RewriterStatement> forceCreateRefs, final RuleContext ctx);
+	public abstract int toParsableString(StringBuilder builder, Map<RewriterStatement, Integer> refs, int maxRefId, Map<String, Set<String>> vars, Set<RewriterStatement> forceCreateRefs, final RuleContext ctx);
 	public abstract void refreshReturnType(final RuleContext ctx);
 	protected abstract void compress(RewriterAssertions assertions);
 

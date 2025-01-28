@@ -19,9 +19,9 @@
 
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
-import org.apache.sysds.hops.rewriter.RewriterRule;
-import org.apache.sysds.hops.rewriter.RewriterRuleBuilder;
-import org.apache.sysds.hops.rewriter.RewriterRuleSet;
+import org.apache.sysds.hops.rewriter.rule.RewriterRule;
+import org.apache.sysds.hops.rewriter.rule.RewriterRuleBuilder;
+import org.apache.sysds.hops.rewriter.rule.RewriterRuleSet;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
@@ -29,7 +29,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.List;
-import java.util.function.Function;
 
 public class TestRuleSet {
 	private static RuleContext ctx;

@@ -17,11 +17,15 @@
  * under the License.
  */
 
-package org.apache.sysds.hops.rewriter;
+package org.apache.sysds.hops.rewriter.rule;
 
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.rewriter.RewriterDataType;
+import org.apache.sysds.hops.rewriter.RewriterRuntimeUtils;
+import org.apache.sysds.hops.rewriter.RewriterStatement;
+import org.apache.sysds.hops.rewriter.RuleContext;
 import org.apache.sysds.hops.rewriter.dml.DMLCodeGenerator;
 import org.apache.sysds.hops.rewriter.dml.DMLExecutor;
 import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;

@@ -82,6 +82,7 @@ public class TopologicalSort {
 
 		// Now, we start introducing facts for the lowest level unordered sets
 		Set<UnorderedSet> lowestUncertainties = findLowestUncertainties(root);
+		System.out.println("Lowest uncertainties: " + lowestUncertainties);
 		int ctr = 0;
 
 		while (!lowestUncertainties.isEmpty()) {
@@ -235,7 +236,25 @@ public class TopologicalSort {
 	private static Set<UnorderedSet> findLowestUncertainties(RewriterStatement root) {
 		Set<UnorderedSet> set = new HashSet<>();
 		recursivelyFindLowestUncertainties(root, set);
-		return set;
+
+		List<UnorderedSet> tmpList = new ArrayList<>(set);
+		Set<UnorderedSet> minSet = new HashSet<>();
+		// We have the issue that uncertainties might still depend on each other (e.g. {a,b}, {inv(a),inv(b)}), even if they are the lowest entries
+		// Theoretically, this comparison might still lead to amgibuities, but never occurred in our examples
+		int minCumSize = Integer.MAX_VALUE;
+		for (int i = 0; i < tmpList.size(); i++) {
+			int cumSize = tmpList.get(i).contents.stream().map(RewriterStatement::countInstructions).reduce(0, Integer::sum);
+
+			if (cumSize < minCumSize) {
+				minSet.clear();
+				minCumSize = cumSize;
+			}
+
+			if (cumSize <= minCumSize)
+				minSet.add(tmpList.get(i));
+		}
+
+		return minSet;
 	}
 
 	// All children in post order and unique

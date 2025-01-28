@@ -1541,8 +1541,8 @@ public class RewriterUtils {
 			stmt.compress();
 			TopologicalSort.sort(stmt, ctx);
 			// Somehow it is unstable if we only compress and sort once
-			stmt.compress();
-			TopologicalSort.sort(stmt, ctx);
+			//stmt.compress();
+			//TopologicalSort.sort(stmt, ctx);
 
 			if (debug)
 				System.out.println("FINAL1: " + stmt.toParsableString(ctx, false));

@@ -168,6 +168,20 @@ public class RewriterTopologySortTests {
 	}
 
 	@Test
+	public void testSimpleEquivalence10() {
+		RewriterStatement stmt = RewriterUtils.parse("+(argList(*(argList(a,b)),*(argList(a,inv(b),b,inv(a)))))", ctx, "FLOAT:a,b,c");
+		RewriterStatement stmt2 = RewriterUtils.parse("+(argList(*(argList(a,inv(b),b,inv(a))),*(argList(a,b))))", ctx, "FLOAT:a,b,c");
+		TopologicalSort.sort(stmt, ctx);
+		TopologicalSort.sort(stmt2, ctx);
+
+		System.out.println("==========");
+		System.out.println(stmt.toParsableString(ctx, true));
+		System.out.println("==========");
+		System.out.println(stmt2.toParsableString(ctx, true));
+		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
+	}
+
+	@Test
 	public void test4() {
 		RewriterStatement stmt = RewriterUtils.parse("sum(*(A, A))", ctx, "MATRIX:A");
 		stmt = converter.apply(stmt);
@@ -177,7 +191,7 @@ public class RewriterTopologySortTests {
 
 	@Test
 	public void test5() {
-		RewriterStatement stmt1 = RewriterUtils.parse("sum(_idxExpr($1:_idx(1,_EClass(argList(ncol(A),nrow(A)))),*(argList([](B,$1,$1),[](A,$1,$1)))))", ctx, "MATRIX:A,B", "LITERAL_INT:1");
+		RewriterStatement stmt1 = RewriterUtils.parse("sum(_idxExpr($1:_idx(1,_EClass(argList(nrow(A),nrow(B)))),*(argList([](B,$1,$1),[](A,$1,$1)))))", ctx, "MATRIX:A,B", "LITERAL_INT:1");
 		RewriterStatement stmt2 = RewriterUtils.parse("sum(_idxExpr($1:_idx(1,_EClass(argList(nrow(B),nrow(A)))),*(argList([](B,$1,$1),[](A,$1,$1)))))", ctx, "MATRIX:A,B", "LITERAL_INT:1");
 		TopologicalSort.sort(stmt1, ctx);
 		TopologicalSort.sort(stmt2, ctx);

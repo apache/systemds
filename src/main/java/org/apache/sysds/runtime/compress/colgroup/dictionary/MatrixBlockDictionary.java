@@ -1178,8 +1178,8 @@ public class MatrixBlockDictionary extends ADictionary {
 		}
 		else {
 			double[] values = _data.getDenseBlockValues();
-			int off = 0;
 			for(int k = 0; k < nRow; k++) {
+				int off = k * nCol;
 				ret[k] = 1;
 				for(int j = 0; j < nCol && ret[k] != 0; j++) { // early abort on zero
 					final double v = values[off++];

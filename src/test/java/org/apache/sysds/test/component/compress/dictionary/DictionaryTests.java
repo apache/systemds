@@ -104,6 +104,7 @@ public class DictionaryTests {
 			addAll(tests, new double[] {1, 2, 3, 4, 5}, 1);
 			addAll(tests, new double[] {1, 2, 3, 4, 5, 6}, 2);
 			addAll(tests, new double[] {1, 2.2, 3.3, 4.4, 5.5, 6.6}, 3);
+			addAll(tests, new double[] {0, 0, 1, 1, 0, 0}, 2);
 
 			addQDict(tests, new byte[] {2, 4, 6, 8}, 2.0, 1);
 			addQDict(tests, new byte[] {44, 44, 110, 12, 32, 14, 25, 2}, 2.0, 2);
@@ -1844,8 +1845,8 @@ public class DictionaryTests {
 
 	}
 
-	@Test 
-	public void subtractTuple(){
+	@Test
+	public void subtractTuple() {
 		double[] r = TestUtils.generateTestVector(nCol, 1, 10, 0.9, 222);
 		IDictionary aa = a.subtractTuple(r);
 		IDictionary bb = b.subtractTuple(r);
@@ -1853,8 +1854,8 @@ public class DictionaryTests {
 		compare(aa, bb, nCol);
 	}
 
-	@Test 
-	public void cbind(){
+	@Test
+	public void cbind() {
 		IDictionary aa = a.cbind(b, nCol);
 		IDictionary bb = b.cbind(a, nCol);
 		compare(aa, bb, nCol * 2);

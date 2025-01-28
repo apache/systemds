@@ -389,7 +389,7 @@ public class RewriterRuleCollection {
 				.parseGlobalVars("MATRIX:A")
 				.parseGlobalVars("LITERAL_INT:1")
 				.withParsedStatement("rowVec(A)")
-				.toParsedStatement("[](A, 1, nrow(A), 1, 1)")
+				.toParsedStatement("[]($1:A, 1, 1, 1, ncol(A))", hooks)
 				.build()
 		);
 
@@ -398,7 +398,16 @@ public class RewriterRuleCollection {
 				.parseGlobalVars("MATRIX:A")
 				.parseGlobalVars("LITERAL_INT:1")
 				.withParsedStatement("colVec(A)")
-				.toParsedStatement("[](A, 1, 1, 1, ncol(A))")
+				.toParsedStatement("[](A, 1, nrow(A), 1, 1)")
+				.build()
+		);
+
+		rules.add(new RewriterRuleBuilder(ctx, "cellMat(A) => [](A, ...)")
+				.setUnidirectional(true)
+				.parseGlobalVars("MATRIX:A")
+				.parseGlobalVars("LITERAL_INT:1")
+				.withParsedStatement("cellMat(A)")
+				.toParsedStatement("[](A, 1, 1, 1, 1)")
 				.build()
 		);
 
@@ -1306,7 +1315,6 @@ public class RewriterRuleCollection {
 				.build()
 		);
 
-		// TODO: We would have to take into account the offset of h, i
 		rules.add(new RewriterRuleBuilder(ctx, "Element selection pushdown")
 				.setUnidirectional(true)
 				.parseGlobalVars("MATRIX:A,B")
@@ -1667,7 +1675,9 @@ public class RewriterRuleCollection {
 								.as(UUID.randomUUID().toString())
 								.withInstruction("sum")
 								.withOps(newIdxExpr);
+						System.out.println("Copying index list: " + newIdxExpr.toParsableString(ctx));
 						RewriterUtils.copyIndexList(newIdxExpr);
+						System.out.println("After copy: " + newIdxExpr.toParsableString(ctx));
 						newIdxExpr.refreshReturnType(ctx);
 						newSum.consolidate(ctx);
 						newArgList.getOperands().add(newSum);
@@ -1700,7 +1710,6 @@ public class RewriterRuleCollection {
 						argList.getOperands().set(i, newStmt);
 					}
 
-					// TODO: This is inefficient
 					RewriterUtils.tryFlattenNestedOperatorPatterns(ctx, match.getNewExprRoot());
 				}, true)
 				.build()

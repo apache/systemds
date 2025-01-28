@@ -71,17 +71,22 @@ public class RewriterStreamTests {
 	@Test
 	public void testSubtractionFloat1() {
 		RewriterStatement stmt = RewriterUtils.parse("+(-(a, b), 1)", ctx, "MATRIX:A,B,C", "FLOAT:a,b", "LITERAL_INT:0,1");
+		RewriterStatement stmt2 = RewriterUtils.parse("+(argList(-(b), a, 1))", ctx, "FLOAT:a,b", "LITERAL_INT:0,1");
 		stmt = canonicalConverter.apply(stmt);
+		stmt2 = canonicalConverter.apply(stmt2);
 		System.out.println(stmt.toParsableString(ctx, true));
-		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, RewriterUtils.parse("+(argList(-(b), a, 1))", ctx, "FLOAT:a,b", "LITERAL_INT:0,1"), stmt));
+		System.out.println(stmt2.toParsableString(ctx, true));
+		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
 	@Test
 	public void testSubtractionFloat2() {
 		RewriterStatement stmt = RewriterUtils.parse("+(1, -(a, -(b, c)))", ctx, "MATRIX:A,B,C", "FLOAT:a,b,c", "LITERAL_INT:0,1");
+		RewriterStatement stmt2 = RewriterUtils.parse("+(argList(-(b), a, c, 1))", ctx, "FLOAT:a,b, c", "LITERAL_INT:0,1");
 		stmt = canonicalConverter.apply(stmt);
+		stmt2 = canonicalConverter.apply(stmt2);
 		System.out.println(stmt.toParsableString(ctx, true));
-		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, RewriterUtils.parse("+(argList(-(b), a, c, 1))", ctx, "FLOAT:a,b, c", "LITERAL_INT:0,1"), stmt));
+		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
 	// Fusion will no longer be pursued
@@ -873,8 +878,8 @@ public class RewriterStreamTests {
 
 	@Test
 	public void testSumEquality4() {
-		RewriterStatement stmt1 = RewriterUtils.parse("%*%(t(rowVec(A)), rowVec(A))", ctx, "MATRIX:A,B", "LITERAL_INT:1");
-		RewriterStatement stmt2 = RewriterUtils.parse("as.matrix(sum(*(rowVec(A), rowVec(A))))", ctx, "MATRIX:A,B", "LITERAL_INT:1");
+		RewriterStatement stmt1 = RewriterUtils.parse("%*%(t(colVec(A)), colVec(A))", ctx, "MATRIX:A,B", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("as.matrix(sum(*(colVec(A), colVec(A))))", ctx, "MATRIX:A,B", "LITERAL_INT:1");
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
@@ -971,8 +976,8 @@ public class RewriterStreamTests {
 
 	@Test
 	public void testMMEquivalence2() {
-		RewriterStatement stmt1 = RewriterUtils.parse("cast.MATRIX(sum(*(t([](A, 1, 1, 1, ncol(A))), [](B, 1, nrow(B), 1, 1))))", ctx, "MATRIX:A,B", "FLOAT:b", "LITERAL_INT:1");
-		RewriterStatement stmt2 = RewriterUtils.parse("%*%([](A, 1, 1, 1, ncol(A)), [](B, 1, nrow(B), 1, 1))", ctx, "MATRIX:A,B", "FLOAT:b", "LITERAL_INT:1");
+		RewriterStatement stmt1 = RewriterUtils.parse("cast.MATRIX(sum(*(t(rowVec(A)), colVec(B))))", ctx, "MATRIX:A,B", "FLOAT:b", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("%*%(rowVec(A), colVec(B))", ctx, "MATRIX:A,B", "FLOAT:b", "LITERAL_INT:1");
 
 		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
 		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));

@@ -86,8 +86,8 @@ public class RewriterNormalFormTests {
 
 	@Test
 	public void testSimplifyBushyBinaryOperation() {
-		RewriterStatement stmt1 = RewriterUtils.parse("*(A,*(B, %*%(C, rowVec(D))))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:1.0");
-		RewriterStatement stmt2 = RewriterUtils.parse("*(*(A,B), %*%(C, rowVec(D)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:1.0");
+		RewriterStatement stmt1 = RewriterUtils.parse("*(A,*(B, %*%(C, colVec(D))))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:1.0");
+		RewriterStatement stmt2 = RewriterUtils.parse("*(*(A,B), %*%(C, colVec(D)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:1.0");
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
@@ -159,7 +159,7 @@ public class RewriterNormalFormTests {
 	@Test
 	public void testSimplifySlicedMatrixMult() {
 		RewriterStatement stmt1 = RewriterUtils.parse("[](%*%(A,B), 1, 1)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:1.0,2.0", "LITERAL_INT:1");
-		RewriterStatement stmt2 = RewriterUtils.parse("as.scalar(%*%(colVec(A), rowVec(B)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:1.0,2.0", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("as.scalar(%*%(rowVec(A), colVec(B)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:1.0,2.0", "LITERAL_INT:1");
 
 		assert match(stmt1, stmt2);
 	}
@@ -226,23 +226,23 @@ public class RewriterNormalFormTests {
 	public void testRemoveEmptyRightIndexing() {
 		// We do not directly support the specification of nnz, but we can emulate such a matrix by multiplying with 0
 		RewriterStatement stmt1 = RewriterUtils.parse("[](*(A, 0.0), 1, nrow(A), 1, 1)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
-		RewriterStatement stmt2 = RewriterUtils.parse("const(rowVec(A), 0.0)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("const(colVec(A), 0.0)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
 
 		assert match(stmt1, stmt2);
 	}
 
 	@Test
 	public void testRemoveUnnecessaryRightIndexing() {
-		RewriterStatement stmt1 = RewriterUtils.parse("[](rowVec(A), 1, nrow(A), 1, 1)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
-		RewriterStatement stmt2 = RewriterUtils.parse("rowVec(A)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
+		RewriterStatement stmt1 = RewriterUtils.parse("[](colVec(A), 1, nrow(A), 1, 1)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("colVec(A)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
 
 		assert match(stmt1, stmt2);
 	}
 
 	@Test
 	public void testRemoveUnnecessaryReorgOperation3() {
-		RewriterStatement stmt1 = RewriterUtils.parse("t(rowVec(colVec(A)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
-		RewriterStatement stmt2 = RewriterUtils.parse("rowVec(colVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
+		RewriterStatement stmt1 = RewriterUtils.parse("t(cellMat(A)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
+		RewriterStatement stmt2 = RewriterUtils.parse("cellMat(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1");
 
 		assert match(stmt1, stmt2);
 	}
@@ -275,16 +275,16 @@ public class RewriterNormalFormTests {
 
 	@Test
 	public void testSimplifyColwiseAggregate() {
-		RewriterStatement stmt1 = RewriterUtils.parse("colSums(colVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
-		RewriterStatement stmt2 = RewriterUtils.parse("colVec(A)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt1 = RewriterUtils.parse("colSums(rowVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("rowVec(A)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 
 		assert match(stmt1, stmt2);
 	}
 
 	@Test
 	public void testSimplifyRowwiseAggregate() {
-		RewriterStatement stmt1 = RewriterUtils.parse("rowSums(rowVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
-		RewriterStatement stmt2 = RewriterUtils.parse("rowVec(A)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt1 = RewriterUtils.parse("rowSums(colVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("colVec(A)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 
 		assert match(stmt1, stmt2);
 	}
@@ -292,8 +292,8 @@ public class RewriterNormalFormTests {
 	// We don't have broadcasting semantics
 	@Test
 	public void testSimplifyColSumsMVMult() {
-		RewriterStatement stmt1 = RewriterUtils.parse("colSums(*(rowVec(A), rowVec(B)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
-		RewriterStatement stmt2 = RewriterUtils.parse("%*%(t(rowVec(B)), rowVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt1 = RewriterUtils.parse("colSums(*(colVec(A), colVec(B)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("%*%(t(colVec(B)), colVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 
 		assert match(stmt1, stmt2);
 	}
@@ -301,15 +301,15 @@ public class RewriterNormalFormTests {
 	// We don't have broadcasting semantics
 	@Test
 	public void testSimplifyRowSumsMVMult() {
-		RewriterStatement stmt1 = RewriterUtils.parse("rowSums(*(colVec(A), colVec(B)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
-		RewriterStatement stmt2 = RewriterUtils.parse("%*%(colVec(A), t(colVec(B)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt1 = RewriterUtils.parse("rowSums(*(rowVec(A), rowVec(B)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("%*%(rowVec(A), t(rowVec(B)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 
 		assert match(stmt1, stmt2);
 	}
 
 	@Test
 	public void testSimplifyUnnecessaryAggregate() {
-		RewriterStatement stmt1 = RewriterUtils.parse("sum(rowVec(colVec(A)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt1 = RewriterUtils.parse("sum(cellMat(A)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 		RewriterStatement stmt2 = RewriterUtils.parse("as.scalar(A)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 
 		assert match(stmt1, stmt2);
@@ -350,16 +350,16 @@ public class RewriterNormalFormTests {
 
 	@Test
 	public void testSimplifyEmptyMatrixMult2() {
-		RewriterStatement stmt1 = RewriterUtils.parse("%*%(rowVec(A), cast.MATRIX(1.0))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
-		RewriterStatement stmt2 = RewriterUtils.parse("rowVec(A)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt1 = RewriterUtils.parse("%*%(colVec(A), cast.MATRIX(1.0))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("colVec(A)", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 
 		assert match(stmt1, stmt2);
 	}
 
 	@Test
 	public void testSimplifyScalarMatrixMult() {
-		RewriterStatement stmt1 = RewriterUtils.parse("%*%(rowVec(A), cast.MATRIX(a))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
-		RewriterStatement stmt2 = RewriterUtils.parse("*(rowVec(A), as.scalar(cast.MATRIX(a)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt1 = RewriterUtils.parse("%*%(colVec(A), cast.MATRIX(a))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("*(colVec(A), as.scalar(cast.MATRIX(a)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 
 		assert match(stmt1, stmt2);
 	}
@@ -405,8 +405,8 @@ public class RewriterNormalFormTests {
 
 	@Test
 	public void testSimplifyDotProductSum() {
-		RewriterStatement stmt1 = RewriterUtils.parse("cast.MATRIX(sum(sq(rowVec(A))))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
-		RewriterStatement stmt2 = RewriterUtils.parse("%*%(t(rowVec(A)), rowVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt1 = RewriterUtils.parse("cast.MATRIX(sum(sq(colVec(A))))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt2 = RewriterUtils.parse("%*%(t(colVec(A)), colVec(A))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 
 		assert match(stmt1, stmt2);
 	}
@@ -477,7 +477,7 @@ public class RewriterNormalFormTests {
 
 	//@Test
 	public void testSimplifyScalarMVBinaryOperation() {
-		RewriterStatement stmt1 = RewriterUtils.parse("*(A, rowVec(colVec(B)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
+		RewriterStatement stmt1 = RewriterUtils.parse("*(A, colVec(colVec(B)))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 		RewriterStatement stmt2 = RewriterUtils.parse("*(A, as.scalar(B))", ctx, "MATRIX:A,B,C,D", "FLOAT:a,b,c", "LITERAL_FLOAT:0.0,1.0,2.0", "LITERAL_INT:1", "LITERAL_BOOL:TRUE,FALSE", "INT:i");
 
 		assert match(stmt1, stmt2);

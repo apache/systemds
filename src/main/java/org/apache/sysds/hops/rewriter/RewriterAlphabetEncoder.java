@@ -97,24 +97,6 @@ public class RewriterAlphabetEncoder {
 
 	private static RuleContext ctx;
 
-	/*private static List<String> allPossibleTypes(Operand op, int argNum) {
-		if (op == null)
-			return List.of("MATRIX", "FLOAT");
-
-		switch (op.op) {
-			case "+":
-				return List.of("MATRIX", "FLOAT");
-			case "-":
-				return List.of("MATRIX", "FLOAT");
-			case "*":
-				return List.of("MATRIX", "FLOAT");
-			case "/":
-				return List.of("MATRIX", "FLOAT");
-		}
-
-		throw new NotImplementedException();
-	}*/
-
 	public static int getMaxSearchNumberForNumOps(int numOps) {
 		int out = 1;
 		for (int i = 0; i < numOps; i++)

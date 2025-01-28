@@ -858,7 +858,7 @@ public class RewriterUtils {
 			operands.set(i, cpy);
 		}
 
-		RewriterUtils.replaceReferenceAware(idxExprRoot.getChild(1), stmt -> {
+		RewriterStatement out = RewriterUtils.replaceReferenceAware(idxExprRoot.getChild(1), stmt -> {
 			UUID idxId = (UUID) stmt.getMeta("idxId");
 			if (idxId != null) {
 				RewriterStatement newStmt = replacements.get(idxId);
@@ -868,6 +868,8 @@ public class RewriterUtils {
 
 			return null;
 		});
+
+		idxExprRoot.getOperands().set(1, out);
 	}
 
 	public static void retargetIndexExpressions(RewriterStatement rootExpr, UUID oldIdxId, RewriterStatement newStatement) {
@@ -1441,6 +1443,7 @@ public class RewriterUtils {
 		RewriterRuleCollection.canonicalizeBooleanStatements(algebraicCanonicalizationRules, ctx);
 		RewriterRuleCollection.canonicalizeAlgebraicStatements(algebraicCanonicalizationRules, ctx);
 		RewriterRuleCollection.eliminateMultipleCasts(algebraicCanonicalizationRules, ctx);
+		RewriterRuleCollection.buildElementWiseAlgebraicCanonicalization(algebraicCanonicalizationRules, ctx);
 		RewriterHeuristic algebraicCanonicalization = new RewriterHeuristic(new RewriterRuleSet(ctx, algebraicCanonicalizationRules));
 
 		ArrayList<RewriterRule> expRules = new ArrayList<>();
@@ -1603,7 +1606,6 @@ public class RewriterUtils {
 				components.add(add);
 			}
 
-			//add = foldConstants(add, ctx);
 			RewriterStatement out = RewriterStatement.multiArgInstr(ctx, "*", sumBody);
 			out.getChild(0).getOperands().addAll(components);
 			return foldConstants(out, ctx);

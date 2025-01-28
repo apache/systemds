@@ -283,15 +283,15 @@ public class CodeGenTests {
 
 	@Test
 	public void codeGen() {
-		//List<String> files = List.of(RewriteAutomaticallyGenerated.VALIDATED_FILE_PATH, RewriteAutomaticallyGenerated.FILE_PATH_CONDITIONAL);
-		List<String> files = List.of(RewriteAutomaticallyGenerated.FILE_PATH_MB);
+		List<String> files = List.of("/Users/janniklindemann/Dev/Rewrite-Generator-Reproducibility/data/rules_end_to_end.dml");
+		//List<String> files = List.of(RewriteAutomaticallyGenerated.FILE_PATH_MB);
 		String targetPath = "/Users/janniklindemann/Dev/MScThesis/other/GeneratedRewriteClass.java";
 
 		try {
 			// This is to specify that the generated code should print to the console if it modifies the DAG
 			// This should be disabled when generating production code
-			RewriterCodeGen.DEBUG = true;
-			RewriterCodeGen.generateRewritesFromFiles(files, targetPath, true, ctx);
+			RewriterCodeGen.DEBUG = false;
+			RewriterCodeGen.generateRewritesFromFiles(files, targetPath, true, 3, true, false, ctx);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

@@ -364,6 +364,7 @@ public class RewriterContextSettings {
 
 		builder.append("rowVec(MATRIX)::MATRIX\n");
 		builder.append("colVec(MATRIX)::MATRIX\n");
+		builder.append("cellMat(MATRIX)::MATRIX\n");
 
 		builder.append("_m(INT,INT,FLOAT)::MATRIX\n");
 		builder.append("_m(INT,INT,BOOL)::MATRIX\n");

@@ -1675,9 +1675,7 @@ public class RewriterRuleCollection {
 								.as(UUID.randomUUID().toString())
 								.withInstruction("sum")
 								.withOps(newIdxExpr);
-						System.out.println("Copying index list: " + newIdxExpr.toParsableString(ctx));
 						RewriterUtils.copyIndexList(newIdxExpr);
-						System.out.println("After copy: " + newIdxExpr.toParsableString(ctx));
 						newIdxExpr.refreshReturnType(ctx);
 						newSum.consolidate(ctx);
 						newArgList.getOperands().add(newSum);

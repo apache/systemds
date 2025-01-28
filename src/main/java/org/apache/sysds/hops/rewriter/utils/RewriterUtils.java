@@ -869,7 +869,8 @@ public class RewriterUtils {
 			return null;
 		});
 
-		idxExprRoot.getOperands().set(1, out);
+		if (out != null)
+			idxExprRoot.getOperands().set(1, out);
 	}
 
 	public static void retargetIndexExpressions(RewriterStatement rootExpr, UUID oldIdxId, RewriterStatement newStatement) {

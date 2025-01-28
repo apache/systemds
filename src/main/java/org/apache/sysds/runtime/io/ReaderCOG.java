@@ -58,7 +58,7 @@ public class ReaderCOG extends MatrixReader{
 
         // TODO: Currently only reads the first image which is the full resolution image
         // In the future, this could be extended to read the overviews as well
-
+        // But keep in mind that we are only returning a single MatrixBlock, so there needs to be some special handling
         COGProperties cogP = new COGProperties(cogHeader.getIFD());
 
         // number of tiles for Width and Length
@@ -74,19 +74,14 @@ public class ReaderCOG extends MatrixReader{
         int currentTileRow = 0;
         int currentBand = 0;
 
-        boolean tilesFullySequential = true;
-        for (int i = 1; i < cogP.getTileOffsets().length; i++) {
-            if (cogP.getTileOffsets()[i] < cogP.getTileOffsets()[i - 1]) {
-                tilesFullySequential = false;
-                break;
-            }
-        }
-
+        // Check if the tiles are fully sequential (always starting at a higher byte offset)
+        // If that is the case, we can skip the mark/reset calls and avoid buffering large amounts of data
+        boolean tilesFullySequential = cogP.tilesFullySequential();
 
         MatrixBlock outputMatrix = createOutputMatrixBlock(cogP.getRows(), cogP.getCols() * cogP.getBands(), cogP.getRows(), estnnz, true, false);
 
         for (int currenTileIdx = 0; currenTileIdx < actualAmountTiles; currenTileIdx++) {
-            int bytesToRead = (cogP.getTileOffsets()[currenTileIdx] - byteReader.getTotalBytesRead()) + cogP.getBytesPerTile()[currenTileIdx];
+            long bytesToRead = (cogP.getTileOffsets()[currenTileIdx] - byteReader.getTotalBytesRead()) + cogP.getBytesPerTile()[currenTileIdx];
             // Mark the current position in the stream
             // This is used to reset the stream to this position after reading the data
             // Valid until bytesToRead + 1 bytes are read

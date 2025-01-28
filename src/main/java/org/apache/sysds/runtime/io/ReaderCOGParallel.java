@@ -68,7 +68,7 @@ public class ReaderCOGParallel extends MatrixReader{
 
         // TODO: Currently only reads the first image which is the full resolution image
         // In the future, this could be extended to read the overviews as well
-
+        // But keep in mind that we are only returning a single MatrixBlock, so there needs to be some special handling
         COGProperties cogP = new COGProperties(cogHeader.getIFD());
 
         // number of tiles for Width and Length
@@ -85,17 +85,12 @@ public class ReaderCOGParallel extends MatrixReader{
         int currentBand = 0;
 
         ExecutorService pool = CommonThreadPool.get(_numThreads);
+        
+        MatrixBlock outputMatrix = createOutputMatrixBlock(cogP.getRows(), cogP.getCols() * cogP.getBands(), cogP.getRows(), estnnz, false, true);
 
-        estnnz = cogP.getRows() * cogP.getCols() * cogP.getBands();
-        MatrixBlock outputMatrix = createOutputMatrixBlock(cogP.getRows(), cogP.getCols() * cogP.getBands(), cogP.getRows(), estnnz, true, true);
-
-        boolean tilesFullySequential = true;
-        for (int i = 1; i < cogP.getTileOffsets().length; i++) {
-            if (cogP.getTileOffsets()[i] < cogP.getTileOffsets()[i - 1]) {
-                tilesFullySequential = false;
-                break;
-            }
-        }
+        // Check if the tiles are fully sequential (always starting at a higher byte offset)
+        // If that is the case, we can skip the mark/reset calls and avoid buffering large amounts of data
+        boolean tilesFullySequential = cogP.tilesFullySequential();
 
         try {
             ArrayList<Callable<MatrixBlock>> tasks = new ArrayList<>();
@@ -104,7 +99,7 @@ public class ReaderCOGParallel extends MatrixReader{
             // Then: Process the read tile data in parallel
             for (int currenTileIdx = 0; currenTileIdx < actualAmountTiles; currenTileIdx++) {
                 // First read the bytes for the new tile
-                int bytesToRead = (cogP.getTileOffsets()[currenTileIdx] - byteReader.getTotalBytesRead()) + cogP.getBytesPerTile()[currenTileIdx];
+                long bytesToRead = (cogP.getTileOffsets()[currenTileIdx] - byteReader.getTotalBytesRead()) + cogP.getBytesPerTile()[currenTileIdx];
                 // Only necessary if we might need to jump back in the stream (when tiles are not fully sequential)
                 if (!tilesFullySequential) {
                     byteReader.mark(bytesToRead);
@@ -302,6 +297,9 @@ public class ReaderCOGParallel extends MatrixReader{
                     // if outputMatrix is sparse apply synchronisation if tiles are more narrow then outputMatrix
                     SparseBlock sblock = _dest.getSparseBlock();
                     for (int i = 0; i < tileLength; i++) {
+                        if (sblock.get(rowOffset + i) == null) {
+                            sblock.allocate(rowOffset + i);
+                        }
                         synchronized (sblock.get(rowOffset + i)) {
                             _dest.appendRowToSparse(sblock, tileMatrix, i,
                                     rowOffset,
@@ -369,12 +367,16 @@ public class ReaderCOGParallel extends MatrixReader{
                     SparseBlock sblock = _dest.getSparseBlock();
                     if (tileWidth < clen) {
                         if (sblock instanceof SparseBlockMCSR && sblock.get(rowOffset) != null) {
-                            for (int i = 0; i < tileLength; i++)
+                            for (int i = 0; i < tileLength; i++) {
+                                if (sblock.get(rowOffset + i) == null) {
+                                    sblock.allocate(rowOffset + i);
+                                }
                                 synchronized (sblock.get(rowOffset + i)) {
                                     _dest.appendRowToSparse(sblock, tileMatrix, i,
                                             rowOffset,
                                             colOffset, true);
                                 }
+                            }
                         }
                         else{
                             synchronized (_dest) {

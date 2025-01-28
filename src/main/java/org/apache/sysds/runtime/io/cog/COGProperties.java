@@ -170,4 +170,15 @@ public class COGProperties {
             }
         }
     }
+
+    public boolean tilesFullySequential() {
+        boolean tilesFullySequential = true;
+        for (int i = 1; i < getTileOffsets().length; i++) {
+            if (getTileOffsets()[i] < getTileOffsets()[i - 1]) {
+                tilesFullySequential = false;
+                break;
+            }
+        }
+        return tilesFullySequential;
+    }
 }

@@ -6,9 +6,9 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 
 public class COGByteReader {
-    private int totalBytesRead;
+    private long totalBytesRead;
     private BufferedInputStream bis;
-    private int readlimit = 0;
+    private long readlimit = 0;
 
     public COGByteReader(BufferedInputStream bis) {
         this.bis = bis;
@@ -20,7 +20,7 @@ public class COGByteReader {
         this.totalBytesRead = totalBytesRead;
     }
 
-    public int getTotalBytesRead() {
+    public long getTotalBytesRead() {
         return totalBytesRead;
     }
 
@@ -52,9 +52,9 @@ public class COGByteReader {
         return readBytes((int) length);
     }
 
-    public void mark(int readlimit) {
+    public void mark(long readlimit) {
         this.readlimit = readlimit;
-        bis.mark(readlimit + 1);
+        bis.mark((int) readlimit + 1);
     }
 
     public void reset() throws DMLRuntimeException {
@@ -66,7 +66,7 @@ public class COGByteReader {
         }
     }
 
-    public void skipBytes(int n) throws DMLRuntimeException {
+    public void skipBytes(long n) throws DMLRuntimeException {
         try {
             long skipped = bis.skip(n);
             if (skipped != n) {

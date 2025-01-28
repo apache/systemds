@@ -85,7 +85,7 @@ public class ReaderCOGParallel extends MatrixReader{
         int currentBand = 0;
 
         ExecutorService pool = CommonThreadPool.get(_numThreads);
-        
+
         MatrixBlock outputMatrix = createOutputMatrixBlock(cogP.getRows(), cogP.getCols() * cogP.getBands(), cogP.getRows(), estnnz, false, true);
 
         // Check if the tiles are fully sequential (always starting at a higher byte offset)
@@ -120,7 +120,7 @@ public class ReaderCOGParallel extends MatrixReader{
                     // Every band is in the same tile, e.g. RGBRGBRGB
                     tileProcessor = new TileProcessor(cogP.getCols() * cogP.getBands(), currentTileData, currentTileRow, currentTileCol,
                             cogP.getTileWidth(), cogP.getTileLength(), cogP.getBands(), cogP.getBitsPerSample(), cogP.getSampleFormat(), cogHeader, outputMatrix,
-                            cogP.getPlanarConfiguration(), _numThreads<=actualAmountTiles);
+                            cogP.getPlanarConfiguration());
 
                     currentTileCol++;
                     if (currentTileCol >= tileCols) {
@@ -139,7 +139,7 @@ public class ReaderCOGParallel extends MatrixReader{
 
                     tileProcessor = new TileProcessor(cogP.getCols() * cogP.getBands(), currentTileData, currentTileRow, currentTileCol,
                             cogP.getTileWidth(), cogP.getTileLength(), cogP.getBands(), cogP.getBitsPerSample(), cogP.getSampleFormat(), cogHeader, outputMatrix,
-                            cogP.getPlanarConfiguration(), _numThreads<=actualAmountTiles, currentBand);
+                            cogP.getPlanarConfiguration(), currentBand);
 
                     currentTileCol++;
 
@@ -158,7 +158,7 @@ public class ReaderCOGParallel extends MatrixReader{
                     result.get();
                 }
 
-                if (outputMatrix.isInSparseFormat() && cogP.getTileWidth() < cogP.getCols()) {
+                if (outputMatrix.isInSparseFormat()) {
                     sortSparseRowsParallel(outputMatrix, cogP.getRows(), _numThreads, pool);
                 }
             } catch (Exception e) {
@@ -192,32 +192,18 @@ public class ReaderCOGParallel extends MatrixReader{
         private final MatrixBlock _dest;
         private final int planarConfiguration;
         private final boolean sparse;
-        private final boolean sync;
         private final int band;
 
         public TileProcessor(int clen, byte[] tileData, int tileRow, int tileCol, int tileWidth, int tileLength,
                              int bands, int[] bitsPerSample, SampleFormatDataTypes[] sampleFormat, COGHeader cogHeader,
-                             MatrixBlock dest, int planarConfiguration, boolean sync) {
-            this.clen = clen;
-            this.tileData = tileData;
-            this.tileRow = tileRow;
-            this.tileCol = tileCol;
-            this.tileWidth = tileWidth;
-            this.tileLength = tileLength;
-            this.bands = bands;
-            this.bitsPerSample = bitsPerSample;
-            this.sampleFormat = sampleFormat;
-            this.cogHeader = cogHeader;
-            this._dest = dest;
-            this.planarConfiguration = planarConfiguration;
-            this.sparse = _dest.isInSparseFormat();
-            this.sync = sync;
-            this.band = 0;
+                             MatrixBlock dest, int planarConfiguration) {
+            this(clen, tileData, tileRow, tileCol, tileWidth, tileLength, bands, bitsPerSample, sampleFormat,
+                    cogHeader, dest, planarConfiguration, 0);
         }
 
         public TileProcessor(int clen, byte[] tileData, int tileRow, int tileCol, int tileWidth, int tileLength,
                              int bands, int[] bitsPerSample, SampleFormatDataTypes[] sampleFormat, COGHeader cogHeader,
-                             MatrixBlock dest, int planarConfiguration, boolean sync, int band) {
+                             MatrixBlock dest, int planarConfiguration, int band) {
             this.clen = clen;
             this.tileData = tileData;
             this.tileRow = tileRow;
@@ -231,16 +217,16 @@ public class ReaderCOGParallel extends MatrixReader{
             this._dest = dest;
             this.planarConfiguration = planarConfiguration;
             this.sparse = _dest.isInSparseFormat();
-            this.sync = sync;
             this.band = band;
         }
+
 
         @Override
         public MatrixBlock call() throws Exception {
             if (planarConfiguration==1) {
                 processTileByPixel();
             }
-            else if (planarConfiguration==2){ // && calculatedAmountTiles * bands == tileOffsets.length){
+            else if (planarConfiguration==2){
                 processTileByBand();
             }
             else{
@@ -256,7 +242,7 @@ public class ReaderCOGParallel extends MatrixReader{
 
             MatrixBlock tileMatrix = new MatrixBlock(tileLength, tileWidth*bands, sparse);
 
-            if( sparse ) {
+            if(sparse) {
                 tileMatrix.allocateAndResetSparseBlock(true, SparseBlock.Type.CSR);
                 tileMatrix.getSparseBlock().allocate(0,  tileLength*tileWidth*bands);
             }
@@ -296,16 +282,19 @@ public class ReaderCOGParallel extends MatrixReader{
                 if (sparse) {
                     // if outputMatrix is sparse apply synchronisation if tiles are more narrow then outputMatrix
                     SparseBlock sblock = _dest.getSparseBlock();
-                    for (int i = 0; i < tileLength; i++) {
-                        if (sblock.get(rowOffset + i) == null) {
-                            sblock.allocate(rowOffset + i);
-                        }
-                        synchronized (sblock.get(rowOffset + i)) {
-                            _dest.appendRowToSparse(sblock, tileMatrix, i,
-                                    rowOffset,
-                                    colOffset, true);
+                    if (tileWidth < clen) {
+                        for (int i = 0; i < tileLength; i++) {
+                            synchronized (sblock.get(rowOffset + i)) {
+                                _dest.appendRowToSparse(sblock, tileMatrix, i,
+                                        rowOffset,
+                                        colOffset, true);
+                            }
                         }
                     }
+                    else {
+                        _dest.appendToSparse(tileMatrix, rowOffset, colOffset);
+                    }
+
                 }
                 else {
                     _dest.copy(rowOffset, rowOffset + tileLength - 1,
@@ -366,32 +355,15 @@ public class ReaderCOGParallel extends MatrixReader{
                     // if outputMatrix is sparse apply synchronisation if tiles are more narrow then outputMatrix
                     SparseBlock sblock = _dest.getSparseBlock();
                     if (tileWidth < clen) {
-                        if (sblock instanceof SparseBlockMCSR && sblock.get(rowOffset) != null) {
-                            for (int i = 0; i < tileLength; i++) {
-                                if (sblock.get(rowOffset + i) == null) {
-                                    sblock.allocate(rowOffset + i);
-                                }
-                                synchronized (sblock.get(rowOffset + i)) {
-                                    _dest.appendRowToSparse(sblock, tileMatrix, i,
-                                            rowOffset,
-                                            colOffset, true);
-                                }
-                            }
-                        }
-                        else{
-                            synchronized (_dest) {
-                                _dest.appendToSparse(
-                                        tileMatrix,
+                        for (int i = 0; i < tileLength; i++)
+                            synchronized (sblock.get(rowOffset + i)) {
+                                _dest.appendRowToSparse(sblock, tileMatrix, i,
                                         rowOffset,
-                                        colOffset);
+                                        colOffset, true);
                             }
-                        }
                     }
                     else {
-                        _dest.appendToSparse(
-                                tileMatrix,
-                                rowOffset,
-                                colOffset);
+                        _dest.appendToSparse(tileMatrix, rowOffset, colOffset);
                     }
                 }
                 else {

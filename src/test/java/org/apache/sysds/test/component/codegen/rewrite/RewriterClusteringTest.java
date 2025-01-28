@@ -125,7 +125,7 @@ public class RewriterClusteringTest {
 				//	return; // Skip
 				// First, build all possible subtrees
 				//System.out.println("Eval:\n" + expr.toParsableString(ctx, true));
-				List<RewriterStatement> subExprs = RewriterUtils.generateSubtrees(expr, ctx, pruneDataSubexrBiggerThan);
+				List<RewriterStatement> subExprs = RewriterSearchUtils.generateSubtrees(expr, ctx, pruneDataSubexrBiggerThan);
 				if (subExprs.size() > pruneDataSubexrBiggerThan)
 					System.out.println("Critical number of subtrees: " + subExprs.size());
 				if (subExprs.size() > 2 * pruneDataSubexrBiggerThan) {

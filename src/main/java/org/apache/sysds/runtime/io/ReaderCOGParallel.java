@@ -283,11 +283,20 @@ public class ReaderCOGParallel extends MatrixReader{
                     // if outputMatrix is sparse apply synchronisation if tiles are more narrow then outputMatrix
                     SparseBlock sblock = _dest.getSparseBlock();
                     if (tileWidth < clen) {
-                        for (int i = 0; i < tileLength; i++) {
-                            synchronized (sblock.get(rowOffset + i)) {
-                                _dest.appendRowToSparse(sblock, tileMatrix, i,
+                        if (sblock instanceof SparseBlockMCSR && sblock.get(rowOffset) != null) {
+                            for (int i = 0; i < tileLength; i++)
+                                synchronized (sblock.get(rowOffset + i)) {
+                                    _dest.appendRowToSparse(sblock, tileMatrix, i,
+                                            rowOffset,
+                                            colOffset, true);
+                                }
+                        }
+                        else{
+                            synchronized (_dest) {
+                                _dest.appendToSparse(
+                                        tileMatrix,
                                         rowOffset,
-                                        colOffset, true);
+                                        colOffset);
                             }
                         }
                     }
@@ -355,12 +364,22 @@ public class ReaderCOGParallel extends MatrixReader{
                     // if outputMatrix is sparse apply synchronisation if tiles are more narrow then outputMatrix
                     SparseBlock sblock = _dest.getSparseBlock();
                     if (tileWidth < clen) {
-                        for (int i = 0; i < tileLength; i++)
-                            synchronized (sblock.get(rowOffset + i)) {
-                                _dest.appendRowToSparse(sblock, tileMatrix, i,
+                        if (sblock instanceof SparseBlockMCSR && sblock.get(rowOffset) != null) {
+                            for (int i = 0; i < tileLength; i++)
+                                synchronized (sblock.get(rowOffset + i)) {
+                                    _dest.appendRowToSparse(sblock, tileMatrix, i,
+                                            rowOffset,
+                                            colOffset, true);
+                                }
+                        }
+                        else{
+                            synchronized (_dest) {
+                                _dest.appendToSparse(
+                                        tileMatrix,
                                         rowOffset,
-                                        colOffset, true);
+                                        colOffset);
                             }
+                        }
                     }
                     else {
                         _dest.appendToSparse(tileMatrix, rowOffset, colOffset);

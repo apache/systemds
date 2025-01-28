@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
 import org.apache.commons.lang3.mutable.MutableObject;
@@ -68,11 +87,6 @@ public class SparsityEstimationTest {
 
 		System.out.println("Dense cost:  " + RewriterCostEstimator.estimateCost(stmt, ctx));
 		System.out.println("Sparse cost: " + RewriterCostEstimator.computeCostFunction(costFunction, RewriterCostEstimator.DEFAULT_COST_FN, (el, tpl) -> nnzs.get(el.getChild(0)), assertionRef.getValue(), ctx));
-
-		/*System.out.println(RewriterCostEstimator.estimateCost(stmt, RewriterCostEstimator.DEFAULT_COST_FN, el -> {
-			System.out.println(el.getChild(0));
-			return nnzs.get(el.getChild(0));
-		}, ctx, null));*/
 	}
 
 	@Test
@@ -93,7 +107,6 @@ public class SparsityEstimationTest {
 
 		RewriterAssertionUtils.buildImplicitAssertion(rule.getStmt1(), rule.getStmt1().getAssertions(ctx), rule.getStmt1(), ctx);
 		RewriterAssertionUtils.buildImplicitAssertion(rule.getStmt2(), rule.getStmt1().getAssertions(ctx), rule.getStmt2(), ctx);
-		//rule.getStmt2().unsafePutMeta("_assertions", rule.getStmt1().getAssertions(ctx));
 
 		RewriterCostEstimator.compareCosts(rule.getStmt1(), rule.getStmt2(), rule.getStmt1().getAssertions(ctx), ctx, true, 5, false);
 	}
@@ -141,7 +154,6 @@ public class SparsityEstimationTest {
 
 		RewriterAssertionUtils.buildImplicitAssertion(rule.getStmt1(), rule.getStmt1().getAssertions(ctx), rule.getStmt1(), ctx);
 		RewriterAssertionUtils.buildImplicitAssertion(rule.getStmt2(), rule.getStmt1().getAssertions(ctx), rule.getStmt2(), ctx);
-		//rule.getStmt2().unsafePutMeta("_assertions", rule.getStmt1().getAssertions(ctx));
 
 		List<Tuple3<List<Number>, Long, Long>> costs = RewriterCostEstimator.compareCosts(rule.getStmt1(), rule.getStmt2(), rule.getStmt1().getAssertions(ctx), ctx, false, 5, false);
 		System.out.println(costs);

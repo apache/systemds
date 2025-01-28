@@ -1383,7 +1383,6 @@ public class RewriterUtils {
 				}
 			}
 
-			//System.out.println("mOptionCopy: " + mOptionCpy);
 			out.addAll(mergeSubtreeCombinations(stmt, indices, mOptionCpy, ctx, maxCombinations));
 			if (out.size() > maxCombinations) {
 				System.out.println("Aborting early due to too many combinations");

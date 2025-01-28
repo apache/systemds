@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
@@ -78,7 +97,7 @@ public class DMLCodeGenTest {
 
 	@Test
 	public void test5() {
-		String ruleStr2 = "MATRIX:A\nLITERAL_INT:1,2\n-(+(1,A), 1)\n=>\n*(1,A)";
+		String ruleStr2 = "MATRIX:A\nLITERAL_FLOAT:1,2\n-(+(1,A), 1)\n=>\n*(1,A)";
 		RewriterRule rule2 = RewriterUtils.parseRule(ruleStr2, ctx);
 
 		assert RewriterRuleCreator.validateRuleCorrectnessAndGains(rule2, ctx);
@@ -101,7 +120,6 @@ public class DMLCodeGenTest {
 
 	@Test
 	public void test8() {
-		// TODO: This rule has been ignored, but why?
 		String ruleStr = "MATRIX:8cbda53a-49a8-479f-bf34-baeeb1eb8b0f,is_LT_infinite,flip_pos\n" +
 				"\n" +
 				"+(%*%(is_LT_infinite,flip_pos),%*%(8cbda53a-49a8-479f-bf34-baeeb1eb8b0f,flip_pos))\n" +
@@ -133,7 +151,6 @@ public class DMLCodeGenTest {
 
 	@Test
 	public void testFused1() {
-		// TODO: This rule has been ignored, but why?
 		String ruleStr = "MATRIX:A\nLITERAL_FLOAT:0.0\n" +
 				"sum(!=(0.0,A))\n" +
 				"=>\n" +
@@ -150,7 +167,6 @@ public class DMLCodeGenTest {
 
 	@Test
 	public void testFused2() {
-		// TODO: This rule has been ignored, but why?
 		String ruleStr = "MATRIX:A,B\nLITERAL_FLOAT:0.0,1.0\n" +
 				"-(0.0, -(*(A,B), 1.0))\n" +
 				"=>\n" +
@@ -167,7 +183,6 @@ public class DMLCodeGenTest {
 
 	@Test
 	public void testFused3() {
-		// TODO: This rule has been ignored, but why?
 		String ruleStr = "MATRIX:A,B\nLITERAL_FLOAT:0.0,1.0\n" +
 				"+(-(A,B),A)\n" +
 				"=>\n" +
@@ -184,7 +199,6 @@ public class DMLCodeGenTest {
 
 	@Test
 	public void testFused4() {
-		// TODO: const() should not contain a var for consistency
 		String ruleStr = "MATRIX:A,B,C\nLITERAL_FLOAT:0.0,1.0\n" +
 				"1-*(A, const(A, 0.0))\n" +
 				"=>\n" +
@@ -201,7 +215,8 @@ public class DMLCodeGenTest {
 
 		assert RewriterRuleCreator.validateRuleCorrectness(rule, ctx);
 
-		assert RewriterRuleCreator.validateRuleApplicability(rule, ctx, true, null);
+		// As we have disabled operator fusion
+		assert !RewriterRuleCreator.validateRuleApplicability(rule, ctx, true, null);
 	}
 
 	@Test

@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
 import org.apache.sysds.hops.rewriter.RewriterRule;
@@ -24,7 +43,7 @@ public class CodeGenConditionTests {
 		canonicalConverter = RewriterUtils.buildCanonicalFormConverter(ctx, false);
 	}
 
-	//@Test
+	@Test
 	public void test1() {
 		String ruleStr = "MATRIX:A\n" +
 				"\n" +
@@ -35,10 +54,9 @@ public class CodeGenConditionTests {
 		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
 
 		List<CodeGenCondition> cgcs = CodeGenCondition.buildCondition(List.of(rule), 1, ctx);
-		System.out.println(cgcs);
 	}
 
-	//@Test
+	@Test
 	public void test2() {
 		String ruleStr = "MATRIX:A\n" +
 				"\n" +
@@ -70,7 +88,6 @@ public class CodeGenConditionTests {
 		fNames.put(rule3, "rule3");
 
 		List<CodeGenCondition> cgcs = CodeGenCondition.buildCondition(List.of(rule, rule2, rule3), 1, ctx);
-		System.out.println(cgcs);
 		System.out.println(CodeGenCondition.getSelectionString(cgcs, 0, fNames, ctx));
 	}
 
@@ -108,11 +125,6 @@ public class CodeGenConditionTests {
 
 		RewriterRule rule4 = RewriterUtils.parseRule(ruleStr4, ctx);
 
-		/*String ruleStr5 = "FLOAT:A,B,C\n" +
-				"\n" +
-				"+(cast.MATRIX(A), B)\n" +
-				"=>\n" +
-				"cast.MATRIX(+(A,B))";*/
 		String ruleStr5 = "MATRIX:B,C\nFLOAT:a\n" +
 				"\n" +
 				"+(*(a,C),*(B,a))\n" +
@@ -132,25 +144,4 @@ public class CodeGenConditionTests {
 		System.out.println(cgcs);
 		System.out.println(CodeGenCondition.getSelectionString(cgcs, 0, fNames, ctx));
 	}
-
-
-
-	/*@Test
-	public void codeGen() {
-		try {
-			List<String> lines = Files.readAllLines(Paths.get(RewriteAutomaticallyGenerated.FILE_PATH));
-			RewriterRuleSet ruleSet = RewriterRuleSet.deserialize(lines, ctx);
-			Map<RewriterRule, String> fNames = new HashMap<>();
-			int ruleCtr = 1;
-			for (RewriterRule rr : ruleSet.getRules())
-				fNames.put(rr, "rule_" + (ruleCtr++));
-
-			List<CodeGenCondition> cgcs = CodeGenCondition.buildCondition(ruleSet.getRules(), 5, ctx);
-			System.out.println(CodeGenCondition.getSelectionString(cgcs, 0, fNames, ctx));
-			//System.out.println(ruleSet.toJavaCode("GeneratedRewriteClass", true));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}*/
-
 }

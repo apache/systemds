@@ -41,6 +41,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ArrayIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.CombinedIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.SliceResult;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IIterate;
@@ -145,6 +146,7 @@ public class IndexesTest {
 			tests.add(createTwoRange(1, 10, 22, 30));
 			tests.add(createTwoRange(9, 11, 22, 30));
 			tests.add(createTwoRange(9, 11, 22, 60));
+			tests.add(createCombined(9, 11, 22));
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -350,6 +352,19 @@ public class IndexesTest {
 	}
 
 	@Test
+	public void equalsCombine(){
+		RangeIndex a = new RangeIndex(9, 11);
+		SingleIndex b = new SingleIndex(22);
+		IColIndex c = a.combine(b);
+		if(eq(expected, c)){
+			LOG.error(c.size());
+			compare(expected, c);
+			compare(c, actual);
+		}
+
+	}
+
+	@Test
 	public void equalsItself() {
 		assertEquals(actual, actual);
 	}
@@ -395,10 +410,16 @@ public class IndexesTest {
 
 	@Test
 	public void combineTwoAround() {
-		IColIndex b = new TwoIndex(expected[0] - 1, expected[expected.length - 1] + 1);
-		IColIndex c = actual.combine(b);
-		assertTrue(c.containsStrict(actual, b));
-		assertTrue(c.containsStrict(b, actual));
+		try {
+			IColIndex b = new TwoIndex(expected[0] - 1, expected[expected.length - 1] + 1);
+			IColIndex c = actual.combine(b);
+			assertTrue(c.containsStrict(actual, b));
+			assertTrue(c.containsStrict(b, actual));
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	@Test
@@ -417,7 +438,10 @@ public class IndexesTest {
 
 	@Test
 	public void estimateInMemorySizeIsNotToBig() {
-		assertTrue(MemoryEstimates.intArrayCost(expected.length) >= actual.estimateInMemorySize() - 16);
+		if(actual instanceof CombinedIndex)
+			assertTrue(MemoryEstimates.intArrayCost(expected.length) >= actual.estimateInMemorySize() - 64);
+		else
+			assertTrue(MemoryEstimates.intArrayCost(expected.length) >= actual.estimateInMemorySize() - 16);
 	}
 
 	@Test
@@ -594,6 +618,17 @@ public class IndexesTest {
 		compare(expected, actual.shift(i), i);
 	}
 
+	private static boolean eq(int[] expected, IColIndex actual) {
+		if(expected.length == actual.size()) {
+			for(int i = 0; i < expected.length; i++)
+				if(expected[i] != actual.get(i))
+					return false;
+			return true;
+		}
+		else
+			return false;
+	}
+
 	public static void compare(int[] expected, IColIndex actual) {
 		assertEquals(expected.length, actual.size());
 		for(int i = 0; i < expected.length; i++)
@@ -672,5 +707,20 @@ public class IndexesTest {
 		for(int i = l2, j = u1 - l1; i < u2; i++, j++)
 			exp[j] = i;
 		return new Object[] {exp, c};
+	}
+
+	private static Object[] createCombined(int l1, int u1, int o) {
+		RangeIndex a = new RangeIndex(l1, u1);
+		SingleIndex b = new SingleIndex(o);
+		IColIndex c = a.combine(b);
+		int[] exp = new int[u1 - l1 + 1];
+
+		for(int i = l1, j = 0; i < u1; i++, j++)
+			exp[j] = i;
+
+		exp[exp.length - 1] = o;
+
+		return new Object[] {exp, c};
+
 	}
 }

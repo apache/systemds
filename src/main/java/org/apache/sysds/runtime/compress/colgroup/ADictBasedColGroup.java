@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.sysds.runtime.compress.colgroup.dictionary.AIdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
@@ -63,8 +64,8 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 
 	@Override
 	public final void decompressToDenseBlockTransposed(DenseBlock db, int rl, int ru) {
-		if(_dict instanceof IdentityDictionary) {
-			final MatrixBlockDictionary md = ((IdentityDictionary) _dict).getMBDict();
+		if(_dict instanceof AIdentityDictionary) {
+			final MatrixBlockDictionary md = ((AIdentityDictionary) _dict).getMBDict();
 			final MatrixBlock mb = md.getMatrixBlock();
 			// The dictionary is never empty.
 			if(mb.isInSparseFormat())
@@ -87,8 +88,8 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 
 	@Override
 	public void decompressToSparseBlockTransposed(SparseBlockMCSR sb, int nColOut) {
-		if(_dict instanceof IdentityDictionary) {
-			final MatrixBlockDictionary md = ((IdentityDictionary) _dict).getMBDict();
+		if(_dict instanceof AIdentityDictionary) {
+			final MatrixBlockDictionary md = ((AIdentityDictionary) _dict).getMBDict();
 			final MatrixBlock mb = md.getMatrixBlock();
 			// The dictionary is never empty.
 			if(mb.isInSparseFormat())
@@ -123,8 +124,8 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 
 	@Override
 	public final void decompressToDenseBlock(DenseBlock db, int rl, int ru, int offR, int offC) {
-		if(_dict instanceof IdentityDictionary) {
-			final MatrixBlockDictionary md = ((IdentityDictionary) _dict).getMBDict();
+		if(_dict instanceof AIdentityDictionary) {
+			final MatrixBlockDictionary md = ((AIdentityDictionary) _dict).getMBDict();
 			final MatrixBlock mb = md.getMatrixBlock();
 			// The dictionary is never empty.
 			if(mb.isInSparseFormat())
@@ -147,9 +148,8 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 
 	@Override
 	public final void decompressToSparseBlock(SparseBlock sb, int rl, int ru, int offR, int offC) {
-		if(_dict instanceof IdentityDictionary) {
-
-			final MatrixBlockDictionary md = ((IdentityDictionary) _dict).getMBDict();
+		if(_dict instanceof AIdentityDictionary) {
+			final MatrixBlockDictionary md = ((AIdentityDictionary) _dict).getMBDict();
 			final MatrixBlock mb = md.getMatrixBlock();
 			// The dictionary is never empty.
 			if(mb.isInSparseFormat())
@@ -249,8 +249,8 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 			return null;
 
 		// is candidate for identity mm.
-		if(_dict instanceof IdentityDictionary //
-		   && !((IdentityDictionary) _dict).withEmpty()
+		if(_dict instanceof AIdentityDictionary //
+		   && !((AIdentityDictionary) _dict).withEmpty()
 			&& right.getNumRows() == _colIndexes.size() //
 			&& allowShallowIdentityRightMult()){
 

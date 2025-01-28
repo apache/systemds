@@ -730,7 +730,14 @@ public class ColGroupTest extends ColGroupBase {
 
 	@Test
 	public void UA_PRODUCT_ROW() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uar*", 1));
+		try {
+			UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uar*", 1));
+		}
+		catch(AssertionError e) {
+			LOG.error(base);
+			LOG.error(other);
+			throw e;
+		}
 	}
 
 	@Test
@@ -1303,7 +1310,6 @@ public class ColGroupTest extends ColGroupBase {
 		selection(mb, ret);
 	}
 
-
 	@Test
 	public void sparseSelectionEmptyRows() {
 		MatrixBlock mb = CLALibSelectionMultTest.createSelectionMatrix(nRow, 50, true);
@@ -1330,23 +1336,22 @@ public class ColGroupTest extends ColGroupBase {
 		MatrixBlock ret1 = new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), ret.isInSparseFormat());
 		ret1.allocateBlock();
 
-
 		MatrixBlock ret2 = new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), ret.isInSparseFormat());
 		ret2.allocateBlock();
 
 		try {
 
 			base.selectionMultiply(selection, points, ret1, 0, selection.getNumRows());
-			other.selectionMultiply(selection, points, ret2,  0, selection.getNumRows());
+			other.selectionMultiply(selection, points, ret2, 0, selection.getNumRows());
 
-			TestUtils.compareMatricesBitAvgDistance(ret1, ret2, 0, 0, base.getClass().getSimpleName() + " vs " + other.getClass().getSimpleName());
-		
-			
+			TestUtils.compareMatricesBitAvgDistance(ret1, ret2, 0, 0,
+				base.getClass().getSimpleName() + " vs " + other.getClass().getSimpleName());
+
 		}
 		catch(NotImplementedException e) {
 			// okay
 		}
-		catch(Exception e){
+		catch(Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}

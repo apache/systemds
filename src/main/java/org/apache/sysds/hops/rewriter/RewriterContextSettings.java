@@ -333,7 +333,8 @@ public class RewriterContextSettings {
 		builder.append("*2(MATRIX)::MATRIX\n");
 
 		for (String t : SCALARS) {
-			builder.append("ifelse(BOOL," + t + "," + t + ")::" + t + "\n");
+			for (String t2 : SCALARS)
+				builder.append("ifelse(BOOL," + t + "," + t2 + ")::" + RewriterUtils.convertibleType(t, t2) + "\n");
 		}
 
 

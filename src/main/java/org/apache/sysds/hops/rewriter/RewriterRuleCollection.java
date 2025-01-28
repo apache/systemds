@@ -817,18 +817,14 @@ public class RewriterRuleCollection {
 				.parseGlobalVars("LITERAL_INT:1")
 				.parseGlobalVars("LITERAL_FLOAT:0.0")
 				.withParsedStatement("diag(A)", hooks)
-				.toParsedStatement("$4:_m($1:_idx(1, nrow(A)), $2:_idx(1, ncol(A)), ifelse(==($1,$2), [](A, $1, $2), 0.0))", hooks)
+				.toParsedStatement("$4:_m($1:_idx(1, nrow(A)), $2:_idx(1, ncol(A)), $5:ifelse(==($1,$2), [](A, $1, $2), 0.0))", hooks)
 				.apply(hooks.get(1).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
 				.apply(hooks.get(2).getId(), stmt -> stmt.unsafePutMeta("idxId", UUID.randomUUID()), true) // Assumes it will never collide
 				.apply(hooks.get(4).getId(), (stmt, match) -> {
 					UUID id = UUID.randomUUID();
 					stmt.unsafePutMeta("ownerId", id);
 					stmt.getChild(0).unsafePutMeta("ownerId", id);
-
 					RewriterStatement aRef = stmt.getChild(0, 1, 0);
-
-					//System.out.println("GETTING: ");
-					//System.out.println(match.getNewExprRoot().getAssertions(ctx).getAssertionStatement(aRef.getNCol(), null));
 					match.getNewExprRoot().getAssertions(ctx).addEqualityAssertion(aRef.getNCol(), aRef.getNRow(), match.getNewExprRoot());
 				}, true) // Assumes it will never collide
 				.build()

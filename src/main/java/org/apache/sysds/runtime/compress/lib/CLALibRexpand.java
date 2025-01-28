@@ -31,7 +31,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -118,7 +118,7 @@ public final class CLALibRexpand {
 		boolean containsNull, int k) throws Exception {
 		// create a single DDC Column group.
 		final IColIndex i = ColIndexFactory.create(0, nColOut);
-		final ADictionary d = new IdentityDictionary(nColOut, containsNull);
+		final IDictionary d = IdentityDictionary.create(nColOut, containsNull);
 		final AMapToData m = MapToFactory.create(seqHeight, map, nColOut + (containsNull ? 1 : 0), k);
 		final AColGroup g = ColGroupDDC.create(i, d, m, null);
 

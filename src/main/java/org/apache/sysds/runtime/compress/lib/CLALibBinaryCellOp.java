@@ -220,6 +220,7 @@ public final class CLALibBinaryCellOp {
 			binaryMVRowMultiThread(oldColGroups, v, op, left, newColGroups, isRowSafe, k);
 
 		ret.allocateColGroupList(newColGroups);
+		ret.setOverlapping(m1.isOverlapping());
 		ret.examSparsity(op.getNumThreads());
 		return ret;
 	}

@@ -38,6 +38,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -146,7 +147,7 @@ public class CLALibLMMTest {
 			cmb = (CompressedMatrixBlock) CompressedMatrixBlockFactory.compress(mb, 1).getLeft();
 			genTests(tests, mb, cmb, "Sparse2");
 
-			IdentityDictionary id = new IdentityDictionary(10);
+			IDictionary id = IdentityDictionary.create(10);
 			AMapToData d = MappingTestUtil.createRandomMap(100, 10, new Random(23));
 			AColGroup idg = ColGroupDDC.create(ColIndexFactory.create(10), id, d, null);
 			cmb = new CompressedMatrixBlock(100, 10);
@@ -162,7 +163,7 @@ public class CLALibLMMTest {
 			mb = CompressedMatrixBlock.getUncompressed(cmb);
 			genTests(tests, mb, cmb, "Identity2");
 
-			id = new IdentityDictionary(10, true);
+			id = IdentityDictionary.create(10, true);
 
 			// continuous index range
 			d = MappingTestUtil.createRandomMap(100, 11, new Random(33));
@@ -259,7 +260,7 @@ public class CLALibLMMTest {
 
 	private static MatrixBlock createSelectionMatrix(final int nRow, final int nRowLeft, boolean emptyRows) {
 		MatrixBlock tcmb;
-		IdentityDictionary id = new IdentityDictionary(nRow, emptyRows);
+		IDictionary id = IdentityDictionary.create(nRow, emptyRows);
 		AMapToData d = MappingTestUtil.createRandomMap(nRowLeft, nRow + (emptyRows ? 1 : 0), new Random(33));
 		AColGroup idg = ColGroupDDC.create(ColIndexFactory.create(nRow), id, d, null);
 		tcmb = new CompressedMatrixBlock(nRowLeft, nRow);

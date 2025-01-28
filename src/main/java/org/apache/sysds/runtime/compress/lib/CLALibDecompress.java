@@ -295,7 +295,6 @@ public final class CLALibDecompress {
 
 	private static void decompressDenseSingleThread(MatrixBlock ret, List<AColGroup> filteredGroups, int rlen,
 		int blklen, double[] constV, double eps, boolean overlapping) {
-
 		final DenseBlock db = ret.getDenseBlock();
 		final int nCol = ret.getNumColumns();
 		for(int i = 0; i < rlen; i += blklen) {
@@ -303,7 +302,7 @@ public final class CLALibDecompress {
 			final int ru = Math.min(i + blklen, rlen);
 			for(AColGroup grp : filteredGroups)
 				grp.decompressToDenseBlock(db, rl, ru);
-			if(constV != null && !ret.isInSparseFormat())
+			if(constV != null)
 				addVector(db, nCol, constV, eps, rl, ru);
 		}
 	}
@@ -389,9 +388,9 @@ public final class CLALibDecompress {
 			double max = -Double.MAX_VALUE;
 			double min = Double.MAX_VALUE;
 			for(double v : constV) {
-				if(v > max)
+				if(v > max && Double.isFinite(v))
 					max = v;
-				if(v < min)
+				if(v < min && Double.isFinite(v))
 					min = v;
 			}
 			final double eps = (max + 1e-4 - min) * 1e-10;

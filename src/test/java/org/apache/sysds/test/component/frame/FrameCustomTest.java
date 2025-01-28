@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.frame;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -30,6 +31,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.Array;
+import org.apache.sysds.runtime.frame.data.columns.StringArray;
 import org.apache.sysds.runtime.frame.data.lib.FrameLibAppend;
 import org.apache.sysds.runtime.frame.data.lib.FrameLibDetectSchema;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -96,5 +99,24 @@ public class FrameCustomTest {
 
 		assertTrue(c.getColumnName(0).equals("Hi"));
 		assertTrue(c.getColumnName(1).equals("There"));
+	}
+
+
+	@Test 
+	public void detectSchema(){
+		FrameBlock f = new FrameBlock(new Array[]{new StringArray(new String[]{"00000001", "e013af63"})});
+		assertEquals("HASH32", FrameLibDetectSchema.detectSchema(f, 1).get(0,0));
+	}
+
+	@Test 
+	public void detectSchema2(){
+		FrameBlock f = new FrameBlock(new Array[]{new StringArray(new String[]{"10000001", "e013af63"})});
+		assertEquals("HASH32", FrameLibDetectSchema.detectSchema(f, 1).get(0,0));
+	}
+
+	@Test 
+	public void detectSchema3(){
+		FrameBlock f = new FrameBlock(new Array[]{new StringArray(new String[]{"e013af63","10000001"})});
+		assertEquals("HASH32", FrameLibDetectSchema.detectSchema(f, 1).get(0,0));
 	}
 }

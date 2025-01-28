@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.APreAgg;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.AIdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -776,7 +777,7 @@ public final class CLALibLeftMultBy {
 				// Multiply out the PreAggregate to the output matrix.
 				for(int j = gl, p = 0; j < gu; j += skip, p++) {
 					final APreAgg cg = preAggCGs.get(j);
-					if(cg.getDictionary() instanceof IdentityDictionary)
+					if(cg.getDictionary() instanceof AIdentityDictionary)
 						continue;
 
 					allocateOrResetTmpRes(ret, tmpRes, rowBlockSize);
@@ -790,7 +791,7 @@ public final class CLALibLeftMultBy {
 
 	private static void preAllocate(List<APreAgg> preAggCGs, int j, int rut, int rlt, double[][] preAgg, int p) {
 		final APreAgg cg = preAggCGs.get(j);
-		if(cg.getDictionary() instanceof IdentityDictionary)
+		if(cg.getDictionary() instanceof AIdentityDictionary)
 			return;
 		final int preAggNCol = cg.getPreAggregateSize();
 

@@ -20,26 +20,42 @@
 # -------------------------------------------------------------
 from typing import List
 
+import numpy as np
+
 from systemds.scuro.modality.type import ModalityType
 
 
 class Modality:
 
-    def __init__(self, modality_type: ModalityType):
+    def __init__(self, modalityType: ModalityType, metadata=None):
         """
         Parent class of the different Modalities (unimodal & multimodal)
         :param modality_type: Type of the modality
         """
-        self.type = modality_type
-        self.schema = modality_type.get_schema()
+        self.modality_type = modalityType
+        self.schema = modalityType.get_schema()
         self.data = None
         self.data_type = None
         self.cost = None
         self.shape = None
-        self.data_index = None
+        self.dataIndex = None
+        self.metadata = metadata
 
     def get_modality_names(self) -> List[str]:
         """
         Extracts the individual unimodal modalities for a given transformed modality.
         """
-        return [modality.name for modality in ModalityType if modality in self.type]
+        return [modality.name for modality in ModalityType if modality in self.modality_type]
+    
+    
+    def update_metadata(self):
+        md_copy = self.metadata
+        self.metadata = {}
+        for i, (md_k, md_v) in enumerate(md_copy.items()):
+            updated_md = self.modality_type.update_metadata(md_v, self.data[i])
+            self.metadata[md_k] = updated_md
+            
+            
+    def window(self, windowSize, aggregationFunction, fieldName):
+        pass
+    

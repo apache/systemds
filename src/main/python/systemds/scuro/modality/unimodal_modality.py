@@ -37,25 +37,42 @@ class UnimodalModality(Modality):
         :param data_loader: Defines how the raw data should be loaded
         :param modality_type: Type of the modality
         """
-        super().__init__(modality_type)
+        super().__init__(modality_type, None)
         self.data_loader = data_loader
-        self.join_modality = None
+        
+    def copy_from_instance(self):
+        return type(self)(self.data_loader, self.modality_type)
 
     def extract_raw_data(self):
         """
         Uses the data loader to read the raw data from a specified location
         and stores the data in the data location.
         """
-        self.data = self.data_loader.load()
+        self.data, self.metadata = self.data_loader.load()
 
-    def apply_representation(self, representation):
-        new_modality = TransformedModality(self.type, representation)
+    def join(self, other, join_condition):
+        if isinstance(other, UnimodalModality):
+            self.data_loader.update_chunk_sizes(other.data_loader)
+        
+        joined_modality = JoinedModality(
+            reduce(or_, [other.modality_type], self.modality_type),
+            self,
+            other,
+            join_condition,
+            self.data_loader.chunk_size is not None
+        )
+
+        return joined_modality
+
+    # TODO: add aggregation method like in join
+    def apply_representation(self, representation, aggregation):
+        new_modality = TransformedModality(self.modality_type, representation, self.data_loader.metadata)
         new_modality.data = []
 
-        if self.data_loader.get_chunk_size():
+        if self.data_loader.chunk_size:
             while (
-                self.data_loader.get_next_chunk_number()
-                < self.data_loader.get_num_total_chunks()
+                self.data_loader.next_chunk
+                < self.data_loader.num_chunks
             ):
                 self.extract_raw_data()
                 new_modality.data.extend(representation.transform(self.data))
@@ -63,18 +80,6 @@ class UnimodalModality(Modality):
             if not self.data:
                 self.extract_raw_data()
             new_modality.data = representation.transform(self.data)
-
+            
+        new_modality.update_metadata()
         return new_modality
-
-    def join(self, other, join_condition):
-        joined_modality = JoinedModality(
-            reduce(or_, other.type, self.type), self, other, join_condition
-        )
-
-        if (
-            not self.data_loader.get_chunk_size()
-            and not other.data_loader.get_chunk_size()
-        ):
-            joined_modality.execute()
-
-        return joined_modality

@@ -119,6 +119,7 @@ class TestDataLoaders(unittest.TestCase):
         cls.data_generator = TestDataGenerator([video, audio, text], cls.test_file_path)
         cls.data_generator.create_multimodal_data(cls.num_instances)
 
+        #TODO: adapt the representation so they return non aggregated values. Apply windowing operation instead
         cls.bert = text.apply_representation(Bert())
         cls.mel_spe = audio.apply_representation(MelSpectrogram())
         cls.resnet = video.apply_representation(ResNet())

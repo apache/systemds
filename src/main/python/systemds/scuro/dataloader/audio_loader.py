@@ -22,7 +22,7 @@ from typing import List, Optional, Union
 
 import librosa
 from systemds.scuro.dataloader.base_loader import BaseLoader
-
+from systemds.scuro.utils.schema_helpers import create_timestamps
 
 class AudioLoader(BaseLoader):
     def __init__(
@@ -37,7 +37,7 @@ class AudioLoader(BaseLoader):
         self.file_sanity_check(file)
         audio, sr = librosa.load(file)
         self.metadata[file] = {"sample_rate": sr, "length": audio.shape[0]}
-        self.metadata[file]["timestamp"] = self.create_timestamps(
+        self.metadata[file]["timestamp"] = create_timestamps(
             self.metadata[file]["sample_rate"], self.metadata[file]["length"]
         )
         self.data.append(audio)

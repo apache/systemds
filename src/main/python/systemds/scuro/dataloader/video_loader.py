@@ -23,6 +23,7 @@ from typing import List, Optional, Union
 import numpy as np
 
 from systemds.scuro.dataloader.base_loader import BaseLoader
+from systemds.scuro.utils.schema_helpers import create_timestamps
 import cv2
 
 
@@ -43,14 +44,14 @@ class VideoLoader(BaseLoader):
             raise f"Could not read video at path: {file}"
 
         self.metadata[file] = {
-            "fps": int(cap.get(cv2.CAP_PROP_FPS)),
+            "fps": cap.get(cv2.CAP_PROP_FPS),
             "length": int(cap.get(cv2.CAP_PROP_FRAME_COUNT)),
             "width": int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
             "height": int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
             "num_channels": 3,
         }
 
-        self.metadata[file]["timestamp"] = self.create_timestamps(
+        self.metadata[file]["timestamp"] = create_timestamps(
             self.metadata[file]["fps"], self.metadata[file]["length"]
         )
 

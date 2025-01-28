@@ -33,7 +33,7 @@ class TestDataGenerator:
         self.balanced = balanced
 
         for modality in modalities:
-            mod_path = f"{self.path}/{modality.type.name}/"
+            mod_path = f"{self.path}/{modality.modality_type.name}/"
             os.mkdir(mod_path)
             modality.file_path = mod_path
         self.labels = []
@@ -69,11 +69,11 @@ class TestDataGenerator:
                 speed_slow += 1
 
             for modality in self.modalities:
-                if modality.type == ModalityType.VIDEO:
+                if modality.modality_type == ModalityType.VIDEO:
                     self.__create_video_data(idx, duration, 30, speed_factor)
-                if modality.type == ModalityType.AUDIO:
+                if modality.modality_type == ModalityType.AUDIO:
                     self.__create_audio_data(idx, duration, speed_factor)
-                if modality.type == ModalityType.TEXT:
+                if modality.modality_type == ModalityType.TEXT:
                     self.__create_text_data(idx, speed_factor)
 
         np.save(f"{self.path}/labels.npy", np.array(self.labels))

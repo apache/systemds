@@ -88,7 +88,7 @@ class TestDataLoaders(unittest.TestCase):
         ).apply_representation(MelSpectrogram())
 
         for i in range(0, self.num_instances):
-            assert round(sum(self.audio_ref.data[i]), 4) == round(sum(audio.data[i]), 4)
+            assert round(sum(sum(self.audio_ref.data[i])), 4) == round(sum(sum(audio.data[i])), 4)
 
     def test_load_video_data_from_file(self):
         video_data_loader = VideoLoader(self.video_path, self.indizes)

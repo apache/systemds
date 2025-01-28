@@ -21,7 +21,6 @@
 import os
 from abc import ABC, abstractmethod
 from typing import List, Optional, Union
-import numpy as np
 
 
 class BaseLoader(ABC):
@@ -46,7 +45,24 @@ class BaseLoader(ABC):
         self._chunk_size = None
 
         if chunk_size:
-            self.update_chunk_size(chunk_size)
+            self.chunk_size = chunk_size
+
+    @property
+    def chunk_size(self):
+        return self._chunk_size
+
+    @chunk_size.setter
+    def chunk_size(self, value):
+        self._chunk_size = value
+        self._num_chunks = int(len(self.indices) / self._chunk_size)
+        
+    @property
+    def num_chunks(self):
+        return self._num_chunks
+    
+    @property
+    def next_chunk(self):
+        return self._next_chunk
 
     def load(self):
         """
@@ -57,18 +73,18 @@ class BaseLoader(ABC):
 
         return self._load(self.indices)
 
-    def update_chunk_size(self, new_chunk_size):
-        self._chunk_size = new_chunk_size
-        self._num_chunks = int(len(self.indices) / self._chunk_size)
+    def update_chunk_sizes(self, other):
+        if not self._chunk_size and not other.chunk_size:
+            return
 
-    def get_chunk_size(self):
-        return self._chunk_size
-
-    def get_next_chunk_number(self):
-        return self._next_chunk
-
-    def get_num_total_chunks(self):
-        return self._num_chunks
+        if (
+            self._chunk_size
+            and not other.chunk_size
+            or self._chunk_size < other.chunk_size
+        ):
+            other.chunk_size = self.chunk_size
+        else:
+            self.chunk_size = other.chunk_size
 
     def _load_next_chunk(self):
         """
@@ -93,27 +109,14 @@ class BaseLoader(ABC):
         else:
             self.extract(self.source_path, indices)
 
-        return self.data
+        return self.data, self.metadata
 
     @abstractmethod
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         pass
 
-    def create_timestamps(self, frequency, sample_length, start_datetime=None):
-        start_time = (
-            start_datetime
-            if start_datetime is not None
-            else np.datetime64("1970-01-01T00:00:00.000000")
-        )
-        time_increment = 1 / frequency
-        time_increments_array = np.arange(sample_length) * np.timedelta64(
-            int(time_increment * 1e6)
-        )
-        timestamps = start_time + time_increments_array
-
-        return timestamps.astype(np.int64)
-
-    def file_sanity_check(self, file):
+    @staticmethod
+    def file_sanity_check(file):
         """
         Checks if the file can be found is not empty
         """

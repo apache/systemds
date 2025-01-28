@@ -21,37 +21,42 @@
 from functools import reduce
 from operator import or_
 
+import numpy as np
+
 from systemds.scuro.modality.modality import Modality
+from systemds.scuro.representations.utils import pad_sequences
 
+class JoinedTransformedModality(Modality):
 
-class TransformedModality(Modality):
-
-    def __init__(self, modality_type, transformation, metadata):
+    def __init__(self, left_modality, right_modality, transformation):
         """
         Parent class of the different Modalities (unimodal & multimodal)
-        :param modality_type: Type of the original modality(ies)
         :param transformation: Representation to be applied on the modality
         """
-        super().__init__(modality_type, metadata)
+        super().__init__(reduce(or_, [left_modality.modality_type], right_modality.modality_type))
         self.transformation = transformation
-        self.data = []
+        self.left_modality = left_modality
+        self.right_modality = right_modality
 
-    def copy_from_instance(self):
-        return type(self)(self.modality_type, self.transformation, self.metadata)
-
-
-    def combine(self, other, fusion_method):
+    def combine(self, fusion_method):
         """
         Combines two or more modalities with each other using a dedicated fusion method
         :param other: The modality to be combined
         :param fusion_method: The fusion method to be used to combine modalities
         """
-        fused_modality = TransformedModality(
-            reduce(or_, (o.modality_type for o in other), self.modality_type),
-            fusion_method, self.metadata
-        )
-        modalities = [self]
-        modalities.extend(other)
-        fused_modality.data = fusion_method.transform(modalities)
-
-        return fused_modality
+        modalities = [self.left_modality, self.right_modality]
+        self.data = []
+        for i in range(0, len(self.left_modality.data)):
+            self.data.append([])
+            for j in range(0, len(self.left_modality.data[i])):
+                self.data[i].append([])
+                fused = np.concatenate([self.left_modality.data[i][j], self.right_modality.data[i][j]], axis=0)
+                self.data[i][j] = fused
+        # self.data = fusion_method.transform(modalities)
+        
+        for i, instance in enumerate(self.data): # TODO: only if the layout is list_of_lists_of_numpy_array
+            r = []
+            [r.extend(l) for l in instance]
+            self.data[i] = np.array(r)
+        self.data = pad_sequences(self.data)
+        return self

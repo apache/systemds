@@ -22,6 +22,7 @@
 
 import h5py
 
+from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from typing import Callable, Dict, Tuple, Any
 import torch.utils.data
@@ -30,8 +31,10 @@ import torchvision.models as models
 import torchvision.transforms as transforms
 import numpy as np
 
-DEVICE = "cpu"
-
+if torch.backends.mps.is_available():
+    DEVICE = torch.device("mps")
+else:
+    DEVICE = torch.device("cpu")
 
 class ResNet(UnimodalRepresentation):
     def __init__(self, layer="avgpool", output_file=None):
@@ -40,7 +43,7 @@ class ResNet(UnimodalRepresentation):
         self.output_file = output_file
         self.layer_name = layer
 
-    def transform(self, data):
+    def transform(self, modality):
 
         resnet = models.resnet152(weights=models.ResNet152_Weights.DEFAULT).to(DEVICE)
         resnet.eval()
@@ -60,7 +63,7 @@ class ResNet(UnimodalRepresentation):
             ]
         )
 
-        dataset = ResNetDataset(data, t)
+        dataset = ResNetDataset(modality.data, t)
         embeddings = {}
 
         class Identity(torch.nn.Module):
@@ -88,7 +91,7 @@ class ResNet(UnimodalRepresentation):
 
         for instance in torch.utils.data.DataLoader(dataset):
             video_id = instance["id"][0]
-            frames = instance["frames"][0].to(DEVICE)
+            frames = instance["data"][0].to(DEVICE)
             embeddings[video_id] = []
             batch_size = 64
 
@@ -99,30 +102,36 @@ class ResNet(UnimodalRepresentation):
 
                 _ = resnet(frame_batch)
                 values = res5c_output
+                # if self.layer_name == "avgpool" or self.layer_name == "maxpool":
+                #     embeddings[video_id].extend(
+                #         torch.flatten(values, 1).detach().cpu().numpy()
+                #     )
+                #
+                # else:
+                pooled = torch.nn.functional.adaptive_avg_pool2d(values, (1, 1))
 
-                if self.layer_name == "avgpool" or self.layer_name == "maxpool":
-                    embeddings[video_id].extend(
-                        torch.flatten(values, 1).detach().cpu().numpy()
-                    )
+                embeddings[video_id].extend(
+                    torch.flatten(pooled, 1).detach().cpu().numpy()
+                )
 
-                else:
-                    pooled = torch.nn.functional.adaptive_avg_pool2d(values, (1, 1))
-
-                    embeddings[video_id].extend(
-                        torch.flatten(pooled, 1).detach().cpu().numpy()
-                    )
-
+        # TODO: this functionality could be used for operator reuse if the data stays the same
         if self.output_file is not None:
             with h5py.File(self.output_file, "w") as hdf:
                 for key, value in embeddings.items():
                     hdf.create_dataset(key, data=value)
 
-        emb = []
+        # emb = []
 
-        for video in embeddings.values():
-            emb.append(np.array(video).mean(axis=0).tolist())
+        # TODO: this should be moved out to a windowing function
+        # for video in embeddings.values():
+        #     emb.append(np.array(video).mean(axis=0).tolist())
 
-        return np.array(emb)
+        transformed_modality = Modality(modality.modality_type, modality.metadata)
+        transformed_modality.data = list(embeddings.values())
+        transformed_modality.schema["data_layout"]["representation"] = "list_of_lists_of_numpy_array" # TODO: create infer data_layout method in modality
+        transformed_modality.schema["data_layout"]["type"] = transformed_modality.data[0][0].dtype # TODO: create infer data_layout method in modality
+
+        return transformed_modality
 
 
 class ResNetDataset(torch.utils.data.Dataset):
@@ -131,12 +140,17 @@ class ResNetDataset(torch.utils.data.Dataset):
         self.tf = tf
 
     def __getitem__(self, index) -> Dict[str, object]:
-        video = self.data[index]
-        frames = torch.empty((len(video), 3, 224, 224))
+        data = self.data[index]
+        output = torch.empty((len(data), 3, 224, 224))
+        
+        for i, d in enumerate(data):
+            if data[0].ndim < 3:
+                d = torch.tensor(d)
+                d = d.repeat(3, 1, 1)
+                
+            output[i] = self.tf(d)
 
-        for i, frame in enumerate(video):
-            frames[i] = self.tf(frame)
-        return {"id": index, "frames": frames}
+        return {"id": index, "data": output}
 
     def __len__(self) -> int:
         return len(self.data)

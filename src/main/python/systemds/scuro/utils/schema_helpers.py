@@ -18,11 +18,26 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import math
+import numpy as np
 
 
-class JoinCondition:
-    def __init__(self, field_1, field_2, join_type, alignment=None):
-        self.field_1 = field_1
-        self.field_2 = field_2
-        self.join_type = join_type
-        self.alignment = alignment
+def create_timestamps(frequency, sample_length, start_datetime=None):
+    start_time = (
+        start_datetime
+        if start_datetime is not None
+        else np.datetime64("1970-01-01T00:00:00.000000")
+    )
+    time_increment = 1 / frequency
+    time_increments_array = np.arange(sample_length) * np.timedelta64(
+        int(time_increment * 1e6)
+    )
+    timestamps = start_time + time_increments_array
+
+    return timestamps.astype(np.int64)
+
+
+def calculate_new_frequency(new_length, old_length, old_frequency):
+    duration = old_length / old_frequency
+    new_frequency = new_length / duration
+    return math.floor(new_frequency)

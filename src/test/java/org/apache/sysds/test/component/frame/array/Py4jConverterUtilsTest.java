@@ -197,6 +197,32 @@ public class Py4jConverterUtilsTest {
 		}
 	}
 
+	@Test
+	public void testConvertRow() {
+		int numElements = 4;
+		byte[] data = {1, 2, 3, 4};
+		Object[] row = Py4jConverterUtils.convertRow(data, numElements, Types.ValueType.UINT8);
+		assertNotNull(row);
+		assertEquals(4, row.length);
+		assertEquals(1, row[0]);
+		assertEquals(2, row[1]);
+		assertEquals(3, row[2]);
+		assertEquals(4, row[3]);
+	}
+
+	@Test
+	public void testConvertFused() {
+		int numElements = 1;
+		byte[] data = {1, 2, 3, 4};
+		Types.ValueType[] valueTypes = {ValueType.UINT8, ValueType.UINT8, ValueType.UINT8, ValueType.UINT8};
+		Array<?>[] arrays = Py4jConverterUtils.convertFused(data, numElements, valueTypes);
+		assertNotNull(arrays);
+		assertEquals(4, arrays.length);
+		for(int i = 0; i < 4; i++) {
+			assertEquals(1 + i, arrays[i].get(0));
+		}
+	}
+
 	@Test(expected = Exception.class)
 	public void nullData() {
 		Py4jConverterUtils.convert(null, 14, ValueType.BOOLEAN);

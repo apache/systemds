@@ -82,7 +82,6 @@ public class TopologicalSort {
 
 		// Now, we start introducing facts for the lowest level unordered sets
 		Set<UnorderedSet> lowestUncertainties = findLowestUncertainties(root);
-		System.out.println("Lowest uncertainties: " + lowestUncertainties);
 		int ctr = 0;
 
 		while (!lowestUncertainties.isEmpty()) {

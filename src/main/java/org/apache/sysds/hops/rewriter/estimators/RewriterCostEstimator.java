@@ -516,9 +516,9 @@ public class RewriterCostEstimator {
 			assertionRef.setValue(assertions);
 
 		RewriterStatement costFn = propagateCostFunction(stmt, ctx, assertions, treatAsDense);
-		costFn = assertions.update(costFn);
 		Map<RewriterStatement, RewriterStatement> estimations = RewriterSparsityEstimator.estimateAllNNZ(costFn, ctx);
 		RewriterSparsityEstimator.rollupSparsities(costFn, estimations, ctx);
+		costFn = assertions.update(costFn);
 		costFn = RewriterUtils.foldConstants(costFn, ctx);
 
 		return costFn;

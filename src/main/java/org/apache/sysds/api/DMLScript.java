@@ -35,6 +35,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 import org.apache.commons.cli.AlreadySelectedException;
 import org.apache.commons.cli.HelpFormatter;
@@ -106,6 +108,7 @@ public class DMLScript
 	public static int         STATISTICS_TOP_K_NGRAMS    = DMLOptions.defaultOptions.statsTopKNGrams;
 	// Set if N-Grams use lineage for data-dependent tracking
 	public static boolean     STATISTICS_NGRAMS_USE_LINEAGE = DMLOptions.defaultOptions.statsNGramsUseLineage;
+	public static boolean     APPLY_GENERATED_REWRITES   = DMLOptions.defaultOptions.applyGeneratedRewrites;
 	// Set statistics maximum wrap length
 	public static int         STATISTICS_MAX_WRAP_LEN    = 30;
 	// Enable/disable to print federated statistics
@@ -167,6 +170,9 @@ public class DMLScript
 
 	public static String _uuid = IDHandler.createDistributedUniqueID();
 	private static final Log LOG = LogFactory.getLog(DMLScript.class.getName());
+
+	public static Function<DMLProgram, Boolean> preHopInterceptor = null; // Intercepts HOPs before they are rewritten
+	public static Function<DMLProgram, Boolean> hopInterceptor = null; // Intercepts HOPs after they are rewritten
 
 	///////////////////////////////
 	// public external interface
@@ -261,6 +267,7 @@ public class DMLScript
 			STATISTICS_NGRAMS     = dmlOptions.statsNGrams;
 			STATISTICS_NGRAM_SIZES = dmlOptions.statsNGramSizes;
 			STATISTICS_TOP_K_NGRAMS = dmlOptions.statsTopKNGrams;
+			APPLY_GENERATED_REWRITES = dmlOptions.applyGeneratedRewrites;
 			FED_STATISTICS        = dmlOptions.fedStats;
 			FED_STATISTICS_COUNT  = dmlOptions.fedStatsCount;
 			JMLC_MEM_STATISTICS   = dmlOptions.memStats;
@@ -456,9 +463,15 @@ public class DMLScript
 		
 		//init working directories (before usage by following compilation steps)
 		initHadoopExecution( ConfigurationManager.getDMLConfig() );
-	
+
+		if (preHopInterceptor != null && !preHopInterceptor.apply(prog))
+			return;
+
 		//Step 5: rewrite HOP DAGs (incl IPA and memory estimates)
 		dmlt.rewriteHopsDAG(prog);
+
+		if (hopInterceptor != null && !hopInterceptor.apply(prog))
+			return;
 		
 		//Step 6: construct lops (incl exec type and op selection)
 		dmlt.constructLops(prog);

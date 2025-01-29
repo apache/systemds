@@ -1730,6 +1730,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 *                  (the invoker is responsible to recompute nnz after all copies are done) 
 	 */
 	public void copy(int rl, int ru, int cl, int cu, MatrixBlock src, boolean awareDestNZ ) {
+		if (src instanceof CompressedMatrixBlock){
+			src = ((CompressedMatrixBlock) src).decompress();
+		}
 		if(sparse && src.sparse)
 			copySparseToSparse(rl, ru, cl, cu, src, awareDestNZ);
 		else if(sparse && !src.sparse)

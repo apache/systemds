@@ -57,8 +57,8 @@ public class RewriterFramework {
 		RewriterFramework rwf = new RewriterFramework(dbPath);
 		rwf.init(false,false);
 		rwf.dataDrivenSearch(1000);
-		rwf.systematicSearch(2);
-		rwf.randomSearch(3, 4, 5000);
+		rwf.systematicSearch(3);
+		//rwf.randomSearch(4, 4, 5000);
 		rwf.createRules(true);
 		rwf.removeInvalidRules();
 		System.out.println(rwf.getUnconditionalRuleSet());

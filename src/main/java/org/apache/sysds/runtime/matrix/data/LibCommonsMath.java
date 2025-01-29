@@ -579,7 +579,7 @@ public class LibCommonsMath
 		final int useGaussianStrategy = 1;
 		final int useBareissStrategy = 2;
 		final int useLaplaceStrategy = 3;
-		int computationStrategy = useGaussianStrategy;
+		int computationStrategy = useBareissStrategy;
 
 		double determinant = 0;
 		switch (computationStrategy) {

@@ -167,7 +167,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = pushdownUnaryAggTransposeOperation(hop, hi, i); //e.g., colSums(t(X)) -> t(rowSums(X))
 			hi = pushdownCSETransposeScalarOperation(hop, hi, i);//e.g., a=t(X), b=t(X^2) -> a=t(X), b=t(X)^2 for CSE t(X)
 			hi = pushdownDetMultOperation(hop, hi, i);           //e.g., det(X%*%Y) -> det(X)*det(Y)
-			hi = pushdownDetScalarMatrixMultOperation(hop, hi, i);  //e.g., det(lambda*X) -> lambda^nrow*det(X)
+			hi = pushdownDetScalarMatrixMultOperation(hop, hi, i);  //e.g., det(lambda*X) -> lambda^nrow(X)*det(X)
 			hi = pushdownSumBinaryMult(hop, hi, i);              //e.g., sum(lambda*X) -> lambda*sum(X)
 			hi = pullupAbs(hop, hi, i);                          //e.g., abs(X)*abs(Y) --> abs(X*Y)
 			hi = simplifyUnaryPPredOperation(hop, hi, i);        //e.g., abs(ppred()) -> ppred(), others: round, ceil, floor

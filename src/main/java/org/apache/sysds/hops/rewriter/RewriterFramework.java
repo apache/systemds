@@ -48,9 +48,8 @@ import java.util.stream.IntStream;
 
 public class RewriterFramework {
 
-	// Why are the following rules not found?
+	// The following rule does sometimes not pass the validation test (probably due to round-off errors sometimes invalidating the result):
 	// An invalid rule was found: sum(%*%(M68353,M7710)) => cast.FLOAT(%*%(colSums(M68353),rowSums(M7710)))
-	//	Reason: Assertion
 
 	// To test the framework
 	public static void main(String[] args) {
@@ -59,6 +58,7 @@ public class RewriterFramework {
 		rwf.init(false,false);
 		rwf.dataDrivenSearch(1000);
 		rwf.systematicSearch(2);
+		rwf.randomSearch(3, 4, 5000);
 		rwf.createRules(true);
 		rwf.removeInvalidRules();
 		System.out.println(rwf.getUnconditionalRuleSet());
@@ -247,14 +247,14 @@ public class RewriterFramework {
 		}
 	}
 
-	public void randomSearch(int minExprSize, int maxExprSize) {
-		randomSearchFromIndex(RewriterSearchUtils.getMaxSearchNumberForNumOps(minExprSize-1)+1, RewriterSearchUtils.getMaxSearchNumberForNumOps(maxExprSize));
+	public void randomSearch(int minExprSize, int maxExprSize, int numSamples) {
+		randomSearchFromIndex(RewriterSearchUtils.getMaxSearchNumberForNumOps(minExprSize-1)+1, RewriterSearchUtils.getMaxSearchNumberForNumOps(maxExprSize), numSamples);
 	}
 
-	public void randomSearchFromIndex(int fromIdx, int toIdx) {
+	public void randomSearchFromIndex(int fromIdx, int toIdx, int numSamples) {
 		// Now we will just do random sampling for a few rounds
 		Random rd = new Random(42);
-		for (int batch = 0; batch < 200 && batch * BATCH_SIZE < toIdx-fromIdx; batch++) {
+		for (int batch = 0; batch < 200 && batch * BATCH_SIZE < numSamples; batch++) {
 			List<Integer> indices = IntStream.range(batch * BATCH_SIZE, (batch + 1) * BATCH_SIZE - 1).boxed().map(v -> fromIdx + rd.nextInt(toIdx-fromIdx)).collect(Collectors.toList());
 			MutableInt ctr2 = new MutableInt(0);
 			int maxSize = indices.size();

@@ -73,15 +73,10 @@ public class RewriterSearchUtils {
 			new Operand("ncol", 0, true, MATRIX),
 			new Operand("nrow", 0, true, MATRIX),
 			new Operand("length", 0, true, MATRIX),
-			/*new Operand("fncol", 1, true, MATRIX),
-			new Operand("fnrow", 1, true, MATRIX),
-			new Operand("flength", 1, true, MATRIX),*/
 
 			new Operand("!=", 2, ALL_TYPES, ALL_TYPES),
 			new Operand("!=0", 1, MATRIX),
 			new Operand("0!=", 1, MATRIX),
-			//new Operand("!=", 2, SCALAR, MATRIX),
-			//new Operand("!=", 2, MATRIX,MATRIX),
 
 			new Operand("cast.MATRIX",1, SCALAR),
 			new Operand("cast.FLOAT", 1, MATRIX),
@@ -90,7 +85,6 @@ public class RewriterSearchUtils {
 			new Operand("+*", 3, MATRIX, SCALAR, MATRIX),
 			new Operand("-*", 3, MATRIX, SCALAR, MATRIX),
 			new Operand("*2", 1, MATRIX),
-			//new Operand("^2", 1, MATRIX),
 			new Operand("_nnz", 1, MATRIX),
 			new Operand("sumSq", 1, MATRIX),
 			new Operand("sq", 1, MATRIX),
@@ -103,9 +97,9 @@ public class RewriterSearchUtils {
 			new Operand("c_-1", 1, ALL_TYPES),
 
 			// ncol / nrow / length stuff
-			new Operand("c_length*", 2, MATRIX, ALL_TYPES),
-			new Operand("c_ncol*", 2, MATRIX, ALL_TYPES),
-			new Operand("c_nrow*", 2, MATRIX, ALL_TYPES),
+			new Operand("c_length*", 1, ALL_TYPES),
+			new Operand("c_ncol*", 1, ALL_TYPES),
+			new Operand("c_nrow*", 1, ALL_TYPES),
 
 			new Operand("log_nz", 1, MATRIX),
 
@@ -413,15 +407,15 @@ public class RewriterSearchUtils {
 				break;
 			}
 			case "c_length*": {
-				stmt = new RewriterInstruction("*", ctx, new RewriterInstruction("length", ctx, stack[0]), stack[1]);
+				stmt = new RewriterInstruction("*", ctx, new RewriterInstruction("length", ctx, new RewriterDataType().as(UUID.randomUUID().toString()).ofType("MATRIX").consolidate(ctx)), stack[0]);
 				break;
 			}
 			case "c_nrow*": {
-				stmt = new RewriterInstruction("*", ctx, new RewriterInstruction("nrow", ctx, stack[0]), stack[1]);
+				stmt = new RewriterInstruction("*", ctx, new RewriterInstruction("nrow", ctx, new RewriterDataType().as(UUID.randomUUID().toString()).ofType("MATRIX").consolidate(ctx)), stack[0]);
 				break;
 			}
 			case "c_col*": {
-				stmt = new RewriterInstruction("*", ctx, new RewriterInstruction("ncol", ctx, stack[0]), stack[1]);
+				stmt = new RewriterInstruction("*", ctx, new RewriterInstruction("ncol", ctx, new RewriterDataType().as(UUID.randomUUID().toString()).ofType("MATRIX").consolidate(ctx)), stack[0]);
 				break;
 			}
 			default: {

@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.compress.workload;
 
 import static org.junit.Assert.fail;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 
 import org.apache.commons.logging.Log;
@@ -46,6 +47,7 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 	private final static String TEST_NAME5 = "WorkloadAnalysisSliceFinder";
 	private final static String TEST_NAME6 = "WorkloadAnalysisLmCG";
 	private final static String TEST_NAME7 = "WorkloadAnalysisL2SVM";
+	private final static String TEST_NAME8 = "WorkloadAnalysisKmeans";
 	private final static String TEST_DIR = "functions/compress/workload/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + WorkloadAnalysisTest.class.getSimpleName() + "/";
 
@@ -73,6 +75,7 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME5, new TestConfiguration(dir, TEST_NAME5, new String[] {"B"}));
 		addTestConfiguration(TEST_NAME6, new TestConfiguration(dir, TEST_NAME6, new String[] {"B"}));
 		addTestConfiguration(TEST_NAME7, new TestConfiguration(dir, TEST_NAME7, new String[] {"B"}));
+		addTestConfiguration(TEST_NAME8, new TestConfiguration(dir, TEST_NAME8, new String[] {"B"}));
 	}
 
 	@Test
@@ -143,8 +146,23 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 		runWorkloadAnalysisTest(TEST_NAME7, ExecMode.SINGLE_NODE, 2, false);
 	}
 
+	@Test
+	public void testKmeansSuccessfulCP() {
+		runWorkloadAnalysisTest(TEST_NAME8, ExecMode.SINGLE_NODE, 1, false, 30);
+	}
+
+	@Test
+	public void testKmeansUnsuccessfulCP() {
+		runWorkloadAnalysisTest(TEST_NAME8, ExecMode.SINGLE_NODE, 1, false, 10);
+	}
+
+	private void runWorkloadAnalysisTest(String testname, ExecMode mode, int compressionCount, boolean intermediates){
+		runWorkloadAnalysisTest(testname, mode, compressionCount, intermediates, -1);
+	}
+
 	// private void runWorkloadAnalysisTest(String testname, ExecMode mode, int compressionCount) {
-	private void runWorkloadAnalysisTest(String testname, ExecMode mode, int compressionCount, boolean intermediates) {
+	private void runWorkloadAnalysisTest(String testname, ExecMode mode, int compressionCount, boolean intermediates,
+										 int maxIter) {
 		ExecMode oldPlatform = setExecMode(mode);
 		boolean oldIntermediates = WorkloadAnalyzer.ALLOW_INTERMEDIATE_CANDIDATES;
 
@@ -154,19 +172,20 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[] {"-stats", "20", "-args", input("X"), input("y"), output("B")};
+			programArgs = new String[] {"-stats", "20", "-args", input("X"), input("y"), output("B"),
+					String.valueOf(maxIter)};
 
 			writeInputMatrixWithMTD("X", X, false);
 			writeInputMatrixWithMTD("y", y, false);
 
-			String ret = runTest(null).toString();
+			ByteArrayOutputStream out = runTest(null);
+			String ret = out != null ? out.toString() : "";
 			LOG.debug(ret);
 
 			// check various additional expectations
 			long actualCompressionCount = (mode == ExecMode.HYBRID || mode == ExecMode.SINGLE_NODE) ? Statistics
 				.getCPHeavyHitterCount("compress") : Statistics.getCPHeavyHitterCount("sp_compress");
-
-			Assert.assertEquals("Assert that the compression counts expeted matches actual: " + compressionCount + " vs "
+			Assert.assertEquals("Assert that the compression counts expected matches actual: " + compressionCount + " vs "
 				+ actualCompressionCount, compressionCount, actualCompressionCount);
 			if(compressionCount > 0)
 				Assert.assertTrue(mode == ExecMode.SINGLE_NODE || mode == ExecMode.HYBRID ? heavyHittersContainsString(
@@ -176,6 +195,7 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			resetExecMode(oldPlatform);
 			fail("Failed workload test");
 		}

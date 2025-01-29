@@ -2,6 +2,9 @@ package org.apache.sysds.runtime.io.cog;
 
 import java.util.Arrays;
 
+/**
+ * Properties of a COG file that are useful for reading the file.
+ */
 public class COGProperties {
 
     private int rows;

@@ -2,12 +2,13 @@ package org.apache.sysds.runtime.io.cog;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+/**
+ * Represents a header for a COG file. This includes IFDs, endianess etc.
+ */
 public class COGHeader {
     private boolean isLittleEndian;
     private String GDALMetadata;
@@ -137,6 +138,12 @@ public class COGHeader {
         }
     }
 
+    /**
+     * Prepares the COG header by reading the first 4 bytes and determining the byte order.
+     * Needs to be called before anything else is done with the COG header.
+     * @param byteReader
+     * @return
+     */
     private static COGHeader prepareHeader(COGByteReader byteReader) {
         // Read first 4 bytes to determine byte order and make sure it is a valid TIFF
         byte[] header = byteReader.readBytes(4);
@@ -388,6 +395,8 @@ public class COGHeader {
                     break;
                 case Compression:
                     // After implementing additional decompression methods, this can be extended
+                    // TODO: LZW would be a great addition as it is widely used
+                    // Furthermore, JPEG support would also be a good addition
                     // 1: none, 8: deflate
                     if (tag.getData()[0].intValue() != 1 && tag.getData()[0].intValue() != 8) {
                         return "Unsupported compression: " + tag.getData()[0];

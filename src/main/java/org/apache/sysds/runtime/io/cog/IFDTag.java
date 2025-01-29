@@ -1,5 +1,8 @@
 package org.apache.sysds.runtime.io.cog;
 
+/**
+ * Represents a single tag in the IFD of a TIFF file
+ */
 public class IFDTag {
     private IFDTagDictionary tagId;
     private short dataType;

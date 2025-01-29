@@ -1,5 +1,8 @@
 package org.apache.sysds.runtime.io.cog;
 
+/**
+ * Enum for mapping sample formats of TIFF image data to names
+ */
 public enum SampleFormatDataTypes {
     UNSIGNED_INTEGER(1),
     SIGNED_INTEGER(2),

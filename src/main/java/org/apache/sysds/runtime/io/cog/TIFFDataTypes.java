@@ -1,5 +1,8 @@
 package org.apache.sysds.runtime.io.cog;
 
+/**
+ * Enum for mapping data types of IFD tags in TIFF to readable names
+ */
 public enum TIFFDataTypes {
     BYTE(1),
     ASCII(2),

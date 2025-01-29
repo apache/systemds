@@ -1,5 +1,8 @@
 package org.apache.sysds.runtime.io.cog;
 
+/**
+ * Enum for mapping IFD tag values to their corresponding tag names
+ */
 public enum IFDTagDictionary {
     Unknown(-1),
     // Right now we will only support baseline TIFF
@@ -8,7 +11,6 @@ public enum IFDTagDictionary {
     ImageWidth(256),
     ImageLength(257),
     BitsPerSample(258),
-    // TODO: LZW Compression
     Compression(259),
     PhotometricInterpretation(262),
     Threshholding(263),
@@ -53,9 +55,13 @@ public enum IFDTagDictionary {
     TileLength(323),
     TileOffsets(324),
     TileByteCounts(325),
-    // TODO: Support nodata values
-    GDALNoData(42113);
-
+    GDALNoData(42113),
+    GeoKeyDirectoryTag(34735),
+    GeoDoubleParamsTag(34736),
+    GeoAsciiParamsTag(34737),
+    ModelPixelScaleTag(33550),
+    ModelTiepointTag(33922),
+    ModelTransformationTag(34264);
 
 
     private final int value;

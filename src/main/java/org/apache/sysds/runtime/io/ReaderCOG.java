@@ -59,6 +59,9 @@ public class ReaderCOG extends MatrixReader{
         // TODO: Currently only reads the first image which is the full resolution image
         // In the future, this could be extended to read the overviews as well
         // But keep in mind that we are only returning a single MatrixBlock, so there needs to be some special handling
+        // TODO: Is the metadata (e.g. the coordinates) necessary in SystemDS? Currently not possible as we only return a MatrixBlock
+        // However, this could possibly be changed in the future to somehow also store relevant metadata if desired.
+        // Currently this implementation reads the most important data from the header.
         COGProperties cogP = new COGProperties(cogHeader.getIFD());
 
         // number of tiles for Width and Length
@@ -96,8 +99,6 @@ public class ReaderCOG extends MatrixReader{
             if (!tilesFullySequential) {
                 byteReader.reset();
             }
-
-            // TODO: If the tile is compressed, decompress the currentTileData here
 
             if (cogP.getCompression() == 8) {
                 currentTileData = COGCompressionUtils.decompressDeflate(currentTileData);

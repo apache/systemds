@@ -19,6 +19,6 @@ public class ReadCOGTestNTilesNBandsUInt16PC2ComDeflateRect extends ReadCOGTest 
     protected double getResult(){ return 199571808.0; }
 
     protected int getId() {
-        return 9;
+        return 6;
     }
 }

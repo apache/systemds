@@ -14,6 +14,7 @@ public class COGCompressionUtils {
      * @throws DMLRuntimeException
      */
     public static byte[] decompressDeflate(byte[] compressedData) throws DMLRuntimeException {
+        // Use the native Java implementation of deflate to decompress the data
         Inflater inflater = new Inflater();
         inflater.setInput(compressedData);
 

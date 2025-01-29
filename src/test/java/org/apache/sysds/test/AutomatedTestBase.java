@@ -110,22 +110,19 @@ import scala.Tuple4;
  *
  */
 public abstract class AutomatedTestBase {
-	protected static final boolean BENCHMARK = false;
-	protected static final int BENCHMARK_WARMUP_RUNS = 0;
-	protected static final int BENCHMARK_REPETITIONS = 1;
+	protected static final boolean RECORD_GENERATED_REWRITES = false;
 	protected static final boolean ALLOW_GENERATED_REWRITES = false;
 	protected static final String BASE_DATA_DIR = "/Users/janniklindemann/Dev/MScThesis/NGramAnalysis/";
 
 
 	///// THESE SHOULD NOT BE MODIFIED /////
 	private static String currentTestName = "";
-	private static boolean benchmark_run = false;
 
 
 	static {
 		RewriterRuntimeUtils.setupIfNecessary();
 
-		if (BENCHMARK) {
+		if (RECORD_GENERATED_REWRITES) {
 			final List<Tuple4<String, Integer, Long, Long>> runTimes = new ArrayList<>();
 
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -1447,49 +1444,37 @@ public abstract class AutomatedTestBase {
 		try{
 			final List<ByteArrayOutputStream> out = new ArrayList<>();
 
-			if (currentTestName == null || !currentTestName.equals(this.getClass().getSimpleName())) {
-				currentTestName = this.getClass().getSimpleName();
-			}
+			if (RECORD_GENERATED_REWRITES) {
+				if (currentTestName == null || !currentTestName.equals(this.getClass().getSimpleName())) {
+					currentTestName = this.getClass().getSimpleName();
+				}
 
-			benchmark_run = false;
-
-			int totalReps = BENCHMARK_WARMUP_RUNS + BENCHMARK_REPETITIONS;
-			
-			for (int i = 0; i < totalReps; i++) {
-				out.clear();
 				Statistics.reset();
+				RewriteAutomaticallyGenerated.totalTimeNanos = 0;
+				RewriteAutomaticallyGenerated.callCount = 0;
+				RewriteAutomaticallyGenerated.maxTimeNanos = -1;
 
-				if (i == BENCHMARK_WARMUP_RUNS) {
-					RewriteAutomaticallyGenerated.totalTimeNanos = 0;
-					RewriteAutomaticallyGenerated.callCount = 0;
-					RewriteAutomaticallyGenerated.maxTimeNanos = -1;
-				}
-				benchmark_run = BENCHMARK && i >= BENCHMARK_WARMUP_RUNS;
-				Statistics.recordAppliedGeneratedRewrites(benchmark_run);
-				if (benchmark_run) {
-					Statistics.setCurrentTestName(currentTestName);
-				} else {
-					Statistics.setCurrentTestName("");
-				}
-
-				Thread t = new Thread(
-						() -> out.add(runTestWithTimeout(newWay, exceptionExpected, expectedException, errMessage, maxSparkInst)),
-						"TestRunner_main");
-				Thread.UncaughtExceptionHandler h = new Thread.UncaughtExceptionHandler() {
-					@Override
-					public void uncaughtException(Thread th, Throwable ex) {
-						fail("Thread Failed test with message: " + ex.getMessage());
-					}
-				};
-				t.setUncaughtExceptionHandler(h);
-				t.start();
-
-				t.join(TEST_TIMEOUT * 1000);
-				if (t.isAlive())
-					throw new TimeoutException("Test failed to finish in time");
-				if (out.size() <= 0) // hack in case the test failed return empty string.
-					fail("test failed");
+				Statistics.recordAppliedGeneratedRewrites(true);
+				Statistics.setCurrentTestName(currentTestName);
 			}
+
+			Thread t = new Thread(
+				() -> out.add(runTestWithTimeout(newWay, exceptionExpected, expectedException, errMessage, maxSparkInst)),
+				"TestRunner_main");
+			Thread.UncaughtExceptionHandler h = new Thread.UncaughtExceptionHandler() {
+				@Override
+				public void uncaughtException(Thread th, Throwable ex) {
+					fail("Thread Failed test with message: " +ex.getMessage());
+				}
+			};
+			t.setUncaughtExceptionHandler(h);
+			t.start();
+
+			t.join(TEST_TIMEOUT * 1000);
+			if(t.isAlive())
+				throw new TimeoutException("Test failed to finish in time");
+			if(out.size() <= 0) // hack in case the test failed return empty string.
+				fail("test failed");
 
 			return out.get(0);
 		}

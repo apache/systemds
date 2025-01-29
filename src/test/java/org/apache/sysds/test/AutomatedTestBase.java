@@ -110,7 +110,7 @@ import scala.Tuple4;
  *
  */
 public abstract class AutomatedTestBase {
-	protected static final boolean BENCHMARK = true;
+	protected static final boolean BENCHMARK = false;
 	protected static final int BENCHMARK_WARMUP_RUNS = 0;
 	protected static final int BENCHMARK_REPETITIONS = 1;
 	protected static final boolean ALLOW_GENERATED_REWRITES = false;
@@ -119,7 +119,6 @@ public abstract class AutomatedTestBase {
 
 	///// THESE SHOULD NOT BE MODIFIED /////
 	private static String currentTestName = "";
-	private static int currentTestRun = -1;
 	private static boolean benchmark_run = false;
 
 
@@ -129,26 +128,7 @@ public abstract class AutomatedTestBase {
 		if (BENCHMARK) {
 			final List<Tuple4<String, Integer, Long, Long>> runTimes = new ArrayList<>();
 
-			DMLScript.runtimeMetricsInterceptor = (runTime, executionTime) -> {
-				if (benchmark_run)
-					runTimes.add(new Tuple4<>(currentTestName, currentTestRun, runTime, executionTime));
-			};
-
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-				StringBuilder csvBuilder = new StringBuilder();
-				csvBuilder.append("TestName;TestRun;RunTimeMS;ExecTimeMS\n");
-
-				for (Tuple4<String, Integer, Long, Long> entry : runTimes) {
-					csvBuilder.append(entry._1());
-					csvBuilder.append(';');
-					csvBuilder.append(entry._2());
-					csvBuilder.append(';');
-					csvBuilder.append(entry._3());
-					csvBuilder.append(';');
-					csvBuilder.append(entry._4());
-					csvBuilder.append('\n');
-				}
-
 				StringBuilder csvBuilder2 = new StringBuilder();
 				csvBuilder2.append("Rewrite;Count\n");
 
@@ -172,7 +152,6 @@ public abstract class AutomatedTestBase {
 				});
 
 				try {
-					Files.writeString(Paths.get(BASE_DATA_DIR + "runtimes.csv"), csvBuilder.toString());
 					Files.writeString(Paths.get(BASE_DATA_DIR + "applied_rewrites.csv"), csvBuilder2.toString());
 					Files.writeString(Paths.get(BASE_DATA_DIR + "rewrite_info.csv"), csvBuilder3.toString());
 				} catch (IOException e) {
@@ -1469,10 +1448,7 @@ public abstract class AutomatedTestBase {
 			final List<ByteArrayOutputStream> out = new ArrayList<>();
 
 			if (currentTestName == null || !currentTestName.equals(this.getClass().getSimpleName())) {
-				currentTestRun = 1;
 				currentTestName = this.getClass().getSimpleName();
-			} else {
-				currentTestRun++;
 			}
 
 			benchmark_run = false;

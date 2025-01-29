@@ -58,7 +58,7 @@ public class DMLOptions {
 	public int[]                statsNGramSizes = { 3 };          // Default n-gram tuple sizes
 	public int                  statsTopKNGrams = 10;             // How many of the most heavy hitting n-grams are displayed
 	public boolean              statsNGramsUseLineage = true;     // If N-Grams use lineage for data-dependent tracking
-	public boolean 				applyGeneratedRewrites = false;   // If generated rewrites should be applied
+	public boolean              applyGeneratedRewrites = false;   // If generated rewrites should be applied
 	public boolean              fedStats      = false;            // Whether to record and print the federated statistics
 	public int                  fedStatsCount = 10;               // Default federated statistics count
 	public boolean              memStats      = false;            // max memory statistics

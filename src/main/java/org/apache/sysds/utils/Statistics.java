@@ -48,7 +48,6 @@ import org.apache.sysds.utils.stats.RecompileStatistics;
 import org.apache.sysds.utils.stats.SparkStatistics;
 import org.apache.sysds.utils.stats.TransformStatistics;
 import scala.Tuple2;
-import scala.Tuple3;
 
 import java.lang.management.CompilationMXBean;
 import java.lang.management.GarbageCollectorMXBean;

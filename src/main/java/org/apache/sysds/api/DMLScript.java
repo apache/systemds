@@ -52,7 +52,6 @@ import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
-import org.apache.sysds.hops.rewriter.generated.RewriteAutomaticallyGenerated;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DMLTranslator;
@@ -174,7 +173,6 @@ public class DMLScript
 
 	public static Function<DMLProgram, Boolean> preHopInterceptor = null; // Intercepts HOPs before they are rewritten
 	public static Function<DMLProgram, Boolean> hopInterceptor = null; // Intercepts HOPs after they are rewritten
-	public static BiConsumer<Long, Long> runtimeMetricsInterceptor = null;
 
 	///////////////////////////////
 	// public external interface
@@ -469,7 +467,6 @@ public class DMLScript
 		if (preHopInterceptor != null && !preHopInterceptor.apply(prog))
 			return;
 
-		long startMillis1 = System.currentTimeMillis();
 		//Step 5: rewrite HOP DAGs (incl IPA and memory estimates)
 		dmlt.rewriteHopsDAG(prog);
 
@@ -503,13 +500,7 @@ public class DMLScript
 		ExecutionContext ec = null;
 		try {
 			ec = ExecutionContextFactory.createContext(rtprog);
-			long startMillis2 = System.currentTimeMillis();
 			ScriptExecutorUtils.executeRuntimeProgram(rtprog, ec, ConfigurationManager.getDMLConfig(), STATISTICS ? STATISTICS_COUNT : 0, null);
-
-			if (runtimeMetricsInterceptor != null) {
-				long endMillis = System.currentTimeMillis();
-				runtimeMetricsInterceptor.accept(endMillis - startMillis1, endMillis - startMillis2);
-			}
 		}
 		finally {
 			//cleanup scratch_space and all working dirs
@@ -520,7 +511,6 @@ public class DMLScript
 			if(ec != null && ec instanceof SparkExecutionContext)
 				((SparkExecutionContext) ec).close();
 			LOG.info("END DML run " + getDateTime() );
-			System.out.println("GenRTime: " + RewriteAutomaticallyGenerated.totalTimeNanos / 1000000D + "ms");
 		}
 	}
 

@@ -400,11 +400,6 @@ public class OptimizerUtils
 		if( optlevel < 0 || optlevel > 7 )
 			throw new DMLRuntimeException("Error: invalid optimization level '"+optlevel+"' (valid values: 0-5).");
 
-		/*optlevel = 2;
-		ALLOW_ALGEBRAIC_SIMPLIFICATION = true;
-		ALLOW_OPERATOR_FUSION = true;
-		ALLOW_SUM_PRODUCT_REWRITES = true;*/
-
 		switch( optlevel )
 		{
 			// opt level 0: static dimensionality

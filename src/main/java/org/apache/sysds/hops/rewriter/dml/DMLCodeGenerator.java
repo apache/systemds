@@ -135,7 +135,6 @@ public class DMLCodeGenerator {
 			if (line.endsWith("valid: TRUE")) {
 				validator.accept(true);
 			} else {
-				DMLExecutor.println("An invalid rule was found: " + ruleName);
 				validator.accept(false);
 			}
 		};

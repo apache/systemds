@@ -62,9 +62,8 @@ doSample = function(Matrix[Double] eX, Matrix[Double] eY, Double ratio, Matrix[D
   MIN_SAMPLE = 1000
   sampledX = eX
   sampledY = eY
-  ratio = ifelse(nrow(eY) > 200000, 0.6, ratio)
   sampled = floor(nrow(eX) * ratio)
-  
+
   if(sampled > MIN_SAMPLE & ratio != 1.0)
   {
     sampleVec = sample(nrow(eX), sampled, FALSE, 23)
@@ -76,7 +75,7 @@ doSample = function(Matrix[Double] eX, Matrix[Double] eY, Double ratio, Matrix[D
     }
     else if(nrow(eY) == 1) { # for clustering
       sampledX = P %*% eX
-      sampledY = eY 
+      sampledY = eY
     }
     print("sampled rows "+nrow(sampledY)+" out of "+nrow(eY))
   }

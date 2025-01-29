@@ -246,10 +246,10 @@ public class DMLCodeGenerator {
 					if (var.isInstruction()) {
 						if (var.trueInstruction().equals("rowVec")) {
 							mId = var.getChild(0).getId();
-							ncol = 1L;
+							nrow = 1L;
 						} else if (var.trueInstruction().equals("colVec")) {
 							mId = var.getChild(0).getId();
-							nrow = 1L;
+							ncol = 1L;
 						} else if (var.trueInstruction().equals("const")) {
 							sb.append(var.getId());
 							sb.append(" = matrix(" + var.getChild(1).getLiteral() + ", rows=" + nrow + ", cols=" + ncol + ")\n");

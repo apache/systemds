@@ -119,6 +119,11 @@ class JoinedModality(Modality):
             self.right_modality.extract_raw_data()
 
         self.execute()
+        left_transformed, right_transformed = self._apply_representation(representation)
+        left_transformed.update_metadata()
+        right_transformed.update_metadata()
+        return JoinedTransformedModality(left_transformed, right_transformed, f'joined_{representation.name}')
+        
         
     def aggregate(self, aggregation_function, field_name): # TODO: use the filed name to extract data entries from modalities
         self.aggregation = Aggregation(aggregation_function, field_name)
@@ -149,12 +154,12 @@ class JoinedModality(Modality):
         new_left= TransformedModality(
             self.left_modality.modality_type,
             representation,
-            self.left_modality.metadata,
+            {},
         )
         new_right = TransformedModality(
             self.right_modality.modality_type,
             representation,
-            self.right_modality.metadata,
+            {},
         )
         while (
             chunk_modality.data_loader.next_chunk
@@ -170,17 +175,29 @@ class JoinedModality(Modality):
             chunk_modality.extract_raw_data()
 
             self.execute(starting_idx)
-            left_transformed = representation.transform(self.left_modality)
-            left_aggregated = self.aggregation.window(left_transformed)
-            new_left.data.extend(
-                left_aggregated.data
-            )
-
-            right_transformed = representation.transform(self.joined_right)
-            right_aggregated = self.aggregation.window(right_transformed)
-            new_right.data.extend(
-                right_aggregated.data
-            )
             
+            left_transformed, right_transformed = self._apply_representation(representation)
+            new_left.data.extend(
+                left_transformed.data
+            )
+            new_left.metadata.update(left_transformed.metadata)
+            new_right.data.extend(
+                right_transformed.data
+            )
+            new_right.metadata.update(right_transformed.metadata)
+        
+        new_left.update_metadata()
+        new_right.update_metadata()
         return JoinedTransformedModality(new_left, new_right, f'joined_{representation.name}')
     
+
+    def _apply_representation(self, representation):
+        left_transformed = representation.transform(self.left_modality)
+        if self.aggregation:
+            left_transformed = self.aggregation.window(left_transformed)
+       
+        right_transformed = representation.transform(self.joined_right)
+        if self.aggregation:
+            right_transformed = self.aggregation.window(right_transformed)
+        
+        return left_transformed, right_transformed

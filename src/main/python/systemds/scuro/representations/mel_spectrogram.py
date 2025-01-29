@@ -18,26 +18,23 @@
 # under the License.
 #
 # -------------------------------------------------------------
-
-import pickle
-
 import librosa
 import numpy as np
-from systemds.scuro.representations.utils import pad_sequences
+
+from systemds.scuro.modality.transformed import TransformedModality
 import matplotlib.pyplot as plt
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 
 
 class MelSpectrogram(UnimodalRepresentation):
-    def __init__(self, avg=True, output_file=None):
+    def __init__(self):
         super().__init__("MelSpectrogram")
-        self.avg = avg
-        self.output_file = output_file
 
-    def transform(self, data):
+    def transform(self, modality):
+        transformed_modality = TransformedModality(modality.modality_type, self, modality.metadata)
         result = []
         max_length = 0
-        for sample in data:
+        for sample in modality.data:
             S = librosa.feature.melspectrogram(
                 y=sample, sr=22050
             )
@@ -45,22 +42,9 @@ class MelSpectrogram(UnimodalRepresentation):
             if S_dB.shape[-1] > max_length:
                 max_length = S_dB.shape[-1]
             result.append(S_dB.T)
-
-        # r = []
-        # for elem in result:
-        #     d = pad_sequences(elem, maxlen=max_length, dtype="float32")
-        #     r.append(d)
-
-        # np_array_r = np.array(r) if not self.avg else np.mean(np.array(r), axis=1)
-        #
-        # if self.output_file is not None:
-        #     data = []
-        #     for i in range(0, np_array_r.shape[0]):
-        #         data.append(np_array_r[i])
-        #     with open(self.output_file, "wb") as file:
-        #         pickle.dump(data, file)
-
-        return result
+        
+        transformed_modality.data = result
+        return transformed_modality
     
     
     def plot_spectrogram(self, spectrogram):

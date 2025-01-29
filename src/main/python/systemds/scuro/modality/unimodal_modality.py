@@ -64,8 +64,8 @@ class UnimodalModality(Modality):
 
         return joined_modality
 
-    # TODO: add aggregation method like in join
-    def apply_representation(self, representation, aggregation):
+    # TODO: maybe this can be made generic so it can be used in the join class as well
+    def apply_representation(self, representation, aggregation=None):
         new_modality = TransformedModality(self.modality_type, representation, self.data_loader.metadata)
         new_modality.data = []
 
@@ -75,11 +75,17 @@ class UnimodalModality(Modality):
                 < self.data_loader.num_chunks
             ):
                 self.extract_raw_data()
-                new_modality.data.extend(representation.transform(self.data))
+                transformed_chunk = representation.transform(self)
+                if aggregation:
+                    transformed_chunk = aggregation.window(transformed_chunk)
+                new_modality.data.extend(transformed_chunk.data)
         else:
             if not self.data:
                 self.extract_raw_data()
-            new_modality.data = representation.transform(self.data)
+            new_modality = representation.transform(self)
             
+            if aggregation:
+                new_modality = aggregation.window(new_modality)
+                
         new_modality.update_metadata()
         return new_modality

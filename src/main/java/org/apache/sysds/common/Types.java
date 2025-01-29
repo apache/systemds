@@ -539,7 +539,7 @@ public interface Types {
 		CAST_AS_FRAME, CAST_AS_LIST, CAST_AS_MATRIX, CAST_AS_SCALAR,
 		CAST_AS_BOOLEAN, CAST_AS_DOUBLE, CAST_AS_INT,
 		CEIL, CHOLESKY, COS, COSH, CUMMAX, CUMMIN, CUMPROD, CUMSUM,
-		CUMSUMPROD, DETECTSCHEMA, COLNAMES, EIGEN, EXISTS, EXP, FLOOR, INVERSE,
+		CUMSUMPROD, DET, DETECTSCHEMA, COLNAMES, EIGEN, EXISTS, EXP, FLOOR, INVERSE,
 		IQM, ISNA, ISNAN, ISINF, LENGTH, LINEAGE, LOG, NCOL, NOT, NROW,
 		MEDIAN, PREFETCH, PRINT, ROUND, SIN, SINH, SIGN, SOFTMAX, SQRT, STOP, _EVICT,
 		SVD, TAN, TANH, TYPEOF, TRIGREMOTE, SQRT_MATRIX_JAVA,
@@ -558,6 +558,7 @@ public interface Types {
 
 		public boolean isScalarOutput() {
 			return this == CAST_AS_SCALAR
+				|| this == DET
 				|| this == NROW || this == NCOL
 				|| this == LENGTH || this == EXISTS
 				|| this == IQM || this == LINEAGE
@@ -579,6 +580,7 @@ public interface Types {
 				case CUMPROD:         return "ucum*";
 				case CUMSUM:          return "ucumk+";
 				case CUMSUMPROD:      return "ucumk+*";
+				case DET:             return "det";
 				case DETECTSCHEMA:    return "detectSchema";
 				case MULT2:           return "*2";
 				case NOT:             return "!";

@@ -210,6 +210,7 @@ public class CPInstructionParser extends InstructionParser {
 		String2CPInstructionType.put( "inverse", CPType.Unary);
 		String2CPInstructionType.put( "sqrt_matrix_java", CPType.Unary);
 		String2CPInstructionType.put( "cholesky",CPType.Unary);
+		String2CPInstructionType.put( "det", CPType.Unary);
 		String2CPInstructionType.put( "sprop", CPType.Unary);
 		String2CPInstructionType.put( "sigmoid", CPType.Unary);
 		String2CPInstructionType.put( "typeOf", CPType.Unary);

@@ -22,6 +22,6 @@
 X = matrix(3, 10, 10);
 while(FALSE){}
 
-R = rowProds(X);
+R = rowProds(2*log(X));
 
 write(R, $1)

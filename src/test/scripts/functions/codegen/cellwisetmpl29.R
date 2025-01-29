@@ -30,6 +30,6 @@ roqProd <- function(X) {
 # X = matrix(seq(7, 1100*200+6), 1100, 200, byrow=TRUE);
 X = matrix(3, 10, 10)
 
-R = t(rowProd(X));
+R = t(rowProd(2*log(X)));
 
 writeMM(as(R,"CsparseMatrix"), paste(args[2], "S", sep=""));

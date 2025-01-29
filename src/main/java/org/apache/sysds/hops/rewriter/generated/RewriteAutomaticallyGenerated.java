@@ -34,11 +34,7 @@ import java.util.List;
 import java.util.function.Function;
 
 public class RewriteAutomaticallyGenerated extends HopRewriteRule {
-	public static final String FILE_PATH_CONDITIONAL = "/Users/janniklindemann/Dev/MScThesis/rules_conditional.rl";
-	public static final String FILE_PATH = "/Users/janniklindemann/Dev/MScThesis/rules.rl";
-	public static final String VALIDATED_FILE_PATH = "/Users/janniklindemann/Dev/MScThesis/rules_validated.rl";
-	public static final String RAW_FILE_PATH = "/Users/janniklindemann/Dev/MScThesis/raw_rules.rl";
-	public static final String FILE_PATH_MB = "/Users/janniklindemann/Dev/Rewrite-Generator-Reproducibility/data/rules_mb.rl";
+	public static final String FILE_PATH = null;
 	public static RewriteAutomaticallyGenerated existingRewrites;
 
 	private Function<Hop, Hop> rewriteFn;
@@ -46,6 +42,8 @@ public class RewriteAutomaticallyGenerated extends HopRewriteRule {
 	public static long callCount = 0;
 	public static long maxTimeNanos = -1;
 
+	// This constructor could be used to dynamically compile generated rewrite rules from a file
+	@Deprecated
 	public RewriteAutomaticallyGenerated() {
 		// Try to read the file
 		try {

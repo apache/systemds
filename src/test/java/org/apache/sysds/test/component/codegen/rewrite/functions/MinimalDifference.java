@@ -30,12 +30,10 @@ import java.util.function.Function;
 public class MinimalDifference {
 
 	private static RuleContext ctx;
-	private static Function<RewriterStatement, RewriterStatement> canonicalConverter;
 
 	@BeforeClass
 	public static void setup() {
 		ctx = RewriterUtils.buildDefaultContext();
-		canonicalConverter = RewriterUtils.buildCanonicalFormConverter(ctx, true);
 	}
 
 	@Test

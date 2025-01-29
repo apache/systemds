@@ -203,7 +203,7 @@ public class RuleCreationTests {
 		rc.registerRule(rule2, rule2.getStmt1().getCost(ctx), rule2.getStmt2().getCost(ctx), false, canonicalConverter);
 		rc.registerRule(rule1, rule1.getStmt1().getCost(ctx), rule1.getStmt2().getCost(ctx), false, canonicalConverter);
 
-		System.out.println(rc.getRuleSet().serialize(ctx));
+		System.out.println(rc.getRuleSet().serialize());
 	}
 
 	@Test

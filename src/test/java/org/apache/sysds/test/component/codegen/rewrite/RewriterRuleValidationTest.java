@@ -38,6 +38,9 @@ import java.util.function.Function;
 
 public class RewriterRuleValidationTest {
 
+	public static String RAW_FILE_PATH; // Must be specified
+	public static String FILE_PATH; // Must be specified
+
 	private static RuleContext ctx;
 	private static Function<RewriterStatement, RewriterStatement> canonicalConverter;
 
@@ -51,7 +54,7 @@ public class RewriterRuleValidationTest {
 	//@Test
 	public void test() {
 		try {
-			List<String> lines = Files.readAllLines(Paths.get(RewriteAutomaticallyGenerated.RAW_FILE_PATH));
+			List<String> lines = Files.readAllLines(Paths.get(RAW_FILE_PATH));
 			RewriterRuleSet ruleSet = RewriterRuleSet.deserialize(lines, ctx);
 			RewriterRuleCreator ruleCreator = new RewriterRuleCreator(ctx);
 
@@ -71,10 +74,10 @@ public class RewriterRuleValidationTest {
 				}
 			}
 			//System.out.println(ruleSet.toJavaCode("GeneratedRewriteClass", false));
-			String serialized = ruleCreator.getRuleSet().serialize(ctx);
+			String serialized = ruleCreator.getRuleSet().serialize();
 			//System.out.println(serialized);
 
-			try (FileWriter writer = new FileWriter(RewriteAutomaticallyGenerated.FILE_PATH)) {
+			try (FileWriter writer = new FileWriter(FILE_PATH)) {
 				writer.write(serialized);
 			} catch (IOException ex) {
 				ex.printStackTrace();

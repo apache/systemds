@@ -55,12 +55,12 @@ public class RuleSerializationTest {
 		RewriterRule rule2 = RewriterUtils.parseRule(ruleStr2, ctx);
 
 		RewriterRuleSet ruleSet = new RewriterRuleSet(ctx, List.of(rule1, rule2));
-		String serialized = ruleSet.serialize(ctx);
+		String serialized = ruleSet.serialize();
 
 		System.out.println(serialized);
 
 		RewriterRuleSet newRuleSet = RewriterRuleSet.deserialize(serialized, ctx);
-		String newSerialized = newRuleSet.serialize(ctx);
+		String newSerialized = newRuleSet.serialize();
 
 		System.out.println(newSerialized);
 

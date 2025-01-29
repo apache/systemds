@@ -69,22 +69,13 @@ import java.util.stream.Collectors;
 public class RewriterRuntimeUtils {
 	public static final boolean interceptAll = false;
 	public static boolean printUnknowns = false;
-	public static final String dbFile = "/Users/janniklindemann/Dev/MScThesis/expressions.db";
+	public static final String dbFile = "./src/test/resources/rewriterframework/expressions.db";
 	public static final boolean readDB = true;
 	public static final boolean writeDB = true;
-
-
-	private static final String matrixDefs = "MATRIX:A,B,C";
-	private static final String floatDefs = "FLOAT:q,r,s,t,f1,f2,f3,f4,f5";
-	private static final String intDefs = "INT:i1,i2,i3,i4,i5";
-	private static final String boolDefs = "BOOL:b1,b2,b3";
 
 	private static boolean setupComplete = false;
 
 	private static HashMap<String, Integer> unknownOps = new HashMap<>();
-	/*private static long totalCPUTime = 0L;
-	private static long evaluatedExpressions = 0L;
-	private static long failures = 0L;*/
 	private static boolean ENFORCE_FLOAT_OBSERVATIONS = true; // To force every data type to float
 	private static boolean OBSERVE_SELECTIONS = false;
 	private static boolean OBSERVE_RAND = false;
@@ -94,8 +85,9 @@ public class RewriterRuntimeUtils {
 			return;
 
 		setupComplete = true;
-		System.out.println("INTERCEPTOR");
+
 		if (interceptAll) {
+			System.out.println("INTERCEPTOR");
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = false;
 			OptimizerUtils.ALLOW_OPERATOR_FUSION = false;
 			System.out.println("OptLevel:" + OptimizerUtils.getOptLevel().toString());
@@ -105,7 +97,6 @@ public class RewriterRuntimeUtils {
 
 			// Setup default context
 			RuleContext ctx = RewriterUtils.buildDefaultContext();
-			//Function<RewriterStatement, RewriterStatement> converter = RewriterUtils.buildCanonicalFormConverter(ctx, false);
 
 			RewriterDatabase exactExprDB = new RewriterDatabase();
 
@@ -128,30 +119,6 @@ public class RewriterRuntimeUtils {
 			});
 
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-				/*System.out.println("===== ALL EQUIVALENCES =====");
-
-				for (RewriterStatement eStmt : equivalentStatements) {
-					System.out.println();
-					System.out.println("===================================");
-					System.out.println("Canonical form: " + eStmt.toParsableString(ctx) + "\n");
-					List<RewriterStatement> equivalences = (List<RewriterStatement>)eStmt.getMeta("equivalentExpressions");
-					equivalences.forEach(stmt -> System.out.println(stmt.toParsableString(ctx) + "\t" + stmt.hashCode()));
-
-					if (equivalences.size() == 0)
-						System.out.println("All statements were actually equivalent!");
-					//System.out.println(equivalences.get(0).match(new RewriterStatement.MatcherContext(ctx, equivalences.get(0))));
-				}
-
-				System.out.println();
-				System.out.println("Total rewriter CPU time: " + totalCPUTime + "ms");
-				System.out.println("Total evaluated unique expressions: " + evaluatedExpressions);
-				System.out.println("Total failures: " + failures);
-				System.out.println("Top 100 unknown ops:");
-
-				List<Map.Entry<String, Integer>> list = unknownOps.entrySet().stream().sorted(Map.Entry.comparingByValue(Comparator.reverseOrder())).collect(Collectors.toList());
-				for (int i = 0; i < 100 && i < list.size(); i++)
-					System.out.println(list.get(i).getKey() + "\t>> " + list.get(i).getValue());*/
-
 				if (writeDB) {
 					try (BufferedWriter writer = new BufferedWriter(new FileWriter(dbFile))) {
 						exactExprDB.serialize(writer, ctx);
@@ -206,7 +173,7 @@ public class RewriterRuntimeUtils {
 			if (matType > 0) {
 				return new RewriterInstruction()
 						.as(stmt.getId())
-						.withInstruction(matType == 1L ? "colVec" : "rowVec")
+						.withInstruction(matType == 1L ? "rowVec" : "colVec")
 						.withOps(stmt)
 						.consolidate(ctx);
 			}
@@ -235,7 +202,7 @@ public class RewriterRuntimeUtils {
 						if (created == null) {
 							created = new RewriterInstruction()
 									.as(stmt.getId())
-									.withInstruction(matType == 1 ? "colVec" : "rowVec")
+									.withInstruction(matType == 1 ? "rowVec" : "colVec")
 									.withOps(child)
 									.consolidate(ctx);
 							createdObjects.put(child, created);
@@ -267,71 +234,6 @@ public class RewriterRuntimeUtils {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	}
-
-	public static List<RewriterStatement> getTopLevelHops(DMLProgram program, final RuleContext ctx) {
-		List<RewriterStatement> l = new ArrayList<>();
-		try {
-			for (String namespaceKey : program.getNamespaces().keySet()) {
-				for (String fname : program.getFunctionStatementBlocks(namespaceKey).keySet()) {
-					FunctionStatementBlock fsblock = program.getFunctionStatementBlock(namespaceKey, fname);
-					l.addAll(getTopLevelHops(fsblock, ctx));
-				}
-			}
-
-			for (StatementBlock sb : program.getStatementBlocks()) {
-				l.addAll(getTopLevelHops(sb, ctx));
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return l;
-	}
-
-	private static List<RewriterStatement> getTopLevelHops(StatementBlock sb, final RuleContext ctx) {
-		List<RewriterStatement> l = new ArrayList<>();
-		if (sb instanceof FunctionStatementBlock)
-		{
-			FunctionStatementBlock fsb = (FunctionStatementBlock) sb;
-			FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);
-			fstmt.getBody().forEach(s -> l.addAll(getTopLevelHops(s, ctx)));
-		}
-		else if (sb instanceof WhileStatementBlock)
-		{
-			WhileStatementBlock wsb = (WhileStatementBlock) sb;
-			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
-			l.add(buildDAG(wsb.getPredicateHops(), ctx));
-			wstmt.getBody().forEach(s -> l.addAll(getTopLevelHops(s, ctx)));
-		}
-		else if (sb instanceof IfStatementBlock)
-		{
-			IfStatementBlock isb = (IfStatementBlock) sb;
-			IfStatement istmt = (IfStatement)isb.getStatement(0);
-			l.add(buildDAG(isb.getPredicateHops(), ctx));
-			istmt.getIfBody().forEach(s -> l.addAll(getTopLevelHops(s, ctx)));
-			istmt.getElseBody().forEach(s -> l.addAll(getTopLevelHops(s, ctx)));
-		}
-		else if (sb instanceof ForStatementBlock)
-		{
-			ForStatementBlock fsb = (ForStatementBlock) sb;
-			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
-			l.add(buildDAG(fsb.getFromHops(), ctx));
-			l.add(buildDAG(fsb.getToHops(), ctx));
-			l.add(buildDAG(fsb.getIncrementHops(), ctx));
-			fstmt.getBody().forEach(s -> l.addAll(getTopLevelHops(s, ctx)));
-		}
-		else
-		{
-			if (sb.getHops() != null)
-				sb.getHops().forEach(hop -> l.add(buildDAG(hop, ctx)));
-		}
-
-		return l.stream().filter(Objects::nonNull).collect(Collectors.toList());
-	}
-
-	private static RewriterStatement buildDAG(Hop hop, final RuleContext ctx) {
-		return buildDAGRecursively(hop, null, new HashMap<>(), 0, 1000, ctx);
 	}
 
 	private static void handleStatementBlock(StatementBlock sb, int maxDepth, Consumer<RewriterStatement> consumer, Set<Hop> visited, RewriterDatabase db, final RuleContext ctx) {
@@ -738,7 +640,7 @@ public class RewriterRuntimeUtils {
 		// Some placeholder definitions
 		switch(op.getOpString()) {
 			case "ba(+*)": // Matrix multiplication
-				return RewriterUtils.parse("%*%(A, B)", ctx, matrixDefs, floatDefs, intDefs, boolDefs);
+				return RewriterUtils.parse("%*%(A, B)", ctx, "MATRIX:A,B");
 		}
 
 		if (printUnknowns)
@@ -752,15 +654,15 @@ public class RewriterRuntimeUtils {
 			case "ua(+C)": // Matrix multiplication
 				if (expectedType != null && !expectedType.equals("MATRIX"))
 					throw new IllegalArgumentException("Unexpected type: " + expectedType);
-				return RewriterUtils.parse("colSums(A)", ctx, matrixDefs, floatDefs, intDefs, boolDefs);
+				return RewriterUtils.parse("colSums(A)", ctx, "MATRIX:A");
 			case "ua(+R)":
 				if (expectedType != null && !expectedType.equals("MATRIX"))
 					throw new IllegalArgumentException("Unexpected type:" + expectedType);
-				return RewriterUtils.parse("rowSums(A)", ctx, matrixDefs, floatDefs, intDefs, boolDefs);
+				return RewriterUtils.parse("rowSums(A)", ctx, "MATRIX:A");
 			case "ua(+RC)":
 				if (expectedType != null && !expectedType.equals("FLOAT"))
 					throw new IllegalArgumentException("Unexpected type: " + expectedType);
-				return RewriterUtils.parse("sum(A)", ctx, matrixDefs, floatDefs, intDefs, boolDefs);
+				return RewriterUtils.parse("sum(A)", ctx, "MATRIX:A");
 			case "ua(nrow)":
 				if (expectedType != null && !expectedType.equals("INT"))
 					throw new IllegalArgumentException("Unexpected type: " + expectedType);
@@ -889,7 +791,7 @@ public class RewriterRuntimeUtils {
 
 		switch(op.getOpString()) {
 			case "r(r')": // Matrix multiplication
-				return RewriterUtils.parse("t(A)", ctx, matrixDefs, floatDefs, intDefs, boolDefs);
+				return RewriterUtils.parse("t(A)", ctx, "MATRIX:A");
 			case "r(rev)":
 				return RewriterUtils.parse("rev(A)", ctx, "MATRIX:A");
 			case "r(rdiag)":
@@ -913,7 +815,7 @@ public class RewriterRuntimeUtils {
 					interestingHops.add(op.getParam("cols"));
 					interestingHops.add(op.getParam("min"));
 					interestingHops.add(op.getParam("max"));
-					return RewriterUtils.parse("rand(i1, i2, f1, f2)", ctx, matrixDefs, floatDefs, intDefs, boolDefs).rename(op.getName());
+					return RewriterUtils.parse("rand(i1, i2, f1, f2)", ctx, "INT:i1,i2", "FLOAT:f1,f2").rename(op.getName());
 				}
 				return null;
 		}

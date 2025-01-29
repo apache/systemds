@@ -35,12 +35,10 @@ import java.util.function.Function;
 public class CodeGenConditionTests {
 
 	private static RuleContext ctx;
-	private static Function<RewriterStatement, RewriterStatement> canonicalConverter;
 
 	@BeforeClass
 	public static void setup() {
 		ctx = RewriterUtils.buildDefaultContext();
-		canonicalConverter = RewriterUtils.buildCanonicalFormConverter(ctx, false);
 	}
 
 	@Test

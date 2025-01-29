@@ -30,7 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
-public class RewriterAlphabetTest {
+public class RewriterSearchUtilsTest {
 
 	private static RuleContext ctx;
 	private static Function<RewriterStatement, RewriterStatement> canonicalConverter;

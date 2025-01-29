@@ -236,7 +236,7 @@ public class RewriterRuleCollection {
 		});
 	}
 
-	public static void canonicalizeAlgebraicStatements(final List<RewriterRule> rules, final RuleContext ctx) {
+	public static void canonicalizeAlgebraicStatements(final List<RewriterRule> rules, boolean allowInversionCanonicalization, final RuleContext ctx) {
 		HashMap<Integer, RewriterStatement> hooks = new HashMap<>();
 
 		RewriterUtils.buildBinaryPermutations(ALL_TYPES, (t1, t2) -> {
@@ -249,14 +249,16 @@ public class RewriterRuleCollection {
 					.build()
 			);
 
-			rules.add(new RewriterRuleBuilder(ctx, "/(a,b) => *(a, inv(b))")
-					.setUnidirectional(true)
-					.parseGlobalVars(t1 + ":a")
-					.parseGlobalVars(t2 + ":b")
-					.withParsedStatement("/(a, b)", hooks)
-					.toParsedStatement("*(a, inv(b))", hooks)
-					.build()
-			);
+			if (allowInversionCanonicalization) {
+				rules.add(new RewriterRuleBuilder(ctx, "/(a,b) => *(a, inv(b))")
+						.setUnidirectional(true)
+						.parseGlobalVars(t1 + ":a")
+						.parseGlobalVars(t2 + ":b")
+						.withParsedStatement("/(a, b)", hooks)
+						.toParsedStatement("*(a, inv(b))", hooks)
+						.build()
+				);
+			}
 
 			rules.add(new RewriterRuleBuilder(ctx, "-(+(a, b)) => +(-(a), -(b))")
 					.setUnidirectional(true)

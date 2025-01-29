@@ -160,7 +160,8 @@ public class RewriterCostEstimator {
 					return tpl._1 * tpl._2;
 				}, jointAssertionsCpy, ctx);
 			} catch (Exception e) {
-				e.printStackTrace();
+				//e.printStackTrace();
+				System.err.println("Error while estimating the cost: " + e.getMessage());
 				return null;
 			}
 		}).collect(Collectors.toList());
@@ -755,6 +756,14 @@ public class RewriterCostEstimator {
 				cost = RewriterStatement.multiArgInstr(ctx, "*", atomicOpCostStmt("sq", ctx), RewriterStatement.nnz(instr.getChild(0), ctx, treatAsDense));
 				overhead.add(MALLOC_COST);
 				break;
+			case "sqrt":
+				cost = RewriterStatement.multiArgInstr(ctx, "*", atomicOpCostStmt("sqrt", ctx), RewriterStatement.nnz(instr.getChild(0), ctx, treatAsDense));
+				overhead.add(MALLOC_COST);
+				break;
+			case "exp":
+				cost = RewriterStatement.multiArgInstr(ctx, "*", atomicOpCostStmt("exp", ctx), RewriterStatement.nnz(instr.getChild(0), ctx, treatAsDense));
+				overhead.add(MALLOC_COST);
+				break;
 			case "log_nz": {
 				// Must be a matrix
 				RewriterStatement logCost = atomicOpCostStmt("log", ctx);
@@ -876,17 +885,17 @@ public class RewriterCostEstimator {
 				return RewriterStatement.literal(ctx, 0L);
 		}
 
-		long opCost = atomicOpCost(instr.trueInstruction());
-		uniqueCosts.add(RewriterUtils.parse(Long.toString(opCost), ctx, "LITERAL_INT:" + opCost));
+		double opCost = atomicOpCost(instr.trueInstruction());
+		uniqueCosts.add(RewriterUtils.parse(Double.toString(opCost), ctx, "LITERAL_FLOAT:" + opCost));
 		return uniqueCosts.get(uniqueCosts.size()-1);
 	}
 
 	private static RewriterStatement atomicOpCostStmt(String op, final RuleContext ctx) {
-		long opCost = atomicOpCost(op);
-		return RewriterUtils.parse(Long.toString(opCost), ctx, "LITERAL_INT:" + opCost);
+		double opCost = atomicOpCost(op);
+		return RewriterUtils.parse(Double.toString(opCost), ctx, "LITERAL_FLOAT:" + opCost);
 	}
 
-	private static long atomicOpCost(String op) {
+	private static double atomicOpCost(String op) {
 		switch (op) {
 			case "+":
 			case "-":
@@ -894,7 +903,7 @@ public class RewriterCostEstimator {
 			case "*":
 				return 2;
 			case "*2":
-				return 1; // To make *2 cheaper than *
+				return 1; // To make *2 cheaper than A+A
 			case "/":
 			case "inv":
 				return 3;
@@ -906,7 +915,7 @@ public class RewriterCostEstimator {
 			case "sqrt":
 				return 10;
 			case "sq":
-				return 5;
+				return 1.8; // To make it cheaper than *(A,A)
 			case "exp":
 			case "log":
 			case "^":

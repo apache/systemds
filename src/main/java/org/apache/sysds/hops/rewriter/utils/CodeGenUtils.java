@@ -70,6 +70,8 @@ public class CodeGenUtils {
 					return "Types.OpOp1.NOT";
 				case "sqrt":
 					return "Types.OpOp1.SQRT";
+				case "sq":
+					return "Types.OpOp1.POW2";
 				case "log":
 					return "Types.OpOp1.LOG";
 				case "abs":
@@ -90,6 +92,12 @@ public class CodeGenUtils {
 					return "Types.OpOp1.CAST_AS_SCALAR";
 				case "const":
 					return "Types.OpOpDG.RAND";
+				case "nrow":
+					return "Types.OpOp1.NROW";
+				case "ncol":
+					return "Types.OpOp1.NCOL";
+				case "length":
+					return "Types.OpOp1.LENGTH";
 			}
 		} else if (stmt.getOperands().size() == 2) {
 			switch (stmt.trueInstruction()) {
@@ -247,6 +255,8 @@ public class CodeGenUtils {
 			case "cast.FLOAT":
 			case "nrow":
 			case "ncol":
+			case "length":
+			case "sq":
 				return "UnaryOp";
 
 			case "rowSums":

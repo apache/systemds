@@ -83,7 +83,7 @@ public class RewriterAlphabetTest {
 			//System.out.println(RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, false).size());
 			for (RewriterStatement stmt : RewriterSearchUtils.buildAllPossibleDAGs(ops, ctx, true)) {
 				System.out.println("Base: " + stmt.toParsableString(ctx));
-				for (RewriterStatement sstmt : RewriterSearchUtils.buildAssertionVariations(stmt, ctx, true)) {
+				for (RewriterStatement sstmt : RewriterSearchUtils.buildAssertionVariations(stmt, ctx)) {
 					canonicalConverter.apply(sstmt);
 					System.out.println(sstmt.toParsableString(ctx));
 					//System.out.println("Raw: " + sstmt);

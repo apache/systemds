@@ -20,7 +20,6 @@
 package org.apache.sysds.hops.rewriter;
 
 import org.apache.commons.collections.list.SynchronizedList;
-import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertionUtils;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
@@ -34,10 +33,7 @@ import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import scala.Tuple2;
 import scala.Tuple4;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -52,15 +48,22 @@ import java.util.stream.IntStream;
 
 public class RewriterFramework {
 
+	// Why are the following rules not found?
+	// An invalid rule was found: sum(%*%(M68353,M7710)) => cast.FLOAT(%*%(colSums(M68353),rowSums(M7710)))
+	//	Reason: Assertion
+
 	// To test the framework
 	public static void main(String[] args) {
-		String dbPath = "/Users/janniklindemann/Dev/Rewrite-Generator-Reproducibility/data/expressions.db";
+		String dbPath = "./src/test/resources/rewriterframework/expressions.db";
 		RewriterFramework rwf = new RewriterFramework(dbPath);
-		rwf.init(false);
+		rwf.init(false,false);
+		rwf.dataDrivenSearch(1000);
 		rwf.systematicSearch(2);
 		rwf.createRules(true);
 		rwf.removeInvalidRules();
-		System.out.println(rwf.getUnconditionalRuleSet().serialize(rwf.getContext()));
+		System.out.println(rwf.getUnconditionalRuleSet());
+		//rwf.removeInapplicableRules();
+		//System.out.println(rwf.getUnconditionalRuleSet().toJavaCode("GeneratedRewriteClass", true));
 	}
 
 
@@ -73,7 +76,6 @@ public class RewriterFramework {
 	private int MAX_COST_SAMPLES = 50;
 
 	private RewriterEquivalenceDatabase equivalenceDB;
-	private RewriterDatabase exactExprDB;
 	private List<RewriterEquivalenceDatabase.DBEntry> foundEquivalences;
 	private boolean pruneNovelExpressions = false;
 
@@ -82,20 +84,6 @@ public class RewriterFramework {
 
 	public RewriterFramework(String dbFile) {
 		this.dbFile = dbFile;
-		setup();
-	}
-
-	public RewriterFramework(RuleContext ctx, RewriterDatabase db, Function<RewriterStatement, RewriterStatement> converter) {
-		this.ctx = ctx;
-		this.converter = converter;
-		this.db = db;
-	}
-
-	private void setup() {
-		ctx = RewriterUtils.buildDefaultContext();
-		converter = RewriterUtils.buildCanonicalFormConverter(ctx, false);
-		db = new RewriterDatabase();
-		exactExprDB = new RewriterDatabase();
 	}
 
 	private void setupDataDrivenSearch() {
@@ -109,7 +97,10 @@ public class RewriterFramework {
 		}
 	}
 
-	public void init(boolean pruneNovelExpressions) {
+	public void init(boolean allowInversionCanonicalization, boolean pruneNovelExpressions) {
+		ctx = RewriterUtils.buildDefaultContext();
+		converter = RewriterUtils.buildCanonicalFormConverter(ctx, allowInversionCanonicalization, false);
+		db = new RewriterDatabase();
 		equivalenceDB = new RewriterEquivalenceDatabase();
 		foundEquivalences = new ArrayList<>();
 		this.pruneNovelExpressions = pruneNovelExpressions;
@@ -119,14 +110,12 @@ public class RewriterFramework {
 		return ctx;
 	}
 
-	public void systematicSearch(int maxDepth) {
-		systematicSearch(0, RewriterSearchUtils.getMaxSearchNumberForNumOps(maxDepth));
-	}
-
 	public void dataDrivenSearch(int exprPruningThreshold) {
 		setupDataDrivenSearch(); // Load the expression DB
 
 		int size = db.size();
+		RewriterDatabase exactExprDB = new RewriterDatabase();
+
 		MutableInt ctr = new MutableInt(0);
 		MutableInt failures = new MutableInt(0);
 		MutableInt generatedExpressions = new MutableInt(0);
@@ -189,7 +178,15 @@ public class RewriterFramework {
 		});
 	}
 
-	public void systematicSearch(int fromIdx, int toIdx) {
+	public void systematicSearch(int maxDepth) {
+		systematicSearch(0, RewriterSearchUtils.getMaxSearchNumberForNumOps(maxDepth), true, false);
+	}
+
+	public void systematicSearch(int maxDepth, boolean includeDuplicateReferences) {
+		systematicSearch(0, RewriterSearchUtils.getMaxSearchNumberForNumOps(maxDepth), includeDuplicateReferences, false);
+	}
+
+	public void systematicSearch(int fromIdx, int toIdx, boolean includeDuplicateReferences, boolean includeRowColVectors) {
 		long MAX_MILLIS = 12000000; // Should be bound by number of ops
 		int diff = toIdx - fromIdx;
 		int maxN = toIdx;
@@ -213,7 +210,10 @@ public class RewriterFramework {
 				for (RewriterStatement dag : stmts) {
 					List<RewriterStatement> expanded = new ArrayList<>();
 					expanded.add(dag);
-					expanded.addAll(RewriterSearchUtils.buildVariations(dag, ctx));
+					if (includeDuplicateReferences)
+						expanded.addAll(RewriterSearchUtils.buildVariations(dag, ctx));
+					if (includeRowColVectors)
+						expanded.addAll(RewriterSearchUtils.buildAssertionVariations(dag, ctx));
 					actualCtr += expanded.size();
 					for (RewriterStatement stmt : expanded) {
 						try {
@@ -247,13 +247,71 @@ public class RewriterFramework {
 		}
 	}
 
-	public void createRules(boolean freeMemory) {
+	public void randomSearch(int minExprSize, int maxExprSize) {
+		randomSearchFromIndex(RewriterSearchUtils.getMaxSearchNumberForNumOps(minExprSize-1)+1, RewriterSearchUtils.getMaxSearchNumberForNumOps(maxExprSize));
+	}
+
+	public void randomSearchFromIndex(int fromIdx, int toIdx) {
+		// Now we will just do random sampling for a few rounds
+		Random rd = new Random(42);
+		for (int batch = 0; batch < 200 && batch * BATCH_SIZE < toIdx-fromIdx; batch++) {
+			List<Integer> indices = IntStream.range(batch * BATCH_SIZE, (batch + 1) * BATCH_SIZE - 1).boxed().map(v -> fromIdx + rd.nextInt(toIdx-fromIdx)).collect(Collectors.toList());
+			MutableInt ctr2 = new MutableInt(0);
+			int maxSize = indices.size();
+			final int mBATCH = batch;
+			indices.parallelStream().forEach(idx -> {
+				if (ctr2.incrementAndGet() % 10 == 0)
+					System.out.println("Done: " + (mBATCH * BATCH_SIZE + ctr2.intValue()) + " / " + (mBATCH * BATCH_SIZE + maxSize));
+
+				List<RewriterSearchUtils.Operand> ops = RewriterSearchUtils.decodeOrderedStatements(idx);
+				List<RewriterStatement> stmts = RewriterSearchUtils.buildAllPossibleDAGs(ops, ctx, true);
+				long actualCtr = 0;
+
+				for (RewriterStatement dag : stmts) {
+					List<RewriterStatement> expanded = new ArrayList<>();
+					expanded.add(dag);
+					//expanded.addAll(RewriterAlphabetEncoder.buildAssertionVariations(dag, ctx, true));
+					expanded.addAll(RewriterSearchUtils.buildVariations(dag, ctx));
+					actualCtr += expanded.size();
+					for (RewriterStatement stmt : expanded) {
+						try {
+							String mstmt = stmt.toParsableString(ctx, true);
+							stmt = RewriterUtils.parse(mstmt, ctx);
+							ctx.metaPropagator.apply(stmt);
+							RewriterStatement canonicalForm = converter.apply(stmt);
+
+							synchronized (this) {
+								if (pruneNovelExpressions && !equivalenceDB.containsEntry(canonicalForm))
+									return;
+
+								RewriterEquivalenceDatabase.DBEntry entry = equivalenceDB.insert(ctx, canonicalForm, stmt);
+
+								// Now, we use common variables
+								if (entry.equivalences.size() > 1) {
+									RewriterStatement commonForm = RewriterRuleCreator.createCommonForm(stmt, entry.equivalences.get(0), canonicalForm, entry.canonicalForm, ctx)._1;
+									entry.equivalences.set(entry.equivalences.size()-1, commonForm);
+								}
+
+								if (entry.equivalences.size() == 2)
+									foundEquivalences.add(entry);
+							}
+						} catch (Exception e) {
+							System.err.println("Faulty expression: " + stmt.toParsableString(ctx));
+							e.printStackTrace();
+						}
+					}
+				}
+			});
+		}
+	}
+
+	public void createRules(boolean freeDBMemory) {
 		System.out.println("===== SUGGESTED REWRITES =====");
 		List<Tuple4<RewriterStatement, List<RewriterStatement>, Long, Boolean>> rewrites = findSuggestedRewrites(foundEquivalences, MAX_COST_SAMPLES);
-		if (freeMemory) {
+
+		if (freeDBMemory) {
 			db.clear();
 			foundEquivalences.clear();
-			//exactExprDB.clear();
 			equivalenceDB.clear();
 		}
 
@@ -312,6 +370,10 @@ public class RewriterFramework {
 		conditionalRuleSet = new RewriterRuleSet(ctx, conditionalRules);
 	}
 
+	/**
+	 * This function removes rules where the output of the origin expression does not match
+	 * the output of the target expression.
+	 */
 	public void removeInvalidRules() {
 		unconditionalRuleCreator.throwOutInvalidRules(true, false);
 	}
@@ -335,9 +397,9 @@ public class RewriterFramework {
 		return conditionalRuleSet;
 	}
 
-	public boolean saveRuleSet(String filePath, RewriterRuleSet ruleSet) {
+	public static boolean saveRuleSet(String filePath, RewriterRuleSet ruleSet) {
 		try (FileWriter writer = new FileWriter(filePath)) {
-			writer.write(ruleSet.serialize(ctx));
+			writer.write(ruleSet.serialize());
 		} catch (IOException ex) {
 			ex.printStackTrace();
 			return false;
@@ -496,7 +558,6 @@ public class RewriterFramework {
 				int nMaxN = RewriterSearchUtils.getMaxSearchNumberForNumOps(4);
 				for (int batch = 0; batch < 200 && System.currentTimeMillis() - startMillis < MAX_MILLIS && batch * BATCH_SIZE < maxN; batch++) {
 					List<Integer> indices = IntStream.range(batch * BATCH_SIZE, (batch + 1) * BATCH_SIZE - 1).boxed().map(v -> maxN + rd.nextInt(nMaxN)).collect(Collectors.toList());
-					//Collections.shuffle(indices);
 					MutableInt ctr2 = new MutableInt(0);
 					int maxSize = indices.size();
 					final int mBATCH = batch;
@@ -609,7 +670,7 @@ public class RewriterFramework {
 		RewriterRuleSet rawRuleSet = ruleCreator.getRuleSet();
 
 		try (FileWriter writer = new FileWriter(RewriteAutomaticallyGenerated.RAW_FILE_PATH)) {
-			writer.write(rawRuleSet.serialize(ctx));
+			writer.write(rawRuleSet.serialize());
 		} catch (IOException ex) {
 			ex.printStackTrace();
 		}
@@ -619,7 +680,7 @@ public class RewriterFramework {
 		ruleCreator.throwOutInvalidRules(true, false);
 
 		try (FileWriter writer = new FileWriter(RewriteAutomaticallyGenerated.VALIDATED_FILE_PATH)) {
-			writer.write(rawRuleSet.serialize(ctx));
+			writer.write(rawRuleSet.serialize());
 		} catch (IOException ex) {
 			ex.printStackTrace();
 		}
@@ -630,7 +691,7 @@ public class RewriterFramework {
 		System.out.println("Writing results...");
 
 		try (FileWriter writer = new FileWriter(RewriteAutomaticallyGenerated.FILE_PATH)) {
-			String serialized = ruleCreator.getRuleSet().serialize(ctx);
+			String serialized = ruleCreator.getRuleSet().serialize();
 			System.out.println(serialized);
 			writer.write(serialized);
 		} catch (IOException ex) {
@@ -638,7 +699,7 @@ public class RewriterFramework {
 		}
 
 		try (FileWriter writer = new FileWriter(RewriteAutomaticallyGenerated.FILE_PATH_CONDITIONAL)) {
-			String serialized = new RewriterRuleSet(ctx, conditionalRules).serialize(ctx);
+			String serialized = new RewriterRuleSet(ctx, conditionalRules).serialize();
 			System.out.println(serialized);
 			writer.write(serialized);
 		} catch (IOException ex) {
@@ -666,8 +727,7 @@ public class RewriterFramework {
 					RewriterAssertionUtils.buildImplicitAssertions(mEq.get(i), assertions, ctx);
 
 				List<Tuple2<List<Number>, List<Long>>> costs = RewriterCostEstimator.compareCosts(mEq, assertions, ctx, true, 0);
-				if (containsEClass(mEq.get(0)))
-					throw new IllegalArgumentException("EClass detected: " + mEq.get(0));
+
 				Set<Tuple2<Integer, Integer>> rewriteProposals = RewriterCostEstimator.findOptima(costs);
 				long mId = idCtr.incrementAndGet();
 
@@ -683,22 +743,10 @@ public class RewriterFramework {
 					}
 				}
 			} catch (Exception e) {
-				e.printStackTrace();
+				//e.printStackTrace();
 			}
 		});
 
 		return suggestions;
-	}
-
-	private boolean containsEClass(RewriterStatement root) {
-		MutableBoolean mb = new MutableBoolean(false);
-		root.forEachPreOrder(stmt -> {
-			if (stmt.isEClass()) {
-				mb.setValue(true);
-				return false;
-			}
-			return true;
-		}, false);
-		return mb.getValue();
 	}
 }

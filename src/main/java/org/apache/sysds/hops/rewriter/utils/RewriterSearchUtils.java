@@ -146,7 +146,7 @@ public class RewriterSearchUtils {
 	}
 
 	// To include structures like row/column vectors etc.
-	public static List<RewriterStatement> buildAssertionVariations(RewriterStatement root, final RuleContext ctx, boolean increasedVariance) {
+	public static List<RewriterStatement> buildAssertionVariations(RewriterStatement root, final RuleContext ctx) {
 		List<RewriterStatement> interestingLeaves = new ArrayList<>();
 		root.forEachPreOrder(cur -> {
 			if (!cur.isInstruction() && !cur.isLiteral() && cur.getResultingDataType(ctx).equals("MATRIX"))
@@ -158,7 +158,6 @@ public class RewriterSearchUtils {
 			return Collections.emptyList();
 
 		List<RewriterStatement> out = new ArrayList<>();
-		//out.add(root);
 
 		for (int i = 0; i < interestingLeaves.size(); i++) {
 			RewriterStatement from = interestingLeaves.get(i);

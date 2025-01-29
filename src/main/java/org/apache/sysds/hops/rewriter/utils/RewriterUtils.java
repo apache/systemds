@@ -754,17 +754,20 @@ public class RewriterUtils {
 	}
 
 	public static Function<RewriterStatement, RewriterStatement> buildCanonicalFormConverter(final RuleContext ctx, boolean debug) {
+		return buildCanonicalFormConverter(ctx, true, debug);
+	}
+
+	public static Function<RewriterStatement, RewriterStatement> buildCanonicalFormConverter(final RuleContext ctx, boolean allowInversionCanonicalization, boolean debug) {
 		ArrayList<RewriterRule> algebraicCanonicalizationRules = new ArrayList<>();
 		RewriterRuleCollection.substituteEquivalentStatements(algebraicCanonicalizationRules, ctx);
 		RewriterRuleCollection.eliminateMultipleCasts(algebraicCanonicalizationRules, ctx);
 		RewriterRuleCollection.canonicalizeBooleanStatements(algebraicCanonicalizationRules, ctx);
-		RewriterRuleCollection.canonicalizeAlgebraicStatements(algebraicCanonicalizationRules, ctx);
+		RewriterRuleCollection.canonicalizeAlgebraicStatements(algebraicCanonicalizationRules, allowInversionCanonicalization, ctx);
 		RewriterRuleCollection.eliminateMultipleCasts(algebraicCanonicalizationRules, ctx);
 		RewriterRuleCollection.buildElementWiseAlgebraicCanonicalization(algebraicCanonicalizationRules, ctx);
 		RewriterHeuristic algebraicCanonicalization = new RewriterHeuristic(new RewriterRuleSet(ctx, algebraicCanonicalizationRules));
 
 		ArrayList<RewriterRule> expRules = new ArrayList<>();
-		//RewriterRuleCollection.pushdownStreamSelections(expRules, ctx); // To eliminate some stuff early on
 		RewriterRuleCollection.expandStreamingExpressions(expRules, ctx);
 		RewriterHeuristic streamExpansion = new RewriterHeuristic(new RewriterRuleSet(ctx, expRules));
 
@@ -777,7 +780,7 @@ public class RewriterUtils {
 		RewriterRuleCollection.buildElementWiseAlgebraicCanonicalization(pd, ctx);
 		RewriterRuleCollection.eliminateMultipleCasts(pd, ctx);
 		RewriterRuleCollection.canonicalizeBooleanStatements(pd, ctx);
-		RewriterRuleCollection.canonicalizeAlgebraicStatements(pd, ctx);
+		RewriterRuleCollection.canonicalizeAlgebraicStatements(pd, allowInversionCanonicalization, ctx);
 		RewriterHeuristic streamSelectPushdown = new RewriterHeuristic(new RewriterRuleSet(ctx, pd));
 
 		ArrayList<RewriterRule> flatten = new ArrayList<>();

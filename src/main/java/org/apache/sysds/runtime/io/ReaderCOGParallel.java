@@ -281,31 +281,10 @@ public class ReaderCOGParallel extends MatrixReader{
                 int colOffset = tileCol * tileWidth * bands;
                 if (sparse) {
                     // if outputMatrix is sparse apply synchronisation if tiles are more narrow then outputMatrix
-                    SparseBlock sblock = _dest.getSparseBlock();
-                    if (tileWidth < clen) {
-                        if (sblock instanceof SparseBlockMCSR && sblock.get(rowOffset) != null) {
-                            for (int i = 0; i < tileLength; i++)
-                                synchronized (sblock.get(rowOffset + i)) {
-                                    _dest.appendRowToSparse(sblock, tileMatrix, i,
-                                            rowOffset,
-                                            colOffset, true);
-                                }
-                        }
-                        else{
-                            synchronized (_dest) {
-                                _dest.appendToSparse(
-                                        tileMatrix,
-                                        rowOffset,
-                                        colOffset);
-                            }
-                        }
-                    }
-                    else {
-                        _dest.appendToSparse(tileMatrix, rowOffset, colOffset);
-                    }
-
+                    insertIntoSparse(_dest, tileMatrix, rowOffset, colOffset);
                 }
                 else {
+                    // if matrix is dense inserting just the tileMatrix as is
                     _dest.copy(rowOffset, rowOffset + tileLength - 1,
                             colOffset, colOffset + (tileWidth * bands) -1,
                             tileMatrix, false);
@@ -315,9 +294,6 @@ public class ReaderCOGParallel extends MatrixReader{
             }
         }
 
-
-
-
         private void processTileByBand() {
             int pixelsRead = 0;
             int bytesRead = 0;
@@ -325,7 +301,7 @@ public class ReaderCOGParallel extends MatrixReader{
 
             MatrixBlock tileMatrix = new MatrixBlock(tileLength, tileWidth*bands, sparse);
 
-            if( sparse ) {
+            if(sparse) {
                 tileMatrix.allocateAndResetSparseBlock(true, SparseBlock.Type.CSR);
                 tileMatrix.getSparseBlock().allocate(0,  tileLength*tileWidth*bands);
             }
@@ -362,30 +338,11 @@ public class ReaderCOGParallel extends MatrixReader{
                 int colOffset = tileCol * tileWidth * bands;
                 if (sparse) {
                     // if outputMatrix is sparse apply synchronisation if tiles are more narrow then outputMatrix
-                    SparseBlock sblock = _dest.getSparseBlock();
-                    if (tileWidth < clen) {
-                        if (sblock instanceof SparseBlockMCSR && sblock.get(rowOffset) != null) {
-                            for (int i = 0; i < tileLength; i++)
-                                synchronized (sblock.get(rowOffset + i)) {
-                                    _dest.appendRowToSparse(sblock, tileMatrix, i,
-                                            rowOffset,
-                                            colOffset, true);
-                                }
-                        }
-                        else{
-                            synchronized (_dest) {
-                                _dest.appendToSparse(
-                                        tileMatrix,
-                                        rowOffset,
-                                        colOffset);
-                            }
-                        }
-                    }
-                    else {
-                        _dest.appendToSparse(tileMatrix, rowOffset, colOffset);
-                    }
+                    insertIntoSparse(_dest, tileMatrix, rowOffset, colOffset);
                 }
                 else {
+                    // insert only values the thread is responsible for
+                    // denseBlocks have zero values by default, so actual current band 0 values dont need to be written
                     for (int i = 0; i < tileLength; i++) {
                         for (int j = 0; j < tileWidth * bands; j++) {
                             if (tileMatrix.get(i, j) != 0) {
@@ -396,6 +353,35 @@ public class ReaderCOGParallel extends MatrixReader{
                 }
             } catch (RuntimeException e) {
                 throw new DMLRuntimeException("Error while processing tile", e);
+            }
+        }
+
+        private void insertIntoSparse(MatrixBlock _dest, MatrixBlock tileMatrix, int rowOffset, int colOffset ) {
+            SparseBlock sblock = _dest.getSparseBlock();
+            if (tileWidth < clen) {
+                // if there is more then one tile in horizontal direction, synchronization is needed
+                // such that threads do not write the same rows concurrently
+                // appendToSparse and appendRowToSparse require sorting
+                if (sblock instanceof SparseBlockMCSR && sblock.get(rowOffset) != null) {
+                    for (int i = 0; i < tileLength; i++)
+                        synchronized (sblock.get(rowOffset + i)) {
+                            _dest.appendRowToSparse(sblock, tileMatrix, i,
+                                    rowOffset,
+                                    colOffset, true);
+                        }
+                }
+                else{
+                    synchronized (_dest) {
+                        _dest.appendToSparse(
+                                tileMatrix,
+                                rowOffset,
+                                colOffset);
+                    }
+                }
+            }
+            else {
+                // otherwise no further synchronization is needed
+                _dest.appendToSparse(tileMatrix, rowOffset, colOffset);
             }
         }
 

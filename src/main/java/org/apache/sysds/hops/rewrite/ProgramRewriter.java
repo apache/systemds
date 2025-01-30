@@ -145,14 +145,7 @@ public class ProgramRewriter{
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION ) {
 				_dagRuleSet.add( new RewriteAlgebraicSimplificationDynamic()      ); //dependencies: cse
 				_dagRuleSet.add( new RewriteAlgebraicSimplificationStatic()       ); //dependencies: cse
-
-				if ( DMLScript.APPLY_GENERATED_REWRITES ) {
-					_dagRuleSet.add(new RewriteAutomaticallyGenerated(new GeneratedRewriteClass()));
-				}
 			}
-
-			if (DMLExecutor.APPLY_INJECTED_REWRITES)
-				_dagRuleSet.add(new RewriteAutomaticallyGenerated(DMLExecutor.REWRITE_FUNCTION));
 		}
 		
 		// cleanup after all rewrites applied 

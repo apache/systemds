@@ -32,6 +32,8 @@ import org.apache.sysds.utils.DMLCompressionStatistics;
 import org.apache.sysds.utils.Statistics;
 import org.junit.Assert;
 
+import java.io.ByteArrayOutputStream;
+
 public abstract class CompressBase extends AutomatedTestBase {
 	// private static final Log LOG = LogFactory.getLog(CompressBase.class.getName());
 
@@ -66,7 +68,8 @@ public abstract class CompressBase extends AutomatedTestBase {
 			fullDMLScriptName = SCRIPT_DIR + "/functions/compress/compress_" + name + ".dml";
 			programArgs = new String[] {"-stats", "100", "-nvargs", "A=" + input("A")};
 
-			String out = runTest(null).toString();
+			ByteArrayOutputStream tmp = runTest(null);
+			String out = tmp != null ? runTest(null).toString() : "";
 
 			int decompressCount = DMLCompressionStatistics.getDecompressionCount();
 			long compressionCount = (instType == ExecType.SPARK) ? Statistics
@@ -74,7 +77,8 @@ public abstract class CompressBase extends AutomatedTestBase {
 			DMLCompressionStatistics.reset();
 
 			Assert.assertEquals(out + "\ncompression count   wrong : ", compressionCount, compressionCountsExpected);
-			Assert.assertTrue(out + "\nDecompression count wrong : ",
+			Assert.assertTrue(out + "\nDecompression count wrong : " + decompressCount +
+							(decompressionCountExpected >= 0 ? " [expected: " + decompressionCountExpected+ "]" : ""),
 				decompressionCountExpected >= 0 ? decompressionCountExpected == decompressCount : decompressCount > 1);
 
 		}

@@ -1265,7 +1265,6 @@ public class RewriterUtils {
 				}
 
 				if (indices.isEmpty()) {
-					System.out.println("Indices empty!");
 					return cur.getChild(1);
 				}
 			}

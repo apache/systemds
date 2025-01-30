@@ -112,7 +112,7 @@ import scala.Tuple4;
 public abstract class AutomatedTestBase {
 	protected static final boolean RECORD_GENERATED_REWRITES = false;
 	protected static final boolean ALLOW_GENERATED_REWRITES = false;
-	protected static final String BASE_DATA_DIR = "/Users/janniklindemann/Dev/MScThesis/NGramAnalysis/";
+	protected static final String BASE_DATA_DIR = null;
 
 
 	///// THESE SHOULD NOT BE MODIFIED /////
@@ -123,8 +123,6 @@ public abstract class AutomatedTestBase {
 		RewriterRuntimeUtils.setupIfNecessary();
 
 		if (RECORD_GENERATED_REWRITES) {
-			final List<Tuple4<String, Integer, Long, Long>> runTimes = new ArrayList<>();
-
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 				StringBuilder csvBuilder2 = new StringBuilder();
 				csvBuilder2.append("Rewrite;Count\n");

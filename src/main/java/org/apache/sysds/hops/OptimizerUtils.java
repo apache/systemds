@@ -399,7 +399,7 @@ public class OptimizerUtils
 		int optlevel = dmlconf.getIntValue(DMLConfig.OPTIMIZATION_LEVEL);
 		if( optlevel < 0 || optlevel > 7 )
 			throw new DMLRuntimeException("Error: invalid optimization level '"+optlevel+"' (valid values: 0-5).");
-
+	
 		switch( optlevel )
 		{
 			// opt level 0: static dimensionality

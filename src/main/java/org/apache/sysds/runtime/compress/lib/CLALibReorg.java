@@ -61,11 +61,11 @@ public class CLALibReorg {
 			if(cmb.getCachedDecompressed() != null)
 				return cmb.getCachedDecompressed().reorgOperations(op, ret, startRow, startColumn, length);
 
+			// Allow transpose to be compressed output. In general we need to have a transposed flag on
+			// the compressed matrix. https://issues.apache.org/jira/browse/SYSTEMDS-3025
 			return transpose(cmb, ret, op.getNumThreads());
 		}
 		else {
-			// Allow transpose to be compressed output. In general we need to have a transposed flag on
-			// the compressed matrix. https://issues.apache.org/jira/browse/SYSTEMDS-3025
 			String message = !warned ? op.getClass().getSimpleName() + " -- " + op.fn.getClass().getSimpleName() : null;
 			MatrixBlock tmp = cmb.getUncompressed(message, op.getNumThreads());
 			warned = true;

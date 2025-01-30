@@ -335,26 +335,6 @@ public class RewriterStreamTests {
 	}
 
 	@Test
-	public void mTest() {
-		List<RewriterRule> rules = new ArrayList<>();
-		rules.add(new RewriterRuleBuilder(ctx, "?")
-				.setUnidirectional(true)
-				.parseGlobalVars("FLOAT:a")
-				.withParsedStatement("a")
-				.toParsedStatement("f(a, a)")
-						.iff(match -> {
-							return !match.getExpressionRoot().isInstruction() || !match.getExpressionRoot().trueInstruction().equals("f");
-						}, true)
-				.build()
-		);
-
-		RewriterHeuristic heur = new RewriterHeuristic(new RewriterRuleSet(ctx, rules));
-		RewriterStatement stmt = RewriterUtils.parse("A", ctx, "FLOAT:A");
-		stmt = heur.apply(stmt);
-		LOG.info(stmt);
-	}
-
-	@Test
 	public void test3() {
 		RewriterStatement stmt = RewriterUtils.parse("+(+(A,X),t(X))", ctx, "MATRIX:X,A");
 		stmt = canonicalConverter.apply(stmt);

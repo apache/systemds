@@ -138,7 +138,9 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 		else if(ec.isMatrixObject(input1.getName()))
 			processMatrixBlockCompression(ec, ec.getMatrixInput(input1.getName()), _numThreads, root);
 		else {
-			throw new NotImplementedException("Not supported other types of input for compression than frame and matrix");
+			LOG.warn("Compression on Scalar should not happen");
+			ScalarObject Scalar = ec.getScalarInput(input1);
+			ec.setScalarOutput(output.getName(),Scalar);
 		}
 	}
 

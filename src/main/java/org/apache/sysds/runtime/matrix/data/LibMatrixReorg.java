@@ -1044,11 +1044,13 @@ public class LibMatrixReorg {
 
 	}
 
-	private static MatrixBlock fusedSeqRexpandSparse(int seqHeight, MatrixBlock A, double w, MatrixBlock ret, boolean updateClen) {
+	private static MatrixBlock fusedSeqRexpandSparse(int seqHeight, MatrixBlock A, double w, MatrixBlock ret,
+													 boolean updateClen) {
 		if(ret == null) {
 			ret = new MatrixBlock();
 			updateClen = true;
 		}
+		int outCols = updateClen ? -1 : ret.getNumColumns();
 		final int rlen = seqHeight;
 		// prepare allocation of CSR sparse block
 		final int[] rowPointers = new int[rlen + 1];
@@ -1060,14 +1062,14 @@ public class LibMatrixReorg {
 		ret.sparse = true;
 		ret.denseBlock = null;
 		// construct sparse CSR block from filled arrays
-		SparseBlockCSR csr = new SparseBlockCSR(rowPointers, indexes, values, rlen);
+		SparseBlockCSR csr = new SparseBlockCSR(rowPointers, indexes, values, seqHeight);
 		ret.sparseBlock = csr;
-		int blkz = Math.min(1024, rlen);
+		int blkz = Math.min(1024, seqHeight);
 		int maxcol = 0;
 		boolean containsNull = false;
-		for(int i = 0; i < rlen; i += blkz) {
+		for(int i = 0; i < seqHeight; i += blkz) {
 			// blocked execution for earlier JIT compilation
-			int t = fusedSeqRexpandSparseBlock(csr, A, w, i, Math.min(i + blkz, rlen));
+			int t = fusedSeqRexpandSparseBlock(csr, A, w, i, Math.min(i + blkz, seqHeight), updateClen,outCols);
 			if(t < 0) {
 				t = Math.abs(t);
 				containsNull = true;
@@ -1078,14 +1080,15 @@ public class LibMatrixReorg {
 		if(containsNull)
 			csr.compact();
 
-		rowPointers[rlen] = rlen;
+		rowPointers[seqHeight] = seqHeight;
 		ret.setNonZeros(ret.sparseBlock.size());
 		if(updateClen)
-			ret.setNumColumns(maxcol);
+			ret.setNumColumns(outCols == -1 ? maxcol : (int) outCols);
 		return ret;
 	}
 
-	private static int fusedSeqRexpandSparseBlock(final SparseBlockCSR csr, final MatrixBlock A, final double w, int rl, int ru) {
+	private static int fusedSeqRexpandSparseBlock(final SparseBlockCSR csr, final MatrixBlock A, final double w, int rl,
+												  int ru, boolean updateClen,int maxOutCol) {
 
 		// prepare allocation of CSR sparse block
 		final int[] rowPointers = csr.rowPointers();
@@ -1096,11 +1099,9 @@ public class LibMatrixReorg {
 		int maxCol = 0;
 
 		for(int i = rl; i < ru; i++) {
-			int c = rexpandSingleRow(i, A.get(i, 0), w, indexes, values);
-			if(c < 0)
-				containsNull = true;
-			else 
-				maxCol = Math.max(c, maxCol);
+			int c = rexpandSingleRow(i, A.get(i, 0), w, indexes, values, updateClen, maxOutCol);
+			containsNull |= c < 0;
+			maxCol = Math.max(c, maxCol);
 			rowPointers[i] = i;
 		}
 	
@@ -1114,23 +1115,22 @@ public class LibMatrixReorg {
 			ret.clen = maxCol;
 	}
 
-	public static int rexpandSingleRow(int row, double v2, double w,  int[] retIx, double[] retVals) {
-		// If any of the values are NaN (i.e., missing) then
-		// we skip this tuple, proceed to the next tuple
-		if(Double.isNaN(v2))
-			return -1;
+	public static int rexpandSingleRow(int row, double v2, double w,  int[] retIx, double[] retVals,
+												boolean updateClen, int maxOutCol) {
 
-		// safe casts to long for consistent behavior with indexing
-		int col = UtilFunctions.toInt(v2);
-		if(col <= 0)
+		final int colUnsafe = UtilFunctions.toInt(v2);	// colUnsafe = 0 for Nan
+		int isNan = (Double.isNaN(v2) ? 1 : 0);		// avoid branching by boolean to int conversion
+		int col = colUnsafe - isNan;				// col = -1 for Nan
+
+		// use branch prediction for rare case
+		if(!Double.isNaN(v2) && colUnsafe <= 0)
 			throw new DMLRuntimeException("Erroneous input while computing the contingency table (value <= zero): " + v2);
 
-		// set weight as value (expand is guaranteed to address different cells)
-		retIx[row] = col - 1;
-		retVals[row] = w;
-
-		// maintain max seen col
-		return col;
+		// avoid branching again by boolean to int conversion
+		int valid = !Double.isNaN(v2) && (updateClen || col <= maxOutCol) ? 1 : 0;
+		retIx[row] = (col - 1)*valid;		// use valid as switch
+		retVals[row] = w*valid;
+		return valid*col + valid - 1;		// -1 if invalid else col
 	}
 
 	/**

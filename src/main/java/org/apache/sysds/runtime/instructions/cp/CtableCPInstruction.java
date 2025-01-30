@@ -110,13 +110,17 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 		
 		boolean outputDimsKnown = (outputDim1 != -1 && outputDim2 != -1);
 		if ( outputDimsKnown ) {
-			int inputRows = matBlock1.getNumRows();
-			int inputCols = matBlock1.getNumColumns();
-			boolean sparse = MatrixBlock.evalSparseFormatInMemory(outputDim1, outputDim2, inputRows*inputCols);
-			//only create result block if dense; it is important not to aggregate on sparse result
-			//blocks because it would implicitly turn the O(N) algorithm into O(N log N). 
-			if( !sparse )
-				resultBlock = new MatrixBlock((int)outputDim1, (int)outputDim2, false); 
+			if(_isExpand){
+				resultBlock = new MatrixBlock((int)outputDim1, (int)outputDim2, true);
+			} else {
+				int inputRows = matBlock1.getNumRows();
+				int inputCols = matBlock1.getNumColumns();
+				boolean sparse = MatrixBlock.evalSparseFormatInMemory(outputDim1, outputDim2, inputRows*inputCols);
+				//only create result block if dense; it is important not to aggregate on sparse result
+				//blocks because it would implicitly turn the O(N) algorithm into O(N log N).
+				if( !sparse )
+					resultBlock = new MatrixBlock((int)outputDim1, (int)outputDim2, false);
+			}
 		}
 		
 		switch(ctableOp) {
@@ -140,7 +144,8 @@ public class CtableCPInstruction extends ComputationCPInstruction {
 				}
 				matBlock2 = ec.getMatrixInput(input2.getName());
 				cst1 = ec.getScalarInput(input3).getDoubleValue();
-				resultBlock = LibMatrixReorg.fusedSeqRexpand(matBlock2.getNumRows(), matBlock2, cst1, resultBlock, true, _k);
+				resultBlock = LibMatrixReorg.fusedSeqRexpand(matBlock2.getNumRows(), matBlock2, cst1, resultBlock,
+						!outputDimsKnown, _k);
 				break;
 			case CTABLE_TRANSFORM_HISTOGRAM: //(VECTOR)
 				// F=ctable(A,1) or F = ctable(A,1,1)

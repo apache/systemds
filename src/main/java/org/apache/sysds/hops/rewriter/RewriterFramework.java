@@ -96,6 +96,11 @@ public class RewriterFramework {
 		}
 	}
 
+	/**
+	 * Initializes the rewriter framework
+	 * @param allowInversionCanonicalization if the conversion from a/c => a*(c^-1) should be applied (during canonicalization)
+	 * @param pruneNovelExpressions if only equivalence groups should be stored, where at least one expression was in the data-set
+	 */
 	public void init(boolean allowInversionCanonicalization, boolean pruneNovelExpressions) {
 		ctx = RewriterUtils.buildDefaultContext();
 		converter = RewriterUtils.buildCanonicalFormConverter(ctx, allowInversionCanonicalization, false);
@@ -109,6 +114,10 @@ public class RewriterFramework {
 		return ctx;
 	}
 
+	/**
+	 * Performs a data-driven search where existing expressions and their subexpressions are considered
+	 * @param exprPruningThreshold the maximum number of generated subexpressions (to avoid exploding numbers of subgraphs for big graphs)
+	 */
 	public void dataDrivenSearch(int exprPruningThreshold) {
 		setupDataDrivenSearch(); // Load the expression DB
 
@@ -174,14 +183,30 @@ public class RewriterFramework {
 		});
 	}
 
+	/**
+	 * Performs a systematic search
+	 * @param maxDepth the maximum number of (virtual) operands
+	 */
 	public void systematicSearch(int maxDepth) {
 		systematicSearch(0, RewriterSearchUtils.getMaxSearchNumberForNumOps(maxDepth), true, false);
 	}
 
+	/**
+	 * Performs a systematic search
+	 * @param maxDepth the maximum number of (virtual) operands
+	 * @param includeDuplicateReferences if the search space should be extended to contain a shared variable (e.g. +(A,B) => [+(A,B), +(A,A)])
+	 */
 	public void systematicSearch(int maxDepth, boolean includeDuplicateReferences) {
 		systematicSearch(0, RewriterSearchUtils.getMaxSearchNumberForNumOps(maxDepth), includeDuplicateReferences, false);
 	}
 
+	/**
+	 * Performs a systematic search
+	 * @param fromIdx the start index
+	 * @param toIdx the end index
+	 * @param includeDuplicateReferences if the search space should be extended to contain a shared variable (e.g. +(A,B) => [+(A,B), +(A,A)])
+	 * @param includeRowColVectors if row-vectors and col-vectors should be included in the search (note that the data-driven approach does not support this)
+	 */
 	public void systematicSearch(int fromIdx, int toIdx, boolean includeDuplicateReferences, boolean includeRowColVectors) {
 		int diff = toIdx - fromIdx;
 		int maxN = toIdx;
@@ -199,7 +224,6 @@ public class RewriterFramework {
 
 				List<RewriterSearchUtils.Operand> ops = RewriterSearchUtils.decodeOrderedStatements(idx);
 				List<RewriterStatement> stmts = RewriterSearchUtils.buildAllPossibleDAGs(ops, ctx, true);
-				long actualCtr = 0;
 
 				for (RewriterStatement dag : stmts) {
 					List<RewriterStatement> expanded = new ArrayList<>();
@@ -208,42 +232,24 @@ public class RewriterFramework {
 						expanded.addAll(RewriterSearchUtils.buildVariations(dag, ctx));
 					if (includeRowColVectors)
 						expanded.addAll(RewriterSearchUtils.buildAssertionVariations(dag, ctx));
-					actualCtr += expanded.size();
-					for (RewriterStatement stmt : expanded) {
-						try {
-							ctx.metaPropagator.apply(stmt);
-							RewriterStatement canonicalForm = converter.apply(stmt);
 
-							synchronized (this) {
-								if (pruneNovelExpressions && !equivalenceDB.containsEntry(canonicalForm))
-									return;
-
-								RewriterEquivalenceDatabase.DBEntry entry = equivalenceDB.insert(ctx, canonicalForm, stmt);
-
-								// Now, we use common variables
-								if (entry.equivalences.size() > 1) {
-									RewriterStatement commonForm = RewriterRuleCreator.createCommonForm(stmt, entry.equivalences.get(0), canonicalForm, entry.canonicalForm, ctx)._1;
-									entry.equivalences.set(entry.equivalences.size() - 1, commonForm);
-								}
-
-								if (entry.equivalences.size() == 2)
-									foundEquivalences.add(entry);
-							}
-						} catch (Exception e) {
-							System.err.println("Faulty expression: " + stmt.toParsableString(ctx));
-							e.printStackTrace();
-						}
-					}
+					insertEquivalences(expanded);
 				}
 			});
 		}
 	}
 
 	public void randomSearch(int minExprSize, int maxExprSize, int numSamples) {
-		randomSearchFromIndex(RewriterSearchUtils.getMaxSearchNumberForNumOps(minExprSize-1)+1, RewriterSearchUtils.getMaxSearchNumberForNumOps(maxExprSize), numSamples);
+		randomSearchFromIndex(RewriterSearchUtils.getMaxSearchNumberForNumOps(minExprSize-1)+1, RewriterSearchUtils.getMaxSearchNumberForNumOps(maxExprSize), numSamples, true, false);
 	}
 
-	public void randomSearchFromIndex(int fromIdx, int toIdx, int numSamples) {
+	/**
+	 * Performs a random search. Samples numSamples expression groups (groups of expressions encoded by a single integer)
+	 * @param fromIdx the start index
+	 * @param toIdx the end index
+	 * @param numSamples the number of sampmles
+	 */
+	public void randomSearchFromIndex(int fromIdx, int toIdx, int numSamples, boolean includeDuplicateReferences, boolean includeRowColVectors) {
 		// Now we will just do random sampling for a few rounds
 		Random rd = new Random(42);
 		for (int batch = 0; batch < 200 && batch * BATCH_SIZE < numSamples; batch++) {
@@ -257,46 +263,52 @@ public class RewriterFramework {
 
 				List<RewriterSearchUtils.Operand> ops = RewriterSearchUtils.decodeOrderedStatements(idx);
 				List<RewriterStatement> stmts = RewriterSearchUtils.buildAllPossibleDAGs(ops, ctx, true);
-				long actualCtr = 0;
 
 				for (RewriterStatement dag : stmts) {
 					List<RewriterStatement> expanded = new ArrayList<>();
 					expanded.add(dag);
-					//expanded.addAll(RewriterAlphabetEncoder.buildAssertionVariations(dag, ctx, true));
-					expanded.addAll(RewriterSearchUtils.buildVariations(dag, ctx));
-					actualCtr += expanded.size();
-					for (RewriterStatement stmt : expanded) {
-						try {
-							String mstmt = stmt.toParsableString(ctx, true);
-							stmt = RewriterUtils.parse(mstmt, ctx);
-							ctx.metaPropagator.apply(stmt);
-							RewriterStatement canonicalForm = converter.apply(stmt);
+					if (includeDuplicateReferences)
+						expanded.addAll(RewriterSearchUtils.buildVariations(dag, ctx));
+					if (includeRowColVectors)
+						expanded.addAll(RewriterSearchUtils.buildAssertionVariations(dag, ctx));
 
-							synchronized (this) {
-								if (pruneNovelExpressions && !equivalenceDB.containsEntry(canonicalForm))
-									return;
-
-								RewriterEquivalenceDatabase.DBEntry entry = equivalenceDB.insert(ctx, canonicalForm, stmt);
-
-								// Now, we use common variables
-								if (entry.equivalences.size() > 1) {
-									RewriterStatement commonForm = RewriterRuleCreator.createCommonForm(stmt, entry.equivalences.get(0), canonicalForm, entry.canonicalForm, ctx)._1;
-									entry.equivalences.set(entry.equivalences.size()-1, commonForm);
-								}
-
-								if (entry.equivalences.size() == 2)
-									foundEquivalences.add(entry);
-							}
-						} catch (Exception e) {
-							System.err.println("Faulty expression: " + stmt.toParsableString(ctx));
-							e.printStackTrace();
-						}
-					}
+					insertEquivalences(expanded);
 				}
 			});
 		}
 	}
 
+	private void insertEquivalences(List<RewriterStatement> stmts) {
+		for (RewriterStatement stmt : stmts) {
+			try {
+				RewriterStatement canonicalForm = converter.apply(stmt);
+
+				synchronized (this) {
+					if (pruneNovelExpressions && !equivalenceDB.containsEntry(canonicalForm))
+						return;
+
+					RewriterEquivalenceDatabase.DBEntry entry = equivalenceDB.insert(ctx, canonicalForm, stmt);
+
+					// Now, we use common variables
+					if (entry.equivalences.size() > 1) {
+						RewriterStatement commonForm = RewriterRuleCreator.createCommonForm(stmt, entry.equivalences.get(0), canonicalForm, entry.canonicalForm, ctx)._1;
+						entry.equivalences.set(entry.equivalences.size()-1, commonForm);
+					}
+
+					if (entry.equivalences.size() == 2)
+						foundEquivalences.add(entry);
+				}
+			} catch (Exception e) {
+				System.err.println("Faulty expression: " + stmt.toParsableString(ctx));
+				e.printStackTrace();
+			}
+		}
+	}
+
+	/**
+	 * Create rules from all observed equivalences
+	 * @param freeDBMemory if all the stored equivalences that are not needed for rule creation should be dropped immediately
+	 */
 	public void createRules(boolean freeDBMemory) {
 		System.out.println("===== SUGGESTED REWRITES =====");
 		List<Tuple4<RewriterStatement, List<RewriterStatement>, Long, Boolean>> rewrites = findSuggestedRewrites(foundEquivalences, MAX_COST_SAMPLES);
@@ -381,10 +393,18 @@ public class RewriterFramework {
 		unconditionalRuleCreator.throwOutInvalidRules(false, true);
 	}
 
+	/**
+	 *
+	 * @return the unconditional rule set (includes rules where there is exactly one possible optimum per equality set)
+	 */
 	public RewriterRuleSet getUnconditionalRuleSet() {
 		return unconditionalRuleCreator.getRuleSet();
 	}
 
+	/**
+	 *
+	 * @return the conditional rule set (rules where the optimal expression may change, e.g., (A*B)+(A*C) <=> A*(B+C))
+	 */
 	public RewriterRuleSet getConditionalRuleSet() {
 		return conditionalRuleSet;
 	}
@@ -392,6 +412,17 @@ public class RewriterFramework {
 	public static boolean saveRuleSet(String filePath, RewriterRuleSet ruleSet) {
 		try (FileWriter writer = new FileWriter(filePath)) {
 			writer.write(ruleSet.serialize());
+		} catch (IOException ex) {
+			ex.printStackTrace();
+			return false;
+		}
+
+		return true;
+	}
+
+	public static boolean saveJavaCode(String filePath, RewriterRuleSet ruleSet, String className, boolean optimize) {
+		try (FileWriter writer = new FileWriter(filePath)) {
+			writer.write(ruleSet.toJavaCode(className, optimize));
 		} catch (IOException ex) {
 			ex.printStackTrace();
 			return false;

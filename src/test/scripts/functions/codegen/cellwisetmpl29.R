@@ -23,7 +23,7 @@ args<-commandArgs(TRUE)
 options(digits=22)
 library("Matrix")
 
-roqProd <- function(X) {
+rowProd <- function(X) {
   apply(X, 1, prod)
 }
 

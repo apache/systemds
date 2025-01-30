@@ -57,9 +57,9 @@ public class RewriterHeuristics implements RewriterHeuristicTransformation {
 	public RewriterStatement apply(RewriterStatement stmt, @Nullable BiFunction<RewriterStatement, RewriterRule, Boolean> func, MutableBoolean bool, boolean print) {
 		for (HeuristicEntry entry : heuristics) {
 			if (print) {
-				LOG.info("\n");
-				LOG.info("> " + entry.name + " <");
-				LOG.info("\n");
+				System.out.println("\n");
+				System.out.println("> " + entry.name + " <");
+				System.out.println("\n");
 			}
 
 			stmt = entry.heuristics.apply(stmt, func, bool, print);

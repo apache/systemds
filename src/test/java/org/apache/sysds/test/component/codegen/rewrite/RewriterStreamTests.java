@@ -1758,4 +1758,14 @@ public class RewriterStreamTests {
 
 		assert can2.match(RewriterStatement.MatcherContext.exactMatch(ctx, can1, can2));
 	}
+
+	@Test
+	public void testTEST() {
+		RewriterStatement stmt1 = RewriterUtils.parse("t(/(<=(A,B),rowSums(<=(C,B))))", ctx, "MATRIX:A,B,C,D,E", "LITERAL_FLOAT:1.0", "LITERAL_INT:1");
+
+		stmt1 = canonicalConverter.apply(stmt1);
+
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+	}
 }

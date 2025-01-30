@@ -1387,7 +1387,8 @@ public class RewriterRuleCollection {
 							if (newOwnerId == null)
 								throw new IllegalArgumentException();
 
-							stmt.getOperands().get(0).getOperands().get(1).unsafePutMeta("ownerId", newOwnerId);
+							if (!stmt.getChild(0, 1).isLiteral())
+								stmt.getOperands().get(0).getOperands().get(1).unsafePutMeta("ownerId", newOwnerId);
 						}, true)
 						.build());
 

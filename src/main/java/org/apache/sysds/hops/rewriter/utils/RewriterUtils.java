@@ -920,6 +920,8 @@ public class RewriterUtils {
 			List<RewriterStatement> components = new ArrayList<>();
 
 			for (RewriterStatement idx : indices) {
+				if (idx.isLiteral())
+					continue;
 				RewriterStatement idxFrom = idx.getChild(0);
 				RewriterStatement idxTo = idx.getChild(1);
 				RewriterStatement negation = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("-").withOps(/*RewriterStatement.ensureFloat(ctx, idxFrom)*/idxFrom).consolidate(ctx);
@@ -1104,9 +1106,12 @@ public class RewriterUtils {
 		int[] literals = IntStream.range(0, argList.size()).filter(i -> argList.get(i).isLiteral()).toArray();
 
 		if (literals.length == 1) {
-			RewriterStatement overwrite = ConstantFoldingUtils.overwritesLiteral((Number)argList.get(literals[0]).getLiteral(), stmt.trueInstruction(), ctx);
-			if (overwrite != null)
-				return overwrite;
+			Object literal = argList.get(literals[0]).getLiteral();
+			if (literal instanceof Number) {
+				RewriterStatement overwrite = ConstantFoldingUtils.overwritesLiteral((Number) literal, stmt.trueInstruction(), ctx);
+				if (overwrite != null)
+					return overwrite;
+			}
 
 			// Check if is neutral element
 			if (ConstantFoldingUtils.isNeutralElement(argList.get(literals[0]).getLiteral(), stmt.trueInstruction())) {

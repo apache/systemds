@@ -614,7 +614,7 @@ public class RewriterUtils {
 		return replaceReferenceAware(root, false, comparer, new HashMap<>());
 	}
 
-	// Replaces elements in a DAG. If a parent item has multiple references, the entire path is updated
+	// Replaces elements in a DAG. If a parent item has multiple references, the entire path is duplicated
 	public static RewriterStatement replaceReferenceAware(RewriterStatement root, boolean duplicateReferences, Function<RewriterStatement, RewriterStatement> comparer, HashMap<RewriterStatement, RewriterStatement> visited) {
 		if (visited.containsKey(root))
 			return visited.get(root);

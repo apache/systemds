@@ -51,16 +51,21 @@ public class RewriterFramework {
 	// The following rule does sometimes not pass the validation test (probably due to round-off errors sometimes invalidating the result):
 	// An invalid rule was found: sum(%*%(M68353,M7710)) => cast.FLOAT(%*%(colSums(M68353),rowSums(M7710)))
 
+	// Erroneous statement: +(+(%*%(diag(scale_X),t(parsertemp115882)),%*%(shift_X,A)),diag(*(scale_lambda,0.001)))
+	// colSums(*(length(A),const(B,1.0)))
+
 	// To test the framework
 	public static void main(String[] args) {
 		String dbPath = "./src/test/resources/rewriterframework/expressions.db";
 		RewriterFramework rwf = new RewriterFramework(dbPath);
-		rwf.init(false,false);
+		rwf.init(true,true);
 		rwf.dataDrivenSearch(1000);
 		rwf.systematicSearch(3);
 		//rwf.randomSearch(4, 4, 5000);
 		rwf.createRules(true);
 		rwf.removeInvalidRules();
+		// Note that unconditional rules are not 'static' rules.
+		// It is a set of equivalences that have a single optimal expression
 		System.out.println(rwf.getUnconditionalRuleSet());
 		//rwf.removeInapplicableRules();
 		//System.out.println(rwf.getUnconditionalRuleSet().toJavaCode("GeneratedRewriteClass", true));
@@ -137,9 +142,6 @@ public class RewriterFramework {
 
 			for (RewriterStatement subExpr : subExprs) {
 				try {
-					String mstmt = subExpr.toParsableString(ctx, true);
-					subExpr = RewriterUtils.parse(mstmt, ctx);
-
 					if (!exactExprDB.insertEntry(ctx, subExpr))
 						continue;
 
@@ -187,12 +189,10 @@ public class RewriterFramework {
 	}
 
 	public void systematicSearch(int fromIdx, int toIdx, boolean includeDuplicateReferences, boolean includeRowColVectors) {
-		long MAX_MILLIS = 12000000; // Should be bound by number of ops
 		int diff = toIdx - fromIdx;
 		int maxN = toIdx;
-		long startMillis = System.currentTimeMillis();
 
-		for (int batch = 0; batch < 10000 && System.currentTimeMillis() - startMillis < MAX_MILLIS && batch * BATCH_SIZE < diff; batch++) {
+		for (int batch = 0; batch < 10000 && batch * BATCH_SIZE < diff; batch++) {
 			List<Integer> indices = IntStream.range(fromIdx + batch * BATCH_SIZE, fromIdx + Math.min((batch + 1) * BATCH_SIZE - 1, maxN)).boxed().collect(Collectors.toList());
 			Collections.shuffle(indices);
 			MutableInt ctr2 = new MutableInt(0);
@@ -217,8 +217,6 @@ public class RewriterFramework {
 					actualCtr += expanded.size();
 					for (RewriterStatement stmt : expanded) {
 						try {
-							String mstmt = stmt.toParsableString(ctx, true);
-							stmt = RewriterUtils.parse(mstmt, ctx);
 							ctx.metaPropagator.apply(stmt);
 							RewriterStatement canonicalForm = converter.apply(stmt);
 

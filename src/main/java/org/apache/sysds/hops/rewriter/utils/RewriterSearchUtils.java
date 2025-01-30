@@ -179,6 +179,9 @@ public class RewriterSearchUtils {
 			}
 		}
 
+		// Serialize and parse again as there may still be duplicate references
+		out = out.stream().map(stmt -> RewriterUtils.parse(stmt.toParsableString(ctx, true), ctx)).collect(Collectors.toList());
+
 		if (ctx.metaPropagator != null)
 			return out.stream().map(stmt -> ctx.metaPropagator.apply(stmt)).collect(Collectors.toList());
 
@@ -257,9 +260,11 @@ public class RewriterSearchUtils {
 				if (ctx.metaPropagator != null)
 					cpy = ctx.metaPropagator.apply(cpy);
 				out.add(cpy);
-				//System.out.println("HERE:" + out.get(out.size()-1));
 			}
 		}
+
+		// Serialize and parse again as there may still be duplicate references
+		out = out.stream().map(stmt -> RewriterUtils.parse(stmt.toParsableString(ctx, true), ctx)).collect(Collectors.toList());
 
 		return out;
 	}
@@ -278,7 +283,8 @@ public class RewriterSearchUtils {
 		if (ctx.metaPropagator != null)
 			allStmts = allStmts.stream().map(stmt -> ctx.metaPropagator.apply(stmt)).collect(Collectors.toList());
 
-		return allStmts;
+		// Serialize and parse all statements as there are still duplicate references
+		return allStmts.stream().map(stmt -> RewriterUtils.parse(stmt.toParsableString(ctx, true), ctx)).collect(Collectors.toList());
 	}
 
 	private static List<RewriterStatement> recursivelyFindAllCombinations(List<Operand> operands, Operand parent, List<String> supportedTypes) {
@@ -520,7 +526,8 @@ public class RewriterSearchUtils {
 
 			subtree.prepareForHashing();
 			subtree.recomputeHashCodes(ctx);
-			return subtree;
+			// We return a copy of the tree as there are still duplicate references
+			return RewriterUtils.parse(subtree.toParsableString(ctx, true), ctx);
 		}).collect(Collectors.toList());
 	}
 

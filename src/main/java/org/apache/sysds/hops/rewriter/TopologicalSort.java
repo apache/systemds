@@ -20,6 +20,8 @@
 package org.apache.sysds.hops.rewriter;
 
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,10 +34,12 @@ import java.util.function.BiFunction;
 
 // We assume that _argList() will have one unique parent
 public class TopologicalSort {
+	protected static final Log LOG = LogFactory.getLog(TopologicalSort.class.getName());
+
 	public static boolean DEBUG = false;
 
 	// All of these operators are sortable with argument lists (e.g. +(argList(1, 2, 3))
-	private static final Set<String> SORTABLE_ARGLIST_OPS = Set.of("+", "-", "*", "_idxExpr", "_EClass", "rand", "_dummy");
+	private static final Set<String> SORTABLE_ARGLIST_OPS = Set.of("+", "*", "_idxExpr", "_EClass", "rand", "_dummy");
 	// All of these operators are sortable but have their operands directly as children (e.g. ==(a,b))
 	private static final Set<String> SORTABLE_OPS = Set.of("==", "!=");
 
@@ -86,18 +90,18 @@ public class TopologicalSort {
 
 		while (!lowestUncertainties.isEmpty()) {
 			if (DEBUG) {
-				System.out.println("Uncertainties after iteration " + ctr + ": " + lowestUncertainties.size());
-				System.out.println("Lowest uncertainties: " + lowestUncertainties);
+				LOG.trace("Uncertainties after iteration " + ctr + ": " + lowestUncertainties.size());
+				LOG.trace("Lowest uncertainties: " + lowestUncertainties);
 			}
 
 			factCtr = introduceFacts(lowestUncertainties, factCtr);
 			buildAddresses(root, ctx);
 
 			if (DEBUG) {
-				System.out.println("Built addresses:");
+				LOG.trace("Built addresses:");
 				for (UnorderedSet u : lowestUncertainties) {
 					for (RewriterStatement s : u.contents) {
-						System.out.println("- " + s + " :: " + getAddress(s));
+						LOG.trace("- " + s + " :: " + getAddress(s));
 					}
 				}
 			}
@@ -114,10 +118,10 @@ public class TopologicalSort {
 
 		// At the end
 		if (DEBUG)
-			System.out.println("Before construction: " + oldRoot.toParsableString(ctx));
+			LOG.trace("Before construction: " + oldRoot.toParsableString(ctx));
 		constructNewDAG(oldRoot, ctx);
 		if (DEBUG)
-			System.out.println("After construction: " + oldRoot.toParsableString(ctx));
+			LOG.trace("After construction: " + oldRoot.toParsableString(ctx));
 	}
 
 	// Returns all uncertain parents ordered in post order (elements without uncertain sub-DAGs come first in the list)
@@ -204,7 +208,7 @@ public class TopologicalSort {
 			}
 
 			if (DEBUG)
-				System.out.println("Initial known order of " + el.toParsableString(ctx) + ": " + knownOrder);
+				LOG.trace("Initial known order of " + el.toParsableString(ctx) + ": " + knownOrder);
 		}, false);
 
 		return uncertainParents;
@@ -300,7 +304,7 @@ public class TopologicalSort {
 		root.forEachPostOrder((cur, pred) -> {
 			List<Object> knownOrder = (List<Object>) cur.getMeta("_knownOrder");
 			if (DEBUG)
-				System.out.println("KnownOrder of " + cur.toParsableString(ctx) + ": " + knownOrder);
+				LOG.trace("KnownOrder of " + cur.toParsableString(ctx) + ": " + knownOrder);
 
 			for (int i = 0; i < cur.getOperands().size(); i++)
 				cur.getOperands().set(i, (RewriterStatement) knownOrder.get(i));
@@ -411,7 +415,7 @@ public class TopologicalSort {
 			el.unsafePutMeta("_address", address);
 
 			if (DEBUG)
-				System.out.println("Address of " + el + " :: " + address);
+				LOG.trace("Address of " + el + " :: " + address);
 		}
 
 		return elementsWithAddress;
@@ -427,8 +431,8 @@ public class TopologicalSort {
 
 
 		if (DEBUG) {
-			System.out.println("CUR: " + current);
-			System.out.println("KnownOrder: " + knownOrder);
+			LOG.trace("CUR: " + current);
+			LOG.trace("KnownOrder: " + knownOrder);
 		}
 
 		if (addresses != null) {

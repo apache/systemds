@@ -982,18 +982,16 @@ public class RewriterRuleCollection {
 				.withParsedStatement("[]($1:_m(h, i, v), j, k, l, m)", hooks)
 				.toParsedStatement("$2:_m(_idx(1, +(+(k, 1), -(j))), _idx(1, +(+(m, 1), -(l))), v)", hooks) // Assuming that selections are valid
 				.linkUnidirectional(hooks.get(1).getId(), hooks.get(2).getId(), lnk -> {
-					// TODO: Big issue when having multiple references to the same sub-dag
 					RewriterStatement.transferMeta(lnk);
 
 					for (int idx = 0; idx < 2; idx++) {
-						// TODO: MultiRef
 						RewriterStatement oldRef = lnk.oldStmt.getOperands().get(idx);
 						RewriterStatement newRef = lnk.newStmt.get(0).getChild(idx);
 						RewriterStatement mStmtC = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("+").withOps(newRef.getChild(1, 1, 0), RewriterStatement.literal(ctx, -1L)).consolidate(ctx);
 						RewriterStatement mStmt = new RewriterInstruction().as(UUID.randomUUID().toString()).withInstruction("+").withOps(newRef, mStmtC).consolidate(ctx);
 						final RewriterStatement newStmt = RewriterUtils.foldConstants(mStmt, ctx);
 
-						/*UUID oldRefId = (UUID)oldRef.getMeta("idxId");
+						UUID oldRefId = (UUID)oldRef.getMeta("idxId");
 
 						RewriterStatement newOne = RewriterUtils.replaceReferenceAware(lnk.newStmt.get(0).getChild(2), stmt -> {
 							UUID idxId = (UUID) stmt.getMeta("idxId");
@@ -1006,20 +1004,7 @@ public class RewriterRuleCollection {
 						});
 
 						if (newOne != null)
-							lnk.newStmt.get(0).getOperands().set(2, newOne);*/
-
-						// Replace all references to h with
-						lnk.newStmt.get(0).getOperands().get(2).forEachPostOrder((el, pred) -> {
-							for (int i = 0; i < el.getOperands().size(); i++) {
-								RewriterStatement child = el.getOperands().get(i);
-								Object meta = child.getMeta("idxId");
-
-								if (meta instanceof UUID && meta.equals(oldRef.getMeta("idxId"))) {
-									el.getOperands().set(i, newStmt);
-								}
-							}
-						}, false);
-
+							lnk.newStmt.get(0).getOperands().set(2, newOne);
 					}
 				}, true)
 				.build()

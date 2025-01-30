@@ -36,8 +36,7 @@ else if(type==3){   # standard list case
     print(A_list)
 }
 else if(type==4){   # slice row from matrix
-    A_row = A[1,]
-    print(A_row)    # print(A[1,]) produces incorrect output
+    print(A[1,])
 }
 else if(type==5){   # slice column from matrix
     A_col = A[,1]

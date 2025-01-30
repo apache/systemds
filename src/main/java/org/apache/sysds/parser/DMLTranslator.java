@@ -1686,11 +1686,13 @@ public class DMLTranslator
 		if (target == null) {
 			target = createTarget(source);
 		}
+		
 		//unknown nnz after range indexing (applies to indexing op but also
 		//data dependent operations)
 		target.setNnz(-1); 
 
-		Hop indexOp = new IndexingOp(target.getName(), target.getDataType(), target.getValueType(),
+		DataType dt = target.getDataType().isScalar() ? DataType.MATRIX : target.getDataType();
+		Hop indexOp = new IndexingOp(target.getName(), dt, target.getValueType(),
 			hops.get(source.getName()), ixRange[0], ixRange[1], ixRange[2], ixRange[3],
 			source.getRowLowerEqualsUpper(), source.getColLowerEqualsUpper());
 

@@ -1073,6 +1073,7 @@ public class RewriterUtils {
 				break;
 		}
 
+		ret.refreshReturnType(ctx);
 		alreadyFolded.put(cur, ret);
 		return ret;
 	}

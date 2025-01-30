@@ -48,12 +48,6 @@ import java.util.stream.IntStream;
 
 public class RewriterFramework {
 
-	// The following rule does sometimes not pass the validation test (probably due to round-off errors sometimes invalidating the result):
-	// An invalid rule was found: sum(%*%(M68353,M7710)) => cast.FLOAT(%*%(colSums(M68353),rowSums(M7710)))
-
-	// Erroneous statement: +(+(%*%(diag(scale_X),t(parsertemp115882)),%*%(shift_X,A)),diag(*(scale_lambda,0.001)))
-	// colSums(*(length(A),const(B,1.0)))
-
 	// To test the framework
 	public static void main(String[] args) {
 		String dbPath = "./src/test/resources/rewriterframework/expressions.db";

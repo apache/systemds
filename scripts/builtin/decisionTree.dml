@@ -193,7 +193,7 @@ findBestSplit = function(Matrix[Double] X2, Matrix[Double] y2, Matrix[Double] fo
   # (both categorical and numerical are treated similarly by
   # finding a cutoff point in the recoded/binned representation)
   R = matrix(0, rows=3, cols=nrow(feat));
-  for( i in 1:nrow(feat) ) {
+  parfor( i in 1:nrow(feat) ) {
     f = as.scalar(feat[i]);        # feature
     beg = as.scalar(foffb[1,f])+1; # feature start in X2
     end = as.scalar(foffe[1,f]);   # feature end in X2

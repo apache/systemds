@@ -734,7 +734,7 @@ public class RewriterUtils {
 	}
 
 	public static RuleContext buildDefaultContext() {
-		RuleContext ctx = RewriterContextSettings.getDefaultContext(new Random());
+		RuleContext ctx = RewriterContextSettings.getDefaultContext();
 		ctx.metaPropagator = new MetaPropagator(ctx);
 		return ctx;
 	}

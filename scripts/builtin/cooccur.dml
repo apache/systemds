@@ -1,0 +1,148 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+#
+# The implementation is based on
+# https://github.com/stanfordnlp/GloVe/blob/master/src/cooccur.c
+#
+#-------------------------------------------------------------
+
+## Function: processText
+## Description: Cleans and processes text data by removing punctuation, converting to lowercase, and reformatting.
+## Input: 
+##   - S (Frame[Unknown]): Input data frame containing text data.
+## Output: 
+##   - result (Frame[Unknown]): Processed text data.
+processText = function(Frame[Unknown] S) return (Frame[Unknown] result){
+    
+    print("processText");
+    tmpStr = map(S[,1], "x -> x.replaceAll(\"[.]\", \"\")");
+    tmpStr = map(tmpStr, "x -> x.replaceAll(\"[^a-zA-Z\\s]\", \" \")");
+    tmpStr = map(tmpStr, "x -> x.toLowerCase()");
+    result = cbind(as.frame(seq(1, nrow(S), 1)), tmpStr);
+}
+
+## Description: Tokenizes text data and retrieves word positions.
+## Input: 
+##   - S (Frame[Unknown]): Input text data.
+##   - maxTokens (Int): Maximum number of tokens.
+##   - jspec_pos (String): JSON specification for tokenization.
+## Output: 
+##   - result (Frame[Unknown]): Tokenized text with positions.
+getWordPosition = function(Frame[Unknown] S, Int maxTokens, String jspec_pos) return (Frame[Unknown] result){
+    
+    print("getWordPosition");
+    wordPosition = tokenize(target=S, spec=jspec_pos, max_tokens=maxTokens);
+    length = map(wordPosition[,3], "S -> S.length()");
+    result = cbind(wordPosition, length);
+}
+
+## Description: Encodes words into a numerical matrix format.
+## Input: 
+##   - S (Frame[Unknown]):  Tokenized text.
+## Output: 
+##   - output (Matrix[double]): Encoded word matrix.
+##   - wordCount (Int): Number of distinct words.
+##   - column (Frame[Unknown]): Mapping of indices to distinct words.
+getRecodedMatrix = function(Frame[Unknown] S) return (Matrix[double] output, Int wordCount, Frame[Unknown] column){
+    print("getRecodedMatrix");
+    [output,M] = transformencode(target=S, spec="{ids:true,recode:[1]}");
+    distinctWord = map(M[,1], "s -> UtilFunctions.splitRecodeEntry(s)[0]");
+    index = map(M[,1], "s -> Integer.valueOf(UtilFunctions.splitRecodeEntry(s)[1])");
+
+    column = cbind(index, distinctWord);
+    sortedIndex = order(target=as.matrix(index), by=1, decreasing=FALSE, index.return=TRUE);
+    for(i in 1:nrow(sortedIndex)){
+        p = as.integer(as.scalar(sortedIndex[i,1]));
+        column[as.integer(as.scalar(index[p])), 2] = distinctWord[p];
+        column[i, 1] = as.integer(as.scalar(index[p]));
+    }
+    wordCount = nrow(distinctWord);
+}
+
+
+createCoocMatrix = function(
+    Frame[Unknown] wordPosition, 
+    Int tableSize, 
+    boolean distanceWeighting, 
+    boolean symmetric, 
+    Int windowSize)
+return (Matrix[double] coocMatrix) 
+{
+    print("Processing word cooccurrence...");
+    coocMatrix = matrix(0, tableSize, tableSize);
+
+    for (i in 1:nrow(wordPosition)) {
+        docId = as.integer(as.scalar(wordPosition[i,1]));
+        wordIndex = as.integer(as.scalar(wordPosition[i,5]));
+        for (j in 1:windowSize) {
+            # Check left context
+            if (i-j > 0) {
+                if(docId == as.integer(as.scalar(wordPosition[i-j, 1])))
+                {
+                    neighbourWordIndex = as.integer(as.scalar(wordPosition[i-j,5]));
+                    increase = ifelse(distanceWeighting, 1.0 / j, 1.0);
+                    coocMatrix[wordIndex, neighbourWordIndex] = coocMatrix[wordIndex, neighbourWordIndex] + increase;
+                }
+            }
+            # Check right context if symmetric
+            if(symmetric){
+                if (i+j < nrow(wordPosition) + 1) {
+                    if(docId == as.integer(as.scalar(wordPosition[i+j, 1])))
+                    {
+                        neighbourWordIndex = as.integer(as.scalar(wordPosition[i+j,5]));
+                        increase = ifelse(distanceWeighting, 1.0 / j, 1.0);
+                        coocMatrix[wordIndex, neighbourWordIndex] = coocMatrix[wordIndex, neighbourWordIndex] + increase;
+                    }
+                }
+            }
+        }
+    }
+    print("Word-word cooccurrence matrix computation completed.");
+}
+
+## Function: getCoocMatrix
+## Description: Processes a text file to generate a co-occurrence matrix.
+## Input: 
+##   - filename (String): CSV file path.
+##   - maxTokens (Int): Maximum number of tokens.
+##   - windowSize (Int): Context window size.
+##   - distanceWeighting (Boolean): Flag to control the distance weighting of cooccurrence counts.
+##   - symmetric (Boolean): 0: asymmetric, 1: symmetric.
+## Output:
+##   - result (Frame[Unknown]): Co-occurrence matrix.
+getCoocMatrix = function(
+    Frame[Unknown] input,
+    Int maxTokens,
+    Int windowSize, 
+    Boolean distanceWeighting, 
+    Boolean symmetric) return (Matrix[double] coocMatrix, Frame[Unknown] column){
+    
+    processedResult = processText(input[,1]);
+
+    jspec_pos = "{\"algo\": \"split\", \"out\": \"position\",\"out_params\": {\"sort_alpha\": false},\"id_cols\": [1],\"tokenize_col\": 2}";
+    wordPosition = getWordPosition(processedResult, maxTokens, jspec_pos);
+
+    [recodedWordPosition, tableSize, column] = getRecodedMatrix(wordPosition[,3]);
+    coocInput = cbind(wordPosition, as.frame(recodedWordPosition));
+
+    coocMatrix = createCoocMatrix(coocInput, tableSize, distanceWeighting, symmetric, windowSize);
+    
+}

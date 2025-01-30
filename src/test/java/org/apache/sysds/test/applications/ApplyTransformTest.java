@@ -19,8 +19,6 @@
 
 package org.apache.sysds.test.applications;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -29,9 +27,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.utils.Statistics;
-import org.apache.sysds.utils.stats.NGramBuilder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;

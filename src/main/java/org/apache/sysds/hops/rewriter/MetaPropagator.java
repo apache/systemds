@@ -29,6 +29,10 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 
+/**
+ * This class is used to propagate dimension information.
+ * Each instruction that produces a matrix must be implemented here.
+ */
 public class MetaPropagator implements Function<RewriterStatement, RewriterStatement> {
 	private final RuleContext ctx;
 

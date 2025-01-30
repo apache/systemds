@@ -34,6 +34,8 @@ import scala.Tuple2;
 import scala.Tuple4;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -63,6 +65,9 @@ public class RewriterFramework {
 		System.out.println(rwf.getUnconditionalRuleSet());
 		//rwf.removeInapplicableRules();
 		//System.out.println(rwf.getUnconditionalRuleSet().toJavaCode("GeneratedRewriteClass", true));
+
+		/*RewriterRuleSet rs = loadRuleSet(rPath);
+		saveJavaCode(sPath, rs, "GeneratedRewriteClass", true);*/
 	}
 
 
@@ -418,6 +423,16 @@ public class RewriterFramework {
 		}
 
 		return true;
+	}
+
+	public static RewriterRuleSet loadRuleSet(String filePath) {
+		try {
+			List<String> lines = Files.readAllLines(Paths.get(filePath));
+			return RewriterRuleSet.deserialize(lines, RewriterUtils.buildDefaultContext());
+		} catch (IOException ex) {
+			ex.printStackTrace();
+			return null;
+		}
 	}
 
 	public static boolean saveJavaCode(String filePath, RewriterRuleSet ruleSet, String className, boolean optimize) {

@@ -121,7 +121,7 @@ public class RewriterCodeGen {
 					" * specific language governing permissions and limitations\n" +
 					" * under the License.\n" +
 					" */\n\n");
-			msb.append("package org.apache.sysds.hops.rewriter;\n\n");
+			msb.append("package org.apache.sysds.hops.rewriter.generated;\n\n");
 		}
 
 		msb.append("import java.util.ArrayList;\n");

@@ -820,8 +820,8 @@ public class RewriterUtils {
 					return true;
 
 				if (r != null)
-					LOG.info("Applying rule: " + r.getName());
-				LOG.info(t.toParsableString(ctx));
+					System.out.println("Applying rule: " + r.getName());
+				System.out.println(t.toParsableString(ctx));
 				return true;
 			}, debug);
 
@@ -830,6 +830,7 @@ public class RewriterUtils {
 				stmt = RewriterUtils.pullOutConstants(stmt, ctx);
 			}
 			RewriterUtils.mergeArgLists(stmt, ctx);
+			unfoldExpressions(stmt, ctx);
 			stmt = RewriterUtils.pullOutConstants(stmt, ctx);
 			cleanupUnecessaryIndexExpressions(stmt, ctx);
 			stmt.prepareForHashing();
@@ -840,8 +841,8 @@ public class RewriterUtils {
 					return true;
 
 				if (r != null)
-					LOG.info("Applying rule: " + r.getName());
-				LOG.info(t.toParsableString(ctx));
+					System.out.println("Applying rule: " + r.getName());
+				System.out.println(t.toParsableString(ctx));
 				return true;
 			}, debug);
 
@@ -858,13 +859,13 @@ public class RewriterUtils {
 			stmt.prepareForHashing();
 
 			if (debug)
-				LOG.info("PRE1:   " + stmt.toParsableString(ctx, false));
+				System.out.println("PRE1:   " + stmt.toParsableString(ctx, false));
 
 			stmt.compress(); // To remove unnecessary metadata such as assertions that are not encoded in the graph
 			TopologicalSort.sort(stmt, ctx);
 
 			if (debug)
-				LOG.info("FINAL1: " + stmt.toParsableString(ctx, false));
+				System.out.println("FINAL1: " + stmt.toParsableString(ctx, false));
 
 			return stmt;
 		};
@@ -1263,8 +1264,10 @@ public class RewriterUtils {
 					indices.remove(idx2);
 				}
 
-				if (indices.isEmpty())
+				if (indices.isEmpty()) {
+					System.out.println("Indices empty!");
 					return cur.getChild(1);
+				}
 			}
 		}
 

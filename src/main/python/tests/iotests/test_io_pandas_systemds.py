@@ -56,11 +56,11 @@ class TestPandasFromToSystemds(unittest.TestCase):
         shutil.rmtree(cls.temp_dir, ignore_errors=True)
 
     def test_into_systemds(self):
-        combinations = [    # (n_rows, n_cols, mixed)
-            (3, 2, True),   # Test un-parallelized code (rows <= 4)
+        combinations = [  # (n_rows, n_cols, mixed)
+            (3, 2, True),  # Test un-parallelized code (rows <= 4)
             (10, 5, True),  # Test parallelized column-wise code
             (5, 10, True),  # Test parallelized column-wise mixed code
-            (5, 10, False)  # Test parallelized row-wise code
+            (5, 10, False),  # Test parallelized row-wise code
         ]
 
         for n_rows, n_cols, mixed in combinations:

@@ -251,7 +251,21 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 
 	@Override
 	protected void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru, SparseBlock sb) {
-		throw new NotImplementedException();
+		for(int i = rl; i < ru; i++) {
+			final int vr = _data.getIndex(i);
+			if(sb.isEmpty(vr))
+				continue;
+			final int apos = sb.pos(vr);
+			final int alen = sb.size(vr) + apos;
+			final int[] aix = sb.indexes(vr);
+			final double[] aval = sb.values(vr);
+			for(int j = apos; j < alen; j++) {
+				final int rowOut = _colIndexes.get(aix[j]);
+				final double[] c = db.values(rowOut);
+				final int off = db.pos(rowOut);
+				c[off + i] += aval[j];
+			}
+		}
 	}
 
 	@Override

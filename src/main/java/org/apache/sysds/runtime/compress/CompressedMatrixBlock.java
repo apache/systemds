@@ -59,6 +59,7 @@ import org.apache.sysds.runtime.compress.lib.CLALibMMChain;
 import org.apache.sysds.runtime.compress.lib.CLALibMatrixMult;
 import org.apache.sysds.runtime.compress.lib.CLALibMerge;
 import org.apache.sysds.runtime.compress.lib.CLALibReplace;
+import org.apache.sysds.runtime.compress.lib.CLALibReorg;
 import org.apache.sysds.runtime.compress.lib.CLALibReshape;
 import org.apache.sysds.runtime.compress.lib.CLALibRexpand;
 import org.apache.sysds.runtime.compress.lib.CLALibScalar;
@@ -633,21 +634,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock reorgOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length) {
-		if(op.fn instanceof SwapIndex && this.getNumColumns() == 1) {
-			MatrixBlock tmp = decompress(op.getNumThreads());
-			long nz = tmp.setNonZeros(tmp.getNonZeros());
-			tmp = new MatrixBlock(tmp.getNumColumns(), tmp.getNumRows(), tmp.getDenseBlockValues());
-			tmp.setNonZeros(nz);
-			return tmp;
-		}
-		else {
-			// Allow transpose to be compressed output. In general we need to have a transposed flag on
-			// the compressed matrix. https://issues.apache.org/jira/browse/SYSTEMDS-3025
-			String message = op.getClass().getSimpleName() + " -- " + op.fn.getClass().getSimpleName();
-			MatrixBlock tmp = getUncompressed(message, op.getNumThreads());
-			return tmp.reorgOperations(op, ret, startRow, startColumn, length);
-		}
-
+		return CLALibReorg.reorg(this, op, (MatrixBlock) ret, startRow, startColumn, length);
 	}
 
 	public boolean isOverlapping() {
@@ -1311,7 +1298,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock transpose(int k) {
-		return getUncompressed().transpose(k);
+		return CLALibReorg.reorg(this, new ReorgOperator(SwapIndex.getSwapIndexFnObject(), k), null, 0, 0, 0);
 	}
 
 	@Override

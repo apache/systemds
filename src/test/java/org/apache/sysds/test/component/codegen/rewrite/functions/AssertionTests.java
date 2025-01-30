@@ -19,14 +19,18 @@
 
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
+import org.apache.sysds.test.component.codegen.rewrite.RewriterTopologySortTests;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class AssertionTests {
+	protected static final Log LOG = LogFactory.getLog(AssertionTests.class.getName());
 
 	private static RuleContext ctx;
 
@@ -45,15 +49,15 @@ public class AssertionTests {
 		RewriterStatement nrowA2 = stmt1.getOperands().get(1).getOperands().get(1);
 
 		assert assertion.addEqualityAssertion(nrowA, nrowC, stmt1);
-		System.out.println(assertion.getAssertions(nrowA));
+		LOG.info(assertion.getAssertions(nrowA));
 
 		assert !assertion.addEqualityAssertion(nrowA, nrowC, stmt1);
-		System.out.println(assertion.getAssertions(nrowC));
+		LOG.info(assertion.getAssertions(nrowC));
 
 		assert assertion.addEqualityAssertion(nrowC, nrowB, stmt1);
-		System.out.println(assertion.getAssertions(nrowC));
+		LOG.info(assertion.getAssertions(nrowC));
 
-		System.out.println(assertion.getAssertions(nrowA2));
+		LOG.info(assertion.getAssertions(nrowA2));
 	}
 
 }

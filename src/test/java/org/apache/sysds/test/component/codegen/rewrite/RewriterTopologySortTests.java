@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.component.codegen.rewrite;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
@@ -29,14 +31,14 @@ import org.junit.Test;
 import java.util.function.Function;
 
 public class RewriterTopologySortTests {
-
+	protected static final Log LOG = LogFactory.getLog(RewriterTopologySortTests.class.getName());
 	private static RuleContext ctx;
 	private static Function<RewriterStatement, RewriterStatement> converter;
 
 	@BeforeClass
 	public static void setup() {
 		ctx = RewriterUtils.buildDefaultContext();
-		converter = RewriterUtils.buildCanonicalFormConverter(ctx, true);
+		converter = RewriterUtils.buildCanonicalFormConverter(ctx, false);
 	}
 
 	@Test
@@ -46,10 +48,10 @@ public class RewriterTopologySortTests {
 		stmt = converter.apply(stmt);
 		stmt2 = converter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -62,10 +64,10 @@ public class RewriterTopologySortTests {
 		stmt = converter.apply(stmt);
 		stmt2 = converter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -76,10 +78,10 @@ public class RewriterTopologySortTests {
 		stmt = converter.apply(stmt);
 		stmt2 = converter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -90,10 +92,10 @@ public class RewriterTopologySortTests {
 		stmt = converter.apply(stmt);
 		stmt2 = converter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -104,10 +106,10 @@ public class RewriterTopologySortTests {
 		stmt = converter.apply(stmt);
 		stmt2 = converter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -118,10 +120,10 @@ public class RewriterTopologySortTests {
 		stmt = converter.apply(stmt);
 		stmt2 = converter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -132,10 +134,10 @@ public class RewriterTopologySortTests {
 		stmt = converter.apply(stmt);
 		stmt2 = converter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -146,10 +148,10 @@ public class RewriterTopologySortTests {
 		stmt = converter.apply(stmt);
 		stmt2 = converter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -160,10 +162,10 @@ public class RewriterTopologySortTests {
 		stmt = converter.apply(stmt);
 		stmt2 = converter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -174,10 +176,10 @@ public class RewriterTopologySortTests {
 		TopologicalSort.sort(stmt, ctx);
 		TopologicalSort.sort(stmt2, ctx);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -186,7 +188,7 @@ public class RewriterTopologySortTests {
 		RewriterStatement stmt = RewriterUtils.parse("sum(*(A, A))", ctx, "MATRIX:A");
 		stmt = converter.apply(stmt);
 
-		System.out.println(stmt.toParsableString(ctx, true));
+		LOG.info(stmt.toParsableString(ctx, true));
 	}
 
 	@Test
@@ -195,8 +197,8 @@ public class RewriterTopologySortTests {
 		RewriterStatement stmt2 = RewriterUtils.parse("sum(_idxExpr($1:_idx(1,_EClass(argList(nrow(B),nrow(A)))),*(argList([](B,$1,$1),[](A,$1,$1)))))", ctx, "MATRIX:A,B", "LITERAL_INT:1");
 		TopologicalSort.sort(stmt1, ctx);
 		TopologicalSort.sort(stmt2, ctx);
-		System.out.println(stmt1.toParsableString(ctx));
-		System.out.println(stmt2.toParsableString(ctx));
+		LOG.info(stmt1.toParsableString(ctx));
+		LOG.info(stmt2.toParsableString(ctx));
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
@@ -208,10 +210,10 @@ public class RewriterTopologySortTests {
 		TopologicalSort.sort(stmt1, ctx);
 		TopologicalSort.sort(stmt2, ctx);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -224,10 +226,10 @@ public class RewriterTopologySortTests {
 		TopologicalSort.sort(stmt1, ctx);
 		TopologicalSort.sort(stmt2, ctx);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -240,10 +242,10 @@ public class RewriterTopologySortTests {
 		TopologicalSort.sort(stmt1, ctx);
 		TopologicalSort.sort(stmt2, ctx);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -254,7 +256,7 @@ public class RewriterTopologySortTests {
 		TopologicalSort.sort(stmt, ctx);
 
 		String parsableString = stmt.toParsableString(ctx);
-		System.out.println(parsableString);
+		LOG.info(parsableString);
 		assert "*(argList(a,a,sum(b)))".equals(parsableString);
 	}
 
@@ -266,10 +268,10 @@ public class RewriterTopologySortTests {
 		TopologicalSort.sort(stmt1, ctx);
 		TopologicalSort.sort(stmt2, ctx);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}

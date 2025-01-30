@@ -20,6 +20,8 @@
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
 import org.apache.commons.lang3.mutable.MutableObject;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.rule.RewriterRule;
@@ -37,6 +39,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 public class RuleSerializationTest {
+	protected static final Log LOG = LogFactory.getLog(RuleSerializationTest.class.getName());
 
 	private static RuleContext ctx;
 	private static Function<RewriterStatement, RewriterStatement> canonicalConverter;
@@ -57,12 +60,12 @@ public class RuleSerializationTest {
 		RewriterRuleSet ruleSet = new RewriterRuleSet(ctx, List.of(rule1, rule2));
 		String serialized = ruleSet.serialize();
 
-		System.out.println(serialized);
+		LOG.info(serialized);
 
 		RewriterRuleSet newRuleSet = RewriterRuleSet.deserialize(serialized, ctx);
 		String newSerialized = newRuleSet.serialize();
 
-		System.out.println(newSerialized);
+		LOG.info(newSerialized);
 
 		assert serialized.equals(newSerialized);
 	}
@@ -74,10 +77,10 @@ public class RuleSerializationTest {
 		RewriterStatement canonicalForm1 = canonicalConverter.apply(from);
 		RewriterStatement canonicalForm2 = canonicalConverter.apply(to);
 
-		System.out.println("==========");
-		System.out.println(canonicalForm1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(canonicalForm2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(canonicalForm1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(canonicalForm2.toParsableString(ctx, true));
 		assert canonicalForm1.match(RewriterStatement.MatcherContext.exactMatch(ctx, canonicalForm2, canonicalForm1));
 
 		RewriterRule rule = RewriterRuleCreator.createRule(from, to, canonicalForm1, canonicalForm2, ctx);
@@ -95,14 +98,14 @@ public class RuleSerializationTest {
 
 		String serialized = rule.toParsableString(ctx);
 
-		System.out.println("::RULE");
-		System.out.println(serialized);
-		System.out.println();
+		LOG.info("::RULE");
+		LOG.info(serialized);
+		LOG.info("");
 
 		RewriterRule newRule = RewriterUtils.parseRule(serialized, ctx);
 		String newSerialized = newRule.toParsableString(ctx);
 
-		System.out.println(newSerialized);
+		LOG.info(newSerialized);
 
 		assert serialized.equals(newSerialized);
 	}
@@ -114,10 +117,10 @@ public class RuleSerializationTest {
 		RewriterStatement canonicalForm1 = canonicalConverter.apply(from);
 		RewriterStatement canonicalForm2 = canonicalConverter.apply(to);
 
-		System.out.println("==========");
-		System.out.println(canonicalForm1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(canonicalForm2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(canonicalForm1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(canonicalForm2.toParsableString(ctx, true));
 		assert canonicalForm1.match(RewriterStatement.MatcherContext.exactMatch(ctx, canonicalForm2, canonicalForm1));
 
 		RewriterRule rule = RewriterRuleCreator.createRule(from, to, canonicalForm1, canonicalForm2, ctx);
@@ -135,14 +138,14 @@ public class RuleSerializationTest {
 
 		String serialized = rule.toParsableString(ctx);
 
-		System.out.println("::RULE");
-		System.out.println(serialized);
-		System.out.println();
+		LOG.info("::RULE");
+		LOG.info(serialized);
+		LOG.info("");
 
 		RewriterRule newRule = RewriterUtils.parseRule(serialized, ctx);
 		String newSerialized = newRule.toParsableString(ctx);
 
-		System.out.println(newSerialized);
+		LOG.info(newSerialized);
 
 		assert serialized.equals(newSerialized);
 	}
@@ -160,6 +163,6 @@ public class RuleSerializationTest {
 				"*(tmp65095,t(%*%(tmp29911,t(W1_rand))))\n" +
 				"}";
 		RewriterRule rule1 = RewriterUtils.parseRule(ruleStr1, ctx);
-		System.out.println(rule1.toString());
+		LOG.info(rule1.toString());
 	}
 }

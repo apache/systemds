@@ -19,10 +19,13 @@
 
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.utils.RewriterSearchUtils;
 import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
+import org.apache.sysds.test.component.codegen.rewrite.RewriterTopologySortTests;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -30,6 +33,7 @@ import java.util.List;
 import java.util.function.Function;
 
 public class SubtreeGeneratorTest {
+	protected static final Log LOG = LogFactory.getLog(SubtreeGeneratorTest.class.getName());
 
 	private static RuleContext ctx;
 
@@ -44,8 +48,8 @@ public class SubtreeGeneratorTest {
 		List<RewriterStatement> subtrees = RewriterSearchUtils.generateSubtrees(stmt, ctx, 100);
 
 		for (RewriterStatement sub : subtrees) {
-			System.out.println("==========");
-			System.out.println(sub.toParsableString(ctx, true));
+			LOG.info("==========");
+			LOG.info(sub.toParsableString(ctx, true));
 		}
 
 		assert subtrees.size() == 2;
@@ -57,8 +61,8 @@ public class SubtreeGeneratorTest {
 		List<RewriterStatement> subtrees = RewriterSearchUtils.generateSubtrees(stmt, ctx, 100);
 
 		for (RewriterStatement sub : subtrees) {
-			System.out.println("==========");
-			System.out.println(sub.toParsableString(ctx, true));
+			LOG.info("==========");
+			LOG.info(sub.toParsableString(ctx, true));
 		}
 
 		assert subtrees.size() == 3;
@@ -70,8 +74,8 @@ public class SubtreeGeneratorTest {
 		List<RewriterStatement> subtrees = RewriterSearchUtils.generateSubtrees(stmt, ctx, 100);
 
 		for (RewriterStatement sub : subtrees) {
-			System.out.println("==========");
-			System.out.println(sub.toParsableString(ctx, true));
+			LOG.info("==========");
+			LOG.info(sub.toParsableString(ctx, true));
 		}
 
 		assert subtrees.size() == 3;

@@ -19,11 +19,14 @@
 
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.rewriter.rule.RewriterRule;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
 import org.apache.sysds.hops.rewriter.codegen.CodeGenCondition;
+import org.apache.sysds.test.component.codegen.rewrite.RewriterTopologySortTests;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -33,6 +36,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 public class CodeGenConditionTests {
+	protected static final Log LOG = LogFactory.getLog(CodeGenConditionTests.class.getName());
 
 	private static RuleContext ctx;
 
@@ -86,7 +90,7 @@ public class CodeGenConditionTests {
 		fNames.put(rule3, "rule3");
 
 		List<CodeGenCondition> cgcs = CodeGenCondition.buildCondition(List.of(rule, rule2, rule3), 1, ctx);
-		System.out.println(CodeGenCondition.getSelectionString(cgcs, 0, fNames, ctx));
+		LOG.info(CodeGenCondition.getSelectionString(cgcs, 0, fNames, ctx));
 	}
 
 	@Test
@@ -139,7 +143,7 @@ public class CodeGenConditionTests {
 		fNames.put(rule5, "rule5");
 
 		List<CodeGenCondition> cgcs = CodeGenCondition.buildCondition(List.of(rule, rule2, rule3, rule4, rule5), 1, ctx);
-		System.out.println(cgcs);
-		System.out.println(CodeGenCondition.getSelectionString(cgcs, 0, fNames, ctx));
+		LOG.info(cgcs);
+		LOG.info(CodeGenCondition.getSelectionString(cgcs, 0, fNames, ctx));
 	}
 }

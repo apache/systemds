@@ -19,10 +19,13 @@
 
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.rewriter.utils.RewriterSearchUtils;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
+import org.apache.sysds.test.component.codegen.rewrite.RewriterTopologySortTests;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -31,6 +34,7 @@ import java.util.List;
 import java.util.function.Function;
 
 public class RewriterSearchUtilsTest {
+	protected static final Log LOG = LogFactory.getLog(RewriterSearchUtilsTest.class.getName());
 
 	private static RuleContext ctx;
 	private static Function<RewriterStatement, RewriterStatement> canonicalConverter;
@@ -54,7 +58,7 @@ public class RewriterSearchUtilsTest {
 		int l = 5;
 		int n = 5;
 		int[] digits = RewriterSearchUtils.fromBaseNNumber(l, n);
-		System.out.println(Arrays.toString(digits));
+		LOG.info(Arrays.toString(digits));
 		assert digits.length == 2 && digits[0] == 1 && digits[1] == 0;
 	}
 
@@ -65,34 +69,34 @@ public class RewriterSearchUtilsTest {
 		int n = 5;
 		int l = RewriterSearchUtils.toBaseNNumber(digits, n);
 		int l2 = RewriterSearchUtils.toBaseNNumber(digits2, n);
-		System.out.println(l);
-		System.out.println(Integer.toBinaryString(l));
-		System.out.println(l2);
-		System.out.println(Integer.toBinaryString(l2));
+		LOG.info(l);
+		LOG.info(Integer.toBinaryString(l));
+		LOG.info(l2);
+		LOG.info(Integer.toBinaryString(l2));
 		assert l == 27;
 	}
 
 	@Test
 	public void testRandomStatementGeneration() {
-		System.out.println(RewriterSearchUtils.getMaxSearchNumberForNumOps(3));
+		LOG.info(RewriterSearchUtils.getMaxSearchNumberForNumOps(3));
 		int ctr = 0;
 		for (int i = 0; i < 20; i++) {
 			List<RewriterSearchUtils.Operand> ops = RewriterSearchUtils.decodeOrderedStatements(i);
-			//System.out.println("Idx: " + i);
-			//System.out.println(ops);
-			//System.out.println(RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, false).size());
+			//LOG.info("Idx: " + i);
+			//LOG.info(ops);
+			//LOG.info(RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, false).size());
 			for (RewriterStatement stmt : RewriterSearchUtils.buildAllPossibleDAGs(ops, ctx, true)) {
-				System.out.println("Base: " + stmt.toParsableString(ctx));
+				LOG.info("Base: " + stmt.toParsableString(ctx));
 				for (RewriterStatement sstmt : RewriterSearchUtils.buildAssertionVariations(stmt, ctx)) {
 					canonicalConverter.apply(sstmt);
-					System.out.println(sstmt.toParsableString(ctx));
-					//System.out.println("Raw: " + sstmt);
+					LOG.info(sstmt.toParsableString(ctx));
+					//LOG.info("Raw: " + sstmt);
 					ctr++;
 				}
 			}
 		}
 
-		System.out.println("Total DAGs: " + ctr);
+		LOG.info("Total DAGs: " + ctr);
 	}
 
 	@Test
@@ -100,28 +104,28 @@ public class RewriterSearchUtilsTest {
 		int ctr = 0;
 		//for (int i = 0; i < 20; i++) {
 			List<RewriterSearchUtils.Operand> ops = List.of(RewriterSearchUtils.instructionAlphabet[3], RewriterSearchUtils.instructionAlphabet[16], RewriterSearchUtils.instructionAlphabet[6]);
-			//System.out.println("Idx: " + i);
-			//System.out.println(ops);
-			//System.out.println(RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, false).size());
+			//LOG.info("Idx: " + i);
+			//LOG.info(ops);
+			//LOG.info(RewriterAlphabetEncoder.buildAllPossibleDAGs(ops, ctx, false).size());
 			for (RewriterStatement stmt : RewriterSearchUtils.buildAllPossibleDAGs(ops, ctx, true)) {
-				System.out.println("Base: " + stmt.toParsableString(ctx));
+				LOG.info("Base: " + stmt.toParsableString(ctx));
 				for (RewriterStatement sstmt : RewriterSearchUtils.buildVariations(stmt, ctx)) {
 					canonicalConverter.apply(sstmt);
-					System.out.println(sstmt.toParsableString(ctx));
-					//System.out.println("Raw: " + sstmt);
+					LOG.info(sstmt.toParsableString(ctx));
+					//LOG.info("Raw: " + sstmt);
 					ctr++;
 				}
 			}
 		//}
 
-		System.out.println("Total DAGs: " + ctr);
+		LOG.info("Total DAGs: " + ctr);
 	}
 
 	@Test
 	public void test() {
 		RewriterStatement stmt = RewriterUtils.parse("+([](A, 1, 1, 1, 1), B)", ctx, "MATRIX:A,B", "LITERAL_INT:1");
 		stmt = canonicalConverter.apply(stmt);
-		System.out.println(stmt.toParsableString(ctx));
+		LOG.info(stmt.toParsableString(ctx));
 	}
 
 }

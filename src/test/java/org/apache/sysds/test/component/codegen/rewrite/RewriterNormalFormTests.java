@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.component.codegen.rewrite;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RuleContext;
 import org.apache.sysds.hops.rewriter.TopologicalSort;
@@ -29,6 +31,8 @@ import org.junit.Test;
 import java.util.function.Function;
 
 public class RewriterNormalFormTests {
+	protected static final Log LOG = LogFactory.getLog(RewriterNormalFormTests.class.getName());
+
 	private static RuleContext ctx;
 	private static Function<RewriterStatement, RewriterStatement> canonicalConverter;
 
@@ -111,11 +115,11 @@ public class RewriterNormalFormTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
-		assert RewriterStatement.MatcherContext.exactMatch(ctx, stmt1, stmt2).debug(true).match();
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
+		assert RewriterStatement.MatcherContext.exactMatch(ctx, stmt1, stmt2).match();
 	}
 
 	@Test
@@ -548,10 +552,10 @@ public class RewriterNormalFormTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		return RewriterStatement.MatcherContext.exactMatch(ctx, stmt1, stmt2).debug(debug).match();
 	}
 }

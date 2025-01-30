@@ -20,6 +20,8 @@
 package org.apache.sysds.hops.rewriter.rule;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,14 +31,15 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 public class RewriterHeuristics implements RewriterHeuristicTransformation {
+	protected static final Log LOG = LogFactory.getLog(RewriterHeuristic.class.getName());
 	List<HeuristicEntry> heuristics = new ArrayList<>();
 
 	public void forEachRuleSet(Consumer<RewriterRuleSet> consumer, boolean printNames) {
 		heuristics.forEach(entry -> {
 			if (printNames) {
-				System.out.println();
-				System.out.println("> " + entry.name + " <");
-				System.out.println();
+				LOG.info("\n");
+				LOG.info("> " + entry.name + " <");
+				LOG.info("\n");
 			}
 			entry.heuristics.forEachRuleSet(consumer, printNames);
 		});
@@ -54,9 +57,9 @@ public class RewriterHeuristics implements RewriterHeuristicTransformation {
 	public RewriterStatement apply(RewriterStatement stmt, @Nullable BiFunction<RewriterStatement, RewriterRule, Boolean> func, MutableBoolean bool, boolean print) {
 		for (HeuristicEntry entry : heuristics) {
 			if (print) {
-				System.out.println();
-				System.out.println("> " + entry.name + " <");
-				System.out.println();
+				LOG.info("\n");
+				LOG.info("> " + entry.name + " <");
+				LOG.info("\n");
 			}
 
 			stmt = entry.heuristics.apply(stmt, func, bool, print);

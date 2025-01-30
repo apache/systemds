@@ -20,6 +20,8 @@
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.rewriter.dml.DMLCodeGenerator;
 import org.apache.sysds.hops.rewriter.dml.DMLExecutor;
 import org.apache.sysds.hops.rewriter.rule.RewriterRule;
@@ -27,6 +29,7 @@ import org.apache.sysds.hops.rewriter.rule.RewriterRuleCreator;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
+import org.apache.sysds.test.component.codegen.rewrite.RewriterTopologySortTests;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -34,6 +37,7 @@ import java.util.UUID;
 import java.util.function.Function;
 
 public class DMLCodeGenTest {
+	protected static final Log LOG = LogFactory.getLog(DMLCodeGenTest.class.getName());
 
 	private static RuleContext ctx;
 	private static Function<RewriterStatement, RewriterStatement> canonicalConverter;
@@ -47,7 +51,7 @@ public class DMLCodeGenTest {
 	@Test
 	public void test1() {
 		RewriterStatement stmt = RewriterUtils.parse("trace(+(A, t(B)))", ctx, "MATRIX:A,B");
-		System.out.println(DMLCodeGenerator.generateDML(stmt));
+		LOG.info(DMLCodeGenerator.generateDML(stmt));
 	}
 
 	@Test
@@ -60,8 +64,8 @@ public class DMLCodeGenTest {
 		//RewriterRuleSet ruleSet = new RewriterRuleSet(ctx, List.of(rule1, rule2));
 		String sessionId = UUID.randomUUID().toString();
 		String validationScript = DMLCodeGenerator.generateRuleValidationDML(rule2, DMLCodeGenerator.EPS, sessionId, ctx);
-		System.out.println("Validation script:");
-		System.out.println(validationScript);
+		LOG.info("Validation script:");
+		LOG.info(validationScript);
 		MutableBoolean valid = new MutableBoolean(true);
 		DMLExecutor.executeCode(validationScript, line -> {
 			if (!line.startsWith(sessionId))
@@ -74,7 +78,7 @@ public class DMLCodeGenTest {
 			}
 		});
 
-		System.out.println("Exiting...");
+		LOG.info("Exiting...");
 		assert valid.booleanValue();
 	}
 
@@ -142,7 +146,7 @@ public class DMLCodeGenTest {
 
 		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
 
-		System.out.println(DMLCodeGenerator.generateRuleValidationDML(rule, "test", ctx));
+		LOG.info(DMLCodeGenerator.generateRuleValidationDML(rule, "test", ctx));
 
 		assert RewriterRuleCreator.validateRuleCorrectness(rule, ctx);
 
@@ -158,7 +162,7 @@ public class DMLCodeGenTest {
 
 		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
 
-		System.out.println(DMLCodeGenerator.generateRuleValidationDML(rule, "test", ctx));
+		LOG.info(DMLCodeGenerator.generateRuleValidationDML(rule, "test", ctx));
 
 		assert RewriterRuleCreator.validateRuleCorrectness(rule, ctx);
 
@@ -174,7 +178,7 @@ public class DMLCodeGenTest {
 
 		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
 
-		System.out.println(DMLCodeGenerator.generateRuleValidationDML(rule, "test", ctx));
+		LOG.info(DMLCodeGenerator.generateRuleValidationDML(rule, "test", ctx));
 
 		assert RewriterRuleCreator.validateRuleCorrectness(rule, ctx);
 
@@ -190,7 +194,7 @@ public class DMLCodeGenTest {
 
 		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
 
-		System.out.println(DMLCodeGenerator.generateRuleValidationDML(rule, "test", ctx));
+		LOG.info(DMLCodeGenerator.generateRuleValidationDML(rule, "test", ctx));
 
 		assert RewriterRuleCreator.validateRuleCorrectness(rule, ctx);
 
@@ -206,12 +210,12 @@ public class DMLCodeGenTest {
 
 		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
 
-		System.out.println(canonicalConverter.apply(rule.getStmt1()).toParsableString(ctx));
-		System.out.println(canonicalConverter.apply(rule.getStmt2()).toParsableString(ctx));
+		LOG.info(canonicalConverter.apply(rule.getStmt1()).toParsableString(ctx));
+		LOG.info(canonicalConverter.apply(rule.getStmt2()).toParsableString(ctx));
 
 		//assert rule.getStmt1().match(RewriterStatement.MatcherContext.exactMatch(ctx, rule.getStmt2(), rule.getStmt1()));
 
-		System.out.println(DMLCodeGenerator.generateRuleValidationDML(rule, "test", ctx));
+		LOG.info(DMLCodeGenerator.generateRuleValidationDML(rule, "test", ctx));
 
 		assert RewriterRuleCreator.validateRuleCorrectness(rule, ctx);
 
@@ -230,12 +234,12 @@ public class DMLCodeGenTest {
 
 		RewriterRule rule = RewriterUtils.parseRule(ruleStr, ctx);
 
-		System.out.println(canonicalConverter.apply(rule.getStmt1()).toParsableString(ctx));
-		System.out.println(canonicalConverter.apply(rule.getStmt2()).toParsableString(ctx));
+		LOG.info(canonicalConverter.apply(rule.getStmt1()).toParsableString(ctx));
+		LOG.info(canonicalConverter.apply(rule.getStmt2()).toParsableString(ctx));
 
 		//assert rule.getStmt1().match(RewriterStatement.MatcherContext.exactMatch(ctx, rule.getStmt2(), rule.getStmt1()));
 
-		System.out.println(DMLCodeGenerator.generateRuleValidationDML(rule, "test", ctx));
+		LOG.info(DMLCodeGenerator.generateRuleValidationDML(rule, "test", ctx));
 
 		assert RewriterRuleCreator.validateRuleCorrectness(rule, ctx);
 

@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
@@ -36,6 +38,7 @@ import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.DataIdentifier;
+import org.apache.sysds.test.component.codegen.rewrite.RewriterTopologySortTests;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import scala.Tuple2;
@@ -46,6 +49,7 @@ import java.util.List;
 import java.util.function.Function;
 
 public class CodeGenTests {
+	protected static final Log LOG = LogFactory.getLog(CodeGenTests.class.getName());
 
 	private static RuleContext ctx;
 
@@ -64,7 +68,7 @@ public class CodeGenTests {
 				.completeRule(stmt1, stmt2)
 				.build();
 
-		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), false, false, ctx, false, false));
+		LOG.info(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), false, false, ctx, false, false));
 
 		try {
 			Function<Hop, Hop> f = RewriterCodeGen.compileRewrites("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false);
@@ -92,7 +96,7 @@ public class CodeGenTests {
 				.completeRule(stmt1, stmt2)
 				.build();
 
-		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), false, false, ctx, false, false));
+		LOG.info(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), false, false, ctx, false, false));
 
 		try {
 			Function<Hop, Hop> f = RewriterCodeGen.compileRewrites("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false);
@@ -128,7 +132,7 @@ public class CodeGenTests {
 				.completeRule(stmt1, stmt2)
 				.build();
 
-		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), false, false, ctx, false, false));
+		LOG.info(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), false, false, ctx, false, false));
 
 		try {
 			Function<Hop, Hop> f = RewriterCodeGen.compileRewrites("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false);
@@ -164,7 +168,7 @@ public class CodeGenTests {
 				.completeRule(stmt1, stmt2)
 				.build();
 
-		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), false, false, ctx, false, false));
+		LOG.info(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), false, false, ctx, false, false));
 
 		try {
 			Function<Hop, Hop> f = RewriterCodeGen.compileRewrites("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false);
@@ -200,7 +204,7 @@ public class CodeGenTests {
 				.completeRule(stmt1, stmt2)
 				.build();
 
-		System.out.println(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), false, false, ctx, false, false));
+		LOG.info(RewriterCodeGen.generateClass("MRuleTest", List.of(new Tuple2<>("testRule", rule)), false, false, ctx, false, false));
 
 		try {
 			Function<Hop, Hop> f = RewriterCodeGen.compileRewrites("MRuleTest", List.of(new Tuple2<>("testRule", rule)), ctx, false, false);
@@ -228,7 +232,7 @@ public class CodeGenTests {
 		RewriterRuleSet rs = new RewriterRuleSet(ctx, List.of(rule));
 		RewriterCodeGen.DEBUG = false;
 		String code = rs.toJavaCode("Test", false, false, true, false);
-		System.out.println(code);
+		LOG.info(code);
 	}
 
 	@Test
@@ -238,7 +242,7 @@ public class CodeGenTests {
 		RewriterRuleSet rs = new RewriterRuleSet(ctx, List.of(rule));
 		RewriterCodeGen.DEBUG = false;
 		String code = rs.toJavaCode("Test", false, false, true, false);
-		System.out.println(code);
+		LOG.info(code);
 	}
 
 	@Test
@@ -258,7 +262,7 @@ public class CodeGenTests {
 		rs.determineConditionalApplicability();
 		RewriterCodeGen.DEBUG = false;
 		String code = rs.toJavaCode("GeneratedRewriteClass", false, true, true, false);
-		System.out.println(code);
+		LOG.info(code);
 	}
 
 	@Test
@@ -273,7 +277,7 @@ public class CodeGenTests {
 		rs.determineConditionalApplicability();
 		RewriterCodeGen.DEBUG = false;
 		String code = rs.toJavaCode("GeneratedRewriteClass", false, true, true, false);
-		System.out.println(code);
+		LOG.info(code);
 	}
 
 	@Test
@@ -288,7 +292,7 @@ public class CodeGenTests {
 		rs.determineConditionalApplicability();
 		RewriterCodeGen.DEBUG = false;
 		String code = rs.toJavaCode("GeneratedRewriteClass", false, true, true, false);
-		System.out.println(code);
+		LOG.info(code);
 	}
 
 	//@Test

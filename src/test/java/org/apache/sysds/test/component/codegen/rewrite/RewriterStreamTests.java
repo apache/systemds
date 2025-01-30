@@ -20,6 +20,8 @@
 package org.apache.sysds.test.component.codegen.rewrite;
 
 import org.apache.commons.lang3.mutable.MutableObject;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.rewriter.rule.RewriterRuleCreator;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertionUtils;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
@@ -44,6 +46,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 public class RewriterStreamTests {
+	protected static final Log LOG = LogFactory.getLog(RewriterStreamTests.class.getName());
 
 	private static RuleContext ctx;
 	private static Function<RewriterStatement, RewriterStatement> canonicalConverter;
@@ -58,7 +61,7 @@ public class RewriterStreamTests {
 	public void testAdditionFloat1() {
 		RewriterStatement stmt = RewriterUtils.parse("+(+(a, b), 1)", ctx, "MATRIX:A,B,C", "FLOAT:a,b", "LITERAL_INT:0,1");
 		stmt = canonicalConverter.apply(stmt);
-		System.out.println(stmt.toParsableString(ctx, true));
+		LOG.info(stmt.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, RewriterUtils.parse("+(argList(a, b, 1))", ctx, "FLOAT:a,b", "LITERAL_INT:0,1"), stmt));
 	}
 
@@ -66,7 +69,7 @@ public class RewriterStreamTests {
 	public void testAdditionFloat2() {
 		RewriterStatement stmt = RewriterUtils.parse("+(1, +(a, b))", ctx, "FLOAT:a,b", "LITERAL_INT:0,1");
 		stmt = canonicalConverter.apply(stmt);
-		System.out.println(stmt.toParsableString(ctx, true));
+		LOG.info(stmt.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, RewriterUtils.parse("+(argList(a, b, 1))", ctx, "FLOAT:a,b", "LITERAL_INT:0,1"), stmt));
 	}
 
@@ -78,10 +81,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
@@ -91,8 +94,8 @@ public class RewriterStreamTests {
 		RewriterStatement stmt2 = RewriterUtils.parse("+(argList(-(b), a, 1))", ctx, "FLOAT:a,b", "LITERAL_INT:0,1");
 		stmt = canonicalConverter.apply(stmt);
 		stmt2 = canonicalConverter.apply(stmt2);
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -102,7 +105,7 @@ public class RewriterStreamTests {
 		RewriterStatement stmt2 = RewriterUtils.parse("+(argList(-(b), a, c, 1))", ctx, "FLOAT:a,b, c", "LITERAL_INT:0,1");
 		stmt = canonicalConverter.apply(stmt);
 		stmt2 = canonicalConverter.apply(stmt2);
-		System.out.println(stmt.toParsableString(ctx, true));
+		LOG.info(stmt.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -112,8 +115,8 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse("+(1, +(A, B))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1");
 		stmt = converter.apply(stmt);
 		RewriterStatement fused = RewriterUtils.buildFusedPlan(stmt, ctx);
-		System.out.println("Orig: " + stmt.toParsableString(ctx, true));
-		System.out.println("Fused: " + (fused == null ? null : fused.toParsableString(ctx, true)));
+		LOG.info("Orig: " + stmt.toParsableString(ctx, true));
+		LOG.info("Fused: " + (fused == null ? null : fused.toParsableString(ctx, true)));
 	}
 
 	@Test
@@ -121,8 +124,8 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse("sum(*(/(A, B), B))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1");
 		stmt = converter.apply(stmt);
 		RewriterStatement fused = RewriterUtils.buildFusedPlan(stmt, ctx);
-		System.out.println("Orig: " + stmt.toParsableString(ctx, true));
-		System.out.println("Fused: " + (fused == null ? null : fused.toParsableString(ctx, true)));
+		LOG.info("Orig: " + stmt.toParsableString(ctx, true));
+		LOG.info("Fused: " + (fused == null ? null : fused.toParsableString(ctx, true)));
 	}
 
 	@Test
@@ -130,8 +133,8 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse("sum(*(t(A), B))", ctx, "MATRIX:A,B", "LITERAL_INT:0,1");
 		stmt = converter.apply(stmt);
 		RewriterStatement fused = RewriterUtils.buildFusedPlan(stmt, ctx);
-		System.out.println("Orig: " + stmt.toParsableString(ctx, true));
-		System.out.println("Fused: " + (fused == null ? null : fused.toParsableString(ctx, true)));
+		LOG.info("Orig: " + stmt.toParsableString(ctx, true));
+		LOG.info("Fused: " + (fused == null ? null : fused.toParsableString(ctx, true)));
 	}*/
 
 	@Test
@@ -141,10 +144,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
@@ -155,10 +158,10 @@ public class RewriterStreamTests {
 		stmt = canonicalConverter.apply(stmt);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -169,10 +172,10 @@ public class RewriterStreamTests {
 		stmt = canonicalConverter.apply(stmt);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -183,10 +186,10 @@ public class RewriterStreamTests {
 		stmt = canonicalConverter.apply(stmt);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -197,10 +200,10 @@ public class RewriterStreamTests {
 		stmt = canonicalConverter.apply(stmt);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -211,10 +214,10 @@ public class RewriterStreamTests {
 		stmt = canonicalConverter.apply(stmt);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -227,12 +230,12 @@ public class RewriterStreamTests {
 		//stmt2 = canonicalConverter.apply(stmt2);
 		stmt3 = canonicalConverter.apply(stmt3);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt3.toParsableString(ctx, true));
-		System.out.println("==========");
-		//System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt3.toParsableString(ctx, true));
+		LOG.info("==========");
+		//LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt3, stmt));
 		//assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
@@ -244,10 +247,10 @@ public class RewriterStreamTests {
 		stmt = canonicalConverter.apply(stmt);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -258,10 +261,10 @@ public class RewriterStreamTests {
 		stmt = canonicalConverter.apply(stmt);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -272,10 +275,10 @@ public class RewriterStreamTests {
 		stmt = canonicalConverter.apply(stmt);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -286,10 +289,10 @@ public class RewriterStreamTests {
 		stmt = canonicalConverter.apply(stmt);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -302,10 +305,10 @@ public class RewriterStreamTests {
 		//TopologicalSort.sort(stmt1, ctx);
 		//TopologicalSort.sort(stmt2, ctx);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
@@ -316,10 +319,10 @@ public class RewriterStreamTests {
 		stmt = canonicalConverter.apply(stmt);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert !stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
 	}
 
@@ -328,7 +331,7 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse("+(0.0,*(2,%*%(t(X),T)))", ctx, "MATRIX:T,X", "FLOAT:0.0", "INT:2");
 		stmt = canonicalConverter.apply(stmt);
 
-		System.out.println(stmt.toParsableString(ctx));
+		LOG.info(stmt.toParsableString(ctx));
 	}
 
 	@Test
@@ -348,7 +351,7 @@ public class RewriterStreamTests {
 		RewriterHeuristic heur = new RewriterHeuristic(new RewriterRuleSet(ctx, rules));
 		RewriterStatement stmt = RewriterUtils.parse("A", ctx, "FLOAT:A");
 		stmt = heur.apply(stmt);
-		System.out.println(stmt);
+		LOG.info(stmt);
 	}
 
 	@Test
@@ -356,7 +359,7 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse("+(+(A,X),t(X))", ctx, "MATRIX:X,A");
 		stmt = canonicalConverter.apply(stmt);
 
-		System.out.println(stmt.toParsableString(ctx));
+		LOG.info(stmt.toParsableString(ctx));
 	}
 
 	@Test
@@ -367,10 +370,10 @@ public class RewriterStreamTests {
 		stmt = canonicalConverter.apply(stmt);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		db.insertEntry(ctx, stmt);
 
@@ -382,8 +385,8 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse("[](hIndex,i,i,1,1)", ctx, "MATRIX:hIndex", "INT:i", "LITERAL_INT:1");
 		stmt = canonicalConverter.apply(stmt);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
 	}
 
 	@Test
@@ -394,10 +397,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -412,10 +415,10 @@ public class RewriterStreamTests {
 
 		RewriterDatabase db = new RewriterDatabase();
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		db.insertEntry(ctx, stmt1);
 
@@ -430,10 +433,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 		assert stmt2.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt1, stmt2));
@@ -447,10 +450,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -463,10 +466,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -479,10 +482,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}*/
@@ -495,10 +498,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -511,10 +514,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}*/
@@ -536,10 +539,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -552,10 +555,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -568,10 +571,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -588,8 +591,8 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("sum(-(X, 7))", ctx, "MATRIX:X,Y", "LITERAL_INT:1,7", "INT:a", "LITERAL_FLOAT:7.0");
 		stmt1 = canonicalConverter.apply(stmt1);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
 	}
 
 	@Test
@@ -597,8 +600,8 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("sum(_idxExpr(_idx(1, 7), -(a)))", ctx, "MATRIX:X,Y", "LITERAL_INT:1,7", "INT:a");
 		stmt1 = canonicalConverter.apply(stmt1);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
 	}
 
 	@Test
@@ -606,8 +609,8 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse("%*%(X,[](B,1,ncol(X),1,ncol(B)))", ctx, "MATRIX:X,B,intercept", "LITERAL_INT:1");
 		stmt = canonicalConverter.apply(stmt);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
 	}
 
 	@Test
@@ -615,8 +618,8 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse("*(CBind(t(KM),KM_cols_select),KM_cols_select)", ctx, "MATRIX:KM,KM_cols_select");
 		stmt = canonicalConverter.apply(stmt);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
 	}
 
 	@Test
@@ -624,8 +627,8 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse("*(CBind(A, A),A)", ctx, "MATRIX:A");
 		stmt = canonicalConverter.apply(stmt);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
 	}
 
 	@Test
@@ -633,8 +636,8 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse("rowSums(<=(D,minD))", ctx, "MATRIX:D,minD");
 		stmt = canonicalConverter.apply(stmt);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
 	}
 
 	@Test
@@ -648,8 +651,8 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse(stmtStr, ctx);
 		stmt = canonicalConverter.apply(stmt);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
 	}
 
 	@Test
@@ -662,8 +665,8 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse(stmtStr, ctx);
 		stmt = canonicalConverter.apply(stmt);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
 	}
 
 	@Test
@@ -676,8 +679,8 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse(stmtStr, ctx);
 		stmt = canonicalConverter.apply(stmt);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
 	}
 
 	@Test
@@ -688,8 +691,8 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse(stmtStr, ctx);
 		stmt = canonicalConverter.apply(stmt);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
 	}
 
 	@Test
@@ -700,10 +703,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -716,10 +719,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -732,10 +735,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -748,10 +751,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -764,10 +767,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -780,10 +783,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -796,10 +799,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -812,10 +815,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -830,8 +833,8 @@ public class RewriterStreamTests {
 		RewriterStatement stmt = RewriterUtils.parse(stmtStr, ctx);
 		stmt = canonicalConverter.apply(stmt);
 
-		System.out.println("==========");
-		System.out.println(stmt.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt.toParsableString(ctx, true));
 	}
 
 	@Test
@@ -842,10 +845,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -856,8 +859,8 @@ public class RewriterStreamTests {
 
 		stmt1 = canonicalConverter.apply(stmt1);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
 	}
 
 	@Test
@@ -868,10 +871,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -884,10 +887,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -900,10 +903,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -916,10 +919,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -930,8 +933,8 @@ public class RewriterStreamTests {
 
 		stmt1 = canonicalConverter.apply(stmt1);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
 	}
 
 	@Test
@@ -942,10 +945,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -955,16 +958,16 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("trace(%*%(t(S),R))", ctx, "MATRIX:S,R", "LITERAL_INT:1");
 		RewriterStatement stmt2 = RewriterUtils.parse("sum(*(S,R))", ctx, "MATRIX:S,R", "LITERAL_INT:1");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -974,18 +977,18 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("%*%(A,*(b, B))", ctx, "MATRIX:A,B", "FLOAT:b", "LITERAL_INT:1");
 		RewriterStatement stmt2 = RewriterUtils.parse("*(b, %*%(A, B))", ctx, "MATRIX:A,B", "FLOAT:b", "LITERAL_INT:1");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println(stmt1.getAssertions(ctx));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
-		System.out.println(stmt2.getAssertions(ctx));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info(stmt1.getAssertions(ctx));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
+		LOG.info(stmt2.getAssertions(ctx));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -995,16 +998,16 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("cast.MATRIX(sum(*(t(rowVec(A)), colVec(B))))", ctx, "MATRIX:A,B", "FLOAT:b", "LITERAL_INT:1");
 		RewriterStatement stmt2 = RewriterUtils.parse("%*%(rowVec(A), colVec(B))", ctx, "MATRIX:A,B", "FLOAT:b", "LITERAL_INT:1");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1014,16 +1017,16 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("colSums(*(A, b))", ctx, "MATRIX:A,B", "FLOAT:b", "LITERAL_INT:1");
 		RewriterStatement stmt2 = RewriterUtils.parse("*(b, colSums(A))", ctx, "MATRIX:A,B", "FLOAT:b", "LITERAL_INT:1");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1033,16 +1036,16 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("colSums(*(A, b))", ctx, "MATRIX:A,B", "FLOAT:b", "LITERAL_INT:1");
 		RewriterStatement stmt2 = RewriterUtils.parse("*(b, colSums(A))", ctx, "MATRIX:A,B", "FLOAT:b", "LITERAL_INT:1");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1052,16 +1055,16 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("*(A,0.0)", ctx, "MATRIX:A,B", "FLOAT:b", "LITERAL_INT:1", "LITERAL_FLOAT:0.0");
 		RewriterStatement stmt2 = RewriterUtils.parse("const(A, 0.0)", ctx, "MATRIX:A,B", "FLOAT:b", "LITERAL_INT:1", "LITERAL_FLOAT:0.0");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1074,18 +1077,18 @@ public class RewriterStreamTests {
 		long cost1 = RewriterCostEstimator.estimateCost(stmt1, ctx);
 		long cost2 = RewriterCostEstimator.estimateCost(stmt2, ctx);
 
-		System.out.println("Cost1: " + cost1);
-		System.out.println("Cost2: " + cost2);
+		LOG.info("Cost1: " + cost1);
+		LOG.info("Cost2: " + cost2);
 
 		assert cost2 == cost1;
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1095,16 +1098,16 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("*(sum(colVec(A)),colSums(B))", ctx, "MATRIX:A,B", "LITERAL_INT:1");
 		RewriterStatement stmt2 = RewriterUtils.parse("%*%(colVec(A),colSums(B))", ctx, "MATRIX:A,B", "LITERAL_INT:1");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1114,18 +1117,18 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("*(a,1.0)", ctx, "FLOAT:a", "LITERAL_FLOAT:1.0");
 		RewriterStatement stmt2 = RewriterUtils.parse("a", ctx, "FLOAT:a", "LITERAL_INT:1");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		RewriterStatement newStmt = canonicalConverter.apply(stmt1);
-		System.out.println(newStmt);
-		System.out.println(stmt1);
+		LOG.info(newStmt);
+		LOG.info(stmt1);
 		//stmt2 = canonicalConverter.apply(stmt2);
 
-		/*System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		/*LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));*/
 	}
@@ -1135,16 +1138,16 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("rev(rev(A))", ctx, "MATRIX:A,B", "LITERAL_INT:1");
 		RewriterStatement stmt2 = RewriterUtils.parse("A", ctx, "MATRIX:A,B", "LITERAL_INT:1");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1154,8 +1157,8 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("trace(%*%(B,B))", ctx, "MATRIX:A,B", "LITERAL_INT:1");
 		RewriterStatement stmt2 = RewriterUtils.parse("sum(*(A, t(B)))", ctx, "MATRIX:A,B", "LITERAL_INT:1");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
@@ -1163,10 +1166,10 @@ public class RewriterStreamTests {
 		stmt1.compress();
 		stmt2.compress();
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1176,16 +1179,16 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("1-*(A, B)", ctx, "MATRIX:A,B");
 		RewriterStatement stmt2 = RewriterUtils.parse("-(1.0, *(A, B))", ctx, "MATRIX:A,B", "LITERAL_FLOAT:1.0");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1195,16 +1198,16 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("+(a, 1-*(A, B))", ctx, "MATRIX:A,B", "FLOAT:a");
 		RewriterStatement stmt2 = RewriterUtils.parse("-(1.0, -(*(A, B), a))", ctx, "MATRIX:A,B", "FLOAT:a", "LITERAL_FLOAT:1.0");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1214,16 +1217,16 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("log_nz(A)", ctx, "MATRIX:A,B", "FLOAT:a");
 		RewriterStatement stmt2 = RewriterUtils.parse("*(!=(0.0, A), log(A))", ctx, "MATRIX:A,B", "LITERAL_FLOAT:0.0");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1233,16 +1236,16 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("log_nz(A, a)", ctx, "MATRIX:A,B", "FLOAT:a");
 		RewriterStatement stmt2 = RewriterUtils.parse("*(!=(0.0, A), log(A, a))", ctx, "MATRIX:A,B", "FLOAT:a", "LITERAL_FLOAT:0.0");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1251,12 +1254,12 @@ public class RewriterStreamTests {
 	public void testFused5() {
 		RewriterStatement stmt1 = RewriterUtils.parse("sq(1-*(A,A))", ctx, "MATRIX:A,B", "FLOAT:a");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
 	}
 
 	@Test
@@ -1264,16 +1267,16 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("/(A,A)", ctx, "MATRIX:A,B", "FLOAT:a");
 		RewriterStatement stmt2 = RewriterUtils.parse("/(A,rev(A))", ctx, "MATRIX:A,B", "FLOAT:a", "LITERAL_FLOAT:0.0");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1283,16 +1286,16 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("+*(A,a,B)", ctx, "MATRIX:A,B", "FLOAT:a");
 		RewriterStatement stmt2 = RewriterUtils.parse("+(*(a, B), A)", ctx, "MATRIX:A,B", "FLOAT:a");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1302,16 +1305,16 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("sum(!=(0.0, A))", ctx, "MATRIX:A,B", "LITERAL_FLOAT:0.0");
 		RewriterStatement stmt2 = RewriterUtils.parse("_nnz(A)", ctx, "MATRIX:A,B", "FLOAT:a");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1320,12 +1323,12 @@ public class RewriterStreamTests {
 	public void testFusedCompilation() {
 		RewriterStatement stmt1 = RewriterUtils.parse("+(a,*2(1-*(B,B)))", ctx, "MATRIX:A,B", "FLOAT:a");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
 	}
 
 	@Test
@@ -1333,16 +1336,16 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("sum(+(a,A))", ctx, "MATRIX:A,B", "FLOAT:a");
 		RewriterStatement stmt2 = RewriterUtils.parse("+(*(a, length(A)), sum(A))", ctx, "MATRIX:A,B", "FLOAT:a", "LITERAL_FLOAT:0.0");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1352,16 +1355,16 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("*(rowSums(/(a,C)),b)", ctx, "MATRIX:A,B,C", "FLOAT:a,b");
 		RewriterStatement stmt2 = RewriterUtils.parse("rowSums(/(*(a,b),C))", ctx, "MATRIX:A,B,C", "FLOAT:a,b", "LITERAL_FLOAT:0.0");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1371,16 +1374,16 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("rowSums(*(A,+(B,1.0)))", ctx, "MATRIX:A,B,C", "FLOAT:a,b", "LITERAL_FLOAT:1.0");
 		RewriterStatement stmt2 = RewriterUtils.parse("+(rowSums(A), rowSums(*(B,A)))", ctx, "MATRIX:A,B,C", "FLOAT:a,b", "LITERAL_FLOAT:1.0");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1390,16 +1393,16 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("*(A,+(B,1.0))", ctx, "MATRIX:A,B,C", "FLOAT:a,b", "LITERAL_FLOAT:1.0");
 		RewriterStatement stmt2 = RewriterUtils.parse("+(A, *(B,A))", ctx, "MATRIX:A,B,C", "FLOAT:a,b", "LITERAL_FLOAT:1.0");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1409,16 +1412,16 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("trace(rev(A))", ctx, "MATRIX:A,B,C", "FLOAT:a,b", "LITERAL_FLOAT:1.0");
 		RewriterStatement stmt2 = RewriterUtils.parse("trace(A)", ctx, "MATRIX:A,B,C", "FLOAT:a,b", "LITERAL_FLOAT:1.0");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1428,16 +1431,16 @@ public class RewriterStreamTests {
 		RewriterStatement stmt1 = RewriterUtils.parse("sum(+(a,*(B,c)))", ctx, "MATRIX:B", "FLOAT:a,c");
 		RewriterStatement stmt2 = RewriterUtils.parse("*(a, sum(+(B,c)))", ctx, "MATRIX:B", "FLOAT:a,c", "LITERAL_FLOAT:0.0");
 
-		System.out.println("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
-		System.out.println("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
+		LOG.info("Cost1: " + RewriterCostEstimator.estimateCost(stmt1, ctx));
+		LOG.info("Cost2: " + RewriterCostEstimator.estimateCost(stmt2, ctx));
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1450,16 +1453,16 @@ public class RewriterStreamTests {
 		long cost1 = RewriterCostEstimator.estimateCost(stmt1, ctx);
 		long cost2 = RewriterCostEstimator.estimateCost(stmt2, ctx);
 
-		System.out.println("Cost1: " + cost1);
-		System.out.println("Cost2: " + cost2);
+		LOG.info("Cost1: " + cost1);
+		LOG.info("Cost2: " + cost2);
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 		assert cost1 > cost2;
@@ -1473,16 +1476,16 @@ public class RewriterStreamTests {
 		long cost1 = RewriterCostEstimator.estimateCost(stmt1, ctx);
 		long cost2 = RewriterCostEstimator.estimateCost(stmt2, ctx);
 
-		System.out.println("Cost1: " + cost1);
-		System.out.println("Cost2: " + cost2);
+		LOG.info("Cost1: " + cost1);
+		LOG.info("Cost2: " + cost2);
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1495,16 +1498,16 @@ public class RewriterStreamTests {
 		long cost1 = RewriterCostEstimator.estimateCost(stmt1, ctx);
 		long cost2 = RewriterCostEstimator.estimateCost(stmt2, ctx);
 
-		System.out.println("Cost1: " + cost1);
-		System.out.println("Cost2: " + cost2);
+		LOG.info("Cost1: " + cost1);
+		LOG.info("Cost2: " + cost2);
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1517,16 +1520,16 @@ public class RewriterStreamTests {
 		long cost1 = RewriterCostEstimator.estimateCost(stmt1, ctx);
 		long cost2 = RewriterCostEstimator.estimateCost(stmt2, ctx);
 
-		System.out.println("Cost1: " + cost1);
-		System.out.println("Cost2: " + cost2);
+		LOG.info("Cost1: " + cost1);
+		LOG.info("Cost2: " + cost2);
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1539,16 +1542,16 @@ public class RewriterStreamTests {
 		long cost1 = RewriterCostEstimator.estimateCost(stmt1, ctx);
 		long cost2 = RewriterCostEstimator.estimateCost(stmt2, ctx);
 
-		System.out.println("Cost1: " + cost1);
-		System.out.println("Cost2: " + cost2);
+		LOG.info("Cost1: " + cost1);
+		LOG.info("Cost2: " + cost2);
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1559,12 +1562,12 @@ public class RewriterStreamTests {
 
 		long cost1 = RewriterCostEstimator.estimateCost(stmt1, ctx);
 
-		System.out.println("Cost1: " + cost1);
+		LOG.info("Cost1: " + cost1);
 
 		stmt1 = canonicalConverter.apply(stmt1);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
 	}
 
 	@Test
@@ -1573,12 +1576,12 @@ public class RewriterStreamTests {
 
 		long cost1 = RewriterCostEstimator.estimateCost(stmt1, ctx);
 
-		System.out.println("Cost1: " + cost1);
+		LOG.info("Cost1: " + cost1);
 
 		stmt1 = canonicalConverter.apply(stmt1);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
 	}
 
 	@Test
@@ -1589,10 +1592,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1606,10 +1609,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1622,10 +1625,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1642,16 +1645,16 @@ public class RewriterStreamTests {
 		RewriterAssertions assertions = RewriterAssertionUtils.buildImplicitAssertions(stmt1, ctx);
 		RewriterAssertionUtils.buildImplicitAssertion(stmt2, assertions, stmt1, ctx);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
-		System.out.println(RewriterCostEstimator.getRawCostFunction(stmt1, ctx, new MutableObject<>(assertions), false).toParsableString(ctx));
-		System.out.println(RewriterCostEstimator.getRawCostFunction(stmt2, ctx, new MutableObject<>(assertions), false).toParsableString(ctx));
-		System.out.println(RewriterCostEstimator.compareCosts(List.of(stmt1, stmt2), assertions, ctx, false, 5));
+		LOG.info(RewriterCostEstimator.getRawCostFunction(stmt1, ctx, new MutableObject<>(assertions), false).toParsableString(ctx));
+		LOG.info(RewriterCostEstimator.getRawCostFunction(stmt2, ctx, new MutableObject<>(assertions), false).toParsableString(ctx));
+		LOG.info(RewriterCostEstimator.compareCosts(List.of(stmt1, stmt2), assertions, ctx, false, 5));
 		Set<Tuple2<Integer, Integer>> t = RewriterCostEstimator.findOptima(RewriterCostEstimator.compareCosts(List.of(stmt1, stmt2), assertions, ctx, true, 5));
-		System.out.println(t);
+		LOG.info(t);
 
 		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, can1, can2));
 	}
@@ -1668,16 +1671,16 @@ public class RewriterStreamTests {
 		RewriterAssertions assertions = RewriterAssertionUtils.buildImplicitAssertions(stmt1, ctx);
 		RewriterAssertionUtils.buildImplicitAssertion(stmt2, assertions, stmt1, ctx);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
-		System.out.println(RewriterCostEstimator.getRawCostFunction(stmt1, ctx, new MutableObject<>(assertions), false).toParsableString(ctx));
-		System.out.println(RewriterCostEstimator.getRawCostFunction(stmt2, ctx, new MutableObject<>(assertions), false).toParsableString(ctx));
-		System.out.println(RewriterCostEstimator.compareCosts(List.of(stmt1, stmt2), assertions, ctx, false, 5));
+		LOG.info(RewriterCostEstimator.getRawCostFunction(stmt1, ctx, new MutableObject<>(assertions), false).toParsableString(ctx));
+		LOG.info(RewriterCostEstimator.getRawCostFunction(stmt2, ctx, new MutableObject<>(assertions), false).toParsableString(ctx));
+		LOG.info(RewriterCostEstimator.compareCosts(List.of(stmt1, stmt2), assertions, ctx, false, 5));
 		Set<Tuple2<Integer, Integer>> t = RewriterCostEstimator.findOptima(RewriterCostEstimator.compareCosts(List.of(stmt1, stmt2), assertions, ctx, true, 5));
-		System.out.println(t);
+		LOG.info(t);
 
 		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, can1, can2));
 	}
@@ -1690,10 +1693,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert !stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1706,10 +1709,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1722,10 +1725,10 @@ public class RewriterStreamTests {
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
@@ -1742,16 +1745,16 @@ public class RewriterStreamTests {
 		RewriterAssertions assertions = RewriterAssertionUtils.buildImplicitAssertions(stmt1, ctx);
 		RewriterAssertionUtils.buildImplicitAssertion(stmt2, assertions, stmt1, ctx);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 
-		System.out.println(RewriterCostEstimator.getRawCostFunction(stmt1, ctx, new MutableObject<>(assertions), false).toParsableString(ctx));
-		System.out.println(RewriterCostEstimator.getRawCostFunction(stmt2, ctx, new MutableObject<>(assertions), false).toParsableString(ctx));
-		System.out.println(RewriterCostEstimator.compareCosts(List.of(stmt1, stmt2), assertions, ctx, false, 5));
+		LOG.info(RewriterCostEstimator.getRawCostFunction(stmt1, ctx, new MutableObject<>(assertions), false).toParsableString(ctx));
+		LOG.info(RewriterCostEstimator.getRawCostFunction(stmt2, ctx, new MutableObject<>(assertions), false).toParsableString(ctx));
+		LOG.info(RewriterCostEstimator.compareCosts(List.of(stmt1, stmt2), assertions, ctx, false, 5));
 		Set<Tuple2<Integer, Integer>> t = RewriterCostEstimator.findOptima(RewriterCostEstimator.compareCosts(List.of(stmt1, stmt2), assertions, ctx, true, 5));
-		System.out.println(t);
+		LOG.info(t);
 
 		assert can2.match(RewriterStatement.MatcherContext.exactMatch(ctx, can1, can2));
 	}

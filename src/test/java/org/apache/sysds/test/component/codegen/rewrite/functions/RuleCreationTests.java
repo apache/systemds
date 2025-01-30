@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.rewriter.rule.RewriterRule;
 import org.apache.sysds.hops.rewriter.rule.RewriterRuleBuilder;
 import org.apache.sysds.hops.rewriter.rule.RewriterRuleCreator;
@@ -26,6 +28,7 @@ import org.apache.sysds.hops.rewriter.rule.RewriterRuleSet;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
+import org.apache.sysds.test.component.codegen.rewrite.RewriterTopologySortTests;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -33,6 +36,8 @@ import java.util.List;
 import java.util.function.Function;
 
 public class RuleCreationTests {
+	protected static final Log LOG = LogFactory.getLog(RuleCreationTests.class.getName());
+
 	private static RuleContext ctx;
 	private static Function<RewriterStatement, RewriterStatement> canonicalConverter;
 
@@ -49,14 +54,14 @@ public class RuleCreationTests {
 		RewriterStatement canonicalForm1 = canonicalConverter.apply(from);
 		RewriterStatement canonicalForm2 = canonicalConverter.apply(to);
 
-		System.out.println("==========");
-		System.out.println(canonicalForm1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(canonicalForm2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(canonicalForm1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(canonicalForm2.toParsableString(ctx, true));
 		assert canonicalForm1.match(RewriterStatement.MatcherContext.exactMatch(ctx, canonicalForm2, canonicalForm1));
 
 		RewriterRule rule = RewriterRuleCreator.createRule(from, to, canonicalForm1, canonicalForm2, ctx);
-		System.out.println(rule);
+		LOG.info(rule);
 	}
 
 	@Test
@@ -66,14 +71,14 @@ public class RuleCreationTests {
 		RewriterStatement canonicalForm1 = canonicalConverter.apply(from);
 		RewriterStatement canonicalForm2 = canonicalConverter.apply(to);
 
-		System.out.println("==========");
-		System.out.println(canonicalForm1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(canonicalForm2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(canonicalForm1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(canonicalForm2.toParsableString(ctx, true));
 		assert canonicalForm1.match(RewriterStatement.MatcherContext.exactMatch(ctx, canonicalForm2, canonicalForm1));
 
 		RewriterRule rule = RewriterRuleCreator.createRule(from, to, canonicalForm1, canonicalForm2, ctx);
-		System.out.println(rule);
+		LOG.info(rule);
 
 		RewriterRuleSet rs = new RewriterRuleSet(ctx, List.of(rule));
 
@@ -131,10 +136,10 @@ public class RuleCreationTests {
 		RewriterStatement canonicalForm1 = canonicalConverter.apply(from);
 		RewriterStatement canonicalForm2 = canonicalConverter.apply(to);
 
-		System.out.println("==========");
-		System.out.println(canonicalForm1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(canonicalForm2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(canonicalForm1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(canonicalForm2.toParsableString(ctx, true));
 
 		assert canonicalForm1.match(RewriterStatement.MatcherContext.exactMatch(ctx, canonicalForm2, canonicalForm1));
 	}
@@ -146,30 +151,30 @@ public class RuleCreationTests {
 		RewriterStatement canonicalForm1 = canonicalConverter.apply(from);
 		RewriterStatement canonicalForm2 = canonicalConverter.apply(to);
 
-		System.out.println("==========");
-		System.out.println(canonicalForm1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(canonicalForm2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(canonicalForm1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(canonicalForm2.toParsableString(ctx, true));
 
 		assert canonicalForm1.match(RewriterStatement.MatcherContext.exactMatch(ctx, canonicalForm2, canonicalForm1));
 
 		RewriterRule rule = RewriterRuleCreator.createRule(from, to, canonicalForm1, canonicalForm2, ctx);
-		System.out.println(rule);
+		LOG.info(rule);
 
 		RewriterStatement from2 = RewriterUtils.parse("/(0.0,a)", ctx, "FLOAT:a", "LITERAL_FLOAT:0.0");
 		RewriterStatement to2 = RewriterUtils.parse("0.0", ctx, "LITERAL_FLOAT:0.0");
 		RewriterStatement canonicalForm12 = canonicalConverter.apply(from2);
 		RewriterStatement canonicalForm22 = canonicalConverter.apply(to2);
 
-		System.out.println("==========");
-		System.out.println(canonicalForm12.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(canonicalForm22.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(canonicalForm12.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(canonicalForm22.toParsableString(ctx, true));
 
 		assert canonicalForm12.match(RewriterStatement.MatcherContext.exactMatch(ctx, canonicalForm22, canonicalForm12));
 
 		RewriterRule rule2 = RewriterRuleCreator.createRule(from2, to2, canonicalForm12, canonicalForm22, ctx);
-		System.out.println(rule2);
+		LOG.info(rule2);
 
 		RewriterRuleSet rs = new RewriterRuleSet(ctx, List.of(rule, rule2));
 
@@ -181,8 +186,8 @@ public class RuleCreationTests {
 
 		testStmt = ar.rule.apply(ar.matches.get(0), testStmt, true, false);
 
-		System.out.println("HERE");
-		System.out.println(testStmt.toParsableString(ctx));
+		LOG.info("HERE");
+		LOG.info(testStmt.toParsableString(ctx));
 
 		ar = rs.acceleratedFindFirst(testStmt);
 
@@ -190,7 +195,7 @@ public class RuleCreationTests {
 
 		testStmt = ar.rule.apply(ar.matches.get(0), testStmt, true, false);
 
-		System.out.println(testStmt);
+		LOG.info(testStmt);
 	}
 
 	@Test
@@ -203,7 +208,7 @@ public class RuleCreationTests {
 		rc.registerRule(rule2, rule2.getStmt1().getCost(ctx), rule2.getStmt2().getCost(ctx), false, canonicalConverter);
 		rc.registerRule(rule1, rule1.getStmt1().getCost(ctx), rule1.getStmt2().getCost(ctx), false, canonicalConverter);
 
-		System.out.println(rc.getRuleSet().serialize());
+		LOG.info(rc.getRuleSet().serialize());
 	}
 
 	@Test
@@ -213,25 +218,25 @@ public class RuleCreationTests {
 		RewriterStatement canonicalForm1 = canonicalConverter.apply(from);
 		RewriterStatement canonicalForm2 = canonicalConverter.apply(to);
 
-		System.out.println("==========");
-		System.out.println(canonicalForm1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(canonicalForm2.toParsableString(ctx, true));
-		/*System.out.println(canonicalForm1.getChild(1, 1, 0));
-		System.out.println(canonicalForm1.getChild(1, 1, 0).getNCol());
-		System.out.println(canonicalForm1.getChild(1, 1, 0).getNRow());
-		System.out.println(canonicalForm2.getChild(1, 1, 0));
-		System.out.println(canonicalForm2.getChild(1, 1, 0).getNCol());
-		System.out.println(canonicalForm2.getChild(1, 1, 0).getNRow());*/
+		LOG.info("==========");
+		LOG.info(canonicalForm1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(canonicalForm2.toParsableString(ctx, true));
+		/*LOG.info(canonicalForm1.getChild(1, 1, 0));
+		LOG.info(canonicalForm1.getChild(1, 1, 0).getNCol());
+		LOG.info(canonicalForm1.getChild(1, 1, 0).getNRow());
+		LOG.info(canonicalForm2.getChild(1, 1, 0));
+		LOG.info(canonicalForm2.getChild(1, 1, 0).getNCol());
+		LOG.info(canonicalForm2.getChild(1, 1, 0).getNRow());*/
 		RewriterStatement.MatcherContext mCtx = RewriterStatement.MatcherContext.exactMatch(ctx, canonicalForm2, canonicalForm1);
 		if (!canonicalForm1.match(mCtx)) {
-			System.out.println(mCtx.getFirstMismatch()._1);
-			System.out.println(mCtx.getFirstMismatch()._2);
+			LOG.info(mCtx.getFirstMismatch()._1);
+			LOG.info(mCtx.getFirstMismatch()._2);
 			assert false;
 		}
 
 		RewriterRule rule = RewriterRuleCreator.createRule(from, to, canonicalForm1, canonicalForm2, ctx);
-		System.out.println(rule);
+		LOG.info(rule);
 	}
 
 	@Test
@@ -268,7 +273,7 @@ public class RuleCreationTests {
 		ruleCreator.registerRule(rule1, canonicalConverter, ctx);
 
 		assert ruleCreator.registerRule(rule2, canonicalConverter, ctx);
-		System.out.println(ruleCreator.getRuleSet().getRules());
+		LOG.info(ruleCreator.getRuleSet().getRules());
 		assert ruleCreator.getRuleSet().getRules().size() == 1;
 	}
 

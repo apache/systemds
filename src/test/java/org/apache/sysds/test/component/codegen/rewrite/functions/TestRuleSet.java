@@ -56,7 +56,6 @@ public class TestRuleSet {
 		assert ar != null;
 
 		stmt = ar.rule.apply(ar.matches.get(0), stmt, ar.forward, false);
-		System.out.println(stmt.toParsableString(ctx));
 	}
 
 	@Test
@@ -77,6 +76,5 @@ public class TestRuleSet {
 		assert ar != null;
 
 		stmt = ar.rule.apply(ar.matches.get(0), stmt, ar.forward, false);
-		System.out.println(stmt.toParsableString(ctx));
 	}
 }

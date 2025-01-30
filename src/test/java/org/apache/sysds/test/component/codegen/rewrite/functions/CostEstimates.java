@@ -20,12 +20,15 @@
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
 import org.apache.commons.lang3.mutable.MutableObject;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.rewriter.rule.RewriterRule;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.estimators.RewriterCostEstimator;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.utils.RewriterUtils;
 import org.apache.sysds.hops.rewriter.RuleContext;
+import org.apache.sysds.test.component.codegen.rewrite.RewriterTopologySortTests;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import scala.Tuple2;
@@ -36,6 +39,8 @@ import java.util.Set;
 import java.util.function.Function;
 
 public class CostEstimates {
+	protected static final Log LOG = LogFactory.getLog(CostEstimates.class.getName());
+
 	private static RuleContext ctx;
 	private static Function<RewriterStatement, RewriterStatement> canonicalConverter;
 
@@ -50,22 +55,22 @@ public class CostEstimates {
 		RewriterStatement stmt = RewriterUtils.parse("%*%(+(A,B), C)", ctx, "MATRIX:A,B,C");
 		MutableObject<RewriterAssertions> assertionRef = new MutableObject<>();
 		long cost1 = RewriterCostEstimator.estimateCost(stmt, ctx, assertionRef);
-		System.out.println(cost1);
+		LOG.info(cost1);
 		long cost2 = RewriterCostEstimator.estimateCost(stmt.getChild(0), ctx, assertionRef);
-		System.out.println(cost2);
+		LOG.info(cost2);
 		assert cost2 < cost1;
 	}
 
 	@Test
 	public void test2() {
 		RewriterStatement stmt = RewriterUtils.parse("*(+(1, 1), 2)", ctx, "LITERAL_INT:1,2");
-		System.out.println(canonicalConverter.apply(stmt));
+		LOG.info(canonicalConverter.apply(stmt));
 	}
 
 	@Test
 	public void test3() {
 		RewriterStatement stmt = RewriterUtils.parse("_EClass(argList(1, ncol(X)))", ctx, "LITERAL_INT:1", "MATRIX:X");
-		System.out.println(canonicalConverter.apply(stmt));
+		LOG.info(canonicalConverter.apply(stmt));
 	}
 
 	@Test
@@ -74,9 +79,9 @@ public class CostEstimates {
 		RewriterStatement stmt2 = RewriterUtils.parse("%*%(t(C), t(+(A,B)))", ctx, "MATRIX:A,B,C");
 		long cost1 = RewriterCostEstimator.estimateCost(stmt1, el -> 2000L, ctx);
 		long cost2 = RewriterCostEstimator.estimateCost(stmt2, el -> 2000L, ctx);
-		System.out.println("Cost1: " + cost1);
-		System.out.println("Cost2: " + cost2);
-		System.out.println("Ratio: " + ((double)cost1)/cost2);
+		LOG.info("Cost1: " + cost1);
+		LOG.info("Cost2: " + cost2);
+		LOG.info("Ratio: " + ((double)cost1)/cost2);
 		assert cost1 < cost2;
 	}
 
@@ -86,18 +91,18 @@ public class CostEstimates {
 		RewriterStatement stmt2 = RewriterUtils.parse("/(*(t(A), t(B)), t(C))", ctx, "MATRIX:A,B,C");
 		long cost1 = RewriterCostEstimator.estimateCost(stmt1, el -> 2000L, ctx);
 		long cost2 = RewriterCostEstimator.estimateCost(stmt2, el -> 2000L, ctx);
-		System.out.println("Cost1: " + cost1);
-		System.out.println("Cost2: " + cost2);
-		System.out.println("Ratio: " + ((double)cost1)/cost2);
+		LOG.info("Cost1: " + cost1);
+		LOG.info("Cost2: " + cost2);
+		LOG.info("Ratio: " + ((double)cost1)/cost2);
 		assert cost1 < cost2;
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
@@ -108,9 +113,9 @@ public class CostEstimates {
 		stmt2.givenThatEqualDimensions(stmt2.getChild(0, 0), stmt2.getChild(1, 0), ctx);
 		long cost1 = RewriterCostEstimator.estimateCost(stmt1, el -> 2000L, ctx);
 		long cost2 = RewriterCostEstimator.estimateCost(stmt2, el -> 2000L, ctx);
-		System.out.println("Cost1: " + cost1);
-		System.out.println("Cost2: " + cost2);
-		System.out.println("Ratio: " + ((double)cost2)/cost1);
+		LOG.info("Cost1: " + cost1);
+		LOG.info("Cost2: " + cost2);
+		LOG.info("Ratio: " + ((double)cost2)/cost1);
 		assert cost2 < cost1;
 
 		stmt1 = canonicalConverter.apply(stmt1);
@@ -124,18 +129,18 @@ public class CostEstimates {
 		RewriterStatement stmt2 = RewriterUtils.parse("rowSums(colSums(A))", ctx, "MATRIX:A,B,C");
 		long cost1 = RewriterCostEstimator.estimateCost(stmt1, el -> 2000L, ctx);
 		long cost2 = RewriterCostEstimator.estimateCost(stmt2, el -> 2000L, ctx);
-		System.out.println("Cost1: " + cost1);
-		System.out.println("Cost2: " + cost2);
-		System.out.println("Ratio: " + ((double)cost1)/cost2);
+		LOG.info("Cost1: " + cost1);
+		LOG.info("Cost2: " + cost2);
+		LOG.info("Ratio: " + ((double)cost1)/cost2);
 		assert cost1 < cost2;
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
@@ -146,18 +151,18 @@ public class CostEstimates {
 
 		long cost1 = RewriterCostEstimator.estimateCost(stmt1, el -> 2000L, ctx);
 		long cost2 = RewriterCostEstimator.estimateCost(stmt2, el -> 2000L, ctx);
-		System.out.println("Cost1: " + cost1);
-		System.out.println("Cost2: " + cost2);
-		System.out.println("Ratio: " + ((double)cost1)/cost2);
+		LOG.info("Cost1: " + cost1);
+		LOG.info("Cost2: " + cost2);
+		LOG.info("Ratio: " + ((double)cost1)/cost2);
 		assert cost1 < cost2;
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
@@ -177,18 +182,18 @@ public class CostEstimates {
 
 		long cost1 = RewriterCostEstimator.estimateCost(stmt1, el -> 2000L, ctx);
 		long cost2 = RewriterCostEstimator.estimateCost(stmt2, el -> 2000L, ctx);
-		System.out.println("Cost1: " + cost1);
-		System.out.println("Cost2: " + cost2);
-		System.out.println("Ratio: " + ((double)cost1)/cost2);
+		LOG.info("Cost1: " + cost1);
+		LOG.info("Cost2: " + cost2);
+		LOG.info("Ratio: " + ((double)cost1)/cost2);
 		assert cost1 == cost2;
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
@@ -206,18 +211,18 @@ public class CostEstimates {
 
 		long cost1 = RewriterCostEstimator.estimateCost(stmt1, el -> 2000L, ctx);
 		long cost2 = RewriterCostEstimator.estimateCost(stmt2, el -> 2000L, ctx);
-		System.out.println("Cost1: " + cost1);
-		System.out.println("Cost2: " + cost2);
-		System.out.println("Ratio: " + ((double)cost1)/cost2);
+		LOG.info("Cost1: " + cost1);
+		LOG.info("Cost2: " + cost2);
+		LOG.info("Ratio: " + ((double)cost1)/cost2);
 		assert cost1 == cost2;
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
@@ -235,17 +240,17 @@ public class CostEstimates {
 
 		long cost1 = RewriterCostEstimator.estimateCost(stmt1, el -> 2000L, ctx);
 		long cost2 = RewriterCostEstimator.estimateCost(stmt2, el -> 2000L, ctx);
-		System.out.println("Cost1: " + cost1);
-		System.out.println("Cost2: " + cost2);
-		System.out.println("Ratio: " + ((double)cost1)/cost2);
+		LOG.info("Cost1: " + cost1);
+		LOG.info("Cost2: " + cost2);
+		LOG.info("Ratio: " + ((double)cost1)/cost2);
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
@@ -263,9 +268,9 @@ public class CostEstimates {
 
 		long cost1 = RewriterCostEstimator.estimateCost(stmt1, el -> 2000L, ctx);
 		long cost2 = RewriterCostEstimator.estimateCost(stmt2, el -> 2000L, ctx);
-		System.out.println("Cost1: " + cost1);
-		System.out.println("Cost2: " + cost2);
-		System.out.println("Ratio: " + ((double)cost1)/cost2);
+		LOG.info("Cost1: " + cost1);
+		LOG.info("Cost2: " + cost2);
+		LOG.info("Ratio: " + ((double)cost1)/cost2);
 
 		assert cost1 < cost2;
 	}
@@ -284,19 +289,19 @@ public class CostEstimates {
 
 		long cost1 = RewriterCostEstimator.estimateCost(stmt1, el -> 2000L, ctx);
 		long cost2 = RewriterCostEstimator.estimateCost(stmt2, el -> 2000L, ctx);
-		System.out.println("Cost1: " + cost1);
-		System.out.println("Cost2: " + cost2);
-		System.out.println("Ratio: " + ((double)cost1)/cost2);
+		LOG.info("Cost1: " + cost1);
+		LOG.info("Cost2: " + cost2);
+		LOG.info("Ratio: " + ((double)cost1)/cost2);
 
 		assert cost2 < cost1;
 
 		stmt1 = canonicalConverter.apply(stmt1);
 		stmt2 = canonicalConverter.apply(stmt2);
 
-		System.out.println("==========");
-		System.out.println(stmt1.toParsableString(ctx, true));
-		System.out.println("==========");
-		System.out.println(stmt2.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt1.toParsableString(ctx, true));
+		LOG.info("==========");
+		LOG.info(stmt2.toParsableString(ctx, true));
 		assert stmt1.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt1));
 	}
 
@@ -306,8 +311,8 @@ public class CostEstimates {
 		MutableObject<RewriterAssertions> assertionRef = new MutableObject<>();
 		long maxCost = RewriterCostEstimator.estimateCost(stmt1, ctx, assertionRef);
 		Tuple2<Set<RewriterStatement>, Boolean> allowedCombinations = RewriterCostEstimator.determineSingleReferenceRequirement(stmt1, RewriterCostEstimator.DEFAULT_COST_FN, assertionRef.getValue(), 0, maxCost, ctx);
-		System.out.println(allowedCombinations._1);
-		System.out.println("AllowCombinations: " + allowedCombinations._2);
+		LOG.info(allowedCombinations._1);
+		LOG.info("AllowCombinations: " + allowedCombinations._2);
 		assert allowedCombinations._1.size() == 1;
 	}
 
@@ -319,8 +324,8 @@ public class CostEstimates {
 		long maxCost = RewriterCostEstimator.estimateCost(stmt1, ctx, assertionRef);
 		long fullCost = RewriterCostEstimator.estimateCost(stmt2, ctx, assertionRef);
 		Tuple2<Set<RewriterStatement>, Boolean> allowedCombinations = RewriterCostEstimator.determineSingleReferenceRequirement(stmt1, RewriterCostEstimator.DEFAULT_COST_FN, assertionRef.getValue(), fullCost, maxCost, ctx);
-		System.out.println(allowedCombinations._1);
-		System.out.println("AllowCombinations: " + allowedCombinations._2);
+		LOG.info(allowedCombinations._1);
+		LOG.info("AllowCombinations: " + allowedCombinations._2);
 		assert allowedCombinations._1.isEmpty();
 	}
 
@@ -339,8 +344,8 @@ public class CostEstimates {
 		RewriterStatement stmt2 = RewriterUtils.parse("%*%(colSums(colVec(A)),B)", ctx, "MATRIX:A,B", "LITERAL_INT:1");
 		long cost1 = RewriterCostEstimator.estimateCost(stmt1, ctx);
 		long cost2 = RewriterCostEstimator.estimateCost(stmt2, ctx);
-		System.out.println("Cost1: " + cost1);
-		System.out.println("Cost2: " + cost2);
+		LOG.info("Cost1: " + cost1);
+		LOG.info("Cost2: " + cost2);
 		assert cost1 < cost2;
 	}
 
@@ -358,11 +363,11 @@ public class CostEstimates {
 
 		List<Tuple3<List<Number>, Long, Long>> cmp = RewriterCostEstimator.compareCosts(rule.getStmt1(), rule.getStmt2(), rule.getStmt1().getAssertions(ctx), ctx, false, 0, false);
 
-		System.out.println(cmp);
+		LOG.info(cmp);
 		long cost1 = RewriterCostEstimator.estimateCost(rule.getStmt1(), ctx);
 		long cost2 = RewriterCostEstimator.estimateCost(rule.getStmt2(), ctx);
-		System.out.println("Cost1: " + cost1);
-		System.out.println("Cost2: " + cost2);
+		LOG.info("Cost1: " + cost1);
+		LOG.info("Cost2: " + cost2);
 		assert cost1 == cost2;
 	}
 
@@ -380,11 +385,11 @@ public class CostEstimates {
 
 		List<Tuple3<List<Number>, Long, Long>> cmp = RewriterCostEstimator.compareCosts(rule.getStmt1(), rule.getStmt2(), rule.getStmt1().getAssertions(ctx), ctx, false, 0, false);
 
-		System.out.println(cmp);
+		LOG.info(cmp);
 		long cost1 = RewriterCostEstimator.estimateCost(rule.getStmt1(), ctx);
 		long cost2 = RewriterCostEstimator.estimateCost(rule.getStmt2(), ctx);
-		System.out.println("Cost1: " + cost1);
-		System.out.println("Cost2: " + cost2);
+		LOG.info("Cost1: " + cost1);
+		LOG.info("Cost2: " + cost2);
 		assert cost1 == cost2;
 	}
 }

@@ -19,11 +19,16 @@
 
 package org.apache.sysds.test.component.codegen.rewrite.functions;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.rewriter.dml.DMLExecutor;
+import org.apache.sysds.test.component.codegen.rewrite.RewriterTopologySortTests;
 import org.junit.Test;
 
 public class CodeExecutionTest {
+	protected static final Log LOG = LogFactory.getLog(CodeExecutionTest.class.getName());
+
 	@Test
 	public void test() {
 		String str = "X = rand(rows=5000, cols=5000, sparsity=0.1)\n" +

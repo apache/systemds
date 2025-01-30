@@ -23,6 +23,8 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.mutable.MutableObject;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.logging.log4j.util.TriConsumer;
 import org.apache.sysds.hops.rewriter.MetaPropagator;
 import org.apache.sysds.hops.rewriter.RewriterContextSettings;
@@ -57,6 +59,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class RewriterUtils {
+	protected static final Log LOG = LogFactory.getLog(RewriterUtils.class.getName());
 
 	public static final Pattern LONG_PATTERN = Pattern.compile("-?\\d+");
 	public static final Pattern DOUBLE_PATTERN = Pattern.compile("-?\\d*\\.\\d+([eE][+-]?\\d+)?");
@@ -817,8 +820,8 @@ public class RewriterUtils {
 					return true;
 
 				if (r != null)
-					System.out.println("Applying rule: " + r.getName());
-				System.out.println(t.toParsableString(ctx));
+					LOG.info("Applying rule: " + r.getName());
+				LOG.info(t.toParsableString(ctx));
 				return true;
 			}, debug);
 
@@ -837,8 +840,8 @@ public class RewriterUtils {
 					return true;
 
 				if (r != null)
-					System.out.println("Applying rule: " + r.getName());
-				System.out.println(t.toParsableString(ctx));
+					LOG.info("Applying rule: " + r.getName());
+				LOG.info(t.toParsableString(ctx));
 				return true;
 			}, debug);
 
@@ -855,13 +858,13 @@ public class RewriterUtils {
 			stmt.prepareForHashing();
 
 			if (debug)
-				System.out.println("PRE1:   " + stmt.toParsableString(ctx, false));
+				LOG.info("PRE1:   " + stmt.toParsableString(ctx, false));
 
 			stmt.compress(); // To remove unnecessary metadata such as assertions that are not encoded in the graph
 			TopologicalSort.sort(stmt, ctx);
 
 			if (debug)
-				System.out.println("FINAL1: " + stmt.toParsableString(ctx, false));
+				LOG.info("FINAL1: " + stmt.toParsableString(ctx, false));
 
 			return stmt;
 		};

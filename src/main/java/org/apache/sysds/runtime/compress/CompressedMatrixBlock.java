@@ -57,6 +57,7 @@ import org.apache.sysds.runtime.compress.lib.CLALibDecompress;
 import org.apache.sysds.runtime.compress.lib.CLALibMMChain;
 import org.apache.sysds.runtime.compress.lib.CLALibMatrixMult;
 import org.apache.sysds.runtime.compress.lib.CLALibMerge;
+import org.apache.sysds.runtime.compress.lib.CLALibReorg;
 import org.apache.sysds.runtime.compress.lib.CLALibReshape;
 import org.apache.sysds.runtime.compress.lib.CLALibRexpand;
 import org.apache.sysds.runtime.compress.lib.CLALibScalar;
@@ -306,7 +307,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	 * @return The cached decompressed matrix, if it does not exist return null
 	 */
 	public MatrixBlock getCachedDecompressed() {
-		if( allowCachingUncompressed && decompressedVersion != null) {
+		if(allowCachingUncompressed && decompressedVersion != null) {
 			final MatrixBlock mb = decompressedVersion.get();
 			if(mb != null) {
 				DMLCompressionStatistics.addDecompressCacheCount();
@@ -400,8 +401,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			long total = baseSizeInMemory();
 			// take into consideration duplicate dictionaries
 			Set<IDictionary> dicts = new HashSet<>();
-			for(AColGroup grp : _colGroups){
-				if(grp instanceof ADictBasedColGroup){
+			for(AColGroup grp : _colGroups) {
+				if(grp instanceof ADictBasedColGroup) {
 					IDictionary dg = ((ADictBasedColGroup) grp).getDictionary();
 					if(dicts.contains(dg))
 						total -= dg.getInMemorySize();
@@ -575,8 +576,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public MatrixBlock chainMatrixMultOperations(MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype,
-		int k) {
+	public MatrixBlock chainMatrixMultOperations(MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype, int k) {
 
 		checkMMChain(ctype, v, w);
 		// multi-threaded MMChain of single uncompressed ColGroup
@@ -653,21 +653,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock reorgOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length) {
-		if(op.fn instanceof SwapIndex && this.getNumColumns() == 1) {
-			MatrixBlock tmp = decompress(op.getNumThreads());
-			long nz = tmp.setNonZeros(tmp.getNonZeros());
-			tmp = new MatrixBlock(tmp.getNumColumns(), tmp.getNumRows(), tmp.getDenseBlockValues());
-			tmp.setNonZeros(nz);
-			return tmp;
-		}
-		else {
-			// Allow transpose to be compressed output. In general we need to have a transposed flag on
-			// the compressed matrix. https://issues.apache.org/jira/browse/SYSTEMDS-3025
-			String message = op.getClass().getSimpleName() + " -- " + op.fn.getClass().getSimpleName();
-			MatrixBlock tmp = getUncompressed(message, op.getNumThreads());
-			return tmp.reorgOperations(op, ret, startRow, startColumn, length);
-		}
-
+		return CLALibReorg.reorg(this, op, (MatrixBlock) ret, startRow, startColumn, length);
 	}
 
 	public boolean isOverlapping() {
@@ -709,10 +695,10 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			return false;
 		}
 	}
-	
+
 	@Override
 	public boolean containsValue(double pattern, int k) {
-		//TODO parallel contains value
+		// TODO parallel contains value
 		return containsValue(pattern);
 	}
 
@@ -774,8 +760,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			return false;
 		else if(_colGroups == null || nonZeros == 0)
 			return true;
-		else{
-			if(nonZeros == -1){
+		else {
+			if(nonZeros == -1) {
 				// try to use column groups
 				for(AColGroup g : _colGroups)
 					if(!g.isEmpty())
@@ -1176,8 +1162,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public void appendRowToSparse(SparseBlock dest, MatrixBlock src, int i, int rowoffset, int coloffset,
-		boolean deep) {
+	public void appendRowToSparse(SparseBlock dest, MatrixBlock src, int i, int rowoffset, int coloffset, boolean deep) {
 		throw new DMLCompressionException("Can't append row to compressed Matrix");
 	}
 
@@ -1237,7 +1222,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public void denseToSparse(boolean allowCSR, int k){
+	public void denseToSparse(boolean allowCSR, int k) {
 		// do nothing
 	}
 
@@ -1326,13 +1311,13 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		throw new DMLCompressionException("Invalid to allocate block on a compressed MatrixBlock");
 	}
 
-	@Override 
+	@Override
 	public MatrixBlock transpose(int k) {
-		return getUncompressed().transpose(k);
+		return CLALibReorg.reorg(this, new ReorgOperator(SwapIndex.getSwapIndexFnObject(), k), null, 0, 0, 0);
 	}
 
-	@Override 
-	public MatrixBlock reshape(int rows,int cols, boolean byRow){
+	@Override
+	public MatrixBlock reshape(int rows, int cols, boolean byRow) {
 		return CLALibReshape.reshape(this, rows, cols, byRow);
 	}
 

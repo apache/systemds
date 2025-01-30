@@ -54,7 +54,7 @@ public class RewriterStreamTests {
 	@BeforeClass
 	public static void setup() {
 		ctx = RewriterUtils.buildDefaultContext();
-		canonicalConverter = RewriterUtils.buildCanonicalFormConverter(ctx, true);
+		canonicalConverter = RewriterUtils.buildCanonicalFormConverter(ctx, false);
 	}
 
 	@Test

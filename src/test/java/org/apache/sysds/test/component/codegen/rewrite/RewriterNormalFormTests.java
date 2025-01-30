@@ -39,7 +39,7 @@ public class RewriterNormalFormTests {
 	@BeforeClass
 	public static void setup() {
 		ctx = RewriterUtils.buildDefaultContext();
-		canonicalConverter = RewriterUtils.buildCanonicalFormConverter(ctx, true);
+		canonicalConverter = RewriterUtils.buildCanonicalFormConverter(ctx, false);
 	}
 
 	//e.g., matrix(1,nrow(X),ncol(X))/X -> 1/X

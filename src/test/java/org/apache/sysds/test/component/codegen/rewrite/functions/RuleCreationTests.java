@@ -116,8 +116,8 @@ public class RuleCreationTests {
 		RewriterRule rule = new RewriterRuleBuilder(ctx)
 				.setUnidirectional(true)
 				.parseGlobalVars("MATRIX:A,B")
-				.withParsedStatement("cast.MATRIX(sum(colVec(A)))")
-				.toParsedStatement("rowSums(colVec(A))")
+				.withParsedStatement("cast.MATRIX(sum(rowVec(A)))")
+				.toParsedStatement("rowSums(rowVec(A))")
 				.build();
 
 		assert RewriterRuleCreator.validateRuleCorrectness(rule, ctx);

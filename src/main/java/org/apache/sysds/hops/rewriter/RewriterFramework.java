@@ -103,7 +103,7 @@ public class RewriterFramework {
 
 	/**
 	 * Initializes the rewriter framework
-	 * @param allowInversionCanonicalization if the conversion from a/c => a*(c^-1) should be applied (during canonicalization)
+	 * @param allowInversionCanonicalization if the conversion from a/c =&gt; a*(c^-1) should be applied (during canonicalization)
 	 * @param pruneNovelExpressions if only equivalence groups should be stored, where at least one expression was in the data-set
 	 */
 	public void init(boolean allowInversionCanonicalization, boolean pruneNovelExpressions) {
@@ -199,7 +199,7 @@ public class RewriterFramework {
 	/**
 	 * Performs a systematic search
 	 * @param maxDepth the maximum number of (virtual) operands
-	 * @param includeDuplicateReferences if the search space should be extended to contain a shared variable (e.g. +(A,B) => [+(A,B), +(A,A)])
+	 * @param includeDuplicateReferences if the search space should be extended to contain a shared variable (e.g. +(A,B) =&gt; [+(A,B), +(A,A)])
 	 */
 	public void systematicSearch(int maxDepth, boolean includeDuplicateReferences) {
 		systematicSearch(0, RewriterSearchUtils.getMaxSearchNumberForNumOps(maxDepth), includeDuplicateReferences, false);
@@ -209,7 +209,7 @@ public class RewriterFramework {
 	 * Performs a systematic search
 	 * @param fromIdx the start index
 	 * @param toIdx the end index
-	 * @param includeDuplicateReferences if the search space should be extended to contain a shared variable (e.g. +(A,B) => [+(A,B), +(A,A)])
+	 * @param includeDuplicateReferences if the search space should be extended to contain a shared variable (e.g. +(A,B) =&gt; [+(A,B), +(A,A)])
 	 * @param includeRowColVectors if row-vectors and col-vectors should be included in the search (note that the data-driven approach does not support this)
 	 */
 	public void systematicSearch(int fromIdx, int toIdx, boolean includeDuplicateReferences, boolean includeRowColVectors) {
@@ -408,7 +408,7 @@ public class RewriterFramework {
 
 	/**
 	 *
-	 * @return the conditional rule set (rules where the optimal expression may change, e.g., (A*B)+(A*C) <=> A*(B+C))
+	 * @return the conditional rule set (rules where the optimal expression may change, e.g., (A*B)+(A*C) &lt;=&gt; A*(B+C))
 	 */
 	public RewriterRuleSet getConditionalRuleSet() {
 		return conditionalRuleSet;

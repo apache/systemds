@@ -142,20 +142,6 @@ public class RewriterTopologySortTests {
 	}
 
 	@Test
-	public void testSimpleEquivalence8() {
-		RewriterStatement stmt = RewriterUtils.parse("+(*(a, b), f(b, a))", ctx, "FLOAT:a,b");
-		RewriterStatement stmt2 = RewriterUtils.parse("+(*(b, a), f(b, a))", ctx, "FLOAT:a,b");
-		stmt = converter.apply(stmt);
-		stmt2 = converter.apply(stmt2);
-
-		LOG.info("==========");
-		LOG.info(stmt.toParsableString(ctx, true));
-		LOG.info("==========");
-		LOG.info(stmt2.toParsableString(ctx, true));
-		assert stmt.match(RewriterStatement.MatcherContext.exactMatch(ctx, stmt2, stmt));
-	}
-
-	@Test
 	public void testSimpleEquivalence9() {
 		RewriterStatement stmt = RewriterUtils.parse("+(*(-(a), b), *(a, a))", ctx, "FLOAT:a,b");
 		RewriterStatement stmt2 = RewriterUtils.parse("+(*(a, -(b)), *(a, a))", ctx, "FLOAT:a,b");

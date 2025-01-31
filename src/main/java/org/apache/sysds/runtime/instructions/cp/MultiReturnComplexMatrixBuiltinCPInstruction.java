@@ -138,6 +138,15 @@ public class MultiReturnComplexMatrixBuiltinCPInstruction extends ComputationCPI
 
 			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, in2, windowSize, overlap, outputs, opcode,
 				str, threads);
+			// 2 inputs and two outputs
+		} else if (opcode.equalsIgnoreCase("img_transform_matrix")) {
+			CPOperand in1 = new CPOperand(parts[1]); //transformation matrix
+			CPOperand in2 = new CPOperand(parts[2]); //dimension matrix [[orig_w, orig_h],[out_w, out_h]]
+
+			outputs.add(new CPOperand(parts[3], ValueType.FP64, DataType.MATRIX));
+			outputs.add(new CPOperand(parts[4], ValueType.FP64, DataType.MATRIX));
+			int threads = Integer.parseInt(parts[5]);
+			return new MultiReturnComplexMatrixBuiltinCPInstruction(null, in1, in2, outputs, opcode, str, threads);
 		}
 		else if ( opcode.equalsIgnoreCase("rcm") ) {
 			CPOperand in1 = new CPOperand(parts[1]);

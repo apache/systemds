@@ -1,0 +1,70 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+# Generates the z matrix for the new linearized image transformation function in order to apply
+# affine transformation to linearized images.
+#
+# INPUT:
+# -------------------------------------------------------------------------------------------
+# transMat      3x3 matrix for affine transformation (transformation Matrix)
+# dimMat        2x2 matrix containing the original size of the image in the first row as follows
+#               [1,1] original height; [1,2] original width
+#               and the target size of the new image in the second row as follows
+#               [2,1] target height; [2,2] target width
+#               (dimensionMatrix)
+# -------------------------------------------------------------------------------------------
+# OUTPUT:
+# ---------------------------------------------------------------------------------------
+# zMat          transformation matrix to be multiplied with for the linearized image
+#               transformation function (arbitrary naming)
+# isFillable    returns a boolean which indicates if cells need to be filled (with fillvalue),
+#               in this case the image is extended, otherwise the original image is used
+# ---------------------------------------------------------------------------------------
+
+
+m_img_transform_test = function(Matrix[Double] transMat, Matrix[Double] dimensionMatrix)
+  return (Matrix[Double] zMat, Matrix[Double] isFillable){
+    T_inv = inv(transMat)
+
+    orig_w = as.scalar(dimensionMatrix[1,1])
+    orig_h = as.scalar(dimensionMatrix[1,2])
+    out_w = as.scalar(dimensionMatrix[2,1])
+    out_h = as.scalar(dimensionMatrix[2,2])
+
+    ## coordinates of output pixel-centers linearized in row-major order
+    coords = matrix(1, rows=3, cols=out_w*out_h)
+    coords[1,] = t((seq(0, out_w*out_h-1) %% out_w) + 0.5)
+    coords[2,] = t((seq(0, out_w*out_h-1) %/% out_w) + 0.5)
+
+    # compute sampling pixel indices
+    coords = floor(T_inv %*% coords) + 1
+
+    inx = t(coords[1,])
+    iny = t(coords[2,])
+
+    # any out-of-range pixels, if present, correspond to an extra pixel with fill_value at the end of the input
+    index_vector = (orig_w *(iny-1) + inx) * ((0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h))
+    index_vector = t(index_vector)
+    xs = ((index_vector == 0)*(orig_w*orig_h +1)) + index_vector
+
+    ind= matrix(seq(1,ncol(xs),1),1,ncol(xs))
+    zMat = table(xs, ind)
+    isFillable = as.matrix(min(index_vector) == 0)
+}

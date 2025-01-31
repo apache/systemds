@@ -23,11 +23,13 @@ import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.fft_linearized;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixFourier.ifft_linearized;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixIMGTransform.transformationMatrix;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.exception.MaxCountExceededException;
@@ -91,6 +93,7 @@ public class LibCommonsMath
 			case "fft_linearized":
 			case "ifft":
 			case "ifft_linearized":
+			case "img_transform_matrix":
 			case "lu":
 			case "qr":
 			case "rcm":
@@ -171,6 +174,8 @@ public class LibCommonsMath
 				return computeIFFT_LINEARIZED(in1, in2, threads);
 			case "rcm":
 				return computeRCM(in1, in2);
+			case "img_transform_matrix":
+				return transformationMatrix(in1, in2, threads);
 			default:
 				return null;
 		}

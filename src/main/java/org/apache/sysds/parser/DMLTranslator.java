@@ -2242,6 +2242,7 @@ public class DMLTranslator
 			case IFFT:
 			case FFT_LINEARIZED:
 			case IFFT_LINEARIZED:
+			case IMG_TRANSFORM_MATRIX:
 			case STFT:
 			case LSTM:
 			case LSTM_BACKWARD:
@@ -2500,7 +2501,6 @@ public class DMLTranslator
 				new NaryOp(target.getName(), target.getDataType(), target.getValueType(), appendOpN,
 					processAllExpressions(source.getAllExpr(), hops));
 			break;
-
 		case TABLE:
 
 			// Always a TertiaryOp is created for table().

@@ -62,8 +62,7 @@ public class BuiltinImageTransformLinTest extends AutomatedTestBase {
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		return Arrays.asList(new Object[][] {{16, 15, 50}, {32, 31, 100}, {64, 64, 200}, {127, 128, 100}, {256, 256, 200},
-			{500, 135, 100}});
+		return Arrays.asList(new Object[][] {{16, 15, 50}, {32, 31, 100}, {64, 64, 200},{127, 128, 100}, {256, 256, 200}, {500, 135, 100}});
 	}
 
 	@Override
@@ -113,13 +112,13 @@ public class BuiltinImageTransformLinTest extends AutomatedTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[] {"-nvargs", "in_file=" + input("A"), "out_file=" + output("B"),
-				"width=" + s_cols * s_rows, "height=" + n_imgs, "out_w=" + s_cols, "out_h=" + s_rows * 1.2, "a=" + a,
+				"width=" + s_cols * s_rows, "height=" + n_imgs, "out_w=" + s_cols, "out_h=" + Math.floor(s_rows * 1.2), "a=" + a,
 				"b=" + b, "c=" + c, "d=" + d, "e=" + e, "f=" + f, "fill_value=" + fill_value, "s_cols=" + s_cols,
 				"s_rows=" + s_rows};
 
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir() + " " + s_cols * s_rows + " "
-				+ n_imgs + " " + s_cols + " " + (s_rows * 1.2) + " " + a + " " + b + " " + c + " " + d + " " + e + " " + f
+				+ n_imgs + " " + s_cols + " " + Math.floor(s_rows * 1.2) + " " + a + " " + b + " " + c + " " + d + " " + e + " " + f
 				+ " " + fill_value + " " + s_cols + " " + s_rows;
 
 			// generate actual dataset

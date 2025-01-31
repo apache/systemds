@@ -22,6 +22,7 @@
 # The Linearized Image Transform function applies an affine transformation to linearized images.
 # Optionally resizes the image (without scaling).
 # Uses nearest neighbor sampling.
+# Is implemented as a builtin function as img_transform_matrix in image_transform_linearized.
 #
 # INPUT:
 # -------------------------------------------------------------------------------------------
@@ -75,17 +76,15 @@ m_img_transform_linearized = function(Matrix[Double] img_in, Integer out_w, Inte
     index_vector = (orig_w *(iny-1) + inx) * ((0<inx) & (inx<=orig_w) & (0<iny) & (iny<=orig_h)) 
     index_vector = t(index_vector)
     xs = ((index_vector == 0)*(orig_w*orig_h +1)) + index_vector
-    
+
+    ind= matrix(seq(1,ncol(xs),1),1,ncol(xs))
+    z = table(xs, ind)
     if(min(index_vector) == 0){
       ys=cbind(img_in, matrix(fill_value,nrow(img_in), 1))
     }else{
       ys = img_in
     }
-
-    ind= matrix(seq(1,ncol(xs),1),1,ncol(xs))
-    z = table(xs, ind) 
     output = ys%*%z
-
     img_out = matrix(output, rows=nrow(img_in), cols=out_w*out_h)
   }
 }

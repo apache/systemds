@@ -672,6 +672,31 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 
 			break;
 		}
+		//implement the calculation of the transformation matrix for affine transformation of images
+			case IMG_TRANSFORM_MATRIX:
+				//transformation matrix must be 3x3 matrix
+				Expression expressionOne_IMG = getFirstExpr();
+				//dimension matrix must be a 2x2 matrix
+				Expression expressionTwo_IMG = getSecondExpr();
+				checkMatrixFrameParam(expressionOne_IMG);
+				checkMatrixFrameParam(expressionTwo_IMG);
+
+				if ((expressionOne_IMG.getOutput().getDim1() != expressionOne_IMG.getOutput().getDim2()) && expressionOne_IMG.getOutput().getDim1() != 3) {
+					raiseValidateError("The first argument to " + _opcode + " must be a square 3x3 matrix.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+				} else if ((expressionTwo_IMG.getOutput().getDim1() != expressionTwo_IMG.getOutput().getDim2()) && expressionOne_IMG.getOutput().getDim1() != 2) {
+					raiseValidateError("The second argument to " + _opcode + " must be a square 2x2 matrix.", false, LanguageErrorCodes.INVALID_PARAMETERS);
+				}
+
+				DataIdentifier img_transfrom_matrix_Out1 = (DataIdentifier) getOutputs()[0];
+				DataIdentifier img_transfrom_matrix_Out2 = (DataIdentifier) getOutputs()[1];
+
+				//describe the matrix characteristics type and value
+				img_transfrom_matrix_Out1.setDataType(DataType.MATRIX);
+				img_transfrom_matrix_Out1.setValueType(ValueType.FP64);
+				img_transfrom_matrix_Out2.setDataType(DataType.MATRIX);
+				img_transfrom_matrix_Out2.setValueType(ValueType.FP64);
+				//the output dimensions are not known beforehand and vary based on input values
+				break;
 		case REMOVE: {
 			checkNumParameters(2);
 			checkListParam(getFirstExpr());
@@ -1336,7 +1361,6 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			output.setBlocksize(0);
 			output.setValueType(ValueType.BOOLEAN);
 			break;
-		
 		// Contingency tables
 		case TABLE:
 			

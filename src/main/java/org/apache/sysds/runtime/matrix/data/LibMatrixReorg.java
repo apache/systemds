@@ -4332,7 +4332,6 @@ public class LibMatrixReorg {
 				iExponents[ip] = 0;
 				div /= powers[ip];
 			}
-			break;
 		}
 
 		denseBlock.setDims(new int[] {cols, rows});
@@ -4363,40 +4362,44 @@ public class LibMatrixReorg {
 		double val = matrix[orig];
 		double cval = matrix[comp];
 
+		while(orig >= 0) {
+			// decrease the remaining shift count by orig and comp
+			count -= 2;
+			orig = simultaneousCycleShiftStep(matrix, moved, rows, maxIndex, workSize, start, orig, val, cval);
+		}
+		return count;
+	}
+
+	private static int simultaneousCycleShiftStep(double[] matrix, boolean[] moved, int rows, int maxIndex,
+		int workSize, int start, int orig, double val, double cval) {
+
+		int comp = maxIndex - orig;
 		int prevOrig = prevIndexCycle(orig, rows, (maxIndex + 1) / rows);
 		int prevComp = maxIndex - prevOrig;
 
-		while(true) {
-			if(orig < workSize)
-				moved[orig] = true;
-			if(comp < workSize)
-				moved[comp] = true;
-			// decrease the remaining shift count by orig and comp
-			count -= 2;
+		if(orig < workSize)
+			moved[orig] = true;
+		if(comp < workSize)
+			moved[comp] = true;
 
-			if(prevOrig == start) {
-				// cycle and comp are distinct
-				matrix[orig] = val;
-				matrix[comp] = cval;
-				break;
-			}
-			if(prevComp == start) {
-				// cycle is self dual
-				matrix[orig] = cval;
-				matrix[comp] = val;
-				break;
-			}
-
-			// shift the values to their next positions
-			matrix[orig] = matrix[prevOrig];
-			matrix[comp] = matrix[prevComp];
-			// update
-			orig = prevOrig;
-			comp = prevComp;
-			prevOrig = prevIndexCycle(orig, rows, (maxIndex + 1) / rows);
-			prevComp = maxIndex - prevOrig;
+		if(prevOrig == start) {
+			// cycle and comp are distinct
+			matrix[orig] = val;
+			matrix[comp] = cval;
+			return -1;
 		}
-		return count;
+		else if(prevComp == start) {
+			// cycle is self dual
+			matrix[orig] = cval;
+			matrix[comp] = val;
+			return -1;
+		}
+
+		// shift the values to their next positions
+		matrix[orig] = matrix[prevOrig];
+		matrix[comp] = matrix[prevComp];
+		// update
+		return prevOrig;
 	}
 
 	private static int prevIndexCycle(int index, int rows, int cols) {

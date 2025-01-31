@@ -253,6 +253,8 @@ public class RewriterFramework {
 	 * @param fromIdx the start index
 	 * @param toIdx the end index
 	 * @param numSamples the number of sampmles
+	 * @param includeDuplicateReferences if expressions such as +(A,A) should be included in the search
+	 * @param includeRowColVectors if row-col vectors should be included in the search
 	 */
 	public void randomSearchFromIndex(int fromIdx, int toIdx, int numSamples, boolean includeDuplicateReferences, boolean includeRowColVectors) {
 		// Now we will just do random sampling for a few rounds

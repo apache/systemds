@@ -267,6 +267,8 @@ public abstract class SpoofCellwise extends SpoofOperator {
 				lnnz = executeDense(a.getDenseBlock(), b, scalars, out, m, n, sparseSafe, 0, m, rix);
 			else
 				lnnz = executeSparse(a.getSparseBlock(), b, scalars, out, m, n, sparseSafe, 0, m, rix);
+			if(lnnz < 0 && _type == CellType.COL_AGG)
+				lnnz = out.recomputeNonZeros();
 		}
 		else  //MULTI-THREADED
 		{

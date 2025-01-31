@@ -1,0 +1,95 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * Adam optimizer with weight decay (AdamW)
+ */
+
+update = function(matrix[double] X, matrix[double] dX, double lr, double beta1, double beta2,
+                  double epsilon, double lambda, int t, matrix[double] m, matrix[double] v)
+    return (matrix[double] X, matrix[double] m, matrix[double] v) {
+    /*
+     * Performs an AdamW update.
+     *
+     * Reference:
+     *  - Decoupled Weight Decay Regularization, Ilya Loshchilov, Frank Hutter.
+     *  - https://arxiv.org/abs/1711.05101v3
+     *
+     * Inputs:
+     *  - X: Parameters to update, of shape (any, any).
+     *  - dX: Gradient wrt `X` of a loss function being optimized, of
+     *      same shape as `X`.
+     *  - lr: Learning rate.  Recommended value is 0.001.
+     *  - beta1: Exponential decay rate for the 1st moment estimates.
+     *      Recommended value is 0.9.
+     *  - beta2: Exponential decay rate for the 2nd moment estimates.
+     *      Recommended value is 0.999.
+     *  - epsilon: Smoothing term to avoid divide by zero errors.
+     *      Recommended value is 1e-8.
+     *  - lambda: Weight decay factor that penalizes large weights.
+     *       Recommended value is 0.01
+     *  - t: Timestep, starting at 0.
+     *  - m: State containing the 1st moment (mean) estimate by
+     *      maintaining exponential moving averages of the gradients, of
+     *      same shape as `X`.
+     *  - v: State containing the 2nd raw moment (uncentered variance)
+     *      estimate by maintaining exponential moving averages of the
+     *      squared gradients, of same shape as `X`.
+     *
+     * Outputs:
+     *  - X: Updated parameters `X`, of same shape as input `X`.
+     *  - m: Updated state containing the 1st moment (mean) estimate by
+     *      maintaining exponential moving averages of the gradients, of
+     *      same shape as `X`.
+     *  - v: Updated state containing the 2nd raw moment (uncentered
+     *      variance) estimate by maintaining exponential moving averages
+     *      of the squared gradients, of same shape as `X`.
+     */
+     t = t + 1
+     m = beta1*m + (1-beta1)*dX  # update biased 1st moment estimate
+     v = beta2*v + (1-beta2)*dX^2  # update biased 2nd raw moment estimate
+     m_hat = m / (1-beta1^t)  # compute bias-corrected 1st moment estimate
+     v_hat = v / (1-beta2^t)  # compute bias-corrected 2nd raw moment estimate
+     X = X - lr * (m_hat / (sqrt(v_hat) + epsilon) + lambda * X)
+}
+
+init = function(matrix[double] X)
+    return (matrix[double] m, matrix[double] v) {
+  /*
+   * Initialize the state for this optimizer.
+   *
+   * Note: This is just a convenience function, and state
+   * may be initialized manually if needed.
+   *
+   * Inputs:
+   *  - X: Parameters to update, of shape (any, any).
+   *
+   * Outputs:
+   *  - m: Initial state containing the 1st moment (mean) estimate by
+   *      maintaining exponential moving averages of the gradients, of
+   *      same shape as `X`.
+   *  - v: Initial state containing the 2nd raw moment (uncentered
+   *      variance) estimate by maintaining exponential moving averages
+   *      of the squared gradients, of same shape as `X`.
+   */
+  m = matrix(0, rows=nrow(X), cols=ncol(X))
+  v = matrix(0, rows=nrow(X), cols=ncol(X))
+}

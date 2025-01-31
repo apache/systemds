@@ -1010,7 +1010,7 @@ public abstract class SpoofCellwise extends SpoofOperator {
 				}
 			}
 		}
-		return 1;
+		return -1;
 	}
 
 	private long executeSparseRowProd(SparseBlock sblock, SideInput[] b, double[] scalars,

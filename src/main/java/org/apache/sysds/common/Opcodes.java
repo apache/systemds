@@ -150,6 +150,7 @@ public enum Opcodes {
 	ATAN("atan", CPType.Unary),
 	SIGN("sign", CPType.Unary),
 	SQRT("sqrt", CPType.Unary),
+	SQRT_MATRIX_JAVA("sqrt_matrix_java", CPType.Unary),
 	PLOGP("plogp", CPType.Unary),
 	PRINT("print", CPType.Unary),
 	ASSERT("assert", CPType.Unary),

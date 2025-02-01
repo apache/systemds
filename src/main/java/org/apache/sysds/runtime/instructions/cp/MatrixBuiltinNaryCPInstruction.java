@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -47,8 +48,8 @@ public class MatrixBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction imp
 		List<FrameBlock> frames = ec.getFrameInputs(inputs);
 		
 		CacheBlock<?> outBlock = null;
-		if( "cbind".equals(getOpcode()) || "rbind".equals(getOpcode()) ) {
-			boolean cbind = "cbind".equals(getOpcode());
+		if( Opcodes.CBIND.toString().equals(getOpcode()) || Opcodes.RBIND.toString().equals(getOpcode()) ) {
+			boolean cbind = Opcodes.CBIND.toString().equals(getOpcode());
 			if(frames.size() == 0 ) { //matrix/scalar
 	 			//robustness for empty lists: create 0-by-0 matrix block
 				outBlock = matrices.size() == 0 ? new MatrixBlock(0, 0, 0) : 
@@ -62,7 +63,7 @@ public class MatrixBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction imp
 					outBlock = ((FrameBlock)outBlock).append(frames.get(i), cbind);
 			}
 		}
-		else if( ArrayUtils.contains(new String[]{"nmin", "nmax", "n+", "n*"}, getOpcode()) ) {
+		else if( ArrayUtils.contains(new String[]{Opcodes.NMIN.toString(), Opcodes.NMAX.toString(), Opcodes.NP.toString(), Opcodes.NM.toString()}, getOpcode()) ) {
 			outBlock = MatrixBlock.naryOperations(_optr, matrices.toArray(new MatrixBlock[0]),
 				scalars.toArray(new ScalarObject[0]), new MatrixBlock());
 		}

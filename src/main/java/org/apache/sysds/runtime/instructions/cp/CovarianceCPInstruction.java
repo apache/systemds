@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.functionobjects.COV;
@@ -40,7 +41,7 @@ public class CovarianceCPInstruction extends BinaryCPInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
-		if( !opcode.equalsIgnoreCase("cov") )
+		if( !opcode.equalsIgnoreCase(Opcodes.COV.toString()) )
 			throw new DMLRuntimeException("CovarianceCPInstruction.parseInstruction():: Unknown opcode " + opcode);
 		
 		InstructionUtils.checkNumFields(parts, 4, 5); //w/o opcode

@@ -37,6 +37,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.Well1024a;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
@@ -718,19 +719,19 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public double max() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uamax", 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMAX.toString(), 1);
 		return aggregateUnaryOperations(op, null, 1000, null).get(0, 0);
 	}
 
 	@Override
 	public double min() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uamin", 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMIN.toString(), 1);
 		return aggregateUnaryOperations(op, null, 1000, null).get(0, 0);
 	}
 
 	@Override
 	public double sum() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uak+", 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAKP.toString(), 1);
 		return aggregateUnaryOperations(op, null, 1000, null).get(0, 0);
 	}
 
@@ -746,19 +747,19 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public double sumSq() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uasqk+", 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UASQKP.toString(), 1);
 		return aggregateUnaryOperations(op, null, 1000, null).get(0, 0);
 	}
 
 	@Override
 	public double prod() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("ua*", 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAM.toString(), 1);
 		return aggregateUnaryOperations(op, null, 1000, null).get(0, 0);
 	}
 
 	@Override
 	public double mean() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uamean", 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMEAN.toString(), 1);
 		return aggregateUnaryOperations(op, null, 1000, null).get(0, 0);
 	}
 

@@ -19,13 +19,13 @@
 
 package org.apache.sysds.test.functions.recompile;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.utils.Statistics;
 
@@ -84,10 +84,10 @@ public class LiteralReplaceCastScalarReadTest extends AutomatedTestBase
 			runTest(true, false, null, -1); 
 		
 			//CHECK cast replacement and sum replacement
-			Assert.assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains(OpOp1.CAST_AS_INT.toString()));
-			Assert.assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains(OpOp1.CAST_AS_DOUBLE.toString()));
-			Assert.assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains(OpOp1.CAST_AS_BOOLEAN.toString()));
-			Assert.assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains("uak+")); //sum
+			Assert.assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains(Opcodes.CAST_AS_INT.toString()));
+			Assert.assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains(Opcodes.CAST_AS_DOUBLE.toString()));
+			Assert.assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains(Opcodes.CAST_AS_BOOLEAN.toString()));
+			Assert.assertEquals(false, Statistics.getCPHeavyHitterOpCodes().contains(Opcodes.UAKP.toString())); //sum
 		}
 		finally {
 			OptimizerUtils.ALLOW_CONSTANT_FOLDING = oldCF;

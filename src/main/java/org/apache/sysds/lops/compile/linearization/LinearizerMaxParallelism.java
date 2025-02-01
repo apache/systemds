@@ -19,6 +19,7 @@
 
 package org.apache.sysds.lops.compile.linearization;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
@@ -136,15 +137,15 @@ public class LinearizerMaxParallelism extends IDagLinearizer
 	private static boolean isDistributedOp(Lop lop) {
 		return lop.isExecSpark()
 			|| (lop instanceof UnaryCP
-			&& (((UnaryCP) lop).getOpCode().equalsIgnoreCase("prefetch")
-			|| ((UnaryCP) lop).getOpCode().equalsIgnoreCase("broadcast")));
+			&& (((UnaryCP) lop).getOpCode().equalsIgnoreCase(Opcodes.PREFETCH.toString())
+			|| ((UnaryCP) lop).getOpCode().equalsIgnoreCase(Opcodes.BROADCAST.toString())));
 	}
 
 	private static boolean isGPUOp(Lop lop) {
 		return lop.isExecGPU()
 			|| (lop instanceof UnaryCP
-			&& (((UnaryCP) lop).getOpCode().equalsIgnoreCase("prefetch")
-			|| ((UnaryCP) lop).getOpCode().equalsIgnoreCase("broadcast")));
+			&& (((UnaryCP) lop).getOpCode().equalsIgnoreCase(Opcodes.PREFETCH.toString())
+			|| ((UnaryCP) lop).getOpCode().equalsIgnoreCase(Opcodes.BROADCAST.toString())));
 	}
 
 	@SuppressWarnings("unused")

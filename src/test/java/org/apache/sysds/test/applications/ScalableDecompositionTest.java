@@ -21,6 +21,7 @@ package org.apache.sysds.test.applications;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
@@ -191,7 +192,7 @@ public class ScalableDecompositionTest extends AutomatedTestBase
 					writeInputMatrixWithMTD("A", AtA, false);
 					runTest(true, false, null, -1);
 					HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("C");
-					MatrixBlock C2 = LibCommonsMath.unaryOperations(AtA, "cholesky");
+					MatrixBlock C2 = LibCommonsMath.unaryOperations(AtA, Opcodes.CHOLESKY.toString());
 					TestUtils.compareMatrices(dmlfile, C2, eps);
 					break;
 				}
@@ -203,7 +204,7 @@ public class ScalableDecompositionTest extends AutomatedTestBase
 					writeInputMatrixWithMTD("B", y, false);
 					runTest(true, false, null, -1);
 					HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("C");
-					MatrixBlock C2 = LibCommonsMath.matrixMatrixOperations(A, b, "solve");
+					MatrixBlock C2 = LibCommonsMath.matrixMatrixOperations(A, b, Opcodes.SOLVE.toString());
 					TestUtils.compareMatrices(dmlfile, C2, eps);
 					break;
 				}
@@ -211,7 +212,7 @@ public class ScalableDecompositionTest extends AutomatedTestBase
 					MatrixBlock A = MatrixBlock.randOperations(rows, cols, 1.0, -5, 10, "uniform", 7);
 					writeInputMatrixWithMTD("A", A, false);
 					runTest(true, false, null, -1);
-					MatrixBlock[] C = LibCommonsMath.multiReturnOperations(A, "lu", 1);
+					MatrixBlock[] C = LibCommonsMath.multiReturnOperations(A, Opcodes.LU.toString(), 1);
 					String[] outputs = new String[]{"C","D","E"};
 					for(int i=0; i<outputs.length; i++) {
 						HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir(outputs[i]);
@@ -223,7 +224,7 @@ public class ScalableDecompositionTest extends AutomatedTestBase
 					MatrixBlock A = MatrixBlock.randOperations(rows, cols, 1.0, -5, 10, "uniform", 7);
 					writeInputMatrixWithMTD("A", A, false);
 					runTest(true, false, null, -1);
-					MatrixBlock[] C = LibCommonsMath.multiReturnOperations(A, "qr", 1);
+					MatrixBlock[] C = LibCommonsMath.multiReturnOperations(A, Opcodes.QR.toString(), 1);
 					String[] outputs = new String[]{"C","D","E"};
 					for(int i=0; i<outputs.length; i++) {
 						HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir(outputs[i]);
@@ -236,7 +237,7 @@ public class ScalableDecompositionTest extends AutomatedTestBase
 					writeInputMatrixWithMTD("A", A, false);
 					runTest(true, false, null, -1);
 					HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("C");
-					MatrixBlock C2 = LibCommonsMath.unaryOperations(A, "inverse");
+					MatrixBlock C2 = LibCommonsMath.unaryOperations(A, Opcodes.INVERSE.toString());
 					TestUtils.compareMatrices(dmlfile, C2, eps);
 					break;
 				}

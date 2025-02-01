@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.rewrite;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -105,7 +106,7 @@ public class RewriteNotOverComparisonsTest extends AutomatedTestBase {
 			HashMap<CellIndex, Double> rfile = readRMatrixFromExpectedDir("R");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
-			long count = Statistics.getCPHeavyHitterCount("!");
+			long count = Statistics.getCPHeavyHitterCount(Opcodes.NOT.toString());
 			Assert.assertTrue(count == (rewrites ? 0 : 1));
 		}
 		finally {

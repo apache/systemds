@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
@@ -106,7 +107,7 @@ public class RewriteSimplifyBushyBinaryOperationTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		
 			if( ID == 1 && rewrites ) //check mmchain, enabled by bushy join 
-				Assert.assertTrue(heavyHittersContainsString("mmchain"));
+				Assert.assertTrue(heavyHittersContainsString(Opcodes.MMCHAIN.toString()));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;

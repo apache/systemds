@@ -40,6 +40,7 @@ import org.apache.commons.math3.linear.LUDecomposition;
 import org.apache.commons.math3.linear.QRDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.codegen.SpoofOperator.SideInput;
@@ -80,7 +81,7 @@ public class LibCommonsMath
 	}
 	
 	public static boolean isSupportedUnaryOperation( String opcode ) {
-		return ( opcode.equals("inverse") || opcode.equals("cholesky") || opcode.equals("sqrt_matrix_java") );
+		return ( opcode.equals(Opcodes.INVERSE.toString()) || opcode.equals(Opcodes.CHOLESKY.toString()) );
 	}
 	
 	public static boolean isSupportedMultiReturnOperation( String opcode ) {
@@ -102,17 +103,15 @@ public class LibCommonsMath
 	}
 	
 	public static boolean isSupportedMatrixMatrixOperation( String opcode ) {
-		return ( opcode.equals("solve") );
+		return ( opcode.equals(Opcodes.SOLVE.toString()) );
 	}
 		
 	public static MatrixBlock unaryOperations(MatrixBlock inj, String opcode) {
 		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(inj);
-		if(opcode.equals("inverse"))
+		if(opcode.equals(Opcodes.INVERSE.toString()))
 			return computeMatrixInverse(matrixInput);
-		else if (opcode.equals("cholesky"))
+		else if (opcode.equals(Opcodes.CHOLESKY.toString()))
 			return computeCholesky(matrixInput);
-		else if (opcode.equals("sqrt_matrix_java"))
-			return computeSqrt(inj);
 		return null;
 	}
 
@@ -136,27 +135,27 @@ public class LibCommonsMath
 	}
 
 	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode, int threads, long seed) {
-		if(opcode.equals("qr"))
+		if(opcode.equals(Opcodes.QR.toString()))
 			return computeQR(in);
 		else if (opcode.equals("qr2"))
 			return computeQR2(in, threads);
-		else if (opcode.equals("lu"))
+		else if (opcode.equals(Opcodes.LU.toString()))
 			return computeLU(in);
-		else if (opcode.equals("eigen"))
+		else if (opcode.equals(Opcodes.EIGEN.toString()))
 			return computeEigen(in);
 		else if (opcode.equals("eigen_lanczos"))
 			return computeEigenLanczos(in, threads, seed);
 		else if (opcode.equals("eigen_qr"))
 			return computeEigenQR(in, threads);
-		else if (opcode.equals("svd"))
+		else if (opcode.equals(Opcodes.SVD.toString()))
 			return computeSvd(in);
-		else if (opcode.equals("fft"))
+		else if (opcode.equals(Opcodes.FFT.toString()))
 			return computeFFT(in, threads);
-		else if (opcode.equals("ifft"))
+		else if (opcode.equals(Opcodes.IFFT.toString()))
 			return computeIFFT(in, threads);
-		else if (opcode.equals("fft_linearized"))
+		else if (opcode.equals(Opcodes.FFT_LINEARIZED.toString()))
 			return computeFFT_LINEARIZED(in, threads);
-		else if (opcode.equals("ifft_linearized"))
+		else if (opcode.equals(Opcodes.IFFT_LINEARIZED.toString()))
 			return computeIFFT_LINEARIZED(in, threads);
 		return null;
 	}
@@ -178,7 +177,7 @@ public class LibCommonsMath
 	}
 
 	public static MatrixBlock matrixMatrixOperations(MatrixBlock in1, MatrixBlock in2, String opcode) {
-		if(opcode.equals("solve")) {
+		if(opcode.equals(Opcodes.SOLVE.toString())) {
 			if (in1.getNumRows() != in1.getNumColumns())
 				throw new DMLRuntimeException("The A matrix, in solve(A,b) should have squared dimensions.");
 			return computeSolve(in1, in2);
@@ -514,19 +513,7 @@ public class LibCommonsMath
 
 		return new MatrixBlock[] { U, Sigma, V };
 	}
-
-	/**
-	 * Computes the square root of a matrix Calls Apache Commons Math EigenDecomposition.
-	 *
-	 * @param in Input matrix
-	 * @return matrix block
-	 */
-	private static MatrixBlock computeSqrt(MatrixBlock in) {
-		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(in);
-		EigenDecomposition ed = new EigenDecomposition(matrixInput);
-		return DataConverter.convertToMatrixBlock(ed.getSquareRoot());
-	}
-
+	
 	/**
 	 * Function to compute matrix inverse via matrix decomposition.
 	 * 

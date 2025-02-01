@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -72,7 +73,7 @@ public class RewriteRemoveUnnecessaryRevTest extends AutomatedTestBase
 			int ret = (int)readDMLScalarFromOutputDir("Scalar").get(new CellIndex(1,1)).doubleValue();
 			Assert.assertEquals(ret, rows*(rows+1)/2);
 			if( rewrites )
-				Assert.assertFalse(heavyHittersContainsString("rev"));
+				Assert.assertFalse(heavyHittersContainsString(Opcodes.REV.toString()));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;

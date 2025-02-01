@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.misc;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.parser.ParseException;
@@ -296,9 +297,9 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 			runTest(true, error != null, error, -1);
 	
 			if( testName.equals(TEST_NAMES[17]) )
-				Assert.assertTrue(heavyHittersContainsString("print"));
+				Assert.assertTrue(heavyHittersContainsString(Opcodes.PRINT.toString()));
 			if( evalRewrite && !testName.equals(TEST_NAMES[28]) )
-				Assert.assertTrue(!heavyHittersContainsString("eval"));
+				Assert.assertTrue(!heavyHittersContainsString(Opcodes.EVAL.toString()));
 		}
 		finally {
 			OptimizerUtils.ALLOW_EVAL_FCALL_REPLACEMENT = oldFlag;

@@ -45,6 +45,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.BlockType;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -1003,7 +1004,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public double prod() {
 		MatrixBlock out = new MatrixBlock(1, 1, false);
 		LibMatrixAgg.aggregateUnaryMatrix(this, out,
-			InstructionUtils.parseBasicAggregateUnaryOperator("ua*", 1));
+			InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAM.toString(), 1));
 		return out.get(0, 0);
 	}
 	
@@ -1019,7 +1020,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public double mean(int k ) {
 		MatrixBlock out = new MatrixBlock(1, 3, false);
 		LibMatrixAgg.aggregateUnaryMatrix(this, out,
-			InstructionUtils.parseBasicAggregateUnaryOperator("uamean", k));
+			InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMEAN.toString(), k));
 		return out.get(0, 0);
 	}
 
@@ -1035,7 +1036,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public double min(int k) {
 		MatrixBlock out = new MatrixBlock(1, 1, false);
 		LibMatrixAgg.aggregateUnaryMatrix(this, out,
-			InstructionUtils.parseBasicAggregateUnaryOperator("uamin", k));
+			InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMIN.toString(), k));
 		return out.get(0, 0);
 	}
 
@@ -1049,7 +1050,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 
 	public final MatrixBlock colMin(int k) {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uacmin", k);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACMIN.toString(), k);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 
@@ -1063,7 +1064,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 
 	public final MatrixBlock colMax(int k) {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uacmax", k);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACMAX.toString(), k);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 	
@@ -1083,7 +1084,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @return the maximum value of all values in the matrix
 	 */
 	public MatrixBlock max(int k){
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uamax", k);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMAX.toString(), k);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 
@@ -1104,7 +1105,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @return Sum of the values in the matrix.
 	 */
 	public MatrixBlock sum(int k) {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uak+", k);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAKP.toString(), k);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 
@@ -1114,7 +1115,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @return A new MatrixBlock containing the column sums of this matrix.
 	 */
 	public MatrixBlock colSum() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uack+", 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACKP.toString(), 1);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 
@@ -1124,7 +1125,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @return A new MatrixBlock containing the row sums of this matrix.
 	 */
 	public final MatrixBlock rowSum(){
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uark+", 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARKP.toString(), 1);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 
@@ -1135,7 +1136,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @return A new MatrixBlock containing the row sums of this matrix.
 	 */
 	public final MatrixBlock rowSum(int k){
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uark+", k);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARKP.toString(), k);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 

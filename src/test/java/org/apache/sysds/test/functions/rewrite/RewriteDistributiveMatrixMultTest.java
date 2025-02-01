@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.rewrite;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -88,7 +89,7 @@ public class RewriteDistributiveMatrixMultTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			//check matrix mult existence
-			String ba = "ba+*";
+			String ba = Opcodes.MMULT.toString();
 			long numMatMul = Statistics.getCPHeavyHitterCount(ba);
 
 			if(rewrites == true) {

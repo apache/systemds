@@ -20,6 +20,7 @@
 package org.apache.sysds.lops;
 
  
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 
 import org.apache.sysds.common.Types.DataType;
@@ -30,7 +31,7 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 public class MapMultChain extends Lop 
 {
 	public static final String OPCODE = "mapmmchain";
-	public static final String OPCODE_CP = "mmchain";
+	public static final String OPCODE_CP = Opcodes.MMCHAIN.toString();
 
 	public enum ChainType {
 		XtXv,  //(t(X) %*% (X %*% v))

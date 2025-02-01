@@ -20,6 +20,7 @@
 package org.apache.sysds.lops;
 
  
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 
 import org.apache.sysds.common.Types.DataType;
@@ -106,26 +107,26 @@ public class Transform extends Lop
 		switch(_operation) {
 			case TRANS:
 				// Transpose a matrix
-				return "r'";
+				return Opcodes.TRANSPOSE.toString();
 			
 			case REV:
 				// Transpose a matrix
-				return "rev";
+				return Opcodes.REV.toString();
 
 			case ROLL:
-				return "roll";
+				return Opcodes.ROLL.toString();
 
 			case DIAG:
 				// Transform a vector into a diagonal matrix
-				return "rdiag";
+				return Opcodes.DIAG.toString();
 			
 			case RESHAPE:
 				// Transform a vector into a diagonal matrix
-				return "rshape";
+				return Opcodes.RESHAPE.toString();
 			
 			case SORT:
 				// Transform a matrix into a sorted matrix 
-				return "rsort";
+				return Opcodes.SORT.toString();
 			
 			default:
 				throw new UnsupportedOperationException(printErrorLocation() 

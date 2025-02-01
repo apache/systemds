@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.binary.matrix_full_cellwise;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -540,10 +541,10 @@ public class FullVectorVectorCellwiseOperationTest extends AutomatedTestBase
 			String opcoder = null;
 			switch( type )
 			{
-				case ADDITION: opcode = "+"; opcoder="+";  break;
-				case SUBTRACTION: opcode = "-";  opcoder="-"; break;
-				case MULTIPLICATION: opcode="*";  opcoder="mult"; break;
-				case LESS_THAN: opcode="<"; opcoder="lt"; break;
+				case ADDITION: opcode = Opcodes.PLUS.toString(); opcoder="+";  break;
+				case SUBTRACTION: opcode = Opcodes.MINUS.toString();  opcoder="-"; break;
+				case MULTIPLICATION: opcode=Opcodes.MULT.toString();  opcoder="mult"; break;
+				case LESS_THAN: opcode=Opcodes.LESS.toString(); opcoder="lt"; break;
 			}
 			
 			TestConfiguration config = getTestConfiguration(TEST_NAME);

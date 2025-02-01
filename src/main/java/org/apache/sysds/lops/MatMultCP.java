@@ -19,6 +19,7 @@
 
 package org.apache.sysds.lops;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.DataType;
@@ -75,7 +76,7 @@ public class MatMultCP extends Lop {
 		String ret = null;
 		if(!useTranspose) {
 			ret = InstructionUtils.concatOperands(
-				getExecType().name(), "ba+*",
+				getExecType().name(), Opcodes.MMULT.toString(),
 				getInputs().get(0).prepInputOperand(input1),
 				getInputs().get(1).prepInputOperand(input2),
 				prepOutputOperand(output),
@@ -83,7 +84,7 @@ public class MatMultCP extends Lop {
 		}
 		else { // GPU or compressed
 			ret = InstructionUtils.concatOperands(
-				getExecType().name(), "ba+*",
+				getExecType().name(), Opcodes.MMULT.toString(),
 				getInputs().get(0).prepInputOperand(input1),
 				getInputs().get(1).prepInputOperand(input2),
 				prepOutputOperand(output),

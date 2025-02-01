@@ -23,6 +23,7 @@ import java.util.Arrays;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
@@ -167,7 +168,7 @@ public class CNodeUnary extends CNode
 			case LOOKUP_C:  return "u(ixc)";
 			case LOOKUP_RC: return "u(ixrc)";
 			case LOOKUP0:   return "u(ix0)";
-			case POW2:      return "^2";
+			case POW2:      return Opcodes.POW2.toString();
 			default:        return "u("+_type.name().toLowerCase()+")";
 		}
 	}

@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.binary.matrix_full_other;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -173,7 +174,7 @@ public class FullMatrixMultiplicationTransposeSelf2Test extends AutomatedTestBas
 		
 			//check for compiled tsmm instructions
 			if( instType == ExecType.SPARK || instType == ExecType.CP ) {
-				String opcode = (instType==ExecType.SPARK) ? Instruction.SP_INST_PREFIX + "tsmm2" : "tsmm";
+				String opcode = (instType==ExecType.SPARK) ? Instruction.SP_INST_PREFIX + "tsmm2" : Opcodes.TSMM.toString();
 				Assert.assertTrue("Missing opcode: "+opcode, Statistics.getCPHeavyHitterOpCodes().contains(opcode) );
 			}
 		}

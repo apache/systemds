@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.aggregate;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
@@ -45,8 +46,8 @@ public class ColVariancesTest extends AutomatedTestBase {
 	private static final String INPUT_NAME = "X";
 	private static final String OUTPUT_NAME = "colVariances";
 
-	private static final String colVarOp = "uacvar";
-	private static final String varOp = "uavar";
+	private static final String colVarOp = Opcodes.UACVAR.toString();
+	private static final String varOp = Opcodes.UAVAR.toString();
 	private static final int rows = 1234;
 	private static final int cols = 1432;
 	private static final double sparsitySparse = 0.2;

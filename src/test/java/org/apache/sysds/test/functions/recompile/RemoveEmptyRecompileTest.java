@@ -21,11 +21,10 @@ package org.apache.sysds.test.functions.recompile;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.lops.LeftIndex;
-import org.apache.sysds.lops.RightIndex;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -270,18 +269,18 @@ public class RemoveEmptyRecompileTest extends AutomatedTestBase
 		switch(type){
 			//for sum, literal replacement of unary aggregates applies
 			case SUM:         return "rlit";//return "uak+";
-			case ROUND:       return "round";
-			case TRANSPOSE:   return "r'";
+			case ROUND:       return Opcodes.ROUND.toString();
+			case TRANSPOSE:   return Opcodes.TRANSPOSE.toString();
 			case MULT_LEFT:
-			case MULT_RIGHT:  return "*";
+			case MULT_RIGHT:  return Opcodes.MULT.toString();
 			case PLUS_LEFT:
-			case PLUS_RIGHT:  return "+";
+			case PLUS_RIGHT:  return Opcodes.PLUS.toString();
 			case MINUS_LEFT:
-			case MINUS_RIGHT: return "-";
+			case MINUS_RIGHT: return Opcodes.MINUS.toString();
 			case MM_LEFT:
-			case MM_RIGHT:    return "ba+*";		
-			case RIX:         return RightIndex.OPCODE;
-			case LIX:         return LeftIndex.OPCODE;
+			case MM_RIGHT:    return Opcodes.MMULT.toString();
+			case RIX:         return Opcodes.RIGHT_INDEX.toString();
+			case LIX:         return Opcodes.LEFT_INDEX.toString();
 		}
 		return null;
 	}

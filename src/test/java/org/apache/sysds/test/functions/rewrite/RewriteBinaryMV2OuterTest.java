@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -46,42 +47,42 @@ public class RewriteBinaryMV2OuterTest extends AutomatedTestBase
 	
 	@Test
 	public void testRewriteBinaryMV2OuterEquals() {
-		testRewriteBinaryMV2Outer("==", false);
+		testRewriteBinaryMV2Outer(Opcodes.EQUAL.toString(), false);
 	}
 	
 	@Test
 	public void testRewriteBinaryMV2OuterNotEquals() {
-		testRewriteBinaryMV2Outer("!=", false);
+		testRewriteBinaryMV2Outer(Opcodes.NOTEQUAL.toString(), false);
 	}
 	
 	@Test
 	public void testRewriteBinaryMV2OuterMinus() {
-		testRewriteBinaryMV2Outer("-", false);
+		testRewriteBinaryMV2Outer(Opcodes.MINUS.toString(), false);
 	}
 	
 	@Test
 	public void testRewriteBinaryMV2OuterPlus() {
-		testRewriteBinaryMV2Outer("+", false);
+		testRewriteBinaryMV2Outer(Opcodes.PLUS.toString(), false);
 	}
 	
 	@Test
 	public void testRewriteBinaryMV2OuterEqualsRewrites() {
-		testRewriteBinaryMV2Outer("==", true);
+		testRewriteBinaryMV2Outer(Opcodes.EQUAL.toString(), true);
 	}
 	
 	@Test
 	public void testRewriteBinaryMV2OuterNotEqualsRewrites() {
-		testRewriteBinaryMV2Outer("!=", true);
+		testRewriteBinaryMV2Outer(Opcodes.NOTEQUAL.toString(), true);
 	}
 	
 	@Test
 	public void testRewriteBinaryMV2OuterMinusRewrites() {
-		testRewriteBinaryMV2Outer("-", true);
+		testRewriteBinaryMV2Outer(Opcodes.MINUS.toString(), true);
 	}
 	
 	@Test
 	public void testRewriteBinaryMV2OuterPlusRewrites() {
-		testRewriteBinaryMV2Outer("+", true);
+		testRewriteBinaryMV2Outer(Opcodes.PLUS.toString(), true);
 	}
 	
 	private void testRewriteBinaryMV2Outer(String opcode, boolean rewrites)
@@ -120,7 +121,7 @@ public class RewriteBinaryMV2OuterTest extends AutomatedTestBase
 			
 			//check for applied rewrites
 			if( rewrites )
-				Assert.assertTrue(!heavyHittersContainsSubString("ba+*"));
+				Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.MMULT.toString()));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;

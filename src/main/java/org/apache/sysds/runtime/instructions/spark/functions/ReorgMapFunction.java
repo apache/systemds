@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.spark.functions;
 
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.functionobjects.DiagIndex;
 import org.apache.sysds.runtime.functionobjects.IndexFunction;
@@ -38,10 +39,10 @@ public class ReorgMapFunction implements PairFunction<Tuple2<MatrixIndexes, Matr
 	private IndexFunction _indexFnObject = null;
 	
 	public ReorgMapFunction(String opcode) {
-		if(opcode.equalsIgnoreCase("r'")) {
+		if(opcode.equalsIgnoreCase(Opcodes.TRANSPOSE.toString())) {
 			_indexFnObject = SwapIndex.getSwapIndexFnObject();
 		}
-		else if(opcode.equalsIgnoreCase("rdiag")) { //diagM2V
+		else if(opcode.equalsIgnoreCase(Opcodes.DIAG.toString())) { //diagM2V
 			_indexFnObject = DiagIndex.getDiagIndexFnObject(false);
 		}
 		else {

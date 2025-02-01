@@ -24,6 +24,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysds.runtime.instructions.spark.ComputationSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.RandSPInstruction;
@@ -33,7 +34,6 @@ import org.apache.sysds.runtime.lineage.LineageItem.LineageItemType;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.Direction;
-import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
@@ -239,10 +239,10 @@ public class LineageItemUtils {
 			LineageItem out = operands.get(roots[0].getHopID());
 			if( roots.length > 1 ) { //multi-agg
 				LineageItem[] outputs = Arrays.stream(roots)
-					.map(h -> new LineageItem("", OpOp1.CAST_AS_MATRIX.toString(),
+					.map(h -> new LineageItem("", Opcodes.CAST_AS_MATRIX.toString(),
 						new LineageItem[]{operands.get(h.getHopID())}))
 					.toArray(LineageItem[]::new);
-				out = new LineageItem("", "cbind", outputs);
+				out = new LineageItem("", Opcodes.CBIND.toString(), outputs);
 			}
 			
 			//cache to avoid reconstruction
@@ -279,13 +279,13 @@ public class LineageItemUtils {
 		String name = Dag.getNextUniqueVarname(root.getDataType());
 		
 		if (root instanceof ReorgOp)
-			li = new LineageItem(name, "r'", LIinputs);
+			li = new LineageItem(name, Opcodes.TRANSPOSE.toString(), LIinputs);
 		else if (root instanceof UnaryOp) {
 			String opcode = ((UnaryOp) root).getOp().toString();
 			li = new LineageItem(name, opcode, LIinputs);
 		}
 		else if (root instanceof AggBinaryOp)
-			li = new LineageItem(name, "ba+*", LIinputs);
+			li = new LineageItem(name, Opcodes.MMULT.toString(), LIinputs);
 		else if (root instanceof BinaryOp)
 			li = new LineageItem(name, ((BinaryOp)root).getOp().toString(), LIinputs);
 		else if (root instanceof TernaryOp) {
@@ -302,7 +302,7 @@ public class LineageItemUtils {
 			li = new LineageItem(name, "rightIndex", LIinputs);
 		else if (root instanceof ParameterizedBuiltinOp) {
 			String opcode = ((ParameterizedBuiltinOp) root).getOp().toString();
-			if (opcode.equalsIgnoreCase("replace"))
+			if (opcode.equalsIgnoreCase(Opcodes.REPLACE.toString()))
 				li = new LineageItem(name, opcode, LIinputs);
 		}
 		else if (root instanceof SpoofFusedOp)
@@ -576,7 +576,7 @@ public class LineageItemUtils {
 				continue;
 			count++;
 			if ((ins instanceof ComputationSPInstruction && !ins.getOpcode().equals("chkpoint"))
-				|| ins.getOpcode().equals("prefetch"))
+				|| ins.getOpcode().equals(Opcodes.PREFETCH.toString()))
 				hasSPInst = true;
 			if (ins instanceof ComputationCPInstruction && ((ComputationCPInstruction) ins).hasFrameInput())
 				hasFrameInput = true;

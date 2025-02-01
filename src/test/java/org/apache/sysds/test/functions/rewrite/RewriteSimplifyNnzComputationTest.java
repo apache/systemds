@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -94,9 +95,9 @@ public class RewriteSimplifyNnzComputationTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			if(rewrites)
-				Assert.assertFalse(heavyHittersContainsString("!="));
+				Assert.assertFalse(heavyHittersContainsString(Opcodes.NOTEQUAL.toString()));
 			else
-				Assert.assertTrue(heavyHittersContainsString("!="));
+				Assert.assertTrue(heavyHittersContainsString(Opcodes.NOTEQUAL.toString()));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;

@@ -22,9 +22,9 @@ package org.apache.sysds.runtime.instructions.cp;
 import java.util.StringTokenizer;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.lops.DataGen;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -59,7 +59,7 @@ public class StringInitCPInstruction extends UnaryCPInstruction {
 
 	public static StringInitCPInstruction parseInstruction(String str) {
 		String opcode = InstructionUtils.getOpCode(str);
-		if( !opcode.equals(DataGen.SINIT_OPCODE) )
+		if( !opcode.equals(Opcodes.STRINGINIT.toString()) )
 			throw new DMLRuntimeException("Unsupported opcode: "+opcode);
 		//parse instruction
 		String[] s = InstructionUtils.getInstructionPartsWithValueType ( str );

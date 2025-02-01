@@ -19,6 +19,7 @@
 
 package org.apache.sysds.lops;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
@@ -127,9 +128,9 @@ public class Ctable extends Lop
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
 		if( operation != Ctable.OperationTypes.CTABLE_EXPAND_SCALAR_WEIGHT )
-			sb.append( "ctable" );
+			sb.append( Opcodes.CTABLE.toString() );
 		else
-			sb.append( "ctableexpand" );
+			sb.append( Opcodes.CTABLEEXPAND.toString() );
 		sb.append( OPERAND_DELIMITOR );
 		
 		sb.append( getInputs().get(0).getDataType() == DataType.SCALAR ?

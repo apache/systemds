@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
@@ -128,7 +129,7 @@ public class GPULineageCacheEvictionTest extends AutomatedTestBase{
 		//Match _evict count
 		if (testname.equalsIgnoreCase(TEST_NAME+"6")) {
 			long exp_numev = 3;
-			long numev = Statistics.getCPHeavyHitterCount("_evict");
+			long numev = Statistics.getCPHeavyHitterCount(Opcodes.EVICT.toString());
 			Assert.assertTrue("Violated Prefetch instruction count: "+numev, numev == exp_numev);
 		}
 	}

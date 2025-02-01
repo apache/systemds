@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.lineage;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.ForProgramBlock;
 import org.apache.sysds.runtime.controlprogram.ProgramBlock;
@@ -53,7 +54,7 @@ public class Lineage {
 	}
 	
 	public void trace(Instruction inst, ExecutionContext ec) {
-		if (inst.getOpcode().equalsIgnoreCase("toString"))
+		if (inst.getOpcode().equalsIgnoreCase(Opcodes.TOSTRING.toString()))
 			//Silently skip toString. TODO: trace toString
 			return;
 

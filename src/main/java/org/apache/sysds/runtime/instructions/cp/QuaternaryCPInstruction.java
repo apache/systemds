@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.lops.WeightedCrossEntropy.WCeMMType;
 import org.apache.sysds.lops.WeightedDivMM.WDivMMType;
 import org.apache.sysds.lops.WeightedSigmoid.WSigmoidType;
@@ -48,7 +49,7 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(inst);
 		String opcode = parts[0];
 		
-		if( opcode.equalsIgnoreCase("wsloss") || opcode.equalsIgnoreCase("wdivmm") || opcode.equalsIgnoreCase("wcemm") ) 
+		if( opcode.equalsIgnoreCase(Opcodes.WSLOSS.toString()) || opcode.equalsIgnoreCase(Opcodes.WDIVMM.toString()) || opcode.equalsIgnoreCase(Opcodes.WCEMM.toString()) )
 		{
 			InstructionUtils.checkNumFields ( parts, 7 );
 			
@@ -59,14 +60,14 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction {
 			CPOperand out = new CPOperand(parts[5]);
 			int k = Integer.parseInt(parts[7]);
 			
-			if( opcode.equalsIgnoreCase("wsloss") )
+			if( opcode.equalsIgnoreCase(Opcodes.WSLOSS.toString()) )
 				return new QuaternaryCPInstruction(new QuaternaryOperator(WeightsType.valueOf(parts[6])), in1, in2, in3, in4, out, k, opcode, inst);	
-			else if( opcode.equalsIgnoreCase("wdivmm") )
+			else if( opcode.equalsIgnoreCase(Opcodes.WDIVMM.toString()) )
 				return new QuaternaryCPInstruction(new QuaternaryOperator(WDivMMType.valueOf(parts[6])), in1, in2, in3, in4, out, k, opcode, inst);				
-			else if( opcode.equalsIgnoreCase("wcemm") ) 		
+			else if( opcode.equalsIgnoreCase(Opcodes.WCEMM.toString()) )
 				return new QuaternaryCPInstruction(new QuaternaryOperator(WCeMMType.valueOf(parts[6])), in1, in2, in3, in4, out, k, opcode, inst);
 		}
-		else if( opcode.equalsIgnoreCase("wsigmoid") )
+		else if( opcode.equalsIgnoreCase(Opcodes.WSIGMOID.toString()) )
 		{
 			InstructionUtils.checkNumFields ( parts, 6 );
 			
@@ -76,10 +77,10 @@ public class QuaternaryCPInstruction extends ComputationCPInstruction {
 			CPOperand out = new CPOperand(parts[4]);
 			int k = Integer.parseInt(parts[6]);
 			
-			if( opcode.equalsIgnoreCase("wsigmoid") )
+			if( opcode.equalsIgnoreCase(Opcodes.WSIGMOID.toString()) )
 				return new QuaternaryCPInstruction(new QuaternaryOperator(WSigmoidType.valueOf(parts[5])), in1, in2, in3, null, out, k, opcode, inst);
 		}
-		else if( opcode.equalsIgnoreCase("wumm") )
+		else if( opcode.equalsIgnoreCase(Opcodes.WUMM.toString()) )
 		{
 			InstructionUtils.checkNumFields ( parts, 7 );
 			

@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
@@ -71,7 +72,7 @@ public class RewriteConstantConjunctionDisjunctionTest extends AutomatedTestBase
 			Assert.assertEquals(
 				"Expected boolean simplification result does not match",
 				expected, ret, 0.0001);
-			Assert.assertFalse(heavyHittersContainsString("!"));
+			Assert.assertFalse(heavyHittersContainsString(Opcodes.NOT.toString()));
 		}
 		finally {
 			resetExecMode(platformOld);

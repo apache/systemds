@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.functionobjects.OffsetColumnIndex;
@@ -59,7 +60,7 @@ public abstract class AppendCPInstruction extends BinaryCPInstruction
 			in1.getDataType()==DataType.LIST ? AppendType.LIST : AppendType.STRING : 
 			cbind ? AppendType.CBIND : AppendType.RBIND;
 		
-		if(!opcode.equalsIgnoreCase("append") && !opcode.equalsIgnoreCase("remove"))
+		if(!opcode.equalsIgnoreCase(Opcodes.APPEND.toString()) && !opcode.equalsIgnoreCase(Opcodes.REMOVE.toString()))
 			throw new DMLRuntimeException("Unknown opcode while parsing a AppendCPInstruction: " + str);
 
 		Operator op = new ReorgOperator(OffsetColumnIndex.getOffsetColumnIndexFnObject(-1));

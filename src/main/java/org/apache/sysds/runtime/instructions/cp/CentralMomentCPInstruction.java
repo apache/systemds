@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.functionobjects.CM;
@@ -39,7 +40,7 @@ public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction {
 		String opcode = parts[0]; 
 		
 		//check supported opcode
-		if( !opcode.equalsIgnoreCase("cm") ) {
+		if( !opcode.equalsIgnoreCase(Opcodes.CM.toString()) ) {
 			throw new DMLRuntimeException("Unsupported opcode "+opcode);
 		}
 		

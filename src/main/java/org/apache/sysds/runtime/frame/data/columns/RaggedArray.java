@@ -24,6 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
@@ -408,7 +409,7 @@ public class RaggedArray<T> extends Array<T> {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_size + 2);
-		sb.append(super.toString()).append("<");
+		sb.append(super.toString()).append(Opcodes.LESS.toString());
 		sb.append(_a.getClass().getSimpleName()).append(">:[");
 		for(int i = 0; i < _size - 1; i++)
 			sb.append(get(i)).append(",");

@@ -20,6 +20,7 @@
 package org.apache.sysds.test.functions.misc;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -129,7 +130,7 @@ public class IPAConstantFoldingScalarVariablePropagationTest extends AutomatedTe
 			
 			//check successful constant folding of entire expressions
 			if( testname.equals(TEST_NAME3) && IPA_SECOND_CHANCE ) {
-				Assert.assertTrue(Statistics.getCPHeavyHitterCount("floor")==2);
+				Assert.assertTrue(Statistics.getCPHeavyHitterCount(Opcodes.FLOOR.toString())==2);
 				Assert.assertTrue(Statistics.getCPHeavyHitterCount("castvti")==2);
 			}
 		}

@@ -22,6 +22,7 @@ package org.apache.sysds.lops;
 import java.util.ArrayList;
 
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.ExecType;
@@ -106,7 +107,7 @@ public class SpoofFused extends Lop
 		StringBuilder sb = InstructionUtils.getStringBuilder();
 		sb.append( getExecType() );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( "spoof" );
+		sb.append( Opcodes.SPOOF );
 
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( _api);

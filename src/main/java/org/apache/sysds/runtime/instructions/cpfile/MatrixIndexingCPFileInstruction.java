@@ -19,8 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.cpfile;
 
-import org.apache.sysds.lops.LeftIndex;
-import org.apache.sysds.lops.RightIndex;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -53,7 +52,7 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		
-		if ( opcode.equalsIgnoreCase(RightIndex.OPCODE) ) {
+		if ( opcode.equalsIgnoreCase(Opcodes.RIGHT_INDEX.toString()) ) {
 			if ( parts.length == 7 ) {
 				CPOperand in, rl, ru, cl, cu, out;
 				in = new CPOperand(parts[1]);
@@ -68,7 +67,7 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
 			}
 		} 
-		else if ( parts[0].equalsIgnoreCase(LeftIndex.OPCODE)) {
+		else if ( parts[0].equalsIgnoreCase(Opcodes.LEFT_INDEX.toString())) {
 			throw new DMLRuntimeException("Invalid opcode while parsing a MatrixIndexingCPFileInstruction: " + str);
 		}
 		else {
@@ -82,7 +81,7 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 		IndexRange ixrange = getIndexRange(ec).add(1);
 		MatrixObject mo = ec.getMatrixObject(input1.getName());
 		
-		if( mo.isPartitioned() && opcode.equalsIgnoreCase(RightIndex.OPCODE) ) 
+		if( mo.isPartitioned() && opcode.equalsIgnoreCase(Opcodes.RIGHT_INDEX.toString()) )
 		{
 			MetaDataFormat meta = (MetaDataFormat)mo.getMetaData();
 			DataCharacteristics mc = meta.getDataCharacteristics();
@@ -106,7 +105,7 @@ public final class MatrixIndexingCPFileInstruction extends IndexingCPInstruction
 						mcNew = new MatrixCharacteristics( mc.getRows(), mo.getPartitionSize(), mc.getBlocksize(), mc.getBlocksize() );
 						break;
 					default:
-						throw new DMLRuntimeException("Unsupported partition format for CP_FILE "+RightIndex.OPCODE+": "+ mo.getPartitionFormat());
+						throw new DMLRuntimeException("Unsupported partition format for CP_FILE "+Opcodes.RIGHT_INDEX.toString()+": "+ mo.getPartitionFormat());
 				}
 				
 				MetaDataFormat metaNew = new MetaDataFormat(mcNew, meta.getFileFormat());

@@ -20,6 +20,7 @@
 package org.apache.sysds.lops;
 
  
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.DataType;
@@ -28,7 +29,7 @@ import org.apache.sysds.common.Types.ValueType;
 
 public class PickByCount extends Lop 
 {
-	public static final String OPCODE = "qpick";
+	public static final String OPCODE = Opcodes.QPICK.toString();
 	
 	public enum OperationTypes {
 		VALUEPICK, 

@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.rewrite;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
@@ -111,7 +112,7 @@ public class RewriteElementwiseMultChainOptimizationAllTest extends AutomatedTes
 			
 			//check for presence of power operator, if we did a rewrite
 			if( rewrites ) {
-				Assert.assertTrue(heavyHittersContainsSubString("^2"));
+				Assert.assertTrue(heavyHittersContainsSubString(Opcodes.POW2.toString()));
 			}
 		}
 		finally {

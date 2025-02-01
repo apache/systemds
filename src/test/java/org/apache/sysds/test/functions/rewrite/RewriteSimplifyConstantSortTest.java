@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -85,12 +86,12 @@ public class RewriteSimplifyConstantSortTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			if(rewrites) {
-				Assert.assertFalse(heavyHittersContainsString("rsort"));
+				Assert.assertFalse(heavyHittersContainsString(Opcodes.SORT.toString()));
 				if(ID == 2)
 					Assert.assertTrue(heavyHittersContainsString("seq"));
 			}
 			else
-				Assert.assertTrue(heavyHittersContainsString("rsort"));
+				Assert.assertTrue(heavyHittersContainsString(Opcodes.SORT.toString()));
 
 		}
 		finally {

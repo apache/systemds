@@ -19,8 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
-import org.apache.sysds.lops.LeftIndex;
-import org.apache.sysds.lops.RightIndex;
+import org.apache.sysds.common.Opcodes;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -48,7 +47,7 @@ public final class FrameIndexingCPInstruction extends IndexingCPInstruction {
 		IndexRange ixrange = getIndexRange(ec);
 		
 		//right indexing
-		if( opcode.equalsIgnoreCase(RightIndex.OPCODE) ) {
+		if( opcode.equalsIgnoreCase(Opcodes.RIGHT_INDEX.toString()) ) {
 
 			//execute right indexing operation
 			FrameBlock in = ec.getFrameInput(input1.getName());
@@ -61,7 +60,7 @@ public final class FrameIndexingCPInstruction extends IndexingCPInstruction {
 			ec.setFrameOutput(output.getName(), out);
 		}
 		//left indexing
-		else if ( opcode.equalsIgnoreCase(LeftIndex.OPCODE)) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.LEFT_INDEX.toString())) {
 			FrameBlock lin = ec.getFrameInput(input1.getName());
 			FrameBlock out = null;
 			

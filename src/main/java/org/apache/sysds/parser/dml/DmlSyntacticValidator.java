@@ -38,6 +38,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Builtins;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
@@ -497,9 +498,9 @@ public class DmlSyntacticValidator implements DmlListener {
 	public void exitFunctionCallAssignmentStatement(FunctionCallAssignmentStatementContext ctx) {
 
 		Set<String> printStatements = new  HashSet<>();
-		printStatements.add("print");
-		printStatements.add("stop");
-		printStatements.add("assert");
+		printStatements.add(Opcodes.PRINT.toString());
+		printStatements.add(Opcodes.STOP.toString());
+		printStatements.add(Opcodes.ASSERT.toString());
 
 		Set<String> outputStatements = new HashSet<>();
 		outputStatements.add("write");
@@ -1501,7 +1502,7 @@ public class DmlSyntacticValidator implements DmlListener {
 				return;
 			}
 		} else if (numParams > 1) {
-			if ("stop".equals(functionName)) {
+			if (Opcodes.STOP.toString().equals(functionName)) {
 				notifyErrorListeners("stop() function cannot have more than 1 parameter", ctx.start);
 				return;
 			}

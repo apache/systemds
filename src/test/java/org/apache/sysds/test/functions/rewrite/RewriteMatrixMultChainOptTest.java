@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.rewrite;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
@@ -113,7 +114,7 @@ public class RewriteMatrixMultChainOptTest extends AutomatedTestBase
 			//check for correct matrix multiplication order, which also allows
 			//the compilation of mmchain operators
 			if( rewrites ) {
-				Assert.assertTrue(heavyHittersContainsSubString("mmchain")
+				Assert.assertTrue(heavyHittersContainsSubString(Opcodes.MMCHAIN.toString())
 					|| heavyHittersContainsSubString("sp_mapmmchain"));
 			}
 		}

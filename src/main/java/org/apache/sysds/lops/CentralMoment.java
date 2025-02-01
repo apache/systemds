@@ -19,6 +19,7 @@
 
 package org.apache.sysds.lops;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.DataType;
@@ -83,14 +84,14 @@ public class CentralMoment extends Lop
 		StringBuilder sb = InstructionUtils.getStringBuilder();
 		if( input3 == null ) {
 			InstructionUtils.concatOperands(sb,
-				getExecType().toString(), "cm",
+				getExecType().toString(), Opcodes.CM.toString(),
 				getInputs().get(0).prepInputOperand(input1),
 				getInputs().get(1).prepScalarInputOperand(getExecType()),
 				prepOutputOperand(output));
 		}
 		else {
 			InstructionUtils.concatOperands(sb,
-				getExecType().toString(), "cm",
+				getExecType().toString(), Opcodes.CM.toString(),
 				getInputs().get(0).prepInputOperand(input1),
 				getInputs().get(1).prepInputOperand(input2),
 				getInputs().get(2).prepScalarInputOperand(getExecType()),

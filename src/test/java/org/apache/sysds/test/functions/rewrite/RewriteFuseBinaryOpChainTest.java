@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.rewrite;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
@@ -169,7 +170,7 @@ public class RewriteFuseBinaryOpChainTest extends AutomatedTestBase
 			
 			if( testname.equals(TEST_NAME5) ) {
 				//check for common subexpression elimination at lop level (independent of rewrites)
-				Assert.assertTrue(Statistics.getCPHeavyHitterCount("qsort") == 1);
+				Assert.assertTrue(Statistics.getCPHeavyHitterCount(Opcodes.QSORT.toString()) == 1);
 			}
 		}
 		finally {

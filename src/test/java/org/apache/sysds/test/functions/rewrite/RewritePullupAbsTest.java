@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.rewrite;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -78,7 +79,7 @@ public class RewritePullupAbsTest extends AutomatedTestBase
 			Assert.assertEquals(expect, dmlfile1.get(new CellIndex(1,1)), 1e-8);
 			//check rewrite application
 			int expect2 = rewrites ? 1 : 2;
-			Assert.assertEquals(expect2, Statistics.getCPHeavyHitterCount("abs"));
+			Assert.assertEquals(expect2, Statistics.getCPHeavyHitterCount(Opcodes.ABS.toString()));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;

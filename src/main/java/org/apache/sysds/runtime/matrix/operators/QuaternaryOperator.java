@@ -20,6 +20,7 @@
 
 package org.apache.sysds.runtime.matrix.operators;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.lops.WeightedCrossEntropy.WCeMMType;
 import org.apache.sysds.lops.WeightedDivMM.WDivMMType;
 import org.apache.sysds.lops.WeightedSigmoid.WSigmoidType;
@@ -117,8 +118,8 @@ public class QuaternaryOperator extends Operator
 	 */
 	public QuaternaryOperator( WUMMType wt, String op ) {
 		this(null, null, null, null, wt, 
-			op.equals("^2") ? Power2.getPower2FnObject() :
-			op.equals("*2") ? Multiply2.getMultiply2FnObject() :
+			op.equals(Opcodes.POW2.toString()) ? Power2.getPower2FnObject() :
+			op.equals(Opcodes.MULT2.toString()) ? Multiply2.getMultiply2FnObject() :
 			Builtin.getBuiltinFnObject(op), 0);
 	}
 

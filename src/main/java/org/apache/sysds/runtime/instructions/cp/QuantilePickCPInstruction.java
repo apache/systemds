@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.lops.PickByCount.OperationTypes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -47,7 +48,7 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction {
 	public static QuantilePickCPInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		if ( !opcode.equalsIgnoreCase("qpick") )
+		if ( !opcode.equalsIgnoreCase(Opcodes.QPICK.toString()) )
 			throw new DMLRuntimeException("Unknown opcode while parsing a QuantilePickCPInstruction: " + str);
 		//instruction parsing
 		if( parts.length == 4 ) {

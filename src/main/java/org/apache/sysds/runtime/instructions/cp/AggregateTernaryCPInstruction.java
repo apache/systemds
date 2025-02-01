@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
@@ -43,7 +44,7 @@ public class AggregateTernaryCPInstruction extends ComputationCPInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
-		if(opcode.equalsIgnoreCase("tak+*") || opcode.equalsIgnoreCase("tack+*")) {
+		if(opcode.equalsIgnoreCase(Opcodes.TAKPM.toString()) || opcode.equalsIgnoreCase(Opcodes.TACKPM.toString())) {
 			InstructionUtils.checkNumFields(parts, 5);
 
 			CPOperand in1 = new CPOperand(parts[1]);

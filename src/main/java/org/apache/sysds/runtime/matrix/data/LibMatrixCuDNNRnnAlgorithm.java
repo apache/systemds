@@ -29,6 +29,7 @@ import static jcuda.jcudnn.JCudnn.cudnnDestroyRNNDescriptor;
 import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
@@ -102,7 +103,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		
 		// Allocate filter descriptor
 		int expectedNumWeights = getExpectedNumWeights();
-		if(rnnMode.equalsIgnoreCase("lstm") && (D+M+2)*4*M != expectedNumWeights) {
+		if(rnnMode.equalsIgnoreCase(Opcodes.LSTM.toString()) && (D+M+2)*4*M != expectedNumWeights) {
 			throw new DMLRuntimeException("Incorrect number of RNN parameters " +  (D+M+2)*4*M + " != " +  expectedNumWeights + ", where numFeatures=" + D + ", hiddenSize=" + M);
 		}
 		wDesc = allocateFilterDescriptor(expectedNumWeights);
@@ -128,7 +129,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		if(rnnMode.equalsIgnoreCase("rnn_relu") || rnnMode.equalsIgnoreCase("rnn_tanh")) {
 			ret = 2;
 		}
-		else if(rnnMode.equalsIgnoreCase("lstm")) {
+		else if(rnnMode.equalsIgnoreCase(Opcodes.LSTM.toString())) {
 			ret = 8;
 		}
 		else if(rnnMode.equalsIgnoreCase("gru")) {
@@ -160,7 +161,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		else if(rnnMode.equalsIgnoreCase("rnn_tanh")) {
 			rnnModeVal = jcuda.jcudnn.cudnnRNNMode.CUDNN_RNN_TANH;
 		}
-		else if(rnnMode.equalsIgnoreCase("lstm")) {
+		else if(rnnMode.equalsIgnoreCase(Opcodes.LSTM.toString())) {
 			rnnModeVal = jcuda.jcudnn.cudnnRNNMode.CUDNN_LSTM;
 		}
 		else if(rnnMode.equalsIgnoreCase("gru")) {

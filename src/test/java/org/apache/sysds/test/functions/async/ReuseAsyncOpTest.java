@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
@@ -92,7 +93,7 @@ public class ReuseAsyncOpTest extends AutomatedTestBase {
 			HashMap<MatrixValue.CellIndex, Double> R = readDMLScalarFromOutputDir("R");
 			long numTsmm = Statistics.getCPHeavyHitterCount("sp_tsmm");
 			long numMapmm = Statistics.getCPHeavyHitterCount("sp_mapmm");
-			long numPrefetch = Statistics.getCPHeavyHitterCount("prefetch");
+			long numPrefetch = Statistics.getCPHeavyHitterCount(Opcodes.PREFETCH.toString());
 
 			proArgs.clear();
 			proArgs.add("-explain");
@@ -110,7 +111,7 @@ public class ReuseAsyncOpTest extends AutomatedTestBase {
 			HashMap<MatrixValue.CellIndex, Double> R_reused = readDMLScalarFromOutputDir("R");
 			long numTsmm_r = Statistics.getCPHeavyHitterCount("sp_tsmm");
 			long numMapmm_r = Statistics.getCPHeavyHitterCount("sp_mapmm");
-			long numPrefetch_r = Statistics.getCPHeavyHitterCount("prefetch");
+			long numPrefetch_r = Statistics.getCPHeavyHitterCount(Opcodes.PREFETCH.toString());
 
 			//compare matrices
 			boolean matchVal = TestUtils.compareMatrices(R, R_reused, 1e-6, "Origin", "withPrefetch");

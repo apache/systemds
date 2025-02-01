@@ -26,6 +26,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -101,7 +102,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in;
 
 		//filter input blocks for trace
-		if( getOpcode().equalsIgnoreCase("uaktrace") )
+		if( getOpcode().equalsIgnoreCase(Opcodes.UAKTRACE.toString()) )
 			out = out.filter(new FilterDiagMatrixBlocksFunction());
 
 		//execute unary aggregate operation

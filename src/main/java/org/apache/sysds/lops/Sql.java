@@ -26,6 +26,7 @@ import static org.apache.sysds.parser.DataExpression.SQL_USER;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.parser.DataExpression;
@@ -59,7 +60,7 @@ public class Sql extends Lop {
 		// TODO spark
 		sb.append("CP");
 		sb.append(OPERAND_DELIMITOR);
-		sb.append("sql");
+		sb.append(Opcodes.SQL);
 		sb.append(OPERAND_DELIMITOR);
 		Lop inLop = _inputParams.get(SQL_CONN);
 		boolean literal = (inLop instanceof Data && ((Data) inLop).isLiteral());

@@ -51,6 +51,7 @@ import jcuda.jcudnn.cudnnTensorDescriptor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -842,7 +843,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 			Pointer x, Pointer hx, Pointer cx, Pointer wPointer,  // input
 			String outputName, String cyName,  					 // output
 			String rnnMode, boolean return_sequences, int N, int M, int D, int T) throws DMLRuntimeException {
-		boolean hasCarry = rnnMode.equalsIgnoreCase("lstm");
+		boolean hasCarry = rnnMode.equalsIgnoreCase(Opcodes.LSTM.toString());
 		// Get output pointers
 		Pointer cudnnYPointer = gCtx.allocate(instName, (long) N *T*M*sizeOfDataType, false);
 		Pointer hyPointer = !return_sequences ? getDenseOutputPointer(ec, gCtx, instName, outputName, N, M) : gCtx.allocate(instName,

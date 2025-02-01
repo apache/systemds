@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -33,7 +34,7 @@ public final class ListAppendRemoveCPInstruction extends AppendCPInstruction {
 	protected ListAppendRemoveCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
 			AppendType type, String opcode, String istr) {
 		super(op, in1, in2, out, type, opcode, istr);
-		if( opcode.equals("remove") )
+		if( opcode.equals(Opcodes.REMOVE.toString()) )
 			output2 = new CPOperand(InstructionUtils.getInstructionPartsWithValueType(istr)[4]);
 	}
 
@@ -60,7 +61,7 @@ public final class ListAppendRemoveCPInstruction extends AppendCPInstruction {
 			ec.setVariable(output.getName(), tmp);
 		}
 		//list remove instruction
-		else if( getOpcode().equals("remove") ) {
+		else if( getOpcode().equals(Opcodes.REMOVE.toString()) ) {
 			//copy on write and remove by position
 			ScalarObject dat2 = ec.getScalarInput(input2);
 			ListObject tmp1 = lo.copy();

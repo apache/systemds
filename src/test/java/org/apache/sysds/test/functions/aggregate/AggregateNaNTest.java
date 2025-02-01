@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.aggregate;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -89,22 +90,22 @@ public class AggregateNaNTest extends AutomatedTestBase
 	
 	@Test
 	public void testRowIndexMaxDenseNaN() {
-		runNaNRowIndexMxxTest("uarimax", false);
+		runNaNRowIndexMxxTest(Opcodes.UARIMAX.toString(), false);
 	}
 	
 	@Test
 	public void testRowIndexMaxSparseNaN() {
-		runNaNRowIndexMxxTest("uarimax", true);
+		runNaNRowIndexMxxTest(Opcodes.UARIMAX.toString(), true);
 	}
 	
 	@Test
 	public void testRowIndexMinDenseNaN() {
-		runNaNRowIndexMxxTest("uarimin", false);
+		runNaNRowIndexMxxTest(Opcodes.UARIMIN.toString(), false);
 	}
 	
 	@Test
 	public void testRowIndexMinSparseNaN() {
-		runNaNRowIndexMxxTest("uarimin", true);
+		runNaNRowIndexMxxTest(Opcodes.UARIMIN.toString(), true);
 	}
 	
 	private void runNaNAggregateTest(int type, boolean sparse) {

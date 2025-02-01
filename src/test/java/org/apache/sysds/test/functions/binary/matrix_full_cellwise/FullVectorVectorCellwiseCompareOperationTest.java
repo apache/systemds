@@ -22,6 +22,7 @@ package org.apache.sysds.test.functions.binary.matrix_full_cellwise;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
@@ -183,12 +184,12 @@ public class FullVectorVectorCellwiseCompareOperationTest extends AutomatedTestB
 			String opcoder = null;
 			switch( type )
 			{
-				case LESS_THAN: 			opcode="<"; opcoder="lt"; break;
-				case LESS_THAN_EQUALS: 		opcode="<="; opcoder="le"; break;
-				case GREATER_THAN: 			opcode=">"; opcoder="gt"; break;
-				case GREATER_THAN_EQUALS: 	opcode=">="; opcoder="ge"; break;
-				case EQUALS: 				opcode="=="; opcoder="eq"; break;
-				case NOT_EQUALS: 			opcode="!="; opcoder="ne"; break;
+				case LESS_THAN: 			opcode= Opcodes.LESS.toString(); opcoder="lt"; break;
+				case LESS_THAN_EQUALS: 		opcode=Opcodes.LESSEQUAL.toString(); opcoder="le"; break;
+				case GREATER_THAN: 			opcode=Opcodes.GREATER.toString(); opcoder="gt"; break;
+				case GREATER_THAN_EQUALS: 	opcode=Opcodes.GREATEREQUAL.toString(); opcoder="ge"; break;
+				case EQUALS: 				opcode=Opcodes.EQUAL.toString(); opcoder="eq"; break;
+				case NOT_EQUALS: 			opcode=Opcodes.NOTEQUAL.toString(); opcoder="ne"; break;
 			}
 			
 			getAndLoadTestConfiguration(TEST_NAME);

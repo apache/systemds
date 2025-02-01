@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.aggregate;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
@@ -45,7 +46,7 @@ public class RowSumsSqTest extends AutomatedTestBase {
 	private static final String INPUT_NAME = "X";
 	private static final String OUTPUT_NAME = "rowSumsSq";
 
-	private static final String op = "uarsqk+";
+	private static final String op = Opcodes.UARSQKP.toString();
 	private static final int rows = 1234;
 	private static final int cols = 567;
 	private static final double sparsity1 = 1;

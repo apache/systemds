@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.unary.matrix;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -166,11 +167,11 @@ public class FullSignTest extends AutomatedTestBase
 			
 			//check generated opcode
 			if( instType == ExecType.CP ) {
-				Assert.assertTrue("Missing opcode: sign", Statistics.getCPHeavyHitterOpCodes().contains("sign") ||
+				Assert.assertTrue("Missing opcode: sign", Statistics.getCPHeavyHitterOpCodes().contains(Opcodes.SIGN.toString()) ||
 						Statistics.getCPHeavyHitterOpCodes().contains("gpu_sign") );
 			}
 			else if ( instType == ExecType.SPARK )
-				Assert.assertTrue("Missing opcode: "+Instruction.SP_INST_PREFIX+"sign", Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+"sign"));	
+				Assert.assertTrue("Missing opcode: "+Instruction.SP_INST_PREFIX+Opcodes.SIGN.toString(), Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+Opcodes.SIGN.toString()));
 		}
 		finally {
 			rtplatform = platformOld;

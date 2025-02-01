@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.rewrite;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
@@ -104,8 +105,8 @@ public class RewriteHoistingLoopInvariantOpsTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			
 			//check applied code motion rewrites (moved sum and - from 10 to 1)
-			Assert.assertEquals(rewrites?1:10, Statistics.getCPHeavyHitterCount("uak+"));
-			Assert.assertEquals(rewrites?1:10, Statistics.getCPHeavyHitterCount("-"));
+			Assert.assertEquals(rewrites?1:10, Statistics.getCPHeavyHitterCount(Opcodes.UAKP.toString()));
+			Assert.assertEquals(rewrites?1:10, Statistics.getCPHeavyHitterCount(Opcodes.MINUS.toString()));
 		}
 		finally {
 			OptimizerUtils.ALLOW_CODE_MOTION = rewritesOld;

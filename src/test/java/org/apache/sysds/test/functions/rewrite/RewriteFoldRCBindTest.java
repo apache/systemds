@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
@@ -93,8 +94,8 @@ public class RewriteFoldRCBindTest extends AutomatedTestBase
 			//check for applied rewrites
 			if( rewrites ) {
 				Assert.assertTrue(!heavyHittersContainsString("append")
-					&& Statistics.getCPHeavyHitterCount("cbind") <= 1
-					&& Statistics.getCPHeavyHitterCount("rbind") <= 1);
+					&& Statistics.getCPHeavyHitterCount(Opcodes.CBIND.toString()) <= 1
+					&& Statistics.getCPHeavyHitterCount(Opcodes.RBIND.toString()) <= 1);
 			}
 		}
 		finally {

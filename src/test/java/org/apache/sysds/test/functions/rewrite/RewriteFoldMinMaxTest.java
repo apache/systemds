@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
@@ -92,9 +93,9 @@ public class RewriteFoldMinMaxTest extends AutomatedTestBase
 			
 			//check for applied rewrites
 			if( rewrites ) {
-				Assert.assertTrue(!heavyHittersContainsString("min") && !heavyHittersContainsString("max")
-					&& (!testname.equals(TEST_NAME1) || Statistics.getCPHeavyHitterCount("nmin") == 1)
-					&& (!testname.equals(TEST_NAME2) || Statistics.getCPHeavyHitterCount("nmax") == 1));
+				Assert.assertTrue(!heavyHittersContainsString(Opcodes.MIN.toString()) && !heavyHittersContainsString(Opcodes.MAX.toString())
+					&& (!testname.equals(TEST_NAME1) || Statistics.getCPHeavyHitterCount(Opcodes.NMIN.toString()) == 1)
+					&& (!testname.equals(TEST_NAME2) || Statistics.getCPHeavyHitterCount(Opcodes.NMAX.toString()) == 1));
 			}
 		}
 		finally {

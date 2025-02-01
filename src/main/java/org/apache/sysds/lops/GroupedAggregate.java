@@ -22,7 +22,8 @@ package org.apache.sysds.lops;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
- 
+
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 
 import org.apache.sysds.parser.Statement;
@@ -158,7 +159,7 @@ public class GroupedAggregate extends Lop
 		}
 		else if( getExecType()==ExecType.SPARK ) {
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( "broadcast" );
+			sb.append( Opcodes.BROADCAST.toString() );
 			sb.append( Lop.NAME_VALUE_SEPARATOR );
 			sb.append( _broadcastGroups );	
 		}

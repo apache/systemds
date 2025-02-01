@@ -19,6 +19,7 @@
 
 package org.apache.sysds.lops;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.DataType;
@@ -99,43 +100,43 @@ public class DnnTransform extends Lop
 		switch(operation) {
 				
 		case MAX_POOL:
-			return "maxpooling";
+			return Opcodes.MAXPOOLING.toString();
 			
 		case RELU_MAX_POOL:
-			return "relu_maxpooling";
+			return Opcodes.RELU_MAXPOOLING.toString();
 			
 		case RELU_MAX_POOL_BACKWARD:
-			return "relu_maxpooling_backward";
+			return Opcodes.RELU_MAXPOOLING_BACKWARD.toString();
 			
 		case RELU_BACKWARD:
-			return "relu_backward";
+			return Opcodes.RELU_BACKWARD.toString();
 			
 		case MAX_POOL_BACKWARD:
-			return "maxpooling_backward";
+			return Opcodes.MAXPOOLING_BACKWARD.toString();
 		
 		case AVG_POOL:
-			return "avgpooling";
+			return Opcodes.AVGPOOLING.toString();
 			
 		case AVG_POOL_BACKWARD:
-			return "avgpooling_backward";
+			return Opcodes.AVGPOOLING_BACKWARD.toString();
 		
 		case CONV2D:
-			return "conv2d";
+			return Opcodes.CONV2D.toString();
 		
 		case CONV2D_BIAS_ADD:
-			return "conv2d_bias_add";
+			return Opcodes.CONV2D_BIAS_ADD.toString();
 		
 		case BIASADD:
-			return "bias_add";
+			return Opcodes.BIAS_ADD.toString();
 		
 		case BIASMULT:
-			return "bias_multiply";
+			return Opcodes.BIAS_MULTIPLY.toString();
 			
 		case CONV2D_BACKWARD_FILTER:
-			return "conv2d_backward_filter";
+			return Opcodes.CONV2D_BACKWARD_FILTER.toString();
 			
 		case CONV2D_BACKWARD_DATA:
-			return "conv2d_backward_data";
+			return Opcodes.CONV2D_BACKWARD_DATA.toString();
 			
 		case CHANNEL_SUMS:
 			return "channel_sums";

@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.resource;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.resource.CloudUtils;
@@ -103,7 +104,7 @@ public class RecompilationTest extends AutomatedTestBase {
 		// X = A.csv: (10^5)x(10^4) = 10^9 ~ 8BG
 		// Y = B.csv: (10^4)x(10^3) = 10^7 ~ 80MB
 		// X %*% Y -> (10^5)x(10^3) = 10^8 ~ 800MB
-		runTestMM("A.csv", "B.csv", 8L*1024*1024*1024, 0, 0, "ba+*", false);
+		runTestMM("A.csv", "B.csv", 8L*1024*1024*1024, 0, 0, Opcodes.MMULT.toString(), false);
 	}
 
 	@Test
@@ -112,7 +113,7 @@ public class RecompilationTest extends AutomatedTestBase {
 		// X = A.csv: (10^5)x(10^4) = 10^9 ~ 8BG
 		// Y = B.csv: (10^4)x(10^3) = 10^7 ~ 80MB
 		// X %*% Y -> (10^5)x(10^3) = 10^8 ~ 800MB
-		runTestMM("A.csv", "B.csv", 16L*1024*1024*1024, 2, 1024*1024*1024, "ba+*", false);
+		runTestMM("A.csv", "B.csv", 16L*1024*1024*1024, 2, 1024*1024*1024, Opcodes.MMULT.toString(), false);
 	}
 
 	@Test
@@ -149,7 +150,7 @@ public class RecompilationTest extends AutomatedTestBase {
 		// Single node cluster with 8GB driver memory -> tsmm operator in CP
 		// X = B.csv: (10^4)x(10^3) = 10^7 ~ 80MB
 		// t(X) %*% X -> (10^3)x(10^3) = 10^6 ~ 8MB (single block)
-		runTestTSMM("B.csv", 8L*1024*1024*1024, 0, -1, "tsmm", false);
+		runTestTSMM("B.csv", 8L*1024*1024*1024, 0, -1, Opcodes.TSMM.toString(), false);
 	}
 
 	@Test
@@ -162,15 +163,15 @@ public class RecompilationTest extends AutomatedTestBase {
 
 	@Test
 	public void test_MM_RecompilationSequence() throws IOException {
-		runTestMM("A.csv", "B.csv", 8L*1024*1024*1024, 0, -1, "ba+*", false);
+		runTestMM("A.csv", "B.csv", 8L*1024*1024*1024, 0, -1, Opcodes.MMULT.toString(), false);
 
-		runTestMM("A.csv", "B.csv", 16L*1024*1024*1024, 4, 1024*1024*1024, "ba+*", false);
+		runTestMM("A.csv", "B.csv", 16L*1024*1024*1024, 4, 1024*1024*1024, Opcodes.MMULT.toString(), false);
 
 		runTestMM("A.csv", "B.csv", 4L*1024*1024*1024, 2, 4L*1024*1024*1024, "mapmm", true);
 
 		runTestMM("A.csv", "B.csv", 4L*1024*1024*1024, 4, 1024*1024*1024, "rmm", true);
 
-		runTestMM("A.csv", "B.csv", 8L*1024*1024*1024, 0, -1, "ba+*", false);
+		runTestMM("A.csv", "B.csv", 8L*1024*1024*1024, 0, -1, Opcodes.MMULT.toString(), false);
 	}
 
 	@Test

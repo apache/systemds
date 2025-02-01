@@ -20,6 +20,7 @@
 package org.apache.sysds.lops;
 
  
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 
 import org.apache.sysds.common.Types.DataType;
@@ -29,7 +30,7 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 public class WeightedSquaredLoss extends Lop 
 {
 	public static final String OPCODE = "mapwsloss";
-	public static final String OPCODE_CP = "wsloss";
+	public static final String OPCODE_CP = Opcodes.WSLOSS.toString();
 	private int _numThreads = 1;
 
 	public enum WeightsType {

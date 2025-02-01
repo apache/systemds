@@ -20,6 +20,7 @@
 package org.apache.sysds.lops;
 
  
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 
 import org.apache.sysds.common.Types.DataType;
@@ -28,8 +29,7 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 public class PMMJ extends Lop 
 {
-	
-	public static final String OPCODE = "pmm";
+	public static final String OPCODE = Opcodes.PMM.toString();
 	
 	public enum CacheType {
 		LEFT,

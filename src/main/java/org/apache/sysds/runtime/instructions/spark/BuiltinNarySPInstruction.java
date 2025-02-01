@@ -26,6 +26,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.BinaryOp;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -95,9 +96,9 @@ public class BuiltinNarySPInstruction extends SPInstruction implements LineageTr
 		boolean inputIsMatrix = inputs[0].isMatrix();
 
 		
-		if( getOpcode().equals("cbind") || getOpcode().equals("rbind") ) {
+		if( getOpcode().equals(Opcodes.CBIND.toString()) || getOpcode().equals(Opcodes.RBIND.toString()) ) {
 			//compute output characteristics
-			boolean cbind = getOpcode().equals("cbind");
+			boolean cbind = getOpcode().equals(Opcodes.CBIND.toString());
 			dcout = computeAppendOutputDataCharacteristics(sec, inputs, cbind);
 			if(inputIsMatrix){
 				//get consolidated input via union over shifted and padded inputs
@@ -164,7 +165,7 @@ public class BuiltinNarySPInstruction extends SPInstruction implements LineageTr
 				return;
 			}
 		}
-		else if( ArrayUtils.contains(new String[]{"nmin","nmax","n+","n*"}, getOpcode()) ) {
+		else if( ArrayUtils.contains(new String[]{Opcodes.NMIN.toString(),Opcodes.NMAX.toString(),Opcodes.NP.toString(),Opcodes.NM.toString()}, getOpcode()) ) {
 			//compute output characteristics
 			dcout = computeMinMaxOutputDataCharacteristics(sec, inputs);
 			

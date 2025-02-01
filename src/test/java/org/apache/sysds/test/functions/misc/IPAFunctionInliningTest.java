@@ -20,6 +20,7 @@
 package org.apache.sysds.test.functions.misc;
 
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -157,7 +158,7 @@ public class IPAFunctionInliningTest extends AutomatedTestBase
 		
 			//check for incorrect operation replication
 			if( testName.equals(TEST_NAME6) )
-				Assert.assertTrue(Statistics.getCPHeavyHitterCount("print")==1);
+				Assert.assertTrue(Statistics.getCPHeavyHitterCount(Opcodes.PRINT.toString())==1);
 		}
 		finally {
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;

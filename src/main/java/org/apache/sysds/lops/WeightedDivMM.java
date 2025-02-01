@@ -20,6 +20,7 @@
 package org.apache.sysds.lops;
 
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.common.Types.ExecType;
@@ -29,7 +30,7 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 public class WeightedDivMM extends Lop 
 {
 	public static final String OPCODE = "mapwdivmm";
-	public static final String OPCODE_CP = "wdivmm";
+	public static final String OPCODE_CP = Opcodes.WDIVMM.toString();
 	private int _numThreads = 1;
 
 	public enum WDivMMType {

@@ -32,6 +32,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Builtins;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
@@ -2453,7 +2454,7 @@ public class DMLTranslator
 			String sop = ((StringIdentifier)source.getThirdExpr()).getValue();
 			sop = sop.replace("\"", "");
 			OpOp2 operation;
-			if ( sop.equalsIgnoreCase(">=") ) 
+			if ( sop.equalsIgnoreCase(">=") )
 				operation = OpOp2.GREATEREQUAL;
 			else if ( sop.equalsIgnoreCase(">") )
 				operation = OpOp2.GREATER;

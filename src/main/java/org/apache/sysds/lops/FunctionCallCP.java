@@ -22,7 +22,7 @@ package org.apache.sysds.lops;
 
 import java.util.ArrayList;
 
-import org.apache.sysds.hops.FunctionOp;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.parser.DMLProgram;
@@ -131,7 +131,7 @@ public class FunctionCallCP extends Lop
 		}
 
 		if(getExecType().equals(ExecType.CP)){
-			if(!(_fname.toLowerCase().equals("remove"))){
+			if(!(_fname.toLowerCase().equals(Opcodes.REMOVE.toString()))){
 				sb.append(Lop.OPERAND_DELIMITOR);
 				sb.append(_numThreads);
 			}
@@ -156,7 +156,7 @@ public class FunctionCallCP extends Lop
 		inst.append(getExecType());
 		
 		inst.append(Lop.OPERAND_DELIMITOR); 
-		inst.append(FunctionOp.OPCODE);
+		inst.append(Opcodes.FCALL.getType());
 		inst.append(Lop.OPERAND_DELIMITOR);
 		inst.append(_fnamespace);
 		inst.append(Lop.OPERAND_DELIMITOR);

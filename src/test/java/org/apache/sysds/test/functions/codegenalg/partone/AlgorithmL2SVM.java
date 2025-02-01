@@ -22,6 +22,7 @@ package org.apache.sysds.test.functions.codegenalg.partone;
 import java.io.File;
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
@@ -184,7 +185,7 @@ public class AlgorithmL2SVM extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("w");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("w");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			Assert.assertTrue(heavyHittersContainsSubString("spoof") || heavyHittersContainsSubString("sp_spoof"));
+			Assert.assertTrue(heavyHittersContainsSubString(Opcodes.SPOOF.toString()) || heavyHittersContainsSubString("sp_spoof"));
 		}
 		finally {
 			rtplatform = platformOld;

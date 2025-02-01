@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
@@ -113,7 +114,7 @@ public class RewriteCumsumConstantTest extends AutomatedTestBase
 			//check for applied rewrites
 			if( rewrites && cols==1 ) { //sequence only for col vectors
 				Assert.assertTrue(!heavyHittersContainsString("rand")
-					&& !heavyHittersContainsString("ucumk+"));
+					&& !heavyHittersContainsString(Opcodes.UCUMKP.toString()));
 			}
 		}
 		finally {

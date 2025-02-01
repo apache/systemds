@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.rewrite;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
@@ -131,7 +132,7 @@ public class RewriteListTsmmCVTest extends AutomatedTestBase
 				//boolean expectedReuse = lineage && instType == ExecType.CP;
 				boolean expectedReuse = lineage;
 				String[] codes = (instType==ExecType.CP) ?
-					new String[]{"rbind","tsmm","ba+*","n+"} :
+					new String[]{Opcodes.RBIND.toString(),Opcodes.TSMM.toString(), Opcodes.MMULT.toString(), Opcodes.NP.toString()} :
 					new String[]{"sp_append","sp_tsmm","sp_mapmm","sp_n+"};
 				Assert.assertTrue(!heavyHittersContainsString(codes[0]));
 				Assert.assertEquals( (expectedReuse ? 7 : 7*6), //per fold

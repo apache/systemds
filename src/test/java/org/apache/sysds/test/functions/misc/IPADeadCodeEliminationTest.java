@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.misc;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -99,9 +100,9 @@ public class IPADeadCodeEliminationTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 			
 			if( IPA && !testname.equals(TEST_NAME4) ) //check for applied dead code removal
-				Assert.assertTrue(!heavyHittersContainsString("uak+"));
+				Assert.assertTrue(!heavyHittersContainsString(Opcodes.UAKP.toString()));
 			if( testname.equals(TEST_NAME4) )
-				Assert.assertTrue(heavyHittersContainsString("uak+"));
+				Assert.assertTrue(heavyHittersContainsString(Opcodes.UAKP.toString()));
 		}
 		finally {
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = oldFlagIPA;

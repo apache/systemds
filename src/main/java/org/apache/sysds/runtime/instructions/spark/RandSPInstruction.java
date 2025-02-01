@@ -239,7 +239,7 @@ public class RandSPInstruction extends UnarySPInstruction {
 			// 7 operands: range, size, replace, seed, blen, outvar
 			InstructionUtils.checkNumFields ( str, 6 );
 		}
-		else if ( opcode.equalsIgnoreCase(DataGen.FRAME_OPCODE) ) {
+		else if ( opcode.equalsIgnoreCase("frame") ) {
 			method = OpOpDG.FRAMEINIT;
 			InstructionUtils.checkNumFields ( str, 6 );
 		}

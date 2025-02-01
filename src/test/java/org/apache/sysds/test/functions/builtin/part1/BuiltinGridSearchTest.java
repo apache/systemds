@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.builtin.part1;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -174,7 +175,7 @@ public class BuiltinGridSearchTest extends AutomatedTestBase
 			
 			//correct handling of verbose flag
 			if( verbose ) // 2 prints outside, if verbose more
-				Assert.assertTrue(Statistics.getCPHeavyHitterCount("print")>100);
+				Assert.assertTrue(Statistics.getCPHeavyHitterCount(Opcodes.PRINT.toString())>100);
 			
 			//Assert.assertEquals(0, Statistics.getNoOfExecutedSPInst());
 			//TODO analyze influence of multiple subsequent tests

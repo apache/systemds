@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -233,7 +234,7 @@ public class RewriteEliminateRemoveEmptyTest extends AutomatedTestBase
 			}
 
 			if( rewrites && !select ) {
-				boolean noRmempty = heavyHittersContainsSubString("rmempty");
+				boolean noRmempty = heavyHittersContainsSubString(Opcodes.RMEMPTY.toString());
 				Assert.assertFalse(noRmempty);
 			}
 		} 

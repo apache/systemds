@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.lib.FrameLibApplySchema;
@@ -39,25 +40,25 @@ public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction {
 		FrameBlock inBlock1 = ec.getFrameInput(input1.getName());
 		FrameBlock inBlock2 = ec.getFrameInput(input2.getName());
 		
-		if(getOpcode().equals("dropInvalidType")) {
+		if(getOpcode().equals(Opcodes.DROPINVALIDTYPE.toString())) {
 			// Perform computation using input frames, and produce the result frame
 			FrameBlock retBlock = inBlock1.dropInvalidType(inBlock2);
 			// Attach result frame with FrameBlock associated with output_name
 			ec.setFrameOutput(output.getName(), retBlock);
 		}
-		else if(getOpcode().equals("valueSwap")) {
+		else if(getOpcode().equals(Opcodes.VALUESWAP.toString())) {
 			// Perform computation using input frames, and produce the result frame
 			FrameBlock retBlock = inBlock1.valueSwap(inBlock2);
 			// Attach result frame with FrameBlock associated with output_name
 			ec.setFrameOutput(output.getName(), retBlock);
 		}
-		else if(getOpcode().equals("freplicate")) {
+		else if(getOpcode().equals(Opcodes.FREPLICATE.toString())) {
 			// Perform computation using input frames, and produce the result frame
 			FrameBlock retBlock = inBlock1.frameRowReplication(inBlock2);
 			// Attach result frame with FrameBlock associated with output_name
 			ec.setFrameOutput(output.getName(), retBlock);
 		}
-		else if(getOpcode().equals("applySchema")) {
+		else if(getOpcode().equals(Opcodes.APPLYSCHEMA.toString())) {
 			final int k = ((MultiThreadedOperator)_optr).getNumThreads();
 			final FrameBlock out = FrameLibApplySchema.applySchema(inBlock1, inBlock2, k);
 			ec.setFrameOutput(output.getName(), out);

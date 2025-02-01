@@ -81,7 +81,9 @@ public class LibCommonsMath
 	}
 	
 	public static boolean isSupportedUnaryOperation( String opcode ) {
-		return ( opcode.equals(Opcodes.INVERSE.toString()) || opcode.equals(Opcodes.CHOLESKY.toString()) );
+		return opcode.equals(Opcodes.INVERSE.toString())
+			|| opcode.equals(Opcodes.CHOLESKY.toString()) 
+			|| opcode.equals(Opcodes.SQRT_MATRIX_JAVA.toString());
 	}
 	
 	public static boolean isSupportedMultiReturnOperation( String opcode ) {
@@ -107,11 +109,15 @@ public class LibCommonsMath
 	}
 		
 	public static MatrixBlock unaryOperations(MatrixBlock inj, String opcode) {
-		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(inj);
-		if(opcode.equals(Opcodes.INVERSE.toString()))
-			return computeMatrixInverse(matrixInput);
-		else if (opcode.equals(Opcodes.CHOLESKY.toString()))
-			return computeCholesky(matrixInput);
+		if (opcode.equals(Opcodes.SQRT_MATRIX_JAVA.toString()))
+			return computeSqrt(inj);
+		else {
+			Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(inj);
+			if(opcode.equals(Opcodes.INVERSE.toString()))
+				return computeMatrixInverse(matrixInput);
+			else if (opcode.equals(Opcodes.CHOLESKY.toString()))
+				return computeCholesky(matrixInput);
+		}
 		return null;
 	}
 
@@ -512,6 +518,18 @@ public class LibCommonsMath
 		MatrixBlock V = DataConverter.convertToMatrixBlock(v.getData());
 
 		return new MatrixBlock[] { U, Sigma, V };
+	}
+	
+	/**
+	 * Computes the square root of a matrix Calls Apache Commons Math EigenDecomposition.
+	 *
+	 * @param in Input matrix
+	 * @return matrix block
+	 */
+	private static MatrixBlock computeSqrt(MatrixBlock in) {
+		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(in);
+		EigenDecomposition ed = new EigenDecomposition(matrixInput);
+		return DataConverter.convertToMatrixBlock(ed.getSquareRoot());
 	}
 	
 	/**

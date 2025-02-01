@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Stack;
 
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.DataGenOp;
 import org.apache.sysds.hops.DataOp;
@@ -213,7 +214,7 @@ public class AutoDiff {
 				break;
 			}
 			case Instruction: {
-				CPInstruction.CPType ctype = InstructionUtils.getCPTypeByOpcode(item.getOpcode());
+				CPInstruction.CPType ctype = Opcodes.getCPTypeByOpcode(item.getOpcode());
 
 				if(ctype != null) {
 					switch(ctype) {

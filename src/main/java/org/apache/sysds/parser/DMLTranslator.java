@@ -2755,6 +2755,7 @@ public class DMLTranslator
 		case SQRT_MATRIX_JAVA:
 		case CHOLESKY:
 		case TYPEOF:
+		case DET:
 		case DETECTSCHEMA:
 		case COLNAMES:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(),

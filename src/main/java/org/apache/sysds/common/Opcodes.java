@@ -165,6 +165,7 @@ public enum Opcodes {
 	STOP("stop", CPType.Unary),
 	INVERSE("inverse", CPType.Unary),
 	CHOLESKY("cholesky", CPType.Unary),
+	DET("det", CPType.Unary),
 	SPROP("sprop", CPType.Unary),
 	SIGMOID("sigmoid", CPType.Unary),
 	TYPEOF("typeOf", CPType.Unary),

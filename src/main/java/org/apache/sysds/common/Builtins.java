@@ -113,6 +113,7 @@ public enum Builtins {
 	DECISIONTREEPREDICT("decisionTreePredict", true),
 	DECOMPRESS("decompress", false),
 	DEEPWALK("deepWalk", true),
+	DET("det", false),
 	DETECTSCHEMA("detectSchema", false),
 	DENIALCONSTRAINTS("denialConstraints", true),
 	DIFFERENCESTATISTICS("differenceStatistics", true),

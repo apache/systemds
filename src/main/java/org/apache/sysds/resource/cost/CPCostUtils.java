@@ -501,6 +501,7 @@ public class CPCostUtils {
 					case "cholesky":
 						costs = (1.0 / 3.0) * output.getCellsWithSparsity() * output.getCellsWithSparsity();
 						break;
+					case "det":
 					case "detectschema":
 					case "colnames":
 						throw new RuntimeException("Specific Frame operation with opcode '" + opcode + "' is not supported yet");

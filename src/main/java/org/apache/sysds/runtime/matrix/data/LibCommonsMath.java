@@ -82,7 +82,8 @@ public class LibCommonsMath
 	
 	public static boolean isSupportedUnaryOperation( String opcode ) {
 		return opcode.equals(Opcodes.INVERSE.toString())
-			|| opcode.equals(Opcodes.CHOLESKY.toString()) 
+			|| opcode.equals(Opcodes.CHOLESKY.toString())
+			|| opcode.equals(Opcodes.DET.toString())
 			|| opcode.equals(Opcodes.SQRT_MATRIX_JAVA.toString());
 	}
 	
@@ -117,6 +118,8 @@ public class LibCommonsMath
 				return computeMatrixInverse(matrixInput);
 			else if (opcode.equals(Opcodes.CHOLESKY.toString()))
 				return computeCholesky(matrixInput);
+			else if (opcode.equals(Opcodes.DET.toString()))
+				return computeDeterminant(matrixInput);
 		}
 		return null;
 	}
@@ -565,6 +568,163 @@ public class LibCommonsMath
 			CholeskyDecomposition.DEFAULT_ABSOLUTE_POSITIVITY_THRESHOLD);
 		RealMatrix rmL = cholesky.getL();
 		return DataConverter.convertToMatrixBlock(rmL.getData());
+	}
+
+	/**
+	 * Function to compute the determinant of a square matrix.
+	 * 
+	 * @param in Array2DRowRealMatrix object
+	 * @return determinant of the matrix as a 1x1 Matrixblock
+	 */
+	private static MatrixBlock computeDeterminant(Array2DRowRealMatrix in) {
+		if(!in.isSquare()) {
+			throw new DMLRuntimeException("Determinant can only be computed for a square matrix. Input matrix is rectangular");
+		}
+
+		final int useBuiltinStrategy = 0;
+		final int useGaussianStrategy = 1;
+		final int useBareissStrategy = 2;
+		final int useLaplaceStrategy = 3;
+		int computationStrategy = useBuiltinStrategy;
+
+		double determinant = 0;
+		switch (computationStrategy) {
+			case useGaussianStrategy:
+				determinant = computeDetGaussian(in);
+				break;
+			case useLaplaceStrategy:
+				determinant = computeDetLaplace(in);
+				break;
+			case useBareissStrategy:
+				determinant = computeDetBareiss(in);
+				break;
+			case useBuiltinStrategy:
+			default:
+				LUDecomposition ludecompose = new LUDecomposition(in);
+				determinant = ludecompose.getDeterminant();
+		}
+
+		MatrixBlock determinantResult = new MatrixBlock(1, 1, false);
+		determinantResult.set(0, 0, determinant);
+		return determinantResult;
+	}
+	
+	private static double computeDetGaussian(Array2DRowRealMatrix in) {
+		double[][] matrix = in.getData();
+		int size = in.getRowDimension();
+		double determinant = 1.0;
+		int swapCount = 0;
+
+		// create upper triangular matrix
+		for (int pivotRow = 0; pivotRow < size; pivotRow++) {
+
+			// Find a non-zero pivot in current column
+			boolean nonZeroPivotFound = false;
+			for (int swapRow = pivotRow; swapRow < size; swapRow++) {
+				if (Math.abs(matrix[swapRow][pivotRow]) > 1e-9) { // small epsilon for fp comparison
+					// Swap rows if necessary to move pivot to diagonal position
+					if (swapRow != pivotRow) {
+						double[] tempRow = matrix[swapRow];
+						matrix[swapRow] = matrix[pivotRow];
+						matrix[pivotRow] = tempRow;
+						swapCount = swapCount + 1;
+					}
+					nonZeroPivotFound = true;
+					break;
+				}
+			}
+
+			if (!nonZeroPivotFound) {
+				// one diagonal element is 0, therefore the multiplication of the
+				// diagonal elements would be zero aswell
+				determinant = 0;
+				break;
+			}
+
+			// eliminate entries below pivot
+			for (int row = pivotRow + 1; row < size; row++) {
+				double factor = matrix[row][pivotRow] / matrix[pivotRow][pivotRow];
+
+				// update the row using the elimination factor
+				for (int col = pivotRow; col < size; col++) {
+					matrix[row][col] = matrix[row][col] - (factor * matrix[pivotRow][col]);
+				}
+			}
+		}
+
+		// Calculate product of diagonal elements
+		for (int i = 0; i < size; i++) {
+			determinant = determinant * matrix[i][i];
+		}
+		if (swapCount % 2 != 0) {
+			determinant = -determinant;
+		}
+		return determinant;
+	}
+
+	private static double computeDetLaplace(Array2DRowRealMatrix in) {
+		int length = in.getRowDimension();
+		double determinant = 0;
+		
+		// base case 2x2 matrix
+		if (length == 2) {
+			return in.getEntry(0, 0) * in.getEntry(1, 1) - in.getEntry(0, 1) * in.getEntry(1, 0);
+		}
+
+		// laplace expansion
+		for (int col = 0; col < length; col++) {
+			if (in.getEntry(0, col) == 0) {
+				// multiplication with zero results in zero
+				continue;
+			}
+			// Build submatrix
+			Array2DRowRealMatrix subMatrix = new Array2DRowRealMatrix(length - 1, length - 1);
+			for (int i = 1; i < length; i++) { // Skip first row
+				int subCol = 0;
+				for (int j = 0; j < length; j++) {
+					if (j == col) continue; // Skip current col
+					subMatrix.setEntry(i - 1, subCol, in.getEntry(i, j));
+					subCol++;
+				}
+			}
+			// recusive determinant calculation
+			int sign = (col % 2 == 0) ? 1 : -1;
+			double subDeterminant = computeDeterminant(subMatrix).get(0, 0);
+			determinant = determinant + sign * in.getEntry(0, col) * subDeterminant;
+		}
+		return determinant;
+	}
+	
+	private static double computeDetBareiss(Array2DRowRealMatrix in) {
+		int n = in.getRowDimension();
+		int sign = 1;
+		for (int k = 0; k < n - 1; k++) {
+			if (0 == in.getEntry(k, k)) {
+				boolean found = false;
+				for (int m = k + 1; m < n; m++) {
+					if (0 == in.getEntry(m, k)) { continue; }
+					found = true;
+					sign = -1*sign;
+					double[] tmp = in.getRow(m);
+					in.setRow(m, in.getRow(k));
+					in.setRow(k, tmp);
+					break;
+				}
+				if (!found) {
+					in.getEntry(n - 1, n - 1);
+					break;
+				}
+			}
+
+			for (int i = k + 1; i < n; i++) {
+				for (int j = k + 1; j < n; j++) {
+					double den = (0 == k) ? 1 : in.getEntry(k-1, k-1);
+					double num = in.getEntry(i, j)*in.getEntry(k, k) - in.getEntry(i, k)*in.getEntry(k, j);
+					in.setEntry(i, j, num/den);
+				}
+			}
+		}
+		return sign * in.getEntry(n - 1, n - 1);
 	}
 
 	/**

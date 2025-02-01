@@ -88,7 +88,7 @@ public class LineageRecomputeUtils {
 	public static Data parseNComputeLineageTrace(String mainTrace) {
 		if (DEBUG)
 			System.out.println(mainTrace);
-
+		
 		// Separate the global trace and the dedup patches
 		String[] patches = LineageParser.separateMainAndDedupPatches(mainTrace);
 		LineageItem root = LineageParser.parseLineageTrace(patches[0]); //global trace
@@ -307,7 +307,7 @@ public class LineageRecomputeUtils {
 				break;
 			}
 			case Instruction: {
-				CPType ctype = InstructionUtils.getCPTypeByOpcode(item.getOpcode());
+				CPType ctype = Opcodes.getCPTypeByOpcode(item.getOpcode());
 				SPType stype = InstructionUtils.getSPTypeByOpcode(item.getOpcode());
 				
 				if (ctype != null) {

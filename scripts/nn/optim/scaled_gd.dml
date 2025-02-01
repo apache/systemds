@@ -1,0 +1,151 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * ScaledGD optimizer.
+ */
+
+update = function(matrix[double] X, matrix[double] Y,
+    matrix[double] dX, matrix[double] dY, double lr, int r)
+  return (matrix[double] X_new, matrix[double] Y_new)
+{
+  /*
+   * Performs one iteration of the Scaled Gradient Descent update.
+   *
+   * Reference:
+   *   - "Accelerating Ill-Conditioned Low-Rank Matrix Estimation
+   *      via Scaled Gradient Descent" (arXiv:2005.08898).
+   *
+   * Typical Steps:
+   * 1) Orthonormal Extension (dimension doubling):
+   *    - Extend X and Y to [X, X⊥] and [Y, Y⊥] so each is m×2r and n×2r,
+   *      with orthonormal columns.
+   * 2) Gradient Step:
+   *    - Subtract lr*dX and lr*dY in the extended (2r) space.
+   * 3) Rank-r Truncation:
+   *    - Recompute X_new, Y_new by SVD on the updated matrix
+   *      of size m×n (i.e., from (X̂ - lr*Gx̂)*(Ŷ - lr*Gŷ)ᵀ).
+   *    - Take only top-r singular values and corresponding vectors.
+   *
+   * Inputs:
+   *  - X: Current m×r matrix (factor or parameter).
+   *  - Y: Current n×r matrix (factor or parameter).
+   *  - dX: Gradient w.r.t. X, same shape as X.
+   *  - dY: Gradient w.r.t. Y, same shape as Y.
+   *  - lr: Learning rate (scalar).
+   *  - r: Target rank for the low-rank approximation.
+   *
+   * Outputs:
+   *  - X_new: Updated factor/parameter matrix (m×r).
+   *  - Y_new: Updated factor/parameter matrix (n×r).
+   */
+
+  #-----------------------------------------------------------
+  # 1) Orthonormal Extension for X and Y
+  #-----------------------------------------------------------
+  # We will form orthonormal complements for X and Y, each adding r columns.
+  # For simplicity, below we create random matrices and orthonormalize them.
+  # In the future, we might use more advanced approaches (QR-based or
+  # local expansions relevant to the gradient directions).
+  X_rand = rand(rows=nrow(X), cols=r)
+  Y_rand = rand(rows=nrow(Y), cols=r)
+
+  # Orthonormalize X
+  X_ext = cbind(X, X_rand)
+  # QR Decomposition: turn X_ext into an orthonormal basis.
+  # Note: SystemDS's 'qr' returns Q,R as multi-return.
+  [QX, RX] = qr(X_ext)
+  # We'll keep just 2r columns of Q (since Q might have dimension m×m)
+  X_hat = QX[, 1:(2*r)]
+
+  # Orthonormalize Y
+  Y_ext = cbind(Y, Y_rand)
+  [QY, RY] = qr(Y_ext)
+  Y_hat = QY[, 1:(2*r)]
+
+  #-----------------------------------------------------------
+  # 2) Gradient Step in Expanded Space
+  #-----------------------------------------------------------
+  # Similarly, we need the gradients w.r.t X_hat, Y_hat. If 'dX' and 'dY'
+  # are for the original X, Y, a simple approach is to "expand" them
+  # by zero-padding for the extra columns.
+  dX_ext = cbind(dX, matrix(0, rows=nrow(X), cols=r))
+  dY_ext = cbind(dY, matrix(0, rows=nrow(Y), cols=r))
+
+  # Update step: X_hat_temp = X_hat - lr * dX_ext, etc.
+  X_hat_temp = X_hat - (lr * dX_ext)
+  Y_hat_temp = Y_hat - (lr * dY_ext)
+
+  #-----------------------------------------------------------
+  # 3) Rank-r Truncation via SVD
+  #-----------------------------------------------------------
+  # Construct a temporary matrix M_temp = X_hat_temp * (Y_hat_temp)ᵀ
+  M_temp = X_hat_temp %*% t(Y_hat_temp)
+
+  # SVD returns multiple outputs: U, S, and V
+  [U, S, V] = svd(M_temp)
+
+  # We will keep only the top-r singular values
+  # Note: S is a diagonal matrix. We can slice it or build from the diag vector.
+  S_diag = diag(S)
+  s_top = S_diag[1:r]
+  U_top = U[, 1:r]
+  V_top = V[, 1:r]
+
+  # Reconstruct X, Y from the rank-r approximation:
+  # M_temp ≈ U_top * diag(s_top) * V_topᵀ
+  # Often we store X_new = U_top * sqrt(diag(s_top)), Y_new = V_top * sqrt(diag(s_top))
+  sqrt_s_top = sqrt(s_top)
+  X_new = U_top %*% diag(sqrt_s_top)
+  Y_new = V_top %*% diag(sqrt_s_top)
+}
+
+init = function(matrix[double] X, matrix[double] Y)
+  return (int r)
+{
+  /*
+   * Here, we treat the number of columns (r) of X and Y
+   * as the "rank parameter" for ScaledGD.
+   * This parameter r is an upper bound on the actual
+   * algebraic rank, because some columns may become
+   * linearly dependent.
+   *
+   * Note: This is just a convenience function, and rank
+   * may be initialized manually if needed.
+
+   * Inputs:
+   *  - X: Current m×r matrix (factor or parameter).
+   *  - Y: Current n×r matrix (factor or parameter).
+   *
+   * Outputs:
+   *  - r: upper bound for rank
+   *
+   *
+   */
+
+  if (ncol(X) != ncol(Y)) {
+      stop("X and Y must have the same number of columns in ScaledGD init.")
+  }
+
+  # The rank parameter (upper bound) is simply the number of columns in X
+  r = ncol(X)
+}
+

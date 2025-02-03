@@ -470,7 +470,7 @@ public class RewriterFramework {
 				for (int i = 1; i < mEq.size(); i++)
 					RewriterAssertionUtils.buildImplicitAssertions(mEq.get(i), assertions, ctx);
 
-				List<Tuple2<List<Number>, List<Long>>> costs = RewriterCostEstimator.compareCosts(mEq, assertions, ctx, true, 0);
+				List<Tuple2<List<Number>, List<Long>>> costs = RewriterCostEstimator.compareCosts(mEq, assertions, ctx, true, sample_size);
 
 				Set<Tuple2<Integer, Integer>> rewriteProposals = RewriterCostEstimator.findOptima(costs);
 				long mId = idCtr.incrementAndGet();

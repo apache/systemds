@@ -31,6 +31,8 @@ import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -57,6 +59,8 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
+import org.apache.sysds.hops.rewriter.generated.RewriteAutomaticallyGenerated;
+import org.apache.sysds.hops.rewriter.RewriterRuntimeUtils;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.parser.ParseException;
@@ -90,6 +94,7 @@ import org.apache.sysds.utils.Statistics;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import scala.Tuple4;
 
 /**
  * <p>
@@ -105,6 +110,51 @@ import org.junit.Before;
  *
  */
 public abstract class AutomatedTestBase {
+	protected static final boolean RECORD_GENERATED_REWRITES = false;
+	protected static final boolean ALLOW_GENERATED_REWRITES = false;
+	protected static final String BASE_DATA_DIR = null;
+
+
+	///// THESE SHOULD NOT BE MODIFIED /////
+	private static String currentTestName = "";
+
+
+	static {
+		RewriterRuntimeUtils.setupIfNecessary();
+
+		if (RECORD_GENERATED_REWRITES) {
+			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+				StringBuilder csvBuilder2 = new StringBuilder();
+				csvBuilder2.append("Rewrite;Count\n");
+
+				Statistics.getAppliedRewrites().forEach((k, v) -> {
+					csvBuilder2.append(k);
+					csvBuilder2.append(';');
+					csvBuilder2.append(v);
+					csvBuilder2.append('\n');
+				});
+
+				StringBuilder csvBuilder3 = new StringBuilder();
+				csvBuilder3.append("Rewrite;TestName;Count\n");
+
+				Statistics.getAdvancedAppliedRewrites().forEach((k, v) -> {
+					csvBuilder3.append(k._1);
+					csvBuilder3.append(';');
+					csvBuilder3.append(k._2);
+					csvBuilder3.append(';');
+					csvBuilder3.append(v);
+					csvBuilder3.append('\n');
+				});
+
+				try {
+					Files.writeString(Paths.get(BASE_DATA_DIR + "applied_rewrites.csv"), csvBuilder2.toString());
+					Files.writeString(Paths.get(BASE_DATA_DIR + "rewrite_info.csv"), csvBuilder3.toString());
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}));
+		}
+	}
 
 	private static final Log LOG = LogFactory.getLog(AutomatedTestBase.class.getName());
 
@@ -1139,6 +1189,9 @@ public abstract class AutomatedTestBase {
 	 */
 	protected void runRScript(boolean newWay) {
 
+		if (RewriterRuntimeUtils.interceptAll)
+			return;
+
 		String executionFile = sourceDirectory + selectedTest + ".R";
 		if(fullRScriptName != null)
 			executionFile = fullRScriptName;
@@ -1388,6 +1441,21 @@ public abstract class AutomatedTestBase {
 		String errMessage, int maxSparkInst) {
 		try{
 			final List<ByteArrayOutputStream> out = new ArrayList<>();
+
+			if (RECORD_GENERATED_REWRITES) {
+				if (currentTestName == null || !currentTestName.equals(this.getClass().getSimpleName())) {
+					currentTestName = this.getClass().getSimpleName();
+				}
+
+				Statistics.reset();
+				RewriteAutomaticallyGenerated.totalTimeNanos = 0;
+				RewriteAutomaticallyGenerated.callCount = 0;
+				RewriteAutomaticallyGenerated.maxTimeNanos = -1;
+
+				Statistics.recordAppliedGeneratedRewrites(true);
+				Statistics.setCurrentTestName(currentTestName);
+			}
+
 			Thread t = new Thread(
 				() -> out.add(runTestWithTimeout(newWay, exceptionExpected, expectedException, errMessage, maxSparkInst)),
 				"TestRunner_main");
@@ -1437,6 +1505,10 @@ public abstract class AutomatedTestBase {
 		cleanupScratchSpace();
 	
 		ArrayList<String> args = new ArrayList<>();
+		if (ALLOW_GENERATED_REWRITES) {
+			args.add("-applyGeneratedRewrites");
+		}
+
 		// setup arguments to SystemDS
 		if(DEBUG) {
 			args.add("-Dsystemds.logging=trace");

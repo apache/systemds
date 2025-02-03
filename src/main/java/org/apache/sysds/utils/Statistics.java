@@ -47,6 +47,7 @@ import org.apache.sysds.utils.stats.ParamServStatistics;
 import org.apache.sysds.utils.stats.RecompileStatistics;
 import org.apache.sysds.utils.stats.SparkStatistics;
 import org.apache.sysds.utils.stats.TransformStatistics;
+import scala.Tuple2;
 
 import java.lang.management.CompilationMXBean;
 import java.lang.management.GarbageCollectorMXBean;
@@ -337,6 +338,35 @@ public class Statistics
 	 */
 	public static long getRunTime() {
 		return execEndTime - execStartTime;
+	}
+
+	private static HashMap<String, Integer> appliedGeneratedRewrites = new HashMap<>();
+	private static HashMap<Tuple2<String, String>, Integer> appliedGeneratedRewritesCounts = new HashMap<>();
+	private static boolean recordGeneratedRewrites = false;
+	private static String currentTestName = "";
+
+	public static void recordAppliedGeneratedRewrites(boolean record) {
+		recordGeneratedRewrites = record;
+	}
+
+	public static void applyGeneratedRewrite(String rewrite) {
+		if (recordGeneratedRewrites) {
+			appliedGeneratedRewrites.compute(rewrite, (k, v) -> v == null ? 1 : v + 1);
+			if (!currentTestName.isEmpty())
+				appliedGeneratedRewritesCounts.compute(new Tuple2<>(rewrite, currentTestName), (k, v) -> v == null ? 1 : v + 1);
+		}
+	}
+
+	public static Map<String, Integer> getAppliedRewrites() {
+		return appliedGeneratedRewrites;
+	}
+
+	public static Map<Tuple2<String, String>, Integer> getAdvancedAppliedRewrites() {
+		return appliedGeneratedRewritesCounts;
+	}
+
+	public static void setCurrentTestName(String testName) {
+		currentTestName = testName;
 	}
 	
 	public static void reset()

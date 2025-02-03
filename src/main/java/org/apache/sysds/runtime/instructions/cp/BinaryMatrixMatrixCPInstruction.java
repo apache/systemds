@@ -93,8 +93,10 @@ public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 			// Release the memory occupied by input matrices
 			ec.releaseMatrixInput(input1.getName(), input2.getName());
 			// Ensure right dense/sparse output representation (guarded by released input memory)
-			if(checkGuardedRepresentationChange(inBlock1, inBlock2, retBlock))
-				retBlock.examSparsity();
+			if(checkGuardedRepresentationChange(inBlock1, inBlock2, retBlock)){
+				int k = (_optr instanceof BinaryOperator) ? ((BinaryOperator) _optr).getNumThreads() : 1; 
+				retBlock.examSparsity(k);
+			}
 		}
 
 		// Attach result matrix with MatrixObject associated with output_name

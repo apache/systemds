@@ -128,7 +128,8 @@ public class CompressionSettings {
 	/** The sorting type used in sorting/joining offsets to create SDC groups */
 	public final SORT_TYPE sdcSortType;
 
-	private static boolean printedStatus = false;
+	/** if the settings have been logged already. */
+	public static boolean printedStatus = false;
 
 	protected CompressionSettings(double samplingRatio, double samplePower, boolean allowSharedDictionary,
 		String transposeInput, int seed, boolean lossy, EnumSet<CompressionType> validCompressions,

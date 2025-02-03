@@ -47,6 +47,7 @@ public class CompressedLoggingTests {
 		final TestAppender appender = LoggingUtils.overwrite();
 
 		try {
+			CompressionSettings.printedStatus = false;
 			Logger.getLogger(CompressedMatrixBlockFactory.class).setLevel(Level.TRACE);
 			MatrixBlock mb = TestUtils.generateTestMatrixBlock(1000, 5, 1, 1, 0.5, 235);
 			MatrixBlock m2 = CompressedMatrixBlockFactory.compress(mb).getLeft();
@@ -73,6 +74,7 @@ public class CompressedLoggingTests {
 		final TestAppender appender = LoggingUtils.overwrite();
 
 		try {
+			CompressionSettings.printedStatus = false;
 			Logger.getLogger(CompressedMatrixBlockFactory.class).setLevel(Level.DEBUG);
 			MatrixBlock mb = TestUtils.generateTestMatrixBlock(1000, 5, 1, 1, 0.5, 235);
 			InstructionTypeCounter inst = new InstructionTypeCounter(10, 0, 0, 0, 0, 0, 0, 0, false);
@@ -101,6 +103,7 @@ public class CompressedLoggingTests {
 		final TestAppender appender = LoggingUtils.overwrite();
 
 		try {
+			CompressionSettings.printedStatus = false;
 			Logger.getLogger(CompressedMatrixBlockFactory.class).setLevel(Level.DEBUG);
 			MatrixBlock mb = TestUtils.generateTestMatrixBlock(2000, 1001, 1, 65, 0.5, 235);
 			mb = TestUtils.round(mb);
@@ -129,6 +132,7 @@ public class CompressedLoggingTests {
 		final TestAppender appender = LoggingUtils.overwrite();
 
 		try {
+			CompressionSettings.printedStatus = false;
 			Logger.getLogger(CompressedMatrixBlockFactory.class).setLevel(Level.DEBUG);
 
 			MatrixBlock mb = TestUtils.generateTestMatrixBlock(5, 5, 0.2, 1, 0.5, 235);
@@ -156,6 +160,7 @@ public class CompressedLoggingTests {
 		final TestAppender appender = LoggingUtils.overwrite();
 
 		try {
+			CompressionSettings.printedStatus = false;
 			Logger.getLogger(CompressedMatrixBlockFactory.class).setLevel(Level.DEBUG);
 
 			MatrixBlock mb = TestUtils.generateTestMatrixBlock(10, 50, 1, 1, 0.5, 235);
@@ -183,6 +188,7 @@ public class CompressedLoggingTests {
 		final TestAppender appender = LoggingUtils.overwrite();
 
 		try {
+			CompressionSettings.printedStatus = false;
 			Logger.getLogger(CompressedMatrixBlockFactory.class).setLevel(Level.DEBUG);
 			MatrixBlock mb = TestUtils.generateTestMatrixBlock(10, 50, 1, 1, 0.5, 235);
 			InstructionTypeCounter inst = new InstructionTypeCounter(10, 0, 0, 0, 0, 0, 0, 0, false);
@@ -210,6 +216,7 @@ public class CompressedLoggingTests {
 		final TestAppender appender = LoggingUtils.overwrite();
 
 		try {
+			CompressionSettings.printedStatus = false;
 			Logger.getLogger(CompressedMatrixBlockFactory.class).setLevel(Level.DEBUG);
 			MatrixBlock mb = TestUtils.generateTestMatrixBlock(10, 50, 1, 1, 0.5, 235);
 			InstructionTypeCounter inst = new InstructionTypeCounter(0, 10, 0, 0, 0, 0, 0, 0, true);
@@ -237,6 +244,7 @@ public class CompressedLoggingTests {
 		final TestAppender appender = LoggingUtils.overwrite();
 
 		try {
+			CompressionSettings.printedStatus = false;
 			Logger.getLogger(CompressedMatrixBlockFactory.class).setLevel(Level.DEBUG);
 			MatrixBlock mb = TestUtils.generateTestMatrixBlock(100, 2, 1, 1, 0.5, 235);
 			CompressionSettingsBuilder sb = new CompressionSettingsBuilder();
@@ -265,6 +273,7 @@ public class CompressedLoggingTests {
 		final TestAppender appender = LoggingUtils.overwrite();
 
 		try {
+			CompressionSettings.printedStatus = false;
 			Logger.getLogger(CompressedMatrixBlockFactory.class).setLevel(Level.TRACE);
 			MatrixBlock mb = TestUtils.generateTestMatrixBlock(10000, 1, 1, 128, 0.5, 235);
 			mb = TestUtils.round(mb);
@@ -292,6 +301,7 @@ public class CompressedLoggingTests {
 		final TestAppender appender = LoggingUtils.overwrite();
 
 		try {
+			CompressionSettings.printedStatus = false;
 			Logger.getLogger(CompressedMatrixBlockFactory.class).setLevel(Level.TRACE);
 			MatrixBlock mb = TestUtils.generateTestMatrixBlock(10, 1000, 1, 1, 1.0, 235);
 			mb = TestUtils.round(mb);
@@ -319,6 +329,7 @@ public class CompressedLoggingTests {
 		final TestAppender appender = LoggingUtils.overwrite();
 
 		try {
+			CompressionSettings.printedStatus = false;
 			Logger.getLogger(CompressedMatrixBlockFactory.class).setLevel(Level.TRACE);
 			MatrixBlock mb = TestUtils.generateTestMatrixBlock(10, 1000, 1, 1, 0.0, 235);
 			mb = TestUtils.round(mb);
@@ -346,6 +357,7 @@ public class CompressedLoggingTests {
 		TestAppender appender = null;
 		
 		try {
+			CompressionSettings.printedStatus = false;
 			appender = LoggingUtils.overwrite();
 			Logger.getLogger(CompressedMatrixBlockFactory.class).setLevel(Level.DEBUG);
 			MatrixBlock mb = TestUtils.generateTestMatrixBlock(100, 3, 1, 1, 0.5, 235);
@@ -375,6 +387,7 @@ public class CompressedLoggingTests {
 		final TestAppender appender = LoggingUtils.overwrite();
 
 		try {
+			CompressionSettings.printedStatus = false;
 			Logger.getLogger(CompressedMatrixBlockFactory.class).setLevel(Level.DEBUG);
 			MatrixBlock mb = TestUtils.generateTestMatrixBlock(400, 600, 1, 1024, 0.18, 235);
 			mb = TestUtils.round(mb);
@@ -406,6 +419,7 @@ public class CompressedLoggingTests {
 		final TestAppender appender = LoggingUtils.overwrite();
 
 		try {
+			CompressionSettings.printedStatus = false;
 			Logger.getLogger(CompressionSettings.class).setLevel(Level.DEBUG);
 			new CompressionSettingsBuilder().create();
 			final List<LoggingEvent> log = LoggingUtils.reinsert(appender);
@@ -430,6 +444,8 @@ public class CompressedLoggingTests {
 		final TestAppender appender = LoggingUtils.overwrite();
 
 		try {
+			CompressionSettings.printedStatus = false;
+
 			Logger.getLogger(CompressionSettings.class).setLevel(Level.DEBUG);
 			new CompressionSettingsBuilder().setSamplingRatio(0.1).create();
 			final List<LoggingEvent> log = LoggingUtils.reinsert(appender);

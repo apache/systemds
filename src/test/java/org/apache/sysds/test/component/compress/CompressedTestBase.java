@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.compress;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
@@ -1079,6 +1080,45 @@ public abstract class CompressedTestBase extends TestBase {
 	}
 
 	@Test
+	public void appendMultiple() {
+		try {
+
+			if(!(cmb instanceof CompressedMatrixBlock))
+				return;
+			if(vectorRows == null)
+				vectorRows = CompressibleInputGenerator.getInput(rows, 1, CompressionType.OLE, 5, 5, -5, 1.0, 3);
+			MatrixBlock ap = CompressedMatrixBlockFactory.compress(vectorRows).getLeft();
+			MatrixBlock ret1 = mb.append(new MatrixBlock[] {ap, ap}, new MatrixBlock(), true);
+			MatrixBlock ret2 = cmb.append(new MatrixBlock[] {ap, ap}, new MatrixBlock(), true);
+			compareResultMatrices(ret1, ret2, 1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void appendMultipleNotAllCompressed() {
+		try {
+
+			if(!(cmb instanceof CompressedMatrixBlock))
+				return;
+			if(vectorRows == null)
+				vectorRows = CompressibleInputGenerator.getInput(rows, 1, CompressionType.OLE, 5, 5, -5, 1.0, 3);
+			MatrixBlock ap = vectorRows;
+			MatrixBlock apc = CompressedMatrixBlockFactory.compress(vectorRows).getLeft();
+			MatrixBlock ret1 = mb.append(new MatrixBlock[] {ap, apc}, new MatrixBlock(), true);
+			MatrixBlock ret2 = cmb.append(new MatrixBlock[] {ap, apc}, new MatrixBlock(), true);
+			compareResultMatrices(ret1, ret2, 1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
 	public void appendCBindTrue() {
 		if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
 			return;
@@ -1086,6 +1126,55 @@ public abstract class CompressedTestBase extends TestBase {
 		MatrixBlock ret1 = mb.append(ap, new MatrixBlock(), true);
 		MatrixBlock ret2 = cmb.append(ap, new MatrixBlock(), true);
 		compareResultMatrices(ret1, ret2, 1);
+	}
+
+	@Test
+	public void appendCBindTrueEmpty() {
+		if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
+			return;
+		MatrixBlock ap = new MatrixBlock(mb.getNumRows(), 1, 0.0);
+		assertTrue(ap.isEmpty());
+		MatrixBlock ret1 = mb.append(ap, new MatrixBlock(), true);
+		MatrixBlock ret2 = cmb.append(ap, new MatrixBlock(), true);
+		compareResultMatrices(ret1, ret2, 1);
+	}
+
+	@Test
+	public void appendCBindTrueEmptyInverse() {
+		if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
+			return;
+		MatrixBlock ap = new MatrixBlock(mb.getNumRows(), 1, 0.0);
+		assertTrue(ap.isEmpty());
+		MatrixBlock ret1 = ap.append(mb, new MatrixBlock(), true);
+		MatrixBlock ret2 = ap.append(cmb, new MatrixBlock(), true);
+		compareResultMatrices(ret1, ret2, 1);
+	}
+
+	@Test
+	public void appendCBindTrueConstInverse() {
+		if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
+			return;
+		MatrixBlock ap = new MatrixBlock(mb.getNumRows(), 1, 2.0);
+		assertTrue(!ap.isEmpty());
+		MatrixBlock ret1 = ap.append(mb, new MatrixBlock(), true);
+		MatrixBlock ret2 = ap.append(cmb, new MatrixBlock(), true);
+		compareResultMatrices(ret1, ret2, 1);
+	}
+
+	@Test
+	public void appendCBindAlignedSelfMultiple() {
+		try {
+
+			if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
+				return;
+			MatrixBlock ret1 = mb.append(new MatrixBlock[] {mb, mb}, new MatrixBlock(), true);
+			MatrixBlock ret2 = cmb.append(new MatrixBlock[] {cmb, cmb}, new MatrixBlock(), true);
+			compareResultMatrices(ret1, ret2, 1);
+		}
+		catch(AssertionError e) {
+			e.printStackTrace();
+			fail("failed Cbind: " + cmb.toString() );
+		}
 	}
 
 	@Test

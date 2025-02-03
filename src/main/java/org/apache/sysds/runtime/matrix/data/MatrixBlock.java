@@ -56,6 +56,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.lib.CLALibAggTernaryOp;
+import org.apache.sysds.runtime.compress.lib.CLALibCBind;
 import org.apache.sysds.runtime.compress.lib.CLALibMerge;
 import org.apache.sysds.runtime.compress.lib.CLALibTernaryOp;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
@@ -3654,10 +3655,19 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return append(that, ret, true); //default cbind
 	}
 
-	public static  MatrixBlock append(List<MatrixBlock> that,MatrixBlock ret, boolean cbind, int k ){
-		MatrixBlock[] th = new MatrixBlock[that.size() -1];
-		for(int i = 0; i < that.size() -1; i++)
-			th[i] = that.get(i+1);
+	/**
+	 * Append that list of matrixblocks to this.
+	 * 
+	 * @param that  That list.
+	 * @param ret   The output block
+	 * @param cbind If the blocks a appended cbind
+	 * @param k     the parallelization degree
+	 * @return the appended matrix.
+	 */
+	public static MatrixBlock append(List<MatrixBlock> that, MatrixBlock ret, boolean cbind, int k) {
+		MatrixBlock[] th = new MatrixBlock[that.size() - 1];
+		for(int i = 0; i < that.size() - 1; i++)
+			th[i] = that.get(i + 1);
 		return that.get(0).append(th, ret, cbind);
 	}
 
@@ -3715,6 +3725,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 */
 	public MatrixBlock append(MatrixBlock[] that, MatrixBlock result, boolean cbind) {
 		checkDimensionsForAppend(that, cbind);
+
+		for(int k = 0; k < that.length; k++)
+			if( that[k] instanceof CompressedMatrixBlock){
+				if(that.length == 1 && cbind)
+					return CLALibCBind.cbind(this, that[0], 1);
+				that[k] = CompressedMatrixBlock.getUncompressed(that[k], "Append N");
+			}
 
 		final int m = cbind ? rlen : combinedRows(that);
 		final int n = cbind ? combinedCols(that) : clen;

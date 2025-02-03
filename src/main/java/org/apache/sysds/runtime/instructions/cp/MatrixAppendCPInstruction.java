@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.instructions.cp;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
-import org.apache.sysds.runtime.compress.lib.CLALibAppend;
+import org.apache.sysds.runtime.compress.lib.CLALibCBind;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
@@ -46,8 +46,9 @@ public final class MatrixAppendCPInstruction extends AppendCPInstruction {
 		validateInput(matBlock1, matBlock2);
 
 		MatrixBlock ret;
-		if(matBlock1 instanceof CompressedMatrixBlock || matBlock2 instanceof CompressedMatrixBlock)
-			ret = CLALibAppend.append(matBlock1, matBlock2, InfrastructureAnalyzer.getLocalParallelism());
+		if(_type == AppendType.CBIND &&
+			(matBlock1 instanceof CompressedMatrixBlock || matBlock2 instanceof CompressedMatrixBlock))
+			ret = CLALibCBind.cbind(matBlock1, matBlock2, InfrastructureAnalyzer.getLocalParallelism());
 		else
 			ret = matBlock1.append(matBlock2, new MatrixBlock(), _type == AppendType.CBIND);
 

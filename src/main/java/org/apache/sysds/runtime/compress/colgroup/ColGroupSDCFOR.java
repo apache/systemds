@@ -549,25 +549,12 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup, IFrameOfRef
 		final IColIndex combinedColIndex = combineColIndexes(nCol, right);
 		final double[] combinedDefaultTuple = IContainDefaultTuple.combineDefaultTuples(_reference, right);
 
-		// return new ColGroupDDC(combinedColIndex, combined, _data, getCachedCounts());
-		return new ColGroupSDC(combinedColIndex, this.getNumRows(), combined, combinedDefaultTuple, _indexes, _data,
-			getCachedCounts());
+		return new ColGroupSDCFOR(combinedColIndex, this.getNumRows(), combined, _indexes, _data, getCachedCounts(),
+			combinedDefaultTuple);
 	}
 
 	@Override
 	public AColGroupCompressed combineWithSameIndex(int nRow, int nCol, AColGroup right) {
-		// if(right instanceof ColGroupSDCZeros){
-		// ColGroupSDCZeros rightSDC = ((ColGroupSDCZeros) right);
-		// IDictionary b = rightSDC.getDictionary();
-		// IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
-		// IColIndex combinedColIndex = _colIndexes.combine(right.getColIndices().shift(nCol));
-		// double[] combinedDefaultTuple = new double[_reference.length + right.getNumCols()];
-		// System.arraycopy(_reference, 0, combinedDefaultTuple, 0, _reference.length);
-
-		// return new ColGroupSDC(combinedColIndex, this.getNumRows(), combined, combinedDefaultTuple, _indexes, _data,
-		// getCachedCounts());
-		// }
-		// else{
 		ColGroupSDCFOR rightSDC = ((ColGroupSDCFOR) right);
 		IDictionary b = rightSDC.getDictionary();
 		IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
@@ -576,9 +563,8 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup, IFrameOfRef
 		System.arraycopy(_reference, 0, combinedDefaultTuple, 0, _reference.length);
 		System.arraycopy(rightSDC._reference, 0, combinedDefaultTuple, _reference.length, rightSDC._reference.length);
 
-		return new ColGroupSDC(combinedColIndex, this.getNumRows(), combined, combinedDefaultTuple, _indexes, _data,
-			getCachedCounts());
-		// }
+		return new ColGroupSDCFOR(combinedColIndex, this.getNumRows(), combined, _indexes, _data, getCachedCounts(),
+			combinedDefaultTuple);
 	}
 
 	@Override

@@ -1184,24 +1184,21 @@ public class BinaryOp extends MultiThreadedHop {
 				return false;
 		}
 	}
-	
+
 	public boolean isPPredOperation() {
-		switch(op){
-			case LESS: 
+		switch(op) {
+			case LESS:
 			case LESSEQUAL:
 			case GREATER:
 			case GREATEREQUAL:
 			case EQUAL:
 			case NOTEQUAL:
 				return true;
-			default : 
+			default:
 				return false;
 		}
-		return (op==OpOp2.LESS    ||op==OpOp2.LESSEQUAL
-			||op==OpOp2.GREATER ||op==OpOp2.GREATEREQUAL
-			||op==OpOp2.EQUAL   ||op==OpOp2.NOTEQUAL);
 	}
-	
+
 	public OpOp2 getComplementPPredOperation() {
 		switch( op ) {
 			case LESS:         return OpOp2.GREATEREQUAL;

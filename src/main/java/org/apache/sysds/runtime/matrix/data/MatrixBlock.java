@@ -4994,10 +4994,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, AggregateBinaryOperator op) {
 		checkAggregateBinaryOperations(m1, m2, op);
 		final int k = op.getNumThreads();
-		if(NativeHelper.isNativeLibraryLoaded())
-			return LibMatrixNative.matrixMult(m1, m2, ret, k);
-		else 
-			return LibMatrixMult.matrixMult(m1, m2, ret, k);
+		return LibMatrixMult.matrixMult(m1, m2, ret, k);
 	}
 
 	protected void checkAggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, AggregateBinaryOperator op) {

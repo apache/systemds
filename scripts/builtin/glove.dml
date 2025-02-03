@@ -28,48 +28,51 @@ init = function(matrix[double] cooc_matrix, double x_max, double alpha)
   return(matrix[double] weights, matrix[double] log_cooc_matrix){
   E = 2.718281828;
   bounded = pmin(cooc_matrix, x_max);
-  weights = (bounded / x_max) ^ alpha;
+  weights = pmin(1, (bounded / x_max) ^ alpha);
   log_cooc_matrix = ifelse(cooc_matrix > 0, log(cooc_matrix, E), 0);
 }
 
-gloveWithCoocMatrix = function(matrix[double] cooc_matrix, frame[Unknown] cooc_index, int seed, int vector_size, double alpha, double eta, double x_max, int iterations,int print_loss_it)
+gloveWithCoocMatrix = function(matrix[double] cooc_matrix, frame[Unknown] cooc_index, int seed, int vector_size, double alpha, double eta, double x_max, double tol, int iterations,int print_loss_it)
     return (frame[Unknown] G){
     /*
-     * Computes vector embeddings for words based on their co-occurrence statistics in a large text corpus.
+     * Computes the vector embeddings for words by analyzing their co-occurrence statistics in a large text corpus.
      *
-     * Parameters:
+     * Inputs:
      *  - cooc_matrix: Precomputed co-occurrence matrix of shape (N, N).
      *  - cooc_index:  Index file mapping words to their positions in the co-occurrence matrix.
      *                 The second column should contain the word list in the same order as the matrix.
      *  - seed: Random seed for reproducibility.
-     *  - vector_size: Dimensionality of word vectors (V).
-     *  - eta: Learning rate for optimization.
-     *  - alpha: Weighting function parameter.
-     *  - x_max: Maximum co-occurrence value as per the GloVe paper.
+     *  - vector_size: Dimensionality of word vectors, V.
+     *  - eta: Learning rate for optimization, recommended value: 0.05.
+     *  - alpha: Weighting function parameter, recommended value: 0.75.
+     *  - x_max: Maximum co-occurrence value as per the GloVe paper: 100.
+     *  - tol: Tolerance value to avoid overfitting, recommended value: 1e-4.
      *  - iterations: Total number of training iterations.
      *  - print_loss_it: Interval (in iterations) for printing the loss.
      *
-     * Returns:
-     *  - G: A data structure containing word indices and their corresponding word vectors of shape (N, V),
-     *       where each row represents a word vector of shape V.
+     * Outputs:
+     *  - G: frame of the word indices and their word vectors, of shape (N, V). Each represented as a vector, of shape (1,V)
      */
 
-    # initialize
     vocab_size = nrow(cooc_matrix);
     W = (rand(rows=vocab_size, cols=vector_size, min=0, max=1, seed=seed)-0.5)/vector_size;
-    C = (rand(rows=vocab_size, cols=vector_size, min=0, max=1, seed=seed)-0.5)/vector_size;
-    bw = (rand(rows=vocab_size, cols=1, min=0, max=1, seed=seed+1)-0.5)/vector_size;
-    bc = (rand(rows=vocab_size, cols=1, min=0, max=1, seed=seed+1)-0.5)/vector_size;
+    C = (rand(rows=vocab_size, cols=vector_size, min=0, max=1, seed=seed+1)-0.5)/vector_size;
+    bw = (rand(rows=vocab_size, cols=1, min=0, max=1, seed=seed+2)-0.5)/vector_size;
+    bc = (rand(rows=vocab_size, cols=1, min=0, max=1, seed=seed+3)-0.5)/vector_size;
     [weights, log_cooc_matrix] = init(cooc_matrix, x_max, alpha);
 
-    momentum_W = 0.1 * matrix(1, nrow(W), ncol(W));
-    momentum_C = 0.1 * matrix(1, nrow(C), ncol(C));
-    momentum_bw = 0.1 * matrix(1, nrow(bw), ncol(bw));
-    momentum_bc = 0.1 * matrix(1, nrow(bc), ncol(bc));
+    momentum_W = 1e-8 + 0.1 * matrix(1, nrow(W), ncol(W));
+    momentum_C = 1e-8 + 0.1 * matrix(1, nrow(C), ncol(C));
+    momentum_bw = 1e-8 + 0.1 * matrix(1, nrow(bw), ncol(bw));
+    momentum_bc = 1e-8 + 0.1 * matrix(1, nrow(bc), ncol(bc));
 
     error = 0;
+    iter = 0;
+    tolerance = tol;
+    previous_error = 1e10;
+    conti = TRUE;
 
-    for (iter in 1:iterations) {
+    while (conti) {
 
         # compute predictions for all co-occurring word pairs at once
         predictions = W %*% t(C) + bw + t(bc);
@@ -83,19 +86,34 @@ gloveWithCoocMatrix = function(matrix[double] cooc_matrix, frame[Unknown] cooc_i
         bcgrad = matrix(colSums(weighted_diffs), nrow(bc), ncol(bc));
 
         error =  sum(0.5 * (weights * (diffs ^ 2)));
+        iter = iter + 1;
 
-        # get steps and update
-        momentum_W = momentum_W + (wgrad ^ 2);
-        momentum_C = momentum_C + (cgrad ^ 2);
-        momentum_bw = momentum_bw + (bwgrad ^ 2);
-        momentum_bc = momentum_bc + (bcgrad ^ 2);
 
-        W = W - (eta * wgrad / sqrt(momentum_W));
-        C = C - (eta * cgrad / sqrt(momentum_C));
-        bw = bw - (eta * bwgrad / sqrt(momentum_bw));
-        bc = bc - (eta * bcgrad / sqrt(momentum_bc));
+        if (abs(previous_error - error) >= tolerance) {
+            if(iter <= iterations){
 
-        G = W + C;
+                # get steps and update
+                momentum_W = momentum_W + (wgrad ^ 2);
+                momentum_C = momentum_C + (cgrad ^ 2);
+                momentum_bw = momentum_bw + (bwgrad ^ 2);
+                momentum_bc = momentum_bc + (bcgrad ^ 2);
+
+                W = W - (eta * wgrad / (sqrt(momentum_W) + 1e-8));
+                C = C - (eta * cgrad / (sqrt(momentum_C) + 1e-8));
+                bw = bw - (eta * bwgrad / (sqrt(momentum_bw) + 1e-8));
+                bc = bc - (eta * bcgrad / (sqrt(momentum_bc) + 1e-8));
+
+                G = W + C;
+
+                previous_error = error;
+
+                final_iter = iter;
+            } else {
+                conti = FALSE;
+            }
+        } else {
+          conti = FALSE;
+        }
 
         if (iter - floor(iter / print_loss_it) * print_loss_it == 0) {
             print("iteration: " + iter + " error: " + error);
@@ -103,15 +121,17 @@ gloveWithCoocMatrix = function(matrix[double] cooc_matrix, frame[Unknown] cooc_i
     }
 
     # add the word index to the word vectors
+    print("Given " + iterations + " iterations, " + "stopped (or converged) at the " + final_iter + " iteration / error: " + error);
     G = cbind(cooc_index[,2], as.frame(G));
 }
 
-glove = function(Frame[Unknown] input, int seed, int vector_size, double alpha, double eta, double x_max, int iterations,int print_loss_it)
+
+glove = function(Frame[Unknown] input, int seed, int vector_size, double alpha, double eta, double x_max, double tol, int iterations,int print_loss_it)
     return (frame[Unknown] G){
         [cooc_matrix, cooc_index] = cooc::getCoocMatrix(input, 26000, 15, TRUE,TRUE);
-        G = gloveWithCoocMatrix(cooc_matrix, cooc_index, seed, vector_size, alpha, eta, x_max, iterations, print_loss_it);
+        G = gloveWithCoocMatrix(cooc_matrix, cooc_index, seed, vector_size, alpha, eta, x_max, tol, iterations, print_loss_it);
 
 }
 
 #input = read(§1, data_type="frame", format="csv", sep=",");
-#G = glove(input, seed, vector_size, alpha, eta, x_max, iterations, print_loss_it);
+#G = glove(input, seed, vector_size, alpha, eta, x_max, tol, iterations, print_loss_it);

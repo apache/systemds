@@ -66,6 +66,7 @@ import org.apache.sysds.runtime.transform.tokenize.Tokenizer;
 import org.apache.sysds.runtime.transform.tokenize.TokenizerFactory;
 import org.apache.sysds.runtime.util.AutoDiff;
 import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction {
 	private static final Log LOG = LogFactory.getLog(ParameterizedBuiltinCPInstruction.class.getName());
@@ -276,7 +277,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 				MatrixBlock target = targetObj.acquireRead();
 				double pattern = Double.parseDouble(params.get("pattern"));
 				double replacement = Double.parseDouble(params.get("replacement"));
-				MatrixBlock ret = target.replaceOperations(new MatrixBlock(), pattern, replacement);
+				MatrixBlock ret = target.replaceOperations(new MatrixBlock(), pattern, replacement, 
+					InfrastructureAnalyzer.getLocalParallelism());
 				if( ret == target ) //shallow copy (avoid bufferpool pollution)
 					ec.setVariable(output.getName(), targetObj);
 				else

@@ -20,6 +20,7 @@
 package org.apache.sysds.test.component.compress;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -38,6 +39,7 @@ import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory;
 import org.apache.sysds.runtime.compress.cost.InstructionTypeCounter;
 import org.apache.sysds.runtime.compress.lib.CLALibCBind;
+import org.apache.sysds.runtime.compress.lib.CLALibReplace;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
@@ -397,9 +399,18 @@ public class CompressedCustomTests {
 		TestUtils.compareMatricesBitAvgDistance(m1, m2, 0, 0, "no");
 	}
 
+	@Test(expected = Exception.class)
+	public void cbindWithError() {
+		CLALibCBind.cbind(null, new MatrixBlock[] {null}, 0);
+	}
 
 	@Test(expected = Exception.class)
-	public void cbindWithError(){
-		CLALibCBind.cbind(null, new MatrixBlock[]{null}, 0);
+	public void replaceWithError() {
+		CLALibReplace.replace(null, null, 0, 0, 10);
+	}
+
+	@Test
+	public void replaceInf() {
+		assertNull(CLALibReplace.replace(null, null, Double.POSITIVE_INFINITY, 0, 10));
 	}
 }

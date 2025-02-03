@@ -629,9 +629,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement) {
-		return CLALibReplace.replace(this, (MatrixBlock) result, pattern, replacement,
-			InfrastructureAnalyzer.getLocalParallelism());
+	public MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement, int k) {
+		return CLALibReplace.replace(this, (MatrixBlock) result, pattern, replacement, k);
 	}
 
 	@Override

@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.lib;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -34,59 +35,74 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 public class CLALibReplace {
 	private static final Log LOG = LogFactory.getLog(CLALibReplace.class.getName());
 
+	private CLALibReplace(){
+		// private constructor
+	}
+
 	public static MatrixBlock replace(CompressedMatrixBlock in, MatrixBlock out, double pattern, double replacement,
 		int k) {
-		if(Double.isInfinite(pattern)) {
-			LOG.info("Ignoring replace infinite in compression since it does not contain this value");
-			return in;
+		try {
+
+			if(Double.isInfinite(pattern)) {
+				LOG.info("Ignoring replace infinite in compression since it does not contain this value");
+				return in;
+			}
+			else if(in.isOverlapping()) {
+				final String message = "replaceOperations " + pattern + " -> " + replacement;
+				return in.getUncompressed(message).replaceOperations(out, pattern, replacement);
+			}
+			else
+				return replaceNormal(in, out, pattern, replacement, k);
 		}
-		else if(in.isOverlapping()) {
-			final String message = "replaceOperations " + pattern + " -> " + replacement;
-			return in.getUncompressed(message).replaceOperations(out, pattern, replacement);
+		catch(Exception e) {
+			throw new RuntimeException("Failed replace pattern: " + pattern + " replacement: " + replacement, e);
 		}
-		else
-			return replaceNormal(in, out, pattern, replacement, k);
 	}
 
 	private static MatrixBlock replaceNormal(CompressedMatrixBlock in, MatrixBlock out, double pattern,
-		double replacement, int k) {
+		double replacement, int k) throws Exception {
 		CompressedMatrixBlock ret = new CompressedMatrixBlock(in.getNumRows(), in.getNumColumns());
 		final List<AColGroup> prev = in.getColGroups();
 		final int colGroupsLength = prev.size();
 		final List<AColGroup> retList = new ArrayList<>(colGroupsLength);
 
-		if(k <= 0) {
-			for(int i = 0; i < colGroupsLength; i++)
-				retList.add(prev.get(i).replace(pattern, replacement));
-		}
-		else {
-			ExecutorService pool = CommonThreadPool.get(k);
-
-			try {
-				List<Future<AColGroup>> tasks = new ArrayList<>(colGroupsLength);
-				for(int i = 0; i < colGroupsLength; i++) {
-					final int j = i;
-					tasks.add(pool.submit(() -> prev.get(j).replace(pattern, replacement)));
-				}
-				for(int i = 0; i < colGroupsLength; i++) {
-					retList.add(tasks.get(i).get());
-				}
-			}
-			catch(Exception e) {
-				throw new RuntimeException("Failed parallel replace", e);
-			}
-			finally {
-				pool.shutdown();
-			}
-		}
+		if(k <= 1)
+			replaceSingleThread(pattern, replacement, prev, colGroupsLength, retList);
+		else
+			replaceMultiThread(pattern, replacement, k, prev, colGroupsLength, retList);
 
 		ret.allocateColGroupList(retList);
-		if(replacement == 0)
+		if(replacement == 0) // have to recompute!
 			ret.recomputeNonZeros();
-		else if( pattern == 0)
-			ret.setNonZeros(((long)in.getNumRows()) * in.getNumColumns());
-		else
+		else if(pattern == 0) // always fully dense.
+			ret.setNonZeros(((long) in.getNumRows()) * in.getNumColumns());
+		else // same nonzeros as input
 			ret.setNonZeros(in.getNonZeros());
 		return ret;
+	}
+
+	private static void replaceMultiThread(double pattern, double replacement, int k, final List<AColGroup> prev,
+		final int colGroupsLength, final List<AColGroup> retList) throws InterruptedException, ExecutionException {
+		ExecutorService pool = CommonThreadPool.get(k);
+
+		try {
+			List<Future<AColGroup>> tasks = new ArrayList<>(colGroupsLength);
+			for(int i = 0; i < colGroupsLength; i++) {
+				final int j = i;
+				tasks.add(pool.submit(() -> prev.get(j).replace(pattern, replacement)));
+			}
+			for(int i = 0; i < colGroupsLength; i++) {
+				retList.add(tasks.get(i).get());
+			}
+		}
+		finally {
+			pool.shutdown();
+		}
+	}
+
+	private static void replaceSingleThread(double pattern, double replacement, final List<AColGroup> prev,
+		final int colGroupsLength, final List<AColGroup> retList) {
+		for(int i = 0; i < colGroupsLength; i++)
+			retList.add(prev.get(i).replace(pattern, replacement));
 	}
 }

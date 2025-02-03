@@ -5157,9 +5157,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	
 	
 	@Override
-	public MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement) {
+	public final MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement) {
+		return replaceOperations(result, pattern, replacement, 1);
+	}
+
+	public MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement, int k) {
 		MatrixBlock ret = checkType(result);
-		return LibMatrixReplace.replaceOperations(this, ret, pattern, replacement);
+		return LibMatrixReplace.replaceOperations(this, ret, pattern, replacement, k);
 	}
 	
 	public MatrixBlock extractTriangular(MatrixBlock ret, boolean lower, boolean diag, boolean values) {

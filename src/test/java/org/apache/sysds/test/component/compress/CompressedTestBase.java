@@ -1173,7 +1173,7 @@ public abstract class CompressedTestBase extends TestBase {
 		}
 		catch(AssertionError e) {
 			e.printStackTrace();
-			fail("failed Cbind: " + cmb.toString() );
+			fail("failed Cbind: " + cmb.toString());
 		}
 	}
 
@@ -1297,6 +1297,44 @@ public abstract class CompressedTestBase extends TestBase {
 
 	protected static CompressionSettingsBuilder csb() {
 		return new CompressionSettingsBuilder().setSeed(compressionSeed).setMinimumSampleSize(100);
+	}
+
+	@Test
+	public void testReplaceNotContainedValue() {
+		double v = min - 1;
+		if(v != 0)
+			testReplace(v, 132);
+	}
+
+	@Test
+	public void testReplace() {
+		if(min != 0)
+			testReplace(min, 323);
+	}
+
+	@Test
+	public void testReplaceWithZero() {
+		if(min != 0)
+			testReplace(min, 0);
+	}
+
+	@Test
+	public void testReplaceZero() {
+		testReplace(0, 3232);
+	}
+
+	private void testReplace(double value, double replacements) {
+		try {
+			if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
+				return;
+			ucRet = mb.replaceOperations(ucRet, value, replacements, _k);
+			MatrixBlock ret2 = cmb.replaceOperations(new MatrixBlock(), value, replacements, _k);
+			compareResultMatrices(ucRet, ret2, 1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new DMLRuntimeException(e);
+		}
 	}
 
 }

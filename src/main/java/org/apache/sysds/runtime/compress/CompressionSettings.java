@@ -128,6 +128,8 @@ public class CompressionSettings {
 	/** The sorting type used in sorting/joining offsets to create SDC groups */
 	public final SORT_TYPE sdcSortType;
 
+	private static boolean printedStatus = false;
+
 	protected CompressionSettings(double samplingRatio, double samplePower, boolean allowSharedDictionary,
 		String transposeInput, int seed, boolean lossy, EnumSet<CompressionType> validCompressions,
 		boolean sortValuesByLength, PartitionerType columnPartitioner, int maxColGroupCoCode, double coCodePercentage,
@@ -151,11 +153,13 @@ public class CompressionSettings {
 		this.minimumCompressionRatio = minimumCompressionRatio;
 		this.isInSparkInstruction = isInSparkInstruction;
 		this.sdcSortType = sdcSortType;
-		if(LOG.isDebugEnabled())
+		if(!printedStatus && LOG.isDebugEnabled()) {
+			printedStatus = true;
 			LOG.debug(this.toString());
+		}
 	}
 
-	public boolean isRLEAllowed(){
+	public boolean isRLEAllowed() {
 		return this.validCompressions.contains(CompressionType.RLE);
 	}
 

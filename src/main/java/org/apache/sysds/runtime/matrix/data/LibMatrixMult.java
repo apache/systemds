@@ -4634,7 +4634,7 @@ public class LibMatrixMult
 		private final boolean _pm2r; //par over m2 rows
 		private final boolean _pm2c; //par over m2 rows
 		private final boolean _m1Perm; //sparse permutation
-		private final boolean _sparse; //sparse output
+		// private final boolean _sparse; //sparse output
 		private final int _rl;
 		private final int _ru;
 		private final ConcurrentHashMap<double[], double[]> _cache;
@@ -4648,7 +4648,7 @@ public class LibMatrixMult
 			_pm2r = pm2r;
 			_pm2c = pm2c;
 			_m1Perm = m1Perm;
-			_sparse = sparse;
+			// _sparse = sparse;
 			_rl = rl;
 			_ru = ru;
 			_cache = cache;

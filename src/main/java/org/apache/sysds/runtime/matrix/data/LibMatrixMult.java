@@ -263,7 +263,7 @@ public class LibMatrixMult
 		// core matrix mult computation
 		if(ultraSparse && !fixedRet)
 			matrixMultUltraSparse(m1, m2, ret, m1Perm, 0, ru2);
-		else if(!m1.sparse && !m2.sparse)
+		else if(!m1.sparse && !m2.sparse && !ret.sparse)
 			matrixMultDenseDense(m1, m2, ret, tm2, pm2, 0, ru2, 0, m2.clen);
 		else if(m1.sparse && m2.sparse)
 			matrixMultSparseSparse(m1, m2, ret, pm2, sparse, 0, ru2);
@@ -1264,11 +1264,57 @@ public class LibMatrixMult
 	}
 
 	private static void matrixMultDenseSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2, int rl, int ru) {
-		if(ret.isInSparseFormat())
-			matrixMultDenseSparseOutSparse(m1, m2, ret, pm2, rl, ru);
+		if(ret.isInSparseFormat()){
+			if(!m1.sparse && !m2.sparse)
+				matrixMultDenseDenseOutSparse(m1,m2,ret, pm2, rl, ru);
+			else 
+				matrixMultDenseSparseOutSparse(m1, m2, ret, pm2, rl, ru);
+		}
 		else
 			matrixMultDenseSparseOutDense(m1, m2, ret, pm2, rl, ru);
 	}
+
+
+	private static void matrixMultDenseDenseOutSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2,
+		int rl, int ru) {
+		final DenseBlock a = m1.getDenseBlock();
+		final DenseBlock b = m2.getDenseBlock();
+		final SparseBlock c = ret.getSparseBlock();
+		final int m = m1.rlen;  // rows left
+		final int cd = m1.clen; // common dim
+		final int n = m2.clen;
+
+		final int rl1 = pm2 ? 0 : rl;
+		final int ru1 = pm2 ? m : ru;
+		final int rl2 = pm2 ? rl : 0;
+		final int ru2 = pm2 ? ru : cd;
+
+		final int blocksizeK = 32;
+		final int blocksizeI = 32;
+
+		for(int bi = rl1; bi < ru1; bi += blocksizeI) {
+			for(int bk = rl2, bimin = Math.min(ru1, bi + blocksizeI); bk < ru2; bk += blocksizeK) {
+				final int bkmin = Math.min(ru2, bk + blocksizeK);
+				// core sub block matrix multiplication
+				for(int i = bi; i < bimin; i++) { // rows left
+					final double[] avals = a.values(i);
+					final int aix = a.pos(i);
+					for(int k = bk; k < bkmin; k++) { // common dimension
+						final double aval = avals[aix + k];
+						if(aval != 0) {
+							final double[] bvals = b.values(k);
+							final int bpos = b.pos(k);
+							for(int j = 0; j < n; j++) {
+								final double bv = bvals[bpos + j];
+								c.add(i, j, aval * bv);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
 
 	private static void matrixMultDenseSparseOutSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2,
 		int rl, int ru) {
@@ -4677,12 +4723,12 @@ public class LibMatrixMult
 			//compute block matrix multiplication
 			if( _ret.sparse ) //ultra-sparse
 				matrixMultUltraSparse(_m1, _m2, _ret, _m1Perm, rl, ru);
-			else if(!_m1.sparse && !_m2.sparse)
+			else if(!_m1.sparse && !_m2.sparse && !_ret.sparse){
 				if(_m1.denseBlock instanceof DenseBlockFP64DEDUP && _m2.denseBlock.isContiguous(0,_m1.clen) && cl == 0 && cu == _m2.clen)
 					matrixMultDenseDenseMMDedup((DenseBlockFP64DEDUP) _m1.denseBlock, _m2.denseBlock, (DenseBlockFP64DEDUP) _ret.denseBlock, _m2.clen, _m1.clen, rl, ru, _cache);
 				else
 					matrixMultDenseDense(_m1, _m2, _ret, _tm2, _pm2r, rl, ru, cl, cu);
-
+			}
 			else if(_m1.sparse && _m2.sparse)
 				matrixMultSparseSparse(_m1, _m2, _ret, _pm2r,  _ret.sparse, rl, ru);
 			else if(_m1.sparse)

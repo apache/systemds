@@ -24,14 +24,17 @@
 #
 #-------------------------------------------------------------
 
-## Function: processText
-## Description: Cleans and processes text data by removing punctuation, converting to lowercase, and reformatting.
-## Input: 
-##   - S (Frame[Unknown]): Input data frame containing text data.
-## Output: 
-##   - result (Frame[Unknown]): Processed text data.
+## Cleans and processes text data by removing punctuation, converting it to lowercase, and reformatting.
+## Adds an index column to the result.
+# INPUT:
+# ------------------------------------------------------------------------------
+# S     (Frame[Unknown]): 1D input data frame containing text data.
+# ------------------------------------------------------------------------------
+# OUTPUT:
+# ------------------------------------------------------------------------------
+# result    (Frame[Unknown]): Processed text data with an index column.
+# ------------------------------------------------------------------------------
 processText = function(Frame[Unknown] S) return (Frame[Unknown] result){
-    
     print("processText");
     tmpStr = map(S[,1], "x -> x.replaceAll(\"[.]\", \"\")");
     tmpStr = map(tmpStr, "x -> x.replaceAll(\"[^a-zA-Z\\s]\", \" \")");
@@ -39,47 +42,69 @@ processText = function(Frame[Unknown] S) return (Frame[Unknown] result){
     result = cbind(as.frame(seq(1, nrow(S), 1)), tmpStr);
 }
 
-## Description: Tokenizes text data and retrieves word positions.
-## Input: 
-##   - S (Frame[Unknown]): Input text data.
-##   - maxTokens (Int): Maximum number of tokens.
-##   - jspec_pos (String): JSON specification for tokenization.
-## Output: 
-##   - result (Frame[Unknown]): Tokenized text with positions.
-getWordPosition = function(Frame[Unknown] S, Int maxTokens, String jspec_pos) return (Frame[Unknown] result){
-    
+## Tokenizes text data and retrieves word positions.
+# INPUT:
+# ------------------------------------------------------------------------------
+# S           (Frame[Unknown]): 2D input text data with an index column.
+# maxTokens   (Int): Maximum number of tokens per text entry.
+# ------------------------------------------------------------------------------
+# OUTPUT:
+# ------------------------------------------------------------------------------
+# result  (Frame[Unknown]): Tokenized words.
+# docID   (Matrix[double]): Document ID matrix corresponding to tokens.
+# ------------------------------------------------------------------------------
+getWordPosition = function(Frame[Unknown] S, Int maxTokens) return (Frame[Unknown] result, Matrix[double] docID){
     print("getWordPosition");
+    jspec_pos = "{\"algo\": \"split\", \"out\": \"position\",\"out_params\": {\"sort_alpha\": false},\"id_cols\": [1],\"tokenize_col\": 2}";
     wordPosition = tokenize(target=S, spec=jspec_pos, max_tokens=maxTokens);
-    length = map(wordPosition[,3], "S -> S.length()");
-    result = cbind(wordPosition, length);
+    result = wordPosition[,3];
+    docID = as.matrix(wordPosition[,1]);
 }
 
-## Description: Encodes words into a numerical matrix format.
-## Input: 
-##   - S (Frame[Unknown]):  Tokenized text.
-## Output: 
-##   - output (Matrix[double]): Encoded word matrix.
-##   - wordCount (Int): Number of distinct words.
-##   - column (Frame[Unknown]): Mapping of indices to distinct words.
-getRecodedMatrix = function(Frame[Unknown] S) return (Matrix[double] output, Int wordCount, Frame[Unknown] column){
+## Encodes words into a numerical matrix format, retrieves the vocabulary size, and maps word indices.
+## Uses transformencode() to recode strings and find each unique string position in the co-occurrence matrix.
+# INPUT:
+# ------------------------------------------------------------------------------
+# S     (Frame[Unknown]): 1D frame of tokenized word positions.
+# ------------------------------------------------------------------------------
+# OUTPUT:
+# ------------------------------------------------------------------------------
+# recodedWordPosition   (Matrix[double]): Encoded word positions as a numerical matrix.
+# tableSize            (Int): Number of distinct words in the input text (co-occurrence matrix size).
+# column               (Frame[Unknown]): Mapping of word indices to distinct words in the co-occurrence matrix.
+# ------------------------------------------------------------------------------
+getRecodedMatrix = function(Frame[Unknown] S) return (Matrix[double] recodedWordPosition, Int tableSize, Frame[Unknown] column){
     print("getRecodedMatrix");
-    [output,M] = transformencode(target=S, spec="{ids:true,recode:[1]}");
+    [recodedWordPosition, M] = transformencode(target=S, spec="{ids:true,recode:[1]}");
+    
     distinctWord = map(M[,1], "s -> UtilFunctions.splitRecodeEntry(s)[0]");
     index = map(M[,1], "s -> Integer.valueOf(UtilFunctions.splitRecodeEntry(s)[1])");
-
     column = cbind(index, distinctWord);
     sortedIndex = order(target=as.matrix(index), by=1, decreasing=FALSE, index.return=TRUE);
+    
     for(i in 1:nrow(sortedIndex)){
         p = as.integer(as.scalar(sortedIndex[i,1]));
         column[as.integer(as.scalar(index[p])), 2] = distinctWord[p];
-        column[i, 1] = as.integer(as.scalar(index[p]));
+        column[i, 1] = as.scalar(index[p]);
     }
-    wordCount = nrow(distinctWord);
+    tableSize = nrow(distinctWord);
 }
 
-
+## Iterates over the recoded word positions to construct a co-occurrence matrix.
+# INPUT:
+# ------------------------------------------------------------------------------
+# recodedWordPosition (Matrix[double]): 2D matrix of recoded word positions with text IDs.
+# tableSize          (Int): Size of the vocabulary (number of unique words).
+# distanceWeighting  (Boolean): Flag to apply distance weighting to co-occurrence counts.
+# symmetric          (Boolean): Determines if the matrix is symmetric (TRUE) or asymmetric (FALSE).
+# windowSize        (Int): Context window size.
+# ------------------------------------------------------------------------------
+# OUTPUT:
+# ------------------------------------------------------------------------------
+# coocMatrix (Matrix[double]): Final word-word co-occurrence matrix.
+# ------------------------------------------------------------------------------
 createCoocMatrix = function(
-    Frame[Unknown] wordPosition, 
+    Matrix[double] recodedWordPosition, 
     Int tableSize, 
     boolean distanceWeighting, 
     boolean symmetric, 
@@ -89,27 +114,29 @@ return (Matrix[double] coocMatrix)
     print("Processing word cooccurrence...");
     coocMatrix = matrix(0, tableSize, tableSize);
 
-    for (i in 1:nrow(wordPosition)) {
-        docId = as.integer(as.scalar(wordPosition[i,1]));
-        wordIndex = as.integer(as.scalar(wordPosition[i,5]));
-        for (j in 1:windowSize) {
-            # Check left context
-            if (i-j > 0) {
-                if(docId == as.integer(as.scalar(wordPosition[i-j, 1])))
-                {
-                    neighbourWordIndex = as.integer(as.scalar(wordPosition[i-j,5]));
-                    increase = ifelse(distanceWeighting, 1.0 / j, 1.0);
-                    coocMatrix[wordIndex, neighbourWordIndex] = coocMatrix[wordIndex, neighbourWordIndex] + increase;
-                }
-            }
-            # Check right context if symmetric
-            if(symmetric){
-                if (i+j < nrow(wordPosition) + 1) {
-                    if(docId == as.integer(as.scalar(wordPosition[i+j, 1])))
+    for (i in 1:nrow(recodedWordPosition)) {
+        docId = as.integer(as.scalar(recodedWordPosition[i,1]));
+        wordIndex = as.integer(as.scalar(recodedWordPosition[i,2]));
+        if(wordIndex != 0){# This check is due to wrong result of the transformencode when running jvm test.
+            for (j in 1:windowSize) {
+                # Check left context
+                if (i-j > 0) {
+                    if(docId == as.integer(as.scalar(recodedWordPosition[i-j, 1])))
                     {
-                        neighbourWordIndex = as.integer(as.scalar(wordPosition[i+j,5]));
+                        neighbourWordIndex = as.integer(as.scalar(recodedWordPosition[i-j,2]));
                         increase = ifelse(distanceWeighting, 1.0 / j, 1.0);
                         coocMatrix[wordIndex, neighbourWordIndex] = coocMatrix[wordIndex, neighbourWordIndex] + increase;
+                    }
+                }
+                # Check right context if symmetric
+                if(symmetric == TRUE){
+                    if (i+j < nrow(recodedWordPosition) + 1) {
+                        if(docId == as.integer(as.scalar(recodedWordPosition[i+j, 1])))
+                        {
+                            neighbourWordIndex = as.integer(as.scalar(recodedWordPosition[i+j,2]));
+                            increase = ifelse(distanceWeighting, 1.0 / j, 1.0);
+                            coocMatrix[wordIndex, neighbourWordIndex] = coocMatrix[wordIndex, neighbourWordIndex] + increase;
+                        }
                     }
                 }
             }
@@ -118,31 +145,33 @@ return (Matrix[double] coocMatrix)
     print("Word-word cooccurrence matrix computation completed.");
 }
 
-## Function: getCoocMatrix
-## Description: Processes a text file to generate a co-occurrence matrix.
-## Input: 
-##   - filename (String): CSV file path.
-##   - maxTokens (Int): Maximum number of tokens.
-##   - windowSize (Int): Context window size.
-##   - distanceWeighting (Boolean): Flag to control the distance weighting of cooccurrence counts.
-##   - symmetric (Boolean): 0: asymmetric, 1: symmetric.
-## Output:
-##   - result (Frame[Unknown]): Co-occurrence matrix.
-getCoocMatrix = function(
+## Main function to process text data to construct a word-word co-occurrence matrix.
+# INPUT:
+# ------------------------------------------------------------------------------
+# input            (Frame[Unknown]): 1DInput corpus in CSV format.
+# maxTokens        (Int): Maximum number of tokens per text entry.
+# windowSize       (Int): Context window size.
+# distanceWeighting (Boolean): Whether to apply distance-based weighting.
+# symmetric        (Boolean): Determines if the matrix is symmetric (TRUE) or asymmetric (FALSE).
+# ------------------------------------------------------------------------------
+# OUTPUT:
+# ------------------------------------------------------------------------------
+# coocMatrix (Matrix[double]): The computed co-occurrence matrix.
+# column     (Frame[Unknown]): Word-index mapping for the co-occurrence matrix.
+# ------------------------------------------------------------------------------
+cooccurrenceMatrix = function(
     Frame[Unknown] input,
     Int maxTokens,
-    Int windowSize, 
-    Boolean distanceWeighting, 
-    Boolean symmetric) return (Matrix[double] coocMatrix, Frame[Unknown] column){
-    
-    processedResult = processText(input[,1]);
+    Int windowSize,
+    Boolean distanceWeighting,
+    Boolean symmetric) return (Matrix[Double] coocMatrix, Frame[Unknown] column){
 
-    jspec_pos = "{\"algo\": \"split\", \"out\": \"position\",\"out_params\": {\"sort_alpha\": false},\"id_cols\": [1],\"tokenize_col\": 2}";
-    wordPosition = getWordPosition(processedResult, maxTokens, jspec_pos);
-
-    [recodedWordPosition, tableSize, column] = getRecodedMatrix(wordPosition[,3]);
-    coocInput = cbind(wordPosition, as.frame(recodedWordPosition));
-
-    coocMatrix = createCoocMatrix(coocInput, tableSize, distanceWeighting, symmetric, windowSize);
+    processedResult = processText(input);
+    [wordPosition, docID] = getWordPosition(processedResult, maxTokens);
+    [recodedWordPosition, tableSize, column] = getRecodedMatrix(wordPosition);
+    coocMatrix = createCoocMatrix(cbind(docID, recodedWordPosition), tableSize, distanceWeighting, symmetric, windowSize);
     
 }
+
+#input = read("src/test/resources/datasets/20news/20news_subset_untokenized.csv", data_type="frame", format="csv", sep=",", header=FALSE);
+#[coocMatrix,  column] = cooccurrenceMatrix(input[,4], 2600, 15, TRUE, TRUE);

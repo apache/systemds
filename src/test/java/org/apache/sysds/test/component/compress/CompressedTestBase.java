@@ -58,7 +58,7 @@ import org.apache.sysds.runtime.compress.cost.InstructionTypeCounter;
 import org.apache.sysds.runtime.compress.estim.ComEstFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
-import org.apache.sysds.runtime.compress.lib.CLALibAppend;
+import org.apache.sysds.runtime.compress.lib.CLALibCBind;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.Divide;
@@ -255,7 +255,7 @@ public abstract class CompressedTestBase extends TestBase {
 				case C_BIND_SELF:
 					if(cmb instanceof CompressedMatrixBlock) {
 						CompressedMatrixBlock cmbc = (CompressedMatrixBlock) cmb;
-						cmb = CLALibAppend.append(cmbc, cmbc, _k);
+						cmb = CLALibCBind.cbind(cmbc, cmbc, _k);
 						mb = mb.append(mb, new MatrixBlock());
 						cols *= 2;
 					}

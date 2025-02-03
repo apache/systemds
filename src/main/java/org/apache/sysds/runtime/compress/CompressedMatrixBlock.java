@@ -50,8 +50,8 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupIO;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
-import org.apache.sysds.runtime.compress.lib.CLALibAppend;
 import org.apache.sysds.runtime.compress.lib.CLALibBinaryCellOp;
+import org.apache.sysds.runtime.compress.lib.CLALibCBind;
 import org.apache.sysds.runtime.compress.lib.CLALibCMOps;
 import org.apache.sysds.runtime.compress.lib.CLALibCompAgg;
 import org.apache.sysds.runtime.compress.lib.CLALibDecompress;
@@ -556,8 +556,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock append(MatrixBlock[] that, MatrixBlock ret, boolean cbind) {
-		if(cbind && that.length == 1)
-			return CLALibAppend.append(this, that[0], InfrastructureAnalyzer.getLocalParallelism());
+		if(cbind)
+			return CLALibCBind.cbind(this, that, InfrastructureAnalyzer.getLocalParallelism());
 		else {
 			MatrixBlock left = getUncompressed("append list or r-bind not supported in compressed");
 			MatrixBlock[] thatUC = new MatrixBlock[that.length];

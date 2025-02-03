@@ -545,7 +545,7 @@ public class RewriterCodeGen {
 	// Returns the set of all active statements after the rewrite
 	private static Set<RewriterStatement> buildRewrite(RewriterStatement newRoot, StringBuilder sb, RewriterAssertions assertions, Map<RewriterStatement, String> vars, final RuleContext ctx, int indentation) {
 		Set<RewriterStatement> visited = new HashSet<>();
-		recursivelyBuildNewHop(sb, newRoot, assertions, vars, ctx, indentation, 1, visited, newRoot.getResultingDataType(ctx).equals("FLOAT"));
+		recursivelyBuildNewHop(sb, newRoot, assertions, vars, ctx, indentation, 1, visited, newRoot.getResultingDataType(ctx).equals("FLOAT"), new ArrayList<>());
 
 		return visited;
 	}
@@ -561,13 +561,13 @@ public class RewriterCodeGen {
 		}, false);
 	}
 
-	private static int recursivelyBuildNewHop(StringBuilder sb, RewriterStatement cur, RewriterAssertions assertions, Map<RewriterStatement, String> vars, final RuleContext ctx, int indentation, int varCtr, Set<RewriterStatement> visited, boolean enforceRootDataType) {
+	private static int recursivelyBuildNewHop(StringBuilder sb, RewriterStatement cur, RewriterAssertions assertions, Map<RewriterStatement, String> vars, final RuleContext ctx, int indentation, int varCtr, Set<RewriterStatement> visited, boolean enforceRootDataType, List<String> createdOps) {
 		visited.add(cur);
 		if (vars.containsKey(cur))
 			return varCtr;
 
 		for (RewriterStatement child : cur.getOperands())
-			varCtr = recursivelyBuildNewHop(sb, child, assertions, vars, ctx, indentation, varCtr, visited, false);
+			varCtr = recursivelyBuildNewHop(sb, child, assertions, vars, ctx, indentation, varCtr, visited, false, createdOps);
 
 		if (cur instanceof RewriterDataType) {
 			if (cur.isLiteral()) {
@@ -610,6 +610,7 @@ public class RewriterCodeGen {
 					sb.append("LiteralOp " + name + " = new LiteralOp( " + literalStr + " );\n");
 				}
 				vars.put(cur, name);
+				createdOps.add(name);
 			}
 
 			return varCtr;
@@ -620,17 +621,31 @@ public class RewriterCodeGen {
 			if (CodeGenUtils.opRequiresBinaryBroadcastingMatch(cur, ctx)) {
 				// Then we need to validate that broadcasting still works after rearranging
 				indent(indentation, sb);
-				sb.append("if ( !RewriterRuntimeUtils.validateBinaryBroadcasting(" + operandRefs[0] + ", " + operandRefs[1] + ") )\n");
+				sb.append("if ( !RewriterRuntimeUtils.validateBinaryBroadcasting(" + operandRefs[0] + ", " + operandRefs[1] + ") ) {\n");
+				for (String createdOp : createdOps) {
+					// Properly remove the references to the newly constructed ops
+					indent(indentation+1, sb);
+					sb.append("HopRewriteUtils.removeAllChildReferences(" + createdOp + ");\n");
+				}
 				indent(indentation+1, sb);
 				sb.append("return hi;\n");
+				indent(indentation, sb);
+				sb.append("}\n");
 			} else {
 				List<Integer> matchingDims = CodeGenUtils.matchingDimRequirement(cur, ctx);
 
 				if (!matchingDims.isEmpty()) {
 					// Then we need to validate that broadcasting still works after rearranging
-					sb.append("if ( !RewriterRuntimeUtils.hasMatchingDims(" + matchingDims.stream().map(idx -> operandRefs[idx]).collect(Collectors.joining(", ")) + ") )\n");
+					sb.append("if ( !RewriterRuntimeUtils.hasMatchingDims(" + matchingDims.stream().map(idx -> operandRefs[idx]).collect(Collectors.joining(", ")) + ") ) {\n");
+					for (String createdOp : createdOps) {
+						// Properly remove the references to the newly constructed ops
+						indent(indentation+1, sb);
+						sb.append("HopRewriteUtils.removeAllChildReferences(" + createdOp + ");\n");
+					}
 					indent(indentation+1, sb);
 					sb.append("return hi;\n");
+					indent(indentation, sb);
+					sb.append("}\n");
 				}
 			}
 
@@ -640,6 +655,7 @@ public class RewriterCodeGen {
 			sb.append(opClass + " " + name + " = " + constructor + ";\n");
 
 			vars.put(cur, name);
+			createdOps.add(name);
 		}
 
 		return varCtr;

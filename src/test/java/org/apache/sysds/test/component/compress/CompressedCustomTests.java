@@ -37,6 +37,7 @@ import org.apache.sysds.runtime.compress.cost.ACostEstimate;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory;
 import org.apache.sysds.runtime.compress.cost.InstructionTypeCounter;
+import org.apache.sysds.runtime.compress.lib.CLALibCBind;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
@@ -394,5 +395,11 @@ public class CompressedCustomTests {
 		m1 = m0.append(m1);
 		MatrixBlock m2 = CompressedMatrixBlockFactory.compress(m1).getLeft();
 		TestUtils.compareMatricesBitAvgDistance(m1, m2, 0, 0, "no");
+	}
+
+
+	@Test(expected = Exception.class)
+	public void cbindWithError(){
+		CLALibCBind.cbind(null, new MatrixBlock[]{null}, 0);
 	}
 }

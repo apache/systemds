@@ -226,6 +226,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	 * @param colGroups new ColGroups in the MatrixBlock
 	 */
 	public void allocateColGroupList(List<AColGroup> colGroups) {
+		cachedMemorySize = -1;
 		_colGroups = colGroups;
 	}
 
@@ -351,7 +352,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			List<Future<Long>> tasks = new ArrayList<>();
 			for(AColGroup g : _colGroups)
 				tasks.add(pool.submit(() -> g.getNumberNonZeros(rlen)));
-
 			long nnz = 0;
 			for(Future<Long> t : tasks)
 				nnz += t.get();
@@ -398,7 +398,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	public long estimateCompressedSizeInMemory() {
 
 		if(cachedMemorySize <= -1L) {
-
 			long total = baseSizeInMemory();
 			// take into consideration duplicate dictionaries
 			Set<IDictionary> dicts = new HashSet<>();
@@ -413,7 +412,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			}
 			cachedMemorySize = total;
 			return total;
-
 		}
 		else
 			return cachedMemorySize;
@@ -1000,6 +998,10 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	public MatrixBlock getUncompressed() {
 		return getUncompressed((String) null);
+	}
+
+	public MatrixBlock getUncompressed(int k){
+		return getUncompressed((String) null, k);
 	}
 
 	public MatrixBlock getUncompressed(String operation) {

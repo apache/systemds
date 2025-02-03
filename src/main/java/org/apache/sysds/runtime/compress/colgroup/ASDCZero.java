@@ -67,7 +67,7 @@ public abstract class ASDCZero extends APreAgg implements AOffsetsGroup, IContai
 		AIterator it) {
 		if(mb.isEmpty()) // early abort.
 			return;
-		
+
 		final DenseBlock res = result.getDenseBlock();
 		final double[] resV = res.values(r);
 		final int offRet = res.pos(r);
@@ -108,11 +108,11 @@ public abstract class ASDCZero extends APreAgg implements AOffsetsGroup, IContai
 		final int v = it.value();
 		while(apos < alen && aix[apos] < v)
 			apos++; // go though sparse block until offset start.
-		if(cu < last) 
+		if(cu < last)
 			leftMultByMatrixNoPreAggSingleRowSparseInside(v, it, apos, alen, aix, aval, resV, offRet, cu);
-		else if(aix[alen - 1] < last) 
+		else if(aix[alen - 1] < last)
 			leftMultByMatrixNoPreAggSingleRowSparseLessThan(v, it, apos, alen, aix, aval, resV, offRet);
-		else 
+		else
 			leftMultByMatrixNoPreAggSingleRowSparseTail(v, it, apos, alen, aix, aval, resV, offRet, cu, last);
 	}
 
@@ -245,7 +245,7 @@ public abstract class ASDCZero extends APreAgg implements AOffsetsGroup, IContai
 	@Override
 	public final CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
 		EstimationFactors ef = new EstimationFactors(getNumValues(), _numRows, getNumberOffsets(), _dict.getSparsity());
-		return new CompressedSizeInfoColGroup(_colIndexes, ef, nRow, getCompType(), getEncoding());
+		return new CompressedSizeInfoColGroup(_colIndexes, ef, this.estimateInMemorySize(), getCompType(), getEncoding());
 	}
 
 	@Override
@@ -257,12 +257,12 @@ public abstract class ASDCZero extends APreAgg implements AOffsetsGroup, IContai
 	public AColGroup morph(CompressionType ct, int nRow) {
 		if(ct == getCompType())
 			return this;
-		else if (ct == CompressionType.SDCFOR)
+		else if(ct == CompressionType.SDCFOR)
 			return this; // it does not make sense to change to FOR.
 		else
 			return super.morph(ct, nRow);
 	}
-	
+
 	@Override
 	protected boolean allowShallowIdentityRightMult() {
 		return true;

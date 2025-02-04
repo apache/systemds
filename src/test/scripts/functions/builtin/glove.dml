@@ -1,0 +1,85 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+cosine_similarity = function(matrix[double] trained_emb)
+    return (matrix[double] cosine_sim){
+    /*
+     * Computes cosine similarity between word embeddings.
+     *
+     * Inputs:
+     *  - trained_emb: Matrix of word embeddings of shape (N, D), where N is the number of words and D is the embedding dimension.
+     *
+     * Outputs:
+     *  - cosine_sim: Matrix of cosine similarity scores between word embeddings, shape (N, N).
+     */
+    dot_product = trained_emb %*% t(trained_emb);
+    row_norms = rowSums(trained_emb^2) ^ 0.5;
+    denominator = row_norms %*% t(row_norms);
+    cosine_sim = dot_product / denominator;
+}
+
+get_top = function(matrix[double] trained_emb, int k, Frame[Unknown] column)
+    return (Frame[Unknown] result){
+    /*
+     * Retrieves the top k most similar word vectors for each word.
+     *
+     * Inputs:
+     *  - trained_emb: Matrix of word embeddings of shape (N, D).
+     *  - k: Number of top similar words to retrieve.
+     *  - column: Frame containing the word column.
+     *
+     * Outputs:
+     *  - result: Frame containing the top k most similar words for each word, shape (N, k+1).
+     *          The first column contains the target word, followed by k columns with similar words.
+     */
+    S = cosine_similarity(trained_emb);
+    n = nrow(S);
+    I = diag(matrix(1, rows=nrow(S), cols=1));
+    S = S * (1 - I) + (-1.0 * I);
+    result = column;
+    for(i in 1:k){
+        result = cbind(result, column);
+    }
+    for (i in 1:n){
+        Scol = S[,i];
+        topN = order(target=Scol, by=1, decreasing=TRUE, index.return=TRUE);
+        
+        for(j in 2:k+1){
+            result[i, j] = column[as.integer(as.scalar(topN[j]))];
+        }
+    }
+}
+
+# Read input word embeddings
+X = read($input, data_type="frame", format="csv", sep=",", header=FALSE);
+
+# compute glove result for input text
+G = glove(X[,4], as.integer($seed), as.integer($vector_size), as.double($alpha), as.double($eta), as.integer($x_max), as.double($tol), as.integer($iterations), as.integer($print_loss_it), as.integer($maxTokens), as.integer($windowSize), $distanceWeighting, $symmetric);
+
+# Extract only the embeddings (excluding the word column)
+X_column = G[,1];
+X_matrix = as.matrix(G[,2:ncol(G)]);
+
+# Compute top-K similar words
+result = get_top(X_matrix, $topK, X_column);
+
+# Write results to output file
+write(result, $out_result, data_type="frame", format="csv");
+

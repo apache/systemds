@@ -1044,11 +1044,13 @@ public class LibMatrixReorg {
 
 	}
 
-	private static MatrixBlock fusedSeqRexpandSparse(int seqHeight, MatrixBlock A, double w, MatrixBlock ret, boolean updateClen) {
+	private static MatrixBlock fusedSeqRexpandSparse(int seqHeight, MatrixBlock A, double w, MatrixBlock ret,
+													 boolean updateClen) {
 		if(ret == null) {
 			ret = new MatrixBlock();
 			updateClen = true;
 		}
+		int outCols = updateClen ? -1 : ret.getNumColumns();
 		final int rlen = seqHeight;
 		// prepare allocation of CSR sparse block
 		final int[] rowPointers = new int[rlen + 1];
@@ -1060,14 +1062,14 @@ public class LibMatrixReorg {
 		ret.sparse = true;
 		ret.denseBlock = null;
 		// construct sparse CSR block from filled arrays
-		SparseBlockCSR csr = new SparseBlockCSR(rowPointers, indexes, values, rlen);
+		SparseBlockCSR csr = new SparseBlockCSR(rowPointers, indexes, values, seqHeight);
 		ret.sparseBlock = csr;
-		int blkz = Math.min(1024, rlen);
+		int blkz = Math.min(1024, seqHeight);
 		int maxcol = 0;
 		boolean containsNull = false;
-		for(int i = 0; i < rlen; i += blkz) {
+		for(int i = 0; i < seqHeight; i += blkz) {
 			// blocked execution for earlier JIT compilation
-			int t = fusedSeqRexpandSparseBlock(csr, A, w, i, Math.min(i + blkz, rlen));
+			int t = fusedSeqRexpandSparseBlock(csr, A, w, i, Math.min(i + blkz, seqHeight), (int) outCols);
 			if(t < 0) {
 				t = Math.abs(t);
 				containsNull = true;
@@ -1078,14 +1080,15 @@ public class LibMatrixReorg {
 		if(containsNull)
 			csr.compact();
 
-		rowPointers[rlen] = rlen;
+		rowPointers[seqHeight] = seqHeight;
 		ret.setNonZeros(ret.sparseBlock.size());
 		if(updateClen)
-			ret.setNumColumns(maxcol);
+			ret.setNumColumns(outCols == -1 ? maxcol : (int) outCols);
 		return ret;
 	}
 
-	private static int fusedSeqRexpandSparseBlock(final SparseBlockCSR csr, final MatrixBlock A, final double w, int rl, int ru) {
+	private static int fusedSeqRexpandSparseBlock(final SparseBlockCSR csr, final MatrixBlock A, final double w, int rl,
+												  int ru, int maxOutCol) {
 
 		// prepare allocation of CSR sparse block
 		final int[] rowPointers = csr.rowPointers();
@@ -1096,7 +1099,7 @@ public class LibMatrixReorg {
 		int maxCol = 0;
 
 		for(int i = rl; i < ru; i++) {
-			int c = rexpandSingleRow(i, A.get(i, 0), w, indexes, values);
+			int c = rexpandSingleRow(i, A.get(i, 0), w, indexes, values, maxOutCol);
 			if(c < 0)
 				containsNull = true;
 			else 
@@ -1114,7 +1117,7 @@ public class LibMatrixReorg {
 			ret.clen = maxCol;
 	}
 
-	public static int rexpandSingleRow(int row, double v2, double w,  int[] retIx, double[] retVals) {
+	public static int rexpandSingleRow(int row, double v2, double w,  int[] retIx, double[] retVals, int maxOutCol) {
 		// If any of the values are NaN (i.e., missing) then
 		// we skip this tuple, proceed to the next tuple
 		if(Double.isNaN(v2))
@@ -1124,10 +1127,12 @@ public class LibMatrixReorg {
 		int col = UtilFunctions.toInt(v2);
 		if(col <= 0)
 			throw new DMLRuntimeException("Erroneous input while computing the contingency table (value <= zero): " + v2);
-
-		// set weight as value (expand is guaranteed to address different cells)
-		retIx[row] = col - 1;
-		retVals[row] = w;
+		// maxOutCol = - 1 if not specified --> TRUE
+		if(col <= maxOutCol){
+			// set weight as value (expand is guaranteed to address different cells)
+			retIx[row] = col - 1;
+			retVals[row] = w;
+		}
 
 		// maintain max seen col
 		return col;

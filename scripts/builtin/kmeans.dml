@@ -145,11 +145,10 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
       }
 
       # Find the closest centroid for each record
-      # P = D <= minD;
+      P = D <= minD;
       # If some records belong to multiple centroids, share them equally
-      # P = P / rowSums (P);
-      P = table(seq(1,nrow(D)), rowIndexMin(D))
-      # P = table(seq(1,nrow(D)),compress(rowIndexMin(D)))
+      P = P / rowSums (P);
+      # P = table(seq(1,num_records), rowIndexMin(D), num_records, num_centroids)
       # Compute the column normalization factor for P
       P_denom = colSums (P);
       # Compute new centroids as weighted averages over the records

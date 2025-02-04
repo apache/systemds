@@ -1,3 +1,22 @@
+<!--
+{% comment %}
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to you under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+{% end comment %}
+-->
+
 # CUDA counter based PRNG
 
 Currently, random matrix generation is done using Java implementations. Either the Java Random class or the custom
@@ -77,96 +96,9 @@ This will compile the cuda kernel to a ptx file that can be shipped with the Sys
 }
 
 ```
-To use this ptx file in the SystemDS project, you can use the following code:
+To use this ptx file in the SystemDS project, you can use this code:
 
-```java
-import jcuda.*;
-import jcuda.driver.*;
-import jcuda.nvrtc.*;
-import jcuda.runtime.JCuda;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
-import static jcuda.driver.JCudaDriver.cuCtxCreate;
-
-public class PhiloxJNvrtcExample {
-
-    public static void main(String[] args) {
-        // Enable exceptions and omit error checks
-        JCuda.setExceptionsEnabled(true);
-        JCudaDriver.setExceptionsEnabled(true);
-        JNvrtc.setExceptionsEnabled(true);
-
-        String ptx = "";
-        try {
-            ptx = new String(Files.readAllBytes(Paths.get("philox_kernel.ptx")));
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-		
-        // Initialize the driver API and create a context
-        JCudaDriver.cuInit(0);
-        CUdevice device = new CUdevice();
-        JCudaDriver.cuDeviceGet(device, 0);
-        CUcontext context = new CUcontext();
-        cuCtxCreate(context, 0, device);
-
-        CUmodule module = new CUmodule();
-        JCudaDriver.cuModuleLoadData(module, ptx);
-
-        // Get a function pointer to the kernel
-        CUfunction function = new CUfunction();
-        JCudaDriver.cuModuleGetFunction(function, module, "philox_4_64");
-
-        // Prepare data
-        int n = 1000; // Number of random numbers to generate
-        long[] hostOut = new long[n];
-        CUdeviceptr deviceOut = new CUdeviceptr();
-        JCudaDriver.cuMemAlloc(deviceOut, n * Sizeof.LONG);
-
-        // Direkte Werte für seed und startingCounter
-        long seed = 0L;        // Fester Seed-Wert
-        long startingCounter = 0L;               // Startwert für Counter
-
-        Pointer kernelParameters = Pointer.to(
-                Pointer.to(deviceOut),           // ulong* output
-                Pointer.to(new long[]{seed}),    // uint64_t seed
-                Pointer.to(new long[]{startingCounter}), // uint64_t startingCounter
-                Pointer.to(new long[]{n})        // size_t numElements
-        );
-
-        // Launch the kernel
-        int blockSizeX = 128;
-        int gridSizeX = (int) Math.ceil((double)n / blockSizeX);
-        JCudaDriver.cuLaunchKernel(
-                function,
-                gridSizeX, 1, 1,      // Grid dimension
-                blockSizeX, 1, 1,     // Block dimension
-                0, null,              // Shared memory size and stream
-                kernelParameters, null // Kernel- und extra parameters
-        );
-        JCudaDriver.cuCtxSynchronize();
-
-        // Copy result back
-        JCudaDriver.cuMemcpyDtoH(Pointer.to(hostOut), deviceOut, n * Sizeof.LONG);
-
-        // Print results
-        System.out.println("Generated random numbers with seed=" + 
-                          String.format("0x%016X", seed) + 
-                          " and startingCounter=" + startingCounter);
-        for (int i = 0; i < Math.min(10, n); i++) {
-            System.out.printf("hostOut[%d] = 0x%016X\n", i, hostOut[i]);
-        }
-
-        // Cleanup
-        JCudaDriver.cuMemFree(deviceOut);
-        JCudaDriver.cuCtxDestroy(context);
-    }
-}
-```
+[PhiloxJNvrtcExample.java](/scripts/staging/cuda-counter-based-prng/PhiloxJNvrtcExample.java)
 
 Run the code with the following command:
 
@@ -178,228 +110,7 @@ javac -cp .:./target/dependency/jcuda-10.2.0.jar:./target/dependency/jcuda-nativ
 
 To compile the cuda kernel during runtime, you can use the following code:
 
-```java
-import jcuda.*;
-import jcuda.driver.*;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-
-import static java.nio.file.Files.readAllBytes;
-import static jcuda.driver.JCudaDriver.*;
-
-public class Random123_cuda implements AutoCloseable {
-    private static String philox4x64KernelSource = "#include <cuda_runtime.h>\n" +
-            "#include <Random123/philox.h>\n" +
-            "extern \"C\" __global__ void philox_4_64(ulong* output, uint64_t startingCounter, uint64_t seed, size_t numElements) {\n"
-            +
-            "    uint64_t idx = blockIdx.x * blockDim.x + threadIdx.x;\n" +
-            "    if (idx * 4 < numElements) {\n" +
-            "        r123::Philox4x64 rng;\n" +
-            "        r123::Philox4x64::ctr_type ctr = {{startingCounter + idx, 0, 0, 0}};\n" +
-            "        r123::Philox4x64::key_type key = {{seed}};\n" +
-            "        r123::Philox4x64::ctr_type result = rng(ctr, key);\n" +
-            "        for (int i = 0; i < 4; ++i) {\n" +
-            "            size_t outputIdx = idx * 4 + i;\n" +
-            "            if (outputIdx < numElements) {\n" +
-            "                output[outputIdx] = result[i];\n" +
-            "            }\n" +
-            "        }\n" +
-            "    }\n" +
-            "}\n";
-
-    private final CUcontext context;
-    private final CUmodule module;
-    private final CUfunction function;
-    private final int blockSize;
-
-    public Random123_cuda() {
-        JCudaDriver.setExceptionsEnabled(true);
-        // Initialize CUDA
-        cuInit(0);
-        CUdevice device = new CUdevice();
-        cuDeviceGet(device, 0);
-        context = new CUcontext();
-        int result = cuCtxCreate(context, 0, device);
-        if (result != CUresult.CUDA_SUCCESS) {
-            throw new RuntimeException(
-                    "Faild to create CUDA context: " + result + ", " + CUresult.stringFor(result));
-        }
-
-        // Compile to PTX
-        String ptx = compileToTPX(philox4x64KernelSource);
-
-        // Load the PTX
-        module = new CUmodule();
-        cuModuleLoadData(module, ptx);
-        function = new CUfunction();
-        cuModuleGetFunction(function, module, "philox_4_64");
-
-        // Set block size based on device capabilities
-        blockSize = 64; // Can be adjusted based on device properties
-    }
-
-    private String compileToTPX(String source) {
-        try {
-            // create temp files
-            File sourceFile = File.createTempFile("philox_kernel", ".cu");
-            File outputFile = File.createTempFile("philox_kernel", ".ptx");
-
-            // Write cuda source to temp file
-            try (FileWriter writer = new FileWriter(sourceFile)) {
-                writer.write(philox4x64KernelSource);
-            }
-
-            // build nvcc command
-            List<String> command = new ArrayList<>();
-            command.add("/usr/local/cuda/bin/nvcc");
-            command.add("-ccbin");
-            command.add("gcc-8");
-            command.add("--ptx"); // PTX-Output generieren
-            command.add("-o");
-            command.add(outputFile.getAbsolutePath());
-            command.add("-I");
-            command.add("./lib/random123/include");
-            command.add(sourceFile.getAbsolutePath());
-
-            ProcessBuilder pb = new ProcessBuilder(command);
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
-
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream()))) {
-                String line;
-                StringBuilder output = new StringBuilder();
-                while ((line = reader.readLine()) != null) {
-                    output.append(line).append("\n");
-                }
-                System.out.println("Compiler Output: " + output.toString());
-            }
-
-            int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                throw new RuntimeException("nvcc compiler returned non-zero exit code: " + exitCode);
-            }
-
-            // Read PTX code
-            String ptxCode = new String(readAllBytes(outputFile.toPath()));
-
-            // Cleanup
-            sourceFile.delete();
-            outputFile.delete();
-
-            return ptxCode;
-
-        } catch (Exception e) {
-            throw new RuntimeException("CUDA-compilation failed: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Generates random numbers using the Philox4x64 algorithm
-     * 
-     * @param startingCounter Initial counter value
-     * @param seed            Random seed
-     * @param numElements     Number of random numbers to generate
-     * @return Array of random numbers
-     */
-    public CUdeviceptr Philox4x64(long startingCounter, long seed, int numElements) {
-        // Allocate host memory for results
-        // long[] hostOutput = new long[numElements];
-
-        // Allocate device memory
-        CUdeviceptr deviceOutput = new CUdeviceptr();
-        cuMemAlloc(deviceOutput, (long) numElements * Sizeof.LONG);
-
-        try {
-            System.out.printf("numElements: %d, seed: %d, startingCounter: %d%n",
-                    numElements, seed, startingCounter);
-
-            Pointer kernelParams = Pointer.to(
-                    Pointer.to(deviceOutput),
-                    Pointer.to(new long[] { startingCounter }),
-                    Pointer.to(new long[] { seed }),
-                    Pointer.to(new long[] { numElements }));
-
-            // Calculate grid size
-            int gridSize = (numElements + (blockSize * 4) - 1) / (blockSize * 4);
-
-            int kernelResult = cuLaunchKernel(function,
-                    gridSize, 1, 1, // Grid dimension
-                    blockSize, 1, 1, // Block dimension
-                    0, null, // Shared memory size and stream
-                    kernelParams, null // Kernel parameters and extra parameters
-            );
-            if (kernelResult != CUresult.CUDA_SUCCESS) {
-                throw new RuntimeException(
-                        "Kernel-launch failed: " + kernelResult + ", " + CUresult.stringFor(kernelResult));
-            }
-
-            // Copy results back to host
-            // cuMemcpyDtoH(Pointer.to(hostOutput), deviceOutput, (long) numElements *
-            // Sizeof.LONG);
-        } finally {
-            // Free device memory
-            // cuMemFree(deviceOutput);
-        }
-
-        // return hostOutput;
-        return deviceOutput;
-    }
-
-    /**
-     * Cleans up CUDA resources
-     */
-    public void close() {
-        cuModuleUnload(module);
-        cuCtxDestroy(context);
-    }
-
-    // Example usage
-    public static void main(String[] args) {
-        try (Random123_cuda generator = new Random123_cuda()) {
-            // Generate 1 million random numbers
-            int numElements = 1_000_000;
-            long seed = 0L;
-            long startingCounter = 0L;
-
-            CUdeviceptr randomNumbers = generator.Philox4x64(startingCounter, seed, numElements);
-
-            long[] elements = new long[10];
-            cuMemcpyDtoH(Pointer.to(elements), randomNumbers, 10L * Sizeof.LONG);
-            cuMemFree(randomNumbers);
-
-            // Print first few numbers
-            System.out.println("First 10 random numbers:");
-            for (int i = 0; i < 10; i++) {
-                System.out.printf("%d: %x%n", i, elements[i]);
-            }
-
-            int size = 10_000_000;
-            long start = System.currentTimeMillis();
-            CUdeviceptr ptr = generator.Philox4x64(0L, 0L, size);
-            long end = System.currentTimeMillis();
-            System.out.println("philox4x64 speed test: " + (end - start) * 1000 + " microseconds");
-            cuMemFree(ptr);
-            Random r = new Random();
-            long javaStart = System.currentTimeMillis();
-            for (int i = 0; i < size; i++) {
-                r.nextLong();
-            }
-            long javaEnd = System.currentTimeMillis();
-            System.out.println("java speed test: " + (javaEnd - javaStart) * 1000 + " microseconds");
-            System.out.println("philox4x64 is " + (double) (javaEnd - javaStart) / (double) (end - start)
-                    + " times faster than java");
-
-        }
-    }
-}
-```
+[PhiloxRuntimeCompilationExample.java](/scripts/staging/cuda-counter-based-prng/PhiloxRuntimeCompilationExample.java)
 
 Run the code with the following command:
 

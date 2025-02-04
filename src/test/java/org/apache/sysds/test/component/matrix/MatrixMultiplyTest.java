@@ -52,10 +52,13 @@ public class MatrixMultiplyTest {
 	// parallelization degree
 	private final int k;
 
-	public MatrixMultiplyTest(int i, int j, int k, double s, double s2, int p) {
+	public MatrixMultiplyTest(int i, int j, int k, double s, double s2, int p, boolean self) {
 		try {
 			this.left = TestUtils.ceil(TestUtils.generateTestMatrixBlock(i, j, -10, 10, i == 1 && j == 1 ? 1 : s, 13));
-			this.right = TestUtils.ceil(TestUtils.generateTestMatrixBlock(j, k, -10, 10, k == 1 && k == 1 ? 1 : s2, 14));
+			if(self)
+				this.right = left;
+			else 
+				this.right = TestUtils.ceil(TestUtils.generateTestMatrixBlock(j, k, -10, 10, k == 1 && k == 1 ? 1 : s2, 14));
 
 			this.exp = multiply(left, right, 1);
 			this.k = p;
@@ -83,7 +86,7 @@ public class MatrixMultiplyTest {
 						for(int i = 0; i < is.length; i++) {
 							for(int j = 0; j < js.length; j++) {
 								for(int k = 0; k < ks.length; k++) {
-									tests.add(new Object[] {is[i], js[j], ks[k], sparsities[s], sparsities[s2], par[p]});
+									tests.add(new Object[] {is[i], js[j], ks[k], sparsities[s], sparsities[s2], par[p], false});
 								}
 							}
 						}
@@ -91,15 +94,25 @@ public class MatrixMultiplyTest {
 				}
 			}
 
-			tests.add(new Object[]{1000, 100, 1000, 0.3, 0.0001, 6});
-			tests.add(new Object[]{1000, 100, 1000, 0.01, 0.3, 6});
-			tests.add(new Object[]{1000, 100, 1000, 0.3, 0.0005, 6});
-			tests.add(new Object[]{1000, 100, 1000, 0.005, 0.3, 6});
+			tests.add(new Object[]{1000, 100, 1000, 0.3, 0.0001, 6, false});
+			tests.add(new Object[]{1000, 100, 1000, 0.01, 0.3, 6, false});
+			tests.add(new Object[]{1000, 100, 1000, 0.3, 0.0005, 6, false});
+			tests.add(new Object[]{1000, 100, 1000, 0.005, 0.3, 6, false});
 
-			tests.add(new Object[]{1000, 100, 1000, 0.6, 0.0001, 6});
-			tests.add(new Object[]{1000, 100, 1000, 0.01, 0.6, 6});
-			tests.add(new Object[]{1000, 100, 1000, 0.6, 0.0005, 6});
-			tests.add(new Object[]{1000, 100, 1000, 0.005, 0.6, 6});
+			tests.add(new Object[]{1000, 100, 1000, 0.6, 0.0001, 6, false});
+			tests.add(new Object[]{1000, 100, 1000, 0.01, 0.6, 6, false});
+			tests.add(new Object[]{1000, 100, 1000, 0.6, 0.0005, 6, false});
+			tests.add(new Object[]{1000, 100, 1000, 0.005, 0.6, 6, false});
+			
+			// 0.00004 ultra sparse turn point
+			tests.add(new Object[]{100, 100, 10000, 0.5, 0.00003, 6, false});
+			tests.add(new Object[]{10000, 100, 100, 0.00003, 0.6, 6, false});
+
+
+			tests.add(new Object[]{3, 10, 100000, 1.0, 0.00003, 6, false});
+			tests.add(new Object[]{100000, 10, 3, 0.00003, 1.0, 6, false});
+			
+			tests.add(new Object[]{1000, 1000, 1000, 0.005, 0.6, 6, true});
 
 		}
 		catch(Exception e) {

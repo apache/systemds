@@ -140,7 +140,7 @@ public class LibMatrixNative
 		else
 			LOG.warn("Was valid for native MM but native lib was not loaded");
 		
-		return LibMatrixMult.matrixMult(m1, m2, ret, k);
+		return LibMatrixMult.matrixMultNonNative(m1, m2, ret, k);
 	}
 	
 	public static void tsmm(MatrixBlock m1, MatrixBlock ret, boolean leftTrans, int k) {

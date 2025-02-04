@@ -44,8 +44,8 @@ linear_tensor_backward = function(matrix[double] dout, matrix[double] X, matrix[
    * Helper function for computing linear layer with tensor input, of shape (A, B*C)
    */
   A = nrow(X)
-  [dX, dW, db] = affine::forward(matrix(dout, rows=A*B, cols=C_out), matrix(X, rows=A*B, cols=C_in), W, b)
-  dX = matrix(out, rows=A, cols=B*C_in)
+  [dX, dW, db] = affine::backward(matrix(dout, rows=A*B, cols=C_out), matrix(X, rows=A*B, cols=C_in), W, b)
+  dX = matrix(dX, rows=A, cols=B*C_in)
 }
 
 layer_norm_forward = function(matrix[double] X, matrix[double] gamma, matrix[double] beta, double epsilon, int B, int C)
@@ -73,14 +73,14 @@ layer_norm_backward = function(matrix[double] dout, matrix[double] cache_mean, m
   batch_norm_doutput = t(matrix(dout, rows=A*B, cols=C))
   # EMA matrices, updated EMA matrices and out matrix are unused and thus empty matrices will be provided
   empty_mat = matrix(0, rows=1, cols=1)
-  [batch_norm_dX, batch_norm_dgamma, batch_norm_dbeta] = batch_norm::backward(
+  [batch_norm_dX, unused1, unused2] = batch_norm::backward(
     batch_norm_doutput,
     empty_mat, empty_mat, empty_mat,
     cache_mean, cache_var, cache_norm,
     batch_norm_input, t(gamma), t(beta), "train", empty_mat, empty_mat, 0.0, epsilon)
   dX = matrix(t(batch_norm_dX), rows=A, cols=B*C)
-  dgamma = t(batch_norm_dgamma)
-  dbeta = t(batch_norm_dbeta)
+  dgamma = t(rowSums(batch_norm_doutput * cache_norm))
+  dbeta = t(rowSums(batch_norm_doutput))
 }
 
 forward = function(matrix[double] states,
@@ -319,7 +319,7 @@ backward = function(matrix[double] dout_states,
   D = d * H
 
   # Layer norm 2 for each token
-  [dout_states, dgamma_ln2, dbeta_ln2] = layer_norm_forward(
+  [dout_states, dgamma_ln2, dbeta_ln2] = layer_norm_backward(
     dout_states, cache_mean_ln2, cache_var_ln2, cache_norm_ln2, as.matrix(outputs[10]), gamma_ln2, beta_ln2, epsilon_ln, T, D)
   # Save dout_states for residual pass
   dout_states_identity_2 = dout_states
@@ -343,7 +343,7 @@ backward = function(matrix[double] dout_states,
   dout_states = dout_states + dout_states_identity_2
 
   # Layer norm 1 for each token
-  [dout_states, dgamma_ln1, dbeta_ln1] = layer_norm_forward(
+  [dout_states, dgamma_ln1, dbeta_ln1] = layer_norm_backward(
     dout_states, cache_mean_ln1, cache_var_ln1, cache_norm_ln1, as.matrix(outputs[6]), gamma_ln1, beta_ln1, epsilon_ln, T, D)
   # Save dout_states for residual pass
   dout_states_identity_1 = dout_states

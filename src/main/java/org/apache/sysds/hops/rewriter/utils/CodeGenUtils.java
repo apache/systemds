@@ -382,6 +382,10 @@ public class CodeGenUtils {
 		String opClass = getOpClass(cur, ctx);
 		String opCode = null;
 
+		for (int i = 0; i < children.length; i++)
+			if (children[i] == null)
+				throw new IllegalArgumentException("The argument " + i + " is null: " + cur.toParsableString(ctx));
+
 		// Special instructions
 		switch (cur.trueInstruction()) {
 			case "%*%":

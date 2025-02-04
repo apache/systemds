@@ -648,6 +648,7 @@ public class RewriterCodeGen {
 
 				if (!matchingDims.isEmpty()) {
 					// Then we need to validate that broadcasting still works after rearranging
+					indent(indentation, sb);
 					sb.append("if ( !RewriterRuntimeUtils.hasMatchingDims(" + matchingDims.stream().map(idx -> operandRefs[idx]).collect(Collectors.joining(", ")) + ") ) {\n");
 					for (String createdOp : createdOps) {
 						// Properly remove the references to the newly constructed ops

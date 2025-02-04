@@ -8,9 +8,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-#
+# 
 #   http://www.apache.org/licenses/LICENSE-2.0
-#
+# 
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,16 +20,25 @@
 #
 #-------------------------------------------------------------
 
-# Build the docker containers
 
-# The first build is for running systemds through docker.
-# docker image build -f docker/sysds.Dockerfile -t apache/systemds:latest .
+mvn package 2>&1 > /dev/null
 
-# The second build is for testing systemds. This image installs the R dependencies needed to run the tests.
-docker image build -f docker/testsysds.Dockerfile -t apache/systemds:testing-latest .
+cm="java --add-modules=jdk.incubator.vector -jar -XX:+UseNUMA target/systemds-3.4.0-SNAPSHOT-perf.jar 1009"
 
-# The third build is python docker for systemds. 
-# docker image build -f docker/pythonsysds.Dockerfile -t apache/systemds:python-nightly .
+# $cm 5 5 5 1 1 true
+# $cm 500 5 5 1 1 true
+# $cm 5 500 5 1 1 true
+# $cm 5 5 500 1 1 true
 
-# You might want to prune the docker system afterwards using
-# docker system prune
+# $cm 100 100 100 1 1 true
+# $cm 1000 100 100 1 1 true
+# $cm 100 1000 100 1 1 true
+# $cm 100 100 1000 1 1 true
+
+# $cm 1000 1000 1000 1 1 true
+
+# $cm 10000 1000 1000 1 1 true
+# $cm 1000 10000 1000 1 1 true
+# $cm 1000 1000 10000 1 1 true
+
+$cm 10000 10000 10000 1 1 false

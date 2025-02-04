@@ -20,6 +20,7 @@
 package org.apache.sysds.hops.rewriter.utils;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RuleContext;
@@ -60,7 +61,6 @@ public class CodeGenUtils {
 	public static String getOpCode(RewriterStatement stmt, final RuleContext ctx) {
 		if (stmt.getOperands().size() == 1) {
 			// Handle unary ops
-			// TODO: nrow, ncol, length
 			switch (stmt.trueInstruction()) {
 				case "t":
 					return "Types.ReOrgOp.TRANS";
@@ -74,14 +74,20 @@ public class CodeGenUtils {
 					return "Types.OpOp1.POW2";
 				case "log":
 					return "Types.OpOp1.LOG";
+				case "log_nz":
+					return "Types.OpOp1.LOG_NZ";
 				case "abs":
 					return "Types.OpOp1.ABS";
 				case "round":
 					return "Types.OpOp1.ROUND";
+				case "exp":
+					return "Types.OpOp1.EXP";
 				case "rowSums":
 				case "colSums":
 				case "sum":
 					return "Types.AggOp.SUM";
+				case "sumSq":
+					return "Types.AggOp.SUM_SQ";
 				case "trace":
 					return "Types.AggOp.TRACE";
 				case "*2":
@@ -248,6 +254,7 @@ public class CodeGenUtils {
 			case "!":
 			case "sqrt":
 			case "log":
+			case "log_nz":
 			case "abs":
 			case "round":
 			case "*2":
@@ -257,11 +264,13 @@ public class CodeGenUtils {
 			case "ncol":
 			case "length":
 			case "sq":
+			case "exp":
 				return "UnaryOp";
 
 			case "rowSums":
 			case "colSums":
 			case "sum":
+			case "sumSq":
 			case "trace":
 				return "AggUnaryOp";
 
@@ -386,6 +395,11 @@ public class CodeGenUtils {
 
 				return "HopRewriteUtils.createAggUnaryOp(" + children[0] + ", Types.AggOp.SUM, Types.Direction.RowCol)";
 
+			case "sumSq":
+				if (children.length != 1)
+					throw new IllegalArgumentException();
+
+				return "HopRewriteUtils.createAggUnaryOp(" + children[0] + ", Types.AggOp.SUM_SQ, Types.Direction.RowCol)";
 			case "trace":
 				if (children.length != 1)
 					throw new IllegalArgumentException();

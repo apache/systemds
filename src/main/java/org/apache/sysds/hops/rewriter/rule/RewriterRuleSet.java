@@ -291,7 +291,12 @@ public class RewriterRuleSet {
 		for (int i = 0; i < data.length; i++) {
 			if (data[i].equals("::RULE")) {
 				if (!currentLines.isEmpty()) {
-					rules.add(RewriterUtils.parseRule(String.join("\n", currentLines), ctx));
+					try {
+						rules.add(RewriterUtils.parseRule(String.join("\n", currentLines), ctx));
+					} catch (Exception e) {
+						System.err.println("An error occurred while parsing the rule:\n" + String.join("\n", currentLines));
+						e.printStackTrace();
+					}
 					currentLines.clear();
 				}
 			} else {

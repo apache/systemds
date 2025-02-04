@@ -1041,7 +1041,7 @@ public abstract class RewriterStatement {
 		MutableInt i = new MutableInt();
 		forEachPreOrder(cur -> {
 			if (!cur.isDataOrigin() || cur.isLiteral()) {
-				i.increment();
+				i.add(1 + cur.getOperands().size());
 			}
 			return true;
 		}, false);

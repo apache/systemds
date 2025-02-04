@@ -151,6 +151,7 @@ public enum Builtins {
 	GET_ACCURACY("getAccuracy", true),
 	GLM("glm", true),
 	GLM_PREDICT("glmPredict", true),
+	GLOVE("glove", true),
 	GMM("gmm", true),
 	GMM_PREDICT("gmmPredict", true),
 	GNMF("gnmf", true),

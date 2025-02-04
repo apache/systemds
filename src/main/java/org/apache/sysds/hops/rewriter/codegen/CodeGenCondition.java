@@ -434,10 +434,15 @@ public class CodeGenCondition {
 	}
 
 	private boolean matchesOpClassCondition(RewriterRule rule, RewriterStatement stmt, final RuleContext ctx) {
-		String opClass = (String) conditionValue;
-		String actualClass = CodeGenUtils.getOpClass(stmt, ctx);
+		try {
+			String opClass = (String) conditionValue;
+			String actualClass = CodeGenUtils.getOpClass(stmt, ctx);
 
-		return opClass.equals(actualClass);
+			return opClass.equals(actualClass);
+		} catch (Exception e) {
+			System.err.println(rule.toParsableString(ctx));
+			throw e;
+		}
 	}
 
 	private boolean matchesOpCodeCondition(RewriterRule rule, RewriterStatement stmt, final RuleContext ctx) {

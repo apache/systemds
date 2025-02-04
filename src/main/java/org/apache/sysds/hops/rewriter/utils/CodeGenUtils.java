@@ -20,6 +20,7 @@
 package org.apache.sysds.hops.rewriter.utils;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.hops.DataGenOp;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.hops.rewriter.assertions.RewriterAssertions;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
@@ -31,12 +32,34 @@ import java.util.Map;
 import java.util.Optional;
 
 public class CodeGenUtils {
+	// Function to access child statement (which are not neccessarily through .getInput(n))
+	public static String getChildAccessor(String parentVar, RewriterStatement stmt, int childIdx) {
+		switch (stmt.trueInstruction()) {
+			case "const":
+				if (childIdx != 1)
+					return null;
+
+				if (stmt.getChild(1).isLiteral() && Math.abs(stmt.getChild(1).floatLiteral()) == 0.0)
+					return "new LiteralOp(0.0D)"; // as this might be nnz = 0 and not DataGenOp
+				return "((DataGenOp)" + parentVar + ").getConstantValue()";
+		}
+
+		return parentVar + ".getInput(" + childIdx + ")";
+	}
+
 	public static String getSpecialOpCheck(RewriterStatement stmt, final RuleContext ctx, String hopVar) {
 		if (!stmt.isInstruction())
 			return null;
 		switch (stmt.trueInstruction()) {
 			case "%*%":
 				return "HopRewriteUtils.isMatrixMultiply(" + hopVar + ")";
+			case "const":
+				if (stmt.getChild(1).isLiteral()) {
+					if (Math.abs(stmt.getChild(1).floatLiteral()) == 0.0) // Then this also holds for nnz=0
+						return "HopRewriteUtils.isDataGenOpWithConstantValue(" + hopVar + ", " + stmt.getChild(1).floatLiteral() + ") || " + hopVar + ".getNnz() == 0";
+					return "HopRewriteUtils.isDataGenOpWithConstantValue(" + hopVar + ", " + stmt.getChild(1).floatLiteral() + ")";
+				} else
+					return "HopRewriteUtils.isDataGenOpWithConstantValue(" + hopVar + ")";
 		}
 
 		return null;
@@ -448,12 +471,13 @@ public class CodeGenUtils {
 
 							if (mappedName != null) {
 								nrowContent = getHopConstructor(stmt, assertions, varNameMapping, ctx, mappedName);
-								break;
+								if (nrowContent != null)
+									break;
 							}
 						}
 
 						if (nrowContent == null)
-							throw new IllegalArgumentException();
+							throw new IllegalArgumentException(nrowAssertion.toString());
 					}
 
 					if (ncolLiteral.isPresent()) {

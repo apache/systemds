@@ -146,11 +146,13 @@ public class RewriterCodeGen {
 
 		StringBuilder implSb = new StringBuilder();
 		Set<String> implemented = new HashSet<>();
+		int implementedRules = 0;
 		for (Tuple2<String, RewriterRule> appliedRewrites : rewrites) {
 			String mRewriteFn;
 			if (ignoreErrors) {
 				try {
 					mRewriteFn = generateRewriteFunction(appliedRewrites._2, appliedRewrites._1, 1, maintainRewriteStats, ctx);
+					implementedRules++;
 				} catch (Exception e) {
 					if (printErrors)
 						e.printStackTrace();
@@ -159,6 +161,7 @@ public class RewriterCodeGen {
 				}
 			} else {
 				mRewriteFn = generateRewriteFunction(appliedRewrites._2, appliedRewrites._1, 1, maintainRewriteStats, ctx);
+				implementedRules++;
 			}
 
 			implSb.append('\n');
@@ -215,6 +218,7 @@ public class RewriterCodeGen {
 		buildMinIdxFunction(msb, 1);
 		msb.append('\n');
 		msb.append("}");
+		System.out.println("Implemented rules: " + implementedRules);
 		return msb.toString();
 	}
 
@@ -257,6 +261,14 @@ public class RewriterCodeGen {
 		Map<RewriterStatement, String> vars = new HashMap<>();
 		vars.put(from, "hi");
 		recursivelyBuildMatchingSequence(from, sb, "hi", ctx, indentation, vars, allowedMultiRefs, allowCombinations);
+
+		from.forEachPreOrder(el -> {
+			if (el.isInstruction() && el.trueInstruction().equals("const") && vars.get(el.getChild(0)) == null) {
+				vars.put(el.getChild(0), vars.get(el));
+			}
+
+			return true;
+		}, false);
 
 		if (fromCost != null) {
 			List<StringBuilder> msb = new ArrayList<>();
@@ -804,16 +816,21 @@ public class RewriterCodeGen {
 
 			// Build the variable definition
 			String name = resolveOperand(cur, i, sb, curVar, ctx, indentation);
-			map.put(stmt, name);
-			sb.append('\n');
-			recursivelyBuildMatchingSequence(stmt, sb, name, ctx, indentation, map, allowedMultiRefs, allowCombinations);
+			if (name != null) {
+				map.put(stmt, name);
+				sb.append('\n');
+				recursivelyBuildMatchingSequence(stmt, sb, name, ctx, indentation, map, allowedMultiRefs, allowCombinations);
+			}
 		}
 	}
 
 	private static String resolveOperand(RewriterStatement stmt, int idx, StringBuilder sb, String curVar, final RuleContext ctx, int indentation) {
+		String accessor = CodeGenUtils.getChildAccessor(curVar, stmt, idx);
+		if (accessor == null)
+			return null; // Then we do not need to traverse the sub-dag further
 		String name = curVar + "_" + idx;
 		indent(indentation, sb);
-		sb.append("Hop " + name + " = " + curVar + ".getInput(" + idx + ");\n");
+		sb.append("Hop " + name + " = " + accessor + ";\n");
 		return name;
 	}
 

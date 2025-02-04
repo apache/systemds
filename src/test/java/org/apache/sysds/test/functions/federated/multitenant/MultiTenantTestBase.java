@@ -124,6 +124,7 @@ public abstract class MultiTenantTestBase extends AutomatedTestBase {
 				"--add-opens=java.base/java.lang.ref=ALL-UNNAMED" ,
 				"--add-opens=java.base/java.util.concurrent=ALL-UNNAMED" ,
 				"--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
+				"--add-modules=jdk.incubator.vector",
 				"-cp", classpath, DMLScript.class.getName()}, argsList.toArray(new String[0])));
 
 		Process process = null;

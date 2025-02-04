@@ -195,6 +195,13 @@ public class IdentityDictionary extends AIdentityDictionary {
 	}
 
 	@Override
+	public int getNumberOfColumns(int nrow) {
+		if(nrow != (nRowCol + (withEmpty ? 1 : 0)))
+			throw new DMLCompressionException("Invalid call to get Number of values assuming wrong number of columns");
+		return nRowCol;
+	}
+
+	@Override
 	public double[] sumAllRowsToDouble(int nrColumns) {
 		if(withEmpty) {
 			double[] ret = new double[nRowCol + 1];

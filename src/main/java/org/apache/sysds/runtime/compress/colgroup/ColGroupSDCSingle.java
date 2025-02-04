@@ -85,7 +85,7 @@ public class ColGroupSDCSingle extends ASDC {
 		if(offsets instanceof OffsetEmpty)
 			return ColGroupConst.create(colIndexes, defaultTuple);
 		final boolean allZero = ColGroupUtils.allZero(defaultTuple);
-		if(dict == null  && allZero)
+		if(dict == null && allZero)
 			return new ColGroupEmpty(colIndexes);
 		else if(dict == null && offsets.getSize() * 2 > numRows + 2) {
 			AOffset rev = offsets.reverse(numRows);
@@ -469,8 +469,16 @@ public class ColGroupSDCSingle extends ASDC {
 		IDictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.size());
 		final int def = (int) _defaultTuple[0];
 		if(d == null) {
-			if(def <= 0 || def > max)
+			if(def <= 0){
+				if(max > 0)
+					return ColGroupEmpty.create(max);
+				else 
+					return null;
+			}
+			else if(def > max && max > 0)
 				return ColGroupEmpty.create(max);
+			else if(max <= 0)
+				return null;
 			else {
 				double[] retDef = new double[max];
 				retDef[((int) _defaultTuple[0]) - 1] = 1;
@@ -478,18 +486,19 @@ public class ColGroupSDCSingle extends ASDC {
 			}
 		}
 		else {
+			final IColIndex outCols = ColIndexFactory.create(d.getNumberOfColumns(_dict.getNumberOfValues(1)));
 			if(def <= 0) {
 				if(ignore)
-					return ColGroupSDCSingleZeros.create(ColIndexFactory.create(max), nRows, d, _indexes, getCachedCounts());
+					return ColGroupSDCSingleZeros.create(outCols, nRows, d, _indexes, getCachedCounts());
 				else
 					throw new DMLRuntimeException("Invalid content of zero in rexpand");
 			}
 			else if(def > max)
-				return ColGroupSDCSingleZeros.create(ColIndexFactory.create(max), nRows, d, _indexes, getCachedCounts());
+				return ColGroupSDCSingleZeros.create(outCols, nRows, d, _indexes, getCachedCounts());
 			else {
 				double[] retDef = new double[max];
 				retDef[((int) _defaultTuple[0]) - 1] = 1;
-				return ColGroupSDCSingle.create(ColIndexFactory.create(max), nRows, d, retDef, _indexes, getCachedCounts());
+				return ColGroupSDCSingle.create(outCols, nRows, d, retDef, _indexes, getCachedCounts());
 			}
 		}
 	}

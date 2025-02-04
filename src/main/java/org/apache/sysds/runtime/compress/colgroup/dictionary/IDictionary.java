@@ -328,6 +328,14 @@ public interface IDictionary {
 	public int getNumberOfValues(int ncol);
 
 	/**
+	 * Get the number of columns in this dictionary, provided you know the number of values, or rows.
+	 * 
+	 * @param nrow The number of rows/values known inside this dictionary
+	 * @return The number of columns
+	 */
+	public int getNumberOfColumns(int nrow);
+
+	/**
 	 * Method used as a pre-aggregate of each tuple in the dictionary, to single double values.
 	 * 
 	 * Note if the number of columns is one the actual dictionaries values are simply returned.

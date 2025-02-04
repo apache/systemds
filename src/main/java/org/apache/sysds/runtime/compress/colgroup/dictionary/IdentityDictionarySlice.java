@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -192,7 +193,7 @@ public class IdentityDictionarySlice extends AIdentityDictionary {
 	public double[] productAllRowsToDouble(int nCol) {
 		double[] ret = new double[nRowCol + (withEmpty ? 1 : 0)];
 		if(u - l - 1 == 0)
-			ret[l] =  1;
+			ret[l] = 1;
 		return ret;
 	}
 
@@ -201,7 +202,7 @@ public class IdentityDictionarySlice extends AIdentityDictionary {
 		int nVal = nRowCol + (withEmpty ? 1 : 0);
 		double[] ret = new double[nVal + 1];
 		if(u - l - 1 == 0)
-			ret[l] =  1;
+			ret[l] = 1;
 		ret[nVal] = defaultTuple[0];
 		for(int i = 1; i < defaultTuple.length; i++)
 			ret[nVal] *= defaultTuple[i];
@@ -235,6 +236,13 @@ public class IdentityDictionarySlice extends AIdentityDictionary {
 	@Override
 	public int getNumberOfValues(int ncol) {
 		return nRowCol + (withEmpty ? 1 : 0);
+	}
+
+	@Override
+	public int getNumberOfColumns(int nrow) {
+		if(nrow != (nRowCol + (withEmpty ? 1 : 0)))
+			throw new DMLCompressionException("Invalid call to get Number of values assuming wrong number of columns");
+		return u - l;
 	}
 
 	@Override

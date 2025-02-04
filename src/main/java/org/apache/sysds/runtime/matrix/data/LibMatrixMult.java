@@ -159,6 +159,13 @@ public class LibMatrixMult
 	 * @return ret Matrix Block
 	 */
 	public static MatrixBlock matrixMult(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k) {
+		if(NativeHelper.isNativeLibraryLoaded())
+			return LibMatrixNative.matrixMult(m1, m2, ret, k);
+		else
+			return matrixMult(m1, m2, ret, false, k);
+	}
+
+	public static MatrixBlock matrixMultNonNative(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k) {
 		return matrixMult(m1, m2, ret, false, k);
 	}
 	
@@ -256,7 +263,7 @@ public class LibMatrixMult
 		// core matrix mult computation
 		if(ultraSparse && !fixedRet)
 			matrixMultUltraSparse(m1, m2, ret, m1Perm, 0, ru2);
-		else if(!m1.sparse && !m2.sparse)
+		else if(!m1.sparse && !m2.sparse && !ret.sparse)
 			matrixMultDenseDense(m1, m2, ret, tm2, pm2, 0, ru2, 0, m2.clen);
 		else if(m1.sparse && m2.sparse)
 			matrixMultSparseSparse(m1, m2, ret, pm2, sparse, 0, ru2);
@@ -1257,6 +1264,100 @@ public class LibMatrixMult
 	}
 
 	private static void matrixMultDenseSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2, int rl, int ru) {
+		if(ret.isInSparseFormat()){
+			if(!m1.sparse && !m2.sparse)
+				matrixMultDenseDenseOutSparse(m1,m2,ret, pm2, rl, ru);
+			else 
+				matrixMultDenseSparseOutSparse(m1, m2, ret, pm2, rl, ru);
+		}
+		else
+			matrixMultDenseSparseOutDense(m1, m2, ret, pm2, rl, ru);
+	}
+
+
+	private static void matrixMultDenseDenseOutSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2,
+		int rl, int ru) {
+		final DenseBlock a = m1.getDenseBlock();
+		final DenseBlock b = m2.getDenseBlock();
+		final SparseBlock c = ret.getSparseBlock();
+		final int m = m1.rlen;  // rows left
+		final int cd = m1.clen; // common dim
+		final int n = m2.clen;
+
+		final int rl1 = pm2 ? 0 : rl;
+		final int ru1 = pm2 ? m : ru;
+		final int rl2 = pm2 ? rl : 0;
+		final int ru2 = pm2 ? ru : cd;
+
+		final int blocksizeK = 32;
+		final int blocksizeI = 32;
+
+		for(int bi = rl1; bi < ru1; bi += blocksizeI) {
+			for(int bk = rl2, bimin = Math.min(ru1, bi + blocksizeI); bk < ru2; bk += blocksizeK) {
+				final int bkmin = Math.min(ru2, bk + blocksizeK);
+				// core sub block matrix multiplication
+				for(int i = bi; i < bimin; i++) { // rows left
+					final double[] avals = a.values(i);
+					final int aix = a.pos(i);
+					for(int k = bk; k < bkmin; k++) { // common dimension
+						final double aval = avals[aix + k];
+						if(aval != 0) {
+							final double[] bvals = b.values(k);
+							final int bpos = b.pos(k);
+							for(int j = 0; j < n; j++) {
+								final double bv = bvals[bpos + j];
+								c.add(i, j, aval * bv);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+	private static void matrixMultDenseSparseOutSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2,
+		int rl, int ru) {
+		final DenseBlock a = m1.getDenseBlock();
+		final SparseBlock b = m2.getSparseBlock();
+		final SparseBlock c = ret.getSparseBlock();
+		final int m = m1.rlen;  // rows left
+		final int cd = m1.clen; // common dim
+
+		final int rl1 = pm2 ? 0 : rl;
+		final int ru1 = pm2 ? m : ru;
+		final int rl2 = pm2 ? rl : 0;
+		final int ru2 = pm2 ? ru : cd;
+
+		final int blocksizeK = 32;
+		final int blocksizeI = 32;
+
+		for(int bi = rl1; bi < ru1; bi += blocksizeI) {
+			for(int bk = rl2, bimin = Math.min(ru1, bi + blocksizeI); bk < ru2; bk += blocksizeK) {
+				final int bkmin = Math.min(ru2, bk + blocksizeK);
+				// core sub block matrix multiplication
+				for(int i = bi; i < bimin; i++) { // rows left
+					final double[] avals = a.values(i);
+					final int aix = a.pos(i);
+					for(int k = bk; k < bkmin; k++) { // common dimension
+						final double aval = avals[aix + k];
+						if(aval == 0 || b.isEmpty(k))
+							continue;
+						final int[] bIdx = b.indexes(k);
+						final double[] bVals = b.values(k);
+						final int bPos = b.pos(k);
+						final int bEnd = bPos + b.size(k);
+						for(int j = bPos; j < bEnd ; j++){
+							c.add(i, bIdx[j], aval * bVals[j]);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private static void matrixMultDenseSparseOutDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean pm2, int rl,
+		int ru) {
 		DenseBlock a = m1.getDenseBlock();
 		DenseBlock c = ret.getDenseBlock();
 		int m = m1.rlen;
@@ -1907,8 +2008,10 @@ public class LibMatrixMult
 		if(ret.isInSparseFormat()){
 			if(m1.isInSparseFormat())
 				matrixMultUltraSparseRightSparseMCSRLeftSparseOut(m1, m2, ret, rl, ru);
-			else
+			else if (m2.isInSparseFormat())
 				matrixMultUltraSparseRightDenseLeftSparseOut(m1, m2, ret, rl, ru);
+			else 
+				matrixMultUltraSparseDenseInput(m1, m2, ret, rl, ru);
 		}
 		else if(ret.getDenseBlock().isContiguous())
 			matrixMultUltraSparseRightDenseOut(m1, m2, ret, rl, ru);
@@ -1987,6 +2090,30 @@ public class LibMatrixMult
 			final double[] bvals = b.values(k);
 			for(int i = rl; i < ru; i++) 
 				mmDenseMatrixSparseRow(bpos, blen, bixs, bvals, k, i, a, c);
+		}
+	}
+
+	private static void matrixMultUltraSparseDenseInput(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru){
+		final int cd = m1.clen;
+		final int rc = m2.clen;
+		final DenseBlock a = m1.denseBlock;
+		final DenseBlock b = m2.denseBlock;
+		final SparseBlockMCSR c = (SparseBlockMCSR) ret.sparseBlock;
+
+		for(int i = rl; i < ru; i++) {
+			// it is known that the left matrix is most likely containing many zeros.
+			final double[] av = a.values(i);
+			final int pos = a.pos(i);
+			for(int k = 0; k < cd; k++) {
+				final double v = av[pos + k];
+				if(v != 0) {
+					final double[] bv = b.values(k);
+					final int posb = b.pos(k);
+					for(int j = 0; j < rc; j++) {
+						c.add(i,j, bv[posb + j] * v);
+					}
+				}
+			}
 		}
 	}
 
@@ -4419,6 +4546,8 @@ public class LibMatrixMult
 	}
 	
 	public static boolean isSparseOutputMatrixMult(MatrixBlock m1, MatrixBlock m2) {
+		if(m2.rlen == 1 && m2.nonZeros < m2.clen / 4) // vector right ... that is sparse.
+			return true;
 		//output is a matrix (not vector), very likely sparse, and output rows fit into L1 cache
 		if( !(m1.sparse && m2.sparse && m1.rlen > 1 && m2.clen > 1) )
 			return false;
@@ -4551,7 +4680,7 @@ public class LibMatrixMult
 		private final boolean _pm2r; //par over m2 rows
 		private final boolean _pm2c; //par over m2 rows
 		private final boolean _m1Perm; //sparse permutation
-		private final boolean _sparse; //sparse output
+		// private final boolean _sparse; //sparse output
 		private final int _rl;
 		private final int _ru;
 		private final ConcurrentHashMap<double[], double[]> _cache;
@@ -4565,7 +4694,7 @@ public class LibMatrixMult
 			_pm2r = pm2r;
 			_pm2c = pm2c;
 			_m1Perm = m1Perm;
-			_sparse = sparse;
+			// _sparse = sparse;
 			_rl = rl;
 			_ru = ru;
 			_cache = cache;
@@ -4594,14 +4723,14 @@ public class LibMatrixMult
 			//compute block matrix multiplication
 			if( _ret.sparse ) //ultra-sparse
 				matrixMultUltraSparse(_m1, _m2, _ret, _m1Perm, rl, ru);
-			else if(!_m1.sparse && !_m2.sparse)
+			else if(!_m1.sparse && !_m2.sparse && !_ret.sparse){
 				if(_m1.denseBlock instanceof DenseBlockFP64DEDUP && _m2.denseBlock.isContiguous(0,_m1.clen) && cl == 0 && cu == _m2.clen)
 					matrixMultDenseDenseMMDedup((DenseBlockFP64DEDUP) _m1.denseBlock, _m2.denseBlock, (DenseBlockFP64DEDUP) _ret.denseBlock, _m2.clen, _m1.clen, rl, ru, _cache);
 				else
 					matrixMultDenseDense(_m1, _m2, _ret, _tm2, _pm2r, rl, ru, cl, cu);
-
+			}
 			else if(_m1.sparse && _m2.sparse)
-				matrixMultSparseSparse(_m1, _m2, _ret, _pm2r, _sparse, rl, ru);
+				matrixMultSparseSparse(_m1, _m2, _ret, _pm2r,  _ret.sparse, rl, ru);
 			else if(_m1.sparse)
 				matrixMultSparseDense(_m1, _m2, _ret, _pm2r, rl, ru);
 			else

@@ -22,7 +22,7 @@
 # (2) https://github.com/stanfordnlp/GloVe/blob/master/src/glove.c
 #-------------------------------------------------------------
 
-source("scripts/builtin/cooccur.dml") as cooc
+source("scripts/builtin/cooccurrenceMatrix.dml") as cooc
 
 init = function(matrix[double] cooc_matrix, double x_max, double alpha)
   return(matrix[double] weights, matrix[double] log_cooc_matrix){
@@ -125,13 +125,47 @@ gloveWithCoocMatrix = function(matrix[double] cooc_matrix, frame[Unknown] cooc_i
     G = cbind(cooc_index[,2], as.frame(G));
 }
 
-
-glove = function(Frame[Unknown] input, int seed, int vector_size, double alpha, double eta, double x_max, double tol, int iterations,int print_loss_it)
+glove = function(
+    Frame[Unknown] input, 
+    int seed, int vector_size, 
+    double alpha, double eta, 
+    double x_max, 
+    double tol, 
+    int iterations,
+    int print_loss_it,
+    Int maxTokens,
+    Int windowSize,
+    Boolean distanceWeighting,
+    Boolean symmetric)
     return (frame[Unknown] G){
-        [cooc_matrix, cooc_index] = cooc::getCoocMatrix(input, 26000, 15, TRUE,TRUE);
-        G = gloveWithCoocMatrix(cooc_matrix, cooc_index, seed, vector_size, alpha, eta, x_max, tol, iterations, print_loss_it);
 
+        /*
+        * Main function to Computes the vector embeddings for words in a large text corpus.
+        * INPUT:
+        * ------------------------------------------------------------------------------
+        * - input (Frame[Unknown]): 1DInput corpus in CSV format.
+        * - seed: Random seed for reproducibility.
+        * - vector_size: Dimensionality of word vectors, V.
+        * - eta: Learning rate for optimization, recommended value: 0.05.
+        * - alpha: Weighting function parameter, recommended value: 0.75.
+        * - x_max: Maximum co-occurrence value as per the GloVe paper: 100.
+        * - tol: Tolerance value to avoid overfitting, recommended value: 1e-4.
+        * - iterations: Total number of training iterations.
+        * - print_loss_it: Interval (in iterations) for printing the loss.
+        * - maxTokens (Int): Maximum number of tokens per text entry.
+        * - windowSize (Int): Context window size.
+        * - distanceWeighting (Boolean): Whether to apply distance-based weighting.
+        * - symmetric (Boolean): Determines if the matrix is symmetric (TRUE) or asymmetric (FALSE).
+        * ------------------------------------------------------------------------------
+        * OUTPUT:
+        * ------------------------------------------------------------------------------
+        * G (Frame[Unknown]): The word indices and their word vectors, of shape (N, V). Each represented as a vector, of shape (1,V)
+        * ------------------------------------------------------------------------------
+        */
+
+        [cooc_matrix, cooc_index] = cooc::cooccurrenceMatrix(input, maxTokens, windowSize, distanceWeighting, symmetric);
+        G = gloveWithCoocMatrix(cooc_matrix, cooc_index, seed, vector_size, alpha, eta, x_max, tol, iterations, print_loss_it);
 }
 
-#input = read(§1, data_type="frame", format="csv", sep=",");
-#G = glove(input, seed, vector_size, alpha, eta, x_max, tol, iterations, print_loss_it);
+#input = read("src/test/resources/datasets/20news/20news_subset_untokenized.csv", data_type="frame", format="csv", sep=",");
+#G = glove(input[,4], seed, vector_size, alpha, eta, x_max, tol, iterations, print_loss_it, 2600, 15, TRUE, TRUE);

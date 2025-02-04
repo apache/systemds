@@ -1,0 +1,198 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/layers/bert_layer.dml") as bert_layer
+
+debug = as.logical(as.integer($1))
+
+B = as.integer($2)
+T = as.integer($3)
+D = as.integer($4)
+H = as.integer($5)
+d = as.integer($6)
+I = as.integer($7)
+
+dropout_p_attention = 0.0
+dropout_p_output = 0.0
+epsilon_ln = 1e-012
+activation = $8
+
+states = matrix(read($9, format="csv"), rows=B, cols=T*D)
+
+W_Q = matrix(read($10, format="csv"), rows=D, cols=D)
+b_Q = matrix(read($11, format="csv"), rows=1, cols=D)
+W_K = matrix(read($12, format="csv"), rows=D, cols=D)
+b_K = matrix(read($13, format="csv"), rows=1, cols=D)
+W_V = matrix(read($14, format="csv"), rows=D, cols=D)
+b_V = matrix(read($15, format="csv"), rows=1, cols=D)
+W_context = matrix(read($16, format="csv"), rows=D, cols=D)
+b_context = matrix(read($17, format="csv"), rows=1, cols=D)
+W_intermediate = matrix(read($18, format="csv"), rows=D, cols=I)
+b_intermediate = matrix(read($19, format="csv"), rows=1, cols=I)
+W_out = matrix(read($20, format="csv"), rows=I, cols=D)
+b_out = matrix(read($21, format="csv"), rows=1, cols=D)
+
+gamma_ln1 = matrix(read($22, format="csv"), rows=1, cols=D)
+beta_ln1 = matrix(read($23, format="csv"), rows=1, cols=D)
+gamma_ln2 = matrix(read($24, format="csv"), rows=1, cols=D)
+beta_ln2 = matrix(read($25, format="csv"), rows=1, cols=D)
+
+expected_out_states = read($26, format="csv")
+expected_attention = read($27, format="csv")
+
+dout_states = matrix(read($28, format="csv"), rows=B, cols=T*D)
+
+expected_din_states = matrix(read($29, format="csv"), rows=B, cols=T*D)
+
+expected_dW_Q = read($30, format="csv")
+expected_db_Q = matrix(read($31, format="csv"), rows=1, cols=D)
+expected_dW_K = read($32, format="csv")
+expected_db_K = matrix(read($33, format="csv"), rows=1, cols=D)
+expected_dW_V = read($34, format="csv")
+expected_db_V = matrix(read($35, format="csv"), rows=1, cols=D)
+expected_dW_context = read($36, format="csv")
+expected_db_context = matrix(read($37, format="csv"), rows=1, cols=D)
+expected_dW_intermediate = read($38, format="csv")
+expected_db_intermediate = matrix(read($39, format="csv"), rows=1, cols=I)
+expected_dW_out = read($40, format="csv")
+expected_db_out = matrix(read($41, format="csv"), rows=1, cols=D)
+
+expected_dgamma_ln1 = matrix(read($42, format="csv"), rows=1, cols=D)
+expected_dbeta_ln1 = matrix(read($43, format="csv"), rows=1, cols=D)
+expected_dgamma_ln2 = matrix(read($44, format="csv"), rows=1, cols=D)
+expected_dbeta_ln2 = matrix(read($45, format="csv"), rows=1, cols=D)
+
+
+[out_states, attention, outputs, dropout_mask_attention, dropout_mask_output_1, dropout_mask_output_2, cache_mean_ln1,
+  cache_var_ln1, cache_norm_ln1, cache_mean_ln2, cache_var_ln2, cache_norm_ln2] = bert_layer::forward(states,
+    H, T, d, I,
+    W_Q,  b_Q, 
+    W_K,  b_K, 
+    W_V,  b_V,
+    W_context,  b_context, 
+    W_intermediate,  b_intermediate, 
+    W_out,  b_out, 
+    dropout_p_attention, 
+    dropout_p_output,
+    epsilon_ln,
+    gamma_ln1,  beta_ln1,
+    gamma_ln2,  beta_ln2,
+    activation
+)
+
+[din_states, dW_Q, db_Q, dW_K, db_K, dW_V, db_V, dW_context, db_context, dW_intermediate, db_intermediate, dW_out, db_out,
+  dgamma_ln1, dbeta_ln1, dgamma_ln2, dbeta_ln2] = bert_layer::backward(dout_states, 
+    dropout_mask_attention, dropout_mask_output_1, dropout_mask_output_2, 
+    cache_mean_ln1, cache_var_ln1, cache_norm_ln1,
+    cache_mean_ln2, cache_var_ln2, cache_norm_ln2,
+    outputs,
+    states,
+    H, T, d, I,
+    W_Q, b_Q,
+    W_K, b_K,
+    W_V, b_V,
+    W_context, b_context,
+    W_intermediate, b_intermediate,
+    W_out, b_out,
+    dropout_p_attention,
+    dropout_p_output,
+    epsilon_ln,
+    gamma_ln1, beta_ln1,
+    gamma_ln2, beta_ln2,
+    activation
+)
+
+if (debug) {
+  print(toString(out_states))
+  print(toString(attention))
+}
+
+states_error = max(abs(expected_out_states - out_states))
+attention_error = max(abs(expected_attention - attention))
+
+if (debug) {
+  print(states_error)
+  print(attention_error)
+}
+
+din_error = max(abs(din_states - expected_din_states))
+dW_Q_error = max(abs(dW_Q - expected_dW_Q))
+db_Q_error = max(abs(db_Q - expected_db_Q))
+dW_K_error = max(abs(dW_K - expected_dW_K))
+db_K_error = max(abs(db_K - expected_db_K))
+dW_V_error = max(abs(dW_V - expected_dW_V))
+db_V_error = max(abs(db_V - expected_db_V))
+dW_context_error = max(abs(dW_context - expected_dW_context))
+db_context_error = max(abs(db_context - expected_db_context))
+dW_intermediate_error = max(abs(dW_intermediate - expected_dW_intermediate))
+db_intermediate_error = max(abs(db_intermediate - expected_db_intermediate))
+dW_out_error = max(abs(dW_out - expected_dW_out))
+db_out_error = max(abs(db_out - expected_db_out))
+dgamma_ln1_error = max(abs(dgamma_ln1 - expected_dgamma_ln1))
+dbeta_ln1_error = max(abs(dbeta_ln1 - expected_dbeta_ln1))
+dgamma_ln2_error = max(abs(dgamma_ln2 - expected_dgamma_ln2))
+dbeta_ln2_error = max(abs(dbeta_ln2 - expected_dbeta_ln2))
+
+if (debug) {
+  print(din_states)
+  
+  print(dW_Q)
+  print(db_Q)
+
+  print(dW_K)
+  print(db_K)
+
+  print(dW_V)
+  print(db_V)
+
+  print(dW_context)
+  print(db_context)
+
+  print(dW_intermediate)
+  print(db_intermediate)
+
+  print(dW_out)
+  print(db_out)
+
+  print(dgamma_ln1)
+  print(dbeta_ln1)
+
+  print(dgamma_ln2)
+  print(dbeta_ln2)
+}
+
+write(din_error, $46, format="text")
+write(dW_Q_error, $47, format="text")
+write(db_Q_error, $48, format="text")
+write(dW_K_error, $49, format="text")
+write(db_K_error, $50, format="text")
+write(dW_V_error, $51, format="text")
+write(db_V_error, $52, format="text")
+write(dW_context_error, $53, format="text")
+write(db_context_error, $54, format="text")
+write(dW_intermediate_error, $55, format="text")
+write(db_intermediate_error, $56, format="text")
+write(dW_out_error, $57, format="text")
+write(db_out_error, $58, format="text")
+write(dgamma_ln1_error, $59, format="text")
+write(dbeta_ln1_error, $60, format="text")
+write(dgamma_ln2_error, $61, format="text")
+write(dbeta_ln2_error, $62, format="text")

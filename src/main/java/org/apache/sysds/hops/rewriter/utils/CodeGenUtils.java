@@ -93,8 +93,8 @@ public class CodeGenUtils {
 					return "Types.OpOp1.NOT";
 				case "sqrt":
 					return "Types.OpOp1.SQRT";
-				case "sq":
-					return "Types.OpOp1.POW2";
+				//case "sq":
+				//	return "Types.OpOp1.POW2"; // POW2 does not seem to work in all cases when applying the rewrite (e.g., LinearLogRegTest)
 				case "log":
 					return "Types.OpOp1.LOG";
 				case "log_nz":
@@ -286,7 +286,7 @@ public class CodeGenUtils {
 			case "nrow":
 			case "ncol":
 			case "length":
-			case "sq":
+			//case "sq": // SQ does not appear to work in some cases
 			case "exp":
 				return "UnaryOp";
 

@@ -827,7 +827,7 @@ public class OptimizerUtils
 		if(dt == DataType.FRAME)
 			return estimateSizeExactFrame(nrows, ncols);
 		else 
-			return estimateSizeExactSparsity(nrows, ncols, sp, dt);
+			return estimateSizeExactSparsity(nrows, ncols, sp);
 	}
 
 	/**

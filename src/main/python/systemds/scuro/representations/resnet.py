@@ -63,15 +63,15 @@ class ResNet(UnimodalRepresentation):
     @model.setter
     def model(self, model):
         if model == "ResNet18":
-            self._model = models.resnet18(pretrained=True).to(DEVICE)
+            self._model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT).to(DEVICE)
         elif model == "ResNet34":
-            self._model = models.resnet34(pretrained=True).to(DEVICE)
+            self._model = models.resnet34(weights=models.ResNet34_Weights.DEFAULT).to(DEVICE)
         elif model == "ResNet50":
-            self._model = models.resnet50(pretrained=True).to(DEVICE)
+            self._model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT).to(DEVICE)
         elif model == "ResNet101":
-            self._model = models.resnet101(pretrained=True).to(DEVICE)
+            self._model = models.resnet101(weights=models.ResNet101_Weights.DEFAULT).to(DEVICE)
         elif model == "ResNet152":
-            self._model = models.resnet152(pretrained=True).to(DEVICE)
+            self._model = models.resnet152(weights=models.ResNet152_Weights.DEFAULT).to(DEVICE)
         else:
             raise NotImplementedError
 

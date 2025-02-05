@@ -26,6 +26,7 @@ import java.util.Map;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.FileFormat;
@@ -63,8 +64,8 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 import org.apache.sysds.utils.MemoryEstimates;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 public class OptimizerUtils 
 {
@@ -820,6 +821,13 @@ public class OptimizerUtils
 	public static long estimateSizeExactSparsity(long nrows, long ncols, double sp) 
 	{
 		return MatrixBlock.estimateSizeInMemory(nrows,ncols,sp);
+	}
+
+	public static long estimateSizeExactSparsity(long nrows, long ncols, double sp, DataType dt){
+		if(dt == DataType.FRAME)
+			return estimateSizeExactFrame(nrows, ncols);
+		else 
+			return estimateSizeExactSparsity(nrows, ncols, sp, dt);
 	}
 
 	/**

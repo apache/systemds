@@ -55,9 +55,9 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 	}
 
 	/**
-	 * Returns the counts of values inside the dictionary. If already calculated it will return the previous counts.
-	 * This produce an overhead in cases where the count is calculated, but the overhead will be limited to number of
-	 * distinct tuples in the dictionary.
+	 * Returns the counts of values inside the dictionary. If already calculated it will return the previous counts. This
+	 * produce an overhead in cases where the count is calculated, but the overhead will be limited to number of distinct
+	 * tuples in the dictionary.
 	 * 
 	 * The returned counts always contains the number of zero tuples as well if there are some contained, even if they
 	 * are not materialized.
@@ -195,15 +195,15 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 
 	@Override
 	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
-		try {
-			IDictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.size());
-			if(d == null)
-				return ColGroupEmpty.create(max);
-			else
-				return copyAndSet(ColIndexFactory.create(max), d);
-		}
-		catch(DMLCompressionException e) {
+		IDictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.size());
+		if(d == null) {
+			if(max <= 0)
+				return null;
 			return ColGroupEmpty.create(max);
+		}
+		else {
+			IColIndex outCols = ColIndexFactory.create(d.getNumberOfColumns(_dict.getNumberOfValues(1)));
+			return copyAndSet(outCols, d);
 		}
 	}
 

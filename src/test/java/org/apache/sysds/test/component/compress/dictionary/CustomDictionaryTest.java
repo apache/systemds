@@ -648,4 +648,17 @@ public class CustomDictionaryTest {
 	public void notEqualsObject(){
 		assertNotEquals(Dictionary.create(new double[]{1.1,2.2,3.3}), new Object());
 	}
+
+
+	@Test 
+	public void createIdentity_1(){
+
+		assertTrue(IdentityDictionary.create(1) instanceof Dictionary);
+	}
+
+	@Test 
+	public void createIdentity_2(){
+
+		assertTrue(IdentityDictionary.create(1, true) instanceof Dictionary);
+	}
 }

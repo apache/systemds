@@ -158,13 +158,40 @@ public class CompressedVectorTest extends CompressedTestBase {
 		testReExpand(true);
 	}
 
+	@Test
+	public void testReExpandColNoIgnore() {
+		testReExpand(true, 0, false, true);
+	}
+
+	@Test
+	public void testReExpandColNoCast() {
+		testReExpand(true, 0, false, false);
+	}
+
 	public void testReExpand(boolean col) {
+		testReExpand(col, 50, true, true);
+	}
+
+	public void testReExpand(boolean col, int max,  boolean ignore, boolean cast) {
 		try {
 			if(cmb instanceof CompressedMatrixBlock) {
-				MatrixBlock ret1 = cmb.rexpandOperations(new MatrixBlock(), 50, !col, true, true, _k);
-				MatrixBlock ret2 = mb.rexpandOperations(new MatrixBlock(), 50, !col, true, true, _k);
+				MatrixBlock ret1 = null;
+				try{
+					ret1 = cmb.rexpandOperations(new MatrixBlock(), max, !col, cast, ignore, _k);
+				}
+				catch(RuntimeException re){
+					if(! re.getMessage().contains("Invalid input value <= 0 for ignore=false:"))
+						throw re;
+					else 
+						return; // great!
+				}
+				MatrixBlock ret2 = mb.rexpandOperations(new MatrixBlock(), max, !col, cast, ignore, _k);
 				compareResultMatrices(ret2, ret1, 0);
 			}
+		}
+		catch(AssertionError e){
+			LOG.error(cmb);
+			throw e;
 		}
 		catch(Exception e) {
 			e.printStackTrace();

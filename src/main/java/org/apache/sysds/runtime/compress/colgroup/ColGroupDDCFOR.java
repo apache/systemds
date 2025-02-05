@@ -26,7 +26,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
@@ -392,33 +391,15 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
 		final int def = (int) _reference[0];
 		IDictionary d = _dict.rexpandColsWithReference(max, ignore, cast, def);
-
 		if(d == null) {
-			if(def <= 0 || def > max)
-				return ColGroupEmpty.create(max);
-			else {
-				double[] retDef = new double[max];
-				retDef[def - 1] = 1;
-				return ColGroupConst.create(retDef);
-			}
+			if(max <= 0)
+				return null;
+			return ColGroupEmpty.create(max);
 		}
 		else {
-			IColIndex outCols = ColIndexFactory.create(max);
-			if(def <= 0) {
-				if(ignore)
-					return ColGroupDDC.create(outCols, d, _data, getCachedCounts());
-				else
-					throw new DMLRuntimeException("Invalid content of zero in rexpand");
-			}
-			else if(def > max)
-				return ColGroupDDC.create(outCols, d, _data, getCachedCounts());
-			else {
-				double[] retDef = new double[max];
-				retDef[def - 1] = 1;
-				return ColGroupDDCFOR.create(outCols, d, _data, getCachedCounts(), retDef);
-			}
+			IColIndex outCols = ColIndexFactory.create(d.getNumberOfColumns(_dict.getNumberOfValues(1)));
+			return ColGroupDDC.create(outCols, d, _data, getCachedCounts());
 		}
-
 	}
 
 	@Override

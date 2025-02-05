@@ -500,15 +500,24 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 	@Override
 	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
 		IDictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.size());
-		return rexpandCols(max, ignore, cast, nRows, d, _indexes, _data, getCachedCounts(), (int) _defaultTuple[0]);
+		return rexpandCols(max, ignore, cast, nRows, d, _indexes, _data, getCachedCounts(), (int) _defaultTuple[0],
+			_dict.getNumberOfValues(1));
 	}
 
 	protected static AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows, IDictionary d,
-		AOffset indexes, AMapToData data, int[] counts, int def) {
+		AOffset indexes, AMapToData data, int[] counts, int def, int nVal) {
 
 		if(d == null) {
-			if(def <= 0 || def > max)
+			if(def <= 0){
+				if(max > 0)
+					return ColGroupEmpty.create(max);
+				else 
+					return null;
+			}
+			else if(def > max && max > 0)
 				return ColGroupEmpty.create(max);
+			else if(max <= 0)
+				return null;
 			else {
 				double[] retDef = new double[max];
 				retDef[def - 1] = 1;
@@ -517,7 +526,7 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 			}
 		}
 		else {
-			final IColIndex outCols = ColIndexFactory.create(max);
+			final IColIndex outCols = ColIndexFactory.create(d.getNumberOfColumns(nVal));
 			if(def <= 0) {
 				if(ignore)
 					return ColGroupSDCZeros.create(outCols, nRows, d, indexes, data, counts);

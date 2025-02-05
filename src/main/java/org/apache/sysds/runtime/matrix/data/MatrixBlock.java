@@ -5010,7 +5010,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return LibMatrixReorg.rexpand(this, result, max, rows, cast, ignore, k);
 	}
 	
-	
 	@Override
 	public final MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement) {
 		return replaceOperations(result, pattern, replacement, 1);

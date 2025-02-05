@@ -111,9 +111,15 @@ public final class CLALibRexpand {
 				cast, ignore, k);
 		else {
 			CompressedMatrixBlock retC = new CompressedMatrixBlock(nRows, max);
-			retC.allocateColGroup(in.getColGroups().get(0).rexpandCols(max, ignore, cast, nRows));
-			retC.recomputeNonZeros();
-			return retC;
+			AColGroup g = in.getColGroups().get(0).rexpandCols(max, ignore, cast, nRows);
+			if(g == null)
+				return new MatrixBlock(nRows,0,0);
+			else {
+				retC.setNumColumns(g.getNumCols());
+				retC.allocateColGroup(g);
+				retC.recomputeNonZeros();
+				return retC;
+			}
 		}
 	}
 

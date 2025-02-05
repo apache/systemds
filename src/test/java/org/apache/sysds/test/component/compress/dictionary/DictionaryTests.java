@@ -378,6 +378,64 @@ public class DictionaryTests {
 	}
 
 	@Test
+	public void getNumValues() {
+		assertEquals(a.getNumberOfValues(nCol), b.getNumberOfValues(nCol));
+	}
+
+	@Test(expected = Exception.class)
+	public void getNumValuesInvalida() {
+		a.getNumberOfValues(nCol + 1);
+		throw new RuntimeException("pass");
+	}
+
+	@Test(expected = Exception.class)
+	public void getNumValuesInvalidb() {
+		b.getNumberOfValues(nCol + 1);
+		throw new RuntimeException("pass");
+	}
+
+	@Test
+	public void getNumColumns() {
+		assertEquals(a.getNumberOfColumns(nRow), b.getNumberOfColumns(nRow));
+	}
+
+	@Test(expected = Exception.class)
+	public void getNumColumnsInvalida() {
+		a.getNumberOfColumns(nRow + 1);
+		throw new RuntimeException("pass");
+	}
+
+	@Test(expected = Exception.class)
+	public void getNumColumnsInvalidb() {
+		b.getNumberOfColumns(nRow + 1);
+		throw new RuntimeException("pass");
+	}
+
+	@Test(expected = Exception.class)
+	public void outOfRange1() {
+		assertEquals(0, a.getValue(nRow, nCol - 1, nCol), 0.0);
+		throw new RuntimeException();
+	}
+
+	@Test(expected = Exception.class)
+	public void outOfRange2() {
+		assertEquals(0, b.getValue(nRow, nCol - 1, nCol), 0.0);
+		throw new RuntimeException();
+	}
+
+	@Test(expected = Exception.class)
+	public void outOfRange3() {
+		assertEquals(0, a.getValue(nRow * nCol + 1), 0.0);
+		throw new RuntimeException();
+	}
+
+	@Test(expected = Exception.class)
+	public void outOfRange4() {
+		assertEquals(0, b.getValue(nRow * nCol + 1), 0.0);
+		throw new RuntimeException();
+	}
+
+	@Test
 	public void getDictType() {
 		assertNotEquals(a.getDictType(), b.getDictType());
 	}
@@ -724,6 +782,13 @@ public class DictionaryTests {
 		IDictionary ad = a.sliceOutColumnRange(s, e, nCol);
 		IDictionary bd = b.sliceOutColumnRange(s, e, nCol);
 		compare(ad, bd, nRow, e - s);
+	}
+
+	@Test
+	public void sliceOutEverything() {
+		IDictionary ad = a.sliceOutColumnRange(0, nCol, nCol);
+		IDictionary bd = b.sliceOutColumnRange(0, nCol, nCol);
+		compare(ad, bd, nRow, nCol);
 	}
 
 	@Test
@@ -1185,6 +1250,61 @@ public class DictionaryTests {
 	}
 
 	@Test
+	public void rightMMPreAggUltraSparse() {
+		final int nColsOut = 30;
+		MatrixBlock sparse = TestUtils.generateTestMatrixBlock(1000, nColsOut, -10, 10, 0.001, 100);
+		sparse = TestUtils.ceil(sparse);
+		sparse.denseToSparse(true);
+		SparseBlock sb = sparse.getSparseBlock();
+		if(sb == null)
+			throw new NotImplementedException();
+
+		IColIndex agCols = new RangeIndex(nColsOut);
+		IColIndex thisCols = new RangeIndex(0, nCol);
+
+		int nVals = a.getNumberOfValues(nCol);
+		try {
+
+			IDictionary aa = a.rightMMPreAggSparse(nVals, sb, thisCols, agCols, nColsOut);
+			IDictionary bb = b.rightMMPreAggSparse(nVals, sb, thisCols, agCols, nColsOut);
+			compare(aa, bb, nColsOut);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+
+	}
+
+
+	@Test
+	public void rightMMPreAggUltraSparseTwoOut() {
+		final int nColsOut = 2;
+		MatrixBlock sparse = TestUtils.generateTestMatrixBlock(1000, nColsOut, -10, 10, 0.001, 100);
+		sparse = TestUtils.ceil(sparse);
+		sparse.denseToSparse(true);
+		SparseBlock sb = sparse.getSparseBlock();
+		if(sb == null)
+			throw new NotImplementedException();
+
+		IColIndex agCols = new RangeIndex(nColsOut);
+		IColIndex thisCols = new RangeIndex(0, nCol);
+
+		int nVals = a.getNumberOfValues(nCol);
+		try {
+
+			IDictionary aa = a.rightMMPreAggSparse(nVals, sb, thisCols, agCols, nColsOut);
+			IDictionary bb = b.rightMMPreAggSparse(nVals, sb, thisCols, agCols, nColsOut);
+			compare(aa, bb, nColsOut);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+
+	}
+
+	@Test
 	public void rightMMPreAggSparse2() {
 		final int nColsOut = 1000;
 		MatrixBlock sparse = TestUtils.generateTestMatrixBlock(1000, nColsOut, -10, 10, 0.01, 100);
@@ -1237,6 +1357,35 @@ public class DictionaryTests {
 		}
 
 	}
+
+
+	@Test
+	public void rightMMPreAggSparseDifferentColumnsUltraSparse() {
+		final int nColsOut = 3;
+		MatrixBlock sparse = TestUtils.generateTestMatrixBlock(1000, 50, -10, 10, 0.001, 100);
+		sparse = TestUtils.ceil(sparse);
+		sparse.denseToSparse(true);
+		SparseBlock sb = sparse.getSparseBlock();
+		if(sb == null)
+			throw new NotImplementedException();
+
+		IColIndex agCols = new ArrayIndex(new int[] {4, 10, 38});
+		IColIndex thisCols = new RangeIndex(0, nCol);
+
+		int nVals = a.getNumberOfValues(nCol);
+		try {
+
+			IDictionary aa = a.rightMMPreAggSparse(nVals, sb, thisCols, agCols, 50);
+			IDictionary bb = b.rightMMPreAggSparse(nVals, sb, thisCols, agCols, 50);
+			compare(aa, bb, nColsOut);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+
+	}
+
 
 	@Test
 	public void MMDictScalingDense() {

@@ -85,7 +85,6 @@ public class SchemeTestSDC extends SchemeTestBase {
 		catch(Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
-			throw new RuntimeException();
 		}
 	}
 }

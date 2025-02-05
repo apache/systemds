@@ -98,6 +98,11 @@ public class DeltaDictionary extends ADictionary {
 	}
 
 	@Override
+	public int getNumberOfColumns(int nrow){
+		return _values.length / nrow;
+	}
+
+	@Override
 	public String getString(int colIndexes) {
 		throw new NotImplementedException();
 	}

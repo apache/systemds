@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.lineage;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.AggBinaryOp;
@@ -32,6 +33,7 @@ import org.apache.sysds.runtime.instructions.cp.BinaryScalarScalarCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.FrameIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ListIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MatrixIndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.fed.ComputationFEDInstruction;
@@ -49,26 +51,26 @@ public class LineageCacheConfig
 	//-------------CACHING LOGIC RELATED CONFIGURATIONS--------------//
 
 	private static final String[] OPCODES = new String[] {
-		"tsmm", "ba+*", "*", "/", "+", "||", "nrow", "ncol", "round", "exp", "log",
-		"rightIndex", "leftIndex", "groupedagg", "r'", "solve", "spoof", "isna",
-		"uamean", "max", "min", "ifelse", "-", "sqrt", "<", ">", "uak+", "<=",
-		"^", "uamax", "uark+", "uacmean", "eigen","ctable", "ctableexpand", "replace",
-		"^2", "*2", "uack+", "tak+*", "uacsqk+", "uark+", "n+", "uarimax", "qsort",
-		"qpick", "transformapply", "uarmax", "n+", "-*", "castdtm", "lowertri", "1-*",
-		"prefetch", "mapmm", "contains", "mmchain", "mapmmchain", "+*", "==", "rmempty",
-		"conv2d_bias_add", "relu_maxpooling", "maxpooling", "batch_norm2d", "avgpooling",
+		Opcodes.TSMM.toString(), Opcodes.MMULT.toString(), Opcodes.MULT.toString(), Opcodes.DIV.toString(), Opcodes.PLUS.toString(), Opcodes.OR.toString(), Opcodes.NROW.toString(), Opcodes.NCOL.toString(), Opcodes.ROUND.toString(), Opcodes.EXP.toString(), Opcodes.LOG.toString(),
+		"rightIndex", "leftIndex", Opcodes.GROUPEDAGG.toString(), Opcodes.TRANSPOSE.toString(), Opcodes.SOLVE.toString(), Opcodes.SPOOF.toString(), Opcodes.ISNA.toString(),
+		Opcodes.UAMEAN.toString(), Opcodes.MAX.toString(), Opcodes.MIN.toString(), Opcodes.IFELSE.toString(), Opcodes.MINUS.toString(), Opcodes.SQRT.toString(), Opcodes.LESS.toString(), Opcodes.GREATER.toString(), Opcodes.UAKP.toString(), Opcodes.LESSEQUAL.toString(),
+		Opcodes.POW.toString(), Opcodes.UAMAX.toString(), Opcodes.UARKP.toString(), Opcodes.UACMEAN.toString(), Opcodes.EIGEN.toString(),Opcodes.CTABLE.toString(), Opcodes.CTABLEEXPAND.toString(), Opcodes.REPLACE.toString(),
+		Opcodes.POW2.toString(), Opcodes.MULT2.toString(), Opcodes.UACKP.toString(), Opcodes.TAKPM.toString(), Opcodes.UACSQKP.toString(), Opcodes.UARKP.toString(), Opcodes.NP.toString(), Opcodes.UARIMAX.toString(), Opcodes.QSORT.toString(),
+		Opcodes.QPICK.toString(), Opcodes.TRANSFORMAPPLY.toString(), Opcodes.UARMAX.toString(), Opcodes.NP.toString(), Opcodes.MINUSMULT.toString(), "castdtm", Opcodes.LOWERTRI.toString(), Opcodes.MINUS1_MULT.toString(),
+		Opcodes.PREFETCH.toString(), "mapmm", Opcodes.CONTAINS.toString(), Opcodes.MMCHAIN.toString(), "mapmmchain", Opcodes.PM.toString(), Opcodes.EQUAL.toString(), Opcodes.RMEMPTY.toString(),
+		Opcodes.CONV2D_BIAS_ADD.toString(), Opcodes.RELU_MAXPOOLING.toString(), Opcodes.MAXPOOLING.toString(), Opcodes.BATCH_NORM2D.toString(), Opcodes.AVGPOOLING.toString(),
 		"softmax"
 		//TODO: Reuse everything.
 	};
 
 	// Relatively expensive instructions. Most include shuffles.
 	private static final String[] PERSIST_OPCODES1 = new String[] {
-		"cpmm", "rmm", "pmm", "zipmm", "rev", "roll", "rshape", "rsort", "-", "*", "+",
-		"/", "%%", "%/%", "1-*", "^", "^2", "*2", "==", "!=", "<", ">",
-		"<=", ">=", "&&", "||", "xor", "max", "min", "rmempty", "rappend",
-		"gappend", "galignedappend", "rbind", "cbind", "nmin", "nmax",
-		"n+", "ctable", "ucumack+", "ucumac*", "ucumacmin", "ucumacmax",
-		"qsort", "qpick"
+		"cpmm", "rmm", Opcodes.PMM.toString(), "zipmm", Opcodes.REV.toString(), Opcodes.ROLL.toString(), Opcodes.RESHAPE.toString(), Opcodes.SORT.toString(), Opcodes.MINUS.toString(), Opcodes.MULT.toString(), Opcodes.PLUS.toString(),
+		Opcodes.DIV.toString(), Opcodes.MODULUS.toString(), Opcodes.INTDIV.toString(), Opcodes.MINUS1_MULT.toString(), Opcodes.POW.toString(), Opcodes.POW2.toString(), Opcodes.MULT2.toString(), Opcodes.EQUAL.toString(), Opcodes.NOTEQUAL.toString(), Opcodes.LESS.toString(), Opcodes.GREATER.toString(),
+		Opcodes.LESSEQUAL.toString(), Opcodes.GREATEREQUAL.toString(), Opcodes.AND.toString(), Opcodes.OR.toString(), Opcodes.XOR.toString(), Opcodes.MAX.toString(), Opcodes.MIN.toString(), Opcodes.RMEMPTY.toString(), "rappend",
+		"gappend", "galignedappend", Opcodes.RBIND.toString(), Opcodes.CBIND.toString(), Opcodes.NMIN.toString(), Opcodes.NMAX.toString(),
+		Opcodes.NP.toString(), Opcodes.CTABLE.toString(), "ucumack+", "ucumac*", "ucumacmin", "ucumacmax",
+		Opcodes.QSORT.toString(), Opcodes.QPICK.toString()
 	};
 
 	// Relatively inexpensive instructions.
@@ -77,7 +79,7 @@ public class LineageCacheConfig
 	};
 
 	private static final String[] GPU_OPCODE_HEAVY = new String[] {
-		"conv2d_bias_add", "relu_maxpooling", "maxpooling", "batch_norm2d", "avgpooling"  //DNN OPs
+		Opcodes.CONV2D_BIAS_ADD.toString(), Opcodes.RELU_MAXPOOLING.toString(), Opcodes.MAXPOOLING.toString(), Opcodes.BATCH_NORM2D.toString(), Opcodes.AVGPOOLING.toString()  //DNN OPs
 	};
 
 	private static String[] REUSE_OPCODES  = new String[] {};
@@ -268,10 +270,11 @@ public class LineageCacheConfig
 			|| inst instanceof GPUInstruction
 			|| inst instanceof ComputationSPInstruction)
 			&& !(inst instanceof ListIndexingCPInstruction)
-			&& !(inst instanceof BinaryScalarScalarCPInstruction);
+			&& !(inst instanceof BinaryScalarScalarCPInstruction)
+			&& !(inst instanceof FrameIndexingCPInstruction);
 		boolean rightCPOp = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
-			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec))
-			|| (inst.getOpcode().startsWith("spoof"))
+			|| (inst.getOpcode().equals(Opcodes.APPEND.toString()) && isVectorAppend(inst, ec))
+			|| (inst.getOpcode().startsWith(Opcodes.SPOOF.toString()))
 			|| (inst instanceof DataGenCPInstruction) && ((DataGenCPInstruction) inst).isMatrixCall());
 		boolean rightSPOp = isReusableRDDType(inst);
 		boolean updateInplace = (inst instanceof MatrixIndexingCPInstruction)

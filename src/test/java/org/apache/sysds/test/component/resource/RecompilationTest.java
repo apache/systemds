@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.resource;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.resource.CloudUtils;
@@ -103,7 +104,7 @@ public class RecompilationTest extends AutomatedTestBase {
 		// X = A.csv: (10^5)x(10^4) = 10^9 ~ 8BG
 		// Y = B.csv: (10^4)x(10^3) = 10^7 ~ 80MB
 		// X %*% Y -> (10^5)x(10^3) = 10^8 ~ 800MB
-		runTestMM("A.csv", "B.csv", 8L*1024*1024*1024, 0, 0, "ba+*", false);
+		runTestMM("A.csv", "B.csv", 8L*1024*1024*1024, 0, 0, Opcodes.MMULT.toString(), false);
 	}
 
 	@Test
@@ -112,7 +113,7 @@ public class RecompilationTest extends AutomatedTestBase {
 		// X = A.csv: (10^5)x(10^4) = 10^9 ~ 8BG
 		// Y = B.csv: (10^4)x(10^3) = 10^7 ~ 80MB
 		// X %*% Y -> (10^5)x(10^3) = 10^8 ~ 800MB
-		runTestMM("A.csv", "B.csv", 16L*1024*1024*1024, 2, 1024*1024*1024, "ba+*", false);
+		runTestMM("A.csv", "B.csv", 16L*1024*1024*1024, 2, 1024*1024*1024, Opcodes.MMULT.toString(), false);
 	}
 
 	@Test
@@ -149,7 +150,7 @@ public class RecompilationTest extends AutomatedTestBase {
 		// Single node cluster with 8GB driver memory -> tsmm operator in CP
 		// X = B.csv: (10^4)x(10^3) = 10^7 ~ 80MB
 		// t(X) %*% X -> (10^3)x(10^3) = 10^6 ~ 8MB (single block)
-		runTestTSMM("B.csv", 8L*1024*1024*1024, 0, -1, "tsmm", false);
+		runTestTSMM("B.csv", 8L*1024*1024*1024, 0, -1, Opcodes.TSMM.toString(), false);
 	}
 
 	@Test
@@ -162,15 +163,15 @@ public class RecompilationTest extends AutomatedTestBase {
 
 	@Test
 	public void test_MM_RecompilationSequence() throws IOException {
-		runTestMM("A.csv", "B.csv", 8L*1024*1024*1024, 0, -1, "ba+*", false);
+		runTestMM("A.csv", "B.csv", 8L*1024*1024*1024, 0, -1, Opcodes.MMULT.toString(), false);
 
-		runTestMM("A.csv", "B.csv", 16L*1024*1024*1024, 4, 1024*1024*1024, "ba+*", false);
+		runTestMM("A.csv", "B.csv", 16L*1024*1024*1024, 4, 1024*1024*1024, Opcodes.MMULT.toString(), false);
 
 		runTestMM("A.csv", "B.csv", 4L*1024*1024*1024, 2, 4L*1024*1024*1024, "mapmm", true);
 
 		runTestMM("A.csv", "B.csv", 4L*1024*1024*1024, 4, 1024*1024*1024, "rmm", true);
 
-		runTestMM("A.csv", "B.csv", 8L*1024*1024*1024, 0, -1, "ba+*", false);
+		runTestMM("A.csv", "B.csv", 8L*1024*1024*1024, 0, -1, Opcodes.MMULT.toString(), false);
 	}
 
 	@Test
@@ -235,8 +236,8 @@ public class RecompilationTest extends AutomatedTestBase {
 
 		// original compilation used for comparison
 		Program expectedProgram = ResourceCompiler.compile(HOME+"mm_test.dml", nvargs);
-		Program recompiledProgram = runTest(precompiledProgram, expectedProgram, driverMemory, numberExecutors, executorMemory);
-		System.out.println(Explain.explain(recompiledProgram));
+		Program recompiledProgram = runTest(precompiledProgram, expectedProgram, driverMemory, numberExecutors, executorMemory, new StringBuilder());
+
 		Optional<Instruction> mmInstruction = ((BasicProgramBlock) recompiledProgram.getProgramBlocks().get(0)).getInstructions().stream()
 				.filter(inst -> (Objects.equals(expectedSparkExecType, inst instanceof SPInstruction) && Objects.equals(inst.getOpcode(), expectedOpcode)))
 				.findFirst();
@@ -257,7 +258,7 @@ public class RecompilationTest extends AutomatedTestBase {
 		}
 		// original compilation used for comparison
 		Program expectedProgram = ResourceCompiler.compile(HOME+"mm_transpose_test.dml", nvargs);
-		Program recompiledProgram = runTest(precompiledProgram, expectedProgram, driverMemory, numberExecutors, executorMemory);
+		Program recompiledProgram = runTest(precompiledProgram, expectedProgram, driverMemory, numberExecutors, executorMemory, new StringBuilder());
 		Optional<Instruction> mmInstruction = ((BasicProgramBlock) recompiledProgram.getProgramBlocks().get(0)).getInstructions().stream()
 				.filter(inst -> (Objects.equals(expectedSparkExecType, inst instanceof SPInstruction) && Objects.equals(inst.getOpcode(), expectedOpcode)))
 				.findFirst();
@@ -273,8 +274,9 @@ public class RecompilationTest extends AutomatedTestBase {
 								  Map<String, String> nvargs) throws IOException {
 		// pre-compiled program using default values to be used as source for the recompilation
 		Program precompiledProgram = generateInitialProgram(HOME+dmlScript, nvargs);
-		System.out.println("precompiled");
-		System.out.println(Explain.explain(precompiledProgram));
+		StringBuilder sb = new StringBuilder();
+		sb.append("\n\nprecompiled\n");
+		sb.append(Explain.explain(precompiledProgram));
 		if (numberExecutors > 0) {
 			ResourceCompiler.setSparkClusterResourceConfigs(driverMemory, driverThreads, numberExecutors, executorMemory, executorThreads);
 		} else {
@@ -282,13 +284,13 @@ public class RecompilationTest extends AutomatedTestBase {
 		}
 		// original compilation used for comparison
 		Program expectedProgram = ResourceCompiler.compile(HOME+dmlScript, nvargs);
-		System.out.println("expected");
-		System.out.println(Explain.explain(expectedProgram));
-		runTest(precompiledProgram, expectedProgram, driverMemory, numberExecutors, executorMemory);
+		sb.append("\n\nexpected\n");
+		sb.append(Explain.explain(expectedProgram));
+		runTest(precompiledProgram, expectedProgram, driverMemory, numberExecutors, executorMemory, sb);
 	}
 
-	private Program runTest(Program precompiledProgram, Program expectedProgram, long driverMemory, int numberExecutors, long executorMemory) {
-		if (DEBUG_MODE) System.out.println(Explain.explain(expectedProgram));
+	private Program runTest(Program precompiledProgram, Program expectedProgram, long driverMemory, int numberExecutors, long executorMemory, StringBuilder sb) {
+		if (DEBUG_MODE) sb.append(Explain.explain(expectedProgram));
 		Program recompiledProgram;
 		if (numberExecutors == 0) {
 			ResourceCompiler.setSingleNodeResourceConfigs(driverMemory, driverThreads);
@@ -303,19 +305,19 @@ public class RecompilationTest extends AutomatedTestBase {
 			);
 			recompiledProgram = ResourceCompiler.doFullRecompilation(precompiledProgram);
 		}
-		System.out.println("recompiled");
-		System.out.println(Explain.explain(recompiledProgram));
+		sb.append("\n\nrecompiled\n");
+		sb.append(Explain.explain(recompiledProgram));
 
-		if (DEBUG_MODE) System.out.println(Explain.explain(recompiledProgram));
-		assertEqualPrograms(expectedProgram, recompiledProgram);
+		if (DEBUG_MODE) sb.append(Explain.explain(recompiledProgram));
+		assertEqualPrograms(expectedProgram, recompiledProgram, sb);
 		return recompiledProgram;
 	}
 
-	private void assertEqualPrograms(Program expected, Program actual) {
+	private void assertEqualPrograms(Program expected, Program actual, StringBuilder sb) {
 		// strip empty blocks basic program blocks
 		String expectedProgramExplained = stripGeneralAndReplaceRandoms(Explain.explain(expected));
 		String actualProgramExplained = stripGeneralAndReplaceRandoms(Explain.explain(actual));
-		Assert.assertEquals(expectedProgramExplained, actualProgramExplained);
+		Assert.assertEquals(sb.toString(), expectedProgramExplained, actualProgramExplained);
 	}
 
 	private String stripGeneralAndReplaceRandoms(String explainedProgram) {

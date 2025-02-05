@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.rewrite;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
@@ -162,7 +163,7 @@ public class RewriteSimplifyWeightedUnaryMMTest extends AutomatedTestBase {
 			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
 			HashMap<MatrixValue.CellIndex, Double> rfile = readRMatrixFromExpectedDir("R");
 			TestUtils.compareMatrices(dmlfile, rfile, 1e-8, "Stat-DML", "Stat-R");
-			Assert.assertTrue(heavyHittersContainsString("wumm")==rewrites);
+			Assert.assertTrue(heavyHittersContainsString(Opcodes.WUMM.toString())==rewrites);
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag1;

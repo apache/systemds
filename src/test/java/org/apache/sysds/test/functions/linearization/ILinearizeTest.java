@@ -34,6 +34,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 //additional imports
@@ -61,7 +62,9 @@ public class ILinearizeTest extends AutomatedTestBase {
 		DEPTH_FIRST("SystemDS-config-depth-first.xml"),
 		MIN_INTERMEDIATE("SystemDS-config-min-intermediate.xml"),
 		MAX_PARALLELIZE("SystemDS-config-max-parallelize.xml"),
-		PIPELINE_DEPTH_FIRST("SystemDS-config-pipeline-depth-first.xml");
+		PIPELINE_DEPTH_FIRST("SystemDS-config-pipeline-depth-first.xml"),
+		RESOURCE_AWARE_FAST("SystemDS-config-resource-aware-fast.xml"),
+		RESOURCE_AWARE_OPTIMAL("SystemDS-config-resource-aware-optimal.xml");
 
 		public final String filePath;
 
@@ -210,6 +213,17 @@ public class ILinearizeTest extends AutomatedTestBase {
 	@Test
 	public void testMinIntermediateLinearization() {
 		runLinearizationTest(Config.MIN_INTERMEDIATE);
+	}
+
+	@Test
+	public void testResourceAwareFastLinearization() {
+		runLinearizationTest(Config.RESOURCE_AWARE_FAST);
+	}
+	
+	@Test
+	@Ignore
+	public void testResourceAwareOptimalLinearization() {
+		runLinearizationTest(Config.RESOURCE_AWARE_OPTIMAL);
 	}
 
 	private void runLinearizationTest(Config config) {

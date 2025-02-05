@@ -1,0 +1,60 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# This builtin function takes the outputs of SliceLine and allows
+#
+#
+# INPUT:
+# ------------------------------------------------------------------------------
+# X       Feature matrix in recoded/binned representation
+# e       Error vector of trained model
+# TK      top-k slices (k x ncol(X) if successful)
+# TKC     score, total/max error, size of slices (k x 4)
+# k2      fist k2 slices to extract with k2 <= k
+# ------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ------------------------------------------------------------------------------
+# Xtk     Selected rows from X which belong to k2 top slices
+# etk     Selected rows from e which belong to k2 top slices
+# ------------------------------------------------------------------------------
+
+m_sliceLineExtract = function(Matrix[Double] X, Matrix[Double] e,
+  Matrix[Double] TK, Matrix[Double] TKC, Integer k2 = -1)
+  return(Matrix[Double] Xtk, Matrix[Double] etk)
+{
+  # check valid parameters
+  if( k2 > nrow(TK) )
+    stop("sliceLineExtract: invalid number of slices to extract: "+k2+" > "+nrow(TK)).
+  if( k2 <= 0 )
+    k2 = nrow(TK);
+
+  # extract first k2 slices from X and e
+  I = matrix(0, k2, nrow(X));
+  parfor(i in 1:k2) {
+    I[i,] = t(rowSums(X == TK[i,]) == sum(TK[i,]))
+  }
+  I = t(colSums(I)); #union
+
+  Xtk = removeEmpty(target=X, margin="rows", select=I);
+  etk = removeEmpty(target=e, margin="rows", select=I);
+}
+

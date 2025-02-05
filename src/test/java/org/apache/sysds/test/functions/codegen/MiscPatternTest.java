@@ -24,6 +24,7 @@ import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.common.Types.ExecType;
@@ -145,7 +146,7 @@ public class MiscPatternTest extends AutomatedTestBase
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("S");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("S");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			Assert.assertTrue(heavyHittersContainsSubString("spoof") 
+			Assert.assertTrue(heavyHittersContainsSubString(Opcodes.SPOOF.toString())
 					|| heavyHittersContainsSubString("sp_spoof"));
 			
 			//ensure correct optimizer decisions
@@ -153,11 +154,11 @@ public class MiscPatternTest extends AutomatedTestBase
 				Assert.assertTrue(!heavyHittersContainsSubString("spoofCell")
 					&& !heavyHittersContainsSubString("sp_spoofCell"));
 			else if( testname.equals(TEST_NAME2) )
-				Assert.assertTrue(!heavyHittersContainsSubString("spoof", 2)
+				Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.SPOOF.toString(), 2)
 					&& !heavyHittersContainsSubString("sp_spoof", 2));
 			else if( testname.equals(TEST_NAME3) || testname.equals(TEST_NAME4) )
 				Assert.assertTrue(heavyHittersContainsSubString("spoofOP", "sp+spoofOP")
-					&& !heavyHittersContainsSubString("ba+*"));
+					&& !heavyHittersContainsSubString(Opcodes.MMULT.toString()));
 		}
 		finally {
 			resetExecMode(platformOld);

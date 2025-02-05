@@ -22,11 +22,11 @@ package org.apache.sysds.runtime.frame.data.columns;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -209,11 +209,6 @@ public class OptionalArray<T> extends Array<T> {
 				_n.set(i, true);
 			}
 		}
-	}
-
-	@Override
-	public void set(int rl, int ru, Array<T> value) {
-		set(rl, ru, value, 0);
 	}
 
 	@Override
@@ -473,30 +468,29 @@ public class OptionalArray<T> extends Array<T> {
 	}
 
 	@Override
-	protected Map<T, Long> createRecodeMap() {
-		if(getValueType() == ValueType.BOOLEAN) {
-			// shortcut for boolean arrays, since we only
-			// need to encounter the first two false and true values.
-			Map<T, Long> map = new HashMap<>();
-			long id = 1;
-			for(int i = 0; i < size() && id <= 2; i++) {
-				T val = get(i);
-				if(val != null) {
-					Long v = map.putIfAbsent(val, id);
-					if(v == null)
-						id++;
-				}
-			}
-			return map;
-		}
+	public void setM(HashMapToInt<T> map, AMapToData m, int i) {
+		_a.setM(map, m, i);
+	}
+
+	@Override
+	public void setM(HashMapToInt<T> map, int si, AMapToData m, int i) {
+		if(_n.get(i))
+			_a.setM(map, si, m, i);
 		else
-			return super.createRecodeMap();
+			m.set(i, si);
+	}
+
+	@Override
+	protected int addValRecodeMap(HashMapToInt<T> map, int id, int i) {
+		if(_n.get(i))
+			id = _a.addValRecodeMap(map, id, i);
+		return id;
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_size + 2);
-		sb.append(super.toString()).append("<").append(_a.getClass().getSimpleName()).append(">:[");
+		sb.append(super.toString()).append(Opcodes.LESS.toString()).append(_a.getClass().getSimpleName()).append(">:[");
 		for(int i = 0; i < _size - 1; i++)
 			sb.append(get(i)).append(",");
 		sb.append(get(_size - 1));

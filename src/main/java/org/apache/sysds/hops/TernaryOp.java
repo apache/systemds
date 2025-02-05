@@ -307,7 +307,7 @@ public class TernaryOp extends MultiThreadedHop
 		}
 		
 		Ctable ternary = new Ctable(inputLops, ternaryOp,
-			getDataType(), getValueType(), ignoreZeros, outputEmptyBlocks, et);
+			getDataType(), getValueType(), ignoreZeros, outputEmptyBlocks, et, OptimizerUtils.getConstrainedNumThreads(getMaxNumThreads()));
 		
 		ternary.getOutputParameters().setDimensions(getDim1(), getDim2(), getBlocksize(), -1);
 		setLineNumbers(ternary);
@@ -480,6 +480,10 @@ public class TernaryOp extends MultiThreadedHop
 	}
 	
 
+	public ExecType findExecTypeTernaryOp(){
+		return _etype == null ? optFindExecType(OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE) : _etype;
+	}
+
 	@Override
 	protected ExecType optFindExecType(boolean transitive) 
 	{
@@ -637,7 +641,7 @@ public class TernaryOp extends MultiThreadedHop
 		return ret;
 	}
 	
-	private boolean isSequenceRewriteApplicable( boolean left ) 
+	public boolean isSequenceRewriteApplicable( boolean left ) 
 	{
 		boolean ret = false;
 		
@@ -647,11 +651,15 @@ public class TernaryOp extends MultiThreadedHop
 		
 		try
 		{
+			// TODO: to rewrite is not currently not triggered if outdim are given --> getInput().size()>=3
+			// currently disabled due performance decrease
 			if( getInput().size()==2 || (getInput().size()==3 && getInput().get(2).getDataType()==DataType.SCALAR) )
 			{
 				Hop input1 = getInput().get(0);
 				Hop input2 = getInput().get(1);
-				if( input1.getDataType() == DataType.MATRIX && input2.getDataType() == DataType.MATRIX )
+				if( (input1.getDataType() == DataType.MATRIX 
+					|| input1.getDataType() == DataType.SCALAR )
+					 && input2.getDataType() == DataType.MATRIX )
 				{
 					//probe rewrite on left input
 					if( left && input1 instanceof DataGenOp )
@@ -662,6 +670,9 @@ public class TernaryOp extends MultiThreadedHop
 							ret = (incr instanceof LiteralOp && HopRewriteUtils.getDoubleValue((LiteralOp)incr)==1)
 								  || dgop.getIncrementValue()==1.0; //set by recompiler
 						}
+					}
+					if( left && input1 instanceof LiteralOp && ((LiteralOp)input1).getStringValue().contains("seq(")){
+						ret = true;
 					}
 					//probe rewrite on right input
 					if( !left && input2 instanceof DataGenOp )

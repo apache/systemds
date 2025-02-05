@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -182,7 +183,7 @@ public class RewriteCTableToRExpandTest extends AutomatedTestBase
 			
 			//check for applied rewrite
 			Assert.assertEquals(Boolean.valueOf(test==1 || test==2 || unknownTests),
-				Boolean.valueOf(heavyHittersContainsSubString("rexpand")));
+				Boolean.valueOf(heavyHittersContainsSubString(Opcodes.REXPAND.toString())));
 		}
 		finally {
 			resetExecMode(platformOld);

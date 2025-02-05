@@ -72,16 +72,16 @@ public class TransformFrameEncodeWordEmbeddingMMTest extends AutomatedTestBase {
 			List<String> strings = generateRandomStrings(rows, 10);
 
 			// Generate the dictionary by assigning unique ID to each distinct token
-			Map<String,Integer> map = writeDictToCsvFile(strings, baseDirectory + INPUT_DIR + "dict");
+			Map<String,Integer> map = writeDictToCsvFile(strings, input(testname + "dict"));
 
 			// Create the dataset by repeating and shuffling the distinct tokens
 			int factor = 32;
 			rows *= factor;
 			List<String> stringsColumn = shuffleAndMultiplyStrings(strings, factor);
-			writeStringsToCsvFile(stringsColumn, baseDirectory + INPUT_DIR + "data");
+			writeStringsToCsvFile(stringsColumn, input(testname + "data"));
 
 			//run script
-			programArgs = new String[]{"-stats","-args", input("embeddings"), input("data"), input("dict"), input("factor"), output("result")};
+			programArgs = new String[]{"-stats","-args", input("embeddings"), input(testname + "data"), input(testname + "dict"), input("factor"), output("result")};
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 
 			// Manually derive the expected result

@@ -159,10 +159,11 @@ public class IOTest {
 	}
 
 	protected static void writeAndReadR(MatrixBlock mb, int blen, int rep) throws Exception {
+		String filename = getName();
 		try {
-			String filename = getName();
 			File f = new File(filename);
-			f.delete();
+			if(f.isFile() || f.isDirectory())
+				f.delete();
 			WriterCompressed.writeCompressedMatrixToHDFS(mb, filename, blen);
 			File f2 = new File(filename);
 			assertTrue(f2.isFile() || f2.isDirectory());
@@ -170,15 +171,21 @@ public class IOTest {
 			IOCompressionTestUtils.verifyEquivalence(mb, mbr);
 		}
 		catch(Exception e) {
-
+			File f = new File(filename);
+			if(f.isFile() || f.isDirectory())
+				f.delete();
 			if(rep < 3) {
 				Thread.sleep(1000);
 				writeAndReadR(mb, blen, rep + 1);
 				return;
 			}
-
 			e.printStackTrace();
 			throw e;
+		}
+		finally{
+			File f = new File(filename);
+			if(f.isFile() || f.isDirectory())
+				f.delete();
 		}
 	}
 }

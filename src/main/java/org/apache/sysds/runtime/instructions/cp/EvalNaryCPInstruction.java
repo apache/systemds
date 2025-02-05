@@ -199,7 +199,15 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 			Data[] ldata = boundOutputNames.stream()
 				.map(n -> ec.getVariable(n)).toArray(Data[]::new);
 			String[] lnames = boundOutputNames.toArray(new String[0]);
-			ListObject listOutput = new ListObject(ldata, lnames);
+			ListObject listOutput = null;
+			if (DMLScript.LINEAGE) {
+				CPOperand[] listOperands = boundOutputNames.stream().map(n -> ec.containsVariable(n) ? new CPOperand(n,
+					ec.getVariable(n)) : new CPOperand(n, ValueType.STRING, DataType.SCALAR, true)).toArray(CPOperand[]::new);
+				LineageItem[] liList = LineageItemUtils.getLineage(ec, listOperands);
+				listOutput = new ListObject(Arrays.asList(ldata), boundOutputNames, Arrays.asList(liList));
+			}
+			else
+				listOutput = new ListObject(ldata, lnames);
 			ec.setVariable(output.getName(), listOutput);
 		}
 		

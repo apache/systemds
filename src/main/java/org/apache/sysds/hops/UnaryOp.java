@@ -512,7 +512,8 @@ public class UnaryOp extends MultiThreadedHop
 		
 		//ensure cp exec type for single-node operations
 		if( _op == OpOp1.PRINT || _op == OpOp1.ASSERT || _op == OpOp1.STOP || _op == OpOp1.TYPEOF
-			|| _op == OpOp1.INVERSE || _op == OpOp1.EIGEN || _op == OpOp1.CHOLESKY || _op == OpOp1.SVD
+			|| _op == OpOp1.INVERSE || _op == OpOp1.EIGEN || _op == OpOp1.CHOLESKY || _op == OpOp1.DET
+			||_op == OpOp1.SVD || _op == OpOp1.SQRT_MATRIX_JAVA
 			|| getInput().get(0).getDataType() == DataType.LIST || isMetadataOperation() )
 		{
 			_etype = ExecType.CP;

@@ -266,6 +266,7 @@ public class TransformFrameEncodeBagOfWords extends AutomatedTestBase
 
 		}
 		catch(Exception ex) {
+			ex.printStackTrace();
 			throw new RuntimeException(ex);
 		}
 		finally {

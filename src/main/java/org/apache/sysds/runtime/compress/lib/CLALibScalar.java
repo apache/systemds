@@ -108,16 +108,35 @@ public final class CLALibScalar {
 	}
 
 	private static MatrixBlock fusedScalarAndDecompress(CompressedMatrixBlock in, ScalarOperator sop) {
+		if(sop.getNumThreads() <= 1)
+			return singleThreadFusedScalarAndDecompress(in, sop);
+		return parallelFusedScalarAndDecompress(in, sop) ;
+	}
+
+	private static MatrixBlock singleThreadFusedScalarAndDecompress(CompressedMatrixBlock in, ScalarOperator sop){
+		final int nRow = in.getNumRows();
+		final int nCol = in.getNumColumns();
+		final MatrixBlock out = new MatrixBlock(nRow, nCol, false);
+		out.allocateDenseBlock();
+		final DenseBlock db = out.getDenseBlock();
+		final List<AColGroup> groups = in.getColGroups();
+		long nnz = fusedDecompressAndScalar(groups, nCol, 0, nRow, db, sop);
+		out.setNonZeros(nnz);
+		out.examSparsity(true);
+		return out;
+	}
+
+	private static MatrixBlock parallelFusedScalarAndDecompress(CompressedMatrixBlock in, ScalarOperator sop) {
 		int k = sop.getNumThreads();
 		ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			final int nRow  = in.getNumRows();
+			final int nRow = in.getNumRows();
 			final int nCol = in.getNumColumns();
 			final MatrixBlock out = new MatrixBlock(nRow, nCol, false);
 			final List<AColGroup> groups = in.getColGroups();
 			out.allocateDenseBlock();
 			final DenseBlock db = out.getDenseBlock();
-			final int blkz = Math.max((int)(Math.ceil((double)nRow / k)), 256);
+			final int blkz = Math.max((int) (Math.ceil((double) nRow / k)), 256);
 			final List<Future<Long>> tasks = new ArrayList<>();
 			for(int i = 0; i < nRow; i += blkz) {
 				final int start = i;
@@ -138,9 +157,6 @@ public final class CLALibScalar {
 		finally {
 			pool.shutdown();
 		}
-
-		// MatrixBlock m1d = m1.decompress(sop.getNumThreads());
-		// return m1d.scalarOperations(sop, result);
 	}
 
 	private static long fusedDecompressAndScalar(final List<AColGroup> groups, int nCol, int start, int end,

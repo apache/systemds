@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -72,7 +73,7 @@ public class BinaryScalarScalarCPInstruction extends BinaryCPInstruction {
 			}
 			else { //all boolean
 				//NOTE: boolean-boolean arithmetic treated as double for consistency with R
-				if( opcode.equals("&&") || opcode.equals("||") || opcode.equals("xor") )
+				if( opcode.equals(Opcodes.AND.toString()) || opcode.equals(Opcodes.OR.toString()) || opcode.equals(Opcodes.XOR.toString()) )
 					sores = new BooleanObject( dop.fn.execute(so1.getBooleanValue(), so2.getBooleanValue()) );
 				else
 					sores = new DoubleObject( dop.fn.execute(so1.getDoubleValue(), so2.getDoubleValue()) );

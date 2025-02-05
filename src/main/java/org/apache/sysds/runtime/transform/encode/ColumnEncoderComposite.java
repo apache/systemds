@@ -27,10 +27,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Objects;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -425,13 +423,11 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 		_columnEncoders.forEach(e -> e.shiftCol(columnOffset));
 	}
 
-	@Override
-	public Set<Integer> getSparseRowsWZeros(){
-		return _columnEncoders.stream().map(ColumnEncoder::getSparseRowsWZeros).flatMap(l -> {
-					if(l == null)
-						return null;
-					return l.stream();
-				}).collect(Collectors.toSet());
+	protected boolean containsZeroOut(){
+		for(int i = 0; i < _columnEncoders.size(); i++)
+			if(_columnEncoders.get(i).containsZeroOut())
+				return true;
+		return false;
 	}
 
 	@Override

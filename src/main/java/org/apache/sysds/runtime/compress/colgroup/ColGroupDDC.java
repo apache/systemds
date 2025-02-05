@@ -251,7 +251,21 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 
 	@Override
 	protected void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru, SparseBlock sb) {
-		throw new NotImplementedException();
+		for(int i = rl; i < ru; i++) {
+			final int vr = _data.getIndex(i);
+			if(sb.isEmpty(vr))
+				continue;
+			final int apos = sb.pos(vr);
+			final int alen = sb.size(vr) + apos;
+			final int[] aix = sb.indexes(vr);
+			final double[] aval = sb.values(vr);
+			for(int j = apos; j < alen; j++) {
+				final int rowOut = _colIndexes.get(aix[j]);
+				final double[] c = db.values(rowOut);
+				final int off = db.pos(rowOut);
+				c[off + i] += aval[j];
+			}
+		}
 	}
 
 	@Override
@@ -595,14 +609,36 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	public void leftMMIdentityPreAggregateDense(MatrixBlock that, MatrixBlock ret, int rl, int ru, int cl, int cu) {
 		DenseBlock db = that.getDenseBlock();
 		DenseBlock retDB = ret.getDenseBlock();
-		if(rl == ru - 1)
-			leftMMIdentityPreAggregateDenseSingleRow(db.values(rl), db.pos(rl), retDB.values(rl), retDB.pos(rl), cl, cu);
-		else
-			throw new NotImplementedException();
+		for(int i = rl; i < ru; i++)
+			leftMMIdentityPreAggregateDenseSingleRow(db.values(i), db.pos(i), retDB.values(i), retDB.pos(i), cl, cu);
 	}
 
 	@Override
 	public void rightDecompressingMult(MatrixBlock right, MatrixBlock ret, int rl, int ru, int nRows, int crl, int cru) {
+		if(_dict instanceof IdentityDictionary)
+			identityRightDecompressingMult(right, ret, rl, ru, crl, cru);
+		else
+			defaultRightDecompressingMult(right, ret, rl, ru, crl, cru);
+	}
+
+	private void identityRightDecompressingMult(MatrixBlock right, MatrixBlock ret, int rl, int ru, int crl, int cru) {
+		final double[] b = right.getDenseBlockValues();
+		final double[] c = ret.getDenseBlockValues();
+		final int jd = right.getNumColumns();
+		final int vLen = 8;
+		final int lenJ = cru - crl;
+		final int end = cru - (lenJ % vLen);
+		for(int i = rl; i < ru; i++) {
+			int k = _data.getIndex(i);
+			final int offOut = i * jd + crl;
+			final double aa = 1;
+			final int k_right = _colIndexes.get(k);
+			vectMM(aa, b, c, end, jd, crl, cru, offOut, k_right, vLen);
+
+		}
+	}
+
+	private void defaultRightDecompressingMult(MatrixBlock right, MatrixBlock ret, int rl, int ru, int crl, int cru) {
 		final double[] a = _dict.getValues();
 		final double[] b = right.getDenseBlockValues();
 		final double[] c = ret.getDenseBlockValues();
@@ -632,7 +668,8 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 		}
 	}
 
-	final void vectMM(double aa, double[] b, double[] c, int endT, int jd, int crl, int cru, int offOut, int k, int vLen) {
+	final void vectMM(double aa, double[] b, double[] c, int endT, int jd, int crl, int cru, int offOut, int k,
+		int vLen) {
 		// vVec = vVec.broadcast(aa);
 		final int offj = k * jd;
 		final int end = endT + offj;
@@ -919,19 +956,17 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 
 	@Override
 	protected void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
-			// morph(CompressionType.UNCOMPRESSED, _data.size()).sparseSelection(selection, ret, rl, ru);;
-			final SparseBlock sb = selection.getSparseBlock();
-			final DenseBlock retB = ret.getDenseBlock();
-			for(int r = rl; r < ru; r++) {
-				if(sb.isEmpty(r))
-					continue;
-				final int sPos = sb.pos(r);
-				final int rowCompressed = sb.indexes(r)[sPos]; // column index with 1
-				decompressToDenseBlock(retB, rowCompressed, rowCompressed + 1, r - rowCompressed, 0);
-			}
+		// morph(CompressionType.UNCOMPRESSED, _data.size()).sparseSelection(selection, ret, rl, ru);;
+		final SparseBlock sb = selection.getSparseBlock();
+		final DenseBlock retB = ret.getDenseBlock();
+		for(int r = rl; r < ru; r++) {
+			if(sb.isEmpty(r))
+				continue;
+			final int sPos = sb.pos(r);
+			final int rowCompressed = sb.indexes(r)[sPos]; // column index with 1
+			decompressToDenseBlock(retB, rowCompressed, rowCompressed + 1, r - rowCompressed, 0);
+		}
 	}
-
-
 
 	private void leftMMIdentityPreAggregateDenseSingleRow(double[] values, int pos, double[] values2, int pos2, int cl,
 		int cu) {
@@ -946,22 +981,21 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 				for(int rc = cl; rc < cu; rc++, pos++) {
 					final int idx = _data.getIndex(rc);
 					if(idx != nVal)
-						values2[_colIndexes.get(idx)] += values[pos];
+						values2[pos2 + _colIndexes.get(idx)] += values[pos];
 				}
 			}
 			else {
 				for(int rc = cl; rc < cu; rc++, pos++)
-					values2[_colIndexes.get(_data.getIndex(rc))] += values[pos];
+					values2[pos2 + _colIndexes.get(_data.getIndex(rc))] += values[pos];
 			}
 		}
 	}
-
 
 	private void leftMMIdentityPreAggregateDenseSingleRowRangeIndex(double[] values, int pos, double[] values2, int pos2,
 		int cl, int cu) {
 		IdentityDictionary a = (IdentityDictionary) _dict;
 
-		final int firstCol = _colIndexes.get(0);
+		final int firstCol = pos2 + _colIndexes.get(0);
 		pos += cl; // left side matrix position offset.
 		if(a.withEmpty()) {
 			final int nVal = _dict.getNumberOfValues(_colIndexes.size()) - 1;

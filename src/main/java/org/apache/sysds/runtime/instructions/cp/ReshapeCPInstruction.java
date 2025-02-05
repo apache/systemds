@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -29,7 +30,6 @@ import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
-import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -59,7 +59,7 @@ public class ReshapeCPInstruction extends UnaryCPInstruction {
 		CPOperand in4 = new CPOperand(parts[4]);
 		CPOperand in5 = new CPOperand(parts[5]);
 		CPOperand out = new CPOperand(parts[6]);
-		if(!opcode.equalsIgnoreCase("rshape"))
+		if(!opcode.equalsIgnoreCase(Opcodes.RESHAPE.toString()))
 			throw new DMLRuntimeException("Unknown opcode while parsing an ReshapeInstruction: " + str);
 		else
 			return new ReshapeCPInstruction(new Operator(true), in1, in2, in3, in4, in5, out, opcode, str);
@@ -97,11 +97,9 @@ public class ReshapeCPInstruction extends UnaryCPInstruction {
 			int rows = (int) ec.getScalarInput(_opRows).getLongValue(); //save cast
 			int cols = (int) ec.getScalarInput(_opCols).getLongValue(); //save cast
 			BooleanObject byRow = (BooleanObject) ec.getScalarInput(_opByRow.getName(), ValueType.BOOLEAN, _opByRow.isLiteral());
-
 			//execute operations
-			MatrixBlock out = new MatrixBlock();
-			LibMatrixReorg.reshape(in, out, rows, cols, byRow.getBooleanValue(), -1);
-
+			MatrixBlock out = in.reshape(rows, cols, byRow.getBooleanValue());
+			
 			//set output and release inputs
 			ec.releaseMatrixInput(input1.getName());
 			ec.setMatrixOutput(output.getName(), out);

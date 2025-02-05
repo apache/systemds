@@ -45,6 +45,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.BlockType;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -55,6 +56,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.lib.CLALibAggTernaryOp;
+import org.apache.sysds.runtime.compress.lib.CLALibCBind;
 import org.apache.sysds.runtime.compress.lib.CLALibMerge;
 import org.apache.sysds.runtime.compress.lib.CLALibTernaryOp;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
@@ -1003,7 +1005,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public double prod() {
 		MatrixBlock out = new MatrixBlock(1, 1, false);
 		LibMatrixAgg.aggregateUnaryMatrix(this, out,
-			InstructionUtils.parseBasicAggregateUnaryOperator("ua*", 1));
+			InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAM.toString(), 1));
 		return out.get(0, 0);
 	}
 	
@@ -1019,7 +1021,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public double mean(int k ) {
 		MatrixBlock out = new MatrixBlock(1, 3, false);
 		LibMatrixAgg.aggregateUnaryMatrix(this, out,
-			InstructionUtils.parseBasicAggregateUnaryOperator("uamean", k));
+			InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMEAN.toString(), k));
 		return out.get(0, 0);
 	}
 
@@ -1035,7 +1037,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public double min(int k) {
 		MatrixBlock out = new MatrixBlock(1, 1, false);
 		LibMatrixAgg.aggregateUnaryMatrix(this, out,
-			InstructionUtils.parseBasicAggregateUnaryOperator("uamin", k));
+			InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMIN.toString(), k));
 		return out.get(0, 0);
 	}
 
@@ -1049,7 +1051,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 
 	public final MatrixBlock colMin(int k) {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uacmin", k);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACMIN.toString(), k);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 
@@ -1063,7 +1065,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 
 	public final MatrixBlock colMax(int k) {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uacmax", k);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACMAX.toString(), k);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 	
@@ -1083,7 +1085,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @return the maximum value of all values in the matrix
 	 */
 	public MatrixBlock max(int k){
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uamax", k);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMAX.toString(), k);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 
@@ -1104,7 +1106,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @return Sum of the values in the matrix.
 	 */
 	public MatrixBlock sum(int k) {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uak+", k);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAKP.toString(), k);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 
@@ -1114,7 +1116,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @return A new MatrixBlock containing the column sums of this matrix.
 	 */
 	public MatrixBlock colSum() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uack+", 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACKP.toString(), 1);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 
@@ -1124,7 +1126,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @return A new MatrixBlock containing the row sums of this matrix.
 	 */
 	public final MatrixBlock rowSum(){
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uark+", 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARKP.toString(), 1);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 
@@ -1135,7 +1137,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @return A new MatrixBlock containing the row sums of this matrix.
 	 */
 	public final MatrixBlock rowSum(int k){
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uark+", k);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARKP.toString(), k);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 
@@ -1413,15 +1415,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	/**
 	 * Recompute the number of nonZero values in parallel
 	 * 
-	 * @param k the paralelization degree
+	 * @param k the parallelization degree
 	 * @return the number of non zeros
 	 */
 	public long recomputeNonZeros(int k) {
-		if(sparse && sparseBlock!=null)
+		// fallback to single thread if k <= 1, small matrix, or sparse. 
+		if(k <= 1 || ((long) rlen * clen < 10000) || (sparse && sparseBlock!=null))
 			return recomputeNonZeros();
 		else if(!sparse && denseBlock!=null){
-			if((long) rlen * clen < 10000)
-				return recomputeNonZeros();
 			final ExecutorService pool = CommonThreadPool.get(k);
 			try {
 				List<Future<Long>> f = new ArrayList<>();
@@ -1451,7 +1452,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 
 			}
 			catch(Exception e) {
-				LOG.warn("Failed Parallel non zero count fallback to singlethread");
+				LOG.warn("Failed Parallel non zero count fallback to single thread");
 				return recomputeNonZeros();
 			}
 			finally {
@@ -1731,6 +1732,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 *                  (the invoker is responsible to recompute nnz after all copies are done) 
 	 */
 	public void copy(int rl, int ru, int cl, int cu, MatrixBlock src, boolean awareDestNZ ) {
+		if (src instanceof CompressedMatrixBlock){
+			src = ((CompressedMatrixBlock) src).getUncompressed("In-place matrix copy into indexed matrix");
+		}
 		if(sparse && src.sparse)
 			copySparseToSparse(rl, ru, cl, cu, src, awareDestNZ);
 		else if(sparse && !src.sparse)
@@ -3651,10 +3655,19 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return append(that, ret, true); //default cbind
 	}
 
-	public static  MatrixBlock append(List<MatrixBlock> that,MatrixBlock ret, boolean cbind, int k ){
-		MatrixBlock[] th = new MatrixBlock[that.size() -1];
-		for(int i = 0; i < that.size() -1; i++)
-			th[i] = that.get(i+1);
+	/**
+	 * Append that list of matrixblocks to this.
+	 * 
+	 * @param that  That list.
+	 * @param ret   The output block
+	 * @param cbind If the blocks a appended cbind
+	 * @param k     the parallelization degree
+	 * @return the appended matrix.
+	 */
+	public static MatrixBlock append(List<MatrixBlock> that, MatrixBlock ret, boolean cbind, int k) {
+		MatrixBlock[] th = new MatrixBlock[that.size() - 1];
+		for(int i = 0; i < that.size() - 1; i++)
+			th[i] = that.get(i + 1);
 		return that.get(0).append(th, ret, cbind);
 	}
 
@@ -3712,6 +3725,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 */
 	public MatrixBlock append(MatrixBlock[] that, MatrixBlock result, boolean cbind) {
 		checkDimensionsForAppend(that, cbind);
+
+		for(int k = 0; k < that.length; k++)
+			if( that[k] instanceof CompressedMatrixBlock){
+				if(that.length == 1 && cbind)
+					return CLALibCBind.cbind(this, that[0], 1);
+				that[k] = CompressedMatrixBlock.getUncompressed(that[k], "Append N");
+			}
 
 		final int m = cbind ? rlen : combinedRows(that);
 		final int n = cbind ? combinedCols(that) : clen;
@@ -4974,10 +4994,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, AggregateBinaryOperator op) {
 		checkAggregateBinaryOperations(m1, m2, op);
 		final int k = op.getNumThreads();
-		if(NativeHelper.isNativeLibraryLoaded())
-			return LibMatrixNative.matrixMult(m1, m2, ret, k);
-		else 
-			return LibMatrixMult.matrixMult(m1, m2, ret, k);
+		return LibMatrixMult.matrixMult(m1, m2, ret, k);
 	}
 
 	protected void checkAggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, AggregateBinaryOperator op) {
@@ -5137,9 +5154,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	
 	
 	@Override
-	public MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement) {
+	public final MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement) {
+		return replaceOperations(result, pattern, replacement, 1);
+	}
+
+	public MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement, int k) {
 		MatrixBlock ret = checkType(result);
-		return LibMatrixReplace.replaceOperations(this, ret, pattern, replacement);
+		return LibMatrixReplace.replaceOperations(this, ret, pattern, replacement, k);
 	}
 	
 	public MatrixBlock extractTriangular(MatrixBlock ret, boolean lower, boolean diag, boolean values) {
@@ -5352,46 +5373,20 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 
 	/**
+	 * D = ctable(seq,A,w)
+	 * <p>
+	 * this = seq; thatMatrix = A; thatScalar = w; ret = D
+	 *
 	 * @param thatMatrix matrix value
 	 * @param thatScalar scalar double
-	 * @param ret result matrix block
+	 * @param ret        result matrix block that is the weight to multiply into the table output
 	 * @param updateClen when this matrix already has the desired number of columns updateClen can be set to false
 	 * @return result matrix block
 	 */
-	public MatrixBlock ctableSeqOperations(MatrixValue thatMatrix, double thatScalar, MatrixBlock ret, boolean updateClen) {
+	public MatrixBlock ctableSeqOperations(MatrixValue thatMatrix, double thatScalar, MatrixBlock ret,
+		boolean updateClen) {
 		MatrixBlock that = checkType(thatMatrix);
-		CTable ctable = CTable.getCTableFnObject();
-		double w = thatScalar;
-		
-		//prepare allocation of CSR sparse block
-		int[] rptr = new int[rlen+1];
-		int[] indexes = new int[rlen];
-		double[] values = new double[rlen];
-		
-		//sparse-unsafe ctable execution
-		//(because input values of 0 are invalid and have to result in errors)
-		//resultBlock guaranteed to be allocated for ctableexpand
-		//each row in resultBlock will be allocated and will contain exactly one value
-		int maxCol = 0;
-		for( int i=0; i<rlen; i++ ) {
-			double v2 = that.get(i, 0);
-			maxCol = ctable.execute(i+1, v2, w, maxCol, indexes, values);
-			rptr[i] = i;
-		}
-		rptr[rlen] = rlen;
-
-		//construct sparse CSR block from filled arrays
-		ret.sparseBlock = new SparseBlockCSR(rptr, indexes, values, rlen);
-		((SparseBlockCSR)ret.sparseBlock).compact();
-		ret.setNonZeros(ret.sparseBlock.size());
-		
-		//update meta data (initially unknown number of columns)
-		//note: nnz maintained in ctable (via quickset)
-		if(updateClen) {
-			ret.clen = maxCol;
-		}
-
-		return ret;
+		return LibMatrixReorg.fusedSeqRexpand(this.getNumRows(), that, thatScalar, ret, updateClen, 1);
 	}
 
 	/**

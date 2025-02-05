@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -111,17 +112,23 @@ public class ReadWriteListTest extends AutomatedTestBase {
 			double val1 = HDFSTool.readDoubleFromHDFSFile(output("R1"));
 			
 			//check no crc files
-			// I have removed this check since i modified the removal of .crc files to a remove on close
-			// File[] files = new File(output("L")).listFiles();
-			// LOG.error(Arrays.toString(files));
-			// Assert.assertFalse(Arrays.stream(files).anyMatch(f -> f.getName().endsWith(".crc")));
+			//disabled due to delete on exist, but for temporary validation via delete
+			//File[] files = new File(output("L")).listFiles();
+			//LOG.error(Arrays.toString(files));
+			//Assert.assertFalse(Arrays.stream(files).anyMatch(f -> f.getName().endsWith(".crc")));
 			
 			//run read
 			fullDMLScriptName = HOME + TEST_NAME2 + ".dml";
 			programArgs = new String[]{"-args", output("L"), output("R2")};
 			runTest(true, false, null, -1);
-			double val2 = HDFSTool.readDoubleFromHDFSFile(output("R2"));
 			
+			//check meta data, incl implicitly format 
+			MetaDataAll meta = getMetaData("L", OUTPUT_DIR);
+			Assert.assertEquals(format.toString(), meta.getFormatTypeString());
+			Assert.assertEquals(4, meta.getDim1());
+			Assert.assertEquals(1, meta.getDim2());
+			
+			double val2 = HDFSTool.readDoubleFromHDFSFile(output("R2"));
 			Assert.assertEquals(Double.valueOf(val1), Double.valueOf(val2), eps);
 		}
 		catch(IOException e) {

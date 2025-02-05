@@ -24,6 +24,7 @@ import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.common.Types.ExecType;
@@ -241,7 +242,7 @@ public class OuterProdTmplTest extends AutomatedTestBase
 				Assert.assertTrue(heavyHittersContainsSubString("spoofOP")
 						|| heavyHittersContainsSubString("sp_spoofOP"));
 				if( testname.equals(TEST_NAME9) )
-					Assert.assertTrue(!heavyHittersContainsSubString("!="));
+					Assert.assertTrue(!heavyHittersContainsSubString(Opcodes.NOTEQUAL.toString()));
 			}
 		}
 		finally {

@@ -1686,11 +1686,13 @@ public class DMLTranslator
 		if (target == null) {
 			target = createTarget(source);
 		}
+		
 		//unknown nnz after range indexing (applies to indexing op but also
 		//data dependent operations)
 		target.setNnz(-1); 
 
-		Hop indexOp = new IndexingOp(target.getName(), target.getDataType(), target.getValueType(),
+		DataType dt = target.getDataType().isScalar() ? DataType.MATRIX : target.getDataType();
+		Hop indexOp = new IndexingOp(target.getName(), dt, target.getValueType(),
 			hops.get(source.getName()), ixRange[0], ixRange[1], ixRange[2], ixRange[3],
 			source.getRowLowerEqualsUpper(), source.getColLowerEqualsUpper());
 
@@ -2451,7 +2453,7 @@ public class DMLTranslator
 			String sop = ((StringIdentifier)source.getThirdExpr()).getValue();
 			sop = sop.replace("\"", "");
 			OpOp2 operation;
-			if ( sop.equalsIgnoreCase(">=") ) 
+			if ( sop.equalsIgnoreCase(">=") )
 				operation = OpOp2.GREATEREQUAL;
 			else if ( sop.equalsIgnoreCase(">") )
 				operation = OpOp2.GREATER;
@@ -2749,8 +2751,10 @@ public class DMLTranslator
 			break;
 
 		case INVERSE:
+		case SQRT_MATRIX_JAVA:
 		case CHOLESKY:
 		case TYPEOF:
+		case DET:
 		case DETECTSCHEMA:
 		case COLNAMES:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(),

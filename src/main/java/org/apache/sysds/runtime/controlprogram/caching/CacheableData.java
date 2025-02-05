@@ -183,6 +183,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	
 	/** The name of HDFS file in which the data is backed up. */
 	protected String _hdfsFileName = null; // file name and path
+	protected boolean _isPRead = false; //persistent read, must not be deleted
 	
 	/** 
 	 * Flag that indicates whether or not hdfs file exists.It is used 
@@ -283,6 +284,14 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 
 	public String getFileName() {
 		return _hdfsFileName;
+	}
+	
+	public boolean isPersistentRead() {
+		return _isPRead;
+	}
+	
+	public void setPersistentRead(boolean pread) {
+		_isPRead = pread;
 	}
 	
 	public long getUniqueID() {

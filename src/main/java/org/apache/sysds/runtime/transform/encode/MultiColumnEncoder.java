@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import static org.apache.sysds.utils.MemoryEstimates.intArrayCost;
+
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -29,8 +31,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -54,6 +54,7 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64DEDUP;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockCSR;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -63,8 +64,6 @@ import org.apache.sysds.runtime.util.DependencyThreadPool;
 import org.apache.sysds.runtime.util.DependencyWrapperTask;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.utils.stats.TransformStatistics;
-
-import static org.apache.sysds.utils.MemoryEstimates.intArrayCost;
 
 public class MultiColumnEncoder implements Encoder {
 
@@ -137,6 +136,7 @@ public class MultiColumnEncoder implements Encoder {
 					pool.shutdown();
 				}
 				outputMatrixPostProcessing(out, k);
+				outputLogging(out);
 				return out;
 			}
 			else {
@@ -158,11 +158,25 @@ public class MultiColumnEncoder implements Encoder {
 				MatrixBlock out = apply(in, k);
 				t1 = System.nanoTime();
 				LOG.debug("Elapsed time for apply phase: "+ ((double) t1 - t0) / 1000000 + " ms");
+
+				outputLogging(out);
 				return out;
 			}
 		}
 		catch(Exception ex) {
-			throw new DMLRuntimeException("Failed transform-encode frame with encoder:\n" + this, ex);
+			String st = this.toString();
+			st = st.substring(0, Math.min(st.length(), 1000));
+			throw new DMLRuntimeException("Failed transform-encode frame with encoder:\n" + st, ex);
+		}
+	}
+
+	private void outputLogging(MatrixBlock out) {
+		if(LOG.isDebugEnabled()) {
+			LOG.debug("Transform Encode output mem size: " + out.getInMemorySize());
+			LOG.debug(String.format("Transform Encode output rows     : %10d", out.getNumRows()));
+			LOG.debug(String.format("Transform Encode output cols     : %10d", out.getNumColumns()));
+			LOG.debug(String.format("Transform Encode output sparsity : %10.5f", out.getSparsity()));
+			LOG.debug(String.format("Transform Encode output nnz      : %10d", out.getNonZeros()));
 		}
 	}
 
@@ -365,10 +379,11 @@ public class MultiColumnEncoder implements Encoder {
 		// There should be a encoder for every column
 		if(hasLegacyEncoder() && !(in instanceof FrameBlock))
 			throw new DMLRuntimeException("LegacyEncoders do not support non FrameBlock Inputs");
-		int numEncoders = getFromAll(ColumnEncoderComposite.class, ColumnEncoder::getColID).size();
+		int numEncoders = getEncoders().size();
+		// getFromAll(ColumnEncoderComposite.class, ColumnEncoder::getColID).size();
 		if(in.getNumColumns() != numEncoders)
 			throw new DMLRuntimeException("Not every column in has a CompositeEncoder. Please make sure every column "
-				+ "has a encoder or slice the input accordingly");
+				+ "has a encoder or slice the input accordingly: num encoders:  " + getEncoders()  + " vs columns " + in.getNumColumns());
 		// TODO smart checks
 		// Block allocation for MT access
 		if(in.getNumRows() == 0)
@@ -834,58 +849,50 @@ public class MultiColumnEncoder implements Encoder {
 
 	private void outputMatrixPostProcessing(MatrixBlock output, int k){
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		if(output.isInSparseFormat()){
+		if(output.isInSparseFormat() && containsZeroOut()){
 			if (k == 1) 
 				outputMatrixPostProcessingSingleThread(output);
 			else 
 				outputMatrixPostProcessingParallel(output, k);	
 		}
-		else {
-			output.recomputeNonZeros(k);
-		}
+		output.recomputeNonZeros(k);
+		
 		if(DMLScript.STATISTICS)
 			TransformStatistics.incOutMatrixPostProcessingTime(System.nanoTime()-t0);
 	}
 
-
 	private void outputMatrixPostProcessingSingleThread(MatrixBlock output){
-		Set<Integer> indexSet = _columnEncoders.stream()
-					.map(ColumnEncoderComposite::getSparseRowsWZeros).flatMap(l -> {
-						if(l == null)
-							return null;
-						return l.stream();
-					}).collect(Collectors.toSet());
-
-		if(!indexSet.stream().allMatch(Objects::isNull)) {
-			for(Integer row : indexSet)
-				output.getSparseBlock().get(row).compact();
+		final SparseBlock sb = output.getSparseBlock();
+		if(sb instanceof SparseBlockMCSR) {
+			IntStream.range(0, output.getNumRows()).forEach(row -> {
+				sb.compact(row);
+			});
 		}
-
-		output.recomputeNonZeros();
+		else {
+			((SparseBlockCSR) sb).compact();
+		}
 	}
 
+	private boolean containsZeroOut() {
+		for(ColumnEncoder e : _columnEncoders)
+			if(e.containsZeroOut())
+				return true;
+		return false;
+	}
 
 	private void outputMatrixPostProcessingParallel(MatrixBlock output, int k) {
 		ExecutorService pool = CommonThreadPool.get(k);
 		try {
-			// Collect the row indices that need compaction
-			Set<Integer> indexSet = pool.submit(() -> _columnEncoders.stream().parallel()
-				.map(ColumnEncoderComposite::getSparseRowsWZeros).flatMap(l -> {
-					if(l == null)
-						return null;
-					return l.stream();
-				}).collect(Collectors.toSet())).get();
-
-			// Check if the set is empty
-			boolean emptySet = pool.submit(() -> indexSet.stream().parallel().allMatch(Objects::isNull)).get();
-
-			// Concurrently compact the rows
-			if(emptySet) {
+			final SparseBlock sb = output.getSparseBlock();
+			if(sb instanceof SparseBlockMCSR) {
 				pool.submit(() -> {
-					indexSet.stream().parallel().forEach(row -> {
-						output.getSparseBlock().get(row).compact();
+					IntStream.range(0, output.getNumRows()).parallel().forEach(row -> {
+						sb.compact(row);
 					});
 				}).get();
+			}
+			else {
+				((SparseBlockCSR) sb).compact();
 			}
 		}
 		catch(Exception ex) {
@@ -894,8 +901,6 @@ public class MultiColumnEncoder implements Encoder {
 		finally {
 			pool.shutdown();
 		}
-
-		output.recomputeNonZeros();
 	}
 
 	@Override

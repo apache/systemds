@@ -356,7 +356,7 @@ public interface ArrayFactory {
 
 		Array<C> targetC = (Array<C>) (ta != tc ? target.changeType(tc) : target);
 		Array<C> srcC = (Array<C>) (tb != tc ? src.changeType(tc) : src);
-		targetC.set(rl, ru, srcC);
+		targetC.set(rl, ru, srcC, 0);
 		return targetC;
 
 	}

@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
@@ -88,11 +89,11 @@ public class RewriteMatrixMultChainOptSparseTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			if(rewrites) {
-				Assert.assertTrue(heavyHittersContainsSubString("mmchain") ||
+				Assert.assertTrue(heavyHittersContainsSubString(Opcodes.MMCHAIN.toString()) ||
 					heavyHittersContainsSubString("sp_mapmmchain"));
 			}
 			else {
-				Assert.assertFalse(heavyHittersContainsSubString("mmchain") ||
+				Assert.assertFalse(heavyHittersContainsSubString(Opcodes.MMCHAIN.toString()) ||
 						heavyHittersContainsSubString("sp_mapmmchain"));
 			}
 		}

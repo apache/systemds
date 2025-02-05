@@ -20,6 +20,7 @@
 package org.apache.sysds.lops;
 
  
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
@@ -30,8 +31,8 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 public class TernaryAggregate extends Lop 
 {
-	public static final String OPCODE_RC = "tak+*";
-	public static final String OPCODE_C = "tack+*";
+	public static final String OPCODE_RC = Opcodes.TAKPM.toString();
+	public static final String OPCODE_C = Opcodes.TACKPM.toString();
 	
 	//NOTE: currently only used for ta+*
 	//private AggOp _aggOp = null;

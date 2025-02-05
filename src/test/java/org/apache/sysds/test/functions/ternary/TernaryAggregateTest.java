@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.ternary;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
@@ -261,7 +262,7 @@ public class TernaryAggregateTest extends AutomatedTestBase
 			//check for rewritten patterns in statistics output
 			if( rewrites ) {
 				String opcode = ((et == ExecType.SPARK) ? Instruction.SP_INST_PREFIX : "") + 
-					(((testname.equals(TEST_NAME1) || vectors ) ? "tak+*" : "tack+*"));
+					(((testname.equals(TEST_NAME1) || vectors ) ? Opcodes.TAKPM.toString() : Opcodes.TACKPM.toString()));
 				Assert.assertEquals(Boolean.TRUE,
 						Boolean.valueOf(Statistics.getCPHeavyHitterOpCodes().contains(opcode)));
 			}

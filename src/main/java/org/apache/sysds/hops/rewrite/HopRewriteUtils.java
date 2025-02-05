@@ -23,6 +23,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
@@ -1146,7 +1147,7 @@ public class HopRewriteUtils {
 	
 	public static boolean isTransformEncode(Hop hop){
 		return hop instanceof FunctionOp 
-			&& (((FunctionOp)hop).getFunctionName().equalsIgnoreCase("transformencode"));
+			&& (((FunctionOp)hop).getFunctionName().equalsIgnoreCase(Opcodes.TRANSFORMENCODE.toString()));
 	}
 
 	public static boolean isBinaryMatrixColVectorOperation(Hop hop) {

@@ -68,6 +68,7 @@ public class TransformApplyUnknownsTest extends AutomatedTestBase {
 				Assert.assertTrue(Double.isNaN(out.get(i-1, 0)));
 		} 
 		catch (DMLRuntimeException e) {
+			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
 	}

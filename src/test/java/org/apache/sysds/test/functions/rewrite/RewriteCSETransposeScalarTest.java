@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -95,7 +96,7 @@ public class RewriteCSETransposeScalarTest extends AutomatedTestBase
 			//compare output  
 			double ret = TestUtils.readDMLScalar(output("R"));
 			Assert.assertEquals("Wrong result, expected: "+(rows*cols), Double.valueOf(rows*cols), Double.valueOf(ret));
-			Assert.assertEquals(Long.valueOf(rewrites?1:2), Long.valueOf(Statistics.getCPHeavyHitterCount("r'")));
+			Assert.assertEquals(Long.valueOf(rewrites?1:2), Long.valueOf(Statistics.getCPHeavyHitterCount(Opcodes.TRANSPOSE.toString())));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewritesOld;

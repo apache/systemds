@@ -539,10 +539,10 @@ public interface Types {
 		CAST_AS_FRAME, CAST_AS_LIST, CAST_AS_MATRIX, CAST_AS_SCALAR,
 		CAST_AS_BOOLEAN, CAST_AS_DOUBLE, CAST_AS_INT,
 		CEIL, CHOLESKY, COS, COSH, CUMMAX, CUMMIN, CUMPROD, CUMSUM,
-		CUMSUMPROD, DETECTSCHEMA, COLNAMES, EIGEN, EXISTS, EXP, FLOOR, INVERSE,
+		CUMSUMPROD, DET, DETECTSCHEMA, COLNAMES, EIGEN, EXISTS, EXP, FLOOR, INVERSE,
 		IQM, ISNA, ISNAN, ISINF, LENGTH, LINEAGE, LOG, NCOL, NOT, NROW,
 		MEDIAN, PREFETCH, PRINT, ROUND, SIN, SINH, SIGN, SOFTMAX, SQRT, STOP, _EVICT,
-		SVD, TAN, TANH, TYPEOF, TRIGREMOTE,
+		SVD, TAN, TANH, TYPEOF, TRIGREMOTE, SQRT_MATRIX_JAVA,
 		//fused ML-specific operators for performance 
 		SPROP, //sample proportion: P * (1 - P)
 		SIGMOID, //sigmoid function: 1 / (1 + exp(-X))
@@ -558,6 +558,7 @@ public interface Types {
 
 		public boolean isScalarOutput() {
 			return this == CAST_AS_SCALAR
+				|| this == DET
 				|| this == NROW || this == NCOL
 				|| this == LENGTH || this == EXISTS
 				|| this == IQM || this == LINEAGE
@@ -574,16 +575,17 @@ public interface Types {
 				case CAST_AS_DOUBLE:  return "castvtd";
 				case CAST_AS_INT:     return "castvti";
 				case CAST_AS_BOOLEAN: return "castvtb";
-				case CUMMAX:          return "ucummax";
-				case CUMMIN:          return "ucummin";
-				case CUMPROD:         return "ucum*";
-				case CUMSUM:          return "ucumk+";
-				case CUMSUMPROD:      return "ucumk+*";
-				case DETECTSCHEMA:    return "detectSchema";
-				case MULT2:           return "*2";
-				case NOT:             return "!";
-				case POW2:            return "^2";
-				case TYPEOF:          return "typeOf";
+				case CUMMAX:          return Opcodes.UCUMMAX.toString();
+				case CUMMIN:          return Opcodes.UCUMMIN.toString();
+				case CUMPROD:         return Opcodes.UCUMM.toString();
+				case CUMSUM:          return Opcodes.UCUMKP.toString();
+				case CUMSUMPROD:      return Opcodes.UCUMKPM.toString();
+				case DET:             return Opcodes.DET.toString();
+				case DETECTSCHEMA:    return Opcodes.DETECTSCHEMA.toString();
+				case MULT2:           return Opcodes.MULT2.toString();
+				case NOT:             return Opcodes.NOT.toString();
+				case POW2:            return Opcodes.POW2.toString();
+				case TYPEOF:          return Opcodes.TYPEOF.toString();
 				default:              return name().toLowerCase();
 			}
 		}
@@ -643,35 +645,35 @@ public interface Types {
 		@Override
 		public String toString() {
 			switch(this) {
-				case PLUS:         return "+";
-				case MINUS:        return "-";
-				case MINUS_NZ:     return "-nz";
-				case MINUS1_MULT:  return "1-*";
-				case MULT:         return "*";
-				case DIV:          return "/";
-				case MODULUS:      return "%%";
-				case INTDIV:       return "%/%";
-				case LESSEQUAL:    return "<=";
-				case LESS:         return "<";
-				case GREATEREQUAL: return ">=";
-				case GREATER:      return ">";
-				case EQUAL:        return "==";
-				case NOTEQUAL:     return "!=";
-				case OR:           return "||";
-				case AND:          return "&&";
-				case POW:          return "^";
+				case PLUS:         return Opcodes.PLUS.toString();
+				case MINUS:        return Opcodes.MINUS.toString();
+				case MINUS_NZ:     return Opcodes.MINUS_NZ.toString();
+				case MINUS1_MULT:  return Opcodes.MINUS1_MULT.toString();
+				case MULT:         return Opcodes.MULT.toString();
+				case DIV:          return Opcodes.DIV.toString();
+				case MODULUS:      return Opcodes.MODULUS.toString();
+				case INTDIV:       return Opcodes.INTDIV.toString();
+				case LESSEQUAL:    return Opcodes.LESSEQUAL.toString();
+				case LESS:         return Opcodes.LESS.toString();
+				case GREATEREQUAL: return Opcodes.GREATEREQUAL.toString();
+				case GREATER:      return Opcodes.GREATER.toString();
+				case EQUAL:        return Opcodes.EQUAL.toString();
+				case NOTEQUAL:     return Opcodes.NOTEQUAL.toString();
+				case OR:           return Opcodes.OR.toString();
+				case AND:          return Opcodes.AND.toString();
+				case POW:          return Opcodes.POW.toString();
 				case IQM:          return "IQM";
-				case MOMENT:       return "cm";
-				case BITWAND:      return "bitwAnd";
-				case BITWOR:       return "bitwOr";
-				case BITWXOR:      return "bitwXor";
-				case BITWSHIFTL:   return "bitwShiftL";
-				case BITWSHIFTR:   return "bitwShiftR";
-				case DROP_INVALID_TYPE: return "dropInvalidType";
-				case DROP_INVALID_LENGTH: return "dropInvalidLength";
-				case FRAME_ROW_REPLICATE: return "freplicate";
-				case VALUE_SWAP: return "valueSwap";
-				case APPLY_SCHEMA: return "applySchema";
+				case MOMENT:       return Opcodes.CM.toString();
+				case BITWAND:      return Opcodes.BITWAND.toString();
+				case BITWOR:       return Opcodes.BITWOR.toString();
+				case BITWXOR:      return Opcodes.BITWXOR.toString();
+				case BITWSHIFTL:   return Opcodes.BITWSHIFTL.toString();
+				case BITWSHIFTR:   return Opcodes.BITWSHIFTR.toString();
+				case DROP_INVALID_TYPE: return Opcodes.DROPINVALIDTYPE.toString();
+				case DROP_INVALID_LENGTH: return Opcodes.DROPINVALIDLENGTH.toString();
+				case FRAME_ROW_REPLICATE: return Opcodes.FREPLICATE.toString();
+				case VALUE_SWAP: return Opcodes.VALUESWAP.toString();
+				case APPLY_SCHEMA: return Opcodes.APPLYSCHEMA.toString();
 				default:           return name().toLowerCase();
 			}
 		}
@@ -720,10 +722,10 @@ public interface Types {
 		@Override
 		public String toString() {
 			switch(this) {
-				case MOMENT:     return "cm";
-				case PLUS_MULT:  return "+*";
-				case MINUS_MULT: return "-*";
-				case MAP:          return "_map";
+				case MOMENT:     return Opcodes.CM.toString();
+				case PLUS_MULT:  return Opcodes.PM.toString();
+				case MINUS_MULT: return Opcodes.MINUSMULT.toString();
+				case MAP:          return Opcodes.MAP.toString();
 				default:         return name().toLowerCase();
 			}
 		}
@@ -774,9 +776,9 @@ public interface Types {
 		@Override
 		public String toString() {
 			switch(this) {
-				case DIAG:    return "rdiag";
-				case TRANS:   return "r'";
-				case RESHAPE: return "rshape";
+				case DIAG:    return Opcodes.DIAG.toString();
+				case TRANS:   return Opcodes.TRANSPOSE.toString();
+				case RESHAPE: return Opcodes.RESHAPE.toString();
 				default:      return name().toLowerCase();
 			}
 		}
@@ -842,7 +844,7 @@ public interface Types {
 				case TRANSIENTREAD:   return "TRead";
 				case TRANSIENTWRITE:  return "TWrite";
 				case FUNCTIONOUTPUT:  return "FunOut";
-				case SQLREAD:         return "Sql";
+				case SQLREAD:         return Opcodes.SQL.toString();
 				case FEDERATED:       return "Fed";
 				default:              return "Invalid";
 			}
@@ -861,6 +863,7 @@ public interface Types {
 		FEDERATED, // A federated matrix
 		PROTO,  // protocol buffer representation
 		HDF5,   // Hierarchical Data Format (HDF)
+		COG,   // Cloud-optimized GeoTIFF
 		UNKNOWN;
 		
 		public boolean isIJV() {

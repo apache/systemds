@@ -26,10 +26,10 @@ import java.util.List;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.AIdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.PlaceHolderDict;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
@@ -327,8 +327,8 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	 * @param constV The output columns.
 	 */
 	public final void addToCommon(double[] constV) {
-		if(_dict instanceof IdentityDictionary) {
-			MatrixBlock mb = ((IdentityDictionary) _dict).getMBDict().getMatrixBlock();
+		if(_dict instanceof AIdentityDictionary) {
+			MatrixBlock mb = ((AIdentityDictionary) _dict).getMBDict().getMatrixBlock();
 			if(mb.isInSparseFormat())
 				addToCommonSparse(constV, mb.getSparseBlock());
 			else
@@ -655,7 +655,7 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	public double getSparsity() {
 		return 1.0;
 	}
-	
+
 	@Override
 	protected void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
 		throw new NotImplementedException();
@@ -710,12 +710,10 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	public AColGroup combineWithSameIndex(int nRow, int nCol, AColGroup right) {
 		if(!(right instanceof ColGroupConst))
 			return super.combineWithSameIndex(nRow, nCol, right);
-
 		final IColIndex combIndex = _colIndexes.combine(right.getColIndices().shift(nCol));
 		final IDictionary b = ((ColGroupConst) right).getDictionary();
 		final IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
 		return create(combIndex, combined);
-
 	}
 
 	@Override
@@ -737,10 +735,11 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 		for(int i = 0; i < right.size(); i++) {
 			AColGroup g = right.get(i);
 
-			if(!(g instanceof ColGroupConst) || !(g instanceof ColGroupEmpty)) {
+			if(!(g instanceof ColGroupConst) && !(g instanceof ColGroupEmpty)) {
 				return super.combineWithSameIndex(nRow, nCol, right);
 			}
 		}
+
 		IColIndex combinedIndex = _colIndexes;
 		int i = 0;
 		for(AColGroup g : right) {
@@ -751,7 +750,7 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 
 		return create(combinedIndex, combined);
 	}
-	
+
 	@Override
 	protected boolean allowShallowIdentityRightMult() {
 		return true;

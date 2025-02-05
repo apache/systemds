@@ -19,6 +19,7 @@
 
 package org.apache.sysds.resource.cost;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.*;
@@ -78,7 +79,7 @@ public class CPCostUtils {
 					else
 						nflop = 2 * output.getCells() + 8 * output.getCells();  // DENSE gen (incl allocate)
 				}
-			} else if (opcode.equals(DataGen.SEQ_OPCODE)) {
+			} else if (opcode.equals(Opcodes.SEQUENCE.toString())) {
 				nflop = DEFAULT_NFLOP_CP * output.getCells();
 			} else {
 				// DataGen.SAMPLE_OPCODE, DataGen.TIME_OPCODE,
@@ -105,7 +106,7 @@ public class CPCostUtils {
 		if (inst instanceof MMTSJCPInstruction) {
 			MMTSJ.MMTSJType type = ((MMTSJCPInstruction) inst).getMMTSJType();
 			opcode += type.isLeft() ? "_left" : "_right";
-		} else if (inst instanceof ReorgCPInstruction && opcode.equals("rsort")) {
+		} else if (inst instanceof ReorgCPInstruction && opcode.equals(Opcodes.SORT.toString())) {
 			if (inst.input2 != null) includeWeights = true;
 		} else if (inst instanceof QuantileSortCPInstruction) {
 			if (inst.input2 != null) {
@@ -177,10 +178,10 @@ public class CPCostUtils {
 	public static double getParameterizedBuiltinInstTime(ParameterizedBuiltinCPInstruction inst, VarStats input, VarStats output, IOMetrics metrics) {
 		CPType instructionType = inst.getCPInstructionType();
 		String opcode = inst.getOpcode();
-		if (opcode.equals("rmempty")) {
+		if (opcode.equals(Opcodes.RMEMPTY.toString())) {
 			String margin = inst.getParameterMap().get("margin");
 			opcode += "_" + margin;
-		} else if (opcode.equals("groupedagg")) {
+		} else if (opcode.equals(Opcodes.GROUPEDAGG.toString())) {
 			CMOperator.AggregateOperationTypes opType = ((CMOperator) inst.getOperator()).getAggOpType();
 			opcode += "_" + opType.name().toLowerCase();
 		}
@@ -316,9 +317,9 @@ public class CPCostUtils {
 					copyMissingDim(output, inputs[0].getN(), inputs[1].getM());
 				break;
 			case ParameterizedBuiltin:
-				if (opcode.equals("rmempty") || opcode.equals("replace")) {
+				if (opcode.equals(Opcodes.RMEMPTY.toString()) || opcode.equals(Opcodes.REPLACE.toString())) {
 					copyMissingDim(output, inputs[0]);
-				} else if (opcode.equals("uppertri") || opcode.equals("lowertri")) {
+				} else if (opcode.equals(Opcodes.UPPERTRI.toString()) || opcode.equals(Opcodes.LOWERTRI.toString())) {
 					copyMissingDim(output, inputs[0].getM(), inputs[0].getM());
 				}
 				break;
@@ -500,6 +501,7 @@ public class CPCostUtils {
 					case "cholesky":
 						costs = (1.0 / 3.0) * output.getCellsWithSparsity() * output.getCellsWithSparsity();
 						break;
+					case "det":
 					case "detectschema":
 					case "colnames":
 						throw new RuntimeException("Specific Frame operation with opcode '" + opcode + "' is not supported yet");
@@ -602,7 +604,7 @@ public class CPCostUtils {
 			case Reshape:
 				if (output == null)
 					throw new RuntimeException("Not all required arguments for Reorg/Reshape operations are passed initialized");
-				if (opcode.equals("rsort"))
+				if (opcode.equals(Opcodes.SORT.toString()))
 					return (long) (output.getCellsWithSparsity() * (Math.log(output.getM()) / Math.log(2))); // merge sort columns (n*m*log2(m))
 				return output.getCellsWithSparsity();
 			case MatrixIndexing:
@@ -620,7 +622,7 @@ public class CPCostUtils {
 					throw new RuntimeException("Not all required arguments for QSort operations are passed initialized");
 				// mergesort since comparator used
 				m = inputs[0].getM();
-				if (opcode.equals("qsort"))
+				if (opcode.equals(Opcodes.QSORT.toString()))
 					costs = m + m;
 				else // == "qsort_wts" (with weights)
 					costs = m * inputs[0].getSparsity();
@@ -662,11 +664,11 @@ public class CPCostUtils {
 				throw new RuntimeException("CP operation type'" + instructionType + "' is not supported yet");
 			// types corresponding to BinaryCPInstruction
 			case Binary:
-				if (opcode.equals("+") || opcode.equals("-")) {
+				if (opcode.equals(Opcodes.PLUS.toString()) || opcode.equals(Opcodes.MINUS.toString())) {
 					if (inputs.length < 2)
 						throw new RuntimeException("Not all required arguments for Binary operations +/- are passed initialized");
 					return inputs[0].getCellsWithSparsity() + inputs[1].getCellsWithSparsity();
-				} else if (opcode.equals("solve")) {
+				} else if (opcode.equals(Opcodes.SOLVE.toString())) {
 					if (inputs.length < 1)
 						throw new RuntimeException("Not all required arguments for Binary operation 'solve' are passed initialized");
 					return inputs[0].getCells() * inputs[0].getN();
@@ -775,16 +777,16 @@ public class CPCostUtils {
 			case AggregateTernary:
 				if (inputs.length < 1)
 					throw new RuntimeException("Not all required arguments for AggregateTernary operation is passed initialized");
-				if (opcode.equals("tak+*") || opcode.equals("tack+*"))
+				if (opcode.equals(Opcodes.TAKPM.toString()) || opcode.equals(Opcodes.TACKPM.toString()))
 					return 6 * inputs[0].getCellsWithSparsity();
 				throw new DMLRuntimeException("AggregateTernary operation with opcode '" + opcode + "' is not supported by SystemDS");
 			case Quaternary:
 				if (inputs.length < 1)
 					throw new RuntimeException("Not all required arguments for Quaternary operation is passed initialized");
-				if (opcode.equals("wsloss") || opcode.equals("wdivmm") || opcode.equals("wcemm")) {
+				if (opcode.equals(Opcodes.WSLOSS.toString()) || opcode.equals(Opcodes.WDIVMM.toString()) || opcode.equals(Opcodes.WCEMM.toString())) {
 					// 4 matrices used
 					return 4 * inputs[0].getCells();
-				} else if (opcode.equals("wsigmoid") || opcode.equals("wumm")) {
+				} else if (opcode.equals(Opcodes.WSIGMOID.toString()) || opcode.equals(Opcodes.WUMM.toString())) {
 					// 3 matrices used
 					return 3 * inputs[0].getCells();
 				}
@@ -811,7 +813,7 @@ public class CPCostUtils {
 			case Ctable:
 				if (output == null)
 					throw new RuntimeException("Not all required arguments for Ctable operation is passed initialized");
-				if (opcode.startsWith("ctable")) {
+				if (opcode.startsWith(Opcodes.CTABLE.toString())) {
 					// potential high inaccuracy due to unknown output column size
 					// and inferring bound on number of elements what could lead to high underestimation
 					return 3 * output.getCellsWithSparsity();
@@ -821,7 +823,7 @@ public class CPCostUtils {
 				// currently this would never be reached since the pmm instruction uses AggregateBinary op. type
 				if (output == null || inputs.length < 1)
 					throw new RuntimeException("Not all required arguments for PMMJ operation is passed initialized");
-				if (opcode.equals("pmm")) {
+				if (opcode.equals(Opcodes.PMM.toString())) {
 					return (long) (inputs[0].getN() * inputs[0].getSparsity()) * output.getCells();
 				}
 				throw new DMLRuntimeException("PMMJ operation with opcode '" + opcode + "' is not supported by SystemDS");

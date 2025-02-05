@@ -23,6 +23,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.misc.Interval;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
@@ -126,19 +127,19 @@ public abstract class Expression implements ParseInfo
 	 * Returns {@code BinaryOp.INVALID} if string value not recognized.
 	 */
 	public static BinaryOp getBinaryOp(String val) {
-		if (val.equalsIgnoreCase("+"))
+		if (val.equalsIgnoreCase(Opcodes.PLUS.toString()))
 			return BinaryOp.PLUS;
-		else if (val.equalsIgnoreCase("-"))
+		else if (val.equalsIgnoreCase(Opcodes.MINUS.toString()))
 			return BinaryOp.MINUS;
-		else if (val.equalsIgnoreCase("*"))
+		else if (val.equalsIgnoreCase(Opcodes.MULT.toString()))
 			return BinaryOp.MULT;
-		else if (val.equalsIgnoreCase("/"))
+		else if (val.equalsIgnoreCase(Opcodes.DIV.toString()))
 			return BinaryOp.DIV;
-		else if (val.equalsIgnoreCase("%%"))
+		else if (val.equalsIgnoreCase(Opcodes.MODULUS.toString()))
 			return BinaryOp.MODULUS;
-		else if (val.equalsIgnoreCase("%/%"))
+		else if (val.equalsIgnoreCase(Opcodes.INTDIV.toString()))
 			return BinaryOp.INTDIV;
-		else if (val.equalsIgnoreCase("^"))
+		else if (val.equalsIgnoreCase(Opcodes.POW.toString()))
 			return BinaryOp.POW;
 		else if (val.equalsIgnoreCase("%*%"))
 			return BinaryOp.MATMULT;
@@ -157,17 +158,17 @@ public abstract class Expression implements ParseInfo
 	public static RelationalOp getRelationalOp(String val) {
 		if (val == null) 
 			return null;
-		else if (val.equalsIgnoreCase("<"))
+		else if (val.equalsIgnoreCase(Opcodes.LESS.toString()))
 			return RelationalOp.LESS;
-		else if (val.equalsIgnoreCase("<="))
+		else if (val.equalsIgnoreCase(Opcodes.LESSEQUAL.toString()))
 			return RelationalOp.LESSEQUAL;
-		else if (val.equalsIgnoreCase(">"))
+		else if (val.equalsIgnoreCase(Opcodes.GREATER.toString()))
 			return RelationalOp.GREATER;
-		else if (val.equalsIgnoreCase(">="))
+		else if (val.equalsIgnoreCase(Opcodes.GREATEREQUAL.toString()))
 			return RelationalOp.GREATEREQUAL;
-		else if (val.equalsIgnoreCase("=="))
+		else if (val.equalsIgnoreCase(Opcodes.EQUAL.toString()))
 			return RelationalOp.EQUAL;
-		else if (val.equalsIgnoreCase("!="))
+		else if (val.equalsIgnoreCase(Opcodes.NOTEQUAL.toString()))
 			return RelationalOp.NOTEQUAL;
 		return RelationalOp.INVALID;
 	}
@@ -181,15 +182,15 @@ public abstract class Expression implements ParseInfo
 	 * Returns {@code BooleanOp.INVALID} if string value not recognized.
 	 */
 	public static BooleanOp getBooleanOp(String val) {
-		if (val.equalsIgnoreCase("&&"))
+		if (val.equalsIgnoreCase(Opcodes.AND.toString()))
 			return BooleanOp.CONDITIONALAND;
 		else if (val.equalsIgnoreCase("&"))
 			return BooleanOp.LOGICALAND;
-		else if (val.equalsIgnoreCase("||"))
+		else if (val.equalsIgnoreCase(Opcodes.OR.toString()))
 			return BooleanOp.CONDITIONALOR;
 		else if (val.equalsIgnoreCase("|"))
 			return BooleanOp.LOGICALOR;
-		else if (val.equalsIgnoreCase("!"))
+		else if (val.equalsIgnoreCase(Opcodes.NOT.toString()))
 			return BooleanOp.NOT;
 		return BooleanOp.INVALID;
 	}

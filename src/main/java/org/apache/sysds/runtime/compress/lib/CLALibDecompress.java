@@ -237,7 +237,7 @@ public final class CLALibDecompress {
 			if(ret.isInSparseFormat()) 
 				decompressSparseSingleThread(ret, filteredGroups, nRows, blklen);
 			else 
-				decompressDenseSingleThread(ret, filteredGroups, nRows, blklen, constV, eps, nonZeros, overlapping);
+				decompressDenseSingleThread(ret, filteredGroups, nRows, blklen, constV, eps, overlapping);
 		}
 		else if(ret.isInSparseFormat()) 
 			decompressSparseMultiThread(ret, filteredGroups, nRows, blklen, k);
@@ -294,8 +294,7 @@ public final class CLALibDecompress {
 	}
 
 	private static void decompressDenseSingleThread(MatrixBlock ret, List<AColGroup> filteredGroups, int rlen,
-		int blklen, double[] constV, double eps, long nonZeros, boolean overlapping) {
-
+		int blklen, double[] constV, double eps, boolean overlapping) {
 		final DenseBlock db = ret.getDenseBlock();
 		final int nCol = ret.getNumColumns();
 		for(int i = 0; i < rlen; i += blklen) {
@@ -303,26 +302,24 @@ public final class CLALibDecompress {
 			final int ru = Math.min(i + blklen, rlen);
 			for(AColGroup grp : filteredGroups)
 				grp.decompressToDenseBlock(db, rl, ru);
-			if(constV != null && !ret.isInSparseFormat())
+			if(constV != null)
 				addVector(db, nCol, constV, eps, rl, ru);
 		}
 	}
 
-	// private static void decompressDenseMultiThread(MatrixBlock ret, List<AColGroup> groups, double[] constV, int k,
-	// boolean overlapping) {
-	// final int nRows = ret.getNumRows();
-	// final double eps = getEps(constV);
-	// final int blklen = Math.max(nRows / k, 512);
-	// decompressDenseMultiThread(ret, groups, nRows, blklen, constV, eps, k, overlapping);
-	// }
-
-	protected static void decompressDenseMultiThread(MatrixBlock ret, List<AColGroup> groups, double[] constV,
+	public static void decompressDense(MatrixBlock ret, List<AColGroup> groups, double[] constV,
 		double eps, int k, boolean overlapping) {
 
 		Timing time = new Timing(true);
 		final int nRows = ret.getNumRows();
 		final int blklen = Math.max(nRows / k, 512);
-		decompressDenseMultiThread(ret, groups, nRows, blklen, constV, eps, k, overlapping);
+		if( k > 1)
+			decompressDenseMultiThread(ret, groups, nRows, blklen, constV, eps, k, overlapping);
+		else
+			decompressDenseSingleThread(ret, groups, nRows, blklen, constV, eps, overlapping);
+		
+		ret.recomputeNonZeros(k);
+		
 		if(DMLScript.STATISTICS) {
 			final double t = time.stop();
 			DMLCompressionStatistics.addDecompressTime(t, k);
@@ -391,9 +388,9 @@ public final class CLALibDecompress {
 			double max = -Double.MAX_VALUE;
 			double min = Double.MAX_VALUE;
 			for(double v : constV) {
-				if(v > max)
+				if(v > max && Double.isFinite(v))
 					max = v;
-				if(v < min)
+				if(v < min && Double.isFinite(v))
 					min = v;
 			}
 			final double eps = (max + 1e-4 - min) * 1e-10;

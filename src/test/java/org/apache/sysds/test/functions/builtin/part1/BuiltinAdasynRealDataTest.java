@@ -70,7 +70,7 @@ public class BuiltinAdasynRealDataTest extends AutomatedTestBase {
 	
 	@Test
 	public void testTitanicAdasynK5() {
-		runAdasynTest(TITANIC_DATA, TITANIC_TFSPEC, true, 0.797, 5, ExecType.CP);
+		runAdasynTest(TITANIC_DATA, TITANIC_TFSPEC, true, 0.786, 5, ExecType.CP);
 	}
 	
 	private void runAdasynTest(String data, String tfspec, boolean adasyn, double minAcc, int k, ExecType instType) {

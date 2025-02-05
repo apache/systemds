@@ -20,6 +20,8 @@
 package org.apache.sysds.runtime.io;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -29,6 +31,10 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.Array;
+import org.apache.sysds.runtime.frame.data.columns.ArrayWrapper;
+import org.apache.sysds.runtime.frame.data.columns.DDCArray;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.HDFSTool;
 
 /**
@@ -43,27 +49,64 @@ public class FrameWriterBinaryBlock extends FrameWriter {
 		// prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path(fname);
-
+		
 		// if the file already exists on HDFS, remove it.
 		HDFSTool.deleteFileIfExistOnHDFS(fname);
-
+		HDFSTool.deleteFileIfExistOnHDFS(fname + ".dict");
+		
 		// bound check for src block
 		if(src.getNumRows() > rlen || src.getNumColumns() > clen) {
 			throw new IOException("Frame block [1:" + src.getNumRows() + ",1:" + src.getNumColumns() + "] "
 				+ "out of overall frame range [1:" + rlen + ",1:" + clen + "].");
 		}
 
+		Pair<List<Pair<Integer,Array<?>>>, FrameBlock> prep = extractDictionaries(src);
+		src = prep.getValue();
+
 		// write binary block to hdfs (sequential/parallel)
-		writeBinaryBlockFrameToHDFS(path, job, src, rlen, clen);
+		writeBinaryBlockFrameToHDFS(path, job, prep.getValue(), rlen, clen);
+
+		if(prep.getKey().size() > 0)
+			writeBinaryBlockDictsToSequenceFile(new Path(fname + ".dict"), job, prep.getKey());
+		
+	}
+
+	protected Pair<List<Pair<Integer,Array<?>>>, FrameBlock> extractDictionaries(FrameBlock src){
+		List<Pair<Integer,Array<?>>> dicts = new ArrayList<>();
+		int blen = ConfigurationManager.getBlocksize();
+		if(src.getNumRows() < blen )
+			return new Pair<>(dicts, src);
+		boolean modified = false;
+		for(int i = 0; i < src.getNumColumns(); i++){
+			Array<?> a = src.getColumn(i);
+			if(a instanceof DDCArray){
+				DDCArray<?> d = (DDCArray<?>)a;
+				dicts.add(new Pair<>(i, d.getDict()));
+				if(modified == false){
+					modified = true;
+					// make sure other users of this frame does not get effected
+				   src = src.copyShallow(); 
+				}
+				src.setColumn(i, d.nullDict());
+			}
+		} 
+		return new Pair<>(dicts, src);
 	}
 
 	protected void writeBinaryBlockFrameToHDFS(Path path, JobConf job, FrameBlock src, long rlen, long clen)
 		throws IOException, DMLRuntimeException {
 		FileSystem fs = IOUtilFunctions.getFileSystem(path);
 		int blen = ConfigurationManager.getBlocksize();
-
+		
 		// sequential write to single file
 		writeBinaryBlockFrameToSequenceFile(path, job, fs, src, blen, 0, (int) rlen);
+		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
+	}
+
+	protected void writeBinaryBlockDictsToSequenceFile(Path path, JobConf job, List<Pair<Integer, Array<?>>> dicts)
+		throws IOException, DMLRuntimeException {
+		FileSystem fs = IOUtilFunctions.getFileSystem(path);
+		writeBinaryBlockDictsToSequenceFile(path, job, fs, dicts);
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
 
@@ -105,6 +148,22 @@ public class FrameWriterBinaryBlock extends FrameWriter {
 					index.set(bi + 1);
 					writer.append(index, block);
 				}
+			}
+		}
+		finally {
+			IOUtilFunctions.closeSilently(writer);
+		}
+	}
+
+	protected static void writeBinaryBlockDictsToSequenceFile(Path path, JobConf job, FileSystem fs, List<Pair<Integer,Array<?>>> dicts) throws IOException{
+		final Writer writer = IOUtilFunctions.getSeqWriterArray(path, job, 1);
+		try{
+			LongWritable index = new LongWritable();
+
+			for(int i = 0; i < dicts.size(); i++){
+				Pair<Integer, Array<?>> p = dicts.get(i);
+				index.set(p.getKey());
+				writer.append(index, new ArrayWrapper(p.getValue()));
 			}
 		}
 		finally {

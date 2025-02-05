@@ -80,7 +80,12 @@ public class ColGroupUncompressed extends AColGroup {
 	 */
 	private final MatrixBlock _data;
 
-	private ColGroupUncompressed(MatrixBlock mb, IColIndex colIndexes) {
+	/**
+	 * Do not use this constructor of column group uncompressed, instead uce the create constructor.
+	 * @param mb The contained data.
+	 * @param colIndexes Column indexes for this Columngroup
+	 */
+	protected ColGroupUncompressed(MatrixBlock mb, IColIndex colIndexes) {
 		super(colIndexes);
 		_data = mb;
 	}

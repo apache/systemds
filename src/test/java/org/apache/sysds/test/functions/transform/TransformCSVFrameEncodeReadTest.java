@@ -21,6 +21,8 @@ package org.apache.sysds.test.functions.transform;
 
 import static org.junit.Assert.fail;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -35,8 +37,9 @@ import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
 
-public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase 
-{
+public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase {
+	protected static final Log LOG = LogFactory.getLog(TransformCSVFrameEncodeReadTest.class.getName());
+
 	private final static String TEST_NAME1 = "TransformCSVFrameEncodeRead";
 	private final static String TEST_DIR = "functions/transform/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + TransformCSVFrameEncodeReadTest.class.getSimpleName() + "/";
@@ -136,7 +139,7 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase
 				DATASET_DIR + DATASET, String.valueOf(nrows), output("R") };
 			
 			String stdOut = runTest(null).toString();
-			
+
 			//read input/output and compare
 			FrameReader reader2 = parRead ? 
 				new FrameReaderTextCSVParallel( new FileFormatPropertiesCSV() ) : 
@@ -158,6 +161,7 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase
 			
 		}
 		catch(Exception ex) {
+			ex.printStackTrace();
 			throw new RuntimeException(ex);
 		}
 		finally {

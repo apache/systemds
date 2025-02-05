@@ -40,6 +40,8 @@ required_packages = [
 
 def check_package_version(package_name, required_version):
     try:
+        print(f"Checking package version for {package_name}...")
+        print(f"Requried version: {required_version} - actual version: {version(package_name)}")
         return version(package_name) >= required_version
     except PackageNotFoundError:
         return False

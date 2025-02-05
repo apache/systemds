@@ -19,6 +19,10 @@
 
 package org.apache.sysds.test.component.frame;
 
+import static org.junit.Assert.assertEquals;
+
+import org.apache.sysds.runtime.frame.data.columns.Array;
+import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ValueType;
@@ -170,5 +174,44 @@ public class FrameGetSetTest extends AutomatedTestBase
 			ex.printStackTrace();
 			throw new RuntimeException(ex);
 		}
+	}
+
+
+	@Test
+	public void testSetRow() {
+		FrameBlock frame = new FrameBlock(schemaMixed, "0", rows);
+
+		frame.setRow(2, new Object[] {"2", 2.0, 2L, true});
+
+		assertEquals(frame.get(2, 0), "2");
+		assertEquals(frame.get(2, 1), 2.0);
+		assertEquals(frame.get(2, 2), 2L);
+		assertEquals(frame.get(2, 3), true);
+	}
+
+	@Test
+	public void testAppendColumnChunk() {
+		FrameBlock frame = new FrameBlock(schemaMixed, rows);
+
+		Array<?> chunk = ArrayFactory.create(new double[] {1.0, 2.0});
+		Array<?> chunk2 = ArrayFactory.create(new double[] {3.0, 4.0});
+		frame.appendColumnChunk(1, chunk);
+		frame.appendColumnChunk(1, chunk2);
+
+		assertEquals(frame.get(0, 1), 1.0);
+		assertEquals(frame.get(1, 1), 2.0);
+		assertEquals(frame.get(2, 1), 3.0);
+		assertEquals(frame.get(3, 1), 4.0);
+	}
+
+	@Test
+	public void testSetColumnChunk() {
+		FrameBlock frame = new FrameBlock(schemaMixed, "0", rows);
+
+		Array<?> chunk = ArrayFactory.create(new double[] {1.0, 2.0});
+		frame.setColumnChunk(1, chunk, 5, rows);
+
+		assertEquals(frame.get(5, 1), 1.0);
+		assertEquals(frame.get(6, 1), 2.0);
 	}
 }

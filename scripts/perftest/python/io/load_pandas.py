@@ -27,7 +27,12 @@ setup = "\n".join(
     [
         "from systemds.script_building.script import DMLScript",
         "import pandas as pd",
-        "df = pd.read_csv(src, header=None)",
+        "import os",
+        "if os.path.isdir(src):",
+        "    files = [os.path.join(src, f) for f in os.listdir(src)]",
+        "    df = pd.concat([pd.read_csv(f, header=None) for f in files])",
+        "else:",
+        "    df = pd.read_csv(src, header=None)",
         "if dtype is not None:",
         "    df = df.astype(dtype)",
     ]

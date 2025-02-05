@@ -170,9 +170,7 @@ public class Py4jConverterUtilsTest {
 		ByteBuffer buffer = ByteBuffer.allocate(4 + strings[0].length() + 4 + strings[1].length());
 		buffer.order(ByteOrder.LITTLE_ENDIAN);
 		for(String s : strings) {
-			buffer.order(ByteOrder.BIG_ENDIAN);
 			buffer.putInt(s.length());
-			buffer.order(ByteOrder.LITTLE_ENDIAN);
 			buffer.put(s.getBytes(StandardCharsets.UTF_8));
 		}
 		Array<?> result = Py4jConverterUtils.convert(buffer.array(), numElements, Types.ValueType.STRING);
@@ -196,6 +194,32 @@ public class Py4jConverterUtilsTest {
 
 		for(int i = 0; i < c.length; i++) {
 			assertEquals(c[i], result.get(i));
+		}
+	}
+
+	@Test
+	public void testConvertRow() {
+		int numElements = 4;
+		byte[] data = {1, 2, 3, 4};
+		Object[] row = Py4jConverterUtils.convertRow(data, numElements, Types.ValueType.UINT8);
+		assertNotNull(row);
+		assertEquals(4, row.length);
+		assertEquals(1, row[0]);
+		assertEquals(2, row[1]);
+		assertEquals(3, row[2]);
+		assertEquals(4, row[3]);
+	}
+
+	@Test
+	public void testConvertFused() {
+		int numElements = 1;
+		byte[] data = {1, 2, 3, 4};
+		Types.ValueType[] valueTypes = {ValueType.UINT8, ValueType.UINT8, ValueType.UINT8, ValueType.UINT8};
+		Array<?>[] arrays = Py4jConverterUtils.convertFused(data, numElements, valueTypes);
+		assertNotNull(arrays);
+		assertEquals(4, arrays.length);
+		for(int i = 0; i < 4; i++) {
+			assertEquals(1 + i, arrays[i].get(0));
 		}
 	}
 

@@ -578,7 +578,7 @@ public class BinaryOp extends MultiThreadedHop {
 			else //e.g., for append,pow or after inference
 				sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
 			
-			ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+			ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity, getDataType());
 		}
 		return ret;
 	}

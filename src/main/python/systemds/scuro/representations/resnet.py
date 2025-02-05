@@ -33,7 +33,7 @@ import numpy as np
 
 if torch.backends.mps.is_available():
     DEVICE = torch.device("mps")
-elif torch.backends.cudnn.is_available():
+elif torch.cuda.is_available():
     DEVICE = torch.device("cuda")
 else:
     DEVICE = torch.device("cpu")

@@ -31,7 +31,7 @@ on:
       - 'src/assembly/**'
       - 'dev/**'
     branches:
-      - scuro_join
+      - main
   pull_request:
     paths-ignore:
       - 'docs/**'

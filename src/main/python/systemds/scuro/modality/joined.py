@@ -110,14 +110,6 @@ class JoinedModality(Modality):
                             if right.ndim == 1:
                                 right = right[np.newaxis, :]
                         else:
-                            if len(self.right_modality.data) < i:
-                                print(f"i:{i}")
-                                print(f"starting_index:{starting_idx}")
-                                print(
-                                    f"right mod length:{len(self.right_modality.data)}"
-                                )
-                                print(f"left mod length:{len(self.left_modality.data)}")
-
                             if self.right_modality.data[i][c].ndim == 1:
                                 right = np.concatenate(
                                     [
@@ -238,11 +230,9 @@ class JoinedModality(Modality):
         new_left = Modality(left_modality.modality_type, {})
         new_right = Modality(right_modality.modality_type, {})
 
-        transform_right = True
         while (
             left_modality.data_loader.next_chunk < left_modality.data_loader.num_chunks
         ):
-            print(left_modality.data_loader.next_chunk)
             if chunk_right:
                 right_modality.extract_raw_data()
                 starting_idx = 0

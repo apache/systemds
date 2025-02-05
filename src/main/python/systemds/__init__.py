@@ -33,15 +33,12 @@ required_packages = [
     ("opt-einsum", "3.3.0"),
     ("h5py", "3.11.0"),
     ("transformers", "4.46.3"),
-    ("nltk", "3.9.1"),
     ("gensim", "4.3.3"),
 ]
 
 
 def check_package_version(package_name, required_version):
     try:
-        print(f"Checking package version for {package_name}...")
-        print(f"Requried version: {required_version} - actual version: {version(package_name)}")
         return version(package_name) >= required_version
     except PackageNotFoundError:
         return False

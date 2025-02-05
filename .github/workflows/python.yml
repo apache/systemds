@@ -114,7 +114,6 @@ jobs:
           torch \
           librosa \
           h5py \
-          nltk \
           gensim \
           black \
           opt-einsum

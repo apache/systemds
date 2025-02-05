@@ -92,20 +92,35 @@ class TestDataLoaders(unittest.TestCase):
         cls.test_file_path = "test_data_dr_search"
         cls.num_instances = 8
         modalities = [ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT]
-        
-        cls.data_generator = setup_data(modalities, cls.num_instances, cls.test_file_path)
+
+        cls.data_generator = setup_data(
+            modalities, cls.num_instances, cls.test_file_path
+        )
         os.makedirs(f"{cls.test_file_path}/embeddings")
 
-        #TODO: adapt the representation so they return non aggregated values. Apply windowing operation instead
-        
-        cls.bert = cls.data_generator.modalities_by_type[ModalityType.TEXT].apply_representation(Bert())
-        cls.mel_spe = cls.data_generator.modalities_by_type[ModalityType.AUDIO].apply_representation(MelSpectrogram())
-        cls.resnet = cls.data_generator.modalities_by_type[ModalityType.VIDEO].apply_representation(ResNet())
+        # TODO: adapt the representation so they return non aggregated values. Apply windowing operation instead
 
+        cls.bert = cls.data_generator.modalities_by_type[
+            ModalityType.TEXT
+        ].apply_representation(Bert())
+        cls.mel_spe = (
+            cls.data_generator.modalities_by_type[ModalityType.AUDIO]
+            .apply_representation(MelSpectrogram())
+            .flatten()
+        )
+        cls.resnet = (
+            cls.data_generator.modalities_by_type[ModalityType.VIDEO]
+            .apply_representation(ResNet())
+            .window(10, "avg")
+            .flatten()
+        )
         cls.mods = [cls.bert, cls.mel_spe, cls.resnet]
 
         split = train_test_split(
-            cls.data_generator.indices, cls.data_generator.labels, test_size=0.2, random_state=42
+            cls.data_generator.indices,
+            cls.data_generator.labels,
+            test_size=0.2,
+            random_state=42,
         )
         cls.train_indizes, cls.val_indizes = [int(i) for i in split[0]], [
             int(i) for i in split[1]
@@ -117,7 +132,7 @@ class TestDataLoaders(unittest.TestCase):
         cls.representations = [
             Concatenation(),
             Average(),
-            RowMax(),
+            RowMax(100),
             Multiplication(),
             Sum(),
             LSTM(width=256, depth=3),

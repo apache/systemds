@@ -34,7 +34,9 @@ class BoW(UnimodalRepresentation):
         self.output_file = output_file
 
     def transform(self, modality):
-        transformed_modality = TransformedModality(modality.modality_type, self, modality.metadata)
+        transformed_modality = TransformedModality(
+            modality.modality_type, self, modality.metadata
+        )
         vectorizer = CountVectorizer(
             ngram_range=(1, self.ngram_range), min_df=self.min_df
         )
@@ -43,6 +45,6 @@ class BoW(UnimodalRepresentation):
 
         if self.output_file is not None:
             save_embeddings(X, self.output_file)
-        
+
         transformed_modality.data = X
         return transformed_modality

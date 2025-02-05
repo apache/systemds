@@ -31,25 +31,26 @@ class MelSpectrogram(UnimodalRepresentation):
         super().__init__("MelSpectrogram")
 
     def transform(self, modality):
-        transformed_modality = TransformedModality(modality.modality_type, self, modality.metadata)
+        transformed_modality = TransformedModality(
+            modality.modality_type, self, modality.metadata
+        )
         result = []
         max_length = 0
         for sample in modality.data:
-            S = librosa.feature.melspectrogram(
-                y=sample, sr=22050
-            )
+            S = librosa.feature.melspectrogram(y=sample, sr=22050)
             S_dB = librosa.power_to_db(S, ref=np.max)
             if S_dB.shape[-1] > max_length:
                 max_length = S_dB.shape[-1]
             result.append(S_dB.T)
-        
+
         transformed_modality.data = result
         return transformed_modality
-    
-    
+
     def plot_spectrogram(self, spectrogram):
         plt.figure(figsize=(10, 4))
-        librosa.display.specshow(spectrogram, x_axis='time', y_axis='mel', sr=22050, cmap='viridis')
-        plt.colorbar(format='%+2.0f dB')
-        plt.title('Mel Spectrogram')
-        plt.savefig('spectrogram.jpg')
+        librosa.display.specshow(
+            spectrogram, x_axis="time", y_axis="mel", sr=22050, cmap="viridis"
+        )
+        plt.colorbar(format="%+2.0f dB")
+        plt.title("Mel Spectrogram")
+        plt.savefig("spectrogram.jpg")

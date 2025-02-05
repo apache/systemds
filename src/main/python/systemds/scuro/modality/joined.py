@@ -24,8 +24,8 @@ import numpy as np
 
 from systemds.scuro.modality.joined_transformed import JoinedTransformedModality
 from systemds.scuro.modality.modality import Modality
-from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.aggregate import Aggregation
+from systemds.scuro.representations.utils import pad_sequences
 
 
 class JoinCondition:
@@ -56,17 +56,28 @@ class JoinedModality(Modality):
         self.left_modality = left_modality
         self.right_modality = right_modality
         self.condition = join_condition
-        self.chunked_execution = chunked_execution # TODO: maybe move this into parent class
+        self.chunked_execution = (
+            chunked_execution  # TODO: maybe move this into parent class
+        )
         self.left_type = type(left_modality)
         self.right_type = type(right_modality)
-        if self.chunked_execution:
+        self.chunk_left = False
+        if self.chunked_execution and self.left_type.__name__.__contains__("Unimodal"):
             self.chunk_left = left_modality.data_loader.chunk_size is not None
 
-    def execute(self, right_starting_idx=0):
+    def execute(self, starting_idx=0):
         self.joined_right = self.right_modality.copy_from_instance()
 
-        for i, element in enumerate(self.left_modality.data):
-            idx_1 = list(self.left_modality.metadata.values())[i + right_starting_idx][
+        start, end = 0, len(self.left_modality.data)
+        if self.chunked_execution and not self.chunk_left:
+            start = starting_idx
+            end = (
+                self.right_modality.data_loader.chunk_size
+                * self.right_modality.data_loader.next_chunk
+            )
+
+        for i in range(start, end):
+            idx_1 = list(self.left_modality.metadata.values())[i + starting_idx][
                 self.condition.leftField
             ]
             if (
@@ -76,7 +87,10 @@ class JoinedModality(Modality):
                 nextIdx[:-1] = idx_1[1:]
                 nextIdx[-1] = sys.maxsize
 
-            idx_2 = list(self.right_modality.metadata.values())[i + right_starting_idx][
+            if self.chunk_left:
+                i = i + starting_idx
+
+            idx_2 = list(self.right_modality.metadata.values())[i][
                 self.condition.rightField
             ]
             self.joined_right.data.append([])
@@ -87,25 +101,53 @@ class JoinedModality(Modality):
             # video: list of lists of numpy array
             # audio: list of numpy array
             for j in range(0, len(idx_1)):
-                self.joined_right.data[i].append([])
-                other = np.array([])
+                self.joined_right.data[i - starting_idx].append([])
+                right = np.array([])
                 if self.condition.join_type == "<":
                     while c < len(idx_2) and idx_2[c] < nextIdx[j]:
-                        if other.size == 0:
-                            other = self.right_modality.data[i + right_starting_idx][c][np.newaxis, :]
+                        if right.size == 0:
+                            right = self.right_modality.data[i][c]
+                            if right.ndim == 1:
+                                right = right[np.newaxis, :]
                         else:
-                            other = np.concatenate([other, self.right_modality.data[i + right_starting_idx][c][np.newaxis, :]], axis=0)
-                        # other.append(self.right_modality.data[i][c])
+                            if len(self.right_modality.data) < i:
+                                print(f"i:{i}")
+                                print(f"starting_index:{starting_idx}")
+                                print(
+                                    f"right mod length:{len(self.right_modality.data)}"
+                                )
+                                print(f"left mod length:{len(self.left_modality.data)}")
+
+                            if self.right_modality.data[i][c].ndim == 1:
+                                right = np.concatenate(
+                                    [
+                                        right,
+                                        self.right_modality.data[i][c][np.newaxis, :],
+                                    ],
+                                    axis=0,
+                                )
+                            else:
+                                right = np.concatenate(
+                                    [right, self.right_modality.data[i][c]],
+                                    axis=0,
+                                )
                         c = c + 1
                 else:
                     while c < len(idx_2) and idx_2[c] <= idx_1[j]:
                         if idx_2[c] == idx_1[j]:
-                            other.append(self.right_modality.data[i + right_starting_idx][c])
+                            right.append(self.right_modality.data[i][c])
                         c = c + 1
-                        
-                if len(other) == 0: # Audio and video length sometimes do not match so we add the average all audio samples for this specific frame
-                    other = np.mean(self.right_modality.data[i + right_starting_idx], axis=0)[np.newaxis,:] # TODO: check correct loading for all data layouts, this is similar to missing data, add a different operation for htis
-                self.joined_right.data[i][j] = other
+
+                if (
+                    len(right) == 0
+                ):  # Audio and video length sometimes do not match so we add the average all audio samples for this specific frame
+                    right = np.mean(self.right_modality.data[i][c - 1 : c], axis=0)
+                    if right.ndim == 1:
+                        right = right[
+                            np.newaxis, :
+                        ]  # TODO: check correct loading for all data layouts, this is similar to missing data, add a different operation for this
+
+                self.joined_right.data[i - starting_idx][j] = right
 
     def apply_representation(self, representation, aggregation):
         self.aggregation = aggregation
@@ -119,20 +161,62 @@ class JoinedModality(Modality):
             self.right_modality.extract_raw_data()
 
         self.execute()
-        left_transformed, right_transformed = self._apply_representation(representation)
+        left_transformed = self._apply_representation(
+            self.left_modality, representation
+        )
+        right_transformed = self._apply_representation(
+            self.joined_right, representation
+        )
         left_transformed.update_metadata()
         right_transformed.update_metadata()
-        return JoinedTransformedModality(left_transformed, right_transformed, f'joined_{representation.name}')
-        
-        
-    def aggregate(self, aggregation_function, field_name): # TODO: use the filed name to extract data entries from modalities
+        return JoinedTransformedModality(
+            left_transformed, right_transformed, f"joined_{representation.name}"
+        )
+
+    def aggregate(
+        self, aggregation_function, field_name
+    ):  # TODO: use the filed name to extract data entries from modalities
         self.aggregation = Aggregation(aggregation_function, field_name)
-        
+
         if not self.chunked_execution and self.joined_right:
             return self.aggregation.aggregate(self.joined_right)
-        
+
         return self
-            
+
+    def combine(self, fusion_method):
+        """
+        Combines two or more modalities with each other using a dedicated fusion method
+        :param other: The modality to be combined
+        :param fusion_method: The fusion method to be used to combine modalities
+        """
+        modalities = [self.left_modality, self.right_modality]
+        self.data = []
+        reshape = False
+        if self.left_modality.get_data_shape() != self.joined_right.get_data_shape():
+            reshape = True
+        for i in range(0, len(self.left_modality.data)):
+            self.data.append([])
+            for j in range(0, len(self.left_modality.data[i])):
+                self.data[i].append([])
+                if reshape:
+                    self.joined_right.data[i][j] = self.joined_right.data[i][j].reshape(
+                        self.left_modality.get_data_shape()
+                    )
+                fused = np.concatenate(
+                    [self.left_modality.data[i][j], self.joined_right.data[i][j]],
+                    axis=0,
+                )
+                self.data[i][j] = fused
+        # self.data = fusion_method.transform(modalities)
+
+        for i, instance in enumerate(
+            self.data
+        ):  # TODO: only if the layout is list_of_lists_of_numpy_array
+            r = []
+            [r.extend(l) for l in instance]
+            self.data[i] = np.array(r)
+        self.data = pad_sequences(self.data)
+        return self
 
     def _handle_chunked_execution(self, representation):
         if self.left_type == self.right_type:
@@ -143,61 +227,58 @@ class JoinedModality(Modality):
             return self._apply_representation_chunked(
                 self.left_modality, self.right_modality, False, representation
             )
-        else:
+        else:  # TODO: refactor this approach (it is changing the way the modalities are joined)
             return self._apply_representation_chunked(
                 self.right_modality, self.left_modality, False, representation
             )
 
     def _apply_representation_chunked(
-        self, chunk_modality, other_modality, chunk_other, representation
+        self, left_modality, right_modality, chunk_right, representation
     ):
-        new_left= TransformedModality(
-            self.left_modality.modality_type,
-            representation,
-            {},
-        )
-        new_right = TransformedModality(
-            self.right_modality.modality_type,
-            representation,
-            {},
-        )
+        new_left = Modality(left_modality.modality_type, {})
+        new_right = Modality(right_modality.modality_type, {})
+
+        transform_right = True
         while (
-            chunk_modality.data_loader.next_chunk
-            < chunk_modality.data_loader.num_chunks
+            left_modality.data_loader.next_chunk < left_modality.data_loader.num_chunks
         ):
-            print(chunk_modality.data_loader.next_chunk
-            )
-            if chunk_other:
-                other_modality.extract_raw_data()
+            print(left_modality.data_loader.next_chunk)
+            if chunk_right:
+                right_modality.extract_raw_data()
                 starting_idx = 0
             else:
-                starting_idx = chunk_modality.data_loader.next_chunk * chunk_modality.data_loader.chunk_size
-            chunk_modality.extract_raw_data()
+                starting_idx = (
+                    left_modality.data_loader.next_chunk
+                    * left_modality.data_loader.chunk_size
+                )
+            left_modality.extract_raw_data()
 
             self.execute(starting_idx)
-            
-            left_transformed, right_transformed = self._apply_representation(representation)
-            new_left.data.extend(
-                left_transformed.data
+
+            right_transformed = self._apply_representation(
+                self.joined_right, representation
             )
-            new_left.metadata.update(left_transformed.metadata)
-            new_right.data.extend(
-                right_transformed.data
-            )
+            new_right.data.extend(right_transformed.data)
             new_right.metadata.update(right_transformed.metadata)
-        
+
+            left_transformed = self._apply_representation(left_modality, representation)
+            new_left.data.extend(left_transformed.data)
+            new_left.metadata.update(left_transformed.metadata)
+
         new_left.update_metadata()
         new_right.update_metadata()
-        return JoinedTransformedModality(new_left, new_right, f'joined_{representation.name}')
-    
+        return JoinedTransformedModality(
+            new_left, new_right, f"joined_{representation.name}"
+        )
 
-    def _apply_representation(self, representation):
-        left_transformed = representation.transform(self.left_modality)
+    def _apply_representation(self, modality, representation):
+        transformed = representation.transform(modality)
         if self.aggregation:
-            left_transformed = self.aggregation.window(left_transformed)
-       
-        right_transformed = representation.transform(self.joined_right)
-        if self.aggregation:
-            right_transformed = self.aggregation.window(right_transformed)
-        
-        return left_transformed, right_transformed
+            aggregated_data_left = self.aggregation.window(transformed)
+            transformed = Modality(
+                transformed.modality_type,
+                transformed.metadata,
+            )
+            transformed.data = aggregated_data_left
+
+        return transformed

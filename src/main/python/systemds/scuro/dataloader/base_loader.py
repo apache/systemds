@@ -55,11 +55,11 @@ class BaseLoader(ABC):
     def chunk_size(self, value):
         self._chunk_size = value
         self._num_chunks = int(len(self.indices) / self._chunk_size)
-        
+
     @property
     def num_chunks(self):
         return self._num_chunks
-    
+
     @property
     def next_chunk(self):
         return self._next_chunk

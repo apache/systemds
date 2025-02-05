@@ -26,6 +26,7 @@ import numpy as np
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.utils import pad_sequences
 
+
 class JoinedTransformedModality(Modality):
 
     def __init__(self, left_modality, right_modality, transformation):
@@ -33,7 +34,9 @@ class JoinedTransformedModality(Modality):
         Parent class of the different Modalities (unimodal & multimodal)
         :param transformation: Representation to be applied on the modality
         """
-        super().__init__(reduce(or_, [left_modality.modality_type], right_modality.modality_type))
+        super().__init__(
+            reduce(or_, [left_modality.modality_type], right_modality.modality_type)
+        )
         self.transformation = transformation
         self.left_modality = left_modality
         self.right_modality = right_modality
@@ -50,11 +53,16 @@ class JoinedTransformedModality(Modality):
             self.data.append([])
             for j in range(0, len(self.left_modality.data[i])):
                 self.data[i].append([])
-                fused = np.concatenate([self.left_modality.data[i][j], self.right_modality.data[i][j]], axis=0)
+                fused = np.concatenate(
+                    [self.left_modality.data[i][j], self.right_modality.data[i][j]],
+                    axis=0,
+                )
                 self.data[i][j] = fused
         # self.data = fusion_method.transform(modalities)
-        
-        for i, instance in enumerate(self.data): # TODO: only if the layout is list_of_lists_of_numpy_array
+
+        for i, instance in enumerate(
+            self.data
+        ):  # TODO: only if the layout is list_of_lists_of_numpy_array
             r = []
             [r.extend(l) for l in instance]
             self.data[i] = np.array(r)

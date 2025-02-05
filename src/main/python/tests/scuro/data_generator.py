@@ -33,15 +33,15 @@ from systemds.scuro.modality.type import ModalityType
 def setup_data(modalities, num_instances, path):
     if os.path.isdir(path):
         shutil.rmtree(path)
-        
+
     os.makedirs(path)
-    
+
     indizes = [str(i) for i in range(0, num_instances)]
-    
+
     modalities_to_create = []
     for modality in modalities:
         mod_path = path + "/" + modality.name + "/"
-        
+
         if modality == ModalityType.VIDEO:
             data_loader = VideoLoader(mod_path, indizes)
         elif modality == ModalityType.AUDIO:
@@ -49,10 +49,10 @@ def setup_data(modalities, num_instances, path):
         elif modality == ModalityType.TEXT:
             data_loader = TextLoader(mod_path, indizes)
         else:
-            raise 'Modality not supported in DataGenerator'
-        
+            raise "Modality not supported in DataGenerator"
+
         modalities_to_create.append(UnimodalModality(data_loader, modality))
-    
+
     data_generator = TestDataGenerator(modalities_to_create, path)
     data_generator.create_multimodal_data(num_instances)
     return data_generator
@@ -60,12 +60,12 @@ def setup_data(modalities, num_instances, path):
 
 class TestDataGenerator:
     def __init__(self, modalities, path, balanced=True):
-        
+
         self.modalities = modalities
         self.modalities_by_type = {}
         for modality in modalities:
             self.modalities_by_type[modality.modality_type] = modality
-        
+
         self._indices = None
         self.path = path
         self.balanced = balanced
@@ -76,16 +76,16 @@ class TestDataGenerator:
             modality.file_path = mod_path
         self.labels = []
         self.label_path = f"{path}/labels.npy"
-        
+
     def get_modality_path(self, modality_type):
         return self.modalities_by_type[modality_type].data_loader.source_path
-    
+
     @property
     def indices(self):
         if self._indices is None:
-            raise 'No indices available, please call setup_data first'
+            raise "No indices available, please call setup_data first"
         return self._indices
-    
+
     def create_multimodal_data(self, num_instances, duration=2, seed=42):
         speed_fast = 0
         speed_slow = 0

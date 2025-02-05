@@ -101,7 +101,7 @@ class TestUnimodalRepresentations(unittest.TestCase):
             r = text.apply_representation(representation)
             assert r.data is not None
             assert len(r.data) == self.num_instances
-            
+
     def test_chunked_video_representations(self):
         video_representations = [ResNet()]
         video_data_loader = VideoLoader(

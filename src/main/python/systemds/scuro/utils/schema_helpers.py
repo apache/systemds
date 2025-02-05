@@ -40,4 +40,4 @@ def create_timestamps(frequency, sample_length, start_datetime=None):
 def calculate_new_frequency(new_length, old_length, old_frequency):
     duration = old_length / old_frequency
     new_frequency = new_length / duration
-    return math.floor(new_frequency)
+    return new_frequency

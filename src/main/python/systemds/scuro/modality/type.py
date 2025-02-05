@@ -70,7 +70,7 @@ class ModalitySchemas:
         mdHandler = cls._metadata_handlers.get(name)
         if mdHandler:
             return mdHandler(md, data)
-        
+
     def extract_data(self, data, index):
         if self.get("data_layout").get("representation") == "list_array":
             return data[index]
@@ -85,6 +85,19 @@ def handle_audio_metadata(md, data):
         {
             "length": len(data),
             "sample_rate": new_frequency,
+            "timestamp": create_timestamps(new_frequency, len(data)),
+        }
+    )
+    return md
+
+
+@ModalitySchemas.register_metadata_handler("VIDEO")
+def handle_video_metadata(md, data):
+    new_frequency = calculate_new_frequency(len(data), md["length"], md["fps"])
+    md.update(
+        {
+            "length": len(data),
+            "fps": new_frequency,
             "timestamp": create_timestamps(new_frequency, len(data)),
         }
     )

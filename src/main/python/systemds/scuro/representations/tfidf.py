@@ -32,7 +32,9 @@ class TfIdf(UnimodalRepresentation):
         self.output_file = output_file
 
     def transform(self, modality):
-        transformed_modality = TransformedModality(modality.modality_type, self, modality.metadata)
+        transformed_modality = TransformedModality(
+            modality.modality_type, self, modality.metadata
+        )
         vectorizer = TfidfVectorizer(min_df=self.min_df)
 
         X = vectorizer.fit_transform(modality.data)
@@ -40,6 +42,6 @@ class TfIdf(UnimodalRepresentation):
 
         if self.output_file is not None:
             save_embeddings(X, self.output_file)
-            
+
         transformed_modality.data = X
         return transformed_modality

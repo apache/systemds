@@ -35,7 +35,9 @@ class Bert(UnimodalRepresentation):
         self.output_file = output_file
 
     def transform(self, modality):
-        transformed_modality = TransformedModality(modality.modality_type, self, modality.metadata)
+        transformed_modality = TransformedModality(
+            modality.modality_type, self, modality.metadata
+        )
         model_name = "bert-base-uncased"
         tokenizer = BertTokenizer.from_pretrained(
             model_name, clean_up_tokenization_spaces=True
@@ -47,7 +49,7 @@ class Bert(UnimodalRepresentation):
 
         if self.output_file is not None:
             save_embeddings(embeddings, self.output_file)
-        
+
         transformed_modality.data = embeddings
         return transformed_modality
 
@@ -58,7 +60,7 @@ class Bert(UnimodalRepresentation):
 
             with torch.no_grad():
                 outputs = model(**inputs)
-                
+
                 cls_embedding = outputs.last_hidden_state[:, 0, :].squeeze().numpy()
                 embeddings.append(cls_embedding)
 

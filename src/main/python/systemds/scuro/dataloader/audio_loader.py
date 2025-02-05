@@ -24,6 +24,7 @@ import librosa
 from systemds.scuro.dataloader.base_loader import BaseLoader
 from systemds.scuro.utils.schema_helpers import create_timestamps
 
+
 class AudioLoader(BaseLoader):
     def __init__(
         self,

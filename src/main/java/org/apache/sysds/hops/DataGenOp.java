@@ -219,11 +219,11 @@ public class DataGenOp extends MultiThreadedHop
 			else {
 				//sparsity-aware estimation (dependent on sparse generation approach); for pure dense generation
 				//we would need to disable sparsity-awareness and estimate via sparsity=1.0
-				ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, _sparsity);
+				ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, _sparsity, getDataType());
 			}
 		}
 		else {
-			ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0);
+			ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, 1.0, getDataType());
 		}
 		
 		return ret;

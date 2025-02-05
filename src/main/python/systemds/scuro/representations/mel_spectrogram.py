@@ -22,6 +22,7 @@ import librosa
 import numpy as np
 
 from systemds.scuro.modality.transformed import TransformedModality
+
 # import matplotlib.pyplot as plt
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 

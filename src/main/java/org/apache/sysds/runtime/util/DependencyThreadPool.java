@@ -92,7 +92,7 @@ public class DependencyThreadPool {
 	public List<Object> submitAllAndWait(List<DependencyTask<?>> dtasks)
 		throws ExecutionException, InterruptedException {
 		List<Object> res = new ArrayList<>();
-		if(DependencyTask.ENABLE_DEBUG_DATA) {
+		if(LOG.isDebugEnabled()) {
 			if (dtasks != null && dtasks.size() > 0)
 				explainTaskGraph(dtasks);
 		}
@@ -172,7 +172,7 @@ public class DependencyThreadPool {
 			DependencyTask<?> t = ret.get(i);
 			for(Callable<?> dep : deps) {
 				DependencyTask<?> dt = map.get(dep);
-				if(DependencyTask.ENABLE_DEBUG_DATA) {
+				if(LOG.isDebugEnabled()) {
 					t._dependencyTasks = t._dependencyTasks == null ? new ArrayList<>() : t._dependencyTasks;
 					t._dependencyTasks.add(dt);
 				}
@@ -226,10 +226,12 @@ public class DependencyThreadPool {
 			sbs[level].append(offsets[level]);
 			sbs[level].append(entry.getKey().toString()+"\n");
 		}
-		System.out.println("EXPlAIN (TASK-GRAPH):");
+		StringBuilder sb = new StringBuilder("\n");
+		sb.append("EXPlAIN (TASK-GRAPH):");
 		for (int i=0; i<sbs.length; i++) {
-			System.out.println(sbs[i].toString());
+			sb.append(sbs[i].toString());
 		}
+		LOG.debug(sb.toString());
 
 	}
 }

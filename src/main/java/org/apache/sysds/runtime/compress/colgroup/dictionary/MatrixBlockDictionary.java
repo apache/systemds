@@ -937,6 +937,13 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
+	public int getNumberOfColumns(int nrow) {
+		if(nrow != _data.getNumRows())
+			throw new DMLCompressionException("Invalid call to get number of columns assuming wrong number of rows");
+		return _data.getNumColumns();
+	}
+
+	@Override
 	public double[] sumAllRowsToDouble(int nrColumns) {
 		double[] ret = new double[_data.getNumRows()];
 
@@ -2397,6 +2404,8 @@ public class MatrixBlockDictionary extends ADictionary {
 		if(nCol > 1)
 			throw new DMLCompressionException("Invalid to rexpand the column groups if more than one column");
 		MatrixBlock ret = LibMatrixReorg.rexpand(_data, new MatrixBlock(), max, false, cast, ignore, 1);
+		if(ret.getNumColumns() == 0)
+			return null;
 		return MatrixBlockDictionary.create(ret);
 	}
 

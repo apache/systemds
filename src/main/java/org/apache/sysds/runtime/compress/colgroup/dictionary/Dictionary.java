@@ -41,7 +41,7 @@ import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -386,6 +386,11 @@ public class Dictionary extends ACachingMBDictionary {
 	@Override
 	public int getNumberOfValues(int nCol) {
 		return _values.length / nCol;
+	}
+
+	@Override
+	public int getNumberOfColumns(int nrow) {
+		return _values.length / nrow;
 	}
 
 	@Override
@@ -1120,8 +1125,11 @@ public class Dictionary extends ACachingMBDictionary {
 		MatrixBlockDictionary m = getMBDict(1);
 		if(m == null)
 			return null;
-		IDictionary a = m.applyScalarOp(new LeftScalarOperator(Plus.getPlusFnObject(), reference));
-		return a == null ? null : a.rexpandCols(max, ignore, cast, 1);
+		IDictionary a = m.applyScalarOp(new RightScalarOperator(Plus.getPlusFnObject(), reference));
+		if(a == null)
+			return null; // second ending
+		a = a.rexpandCols(max, ignore, cast, 1);
+		return a;
 	}
 
 	@Override

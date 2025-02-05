@@ -527,8 +527,11 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	@Override
 	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
 		IDictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.size());
-		if(d == null)
+		if(d == null){
+			if(max <= 0)
+				return null;
 			return ColGroupEmpty.create(max);
+		}
 		else
 			return create(max, d);
 	}

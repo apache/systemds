@@ -54,6 +54,11 @@ public class PlaceHolderDict extends ADictionary {
 	}
 
 	@Override
+	public int getNumberOfColumns(int nrow) {
+		throw new RuntimeException("invalid to get number of columns for PlaceHolderDict");
+	}
+
+	@Override
 	public MatrixBlockDictionary getMBDict() {
 		throw new RuntimeException(errMessage);
 	}

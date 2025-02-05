@@ -143,6 +143,11 @@ public class QDictionary extends ACachingMBDictionary {
 	}
 
 	@Override
+	public int getNumberOfColumns(int nCol) {
+		return _values.length / nCol;
+	}
+
+	@Override
 	public double[] sumAllRowsToDouble(int nrColumns) {
 		if(nrColumns == 1)
 			return getValues(); // shallow copy of values

@@ -427,7 +427,7 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup, IFrameOfRef
 	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
 		IDictionary d = _dict.rexpandColsWithReference(max, ignore, cast, (int) _reference[0]);
 		return ColGroupSDC.rexpandCols(max, ignore, cast, nRows, d, _indexes, _data, getCachedCounts(),
-			(int) _reference[0]);
+			(int) _reference[0], _dict.getNumberOfValues(1));
 	}
 
 	@Override

@@ -90,7 +90,7 @@ class TestDataLoaders(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.test_file_path = "test_data_dr_search"
-        cls.num_instances = 8
+        cls.num_instances = 20
         modalities = [ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT]
 
         cls.data_generator = setup_data(

@@ -19,9 +19,6 @@
 #
 # -------------------------------------------------------------
 
-
-import h5py
-
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from typing import Callable, Dict, Tuple, Any

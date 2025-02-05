@@ -1069,7 +1069,7 @@ public class LibMatrixReorg {
 		boolean containsNull = false;
 		for(int i = 0; i < seqHeight; i += blkz) {
 			// blocked execution for earlier JIT compilation
-			int t = fusedSeqRexpandSparseBlock(csr, A, w, i, Math.min(i + blkz, seqHeight), (int) outCols);
+			int t = fusedSeqRexpandSparseBlock(csr, A, w, i, Math.min(i + blkz, seqHeight), updateClen,outCols);
 			if(t < 0) {
 				t = Math.abs(t);
 				containsNull = true;
@@ -1088,7 +1088,7 @@ public class LibMatrixReorg {
 	}
 
 	private static int fusedSeqRexpandSparseBlock(final SparseBlockCSR csr, final MatrixBlock A, final double w, int rl,
-												  int ru, int maxOutCol) {
+												  int ru, boolean updateClen,int maxOutCol) {
 
 		// prepare allocation of CSR sparse block
 		final int[] rowPointers = csr.rowPointers();
@@ -1099,11 +1099,9 @@ public class LibMatrixReorg {
 		int maxCol = 0;
 
 		for(int i = rl; i < ru; i++) {
-			int c = rexpandSingleRow(i, A.get(i, 0), w, indexes, values, maxOutCol);
-			if(c < 0)
-				containsNull = true;
-			else 
-				maxCol = Math.max(c, maxCol);
+			int c = rexpandSingleRow(i, A.get(i, 0), w, indexes, values, updateClen, maxOutCol);
+			containsNull |= c < 0;
+			maxCol = Math.max(c, maxCol);
 			rowPointers[i] = i;
 		}
 	
@@ -1117,25 +1115,22 @@ public class LibMatrixReorg {
 			ret.clen = maxCol;
 	}
 
-	public static int rexpandSingleRow(int row, double v2, double w,  int[] retIx, double[] retVals, int maxOutCol) {
-		// If any of the values are NaN (i.e., missing) then
-		// we skip this tuple, proceed to the next tuple
-		if(Double.isNaN(v2))
-			return -1;
+	public static int rexpandSingleRow(int row, double v2, double w,  int[] retIx, double[] retVals,
+												boolean updateClen, int maxOutCol) {
 
-		// safe casts to long for consistent behavior with indexing
-		int col = UtilFunctions.toInt(v2);
-		if(col <= 0)
+		final int colUnsafe = UtilFunctions.toInt(v2);	// colUnsafe = 0 for Nan
+		int isNan = (Double.isNaN(v2) ? 1 : 0);		// avoid branching by boolean to int conversion
+		int col = colUnsafe - isNan;				// col = -1 for Nan
+
+		// use branch prediction for rare case
+		if(!Double.isNaN(v2) && colUnsafe <= 0)
 			throw new DMLRuntimeException("Erroneous input while computing the contingency table (value <= zero): " + v2);
-		// maxOutCol = - 1 if not specified --> TRUE
-		if(col <= maxOutCol){
-			// set weight as value (expand is guaranteed to address different cells)
-			retIx[row] = col - 1;
-			retVals[row] = w;
-		}
 
-		// maintain max seen col
-		return col;
+		// avoid branching again by boolean to int conversion
+		int valid = !Double.isNaN(v2) && (updateClen || col <= maxOutCol) ? 1 : 0;
+		retIx[row] = (col - 1)*valid;		// use valid as switch
+		retVals[row] = w*valid;
+		return valid*col + valid - 1;		// -1 if invalid else col
 	}
 
 	/**

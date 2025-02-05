@@ -191,24 +191,24 @@ public final class CLALibRexpand {
 
 		int maxCol = 0;
 		int zeros = 0;
-		int notHandledNulls = 0;
 		final double[] aVals = A.getDenseBlockValues();
 
 		for(int i = start; i < end; i++) {
 			final double v2 = aVals[i];
-			int colUnsafe = UtilFunctions.toInt(v2);
-			if(colUnsafe <= 0)
+			final int colUnsafe = UtilFunctions.toInt(v2);
+			if(!Double.isNaN(v2) && colUnsafe < 0)
 				throw new DMLRuntimeException(
 						"Erroneous input while computing the contingency table (value <= zero): " + v2);
-			boolean invalid = Double.isNaN(v2) || (maxOutCol != -1 && colUnsafe > maxOutCol);
-			final int colSafe = invalid ? maxOutCol : colUnsafe - 1;
-			zeros += invalid ? 1 : 0;
-			notHandledNulls += Double.isNaN(v2) ? maxOutCol : 0;
+			// Boolean to int conversion to avoid branch
+			final int invalid = Double.isNaN(v2) || (maxOutCol != -1 && colUnsafe > maxOutCol) ? 1 : 0;
+			// if invalid -> maxOutCol else -> colUnsafe - 1
+			final int colSafe = maxOutCol*invalid + (colUnsafe - 1)*(1 - invalid);
+			zeros += invalid;
 			maxCol = Math.max(colUnsafe, maxCol);
 			map[i] = colSafe;
 		}
 
-		if (notHandledNulls < 0){
+		if (maxOutCol == -1 && zeros > 0){
 			maxCol *= -1;
 		}
 

@@ -152,6 +152,28 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 
 	}
 
+	public int putIfAbsentReturnVal(K key, int value) {
+
+		if(key == null) {
+			if(nullV == -1) {
+				size++;
+				nullV = value;
+				return -1;
+			}
+			else
+				return nullV;
+		}
+		else {
+			final int ix = hash(key);
+			Node<K> b = buckets[ix];
+			if(b == null)
+				return createBucketReturnVal(ix, key, value);
+			else
+				return putIfAbsentBucketReturnval(ix, key, value);
+		}
+
+	}
+
 	private int putIfAbsentBucket(int ix, K key, int value) {
 		Node<K> b = buckets[ix];
 		while(true) {
@@ -162,6 +184,21 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 				size++;
 				resize();
 				return -1;
+			}
+			b = b.next;
+		}
+	}
+
+	private int putIfAbsentBucketReturnval(int ix, K key, int value) {
+		Node<K> b = buckets[ix];
+		while(true) {
+			if(b.key.equals(key))
+				return b.value;
+			if(b.next == null) {
+				b.setNext(new Node<>(key, value, null));
+				size++;
+				resize();
+				return value;
 			}
 			b = b.next;
 		}
@@ -189,6 +226,12 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 		buckets[ix] = new Node<K>(key, value, null);
 		size++;
 		return -1;
+	}
+
+	private int createBucketReturnVal(int ix, K key, int value) {
+		buckets[ix] = new Node<K>(key, value, null);
+		size++;
+		return value;
 	}
 
 	private int addToBucket(int ix, K key, int value) {

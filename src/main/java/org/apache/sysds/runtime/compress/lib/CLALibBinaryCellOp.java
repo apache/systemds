@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.compress.lib;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -35,13 +36,26 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.ADictBasedColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ASDCZero;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
+import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.data.SparseRow;
+import org.apache.sysds.runtime.data.SparseRowScalar;
+import org.apache.sysds.runtime.data.SparseRowVector;
+import org.apache.sysds.runtime.frame.data.columns.HashMapToInt;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
@@ -52,6 +66,7 @@ import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.LibMatrixBincell.BinaryAccessType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
@@ -62,6 +77,7 @@ import org.apache.sysds.utils.stats.Timing;
 
 public final class CLALibBinaryCellOp {
 	private static final Log LOG = LogFactory.getLog(CLALibBinaryCellOp.class.getName());
+	public static final int DECOMPRESSION_BLEN = 16384;
 
 	private CLALibBinaryCellOp() {
 		// empty private constructor.
@@ -70,7 +86,7 @@ public final class CLALibBinaryCellOp {
 	public static MatrixBlock binaryOperationsRight(BinaryOperator op, CompressedMatrixBlock m1, MatrixBlock that) {
 
 		try {
-			op = LibMatrixBincell.replaceOpWithSparseSafeIfApplicable(m1, that, op);
+ 			op = LibMatrixBincell.replaceOpWithSparseSafeIfApplicable(m1, that, op);
 			if((that.getNumRows() == 1 && that.getNumColumns() == 1) || that.isEmpty()) {
 				ScalarOperator sop = new RightScalarOperator(op.fn, that.get(0, 0), op.getNumThreads());
 
@@ -104,14 +120,42 @@ public final class CLALibBinaryCellOp {
 	private static MatrixBlock binaryOperationsRightFiltered(BinaryOperator op, CompressedMatrixBlock m1,
 		MatrixBlock that) throws Exception {
 		BinaryAccessType atype = LibMatrixBincell.getBinaryAccessTypeExtended(m1, that);
-		if(that instanceof CompressedMatrixBlock && that.getInMemorySize() < m1.getInMemorySize()) {
+		if(isDoubleCompressedOpApplicable(m1, that))
+			return doubleCompressedBinaryOp(op, m1, (CompressedMatrixBlock) that);
+		if(that instanceof CompressedMatrixBlock && that.getNumColumns() == m1.getNumColumns()
+				&& that.getInMemorySize() < m1.getInMemorySize() ) {
 			MatrixBlock m1uc = CompressedMatrixBlock.getUncompressed(m1, "Decompressing left side in BinaryOps");
 			return selectProcessingBasedOnAccessType(op, (CompressedMatrixBlock) that, m1uc, atype, true);
 		}
 		else {
+			// right side has worse compression or is a column vector
 			that = CompressedMatrixBlock.getUncompressed(that, "Decompressing right side in BinaryOps");
 			return selectProcessingBasedOnAccessType(op, m1, that, atype, false);
 		}
+	}
+
+	private static boolean isDoubleCompressedOpApplicable(CompressedMatrixBlock m1, MatrixBlock that) {
+		return that instanceof CompressedMatrixBlock
+				&& !m1.isOverlapping()
+				&& m1.getColGroups().get(0) instanceof ColGroupDDC
+				&& !((CompressedMatrixBlock) that).isOverlapping()
+				&& ((CompressedMatrixBlock) that).getColGroups().get(0) instanceof ColGroupDDC
+				&& ((IMapToDataGroup) m1.getColGroups().get(0)).getMapToData() ==
+					((IMapToDataGroup) ((CompressedMatrixBlock) that).getColGroups().get(0)).getMapToData();
+	}
+
+	private static CompressedMatrixBlock doubleCompressedBinaryOp(BinaryOperator op, CompressedMatrixBlock m1, CompressedMatrixBlock m2) {
+		LOG.debug("Double Compressed BinaryOp");
+		AColGroup left = m1.getColGroups().get(0);
+		AColGroup right = m2.getColGroups().get(0);
+		AMapToData lm = ((IMapToDataGroup) left).getMapToData();
+		MatrixBlock lmb = ((ADictBasedColGroup) left).getDictionary().getMBDict(m1.getNumColumns()).getMatrixBlock();
+		MatrixBlock rmb = ((ADictBasedColGroup) right).getDictionary().getMBDict(m2.getNumColumns()).getMatrixBlock();
+		MatrixBlock out = lmb.binaryOperations(op, rmb);
+		AColGroup rgroup = ColGroupDDC.create(left.getColIndices(), MatrixBlockDictionary.create(out), lm, null);
+		CompressedMatrixBlock outCompressed = new CompressedMatrixBlock(m1.getNumRows(), m1.getNumColumns());
+		outCompressed.allocateColGroup(rgroup);
+		return outCompressed;
 	}
 
 	private static MatrixBlock selectProcessingBasedOnAccessType(BinaryOperator op, CompressedMatrixBlock m1,
@@ -367,13 +411,17 @@ public final class CLALibBinaryCellOp {
 		final int k = op.getNumThreads();
 		long nnz = 0;
 
-		boolean shouldBeSparseOut = false;
-		if(op.fn.isBinary()) {
-			// maybe it is good if this is a sparse output.
-			// evaluate if it is good
-			double est = evaluateSparsityMVCol(m1, m2, op, left);
-			shouldBeSparseOut = MatrixBlock.evalSparseFormatInMemory(nRows, nCols, (long) (est * nRows * nCols));
+		// maybe it is good if this is a sparse output.
+		// evaluate if it is good
+		Pair<Double, Double> tuple = evaluateSparsityMVCol(m1, m2, op, left);
+		double estSparsity = tuple.getKey();
+		double estNnzPerRow = tuple.getValue();
+		boolean shouldBeSparseOut = MatrixBlock.evalSparseFormatInMemory(nRows, nCols, (long) (estSparsity * nRows * nCols));
 
+		// currently also jump into that case if estNnzPerRow == 0
+		if(estNnzPerRow <= 2 && nCols <= 31 && op.fn instanceof ValueComparisonFunction){
+			return k <= 1 ? binaryMVComparisonColSingleThreadCompressed(m1, m2, op, left) :
+					binaryMVComparisonColMultiCompressed(m1, m2, op, left);
 		}
 		MatrixBlock ret = new MatrixBlock(nRows, nCols, shouldBeSparseOut, -1).allocateBlock();
 
@@ -403,14 +451,143 @@ public final class CLALibBinaryCellOp {
 		return ret;
 	}
 
+	private static MatrixBlock binaryMVComparisonColSingleThreadCompressed(CompressedMatrixBlock m1, MatrixBlock m2,
+																		   BinaryOperator op, boolean left) {
+		final int nRows = m1.getNumRows();
+		final int nCols = m1.getNumColumns();
+
+		// get indicators (one-hot-encoded comparison results)
+		BinaryMVColTaskCompressed task =  new BinaryMVColTaskCompressed(m1, m2, 0, nRows, op, left);
+		long nnz = task.call();
+		int[] indicators = task._ret;
+
+		// map each unique indicator to an index
+		HashMapToInt<Integer> hm = new HashMapToInt<>(nCols*3);
+		int[] colMap = new int[nRows];
+		for(int i = 0; i < m1.getNumRows(); i++){
+			int nextId = hm.size();
+			int id = hm.putIfAbsentI(indicators[i], nextId);
+			colMap[i] = id == -1 ? nextId : id;
+		}
+
+		// decode the unique indicator ints to SparseVectors
+		MatrixBlock outMb = getMCSRMatrixBlock(hm, nCols);
+
+		// create compressed block
+		return getCompressedMatrixBlock(m1, colMap, hm.size(), outMb, nRows, nCols, nnz);
+	}
+
+	private static void fillSparseBlockFromIndicatorFromIndicatorInt(int numCol, Integer indicator, Integer rix, SparseBlockMCSR out) {
+		ArrayList<Integer> colIndices = new ArrayList<>(8);
+		for (int c = numCol - 1; c >= 0; c--) {
+			if(indicator <= 0)
+				break;
+			if(indicator % 2 == 1){
+				colIndices.add(c);
+			}
+			indicator = indicator >> 1;
+		}
+		SparseRow row = null;
+		if(colIndices.size() > 1){
+			double[] vals = new double[colIndices.size()];
+			Arrays.fill(vals, 1);
+			int[] indices = new int[colIndices.size()];
+			for (int i = 0, j = colIndices.size() - 1; i < colIndices.size(); i++, j--)
+				indices[i] = colIndices.get(j);
+
+			row = new SparseRowVector(vals, indices);
+		} else if(colIndices.size() == 1){
+			row = new SparseRowScalar(colIndices.get(0), 1.0);
+		}
+		out.set(rix, row, false);
+	}
+
+	private static MatrixBlock binaryMVComparisonColMultiCompressed(CompressedMatrixBlock m1, MatrixBlock m2,
+																	BinaryOperator op, boolean left) throws Exception {
+		final int nRows = m1.getNumRows();
+		final int nCols = m1.getNumColumns();
+		final int k = op.getNumThreads();
+		final int blkz = nRows / k;
+
+		// get indicators (one-hot-encoded comparison results)
+		long nnz = 0;
+		final ExecutorService pool = CommonThreadPool.get(op.getNumThreads());
+		try {
+			final ArrayList<BinaryMVColTaskCompressed> tasks = new ArrayList<>();
+			for(int i = 0; i < nRows; i += blkz) {
+				tasks.add(new BinaryMVColTaskCompressed(m1, m2, i, Math.min(nRows, i + blkz), op, left));
+			}
+			List<Future<Long>> futures = pool.invokeAll(tasks);
+			HashMapToInt<Integer> hm = new HashMapToInt<>(nCols*2);
+			int[] colMap = new int[nRows];
+
+			for(Future<Long> f : futures)
+				nnz += f.get();
+
+			// map each unique indicator to an index
+			mergeMVColTaskResults(tasks, blkz, hm, colMap);
+
+			// decode the unique indicator ints to SparseVectors
+			MatrixBlock outMb = getMCSRMatrixBlock(hm, nCols);
+
+			// create compressed block
+			return getCompressedMatrixBlock(m1, colMap, hm.size(), outMb, nRows, nCols, nnz);
+		}
+		finally {
+			pool.shutdown();
+		}
+
+	}
+
+	private static void mergeMVColTaskResults(ArrayList<BinaryMVColTaskCompressed> tasks, int blkz, HashMapToInt<Integer> hm, int[] colMap) {
+
+		for(int j = 0; j < tasks.size(); j++) {
+			int[] indicators = tasks.get(j)._ret;
+			int offset = j* blkz;
+
+			final int remainders = indicators.length % 8;
+			final int endVecLen = indicators.length - remainders;
+			for (int i = 0; i < endVecLen; i+= 8) {
+				colMap[offset + i] = hm.putIfAbsentReturnVal(indicators[i], hm.size());
+				colMap[offset + i + 1] = hm.putIfAbsentReturnVal(indicators[i + 1], hm.size());
+				colMap[offset + i + 2] = hm.putIfAbsentReturnVal(indicators[i + 2], hm.size());
+				colMap[offset + i + 3] = hm.putIfAbsentReturnVal(indicators[i + 3], hm.size());
+				colMap[offset + i + 4] = hm.putIfAbsentReturnVal(indicators[i + 4], hm.size());
+				colMap[offset + i + 5] = hm.putIfAbsentReturnVal(indicators[i + 5], hm.size());
+				colMap[offset + i + 6] = hm.putIfAbsentReturnVal(indicators[i + 6], hm.size());
+				colMap[offset + i + 7] = hm.putIfAbsentReturnVal(indicators[i + 7], hm.size());
+
+			}
+			for (int i = 0; i < remainders; i++) {
+				colMap[offset + endVecLen + i] = hm.putIfAbsentReturnVal(indicators[endVecLen + i], hm.size());
+			}
+		}
+	}
+
+
+	private static CompressedMatrixBlock getCompressedMatrixBlock(CompressedMatrixBlock m1, int[] colMap,
+				int mapSize, MatrixBlock outMb, int nRows, int nCols, long nnz) {
+		final IColIndex i = ColIndexFactory.create(0, m1.getNumColumns());
+		final AMapToData map = MapToFactory.create(m1.getNumRows(), colMap, mapSize);
+		final AColGroup rgroup = ColGroupDDC.create(i, MatrixBlockDictionary.create(outMb), map, null);
+		final ArrayList<AColGroup> groups = new ArrayList<>(1);
+		groups.add(rgroup);
+        return new CompressedMatrixBlock(nRows, nCols, nnz, false, groups);
+	}
+
+	private static MatrixBlock getMCSRMatrixBlock(HashMapToInt<Integer> hm, int nCols) {
+		// decode the unique indicator ints to SparseVectors
+		SparseBlockMCSR out = new SparseBlockMCSR(hm.size());
+		hm.forEach((indicator, rix) ->
+				fillSparseBlockFromIndicatorFromIndicatorInt(nCols, indicator, rix, out));
+        return new MatrixBlock(hm.size(), nCols, -1, out);
+	}
+
 	private static long binaryMVColSingleThreadDense(CompressedMatrixBlock m1, MatrixBlock m2, BinaryOperator op,
 		boolean left, MatrixBlock ret) {
 		final int nRows = m1.getNumRows();
 		long nnz = 0;
-		if(left)
-			nnz += new BinaryMVColLeftTaskDense(m1, m2, ret, 0, nRows, op).call();
-		else
-			nnz += new BinaryMVColTaskDense(m1, m2, ret, 0, nRows, op).call();
+		nnz += new BinaryMVColTaskDense(m1, m2, ret, 0, nRows, op, left).call();
 		return nnz;
 	}
 
@@ -418,10 +595,7 @@ public final class CLALibBinaryCellOp {
 		boolean left, MatrixBlock ret) {
 		final int nRows = m1.getNumRows();
 		long nnz = 0;
-		if(left)
-			throw new NotImplementedException();
-		else
-			nnz += new BinaryMVColTaskSparse(m1, m2, ret, 0, nRows, op).call();
+		nnz += new BinaryMVColTaskSparse(m1, m2, ret, 0, nRows, op, left).call();
 		return nnz;
 	}
 
@@ -435,10 +609,7 @@ public final class CLALibBinaryCellOp {
 		try {
 			final ArrayList<Callable<Long>> tasks = new ArrayList<>();
 			for(int i = 0; i < nRows; i += blkz) {
-				if(left)
-					tasks.add(new BinaryMVColLeftTaskDense(m1, m2, ret, i, Math.min(nRows, i + blkz), op));
-				else
-					tasks.add(new BinaryMVColTaskDense(m1, m2, ret, i, Math.min(nRows, i + blkz), op));
+				tasks.add(new BinaryMVColTaskDense(m1, m2, ret, i, Math.min(nRows, i + blkz), op, left));
 			}
 			for(Future<Long> f : pool.invokeAll(tasks))
 				nnz += f.get();
@@ -459,10 +630,7 @@ public final class CLALibBinaryCellOp {
 		try {
 			final ArrayList<Callable<Long>> tasks = new ArrayList<>();
 			for(int i = 0; i < nRows; i += blkz) {
-				if(left)
-					throw new NotImplementedException();
-				else
-					tasks.add(new BinaryMVColTaskSparse(m1, m2, ret, i, Math.min(nRows, i + blkz), op));
+				tasks.add(new BinaryMVColTaskSparse(m1, m2, ret, i, Math.min(nRows, i + blkz), op, left));
 			}
 			for(Future<Long> f : pool.invokeAll(tasks))
 				nnz += f.get();
@@ -543,6 +711,97 @@ public final class CLALibBinaryCellOp {
 			return m;
 	}
 
+	private static class BinaryMVColTaskCompressed implements Callable<Long> {
+		private final int _rl;
+		private final int _ru;
+		private final CompressedMatrixBlock _m1;
+		private final MatrixBlock _m2;
+		private final int[] _ret;
+		private final BinaryOperator _op;
+		private final ValueComparisonFunction _compFn;
+		private final boolean _left;
+
+		private MatrixBlock tmp;
+
+		protected BinaryMVColTaskCompressed(CompressedMatrixBlock m1, MatrixBlock m2, int rl, int ru,
+											BinaryOperator op, boolean left) {
+			_m1 = m1;
+			_m2 = m2;
+			_op = op;
+			_rl = rl;
+			_ru = ru;
+			_ret = new int[ru - rl];
+			_compFn = (ValueComparisonFunction) op.fn;
+			_left = left;
+		}
+
+		@Override
+		public Long call() {
+			tmp = allocateTempUncompressedBlock(_m1.getNumColumns());
+			final int _blklen = tmp.getNumRows();
+			final List<AColGroup> groups = _m1.getColGroups();
+			final AIterator[] its = getIterators(groups, _rl);
+			long nnz = 0;
+
+			if(!_left)
+				for (int rl = _rl, retIxOff = 0; rl < _ru; rl += _blklen, retIxOff += _blklen){
+					int ru = Math.min(rl + _blklen, _ru);
+					decompressToTmpBlock(rl, ru, tmp.getDenseBlock(), groups, its);
+					nnz += processDense(rl, ru, retIxOff);
+					tmp.reset();
+				}
+			else
+				for (int rl = _rl, retIxOff = 0; rl < _ru; rl += _blklen, retIxOff += _blklen){
+					int ru = Math.min(rl + _blklen, _ru);
+					decompressToTmpBlock(rl, ru, tmp.getDenseBlock(), groups, its);
+					nnz += processDenseLeft(rl, ru, retIxOff);
+					tmp.reset();
+				}
+
+			return nnz;
+		}
+
+		private final long processDense(final int rl, final int ru, final int retIxOffset) {
+			final int nCol = _m1.getNumColumns();
+			final double[] _tmpDense = tmp.getDenseBlockValues();
+			final double[] _m2Dense = _m2.getDenseBlockValues();
+			long nnz = 0;
+			for(int row = rl, retIx = retIxOffset; row < ru; row++, retIx++) {
+				final double vr = _m2Dense[row];
+				final int tmpOff = (row - rl) * nCol;
+				int indicatorVector = 0;
+				for(int col = 0; col < nCol; col++) {
+					indicatorVector = indicatorVector << 1;
+					int indicator = _compFn.compare(_tmpDense[tmpOff + col], vr) ? 1 : 0;
+					indicatorVector += indicator;
+					nnz += indicator;
+				}
+				_ret[retIx] = indicatorVector;
+			}
+			return nnz;
+		}
+
+		private final long processDenseLeft(final int rl, final int ru, final int retIxOffset) {
+			final int nCol = _m1.getNumColumns();
+			final double[] _tmpDense = tmp.getDenseBlockValues();
+			final double[] _m2Dense = _m2.getDenseBlockValues();
+			long nnz = 0;
+			for(int row = rl, retIx = retIxOffset; row < ru; row++, retIx++) {
+				final double vr = _m2Dense[row];
+				final int tmpOff = (row - rl) * nCol;
+				int indicatorVector = 0;
+				for(int col = 0; col < nCol; col++) {
+					indicatorVector = indicatorVector << 1;
+					int indicator = _compFn.compare(vr, _tmpDense[tmpOff + col]) ? 1 : 0;
+					indicatorVector += indicator;
+					nnz += indicator;
+				}
+				_ret[retIx] = indicatorVector;
+			}
+			return nnz;
+		}
+	}
+
 	private static class BinaryMVColTaskDense implements Callable<Long> {
 		private final int _rl;
 		private final int _ru;
@@ -550,15 +809,17 @@ public final class CLALibBinaryCellOp {
 		private final MatrixBlock _m2;
 		private final MatrixBlock _ret;
 		private final BinaryOperator _op;
+		private boolean _left;
 
 		protected BinaryMVColTaskDense(CompressedMatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru,
-			BinaryOperator op) {
+			BinaryOperator op, boolean left) {
 			_m1 = m1;
 			_m2 = m2;
 			_ret = ret;
 			_op = op;
 			_rl = rl;
 			_ru = ru;
+			_left = left;
 		}
 
 		@Override
@@ -568,8 +829,12 @@ public final class CLALibBinaryCellOp {
 
 			final AIterator[] its = getIterators(groups, _rl);
 
-			for(int r = _rl; r < _ru; r += _blklen)
-				processBlock(r, Math.min(r + _blklen, _ru), groups, its);
+			if(!_left)
+				for(int r = _rl; r < _ru; r += _blklen)
+					processBlock(r, Math.min(r + _blklen, _ru), groups, its);
+			else
+				for(int r = _rl; r < _ru; r += _blklen)
+					processBlockLeft(r, Math.min(r + _blklen, _ru), groups, its);
 
 			return _ret.recomputeNonZeros(_rl, _ru - 1);
 		}
@@ -579,6 +844,13 @@ public final class CLALibBinaryCellOp {
 			final DenseBlock db = _ret.getDenseBlock();
 			decompressToSubBlock(rl, ru, db, groups, its);
 			processGenericDense(rl, ru);
+		}
+
+		private final void processBlockLeft(final int rl, final int ru, final List<AColGroup> groups, final AIterator[] its) {
+			// unsafe decompress, since we count nonzeros afterwards.
+			final DenseBlock db = _ret.getDenseBlock();
+			decompressToSubBlock(rl, ru, db, groups, its);
+			processGenericDenseLeft(rl, ru);
 		}
 
 		private final void processGenericDense(final int rl, final int ru) {
@@ -594,9 +866,27 @@ public final class CLALibBinaryCellOp {
 			}
 		}
 
+		private final void processGenericDenseLeft(final int rl, final int ru) {
+			final int ncol = _m1.getNumColumns();
+			final DenseBlock rd = _ret.getDenseBlock();
+			// m2 is a vector therefore guaranteed continuous.
+			final double[] _m2Dense = _m2.getDenseBlockValues();
+			for(int row = rl; row < ru; row++) {
+				final double[] retDense = rd.values(row);
+				final int posR = rd.pos(row);
+				final double vr = _m2Dense[row];
+				processRowLeft(ncol, retDense, posR, vr);
+			}
+		}
+
 		private void processRow(final int ncol, final double[] ret, final int posR, final double vr) {
 			for(int col = 0; col < ncol; col++)
 				ret[posR + col] = _op.fn.execute(ret[posR + col], vr);
+		}
+
+		private void processRowLeft(final int ncol, final double[] ret, final int posR, final double vr) {
+			for(int col = 0; col < ncol; col++)
+				ret[posR + col] = _op.fn.execute(vr,ret[posR + col]);
 		}
 
 	}
@@ -611,33 +901,43 @@ public final class CLALibBinaryCellOp {
 
 		private MatrixBlock tmp;
 
+		private boolean _left;
+
 		protected BinaryMVColTaskSparse(CompressedMatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru,
-			BinaryOperator op) {
+			BinaryOperator op, boolean left) {
 			_m1 = m1;
 			_m2 = m2;
 			_ret = ret;
 			_op = op;
 			_rl = rl;
 			_ru = ru;
+			_left = left;
 		}
 
 		@Override
 		public Long call() {
-			final int _blklen = Math.max(16384 / _ret.getNumColumns(), 64);
+			tmp = allocateTempUncompressedBlock(_m1.getNumColumns());
+			final int _blklen = tmp.getNumRows();
 			final List<AColGroup> groups = _m1.getColGroups();
 			final AIterator[] its = getIterators(groups, _rl);
-			tmp = new MatrixBlock(_blklen, _m1.getNumColumns(), false);
-			tmp.allocateBlock();
-
-			for(int r = _rl; r < _ru; r += _blklen)
-				processBlock(r, Math.min(r + _blklen, _ru), groups, its);
-
+			if(!_left)
+				for(int r = _rl; r < _ru; r += _blklen)
+					processBlock(r, Math.min(r + _blklen, _ru), groups, its);
+			else
+				for(int r = _rl; r < _ru; r += _blklen)
+					processBlockLeft(r, Math.min(r + _blklen, _ru), groups, its);
 			return _ret.recomputeNonZeros(_rl, _ru - 1);
 		}
 
 		private final void processBlock(final int rl, final int ru, final List<AColGroup> groups, final AIterator[] its) {
 			decompressToTmpBlock(rl, ru, tmp.getDenseBlock(), groups, its);
 			processDense(rl, ru);
+			tmp.reset();
+		}
+
+		private final void processBlockLeft(final int rl, final int ru, final List<AColGroup> groups, final AIterator[] its) {
+			decompressToTmpBlock(rl, ru, tmp.getDenseBlock(), groups, its);
+			processDenseLeft(rl, ru);
 			tmp.reset();
 		}
 
@@ -654,6 +954,26 @@ public final class CLALibBinaryCellOp {
 
 			}
 		}
+
+		private final void processDenseLeft(final int rl, final int ru) {
+			final int nCol = _m1.getNumColumns();
+			final SparseBlock sb = _ret.getSparseBlock();
+			final double[] _tmpDense = tmp.getDenseBlockValues();
+			final double[] _m2Dense = _m2.getDenseBlockValues();
+			for(int row = rl; row < ru; row++) {
+				final double vr = _m2Dense[row];
+				final int tmpOff = (row - rl) * nCol;
+				for(int col = 0; col < nCol; col++)
+					sb.append(row, col, _op.fn.execute(vr, _tmpDense[tmpOff + col]));
+
+			}
+		}
+	}
+
+	private static MatrixBlock allocateTempUncompressedBlock(int cols) {
+		MatrixBlock out = new MatrixBlock(Math.max(DECOMPRESSION_BLEN / cols, 64), cols, false);
+		out.allocateBlock();
+		return out;
 	}
 
 	private static class BinaryMMTask implements Callable<Long> {
@@ -804,48 +1124,6 @@ public final class CLALibBinaryCellOp {
 		}
 	}
 
-	private static class BinaryMVColLeftTaskDense implements Callable<Long> {
-		private final int _rl;
-		private final int _ru;
-		private final CompressedMatrixBlock _m1;
-		private final MatrixBlock _m2;
-		private final MatrixBlock _ret;
-		private final BinaryOperator _op;
-
-		protected BinaryMVColLeftTaskDense(CompressedMatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru,
-			BinaryOperator op) {
-			_m1 = m1;
-			_m2 = m2;
-			_ret = ret;
-			_op = op;
-			_rl = rl;
-			_ru = ru;
-		}
-
-		@Override
-		public Long call() {
-			for(AColGroup g : _m1.getColGroups())
-				g.decompressToDenseBlock(_ret.getDenseBlock(), _rl, _ru);
-
-			// m2 is never sparse or empty. always dense here.
-			final int ncol = _m1.getNumColumns();
-			int offset = _rl * ncol;
-			double[] _retDense = _ret.getDenseBlockValues();
-			double[] _m2Dense = _m2.getDenseBlockValues();
-			for(int row = _rl; row < _ru; row++) {
-				double vr = _m2Dense[row];
-				for(int col = 0; col < ncol; col++) {
-					double v = _op.fn.execute(vr, _retDense[offset]);
-					_retDense[offset] = v;
-					offset++;
-				}
-			}
-
-			return _ret.recomputeNonZeros(_rl, _ru - 1);
-
-		}
-	}
-
 	private static abstract class BinaryMVRowTask implements Callable<AColGroup> {
 		protected final AColGroup _group;
 		protected final double[] _v;
@@ -931,8 +1209,8 @@ public final class CLALibBinaryCellOp {
 		return its;
 	}
 
-	private static double evaluateSparsityMVCol(CompressedMatrixBlock m1, MatrixBlock m2, BinaryOperator op,
-		boolean left) {
+	private static Pair<Double, Double> evaluateSparsityMVCol(CompressedMatrixBlock m1, MatrixBlock m2, BinaryOperator op,
+											  boolean left) {
 		final List<AColGroup> groups = m1.getColGroups();
 		final int nCol = m1.getNumColumns();
 		final int nRow = m1.getNumRows();
@@ -950,26 +1228,36 @@ public final class CLALibBinaryCellOp {
 		decompressToDense(groups, sampleRow, sampleCol, dv);
 
 		int nnz = 0;
+		int[] nnzPerRow = new int[sampleRow];
 		// m2v guaranteed to be dense and not empty.
 		// if empty then we defaulted to scalar operations.
 		if(left) {
 			for(int r = 0; r < sampleRow; r++) {
 				final double m = m2v[r];
 				final int off = r * sampleCol;
-				for(int c = 0; c < sampleCol; c++)
-					nnz += op.fn.execute(m, dv[off + c]) != 0 ? 1 : 0;
+				for(int c = 0; c < sampleCol; c++) {
+					int outVal = op.fn.execute(m, dv[off + c]) != 0 ? 1 : 0;
+					nnz += outVal;
+					nnzPerRow[r] += outVal;
+				}
 			}
 		}
 		else {
 			for(int r = 0; r < sampleRow; r++) {
 				final double m = m2v[r];
 				final int off = r * sampleCol;
-				for(int c = 0; c < sampleCol; c++)
-					nnz += op.fn.execute(dv[off + c], m) != 0 ? 1 : 0;
+				for(int c = 0; c < sampleCol; c++){
+					int outVal = op.fn.execute(dv[off + c], m) != 0 ? 1 : 0;
+					nnz += outVal;
+					nnzPerRow[r] += outVal;
+				}
 			}
 		}
-
-		return (double) nnz / (sampleNCells);
+		double sum = 0;
+		for(int i = 0; i < sampleRow; i++) {
+			sum += nnzPerRow[i];
+		}
+		return new Pair<>((double) nnz / (sampleNCells), sum / sampleRow);
 
 	}
 

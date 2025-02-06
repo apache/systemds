@@ -31,6 +31,7 @@ import org.apache.sysds.performance.generators.FrameTransformFile;
 import org.apache.sysds.performance.generators.GenMatrices;
 import org.apache.sysds.performance.generators.IGenerate;
 import org.apache.sysds.performance.generators.MatrixFile;
+import org.apache.sysds.performance.matrix.MatrixAppend;
 import org.apache.sysds.performance.matrix.MatrixBinaryCellPerf;
 import org.apache.sysds.performance.matrix.MatrixMulPerformance;
 import org.apache.sysds.performance.matrix.MatrixReplacePerf;
@@ -134,6 +135,9 @@ public class Main {
 				break;
 			case 1007:
 				Transform.main(args);
+				break;
+			case 1008:
+				MatrixAppend.main(args);
 				break;
 			default:
 				break;

@@ -89,3 +89,10 @@ transform encode
 ```bash
 java -jar -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html -XX:+UseNUMA target/systemds-3.3.0-SNAPSHOT-perf.jar 1007
 ```
+
+
+append matrix sequence 
+
+```bash
+./src/test/scripts/performance/append.sh
+```

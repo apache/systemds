@@ -62,7 +62,7 @@ public class CLALibBinaryCellOpTest {
 		// (LessThanEquals.getLessThanEqualsFnObject()), //
 		// (GreaterThan.getGreaterThanFnObject()), //
 		// (GreaterThanEquals.getGreaterThanEqualsFnObject()), //
-		// (Multiply.getMultiplyFnObject()), //
+		(Multiply.getMultiplyFnObject()), //
 		// (Modulus.getFnObject()), //
 		// (IntegerDivide.getFnObject()), //
 		// (Equals.getEqualsFnObject()), //
@@ -463,6 +463,13 @@ public class CLALibBinaryCellOpTest {
 		if(mcv2 == null)
 			throw new RuntimeException();
 		execL(op, mb, cmb, mcv2);
+	}
+
+	@Test(expected = Exception.class)
+	public void binLeftMcV_noCache() {
+		CompressedMatrixBlock spy = spy(cmb);
+		when(spy.getCachedDecompressed()).thenReturn(null);
+		execL(op, mb, spy, mcv2);
 	}
 
 	@Test(expected = Exception.class)

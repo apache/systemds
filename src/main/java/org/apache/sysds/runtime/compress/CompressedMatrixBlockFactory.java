@@ -344,7 +344,8 @@ public class CompressedMatrixBlockFactory {
 		// final int nRows = mb.getNumRows();
 		final int nCols = mb.getNumColumns();
 		// Assume the scaling of cocoding is at maximum square root good relative to number of columns.
-		final double scale = Math.sqrt(nCols);
+		final double scale = mb instanceof CompressedMatrixBlock &&
+				((CompressedMatrixBlock) mb).getColGroups().size() == 1 ? 1 : Math.sqrt(nCols);
 		final double threshold = _stats.estimatedCostCols / scale;
 
 		if(threshold < _stats.originalCost *

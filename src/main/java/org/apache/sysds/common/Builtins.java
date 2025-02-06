@@ -301,6 +301,7 @@ public enum Builtins {
 	SD("sd", false),
 	SELVARTHRESH("selectByVarThresh", true),
 	SEQ("seq", false),
+	SES("ses", true),
 	SYMMETRICDIFFERENCE("symmetricDifference", true),
 	SHAPEXPLAINER("shapExplainer", true),
 	SHERLOCK("sherlock", true),

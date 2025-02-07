@@ -18,26 +18,26 @@
 # under the License.
 #
 # -------------------------------------------------------------
-import json
-
-from systemds.scuro.dataloader.base_loader import BaseLoader
-from typing import Optional, List, Union
+import math
+import numpy as np
 
 
-class JSONLoader(BaseLoader):
-    def __init__(
-        self,
-        source_path: str,
-        indices: List[str],
-        field: str,
-        chunk_size: Optional[int] = None,
-    ):
-        super().__init__(source_path, indices, chunk_size)
-        self.field = field
+def create_timestamps(frequency, sample_length, start_datetime=None):
+    start_time = (
+        start_datetime
+        if start_datetime is not None
+        else np.datetime64("1970-01-01T00:00:00.000000")
+    )
+    time_increment = 1 / frequency
+    time_increments_array = np.arange(sample_length) * np.timedelta64(
+        int(time_increment * 1e6)
+    )
+    timestamps = start_time + time_increments_array
 
-    def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
-        self.file_sanity_check(file)
-        with open(file) as f:
-            json_file = json.load(f)
-            for idx in index:
-                self.data.append(json_file[idx][self.field])
+    return timestamps.astype(np.int64)
+
+
+def calculate_new_frequency(new_length, old_length, old_frequency):
+    duration = old_length / old_frequency
+    new_frequency = new_length / duration
+    return new_frequency

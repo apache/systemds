@@ -19,7 +19,7 @@
 #
 # -------------------------------------------------------------
 from systemds.scuro.dataloader.base_loader import BaseLoader
-from typing import Optional, Pattern, List
+from typing import Optional, Pattern, List, Union
 import re
 
 
@@ -34,11 +34,12 @@ class TextLoader(BaseLoader):
         super().__init__(source_path, indices, chunk_size)
         self.prefix = prefix
 
-    def extract(self, file: str):
+    def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
         with open(file) as text_file:
             for i, line in enumerate(text_file):
                 if self.prefix:
                     line = re.sub(self.prefix, "", line)
                 line = line.replace("\n", "")
+                self.metadata[file] = {"length": len(line.split())}
                 self.data.append(line)

@@ -35,22 +35,56 @@ class BaseLoader(ABC):
         (otherwise please provide your own Dataloader that knows about the file name convention)
         """
         self.data = []
+        self.metadata = (
+            {}
+        )  # TODO: check what the index should be for storing the metadata (file_name, counter, ...)
         self.source_path = source_path
         self.indices = indices
-        self.chunk_size = chunk_size
-        self.next_chunk = 0
+        self._next_chunk = 0
+        self._num_chunks = 1
+        self._chunk_size = None
 
-        if self.chunk_size:
-            self.num_chunks = int(len(self.indices) / self.chunk_size)
+        if chunk_size:
+            self.chunk_size = chunk_size
+
+    @property
+    def chunk_size(self):
+        return self._chunk_size
+
+    @chunk_size.setter
+    def chunk_size(self, value):
+        self._chunk_size = value
+        self._num_chunks = int(len(self.indices) / self._chunk_size)
+
+    @property
+    def num_chunks(self):
+        return self._num_chunks
+
+    @property
+    def next_chunk(self):
+        return self._next_chunk
 
     def load(self):
         """
         Takes care of loading the raw data either chunk wise (if chunk size is defined) or all at once
         """
-        if self.chunk_size:
+        if self._chunk_size:
             return self._load_next_chunk()
 
         return self._load(self.indices)
+
+    def update_chunk_sizes(self, other):
+        if not self._chunk_size and not other.chunk_size:
+            return
+
+        if (
+            self._chunk_size
+            and not other.chunk_size
+            or self._chunk_size < other.chunk_size
+        ):
+            other.chunk_size = self.chunk_size
+        else:
+            self.chunk_size = other.chunk_size
 
     def _load_next_chunk(self):
         """
@@ -58,9 +92,11 @@ class BaseLoader(ABC):
         """
         self.data = []
         next_chunk_indices = self.indices[
-            self.next_chunk * self.chunk_size : (self.next_chunk + 1) * self.chunk_size
+            self._next_chunk
+            * self._chunk_size : (self._next_chunk + 1)
+            * self._chunk_size
         ]
-        self.next_chunk += 1
+        self._next_chunk += 1
         return self._load(next_chunk_indices)
 
     def _load(self, indices: List[str]):
@@ -73,13 +109,14 @@ class BaseLoader(ABC):
         else:
             self.extract(self.source_path, indices)
 
-        return self.data
+        return self.data, self.metadata
 
     @abstractmethod
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         pass
 
-    def file_sanity_check(self, file):
+    @staticmethod
+    def file_sanity_check(file):
         """
         Checks if the file can be found is not empty
         """

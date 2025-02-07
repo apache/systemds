@@ -116,8 +116,9 @@ jobs:
           h5py \
           gensim \
           black \
-          opt-einsum
-                
+          opt-einsum \
+          textblob
+                                      
     - name: Build Python Package
       run: |
         cd src/main/python

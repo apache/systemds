@@ -1312,7 +1312,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		else if( !sparse && sparseDst )
 			denseToSparse(allowCSR, k);
 	}
-	
+
 	public static boolean evalSparseFormatInMemory(DataCharacteristics dc) {
 		return evalSparseFormatInMemory(dc.getRows(), dc.getCols(), dc.getNonZeros());
 	}
@@ -1384,12 +1384,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		LibMatrixDenseToSparse.denseToSparse(this, allowCSR, k);
 	}
 
-	public final void sparseToDense() {
-		sparseToDense(1);
+	public final MatrixBlock sparseToDense() {
+		return sparseToDense(1);
 	}
 
-	public void sparseToDense(int k) {
+	public MatrixBlock sparseToDense(int k) {
 		LibMatrixSparseToDense.sparseToDense(this, k);
+		return this;
 	}
 
 	/**
@@ -2951,13 +2952,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		boolean sparseDst = evalSparseFormatOnDisk();
 		return !sparse || !sparseDst
 			|| (sparse && sparseBlock instanceof SparseBlockCSR)
-			|| (sparse && sparseBlock instanceof SparseBlockMCSR
-				&& getInMemorySize() / MAX_SHALLOW_SERIALIZE_OVERHEAD 
-				<= getExactSerializedSize())
-			|| (sparse && sparseBlock instanceof SparseBlockMCSR
-				&& nonZeros < Integer.MAX_VALUE //CSR constraint
-				&& inclConvert && CONVERT_MCSR_TO_CSR_ON_DEEP_SERIALIZE
-				&& !isUltraSparseSerialize(sparseDst));
+			|| (sparse && sparseBlock instanceof SparseBlockMCSR);
+			// || (sparse && sparseBlock instanceof SparseBlockMCSR
+			// 	&& getInMemorySize() / MAX_SHALLOW_SERIALIZE_OVERHEAD 
+			// 	<= getExactSerializedSize())
+			// || (sparse && sparseBlock instanceof SparseBlockMCSR
+			// 	&& nonZeros < Integer.MAX_VALUE //CSR constraint
+			// 	&& inclConvert && CONVERT_MCSR_TO_CSR_ON_DEEP_SERIALIZE
+			// 	&& !isUltraSparseSerialize(sparseDst));
 	}
 	
 	@Override 
@@ -5254,8 +5256,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * (i1,j1,v2) from input2 (that)
 	 * (w)  from scalar_input3 (scalarThat2)
 	 *
-	 * @param thatMatrix matrix value
-	 * @param thatScalar scalar double
+	 * @param thatMatrix matrix value, the vector to encode via table
+	 * @param thatScalar scalar double, w, that is the weight to multiply on the encoded values
 	 * @param resultBlock result matrix block
 	 * @return resultBlock
 	 */

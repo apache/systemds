@@ -30,12 +30,12 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 
 public class DependencyTask<E> implements Comparable<DependencyTask<?>>, Callable<E> {
-	public static final boolean ENABLE_DEBUG_DATA = false; // explain task graph
 	protected static final Log LOG = LogFactory.getLog(DependencyTask.class.getName());
+	/** debugging dependency tasks only used if LOG.isDebugEnabled */
+	public List<DependencyTask<?>> _dependencyTasks = null;
 
 	private final Callable<E> _task;
 	protected final List<DependencyTask<?>> _dependantTasks;
-	public List<DependencyTask<?>> _dependencyTasks = null; // only for debugging
 	private CompletableFuture<Future<?>> _future;
 	private int _rdy = 0;
 	private Integer _priority = 0;

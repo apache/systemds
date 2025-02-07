@@ -25,7 +25,11 @@ from typing import List, Optional, Union
 
 class BaseLoader(ABC):
     def __init__(
-        self, source_path: str, indices: List[str], chunk_size: Optional[int] = None
+        self,
+        source_path: str,
+        indices: List[str],
+        chunk_size: Optional[int] = None,
+        modality_type=None,
     ):
         """
         Base class to load raw data for a given list of indices and stores them in the data object
@@ -40,6 +44,7 @@ class BaseLoader(ABC):
         )  # TODO: check what the index should be for storing the metadata (file_name, counter, ...)
         self.source_path = source_path
         self.indices = indices
+        self.modality_type = modality_type
         self._next_chunk = 0
         self._num_chunks = 1
         self._chunk_size = None

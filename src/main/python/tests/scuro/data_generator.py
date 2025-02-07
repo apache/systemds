@@ -51,7 +51,7 @@ def setup_data(modalities, num_instances, path):
         else:
             raise "Modality not supported in DataGenerator"
 
-        modalities_to_create.append(UnimodalModality(data_loader, modality))
+        modalities_to_create.append(UnimodalModality(data_loader))
 
     data_generator = TestDataGenerator(modalities_to_create, path)
     data_generator.create_multimodal_data(num_instances)

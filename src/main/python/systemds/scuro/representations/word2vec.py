@@ -24,6 +24,7 @@ from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import save_embeddings
 from gensim.models import Word2Vec
 from gensim.utils import tokenize
+from textblob import TextBlob
 
 
 def get_embedding(sentence, model):
@@ -47,7 +48,7 @@ class W2V(UnimodalRepresentation):
         transformed_modality = TransformedModality(
             modality.modality_type, self, modality.metadata
         )
-        t = [list(tokenize(s.lower())) for s in modality.data]
+        t = [list(TextBlob(s).words) for s in modality.data]
         model = Word2Vec(
             sentences=t,
             vector_size=self.vector_size,
@@ -56,8 +57,8 @@ class W2V(UnimodalRepresentation):
         )
         embeddings = []
         for sentences in modality.data:
-            tokens = list(tokenize(sentences.lower()))
-            embeddings.append(get_embedding(tokens, model))
+            tokens = list(TextBlob(sentences).words)
+            embeddings.append(np.array(get_embedding(tokens, model)).reshape(1, -1))
 
         if self.output_file is not None:
             save_embeddings(np.array(embeddings), self.output_file)

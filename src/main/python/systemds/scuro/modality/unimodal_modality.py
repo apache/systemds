@@ -31,17 +31,17 @@ from systemds.scuro.modality.type import ModalityType
 
 class UnimodalModality(Modality):
 
-    def __init__(self, data_loader: BaseLoader, modality_type: ModalityType):
+    def __init__(self, data_loader: BaseLoader):
         """
         This class represents a unimodal modality.
         :param data_loader: Defines how the raw data should be loaded
         :param modality_type: Type of the modality
         """
-        super().__init__(modality_type, None)
+        super().__init__(data_loader.modality_type, None)
         self.data_loader = data_loader
 
     def copy_from_instance(self):
-        new_instance = type(self)(self.data_loader, self.modality_type)
+        new_instance = type(self)(self.data_loader)
         if self.metadata:
             new_instance.metadata = self.metadata.copy()
         return new_instance
@@ -72,6 +72,11 @@ class UnimodalModality(Modality):
             join_condition,
             self.data_loader.chunk_size is not None,
         )
+
+        if self.data_loader.chunk_size is None:
+            self.extract_raw_data()
+            joined_modality.execute(0)
+            joined_modality.joined_right.update_metadata()
 
         return joined_modality
 

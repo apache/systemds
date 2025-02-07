@@ -46,7 +46,7 @@ class Bert(UnimodalRepresentation):
         model = BertModel.from_pretrained(model_name)
 
         embeddings = self.create_embeddings(modality.data, model, tokenizer)
-
+        embeddings = [embeddings[i : i + 1] for i in range(embeddings.shape[0])]
         if self.output_file is not None:
             save_embeddings(embeddings, self.output_file)
 

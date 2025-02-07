@@ -18,11 +18,14 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import numpy as np
+from textblob import TextBlob
 
-from sklearn.feature_extraction.text import TfidfVectorizer
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
-from systemds.scuro.representations.utils import read_data_from_file, save_embeddings
+from systemds.scuro.representations.utils import save_embeddings
+from gensim import models
+from gensim.corpora import Dictionary
 
 
 class TfIdf(UnimodalRepresentation):
@@ -35,10 +38,13 @@ class TfIdf(UnimodalRepresentation):
         transformed_modality = TransformedModality(
             modality.modality_type, self, modality.metadata
         )
-        vectorizer = TfidfVectorizer(min_df=self.min_df)
 
-        X = vectorizer.fit_transform(modality.data)
-        X = X.toarray()
+        tokens = [list(TextBlob(s).words) for s in modality.data]
+        dictionary = Dictionary()
+        BoW_corpus = [dictionary.doc2bow(doc, allow_update=True) for doc in tokens]
+        tfidf = models.TfidfModel(BoW_corpus, smartirs="ntc")
+        X = tfidf[BoW_corpus]
+        X = [np.array(x)[:, 1].reshape(1, -1) for x in X]
 
         if self.output_file is not None:
             save_embeddings(X, self.output_file)

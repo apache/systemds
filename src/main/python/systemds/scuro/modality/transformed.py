@@ -23,6 +23,7 @@ from operator import or_
 
 from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.modality import Modality
+from systemds.scuro.representations.aggregate import Aggregation
 from systemds.scuro.representations.window import WindowAggregation
 
 
@@ -36,7 +37,6 @@ class TransformedModality(Modality):
         """
         super().__init__(modality_type, metadata)
         self.transformation = transformation
-        self.data = []
 
     def copy_from_instance(self):
         return type(self)(self.modality_type, self.transformation, self.metadata)
@@ -46,7 +46,7 @@ class TransformedModality(Modality):
         if type(right).__name__.__contains__("Unimodal"):
             if right.data_loader.chunk_size:
                 chunked_execution = True
-            elif right.data is None or len(right.data) == 0:
+            elif not right.has_data():
                 right.extract_raw_data()
 
         joined_modality = JoinedModality(
@@ -59,15 +59,16 @@ class TransformedModality(Modality):
 
         if not chunked_execution:
             joined_modality.execute(0)
+            joined_modality.joined_right.update_metadata()
 
         return joined_modality
 
-    def window(self, windowSize, aggregationFunction, fieldName=None):
+    def window(self, windowSize, aggregation):
         transformed_modality = TransformedModality(
             self.modality_type, "window", self.metadata
         )
-        w = WindowAggregation(windowSize, aggregationFunction)
-        transformed_modality.data = w.window(self)
+        w = WindowAggregation(windowSize, Aggregation(aggregation))
+        transformed_modality.data = w.execute(self)
 
         return transformed_modality
 

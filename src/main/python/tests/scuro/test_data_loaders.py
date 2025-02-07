@@ -22,6 +22,8 @@
 import os
 import shutil
 import unittest
+import numpy as np
+
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.bert import Bert
 from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
@@ -72,40 +74,32 @@ class TestDataLoaders(unittest.TestCase):
             self.data_generator.get_modality_path(ModalityType.AUDIO),
             self.data_generator.indices,
         )
-        audio = UnimodalModality(
-            audio_data_loader, ModalityType.AUDIO
-        ).apply_representation(MelSpectrogram())
+        audio = UnimodalModality(audio_data_loader).apply_representation(
+            MelSpectrogram()
+        )
 
         for i in range(0, self.num_instances):
-            assert round(sum(sum(self.audio_ref.data[i])), 4) == round(
-                sum(sum(audio.data[i])), 4
-            )
+            np.testing.assert_almost_equal(self.audio_ref.data[i], audio.data[i])
 
     def test_load_video_data_from_file(self):
         video_data_loader = VideoLoader(
             self.data_generator.get_modality_path(ModalityType.VIDEO),
             self.data_generator.indices,
         )
-        video = UnimodalModality(
-            video_data_loader, ModalityType.VIDEO
-        ).apply_representation(ResNet())
+        video = UnimodalModality(video_data_loader).apply_representation(ResNet())
 
         for i in range(0, self.num_instances):
-            assert round(sum(sum(self.video_ref.data[i])), 4) == round(
-                sum(sum(video.data[i])), 4
-            )
+            np.testing.assert_almost_equal(self.video_ref.data[i], video.data[i])
 
     def test_load_text_data_from_file(self):
         text_data_loader = TextLoader(
             self.data_generator.get_modality_path(ModalityType.TEXT),
             self.data_generator.indices,
         )
-        text = UnimodalModality(
-            text_data_loader, ModalityType.TEXT
-        ).apply_representation(Bert())
+        text = UnimodalModality(text_data_loader).apply_representation(Bert())
 
         for i in range(0, self.num_instances):
-            assert round(sum(self.text_ref.data[i]), 4) == round(sum(text.data[i]), 4)
+            np.testing.assert_almost_equal(self.text_ref.data[i], text.data[i])
 
 
 if __name__ == "__main__":

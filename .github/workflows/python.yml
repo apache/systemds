@@ -114,10 +114,10 @@ jobs:
           torch \
           librosa \
           h5py \
-          nltk \
           gensim \
-          black
-
+          black \
+          opt-einsum
+                
     - name: Build Python Package
       run: |
         cd src/main/python

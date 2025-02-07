@@ -18,26 +18,3 @@
 # under the License.
 #
 # -------------------------------------------------------------
-import json
-
-from systemds.scuro.dataloader.base_loader import BaseLoader
-from typing import Optional, List, Union
-
-
-class JSONLoader(BaseLoader):
-    def __init__(
-        self,
-        source_path: str,
-        indices: List[str],
-        field: str,
-        chunk_size: Optional[int] = None,
-    ):
-        super().__init__(source_path, indices, chunk_size)
-        self.field = field
-
-    def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
-        self.file_sanity_check(file)
-        with open(file) as f:
-            json_file = json.load(f)
-            for idx in index:
-                self.data.append(json_file[idx][self.field])

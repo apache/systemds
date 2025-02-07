@@ -20,7 +20,7 @@
 # -------------------------------------------------------------
 
 from sklearn.feature_extraction.text import TfidfVectorizer
-
+from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import read_data_from_file, save_embeddings
 
@@ -31,13 +31,17 @@ class TfIdf(UnimodalRepresentation):
         self.min_df = min_df
         self.output_file = output_file
 
-    def transform(self, data):
+    def transform(self, modality):
+        transformed_modality = TransformedModality(
+            modality.modality_type, self, modality.metadata
+        )
         vectorizer = TfidfVectorizer(min_df=self.min_df)
 
-        X = vectorizer.fit_transform(data)
+        X = vectorizer.fit_transform(modality.data)
         X = X.toarray()
 
         if self.output_file is not None:
             save_embeddings(X, self.output_file)
 
-        return X
+        transformed_modality.data = X
+        return transformed_modality

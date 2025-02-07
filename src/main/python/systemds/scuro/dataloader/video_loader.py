@@ -18,11 +18,12 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import numpy as np
 
 from systemds.scuro.dataloader.base_loader import BaseLoader
+from systemds.scuro.utils.schema_helpers import create_timestamps
 import cv2
 
 
@@ -35,9 +36,25 @@ class VideoLoader(BaseLoader):
     ):
         super().__init__(source_path, indices, chunk_size)
 
-    def extract(self, file: str):
+    def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
         cap = cv2.VideoCapture(file)
+
+        if not cap.isOpened():
+            raise f"Could not read video at path: {file}"
+
+        self.metadata[file] = {
+            "fps": cap.get(cv2.CAP_PROP_FPS),
+            "length": int(cap.get(cv2.CAP_PROP_FRAME_COUNT)),
+            "width": int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
+            "height": int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
+            "num_channels": 3,
+        }
+
+        self.metadata[file]["timestamp"] = create_timestamps(
+            self.metadata[file]["fps"], self.metadata[file]["length"]
+        )
+
         frames = []
         while cap.isOpened():
             ret, frame = cap.read()

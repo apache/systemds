@@ -46,11 +46,11 @@ class LSTM(Fusion):
         result = np.zeros((size, 0))
 
         for modality in modalities:
-            if modality.type in self.unimodal_embeddings.keys():
-                out = self.unimodal_embeddings.get(modality.type)
+            if modality.modality_type in self.unimodal_embeddings.keys():
+                out = self.unimodal_embeddings.get(modality.modality_type)
             else:
                 out = self.run_lstm(modality.data)
-                self.unimodal_embeddings[modality.type] = out
+                self.unimodal_embeddings[modality.modality_type] = out
 
             result = np.concatenate([result, out], axis=-1)
 

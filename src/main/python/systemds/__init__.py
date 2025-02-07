@@ -26,13 +26,14 @@ from systemds import examples
 __all__ = ["context", "operator", "examples"]
 
 required_packages = [
-    ("torch", "2.4.1"),
-    ("torchvision", "0.19.1"),
+    ("torch", "2.5.1"),
+    ("torchvision", "0.20.1"),
     ("librosa", "0.10.2"),
     ("opencv-python", "4.10.0.84"),
     ("opt-einsum", "3.3.0"),
     ("h5py", "3.11.0"),
     ("transformers", "4.46.3"),
+    ("nltk", "3.9.1"),
     ("gensim", "4.3.3"),
 ]
 

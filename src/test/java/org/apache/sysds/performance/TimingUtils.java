@@ -32,51 +32,26 @@ public interface TimingUtils {
 
 	/** A specification enum for the type of statistics to gather from the time measurements */
 	public enum StatsType {
-		MEAN_STD;
+		MEAN_STD, MEAN_STD_Q1;
 	}
 
 	/** The specified measurement to use in this case. Can be set from any of the programs */
-	public static StatsType st = StatsType.MEAN_STD;
+	// public static StatsType st = StatsType.MEAN_STD;
 
-	// /**
-	// * Time the given function call
-	// *
-	// * @param f The function to execute
-	// * @return The time it took
-	// */
-	// public static double time(F f) {
-	// Timing time = new Timing(true);
-	// f.run();
-	// return time.stop();
-	// }
-
-	// /**
-	// * Time the function and print using the string given prepended.
-	// *
-	// * @param f The function to time
-	// * @param p The print statement
-	// */
-	// public static void time(F f, String p) {
-	// Timing time = new Timing(true);
-	// f.run();
-	// System.out.print(p);
-	// System.out.println(time.stop());
-	// }
-
-/**
+	/**
 	 * Time the function given assuming that it should put result into the given time array at index i.
 	 * 
-	 * @param f     The function to time
+	 * @param f   The function to time
 	 * @param rep the number of repetitions
 	 */
 	public static double[] time(F f, int rep) {
 		double[] times = new double[rep];
-		for(int i = 0; i < rep; i ++)
+		for(int i = 0; i < rep; i++)
 			time(f, times, i);
-		
+
 		return times;
 	}
-	
+
 	/**
 	 * Time the function given assuming that it should put result into the given time array at index i.
 	 * 
@@ -116,14 +91,31 @@ public interface TimingUtils {
 	}
 
 	/**
-	 * Calculate the statistics of the times executed The default is to calculate the mean and standard deviation and
-	 * return that as a string
+	 * Calculate the statistics of the times executed
+	 * <p>
+	 * The default is to calculate the mean and standard deviation and return that as a string
 	 * 
-	 * @param v The times observed
+	 * @param v  The times observed
+	 * @param st The type of stats to print
 	 * @return The status string.
 	 */
 	public static String stats(double[] v) {
+		return statsMeanSTD(v);
+	}
+
+	/**
+	 * Calculate the statistics of the times executed, given the stats type provided
+	 * <p>
+	 * The default is to calculate the mean and standard deviation and return that as a string
+	 * 
+	 * @param v  The times observed
+	 * @param st The type of stats to print
+	 * @return The status string.
+	 */
+	public static String stats(double[] v, StatsType st) {
 		switch(st) {
+			case MEAN_STD_Q1:
+				return statsMeanSTDQ1(v);
 			case MEAN_STD:
 			default:
 				return statsMeanSTD(v);
@@ -149,6 +141,32 @@ public interface TimingUtils {
 		double std = Math.sqrt(var / el);
 
 		return String.format("%8.3f+-%7.3f ms", mean, std);
+	}
+
+	private static String statsMeanSTDQ1(double[] v) {
+		final int l = v.length;
+		final int remove = (int) Math.floor(l * 0.05);
+		Arrays.sort(v);
+
+		double q1 = v[v.length - 1 - (int) (Math.floor((double) v.length / 100))];
+		double q2p5 = v[v.length - 1 - (int) (Math.floor((double) v.length / 40))];
+		double q5 = v[v.length - 1 - (int) (Math.floor((double) v.length / 20))];
+		double q10 = v[v.length - 1 - (int) (Math.floor((double) v.length / 10))];
+
+		double total = 0;
+		final int el = v.length - remove * 2;
+		for(int i = remove; i < l - remove; i++)
+			total += v[i];
+
+		double mean = total / el;
+
+		double var = 0;
+		for(int i = remove; i < l - remove; i++)
+			var += Math.pow(Math.abs(v[i] - mean), 2);
+
+		double std = Math.sqrt(var / el);
+
+		return String.format("%8.3f+-%7.3f ms [q1:%7.3f, q2.5:%7.3f, q5:%7.3f, q10:%7.3f]", mean, std, q1, q2p5, q5, q10);
 	}
 
 	/**

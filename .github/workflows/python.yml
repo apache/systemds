@@ -118,7 +118,7 @@ jobs:
           black \
           opt-einsum \
           textblob
-                                      
+        python -m textblob.download_corpora          
     - name: Build Python Package
       run: |
         cd src/main/python

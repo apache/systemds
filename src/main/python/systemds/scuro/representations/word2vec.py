@@ -26,7 +26,9 @@ from gensim.models import Word2Vec
 from textblob import TextBlob
 
 import nltk
-nltk.download('punkt_tab')
+
+nltk.download("punkt_tab")
+
 
 def get_embedding(sentence, model):
     vectors = []

@@ -27,7 +27,6 @@ rowProd <- function(X) {
   apply(X, 1, prod)
 }
 
-# X = matrix(seq(7, 1100*200+6), 1100, 200, byrow=TRUE);
 X = matrix(3, 10, 10)
 
 R = t(rowProd(2*log(X)));

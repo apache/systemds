@@ -27,6 +27,8 @@ from systemds.scuro.representations.utils import save_embeddings
 from gensim import models
 from gensim.corpora import Dictionary
 
+import nltk
+nltk.download('punkt_tab')
 
 class TfIdf(UnimodalRepresentation):
     def __init__(self, min_df, output_file=None):

@@ -23,9 +23,10 @@ from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import save_embeddings
 from gensim.models import Word2Vec
-from gensim.utils import tokenize
 from textblob import TextBlob
 
+import nltk
+nltk.download('punkt_tab')
 
 def get_embedding(sentence, model):
     vectors = []

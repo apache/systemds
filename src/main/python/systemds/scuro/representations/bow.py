@@ -42,6 +42,7 @@ class BoW(UnimodalRepresentation):
         )
 
         X = vectorizer.fit_transform(modality.data).toarray()
+        X = [X[i : i + 1] for i in range(X.shape[0])]
 
         if self.output_file is not None:
             save_embeddings(X, self.output_file)

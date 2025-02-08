@@ -18,8 +18,10 @@
 # under the License.
 #
 #-------------------------------------------------------------
-
-X = matrix(3, 10, 10);
+A = matrix(2, 3, 10)
+B = matrix(0, 4, 10)
+C = matrix(3, 3, 10)
+X = rbind(A, B, C);
 while(FALSE){}
 
 R = colProds(2*log(X));

@@ -27,8 +27,10 @@ colProd <- function(X) {
   apply(X, 2, prod)
 }
 
-#X = matrix(seq(7, 1100*200+6), 1100, 200, byrow=TRUE);
-X = matrix(3, 10, 10)
+A = matrix(2, 3, 10)
+B = matrix(0, 4, 10)
+C = matrix(3, 3, 10)
+X = rbind(A,B,C)
 
 R = t(colProd(2*log(X)));
 

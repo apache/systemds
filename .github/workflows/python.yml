@@ -31,7 +31,7 @@ on:
       - 'src/assembly/**'
       - 'dev/**'
     branches:
-      - main
+      - scuro_window
   pull_request:
     paths-ignore:
       - 'docs/**'
@@ -117,7 +117,8 @@ jobs:
           gensim \
           black \
           opt-einsum \
-          textblob
+          textblob \
+          nltk
         python -m textblob.download_corpora          
     - name: Build Python Package
       run: |

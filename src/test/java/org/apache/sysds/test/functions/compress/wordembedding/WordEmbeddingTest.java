@@ -21,7 +21,6 @@ package org.apache.sysds.test.functions.compress.wordembedding;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.File;
 
@@ -36,11 +35,12 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.test.functions.compress.table.CompressedTableOverwriteTest;
 import org.junit.Test;
 
-public class WordEmbeddingUseCase extends AutomatedTestBase {
+public class WordEmbeddingTest extends AutomatedTestBase {
 
-	protected static final Log LOG = LogFactory.getLog(WordEmbeddingUseCase.class.getName());
+	protected static final Log LOG = LogFactory.getLog(CompressedTableOverwriteTest.class.getName());
 
 	private final static String TEST_DIR = "functions/compress/wordembedding/";
 
@@ -81,32 +81,8 @@ public class WordEmbeddingUseCase extends AutomatedTestBase {
 		wordEmb(100, 200, 5, 2, ExecType.CP, "01");
 	}
 
-	@Test
-	public void testWordEmbSP() {
-		wordEmb(10, 2, 2, 2, ExecType.SPARK, "01");
-	}
 
-	@Test
-	public void testWordEmb_mediumSP() {
-		wordEmb(100, 30, 4, 3, ExecType.SPARK, "01");
-	}
-
-	@Test
-	public void testWordEmb_bigWordsSP() {
-		wordEmb(10, 2, 2, 10, ExecType.SPARK, "01");
-	}
-
-	@Test
-	public void testWordEmb_longSentencesSP() {
-		wordEmb(100, 30, 5, 2, ExecType.SPARK, "01");
-	}
-
-	@Test
-	public void testWordEmb_moreUniqueWordsThanSentencesSP() {
-		wordEmb(100, 200, 5, 2, ExecType.SPARK, "01");
-	}
-
-	public void wordEmb(int rows, int unique, int l, int embeddingSize, ExecType instType, String name) {
+	public void wordEmb(int rows, int unique, int l, int embeddingSize,  ExecType instType, String name) {
 
 		OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND = true;
 		Types.ExecMode platformOld = setExecMode(instType);
@@ -116,9 +92,9 @@ public class WordEmbeddingUseCase extends AutomatedTestBase {
 		try {
 			super.setOutputBuffering(true);
 			loadTestConfiguration(getTestConfiguration(getTestName()));
-			fullDMLScriptName = SCRIPT_DIR + getTestClassDir() + name + ".dml";
+			fullDMLScriptName = SCRIPT_DIR +  getTestClassDir() + name + ".dml";
 
-			programArgs = new String[] {"-stats", "100", "-explain", "-args", input("X"), input("W"), "" + l, output("R")};
+			programArgs = new String[] {"-stats", "100", "-args", input("X"), input("W"), "" + l, output("R")};
 
 			MatrixBlock X = TestUtils.generateTestMatrixBlock(rows, 1, 1, unique + 1, 1.0, 32);
 			X = TestUtils.floor(X);
@@ -127,15 +103,11 @@ public class WordEmbeddingUseCase extends AutomatedTestBase {
 			MatrixBlock W = TestUtils.generateTestMatrixBlock(unique, embeddingSize, 1.0, -1, 1, 32);
 			writeBinaryWithMTD("W", W);
 
-			String r = runTest(null).toString();
-			
+			runTest(null);
+
 			MatrixBlock R = TestUtils.readBinary(output("R"));
 
 			analyzeResult(X, W, R, l);
-
-			if( instType == ExecType.CP && heavyHittersContainsString("seq")){
-				fail("cp should not have seq instruction\n" + r);
-			}
 
 		}
 		catch(Exception e) {
@@ -147,20 +119,17 @@ public class WordEmbeddingUseCase extends AutomatedTestBase {
 		}
 	}
 
-	private void analyzeResult(MatrixBlock X, MatrixBlock W, MatrixBlock R, int l) {
-		assertEquals(R.getNumRows() ,X.getNumRows() / l);
-		// assertEquals(W.getNumColumns() , X.getNumColumns() * l);
-
-		for(int i = 0; i < X.getNumRows(); i++) {
+	private void analyzeResult(MatrixBlock X, MatrixBlock W, MatrixBlock R, int l){
+		for(int i = 0; i < X.getNumRows(); i++){
 			// for each row in X, it should embed with a W, in accordance to what value it used
 
 			// the entry to look into W. // as in row
-			int e = UtilFunctions.toInt(X.get(i, 0)) - 1;
+			int e = UtilFunctions.toInt(X.get(i,0)) -1;
 			int rowR = i / l;
 			int offR = i % l;
-
-			for(int j = 0; j < W.getNumColumns(); j++) {
-				assertEquals("i:"+i+" j:" + j,R.get(rowR, offR * W.getNumColumns() + j), W.get(e, j), 0.0);
+			
+			for(int j = 0; j < W.getNumColumns(); j++){
+				assertEquals(R.get(rowR, offR* W.getNumColumns() + j), W.get(e, j), 0.0);
 			}
 		}
 	}

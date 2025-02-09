@@ -1080,7 +1080,6 @@ public abstract class SpoofCellwise extends SpoofOperator {
 				for(int k=apos; k<apos+alen; k++) {
 					//process zeros before current non-zero
 					if(!sparseSafe && (aix[k] - (lastj+1) >= 1)) {
-						//todo: handling, when row index is 0
 						c[k] *= genexec(0, b, scalars, m, n, rix+i, i, k);
 						zeroFlag[k] = true;
 					}

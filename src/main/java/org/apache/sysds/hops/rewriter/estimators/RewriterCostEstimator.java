@@ -22,6 +22,7 @@ package org.apache.sysds.hops.rewriter.estimators;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.mutable.MutableLong;
 import org.apache.commons.lang3.mutable.MutableObject;
+import org.apache.sysds.hops.rewriter.RewriterFramework;
 import org.apache.sysds.hops.rewriter.RewriterInstruction;
 import org.apache.sysds.hops.rewriter.rule.RewriterRule;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
@@ -161,7 +162,8 @@ public class RewriterCostEstimator {
 				}, jointAssertionsCpy, ctx);
 			} catch (Exception e) {
 				//e.printStackTrace();
-				System.err.println("Error while estimating the cost: " + e.getMessage());
+				if (RewriterFramework.DEBUG)
+					System.err.println("Error while estimating the cost: " + e.getMessage());
 				return null;
 			}
 		}).collect(Collectors.toList());
@@ -267,7 +269,8 @@ public class RewriterCostEstimator {
 						return literal;
 					}, mAssertionsCpy, ctx);
 				} catch (Exception e) {
-					e.printStackTrace();
+					if (RewriterFramework.DEBUG)
+						e.printStackTrace();
 					return null;
 				}
 			}).collect(Collectors.toList());
@@ -787,6 +790,7 @@ public class RewriterCostEstimator {
 				}
 				break;
 			case "const":
+				overhead.add(MALLOC_COST);
 			case "rowVec":
 			case "colVec":
 			case "cellMat":

@@ -43,8 +43,8 @@ public class RewriterContextSettings {
 		builder.append("rowSums(MATRIX)::MATRIX\n");
 		builder.append("colSums(MATRIX)::MATRIX\n");
 
-		builder.append("max(MATRIX)::FLOAT\n"); // Support for min/max is limited
-		builder.append("min(MATRIX)::FLOAT\n"); // Support for min/max is limited
+		builder.append("max(MATRIX)::FLOAT\n"); // Support for min/max is limited (e.g., constants are not pulled out yet)
+		builder.append("min(MATRIX)::FLOAT\n"); // Support for min/max is limited (e.g., constants are not pulled out yet)
 
 		builder.append("%*%(MATRIX,MATRIX)::MATRIX\n");
 
@@ -203,6 +203,8 @@ public class RewriterContextSettings {
 		builder.append("sq(MATRIX)::MATRIX\n");
 		builder.append("+*(MATRIX,FLOAT,MATRIX)::MATRIX\n");
 		builder.append("-*(MATRIX,FLOAT,MATRIX)::MATRIX\n");
+		builder.append("+*(MATRIX,INT,MATRIX)::MATRIX\n");
+		builder.append("-*(MATRIX,INT,MATRIX)::MATRIX\n");
 		builder.append("*2(MATRIX)::MATRIX\n");
 
 		for (String t : SCALARS) {
@@ -234,11 +236,11 @@ public class RewriterContextSettings {
 			builder.append("log_nz(MATRIX," + t + ")::MATRIX\n");
 		});
 
-		builder.append("const(MATRIX,FLOAT)::MATRIX\n");
+		builder.append("const(MATRIX,FLOAT)::MATRIX\n"); // const currently just supports literal values when creating rules (equivalence matching with non-literals should work fine though)
 
 		builder.append("rowVec(MATRIX)::MATRIX\n");
 		builder.append("colVec(MATRIX)::MATRIX\n");
-		builder.append("cellMat(MATRIX)::MATRIX\n");
+		builder.append("cellMat(MATRIX)::MATRIX\n"); // cellMat is currently not supported for rule creation
 
 		builder.append("_m(INT,INT,FLOAT)::MATRIX\n");
 		builder.append("_m(INT,INT,BOOL)::MATRIX\n");

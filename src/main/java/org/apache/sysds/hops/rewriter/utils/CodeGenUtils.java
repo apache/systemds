@@ -510,6 +510,9 @@ public class CodeGenUtils {
 					ncolContent = getHopConstructor(cur.getChild(0).getNCol(), assertions, varNameMapping, ctx, referredVarName);
 				}
 
+				if (!cur.getChild(1).isLiteral())
+					throw new IllegalArgumentException("Constant operator only supports literals!");
+
 				return "((DataGenOp) HopRewriteUtils.createDataGenOpFromDims(" + nrowContent + "," + ncolContent + "," + cur.getChild(1).getLiteral() + "D))";
 		}
 

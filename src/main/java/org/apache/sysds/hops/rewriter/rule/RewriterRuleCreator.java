@@ -23,6 +23,7 @@ import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.rewriter.RewriterDataType;
+import org.apache.sysds.hops.rewriter.RewriterFramework;
 import org.apache.sysds.hops.rewriter.RewriterRuntimeUtils;
 import org.apache.sysds.hops.rewriter.RewriterStatement;
 import org.apache.sysds.hops.rewriter.RuleContext;
@@ -67,8 +68,10 @@ public class RewriterRuleCreator {
 		try {
 			return registerRule(rule, RewriterCostEstimator.estimateCost(rule.getStmt1(), ctx), RewriterCostEstimator.estimateCost(rule.getStmt2(), ctx), false, canonicalFormConverter);
 		} catch (Exception e) {
-			System.err.println("Error while registering a rule: " + rule);
-			e.printStackTrace();
+			if (RewriterFramework.DEBUG) {
+				System.err.println("Error while registering a rule: " + rule);
+				e.printStackTrace();
+			}
 			return false;
 		}
 	}
@@ -403,9 +406,6 @@ public class RewriterRuleCreator {
 				}
 			}
 
-			// TODO: Maybe we can still rewrite the new graph if it still has less cost
-
-			// TODO: Evaluate cost and if our rule can still be applied
 			return injectedRewriteClass != null; // The program should not be executed as we just want to extract any rewrites that are applied to the current statement
 		});
 

@@ -32,6 +32,6 @@ B = matrix(0, 4, 10)
 C = matrix(3, 3, 10)
 X = rbind(A,B,C)
 
-R = t(colProd(2*log(X)));
+R = t(colProd(X*min(A)));
 
 writeMM(as(R,"CsparseMatrix"), paste(args[2], "S", sep=""));

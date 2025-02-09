@@ -448,7 +448,10 @@ public class UtilFunctions {
 				return 0; // invalid loop configuration
 		}
 		long tmp = (long) Math.floor(to/incr - from/incr);
-		return 1L + tmp + ((from+tmp*incr < to) ? 1 : 0);
+		if( incr > 0 )
+			return 1L + tmp + ((from+(tmp+1)*incr <= to) ? 1 : 0);
+		else
+			return 1L + tmp + ((from+(tmp+1)*incr >= to) ? 1 : 0);
 	}
 	
 	/**

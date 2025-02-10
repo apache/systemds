@@ -60,7 +60,7 @@ public class RewriterFramework {
 	public static void main(String[] args) {
 		String dbPath = "./src/test/resources/rewriterframework/expressions.db";
 		RewriterFramework rwf = new RewriterFramework(dbPath);
-		rwf.init(true,true);
+		rwf.init(true,false);
 		long dds = System.currentTimeMillis();
 		int ddsN = rwf.dataDrivenSearch(1000);
 		long sys = System.currentTimeMillis();
@@ -73,16 +73,16 @@ public class RewriterFramework {
 		long invalidRuleRemoval = System.currentTimeMillis();
 		int invalidRuleRemovalN = rwf.removeInvalidRules();
 		long invalidRuleRemovalEnd = System.currentTimeMillis();
-		saveRuleSet("/Users/janniklindemann/Dev/MScThesis/NGramAnalysis/rules_validated_06.02.2025(4).rl", rwf.getUnconditionalRuleSet());
-		saveRuleSet("/Users/janniklindemann/Dev/MScThesis/NGramAnalysis/rules_conditional_06.02.2025(4).rl", rwf.getConditionalRuleSet());
-		//saveJavaCode("/Users/janniklindemann/Dev/MScThesis/NGramAnalysis/rules_validated_03.02.2025.rl", rwf.getUnconditionalRuleSet(), "GeneratedRewriteClass", true);
+		saveRuleSet("<file-path>", rwf.getUnconditionalRuleSet());
+		saveRuleSet("<file-path>", rwf.getConditionalRuleSet());
+		
 		// Note that unconditional rules are not 'static' rules.
 		// It is a set of equivalences that have a single optimal expression
 		//System.out.println(rwf.getUnconditionalRuleSet());
 		long inapplicableRuleRemoval = System.currentTimeMillis();
 		int inapplicableRuleRemovalN = rwf.removeInapplicableRules();
 		long end = System.currentTimeMillis();
-		saveRuleSet("/Users/janniklindemann/Dev/MScThesis/NGramAnalysis/rules_applicable_06.02.2025(4).rl", rwf.getUnconditionalRuleSet());
+		//saveRuleSet("<file-path>", rwf.getUnconditionalRuleSet());
 
 		System.out.println("DDS: " + (sys-dds)/1000D + "s");
 		System.out.println("SYS: " + (rs-sys)/1000D + "s");
@@ -98,30 +98,6 @@ public class RewriterFramework {
 		System.out.println("IRR_N: " + invalidRuleRemovalN);
 		System.out.println("ARR_N: " + inapplicableRuleRemovalN);
 		//System.out.println(rwf.getUnconditionalRuleSet().toJavaCode("GeneratedRewriteClass", true));
-
-		/*String rPath = "/Users/janniklindemann/Dev/MScThesis/NGramAnalysis/rules_validated_04.02.2025(2).rl";
-		String rPath2 = "/Users/janniklindemann/Dev/MScThesis/NGramAnalysis/rules_conditional_04.02.2025(2).rl";
-		String rPath3 = "/Users/janniklindemann/Dev/MScThesis/NGramAnalysis/rules_complete_filtered_04.02.2025(2)";
-		String sPath = "/Users/janniklindemann/Dev/MScThesis/other/GeneratedRewriteClass.java";
-
-		try {
-			List<String> lines = Files.readAllLines(Paths.get(rPath3));
-			//List<String> lines2 = Files.readAllLines(Paths.get(rPath2));
-			//lines.addAll(lines2);
-			RewriterRuleSet rs = RewriterRuleSet.deserialize(lines, RewriterUtils.buildDefaultContext());
-			List<RewriterRule> rulesUncond = rs.getRules().stream().filter(rl -> !rl.isConditionalMultiRule()).collect(Collectors.toList());
-			List<RewriterRule> rulesCond = rs.getRules().stream().filter(RewriterRule::isConditionalMultiRule).collect(Collectors.toList());
-			rulesCond.sort(Comparator.comparingInt(rl -> -rl.getStmt1().countInstructions()));
-			if (rulesCond.size() > 500)
-				rulesCond = rulesCond.subList(0, 500);
-			rulesUncond.addAll(rulesCond);
-			RewriterRuleSet rs2 = new RewriterRuleSet(RewriterUtils.buildDefaultContext(), rulesUncond);
-			//saveRuleSet("/Users/janniklindemann/Dev/MScThesis/NGramAnalysis/rules_complete_filtered_04.02.2025(2)", rs2);
-			saveJavaCode(sPath, rs2, "GeneratedRewriteClass", true);
-		} catch (IOException ex) {
-			ex.printStackTrace();
-			//return null;
-		}*/
 
 		//RewriterRuleSet rs = loadRuleSet(rPath);
 		//saveJavaCode(sPath, rs, "GeneratedRewriteClass", true);

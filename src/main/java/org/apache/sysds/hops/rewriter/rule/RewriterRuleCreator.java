@@ -266,7 +266,7 @@ public class RewriterRuleCreator {
 		MutableBoolean isValid = new MutableBoolean(false);
 		boolean successful = DMLExecutor.executeCode(code, DMLCodeGenerator.ruleValidationScript(rule.toParsableString(ctx), sessionId, isValid::setValue));
 
-		if (!isValid.booleanValue()) {
+		if (!isValid.booleanValue() && RewriterFramework.DEBUG) {
 			String errStr = "An invalid rule was found: " + rule + "\n\tReason: " + (successful ? "Assertion" : "Error");
 
 			if (!successful && !DMLExecutor.getLastErr().isEmpty())

@@ -19,18 +19,19 @@
 
 package org.apache.sysds.hops.fedplanner;
 
-import org.apache.sysds.hops.Hop;
-import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Arrays;
+import java.util.Collections;
+import org.apache.sysds.hops.Hop;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
+import org.apache.sysds.hops.fedplanner.FederatedPlanCostEnumerator.ConflictMergeResolveInfo;
+import org.apache.sysds.hops.fedplanner.FederatedPlanCostEnumerator.ResolvedType;
 
 /**
  * A Memoization Table for managing federated plans (FedPlan) based on combinations of Hops and fedOutTypes.
@@ -41,98 +42,196 @@ public class FederatedMemoTable {
 	// Maps Hop ID and fedOutType pairs to their plan variants
 	private final Map<Pair<Long, FederatedOutput>, FedPlanVariants> hopMemoTable = new HashMap<>();
 
-	/**
-	 * Adds a new federated plan to the memo table.
-	 * Creates a new variant list if none exists for the given Hop and fedOutType.
-	 *
-	 * @param hop		 The Hop node
-	 * @param fedOutType  The federated output type
-	 * @param planChilds  List of child plan references
-	 * @return		   The newly created FedPlan
-	 */
-	public FedPlan addFedPlan(Hop hop, FederatedOutput fedOutType, List<Pair<Long, FederatedOutput>> planChilds) {
-		long hopID = hop.getHopID();
-		FedPlanVariants fedPlanVariantList;
-
-		if (contains(hopID, fedOutType)) {
-			fedPlanVariantList = hopMemoTable.get(new ImmutablePair<>(hopID, fedOutType));
-		} else {
-			fedPlanVariantList = new FedPlanVariants(hop, fedOutType);
-			hopMemoTable.put(new ImmutablePair<>(hopID, fedOutType), fedPlanVariantList);
-		}
-
-		FedPlan newPlan = new FedPlan(planChilds, fedPlanVariantList);
-		fedPlanVariantList.addFedPlan(newPlan);
-
-		return newPlan;
-	}
-
-	/**
-	 * Retrieves the minimum cost child plan considering the parent's output type.
-	 * The cost is calculated using getParentViewCost to account for potential type mismatches.
-	 */
-	public FedPlan getMinCostFedPlan(Pair<Long, FederatedOutput> fedPlanPair) {
-		FedPlanVariants fedPlanVariantList = hopMemoTable.get(fedPlanPair);
-		return fedPlanVariantList._fedPlanVariants.stream()
-				.min(Comparator.comparingDouble(FedPlan::getTotalCost))
-				.orElse(null);
-	}
-
-	public FedPlanVariants getFedPlanVariants(long hopID, FederatedOutput fedOutType) {
-		return hopMemoTable.get(new ImmutablePair<>(hopID, fedOutType));
+	public void addFedPlanVariants(long hopID, FederatedOutput fedOutType, FedPlanVariants fedPlanVariants) {
+		hopMemoTable.put(new ImmutablePair<>(hopID, fedOutType), fedPlanVariants);
 	}
 
 	public FedPlanVariants getFedPlanVariants(Pair<Long, FederatedOutput> fedPlanPair) {
 		return hopMemoTable.get(fedPlanPair);
 	}
 
+	public FedPlanVariants getFedPlanVariants(long hopID, FederatedOutput fedOutType) {
+		return hopMemoTable.get(new ImmutablePair<>(hopID, fedOutType));
+	}
+
 	public FedPlan getFedPlanAfterPrune(long hopID, FederatedOutput fedOutType) {
-		// Todo: Consider whether to verify if pruning has been performed
 		FedPlanVariants fedPlanVariantList = hopMemoTable.get(new ImmutablePair<>(hopID, fedOutType));
 		return fedPlanVariantList._fedPlanVariants.get(0);
 	}
 
 	public FedPlan getFedPlanAfterPrune(Pair<Long, FederatedOutput> fedPlanPair) {
-		// Todo: Consider whether to verify if pruning has been performed
 		FedPlanVariants fedPlanVariantList = hopMemoTable.get(fedPlanPair);
 		return fedPlanVariantList._fedPlanVariants.get(0);
 	}
 
-	/**
-	 * Checks if the memo table contains an entry for a given Hop and fedOutType.
-	 *
-	 * @param hopID   The Hop ID.
-	 * @param fedOutType The associated fedOutType.
-	 * @return True if the entry exists, false otherwise.
-	 */
 	public boolean contains(long hopID, FederatedOutput fedOutType) {
 		return hopMemoTable.containsKey(new ImmutablePair<>(hopID, fedOutType));
 	}
 
-	/**
-	 * Prunes the specified entry in the memo table, retaining only the minimum-cost
-	 * FedPlan for the given Hop ID and federated output type.
-	 *
-	 * @param hopID The ID of the Hop to prune
-	 * @param federatedOutput The federated output type associated with the Hop
-	 */
-	public void pruneFedPlan(long hopID, FederatedOutput federatedOutput) {
-		hopMemoTable.get(new ImmutablePair<>(hopID, federatedOutput)).prune();
-	}
+	public static class ConflictedFedPlanVariants extends FedPlanVariants {
+		public List<ConflictMergeResolveInfo> conflictInfos;
+		protected int numConflictCombinations;
+		// 2^(# of conflicts), 2^(# of childs)
+		protected double[][] cumulativeCost;
+		protected int[][] forwardingBitMap;
 
-	/**
-	 * Represents common properties and costs associated with a Hop.
-	 * This class holds a reference to the Hop and tracks its execution and network transfer costs.
-	 */
-	public static class HopCommon {
-		protected final Hop hopRef;         // Reference to the associated Hop
-		protected double selfCost;          // Current execution cost (compute + memory access)
-		protected double netTransferCost;   // Network transfer cost
+		// bitset array (java class) >> arbitary length >>
 
-		protected HopCommon(Hop hopRef) {
-			this.hopRef = hopRef;
-			this.selfCost = 0;
-			this.netTransferCost = 0;
+		public ConflictedFedPlanVariants(HopCommon hopCommon, FederatedOutput fedOutType, 
+				List<ConflictMergeResolveInfo> conflictMergeResolveInfos) {
+			super(hopCommon, fedOutType);
+			this.conflictInfos = conflictMergeResolveInfos;
+			this.numConflictCombinations = 1 << this.conflictInfos.size();
+			this.cumulativeCost = new double[this.numConflictCombinations][this._fedPlanVariants.size()];
+			this.forwardingBitMap = new int[this.numConflictCombinations][this._fedPlanVariants.size()];
+			// Initialize isForwardBitMap to 0
+			for (int i = 0; i < this.numConflictCombinations; i++) {
+				Arrays.fill(this.cumulativeCost[i], 0);
+				Arrays.fill(this.forwardingBitMap[i], 0);
+			}
+		}
+		
+		// Todo: (최적화) java bitset 사용하여, 다수의 conflict 처리할 수 있도록 해야 함.
+		// Todo: (구현) 만약 resolve point (converge, first-split & last-merge) child로 내려가면서 recursive하게 prune 해야 함. (이때, parents의 LOUT/FOUT의 Optimal Plan을 동시에 고려해야함)
+		public void pruneConflictedFedPlans() {
+			// Step 1: Initialize prunedCost and prunedIsForwardingBitMap with minimal values per combination
+			double[][] prunedCost = new double[this.numConflictCombinations][1];
+			int[][] prunedIsForwardingBitMap = new int[this.numConflictCombinations][1];
+			List<FedPlan> prunedFedPlanVariants = new ArrayList<>();
+
+			for (int i = 0; i < this.numConflictCombinations; i++) {
+				double minCost = Double.MAX_VALUE;
+				int minIndex = -1;
+				for (int j = 0; j < _fedPlanVariants.size(); j++) {
+					if (cumulativeCost[i][j] < minCost) {
+						minCost = cumulativeCost[i][j];
+						minIndex = j;
+					}
+				}
+				prunedCost[i][0] = minCost;
+				prunedIsForwardingBitMap[i][0] = (minIndex != -1) ? forwardingBitMap[i][minIndex] : 0;
+				prunedFedPlanVariants.add(_fedPlanVariants.get(minIndex));
+			}
+			
+			this.cumulativeCost = prunedCost;
+			this.forwardingBitMap = prunedIsForwardingBitMap;
+			this._fedPlanVariants = prunedFedPlanVariants;
+
+			// Step 2: Collect resolved conflict bit positions
+			List<Integer> resolvedBits = new ArrayList<>();
+			for (int i = 0; i < conflictInfos.size(); i++) {
+				ConflictMergeResolveInfo info = conflictInfos.get(i);
+				if (info.getResolvedType() == ResolvedType.RESOLVE) {
+					resolvedBits.add(i); // Assuming index corresponds to bit position
+				}
+			}
+			
+			int resolvedBitsSize = resolvedBits.size();
+
+			// CASE 1: if not resolved, return
+			if (resolvedBitsSize == 0){
+				return;
+			}
+
+			// CASE 2: if all resolved, transform to FedPlanVariants
+			if (resolvedBits.size() == conflictInfos.size()){
+				double minCost = Double.MAX_VALUE;
+				int minCostIdx = -1;
+
+				for (int i = 0; i < this.numConflictCombinations; i++) {
+					if (cumulativeCost[i][0] < minCost) {
+						minCost = cumulativeCost[i][0];
+						minCostIdx = i;
+					}
+				}
+				
+				FedPlan finalFedPlan = this.getFedPlanVariants().get(minCostIdx);
+				finalFedPlan.setCumulativeCost(minCost);
+				this._fedPlanVariants.clear();
+				this._fedPlanVariants.add(finalFedPlan);
+
+				this.conflictInfos = null;
+				this.cumulativeCost = null;
+				this.forwardingBitMap = null;
+				this.numConflictCombinations = 0;
+
+				return;
+			}
+
+			// CASE 3: if some resolved, some not, merge them
+			int mask = 0;
+			for (int bit : resolvedBits) {
+				mask |= (1 << bit);
+			}
+			mask = ~mask;
+	
+			List<Integer> unresolvedBits = new ArrayList<>();
+			for (int bit = 0; bit < conflictInfos.size(); bit++) {
+				if (!resolvedBits.contains(bit)) {
+					unresolvedBits.add(bit);
+				}
+			}
+			Collections.sort(unresolvedBits); // Ensure consistent ordering
+	
+			// Create newConflictInfos with unresolved conflicts
+			List<ConflictMergeResolveInfo> newConflictInfos = new ArrayList<>();
+			for (int bit : unresolvedBits) {
+				newConflictInfos.add(conflictInfos.get(bit));
+			}
+
+			// Step 4: Group combinations by their base (ignoring resolved bits)
+			Map<Integer, List<Integer>> groups = new HashMap<>();
+			for (int i = 0; i < this.numConflictCombinations; i++) {
+				int base = i & mask;
+				groups.computeIfAbsent(base, k -> new ArrayList<>()).add(i);
+			}
+	
+			// Step 5: Merge groups and create new arrays with reduced size
+			int newSize = 1 << unresolvedBits.size();
+			double[][] newPrunedCost = new double[newSize][1];
+			int[][] newPrunedBitMap = new int[newSize][1];
+			List<FedPlan> newPrunedFedPlanVariants = new ArrayList<>(newSize);
+			Arrays.fill(newPrunedCost, Double.MAX_VALUE);
+	
+			for (Map.Entry<Integer, List<Integer>> entry : groups.entrySet()) {
+				int base = entry.getKey();
+				List<Integer> group = entry.getValue();
+	
+				// Find minimal cost and bitmap in the group
+				double minGroupCost = Double.MAX_VALUE;
+				int minBitmap = 0;
+				int minIdx = -1;
+
+				for (int comb : group) {
+					if (cumulativeCost[comb][0] < minGroupCost) {
+						minGroupCost = cumulativeCost[comb][0];
+						minBitmap = forwardingBitMap[comb][0];
+						minIdx = comb;
+					}
+				}
+	
+				// Compute new index based on unresolved bits
+				int newIndex = 0;
+				for (int i = 0; i < unresolvedBits.size(); i++) {
+					int bitPos = unresolvedBits.get(i);
+					if ((base & (1 << bitPos)) != 0) {
+						newIndex |= (1 << i); // Set the i-th bit in newIndex
+					}
+				}
+	
+				// Update newPruned arrays
+				if (newIndex < newSize) {
+					newPrunedCost[newIndex][0] = minGroupCost;
+					newPrunedBitMap[newIndex][0] = minBitmap;
+					newPrunedFedPlanVariants.add(newIndex, _fedPlanVariants.get(minIdx));
+				}
+			}
+	
+			// Replace the pruned arrays with the merged results and update size
+			this.conflictInfos = newConflictInfos;
+			this.cumulativeCost = newPrunedCost;
+			this.forwardingBitMap = newPrunedBitMap;
+			this.numConflictCombinations = newSize; // Update to the new reduced size
 		}
 	}
 
@@ -146,21 +245,24 @@ public class FederatedMemoTable {
 		private final FederatedOutput fedOutType;  // Output type (FOUT/LOUT)
 		protected List<FedPlan> _fedPlanVariants;  // List of plan variants
 
-		public FedPlanVariants(Hop hopRef, FederatedOutput fedOutType) {
-			this.hopCommon = new HopCommon(hopRef);
+		public FedPlanVariants(HopCommon hopCommon, FederatedOutput fedOutType) {
+			this.hopCommon = hopCommon;
 			this.fedOutType = fedOutType;
 			this._fedPlanVariants = new ArrayList<>();
 		}
 
+		public boolean isEmpty() {return _fedPlanVariants.isEmpty();}
 		public void addFedPlan(FedPlan fedPlan) {_fedPlanVariants.add(fedPlan);}
 		public List<FedPlan> getFedPlanVariants() {return _fedPlanVariants;}
-		public boolean isEmpty() {return _fedPlanVariants.isEmpty();}
+		public FederatedOutput getFedOutType() {return fedOutType;}
+		public double getSelfCost() {return hopCommon.getSelfCost();}
+		public double getForwardingCost() {return hopCommon.getForwardingCost();}
 
-		public void prune() {
+		public void pruneFedPlans() {
 			if (_fedPlanVariants.size() > 1) {
 				// Find the FedPlan with the minimum cost
 				FedPlan minCostPlan = _fedPlanVariants.stream()
-						.min(Comparator.comparingDouble(FedPlan::getTotalCost))
+						.min(Comparator.comparingDouble(FedPlan::getCumulativeCost))
 						.orElse(null);
 
 				// Retain only the minimum cost plan
@@ -174,43 +276,53 @@ public class FederatedMemoTable {
 	 * Represents a single federated execution plan with its associated costs and dependencies.
 	 * This class contains:
 	 * 1. selfCost: Cost of current hop (compute + input/output memory access)
-	 * 2. totalCost: Cumulative cost including this plan and all child plans
+	 * 2. cumulativeCost: Cumulative cost including this plan and all child plans
 	 * 3. netTransferCost: Network transfer cost for this plan to parent plan.
 	 * 
 	 * FedPlan is linked to FedPlanVariants, which in turn uses HopCommon to manage common properties and costs.
 	 */
 	public static class FedPlan {
-		private double totalCost;                  // Total cost including child plans
+		private double cumulativeCost;                  // Total cost including child plans
 		private final FedPlanVariants fedPlanVariants;  // Reference to variant list
 		private final List<Pair<Long, FederatedOutput>> childFedPlans;  // Child plan references
 
-		public FedPlan(List<Pair<Long, FederatedOutput>> childFedPlans, FedPlanVariants fedPlanVariants) {
-			this.totalCost = 0;
-			this.childFedPlans = childFedPlans;
+		public FedPlan(double cumulativeCost, FedPlanVariants fedPlanVariants, List<Pair<Long, FederatedOutput>> childFedPlans) {
+			this.cumulativeCost = cumulativeCost;
 			this.fedPlanVariants = fedPlanVariants;
+			this.childFedPlans = childFedPlans;			
 		}
 
-		public void setTotalCost(double totalCost) {this.totalCost = totalCost;}
-		public void setSelfCost(double selfCost) {fedPlanVariants.hopCommon.selfCost = selfCost;}
-		public void setNetTransferCost(double netTransferCost) {fedPlanVariants.hopCommon.netTransferCost = netTransferCost;}
-		
-		public Hop getHopRef() {return fedPlanVariants.hopCommon.hopRef;}
-		public long getHopID() {return fedPlanVariants.hopCommon.hopRef.getHopID();}
-		public FederatedOutput getFedOutType() {return fedPlanVariants.fedOutType;}
-		public double getTotalCost() {return totalCost;}
-		public double getSelfCost() {return fedPlanVariants.hopCommon.selfCost;}
-		public double getNetTransferCost() {return fedPlanVariants.hopCommon.netTransferCost;}
+		public Hop getHopRef() {return fedPlanVariants.hopCommon.getHopRef();}
+		public long getHopID() {return fedPlanVariants.hopCommon.getHopRef().getHopID();}
+		public FederatedOutput getFedOutType() {return fedPlanVariants.getFedOutType();}
+		public double getCumulativeCost() {return cumulativeCost;}
+		public double getSelfCost() {return fedPlanVariants.hopCommon.getSelfCost();}
+		public double getForwardingCost() {return fedPlanVariants.hopCommon.getForwardingCost();}
 		public List<Pair<Long, FederatedOutput>> getChildFedPlans() {return childFedPlans;}
 
-		/**
-		 * Calculates the conditional network transfer cost based on output type compatibility.
-		 * Returns 0 if output types match, otherwise returns the network transfer cost.
-		 * @param parentFedOutType The federated output type of the parent plan.
-		 * @return The conditional network transfer cost.
-		 */
-		public double getCondNetTransferCost(FederatedOutput parentFedOutType) {
-			if (parentFedOutType == getFedOutType()) return 0;
-			return fedPlanVariants.hopCommon.netTransferCost;
+		public void setCumulativeCost(double cumulativeCost) {this.cumulativeCost = cumulativeCost;}
+	}
+
+	/**
+	 * Represents common properties and costs associated with a Hop.
+	 * This class holds a reference to the Hop and tracks its execution and network transfer costs.
+	 */
+	public static class HopCommon {
+		protected final Hop hopRef;
+		protected double selfCost;
+		protected double forwardingCost;
+
+		public HopCommon(Hop hopRef) {
+			this.hopRef = hopRef;
+			this.selfCost = 0;
+			this.forwardingCost = 0;
 		}
+
+		public Hop getHopRef() {return hopRef;}
+		public double getSelfCost() {return selfCost;}
+		public double getForwardingCost() {return forwardingCost;}
+
+		public void setSelfCost(double selfCost) {this.selfCost = selfCost;}
+		public void setForwardingCost(double forwardingCost) {this.forwardingCost = forwardingCost;}
 	}
 }

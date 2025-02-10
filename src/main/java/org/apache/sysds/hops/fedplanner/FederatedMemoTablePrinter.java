@@ -65,9 +65,9 @@ public class FederatedMemoTablePrinter {
 
 
         sb.append(String.format(" {Total: %.1f, Self: %.1f, Net: %.1f}",
-                plan.getTotalCost(),
+                plan.getCumulativeCost(),
                 plan.getSelfCost(),
-                plan.getNetTransferCost()));
+                plan.getForwardingCost()));
 
         // Add matrix characteristics
         sb.append(" [")

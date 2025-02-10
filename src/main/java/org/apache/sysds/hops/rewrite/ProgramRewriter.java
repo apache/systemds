@@ -27,6 +27,9 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.rewriter.generated.GeneratedRewriteClass;
+import org.apache.sysds.hops.rewriter.generated.RewriteAutomaticallyGenerated;
+import org.apache.sysds.hops.rewriter.dml.DMLExecutor;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.ForStatement;
 import org.apache.sysds.parser.ForStatementBlock;
@@ -83,6 +86,9 @@ public class ProgramRewriter{
 				_dagRuleSet.add( new RewriteCommonSubexpressionElimination()     );
 			if( OptimizerUtils.ALLOW_CONSTANT_FOLDING )
 				_dagRuleSet.add( new RewriteConstantFolding()                    ); //dependency: cse
+			if ( DMLScript.APPLY_GENERATED_REWRITES ) {
+				_dagRuleSet.add(new RewriteAutomaticallyGenerated(new GeneratedRewriteClass()));
+			}
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
 				_dagRuleSet.add( new RewriteAlgebraicSimplificationStatic()      ); //dependencies: cse
 			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )             //dependency: simplifications (no need to merge leafs again)
@@ -123,6 +129,9 @@ public class ProgramRewriter{
 		{
 			if ( DMLScript.USE_ACCELERATOR ){
 				_dagRuleSet.add( new RewriteGPUSpecificOps() );	// gpu-specific rewrites
+			}
+			if ( DMLScript.APPLY_GENERATED_REWRITES ) {
+				_dagRuleSet.add(new RewriteAutomaticallyGenerated(new GeneratedRewriteClass()));
 			}
 			if ( OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES) {
 				_dagRuleSet.add( new RewriteMatrixMultChainOptimization()         ); //dependency: cse

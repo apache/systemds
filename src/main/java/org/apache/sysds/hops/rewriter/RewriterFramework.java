@@ -73,8 +73,8 @@ public class RewriterFramework {
 		long invalidRuleRemoval = System.currentTimeMillis();
 		int invalidRuleRemovalN = rwf.removeInvalidRules();
 		long invalidRuleRemovalEnd = System.currentTimeMillis();
-		saveRuleSet("<file-path>", rwf.getUnconditionalRuleSet());
-		saveRuleSet("<file-path>", rwf.getConditionalRuleSet());
+		//saveRuleSet("<file-path>", rwf.getUnconditionalRuleSet());
+		//saveRuleSet("<file-path>", rwf.getConditionalRuleSet());
 		
 		// Note that unconditional rules are not 'static' rules.
 		// It is a set of equivalences that have a single optimal expression

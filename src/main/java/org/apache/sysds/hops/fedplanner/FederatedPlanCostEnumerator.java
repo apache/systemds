@@ -28,6 +28,8 @@ import java.util.LinkedHashMap;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.sysds.common.Types;
+import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.fedplanner.FederatedMemoTable.FedPlan;
 import org.apache.sysds.hops.fedplanner.FederatedMemoTable.FedPlanVariants;
@@ -50,8 +52,11 @@ import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
  */
 public class FederatedPlanCostEnumerator {
 	public static void enumerateProgram(DMLProgram prog) {
+		FederatedMemoTable memoTable = new FederatedMemoTable();
+		Map<String, Long> transTable = new HashMap<>();
+
 		for(StatementBlock sb : prog.getStatementBlocks())
-			enumerateStatementBlock(sb);
+			enumerateStatementBlock(sb, memoTable, transTable);
 	}
 
 	/**
@@ -61,7 +66,7 @@ public class FederatedPlanCostEnumerator {
 	 * 
 	 * @param sb The statement block to enumerate.
 	 */
-	public static void enumerateStatementBlock(StatementBlock sb) {
+	public static void enumerateStatementBlock(StatementBlock sb, FederatedMemoTable memoTable, Map<String, Long> transTable) {
 		// While enumerating the program, recursively determine the optimal FedPlan and MemoTable
 		// for each statement block and statement.
 		// 1. How to recursively integrate optimal FedPlans and MemoTables across statements and statement blocks?
@@ -75,12 +80,12 @@ public class FederatedPlanCostEnumerator {
 			IfStatementBlock isb = (IfStatementBlock) sb;
 			IfStatement istmt = (IfStatement)isb.getStatement(0);
 
-			enumerateFederatedPlanCost(isb.getPredicateHops());
+			enumerateHopDAG(isb.getPredicateHops(), memoTable, transTable);
 
 			for (StatementBlock csb : istmt.getIfBody())
-				enumerateStatementBlock(csb);
+				enumerateStatementBlock(csb, memoTable, transTable);
 			for (StatementBlock csb : istmt.getElseBody())
-				enumerateStatementBlock(csb);
+				enumerateStatementBlock(csb, memoTable, transTable);
 
 			// Todo: 1. apply iteration weight to csbFedPlans (if: 0.5, else: 0.5)
 			// Todo: 2. Merge predFedPlans
@@ -89,12 +94,12 @@ public class FederatedPlanCostEnumerator {
 
 			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
 
-			enumerateFederatedPlanCost(fsb.getFromHops());
-			enumerateFederatedPlanCost(fsb.getToHops());
-			enumerateFederatedPlanCost(fsb.getIncrementHops());
+			enumerateHopDAG(fsb.getFromHops(), memoTable, transTable);
+			enumerateHopDAG(fsb.getToHops(), memoTable, transTable);
+			enumerateHopDAG(fsb.getIncrementHops(), memoTable, transTable);
 
 			for (StatementBlock csb : fstmt.getBody())
-				enumerateStatementBlock(csb);
+				enumerateStatementBlock(csb, memoTable, transTable);
 
 			// Todo: 1. get(predict) # of Iterations
 			// Todo: 2. apply iteration weight to csbFedPlans
@@ -102,11 +107,11 @@ public class FederatedPlanCostEnumerator {
 		} else if (sb instanceof WhileStatementBlock) {
 			WhileStatementBlock wsb = (WhileStatementBlock) sb;
 			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
-			enumerateFederatedPlanCost(wsb.getPredicateHops());
+			enumerateHopDAG(wsb.getPredicateHops(), memoTable, transTable);
 
 			ArrayList<FedPlan> csbFedPlans = new ArrayList<>();
 			for (StatementBlock csb : wstmt.getBody())
-				enumerateStatementBlock(csb);
+				enumerateStatementBlock(csb, memoTable, transTable);
 
 			// Todo: 1. get(predict) # of Iterations
 			// Todo: 2. apply iteration weight to csbFedPlans
@@ -115,13 +120,13 @@ public class FederatedPlanCostEnumerator {
 			FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
 			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
 			for (StatementBlock csb : fstmt.getBody())
-				enumerateStatementBlock(csb);
+				enumerateStatementBlock(csb, memoTable, transTable);
 
 			// Todo: 1. Merge csbFedPlans
 		} else { //generic (last-level)
 			if( sb.getHops() != null )
 				for( Hop c : sb.getHops() )
-					enumerateFederatedPlanCost(c);
+				enumerateHopDAG(c, memoTable, transTable);
 		}
 	}
 
@@ -133,12 +138,11 @@ public class FederatedPlanCostEnumerator {
 	 * @param rootHop The root Hop node from which to start the plan enumeration.
 	 * @return The optimal FedPlan with the minimum cost for the entire DAG.
 	 */
-	public static FedPlan enumerateFederatedPlanCost(Hop rootHop) {
+	public static FedPlan enumerateHopDAG(Hop rootHop, FederatedMemoTable memoTable, Map<String, Long> transTable) {
 		// Create new memo table to store all plan variants
-		FederatedMemoTable memoTable = new FederatedMemoTable();
 
 		// Recursively enumerate all possible plans
-		enumerateFederatedPlanCost(rootHop, memoTable);
+		enumerateHop(rootHop, memoTable, transTable);
 
 		// Return the minimum cost plan for the root node
 		FedPlan optimalPlan = getMinCostRootFedPlan(rootHop.getHopID(), memoTable);
@@ -167,14 +171,29 @@ public class FederatedPlanCostEnumerator {
 	 * @param hop ?
 	 * @param memoTable ?
 	 */
-	private static void enumerateFederatedPlanCost(Hop hop, FederatedMemoTable memoTable) {
+	private static void enumerateHop(Hop hop, FederatedMemoTable memoTable, Map<String, Long> transTable) {
 		int numInputs = hop.getInput().size();
 
 		// Process all input nodes first if not already in memo table
 		for (Hop inputHop : hop.getInput()) {
 			if (!memoTable.contains(inputHop.getHopID(), FederatedOutput.FOUT) 
 				&& !memoTable.contains(inputHop.getHopID(), FederatedOutput.LOUT)) {
-					enumerateFederatedPlanCost(inputHop, memoTable);
+					enumerateHop(inputHop, memoTable, transTable);
+			}
+		}
+
+		if (hop instanceof DataOp
+				&& ((DataOp)hop).getOp()== Types.OpOpData.TRANSIENTWRITE
+				&& !(hop.getName().equals("__pred"))){
+			transTable.put(hop.getName(), hop.getHopID());
+		}
+
+		if (hop instanceof DataOp
+				&& !(hop.getName().equals("__pred"))){
+			if (((DataOp)hop).getOp()== Types.OpOpData.TRANSIENTWRITE){
+				transTable.put(hop.getName(), hop.getHopID());
+			} else if (((DataOp)hop).getOp()== Types.OpOpData.TRANSIENTREAD){
+				long rWriteHopID = transTable.get(hop.getName());
 			}
 		}
 

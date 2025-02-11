@@ -20,9 +20,15 @@
 package org.apache.sysds.test.component.federated;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 
+import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.test.functions.federated.algorithms.FederatedL2SVMTest;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
@@ -66,9 +72,6 @@ public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
 
 	@Test
 	public void testFederatedPlanCostEnumerator7() { runTest("FederatedPlanCostEnumeratorTest7.dml"); }
-
-	@Test
-	public void testFederatedPlanCostEnumerator8() { runTest("FederatedPlanCostEnumeratorTest4.dml"); }
 
 	// Todo: Need to write test scripts for the federated version
 	private void runTest( String scriptFilename ) {

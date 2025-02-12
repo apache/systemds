@@ -58,8 +58,8 @@ import org.apache.sysds.runtime.compress.lib.CLALibDecompress;
 import org.apache.sysds.runtime.compress.lib.CLALibMMChain;
 import org.apache.sysds.runtime.compress.lib.CLALibMatrixMult;
 import org.apache.sysds.runtime.compress.lib.CLALibMerge;
-import org.apache.sysds.runtime.compress.lib.CLALibReplace;
 import org.apache.sysds.runtime.compress.lib.CLALibReorg;
+import org.apache.sysds.runtime.compress.lib.CLALibReplace;
 import org.apache.sysds.runtime.compress.lib.CLALibReshape;
 import org.apache.sysds.runtime.compress.lib.CLALibRexpand;
 import org.apache.sysds.runtime.compress.lib.CLALibScalar;
@@ -1202,8 +1202,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public void sparseToDense(int k) {
-		// do nothing
+	public MatrixBlock sparseToDense(int k) {
+		return this; // do nothing
 	}
 
 	@Override

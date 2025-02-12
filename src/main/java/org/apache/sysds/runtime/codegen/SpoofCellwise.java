@@ -1078,13 +1078,12 @@ public abstract class SpoofCellwise extends SpoofOperator {
 				for(int k=apos; k<apos+alen; k++) {
 					//process zeros before current non-zero
 					if(!sparseSafe && (aix[k] - (lastj+1) >= 1)) {
-						c[k] *= genexec(0, b, scalars, m, n, rix+i, i, k);
-						zeroFlag[k] = true;
-					}
-					if(!zeroFlag[k]) {
-						//process current non-zero
-						lastj = aix[k];
-						c[aix[k]] *= genexec(avals[aix[k]], b, scalars, m, n, rix+i, i, lastj);
+						c[aix[k]] *= genexec(0, b, scalars, m, n, rix+i, i, k);
+						zeroFlag[aix[k]] = true;
+					} else if(aix[k] == 0) {
+						c[aix[k]] = genexec(avals[k], b, scalars, m, n, rix+i, i, k);
+					}else if(!zeroFlag[aix[k]]){
+						c[aix[k]] *= genexec(avals[k], b, scalars, m, n, rix+i, i, k);
 					}
 				}
 			}
@@ -1093,7 +1092,8 @@ public abstract class SpoofCellwise extends SpoofOperator {
 				for(int j=lastj+1; j<n; j++) {
 					if(i == 0) {
 						c[j] = genexec(0, b, scalars, m, n, rix+i, i, j);
-					} else {
+						zeroFlag[j] = true;
+					} else if(!zeroFlag[j]){
 						c[j] *= genexec(0, b, scalars, m, n, rix+i, i, j);
 					}
 				}

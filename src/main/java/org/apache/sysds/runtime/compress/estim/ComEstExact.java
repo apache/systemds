@@ -38,7 +38,7 @@ public class ComEstExact extends AComEst {
 
 	@Override
 	public CompressedSizeInfoColGroup getColGroupInfo(IColIndex colIndexes, int estimate, int nrUniqueUpperBound) {
-		final IEncode map = EncodingFactory.createFromMatrixBlock(_data, _cs.transposed, colIndexes);
+		final IEncode map = EncodingFactory.createFromMatrixBlock(_data, _cs.transposed, colIndexes, _cs.scaleFactors);
 		if(map instanceof EmptyEncoding)
 			return new CompressedSizeInfoColGroup(colIndexes, getNumRows(), CompressionType.EMPTY);
 		return getFacts(map, colIndexes);
@@ -59,7 +59,7 @@ public class ComEstExact extends AComEst {
 
 	protected CompressedSizeInfoColGroup getFacts(IEncode map, IColIndex colIndexes) {
 		final int _numRows = getNumRows();
-		final EstimationFactors em = map.extractFacts(_numRows, _data.getSparsity(), _data.getSparsity(), _cs);	
+		final EstimationFactors em = map.extractFacts(_numRows, _data.getSparsity(), _data.getSparsity(), _cs);
 		return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
 	}
 

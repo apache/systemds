@@ -303,6 +303,7 @@ public enum Opcodes {
 	PARTITION("partition", CPType.Partition),
 	COMPRESS(Compression.OPCODE, CPType.Compression),
 	DECOMPRESS(DeCompression.OPCODE, CPType.DeCompression),
+	QUANTIZE_COMPRESS("quantize_compress", CPType.QuantizeCompression),
 	SPOOF("spoof", CPType.SpoofFused),
 	PREFETCH("prefetch", CPType.Prefetch),
 	EVICT("_evict", CPType.EvictLineageCache),

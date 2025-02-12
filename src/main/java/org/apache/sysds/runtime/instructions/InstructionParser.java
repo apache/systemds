@@ -26,6 +26,8 @@ import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction.SPType;
 
+import com.esotericsoftware.minlog.Log;
+
 public class InstructionParser 
 {
 	public static Instruction parseSingleInstruction ( String str ) {
@@ -39,6 +41,7 @@ public class InstructionParser
 				CPType cptype = InstructionUtils.getCPType(str);
 				if( cptype == null )
 					throw new DMLRuntimeException("Unknown CP instruction: " + str);
+				Log.debug("Known CP instruction: " + str);
 				return CPInstructionParser.parseSingleInstruction (cptype, str);
 			case SPARK: 
 				SPType sptype = InstructionUtils.getSPType(str);
@@ -65,8 +68,10 @@ public class InstructionParser
 			return null;
 		String[] strlist = str.split(Instruction.INSTRUCTION_DELIM);
 		Instruction[] inst = new Instruction[strlist.length];
-		for ( int i=0; i < inst.length; i++ )
+		for ( int i=0; i < inst.length; i++ ) {
+			System.out.println(strlist[i]);
 			inst[i] = parseSingleInstruction ( strlist[i] );
+		}
 		return inst;
 	}
 }

@@ -50,6 +50,7 @@ import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
@@ -135,6 +136,25 @@ public class CompressedMatrixBlockFactory {
 
 	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, int k, WTreeRoot root) {
 		return compress(mb, k, new CompressionSettingsBuilder(), root);
+	}
+
+	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, MatrixBlock sf, int k, WTreeRoot root) {
+		// Handle only row vectors, as column-wise quantization is not allowed.
+		// The restriction is handled upstream
+		LOG.debug("Number of columns of sf " + sf.getNumColumns());
+		double[] scaleFactors = new double[sf.getNumRows()];
+		for (int i = 0; i < sf.getNumRows(); i++) {
+			scaleFactors[i] = sf.get(i,0);
+		}
+		CompressionSettingsBuilder builder = new CompressionSettingsBuilder().setScaleFactor(scaleFactors);
+		return compress(mb, k, builder, root);
+	}	
+
+	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, ScalarObject sf, int k, WTreeRoot root) {
+		double[] scaleFactors = new double[1];
+		scaleFactors[0] = sf.getDoubleValue();
+		CompressionSettingsBuilder builder = new CompressionSettingsBuilder().setScaleFactor(scaleFactors);
+		return compress(mb, k, builder, root);
 	}
 
 	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, int k, CostEstimatorBuilder csb) {
@@ -490,7 +510,26 @@ public class CompressedMatrixBlockFactory {
 			MatrixBlock ucmb = ((CompressedMatrixBlock) mb).getUncompressed("Decompressing for abort: ", k);
 			return new ImmutablePair<>(ucmb, _stats);
 		}
-		return new ImmutablePair<>(mb, _stats);
+		if(compSettings.scaleFactors == null) {
+			LOG.warn("Scale factors are null - returning original matrix.");
+			return new ImmutablePair<>(mb, _stats);
+		} else {
+			LOG.warn("Scale factors are present - returning scaled matrix.");
+			MatrixBlock scaledMb = new MatrixBlock(mb.getNumRows(), mb.getNumColumns(), mb.isInSparseFormat());
+			scaledMb.copy(mb);
+	
+			// Apply scaling and flooring 
+			// TODO: Use internal matrix prod 
+			for(int r = 0; r < mb.getNumRows(); r++) {
+				double scaleFactor = compSettings.scaleFactors.length == 1 ? compSettings.scaleFactors[0] : compSettings.scaleFactors[r];
+				for(int c = 0; c < mb.getNumColumns(); c++) {
+					double newValue = Math.floor(mb.get(r, c) * scaleFactor);
+					scaledMb.set(r, c, newValue);
+				}
+			}
+			scaledMb.recomputeNonZeros();
+			return new ImmutablePair<>(scaledMb, _stats);
+		}
 	}
 
 	private void logInit() {

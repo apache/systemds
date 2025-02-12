@@ -41,6 +41,8 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
+import scala.NotImplementedError;
+
 public interface EncodingFactory {
 
 	public static final Log LOG = LogFactory.getLog(EncodingFactory.class.getName());
@@ -56,10 +58,24 @@ public interface EncodingFactory {
 	public static IEncode createFromMatrixBlock(MatrixBlock m, boolean transposed, IColIndex rowCols) {
 		if(m.isEmpty())
 			return new EmptyEncoding();
-		else if(rowCols.size() == 1)
-			return createFromMatrixBlock(m, transposed, rowCols.get(0));
-		else
+		else if(rowCols.size() == 1) {
+			return createFromMatrixBlock(m, transposed, rowCols.get(0), null);
+		}
+		else {
 			return createWithReader(m, rowCols, transposed);
+		}
+	}
+
+	public static IEncode createFromMatrixBlock(MatrixBlock m, boolean transposed, IColIndex rowCols,
+		double[] scaleFactors) {
+		if(m.isEmpty())
+			return new EmptyEncoding();
+		else if(rowCols.size() == 1) {
+			return createFromMatrixBlock(m, transposed, rowCols.get(0), scaleFactors);
+		}
+		else {
+			return createWithReader(m, rowCols, transposed);
+		}
 	}
 
 	/**
@@ -115,8 +131,42 @@ public interface EncodingFactory {
 		}
 		else if(m.isInSparseFormat())
 			return createFromSparse(m, rowCol);
-		else
-			return createFromDense(m, rowCol);
+		else {
+			return createFromDense(m, rowCol, null);
+		}
+	}
+
+	/**
+	 * Create encoding of a single specific column inside the matrix input.
+	 * 
+	 * @param m          	The Matrix to encode a column from
+	 * @param transposed 	If the matrix is in transposed format.
+	 * @param rowCol     	The column index to encode
+	 * @param scaleFactors  For quantization-fused compression, scale factors per row, or a single value for entire matrix
+	 * @return An encoded format of the information of this column.
+	 */	
+	public static IEncode createFromMatrixBlock(MatrixBlock m, boolean transposed, int rowCol, double[] scaleFactors) {
+		if(m.isEmpty())
+			return new EmptyEncoding();
+		else if(transposed) {
+			if (scaleFactors != null) {
+				throw new NotImplementedError(); // TODO: handle quantization-fused compression
+			} else {
+				if(m.isInSparseFormat())
+				return createFromSparseTransposed(m, rowCol);
+			else
+				return createFromDenseTransposed(m, rowCol);
+			}
+		}
+		else if(m.isInSparseFormat()) {
+			if (scaleFactors != null) {
+				throw new NotImplementedError(); // TODO: handle quantization-fused compression
+			} else {
+				return createFromSparse(m, rowCol); 
+			}
+		} else {
+			return createFromDense(m, rowCol, scaleFactors);
+		}
 	}
 
 	public static IEncode create(ColGroupConst c) {
@@ -242,7 +292,7 @@ public interface EncodingFactory {
 		}
 	}
 
-	private static IEncode createFromDense(MatrixBlock m, int col) {
+	private static IEncode createFromDense(MatrixBlock m, int col, double[] scaleFactors) {
 		final DenseBlock db = m.getDenseBlock();
 		if(!db.isContiguous())
 			throw new NotImplementedException("Not Implemented non contiguous dense matrix encoding for sample");
@@ -253,9 +303,28 @@ public interface EncodingFactory {
 		final int end = off + nRow * nCol;
 		final double[] vals = m.getDenseBlockValues();
 
+		// Validate scaleFactors
+		boolean useSingleScalar = false;
+		if(scaleFactors != null) {
+			if(scaleFactors.length == 1) {
+				useSingleScalar = true;
+			}
+		}
+
 		// Iteration 1, make Count HashMap.
-		for(int i = off; i < end; i += nCol) // jump down through rows.
-			map.increment(vals[i]);
+		for(int i = off, r = 0; i < end; i += nCol, r++) {// jump down through rows.
+			double value = vals[i];
+
+			// Apply scaling and flooring if scaleFactors is not null
+			if(scaleFactors != null) {
+				double scaleFactor = useSingleScalar ? scaleFactors[0] : scaleFactors[r];
+				value = Math.floor(value * scaleFactor);
+			}
+
+			map.increment(value);
+
+		}
+
 		final int nUnique = map.size();
 		if(nUnique == 1)
 			return new ConstEncoding(m.getNumColumns());
@@ -269,9 +338,17 @@ public interface EncodingFactory {
 			final AMapToData d = MapToFactory.create(nV, nUnique - 1);
 			int di = 0;
 			for(int i = off, r = 0; i < end; i += nCol, r++) {
-				if(vals[i] != 0) {
+				double value = vals[i];
+
+				// Apply scaling and flooring if scaleFactors is not null
+				if(scaleFactors != null) {
+					double scaleFactor = useSingleScalar ? scaleFactors[0] : scaleFactors[r];
+					value = Math.floor(value * scaleFactor);
+				}
+
+				if(value != 0) {
 					offsets.appendValue(r);
-					d.set(di++, map.getId(vals[i]));
+					d.set(di++, map.getId(value));
 				}
 			}
 			if(di != nV)
@@ -285,9 +362,21 @@ public interface EncodingFactory {
 			// Allocate counts, and iterate once to replace counts with u ids
 
 			final AMapToData d = MapToFactory.create(nRow, nUnique);
+
 			// Iteration 2, make final map
-			for(int i = off, r = 0; i < end; i += nCol, r++)
-				d.set(r, map.getId(vals[i]));
+			for(int i = off, r = 0; i < end; i += nCol, r++) {
+				double value = vals[i];
+
+				// Apply scaling and flooring if scaleFactors is not null
+				if(scaleFactors != null) {
+					double scaleFactor = useSingleScalar ? scaleFactors[0] : scaleFactors[r];
+					value = Math.floor(value * scaleFactor);
+				}
+
+				d.set(r, map.getId(value));
+
+			}
+
 			return new DenseEncoding(d);
 		}
 	}

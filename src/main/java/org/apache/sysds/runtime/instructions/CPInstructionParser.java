@@ -196,7 +196,11 @@ public class CPInstructionParser extends InstructionParser {
 			
 			case DeCompression:
 				return DeCompressionCPInstruction.parseInstruction(str);
-				
+			
+			case QuantizeCompression:
+				LOG.debug("Parsing Quantize Compress instruction");
+				return CompressionCPInstruction.parseQuantizationFusedInstruction(str);				
+
 			case Local:
 				return LocalCPInstruction.parseInstruction(str);
 

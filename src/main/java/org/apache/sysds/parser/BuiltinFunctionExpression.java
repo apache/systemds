@@ -752,6 +752,31 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 				raiseValidateError("Compress/DeCompress instruction not allowed in dml script");
 			break;
 
+			case QUANTIZE_COMPRESS: // this is not used when with two arguments it seems
+				if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_QUANTIZE_COMPRESS_COMMAND) {
+					Expression expressionTwo = getSecondExpr();
+					checkNumParameters(getSecondExpr() != null ? 2 : 1);
+					checkMatrixFrameParam(getFirstExpr());
+					if(expressionTwo != null)
+						checkMatrixParam(getSecondExpr());
+
+					Identifier compressInput1 = getFirstExpr().getOutput();
+					// Identifier compressInput2 = getSecondExpr().getOutput();
+
+					DataIdentifier compressOutput = (DataIdentifier) getOutputs()[0];
+					compressOutput.setDataType(DataType.MATRIX);
+					compressOutput.setDimensions(compressInput1.getDim1(), compressInput1.getDim2());
+					compressOutput.setBlocksize(compressInput1.getBlocksize());
+					compressOutput.setValueType(compressInput1.getValueType());
+
+					DataIdentifier metaOutput = (DataIdentifier) getOutputs()[1];
+					metaOutput.setDataType(DataType.FRAME);
+					metaOutput.setDimensions(compressInput1.getDim1(), -1);
+				}
+				else
+					raiseValidateError("Quantize and compress instruction not allowed in dml script");
+				break;
+							
 		default: //always unconditional
 			raiseValidateError("Unknown Builtin Function opcode: " + _opcode, false);
 		}
@@ -2013,6 +2038,34 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			else
 				raiseValidateError("Compress/DeCompress instruction not allowed in dml script");
 			break;
+		case QUANTIZE_COMPRESS:
+			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_QUANTIZE_COMPRESS_COMMAND) {
+				checkNumParameters(2);
+				Expression firstExpr = getFirstExpr();
+				Expression secondExpr = getSecondExpr();
+
+				checkMatrixParam(getFirstExpr());
+
+				if(secondExpr != null) {
+					// check if scale factor is a scalar, vector or matrix
+					checkMatrixScalarParam(secondExpr);
+					// if scale factor is a vector or matrix, make sure it has an appropriate shape
+					if(secondExpr.getOutput().getDataType() != DataType.SCALAR) {
+						if(is1DMatrix(secondExpr)) {
+							long vectorLength = secondExpr.getOutput().getDim1();
+							if(vectorLength != firstExpr.getOutput().getDim1()) {
+								raiseValidateError(
+									"The length of the row-wise scale factor vector must match the number of rows in the matrix.");
+							}
+						}
+						else {
+							checkMatchingDimensions(firstExpr, secondExpr);
+						}
+					}
+				}
+			}
+			break;
+
 		case ROW_COUNT_DISTINCT:
 			checkNumParameters(1);
 			checkMatrixParam(getFirstExpr());

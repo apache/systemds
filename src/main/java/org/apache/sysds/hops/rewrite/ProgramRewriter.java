@@ -90,7 +90,9 @@ public class ProgramRewriter{
 			if( OptimizerUtils.ALLOW_AUTO_VECTORIZATION )
 				_dagRuleSet.add( new RewriteIndexingVectorization()              ); //dependency: cse, simplifications
 			_dagRuleSet.add( new RewriteInjectSparkPReadCheckpointing()          ); //dependency: reblock
-			
+			if( OptimizerUtils.ALLOW_QUANTIZE_COMPRESS_REWRITE )
+				_dagRuleSet.add( new RewriteQuantizationFusedCompression()  	 );
+
 			//add statement block rewrite rules
 			if( OptimizerUtils.ALLOW_BRANCH_REMOVAL )
 				_sbRuleSet.add(  new RewriteRemoveUnnecessaryBranches()          ); //dependency: constant folding

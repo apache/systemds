@@ -19,7 +19,9 @@
 
 package org.apache.sysds.hops.cost;
 
+import org.apache.sysds.common.InstructionType;
 import org.apache.sysds.common.Opcodes;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
@@ -95,7 +97,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		//write time caching
 		double wtime = 0;
 		//double wtime = getFSWriteTime( vs[2]._rlen, vs[2]._clen, (vs[2]._nnz<0)? 1.0:(double)vs[2]._nnz/vs[2]._rlen/vs[2]._clen );
-		if( inst instanceof VariableCPInstruction && ((VariableCPInstruction)inst).getOpcode().equals("write") )
+		if( inst instanceof VariableCPInstruction && ((VariableCPInstruction)inst).getOpcode().equals(Opcodes.WRITE.toString()) )
 			wtime += getHDFSWriteTime(vs[2].getRows(), vs[2].getCols(), vs[2].getSparsity(), ((VariableCPInstruction)inst).getInput3().getName() );
 		
 		if( LOG.isDebugEnabled() && wtime!=0 ) {
@@ -278,7 +280,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		
 		//NOTE: all instruction types that are equivalent in CP and MR are only
 		//included in CP to prevent redundancy
-		CPType cptype = Opcodes.getCPTypeByOpcode(optype);
+		InstructionType cptype = Opcodes.getTypeByOpcode(optype, Types.ExecType.CP);
 		if( cptype != null ) //for CP Ops and equivalent MR ops
 		{
 			//general approach: count of floating point *, /, +, -, ^, builtin ;
@@ -429,7 +431,7 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 					        ((rightSparse) ? d2m * d2n * d2s : d2m * d2n ));
 				
 				case Variable: //opcodes: assignvar, cpvar, rmvar, rmfilevar, assignvarwithfile, attachfiletovar, valuepick, iqsize, read, write, createvar, setfilename, castAsMatrix
-					if( optype.equals("write") ){
+					if( optype.equals(Opcodes.WRITE.toString()) ){
 						FileFormat fmt = FileFormat.safeValueOf(args[0]);
 						boolean text = fmt.isTextFormat();
 						double xwrite =  text ? DEFAULT_NFLOP_TEXT_IO : DEFAULT_NFLOP_CP;

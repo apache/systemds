@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.spark;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -58,7 +59,7 @@ public class AppendGSPInstruction extends AppendSPInstruction {
 		CPOperand out = new CPOperand(parts[5]);
 		boolean cbind = Boolean.parseBoolean(parts[6]);
 		
-		if(!opcode.equalsIgnoreCase("gappend"))
+		if(!opcode.equalsIgnoreCase(Opcodes.GAPPEND.toString()))
 			throw new DMLRuntimeException("Unknown opcode while parsing a AppendGSPInstruction: " + str);
 		
 		return new AppendGSPInstruction(

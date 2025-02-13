@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.quaternary;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -242,7 +243,7 @@ public class WeightedUnaryMatrixMultTest extends AutomatedTestBase
 				Assert.assertTrue("Missing opcode wumm", Statistics.getCPHeavyHitterOpCodes().contains(WeightedUnaryMM.OPCODE_CP));
 			}
 			else if( instType == ExecType.SPARK && rewrites ) {
-				String opcode = Instruction.SP_INST_PREFIX + ((rep)?WeightedUnaryMMR.OPCODE:WeightedUnaryMM.OPCODE);
+				String opcode = Instruction.SP_INST_PREFIX + ((rep)? Opcodes.WEIGHTEDUNARYMMR.toString():Opcodes.WEIGHTEDUNARYMM.toString());
 				Assert.assertTrue("Missing opcode sp_wumm", Statistics.getCPHeavyHitterOpCodes().contains(opcode) );
 			}
 		}

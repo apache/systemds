@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.quaternary;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -346,7 +347,7 @@ public class WeightedSquaredLossTest extends AutomatedTestBase {
 				boolean noWeights = testname.equals(TEST_NAME3) || testname.equals(TEST_NAME6) ||
 					testname.equals(TEST_NAME7);
 				String opcode = Instruction.SP_INST_PREFIX +
-					((rep || !noWeights) ? WeightedSquaredLossR.OPCODE : WeightedSquaredLoss.OPCODE);
+					((rep || !noWeights) ? Opcodes.WEIGHTEDSQUAREDLOSSR.toString() : Opcodes.WEIGHTEDSQUAREDLOSS.toString());
 				Assert.assertTrue("Rewrite not applied.", Statistics.getCPHeavyHitterOpCodes().contains(opcode));
 			}
 		}

@@ -23,6 +23,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -53,17 +54,17 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 	private CumulativeOffsetSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, double init, boolean broadcast, String opcode, String istr) {
 		super(SPType.CumsumOffset, op, in1, in2, out, opcode, istr);
 
-		if ("bcumoffk+".equals(opcode))
+		if (Opcodes.BCUMOFFKP.toString().equals(opcode))
 			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucumk+"));
-		else if ("bcumoff*".equals(opcode))
+		else if (Opcodes.BCUMOFFM.toString().equals(opcode))
 			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucum*"));
-		else if ("bcumoff+*".equals(opcode)) {
+		else if (Opcodes.BCUMOFFPM.toString().equals(opcode)) {
 			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucumk+*"));
 			_cumsumprod = true;
 		}
-		else if ("bcumoffmin".equals(opcode))
+		else if (Opcodes.BCUMOFFMIN.toString().equals(opcode))
 			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucummin"));
-		else if ("bcumoffmax".equals(opcode))
+		else if (Opcodes.BCUMOFFMAX.toString().equals(opcode))
 			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucummax"));
 
 		_initValue = init;

@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -158,7 +159,7 @@ public class QuaternaryWSLossFEDInstruction extends QuaternaryFEDInstruction {
 					getTID(), true, frSliced.toArray(new FederatedRequest[0][]), frAll);
 
 			// aggregate partial results from federated responses
-			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
+			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAKP.toString());
 			ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, response));
 		}
 		else {

@@ -22,6 +22,7 @@ package org.apache.sysds.lops;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 import static org.apache.sysds.common.Types.DataType;
@@ -58,7 +59,7 @@ public class Federated extends Lop {
 	public String getInstructions(String type, String addresses, String ranges, String output) {
 		StringBuilder sb = new StringBuilder("FED");
 		sb.append(OPERAND_DELIMITOR);
-		sb.append("fedinit");
+		sb.append(Opcodes.FEDINIT);
 		sb.append(OPERAND_DELIMITOR);
 		sb.append(_type.prepScalarInputOperand(type));
 		sb.append(OPERAND_DELIMITOR);

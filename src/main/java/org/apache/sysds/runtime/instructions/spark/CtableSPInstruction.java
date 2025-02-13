@@ -23,6 +23,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.lops.Ctable;
@@ -74,10 +75,10 @@ public class CtableSPInstruction extends ComputationSPInstruction {
 		String opcode = parts[0];
 		
 		//handle opcode
-		if ( !(opcode.equalsIgnoreCase("ctable") || opcode.equalsIgnoreCase("ctableexpand")) ) {
+		if ( !(opcode.equalsIgnoreCase(Opcodes.CTABLE.toString()) || opcode.equalsIgnoreCase(Opcodes.CTABLEEXPAND.toString())) ) {
 			throw new DMLRuntimeException("Unexpected opcode in TertiarySPInstruction: " + inst);
 		}
-		boolean isExpand = opcode.equalsIgnoreCase("ctableexpand");
+		boolean isExpand = opcode.equalsIgnoreCase(Opcodes.CTABLEEXPAND.toString());
 		
 		//handle operands
 		CPOperand in1 = new CPOperand(parts[1]);

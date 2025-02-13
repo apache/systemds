@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
@@ -88,8 +89,8 @@ public abstract class UnaryFEDInstruction extends ComputationFEDInstruction {
 			}
 		}
 		else if(inst instanceof ReorgCPInstruction &&
-				(inst.getOpcode().equals("r'") || inst.getOpcode().equals("rdiag")
-						|| inst.getOpcode().equals("rev") || inst.getOpcode().equals("roll"))) {
+				(inst.getOpcode().equals(Opcodes.TRANSPOSE.toString()) || inst.getOpcode().equals(Opcodes.DIAG.toString())
+						|| inst.getOpcode().equals(Opcodes.REV.toString()) || inst.getOpcode().equals(Opcodes.ROLL.toString()))) {
 			ReorgCPInstruction rinst = (ReorgCPInstruction) inst;
 			CacheableData<?> mo = ec.getCacheableData(rinst.input1);
 
@@ -158,8 +159,8 @@ public abstract class UnaryFEDInstruction extends ComputationFEDInstruction {
 					return AggregateUnaryFEDInstruction.parseInstruction(auinstruction);
 		}
 		else if(inst instanceof ReorgSPInstruction &&
-				(inst.getOpcode().equals("r'") || inst.getOpcode().equals("rdiag")
-						|| inst.getOpcode().equals("rev") || inst.getOpcode().equals("roll"))) {
+				(inst.getOpcode().equals(Opcodes.TRANSPOSE.toString()) || inst.getOpcode().equals(Opcodes.DIAG.toString())
+						|| inst.getOpcode().equals(Opcodes.REV.toString()) || inst.getOpcode().equals(Opcodes.ROLL.toString()))) {
 			ReorgSPInstruction rinst = (ReorgSPInstruction) inst;
 			CacheableData<?> mo = ec.getCacheableData(rinst.input1);
 			if((mo instanceof MatrixObject || mo instanceof FrameObject) && mo.isFederated() &&
@@ -176,9 +177,9 @@ public abstract class UnaryFEDInstruction extends ComputationFEDInstruction {
 		else if(inst.input1 != null && inst.input1.isMatrix() && ec.containsVariable(inst.input1)) {
 			MatrixObject mo1 = ec.getMatrixObject(inst.input1);
 			if(mo1.isFederatedExcept(FType.BROADCAST)) {
-				if(inst.getOpcode().equalsIgnoreCase("cm"))
+				if(inst.getOpcode().equalsIgnoreCase(Opcodes.CM.toString()))
 					return CentralMomentFEDInstruction.parseInstruction((CentralMomentSPInstruction) inst);
-				else if(inst.getOpcode().equalsIgnoreCase("qsort")) {
+				else if(inst.getOpcode().equalsIgnoreCase(Opcodes.QSORT.toString())) {
 					if(mo1.getFedMapping().getFederatedRanges().length == 1)
 						return QuantileSortFEDInstruction.parseInstruction(inst.getInstructionString(), false);
 				}

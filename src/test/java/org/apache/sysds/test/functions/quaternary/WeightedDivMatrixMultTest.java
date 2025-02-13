@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.quaternary;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -475,7 +476,7 @@ public class WeightedDivMatrixMultTest extends AutomatedTestBase
 			}
 			else if( instType == ExecType.SPARK && rewrites ) {
 				boolean reduce = rep || testname.equals(TEST_NAME8) || testname.equals(TEST_NAME9);
-				String opcode = Instruction.SP_INST_PREFIX + ((reduce)?WeightedDivMMR.OPCODE:WeightedDivMM.OPCODE);
+				String opcode = Instruction.SP_INST_PREFIX + ((reduce)? Opcodes.WEIGHTEDDIVMMR.toString():Opcodes.WEIGHTEDDIVMM.toString());
 				Assert.assertTrue("Missing opcode sp_wdivmm", Statistics.getCPHeavyHitterOpCodes().contains(opcode) );
 			}
 		}

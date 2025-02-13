@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.codegenalg.parttwo;
 
 import java.io.File;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
@@ -254,7 +255,7 @@ public class AlgorithmDatagen extends AutomatedTestBase
 			
 			runTest(true, false, null, -1); 
 
-			Assert.assertTrue(heavyHittersContainsSubString("spoof")
+			Assert.assertTrue(heavyHittersContainsSubString(Opcodes.SPOOF.toString())
 				|| heavyHittersContainsSubString("sp_spoof"));
 		}
 		finally {

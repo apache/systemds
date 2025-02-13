@@ -25,6 +25,7 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -497,7 +498,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 
 		protected void aggResult(ExecutionContext ec, Future<FederatedResponse>[] response,
 			FederationMap fedMap) {
-			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
+			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAKP.toString());
 			switch(_outProdType) {
 				case LEFT_OUTER_PRODUCT:
 				case RIGHT_OUTER_PRODUCT:

@@ -33,7 +33,7 @@ import scala.Tuple2;
 
 public class BinaryFrameFrameSPInstruction extends BinarySPInstruction {
 	protected BinaryFrameFrameSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
-			String opcode, String istr) {
+											String opcode, String istr) {
 		super(SPType.Binary, op, in1, in2, out, opcode, istr);
 	}
 
@@ -45,7 +45,7 @@ public class BinaryFrameFrameSPInstruction extends BinarySPInstruction {
 		// Get input RDDs
 		JavaPairRDD<Long, FrameBlock> in1 = sec.getFrameBinaryBlockRDDHandleForVariable(input1.getName());
 		JavaPairRDD<Long, FrameBlock> out = null;
-		
+
 		if(getOpcode().equals(Opcodes.DROPINVALIDTYPE.toString())) {
 			// get schema frame-block
 			Broadcast<FrameBlock> fb = sec.getSparkContext().broadcast(sec.getFrameInput(input2.getName()));
@@ -60,6 +60,11 @@ public class BinaryFrameFrameSPInstruction extends BinarySPInstruction {
 			// Attach result frame with FrameBlock associated with output_name
 			sec.releaseFrameInput(input2.getName());
 		}
+		else if(getOpcode().equals(Opcodes.APPLYSCHEMA.toString())){
+			Broadcast<FrameBlock> fb = sec.getSparkContext().broadcast(sec.getFrameInput(input2.getName()));
+			out = in1.mapValues(new applySchema(fb.getValue()));
+			sec.releaseFrameInput(input2.getName());
+		}
 		else {
 			JavaPairRDD<Long, FrameBlock> in2 = sec.getFrameBinaryBlockRDDHandleForVariable(input2.getName());
 			// create output frame
@@ -67,11 +72,13 @@ public class BinaryFrameFrameSPInstruction extends BinarySPInstruction {
 			// check for binary operations
 			out = in1.join(in2).mapValues(new FrameComparison(dop));
 		}
-		
+
 		//set output RDD and maintain dependencies
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
-		if( !getOpcode().equals(Opcodes.DROPINVALIDTYPE.toString())  && !getOpcode().equals(Opcodes.VALUESWAP.toString()))
+		if(!getOpcode().equals(Opcodes.DROPINVALIDTYPE.toString()) && //
+				!getOpcode().equals(Opcodes.VALUESWAP.toString()) && //
+				!getOpcode().equals(Opcodes.APPLYSCHEMA.toString()))
 			sec.addLineageRDD(output.getName(), input2.getName());
 	}
 
@@ -115,6 +122,22 @@ public class BinaryFrameFrameSPInstruction extends BinarySPInstruction {
 		@Override
 		public FrameBlock call(FrameBlock arg0) throws Exception {
 			return arg0.valueSwap(schema_frame);
+		}
+	}
+
+
+	private static class applySchema implements Function<FrameBlock, FrameBlock>{
+		private static final long serialVersionUID = 58504021316402L;
+
+		private FrameBlock schema;
+
+		public applySchema(FrameBlock schema ) {
+			this.schema = schema;
+		}
+
+		@Override
+		public FrameBlock call(FrameBlock arg0) throws Exception {
+			return arg0.applySchema(schema);
 		}
 	}
 }

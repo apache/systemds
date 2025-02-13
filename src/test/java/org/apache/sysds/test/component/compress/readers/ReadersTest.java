@@ -19,18 +19,22 @@
 
 package org.apache.sysds.test.component.compress.readers;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
+import org.apache.sysds.runtime.compress.readers.ReaderColumnSelectionQuantized;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
+import java.util.Arrays;
 
 public class ReadersTest {
 
@@ -83,4 +87,45 @@ public class ReadersTest {
 		mb.allocateDenseBlock();
 		ReaderColumnSelection.createReader(mb, ColIndexFactory.create(2), false, 10, 9);
 	}
+
+	@Test
+    public void testReaderColumnSelectionQuantized() {
+
+		// 4.0 0.0
+		// 3.0 0.0
+		// 0.0 5.0
+
+		MatrixBlock mb = new MatrixBlock(3, 2, false);
+		mb.allocateDenseBlock();
+		mb.set(0, 0, 4);
+		mb.set(1, 0, 3);
+		mb.set(2, 1, 5);
+
+		double[][] scaleFactorCases = {
+			{0.3},                 // Scalar case
+			{0.3, 0.4, 0.5}        // Per-row scale factor
+		};
+	
+		for (double[] scaleFactors : scaleFactorCases) {
+			ReaderColumnSelection r = ReaderColumnSelectionQuantized.createReader(
+				mb, ColIndexFactory.create(2), false, scaleFactors);
+	
+			double[][] expectedValues = {
+				{ Math.floor(4 * (scaleFactors.length > 1 ? scaleFactors[0] : scaleFactors[0])), Math.floor(0.0 * (scaleFactors.length > 1 ? scaleFactors[0] : scaleFactors[0])) },
+				{ Math.floor(3 * (scaleFactors.length > 1 ? scaleFactors[1] : scaleFactors[0])), Math.floor(0.0 * (scaleFactors.length > 1 ? scaleFactors[1] : scaleFactors[0])) },
+				{ Math.floor(0.0 * (scaleFactors.length > 1 ? scaleFactors[2] : scaleFactors[0])), Math.floor(5 * (scaleFactors.length > 1 ? scaleFactors[2] : scaleFactors[0])) }
+			};
+	
+			DblArray d;
+			int rowIndex = 0;
+			while ((d = r.nextRow()) != null) {
+				assertNotNull("Row " + rowIndex + " should not be null", d);
+				assertArrayEquals("Mismatch for scaleFactors " + Arrays.toString(scaleFactors),
+					expectedValues[rowIndex], d.getData(), 0.0);
+				rowIndex++;
+			}
+		}
+	}
+	
+
 }

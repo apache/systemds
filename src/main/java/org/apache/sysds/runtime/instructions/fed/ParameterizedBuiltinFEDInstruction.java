@@ -36,6 +36,7 @@ import java.util.zip.Checksum;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
@@ -417,8 +418,8 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 				return null;
 			});
 			// find empty in matrix
-			BinaryOperator plus = InstructionUtils.parseBinaryOperator("+");
-			BinaryOperator greater = InstructionUtils.parseBinaryOperator(">");
+			BinaryOperator plus = InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString());
+			BinaryOperator greater = InstructionUtils.parseBinaryOperator(Opcodes.GREATER.toString());
 			s = colSums.get(0);
 			for(int i = 1; i < colSums.size(); i++)
 				s = s.binaryOperationsInPlace(plus, colSums.get(i));
@@ -579,8 +580,8 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 				return null;
 			});
 			// find empty in matrix
-			BinaryOperator plus = InstructionUtils.parseBinaryOperator("+");
-			BinaryOperator greater = InstructionUtils.parseBinaryOperator(">");
+			BinaryOperator plus = InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString());
+			BinaryOperator greater = InstructionUtils.parseBinaryOperator(Opcodes.GREATER.toString());
 			s = colSums.get(0);
 			for(int i = 1; i < colSums.size(); i++)
 				s = s.binaryOperationsInPlace(plus, colSums.get(i));
@@ -994,8 +995,8 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
 			MatrixBlock mb = ((MatrixObject) data[0]).acquireReadAndRelease();
 
-			BinaryOperator plus = InstructionUtils.parseBinaryOperator("+");
-			BinaryOperator greater = InstructionUtils.parseBinaryOperator(">");
+			BinaryOperator plus = InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString());
+			BinaryOperator greater = InstructionUtils.parseBinaryOperator(Opcodes.GREATER.toString());
 			int len = _marginRow ? mb.getNumColumns() : mb.getNumRows();
 			MatrixBlock tmp1 = _marginRow ? mb.slice(0, mb.getNumRows() - 1, 0, 0, new MatrixBlock()) : mb
 				.slice(0, 0, 0, mb.getNumColumns() - 1, new MatrixBlock());

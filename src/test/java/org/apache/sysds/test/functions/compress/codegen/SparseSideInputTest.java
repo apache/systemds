@@ -26,6 +26,7 @@ import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -177,7 +178,7 @@ public class SparseSideInputTest extends AutomatedTestBase {
 			HashMap<CellIndex, Double> dmlResult = readDMLMatrixFromOutputDir("R");
 			HashMap<CellIndex, Double> rResult = readRMatrixFromExpectedDir("R");
 			TestUtils.compareMatrices(dmlResult, rResult, eps, "Stat-DML", "Stat-R");
-			assertTrue(heavyHittersContainsSubString("spoof") || heavyHittersContainsSubString("sp_spoof"));
+			assertTrue(heavyHittersContainsSubString(Opcodes.SPOOF.toString()) || heavyHittersContainsSubString("sp_spoof"));
 			if(compress)
 				assertTrue(heavyHittersContainsSubString("compress") || heavyHittersContainsSubString("sp_compress"));
 		}

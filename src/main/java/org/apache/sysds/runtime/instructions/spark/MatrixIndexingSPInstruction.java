@@ -25,6 +25,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.rdd.PartitionPruningRDD;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.LeftIndex;
@@ -102,7 +103,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 			throw new DMLRuntimeException("Index range out of bounds: "+ixrange+" "+mcIn);
 		
 		//right indexing
-		if( opcode.equalsIgnoreCase(RightIndex.OPCODE) )
+		if( opcode.equalsIgnoreCase(Opcodes.RIGHT_INDEX.toString()) )
 		{
 			//update and check output dimensions
 			DataCharacteristics mcOut = output.isScalar() ? 
@@ -137,7 +138,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 			}
 		}
 		//left indexing
-		else if ( opcode.equalsIgnoreCase(LeftIndex.OPCODE) || opcode.equalsIgnoreCase("mapLeftIndex"))
+		else if ( opcode.equalsIgnoreCase(Opcodes.LEFT_INDEX.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPLEFTINDEX.toString()))
 		{
 			String rddVar = (_type==LixCacheType.LEFT) ? input2.getName() : input1.getName();
 			String bcVar = (_type==LixCacheType.LEFT) ? input1.getName() : input2.getName();
@@ -163,7 +164,7 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 				throw new DMLRuntimeException("Invalid index range of leftindexing: ["+rl+":"+ru+","+cl+":"+cu+"] vs ["+mcRight.getRows()+"x"+mcRight.getCols()+"]." );
 			}
 			
-			if(opcode.equalsIgnoreCase("mapLeftIndex")) 
+			if(opcode.equalsIgnoreCase(Opcodes.MAPLEFTINDEX.toString()))
 			{
 				broadcastIn2 = sec.getBroadcastForVariable( bcVar );
 				

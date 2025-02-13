@@ -206,7 +206,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			return VariableOperationCode.CastAsScalarVariable;
 		else if ( str.equalsIgnoreCase(Opcodes.CAST_AS_MATRIX.toString()) )
 			return VariableOperationCode.CastAsMatrixVariable;
-		else if ( str.equalsIgnoreCase(OpOp1.CAST_AS_FRAME.toString()) 
+		else if ( str.equalsIgnoreCase(Opcodes.CAST_AS_FRAME.toString())
 			|| str.equalsIgnoreCase(Opcodes.CAST_AS_FRAME_VAR.toString()))
 			return VariableOperationCode.CastAsFrameVariable;
 		else if ( str.equalsIgnoreCase(Opcodes.CAST_AS_LIST.toString()) )

@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.Arrays;
 import java.util.Collection;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -114,7 +115,7 @@ public class FedFullReuseTest extends AutomatedTestBase {
 			"-nvargs", "X1=" + input("X1"), "X2=" + input("X2"), "Y1=" + input("Y1"),
 			"Y2=" + input("Y2"), "Z=" + expected("Z")};
 		runTest(true, false, null, -1);
-		long mmCount = Statistics.getCPHeavyHitterCount("ba+*");
+		long mmCount = Statistics.getCPHeavyHitterCount(Opcodes.MMULT.toString());
 
 		// Run actual dml script with federated matrix
 		// The fed workers reuse ba+*
@@ -125,7 +126,7 @@ public class FedFullReuseTest extends AutomatedTestBase {
 			"Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
 			"Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
 		runTest(true, false, null, -1);
-		long mmCount_fed = Statistics.getCPHeavyHitterCount("ba+*");
+		long mmCount_fed = Statistics.getCPHeavyHitterCount(Opcodes.MMULT.toString());
 		long fedMMCount = Statistics.getCPHeavyHitterCount("fed_ba+*");
 
 		// compare results 

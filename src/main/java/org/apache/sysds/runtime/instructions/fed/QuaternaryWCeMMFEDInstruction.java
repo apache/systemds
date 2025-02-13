@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
 import org.apache.sysds.runtime.instructions.spark.QuaternarySPInstruction;
@@ -148,7 +149,7 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
 				fedMap.execute(getTID(), true, frAll) : fedMap.execute(getTID(), true, frSliced, frAll);
 			
 			//aggregate partial results from federated responses
-			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
+			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAKP.toString());
 			ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, response));
 		}
 		else {

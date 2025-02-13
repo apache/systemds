@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.fed;
 
 import java.util.concurrent.Future;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -80,7 +81,7 @@ public class AggregateTernaryFEDInstruction extends ComputationFEDInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
-		if(opcode.equalsIgnoreCase("tak+*") || opcode.equalsIgnoreCase("tack+*")) {
+		if(opcode.equalsIgnoreCase(Opcodes.TAKPM.toString()) || opcode.equalsIgnoreCase(Opcodes.TACKPM.toString())) {
 			InstructionUtils.checkNumFields(parts, 5, 6);
 
 			CPOperand in1 = new CPOperand(parts[1]);
@@ -115,11 +116,11 @@ public class AggregateTernaryFEDInstruction extends ComputationFEDInstruction {
 			Future<FederatedResponse>[] response = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3);
 			
 			if(output.getDataType().isScalar()) {
-				AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
+				AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAKP.toString());
 				ec.setScalarOutput(output.getName(), FederationUtils.aggScalar(aop, response, mo1.getFedMapping()));
 			}
 			else {
-				AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator(getOpcode().equals("fed_tak+*") ? "uak+" : "uack+");
+				AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator(getOpcode().equals("fed_tak+*") ? Opcodes.UAKP.toString() : Opcodes.UACKP.toString());
 				ec.setMatrixOutput(output.getName(), FederationUtils.aggMatrix(aop, response, mo1.getFedMapping()));
 			}
 		}

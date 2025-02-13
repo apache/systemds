@@ -23,6 +23,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.lops.WeightedCrossEntropy;
 import org.apache.sysds.lops.WeightedCrossEntropy.WCeMMType;
 import org.apache.sysds.lops.WeightedDivMM;
@@ -80,10 +81,10 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 		}
 		
 		//instruction parsing
-		if(    WeightedSquaredLoss.OPCODE.equalsIgnoreCase(opcode)    //wsloss
-			|| WeightedSquaredLossR.OPCODE.equalsIgnoreCase(opcode) )
+		if(    Opcodes.WEIGHTEDSQUAREDLOSS.toString().equalsIgnoreCase(opcode)    //wsloss
+			|| Opcodes.WEIGHTEDSQUAREDLOSSR.toString().equalsIgnoreCase(opcode) )
 		{
-			boolean isRed = WeightedSquaredLossR.OPCODE.equalsIgnoreCase(opcode);
+			boolean isRed = Opcodes.WEIGHTEDSQUAREDLOSSR.toString().equalsIgnoreCase(opcode);
 			
 			//check number of fields (4 inputs, output, type)
 			if( isRed )
@@ -104,10 +105,10 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 			
 			return new QuaternarySPInstruction(new QuaternaryOperator(wtype), in1, in2, in3, in4, out, cacheU, cacheV, opcode, str);	
 		}
-		else if(    WeightedUnaryMM.OPCODE.equalsIgnoreCase(opcode)    //wumm
-			|| WeightedUnaryMMR.OPCODE.equalsIgnoreCase(opcode) )
+		else if(    Opcodes.WEIGHTEDUNARYMM.toString().equalsIgnoreCase(opcode)    //wumm
+			|| Opcodes.WEIGHTEDUNARYMMR.toString().equalsIgnoreCase(opcode) )
 		{
-			boolean isRed = WeightedUnaryMMR.OPCODE.equalsIgnoreCase(opcode);
+			boolean isRed = Opcodes.WEIGHTEDUNARYMMR.toString().equalsIgnoreCase(opcode);
 			
 			//check number of fields (4 inputs, output, type)
 			if( isRed )
@@ -128,8 +129,8 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 			
 			return new QuaternarySPInstruction(new QuaternaryOperator(wtype, uopcode), in1, in2, in3, null, out, cacheU, cacheV, opcode, str);	
 		}
-		else if(    WeightedDivMM.OPCODE.equalsIgnoreCase(opcode)    //wdivmm
-				|| WeightedDivMMR.OPCODE.equalsIgnoreCase(opcode) )
+		else if(    Opcodes.WEIGHTEDDIVMM.toString().equalsIgnoreCase(opcode)    //wdivmm
+				|| Opcodes.WEIGHTEDDIVMMR.toString().equalsIgnoreCase(opcode) )
 		{
 			boolean isRed = opcode.startsWith("red");
 			
@@ -156,7 +157,7 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 		else //map/redwsigmoid, map/redwcemm
 		{
 			boolean isRed = opcode.startsWith("red");
-			int addInput4 = (opcode.endsWith("wcemm")) ? 1 : 0;
+			int addInput4 = (opcode.endsWith(Opcodes.WCEMM.toString())) ? 1 : 0;
 			
 			//check number of fields (3 or 4 inputs, output, type)
 			if( isRed )
@@ -173,9 +174,9 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 			boolean cacheU = isRed ? Boolean.parseBoolean(parts[6 + addInput4]) : true;
 			boolean cacheV = isRed ? Boolean.parseBoolean(parts[7 + addInput4]) : true;
 		
-			if( opcode.endsWith("wsigmoid") )
+			if( opcode.endsWith(Opcodes.WSIGMOID.toString()) )
 				return new QuaternarySPInstruction(new QuaternaryOperator(WSigmoidType.valueOf(parts[5])), in1, in2, in3, null, out, cacheU, cacheV, opcode, str);
-			else if( opcode.endsWith("wcemm") ) {
+			else if( opcode.endsWith(Opcodes.WCEMM.toString()) ) {
 				CPOperand in4 = new CPOperand(parts[4]);
 				final WCeMMType wt = WCeMMType.valueOf(parts[6]);
 				QuaternaryOperator qop = (wt.hasFourInputs() ? new QuaternaryOperator(wt, Double.parseDouble(in4.getName())) : new QuaternaryOperator(wt));
@@ -205,11 +206,11 @@ public class QuaternarySPInstruction extends ComputationSPInstruction {
 		}
 		
 		//map-side only operation (one rdd input, two broadcasts)
-		if(    WeightedSquaredLoss.OPCODE.equalsIgnoreCase(getOpcode())
-			|| WeightedSigmoid.OPCODE.equalsIgnoreCase(getOpcode())
-			|| WeightedDivMM.OPCODE.equalsIgnoreCase(getOpcode()) 
-			|| WeightedCrossEntropy.OPCODE.equalsIgnoreCase(getOpcode())
-			|| WeightedUnaryMM.OPCODE.equalsIgnoreCase(getOpcode())) 
+		if(    Opcodes.WEIGHTEDSQUAREDLOSS.toString().equalsIgnoreCase(getOpcode())
+			|| Opcodes.WEIGHTEDSIGMOID.toString().equalsIgnoreCase(getOpcode())
+			|| Opcodes.WEIGHTEDDIVMM.toString().equalsIgnoreCase(getOpcode())
+			|| Opcodes.WEIGHTEDCROSSENTROPY.toString().equalsIgnoreCase(getOpcode())
+			|| Opcodes.WEIGHTEDUNARYMM.toString().equalsIgnoreCase(getOpcode()))
 		{
 			PartitionedBroadcast<MatrixBlock> bc1 = sec.getBroadcastForVariable( input2.getName() );
 			PartitionedBroadcast<MatrixBlock> bc2 = sec.getBroadcastForVariable( input3.getName() );

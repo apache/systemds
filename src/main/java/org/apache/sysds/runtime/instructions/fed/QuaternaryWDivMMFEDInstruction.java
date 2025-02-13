@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
 import org.apache.sysds.runtime.instructions.spark.QuaternarySPInstruction;
@@ -194,7 +195,7 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 			if((wdivmm_type.isLeft() && X.isFederated(FType.ROW))
 				|| (wdivmm_type.isRight() && X.isFederated(FType.COL))) { // local aggregation
 				// aggregate partial results from federated responses
-				AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
+				AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAKP.toString());
 				ec.setMatrixOutput(output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
 			}
 			else if(wdivmm_type.isLeft() || wdivmm_type.isRight() || wdivmm_type.isBasic()) {

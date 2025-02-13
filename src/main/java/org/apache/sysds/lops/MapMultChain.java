@@ -30,7 +30,7 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 public class MapMultChain extends Lop 
 {
-	public static final String OPCODE = "mapmmchain";
+	public static final String OPCODE = Opcodes.MAPMMCHAIN.toString();
 	public static final String OPCODE_CP = Opcodes.MMCHAIN.toString();
 
 	public enum ChainType {

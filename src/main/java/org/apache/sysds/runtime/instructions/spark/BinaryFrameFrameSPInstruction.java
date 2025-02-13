@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.spark;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.broadcast.Broadcast;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -45,23 +46,18 @@ public class BinaryFrameFrameSPInstruction extends BinarySPInstruction {
 		JavaPairRDD<Long, FrameBlock> in1 = sec.getFrameBinaryBlockRDDHandleForVariable(input1.getName());
 		JavaPairRDD<Long, FrameBlock> out = null;
 		
-		if(getOpcode().equals("dropInvalidType")) {
+		if(getOpcode().equals(Opcodes.DROPINVALIDTYPE.toString())) {
 			// get schema frame-block
 			Broadcast<FrameBlock> fb = sec.getSparkContext().broadcast(sec.getFrameInput(input2.getName()));
 			out = in1.mapValues(new isCorrectbySchema(fb.getValue()));
 			//release input frame
 			sec.releaseFrameInput(input2.getName());
 		}
-		else if(getOpcode().equals("valueSwap")) {
+		else if(getOpcode().equals(Opcodes.VALUESWAP.toString())) {
 			// Perform computation using input frames, and produce the result frame
 			Broadcast<FrameBlock> fb = sec.getSparkContext().broadcast(sec.getFrameInput(input2.getName()));
 			out = in1.mapValues(new valueSwapBySchema(fb.getValue()));
 			// Attach result frame with FrameBlock associated with output_name
-			sec.releaseFrameInput(input2.getName());
-		}
-		else if(getOpcode().equals("applySchema")){
-			Broadcast<FrameBlock> fb = sec.getSparkContext().broadcast(sec.getFrameInput(input2.getName()));
-			out = in1.mapValues(new applySchema(fb.getValue()));
 			sec.releaseFrameInput(input2.getName());
 		}
 		else {
@@ -75,9 +71,7 @@ public class BinaryFrameFrameSPInstruction extends BinarySPInstruction {
 		//set output RDD and maintain dependencies
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
-		if(!getOpcode().equals("dropInvalidType") && //
-			!getOpcode().equals("valueSwap") && //
-			!getOpcode().equals("applySchema"))
+		if( !getOpcode().equals(Opcodes.DROPINVALIDTYPE.toString())  && !getOpcode().equals(Opcodes.VALUESWAP.toString()))
 			sec.addLineageRDD(output.getName(), input2.getName());
 	}
 
@@ -121,22 +115,6 @@ public class BinaryFrameFrameSPInstruction extends BinarySPInstruction {
 		@Override
 		public FrameBlock call(FrameBlock arg0) throws Exception {
 			return arg0.valueSwap(schema_frame);
-		}
-	}
-
-
-	private static class applySchema implements Function<FrameBlock, FrameBlock>{
-		private static final long serialVersionUID = 58504021316402L;
-
-		private FrameBlock schema;
-
-		public applySchema(FrameBlock schema ) {
-			this.schema = schema;
-		}
-
-		@Override
-		public FrameBlock call(FrameBlock arg0) throws Exception {
-			return arg0.applySchema(schema);
 		}
 	}
 }

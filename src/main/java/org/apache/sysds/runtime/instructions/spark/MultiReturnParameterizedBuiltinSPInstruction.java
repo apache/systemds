@@ -36,6 +36,7 @@ import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.util.AccumulatorV2;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
@@ -92,7 +93,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 		ArrayList<CPOperand> outputs = new ArrayList<>();
 		String opcode = parts[0];
 
-		if(opcode.equalsIgnoreCase("transformencode")) {
+		if(opcode.equalsIgnoreCase(Opcodes.TRANSFORMENCODE.toString())) {
 			// one input and two outputs
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);

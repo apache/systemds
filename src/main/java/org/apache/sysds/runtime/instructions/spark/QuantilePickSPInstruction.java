@@ -24,6 +24,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.lops.PickByCount.OperationTypes;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -67,7 +68,7 @@ public class QuantilePickSPInstruction extends BinarySPInstruction {
 		String opcode = parts[0];
 		
 		//sanity check opcode
-		if ( !opcode.equalsIgnoreCase("qpick") ) {
+		if ( !opcode.equalsIgnoreCase(Opcodes.QPICK.toString()) ) {
 			throw new DMLRuntimeException("Unknown opcode while parsing a QuantilePickCPInstruction: " + str);
 		}
 		

@@ -33,6 +33,7 @@ import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.common.Types.FileFormat;
@@ -137,7 +138,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 		// first part is always the opcode
 		String opcode = parts[0];
 
-		if(opcode.equalsIgnoreCase("mapgroupedagg")) {
+		if(opcode.equalsIgnoreCase(Opcodes.MAPGROUPEDAGG.toString())) {
 			CPOperand target = new CPOperand(parts[1]);
 			CPOperand groups = new CPOperand(parts[2]);
 			CPOperand out = new CPOperand(parts[3]);
@@ -159,7 +160,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 
 			// determine the appropriate value function
 			ValueFunction func = null;
-			if(opcode.equalsIgnoreCase("groupedagg")) {
+			if(opcode.equalsIgnoreCase(Opcodes.GROUPEDAGG.toString())) {
 				// check for mandatory arguments
 				String fnStr = paramsMap.get("fn");
 				if(fnStr == null)
@@ -172,18 +173,18 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				Operator op = InstructionUtils.parseGroupedAggOperator(fnStr, paramsMap.get("order"));
 				return new ParameterizedBuiltinSPInstruction(op, paramsMap, out, opcode, str);
 			}
-			else if(opcode.equalsIgnoreCase("rmempty")) {
+			else if(opcode.equalsIgnoreCase(Opcodes.RMEMPTY.toString())) {
 				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 			}
-			else if(opcode.equalsIgnoreCase("rexpand") || opcode.equalsIgnoreCase("replace") ||
-				opcode.equalsIgnoreCase("lowertri") || opcode.equalsIgnoreCase("uppertri") ||
-				opcode.equalsIgnoreCase("tokenize") || opcode.equalsIgnoreCase("transformapply") ||
-				opcode.equalsIgnoreCase("transformdecode")) {
+			else if(opcode.equalsIgnoreCase(Opcodes.REXPAND.toString()) || opcode.equalsIgnoreCase(Opcodes.REPLACE.toString()) ||
+				opcode.equalsIgnoreCase(Opcodes.LOWERTRI.toString()) || opcode.equalsIgnoreCase(Opcodes.UPPERTRI.toString()) ||
+				opcode.equalsIgnoreCase(Opcodes.TOKENIZE.toString()) || opcode.equalsIgnoreCase(Opcodes.TRANSFORMAPPLY.toString()) ||
+				opcode.equalsIgnoreCase(Opcodes.TRANSFORMDECODE.toString())) {
 				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 			}
-			else if(opcode.equalsIgnoreCase("contains")) {
+			else if(opcode.equalsIgnoreCase(Opcodes.CONTAINS.toString())) {
 				return new ParameterizedBuiltinSPInstruction(null, paramsMap, out, opcode, str);
 			}
 			else {
@@ -199,7 +200,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 		String opcode = getOpcode();
 
 		// opcode guaranteed to be a valid opcode (see parsing)
-		if(opcode.equalsIgnoreCase("mapgroupedagg")) {
+		if(opcode.equalsIgnoreCase(Opcodes.MAPGROUPEDAGG.toString())) {
 			// get input rdd handle
 			String targetVar = params.get(Statement.GAGG_TARGET);
 			String groupsVar = params.get(Statement.GAGG_GROUPS);
@@ -235,7 +236,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				sec.addLineageBroadcast(output.getName(), groupsVar);
 			}
 		}
-		else if(opcode.equalsIgnoreCase("groupedagg")) {
+		else if(opcode.equalsIgnoreCase(Opcodes.GROUPEDAGG.toString())) {
 			boolean broadcastGroups = Boolean.parseBoolean(params.get("broadcast"));
 
 			// get input rdd handle
@@ -321,7 +322,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				sec.addLineageRDD(output.getName(), params.get(Statement.GAGG_WEIGHTS));
 			}
 		}
-		else if(opcode.equalsIgnoreCase("rmempty")) {
+		else if(opcode.equalsIgnoreCase(Opcodes.RMEMPTY.toString())) {
 			String rddInVar = params.get("target");
 			String rddOffVar = params.get("offset");
 
@@ -380,7 +381,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				sec.setMatrixOutput(output.getName(), out);
 			}
 		}
-		else if(opcode.equalsIgnoreCase("contains")) {
+		else if(opcode.equalsIgnoreCase(Opcodes.CONTAINS.toString())) {
 			
 			JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec
 				.getBinaryMatrixBlockRDDHandleForVariable(params.get("target"));
@@ -407,7 +408,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			// execute contains operation 
 			ec.setScalarOutput(output.getName(), new BooleanObject(ret));
 		}
-		else if(opcode.equalsIgnoreCase("replace")) {
+		else if(opcode.equalsIgnoreCase(Opcodes.REPLACE.toString())) {
 			if(sec.isFrameObject(params.get("target"))){
 				params.get("target");
 				JavaPairRDD<Long, FrameBlock> in1 = sec.getFrameBinaryBlockRDDHandleForVariable(params.get("target"));
@@ -440,11 +441,11 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 					(pattern != 0 && replacement != 0) ? mcIn.getNonZeros() : -1);
 			}
 		}
-		else if(opcode.equalsIgnoreCase("lowertri") || opcode.equalsIgnoreCase("uppertri")) {
+		else if(opcode.equalsIgnoreCase(Opcodes.LOWERTRI.toString()) || opcode.equalsIgnoreCase(Opcodes.UPPERTRI.toString())) {
 			JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec
 				.getBinaryMatrixBlockRDDHandleForVariable(params.get("target"));
 			DataCharacteristics mcIn = sec.getDataCharacteristics(params.get("target"));
-			boolean lower = opcode.equalsIgnoreCase("lowertri");
+			boolean lower = opcode.equalsIgnoreCase(Opcodes.LOWERTRI.toString());
 			boolean diag = Boolean.parseBoolean(params.get("diag"));
 			boolean values = Boolean.parseBoolean(params.get("values"));
 
@@ -458,7 +459,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			// update output statistics (required for correctness)
 			sec.getDataCharacteristics(output.getName()).setDimension(mcIn.getRows(), mcIn.getCols());
 		}
-		else if(opcode.equalsIgnoreCase("rexpand")) {
+		else if(opcode.equalsIgnoreCase(Opcodes.REXPAND.toString())) {
 			String rddInVar = params.get("target");
 
 			// get input rdd handle
@@ -500,7 +501,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			// post-processing to obtain sparsity of ultra-sparse outputs
 			SparkUtils.postprocessUltraSparseOutput(sec.getMatrixObject(output), mcOut);
 		}
-		else if(opcode.equalsIgnoreCase("tokenize")) {
+		else if(opcode.equalsIgnoreCase(Opcodes.TOKENIZE.toString())) {
 			// get input RDD data
 			FrameObject fo = sec.getFrameObject(params.get("target"));
 			JavaPairRDD<Long, FrameBlock> in = (JavaPairRDD<Long, FrameBlock>) sec.getRDDHandleForFrameObject(fo,
@@ -523,7 +524,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			sec.getDataCharacteristics(output.getName()).set(numRows, numCols, mc.getBlocksize());
 			sec.getFrameObject(output.getName()).setSchema(tokenizer.getSchema());
 		}
-		else if(opcode.equalsIgnoreCase("transformapply")) {
+		else if(opcode.equalsIgnoreCase(Opcodes.TRANSFORMAPPLY.toString())) {
 			// get input RDD and meta data
 			FrameObject fo = sec.getFrameObject(params.get("target"));
 			JavaPairRDD<Long, FrameBlock> in = (JavaPairRDD<Long, FrameBlock>) sec.getRDDHandleForFrameObject(fo,
@@ -587,7 +588,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			if(params.get("embedding") != null)
 				ec.releaseMatrixInput(params.get("embedding"));
 		}
-		else if(opcode.equalsIgnoreCase("transformdecode")) {
+		else if(opcode.equalsIgnoreCase(Opcodes.TRANSFORMDECODE.toString())) {
 			// get input RDD and meta data
 			JavaPairRDD<MatrixIndexes, MatrixBlock> in = sec
 				.getBinaryMatrixBlockRDDHandleForVariable(params.get("target"));
@@ -620,14 +621,14 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 	@Override
 	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
 		String opcode = getOpcode();
-		if(opcode.equalsIgnoreCase("replace")) {
+		if(opcode.equalsIgnoreCase(Opcodes.REPLACE.toString())) {
 			CPOperand target = getTargetOperand();
 			CPOperand pattern = getFP64Literal("pattern");
 			CPOperand replace = getFP64Literal("replacement");
 			return Pair.of(output.getName(),
 				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, pattern, replace)));
 		}
-		else if(opcode.equalsIgnoreCase("rmempty")) {
+		else if(opcode.equalsIgnoreCase(Opcodes.RMEMPTY.toString())) {
 			CPOperand target = getTargetOperand();
 			String off = params.get("offset");
 			CPOperand offset = new CPOperand(off, ValueType.FP64, Types.DataType.MATRIX);
@@ -639,7 +640,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, offset, margin,
 				emptyReturn, maxDim, bRmEmptyBC)));
 		}
-		else if(opcode.equalsIgnoreCase("transformdecode") || opcode.equalsIgnoreCase("transformapply")) {
+		else if(opcode.equalsIgnoreCase(Opcodes.TRANSFORMDECODE.toString()) || opcode.equalsIgnoreCase(Opcodes.TRANSFORMAPPLY.toString())) {
 			CPOperand target = new CPOperand(params.get("target"), ValueType.FP64, Types.DataType.FRAME);
 			CPOperand meta = getLiteral("meta", ValueType.UNKNOWN, Types.DataType.FRAME);
 			CPOperand spec = getStringLiteral("spec");
@@ -648,7 +649,7 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			return Pair.of(output.getName(),
 				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, meta, spec)));
 		}
-		if(opcode.equalsIgnoreCase("contains")) {
+		if(opcode.equalsIgnoreCase(Opcodes.CONTAINS.toString())) {
 			CPOperand target = getTargetOperand();
 			CPOperand pattern = getFP64Literal("pattern");
 			return Pair.of(output.getName(),

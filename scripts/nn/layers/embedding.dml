@@ -19,8 +19,33 @@
 #
 #-------------------------------------------------------------
 
-forward = function()
-    return () {}
+forward = function(matrix[double] indices, matrix[double] embedding_dict)
+    return (matrix[double] embeddings) {
+  /*
+   * Forward pass of an embedding layer. An embedding matrix is constructed
+   * from indices and corresponding embedding vectors from the embedding
+   * dictionary.
+   * 
+   * Inputs:
+   * - indices: Indices referring to embedding vectors of embedding dictionary
+   *            of shape n x 1 with each value in {1, ..., v}.
+   * - embedding_dict: Dictionary of embedding vectors of shape v x d.
+   *
+   * Outputs:
+   * - embeddings: Embedding matrix where row i is equal to 
+   *               embedding_dict[indices[i]].
+   */
+  n = nrow(indices)
+  d = ncol(embedding_dict)
+
+  # Construct permutation-like matrix (one '1' per row, rest '0')
+  permutation = matrix(0, rows=n, cols=d)
+  for (i in 1:n) {
+    permutation[i, as.integer(as.scalar(indices[i]))] = 1
+  }
+
+  embeddings = permutation %*% embedding_dict
+}
 
 backward = function()
     return () {}
@@ -28,7 +53,7 @@ backward = function()
 init = function(int v, int d, int seed  = -1)
     return (matrix[double] embedding_dict) {
   /*
-   * Initializes embedding dictionary matrix via N(0, 1)
+   * Initializes embedding dictionary matrix via N(0, 1).
    *
    * Inputs:
    * - v: Embedding dictionary size.
@@ -36,7 +61,7 @@ init = function(int v, int d, int seed  = -1)
    * - seed: Optional random generation seed.
    *
    * Output:
-   * - embedding_dict: Embedding dictionary matrix of shape v x d
+   * - embedding_dict: Embedding dictionary matrix of shape v x d.
    */
   embedding_dict = rand(rows=v, cols=d, pdf="normal", seed=seed)
 }

@@ -1835,14 +1835,12 @@ public class DMLTranslator
 			constRight = (source.getRight().getOutput() instanceof ConstIdentifier);
 		}
 
-		if (constLeft || constRight) {
-			throw new RuntimeException(source.printErrorLocation() + "Boolean expression with constant unsupported");
-		}
-
-		Hop left = processExpression(source.getLeft(), null, hops);
+		Hop left = !constLeft ? processExpression(source.getLeft(), null, hops) : 
+			new LiteralOp(Boolean.valueOf(source.getLeft().getText().toLowerCase()));
 		Hop right = null;
 		if (source.getRight() != null) {
-			right = processExpression(source.getRight(), null, hops);
+			right = !constRight ? processExpression(source.getRight(), null, hops) :
+				new LiteralOp(Boolean.valueOf(source.getRight().getText().toLowerCase()));
 		}
 
 		//prepare target identifier and ensure that output type is boolean 

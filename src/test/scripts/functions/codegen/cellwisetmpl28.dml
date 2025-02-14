@@ -18,11 +18,13 @@
 # under the License.
 #
 #-------------------------------------------------------------
-A = matrix(2, 3, 10)
-B = matrix(0, 4, 10)
-C = matrix(3, 3, 10)
-X = rbind(A, B, C);
-X = rand(rows=10, cols=10, min=0, max=1, pdf="uniform", sparsity=0.2)
+V = matrix(2, 1, 1)
+O = matrix(0, 1, 1)
+A = rbind(O, O, O, O, O, V, O, O, O, O)
+B = matrix(0, 10, 5)
+#C = matrix(3, 10, 3)
+X = cbind(B, A, B);
+#X = rand(rows=10, cols=10, min=0, max=1, pdf="uniform", sparsity=0.2)
 while(FALSE){}
 
 R = colProds(X*min(A));

@@ -942,9 +942,15 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			output.setBlocksize (id.getBlocksize());
 			output.setValueType(id.getValueType());
 			break;
+		case TRACE:
+			if(getFirstExpr().getOutput().dimsKnown() 
+				&& getFirstExpr().getOutput().getDim1() != getFirstExpr().getOutput().getDim2()) 
+			{
+				raiseValidateError("Trace is only defined on squared matrices but found ["
+					+getFirstExpr().getOutput().getDim1()+"x"+getFirstExpr().getOutput().getDim2()+"].", conditional);
+			}
 		case SUM:
 		case PROD:
-		case TRACE:
 		case SD:
 		case VAR:
 			// sum(X);

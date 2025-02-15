@@ -136,6 +136,10 @@ public interface Types {
 			}
 		}
 		
+		public boolean isFP() {
+			return this==FP64 || this==FP32;
+		}
+		
 		/**
 		 * Helper method to detect Unknown ValueTypes.
 		 * 

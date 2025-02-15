@@ -622,7 +622,13 @@ public class HopRewriteUtils {
 	public static UnaryOp createUnary(Hop input, OpOp1 type)  {
 		DataType dt = type.isScalarOutput() ? DataType.SCALAR :
 			(type==OpOp1.CAST_AS_MATRIX) ? DataType.MATRIX : input.getDataType();
-		ValueType vt = (type==OpOp1.CAST_AS_MATRIX) ? ValueType.FP64 : input.getValueType();
+		ValueType vt = input.getValueType();
+		switch( type ) {
+			case CAST_AS_MATRIX: 
+			case CAST_AS_DOUBLE:  vt = ValueType.FP64; break;
+			case CAST_AS_INT:     vt = ValueType.INT64; break;
+			case CAST_AS_BOOLEAN: vt = ValueType.BOOLEAN; break;
+		}
 		UnaryOp unary = new UnaryOp(input.getName(), dt, vt, type, input);
 		unary.setBlocksize(input.getBlocksize());
 		if( type.isScalarOutput() || type == OpOp1.CAST_AS_MATRIX ) {
@@ -650,11 +656,16 @@ public class HopRewriteUtils {
 	public static BinaryOp createBinary(Hop input1, Hop input2, OpOp2 op, boolean outer) {
 		Hop mainInput = input1.getDataType().isMatrix() ? input1 :
 			input2.getDataType().isMatrix() ? input2 : input1;
+		Hop otherInput = mainInput==input1 ? input2 : input1;
 		BinaryOp bop = new BinaryOp(mainInput.getName(), mainInput.getDataType(),
 			mainInput.getValueType(), op, input1, input2);
-		//cleanup value type for relational operations
+		//cleanup value type for relational operations and others
+		if( otherInput.getValueType().isFP() && !mainInput.getValueType().isFP() )
+			bop.setValueType(otherInput.getValueType());
 		if( bop.isPPredOperation() && bop.getDataType().isScalar() )
 			bop.setValueType(ValueType.BOOLEAN);
+		if( bop.getDataType().isMatrix() )
+			bop.setValueType(ValueType.FP64);
 		bop.setOuterVectorOperation(outer);
 		bop.setBlocksize(mainInput.getBlocksize());
 		copyLineNumbers(mainInput, bop);

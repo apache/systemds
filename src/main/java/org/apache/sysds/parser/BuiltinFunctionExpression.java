@@ -751,31 +751,6 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			else
 				raiseValidateError("Compress/DeCompress instruction not allowed in dml script");
 			break;
-
-			case QUANTIZE_COMPRESS: // this is not used when with two arguments it seems
-				if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_QUANTIZE_COMPRESS_COMMAND) {
-					Expression expressionTwo = getSecondExpr();
-					checkNumParameters(getSecondExpr() != null ? 2 : 1);
-					checkMatrixFrameParam(getFirstExpr());
-					if(expressionTwo != null)
-						checkMatrixParam(getSecondExpr());
-
-					Identifier compressInput1 = getFirstExpr().getOutput();
-					// Identifier compressInput2 = getSecondExpr().getOutput();
-
-					DataIdentifier compressOutput = (DataIdentifier) getOutputs()[0];
-					compressOutput.setDataType(DataType.MATRIX);
-					compressOutput.setDimensions(compressInput1.getDim1(), compressInput1.getDim2());
-					compressOutput.setBlocksize(compressInput1.getBlocksize());
-					compressOutput.setValueType(compressInput1.getValueType());
-
-					DataIdentifier metaOutput = (DataIdentifier) getOutputs()[1];
-					metaOutput.setDataType(DataType.FRAME);
-					metaOutput.setDimensions(compressInput1.getDim1(), -1);
-				}
-				else
-					raiseValidateError("Quantize and compress instruction not allowed in dml script");
-				break;
 							
 		default: //always unconditional
 			raiseValidateError("Unknown Builtin Function opcode: " + _opcode, false);

@@ -42,84 +42,84 @@ import org.apache.sysds.hops.Hop;
  * identifies the pattern without applying fusion.
  */
 public class RewriteQuantizationFusedCompression extends HopRewriteRule {
-    @Override
-    public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
-        if(roots == null)
-            return null;
+	@Override
+	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
+		if(roots == null)
+			return null;
 
-        // traverse the HOP DAG
-        HashMap<String, Hop> floors = new HashMap<>();
-        HashMap<String, Hop> compresses = new HashMap<>();
-        for(Hop h : roots)
-            collectFloorCompressSequences(h, floors, compresses);
+		// traverse the HOP DAG
+		HashMap<String, Hop> floors = new HashMap<>();
+		HashMap<String, Hop> compresses = new HashMap<>();
+		for(Hop h : roots)
+			collectFloorCompressSequences(h, floors, compresses);
 
-        Hop.resetVisitStatus(roots);
+		Hop.resetVisitStatus(roots);
 
-        // check compresses for compress-after-floor pattern
-        for(Entry<String, Hop> e : compresses.entrySet()) {
-            String inputname = e.getKey();
-            Hop compresshop = e.getValue();
+		// check compresses for compress-after-floor pattern
+		for(Entry<String, Hop> e : compresses.entrySet()) {
+			String inputname = e.getKey();
+			Hop compresshop = e.getValue();
 
-            if(floors.containsKey(inputname) // floors same name
-                && ((floors.get(inputname).getBeginLine() < compresshop.getBeginLine()) ||
-                    (floors.get(inputname).getEndLine() < compresshop.getEndLine()) ||
-                    (floors.get(inputname).getBeginLine() == compresshop.getBeginLine() &&
-                     floors.get(inputname).getEndLine() == compresshop.getBeginLine() &&
-                     floors.get(inputname).getBeginColumn() < compresshop.getBeginColumn()))) {
+			if(floors.containsKey(inputname) // floors same name
+				&& ((floors.get(inputname).getBeginLine() < compresshop.getBeginLine()) ||
+					(floors.get(inputname).getEndLine() < compresshop.getEndLine()) ||
+					(floors.get(inputname).getBeginLine() == compresshop.getBeginLine() &&
+					 floors.get(inputname).getEndLine() == compresshop.getBeginLine() &&
+					 floors.get(inputname).getBeginColumn() < compresshop.getBeginColumn()))) {
 
-                // retrieve the floor hop and inputs
-                Hop floorhop = floors.get(inputname);
-                Hop floorInput = floorhop.getInput().get(0);
+				// retrieve the floor hop and inputs
+				Hop floorhop = floors.get(inputname);
+				Hop floorInput = floorhop.getInput().get(0);
 
-                // check if the input of the floor operation is a matrix
-                if(floorInput.getDataType() == DataType.MATRIX) {
+				// check if the input of the floor operation is a matrix
+				if(floorInput.getDataType() == DataType.MATRIX) {
 
-                    // Check if the input of the floor operation involves a multiplication operation
-                    if(floorInput instanceof BinaryOp && ((BinaryOp) floorInput).getOp() == OpOp2.MULT) {
-                        Hop initialMatrix = floorInput.getInput().get(0);
-                        Hop sf = floorInput.getInput().get(1);
+					// Check if the input of the floor operation involves a multiplication operation
+					if(floorInput instanceof BinaryOp && ((BinaryOp) floorInput).getOp() == OpOp2.MULT) {
+						Hop initialMatrix = floorInput.getInput().get(0);
+						Hop sf = floorInput.getInput().get(1);
 
-                        // create fused hop
-                        BinaryOp fusedhop = new BinaryOp("test", DataType.MATRIX, ValueType.FP64,
-                            OpOp2.QUANTIZE_COMPRESS, initialMatrix, sf);
+						// create fused hop
+						BinaryOp fusedhop = new BinaryOp("test", DataType.MATRIX, ValueType.FP64,
+							OpOp2.QUANTIZE_COMPRESS, initialMatrix, sf);
 
-                        // rewire compress consumers to fusedHop
-                        List<Hop> parents = new ArrayList<>(compresshop.getParent());
-                        for(Hop p : parents) {
-                            HopRewriteUtils.replaceChildReference(p, compresshop, fusedhop);
-                        }
-                    }
-                }
-            }
-        }
-        return roots;
-    }
+						// rewire compress consumers to fusedHop
+						List<Hop> parents = new ArrayList<>(compresshop.getParent());
+						for(Hop p : parents) {
+							HopRewriteUtils.replaceChildReference(p, compresshop, fusedhop);
+						}
+					}
+				}
+			}
+		}
+		return roots;
+	}
 
-    @Override
-    public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
-        // do nothing, floor/compress do not occur in predicates
-        return root;
-    }
+	@Override
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
+		// do nothing, floor/compress do not occur in predicates
+		return root;
+	}
 
-    private void collectFloorCompressSequences(Hop hop, HashMap<String, Hop> floors, HashMap<String, Hop> compresses) {
-        if(hop.isVisited())
-            return;
+	private void collectFloorCompressSequences(Hop hop, HashMap<String, Hop> floors, HashMap<String, Hop> compresses) {
+		if(hop.isVisited())
+			return;
 
-        // process childs
-        if(!hop.getInput().isEmpty())
-            for(Hop c : hop.getInput())
-                collectFloorCompressSequences(c, floors, compresses);
+		// process childs
+		if(!hop.getInput().isEmpty())
+			for(Hop c : hop.getInput())
+				collectFloorCompressSequences(c, floors, compresses);
 
-        // process current hop
-        if(hop instanceof UnaryOp) {
-            UnaryOp uop = (UnaryOp) hop;
-            if(uop.getOp() == OpOp1.FLOOR) {
-                floors.put(uop.getName(), uop);
-            }
-            else if(uop.getOp() == OpOp1.COMPRESS) {
-                compresses.put(uop.getInput(0).getName(), uop);
-            }
-        }
-        hop.setVisited();
-    }
+		// process current hop
+		if(hop instanceof UnaryOp) {
+			UnaryOp uop = (UnaryOp) hop;
+			if(uop.getOp() == OpOp1.FLOOR) {
+				floors.put(uop.getName(), uop);
+			}
+			else if(uop.getOp() == OpOp1.COMPRESS) {
+				compresses.put(uop.getInput(0).getName(), uop);
+			}
+		}
+		hop.setVisited();
+	}
 }

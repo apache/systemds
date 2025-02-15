@@ -70,6 +70,14 @@ public class CompressionSettingsBuilder {
 
 	}
 
+	/**
+	 * Sets the scale factors for compression, enabling quantization-fused compression.
+	 * 
+	 * @param scaleFactors An array of scale factors applied during compression. 
+	 *                     - If row-wise scaling is used, this should be an array where each value corresponds to a row. 
+	 *                     - If a single scalar is provided, it is applied uniformly to the entire matrix.
+	 * @return The CompressionSettingsBuilder instance with the updated scale factors.
+	 */
 	public CompressionSettingsBuilder setScaleFactor(double[] scaleFactors) {
 		this.scaleFactors = scaleFactors;
 		return this;

@@ -141,11 +141,7 @@ public class CompressedMatrixBlockFactory {
 	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, MatrixBlock sf, int k, WTreeRoot root) {
 		// Handle only row vectors, as column-wise quantization is not allowed.
 		// The restriction is handled upstream
-		LOG.debug("Number of columns of sf " + sf.getNumColumns());
-		double[] scaleFactors = new double[sf.getNumRows()];
-		for (int i = 0; i < sf.getNumRows(); i++) {
-			scaleFactors[i] = sf.get(i,0);
-		}
+		double[] scaleFactors = sf.getDenseBlockValues();
 		CompressionSettingsBuilder builder = new CompressionSettingsBuilder().setScaleFactor(scaleFactors);
 		return compress(mb, k, builder, root);
 	}	

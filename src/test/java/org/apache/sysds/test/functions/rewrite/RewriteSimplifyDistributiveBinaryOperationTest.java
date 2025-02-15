@@ -86,6 +86,11 @@ public class RewriteSimplifyDistributiveBinaryOperationTest extends AutomatedTes
 	public void testDistrBinaryOpMultAddRewrite() {
 		testSimplifyDistributiveBinaryOperation(4, true);    //pattern: (Y*X+X) -> (Y+1)*X
 	}
+	
+	@Test
+	public void testDistrBinaryOpMultMinusVectorRewrite() {
+		testSimplifyDistributiveBinaryOperation(5, true);    //pattern: (X*Y-X) -> (Y+1)*X, Y vector
+	}
 
 	private void testSimplifyDistributiveBinaryOperation(int ID, boolean rewrites) {
 		boolean oldFlag1 = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -104,7 +109,7 @@ public class RewriteSimplifyDistributiveBinaryOperationTest extends AutomatedTes
 
 			//create matrices
 			double[][] X = getRandomMatrix(rows, cols, -1, 1, 0.60d, 3);
-			double[][] Y = getRandomMatrix(rows, cols, -1, 1, 0.60d, 5);
+			double[][] Y = getRandomMatrix(rows, ID==5?1:cols, -1, 1, 0.60d, 5);
 			writeInputMatrixWithMTD("X", X, true);
 			writeInputMatrixWithMTD("Y", Y, true);
 

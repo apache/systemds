@@ -886,10 +886,14 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						X = right;
 						Y = ( right == leftC1 ) ? leftC2 : leftC1;
 					}
-					if( X != null ){ //rewrite 'binary +/-' 
+					if( X != null && Y.dimsKnown() ){ //rewrite 'binary +/-' 
 						LiteralOp literal = new LiteralOp(1);
 						BinaryOp plus = HopRewriteUtils.createBinary(Y, literal, bop.getOp());
-						BinaryOp mult = HopRewriteUtils.createBinary(plus, X, OpOp2.MULT);
+						
+						BinaryOp mult = (plus.getDim1()==1 || plus.getDim2() == 1)
+								&& (X.getDim1()>1 && X.getDim2()>1) ?
+							HopRewriteUtils.createBinary(X, plus, OpOp2.MULT) :
+							HopRewriteUtils.createBinary(plus, X, OpOp2.MULT);
 						HopRewriteUtils.replaceChildReference(parent, hi, mult, pos);
 						HopRewriteUtils.cleanupUnreferenced(hi, left);
 						hi = mult;
@@ -908,10 +912,13 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						X = left;
 						Y = ( left == rightC1 ) ? rightC2 : rightC1;
 					}
-					if( X != null ){ //rewrite '+/- binary'
+					if( X != null && Y.dimsKnown() ){ //rewrite '+/- binary'
 						LiteralOp literal = new LiteralOp(1);
 						BinaryOp plus = HopRewriteUtils.createBinary(literal, Y, bop.getOp());
-						BinaryOp mult = HopRewriteUtils.createBinary(plus, X, OpOp2.MULT);
+						BinaryOp mult = (plus.getDim1()==1 || plus.getDim2() == 1) 
+								&& (X.getDim1()>1 && X.getDim2()>1) ?
+							HopRewriteUtils.createBinary(X, plus, OpOp2.MULT) :
+							HopRewriteUtils.createBinary(plus, X, OpOp2.MULT);
 						HopRewriteUtils.replaceChildReference(parent, hi, mult, pos);
 						HopRewriteUtils.cleanupUnreferenced(hi, right);
 						hi = mult;

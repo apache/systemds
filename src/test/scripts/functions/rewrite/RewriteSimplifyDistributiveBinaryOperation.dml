@@ -38,6 +38,9 @@ else if( type == 3 ) {
 else if( type == 4 ) {
     R = (Y*X+X) * 1
 }
+else if( type == 5 ) {
+    R = (X*Y-X) * 1
+}
 
 
 # Write the result matrix R

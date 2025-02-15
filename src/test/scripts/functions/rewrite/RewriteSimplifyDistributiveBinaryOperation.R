@@ -44,6 +44,8 @@ if( type == 1 ) {
     R = (X+Y*X)
 } else if( type == 4 ) {
     R = (Y*X+X)
+} else if( type == 5 ) {
+    R = (X*(Y%*%matrix(1,1,ncol(X)))-X) * 1
 }
 
 

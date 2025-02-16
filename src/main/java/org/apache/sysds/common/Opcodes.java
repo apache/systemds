@@ -70,12 +70,12 @@ public enum Opcodes {
 	LENGTH("length", InstructionType.AggregateUnary),
 	EXISTS("exists", InstructionType.AggregateUnary),
 	LINEAGE("lineage", InstructionType.AggregateUnary),
-	UACD("uacd", InstructionType.AggregateUnary),
-	UACDR("uacdr", InstructionType.AggregateUnary),
-	UACDC("uacdc", InstructionType.AggregateUnary),
-	UACDAP("uacdap", InstructionType.AggregateUnary),
-	UACDAPR("uacdapr", InstructionType.AggregateUnary),
-	UACDAPC("uacdapc", InstructionType.AggregateUnary),
+	UACD("uacd", InstructionType.AggregateUnary, InstructionType.AggregateUnarySketch),
+	UACDR("uacdr", InstructionType.AggregateUnary, InstructionType.AggregateUnarySketch),
+	UACDC("uacdc", InstructionType.AggregateUnary, InstructionType.AggregateUnarySketch),
+	UACDAP("uacdap", InstructionType.AggregateUnary, InstructionType.AggregateUnarySketch),
+	UACDAPR("uacdapr", InstructionType.AggregateUnary, InstructionType.AggregateUnarySketch),
+	UACDAPC("uacdapc", InstructionType.AggregateUnary, InstructionType.AggregateUnarySketch),
 	UNIQUE("unique", InstructionType.AggregateUnary),
 	UNIQUER("uniquer", InstructionType.AggregateUnary),
 	UNIQUEC("uniquec", InstructionType.AggregateUnary),
@@ -209,7 +209,7 @@ public enum Opcodes {
 	RMVAR("rmvar", InstructionType.Variable),
 	RMFILEVAR("rmfilevar", InstructionType.Variable),
 	CAST_AS_SCALAR(OpOp1.CAST_AS_SCALAR.toString(), InstructionType.Variable),
-	CAST_AS_MATRIX(OpOp1.CAST_AS_MATRIX.toString(), InstructionType.Variable),
+	CAST_AS_MATRIX(OpOp1.CAST_AS_MATRIX.toString(), InstructionType.Variable, InstructionType.Cast),
 	CAST_AS_FRAME_VAR("cast_as_frame", InstructionType.Variable),
 	CAST_AS_FRAME(OpOp1.CAST_AS_FRAME.toString(), InstructionType.Variable, InstructionType.Cast),
 	CAST_AS_LIST(OpOp1.CAST_AS_LIST.toString(), InstructionType.Variable),
@@ -463,6 +463,8 @@ public enum Opcodes {
 	}
 
 	public static InstructionType getTypeByOpcode(String opcode, Types.ExecType type) {
+		System.out.println(opcode);
+		System.out.println(type);
 		for (Opcodes op : Opcodes.values()) {
 			if (op.toString().equalsIgnoreCase(opcode.trim())) {
 				switch (type) {

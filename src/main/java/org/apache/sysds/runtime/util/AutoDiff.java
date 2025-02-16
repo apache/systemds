@@ -215,7 +215,7 @@ public class AutoDiff {
 				break;
 			}
 			case Instruction: {
-				InstructionType ctype = InstructionUtils.getCPTypeByOpcode(item.getOpcode());
+				InstructionType ctype = Opcodes.getTypeByOpcode(item.getOpcode(), Types.ExecType.CP);
 
 				if(ctype != null) {
 					switch(ctype) {

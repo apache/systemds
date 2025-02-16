@@ -845,6 +845,7 @@ public interface Types {
 		FEDERATED, // A federated matrix
 		PROTO,  // protocol buffer representation
 		HDF5,   // Hierarchical Data Format (HDF)
+		PARQUET, // parquet format for columnar data storage
 		UNKNOWN;
 		
 		public boolean isIJV() {

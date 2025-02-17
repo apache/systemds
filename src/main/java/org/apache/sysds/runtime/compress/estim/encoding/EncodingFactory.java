@@ -60,7 +60,7 @@ public interface EncodingFactory {
 			return createFromMatrixBlock(m, transposed, rowCols.get(0), null);
 		}
 		else {
-			return createWithReader(m, rowCols, transposed);
+			return createWithReader(m, rowCols, transposed, null);
 		}
 	}
 
@@ -72,7 +72,7 @@ public interface EncodingFactory {
 			return createFromMatrixBlock(m, transposed, rowCols.get(0), scaleFactors);
 		}
 		else {
-			return createWithReader(m, rowCols, transposed);
+			return createWithReader(m, rowCols, transposed, scaleFactors);
 		}
 	}
 
@@ -137,33 +137,42 @@ public interface EncodingFactory {
 	/**
 	 * Create encoding of a single specific column inside the matrix input.
 	 * 
-	 * @param m          	The Matrix to encode a column from
-	 * @param transposed 	If the matrix is in transposed format.
-	 * @param rowCol     	The column index to encode
-	 * @param scaleFactors  For quantization-fused compression, scale factors per row, or a single value for entire matrix
+	 * @param m            The Matrix to encode a column from
+	 * @param transposed   If the matrix is in transposed format.
+	 * @param rowCol       The column index to encode
+	 * @param scaleFactors For quantization-fused compression, scale factors per row, or a single value for entire
+	 *                     matrix
 	 * @return An encoded format of the information of this column.
-	 */	
+	 */
 	public static IEncode createFromMatrixBlock(MatrixBlock m, boolean transposed, int rowCol, double[] scaleFactors) {
 		if(m.isEmpty())
 			return new EmptyEncoding();
 		else if(transposed) {
-			if (scaleFactors != null) {
+			if(scaleFactors != null) {
 				throw new NotImplementedException(); // TODO: handle quantization-fused compression
-			} else {
+			}
+			else {
 				if(m.isInSparseFormat())
-				return createFromSparseTransposed(m, rowCol);
-			else
-				return createFromDenseTransposed(m, rowCol);
+					return createFromSparseTransposed(m, rowCol);
+				else
+					return createFromDenseTransposed(m, rowCol);
 			}
 		}
 		else if(m.isInSparseFormat()) {
-			if (scaleFactors != null) {
+			if(scaleFactors != null) {
 				throw new NotImplementedException(); // TODO: handle quantization-fused compression
-			} else {
-				return createFromSparse(m, rowCol); 
 			}
-		} else {
-			return createFromDenseQuantized(m, rowCol, scaleFactors);
+			else {
+				return createFromSparse(m, rowCol);
+			}
+		}
+		else {
+			if(scaleFactors != null) {
+				return createFromDenseQuantized(m, rowCol, scaleFactors);
+			}
+			else {
+				return createFromDense(m, rowCol);
+			}
 		}
 	}
 
@@ -277,13 +286,13 @@ public interface EncodingFactory {
 
 			// Iteration 3 of non zero indexes, make a Offset Encoding to know what cells are zero and not.
 			// not done yet
-			try{
+			try {
 
 				final AOffset o = OffsetFactory.createOffset(aix, apos, alen);
 				return new SparseEncoding(d, o, m.getNumColumns());
 			}
-			catch(Exception e){
-				String mes = Arrays.toString(Arrays.copyOfRange(aix, apos, alen))  +  "\n" + apos  + "  " + alen;
+			catch(Exception e) {
+				String mes = Arrays.toString(Arrays.copyOfRange(aix, apos, alen)) + "\n" + apos + "  " + alen;
 				mes += Arrays.toString(Arrays.copyOfRange(avals, apos, alen));
 				throw new DMLRuntimeException(mes, e);
 			}
@@ -303,13 +312,13 @@ public interface EncodingFactory {
 
 		// Validate scaleFactors
 		boolean useSingleScalar = false;
-			if(scaleFactors != null) {
-				if(scaleFactors.length == 1) {
-					useSingleScalar = true;
-				}
+		if(scaleFactors != null) {
+			if(scaleFactors.length == 1) {
+				useSingleScalar = true;
 			}
+		}
 
-		if (useSingleScalar == true) {
+		if(useSingleScalar == true) {
 			// Iteration 1, make Count HashMap with quantized values
 			for(int i = off; i < end; i += nCol) {// jump down through rows.
 				map.increment(Math.floor(vals[i] * scaleFactors[0]));
@@ -339,7 +348,7 @@ public interface EncodingFactory {
 				final AOffset o = OffsetFactory.createOffset(offsets);
 
 				return new SparseEncoding(d, o, nRow);
-			} 
+			}
 			else {
 				// Allocate counts, and iterate once to replace counts with u ids
 
@@ -351,8 +360,8 @@ public interface EncodingFactory {
 				}
 				return new DenseEncoding(d);
 			}
-		} 
-		else { 
+		}
+		else {
 			// Iteration 1, make Count HashMap with row-wise quantized values
 			for(int i = off, r = 0; i < end; i += nCol, r++) {// jump down through rows.
 				map.increment(Math.floor(vals[i] * scaleFactors[r]));
@@ -382,7 +391,7 @@ public interface EncodingFactory {
 				final AOffset o = OffsetFactory.createOffset(offsets);
 
 				return new SparseEncoding(d, o, nRow);
-			} 
+			}
 			else {
 				// Allocate counts, and iterate once to replace counts with u ids
 
@@ -496,8 +505,10 @@ public interface EncodingFactory {
 		return new SparseEncoding(d, o, m.getNumRows());
 	}
 
-	private static IEncode createWithReader(MatrixBlock m, IColIndex rowCols, boolean transposed) {
-		final ReaderColumnSelection reader1 = ReaderColumnSelection.createReader(m, rowCols, transposed);
+	private static IEncode createWithReader(MatrixBlock m, IColIndex rowCols, boolean transposed,
+		double[] scaleFactors) {
+		final ReaderColumnSelection reader1 = (scaleFactors == null) ? ReaderColumnSelection.createReader(m, rowCols,
+			transposed) : ReaderColumnSelection.createQuantizedReader(m, rowCols, transposed, scaleFactors);
 		final int nRows = transposed ? m.getNumColumns() : m.getNumRows();
 		final DblArrayCountHashMap map = new DblArrayCountHashMap();
 		final IntArrayList offsets = new IntArrayList();
@@ -517,17 +528,18 @@ public interface EncodingFactory {
 
 		if(offsets.size() < nRows / 4)
 			// Output encoded sparse since there is very empty.
-			return createWithReaderSparse(m, map, rowCols, offsets, nRows, transposed);
+			return createWithReaderSparse(m, map, rowCols, offsets, nRows, transposed, scaleFactors);
 		else
-			return createWithReaderDense(m, map, rowCols, nRows, transposed, offsets.size() < nRows);
+			return createWithReaderDense(m, map, rowCols, nRows, transposed, offsets.size() < nRows, scaleFactors);
 
 	}
 
 	private static IEncode createWithReaderDense(MatrixBlock m, DblArrayCountHashMap map, IColIndex rowCols, int nRows,
-		boolean transposed, boolean zero) {
+		boolean transposed, boolean zero, double[] scaleFactors) {
 		// Iteration 2,
 		final int unique = map.size() + (zero ? 1 : 0);
-		final ReaderColumnSelection reader2 = ReaderColumnSelection.createReader(m, rowCols, transposed);
+		final ReaderColumnSelection reader2 = (scaleFactors == null) ? ReaderColumnSelection.createReader(m, rowCols,
+			transposed) : ReaderColumnSelection.createQuantizedReader(m, rowCols, transposed, scaleFactors);
 		final AMapToData d = MapToFactory.create(nRows, unique);
 
 		DblArray cellVals;
@@ -542,8 +554,9 @@ public interface EncodingFactory {
 	}
 
 	private static IEncode createWithReaderSparse(MatrixBlock m, DblArrayCountHashMap map, IColIndex rowCols,
-		IntArrayList offsets, int nRows, boolean transposed) {
-		final ReaderColumnSelection reader2 = ReaderColumnSelection.createReader(m, rowCols, transposed);
+		IntArrayList offsets, int nRows, boolean transposed, double[] scaleFactors) {
+		final ReaderColumnSelection reader2 = (scaleFactors == null) ? ReaderColumnSelection.createReader(m, rowCols,
+			transposed) : ReaderColumnSelection.createQuantizedReader(m, rowCols, transposed, scaleFactors);
 		DblArray cellVals = reader2.nextRow();
 
 		final AMapToData d = MapToFactory.create(offsets.size(), map.size());

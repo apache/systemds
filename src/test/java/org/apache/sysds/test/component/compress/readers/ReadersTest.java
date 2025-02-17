@@ -28,7 +28,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
-import org.apache.sysds.runtime.compress.readers.ReaderColumnSelectionQuantized;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -107,7 +106,7 @@ public class ReadersTest {
 		};
 	
 		for (double[] scaleFactors : scaleFactorCases) {
-			ReaderColumnSelection r = ReaderColumnSelectionQuantized.createReader(
+			ReaderColumnSelection r = ReaderColumnSelection.createQuantizedReader(
 				mb, ColIndexFactory.create(2), false, scaleFactors);
 	
 			double[][] expectedValues = {

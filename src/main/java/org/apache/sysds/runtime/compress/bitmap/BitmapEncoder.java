@@ -29,7 +29,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
-import org.apache.sysds.runtime.compress.readers.ReaderColumnSelectionQuantized;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.compress.utils.DblArrayIntListHashMap;
 import org.apache.sysds.runtime.compress.utils.DblArrayIntListHashMap.DArrayIListEntry;
@@ -184,9 +183,9 @@ public class BitmapEncoder {
 		boolean transposed, int estimatedUnique, boolean sort, double[] scaleFactors) {
 		final DblArrayIntListHashMap map = new DblArrayIntListHashMap(estimatedUnique);
 
-		final ReaderColumnSelection reader = (scaleFactors == null) ? ReaderColumnSelection.createReader(rawBlock,
-			colIndices,
-			transposed) : ReaderColumnSelectionQuantized.createReader(rawBlock, colIndices, transposed, scaleFactors);
+		final ReaderColumnSelection reader = (scaleFactors == null) ? 
+		ReaderColumnSelection.createReader(rawBlock, colIndices, transposed) : 
+		ReaderColumnSelection.createQuantizedReader(rawBlock, colIndices, transposed, scaleFactors);
 
 		DblArray cellVals = null;
 		try {

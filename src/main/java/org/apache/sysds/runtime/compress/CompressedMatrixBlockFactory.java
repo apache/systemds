@@ -301,7 +301,7 @@ public class CompressedMatrixBlockFactory {
 			return new ImmutablePair<>(mb, null);
 		}
 
-		_stats.denseSize = MatrixBlock.estimateSizeInMemory(mb.getNumRows(), mb.getNumColumns(), 1.0);
+		_stats.denseSize = MatrixBlock.estimateSizeInMemory(mb.getNumRows(), mb.getNumColumns(), 1.0); 
 		_stats.sparseSize = MatrixBlock.estimateSizeSparseInMemory(mb.getNumRows(), mb.getNumColumns(), mb.getSparsity());
 		_stats.originalSize = mb.getInMemorySize();
 		_stats.originalCost = costEstimator.getCost(mb);
@@ -316,8 +316,10 @@ public class CompressedMatrixBlockFactory {
 
 		res = new CompressedMatrixBlock(mb); // copy metadata and allocate soft reference
 		logInit();
+			
 		classifyPhase();
-		if(compressionGroups == null)
+
+		if(compressionGroups == null) 
 			return abortCompression();
 
 		// clear extra data from analysis

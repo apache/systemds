@@ -55,7 +55,6 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.lib.CLALibCombineGroups;
 import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
-import org.apache.sysds.runtime.compress.readers.ReaderColumnSelectionQuantized;
 import org.apache.sysds.runtime.compress.utils.ACount;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
@@ -255,6 +254,7 @@ public class ColGroupFactory {
 	}
 
 	private AColGroup compress(CompressedSizeInfoColGroup cg) throws Exception {
+		LOG.debug("Compressing column group");
 		final IColIndex colIndexes = cg.getColumns();
 		final CompressionType ct = cg.getBestCompressionType(); // TODO: handle quantization-fused compression
 		final boolean t = cs.transposed;
@@ -692,9 +692,9 @@ public class ColGroupFactory {
 	private boolean readToMapDDC(IColIndex colIndexes, DblArrayCountHashMap map, AMapToData data, int rl, int ru,
 		int fill) {
 
-		ReaderColumnSelection reader = (cs.scaleFactors == null) ? ReaderColumnSelection.createReader(in, colIndexes,
-			cs.transposed, rl,
-			ru) : ReaderColumnSelectionQuantized.createReader(in, colIndexes, cs.transposed, rl, ru, cs.scaleFactors);
+		ReaderColumnSelection reader = (cs.scaleFactors == null) ? 
+		ReaderColumnSelection.createReader(in, colIndexes, cs.transposed, rl, ru) : 
+		ReaderColumnSelection.createQuantizedReader(in, colIndexes, cs.transposed, rl, ru, cs.scaleFactors);
 
 		DblArray cellVals = reader.nextRow();
 		boolean extra = false;
@@ -995,8 +995,9 @@ public class ColGroupFactory {
 			}
 		}
 		IColIndex subCols = ColIndexFactory.create(cols.size());
-		ReaderColumnSelection reader = (cs.scaleFactors == null) ? ReaderColumnSelection.createReader(sub, subCols,
-			false) : ReaderColumnSelectionQuantized.createReader(sub, subCols, false, cs.scaleFactors);
+		ReaderColumnSelection reader = (cs.scaleFactors == null) ? 
+		ReaderColumnSelection.createReader(sub, subCols, false) : 
+		ReaderColumnSelection.createQuantizedReader(sub, subCols, false, cs.scaleFactors);
 
 		final int mapStartSize = Math.min(nrUniqueEstimate, offsetsInt.length / 2);
 		DblArrayCountHashMap map = new DblArrayCountHashMap(mapStartSize);

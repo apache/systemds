@@ -36,6 +36,6 @@ colProd <- function(X) {
 X = matrix(3, 10, 10);
 
 # R = t(colProd(X*min(A)));
-R = colProd(2*log(X));
+R = t(colProd(2*log(X)));
 
 writeMM(as(R,"CsparseMatrix"), paste(args[2], "S", sep=""));

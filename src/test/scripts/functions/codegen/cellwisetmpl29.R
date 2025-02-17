@@ -29,6 +29,6 @@ rowProd <- function(X) {
 
 X = matrix(3, 10, 10)
 
-R = t(rowProd(2*log(X)));
+R = rowProd(2*log(X));
 
 writeMM(as(R,"CsparseMatrix"), paste(args[2], "S", sep=""));

@@ -27,6 +27,8 @@ import java.math.MathContext;
 import java.util.Arrays;
 import java.util.Set;
 
+import jdk.incubator.vector.DoubleVector;
+import jdk.incubator.vector.VectorSpecies;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ArrayIndex;
@@ -64,6 +66,8 @@ public class MatrixBlockDictionary extends ADictionary {
 	private static final long serialVersionUID = 2535887782150955098L;
 
 	final private MatrixBlock _data;
+
+	static final VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_PREFERRED;
 
 	/**
 	 * Unsafe private constructor that does not check the data validity. USE WITH CAUTION.
@@ -2088,7 +2092,71 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	private void preaggValuesFromDenseDictDenseAggRange(final int numVals, final IColIndex colIndexes, final int s,
 		final int e, final double[] b, final int cut, final double[] ret) {
-		preaggValuesFromDenseDictDenseAggRangeGeneric(numVals, colIndexes, s, e, b, cut, ret);
+		if(colIndexes instanceof RangeIndex) {
+			RangeIndex ri = (RangeIndex) colIndexes;
+			preaggValuesFromDenseDictDenseAggRangeRange(numVals, ri.get(0), ri.get(0) + ri.size(), s, e, b, cut, ret);
+		}
+		else
+			preaggValuesFromDenseDictDenseAggRangeGeneric(numVals, colIndexes, s, e, b, cut, ret);
+	}
+
+	private void preaggValuesFromDenseDictDenseAggRangeRange(final int numVals, final int ls, final int le, final int rs,
+		final int re, final double[] b, final int cut, final double[] ret) {
+		final int cz = le - ls;
+		final int az = re - rs;
+		// final int nCells = numVals * cz;
+		final double[] values = _data.getDenseBlockValues();
+		// Correctly named ikj matrix multiplication .
+
+		final int blkzI = 32;
+		final int blkzK = 24;
+		final int blkzJ = 1024;
+		for(int bi = 0; bi < numVals; bi += blkzI) {
+			final int bie = Math.min(numVals, bi + blkzI);
+			for(int bk = 0; bk < cz; bk += blkzK) {
+				final int bke = Math.min(cz, bk + blkzK);
+				for(int bj = 0; bj < az; bj += blkzJ) {
+					final int bje = Math.min(az, bj + blkzJ);
+					final int sOffT = rs + bj;
+					final int eOffT = rs + bje;
+					preaggValuesFromDenseDictBlockedIKJ(values, b, ret, bi, bk, bj, bie, bke, cz, az, ls, cut, sOffT, eOffT);
+				}
+			}
+		}
+	}
+
+	private static void preaggValuesFromDenseDictBlockedIKJ(double[] a, double[] b, double[] ret, int bi, int bk, int bj,
+		int bie, int bke, int cz, int az, int ls, int cut, int sOffT, int eOffT) {
+		final int vLen = SPECIES.length();
+		final DoubleVector vVec = DoubleVector.zero(SPECIES);
+		final int leftover = sOffT - eOffT % vLen; // leftover not vectorized
+		for(int i = bi; i < bie; i++) {
+			final int offI = i * cz;
+			final int offOutT = i * az + bj;
+			for(int k = bk; k < bke; k++) {
+				final int idb = (k + ls) * cut;
+				final int sOff = sOffT + idb;
+				final int eOff = eOffT + idb;
+				final double v = a[offI + k];
+				vecInnerLoop(v, b, ret, offOutT, eOff, sOff, leftover, vLen, vVec);
+			}
+		}
+	}
+
+	private static void vecInnerLoop(final double v, final double[] b, final double[] ret, final int offOutT,
+		final int eOff, final int sOff, final int leftover, final int vLen, DoubleVector vVec) {
+		int offOut = offOutT;
+		vVec = vVec.broadcast(v);
+		final int end = eOff - leftover;
+		for(int j = sOff; j < end; j += vLen, offOut += vLen) {
+			DoubleVector res = DoubleVector.fromArray(SPECIES, ret, offOut);
+			DoubleVector bVec = DoubleVector.fromArray(SPECIES, b, j);
+			vVec.fma(bVec, res).intoArray(ret, offOut);
+		}
+		for(int j = end; j < eOff; j++, offOut++) {
+			ret[offOut] += v * b[j];
+		}
+
 	}
 
 	private void preaggValuesFromDenseDictDenseAggRangeGeneric(final int numVals, final IColIndex colIndexes,

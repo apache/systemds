@@ -27,13 +27,15 @@ colProd <- function(X) {
   apply(X, 2, prod)
 }
 
-V = matrix(2, 1, 1)
-O = matrix(0, 1, 1)
-A = rbind(O, O, O, O, O, V, O, O, O, O)
-B = matrix(0, 10, 5)
-#C = matrix(3, 10, 3)
-X = cbind(B, A, B);
+# V = matrix(2, 1, 1)
+# O = matrix(0, 1, 1)
+# A = rbind(O, O, O, O, O, V, O, O, O, O)
+# B = matrix(0, 10, 5)
+# C = matrix(3, 10, 3)
+# X = cbind(B, A, B);
+X = matrix(3, 10, 10);
 
-R = t(colProd(X*min(A)));
+# R = t(colProd(X*min(A)));
+R = colProd(2*log(X));
 
 writeMM(as(R,"CsparseMatrix"), paste(args[2], "S", sep=""));

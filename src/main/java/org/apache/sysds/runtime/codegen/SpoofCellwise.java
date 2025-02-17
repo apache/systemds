@@ -1067,7 +1067,7 @@ public abstract class SpoofCellwise extends SpoofOperator {
 		MatrixBlock out, int m, int n, boolean sparseSafe, int rl, int ru, long rix)
 	{
 		double[] c = out.getDenseBlockValues();
-//		boolean[] zeroFlag = new boolean[n];
+		boolean[] zeroFlag = new boolean[n];
 
 		for(int i=rl; i<ru; i++) {
 			int lastj = -1;
@@ -1079,7 +1079,7 @@ public abstract class SpoofCellwise extends SpoofOperator {
 				double[] avals = sblock.values(i);
 				//process every column, to not miss any 0's
 				for(int j = 0; j < n; j++) {
-					if(/*!zeroFlag[j] && */!(c[j] == 0)) {
+					if(!zeroFlag[j]) {
 						if (aix[apos] == j) {
 							if(i == 0) {
 								c[j] = genexec(avals[apos], b, scalars, m, n, rix + i, i, j);
@@ -1091,10 +1091,10 @@ public abstract class SpoofCellwise extends SpoofOperator {
 							}
 						} else if(i == 0) {
 							c[j] = genexec(0, b, scalars, m, n, rix + i, i, j);
-//							zeroFlag[j] = true;
+							zeroFlag[j] = true;
 						} else {
 							c[j] *= genexec(0, b, scalars, m, n, rix + i, i, j);
-//							zeroFlag[j] = true;
+							zeroFlag[j] = true;
 						}
 					}
 				}

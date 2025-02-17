@@ -36,7 +36,7 @@ def selectByVarThresh(X: Matrix,
     
     
     :param X: Matrix of feature vectors.
-    :param thresh: The threshold for to drop
+    :param threshold: The threshold for to drop
     :return: Matrix of feature vectors with <= thresh variance.
     """
 

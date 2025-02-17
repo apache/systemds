@@ -48,7 +48,7 @@ def glm(X: Matrix,
        BETA_MIN_INDEX        Column index for the smallest beta value
        BETA_MAX              Largest beta value (regression coefficient), excluding the intercept
        BETA_MAX_INDEX        Column index for the largest beta value
-       INTERCEPT             Intercept value, or NaN if there is no intercept (if icpt=0)
+       INTERCEPT             Intercept value, or NaN if there is no intercept (if intercept=0)
        DISPERSION            Dispersion used to scale deviance, provided as "disp" input parameter
                              or estimated (same as DISPERSION_EST) if the "disp" parameter is <= 0
        DISPERSION_EST        Dispersion estimated from the dataset
@@ -117,18 +117,18 @@ def glm(X: Matrix,
     :param lpow: Power for Link function defined as (mean)^power (ignored if link != 1):
         -2.0 = 1/mu^2, -1.0 = reciprocal, 0.0 = log, 0.5 = sqrt, 1.0 = identity
     :param yneg: Response value for Bernoulli "No" label, usually 0.0 or -1.0
-    :param icpt: Intercept presence, X columns shifting and rescaling:
+    :param intercept: Intercept presence, X columns shifting and rescaling:
         0 = no intercept, no shifting, no rescaling;
         1 = add intercept, but neither shift nor rescale X;
         2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
     :param reg: Regularization parameter (lambda) for L2 regularization
     :param tol: Tolerance (epsilon)
     :param disp: (Over-)dispersion value, or 0.0 to estimate it from data
-    :param moi: Maximum number of outer (Newton / Fisher Scoring) iterations
-    :param mii: Maximum number of inner (Conjugate Gradient) iterations, 0 = no maximum
+    :param maxIter: Maximum number of outer (Newton / Fisher Scoring) iterations
+    :param maxInnerIter: Maximum number of inner (Conjugate Gradient) iterations, 0 = no maximum
     :param verbose: if the Algorithm should be verbose
-    :return: Matrix beta, whose size depends on icpt:
-        icpt=0: ncol(X) x 1;  icpt=1: (ncol(X) + 1) x 1;  icpt=2: (ncol(X) + 1) x 2
+    :return: Matrix beta, whose size depends on intercept:
+        intercept=0: ncol(X) x 1;  intercept=1: (ncol(X) + 1) x 1;  intercept=2: (ncol(X) + 1) x 2
     """
 
     params_dict = {'X': X, 'Y': Y}

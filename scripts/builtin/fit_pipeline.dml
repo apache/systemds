@@ -98,7 +98,7 @@ return (Matrix[Double] scores, Matrix[Double] cleanTrain, Matrix[Double] cleanTe
   
   
   # # # now test accuracy
-  [eXtrain, eYtrain, eXtest, eYtest, a, b, c, d, iState] = executePipeline(pipeline=pip, Xtrain=eXtrain, Ytrain=eYtrain,
+  [eXtrain, eYtrain, eXtest, eYtest, a, b, c, d, iState] = executePipeline(pipeline=pip, X=eXtrain, Y=eYtrain,
     Xtest=eXtest, Ytest=eYtest, metaList=metaList, hyperParameters=hp_matrix, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE)
   
   if(max(eYtrain) == min(eYtrain)) 

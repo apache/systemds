@@ -67,7 +67,7 @@ ytrain2 = removeEmpty(target=y, margin="rows", select=(S>reg_thr));
 
 print("Model training on sample "+nrow(Xtrain2))
 print(" -- with labels 1: "+sum(ytrain2==1)+", 2: "+sum(ytrain2==2))
-B = multiLogReg(X=Xtrain2, Y=ytrain2, maxii=50, icpt=0, reg=0.001, verbose=TRUE);
+B = multiLogReg(X=Xtrain2, Y=ytrain2, maxInnerIter=50, intercept=0, reg=0.001, verbose=TRUE);
 [M,yhat,acc] = multiLogRegPredict(X=Xtrain2, B=B, Y=ytrain2, verbose=TRUE);
 [M,yhat,acc] = multiLogRegPredict(X=Xtest, B=B, Y=ytest, verbose=TRUE);
 

@@ -24,10 +24,10 @@
 # It flips an image on the X (horizontal) or Y (vertical) axis.
 # INPUT:
 # -----------------------------------------------------------------------------------------
-# img_matrix           Input matrix/image (every row represents a linearized matrix/image)
-# horizontal_axis      flip either in X or Y axis
-# original_rows        number of rows in the original 2-D images
-# original_cols        number of cols in the original 2-D images
+# img          Input matrix/image (every row represents a linearized matrix/image)
+# horizontal   flip either in X or Y axis
+# sH           Height of a single image
+# sW           Width of a single image
 # -----------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -35,36 +35,36 @@
 # R            Output matrix/image  (every row represents a linearized matrix/image)
 # -----------------------------------------------------------------------------------------
 
-m_img_mirror_linearized = function(matrix[double] img_matrix, Boolean horizontal_axis,
-Integer original_rows, Integer original_cols) return (matrix[double] R) {
-  n = ncol(img_matrix);
-  R = matrix(0, rows=nrow(img_matrix), cols=n);
-  rows = original_rows;
-  cols = original_cols;
+m_img_mirror_linearized = function(matrix[double] img, Boolean horizontal,
+Integer sH, Integer sW) return (matrix[double] R) {
+  n = ncol(img);
+  R = matrix(0, rows=nrow(img), cols=n);
+  rows = sH;
+  cols = sW;
 
-  if (horizontal_axis) {
+  if (horizontal) {
     parfor (i in seq(1, (rows %/% 2) * cols, cols),check=0) {
       start = i;
       end = i + cols - 1;
       mirrorStart = (n - end) + 1;
       mirrorEnd = (n - start) + 1;
-      R[, start:end] = img_matrix[, mirrorStart:mirrorEnd];
-      R[, mirrorStart:mirrorEnd] = img_matrix[, start:end];
+      R[, start:end] = img[, mirrorStart:mirrorEnd];
+      R[, mirrorStart:mirrorEnd] = img[, start:end];
     }
     if (rows %% 2 == 1) {
       midStart = ((rows %/% 2)) * cols + 1;
       midEnd = midStart + cols - 1;
-      R[, midStart:midEnd] = img_matrix[, midStart:midEnd];
+      R[, midStart:midEnd] = img[, midStart:midEnd];
     }
   }
   else {
       offset = 1;
       while (offset <= n) {
         end = min(n, offset + cols - 1);
-        reversed_sub_matrix = matrix(0, rows=nrow(img_matrix), cols=cols);
+        reversed_sub_matrix = matrix(0, rows=nrow(img), cols=cols);
         idx = 1;
         for (j in offset:end) {
-          reversed_sub_matrix[, cols - idx + 1] = img_matrix[, j];
+          reversed_sub_matrix[, cols - idx + 1] = img[, j];
           idx = idx + 1;
         }
         R[, offset:end] = reversed_sub_matrix;

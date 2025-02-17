@@ -87,7 +87,7 @@ public class MLContextLinregTest extends MLContextTestBase {
 			Script lrcg = new Script(
 				  "X = read($X);\n"
 				+ "y = read($Y);\n"
-				+ "beta_out = lmCG(X=X, y=y, icpt=$icpt, tol=$tol, maxi=$maxi, reg=$reg);\n");
+				+ "beta_out = lmCG(X=X, y=y, intercept=$icpt, tol=$tol, maxIter=$maxi, reg=$reg);\n");
 			lrcg.in("X", X).in("y", Y).in("$icpt", "0").in("$tol", "0.000001").in("$maxi", "0").in("$reg", "0.000001")
 					.out("beta_out");
 			outmat = ml.execute(lrcg).getMatrix("beta_out").toMatrixBlock();
@@ -98,7 +98,7 @@ public class MLContextLinregTest extends MLContextTestBase {
 			Script lrds = new Script(
 				  "X = read($X);\n"
 				+ "y = read($Y);\n"
-				+ "beta_out = lmDS(X=X, y=y, icpt=$icpt, reg=$reg);\n");
+				+ "beta_out = lmDS(X=X, y=y, intercept=$icpt, reg=$reg);\n");
 			lrds.in("X", X).in("y", Y).in("$icpt", "0").in("$reg", "0.000001").out("beta_out");
 			outmat = ml.execute(lrds).getMatrix("beta_out").toMatrixBlock();
 

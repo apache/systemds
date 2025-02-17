@@ -65,7 +65,7 @@ public class Compression extends Lop {
 		sb.append(OPCODE);
 		sb.append(OPERAND_DELIMITOR);
 		if(getInputs().get(0) instanceof FunctionCallCP &&
-			((FunctionCallCP)getInputs().get(0)).getFunctionName().equalsIgnoreCase(Opcodes.TRANSFORMENCODE.toString()) ){
+			((FunctionCallCP)getInputs().get(0)).getFunctionName().equalsIgnoreCase("transformencode") ){
 			sb.append(getInputs().get(0).getOutputs().get(0).getOutputParameters().getLabel());
 		}
 		else{
@@ -73,7 +73,7 @@ public class Compression extends Lop {
 		}
 		sb.append(OPERAND_DELIMITOR);
 		if(getInputs().get(0) instanceof FunctionCallCP && 
-			((FunctionCallCP)getInputs().get(0)).getFunctionName().equalsIgnoreCase(Opcodes.TRANSFORMENCODE.toString()) ){
+			((FunctionCallCP)getInputs().get(0)).getFunctionName().equalsIgnoreCase("transformencode") ){
 			sb.append(getInputs().get(0).getOutputs().get(0).getOutputParameters().getLabel());
 		}
 		else{

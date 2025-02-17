@@ -149,7 +149,7 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
 				fedMap.execute(getTID(), true, frAll) : fedMap.execute(getTID(), true, frSliced, frAll);
 			
 			//aggregate partial results from federated responses
-			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAKP.toString());
+			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
 			ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, response));
 		}
 		else {

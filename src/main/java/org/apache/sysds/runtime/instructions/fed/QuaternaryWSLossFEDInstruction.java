@@ -159,7 +159,7 @@ public class QuaternaryWSLossFEDInstruction extends QuaternaryFEDInstruction {
 					getTID(), true, frSliced.toArray(new FederatedRequest[0][]), frAll);
 
 			// aggregate partial results from federated responses
-			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAKP.toString());
+			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
 			ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, response));
 		}
 		else {

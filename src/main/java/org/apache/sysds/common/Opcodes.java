@@ -297,8 +297,8 @@ public enum Opcodes {
 	RCM("rcm", InstructionType.MultiReturnComplexMatrixBuiltin),
 
 	PARTITION("partition", InstructionType.Partition),
-	COMPRESS(Compression.OPCODE, InstructionType.Compression),
-	DECOMPRESS(DeCompression.OPCODE, InstructionType.DeCompression),
+	COMPRESS(Compression.OPCODE, InstructionType.Compression, InstructionType.Compression),
+	DECOMPRESS(DeCompression.OPCODE, InstructionType.DeCompression, InstructionType.DeCompression),
 	SPOOF("spoof", InstructionType.SpoofFused),
 	PREFETCH("prefetch", InstructionType.Prefetch),
 	EVICT("_evict", InstructionType.EvictLineageCache),
@@ -309,8 +309,6 @@ public enum Opcodes {
 	SQL("sql", InstructionType.Sql),
 
 	//SP Opcodes
-	//TSMM_SP("tsmm", InstructionType.TSMM),
-	//PMM_SP("pmm", InstructionType.PMM),
 	MAPMM("mapmm", InstructionType.MAPMM),
 	MAPMMCHAIN("mapmmchain", InstructionType.MAPMMCHAIN),
 	TSMM2("tsmm2", InstructionType.TSMM2),
@@ -353,7 +351,7 @@ public enum Opcodes {
 	MAPMIN("mapmin", InstructionType.Binary),
 
 	//REBLOCK Instruction Opcodes
-	RBLK("rblk", InstructionType.Reblock),
+	RBLK("rblk", null, InstructionType.Reblock),
 	CSVRBLK("csvrblk", InstructionType.CSVReblock),
 	LIBSVMRBLK("libsvmrblk", InstructionType.LIBSVMReblock),
 
@@ -397,17 +395,10 @@ public enum Opcodes {
 	CASTDTM("castdtm", InstructionType.Cast),
 	CASTDTF("castdtf", InstructionType.Cast),
 
-	//RSHAPE_SP("rshape", InstructionType.MatrixReshape),
-
-	//TRANSFORMENCODE_SP("transformencode", InstructionType.MultiReturnBuiltin),
-
-	//WRITE_SP("write", InstructionType.Write),
-
 	//FED Opcodes
 	FEDINIT("fedinit", InstructionType.Init);
-	//TSMM_FED("tsmm", InstructionType.Tsmm);
 
-	// Constructor
+	// Constructors
 	Opcodes(String name, InstructionType type) {
 		this._name = name;
 		this._type = type;
@@ -437,10 +428,11 @@ public enum Opcodes {
 
 	private static final Map<String, Opcodes> _lookupMap = new HashMap<>();
 
-	// Initialize lookup map
 	static {
 		for (Opcodes op : EnumSet.allOf(Opcodes.class)) {
-			_lookupMap.put(op.toString(), op);
+			if (op._name != null) {
+				_lookupMap.put(op._name.toLowerCase(), op);
+			}
 		}
 	}
 
@@ -454,17 +446,18 @@ public enum Opcodes {
 		return _type;
 	}
 
-	public InstructionType getSpType(){
-		return _spType;
+	public InstructionType getSpType() {
+		return _spType != null ? _spType : _type;
 	}
 
 	public InstructionType getFedType(){
-		return _fedType;
+		return _fedType != null ? _fedType : _type;
 	}
 
 	public static InstructionType getTypeByOpcode(String opcode, Types.ExecType type) {
-		System.out.println(opcode);
-		System.out.println(type);
+		if (opcode == null || opcode.trim().isEmpty()) {
+			return null;
+		}
 		for (Opcodes op : Opcodes.values()) {
 			if (op.toString().equalsIgnoreCase(opcode.trim())) {
 				switch (type) {
@@ -479,7 +472,5 @@ public enum Opcodes {
 		}
 		return null;
 	}
-
-
-
 }
+

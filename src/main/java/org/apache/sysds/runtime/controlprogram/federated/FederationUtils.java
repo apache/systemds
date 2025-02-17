@@ -334,7 +334,7 @@ public class FederationUtils {
 		try {
 			FederatedRange[] ranges = map.getFederatedRanges();
 			BinaryOperator plus = InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString());
-			BinaryOperator minus = InstructionUtils.parseBinaryOperator(Opcodes.MINUS.toString());
+			BinaryOperator minus = InstructionUtils.parseBinaryOperator("-");
 
 			ScalarOperator mult1 = InstructionUtils.parseScalarBinaryOperator(Opcodes.MULT.toString(), false);
 			ScalarOperator dev1 = InstructionUtils.parseScalarBinaryOperator(Opcodes.DIV.toString(), false);

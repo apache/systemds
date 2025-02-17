@@ -195,7 +195,7 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 			if((wdivmm_type.isLeft() && X.isFederated(FType.ROW))
 				|| (wdivmm_type.isRight() && X.isFederated(FType.COL))) { // local aggregation
 				// aggregate partial results from federated responses
-				AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAKP.toString());
+				AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
 				ec.setMatrixOutput(output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
 			}
 			else if(wdivmm_type.isLeft() || wdivmm_type.isRight() || wdivmm_type.isBasic()) {

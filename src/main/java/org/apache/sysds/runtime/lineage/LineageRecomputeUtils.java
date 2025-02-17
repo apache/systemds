@@ -32,6 +32,7 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.InstructionType;
 import org.apache.sysds.common.Opcodes;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOp1;
@@ -308,8 +309,8 @@ public class LineageRecomputeUtils {
 				break;
 			}
 			case Instruction: {
-				InstructionType ctype = InstructionUtils.getCPTypeByOpcode(item.getOpcode());
-				InstructionType stype = InstructionUtils.getSPTypeByOpcode(item.getOpcode());
+				InstructionType ctype = Opcodes.getTypeByOpcode(item.getOpcode(), Types.ExecType.CP);
+				InstructionType stype = Opcodes.getTypeByOpcode(item.getOpcode(), Types.ExecType.SPARK);
 				
 				if (ctype != null) {
 					switch (ctype) {

@@ -498,7 +498,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 
 		protected void aggResult(ExecutionContext ec, Future<FederatedResponse>[] response,
 			FederationMap fedMap) {
-			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAKP.toString());
+			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
 			switch(_outProdType) {
 				case LEFT_OUTER_PRODUCT:
 				case RIGHT_OUTER_PRODUCT:

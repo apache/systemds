@@ -59,7 +59,7 @@ public class Federated extends Lop {
 	public String getInstructions(String type, String addresses, String ranges, String output) {
 		StringBuilder sb = new StringBuilder("FED");
 		sb.append(OPERAND_DELIMITOR);
-		sb.append(Opcodes.FEDINIT);
+		sb.append("fedinit");
 		sb.append(OPERAND_DELIMITOR);
 		sb.append(_type.prepScalarInputOperand(type));
 		sb.append(OPERAND_DELIMITOR);

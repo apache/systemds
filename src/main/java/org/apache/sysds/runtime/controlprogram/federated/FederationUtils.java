@@ -41,6 +41,7 @@ import io.netty.handler.codec.compression.SnappyFrameEncoder;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
@@ -200,8 +201,8 @@ public class FederationUtils {
 	public static MatrixBlock aggMean(Future<FederatedResponse>[] ffr, FederationMap map) {
 		try {
 			FederatedRange[] ranges = map.getFederatedRanges();
-			BinaryOperator bop = InstructionUtils.parseBinaryOperator("+");
-			ScalarOperator sop1 = InstructionUtils.parseScalarBinaryOperator("*", false);
+			BinaryOperator bop = InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString());
+			ScalarOperator sop1 = InstructionUtils.parseScalarBinaryOperator(Opcodes.MULT.toString(), false);
 			MatrixBlock ret = null;
 			long size = 0;
 			for(int i=0; i<ffr.length; i++) {
@@ -332,12 +333,12 @@ public class FederationUtils {
 	public static MatrixBlock aggVar(Future<FederatedResponse>[] ffr, Future<FederatedResponse>[] meanFfr, FederationMap map, boolean isRowAggregate, boolean isScalar) {
 		try {
 			FederatedRange[] ranges = map.getFederatedRanges();
-			BinaryOperator plus = InstructionUtils.parseBinaryOperator("+");
+			BinaryOperator plus = InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString());
 			BinaryOperator minus = InstructionUtils.parseBinaryOperator("-");
 
-			ScalarOperator mult1 = InstructionUtils.parseScalarBinaryOperator("*", false);
-			ScalarOperator dev1 = InstructionUtils.parseScalarBinaryOperator("/", false);
-			ScalarOperator pow = InstructionUtils.parseScalarBinaryOperator("^2", false);
+			ScalarOperator mult1 = InstructionUtils.parseScalarBinaryOperator(Opcodes.MULT.toString(), false);
+			ScalarOperator dev1 = InstructionUtils.parseScalarBinaryOperator(Opcodes.DIV.toString(), false);
+			ScalarOperator pow = InstructionUtils.parseScalarBinaryOperator(Opcodes.POW2.toString(), false);
 
 			long size1 = isScalar ? ranges[0].getSize() : ranges[0].getSize(isRowAggregate ? 1 : 0);
 			MatrixBlock var1 = (MatrixBlock)ffr[0].get().getData()[0];

@@ -174,7 +174,7 @@ public class FullMatrixMultiplicationTransposeSelf2Test extends AutomatedTestBas
 		
 			//check for compiled tsmm instructions
 			if( instType == ExecType.SPARK || instType == ExecType.CP ) {
-				String opcode = (instType==ExecType.SPARK) ? Instruction.SP_INST_PREFIX + "tsmm2" : Opcodes.TSMM.toString();
+				String opcode = (instType==ExecType.SPARK) ? Instruction.SP_INST_PREFIX + Opcodes.TSMM2 : Opcodes.TSMM.toString();
 				Assert.assertTrue("Missing opcode: "+opcode, Statistics.getCPHeavyHitterOpCodes().contains(opcode) );
 			}
 		}

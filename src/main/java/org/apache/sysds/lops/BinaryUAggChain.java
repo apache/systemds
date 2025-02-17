@@ -19,6 +19,7 @@
 
 package org.apache.sysds.lops;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.AggOp;
@@ -30,7 +31,7 @@ import org.apache.sysds.common.Types.ValueType;
 
 public class BinaryUAggChain extends Lop 
 {
-	public static final String OPCODE = "binuaggchain";
+	public static final String OPCODE = Opcodes.BINUAGGCHAIN.toString();
 
 	//outer operation
 	private OpOp2 _binOp = null;

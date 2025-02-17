@@ -22,6 +22,7 @@ package org.apache.sysds.lops;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 import static org.apache.sysds.common.Types.DataType;

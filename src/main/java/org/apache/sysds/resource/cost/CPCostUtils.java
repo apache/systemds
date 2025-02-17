@@ -202,11 +202,11 @@ public class CPCostUtils {
 
 	// HELPERS
 	public static boolean opcodeRequiresScan(String opcode) {
-		return  !opcode.equals("ncol") &&
-				!opcode.equals("nrow") &&
-				!opcode.equals("length") &&
-				!opcode.equals("exists") &&
-				!opcode.equals("lineage");
+		return  !opcode.equals(Opcodes.NCOL.toString()) &&
+				!opcode.equals(Opcodes.NROW.toString()) &&
+				!opcode.equals(Opcodes.LENGTH.toString()) &&
+				!opcode.equals(Opcodes.EXISTS.toString()) &&
+				!opcode.equals(Opcodes.LINEAGE.toString());
 	}
 	public static void assignOutputMemoryStats(CPInstruction inst, VarStats output, VarStats...inputs) {
 		CPType instType = inst.getCPInstructionType();

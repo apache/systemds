@@ -122,7 +122,7 @@ public class RecompilationTest extends AutomatedTestBase {
 		// X = A.csv: (10^5)x(10^4) = 10^9 ~ 8BG
 		// Y = B.csv: (10^4)x(10^3) = 10^7 ~ 80MB
 		// X %*% Y -> (10^5)x(10^3) = 10^8 ~ 800MB
-		runTestMM("A.csv", "B.csv", 4L*1024*1024*1024, 2, 4L*1024*1024*1024, "mapmm", true);
+		runTestMM("A.csv", "B.csv", 4L*1024*1024*1024, 2, 4L*1024*1024*1024, Opcodes.MAPMM.toString(), true);
 	}
 
 	@Test
@@ -131,7 +131,7 @@ public class RecompilationTest extends AutomatedTestBase {
 		// X = A.csv: (10^5)x(10^4) = 10^9 ~ 8BG
 		// Y = B.csv: (10^4)x(10^3) = 10^7 ~ 80MB
 		// X %*% Y -> (10^5)x(10^3) = 10^8 ~ 800MB
-		runTestMM("A.csv", "B.csv", 4L*1024*1024*1024, 4, 1024*1024*1024, "rmm", true);
+		runTestMM("A.csv", "B.csv", 4L*1024*1024*1024, 4, 1024*1024*1024, Opcodes.RMM.toString(), true);
 	}
 
 	@Test
@@ -140,7 +140,7 @@ public class RecompilationTest extends AutomatedTestBase {
 		// X = A.csv: (10^5)x(10^4) = 10^9 ~ 8BG
 		// Y = C.csv: (10^4)x(10^4) = 10^8 ~ 800MB
 		// X %*% Y -> (10^5)x(10^4) = 10^9 ~ 8GB
-		runTestMM("A.csv", "C.csv", 8L*1024*1024*1024, 2, 4L*1024*1024*1024, "cpmm", true);
+		runTestMM("A.csv", "C.csv", 8L*1024*1024*1024, 2, 4L*1024*1024*1024, Opcodes.CPMM.toString(), true);
 	}
 
 	// Tests for transposed self matrix multiplication (t(X)%*%X) ------------------------------------------------------
@@ -158,7 +158,7 @@ public class RecompilationTest extends AutomatedTestBase {
 		// Distributed cluster with 8GB driver memory and 8GB executor memory -> cpmm operator in Spark
 		// X = A.csv: (10^5)x(10^4) = 10^9 ~ 8GB
 		// t(X) %*% X -> (10^4)x(10^4) = 10^8 ~ 800MB
-		runTestTSMM("A.csv", 8L*1024*1024*1024, 2, 8L*1024*1024*1024, "cpmm", true);
+		runTestTSMM("A.csv", 8L*1024*1024*1024, 2, 8L*1024*1024*1024, Opcodes.CPMM.toString(), true);
 	}
 
 	@Test
@@ -167,9 +167,9 @@ public class RecompilationTest extends AutomatedTestBase {
 
 		runTestMM("A.csv", "B.csv", 16L*1024*1024*1024, 4, 1024*1024*1024, Opcodes.MMULT.toString(), false);
 
-		runTestMM("A.csv", "B.csv", 4L*1024*1024*1024, 2, 4L*1024*1024*1024, "mapmm", true);
+		runTestMM("A.csv", "B.csv", 4L*1024*1024*1024, 2, 4L*1024*1024*1024, Opcodes.MAPMM.toString(), true);
 
-		runTestMM("A.csv", "B.csv", 4L*1024*1024*1024, 4, 1024*1024*1024, "rmm", true);
+		runTestMM("A.csv", "B.csv", 4L*1024*1024*1024, 4, 1024*1024*1024, Opcodes.RMM.toString(), true);
 
 		runTestMM("A.csv", "B.csv", 8L*1024*1024*1024, 0, -1, Opcodes.MMULT.toString(), false);
 	}

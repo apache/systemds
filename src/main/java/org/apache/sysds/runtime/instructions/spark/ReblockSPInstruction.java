@@ -25,6 +25,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.hops.recompile.Recompiler;
@@ -69,7 +70,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
-		if(!opcode.equals("rblk")) {
+		if(!opcode.equals(Opcodes.RBLK.toString())) {
 			throw new DMLRuntimeException("Incorrect opcode for ReblockSPInstruction:" + opcode);
 		}
 
@@ -157,7 +158,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 				naStrings = props.getNAStrings();
 			}
 
-			csvInstruction = new CSVReblockSPInstruction(null, input1, output, mcOut.getBlocksize(), mcOut.getBlocksize(), hasHeader, delim, fill, fillValue, "csvrblk", instString, naStrings);
+			csvInstruction = new CSVReblockSPInstruction(null, input1, output, mcOut.getBlocksize(), mcOut.getBlocksize(), hasHeader, delim, fill, fillValue, Opcodes.CSVRBLK.toString(), instString, naStrings);
 			csvInstruction.processInstruction(sec);
 			return;
 		}
@@ -245,7 +246,7 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 				naStrings = props.getNAStrings();
 			}
 
-			csvInstruction = new CSVReblockSPInstruction(null, input1, output, mcOut.getBlocksize(), mcOut.getBlocksize(), hasHeader, delim, fill, fillValue, "csvrblk", instString, naStrings);
+			csvInstruction = new CSVReblockSPInstruction(null, input1, output, mcOut.getBlocksize(), mcOut.getBlocksize(), hasHeader, delim, fill, fillValue, Opcodes.CSVRBLK.toString(), instString, naStrings);
 			csvInstruction.processInstruction(sec);
 		}
 		else if(fmt == FileFormat.LIBSVM) {

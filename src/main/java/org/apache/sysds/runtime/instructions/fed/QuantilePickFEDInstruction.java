@@ -33,6 +33,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.PickByCount.OperationTypes;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -93,7 +94,7 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 	public static QuantilePickFEDInstruction parseInstruction ( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		if ( !opcode.equalsIgnoreCase("qpick") )
+		if ( !opcode.equalsIgnoreCase(Opcodes.QPICK.toString()) )
 			throw new DMLRuntimeException("Unknown opcode while parsing a QuantilePickCPInstruction: " + str);
 		FederatedOutput fedOut = FederatedOutput.valueOf(parts[parts.length-1]);
 		QuantilePickFEDInstruction inst = null;
@@ -361,7 +362,7 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 						// Add results by row
 						MatrixBlock tmp = (MatrixBlock) response.getData()[0];
 						synchronized(out) {
-							out.binaryOperationsInPlace(InstructionUtils.parseBinaryOperator("+"), tmp);
+							out.binaryOperationsInPlace(InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString()), tmp);
 						}
 						return null;
 					}

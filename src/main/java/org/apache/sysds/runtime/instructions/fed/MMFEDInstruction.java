@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.fed;
 import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.hops.fedplanner.FTypes.AlignType;

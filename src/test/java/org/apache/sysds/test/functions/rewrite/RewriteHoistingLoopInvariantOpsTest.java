@@ -106,7 +106,7 @@ public class RewriteHoistingLoopInvariantOpsTest extends AutomatedTestBase
 			
 			//check applied code motion rewrites (moved sum and - from 10 to 1)
 			Assert.assertEquals(rewrites?1:10, Statistics.getCPHeavyHitterCount(Opcodes.UAKP.toString()));
-			Assert.assertEquals(rewrites?1:10, Statistics.getCPHeavyHitterCount(Opcodes.MINUS.toString()));
+			Assert.assertEquals(rewrites?1:10, Statistics.getCPHeavyHitterCount("-"));
 		}
 		finally {
 			OptimizerUtils.ALLOW_CODE_MOTION = rewritesOld;

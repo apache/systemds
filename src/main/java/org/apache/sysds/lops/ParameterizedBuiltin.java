@@ -187,19 +187,19 @@ public class ParameterizedBuiltin extends Lop
 				break;
 			}
 			case AUTODIFF: {
-				sb.append(Opcodes.AUTODIFF.toString()); //opcode
+				sb.append(Opcodes.AUTODIFF); //opcode
 				sb.append(OPERAND_DELIMITOR);
 				compileGenericParamMap(sb, _inputParams);
 				break;
 			}
 			case LIST: {
-				sb.append(Opcodes.NVLIST.toString()); //opcode
+				sb.append(Opcodes.NVLIST); //opcode
 				sb.append(OPERAND_DELIMITOR);
 				compileGenericParamMap(sb, _inputParams);
 				break;
 			}
 			case TOSTRING: {
-				sb.append(Opcodes.TOSTRING.toString()); //opcode
+				sb.append(Opcodes.TOSTRING); //opcode
 				sb.append(OPERAND_DELIMITOR);
 				compileGenericParamMap(sb, _inputParams);
 				break;

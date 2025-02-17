@@ -28,6 +28,7 @@ import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
@@ -332,7 +333,7 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 				next.copy(0, mb.getNumRows()-1, 0, mb.getNumColumns()-1, mb, true);
 
 				// add worker results
-				BinaryOperator plus = InstructionUtils.parseBinaryOperator("+");
+				BinaryOperator plus = InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString());
 				resultBlock = prev.binaryOperationsInPlace(plus, next);
 			}
 			catch(Exception e) {

@@ -19,6 +19,7 @@
 
 package org.apache.sysds.lops;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
@@ -78,11 +79,11 @@ public class CumulativeOffsetBinary extends Lop
 	
 	private String getOpcode() {
 		switch( _op ) {
-			case SUM:      return "bcumoffk+";
-			case PROD:     return "bcumoff*";
-			case SUM_PROD: return "bcumoff+*";
-			case MIN:      return "bcumoffmin";
-			case MAX:      return "bcumoffmax";
+			case SUM:      return Opcodes.BCUMOFFKP.toString();
+			case PROD:     return Opcodes.BCUMOFFM.toString();
+			case SUM_PROD: return Opcodes.BCUMOFFPM.toString();
+			case MIN:      return Opcodes.BCUMOFFMIN.toString();
+			case MAX:      return Opcodes.BCUMOFFMAX.toString();
 			default:       return null;
 		}
 	}

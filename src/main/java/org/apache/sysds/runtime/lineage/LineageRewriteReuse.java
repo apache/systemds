@@ -1093,7 +1093,7 @@ public class LineageRewriteReuse
 
 		// If the inputs to * came from cbind, look for both the inputs in cache.
 		LineageItem item = ((ComputationCPInstruction) curr).getLineageItem(ec).getValue();
-		if (curr.getOpcode().equalsIgnoreCase("*")) {
+		if (curr.getOpcode().equalsIgnoreCase(Opcodes.MULT.toString())) {
 			LineageItem left= item.getInputs()[0];
 			LineageItem right = item.getInputs()[1];
 			if (left.getOpcode().equalsIgnoreCase(Opcodes.CBIND.toString()) && right.getOpcode().equalsIgnoreCase(Opcodes.CBIND.toString())){

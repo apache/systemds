@@ -974,8 +974,8 @@ public abstract class SpoofCellwise extends SpoofOperator {
 						lc[i] *= genexec(0, b, scalars, m, n, rix+i, i, j);
 						break;
 					}
-					lnnz += (lc[i] != 0) ? 1 : 0;
 				}
+				lnnz += (lc[i] != 0) ? 1 : 0;
 			}
 		}
 		return lnnz;

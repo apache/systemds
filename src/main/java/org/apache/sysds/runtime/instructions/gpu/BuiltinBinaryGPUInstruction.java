@@ -76,5 +76,4 @@ public abstract class BuiltinBinaryGPUInstruction extends GPUInstruction {
 			throw new DMLRuntimeException(
 				"GPU : Unsupported GPU builtin operations on a matrix and a scalar:" + opcode);
 	}
-
 }

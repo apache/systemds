@@ -1,0 +1,55 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Builtin function for simple exponential smoothing (SES).
+#
+# INPUT:
+# ------------------------------------------------------------------------------
+# x        Time series vector [shape: n-by-1]
+# h        Forecasting horizon
+# alpha    Smoothing parameter yhat_t = alpha * x_y + (1-alpha) * yhat_t-1
+# ------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ------------------------------------------------------------------------------
+# yhat     Forecasts [shape: h-by-1]
+# ------------------------------------------------------------------------------
+
+m_ses = function(Matrix[Double] x, Integer h = 1, Double alpha = 0.5)
+  return (Matrix[Double] yhat)
+{
+  # check and ensure valid parameters
+  if(h < 1) {
+    print("SES: forecasting horizon should be larger one.");
+    h = 1;
+  }
+  if(alpha < 0 | alpha > 1) {
+    print("SES: smooting parameter should be in [0,1].");
+    alpha = 0.5;
+  }
+
+  # vectorized forecasting
+  # weights are 1 for first value and otherwise replicated alpha
+  # but to compensate alpha*x for the first, we use 1/alpha
+  w = rbind(as.matrix(1/alpha), matrix(1-alpha,nrow(x)-1,1));
+  y = cumsumprod(cbind(alpha*x, w));
+  yhat = matrix(as.scalar(y[nrow(x),1]), h, 1);
+}

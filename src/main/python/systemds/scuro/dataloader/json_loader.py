@@ -21,7 +21,7 @@
 import json
 
 from systemds.scuro.dataloader.base_loader import BaseLoader
-from typing import Optional, List
+from typing import Optional, List, Union
 
 
 class JSONLoader(BaseLoader):
@@ -35,9 +35,9 @@ class JSONLoader(BaseLoader):
         super().__init__(source_path, indices, chunk_size)
         self.field = field
 
-    def extract(self, file: str, indices: List[str]):
+    def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
         with open(file) as f:
             json_file = json.load(f)
-            for idx in indices:
+            for idx in index:
                 self.data.append(json_file[idx][self.field])

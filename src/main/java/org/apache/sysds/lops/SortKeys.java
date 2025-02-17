@@ -21,7 +21,8 @@ package org.apache.sysds.lops;
 
 import java.util.HashSet;
 
- 
+
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.DataType;
@@ -29,8 +30,7 @@ import org.apache.sysds.common.Types.ValueType;
 
 public class SortKeys extends Lop 
 {
-	
-	public static final String OPCODE = "qsort"; //quantile sort 
+	public static final String OPCODE = Opcodes.QSORT.toString(); //quantile sort
 	
 	public enum OperationTypes { 
 		WithWeights, 

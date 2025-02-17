@@ -24,6 +24,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
@@ -46,7 +47,7 @@ public class CLALibCompAggTest {
 
 	@Test
 	public void uavar() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uavar", 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAVAR.toString(), 1);
 		MatrixBlock cRet = cmb.aggregateUnaryOperations(op);
 		MatrixBlock uRet = mb.aggregateUnaryOperations(op);
 		TestUtils.compareMatricesPercentageDistance(uRet, cRet, 0, 0, "variance");
@@ -54,7 +55,7 @@ public class CLALibCompAggTest {
 
 	@Test
 	public void uamult() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("ua*", 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAM.toString(), 1);
 		MatrixBlock cRet = cmb.aggregateUnaryOperations(op);
 		MatrixBlock uRet = mb.aggregateUnaryOperations(op);
 		TestUtils.compareMatricesPercentageDistance(uRet, cRet, 0, 0, "product");
@@ -62,7 +63,7 @@ public class CLALibCompAggTest {
 
 	@Test
 	public void uarmult() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uar*", 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARM.toString(), 1);
 		MatrixBlock cRet = cmb.aggregateUnaryOperations(op);
 		MatrixBlock uRet = mb.aggregateUnaryOperations(op);
 		TestUtils.compareMatricesPercentageDistance(uRet, cRet, 0, 0, "product");
@@ -70,7 +71,7 @@ public class CLALibCompAggTest {
 
 	@Test
 	public void uacmult() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uac*", 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACM.toString(), 1);
 		MatrixBlock cRet = cmb.aggregateUnaryOperations(op);
 		MatrixBlock uRet = mb.aggregateUnaryOperations(op);
 		TestUtils.compareMatricesPercentageDistance(uRet, cRet, 0, 0, "product");
@@ -79,7 +80,7 @@ public class CLALibCompAggTest {
 	@Test
 	public void uarimax() {
 		try {
-			AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uarimax", 1);
+			AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARIMAX.toString(), 1);
 			MatrixBlock cRet = cmb.aggregateUnaryOperations(op);
 			MatrixBlock uRet = mb.aggregateUnaryOperations(op);
 			TestUtils.compareMatricesPercentageDistance(uRet, cRet, 0, 0, "maxindexs");
@@ -96,13 +97,12 @@ public class CLALibCompAggTest {
 		AggregateUnaryOperator op = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), 1);
 		MatrixBlock cRet = cmb.aggregateUnaryOperations(op, null, 1000, null, false);
 		MatrixBlock uRet = mb.aggregateUnaryOperations(op, null, 1000, null, false);
-		TestUtils.compareMatricesPercentageDistance(uRet, cRet, 0, 0, "uamax");
-
+		TestUtils.compareMatricesPercentageDistance(uRet, cRet, 0, 0, Opcodes.UAMAX.toString());
 	}
 
 	@Test
 	public void uamultOverlapping() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("ua*", 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAM.toString(), 1);
 		cmb.setOverlapping(true);
 		MatrixBlock cRet = cmb.aggregateUnaryOperations(op);
 		MatrixBlock uRet = mb.aggregateUnaryOperations(op);
@@ -111,7 +111,7 @@ public class CLALibCompAggTest {
 
 	@Test
 	public void uamultOverlapping_noCache() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("ua*", 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAM.toString(), 1);
 		cmb.setOverlapping(true);
 		CompressedMatrixBlock spy = spy(cmb);
 		when(spy.getCachedDecompressed()).thenReturn(null);
@@ -123,7 +123,7 @@ public class CLALibCompAggTest {
 
 	@Test
 	public void uamaxOverlapping() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uamax", 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMAX.toString(), 1);
 		cmb.setOverlapping(true);
 		MatrixBlock cRet = cmb.aggregateUnaryOperations(op);
 		MatrixBlock uRet = mb.aggregateUnaryOperations(op);
@@ -132,7 +132,7 @@ public class CLALibCompAggTest {
 
 	@Test
 	public void uamaxOverlapping_noCache() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uamax", 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMAX.toString(), 1);
 		cmb.setOverlapping(true);
 		CompressedMatrixBlock spy = spy(cmb);
 		when(spy.getCachedDecompressed()).thenReturn(null);
@@ -144,7 +144,7 @@ public class CLALibCompAggTest {
 
 	@Test
 	public void uamaxPrefilterSingleThread() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uamax", 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMAX.toString(), 1);
 		CompressedMatrixBlock c = CompressedMatrixBlockFactory.createConstant(cmb.getNumRows(), 1, 10);
 		CompressedMatrixBlock cmbt = (CompressedMatrixBlock) cmb.append(c);
 		cmbt.setOverlapping(true);
@@ -157,7 +157,7 @@ public class CLALibCompAggTest {
 
 	@Test
 	public void uamaxPrefilterParallel() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uamax", 10);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMAX.toString(), 10);
 		CompressedMatrixBlock c = CompressedMatrixBlockFactory.createConstant(cmb.getNumRows(), 1, 10);
 		CompressedMatrixBlock cmbt = (CompressedMatrixBlock) cmb.append(c);
 		cmbt.setOverlapping(true);
@@ -170,7 +170,7 @@ public class CLALibCompAggTest {
 
 	@Test
 	public void uarmaxPrefilterParallel() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uarmax", 10);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARMAX.toString(), 10);
 		CompressedMatrixBlock c = CompressedMatrixBlockFactory.createConstant(cmb.getNumRows(), 1, 10);
 		CompressedMatrixBlock cmbt = (CompressedMatrixBlock) cmb.append(c);
 		cmbt.setOverlapping(true);
@@ -183,7 +183,7 @@ public class CLALibCompAggTest {
 
 	@Test
 	public void uacmaxPrefilterParallel() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uacmax", 10);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACMAX.toString(), 10);
 		CompressedMatrixBlock c = CompressedMatrixBlockFactory.createConstant(cmb.getNumRows(), 1, 10);
 		CompressedMatrixBlock cmbt = (CompressedMatrixBlock) cmb.append(c);
 		cmbt.setOverlapping(true);
@@ -196,7 +196,7 @@ public class CLALibCompAggTest {
 
 	@Test
 	public void rowsum_compressedReturn() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uark+", 10);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARKP.toString(), 10);
 		MatrixBlock cRet = cmb.aggregateUnaryOperations(op);
 		MatrixBlock uRet = mb.aggregateUnaryOperations(op);
 		TestUtils.compareMatricesPercentageDistance(uRet, cRet, 0, 0, "rowsum");
@@ -205,7 +205,7 @@ public class CLALibCompAggTest {
 
 	@Test
 	public void rowmean() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uarmean", 10);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARMEAN.toString(), 10);
 		MatrixBlock cRet = cmb.aggregateUnaryOperations(op);
 		MatrixBlock uRet = mb.aggregateUnaryOperations(op);
 		TestUtils.compareMatricesPercentageDistance(uRet, cRet, 0, 0, "rowmean");
@@ -213,7 +213,7 @@ public class CLALibCompAggTest {
 
 	@Test
 	public void rowmeanDecompressing() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uarmean", 10);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARMEAN.toString(), 10);
 		CompressedMatrixBlock spy = spy(cmb);
 		when(spy.isOverlapping()).thenReturn(true);
 		when(spy.getCachedDecompressed()).thenReturn(null);
@@ -225,8 +225,7 @@ public class CLALibCompAggTest {
 	@Test
 	public void rowSquareSumDecompressing() {
 		try{
-
-			AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uarsqk+", 10);
+			AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARSQKP.toString(), 10);
 			CompressedMatrixBlock spy = spy(cmb);
 			when(spy.isOverlapping()).thenReturn(true);
 			when(spy.getCachedDecompressed()).thenReturn(null);
@@ -243,7 +242,7 @@ public class CLALibCompAggTest {
 
 	@Test
 	public void rowMin() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uarmin", 10);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARMIN.toString(), 10);
 		MatrixBlock cRet = cmb.aggregateUnaryOperations(op);
 		MatrixBlock uRet = mb.aggregateUnaryOperations(op);
 		TestUtils.compareMatricesPercentageDistance(uRet, cRet, 0, 0, "rowmin");
@@ -251,7 +250,7 @@ public class CLALibCompAggTest {
 
 	@Test
 	public void rowMinSparseLotsOfZero() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uarmin", 10);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARMIN.toString(), 10);
 
 		MatrixBlock mb = TestUtils.generateTestMatrixBlock(1000, 1000, 1, 1, 0.01, 2341);
 
@@ -268,8 +267,7 @@ public class CLALibCompAggTest {
 	@Test
 	public void rowsum_compressedReturn2() {
 		try {
-
-			AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uark+", 10);
+			AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARKP.toString(), 10);
 
 			CompressedMatrixBlock c = CompressedMatrixBlockFactory.createConstant(cmb.getNumRows(), 1, 0);
 			CompressedMatrixBlock cmbt = (CompressedMatrixBlock) cmb.append(c);
@@ -290,8 +288,7 @@ public class CLALibCompAggTest {
 	@Test
 	public void rowsum_compressedReturn3() {
 		try {
-
-			AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uark+", 10);
+			AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARKP.toString(), 10);
 
 			CompressedMatrixBlock c = CompressedMatrixBlockFactory.createConstant(cmb.getNumRows(), 1, -1);
 			CompressedMatrixBlock c2 = CompressedMatrixBlockFactory.createConstant(cmb.getNumRows(), 1, 1);
@@ -317,8 +314,7 @@ public class CLALibCompAggTest {
 	@Test
 	public void rowsum_compressedReturn4() {
 		try {
-
-			AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uark+", 10);
+			AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARKP.toString(), 10);
 
 			CompressedMatrixBlock c = CompressedMatrixBlockFactory.createConstant(cmb.getNumRows(), 1, 12);
 			CompressedMatrixBlock c2 = CompressedMatrixBlockFactory.createConstant(cmb.getNumRows(), 1, 1);
@@ -343,7 +339,7 @@ public class CLALibCompAggTest {
 	@Test
 	public void rowsum_compressedReturn5() {
 		try {
-			AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uark+", 10);
+			AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARKP.toString(), 10);
 
 			op = new AggregateUnaryOperator(new AggregateOperator(0, Plus.getPlusFnObject(), CorrectionLocationType.NONE),
 				op.indexFn, op.getNumThreads());
@@ -371,7 +367,7 @@ public class CLALibCompAggTest {
 	@Test
 	public void notRowSumThereforeNotCompressed() {
 		try {
-			AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uarsqk+", 10);
+			AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARSQKP.toString(), 10);
 			CompressedMatrixBlock c = CompressedMatrixBlockFactory.createConstant(cmb.getNumRows(), 1, 12);
 			CompressedMatrixBlock c2 = CompressedMatrixBlockFactory.createConstant(cmb.getNumRows(), 1, 1);
 			MatrixBlock ctmp = c.append(c2);

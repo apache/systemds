@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.rewrite;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -144,10 +145,9 @@ public class RewriteSimplifyWeightedSigmoidMMChainsTest extends AutomatedTestBas
 			TestUtils.compareMatrices(dmlfile, rfile, 1e-8, "Stat-DML", "Stat-R");
 
 			if(rewrites)
-				Assert.assertTrue(heavyHittersContainsString("wsigmoid"));
+				Assert.assertTrue(heavyHittersContainsString(Opcodes.WSIGMOID.toString()));
 			else
-				Assert.assertFalse(heavyHittersContainsString("wsigmoid"));
-
+				Assert.assertFalse(heavyHittersContainsString(Opcodes.WSIGMOID.toString()));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag1;

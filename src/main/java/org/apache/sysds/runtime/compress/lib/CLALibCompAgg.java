@@ -551,16 +551,8 @@ public class CLALibCompAgg {
 	}
 
 	private static void fillStart(MatrixBlock in, MatrixBlock ret, AggregateUnaryOperator op) {
-		final ValueFunction fn = op.aggOp.increOp.fn;
-		if(fn instanceof Builtin) {
-			ret.getDenseBlock().set(op.aggOp.initialValue);
-		}
-		else if(fn instanceof Multiply && op.indexFn instanceof ReduceAll) {
-			long nnz = in.getNonZeros();
-			long nc = (long) in.getNumRows() * in.getNumColumns();
-			boolean containsZero = nnz != nc;
-			ret.getDenseBlock().set(0, 0, containsZero ? 0 : 1);
-		}
+		if(op.aggOp.initialValue != 0)
+			ret.reset(ret.getNumRows(), ret.getNumColumns(), op.aggOp.initialValue);
 	}
 
 	protected static MatrixBlock genTmpReduceAllOrRow(MatrixBlock ret, AggregateUnaryOperator op) {

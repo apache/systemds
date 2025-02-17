@@ -1154,25 +1154,51 @@ public class BinaryOp extends MultiThreadedHop {
 	}
 	
 	public boolean supportsMatrixScalarOperations() {
-		return ( op==OpOp2.PLUS ||op==OpOp2.MINUS
-				||op==OpOp2.MULT ||op==OpOp2.DIV
-				||op==OpOp2.MODULUS ||op==OpOp2.INTDIV
-				||op==OpOp2.LESS ||op==OpOp2.LESSEQUAL
-				||op==OpOp2.GREATER ||op==OpOp2.GREATEREQUAL
-				||op==OpOp2.EQUAL ||op==OpOp2.NOTEQUAL
-				||op==OpOp2.MIN ||op==OpOp2.MAX
-				||op==OpOp2.LOG ||op==OpOp2.POW
-				||op==OpOp2.AND ||op==OpOp2.OR ||op==OpOp2.XOR
-				||op==OpOp2.BITWAND ||op==OpOp2.BITWOR ||op==OpOp2.BITWXOR
-				||op==OpOp2.BITWSHIFTL ||op==OpOp2.BITWSHIFTR);
+		switch(op) {
+			case PLUS:
+			case MINUS:
+			case MULT:
+			case DIV:
+			case MODULUS:
+			case INTDIV:
+			case LESS:
+			case LESSEQUAL:
+			case GREATER:
+			case GREATEREQUAL:
+			case EQUAL:
+			case NOTEQUAL:
+			case MIN:
+			case MAX:
+			case LOG:
+			case POW:
+			case AND:
+			case OR:
+			case XOR:
+			case BITWAND:
+			case BITWOR:
+			case BITWXOR:
+			case BITWSHIFTL:
+			case BITWSHIFTR:
+				return true;
+			default:
+				return false;
+		}
 	}
-	
+
 	public boolean isPPredOperation() {
-		return (op==OpOp2.LESS    ||op==OpOp2.LESSEQUAL
-			||op==OpOp2.GREATER ||op==OpOp2.GREATEREQUAL
-			||op==OpOp2.EQUAL   ||op==OpOp2.NOTEQUAL);
+		switch(op) {
+			case LESS:
+			case LESSEQUAL:
+			case GREATER:
+			case GREATEREQUAL:
+			case EQUAL:
+			case NOTEQUAL:
+				return true;
+			default:
+				return false;
+		}
 	}
-	
+
 	public OpOp2 getComplementPPredOperation() {
 		switch( op ) {
 			case LESS:         return OpOp2.GREATEREQUAL;

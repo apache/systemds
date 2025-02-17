@@ -1686,11 +1686,13 @@ public class DMLTranslator
 		if (target == null) {
 			target = createTarget(source);
 		}
+		
 		//unknown nnz after range indexing (applies to indexing op but also
 		//data dependent operations)
 		target.setNnz(-1); 
 
-		Hop indexOp = new IndexingOp(target.getName(), target.getDataType(), target.getValueType(),
+		DataType dt = target.getDataType().isScalar() ? DataType.MATRIX : target.getDataType();
+		Hop indexOp = new IndexingOp(target.getName(), dt, target.getValueType(),
 			hops.get(source.getName()), ixRange[0], ixRange[1], ixRange[2], ixRange[3],
 			source.getRowLowerEqualsUpper(), source.getColLowerEqualsUpper());
 
@@ -1833,14 +1835,12 @@ public class DMLTranslator
 			constRight = (source.getRight().getOutput() instanceof ConstIdentifier);
 		}
 
-		if (constLeft || constRight) {
-			throw new RuntimeException(source.printErrorLocation() + "Boolean expression with constant unsupported");
-		}
-
-		Hop left = processExpression(source.getLeft(), null, hops);
+		Hop left = !constLeft ? processExpression(source.getLeft(), null, hops) : 
+			new LiteralOp(Boolean.valueOf(source.getLeft().getText().toLowerCase()));
 		Hop right = null;
 		if (source.getRight() != null) {
-			right = processExpression(source.getRight(), null, hops);
+			right = !constRight ? processExpression(source.getRight(), null, hops) :
+				new LiteralOp(Boolean.valueOf(source.getRight().getText().toLowerCase()));
 		}
 
 		//prepare target identifier and ensure that output type is boolean 
@@ -2451,7 +2451,7 @@ public class DMLTranslator
 			String sop = ((StringIdentifier)source.getThirdExpr()).getValue();
 			sop = sop.replace("\"", "");
 			OpOp2 operation;
-			if ( sop.equalsIgnoreCase(">=") ) 
+			if ( sop.equalsIgnoreCase(">=") )
 				operation = OpOp2.GREATEREQUAL;
 			else if ( sop.equalsIgnoreCase(">") )
 				operation = OpOp2.GREATER;
@@ -2752,6 +2752,7 @@ public class DMLTranslator
 		case SQRT_MATRIX_JAVA:
 		case CHOLESKY:
 		case TYPEOF:
+		case DET:
 		case DETECTSCHEMA:
 		case COLNAMES:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(),

@@ -22,6 +22,7 @@ package org.apache.sysds.test.functions.codegenalg.partone;
 import java.io.File;
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.junit.Assert;
 import org.junit.Test;
@@ -243,7 +244,7 @@ public class AlgorithmAutoEncoder extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlb3, rb3, eps, "Stat-DML", "Stat-R");
 			TestUtils.compareMatrices(dmlb4, rb4, eps, "Stat-DML", "Stat-R");
 			
-			Assert.assertTrue(heavyHittersContainsSubString("spoof") 
+			Assert.assertTrue(heavyHittersContainsSubString(Opcodes.SPOOF.toString())
 				|| heavyHittersContainsSubString("sp_spoof"));
 		}
 		finally {

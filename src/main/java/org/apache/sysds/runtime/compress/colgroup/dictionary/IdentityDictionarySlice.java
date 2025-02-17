@@ -22,20 +22,17 @@ package org.apache.sysds.runtime.compress.colgroup.dictionary;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.lang.ref.SoftReference;
 import java.util.Arrays;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
-import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 
-public class IdentityDictionarySlice extends IdentityDictionary {
+public class IdentityDictionarySlice extends AIdentityDictionary {
 
-	private static final long serialVersionUID = 2535887782150955098L;
+	private static final long serialVersionUID = 2535887782153555098L;
 
 	/** Lower index for the slice */
 	private final int l;
@@ -53,10 +50,33 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	 */
 	public IdentityDictionarySlice(int nRowCol, boolean withEmpty, int l, int u) {
 		super(nRowCol, withEmpty);
-		if(u > nRowCol || l < 0 || l >= u)
-			throw new DMLRuntimeException("Invalid slice Identity: " + nRowCol + " range: " + l + "--" + u);
 		this.l = l;
 		this.u = u;
+	}
+
+	/**
+	 * Create a Identity matrix dictionary slice (if other groups are not more applicable). It behaves as if allocated a
+	 * Sparse Matrix block but exploits that the structure is known to have certain properties.
+	 * 
+	 * @param nRowCol   the number of rows and columns in this identity matrix.
+	 * @param withEmpty If the matrix should contain an empty row in the end.
+	 * @param l         the index lower to start at
+	 * @param u         the index upper to end at (not inclusive)
+	 * @return a Dictionary instance.
+	 */
+	public static IDictionary create(int nRowCol, boolean withEmpty, int l, int u) {
+		if(u > nRowCol || l < 0 || l >= u)
+			throw new DMLRuntimeException("Invalid slice Identity: " + nRowCol + " range: " + l + "--" + u);
+		if(nRowCol == 1) {
+			if(withEmpty)
+				return new Dictionary(new double[] {1, 0});
+			else
+				return new Dictionary(new double[] {1});
+		}
+		else if(l == 0 && u == nRowCol)
+			return IdentityDictionary.create(nRowCol, withEmpty);
+		else
+			return new IdentityDictionarySlice(nRowCol, withEmpty, l, u);
 	}
 
 	@Override
@@ -72,14 +92,20 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 
 	@Override
 	public double getValue(int i) {
-		throw new NotImplementedException();
+		final int nCol = u - l;
+		final int vRow = i / nCol;
+		if(vRow < l || vRow >= u)
+			return 0;
+		final int oRow = vRow - l;
+		final int col = i % nCol;
+		return oRow == col ? 1 : 0;
 	}
 
 	@Override
 	public final double getValue(int r, int c, int nCol) {
 		if(r < l || r > u)
 			return 0;
-		return super.getValue(r - l, c, nCol);
+		return (r - l) == c ? 1 : 0;
 	}
 
 	@Override
@@ -88,15 +114,21 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	}
 
 	public static long getInMemorySize(int numberColumns) {
-		// int * 3 + padding + softReference
-		return 12 + 4 + 8;
+		// 2 more ints, no padding.
+		return AIdentityDictionary.getInMemorySize(numberColumns) + 8;
 	}
 
 	@Override
 	public double[] aggregateRows(Builtin fn, int nCol) {
-		double[] ret = new double[nRowCol];
-		Arrays.fill(ret, l, u, fn.execute(1, 0));
-		return ret;
+		double[] ret = new double[nRowCol + (withEmpty ? 1 : 0)];
+		if(l + 1 == u) {
+			ret[l] = 1;
+			return ret;
+		}
+		else {
+			Arrays.fill(ret, l, u, fn.execute(1, 0));
+			return ret;
+		}
 	}
 
 	@Override
@@ -120,60 +152,73 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 
 	@Override
 	public double[] sumAllRowsToDouble(int nrColumns) {
-		double[] ret = new double[nRowCol];
+		double[] ret = new double[nRowCol + (withEmpty ? 1 : 0)];
 		Arrays.fill(ret, l, u, 1.0);
 		return ret;
 	}
 
 	@Override
 	public double[] sumAllRowsToDoubleWithDefault(double[] defaultTuple) {
-		double[] ret = new double[nRowCol];
-		Arrays.fill(ret, l, u, 1.0);
+		double[] ret = new double[getNumberOfValues(defaultTuple.length) + 1];
+		for(int i = l; i < u; i++)
+			ret[i] = 1;
 		for(int i = 0; i < defaultTuple.length; i++)
-			ret[i] += defaultTuple[i];
+			ret[ret.length - 1] += defaultTuple[i];
 		return ret;
 	}
 
 	@Override
 	public double[] sumAllRowsToDoubleWithReference(double[] reference) {
-		double[] ret = new double[nRowCol];
-		Arrays.fill(ret, l, u, 1.0);
+		final double[] ret = new double[getNumberOfValues(reference.length)];
+		double refSum = 0;
 		for(int i = 0; i < reference.length; i++)
-			ret[i] += reference[i] * nRowCol;
+			refSum += reference[i];
+		for(int i = 0; i < l; i++)
+			ret[i] = refSum;
+		for(int i = l; i < u; i++)
+			ret[i] = 1 + refSum;
+		for(int i = u; i < ret.length; i++)
+			ret[i] = refSum;
 		return ret;
 	}
 
 	@Override
 	public double[] sumAllRowsToDoubleSq(int nrColumns) {
-		double[] ret = new double[nRowCol];
+		double[] ret = new double[nRowCol + (withEmpty ? 1 : 0)];
 		Arrays.fill(ret, l, u, 1);
 		return ret;
 	}
 
 	@Override
 	public double[] productAllRowsToDouble(int nCol) {
-		return new double[nRowCol];
+		double[] ret = new double[nRowCol + (withEmpty ? 1 : 0)];
+		if(u - l - 1 == 0)
+			ret[l] = 1;
+		return ret;
 	}
 
 	@Override
 	public double[] productAllRowsToDoubleWithDefault(double[] defaultTuple) {
-		return new double[nRowCol];
+		int nVal = nRowCol + (withEmpty ? 1 : 0);
+		double[] ret = new double[nVal + 1];
+		if(u - l - 1 == 0)
+			ret[l] = 1;
+		ret[nVal] = defaultTuple[0];
+		for(int i = 1; i < defaultTuple.length; i++)
+			ret[nVal] *= defaultTuple[i];
+		return ret;
 	}
 
 	@Override
 	public void colSum(double[] c, int[] counts, IColIndex colIndexes) {
-		for(int i = 0; i < colIndexes.size(); i++) {
-			// very nice...
-			final int idx = colIndexes.get(i);
-			c[idx] = counts[i];
-		}
+		for(int i = l; i < u; i++)
+			c[colIndexes.get(i - l)] = counts[i];
 	}
 
 	@Override
 	public double sum(int[] counts, int ncol) {
-		int end = withEmpty && u == ncol ? u - 1 : u;
 		double s = 0.0;
-		for(int i = l; i < end; i++)
+		for(int i = l; i < u; i++)
 			s += counts[i];
 		return s;
 	}
@@ -181,16 +226,6 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	@Override
 	public double sumSq(int[] counts, int ncol) {
 		return sum(counts, ncol);
-	}
-
-	@Override
-	public IDictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
-		return getMBDict().sliceOutColumnRange(idxStart, idxEnd, previousNumberOfColumns);
-	}
-
-	@Override
-	public boolean containsValue(double pattern) {
-		return pattern == 0.0 || pattern == 1.0;
 	}
 
 	@Override
@@ -204,37 +239,10 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	}
 
 	@Override
-	public MatrixBlockDictionary getMBDict(int nCol) {
-		if(cache != null) {
-			MatrixBlockDictionary r = cache.get();
-			if(r != null)
-				return r;
-		}
-		MatrixBlockDictionary ret = createMBDict();
-		cache = new SoftReference<>(ret);
-		return ret;
-	}
-
-	private MatrixBlockDictionary createMBDict() {
-		MatrixBlock identity = new MatrixBlock(nRowCol, u - l, true);
-		for(int i = l; i < u; i++)
-			identity.set(i, i - l, 1.0);
-		return new MatrixBlockDictionary(identity);
-	}
-
-	@Override
-	public String getString(int colIndexes) {
-		return "IdentityMatrix of size: " + nRowCol;
-	}
-
-	@Override
-	public String toString() {
-		return "IdentityMatrix of size: " + nRowCol;
-	}
-
-	@Override
-	public IDictionary scaleTuples(int[] scaling, int nCol) {
-		return getMBDict().scaleTuples(scaling, nCol);
+	public int getNumberOfColumns(int nrow) {
+		if(nrow != (nRowCol + (withEmpty ? 1 : 0)))
+			throw new DMLCompressionException("Invalid call to get Number of values assuming wrong number of columns");
+		return u - l;
 	}
 
 	@Override
@@ -262,46 +270,13 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	}
 
 	@Override
-	public IDictionary replace(double pattern, double replace, int nCol) {
-		if(containsValue(pattern))
-			return getMBDict().replace(pattern, replace, nCol);
-		else
-			return this;
-	}
-
-	@Override
-	public IDictionary replaceWithReference(double pattern, double replace, double[] reference) {
-		if(containsValueWithReference(pattern, reference))
-			return getMBDict().replaceWithReference(pattern, replace, reference);
-		else
-			return this;
-	}
-
-	@Override
 	public double getSparsity() {
-		return (double) (u - l) / ((u -l) * (nRowCol + (withEmpty ? 1 : 0)));
-	}
-
-	@Override
-	public IDictionary binOpRight(BinaryOperator op, double[] v, IColIndex colIndexes) {
-		return getMBDict().binOpRight(op, v);
-	}
-
-	@Override
-	public IDictionary preaggValuesFromDense(final int numVals, final IColIndex colIndexes,
-		final IColIndex aggregateColumns, final double[] b, final int cut) {
-		return getMBDict().preaggValuesFromDense(numVals, colIndexes, aggregateColumns, b, cut);
-	}
-
-	@Override
-	public void addToEntryVectorized(double[] v, int f1, int f2, int f3, int f4, int f5, int f6, int f7, int f8, int t1,
-		int t2, int t3, int t4, int t5, int t6, int t7, int t8, int nCol) {
-		getMBDict().addToEntryVectorized(v, f1, f2, f3, f4, f5, f6, f7, f8, t1, t2, t3, t4, t5, t6, t7, t8, nCol);
+		return (double) (u - l) / ((u - l) * (nRowCol + (withEmpty ? 1 : 0)));
 	}
 
 	@Override
 	public void addToEntry(final double[] v, final int fr, final int to, final int nCol, int rep) {
-		if(fr >= l && fr < u) 
+		if(fr >= l && fr < u)
 			v[to * nCol + fr - l] += rep;
 	}
 
@@ -309,7 +284,7 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 	public boolean equals(IDictionary o) {
 		if(o instanceof IdentityDictionarySlice) {
 			IdentityDictionarySlice os = ((IdentityDictionarySlice) o);
-			return os.nRowCol == nRowCol && os.l == l && os.u == u;
+			return os.nRowCol == nRowCol && os.l == l && os.u == u && withEmpty == os.withEmpty;
 		}
 		else if(o instanceof IdentityDictionary)
 			return false;
@@ -319,22 +294,25 @@ public class IdentityDictionarySlice extends IdentityDictionary {
 
 	@Override
 	public MatrixBlockDictionary getMBDict() {
-		final int nCol = u - l;
-		MatrixBlock mb = new MatrixBlock(nRowCol + (withEmpty ? 1 : 0), nCol, true);
-		mb.allocateSparseRowsBlock();
-
-		SparseBlock sb = mb.getSparseBlock();
-		for(int i = l; i < u; i++) {
-			sb.append(i, i - l, 1);
-		}
-
-		mb.setNonZeros(nCol);
-		return new MatrixBlockDictionary(mb);
+		return getMBDict(nRowCol);
 	}
 
 	@Override
-	public void multiplyScalar(double v, double[] ret, int off, int dictIdx, IColIndex cols) {
-		getMBDict().multiplyScalar(v, ret, off, dictIdx, cols);
+	public MatrixBlockDictionary createMBDict(int nCol) {
+		MatrixBlock identity = new MatrixBlock(nRowCol + (withEmpty ? 1 : 0), u - l, true);
+		for(int i = l; i < u; i++)
+			identity.set(i, i - l, 1.0);
+		return new MatrixBlockDictionary(identity);
+	}
+
+	@Override
+	public String getString(int colIndexes) {
+		return toString();
+	}
+
+	@Override
+	public String toString() {
+		return "IdentityMatrixSlice of size: " + nRowCol + " l " + l + " u " + u;
 	}
 
 }

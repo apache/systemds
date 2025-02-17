@@ -21,6 +21,7 @@
 
 from sklearn.feature_extraction.text import CountVectorizer
 
+from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import save_embeddings
 
@@ -32,14 +33,18 @@ class BoW(UnimodalRepresentation):
         self.min_df = min_df
         self.output_file = output_file
 
-    def transform(self, data):
+    def transform(self, modality):
+        transformed_modality = TransformedModality(
+            modality.modality_type, self, modality.metadata
+        )
         vectorizer = CountVectorizer(
             ngram_range=(1, self.ngram_range), min_df=self.min_df
         )
 
-        X = vectorizer.fit_transform(data).toarray()
+        X = vectorizer.fit_transform(modality.data).toarray()
 
         if self.output_file is not None:
             save_embeddings(X, self.output_file)
 
-        return X
+        transformed_modality.data = X
+        return transformed_modality

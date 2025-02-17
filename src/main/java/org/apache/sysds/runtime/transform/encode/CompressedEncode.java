@@ -41,6 +41,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressedArray;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
@@ -248,7 +249,7 @@ public class CompressedEncode {
 			return ColGroupConst.create(colIndexes, new double[] {1});
 		}
 
-		ADictionary d = new IdentityDictionary(colIndexes.size(), containsNull);
+		IDictionary d = IdentityDictionary.create(colIndexes.size(), containsNull);
 		AMapToData m = createMappingAMapToData(a, map, containsNull);
 		AColGroup ret = ColGroupDDC.create(colIndexes, d, m, null);
 		nnz.addAndGet(ret.getNumberNonZeros(in.getNumRows()));
@@ -377,7 +378,7 @@ public class CompressedEncode {
 		b.build(in); // build first since we figure out if it contains null here.
 		final boolean containsNull = b.containsNull;
 		IColIndex colIndexes = ColIndexFactory.create(0, b._numBin);
-		ADictionary d = new IdentityDictionary(colIndexes.size(), containsNull);
+		IDictionary d = IdentityDictionary.create(colIndexes.size(), containsNull);
 		final AMapToData m;
 		m = binEncode(a, b, containsNull);
 		AColGroup ret = ColGroupDDC.create(colIndexes, d, m, null);
@@ -653,7 +654,7 @@ public class CompressedEncode {
 			nnz.addAndGet(in.getNumRows());
 			return ColGroupConst.create(colIndexes, new double[] {1});
 		}
-		ADictionary d = new IdentityDictionary(colIndexes.size(), nulls);
+		IDictionary d = IdentityDictionary.create(colIndexes.size(), nulls);
 		AMapToData m = createHashMappingAMapToData(a, domain, nulls);
 		AColGroup ret = ColGroupDDC.create(colIndexes, d, m, null);
 		nnz.addAndGet(ret.getNumberNonZeros(in.getNumRows()));

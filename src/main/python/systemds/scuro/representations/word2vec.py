@@ -19,11 +19,11 @@
 #
 # -------------------------------------------------------------
 import numpy as np
-
+from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import save_embeddings
 from gensim.models import Word2Vec
-from nltk.tokenize import word_tokenize
+from gensim.utils import tokenize
 
 
 def get_embedding(sentence, model):
@@ -43,8 +43,11 @@ class W2V(UnimodalRepresentation):
         self.window = window
         self.output_file = output_file
 
-    def transform(self, data):
-        t = [word_tokenize(s.lower()) for s in data]
+    def transform(self, modality):
+        transformed_modality = TransformedModality(
+            modality.modality_type, self, modality.metadata
+        )
+        t = [list(tokenize(s.lower())) for s in modality.data]
         model = Word2Vec(
             sentences=t,
             vector_size=self.vector_size,
@@ -52,11 +55,11 @@ class W2V(UnimodalRepresentation):
             min_count=self.min_count,
         )
         embeddings = []
-        for sentences in data:
-            tokens = word_tokenize(sentences.lower())
+        for sentences in modality.data:
+            tokens = list(tokenize(sentences.lower()))
             embeddings.append(get_embedding(tokens, model))
 
         if self.output_file is not None:
             save_embeddings(np.array(embeddings), self.output_file)
-
-        return np.array(embeddings)
+        transformed_modality.data = np.array(embeddings)
+        return transformed_modality

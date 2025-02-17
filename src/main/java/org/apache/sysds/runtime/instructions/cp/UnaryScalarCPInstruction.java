@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -42,7 +43,7 @@ public class UnaryScalarCPInstruction extends UnaryCPInstruction {
 		so = ec.getScalarInput(input1);
 		
 		//core execution
-		if ( opcode.equalsIgnoreCase("print") ) {
+		if ( opcode.equalsIgnoreCase(Opcodes.PRINT.toString()) ) {
 			String outString = so.getLanguageSpecificStringValue();
 
 			// print to stdout only when suppress flag in DMLScript is not set.
@@ -53,14 +54,14 @@ public class UnaryScalarCPInstruction extends UnaryCPInstruction {
 			// String that is printed on stdout will be inserted into symbol table (dummy, not necessary!) 
 			sores = new StringObject(outString);
 		}
-		else if ( opcode.equalsIgnoreCase("stop") ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.STOP.toString()) ) {
 			String message = so.getStringValue();
 			if(message != null && !message.isEmpty())
 				throw new DMLScriptException(message);
 			else
 				throw new DMLScriptException("Stop Called");
 		}
-		else if ( opcode.equalsIgnoreCase("assert") ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.ASSERT.toString()) ) {
 			sores = new BooleanObject(so.getBooleanValue());
 			if(!so.getBooleanValue()) {
 				String fileName = (getFilename() == null) ? "" : getFilename() + " "; 

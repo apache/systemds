@@ -23,6 +23,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.TensorBlock;
@@ -206,7 +207,7 @@ public class RDDAggregateUtils
 	}
 	
 	public static double max(JavaPairRDD<MatrixIndexes, MatrixBlock> in) {
-		AggregateUnaryOperator auop = InstructionUtils.parseBasicAggregateUnaryOperator("uamax");
+		AggregateUnaryOperator auop = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMAX.toString());
 		MatrixBlock tmp = aggStable(in.map(new RDDUAggFunction2(auop, -1)), auop.aggOp);
 		return tmp.get(0, 0);
 	}

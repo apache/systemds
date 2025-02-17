@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -48,7 +49,7 @@ public class ScalarBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction imp
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		if( "printf".equals(getOpcode()) ) {
+		if( Opcodes.PRINTF.toString().equals(getOpcode()) ) {
 			List<ScalarObject> scalarObjects = new ArrayList<>();
 			for (CPOperand input : inputs) {
 				ScalarObject so = ec.getScalarInput(input);

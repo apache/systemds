@@ -19,6 +19,7 @@
 
 package org.apache.sysds.resource.cost;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.AggBinaryOp;
@@ -102,7 +103,7 @@ public class SparkCostUtils {
 				shuffleTime = 0;
 			} else if (aggType == AggBinaryOp.SparkAggType.MULTI_BLOCK) {
 				// combineByKey() triggers a new stage -> cost = computation time + shuffle time (combineByKey);
-				if (opcode.equals("uaktrace")) {
+				if (opcode.equals(Opcodes.UAKTRACE.toString())) {
 					long diagonalBlockSize = OptimizerUtils.estimatePartitionedSizeExactSparsity(
 							input.characteristics.getBlocksize() * input.getM(),
 							input.characteristics.getBlocksize(),
@@ -131,7 +132,7 @@ public class SparkCostUtils {
 	public static double getIndexingInstTime(IndexingSPInstruction inst, VarStats input1, VarStats input2, VarStats output, IOMetrics driverMetrics, IOMetrics executorMetrics) {
 		String opcode = inst.getOpcode();
 		double dataTransmissionTime;
-		if (opcode.equals(RightIndex.OPCODE)) {
+		if (opcode.equals(Opcodes.RIGHT_INDEX.toString())) {
 			// assume direct collecting if output dimensions not larger than block size
 			int blockSize = ConfigurationManager.getBlocksize();
 			if (output.getM() <= blockSize && output.getN() <= blockSize) {
@@ -142,7 +143,7 @@ public class SparkCostUtils {
 				// represents general indexing: worst case: shuffling required
 				dataTransmissionTime = getSparkShuffleTime(output.rddStats, executorMetrics, true);
 			}
-		} else if (opcode.equals(LeftIndex.OPCODE)) {
+		} else if (opcode.equals(Opcodes.LEFT_INDEX.toString())) {
 			// model combineByKey() with shuffling the second input
 			dataTransmissionTime = getSparkShuffleTime(input2.rddStats, executorMetrics, true);
 		} else { // mapLeftIndex
@@ -438,7 +439,7 @@ public class SparkCostUtils {
 	public static double getCtableInstTime(CtableSPInstruction tableInst, VarStats input1, VarStats input2, VarStats input3, VarStats output, IOMetrics executorMetrics) {
 		String opcode = tableInst.getOpcode();
 		double shuffleTime;
-		if (opcode.equals("ctableexpand") || !input2.isScalar() && input3.isScalar()) { // CTABLE_EXPAND_SCALAR_WEIGHT/CTABLE_TRANSFORM_SCALAR_WEIGHT
+		if (opcode.equals(Opcodes.CTABLEEXPAND.toString()) || !input2.isScalar() && input3.isScalar()) { // CTABLE_EXPAND_SCALAR_WEIGHT/CTABLE_TRANSFORM_SCALAR_WEIGHT
 			// in1.join(in2)
 			shuffleTime = getSparkShuffleTime(input2.rddStats, executorMetrics, true);
 		} else if (input2.isScalar() && input3.isScalar()) { // CTABLE_TRANSFORM_HISTOGRAM

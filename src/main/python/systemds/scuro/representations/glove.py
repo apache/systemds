@@ -19,7 +19,8 @@
 #
 # -------------------------------------------------------------
 import numpy as np
-from nltk import word_tokenize
+from gensim.utils import tokenize
+
 
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import read_data_from_file, save_embeddings
@@ -47,7 +48,7 @@ class GloVe(UnimodalRepresentation):
 
         embeddings = []
         for sentences in data:
-            tokens = word_tokenize(sentences.lower())
+            tokens = list(tokenize(sentences.lower()))
             embeddings.append(
                 np.mean(
                     [

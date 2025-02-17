@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.component.compress.indexes;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -41,6 +42,7 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.SingleIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.TwoIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.TwoRangesIndex;
 import org.apache.sysds.runtime.compress.utils.Util;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -1026,5 +1028,65 @@ public class CustomIndexTest {
 		IColIndex a = new TwoRangesIndex(new RangeIndex(1, 4), new RangeIndex(11, 20));
 		IColIndex b = new RangeIndex(3, 11);
 		assertTrue(a.containsAny(b));
+	}
+
+	@Test
+	public void reordering1(){
+		IColIndex a = ColIndexFactory.createI(1,3,5);
+		IColIndex b = ColIndexFactory.createI(2);
+
+		assertFalse(IColIndex.inOrder(a, b));
+		Pair<int[], int[]> r = IColIndex.reorderingIndexes(a, b);
+		
+		int[] ra = r.getKey();
+		int[] rb = r.getValue();
+
+		assertArrayEquals(new int[]{0,2,3}, ra);
+		assertArrayEquals(new int[]{1}, rb);
+	}
+
+	@Test
+	public void reordering2(){
+		IColIndex a = ColIndexFactory.createI(1,3,5);
+		IColIndex b = ColIndexFactory.createI(2,4);
+
+		assertFalse(IColIndex.inOrder(a, b));
+		Pair<int[], int[]> r = IColIndex.reorderingIndexes(a, b);
+		
+		int[] ra = r.getKey();
+		int[] rb = r.getValue();
+
+		assertArrayEquals(new int[]{0,2,4}, ra);
+		assertArrayEquals(new int[]{1,3}, rb);
+	}
+
+	@Test
+	public void reordering3(){
+		IColIndex a = ColIndexFactory.createI(1,3,5);
+		IColIndex b = ColIndexFactory.createI(0, 2,4);
+
+		assertFalse(IColIndex.inOrder(a, b));
+		Pair<int[], int[]> r = IColIndex.reorderingIndexes(a, b);
+		
+		int[] ra = r.getKey();
+		int[] rb = r.getValue();
+
+		assertArrayEquals(new int[]{1,3,5}, ra);
+		assertArrayEquals(new int[]{0,2,4}, rb);
+	}
+
+	@Test
+	public void reordering4(){
+		IColIndex a = ColIndexFactory.createI(1,5);
+		IColIndex b = ColIndexFactory.createI(0,2,3,4);
+
+		assertFalse(IColIndex.inOrder(a, b));
+		Pair<int[], int[]> r = IColIndex.reorderingIndexes(a, b);
+		
+		int[] ra = r.getKey();
+		int[] rb = r.getValue();
+
+		assertArrayEquals(new int[]{1,5}, ra);
+		assertArrayEquals(new int[]{0,2,3,4}, rb);
 	}
 }

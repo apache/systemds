@@ -19,6 +19,9 @@
 
 package org.apache.sysds.runtime.compress.colgroup.dictionary;
 
+import java.io.DataOutput;
+import java.io.IOException;
+
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
@@ -30,14 +33,21 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  * This dictionary class is a specialization for the DeltaDDCColgroup. Here the adjustments for operations for the delta
  * encoded values are implemented.
  */
-public class DeltaDictionary extends Dictionary {
+public class DeltaDictionary extends ADictionary {
 	private static final long serialVersionUID = -5700139221491143705L;
-	
+
 	private final int _numCols;
 
+	protected final double[] _values;
+
 	public DeltaDictionary(double[] values, int numCols) {
-		super(values);
+		_values = values;
 		_numCols = numCols;
+	}
+
+	@Override 
+	public double[] getValues(){
+		return _values;
 	}
 
 	@Override
@@ -60,5 +70,55 @@ public class DeltaDictionary extends Dictionary {
 			throw new NotImplementedException();
 
 		return new DeltaDictionary(retV, _numCols);
+	}
+
+	@Override
+	public long getInMemorySize() {
+		return Dictionary.getInMemorySize(_values.length);
+	}
+
+	@Override
+	public void write(DataOutput out) throws IOException {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public long getExactSizeOnDisk() {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public DictType getDictType() {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public int getNumberOfValues(int ncol) {
+		return _values.length / ncol;
+	}
+
+	@Override
+	public int getNumberOfColumns(int nrow){
+		return _values.length / nrow;
+	}
+
+	@Override
+	public String getString(int colIndexes) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public long getNumberNonZeros(int[] counts, int nCol) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public boolean equals(IDictionary o) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public IDictionary clone() {
+		throw new NotImplementedException();
 	}
 }

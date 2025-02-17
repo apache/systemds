@@ -92,6 +92,9 @@ public class LibMatrixReorg {
 	
 	//use csr instead of mcsr sparse block for rexpand columns / diag v2m
 	public static final boolean SPARSE_OUTPUTS_IN_CSR = true;
+
+	//use legacy in-place transpose dense instead of brenner in-place transpose dense
+	public static final boolean TRANSPOSE_IN_PLACE_DENSE_LEGACY = true;
 	
 	private enum ReorgType {
 		TRANSPOSE,
@@ -1041,11 +1044,13 @@ public class LibMatrixReorg {
 
 	}
 
-	private static MatrixBlock fusedSeqRexpandSparse(int seqHeight, MatrixBlock A, double w, MatrixBlock ret, boolean updateClen) {
+	private static MatrixBlock fusedSeqRexpandSparse(int seqHeight, MatrixBlock A, double w, MatrixBlock ret,
+													 boolean updateClen) {
 		if(ret == null) {
 			ret = new MatrixBlock();
 			updateClen = true;
 		}
+		int outCols = updateClen ? -1 : ret.getNumColumns();
 		final int rlen = seqHeight;
 		// prepare allocation of CSR sparse block
 		final int[] rowPointers = new int[rlen + 1];
@@ -1057,14 +1062,14 @@ public class LibMatrixReorg {
 		ret.sparse = true;
 		ret.denseBlock = null;
 		// construct sparse CSR block from filled arrays
-		SparseBlockCSR csr = new SparseBlockCSR(rowPointers, indexes, values, rlen);
+		SparseBlockCSR csr = new SparseBlockCSR(rowPointers, indexes, values, seqHeight);
 		ret.sparseBlock = csr;
-		int blkz = Math.min(1024, rlen);
+		int blkz = Math.min(1024, seqHeight);
 		int maxcol = 0;
 		boolean containsNull = false;
-		for(int i = 0; i < rlen; i += blkz) {
+		for(int i = 0; i < seqHeight; i += blkz) {
 			// blocked execution for earlier JIT compilation
-			int t = fusedSeqRexpandSparseBlock(csr, A, w, i, Math.min(i + blkz, rlen));
+			int t = fusedSeqRexpandSparseBlock(csr, A, w, i, Math.min(i + blkz, seqHeight), updateClen,outCols);
 			if(t < 0) {
 				t = Math.abs(t);
 				containsNull = true;
@@ -1075,14 +1080,15 @@ public class LibMatrixReorg {
 		if(containsNull)
 			csr.compact();
 
-		rowPointers[rlen] = rlen;
+		rowPointers[seqHeight] = seqHeight;
 		ret.setNonZeros(ret.sparseBlock.size());
 		if(updateClen)
-			ret.setNumColumns(maxcol);
+			ret.setNumColumns(outCols == -1 ? maxcol : (int) outCols);
 		return ret;
 	}
 
-	private static int fusedSeqRexpandSparseBlock(final SparseBlockCSR csr, final MatrixBlock A, final double w, int rl, int ru) {
+	private static int fusedSeqRexpandSparseBlock(final SparseBlockCSR csr, final MatrixBlock A, final double w, int rl,
+												  int ru, boolean updateClen,int maxOutCol) {
 
 		// prepare allocation of CSR sparse block
 		final int[] rowPointers = csr.rowPointers();
@@ -1093,11 +1099,9 @@ public class LibMatrixReorg {
 		int maxCol = 0;
 
 		for(int i = rl; i < ru; i++) {
-			int c = rexpandSingleRow(i, A.get(i, 0), w, indexes, values);
-			if(c < 0)
-				containsNull = true;
-			else 
-				maxCol = Math.max(c, maxCol);
+			int c = rexpandSingleRow(i, A.get(i, 0), w, indexes, values, updateClen, maxOutCol);
+			containsNull |= c < 0;
+			maxCol = Math.max(c, maxCol);
 			rowPointers[i] = i;
 		}
 	
@@ -1111,23 +1115,22 @@ public class LibMatrixReorg {
 			ret.clen = maxCol;
 	}
 
-	public static int rexpandSingleRow(int row, double v2, double w,  int[] retIx, double[] retVals) {
-		// If any of the values are NaN (i.e., missing) then
-		// we skip this tuple, proceed to the next tuple
-		if(Double.isNaN(v2))
-			return -1;
+	public static int rexpandSingleRow(int row, double v2, double w,  int[] retIx, double[] retVals,
+												boolean updateClen, int maxOutCol) {
 
-		// safe casts to long for consistent behavior with indexing
-		int col = UtilFunctions.toInt(v2);
-		if(col <= 0)
+		final int colUnsafe = UtilFunctions.toInt(v2);	// colUnsafe = 0 for Nan
+		int isNan = (Double.isNaN(v2) ? 1 : 0);		// avoid branching by boolean to int conversion
+		int col = colUnsafe - isNan;				// col = -1 for Nan
+
+		// use branch prediction for rare case
+		if(!Double.isNaN(v2) && colUnsafe <= 0)
 			throw new DMLRuntimeException("Erroneous input while computing the contingency table (value <= zero): " + v2);
 
-		// set weight as value (expand is guaranteed to address different cells)
-		retIx[row] = col - 1;
-		retVals[row] = w;
-
-		// maintain max seen col
-		return col;
+		// avoid branching again by boolean to int conversion
+		int valid = !Double.isNaN(v2) && (updateClen || col <= maxOutCol) ? 1 : 0;
+		retIx[row] = (col - 1)*valid;		// use valid as switch
+		retVals[row] = w*valid;
+		return valid*col + valid - 1;		// -1 if invalid else col
 	}
 
 	/**
@@ -1789,19 +1792,23 @@ public class LibMatrixReorg {
 			transposeInPlaceTrivial(in.getDenseBlockValues(), cols, k);
 		}
 		else {
-			if(cols<rows){
-				// important to set dims after
-				c2r(in, k);
-				values.setDims(new int[]{rows,cols});
-				in.setNumColumns(cols);
-				in.setNumRows(rows);
-			}
-			else{
-				// important to set dims before
-				values.setDims(new int[]{rows,cols});
-				in.setNumColumns(cols);
-				in.setNumRows(rows);
-				r2c(in, k);
+			if(TRANSPOSE_IN_PLACE_DENSE_LEGACY) {
+				if(cols < rows) {
+					// important to set dims after
+					c2r(in, k);
+					values.setDims(new int[] {rows, cols});
+					in.setNumColumns(cols);
+					in.setNumRows(rows);
+				}
+				else {
+					// important to set dims before
+					values.setDims(new int[] {rows, cols});
+					in.setNumColumns(cols);
+					in.setNumRows(rows);
+					r2c(in, k);
+				}
+			} else {
+				transposeInPlaceDenseBrenner(in, k);
 			}
 		}
 
@@ -4226,5 +4233,235 @@ public class LibMatrixReorg {
 			}
 			return null;
 		}
+	}
+
+	/**
+	 * Transposes a dense matrix in-place using following cycles based on Brenner's method. This
+	 * method shifts cycles with a focus on less storage by using cycle leaders based on prime factorization. The used
+	 * storage is in O(n+m). Quadratic matrices should be handled outside this method (using the trivial method) for a
+	 * speedup. This method is based on: Algorithm 467, Brenner, https://dl.acm.org/doi/pdf/10.1145/355611.362542.
+	 *
+	 * @param in The input matrix to be transposed.
+	 * @param k  The number of threads.
+	 */
+	public static void transposeInPlaceDenseBrenner(MatrixBlock in, int k) {
+
+		DenseBlock denseBlock = in.getDenseBlock();
+		double[] matrix = in.getDenseBlockValues();
+
+		final int rows = in.getNumRows();
+		final int cols = in.getNumColumns();
+
+		// Brenner: rows + cols / 2 is sufficient for most cases.
+		int workSize = rows + cols;
+		int maxIndex = rows * cols - 1;
+
+		// prime factorization of the maximum index to identify cycle structures
+		// Brenner: length 8 is sufficient up to maxIndex 2*3*5*...*19 = 9,767,520.
+		int[] primes = new int[8];
+		int[] exponents = new int[8];
+		int[] powers = new int[8];
+		int numPrimes = primeFactorization(maxIndex, primes, exponents, powers);
+
+		int[] iExponents = new int[numPrimes];
+		int div = 1;
+
+		div:
+		while(div < maxIndex / 2) {
+
+			// number of indices divisible by div and no other divisor of maxIndex
+			int count = eulerTotient(primes, exponents, iExponents, numPrimes, maxIndex / div);
+			// all false
+			boolean[] moved = new boolean[workSize];
+			// starting point cycle
+			int start = div;
+
+			count:
+			do {
+				// companion of start
+				int comp = maxIndex - start;
+
+				if(start == div) {
+					// shift cycles
+					count = simultaneousCycleShift(matrix, moved, rows, maxIndex, count, workSize, start, comp);
+					start += div;
+				}
+				else if(start < workSize && moved[start]) {
+					// already moved
+					start += div;
+				}
+				else {
+					// handle other cycle starts
+					int cycleLeader = start / div;
+					for(int ip = 0; ip < numPrimes; ip++) {
+						if(iExponents[ip] != exponents[ip] && cycleLeader % primes[ip] == 0) {
+							start += div;
+							continue count;
+						}
+					}
+
+					if(start < workSize) {
+						count = simultaneousCycleShift(matrix, moved, rows, maxIndex, count, workSize, start, comp);
+						start += div;
+						continue;
+					}
+
+					int test = start;
+					do {
+						test = prevIndexCycle(test, rows, cols);
+						if(test < start || test > comp) {
+							start += div;
+							continue count;
+						}
+					}
+					while(test > start && test < comp);
+
+					count = simultaneousCycleShift(matrix, moved, rows, maxIndex, count, workSize, start, comp);
+					start += div;
+				}
+			}
+			while(count > 0);
+
+			// update cycle divisor for the next set of cycles based on prime factors
+			for(int ip = 0; ip < numPrimes; ip++) {
+				if(iExponents[ip] != exponents[ip]) {
+					iExponents[ip]++;
+					div *= primes[ip];
+					continue div;
+				}
+				iExponents[ip] = 0;
+				div /= powers[ip];
+			}
+		}
+
+		denseBlock.setDims(new int[] {cols, rows});
+		in.setNumColumns(rows);
+		in.setNumRows(cols);
+	}
+
+	/**
+	 * Performs a simultaneous cycle shift for a cycle and its companion cycle. This method ensures that distinct cycles
+	 * or self-dual cycles are handled correctly. This method is based on: Algorithm 2, Karlsson,
+	 * https://webapps.cs.umu.se/uminf/reports/2009/011/part1.pdf and Algorithm 467, Brenner,
+	 * https://dl.acm.org/doi/pdf/10.1145/355611.362542.
+	 *
+	 * @param matrix   The matrix whose elements are being shifted.
+	 * @param moved    Boolean array tracking whether an element has already been moved.
+	 * @param rows     The number of rows in the matrix.
+	 * @param maxIndex The maximum valid index in the matrix.
+	 * @param count    The number of elements left to process.
+	 * @param workSize The length of moved.
+	 * @param start    The starting index for the cycle shift.
+	 * @param comp     The corresponding companion index.
+	 * @return The updated count of elements remaining to shift.
+	 */
+	private static int simultaneousCycleShift(double[] matrix, boolean[] moved, int rows, int maxIndex, int count,
+		int workSize, int start, int comp) {
+
+		int orig = start;
+		double val = matrix[orig];
+		double cval = matrix[comp];
+
+		while(orig >= 0) {
+			// decrease the remaining shift count by orig and comp
+			count -= 2;
+			orig = simultaneousCycleShiftStep(matrix, moved, rows, maxIndex, workSize, start, orig, val, cval);
+		}
+		return count;
+	}
+
+	private static int simultaneousCycleShiftStep(double[] matrix, boolean[] moved, int rows, int maxIndex,
+		int workSize, int start, int orig, double val, double cval) {
+
+		int comp = maxIndex - orig;
+		int prevOrig = prevIndexCycle(orig, rows, (maxIndex + 1) / rows);
+		int prevComp = maxIndex - prevOrig;
+
+		if(orig < workSize)
+			moved[orig] = true;
+		if(comp < workSize)
+			moved[comp] = true;
+
+		if(prevOrig == start) {
+			// cycle and comp are distinct
+			matrix[orig] = val;
+			matrix[comp] = cval;
+			return -1;
+		}
+		else if(prevComp == start) {
+			// cycle is self dual
+			matrix[orig] = cval;
+			matrix[comp] = val;
+			return -1;
+		}
+
+		// shift the values to their next positions
+		matrix[orig] = matrix[prevOrig];
+		matrix[comp] = matrix[prevComp];
+		// update
+		return prevOrig;
+	}
+
+	private static int prevIndexCycle(int index, int rows, int cols) {
+		int lastIndex = rows * cols - 1;
+		if(index == lastIndex)
+			return lastIndex;
+		long temp = (long) index * cols;
+		return (int) (temp % lastIndex);
+	}
+
+	/**
+	 * Performs prime factorization of a given number n. The method calculates the prime factors of n, their exponents,
+	 * powers and stores the results in the provided arrays.
+	 *
+	 * @param n         The number to be factorized.
+	 * @param primes    Array to store the unique prime factors of n.
+	 * @param exponents Array to store the exponents of the respective prime factors.
+	 * @param powers    Array to store the powers of the respective prime factors.
+	 * @return The number of unique prime factors.
+	 */
+	private static int primeFactorization(int n, int[] primes, int[] exponents, int[] powers) {
+		int pIdx = -1;
+		int currDiv = 0;
+		int rest = n;
+		int div = 2;
+
+		while(rest > 1) {
+			int quotient = rest / div;
+			if(rest - div * quotient == 0) {
+				if(div == currDiv) {
+					// current divisor is the same as the last one
+					powers[pIdx] *= div;
+					exponents[pIdx]++;
+				}
+				else {
+					// new prime factor found
+					pIdx++;
+					if(pIdx >= primes.length)
+						throw new RuntimeException("Not enough space, need to expand input arrays.");
+
+					primes[pIdx] = div;
+					powers[pIdx] = div;
+					currDiv = div;
+					exponents[pIdx] = 1;
+				}
+				rest = quotient;
+			}
+			else {
+				// only odd divs
+				div = (div == 2) ? 3 : div + 2;
+			}
+		}
+		return pIdx + 1;
+	}
+
+	private static int eulerTotient(int[] primes, int[] exponents, int[] iExponents, int numPrimes, int count) {
+		for(int ip = 0; ip < numPrimes; ip++) {
+			if(iExponents[ip] == exponents[ip]) {
+				continue;
+			}
+			count = (count / primes[ip]) * (primes[ip] - 1);
+		}
+		return count;
 	}
 }

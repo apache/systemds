@@ -21,6 +21,7 @@ package org.apache.sysds.lops;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.DataIdentifier;
@@ -342,7 +343,7 @@ public class DataGen extends Lop
 		
 		ExecType et = getExecType();
 		return InstructionUtils.concatOperands(
-			et.toString(), DataGen.SEQ_OPCODE,
+			et.toString(), Opcodes.SEQUENCE.toString(),
 			String.valueOf(getOutputParameters().getNumRows()),
 			String.valueOf(getOutputParameters().getNumCols()),
 			String.valueOf(getOutputParameters().getBlocksize()),

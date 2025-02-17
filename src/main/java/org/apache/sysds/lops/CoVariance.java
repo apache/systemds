@@ -19,6 +19,7 @@
 
 package org.apache.sysds.lops;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
@@ -85,7 +86,7 @@ public class CoVariance extends Lop
 		StringBuilder sb = InstructionUtils.getStringBuilder();
 		sb.append( getExecType() );
 		sb.append( Lop.OPERAND_DELIMITOR );
-		sb.append( "cov" );
+		sb.append( Opcodes.COV.toString() );
 		sb.append( OPERAND_DELIMITOR );
 
 		sb.append( getInputs().get(0).prepInputOperand(input1));

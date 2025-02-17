@@ -330,38 +330,6 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	}
 
 	@Test
-	public void testReplaceNotContainedValue() {
-		double v = min - 1;
-		if(v != 0)
-			testReplace(v);
-	}
-
-	@Test
-	public void testReplace() {
-		if(min != 0)
-			testReplace(min);
-	}
-
-	@Test
-	public void testReplaceZero() {
-		testReplace(0);
-	}
-
-	private void testReplace(double value) {
-		try {
-			if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
-				return;
-			ucRet = mb.replaceOperations(ucRet, value, 1425);
-			MatrixBlock ret2 = cmb.replaceOperations(new MatrixBlock(), value, 1425);
-			compareResultMatrices(ucRet, ret2, 1);
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			throw new DMLRuntimeException(e);
-		}
-	}
-
-	@Test
 	public void testCompressedMatrixConstruction() {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)

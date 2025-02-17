@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.compress.colgroup.dictionary;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.Arrays;
@@ -42,7 +41,7 @@ import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -52,13 +51,11 @@ import org.apache.sysds.utils.MemoryEstimates;
  * group. The primary reason for its introduction was to provide an entry point for specialization such as shared
  * dictionaries, which require additional information.
  */
-public class Dictionary extends ADictionary {
+public class Dictionary extends ACachingMBDictionary {
 
 	private static final long serialVersionUID = -6517136537249507753L;
 
 	protected final double[] _values;
-	/** A Cache to contain a MatrixBlock version of the dictionary. */
-	protected volatile SoftReference<MatrixBlockDictionary> cache = null;
 
 	protected Dictionary(double[] values) {
 		_values = values;
@@ -292,7 +289,7 @@ public class Dictionary extends ADictionary {
 		final int lenV = colIndexes.size();
 		for(int i = 0; i < _values.length; i++)
 			retVals[i] = fn.execute(_values[i], v[colIndexes.get(i % lenV)]);
-		for(int i = _values.length; i < _values.length; i++)
+		for(int i = _values.length; i < retVals.length; i++)
 			retVals[i] = fn.execute(0, v[colIndexes.get(i % lenV)]);
 
 		return create(retVals);
@@ -332,7 +329,7 @@ public class Dictionary extends ADictionary {
 		final int lenV = colIndexes.size();
 		for(int i = 0; i < _values.length; i++)
 			retVals[i] = fn.execute(v[colIndexes.get(i % lenV)], _values[i]);
-		for(int i = _values.length; i < _values.length; i++)
+		for(int i = _values.length; i < retVals.length; i++)
 			retVals[i] = fn.execute(v[colIndexes.get(i % lenV)], 0);
 
 		return create(retVals);
@@ -389,6 +386,11 @@ public class Dictionary extends ADictionary {
 	@Override
 	public int getNumberOfValues(int nCol) {
 		return _values.length / nCol;
+	}
+
+	@Override
+	public int getNumberOfColumns(int nrow) {
+		return _values.length / nrow;
 	}
 
 	@Override
@@ -468,9 +470,9 @@ public class Dictionary extends ADictionary {
 		final double[] ret = new double[numVals + 1];
 		for(int k = 0; k < numVals; k++)
 			ret[k] = prodRow(k, nCol);
-		ret[ret.length - 1] = defaultTuple[0];
+		ret[numVals] = defaultTuple[0];
 		for(int i = 1; i < nCol; i++)
-			ret[ret.length - 1] *= defaultTuple[i];
+			ret[numVals] *= defaultTuple[i];
 		return ret;
 	}
 
@@ -525,9 +527,10 @@ public class Dictionary extends ADictionary {
 
 	private double prodRow(int k, int nrColumns) {
 		final int valOff = k * nrColumns;
+		final int end = valOff + nrColumns;
 		double res = _values[valOff];
-		for(int i = 1; i < nrColumns; i++)
-			res *= _values[valOff + i];
+		for(int i = valOff + 1; i < end && res != 0; i++) // early abort on zero
+			res *= _values[i];
 		return res;
 	}
 
@@ -729,6 +732,8 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public boolean containsValueWithReference(double pattern, double[] reference) {
+		if(Double.isNaN(pattern))
+			return super.containsValueWithReference(pattern, reference);
 		final int nCol = reference.length;
 		for(int i = 0; i < _values.length; i++)
 			if(_values[i] + reference[i % nCol] == pattern)
@@ -840,14 +845,8 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public MatrixBlockDictionary getMBDict(int nCol) {
-		if(cache != null) {
-			MatrixBlockDictionary r = cache.get();
-			if(r != null)
-				return r;
-		}
+	public MatrixBlockDictionary createMBDict(int nCol) {
 		MatrixBlockDictionary ret = MatrixBlockDictionary.createDictionary(_values, nCol, true);
-		cache = new SoftReference<>(ret);
 		return ret;
 	}
 
@@ -922,46 +921,7 @@ public class Dictionary extends ADictionary {
 		final int nCol = reference.length;
 		final int nRow = _values.length / nCol;
 		if(Util.eq(pattern, Double.NaN)) {
-			Set<Integer> colsWithNan = null;
-			for(int i = 0; i < reference.length; i++) {
-				if(Util.eq(reference[i], Double.NaN)) {
-					if(colsWithNan == null)
-						colsWithNan = new HashSet<>();
-					colsWithNan.add(i);
-					reference[i] = replace;
-				}
-			}
-
-			if(colsWithNan != null) {
-				final double[] retV = new double[_values.length];
-				for(int i = 0; i < nRow; i++) {
-					final int off = i * reference.length;
-					for(int j = 0; j < nCol; j++) {
-						final int cell = off + j;
-						if(colsWithNan.contains(j))
-							retV[cell] = 0;
-						else if(Util.eq(_values[cell], Double.NaN))
-							retV[cell] = replace;
-						else
-							retV[cell] = _values[cell];
-					}
-				}
-				return create(retV);
-			}
-			else {
-				final double[] retV = new double[_values.length];
-				for(int i = 0; i < nRow; i++) {
-					final int off = i * reference.length;
-					for(int j = 0; j < nCol; j++) {
-						final int cell = off + j;
-						if(Util.eq(_values[cell], Double.NaN))
-							retV[cell] = replace;
-						else
-							retV[cell] = _values[cell];
-					}
-				}
-				return create(retV);
-			}
+			return replaceWithReferenceNaN(replace, reference, nCol, nRow);
 		}
 		else {
 			final double[] retV = new double[_values.length];
@@ -975,6 +935,62 @@ public class Dictionary extends ADictionary {
 				}
 			}
 			return create(retV);
+		}
+	}
+
+	private IDictionary replaceWithReferenceNaN(double replace, double[] reference, final int nCol, final int nRow) {
+		final Set<Integer> colsWithNan = getColsWithNan(replace, reference);
+		final double[] retV;
+		if(colsWithNan != null) {
+			if(colsWithNan.size() == nCol && replace == 0)
+				return null;
+			retV = new double[_values.length];
+			replaceWithReferenceNanDenseWithNanCols(replace, reference, nRow, nCol, colsWithNan, _values, retV);
+		}
+		else {
+			retV = new double[_values.length];
+			replaceWithReferenceNanDenseWithoutNanCols(replace, reference, nRow, nCol, retV, _values);
+		}
+		return create(retV);
+	}
+
+	protected static Set<Integer> getColsWithNan(double replace, double[] reference) {
+		Set<Integer> colsWithNan = null;
+		for(int i = 0; i < reference.length; i++) {
+			if(Util.eq(reference[i], Double.NaN)) {
+				if(colsWithNan == null)
+					colsWithNan = new HashSet<>();
+				colsWithNan.add(i);
+				reference[i] = replace;
+			}
+		}
+		return colsWithNan;
+	}
+
+	protected static void replaceWithReferenceNanDenseWithoutNanCols(final double replace, final double[] reference,
+		final int nRow, final int nCol, final double[] retV, final double[] values) {
+		int off = 0;
+		for(int i = 0; i < nRow; i++) {
+			for(int j = 0; j < nCol; j++) {
+				final double v = values[off];
+				retV[off++] = Util.eq(Double.NaN, v) ? replace - reference[j] : v;
+			}
+		}
+	}
+
+	protected static void replaceWithReferenceNanDenseWithNanCols(final double replace, final double[] reference,
+		final int nRow, final int nCol, Set<Integer> colsWithNan, final double[] values, final double[] retV) {
+		int off = 0;
+		for(int i = 0; i < nRow; i++) {
+			for(int j = 0; j < nCol; j++) {
+				final double v = values[off];
+				if(colsWithNan.contains(j))
+					retV[off++] = 0;
+				else if(Util.eq(v, Double.NaN))
+					retV[off++] = replace - reference[j];
+				else
+					retV[off++] = v;
+			}
 		}
 	}
 
@@ -1033,15 +1049,20 @@ public class Dictionary extends ADictionary {
 		if(ret[0] == 0)
 			return;
 		final MathContext cont = MathContext.DECIMAL128;
-		final int len = counts.length;
+		final int nRow = counts.length;
 		final int nCol = reference.length;
+
 		BigDecimal tmp = BigDecimal.ONE;
 		int off = 0;
-		for(int i = 0; i < len; i++) {
+		for(int i = 0; i < nRow; i++) {
 			for(int j = 0; j < nCol; j++) {
 				final double v = _values[off++] + reference[j];
 				if(v == 0) {
 					ret[0] = 0;
+					return;
+				}
+				else if(!Double.isFinite(v)) {
+					ret[0] = v;
 					return;
 				}
 				tmp = tmp.multiply(new BigDecimal(v).pow(counts[i], cont), cont);
@@ -1053,6 +1074,7 @@ public class Dictionary extends ADictionary {
 			ret[0] = 0;
 		else if(!Double.isInfinite(ret[0]))
 			ret[0] = new BigDecimal(ret[0]).multiply(tmp, MathContext.DECIMAL128).doubleValue();
+
 	}
 
 	@Override
@@ -1103,8 +1125,11 @@ public class Dictionary extends ADictionary {
 		MatrixBlockDictionary m = getMBDict(1);
 		if(m == null)
 			return null;
-		IDictionary a = m.applyScalarOp(new LeftScalarOperator(Plus.getPlusFnObject(), reference));
-		return a == null ? null : a.rexpandCols(max, ignore, cast, 1);
+		IDictionary a = m.applyScalarOp(new RightScalarOperator(Plus.getPlusFnObject(), reference));
+		if(a == null)
+			return null; // second ending
+		a = a.rexpandCols(max, ignore, cast, 1);
+		return a;
 	}
 
 	@Override
@@ -1201,25 +1226,8 @@ public class Dictionary extends ADictionary {
 	public boolean equals(IDictionary o) {
 		if(o instanceof Dictionary)
 			return Arrays.equals(_values, ((Dictionary) o)._values);
-		else if(o instanceof IdentityDictionary)
-			return ((IdentityDictionary) o).equals(this);
-		else if(o instanceof MatrixBlockDictionary) {
-			final MatrixBlock mb = ((MatrixBlockDictionary) o).getMatrixBlock();
-			if(mb.isEmpty()) {
-				for(int i = 0; i < _values.length; i++) {
-					if(_values[i] != 0)
-						return false;
-				}
-				return true;
-			}
-			else if(mb.isInSparseFormat())
-				return mb.getSparseBlock().equals(_values, mb.getNumColumns());
-			final double[] dv = mb.getDenseBlockValues();
-			return Arrays.equals(_values, dv);
-		}
-		else if(o instanceof IdentityDictionary) {
+		else if(o != null)
 			return o.equals(this);
-		}
 		return false;
 	}
 
@@ -1246,10 +1254,91 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
+	protected IDictionary rightMMPreAggSparseSelectedCols(int numVals, SparseBlock b, IColIndex thisCols,
+		IColIndex aggregateColumns) {
+
+		final int thisColsSize = thisCols.size();
+		final int aggColSize = aggregateColumns.size();
+		final double[] ret = new double[numVals * aggColSize];
+
+		for(int h = 0; h < thisColsSize; h++) {
+			// chose row in right side matrix via column index of the dictionary
+			final int colIdx = thisCols.get(h);
+			if(b.isEmpty(colIdx))
+				continue;
+
+			// extract the row values on the right side.
+			final double[] sValues = b.values(colIdx);
+			final int[] sIndexes = b.indexes(colIdx);
+			final int sPos = b.pos(colIdx);
+			final int sEnd = b.size(colIdx) + sPos;
+
+			for(int j = 0; j < numVals; j++) { // rows left
+				final int offOut = j * aggColSize;
+				final double v = getValue(j, h, thisColsSize);
+				sparseAddSelected(sPos, sEnd, aggColSize, aggregateColumns, sIndexes, sValues, ret, offOut, v);
+			}
+
+		}
+		return Dictionary.create(ret);
+	}
+
+	private void sparseAddSelected(int sPos, int sEnd, int aggColSize, IColIndex aggregateColumns, int[] sIndexes,
+		double[] sValues, double[] ret, int offOut, double v) {
+
+		int retIdx = 0;
+		for(int i = sPos; i < sEnd; i++) {
+			// skip through the retIdx.
+			while(retIdx < aggColSize && aggregateColumns.get(retIdx) < sIndexes[i])
+				retIdx++;
+			if(retIdx == aggColSize)
+				break;
+			ret[offOut + retIdx] += v * sValues[i];
+		}
+		retIdx = 0;
+	}
+
+	@Override
+	protected IDictionary rightMMPreAggSparseAllColsRight(int numVals, SparseBlock b, IColIndex thisCols,
+		int nColRight) {
+		final int thisColsSize = thisCols.size();
+		final double[] ret = new double[numVals * nColRight];
+
+		for(int h = 0; h < thisColsSize; h++) { // common dim
+			// chose row in right side matrix via column index of the dictionary
+			final int colIdx = thisCols.get(h);
+			if(b.isEmpty(colIdx))
+				continue;
+
+			// extract the row values on the right side.
+			final double[] sValues = b.values(colIdx);
+			final int[] sIndexes = b.indexes(colIdx);
+			final int sPos = b.pos(colIdx);
+			final int sEnd = b.size(colIdx) + sPos;
+
+			for(int i = 0; i < numVals; i++) { // rows left
+				final int offOut = i * nColRight;
+				final double v = getValue(i, h, thisColsSize);
+				SparseAdd(sPos, sEnd, ret, offOut, sIndexes, sValues, v);
+			}
+		}
+		return Dictionary.create(ret);
+	}
+
+	private void SparseAdd(int sPos, int sEnd, double[] ret, int offOut, int[] sIdx, double[] sVals, double v) {
+		if(v != 0) {
+			for(int k = sPos; k < sEnd; k++) { // cols right with value
+				ret[offOut + sIdx[k]] += v * sVals[k];
+			}
+		}
+	}
+
+	@Override
 	public IDictionary append(double[] row) {
 		double[] retV = new double[_values.length + row.length];
 		System.arraycopy(_values, 0, retV, 0, _values.length);
 		System.arraycopy(row, 0, retV, _values.length, row.length);
 		return new Dictionary(retV);
 	}
+
 }

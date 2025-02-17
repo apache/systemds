@@ -19,6 +19,7 @@
 
 package org.apache.sysds.lops;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.ValueType;
@@ -64,7 +65,7 @@ public class Compression extends Lop {
 		sb.append(OPCODE);
 		sb.append(OPERAND_DELIMITOR);
 		if(getInputs().get(0) instanceof FunctionCallCP &&
-			((FunctionCallCP)getInputs().get(0)).getFunctionName().equalsIgnoreCase("transformencode") ){
+			((FunctionCallCP)getInputs().get(0)).getFunctionName().equalsIgnoreCase(Opcodes.TRANSFORMENCODE.toString()) ){
 			sb.append(getInputs().get(0).getOutputs().get(0).getOutputParameters().getLabel());
 		}
 		else{
@@ -72,7 +73,7 @@ public class Compression extends Lop {
 		}
 		sb.append(OPERAND_DELIMITOR);
 		if(getInputs().get(0) instanceof FunctionCallCP && 
-			((FunctionCallCP)getInputs().get(0)).getFunctionName().equalsIgnoreCase("transformencode") ){
+			((FunctionCallCP)getInputs().get(0)).getFunctionName().equalsIgnoreCase(Opcodes.TRANSFORMENCODE.toString()) ){
 			sb.append(getInputs().get(0).getOutputs().get(0).getOutputParameters().getLabel());
 		}
 		else{

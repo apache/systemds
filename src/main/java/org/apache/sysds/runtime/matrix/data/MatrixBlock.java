@@ -38,13 +38,13 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.BlockType;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -889,7 +889,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		appendToSparse(that, rowoffset, coloffset, true);
 	}
 	
-	private void appendToSparse( MatrixBlock that, int rowoffset, int coloffset, boolean deep ) 
+	protected void appendToSparse( MatrixBlock that, int rowoffset, int coloffset, boolean deep ) 
 	{
 		if( that==null || that.isEmptyBlock(false) )
 			return; //nothing to append
@@ -1003,7 +1003,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public double prod() {
 		MatrixBlock out = new MatrixBlock(1, 1, false);
 		LibMatrixAgg.aggregateUnaryMatrix(this, out,
-			InstructionUtils.parseBasicAggregateUnaryOperator("ua*", 1));
+			InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAM.toString(), 1));
 		return out.get(0, 0);
 	}
 	
@@ -1019,7 +1019,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public double mean(int k ) {
 		MatrixBlock out = new MatrixBlock(1, 3, false);
 		LibMatrixAgg.aggregateUnaryMatrix(this, out,
-			InstructionUtils.parseBasicAggregateUnaryOperator("uamean", k));
+			InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMEAN.toString(), k));
 		return out.get(0, 0);
 	}
 
@@ -1035,7 +1035,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public double min(int k) {
 		MatrixBlock out = new MatrixBlock(1, 1, false);
 		LibMatrixAgg.aggregateUnaryMatrix(this, out,
-			InstructionUtils.parseBasicAggregateUnaryOperator("uamin", k));
+			InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMIN.toString(), k));
 		return out.get(0, 0);
 	}
 
@@ -1049,7 +1049,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 
 	public final MatrixBlock colMin(int k) {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uacmin", k);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACMIN.toString(), k);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 
@@ -1063,7 +1063,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 
 	public final MatrixBlock colMax(int k) {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uacmax", k);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACMAX.toString(), k);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 	
@@ -1083,7 +1083,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @return the maximum value of all values in the matrix
 	 */
 	public MatrixBlock max(int k){
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uamax", k);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMAX.toString(), k);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 
@@ -1104,7 +1104,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @return Sum of the values in the matrix.
 	 */
 	public MatrixBlock sum(int k) {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uak+", k);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAKP.toString(), k);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 
@@ -1114,7 +1114,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @return A new MatrixBlock containing the column sums of this matrix.
 	 */
 	public MatrixBlock colSum() {
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uack+", 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACKP.toString(), 1);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 
@@ -1124,7 +1124,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @return A new MatrixBlock containing the row sums of this matrix.
 	 */
 	public final MatrixBlock rowSum(){
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uark+", 1);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARKP.toString(), 1);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 
@@ -1135,7 +1135,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @return A new MatrixBlock containing the row sums of this matrix.
 	 */
 	public final MatrixBlock rowSum(int k){
-		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uark+", k);
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARKP.toString(), k);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 
@@ -1730,6 +1730,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 *                  (the invoker is responsible to recompute nnz after all copies are done) 
 	 */
 	public void copy(int rl, int ru, int cl, int cu, MatrixBlock src, boolean awareDestNZ ) {
+		if (src instanceof CompressedMatrixBlock){
+			src = ((CompressedMatrixBlock) src).getUncompressed("In-place matrix copy into indexed matrix");
+		}
 		if(sparse && src.sparse)
 			copySparseToSparse(rl, ru, cl, cu, src, awareDestNZ);
 		else if(sparse && !src.sparse)
@@ -3650,10 +3653,19 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return append(that, ret, true); //default cbind
 	}
 
-	public static  MatrixBlock append(List<MatrixBlock> that,MatrixBlock ret, boolean cbind, int k ){
-		MatrixBlock[] th = new MatrixBlock[that.size() -1];
-		for(int i = 0; i < that.size() -1; i++)
-			th[i] = that.get(i+1);
+	/**
+	 * Append that list of matrixblocks together.
+	 * 
+	 * @param that  That list.
+	 * @param ret   The output block
+	 * @param cbind If the blocks a appended cbind
+	 * @param k     the parallelization degree
+	 * @return the appended matrix.
+	 */
+	public static MatrixBlock append(List<MatrixBlock> that, MatrixBlock ret, boolean cbind, int k) {
+		MatrixBlock[] th = new MatrixBlock[that.size() - 1];
+		for(int i = 0; i < that.size() - 1; i++)
+			th[i] = that.get(i + 1);
 		return that.get(0).append(th, ret, cbind);
 	}
 
@@ -3667,38 +3679,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @param cbind if binding on columns or rows
 	 * @return the ret MatrixBlock object with the appended result
 	 */
-	public final MatrixBlock append( MatrixBlock that, MatrixBlock ret, boolean cbind ) {
+	public final MatrixBlock append(MatrixBlock that, MatrixBlock ret, boolean cbind ) {
 		return append(new MatrixBlock[]{that}, ret, cbind);
 	}
 	
-	private final long calculateCombinedNNz(MatrixBlock[] that){
-		long nnz = nonZeros;
-		for(MatrixBlock b : that)
-			nnz += b.nonZeros;
-		return nnz;
-	}
-
-	private final int combinedRows(MatrixBlock[] that){
-		int r =  rlen;
-		for(MatrixBlock b : that)
-			r += b.rlen;
-		return r;
-	}
-
-	private final int combinedCols(MatrixBlock[] that){
-		int c =  clen;
-		for(MatrixBlock b : that)
-			c += b.clen;
-		return c;
-	}
-
-	private final int computeNNzRow(MatrixBlock[] that, int row) {
-		int lnnz = (int) this.recomputeNonZeros(row, row, 0, this.clen - 1);
-		for(MatrixBlock b : that)
-			lnnz += b.recomputeNonZeros(row, row, 0, b.clen - 1);
-		return lnnz;
-	}
-
 	/**
 	 * Append that list of matrixes to this matrix.
 	 * 
@@ -3710,112 +3694,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @return the ret MatrixBlock object with the appended result
 	 */
 	public MatrixBlock append(MatrixBlock[] that, MatrixBlock result, boolean cbind) {
-		checkDimensionsForAppend(that, cbind);
-
-		final int m = cbind ? rlen : combinedRows(that);
-		final int n = cbind ? combinedCols(that) : clen;
-		final long nnz = calculateCombinedNNz(that);
-
-		boolean shallowCopy = (nonZeros == nnz);
-		boolean sp = evalSparseFormatInMemory(m, n, nnz);
-		
-		//init result matrix 
-		if( result == null )
-			result = new MatrixBlock(m, n, sp, nnz);
-		else
-			result.reset(m, n, sp, nnz);
-		
-		//core append operation
-		//copy left and right input into output
-		if( !result.sparse && nnz!=0 ) //DENSE
-		{
-			if( cbind ) {
-				DenseBlock resd = result.allocateBlock().getDenseBlock();
-				MatrixBlock[] in = ArrayUtils.addAll(new MatrixBlock[]{this}, that);
-				
-				for( int i=0; i<m; i++ ) {
-					for( int k=0, off=0; k<in.length; off+=in[k].clen, k++ ) {
-						if( in[k].isEmptyBlock(false) )
-							continue;
-						if( in[k].sparse ) {
-							SparseBlock src = in[k].sparseBlock;
-							if( src.isEmpty(i) )
-								continue;
-							int srcpos = src.pos(i);
-							int srclen = src.size(i);
-							int[] srcix = src.indexes(i);
-							double[] srcval = src.values(i);
-							double[] resval = resd.values(i);
-							int resix = resd.pos(i, off);
-							for (int j=srcpos; j<srcpos+srclen; j++)
-								resval[resix+srcix[j]] = srcval[j];
-						}
-						else {
-							DenseBlock src = in[k].getDenseBlock();
-							double[] srcval = src.values(i);
-							double[] resval = resd.values(i);
-							System.arraycopy(srcval, src.pos(i),
-								resval, resd.pos(i, off), in[k].clen);
-						}
-					}
-				}
-			}
-			else { //rbind
-				result.copy(0, rlen-1, 0, n-1, this, false);
-				for(int i=0, off=rlen; i<that.length; i++) {
-					result.copy(off, off+that[i].rlen-1, 0, n-1, that[i], false);
-					off += that[i].rlen;
-				}
-			}
-		}
-		//SPARSE
-		else if(nnz != 0) {
-			//adjust sparse rows if required
-			result.allocateSparseRowsBlock();
-			//allocate sparse rows once for cbind
-			if( cbind && nnz > rlen && !shallowCopy && result.getSparseBlock() instanceof SparseBlockMCSR ) {
-				final SparseBlock sblock = result.getSparseBlock();
-				// for each row calculate how many non zeros are pressent.
-				for( int i=0; i<result.rlen; i++ ) 
-					sblock.allocate(i, computeNNzRow(that, i));
-				
-			}
-			
-			//core append operation
-			// we can always append this directly to offset 0.0 in both cbind and rbind.
-			result.appendToSparse(this, 0, 0, !shallowCopy);
-			if( cbind ) {
-				for(int i=0, off=clen; i<that.length; i++) {
-					result.appendToSparse(that[i], 0, off);
-					off += that[i].clen;
-				}
-			}
-			else { //rbind
-				for(int i=0, off=rlen; i<that.length; i++) {
-					result.appendToSparse(that[i], off, 0);
-					off += that[i].rlen;
-				}
-			}
-		}
-		
-		//update meta data
-		result.nonZeros = nnz;
-		return result;
-	}
-
-	public void checkDimensionsForAppend(MatrixBlock[] in, boolean cbind) {
-		if(cbind) {
-			for(int i = 0; i < in.length; i++)
-				if(in[i].rlen != rlen)
-					throw new DMLRuntimeException(
-						"Invalid nRow dimension for append cbind: was " + in[i].rlen + " should be: " + rlen);
-		}
-		else {
-			for(int i = 0; i < in.length; i++)
-				if(in[i].clen != clen)
-					throw new DMLRuntimeException(
-						"Invalid nCol dimension for append rbind: was " + in[i].clen + " should be: " + clen);
-		}
+		return LibMatrixAppend.append(this, that, result, cbind);
 	}
 
 	public static MatrixBlock naryOperations(Operator op, MatrixBlock[] matrices, ScalarObject[] scalars, MatrixBlock ret) {
@@ -4973,10 +4852,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, AggregateBinaryOperator op) {
 		checkAggregateBinaryOperations(m1, m2, op);
 		final int k = op.getNumThreads();
-		if(NativeHelper.isNativeLibraryLoaded())
-			return LibMatrixNative.matrixMult(m1, m2, ret, k);
-		else 
-			return LibMatrixMult.matrixMult(m1, m2, ret, k);
+		return LibMatrixMult.matrixMult(m1, m2, ret, k);
 	}
 
 	protected void checkAggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, AggregateBinaryOperator op) {
@@ -5134,11 +5010,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return LibMatrixReorg.rexpand(this, result, max, rows, cast, ignore, k);
 	}
 	
-	
 	@Override
-	public MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement) {
+	public final MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement) {
+		return replaceOperations(result, pattern, replacement, 1);
+	}
+
+	public MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement, int k) {
 		MatrixBlock ret = checkType(result);
-		return LibMatrixReplace.replaceOperations(this, ret, pattern, replacement);
+		return LibMatrixReplace.replaceOperations(this, ret, pattern, replacement, k);
 	}
 	
 	public MatrixBlock extractTriangular(MatrixBlock ret, boolean lower, boolean diag, boolean values) {

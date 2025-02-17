@@ -31,7 +31,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -39,6 +39,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -71,19 +72,23 @@ public final class CLALibRexpand {
 
 		try {
 			final int[] map = new int[seqHeight];
-			int maxCol = constructInitialMapping(map, A, k);
+			Pair<Integer, Integer> meta = constructInitialMapping(map, A, k, nColOut);
+			int maxCol = meta.getKey();
+			int nZeros = meta.getValue();
 			boolean containsNull = maxCol < 0;
 			maxCol = Math.abs(maxCol);
 
+			boolean cutOff = false;
 			if(nColOut == -1)
 				nColOut = maxCol;
 			else if(nColOut < maxCol)
-				throw new DMLRuntimeException("invalid nColOut, requested: " + nColOut + " but have to be : " + maxCol);
+				cutOff = true;
 
-			final int nNulls = containsNull ? correctNulls(map, nColOut) : 0;
+			if(containsNull)
+				correctNulls(map, nColOut);
 			if(nColOut == 0) // edge case of empty zero dimension block.
 				return new MatrixBlock(seqHeight, 0, 0.0);
-			return createCompressedReturn(map, nColOut, seqHeight, nNulls, containsNull, k);
+			return createCompressedReturn(map, nColOut, seqHeight, nZeros, containsNull || cutOff, k);
 		}
 		catch(Exception e) {
 			throw new RuntimeException("Failed table seq operator", e);
@@ -106,9 +111,15 @@ public final class CLALibRexpand {
 				cast, ignore, k);
 		else {
 			CompressedMatrixBlock retC = new CompressedMatrixBlock(nRows, max);
-			retC.allocateColGroup(in.getColGroups().get(0).rexpandCols(max, ignore, cast, nRows));
-			retC.recomputeNonZeros();
-			return retC;
+			AColGroup g = in.getColGroups().get(0).rexpandCols(max, ignore, cast, nRows);
+			if(g == null)
+				return new MatrixBlock(nRows,0,0);
+			else {
+				retC.setNumColumns(g.getNumCols());
+				retC.allocateColGroup(g);
+				retC.recomputeNonZeros();
+				return retC;
+			}
 		}
 	}
 
@@ -118,7 +129,7 @@ public final class CLALibRexpand {
 		boolean containsNull, int k) throws Exception {
 		// create a single DDC Column group.
 		final IColIndex i = ColIndexFactory.create(0, nColOut);
-		final ADictionary d = new IdentityDictionary(nColOut, containsNull);
+		final IDictionary d = IdentityDictionary.create(nColOut, containsNull);
 		final AMapToData m = MapToFactory.create(seqHeight, map, nColOut + (containsNull ? 1 : 0), k);
 		final AColGroup g = ColGroupDDC.create(i, d, m, null);
 
@@ -139,7 +150,7 @@ public final class CLALibRexpand {
 		return nNulls;
 	}
 
-	private static int constructInitialMapping(int[] map, MatrixBlock A, int k) {
+	private static Pair<Integer,Integer> constructInitialMapping(int[] map, MatrixBlock A, int k, int maxOutCol) {
 		if(A.isEmpty() || A.isInSparseFormat())
 			throw new DMLRuntimeException("not supported empty or sparse construction of seq table");
 		final MatrixBlock Ac;
@@ -155,20 +166,23 @@ public final class CLALibRexpand {
 		try {
 
 			int blkz = Math.max((map.length / k), 1000);
-			List<Future<Integer>> tasks = new ArrayList<>();
+			List<Future<Pair<Integer,Integer>>> tasks = new ArrayList<>();
 			for(int i = 0; i < map.length; i += blkz) {
 				final int start = i;
 				final int end = Math.min(i + blkz, map.length);
-				tasks.add(pool.submit(() -> partialMapping(map, Ac, start, end)));
+				tasks.add(pool.submit(() -> partialMapping(map, Ac, start, end, maxOutCol)));
 			}
 
 			int maxCol = 0;
-			for(Future<Integer> f : tasks) {
-				int tmp = f.get();
-				if(Math.abs(tmp) > Math.abs(maxCol))
-					maxCol = tmp;
+			int zeros = 0;
+			for(Future<Pair<Integer,Integer>> f : tasks) {
+				int tmpMaxCol = f.get().getKey();
+				int tmpZeros = f.get().getValue();
+				if(Math.abs(tmpMaxCol) > Math.abs(maxCol))
+					maxCol = tmpMaxCol;
+				zeros += tmpZeros;
 			}
-			return maxCol;
+			return new Pair<Integer,Integer>(maxCol, zeros);
 		}
 		catch(Exception e) {
 			throw new DMLRuntimeException(e);
@@ -179,33 +193,32 @@ public final class CLALibRexpand {
 
 	}
 
-	private static int partialMapping(int[] map, MatrixBlock A, int start, int end) {
+	private static Pair<Integer, Integer> partialMapping(int[] map, MatrixBlock A, int start, int end, int maxOutCol) {
 
 		int maxCol = 0;
-		boolean containsNull = false;
-
+		int zeros = 0;
 		final double[] aVals = A.getDenseBlockValues();
 
 		for(int i = start; i < end; i++) {
 			final double v2 = aVals[i];
-			if(Double.isNaN(v2)) {
-				map[i] = -1; // assign temporarily to -1
-				containsNull = true;
-			}
-			else {
-				// safe casts to long for consistent behavior with indexing
-				int col = UtilFunctions.toInt(v2);
-				if(col <= 0)
-					throw new DMLRuntimeException(
+			final int colUnsafe = UtilFunctions.toInt(v2);
+			if(!Double.isNaN(v2) && colUnsafe < 0)
+				throw new DMLRuntimeException(
 						"Erroneous input while computing the contingency table (value <= zero): " + v2);
-
-				map[i] = col - 1;
-				// maintain max seen col
-				maxCol = Math.max(col, maxCol);
-			}
+			// Boolean to int conversion to avoid branch
+			final int invalid = Double.isNaN(v2) || (maxOutCol != -1 && colUnsafe > maxOutCol) ? 1 : 0;
+			// if invalid -> maxOutCol else -> colUnsafe - 1
+			final int colSafe = maxOutCol*invalid + (colUnsafe - 1)*(1 - invalid);
+			zeros += invalid;
+			maxCol = Math.max(colUnsafe, maxCol);
+			map[i] = colSafe;
 		}
 
-		return containsNull ? maxCol * -1 : maxCol;
+		if (maxOutCol == -1 && zeros > 0){
+			maxCol *= -1;
+		}
+
+		return new Pair<Integer, Integer>(maxCol, zeros);
 	}
 
 	public static boolean compressedTableSeq() {

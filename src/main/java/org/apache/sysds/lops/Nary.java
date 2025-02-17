@@ -20,6 +20,7 @@
 package org.apache.sysds.lops;
 
  
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 
 import org.apache.sysds.common.Types.DataType;
@@ -116,9 +117,9 @@ public class Nary extends Lop {
 				//need to differentiate from binary min/max operations
 				return "n"+operationType.name().toLowerCase();
 			case PLUS:
-				return "n+";
+				return Opcodes.NP.toString();
 			case MULT:
-				return "n*";
+				return Opcodes.NM.toString();
 			default:
 				throw new UnsupportedOperationException(
 					"Nary operation type (" + operationType + ") is not defined.");

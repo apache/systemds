@@ -1,0 +1,54 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+cols=$cols
+rows=$rows
+reCols=$reCols
+reRows=$reRows
+sparsity=$sparsity 
+min=$min
+max=$max
+
+X = rand(cols=cols, rows=rows, min=min, max=max, sparsity=$sparsity)
+X = ceil(X)
+
+X_C = compress(X)
+
+while(FALSE){} # force a break
+
+X_r = matrix(X, rows = reRows, cols=reCols)
+X_Cr = matrix(X_C, rows = reRows, cols=reCols)
+
+while(FALSE){} # force a second break
+
+same = X == X_C 
+same2 = X_r == X_Cr
+
+print(sum(same))
+print(sum(same2))
+
+nCells = cols * rows
+
+if(nCells == sum(same) & sum(same) == sum(same2))
+    print("Success, the output contained the same values after reshaping")
+else 
+    print("Failed, the output did not contain the same values after reshaping")

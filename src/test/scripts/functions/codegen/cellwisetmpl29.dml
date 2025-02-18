@@ -19,9 +19,15 @@
 #
 #-------------------------------------------------------------
 
-X = matrix(3, 10, 10);
+A = matrix(2, 1, 10)
+B = matrix(0, 10, 10)
+X = rbind(B, A, B)
+#X = matrix(3, 10, 10);
+
 while(FALSE){}
 
-R = rowProds(2*log(X));
+#R = rowProds(2*log(X));
+#R = rowProds(X*min(A));
+R = rowProds(X^2 + 1)
 
 write(R, $1)

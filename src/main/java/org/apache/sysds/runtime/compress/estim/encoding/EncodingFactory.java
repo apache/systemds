@@ -149,7 +149,10 @@ public interface EncodingFactory {
 			return new EmptyEncoding();
 		else if(transposed) {
 			if(scaleFactors != null) {
-				throw new NotImplementedException(); // TODO: handle quantization-fused compression
+				if(m.isInSparseFormat())
+					throw new NotImplementedException();
+				else
+					return createFromDenseTransposedQuantized(m, rowCol, scaleFactors); 
 			}
 			else {
 				if(m.isInSparseFormat())
@@ -299,6 +302,217 @@ public interface EncodingFactory {
 		}
 	}
 
+	private static IEncode createFromDense(MatrixBlock m, int col) {
+		final DenseBlock db = m.getDenseBlock();
+		if(!db.isContiguous())
+			throw new NotImplementedException("Not Implemented non contiguous dense matrix encoding for sample");
+		final DoubleCountHashMap map = new DoubleCountHashMap(16);
+		final int off = col;
+		final int nCol = m.getNumColumns();
+		final int nRow = m.getNumRows();
+		final int end = off + nRow * nCol;
+		final double[] vals = m.getDenseBlockValues();
+
+		// Iteration 1, make Count HashMap.
+		for(int i = off; i < end; i += nCol) // jump down through rows.
+			map.increment(vals[i]);
+		final int nUnique = map.size();
+		if(nUnique == 1)
+			return new ConstEncoding(m.getNumColumns());
+
+		if(map.getOrDefault(0.0, -1) > nRow / 4) {
+			map.replaceWithUIDsNoZero();
+			final int zeroCount = map.get(0.0);
+			final int nV = m.getNumRows() - zeroCount;
+			final IntArrayList offsets = new IntArrayList(nV);
+
+			final AMapToData d = MapToFactory.create(nV, nUnique - 1);
+			int di = 0;
+			for(int i = off, r = 0; i < end; i += nCol, r++) {
+				if(vals[i] != 0) {
+					offsets.appendValue(r);
+					d.set(di++, map.getId(vals[i]));
+				}
+			}
+			if(di != nV)
+				throw new DMLRuntimeException("Invalid number of zero.");
+
+			final AOffset o = OffsetFactory.createOffset(offsets);
+
+			return new SparseEncoding(d, o, nRow);
+		}
+		else {
+			// Allocate counts, and iterate once to replace counts with u ids
+
+			final AMapToData d = MapToFactory.create(nRow, nUnique);
+			// Iteration 2, make final map
+			for(int i = off, r = 0; i < end; i += nCol, r++)
+				d.set(r, map.getId(vals[i]));
+			return new DenseEncoding(d);
+		}
+	}
+
+	private static IEncode createFromSparse(MatrixBlock m, int col) {
+
+		final DoubleCountHashMap map = new DoubleCountHashMap(16);
+		final SparseBlock sb = m.getSparseBlock();
+
+		final double guessedNumberOfNonZero = Math.min(4, Math.ceil(m.getNumRows() * m.getSparsity()));
+		final IntArrayList offsets = new IntArrayList((int) guessedNumberOfNonZero);
+
+		// Iteration 1 of non zero values, make Count HashMap.
+		for(int r = 0; r < m.getNumRows(); r++) { // Horrible performance but ... it works.
+			if(sb.isEmpty(r))
+				continue;
+			final int apos = sb.pos(r);
+			final int alen = sb.size(r) + apos;
+			final int[] aix = sb.indexes(r);
+			final int index = Arrays.binarySearch(aix, apos, alen, col);
+			if(index >= 0) {
+				offsets.appendValue(r);
+				map.increment(sb.values(r)[index]);
+			}
+		}
+		if(offsets.size() == 0)
+			return new EmptyEncoding();
+
+		final int nUnique = map.size();
+
+		final AMapToData d = MapToFactory.create(offsets.size(), nUnique);
+
+		// Iteration 2 of non zero values, make either a IEncode Dense or sparse map.
+		for(int off = 0, r = 0; off < offsets.size(); r++) {
+			if(sb.isEmpty(r))
+				continue;
+			final int apos = sb.pos(r);
+			final int alen = sb.size(r) + apos;
+			final int[] aix = sb.indexes(r);
+			// Performance hit because of binary search for each row.
+			final int index = Arrays.binarySearch(aix, apos, alen, col);
+			if(index >= 0) {
+				final double v = sb.values(r)[index];
+				if(index >= 0)
+					d.set(off++, map.getId(v));
+			}
+		}
+
+		// Iteration 3 of non zero indexes, make a Offset Encoding to know what cells are zero and not.
+		final AOffset o = OffsetFactory.createOffset(offsets);
+		return new SparseEncoding(d, o, m.getNumRows());
+	}
+
+	private static IEncode createFromDenseTransposedQuantized(MatrixBlock m, int row, double[] scaleFactors) {
+		final DenseBlock db = m.getDenseBlock();
+		if(!db.isContiguous())
+			throw new NotImplementedException("Not Implemented non contiguous dense matrix encoding for sample");
+		final DoubleCountHashMap map = new DoubleCountHashMap();
+		final int off = db.pos(row);
+		final int nCol = m.getNumColumns();
+		final int end = off + nCol;
+		final double[] vals = db.values(row);
+
+		// Validate scaleFactors
+		boolean useSingleScalar = false;
+		if(scaleFactors != null) {
+			if(scaleFactors.length == 1) {
+				useSingleScalar = true;
+			}
+		}
+
+		if(useSingleScalar == true) {
+
+			// Iteration 1: Apply scaling & quantization, then populate the HashMap
+			for(int i = off; i < end; i++) // sequential access
+				map.increment(Math.floor(vals[i] * scaleFactors[0]));
+
+			final int nUnique = map.size();
+
+			if(nUnique == 1)
+				return new ConstEncoding(m.getNumColumns());
+			else if(nUnique == 0)
+				return new EmptyEncoding();
+			else if(map.getOrDefault(0.0, -1) > nCol / 4) {
+				map.replaceWithUIDsNoZero();
+				final int zeroCount = map.get(0.0);
+				final int nV = nCol - zeroCount;
+				final IntArrayList offsets = new IntArrayList(nV);
+
+				final AMapToData d = MapToFactory.create(nV, nUnique - 1);
+				int di = 0;
+				for(int i = off, r = 0; i < end; i++, r++) {
+					double value = Math.floor(vals[i] * scaleFactors[0]);
+					if (value != 0) {
+						offsets.appendValue(r);
+						d.set(di++, map.getId(value));
+					}
+				}
+				if(di != nV)
+					throw new RuntimeException("Did not find equal number of elements " + di + " vs " + nV);
+
+				final AOffset o = OffsetFactory.createOffset(offsets);
+				return new SparseEncoding(d, o, nCol);
+			}
+			else {
+				// Create output map
+				final AMapToData d = MapToFactory.create(nCol, nUnique);
+
+				// Iteration 2, make final map
+				for(int i = off, r = 0; i < end; i++, r++) {
+					double value = Math.floor(vals[i] * scaleFactors[0]);
+					d.set(r, map.getId(value));
+				}
+
+				return new DenseEncoding(d);
+			}
+		}
+		else {
+			// Iteration 1: Apply scaling & quantization, then populate the HashMap
+			for(int i = off; i < end; i++) // sequential access
+				map.increment(Math.floor(vals[i] * scaleFactors[row]));
+
+			final int nUnique = map.size();
+
+			if(nUnique == 1)
+				return new ConstEncoding(m.getNumColumns());
+			else if(nUnique == 0)
+				return new EmptyEncoding();
+			else if(map.getOrDefault(0.0, -1) > nCol / 4) {
+				map.replaceWithUIDsNoZero();
+				final int zeroCount = map.get(0.0);
+				final int nV = nCol - zeroCount;
+				final IntArrayList offsets = new IntArrayList(nV);
+
+				final AMapToData d = MapToFactory.create(nV, nUnique - 1);
+				int di = 0;
+				for(int i = off, r = 0; i < end; i++, r++) {
+					double value = Math.floor(vals[i] * scaleFactors[row]);
+					if (value != 0) {
+						offsets.appendValue(r);
+						d.set(di++, map.getId(value));
+					}
+				}
+				if(di != nV)
+					throw new RuntimeException("Did not find equal number of elements " + di + " vs " + nV);
+
+				final AOffset o = OffsetFactory.createOffset(offsets);
+				return new SparseEncoding(d, o, nCol);
+			}
+			else {
+				// Create output map
+				final AMapToData d = MapToFactory.create(nCol, nUnique);
+
+				// Iteration 2, make final map
+				for(int i = off, r = 0; i < end; i++, r++) {
+					double value = Math.floor(vals[i] * scaleFactors[row]);
+					d.set(r, map.getId(value));
+				}
+
+				return new DenseEncoding(d);
+			}
+
+		}
+	}
+
 	private static IEncode createFromDenseQuantized(MatrixBlock m, int col, double[] scaleFactors) {
 		final DenseBlock db = m.getDenseBlock();
 		if(!db.isContiguous())
@@ -404,105 +618,6 @@ public interface EncodingFactory {
 				return new DenseEncoding(d);
 			}
 		}
-	}
-
-	private static IEncode createFromDense(MatrixBlock m, int col) {
-		final DenseBlock db = m.getDenseBlock();
-		if(!db.isContiguous())
-			throw new NotImplementedException("Not Implemented non contiguous dense matrix encoding for sample");
-		final DoubleCountHashMap map = new DoubleCountHashMap(16);
-		final int off = col;
-		final int nCol = m.getNumColumns();
-		final int nRow = m.getNumRows();
-		final int end = off + nRow * nCol;
-		final double[] vals = m.getDenseBlockValues();
-
-		// Iteration 1, make Count HashMap.
-		for(int i = off; i < end; i += nCol) // jump down through rows.
-			map.increment(vals[i]);
-		final int nUnique = map.size();
-		if(nUnique == 1)
-			return new ConstEncoding(m.getNumColumns());
-
-		if(map.getOrDefault(0.0, -1) > nRow / 4) {
-			map.replaceWithUIDsNoZero();
-			final int zeroCount = map.get(0.0);
-			final int nV = m.getNumRows() - zeroCount;
-			final IntArrayList offsets = new IntArrayList(nV);
-
-			final AMapToData d = MapToFactory.create(nV, nUnique - 1);
-			int di = 0;
-			for(int i = off, r = 0; i < end; i += nCol, r++) {
-				if(vals[i] != 0) {
-					offsets.appendValue(r);
-					d.set(di++, map.getId(vals[i]));
-				}
-			}
-			if(di != nV)
-				throw new DMLRuntimeException("Invalid number of zero.");
-
-			final AOffset o = OffsetFactory.createOffset(offsets);
-
-			return new SparseEncoding(d, o, nRow);
-		}
-		else {
-			// Allocate counts, and iterate once to replace counts with u ids
-
-			final AMapToData d = MapToFactory.create(nRow, nUnique);
-			// Iteration 2, make final map
-			for(int i = off, r = 0; i < end; i += nCol, r++)
-				d.set(r, map.getId(vals[i]));
-			return new DenseEncoding(d);
-		}
-	}
-
-	private static IEncode createFromSparse(MatrixBlock m, int col) {
-
-		final DoubleCountHashMap map = new DoubleCountHashMap(16);
-		final SparseBlock sb = m.getSparseBlock();
-
-		final double guessedNumberOfNonZero = Math.min(4, Math.ceil(m.getNumRows() * m.getSparsity()));
-		final IntArrayList offsets = new IntArrayList((int) guessedNumberOfNonZero);
-
-		// Iteration 1 of non zero values, make Count HashMap.
-		for(int r = 0; r < m.getNumRows(); r++) { // Horrible performance but ... it works.
-			if(sb.isEmpty(r))
-				continue;
-			final int apos = sb.pos(r);
-			final int alen = sb.size(r) + apos;
-			final int[] aix = sb.indexes(r);
-			final int index = Arrays.binarySearch(aix, apos, alen, col);
-			if(index >= 0) {
-				offsets.appendValue(r);
-				map.increment(sb.values(r)[index]);
-			}
-		}
-		if(offsets.size() == 0)
-			return new EmptyEncoding();
-
-		final int nUnique = map.size();
-
-		final AMapToData d = MapToFactory.create(offsets.size(), nUnique);
-
-		// Iteration 2 of non zero values, make either a IEncode Dense or sparse map.
-		for(int off = 0, r = 0; off < offsets.size(); r++) {
-			if(sb.isEmpty(r))
-				continue;
-			final int apos = sb.pos(r);
-			final int alen = sb.size(r) + apos;
-			final int[] aix = sb.indexes(r);
-			// Performance hit because of binary search for each row.
-			final int index = Arrays.binarySearch(aix, apos, alen, col);
-			if(index >= 0) {
-				final double v = sb.values(r)[index];
-				if(index >= 0)
-					d.set(off++, map.getId(v));
-			}
-		}
-
-		// Iteration 3 of non zero indexes, make a Offset Encoding to know what cells are zero and not.
-		final AOffset o = OffsetFactory.createOffset(offsets);
-		return new SparseEncoding(d, o, m.getNumRows());
 	}
 
 	private static IEncode createWithReader(MatrixBlock m, IColIndex rowCols, boolean transposed,

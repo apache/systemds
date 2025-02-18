@@ -80,8 +80,9 @@ public class QuantizationFusedCompressionTest {
 	 * Test 3: Compare compression statistics of two matrices, m0 and m1, where m0 is derived as m0 = floor(m1 * sf)
 	 * with sf = 0.5.
 	 * 
-	 * - Compression for m0 is aborted at phase 1 (before co-code). - Compression for m1 should also be aborted at the
-	 * same phase. - The resulting compression statistics for both matrices should match.
+	 * - Compression for m0 is aborted at phase 1 (before co-code). 
+	 * - Compression for m1 should also be aborted at the same phase. 
+	 * - The resulting compression statistics for both matrices should match.
 	 */
 	@Test
 	public void testQuantizationFusedCompressionAbortedBeforeCoCodeStats() {
@@ -115,8 +116,9 @@ public class QuantizationFusedCompressionTest {
 	 * Test 4: Compare compression statistics of two matrices, m0 and m1, where m0 is derived as m0 = floor(m1 * sf)
 	 * with sf = 0.3.
 	 * 
-	 * - Compression for m0 is aborted at phase 2 (after co-code). - Compression for m1 should also be aborted at the
-	 * same phase. - The resulting compression statistics for both matrices should match.
+	 * - Compression for m0 is aborted at phase 2 (after co-code). 
+	 * - Compression for m1 should also be aborted at the same phase. 
+	 * - The resulting compression statistics for both matrices should match.
 	 */
 	@Test
 	public void testQuantizationFusedCompressionAbortedAfterCoCodeStats() {

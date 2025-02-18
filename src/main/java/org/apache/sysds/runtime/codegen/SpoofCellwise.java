@@ -968,10 +968,9 @@ public abstract class SpoofCellwise extends SpoofOperator {
 					double aval = avals[aix + j];
 					if(j == 0) {
 						lc[i] = genexec(aval, b, scalars, m, n, rix+i, i, j);
-					} else if(aval != 0 || !sparseSafe)
+					} else if((aval != 0 || !sparseSafe) && lc[i] != 0) {
 						lc[i] *= genexec(aval, b, scalars, m, n, rix+i, i, j);
-					else {
-						lc[i] *= genexec(0, b, scalars, m, n, rix+i, i, j);
+					} else {
 						break;
 					}
 				}
@@ -1011,10 +1010,9 @@ public abstract class SpoofCellwise extends SpoofOperator {
 						double aval = avals[aix + j];
 						if(i == 0)
 							lc[j] = genexec(aval, b, scalars, m, n, rix + i, i, j);
-						else if(aval != 0 || !sparseSafe)
+						else if((aval != 0 || !sparseSafe) && lc[j] != 0) {
 							lc[j] *= genexec(aval, b, scalars, m, n, rix + i, i, j);
-						else {
-							lc[j] *= genexec(0, b, scalars, m, n, rix + i, i, j);
+						} else {
 							zeroFlag[j] = true;
 						}
 					}
@@ -1036,28 +1034,40 @@ public abstract class SpoofCellwise extends SpoofOperator {
 				int alen = sblock.size(i);
 				int[] aix = sblock.indexes(i);
 				double[] avals = sblock.values(i);
-				for(int j = apos; j < apos+alen; j++) {
+				for(int k = apos; k < apos+alen; k++) {
 					if(!sparseSafe) {
-						// if there is a zero, no need to compute anymore
-						if(j == 0) {
-							if(genexec(0, b, scalars, m, n, rix+i, i, j) == 0) {
+						for(int j=lastj+1; j<aix[k]; j++) {
+							if(j == 0) {
 								c[i] = genexec(0, b, scalars, m, n, rix+i, i, j);
-								break;
+							} else if(c[i] != 0){
+								c[i] *= genexec(0, b, scalars, m, n, rix+i, i, j);
 							} else {
-								c[i] = genexec(0, b, scalars, m, n, rix+i, i, j);
+								break;
 							}
-						} else if(aix[j] - (lastj+1) >= 1) {
-							c[i] *= genexec(0, b, scalars, m, n, rix + i, i, j);
-							break;
 						}
 					}
-					lastj = aix[j];
-					c[i] *= genexec(avals[j], b, scalars, m, n, rix+i, i, j);
+					if(aix[k] == 0) {
+						lastj = aix[k];
+						c[i] = genexec(avals[k], b, scalars, m, n, rix+i, i, k);
+					} else if(c[i] != 0){
+						lastj = aix[k];
+						c[i] *= genexec(avals[k], b, scalars, m, n, rix+i, i, k);
+					} else {
+						break;
+					}
 				}
 			}
+			//process remaining zeros
 			if(!sparseSafe)
-				for(int j=lastj+1; j<n; j++)
-					c[i] *= genexec(0, b, scalars, m, n, rix+i, i, j);
+				for(int j=lastj+1; j<n; j++) {
+					if(j == 0) {
+						c[i] = genexec(0, b, scalars, m, n, rix+i, i, j);
+					} else if(c[i] != 0){
+						c[i] *= genexec(0, b, scalars, m, n, rix+i, i, j);
+					} else {
+						break;
+					}
+				}
 			lnnz += (c[i] != 0) ? 1 : 0;
 		}
 		return lnnz;
@@ -1078,23 +1088,30 @@ public abstract class SpoofCellwise extends SpoofOperator {
 				int[] aix = sblock.indexes(i);
 				double[] avals = sblock.values(i);
 				//process every column, to not miss any 0's
-				for(int j = 0; j < n; j++) {
-					if(!zeroFlag[j]) {
-						if (aix[apos] == j) {
-							if(i == 0) {
-								c[j] = genexec(avals[apos], b, scalars, m, n, rix + i, i, j);
-							} else {
-								c[j] *= genexec(avals[apos], b, scalars, m, n, rix + i, i, j);
+				for(int k=apos; k<apos+alen; k++) {
+					//process zeros before current non-zero
+					if( !sparseSafe )
+						for(int j=lastj+1; j<aix[k]; j++) {
+							if(!zeroFlag[j]) {
+								if(i == 0) {
+									c[j] = genexec(0, b, scalars, m, n, rix+i, i, j);
+								} else if(c[j] != 0){
+									c[j] *= genexec(0, b, scalars, m, n, rix+i, i, j);
+								} else {
+									zeroFlag[j] = true;
+								}
 							}
-							if(alen > 1) {
-								apos++;
-							}
-						} else if(i == 0) {
-							c[j] = genexec(0, b, scalars, m, n, rix + i, i, j);
-							zeroFlag[j] = true;
+						}
+					//process current non-zero
+					if(!zeroFlag[aix[k]]) {
+						if(i == 0) {
+							lastj = aix[k];
+							c[aix[k]] = genexec(avals[k], b, scalars, m, n, rix+i, i, lastj);
+						} else if(c[aix[k]] != 0){
+							lastj = aix[k];
+							c[aix[k]] *= genexec(avals[k], b, scalars, m, n, rix+i, i, lastj);
 						} else {
-							c[j] *= genexec(0, b, scalars, m, n, rix + i, i, j);
-							zeroFlag[j] = true;
+							zeroFlag[aix[k]] = true;
 						}
 					}
 				}
@@ -1102,10 +1119,14 @@ public abstract class SpoofCellwise extends SpoofOperator {
 			//process empty rows or remaining zeros
 			if(!sparseSafe)
 				for(int j=lastj+1; j<n; j++) {
-					if(i == 0) {
-						c[j] = genexec(0, b, scalars, m, n, rix+i, i, j);
-					} else {
-						break;
+					if(!zeroFlag[j]) {
+						if(i == 0) {
+							c[j] = genexec(0, b, scalars, m, n, rix+i, i, j);
+						} else if(c[j] != 0){
+							c[j] *= genexec(0, b, scalars, m, n, rix+i, i, j);
+						} else {
+							zeroFlag[j] = true;
+						}
 					}
 				}
 		}

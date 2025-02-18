@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.compress.readers;
 
+import org.apache.commons.lang3.NotImplementedException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
@@ -83,7 +85,7 @@ public abstract class ReaderColumnSelection {
 	}
 
 	/**
-	 * Create an reader of the matrix block that is able to iterate though all the rows and return as dense double
+	 * Create a reader of the matrix block that is able to iterate though all the rows and return as dense double
 	 * arrays.
 	 * 
 	 * Note the reader reuse the return, therefore if needed for something please copy the returned rows.
@@ -100,7 +102,30 @@ public abstract class ReaderColumnSelection {
 	}
 
 	/**
-	 * Create an reader of the matrix block that is able to iterate though all the rows and return as dense double
+	 * Create a reader of the matrix block that directly reads quantized values using scale factors.
+	 * 
+	 * Note the reader reuse the return, therefore if needed for something please copy the returned rows.
+	 * 
+	 * @param rawBlock   	The block to iterate though
+	 * @param colIndices 	The column indexes to extract and insert into the double array
+	 * @param transposed 	If the raw block should be treated as transposed
+	 * @param scaleFactors 	An array of scale factors applied. 
+	 *                     	- If row-wise scaling is used, this should be an array where each value corresponds to a row. 
+	 *                     	- If a single scalar is provided, it is applied uniformly to the entire matrix.
+	 * @return A reader of the columns specified
+	 */	
+
+	public static ReaderColumnSelection createQuantizedReader(MatrixBlock rawBlock, IColIndex colIndices, boolean transposed, double[] scaleFactors) {
+		if (transposed) {
+			throw new NotImplementedException();
+		}
+		final int rl = 0;
+		final int ru = transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows();
+		return createQuantizedReader(rawBlock, colIndices, transposed, rl, ru, scaleFactors);
+	}
+
+	/**
+	 * Create a reader of the matrix block that is able to iterate though all the rows and return as dense double
 	 * arrays.
 	 * 
 	 * Note the reader reuse the return, therefore if needed for something please copy the returned rows.
@@ -135,6 +160,40 @@ public abstract class ReaderColumnSelection {
 			return new ReaderColumnSelectionDenseMultiBlock(rawBlock, colIndices, rl, ru);
 		return new ReaderColumnSelectionDenseSingleBlock(rawBlock, colIndices, rl, ru);
 	}
+
+	/**
+	 * Create a reader of the matrix block that directly reads quantized values using scale factors.
+	 * 
+	 * Note the reader reuse the return, therefore if needed for something please copy the returned rows.
+	 * 
+	 * @param rawBlock   	The block to iterate though
+	 * @param colIndices 	The column indexes to extract and insert into the double array
+	 * @param transposed 	If the raw block should be treated as transposed
+	 * @param rl         	The row to start at
+	 * @param ru         	The row to end at (not inclusive)
+	 * @param scaleFactors 	An array of scale factors applied. 
+	 *                     	- If row-wise scaling is used, this should be an array where each value corresponds to a row. 
+	 *                     	- If a single scalar is provided, it is applied uniformly to the entire matrix.
+	 * @return A reader of the columns specified
+	 */	
+	public static ReaderColumnSelection createQuantizedReader(MatrixBlock rawBlock, IColIndex colIndices, boolean transposed,
+		int rl, int ru, double[] scaleFactors) {
+		checkInput(rawBlock, colIndices, rl, ru, transposed);
+		rl = rl - 1;
+		if(rawBlock.isEmpty()) {
+			LOG.warn("It is likely an error occurred when reading an empty block, but we do support it!");
+			return new ReaderColumnSelectionEmpty(rawBlock, colIndices, rl, ru, transposed);
+		} 
+		else if(transposed) {
+			throw new NotImplementedException();
+		}
+		else if(rawBlock.isInSparseFormat()) {
+			throw new NotImplementedException();
+		}
+		else {
+			return new ReaderColumnSelectionDenseSingleBlockQuantized(rawBlock, colIndices, rl, ru, scaleFactors);
+		}
+	}	
 
 	private static void checkInput(final MatrixBlock rawBlock, final IColIndex colIndices, final int rl, final int ru,
 		final boolean transposed) {

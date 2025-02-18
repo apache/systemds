@@ -270,6 +270,7 @@ public class InstructionUtils {
 
 	public static CPType getCPType(String str) {
 		String opcode = getOpCode(str);
+		LOG.debug(opcode);
 		return Opcodes.getCPTypeByOpcode(opcode);
 	}
 	

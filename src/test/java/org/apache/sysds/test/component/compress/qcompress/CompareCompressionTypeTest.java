@@ -44,16 +44,16 @@ import org.junit.Test;
 public class CompareCompressionTypeTest {
 
 	/**
-	 * Test 1: Compare the best compression types of two matrices, m0 and m1.
+	 * Test 1: Compare the best compression types of two matrices, m0 and m1: DDC.
 	 * 
-	 * - m0 is generated as a floored matrix. 
-	 * - m1 is generated as a full-precision matrix, but will be internally multiplied by 1.0 and floored.
-	 * - Since m1 undergoes an equivalent transformation (scaling by 1.0 and flooring), the best compression types 
-	 *   determined by the estimator should match elementwise for both matrices.
-	 * - This validates that the estimator correctly handles explicit flooring vs. internal scaling and flooring during quantization-fused compression.
+	 * - m0 is generated as a floored matrix. - m1 is generated as a full-precision matrix, but will be internally
+	 * multiplied by 1.0 and floored. - Since m1 undergoes an equivalent transformation (scaling by 1.0 and flooring),
+	 * the best compression types determined by the estimator should match elementwise for both matrices. - This
+	 * validates that the estimator correctly handles explicit flooring vs. internal scaling and flooring during
+	 * quantization-fused compression.
 	 */
 	@Test
-	public void testCompareBestCompressionTypeForTwoMatrices() {
+	public void testCompareBestCompressionTypeForTwoMatricesDDC() {
 		try {
 			Random r = new Random(1234);
 			int k = 4;
@@ -65,7 +65,8 @@ public class CompareCompressionTypeTest {
 			AComEst estimator0 = ComEstFactory.createEstimator(m0, cs0, k);
 			CompressedSizeInfo compressedGroups0 = estimator0.computeCompressedSizeInfos(k);
 
-			// Generate second matrix full-precision matrix that will be internally scaled by 1.0 and floored and compute
+			// Generate second matrix full-precision matrix that will be internally scaled by 1.0 and floored and
+			// compute
 			// compression info
 			MatrixBlock m1 = generateTestMatrix(10000, 500, 1, 100, 1.0, r, false);
 			double[] scaleFactor = {1.0};
@@ -80,7 +81,57 @@ public class CompareCompressionTypeTest {
 			assertEquals("Mismatch in number of compressed groups", groups0.size(), groups1.size());
 
 			for(int i = 0; i < groups0.size(); i++) {
-				assertEquals("Best compression type mismatch at index " + i, groups0.get(i).getBestCompressionType(), groups1.get(i).getBestCompressionType());
+				assertEquals("Best compression type mismatch at index " + i, groups0.get(i).getBestCompressionType(),
+					groups1.get(i).getBestCompressionType());
+			}
+
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail("Compression extraction failed: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Test 1: Compare the best compression types of two matrices, m0 and m1: CONST.
+	 * 
+	 * - m0 is generated as a floored matrix. - m1 is generated as a full-precision matrix, but will be internally
+	 * multiplied by 1.0 and floored. - Since m1 undergoes an equivalent transformation (scaling by 1.0 and flooring),
+	 * the best compression types determined by the estimator should match elementwise for both matrices. - This
+	 * validates that the estimator correctly handles explicit flooring vs. internal scaling and flooring during
+	 * quantization-fused compression.
+	 */
+	@Test
+	public void testCompareBestCompressionTypeForTwoMatricesConst() {
+		try {
+			Random r = new Random(1234);
+			int k = 4;
+
+			// Generate first floored matrix and compute compression info
+			MatrixBlock m0 = generateTestMatrix(10000, 500, 1, 1, 1.0, r, true);
+			CompressionSettings cs0 = new CompressionSettingsBuilder().setColumnPartitioner(PartitionerType.GREEDY)
+				.setSeed(1234).create();
+			AComEst estimator0 = ComEstFactory.createEstimator(m0, cs0, k);
+			CompressedSizeInfo compressedGroups0 = estimator0.computeCompressedSizeInfos(k);
+
+			// Generate second matrix full-precision matrix that will be internally scaled by 1.0 and floored and
+			// compute
+			// compression info
+			MatrixBlock m1 = generateTestMatrix(10000, 500, 1, 1, 1.0, r, false);
+			double[] scaleFactor = {1.0};
+			CompressionSettings cs1 = new CompressionSettingsBuilder().setColumnPartitioner(PartitionerType.GREEDY)
+				.setScaleFactor(scaleFactor).setSeed(1234).create();
+			AComEst estimator1 = ComEstFactory.createEstimator(m1, cs1, k);
+			CompressedSizeInfo compressedGroups1 = estimator1.computeCompressedSizeInfos(k);
+
+			List<CompressedSizeInfoColGroup> groups0 = compressedGroups0.getInfo();
+			List<CompressedSizeInfoColGroup> groups1 = compressedGroups1.getInfo();
+
+			assertEquals("Mismatch in number of compressed groups", groups0.size(), groups1.size());
+
+			for(int i = 0; i < groups0.size(); i++) {
+				assertEquals("Best compression type mismatch at index " + i, groups0.get(i).getBestCompressionType(),
+					groups1.get(i).getBestCompressionType());
 			}
 
 		}

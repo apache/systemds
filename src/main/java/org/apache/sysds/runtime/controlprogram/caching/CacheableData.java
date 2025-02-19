@@ -22,8 +22,8 @@ package org.apache.sysds.runtime.controlprogram.caching;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
@@ -215,7 +215,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	//for lazily evaluated RDDs, and (2) as abstraction for environments that do not necessarily have spark libraries available
 	private RDDObject _rddHandle = null; //RDD handle
 	private BroadcastObject<T> _bcHandle = null; //Broadcast handle
-	protected HashMap<GPUContext, GPUObject> _gpuObjects = null; //Per GPUContext object allocated on GPU
+	protected ConcurrentHashMap<GPUContext, GPUObject> _gpuObjects = null; //Per GPUContext object allocated on GPU
 
 	private LineageItem _lineage = null;
 	
@@ -230,7 +230,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 		_uniqueID = _seq.getNextID();
 		_cacheStatus = CacheStatus.EMPTY;
 		_numReadThreads = 0;
-		_gpuObjects = DMLScript.USE_ACCELERATOR ? new HashMap<>() : null;
+		_gpuObjects = DMLScript.USE_ACCELERATOR ? new ConcurrentHashMap<>() : null;
 	}
 	
 	/**
@@ -481,7 +481,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 
 	public synchronized void setGPUObject(GPUContext gCtx, GPUObject gObj) {
 		if( _gpuObjects == null )
-			_gpuObjects = new HashMap<>();
+			_gpuObjects = new ConcurrentHashMap<>();
 		GPUObject old = _gpuObjects.put(gCtx, gObj);
 		if (old != null)
 				throw new DMLRuntimeException("GPU : Inconsistent internal state - this CacheableData already has a GPUObject assigned to the current GPUContext (" + gCtx + ")");

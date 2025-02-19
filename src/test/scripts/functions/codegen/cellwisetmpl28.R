@@ -30,16 +30,9 @@ colProd <- function(X) {
 Z = matrix(0, 5, 1)
 Y = matrix(2, 5, 1)
 A = rbind(Y, Z)
-# A = matrix(2, 10, 1)
 B = matrix(0, 10, 10)
 X = cbind(B, A, B)
-# W = matrix(5, 10, 1)
-# V = matrix(3, 10, 5)
-# X = cbind(W, V, W, V, W);
-F = matrix(0, 10, 10)
 
-# R = t(colProd(2*log(X)));
-# R = t(colProd(X*min(F)));
 R = t(colProd(X^2 + 1));
 
 writeMM(as(R,"CsparseMatrix"), paste(args[2], "S", sep=""));

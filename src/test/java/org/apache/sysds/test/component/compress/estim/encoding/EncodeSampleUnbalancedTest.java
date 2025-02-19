@@ -81,6 +81,10 @@ public class EncodeSampleUnbalancedTest extends EncodeSampleMultiColTest {
 		// Both Sparse and end dense joined
 		tests.add(createT(1, 0.2, 10, 10, 0.1, 2, 1000, 1231521));
 
+
+		tests.add(createT(1, 1.0, 100, 1, 1.0, 10,  10000, 132));
+		tests.add(createT(1, 1.0, 1000, 1, 1.0, 10,  10000, 132));
+
 		return tests;
 	}
 

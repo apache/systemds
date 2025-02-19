@@ -18,21 +18,15 @@
 # under the License.
 #
 #-------------------------------------------------------------
+
 Z = matrix(0, 1, 5)
 Y = matrix(2, 1, 5)
 A = cbind(Y, Z)
-#A = matrix(2, 1, 10)
 B = matrix(0, 10, 10)
 X = rbind(B, A, B)
-#W = matrix(5, 1, 10)
-#V = matrix(3, 5, 10)
-#X = rbind(W, V, W, V, W);
-F = matrix(2, 10, 10)
 
 while(FALSE){}
 
-#R = rowProds(2*log(X));
-#R = rowProds(X*min(F));
 R = rowProds(X^2 + 1)
 
 write(R, $1)

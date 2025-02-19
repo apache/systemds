@@ -27,13 +27,19 @@ rowProd <- function(X) {
   apply(X, 1, prod)
 }
 
-A = matrix(2, 1, 10)
+Z = matrix(0, 1, 5)
+Y = matrix(2, 1, 5)
+A = cbind(Y, Z)
+# A = matrix(2, 1, 10)
 B = matrix(0, 10, 10)
 X = rbind(B, A, B)
-# X = matrix(3, 10, 10)
+# W = matrix(5, 1, 10)
+# V = matrix(3, 5, 10)
+# X = rbind(W, V, W, V, W);
+F = matrix(2, 10, 10)
 
 # R = rowProd(2*log(X));
-# R = rowProd(X*min(A));
+# R = rowProd(X*min(F));
 R = rowProd(X^2 + 1)
 
 writeMM(as(R,"CsparseMatrix"), paste(args[2], "S", sep=""));

@@ -67,7 +67,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME25 = TEST_NAME+25; //bias_add
 	private static final String TEST_NAME26 = TEST_NAME+26; //bias_mult
 	private static final String TEST_NAME27 = TEST_NAME+27; //outer < +7 negative
-		private static final String TEST_NAME28 = TEST_NAME+28; //colProd(X)
+	private static final String TEST_NAME28 = TEST_NAME+28; //colProd(X)
 	private static final String TEST_NAME29 = TEST_NAME+29; //rowProd(X)
 
 	private static final String TEST_DIR = "functions/codegen/";

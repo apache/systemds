@@ -254,25 +254,20 @@ public class ColGroupFactory {
 	}
 
 	private AColGroup compress(CompressedSizeInfoColGroup cg) throws Exception {
-		LOG.debug("Compressing column group");
 		final IColIndex colIndexes = cg.getColumns();
-		final CompressionType ct = cg.getBestCompressionType(); // TODO: handle quantization-fused compression
+		final CompressionType ct = CompressionType.SDC;
 		final boolean t = cs.transposed;
 
 		// Fast path compressions
 		if((ct == CompressionType.EMPTY && !t) || //
 			(t && colIndexes.size() == 1 && in.isInSparseFormat() // Empty Column
-				&& in.getSparseBlock().isEmpty(colIndexes.get(0)))) {
-			if(cs.scaleFactors != null) {
-				throw new NotImplementedException(); // TODO: handle quantization-fused compression
-			}
-			else {
-				return new ColGroupEmpty(colIndexes);
-			}
-		}
+				&& in.getSparseBlock().isEmpty(colIndexes.get(0))))
+			// TODO: handle quantization-fused compression if deemed necessary,
+			// but if the matrix reaches here, it likely doesn't need quantization.
+			return new ColGroupEmpty(colIndexes);
 		else if(ct == CompressionType.UNCOMPRESSED) { // don't construct mapping if uncompressed
 			if(cs.scaleFactors != null) {
-				throw new NotImplementedException(); // TODO: handle quantization-fused compression
+				return ColGroupUncompressed.createQuantized(colIndexes, in, t, cs.scaleFactors);
 			}
 			else {
 				return ColGroupUncompressed.create(colIndexes, in, t);
@@ -621,10 +616,14 @@ public class ColGroupFactory {
 
 	private AColGroup directCompressDDC(IColIndex colIndexes, CompressedSizeInfoColGroup cg) throws Exception {
 		// testing multicol
-		if(colIndexes.size() > 1)
+		if(colIndexes.size() > 1) {
+			LOG.debug("DDC multi column");
 			return directCompressDDCMultiCol(colIndexes, cg);
-		else
+		}
+		else {
+			LOG.debug("DDC single column");
 			return directCompressDDCSingleCol(colIndexes, cg);
+		}
 	}
 
 	private AColGroup directCompressDDCSingleCol(IColIndex colIndexes, CompressedSizeInfoColGroup cg) {
@@ -692,9 +691,9 @@ public class ColGroupFactory {
 	private boolean readToMapDDC(IColIndex colIndexes, DblArrayCountHashMap map, AMapToData data, int rl, int ru,
 		int fill) {
 
-		ReaderColumnSelection reader = (cs.scaleFactors == null) ? 
-		ReaderColumnSelection.createReader(in, colIndexes, cs.transposed, rl, ru) : 
-		ReaderColumnSelection.createQuantizedReader(in, colIndexes, cs.transposed, rl, ru, cs.scaleFactors);
+		ReaderColumnSelection reader = (cs.scaleFactors == null) ? ReaderColumnSelection.createReader(in, colIndexes,
+			cs.transposed, rl,
+			ru) : ReaderColumnSelection.createQuantizedReader(in, colIndexes, cs.transposed, rl, ru, cs.scaleFactors);
 
 		DblArray cellVals = reader.nextRow();
 		boolean extra = false;
@@ -995,9 +994,8 @@ public class ColGroupFactory {
 			}
 		}
 		IColIndex subCols = ColIndexFactory.create(cols.size());
-		ReaderColumnSelection reader = (cs.scaleFactors == null) ? 
-		ReaderColumnSelection.createReader(sub, subCols, false) : 
-		ReaderColumnSelection.createQuantizedReader(sub, subCols, false, cs.scaleFactors);
+		ReaderColumnSelection reader = (cs.scaleFactors == null) ? ReaderColumnSelection.createReader(sub, subCols,
+			false) : ReaderColumnSelection.createQuantizedReader(sub, subCols, false, cs.scaleFactors);
 
 		final int mapStartSize = Math.min(nrUniqueEstimate, offsetsInt.length / 2);
 		DblArrayCountHashMap map = new DblArrayCountHashMap(mapStartSize);

@@ -206,6 +206,10 @@ public class CompressedSizeInfoColGroup {
 		return _facts.tupleSparsity;
 	}
 
+	public EstimationFactors getFacts() {
+		return _facts;
+	}
+
 	public IEncode getMap() {
 		return _map;
 	}

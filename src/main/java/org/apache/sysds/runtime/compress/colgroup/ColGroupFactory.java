@@ -255,7 +255,7 @@ public class ColGroupFactory {
 
 	private AColGroup compress(CompressedSizeInfoColGroup cg) throws Exception {
 		final IColIndex colIndexes = cg.getColumns();
-		final CompressionType ct = CompressionType.SDC;
+		final CompressionType ct = cg.getBestCompressionType();
 		final boolean t = cs.transposed;
 
 		// Fast path compressions

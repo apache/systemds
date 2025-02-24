@@ -20,15 +20,7 @@
 package org.apache.sysds.test.component.federated;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
-
-import org.apache.sysds.common.Types;
-import org.apache.sysds.hops.Hop;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-import org.apache.sysds.test.TestUtils;
-import org.apache.sysds.test.functions.federated.algorithms.FederatedL2SVMTest;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
@@ -41,7 +33,6 @@ import org.apache.sysds.parser.ParserWrapper;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.hops.fedplanner.FederatedPlanCostEnumerator;
-
 
 public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
 {
@@ -73,6 +64,12 @@ public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
 	@Test
 	public void testFederatedPlanCostEnumerator7() { runTest("FederatedPlanCostEnumeratorTest7.dml"); }
 
+	@Test
+	public void testFederatedPlanCostEnumerator8() { runTest("FederatedPlanCostEnumeratorTest8.dml"); }
+
+	@Test
+	public void testFederatedPlanCostEnumerator9() { runTest("FederatedPlanCostEnumeratorTest9.dml"); }
+
 	// Todo: Need to write test scripts for the federated version
 	private void runTest( String scriptFilename ) {
 		int index = scriptFilename.lastIndexOf(".dml");
@@ -97,8 +94,9 @@ public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
 			dmlt.constructHops(prog);
 			dmlt.rewriteHopsDAG(prog);
 			dmlt.constructLops(prog);
+			dmlt.rewriteLopDAG(prog);
 
-			FederatedPlanCostEnumerator.enumerateProgram(prog);
+			FederatedPlanCostEnumerator.enumerateProgram(prog, true);
 		}
 		catch (IOException e) {
 			e.printStackTrace();

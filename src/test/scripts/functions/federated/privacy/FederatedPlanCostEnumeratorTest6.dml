@@ -19,13 +19,16 @@
 #
 #-------------------------------------------------------------
 
-A = matrix(7,10,10);
-b = rand(rows = 1, cols = ncol(A), min = 1, max = 2)
-d = sum(b) * 8
+A = matrix(7, rows=10, cols=10)
+b = rand(rows = 1, cols = ncol(A), min = 1, max = 2);
 i = 0
-while(sum(b) < d){
-    i = i + 1
-    b = b + i
-    s = b %*% A
-    print(mean(s))
+
+while (sum(b) < i) {
+  i = i + 1
+  b = b + i
+  A = A * A
+  s = b %*% A
+  print(mean(s))
 }
+c = sqrt(A)
+print(sum(c))

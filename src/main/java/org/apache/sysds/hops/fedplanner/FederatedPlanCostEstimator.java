@@ -19,9 +19,12 @@
 
 package org.apache.sysds.hops.fedplanner;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.common.Types;
+import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.cost.ComputeCost;
 import org.apache.sysds.hops.fedplanner.FederatedMemoTable.FedPlan;
+import org.apache.sysds.hops.fedplanner.FederatedMemoTable.HopCommon;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 
 import java.util.LinkedHashMap;
@@ -42,43 +45,102 @@ public class FederatedPlanCostEstimator {
 	// Network bandwidth for data transfers between federated sites (1 Gbps)
 	private static final double DEFAULT_MBS_NETWORK_BANDWIDTH = 125.0;
 
+	// Retrieves the cumulative and forwarding costs of the child hops and stores them in arrays
+	public static void getChildCosts(HopCommon hopCommon, FederatedMemoTable memoTable, List<Hop> inputHops,
+									 double[][] childCumulativeCost, double[] childForwardingCost) {
+		for (int i = 0; i < inputHops.size(); i++) {
+			long childHopID = inputHops.get(i).getHopID();
+
+			FedPlan childLOutFedPlan = memoTable.getFedPlanAfterPrune(childHopID, FederatedOutput.LOUT);
+			FedPlan childFOutFedPlan = memoTable.getFedPlanAfterPrune(childHopID, FederatedOutput.FOUT);
+			
+			// The cumulative cost of the child already includes the weight
+			childCumulativeCost[i][0] = childLOutFedPlan.getCumulativeCost();
+			childCumulativeCost[i][1] = childFOutFedPlan.getCumulativeCost();
+
+			// TODO: Q. Shouldn't the child's forwarding cost follow the parent's weight, regardless of loops or if-else statements?
+			childForwardingCost[i] = hopCommon.weight * childLOutFedPlan.getForwardingCost();
+		}
+	}
+
 	/**
-	 * Computes total cost of federated plan by:
-	 * 1. Computing current node cost (if not cached)
-	 * 2. Adding minimum-cost child plans
-	 * 3. Including network transfer costs when needed
+	 * Computes the cost associated with a given Hop node.
+	 * This method calculates both the self cost and the forwarding cost for the Hop,
+	 * taking into account its type and the number of parent nodes.
 	 *
-	 * @param currentPlan Plan to compute cost for
-	 * @param memoTable Table containing all plan variants
+	 * @param hopCommon The HopCommon object containing the Hop and its properties.
+	 * @return The self cost of the Hop.
 	 */
-	public static void computeFederatedPlanCost(FedPlan currentPlan, FederatedMemoTable memoTable) {
-		double totalCost;
-		Hop currentHop = currentPlan.getHopRef();
-
-		// Step 1: Calculate current node costs if not already computed
-		if (currentPlan.getSelfCost() == 0) {
-			// Compute cost for current node (computation + memory access)
-			totalCost = computeCurrentCost(currentHop);
-			currentPlan.setSelfCost(totalCost);
-			// Calculate potential network transfer cost if federation type changes
-			currentPlan.setForwardingCost(computeHopNetworkAccessCost(currentHop.getOutputMemEstimate()));
-		} else {
-			totalCost = currentPlan.getSelfCost();
+	public static double computeHopCost(HopCommon hopCommon){
+		// TWrite and TRead are meta-data operations, hence selfCost is zero
+		if (hopCommon.hopRef instanceof DataOp){
+			if (((DataOp)hopCommon.hopRef).getOp() == Types.OpOpData.TRANSIENTWRITE ){
+				hopCommon.setSelfCost(0);
+				// Since TWrite and TRead have the same FedOutType, forwarding cost is zero
+				hopCommon.setForwardingCost(0);
+				return 0;
+			} else if (((DataOp)hopCommon.hopRef).getOp() == Types.OpOpData.TRANSIENTREAD) {
+				hopCommon.setSelfCost(0);
+				// TRead may have a different FedOutType from its parent, so calculate forwarding cost
+				// TODO: Uncertain about the number of TWrites
+				hopCommon.setForwardingCost(computeHopForwardingCost(hopCommon.hopRef.getOutputMemEstimate()));
+				return 0;
+			}
 		}
-		
-		// Step 2: Process each child plan and add their costs
-		for (Pair<Long, FederatedOutput> childPlanPair : currentPlan.getChildFedPlans()) {
-			// Find minimum cost child plan considering federation type compatibility
-			// Note: This approach might lead to suboptimal or wrong solutions when a child has multiple parents
-			// because we're selecting child plans independently for each parent
-			FedPlan planRef = memoTable.getMinCostFedPlan(childPlanPair);
 
-			// Add child plan cost (includes network transfer cost if federation types differ)
-			totalCost += planRef.getTotalCost() + planRef.getCondForwardingCost(currentPlan.getFedOutType());
+		// In loops, selfCost is repeated, but forwarding may not be
+		// Therefore, the weight for forwarding follows the parent's weight (TODO: Q. Is the parent also receiving forwarding once?)
+		double selfCost = hopCommon.weight * computeSelfCost(hopCommon.hopRef);
+		double forwardingCost = computeHopForwardingCost(hopCommon.hopRef.getOutputMemEstimate());
+
+		int numParents = hopCommon.hopRef.getParent().size();
+		if (numParents >= 2) {
+			selfCost /= numParents;
+			forwardingCost /= numParents;
 		}
+
+		hopCommon.setSelfCost(selfCost);
+		hopCommon.setForwardingCost(forwardingCost);
+
+		return selfCost;
+	}
+
+	/**
+	 * Computes the cost for the current Hop node.
+	 * 
+	 * @param currentHop The Hop node whose cost needs to be computed
+	 * @return The total cost for the current node's operation
+	 */
+	private static double computeSelfCost(Hop currentHop){
+		double computeCost = ComputeCost.getHOPComputeCost(currentHop);
+		double inputAccessCost = computeHopMemoryAccessCost(currentHop.getInputMemEstimate());
+		double ouputAccessCost = computeHopMemoryAccessCost(currentHop.getOutputMemEstimate());
 		
-		// Step 3: Set final cumulative cost including current node
-		currentPlan.setTotalCost(totalCost);
+		// Compute total cost assuming:
+		// 1. Computation and input access can be overlapped (hence taking max)
+		// 2. Output access must wait for both to complete (hence adding)
+		return Math.max(computeCost, inputAccessCost) + ouputAccessCost;
+	}
+
+	/**
+	 * Calculates the memory access cost based on data size and memory bandwidth.
+	 * 
+	 * @param memSize Size of data to be accessed (in bytes)
+	 * @return Time cost for memory access (in seconds)
+	 */
+	private static double computeHopMemoryAccessCost(double memSize) {
+		return memSize / (1024*1024) / DEFAULT_MBS_MEMORY_BANDWIDTH;
+	}
+
+	/**
+	 * Calculates the network transfer cost based on data size and network bandwidth.
+	 * Used when federation status changes between parent and child plans.
+	 * 
+	 * @param memSize Size of data to be transferred (in bytes)
+	 * @return Time cost for network transfer (in seconds)
+	 */
+	private static double computeHopForwardingCost(double memSize) {
+		return memSize / (1024*1024) / DEFAULT_MBS_NETWORK_BANDWIDTH;
 	}
 
 	/**
@@ -138,7 +200,7 @@ public class FederatedPlanCostEstimator {
 				if (cacluatedConflictPlanPair.getRight() == FederatedOutput.LOUT) {
 					// When changing from calculated LOUT to current FOUT, subtract the existing LOUT total cost and add the FOUT total cost
 					// When maintaining calculated LOUT to current LOUT, the total cost remains unchanged.
-					fOutAdditionalCost += confilctFOutFedPlan.getTotalCost() - confilctLOutFedPlan.getTotalCost();
+					fOutAdditionalCost += confilctFOutFedPlan.getCumulativeCost() - confilctLOutFedPlan.getCumulativeCost();
 
 					if (conflictParentFedPlan.getFedOutType() == FederatedOutput.LOUT) {
 						// (CASE 1) Previously, calculated was LOUT and parent was LOUT, so no network transfer cost occurred
@@ -148,30 +210,30 @@ public class FederatedPlanCostEstimator {
 						// Previously, calculated was LOUT and parent was FOUT, so network transfer cost occurred
                     	// (CASE 2) If maintaining calculated LOUT to current LOUT, subtract existing network transfer cost and calculate later
 						isLOutForwarding = true;
-						lOutAdditionalCost -= confilctLOutFedPlan.setForwardingCost();
+						lOutAdditionalCost -= confilctLOutFedPlan.getForwardingCost();
 
 						// (CASE 6) If changing from calculated LOUT to current FOUT, no network transfer cost occurs, so subtract it
-						fOutAdditionalCost -= confilctLOutFedPlan.setForwardingCost();
+						fOutAdditionalCost -= confilctLOutFedPlan.getForwardingCost();
 					}
 				} else {
-					lOutAdditionalCost += confilctLOutFedPlan.getTotalCost() - confilctFOutFedPlan.getTotalCost();
+					lOutAdditionalCost += confilctLOutFedPlan.getCumulativeCost() - confilctFOutFedPlan.getCumulativeCost();
 
 					if (conflictParentFedPlan.getFedOutType() == FederatedOutput.FOUT) {
 						isLOutForwarding = true;
 					} else {
 						isFOutForwarding = true;
-						lOutAdditionalCost -= confilctLOutFedPlan.setForwardingCost();
-						fOutAdditionalCost -= confilctLOutFedPlan.setForwardingCost();
+						lOutAdditionalCost -= confilctLOutFedPlan.getForwardingCost();
+						fOutAdditionalCost -= confilctLOutFedPlan.getForwardingCost();
 					}
 				}
 			}
 
 			// Add network transfer costs if applicable
 			if (isLOutForwarding) {
-				lOutAdditionalCost += confilctLOutFedPlan.setForwardingCost();
+				lOutAdditionalCost += confilctLOutFedPlan.getForwardingCost();
 			}
 			if (isFOutForwarding) {
-				fOutAdditionalCost += confilctFOutFedPlan.setForwardingCost();
+				fOutAdditionalCost += confilctFOutFedPlan.getForwardingCost();
 			}
 
 			// Determine the optimal federated output type based on the calculated costs
@@ -198,43 +260,5 @@ public class FederatedPlanCostEstimator {
 			}
 		}
 		return resolvedFedPlanLinkedMap;
-	}
-	
-	/**
-	 * Computes the cost for the current Hop node.
-	 * 
-	 * @param currentHop The Hop node whose cost needs to be computed
-	 * @return The total cost for the current node's operation
-	 */
-	private static double computeCurrentCost(Hop currentHop){
-		double computeCost = ComputeCost.getHOPComputeCost(currentHop);
-		double inputAccessCost = computeHopMemoryAccessCost(currentHop.getInputMemEstimate());
-		double ouputAccessCost = computeHopMemoryAccessCost(currentHop.getOutputMemEstimate());
-		
-		// Compute total cost assuming:
-		// 1. Computation and input access can be overlapped (hence taking max)
-		// 2. Output access must wait for both to complete (hence adding)
-		return Math.max(computeCost, inputAccessCost) + ouputAccessCost;
-	}
-
-	/**
-	 * Calculates the memory access cost based on data size and memory bandwidth.
-	 * 
-	 * @param memSize Size of data to be accessed (in bytes)
-	 * @return Time cost for memory access (in seconds)
-	 */
-	private static double computeHopMemoryAccessCost(double memSize) {
-		return memSize / (1024*1024) / DEFAULT_MBS_MEMORY_BANDWIDTH;
-	}
-
-	/**
-	 * Calculates the network transfer cost based on data size and network bandwidth.
-	 * Used when federation status changes between parent and child plans.
-	 * 
-	 * @param memSize Size of data to be transferred (in bytes)
-	 * @return Time cost for network transfer (in seconds)
-	 */
-	private static double computeHopNetworkAccessCost(double memSize) {
-		return memSize / (1024*1024) / DEFAULT_MBS_NETWORK_BANDWIDTH;
 	}
 }

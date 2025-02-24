@@ -129,6 +129,11 @@ public class NNComponentTest extends TestFolder {
 		run("gelu.dml");
 	}
 
+	@Test
+	public void embedding() {
+		run("embedding.dml");
+	}
+
 	@Override
 	protected void run(String name) {
 		super.run("component/" + name);

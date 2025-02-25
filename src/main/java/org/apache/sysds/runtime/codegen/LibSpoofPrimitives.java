@@ -2151,7 +2151,19 @@ public class LibSpoofPrimitives
 			new DenseBlockFP64(new int[]{K, PQ}, c), PQ, CRS, 0, K, 0, PQ);
 		return c;
 	} 
-	
+
+	public static double vectVar(double[] a, int ai, int len) {
+		double meanVal = vectMean(a, ai, len);
+		double[] aSqr = vectPow2Write(a, ai, len);
+		return ((double) 1 /len)*(vectSum(aSqr, ai, len)-meanVal);
+	}
+
+	public static double vectVar(double[] avals, int[] aix, int ai, int alen, int len) {
+		double meanVal = vectMean(avals, aix, ai, alen, len);
+		double[] avalsSqr = vectPow2Write(avals, aix, ai, alen, len);
+		return ((double) 1 /len)*(vectSum(avalsSqr, ai, len)-meanVal);
+	}
+
 	//complex builtin functions that are not directly generated
 	//(included here in order to reduce the number of imports)
 	

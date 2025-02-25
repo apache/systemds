@@ -17,90 +17,94 @@
  * under the License.
  */
 
-package org.apache.sysds.test.component.federated;
+ package org.apache.sysds.test.component.federated;
 
-import java.io.IOException;
-import java.util.HashMap;
-import org.junit.Assert;
-import org.junit.Test;
-import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.conf.ConfigurationManager;
-import org.apache.sysds.conf.DMLConfig;
-import org.apache.sysds.parser.DMLProgram;
-import org.apache.sysds.parser.DMLTranslator;
-import org.apache.sysds.parser.ParserFactory;
-import org.apache.sysds.parser.ParserWrapper;
-import org.apache.sysds.test.AutomatedTestBase;
-import org.apache.sysds.test.TestConfiguration;
-import org.apache.sysds.hops.fedplanner.FederatedPlanCostEnumerator;
+ import java.io.IOException;
+ import java.util.HashMap;
+ import org.junit.Assert;
+ import org.junit.Test;
+ import org.apache.sysds.api.DMLScript;
+ import org.apache.sysds.conf.ConfigurationManager;
+ import org.apache.sysds.conf.DMLConfig;
+ import org.apache.sysds.parser.DMLProgram;
+ import org.apache.sysds.parser.DMLTranslator;
+ import org.apache.sysds.parser.ParserFactory;
+ import org.apache.sysds.parser.ParserWrapper;
+ import org.apache.sysds.test.AutomatedTestBase;
+ import org.apache.sysds.test.TestConfiguration;
+ import org.apache.sysds.hops.fedplanner.FederatedPlanCostEnumerator;
+ 
+ public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
+ {
+	 private static final String TEST_DIR = "functions/federated/privacy/";
+	 private static final String HOME = SCRIPT_DIR + TEST_DIR;
+	 private static final String TEST_CLASS_DIR = TEST_DIR + FederatedPlanCostEnumeratorTest.class.getSimpleName() + "/";
+	 
+	 @Override
+	 public void setUp() {}
+ 
+	 @Test
+	 public void testFederatedPlanCostEnumerator1() { runTest("FederatedPlanCostEnumeratorTest1.dml"); }
+ 
+	 @Test
+	 public void testFederatedPlanCostEnumerator2() { runTest("FederatedPlanCostEnumeratorTest2.dml"); }
+ 
+	 @Test
+	 public void testFederatedPlanCostEnumerator3() { runTest("FederatedPlanCostEnumeratorTest3.dml"); }
+ 
+	 @Test
+	 public void testFederatedPlanCostEnumerator4() { runTest("FederatedPlanCostEnumeratorTest4.dml"); }
+ 
+	 @Test
+	 public void testFederatedPlanCostEnumerator5() { runTest("FederatedPlanCostEnumeratorTest5.dml"); }
+ 
+	 @Test
+	 public void testFederatedPlanCostEnumerator6() { runTest("FederatedPlanCostEnumeratorTest6.dml"); }
+ 
+	 @Test
+	 public void testFederatedPlanCostEnumerator7() { runTest("FederatedPlanCostEnumeratorTest7.dml"); }
+ 
+	 @Test
+	 public void testFederatedPlanCostEnumerator8() { runTest("FederatedPlanCostEnumeratorTest8.dml"); }
+ 
+	 @Test
+	 public void testFederatedPlanCostEnumerator9() { runTest("FederatedPlanCostEnumeratorTest9.dml"); }
 
-public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
-{
-	private static final String TEST_DIR = "functions/federated/privacy/";
-	private static final String HOME = SCRIPT_DIR + TEST_DIR;
-	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedPlanCostEnumeratorTest.class.getSimpleName() + "/";
-	
-	@Override
-	public void setUp() {}
+	 @Test
+	 public void testFederatedPlanCostEnumerator10() { runTest("FederatedPlanCostEnumeratorTest10.dml"); }
 
-	@Test
-	public void testFederatedPlanCostEnumerator1() { runTest("FederatedPlanCostEnumeratorTest1.dml"); }
-
-	@Test
-	public void testFederatedPlanCostEnumerator2() { runTest("FederatedPlanCostEnumeratorTest2.dml"); }
-
-	@Test
-	public void testFederatedPlanCostEnumerator3() { runTest("FederatedPlanCostEnumeratorTest3.dml"); }
-
-	@Test
-	public void testFederatedPlanCostEnumerator4() { runTest("FederatedPlanCostEnumeratorTest4.dml"); }
-
-	@Test
-	public void testFederatedPlanCostEnumerator5() { runTest("FederatedPlanCostEnumeratorTest5.dml"); }
-
-	@Test
-	public void testFederatedPlanCostEnumerator6() { runTest("FederatedPlanCostEnumeratorTest6.dml"); }
-
-	@Test
-	public void testFederatedPlanCostEnumerator7() { runTest("FederatedPlanCostEnumeratorTest7.dml"); }
-
-	@Test
-	public void testFederatedPlanCostEnumerator8() { runTest("FederatedPlanCostEnumeratorTest8.dml"); }
-
-	@Test
-	public void testFederatedPlanCostEnumerator9() { runTest("FederatedPlanCostEnumeratorTest9.dml"); }
-
-	// Todo: Need to write test scripts for the federated version
-	private void runTest( String scriptFilename ) {
-		int index = scriptFilename.lastIndexOf(".dml");
-		String testName = scriptFilename.substring(0, index > 0 ? index : scriptFilename.length());
-		TestConfiguration testConfig = new TestConfiguration(TEST_CLASS_DIR, testName, new String[] {});
-		addTestConfiguration(testName, testConfig);
-		loadTestConfiguration(testConfig);
-		
-		try {
-			DMLConfig conf = new DMLConfig(getCurConfigFile().getPath());
-			ConfigurationManager.setLocalConfig(conf);
-			
-			//read script
-			String dmlScriptString = DMLScript.readDMLScript(true, HOME + scriptFilename);
-		
-			//parsing and dependency analysis
-			ParserWrapper parser = ParserFactory.createParser();
-			DMLProgram prog = parser.parse(DMLScript.DML_FILE_PATH_ANTLR_PARSER, dmlScriptString, new HashMap<>());
-			DMLTranslator dmlt = new DMLTranslator(prog);
-			dmlt.liveVariableAnalysis(prog);
-			dmlt.validateParseTree(prog);
-			dmlt.constructHops(prog);
-			dmlt.rewriteHopsDAG(prog);
-			dmlt.constructLops(prog);
-			dmlt.rewriteLopDAG(prog);
-
-			FederatedPlanCostEnumerator.enumerateProgram(prog, true);
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-			Assert.fail();
-		}
-	}
-}
+	 // Todo: Need to write test scripts for the federated version
+	 private void runTest( String scriptFilename ) {
+		 int index = scriptFilename.lastIndexOf(".dml");
+		 String testName = scriptFilename.substring(0, index > 0 ? index : scriptFilename.length());
+		 TestConfiguration testConfig = new TestConfiguration(TEST_CLASS_DIR, testName, new String[] {});
+		 addTestConfiguration(testName, testConfig);
+		 loadTestConfiguration(testConfig);
+		 
+		 try {
+			 DMLConfig conf = new DMLConfig(getCurConfigFile().getPath());
+			 ConfigurationManager.setLocalConfig(conf);
+			 
+			 //read script
+			 String dmlScriptString = DMLScript.readDMLScript(true, HOME + scriptFilename);
+		 
+			 //parsing and dependency analysis
+			 ParserWrapper parser = ParserFactory.createParser();
+			 DMLProgram prog = parser.parse(DMLScript.DML_FILE_PATH_ANTLR_PARSER, dmlScriptString, new HashMap<>());
+			 DMLTranslator dmlt = new DMLTranslator(prog);
+			 dmlt.liveVariableAnalysis(prog);
+			 dmlt.validateParseTree(prog);
+			 dmlt.constructHops(prog);
+			 dmlt.rewriteHopsDAG(prog);
+			 dmlt.constructLops(prog);
+			 dmlt.rewriteLopDAG(prog);
+ 
+			 FederatedPlanCostEnumerator.enumerateProgram(prog, true);
+		 }
+		 catch (IOException e) {
+			 e.printStackTrace();
+			 Assert.fail();
+		 }
+	 }
+ }
+ 

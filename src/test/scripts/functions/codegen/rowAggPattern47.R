@@ -28,7 +28,8 @@ rowVars <- function(X) {
     apply(X, 1, var)
 }
 
-X = matrix(seq(1,6000)/6000, 600, 10, byrow=TRUE);
+# X = matrix(seq(1,6000)/6000, 600, 10, byrow=TRUE);
+X = matrix(2, 10, 10);
 
 R = as.matrix(sum(rowVars(X)));
 

@@ -2153,15 +2153,15 @@ public class LibSpoofPrimitives
 	} 
 
 	public static double vectVar(double[] a, int ai, int len) {
-		double meanVal = vectMean(a, ai, len);
+		double meanVal = Math.pow(vectMean(a, ai, len), 2);
 		double[] aSqr = vectPow2Write(a, ai, len);
-		return ((double) 1 /len)*(vectSum(aSqr, ai, len)-meanVal);
+		return ((double) 1 /len)*(vectSum(aSqr, 0, len)-meanVal);
 	}
 
 	public static double vectVar(double[] avals, int[] aix, int ai, int alen, int len) {
-		double meanVal = vectMean(avals, aix, ai, alen, len);
+		double meanVal = Math.pow(vectMean(avals, aix, ai, alen, len), 2);
 		double[] avalsSqr = vectPow2Write(avals, aix, ai, alen, len);
-		return ((double) 1 /len)*(vectSum(avalsSqr, ai, len)-meanVal);
+		return ((double) 1 /len)*(vectSum(avalsSqr, 0, alen)-meanVal);
 	}
 
 	//complex builtin functions that are not directly generated

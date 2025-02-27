@@ -25,7 +25,7 @@ library("Matrix")
 library("matrixStats")
 
 rowVars <- function(X) {
-    apply(X, 1, var)
+  apply(X, 1, function(x) sum((x - mean(x))^2) / length(x))
 }
 
 # X = matrix(seq(1,6000)/6000, 600, 10, byrow=TRUE);

@@ -30,12 +30,12 @@ import org.junit.Test;
 
 import java.util.HashMap;
 
-public class RewriteRemoveUnnecessaryReorgOperationTest extends AutomatedTestBase {
+public class RewriteRemoveUnnecessaryMinusTest extends AutomatedTestBase {
 
-	private static final String TEST_NAME = "RewriteRemoveUnnecessaryReorgOperation";
+	private static final String TEST_NAME = "RewriteRemoveUnnecessaryMinus";
 	private static final String TEST_DIR = "functions/rewrite/";
 	private static final String TEST_CLASS_DIR =
-		TEST_DIR + RewriteRemoveUnnecessaryReorgOperationTest.class.getSimpleName() + "/";
+		TEST_DIR + RewriteRemoveUnnecessaryMinusTest.class.getSimpleName() + "/";
 
 	private static final int rows = 500;
 	private static final int cols = 500;
@@ -48,26 +48,16 @@ public class RewriteRemoveUnnecessaryReorgOperationTest extends AutomatedTestBas
 	}
 
 	@Test
-	public void testRemoveUnnecessaryReorgOperationTransposeNoRewrite() {
-		testRewriteRemoveUnnecessaryReorgOperation(1, false);
+	public void testRemoveUnnecessaryMinusNoRewrite() {
+		testRewriteRemoveUnnecessaryMinus(false);
 	}
 
 	@Test
-	public void testRemoveUnnecessaryReorgOperationTransposeRewrite() {
-		testRewriteRemoveUnnecessaryReorgOperation(1, true);
+	public void testRemoveUnnecessaryMinusRewrite() {
+		testRewriteRemoveUnnecessaryMinus(true);
 	}
 
-	@Test
-	public void testRemoveUnnecessaryReorgOperationReverseNoRewrite() {
-		testRewriteRemoveUnnecessaryReorgOperation(2, false);
-	}
-
-	@Test
-	public void testRemoveUnnecessaryReorgOperationReverseRewrite() {
-		testRewriteRemoveUnnecessaryReorgOperation(2, true);
-	}
-
-	private void testRewriteRemoveUnnecessaryReorgOperation(int ID, boolean rewrites) {
+	private void testRewriteRemoveUnnecessaryMinus(boolean rewrites) {
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		try {
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
@@ -75,9 +65,9 @@ public class RewriteRemoveUnnecessaryReorgOperationTest extends AutomatedTestBas
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-stats", "-args", input("X"), String.valueOf(ID), output("R")};
+			programArgs = new String[] {"-stats", "-args", input("X"), output("R")};
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = getRCmd(inputDir(), String.valueOf(ID), expectedDir());
+			rCmd = getRCmd(inputDir(), expectedDir());
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 
@@ -94,9 +84,9 @@ public class RewriteRemoveUnnecessaryReorgOperationTest extends AutomatedTestBas
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			if(rewrites)
-				Assert.assertFalse(heavyHittersContainsString(Opcodes.TRANSPOSE.toString(), Opcodes.REV.toString()));
+				Assert.assertFalse(heavyHittersContainsString(Opcodes.MULT.toString(), Opcodes.POW.toString()));
 			else
-				Assert.assertTrue((heavyHittersContainsString(Opcodes.MULT.toString(), Opcodes.REV.toString())));
+				Assert.assertTrue((heavyHittersContainsString(Opcodes.MULT.toString(), Opcodes.POW.toString())));
 
 		}
 		finally {

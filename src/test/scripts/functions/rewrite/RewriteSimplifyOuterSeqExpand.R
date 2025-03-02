@@ -35,7 +35,7 @@ v = matrix(1, 6, 1)
 
 # Perform operations
 if(type==1){
-    R = outer(v, 1:m, "==")
+    R = outer(as.vector(v), 1:m, "==")
 } else if(type==2){
     R = outer(1:m, as.vector(v), "==")
 

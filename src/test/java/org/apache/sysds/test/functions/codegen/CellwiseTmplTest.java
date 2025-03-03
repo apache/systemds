@@ -67,8 +67,10 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME25 = TEST_NAME+25; //bias_add
 	private static final String TEST_NAME26 = TEST_NAME+26; //bias_mult
 	private static final String TEST_NAME27 = TEST_NAME+27; //outer < +7 negative
-	private static final String TEST_NAME28 = TEST_NAME+28; //colProd(X)
-	private static final String TEST_NAME29 = TEST_NAME+29; //rowProd(X)
+	private static final String TEST_NAME28 = TEST_NAME+28; //colProds(X^2 + 1)
+	private static final String TEST_NAME29 = TEST_NAME+29;
+	private static final String TEST_NAME30 = TEST_NAME+30;	//rowProds(X^2 + 1)
+	private static final String TEST_NAME31 = TEST_NAME+31;
 
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CellwiseTmplTest.class.getSimpleName() + "/";
@@ -81,7 +83,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for( int i=1; i<=29; i++ ) {
+		for( int i=1; i<=31; i++ ) {
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(
 				TEST_CLASS_DIR, TEST_NAME+i, new String[] {String.valueOf(i)}) );
 		}
@@ -469,6 +471,16 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Test
 	public void testCodegenCellwise29() {
 		testCodegenIntegration( TEST_NAME29, false, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwise30() {
+		testCodegenIntegration( TEST_NAME30, false, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwise31() {
+		testCodegenIntegration( TEST_NAME31, false, ExecType.CP );
 	}
 
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )

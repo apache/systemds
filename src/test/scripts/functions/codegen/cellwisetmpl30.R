@@ -19,12 +19,20 @@
 #
 #-------------------------------------------------------------
 
-X = matrix(seq(9, 100*50+8), 100, 50);
-#F = matrix(3, 10, 10)
-#X = matrix(seq(2, 10*20+1), 10, 20)
+args<-commandArgs(TRUE)
+options(digits=22)
+library("Matrix")
 
-while(FALSE){}
+rowProds <- function(X) {
+  apply(X, 1, prod)
+}
 
-R = colProds(2*log(X))
+Z = matrix(0, 1, 5)
+Y = matrix(2, 1, 5)
+A = cbind(Y, Z)
+B = matrix(0, 10, 10)
+X = rbind(B, A, B)
 
-write(R, $1)
+R = rowProds(X^2 + 1)
+
+writeMM(as(R,"CsparseMatrix"), paste(args[2], "S", sep=""));

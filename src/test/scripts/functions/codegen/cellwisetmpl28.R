@@ -23,7 +23,7 @@ args<-commandArgs(TRUE)
 options(digits=22)
 library("Matrix")
 
-colProd <- function(X) {
+colProds <- function(X) {
   apply(X, 2, prod)
 }
 
@@ -33,6 +33,6 @@ A = rbind(Y, Z)
 B = matrix(0, 10, 10)
 X = cbind(B, A, B)
 
-R = t(colProd(X^2 + 1));
+R = t(colProds(X^2 + 1));
 
 writeMM(as(R,"CsparseMatrix"), paste(args[2], "S", sep=""));

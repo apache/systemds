@@ -23,16 +23,14 @@ args<-commandArgs(TRUE)
 options(digits=22)
 library("Matrix")
 
-rowProd <- function(X) {
-  apply(X, 1, prod)
+colProds <- function(X) {
+  apply(X, 2, prod)
 }
 
-Z = matrix(0, 1, 5)
-Y = matrix(2, 1, 5)
-A = cbind(Y, Z)
-B = matrix(0, 10, 10)
-X = rbind(B, A, B)
+X = matrix(seq(9, 100*50+8), 100, 50, byrow=TRUE);
+# F = matrix(3, 10, 10)
+# X = matrix(seq(2, 10*20+1), 10, 20)
 
-R = rowProd(X^2 + 1)
+R = t(colProds(2*log(X)))
 
 writeMM(as(R,"CsparseMatrix"), paste(args[2], "S", sep=""));

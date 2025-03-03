@@ -19,12 +19,16 @@
 #
 #-------------------------------------------------------------
 
-X = matrix(seq(9, 100*50+8), 100, 50);
-#F = matrix(3, 10, 10)
-#X = matrix(seq(2, 10*20+1), 10, 20)
+args<-commandArgs(TRUE)
+options(digits=22)
+library("Matrix")
 
-while(FALSE){}
+rowProds <- function(X) {
+  apply(X, 1, prod)
+}
 
-R = colProds(2*log(X))
+X = matrix(seq(9, 1000*150+8), 1000, 150, byrow=TRUE);
 
-write(R, $1)
+R = rowProds(2*log(X));
+
+writeMM(as(R,"CsparseMatrix"), paste(args[2], "S", sep=""));

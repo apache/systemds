@@ -19,12 +19,14 @@
 #
 #-------------------------------------------------------------
 
-X = matrix(seq(9, 100*50+8), 100, 50);
-#F = matrix(3, 10, 10)
-#X = matrix(seq(2, 10*20+1), 10, 20)
+Z = matrix(0, 1, 5)
+Y = matrix(2, 1, 5)
+A = cbind(Y, Z)
+B = matrix(0, 10, 10)
+X = rbind(B, A, B)
 
 while(FALSE){}
 
-R = colProds(2*log(X))
+R = rowProds(X^2 + 1)
 
 write(R, $1)

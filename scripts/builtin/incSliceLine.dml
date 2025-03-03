@@ -688,8 +688,8 @@ pruneUnchangedSlices = function(Matrix[Double] S, Matrix[Double] S2, Matrix[Doub
   # Imat has a 1 where a slice in changedX2 belongs to a slice in prevLatAtLevel
   if(nrow(S2) > 0 & sum(S2) > 0 & nrow(unchangedS) > 0) {
     # b) select unchanged slices that can be pruned
-    I = t(colSums((changedX2 %*% t(unchangedS)) == level) == 0) # change pushdown
-        & unchangedR[,4] < minSup; # minSup pushdown
+    I = t(colSums((changedX2 %*% t(unchangedS)) == level)) # change pushdown
+        + unchangedR[,4] < minSup; # minSup pushdown
     unchangedS2 = removeEmpty(target=unchangedS, margin="rows", select=I);
     if(sum(I) > 0){
       SPr = removeEmpty(target=prevLattice, margin="rows", select=I);

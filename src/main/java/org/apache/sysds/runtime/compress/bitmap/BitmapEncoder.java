@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
@@ -48,7 +49,8 @@ public class BitmapEncoder {
 
 	public static ABitmap extractBitmap(IColIndex colIndices, MatrixBlock rawBlock, int estimatedNumberOfUniques,
 		CompressionSettings cs) {
-		return extractBitmap(colIndices, rawBlock, cs.transposed, estimatedNumberOfUniques, cs.sortTuplesByFrequency);
+		return extractBitmap(colIndices, rawBlock, cs.transposed, estimatedNumberOfUniques, cs.sortTuplesByFrequency,
+			cs.scaleFactors);
 	}
 
 	/**
@@ -61,75 +63,177 @@ public class BitmapEncoder {
 	 * @param rawBlock                 An uncompressed matrix block; can be dense, sparse, empty, or null (not
 	 *                                 Compressed!)
 	 * @param transposed               Boolean specifying if the rawBlock was transposed.
-	 * @param estimatedNumberOfUniques The number of estimated uniques inside this group. Used to allocated the HashMaps.
+	 * @param estimatedNumberOfUniques The number of estimated uniques inside this group. Used to allocated the
+	 *                                 HashMaps.
 	 * @param sortedEntries            Boolean specifying if the entries should be sorted based on frequency of tuples
 	 * @return Uncompressed bitmap representation of the columns specified
 	 */
 	public static ABitmap extractBitmap(IColIndex colIndices, MatrixBlock rawBlock, boolean transposed,
 		int estimatedNumberOfUniques, boolean sortedEntries) {
+		// Overloaded method with scaleFactors defaulted to null
+		return extractBitmap(colIndices, rawBlock, transposed, estimatedNumberOfUniques, sortedEntries, null);
+	}
+
+	/**
+	 * Generate quantization-fused uncompressed bitmaps for a set of columns in an uncompressed matrix block.
+	 * 
+	 * if the rawBlock is transposed and sparse it should be guaranteed that the rows specified are not empty, aka all
+	 * zero.
+	 * 
+	 * @param colIndices               Indexes (within the block) of the columns to extract
+	 * @param rawBlock                 An uncompressed matrix block; can be dense, sparse, empty, or null (not
+	 *                                 Compressed!)
+	 * @param transposed               Boolean specifying if the rawBlock was transposed.
+	 * @param estimatedNumberOfUniques The number of estimated uniques inside this group. Used to allocated the
+	 *                                 HashMaps.
+	 * @param sortedEntries            Boolean specifying if the entries should be sorted based on frequency of tuples
+	 * @param scaleFactors             For quantization-fused compression, scale factors per row, or a single value for
+	 *                                 entire matrix
+	 * @return Uncompressed bitmap representation of the columns specified
+	 */
+	public static ABitmap extractBitmap(IColIndex colIndices, MatrixBlock rawBlock, boolean transposed,
+		int estimatedNumberOfUniques, boolean sortedEntries, double[] scaleFactors) {
 		if(rawBlock == null || rawBlock.isEmpty())
 			return null;
 
 		final int numRows = transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows();
 		final int estimatedNumber = Math.max(estimatedNumberOfUniques, 8);
-		if(colIndices.size() == 1)
+		if(colIndices.size() == 1) {
 			return extractBitmapSingleColumn(colIndices.get(0), rawBlock, numRows, transposed, estimatedNumber,
-				sortedEntries);
-		else
-			return extractBitmapMultiColumns(colIndices, rawBlock, numRows, transposed, estimatedNumber, sortedEntries);
+				sortedEntries, scaleFactors);
+		}
+		else {
+			return extractBitmapMultiColumns(colIndices, rawBlock, numRows, transposed, estimatedNumber, sortedEntries,
+				scaleFactors);
+		}
 	}
 
-	private static ABitmap extractBitmapSingleColumn(int colIndex, MatrixBlock rawBlock, int numRows, boolean transposed,
-		int est, boolean sort) {
+	private static ABitmap extractBitmapSingleColumn(int colIndex, MatrixBlock rawBlock, int numRows,
+		boolean transposed, int est, boolean sort, double[] scaleFactors) {
 		if(transposed) {
 			if(rawBlock.isInSparseFormat() && rawBlock.getSparseBlock().isEmpty(colIndex))
 				return null;
-			return makeSingleColBitmap(extractSingleColT(colIndex, rawBlock, est), rawBlock.getNumColumns(), sort);
+			return makeSingleColBitmap(extractSingleColT(colIndex, rawBlock, est, scaleFactors), rawBlock.getNumColumns(), sort);
 		}
 		else
-			return makeSingleColBitmap(extractSingleCol(colIndex, rawBlock, est), rawBlock.getNumRows(), sort);
+			return makeSingleColBitmap(extractSingleCol(colIndex, rawBlock, est, scaleFactors), rawBlock.getNumRows(),
+				sort);
 	}
 
-	private static DoubleIntListHashMap extractSingleCol(int colIndex, MatrixBlock rawBlock, int estimatedUnique) {
+	private static DoubleIntListHashMap extractSingleCol(int colIndex, MatrixBlock rawBlock, int estimatedUnique,
+		double[] scaleFactors) {
 		final DoubleIntListHashMap distinctVals = new DoubleIntListHashMap(estimatedUnique);
 		final int nRows = rawBlock.getNumRows();
 		final int nCols = rawBlock.getNumColumns();
 		final boolean sparse = rawBlock.isInSparseFormat();
 
-		if(sparse) {
-			final SparseBlock sb = rawBlock.getSparseBlock();
-			for(int r = 0; r < nRows; r++) {
-				if(sb.isEmpty(r))
-					continue;
-				final int apos = sb.pos(r);
-				final int alen = sb.size(r) + apos;
-				final int[] aix = sb.indexes(r);
-				final int idx = Arrays.binarySearch(aix, apos, alen, colIndex);
-				if(idx >= 0)
-					distinctVals.appendValue(sb.values(r)[idx], r);
+		if(scaleFactors == null) {
+			if(sparse) {
+				final SparseBlock sb = rawBlock.getSparseBlock();
+				for(int r = 0; r < nRows; r++) {
+					if(sb.isEmpty(r))
+						continue;
+					final int apos = sb.pos(r);
+					final int alen = sb.size(r) + apos;
+					final int[] aix = sb.indexes(r);
+					final int idx = Arrays.binarySearch(aix, apos, alen, colIndex);
+					if(idx >= 0)
+						distinctVals.appendValue(sb.values(r)[idx], r);
+				}
+			}
+			else if(rawBlock.getDenseBlock().isContiguous()) {
+				final double[] values = rawBlock.getDenseBlockValues();
+				if(nCols == 1)
+					// Since the only values contained is in this column index. simply extract it continuously.
+					for(int i = 0; i < values.length; i++)
+						distinctVals.appendValue(values[i], i);
+				else
+					// For loop down through the rows skipping all other values than the ones in the specified column
+					// index.
+					for(int i = 0, off = colIndex; off < nRows * nCols; i++, off += nCols)
+						distinctVals.appendValue(values[off], i);
+			}
+			else { // GENERAL CASE
+					// This case is slow, because it does a binary search in each row of the sparse input. (if sparse)
+					// and does get value in dense cases with multi blocks.
+				for(int i = 0; i < nRows; i++)
+					distinctVals.appendValue(rawBlock.get(i, colIndex), i);
 			}
 		}
-		else if(rawBlock.getDenseBlock().isContiguous()) {
-			final double[] values = rawBlock.getDenseBlockValues();
-			if(nCols == 1)
-				// Since the only values contained is in this column index. simply extract it continuously.
-				for(int i = 0; i < values.length; i++)
-					distinctVals.appendValue(values[i], i);
-			else
-				// For loop down through the rows skipping all other values than the ones in the specified column index.
-				for(int i = 0, off = colIndex; off < nRows * nCols; i++, off += nCols)
-					distinctVals.appendValue(values[off], i);
-		}
-		else { // GENERAL CASE
-			// This case is slow, because it does a binary search in each row of the sparse input. (if sparse)
-			// and does get value in dense cases with multi blocks.
-			for(int i = 0; i < nRows; i++)
-				distinctVals.appendValue(rawBlock.get(i, colIndex), i);
+		else {
+			// Apply single scale factor
+			if(scaleFactors.length == 1) {
+				final double scaleFactor = scaleFactors[0];
+
+				if(sparse) {
+					final SparseBlock sb = rawBlock.getSparseBlock();
+					for(int r = 0; r < nRows; r++) {
+						if(sb.isEmpty(r))
+							continue;
+						final int apos = sb.pos(r);
+						final int alen = sb.size(r) + apos;
+						final int[] aix = sb.indexes(r);
+						final int idx = Arrays.binarySearch(aix, apos, alen, colIndex);
+						if(idx >= 0)
+							distinctVals.appendValue(Math.floor(sb.values(r)[idx] * scaleFactor), r);
+					}
+				}
+				else if(rawBlock.getDenseBlock().isContiguous()) {
+					final double[] values = rawBlock.getDenseBlockValues();
+					if(nCols == 1) {
+						for(int i = 0; i < values.length; i++)
+							distinctVals.appendValue(Math.floor(values[i] * scaleFactor), i);
+					}
+					else {
+						for(int i = 0, off = colIndex; off < nRows * nCols; i++, off += nCols)
+							distinctVals.appendValue(Math.floor(values[off] * scaleFactor), i);
+					}
+				}
+				else { // GENERAL CASE
+					for(int i = 0; i < nRows; i++)
+						distinctVals.appendValue(Math.floor(rawBlock.get(i, colIndex) * scaleFactor), i);
+				}
+			}
+			else {
+				// Apply scale factor row-wise. The shape of scale factor is handled upstream.
+				if(sparse) {
+					final SparseBlock sb = rawBlock.getSparseBlock();
+					for(int r = 0; r < nRows; r++) {
+						if(sb.isEmpty(r))
+							continue;
+						final int apos = sb.pos(r);
+						final int alen = sb.size(r) + apos;
+						final int[] aix = sb.indexes(r);
+						final int idx = Arrays.binarySearch(aix, apos, alen, colIndex);
+						if(idx >= 0)
+							distinctVals.appendValue(Math.floor(sb.values(r)[idx] * scaleFactors[r]), r);
+					}
+				}
+				else if(rawBlock.getDenseBlock().isContiguous()) {
+					final double[] values = rawBlock.getDenseBlockValues();
+					if(nCols == 1) {
+						for(int i = 0; i < values.length; i++)
+							distinctVals.appendValue(Math.floor(values[i] * scaleFactors[i]), i);
+					}
+					else {
+						for(int i = 0, off = colIndex; off < nRows * nCols; i++, off += nCols)
+							distinctVals.appendValue(Math.floor(values[off] * scaleFactors[i]), i);
+					}
+				}
+				else { // GENERAL CASE
+					for(int i = 0; i < nRows; i++)
+						distinctVals.appendValue(Math.floor(rawBlock.get(i, colIndex) * scaleFactors[i]), i);
+				}
+			}
 		}
 		return distinctVals;
 	}
 
-	private static DoubleIntListHashMap extractSingleColT(int colIndex, MatrixBlock rawBlock, int estimatedUnique) {
+	private static DoubleIntListHashMap extractSingleColT(int colIndex, MatrixBlock rawBlock, int estimatedUnique, double[] scaleFactors) {
+		if (scaleFactors != null) {
+			throw new NotImplementedException();
+		}
+		
 		// probe map for distinct items (for value or value groups)
 		final DoubleIntListHashMap distinctVals = new DoubleIntListHashMap(estimatedUnique);
 
@@ -163,15 +267,20 @@ public class BitmapEncoder {
 	}
 
 	private static ABitmap extractBitmapMultiColumns(IColIndex colIndices, MatrixBlock rawBlock, int numRows,
-		boolean transposed, int estimatedUnique, boolean sort) {
+		boolean transposed, int estimatedUnique, boolean sort, double[] scaleFactors) {
 		final DblArrayIntListHashMap map = new DblArrayIntListHashMap(estimatedUnique);
-		final ReaderColumnSelection reader = ReaderColumnSelection.createReader(rawBlock, colIndices, transposed);
+
+		final ReaderColumnSelection reader = (scaleFactors == null) ? ReaderColumnSelection.createReader(rawBlock,
+			colIndices,
+			transposed) : ReaderColumnSelection.createQuantizedReader(rawBlock, colIndices, transposed, scaleFactors);
+
 		DblArray cellVals = null;
 		try {
 			DblArray empty = new DblArray(new double[colIndices.size()]);
 			while((cellVals = reader.nextRow()) != null) {
-				if(!cellVals.equals(empty))
+				if(!cellVals.equals(empty)) {
 					map.appendValue(cellVals, reader.getCurrentRowIndex());
+				}
 			}
 
 		}
@@ -195,6 +304,7 @@ public class BitmapEncoder {
 				values[bitmapIx] = val.key.getData();
 				offsetsLists[bitmapIx++] = val.value;
 			}
+
 			return new MultiColBitmap(offsetsLists, values, numRows);
 		}
 		else

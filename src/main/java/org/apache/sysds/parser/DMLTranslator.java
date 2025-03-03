@@ -2584,6 +2584,9 @@ public class DMLTranslator
 		case DECOMPRESS:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.FP64, OpOp1.DECOMPRESS, expr);
 			break;
+		case QUANTIZE_COMPRESS:
+			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.valueOf(source.getOpCode().name()), expr, expr2);
+			break;
 
 		// Boolean binary
 		case XOR:

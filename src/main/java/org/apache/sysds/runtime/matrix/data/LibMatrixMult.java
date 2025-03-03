@@ -60,6 +60,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.NativeHelper;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
+
 /**
  * MB: Library for matrix multiplications including MM, MV, VV for all
  * combinations of dense, sparse, ultrasparse representations and special
@@ -78,6 +79,7 @@ public class LibMatrixMult
 	public static final int L2_CACHESIZE = 256 * 1024; //256KB (common size)
 	public static final int L3_CACHESIZE = 16 * 1024 * 1024; //16MB (common size)
 	private static final Log LOG = LogFactory.getLog(LibMatrixMult.class.getName());
+	
 
 	private LibMatrixMult() {
 		//prevent instantiation via private constructor
@@ -266,7 +268,7 @@ public class LibMatrixMult
 		else if(!m1.sparse && !m2.sparse && !ret.sparse)
 			matrixMultDenseDense(m1, m2, ret, tm2, pm2, 0, ru2, 0, m2.clen);
 		else if(m1.sparse && m2.sparse)
-			matrixMultSparseSparse(m1, m2, ret, pm2, sparse, 0, ru2);
+			matrixMultSparseSparse(m1, m2, ret, pm2, ret.sparse, 0, ru2);
 		else if(m1.sparse)
 			matrixMultSparseDense(m1, m2, ret, pm2, 0, ru2);
 		else
@@ -831,7 +833,7 @@ public class LibMatrixMult
 		//check for empty result 
 		if(   mW.isEmptyBlock(false) 
 		   || (wt.isLeft() && mU.isEmptyBlock(false))
-		   || (wt.isRight() && mV.isEmptyBlock(false)) 
+		   || (wt.isRight() && mV.isEmptyBlock(false))
 		   || (wt.isBasic() && mW.isEmptyBlock(false)))  {
 			ret.examSparsity(); //turn empty dense into sparse
 			return; 
@@ -2003,7 +2005,6 @@ public class LibMatrixMult
 		}
 	}
 
-	
 	private static void matrixMultUltraSparseRight(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int rl, int ru) {
 		if(ret.isInSparseFormat()){
 			if(m1.isInSparseFormat())
@@ -3227,8 +3228,13 @@ public class LibMatrixMult
 		DenseBlock u = mU.getDenseBlock();
 		DenseBlock v = mV.getDenseBlock();
 		DenseBlock x = (mX==null) ? null : mX.getDenseBlock();
-		DenseBlock c = ret.getDenseBlock();
-		
+		DenseBlock c = ret.getDenseBlock();		
+
+		if(c == null){
+			ret.allocateDenseBlock();
+			c = ret.getDenseBlock();
+		}
+
 		//approach: iterate over non-zeros of w, selective mm computation
 		//cache-conscious blocking: due to blocksize constraint (default 1000),
 		//a blocksize of 16 allows to fit blocks of UV into L2 cache (256KB) 
@@ -3375,7 +3381,11 @@ public class LibMatrixMult
 
 		//output always in dense representation
 		DenseBlock c = ret.getDenseBlock();
-		
+		if(c == null){
+			ret.allocateDenseBlock();
+			c = ret.getDenseBlock();
+		}
+
 		//approach: iterate over non-zeros of w, selective mm computation
 		if( mW.sparse ) //SPARSE
 		{
@@ -4082,7 +4092,8 @@ public class LibMatrixMult
 			c[ ci+7 ] += a[ ai+7 ] + bval;
 		}
 	}
-	
+
+
 	//note: public for use by codegen for consistency
 	public static void vectAdd( double[] a, double[] c, int ai, int ci, final int len )
 	{

@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.ValueType;
@@ -65,13 +66,13 @@ public class CastSPInstruction extends UnarySPInstruction {
 		JavaPairRDD<?,?> out = null;
 		
 		//convert frame-matrix / matrix-frame and set output
-		if( opcode.equals(OpOp1.CAST_AS_MATRIX.toString()) ) {
+		if( opcode.equals(Opcodes.CAST_AS_MATRIX.toString()) ) {
 			DataCharacteristics mcOut = new MatrixCharacteristics(mcIn);
 			mcOut.setBlocksize(ConfigurationManager.getBlocksize());
 			out = FrameRDDConverterUtils.binaryBlockToMatrixBlock(
 				(JavaPairRDD<Long, FrameBlock>)in, mcIn, mcOut);
 		}
-		else if( opcode.equals(OpOp1.CAST_AS_FRAME.toString()) ) {
+		else if( opcode.equals(Opcodes.CAST_AS_FRAME.toString()) ) {
 			out = FrameRDDConverterUtils.matrixBlockToBinaryBlockLongIndex(sec.getSparkContext(), 
 				(JavaPairRDD<MatrixIndexes, MatrixBlock>)in, mcIn);
 		}
@@ -85,7 +86,7 @@ public class CastSPInstruction extends UnarySPInstruction {
 		sec.addLineageRDD(output.getName(), input1.getName());
 		
 		//update schema information for output frame
-		if( opcode.equals(OpOp1.CAST_AS_FRAME.toString()) ) {
+		if( opcode.equals(Opcodes.CAST_AS_FRAME.toString()) ) {
 			sec.getFrameObject(output.getName()).setSchema(
 				UtilFunctions.nCopies((int)mcIn.getCols(), ValueType.FP64));
 		}

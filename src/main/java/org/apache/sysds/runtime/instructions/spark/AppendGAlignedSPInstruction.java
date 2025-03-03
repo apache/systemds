@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -51,7 +52,7 @@ public class AppendGAlignedSPInstruction extends AppendSPInstruction {
 		CPOperand out = new CPOperand(parts[4]);
 		boolean cbind = Boolean.parseBoolean(parts[5]);
 		
-		if(!opcode.equalsIgnoreCase("galignedappend"))
+		if(!opcode.equalsIgnoreCase(Opcodes.GALIGNEDAPPEND.toString()))
 			throw new DMLRuntimeException("Unknown opcode while parsing a AppendGSPInstruction: " + str);
 		
 		return new AppendGAlignedSPInstruction(

@@ -85,7 +85,7 @@ public class MMTSJ extends Lop
 		StringBuilder sb = InstructionUtils.getStringBuilder();
 		sb.append( getExecType() );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( _multiPass ? "tsmm2" : Opcodes.TSMM.toString() );
+		sb.append( _multiPass ? Opcodes.TSMM2.toString() : Opcodes.TSMM.toString() );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getInputs().get(0).prepInputOperand(input_index1));
 		sb.append( OPERAND_DELIMITOR );

@@ -288,8 +288,8 @@ public class BuiltinNarySPInstruction extends SPInstruction implements LineageTr
 
 		public MinMaxAddMultFunction(String opcode, List<ScalarObject> scalars) {
 			_scalars = scalars.toArray(new ScalarObject[0]);
-			_op = new SimpleOperator(opcode.equals("n+") ? Plus.getPlusFnObject() :
-					opcode.equals("n*") ? Multiply.getMultiplyFnObject() :
+			_op = new SimpleOperator(opcode.equals(Opcodes.NP.toString()) ? Plus.getPlusFnObject() :
+					opcode.equals(Opcodes.NM.toString()) ? Multiply.getMultiplyFnObject() :
 							Builtin.getBuiltinFnObject(opcode.substring(1)));
 		}
 		

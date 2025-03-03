@@ -28,6 +28,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -94,15 +95,15 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		String opcode = InstructionUtils.getOpCode(str);
 		
-		if ( opcode.equalsIgnoreCase("r'") ) {
+		if ( opcode.equalsIgnoreCase(Opcodes.TRANSPOSE.toString()) ) {
 			parseUnaryInstruction(str, in, out); //max 2 operands
 			return new ReorgSPInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject()), in, out, opcode, str);
 		}
-		else if ( opcode.equalsIgnoreCase("rev") ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.REV.toString()) ) {
 			parseUnaryInstruction(str, in, out); //max 2 operands
 			return new ReorgSPInstruction(new ReorgOperator(RevIndex.getRevIndexFnObject()), in, out, opcode, str);
 		}
-		else if (opcode.equalsIgnoreCase("roll")) {
+		else if (opcode.equalsIgnoreCase(Opcodes.ROLL.toString())) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields(str, 3);
 		in.split(parts[1]);
@@ -111,11 +112,11 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 		return new ReorgSPInstruction(new ReorgOperator(new RollIndex(0)),
 				in, out, shift, opcode, str);
 }
-		else if ( opcode.equalsIgnoreCase("rdiag") ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.DIAG.toString()) ) {
 			parseUnaryInstruction(str, in, out); //max 2 operands
 			return new ReorgSPInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, opcode, str);
 		} 
-		else if ( opcode.equalsIgnoreCase("rsort") ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.SORT.toString()) ) {
 			String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 			InstructionUtils.checkNumFields(parts, 5, 6);
 			in.split(parts[1]);
@@ -145,19 +146,19 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = null;
 		DataCharacteristics mcIn = sec.getDataCharacteristics(input1.getName());
 		
-		if( opcode.equalsIgnoreCase("r'") ) //TRANSPOSE
+		if( opcode.equalsIgnoreCase(Opcodes.TRANSPOSE.toString()) ) //TRANSPOSE
 		{
 			//execute transpose reorg operation
 			out = in1.mapToPair(new ReorgMapFunction(opcode));
 		}
-		else if( opcode.equalsIgnoreCase("rev") ) //REVERSE
+		else if( opcode.equalsIgnoreCase(Opcodes.REV.toString()) ) //REVERSE
 		{
 			//execute reverse reorg operation
 			out = in1.flatMapToPair(new RDDRevFunction(mcIn));
 			if( mcIn.getRows() % mcIn.getBlocksize() != 0 )
 				out = RDDAggregateUtils.mergeByKey(out, false);
 		}
-		else if (opcode.equalsIgnoreCase("roll")) // ROLL
+		else if (opcode.equalsIgnoreCase(Opcodes.ROLL.toString())) // ROLL
 		{
 			int shift = (int) ec.getScalarInput(_shift).getLongValue();
 
@@ -165,7 +166,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			out = in1.flatMapToPair(new RDDRollFunction(mcIn, shift));
 			out = RDDAggregateUtils.mergeByKey(out, false);
 		}
-		else if ( opcode.equalsIgnoreCase("rdiag") ) // DIAG
+		else if ( opcode.equalsIgnoreCase(Opcodes.DIAG.toString()) ) // DIAG
 		{	
 			if(mcIn.getCols() == 1) { // diagV2M
 				out = in1.flatMapToPair(new RDDDiagV2MFunction(mcIn));
@@ -176,7 +177,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 					     .mapToPair(new ReorgMapFunction(opcode));
 			}
 		}
-		else if ( opcode.equalsIgnoreCase("rsort") ) //ORDER
+		else if ( opcode.equalsIgnoreCase(Opcodes.SORT.toString()) ) //ORDER
 		{
 			// Sort by column 'col' in ascending/descending order and return either index/value
 			
@@ -232,7 +233,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 		}
 		
 		//store output rdd handle
-		if( opcode.equalsIgnoreCase("rsort") && _col.getDataType().isMatrix() )
+		if( opcode.equalsIgnoreCase(Opcodes.SORT.toString()) && _col.getDataType().isMatrix() )
 			sec.releaseMatrixInput(_col.getName());
 		updateReorgDataCharacteristics(sec);
 		sec.setRDDHandleForVariable(output.getName(), out);
@@ -249,11 +250,11 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 			if( !mc1.dimsKnown() )
 				throw new DMLRuntimeException("Unable to compute output matrix characteristics from input.");
 			
-			if ( getOpcode().equalsIgnoreCase("r'") ) 
+			if ( getOpcode().equalsIgnoreCase(Opcodes.TRANSPOSE.toString()) )
 				mcOut.set(mc1.getCols(), mc1.getRows(), mc1.getBlocksize(), mc1.getBlocksize());
-			else if ( getOpcode().equalsIgnoreCase("rdiag") )
+			else if ( getOpcode().equalsIgnoreCase(Opcodes.DIAG.toString()) )
 				mcOut.set(mc1.getRows(), (mc1.getCols()>1)?1:mc1.getRows(), mc1.getBlocksize(), mc1.getBlocksize());
-			else if ( getOpcode().equalsIgnoreCase("rsort") ) {
+			else if ( getOpcode().equalsIgnoreCase(Opcodes.SORT.toString()) ) {
 				boolean ixret = sec.getScalarInput(_ixret).getBooleanValue();
 				mcOut.set(mc1.getRows(), ixret?1:mc1.getCols(), mc1.getBlocksize(), mc1.getBlocksize());
 			}
@@ -264,7 +265,7 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 		
 		//infer initially unknown nnz from input
 		if( !mcOut.nnzKnown() && mc1.nnzKnown() ){
-			boolean sortIx = getOpcode().equalsIgnoreCase("rsort") && sec.getScalarInput(_ixret).getBooleanValue();			
+			boolean sortIx = getOpcode().equalsIgnoreCase(Opcodes.SORT.toString()) && sec.getScalarInput(_ixret).getBooleanValue();
 			if( sortIx )
 				mcOut.setNonZeros(mc1.getRows());
 			else //default (r', rdiag, rev, roll, rsort data)

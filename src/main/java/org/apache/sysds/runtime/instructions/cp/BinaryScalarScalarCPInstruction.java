@@ -57,7 +57,7 @@ public class BinaryScalarScalarCPInstruction extends BinaryCPInstruction {
 		//compute output value, incl implicit type promotion if necessary
 		else {
 			if( so1 instanceof StringObject || so2 instanceof StringObject ) {
-				if( !opcode.equals("+") ) //not string concatenation
+				if( !opcode.equals(Opcodes.PLUS.toString()) ) //not string concatenation
 					throw new DMLRuntimeException("Arithmetic '"+opcode+"' not supported over string inputs.");
 				sores = new StringObject( dop.fn.execute(
 					so1.getLanguageSpecificStringValue(), so2.getLanguageSpecificStringValue()) );

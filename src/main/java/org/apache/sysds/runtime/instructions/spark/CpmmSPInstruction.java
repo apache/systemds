@@ -26,6 +26,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -76,7 +77,7 @@ public class CpmmSPInstruction extends AggregateBinarySPInstruction {
 	public static CpmmSPInstruction parseInstruction( String str ) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		if ( !opcode.equalsIgnoreCase("cpmm"))
+		if ( !opcode.equalsIgnoreCase(Opcodes.CPMM.toString()))
 			throw new DMLRuntimeException("CpmmSPInstruction.parseInstruction(): Unknown opcode " + opcode);
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
@@ -122,7 +123,7 @@ public class CpmmSPInstruction extends AggregateBinarySPInstruction {
 				}
 			}
 			else {
-				JavaRDD<MatrixBlock> out = in1.join(in2.mapToPair(new ReorgMapFunction("r'"))).values().map(new Cpmm2MultiplyFunction()).filter(new FilterNonEmptyBlocksFunction2());
+				JavaRDD<MatrixBlock> out = in1.join(in2.mapToPair(new ReorgMapFunction(Opcodes.TRANSPOSE.toString()))).values().map(new Cpmm2MultiplyFunction()).filter(new FilterNonEmptyBlocksFunction2());
 				MatrixBlock out2 = RDDAggregateUtils.sumStable(out);
 
 				//put output block into symbol table (no lineage because single block)
@@ -283,7 +284,7 @@ public class CpmmSPInstruction extends AggregateBinarySPInstruction {
 		@Override
 		public MatrixBlock call() {
 				JavaRDD<MatrixBlock> out = _in1
-				.join(_in2.mapToPair(new ReorgMapFunction("r'")))
+				.join(_in2.mapToPair(new ReorgMapFunction(Opcodes.TRANSPOSE.toString())))
 				.values().map(new Cpmm2MultiplyFunction())
 				.filter(new FilterNonEmptyBlocksFunction2());
 			return RDDAggregateUtils.sumStable(out);

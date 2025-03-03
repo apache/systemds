@@ -939,8 +939,8 @@ public class LibCommonsMath
 
 			ReorgOperator op_t = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), threads);
 			AggregateBinaryOperator op_mul_agg = InstructionUtils.getMatMultOperator(threads);
-			BinaryOperator op_add = InstructionUtils.parseExtendedBinaryOperator("+");
-			BinaryOperator op_sub = InstructionUtils.parseExtendedBinaryOperator("-");
+			BinaryOperator op_add = InstructionUtils.parseExtendedBinaryOperator(Opcodes.PLUS.toString());
+			BinaryOperator op_sub = InstructionUtils.parseExtendedBinaryOperator(Opcodes.MINUS.toString());
 
 			MatrixBlock v_t = v.reorgOperations(op_t, new MatrixBlock(), 0, 0, m);
 			v_t = v_t.binaryOperations(op_add, v_t);

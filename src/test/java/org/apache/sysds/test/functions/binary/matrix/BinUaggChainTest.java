@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.binary.matrix;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
@@ -116,7 +117,7 @@ public class BinUaggChainTest extends AutomatedTestBase
 			checkNumCompiledSparkInst(expectedNumCompiled);
 			checkNumExecutedSparkInst(expectedNumExecuted);
 			Assert.assertEquals(singleBlock,
-				heavyHittersContainsSubString("binuaggchain"));
+				heavyHittersContainsSubString(Opcodes.BINUAGGCHAIN.toString()));
 		}
 		finally {
 			rtplatform = platformOld;

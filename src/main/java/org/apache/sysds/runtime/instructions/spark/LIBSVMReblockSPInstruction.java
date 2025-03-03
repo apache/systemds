@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.spark;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
@@ -58,7 +59,7 @@ public class LIBSVMReblockSPInstruction extends UnarySPInstruction {
 
 	public static LIBSVMReblockSPInstruction parseInstruction(String str) {
 		String opcode = InstructionUtils.getOpCode(str);
-		if(!opcode.equals("libsvmrblk"))
+		if(!opcode.equals(Opcodes.LIBSVMRBLK.toString()))
 			throw new DMLRuntimeException("Incorrect opcode for LIBSVMReblockSPInstruction:" + opcode);
 
 		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);

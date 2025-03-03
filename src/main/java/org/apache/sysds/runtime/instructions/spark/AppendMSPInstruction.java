@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.spark;
 
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.functionobjects.OffsetColumnIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -47,7 +48,7 @@ public abstract class AppendMSPInstruction extends AppendSPInstruction {
 		CPOperand out = new CPOperand(parts[4]);
 		boolean cbind = Boolean.parseBoolean(parts[5]);
 		
-		if(!opcode.equalsIgnoreCase("mappend"))
+		if(!opcode.equalsIgnoreCase(Opcodes.MAPPEND.toString()))
 			throw new DMLRuntimeException("Unknown opcode while parsing a AppendMSPInstruction: " + str);
 		
 		//construct matrix/frame appendm instruction

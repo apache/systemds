@@ -366,7 +366,7 @@ public class UnaryOp extends MultiThreadedHop
 		} else {
 			sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
 		}
-		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity, getDataType());
 	}
 	
 	@Override

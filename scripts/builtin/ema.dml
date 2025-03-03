@@ -24,7 +24,7 @@
 # INPUT:
 # ------------------------------------------------------------------------------------------
 # X       Frame that contains time series data that needs to be imputed
-#         search_iterations	Integer	--	Budget iterations for parameter optimization,
+# iter    Integer	--	Budget iterations for parameter optimization,
 #         used if parameters weren't set
 # mode    Type of EMA method. Either "single", "double" or "triple"
 # freq    Seasonality when using triple EMA.
@@ -40,9 +40,9 @@
 
 # TODO: convert to DML builtin using cumsumprod(data, alpha) 
 
-f_ema = function(Frame[Double] X, Integer search_iterations, String mode, Integer freq, 
+f_ema = function(Frame[Double] X, Integer iter, String mode, Integer freq,
   Double alpha, Double beta, Double gamma) return (Frame[Double] Y) {
-  M = map(X, "UtilFunctions.exponentialMovingAverageImputation(" + search_iterations + ";"
+  M = map(X, "UtilFunctions.exponentialMovingAverageImputation(" + iter + ";"
     + mode + ";" + freq + ";" + alpha + ";" + beta + ";" + gamma + ")")
   Y = as.frame(as.matrix(M))
 }

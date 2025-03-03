@@ -32,12 +32,12 @@
 # SI         Column indices of X corresponding to the factors to be used for stratifying
 # alpha      Parameter to compute 100*(1-alpha)% confidence intervals for the survivor
 #            function and its median
-# err_type   "greenwood" Parameter to specify the error type according to "greenwood" (the default) or "peto"
-# conf_type  Parameter to modify the confidence interval; "plain" keeps the lower and
+# err        "greenwood" Parameter to specify the error type according to "greenwood" (the default) or "peto"
+# conf       Parameter to modify the confidence interval; "plain" keeps the lower and
 #            upper bound of the confidence interval unmodified, "log" (the default)
 #            corresponds to logistic transformation and "log-log" corresponds to the
 #            complementary log-log transformation
-# test_type  If survival data for multiple groups is available specifies which test to
+# test       If survival data for multiple groups is available specifies which test to
 #            perform for comparing survival data across multiple groups: "none" (the default)
 #            "log-rank" or "wilcoxon" test
 # ------------------------------------------------------------------------------------------
@@ -84,7 +84,7 @@
 # --------------------------------------------------------------------------------------------
 
 m_km = function(Matrix[Double] X, Matrix[Double] TE, Matrix[Double] GI, Matrix[Double] SI,
-    Double alpha = 0.05, String err_type = "greenwood", String conf_type = "log", String test_type = "none")
+    Double alpha = 0.05, String err = "greenwood", String conf = "log", String test = "none")
   return (Matrix[Double] O, Matrix[Double] M, Matrix[Double] T, Matrix[Double] T_GROUPS_OE)
 {
   if (ncol(GI) != 0 & nrow(GI) != 0)
@@ -102,14 +102,14 @@ m_km = function(Matrix[Double] X, Matrix[Double] TE, Matrix[Double] GI, Matrix[D
   SI = t(SI);
 
   # check arguments for validity
-  if (err_type != "greenwood" & err_type != "peto")
-    stop (err_type + " is not a valid error type!");
+  if (err != "greenwood" & err != "peto")
+    stop (err + " is not a valid error type!");
 
-  if (conf_type != "plain" & conf_type != "log" & conf_type != "log-log")
-    stop (conf_type + " is not a valid confidence type!");
+  if (conf != "plain" & conf != "log" & conf != "log-log")
+    stop (conf + " is not a valid confidence type!");
 
-  if (test_type != "log-rank" & test_type != "wilcoxon" & test_type != "none")
-    stop (test_type + " is not a valid test type!");
+  if (test != "log-rank" & test != "wilcoxon" & test != "none")
+    stop (test + " is not a valid test type!");
 
   n_group_cols = ncol (GI);
   n_stratum_cols = ncol (SI);
@@ -233,7 +233,7 @@ m_km = function(Matrix[Double] X, Matrix[Double] TE, Matrix[Double] GI, Matrix[D
   M_cols = seq (1, num_groups * num_strata);
   z_alpha_2 = icdf (target = 1 - alpha / 2, dist = "normal");
 
-  if (num_groups > 1 & test_type != "none") {
+  if (num_groups > 1 & test != "none") {
     str = "";
     TEST = matrix (0, rows = num_groups, cols = 5);
     TEST_GROUPS_OE = matrix (0, rows = 1, cols = 4);
@@ -243,7 +243,7 @@ m_km = function(Matrix[Double] X, Matrix[Double] TE, Matrix[Double] GI, Matrix[D
     EXP = matrix (0, rows = num_groups, cols = num_strata);
     V_sum_total = matrix (0, rows = num_groups-1, cols = (num_groups-1) * num_strata);
     n_event_all_global = matrix(1, rows=num_groups, cols=num_strata);
-  } else if (num_groups == 1 & test_type != "none") {
+  } else if (num_groups == 1 & test != "none") {
     stop ("Data contains only one group or no groups, at least two groups are required for test!");
   }
 
@@ -299,7 +299,7 @@ m_km = function(Matrix[Double] X, Matrix[Double] TE, Matrix[Double] GI, Matrix[D
 
     n_risk_stratum = range - n_event_all_stratum_agg; # no. at risk per stratum
 
-    if (num_groups > 1 & test_type != "none") {	# needed for log-rank or wilcoxon test
+    if (num_groups > 1 & test != "none") {	# needed for log-rank or wilcoxon test
       n_risk_n_event_stratum = matrix (0, rows = n_time_all1, cols = num_groups * 2);
     }
   }
@@ -354,7 +354,7 @@ m_km = function(Matrix[Double] X, Matrix[Double] TE, Matrix[Double] GI, Matrix[D
     }
     n_risk_stratum = range - n_event_all_stratum_agg; # no. at risk per stratum
 
-    if (num_groups > 1 & test_type != "none") {	# needed for log-rank or wilcoxon test
+    if (num_groups > 1 & test != "none") {	# needed for log-rank or wilcoxon test
       n_risk_n_event_stratum = matrix (0, rows = n_time_all1, cols = num_groups * 2);
     }
 
@@ -389,7 +389,7 @@ m_km = function(Matrix[Double] X, Matrix[Double] TE, Matrix[Double] GI, Matrix[D
         }
 
         n_risk = sum (group_ind) - n_event_all_agg; # no. at risk per stratum per group
-        if (num_groups > 1 & test_type != "none") {
+        if (num_groups > 1 & test != "none") {
           n_risk_n_event_stratum[,(g - 1) * 2 + 1] = n_risk;
           n_risk_n_event_stratum[,(g - 1) * 2 + 2] = n_event;
         }
@@ -408,20 +408,20 @@ m_km = function(Matrix[Double] X, Matrix[Double] TE, Matrix[Double] GI, Matrix[D
         surv = cumprod ((n_risk - n_event) / n_risk);
         tmp = n_event / (n_risk * (n_risk - n_event));
         se_surv = sqrt (cumsum (tmp)) * surv;
-        if (err_type == "peto") {
+        if (err == "peto") {
           se_surv = (surv * sqrt(1 - surv) / sqrt(n_risk));
         }
 
-        if (conf_type == "plain") {
+        if (conf == "plain") {
           # True survivor function is in [surv +- z_alpha_2 * se_surv],
           # values less than 0 are replaced by 0, values larger than 1are replaced by 1!
           CI_l = max (surv - (z_alpha_2 * se_surv), 0);
           CI_r = min (surv + (z_alpha_2 * se_surv), 1);
-        } else if (conf_type == "log") {
+        } else if (conf == "log") {
           # True survivor function is in [surv * exp(+- z_alpha_2 * se_surv / surv)]
           CI_l = max (surv * exp (- z_alpha_2 * se_surv / surv), 0);
           CI_r = min (surv * exp ( z_alpha_2 * se_surv / surv), 1);
-        } else { # conf_type == "log-log"
+        } else { # conf == "log-log"
           # True survivor function is in [surv ^ exp(+- z_alpha_2 * se(log(-log(surv))))]
           CI_l = max (surv ^ exp (- z_alpha_2 * se_surv / log(surv)), 0);
           CI_r = min (surv ^ exp ( z_alpha_2 * se_surv / log(surv)), 1);
@@ -495,7 +495,7 @@ m_km = function(Matrix[Double] X, Matrix[Double] TE, Matrix[Double] GI, Matrix[D
            }
 
            M[M_offset,3] = t_5;
-           if (test_type != "none") {
+           if (test != "none") {
              n_event_all_global[g,s] = n_event_sum_all;
            }
          }
@@ -507,16 +507,16 @@ m_km = function(Matrix[Double] X, Matrix[Double] TE, Matrix[Double] GI, Matrix[D
     }
 
     ######## COMPARISON BETWEEN DIFFERENT GROUPS USING LOG-RANK OR WILCOXON TEST
-    if (num_groups > 1 & test_type != "none") {
+    if (num_groups > 1 & test != "none") {
       V = matrix (0, rows = num_groups-1, cols = num_groups-1);
       parfor (g in 0:(num_groups-1), check = 0) {
         n_risk = n_risk_n_event_stratum[,g * 2 + 1];
         n_event = n_risk_n_event_stratum[,g * 2 + 2];
 
-        if (test_type == "log-rank") {
+        if (test == "log-rank") {
           O = n_event;
           E = n_risk * n_event_stratum / n_risk_stratum;
-        } else { ### test_type == "wilcoxon"
+        } else { ### test == "wilcoxon"
           O = n_risk_stratum * n_event / range;
           E = n_risk * n_event_stratum / range;
         }
@@ -537,12 +537,12 @@ m_km = function(Matrix[Double] X, Matrix[Double] TE, Matrix[Double] GI, Matrix[D
           if (i1 == i2) {
             I_i1i2 = 1;
           }
-          if (test_type == "log-rank") {
+          if (test == "log-rank") {
             V1 = n_risk * n_event_stratum * (n_risk_stratum - n_event_stratum) / (n_risk_stratum * (n_risk_stratum - 1));
             V1 = replace (target = V1, pattern = NaN, replacement = 0);
             V2 = I_i1i2 - (n_risk_i2j / n_risk_stratum);
             V[(i1 + 1),(i2 + 1)] = sum (V1 * V2);
-          } else { ### test_type == "wilcoxon"
+          } else { ### test == "wilcoxon"
             V1 = (n_risk_stratum ^ 2) * (n_risk * n_event_stratum) * (n_risk_stratum - n_event_stratum) / (n_risk_stratum * (n_risk_stratum - 1));
             V1 = replace (target = V1, pattern = NaN, replacement = 0);
             V2 = I_i1i2 - (n_risk_i2j / n_risk_stratum);
@@ -555,7 +555,7 @@ m_km = function(Matrix[Double] X, Matrix[Double] TE, Matrix[Double] GI, Matrix[D
     }
   }
 
-  if (num_groups > 1 & test_type != "none") {
+  if (num_groups > 1 & test != "none") {
     V_sum = matrix (0, rows = num_groups-1, cols = num_groups-1);
     for (s in 1:num_strata) {
       V_start_ind = (s - 1) * (num_groups - 1) + 1;
@@ -567,7 +567,7 @@ m_km = function(Matrix[Double] X, Matrix[Double] TE, Matrix[Double] GI, Matrix[D
 
     test_st = as.scalar (t(U_sum[1:(num_groups-1),1]) %*% inv(V_sum) %*% U_sum[1:(num_groups-1),1]);
     p_val = 1 - cdf (target = test_st, dist = "chisq", df = num_groups-1 );
-    if (test_type != "none") {
+    if (test != "none") {
       U_OE_sum = rowSums(U_OE);
       V_OE =rowSums((U*U) /sum(V_sum));
       TEST_GROUPS_OE[1,1] = num_groups;
@@ -579,7 +579,7 @@ m_km = function(Matrix[Double] X, Matrix[Double] TE, Matrix[Double] GI, Matrix[D
       TEST[,3] = rowSums(EXP);
       TEST[,4] = rowSums(U_OE_sum);
       TEST[,5] = rowSums(V_OE);
-      str = append (str, test_type + " test for " + num_groups + " groups: Chi-squared = " + test_st + " on " + (num_groups - 1) + " df, p = " + p_val + " ");
+      str = append (str, test + " test for " + num_groups + " groups: Chi-squared = " + test_st + " on " + (num_groups - 1) + " df, p = " + p_val + " ");
     }
   }
 
@@ -608,12 +608,12 @@ m_km = function(Matrix[Double] X, Matrix[Double] TE, Matrix[Double] GI, Matrix[D
   # pull out non-empty rows from TEST
   if (n_group_cols > 0 & n_stratum_cols > 0) {
     M = cbind (G_cols, S_cols, M);
-    if (test_type != "none") {
+    if (test != "none") {
       TEST = cbind (G_cols_original, TEST);
     }
   } else if (n_group_cols > 0) {
     M = cbind (G_cols, M);
-    if (test_type != "none") {
+    if (test != "none") {
       TEST = cbind (G_cols_original, TEST);
     }
   } else if (n_stratum_cols > 0) {
@@ -626,7 +626,7 @@ m_km = function(Matrix[Double] X, Matrix[Double] TE, Matrix[Double] GI, Matrix[D
   KM = removeEmpty (target = KM, margin = "rows");
   KM = KM[1:(nrow (KM) - 1),];
 
-  if (test_type != "none") {
+  if (test != "none") {
     if (num_groups > 1) {
       T = TEST;
       T_GROUPS_OE = TEST_GROUPS_OE;

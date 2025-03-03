@@ -36,37 +36,37 @@
 # -------------------------------------------------------------------------------------------
 # X              Data Matrix of shape
 #                (number of data points, input dimensionality)
-# reduced_dims   Output dimensionality
+# reducedDims    Output dimensionality
 # perplexity     Perplexity Parameter
 # lr             Learning rate
 # momentum       Momentum Parameter
-# max_iter       Number of iterations
+# maxIter        Number of iterations
 # tol            Tolerance for early stopping in gradient descent
 # seed           The seed used for initial values.
 #                If set to -1 random seeds are selected.
-# is_verbose     Print debug information
-# print_iter     Intervals of printing out the L1 norm values. Parameter not relevant if
-#                is_verbose = FALSE.
+# verbose        Print debug information
+# printIter      Intervals of printing out the L1 norm values. Parameter not relevant if
+#                verbose = FALSE.
 # -------------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # -------------------------------------------------------------------------------------------
-# Y      Data Matrix of shape (number of data points, reduced_dims)
+# Y      Data Matrix of shape (number of data points, reducedDims)
 # -------------------------------------------------------------------------------------------
 
-m_tSNE = function(Matrix[Double] X, Integer reduced_dims = 2, Integer perplexity = 30,
-  Double lr = 300., Double momentum = 0.9, Integer max_iter = 1000, Double tol = 1e-5, 
-  Integer seed = -1, Boolean is_verbose = FALSE, Integer print_iter = 10)
+m_tSNE = function(Matrix[Double] X, Integer reducedDims = 2, Integer perplexity = 30,
+  Double lr = 300., Double momentum = 0.9, Integer maxIter = 1000, Double tol = 1e-5,
+  Integer seed = -1, Boolean verbose = FALSE, Integer printIter = 10)
   return(Matrix[Double] Y)
 {
-  d = reduced_dims
+  d = reducedDims
   n = nrow(X)
 
-  P = x2p(X, perplexity, is_verbose)
+  P = x2p(X, perplexity, verbose)
   P = P*4
   Y = rand(rows=n, cols=d, pdf="normal", seed=seed)
   dY = matrix(0, rows=n, cols=d)
-  C = matrix(0, rows=max_iter/100, cols=1)
+  C = matrix(0, rows=maxIter/100, cols=1)
   ZERODIAG = (diag(matrix(-1, rows=n, cols=1)) + 1)
 
   D = matrix(0, rows=n, cols=n)
@@ -74,7 +74,7 @@ m_tSNE = function(Matrix[Double] X, Integer reduced_dims = 2, Integer perplexity
   Q = matrix(0, rows=n, cols=n)
   W = matrix(0, rows=n, cols=n)
 
-  if(is_verbose)
+  if(verbose)
     print("starting loop....")
 
   itr = 1
@@ -93,7 +93,7 @@ m_tSNE = function(Matrix[Double] X, Integer reduced_dims = 2, Integer perplexity
   norm_initial = norm
   norm_target = norm_initial * tol
 
-  if(is_verbose){
+  if(verbose){
     print("L1 Norm initial : " + norm_initial)
     print("L1 Norm target  : " + norm_target)
   }
@@ -110,7 +110,7 @@ m_tSNE = function(Matrix[Double] X, Integer reduced_dims = 2, Integer perplexity
   itr = itr + 1
   # End of first iteration
 
-  while (itr <= max_iter & norm > norm_target) {
+  while (itr <= maxIter & norm > norm_target) {
     D = dist(Y)
     Z = 1/(D + 1)
     Z = Z * ZERODIAG
@@ -121,7 +121,7 @@ m_tSNE = function(Matrix[Double] X, Integer reduced_dims = 2, Integer perplexity
     dY = momentum*dY - lr*g
 
     norm = sum(dY^2)
-    if(is_verbose & itr %% print_iter == 0){
+    if(verbose & itr %% printIter == 0){
       print("Iteration: " + itr)
       print("L1 Norm: " + norm)
     }
@@ -139,15 +139,15 @@ m_tSNE = function(Matrix[Double] X, Integer reduced_dims = 2, Integer perplexity
   }
 }
 
-x2p = function(matrix[double] X, double perplexity, Boolean is_verbose = FALSE)
+x2p = function(matrix[double] X, double perplexity, Boolean verbose = FALSE)
 return(matrix[double] P)
 {
-  if(is_verbose)
+  if(verbose)
     print("x2p....")
   tol = 1.0e-5
   INF = 1.0e20
   n = nrow(X)
-  if(is_verbose)
+  if(verbose)
     print(n)
   D = dist(X)
 
@@ -183,6 +183,6 @@ return(matrix[double] P)
 
   P = P + t(P)
   P = P / sum(P)
-  if(is_verbose)
+  if(verbose)
     print("x2p finishing....")
 }

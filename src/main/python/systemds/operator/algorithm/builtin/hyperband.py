@@ -28,10 +28,10 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
-def hyperband(X_train: Matrix,
-              y_train: Matrix,
-              X_val: Matrix,
-              y_val: Matrix,
+def hyperband(X: Matrix,
+              Y: Matrix,
+              Xtest: Matrix,
+              Ytest: Matrix,
               params: List,
               paramRanges: Matrix,
               **kwargs: Dict[str, VALID_INPUT_TYPES]):
@@ -46,10 +46,10 @@ def hyperband(X_train: Matrix,
     
     
     
-    :param X_train: Input Matrix of training vectors
-    :param y_train: Labels for training vectors
-    :param X_val: Input Matrix of validation vectors
-    :param y_val: Labels for validation vectors
+    :param X: Input Matrix of training vectors
+    :param Y: Labels for training vectors
+    :param Xtest: Input Matrix of validation vectors
+    :param Ytest: Labels for validation vectors
     :param params: List of parameters to optimize
     :param paramRanges: The min and max values for the uniform distributions to draw from.
         One row per hyper parameter, first column specifies min, second column max value.
@@ -60,14 +60,14 @@ def hyperband(X_train: Matrix,
     :return: hyper parameters of best performing candidate
     """
 
-    params_dict = {'X_train': X_train, 'y_train': y_train, 'X_val': X_val, 'y_val': y_val, 'params': params, 'paramRanges': paramRanges}
+    params_dict = {'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'params': params, 'paramRanges': paramRanges}
     params_dict.update(kwargs)
     
-    vX_0 = Matrix(X_train.sds_context, '')
-    vX_1 = Frame(X_train.sds_context, '')
+    vX_0 = Matrix(X.sds_context, '')
+    vX_1 = Frame(X.sds_context, '')
     output_nodes = [vX_0, vX_1, ]
 
-    op = MultiReturn(X_train.sds_context, 'hyperband', output_nodes, named_input_nodes=params_dict)
+    op = MultiReturn(X.sds_context, 'hyperband', output_nodes, named_input_nodes=params_dict)
 
     vX_0._unnamed_input_nodes = [op]
     vX_1._unnamed_input_nodes = [op]

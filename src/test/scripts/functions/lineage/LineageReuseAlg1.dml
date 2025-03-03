@@ -23,7 +23,7 @@ X = rand(rows=100, cols=10, sparsity=1.0, seed=1);
 y = X %*% rand(rows=10, cols=1, sparsity=1.0, seed=1);
 R = matrix(0, 101, 2);
 
-[C, S] = steplm(X=X, y=y, icpt=2);
+[C, S] = steplm(X=X, y=y, intercept=2);
 S = cbind(S, matrix(1, 1, 1));
 R[1:nrow(C) ,1] = C;
 R[1:ncol(S) ,2] = t(S);

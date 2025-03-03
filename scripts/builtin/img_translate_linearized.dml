@@ -24,37 +24,37 @@
 # It translates the image and Optionally resizes the image (without scaling).
 # INPUT:
 # ----------------------------------------------------------------------------------------------
-# img_in                Input matrix/image (every row represents a linearized matrix/image)
-# offset_x              The distance to move the image in x direction
-# offset_y              The distance to move the image in y direction
-# out_w                 Width of the output image
-# out_h                 Height of the output image
-# fill_value            The background of the image
-# o_w                   Width of the original 2D images
-# o_h                   Height of the original 2D images
+# img       Input matrix/image (every row represents a linearized matrix/image)
+# offsetX   The distance to move the image in x direction
+# offsetY   The distance to move the image in y direction
+# w         Width of the output image
+# h         Height of the output image
+# value     The background of the image
+# sW        Width of the original 2D images
+# sH        Height of the original 2D images
 # --------------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # --------------------------------------------------------------------------------------------
-# img_out               Output matrix/image  (every row represents a linearized matrix/image)
+# img_out   Output matrix/image  (every row represents a linearized matrix/image)
 # --------------------------------------------------------------------------------------------
 
-m_img_translate_linearized = function(Matrix[Double] img_in, Double offset_x, 
-Double offset_y,Integer out_w, Integer out_h, Double fill_value, Integer o_w, Integer o_h) 
+m_img_translate_linearized = function(Matrix[Double] img, Double offsetX,
+Double offsetY,Integer w, Integer h, Double value, Integer sW, Integer sH)
 return (Matrix[Double] img_out) {
-  offset_x = round(offset_x)
-  offset_y = round(offset_y)
-  img_out = matrix(fill_value, rows=nrow(img_in), cols=out_w * out_h)
-       parfor(y in 1:out_h,check=0) {
-         for (x in 1:out_w) {
-        src_x = x - offset_x
-        src_y = y - offset_y
-        if (src_x >= 1 & src_x <= o_w & src_y >= 1 & src_y <= o_h) {
-          start_index = (src_y - 1) * o_w + src_x
-          dest_index = (y - 1) * out_w + x
+  offsetX = round(offsetX)
+  offsetY = round(offsetY)
+  img_out = matrix(value, rows=nrow(img), cols=w * h)
+       parfor(y in 1:h,check=0) {
+         for (x in 1:w) {
+        src_x = x - offsetX
+        src_y = y - offsetY
+        if (src_x >= 1 & src_x <= sW & src_y >= 1 & src_y <= sH) {
+          start_index = (src_y - 1) * sW + src_x
+          dest_index = (y - 1) * w + x
     
-          if (start_index >= 1 & start_index <= ncol(img_in) & dest_index >= 1 & dest_index <= ncol(img_out)) {
-            img_out[, dest_index] = img_in[, start_index]
+          if (start_index >= 1 & start_index <= ncol(img) & dest_index >= 1 & dest_index <= ncol(img_out)) {
+            img_out[, dest_index] = img[, start_index]
           }  
         }
       }

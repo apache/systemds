@@ -23,9 +23,9 @@
 #
 # INPUT:
 # -----------------------------------------------------------------------------------------
-# img_in       Input matrix/image
+# img          Input matrix/image
 # value        The amount of brightness to be changed for the image
-# channel_max  Maximum value of the brightness of the image
+# maxValue     Maximum channel value of the brightness of the image
 # -----------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -33,7 +33,7 @@
 # img_out  Output matrix/image
 # ----------------------------------------------------------------------------------------------------------------------
 
-m_img_brightness = function(Matrix[Double] img_in, Double value, Integer channel_max) return (Matrix[Double] img_out) {
+m_img_brightness = function(Matrix[Double] img, Double value, Integer maxValue) return (Matrix[Double] img_out) {
   # change the brightness of an image
-  img_out = max(0, min(img_in + value, channel_max))
+  img_out = max(0, min(img + value, maxValue))
 }

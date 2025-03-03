@@ -43,7 +43,7 @@ return (Matrix[Double] Xout, Matrix[Double] Yout)
   Yout = Y
   if(min(Y) != max(Y) & max(Y) <= 2)
   {
-    betas = multiLogReg(X=X, Y=Y, icpt=1, reg=1e-4, maxi=100, maxii=0, verbose=verbose)
+    betas = multiLogReg(X=X, Y=Y, intercept=1, reg=1e-4, maxIter=100, maxInnerIter=0, verbose=verbose)
     [prob, yhat, accuracy] = multiLogRegPredict(X, betas, Y, FALSE)
     
     inc = ((yhat != Y) & (rowMaxs(prob) > threshold))

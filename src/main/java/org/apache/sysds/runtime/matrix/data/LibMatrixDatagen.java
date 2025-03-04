@@ -21,11 +21,14 @@
 package org.apache.sysds.runtime.matrix.data;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,11 +40,16 @@ import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
+import org.apache.sysds.runtime.util.CounterBasedPRNGenerator;
+import org.apache.sysds.runtime.util.IPRNGenerator;
 import org.apache.sysds.runtime.util.NormalPRNGenerator;
 import org.apache.sysds.runtime.util.PRNGenerator;
+import org.apache.sysds.runtime.util.PhiloxNormalCBPRNGenerator;
+import org.apache.sysds.runtime.util.PhiloxUniformCBPRNGenerator;
 import org.apache.sysds.runtime.util.PoissonPRNGenerator;
 import org.apache.sysds.runtime.util.UniformPRNGenerator;
 import org.apache.sysds.runtime.util.UtilFunctions;
+
 
 public class LibMatrixDatagen 
 {
@@ -140,9 +148,11 @@ public class LibMatrixDatagen
 		RandomMatrixGenerator rgen = null;
 		switch (pdf) {
 			case UNIFORM:
+			case CB_UNIFORM:
 				rgen = new RandomMatrixGenerator(pdf, r, c, blen, sp, min, max);
 				break;
 			case NORMAL:
+			case CB_NORMAL:
 				rgen = new RandomMatrixGenerator(pdf, r, c, blen, sp);
 				break;
 			case POISSON:
@@ -465,13 +475,17 @@ public class LibMatrixDatagen
 		int ncb = (int) Math.ceil((double)cols/blen);
 		int counter = 0;
 
+		long[] ctr = {0, 0, 0, 0}; // Counter based RNG counter
+
 		// Setup Pseudo Random Number Generator for cell values based on 'pdf'.
-		PRNGenerator valuePRNG = rgen._valuePRNG;
+		IPRNGenerator valuePRNG = rgen._valuePRNG;
 		if (valuePRNG == null) {
 			switch (rgen._pdf) {
 				case UNIFORM: valuePRNG = new UniformPRNGenerator(); break;
 				case NORMAL:  valuePRNG = new NormalPRNGenerator(); break;
 				case POISSON: valuePRNG = new PoissonPRNGenerator(); break;
+				case CB_UNIFORM: valuePRNG = new PhiloxUniformCBPRNGenerator(); break;
+				case CB_NORMAL: valuePRNG = new PhiloxNormalCBPRNGenerator(); break;
 				default:
 					throw new DMLRuntimeException("Unsupported distribution function for Rand: " + rgen._pdf);
 			}
@@ -505,7 +519,13 @@ public class LibMatrixDatagen
 				// Also note that we cannot use the same seed here, because for ultra-sparse generation
 				// the number of calls to the valuePRNG and nnzPRNG are the same, thus creating correlated
 				// outcomes (bias toward the end of the value range)
-				nnzPRNG.setSeed((long)(valuePRNG.nextDouble()*Long.MAX_VALUE));
+
+				if (valuePRNG instanceof CounterBasedPRNGenerator) {
+					nnzPRNG.setSeed((long)(((CounterBasedPRNGenerator) valuePRNG).getDoubles(ctr, 1)[0]*Long.MAX_VALUE ));
+				} else {
+					nnzPRNG.setSeed((long)(((PRNGenerator) valuePRNG).nextDouble()*Long.MAX_VALUE));
+				}
+
 				boolean localSparse = sparsity < 1 && MatrixBlock.evalSparseFormatInMemory(
 					blockrows, blockcols, (long)(sparsity*blockrows*blockcols));
 				if ( localSparse) {
@@ -515,17 +535,22 @@ public class LibMatrixDatagen
 						out.sparse = true; //otherwise ignored
 						c = out.sparseBlock;
 					}
-					genSparse(c, clen, blockrows, blockcols, rowoffset, coloffset,
-						sparsity, estnnzRow, min, range, valuePRNG, nnzPRNG);
+					if (valuePRNG instanceof PRNGenerator) {
+						genSparse(c, clen, blockrows, blockcols, rowoffset, coloffset,
+								sparsity, estnnzRow, min, range, (PRNGenerator) valuePRNG, nnzPRNG);
+					}
 				}
 				else {
 					if (sparsity == 1.0) {
 						genFullyDense(out.getDenseBlock(), blockrows, blockcols,
-							rowoffset, coloffset, min, range, valuePRNG);
+							rowoffset, coloffset, min, range, valuePRNG, ctr);
 					}
 					else {
-						genDense(out, clen, blockrows, blockcols, rowoffset, coloffset,
-							sparsity, estnnzRow, min, range, valuePRNG, nnzPRNG);
+						if (valuePRNG instanceof PRNGenerator) {
+							genDense(out, clen, blockrows, blockcols, rowoffset, coloffset,
+									sparsity, estnnzRow, min, range, (PRNGenerator) valuePRNG, nnzPRNG);
+						}
+
 					}
 				} // sparse or dense 
 			} // cbj
@@ -590,13 +615,22 @@ public class LibMatrixDatagen
 	}
 	
 	private static void genFullyDense(DenseBlock c, int blockrows, int blockcols, int rowoffset, int coloffset, 
-		double min, double range, PRNGenerator valuePRNG)
+		double min, double range, IPRNGenerator valuePRNG, long[] ctr)
 	{
-		for(int i = rowoffset; i < rowoffset+blockrows; i++) {
+		Iterator<Double> rngStream;
+		if (valuePRNG instanceof PRNGenerator) {
+			rngStream = Stream.generate(() -> min + (range * ((PRNGenerator) valuePRNG).nextDouble())).iterator();
+		} else if (valuePRNG instanceof CounterBasedPRNGenerator) {
+			rngStream = Arrays.stream(((CounterBasedPRNGenerator)valuePRNG).getDoubles(ctr, blockrows * blockcols)).map(i -> min + (range * i)).iterator();
+		} else {
+			throw new DMLRuntimeException("Unsupported PRNGenerator for fully dense generation");
+		}
+		for (int i = rowoffset; i < rowoffset + blockrows; i++) {
 			double[] cvals = c.values(i);
 			int cix = c.pos(i, coloffset);
-			for(int j = 0; j < blockcols; j++)
-				cvals[cix+j] = min + (range * valuePRNG.nextDouble());
+			for (int j = 0; j < blockcols; j++) {
+				cvals[cix + j] = rngStream.next();
+			}
 		}
 	}
 

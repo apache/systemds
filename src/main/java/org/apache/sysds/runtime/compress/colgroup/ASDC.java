@@ -34,7 +34,7 @@ import org.apache.sysds.runtime.compress.estim.EstimationFactors;
  * This column group is handy in cases where sparse unsafe operations is executed on very sparse columns. Then the zeros
  * would be materialized in the group without any overhead.
  */
-public abstract class ASDC extends AMorphingMMColGroup implements AOffsetsGroup , IContainDefaultTuple {
+public abstract class ASDC extends AMorphingMMColGroup implements AOffsetsGroup, IContainDefaultTuple {
 	private static final long serialVersionUID = 769993538831949086L;
 
 	/** Sparse row indexes for the data */
@@ -62,11 +62,26 @@ public abstract class ASDC extends AMorphingMMColGroup implements AOffsetsGroup 
 	@Override
 	public final CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
 		EstimationFactors ef = new EstimationFactors(getNumValues(), _numRows, getNumberOffsets(), _dict.getSparsity());
-		return new CompressedSizeInfoColGroup(_colIndexes, ef, nRow, getCompType(),getEncoding());
+		return new CompressedSizeInfoColGroup(_colIndexes, ef, estimateInMemorySize(), getCompType(), getEncoding());
 	}
 
 	@Override
 	public ICLAScheme getCompressionScheme() {
 		return SDCScheme.create(this);
+	}
+
+	@Override
+	public AColGroup morph(CompressionType ct, int nRow) {
+		if(ct == getCompType())
+			return this;
+		else if(ct == CompressionType.SDCFOR)
+			return this; // it does not make sense to change to FOR.
+		else
+			return super.morph(ct, nRow);
+	}
+
+	@Override
+	protected boolean allowShallowIdentityRightMult() {
+		return false;
 	}
 }

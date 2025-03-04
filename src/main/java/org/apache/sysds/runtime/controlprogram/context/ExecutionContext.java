@@ -624,13 +624,10 @@ public class ExecutionContext {
 		mo.release();
 	}
 
-	@SuppressWarnings("unused")
 	public void setMatrixOutputAndLineage(String varName, Future<MatrixBlock> fmb, LineageItem li) {
 		if (isAutoCreateVars() && !containsVariable(varName)) {
-			//FIXME without adding this fmo object here to the symbol table
-			// it would crash in federated operations (autocreatevars)
-			MatrixObject fmo = new MatrixObjectFuture(Types.ValueType.FP64,
-				OptimizerUtils.getUniqueTempFileName(), fmb);
+			setVariable(varName, new MatrixObjectFuture(Types.ValueType.FP64,
+				OptimizerUtils.getUniqueTempFileName(), fmb));
 		}
 		MatrixObject mo = getMatrixObject(varName);
 		MatrixObjectFuture fmo = new MatrixObjectFuture(mo, fmb);

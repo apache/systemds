@@ -20,8 +20,6 @@
 # -------------------------------------------------------------
 from typing import List
 
-from sklearn.preprocessing import StandardScaler
-
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.representation import Representation
 
@@ -34,7 +32,7 @@ class Fusion(Representation):
         """
         super().__init__(name)
 
-    def fuse(self, modalities: List[Modality]):
+    def transform(self, modalities: List[Modality]):
         """
         Implemented for every child class and creates a fused representation out of
         multiple modalities

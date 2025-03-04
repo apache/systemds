@@ -33,6 +33,7 @@ import java.util.Random;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
@@ -571,62 +572,62 @@ public class ColGroupTest extends ColGroupBase {
 
 	@Test
 	public void UA_SUM_KAHN() {
-		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator("uak+", 1), 1);
+		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAKP.toString(), 1), 1);
 	}
 
 	@Test
 	public void UA_SUM() {
-		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator("ua+", 1), 1);
+		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAP.toString(), 1), 1);
 	}
 
 	@Test
 	public void UA_SUM_REP() {
-		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator("ua+", 1), 2);
+		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAP.toString(), 1), 2);
 	}
 
 	@Test
 	public void UA_MAX() {
-		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator("uamax", 1), 1);
+		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMAX.toString(), 1), 1);
 	}
 
 	@Test
 	public void UA_MAX_REP() {
-		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator("uamax", 1), 2);
+		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMAX.toString(), 1), 2);
 	}
 
 	@Test
 	public void UA_MIN() {
-		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator("uamin", 1), 1);
+		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMIN.toString(), 1), 1);
 	}
 
 	@Test
 	public void UA_MIN_REP() {
-		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator("uamin", 1), 2);
+		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAMIN.toString(), 1), 2);
 	}
 
 	@Test
 	public void UA_PRODUCT() {
-		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator("ua*", 1), 1);
+		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAM.toString(), 1), 1);
 	}
 
 	@Test
 	public void UA_PRODUCT_REP() {
-		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator("ua*", 1), 2);
+		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UAM.toString(), 1), 2);
 	}
 
 	@Test
 	public void UA_SUMSQ_KAHN() {
-		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator("uasqk+", 1), 1);
+		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UASQKP.toString(), 1), 1);
 	}
 
 	@Test(expected = DMLRuntimeException.class)
 	public void UA_INDEX() {
-		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator("uarimax", 1), 1);
+		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARIMAX.toString(), 1), 1);
 	}
 
 	@Test(expected = DMLRuntimeException.class)
 	public void UA_VAR() {
-		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator("uacvar", 1), 1);
+		UA_FULL(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACVAR.toString(), 1), 1);
 	}
 
 	protected void UA_FULL(AggregateUnaryOperator op, int reps) {
@@ -658,32 +659,32 @@ public class ColGroupTest extends ColGroupBase {
 
 	@Test
 	public void UA_SUM_KAHN_COL() {
-		UA_COL(InstructionUtils.parseBasicAggregateUnaryOperator("uack+", 1));
+		UA_COL(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACKP.toString(), 1));
 	}
 
 	@Test
 	public void UA_SUM_COL() {
-		UA_COL(InstructionUtils.parseBasicAggregateUnaryOperator("uac+", 1));
+		UA_COL(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACP.toString(), 1));
 	}
 
 	@Test
 	public void UA_MAX_COL() {
-		UA_COL(InstructionUtils.parseBasicAggregateUnaryOperator("uacmax", 1));
+		UA_COL(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACMAX.toString(), 1));
 	}
 
 	@Test
 	public void UA_MIN_COL() {
-		UA_COL(InstructionUtils.parseBasicAggregateUnaryOperator("uacmin", 1));
+		UA_COL(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACMIN.toString(), 1));
 	}
 
 	@Test
 	public void UA_PRODUCT_COL() {
-		UA_COL(InstructionUtils.parseBasicAggregateUnaryOperator("uac*", 1));
+		UA_COL(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACM.toString(), 1));
 	}
 
 	@Test
 	public void UA_SUMSQ_KAHN_COL() {
-		UA_COL(InstructionUtils.parseBasicAggregateUnaryOperator("uacsqk+", 1));
+		UA_COL(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UACSQKP.toString(), 1));
 	}
 
 	protected void UA_COL(AggregateUnaryOperator op) {
@@ -710,32 +711,39 @@ public class ColGroupTest extends ColGroupBase {
 
 	@Test
 	public void UA_SUM_KAHN_ROW() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uark+", 1));
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARKP.toString(), 1));
 	}
 
 	@Test
 	public void UA_SUM_ROW() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uar+", 1));
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARP.toString(), 1));
 	}
 
 	@Test
 	public void UA_MAX_ROW() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uarmax", 1));
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARMAX.toString(), 1));
 	}
 
 	@Test
 	public void UA_MIN_ROW() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uarmin", 1));
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARMIN.toString(), 1));
 	}
 
 	@Test
 	public void UA_PRODUCT_ROW() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uar*", 1));
+		try {
+			UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARM.toString(), 1));
+		}
+		catch(AssertionError e) {
+			LOG.error(base);
+			LOG.error(other);
+			throw e;
+		}
 	}
 
 	@Test
 	public void UA_SUMSQ_KAHN_ROW() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uarsqk+", 1));
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARSQKP.toString(), 1));
 	}
 
 	protected void UA_ROW(AggregateUnaryOperator op) {
@@ -744,92 +752,92 @@ public class ColGroupTest extends ColGroupBase {
 
 	@Test
 	public void UA_SUM_KAHN_ROW_END() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uark+", 1), nRow - 4, nRow - 1);
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARKP.toString(), 1), nRow - 4, nRow - 1);
 	}
 
 	@Test
 	public void UA_SUM_ROW_END() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uar+", 1), nRow - 4, nRow - 1);
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARP.toString(), 1), nRow - 4, nRow - 1);
 	}
 
 	@Test
 	public void UA_MAX_ROW_END() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uarmax", 1), nRow - 4, nRow - 1);
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARMAX.toString(), 1), nRow - 4, nRow - 1);
 	}
 
 	@Test
 	public void UA_MIN_ROW_END() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uarmin", 1), nRow - 4, nRow - 1);
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARMIN.toString(), 1), nRow - 4, nRow - 1);
 	}
 
 	@Test
 	public void UA_PRODUCT_ROW_END() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uar*", 1), nRow - 4, nRow - 1);
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARM.toString(), 1), nRow - 4, nRow - 1);
 	}
 
 	@Test
 	public void UA_SUMSQ_KAHN_ROW_END() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uarsqk+", 1), nRow - 4, nRow - 1);
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARSQKP.toString(), 1), nRow - 4, nRow - 1);
 	}
 
 	@Test
 	public void UA_SUM_KAHN_ROW_START() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uark+", 1), 1, 10);
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARKP.toString(), 1), 1, 10);
 	}
 
 	@Test
 	public void UA_SUM_ROW_START() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uar+", 1), 1, 10);
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARP.toString(), 1), 1, 10);
 	}
 
 	@Test
 	public void UA_MAX_ROW_START() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uarmax", 1), 1, 10);
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARMAX.toString(), 1), 1, 10);
 	}
 
 	@Test
 	public void UA_MIN_ROW_START() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uarmin", 1), 1, 10);
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARMIN.toString(), 1), 1, 10);
 	}
 
 	@Test
 	public void UA_PRODUCT_ROW_START() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uar*", 1), 1, 10);
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARM.toString(), 1), 1, 10);
 	}
 
 	@Test
 	public void UA_SUMSQ_KAHN_ROW_START() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uarsqk+", 1), 1, 10);
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARSQKP.toString(), 1), 1, 10);
 	}
 
 	@Test
 	public void UA_SUM_KAHN_ROW_BEGINNING() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uark+", 1), 0, 4);
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARKP.toString(), 1), 0, 4);
 	}
 
 	@Test
 	public void UA_SUM_ROW_BEGINNING() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uar+", 1), 0, 4);
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARP.toString(), 1), 0, 4);
 	}
 
 	@Test
 	public void UA_MAX_ROW_BEGINNING() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uarmax", 1), 0, 4);
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARMAX.toString(), 1), 0, 4);
 	}
 
 	@Test
 	public void UA_MIN_ROW_BEGINNING() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uarmin", 1), 0, 4);
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARMIN.toString(), 1), 0, 4);
 	}
 
 	@Test
 	public void UA_PRODUCT_ROW_BEGINNING() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uar*", 1), 0, 4);
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARM.toString(), 1), 0, 4);
 	}
 
 	@Test
 	public void UA_SUMSQ_KAHN_ROW_BEGINNING() {
-		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uarsqk+", 1), 0, 4);
+		UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARSQKP.toString(), 1), 0, 4);
 	}
 
 	protected void UA_ROW(AggregateUnaryOperator op, int rl, int ru) {
@@ -1171,26 +1179,17 @@ public class ColGroupTest extends ColGroupBase {
 
 	@Test
 	public void leftMultNoPreAggDenseMultiRowColRange() {
-		try {
-			leftMultNoPreAgg(3, 0, 3, 5, nRow - 4);
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
+		leftMultNoPreAgg(3, 0, 3, 5, nRow - 4);
 	}
 
-	@Test(expected = NotImplementedException.class)
-	// @Test
+	@Test
 	public void leftMultNoPreAggSparseColRange() {
 		leftMultNoPreAgg(3, 0, 1, 5, nRow - 4, 0.1);
-		throw new NotImplementedException("Make test parse since the check actually says it is correct");
 	}
 
-	@Test(expected = NotImplementedException.class)
+	@Test
 	public void leftMultNoPreAggSparseMultiRowColRange() {
 		leftMultNoPreAgg(3, 0, 3, 5, nRow - 4, 0.1);
-		throw new NotImplementedException("Make test parse since the check actually says it is correct");
 	}
 
 	@Test
@@ -1203,16 +1202,14 @@ public class ColGroupTest extends ColGroupBase {
 		leftMultNoPreAgg(3, 0, 3, 5, 9);
 	}
 
-	@Test(expected = NotImplementedException.class)
+	@Test
 	public void leftMultNoPreAggSparseColStartRange() {
 		leftMultNoPreAgg(3, 0, 1, 5, 9, 0.1);
-		throw new NotImplementedException("Make test parse since the check actually says it is correct");
 	}
 
-	@Test(expected = NotImplementedException.class)
+	@Test
 	public void leftMultNoPreAggSparseMultiRowColStartRange() {
 		leftMultNoPreAgg(3, 0, 3, 5, 9, 0.1);
-		throw new NotImplementedException("Make test parse since the check actually says it is correct");
 	}
 
 	@Test
@@ -1225,30 +1222,24 @@ public class ColGroupTest extends ColGroupBase {
 		leftMultNoPreAgg(3, 0, 3, nRow - 10, nRow - 3);
 	}
 
-	@Test(expected = NotImplementedException.class)
+	@Test
 	public void leftMultNoPreAggSparseColEndRange() {
 		leftMultNoPreAgg(3, 0, 1, nRow - 10, nRow - 3, 0.1);
-		throw new NotImplementedException("Make test parse since the check actually says it is correct");
 	}
 
-	@Test(expected = NotImplementedException.class)
+	@Test
 	public void leftMultNoPreAggSparseMultiRowColEndRange() {
 		leftMultNoPreAgg(3, 0, 3, nRow - 10, nRow - 3, 0.1);
-		throw new NotImplementedException("Make test parse since the check actually says it is correct");
 	}
 
-	@Test(expected = NotImplementedException.class)
-	// @Test
+	@Test
 	public void leftMultNoPreAggSparseMultiRowColToEnd() {
 		leftMultNoPreAgg(3, 0, 3, nRow - 10, nRow, 0.1);
-		throw new NotImplementedException("Make test parse since the check actually says it is correct");
 	}
 
-	@Test(expected = NotImplementedException.class)
-	// @Test
+	@Test
 	public void leftMultNoPreAggSparseMultiRowColFromStart() {
 		leftMultNoPreAgg(3, 0, 3, 0, 4, 0.1);
-		throw new NotImplementedException("Make test parse since the check actually says it is correct");
 	}
 
 	public void leftMultNoPreAgg(int nRowLeft, int rl, int ru, int cl, int cu) {
@@ -1291,7 +1282,7 @@ public class ColGroupTest extends ColGroupBase {
 			compare(bt, ot);
 		}
 		catch(NotImplementedException e) {
-			throw e;
+			LOG.error("not implemented: " + base.getClass().getSimpleName() + " or: " + other.getClass().getSimpleName());
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -1320,7 +1311,6 @@ public class ColGroupTest extends ColGroupBase {
 		selection(mb, ret);
 	}
 
-
 	@Test
 	public void sparseSelectionEmptyRows() {
 		MatrixBlock mb = CLALibSelectionMultTest.createSelectionMatrix(nRow, 50, true);
@@ -1347,23 +1337,22 @@ public class ColGroupTest extends ColGroupBase {
 		MatrixBlock ret1 = new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), ret.isInSparseFormat());
 		ret1.allocateBlock();
 
-
 		MatrixBlock ret2 = new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), ret.isInSparseFormat());
 		ret2.allocateBlock();
 
 		try {
 
 			base.selectionMultiply(selection, points, ret1, 0, selection.getNumRows());
-			other.selectionMultiply(selection, points, ret2,  0, selection.getNumRows());
+			other.selectionMultiply(selection, points, ret2, 0, selection.getNumRows());
 
-			TestUtils.compareMatricesBitAvgDistance(ret1, ret2, 0, 0, base.getClass().getSimpleName() + " vs " + other.getClass().getSimpleName());
-		
-			
+			TestUtils.compareMatricesBitAvgDistance(ret1, ret2, 0, 0,
+				base.getClass().getSimpleName() + " vs " + other.getClass().getSimpleName());
+
 		}
 		catch(NotImplementedException e) {
 			// okay
 		}
-		catch(Exception e){
+		catch(Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
@@ -1619,15 +1608,23 @@ public class ColGroupTest extends ColGroupBase {
 
 	private MatrixBlock mmPreAggDense(APreAgg g, MatrixBlock mb, double[] cv, double[] rowSum, int rl, int ru, int cl,
 		int cu) {
-		final MatrixBlock retB = new MatrixBlock(ru, maxCol, false);
-		retB.allocateDenseBlock();
-		double[] preB = new double[g.getPreAggregateSize() * (ru - rl)];
-		g.preAggregateDense(mb, preB, rl, ru, cl, cu);
-		MatrixBlock preAggB = new MatrixBlock(ru - rl, g.getPreAggregateSize(), preB);
-		MatrixBlock tmpRes = new MatrixBlock(1, retB.getNumColumns(), false);
-		g.mmWithDictionary(preAggB, tmpRes, retB, 1, rl, ru);
-		mmRowSum(retB, cv, rowSum, rl, ru);
-		return retB;
+		try {
+			final MatrixBlock retB = new MatrixBlock(ru, maxCol, false);
+			retB.allocateDenseBlock();
+			double[] preB = new double[g.getPreAggregateSize() * (ru - rl)];
+			g.preAggregateDense(mb, preB, rl, ru, cl, cu);
+			MatrixBlock preAggB = new MatrixBlock(ru - rl, g.getPreAggregateSize(), preB);
+			MatrixBlock tmpRes = new MatrixBlock(1, retB.getNumColumns(), false);
+			tmpRes.allocateBlock();
+			g.mmWithDictionary(preAggB, tmpRes, retB, 1, rl, ru);
+			mmRowSum(retB, cv, rowSum, rl, ru);
+			return retB;
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+			return null;
+		}
 	}
 
 	private MatrixBlock mmRowSum(double[] cv, double[] rowSum, int rl, int ru, int cl, int cu) {
@@ -1890,8 +1887,8 @@ public class ColGroupTest extends ColGroupBase {
 	public void rightMultWithAllCols(MatrixBlock right) {
 		try {
 			final IColIndex cols = ColIndexFactory.create(right.getNumColumns());
-			AColGroup b = base.rightMultByMatrix(right, cols);
-			AColGroup o = other.rightMultByMatrix(right, cols);
+			AColGroup b = base.rightMultByMatrix(right, cols, 1);
+			AColGroup o = other.rightMultByMatrix(right, cols, 1);
 			if(!(b == null && o == null))
 				compare(b, o);
 		}
@@ -2254,8 +2251,7 @@ public class ColGroupTest extends ColGroupBase {
 			MatrixBlock btd = denseMB(ru - rl, maxCol);
 			decompressToDenseBlock(otd, btd, a, b, 0, nRow);
 
-			UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uar+", 1), 0, newNRow, a, b, newNRow);
-
+			UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARP.toString(), 1), 0, newNRow, a, b, newNRow);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -2362,7 +2358,7 @@ public class ColGroupTest extends ColGroupBase {
 				assertEquals(s2, s, 0.0001);
 				assertEquals(s2n, s, 0.0001);
 
-				UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator("uar+", 1), 0, nRow * 2, g2, g2n, nRow * 2);
+				UA_ROW(InstructionUtils.parseBasicAggregateUnaryOperator(Opcodes.UARP.toString(), 1), 0, nRow * 2, g2, g2n, nRow * 2);
 			}
 		}
 		catch(NotImplementedException e) {

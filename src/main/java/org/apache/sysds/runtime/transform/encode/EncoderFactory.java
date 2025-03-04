@@ -126,16 +126,25 @@ public interface EncoderFactory {
 			rcIDs = unionDistinct(rcIDs, except(except(dcIDs, binIDs), haIDs));
 			// Error out if the first level encoders have overlaps
 			if (intersect(rcIDs, binIDs, haIDs, weIDs, bowIDs))
-				throw new DMLRuntimeException("More than one encoders (recode, binning, hashing, word_embedding, bag_of_words) on one column is not allowed");
+				throw new DMLRuntimeException("More than one encoders (recode, binning, hashing, word_embedding, bag_of_words) on one column is not allowed:\n" + spec);
 
 			List<Integer> ptIDs = except(UtilFunctions.getSeqList(1, clen, 1), naryUnionDistinct(rcIDs, haIDs, binIDs, weIDs, bowIDs));
-			List<Integer> oIDs = Arrays.asList(ArrayUtils
-				.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.OMIT.toString(), minCol, maxCol)));
-			List<Integer> mvIDs = Arrays.asList(ArrayUtils.toObject(
-				TfMetaUtils.parseJsonObjectIDList(jSpec, colnames, TfMethod.IMPUTE.toString(), minCol, maxCol)));
+			List<Integer> oIDs = new ArrayList<>(Arrays.asList(ArrayUtils
+				.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.OMIT.toString(), minCol, maxCol))));
+			List<Integer> mvIDs = new ArrayList<>(Arrays.asList(ArrayUtils.toObject(
+				TfMetaUtils.parseJsonObjectIDList(jSpec, colnames, TfMethod.IMPUTE.toString(), minCol, maxCol))));
 			List<Integer> udfIDs = TfMetaUtils.parseUDFColIDs(jSpec, colnames, minCol, maxCol);
 
-
+			// robustness for transformencode specs w/ non-existing columns (so far, endless loops)
+			rcIDs.removeIf(i -> i > clen);
+			ptIDs.removeIf(i -> i > clen);
+			oIDs.removeIf(i -> i > clen);
+			mvIDs.removeIf(i -> i > clen);
+			udfIDs.removeIf(i -> i > clen);
+			binIDs.removeIf(i -> i > clen);
+			weIDs.removeIf(i -> i > clen);
+			bowIDs.removeIf(i -> i > clen);
+			
 			// create individual encoders
 			if(!rcIDs.isEmpty())
 				for(Integer id : rcIDs)
@@ -256,6 +265,8 @@ public interface EncoderFactory {
 			return EncoderType.Recode.ordinal();
 		else if(columnEncoder instanceof ColumnEncoderWordEmbedding)
 			return EncoderType.WordEmbedding.ordinal();
+		else if(columnEncoder instanceof ColumnEncoderBagOfWords)
+			return EncoderType.BagOfWords.ordinal();
 		throw new DMLRuntimeException("Unsupported encoder type: " + columnEncoder.getClass().getCanonicalName());
 	}
 
@@ -274,6 +285,8 @@ public interface EncoderFactory {
 				return new ColumnEncoderRecode();
 			case WordEmbedding:
 				return new ColumnEncoderWordEmbedding();
+			case BagOfWords:
+				return new ColumnEncoderBagOfWords();
 			default:
 				throw new DMLRuntimeException("Unsupported encoder type: " + etype);
 		}

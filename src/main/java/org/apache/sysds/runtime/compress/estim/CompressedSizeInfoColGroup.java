@@ -220,6 +220,8 @@ public class CompressedSizeInfoColGroup {
 
 	private static EnumMap<CompressionType, Double> calculateCompressionSizes(IColIndex cols, EstimationFactors fact,
 		Set<CompressionType> validCompressionTypes) {
+		if(validCompressionTypes.size() > 10 )
+			throw new DMLCompressionException("Invalid big number of compression types");
 		EnumMap<CompressionType, Double> res = new EnumMap<>(CompressionType.class);
 		for(CompressionType ct : validCompressionTypes) {
 			double compSize = getCompressionSize(cols, ct, fact);

@@ -31,11 +31,11 @@ public class MapToUByte extends MapToByte {
 	private static final long serialVersionUID = -2498505439667351828L;
 
 	protected MapToUByte(int size) {
-		this(127, size);
+		this(128, size);
 	}
 
 	public MapToUByte(int unique, int size) {
-		super(Math.min(unique, 127), new byte[size]);
+		super(Math.min(unique, 128), new byte[size]);
 	}
 
 	protected MapToUByte(int unique, byte[] data) {
@@ -60,10 +60,6 @@ public class MapToUByte extends MapToByte {
 	@Override
 	public void fill(int v) {
 		Arrays.fill(_data, (byte) (v % 128));
-	}
-
-	public static long getInMemorySize(int dataLength) {
-		return MapToByte.getInMemorySize(dataLength);
 	}
 
 	@Override
@@ -119,28 +115,37 @@ public class MapToUByte extends MapToByte {
 
 	@Override
 	public int[] getCounts(int[] ret) {
-		for(int i = 0; i < _data.length; i++)
+		final int h = (_data.length) % 8;
+		for(int i = 0; i < h; i++)
 			ret[_data[i]]++;
+		getCountsBy8P(ret, h, _data.length);
 		return ret;
 	}
 
-	@Override
-	public int getMaxPossible() {
-		return 128;
+	private void getCountsBy8P(int[] ret, int s, int e) {
+		for(int i = s; i < e; i += 8) {
+			ret[_data[i]]++;
+			ret[_data[i + 1]]++;
+			ret[_data[i + 2]]++;
+			ret[_data[i + 3]]++;
+			ret[_data[i + 4]]++;
+			ret[_data[i + 5]]++;
+			ret[_data[i + 6]]++;
+			ret[_data[i + 7]]++;
+		}
 	}
 
 	@Override
 	protected void decompressToRangeNoOffBy8(double[] c, int r, double[] values) {
 		c[r] += values[_data[r]];
-		c[r+1] += values[_data[r+1]];
-		c[r+2] += values[_data[r+2]];
-		c[r+3] += values[_data[r+3]];
-		c[r+4] += values[_data[r+4]];
-		c[r+5] += values[_data[r+5]];
-		c[r+6] += values[_data[r+6]];
-		c[r+7] += values[_data[r+7]];
+		c[r + 1] += values[_data[r + 1]];
+		c[r + 2] += values[_data[r + 2]];
+		c[r + 3] += values[_data[r + 3]];
+		c[r + 4] += values[_data[r + 4]];
+		c[r + 5] += values[_data[r + 5]];
+		c[r + 6] += values[_data[r + 6]];
+		c[r + 7] += values[_data[r + 7]];
 	}
-
 
 	@Override
 	public void decompressToRange(double[] c, int rl, int ru, int offR, double[] values) {
@@ -166,7 +171,6 @@ public class MapToUByte extends MapToByte {
 		for(int rc = rl + h; rc < ru; rc += 8)
 			decompressToRangeNoOffBy8(c, rc, values);
 	}
-
 
 	@Override
 	public AMapToData resize(int unique) {

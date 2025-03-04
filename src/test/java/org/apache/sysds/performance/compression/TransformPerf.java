@@ -75,7 +75,6 @@ public class TransformPerf extends APerfTest<Serialize.InOut, FrameBlock> {
 		}
 	}
 
-	@SuppressWarnings("unused")
 	private void detectSchema(int k) {
 		FrameBlock fb = gen.take();
 		long in = fb.getInMemorySize();
@@ -84,7 +83,6 @@ public class TransformPerf extends APerfTest<Serialize.InOut, FrameBlock> {
 		ret.add(new InOut(in, out));
 	}
 
-	@SuppressWarnings("unused")
 	private void detectAndApply(int k) {
 		FrameBlock fb = gen.take();
 		long in = fb.getInMemorySize();
@@ -94,7 +92,6 @@ public class TransformPerf extends APerfTest<Serialize.InOut, FrameBlock> {
 		ret.add(new InOut(in, outS));
 	}
 
-	@SuppressWarnings("unused")
 	private void transformEncode(int k) {
 		FrameBlock fb = gen.take();
 		long in = fb.getInMemorySize();

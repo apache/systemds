@@ -20,6 +20,7 @@
 package org.apache.sysds.lops;
 
  
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.AggOp;
@@ -37,7 +38,7 @@ import org.apache.sysds.common.Types.ValueType;
  */
 public class UAggOuterChain extends Lop 
 {
-	public static final String OPCODE = "uaggouterchain";
+	public static final String OPCODE = Opcodes.UAGGOUTERCHAIN.toString();
 
 	//outer operation
 	private AggOp _uaggOp = null;

@@ -27,9 +27,9 @@ import org.apache.hadoop.io.Writable;
 
 public class ArrayWrapper implements Writable {
 
-	public Array<?> _a; 
+	public Array<?> _a;
 
-	public ArrayWrapper(Array<?> a){
+	public ArrayWrapper(Array<?> a) {
 		_a = a;
 	}
 
@@ -44,5 +44,5 @@ public class ArrayWrapper implements Writable {
 		int s = in.readInt();
 		_a = ArrayFactory.read(in, s);
 	}
-	
+
 }

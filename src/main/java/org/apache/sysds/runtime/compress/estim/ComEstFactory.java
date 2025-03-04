@@ -23,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.lib.CLALibSlice;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public interface ComEstFactory {
@@ -37,13 +38,13 @@ public interface ComEstFactory {
 	 * @return A new CompressionSizeEstimator used to extract information of column groups
 	 */
 	public static AComEst createEstimator(MatrixBlock data, CompressionSettings cs, int k) {
-		if(data instanceof CompressedMatrixBlock)
-			return createCompressedEstimator((CompressedMatrixBlock) data, cs);
-
 		final int nRows = cs.transposed ? data.getNumColumns() : data.getNumRows();
 		final int nCols = cs.transposed ? data.getNumRows() : data.getNumColumns();
 		final double sparsity = data.getSparsity();
 		final int sampleSize = getSampleSize(cs, nRows, nCols, sparsity);
+		
+		if(data instanceof CompressedMatrixBlock)
+			return createCompressedEstimator((CompressedMatrixBlock) data, cs, sampleSize, k);
 
 		if(data.isEmpty())
 			return createExactEstimator(data, cs);
@@ -76,8 +77,17 @@ public interface ComEstFactory {
 		return new ComEstExact(data, cs);
 	}
 
-	private static ComEstCompressed createCompressedEstimator(CompressedMatrixBlock data, CompressionSettings cs) {
-		LOG.debug("Using Compressed Estimator");
+	private static AComEst createCompressedEstimator(CompressedMatrixBlock data, CompressionSettings cs, int sampleSize,
+		int k) {
+		if(sampleSize < data.getNumRows()) {
+			LOG.debug("Trying to sample");
+			final MatrixBlock slice = CLALibSlice.sliceRowsCompressed(data, 0, sampleSize);
+			if(slice instanceof CompressedMatrixBlock) {
+				LOG.debug("Using Sampled Compressed Estimator " + sampleSize);
+				return new ComEstCompressedSample((CompressedMatrixBlock) slice, cs, data, k);
+			}
+		}
+		LOG.debug("Using Full Compressed Estimator");
 		return new ComEstCompressed(data, cs);
 	}
 

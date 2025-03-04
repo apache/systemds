@@ -55,12 +55,12 @@ jobs:
         distribution: ${{ matrix.javadist }}
         java-version: ${{ matrix.java }}
         cache: 'maven'
-  
+
     - name: Make Documentation SystemDS Java
       run: mvn -ntp -P distribution package
 
   doc2:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     name: Python
     steps:
     - name: Checkout Repository

@@ -942,9 +942,15 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			output.setBlocksize (id.getBlocksize());
 			output.setValueType(id.getValueType());
 			break;
+		case TRACE:
+			if(getFirstExpr().getOutput().dimsKnown() 
+				&& getFirstExpr().getOutput().getDim1() != getFirstExpr().getOutput().getDim2()) 
+			{
+				raiseValidateError("Trace is only defined on squared matrices but found ["
+					+getFirstExpr().getOutput().getDim1()+"x"+getFirstExpr().getOutput().getDim2()+"].", conditional);
+			}
 		case SUM:
 		case PROD:
-		case TRACE:
 		case SD:
 		case VAR:
 			// sum(X);
@@ -1301,6 +1307,17 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			}
 			output.setBlocksize(id.getBlocksize());
 			output.setValueType(id.getValueType());
+			break;
+		case DET:
+			checkNumParameters(1);
+			checkMatrixParam(getFirstExpr());
+			if ( id.getDim2() == -1 || id.getDim1() != id.getDim2() ) {
+				raiseValidateError("det requires a square matrix as first argument.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+			}
+			output.setDataType(DataType.SCALAR);
+			output.setDimensions(0, 0);
+			output.setBlocksize(0);
+			output.setValueType(ValueType.FP64);
 			break;
 		case NROW:
 		case NCOL:
@@ -1759,6 +1776,19 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			output.setDimensions(in.getDim1(), in.getDim2());
 			output.setBlocksize(in.getBlocksize());
 			break;
+
+		case SQRT_MATRIX_JAVA:
+
+			checkNumParameters(1);
+			checkMatrixParam(getFirstExpr());
+			output.setDataType(DataType.MATRIX);
+			output.setValueType(ValueType.FP64);
+			Identifier sqrt = getFirstExpr().getOutput();
+			if(sqrt.dimsKnown() && sqrt.getDim1() != sqrt.getDim2())
+				raiseValidateError("Input to sqrtMatrix() must be square matrix -- given: a " + sqrt.getDim1() + "x" + sqrt.getDim2() + " matrix.", conditional);
+			output.setDimensions( sqrt.getDim1(),  sqrt.getDim2());
+			output.setBlocksize( sqrt.getBlocksize());
+			break;
 		
 		case CHOLESKY:
 		{
@@ -1974,8 +2004,8 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 		case DECOMPRESS:
 			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND){
 				checkNumParameters(1);
-				checkMatrixParam(getFirstExpr());
-				output.setDataType(DataType.MATRIX);
+				checkMatrixFrameParam(getFirstExpr());
+				output.setDataType(getFirstExpr().getOutput().getDataType());
 				output.setDimensions(id.getDim1(), id.getDim2());
 				output.setBlocksize (id.getBlocksize());
 				output.setValueType(id.getValueType());

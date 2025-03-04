@@ -64,6 +64,7 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
+import org.apache.sysds.utils.MemoryEstimates;
 
 public class OptimizerUtils 
 {
@@ -198,7 +199,7 @@ public class OptimizerUtils
 	public static boolean ALLOW_SUM_PRODUCT_REWRITES2 = true;
 
 	/**
-	 * Enables additional mmchain optimizations. in the future, this might be merged with
+	 * Enables additional mmchain optimizations. In the future, this might be merged with
 	 * ALLOW_SUM_PRODUCT_REWRITES.
 	 */
 	public static boolean ALLOW_ADVANCED_MMCHAIN_REWRITES = false;
@@ -787,6 +788,18 @@ public class OptimizerUtils
 	{
 		double sp = getSparsity(nrows, ncols, nnz);
 		return estimateSizeExactSparsity(nrows, ncols, sp);
+	}
+
+
+	public static long estimateSizeExactFrame(long nRows, long nCols){
+		// Currently we do not support frames larger than INT. 
+		// Therefore, we estimate their size to be extremely large.
+		// The large size force spark operations.
+		if(nRows > Integer.MAX_VALUE)
+			return Long.MAX_VALUE;
+		
+		// assuming String arrays and on average 8 characters per value.
+		return (long)MemoryEstimates.stringArrayCost((int)nRows, 8) * nCols;
 	}
 	
 	/**

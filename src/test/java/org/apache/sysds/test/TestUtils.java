@@ -810,6 +810,10 @@ public class TestUtils {
 			new double[][]{actualMatrix}, 1, expectedMatrix.length, epsilon);
 	}
 
+	public static void compareMatrices(double[] expectedMatrix, double[] actualMatrix, double epsilon, String message) {
+		compareMatrices(new double[][]{expectedMatrix},
+			new double[][]{actualMatrix}, 1, expectedMatrix.length, epsilon, message);
+	}
 
 	public static void compareMatrices(double[][] expectedMatrix, double[][] actualMatrix, int rows, int cols,
 		double epsilon) {
@@ -904,8 +908,9 @@ public class TestUtils {
 			}
 		}
 
-		for(int i = 0; i < rows; i++) {
-			for(int j = 0; j < cols; j++) {
+		
+		for(int j = 0; j < cols; j++) {
+			for(int i = 0; i < rows; i++) {
 				final Object a = expected.get(i, j);
 				final Object b = actual.get(i, j);
 				if(a == null)
@@ -2132,6 +2137,17 @@ public class TestUtils {
 		return vector;
 	}
 
+	public static int[] generateTestIntVector(int cols, int min, int max, double sparsity, long seed) {
+		int[] vector = new int[cols];
+		Random random = (seed == -1) ? TestUtils.random : new Random(seed);
+		for(int j = 0; j < cols; j++) {
+			if(random.nextDouble() > sparsity)
+				continue;
+			vector[j] = (random.nextInt(max - min) + min);
+		}
+		return vector;
+	}
+
 	/**
 	 *
 	 * Generates a test matrix with the specified parameters as a MatrixBlock.
@@ -2336,6 +2352,15 @@ public class TestUtils {
 		return generateRandomFrameBlock(rows, schema, random);
 	}
 
+	/**
+	 * Generate a random FrameBlock
+	 * 
+	 * @param rows       The number of rows in the block
+	 * @param schema     The schema (also determines the number of columns)
+	 * @param seed       The seed for the random generators
+	 * @param nullChance The percentage of values that are null. (0 is no nulls, while 1 is all null)
+	 * @return A new FrameBlock
+	 */
 	public static FrameBlock generateRandomFrameBlock(int rows, ValueType[] schema, long seed, double nullChance){
 		Random random = (seed == -1) ? TestUtils.random : new Random(seed);
 

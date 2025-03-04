@@ -19,14 +19,13 @@
 
 package org.apache.sysds.runtime.io;
 
-import java.io.IOException;
+import java.util.List;
 
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.lib.FrameLibCompress;
+import org.apache.sysds.runtime.matrix.data.Pair;
 
 public class FrameWriterCompressed extends FrameWriterBinaryBlockParallel {
 
@@ -37,11 +36,10 @@ public class FrameWriterCompressed extends FrameWriterBinaryBlockParallel {
 	}
 
 	@Override
-	protected void writeBinaryBlockFrameToHDFS(Path path, JobConf job, FrameBlock src, long rlen, long clen)
-		throws IOException, DMLRuntimeException {
+	protected Pair<List<Pair<Integer, Array<?>>>, FrameBlock> extractDictionaries(FrameBlock src) {
 		int k = parallel ? OptimizerUtils.getParallelBinaryWriteParallelism() : 1;
 		FrameBlock compressed = FrameLibCompress.compress(src, k);
-		super.writeBinaryBlockFrameToHDFS(path, job, compressed, rlen, clen);
+		return super.extractDictionaries(compressed);
 	}
 
 }

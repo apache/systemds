@@ -44,7 +44,7 @@ import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
  * 
  */
 public class FrameWriterBinaryBlockParallel extends FrameWriterBinaryBlock
-{	
+{
 	@Override
 	protected void writeBinaryBlockFrameToHDFS( Path path, JobConf job, FrameBlock src, long rlen, long clen )
 		throws IOException, DMLRuntimeException
@@ -59,11 +59,11 @@ public class FrameWriterBinaryBlockParallel extends FrameWriterBinaryBlock
 		numThreads = Math.min(numThreads, numPartFiles);
 
 		//fall back to sequential write if dop is 1 (e.g., <128MB) in order to create single file
-		if( numThreads <= 1 ) {
+		if( !_forcedParallel && numThreads <= 1 ) {
 			super.writeBinaryBlockFrameToHDFS(path, job, src, rlen, clen);
 			return;
 		}
-		
+	
 		//create directory for concurrent tasks
 		HDFSTool.createDirIfNotExistOnHDFS(path, DMLConfig.DEFAULT_SHARED_DIR_PERMISSION);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path);

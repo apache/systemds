@@ -52,8 +52,12 @@ public class ResultMergeRemoteSparkWCompare extends ResultMergeMatrix implements
 		
 		//merge all blocks into compare block
 		MatrixBlock out = new MatrixBlock(cin);
-		while( din.hasNext() )
-			mergeWithComp(out, din.next(), compare);
+		while( din.hasNext() ) {
+			if( _isAccum )
+				mergeWithoutComp(out, din.next(), compare, false);
+			else
+				mergeWithComp(out, din.next(), compare);
+		}
 		
 		//create output tuple
 		return new Tuple2<>(new MatrixIndexes(ixin), out);

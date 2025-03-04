@@ -24,6 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
@@ -149,10 +150,6 @@ public class RaggedArray<T> extends Array<T> {
 			throw new NotImplementedException("Unimplemented method 'setFromOtherType'");
 	}
 
-	@Override
-	public void set(int rl, int ru, Array<T> value) {
-		set(rl, ru, value, 0);
-	}
 
 	@Override
 	public void set(int rl, int ru, Array<T> value, int rlSrc) {
@@ -267,11 +264,6 @@ public class RaggedArray<T> extends Array<T> {
 		return _a.changeTypeBoolean(retA, l, u);
 	}
 
-	// @Override
-	// protected Array<Double> changeTypeDouble() {
-	// 	return _a.changeTypeDouble();
-	// }
-
 	@Override
 	protected Array<Double> changeTypeDouble(Array<Double> retA, int l, int u) {
 		return _a.changeTypeDouble(retA, l, u);
@@ -312,7 +304,7 @@ public class RaggedArray<T> extends Array<T> {
 		return _a.changeTypeCharacter(retA, l, u);
 	}
 
-	@Override 
+	@Override
 	public Array<?> changeTypeWithNulls(ValueType t) {
 		throw new NotImplementedException("Not Implemented ragged array with nulls");
 	}
@@ -417,7 +409,7 @@ public class RaggedArray<T> extends Array<T> {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(_size + 2);
-		sb.append(super.toString()).append("<");
+		sb.append(super.toString()).append(Opcodes.LESS.toString());
 		sb.append(_a.getClass().getSimpleName()).append(">:[");
 		for(int i = 0; i < _size - 1; i++)
 			sb.append(get(i)).append(",");

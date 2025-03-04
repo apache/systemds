@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.runtime.lineage.Lineage;
@@ -80,7 +81,7 @@ public class LineageReuseEvalTest extends LineageBase {
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> X_orig = readDMLMatrixFromOutputDir("X");
 			//long numlmDS = Statistics.getCPHeavyHitterCount("m_lmDS");
-			long numMM = Statistics.getCPHeavyHitterCount("ba+*");
+			long numMM = Statistics.getCPHeavyHitterCount(Opcodes.MMULT.toString());
 			
 			// With lineage-based reuse enabled
 			proArgs.clear();
@@ -95,7 +96,7 @@ public class LineageReuseEvalTest extends LineageBase {
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> X_reused = readDMLMatrixFromOutputDir("X");
 			//long numlmDS_reuse = Statistics.getCPHeavyHitterCount("m_lmDS");
-			long numMM_reuse = Statistics.getCPHeavyHitterCount("ba+*");
+			long numMM_reuse = Statistics.getCPHeavyHitterCount(Opcodes.MMULT.toString());
 			
 			Lineage.setLinReuseNone();
 			TestUtils.compareMatrices(X_orig, X_reused, 1e-6, "Origin", "Reused");

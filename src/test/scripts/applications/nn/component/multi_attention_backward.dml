@@ -1,0 +1,66 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/nn/layers/multi_attention.dml") as multi_attention
+
+batch_size = as.integer($1)
+seq_length = as.integer($2)
+heads = as.integer($3)
+embedding_dim = as.integer($4)
+debug = as.logical(as.integer($5))
+
+query = matrix(read($6, format="csv"), rows=batch_size, cols=seq_length*heads*embedding_dim)
+key = matrix(read($7, format="csv"), rows=batch_size, cols=seq_length*heads*embedding_dim)
+value = matrix(read($8, format="csv"), rows=batch_size, cols=seq_length*heads*embedding_dim)
+
+dcontext = matrix(read($9, format="csv"), rows=batch_size, cols=seq_length*heads*embedding_dim)
+attention = matrix(read($10, format="csv"), rows=batch_size, cols=heads*seq_length*seq_length)
+
+expected_dquery = matrix(read($11, format="csv"), rows=batch_size, cols=seq_length*heads*embedding_dim)
+expected_dkey = matrix(read($12, format="csv"), rows=batch_size, cols=seq_length*heads*embedding_dim)
+expected_dvalue = matrix(read($13, format="csv"), rows=batch_size, cols=seq_length*heads*embedding_dim)
+
+dropout_mask = matrix(0, rows=1, cols=1)
+
+[dquery, dkey, dvalue] = multi_attention::backward(dcontext, dropout_mask, attention, query, key, value, heads, seq_length, embedding_dim, 0.0)
+
+if (debug) {
+    print(toString(dquery))
+    print(toString(expected_dquery))
+    print(toString(dkey))
+    print(toString(expected_dkey))
+    print(toString(dvalue))
+    print(toString(expected_dvalue))
+}
+
+dquery_error = max(abs(expected_dquery - dquery))
+dkey_error = max(abs(expected_dkey - dkey))
+dvalue_error = max(abs(expected_dvalue - dvalue))
+
+if (debug) {
+    print(dquery_error)
+    print(dkey_error)
+    print(dvalue_error)
+}
+
+write(dquery_error, $14, format="text")
+write(dkey_error, $15, format="text")
+write(dvalue_error, $16, format="text")

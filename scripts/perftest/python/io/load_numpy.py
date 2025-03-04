@@ -22,13 +22,18 @@
 
 import argparse
 import timeit
+from systemds.context import SystemDSContext
 
 setup = "\n".join(
     [
-        "from systemds.context import SystemDSContext",
         "from systemds.script_building.script import DMLScript",
         "import numpy as np",
-        "array = np.loadtxt(src, delimiter=',')",
+        "import os",
+        "if os.path.isdir(src):",
+        "    files = [os.path.join(src, f) for f in os.listdir(src)]",
+        "    array = np.concatenate([np.loadtxt(f, delimiter=',') for f in files])",
+        "else:",
+        "    array = np.loadtxt(src, delimiter=',')",
         "if dtype is not None:",
         "    array = array.astype(dtype)",
     ]
@@ -37,11 +42,10 @@ setup = "\n".join(
 
 run = "\n".join(
     [
-        "with SystemDSContext(logging_level=10, py4j_logging_level=50) as ctx:",
-        "    matrix_from_np = ctx.from_numpy(array)",
-        "    script = DMLScript(ctx)",
-        "    script.add_input_from_python('test', matrix_from_np)",
-        "    script.execute()",
+        "matrix_from_np = ctx.from_numpy(array)",
+        "script = DMLScript(ctx)",
+        "script.add_input_from_python('test', matrix_from_np)",
+        "script.execute()",
     ]
 )
 
@@ -66,8 +70,9 @@ dtype_choices = [
 
 
 def main(args):
-    gvars = {"src": args.src, "dtype": args.dtype}
+    gvars = {"src": args.src, "dtype": args.dtype, "ctx": SystemDSContext(logging_level=10, py4j_logging_level=50)}
     print(timeit.timeit(run, setup, globals=gvars, number=args.number))
+    gvars["ctx"].close()
 
 
 if __name__ == "__main__":
@@ -86,4 +91,8 @@ if __name__ == "__main__":
         help=help_force_dtype,
     )
     args = parser.parse_args()
+
+    if args.dtype == "string":  # numpy has no "string" dtype, convert to "str"
+        args.dtype = "str"
+
     main(args)

@@ -556,6 +556,17 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	}
 
 	/**
+	 * Sets row at position r to the input array of objects, corresponding to the schema.
+	 * @param r	  row index
+	 * @param row array of objects
+	 */
+	public void setRow(int r, Object[] row) {
+		for (int i = 0; i < row.length; i++) {
+			set(r, i, row[i]);
+		}
+	}
+
+	/**
 	 * Append a row to the end of the data frame, where all row fields are boxed objects according to the schema.
 	 *
 	 * Append row should be avoided if possible.
@@ -753,6 +764,55 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		_msize = -1;
 	}
 
+	/**
+	 * Appends a chunk of data to the end of a specified column.
+	 * 
+	 * @param c     column index
+	 * @param chunk chunk of data to append
+	 */
+	public void appendColumnChunk(int c, Array<?> chunk) {
+		if (_coldata == null) {
+			_coldata = new Array[getNumColumns()];
+		}
+
+		if (_coldata[c] == null) {
+			_coldata[c] = chunk;
+			_nRow = chunk.size();
+		} else {
+			_coldata[c] = ArrayFactory.append(_coldata[c], chunk);
+			_nRow += chunk.size();
+		}
+
+		_msize = -1;
+	}
+
+	/**
+	 * Sets a chunk of data to a specified column, starting at the specified offset.
+	 * 
+	 * @param c		  column index
+	 * @param chunk   chunk of data to set
+	 * @param offset  offset position where it should set the chunk
+	 * @param colSize size of columns, in case columns aren't initialized yet
+	 */
+	public void setColumnChunk(int c, Array<?> chunk, int offset, int colSize) {
+		if (_coldata == null) {
+			_coldata = new Array[getNumColumns()];
+			_nRow = colSize;
+		}
+
+		if (_coldata[c] == null) {
+			_coldata[c] = ArrayFactory.allocate(chunk.getValueType(), _nRow);
+		}
+
+		if (_coldata[c].getValueType() != chunk.getValueType()) {
+			throw new DMLRuntimeException("ValueType mismatch in setColumnChunk: expected " +
+					_coldata[c].getValueType() + " but got " + chunk.getValueType());
+		}
+
+		ArrayFactory.set(_coldata[c], chunk, offset, offset + chunk.size() - 1, _nRow);
+	}
+
+
 	@Override
 	public void write(DataOutput out) throws IOException {
 		final boolean isDefaultMeta = isColNamesDefault() && isColumnMetadataDefault();
@@ -769,7 +829,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 				out.writeUTF(getColumnName(j));
 				_colmeta[j].write(out);
 			}
-			if(type >= 0 && nRow > 0) // if allocated write column data
+			if(type > 0 && nRow > 0) // if allocated write column data
 				_coldata[j].write(out);
 		}
 	}
@@ -910,7 +970,7 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 				size += IOUtilFunctions.getUTFSize(getColumnName(j));
 				size += _colmeta[j].getExactSerializedSize();
 			}
-			if(type >= 0)
+			if(type > 0)
 				size += _coldata[j].getExactSerializedSize();
 		}
 		return size;
@@ -1267,8 +1327,8 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	 * @param col is the column # from frame data which contains Recode map generated earlier.
 	 * @return map of token and code for every element in the input column of a frame containing Recode map
 	 */
-	public Map<Object, Long> getRecodeMap(int col) {
-		return _coldata[col].getRecodeMap();
+	public Map<Object, Integer> getRecodeMap(int col) {
+		return _coldata[col].getRecodeMap(4);
 	}
 
 	@Override

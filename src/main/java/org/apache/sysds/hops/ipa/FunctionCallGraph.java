@@ -402,11 +402,7 @@ public class FunctionCallGraph
 			for (StatementBlock current : fs.getBody())
 				ret |= rConstructFunctionCallGraph(fkey, current, fstack, lfset);
 		} 
-		else if (sb instanceof FunctionStatementBlock) {
-			FunctionStatement fsb = (FunctionStatement) sb.getStatement(0);
-			for (StatementBlock current : fsb.getBody())
-				ret |= rConstructFunctionCallGraph(fkey, current, fstack, lfset);
-		} 
+		//FunctionStatementBlock handled on adding functions from basic blocks
 		else {
 			// For generic StatementBlock
 			List<Hop> hopsDAG = sb.getHops();

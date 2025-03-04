@@ -20,6 +20,7 @@
 package org.apache.sysds.lops;
 
  
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 
 import org.apache.sysds.common.Types.DataType;
@@ -84,7 +85,7 @@ public class MMTSJ extends Lop
 		StringBuilder sb = InstructionUtils.getStringBuilder();
 		sb.append( getExecType() );
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( _multiPass ? "tsmm2" : "tsmm" );
+		sb.append( _multiPass ? "tsmm2" : Opcodes.TSMM.toString() );
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( getInputs().get(0).prepInputOperand(input_index1));
 		sb.append( OPERAND_DELIMITOR );

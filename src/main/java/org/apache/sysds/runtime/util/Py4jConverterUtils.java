@@ -27,6 +27,7 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
+import org.apache.sysds.runtime.frame.data.columns.BitSetArray;
 import org.apache.sysds.runtime.frame.data.columns.BooleanArray;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -127,69 +128,81 @@ public class Py4jConverterUtils {
 		buffer.order(ByteOrder.LITTLE_ENDIAN);
 
 		Array<?> array = ArrayFactory.allocate(valueType, numElements);
-
-		// Process the data based on the value type
-		switch(valueType) {
-			case UINT8:
-				for(int i = 0; i < numElements; i++) {
-					array.set(i, (int) (buffer.get() & 0xFF));
-				}
-				break;
-			case INT32:
-				for(int i = 0; i < numElements; i++) {
-					array.set(i, buffer.getInt());
-				}
-				break;
-			case INT64:
-				for(int i = 0; i < numElements; i++) {
-					array.set(i, buffer.getLong());
-				}
-				break;
-			case FP32:
-				for(int i = 0; i < numElements; i++) {
-					array.set(i, buffer.getFloat());
-				}
-				break;
-			case FP64:
-				for(int i = 0; i < numElements; i++) {
-					array.set(i, buffer.getDouble());
-				}
-				break;
-			case BOOLEAN:
-				for(int i = 0; i < numElements; i++) {
-					((BooleanArray) array).set(i, buffer.get() != 0);
-				}
-				break;
-			case STRING:
-				for(int i = 0; i < numElements; i++) {
-					buffer.order(ByteOrder.BIG_ENDIAN);
-					int strLen = buffer.getInt();
-					buffer.order(ByteOrder.LITTLE_ENDIAN);
-					byte[] strBytes = new byte[strLen];
-					buffer.get(strBytes);
-					array.set(i, new String(strBytes, StandardCharsets.UTF_8));
-				}
-				break;
-			case CHARACTER:
-				for(int i = 0; i < numElements; i++) {
-					array.set(i, buffer.getChar());
-				}
-				break;
-			case HASH32:
-				for(int i = 0; i < numElements; i++) {
-					array.set(i, buffer.getInt());
-				}
-				break;
-			case HASH64:
-				for(int i = 0; i < numElements; i++) {
-					array.set(i, buffer.getLong());
-				}
-				break;
-			default:
-				throw new DMLRuntimeException("Unsupported value type: " + valueType);
-		}
+		readBufferIntoArray(buffer, array, valueType, numElements);
 
 		return array;
+	}
+
+	// Right now row conversion is only supported for if all columns have the same datatype, so this is a placeholder for now that essentially just casts to Object[]
+	public static Object[] convertRow(byte[] data, int numElements, Types.ValueType valueType) {
+		Array<?> converted = convert(data, numElements, valueType);
+
+		Object[] row = new Object[numElements];
+		for(int i = 0; i < numElements; i++) {
+			row[i] = converted.get(i);
+		}
+
+		return row;
+	}
+
+	public static Array<?>[] convertFused(byte[] data, int numElements, Types.ValueType[] valueTypes) {
+		int numOperations = valueTypes.length;
+
+		ByteBuffer buffer = ByteBuffer.wrap(data);
+		buffer.order(ByteOrder.LITTLE_ENDIAN);
+
+		Array<?>[] arrays = new Array<?>[numOperations];
+
+		for (int i = 0; i < numOperations; i++) {
+			arrays[i] = ArrayFactory.allocate(valueTypes[i], numElements);
+			readBufferIntoArray(buffer, arrays[i], valueTypes[i], numElements);
+		}
+
+        return arrays;
+    }
+
+	private static void readBufferIntoArray(ByteBuffer buffer, Array<?> array, Types.ValueType valueType, int numElements) {
+		for (int i = 0; i < numElements; i++) {
+			switch (valueType) {
+				case UINT8:
+					array.set(i, (int) (buffer.get() & 0xFF));
+					break;
+				case INT32:
+                case HASH32:
+                    array.set(i, buffer.getInt());
+					break;
+				case INT64:
+                case HASH64:
+                    array.set(i, buffer.getLong());
+					break;
+				case FP32:
+					array.set(i, buffer.getFloat());
+					break;
+				case FP64:
+					array.set(i, buffer.getDouble());
+					break;
+				case BOOLEAN:
+					if (array instanceof BooleanArray) {
+						((BooleanArray) array).set(i, buffer.get() != 0);
+					} else if (array instanceof BitSetArray) {
+						((BitSetArray) array).set(i, buffer.get() != 0);
+					} else {
+						throw new DMLRuntimeException("Array factory returned invalid array type for boolean values.");
+					}
+					break;
+				case STRING:
+					int strLength = buffer.getInt();
+					byte[] strBytes = new byte[strLength];
+					buffer.get(strBytes);
+					array.set(i, new String(strBytes, StandardCharsets.UTF_8));
+					break;
+				case CHARACTER:
+					array.set(i, buffer.getChar());
+					break;
+                default:
+					throw new DMLRuntimeException("Unsupported value type: " + valueType);
+			}
+		}
 	}
 
 	public static byte[] convertMBtoPy4JDenseArr(MatrixBlock mb) {

@@ -121,9 +121,6 @@ public class HopDagValidator {
 			check(hop instanceof DataOp || hop instanceof FunctionOp || hop instanceof LiteralOp, hop,
 					"is not a dataop/functionop/literal but has no children");
 
-		// check Hop has a legal arity (number of children)
-		hop.checkArity();
-
 		// check Matrix data type Hops must have Double Value type
 		if (dt == DataType.MATRIX )
 			check(vt == ValueType.FP64 || vt == ValueType.INT64, hop,

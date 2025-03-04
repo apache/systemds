@@ -20,6 +20,7 @@
 package org.apache.sysds.lops;
 
  
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 
 import org.apache.sysds.common.Types.DataType;
@@ -29,7 +30,7 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 public class WeightedCrossEntropy extends Lop 
 {
 	public static final String OPCODE = "mapwcemm";
-	public static final String OPCODE_CP = "wcemm";
+	public static final String OPCODE_CP = Opcodes.WCEMM.toString();
 	private int _numThreads = 1;
 
 	public enum WCeMMType {

@@ -19,7 +19,10 @@
 
 package org.apache.sysds.runtime.io;
 
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
@@ -52,6 +55,7 @@ public class ListWriter
 		
 		try {
 			//write basic list meta data
+			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 			HDFSTool.writeMetaDataFile(fname + ".mtd", lo.getValueType(), null,
 				lo.getDataType(), dc, FileFormat.safeValueOf(fmtStr), props);
 			
@@ -64,13 +68,18 @@ public class ListWriter
 			for(int i=0; i<lo.getLength(); i++) {
 				Data dat = lo.getData(i);
 				String lfname = fname +"/"+i+"_"+(lo.isNamedList()?lo.getName(i):"null");
-				if( dat instanceof CacheableData<?> )
+				if( dat instanceof CacheableData<?> ) {
 					((CacheableData<?>)dat).exportData(lfname, fmtStr, props);
+					IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(job, new Path(lfname));
+				}
 				else if( dat instanceof ListObject )
 					writeListToHDFS((ListObject)dat, lfname, fmtStr, props);
 				else //scalar
 					HDFSTool.writeScalarToHDFS((ScalarObject)dat, lfname);
 			}
+			
+			//remove crc file of list directory
+			IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(job, new Path(fname));
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(

@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -92,10 +93,9 @@ public class RewriteSimplifyEmptyColMeansTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			if(rewrites)
-				Assert.assertFalse(heavyHittersContainsString("uacmean") && heavyHittersContainsString("-"));
+				Assert.assertFalse(heavyHittersContainsString(Opcodes.UACMEAN.toString()) && heavyHittersContainsString(Opcodes.MINUS.toString()));
 			else
-				Assert.assertTrue(heavyHittersContainsString("uacmean") && heavyHittersContainsString("-"));
-
+				Assert.assertTrue(heavyHittersContainsString(Opcodes.UACMEAN.toString()) && heavyHittersContainsString(Opcodes.MINUS.toString()));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;

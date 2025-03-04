@@ -108,6 +108,11 @@ public class NNComponentTest extends TestFolder {
 		run("transpose_NCHW_to_CNHW.dml");
 	}
 
+	@Test
+	public void transpose_ABCD_to_ACBD() {
+		run("transpose_ABCD_to_ACBD.dml");
+	}
+
 	@Test 
 	public void logcosh(){
 		run("logcosh.dml");
@@ -117,6 +122,11 @@ public class NNComponentTest extends TestFolder {
 	public void resnet() {
 		run("resnet_basic.dml");
 		run("resnet_bottleneck.dml");
+	}
+
+	@Test
+	public void gelu() {
+		run("gelu.dml");
 	}
 
 	@Override

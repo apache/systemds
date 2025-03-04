@@ -113,7 +113,7 @@ public class DoubleIntListHashMap {
 		}
 		else {
 			for(DIListEntry e = _data[ix]; e != null; e = e.next) {
-				if(e.key == key) {
+				if(Util.eq(e.key , key)) {
 					IntArrayList lstPtr = e.value;
 					lstPtr.appendValue(value);
 					break;

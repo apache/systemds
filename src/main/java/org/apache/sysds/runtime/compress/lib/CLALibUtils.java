@@ -97,6 +97,49 @@ public final class CLALibUtils {
 		return false;
 	}
 
+	protected static boolean alreadyPreFiltered(List<AColGroup> groups, int nCol) {
+		boolean constFound = false;
+		for(AColGroup g : groups) {
+			if(g instanceof AMorphingMMColGroup || g instanceof ColGroupEmpty || g.isEmpty() ||
+				(constFound && g instanceof ColGroupConst))
+				return false;
+			else if(g instanceof ColGroupConst){
+				if(g.getNumCols() != nCol)
+					return false;
+				
+				constFound = true;
+			}
+		}
+
+		return true;
+	}
+
+	protected static double[] filterGroupsAndSplitPreAggOneConst(List<AColGroup> groups, List<AColGroup> noPreAggGroups,
+		List<APreAgg> preAggGroups) {
+		double[] consts = null;
+		for(AColGroup g : groups) {
+			if(g instanceof ColGroupConst)
+			  consts = ((ColGroupConst) g).getValues();
+			else if(g instanceof APreAgg)
+				preAggGroups.add((APreAgg) g);
+			else
+				noPreAggGroups.add(g);
+		}
+
+		return consts;
+	}
+
+	protected static double[] filterGroupsAndSplitPreAggOneConst(List<AColGroup> groups, List<AColGroup> out) {
+		double[] consts = null;
+		for(AColGroup g : groups) {
+			if(g instanceof ColGroupConst)
+				consts = ((ColGroupConst) g).getValues();
+			else
+				out.add(g);
+		}
+		return consts;
+	}
+
 	/**
 	 * Helper method to determine if the column groups contains Morphing or Frame of reference groups.
 	 * 
@@ -105,7 +148,7 @@ public final class CLALibUtils {
 	 */
 	protected static boolean shouldPreFilterMorphOrRef(List<AColGroup> groups) {
 		for(AColGroup g : groups)
-			if(g instanceof AMorphingMMColGroup || g instanceof IFrameOfReferenceGroup)
+			if(g instanceof AMorphingMMColGroup || g instanceof IFrameOfReferenceGroup || g instanceof ColGroupConst)
 				return true;
 		return false;
 	}

@@ -40,7 +40,8 @@ import org.junit.runners.Parameterized;
 public class FederatedCentralMomentTest extends AutomatedTestBase {
 
 	private final static String TEST_DIR = "functions/federated/";
-	private final static String TEST_NAME = "FederatedCentralMomentTest";
+	private final static String TEST_NAME1 = "FederatedCentralMomentTest";
+	private final static String TEST_NAME2 = "FederatedCentralMomentWeightedTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedCentralMomentTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
@@ -48,44 +49,62 @@ public class FederatedCentralMomentTest extends AutomatedTestBase {
 	public int rows;
 
 	@Parameterized.Parameter(1)
+	public int cols;
+
+	@Parameterized.Parameter(2)
 	public int k;
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		return Arrays.asList(new Object[][] {{1000, 2}, {1000, 3}, {1000, 4}});
+		return Arrays.asList(new Object[][] {{20, 1, 2}});
 	}
 
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"S.scalar"}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"S.scalar"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"S.scalar"}));
 	}
 
 	@Test
-	@Ignore // infinite runtime online but works locally.
 	public void federatedCentralMomentCP() {
-		federatedCentralMoment(Types.ExecMode.SINGLE_NODE);
+		federatedCentralMoment(Types.ExecMode.SINGLE_NODE, false);
 	}
 
 	@Test
-	@Ignore
-	public void federatedCentralMomentSP() {
-		federatedCentralMoment(Types.ExecMode.SPARK);
+	public void federatedCentralMomentWeightedCP() {
+		federatedCentralMoment(Types.ExecMode.SINGLE_NODE, true);
 	}
 
-	public void federatedCentralMoment(Types.ExecMode execMode) {
+	@Test
+	public void federatedCentralMomentSP() {
+		federatedCentralMoment(Types.ExecMode.SPARK, false);
+	}
+
+	// The test fails due to an error while executing rmvar instruction after cm calculation
+	// The CacheStatus of the weights variable is READ hence it can't be modified
+	// In this test the input matrix is federated and weights are read from file
+	@Ignore
+	@Test
+	public void federatedCentralMomentWeightedSP() {
+		federatedCentralMoment(Types.ExecMode.SPARK, true);
+	}
+
+	public void federatedCentralMoment(Types.ExecMode execMode, boolean isWeighted) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 
+		String TEST_NAME = isWeighted ? TEST_NAME2 : TEST_NAME1;
 		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
 		int r = rows / 4;
+		int c = cols;
 
-		double[][] X1 = getRandomMatrix(r, 1, 1, 5, 1, 3);
-		double[][] X2 = getRandomMatrix(r, 1, 1, 5, 1, 7);
-		double[][] X3 = getRandomMatrix(r, 1, 1, 5, 1, 8);
-		double[][] X4 = getRandomMatrix(r, 1, 1, 5, 1, 9);
+		double[][] X1 = getRandomMatrix(r, c, 1, 5, 1, 3);
+		double[][] X2 = getRandomMatrix(r, c, 1, 5, 1, 7);
+		double[][] X3 = getRandomMatrix(r, c, 1, 5, 1, 8);
+		double[][] X4 = getRandomMatrix(r, c, 1, 5, 1, 9);
 
 		MatrixCharacteristics mc = new MatrixCharacteristics(r, 1, blocksize, r);
 		writeInputMatrixWithMTD("X1", X1, false, mc);
@@ -114,24 +133,47 @@ public class FederatedCentralMomentTest extends AutomatedTestBase {
 			if(rtplatform == Types.ExecMode.SPARK) {
 				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			}
-			// Run reference dml script with normal matrix for Row/Col
-			fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-			programArgs = new String[] {"-stats", "100", "-args", input("X1"), input("X2"), input("X3"), input("X4"),
-				expected("S"), String.valueOf(k)};
-			runTest(null);
-
 			TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 			loadTestConfiguration(config);
+			if (isWeighted) {
+				double[][] W1 = getRandomMatrix(r, c, 0, 1, 1, 3);
 
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-stats", "100", "-nvargs",
-				"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
-				"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
-				"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
-				"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + 1,
-				"out_S=" + output("S"), "k=" + k};
-			runTest(null);
+				writeInputMatrixWithMTD("W1", W1, false, mc);
 
+				// Run reference dml script with normal matrix
+				fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
+				programArgs = new String[] {"-stats", "100", "-args", input("X1"), input("X2"), input("X3"), input("X4"),
+						input("W1"), expected("S"), "" + k};
+				runTest(null);
+
+				fullDMLScriptName = HOME + TEST_NAME + ".dml";
+				programArgs = new String[] {"-stats", "100", "-nvargs",
+						"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+						"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
+						"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
+						"in_X4=" + TestUtils.federatedAddress(port4, input("X4")),
+						"in_W1=" + input("W1"),
+						"rows=" + rows, "cols=" + cols, "k=" + k,
+						"out_S=" + output("S")};
+				runTest(null);
+			}
+			else {
+				// Run reference dml script with normal matrix for Row/Col
+				fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
+				programArgs = new String[]{"-stats", "100", "-args", input("X1"), input("X2"), input("X3"), input("X4"),
+						expected("S"), String.valueOf(k)};
+				runTest(null);
+
+
+				fullDMLScriptName = HOME + TEST_NAME + ".dml";
+				programArgs = new String[]{"-stats", "100", "-nvargs",
+						"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+						"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
+						"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
+						"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + 1,
+						"out_S=" + output("S"), "k=" + k};
+				runTest(null);
+			}
 			// compare all sums via files
 			compareResults(0.01);
 

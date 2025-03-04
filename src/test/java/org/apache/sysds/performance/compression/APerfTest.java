@@ -23,6 +23,7 @@ import java.util.ArrayList;
 
 import org.apache.sysds.performance.TimingUtils;
 import org.apache.sysds.performance.TimingUtils.F;
+import org.apache.sysds.performance.TimingUtils.StatsType;
 import org.apache.sysds.performance.generators.IGenerate;
 
 public abstract class APerfTest<T, G> {
@@ -36,10 +37,30 @@ public abstract class APerfTest<T, G> {
 	/** Default Repetitions */
 	protected final int N;
 
+	/** Warmup iterations */
+	protected final int W;
+
+	/** The type of statistics to use */
+	protected final StatsType st;
+
 	protected APerfTest(int N, IGenerate<G> gen) {
+		this(N, 10, gen, StatsType.MEAN_STD);
+	}
+
+	protected APerfTest(int N, IGenerate<G> gen, StatsType st) {
+		this(N, 10, gen, st);
+	}
+
+	protected APerfTest(int N, int W, IGenerate<G> gen) {
+		this(N, W, gen, StatsType.MEAN_STD);
+	}
+
+	protected APerfTest(int N, int W, IGenerate<G> gen, StatsType st) {
 		ret = new ArrayList<>(N);
 		this.gen = gen;
 		this.N = N;
+		this.W = W;
+		this.st = st;
 	}
 
 	protected void execute(F f, String name) throws InterruptedException {
@@ -53,12 +74,12 @@ public abstract class APerfTest<T, G> {
 	}
 
 	protected void execute(F f, F c, F b, String name) throws InterruptedException {
-		warmup(f, 10);
+		warmup(f, W);
 		gen.generate(N);
 		ret.clear();
 		double[] times = TimingUtils.time(f, c, b, N, gen);
 		String retS = makeResString(times);
-		System.out.println(String.format("%35s, %s, %10s", name, TimingUtils.stats(times), retS));
+		System.out.println(String.format("%35s, %s, %10s", name, TimingUtils.stats(times, st), retS));
 	}
 
 	protected void warmup(F f, int n) throws InterruptedException {
@@ -80,7 +101,7 @@ public abstract class APerfTest<T, G> {
 		ret.clear();
 		double[] times = TimingUtils.time(f, c, b, N, gen);
 		String retS = makeResString(times);
-		System.out.println(String.format("%35s, %s, %10s", name, TimingUtils.stats(times), retS));
+		System.out.println(String.format("%35s, %s, %10s", name, TimingUtils.stats(times, st), retS));
 	}
 
 	protected abstract String makeResString();
@@ -94,7 +115,7 @@ public abstract class APerfTest<T, G> {
 		StringBuilder sb = new StringBuilder();
 		sb.append(String.format("%20s ", this.getClass().getSimpleName()));
 		sb.append(" Repetitions: ").append(N).append("\n");
-		sb.append(String.format("%20s ","Generator:"));
+		sb.append(String.format("%20s ", "Generator:"));
 		sb.append(gen);
 		sb.append("\n");
 		return sb.toString();

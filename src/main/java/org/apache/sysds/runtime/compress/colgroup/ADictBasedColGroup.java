@@ -20,18 +20,22 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+import org.apache.sysds.runtime.compress.colgroup.dictionary.AIdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public abstract class ADictBasedColGroup extends AColGroupCompressed implements IContainADictionary {
@@ -58,10 +62,69 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 	}
 
 	@Override
-	public final void decompressToDenseBlock(DenseBlock db, int rl, int ru, int offR, int offC) {
-		if(_dict instanceof IdentityDictionary) {
+	public final void decompressToDenseBlockTransposed(DenseBlock db, int rl, int ru) {
+		if(_dict instanceof AIdentityDictionary) {
+			final MatrixBlockDictionary md = ((AIdentityDictionary) _dict).getMBDict();
+			final MatrixBlock mb = md.getMatrixBlock();
+			// The dictionary is never empty.
+			if(mb.isInSparseFormat())
+				decompressToDenseBlockTransposedSparseDictionary(db, rl, ru, mb.getSparseBlock());
+			else
+				decompressToDenseBlockTransposedDenseDictionary(db, rl, ru, mb.getDenseBlockValues());
+		}
+		else if(_dict instanceof MatrixBlockDictionary) {
+			final MatrixBlockDictionary md = (MatrixBlockDictionary) _dict;
+			final MatrixBlock mb = md.getMatrixBlock();
+			// The dictionary is never empty.
+			if(mb.isInSparseFormat())
+				decompressToDenseBlockTransposedSparseDictionary(db, rl, ru, mb.getSparseBlock());
+			else
+				decompressToDenseBlockTransposedDenseDictionary(db, rl, ru, mb.getDenseBlockValues());
+		}
+		else
+			decompressToDenseBlockTransposedDenseDictionary(db, rl, ru, _dict.getValues());
+	}
 
-			final MatrixBlockDictionary md = ((IdentityDictionary) _dict).getMBDict();
+	@Override
+	public void decompressToSparseBlockTransposed(SparseBlockMCSR sb, int nColOut) {
+		if(_dict instanceof AIdentityDictionary) {
+			final MatrixBlockDictionary md = ((AIdentityDictionary) _dict).getMBDict();
+			final MatrixBlock mb = md.getMatrixBlock();
+			// The dictionary is never empty.
+			if(mb.isInSparseFormat())
+				decompressToSparseBlockTransposedSparseDictionary(sb, mb.getSparseBlock(), nColOut);
+			else
+				decompressToSparseBlockTransposedDenseDictionary(sb, mb.getDenseBlockValues(), nColOut);
+		}
+		else if(_dict instanceof MatrixBlockDictionary) {
+			final MatrixBlockDictionary md = (MatrixBlockDictionary) _dict;
+			final MatrixBlock mb = md.getMatrixBlock();
+			// The dictionary is never empty.
+			if(mb.isInSparseFormat())
+				decompressToSparseBlockTransposedSparseDictionary(sb, mb.getSparseBlock(), nColOut);
+			else
+				decompressToSparseBlockTransposedDenseDictionary(sb, mb.getDenseBlockValues(), nColOut);
+		}
+		else
+			decompressToSparseBlockTransposedDenseDictionary(sb, _dict.getValues(), nColOut);
+	}
+
+	protected abstract void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru,
+		SparseBlock dict);
+
+	protected abstract void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru,
+		double[] dict);
+
+	protected abstract void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock dict,
+		int nColOut);
+
+	protected abstract void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict,
+		int nColOut);
+
+	@Override
+	public final void decompressToDenseBlock(DenseBlock db, int rl, int ru, int offR, int offC) {
+		if(_dict instanceof AIdentityDictionary) {
+			final MatrixBlockDictionary md = ((AIdentityDictionary) _dict).getMBDict();
 			final MatrixBlock mb = md.getMatrixBlock();
 			// The dictionary is never empty.
 			if(mb.isInSparseFormat())
@@ -84,9 +147,8 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 
 	@Override
 	public final void decompressToSparseBlock(SparseBlock sb, int rl, int ru, int offR, int offC) {
-		if(_dict instanceof IdentityDictionary) {
-
-			final MatrixBlockDictionary md = ((IdentityDictionary) _dict).getMBDict();
+		if(_dict instanceof AIdentityDictionary) {
+			final MatrixBlockDictionary md = ((AIdentityDictionary) _dict).getMBDict();
 			final MatrixBlock mb = md.getMatrixBlock();
 			// The dictionary is never empty.
 			if(mb.isInSparseFormat())
@@ -181,9 +243,18 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 	}
 
 	@Override
-	public final AColGroup rightMultByMatrix(MatrixBlock right, IColIndex allCols) {
+	public final AColGroup rightMultByMatrix(MatrixBlock right, IColIndex allCols, int k) {
 		if(right.isEmpty())
 			return null;
+
+		// is candidate for identity mm.
+		if(_dict instanceof AIdentityDictionary //
+		   && !((AIdentityDictionary) _dict).withEmpty()
+			&& right.getNumRows() == _colIndexes.size() //
+			&& allowShallowIdentityRightMult()){
+
+			return copyAndSet(allCols, MatrixBlockDictionary.create(right));
+		}
 
 		final int nCol = right.getNumColumns();
 		// make sure allCols is allocated
@@ -198,10 +269,12 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 
 		final int nVals = getNumValues();
 		final IDictionary preAgg = (right.isInSparseFormat()) ? // Chose Sparse or Dense
-			rightMMPreAggSparse(nVals, right.getSparseBlock(), agCols, 0, nCol) : // sparse
+			rightMMPreAggSparse(nVals, right.getSparseBlock(), agCols, nCol) : // sparse
 			_dict.preaggValuesFromDense(nVals, _colIndexes, agCols, right.getDenseBlockValues(), nCol); // dense
 		return allocateRightMultiplication(right, agCols, preAgg);
 	}
+
+	protected abstract boolean allowShallowIdentityRightMult();
 
 	protected abstract AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes,
 		IDictionary preAgg);
@@ -269,30 +342,8 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 		return ColIndexFactory.create(aggregateColumns);
 	}
 
-	private IDictionary rightMMPreAggSparse(int numVals, SparseBlock b, IColIndex aggregateColumns, int cl, int cu) {
-		final double[] ret = new double[numVals * aggregateColumns.size()];
-		for(int h = 0; h < _colIndexes.size(); h++) {
-			final int colIdx = _colIndexes.get(h);
-			if(b.isEmpty(colIdx))
-				continue;
-
-			final double[] sValues = b.values(colIdx);
-			final int[] sIndexes = b.indexes(colIdx);
-			int retIdx = 0;
-			for(int i = b.pos(colIdx); i < b.size(colIdx) + b.pos(colIdx); i++) {
-				while(aggregateColumns.get(retIdx) < sIndexes[i])
-					retIdx++;
-				// It is known in this case that the sIndex always correspond to the aggregateColumns.
-				// if(sIndexes[i] == aggregateColumns[retIdx])
-				for(int j = 0, offOrg = h;
-					j < numVals * aggregateColumns.size();
-					j += aggregateColumns.size(), offOrg += _colIndexes.size()) {
-					ret[j + retIdx] += _dict.getValue(offOrg) * sValues[i];
-				}
-			}
-
-		}
-		return Dictionary.create(ret);
+	private IDictionary rightMMPreAggSparse(int numVals, SparseBlock b, IColIndex aggregateColumns, int nColRight) {
+		return _dict.rightMMPreAggSparse(numVals, b, this._colIndexes, aggregateColumns, nColRight);
 	}
 
 	@Override
@@ -325,4 +376,30 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 		return copyAndSet(outCols, newDict);
 	}
 
+	protected IDictionary combineDictionaries(int nCol, List<AColGroup> right) {
+		List<IDictionary> dicts = new ArrayList<>(right.size() + 1);
+		try{
+
+			dicts.add(getDictionary());
+			for(int i = 0; i < right.size(); i++) {
+				if(right instanceof ColGroupEmpty){
+					dicts.add(Dictionary.createNoCheck(new double[nCol]));
+				}
+				else{
+					ADictBasedColGroup a = ((ADictBasedColGroup) right.get(i));
+					dicts.add(a.getDictionary());
+				}
+			}
+			return DictionaryFactory.cBindDictionaries(getNumCols(), dicts);
+		}
+		catch(Exception e){
+			throw new RuntimeException( dicts +"", e);
+		}
+
+	}
+
+	@Override
+	public double getSparsity() {
+		return _dict.getSparsity();
+	}
 }

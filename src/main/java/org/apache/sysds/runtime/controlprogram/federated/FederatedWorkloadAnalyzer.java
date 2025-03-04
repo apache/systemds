@@ -32,10 +32,10 @@ import org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 
 public class FederatedWorkloadAnalyzer {
-	protected static final Log LOG = LogFactory.getLog(FederatedWorkerHandler.class.getName());
+	protected static final Log LOG = LogFactory.getLog(FederatedWorkloadAnalyzer.class.getName());
 
 	/** Frequency value for how many instructions before we do a pass for compression */
-	private static int compressRunFrequency = 10;
+	private static final int compressRunFrequency = 10;
 
 	/** Instruction maps to interesting variables */
 	private final ConcurrentHashMap<Long, ConcurrentHashMap<Long, InstructionTypeCounter>> m;
@@ -55,8 +55,10 @@ public class FederatedWorkloadAnalyzer {
 	}
 
 	public void compressRun(ExecutionContext ec, long tid) {
-		if(counter % compressRunFrequency == compressRunFrequency - 1)
+		if(counter >= compressRunFrequency ){
+			counter = 0;
 			get(tid).forEach((K, V) -> CompressedMatrixBlockFactory.compressAsync(ec, Long.toString(K), V));
+		}
 	}
 
 	private void incrementWorkload(ExecutionContext ec, long tid, ComputationCPInstruction cpIns) {
@@ -77,13 +79,16 @@ public class FederatedWorkloadAnalyzer {
 			int r2 = (int) d2.getDim(0);
 			int c2 = (int) d2.getDim(1);
 			if(validSize(r1, c1)) {
-				getOrMakeCounter(mm, Long.parseLong(n1)).incRMM(r1);
+				getOrMakeCounter(mm, Long.parseLong(n1)).incRMM(c2);
+				// safety add overlapping decompress for RMM
+				getOrMakeCounter(mm, Long.parseLong(n1)).incOverlappingDecompressions();
 				counter++;
 			}
 			if(validSize(r2, c2)) {
-				getOrMakeCounter(mm, Long.parseLong(n2)).incLMM(c2);
+				getOrMakeCounter(mm, Long.parseLong(n2)).incLMM(r1);
 				counter++;
 			}
+			
 		}
 	}
 
@@ -110,5 +115,17 @@ public class FederatedWorkloadAnalyzer {
 
 	private static boolean validSize(int nRow, int nCol) {
 		return nRow > 90 && nRow >= nCol;
+	}
+
+	@Override 
+	public String toString(){
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName());
+		sb.append("  Counter: ");
+		sb.append(counter);
+		sb.append("\n");
+		sb.append(m);
+
+		return sb.toString();
 	}
 }

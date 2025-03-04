@@ -38,6 +38,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -125,7 +126,7 @@ public class CLALibSelectionMultTest {
 
 			gs = new ArrayList<>();
 			gs.add(ColGroupConst.create(ColIndexFactory.create(10), new double[] {13.0, 0, 0, 0, 0, 0, 0, 0, 0, 0}));
-			IdentityDictionary id = new IdentityDictionary(10);
+			IDictionary id = IdentityDictionary.create(10);
 			AMapToData d = MappingTestUtil.createRandomMap(100, 10, new Random(23));
 			AColGroup idg = ColGroupDDC.create(ColIndexFactory.create(10, 100), id, d, null);
 			gs.add(idg);
@@ -161,7 +162,7 @@ public class CLALibSelectionMultTest {
 			mb = CompressedMatrixBlock.getUncompressed(cmb);
 			genTests(tests, mb, cmb, "Identity2");
 
-			id = new IdentityDictionary(10, true);
+			id = IdentityDictionary.create(10, true);
 
 			d = MappingTestUtil.createRandomMap(100, 11, new Random(33));
 			idg = ColGroupDDC.create(ColIndexFactory.createI(0,1,2,3,4,6,7,8,9,10), id, d, null);
@@ -217,7 +218,7 @@ public class CLALibSelectionMultTest {
 
 	public static MatrixBlock createSelectionMatrix(final int nRow, final int nRowLeft, boolean emptyRows) {
 		MatrixBlock tcmb;
-		IdentityDictionary id = new IdentityDictionary(nRow, emptyRows);
+		IDictionary id = IdentityDictionary.create(nRow, emptyRows);
 		AMapToData d = MappingTestUtil.createRandomMap(nRowLeft, nRow + (emptyRows ? 1 : 0), new Random(33));
 		AColGroup idg = ColGroupDDC.create(ColIndexFactory.create(nRow), id, d, null);
 		tcmb = new CompressedMatrixBlock(nRowLeft, nRow);

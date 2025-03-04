@@ -132,9 +132,11 @@ public interface HassAndStokes {
 	private static double getGammaSquared(double D, int[] f, int n, int N) {
 		// Computes the "squared coefficient of variation" based on a given initial estimate D (Eq 16).
 		double gamma = 0;
-		for(int i = 1; i <= f.length; i++)
-			if(f[i - 1] != 0)
-				gamma += i * (i - 1) * f[i - 1];
+		for(int i = 2; i <= f.length; i++){
+			int im1 = i - 1;
+			// if(f[im1] != 0)
+				gamma += i * (im1) * f[im1];
+		}
 		gamma *= D / n / n;
 		gamma += D / N - 1;
 		return Math.max(0, gamma);

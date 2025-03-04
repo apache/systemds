@@ -65,9 +65,12 @@ public abstract class ASDCZero extends APreAgg implements AOffsetsGroup, IContai
 
 	private final void leftMultByMatrixNoPreAggSingleRow(MatrixBlock mb, MatrixBlock result, int r, int cl, int cu,
 		AIterator it) {
-		final double[] resV = result.getDenseBlockValues();
-		final int nCols = result.getNumColumns();
-		final int offRet = nCols * r;
+		if(mb.isEmpty()) // early abort.
+			return;
+
+		final DenseBlock res = result.getDenseBlock();
+		final double[] resV = res.values(r);
+		final int offRet = res.pos(r);
 		if(mb.isInSparseFormat()) {
 			final SparseBlock sb = mb.getSparseBlock();
 			leftMultByMatrixNoPreAggSingleRowSparse(sb, resV, offRet, r, cu, it);
@@ -102,50 +105,62 @@ public abstract class ASDCZero extends APreAgg implements AOffsetsGroup, IContai
 		final int alen = sb.size(r) + apos;
 		final int[] aix = sb.indexes(r);
 		final double[] aval = sb.values(r);
-		int v = it.value();
+		final int v = it.value();
 		while(apos < alen && aix[apos] < v)
 			apos++; // go though sparse block until offset start.
-		if(cu < last) {
-			while(v < cu && apos < alen) {
-				if(aix[apos] == v) {
-					multiplyScalar(aval[apos++], resV, offRet, it);
-					v = it.next();
-				}
-				else if(aix[apos] < v)
-					apos++;
-				else
-					v = it.next();
-			}
-		}
-		else if(aix[alen - 1] < last) {
-			while(apos < alen) {
-				if(aix[apos] == v) {
-					multiplyScalar(aval[apos++], resV, offRet, it);
-					v = it.next();
-				}
-				else if(aix[apos] < v)
-					apos++;
-				else
-					v = it.next();
-			}
-		}
-		else {
-			while(v < last) {
-				if(aix[apos] == v) {
-					multiplyScalar(aval[apos++], resV, offRet, it);
-					v = it.next();
-				}
-				else if(aix[apos] < v)
-					apos++;
-				else
-					v = it.next();
-			}
-			while(aix[apos] < last && apos < alen)
-				apos++;
+		if(cu < last)
+			leftMultByMatrixNoPreAggSingleRowSparseInside(v, it, apos, alen, aix, aval, resV, offRet, cu);
+		else if(aix[alen - 1] < last)
+			leftMultByMatrixNoPreAggSingleRowSparseLessThan(v, it, apos, alen, aix, aval, resV, offRet);
+		else
+			leftMultByMatrixNoPreAggSingleRowSparseTail(v, it, apos, alen, aix, aval, resV, offRet, cu, last);
+	}
 
-			if(last == aix[apos])
-				multiplyScalar(aval[apos], resV, offRet, it);
+	private final void leftMultByMatrixNoPreAggSingleRowSparseInside(int v, AIterator it, int apos, int alen, int[] aix,
+		double[] aval, double[] resV, int offRet, int cu) {
+		while(v < cu && apos < alen) {
+			if(aix[apos] == v) {
+				multiplyScalar(aval[apos++], resV, offRet, it);
+				v = it.next();
+			}
+			else if(aix[apos] < v)
+				apos++;
+			else
+				v = it.next();
 		}
+	}
+
+	private final void leftMultByMatrixNoPreAggSingleRowSparseLessThan(int v, AIterator it, int apos, int alen,
+		int[] aix, double[] aval, double[] resV, int offRet) {
+		while(apos < alen) {
+			if(aix[apos] == v) {
+				multiplyScalar(aval[apos++], resV, offRet, it);
+				v = it.next();
+			}
+			else if(aix[apos] < v)
+				apos++;
+			else
+				v = it.next();
+		}
+	}
+
+	private final void leftMultByMatrixNoPreAggSingleRowSparseTail(int v, AIterator it, int apos, int alen, int[] aix,
+		double[] aval, double[] resV, int offRet, int cu, int last) {
+		while(v < last) {
+			if(aix[apos] == v) {
+				multiplyScalar(aval[apos++], resV, offRet, it);
+				v = it.next();
+			}
+			else if(aix[apos] < v)
+				apos++;
+			else
+				v = it.next();
+		}
+		while(aix[apos] < last && apos < alen)
+			apos++;
+
+		if(last == aix[apos])
+			multiplyScalar(aval[apos], resV, offRet, it);
 	}
 
 	private final void leftMultByMatrixNoPreAggRows(MatrixBlock mb, MatrixBlock result, int rl, int ru, int cl, int cu,
@@ -230,11 +245,26 @@ public abstract class ASDCZero extends APreAgg implements AOffsetsGroup, IContai
 	@Override
 	public final CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
 		EstimationFactors ef = new EstimationFactors(getNumValues(), _numRows, getNumberOffsets(), _dict.getSparsity());
-		return new CompressedSizeInfoColGroup(_colIndexes, ef, nRow, getCompType(),getEncoding());
+		return new CompressedSizeInfoColGroup(_colIndexes, ef, this.estimateInMemorySize(), getCompType(), getEncoding());
 	}
 
-		@Override
+	@Override
 	public ICLAScheme getCompressionScheme() {
 		return SDCScheme.create(this);
+	}
+
+	@Override
+	public AColGroup morph(CompressionType ct, int nRow) {
+		if(ct == getCompType())
+			return this;
+		else if(ct == CompressionType.SDCFOR)
+			return this; // it does not make sense to change to FOR.
+		else
+			return super.morph(ct, nRow);
+	}
+
+	@Override
+	protected boolean allowShallowIdentityRightMult() {
+		return true;
 	}
 }

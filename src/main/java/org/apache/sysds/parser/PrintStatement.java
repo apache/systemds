@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.apache.sysds.common.Opcodes;
 
 public class PrintStatement extends Statement
 {
@@ -40,17 +41,17 @@ public class PrintStatement extends Statement
 	protected List<Expression> expressions;
 
 	private static PRINTTYPE getPrintType(String type, List<Expression> expressions) {
-		if(type.equalsIgnoreCase("print")) {
+		if(type.equalsIgnoreCase(Opcodes.PRINT.toString())) {
 			if ((expressions == null) || (expressions.size() == 1)) {
 				return PRINTTYPE.PRINT;
 			} else {
 				return PRINTTYPE.PRINTF;
 			}
 		}
-		else if (type.equalsIgnoreCase("assert")) {
+		else if (type.equalsIgnoreCase(Opcodes.ASSERT.toString())) {
 			return PRINTTYPE.ASSERT;
 		}
-		else if (type.equalsIgnoreCase("stop")) {
+		else if (type.equalsIgnoreCase(Opcodes.STOP.toString())) {
 			return PRINTTYPE.STOP;
 		}
 		else

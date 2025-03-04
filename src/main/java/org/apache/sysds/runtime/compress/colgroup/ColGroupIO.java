@@ -24,12 +24,15 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.ColGroupType;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 
 /** IO for ColGroups, it enables read and write ColGroups */
 public interface ColGroupIO {
@@ -81,8 +84,19 @@ public interface ColGroupIO {
 	 */
 	public static long getExactSizeOnDisk(List<AColGroup> colGroups) {
 		long ret = 4; // int for number of colGroups.
-		for(AColGroup grp : colGroups)
+		Set<IDictionary> dicts = new HashSet<>();
+		for(AColGroup grp : colGroups){
+			if(grp instanceof ADictBasedColGroup){
+				IDictionary dict = ((ADictBasedColGroup)grp).getDictionary();
+				if(dicts.contains(dict))
+					ret -= dict.getExactSizeOnDisk();
+				dicts.add(dict);
+			}
 			ret += grp.getExactSizeOnDisk();
+		}
+		if(LOG.isWarnEnabled())
+			LOG.warn(" duplicate dicts on exact Size on Disk : " + (colGroups.size() - dicts.size()) );
+		
 		return ret;
 	}
 

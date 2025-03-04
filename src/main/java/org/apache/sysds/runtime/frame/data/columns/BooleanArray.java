@@ -36,7 +36,7 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class BooleanArray extends ABooleanArray {
 	protected boolean[] _data;
 
-	private BooleanArray(int nRow){
+	private BooleanArray(int nRow) {
 		this(new boolean[nRow]);
 	}
 
@@ -67,11 +67,6 @@ public class BooleanArray extends ABooleanArray {
 	@Override
 	public void set(int index, String value) {
 		set(index, BooleanArray.parseBoolean(value));
-	}
-
-	@Override
-	public void set(int rl, int ru, Array<Boolean> value) {
-		set(rl, ru, value, 0);
 	}
 
 	@Override

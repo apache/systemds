@@ -64,7 +64,7 @@ jobs:
         distribution: ${{ matrix.javadist }}
         java-version: ${{ matrix.java }}
         cache: 'maven'
-    
+
     - name: Cache Pip Dependencies
       uses: actions/cache@v4
       with:
@@ -93,11 +93,11 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         architecture: 'x64'
-  
+
     - name: Install pip Dependencies
       run: |
         # Install pip twice to update past the versions.
-        pip install --upgrade pip 
+        pip install --upgrade pip
         pip install --upgrade pip
         pip install wheel
         pip install \
@@ -114,8 +114,10 @@ jobs:
           torch \
           librosa \
           h5py \
-          black
-
+          gensim \
+          black \
+          opt-einsum
+                
     - name: Build Python Package
       run: |
         cd src/main/python
@@ -131,7 +133,7 @@ jobs:
         unittest-parallel -t . -s tests -v
         # python -m unittest discover -s tests -p 'test_*.py'
         echo "Exit Status: " $?
-    
+
     - name: Run all python tests no environment
       run: |
         export LOG4JPROP=$(pwd)/src/test/resources/log4j.properties

@@ -25,11 +25,14 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoder;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderBagOfWords;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderComposite;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
@@ -56,7 +59,8 @@ public class ColumnEncoderSerializationTest extends AutomatedTestBase
 		RECODE,
 		DUMMY,
 		IMPUTE,
-		OMIT
+		OMIT,
+		BOW
 	}
 
 	@Override
@@ -88,6 +92,12 @@ public class ColumnEncoderSerializationTest extends AutomatedTestBase
 	@Test
 	public void testComposite8() { runTransformSerTest(TransformType.OMIT, schemaStrings); }
 
+	@Test
+	public void testComposite9() { runTransformSerTest(TransformType.BOW, schemaStrings); }
+
+	@Test
+	public void testComposite10() { runTransformSerTest(TransformType.BOW, schemaMixed); }
+
 
 
 
@@ -117,11 +127,21 @@ public class ColumnEncoderSerializationTest extends AutomatedTestBase
 					"{ \"id\": 7, \"method\": \"global_mode\" }, { \"id\": 9, \"method\": \"global_mean\" } ]\n\n}";
 		else if (type == TransformType.OMIT)
 			spec = "{ \"ids\": true, \"omit\": [ 1,2,4,5,6,7,8,9 ], \"recode\": [ 2, 7 ] }";
+		else if (type == TransformType.BOW)
+			spec = "{ \"ids\": true, \"omit\": [ 1,4,5,6,8,9 ], \"bag_of_words\": [ 2, 7 ] }";
 
 		frame.setSchema(schema);
 		String[] cnames = frame.getColumnNames();
 
 		MultiColumnEncoder encoderIn = EncoderFactory.createEncoder(spec, cnames, frame.getNumColumns(), null);
+		if(type == TransformType.BOW){
+			List<ColumnEncoderBagOfWords> encs = encoderIn.getColumnEncoders(ColumnEncoderBagOfWords.class);
+			HashMap<Object, Integer> dict = new HashMap<>();
+			dict.put("val1", 1);
+			dict.put("val2", 2);
+			dict.put("val3", 300);
+			encs.forEach(e -> e.setTokenDictionary(dict));
+		}
 		MultiColumnEncoder encoderOut;
 
 		// serialization and deserialization
@@ -141,7 +161,16 @@ public class ColumnEncoderSerializationTest extends AutomatedTestBase
 		for(Class<? extends ColumnEncoder> classtype: typesIn){
 			Assert.assertArrayEquals(encoderIn.getFromAllIntArray(classtype, ColumnEncoder::getColID), encoderOut.getFromAllIntArray(classtype, ColumnEncoder::getColID));
 		}
-
+		if(type == TransformType.BOW){
+			List<ColumnEncoderBagOfWords> encsIn = encoderIn.getColumnEncoders(ColumnEncoderBagOfWords.class);
+			List<ColumnEncoderBagOfWords> encsOut = encoderOut.getColumnEncoders(ColumnEncoderBagOfWords.class);
+			for (int i = 0; i < encsIn.size(); i++) {
+				Map<Object, Integer> eOutDict = encsOut.get(i).getTokenDictionary();
+				encsIn.get(i).getTokenDictionary().forEach((k,v) -> {
+					assert v.equals(eOutDict.get(k));
+				});
+			}
+		}
 
 	}
 

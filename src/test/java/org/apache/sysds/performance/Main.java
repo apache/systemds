@@ -24,12 +24,14 @@ import org.apache.sysds.performance.compression.SchemaTest;
 import org.apache.sysds.performance.compression.Serialize;
 import org.apache.sysds.performance.compression.StreamCompress;
 import org.apache.sysds.performance.compression.TransformPerf;
+import org.apache.sysds.performance.frame.Transform;
 import org.apache.sysds.performance.generators.ConstMatrix;
 import org.apache.sysds.performance.generators.FrameFile;
 import org.apache.sysds.performance.generators.FrameTransformFile;
 import org.apache.sysds.performance.generators.GenMatrices;
 import org.apache.sysds.performance.generators.IGenerate;
 import org.apache.sysds.performance.generators.MatrixFile;
+import org.apache.sysds.performance.matrix.MatrixAppend;
 import org.apache.sysds.performance.matrix.MatrixBinaryCellPerf;
 import org.apache.sysds.performance.matrix.MatrixMulPerformance;
 import org.apache.sysds.performance.matrix.MatrixReplacePerf;
@@ -128,8 +130,14 @@ public class Main {
 			case 1005:
 				ReshapePerf.main(args);
 				break;
-			case 1006: 
+			case 1006:
 				MatrixBinaryCellPerf.main(args);
+				break;
+			case 1007:
+				Transform.main(args);
+				break;
+			case 1008:
+				MatrixAppend.main(args);
 				break;
 			default:
 				break;

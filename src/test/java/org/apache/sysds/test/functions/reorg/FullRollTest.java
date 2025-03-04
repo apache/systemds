@@ -20,6 +20,7 @@
 package org.apache.sysds.test.functions.reorg;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
@@ -96,14 +97,14 @@ public class FullRollTest extends AutomatedTestBase {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = false;
 			programArgs = new String[]{"-stats", "-explain", "-args", input("A"), output("B")};
 			runTest(true, false, null, -1);
-			boolean opcodeCP = Statistics.getCPHeavyHitterOpCodes().contains("roll");
+			boolean opcodeCP = Statistics.getCPHeavyHitterOpCodes().contains(Opcodes.ROLL.toString());
 			
 			// Run test SP
 			rtplatform = ExecMode.SPARK;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 			programArgs = new String[]{"-stats", "-explain", "-args", input("A"), output("C")};
 			runTest(true, false, null, -1);
-			boolean opcodeSP = Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX + "roll");
+			boolean opcodeSP = Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX + Opcodes.ROLL.toString());
 			
 			//compare matrices
 			HashMap<CellIndex, Double> dmlfileCP = readDMLMatrixFromOutputDir("B");

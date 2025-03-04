@@ -154,7 +154,6 @@ public class FederatedParamservTest extends AutomatedTestBase {
 				int port = getRandomAvailablePort();
 				threads.add(startLocalFedWorkerThread(port, FED_WORKER_WAIT_S));
 				ports.add(port);
-				System.out.println("Worker with port " + port + " started!");
 
 				if ( threads.get(i).isInterrupted() || !threads.get(i).isAlive() )
 					throw new DMLRuntimeException("Federated worker thread dead or interrupted! Port " + port);

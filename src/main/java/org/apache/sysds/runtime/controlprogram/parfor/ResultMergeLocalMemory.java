@@ -73,7 +73,7 @@ public class ResultMergeLocalMemory extends ResultMergeMatrix
 			
 			//create compare matrix if required (existing data in result)
 			_compare = getCompareMatrix(outMB);
-			if( _compare != null )
+			if( _compare != null || _isAccum )
 				outMBNew.copy(outMB);
 			
 			//serial merge all inputs
@@ -90,7 +90,7 @@ public class ResultMergeLocalMemory extends ResultMergeMatrix
 					MatrixBlock inMB = in.acquireRead();
 					
 					//core merge 
-					merge( outMBNew, inMB, appendOnly );
+					merge( outMBNew, inMB, _compare, appendOnly );
 					
 					//unpin and clear in-memory input_i
 					in.release();
@@ -169,7 +169,7 @@ public class ResultMergeLocalMemory extends ResultMergeMatrix
 				
 				//create compare matrix if required (existing data in result)
 				_compare = getCompareMatrix(outMB);
-				if( _compare != null )
+				if( _compare != null || _isAccum )
 					outMBNew.copy(outMB);
 				
 				//parallel merge of all inputs
@@ -215,7 +215,7 @@ public class ResultMergeLocalMemory extends ResultMergeMatrix
 		return moNew;
 	}
 
-	private static DenseBlock getCompareMatrix( MatrixBlock output ) {
+	private DenseBlock getCompareMatrix( MatrixBlock output ) {
 		//create compare matrix only if required
 		if( !output.isEmptyBlock(false) )
 			return DataConverter.convertToDenseBlock(output, false);
@@ -253,11 +253,12 @@ public class ResultMergeLocalMemory extends ResultMergeMatrix
 	 * 
 	 * @param out output matrix block
 	 * @param in input matrix block
+	 * @param compare initialized output
 	 * @param appendOnly ?
 	 */
-	private void merge( MatrixBlock out, MatrixBlock in, boolean appendOnly ) {
-		if( _compare == null )
-			mergeWithoutComp(out, in, appendOnly, true);
+	private void merge( MatrixBlock out, MatrixBlock in, DenseBlock compare, boolean appendOnly ) {
+		if( _compare == null || _isAccum )
+			mergeWithoutComp(out, in, _compare, appendOnly, true);
 		else
 			mergeWithComp(out, in, _compare);
 	}
@@ -304,7 +305,7 @@ public class ResultMergeLocalMemory extends ResultMergeMatrix
 				LOG.trace("ResultMerge (local, in-memory): Merge input "+_inMO.hashCode()+" (fname="+_inMO.getFileName()+")");
 				
 				MatrixBlock inMB = _inMO.acquireRead(); //incl. implicit read from HDFS
-				merge( _outMB, inMB, false );
+				merge( _outMB, inMB, _compare, false );
 				_inMO.release();
 				_inMO.clearData();
 			}

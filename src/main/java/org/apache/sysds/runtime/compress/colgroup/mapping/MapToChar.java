@@ -22,8 +22,11 @@ package org.apache.sysds.runtime.compress.colgroup.mapping;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
@@ -42,7 +45,7 @@ public class MapToChar extends AMapToData {
 	private final char[] _data;
 
 	protected MapToChar(int size) {
-		this(Character.MAX_VALUE, size);
+		this(Character.MAX_VALUE + 1, size);
 	}
 
 	public MapToChar(int unique, int size) {
@@ -93,6 +96,22 @@ public class MapToChar extends AMapToData {
 	}
 
 	@Override
+	public void set(int l, int u, int off, AMapToData tm) {
+		if(tm instanceof MapToChar) {
+			MapToChar tbm = (MapToChar) tm;
+			char[] tbv = tbm._data;
+			for(int i = l; i < u; i++, off++) {
+				_data[i] = tbv[off];
+			}
+		}
+		else {
+			for(int i = l; i < u; i++, off++) {
+				set(i, tm.getIndex(off));
+			}
+		}
+	}
+
+	@Override
 	public int setAndGet(int n, int v) {
 		return _data[n] = (char) v;
 	}
@@ -116,27 +135,37 @@ public class MapToChar extends AMapToData {
 		out.writeByte(MAP_TYPE.CHAR.ordinal());
 		out.writeInt(getUnique());
 		out.writeInt(_data.length);
+		writeChars(out, _data);
+
+	}
+
+	protected static void writeChars(DataOutput out, char[] _data_c) throws IOException {
 		final int BS = 100;
-		if(_data.length > BS) {
+		if(_data_c.length > BS) {
 			final byte[] buff = new byte[BS * 2];
-			for(int i = 0; i < _data.length;) {
-				if(i + BS <= _data.length) {
-					for(int o = 0; o < BS; o++) {
-						IOUtilFunctions.shortToBa(_data[i++], buff, o * 2);
-					}
-					out.write(buff);
-				}
-				else {// remaining.
-					for(; i < _data.length; i++)
-						out.writeChar(_data[i]);
-				}
+			for(int i = 0; i < _data_c.length;) {
+				i = writeCharsBlock(out, _data_c, BS, buff, i);
 			}
 		}
 		else {
-			for(int i = 0; i < _data.length; i++)
-				out.writeChar(_data[i]);
+			for(int i = 0; i < _data_c.length; i++)
+				out.writeChar(_data_c[i]);
 		}
+	}
 
+	private static int writeCharsBlock(DataOutput out, char[] _data_c, final int BS, final byte[] buff, int i)
+		throws IOException {
+		if(i + BS <= _data_c.length) {
+			for(int o = 0; o < BS; o++) {
+				IOUtilFunctions.shortToBa(_data_c[i++], buff, o * 2);
+			}
+			out.write(buff);
+		}
+		else {// remaining.
+			for(; i < _data_c.length; i++)
+				out.writeChar(_data_c[i]);
+		}
+		return i;
 	}
 
 	protected static MapToChar readFields(DataInput in) throws IOException {
@@ -144,12 +173,8 @@ public class MapToChar extends AMapToData {
 		final int length = in.readInt();
 		final char[] data = new char[length];
 		for(int i = 0; i < length; i++)
-			data[i] = in.readChar();
+			data[i] = (char) in.readUnsignedShort();
 		return new MapToChar(unique, data);
-	}
-
-	protected char[] getChars() {
-		return _data;
 	}
 
 	@Override
@@ -208,23 +233,31 @@ public class MapToChar extends AMapToData {
 	}
 
 	@Override
-	public void copyInt(int[] d) {
-		for(int i = 0; i < _data.length; i++)
+	public void copyInt(int[] d, int start, int end) {
+		for(int i = start; i < end; i++)
 			_data[i] = (char) d[i];
 	}
 
 	@Override
-	public void copyBit(BitSet d) {
-		for(int i = d.nextSetBit(0); i >= 0; i = d.nextSetBit(i + 1)) {
-			_data[i] = 1;
-		}
+	public int[] getCounts(int[] ret) {
+		final int h = (_data.length) % 8;
+		for(int i = 0; i < h; i++)
+			ret[getIndex(i)]++;
+		getCountsBy8P(ret, h, _data.length);
+		return ret;
 	}
 
-	@Override
-	public int[] getCounts(int[] ret) {
-		for(int i = 0; i < _data.length; i++)
-			ret[_data[i]]++;
-		return ret;
+	private void getCountsBy8P(int[] ret, int s, int e) {
+		for(int i = s; i < e; i += 8) {
+			ret[getIndex(i)]++;
+			ret[getIndex(i + 1)]++;
+			ret[getIndex(i + 2)]++;
+			ret[getIndex(i + 3)]++;
+			ret[getIndex(i + 4)]++;
+			ret[getIndex(i + 5)]++;
+			ret[getIndex(i + 6)]++;
+			ret[getIndex(i + 7)]++;
+		}
 	}
 
 	@Override
@@ -300,11 +333,6 @@ public class MapToChar extends AMapToData {
 		}
 
 		return new MapToChar(getUnique(), ret);
-	}
-
-	@Override
-	public int getMaxPossible() {
-		return Character.MAX_VALUE;
 	}
 
 	@Override
@@ -389,6 +417,40 @@ public class MapToChar extends AMapToData {
 		v[getIndex(r6)] += td[tm.getIndex(r6)];
 		v[getIndex(r7)] += td[tm.getIndex(r7)];
 		v[getIndex(r8)] += td[tm.getIndex(r8)];
+	}
+
+	@Override
+	public AMapToData[] splitReshapeDDCPushDown(final int multiplier, final ExecutorService pool) throws Exception {
+		final int s = size();
+		final MapToChar[] ret = new MapToChar[multiplier];
+		final int eachSize = s / multiplier;
+		for(int i = 0; i < multiplier; i++)
+			ret[i] = new MapToChar(getUnique(), eachSize);
+
+		final int blkz = Math.max(eachSize / 8, 2048) * multiplier;
+		List<Future<?>> tasks = new ArrayList<>();
+		for(int i = 0; i < s; i += blkz) {
+			final int start = i;
+			final int end = Math.min(i + blkz, s);
+			tasks.add(pool.submit(() -> splitReshapeDDCBlock(ret, multiplier, start, end)));
+		}
+
+		for(Future<?> t : tasks)
+			t.get();
+
+		return ret;
+	}
+
+	private void splitReshapeDDCBlock(final MapToChar[] ret, final int multiplier, final int start, final int end) {
+		for(int i = start; i < end; i += multiplier)
+			splitReshapeDDCRow(ret, multiplier, i);
+	}
+
+	private void splitReshapeDDCRow(final MapToChar[] ret, final int multiplier, final int i) {
+		final int off = i / multiplier;
+		final int end = i + multiplier;
+		for(int j = i; j < end; j++)
+			ret[j % multiplier]._data[off] = _data[j];
 	}
 
 }

@@ -21,6 +21,7 @@ package org.apache.sysds.lops;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOpData;
@@ -255,7 +256,7 @@ public class Data extends Lop
 			sb.append( "CP" );
 		sb.append( OPERAND_DELIMITOR );
 		if (_op.isRead()) {
-			sb.append( "read" );
+			sb.append( Opcodes.READ.toString() );
 			sb.append( OPERAND_DELIMITOR );
 			sb.append ( this.prepInputOperand(input1) );
 		}
@@ -276,12 +277,10 @@ public class Data extends Lop
 		OutputParameters oparams = getOutputParameters();
 		if ( _op.isWrite() ) {
 			sb.append( OPERAND_DELIMITOR );
-			FileFormat fmt = null;
-			if ( getDataType() == DataType.MATRIX || getDataType() == DataType.FRAME )
-				fmt = oparams.getFormat();
-			else // scalars will always be written in text format
-				fmt = FileFormat.TEXT;
-
+			// scalars will always be written in text format
+			FileFormat fmt = getDataType().isScalar() ?
+				FileFormat.TEXT : oparams.getFormat();
+			
 			//format literal or variable
 			Lop fmtLop = _inputParams.get(DataExpression.FORMAT_TYPE);
 			String fmtLabel = (fmt!=FileFormat.UNKNOWN) ? fmt.toString() : fmtLop.getOutputParameters().getLabel();
@@ -410,7 +409,7 @@ public class Data extends Lop
 			StringBuilder sb = InstructionUtils.getStringBuilder();
 			sb.append( "CP" );
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( "createvar" );
+			sb.append( Opcodes.CREATEVAR.toString() );
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( outputLabel );
 			sb.append( OPERAND_DELIMITOR );

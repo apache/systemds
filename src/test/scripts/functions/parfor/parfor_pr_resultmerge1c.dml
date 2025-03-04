@@ -28,8 +28,9 @@ R1 = matrix(0,rows=m,cols=n);
 parfor( i in 1:(n-7), par=8, mode=REMOTE_SPARK, resultmerge=REMOTE_SPARK, taskpartitioner=FACTORING, opt=NONE )
 {
    X = V[,i];
+   while(FALSE){} # prevent auto vectorization
    R1[,i] = X;
-}   
+}
 
-R = R1 + R1; 
-write(R, $4);       
+R = R1 + R1;
+write(R, $4);

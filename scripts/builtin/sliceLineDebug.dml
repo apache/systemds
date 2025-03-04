@@ -26,7 +26,7 @@
 # INPUT:
 # ------------------------------------------------------------------------------
 # TK      top-k slices (k x ncol(X) if successful)
-# TKC     score, size, error of slices (k x 3)
+# TKC     score, total/max error, size of slices (k x 4)
 # tfmeta  transformencode meta data
 # tfspec  transform specification
 # ------------------------------------------------------------------------------

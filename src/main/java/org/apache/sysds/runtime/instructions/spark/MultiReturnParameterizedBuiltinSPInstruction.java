@@ -62,6 +62,7 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoder;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderBagOfWords;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderBin;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderComposite;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
@@ -263,6 +264,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			// encoder-specific outputs
 			List<ColumnEncoderRecode> raEncoders = _encoder.getColumnEncoders(ColumnEncoderRecode.class);
 			List<ColumnEncoderBin> baEncoders = _encoder.getColumnEncoders(ColumnEncoderBin.class);
+			List<ColumnEncoderBagOfWords> bowEncoders = _encoder.getColumnEncoders(ColumnEncoderBagOfWords.class);
 			ArrayList<Tuple2<Integer, Object>> ret = new ArrayList<>();
 
 			// output recode maps as columnID - token pairs
@@ -273,8 +275,14 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 				for(Entry<Integer, HashSet<Object>> e1 : tmp.entrySet())
 					for(Object token : e1.getValue())
 						ret.add(new Tuple2<>(e1.getKey(), token));
-				if(!raEncoders.isEmpty())
-					raEncoders.forEach(columnEncoderRecode -> columnEncoderRecode.getCPRecodeMapsPartial().clear());
+				raEncoders.forEach(columnEncoderRecode -> columnEncoderRecode.getCPRecodeMapsPartial().clear());
+			}
+
+			if(!bowEncoders.isEmpty()){
+				for (ColumnEncoderBagOfWords bowEnc : bowEncoders)
+					for (Object token : bowEnc.getPartialTokenDictionary())
+						ret.add(new Tuple2<>(bowEnc.getColID(), token));
+				bowEncoders.forEach(enc -> enc.getPartialTokenDictionary().clear());
 			}
 
 			// output binning column min/max as columnID - min/max pairs
@@ -317,11 +325,12 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			Iterator<Object> iter = arg0._2().iterator();
 			ArrayList<String> ret = new ArrayList<>();
 
-			long rowID = 1;
+			int rowID = 1;
 			StringBuilder sb = new StringBuilder();
 
 			// handle recode maps
-			if(_encoder.containsEncoderForID(colID, ColumnEncoderRecode.class)) {
+			if(_encoder.containsEncoderForID(colID, ColumnEncoderRecode.class) ||
+					_encoder.containsEncoderForID(colID, ColumnEncoderBagOfWords.class)) {
 				while(iter.hasNext()) {
 					String token = TfUtils.sanitizeSpaces(iter.next().toString());
 					sb.append(rowID).append(' ').append(scolID).append(' ');
@@ -362,7 +371,7 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			else {
 				throw new DMLRuntimeException("Unsupported metadata output for encoder: \n" + _encoder);
 			}
-			_accMax.add(rowID - 1);
+			_accMax.add(rowID - 1L);
 
 			return ret.iterator();
 		}

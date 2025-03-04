@@ -258,7 +258,10 @@ public class ResultMergeLocalFile extends ResultMergeMatrix
 							DenseBlock compare = DataConverter.convertToDenseBlock(mb, true);
 							for( String lname : dir.list() ) {
 								MatrixBlock tmp = LocalFileUtils.readMatrixBlockFromLocal( dir+"/"+lname );
-								mergeWithComp(mb, tmp, compare);
+								if( _isAccum )
+									mergeWithoutComp(mb, tmp, compare, appendOnly);
+								else
+									mergeWithComp(mb, tmp, compare);
 							}
 							
 							//sort sparse due to append-only
@@ -279,7 +282,7 @@ public class ResultMergeLocalFile extends ResultMergeMatrix
 								}
 								else {
 									MatrixBlock tmp = LocalFileUtils.readMatrixBlockFromLocal( dir+"/"+lname );
-									mergeWithoutComp(mb, tmp, appendOnly);
+									mergeWithoutComp(mb, tmp, null, appendOnly);
 								}
 							}
 							

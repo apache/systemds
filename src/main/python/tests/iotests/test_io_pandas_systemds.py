@@ -27,18 +27,22 @@ import pandas as pd
 from systemds.context import SystemDSContext
 
 
+def create_dataframe(n_rows, n_cols, mixed=True):
+    return pd.DataFrame(
+        {
+            f"C{i+1}": [
+                f"col{i+1}_string_{j}" if i == 0 and mixed else j + i
+                for j in range(n_rows)
+            ]
+            for i in range(n_cols)
+        }
+    )
+
+
 class TestPandasFromToSystemds(unittest.TestCase):
 
     sds: SystemDSContext = None
     temp_dir: str = "tests/iotests/temp_write_csv/"
-    n_cols = 3
-    n_rows = 5
-    df = pd.DataFrame(
-        {
-            "C1": [f"col1_string_{i}" for i in range(n_rows)],
-            "C2": [i for i in range(n_rows)],
-        }
-    )
 
     @classmethod
     def setUpClass(cls):
@@ -52,22 +56,36 @@ class TestPandasFromToSystemds(unittest.TestCase):
         shutil.rmtree(cls.temp_dir, ignore_errors=True)
 
     def test_into_systemds(self):
-        # Transfer into SystemDS and write to CSV
-        frame = self.sds.from_pandas(self.df)
-        frame.write(
-            self.temp_dir + "into_systemds.csv", format="csv", header=True
-        ).compute(verbose=True)
+        combinations = [  # (n_rows, n_cols, mixed)
+            (3, 2, True),  # Test un-parallelized code (rows <= 4)
+            (10, 5, True),  # Test parallelized column-wise code
+            (5, 10, True),  # Test parallelized column-wise mixed code
+            (5, 10, False),  # Test parallelized row-wise code
+        ]
 
-        # Read the CSV file using pandas
-        result_df = pd.read_csv(self.temp_dir + "into_systemds.csv")
+        for n_rows, n_cols, mixed in combinations:
+            df = create_dataframe(n_rows, n_cols, mixed)
 
-        # Verify the data
-        self.assertTrue(isinstance(result_df, pd.DataFrame))
-        self.assertTrue(self.df.equals(result_df))
+            # Transfer into SystemDS and write to CSV
+            frame = self.sds.from_pandas(df)
+            frame.write(
+                self.temp_dir + "into_systemds.csv", format="csv", header=True
+            ).compute(verbose=True)
+
+            # Read the CSV file using pandas
+            result_df = pd.read_csv(self.temp_dir + "into_systemds.csv")
+
+            # Verify the data
+            self.assertTrue(isinstance(result_df, pd.DataFrame))
+            self.assertTrue(df.equals(result_df))
 
     def test_out_of_systemds(self):
+        n_rows = 3
+        n_cols = 2
+        df = create_dataframe(n_rows, n_cols)
+
         # Create a CSV file to read into SystemDS
-        self.df.to_csv(self.temp_dir + "out_of_systemds.csv", header=False, index=False)
+        df.to_csv(self.temp_dir + "out_of_systemds.csv", header=False, index=False)
 
         # Read the CSV file into SystemDS and then compute back to pandas
         frame = self.sds.read(
@@ -79,7 +97,7 @@ class TestPandasFromToSystemds(unittest.TestCase):
         result_df["C2"] = result_df["C2"].astype(int)
 
         self.assertTrue(isinstance(result_df, pd.DataFrame))
-        self.assertTrue(self.df.equals(result_df))
+        self.assertTrue(df.equals(result_df))
 
 
 if __name__ == "__main__":

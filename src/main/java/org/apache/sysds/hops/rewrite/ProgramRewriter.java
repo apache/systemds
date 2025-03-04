@@ -75,7 +75,6 @@ public class ProgramRewriter{
 		if( staticRewrites )
 		{
 			//add static HOP DAG rewrite rules
-			_dagRuleSet.add(     new RewriteTransientWriteParentHandling()       );
 			_dagRuleSet.add(     new RewriteRemoveReadAfterWrite()               ); //dependency: before blocksize
 			_dagRuleSet.add(     new RewriteBlockSizeAndReblock()                );
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
@@ -116,7 +115,8 @@ public class ProgramRewriter{
  			if( LineageCacheConfig.getCompAssRW() )
  				_sbRuleSet.add(  new MarkForLineageReuse()                       );
  			_sbRuleSet.add(      new RewriteRemoveTransformEncodeMeta()          );
-		}
+ 			_dagRuleSet.add( new RewriteNonScalarPrint()                         );
+ 		}
 		
 		// DYNAMIC REWRITES (which do require size information)
 		if( dynamicRewrites )

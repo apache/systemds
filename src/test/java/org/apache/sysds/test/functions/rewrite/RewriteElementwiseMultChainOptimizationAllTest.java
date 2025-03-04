@@ -21,9 +21,9 @@ package org.apache.sysds.test.functions.rewrite;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.common.Types.ExecType;
@@ -74,16 +74,7 @@ public class RewriteElementwiseMultChainOptimizationAllTest extends AutomatedTes
 
 	private void testRewriteMatrixMultChainOp(String testname, boolean rewrites, ExecType et)
 	{	
-		ExecMode platformOld = rtplatform;
-		switch( et ){
-			case SPARK: rtplatform = ExecMode.SPARK; break;
-			default: rtplatform = ExecMode.HYBRID; break;
-		}
-		
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		
+		ExecMode platformOld = setExecMode(et);
 		boolean rewritesOld = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
 		OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = rewrites;
 		
@@ -121,13 +112,12 @@ public class RewriteElementwiseMultChainOptimizationAllTest extends AutomatedTes
 			
 			//check for presence of power operator, if we did a rewrite
 			if( rewrites ) {
-				Assert.assertTrue(heavyHittersContainsSubString("^2"));
+				Assert.assertTrue(heavyHittersContainsSubString(Opcodes.POW2.toString()));
 			}
 		}
 		finally {
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = rewritesOld;
-			rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			resetExecMode(platformOld);
 		}
 	}
 }

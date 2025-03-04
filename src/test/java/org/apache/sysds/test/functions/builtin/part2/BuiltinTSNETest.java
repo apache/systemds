@@ -415,7 +415,6 @@ public class BuiltinTSNETest extends AutomatedTestBase
 		runTSNEEarlyStoppingTest(2, 30, 300., 0.9, 1000, 1e-1, 1, "TRUE", 10, ExecType.CP);
 	}
 
-	@SuppressWarnings("unused")
 	private void runTSNEEarlyStoppingTest(
 		Integer reduced_dims, 
 		Integer perplexity, 

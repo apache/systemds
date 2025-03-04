@@ -88,6 +88,7 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.decode.Decoder;
 import org.apache.sysds.runtime.transform.decode.DecoderFactory;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderBagOfWords;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
 import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
@@ -1056,6 +1057,13 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 
 			// execute block transform apply
 			MultiColumnEncoder encoder = _bencoder.getValue();
+			// we need to create a copy of the encoder since the bag of word encoder stores frameblock specific state
+			// which would be overwritten when multiple blocks are located on a executor
+			// to avoid this, we need to create a shallow copy of the MCEncoder, where we only instantiate new bow
+			// encoders objects with the frameblock specific fields and shallow copy the other fields (like meta)
+			// other encoders are reused and not newly instantiated
+			if(!encoder.getColumnEncoders(ColumnEncoderBagOfWords.class).isEmpty())
+				encoder = new MultiColumnEncoder(encoder); // create copy
 			MatrixBlock tmp = encoder.apply(blk);
 			// remap keys
 			if(_omap != null) {

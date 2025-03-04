@@ -73,10 +73,9 @@ public class IndexingOp extends Hop
 		setRowLowerEqualsUpper(passedRowsLEU);
 		setColLowerEqualsUpper(passedColsLEU);
 	}
-
-	@Override
-	public void checkArity() {
-		HopsException.check(_input.size() == 5, this, "should have 5 inputs but has %d inputs", _input.size());
+	
+	public boolean isScalarOutput() {
+		return isRowLowerEqualsUpper() && isColLowerEqualsUpper();
 	}
 
 	public boolean isRowLowerEqualsUpper(){
@@ -371,6 +370,14 @@ public class IndexingOp extends Hop
 	@Override
 	public void refreshSizeInformation()
 	{
+		// early abort for scalar right indexing
+		// (important to prevent incorrect dynamic rewrites)
+		if( isScalar() ) {
+			setDim1(0); 
+			setDim2(0);
+			return;
+		}
+		
 		Hop input1 = getInput().get(0); //matrix
 		Hop input2 = getInput().get(1); //inpRowL
 		Hop input3 = getInput().get(2); //inpRowU

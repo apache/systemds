@@ -20,6 +20,8 @@
 package org.apache.sysds.test.functions.rewrite;
 
 import java.util.HashMap;
+
+import org.apache.sysds.common.Opcodes;
 import org.junit.Test;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -97,6 +99,6 @@ public class RewriteMergeBlocksTest extends AutomatedTestBase
 		HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
 		TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		Assert.assertTrue(expectedMerge == 
-			heavyHittersContainsSubString("mmchain"));
+			heavyHittersContainsSubString(Opcodes.MMCHAIN.toString()));
 	}
 }

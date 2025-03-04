@@ -110,11 +110,6 @@ public class BinaryOp extends MultiThreadedHop {
 		refreshSizeInformation();
 	}
 
-	@Override
-	public void checkArity() {
-		HopsException.check(_input.size() == 2, this, "should have arity 2 but has arity %d", _input.size());
-	}
-
 	public OpOp2 getOp() {
 		return op;
 	}
@@ -756,13 +751,12 @@ public class BinaryOp extends MultiThreadedHop {
 		DataType dt2 = getInput().get(1).getDataType();
 		
 		if( _etypeForced != null ) {
-			_etype = _etypeForced;
+			setExecType(_etypeForced);
 		}
 		else 
 		{
-			if ( OptimizerUtils.isMemoryBasedOptLevel() ) 
-			{
-				_etype = findExecTypeByMemEstimate();
+			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
+				setExecType(findExecTypeByMemEstimate());
 			}
 			else
 			{
@@ -773,29 +767,29 @@ public class BinaryOp extends MultiThreadedHop {
 					if ( (getInput().get(0).areDimsBelowThreshold() && getInput().get(1).areDimsBelowThreshold())
 							|| (getInput().get(0).isVector() && getInput().get(1).isVector()))
 					{
-						_etype = ExecType.CP;
+						setExecType(ExecType.CP);
 					}
 				}
 				else if ( dt1 == DataType.MATRIX && dt2 == DataType.SCALAR ) {
 					if ( getInput().get(0).areDimsBelowThreshold() || getInput().get(0).isVector() )
 					{
-						_etype = ExecType.CP;
+						setExecType(ExecType.CP);
 					}
 				}
 				else if ( dt1 == DataType.SCALAR && dt2 == DataType.MATRIX ) {
 					if ( getInput().get(1).areDimsBelowThreshold() || getInput().get(1).isVector() )
 					{
-						_etype = ExecType.CP;
+						setExecType(ExecType.CP);
 					}
 				}
 				else
 				{
-					_etype = ExecType.CP;
+					setExecType(ExecType.CP);
 				}
 				
 				//if no CP condition applied
 				if( _etype == null )
-					_etype = ExecType.SPARK;
+					setExecType(ExecType.SPARK);
 			}
 		
 			//check for valid CP dimensions and matrix size
@@ -1160,25 +1154,51 @@ public class BinaryOp extends MultiThreadedHop {
 	}
 	
 	public boolean supportsMatrixScalarOperations() {
-		return ( op==OpOp2.PLUS ||op==OpOp2.MINUS
-				||op==OpOp2.MULT ||op==OpOp2.DIV
-				||op==OpOp2.MODULUS ||op==OpOp2.INTDIV
-				||op==OpOp2.LESS ||op==OpOp2.LESSEQUAL
-				||op==OpOp2.GREATER ||op==OpOp2.GREATEREQUAL
-				||op==OpOp2.EQUAL ||op==OpOp2.NOTEQUAL
-				||op==OpOp2.MIN ||op==OpOp2.MAX
-				||op==OpOp2.LOG ||op==OpOp2.POW
-				||op==OpOp2.AND ||op==OpOp2.OR ||op==OpOp2.XOR
-				||op==OpOp2.BITWAND ||op==OpOp2.BITWOR ||op==OpOp2.BITWXOR
-				||op==OpOp2.BITWSHIFTL ||op==OpOp2.BITWSHIFTR);
+		switch(op) {
+			case PLUS:
+			case MINUS:
+			case MULT:
+			case DIV:
+			case MODULUS:
+			case INTDIV:
+			case LESS:
+			case LESSEQUAL:
+			case GREATER:
+			case GREATEREQUAL:
+			case EQUAL:
+			case NOTEQUAL:
+			case MIN:
+			case MAX:
+			case LOG:
+			case POW:
+			case AND:
+			case OR:
+			case XOR:
+			case BITWAND:
+			case BITWOR:
+			case BITWXOR:
+			case BITWSHIFTL:
+			case BITWSHIFTR:
+				return true;
+			default:
+				return false;
+		}
 	}
-	
+
 	public boolean isPPredOperation() {
-		return (op==OpOp2.LESS    ||op==OpOp2.LESSEQUAL
-			||op==OpOp2.GREATER ||op==OpOp2.GREATEREQUAL
-			||op==OpOp2.EQUAL   ||op==OpOp2.NOTEQUAL);
+		switch(op) {
+			case LESS:
+			case LESSEQUAL:
+			case GREATER:
+			case GREATEREQUAL:
+			case EQUAL:
+			case NOTEQUAL:
+				return true;
+			default:
+				return false;
+		}
 	}
-	
+
 	public OpOp2 getComplementPPredOperation() {
 		switch( op ) {
 			case LESS:         return OpOp2.GREATEREQUAL;

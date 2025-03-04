@@ -26,7 +26,9 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -34,6 +36,7 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.RightIndex;
@@ -45,7 +48,6 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.lineage.LineageItem;
-import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.IndexRange;
 
 public class FederationMap {
@@ -147,10 +149,8 @@ public class FederationMap {
 		return broadcastSliced(data, null, transposed);
 	}
 
-	public FederatedRequest[] broadcastSliced(MatrixLineagePair moLin,
-		boolean transposed) {
-		return broadcastSliced(moLin.getMO(), moLin.getLI(),
-			transposed);
+	public FederatedRequest[] broadcastSliced(MatrixLineagePair moLin, boolean transposed) {
+		return broadcastSliced(moLin.getMO(), moLin.getLI(), transposed);
 	}
 
 	/**
@@ -639,11 +639,25 @@ public class FederationMap {
 	 * @param forEachFunction function to execute for each pair
 	 */
 	public void forEachParallel(BiFunction<FederatedRange, FederatedData, Void> forEachFunction) {
-		ExecutorService pool = CommonThreadPool.get(_fedMap.size());
+		ExecutorService pool = Executors.newFixedThreadPool(_fedMap.size());
 		ArrayList<MappingTask> mappingTasks = new ArrayList<>();
 		for(Pair<FederatedRange, FederatedData> fedMap : _fedMap)
 			mappingTasks.add(new MappingTask(fedMap.getKey(), fedMap.getValue(), forEachFunction, _ID));
-		CommonThreadPool.invokeAndShutdown(pool, mappingTasks);
+
+		try {
+			for(Future<?> t:pool.invokeAll(mappingTasks, ConfigurationManager.getFederatedTimeout(), TimeUnit.SECONDS)){
+				if(!t.isDone())
+					throw new RuntimeException("Timeout");
+				else if(t.isCancelled())
+					throw new RuntimeException("Failed");
+			}
+		}
+		catch(InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+		finally{
+			pool.shutdown();
+		}
 	}
 
 	/**
@@ -657,15 +671,25 @@ public class FederationMap {
 	 * @return the new <code>FederationMap</code>
 	 */
 	public FederationMap mapParallel(long newVarID, BiFunction<FederatedRange, FederatedData, Void> mappingFunction) {
-		ExecutorService pool = CommonThreadPool.get(_fedMap.size());
-
+		ExecutorService pool = Executors.newFixedThreadPool(_fedMap.size());
 		FederationMap fedMapCopy = copyWithNewID(_ID);
 		ArrayList<MappingTask> mappingTasks = new ArrayList<>();
 		for(Pair<FederatedRange, FederatedData> fedMap : fedMapCopy._fedMap)
 			mappingTasks.add(new MappingTask(fedMap.getKey(), fedMap.getValue(), mappingFunction, newVarID));
-		CommonThreadPool.invokeAndShutdown(pool, mappingTasks);
-		fedMapCopy._ID = newVarID;
-		return fedMapCopy;
+		try{
+			for(Future<?> t : pool.invokeAll(mappingTasks, ConfigurationManager.getFederatedTimeout(), TimeUnit.SECONDS)){
+				if(!t.isDone())
+					throw new RuntimeException("Timeout");
+				else if(t.isCancelled()){
+					throw new RuntimeException("Failed");
+				}
+			}
+			fedMapCopy._ID = newVarID;
+			return fedMapCopy;
+		}
+		catch(Exception e){
+			throw new RuntimeException(e);
+		}
 	}
 
 	public FederationMap filter(IndexRange ixrange) {

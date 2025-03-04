@@ -141,13 +141,6 @@ public class DataGenOp extends MultiThreadedHop
 	}
 
 	@Override
-	public void checkArity() {
-		int sz = _input.size();
-		int pz = _paramIndexMap.size();
-		HopsException.check(sz == pz, this, "has %d inputs but %d parameters", sz, pz);
-	}
-
-	@Override
 	public String getOpString() {
 		return "dg(" + _op.toString().toLowerCase() +")";
 	}

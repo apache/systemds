@@ -201,7 +201,9 @@ public class DMLOptions {
 				else if (explainType.equalsIgnoreCase("runtime")) dmlOptions.explainType = ExplainType.RUNTIME;
 				else if (explainType.equalsIgnoreCase("recompile_hops")) dmlOptions.explainType = ExplainType.RECOMPILE_HOPS;
 				else if (explainType.equalsIgnoreCase("recompile_runtime")) dmlOptions.explainType = ExplainType.RECOMPILE_RUNTIME;
-				else throw new org.apache.commons.cli.ParseException("Invalid argument specified for -hops option, must be one of [hops, runtime, recompile_hops, recompile_runtime]");
+				else if (explainType.equalsIgnoreCase("codegen")) dmlOptions.explainType = ExplainType.CODEGEN;
+				else if (explainType.equalsIgnoreCase("codegen_recompile")) dmlOptions.explainType = ExplainType.CODEGEN_RECOMPILE;
+				else throw new org.apache.commons.cli.ParseException("Invalid argument specified for -hops option, must be one of [hops, runtime, recompile_hops, recompile_runtime, codegen, codegen_recompile]");
 			}
 		}
 
@@ -376,7 +378,7 @@ public class DMLOptions {
 		Option memOpt = OptionBuilder.withDescription("monitors and reports max memory consumption in CP; default off")
 			.create("mem");
 		Option explainOpt = OptionBuilder.withArgName("level")
-			.withDescription("explains plan levels; can be 'hops' / 'runtime'[default] / 'recompile_hops' / 'recompile_runtime'")
+			.withDescription("explains plan levels; can be 'hops' / 'runtime'[default] / 'recompile_hops' / 'recompile_runtime' / 'codegen' / 'codegen_recompile'")
 			.hasOptionalArg().create("explain");
 		Option execOpt = OptionBuilder.withArgName("mode")
 			.withDescription("sets execution mode; can be 'hadoop' / 'singlenode' / 'hybrid'[default] / 'HYBRID' / 'spark'")

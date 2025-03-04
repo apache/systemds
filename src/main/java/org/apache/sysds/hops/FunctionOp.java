@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.lops.Compression;
 import org.apache.sysds.lops.FunctionCallCP;
 import org.apache.sysds.lops.Lop;
@@ -91,10 +92,6 @@ public class FunctionOp extends MultiThreadedHop
 		}
 	}
 
-	/** FunctionOps may have any number of inputs. */
-	@Override
-	public void checkArity() {}
-	
 	public String getFunctionKey() {
 		return DMLProgram.constructFunctionKey(
 			getFunctionNamespace(), getFunctionName());
@@ -183,54 +180,54 @@ public class FunctionOp extends MultiThreadedHop
 		if ( getFunctionType() != FunctionType.MULTIRETURN_BUILTIN )
 			throw new RuntimeException("Invalid call of computeOutputMemEstimate in FunctionOp.");
 		else {
-			if ( getFunctionName().equalsIgnoreCase("qr") ) {
+			if ( getFunctionName().equalsIgnoreCase(Opcodes.QR.toString()) ) {
 				// upper-triangular and lower-triangular matrices
 				long outputH = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 0.5);
 				long outputR = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 0.5);
 				return outputH+outputR; 
 			}
-			else if ( getFunctionName().equalsIgnoreCase("lu") ) {
+			else if ( getFunctionName().equalsIgnoreCase(Opcodes.LU.toString()) ) {
 				// upper-triangular and lower-triangular matrices
 				long outputP = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0/getOutputs().get(1).getDim2());
 				long outputL = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 0.5);
 				long outputU = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 0.5);
 				return outputL+outputU+outputP; 
 			}
-			else if ( getFunctionName().equalsIgnoreCase("eigen") ) {
+			else if ( getFunctionName().equalsIgnoreCase(Opcodes.EIGEN.toString()) ) {
 				long outputVectors = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
 				long outputValues = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), 1, 1.0);
 				return outputVectors+outputValues; 
 			}
-			else if ( getFunctionName().equalsIgnoreCase("fft") ) {
+			else if ( getFunctionName().equalsIgnoreCase(Opcodes.FFT.toString()) ) {
 				long outputRe = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
 				long outputIm = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0);
 				return outputRe+outputIm;
 			}
-			else if ( getFunctionName().equalsIgnoreCase("ifft") ) {
+			else if ( getFunctionName().equalsIgnoreCase(Opcodes.IFFT.toString()) ) {
 				long outputRe = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
 				long outputIm = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0);
 				return outputRe+outputIm;
 			}
-			else if ( getFunctionName().equalsIgnoreCase("fft_linearized") ) {
+			else if ( getFunctionName().equalsIgnoreCase(Opcodes.FFT_LINEARIZED.toString()) ) {
 				long outputRe = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
 				long outputIm = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0);
 				return outputRe+outputIm;
 			}
-			else if ( getFunctionName().equalsIgnoreCase("ifft_linearized") ) {
+			else if ( getFunctionName().equalsIgnoreCase(Opcodes.IFFT_LINEARIZED.toString()) ) {
 				long outputRe = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
 				long outputIm = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0);
 				return outputRe+outputIm;
 			}
-			else if ( getFunctionName().equalsIgnoreCase("stft") ) {
+			else if ( getFunctionName().equalsIgnoreCase(Opcodes.STFT.toString()) ) {
 				long outputRe = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
 				long outputIm = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0);
 				return outputRe+outputIm;
 			}
-			else if ( getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("lstm_backward") ) {
+			else if ( getFunctionName().equalsIgnoreCase(Opcodes.LSTM.toString()) || getFunctionName().equalsIgnoreCase(Opcodes.LSTM_BACKWARD.toString()) ) {
 				// TODO: To allow for initial version to always run on the GPU
 				return 0; 
 			}
-			else if ( getFunctionName().equalsIgnoreCase("batch_norm2d") || getFunctionName().equalsIgnoreCase("batch_norm2d_train")) {
+			else if ( getFunctionName().equalsIgnoreCase(Opcodes.BATCH_NORM2D.toString()) || getFunctionName().equalsIgnoreCase("batch_norm2d_train")) {
 				return OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0) +
 						OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0) +
 						OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(2).getDim1(), getOutputs().get(2).getDim2(), 1.0) +
@@ -240,18 +237,18 @@ public class FunctionOp extends MultiThreadedHop
 			else if ( getFunctionName().equalsIgnoreCase("batch_norm2d_test") ) {
 			return OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
 		}
-			else if ( getFunctionName().equalsIgnoreCase("batch_norm2d_backward") ) {
+			else if ( getFunctionName().equalsIgnoreCase(Opcodes.BATCH_NORM2D_BACKWARD.toString()) ) {
 				return OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0) +
 						OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0) +
 						OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(2).getDim1(), getOutputs().get(2).getDim2(), 1.0);
 			}
-			else if ( getFunctionName().equalsIgnoreCase("svd") ) {
+			else if ( getFunctionName().equalsIgnoreCase(Opcodes.SVD.toString()) ) {
 				long outputU = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(0).getDim1(), getOutputs().get(0).getDim2(), 1.0);
 				long outputSigma = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(1).getDim1(), getOutputs().get(1).getDim2(), 1.0);
 				long outputV = OptimizerUtils.estimateSizeExactSparsity(getOutputs().get(2).getDim1(), getOutputs().get(2).getDim2(), 1.0);
 				return outputU+outputSigma+outputV;
 			}
-			else if( getFunctionName().equalsIgnoreCase("rcm") ) {
+			else if( getFunctionName().equalsIgnoreCase(Opcodes.RCM.toString()) ) {
 				long nr = Math.max(getInput(0).getDim1(), getInput(1).getDim1());
 				long nc = Math.max(getInput(0).getDim2(), getInput(1).getDim2());
 				return 2*OptimizerUtils.estimateSizeExactSparsity(nr, nc, 1.0); 
@@ -267,50 +264,50 @@ public class FunctionOp extends MultiThreadedHop
 		if ( getFunctionType() != FunctionType.MULTIRETURN_BUILTIN )
 			throw new RuntimeException("Invalid call of computeIntermediateMemEstimate in FunctionOp.");
 		else {
-			if ( getFunctionName().equalsIgnoreCase("qr") ) {
+			if ( getFunctionName().equalsIgnoreCase(Opcodes.QR.toString()) ) {
 				// matrix of size same as the input
 				return OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0); 
 			}
-			else if ( getFunctionName().equalsIgnoreCase("lu")) {
+			else if ( getFunctionName().equalsIgnoreCase(Opcodes.LU.toString())) {
 				// 1D vector 
 				return OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), 1, 1.0); 
 			}
-			else if ( getFunctionName().equalsIgnoreCase("eigen")) {
+			else if ( getFunctionName().equalsIgnoreCase(Opcodes.EIGEN.toString())) {
 				// One matrix of size original input and three 1D vectors (used to represent tridiagonal matrix)
 				return OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0) 
 						+ 3*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), 1, 1.0); 
 			}
-			else if ( getFunctionName().equalsIgnoreCase("fft") ) {
+			else if ( getFunctionName().equalsIgnoreCase(Opcodes.FFT.toString()) ) {
 				// 2 matrices of size same as the input
 				return 2*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0);
 			}
-			else if ( getFunctionName().equalsIgnoreCase("ifft") ) {
+			else if ( getFunctionName().equalsIgnoreCase(Opcodes.IFFT.toString()) ) {
 				// 2 matrices of size same as the input
 				return 2*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0);
 			}
-			else if ( getFunctionName().equalsIgnoreCase("fft_linearized") ) {
+			else if ( getFunctionName().equalsIgnoreCase(Opcodes.FFT_LINEARIZED.toString()) ) {
 				// 2 matrices of size same as the input
 				return 2*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0);
 			}
-			else if ( getFunctionName().equalsIgnoreCase("ifft_linearized") ) {
+			else if ( getFunctionName().equalsIgnoreCase(Opcodes.IFFT_LINEARIZED.toString()) ) {
 				// 2 matrices of size same as the input
 				return 2*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0);
 			}
-			else if ( getFunctionName().equalsIgnoreCase("stft") ) {
+			else if ( getFunctionName().equalsIgnoreCase(Opcodes.STFT.toString()) ) {
 				// 2 matrices of size same as the input
 				return 2*OptimizerUtils.estimateSizeExactSparsity(getInput().get(0).getDim1(), getInput().get(0).getDim2(), 1.0);
 			}
-			else if (getFunctionName().equalsIgnoreCase("batch_norm2d") || getFunctionName().equalsIgnoreCase("batch_norm2d_backward") ||
+			else if (getFunctionName().equalsIgnoreCase(Opcodes.BATCH_NORM2D.toString()) || getFunctionName().equalsIgnoreCase(Opcodes.BATCH_NORM2D_BACKWARD.toString()) ||
 					getFunctionName().equalsIgnoreCase("batch_norm2d_train") || getFunctionName().equalsIgnoreCase("batch_norm2d_test")) {
 				return 0; 
 			}
-			else if ( getFunctionName().equalsIgnoreCase("lstm") 
-					||  getFunctionName().equalsIgnoreCase("lstm_backward")
-					|| getFunctionName().equalsIgnoreCase("rcm")) {
+			else if ( getFunctionName().equalsIgnoreCase(Opcodes.LSTM.toString())
+					||  getFunctionName().equalsIgnoreCase(Opcodes.LSTM_BACKWARD.toString())
+					|| getFunctionName().equalsIgnoreCase(Opcodes.RCM.toString())) {
 				// TODO: To allow for initial version to always run on the GPU
 				return 0; 
 			}
-			else if ( getFunctionName().equalsIgnoreCase("svd")) {
+			else if ( getFunctionName().equalsIgnoreCase(Opcodes.SVD.toString())) {
 				double interOutput = OptimizerUtils.estimateSizeExactSparsity(1, getInput().get(0).getDim2(), 1.0);
 				return interOutput;
 			}
@@ -326,8 +323,8 @@ public class FunctionOp extends MultiThreadedHop
 	
 	@Override
 	public boolean isGPUEnabled() {
-		if(getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("lstm_backward") ||  
-			getFunctionName().equalsIgnoreCase("batch_norm2d") || getFunctionName().equalsIgnoreCase("batch_norm2d_backward") ||
+		if(getFunctionName().equalsIgnoreCase(Opcodes.LSTM.toString()) || getFunctionName().equalsIgnoreCase(Opcodes.LSTM_BACKWARD.toString()) ||
+			getFunctionName().equalsIgnoreCase(Opcodes.BATCH_NORM2D.toString()) || getFunctionName().equalsIgnoreCase(Opcodes.BATCH_NORM2D_BACKWARD.toString()) ||
 			getFunctionName().equalsIgnoreCase("batch_norm2d_train") || getFunctionName().equalsIgnoreCase("batch_norm2d_test")) 
 			return true;
 		else
@@ -367,7 +364,7 @@ public class FunctionOp extends MultiThreadedHop
 	}
 
 	protected void constructAndSetCompressionLopFunctionalIfRequired(ExecType et) {
-		if((requiresCompression()) && ((FunctionCallCP) getLops()).getFunctionName().equalsIgnoreCase("transformencode")){ // xor
+		if((requiresCompression()) && ((FunctionCallCP) getLops()).getFunctionName().equalsIgnoreCase(Opcodes.TRANSFORMENCODE.toString())){ // xor
 			
 			// Lop matrixOut = lop.getFunctionOutputs().get(0);
 			Lop compressionInstruction = null;
@@ -403,15 +400,16 @@ public class FunctionOp extends MultiThreadedHop
 		if ( getFunctionType() == FunctionType.MULTIRETURN_BUILTIN ) {
 			boolean isBuiltinFunction = isBuiltinFunction();
 			// check if there is sufficient memory to execute this function
-			if(isBuiltinFunction && getFunctionName().equalsIgnoreCase("transformencode") ) {
+			double mem = getMemEstimate(); // obtain memory estimates for all (e.g., used in parfor)
+			if(isBuiltinFunction && getFunctionName().equalsIgnoreCase(Opcodes.TRANSFORMENCODE.toString()) ) {
 				_etype = ((_etypeForced==ExecType.SPARK 
-					|| (getMemEstimate() >= OptimizerUtils.getLocalMemBudget()
-						&& OptimizerUtils.isSparkExecutionMode())) ? ExecType.SPARK : ExecType.CP);
+					|| (mem >= OptimizerUtils.getLocalMemBudget() && OptimizerUtils.isSparkExecutionMode())) ? 
+					ExecType.SPARK : ExecType.CP);
 			}
-			else if(isBuiltinFunction && (getFunctionName().equalsIgnoreCase("lstm") || getFunctionName().equalsIgnoreCase("lstm_backward"))) {
+			else if(isBuiltinFunction && (getFunctionName().equalsIgnoreCase(Opcodes.LSTM.toString()) || getFunctionName().equalsIgnoreCase(Opcodes.LSTM_BACKWARD.toString()))) {
 				_etype = DMLScript.USE_ACCELERATOR ? ExecType.GPU : ExecType.CP;
 			}
-			else if(isBuiltinFunction && (getFunctionName().equalsIgnoreCase("batch_norm2d") || getFunctionName().equalsIgnoreCase("batch_norm2d_backward"))) {
+			else if(isBuiltinFunction && (getFunctionName().equalsIgnoreCase(Opcodes.BATCH_NORM2D.toString()) || getFunctionName().equalsIgnoreCase(Opcodes.BATCH_NORM2D_BACKWARD.toString()))) {
 				_etype = DMLScript.USE_ACCELERATOR ? ExecType.GPU : ExecType.CP;
 			}
 			else if(isBuiltinFunction && getFunctionName().equalsIgnoreCase("batch_norm2d_train")) {

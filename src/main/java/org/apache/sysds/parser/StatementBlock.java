@@ -595,6 +595,13 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 			Expression[] clexpr = lexpr.getAllExpr();
 			for( int i=0; i<clexpr.length; i++ )
 				clexpr[i] = rHoistFunctionCallsFromExpressions(clexpr[i], false, tmp, prog);
+			if( !root && lexpr.getOpCode()==Builtins.TIME ) { //core time hoisting
+				String varname = StatementBlockRewriteRule.createCutVarName(true);
+				DataIdentifier di = new DataIdentifier(varname);
+				di.setDataType(lexpr.getDataType());
+				di.setValueType(lexpr.getValueType());
+				tmp.add(new AssignmentStatement(di, lexpr, di));
+			}
 		}
 		else if( expr instanceof ParameterizedBuiltinFunctionExpression ) {
 			ParameterizedBuiltinFunctionExpression lexpr = (ParameterizedBuiltinFunctionExpression) expr;
@@ -612,7 +619,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 			FunctionCallIdentifier fexpr = (FunctionCallIdentifier) expr;
 			for( ParameterExpression pexpr : fexpr.getParamExprs() )
 				pexpr.setExpr(rHoistFunctionCallsFromExpressions(pexpr.getExpr(), false, tmp, prog));
-			if( !root ) { //core hoisting
+			if( !root ) { //core fcall hoisting
 				String varname = StatementBlockRewriteRule.createCutVarName(true);
 				DataIdentifier di = new DataIdentifier(varname);
 				di.setDataType(fexpr.getDataType());
@@ -887,11 +894,11 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 					DataType outputDatatype = expression.getOutput().getDataType();
 					switch (outputDatatype) {
 						case SCALAR:
-							break;
 						case MATRIX:
-						case TENSOR:
 						case FRAME:
 						case LIST:
+							break;
+						case TENSOR:
 							pstmt.raiseValidateError("Print statements can only print scalars. To print a " + outputDatatype + ", please wrap it in a toString() function.", conditional);
 						default:
 							pstmt.raiseValidateError("Print statements can only print scalars. Input datatype was: " + outputDatatype, conditional);

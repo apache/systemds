@@ -71,11 +71,6 @@ public class LiteralOp extends Hop
 	}
 
 	@Override
-	public void checkArity() {
-		HopsException.check(_input.isEmpty(), this, "should have 0 inputs but has %d inputs", _input.size());
-	}
-	
-	@Override
 	public boolean isGPUEnabled() {
 		return false;
 	}

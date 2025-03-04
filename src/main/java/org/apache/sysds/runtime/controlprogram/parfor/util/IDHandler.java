@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.controlprogram.parfor.util;
 
-import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -78,28 +77,21 @@ public class IDHandler
 	 * @return distributed unique id
 	 */
 	public static String createDistributedUniqueID() {
-		String uuid = null;
+		String uuid = "0_0.0.0.0";
 
 		try {
-			String pid = getProcessID();
+			long pid = getProcessID();
 			String host = getIPAddress(false);
 			uuid = pid + "_" + host;
 		}
-		catch(Exception ex) {
-			uuid = "0_0.0.0.0";
-		}
+		catch(Exception ex) {}
 
 		return uuid;
 	}
 
-	public static String getProcessID() {
-		//get process id
-		String pname = ManagementFactory.getRuntimeMXBean().getName(); //pid@hostname
-		String pid = pname.split("@")[0];
-		// TODO: change this as soon as we switch to a java version >= 9
-		// import java.lang.ProcessHandle;
-		// pid = ProcessHandle.current().pid();
-		return pid;
+	public static long getProcessID() {
+		//alternative: ManagementFactory.getRuntimeMXBean().getName() --> pid@hostname
+		return ProcessHandle.current().pid();
 	}
 	
 	public static String getIPAddress(boolean noLocal) throws SocketException, UnknownHostException {

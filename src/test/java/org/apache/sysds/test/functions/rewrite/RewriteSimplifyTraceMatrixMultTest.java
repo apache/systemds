@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -85,18 +86,12 @@ public class RewriteSimplifyTraceMatrixMultTest extends AutomatedTestBase {
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 			//check trace operator existence
-			String uaktrace = "uaktrace";
-			long numTrace = Statistics.getCPHeavyHitterCount(uaktrace);
-
-			if(rewrites)
-				Assert.assertTrue(numTrace == 0);
-			else
-				Assert.assertTrue(numTrace == 1);
-
+			long numTrace = Statistics.getCPHeavyHitterCount(Opcodes.UAKTRACE.toString());
+			Assert.assertTrue(numTrace == (rewrites ? 1 : 2)); 
+			Assert.assertTrue(heavyHittersContainsString(Opcodes.REV.toString()));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
 		}
-
 	}
 }

@@ -50,14 +50,12 @@ public class ComEstCompressed extends AComEst {
 
 	@Override
 	public CompressedSizeInfoColGroup getColGroupInfo(IColIndex colIndexes, int estimate, int nrUniqueUpperBound) {
-
-		// final IEncode map =
-		throw new UnsupportedOperationException("Unimplemented method 'getColGroupInfo'");
+		return null;
 	}
 
 	@Override
 	public CompressedSizeInfoColGroup getDeltaColGroupInfo(IColIndex colIndexes, int estimate, int nrUniqueUpperBound) {
-		throw new UnsupportedOperationException("Unimplemented method 'getDeltaColGroupInfo'");
+		return null;
 	}
 
 	@Override
@@ -69,11 +67,11 @@ public class ComEstCompressed extends AComEst {
 		}
 		else {
 			List<AColGroup> groups = CLALibCombineGroups.findGroupsInIndex(columns, cData.getColGroups());
-			int nVals = 1;
+			long nVals = 1;
 			for(AColGroup g : groups)
 				nVals *= g.getNumValues();
 
-			return Math.min(_data.getNumRows(), nVals);
+			return Math.min(_data.getNumRows(), (int) Math.min(nVals, Integer.MAX_VALUE));
 		}
 	}
 

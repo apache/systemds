@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOp1;
@@ -81,13 +82,13 @@ import org.apache.sysds.utils.Statistics;
 public class LineageRecomputeUtils {
 	private static final String LVARPREFIX = "lvar";
 	public static final String LPLACEHOLDER = "IN#";
-	private static final boolean DEBUG = true;
+	private static final boolean DEBUG = false;
 	public static Map<String, DedupLoopItem> loopPatchMap = new HashMap<>();
 
 	public static Data parseNComputeLineageTrace(String mainTrace) {
 		if (DEBUG)
 			System.out.println(mainTrace);
-
+		
 		// Separate the global trace and the dedup patches
 		String[] patches = LineageParser.separateMainAndDedupPatches(mainTrace);
 		LineageItem root = LineageParser.parseLineageTrace(patches[0]); //global trace
@@ -306,7 +307,7 @@ public class LineageRecomputeUtils {
 				break;
 			}
 			case Instruction: {
-				CPType ctype = InstructionUtils.getCPTypeByOpcode(item.getOpcode());
+				CPType ctype = Opcodes.getCPTypeByOpcode(item.getOpcode());
 				SPType stype = InstructionUtils.getSPTypeByOpcode(item.getOpcode());
 				
 				if (ctype != null) {
@@ -358,8 +359,8 @@ public class LineageRecomputeUtils {
 						}
 						case Binary: {
 							//handle special cases of binary operations 
-							String opcode = ("^2".equals(item.getOpcode()) 
-								|| "*2".equals(item.getOpcode())) ? 
+							String opcode = (Opcodes.POW2.toString().equals(item.getOpcode())
+								|| Opcodes.MULT2.toString().equals(item.getOpcode())) ?
 								item.getOpcode().substring(0, 1) : item.getOpcode();
 							Hop input1 = operands.get(item.getInputs()[0].getId());
 							Hop input2 = operands.get(item.getInputs()[1].getId());
@@ -390,8 +391,8 @@ public class LineageRecomputeUtils {
 							break;
 						}
 						case BuiltinNary: {
-							String opcode = item.getOpcode().equals("n+") ? "plus" :
-									item.getOpcode().equals("n*") ? "mult" : item.getOpcode();
+							String opcode = item.getOpcode().equals(Opcodes.NP.toString()) ? "plus" :
+									item.getOpcode().equals(Opcodes.NM.toString()) ? "mult" : item.getOpcode();
 							operands.put(item.getId(), HopRewriteUtils.createNary(
 								OpOpN.valueOf(opcode.toUpperCase()), createNaryInputs(item, operands)));
 							break;
@@ -538,24 +539,24 @@ public class LineageRecomputeUtils {
 		String opcode = item.getOpcode();
 		Hop target = operands.get(item.getInputs()[0].getId());
 		LinkedHashMap<String,Hop> args = new LinkedHashMap<>();
-		if( opcode.equals("groupedagg") ) {
+		if( opcode.equals(Opcodes.GROUPEDAGG.toString()) ) {
 			args.put("target", target);
 			args.put(Statement.GAGG_GROUPS, operands.get(item.getInputs()[1].getId()));
 			args.put(Statement.GAGG_WEIGHTS, operands.get(item.getInputs()[2].getId()));
 			args.put(Statement.GAGG_FN, operands.get(item.getInputs()[3].getId()));
 			args.put(Statement.GAGG_NUM_GROUPS, operands.get(item.getInputs()[4].getId()));
 		}
-		else if (opcode.equalsIgnoreCase("rmempty")) {
+		else if (opcode.equalsIgnoreCase(Opcodes.RMEMPTY.toString())) {
 			args.put("target", target);
 			args.put("margin", operands.get(item.getInputs()[1].getId()));
 			args.put("select", operands.get(item.getInputs()[2].getId()));
 		}
-		else if(opcode.equalsIgnoreCase("replace")) {
+		else if(opcode.equalsIgnoreCase(Opcodes.REPLACE.toString())) {
 			args.put("target", target);
 			args.put("pattern", operands.get(item.getInputs()[1].getId()));
 			args.put("replacement", operands.get(item.getInputs()[2].getId()));
 		}
-		else if(opcode.equalsIgnoreCase("rexpand")) {
+		else if(opcode.equalsIgnoreCase(Opcodes.REXPAND.toString())) {
 			args.put("target", target);
 			args.put("max", operands.get(item.getInputs()[1].getId()));
 			args.put("dir", operands.get(item.getInputs()[2].getId()));
@@ -752,8 +753,8 @@ public class LineageRecomputeUtils {
 						}
 						case Binary: {
 							//handle special cases of binary operations 
-							String opcode = ("^2".equals(item.getOpcode()) 
-								|| "*2".equals(item.getOpcode())) ? 
+							String opcode = (Opcodes.POW2.toString().equals(item.getOpcode())
+								|| Opcodes.MULT2.toString().equals(item.getOpcode())) ?
 								item.getOpcode().substring(0, 1) : item.getOpcode();
 							Hop input1 = operands.get(item.getInputs()[0].getId());
 							Hop input2 = operands.get(item.getInputs()[1].getId());
@@ -784,7 +785,7 @@ public class LineageRecomputeUtils {
 							break;
 						}
 						case BuiltinNary: {
-							String opcode = item.getOpcode().equals("n+") ? "plus" : item.getOpcode();
+							String opcode = item.getOpcode().equals(Opcodes.NP.toString()) ? "plus" : item.getOpcode();
 							operands.put(item.getId(), HopRewriteUtils.createNary(
 								OpOpN.valueOf(opcode.toUpperCase()), createNaryInputs(item, operands)));
 							break;

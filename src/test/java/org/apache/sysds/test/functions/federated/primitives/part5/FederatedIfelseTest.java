@@ -39,6 +39,7 @@ import org.junit.runners.Parameterized;
 public class FederatedIfelseTest extends AutomatedTestBase {
 	private final static String TEST_NAME1 = "FederatedIfelseTest";
 	private final static String TEST_NAME2 = "FederatedIfelseAlignedTest";
+	private final static String TEST_NAME3 = "FederatedIfelseSingleMatrixInputTest";
 
 	private final static String TEST_DIR = "functions/federated/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedIfelseTest.class.getSimpleName() + "/";
@@ -62,36 +63,42 @@ public class FederatedIfelseTest extends AutomatedTestBase {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"S"}));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"S"}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"S"}));
 	}
 
 	@Test
 	public void testIfelseDiffWorkersCP() {
-		runTernaryTest(ExecMode.SINGLE_NODE, false);
+		runTernaryTest(ExecMode.SINGLE_NODE, false, false);
+	}
+
+	@Test
+	public void testIfelseDiffWorkersSingleMatInCP() {
+		runTernaryTest(ExecMode.SINGLE_NODE, false, true);
 	}
 
 	@Test
 	public void testIfelseAlignedCP() {
-		runTernaryTest(ExecMode.SINGLE_NODE, true);
+		runTernaryTest(ExecMode.SINGLE_NODE, true, false);
 	}
 
 	@Test
 	public void testIfelseDiffWorkersSP() {
-		runTernaryTest(ExecMode.SPARK, false);
+		runTernaryTest(ExecMode.SPARK, false, false);
 	}
 
 	@Test
 	public void testIfelseAlignedSP() {
-		runTernaryTest(ExecMode.SPARK, true);
+		runTernaryTest(ExecMode.SPARK, true, false);
 	}
 
-	private void runTernaryTest(ExecMode execMode, boolean aligned) {
+	private void runTernaryTest(ExecMode execMode, boolean aligned, boolean singleMatrixInput) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;
 
 		if(rtplatform == ExecMode.SPARK)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
-		String TEST_NAME = aligned ? TEST_NAME2 : TEST_NAME1;
+		String TEST_NAME = aligned ? TEST_NAME2 : (!singleMatrixInput ? TEST_NAME1 : TEST_NAME3);
 
 		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -148,10 +155,51 @@ public class FederatedIfelseTest extends AutomatedTestBase {
 			TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 			loadTestConfiguration(config);
 
-			if(aligned)
-				runAlignedTernary(HOME, TEST_NAME, r, c, port1, port2, port3, port4);
-			else
-				runTernary(HOME, TEST_NAME, port1, port2, port3, port4);
+			if(aligned) {
+				// Run reference dml script with normal matrix
+				fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
+				programArgs = new String[] {"-stats", "100", "-args", input("X1"), input("X2"), input("X3"), input("X4"),
+					input("Y1"), input("Y2"), input("Y3"), input("Y4"), expected("S"),
+					Boolean.toString(rowPartitioned).toUpperCase()};
+				runTest(true, false, null, -1);
+
+				// Run actual dml script with federated matrix
+
+				fullDMLScriptName = HOME + TEST_NAME + ".dml";
+				programArgs = new String[] {"-stats", "100", "-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+					"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
+					"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
+					"in_X4=" + TestUtils.federatedAddress(port4, input("X4")),
+					"in_Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
+					"in_Y2=" + TestUtils.federatedAddress(port2, input("Y2")),
+					"in_Y3=" + TestUtils.federatedAddress(port3, input("Y3")),
+					"in_Y4=" + TestUtils.federatedAddress(port4, input("Y4")), "rows=" + rows, "cols=" + cols,
+					"rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out_S=" + output("S")};
+				runTest(true, false, null, -1);
+			} else {
+				// Run reference dml script with normal matrix
+				fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
+				programArgs = new String[] {"-stats", "100", "-args", input("X1"), input("X2"), input("X3"),
+					input("X4"), expected("S"), Boolean.toString(rowPartitioned).toUpperCase()};
+				runTest(true, false, null, -1);
+
+				// Run actual dml script with federated matrix
+				double[][] x = getRandomMatrix(1, 1, 3.0, 3.0, 1, 1);
+				double[][] y = getRandomMatrix(1, 1, 4.0, 4.0, 1, 1);
+				MatrixCharacteristics mc1 = new MatrixCharacteristics(1, 1, blocksize, 1 * 1);
+				writeInputMatrixWithMTD("x", x, false, mc1);
+				writeInputMatrixWithMTD("y", y, false, mc1);
+
+				fullDMLScriptName = HOME + TEST_NAME + ".dml";
+				programArgs = new String[] {"-stats", "100", "-nvargs",
+					"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+					"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
+					"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
+					"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + cols,
+					"x=" + input("x"), "y=" + input("y"), "rP=" + Boolean.toString(rowPartitioned).toUpperCase(),
+					"out_S=" + output("S")};
+				runTest(true, false, null, -1);
+			}
 
 			// compare via files
 			compareResults(1e-9, "DML1", "DML2");
@@ -177,57 +225,5 @@ public class FederatedIfelseTest extends AutomatedTestBase {
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
-	}
-
-	private void runTernary(String HOME, String TEST_NAME, int port1, int port2, int port3, int port4) {
-		// Run reference dml script with normal matrix
-		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-		programArgs = new String[] {"-stats", "100", "-args", input("X1"), input("X2"), input("X3"), input("X4"),
-			expected("S"), Boolean.toString(rowPartitioned).toUpperCase()};
-		runTest(true, false, null, -1);
-
-		// Run actual dml script with federated matrix
-
-		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-stats", "100", "-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
-			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
-			"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
-			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + cols,
-			"rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out_S=" + output("S")};
-		runTest(true, false, null, -1);
-	}
-
-	private void runAlignedTernary(String HOME, String TEST_NAME, int r, int c, int port1, int port2, int port3,
-		int port4) {
-		double[][] Y1 = getRandomMatrix(r, c, 10, 15, 1, 3);
-		double[][] Y2 = getRandomMatrix(r, c, 10, 15, 1, 7);
-		double[][] Y3 = getRandomMatrix(r, c, 10, 15, 1, 8);
-		double[][] Y4 = getRandomMatrix(r, c, 10, 15, 1, 9);
-		MatrixCharacteristics mc2 = new MatrixCharacteristics(r, c, blocksize, r * c);
-		writeInputMatrixWithMTD("Y1", Y1, false, mc2);
-		writeInputMatrixWithMTD("Y2", Y2, false, mc2);
-		writeInputMatrixWithMTD("Y3", Y3, false, mc2);
-		writeInputMatrixWithMTD("Y4", Y4, false, mc2);
-
-		// Run reference dml script with normal matrix
-		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-		programArgs = new String[] {"-stats", "100", "-args", input("X1"), input("X2"), input("X3"), input("X4"),
-			input("Y1"), input("Y2"), input("Y3"), input("Y4"), expected("S"),
-			Boolean.toString(rowPartitioned).toUpperCase()};
-		runTest(true, false, null, -1);
-
-		// Run actual dml script with federated matrix
-
-		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-stats", "100", "-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
-			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
-			"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
-			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")),
-			"in_Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
-			"in_Y2=" + TestUtils.federatedAddress(port2, input("Y2")),
-			"in_Y3=" + TestUtils.federatedAddress(port3, input("Y3")),
-			"in_Y4=" + TestUtils.federatedAddress(port4, input("Y4")), "rows=" + rows, "cols=" + cols,
-			"rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out_S=" + output("S")};
-		runTest(true, false, null, -1);
 	}
 }

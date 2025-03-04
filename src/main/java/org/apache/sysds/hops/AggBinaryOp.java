@@ -111,11 +111,6 @@ public class AggBinaryOp extends MultiThreadedHop {
 		refreshSizeInformation();
 	}
 
-	@Override
-	public void checkArity() {
-		HopsException.check(_input.size() == 2, this, "should have arity 2 but has arity %d", _input.size());
-	}
-
 	public void setHasLeftPMInput(boolean flag) {
 		_hasLeftPMInput = flag;
 	}
@@ -387,26 +382,24 @@ public class AggBinaryOp extends MultiThreadedHop {
 	{
 		checkAndSetForcedPlatform();
 		
-		if( _etypeForced != null )
-		{
-			_etype = _etypeForced;
+		if( _etypeForced != null ) {
+			setExecType(_etypeForced);
 		}
 		else 
 		{
-			if ( OptimizerUtils.isMemoryBasedOptLevel() ) 
-			{
-				_etype = findExecTypeByMemEstimate();
+			if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
+				setExecType(findExecTypeByMemEstimate());
 			}
 			// choose CP if the dimensions of both inputs are below Hops.CPThreshold 
 			// OR if it is vector-vector inner product
 			else if ( (getInput().get(0).areDimsBelowThreshold() && getInput().get(1).areDimsBelowThreshold())
 						|| (getInput().get(0).isVector() && getInput().get(1).isVector() && !isOuterProduct()) )
 			{
-				_etype = ExecType.CP;
+				setExecType(ExecType.CP);
 			}
 			else
 			{
-				_etype = ExecType.SPARK;
+				setExecType(ExecType.SPARK);
 			}
 			
 			//check for valid CP mmchain, send invalid memory requirements to remote
@@ -414,7 +407,7 @@ public class AggBinaryOp extends MultiThreadedHop {
 				&& checkMapMultChain() != ChainType.NONE
 				&& OptimizerUtils.getLocalMemBudget() < 
 				getInput().get(0).getInput().get(0).getOutputMemEstimate() ) {
-				_etype = ExecType.SPARK;
+				setExecType(ExecType.SPARK);
 			}
 			
 			//check for valid CP dimensions and matrix size
@@ -429,7 +422,7 @@ public class AggBinaryOp extends MultiThreadedHop {
 			|| ( !mmtsj.isRight() && isApplicableForTransitiveSparkExecType(false))) )
 		{
 			//pull binary aggregate into spark 
-			_etype = ExecType.SPARK;
+			setExecType(ExecType.SPARK);
 		}
 
 		//mark for recompile (forever)

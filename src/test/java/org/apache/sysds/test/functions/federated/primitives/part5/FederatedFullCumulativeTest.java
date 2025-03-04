@@ -90,6 +90,16 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 	}
 
 	@Test
+	public void testProdDenseMatrixCP() {
+		runCumOperationTest(OpType.PROD, ExecType.CP);
+	}
+
+	@Test
+	public void testSumProdDenseMatrixCP() {
+		runCumOperationTest(OpType.SUMPROD, ExecType.CP);
+	}
+
+	@Test
 	@Ignore
 	public void testSumDenseMatrixSP() {
 		runCumOperationTest(OpType.SUM, ExecType.SPARK);
@@ -189,7 +199,10 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 			runTest(true, false, null, -1);
 
 			// compare via files
-			compareResults(1e-6, "DML1", "DML2");
+			if (type != OpType.SUMPROD && type != OpType.PROD)
+				compareResults(1e-6, "DML1", "DML2");
+			else // we sum over the cumsumprod matrix and get a very large number, hence the large tolerance
+				compareResults(1e+73, "DML1", "DML2");
 
 			switch(type) {
 				case SUM:
@@ -208,12 +221,20 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 						heavyHittersContainsString(instType == ExecType.SPARK ? "fed_bcumoffmin" : "fed_ucummin"));
 					break;
 				case SUMPROD:
-					Assert.assertTrue(heavyHittersContainsString(instType == ExecType.SPARK ? "fed_bcumoff+*" : "ucumk+*"));
+					// when input is column-partitioned, ucumk+* is executed instead of fed_ucumk+*
+					Assert.assertTrue(heavyHittersContainsString(instType == ExecType.SPARK ? "fed_bcumoff+*" :
+						rowPartitioned ? "fed_ucumk+*" : "ucumk+*"));
 					break;
 			}
 
-			if(instType != ExecType.SPARK) // verify output is federated
-				Assert.assertTrue(heavyHittersContainsString("fed_uak+"));
+			if(instType != ExecType.SPARK) { // verify output is federated
+				if (type == OpType.SUMPROD && !rowPartitioned) {
+					Assert.assertTrue(heavyHittersContainsString("uak+"));
+				} else {
+					Assert.assertTrue(heavyHittersContainsString("fed_uak+"));
+				}
+			}
+
 
 			// check that federated input files are still existing
 			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

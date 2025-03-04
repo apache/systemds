@@ -25,9 +25,6 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -44,11 +41,14 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
+import org.apache.sysds.runtime.compress.utils.HashMapLongInt;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
+
 
 public class CombineTest {
 
@@ -78,8 +78,8 @@ public class CombineTest {
 
 			IDictionary a = Dictionary.create(new double[] {1.2});
 			IDictionary b = Dictionary.create(new double[] {1.4});
-			Map<Integer, Integer> filter = new HashMap<>();
-			filter.put(0, 0);
+			HashMapLongInt filter = new HashMapLongInt(3);
+			filter.putIfAbsent(0, 0);
 			IDictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1, filter);
 
 			assertEquals(c.getValue(0, 0, 2), 1.2, 0.0);
@@ -97,8 +97,7 @@ public class CombineTest {
 
 			IDictionary a = Dictionary.create(new double[] {1.2});
 			IDictionary b = Dictionary.create(new double[] {1.4});
-			Map<Integer, Integer> filter = new HashMap<>();
-			// filter.put(0, 0);
+			HashMapLongInt filter = new HashMapLongInt(3);
 			IDictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1, filter);
 
 			assertEquals(c, null);
@@ -175,8 +174,8 @@ public class CombineTest {
 		try {
 			IDictionary a = Dictionary.create(new double[] {1.2, 1.3});
 			IDictionary b = Dictionary.create(new double[] {1.4, 1.5});
-			Map<Integer, Integer> filter = new HashMap<>();
-			filter.put(0,0);
+			HashMapLongInt filter = new HashMapLongInt(3);
+			filter.putIfAbsent(0, 0);
 
 			IDictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1, filter);
 
@@ -196,14 +195,13 @@ public class CombineTest {
 		}
 	}
 
-
 	@Test
 	public void twoBothSidesFilter2() {
 		try {
 			IDictionary a = Dictionary.create(new double[] {1.2, 1.3});
 			IDictionary b = Dictionary.create(new double[] {1.4, 1.5});
-			Map<Integer, Integer> filter = new HashMap<>();
-			filter.put(3,0);
+			HashMapLongInt filter = new HashMapLongInt(3);
+			filter.putIfAbsent(3, 0);
 
 			IDictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1, filter);
 
@@ -223,15 +221,14 @@ public class CombineTest {
 		}
 	}
 
-
 	@Test
 	public void twoBothSidesFilter3() {
 		try {
 			IDictionary a = Dictionary.create(new double[] {1.2, 1.3});
 			IDictionary b = Dictionary.create(new double[] {1.4, 1.5});
-			Map<Integer, Integer> filter = new HashMap<>();
-			filter.put(3,0);
-			filter.put(1,1);
+			HashMapLongInt filter = new HashMapLongInt(3);
+			filter.putIfAbsent(3, 0);
+			filter.putIfAbsent(1, 1);
 
 			IDictionary c = DictionaryFactory.combineFullDictionaries(a, 1, b, 1, filter);
 
@@ -259,7 +256,7 @@ public class CombineTest {
 			double[] ad = new double[] {0};
 			double[] bd = new double[] {0};
 
-			IDictionary c = DictionaryFactory.combineSDC(a, ad, b, bd);
+			IDictionary c = DictionaryFactory.combineSDCNoFilter(a, ad, b, bd);
 			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
 
 			MatrixBlock exp = new MatrixBlock(4, 2, new double[] {0, 0, 3, 0, 0, 4, 3, 4});
@@ -279,7 +276,7 @@ public class CombineTest {
 			double[] ad = new double[] {0};
 			double[] bd = new double[] {0, 0};
 
-			IDictionary c = DictionaryFactory.combineSDC(a, ad, b, bd);
+			IDictionary c = DictionaryFactory.combineSDCNoFilter(a, ad, b, bd);
 			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
 
 			MatrixBlock exp = new MatrixBlock(4, 3, new double[] {0, 0, 0, 3, 0, 0, 0, 4, 4, 3, 4, 4});
@@ -299,7 +296,7 @@ public class CombineTest {
 			double[] ad = new double[] {1};
 			double[] bd = new double[] {2};
 
-			IDictionary c = DictionaryFactory.combineSDC(a, ad, b, bd);
+			IDictionary c = DictionaryFactory.combineSDCNoFilter(a, ad, b, bd);
 			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
 
 			MatrixBlock exp = new MatrixBlock(4, 2, new double[] {//
@@ -323,7 +320,7 @@ public class CombineTest {
 			double[] ad = new double[] {0, 1};
 			double[] bd = new double[] {0, 2};
 
-			IDictionary c = DictionaryFactory.combineSDC(a, ad, b, bd);
+			IDictionary c = DictionaryFactory.combineSDCNoFilter(a, ad, b, bd);
 			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
 
 			MatrixBlock exp = new MatrixBlock(4, 4, new double[] {//
@@ -347,7 +344,7 @@ public class CombineTest {
 			double[] ad = new double[] {0, 1};
 			double[] bd = new double[] {0, 2};
 
-			IDictionary c = DictionaryFactory.combineSDC(a, ad, b, bd);
+			IDictionary c = DictionaryFactory.combineSDCNoFilter(a, ad, b, bd);
 			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
 
 			MatrixBlock exp = new MatrixBlock(6, 4, new double[] {//
@@ -373,7 +370,7 @@ public class CombineTest {
 			double[] ad = new double[] {0, 1};
 			double[] bd = new double[] {0, 2};
 
-			IDictionary c = DictionaryFactory.combineSDC(a, ad, b, bd);
+			IDictionary c = DictionaryFactory.combineSDCNoFilter(a, ad, b, bd);
 			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
 
 			MatrixBlock exp = new MatrixBlock(9, 4, new double[] {//
@@ -532,58 +529,12 @@ public class CombineTest {
 		DictionaryFactory.combineDictionariesSparse(m, s);
 	}
 
-	// @Test
-	// public void sparseSparseConst1() {
-	// 	try {
-	// 		IDictionary a = Dictionary.create(new double[] {3, 2, 7, 8});
-	// 		// IDictionary b = Dictionary.create(new double[] {4, 4, 9, 5});
-
-	// 		double[] bd = new double[] {0, 2};
-
-	// 		IDictionary c = DictionaryFactory.combineSparseConstSparseRet(a, 2, bd);
-	// 		MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
-
-	// 		MatrixBlock exp = new MatrixBlock(2, 4, new double[] {//
-	// 			3, 2, 0, 2, //
-	// 			7, 8, 0, 2,});
-	// 		TestUtils.compareMatricesBitAvgDistance(ret, exp, 0, 0);
-	// 	}
-	// 	catch(Exception e) {
-	// 		e.printStackTrace();
-	// 		fail(e.getMessage());
-	// 	}
-	// }
-
-	// @Test
-	// public void sparseSparseConst2() {
-	// 	try {
-	// 		IDictionary a = Dictionary.create(new double[] {3, 2, 7, 8});
-	// 		// IDictionary b = Dictionary.create(new double[] {4, 4, 9, 5});
-
-	// 		double[] bd = new double[] {0, 2};
-
-	// 		IDictionary c = DictionaryFactory.combineSparseConstSparseRet(a, 1, bd);
-	// 		MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
-
-	// 		MatrixBlock exp = new MatrixBlock(4, 3, new double[] {//
-	// 			3, 0, 2, //
-	// 			2, 0, 2, //
-	// 			7, 0, 2, //
-	// 			8, 0, 2,});
-	// 		TestUtils.compareMatricesBitAvgDistance(exp, ret, 0, 0);
-	// 	}
-	// 	catch(Exception e) {
-	// 		e.printStackTrace();
-	// 		fail(e.getMessage());
-	// 	}
-	// }
-
 	@Test
 	public void testEmpty() {
 		try {
 			IDictionary d = Dictionary.create(new double[] {3, 2, 7, 8});
-			AColGroup a = ColGroupDDC.create(ColIndexFactory.create(2), d, MapToFactory.create(10, 2), null);
-			ColGroupEmpty b = new ColGroupEmpty(ColIndexFactory.create(4));
+			AColGroup a = ColGroupDDC.create(ColIndexFactory.createI(1, 2), d, MapToFactory.create(10, 2), null);
+			ColGroupEmpty b = new ColGroupEmpty(ColIndexFactory.createI(3, 4, 5, 6));
 
 			IDictionary c = DictionaryFactory.combineDictionaries((AColGroupCompressed) a, (AColGroupCompressed) b);
 			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
@@ -603,9 +554,9 @@ public class CombineTest {
 	public void combineDictionariesSparse1() {
 		try {
 			IDictionary d = Dictionary.create(new double[] {3, 2, 7, 8});
-			AColGroup a = ColGroupSDC.create(ColIndexFactory.create(2), 500, d, new double[] {1, 2},
+			AColGroup a = ColGroupSDC.create(ColIndexFactory.createI(1, 2), 500, d, new double[] {1, 2},
 				OffsetFactory.createOffset(new int[] {3, 4}), MapToFactory.create(10, 2), null);
-			ColGroupEmpty b = new ColGroupEmpty(ColIndexFactory.create(4));
+			ColGroupEmpty b = new ColGroupEmpty(ColIndexFactory.createI(3, 4, 5, 6));
 
 			IDictionary c = DictionaryFactory.combineDictionariesSparse((AColGroupCompressed) a, (AColGroupCompressed) b);
 			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
@@ -624,17 +575,19 @@ public class CombineTest {
 	@Test
 	public void combineDictionariesSparse2() {
 		try {
-			IDictionary d = Dictionary.create(new double[] {3, 2, 7, 8});
-			AColGroup b = ColGroupSDC.create(ColIndexFactory.create(2), 500, d, new double[] {1, 2},
+			IDictionary d = Dictionary.create(new double[] {//
+				3, 2, //
+				7, 8});
+			AColGroup a = ColGroupSDC.create(ColIndexFactory.createI(1, 2), 500, d, new double[] {1, 2},
 				OffsetFactory.createOffset(new int[] {3, 4}), MapToFactory.create(10, 2), null);
-			ColGroupEmpty a = new ColGroupEmpty(ColIndexFactory.create(4));
+			ColGroupEmpty b = new ColGroupEmpty(ColIndexFactory.createI(3, 4, 5, 6));
 
 			IDictionary c = DictionaryFactory.combineDictionariesSparse((AColGroupCompressed) a, (AColGroupCompressed) b);
 			MatrixBlock ret = c.getMBDict(2).getMatrixBlock();
 
 			MatrixBlock exp = new MatrixBlock(2, 6, new double[] {//
-				0, 0, 0, 0, 3, 2, //
-				0, 0, 0, 0, 7, 8,});
+				3, 2, 0, 0, 0, 0, //
+				7, 8, 0, 0, 0, 0,});
 			TestUtils.compareMatricesBitAvgDistance(ret, exp, 0, 0);
 		}
 		catch(Exception e) {
@@ -647,10 +600,10 @@ public class CombineTest {
 	public void combineMockingEmpty() {
 		IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
 		double[] ade = new double[] {0};
-		AColGroupCompressed a = mockSDC(ad, ade);
-		AColGroupCompressed b = mockSDC(ad, ade);
+		AColGroupCompressed a = mockSDC(ad, ade, ColIndexFactory.create(1));
+		AColGroupCompressed b = mockSDC(ad, ade, ColIndexFactory.create(2));
 
-		Map<Integer, Integer> m = new HashMap<>();
+		HashMapLongInt m = new HashMapLongInt(10);
 		IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 
 		assertEquals(red.getNumberOfValues(2), 0);
@@ -658,82 +611,87 @@ public class CombineTest {
 
 	@Test
 	public void combineMockingDefault() {
-		IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
-		double[] ade = new double[] {0};
-		AColGroupCompressed a = mockSDC(ad, ade);
-		AColGroupCompressed b = mockSDC(ad, ade);
-
-		Map<Integer, Integer> m = new HashMap<>();
-		m.put(0, 0);
-		IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
-
-		assertEquals(red.getNumberOfValues(2), 1);
-		assertEquals(red, Dictionary.createNoCheck(new double[] {0, 0}));
+		try {
+			IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
+			double[] ade = new double[] {0};
+			AColGroupCompressed a = mockSDC(ad, ade, ColIndexFactory.create(1));
+			AColGroupCompressed b = mockSDC(ad, ade, ColIndexFactory.create(2));
+			HashMapLongInt m = new HashMapLongInt(10);
+			m.putIfAbsent(0, 0);
+			IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+			assertEquals(red.getNumberOfValues(2), 1);
+			assertEquals(Dictionary.createNoCheck(new double[] {0, 0}), red);
+			assertEquals(red, Dictionary.createNoCheck(new double[] {0, 0}));
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	@Test
 	public void combineMockingFirstValue() {
 		IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
 		double[] ade = new double[] {0};
-		AColGroupCompressed a = mockSDC(ad, ade);
-		AColGroupCompressed b = mockSDC(ad, ade);
+		AColGroupCompressed a = mockSDC(ad, ade, ColIndexFactory.create(1));
+		AColGroupCompressed b = mockSDC(ad, ade, ColIndexFactory.create(2));
 
-		Map<Integer, Integer> m = new HashMap<>();
-		m.put(1, 0);
+		HashMapLongInt m = new HashMapLongInt(10);
+		m.putIfAbsent(1, 0);
 		IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 
 		assertEquals(red.getNumberOfValues(2), 1);
-		assertEquals(red, Dictionary.create(new double[] {1, 0}));
+		assertEquals(red, Dictionary.create(new double[] {0, 1}));
 	}
 
 	@Test
 	public void combineMockingFirstAndDefault() {
 		IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
 		double[] ade = new double[] {0};
-		AColGroupCompressed a = mockSDC(ad, ade);
-		AColGroupCompressed b = mockSDC(ad, ade);
+		AColGroupCompressed a = mockSDC(ad, ade, ColIndexFactory.create(1));
+		AColGroupCompressed b = mockSDC(ad, ade, ColIndexFactory.create(2));
 
-		Map<Integer, Integer> m = new HashMap<>();
-		m.put(1, 0);
-		m.put(0, 1);
+		HashMapLongInt m = new HashMapLongInt(10);
+		m.putIfAbsent(1, 0);
+		m.putIfAbsent(0, 1);
 		IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 
 		assertEquals(red.getNumberOfValues(2), 2);
-		assertEquals(red, Dictionary.create(new double[] {1, 0, 0, 0}));
+		assertEquals(red, Dictionary.create(new double[] {0, 1, 0, 0}));
 	}
 
 	@Test
 	public void combineMockingMixed() {
 		IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
 		double[] ade = new double[] {0};
-		AColGroupCompressed a = mockSDC(ad, ade);
-		AColGroupCompressed b = mockSDC(ad, ade);
+		AColGroupCompressed a = mockSDC(ad, ade, ColIndexFactory.create(1));
+		AColGroupCompressed b = mockSDC(ad, ade, ColIndexFactory.create(2));
 
-		Map<Integer, Integer> m = new HashMap<>();
-		m.put(1, 0);
-		m.put(0, 1);
-		m.put(5, 2);
+		HashMapLongInt m = new HashMapLongInt(10);
+		m.putIfAbsent(1, 0);
+		m.putIfAbsent(0, 1);
+		m.putIfAbsent(5, 2);
 		IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 
 		assertEquals(red.getNumberOfValues(2), 3);
-		assertEquals(Dictionary.create(new double[] {1, 0, 0, 0, 0, 1}), red);
+		assertEquals(Dictionary.create(new double[] {0, 1, 0, 0, 1, 0}), red);
 	}
 
 	@Test
 	public void combineMockingMixed2() {
 		IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
 		double[] ade = new double[] {0};
-		AColGroupCompressed a = mockSDC(ad, ade);
-		AColGroupCompressed b = mockSDC(ad, ade);
+		AColGroupCompressed a = mockSDC(ad, ade, ColIndexFactory.create(1));
+		AColGroupCompressed b = mockSDC(ad, ade, ColIndexFactory.create(2));
 
-		Map<Integer, Integer> m = new HashMap<>();
-		m.put(1, 0);
-		m.put(0, 1);
-		m.put(10, 2);
+		HashMapLongInt m = new HashMapLongInt(10);
+		m.putIfAbsent(1, 0);
+		m.putIfAbsent(0, 1);
+		m.putIfAbsent(10, 2);
 		IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 
 		assertEquals(red.getNumberOfValues(2), 3);
-		assertEquals(Dictionary.create(new double[] {1, 0, 0, 0, 0, 2}), red);
+		assertEquals(Dictionary.create(new double[] {0, 1, 0, 0, 2, 0}), red);
 	}
 
 	@Test
@@ -742,10 +700,10 @@ public class CombineTest {
 
 			IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
 			double[] ade = new double[] {0};
-			AColGroupCompressed a = mockDDC(ad, 1);
-			AColGroupCompressed b = mockSDC(ad, ade);
+			AColGroupCompressed a = mockDDC(ad, ColIndexFactory.create(1));
+			AColGroupCompressed b = mockSDC(ad, ade, ColIndexFactory.create(2));
 
-			Map<Integer, Integer> m = new HashMap<>();
+			HashMapLongInt m = new HashMapLongInt(10);
 			IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 
 			assertEquals(0, red.getNumberOfValues(2));
@@ -763,14 +721,14 @@ public class CombineTest {
 
 			IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
 			double[] ade = new double[] {0};
-			AColGroupCompressed a = mockDDC(ad, 1);
-			AColGroupCompressed b = mockSDC(ad, ade);
+			AColGroupCompressed a = mockDDC(ad, ColIndexFactory.create(1));
+			AColGroupCompressed b = mockSDC(ad, ade, ColIndexFactory.create(2));
 
-			Map<Integer, Integer> m = new HashMap<>();
-			m.put(0, 0);
+			HashMapLongInt m = new HashMapLongInt(10);
+			m.putIfAbsent(0, 0);
 			IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 			assertEquals(1, red.getNumberOfValues(2));
-			assertEquals(Dictionary.createNoCheck(new double[] {1, 0}), red);
+			assertEquals(Dictionary.createNoCheck(new double[] {0, 1}), red);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -784,16 +742,16 @@ public class CombineTest {
 
 			IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
 			double[] ade = new double[] {0};
-			AColGroupCompressed a = mockDDC(ad, 1);
-			AColGroupCompressed b = mockSDC(ad, ade);
+			AColGroupCompressed a = mockDDC(ad, ColIndexFactory.create(1));
+			AColGroupCompressed b = mockSDC(ad, ade, ColIndexFactory.create(2));
 
-			Map<Integer, Integer> m = new HashMap<>();
-			m.put(0, 1);
-			m.put(1, 0);
+			HashMapLongInt m = new HashMapLongInt(10);
+			m.putIfAbsent(0, 1);
+			m.putIfAbsent(1, 0);
 			IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 
 			assertEquals(2, red.getNumberOfValues(2));
-			assertEquals(Dictionary.createNoCheck(new double[] {2, 0, 1, 0}), red);
+			assertEquals(Dictionary.createNoCheck(new double[] {0, 2, 0, 1}), red);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -807,17 +765,17 @@ public class CombineTest {
 
 			IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
 			double[] ade = new double[] {0};
-			AColGroupCompressed a = mockDDC(ad, 1);
-			AColGroupCompressed b = mockSDC(ad, ade);
+			AColGroupCompressed a = mockDDC(ad, ColIndexFactory.create(1));
+			AColGroupCompressed b = mockSDC(ad, ade, ColIndexFactory.create(2));
 
-			Map<Integer, Integer> m = new HashMap<>();
-			m.put(0, 1);
-			m.put(1, 0);
-			m.put(4, 2);
+			HashMapLongInt m = new HashMapLongInt(10);
+			m.putIfAbsent(0, 1);
+			m.putIfAbsent(1, 0);
+			m.putIfAbsent(4, 2);
 			IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 
 			assertEquals(3, red.getNumberOfValues(2));
-			assertEquals(Dictionary.createNoCheck(new double[] {2, 0, 1, 0, 1, 1}), red);
+			assertEquals(Dictionary.createNoCheck(new double[] {0, 2, 0, 1, 1, 1}), red);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -831,18 +789,18 @@ public class CombineTest {
 
 			IDictionary ad = Dictionary.create(new double[] {1, 2, 3, 4});
 			double[] ade = new double[] {0};
-			AColGroupCompressed a = mockDDC(ad, 1);
-			AColGroupCompressed b = mockSDC(ad, ade);
+			AColGroupCompressed a = mockDDC(ad, ColIndexFactory.create(1));
+			AColGroupCompressed b = mockSDC(ad, ade, ColIndexFactory.create(2));
 
-			Map<Integer, Integer> m = new HashMap<>();
-			m.put(0, 1);
-			m.put(1, 0);
-			m.put(5, 2);
-			m.put(4, 3);
+			HashMapLongInt m = new HashMapLongInt(10);
+			m.putIfAbsent(0, 1);
+			m.putIfAbsent(1, 0);
+			m.putIfAbsent(5, 2);
+			m.putIfAbsent(4, 3);
 			IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
 
 			assertEquals(4, red.getNumberOfValues(2));
-			assertEquals(Dictionary.createNoCheck(new double[] {2, 0, 1, 0, 2, 1, 1, 1}), red);
+			assertEquals(Dictionary.createNoCheck(new double[] {0, 2, 0, 1, 1, 2, 1, 1}), red);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -850,20 +808,167 @@ public class CombineTest {
 		}
 	}
 
-	private ASDC mockSDC(IDictionary ad, double[] def) {
+	@Test
+	public void combineFailCase1() {
+		try {
+
+			IDictionary ad = Dictionary.create(new double[] {3, 1, 2});
+			IDictionary ab = Dictionary.create(new double[] {2, 3});
+			double[] ade = new double[] {1};
+			AColGroupCompressed a = mockDDC(ad, ColIndexFactory.create(1));
+			AColGroupCompressed b = mockSDC(ab, ade, ColIndexFactory.create(2));
+
+			HashMapLongInt m = new HashMapLongInt(10);
+			// 0=8, 1=7, 2=5, 3=0, 4=6, 5=2, 6=4, 7=1, 8=3
+			m.putIfAbsent(0, 8);
+			m.putIfAbsent(1, 7);
+			m.putIfAbsent(2, 5);
+			m.putIfAbsent(3, 0);
+			m.putIfAbsent(4, 6);
+			m.putIfAbsent(5, 2);
+			m.putIfAbsent(6, 4);
+			m.putIfAbsent(7, 1);
+			m.putIfAbsent(8, 3);
+			IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+
+			assertEquals(9, red.getNumberOfValues(2));
+			assertEquals(Dictionary.createNoCheck(//
+				new double[] {//
+					2, 3, //
+					3, 1, //
+					2, 2, //
+					3, 2, //
+					3, 3, //
+					1, 2, //
+					2, 1, //
+					1, 1, //
+					1, 3,//
+				}), red);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void combineFailCase2() {
+		try {
+
+			IDictionary ad = Dictionary.create(new double[] {3, 1, 2});
+			IDictionary ab = Dictionary.create(new double[] {2, 3});
+			double[] ade = new double[] {1};
+			AColGroupCompressed a = mockDDC(ad, ColIndexFactory.createI(1));
+			AColGroupCompressed b = mockSDC(ab, ade, ColIndexFactory.createI(2));
+
+			HashMapLongInt m = new HashMapLongInt(10);
+			for(int i = 0; i < 9; i++) {
+				m.putIfAbsent(i, i);
+			}
+
+			IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+
+			assertEquals(9, red.getNumberOfValues(2));
+			assertEquals(Dictionary.createNoCheck(//
+				new double[] {//
+					3, 1, //
+					1, 1, //
+					2, 1, //
+					3, 2, //
+					1, 2, //
+					2, 2, //
+					3, 3, //
+					1, 3, //
+					2, 3,//
+				}), red);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testCombineSDC() {
+		IDictionary ad = Dictionary.create(new double[] {2, 3});
+		IDictionary ab = Dictionary.create(new double[] {1, 2});
+		double[] ade = new double[] {1.0};
+		double[] abe = new double[] {3.0};
+		AColGroupCompressed a = mockSDC(ad, ade, ColIndexFactory.createI(1));
+		AColGroupCompressed b = mockSDC(ab, abe, ColIndexFactory.createI(2));
+		HashMapLongInt m = new HashMapLongInt(10);
+		m.putIfAbsent(0, 8);
+		m.putIfAbsent(1, 0);
+		m.putIfAbsent(2, 4);
+		m.putIfAbsent(3, 7);
+		m.putIfAbsent(4, 6);
+		m.putIfAbsent(5, 1);
+		m.putIfAbsent(6, 5);
+		m.putIfAbsent(7, 2);
+		m.putIfAbsent(8, 3);
+
+		IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+
+		assertEquals(9, red.getNumberOfValues(2));
+		assertEquals(Dictionary.createNoCheck(//
+			new double[] {//
+				2, 3, //
+				3, 1, //
+				2, 2, //
+				3, 2, //
+				3, 3, //
+				1, 2, //
+				2, 1, //
+				1, 1, //
+				1, 3,//
+			}), red);
+	}
+
+	@Test
+	public void testCombineSDCRange() {
+		IDictionary ad = Dictionary.create(new double[] {2, 3});
+		IDictionary ab = Dictionary.create(new double[] {1, 2});
+		double[] ade = new double[] {1.0};
+		double[] abe = new double[] {3.0};
+		AColGroupCompressed a = mockSDC(ad, ade, ColIndexFactory.createI(1));
+		AColGroupCompressed b = mockSDC(ab, abe, ColIndexFactory.createI(2));
+		HashMapLongInt m = new HashMapLongInt(10);
+		for(int i = 0; i < 9; i++) {
+			m.putIfAbsent(i, i);
+		}
+		IDictionary red = DictionaryFactory.combineDictionaries(a, b, m);
+
+		assertEquals(9, red.getNumberOfValues(2));
+		assertEquals(Dictionary.createNoCheck(//
+			new double[] {//
+				1, 3, //
+				2, 3, //
+				3, 3, //
+				1, 1, //
+				2, 1, //
+				3, 1, //
+				1, 2, //
+				2, 2, //
+				3, 2,//
+			}), red);
+	}
+
+	private ASDC mockSDC(IDictionary ad, double[] def, IColIndex c) {
 		ASDC a = mock(ASDC.class);
 		when(a.getCompType()).thenReturn(CompressionType.SDC);
 		when(a.getDictionary()).thenReturn(ad);
 		when(a.getDefaultTuple()).thenReturn(def);
 		when(a.getNumCols()).thenReturn(def.length);
+		when(a.getColIndices()).thenReturn(c);
 		return a;
 	}
 
-	private ColGroupDDC mockDDC(IDictionary ad, int nCol) {
+	private ColGroupDDC mockDDC(IDictionary ad, IColIndex c) {
 		ColGroupDDC a = mock(ColGroupDDC.class);
 		when(a.getCompType()).thenReturn(CompressionType.DDC);
 		when(a.getDictionary()).thenReturn(ad);
-		when(a.getNumCols()).thenReturn(nCol);
+		when(a.getNumCols()).thenReturn(c.size());
+		when(a.getColIndices()).thenReturn(c);
 		return a;
 	}
 }

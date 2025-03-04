@@ -19,39 +19,76 @@
 #
 # -------------------------------------------------------------
 
-
-import h5py
-
+from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from typing import Callable, Dict, Tuple, Any
 import torch.utils.data
-import os
-import cv2
 import torch
 import torchvision.models as models
 import torchvision.transforms as transforms
 import numpy as np
 
-DEVICE = "cpu"
+if torch.backends.mps.is_available():
+    DEVICE = torch.device("mps")
+elif torch.cuda.is_available():
+    DEVICE = torch.device("cuda")
+else:
+    DEVICE = torch.device("cpu")
 
 
 class ResNet(UnimodalRepresentation):
-    def __init__(self, output_file=None):
+    def __init__(self, layer="avgpool", model_name="ResNet18", output_file=None):
         super().__init__("ResNet")
 
         self.output_file = output_file
-
-    def parse_all(self, file_path, indices, get_sequences=False):
-        resnet = models.resnet152(weights=models.ResNet152_Weights.DEFAULT)
-        resnet.eval()
-
-        for param in resnet.parameters():
+        self.layer_name = layer
+        self.model = model_name
+        self.model.eval()
+        for param in self.model.parameters():
             param.requires_grad = False
 
-        transform = transforms.Compose(
+        class Identity(torch.nn.Module):
+            def forward(self, input_: torch.Tensor) -> torch.Tensor:
+                return input_
+
+        self.model.fc = Identity()
+
+    @property
+    def model(self):
+        return self._model
+
+    @model.setter
+    def model(self, model):
+        if model == "ResNet18":
+            self._model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT).to(
+                DEVICE
+            )
+        elif model == "ResNet34":
+            self._model = models.resnet34(weights=models.ResNet34_Weights.DEFAULT).to(
+                DEVICE
+            )
+        elif model == "ResNet50":
+            self._model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT).to(
+                DEVICE
+            )
+        elif model == "ResNet101":
+            self._model = models.resnet101(weights=models.ResNet101_Weights.DEFAULT).to(
+                DEVICE
+            )
+        elif model == "ResNet152":
+            self._model = models.resnet152(weights=models.ResNet152_Weights.DEFAULT).to(
+                DEVICE
+            )
+        else:
+            raise NotImplementedError
+
+    def transform(self, modality):
+
+        t = transforms.Compose(
             [
                 transforms.ToPILImage(),
-                transforms.Resize((224, 224)),
+                transforms.Resize(256),
+                transforms.CenterCrop(224),
                 transforms.ToTensor(),
                 transforms.Normalize(
                     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
@@ -59,119 +96,77 @@ class ResNet(UnimodalRepresentation):
             ]
         )
 
-        dataset = ResNetDataset(transform=transform, video_folder_path=file_path)
+        dataset = ResNetDataset(modality.data, t)
         embeddings = {}
-
-        class Identity(torch.nn.Module):
-            def forward(self, input_: torch.Tensor) -> torch.Tensor:
-                return input_
-
-        resnet.fc = Identity()
 
         res5c_output = None
 
-        def avg_pool_hook(
-            _module: torch.nn.Module, input_: Tuple[torch.Tensor], _output: Any
-        ) -> None:
-            nonlocal res5c_output
-            res5c_output = input_[0]
+        def get_features(name_):
+            def hook(
+                _module: torch.nn.Module, input_: Tuple[torch.Tensor], output: Any
+            ):
+                nonlocal res5c_output
+                res5c_output = output
 
-        resnet.avgpool.register_forward_hook(avg_pool_hook)
+            return hook
+
+        if self.layer_name:
+            for name, layer in self.model.named_modules():
+                if name == self.layer_name:
+                    layer.register_forward_hook(get_features(name))
+                    break
 
         for instance in torch.utils.data.DataLoader(dataset):
             video_id = instance["id"][0]
-            frames = instance["frames"][0].to(DEVICE)
-            embeddings[video_id] = torch.empty((len(frames), 2048))
-            batch_size = 32
+            frames = instance["data"][0].to(DEVICE)
+            embeddings[video_id] = []
+            batch_size = 64
+
             for start_index in range(0, len(frames), batch_size):
                 end_index = min(start_index + batch_size, len(frames))
                 frame_ids_range = range(start_index, end_index)
                 frame_batch = frames[frame_ids_range]
 
-                avg_pool_value = resnet(frame_batch)
+                _ = self.model(frame_batch)
+                values = res5c_output
+                pooled = torch.nn.functional.adaptive_avg_pool2d(values, (1, 1))
 
-                embeddings[video_id][frame_ids_range] = avg_pool_value.to(DEVICE)
+                embeddings[video_id].extend(
+                    torch.flatten(pooled, 1).detach().cpu().numpy()
+                )
 
-        if self.output_file is not None:
-            with h5py.File(self.output_file, "w") as hdf:
-                for key, value in embeddings.items():
-                    hdf.create_dataset(key, data=value)
+        transformed_modality = TransformedModality(
+            modality.modality_type, "resnet", modality.metadata
+        )
+        transformed_modality.data = list(embeddings.values())
+        transformed_modality.update_data_layout()
 
-        emb = np.zeros((len(indices), 2048), dtype="float32")
-        if indices is not None:
-            for i in indices:
-                emb[i] = embeddings.get(str(i)).mean(dim=0).numpy()
-        else:
-            for i, key in enumerate(embeddings.keys()):
-                emb[i] = embeddings.get(key).mean(dim=0).numpy()
-
-        return emb
-
-    @staticmethod
-    def extract_features_from_video(video_path, model, transform):
-        cap = cv2.VideoCapture(video_path)
-        features = []
-        count = 0
-        success, frame = cap.read()
-
-        while success:
-            success, frame = cap.read()
-            transformed_frame = transform(frame).unsqueeze(0)
-
-            with torch.no_grad():
-                feature_vector = model(transformed_frame)
-                feature_vector = feature_vector.view(-1).numpy()
-
-            features.append(feature_vector)
-
-            count += 1
-
-        cap.release()
-        return features, count
+        return transformed_modality
 
 
 class ResNetDataset(torch.utils.data.Dataset):
-    def __init__(self, video_folder_path: str, transform: Callable = None):
-        self.video_folder_path = video_folder_path
-        self.transform = transform
-        self.video_ids = []
-        video_files = [
-            f
-            for f in os.listdir(self.video_folder_path)
-            if f.lower().endswith((".mp4", ".avi", ".mov", ".mkv"))
-        ]
-        self.file_extension = video_files[0].split(".")[-1]
-
-        for video in video_files:
-            video_id, _ = video.split("/")[-1].split(".")
-            self.video_ids.append(video_id)
-
-        self.frame_count_by_video_id = {video_id: 0 for video_id in self.video_ids}
+    def __init__(self, data: str, tf: Callable = None):
+        self.data = data
+        self.tf = tf
 
     def __getitem__(self, index) -> Dict[str, object]:
-        video_id = self.video_ids[index]
-        video_path = self.video_folder_path + "/" + video_id + "." + self.file_extension
+        data = self.data[index]
+        if type(data) is np.ndarray:
+            output = torch.empty((1, 3, 224, 224))
+            d = torch.tensor(data)
+            d = d.repeat(3, 1, 1)
+            output[0] = self.tf(d)
+        else:
+            output = torch.empty((len(data), 3, 224, 224))
 
-        frames = None
-        count = 0
+            for i, d in enumerate(data):
+                if data[0].ndim < 3:
+                    d = torch.tensor(d)
+                    d = d.repeat(3, 1, 1)
 
-        cap = cv2.VideoCapture(video_path)
+                output[i] = self.tf(d)
 
-        success, frame = cap.read()
-
-        num_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        self.frame_count_by_video_id[video_id] = num_frames
-        if frames is None and success:
-            frames = torch.empty((num_frames, 3, 224, 224))
-
-        while success:
-            frame = self.transform(frame)
-            frames[count] = frame  # noqa
-            success, frame = cap.read()
-            count += 1
-
-        cap.release()
-        return {"id": video_id, "frames": frames}
+        return {"id": index, "data": output}
 
     def __len__(self) -> int:
-        return len(self.video_ids)
+        return len(self.data)

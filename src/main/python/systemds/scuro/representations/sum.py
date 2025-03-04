@@ -35,7 +35,7 @@ class Sum(Fusion):
         """
         super().__init__("Sum")
 
-    def fuse(self, modalities: List[Modality]):
+    def transform(self, modalities: List[Modality]):
         max_emb_size = self.get_max_embedding_size(modalities)
 
         data = pad_sequences(modalities[0].data, maxlen=max_emb_size, dtype="float32")

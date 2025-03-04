@@ -32,11 +32,13 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.io.hdf5.H5;
 import org.apache.sysds.runtime.io.hdf5.H5Constants;
 import org.apache.sysds.runtime.io.hdf5.H5ContiguousDataset;
 import org.apache.sysds.runtime.io.hdf5.H5RootObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class ReaderHDF5 extends MatrixReader {
 	protected final FileFormatPropertiesHDF5 _props;
@@ -51,7 +53,7 @@ public class ReaderHDF5 extends MatrixReader {
 		//allocate output matrix block
 		MatrixBlock ret = null;
 		if(rlen >= 0 && clen >= 0) //otherwise allocated on read
-			ret = createOutputMatrixBlock(rlen, clen, (int) rlen, estnnz, true, false);
+			ret = createOutputMatrixBlock(rlen, clen, (int) rlen, estnnz, true, true);
 
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
@@ -92,7 +94,8 @@ public class ReaderHDF5 extends MatrixReader {
 
 	private static MatrixBlock readHDF5MatrixFromHDFS(Path path, JobConf job,
 		FileSystem fs, MatrixBlock dest, long rlen, long clen, int blen, String datasetName)
-		throws IOException, DMLRuntimeException {
+		throws IOException, DMLRuntimeException
+	{
 		//prepare file paths in alphanumeric order
 		ArrayList<Path> files = new ArrayList<>();
 		if(fs.getFileStatus(path).isDirectory()) {
@@ -105,7 +108,7 @@ public class ReaderHDF5 extends MatrixReader {
 
 		//determine matrix size via additional pass if required
 		if(dest == null) {
-			dest = computeHDF5Size(files, fs, datasetName);
+			dest = computeHDF5Size(files, fs, datasetName, rlen*clen);
 			clen = dest.getNumColumns();
 			rlen = dest.getNumRows();
 		}
@@ -124,7 +127,8 @@ public class ReaderHDF5 extends MatrixReader {
 	}
 
 	public static long readMatrixFromHDF5(BufferedInputStream bis, String datasetName, MatrixBlock dest,
-		int row, long rlen, long clen, int blen) {
+		int rl, long ru, long clen, int blen)
+	{
 		bis.mark(0);
 		long lnnz = 0;
 		H5RootObject rootObject = H5.H5Fopen(bis);
@@ -133,28 +137,44 @@ public class ReaderHDF5 extends MatrixReader {
 		int[] dims = rootObject.getDimensions();
 		int ncol = dims[1];
 
-		DenseBlock denseBlock = dest.getDenseBlock();
-		double[] data = new double[ncol];
-		for(int i = row; i < rlen; i++) {
-			H5.H5Dread(contiguousDataset, i, data);
-			for(int j = 0; j < ncol; j++) {
-				if(data[j] != 0) {
-					denseBlock.set(i, j, data[j]);
-					lnnz++;
+		try {
+			double[] row = new double[ncol];
+			if( dest.isInSparseFormat() ) {
+				SparseBlock sb = dest.getSparseBlock();
+				for(int i = rl; i < ru; i++) {
+					H5.H5Dread(contiguousDataset, i, row);
+					int lnnzi = UtilFunctions.computeNnz(row, 0, (int)clen);
+					sb.allocate(i, lnnzi); //avoid row reallocations
+					for(int j = 0; j < ncol; j++) 
+						sb.append(i, j, row[j]); //prunes zeros
+					lnnz += lnnzi;
 				}
 			}
-			row++;
+			else {
+				DenseBlock denseBlock = dest.getDenseBlock();
+				for(int i = rl; i < ru; i++) {
+					H5.H5Dread(contiguousDataset, i, row);
+					for(int j = 0; j < ncol; j++) {
+						if(row[j] != 0) {
+							denseBlock.set(i, j, row[j]);
+							lnnz++;
+						}
+					}
+				}
+			}
 		}
-		IOUtilFunctions.closeSilently(bis);
+		finally {
+			IOUtilFunctions.closeSilently(bis);
+		}
 		return lnnz;
 	}
 
-	public static MatrixBlock computeHDF5Size(List<Path> files, FileSystem fs, String datasetName)
-		throws IOException, DMLRuntimeException {
+	public static MatrixBlock computeHDF5Size(List<Path> files, FileSystem fs, String datasetName, long estnnz)
+		throws IOException, DMLRuntimeException
+	{
 		int nrow = 0;
 		int ncol = 0;
 		for(int fileNo = 0; fileNo < files.size(); fileNo++) {
-
 			BufferedInputStream bis = new BufferedInputStream(fs.open(files.get(fileNo)));
 			H5RootObject rootObject = H5.H5Fopen(bis);
 			H5.H5Dopen(rootObject, datasetName);
@@ -166,6 +186,6 @@ public class ReaderHDF5 extends MatrixReader {
 			IOUtilFunctions.closeSilently(bis);
 		}
 		// allocate target matrix block based on given size;
-		return createOutputMatrixBlock(nrow, ncol, nrow, (long) nrow * ncol, true, false);
+		return createOutputMatrixBlock(nrow, ncol, nrow, estnnz, true, true);
 	}
 }

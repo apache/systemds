@@ -79,9 +79,6 @@ public class SpoofFusedOp extends MultiThreadedHop
 	}
 
 	@Override
-	public void checkArity() {}
-
-	@Override
 	public boolean allowsAllExecTypes() {
 		return _distSupported;
 	}

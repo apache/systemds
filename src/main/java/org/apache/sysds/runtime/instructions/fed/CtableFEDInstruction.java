@@ -66,10 +66,11 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 	}
 
 	public static CtableFEDInstruction parseInstruction(CtableCPInstruction inst, ExecutionContext ec) {
-		if((inst.getOpcode().equalsIgnoreCase("ctable") || inst.getOpcode().equalsIgnoreCase("ctableexpand")) &&
-			(ec.getCacheableData(inst.input1).isFederated(FType.ROW) ||
+		// TODO: add support for new tableexpand intruction. 
+		if((inst.getOpcode().equalsIgnoreCase("ctable") ) &&
+				((inst.input1.isMatrix() && ec.getCacheableData(inst.input1).isFederated(FType.ROW) ||
 				(inst.input2.isMatrix() && ec.getCacheableData(inst.input2).isFederated(FType.ROW)) ||
-				(inst.input3.isMatrix() && ec.getCacheableData(inst.input3).isFederated(FType.ROW))))
+				(inst.input3.isMatrix() && ec.getCacheableData(inst.input3).isFederated(FType.ROW)))))
 			return CtableFEDInstruction.parseInstruction(inst);
 		return null;
 	}

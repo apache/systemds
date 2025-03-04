@@ -561,6 +561,22 @@ public abstract class SparseBlock implements Serializable, Block
 		//default generic iterator, override if necessary
 		return new SparseBlockIterator(rl, Math.min(ru,numRows()));
 	}
+	
+	/**
+	 * Get a non-zero iterator over the subblock [rl/cl, ru/cu). Note that
+	 * the returned IJV object is reused across next calls and should 
+	 * be directly consumed or deep copied. 
+	 * 
+	 * @param rl   inclusive lower row index starting at 0
+	 * @param ru   exclusive upper row index starting at 0
+	 * @param cl   inclusive lower column index starting at 0
+	 * @param cu   exclusive upper column index starting at 0
+	 * @return IJV iterator
+	 */
+	public Iterator<IJV> getIterator(int rl, int ru, int cl, int cu) {
+		//default generic iterator, override if necessary
+		return new SparseBlockIterator(rl, Math.min(ru,numRows()), cl, cu);
+	}
 
 	/**
 	 * Get an iterator over the indices of non-empty rows within the entire sparse block.
@@ -694,19 +710,29 @@ public abstract class SparseBlock implements Serializable, Block
 		private int _curColIx = -1; //current col index pos
 		private int[] _curIndexes = null; //current col indexes
 		private double[] _curValues = null; //current col values
- 		private boolean _noNext = false; //end indicator		
+ 		private boolean _noNext = false; //end indicator
 		private IJV retijv = new IJV(); //reuse output tuple
+		private int _cl = 0;
+		private int _cu = Integer.MAX_VALUE;
 
 		protected SparseBlockIterator(int ru) {
 			_rlen = ru;
 			_curRow = 0;
-			findNextNonZeroRow();
+			findNextNonZeroRow(0);
 		}
 		
 		protected SparseBlockIterator(int rl, int ru) {
 			_rlen = ru;
 			_curRow = rl;
-			findNextNonZeroRow();
+			findNextNonZeroRow(0);
+		}
+		
+		protected SparseBlockIterator(int rl, int ru, int cl, int cu) {
+			_rlen = ru;
+			_curRow = rl;
+			_cl = cl;
+			_cu = cu;
+			findNextNonZeroRow(cl);
 		}
 		
 		@Override
@@ -717,14 +743,12 @@ public abstract class SparseBlock implements Serializable, Block
 		@Override
 		public IJV next( ) {
 			retijv.set(_curRow, _curIndexes[_curColIx], _curValues[_curColIx]);
-			
-			//NOTE: no preincrement on curcolix to avoid OpenJDK8 escape analysis bug, encountered 
-			//with tests SparsityRecompileTest/SparsityFunctionRecompileTest on parfor local result merge
-			if( _curColIx < pos(_curRow)+size(_curRow)-1 ) 
+			if( _curColIx < pos(_curRow)+size(_curRow)-1 && _curIndexes[_curColIx+1] < _cu ) { 
 				_curColIx++;
+			}
 			else {
 				_curRow++;
-				findNextNonZeroRow();	
+				findNextNonZeroRow(_cl);
 			}
 
 			return retijv;
@@ -733,19 +757,21 @@ public abstract class SparseBlock implements Serializable, Block
 		@Override
 		public void remove() {
 			throw new RuntimeException("SparseBlockIterator is unsupported!");
-		}		
+		}
 		
 		/**
 		 * Moves cursor to next non-zero value or indicates that no more 
 		 * values are available.
 		 */
-		private void findNextNonZeroRow() {
-			while( _curRow<_rlen && isEmpty(_curRow))
+		private void findNextNonZeroRow(int cl) {
+			while( _curRow<_rlen && (isEmpty(_curRow) 
+				|| (cl>0 && posFIndexGTE(_curRow, cl) < 0)) )
 				_curRow++;
 			if(_curRow >= _rlen)
 				_noNext = true;
 			else {
-				_curColIx = pos(_curRow);
+				_curColIx = (cl==0) ? 
+					pos(_curRow) : posFIndexGTE(_curRow, cl);
 				_curIndexes = indexes(_curRow); 
 				_curValues = values(_curRow);
 			}

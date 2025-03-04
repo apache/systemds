@@ -19,8 +19,10 @@
 #
 #-------------------------------------------------------------
 
-X = rand(rows=10000, cols=10);
-Y = X %*% rand(rows=10, cols=1);
+m = ifdef($m, 10000);
+n = ifdef($n, 10);
+X = rand(rows=m, cols=n);
+Y = X %*% rand(rows=n, cols=1);
 w = l2svm(X=X, Y=Y, intercept=1, epsilon=1e-6, reg=0.01, maxIterations=20);
 print(sum(w));
 

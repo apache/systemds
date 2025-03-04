@@ -868,13 +868,15 @@ that users provide MTD files for their own data as well.
 
 #### File formats and MTD files
 
-SystemDS supports 4 file formats:
+SystemDS supports 6 file formats:
 
   * CSV (delimited)
   * Matrix Market (coordinate)
   * Text (i,j,v)
+  * LIBSVM
   * Binary
   * HDF5
+  * COG
 
 The CSV format is a standard text-based format where columns are separated by delimiter characters, typically commas, and
 rows are represented on separate lines.
@@ -898,6 +900,15 @@ The binary format can only be read and written by SystemDS.
 Hierarchical Data Format (HDF) is a file format designed to store and organize large amounts of data. SystemDS supports 
 some features of the HDF5 like two dimension data (Matrix), matrix with FP64 (double) data type, 
 single dataset, single group, and contiguous dataset.
+
+Cloud Optimized GeoTIFF (COG) is an image format designed to store large amounts of geospatial data while allowing for
+efficient access. This is done by splitting the image into tiles which can then be accessed independently. Currently, SystemDS
+only supports reading COG files and can only process the most important metadata that is required for reading the image. Normal
+TIFF files that aren't tiled cannot be read by SystemDS. Support for BigTIFF is very limited and not recommended.
+
+The currently supported compression methods are as follows:
+- None
+- Deflate
 
 Let's look at a matrix and examples of its data represented in the supported formats with corresponding metadata. In the table below, we have
 a matrix consisting of 4 rows and 3 columns.

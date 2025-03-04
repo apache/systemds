@@ -19,6 +19,7 @@
 
 package org.apache.sysds.resource.cost;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -39,6 +40,7 @@ import org.apache.sysds.runtime.meta.MetaDataFormat;
 
 import static org.apache.sysds.lops.Data.PREAD_PREFIX;
 import static org.apache.sysds.lops.DataGen.*;
+import static org.apache.sysds.resource.cost.CPCostUtils.opcodeRequiresScan;
 import static org.apache.sysds.resource.cost.IOCostUtils.*;
 import static org.apache.sysds.resource.cost.SparkCostUtils.getRandInstTime;
 
@@ -52,16 +54,18 @@ import java.util.*;
 public class CostEstimator
 {
 	private static final long MIN_MEMORY_TO_TRACK = 1024 * 1024; // 1MB
-	private static final int DEFAULT_NUM_ITER = 15;
+	private static final int DEFAULT_NUM_ITER = 10;
+	// leaves room for GC overhead
+	private static final double MEM_ALLOCATION_LIMIT_FRACTION = 0.9;
 	// Non-static members
 	private final Program _program;
-	private final IOCostUtils.IOMetrics driverMetrics;
-	private final IOCostUtils.IOMetrics executorMetrics;
 	// declare here the hashmaps
 	private final HashMap<String, VarStats> _stats;
 	private final HashSet<String> _functions;
 	private final long localMemoryLimit; // refers to the drivers JVM memory
 	private long freeLocalMemory;
+	private final IOCostUtils.IOMetrics driverMetrics;
+	private final IOCostUtils.IOMetrics executorMetrics;
 
 	/**
 	 * Entry point for estimating the execution time of a program.
@@ -78,13 +82,33 @@ public class CostEstimator
 	}
 	public CostEstimator(Program program, CloudInstance driverNode, CloudInstance executorNode) {
 		_program = program;
-		driverMetrics = new IOCostUtils.IOMetrics(driverNode);
-		executorMetrics = executorNode != null? new IOCostUtils.IOMetrics(executorNode) : null;
 		// initialize here the hashmaps
 		_stats = new HashMap<>();
 		_functions = new HashSet<>();
-		localMemoryLimit = (long) OptimizerUtils.getLocalMemBudget();
+		localMemoryLimit = (long) (OptimizerUtils.getLocalMemBudget() * MEM_ALLOCATION_LIMIT_FRACTION);
 		freeLocalMemory = localMemoryLimit;
+		driverMetrics = new IOMetrics(driverNode);
+		if (executorNode == null) {
+			// estimation for single node execution -> no executor resources
+			executorMetrics = null;
+		} else {
+			// estimation for hybrid execution
+			// adapt the CPU related metrics needed
+			int dedicatedExecutorCores =
+					SparkExecutionContext.getDefaultParallelism(false) / SparkExecutionContext.getNumExecutors();
+			long effectiveExecutorFlops = (long) (executorNode.getFLOPS() *
+					((double) executorNode.getVCPUs() / dedicatedExecutorCores));
+			// adapting the rest of the metrics not needed since the OS and resource management tasks
+			// would not consume large portion of the memory/storage/network bandwidth in the general case
+			executorMetrics = new IOMetrics(
+					effectiveExecutorFlops,
+					dedicatedExecutorCores,
+					executorNode.getMemoryBandwidth(),
+					executorNode.getDiskReadBandwidth(),
+					executorNode.getDiskWriteBandwidth(),
+					executorNode.getNetworkBandwidth()
+			);
+		}
 	}
 
 	/**
@@ -274,6 +298,10 @@ public class CostEstimator
 			switch (opcode) {
 				case "createvar":
 					DataCharacteristics dataCharacteristics = vinst.getMetaData().getDataCharacteristics();
+					if (!dataCharacteristics.nnzKnown()) {
+						// assign NNZ if -1 to avoid any negative results at calculating estimated object size
+						dataCharacteristics.setNonZeros(dataCharacteristics.getLength());
+					}
 					VarStats varStats = new VarStats(varName, dataCharacteristics);
 					if (vinst.getInput1().getName().startsWith(PREAD_PREFIX)) {
 						// NOTE: add I/O here although at execution the reading is done when the input is needed
@@ -372,7 +400,7 @@ public class CostEstimator
 	 *
 	 * @param inst instruction for estimation
 	 * @return estimated time in seconds
-	 * @throws CostEstimationException ?
+	 * @throws CostEstimationException when the hardware configuration is not sufficient
 	 */
 	public double getTimeEstimateCPInst(CPInstruction inst) throws CostEstimationException {
 		double time = 0;
@@ -416,15 +444,16 @@ public class CostEstimator
 					VarStats colLower = getStatsWithDefaultScalar(idxInst.getColLower().getName());
 					VarStats colUpper = getStatsWithDefaultScalar(idxInst.getColUpper().getName());
 					CPCostUtils.assignOutputMemoryStats(inst, output, input, weights, rowLower, rowUpper, colLower, colUpper);
-				} else if (inst instanceof ReorgCPInstruction && inst.getOpcode().equals("rsort")) {
+				} else if (inst instanceof ReorgCPInstruction && inst.getOpcode().equals(Opcodes.SORT.toString())) {
 					ReorgCPInstruction reorgInst = (ReorgCPInstruction) inst;
 					VarStats ixRet = getStatsWithDefaultScalar(reorgInst.getIxRet().getName());
 					CPCostUtils.assignOutputMemoryStats(inst, output, input, ixRet);
 				} else {
 					CPCostUtils.assignOutputMemoryStats(inst, output, input);
 				}
-
-				time += loadCPVarStatsAndEstimateTime(input);
+				if (opcodeRequiresScan(inst.getOpcode())) {
+					time += loadCPVarStatsAndEstimateTime(input);
+				} // else -> // not read required
 				time += weights == null ? 0 : loadCPVarStatsAndEstimateTime(weights);
 				time += CPCostUtils.getUnaryInstTime(uinst, input, weights, output, driverMetrics);
 			}
@@ -551,6 +580,12 @@ public class CostEstimator
 
 		if (output != null)
 			putInMemory(output);
+		// detection for functionality bugs
+		if (time < 0) {
+			throw new RuntimeException("Unexpected negative value at estimating CP instruction execution time");
+		} else if (time == Double.POSITIVE_INFINITY) {
+			throw new RuntimeException("Unexpected infinity value at estimating CP instruction execution time");
+		}
 		return time;
 	}
 
@@ -599,6 +634,8 @@ public class CostEstimator
 
 			output = getStats(cinst.getOutputVariableName());
 			SparkCostUtils.assignOutputRDDStats(inst, output, input);
+
+			output.fileInfo = input.fileInfo;
 			output.rddStats.checkpoint = true;
 			// assume the rdd object is only marked as checkpoint;
 			// adding spilling or serializing cost is skipped
@@ -646,10 +683,10 @@ public class CostEstimator
 					input2 = getStats(ixdinst.input2.getName());
 				}
 
-				if (ixdinst.getOpcode().equals(LeftIndex.OPCODE)) {
+				if (ixdinst.getOpcode().equals(Opcodes.LEFT_INDEX.toString())) {
 					loadTime += loadRDDStatsAndEstimateTime(input2);
 				} else { // mapLeftIndex
-					loadTime += loadCPVarStatsAndEstimateTime(input2);
+					loadTime += loadBroadcastVarStatsAndEstimateTime(input2);
 				}
 			} else {
 				input1 = getStats(ixdinst.input1.getName());
@@ -675,7 +712,7 @@ public class CostEstimator
 				SparkCostUtils.assignOutputRDDStats(inst, output, input);
 				output.rddStats.cost = loadTime + SparkCostUtils.getUnaryInstTime(uinst.getOpcode(), input, output, executorMetrics);
 			} else if (uinst instanceof ReorgSPInstruction || inst instanceof MatrixReshapeSPInstruction) {
-				if (uinst instanceof ReorgSPInstruction && uinst.getOpcode().equals("rsort")) {
+				if (uinst instanceof ReorgSPInstruction && uinst.getOpcode().equals(Opcodes.SORT.toString())) {
 					ReorgSPInstruction reorgInst = (ReorgSPInstruction) inst;
 					VarStats ixRet = getStatsWithDefaultScalar(reorgInst.getIxRet().getName());
 					SparkCostUtils.assignOutputRDDStats(inst, output, input, ixRet);
@@ -717,7 +754,7 @@ public class CostEstimator
 			// handle input rdd loading
 			double loadTime = loadRDDStatsAndEstimateTime(input1);
 			if (inst instanceof  BinaryMatrixBVectorSPInstruction) {
-				loadTime += loadCPVarStatsAndEstimateTime(input2);
+				loadTime += loadBroadcastVarStatsAndEstimateTime(input2);
 			} else {
 				loadTime += loadRDDStatsAndEstimateTime(input2);
 			}
@@ -733,7 +770,7 @@ public class CostEstimator
 			double loadTime = loadRDDStatsAndEstimateTime(input1);
 			VarStats input2 = getStats(ainst.input2.getName());
 			if (ainst instanceof AppendMSPInstruction) {
-				loadTime += loadCPVarStatsAndEstimateTime(input2);
+				loadTime += loadBroadcastVarStatsAndEstimateTime(input2);
 			} else {
 				loadTime += loadRDDStatsAndEstimateTime(input2);
 			}
@@ -757,7 +794,7 @@ public class CostEstimator
 					input2 = getStats(binst.input1.getName());
 				}
 				loadTime += loadRDDStatsAndEstimateTime(input1);
-				loadTime += loadCPVarStatsAndEstimateTime(input2);
+				loadTime += loadBroadcastVarStatsAndEstimateTime(input2);
 			} else {
 				input1 = getStats(binst.input1.getName());
 				input2 = getStats(binst.input2.getName());
@@ -774,10 +811,10 @@ public class CostEstimator
 			VarStats input1 = getStats(mmchaininst.input1.getName());
 			VarStats input2 = getStats(mmchaininst.input1.getName());
 			VarStats input3 = null;
-			double loadTime = loadRDDStatsAndEstimateTime(input1) + loadCPVarStatsAndEstimateTime(input2);
+			double loadTime = loadRDDStatsAndEstimateTime(input1) + loadBroadcastVarStatsAndEstimateTime(input2);
 			if (mmchaininst.input3 != null) {
 				input3 = getStats(mmchaininst.input3.getName());
-				loadTime += loadCPVarStatsAndEstimateTime(input3);
+				loadTime += loadBroadcastVarStatsAndEstimateTime(input3);
 			}
 			output = getStats(mmchaininst.output.getName());
 			SparkCostUtils.assignOutputRDDStats(inst, output, input1, input2, input3);
@@ -786,7 +823,7 @@ public class CostEstimator
 					SparkCostUtils.getMatMulChainInstTime(mmchaininst, input1, input2, input3, output, driverMetrics, executorMetrics);
 		} else if (inst instanceof CtableSPInstruction) {
 			CtableSPInstruction tableInst = (CtableSPInstruction) inst;
-			VarStats input1 = getStats(tableInst.input1.getName());
+			VarStats input1 = getStatsWithDefaultScalar(tableInst.input1.getName());
 			VarStats input2 = getStatsWithDefaultScalar(tableInst.input2.getName());
 			VarStats input3 = getStatsWithDefaultScalar(tableInst.input3.getName());
 			double loadTime = loadRDDStatsAndEstimateTime(input1) +
@@ -810,7 +847,7 @@ public class CostEstimator
 				case "rmempty":
 					input2 = getParameterizedBuiltinParamStats("offset", paramInst.getParameterMap(), false);
 					if (Boolean.parseBoolean(paramInst.getParameterMap().get("bRmEmptyBC"))) {
-						loadTime += input2 != null? loadCPVarStatsAndEstimateTime(input2) : 0; // broadcast
+						loadTime += input2 != null? loadBroadcastVarStatsAndEstimateTime(input2) : 0;
 					} else {
 						loadTime += input2 != null? loadRDDStatsAndEstimateTime(input2) : 0;
 					}
@@ -827,8 +864,36 @@ public class CostEstimator
 			output = getStatsWithDefaultScalar(paramInst.getOutputVariableName());
 			SparkCostUtils.assignOutputRDDStats(inst, output, input1);
 
-			output.rddStats.cost = loadTime + SparkCostUtils.getParameterizedBuiltinInstTime(paramInst, input1, input2, output,
-					driverMetrics, executorMetrics);
+			output.rddStats.cost = loadTime + SparkCostUtils.getParameterizedBuiltinInstTime(paramInst,
+					input1, input2, output, driverMetrics, executorMetrics);
+		} else if (inst instanceof TernarySPInstruction) {
+			TernarySPInstruction tInst = (TernarySPInstruction) inst;
+			VarStats input1 = getStatsWithDefaultScalar(tInst.input1.getName());
+			VarStats input2 = getStatsWithDefaultScalar(tInst.input2.getName());
+			VarStats input3 = getStatsWithDefaultScalar(tInst.input3.getName());
+			double loadTime = loadRDDStatsAndEstimateTime(input1) +
+					loadRDDStatsAndEstimateTime(input2) + loadRDDStatsAndEstimateTime(input3);
+
+			output = getStats(tInst.getOutputVariableName());
+			SparkCostUtils.assignOutputRDDStats(inst, output, input1, input2, input3);
+
+			output.rddStats.cost = loadTime + SparkCostUtils.getTernaryInstTime(tInst,
+					input1, input2, input3, output, executorMetrics);
+		} else if (inst instanceof QuaternarySPInstruction) {
+			// NOTE: not all quaternary instructions supported yet; only
+			//  mapwdivmm, mapsigmoid, mapwumm, mapwsloss, mapwcemm
+			QuaternarySPInstruction quatInst = (QuaternarySPInstruction) inst;
+			VarStats input1 = getStats(quatInst.input1.getName());
+			VarStats input2 = getStats(quatInst.input2.getName());
+			VarStats input3 = getStats(quatInst.input3.getName());
+			double loadTime = loadRDDStatsAndEstimateTime(input1) +
+					loadBroadcastVarStatsAndEstimateTime(input2) + loadBroadcastVarStatsAndEstimateTime(input3);
+
+			output = getStatsWithDefaultScalar(quatInst.getOutputVariableName()); // matrix or aggregated scalar
+			SparkCostUtils.assignOutputRDDStats(inst, output, input1, input2, input3);
+
+			output.rddStats.cost = loadTime + SparkCostUtils.getQuaternaryInstTime(quatInst,
+					input1, input2, input3, output, driverMetrics, executorMetrics);
 		} else if (inst instanceof WriteSPInstruction) {
 			WriteSPInstruction wInst = (WriteSPInstruction) inst;
 			VarStats input = getStats(wInst.input1.getName());
@@ -847,11 +912,7 @@ public class CostEstimator
 //
 //		} else if (inst instanceof QuantilePickSPInstruction) {
 //
-//		} else if (inst instanceof TernarySPInstruction) {
-//
 //		} else if (inst instanceof AggregateTernarySPInstruction) {
-//
-//		} else if (inst instanceof QuaternarySPInstruction) {
 //
 //		}
 		else {
@@ -891,11 +952,13 @@ public class CostEstimator
 			varToCollect.rddStats = null;
 		}
 
+		// detection for functionality bugs
 		if (computeTime < 0 || collectTime < 0) {
-			// detection for functionality bugs
 			throw new RuntimeException("Unexpected negative value at estimating Spark Job execution time");
+		} else if (computeTime == Double.POSITIVE_INFINITY || collectTime == Double.POSITIVE_INFINITY) {
+			throw new RuntimeException("Unexpected infinity value at estimating Spark Job execution time");
 		}
-		return computeTime + computeTime;
+		return collectTime + computeTime;
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
@@ -915,15 +978,15 @@ public class CostEstimator
 		double loadTime;
 		// input.fileInfo != null output of reblock inst. -> execution not triggered
 		// input.rddStats.checkpoint for output of checkpoint inst. -> execution not triggered
-		if (input.rddStats != null && (input.fileInfo == null || !input.rddStats.checkpoint)) {
+		if (input.rddStats != null && ((input.fileInfo == null && !input.rddStats.checkpoint) || (input.fileInfo != null && input.rddStats.checkpoint))) {
 			// loading from RDD
 			loadTime = getTimeEstimateSparkJob(input);
 		} else {
 			// loading from a file
 			if (input.fileInfo == null || input.fileInfo.length != 2) {
-				throw new DMLRuntimeException("Time estimation is not possible without file info.");
-			} else if (!input.fileInfo[0].equals(HDFS_SOURCE_IDENTIFIER) && !input.fileInfo[0].equals(S3_SOURCE_IDENTIFIER)) {
-				throw new DMLRuntimeException("Time estimation is not possible for data source: " + input.fileInfo[0]);
+				throw new RuntimeException("Time estimation is not possible without file info.");
+			} else if (isInvalidDataSource((String) input.fileInfo[0])) {
+				throw new RuntimeException("Time estimation is not possible for data source: " + input.fileInfo[0]);
 			}
 			loadTime = IOCostUtils.getFileSystemReadTime(input, driverMetrics);
 		}
@@ -932,10 +995,31 @@ public class CostEstimator
 		return loadTime;
 	}
 
+	/**
+	 * This method emulates the SystemDS mechanism of loading objects into
+	 * the CP memory from a file or an existing RDD object and
+	 * their preparation for broadcasting - create the broadcast object in-memory.
+	 *
+	 * @param input variable for broadcasting
+	 * @return estimated time in seconds for loading into memory
+	 */
+	private double loadBroadcastVarStatsAndEstimateTime(VarStats input) throws CostEstimationException {
+		// step 1: load CP variable as usual
+		double time = loadCPVarStatsAndEstimateTime(input);
+		// step 2: ensure the current memory is sufficient for creating the broadcast var.
+		// use the in-memory size for simplification
+		if (freeLocalMemory - input.allocatedMemory < 0) {
+			throw new CostEstimationException("Insufficient local memory for broadcasting");
+		}
+		// currently time for creating the broadcast var. is not considered
+		return time;
+	}
+
 	private void putInMemory(VarStats output) throws CostEstimationException {
 		if (output.isScalar() || output.allocatedMemory <= MIN_MEMORY_TO_TRACK) return;
-		if (freeLocalMemory - output.allocatedMemory < 0)
+		if (freeLocalMemory - output.allocatedMemory < 0) {
 			throw new CostEstimationException("Insufficient local memory");
+		}
 		freeLocalMemory -= output.allocatedMemory;
 	}
 
@@ -988,10 +1072,9 @@ public class CostEstimator
 			// if input RDD size is initiated -> cost should be calculated
 			// transfer the cost to the output rdd for lineage proper handling
 			ret = input.rddStats.cost;
-			if (input.rddStats.checkpoint) {
-				// cost of checkpoint var transferred only once
-				input.rddStats.cost = 0;
-			}
+			// NOTE: currently all variables are considered as reusable (via lineage)
+			//  or cached/persisted in memory
+			input.rddStats.cost = 0;
 		} else {
 			throw new RuntimeException("Initialized RDD stats without initialized data characteristics is undefined behaviour");
 		}

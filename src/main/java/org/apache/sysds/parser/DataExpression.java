@@ -984,7 +984,8 @@ public class DataExpression extends DataIdentifier
 
 			// Check for file existence (before metadata parsing for meaningful error messages)
 			if( shouldReadMTD //skip check for jmlc/mlcontext
-				&& !HDFSTool.existsFileOnHDFS(inputFileName)) 
+				&& !HDFSTool.existsFileOnHDFS(inputFileName)
+				&& !ConfigurationManager.getCompilerConfigFlag(ConfigType.RESOURCE_OPTIMIZATION))
 			{
 				String fsext = InfrastructureAnalyzer.isLocalMode() ? "FS (local mode)" : "HDFS";
 				raiseValidateError("Read input file does not exist on "+fsext+": " + 
@@ -1163,6 +1164,8 @@ public class DataExpression extends DataIdentifier
 			
 			boolean isHDF5 = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.HDF5.toString()));
 
+			boolean isCOG = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.COG.toString()));
+
 			dataTypeString = (getVarParam(DATATYPEPARAM) == null) ? null : getVarParam(DATATYPEPARAM).toString();
 			
 			if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(Statement.MATRIX_DATA_TYPE) 
@@ -1187,7 +1190,7 @@ public class DataExpression extends DataIdentifier
 				// initialize size of target data identifier to UNKNOWN
 				getOutput().setDimensions(-1, -1);
 				
-				if (!isCSV && !isLIBSVM && !isHDF5 && ConfigurationManager.getCompilerConfig()
+				if (!isCSV && !isLIBSVM && !isHDF5 && !isCOG && ConfigurationManager.getCompilerConfig()
 						.getBool(ConfigType.REJECT_READ_WRITE_UNKNOWNS) //skip check for csv/libsvm format / jmlc api
 					&& (getVarParam(READROWPARAM) == null || getVarParam(READCOLPARAM) == null) ) {
 						raiseValidateError("Missing or incomplete dimension information in read statement: "

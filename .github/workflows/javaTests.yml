@@ -48,7 +48,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-22.04]
         tests: [
           "org.apache.sysds.test.applications.**",
           "**.test.usertest.**",
@@ -62,7 +62,7 @@ jobs:
           "**.functions.compress.**,**.functions.data.tensor.**,**.functions.codegenalg.parttwo.**,**.functions.codegen.**,**.functions.caching.**",
           "**.functions.binary.matrix_full_cellwise.**,**.functions.binary.matrix_full_other.**",
           "**.functions.federated.algorithms.**,**.functions.federated.io.**,**.functions.federated.paramserv.**",
-          "**.functions.federated.transform.**",
+          "**.functions.federated.transform.**,**.functions.federated.fedplanner.**",
           "**.functions.federated.primitives.part1.** -Dtest-threadCount=1 -Dtest-forkCount=1",
           "**.functions.federated.primitives.part2.** -Dtest-threadCount=1 -Dtest-forkCount=1",
           "**.functions.federated.primitives.part3.** -Dtest-threadCount=1 -Dtest-forkCount=1",
@@ -86,7 +86,8 @@ jobs:
           "**.functions.transform.**","**.functions.unique.**",
           "**.functions.unary.matrix.**,**.functions.linearization.**,**.functions.jmlc.**"
         ]
-        java: [11]
+        java: ['11']
+        javadist: ['adopt']
     name: ${{ matrix.tests }}
     steps:
     - name: Checkout Repository
@@ -116,10 +117,16 @@ jobs:
 
   determine_test_coverage:
     name: Determine Test Coverage
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     needs: [
       java_tests
       ]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04]
+        java: ['11']
+        javadist: ['adopt']
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -147,7 +154,7 @@ jobs:
       run: mvn jacoco:report
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4.6.0
+      uses: codecov/codecov-action@v5.3.1
       if: github.repository_owner == 'apache'
       with:
         fail_ci_if_error: false

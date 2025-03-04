@@ -23,9 +23,11 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
@@ -44,6 +46,7 @@ import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -74,15 +77,23 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 		super(colIndices, numRows, dict, offsets, cachedCounts);
 		_data = data;
 		_defaultTuple = defaultTuple;
-		if(data.getUnique() != dict.getNumberOfValues(colIndices.size())) {
-			if(data.getUnique() != data.getMax())
-				throw new DMLCompressionException(
-					"Invalid unique count compared to actual: " + data.getUnique() + " " + data.getMax());
-			throw new DMLCompressionException("Invalid construction of SDC group: number uniques: " + data.getUnique()
-				+ " vs." + dict.getNumberOfValues(colIndices.size()));
+		if(CompressedMatrixBlock.debug) {
+
+			if(data.getUnique() != dict.getNumberOfValues(colIndices.size())) {
+				if(data.getUnique() != data.getMax())
+					throw new DMLCompressionException(
+						"Invalid unique count compared to actual: " + data.getUnique() + " " + data.getMax());
+				throw new DMLCompressionException("Invalid construction of SDC group: number uniques: " + data.getUnique()
+					+ " vs." + dict.getNumberOfValues(colIndices.size()));
+			}
+			if(_indexes.getSize() == numRows)
+				LOG.warn("Invalid SDC group that contains index with size == numRows");
+			if(defaultTuple.length != colIndices.size())
+				throw new DMLCompressionException("Invalid construction of SDC group");
+
+			_data.verify();
+			_indexes.verify(_data.size());
 		}
-		if(defaultTuple.length != colIndices.size())
-			throw new DMLCompressionException("Invalid construction of SDC group");
 
 	}
 
@@ -489,15 +500,24 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 	@Override
 	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
 		IDictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.size());
-		return rexpandCols(max, ignore, cast, nRows, d, _indexes, _data, getCachedCounts(), (int) _defaultTuple[0]);
+		return rexpandCols(max, ignore, cast, nRows, d, _indexes, _data, getCachedCounts(), (int) _defaultTuple[0],
+			_dict.getNumberOfValues(1));
 	}
 
 	protected static AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows, IDictionary d,
-		AOffset indexes, AMapToData data, int[] counts, int def) {
+		AOffset indexes, AMapToData data, int[] counts, int def, int nVal) {
 
 		if(d == null) {
-			if(def <= 0 || def > max)
+			if(def <= 0){
+				if(max > 0)
+					return ColGroupEmpty.create(max);
+				else 
+					return null;
+			}
+			else if(def > max && max > 0)
 				return ColGroupEmpty.create(max);
+			else if(max <= 0)
+				return null;
 			else {
 				double[] retDef = new double[max];
 				retDef[def - 1] = 1;
@@ -506,7 +526,7 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 			}
 		}
 		else {
-			final IColIndex outCols = ColIndexFactory.create(max);
+			final IColIndex outCols = ColIndexFactory.create(d.getNumberOfColumns(nVal));
 			if(def <= 0) {
 				if(ignore)
 					return ColGroupSDCZeros.create(outCols, nRows, d, indexes, data, counts);
@@ -683,7 +703,7 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 			}
 			else {
 				while(c < points.length && points[c].o == of) {
-					_dict.put(sr, _data.getIndex(it.getDataIndex()), points[c].r, nCol, _colIndexes);
+					_dict.putSparse(sr, _data.getIndex(it.getDataIndex()), points[c].r, nCol, _colIndexes);
 					c++;
 				}
 				of = it.next();
@@ -696,7 +716,7 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 		}
 
 		while(of == last && c < points.length && points[c].o == of) {
-			_dict.put(sr, _data.getIndex(it.getDataIndex()), points[c].r, nCol, _colIndexes);
+			_dict.putSparse(sr, _data.getIndex(it.getDataIndex()), points[c].r, nCol, _colIndexes);
 			c++;
 		}
 
@@ -722,6 +742,135 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 	@Override
 	protected void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
 		throw new NotImplementedException();
+	}
+
+	@Override
+	public AColGroup morph(CompressionType ct, int nRow) {
+		if(ct == getCompType())
+			return this;
+		else if(ct == CompressionType.DDC) {
+
+			AMapToData nMap = MapToFactory.create(nRow, _data.getUnique() + 1);
+			IDictionary nDict = _dict.append(_defaultTuple);
+
+			final AIterator it = _indexes.getIterator();
+			final int last = _indexes.getOffsetToLast();
+			int r = 0;
+			int def = _data.getUnique();
+			while(it.value() < last) {
+				final int iv = it.value();
+				while(r < iv) {
+					nMap.set(r++, def);
+				}
+				nMap.set(r++, _data.getIndex(it.getDataIndex()));
+				it.next();
+			}
+			nMap.set(r++, _data.getIndex(it.getDataIndex()));
+			while(r < nRow) {
+				nMap.set(r++, def);
+			}
+
+			return ColGroupDDC.create(_colIndexes, nDict, nMap, null);
+		}
+
+		else {
+			return super.morph(ct, nRow);
+		}
+	}
+
+	@Override
+	public AColGroupCompressed combineWithSameIndex(int nRow, int nCol, List<AColGroup> right) {
+
+		final IDictionary combined = combineDictionaries(nCol, right);
+		final IColIndex combinedColIndex = combineColIndexes(nCol, right);
+		final double[] combinedDefaultTuple = IContainDefaultTuple.combineDefaultTuples(_defaultTuple, right);
+
+		// return new ColGroupDDC(combinedColIndex, combined, _data, getCachedCounts());
+		return new ColGroupSDC(combinedColIndex, this.getNumRows(), combined, combinedDefaultTuple, _indexes, _data,
+			getCachedCounts());
+	}
+
+	@Override
+	public AColGroupCompressed combineWithSameIndex(int nRow, int nCol, AColGroup right) {
+		if(right instanceof ColGroupSDCZeros) {
+			ColGroupSDCZeros rightSDC = ((ColGroupSDCZeros) right);
+			IDictionary b = rightSDC.getDictionary();
+			IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
+			IColIndex combinedColIndex = _colIndexes.combine(right.getColIndices().shift(nCol));
+			double[] combinedDefaultTuple = new double[_defaultTuple.length + right.getNumCols()];
+			System.arraycopy(_defaultTuple, 0, combinedDefaultTuple, 0, _defaultTuple.length);
+			// System.arraycopy(rightSDC._defaultTuple, 0, combinedDefaultTuple, _defaultTuple.length,
+			// rightSDC._defaultTuple.length);
+
+			return new ColGroupSDC(combinedColIndex, this.getNumRows(), combined, combinedDefaultTuple, _indexes, _data,
+				getCachedCounts());
+		}
+		else {
+			ColGroupSDC rightSDC = ((ColGroupSDC) right);
+			IDictionary b = rightSDC.getDictionary();
+			IDictionary combined = DictionaryFactory.cBindDictionaries(_dict, b, this.getNumCols(), right.getNumCols());
+			IColIndex combinedColIndex = _colIndexes.combine(right.getColIndices().shift(nCol));
+			double[] combinedDefaultTuple = new double[_defaultTuple.length + rightSDC._defaultTuple.length];
+			System.arraycopy(_defaultTuple, 0, combinedDefaultTuple, 0, _defaultTuple.length);
+			System.arraycopy(rightSDC._defaultTuple, 0, combinedDefaultTuple, _defaultTuple.length,
+				rightSDC._defaultTuple.length);
+
+			return new ColGroupSDC(combinedColIndex, this.getNumRows(), combined, combinedDefaultTuple, _indexes, _data,
+				getCachedCounts());
+		}
+	}
+
+	@Override
+	public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
+		IntArrayList[] splitOffs = new IntArrayList[multiplier];
+		IntArrayList[] tmpMaps = new IntArrayList[multiplier];
+		for(int i = 0; i < multiplier; i++) {
+			splitOffs[i] = new IntArrayList();
+			tmpMaps[i] = new IntArrayList();
+		}
+
+		AIterator it = _indexes.getIterator();
+		final int last = _indexes.getOffsetToLast();
+
+		while(it.value() != last) {
+			final int v = it.value(); // offset
+			final int d = it.getDataIndex(); // data index value
+			final int m = _data.getIndex(d);
+
+			final int outV = v / multiplier;
+			final int outM = v % multiplier;
+
+			tmpMaps[outM].appendValue(m);
+			splitOffs[outM].appendValue(outV);
+
+			it.next();
+		}
+
+		// last value
+		final int v = it.value();
+		final int d = it.getDataIndex();
+		final int m = _data.getIndex(d);
+		final int outV = v / multiplier;
+		final int outM = v % multiplier;
+		tmpMaps[outM].appendValue(m);
+		splitOffs[outM].appendValue(outV);
+
+		// iterate through all rows.
+
+		AOffset[] offs = new AOffset[multiplier];
+		AMapToData[] maps = new AMapToData[multiplier];
+		for(int i = 0; i < multiplier; i++) {
+			offs[i] = OffsetFactory.createOffset(splitOffs[i]);
+			maps[i] = MapToFactory.create(_data.getUnique(), tmpMaps[i]);
+		}
+
+		// assign columns
+		AColGroup[] res = new AColGroup[multiplier];
+		for(int i = 0; i < multiplier; i++) {
+			final IColIndex ci = i == 0 ? _colIndexes : _colIndexes.shift(i * nColOrg);
+			res[i] = create(ci, _numRows / multiplier, _dict, _defaultTuple, offs[i], maps[i], null);
+		}
+		return res;
 	}
 
 	@Override

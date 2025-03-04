@@ -19,12 +19,11 @@
 
 package org.apache.sysds.runtime.compress.estim.encoding;
 
-import java.util.Map;
-
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
+import org.apache.sysds.runtime.compress.utils.HashMapLongInt;
 
 /** Const encoding for cases where the entire group of columns is the same value */
 public class ConstEncoding extends AEncode {
@@ -41,8 +40,11 @@ public class ConstEncoding extends AEncode {
 	}
 
 	@Override
-	public Pair<IEncode, Map<Integer, Integer>> combineWithMap(IEncode e) {
-		return new ImmutablePair<>(e, null);
+	public Pair<IEncode, HashMapLongInt> combineWithMap(IEncode e) {
+		if(e instanceof EmptyEncoding)
+			return new ImmutablePair<>(this, null);
+		else
+			return new ImmutablePair<>(e, null);
 	}
 
 	@Override

@@ -36,6 +36,7 @@ public abstract class ResultMerge<T extends CacheableData<?>> implements Seriali
 	protected static final Log LOG = LogFactory.getLog(ResultMerge.class.getName());
 	protected static final String NAME_SUFFIX = "_rm";
 	protected static final BinaryOperator PLUS = InstructionUtils.parseBinaryOperator("+");
+	protected static final BinaryOperator MINUS = InstructionUtils.parseBinaryOperator("-");
 	
 	//inputs to result merge
 	protected T       _output      = null;

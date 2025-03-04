@@ -318,7 +318,7 @@ public class Recompiler {
 	 * @param tid thread id, 0 for main or before worker creation
 	 * @return modified list of instructions
 	 */
-	private static ArrayList<Instruction> recompile(StatementBlock sb, ArrayList<Hop> hops, ExecutionContext ec, RecompileStatus status,
+	public static ArrayList<Instruction> recompile(StatementBlock sb, ArrayList<Hop> hops, ExecutionContext ec, RecompileStatus status,
 		boolean inplace, boolean replaceLit, boolean updateStats, boolean forceEt, boolean pred, ExecType et, long tid ) 
 	{
 		boolean codegen = ConfigurationManager.isCodegenEnabled()

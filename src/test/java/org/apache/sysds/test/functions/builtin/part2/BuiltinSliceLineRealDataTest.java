@@ -39,7 +39,7 @@ public class BuiltinSliceLineRealDataTest extends AutomatedTestBase {
 	@Override
 	public void setUp() {
 		for(int i=1; i<=1; i++)
-			addTestConfiguration(TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"R"}));
+			addTestConfiguration(TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"R","V"}));
 	}
 
 	@Test
@@ -55,12 +55,14 @@ public class BuiltinSliceLineRealDataTest extends AutomatedTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[] {"-stats",
-				"-args", data, tfspec, output("R")};
+				"-args", data, tfspec, output("R"), output("V")};
 
 			runTest(true, false, null, -1);
 
 			double acc = readDMLMatrixFromOutputDir("R").get(new CellIndex(1,1));
+			double val = readDMLMatrixFromOutputDir("V").get(new CellIndex(1,1));
 			Assert.assertTrue(acc >= minAcc);
+			Assert.assertTrue(val >= 0.99);
 			Assert.assertEquals(0, Statistics.getNoOfExecutedSPInst());
 		}
 		finally {

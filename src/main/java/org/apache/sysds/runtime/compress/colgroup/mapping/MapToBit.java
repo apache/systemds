@@ -77,15 +77,7 @@ public class MapToBit extends AMapToData {
 	}
 
 	private MapToBit(int unique, BitSet d, int size) {
-		super(unique);
-		long[] bsd = d.toLongArray();
-		if(bsd.length == longSize(size))
-			_data = bsd;
-		else {
-			_data = new long[longSize(size)];
-			System.arraycopy(bsd, 0, _data, 0, bsd.length);
-		}
-		_size = size;
+		this(unique, d.toLongArray(), size);
 	}
 
 	private MapToBit(int unique, long[] bsd, int size) {
@@ -99,10 +91,6 @@ public class MapToBit extends AMapToData {
 		_size = size;
 	}
 
-	protected long[] getData() {
-		return _data;
-	}
-
 	@Override
 	public MAP_TYPE getType() {
 		return MapToFactory.MAP_TYPE.BIT;
@@ -110,17 +98,19 @@ public class MapToBit extends AMapToData {
 
 	@Override
 	public int getIndex(int n) {
-		int wIdx = n >> 6; // same as divide by 64 bit faster
+		int wIdx = n >> 6; // same as divide by 64 but faster
 		return (_data[wIdx] & (1L << n)) != 0L ? 1 : 0;
 	}
 
 	@Override
 	public void fill(int v) {
-		long re = (_data.length * 64) - _size;
-		if(re == 0 || v == 0)
-			Arrays.fill(_data, v == 0 ? 0L : -1L);
+		final long re = (_data.length * 64) - _size;
+		final boolean fillZero = v == 0;
+		final long fillValue = fillZero ? 0L : -1L;
+		if(re == 0 || fillZero)
+			Arrays.fill(_data, fillValue);
 		else {
-			Arrays.fill(_data, 0, _data.length - 1, v == 0 ? 0L : -1L);
+			Arrays.fill(_data, 0, _data.length - 1, fillValue);
 			_data[_data.length - 1] = -1L >>> re;
 		}
 	}
@@ -146,9 +136,16 @@ public class MapToBit extends AMapToData {
 	}
 
 	@Override
+	public void set(int l, int u, int off, AMapToData tm) {
+		for(int i = l; i < u; i++, off++) {
+			set(i, tm.getIndex(off));
+		}
+	}
+
+	@Override
 	public int setAndGet(int n, int v) {
 		set(n, v);
-		return 1;
+		return v == 1 ? 1 : 0;
 	}
 
 	@Override
@@ -254,30 +251,39 @@ public class MapToBit extends AMapToData {
 	}
 
 	@Override
-	public void copy(AMapToData d) {
-		// if(d instanceof MapToBit)
-		// copyBit((MapToBit) d);
-		if(d instanceof MapToInt)
-			copyInt((MapToInt) d);
-		else {
-			final int sz = size();
-			for(int i = 0; i < sz; i++)
-				set(i, d.getIndex(i));
-		}
-	}
-
-	@Override
-	public void copyInt(int[] d) {
-		for(int i = 0; i < _size; i++)
+	public void copyInt(int[] d, int start, int end) {
+		for(int i = start; i < end; i++)
 			set(i, d[i]);
 	}
 
 	@Override
-	public void copyBit(BitSet d) {
-		long[] vals = d.toLongArray();
-		System.arraycopy(vals, 0, _data, 0, vals.length);
-		if(vals.length < _data.length)
-			Arrays.fill(_data, vals.length, _data.length, 0L);
+	public void copyBit(MapToBit d) {
+		long[] vals = d._data;
+		System.arraycopy(vals, 0, _data, 0, Math.min(vals.length, _data.length));
+	}
+
+	/**
+	 * Return the index of the next bit set to one. If no more bits are set to one return -1. The method behaves
+	 * similarly to and is inspired from java's BitSet. If a negative value is given as input it fails.
+	 * 
+	 * @param fromIndex The index to start from (inclusive)
+	 * @return The next valid index.
+	 */
+	public int nextSetBit(int fromIndex) {
+		if(fromIndex >= _size)
+			return -1;
+		int u = fromIndex >> 6; // long trick instead of division by 64.
+		final int s = _data.length;
+		// mask out previous set bits in this word.
+		long word = _data[u] & (0xffffffffffffffffL << fromIndex);
+
+		while(true) {
+			if(word != 0)
+				return (u * 64) + Long.numberOfTrailingZeros(word);
+			if(++u == s)
+				return -1;
+			word = _data[u];
+		}
 	}
 
 	private static class JoinBitSets {
@@ -292,30 +298,16 @@ public class MapToBit extends AMapToData {
 			final long[] t_longs = t_data._data;
 			final long[] _longs = o_data._data;
 
-			final int common = Math.min(t_longs.length, _longs.length);
+			if(t_longs.length != _longs.length)
+				throw new RuntimeException("Invalid to join bit sets not same length");
 
-			for(int i = 0; i < common; i++) {
+			for(int i = 0; i < _longs.length; i++) {
 				long t = t_longs[i];
 				long v = _longs[i];
 				tt += Long.bitCount(t & v);
 				ft += Long.bitCount(t & ~v);
 				tf += Long.bitCount(~t & v);
 				ff += Long.bitCount(~t & ~v);
-			}
-
-			if(t_longs.length > common) {
-				for(int i = common; i < t_longs.length; i++) {
-					int v = Long.bitCount(t_longs[i]);
-					ft += v;
-					ff += 64 - v;
-				}
-			}
-			else if(_longs.length > common) {
-				for(int i = common; i < _longs.length; i++) {
-					int v = Long.bitCount(_longs[i]);
-					tf += v;
-					ff += 64 - v;
-				}
 			}
 
 			final int longest = Math.max(t_longs.length, _longs.length);
@@ -379,7 +371,12 @@ public class MapToBit extends AMapToData {
 	@Override
 	public AMapToData slice(int l, int u) {
 		long[] s = BitSetArray.sliceVectorized(_data, l, u);
-		return new MapToBit(getUnique(), s, u - l);
+		MapToBit m = new MapToBit(getUnique(), s, u - l);
+
+		if(m.isEmpty())
+			return new MapToZero(u - l);
+		else
+			return m;
 	}
 
 	@Override
@@ -432,10 +429,6 @@ public class MapToBit extends AMapToData {
 
 	private static int longSize(int size) {
 		return Math.max(size >> 6, 0) + 1;
-	}
-
-	public int getMaxPossible() {
-		return 2;
 	}
 
 	@Override

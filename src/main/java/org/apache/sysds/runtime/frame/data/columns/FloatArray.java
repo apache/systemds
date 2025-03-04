@@ -25,11 +25,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
-import java.util.Map;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.frame.data.columns.ArrayFactory.FrameArrayType;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -71,11 +69,6 @@ public class FloatArray extends Array<Float> {
 	@Override
 	public void set(int index, String value) {
 		set(index, parseFloat(value));
-	}
-
-	@Override
-	public void set(int rl, int ru, Array<Float> value) {
-		set(rl, ru, value, 0);
 	}
 
 	@Override
@@ -396,20 +389,6 @@ public class FloatArray extends Array<Float> {
 	@Override
 	public boolean possiblyContainsNaN() {
 		return true;
-	}
-
-	@Override
-	protected int setAndAddToDict(Map<Float, Integer> rcd, AMapToData m, int i, Integer id) {
-		// JIT.
-		final Float val = _data[i];
-		final Integer v = rcd.get(val);
-		if(v == null) {
-			m.set(i, id);
-			rcd.put(val, id++);
-		}
-		else
-			m.set(i, v);
-		return id;
 	}
 
 	@Override

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
@@ -119,7 +120,7 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 				|| testname.equalsIgnoreCase(TEST_NAME+"5"))
 				expected_numPF = 0;
 			//long expected_successPF = !testname.equalsIgnoreCase(TEST_NAME+"3") ? 1 : 0;
-			long numPF = Statistics.getCPHeavyHitterCount("prefetch");
+			long numPF = Statistics.getCPHeavyHitterCount(Opcodes.PREFETCH.toString());
 			Assert.assertTrue("Violated Prefetch instruction count: "+numPF, numPF == expected_numPF);
 			//long successPF = SparkStatistics.getAsyncPrefetchCount();
 			//Assert.assertTrue("Violated successful Prefetch count: "+successPF, successPF == expected_successPF);

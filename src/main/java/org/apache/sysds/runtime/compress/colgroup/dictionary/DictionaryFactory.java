@@ -21,11 +21,12 @@ package org.apache.sysds.runtime.compress.colgroup.dictionary;
 
 import java.io.DataInput;
 import java.io.IOException;
-import java.util.Map;
+import java.util.List;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.bitmap.Bitmap;
 import org.apache.sysds.runtime.compress.bitmap.MultiColBitmap;
@@ -34,14 +35,18 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroupCompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.IContainADictionary;
 import org.apache.sysds.runtime.compress.colgroup.IContainDefaultTuple;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.lib.CLALibCombineGroups;
 import org.apache.sysds.runtime.compress.utils.ACount;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
 import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
+import org.apache.sysds.runtime.compress.utils.HashMapLongInt;
+import org.apache.sysds.runtime.compress.utils.HashMapLongInt.KV;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.Pair;
 
 public interface DictionaryFactory {
 	static final Log LOG = LogFactory.getLog(DictionaryFactory.class.getName());
@@ -67,7 +72,6 @@ public interface DictionaryFactory {
 			default:
 				return MatrixBlockDictionary.read(in);
 		}
-
 	}
 
 	public static long getInMemorySize(int nrValues, int nrColumns, double tupleSparsity, boolean lossy) {
@@ -235,8 +239,7 @@ public interface DictionaryFactory {
 		return combineDictionaries(a, b, null);
 	}
 
-	public static IDictionary combineDictionaries(AColGroupCompressed a, AColGroupCompressed b,
-		Map<Integer, Integer> filter) {
+	public static IDictionary combineDictionaries(AColGroupCompressed a, AColGroupCompressed b, HashMapLongInt filter) {
 		if(a instanceof ColGroupEmpty && b instanceof ColGroupEmpty)
 			return null; // null return is handled elsewhere.
 
@@ -248,34 +251,37 @@ public interface DictionaryFactory {
 
 		if(ae && be) {
 
-			IDictionary ad = ((IContainADictionary) a).getDictionary();
-			IDictionary bd = ((IContainADictionary) b).getDictionary();
+			final IDictionary ad = ((IContainADictionary) a).getDictionary();
+			final IDictionary bd = ((IContainADictionary) b).getDictionary();
 			if(ac.isConst()) {
 				if(bc.isConst()) {
 					return Dictionary.create(CLALibCombineGroups.constructDefaultTuple(a, b));
 				}
 				else if(bc.isDense()) {
 					final double[] at = ((IContainDefaultTuple) a).getDefaultTuple();
-					return combineConstSparseSparseRet(at, bd, b.getNumCols(), filter);
+					Pair<int[], int[]> r = IColIndex.reorderingIndexes(a.getColIndices(), b.getColIndices());
+					return combineConstLeft(at, bd, b.getNumCols(), r.getKey(), r.getValue(), filter);
 				}
 			}
 			else if(ac.isDense()) {
 				if(bc.isConst()) {
+					final Pair<int[], int[]> r = IColIndex.reorderingIndexes(a.getColIndices(), b.getColIndices());
 					final double[] bt = ((IContainDefaultTuple) b).getDefaultTuple();
-					return combineSparseConstSparseRet(ad, a.getNumCols(), bt, filter);
+					return combineSparseConstSparseRet(ad, a.getNumCols(), bt, r.getKey(), r.getValue(), filter);
 				}
-				else if(bc.isDense())
-					return combineFullDictionaries(ad, a.getNumCols(), bd, b.getNumCols(), filter);
+				else if(bc.isDense()) {
+					return combineFullDictionaries(ad, a.getColIndices(), bd, b.getColIndices(), filter);
+				}
 				else if(bc.isSDC()) {
 					double[] tuple = ((IContainDefaultTuple) b).getDefaultTuple();
-					return combineSDCRight(ad, a.getNumCols(), bd, tuple, filter);
+					return combineSDCRight(ad, a.getColIndices(), bd, tuple, b.getColIndices(), filter);
 				}
 			}
 			else if(ac.isSDC()) {
 				if(bc.isSDC()) {
 					final double[] at = ((IContainDefaultTuple) a).getDefaultTuple();
 					final double[] bt = ((IContainDefaultTuple) b).getDefaultTuple();
-					return combineSDC(ad, at, bd, bt, filter);
+					return combineSDCFilter(ad, at, a.getColIndices(), bd, bt, b.getColIndices(), filter);
 				}
 			}
 		}
@@ -291,32 +297,81 @@ public interface DictionaryFactory {
 	 * @return The combined dictionary
 	 */
 	public static IDictionary combineDictionariesSparse(AColGroupCompressed a, AColGroupCompressed b) {
+		return combineDictionariesSparse(a, b, null);
+	}
+
+	/**
+	 * Combine the dictionaries assuming a sparse combination where each dictionary can be a SDC containing a default
+	 * element that have to be introduced into the combined dictionary.
+	 * 
+	 * @param a      A Dictionary can be SDC or const
+	 * @param b      A Dictionary can be Const or SDC
+	 * @param filter A filter to remove elements in the combined dictionary
+	 * @return The combined dictionary
+	 */
+	public static IDictionary combineDictionariesSparse(AColGroupCompressed a, AColGroupCompressed b,
+		HashMapLongInt filter) {
 		CompressionType ac = a.getCompType();
 		CompressionType bc = b.getCompType();
 
+		if(filter != null)
+			throw new NotImplementedException("Not supported filter for sparse join yet!");
+
 		if(ac.isSDC()) {
-			IDictionary ad = ((IContainADictionary) a).getDictionary();
+			final IDictionary ad = ((IContainADictionary) a).getDictionary();
 			if(bc.isConst()) {
+				final Pair<int[], int[]> r = IColIndex.reorderingIndexes(a.getColIndices(), b.getColIndices());
 				double[] bt = ((IContainDefaultTuple) b).getDefaultTuple();
-				return combineSparseConstSparseRet(ad, a.getNumCols(), bt);
+				return combineSparseConstSparseRet(ad, a.getNumCols(), bt, r.getKey(), r.getValue());
 			}
 			else if(bc.isSDC()) {
-				IDictionary bd = ((IContainADictionary) b).getDictionary();
+				final IDictionary bd = ((IContainADictionary) b).getDictionary();
 				if(a.sameIndexStructure(b)) {
-					return ad.cbind(bd, b.getNumCols());
+					// in order or other order..
+					if(IColIndex.inOrder(a.getColIndices(), b.getColIndices()))
+						return ad.cbind(bd, b.getNumCols());
+					else if(IColIndex.inOrder(b.getColIndices(), a.getColIndices()))
+						return bd.cbind(ad, b.getNumCols());
+					else {
+						final Pair<int[], int[]> r = IColIndex.reorderingIndexes(a.getColIndices(), b.getColIndices());
+						return cbindReorder(ad, bd, r.getKey(), r.getValue());
+					}
 				}
-				// real combine extract default and combine like dense but with default before.
 			}
 		}
 		else if(ac.isConst()) {
-			double[] at = ((IContainDefaultTuple) a).getDefaultTuple();
+			final double[] at = ((IContainDefaultTuple) a).getDefaultTuple();
 			if(bc.isSDC()) {
-				IDictionary bd = ((IContainADictionary) b).getDictionary();
-				return combineConstSparseSparseRet(at, bd, b.getNumCols());
+				final IDictionary bd = ((IContainADictionary) b).getDictionary();
+				final Pair<int[], int[]> r = IColIndex.reorderingIndexes(a.getColIndices(), b.getColIndices());
+				return combineConstLeftAll(at, bd, b.getNumCols(), r.getKey(), r.getValue());
 			}
 		}
 
 		throw new NotImplementedException("Not supporting combining dense: " + a + " " + b);
+	}
+
+	private static IDictionary cbindReorder(IDictionary a, IDictionary b, int[] ai, int[] bi) {
+		final int nca = ai.length;
+		final int ncb = bi.length;
+		final int ra = a.getNumberOfValues(nca);
+		final int rb = b.getNumberOfValues(ncb);
+		final MatrixBlock ma = a.getMBDict(nca).getMatrixBlock();
+		final MatrixBlock mb = b.getMBDict(ncb).getMatrixBlock();
+		if(ra != rb)
+			throw new DMLCompressionException("Invalid cbind reorder, different sizes of dictionaries");
+		final MatrixBlock out = new MatrixBlock(ra, nca + ncb, false);
+
+		for(int r = 0; r < ra; r++) {// each row
+			//
+			for(int c = 0; c < nca; c++)
+				out.set(r, ai[c], ma.get(r, c));
+
+			for(int c = 0; c < ncb; c++)
+				out.set(r, bi[c], mb.get(r, c));
+		}
+
+		return new MatrixBlockDictionary(out);
 	}
 
 	/**
@@ -332,6 +387,13 @@ public interface DictionaryFactory {
 		return combineFullDictionaries(a, nca, b, ncb, null);
 	}
 
+	public static IDictionary combineFullDictionaries(IDictionary a, IColIndex ai, IDictionary b, IColIndex bi,
+		HashMapLongInt filter) {
+		final int nca = ai.size();
+		final int ncb = bi.size();
+		return combineFullDictionaries(a, ai, nca, b, bi, ncb, filter);
+	}
+
 	/**
 	 * Combine the dictionaries as if the dictionaries only contain the values in the specified filter.
 	 * 
@@ -344,51 +406,52 @@ public interface DictionaryFactory {
 	 * @return A combined dictionary
 	 */
 	public static IDictionary combineFullDictionaries(IDictionary a, int nca, IDictionary b, int ncb,
-		Map<Integer, Integer> filter) {
+		HashMapLongInt filter) {
+		return combineFullDictionaries(a, null, nca, b, null, ncb, filter);
+	}
+
+	public static IDictionary combineFullDictionaries(IDictionary a, IColIndex ai, int nca, IDictionary b, IColIndex bi,
+		int ncb, HashMapLongInt filter) {
 		final int ra = a.getNumberOfValues(nca);
 		final int rb = b.getNumberOfValues(ncb);
 
 		final MatrixBlock ma = a.getMBDict(nca).getMatrixBlock();
 		final MatrixBlock mb = b.getMBDict(ncb).getMatrixBlock();
-
-		if(ra == 1 && rb == 1) {
-
-			if(filter == null || filter.containsKey(0))
-				return new MatrixBlockDictionary(ma.append(mb));
-			else
-				return null;
-		}
-
-		MatrixBlock out = new MatrixBlock(filter != null ? filter.size() : ra * rb, nca + ncb, false);
-
+		final int filterSize = filter != null ? filter.size() : ra * rb;
+		if(filterSize == 0)
+			return null;
+		final MatrixBlock out = new MatrixBlock(filterSize, nca + ncb, false);
 		out.allocateBlock();
 
-		if(filter != null)
-			combineFullWithFilter(nca, ncb, filter, ra, ma, mb, out);
-		else
-			combineFullWithoutFilter(nca, ncb, ra, ma, mb, out);
+		if(ai != null && bi != null && !IColIndex.inOrder(ai, bi)) {
+
+			Pair<int[], int[]> reordering = IColIndex.reorderingIndexes(ai, bi);
+			if(filter != null)
+				// throw new NotImplementedException();
+				combineFullDictionariesOOOFilter(out, filter, ra, rb, nca, ncb, reordering.getKey(), reordering.getValue(),
+					ma, mb);
+			else
+				combineFullDictionariesOOONoFilter(out, ra, rb, nca, ncb, reordering.getKey(), reordering.getValue(), ma,
+					mb);
+
+		}
+		else {
+			if(filter != null)
+				combineFullDictionariesFilter(out, filter, ra, rb, nca, ncb, ma, mb);
+			else
+				combineFullDictionariesNoFilter(out, ra, rb, nca, ncb, ma, mb);
+		}
+
+		out.examSparsity(true);
 
 		return new MatrixBlockDictionary(out);
 	}
 
-	private static void combineFullWithoutFilter(int nca, int ncb, final int ra, MatrixBlock ma, MatrixBlock mb,
-		MatrixBlock out) {
-		for(int r = 0; r < out.getNumRows(); r++) {
-			int ia = r % ra;
-			int ib = r / ra;
-			for(int c = 0; c < nca; c++)
-				out.set(r, c, ma.get(ia, c));
-
-			for(int c = 0; c < ncb; c++)
-				out.set(r, c + nca, mb.get(ib, c));
-
-		}
-	}
-
-	private static void combineFullWithFilter(int nca, int ncb, Map<Integer, Integer> filter, final int ra,
-		MatrixBlock ma, MatrixBlock mb, MatrixBlock out) {
-		for(int r : filter.keySet()) {
-			int o = filter.get(r);
+	private static void combineFullDictionariesFilter(MatrixBlock out, HashMapLongInt filter, int ra, int rb, int nca,
+		int ncb, MatrixBlock ma, MatrixBlock mb) {
+		for(KV k : filter) {
+			final int r = (int) (k.k);
+			final int o = k.v;
 			int ia = r % ra;
 			int ib = r / ra;
 			for(int c = 0; c < nca; c++)
@@ -396,20 +459,61 @@ public interface DictionaryFactory {
 
 			for(int c = 0; c < ncb; c++)
 				out.set(o, c + nca, mb.get(ib, c));
-
 		}
 	}
 
-	private static IDictionary combineSDCRight(IDictionary a, int nca, IDictionary b, double[] tub) {
+	private static void combineFullDictionariesOOOFilter(MatrixBlock out, HashMapLongInt filter, int ra, int rb, int nca,
+		int ncb, int[] ai, int[] bi, MatrixBlock ma, MatrixBlock mb) {
+		for(KV k : filter) {
+			final int r = (int) (k.k);
+			final int o = k.v;
+			int ia = r % ra;
+			int ib = r / ra;
+			for(int c = 0; c < nca; c++)
+				out.set(o, ai[c], ma.get(ia, c));
+			for(int c = 0; c < ncb; c++)
+				out.set(o, bi[c], mb.get(ib, c));
+		}
+	}
 
+	private static void combineFullDictionariesOOONoFilter(MatrixBlock out, int ra, int rb, int nca, int ncb, int[] ai,
+		int[] bi, MatrixBlock ma, MatrixBlock mb) {
+		for(int r = 0; r < out.getNumRows(); r++) {
+			int ia = r % ra;
+			int ib = r / ra;
+			for(int c = 0; c < nca; c++)
+				out.set(r, ai[c], ma.get(ia, c));
+			for(int c = 0; c < ncb; c++)
+				out.set(r, bi[c], mb.get(ib, c));
+		}
+	}
+
+	private static void combineFullDictionariesNoFilter(MatrixBlock out, int ra, int rb, int nca, int ncb,
+		MatrixBlock ma, MatrixBlock mb) {
+		for(int r = 0; r < out.getNumRows(); r++) {
+			int ia = r % ra;
+			int ib = r / ra;
+			for(int c = 0; c < nca; c++)
+				out.set(r, c, ma.get(ia, c));
+			for(int c = 0; c < ncb; c++)
+				out.set(r, c + nca, mb.get(ib, c));
+		}
+	}
+
+	public static IDictionary combineSDCRightNoFilter(IDictionary a, int nca, IDictionary b, double[] tub) {
+		return combineSDCRightNoFilter(a, null, nca, b, tub, null);
+	}
+
+	public static IDictionary combineSDCRightNoFilter(IDictionary a, IColIndex ai, int nca, IDictionary b, double[] tub,
+		IColIndex bi) {
+		if(ai != null || bi != null)
+			throw new NotImplementedException();
 		final int ncb = tub.length;
 		final int ra = a.getNumberOfValues(nca);
 		final int rb = b.getNumberOfValues(ncb);
-
-		MatrixBlock ma = a.getMBDict(nca).getMatrixBlock();
-		MatrixBlock mb = b.getMBDict(ncb).getMatrixBlock();
-
-		MatrixBlock out = new MatrixBlock(ra * (rb + 1), nca + ncb, false);
+		final MatrixBlock ma = a.getMBDict(nca).getMatrixBlock();
+		final MatrixBlock mb = b.getMBDict(ncb).getMatrixBlock();
+		final MatrixBlock out = new MatrixBlock(ra * (rb + 1), nca + ncb, false);
 
 		out.allocateBlock();
 
@@ -434,65 +538,116 @@ public interface DictionaryFactory {
 		return new MatrixBlockDictionary(out);
 	}
 
+	public static IDictionary combineSDCRight(IDictionary a, IColIndex ai, IDictionary b, double[] tub, IColIndex bi,
+		HashMapLongInt filter) {
+		return combineSDCRight(a, ai, ai.size(), b, tub, bi, filter);
+	}
+
 	public static IDictionary combineSDCRight(IDictionary a, int nca, IDictionary b, double[] tub,
-		Map<Integer, Integer> filter) {
+		HashMapLongInt filter) {
+		return combineSDCRight(a, null, nca, b, tub, null, filter);
+	}
+
+	public static IDictionary combineSDCRight(IDictionary a, IColIndex ai, int nca, IDictionary b, double[] tub,
+		IColIndex bi, HashMapLongInt filter) {
 		if(filter == null)
-			return combineSDCRight(a, nca, b, tub);
+			return combineSDCRightNoFilter(a, ai, nca, b, tub, bi);
+
 		final int ncb = tub.length;
 		final int ra = a.getNumberOfValues(nca);
 		final int rb = b.getNumberOfValues(ncb);
-
-		MatrixBlock ma = a.getMBDict(nca).getMatrixBlock();
-		MatrixBlock mb = b.getMBDict(ncb).getMatrixBlock();
-
-		MatrixBlock out = new MatrixBlock(filter.size(), nca + ncb, false);
-
+		final MatrixBlock ma = a.getMBDict(nca).getMatrixBlock();
+		final MatrixBlock mb = b.getMBDict(ncb).getMatrixBlock();
+		final MatrixBlock out = new MatrixBlock(filter.size(), nca + ncb, false);
 		out.allocateBlock();
 
-		for(int r = 0; r < ra; r++) {
-			if(filter.containsKey(r)) {
+		if(ai != null && bi != null) {
+			Pair<int[], int[]> re = IColIndex.reorderingIndexes(ai, bi);
+			combineSDCRightOOOFilter(out, nca, ncb, tub, ra, rb, ma, mb, re.getKey(), re.getValue(), filter);
+		}
+		else {
+			combineSDCRightFilter(out, nca, ncb, tub, ra, rb, ma, mb, filter);
+		}
+		return new MatrixBlockDictionary(out);
+	}
 
-				int o = filter.get(r);
+	private static void combineSDCRightFilter(MatrixBlock out, int nca, int ncb, double[] tub, int ra, int rb,
+		MatrixBlock ma, MatrixBlock mb, HashMapLongInt filter) {
+		for(int r = 0; r < ra; r++) {
+			int o = filter.get(r);
+			if(o != -1) {
 				for(int c = 0; c < nca; c++)
 					out.set(o, c, ma.get(r, c));
 				for(int c = 0; c < ncb; c++)
 					out.set(o, c + nca, tub[c]);
 			}
-
 		}
-
-		for(int r = ra; r < ra * rb; r++) {
-			if(filter.containsKey(r)) {
-				int o = filter.get(r);
-
+		for(int r = ra; r < ra * rb + ra; r++) {
+			int o = filter.get(r);
+			if(o != -1) {
 				int ia = r % ra;
 				int ib = r / ra - 1;
 				for(int c = 0; c < nca; c++) // all good.
 					out.set(o, c, ma.get(ia, c));
-
 				for(int c = 0; c < ncb; c++)
 					out.set(o, c + nca, mb.get(ib, c));
-
 			}
 		}
-		return new MatrixBlockDictionary(out);
 	}
 
-	public static IDictionary combineSDC(IDictionary a, double[] tua, IDictionary b, double[] tub) {
+	private static void combineSDCRightOOOFilter(MatrixBlock out, int nca, int ncb, double[] tub, int ra, int rb,
+		MatrixBlock ma, MatrixBlock mb, int[] ai, int[] bi, HashMapLongInt filter) {
+		for(int r = 0; r < ra; r++) {
+			int o = filter.get(r);
+			if(o != -1) {
+				for(int c = 0; c < nca; c++)
+					out.set(o, ai[c], ma.get(r, c));
+				for(int c = 0; c < ncb; c++)
+					out.set(o, bi[c], tub[c]);
+			}
+		}
+		for(int r = ra; r < ra * rb + ra; r++) {
+			int o = filter.get(r);
+			if(o != -1) {
+				int ia = r % ra;
+				int ib = r / ra - 1;
+				for(int c = 0; c < nca; c++) // all good.
+					out.set(o, ai[c], ma.get(ia, c));
+				for(int c = 0; c < ncb; c++)
+					out.set(o, bi[c], mb.get(ib, c));
+			}
+		}
+	}
+
+	public static IDictionary combineSDCNoFilter(IDictionary a, double[] tua, IDictionary b, double[] tub) {
+		return combineSDCNoFilter(a, tua, null, b, tub, null);
+	}
+
+	public static IDictionary combineSDCNoFilter(IDictionary a, double[] tua, IColIndex ai, IDictionary b, double[] tub,
+		IColIndex bi) {
 		final int nca = tua.length;
 		final int ncb = tub.length;
 		final int ra = a.getNumberOfValues(nca);
 		final int rb = b.getNumberOfValues(ncb);
-
-		MatrixBlock ma = a.getMBDict(nca).getMatrixBlock();
-		MatrixBlock mb = b.getMBDict(ncb).getMatrixBlock();
-
-		MatrixBlock out = new MatrixBlock((ra + 1) * (rb + 1), nca + ncb, false);
+		final MatrixBlock ma = a.getMBDict(nca).getMatrixBlock();
+		final MatrixBlock mb = b.getMBDict(ncb).getMatrixBlock();
+		final MatrixBlock out = new MatrixBlock((ra + 1) * (rb + 1), nca + ncb, false);
 
 		out.allocateBlock();
 
-		// 0 row both default tuples
+		if(ai != null || bi != null) {
+			final Pair<int[], int[]> re = IColIndex.reorderingIndexes(ai, bi);
+			combineSDCNoFilterOOO(nca, ncb, tua, tub, out, ma, mb, ra, rb, re.getKey(), re.getValue());
+		}
+		else
+			combineSDCNoFilter(nca, ncb, tua, tub, out, ma, mb, ra, rb);
+		return new MatrixBlockDictionary(out);
+	}
 
+	private static void combineSDCNoFilter(int nca, int ncb, double[] tua, double[] tub, MatrixBlock out, MatrixBlock ma,
+		MatrixBlock mb, int ra, int rb) {
+
+		// 0 row both default tuples
 		for(int c = 0; c < nca; c++)
 			out.set(0, c, tua[c]);
 
@@ -508,8 +663,8 @@ public interface DictionaryFactory {
 		}
 
 		for(int r = ra + 1; r < out.getNumRows(); r++) {
-			int ia = r % (ra + 1) - 1;
-			int ib = r / (ra + 1) - 1;
+			final int ia = r % (ra + 1) - 1;
+			final int ib = r / (ra + 1) - 1;
 
 			if(ia == -1)
 				for(int c = 0; c < nca; c++)
@@ -520,42 +675,89 @@ public interface DictionaryFactory {
 
 			for(int c = 0; c < ncb; c++) // all good here.
 				out.set(r, c + nca, mb.get(ib, c));
-
 		}
+	}
+
+	private static void combineSDCNoFilterOOO(int nca, int ncb, double[] tua, double[] tub, MatrixBlock out,
+		MatrixBlock ma, MatrixBlock mb, int ra, int rb, int[] ai, int[] bi) {
+
+		// 0 row both default tuples
+		for(int c = 0; c < nca; c++)
+			out.set(0, ai[c], tua[c]);
+
+		for(int c = 0; c < ncb; c++)
+			out.set(0, bi[c], tub[c]);
+
+		// default case for b and all cases for a.
+		for(int r = 1; r < ra + 1; r++) {
+			for(int c = 0; c < nca; c++)
+				out.set(r, ai[c], ma.get(r - 1, c));
+			for(int c = 0; c < ncb; c++)
+				out.set(r, bi[c], tub[c]);
+		}
+
+		for(int r = ra + 1; r < out.getNumRows(); r++) {
+			final int ia = r % (ra + 1) - 1;
+			final int ib = r / (ra + 1) - 1;
+
+			if(ia == -1)
+				for(int c = 0; c < nca; c++)
+					out.set(r, ai[c], tua[c]);
+			else
+				for(int c = 0; c < nca; c++)
+					out.set(r, ai[c], ma.get(ia, c));
+
+			for(int c = 0; c < ncb; c++) // all good here.
+				out.set(r, bi[c], mb.get(ib, c));
+		}
+	}
+
+	public static IDictionary combineSDCFilter(IDictionary a, double[] tua, IDictionary b, double[] tub,
+		HashMapLongInt filter) {
+		return combineSDCFilter(a, tua, null, b, tub, null, filter);
+	}
+
+	public static IDictionary combineSDCFilter(IDictionary a, double[] tua, IColIndex ai, IDictionary b, double[] tub,
+		IColIndex bi, HashMapLongInt filter) {
+		if(filter == null)
+			return combineSDCNoFilter(a, tua, ai, b, tub, bi);
+
+		final int nca = tua.length;
+		final int ncb = tub.length;
+		final int ra = a.getNumberOfValues(nca);
+		final int rb = b.getNumberOfValues(ncb);
+		final MatrixBlock ma = a.getMBDict(nca).getMatrixBlock();
+		final MatrixBlock mb = b.getMBDict(ncb).getMatrixBlock();
+		final MatrixBlock out = new MatrixBlock(filter.size(), nca + ncb, false);
+		out.allocateBlock();
+
+		if(ai != null && bi != null) {
+			Pair<int[], int[]> re = IColIndex.reorderingIndexes(ai, bi);
+			combineSDCFilterOOO(filter, nca, ncb, tua, tub, out, ma, mb, ra, rb, re.getKey(), re.getValue());
+		}
+		else
+			combineSDCFilter(filter, nca, ncb, tua, tub, out, ma, mb, ra, rb);
 
 		return new MatrixBlockDictionary(out);
 	}
 
-	public static IDictionary combineSDC(IDictionary a, double[] tua, IDictionary b, double[] tub,
-		Map<Integer, Integer> filter) {
-		if(filter == null)
-			return combineSDC(a, tua, b, tub);
-		final int nca = tua.length;
-		final int ncb = tub.length;
-		final int ra = a.getNumberOfValues(nca);
-		final int rb = b.getNumberOfValues(nca);
-
-		MatrixBlock ma = a.getMBDict(nca).getMatrixBlock();
-		MatrixBlock mb = b.getMBDict(ncb).getMatrixBlock();
-
-		MatrixBlock out = new MatrixBlock(filter.size(), nca + ncb, false);
-
-		out.allocateBlock();
+	private static void combineSDCFilter(HashMapLongInt filter, int nca, int ncb, double[] tua, double[] tub,
+		MatrixBlock out, MatrixBlock ma, MatrixBlock mb, int ra, int rb) {
 
 		// 0 row both default tuples
-		if(filter.containsKey(0)) {
-			int o = filter.get(0);
+		final int o0 = filter.get(0);
+		if(o0 != -1) {
 			for(int c = 0; c < nca; c++)
-				out.set(o, c, tua[c]);
+				out.set(o0, c, tua[c]);
 
 			for(int c = 0; c < ncb; c++)
-				out.set(o, c + nca, tub[c]);
+				out.set(o0, c + nca, tub[c]);
 		}
 
 		// default case for b and all cases for a.
 		for(int r = 1; r < ra + 1; r++) {
-			if(filter.containsKey(r)) {
-				int o = filter.get(r);
+			final int o = filter.get(r);
+			if(o != -1) {
 				for(int c = 0; c < nca; c++)
 					out.set(o, c, ma.get(r - 1, c));
 				for(int c = 0; c < ncb; c++)
@@ -563,13 +765,11 @@ public interface DictionaryFactory {
 			}
 		}
 
-		for(int r = ra + 1; r < ra * rb; r++) {
-
-			if(filter.containsKey(r)) {
-				int o = filter.get(r);
-
-				int ia = r % (ra + 1) - 1;
-				int ib = r / (ra + 1) - 1;
+		for(int r = ra + 1; r < ra * rb + ra + rb + 1; r++) {
+			final int o = filter.get(r);
+			if(o != -1) {
+				final int ia = r % (ra + 1) - 1;
+				final int ib = r / (ra + 1) - 1;
 
 				if(ia == -1)
 					for(int c = 0; c < nca; c++)
@@ -582,12 +782,50 @@ public interface DictionaryFactory {
 					out.set(o, c + nca, mb.get(ib, c));
 			}
 		}
-
-		return new MatrixBlockDictionary(out);
-
 	}
 
-	private static IDictionary combineSparseConstSparseRet(IDictionary a, int nca, double[] tub) {
+	private static void combineSDCFilterOOO(HashMapLongInt filter, int nca, int ncb, double[] tua, double[] tub,
+		MatrixBlock out, MatrixBlock ma, MatrixBlock mb, int ra, int rb, int[] ai, int[] bi) {
+		// 0 row both default tuples
+		final int o0 = filter.get(0);
+		if(o0 != -1) {
+			for(int c = 0; c < nca; c++)
+				out.set(o0, ai[c], tua[c]);
+			for(int c = 0; c < ncb; c++)
+				out.set(o0, bi[c], tub[c]);
+		}
+
+		// default case for b and all cases for a.
+		for(int r = 1; r < ra + 1; r++) {
+			final int o = filter.get(r);
+			if(o != -1) {
+				for(int c = 0; c < nca; c++)
+					out.set(o, ai[c], ma.get(r - 1, c));
+				for(int c = 0; c < ncb; c++)
+					out.set(o, bi[c], tub[c]);
+			}
+		}
+
+		for(int r = ra + 1; r < ra * rb + ra + rb + 1; r++) {
+			final int o = filter.get(r);
+			if(o != -1) {
+				final int ia = r % (ra + 1) - 1;
+				final int ib = r / (ra + 1) - 1;
+
+				if(ia == -1)
+					for(int c = 0; c < nca; c++)
+						out.set(o, ai[c], tua[c]);
+				else
+					for(int c = 0; c < nca; c++)
+						out.set(o, ai[c], ma.get(ia, c));
+
+				for(int c = 0; c < ncb; c++) // all good here.
+					out.set(o, bi[c], mb.get(ib, c));
+			}
+		}
+	}
+
+	private static IDictionary combineSparseConstSparseRet(IDictionary a, int nca, double[] tub, int[] ai, int[] bi) {
 		final int ncb = tub.length;
 		final int ra = a.getNumberOfValues(nca);
 
@@ -600,19 +838,19 @@ public interface DictionaryFactory {
 		// default case for b and all cases for a.
 		for(int r = 0; r < ra; r++) {
 			for(int c = 0; c < nca; c++)
-				out.set(r, c, ma.get(r, c));
+				out.set(r, ai[c], ma.get(r, c));
 			for(int c = 0; c < ncb; c++)
-				out.set(r, c + nca, tub[c]);
+				out.set(r, bi[c], tub[c]);
 		}
 
 		return new MatrixBlockDictionary(out);
 
 	}
 
-	private static IDictionary combineSparseConstSparseRet(IDictionary a, int nca, double[] tub,
-		Map<Integer, Integer> filter) {
+	private static IDictionary combineSparseConstSparseRet(IDictionary a, int nca, double[] tub, int[] ai, int[] bi,
+		HashMapLongInt filter) {
 		if(filter == null)
-			return combineSparseConstSparseRet(a, nca, tub);
+			return combineSparseConstSparseRet(a, nca, tub, ai, bi);
 		else
 			throw new NotImplementedException();
 		// final int ncb = tub.length;
@@ -636,7 +874,8 @@ public interface DictionaryFactory {
 
 	}
 
-	private static IDictionary combineConstSparseSparseRet(double[] tua, IDictionary b, int ncb) {
+	private static IDictionary combineConstLeftAll(double[] tua, IDictionary b, int ncb, int[] ai, int[] bi) {
+
 		final int nca = tua.length;
 		final int rb = b.getNumberOfValues(ncb);
 
@@ -649,19 +888,19 @@ public interface DictionaryFactory {
 		// default case for b and all cases for a.
 		for(int r = 0; r < rb; r++) {
 			for(int c = 0; c < nca; c++)
-				out.set(r, c, tua[c]);
+				out.set(r, ai[c], tua[c]);
 			for(int c = 0; c < ncb; c++)
-				out.set(r, c + nca, mb.get(r, c));
+				out.set(r, bi[c], mb.get(r, c));
 		}
 
 		return new MatrixBlockDictionary(out);
 
 	}
 
-	private static IDictionary combineConstSparseSparseRet(double[] tua, IDictionary b, int ncb,
-		Map<Integer, Integer> filter) {
+	private static IDictionary combineConstLeft(double[] tua, IDictionary b, int ncb, int[] ai, int[] bi,
+		HashMapLongInt filter) {
 		if(filter == null)
-			return combineConstSparseSparseRet(tua, b, ncb);
+			return combineConstLeftAll(tua, b, ncb, ai, bi);
 		else
 			throw new NotImplementedException();
 		// final int nca = tua.length;
@@ -683,5 +922,40 @@ public interface DictionaryFactory {
 
 		// return new MatrixBlockDictionary(out);
 
+	}
+
+	public static IDictionary cBindDictionaries(int nCol, List<IDictionary> dicts) {
+		MatrixBlockDictionary baseDict = dicts.get(0).getMBDict(nCol);
+		MatrixBlock base = baseDict == null ? new MatrixBlock(1, nCol, true) : baseDict.getMatrixBlock();
+		MatrixBlock[] others = new MatrixBlock[dicts.size() - 1];
+		for(int i = 1; i < dicts.size(); i++) {
+			MatrixBlockDictionary otherDict = dicts.get(i).getMBDict(nCol);
+			MatrixBlock otherBase = otherDict == null ? new MatrixBlock(1, nCol, true) : otherDict.getMatrixBlock();
+			others[i - 1] = otherBase;
+		}
+		MatrixBlock ret = base.append(others, null, true);
+		return MatrixBlockDictionary.create(ret, true);
+	}
+
+	// public static IDictionary cBindDictionaries(List<Pair<Integer, IDictionary>> dicts) {
+	// MatrixBlock base = dicts.get(0).getValue().getMBDict(dicts.get(0).getKey()).getMatrixBlock();
+	// MatrixBlock[] others = new MatrixBlock[dicts.size() - 1];
+	// for(int i = 1; i < dicts.size(); i++) {
+	// Pair<Integer, IDictionary> p = dicts.get(i);
+	// others[i - 1] = p.getValue().getMBDict(p.getKey()).getMatrixBlock();
+	// }
+	// MatrixBlock ret = base.append(others, null, true);
+	// return new MatrixBlockDictionary(ret);
+	// }
+
+	public static IDictionary cBindDictionaries(IDictionary left, IDictionary right, int nColLeft, int nColRight) {
+		MatrixBlockDictionary base = left.getMBDict(nColLeft);
+		MatrixBlockDictionary add = right.getMBDict(nColRight);
+
+		MatrixBlock a = base == null ? (add != null ? new MatrixBlock(add.getNumberOfValues(nColRight), nColLeft,
+			true) : new MatrixBlock(1, nColLeft, true)) : base.getMatrixBlock();
+		MatrixBlock b = add == null ? new MatrixBlock(a.getNumRows(), nColRight, true) : add.getMatrixBlock();
+		MatrixBlock ret = a.append(b, null, true);
+		return MatrixBlockDictionary.create(ret, true);
 	}
 }

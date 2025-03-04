@@ -40,17 +40,17 @@ class LSTM(Fusion):
         self.dropout_rate = dropout_rate
         self.unimodal_embeddings = {}
 
-    def fuse(self, modalities: List[Modality], train_indices=None):
+    def transform(self, modalities: List[Modality]):
         size = len(modalities[0].data)
 
         result = np.zeros((size, 0))
 
         for modality in modalities:
-            if modality.name in self.unimodal_embeddings.keys():
-                out = self.unimodal_embeddings.get(modality.name)
+            if modality.modality_type in self.unimodal_embeddings.keys():
+                out = self.unimodal_embeddings.get(modality.modality_type)
             else:
                 out = self.run_lstm(modality.data)
-                self.unimodal_embeddings[modality.name] = out
+                self.unimodal_embeddings[modality.modality_type] = out
 
             result = np.concatenate([result, out], axis=-1)
 

@@ -19,8 +19,10 @@
 #
 #-------------------------------------------------------------
 
-X = rand(rows=10000, cols=10);
-Y = X %*% rand(rows=10, cols=1);
+m = ifdef($m, 10000);
+n = ifdef($n, 10);
+X = rand(rows=m, cols=n);
+Y = X %*% rand(rows=n, cols=1);
 w = lm(X=X, y=Y, icpt=2, tol=1e-8, reg=0.1, maxi=20);
 print(sum(w));
 

@@ -181,7 +181,7 @@ public class DDCSchemeMC extends DDCScheme {
 	private Pair<ICLAScheme, AColGroup> tryUpdateAndEncode(MatrixBlock data, ReaderColumnSelection reader, int nRow,
 		IColIndex columns) {
 		final AMapToData d = MapToFactory.create(nRow, map.size());
-		int max = d.getMaxPossible();
+		int max = d.getUpperBoundValue();
 
 		DblArray cellVals;
 		ACount<DblArray> emptyIdx = map.getC(emptyRow);
@@ -189,7 +189,7 @@ public class DDCSchemeMC extends DDCScheme {
 			while((cellVals = reader.nextRow()) != null) {
 				final int row = reader.getCurrentRowIndex();
 				final int id = map.increment(cellVals);
-				if(id >= max)
+				if(id > max)
 					throw new DMLCompressionException("Failed update and encode with " + max + " possible values");
 				d.set(row, id);
 			}
@@ -204,7 +204,7 @@ public class DDCSchemeMC extends DDCScheme {
 						d.set(r++, emptyIdx.id);
 				}
 				final int id = map.increment(cellVals);
-				if(id >= max)
+				if(id > max)
 					throw new DMLCompressionException(
 						"Failed update and encode with " + max + " possible values" + map + " " + map.size());
 				d.set(row, id);

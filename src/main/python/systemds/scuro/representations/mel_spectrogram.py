@@ -18,49 +18,40 @@
 # under the License.
 #
 # -------------------------------------------------------------
-
-import os
-import pickle
-
 import librosa
 import numpy as np
-from systemds.scuro.representations.utils import pad_sequences
 
+from systemds.scuro.modality.transformed import TransformedModality
+
+# import matplotlib.pyplot as plt
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 
 
 class MelSpectrogram(UnimodalRepresentation):
-    def __init__(self, avg=True, output_file=None):
+    def __init__(self):
         super().__init__("MelSpectrogram")
-        self.avg = avg
-        self.output_file = output_file
 
-    def parse_all(self, file_path, indices, get_sequences=False):
+    def transform(self, modality):
+        transformed_modality = TransformedModality(
+            modality.modality_type, self, modality.metadata
+        )
         result = []
         max_length = 0
-        if os.path.isdir(file_path):
-            for filename in os.listdir(file_path):
-                f = os.path.join(file_path, filename)
-                if os.path.isfile(f):
-                    y, sr = librosa.load(f)
-                    S = librosa.feature.melspectrogram(y=y, sr=sr)
-                    S_dB = librosa.power_to_db(S, ref=np.max)
-                    if S_dB.shape[-1] > max_length:
-                        max_length = S_dB.shape[-1]
-                    result.append(S_dB)
+        for sample in modality.data:
+            S = librosa.feature.melspectrogram(y=sample, sr=22050)
+            S_dB = librosa.power_to_db(S, ref=np.max)
+            if S_dB.shape[-1] > max_length:
+                max_length = S_dB.shape[-1]
+            result.append(S_dB.T)
 
-        r = []
-        for elem in result:
-            d = pad_sequences(elem, maxlen=max_length, dtype="float32")
-            r.append(d)
+        transformed_modality.data = result
+        return transformed_modality
 
-        np_array_r = np.array(r) if not self.avg else np.mean(np.array(r), axis=1)
-
-        if self.output_file is not None:
-            data = {}
-            for i in range(0, np_array_r.shape[0]):
-                data[indices[i]] = np_array_r[i]
-            with open(self.output_file, "wb") as file:
-                pickle.dump(data, file)
-
-        return np_array_r
+    # def plot_spectrogram(self, spectrogram):
+    #     plt.figure(figsize=(10, 4))
+    #     librosa.display.specshow(
+    #         spectrogram, x_axis="time", y_axis="mel", sr=22050, cmap="viridis"
+    #     )
+    #     plt.colorbar(format="%+2.0f dB")
+    #     plt.title("Mel Spectrogram")
+    #     plt.savefig("spectrogram.jpg")

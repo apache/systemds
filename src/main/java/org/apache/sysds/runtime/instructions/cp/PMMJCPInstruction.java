@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -44,7 +45,7 @@ public class PMMJCPInstruction extends ComputationCPInstruction {
 		CPOperand in3 = new CPOperand(parts[3]);
 		CPOperand out = new CPOperand(parts[4]);
 		int k = Integer.parseInt(parts[5]);
-		if(!opcode.equalsIgnoreCase("pmm"))
+		if(!opcode.equalsIgnoreCase(Opcodes.PMM.toString()))
 			throw new DMLRuntimeException("Unknown opcode while parsing an PMMJCPInstruction: " + str);
 		else
 			return new PMMJCPInstruction(new Operator(true), in1, in2, in3, out, k, opcode, str);

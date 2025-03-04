@@ -68,11 +68,6 @@ public class RewritePushdownSumBinaryMult extends AutomatedTestBase
 		testRewritePushdownSumBinaryMult( TEST_NAME2, true );
 	}
 	
-	/**
-	 * 
-	 * @param testname
-	 * @param rewrites
-	 */
 	private void testRewritePushdownSumBinaryMult( String testname, boolean rewrites )
 	{	
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;

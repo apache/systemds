@@ -18,81 +18,10 @@
 # under the License.
 #
 # -------------------------------------------------------------
-
-
-import json
+import os
 import pickle
 
-import h5py
 import numpy as np
-
-from systemds.scuro.representations.unimodal import UnimodalRepresentation
-
-
-class NPY(UnimodalRepresentation):
-    def __init__(self):
-        super().__init__("NPY")
-
-    def parse_all(self, filepath, indices, get_sequences=False):
-        data = np.load(filepath, allow_pickle=True)
-
-        if indices is not None:
-            return np.array([data[index] for index in indices])
-        else:
-            return np.array([data[index] for index in data])
-
-
-class Pickle(UnimodalRepresentation):
-    def __init__(self):
-        super().__init__("Pickle")
-
-    def parse_all(self, file_path, indices, get_sequences=False):
-        with open(file_path, "rb") as f:
-            data = pickle.load(f)
-
-        embeddings = []
-        for n, idx in enumerate(indices):
-            embeddings.append(data[idx])
-
-        return np.array(embeddings)
-
-
-class HDF5(UnimodalRepresentation):
-    def __init__(self):
-        super().__init__("HDF5")
-
-    def parse_all(self, filepath, indices=None, get_sequences=False):
-        data = h5py.File(filepath)
-
-        if get_sequences:
-            max_emb = 0
-            for index in indices:
-                if max_emb < len(data[index][()]):
-                    max_emb = len(data[index][()])
-
-            emb = []
-            if indices is not None:
-                for index in indices:
-                    emb_i = data[index].tolist()
-                    for i in range(len(emb_i), max_emb):
-                        emb_i.append([0 for x in range(0, len(emb_i[0]))])
-                    emb.append(emb_i)
-
-                return np.array(emb)
-        else:
-            if indices is not None:
-                return np.array([np.mean(data[index], axis=0) for index in indices])
-            else:
-                return np.array([np.mean(data[index][()], axis=0) for index in data])
-
-
-class JSON(UnimodalRepresentation):
-    def __init__(self):
-        super().__init__("JSON")
-
-    def parse_all(self, filepath, indices):
-        with open(filepath) as file:
-            return json.load(file)
 
 
 def pad_sequences(sequences, maxlen=None, dtype="float32", value=0):
@@ -106,3 +35,39 @@ def pad_sequences(sequences, maxlen=None, dtype="float32", value=0):
         result[i, : len(data)] = data
 
     return result
+
+
+def get_segments(data, key_prefix):
+    segments = {}
+    counter = 1
+    for line in data:
+        line = line.replace("\n", "")
+        segments[key_prefix + str(counter)] = line
+        counter += 1
+
+    return segments
+
+
+def read_data_from_file(filepath, indices):
+    data = {}
+
+    is_dir = True if os.path.isdir(filepath) else False
+
+    if is_dir:
+        files = os.listdir(filepath)
+
+        # get file extension
+        _, ext = os.path.splitext(files[0])
+        for key in indices:
+            with open(filepath + key + ext) as segm:
+                data.update(get_segments(segm, key + "_"))
+    else:
+        with open(filepath) as file:
+            data.update(get_segments(file, ""))
+
+    return data
+
+
+def save_embeddings(data, file_name):
+    with open(file_name, "wb") as file:
+        pickle.dump(data, file)

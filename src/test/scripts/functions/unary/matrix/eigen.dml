@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -29,13 +29,6 @@ A = t(A) %*% A; # make the input matrix symmetric
 
 [eval, evec] = eigen(A);
 
-/*
-B = evec %*% diag(eval) %*% t(evec);
-diff = sum(A - B);
-D = matrix(1,1,1);
-D = diff*D;
-*/
-
 numEval = $2;
 D = matrix(1, numEval, 1);
 for ( i in 1:numEval ) {
@@ -44,17 +37,6 @@ for ( i in 1:numEval ) {
     diff = sum(Av-rhs);
     D[i,1] = diff;
 }
-
-/*
-# TODO: dummy if() must be removed
-v = evec[,1];
-Av = A %*% v;
-rhs = as.scalar(eval[1,1]) * evec[,1];
-diff = sum(Av-rhs);
-
-D = matrix(1,1,1);
-D = diff*D;
-*/
 
 write(D, $3);
 

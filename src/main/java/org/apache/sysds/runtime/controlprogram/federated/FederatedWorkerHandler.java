@@ -619,9 +619,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			pb.execute(ec);
 		}
 		catch(Exception ex) {
-			// ensure all variables are properly unpinned, even in case
+			// ensure all variables are properly released, even in case
 			// of failures because federated workers are stateful servers
-			ec.getVariables().releasePinnedData();
+			ec.getVariables().releaseAcquiredData();
 			throw ex;
 		}
 	}
@@ -651,8 +651,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		// get function and input parameters
 		try {
 			FederatedUDF udf = (FederatedUDF) request.getParam(0);
-			if(LOG.isDebugEnabled())
-				LOG.debug(udf);
+			LOG.debug(udf);
 
 			eventStage.operation = udf.getClass().getSimpleName();
 

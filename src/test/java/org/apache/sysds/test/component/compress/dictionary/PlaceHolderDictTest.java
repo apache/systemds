@@ -490,8 +490,13 @@ public class PlaceHolderDictTest {
 	}
 
 	@Test(expected = Exception.class)
-	public void put() {
-		d.put(null, 1, 1, 1, null);
+	public void putDense() {
+		d.putDense(null, 1, 1, 1, null);
+	}
+
+	@Test(expected = Exception.class)
+	public void putSparse() {
+		d.putSparse(null, 1, 1, 1, null);
 	}
 
 	@Test

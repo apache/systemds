@@ -27,10 +27,13 @@ colProds <- function(X) {
   apply(X, 2, prod)
 }
 
-X = matrix(seq(9, 100*50+8), 100, 50, byrow=TRUE);
+X = matrix(3, 10, 10)
+# X = matrix(seq(9, 100*100+8), 100, 100, byrow=TRUE);
 # F = matrix(3, 10, 10)
-# X = matrix(seq(2, 10*20+1), 10, 20)
+# X = matrix(seq(from = 1, to = 10, by = 2), 10, 20)
+# X = matrix(1.3109348721, 10, 10)
 
 R = t(colProds(2*log(X)))
+# R = t(colProds(X*min(F)));
 
 writeMM(as(R,"CsparseMatrix"), paste(args[2], "S", sep=""));

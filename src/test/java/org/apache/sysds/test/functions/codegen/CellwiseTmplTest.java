@@ -68,9 +68,9 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME26 = TEST_NAME+26; //bias_mult
 	private static final String TEST_NAME27 = TEST_NAME+27; //outer < +7 negative
 	private static final String TEST_NAME28 = TEST_NAME+28; //colProds(X^2 + 1)
-	private static final String TEST_NAME29 = TEST_NAME+29;
+	private static final String TEST_NAME29 = TEST_NAME+29; //colProds(2*log(X))
 	private static final String TEST_NAME30 = TEST_NAME+30;	//rowProds(X^2 + 1)
-	private static final String TEST_NAME31 = TEST_NAME+31;
+	private static final String TEST_NAME31 = TEST_NAME+31;	//colProds(2*log(X))
 
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CellwiseTmplTest.class.getSimpleName() + "/";

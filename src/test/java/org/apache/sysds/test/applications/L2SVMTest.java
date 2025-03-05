@@ -49,7 +49,7 @@ public class L2SVMTest extends AutomatedTestBase
 		numRecords = rows;
 		numFeatures = cols;
 		sparsity = sp;
-		intercept = this.intercept;
+		this.intercept = intercept;
 	}
 	
 	@Parameters

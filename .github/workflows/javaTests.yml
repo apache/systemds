@@ -51,7 +51,7 @@ jobs:
         os: [ubuntu-22.04]
         tests: [
           "org.apache.sysds.test.applications.**",
-          "**.test.usertest.**",
+          "**.test.usertest.**,**.api.**",
           "**.component.c**.** -Dtest-threadCount=1 -Dtest-forkCount=1",
           "**.component.e**.**,**.component.f**.**,**.component.m**.**",
           "**.component.p**.**,**.component.r**.**,**.component.s**.**,**.component.t**.**,**.component.u**.**",

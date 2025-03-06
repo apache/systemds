@@ -156,6 +156,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = simplifyConstantConjunction(hop, hi, i);        //e.g., a & !a -> FALSE 
 			hi = simplifyReverseOperation(hop, hi, i);           //e.g., table(seq(1,nrow(X),1),seq(nrow(X),1,-1)) %*% X -> rev(X)
 			hi = simplifyReverseSequence(hop, hi, i);            //e.g., rev(seq(1,n)) -> seq(n,1)
+			hi = simplifyReverseSequenceStep(hop, hi, i);
 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION)
 				hi = simplifyMultiBinaryToBinaryOperation(hi);       //e.g., 1-X*Y -> X 1-* Y
 			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
@@ -207,6 +208,59 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		}
 
 		hop.setVisited();
+	}
+
+	private static Hop simplifyReverseSequenceStep(Hop parent, Hop hi, int pos) {
+		if (HopRewriteUtils.isReorg(hi, ReOrgOp.REV)
+				&& hi.getInput(0) instanceof DataGenOp
+				&& ((DataGenOp) hi.getInput(0)).getOp() == OpOpDG.SEQ
+				&& hi.getInput(0).getParent().size() == 1) { // only one consumer
+
+			DataGenOp seq = (DataGenOp) hi.getInput(0);
+			Hop from = seq.getInput().get(seq.getParamIndex(Statement.SEQ_FROM));
+			Hop to = seq.getInput().get(seq.getParamIndex(Statement.SEQ_TO));
+			Hop incr = seq.getInput().get(seq.getParamIndex(Statement.SEQ_INCR));
+
+			if (from instanceof LiteralOp && to instanceof LiteralOp && incr instanceof LiteralOp) {
+				double fromVal = ((LiteralOp) from).getDoubleValue();
+				double toVal = ((LiteralOp) to).getDoubleValue();
+				double incrVal = ((LiteralOp) incr).getDoubleValue();
+
+				// Skip if increment is zero (invalid sequence)
+				if (Math.abs(incrVal) < 1e-10)
+					return hi;
+
+				boolean isValidDirection = false;
+
+				// Checking direction compatibility
+				if ((incrVal > 0 && fromVal <= toVal) || (incrVal < 0 && fromVal >= toVal)) {
+					isValidDirection = true;
+				}
+
+				if (isValidDirection) {
+					// Calculate the number of elements and the last element
+					int numValues = (int)Math.floor(Math.abs((toVal - fromVal) / incrVal)) + 1;
+					double lastVal = fromVal + (numValues - 1) * incrVal;
+
+					// Create a new sequence based on actual last value
+					LiteralOp newFrom = new LiteralOp(lastVal);
+					LiteralOp newTo = new LiteralOp(fromVal);
+					LiteralOp newIncr = new LiteralOp(-incrVal);
+
+					// Replace the parameters
+					seq.getInput().set(seq.getParamIndex(Statement.SEQ_FROM), newFrom);
+					seq.getInput().set(seq.getParamIndex(Statement.SEQ_TO), newTo);
+					seq.getInput().set(seq.getParamIndex(Statement.SEQ_INCR), newIncr);
+
+					// Replace the old sequence with the new one
+					HopRewriteUtils.replaceChildReference(parent, hi, seq, pos);
+					HopRewriteUtils.cleanupUnreferenced(hi, seq);
+					hi = seq;
+					LOG.debug("Applied simplifyReverseSequenceStep (line " + hi.getBeginLine() + ").");
+				}
+			}
+		}
+		return hi;
 	}
 
 	private static Hop removeUnnecessaryVectorizeOperation(Hop hi)
@@ -1851,6 +1905,37 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				hi = hi3;
 
 				LOG.debug("Applied removeUnecessaryReorgOperation.");
+			}
+		}
+		// Handle the second case: t(X) %*% v -> t(t(v) %*% X)
+		else if (hi instanceof BinaryOp && ((BinaryOp) hi).getOp() == OpOp2.MULT) {
+			Hop left = hi.getInput().get(0);
+			Hop right = hi.getInput().get(1);
+
+			if (left instanceof ReorgOp && ((ReorgOp) left).getOp() == ReOrgOp.TRANS) {
+				try {
+					Hop X = left.getInput().get(0);
+
+					// Create transpose of v
+					Hop transposeV = HopRewriteUtils.createTranspose(right);
+
+					// Create multiplication
+					Hop newMult = HopRewriteUtils.createMatrixMultiply(transposeV, X);
+
+					// Create final transpose
+					Hop finalTranspose = HopRewriteUtils.createTranspose(newMult);
+
+					// Replace the original hop with new construct
+					HopRewriteUtils.replaceChildReference(parent, hi, finalTranspose, pos);
+					HopRewriteUtils.cleanupUnreferenced(hi);
+
+					LOG.debug("Applied removeUnnecessaryReorgOperation.");
+
+					return finalTranspose;
+				}
+				catch (Exception e) {
+					LOG.error("Failed to apply removeUnnecessaryReorgOperation: " + e.getMessage(), e);
+				}
 			}
 		}
 

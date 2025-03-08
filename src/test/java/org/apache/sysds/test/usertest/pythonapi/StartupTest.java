@@ -19,11 +19,47 @@
 
 package org.apache.sysds.test.usertest.pythonapi;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.spi.LoggingEvent;
 import org.apache.sysds.api.PythonDMLScript;
+import org.apache.sysds.test.LoggingUtils;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+
+import java.util.List;
+
 
 /** Simple tests to verify startup of Python Gateway server happens without crashes */
 public class StartupTest {
+	private LoggingUtils.TestAppender appender;
+
+	@Before
+	public void setUp() {
+		appender = LoggingUtils.overwrite();
+		PythonDMLScript.setDMLGateWayListenerLoggerLevel(Level.ALL);
+	}
+
+	@After
+	public void tearDown() {
+		LoggingUtils.reinsert(appender);
+	}
+
+	private void assertLogMessages(String... expectedMessages) {
+		List<LoggingEvent> log = LoggingUtils.reinsert(appender);
+		log.stream().forEach(l -> System.out.println(l.getMessage()));
+		Assert.assertEquals("Unexpected number of log messages", expectedMessages.length, log.size());
+
+		for (int i = 0; i < expectedMessages.length; i++) {
+			// order does not matter
+			boolean found = false;
+			for (String message : expectedMessages) {
+				found |= log.get(i).getMessage().toString().startsWith(message);
+			}
+			Assert.assertTrue("Unexpected log message: " + log.get(i).getMessage(),found);
+		}
+	}
 
 	@Test(expected = Exception.class)
 	public void testStartupIncorrect_1() throws Exception {
@@ -49,5 +85,19 @@ public class StartupTest {
 	public void testStartupIncorrect_5() throws Exception {
 		// Number out of range
 		PythonDMLScript.main(new String[] {"-python", "918757"});
+	}
+
+	@Test
+	public void testStartupCorrect() throws Exception {
+		PythonDMLScript.main(new String[]{"-python", "4001"});
+		Thread.sleep(200);
+		PythonDMLScript.GwS.shutdown();
+		Thread.sleep(200);
+		assertLogMessages(
+				"GatewayServer started",
+				"Starting JVM shutdown",
+				"Shutdown done",
+				"GatewayServer stopped"
+		);
 	}
 }

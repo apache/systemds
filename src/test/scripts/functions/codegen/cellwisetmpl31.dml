@@ -21,9 +21,11 @@
 
 X = matrix(3, 10, 10)
 #X = matrix(seq(9, 100*100+8), 100, 100);
+#F = matrix(0.1, 10, 10)
 
 while(FALSE){}
 
 R = rowProds(2*log(X))
+#R = rowProds(X*min(F))
 
 write(R, $1)

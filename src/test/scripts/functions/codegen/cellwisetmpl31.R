@@ -29,7 +29,9 @@ rowProds <- function(X) {
 
 X = matrix(3, 10, 10)
 # X = matrix(seq(9, 100*100+8), 100, 100, byrow=TRUE);
+# F = matrix(0.1, 10, 10)
 
 R = rowProds(2*log(X));
+# R = rowProds(X*min(F))
 
 writeMM(as(R,"CsparseMatrix"), paste(args[2], "S", sep=""));

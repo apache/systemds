@@ -29,7 +29,7 @@ colProds <- function(X) {
 
 X = matrix(3, 10, 10)
 # X = matrix(seq(9, 100*100+8), 100, 100, byrow=TRUE);
-# F = matrix(3, 10, 10)
+# F = matrix(0.1, 10, 10)
 # X = matrix(seq(from = 1, to = 10, by = 2), 10, 20)
 # X = matrix(1.3109348721, 10, 10)
 

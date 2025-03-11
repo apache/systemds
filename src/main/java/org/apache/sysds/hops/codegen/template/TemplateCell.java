@@ -66,7 +66,7 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 public class TemplateCell extends TemplateBase 
 {	
 	private static final AggOp[] SUPPORTED_AGG = 
-			new AggOp[]{AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX};
+			new AggOp[]{AggOp.SUM, AggOp.SUM_SQ, AggOp.MIN, AggOp.MAX, AggOp.PROD};
 	
 	public TemplateCell() {
 		super(TemplateType.CELL);

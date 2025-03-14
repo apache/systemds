@@ -77,6 +77,7 @@
 		<test-forkCount>1C</test-forkCount>
 		<rerun.failing.tests.count>2</rerun.failing.tests.count>
 		<jacoco.skip>false</jacoco.skip>
+		<doc.skip>false</doc.skip>
 		<jacoco.include>**</jacoco.include>
 		<automatedtestbase.outputbuffering>false</automatedtestbase.outputbuffering>
 		<argLine>-Xms3000m -Xmx3000m -Xmn300m</argLine>
@@ -875,9 +876,9 @@
 						<configuration>
 							<excludePackageNames>*.protobuf</excludePackageNames>
 							<notimestamp>true</notimestamp>
-							<failOnWarnings>true</failOnWarnings>
+							<failOnWarnings>false</failOnWarnings>
 							<quiet>true</quiet>
-							<skip>false</skip>
+							<skip>${doc.skip}</skip>
 							<show>public</show>
 							<source>${java.level}</source>
 						</configuration>

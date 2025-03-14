@@ -20,6 +20,7 @@
 package org.apache.sysds.test.usertest.pythonapi;
 
 import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
 import org.apache.sysds.api.PythonDMLScript;
 import org.apache.sysds.test.LoggingUtils;
@@ -27,23 +28,30 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import py4j.GatewayServer;
 
+import java.security.Permission;
 import java.util.List;
 
 
 /** Simple tests to verify startup of Python Gateway server happens without crashes */
 public class StartupTest {
 	private LoggingUtils.TestAppender appender;
+	private SecurityManager sm;
 
 	@Before
 	public void setUp() {
 		appender = LoggingUtils.overwrite();
+		sm = System.getSecurityManager();
+		System.setSecurityManager(new NoExitSecurityManager());
 		PythonDMLScript.setDMLGateWayListenerLoggerLevel(Level.ALL);
+		Logger.getLogger(PythonDMLScript.class.getName()).setLevel(Level.ALL);
 	}
 
 	@After
 	public void tearDown() {
 		LoggingUtils.reinsert(appender);
+		System.setSecurityManager(sm);
 	}
 
 	private void assertLogMessages(String... expectedMessages) {
@@ -88,9 +96,29 @@ public class StartupTest {
 	}
 
 	@Test
+	public void testStartupIncorrect_6() throws Exception {
+		GatewayServer gws1 = null;
+		try {
+			PythonDMLScript.main(new String[]{"-python", "4001"});
+			gws1 = PythonDMLScript.GwS;
+			Thread.sleep(200);
+			PythonDMLScript.main(new String[]{"-python", "4001"});
+			Thread.sleep(200);
+		} catch (SecurityException e) {
+			assertLogMessages(
+					"GatewayServer started",
+					"failed startup"
+			);
+			gws1.shutdown();
+		}
+	}
+
+	@Test
 	public void testStartupCorrect() throws Exception {
-		PythonDMLScript.main(new String[]{"-python", "4001"});
+		PythonDMLScript.main(new String[]{"-python", "4002"});
 		Thread.sleep(200);
+		PythonDMLScript script = (PythonDMLScript) PythonDMLScript.GwS.getGateway().getEntryPoint();
+		script.getConnection();
 		PythonDMLScript.GwS.shutdown();
 		Thread.sleep(200);
 		assertLogMessages(
@@ -99,5 +127,15 @@ public class StartupTest {
 				"Shutdown done",
 				"GatewayServer stopped"
 		);
+	}
+
+	class NoExitSecurityManager extends SecurityManager {
+		@Override
+		public void checkPermission(Permission perm) { }
+
+		@Override
+		public void checkExit(int status) {
+			throw new SecurityException("Intercepted exit()");
+		}
 	}
 }

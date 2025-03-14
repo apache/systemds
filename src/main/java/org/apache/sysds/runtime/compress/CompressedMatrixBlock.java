@@ -611,14 +611,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	public MatrixBlock transposeSelfMatrixMultOperations(MatrixBlock out, MMTSJType tstype, int k) {
 		// check for transpose type
 		if(tstype == MMTSJType.LEFT) {
-			if(isEmpty())
-				return new MatrixBlock(clen, clen, true);
-			// create output matrix block
-			if(out == null)
-				out = new MatrixBlock(clen, clen, false);
-			else
-				out.reset(clen, clen, false);
-			out.allocateDenseBlock();
 			CLALibTSMM.leftMultByTransposeSelf(this, out, k);
 			return out;
 		}

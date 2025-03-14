@@ -170,6 +170,7 @@ from .builtin.sigmoid import sigmoid
 from .builtin.skewness import skewness 
 from .builtin.sliceLine import sliceLine 
 from .builtin.sliceLineDebug import sliceLineDebug 
+from .builtin.sliceLineExtract import sliceLineExtract 
 from .builtin.slicefinder import slicefinder 
 from .builtin.smape import smape 
 from .builtin.smote import smote 
@@ -177,6 +178,7 @@ from .builtin.softmax import softmax
 from .builtin.solve import solve 
 from .builtin.split import split 
 from .builtin.splitBalanced import splitBalanced 
+from .builtin.sqrtMatrix import sqrtMatrix 
 from .builtin.stableMarriage import stableMarriage 
 from .builtin.statsNA import statsNA 
 from .builtin.steplm import steplm 
@@ -346,6 +348,7 @@ __all__ = ['WoE',
  'skewness',
  'sliceLine',
  'sliceLineDebug',
+ 'sliceLineExtract',
  'slicefinder',
  'smape',
  'smote',
@@ -353,6 +356,7 @@ __all__ = ['WoE',
  'solve',
  'split',
  'splitBalanced',
+ 'sqrtMatrix',
  'stableMarriage',
  'statsNA',
  'steplm',

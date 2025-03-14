@@ -95,6 +95,7 @@ public class FederatedWorkloadAnalyzer {
 			final String n1 = cpIns.input1.getName();		
 			getOrMakeCounter(mm, Long.parseLong(n1)).incRMM(1);
 			getOrMakeCounter(mm, Long.parseLong(n1)).incLMM(1);
+			counter ++;
 
 		}
 	}

@@ -162,6 +162,7 @@ from .builtin.scale import scale
 from .builtin.scaleApply import scaleApply 
 from .builtin.scaleMinMax import scaleMinMax 
 from .builtin.selectByVarThresh import selectByVarThresh 
+from .builtin.ses import ses 
 from .builtin.setdiff import setdiff 
 from .builtin.sherlock import sherlock 
 from .builtin.sherlockPredict import sherlockPredict 
@@ -340,6 +341,7 @@ __all__ = ['WoE',
  'scaleApply',
  'scaleMinMax',
  'selectByVarThresh',
+ 'ses',
  'setdiff',
  'sherlock',
  'sherlockPredict',

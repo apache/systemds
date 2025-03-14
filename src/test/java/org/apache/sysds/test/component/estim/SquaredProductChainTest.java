@@ -26,6 +26,7 @@ import org.apache.sysds.hops.estim.EstimatorBitsetMM;
 import org.apache.sysds.hops.estim.EstimatorDensityMap;
 import org.apache.sysds.hops.estim.EstimatorLayeredGraph;
 import org.apache.sysds.hops.estim.EstimatorMatrixHistogram;
+import org.apache.sysds.hops.estim.EstimatorLayeredGraph;
 import org.apache.sysds.hops.estim.MMNode;
 import org.apache.sysds.hops.estim.SparsityEstimator;
 import org.apache.sysds.hops.estim.SparsityEstimator.OpCode;
@@ -125,6 +126,16 @@ public class SquaredProductChainTest extends AutomatedTestBase
 	@Test
 	public void testMatrixHistogramExceptCase2() {
 		runSparsityEstimateTest(new EstimatorMatrixHistogram(true), m, k, n, n2, case2);
+	}
+
+	@Test
+	public void testLayeredGraphCase1() {
+		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, n2, case1);
+	}
+
+	@Test
+	public void testLayeredGraphCase2() {
+		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, n2, case2);
 	}
 	
 	@Test

@@ -30,6 +30,8 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.MMChainCPInstruction;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class FederatedWorkloadAnalyzer {
 	protected static final Log LOG = LogFactory.getLog(FederatedWorkloadAnalyzer.class.getName());
@@ -89,6 +91,12 @@ public class FederatedWorkloadAnalyzer {
 				counter++;
 			}
 			
+		}else if (cpIns instanceof MMChainCPInstruction){
+			final String n1 = cpIns.input1.getName();		
+			getOrMakeCounter(mm, Long.parseLong(n1)).incRMM(1);
+			getOrMakeCounter(mm, Long.parseLong(n1)).incLMM(1);
+			counter ++;
+
 		}
 	}
 

@@ -599,7 +599,6 @@ public class ParForProgramBlock extends ForProgramBlock {
 		//OPTIMIZATION of ParFOR body (incl all child parfor PBs)
 		///////
 		if( _optMode != POptMode.NONE ) {
-			OptimizationWrapper.setLogLevel(_optLogLevel); //set optimizer log level
 			OptimizationWrapper.optimize(_optMode, sb, this, ec, _numRuns); //core optimize
 		}
 

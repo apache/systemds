@@ -156,6 +156,16 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 		runWorkloadAnalysisTest(TEST_NAME8, ExecMode.SINGLE_NODE, 1, false, 10);
 	}
 
+	@Test
+	public void testKmeansSuccessfulIntermediateCP() {
+		runWorkloadAnalysisTest(TEST_NAME8, ExecMode.SINGLE_NODE, 42, true, 25);
+	}
+
+	@Test
+	public void testKmeansUnsuccessfulIntermediateCP() {
+		runWorkloadAnalysisTest(TEST_NAME8, ExecMode.SINGLE_NODE, 27, true, 10);
+	}
+
 	private void runWorkloadAnalysisTest(String testname, ExecMode mode, int compressionCount, boolean intermediates){
 		runWorkloadAnalysisTest(testname, mode, compressionCount, intermediates, -1);
 	}

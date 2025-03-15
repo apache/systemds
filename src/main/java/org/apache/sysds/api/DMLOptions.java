@@ -141,34 +141,32 @@ public class DMLOptions {
 			String lineageTypes[] = line.getOptionValues("lineage");
 			if (lineageTypes != null) {
 				for (String lineageType : lineageTypes) {
-					if (lineageType != null){
-						if (lineageType.equalsIgnoreCase("dedup"))
-							dmlOptions.lineage_dedup = lineageType.equalsIgnoreCase("dedup");
-						else if (lineageType.equalsIgnoreCase("reuse_full")
-							|| lineageType.equalsIgnoreCase("reuse"))
-							dmlOptions.linReuseType = ReuseCacheType.REUSE_FULL;
-						else if (lineageType.equalsIgnoreCase("reuse_partial"))
-							dmlOptions.linReuseType = ReuseCacheType.REUSE_PARTIAL;
-						else if (lineageType.equalsIgnoreCase("reuse_multilevel"))
-							dmlOptions.linReuseType = ReuseCacheType.REUSE_MULTILEVEL;
-						else if (lineageType.equalsIgnoreCase("reuse_hybrid"))
-							dmlOptions.linReuseType = ReuseCacheType.REUSE_HYBRID;
-						else if (lineageType.equalsIgnoreCase("none"))
-							dmlOptions.linReuseType = ReuseCacheType.NONE;
-						else if (lineageType.equalsIgnoreCase("policy_lru"))
-							dmlOptions.linCachePolicy = LineageCachePolicy.LRU;
-						else if (lineageType.equalsIgnoreCase("policy_costnsize"))
-							dmlOptions.linCachePolicy = LineageCachePolicy.COSTNSIZE;
-						else if (lineageType.equalsIgnoreCase("policy_dagheight"))
-							dmlOptions.linCachePolicy = LineageCachePolicy.DAGHEIGHT;
-						else if (lineageType.equalsIgnoreCase("estimate"))
-							dmlOptions.lineage_estimate = lineageType.equalsIgnoreCase("estimate");
-						else if (lineageType.equalsIgnoreCase("debugger"))
-							dmlOptions.lineage_debugger = lineageType.equalsIgnoreCase("debugger");							
-						else
-							throw new org.apache.commons.cli.ParseException(
-								"Invalid argument specified for -lineage option: " + lineageType);
-					}
+					if (lineageType.equalsIgnoreCase("dedup"))
+						dmlOptions.lineage_dedup = lineageType.equalsIgnoreCase("dedup");
+					else if (lineageType.equalsIgnoreCase("reuse_full")
+						|| lineageType.equalsIgnoreCase("reuse"))
+						dmlOptions.linReuseType = ReuseCacheType.REUSE_FULL;
+					else if (lineageType.equalsIgnoreCase("reuse_partial"))
+						dmlOptions.linReuseType = ReuseCacheType.REUSE_PARTIAL;
+					else if (lineageType.equalsIgnoreCase("reuse_multilevel"))
+						dmlOptions.linReuseType = ReuseCacheType.REUSE_MULTILEVEL;
+					else if (lineageType.equalsIgnoreCase("reuse_hybrid"))
+						dmlOptions.linReuseType = ReuseCacheType.REUSE_HYBRID;
+					else if (lineageType.equalsIgnoreCase("none"))
+						dmlOptions.linReuseType = ReuseCacheType.NONE;
+					else if (lineageType.equalsIgnoreCase("policy_lru"))
+						dmlOptions.linCachePolicy = LineageCachePolicy.LRU;
+					else if (lineageType.equalsIgnoreCase("policy_costnsize"))
+						dmlOptions.linCachePolicy = LineageCachePolicy.COSTNSIZE;
+					else if (lineageType.equalsIgnoreCase("policy_dagheight"))
+						dmlOptions.linCachePolicy = LineageCachePolicy.DAGHEIGHT;
+					else if (lineageType.equalsIgnoreCase("estimate"))
+						dmlOptions.lineage_estimate = true;
+					else if (lineageType.equalsIgnoreCase("debugger"))
+						dmlOptions.lineage_debugger = true;
+					else
+						throw new org.apache.commons.cli.ParseException(
+							"Invalid argument specified for -lineage option: " + lineageType);
 				}
 			}
 		}
@@ -186,13 +184,11 @@ public class DMLOptions {
 		}
 		if (line.hasOption("exec")){
 			String execMode = line.getOptionValue("exec");
-			if (execMode != null){
-				if (execMode.equalsIgnoreCase("singlenode")) dmlOptions.execMode = ExecMode.SINGLE_NODE;
-				else if (execMode.equalsIgnoreCase("hybrid")) dmlOptions.execMode = ExecMode.HYBRID;
-				else if (execMode.equalsIgnoreCase("spark")) dmlOptions.execMode = ExecMode.SPARK;
-				else throw new org.apache.commons.cli.ParseException("Invalid argument specified for -exec option, must be one of [hadoop, singlenode, hybrid, HYBRID, spark]");
-			}
-		}
+			if (execMode.equalsIgnoreCase("singlenode")) dmlOptions.execMode = ExecMode.SINGLE_NODE;
+			else if (execMode.equalsIgnoreCase("hybrid")) dmlOptions.execMode = ExecMode.HYBRID;
+			else if (execMode.equalsIgnoreCase("spark")) dmlOptions.execMode = ExecMode.SPARK;
+			else throw new org.apache.commons.cli.ParseException("Invalid argument specified for -exec option, must be one of [hadoop, singlenode, hybrid, HYBRID, spark]");
+	}
 		if (line.hasOption("explain")) {
 			dmlOptions.explainType = ExplainType.RUNTIME;
 			String explainType = line.getOptionValue("explain");
@@ -222,7 +218,7 @@ public class DMLOptions {
 		dmlOptions.statsNGrams = line.hasOption("ngrams");
 		if (dmlOptions.statsNGrams){
 			String[] nGramArgs = line.getOptionValues("ngrams");
-			if (nGramArgs.length >= 2) {
+			if (nGramArgs != null && nGramArgs.length >= 2) {
 				try {
 					String[] nGramSizeSplit = nGramArgs[0].split(",");
 					dmlOptions.statsNGramSizes = new int[nGramSizeSplit.length];
@@ -273,11 +269,17 @@ public class DMLOptions {
 
 		if (line.hasOption("fedMonitoring")) {
 			dmlOptions.fedMonitoring= true;
-			dmlOptions.fedMonitoringPort = Integer.parseInt(line.getOptionValue("fedMonitoring"));
+			String port = line.getOptionValue("fedMonitoring");
+			if(port != null)
+				dmlOptions.fedMonitoringPort = Integer.parseInt(port);
+			else
+				throw new org.apache.commons.cli.ParseException("No port [integer] specified for -fedMonitoring option");
 		}
 
 		if (line.hasOption("fedMonitoringAddress")) {
 			dmlOptions.fedMonitoringAddress = line.getOptionValue("fedMonitoringAddress");
+			if(dmlOptions.fedMonitoringAddress == null)
+				throw new org.apache.commons.cli.ParseException("No address [String] specified for -fedMonitoringAddress option");
 		}
 
 		if (line.hasOption("f")){
@@ -326,7 +328,7 @@ public class DMLOptions {
 			OptimizerUtils.FEDERATED_COMPILATION = true;
 			dmlOptions.federatedCompilation = true;
 			String[] fedCompSpecs = line.getOptionValues("federatedCompilation");
-			if ( fedCompSpecs != null && fedCompSpecs.length > 0 ){
+			if (fedCompSpecs != null){
 				for ( String spec : fedCompSpecs ){
 					String[] specPair = spec.split("=");
 					if (specPair.length != 2){
@@ -370,8 +372,8 @@ public class DMLOptions {
 			.withDescription("monitors and reports summary execution statistics; heavy hitter <count> is 10 unless overridden; default off")
 			.hasOptionalArg().create("stats");
 		Option ngramsOpt = OptionBuilder//.withArgName("ngrams")
-			.withDescription("monitors and reports the most occurring n-grams; -ngrams <comma separated n's> <topK>")
-			.hasOptionalArgs(2).create("ngrams");
+			.withDescription("monitors and reports the most occurring n-grams; -ngrams <comma separated n's> <topK> <boolean lineage>")
+			.hasOptionalArgs(3).create("ngrams");
 		Option fedStatsOpt = OptionBuilder.withArgName("count")
 			.withDescription("monitors and reports summary execution statistics of federated workers; heavy hitter <count> is 10 unless overridden; default off")
 			.hasOptionalArg().create("fedStats");

@@ -156,6 +156,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = simplifyConstantConjunction(hop, hi, i);        //e.g., a & !a -> FALSE 
 			hi = simplifyReverseOperation(hop, hi, i);           //e.g., table(seq(1,nrow(X),1),seq(nrow(X),1,-1)) %*% X -> rev(X)
 			hi = simplifyReverseSequence(hop, hi, i);            //e.g., rev(seq(1,n)) -> seq(n,1)
+			hi = simplifyReverseSequenceStep(hop, hi, i);        //e.g., rev(seq(1,n,2)) -> rev(n,1,-2)
 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION)
 				hi = simplifyMultiBinaryToBinaryOperation(hi);       //e.g., 1-X*Y -> X 1-* Y
 			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
@@ -822,6 +823,59 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			LOG.debug("Applied simplifyReverseSequence (line "+hi.getBeginLine()+").");
 		}
 
+		return hi;
+	}
+	
+	private static Hop simplifyReverseSequenceStep(Hop parent, Hop hi, int pos) {
+		if (HopRewriteUtils.isReorg(hi, ReOrgOp.REV)
+				&& hi.getInput(0) instanceof DataGenOp
+				&& ((DataGenOp) hi.getInput(0)).getOp() == OpOpDG.SEQ
+				&& hi.getInput(0).getParent().size() == 1) // only one consumer
+		{
+			DataGenOp seq = (DataGenOp) hi.getInput(0);
+			Hop from = seq.getInput().get(seq.getParamIndex(Statement.SEQ_FROM));
+			Hop to = seq.getInput().get(seq.getParamIndex(Statement.SEQ_TO));
+			Hop incr = seq.getInput().get(seq.getParamIndex(Statement.SEQ_INCR));
+
+			if (from instanceof LiteralOp && to instanceof LiteralOp && incr instanceof LiteralOp) {
+				double fromVal = ((LiteralOp) from).getDoubleValue();
+				double toVal = ((LiteralOp) to).getDoubleValue();
+				double incrVal = ((LiteralOp) incr).getDoubleValue();
+
+				// Skip if increment is zero (invalid sequence)
+				if (Math.abs(incrVal) < 1e-10)
+					return hi;
+
+				boolean isValidDirection = false;
+
+				// Checking direction compatibility
+				if ((incrVal > 0 && fromVal <= toVal) || (incrVal < 0 && fromVal >= toVal)) {
+					isValidDirection = true;
+				}
+
+				if (isValidDirection) {
+					// Calculate the number of elements and the last element
+					int numValues = (int)Math.floor(Math.abs((toVal - fromVal) / incrVal)) + 1;
+					double lastVal = fromVal + (numValues - 1) * incrVal;
+
+					// Create a new sequence based on actual last value
+					LiteralOp newFrom = new LiteralOp(lastVal);
+					LiteralOp newTo = new LiteralOp(fromVal);
+					LiteralOp newIncr = new LiteralOp(-incrVal);
+
+					// Replace the parameters
+					seq.getInput().set(seq.getParamIndex(Statement.SEQ_FROM), newFrom);
+					seq.getInput().set(seq.getParamIndex(Statement.SEQ_TO), newTo);
+					seq.getInput().set(seq.getParamIndex(Statement.SEQ_INCR), newIncr);
+
+					// Replace the old sequence with the new one
+					HopRewriteUtils.replaceChildReference(parent, hi, seq, pos);
+					HopRewriteUtils.cleanupUnreferenced(hi, seq);
+					hi = seq;
+					LOG.debug("Applied simplifyReverseSequenceStep (line " + hi.getBeginLine() + ").");
+				}
+			}
+		}
 		return hi;
 	}
 

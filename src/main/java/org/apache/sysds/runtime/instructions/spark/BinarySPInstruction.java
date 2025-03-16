@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.lops.BinaryM.VectorType;
@@ -111,7 +112,7 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		else if( dt1 == DataType.FRAME || dt2 == DataType.FRAME ) {
 			if(dt1 == DataType.FRAME && dt2 == DataType.FRAME)
 				return new BinaryFrameFrameSPInstruction(operator, in1, in2, out, opcode, str);
-			else if(dt1 == DataType.FRAME && dt2 == DataType.SCALAR && opcode.equalsIgnoreCase("+"))
+			else if(dt1 == DataType.FRAME && dt2 == DataType.SCALAR && opcode.equalsIgnoreCase(Opcodes.PLUS.toString()))
 				return new BinaryMatrixScalarSPInstruction(operator, in1, in2, out, opcode, str);
 		}
 

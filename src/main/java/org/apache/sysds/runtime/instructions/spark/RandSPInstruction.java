@@ -42,6 +42,7 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.util.random.SamplingUtils;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.OpOpDG;
@@ -49,7 +50,6 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.DataGenOp;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.lops.DataGen;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -225,16 +225,16 @@ public class RandSPInstruction extends UnarySPInstruction {
 		String opcode = s[0];
 		
 		OpOpDG method = null;
-		if ( opcode.equalsIgnoreCase(DataGen.RAND_OPCODE) ) {
+		if ( opcode.equalsIgnoreCase(Opcodes.RANDOM.toString()) ) {
 			method = OpOpDG.RAND;
 			InstructionUtils.checkNumFields ( str, 10, 11 );
 		}
-		else if ( opcode.equalsIgnoreCase(DataGen.SEQ_OPCODE) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.SEQUENCE.toString()) ) {
 			method = OpOpDG.SEQ;
 			// 8 operands: rows, cols, blen, from, to, incr, outvar
 			InstructionUtils.checkNumFields ( str, 7 );
 		}
-		else if ( opcode.equalsIgnoreCase(DataGen.SAMPLE_OPCODE) ) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.SAMPLE.toString()) ) {
 			method = OpOpDG.SAMPLE;
 			// 7 operands: range, size, replace, seed, blen, outvar
 			InstructionUtils.checkNumFields ( str, 6 );

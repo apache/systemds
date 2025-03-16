@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -127,9 +128,9 @@ public class RewriteSimplifyDistributiveBinaryOperationTest extends AutomatedTes
 			 */
 
 			if(rewrites)
-				Assert.assertTrue(Statistics.getCPHeavyHitterCount("*") == 1);
+				Assert.assertTrue(Statistics.getCPHeavyHitterCount(Opcodes.MULT.toString()) == 1);
 			else
-				Assert.assertTrue(Statistics.getCPHeavyHitterCount("*") == 2);
+				Assert.assertTrue(Statistics.getCPHeavyHitterCount(Opcodes.MULT.toString()) == 2);
 
 		}
 		finally {

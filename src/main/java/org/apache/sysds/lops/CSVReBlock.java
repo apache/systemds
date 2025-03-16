@@ -19,6 +19,7 @@
  
 package org.apache.sysds.lops;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.common.Types.ExecType;
@@ -31,7 +32,7 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
  */
 public class CSVReBlock extends Lop 
 {
-	public static final String OPCODE = "csvrblk"; 
+	public static final String OPCODE = Opcodes.CSVRBLK.toString();
 	
 	private int _blocksize;
 

@@ -30,7 +30,6 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
-import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -206,7 +205,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			return VariableOperationCode.CastAsScalarVariable;
 		else if ( str.equalsIgnoreCase(Opcodes.CAST_AS_MATRIX.toString()) )
 			return VariableOperationCode.CastAsMatrixVariable;
-		else if ( str.equalsIgnoreCase(OpOp1.CAST_AS_FRAME.toString()) 
+		else if ( str.equalsIgnoreCase(Opcodes.CAST_AS_FRAME.toString())
 			|| str.equalsIgnoreCase(Opcodes.CAST_AS_FRAME_VAR.toString()))
 			return VariableOperationCode.CastAsFrameVariable;
 		else if ( str.equalsIgnoreCase(Opcodes.CAST_AS_LIST.toString()) )

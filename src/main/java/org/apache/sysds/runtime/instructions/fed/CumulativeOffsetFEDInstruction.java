@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.fed;
 
 import java.util.concurrent.Future;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
@@ -209,8 +210,8 @@ public class CumulativeOffsetFEDInstruction extends BinaryFEDInstruction
 
 		// compute  B11 = B11 + B12 ⊙ a
 		MatrixBlock B = firstValues.slice(0, firstValues.getNumRows()-1,1, 1)
-			.binaryOperations(InstructionUtils.parseBinaryOperator("*"), a, new MatrixBlock());
-		return B.binaryOperationsInPlace(InstructionUtils.parseBinaryOperator("+"), firstValues.slice(0,firstValues.getNumRows()-1,0,0));
+			.binaryOperations(InstructionUtils.parseBinaryOperator(Opcodes.MULT.toString()), a, new MatrixBlock());
+		return B.binaryOperationsInPlace(InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString()), firstValues.slice(0,firstValues.getNumRows()-1,0,0));
 	}
 
 	private MatrixBlock[] getAggMatrices(MatrixObject mo1) {

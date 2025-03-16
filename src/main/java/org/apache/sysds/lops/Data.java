@@ -409,7 +409,7 @@ public class Data extends Lop
 			StringBuilder sb = InstructionUtils.getStringBuilder();
 			sb.append( "CP" );
 			sb.append( OPERAND_DELIMITOR );
-			sb.append( Opcodes.CREATEVAR.toString() );
+			sb.append( "createvar" );
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( outputLabel );
 			sb.append( OPERAND_DELIMITOR );

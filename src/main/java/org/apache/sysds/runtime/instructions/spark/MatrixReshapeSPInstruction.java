@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -74,7 +75,7 @@ public class MatrixReshapeSPInstruction extends UnarySPInstruction
 		CPOperand out = new CPOperand(parts[6]);
 		boolean outputEmptyBlocks = Boolean.parseBoolean(parts[7]);
 		 
-		if(!opcode.equalsIgnoreCase("rshape"))
+		if(!opcode.equalsIgnoreCase(Opcodes.RESHAPE.toString()))
 			throw new DMLRuntimeException("Unknown opcode while parsing an MatrixReshapeInstruction: " + str);
 		else
 			return new MatrixReshapeSPInstruction(new Operator(true), in1, rows, cols, byRow, out, outputEmptyBlocks, opcode, str);

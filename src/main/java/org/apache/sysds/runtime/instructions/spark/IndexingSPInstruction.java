@@ -19,9 +19,8 @@
 
 package org.apache.sysds.runtime.instructions.spark;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
-import org.apache.sysds.lops.LeftIndex;
-import org.apache.sysds.lops.RightIndex;
 import org.apache.sysds.lops.LeftIndex.LixCacheType;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -74,7 +73,7 @@ public abstract class IndexingSPInstruction extends UnarySPInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		
-		if ( opcode.equalsIgnoreCase(RightIndex.OPCODE) ) {
+		if ( opcode.equalsIgnoreCase(Opcodes.RIGHT_INDEX.toString()) ) {
 			if ( parts.length == 8 ) {
 				CPOperand in = new CPOperand(parts[1]);
 				CPOperand rl = new CPOperand(parts[2]);
@@ -92,7 +91,7 @@ public abstract class IndexingSPInstruction extends UnarySPInstruction {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
 			}
 		} 
-		else if ( opcode.equalsIgnoreCase(LeftIndex.OPCODE) || opcode.equalsIgnoreCase("mapLeftIndex")) {
+		else if ( opcode.equalsIgnoreCase(Opcodes.LEFT_INDEX.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPLEFTINDEX.toString())) {
 			if ( parts.length == 9 ) {
 				CPOperand lhsInput = new CPOperand(parts[1]);
 				CPOperand rhsInput = new CPOperand(parts[2]);

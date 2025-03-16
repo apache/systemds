@@ -717,6 +717,7 @@ public final class CLALibBinaryCellOp {
 		private final CompressedMatrixBlock _m1;
 		private final MatrixBlock _m2;
 		private final int[] _ret;
+		@SuppressWarnings("unused")
 		private final BinaryOperator _op;
 		private final ValueComparisonFunction _compFn;
 		private final boolean _left;

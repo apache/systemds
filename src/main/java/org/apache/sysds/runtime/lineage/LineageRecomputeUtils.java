@@ -30,7 +30,9 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.InstructionType;
 import org.apache.sysds.common.Opcodes;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOp1;
@@ -66,14 +68,12 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionParser;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ScalarObjectFactory;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.spark.RandSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.SPInstruction.SPType;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.Explain.ExplainCounts;
@@ -113,7 +113,7 @@ public class LineageRecomputeUtils {
 	
 	private static Data computeByLineage(LineageItem root) 
 	{
-		long rootId = root.getOpcode().equals("write") ?
+		long rootId = root.getOpcode().equals(Opcodes.WRITE.toString()) ?
 			root.getInputs()[0].getId() : root.getId();
 		String varname = LVARPREFIX + rootId;
 		Program prog = new Program(null);
@@ -307,8 +307,8 @@ public class LineageRecomputeUtils {
 				break;
 			}
 			case Instruction: {
-				CPType ctype = Opcodes.getCPTypeByOpcode(item.getOpcode());
-				SPType stype = InstructionUtils.getSPTypeByOpcode(item.getOpcode());
+				InstructionType ctype = Opcodes.getTypeByOpcode(item.getOpcode(), Types.ExecType.CP);
+				InstructionType stype = Opcodes.getTypeByOpcode(item.getOpcode(), Types.ExecType.SPARK);
 				
 				if (ctype != null) {
 					switch (ctype) {
@@ -577,7 +577,7 @@ public class LineageRecomputeUtils {
 				operands.get(item.getInputs()[3].getId()), //cl
 				operands.get(item.getInputs()[4].getId())); //cu
 		else if( "leftIndex".equals(item.getOpcode()) 
-				|| "mapLeftIndex".equals(item.getOpcode()) )
+				|| Opcodes.MAPLEFTINDEX.toString().equals(item.getOpcode()) )
 			return HopRewriteUtils.createLeftIndexingOp(input,
 				operands.get(item.getInputs()[1].getId()), //rhs
 				operands.get(item.getInputs()[2].getId()), //rl
@@ -701,8 +701,8 @@ public class LineageRecomputeUtils {
 				break;
 			}
 			case Instruction: {
-				CPType ctype = InstructionUtils.getCPTypeByOpcode(item.getOpcode());
-				SPType stype = InstructionUtils.getSPTypeByOpcode(item.getOpcode());
+				InstructionType ctype = InstructionUtils.getCPTypeByOpcode(item.getOpcode());
+				InstructionType stype = InstructionUtils.getSPTypeByOpcode(item.getOpcode());
 				
 				if (ctype != null) {
 					switch (ctype) {

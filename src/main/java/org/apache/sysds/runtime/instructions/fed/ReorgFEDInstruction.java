@@ -28,6 +28,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
@@ -102,7 +103,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		FederatedOutput fedOut;
-		if(opcode.equalsIgnoreCase("r'")) {
+		if(opcode.equalsIgnoreCase(Opcodes.TRANSPOSE.toString())) {
 			InstructionUtils.checkNumFields(str, 2, 3, 4);
 			in.split(parts[1]);
 			out.split(parts[2]);
@@ -112,19 +113,19 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			return new ReorgFEDInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject(), k), in, out, opcode, str,
 				fedOut);
 		}
-		else if(opcode.equalsIgnoreCase("rdiag")) {
+		else if(opcode.equalsIgnoreCase(Opcodes.DIAG.toString())) {
 			parseUnaryInstruction(str, in, out); // max 2 operands
 			fedOut = parseFedOutFlag(str, 3);
 			return new ReorgFEDInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, opcode, str,
 				fedOut);
 		}
-		else if(opcode.equalsIgnoreCase("rev")) {
+		else if(opcode.equalsIgnoreCase(Opcodes.REV.toString())) {
 			parseUnaryInstruction(str, in, out); // max 2 operands
 			fedOut = parseFedOutFlag(str, 3);
 			return new ReorgFEDInstruction(new ReorgOperator(RevIndex.getRevIndexFnObject()), in, out, opcode, str,
 				fedOut);
 		}
-		else if (opcode.equalsIgnoreCase("roll")) {
+		else if (opcode.equalsIgnoreCase(Opcodes.ROLL.toString())) {
 			InstructionUtils.checkNumFields(str, 3);
 			in.split(parts[1]);
 			out.split(parts[3]);
@@ -151,7 +152,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			throw new DMLRuntimeException("Federation type " + mo1.getFedMapping().getType()
 				+ " is not supported for Reorg processing");
 
-		if(instOpcode.equals("r'")) {
+		if(instOpcode.equals(Opcodes.TRANSPOSE.toString())) {
 			//execute transpose at federated site
 			long id = FederationUtils.getNextFedDataID();
 			FederatedRequest fr = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), mo1.getDataType());
@@ -176,7 +177,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 		} else if ( mo1.isFederated(FType.PART) ){
 			throw new DMLRuntimeException("Operation with opcode " + instOpcode + " is not supported with PART input");
 		}
-		else if(instOpcode.equalsIgnoreCase("rev")) {
+		else if(instOpcode.equalsIgnoreCase(Opcodes.REV.toString())) {
 			long id = FederationUtils.getNextFedDataID();
 			FederatedRequest fr = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), mo1.getDataType());
 
@@ -196,7 +197,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr1.getID()));
 
 			optionalForceLocal(out);
-		} else if (instOpcode.equalsIgnoreCase("roll")) {
+		} else if (instOpcode.equalsIgnoreCase(Opcodes.ROLL.toString())) {
 			long rlen = mo1.getNumRows();
 			long shift = ec.getScalarInput(_shift).getLongValue();
 			shift %= (rlen != 0 ? rlen : 1); // roll matrix with axis=none
@@ -227,7 +228,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			out.setFedMapping(outFedMap);
 			optionalForceLocal(out);
 		}
-		else if (instOpcode.equals("rdiag")) {
+		else if (instOpcode.equals(Opcodes.DIAG.toString())) {
 			RdiagResult result;
 			// diag(diag(X))
 			if (mo1.getNumColumns() == 1 && mo1.getNumRows() != 1) {

@@ -25,6 +25,7 @@ import java.util.StringTokenizer;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.InstructionType;
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.AggOp;
@@ -34,16 +35,6 @@ import org.apache.sysds.common.Types.Direction;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.WeightedCrossEntropy;
-import org.apache.sysds.lops.WeightedCrossEntropyR;
-import org.apache.sysds.lops.WeightedDivMM;
-import org.apache.sysds.lops.WeightedDivMMR;
-import org.apache.sysds.lops.WeightedSigmoid;
-import org.apache.sysds.lops.WeightedSigmoidR;
-import org.apache.sysds.lops.WeightedSquaredLoss;
-import org.apache.sysds.lops.WeightedSquaredLossR;
-import org.apache.sysds.lops.WeightedUnaryMM;
-import org.apache.sysds.lops.WeightedUnaryMMR;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.functionobjects.And;
 import org.apache.sysds.runtime.functionobjects.BitwAnd;
@@ -86,12 +77,9 @@ import org.apache.sysds.runtime.functionobjects.ReduceDiag;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.functionobjects.Xor;
 import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
-import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FEDType;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import org.apache.sysds.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
-import org.apache.sysds.runtime.instructions.spark.SPInstruction.SPType;
 import org.apache.sysds.runtime.matrix.data.LibCommonsMath;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
@@ -264,30 +252,33 @@ public class InstructionUtils {
 		return str.substring(ix1+1, ix2);
 	}
 
-	public static SPType getSPType(String str) {
-		return SPInstructionParser.String2SPInstructionType.get(getOpCode(str));
+	public static InstructionType getSPType(String str) {
+		String opcode = getOpCode(str);
+		return Opcodes.getTypeByOpcode(opcode, Types.ExecType.SPARK);
 	}
 
-	public static CPType getCPType(String str) {
+	public static InstructionType getCPType(String str) {
 		String opcode = getOpCode(str);
-		return Opcodes.getCPTypeByOpcode(opcode);
+		return Opcodes.getTypeByOpcode(opcode, Types.ExecType.CP);
 	}
 	
-	public static SPType getSPTypeByOpcode(String opcode) {
-		return SPInstructionParser.String2SPInstructionType.get(opcode);
-	}
-	
-	public static CPType getCPTypeByOpcode( String opcode ) {
+	public static InstructionType getSPTypeByOpcode(String opcode) {
 		String op = getOpCode(opcode);
-		return Opcodes.getCPTypeByOpcode(op);
+		return Opcodes.getTypeByOpcode(op, Types.ExecType.SPARK);
+	}
+	
+	public static InstructionType getCPTypeByOpcode(String opcode ) {
+		String op = getOpCode(opcode);
+		return Opcodes.getTypeByOpcode(op, Types.ExecType.CP);
 	}
 
 	public static GPUINSTRUCTION_TYPE getGPUType( String str ) {
 		return GPUInstructionParser.String2GPUInstructionType.get(getOpCode(str));
 	}
 	
-	public static FEDType getFEDType(String str) {
-		return FEDInstructionParser.String2FEDInstructionType.get(getOpCode(str));
+	public static InstructionType getFEDType(String str) {
+		String op = getOpCode(str);
+		return Opcodes.getTypeByOpcode(op, Types.ExecType.FED);
 	}
 
 	public static boolean isBuiltinFunction( String opcode ) {
@@ -574,15 +565,15 @@ public class InstructionUtils {
 
 	public static AggregateUnaryOperator parseCumulativeAggregateUnaryOperator(String opcode) {
 		AggregateOperator agg = null;
-		if( "ucumack+".equals(opcode) )
+		if( Opcodes.UCUMACKP.toString().equals(opcode) )
 			agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), CorrectionLocationType.LASTROW);
-		else if ( "ucumac*".equals(opcode) )
+		else if ( Opcodes.UCUMACM.toString().equals(opcode) )
 			agg = new AggregateOperator(1, Multiply.getMultiplyFnObject(), CorrectionLocationType.NONE);
-		else if ( "ucumac+*".equals(opcode) )
+		else if ( Opcodes.UCUMACPM.toString().equals(opcode) )
 			agg = new AggregateOperator(0, PlusMultiply.getFnObject(), CorrectionLocationType.NONE);
-		else if ( "ucumacmin".equals(opcode) )
+		else if ( Opcodes.UCUMACMIN.toString().equals(opcode) )
 			agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("min"), CorrectionLocationType.NONE);
-		else if ( "ucumacmax".equals(opcode) )
+		else if ( Opcodes.UCUMACMAX.toString().equals(opcode) )
 			agg = new AggregateOperator(0, Builtin.getBuiltinFnObject("max"), CorrectionLocationType.NONE);
 		return new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject());
 	}
@@ -869,59 +860,59 @@ public class InstructionUtils {
 	}
 
 	public static BinaryOperator parseExtendedBinaryOperator(String opcode) {
-		if(opcode.equalsIgnoreCase(Opcodes.EQUAL.toString()) || opcode.equalsIgnoreCase("map=="))
+		if(opcode.equalsIgnoreCase(Opcodes.EQUAL.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPEQ.toString()))
 			return new BinaryOperator(Equals.getEqualsFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.NOTEQUAL.toString()) || opcode.equalsIgnoreCase("map!="))
+		else if(opcode.equalsIgnoreCase(Opcodes.NOTEQUAL.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPNEQ.toString()))
 			return new BinaryOperator(NotEquals.getNotEqualsFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.LESS.toString()) || opcode.equalsIgnoreCase("map<"))
+		else if(opcode.equalsIgnoreCase(Opcodes.LESS.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPLT.toString()))
 			return new BinaryOperator(LessThan.getLessThanFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.GREATER.toString()) || opcode.equalsIgnoreCase("map>"))
+		else if(opcode.equalsIgnoreCase(Opcodes.GREATER.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPGT.toString()))
 			return new BinaryOperator(GreaterThan.getGreaterThanFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.LESSEQUAL.toString()) || opcode.equalsIgnoreCase("map<="))
+		else if(opcode.equalsIgnoreCase(Opcodes.LESSEQUAL.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPLE.toString()))
 			return new BinaryOperator(LessThanEquals.getLessThanEqualsFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.GREATEREQUAL.toString()) || opcode.equalsIgnoreCase("map>="))
+		else if(opcode.equalsIgnoreCase(Opcodes.GREATEREQUAL.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPGE.toString()))
 			return new BinaryOperator(GreaterThanEquals.getGreaterThanEqualsFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.AND.toString()) || opcode.equalsIgnoreCase("map&&"))
+		else if(opcode.equalsIgnoreCase(Opcodes.AND.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPAND.toString()))
 			return new BinaryOperator(And.getAndFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.OR.toString()) || opcode.equalsIgnoreCase("map||"))
+		else if(opcode.equalsIgnoreCase(Opcodes.OR.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPOR.toString()))
 			return new BinaryOperator(Or.getOrFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.XOR.toString()) || opcode.equalsIgnoreCase("mapxor"))
+		else if(opcode.equalsIgnoreCase(Opcodes.XOR.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPXOR.toString()))
 			return new BinaryOperator(Xor.getXorFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.BITWAND.toString()) || opcode.equalsIgnoreCase("mapbitwAnd"))
+		else if(opcode.equalsIgnoreCase(Opcodes.BITWAND.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPBITWAND.toString()))
 			return new BinaryOperator(BitwAnd.getBitwAndFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.BITWOR.toString()) || opcode.equalsIgnoreCase("mapbitwOr"))
+		else if(opcode.equalsIgnoreCase(Opcodes.BITWOR.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPBITWOR.toString()))
 			return new BinaryOperator(BitwOr.getBitwOrFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.BITWXOR.toString()) || opcode.equalsIgnoreCase("mapbitwXor"))
+		else if(opcode.equalsIgnoreCase(Opcodes.BITWXOR.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPBITWXOR.toString()))
 			return new BinaryOperator(BitwXor.getBitwXorFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.BITWSHIFTL.toString()) || opcode.equalsIgnoreCase("mapbitwShiftL"))
+		else if(opcode.equalsIgnoreCase(Opcodes.BITWSHIFTL.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPBITWSHIFTL.toString()))
 			return new BinaryOperator(BitwShiftL.getBitwShiftLFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.BITWSHIFTR.toString()) || opcode.equalsIgnoreCase("mapbitwShiftR"))
+		else if(opcode.equalsIgnoreCase(Opcodes.BITWSHIFTR.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPBITWSHIFTR.toString()))
 			return new BinaryOperator(BitwShiftR.getBitwShiftRFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.PLUS.toString()) || opcode.equalsIgnoreCase("map+"))
+		else if(opcode.equalsIgnoreCase(Opcodes.PLUS.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPPLUS.toString()))
 			return new BinaryOperator(Plus.getPlusFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.MINUS.toString()) || opcode.equalsIgnoreCase("map-"))
+		else if(opcode.equalsIgnoreCase(Opcodes.MINUS.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPMINUS.toString()))
 			return new BinaryOperator(Minus.getMinusFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.MULT.toString()) || opcode.equalsIgnoreCase("map*"))
+		else if(opcode.equalsIgnoreCase(Opcodes.MULT.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPMULT.toString()))
 			return new BinaryOperator(Multiply.getMultiplyFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.MINUS1_MULT.toString()) || opcode.equalsIgnoreCase("map1-*"))
+		else if(opcode.equalsIgnoreCase(Opcodes.MINUS1_MULT.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPMINUS1_MULT.toString()))
 			return new BinaryOperator(Minus1Multiply.getMinus1MultiplyFnObject());
 		else if ( opcode.equalsIgnoreCase(Opcodes.MULT2.toString()) )
 			return new BinaryOperator(Multiply2.getMultiply2FnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.DIV.toString()) || opcode.equalsIgnoreCase("map/"))
+		else if(opcode.equalsIgnoreCase(Opcodes.DIV.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPDIV.toString()))
 			return new BinaryOperator(Divide.getDivideFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.MODULUS.toString()) || opcode.equalsIgnoreCase("map%%"))
+		else if(opcode.equalsIgnoreCase(Opcodes.MODULUS.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPMOD.toString()))
 			return new BinaryOperator(Modulus.getFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.INTDIV.toString()) || opcode.equalsIgnoreCase("map%/%"))
+		else if(opcode.equalsIgnoreCase(Opcodes.INTDIV.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPINTDIV.toString()))
 			return new BinaryOperator(IntegerDivide.getFnObject());
-		else if(opcode.equalsIgnoreCase(Opcodes.POW.toString()) || opcode.equalsIgnoreCase("map^"))
+		else if(opcode.equalsIgnoreCase(Opcodes.POW.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPPOW.toString()))
 			return new BinaryOperator(Power.getPowerFnObject());
 		else if ( opcode.equalsIgnoreCase(Opcodes.POW2.toString()) )
 			return new BinaryOperator(Power2.getPower2FnObject());
-		else if ( opcode.equalsIgnoreCase(Opcodes.MAX.toString()) || opcode.equalsIgnoreCase("mapmax") )
+		else if ( opcode.equalsIgnoreCase(Opcodes.MAX.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPMAX.toString()) )
 			return new BinaryOperator(Builtin.getBuiltinFnObject("max"));
-		else if ( opcode.equalsIgnoreCase(Opcodes.MIN.toString()) || opcode.equalsIgnoreCase("mapmin") )
+		else if ( opcode.equalsIgnoreCase(Opcodes.MIN.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPMIN.toString()) )
 			return new BinaryOperator(Builtin.getBuiltinFnObject("min"));
-		else if ( opcode.equalsIgnoreCase(Opcodes.DROPINVALIDLENGTH.toString()) || opcode.equalsIgnoreCase("mapdropInvalidLength") )
+		else if ( opcode.equalsIgnoreCase(Opcodes.DROPINVALIDLENGTH.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPDROPINVALIDLENGTH.toString()) )
 			return new BinaryOperator(Builtin.getBuiltinFnObject("dropInvalidLength"));
 		else if ( opcode.equalsIgnoreCase(Opcodes.VALUESWAP.toString()) || opcode.equalsIgnoreCase("mapValueSwap") )
 			return new BinaryOperator(Builtin.getBuiltinFnObject("valueSwap"));
@@ -1062,16 +1053,16 @@ public class InstructionUtils {
 
 	public static boolean isDistQuaternaryOpcode(String opcode) 
 	{
-		return WeightedSquaredLoss.OPCODE.equalsIgnoreCase(opcode)     //mapwsloss
-			|| WeightedSquaredLossR.OPCODE.equalsIgnoreCase(opcode)    //redwsloss
-			|| WeightedSigmoid.OPCODE.equalsIgnoreCase(opcode)   	   //mapwsigmoid
-			|| WeightedSigmoidR.OPCODE.equalsIgnoreCase(opcode)        //redwsigmoid
-			|| WeightedDivMM.OPCODE.equalsIgnoreCase(opcode)           //mapwdivmm
-			|| WeightedDivMMR.OPCODE.equalsIgnoreCase(opcode)          //redwdivmm
-			|| WeightedCrossEntropy.OPCODE.equalsIgnoreCase(opcode)    //mapwcemm
-			|| WeightedCrossEntropyR.OPCODE.equalsIgnoreCase(opcode)   //redwcemm
-			|| WeightedUnaryMM.OPCODE.equalsIgnoreCase(opcode)         //mapwumm
-			|| WeightedUnaryMMR.OPCODE.equalsIgnoreCase(opcode);       //redwumm
+		return Opcodes.WEIGHTEDSQUAREDLOSS.toString().equalsIgnoreCase(opcode)     //mapwsloss
+			|| Opcodes.WEIGHTEDSQUAREDLOSSR.toString().equalsIgnoreCase(opcode)    //redwsloss
+			|| Opcodes.WEIGHTEDSIGMOID.toString().equalsIgnoreCase(opcode)   	   //mapwsigmoid
+			|| Opcodes.WEIGHTEDSIGMOIDR.toString().equalsIgnoreCase(opcode)        //redwsigmoid
+			|| Opcodes.WEIGHTEDDIVMM.toString().equalsIgnoreCase(opcode)           //mapwdivmm
+			|| Opcodes.WEIGHTEDDIVMMR.toString().equalsIgnoreCase(opcode)          //redwdivmm
+			|| Opcodes.WEIGHTEDCROSSENTROPY.toString().equalsIgnoreCase(opcode)    //mapwcemm
+			|| Opcodes.WEIGHTEDCROSSENTROPYR.toString().equalsIgnoreCase(opcode)   //redwcemm
+			|| Opcodes.WEIGHTEDUNARYMM.toString().equalsIgnoreCase(opcode)         //mapwumm
+			|| Opcodes.WEIGHTEDUNARYMMR.toString().equalsIgnoreCase(opcode);       //redwumm
 	}
 	
 	public static AggregateBinaryOperator getMatMultOperator(int k) {

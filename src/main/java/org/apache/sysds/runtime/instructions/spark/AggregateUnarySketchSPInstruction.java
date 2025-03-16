@@ -26,6 +26,7 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.sysds.api.DMLException;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -67,25 +68,25 @@ public class AggregateUnarySketchSPInstruction extends UnarySPInstruction {
 		AggBinaryOp.SparkAggType aggtype = AggBinaryOp.SparkAggType.valueOf(parts[3]);
 
 		CountDistinctOperator cdop = null;
-		if(opcode.equals("uacd")) {
+		if(opcode.equals(Opcodes.UACD.toString())) {
 			cdop = new CountDistinctOperator(CountDistinctOperatorTypes.COUNT, Types.Direction.RowCol,
 				ReduceAll.getReduceAllFnObject(), Hash.HashType.LinearHash);
 		}
-		else if(opcode.equals("uacdr")) {
+		else if(opcode.equals(Opcodes.UACDR.toString())) {
 			throw new NotImplementedException("uacdr has not been implemented yet");
 		}
-		else if(opcode.equals("uacdc")) {
+		else if(opcode.equals(Opcodes.UACDC.toString())) {
 			throw new NotImplementedException("uacdc has not been implemented yet");
 		}
-		else if(opcode.equals("uacdap")) {
+		else if(opcode.equals(Opcodes.UACDAP.toString())) {
 			cdop = new CountDistinctOperator(CountDistinctOperatorTypes.KMV, Types.Direction.RowCol,
 				ReduceAll.getReduceAllFnObject(), Hash.HashType.LinearHash);
 		}
-		else if(opcode.equals("uacdapr")) {
+		else if(opcode.equals(Opcodes.UACDAPR.toString())) {
 			cdop = new CountDistinctOperator(CountDistinctOperatorTypes.KMV, Types.Direction.Row,
 				ReduceCol.getReduceColFnObject(), Hash.HashType.LinearHash);
 		}
-		else if(opcode.equals("uacdapc")) {
+		else if(opcode.equals(Opcodes.UACDAPC.toString())) {
 			cdop = new CountDistinctOperator(CountDistinctOperatorTypes.KMV, Types.Direction.Col,
 				ReduceRow.getReduceRowFnObject(), Hash.HashType.LinearHash);
 		}

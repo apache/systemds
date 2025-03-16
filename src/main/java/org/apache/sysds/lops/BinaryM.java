@@ -19,6 +19,7 @@
 
 package org.apache.sysds.lops;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.DataType;
@@ -96,15 +97,15 @@ public class BinaryM extends Lop
 	}
 
 	public static boolean isOpcode(String opcode) {
-		return opcode.equals("map+") || opcode.equals("map-") ||
-			opcode.equals("map*") || opcode.equals("map/") ||
-			opcode.equals("map%%") || opcode.equals("map%/%") ||
-			opcode.equals("map<") || opcode.equals("map<=") ||
-			opcode.equals("map>") || opcode.equals("map>=") ||
-			opcode.equals("map==") || opcode.equals("map!=") ||
-			opcode.equals("map&&") || opcode.equals("map||") ||
-			opcode.equals("mapmin") || opcode.equals("mapmax") ||
-			opcode.equals("map^") || opcode.equals("map1-*");
+		return opcode.equals(Opcodes.MAPPLUS.toString()) || opcode.equals(Opcodes.MAPMINUS.toString()) ||
+			opcode.equals(Opcodes.MAPMULT.toString()) || opcode.equals(Opcodes.MAPDIV.toString()) ||
+			opcode.equals(Opcodes.MAPMOD.toString()) || opcode.equals(Opcodes.MAPINTDIV.toString()) ||
+			opcode.equals(Opcodes.MAPLT.toString()) || opcode.equals(Opcodes.MAPLE.toString()) ||
+			opcode.equals(Opcodes.MAPGT.toString()) || opcode.equals(Opcodes.MAPGE.toString()) ||
+			opcode.equals(Opcodes.MAPEQ.toString()) || opcode.equals(Opcodes.MAPNEQ.toString()) ||
+			opcode.equals(Opcodes.MAPAND.toString()) || opcode.equals(Opcodes.MAPOR.toString()) ||
+			opcode.equals(Opcodes.MAPMIN.toString()) || opcode.equals(Opcodes.MAPMAX.toString()) ||
+			opcode.equals(Opcodes.MAPPOW.toString()) || opcode.equals(Opcodes.MAPMINUS1_MULT.toString());
 	}
 	
 	@Override

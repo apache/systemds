@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.quaternary;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -159,7 +160,7 @@ public class RewritesWeightedSigmoidTest extends AutomatedTestBase
 			if( instType == ExecType.CP )
 				Assert.assertTrue(!Statistics.getCPHeavyHitterOpCodes().contains(WeightedSigmoid.OPCODE_CP));
 			else if( instType == ExecType.SPARK )
-				Assert.assertTrue(!Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+WeightedSigmoid.OPCODE));	
+				Assert.assertTrue(!Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+ Opcodes.WEIGHTEDSIGMOID));
 		}
 		finally
 		{

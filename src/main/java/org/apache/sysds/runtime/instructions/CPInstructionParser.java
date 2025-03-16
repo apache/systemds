@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.InstructionType;
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -32,7 +33,6 @@ import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.BroadcastCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.BuiltinNaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction;
-import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysds.runtime.instructions.cp.CentralMomentCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CompressionCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CovarianceCPInstruction;
@@ -72,7 +72,7 @@ public class CPInstructionParser extends InstructionParser {
 	public static CPInstruction parseSingleInstruction (String str ) {
 		if ( str == null || str.isEmpty() )
 			return null;
-		CPType cptype = InstructionUtils.getCPType(str);
+		InstructionType cptype = InstructionUtils.getCPType(str);
 		if ( cptype == null )
 			throw new DMLRuntimeException("Unable derive cptype for instruction: " + str);
 		CPInstruction cpinst = parseSingleInstruction(cptype, str);
@@ -81,7 +81,7 @@ public class CPInstructionParser extends InstructionParser {
 		return cpinst;
 	}
 	
-	public static CPInstruction parseSingleInstruction ( CPType cptype, String str ) {
+	public static CPInstruction parseSingleInstruction ( InstructionType cptype, String str ) {
 		ExecType execType;
 		if ( str == null || str.isEmpty() ) 
 			return null;

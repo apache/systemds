@@ -19,6 +19,7 @@
 
 package org.apache.sysds.lops;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.DataType;
@@ -27,7 +28,7 @@ import org.apache.sysds.common.Types.ValueType;
 
 public class AppendM extends Lop
 {
-	public static final String OPCODE = "mappend";
+	public static final String OPCODE = Opcodes.MAPPEND.toString();
 	
 	public enum CacheType {
 		RIGHT,

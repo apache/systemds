@@ -25,6 +25,7 @@ import java.util.Set;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
@@ -70,7 +71,7 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 
 	public static CSVReblockSPInstruction parseInstruction(String str) {
 		String opcode = InstructionUtils.getOpCode(str);
-		if( !opcode.equals("csvrblk") )
+		if( !opcode.equals(Opcodes.CSVRBLK.toString()) )
 			throw new DMLRuntimeException("Incorrect opcode for CSVReblockSPInstruction:" + opcode);
 
 		// Example parts of CSVReblockSPInstruction:

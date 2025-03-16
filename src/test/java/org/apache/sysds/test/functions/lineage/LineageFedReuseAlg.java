@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.lineage;
 
 import static org.junit.Assert.assertTrue;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -108,9 +109,9 @@ public class LineageFedReuseAlg extends AutomatedTestBase {
 				"in_Y=" + input("Y"), "cont=" + String.valueOf(contSplits).toUpperCase(), "out=" + output("Z")};
 			Lineage.resetInternalState();
 			runTest(true, false, null, -1);
-			long tsmmCount_reuse = Statistics.getCPHeavyHitterCount("tsmm");
+			long tsmmCount_reuse = Statistics.getCPHeavyHitterCount(Opcodes.TSMM.toString());
 			long fed_tsmmCount_reuse = Statistics.getCPHeavyHitterCount("fed_tsmm");
-			long mmCount_reuse = Statistics.getCPHeavyHitterCount("ba+*");
+			long mmCount_reuse = Statistics.getCPHeavyHitterCount(Opcodes.MMULT.toString());
 			long fed_mmCount_reuse = Statistics.getCPHeavyHitterCount("fed_ba+*");
 
 			// Run with federated matrix and without reuse
@@ -122,9 +123,9 @@ public class LineageFedReuseAlg extends AutomatedTestBase {
 				"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + (cols + 1),
 				"in_Y=" + input("Y"), "cont=" + String.valueOf(contSplits).toUpperCase(), "out=" + expected("Z")};
 			runTest(true, false, null, -1);
-			long tsmmCount = Statistics.getCPHeavyHitterCount("tsmm");
+			long tsmmCount = Statistics.getCPHeavyHitterCount(Opcodes.TSMM.toString());
 			long fed_tsmmCount = Statistics.getCPHeavyHitterCount("fed_tsmm");
-			long mmCount = Statistics.getCPHeavyHitterCount("ba+*");
+			long mmCount = Statistics.getCPHeavyHitterCount(Opcodes.MMULT.toString());
 			long fed_mmCount = Statistics.getCPHeavyHitterCount("fed_ba+*");
 
 			// compare results 

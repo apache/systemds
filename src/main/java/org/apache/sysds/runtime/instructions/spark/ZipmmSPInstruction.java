@@ -25,6 +25,7 @@ import java.util.concurrent.Future;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -62,7 +63,7 @@ public class ZipmmSPInstruction extends BinarySPInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
-		if ( opcode.equalsIgnoreCase("zipmm")) {
+		if ( opcode.equalsIgnoreCase(Opcodes.ZIPMM.toString())) {
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand out = new CPOperand(parts[3]);

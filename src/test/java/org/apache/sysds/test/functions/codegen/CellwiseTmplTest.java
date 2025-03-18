@@ -448,7 +448,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	public void testCodegenCellwiseRewrite26_sp() {
 		testCodegenIntegration( TEST_NAME26, true, ExecType.SPARK );
 	}
-	
+
 	@Test
 	public void testCodegenCellwiseRewrite27() {
 		testCodegenIntegration( TEST_NAME27, true, ExecType.CP );
@@ -459,8 +459,14 @@ public class CellwiseTmplTest extends AutomatedTestBase
 		testCodegenIntegration( TEST_NAME27, false, ExecType.CP );
 	}
 
+	@Test
 	public void testCodegenCellwiseRewrite27_sp() {
 		testCodegenIntegration( TEST_NAME27, true, ExecType.SPARK );
+	}
+
+	@Test
+	public void testCodegenCellwiseRewrite28() {
+		testCodegenIntegration( TEST_NAME28, true, ExecType.CP );
 	}
 
 	@Test
@@ -469,8 +475,28 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	}
 
 	@Test
+	public void testCodegenCellwiseRewrite28_sp() {
+		testCodegenIntegration( TEST_NAME28, true, ExecType.SPARK );
+	}
+
+	@Test
+	public void testCodegenCellwiseRewrite29() {
+		testCodegenIntegration( TEST_NAME29, true, ExecType.CP );
+	}
+
+	@Test
 	public void testCodegenCellwise29() {
 		testCodegenIntegration( TEST_NAME29, false, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwiseRewrite29_sp() {
+		testCodegenIntegration( TEST_NAME29, true, ExecType.SPARK );
+	}
+
+	@Test
+	public void testCodegenCellwiseRewrite30() {
+		testCodegenIntegration( TEST_NAME30, true, ExecType.CP );
 	}
 
 	@Test
@@ -479,8 +505,23 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	}
 
 	@Test
+	public void testCodegenCellwiseRewrite30_sp() {
+		testCodegenIntegration( TEST_NAME30, true, ExecType.SPARK );
+	}
+
+	@Test
+	public void testCodegenCellwiseRewrite31() {
+		testCodegenIntegration( TEST_NAME31, true, ExecType.CP );
+	}
+
+	@Test
 	public void testCodegenCellwise31() {
 		testCodegenIntegration( TEST_NAME31, false, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwiseRewrite31_sp() {
+		testCodegenIntegration( TEST_NAME31, true, ExecType.SPARK );
 	}
 
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )

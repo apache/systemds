@@ -19,11 +19,11 @@
 #
 #-------------------------------------------------------------
 
-X = matrix(seq(7, 100*100+6), 100, 100);
-#X = matrix(2, 10, 10)
+X = matrix(seq(7, 50*10+6), 50, 10);
+z = seq(1,50)
 
 while(FALSE){}
 
-R = as.matrix(sum(rowVars(X)));
+R = as.matrix(sum(X + rowVars(X)));
 
 write(R, $1)

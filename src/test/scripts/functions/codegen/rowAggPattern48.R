@@ -18,10 +18,19 @@
 # under the License.
 #
 #-------------------------------------------------------------
+args<-commandArgs(TRUE)
+options(digits=22)
+library("Matrix")
+library("matrixStats")
 
+# rowVars <- function(X) {
+#   apply(X, 1, function(x) sum((x - mean(x))^2) / length(x))
+# }
 
-while(FALSE){}
+Z = matrix(seq(1,10), 1, 10)
+Y = matrix(0, 10, 10)
+X = rbind(Y, Z, Y)
 
 R = as.matrix(sum(rowVars(X)));
 
-write(R, $1)
+writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep=""));

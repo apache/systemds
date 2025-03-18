@@ -24,13 +24,13 @@ options(digits=22)
 library("Matrix")
 library("matrixStats")
 
-rowVars <- function(X) {
-  apply(X, 1, function(x) sum((x - mean(x))^2) / length(x))
-}
+# rowVars <- function(X) {
+#   apply(X, 1, function(x) sum((x - mean(x))^2) / length(x))
+# }
 
-X = matrix(seq(7, 100*100+6), 100, 100, byrow=TRUE);
-# X = matrix(2, 10, 10);
+X = matrix(seq(7, 50*10+6), 50, 10, byrow=TRUE);
+z = seq(1,50)
 
-R = as.matrix(sum(rowVars(X)));
+R = as.matrix(sum(X + rowVars(X)));
 
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep=""));

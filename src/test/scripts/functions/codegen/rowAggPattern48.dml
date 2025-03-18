@@ -19,6 +19,10 @@
 #
 #-------------------------------------------------------------
 
+Z = matrix(seq(1,10), 1, 10)
+Y = matrix(0, 10, 10)
+X = rbind(Y, Z, Y)
+
 while(FALSE){}
 
 R = as.matrix(sum(rowVars(X)));

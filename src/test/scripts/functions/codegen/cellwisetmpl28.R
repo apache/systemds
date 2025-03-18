@@ -22,10 +22,11 @@
 args<-commandArgs(TRUE)
 options(digits=22)
 library("Matrix")
+library("matrixStats")
 
-colProds <- function(X) {
-  apply(X, 2, prod)
-}
+# colProds <- function(X) {
+#   apply(X, 2, prod)
+# }
 
 Z = matrix(0, 5, 1)
 Y = matrix(2, 5, 1)

@@ -22,10 +22,11 @@
 args<-commandArgs(TRUE)
 options(digits=22)
 library("Matrix")
+library("matrixStats")
 
-rowProds <- function(X) {
-  apply(X, 1, prod)
-}
+# rowProds <- function(X) {
+#   apply(X, 1, prod)
+# }
 
 X = matrix(3, 10, 10)
 # X = matrix(seq(9, 100*100+8), 100, 100, byrow=TRUE);

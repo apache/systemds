@@ -89,7 +89,12 @@ public abstract class SparsityEstimator
 	protected boolean isExactMetadataOp(OpCode op) {
 		return ArrayUtils.contains(EXACT_META_DATA_OPS, op);
 	}
-	
+
+	protected boolean isExactMetadataOp(OpCode op, int clen) {
+		return ArrayUtils.contains(EXACT_META_DATA_OPS, op)
+			&& (op != OpCode.DIAG || clen == 1);
+	}
+
 	protected DataCharacteristics estimExactMetaData(DataCharacteristics dc1, DataCharacteristics dc2, OpCode op) {
 		switch( op ) {
 			case EQZERO:

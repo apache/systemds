@@ -87,7 +87,9 @@ public class RowAggTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME44 = TEST_NAME+"44"; //maxpool(X - mean(X)) + 7;
 	private static final String TEST_NAME45 = TEST_NAME+"45"; //vector allocation;
 	private static final String TEST_NAME46 = TEST_NAME+"46"; //conv2d(X - mean(X), F1) + conv2d(X - mean(X), F2);
-	
+	private static final String TEST_NAME47 = TEST_NAME+"47"; //sum(X + rowVars(X))
+	private static final String TEST_NAME48 = TEST_NAME+"48"; //sum(rowVars(X))
+
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RowAggTmplTest.class.getSimpleName() + "/";
 	private final static String TEST_CONF = "SystemDS-config-codegen.xml";
@@ -98,7 +100,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for(int i=1; i<=46; i++)
+		for(int i=1; i<=48; i++)
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME+i, new String[] { String.valueOf(i) }) );
 	}
 	
@@ -795,6 +797,36 @@ public class RowAggTmplTest extends AutomatedTestBase
 		testCodegenIntegration( TEST_NAME46, false, ExecType.SPARK );
 	}
 
+	@Test
+	public void testCodegenRowAggRewrite47CP() {
+		testCodegenIntegration( TEST_NAME47, true, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenRowAgg47CP() {
+		testCodegenIntegration( TEST_NAME47, false, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenRowAgg47SP() {
+		testCodegenIntegration( TEST_NAME47, false, ExecType.SPARK );
+	}
+
+	@Test
+	public void testCodegenRowAggRewrite48CP() {
+		testCodegenIntegration( TEST_NAME48, true, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenRowAgg48CP() {
+		testCodegenIntegration( TEST_NAME48, false, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenRowAgg48SP() {
+		testCodegenIntegration( TEST_NAME48, false, ExecType.SPARK );
+	}
+
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -807,7 +839,7 @@ public class RowAggTmplTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-stats", "-args", output("S") };
+			programArgs = new String[]{"-explain", "codegen", "-stats", "-args", output("S") };
 			
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());

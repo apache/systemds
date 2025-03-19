@@ -23,8 +23,8 @@
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------------
-# img_in     Input matrix/image (every row of the matrix represents a linearized image)
-# max_value  The maximum value pixels can have
+# img        Input matrix/image (every row of the matrix represents a linearized image)
+# maxValue   The maximum value pixels can have
 # ---------------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -32,6 +32,6 @@
 # img_out  Output images (every row of the matrix represents a linearized image)
 # -------------------------------------------------------------------------------------------
 
-m_img_invert_linearized = function(Matrix[Double] img_in, Double max_value) return (Matrix[Double] img_out) {
-  img_out = img_invert(img_in,max_value)
+m_imgvert_linearized = function(Matrix[Double] img, Double maxValue) return (Matrix[Double] img_out) {
+  img_out = img_invert(img,maxValue)
 }

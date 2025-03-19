@@ -30,9 +30,9 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def lenetPredict(model: List,
                  X: Matrix,
-                 C: int,
-                 Hin: int,
-                 Win: int,
+                 c: int,
+                 h: int,
+                 w: int,
                  **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
      This builtin function makes prediction given data and trained LeNet model
@@ -40,15 +40,15 @@ def lenetPredict(model: List,
     
     
     :param model: Trained LeNet model
-    :param X: Input data matrix, of shape (N, C*Hin*Win)
-    :param C: Number of input channels
-    :param Hin: Input height
-    :param Win: Input width
-    :param batch_size: Batch size
+    :param X: Input data matrix, of shape (N, c*h*w)
+    :param c: Number of input channels
+    :param h: Input height
+    :param w: Input width
+    :param batchSize: Batch size
     :return: Predicted values
     """
 
-    params_dict = {'model': model, 'X': X, 'C': C, 'Hin': Hin, 'Win': Win}
+    params_dict = {'model': model, 'X': X, 'c': c, 'h': h, 'w': w}
     params_dict.update(kwargs)
     return Matrix(model.sds_context,
         'lenetPredict',

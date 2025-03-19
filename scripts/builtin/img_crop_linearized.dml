@@ -23,13 +23,13 @@
 #
 # INPUT:
 # ----------------------------------------------------------------------------------------
-# img_in     Linearized input images as 2D matrix
+# img        Linearized input images as 2D matrix
 # w          The width of the subregion required
 # h          The height of the subregion required
-# x_offset   The horizontal offset for the center of the crop region
-# y_offset   The vertical offset for the center of the crop region
-# s_cols     Width of a single image
-# s_rows     Height of a single image
+# offsetX    The horizontal offset for the center of the crop region
+# offsetY    The vertical offset for the center of the crop region
+# sW         Width of a single image
+# sH         Height of a single image
 # ----------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -37,22 +37,22 @@
 # img_out     Cropped images as linearized 2D matrix
 # --------------------------------------------------------------------------------------------------
 
-m_img_crop_linearized = function(Matrix[Double] img_in, Integer w, Integer h, Integer x_offset, Integer y_offset, 
-  Integer s_cols, Integer s_rows) return (Matrix[Double] img_out) {
+m_img_crop_linearized = function(Matrix[Double] img, Integer w, Integer h, Integer offsetX, Integer offsetY,
+  Integer sW, Integer sH) return (Matrix[Double] img_out) {
   
-  orig_w = s_cols
-  orig_h = s_rows
+  orig_w = sW
+  orig_h = sH
 
-  nrows = nrow(img_in) # number of images
+  nrows = nrow(img) # number of images
 
-  start_h = (ceil((orig_h - h) / 2)) + y_offset
+  start_h = (ceil((orig_h - h) / 2)) + offsetY
   end_h = (start_h + h - 1) 
-  start_w = (ceil((orig_w - w) / 2)) + x_offset
+  start_w = (ceil((orig_w - w) / 2)) + offsetX
   end_w = (start_w + w - 1) 
 
   if((start_h < 0) | (end_h > orig_h) | (start_w < 0) | (end_w > orig_w)) {
     print("Offset out of bounds! Returning input.")
-    img_out = img_in
+    img_out = img
   }
   else {
     mask = matrix(0, rows=orig_h, cols=orig_w)
@@ -61,7 +61,7 @@ m_img_crop_linearized = function(Matrix[Double] img_in, Integer w, Integer h, In
 
     linear_mask = matrix(mask, rows=1, cols=orig_w * orig_h)
 
-    img_out = matrix(removeEmpty(target=(matrix(img_in+1, nrow(img_in), ncol(img_in))), margin="cols", select=linear_mask) - 1, nrows, w * h)
+    img_out = matrix(removeEmpty(target=(matrix(img+1, nrow(img), ncol(img))), margin="cols", select=linear_mask) - 1, nrows, w * h)
   }
 }
 

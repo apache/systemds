@@ -38,16 +38,16 @@ def gmm(X: Matrix,
     
     
     :param X: Dataset input to fit the GMM model
-    :param n_components: Number of components to use in the Gaussian mixture model
+    :param nComponents: Number of components to use in the Gaussian mixture model
     :param model: "VVV": unequal variance (full),each component has its own general covariance matrix
         "EEE": equal variance (tied), all components share the same general covariance matrix
         "VVI": spherical, unequal volume (diag), each component has its own diagonal
         covariance matrix
         "VII": spherical, equal volume (spherical), each component has its own single variance
-    :param init_param: Initialization algorithm to use to initialize the gaussian weights, valid inputs are:
+    :param initParams: Initialization algorithm to use to initialize the gaussian weights, valid inputs are:
         "kmeans" or "random"
-    :param iterations: Number of iterations
-    :param reg_covar: Regularization parameter for covariance matrix
+    :param maxIter: Number of iterations
+    :param reg: Regularization parameter for covariance matrix
     :param tol: Tolerance value for convergence
     :param seed: The seed value to initialize the values for fitting the GMM.
     :return: The predictions made by the gaussian model on the X input dataset

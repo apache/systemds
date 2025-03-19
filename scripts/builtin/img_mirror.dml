@@ -24,19 +24,19 @@
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------------
-# img_in     Input matrix/image
-# max_value  The maximum value pixels can have
+# img         Input matrix/image
+# horizontal  Boolean, True for horizental
 # ---------------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # -------------------------------------------------------------------------------------------
-# img_out  Flipped matrix/image
+# img_out     Flipped matrix/image
 # -------------------------------------------------------------------------------------------
 
-m_img_mirror = function(Matrix[Double] img_in, Boolean horizontal_axis) return (Matrix[Double] img_out) {
+m_img_mirror = function(Matrix[Double] img, Boolean horizontal) return (Matrix[Double] img_out) {
   # flip an image on the x (horizontal) or y (vertical) axis
-  if( horizontal_axis)
-    img_out = rev(img_in)
+  if( horizontal)
+    img_out = rev(img)
   else
-    img_out = t(rev(t(img_in)))
+    img_out = t(rev(t(img)))
 }

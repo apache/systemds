@@ -57,10 +57,10 @@ crossV = function(Matrix[double] X, Matrix[double] y, Integer k, Matrix[Double] 
     trainy = trainset[, 1]
     testX = testset[, 2:ncol(testset)]
     testy = testset[, 1]
-    beta = multiLogReg(X=trainX, Y=trainy, icpt=as.scalar(MLhp[1,1]), reg=as.scalar(MLhp[1,2]), tol=as.scalar(MLhp[1,3]), 
-      maxi=as.scalar(MLhp[1,4]), maxii=50, verbose=FALSE);
+    beta = multiLogReg(X=trainX, Y=trainy, intercept=as.scalar(MLhp[1,1]), reg=as.scalar(MLhp[1,2]), tol=as.scalar(MLhp[1,3]),
+      maxIter=as.scalar(MLhp[1,4]), maxInnerIter=50, verbose=FALSE);
     [prob, yhat, acc] = multiLogRegPredict(testX, beta, testy, FALSE)
-    accuracy = getAccuracy(testy, yhat, isWeighted)
+    accuracy = getAccuracy(yhat, testy, isWeighted)
     accuracyMatrix[i] = accuracy
   }
 }

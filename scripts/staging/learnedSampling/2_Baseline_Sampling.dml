@@ -40,7 +40,7 @@ for(i in 1:nrow(sf)) {
   sfi = as.scalar(sf[i]);
   print("Baseline uniform sampling with f="+sfi+", nrow="+round(nrow(X)*sfi))
   [Xtrain2,Xtest2,ytrain2,ytest2] = split(X=X,Y=y,f=sfi,cont=FALSE,seed=7)
-  B = multiLogReg(X=Xtrain2, Y=ytrain2, maxii=50, icpt=2, reg=0.001, verbose=FALSE);
+  B = multiLogReg(X=Xtrain2, Y=ytrain2, maxInnerIter=50, intercept=2, reg=0.001, verbose=FALSE);
 
   [M,yhat,acc] = multiLogRegPredict(X=Xtrain2, B=B, Y=ytrain2, verbose=TRUE);
   [M,yhat,acc] = multiLogRegPredict(X=Xtest, B=B, Y=ytest, verbose=TRUE);

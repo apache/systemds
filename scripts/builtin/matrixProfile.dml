@@ -34,11 +34,11 @@
 # INPUT:
 # ----------------------------------------------------------------------------------
 # ts              Time series to profile
-# window_size     Sliding window size
-# sample_percent  Degree of approximation
+# windowSize      Sliding window size
+# sampleFrac      Degree of approximation
 #                 between zero and one (1
 #                 computes the exact solution)
-# is_verbose      Print debug information
+# verbose         Print debug information
 # ----------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -47,40 +47,40 @@
 # profile_index  Indices of least distances
 # -----------------------------------------------------------------------------------
 
-m_matrixProfile = function(Matrix[Double] ts, Integer window_size=4, Double sample_percent=1.0, Boolean is_verbose=FALSE)
+m_matrixProfile = function(Matrix[Double] ts, Integer windowSize=4, Double sampleFrac=1.0, Boolean verbose=FALSE)
   return(Matrix[Double] profile, Matrix[Double] profile_index)
 {
-  if (is_verbose)
+  if (verbose)
     print ("##############################\n# MATRIXPROFILE SCRIPT ENTRY #\n##############################");
 
   # TODO: preSCRIMP 
   # requires a similarity search algorithm e.g.: MASS (Mueen's Algorithm for Similarity Search)
 
   n = length(ts);
-  [mu,sig] = moving_avg(ts, n, window_size);
-  if (is_verbose) {
+  [mu,sig] = moving_avg(ts, n, windowSize);
+  if (verbose) {
     print_ts(ts);
     print_ts(mu);
     print_ts(sig);
   }
 
   # initialize
-  profile_len = n-window_size+1;
+  profile_len = n-windowSize+1;
   profile = matrix(Inf, cols=1, rows=profile_len);
   profile_index = matrix(1, cols=1, rows=profile_len);
 
   # random permutation
-  exclusion_zone = as.integer(ceil(window_size/4)) + 1;
+  exclusion_zone = as.integer(ceil(windowSize/4)) + 1;
   sample_size = profile_len-exclusion_zone;
-  if (sample_percent < 1.0 & sample_percent >= 0.0) {
-    sample_size = ceil(sample_size*sample_percent);
+  if (sampleFrac < 1.0 & sampleFrac >= 0.0) {
+    sample_size = ceil(sample_size*sampleFrac);
   }
   s = sample(sample_size, sample_size, FALSE);
   s = s + exclusion_zone;
 
-  if (is_verbose) {
+  if (verbose) {
     print("n: " + n);
-    print("window_size: " + window_size);
+    print("windowSize: " + windowSize);
     print("profile_len: " + profile_len);
     print("exclusion_zone: " + exclusion_zone);
     print("sample_size: " + sample_size);
@@ -90,12 +90,12 @@ m_matrixProfile = function(Matrix[Double] ts, Integer window_size=4, Double samp
     k = as.scalar(s[k_idx]);
     k_idx += 1;
     q = 0;
-    for (i in 1:n-window_size+2-k) {
+    for (i in 1:n-windowSize+2-k) {
       if (i==1)
-        q = as.scalar(t(ts[1:window_size]) %*% ts[k:k+window_size-1]);
+        q = as.scalar(t(ts[1:windowSize]) %*% ts[k:k+windowSize-1]);
       else
-        q = as.scalar(q - ts[i-1]%*%ts[i+k-2] + ts[i+window_size-1]%*%ts[i+k+window_size-2]);
-      d = sqrt(2*window_size*(1-(q - window_size*as.scalar(mu[i]*mu[i+k-1])) / (window_size*as.scalar(sig[i]*sig[i+k-1]))));
+        q = as.scalar(q - ts[i-1]%*%ts[i+k-2] + ts[i+windowSize-1]%*%ts[i+k+windowSize-2]);
+      d = sqrt(2*windowSize*(1-(q - windowSize*as.scalar(mu[i]*mu[i+k-1])) / (windowSize*as.scalar(sig[i]*sig[i+k-1]))));
 
       if (d < as.scalar(profile[i])) {
         profile[i] = d;
@@ -112,10 +112,10 @@ m_matrixProfile = function(Matrix[Double] ts, Integer window_size=4, Double samp
   print_ts(profile_index);
 }
 
-moving_avg = function(Matrix[Double] array, Integer n, Integer window_size)
+moving_avg = function(Matrix[Double] array, Integer n, Integer windowSize)
   return(Matrix[Double] mu, Matrix[Double] sig)
 {
-  profile_len = n - window_size + 1;
+  profile_len = n - windowSize + 1;
   cum_sum = matrix(0, cols=1, rows=n);
   sq_cum_sum = matrix(0, cols=1, rows=n);
   sums = matrix(0, cols=1, rows=profile_len);
@@ -127,16 +127,16 @@ moving_avg = function(Matrix[Double] array, Integer n, Integer window_size)
   cum_sum = cumsum(array);
   sq_cum_sum = cumsum(array*array);
 
-  sums[1] = cum_sum[window_size];
-  sq_sums[1] = sq_cum_sum[window_size];
-  for (i in 1:n-window_size) {
-    sums[i+1]    = cum_sum[window_size + i] - cum_sum[i];
-    sq_sums[i+1] = sq_cum_sum[window_size + i] - sq_cum_sum[i];
+  sums[1] = cum_sum[windowSize];
+  sq_sums[1] = sq_cum_sum[windowSize];
+  for (i in 1:n-windowSize) {
+    sums[i+1]    = cum_sum[windowSize + i] - cum_sum[i];
+    sq_sums[i+1] = sq_cum_sum[windowSize + i] - sq_cum_sum[i];
   }
 
   for (i in 1:profile_len) {
-    mu[i] = sums[i] / window_size;
-    sig_sq[i] = sq_sums[i] / window_size - mu[i] * mu[i];
+    mu[i] = sums[i] / windowSize;
+    sig_sq[i] = sq_sums[i] / windowSize - mu[i] * mu[i];
     sig[i] = max(sqrt(sig_sq[i]), 0);
   }
 }

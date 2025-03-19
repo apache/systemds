@@ -22,7 +22,7 @@
 X = read($X)
 solver = ifelse($useJacobi, "jacobi", "cg")
 
-coefficients = arima(X=X, max_func_invoc=$max_func_invoc, p=$p, d=$d, q=$q, 
-  P=$P, D=$D, Q=$Q, s=$s, include_mean=$include_mean, solver=solver)
+coefficients = arima(X=X, maxIter=$max_func_invoc, p=$p, d=$d, q=$q,
+  P=$P, D=$D, Q=$Q, s=$s, includeMean=$include_mean, solver=solver)
 
 write(coefficients, $model)

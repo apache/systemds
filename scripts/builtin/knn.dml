@@ -26,23 +26,23 @@
 # Train               The input matrix as features
 # Test                The input matrix for nearest neighbor search
 # CL                  The input matrix as target
-# CL_T                The target type of matrix CL whether
+# ctypes              The target type of matrix CL whether
 #                     columns in CL are continuous ( =1 ) or
 #                     categorical ( =2 ) or not specified ( =0 )
-# trans_continuous    Option flag for continuous feature transformed to [-1,1]:
+# transCont           Option flag for continuous feature transformed to [-1,1]:
 #                     FALSE = do not transform continuous variable;
 #                     TRUE = transform continuous variable;
-# k_value             k value for KNN, ignore if select_k enable
-# select_k            Use k selection algorithm to estimate k (TRUE means yes)
-# k_min               Min k value(  available if select_k = 1 )
-# k_max               Max k value(  available if select_k = 1 )
-# select_feature      Use feature selection algorithm to select feature (TRUE means yes)
-# feature_max         Max feature selection
-# interval            Interval value for K selecting (  available if select_k = 1 )
-# feature_importance  Use feature importance algorithm to estimate each feature
+# k                   k value for KNN, ignore if selectK enable
+# selectK             Use k selection algorithm to estimate k (TRUE means yes)
+# minK                Min k value(  available if selectK = 1 )
+# maxK                Max k value(  available if selectK = 1 )
+# selectFeature       Use feature selection algorithm to select feature (TRUE means yes)
+# maxFeatures         Max feature selection
+# interval            Interval value for K selecting (  available if selectK = 1 )
+# featureImportance   Use feature importance algorithm to estimate each feature
 #                     (TRUE means yes)
-# predict_con_tg      Continuous  target predict function: mean(=0) or median(=1)
-# START_SELECTED      feature selection initial value
+# predictCont         Continuous target predict function: mean(=0) or median(=1)
+# initSelectFeature   initial feature selection matrix
 # ---------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -56,18 +56,18 @@ m_knn = function(
     Matrix[Double] Train,
     Matrix[Double] Test,
     Matrix[Double] CL,
-    Integer CL_T = 0,
-    Integer trans_continuous = 0,
-    Integer k_value = 5,
-    Integer select_k = 0,
-    Integer k_min = 1,
-    Integer k_max = 100,
-    Integer select_feature = 0,
-    Integer feature_max = 10,
+    Integer ctypes = 0,
+    Integer transCont = 0,
+    Integer k = 5,
+    Integer selectK = 0,
+    Integer minK = 1,
+    Integer maxK = 100,
+    Integer selectFeature = 0,
+    Integer maxFeatures = 10,
     Integer interval = 1000,
-    Integer feature_importance = 0,
-    Integer predict_con_tg = 0,
-    Matrix[Double] START_SELECTED = matrix(0, 0, 0)
+    Integer featureImportance = 0,
+    Integer predictCont = 0,
+    Matrix[Double] initSelectFeature = matrix(0, 0, 0)
 )return(
     Matrix[Double] NNR_matrix,
     Matrix[Double] CL_matrix,
@@ -77,7 +77,7 @@ m_knn = function(
   m_feature_importance = matrix(0, 0, 0);
 
   #data prepare
-  if( trans_continuous == 1 ){
+  if( transCont == 1 ){
     Train = prepareKNNData( Train);
     Test  = prepareKNNData( Test);
   }
@@ -86,87 +86,87 @@ m_knn = function(
   n_features = ncol( Train );
   s_selected_k = 5;
   m_selected_feature = matrix(1,rows=1,cols=n_records);
-  if( select_k == 1 | select_feature==1 ){
+  if( selectK == 1 | selectFeature==1 ){
     #parameter check
     #parameter re-define
-    if( select_k==1 ){
-      if(  k_max >= n_records  ){
-        k_max = n_records - 1;
-        print( "k_max should no greater than number of record, change k_max equal " +
-        "( number of record - 1 ) : " + k_max );
+    if( selectK==1 ){
+      if(  maxK >= n_records  ){
+        maxK = n_records - 1;
+        print( "maxK should no greater than number of record, change maxK equal " +
+        "( number of record - 1 ) : " + maxK );
       }
-      if(  k_max >= interval  ){
-        interval = k_max + 1;
-        # k_max should equal interval -1, because we drop self when search nn.
-        print( "interval should be no less than k_max, change interval equal : " +
+      if(  maxK >= interval  ){
+        interval = maxK + 1;
+        # maxK should equal interval -1, because we drop self when search nn.
+        print( "interval should be no less than maxK, change interval equal : " +
         interval );
       }
-      if(  k_max <= 1  )
-        stop( "uncorrect k_max value"  );
-      if(  k_min >= k_max )
-        stop( "k_min >= k_max" );
+      if(  maxK <= 1  )
+        stop( "uncorrect maxK value"  );
+      if(  minK >= maxK )
+        stop( "minK >= maxK" );
     }
-    if( select_feature == 1 ){
-      if(  k_value >= n_records  ){
-        k_value = n_records - 1;
-        print( "k_value should be no greater than number of record, change k_value equal " +
-        "( number of record - 1 ) : " + k_value );
+    if( selectFeature == 1 ){
+      if(  k >= n_records  ){
+        k = n_records - 1;
+        print( "k should be no greater than number of record, change k equal " +
+        "( number of record - 1 ) : " + k );
       }
       #Select feature only
-      if( nrow(START_SELECTED) == 0 & ncol(START_SELECTED) == 0 )
+      if( nrow(initSelectFeature) == 0 & ncol(initSelectFeature) == 0 )
         m_start_selected_feature = matrix( 0,1,n_features );
       else
-        m_start_selected_feature = START_SELECTED;
+        m_start_selected_feature = initSelectFeature;
     }
 
-    if( select_k == 1 & select_feature == 1){
+    if( selectK == 1 & selectFeature == 1){
       #Combined k and feature selection
       print("Start combined k and feature selection ...");
       [m_selected_feature,s_selected_k] =
-        getSelectedFeatureAndK( Train,CL,CL_T,m_start_selected_feature,
-        feature_max,k_min,k_max,interval );
+        getSelectedFeatureAndK( Train,CL,ctypes,m_start_selected_feature,
+        maxFeatures,minK,maxK,interval );
     }
-    else if( select_k == 1 ){
+    else if( selectK == 1 ){
       #Select k only
       print("Start k select ...");
-      s_selected_k = getSelectedKBase( Train,CL,CL_T,k_min,k_max,interval );
+      s_selected_k = getSelectedKBase( Train,CL,ctypes,minK,maxK,interval );
     }
-    else if( select_feature == 1 ){
+    else if( selectFeature == 1 ){
       #Select feature only
       print("Start feature selection ... ");
       [m_selected_feature,d_err] =
-        getSelectedFeature( Train,CL,CL_T,m_start_selected_feature,
-        feature_max,k_value,interval );
+        getSelectedFeature( Train,CL,ctypes,m_start_selected_feature,
+        maxFeatures,k,interval );
     }
   }
 
-  if( feature_importance == 1){
-    if(  k_value >= n_records  ){
-      k_value = n_records - 1;
-      print( "k_value should be no greater than number of record, make k_value equal " +
-      "( number of record - 1 ) : " + k_value );
+  if( featureImportance == 1){
+    if(  k >= n_records  ){
+      k = n_records - 1;
+      print( "k should be no greater than number of record, make k equal " +
+      "( number of record - 1 ) : " + k );
     }
     [m_feature_importance,m_norm_feature_importance] =
-      getFeatureImportance(Train,CL,CL_T,k_value);
+      getFeatureImportance(Train,CL,ctypes,k);
   }
 
-  NNR_matrix = naiveKNNsearch(P=Train,Q=Test,K=k_value);
+  NNR_matrix = naiveKNNsearch(P=Train,Q=Test,K=k);
 
   CL_matrix = matrix( 0,nrow( Test ),1 );
 
   for(i in 1 : nrow(NNR_matrix))
   {
-    NNR_tmp_matrix = matrix( 0,k_value,1 );
-    for( j in 1:k_value )
+    NNR_tmp_matrix = matrix( 0,k,1 );
+    for( j in 1:k )
       NNR_tmp_matrix[j,1] = CL[as.scalar( NNR_matrix[i,j] ),1];
 
-    if(CL_T == 2) {
+    if(ctypes == 2) {
       t_cl_value = as.scalar( rowIndexMax( t(NNR_tmp_matrix) ) );
     }
     else {
-      if ( predict_con_tg == 0)
+      if ( predictCont == 0)
         t_cl_value = mean( NNR_tmp_matrix );
-      else if(predict_con_tg == 1)
+      else if(predictCont == 1)
         t_cl_value = median( NNR_tmp_matrix );
     }
 

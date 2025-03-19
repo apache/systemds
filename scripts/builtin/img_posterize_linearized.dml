@@ -24,7 +24,7 @@
 #
 # INPUT:
 # -------------------------------------------------------------------------------------------
-# img_in  Row linearized input images as 2D matrix
+# img     Row linearized input images as 2D matrix
 # bits    The number of bits keep for the values.
 #         1 means black and white, 8 means every integer between 0 and 255.
 # -------------------------------------------------------------------------------------------
@@ -34,6 +34,6 @@
 # img_out  Row linearized output images as 2D matrix
 # ---------------------------------------------------------------------------------------------
 
-m_img_posterize_linearized = function(Matrix[Double] img_in, Integer bits) return (Matrix[Double] img_out) {
-  img_out = (img_in %/% 2^(8 - bits)) * (2^(8 - bits))
+m_img_posterize_linearized = function(Matrix[Double] img, Integer bits) return (Matrix[Double] img_out) {
+  img_out = (img %/% 2^(8 - bits)) * (2^(8 - bits))
 }

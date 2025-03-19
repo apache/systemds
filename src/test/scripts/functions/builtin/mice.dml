@@ -36,7 +36,7 @@ if(sum(Mask) == ncol(F))
   jspecR = "{ids:true, recode:["+s+"]}";
   [X, M] = transformencode(target=F, spec=jspecR);
   # call mice
-  [dataset, meta, th, dm, betaList] = mice(X=X,cMask=Mask, iter=$iteration, threshold=0.8, verbose = FALSE)
+  [dataset, meta, th, dm, betaList] = mice(X=X,ctypes=Mask, maxIter=$iteration, threshold=0.8, verbose = FALSE)
   output1 = miceApply(X=X, meta=meta, threshold=th, dM=dm, betaList=betaList)
   match = abs(output1 - dataset) < 0.16
   print("match: \n"+(sum(match == 0) == 0))
@@ -51,7 +51,7 @@ else if(sum(Mask) == 0){
   # no transformation is required, cast the frame into matrix and call mice
   # as.matrix() will convert the null values into zeros, so explicitly replace zeros with NaN
   X = replace(target = as.matrix(F), pattern = 0, replacement = NaN)
-  [output, meta, th, dm, betaList] = mice(X=X, cMask=Mask, iter=$iteration, verbose = FALSE )
+  [output, meta, th, dm, betaList] = mice(X=X, ctypes=Mask, maxIter=$iteration, verbose = FALSE )
   output1 = miceApply(X=X, meta=meta, threshold=th, dM=dm, betaList=betaList)
   match = abs(output - output1) < 0.1
   print("match sum: \n"+(sum(match == 0) == 0))
@@ -70,7 +70,7 @@ else
   jspecR = "{ids:true, recode:["+s+"]}";
   [X, M] = transformencode(target=F, spec=jspecR);
   # call mice
-  dataset = mice(X=X,cMask=Mask, iter=$iteration, verbose = FALSE )
+  dataset = mice(X=X,ctypes=Mask, maxIter=$iteration, verbose = FALSE )
   # decode data into original format
   output = as.matrix(transformdecode(target=dataset, spec=jspecR, meta=M));
   # below lines are only for testing purpose  

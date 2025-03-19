@@ -20,6 +20,6 @@
 #-------------------------------------------------------------
 
 
-  X = rbind(read($X1), read($X2))
-  [C, Y] = kmeans(X=X,k=4, runs=1, max_iter=120, seed=93)
-  write(C, $Z);
+X = rbind(read($X1), read($X2))
+[C, Y] = kmeans(X=X,k=4, runs=1, maxIter=120, seed=93)
+write(C, $Z);

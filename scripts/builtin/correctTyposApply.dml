@@ -38,9 +38,9 @@
 # ----------------------------------------------------------------------------------------
 # strings              The nx1 input frame of corrupted strings
 # nullMask             ---
-# frequency_threshold  Strings that occur above this frequency level will not be corrected
-# distance_threshold   Max distance at which strings are considered similar
-# distance matrix      ---
+# frequencyThreshold   Strings that occur above this frequency level will not be corrected
+# distanceThreshold    Max distance at which strings are considered similar
+# distances            ---
 # dict                 ---
 # ----------------------------------------------------------------------------------------
 #
@@ -50,7 +50,8 @@
 # ---------------------------------------------------------------------------------------------
 
 
-f_correctTyposApply = function(Frame[String] strings, Double frequency_threshold = 0.05, Integer distance_threshold = 2, Matrix[Double] distance_matrix, Frame[Unknown] dict)
+f_correctTyposApply = function(Frame[String] strings, Double frequencyThreshold = 0.05, Integer distanceThreshold = 2,
+  Matrix[Double] distances, Frame[Unknown] dict)
   return (Frame[String] Y)
 {
   strings = map(strings, "s -> s.toLowerCase()");
@@ -63,18 +64,18 @@ f_correctTyposApply = function(Frame[String] strings, Double frequency_threshold
   for (i in 1:num_different_strings) {
     idx = as.integer(as.scalar(sorted_frequency_idxs[i])); # lowest frequency idx
     frequency = as.scalar(frequencies[idx]);
-    if (frequency < frequency_threshold) {
-      min_idxs = t(order(target=t(distance_matrix[idx,]), index.return=TRUE));
+    if (frequency < frequencyThreshold) {
+      min_idxs = t(order(target=t(distances[idx,]), index.return=TRUE));
 
       j = 1;
       break=FALSE;
       while (j <= num_different_strings & !break) {
         min_idx = as.integer(as.scalar(min_idxs[,j]));
-        min = as.integer(as.scalar(distance_matrix[idx, min_idx]));
+        min = as.integer(as.scalar(distances[idx, min_idx]));
         replacement_frequency = as.scalar(frequencies[min_idx]);
 
         # TODO: additional parameter for replacement_frequency?
-        if (min < distance_threshold & replacement_frequency > frequency_threshold/2) {
+        if (min < distanceThreshold & replacement_frequency > frequencyThreshold/2) {
           to_replace = as.scalar(strings[idx,]);
           replacement = as.scalar(strings[min_idx,]);
           Y = replaceStrings1(replacement, to_replace, Y);

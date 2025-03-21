@@ -21,12 +21,22 @@
 package org.apache.sysds.test.component.misc;
 
 
+import org.apache.commons.cli.ParseException;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
 import org.apache.sysds.api.DMLOptions;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.api.ScriptExecutorUtils;
+import org.apache.sysds.api.mlcontext.Script;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.LanguageException;
+import org.apache.sysds.parser.ParserFactory;
+import org.apache.sysds.parser.ParserWrapper;
+import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.test.LoggingUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -34,7 +44,9 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -43,6 +55,8 @@ import java.util.concurrent.TimeoutException;
 
 import static org.apache.sysds.api.DMLScript.executeScript;
 import static org.apache.sysds.api.DMLScript.readDMLScript;
+import static org.apache.sysds.api.mlcontext.ScriptFactory.dml;
+import static org.junit.Assert.assertTrue;
 
 @net.jcip.annotations.NotThreadSafe
 public class DMLScriptTest {
@@ -360,5 +374,44 @@ public class DMLScriptTest {
     public void createDMLScriptInstance(){
         DMLScript script = new DMLScript();
         Assert.assertTrue(script != null);
+
+    }
+
+    @Test
+    public void testLineageScriptExecutorUtilTestTest() throws IOException {
+        // just for code coverage
+        new ScriptExecutorUtils();
+
+        String cl = "systemds -lineage estimate -s \"print('hello')\"";
+        String[] args = cl.split(" ");
+        final PrintStream originalOut = System.out;
+        try {
+            final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
+            System.setOut(new PrintStream(outputStreamCaptor));
+            executeScript(args);
+            System.setOut(originalOut);
+            String[] lines = outputStreamCaptor.toString().split(System.lineSeparator());
+            Assert.assertTrue(lines[0].startsWith("hello"));
+            Assert.assertTrue(Arrays.stream(lines).anyMatch(s -> s.startsWith("Compute Time (Elapsed/Saved):")));
+            Assert.assertTrue(Arrays.stream(lines).anyMatch(s -> s.startsWith("Space Used (C/R/L):")));
+            Assert.assertTrue(Arrays.stream(lines).anyMatch(s -> s.startsWith("Cache Full Timestamp:")));
+        } finally {
+            System.setOut(originalOut);
+        }
+    }
+
+    @Test
+    public void testScriptExecutorUtilTestTest() throws IOException, ParseException {
+        boolean old = DMLScript.USE_ACCELERATOR;
+        DMLScript.USE_ACCELERATOR = true;
+        try {
+            ExecutionContext ec = ExecutionContextFactory.createContext();
+            ScriptExecutorUtils.executeRuntimeProgram(null, ec, ConfigurationManager.getDMLConfig(), 0, null);
+        } catch (Error e){
+            Assert.assertTrue("Expecting Message starting with \"Error while loading native library. Instead got:"
+                    + e.getMessage(), e.getMessage().startsWith("Error while loading native library"));
+        } finally {
+            DMLScript.USE_ACCELERATOR = old;
+        }
     }
 }

@@ -24,7 +24,6 @@ import java.util.Random;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
@@ -76,14 +75,8 @@ public class AppendVectorTest extends AutomatedTestBase
 	public void commonAppendTest(ExecMode platform, int rows, int cols)
 	{
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
-	
-		ExecMode prevPlfm=rtplatform;
+		ExecMode prevPlfm = setExecMode(platform);
 		
-		rtplatform = platform;
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == ExecMode.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
 		try {
 			config.addVariable("rows", rows);
 			config.addVariable("cols", cols);
@@ -121,8 +114,7 @@ public class AppendVectorTest extends AutomatedTestBase
 			}
 		}
 		finally {
-			rtplatform = prevPlfm;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			resetExecMode(prevPlfm);
 		}
 	}
 }

@@ -24,7 +24,6 @@ import java.util.HashMap;
 import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -103,23 +102,15 @@ public class RBindCBindMatrixTest extends AutomatedTestBase
 	
 	public void runRBindTest(String testname, boolean sparse, ExecType et)
 	{		
-		ExecMode platformOld = rtplatform;
-		switch( et ){
-			case SPARK: rtplatform = ExecMode.SPARK; break;
-			default: rtplatform = ExecMode.HYBRID; break;
-		}
-	
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == ExecMode.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-
+		ExecMode platformOld = setExecMode(et);
+		
 		String TEST_NAME = testname;
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		loadTestConfiguration(config);
 		double sparsity = (sparse) ? sparsity2 : sparsity1; 
 		
 		try
-		{	          
+		{
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
 			//stats required for opcode checks
@@ -151,11 +142,8 @@ public class RBindCBindMatrixTest extends AutomatedTestBase
 				Assert.assertTrue("Rewrite not applied", !Statistics.getCPHeavyHitterOpCodes().contains(opcode) );
 			}
 		}
-		finally
-		{
-			//reset execution platform
-			rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		finally {
+			resetExecMode(platformOld);
 		}
 	}
 }

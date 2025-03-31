@@ -616,6 +616,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		
 		try {
 			// execute single instruction
+			// TODO move this thread naming to Netty thread creation!
+			Thread curThread = Thread.currentThread();
+			long id = curThread.getId();
+			Thread.currentThread().setName("FedExec_"+ id);
 			pb.execute(ec);
 		}
 		catch(Exception ex) {

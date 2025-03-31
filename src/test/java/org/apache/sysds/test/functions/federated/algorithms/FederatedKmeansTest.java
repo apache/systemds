@@ -22,6 +22,8 @@ package org.apache.sysds.test.functions.federated.algorithms;
 import java.util.Arrays;
 import java.util.Collection;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
@@ -31,6 +33,7 @@ import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.utils.stats.Timing;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -40,6 +43,7 @@ import org.junit.runners.Parameterized;
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedKmeansTest extends AutomatedTestBase {
+	protected static final Log LOG = LogFactory.getLog(FederatedKmeansTest.class.getName());
 
 	private final static String TEST_DIR = "functions/federated/";
 	private final static String TEST_NAME = "FederatedKmeansTest";
@@ -120,7 +124,6 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 		programArgs = new String[] {"-args", input("X1"), input("X2"),
 			String.valueOf(singleWorker).toUpperCase(), String.valueOf(runs), expected("Z")};
 		runTest(true, false, null, -1);
-
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-stats","20", "-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
@@ -130,8 +133,9 @@ public class FederatedKmeansTest extends AutomatedTestBase {
 		for(int i = 0; i < rep; i++) {
 			ParForProgramBlock.resetWorkerIDs();
 			FederationUtils.resetFedDataID();
+			Timing t = new Timing();
 			runTest(true, false, null, -1);
-
+			LOG.debug("Federated kmeans runtime: " + t);
 			// check for federated operations
 			Assert.assertTrue(heavyHittersContainsString("fed_ba+*"));
 			// Assert.assertTrue(heavyHittersContainsString("fed_uasqk+"));

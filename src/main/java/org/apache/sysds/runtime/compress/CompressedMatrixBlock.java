@@ -58,8 +58,8 @@ import org.apache.sysds.runtime.compress.lib.CLALibDecompress;
 import org.apache.sysds.runtime.compress.lib.CLALibMMChain;
 import org.apache.sysds.runtime.compress.lib.CLALibMatrixMult;
 import org.apache.sysds.runtime.compress.lib.CLALibMerge;
-import org.apache.sysds.runtime.compress.lib.CLALibReplace;
 import org.apache.sysds.runtime.compress.lib.CLALibReorg;
+import org.apache.sysds.runtime.compress.lib.CLALibReplace;
 import org.apache.sysds.runtime.compress.lib.CLALibReshape;
 import org.apache.sysds.runtime.compress.lib.CLALibRexpand;
 import org.apache.sysds.runtime.compress.lib.CLALibScalar;
@@ -101,6 +101,7 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.utils.DMLCompressionStatistics;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
+import org.apache.sysds.utils.stats.Timing;
 
 public class CompressedMatrixBlock extends MatrixBlock {
 	private static final Log LOG = LogFactory.getLog(CompressedMatrixBlock.class.getName());
@@ -475,16 +476,20 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	public static CompressedMatrixBlock read(DataInput in) throws IOException {
+		Timing t = new Timing();
 		int rlen = in.readInt();
 		int clen = in.readInt();
 		long nonZeros = in.readLong();
 		boolean overlappingColGroups = in.readBoolean();
 		List<AColGroup> groups = ColGroupIO.readGroups(in, rlen);
-		return new CompressedMatrixBlock(rlen, clen, nonZeros, overlappingColGroups, groups);
+		CompressedMatrixBlock ret =  new CompressedMatrixBlock(rlen, clen, nonZeros, overlappingColGroups, groups);
+		LOG.debug("Compressed read serialization time: " + t.stop());
+		return ret;
 	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {
+		Timing t = new Timing();
 		final long estimateUncompressed = nonZeros > 0 ? MatrixBlock.estimateSizeOnDisk(rlen, clen,
 			nonZeros) : Long.MAX_VALUE;
 		final long estDisk = nonZeros > 0 ? getExactSizeOnDisk() : Long.MAX_VALUE;
@@ -512,6 +517,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		out.writeLong(nonZeros);
 		out.writeBoolean(overlappingColGroups);
 		ColGroupIO.writeGroups(out, _colGroups);
+		LOG.debug("Compressed write serialization time: " + t.stop());
 	}
 
 	/**
@@ -611,14 +617,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	public MatrixBlock transposeSelfMatrixMultOperations(MatrixBlock out, MMTSJType tstype, int k) {
 		// check for transpose type
 		if(tstype == MMTSJType.LEFT) {
-			if(isEmpty())
-				return new MatrixBlock(clen, clen, true);
-			// create output matrix block
-			if(out == null)
-				out = new MatrixBlock(clen, clen, false);
-			else
-				out.reset(clen, clen, false);
-			out.allocateDenseBlock();
 			CLALibTSMM.leftMultByTransposeSelf(this, out, k);
 			return out;
 		}
@@ -1202,8 +1200,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public void sparseToDense(int k) {
-		// do nothing
+	public MatrixBlock sparseToDense(int k) {
+		return this; // do nothing
 	}
 
 	@Override

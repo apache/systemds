@@ -25,6 +25,10 @@ from systemds.scuro.representations.utils import save_embeddings
 from gensim.models import Word2Vec
 from gensim.utils import tokenize
 
+import nltk
+
+nltk.download("punkt_tab")
+
 
 def get_embedding(sentence, model):
     vectors = []
@@ -57,7 +61,7 @@ class W2V(UnimodalRepresentation):
         embeddings = []
         for sentences in modality.data:
             tokens = list(tokenize(sentences.lower()))
-            embeddings.append(get_embedding(tokens, model))
+            embeddings.append(np.array(get_embedding(tokens, model)).reshape(1, -1))
 
         if self.output_file is not None:
             save_embeddings(np.array(embeddings), self.output_file)

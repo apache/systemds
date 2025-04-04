@@ -135,11 +135,13 @@ class ResNet(UnimodalRepresentation):
                     torch.flatten(pooled, 1).detach().cpu().numpy()
                 )
 
+            embeddings[video_id] = np.array(embeddings[video_id])
+
         transformed_modality = TransformedModality(
             modality.modality_type, "resnet", modality.metadata
         )
+
         transformed_modality.data = list(embeddings.values())
-        transformed_modality.update_data_layout()
 
         return transformed_modality
 

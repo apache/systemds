@@ -23,29 +23,44 @@ import numpy as np
 from systemds.scuro.modality.modality import Modality
 
 
-# TODO: make this a Representation and add a fusion method that fuses two modalities with each other
-
-
 class Aggregation:
-    def __init__(self, aggregation_function, field_name):
-        self.aggregation_function = aggregation_function
-        self.field_name = field_name
+    @staticmethod
+    def _mean_agg(data):
+        return np.mean(data, axis=0)
 
-    def aggregate(self, modality):
+    @staticmethod
+    def _max_agg(data):
+        return np.max(data, axis=0)
+
+    @staticmethod
+    def _min_agg(data):
+        return np.min(data, axis=0)
+
+    @staticmethod
+    def _sum_agg(data):
+        return np.sum(data, axis=0)
+
+    _aggregation_function = {
+        "mean": _mean_agg.__func__,
+        "max": _max_agg.__func__,
+        "min": _min_agg.__func__,
+        "sum": _sum_agg.__func__,
+    }
+
+    def __init__(self, aggregation_function):
+        if aggregation_function not in self._aggregation_function.keys():
+            raise ValueError("Invalid aggregation function")
+        self._aggregation_func = self._aggregation_function[aggregation_function]
+
+    def execute(self, modality):
         aggregated_modality = Modality(modality.modality_type, modality.metadata)
         aggregated_modality.data = []
         for i, instance in enumerate(modality.data):
             aggregated_modality.data.append([])
             for j, entry in enumerate(instance):
-                if self.aggregation_function == "sum":
-                    aggregated_modality.data[i].append(np.sum(entry, axis=0))
-                elif self.aggregation_function == "mean":
-                    aggregated_modality.data[i].append(np.mean(entry, axis=0))
-                elif self.aggregation_function == "min":
-                    aggregated_modality.data[i].append(np.min(entry, axis=0))
-                elif self.aggregation_function == "max":
-                    aggregated_modality.data[i].append(np.max(entry, axis=0))
-                else:
-                    raise ValueError("Invalid aggregation function")
+                aggregated_modality.data[i].append(self._aggregation_func(entry))
 
         return aggregated_modality
+
+    def aggregate_instance(self, instance):
+        return self._aggregation_func(instance)

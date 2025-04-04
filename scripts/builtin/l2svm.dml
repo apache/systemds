@@ -24,38 +24,38 @@
 #
 # INPUT:
 # ------------------------------------------------------------------------------
-# X              Feature matrix X (shape: m x n)
-# Y              Label vector y of class labels (shape: m x 1), assumed binary
-#                in -1/+1 or 1/2 encoding.
-# intercept      Indicator if a bias column should be added to X and the model
-# epsilon        Tolerance for early termination if the reduction of objective
-#                function is less than epsilon times the initial objective
-# reg            Regularization parameter (lambda) for L2 regularization
-# maxIterations  Maximum number of conjugate gradient (outer) iterations
-# maxii          Maximum number of line search (inner) iterations
-# verbose        Indicator if training details should be printed
-# columnId       An optional class ID used in verbose print output,
-#                eg. used when L2SVM is used in MSVM.
+# X                     Feature matrix X (shape: m x n)
+# Y                     Label vector y of class labels (shape: m x 1), assumed binary
+#                       in -1/+1 or 1/2 encoding.
+# intercept             Indicator if a bias column should be added to X and the model
+# tol                   Tolerance (epsilon) for early termination if the reduction of objective
+#                       function is less than tolerance times the initial objective
+# reg                   Regularization parameter (lambda) for L2 regularization
+# maxIter               Maximum number of conjugate gradient (outer) iterations
+# maxInnerIter          Maximum number of line search (inner) iterations
+# verbose               Indicator if training details should be printed
+# columnId              An optional class ID used in verbose print output,
+#                       eg. used when L2SVM is used in MSVM.
 # ------------------------------------------------------------------------------
 #
 # OUTPUT:
 # ------------------------------------------------------------------------------
-# model          Trained model/weights (shape: n x 1, w/ intercept: n+1)
+# model                 Trained model/weights (shape: n x 1, w/ intercept: n+1)
 # ------------------------------------------------------------------------------
 
 m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE,
-    Double epsilon = 0.001, Double reg = 1, Integer maxIterations = 100, 
-    Integer maxii = 20, Boolean verbose = FALSE, Integer columnId = -1)
+    Double tol = 0.001, Double reg = 1, Integer maxIter = 100,
+    Integer maxInnerIter = 20, Boolean verbose = FALSE, Integer columnId = -1)
   return(Matrix[Double] model)
 {
   #check input parameter assertions
   if(nrow(X) < 2)
     stop("L2SVM: Stopping due to invalid inputs: Not possible to learn a binary class classifier without at least 2 rows")
-  if(epsilon < 0)
+  if(tol < 0)
     stop("L2SVM: Stopping due to invalid argument: Tolerance (tol) must be non-negative")
   if(reg < 0)
     stop("L2SVM: Stopping due to invalid argument: Regularization constant (reg) must be non-negative")
-  if(maxIterations < 1)
+  if(maxIter < 1)
     stop("L2SVM: Stopping due to invalid argument: Maximum iterations should be a positive integer")
   if(ncol(Y) < 1)
     stop("L2SVM: Stopping due to invalid multiple label columns, maybe use MSVM instead?")
@@ -93,7 +93,7 @@ m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE
 
   iter = 0
   continue = TRUE
-  while(continue & iter < maxIterations)  {
+  while(continue & iter < maxIter)  {
     # minimizing primal obj along direction s
     step_sz = 0
     Xd = X %*% s
@@ -101,7 +101,7 @@ m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE
     dd = reg * sum(s * s)
     continue1 = TRUE
     iiter = 0
-    while(continue1 & iiter < maxii){
+    while(continue1 & iiter < maxInnerIter){
       tmp_Xw = Xw + step_sz*Xd
       out = 1 - Y * (tmp_Xw)
       sv = (out > 0)
@@ -109,7 +109,7 @@ m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE
       g = wd + step_sz*dd - sum(out * Y * Xd)
       h = dd + sum(Xd * sv * Xd)
       step_sz = step_sz - g/h
-      continue1 = (g*g/h >= epsilon)
+      continue1 = (g*g/h >= tol)
       iiter = iiter + 1
     }
 
@@ -129,7 +129,7 @@ m_l2svm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE
     }
 
     tmp = sum(s * g_old)
-    continue = (step_sz*tmp >= epsilon*obj & sum(s^2) != 0);
+    continue = (step_sz*tmp >= tol*obj & sum(s^2) != 0);
 
     #non-linear CG step
     be = sum(g_new * g_new)/sum(g_old * g_old)

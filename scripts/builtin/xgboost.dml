@@ -48,11 +48,11 @@
 #                - R[,2]: 2 (categorical feature)
 #                Feature 1 is a scalar feature and features 2 is a categorical feature
 #                If R is not provided by default all variables are assumed to be scale (1)
-# sml_type       Supervised machine learning type: 1 = Regression(default), 2 = Classification
-# num_trees      Number of trees to be created in the xgboost model
-# learning_rate  Alias: eta. After each boosting step the learning rate controls the weights of the new predictions
-# max_depth      Maximum depth of a tree. Increasing this value will make the model more complex and more likely to overfit
-# lambda         L2 regularization term on weights. Increasing this value will make model more conservative and reduce amount of leaves of a tree
+# smlType        Supervised machine learning type: 1 = Regression(default), 2 = Classification
+# numTrees       Number of trees to be created in the xgboost model
+# lr             Alias: eta. After each boosting step the learning rate controls the weights of the new predictions
+# maxDepth       Maximum depth of a tree. Increasing this value will make the model more complex and more likely to overfit
+# reg            L2 regularization term on weights (lambda). Increasing this value will make model more conservative and reduce amount of leaves of a tree
 # -----------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -61,8 +61,8 @@
 # -----------------------------------------------------------------------------------
 
 m_xgboost = function(Matrix[Double] X, Matrix[Double] y,
-  Matrix[Double] R = matrix(1,rows=1,cols=nrow(X)), Integer sml_type = 1, Integer num_trees = 7,
-  Double learning_rate = 0.3, Integer max_depth = 6, Double lambda = 0.0)
+  Matrix[Double] R = matrix(1,rows=1,cols=nrow(X)), Integer smlType = 1, Integer numTrees = 7,
+  Double lr = 0.3, Integer maxDepth = 6, Double reg = 0.0)
   return (Matrix[Double] M)
 {
   # test if input correct
@@ -79,19 +79,19 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y,
   current_prediction = matrix(median(y), rows=nrow(y), cols=1)
 
   tree_id = 1
-  while(tree_id <= num_trees) {
-    if(sml_type == 1) # Regression
+  while(tree_id <= numTrees) {
+    if(smlType == 1) # Regression
     {
-      curr_M = buildOneTreeRegression(X, y, R, max_depth, current_prediction, tree_id, lambda)
+      curr_M = buildOneTreeRegression(X, y, R, maxDepth, current_prediction, tree_id, reg)
     }
     else # classification
     {
-      assert(sml_type == 2)
-      curr_M = buildOneTreeClassification(X, y, R, max_depth, current_prediction, tree_id, lambda)
+      assert(smlType == 2)
+      curr_M = buildOneTreeClassification(X, y, R, maxDepth, current_prediction, tree_id, reg)
     }
 
     # in current prediction all previous trees are considered, so we only add the current tree to calculate new predictions
-    current_prediction = calculateNewPredictions(X, sml_type,current_prediction, learning_rate, curr_M)
+    current_prediction = calculateNewPredictions(X, smlType,current_prediction, lr, curr_M)
 
     tree_id = tree_id + 1
     M = cbind(M, curr_M) # concat the new tree to the existing one (forest-ing)
@@ -101,18 +101,19 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y,
 
 #-----------------------------------------------------------------------------------------------------------------------
 # INPUT:    X: nxn matrix, original input matrix
+# INUT:     smlType: Supervised machine learning type: 1 = Regression(default), 2 = Classification
 # INPUT:    current_prediction: nx1 vector of the current prediction for my target features y (1st run is init prediction)
-# INPUT:    learning_rate: set by user
+# INPUT:    lr: learning rate set by user
 # INPUT:    curr_M: The current M matrix with the current tree
 # OUTPUT:   new_prediction: x1 vector of new new_prediction for my target features y
-calculateNewPredictions = function(Matrix[Double] X, Integer sml_type, Matrix[Double] current_prediction,
-    Double learning_rate, Matrix[Double] curr_M)
+calculateNewPredictions = function(Matrix[Double] X, Integer smlType, Matrix[Double] current_prediction,
+    Double lr, Matrix[Double] curr_M)
     return (Matrix[Double] new_prediction)
 {
   new_prediction = matrix(0, rows=nrow(current_prediction), cols=1)
   start_node_current_tree = curr_M[,1]
 
-  if(sml_type == 1) # Regression
+  if(smlType == 1) # Regression
   {
     for(entry in 1:nrow(X)) # go though each entry in X and calculate the new prediction
     {
@@ -120,7 +121,7 @@ calculateNewPredictions = function(Matrix[Double] X, Integer sml_type, Matrix[Do
 
       output_value = getOutputValueForEntry(X[entry,], curr_M, start_node_current_tree)
       output_values = cbind(output_values, as.matrix(output_value))
-      new_prediction[entry,] = current_prediction[entry,] + learning_rate * sum(output_values)
+      new_prediction[entry,] = current_prediction[entry,] + lr * sum(output_values)
     }
   }
   else # Classification
@@ -135,7 +136,7 @@ calculateNewPredictions = function(Matrix[Double] X, Integer sml_type, Matrix[Do
         log_odds = 0
       else
         log_odds = log(odds / (1 - odds))
-      x = (log_odds + learning_rate * sum(output_values))
+      x = (log_odds + lr * sum(output_values))
       e = 2.7182818284
       new_prediction[entry,] = e^x / (1 + e^x)
     }
@@ -197,16 +198,16 @@ getOutputValueForEntry = function(Matrix[Double] row_vector,
 # INPUT:    R The matrix R which for each feature in X contains the following information
 #           - R[,2]: 1 (scalar feature)
 #           - R[,1]: 2 (categorical feature)
-# INPUT:    max_depth: the max depth of a tree
+# INPUT:    maxDepth: the max depth of a tree
 # INPUT:    prediction: nx1 vector, my current predictions for my target value y
 # INPUT:    tree_id: The current tree id, starting at 1
-# INPUT:    lambda: the regularization parameter lambda
+# INPUT:    reg: the regularization parameter lambda
 # OUTPUT:   M: the current M matrix of this tree
-buildOneTreeRegression = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R, Integer max_depth,
-  Matrix[Double] prediction, Double tree_id, Double lambda)
+buildOneTreeRegression = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R, Integer maxDepth,
+  Matrix[Double] prediction, Double tree_id, Double reg)
   return (Matrix[Double] M)
 {
-  sml_type = 1 # regression
+  smlType = 1 # regression
 
   M = matrix(0,rows=6,cols=0)
   node_queue = matrix(1, rows=1, cols=1)     # Add first Node
@@ -235,15 +236,15 @@ buildOneTreeRegression = function(Matrix[Double] X, Matrix[Double] y, Matrix[Dou
     best_feature_index = 0.00
     done = FALSE
 
-    if(available_rows > 1 & max_depth > level & done == FALSE) # leaf check or max depth check
+    if(available_rows > 1 & maxDepth > level & done == FALSE) # leaf check or max depth check
     {
-      best_feature_index = findBestFeature(X=curr_X, y=curr_y, sml_type=sml_type)
+      best_feature_index = findBestFeature(X=curr_X, y=curr_y, smlType=smlType)
       type = getTypeOfFeature(R, best_feature_index)
 
       if(type == 1.0) # SCALAR
       {
-        similarity_score = calculateSimilarityScore(residual_matrix, lambda)
-        [best_split_threshold, best_gain] = findBestSplit(sml_type, curr_X[,best_feature_index], similarity_score, curr_prediction, lambda)
+        similarity_score = calculateSimilarityScore(residual_matrix, reg)
+        [best_split_threshold, best_gain] = findBestSplit(smlType, curr_X[,best_feature_index], similarity_score, curr_prediction, reg)
         has_child = best_gain > 0 # if the gain is < 0, the split is worse than the current node
       }
       else # CATEGORICAL
@@ -274,7 +275,7 @@ buildOneTreeRegression = function(Matrix[Double] X, Matrix[Double] y, Matrix[Dou
     }
     else # has no child => must be leaf
     {
-      output_value = calculateOutputValue(residual_matrix, lambda)
+      output_value = calculateOutputValue(residual_matrix, reg)
                                     # offset, best_feature_idx, threshold
       M = addOutputRow(M, node, tree_id, R, 0.0, 0.0, 0.0, output_value)
     }
@@ -289,16 +290,16 @@ buildOneTreeRegression = function(Matrix[Double] X, Matrix[Double] y, Matrix[Dou
 # INPUT:    R The matrix R which for each feature in X contains the following information
 #           - R[,2]: 1 (scalar feature)
 #           - R[,1]: 2 (categorical feature)
-# INPUT:    max_depth: the max depth of a tree
+# INPUT:    maxDepth: the max depth of a tree
 # INPUT:    prediction: nx1 vector, my current predictions for my target value y
 # INPUT:    tree_id: The current tree id, starting at 1
-# INPUT:    lambda: the regularization parameter lambda
+# INPUT:    reg: the regularization parameter lambda
 # OUTPUT:   M: the current M matrix of this tree
-buildOneTreeClassification = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R, Integer max_depth,
-  Matrix[Double] prediction, Double tree_id, Double lambda)
+buildOneTreeClassification = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R, Integer maxDepth,
+  Matrix[Double] prediction, Double tree_id, Double reg)
   return (Matrix[Double] M)
 {
-  sml_type = 2 # classification
+  smlType = 2 # classification
 
   M = matrix(0,rows=6,cols=0)
   node_queue = matrix(1, rows=1, cols=1)     # Add first Node
@@ -328,15 +329,15 @@ buildOneTreeClassification = function(Matrix[Double] X, Matrix[Double] y, Matrix
     count = sum(curr_y)
     done = (count == 0) | (count == nrow(curr_y));
 
-    if(available_rows > 1 & max_depth > level & !done) # leaf check or max depth check
+    if(available_rows > 1 & maxDepth > level & !done) # leaf check or max depth check
     {
-      best_feature_index = findBestFeature(X=curr_X, y=curr_y, sml_type=sml_type)
+      best_feature_index = findBestFeature(X=curr_X, y=curr_y, smlType=smlType)
       type = getTypeOfFeature(R, best_feature_index)
 
       if(type == 1.0) # SCALAR
       {
-        similarity_score = calculateSimilarityScoreClassification(residual_matrix, curr_prediction, lambda)
-        [best_split_threshold, best_gain] = findBestSplit(sml_type, curr_X[,best_feature_index], similarity_score, curr_prediction, lambda)
+        similarity_score = calculateSimilarityScoreClassification(residual_matrix, curr_prediction, reg)
+        [best_split_threshold, best_gain] = findBestSplit(smlType, curr_X[,best_feature_index], similarity_score, curr_prediction, reg)
         has_child = best_gain > 0 # if the gain is < 0, the split is worse than the current node
       }
       else # CATEGORICAL
@@ -368,7 +369,7 @@ buildOneTreeClassification = function(Matrix[Double] X, Matrix[Double] y, Matrix
     }
     else # has no child => must be leaf
     {
-      output_value = calculateOutputValueClassification(residual_matrix, curr_prediction, lambda)
+      output_value = calculateOutputValueClassification(residual_matrix, curr_prediction, reg)
                                     # offset, best_feature_idx, threshold
       M = addOutputRow(M, node, tree_id, R, 0.0, 0.0, 0.0, output_value)
     }
@@ -532,7 +533,7 @@ dataQueuePush = function(Matrix[Double] left, Matrix[Double] right, Matrix[Doubl
 # INPUT:    X: a nxn matrix (the current samples with all features we observe)
 # INPUT:    y: a 1xn matrix (the current y to all observed samples)
 # OUTPUT:   lowest_residuals_index: the feature index with the lowest residuals
-findBestFeature = function(Matrix[Double] X, Matrix[Double] y, Integer sml_type)
+findBestFeature = function(Matrix[Double] X, Matrix[Double] y, Integer smlType)
   return (Integer lowest_residuals_index)
 {
   lowest_residuals = 0
@@ -542,7 +543,7 @@ findBestFeature = function(Matrix[Double] X, Matrix[Double] y, Integer sml_type)
     current_feature = X[,i]
 
     # TODO investigate if glm is necessary here
-    if(sml_type == 1) # Regression
+    if(smlType == 1) # Regression
       weights = glm(X=current_feature, Y=y, dfam=1, verbose=FALSE)
     else # Classification
       weights = glm(X=current_feature, Y=y, dfam=2, verbose=FALSE)
@@ -561,7 +562,7 @@ findBestFeature = function(Matrix[Double] X, Matrix[Double] y, Integer sml_type)
 #-----------------------------------------------------------------------------------------------------------------------
 # INPUT:    one_featureX: a 1xn matrix (one feature with all values)
 # OUTPUT:   best_split: the best split (highest gain indicates best splitting of datasets)
-findBestSplit = function(Integer sml_type, Matrix[Double] one_featureX, Double sim_score_parent, Matrix[Double] predictions, Double lambda)
+findBestSplit = function(Integer smlType, Matrix[Double] one_featureX, Double sim_score_parent, Matrix[Double] predictions, Double reg)
   return (Double best_split, Double best_gain)
 {
   assert(ncol(one_featureX) == 1)
@@ -577,13 +578,13 @@ findBestSplit = function(Integer sml_type, Matrix[Double] one_featureX, Double s
     current_split = average(ordered_X[i,], ordered_X[i+1,])
     [left, right] = splitMatrixByValue(one_featureX, current_split)
 
-    if(sml_type == 1) { # Regression
-      sim_score_left = calculateSimilarityScore(left, lambda)
-      sim_score_right = calculateSimilarityScore(right, lambda)
+    if(smlType == 1) { # Regression
+      sim_score_left = calculateSimilarityScore(left, reg)
+      sim_score_right = calculateSimilarityScore(right, reg)
     }
     else { # Classification
-      sim_score_left = calculateSimilarityScoreClassification(left, predictions, lambda)
-      sim_score_right = calculateSimilarityScoreClassification(right, predictions, lambda)
+      sim_score_left = calculateSimilarityScoreClassification(left, predictions, reg)
+      sim_score_right = calculateSimilarityScoreClassification(right, predictions, reg)
     }
     current_gain = sim_score_left + sim_score_right - sim_score_parent
 
@@ -639,31 +640,31 @@ splitMatrixByCategory = function(Matrix[Double] curr_X, Matrix[Double] X)
 #-----------------------------------------------------------------------------------------------------------------------
 # INPUT:    row_vector: a 1xn matrix (one feature with all residuals)
 # OUTPUT:   similarity_score: the similarity score of the residuals
-calculateSimilarityScore = function (matrix[Double] row_vector, Double lambda)
+calculateSimilarityScore = function (matrix[Double] row_vector, Double reg)
   return (Double similarity_score)
 {
-  similarity_score = (sum(row_vector)^2) / (nrow(row_vector) + lambda);
+  similarity_score = (sum(row_vector)^2) / (nrow(row_vector) + reg);
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
 # INPUT:    row_vector: a 1xn matrix (one feature with all residuals)
 # OUTPUT:   similarity_score: the similarity score of the residuals
-calculateSimilarityScoreClassification = function (matrix[Double] row_vector, matrix[Double] predictions, Double lambda)
+calculateSimilarityScoreClassification = function (matrix[Double] row_vector, matrix[Double] predictions, Double reg)
   return (Double similarity_score)
 {
   nominator = (sum(row_vector)^2)
   d =  predictions * (1 - predictions)
-  denominator = sum(d) + lambda
+  denominator = sum(d) + reg
   similarity_score = nominator / denominator;
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
 # INPUT:    residuals_vector: a 1xn matrix (one feature with all residuals)
 # OUTPUT:   similarity_score: the similarity score of the residuals
-calculateOutputValue = function (matrix[Double] residuals_vector, Double lambda)
+calculateOutputValue = function (matrix[Double] residuals_vector, Double reg)
   return (Double output_value)
 {
-  output_value = (sum(residuals_vector)) / (nrow(residuals_vector) + lambda);
+  output_value = (sum(residuals_vector)) / (nrow(residuals_vector) + reg);
   if(output_value == 'NaN') # just in case we have a node with no sample inside
     output_value = 0.0
 }
@@ -671,12 +672,12 @@ calculateOutputValue = function (matrix[Double] residuals_vector, Double lambda)
 #-----------------------------------------------------------------------------------------------------------------------
 # INPUT:    residuals_vector: a 1xn matrix (one feature with all residuals)
 # OUTPUT:   similarity_score: the similarity score of the residuals
-calculateOutputValueClassification = function (matrix[Double] residuals_vector, matrix[Double] predictions, Double lambda)
+calculateOutputValueClassification = function (matrix[Double] residuals_vector, matrix[Double] predictions, Double reg)
   return (Double output_value)
 {
   nominator = (sum(residuals_vector))
   d =  predictions * (1 - predictions)
-  denominator = sum(d) + lambda
+  denominator = sum(d) + reg
   if(denominator == 0)
     output_value = 0
   else

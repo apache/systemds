@@ -36,7 +36,7 @@ def arima(X: Matrix,
     
     
     :param X: The input Matrix to apply Arima on.
-    :param max_func_invoc: ---
+    :param maxIter: max_func_invoc
     :param p: non-seasonal AR order
     :param d: non-seasonal differencing order
     :param q: non-seasonal MA order
@@ -44,7 +44,7 @@ def arima(X: Matrix,
     :param D: seasonal differencing order
     :param Q: seasonal MA order
     :param s: period in terms of number of time-steps
-    :param include_mean: center to mean 0, and include in result
+    :param includeMean: center to mean 0, and include in result
     :param solver: solver, is either "cg" or "jacobi"
     :return: The calculated coefficients
     """

@@ -28,27 +28,27 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
-def img_cutout(img_in: Matrix,
+def img_cutout(img: Matrix,
                x: int,
                y: int,
-               width: int,
-               height: int,
-               fill_value: float):
+               w: int,
+               h: int,
+               value: float):
     """
      Image Cutout function replaces a rectangular section of an image with a constant value.
     
     
     
-    :param img_in: Input image as 2D matrix with top left corner at [1, 1]
+    :param img: Input image as 2D matrix with top left corner at [1, 1]
     :param x: Column index of the top left corner of the rectangle (starting at 1)
     :param y: Row index of the top left corner of the rectangle (starting at 1)
-    :param width: Width of the rectangle (must be positive)
-    :param height: Height of the rectangle (must be positive)
-    :param fill_value: The value to set for the rectangle
+    :param w: Width of the rectangle (must be positive)
+    :param h: Height of the rectangle (must be positive)
+    :param value: The value to set for the rectangle
     :return: Output image as 2D matrix with top left corner at [1, 1]
     """
 
-    params_dict = {'img_in': img_in, 'x': x, 'y': y, 'width': width, 'height': height, 'fill_value': fill_value}
-    return Matrix(img_in.sds_context,
+    params_dict = {'img': img, 'x': x, 'y': y, 'w': w, 'h': h, 'value': value}
+    return Matrix(img.sds_context,
         'img_cutout',
         named_input_nodes=params_dict)

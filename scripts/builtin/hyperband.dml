@@ -29,10 +29,10 @@
 #
 # INPUT:
 # ------------------------------------------------------------------------------------------
-# X_train      Input Matrix of training vectors
-# y_train      Labels for training vectors
-# X_val        Input Matrix of validation vectors
-# y_val        Labels for validation vectors
+# X            Input Matrix of training vectors
+# Y            Labels for training vectors
+# Xtest        Input Matrix of validation vectors
+# Ytest        Labels for validation vectors
 # params       List of parameters to optimize
 # paramRanges  The min and max values for the uniform distributions to draw from.
 #              One row per hyper parameter, first column specifies min, second column max value.
@@ -47,8 +47,8 @@
 # bestHyperParams  hyper parameters of best performing candidate
 # ----------------------------------------------------------------------------------------------
 
-m_hyperband = function(Matrix[Double] X_train, Matrix[Double] y_train,
-  Matrix[Double] X_val, Matrix[Double] y_val, List[String] params, 
+m_hyperband = function(Matrix[Double] X, Matrix[Double] Y,
+  Matrix[Double] Xtest, Matrix[Double] Ytest, List[String] params,
   Matrix[Double] paramRanges, Scalar[int] R = 81, Scalar[int] eta = 3, 
   Boolean verbose = TRUE) 
   return (Matrix[Double] bestWeights, Frame[Unknown] bestHyperParams) 
@@ -59,15 +59,15 @@ m_hyperband = function(Matrix[Double] X_train, Matrix[Double] y_train,
   
   assert(numParams == nrow(paramRanges));
   assert(ncol(paramRanges) == 2);
-  assert(nrow(X_train) == nrow(y_train));
-  assert(nrow(X_val) == nrow(y_val));
-  assert(ncol(X_train) == ncol(X_val));
-  assert(ncol(y_train) == ncol(y_val));
+  assert(nrow(X) == nrow(Y));
+  assert(nrow(Xtest) == nrow(Ytest));
+  assert(ncol(X) == ncol(Xtest));
+  assert(ncol(Y) == ncol(Ytest));
 
   s_max = floor(log(R,eta));
   B = (s_max + 1) * R;
   bracketWinners = matrix(0, s_max+1, numParams+1);
-  winnerWeights = matrix(0, s_max+1, ncol(X_train));
+  winnerWeights = matrix(0, s_max+1, ncol(X));
 
   parfor( s in s_max:0 ) {
     debugMsgs = "--------------------------";
@@ -80,7 +80,7 @@ m_hyperband = function(Matrix[Double] X_train, Matrix[Double] y_train,
     r = R * eta^(-s);
     
     scoreboard = matrix(0,n,1+numParams);
-    candidateWeights = matrix(0,n,ncol(X_train));
+    candidateWeights = matrix(0,n,ncol(X));
     # candidateWeights is not read until last round, as models are retrained 
     # from zero in every trial at the moment
 
@@ -112,7 +112,7 @@ m_hyperband = function(Matrix[Double] X_train, Matrix[Double] y_train,
         # TODO argument list has to be passed from outside as well
         # args is a residue from the implementation with eval("lmCG", args)
         # init argument list
-        args = list(X=X_train, y=y_train, icpt=0, reg=1e-7, 
+        args = list(X=X, y=Y, icpt=0, reg=1e-7,
           tol=1e-7, maxi=r_i, verbose=TRUE);
           
         for( curParam in 1:numParams ) {
@@ -128,12 +128,12 @@ m_hyperband = function(Matrix[Double] X_train, Matrix[Double] y_train,
         # prone depending on the order of the list. hyper parameters to optimize
         # are taken from args, as there they are reordered to be invariant to the
         # order used at calling hyperband
-        weights = eval("lmCG", list(X=X_train, y=y_train, icpt=0, 
-          tol=as.scalar(args[1]), reg=as.scalar(args[2]), maxi=r_i, verbose=FALSE));
+        weights = eval("lmCG", list(X=X, y=Y, intercept=0,
+          tol=as.scalar(args[1]), reg=as.scalar(args[2]), maxIter=r_i, verbose=FALSE));
         
         candidateWeights[curCandidate] = t(weights)
-        preds = lmPredict(X=X_val, B=weights, ytest= matrix(0,1,1));
-        scoreboard[curCandidate,1] = as.matrix(sum((y_val - preds)^2));
+        preds = lmPredict(X=Xtest, B=weights, Ytest= matrix(0,1,1));
+        scoreboard[curCandidate,1] = as.matrix(sum((Ytest - preds)^2));
       }
       
       # reorder both matrices by same order

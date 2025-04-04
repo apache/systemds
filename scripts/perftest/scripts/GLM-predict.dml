@@ -32,7 +32,7 @@ lpow = ifdef ($lpow, 1.0);  # $lpow = 1.0;
 disp = ifdef ($disp, 1.0);  # $disp = 1.0;
 
 
-[M] = glmPredict(X=X, B=B, ytest=Y,
+[M] = glmPredict(X=X, B=B, Ytest=Y,
   dfam=dfam, vpow=vpow, link=link, lpow=lpow, disp=disp);
 
 if( $M != " " )

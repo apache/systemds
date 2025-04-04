@@ -30,7 +30,7 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def outlierByIQR(X: Matrix,
                  k: float,
-                 max_iterations: int,
+                 maxIter: int,
                  **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
      Builtin function for detecting and repairing outliers using standard deviation 
@@ -39,17 +39,16 @@ def outlierByIQR(X: Matrix,
     
     :param X: Matrix X
     :param k: a constant used to discern outliers k*IQR
-    :param isIterative: iterative repair or single repair
     :param repairMethod: values: 0 = delete rows having outliers,
         1 = replace outliers with zeros
         2 = replace outliers as missing values
-    :param max_iterations: values: 0 = arbitrary number of iteraition until all outliers are removed,
+    :param maxIter: values: 0 = arbitrary number of iteraition until all outliers are removed,
         n = any constant defined by user
     :param verbose: flag specifying if logging information should be printed
     :return: Matrix X with no outliers
     """
 
-    params_dict = {'X': X, 'k': k, 'max_iterations': max_iterations}
+    params_dict = {'X': X, 'k': k, 'maxIter': maxIter}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')

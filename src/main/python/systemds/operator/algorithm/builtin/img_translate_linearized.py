@@ -28,32 +28,32 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
-def img_translate_linearized(img_in: Matrix,
-                             offset_x: float,
-                             offset_y: float,
-                             out_w: int,
-                             out_h: int,
-                             fill_value: float,
-                             o_w: int,
-                             o_h: int):
+def img_translate_linearized(img: Matrix,
+                             offsetX: float,
+                             offsetY: float,
+                             w: int,
+                             h: int,
+                             value: float,
+                             sW: int,
+                             sH: int):
     """
      This function has  the same functionality with img_translate but it handles multiple images at
      the same time. Each row of the input and output matrix represents a linearized image/matrix
      It translates the image and Optionally resizes the image (without scaling).
     
     
-    :param img_in: Input matrix/image (every row represents a linearized matrix/image)
-    :param offset_x: The distance to move the image in x direction
-    :param offset_y: The distance to move the image in y direction
-    :param out_w: Width of the output image
-    :param out_h: Height of the output image
-    :param fill_value: The background of the image
-    :param o_w: Width of the original 2D images
-    :param o_h: Height of the original 2D images
+    :param img: Input matrix/image (every row represents a linearized matrix/image)
+    :param offsetX: The distance to move the image in x direction
+    :param offsetY: The distance to move the image in y direction
+    :param w: Width of the output image
+    :param h: Height of the output image
+    :param value: The background of the image
+    :param sW: Width of the original 2D images
+    :param sH: Height of the original 2D images
     :return: Output matrix/image  (every row represents a linearized matrix/image)
     """
 
-    params_dict = {'img_in': img_in, 'offset_x': offset_x, 'offset_y': offset_y, 'out_w': out_w, 'out_h': out_h, 'fill_value': fill_value, 'o_w': o_w, 'o_h': o_h}
-    return Matrix(img_in.sds_context,
+    params_dict = {'img': img, 'offsetX': offsetX, 'offsetY': offsetY, 'w': w, 'h': h, 'value': value, 'sW': sW, 'sH': sH}
+    return Matrix(img.sds_context,
         'img_translate_linearized',
         named_input_nodes=params_dict)

@@ -61,10 +61,10 @@ class TestHyperband(unittest.TestCase):
         paramRanges = self.sds.from_numpy(self.param_ranges)
         params = self.params
         [best_weights_mat, opt_hyper_params_df] = hyperband(
-            X_train=x_train,
-            y_train=y_train,
-            X_val=x_val,
-            y_val=y_val,
+            X=x_train,
+            Y=y_train,
+            Xtest=x_val,
+            Ytest=y_val,
             params=params,
             paramRanges=paramRanges,
             verbose=False,

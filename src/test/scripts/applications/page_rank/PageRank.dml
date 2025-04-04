@@ -26,7 +26,7 @@ u = read($4);
 alpha = $5;
 maxi = $6;
 
-p = pageRank(G=G, p=p, e=e, u=u, alpha=alpha, max_iter=maxi);
+p = pageRank(G=G, p=p, e=e, u=u, alpha=alpha, maxIter=maxi);
 
 write(p, $7, format="text");
 

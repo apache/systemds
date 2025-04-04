@@ -24,6 +24,6 @@ if( $3 )
 else
   X = rbind(read($1), read($2))
 
-[C,Y] = kmeans(X=X, k=4, runs=$4, max_iter=150)
+[C,Y] = kmeans(X=X, k=4, runs=$4, maxIter=150)
 
 write(C, $5)

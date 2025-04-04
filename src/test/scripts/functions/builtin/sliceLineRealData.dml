@@ -39,8 +39,8 @@ cix = matrix(X + foffb, m*n, 1);
 X2 = table(rix, cix); #one-hot encoded
 
 # learn model
-B = lm(X=X2, y=y, icpt=2, reg=0.001, verbose=FALSE);
-yhat = lmPredict(X=X2, B=B, ytest=y, icpt=1, verbose=FALSE);
+B = lm(X=X2, y=y, intercept=2, reg=0.001, verbose=FALSE);
+yhat = lmPredict(X=X2, B=B, Ytest=y, intercept=1, verbose=FALSE);
 acc = lmPredictStats(yhat, y, TRUE);
 e = (y-yhat)^2;
 

@@ -1,0 +1,120 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+#
+# Generates random Gaussian-mixture data to test k-Means clustering algorithms
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------
+# NAME  TYPE   DEFAULT  MEANING
+# ----------------------------------------------------------------------------
+# nr    Int     ---     Number of records
+# nf    Int     ---     Number of features
+# nc    Int     ---     Number of clusters
+# dc    Double  ---     St.dev. of cluster "centroid" features from zero mean
+# dr    Double  ---     St.dev. of the 1-st feature in a record within cluster
+# fbf   Double  ---     Feature bias factor: Stdev(last) / Stdev(1-st) feature
+# cbf   Double  ---     Cluster bias factor: Prob[1-st clus] / Prob[k-th clus]
+# X     String  ---     Location to write matrix X with generated data records
+# C     String  ---     Location to write cluster "centroids" (Gaussian means)
+# Y     String  ---     Location to write assignment of records to cluster ids
+# YbyC  String  ---     Location to write rec-cluster assigns by min-dist to C
+# ----------------------------------------------------------------------------
+#
+# Example:
+# hadoop jar SystemDS.jar -f genRandData4Kmeans.dml -nvargs nr=100000 nf=100
+#     nc=10 dc=10.0 dr=1.0 fbf=100.0 cbf=100.0 X=X.mtx C=C.mtx Y=Y.mtx YbyC=YbyC.mtx
+
+print ("BEGIN K-MEANS GENERATOR SCRIPT");
+
+num_records   = $nr;
+num_features  = $nf;
+num_centroids = $nc;
+dist_per_feature_centroids = $dc;
+dist_per_feature_first_record = $dr;
+feature_bias_factor = $fbf;
+cluster_bias_factor = $cbf;
+
+fileX    = ifdef ($X, "X");
+fileC    = ifdef ($C, "C");
+fileY    = ifdef ($Y, "Y");
+fileYbyC = ifdef ($YbyC, "YbyC");
+fmt      = ifdef ($fmt, "text");
+
+print ("Generating cluster distribution (mixture) centroids...");
+
+C = Rand (rows = num_centroids, cols = num_features, pdf = "normal");
+C = C * dist_per_feature_centroids;
+
+print ("Generating record-to-cluster assignments...");
+
+# Y is a multinomial in {1, ..., num_centroids} with 1 being more likely
+# than "num_centroids" by the factor of "cluster_bias_factor"
+
+rnd = Rand (rows = num_records, cols = 1, min = 0.0, max = 1.0, pdf = "uniform");
+if (cluster_bias_factor == 1.0) {
+    Y = round (0.5 + rnd * num_centroids);
+} else {
+    rnd_scaled = rnd * (1 - cluster_bias_factor ^ (- num_centroids / (num_centroids - 1)));
+    Y = round (0.5 - (num_centroids - 1) * log (1 - rnd_scaled) / log (cluster_bias_factor));
+}
+
+print ("Generating within-cluster random shifts...");
+
+X_shift = Rand (rows = num_records, cols = num_features, pdf = "normal");
+feature_factors = dist_per_feature_first_record * 
+    exp ((seq (1, num_features) - 1) / (num_features - 1) * log (feature_bias_factor));
+X_shift = X_shift %*% diag (feature_factors);
+
+print ("Generating records by shifting from centroids..."); 
+
+Y_bitmap_raw = table (seq (1, num_records), Y);
+Y_bitmap = matrix (0, rows = num_records, cols = num_centroids);
+Y_bitmap [, 1 : ncol (Y_bitmap_raw)] = Y_bitmap_raw;
+X = Y_bitmap %*% C + X_shift;
+
+print ("Computing record-to-cluster assignments by minimum centroid distance...");
+
+D = t(t(-2 * (X %*% t(C))) + rowSums (C ^ 2));
+P = (D <= rowMins (D));
+aggr_P = t(cumsum (t(P)));
+Y_by_C = rowSums (aggr_P == 0) + 1;
+
+print ("Computing useful statistics...");
+
+sumXsq = sum (X ^ 2);
+default_wcss  = sumXsq - sum (colSums (X) ^ 2) / num_records;
+attained_wcss = sumXsq + sum (rowMins (D));
+
+print ("Default (single-cluster) WCSS = " + default_wcss);
+print (num_centroids + "-cluster WCSS attained by the mixture centroids = " + attained_wcss);
+
+print ("Writing out the resulting dataset...");
+
+write (X, fileX, format = fmt);
+write (C, fileC, format = fmt);
+write (Y, fileY, format = fmt);
+write (Y_by_C, fileYbyC, format = fmt);
+
+print ("Please run the scoring script to compare " + fileY + " with " + fileYbyC); 
+
+print ("DONE: K-MEANS GENERATOR SCRIPT");
+

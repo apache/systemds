@@ -1,5 +1,4 @@
 #!/bin/bash
-#-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -19,20 +18,21 @@
 # under the License.
 #
 #-------------------------------------------------------------
+if [ "$(basename $PWD)" != "perftest" ];
+then
+  echo "Please execute scripts from directory 'perftest'"
+  exit 1;
+fi
 
- #Client mode spark-submit script
-export SPARK_HOME=/home/hadoop/spark-3.3.1-bin-hadoop3
-export HADOOP_CONF_DIR=/home/hadoop/hadoop-3.3.1/etc/hadoop
+CMD=$1
+DATADIR=$2
 
-$SPARK_HOME/bin/spark-submit \
-     --master yarn \
-     --deploy-mode client \
-     --driver-memory 20g \
-     --num-executors 6 \
-     --conf spark.driver.extraJavaOptions="-Xms20g -Xmn2g -Dlog4j.configuration=file:/home/mboehm/perftest/log4j.properties " \
-     --conf spark.ui.showConsoleProgress=true \
-     --conf spark.executor.heartbeatInterval=100s \
-     --conf spark.network.timeout=512s \
-     --executor-memory 200g \
-     --executor-cores 48 \
-      SystemDS.jar "$@" 
+FORMAT="binary" # can be csv, mm, text, binary
+DENSE_SP=0.9
+SPARSE_SP=0.01
+
+BASEPATH=$(dirname $0)
+
+#generate XS scenarios (80MB)
+${CMD} -f ${BASEPATH}/../datagen/genRandData4LogisticRegression.dml --args 10000 1000 5 5 ${DATADIR}/w10k_1k_dense ${DATADIR}/X10k_1k_dense ${DATADIR}/Y10k_1k_dense 1 0 $DENSE_SP $FORMAT 1
+${CMD} -f ${BASEPATH}/../datagen/genRandData4LogisticRegression.dml --args 10000 1000 5 5 ${DATADIR}/w10k_1k_sparse ${DATADIR}/X10k_1k_sparse ${DATADIR}/Y10k_1k_sparse 1 0 $SPARSE_SP $FORMAT 1

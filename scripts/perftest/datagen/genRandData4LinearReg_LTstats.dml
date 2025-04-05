@@ -1,0 +1,233 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+#
+# generates random data to test bi- and multinomial logistic regression
+
+# $N  = number of training samples
+# $Nt = number of test samples (or 0 if none)
+# $nf = number of features (independent variables)
+# $nc = number of categories; = 1 if "binomial" with +1/-1 labels
+# $Xmin  = minimum feature value
+# $Xmax  = maximum feature value
+# $spars = controls sparsity in the generated data
+# $avgLTmin = average linear term (X %*% beta + intercept), minimum value
+# $avgLTmax = average linear term (X %*% beta + intercept), maximum value
+# $stdLT = requested standard deviation for the linear terms
+# $iceptmin = intercept, minimum value (0.0 disables intercept)
+# $iceptmax = intercept, maximum value (0.0 disables intercept)
+# $B  = location to store generated regression parameters
+# $X  = location to store generated training data
+# $Y  = location to store generated training category labels
+# $Xt = location to store generated test data
+# $Yt = location to store generated test category labels
+# $fmt = format of the output
+#
+# Example:
+# hadoop jar SystemDS.jar -f genRandData4LinearReg_LTstats.dml -nvargs
+#     N=1000000 Nt=1000 nf=20 nc=3 Xmin=0.0 Xmax=1.0 spars=1.0 avgLTmin=3.0 avgLTmax=5.0 stdLT=1.25
+#     iceptmin=1.0 iceptmax=1.0 B=./B123 X=./X123 Y=./Y123 Xt=./Xt123 Yt=./Yt123 fmt=binary
+
+numTrainingSamples = $N;
+numTestSamples = $Nt;
+numFeatures = $nf;
+numCategories = $nc;
+minIntercept = $iceptmin;
+maxIntercept = $iceptmax;
+minXentry = $Xmin;
+maxXentry = $Xmax;
+minAvgLT = $avgLTmin;
+maxAvgLT = $avgLTmax;
+sparsityLevel = $spars;
+stdevLT = $stdLT;
+fileB  = ifdef ($B,  "B");
+fileX  = ifdef ($X,  "X");
+fileY  = ifdef ($Y,  "Y");
+fileXt = ifdef ($Xt, "Xt");
+fileYt = ifdef ($Yt, "Yt");
+fmt = ifdef ($fmt, "mm");
+
+numSamples = numTrainingSamples + numTestSamples;
+
+isBinomialPMOne = FALSE;
+if (numCategories == 1) {
+    numCategories = 2;
+    isBinomialPMOne = TRUE;
+}
+do_we_output_intercept = 1;
+if (minIntercept == 0 & maxIntercept == 0) {
+    do_we_output_intercept = 0;
+}
+
+X = Rand (rows = numSamples, cols = numFeatures, min = minXentry, max = maxXentry, pdf = "uniform", sparsity = sparsityLevel);
+
+meanLT  = Rand (rows = 1, cols = numCategories - 1, min = minAvgLT, max = maxAvgLT, pdf = "uniform");
+sigmaLT = matrix (stdevLT, rows = 1, cols = numCategories - 1);
+b_intercept = Rand (rows = 1, cols = numCategories - 1, min = minIntercept, max = maxIntercept, pdf = "uniform");
+
+meanLT_minus_intercept = meanLT - b_intercept;
+[B, new_sigmaLT] = generateWeights (X, meanLT_minus_intercept, sigmaLT);
+
+ones = matrix (1.0, rows = numSamples, cols = 1);
+LT = X %*% B + ones %*% b_intercept;
+actual_meanLT  = colSums (LT) / numSamples;
+actual_sigmaLT = sqrt (colSums ((LT - ones %*% actual_meanLT)^2) / numSamples);
+
+for (i in 1:(numCategories - 1)) {
+    if (as.scalar (new_sigmaLT [1, i]) == as.scalar (sigmaLT [1, i])) {
+        print ("Category " + i + ":  Intercept = " + as.scalar (b_intercept [1, i])); 
+    } else {
+        print ("Category " + i + ":  Intercept = " + as.scalar (b_intercept [1, i]) + ",  st.dev.(LT) relaxed from " + as.scalar (sigmaLT [1, i])); 
+    }
+    print ("    Wanted LT mean = " + as.scalar (meanLT [1, i])        + ",  st.dev. = " + as.scalar (new_sigmaLT [1, i]));
+    print ("    Actual LT mean = " + as.scalar (actual_meanLT [1, i]) + ",  st.dev. = " + as.scalar (actual_sigmaLT [1, i]));
+}
+
+
+/*
+ones = matrix (1.0, rows = 1, cols = numCategories - 1);
+Prob = exp (LT);
+Prob = Prob / ((1.0 + rowSums (Prob)) %*% ones);
+Prob = t(cumsum (t(Prob)));
+
+r = Rand (rows = numSamples, cols = 1, min = 0, max = 1, pdf = "uniform", seed = 0);
+R = r %*% ones;
+Y = 1 + rowSums (Prob < R);
+if (isBinomialPMOne) {
+    Y = 3 - 2 * Y;
+}
+*/
+
+/* USE FOR LINEAR REGRESSION */
+
+r = Rand (rows = numSamples, cols = 1, pdf = "normal");
+Y = LT [, 1] + r;
+
+
+if (do_we_output_intercept == 1) {
+    new_B = matrix (0.0, rows = nrow(B) + 1, cols = ncol(B));
+    new_B [1:nrow(B), 1:ncol(B)] = B;
+    new_B [nrow(B)+1, 1:ncol(B)] = b_intercept;
+    write (new_B, fileB, format=fmt);
+} else {
+    write (B, fileB, format=fmt);
+}
+
+if (numTestSamples > 0) {
+    X_train = X [1:numTrainingSamples,];
+    Y_train = Y [1:numTrainingSamples,];
+    X_test  = X [(numTrainingSamples+1):numSamples,];
+    Y_test  = Y [(numTrainingSamples+1):numSamples,];
+    write (X_train, fileX,  format=fmt);
+    write (Y_train, fileY,  format=fmt);
+    write (X_test,  fileXt, format=fmt);
+    write (Y_test,  fileYt, format=fmt);
+} else {
+    write (X, fileX, format=fmt);
+    write (Y, fileY, format=fmt);
+}
+
+
+
+
+
+
+# Generates weight vectors to ensure the desired statistics for Linear Terms = X %*% W
+# To be used for data generation in the testing of GLM, Logistic Regression, etc.
+# INPUT:  meanLT and sigmaLT are row vectors, meanLT[1, i] and sigmaLT[1, i] are
+#         the desired mean and standard deviation for X %*% W[, i]
+# OUTPUT: "W" is the matrix of generated (column) weight vectors W[, i]
+#         new_sigmaLT[1, i] == sigmaLT[1, i] if the std.dev is successfully enforced,
+#         new_sigmaLT[1, i]  > sigmaLT[1, i] if we had to relax this constraint.
+generateWeights = 
+    function (Matrix[double] X, Matrix[double] meanLT, Matrix[double] sigmaLT)
+    return   (Matrix[double] W, Matrix[double] new_sigmaLT)
+{
+    num_w = ncol (meanLT);  # Number of output weight vectors
+    dim_w = ncol (X);       # Number of features / dimensions in a weight vector
+    w_X = t(colSums(X));    # "Prohibited" weight shift direction that changes meanLT
+                            # (all orthogonal shift directions do not affect meanLT)
+
+    # Compute "w_1" with meanLT = 1 and with the smallest possible sigmaLT
+
+    w_1 = straightenX (X);
+    r_1 = (X %*% w_1) - 1.0;
+    norm_r_1_sq = sum (r_1 ^ 2);
+    
+    # For each W[, i] generate uniformly random directions to shift away from "w_1"
+    
+    DW_raw = Rand (rows = dim_w, cols = num_w, pdf = "normal");
+    DW = DW_raw - (w_X %*% t(w_X) %*% DW_raw) / sum (w_X ^ 2); # Orthogonal to w_X
+    XDW = X %*% DW;
+    
+    # Determine how far to shift in the chosen directions to satisfy the constraints
+    # Use the positive root of the quadratic equation; relax sigmaLT where needed
+    
+    a_qe = colSums (XDW ^ 2);
+    b_qe = 2.0 * meanLT * (t(r_1) %*% XDW);
+    c_qe = meanLT^2 * norm_r_1_sq - sigmaLT^2 * nrow(X);
+
+    is_sigmaLT_OK = (c_qe <= 0);
+    new_sigmaLT = is_sigmaLT_OK * sigmaLT + (1 - is_sigmaLT_OK) * abs (meanLT) * sqrt (norm_r_1_sq / nrow(X));
+    c_qe = is_sigmaLT_OK * c_qe;
+    x_qe = (- b_qe + sqrt (b_qe * b_qe - 4.0 * a_qe * c_qe)) / (2.0 * a_qe);
+    
+    # Scale and shift "w_1" in the "DW" directions to produce the result:
+    
+    ones = matrix (1.0, rows = dim_w, cols = 1);
+    W = w_1 %*% meanLT + DW * (ones %*% x_qe);
+}
+
+# Computes vector w such that  ||X %*% w - 1|| -> MIN  given  avg(X %*% w) = 1
+# We find z_LS such that ||X %*% z_LS - 1|| -> MIN unconditionally, then scale
+# it to compute  w = c * z_LS  such that  sum(X %*% w) = nrow(X).
+straightenX =
+    function (Matrix[double] X)
+    return   (Matrix[double] w)
+{
+    w_X = t(colSums(X));
+    lambda_LS = 0.000001 * sum(X ^ 2) / ncol(X);
+    eps = 0.000000001 * nrow(X);
+
+    # BEGIN LEAST SQUARES
+    
+    r_LS = - w_X;
+    z_LS = matrix (0.0, rows = ncol(X), cols = 1);
+    p_LS = - r_LS;
+    norm_r2_LS = sum (r_LS ^ 2);
+    i_LS = 0;
+    while (i_LS < 50 & i_LS < ncol(X) & norm_r2_LS >= eps)
+    {
+        temp_LS = X %*% p_LS;
+        q_LS = (t(X) %*% temp_LS) + lambda_LS * p_LS;
+        alpha_LS = norm_r2_LS / sum (p_LS * q_LS);
+        z_LS = z_LS + alpha_LS * p_LS;
+        old_norm_r2_LS = norm_r2_LS;
+        r_LS = r_LS + alpha_LS * q_LS;
+        norm_r2_LS = sum (r_LS ^ 2);
+        p_LS = -r_LS + (norm_r2_LS / old_norm_r2_LS) * p_LS;
+        i_LS = i_LS + 1;
+    }
+    
+    # END LEAST SQUARES
+    
+    w = (nrow(X) / sum (w_X * z_LS)) * z_LS;
+}

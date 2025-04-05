@@ -1,0 +1,68 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# generates random data to test linear logistic regression
+
+# $1 is number of samples
+# $2 is number of features (independent variables)
+# $3 is maximum feature value (absolute value)
+# $4 is maximum weight (absolute value)
+# $5 is location to store generated weights
+# $6 is location to store generated data
+# $7 is location to store generated labels
+# $8 addNoise. if 0 then no noise is added, to add noise set this to 1
+# $9 is b, 0 disables intercept
+# $10 controls sparsity in the generated data
+
+numSamples = $1
+numFeatures = $2
+maxFeatureValue = $3
+maxWeight = $4
+addNoise = $8
+b = $9
+
+X = Rand(rows=numSamples, cols=numFeatures, min=-1, max=1, pdf="uniform", seed=0, sparsity=$10)
+X = X * maxFeatureValue 
+
+w = Rand(rows=numFeatures, cols=1, min=-1, max=1, pdf="uniform", seed=0)
+w = w * maxWeight
+
+ot = X%*%w
+if(b!=0) {
+	b_mat = Rand(rows=1, cols=1, min=b, max=b, pdf="uniform")
+	w =  t(cbind(t(w), b_mat))
+	ot = ot + b
+}
+
+prob = 1/(1+exp(-ot))
+if(addNoise == 1){
+	r = Rand(rows=numSamples, cols=1, min=0, max=1, pdf="uniform", seed=0)
+}else{
+	print("this data generator generates the same dataset for both noise=0 and noise=1")
+	r = Rand(rows=numSamples, cols=1, min=0, max=1, pdf="uniform", seed=0)
+	#r = Rand(rows=numSamples, cols=1, min=0.5, max=0.5, pdf="uniform")
+}
+Y = 1 - 2 * (prob < r)
+Y = (Y+3)/2
+
+write(w, $5, format="binary")
+write(X, $6, format="binary")
+write(Y, $7, format="binary")

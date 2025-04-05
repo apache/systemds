@@ -1,0 +1,87 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# generates a two column matrix of categorical
+# variables
+# used to test systemds's chi-squared bivariate stat
+# computation
+
+# $1 is number of samples to generate
+# $2 is number of categories for 1st categorical variable
+# $3 is number of categories for 2nd categorical variable
+# $4 is the file to write out the chi-squared statistic to
+# $5 is the file to write out the generated data to
+
+numSamples = $1
+numCategories1 = $2
+numCategories2 = $3
+
+o = Rand(rows=numCategories1, cols=numCategories2, min=0.0, max=1.0, pdf="uniform", seed=0)
+o = o / sum(o)
+
+probs1 = rowSums(o)
+probs1 = probs1 / sum(probs1)
+probs2 = colSums(o)
+probs2 = probs2 / sum(probs2)
+e = probs1 %*% probs2
+
+chisquared = sum((o-e)^2/e)
+write(chisquared, $4, format="binary")
+
+oCDF = Rand(rows=numCategories1, cols=numCategories2, min=0.0, max=0.0, pdf="uniform", seed=0)
+for(i in 1:numCategories1){
+	for(j in 1:numCategories2){
+		if(i==1 & j==1){
+			oCDF[i,j] = o[1,1]
+		}
+		if(i != 1 & j == 1){
+			oCDF[i,j] = oCDF[i-1,numCategories2] + o[i,j]
+		}
+		if(j > 1){
+			oCDF[i,j] = oCDF[i,j-1] + o[i,j]
+		}
+	}
+}
+
+one = Rand(rows=1, cols=1, min=1.0, max=1.0, pdf="uniform", seed=0)
+data = Rand(rows=numSamples, cols=2, min=0.0, max=0.0, pdf="uniform", seed=0)
+parfor(s in 1:numSamples){
+	r_mat = Rand(rows=1, cols=1, min=0.0, max=1.0, pdf="uniform", seed=0)
+	r = as.scalar(r_mat)
+
+	cat1 = -1
+	cat2 = -1
+	continue = 1
+	for(i in 1:numCategories1){
+		for(j in 1:numCategories2){
+			cdf = as.scalar(oCDF[i,j])
+			if(continue == 1 & r <= cdf){
+				cat1 = i
+				cat2 = j
+				continue = 0
+			}
+		}
+	}
+	
+	data[s,1] = cat1*one
+	data[s,2] = cat2*one
+}
+write(data, $5, format="binary")

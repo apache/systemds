@@ -71,7 +71,7 @@ public class UnivariateStatsBasicTest extends AutomatedTestBase
 			loadTestConfiguration(config);
 			
 			//run univariate stats data generator
-			fullDMLScriptName = "./scripts/datagen/"+TEST_NAME_DATAGEN+".dml";
+			fullDMLScriptName = "./scripts/perftest/datagen/"+TEST_NAME_DATAGEN+".dml";
 			programArgs = new String[]{ "-args", "100000", "100", "10", "1", "2", "3", "4", input("uni.mtx") };
 			runTest(true, false, null, -1);
 			

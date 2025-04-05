@@ -1,0 +1,61 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+#
+# Synthetic data generator for PCA
+# 3 hidden dimensions (V1, V2, V3)
+# generates only "dense" data
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME   TYPE   DEFAULT  MEANING
+# --------------------------------------------------------------------------------------------
+# R      Int     10000   Number of rows
+# C      Int     1000    Number of categorical attributes
+# OUT    String  ---     Location (on HDFS) to store the generated dataset
+# FMT    String  "csv"   Matrix output format, usually "text", "csv" or "binary"
+# --------------------------------------------------------------------------------------------
+#
+# Example:
+# hadoop jar SystemDS.jar -f genRandData4PCA.dml -nvargs R=1000000 C=1000 OUT=/user/biuser/pcaData.mtx FMT=csv
+
+R   = ifdef ($R, 10000)
+C   = ifdef ($C, 1000)
+FMT = ifdef ($FMT, "csv");
+
+# Modified version of the procedure from Zou et.al., "Sparse Principal Component Analysis", 2006.
+
+# V1 ~ N(0,290); V2~N(0,300); V3 = -0.3V1+0.925V2 + e, e ~ N(0,1)
+V1 = 0 + 290*rand(rows=R, cols=1, pdf="normal");
+V2 = 0 + 300*rand(rows=R, cols=1, pdf="normal");
+V3 = -0.3*V1 + 0.925*V2 + rand(rows=R, cols=1, pdf="normal");
+
+C1 = ceil(C/2.5);
+C2 = ceil(C/2.5);
+C3 = C - C1 - C2;
+
+M = matrix(0, rows=R, cols=C)
+
+M[,1:C1]       = rand(rows=R, cols=C1, pdf="normal") + V1;
+M[,C1+1:C1+C2] = rand(rows=R, cols=C2, pdf="normal") + V2;
+M[,C1+C2+1:C]  = rand(rows=R, cols=C3, pdf="normal") + V3;
+
+write(M, $OUT, format=FMT);

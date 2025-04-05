@@ -1,0 +1,133 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+#  
+# THIS SCRIPT GENERATED RANDOM DATA FOR KAPLAN-MEIER AND COX PROPORTIONAL HAZARD MODELS
+# ASSUMPTION: BASELINE HAZARD HAS WEIBULL DISTRIBUTION WITH PARAMETERS LAMBDA AND V
+#
+# INPUT   PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME    TYPE     DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# type    Sting    ---          The type of model for which the data is being generated: "kaplan-meier" or "cox"
+# n       Int                   Number of records 
+# lambda  Double   2.0          Scale parameter of the Weibull distribution used for generating timestamps 
+# v       Double   1.5          Shape parameter of the Weibull distribution used for generating timestamps 
+# p       Double   0.8          1 - probability of a record being censored
+# g       Int      2            If type=kaplan-meier the number of categorical features used for grouping 
+# s       Int      1            If type=kaplan-meier the number of categorical features used for stratifying
+# f       Int      10           If type=kaplan-meier maximum number of levels (i.e., distinct values) of g+s categorical features
+# m       Int      100          If type=cox the number of features in the model
+# sp      Double   1.0          If type=cox the sparsity of the feature matrix 
+# O       String   ---          Location to write the output matrix containing random data for the kaplan-meier or the cox model 
+# B       String   ---          If type=cox location to write the output matrix containing the coefficients for the cox model 
+# TE 	  String   ---			Location to store column indices of X corresponding to timestamp (first row) and event information (second row)
+# F       String   ---			Location to store column indices of X which are to be used for fitting the Cox model
+# fmt     String   "text"       The output format of results of the kaplan-meier analysis, such as "text" or "csv"
+# ---------------------------------------------------------------------------------------------
+# OUTPUTS: 
+# 1- If type=kaplan-meier an n x (2+g+s) matrix O with      
+#    - column 1 contains timestamps generated randomly from a Weibull distribution with parameters lambda and v
+#	 - column 2 contains the information whether an event occurred (1) or data is censored (0)
+#	 - columns 3:2+g contain categorical features used for grouping	
+#    - columns 3+g:2+g+s contain categorical features used for stratifying
+#   if type=cox an n x (2+m) matrix O with 
+#	 - column 1 contains timestamps generated randomly from a Weibull distribution with parameters lambda and v
+#	 - column 2 contains the information whether an event occurred (1) or data is censored (0)
+#	 - columns 3:2+m contain scale features 
+# 2- If type=cox a coefficient matrix B
+# 3- A column matrix TE containing the column indices of X corresponding to timestamp (first row) and event information (second row)
+# 4- A column matrix F containing the column indices of X which are to be used for KM analysis or fitting the Cox model
+
+type = $type; # either "kaplan-meier" or "cox" 
+num_records = $n; 
+lambda = ifdef ($l, 2.0); 
+p_event = ifdef ($p, 0.8); # 1 - prob. of a record being censored
+# parameters related to the kaplan-meier model
+n_groups = ifdef ($g, 2);
+n_strata = ifdef ($s, 1);
+max_level = ifdef ($f, 10);
+# parameters related to the cox model
+num_features = ifdef ($m, 1000);  
+sparsity = ifdef ($sp, 1.0); 
+fileO = $O;
+fileB = $B; 
+fileTE = $TE;
+fileF = $F;
+fmtO = ifdef ($fmt, "text"); # $fmt="text" 
+p_censor = 1 - p_event; # prob. that record is censored
+
+if (type == "kaplan-meier") {
+	
+	v = ifdef ($v, 1.5);
+	# generate categorical features used for grouping and stratifying
+	X = ceil (rand (rows = num_records, cols = n_groups + n_strata, min = 0.000000001, max = max_level - 0.000000001, pdf = "uniform"));
+	
+	# generate timestamps
+	U = rand (rows = num_records, cols = 1, min = 0.000000001, max = 1); 
+	T = (-log (U) / lambda) ^ (1/v);
+
+} else if (type == "cox") {
+
+	v = ifdef ($v, 50);
+	# generate feature matrix
+	X = rand (rows = num_records, cols = num_features, min = 1, max = 5, pdf = "uniform", sparsity = sparsity);
+
+	# generate coefficients
+	B = rand (rows = num_features, cols = 1, min = -1.0, max = 1.0, pdf = "uniform", sparsity = 1.0); # * beta_range;	
+
+	# generate timestamps
+	U = rand (rows = num_records, cols = 1, min = 0.000000001, max = 1); 
+	T = (-log (U) / (lambda * exp (X %*% B)) ) ^ (1/v);
+
+} else {
+	stop ("Wrong model type!");
+}
+
+Y = matrix (0, rows = num_records, cols = 2);
+event = floor (rand (rows = num_records, cols = 1, min = (1 - p_censor), max = (1 + p_event)));
+n_time = sum (event);
+Y[,2] = event;
+  	
+# binning of event times
+min_T = min (T);
+max_T = max (T);
+# T = T - min_T;
+len = max_T - min_T;
+num_bins = len / n_time;
+T = ceil (T / num_bins);
+
+# print ("min(T) " + min(T) + " max(T) " + max(T));
+Y[,1] = T;
+
+O = cbind (Y, X);
+write (O, fileO, format = fmtO);
+
+if (type == "cox") {
+	write (B, fileB, format = fmtO);
+	
+}
+
+TE = matrix ("1 2", rows = 2, cols = 1);
+F = seq (1, num_features);
+write (TE, fileTE, format = fmtO);
+write (F, fileF, format = fmtO);
+

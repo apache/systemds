@@ -37,8 +37,7 @@ for i in 0 1; do
    #training
    tstart=$(date +%s.%N)
 
-   # /algorithms/l2-svm.dml already calls a built-in function for the l2 svm.
-   ${CMD} -f ./../algorithms/l2-svm.dml \
+   ${CMD} -f scripts/l2-svm.dml \
       "$FEDERATEDCOMPILATION" \
       --config conf/SystemDS-config.xml \
       --stats \

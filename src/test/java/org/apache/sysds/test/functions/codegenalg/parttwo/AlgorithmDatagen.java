@@ -241,13 +241,13 @@ public class AlgorithmDatagen extends AutomatedTestBase
 			double sparsity = sparse ? sparsity2 : sparsity1;
 			
 			if( type ==  DatagenType.LINREG) {
-				fullDMLScriptName = "scripts/datagen/genRandData4LinearRegression.dml";
+				fullDMLScriptName = "scripts/perftest/datagen/genRandData4LinearRegression.dml";
 				programArgs = new String[]{ "-stats", "-args",
 					String.valueOf(rows), String.valueOf(cols), "10", "1", output("w"),
 					output("X"), output("y"), "1", "1", String.valueOf(sparsity), "binary"};
 			}
 			else { //LOGREG
-				fullDMLScriptName = "scripts/datagen/genRandData4LogisticRegression.dml";
+				fullDMLScriptName = "scripts/perftest/datagen/genRandData4LogisticRegression.dml";
 				programArgs = new String[]{ "-stats", "-args",
 					String.valueOf(rows), String.valueOf(cols), "10", "1", output("w"),
 					output("X"), output("y"), "1", "1", String.valueOf(sparsity), "binary", "1"};

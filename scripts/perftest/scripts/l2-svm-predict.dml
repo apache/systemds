@@ -28,58 +28,16 @@ cmdLine_fmt = ifdef($fmt, "text")
 
 X = read($X)
 
-w = read($model)
+W = read($model)
 
-dimensions = as.scalar(w[nrow(w),1])
+dimensions = as.scalar(W[nrow(W),1])
 if(dimensions != ncol(X))
   stop("Stopping due to invalid input: Model dimensions do not seem to match input data dimensions")
 
-intercept = as.scalar(w[nrow(w)-1,1])
-negative_label = as.scalar(w[nrow(w)-2,1])
-positive_label = as.scalar(w[nrow(w)-3,1])
-w = w[1:(nrow(w)-4),]
+intercept = as.scalar(W[nrow(W)-1,1])
+W = W[1:(nrow(W)-2),]
 
-[scores, Y] = l2svmPredict(X = X, W = w, verbose = TRUE)
+[scores, Y] = l2svmPredict(X = X, W = W, verbose = TRUE)
 
-if(cmdLine_scores != " ")
-  write(scores, cmdLine_scores, format=cmdLine_fmt)
+write(scores, cmdLine_scores, format=cmdLine_fmt)
 
-if(!cmdLine_scoring_only){
-  Y = read(cmdLine_Y)
-
-  pred = (scores >= 0)
-  pred_labels = pred*positive_label + (1-pred)*negative_label
-  num_correct = sum(pred_labels == Y)
-  acc = 100*num_correct/nrow(X)
-
-  acc_str = "Accuracy (%): " + acc
-  print(acc_str)
-
-  if(cmdLine_accuracy != " ")
-    write(acc_str, cmdLine_accuracy)
-
-  if(cmdLine_confusion != " ") {
-    pred = 2*pred - 1
-    
-    if(negative_label != -1 | positive_label != +1)
-      Y = 2/(positive_label - negative_label)*Y - (negative_label + positive_label)/(positive_label - negative_label)
-
-    pred_is_minus = (pred == -1)
-    pred_is_plus = 1 - pred_is_minus
-    y_is_minus = (Y == -1)
-    y_is_plus = 1 - y_is_minus
-
-    check_min_y_minus = sum(pred_is_minus*y_is_minus)
-    check_min_y_plus = sum(pred_is_minus*y_is_plus)
-    check_max_y_minus = sum(pred_is_plus*y_is_minus)
-    check_max_y_plus = sum(pred_is_plus*y_is_plus)
-
-    confusion_mat = matrix(0, rows=2, cols=2)
-    confusion_mat[1,1] = check_min_y_minus
-    confusion_mat[1,2] = check_min_y_plus
-    confusion_mat[2,1] = check_max_y_minus
-    confusion_mat[2,2] = check_max_y_plus
-
-    write(confusion_mat, cmdLine_confusion, format="csv")
-  }
-}

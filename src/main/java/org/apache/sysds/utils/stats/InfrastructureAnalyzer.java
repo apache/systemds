@@ -183,10 +183,13 @@ public class InfrastructureAnalyzer
 	 * @return maximum remote parallelism constraint
 	 */
 	public static int getCkMaxMR() {
+		//NOTE: we refresh only if there is already a spark context created
+		// in order to avoid unnecessary spark context creation in local ops
+		boolean refresh = SparkExecutionContext.isSparkContextCreated();
 		if( OptimizerUtils.isSparkExecutionMode() )
 			return SparkExecutionContext.isLocalMaster() ?
 				InfrastructureAnalyzer.getLocalParallelism() :
-				SparkExecutionContext.getDefaultParallelism(true);
+				SparkExecutionContext.getDefaultParallelism(refresh);
 		else
 			return getRemoteParallelMapTasks();
 	}
@@ -198,7 +201,6 @@ public class InfrastructureAnalyzer
 	 */
 	public static long getCmMax() {
 		//default value (if not specified)
-		//TODO spark remote map task budget?
 		return getLocalMaxMemory();
 	}
 

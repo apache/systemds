@@ -60,7 +60,7 @@ testData = F[split+1:nrow(F),]
 
 
 print("pipeline: "+toString(pip[1]))
-[result, trX, tsX, exState, iState]  = fit_pipeline(trainData, testData, metaInfo, pip[1,], applyFunc[1,], hp[1,], 3, "evalClassification", evalHp, TRUE, FALSE)
+[result, trX, tsX, exState, iState]  = fit_pipeline(trainData, testData, metaInfo, pip[1,], applyFunc[1,], hp[1,], 3, "evalClassification", evalHp, TRUE, FALSE, FALSE)
 eXtest  = apply_pipeline(testData, metaInfo, pip[1,], applyFunc[1,], hp[1,], TRUE, exState, iState, FALSE)
 
 

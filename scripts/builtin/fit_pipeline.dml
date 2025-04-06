@@ -48,7 +48,7 @@ source("scripts/builtin/bandit.dml") as bandit;
 
 f_fit_pipeline = function(Frame[Unknown] trainData, Frame[Unknown] testData, Frame[Unknown] metaData = as.frame("NULL"),
   Frame[Unknown] pip, Frame[Unknown] applyFunc, Matrix[Double] hp, Integer cvk=3, String evaluationFunc, Matrix[Double] evalFunHp,
-  Boolean isLastLabel = TRUE, Boolean correctTypos=FALSE)
+  Boolean isLastLabel = TRUE, Boolean correctTypos=FALSE, Boolean allCombinations=FALSE)
 return (Matrix[Double] scores, Matrix[Double] cleanTrain, Matrix[Double] cleanTest, List[Unknown] externalState, List[Unknown] iState)
 {
   externalState = list()
@@ -92,28 +92,66 @@ return (Matrix[Double] scores, Matrix[Double] cleanTrain, Matrix[Double] cleanTe
   hp_matrix = matrix(hp_width, rows=ncol(pip), cols=ncol(hp_width)/ncol(pip))
   pipList = list(ph = pip, hp = hp_matrix, flags = no_of_flag_vars)
 
+  print("Getting training score using CV")
   [trainScore, evalFunHp] = bandit::crossV(X=eXtrain, y=eYtrain, cvk=cvk, evalFunHp=evalFunHp,
       pipList=pipList, metaList=metaList, evalFunc=evaluationFunc)
-  print("train score cv: "+toString(trainScore))
+  print("- train score cv: "+toString(trainScore))
   
-  
-  # # # now test accuracy
-  [eXtrain, eYtrain, eXtest, eYtest, a, b, c, d, iState] = executePipeline(pipeline=pip, Xtrain=eXtrain, Ytrain=eYtrain,
-    Xtest=eXtest, Ytest=eYtest, metaList=metaList, hyperParameters=hp_matrix, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE)
-  
-  if(max(eYtrain) == min(eYtrain)) 
-    stop("Y contains only one class")
+  print("----------------------------");
+  print("Getting test accuracy")
+  primitives = matrix(0, rows=0, cols=0);
+  if (allCombinations) {
+  # Count number of subsets of consecutive primitives
+    totCount = 0;
+    n = ncol(pip); 
+    for (i in 1:n) {
+      for (j in i:n)
+        totCount = totCount + 1;
+    }
+    # List start and end indices of all those subsets
+    primitives = matrix(0, rows=totCount, cols=2);
+    r = 1;
+    for (start in 1:n) {
+      for (end in start:n) {
+        primitives[r,1] = start;
+        primitives[r,2] = end;
+        r = r + 1;
+      }
+    }
+  }
+  else {
+  # Include all primitives
+    primitives = matrix(0, rows=1, cols=2);
+    primitives[1,1] = 1;
+    primitives[1,2] = ncol(pip);
+  }
 
-  # score = eval(evaluationFunc, list(X=eXtrain, Y=eYtrain, Xtest=eXtrain, Ytest=eYtrain, Xorig=as.matrix(0), evalFunHp=evalFunHp))
-  # trainAccuracy = as.scalar(score[1, 1])
-  
-  score = eval(evaluationFunc, list(X=eXtrain, Y=eYtrain, Xtest=eXtest, Ytest=eYtest, Xorig=as.matrix(0), evalFunHp=evalFunHp))
-  testAccuracy = as.scalar(score[1, 1])
-  
-  scores = matrix(0, rows=1, cols=3)
-  scores[1, 1] = dirtyScore
-  # scores[1, 2] = trainAccuracy
-  scores[1, 3] = testAccuracy  
-  cleanTrain = cbind(eXtrain, eYtrain)
-  cleanTest = cbind(eXtest, eYtest)
+  for (r in 1:nrow(primitives)) {
+    startInd = as.scalar(primitives[r,1]);
+    endInd = as.scalar(primitives[r,2]);
+    # # # now test accuracy
+    [eXtrain_cl, eYtrain_cl, eXtest_cl, eYtest_cl, a, b, c, d, iState] = executePipeline(pipeline=pip, Xtrain=eXtrain, Ytrain=eYtrain,
+      Xtest=eXtest, Ytest=eYtest, metaList=metaList, hyperParameters=hp_matrix, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE, startInd=startInd, endInd=endInd)
+    
+    if(max(eYtrain_cl) == min(eYtrain_cl)) 
+      stop("Y contains only one class")
+
+    # score = eval(evaluationFunc, list(X=eXtrain, Y=eYtrain, Xtest=eXtrain, Ytest=eYtrain, Xorig=as.matrix(0), evalFunHp=evalFunHp))
+    # trainAccuracy = as.scalar(score[1, 1])
+    
+    score = eval(evaluationFunc, list(X=eXtrain_cl, Y=eYtrain_cl, Xtest=eXtest_cl, Ytest=eYtest_cl, Xorig=as.matrix(0), evalFunHp=evalFunHp))
+    testAccuracy = as.scalar(score[1, 1])
+    
+    scores = matrix(0, rows=1, cols=3)
+    scores[1, 1] = dirtyScore
+    # scores[1, 2] = trainAccuracy
+    scores[1, 3] = testAccuracy  
+    cleanTrain = cbind(eXtrain_cl, eYtrain_cl)
+    cleanTest = cbind(eXtest, eYtest)
+
+    header = frame(["dirty acc", "train acc", "test acc"], rows=1, cols=3)
+    result = as.frame(scores)
+    writeRes = rbind(header, result)
+    print(toString(writeRes))
+  }
 }

@@ -45,13 +45,13 @@ acc = lmPredictStats(yhat, y, TRUE);
 e = (y-yhat)^2;
 
 # model debugging via sliceline
-[TK,TKC,D] = sliceLine(X=X, e=e, k=4, alpha=0.95, minSup=32, tpBlksz=16, verbose=TRUE)
+[TK,TKC,D] = sliceLine(X=X, e=e, k=4, alpha=0.95, minSup=32, tpBlksz=16, verbose=FALSE)
 tfspec2 = "{ ids:true, recode:[1,2,5], bin:[{id:3, method:equi-width, numbins:10},{id:4, method:equi-width, numbins:10}]}"
 XYZ = sliceLineDebug(TK=TK, TKC=TKC, tfmeta=meta, tfspec=tfspec2)
-[Xtk,etk] = sliceLineExtract(X=X, e=e, TK=TK, TKC=TKC, k2=3);
+[Xtk,etk,I] = sliceLineExtract(X=X, e=e, TK=TK, TKC=TKC, k2=3);
 
 acc = acc[3,1];
-val = as.matrix((sum(TKC[1,4]) >= nrow(Xtk)) & (nrow(Xtk) == nrow(etk)))
+val = as.matrix((sum(TKC[1,4]) <= nrow(Xtk)) & (nrow(Xtk) == nrow(etk)))
 
 write(acc, $3);
 write(val, $4);

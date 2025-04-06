@@ -311,7 +311,7 @@ run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i = 1, Matrix[Do
       {
         [eXtrain, eYtrain, eXtest, eYtest, Tr, hpForPruning, changesByOp, changesByPip] = executePipeline(pipeline=op, 
           Xtrain=X, Ytrain=Y, Xtest=Xtest, Ytest=Ytest, metaList=metaList2,  hyperParameters=hp_matrix, hpForPruning=hpForPruning,
-          changesByOp=changesByOp, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE)
+          changesByOp=changesByOp, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE, startInd=1, endInd=ncol(op))
         if(max(eYtrain) == min(eYtrain)) 
           print("Y contains only one class")
         else if(changesByPip < ref)
@@ -540,7 +540,7 @@ return (Double accuracy, Matrix[Double] evalFunHp, Matrix[Double] hpForPruning, 
     {
       [trainX, trainy, testX, testy, Tr, hpForPruning, changesByOp, changesByPip] = executePipeline(pipeline=as.frame(pipList['ph']),
         Xtrain=trainX, Ytrain=trainy, Xtest= testX, Ytest=testy, metaList=metaList, hyperParameters=as.matrix(pipList['hp']), hpForPruning=hpForPruning,
-        changesByOp=changesByOp, flagsCount=as.scalar(pipList['flags']), test=TRUE, verbose=FALSE)
+        changesByOp=changesByOp, flagsCount=as.scalar(pipList['flags']), test=TRUE, verbose=FALSE, startInd=1, endInd=ncol(as.frame(pipList['ph'])))
       #TODO double check why this is necessary
       mincol = min(ncol(cvChanges),ncol(changesByOp))
       cvChanges[cvk,1:mincol] = changesByOp[,1:mincol];
@@ -557,7 +557,7 @@ return (Double accuracy, Matrix[Double] evalFunHp, Matrix[Double] hpForPruning, 
   allChanges = min(allChanges)
   changesByOp = colMaxs(cvChanges)
   accuracy =  mean(accuracyMatrix)
-  print("cv accuracy: "+toString(accuracy))
+  print("- cv accuracy: "+toString(accuracy))
 }
 
 pruningSignal = function(Matrix[Double] pipPre, Matrix[Double] pipNew, Matrix[Double] hp_matrix, Matrix[Double] hpForPruning, Matrix[Double] changesByOp)
@@ -670,7 +670,7 @@ run_with_hyperparamNested = function(Frame[Unknown] ph_pip, Integer r_i = 1, Mat
         {
           [eXtrain, eYtrain, eXtest, eYtest, Tr, hpForPruning, changesByOp, changesByPip] = executePipeline(pipeline=op, 
             Xtrain=X, Ytrain=Y, Xtest=Xtest, Ytest=Ytest, metaList=metaList2,  hyperParameters=hp_matrix, hpForPruning=hpForPruning,
-            changesByOp=changesByOp, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE)
+            changesByOp=changesByOp, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE, startInd=1, endInd=ncol(op))
           if(max(eYtrain) == min(eYtrain)) 
             print("Y contains only one class")
           else if(changesByPip < ref)

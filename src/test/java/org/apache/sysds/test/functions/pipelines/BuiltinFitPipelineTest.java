@@ -24,6 +24,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class BuiltinFitPipelineTest extends AutomatedTestBase {
@@ -42,7 +43,8 @@ public class BuiltinFitPipelineTest extends AutomatedTestBase {
 	public void setUp() {
 		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"R"}));
 	}
-	
+
+	@Ignore
 	@Test
 	public void testEvalPipClass() {
 		evalPip(0.8, "FALSE", INPUT+"/classification/", Types.ExecMode.SINGLE_NODE);

@@ -52,7 +52,7 @@ hp = matrix("0.000 0.000 1.000 0.000 0.000 0.000 2.000
             1.000 0.786 0.000 0.000 1.000 1.000 2.000", rows=2, cols=7)
 print("X unchanged "+sum(eXtrain))
 [eX, Y, Xtest, Ytest, tr] = executePipeline(pip, eXtrain, eYtrain, eXtest, eYtest, metaList, hp,
-  as.matrix(0), as.matrix(0), flagsCount, TRUE, FALSE)
+  as.matrix(0), as.matrix(0), flagsCount, TRUE, FALSE, 1, ncol(pip))
 
 
 [eXtrain, imp] = imputeByMean(eXtrain, mask)

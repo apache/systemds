@@ -340,8 +340,11 @@ public class SparkExecutionContext extends ExecutionContext
 		return conf;
 	}
 	
+	@SuppressWarnings("resource")
 	public static boolean isLocalMaster() {
-		return getSparkContextStatic().isLocal();
+		return isSparkContextCreated() ? 
+			getSparkContextStatic().isLocal() : 
+			DMLScript.USE_LOCAL_SPARK_CONFIG;
 	}
 
 	/**

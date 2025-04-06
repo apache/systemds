@@ -51,7 +51,8 @@
 
 f_executePipeline = function(Frame[String] pipeline, Matrix[Double] Xtrain,  Matrix[Double] Ytrain, 
   Matrix[Double] Xtest,  Matrix[Double] Ytest, List[Unknown] metaList, Matrix[Double] hyperParameters, Matrix[Double] hpForPruning = as.matrix(0),
-  Matrix[Double] changesByOp = as.matrix(0), Integer flagsCount, Boolean test = FALSE, Boolean verbose)
+  Matrix[Double] changesByOp = as.matrix(0), Integer flagsCount, Boolean test = FALSE, Boolean verbose,
+  Integer startInd, Integer endInd)
   return (Matrix[Double] Xtrain, Matrix[Double] Ytrain, Matrix[Double] Xtest, Matrix[Double] Ytest,
     Double t2, Matrix[Double] hpForPruning, Matrix[Double] changesByOp, Double changesAll, List[Unknown] internalStates)
 {
@@ -68,8 +69,11 @@ f_executePipeline = function(Frame[String] pipeline, Matrix[Double] Xtrain,  Mat
     print("pipeline in execution "+toString(pipeline))
     print("pipeline hps "+toString(hyperParameters))
   }
-  for(i in 1:ncol(pipeline)) {
+
+#  for(i in 1:ncol(pipeline)) {
+  for(i in startInd:endInd) {
     op = as.scalar(pipeline[1,i])
+    print("-- Applying Primitive: "+op);
     applyOp = toString(as.scalar(applyFunc[1,i]))
     Xclone = Xtrain
     XtestClone = Xtest

@@ -1509,8 +1509,12 @@ public class Recompiler {
 	public static void rSetExecType( Hop hop, ExecType etype ) {
 		if( hop.isVisited() )
 			return;
-		//update function names
+		//update hop properties (exec type, spark lops)
 		hop.setForcedExecType(etype);
+		if(etype == ExecType.CP) {
+			hop.setRequiresCheckpoint(false);
+			hop.setRequiresReblock(false);
+		}
 		if( hop.getInput() != null )
 			for( Hop c : hop.getInput() )
 				rSetExecType(c, etype);

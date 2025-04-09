@@ -70,6 +70,7 @@ class TestSVM(Model):
 
 
 def scale_data(data, train_indizes):
+    data = np.array(data).reshape(len(data), -1)
     scaler = MinMaxScaler(feature_range=(0, 1))
     scaler.fit(data[train_indizes])
     return scaler.transform(data)
@@ -111,7 +112,7 @@ class TestDataLoaders(unittest.TestCase):
         cls.resnet = (
             cls.data_generator.modalities_by_type[ModalityType.VIDEO]
             .apply_representation(ResNet())
-            .window(10, "avg")
+            .window(10, "mean")
             .flatten()
         )
         cls.mods = [cls.bert, cls.mel_spe, cls.resnet]

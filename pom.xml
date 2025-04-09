@@ -25,7 +25,7 @@
 		<version>24</version>
 	</parent>
 	<groupId>org.apache.systemds</groupId>
-	<version>3.3.0</version>
+	<version>3.4.0-SNAPSHOT</version>
 	<artifactId>systemds</artifactId>
 	<packaging>jar</packaging>
 	<name>Apache SystemDS</name>
@@ -96,7 +96,7 @@
 
 	<scm>
 		<developerConnection>scm:git:https://github.com/apache/systemds.git</developerConnection>
-		<tag>3.3.0-rc1</tag>
+		<tag>HEAD</tag>
 	</scm>
 
 	<build>

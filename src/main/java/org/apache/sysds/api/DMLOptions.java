@@ -58,6 +58,7 @@ public class DMLOptions {
 	public int[]                statsNGramSizes = { 3 };          // Default n-gram tuple sizes
 	public int                  statsTopKNGrams = 10;             // How many of the most heavy hitting n-grams are displayed
 	public boolean              statsNGramsUseLineage = true;     // If N-Grams use lineage for data-dependent tracking
+	public boolean              applyGeneratedRewrites = false;   // If generated rewrites should be applied
 	public boolean              fedStats      = false;            // Whether to record and print the federated statistics
 	public int                  fedStatsCount = 10;               // Default federated statistics count
 	public boolean              memStats      = false;            // max memory statistics
@@ -246,6 +247,8 @@ public class DMLOptions {
 			}
 		}
 
+		dmlOptions.applyGeneratedRewrites = line.hasOption("applyGeneratedRewrites");
+
 		dmlOptions.fedStats = line.hasOption("fedStats");
 		if (dmlOptions.fedStats) {
 			String fedStatsCount = line.getOptionValue("fedStats");
@@ -372,6 +375,7 @@ public class DMLOptions {
 		Option ngramsOpt = OptionBuilder//.withArgName("ngrams")
 			.withDescription("monitors and reports the most occurring n-grams; -ngrams <comma separated n's> <topK>")
 			.hasOptionalArgs(2).create("ngrams");
+		Option applyGeneratedRewritesOpt = OptionBuilder.withArgName("applyGeneratedRewrites").withDescription("if automatically generated rewrites should be applied").create("applyGeneratedRewrites");
 		Option fedStatsOpt = OptionBuilder.withArgName("count")
 			.withDescription("monitors and reports summary execution statistics of federated workers; heavy hitter <count> is 10 unless overridden; default off")
 			.hasOptionalArg().create("fedStats");
@@ -434,6 +438,7 @@ public class DMLOptions {
 		options.addOption(cleanOpt);
 		options.addOption(statsOpt);
 		options.addOption(ngramsOpt);
+		options.addOption(applyGeneratedRewritesOpt);
 		options.addOption(fedStatsOpt);
 		options.addOption(memOpt);
 		options.addOption(explainOpt);

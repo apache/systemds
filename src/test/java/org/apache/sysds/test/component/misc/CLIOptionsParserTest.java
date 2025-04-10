@@ -24,12 +24,17 @@ import java.util.Map;
 import org.apache.commons.cli.AlreadySelectedException;
 import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.ParseException;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLOptions;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.utils.Explain;
+
+import static org.apache.sysds.api.DMLOptions.parseCLArguments;
 
 @net.jcip.annotations.NotThreadSafe
 public class CLIOptionsParserTest {
@@ -162,6 +167,7 @@ public class CLIOptionsParserTest {
 		Assert.assertEquals(ReuseCacheType.REUSE_PARTIAL, o.linReuseType);
 		Assert.assertEquals(false, o.lineage_dedup);
 	}
+
 	@Test
 	public void testLineageReuseH() throws Exception {
 		String cl = "systemds -f test.dml -lineage reuse_hybrid";
@@ -449,5 +455,194 @@ public class CLIOptionsParserTest {
 		DMLOptions o = DMLOptions.parseCLArguments(args);
 		Map<String, String> m = o.argVals;
 		Assert.assertEquals("'def'", m.get("$abc"));
+	}
+
+	@Test
+	public void parseCLArgumentsLineageDAGHEIGHTTest() throws ParseException {
+		String[] args = new String[]{"-f", "test", "-lineage", "policy_dagheight"};
+		DMLOptions opts = parseCLArguments(args);
+		Assert.assertTrue(opts.lineage && opts.linCachePolicy == LineageCacheConfig.LineageCachePolicy.DAGHEIGHT);
+	}
+
+	@Test
+	public void parseCLIArgumentsLineageEstimateTest() throws ParseException {
+		String[] args = new String[]{"-f", "test", "-lineage", "estimate"};
+		DMLOptions opts = parseCLArguments(args);
+		Assert.assertTrue(opts.lineage && opts.lineage_estimate);
+	}
+
+	@Test
+	public void parseCLArgumentsGPUTest() throws ParseException {
+		String[] args = new String[]{"-f", "test", "-gpu",};
+		DMLOptions opts = parseCLArguments(args);
+		Assert.assertTrue(opts.gpu);
+	}
+
+	@Test
+	public void parseCLArgumentsInvalidExplainTest() throws ParseException {
+		String[] args = new String[]{"-f", "test","-explain","XYZ"};
+		try {
+			parseCLArguments(args);
+		} catch (ParseException e) {
+			assert e.getMessage().equals("Invalid argument specified for -hops option, must be one of [hops, runtime, recompile_hops, recompile_runtime, codegen, codegen_recompile]");
+		}
+	}
+
+	@Test
+	public void parseCLArgumentsExplainCodegenRecompileTest() throws ParseException {
+		String[] args = new String[]{"-f", "test","-explain","codegen_recompile"};
+		DMLOptions opts = parseCLArguments(args);
+		Assert.assertEquals(opts.explainType, Explain.ExplainType.CODEGEN_RECOMPILE);
+	}
+
+	@Test
+	public void parseCLArgumentsNGramsTest1() throws ParseException {
+		String[] args = new String[]{"-f", "test", "-ngrams",};
+		DMLOptions opts = parseCLArguments(args);
+		Assert.assertTrue(opts.statsNGrams);
+	}
+
+	@Test
+	public void parseCLArgumentsNGramsTest2() throws ParseException {
+		String[] args =  new String[]{"-f", "test", "-ngrams","1"};
+		DMLOptions opts = parseCLArguments(args);
+		Assert.assertTrue(opts.statsNGrams);
+	}
+
+	@Test
+	public void parseCLArgumentsNGramsTest3() throws ParseException {
+		String[] args = new String[]{"-f", "test", "-ngrams","1","1","FALSE"};
+		DMLOptions opts = parseCLArguments(args);
+		Assert.assertTrue(opts.statsNGrams);
+		Assert.assertEquals(opts.statsNGramSizes[0], 1);
+		Assert.assertEquals(opts.statsTopKNGrams, 1);
+		Assert.assertFalse(opts.statsNGramsUseLineage);
+	}
+
+	@Test
+	public void parseCLArgumentsNGramsTest4() throws ParseException {
+		String[] args = new String[]{"-f", "test", "-ngrams","1,3","1"};
+		DMLOptions opts = parseCLArguments(args);
+		Assert.assertTrue(opts.statsNGrams);
+		Assert.assertEquals(opts.statsNGramSizes[0], 1);
+		Assert.assertEquals(opts.statsNGramSizes[1], 3);
+		Assert.assertEquals(opts.statsTopKNGrams, 1);
+		Assert.assertTrue(opts.statsNGramsUseLineage);
+	}
+
+	@Test
+	public void parseCLArgumentsNGramsTest5() throws ParseException {
+		String[] args = new String[]{"-f", "test","-ngrams","1,2","b"};
+		try {
+			parseCLArguments(args);
+		} catch (ParseException e) {
+			assert e.getMessage().equals("Invalid argument specified for -ngrams option, must be a valid integer");
+		}
+	}
+
+	@Test
+	public void parseCLArgumentsFEDStatsTest1() throws ParseException {
+		String[] args = new String[]{"-f", "test", "-fedStats",};
+		DMLOptions opts = parseCLArguments(args);
+		Assert.assertTrue(opts.fedStats);
+	}
+
+	@Test
+	public void parseCLArgumentsFEDStatsTest2() throws ParseException {
+		String[] args = new String[]{"-f", "test", "-fedStats", "21"};
+		DMLOptions opts = parseCLArguments(args);
+		Assert.assertTrue(opts.fedStats);
+		Assert.assertEquals(21, opts.fedStatsCount);
+	}
+
+	@Test
+	public void parseCLArgumentsFEDStatsTest3() {
+		String[] args = new String[]{"-f", "test", "-fedStats", "xyz"};
+		try {
+			parseCLArguments(args);
+		} catch (ParseException e) {
+			assert e.getMessage().equals("Invalid argument specified for -fedStats option, must be a valid integer");
+		}
+	}
+
+	@Test
+	public void parseCLArgumentsFEDMonitoringTest1() {
+		String[] args = new String[]{"-fedMonitoring"};
+		try {
+			parseCLArguments(args);
+		} catch (ParseException e) {
+			assert e.getMessage().equals("No port [integer] specified for -fedMonitoring option");
+		}
+	}
+
+	@Test
+	public void parseCLArgumentsFEDMonitoringTest2() {
+		String[] args = new String[]{"-fedMonitoring","21", "-fedMonitoringAddress"};
+		try {
+			parseCLArguments(args);
+		} catch (ParseException e) {
+			assert e.getMessage().equals("No address [String] specified for -fedMonitoringAddress option");
+		}
+	}
+
+	@Test
+	public void parseCLArgumentsFEDMonitoringTest3() throws ParseException {
+		String[] args = new String[]{"-fedMonitoring", "21"};
+		DMLOptions opts = parseCLArguments(args);
+		Assert.assertTrue(opts.fedMonitoring);
+		Assert.assertEquals(21, opts.fedMonitoringPort);
+	}
+
+	@Test
+	public void parseCLArgumentsFEDMonitoringTest4() throws ParseException {
+		String[] args = new String[]{"-fedMonitoring", "21", "-fedMonitoringAddress", "xyz"};
+		DMLOptions opts = parseCLArguments(args);
+		Assert.assertTrue(opts.fedMonitoring);
+		Assert.assertEquals(21, opts.fedMonitoringPort);
+		Assert.assertEquals("xyz", opts.fedMonitoringAddress);
+	}
+
+	@Test
+	public void parseCLArgumentsFEDCompilationTest1() throws ParseException {
+		String[] args = new String[]{"-f", "test", "-federatedCompilation"};
+		DMLOptions opts = parseCLArguments(args);
+		Assert.assertTrue(opts.federatedCompilation);
+	}
+
+	@Test
+	public void parseCLArgumentsFEDCompilationTest2() throws ParseException {
+		String[] args = new String[]{"-f", "test", "-federatedCompilation", "1=NONE"};
+		DMLOptions opts = parseCLArguments(args);
+		Assert.assertTrue(opts.federatedCompilation);
+		Assert.assertEquals(OptimizerUtils.FEDERATED_SPECS.get(1), FEDInstruction.FederatedOutput.NONE);
+	}
+
+	@Test
+	public void parseCLArgumentsFEDCompilationTest3() {
+		String[] args = new String[]{"-f","test", "-federatedCompilation","1=n=n"};
+		try {
+			parseCLArguments(args);
+			throw new AssertionError("Test should have resulted in Exception");
+		} catch (ParseException e){
+			Assert.assertEquals("Invalid argument specified for -federatedCompilation option, must be a list of space separated K=V pairs, where K is a line number of the DML script and V is a federated output value",e.getMessage());
+		}
+	}
+
+	@Test
+	public void parseCLArgumentsFEDNoRuntimeConversionTest() throws ParseException {
+		String[] args = new String[]{"-f", "test", "-noFedRuntimeConversion"};
+		DMLOptions opts = parseCLArguments(args);
+		Assert.assertTrue(opts.noFedRuntimeConversion);
+	}
+
+	@Test
+	public void testDMLOptionToString() throws ParseException {
+		String cl = "systemds -f test.dml -exec spark";
+		String[] args = cl.split(" ");
+		DMLOptions o = DMLOptions.parseCLArguments(args);
+		String oString = o.toString();
+		Assert.assertTrue(oString.contains("script='null'"));
+		Assert.assertTrue(oString.contains("filePath='test.dml'"));
+		Assert.assertTrue(oString.contains("execMode=SPARK"));
 	}
 }

@@ -84,9 +84,18 @@ public class FederatedMemoTable {
 		public long getHopID() {return fedPlanVariants.hopCommon.getHopRef().getHopID();}
 		public FederatedOutput getFedOutType() {return fedPlanVariants.getFedOutType();}
 		public double getCumulativeCost() {return cumulativeCost;}
+		public double getCumulativeCostPerParents() {
+			double cumulativeCostPerParents = cumulativeCost;
+			int numOfParents = fedPlanVariants.hopCommon.getNumOfParents();
+			if (fedPlanVariants.hopCommon.getNumOfParents() >= 2){
+				cumulativeCostPerParents /= numOfParents;
+			}
+			return cumulativeCostPerParents;
+		}
 		public double getSelfCost() {return fedPlanVariants.hopCommon.getSelfCost();}
 		public double getForwardingCost() {return fedPlanVariants.hopCommon.getForwardingCost();}
 		public double getWeight() {return fedPlanVariants.hopCommon.getWeight();}
+		public List<Pair<Long, Double>> getLoopContext() {return fedPlanVariants.hopCommon.loopContext;}
 		public List<Pair<Long, FederatedOutput>> getChildFedPlans() {return childFedPlans;}
 	}
 
@@ -128,26 +137,56 @@ public class FederatedMemoTable {
 	/**
 	 * Represents common properties and costs associated with a Hop.
 	 * This class holds a reference to the Hop and tracks its execution and network forwarding (transfer) costs.
+	 * It also maintains the loop context information to properly calculate forwarding costs within loops.
 	 */
 	public static class HopCommon {
 		protected final Hop hopRef; // Reference to the associated Hop
 		protected double selfCost; // Cost of the hop's computation and memory access
 		protected double forwardingCost; // Cost of forwarding the hop's output to its parent
 		protected double weight; // Weight used to calculate cost based on hop execution frequency
+		protected List<Pair<Long, Double>> loopContext; // Loop context in which this hop exists
 
 		public HopCommon(Hop hopRef, double weight) {
 			this.hopRef = hopRef;
 			this.selfCost = 0;
 			this.forwardingCost = 0;
 			this.weight = weight;
+			this.loopContext = new ArrayList<>();
+		}
+		
+		public HopCommon(Hop hopRef, double weight, List<Pair<Long, Double>> loopContext) {
+			this.hopRef = hopRef;
+			this.selfCost = 0;
+			this.forwardingCost = 0;
+			this.weight = weight;
+			this.loopContext = loopContext != null ? new ArrayList<>(loopContext) : new ArrayList<>();
 		}
 
 		public Hop getHopRef() {return hopRef;}
 		public double getSelfCost() {return selfCost;}
 		public double getForwardingCost() {return forwardingCost;}
 		public double getWeight() {return weight;}
+		public int getNumOfParents() {return hopRef.getParent().size();}
+		public List<Pair<Long, Double>> getLoopContext() {return loopContext;}
 
 		protected void setSelfCost(double selfCost) {this.selfCost = selfCost;}
 		protected void setForwardingCost(double forwardingCost) {this.forwardingCost = forwardingCost;}
+		
+		public double getChildFowardingWeight(List<Pair<Long, Double>> childLoopContext) {
+			if (loopContext.isEmpty()) {
+				return weight;
+			}
+
+			double forwardingWeight = this.weight;
+			
+			for (int i = 0; i < loopContext.size(); i++) {
+				if (i >= childLoopContext.size() || loopContext.get(i).getLeft() != childLoopContext.get(i).getLeft()) {
+					forwardingWeight /=loopContext.get(i).getRight();
+				}
+			}
+
+			// Check if the innermost loops are the same
+			return forwardingWeight;
+		}
 	}
 }

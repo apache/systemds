@@ -23,16 +23,17 @@
  import java.util.Map;
  import java.util.HashMap;
  import java.util.LinkedHashMap;
- import java.util.Optional;
  import java.util.Set;
  import java.util.HashSet;
- 
+
  import org.apache.commons.lang3.tuple.Pair;
  
  import org.apache.commons.lang3.tuple.ImmutablePair;
  import org.apache.sysds.common.Types;
  import org.apache.sysds.hops.DataOp;
- import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.FunctionOp;
+import org.apache.sysds.hops.FunctionOp.FunctionType;
+import org.apache.sysds.hops.Hop;
  import org.apache.sysds.hops.LiteralOp;
  import org.apache.sysds.hops.UnaryOp;
  import org.apache.sysds.hops.fedplanner.FederatedMemoTable.HopCommon;
@@ -51,8 +52,8 @@
  import org.apache.sysds.parser.WhileStatementBlock;
  import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
  import org.apache.sysds.runtime.util.UtilFunctions;
- 
- public class FederatedPlanCostEnumerator {
+
+public class FederatedPlanCostEnumerator {
 	 private static final double DEFAULT_LOOP_WEIGHT = 10.0;
 	 private static final double DEFAULT_IF_ELSE_WEIGHT = 0.5;
  
@@ -66,18 +67,35 @@
 	  */
 	 public static void enumerateProgram(DMLProgram prog, boolean isPrint) {
 		 FederatedMemoTable memoTable = new FederatedMemoTable();
- 
+
+		 List<Map<String, List<Hop>>> outerTransTableList = new ArrayList<>();
 		 Map<String, List<Hop>> outerTransTable = new HashMap<>();
-		 Map<String, List<Hop>> formerInnerTransTable = new HashMap<>();
+		 outerTransTableList.add(outerTransTable);
+
 		 Set<Hop> progRootHopSet = new HashSet<>(); // Set of hops for the root dummy node
 		 // TODO: Just for debug, remove later
 		 Set<Hop> statRootHopSet = new HashSet<>(); // Set of hops that have no parent but are not referenced
+
+		 List<Pair<Long, Double>> loopStack = new ArrayList<>();
+		 Set<String> fnStack = new HashSet<>();
+
+		 Map<Long, List<Hop>> rewireTable = FederatedPlanRewireTransTable.rewireProgram(prog);
 		 
+		 // Debug: Print rewireTable contents
+		 System.out.println("=== RewireTable Contents ===");
+		 rewireTable.forEach((hopId, hopList) -> {
+			 System.out.println("HopID: " + hopId);
+			 System.out.println("Connected Hops:");
+			 hopList.forEach(h -> System.out.println("  - " + h.getHopID() + " (" + h.getClass().getSimpleName() + "): " + h.getName()));
+			 System.out.println();
+		 });
+		 System.out.println("=== End RewireTable Contents ===");
+
 		 for (StatementBlock sb : prog.getStatementBlocks()) {
-			 Optional.ofNullable(enumerateStatementBlock(sb, memoTable, outerTransTable, formerInnerTransTable, progRootHopSet, statRootHopSet, 1, false))
-				 .ifPresent(outerTransTable::putAll);
+			Map<String, List<Hop>> innerTransTable = enumerateStatementBlock(sb, prog, memoTable, outerTransTableList, null, fnStack, progRootHopSet, statRootHopSet, 1, loopStack);
+			outerTransTableList.get(0).putAll(innerTransTable);
 		 }
- 
+		 
 		 FedPlan optimalPlan = getMinCostRootFedPlan(progRootHopSet, memoTable);
  
 		 // Detect conflicts in the federated plans where different FedPlans have different FederatedOutput types
@@ -88,8 +106,9 @@
 			 FederatedMemoTablePrinter.printFedPlanTree(optimalPlan, statRootHopSet, memoTable, additionalTotalCost);
 		 }
 	 }
- 
- 
+
+
+
 	 /**
 	  * Enumerates the statement block and updates the transient and memoization tables.
 	  * This method processes different types of statement blocks such as If, For, While, and Function blocks.
@@ -99,46 +118,50 @@
 	  * @param sb The statement block to enumerate.
 	  * @param memoTable The memoization table to store plan variants.
 	  * @param outerTransTable The table to track immutable outer transient writes.
-	  * @param formerInnerTransTable The table to track immutable former inner transient writes.
+	  * @param formerTransTable The table to track immutable former inner transient writes.
 	  * @param progRootHopSet The set of hops to connect to the root dummy node.
 	  * @param statRootHopSet The set of statement root hops for debugging purposes (check if not referenced).
 	  * @param weight The weight associated with the current Hop.
-	  * @param isInnerBlock A boolean indicating if the current block is an inner block.
+	  * @param parentLoopStack The context of parent loops for loop-level context tracking.
 	  * @return A map of inner transient writes.
 	  */
-	 public static Map<String, List<Hop>> enumerateStatementBlock(StatementBlock sb, FederatedMemoTable memoTable, Map<String, List<Hop>> outerTransTable,
-																 Map<String, List<Hop>> formerInnerTransTable, Set<Hop> progRootHopSet, Set<Hop> statRootHopSet, double weight, boolean isInnerBlock) {
+	 public static Map<String, List<Hop>> enumerateStatementBlock(StatementBlock sb, DMLProgram prog, FederatedMemoTable memoTable, List<Map<String, List<Hop>>> outerTransTableList,
+																 Map<String, List<Hop>> formerTransTable, Set<String> fnStack, Set<Hop> progRootHopSet, Set<Hop> statRootHopSet, 
+																 double weight, List<Pair<Long, Double>> parentLoopStack) {
+		 List<Map<String, List<Hop>>> newOuterTransTableList = new ArrayList<>(outerTransTableList);
+
+		 if (formerTransTable != null){
+			 newOuterTransTableList.add(formerTransTable);
+		 }
+
+		 Map<String, List<Hop>> newFormerTransTable = new HashMap<>();
 		 Map<String, List<Hop>> innerTransTable = new HashMap<>();
- 
+
 		 if (sb instanceof IfStatementBlock) {
 			 IfStatementBlock isb = (IfStatementBlock) sb;
 			 IfStatement istmt = (IfStatement)isb.getStatement(0);
- 
-			 enumerateHopDAG(isb.getPredicateHops(), memoTable, outerTransTable, formerInnerTransTable, innerTransTable, progRootHopSet, statRootHopSet, weight, isInnerBlock);
- 
-			 // Treat outerTransTable as immutable in inner blocks
-			 // Write TWrite of sb sequentially in innerTransTable, and update formerInnerTransTable after the sb ends
-			 // In case of if-else, create separate formerInnerTransTables for if and else, merge them after completion, and update formerInnerTransTable
-			 Map<String, List<Hop>> ifFormerInnerTransTable = new HashMap<>(formerInnerTransTable);
-			 Map<String, List<Hop>> elseFormerInnerTransTable = new HashMap<>(formerInnerTransTable);
- 
-			 for (StatementBlock csb : istmt.getIfBody()){
-				 ifFormerInnerTransTable.putAll(enumerateStatementBlock(csb, memoTable, outerTransTable, ifFormerInnerTransTable, progRootHopSet, statRootHopSet, DEFAULT_IF_ELSE_WEIGHT * weight, true));
-			 }
- 
-			 for (StatementBlock csb : istmt.getElseBody()){
-				 elseFormerInnerTransTable.putAll(enumerateStatementBlock(csb, memoTable, outerTransTable, elseFormerInnerTransTable, progRootHopSet, statRootHopSet, DEFAULT_IF_ELSE_WEIGHT * weight, true));
-			 }
- 
+
+			 Map<String, List<Hop>> elseFormerTransTable = new HashMap<>();
+			 weight *= DEFAULT_IF_ELSE_WEIGHT;
+
+			 enumerateHopDAG(isb.getPredicateHops(), prog, memoTable, newOuterTransTableList, null, innerTransTable, fnStack, progRootHopSet, statRootHopSet, weight, parentLoopStack);
+			 
+			 newFormerTransTable.putAll(innerTransTable);
+			 elseFormerTransTable.putAll(innerTransTable);
+			 
+			 for (StatementBlock innerIsb : istmt.getIfBody())
+				 newFormerTransTable.putAll(enumerateStatementBlock(innerIsb, prog, memoTable, newOuterTransTableList, newFormerTransTable, fnStack, progRootHopSet, statRootHopSet, weight, parentLoopStack));
+
+			 for (StatementBlock innerIsb : istmt.getElseBody())
+				 elseFormerTransTable.putAll(enumerateStatementBlock(innerIsb, prog, memoTable, newOuterTransTableList, elseFormerTransTable, fnStack, progRootHopSet, statRootHopSet, weight, parentLoopStack));
+
 			 // If there are common keys: merge elseValue list into ifValue list
-			 elseFormerInnerTransTable.forEach((key, elseValue) -> {
-				 ifFormerInnerTransTable.merge(key, elseValue, (ifValue, newValue) -> {
+			 elseFormerTransTable.forEach((key, elseValue) -> {
+				newFormerTransTable.merge(key, elseValue, (ifValue, newValue) -> {
 					 ifValue.addAll(newValue);
 					 return ifValue;
 				 });
 			 });
-			 // Update innerTransTable
-			 innerTransTable.putAll(ifFormerInnerTransTable);
 		 }
 		 else if (sb instanceof ForStatementBlock) { //incl parfor
 			 ForStatementBlock fsb = (ForStatementBlock) sb;
@@ -161,62 +184,56 @@
 				 loopWeight = UtilFunctions.getSeqLength(dfrom, dto, dincr, false);
 			 }
 			 weight *= loopWeight;
- 
-			 enumerateHopDAG(fsb.getFromHops(), memoTable, outerTransTable, formerInnerTransTable, innerTransTable, progRootHopSet, statRootHopSet, weight, isInnerBlock);
-			 enumerateHopDAG(fsb.getToHops(), memoTable, outerTransTable, formerInnerTransTable, innerTransTable, progRootHopSet, statRootHopSet, weight, isInnerBlock);
-			 enumerateHopDAG(fsb.getIncrementHops(), memoTable, outerTransTable, formerInnerTransTable, innerTransTable, progRootHopSet, statRootHopSet, weight, isInnerBlock);
- 
-			 enumerateStatementBlockBody(fstmt.getBody(), memoTable, outerTransTable, formerInnerTransTable, innerTransTable, progRootHopSet, statRootHopSet, weight);
+
+			// 현재 루프 컨텍스트 생성 (부모 컨텍스트 복사)
+			List<Pair<Long, Double>> currentLoopStack = new ArrayList<>(parentLoopStack);
+			currentLoopStack.add(Pair.of(sb.getSBID(), loopWeight));
+			 
+			 enumerateHopDAG(fsb.getFromHops(), prog, memoTable, newOuterTransTableList, null, innerTransTable, fnStack, progRootHopSet, statRootHopSet, weight, currentLoopStack);
+			 enumerateHopDAG(fsb.getToHops(), prog, memoTable, newOuterTransTableList, null, innerTransTable, fnStack, progRootHopSet, statRootHopSet, weight, currentLoopStack);
+			 enumerateHopDAG(fsb.getIncrementHops(), prog, memoTable, newOuterTransTableList, null, innerTransTable, fnStack, progRootHopSet, statRootHopSet, weight, currentLoopStack);
+			 newFormerTransTable.putAll(innerTransTable);
+
+			 for (StatementBlock innerFsb : fstmt.getBody())
+				newFormerTransTable.putAll(enumerateStatementBlock(innerFsb, prog, memoTable, newOuterTransTableList, newFormerTransTable, fnStack, progRootHopSet, statRootHopSet, weight, currentLoopStack));
 		 }
 		 else if (sb instanceof WhileStatementBlock) {
+			// TODO:  Loop 안의 TRead의 Parent가 Loop안에서 발생한 TWrite를 읽는 다면 동일한 fedoutputType을 가짐.
+			// Question: 만약 Loop안의 Twrite을 Loop 밖에서 읽는다면?
+			// 중첩 While문 일때는? 모름 자고 일어나서 하자
+
 			 WhileStatementBlock wsb = (WhileStatementBlock) sb;
 			 WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
 			 weight *= DEFAULT_LOOP_WEIGHT;
+			 
+			// 현재 루프 컨텍스트 생성 (부모 컨텍스트 복사)
+			List<Pair<Long, Double>> currentLoopStack = new ArrayList<>(parentLoopStack);
+			currentLoopStack.add(Pair.of(sb.getSBID(), DEFAULT_LOOP_WEIGHT));
  
-			 enumerateHopDAG(wsb.getPredicateHops(), memoTable, outerTransTable, formerInnerTransTable, innerTransTable, progRootHopSet, statRootHopSet, weight, isInnerBlock);
-			 enumerateStatementBlockBody(wstmt.getBody(), memoTable, outerTransTable, formerInnerTransTable, innerTransTable, progRootHopSet, statRootHopSet, weight);
+			 enumerateHopDAG(wsb.getPredicateHops(), prog, memoTable, newOuterTransTableList, null, innerTransTable, fnStack, progRootHopSet, statRootHopSet, weight, currentLoopStack);
+			 newFormerTransTable.putAll(innerTransTable);
+
+			 for (StatementBlock innerWsb : wstmt.getBody())
+				newFormerTransTable.putAll(enumerateStatementBlock(innerWsb, prog, memoTable, newOuterTransTableList, newFormerTransTable, fnStack, progRootHopSet, statRootHopSet, weight, currentLoopStack));
 		 }
 		 else if (sb instanceof FunctionStatementBlock) {
 			 FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
 			 FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
- 
-			 // TODO: Do not descend for visited functions (use a hash set for functions using their names)
-			 enumerateStatementBlockBody(fstmt.getBody(), memoTable, outerTransTable, formerInnerTransTable, innerTransTable, progRootHopSet, statRootHopSet, weight);
+			 
+			 for (StatementBlock innerFsb : fstmt.getBody())
+				newFormerTransTable.putAll(enumerateStatementBlock(innerFsb, prog, memoTable, newOuterTransTableList, newFormerTransTable, fnStack, progRootHopSet, statRootHopSet, weight, parentLoopStack));
 		 }
 		 else { //generic (last-level)
 			 if( sb.getHops() != null ){
 				 for(Hop c : sb.getHops())
-					 // In the statement block, if isInner, write hopDAG in innerTransTable, if not, write directly in outerTransTable
-					 enumerateHopDAG(c, memoTable, outerTransTable, formerInnerTransTable, innerTransTable, progRootHopSet, statRootHopSet, weight, isInnerBlock);
+					 enumerateHopDAG(c, prog, memoTable, newOuterTransTableList, null, innerTransTable, fnStack, progRootHopSet, statRootHopSet, weight, parentLoopStack);
 			 }
+
+			 return innerTransTable;
 		 }
-		 return innerTransTable;
+		 return newFormerTransTable;
 	 }
 		 
-	 /**
-	  * Enumerates the statement blocks within a body and updates the transient and memoization tables.
-	  *
-	  * @param sbList The list of statement blocks to enumerate.
-	  * @param memoTable The memoization table to store plan variants.
-	  * @param outerTransTable The table to track immutable outer transient writes.
-	  * @param formerInnerTransTable The table to track immutable former inner transient writes.
-	  * @param innerTransTable The table to track inner transient writes.
-	  * @param progRootHopSet The set of hops to connect to the root dummy node.
-	  * @param statRootHopSet The set of statement root hops for debugging purposes (check if not referenced).
-	  * @param weight The weight associated with the current Hop.
-	  */
-	 public static void enumerateStatementBlockBody(List<StatementBlock> sbList, FederatedMemoTable memoTable, Map<String, List<Hop>> outerTransTable,
-									 Map<String, List<Hop>> formerInnerTransTable, Map<String, List<Hop>> innerTransTable, Set<Hop> progRootHopSet, Set<Hop> statRootHopSet, double weight) {
-		 // The statement blocks within the body reference outerTransTable and formerInnerTransTable as immutable read-only,
-		 // and record TWrite in the innerTransTable of the statement block within the body.
-		 // Update the formerInnerTransTable with the contents of the returned innerTransTable.
-		 for (StatementBlock sb : sbList)
-			 formerInnerTransTable.putAll(enumerateStatementBlock(sb, memoTable, outerTransTable, formerInnerTransTable, progRootHopSet, statRootHopSet, weight, true));
- 
-		 // Then update and return the innerTransTable of the statement block containing the body.
-		 innerTransTable.putAll(formerInnerTransTable);
-	 }
- 
 	 /**
 	  * Enumerates the statement hop DAG within a statement block.
 	  * This method recursively enumerates all possible federated execution plans
@@ -225,22 +242,23 @@
 	  * @param rootHop The root Hop of the DAG to enumerate.
 	  * @param memoTable The memoization table to store plan variants.
 	  * @param outerTransTable The table to track transient writes.
-	  * @param formerInnerTransTable The table to track immutable inner transient writes.
+	  * @param formerTransTable The table to track immutable inner transient writes.
 	  * @param innerTransTable The table to track inner transient writes.
 	  * @param progRootHopSet The set of hops to connect to the root dummy node.
 	  * @param statRootHopSet The set of root hops for debugging purposes.
 	  * @param weight The weight associated with the current Hop.
-	  * @param isInnerBlock A boolean indicating if the current block is an inner block.
+	  * @param loopStack The context of parent loops for loop-level context tracking.
 	  */
-	 public static void enumerateHopDAG(Hop rootHop, FederatedMemoTable memoTable, Map<String, List<Hop>> outerTransTable,
-										 Map<String, List<Hop>> formerInnerTransTable, Map<String,List<Hop>> innerTransTable, Set<Hop> progRootHopSet, Set<Hop> statRootHopSet, double weight, boolean isInnerBlock) {
+	 public static void enumerateHopDAG(Hop rootHop, DMLProgram prog, FederatedMemoTable memoTable, List<Map<String, List<Hop>>> outerTransTableList,
+										 Map<String, List<Hop>> formerTransTable, Map<String,List<Hop>> innerTransTable, Set<String> fnStack,
+										 Set<Hop> progRootHopSet, Set<Hop> statRootHopSet, double weight, List<Pair<Long, Double>> loopStack) {
 		 // Recursively enumerate all possible plans
-		 rewireAndEnumerateFedPlan(rootHop, memoTable, outerTransTable, formerInnerTransTable, innerTransTable, weight, isInnerBlock);
+		 rewireAndEnumerateFedPlan(rootHop, prog, memoTable, outerTransTableList, formerTransTable, innerTransTable, fnStack, progRootHopSet, statRootHopSet, weight, loopStack);
 		 
 		 // Identify hops to connect to the root dummy node
-		 
 		 if ((rootHop instanceof DataOp && (rootHop.getName().equals("__pred"))) // TWrite "__pred"
-			 || (rootHop instanceof UnaryOp && ((UnaryOp)rootHop).getOp() == Types.OpOp1.PRINT)){ // u(print)
+			 || (rootHop instanceof UnaryOp && ((UnaryOp)rootHop).getOp() == Types.OpOp1.PRINT) // u(print)
+			 || (rootHop instanceof DataOp && ((DataOp)rootHop).getOp() == Types.OpOpData.PERSISTENTWRITE)){ // PWrite
 			 // Connect TWrite pred and u(print) to the root dummy node
 			 // TODO: Should we check all statement-level root hops to see if they are not referenced?
 			 progRootHopSet.add(rootHop);
@@ -259,89 +277,109 @@
 	  * @param hop The Hop for which to rewire and enumerate federated plans.
 	  * @param memoTable The memoization table to store plan variants.
 	  * @param outerTransTable The table to track transient writes.
-	  * @param formerInnerTransTable The table to track immutable inner transient writes.
+	  * @param formerTransTable The table to track immutable inner transient writes.
 	  * @param innerTransTable The table to track inner transient writes.
 	  * @param weight The weight associated with the current Hop.
-	  * @param isInner A boolean indicating if the current block is an inner block.
+	  * @param loopStack The context of parent loops for loop-level context tracking.
 	  */
-	 private static void rewireAndEnumerateFedPlan(Hop hop, FederatedMemoTable memoTable, Map<String, List<Hop>> outerTransTable,
-												Map<String, List<Hop>> formerInnerTransTable, Map<String, List<Hop>> innerTransTable, 
-												double weight, boolean isInner) {
+	 private static void rewireAndEnumerateFedPlan(Hop hop, DMLProgram prog, FederatedMemoTable memoTable, List<Map<String, List<Hop>>> outerTransTableList,
+												Map<String, List<Hop>> formerTransTable, Map<String, List<Hop>> innerTransTable, Set<String> fnStack, 
+												Set<Hop> progRootHopSet, Set<Hop> statRootHopSet, double weight, List<Pair<Long, Double>> loopStack) {
 		// Process all input nodes first if not already in memo table
 		for (Hop inputHop : hop.getInput()) {
 			long inputHopID = inputHop.getHopID();
 			if (!memoTable.contains(inputHopID, FederatedOutput.FOUT)
 					&& !memoTable.contains(inputHopID, FederatedOutput.LOUT)) {
-				rewireAndEnumerateFedPlan(inputHop, memoTable, outerTransTable, formerInnerTransTable, innerTransTable, weight, isInner);
+				rewireAndEnumerateFedPlan(inputHop, prog, memoTable, outerTransTableList, formerTransTable, innerTransTable, fnStack, progRootHopSet, statRootHopSet, weight, loopStack);
+			}
+		}
+
+		if( hop instanceof FunctionOp )
+		{
+			//maintain counters and investigate functions if not seen so far
+			FunctionOp fop = (FunctionOp) hop;
+			String fkey = fop.getFunctionKey();
+			
+			if( fop.getFunctionType() == FunctionType.DML )
+			{
+				FunctionStatementBlock fsb = prog.getFunctionStatementBlock(fop.getFunctionNamespace(), fop.getFunctionName());
+				// Todo: progRootHopSet, statRootHopSet을 이렇게 넘겨줘야하나?
+				// Todo: 재귀랑 여러번 호출되는거랑 다른 것 아닌가?
+				// Todo: Input/Output이 제대로 넘겨지는 것이 맞나?
+				 if(!fnStack.contains(fkey)) {
+					 fnStack.add(fkey);
+					 enumerateStatementBlock(fsb, prog, memoTable, outerTransTableList, null, fnStack, progRootHopSet, statRootHopSet, 1, loopStack);
+				 }
 			}
 		}
 
 		// Determine modified child hops based on DataOp type and transient operations
-		List<Hop> childHops = rewireTransReadWrite(hop, outerTransTable, formerInnerTransTable, innerTransTable, isInner);
+		Pair<List<Hop>, Boolean> result = rewireTransReadWrite(hop, outerTransTableList, formerTransTable, innerTransTable);
+		List<Hop> childHops = result.getLeft();
+		boolean isTrans = result.getRight();
 
 		// Enumerate the federated plan for the current Hop
-		enumerateFedPlan(hop, memoTable, childHops, weight);
+		enumerateFedPlan(hop, memoTable, childHops, weight, isTrans, loopStack);
 	}
 
-	private static List<Hop> rewireTransReadWrite(Hop hop, Map<String, List<Hop>> outerTransTable,
-													Map<String, List<Hop>> formerInnerTransTable,
-													Map<String, List<Hop>> innerTransTable, boolean isInner) {
+	private static Pair<List<Hop>, Boolean> rewireTransReadWrite(Hop hop, List<Map<String, List<Hop>>> outerTransTableList,
+													Map<String, List<Hop>> formerTransTable,
+													Map<String, List<Hop>> innerTransTable) {
 		List<Hop> childHops = hop.getInput();
+		boolean isTrans = false;
 		
+		// TODO: How about PWrite?
 		if (!(hop instanceof DataOp) || hop.getName().equals("__pred")) {
-			return childHops; // Early exit for non-DataOp or __pred
+			return Pair.of(childHops, isTrans); // Early exit for non-DataOp or __pred
 		}
 
 		DataOp dataOp = (DataOp) hop;
 		Types.OpOpData opType = dataOp.getOp();
 		String hopName = dataOp.getName();
 
-		if (isInner && opType == Types.OpOpData.TRANSIENTWRITE) {
+		if (opType == Types.OpOpData.TRANSIENTWRITE) {
 			innerTransTable.computeIfAbsent(hopName, k -> new ArrayList<>()).add(hop);
+			isTrans = true;
 		}
-		else if (isInner && opType == Types.OpOpData.TRANSIENTREAD) {
-			childHops = rewireInnerTransRead(childHops, hopName, 
-				innerTransTable, formerInnerTransTable, outerTransTable);
-		}
-		else if (!isInner && opType == Types.OpOpData.TRANSIENTWRITE) {
-			outerTransTable.computeIfAbsent(hopName, k -> new ArrayList<>()).add(hop);
-		}
-		else if (!isInner && opType == Types.OpOpData.TRANSIENTREAD) {
-			childHops = rewireOuterTransRead(childHops, hopName, outerTransTable);
+		else if (opType == Types.OpOpData.TRANSIENTREAD) {
+			childHops = rewireTransRead(childHops, hopName, 
+				innerTransTable, formerTransTable, outerTransTableList);
+			isTrans = true;
 		}
 
-		return childHops;
+		return Pair.of(childHops, isTrans);
 	}
 
-	private static List<Hop> rewireInnerTransRead(List<Hop> childHops, String hopName, Map<String, List<Hop>> innerTransTable,
-													Map<String, List<Hop>> formerInnerTransTable, Map<String, List<Hop>> outerTransTable) {
+	private static List<Hop> rewireTransRead(List<Hop> childHops, String hopName, Map<String, List<Hop>> innerTransTable,
+													Map<String, List<Hop>> formerTransTable, List<Map<String, List<Hop>>> outerTransTableList) {
 		List<Hop> newChildHops = new ArrayList<>(childHops);
+		List<Hop> additionalChildHops = new ArrayList<>();
 
-		// Read according to priority: inner -> formerInner -> outer
-		List<Hop> additionalChildHops = innerTransTable.get(hopName);
-		if (additionalChildHops == null) {
-			additionalChildHops = formerInnerTransTable.get(hopName);
-		}
-		if (additionalChildHops == null) {
-			additionalChildHops = outerTransTable.get(hopName);
+		// Read according to priority: inner -> former -> outer
+		if (!innerTransTable.isEmpty()){
+			additionalChildHops = innerTransTable.get(hopName);
 		}
 
-		if (additionalChildHops != null) {
+		if ((additionalChildHops == null || additionalChildHops.isEmpty()) && formerTransTable != null) {
+			additionalChildHops = formerTransTable.get(hopName);
+		}
+
+		if (additionalChildHops == null || additionalChildHops.isEmpty()) {
+			// 마지막으로 삽입된 outerTransTable부터 역순으로 순회
+			for (int i = outerTransTableList.size() - 1; i >= 0; i--) {
+				Map<String, List<Hop>> outerTransTable = outerTransTableList.get(i);
+				additionalChildHops = outerTransTable.get(hopName);
+				if (additionalChildHops != null && !additionalChildHops.isEmpty()) break;
+			}
+		}
+
+		if (additionalChildHops != null && !additionalChildHops.isEmpty()) {
 			newChildHops.addAll(additionalChildHops);
 		}
 		return newChildHops;
 	}
-
-	private static List<Hop> rewireOuterTransRead(List<Hop> childHops, String hopName, Map<String, List<Hop>> outerTransTable) {
-		List<Hop> newChildHops = new ArrayList<>(childHops);
-		List<Hop> additionalChildHops = outerTransTable.get(hopName);
-		if (additionalChildHops != null) {
-			newChildHops.addAll(additionalChildHops);
-		}
-		return newChildHops;
-	}
-
-	 /**
+	 
+	/**
 	  * Enumerates federated execution plans for a given Hop.
 	  * This method calculates the self cost and child costs for the Hop,
 	  * generates federated plan variants for both LOUT and FOUT output types,
@@ -351,10 +389,11 @@
 	  * @param memoTable The memoization table to store plan variants.
 	  * @param childHops The list of child hops.
 	  * @param weight The weight associated with the current Hop.
+	  * @param loopStack The context of parent loops for loop-level context tracking.
 	  */
-	 private static void enumerateFedPlan(Hop hop, FederatedMemoTable memoTable, List<Hop> childHops, double weight){
+	 private static void enumerateFedPlan(Hop hop, FederatedMemoTable memoTable, List<Hop> childHops, double weight, boolean isTrans, List<Pair<Long, Double>> loopStack) {
 		 long hopID = hop.getHopID();
-		 HopCommon hopCommon = new HopCommon(hop, weight);
+		 HopCommon hopCommon = new HopCommon(hop, weight, loopStack);
 		 double selfCost = FederatedPlanCostEstimator.computeHopCost(hopCommon);
  
 		 FedPlanVariants lOutFedPlanVariants = new FedPlanVariants(hopCommon, FederatedOutput.LOUT);
@@ -368,11 +407,11 @@
  
 		 // The self cost follows its own weight, while the forwarding cost follows the parent's weight.
 		 FederatedPlanCostEstimator.getChildCosts(hopCommon, memoTable, childHops, childCumulativeCost, childForwardingCost);
- 
-		 if (numInitInputs == numInputs){
-			 enumerateOnlyInitChildFedPlan(lOutFedPlanVariants, fOutFedPlanVariants, numInitInputs, childHops, childCumulativeCost, childForwardingCost, selfCost);
+		
+		 if (isTrans){
+			 enumerateTransChildFedPlan(lOutFedPlanVariants, fOutFedPlanVariants, numInitInputs, numInputs, childHops, childCumulativeCost, selfCost);
 		 } else {
-			 enumerateTReadInitChildFedPlan(lOutFedPlanVariants, fOutFedPlanVariants, numInitInputs, numInputs, childHops, childCumulativeCost, childForwardingCost, selfCost);
+			 enumerateChildFedPlan(lOutFedPlanVariants, fOutFedPlanVariants, numInitInputs, childHops, childCumulativeCost, childForwardingCost, selfCost);
 		 }
  
 		 // Prune the FedPlans to remove redundant plans
@@ -397,14 +436,25 @@
 	  * @param childForwardingCost The forwarding costs for each child hop.
 	  * @param selfCost The self cost of the current hop.
 	  */
-	 private static void enumerateOnlyInitChildFedPlan(FedPlanVariants lOutFedPlanVariants, FedPlanVariants fOutFedPlanVariants, int numInitInputs, List<Hop> childHops, 
+	 private static void enumerateChildFedPlan(FedPlanVariants lOutFedPlanVariants, FedPlanVariants fOutFedPlanVariants, int numInitInputs, List<Hop> childHops, 
 				 double[][] childCumulativeCost, double[] childForwardingCost, double selfCost){
 		 // Iterate 2^n times, generating two FedPlans (LOUT, FOUT) each time.
 		 for (int i = 0; i < (1 << numInitInputs); i++) {
 			 double[] cumulativeCost = new double[]{selfCost, selfCost};
 			 List<Pair<Long, FederatedOutput>> planChilds = new ArrayList<>();
+
 			 // LOUT and FOUT share the same planChilds in each iteration (only forwarding cost differs).
-			 enumerateInitChildFedPlan(numInitInputs, childHops, planChilds, childCumulativeCost, childForwardingCost, cumulativeCost, i);
+			 for (int j = 0; j < numInitInputs; j++) {
+				Hop inputHop = childHops.get(j);
+				// Calculate the bit value to decide between FOUT and LOUT for the current input
+				final int bit = (i & (1 << j)) != 0 ? 1 : 0; // Determine the bit value (decides FOUT/LOUT)
+				final FederatedOutput childType = (bit == 1) ? FederatedOutput.FOUT : FederatedOutput.LOUT;
+				planChilds.add(Pair.of(inputHop.getHopID(), childType));
+	
+				// Update the cumulative cost for LOUT, FOUT
+				cumulativeCost[0] += childCumulativeCost[j][bit] + childForwardingCost[j] * bit;
+				cumulativeCost[1] += childCumulativeCost[j][bit] + childForwardingCost[j] * (1 - bit);
+			}
  
 			 lOutFedPlanVariants.addFedPlan(new FedPlan(cumulativeCost[0], lOutFedPlanVariants, planChilds));
 			 fOutFedPlanVariants.addFedPlan(new FedPlan(cumulativeCost[1], fOutFedPlanVariants, planChilds));
@@ -412,11 +462,11 @@
 	 }
  
 	 /**
-	  * Enumerates federated execution plans for a TRead hop.
+	  * Enumerates federated execution plans for a TRead/TWrite hop.
 	  * This method calculates the cumulative costs for both LOUT and FOUT federated output types
-	  * by considering the additional child hops, which are TWrite hops.
-	  * It generates all possible combinations of federated output types for the initial child hops
-	  * and adds the pre-calculated costs of the TWrite child hops to these combinations.
+	  * considering that TRead/TWrite hops have only one child (TWrite/Child of TWrite).
+	  * Since TRead, TWrite and Child of TWrite have the same federated output type, it generates only
+	  * a single plan for each output type.
 	  *
 	  * @param lOutFedPlanVariants The FedPlanVariants object for LOUT output type.
 	  * @param fOutFedPlanVariants The FedPlanVariants object for FOUT output type.
@@ -424,65 +474,30 @@
 	  * @param numInputs The total number of input hops, including additional TWrite hops.
 	  * @param childHops The list of child hops.
 	  * @param childCumulativeCost The cumulative costs for each child hop.
-	  * @param childForwardingCost The forwarding costs for each child hop.
 	  * @param selfCost The self cost of the current hop.
 	  */
-	 private static void enumerateTReadInitChildFedPlan(FedPlanVariants lOutFedPlanVariants, FedPlanVariants fOutFedPlanVariants,
+	 private static void enumerateTransChildFedPlan(FedPlanVariants lOutFedPlanVariants, FedPlanVariants fOutFedPlanVariants,
 					 int numInitInputs, int numInputs, List<Hop> childHops, 
-					 double[][] childCumulativeCost, double[] childForwardingCost, double selfCost){
-		 double lOutTReadCumulativeCost = selfCost;
-		 double fOutTReadCumulativeCost = selfCost;
-		 
-		 List<Pair<Long, FederatedOutput>> lOutTReadPlanChilds = new ArrayList<>();
-		 List<Pair<Long, FederatedOutput>> fOutTReadPlanChilds = new ArrayList<>();
-		 
-		 // Pre-calculate the cost for the additional child hop, which is a TWrite hop, of the TRead hop.
-		 // Constraint: TWrite must have the same FedOutType as TRead.
-		 for (int j = numInitInputs; j < numInputs; j++) {
-			 Hop inputHop = childHops.get(j);
-			 lOutTReadPlanChilds.add(Pair.of(inputHop.getHopID(), FederatedOutput.LOUT));
-			 fOutTReadPlanChilds.add(Pair.of(inputHop.getHopID(), FederatedOutput.FOUT));
- 
-			 lOutTReadCumulativeCost += childCumulativeCost[j][0];
-			 fOutTReadCumulativeCost += childCumulativeCost[j][1];
-			 // Skip TWrite -> TRead as they have the same FedOutType.
-		 }
- 
-		 for (int i = 0; i < (1 << numInitInputs); i++) {
-			 double[] cumulativeCost = new double[]{selfCost, selfCost};
-			 List<Pair<Long, FederatedOutput>> lOutPlanChilds = new ArrayList<>();
-			 enumerateInitChildFedPlan(numInitInputs, childHops, lOutPlanChilds, childCumulativeCost, childForwardingCost, cumulativeCost, i);
- 
-			 // Copy lOutPlanChilds to create fOutPlanChilds and add the pre-calculated cost of the TWrite child hop.
-			 List<Pair<Long, FederatedOutput>> fOutPlanChilds = new ArrayList<>(lOutPlanChilds);
+					 double[][] childCumulativeCost, double selfCost){
+	 
+		 double[] cumulativeCost = new double[]{selfCost, selfCost};
+		 List<Pair<Long, FederatedOutput>> lOutTransPlanChilds = new ArrayList<>();
+		 List<Pair<Long, FederatedOutput>> fOutTransPlanChilds = new ArrayList<>();
+					
+		 for (int i =0; i < numInputs; i++){
+			 Hop inputHop = childHops.get(i);
 			 
-			 lOutPlanChilds.addAll(lOutTReadPlanChilds);
-			 fOutPlanChilds.addAll(fOutTReadPlanChilds);
- 
-			 cumulativeCost[0] += lOutTReadCumulativeCost;
-			 cumulativeCost[1] += fOutTReadCumulativeCost;
- 
-			 lOutFedPlanVariants.addFedPlan(new FedPlan(cumulativeCost[0], lOutFedPlanVariants, lOutPlanChilds));
-			 fOutFedPlanVariants.addFedPlan(new FedPlan(cumulativeCost[1], fOutFedPlanVariants, fOutPlanChilds));
+			 lOutTransPlanChilds.add(Pair.of(inputHop.getHopID(), FederatedOutput.LOUT));
+			 fOutTransPlanChilds.add(Pair.of(inputHop.getHopID(), FederatedOutput.FOUT));
+
+			 cumulativeCost[0] = selfCost + childCumulativeCost[0][0];
+			 cumulativeCost[1] = selfCost + childCumulativeCost[0][1];
 		 }
+		 
+		 // Generate only a single plan for each output type as "TRead, TWrite and Child of TWrite" have the same FedOutType
+		 lOutFedPlanVariants.addFedPlan(new FedPlan(cumulativeCost[0], lOutFedPlanVariants, lOutTransPlanChilds));
+		 fOutFedPlanVariants.addFedPlan(new FedPlan(cumulativeCost[1], fOutFedPlanVariants, fOutTransPlanChilds));
 	 }
- 
-	 // Calculates costs for initial child hops, determining FOUT or LOUT based on `i`.
-	 private static void enumerateInitChildFedPlan(int numInitInputs, List<Hop> childHops, List<Pair<Long, FederatedOutput>> planChilds,
-				 double[][] childCumulativeCost, double[] childForwardingCost, double[] cumulativeCost, int i){
-		 // For each input, determine if it should be FOUT or LOUT based on bit j in i
-		 for (int j = 0; j < numInitInputs; j++) {
-			 Hop inputHop = childHops.get(j);
-			 // Calculate the bit value to decide between FOUT and LOUT for the current input
-			 final int bit = (i & (1 << j)) != 0 ? 1 : 0; // Determine the bit value (decides FOUT/LOUT)
-			 final FederatedOutput childType = (bit == 1) ? FederatedOutput.FOUT : FederatedOutput.LOUT;
-			 planChilds.add(Pair.of(inputHop.getHopID(), childType));
- 
-			 // Update the cumulative cost for LOUT, FOUT
-			 cumulativeCost[0] += childCumulativeCost[j][bit] + childForwardingCost[j] * bit;
-			 cumulativeCost[1] += childCumulativeCost[j][bit] + childForwardingCost[j] * (1 - bit);
-		 }
-	 }	
  
 	 // Creates a dummy root node (fedplan) and selects the FedPlan with the minimum cost to return.
 	 // The dummy root node does not have LOUT or FOUT.

@@ -49,7 +49,7 @@ public class FederatedMemoTablePrinter {
         }
 
         visited.add(hopID);
-        printFedPlan(plan, depth, true);
+        printFedPlan(plan, memoTable, depth, true);
 
         // Process child nodes
         List<Pair<Long, FEDInstruction.FederatedOutput>> childFedPlanPairs = plan.getChildFedPlans();
@@ -87,7 +87,7 @@ public class FederatedMemoTablePrinter {
         }
 
         visited.add(hopID);
-        printFedPlan(plan, depth, false);
+        printFedPlan(plan, memoTable, depth, false);
 
         // Process child nodes
         List<Pair<Long, FEDInstruction.FederatedOutput>> childFedPlanPairs = plan.getChildFedPlans();
@@ -103,7 +103,7 @@ public class FederatedMemoTablePrinter {
         }
     }
 
-    private static void printFedPlan(FederatedMemoTable.FedPlan plan, int depth, boolean isNotReferenced) {
+    private static void printFedPlan(FederatedMemoTable.FedPlan plan, FederatedMemoTable memoTable, int depth, boolean isNotReferenced) {
         StringBuilder sb = new StringBuilder();
         Hop hop = null;
 
@@ -136,7 +136,7 @@ public class FederatedMemoTablePrinter {
         
         childs.append(")");
 
-        if( childAdded )
+        if (childAdded)
             sb.append(childs.toString());
 
         if (depth == 0){
@@ -182,6 +182,23 @@ public class FederatedMemoTablePrinter {
         // Add execution type
         if (hop.getExecType() != null) {
             sb.append(", ").append(hop.getExecType());
+        }
+        
+        if (childAdded){
+            sb.append(" [Edges]{");
+            for (Pair<Long, FederatedOutput> childPair : plan.getChildFedPlans()){
+                // Add forwarding weight for each edge
+                FedPlan childPlan = memoTable.getFedPlanAfterPrune(childPair.getLeft(), childPair.getRight());
+                String isForwardingCostOccured = "";
+                if (childPair.getRight() == plan.getFedOutType()){
+                    isForwardingCostOccured = "X";
+                } else {
+                    isForwardingCostOccured = "O";
+                }
+                sb.append(String.format("(ID:%d, %s, C:%.1f, F:%.1f, FW:%.1f)", childPair.getLeft(), isForwardingCostOccured, childPlan.getSelfCost(), childPlan.getForwardingCost(), childPlan.getWeight()));
+                sb.append(childAdded?",":"");
+            }
+            sb.append("}");
         }
 
         System.out.println(sb);

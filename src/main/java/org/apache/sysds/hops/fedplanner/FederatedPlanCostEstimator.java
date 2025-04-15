@@ -55,11 +55,12 @@
 			 FedPlan childFOutFedPlan = memoTable.getFedPlanAfterPrune(childHopID, FederatedOutput.FOUT);
 			 
 			 // The cumulative cost of the child already includes the weight
-			 childCumulativeCost[i][0] = childLOutFedPlan.getCumulativeCost();
-			 childCumulativeCost[i][1] = childFOutFedPlan.getCumulativeCost();
- 
-			 // TODO: Q. Shouldn't the child's forwarding cost follow the parent's weight, regardless of loops or if-else statements?
-			 childForwardingCost[i] = hopCommon.weight * childLOutFedPlan.getForwardingCost();
+			 // Todo: TWrite, TRead 고려해야함
+			 childCumulativeCost[i][0] = childLOutFedPlan.getCumulativeCostPerParents();
+			 childCumulativeCost[i][1] = childFOutFedPlan.getCumulativeCostPerParents();
+
+			 // Todo: TWrite, TRead 고려해야하고, /numOfParents 고려해야함
+			 childForwardingCost[i] = hopCommon.getChildFowardingWeight(childLOutFedPlan.getLoopContext()) * childLOutFedPlan.getForwardingCost();
 		 }
 	 }
  
@@ -94,6 +95,7 @@
  
 		 int numParents = hopCommon.hopRef.getParent().size();
 		 if (numParents >= 2) {
+			// Todo. Multi-thread인 경우, worker 수에 따라 나누기
 			 selfCost /= numParents;
 			 forwardingCost /= numParents;
 		 }
@@ -199,7 +201,7 @@
 				 if (cacluatedConflictPlanPair.getRight() == FederatedOutput.LOUT) {
 					 // When changing from calculated LOUT to current FOUT, subtract the existing LOUT total cost and add the FOUT total cost
 					 // When maintaining calculated LOUT to current LOUT, the total cost remains unchanged.
-					 fOutAdditionalCost += confilctFOutFedPlan.getCumulativeCost() - confilctLOutFedPlan.getCumulativeCost();
+					 fOutAdditionalCost += confilctFOutFedPlan.getCumulativeCostPerParents() - confilctLOutFedPlan.getCumulativeCostPerParents();
  
 					 if (conflictParentFedPlan.getFedOutType() == FederatedOutput.LOUT) {
 						 // (CASE 1) Previously, calculated was LOUT and parent was LOUT, so no network transfer cost occurred
@@ -215,7 +217,7 @@
 						 fOutAdditionalCost -= confilctLOutFedPlan.getForwardingCost();
 					 }
 				 } else {
-					 lOutAdditionalCost += confilctLOutFedPlan.getCumulativeCost() - confilctFOutFedPlan.getCumulativeCost();
+					 lOutAdditionalCost += confilctLOutFedPlan.getCumulativeCostPerParents() - confilctFOutFedPlan.getCumulativeCostPerParents();
  
 					 if (conflictParentFedPlan.getFedOutType() == FederatedOutput.FOUT) {
 						 isLOutForwarding = true;

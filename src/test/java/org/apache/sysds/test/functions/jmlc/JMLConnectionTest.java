@@ -27,6 +27,8 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.parser.LanguageException;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -40,6 +42,12 @@ import java.util.HashMap;
  * Test input and output capabilities of JMLC Connection class.
  */
 public class JMLConnectionTest extends AutomatedTestBase {
+	public static final String META = "{\"data_type\": \"matrix\",\n" +
+			"    \"value_type\": \"double\",  \n" +
+			"    \"rows\": 1,\n" +
+			"    \"cols\": 1,\n" +
+			"    \"nnz\": 1,\n" +
+			"    \"format\": \"csv\"}";
 	private final static String TEST_NAME = "JMLConnectionTest";
 	private final static String TEST_DIR = "functions/jmlc/";
 
@@ -155,7 +163,7 @@ public class JMLConnectionTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testDoubleMatrixException() {
+	public void testReadDoubleMatrixException() {
 		try (Connection conn = new Connection()) {
 			conn.readDoubleMatrix("test.csv");
 		} catch (IOException e) {
@@ -164,7 +172,7 @@ public class JMLConnectionTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testDoubleMatrixException2() {
+	public void testReadDoubleMatrixException2() {
 		try (Connection conn = new Connection()) {
 			conn.readDoubleMatrix("test.csv", null, 1, 1, 1, 1);
 		} catch (IOException e) {
@@ -173,7 +181,7 @@ public class JMLConnectionTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testDoubleMatrix() {
+	public void testReadDoubleMatrix() {
 		try (Connection conn = new Connection()) {
 			double[][] matrix = conn.readDoubleMatrix("src/test/resources/component/compress/1-1.csv");
 			Assert.assertEquals(1.0, matrix[0][0], 0.0);
@@ -183,7 +191,7 @@ public class JMLConnectionTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testDoubleMatrix2() {
+	public void testReadDoubleMatrix2() {
 		try (Connection conn = new Connection()) {
 			double[][] matrix = conn.readDoubleMatrix("src/test/resources/component/compress/1-1.csv", Types.FileFormat.CSV, 1, 1, 1, 1);
 			Assert.assertEquals(1.0, matrix[0][0], 0.0);
@@ -193,12 +201,93 @@ public class JMLConnectionTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testConvertMatrix() {
+	public void testConvertToDoubleMatrix() {
 		try (Connection conn = new Connection()) {
-			double[][] matrix = conn.convertToDoubleMatrix("src/test/resources/component/compress/1-1.csv", "tmp");
+			double[][] matrix = conn.convertToDoubleMatrix("1", META);
 			Assert.assertEquals(1.0, matrix[0][0], 0.0);
 		} catch (IOException e) {
 			throw new AssertionError(e);
+		}
+	}
+
+	@Test
+	public void testConvertToDoubleMatrixException() {
+		try (Connection conn = new Connection()) {
+			String meta = "abc";
+			conn.convertToDoubleMatrix("1", meta);
+		} catch (IOException e) {
+			Throwable cause = e.getCause();
+			Assert.assertEquals("NullPointerException", cause.getClass().getSimpleName());
+		}
+	}
+
+	@Test
+	public void testConvertToMatrix1() {
+		try (Connection conn = new Connection()) {
+			MatrixBlock mb = conn.convertToMatrix("1", META);
+			Assert.assertEquals(1.0, mb.get(0,0), 0.0);
+		} catch (IOException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	@Test
+	public void testConvertToMatrixException1() {
+		try (Connection conn = new Connection()) {
+			conn.convertToMatrix("1", "{" + META);
+		} catch (IOException e) {
+			Throwable cause = e.getCause();
+			Assert.assertEquals("NullPointerException", cause.getClass().getSimpleName());
+		}
+	}
+
+	@Test
+	public void testConvertToMatrix2() {
+		try (Connection conn = new Connection()) {
+			MatrixBlock mb = conn.convertToMatrix("1 1 1", 1, 1);
+			Assert.assertEquals(1.0, mb.get(0,0), 0.0);
+		} catch (IOException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	@Test
+	public void testConvertToMatrixException2() {
+		try (Connection conn = new Connection()) {
+			conn.convertToMatrix("1 1", 1,1);
+		} catch (IOException e) {
+			Throwable cause = e.getCause();
+			Assert.assertEquals("StringIndexOutOfBoundsException", cause.getClass().getSimpleName());
+		}
+	}
+
+	@Test
+	public void testConvertToMatrixCSV() {
+		try (Connection conn = new Connection()) {
+			MatrixBlock mb = conn.convertToMatrix(IOUtilFunctions.toInputStream("1"), 1,1,"csv");
+			Assert.assertEquals(1.0, mb.get(0,0), 0.0);
+		} catch (IOException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	@Test
+	public void testConvertToMatrixMM() {
+		try (Connection conn = new Connection()) {
+			MatrixBlock mb = conn.convertToMatrix(IOUtilFunctions.toInputStream("%%MatrixMarket matrix coordinate real"+
+					" general \n 1 1 1 \n 1 1 1.0"), 1,1,"mm");
+			Assert.assertEquals(1.0, mb.get(0,0), 0.0);
+		} catch (IOException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	@Test
+	public void testConvertToMatrixInvalidFormat() {
+		try (Connection conn = new Connection()) {
+			conn.convertToMatrix(IOUtilFunctions.toInputStream("1"), 1,1,"abc");
+		} catch (IOException e) {
+			Assert.assertTrue(e.getMessage().startsWith("Invalid input format"));
 		}
 	}
 }

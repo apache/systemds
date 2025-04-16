@@ -657,8 +657,8 @@ public class HopRewriteUtils {
 		Hop mainInput = input1.getDataType().isMatrix() ? input1 :
 			input2.getDataType().isMatrix() ? input2 : input1;
 		Hop otherInput = mainInput==input1 ? input2 : input1;
-		BinaryOp bop = new BinaryOp(mainInput.getName(), mainInput.getDataType(),
-			mainInput.getValueType(), op, input1, input2);
+		BinaryOp bop = new BinaryOp(mainInput.getName(),
+			mainInput.getDataType(),mainInput.getValueType(), op, input1, input2, outer);
 		//cleanup value type for relational operations and others
 		if( otherInput.getValueType().isFP() && !mainInput.getValueType().isFP() )
 			bop.setValueType(otherInput.getValueType());
@@ -666,7 +666,6 @@ public class HopRewriteUtils {
 			bop.setValueType(ValueType.BOOLEAN);
 		if( bop.getDataType().isMatrix() )
 			bop.setValueType(ValueType.FP64);
-		bop.setOuterVectorOperation(outer);
 		bop.setBlocksize(mainInput.getBlocksize());
 		copyLineNumbers(mainInput, bop);
 		bop.refreshSizeInformation();

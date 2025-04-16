@@ -109,6 +109,12 @@ public class BinaryOp extends MultiThreadedHop {
 		//compute unknown dims and nnz
 		refreshSizeInformation();
 	}
+	
+	public BinaryOp(String l, DataType dt, ValueType vt, OpOp2 o,
+			Hop inp1, Hop inp2, boolean outer) {
+		this(l, dt, vt, o, inp1, inp2);
+		setOuterVectorOperation(outer);
+	}
 
 	public OpOp2 getOp() {
 		return op;
@@ -448,6 +454,15 @@ public class BinaryOp extends MultiThreadedHop {
 		} 
 		else 
 		{
+			//check correct broadcasting dimensions
+			if( !outer && ((left.getDim1()==1 && right.getDim1() > 1)
+				|| (left.getDim2()==1 && right.getDim2() > 1)) )
+			{
+				throw new HopsException("Invalid binary broadcasting from left: "
+					+ left.getDataCharacteristics()+" "+getOp().name()+" "
+					+right.getDataCharacteristics());
+			}
+			
 			// Both operands are Matrixes or Tensors
 			ExecType et = optFindExecType();
 			boolean isGPUSoftmax = et == ExecType.GPU && op == OpOp2.DIV && 
@@ -1092,15 +1107,6 @@ public class BinaryOp extends MultiThreadedHop {
 					}
 					else //GENERAL CASE
 					{
-						//check correct broadcasting dimensions
-						if( (input1.getDim1()==1 && input2.getDim1() > 1)
-							|| (input1.getDim2()==1 && input2.getDim2() > 1) )
-						{
-							throw new HopsException("Invalid binary broadcasting from left: "
-								+ input1.getDataCharacteristics()+" "+getOp().name()+" "
-								+input2.getDataCharacteristics());
-						}
-						
 						ldim1 = (input1.rowsKnown()) ? input1.getDim1()
 							: ((input2.getDim1()>1)?input2.getDim1():-1);
 						ldim2 = (input1.colsKnown()) ? input1.getDim2() 

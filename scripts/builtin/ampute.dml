@@ -72,8 +72,8 @@ m_ampute = function(Matrix[Double] X,
 
       # 4. Use probabilities to ampute pattern candidates:
       random = rand(rows=groupSize, cols=1, min=0, max=1, pdf="uniform", seed=seed)
-      amputeds = (random <= probs) * (1 - patterns[patternNum]) # Obtains matrix with 1's at indices to ampute.
-      while (FALSE) {} # FIX ME
+      # Obtains matrix with 1's at indices to ampute.
+      amputeds = outer((random <= probs), (1 - patterns[patternNum]), "*")
       groupSamples = groupSamples + replace(target=amputeds, pattern=1, replacement=NaN)
 
       # 5. Update output matrix:
@@ -241,7 +241,6 @@ return (Matrix[Double] groupAssignments, Matrix[Double] groupCounts) {
 
     for (i in 1:numGroups) {
       assigned = (random >= cumSum[i]) & (random < cumSum[i + 1])
-      while (FALSE) {} # FIX ME
       groupCounts[i] = sum(assigned)
       groupAssignments = groupAssignments + i * assigned
     }

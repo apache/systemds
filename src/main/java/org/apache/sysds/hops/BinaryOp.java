@@ -1092,6 +1092,15 @@ public class BinaryOp extends MultiThreadedHop {
 					}
 					else //GENERAL CASE
 					{
+						//check correct broadcasting dimensions
+						if( (input1.getDim1()==1 && input2.getDim1() > 1)
+							|| (input1.getDim2()==1 && input2.getDim2() > 1) )
+						{
+							throw new HopsException("Invalid binary broadcasting from left: "
+								+ input1.getDataCharacteristics()+" "+getOp().name()+" "
+								+input2.getDataCharacteristics());
+						}
+						
 						ldim1 = (input1.rowsKnown()) ? input1.getDim1()
 							: ((input2.getDim1()>1)?input2.getDim1():-1);
 						ldim2 = (input1.colsKnown()) ? input1.getDim2() 

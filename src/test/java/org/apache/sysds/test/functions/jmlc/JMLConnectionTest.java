@@ -27,6 +27,7 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.parser.LanguageException;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -105,13 +106,22 @@ public class JMLConnectionTest extends AutomatedTestBase {
 
 	@Test
 	public void testConnectionParseLanguageException() {
+		boolean oldStat = DMLScript.STATISTICS;
+		boolean oldJMLCStat = DMLScript.JMLC_MEM_STATISTICS;
         try (Connection conn = new Connection()) {
+			DMLScript.STATISTICS = true;
+			conn.gatherMemStats(true);
+			Assert.assertTrue(DMLScript.STATISTICS);
+
             conn.prepareScript("printx('hello')", new String[]{}, new String[]{});
             throw new AssertionError("Test should have thrown a DMLException");
         } catch (DMLException e) {
             Throwable cause = e.getCause();
             Assert.assertTrue(cause.getMessage().startsWith("ERROR: [line 1:0] -> printx('hello') -- function printx is undefined in namespace .builtinNS"));
-        }
+        } finally {
+			DMLScript.STATISTICS = oldStat;
+			DMLScript.JMLC_MEM_STATISTICS = oldJMLCStat;
+		}
 	}
 
 	@Test
@@ -286,6 +296,84 @@ public class JMLConnectionTest extends AutomatedTestBase {
 	public void testConvertToMatrixInvalidFormat() {
 		try (Connection conn = new Connection()) {
 			conn.convertToMatrix(IOUtilFunctions.toInputStream("1"), 1,1,"abc");
+		} catch (IOException e) {
+			Assert.assertTrue(e.getMessage().startsWith("Invalid input format"));
+		}
+	}
+
+	@Test
+	public void testReadFrame1() {
+		try (Connection conn = new Connection()) {
+			conn.readStringFrame("test.csv");
+		} catch (IOException e) {
+			Assert.assertEquals("IOException", e.getCause().getClass().getSimpleName());
+		}
+	}
+
+	@Test
+	public void testReadFrame2() {
+		try (Connection conn = new Connection()) {
+			conn.readStringFrame("test.csv", Types.FileFormat.CSV, 1, 1);
+		} catch (IOException e) {
+			Assert.assertTrue(e.getCause().getMessage().startsWith("File test.csv does not exist on HDFS/LFS"));
+		}
+	}
+
+	@Test
+	public void testConvertToStringFrame1() {
+		try (Connection conn = new Connection()) {
+			String[][] frame = conn.convertToStringFrame("Hello", META);
+			Assert.assertEquals("Hello", frame[0][0]);
+		} catch (IOException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	@Test
+	public void testConvertToStringFrameException1() {
+		try (Connection conn = new Connection()) {
+			conn.convertToFrame("Hello", "{" + META);
+		} catch (IOException e) {
+			Assert.assertEquals("NullPointerException", e.getCause().getClass().getSimpleName());
+		}
+	}
+
+	@Test
+	public void testConvertToStringFrame2() {
+		try (Connection conn = new Connection()) {
+			String[][] frame = conn.convertToStringFrame("1 1 Hello", 1,1);
+			Assert.assertEquals("Hello", frame[0][0]);
+		} catch (IOException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	@Test
+	public void testConvertToStringFrame3() {
+		try (Connection conn = new Connection()) {
+			String[][] frame = conn.convertToStringFrame(IOUtilFunctions.toInputStream("Hello"), 1,1, "csv");
+			Assert.assertEquals("Hello", frame[0][0]);
+		} catch (IOException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	@Test
+	public void testConvertToStringFrame4() {
+		try (Connection conn = new Connection()) {
+			String[][] frame = conn.convertToStringFrame(IOUtilFunctions.toInputStream("%%MatrixMarket matrix coordinate real"+
+					" general \n 1 1 1 \n 1 1 Hello"), 1,1, "mm");
+			Assert.assertEquals("Hello", frame[0][0]);
+		} catch (IOException e) {
+			Assert.assertEquals("Failed to create frame reader for unknown format: mm", e.getCause().getMessage());
+		}
+	}
+
+	@Test
+	public void testConvertToStringFrameException2() {
+		try (Connection conn = new Connection()) {
+			String[][] frame = conn.convertToStringFrame(IOUtilFunctions.toInputStream("Hi"), 1,1, "abc");
+			Assert.assertEquals("Hello", frame[0][0]);
 		} catch (IOException e) {
 			Assert.assertTrue(e.getMessage().startsWith("Invalid input format"));
 		}

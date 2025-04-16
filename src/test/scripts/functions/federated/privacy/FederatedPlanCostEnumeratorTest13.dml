@@ -19,8 +19,23 @@
 #
 #-------------------------------------------------------------
 
-a = matrix(7,10,10);
-if (sum(a) > 0.5)
-    b = a * 2;
-c = sqrt(b);
-print(sum(c));
+test = function(matrix[Double] n, matrix[Double] m)
+      return (matrix[Double] k) {
+    if (sum(n) > 1){
+      k = n;
+    } else {
+      k = n * m;
+    }
+    k = k * m * n;
+}
+W1 = rand(rows=1000, cols=1000, seed=1);
+W2 = rand(rows=10000, cols=10000, seed=2);
+
+test_result1 = test(W1, W2);
+test_result2 = test(W2, W1);
+
+sum_result1 = sum(test_result1);
+sum_result2 = sum(test_result2);
+
+print("Test1: " + sum_result1);
+print("Test2: " + sum_result2);

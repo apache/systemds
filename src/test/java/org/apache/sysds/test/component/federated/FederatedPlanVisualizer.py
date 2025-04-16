@@ -289,29 +289,27 @@ def visualize_plan(filename: str, output_dir: str = "visualization_output"):
         
         # 2. 각 자식 노드의 cumulative_cost와 forward_cost 합산
         for child_node in child_nodes:
-            # 자식 노드의 총 비용 (Total)
-            child_total = G.nodes[child_node].get('total', '0.0')
-            try:
-                child_total_float = float(child_total)
-                print(f"  자식 노드 {child_node}의 Total 비용: {child_total_float}")
-                child_cumulated_cost_sum += child_total_float
-            except (ValueError, TypeError):
-                print(f"  자식 노드 {child_node}의 Total 비용 변환 실패: {child_total}")
-            
-            # 자식 노드의 포워딩 비용 계산
-            # 자식 노드에서 나가는 엣지들의 forward_cost 합산
-            child_forward_sum = 0.0
-            for _, grandchild, data in G.out_edges(child_node, data=True):
-                if 'forward_cost' in data and data['forward_cost'] is not None:
+            # 현재 노드와 자식 노드 사이의 엣지 데이터 가져오기
+            edge_data = G.get_edge_data(child_node, node_id)
+            if edge_data:
+                # 누적 비용 계산
+                if 'cumulative_cost' in edge_data and edge_data['cumulative_cost'] is not None:
                     try:
-                        if data['forward_cost'] != '-1':  # 미발견 엣지가 아닌 경우에만
-                            fwd_cost = float(data['forward_cost'])
-                            child_forward_sum += fwd_cost
-                            print(f"    자식 노드 {child_node}의 forward_cost: {fwd_cost}")
+                        cumulative_cost = float(edge_data['cumulative_cost'])
+                        print(f"  자식 노드 {child_node}의 누적 비용: {cumulative_cost}")
+                        child_cumulated_cost_sum += cumulative_cost
                     except ValueError:
-                        print(f"    자식 노드 {child_node}의 forward_cost 변환 실패: {data['forward_cost']}")
-            
-            child_forward_cost_sum += child_forward_sum
+                        print(f"  자식 노드 {child_node}의 누적 비용 변환 실패: {edge_data['cumulative_cost']}")
+                
+                # 포워딩 비용 계산
+                if 'forward_cost' in edge_data and edge_data['forward_cost'] is not None:
+                    try:
+                        if edge_data['forward_cost'] != '-1':  # 미발견 엣지가 아닌 경우에만
+                            fwd_cost = float(edge_data['forward_cost'])
+                            print(f"  자식 노드 {child_node}의 forward_cost: {fwd_cost}")
+                            child_forward_cost_sum += fwd_cost
+                    except ValueError:
+                        print(f"  자식 노드 {child_node}의 forward_cost 변환 실패: {edge_data['forward_cost']}")
         
         # 레이블 첫 줄: 노드 ID, 연산, 총 비용, 가중치
         first_line = f"{node_id}: {label}"
@@ -459,28 +457,31 @@ def visualize_plan(filename: str, output_dir: str = "visualization_output"):
         # 발견된 엣지는 정보 표시
         if 'is_discovered' in d and d['is_discovered'] and 'forward_cost' in d and 'forward_weight' in d:
             label_parts = []
-            
+
+            # 누적 비용이 있으면 추가 (정수 부분만)
+            if 'cumulative_cost' in d and d['cumulative_cost'] is not None:
+                try:
+                    cumulative_cost_int = int(float(d['cumulative_cost']))
+                    label_parts.append(f"C:{cumulative_cost_int}")
+                except ValueError:
+                    label_parts.append(f"C:{d['cumulative_cost']}")
+
+
             # 포워딩 비용 (정수 부분만)
             try:
                 forward_cost_int = int(float(d['forward_cost']))
-                label_parts.append(f"C:{forward_cost_int}")
+                label_parts.append(f"FC:{forward_cost_int}")
             except ValueError:
-                label_parts.append(f"C:{d['forward_cost']}")
+                label_parts.append(f"FC:{d['forward_cost']}")
             
             # 가중치 (정수 부분만)
             try:
                 forward_weight_int = int(float(d['forward_weight']))
-                label_parts.append(f"W:{forward_weight_int}")
+                label_parts.append(f"FW:{forward_weight_int}")
             except ValueError:
-                label_parts.append(f"W:{d['forward_weight']}")
+                label_parts.append(f"FW:{d['forward_weight']}")
             
-            # # 누적 비용이 있으면 추가 (정수 부분만)
-            # if 'cumulative_cost' in d and d['cumulative_cost'] is not None:
-            #     try:
-            #         cumulative_cost_int = int(float(d['cumulative_cost']))
-            #         label_parts.append(f"C:{cumulative_cost_int}")
-            #     except ValueError:
-            #         label_parts.append(f"C:{d['cumulative_cost']}")
+
             
             edge_labels[(u, v)] = "\n".join(label_parts)
         # 미발견 엣지는 "Undiscovered"로 표시

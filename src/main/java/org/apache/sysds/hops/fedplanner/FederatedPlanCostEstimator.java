@@ -55,7 +55,6 @@
 			 FedPlan childFOutFedPlan = memoTable.getFedPlanAfterPrune(childHopID, FederatedOutput.FOUT);
 			 
 			 // The cumulative cost of the child already includes the weight
-			 // Todo: TWrite, TRead 고려해야함
 			 childCumulativeCost[i][0] = childLOutFedPlan.getCumulativeCostPerParents();
 			 childCumulativeCost[i][1] = childFOutFedPlan.getCumulativeCostPerParents();
 
@@ -83,6 +82,7 @@
 			 } else if (((DataOp)hopCommon.hopRef).getOp() == Types.OpOpData.TRANSIENTREAD) {
 				 hopCommon.setSelfCost(0);
 				 // TRead may have a different FedOutType from its parent, so calculate forwarding cost
+				 // Todo: numOfParents 고려해야함
 				 hopCommon.setForwardingCost(computeHopForwardingCost(hopCommon.hopRef.getOutputMemEstimate()));
 				 return 0;
 			 }
@@ -90,16 +90,10 @@
  
 		 // In loops, selfCost is repeated, but forwarding may not be
 		 // Therefore, the weight for forwarding follows the parent's weight (TODO: Q. Is the parent also receiving forwarding once?)
+		 // Todo. Multi-thread인 경우, worker 수에 따라 나누기
 		 double selfCost = hopCommon.weight * computeSelfCost(hopCommon.hopRef);
 		 double forwardingCost = computeHopForwardingCost(hopCommon.hopRef.getOutputMemEstimate());
- 
-		 int numParents = hopCommon.hopRef.getParent().size();
-		 if (numParents >= 2) {
-			// Todo. Multi-thread인 경우, worker 수에 따라 나누기
-			 selfCost /= numParents;
-			 forwardingCost /= numParents;
-		 }
- 
+
 		 hopCommon.setSelfCost(selfCost);
 		 hopCommon.setForwardingCost(forwardingCost);
  

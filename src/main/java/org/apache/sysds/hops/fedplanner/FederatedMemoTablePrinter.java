@@ -21,14 +21,14 @@ public class FederatedMemoTablePrinter {
      * @param memoTable The memoization table containing FedPlan variants
      * @param additionalTotalCost The additional cost to be printed once
      */
-    public static void printFedPlanTree(FederatedMemoTable.FedPlan rootFedPlan, Set<Hop> rootHopStatSet,
+    public static void printFedPlanTree(FederatedMemoTable.FedPlan rootFedPlan, Set<Long> rootHopStatSet,
                                         FederatedMemoTable memoTable, double additionalTotalCost) {
         System.out.println("Additional Cost: " + additionalTotalCost);
         Set<Long> visited = new HashSet<>();
         printFedPlanTreeRecursive(rootFedPlan, memoTable, visited, 0);
         
-        for (Hop hop : rootHopStatSet) {
-            FedPlan plan = memoTable.getFedPlanAfterPrune(hop.getHopID(), FederatedOutput.LOUT);
+        for (Long hopID : rootHopStatSet) {
+            FedPlan plan = memoTable.getFedPlanAfterPrune(hopID, FederatedOutput.LOUT);
             printNotReferencedFedPlanRecursive(plan, memoTable, visited, 1);
         }
     }
@@ -195,7 +195,7 @@ public class FederatedMemoTablePrinter {
                 } else {
                     isForwardingCostOccured = "O";
                 }
-                sb.append(String.format("(ID:%d, %s, C:%.1f, F:%.1f, FW:%.1f)", childPair.getLeft(), isForwardingCostOccured, childPlan.getSelfCost(), childPlan.getForwardingCost(), childPlan.getWeight()));
+                sb.append(String.format("(ID:%d, %s, C:%.1f, F:%.1f, FW:%.1f)", childPair.getLeft(), isForwardingCostOccured, childPlan.getCumulativeCostPerParents(), childPlan.getForwardingCost(), childPlan.getWeight()));
                 sb.append(childAdded?",":"");
             }
             sb.append("}");

@@ -87,7 +87,7 @@ public class FederatedMemoTable {
 		public double getCumulativeCostPerParents() {
 			double cumulativeCostPerParents = cumulativeCost;
 			int numOfParents = fedPlanVariants.hopCommon.getNumOfParents();
-			if (fedPlanVariants.hopCommon.getNumOfParents() >= 2){
+			if (numOfParents >= 2){
 				cumulativeCostPerParents /= numOfParents;
 			}
 			return cumulativeCostPerParents;
@@ -143,21 +143,15 @@ public class FederatedMemoTable {
 		protected final Hop hopRef; // Reference to the associated Hop
 		protected double selfCost; // Cost of the hop's computation and memory access
 		protected double forwardingCost; // Cost of forwarding the hop's output to its parent
+		protected int numOfParents;
 		protected double weight; // Weight used to calculate cost based on hop execution frequency
 		protected List<Pair<Long, Double>> loopContext; // Loop context in which this hop exists
 
-		public HopCommon(Hop hopRef, double weight) {
+		public HopCommon(Hop hopRef, double weight, int numOfParents, List<Pair<Long, Double>> loopContext) {
 			this.hopRef = hopRef;
 			this.selfCost = 0;
 			this.forwardingCost = 0;
-			this.weight = weight;
-			this.loopContext = new ArrayList<>();
-		}
-		
-		public HopCommon(Hop hopRef, double weight, List<Pair<Long, Double>> loopContext) {
-			this.hopRef = hopRef;
-			this.selfCost = 0;
-			this.forwardingCost = 0;
+			this.numOfParents = numOfParents;
 			this.weight = weight;
 			this.loopContext = loopContext != null ? new ArrayList<>(loopContext) : new ArrayList<>();
 		}
@@ -166,7 +160,7 @@ public class FederatedMemoTable {
 		public double getSelfCost() {return selfCost;}
 		public double getForwardingCost() {return forwardingCost;}
 		public double getWeight() {return weight;}
-		public int getNumOfParents() {return hopRef.getParent().size();}
+		public int getNumOfParents() {return numOfParents;}
 		public List<Pair<Long, Double>> getLoopContext() {return loopContext;}
 
 		protected void setSelfCost(double selfCost) {this.selfCost = selfCost;}

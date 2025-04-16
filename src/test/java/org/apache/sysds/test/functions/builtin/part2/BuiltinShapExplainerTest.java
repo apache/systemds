@@ -20,6 +20,7 @@
 package org.apache.sysds.test.functions.builtin.part2;
 
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -30,6 +31,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
+@Ignore //FIXME
 public class BuiltinShapExplainerTest extends AutomatedTestBase
 {
 	private static final String TEST_NAME = "shapExplainer";

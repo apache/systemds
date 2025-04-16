@@ -2767,8 +2767,7 @@ public class DMLTranslator
 			if( op == null )
 				throw new HopsException("Unsupported outer vector binary operation: "+((LiteralOp)expr3).getStringValue());
 
-			currBuiltinOp = new BinaryOp(target.getName(), DataType.MATRIX, target.getValueType(), op, expr, expr2);
-			((BinaryOp)currBuiltinOp).setOuterVectorOperation(true); //flag op as specific outer vector operation
+			currBuiltinOp = new BinaryOp(target.getName(), DataType.MATRIX, target.getValueType(), op, expr, expr2, true);
 			currBuiltinOp.refreshSizeInformation(); //force size reevaluation according to 'outer' flag otherwise danger of incorrect dims
 			break;
 

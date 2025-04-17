@@ -93,6 +93,13 @@ public class JMLConnectionTest extends AutomatedTestBase {
 		conn.gatherMemStats(false);
 		Assert.assertTrue(DMLScript.STATISTICS);
 
+		conn.gatherMemStats(true);
+		Assert.assertTrue(DMLScript.STATISTICS);
+
+		DMLScript.STATISTICS = false;
+		conn.gatherMemStats(false);
+		Assert.assertFalse(DMLScript.STATISTICS);
+
         try (conn) {
             conn.prepareScript("printx('hello')", new String[]{"$inScalar1", null}, new String[]{null});
             throw new AssertionError("Test should have thrown a LanguageException");
@@ -106,22 +113,13 @@ public class JMLConnectionTest extends AutomatedTestBase {
 
 	@Test
 	public void testConnectionParseLanguageException() {
-		boolean oldStat = DMLScript.STATISTICS;
-		boolean oldJMLCStat = DMLScript.JMLC_MEM_STATISTICS;
         try (Connection conn = new Connection()) {
-			DMLScript.STATISTICS = true;
-			conn.gatherMemStats(true);
-			Assert.assertTrue(DMLScript.STATISTICS);
-
             conn.prepareScript("printx('hello')", new String[]{}, new String[]{});
             throw new AssertionError("Test should have thrown a DMLException");
         } catch (DMLException e) {
             Throwable cause = e.getCause();
             Assert.assertTrue(cause.getMessage().startsWith("ERROR: [line 1:0] -> printx('hello') -- function printx is undefined in namespace .builtinNS"));
-        } finally {
-			DMLScript.STATISTICS = oldStat;
-			DMLScript.JMLC_MEM_STATISTICS = oldJMLCStat;
-		}
+        }
 	}
 
 	@Test
@@ -376,6 +374,16 @@ public class JMLConnectionTest extends AutomatedTestBase {
 			Assert.assertEquals("Hello", frame[0][0]);
 		} catch (IOException e) {
 			Assert.assertTrue(e.getMessage().startsWith("Invalid input format"));
+		}
+	}
+
+	@Test
+	public void testConvertToFrame() {
+		try (Connection conn = new Connection()) {
+			FrameBlock frame = conn.convertToFrame("1 1 Hello", 1, 1);
+			Assert.assertEquals("Hello", frame.get(0,0));
+		} catch (IOException e) {
+			throw new AssertionError(e);
 		}
 	}
 }

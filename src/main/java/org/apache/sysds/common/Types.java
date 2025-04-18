@@ -868,6 +868,7 @@ public interface Types {
 		PROTO,  // protocol buffer representation
 		HDF5,   // Hierarchical Data Format (HDF)
 		COG,   // Cloud-optimized GeoTIFF
+		PARQUET, // parquet format for columnar data storage
 		UNKNOWN;
 		
 		public boolean isIJV() {

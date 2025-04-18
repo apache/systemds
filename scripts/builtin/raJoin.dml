@@ -99,7 +99,7 @@ m_raJoin = function (Matrix[Double] A, Integer colA, Matrix[Double] B,
       # TODO performance - try avoid iterating over rows
       # create a mask to apply the outBucket value as an index of following matrix
       seqMatrix = matrix(1, rows=nrow(outBucket), cols=1) %*% t(seq(1, nrow(cumHistMul)))
-      mask = (outBucket == seqMatrix)
+      mask = outer(outBucket, seqMatrix, "==")
 
       updatedoffset = offset - (mask %*% (cumHistMul - histMul)) - 1
       leftOutIdx = mask %*% (cumLeftHist - leftHist) + (floor(updatedoffset / mask %*% rightHist)) + 1

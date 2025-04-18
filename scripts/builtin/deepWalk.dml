@@ -136,7 +136,7 @@ update = function(Matrix[double] Phi, Matrix[double] Theta,
   gradients = computeGradients(u, v, Theta, path_to_u, Phi, tree_depth)
 
   # compute negative gradient for Theta update
-  neg_gradient = gradients * Phi[v]
+  neg_gradient = outer(gradients, Phi[v,], "*");
   for (i in 1:nrow(gradients))
     Theta_new[as.scalar(path_to_u[i])] = Theta_new[as.scalar(path_to_u[i])] + alpha * neg_gradient[i]
 

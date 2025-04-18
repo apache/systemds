@@ -58,7 +58,7 @@ return (Double mattCC)
   mattCC = computeMCC(confM)
 }
 
-computeMCC = function(Matrix[Double] confusionM) 
+computeMCC = function(Matrix[Double] confusionM)
   return (Double mattCC) {
 
   TN=as.scalar(confusionM[1,1])

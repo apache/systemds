@@ -458,7 +458,8 @@ public class BinaryOp extends MultiThreadedHop {
 			if( !outer && ((left.getDim1()==1 && right.getDim1() > 1)
 				|| (left.getDim2()==1 && right.getDim2() > 1)) )
 			{
-				throw new HopsException("Invalid binary broadcasting from left: "
+				throw new HopsException("Invalid binary broadcasting from left "
+					+ "(lines "+getBeginLine()+"-"+getEndLine()+"): "
 					+ left.getDataCharacteristics()+" "+getOp().name()+" "
 					+right.getDataCharacteristics());
 			}

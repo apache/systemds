@@ -704,8 +704,8 @@ return(Matrix[Double] M){
   n_cols=ncol(M)
   #reshape to row vector
   M = matrix(M, rows=1, cols=length(M))
-  #broadcast
-  M = matrix(1, rows=n_times, cols=1) * M
+  #replicate via outer product
+  M = matrix(1, rows=n_times, cols=1) %*% M
   #reshape to get matrix
   M = matrix(M, rows=n_rows*n_times, cols=n_cols)
 }

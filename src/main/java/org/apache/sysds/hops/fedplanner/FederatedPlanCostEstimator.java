@@ -51,7 +51,7 @@
 									  double[][] childCumulativeCost, double[] childForwardingCost) {
 		 for (int i = 0; i < inputHops.size(); i++) {
 			 long childHopID = inputHops.get(i).getHopID();
- 
+//			 System.out.println("[Read]" + hopCommon.getHopRef().getOpString() + "(" + hopCommon.getHopRef().getHopID() + ") ->" + inputHops.get(i).getOpString() + "(" + childHopID + ")");
 			 FedPlan childLOutFedPlan = memoTable.getFedPlanAfterPrune(childHopID, FederatedOutput.LOUT);
 			 FedPlan childFOutFedPlan = memoTable.getFedPlanAfterPrune(childHopID, FederatedOutput.FOUT);
 			 

@@ -47,6 +47,7 @@ public class FederatedMemoTable {
 	}
 
 	public FedPlan getFedPlanAfterPrune(long hopID, FederatedOutput fedOutType) {
+
 		FedPlanVariants fedPlanVariantList = hopMemoTable.get(new ImmutablePair<>(hopID, fedOutType));
 		return fedPlanVariantList._fedPlanVariants.get(0);
 	}

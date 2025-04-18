@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 test = function(matrix[Double] n, matrix[Double] m)
-      return (matrix[Double] k) {
+                        return (matrix[Double] k) {
     if (sum(n) > 1){
       k = n;
     } else {

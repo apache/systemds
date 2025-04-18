@@ -1418,4 +1418,165 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	public HashMap<Lop.Type, List<Lop.Type>> getCheckpointPositions() {
 		return _checkpointPositions;
 	}
+
+	/**
+	 * StatementBlock을 깊은 복사하는 함수
+	 * @param original 복사할 원본 StatementBlock
+	 * @return 깊은 복사된 StatementBlock
+	 * // Todo Hop 제외
+	 */
+	public StatementBlock deepCopy() {
+		StatementBlock copy;
+		if (this instanceof FunctionStatementBlock){
+			copy = new FunctionStatementBlock();
+		} else if (this instanceof ForStatementBlock){
+			copy = new ForStatementBlock();
+		} else if (this instanceof WhileStatementBlock){
+			copy = new WhileStatementBlock();
+		} else {
+			copy = new StatementBlock();
+		}
+
+		// 기본 메타데이터 복사
+		copy.setFilename(this.getFilename());
+		copy.setBeginLine(this.getBeginLine());
+		copy.setBeginColumn(this.getBeginColumn());
+		copy.setEndLine(this.getEndLine());
+		copy.setEndColumn(this.getEndColumn());
+		copy.setText(this.getText());
+
+		// DML 프로그램 참조 복사
+		copy.setDMLProg(this.getDMLProg());
+
+		// LiveVariableAnalysis 정보 복사
+		if (this.liveIn() != null)
+			copy.setLiveIn(this.liveIn());
+		if (this.liveOut() != null)
+			copy.setLiveOut(this.liveOut());
+		if (this._gen != null)
+			copy._gen.addVariables(this._gen);
+		if (this._kill != null)
+			copy._kill.addVariables(this._kill);
+		if (this._read != null)
+			copy._read.addVariables(this._read);
+		if (this._updated != null)
+			copy._updated.addVariables(this._updated);
+		if (this._warnSet != null)
+			copy._warnSet.addVariables(this._warnSet);
+
+		// 상수 변수 복사
+		copy._constVarsIn.putAll(this._constVarsIn);
+		copy._constVarsOut.putAll(this._constVarsOut);
+
+		// 문장(statements) 깊은 복사
+		if (this._statements != null && !this._statements.isEmpty()) {
+			for (Statement stmt : this._statements) {
+				Statement copyStmt = null;
+
+				if (stmt instanceof AssignmentStatement) {
+					AssignmentStatement as = (AssignmentStatement)stmt;
+					AssignmentStatement newAs = new AssignmentStatement(
+						new DataIdentifier(as.getTarget()), as.getSource());
+					newAs.setParseInfo(as);
+					newAs.setAccumulator(as.isAccumulator());
+					copyStmt = newAs;
+				} 
+				else if (stmt instanceof MultiAssignmentStatement) {
+					MultiAssignmentStatement mas = (MultiAssignmentStatement)stmt;
+					ArrayList<DataIdentifier> newTargets = new ArrayList<>();
+					for (DataIdentifier di : mas.getTargetList())
+						newTargets.add(new DataIdentifier(di));
+					MultiAssignmentStatement newMas = new MultiAssignmentStatement(newTargets, mas.getSource());
+					newMas.setParseInfo(mas);
+					copyStmt = newMas;
+				} 
+				else if (stmt instanceof IfStatement) {
+					IfStatement is = (IfStatement)stmt;
+					IfStatement newIs = new IfStatement();
+					newIs.setParseInfo(is);
+					newIs.setConditionalPredicate(is.getConditionalPredicate());
+					
+					// 조건부 본문 복사
+					ArrayList<StatementBlock> newIfBody = new ArrayList<>();
+					for (StatementBlock sb : is.getIfBody())
+						newIfBody.add(sb.deepCopy());
+					newIs.setIfBody(newIfBody);
+					
+					// else 본문 복사
+					ArrayList<StatementBlock> newElseBody = new ArrayList<>();
+					for (StatementBlock sb : is.getElseBody())
+						newElseBody.add(sb.deepCopy());
+					newIs.setElseBody(newElseBody);
+					
+					copyStmt = newIs;
+				} 
+				else if (stmt instanceof FunctionStatement) {
+					FunctionStatement fs = (FunctionStatement)stmt;
+					FunctionStatement newFs = new FunctionStatement();
+
+					// FunctionStatement 기본 속성 복사
+					newFs.setParseInfo(fs);
+					newFs.setName(fs.getName());
+
+					// 입력 및 출력 파라미터 복사 (한 번에 설정)
+					ArrayList<DataIdentifier> newInputParams = new ArrayList<>();
+					for (DataIdentifier di : fs.getInputParams())
+						newInputParams.add(new DataIdentifier(di));
+					newFs.setInputParams(newInputParams);
+
+					ArrayList<DataIdentifier> newOutputParams = new ArrayList<>();
+					for (DataIdentifier di : fs.getOutputParams())
+						newOutputParams.add(new DataIdentifier(di));
+					newFs.setOutputParams(newOutputParams);
+
+					// 함수 본문(body) 복사
+					ArrayList<StatementBlock> newBody = new ArrayList<>();
+					for (StatementBlock sb : fs.getBody()) {
+						newBody.add(sb.deepCopy());
+					}
+					newFs.setBody(newBody);
+					copyStmt = newFs;
+				} 
+				else if (stmt instanceof ForStatement) {
+					ForStatement fs = (ForStatement)stmt;
+					ForStatement newFs = new ForStatement();
+					newFs.setParseInfo(fs);
+					newFs.setPredicate(fs.getIterablePredicate());
+					
+					// For 루프 본문 복사
+					ArrayList<StatementBlock> newBody = new ArrayList<>();
+					for (StatementBlock sb : fs.getBody())
+						newBody.add(sb.deepCopy());
+					newFs.setBody(newBody);
+					
+					copyStmt = newFs;
+				} 
+				else if (stmt instanceof WhileStatement) {
+					WhileStatement ws = (WhileStatement)stmt;
+					WhileStatement newWs = new WhileStatement();
+					newWs.setParseInfo(ws);
+					newWs.setPredicate(ws.getConditionalPredicate());
+					
+					// While 루프 본문 복사
+					ArrayList<StatementBlock> newBody = new ArrayList<>();
+					for (StatementBlock sb : ws.getBody())
+						newBody.add(sb.deepCopy());
+					newWs.setBody(newBody);
+					
+					copyStmt = newWs;
+				} 
+				else if (stmt instanceof PrintStatement) {
+					PrintStatement ps = (PrintStatement)stmt;
+					PrintStatement newPs = new PrintStatement(ps.getType(), ps.getExpressions());
+					newPs.setParseInfo(ps);
+					copyStmt = newPs;
+				}
+				// 복사된 명령문을 새로운 StatementBlock에 추가
+				if (copyStmt != null) {
+					copy.addStatement(copyStmt);
+				}
+			}
+		}
+		return copy;
+	}
 }

@@ -39,8 +39,6 @@ public class FederatedPlanRewireTransTable {
            Map<String, List<Hop>> innerTransTable = rewireStatementBlock(sb, prog, visitedHops, rewireTable, outerTransTableList, null, unRefTwriteSet, progRootHopSet, fnStack);
            outerTransTableList.get(0).putAll(innerTransTable);
         }
-
-        return;
     }
 
     public static Map<String, List<Hop>> rewireStatementBlock(StatementBlock sb, DMLProgram prog, Set<Long> visitedHops, Map<Long,List<Hop>> rewireTable, List<Map<String, List<Hop>>> outerTransTableList,
@@ -158,6 +156,10 @@ public class FederatedPlanRewireTransTable {
                if(!fnStack.contains(fkey)) {
                    fnStack.add(fkey);
                    FunctionStatementBlock fsb = prog.getFunctionStatementBlock(fop.getFunctionNamespace(), fop.getFunctionName());
+                   fsb = updateFunctionStatementBlockVariables(fop, fsb);
+                   // Todo: RewireTable, MemoTable 분리?
+                   fop.setFunctionName(fkey);
+                   prog.addFunctionStatementBlock(fkey, fsb);
 
                    Map<String, List<Hop>> newFormerTransTable = new HashMap<>();
                    if (formerTransTable != null){
@@ -174,12 +176,20 @@ public class FederatedPlanRewireTransTable {
                    }
 
                    // Todo: Input에 따른 Cost(Memory Estimation) 반영 안됨 -> 다른 Input 동일 Cost
+                   // Input이 하나로 동일할 때만 가능.
                    Map<String, List<Hop>> functionTransTable = rewireStatementBlock(fsb, prog, visitedHops, rewireTable, outerTransTableList, newFormerTransTable, unRefTwriteSet, progRootHopSet, fnStack);
+                   
                    String tWriteName = fop.getOutputVariableNames()[0];
                    List<Hop> outputHops = functionTransTable.get(fsb.getOutputsofSB().get(0).getName());
                    innerTransTable.computeIfAbsent(fop.getOutputVariableNames()[0], k -> new ArrayList<>()).addAll(outputHops);
-                   // Todo: 이건 어떻게 등록하지?
                    // unRefTwriteSet.add(fop.getOutputVariableNames()[0]);
+                //    // 함수 출력 결과의 차원 정보도 FunctionOp에 반영
+                //    if (outputHops != null && !outputHops.isEmpty()) {
+                //        Hop outputHop = outputHops.get(0);
+                //        fop.setDim1(outputHop.getDim1());
+                //        fop.setDim2(outputHop.getDim2());
+                //        fop.setNnz(outputHop.getNnz());
+                //    }
                }
            }
        }
@@ -241,5 +251,66 @@ public class FederatedPlanRewireTransTable {
 
        return childHops;
    }
-}
- 
+
+   /**
+    * FunctionOp의 입력 데이터 정보를 바탕으로 FunctionStatementBlock의 변수 정보를 업데이트합니다.
+    * 
+    * @param fop 함수 연산자
+    * @param fsb 함수 구문 블록
+    */
+   private static FunctionStatementBlock updateFunctionStatementBlockVariables(FunctionOp fop, StatementBlock originalFsb) {
+		// 새로운 FunctionStatementBlock 생성
+       FunctionStatementBlock fsb = (FunctionStatementBlock) originalFsb.deepCopy();
+       String[] inputArgs = fop.getInputVariableNames();
+       List<Hop> inputHops = fop.getInput();
+       
+       for (int i = 0; i < inputHops.size(); i++) {
+           Hop inputHop = inputHops.get(i);
+           String argName = inputArgs[i];
+
+           // 1. liveIn 변수 집합 업데이트
+           if (fsb.liveIn().containsVariable(argName)) {
+               DataIdentifier liveInVar = fsb.liveIn().getVariable(argName);
+               liveInVar.setDimensions(inputHop.getDim1(), inputHop.getDim2());
+               liveInVar.setNnz(inputHop.getNnz());
+               
+               // 데이터 타입과 값 타입도 업데이트 (필요한 경우)
+               if (liveInVar.getDataType() == inputHop.getDataType()) {
+                   liveInVar.setValueType(inputHop.getValueType());
+               }
+               
+               // 블록 크기 업데이트
+               if (inputHop.getBlocksize() > 0) {
+                   liveInVar.setBlocksize(inputHop.getBlocksize());
+               }
+           }
+
+           // 2. liveOut 변수 집합 업데이트 (함수 내에서 사용되고 함수 이후에도 살아있는 변수)
+           if (fsb.liveOut().containsVariable(argName)) {
+               DataIdentifier liveOutVar = fsb.liveOut().getVariable(argName);
+               liveOutVar.setDimensions(inputHop.getDim1(), inputHop.getDim2());
+               liveOutVar.setNnz(inputHop.getNnz());
+           }
+           
+           // 3. _gen 변수 집합 업데이트 (함수 내에서 생성된 변수) - 직접 필드 접근
+           if (fsb.getGen() != null && fsb.getGen().containsVariable(argName)) {
+               DataIdentifier genVar = fsb.getGen().getVariable(argName);
+               genVar.setDimensions(inputHop.getDim1(), inputHop.getDim2());
+               genVar.setNnz(inputHop.getNnz());
+           }
+           
+           // 4. _kill 변수 집합 업데이트 (함수 내에서 수정되는 변수) - 직접 필드 접근
+           if (fsb.getKill() != null && fsb.getKill().containsVariable(argName)) {
+               DataIdentifier updatedVar = fsb.getKill().getVariable(argName);
+               updatedVar.setDimensions(inputHop.getDim1(), inputHop.getDim2());
+               updatedVar.setNnz(inputHop.getNnz());
+           }
+       }
+
+       DMLTranslator dmlt = new DMLTranslator(new DMLProgram());
+       // Todo 더 복잡하게 해야할 듯...
+       dmlt.constructHops(fsb);
+
+       return fsb;
+   }
+} 

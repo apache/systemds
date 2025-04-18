@@ -216,7 +216,6 @@ public class FederatedPlanCostEnumerator {
 			 FunctionOp fop = (FunctionOp) hop;
 			 if( fop.getFunctionType() == FunctionType.DML )
 			 {
-				 // Todo: RewireTable하고 동일하게 구현
 				 String fkey = fop.getFunctionKey();
 				 for (Hop inputHop : fop.getInput()){
 					 fkey += "," + inputHop.getName();

@@ -38,7 +38,7 @@
 m_raSelection = function (Matrix[Double] X, Integer col, String op, Double val)
   return (Matrix[Double] Y)
 {
-  # Dertimine the operators
+  # Determine the operators
   I = ifelse(op == "==", X[,col] == val,
         ifelse(op == "!=", X[,col] != val,
         ifelse(op == "<",  X[,col] <  val,

@@ -28,14 +28,12 @@ import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-@Ignore //FIXME
 public class BuiltinMDTest extends AutomatedTestBase {
 	private final static String TEST_NAME = "matching_dependency";
 	private final static String TEST_DIR = "functions/builtin/";
@@ -92,7 +90,7 @@ public class BuiltinMDTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
+	//@Ignore
 	// https://issues.apache.org/jira/browse/SYSTEMDS-3716
 	public void testMDSP() {
 		double[][] D =  {

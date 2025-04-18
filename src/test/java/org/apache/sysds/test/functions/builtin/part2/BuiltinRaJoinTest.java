@@ -24,12 +24,10 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashMap;
 
-@Ignore //FIXME
 public class BuiltinRaJoinTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME = "raJoin";

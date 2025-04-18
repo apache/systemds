@@ -33,7 +33,7 @@ public class CNodeUnary extends CNode
 	public enum UnaryType {
 		LOOKUP_R, LOOKUP_C, LOOKUP_RC, LOOKUP0, //codegen specific
 		ROW_SUMS, ROW_SUMSQS, ROW_COUNTNNZS, //codegen specific
-		ROW_MEANS, ROW_MINS, ROW_MAXS,
+		ROW_MEANS, ROW_MINS, ROW_MAXS, ROW_VARS,
 		VECT_EXP, VECT_POW2, VECT_MULT2, VECT_SQRT, VECT_LOG,
 		VECT_ABS, VECT_ROUND, VECT_CEIL, VECT_FLOOR, VECT_SIGN, 
 		VECT_SIN, VECT_COS, VECT_TAN, VECT_ASIN, VECT_ACOS, VECT_ATAN, 
@@ -139,6 +139,7 @@ public class CNodeUnary extends CNode
 			case ROW_MINS:   return "u(Rmin)";
 			case ROW_MAXS:   return "u(Rmax)";
 			case ROW_MEANS:  return "u(Rmean)";
+			case ROW_VARS:	 return "u(Rvar)";
 			case ROW_COUNTNNZS: return "u(Rnnz)";
 			case VECT_EXP:
 			case VECT_POW2:
@@ -210,6 +211,7 @@ public class CNodeUnary extends CNode
 			case ROW_MINS:
 			case ROW_MAXS:
 			case ROW_MEANS:
+			case ROW_VARS:
 			case ROW_COUNTNNZS:
 			case EXP:
 			case LOOKUP_R:

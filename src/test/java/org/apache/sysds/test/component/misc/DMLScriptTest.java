@@ -24,7 +24,6 @@ package org.apache.sysds.test.component.misc;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
-import org.apache.sysds.api.DMLOptions;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.test.LoggingUtils;

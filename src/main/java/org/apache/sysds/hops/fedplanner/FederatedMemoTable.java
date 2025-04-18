@@ -94,7 +94,8 @@ public class FederatedMemoTable {
 		}
 		public double getSelfCost() {return fedPlanVariants.hopCommon.getSelfCost();}
 		public double getForwardingCost() {return fedPlanVariants.hopCommon.getForwardingCost();}
-		public double getWeight() {return fedPlanVariants.hopCommon.getWeight();}
+		public double getComputeWeight() {return fedPlanVariants.hopCommon.getComputeWeight();}
+		public double getNetworkWeight() {return fedPlanVariants.hopCommon.getNetworkWeight();}
 		public List<Pair<Long, Double>> getLoopContext() {return fedPlanVariants.hopCommon.loopContext;}
 		public List<Pair<Long, FederatedOutput>> getChildFedPlans() {return childFedPlans;}
 	}
@@ -144,22 +145,25 @@ public class FederatedMemoTable {
 		protected double selfCost; // Cost of the hop's computation and memory access
 		protected double forwardingCost; // Cost of forwarding the hop's output to its parent
 		protected int numOfParents;
-		protected double weight; // Weight used to calculate cost based on hop execution frequency
+		protected double computeWeight; // Weight used to calculate cost based on hop execution frequency
+		protected double networkWeight; // Weight used to calculate cost based on hop execution frequency
 		protected List<Pair<Long, Double>> loopContext; // Loop context in which this hop exists
 
-		public HopCommon(Hop hopRef, double weight, int numOfParents, List<Pair<Long, Double>> loopContext) {
+		public HopCommon(Hop hopRef, double computeWeight, double networkWeight, int numOfParents, List<Pair<Long, Double>> loopContext) {
 			this.hopRef = hopRef;
 			this.selfCost = 0;
 			this.forwardingCost = 0;
 			this.numOfParents = numOfParents;
-			this.weight = weight;
+			this.computeWeight = computeWeight;
+			this.networkWeight = networkWeight;
 			this.loopContext = loopContext != null ? new ArrayList<>(loopContext) : new ArrayList<>();
 		}
 
 		public Hop getHopRef() {return hopRef;}
 		public double getSelfCost() {return selfCost;}
 		public double getForwardingCost() {return forwardingCost;}
-		public double getWeight() {return weight;}
+		public double getComputeWeight() {return computeWeight;}
+		public double getNetworkWeight() {return networkWeight;}
 		public int getNumOfParents() {return numOfParents;}
 		public List<Pair<Long, Double>> getLoopContext() {return loopContext;}
 
@@ -168,10 +172,10 @@ public class FederatedMemoTable {
 		
 		public double getChildFowardingWeight(List<Pair<Long, Double>> childLoopContext) {
 			if (loopContext.isEmpty()) {
-				return weight;
+				return networkWeight;
 			}
 
-			double forwardingWeight = this.weight;
+			double forwardingWeight = this.networkWeight;
 			
 			for (int i = 0; i < loopContext.size(); i++) {
 				if (i >= childLoopContext.size() || loopContext.get(i).getLeft() != childLoopContext.get(i).getLeft()) {

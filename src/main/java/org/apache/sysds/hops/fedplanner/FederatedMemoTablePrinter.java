@@ -149,7 +149,7 @@ public class FederatedMemoTablePrinter {
                 plan.getCumulativeCost(),
                 plan.getSelfCost(),
                 plan.getForwardingCost(),
-                plan.getWeight()));
+                plan.getComputeWeight()));
 
         // Add matrix characteristics
         sb.append(" [")
@@ -195,7 +195,8 @@ public class FederatedMemoTablePrinter {
                 } else {
                     isForwardingCostOccured = "O";
                 }
-                sb.append(String.format("(ID:%d, %s, C:%.1f, F:%.1f, FW:%.1f)", childPair.getLeft(), isForwardingCostOccured, childPlan.getCumulativeCostPerParents(), childPlan.getForwardingCost(), childPlan.getWeight()));
+                // Todo: Network Weight이랑 Cost 확실하지 않음.
+                sb.append(String.format("(ID:%d, %s, C:%.1f, F:%.1f, FW:%.1f)", childPair.getLeft(), isForwardingCostOccured, childPlan.getCumulativeCostPerParents(), childPlan.getForwardingCost(), childPlan.getNetworkWeight()));
                 sb.append(childAdded?",":"");
             }
             sb.append("}");

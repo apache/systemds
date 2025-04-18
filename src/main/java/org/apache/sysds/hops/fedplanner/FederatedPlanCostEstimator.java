@@ -44,7 +44,8 @@
 	 private static final double DEFAULT_MBS_MEMORY_BANDWIDTH = 25000.0;
 	 // Network bandwidth for data transfers between federated sites (1 Gbps)
 	 private static final double DEFAULT_MBS_NETWORK_BANDWIDTH = 125.0;
- 
+	 private static final double DEFAULT_MBS_NETWORK_LATENCY = 0.001;
+
 	 // Retrieves the cumulative and forwarding costs of the child hops and stores them in arrays
 	 public static void getChildCosts(HopCommon hopCommon, FederatedMemoTable memoTable, List<Hop> inputHops,
 									  double[][] childCumulativeCost, double[] childForwardingCost) {
@@ -91,7 +92,7 @@
 		 // In loops, selfCost is repeated, but forwarding may not be
 		 // Therefore, the weight for forwarding follows the parent's weight (TODO: Q. Is the parent also receiving forwarding once?)
 		 // Todo. Multi-thread인 경우, worker 수에 따라 나누기
-		 double selfCost = hopCommon.weight * computeSelfCost(hopCommon.hopRef);
+		 double selfCost = hopCommon.getComputeWeight() * computeSelfCost(hopCommon.hopRef);
 		 double forwardingCost = computeHopForwardingCost(hopCommon.hopRef.getOutputMemEstimate());
 
 		 hopCommon.setSelfCost(selfCost);
@@ -135,7 +136,7 @@
 	  * @return Time cost for network transfer (in seconds)
 	  */
 	 private static double computeHopForwardingCost(double memSize) {
-		 return memSize / (1024*1024) / DEFAULT_MBS_NETWORK_BANDWIDTH;
+		 return DEFAULT_MBS_NETWORK_LATENCY + (memSize / (1024*1024) / DEFAULT_MBS_NETWORK_BANDWIDTH);
 	 }
  
 	 /**
@@ -205,6 +206,7 @@
 						 // Previously, calculated was LOUT and parent was FOUT, so network transfer cost occurred
 						 // (CASE 2) If maintaining calculated LOUT to current LOUT, subtract existing network transfer cost and calculate later
 						 isLOutForwarding = true;
+						 // Todo: forwarding cost weight 고려해서 다시 구현해야함.
 						 lOutAdditionalCost -= confilctLOutFedPlan.getForwardingCost();
  
 						 // (CASE 6) If changing from calculated LOUT to current FOUT, no network transfer cost occurs, so subtract it

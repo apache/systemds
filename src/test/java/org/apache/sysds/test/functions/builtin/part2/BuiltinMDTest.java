@@ -90,8 +90,6 @@ public class BuiltinMDTest extends AutomatedTestBase {
 	}
 
 	@Test
-	//@Ignore
-	// https://issues.apache.org/jira/browse/SYSTEMDS-3716
 	public void testMDSP() {
 		double[][] D =  {
 			{7567, 231, 1231, 1232, 122, 321},

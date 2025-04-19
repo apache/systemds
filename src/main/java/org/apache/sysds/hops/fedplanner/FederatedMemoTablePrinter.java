@@ -195,8 +195,7 @@ public class FederatedMemoTablePrinter {
                 } else {
                     isForwardingCostOccured = "O";
                 }
-                // Todo: Network Weight이랑 Cost 확실하지 않음.
-                sb.append(String.format("(ID:%d, %s, C:%.1f, F:%.1f, FW:%.1f)", childPair.getLeft(), isForwardingCostOccured, childPlan.getCumulativeCostPerParents(), childPlan.getForwardingCost(), childPlan.getNetworkWeight()));
+                sb.append(String.format("(ID:%d, %s, C:%.1f, F:%.1f, FW:%.1f)", childPair.getLeft(), isForwardingCostOccured, childPlan.getCumulativeCostPerParents(), plan.getChildForwardingWeight(childPlan.getLoopContext()) * childPlan.getForwardingCostPerParents(), plan.getChildForwardingWeight(childPlan.getLoopContext())));
                 sb.append(childAdded?",":"");
             }
             sb.append("}");

@@ -41,6 +41,17 @@ public class FederatedPlanRewireTransTable {
         }
     }
 
+    public static void rewireFunctionDynamic(FunctionStatementBlock function, Map<Long, List<Hop>> rewireTable, Set<Long> unRefTwriteSet, Set<Hop> progRootHopSet) {
+        Set<Long> visitedHops = new HashSet<>();
+        Set<String> fnStack = new HashSet<>();
+
+        List<Map<String, List<Hop>>> outerTransTableList = new ArrayList<>();
+        Map<String, List<Hop>> outerTransTable = new HashMap<>();
+        outerTransTableList.add(outerTransTable);
+        // Todo: not tested
+        rewireStatementBlock(function, null, visitedHops, rewireTable, outerTransTableList, null, unRefTwriteSet, progRootHopSet, fnStack);
+    }
+
     public static Map<String, List<Hop>> rewireStatementBlock(StatementBlock sb, DMLProgram prog, Set<Long> visitedHops, Map<Long,List<Hop>> rewireTable, List<Map<String, List<Hop>>> outerTransTableList,
                                                                 Map<String, List<Hop>> formerTransTable, Set<Long> unRefTwriteSet, Set<Hop> progRootHopSet, Set<String> fnStack) {
         List<Map<String, List<Hop>>> newOuterTransTableList = new ArrayList<>();                                           
@@ -156,10 +167,10 @@ public class FederatedPlanRewireTransTable {
                if(!fnStack.contains(fkey)) {
                    fnStack.add(fkey);
                    FunctionStatementBlock fsb = prog.getFunctionStatementBlock(fop.getFunctionNamespace(), fop.getFunctionName());
-                   fsb = updateFunctionStatementBlockVariables(fop, fsb);
-                   // Todo: RewireTable, MemoTable 분리?
+                   FunctionStatementBlock newFsb = updateFunctionStatementBlockVariables(fop, fsb);
+                   // Todo (Future): 인자로 분리 안하면 RewireTable, MemoTable 분리해야 함.
                    fop.setFunctionName(fkey);
-                   prog.addFunctionStatementBlock(fkey, fsb);
+                   prog.addFunctionStatementBlock(fkey, newFsb);
 
                    Map<String, List<Hop>> newFormerTransTable = new HashMap<>();
                    if (formerTransTable != null){
@@ -175,33 +186,26 @@ public class FederatedPlanRewireTransTable {
                        newFormerTransTable.computeIfAbsent(inputArgs[i], k -> new ArrayList<>()).add(inputHops.get(i));
                    }
 
-                   // Todo: Input에 따른 Cost(Memory Estimation) 반영 안됨 -> 다른 Input 동일 Cost
-                   // Input이 하나로 동일할 때만 가능.
-                   Map<String, List<Hop>> functionTransTable = rewireStatementBlock(fsb, prog, visitedHops, rewireTable, outerTransTableList, newFormerTransTable, unRefTwriteSet, progRootHopSet, fnStack);
+                   Map<String, List<Hop>> functionTransTable = rewireStatementBlock(newFsb, prog, visitedHops, rewireTable, outerTransTableList, newFormerTransTable, unRefTwriteSet, progRootHopSet, fnStack);
                    
-                   String tWriteName = fop.getOutputVariableNames()[0];
-                   List<Hop> outputHops = functionTransTable.get(fsb.getOutputsofSB().get(0).getName());
-                   innerTransTable.computeIfAbsent(fop.getOutputVariableNames()[0], k -> new ArrayList<>()).addAll(outputHops);
-                   // unRefTwriteSet.add(fop.getOutputVariableNames()[0]);
-                //    // 함수 출력 결과의 차원 정보도 FunctionOp에 반영
-                //    if (outputHops != null && !outputHops.isEmpty()) {
-                //        Hop outputHop = outputHops.get(0);
-                //        fop.setDim1(outputHop.getDim1());
-                //        fop.setDim2(outputHop.getDim2());
-                //        fop.setNnz(outputHop.getNnz());
-                //    }
+                   for (int i = 0; i < fop.getOutputVariableNames().length; i++){
+                       String tWriteName = fop.getOutputVariableNames()[i];
+                       List<Hop> outputHops = functionTransTable.get(newFsb.getOutputsofSB().get(i).getName());
+                       innerTransTable.computeIfAbsent(tWriteName, k -> new ArrayList<>()).addAll(outputHops);
+                       for (Hop outputHop: outputHops){
+                           unRefTwriteSet.add(outputHop.getHopID());
+                       }
+                   }
                }
            }
        }
 
-       // Determine modified child hops based on DataOp type and transient operations
         rewireTransReadWrite(hop, rewireTable, outerTransTableList, formerTransTable, innerTransTable, unRefTwriteSet);
    }
 
    private static void rewireTransReadWrite(Hop hop, Map<Long,List<Hop>> rewireTable, List<Map<String, List<Hop>>> outerTransTableList,
                                                    Map<String, List<Hop>> formerTransTable, Map<String, List<Hop>> innerTransTable, Set<Long> unRefTwriteSet) {
-       // TODO: How about PWrite?
-       if (!(hop instanceof DataOp) || hop.getName().equals("__pred")) {
+       if (!(hop instanceof DataOp) || hop.getName().equals("__pred") || (hop instanceof DataOp && ((DataOp)hop).getOp() == Types.OpOpData.PERSISTENTWRITE)) {
            return; // Early exit for non-DataOp or __pred
        }
 
@@ -214,15 +218,12 @@ public class FederatedPlanRewireTransTable {
            unRefTwriteSet.add(hop.getHopID());
        }
        else if (opType == Types.OpOpData.TRANSIENTREAD) {
-           List<Hop> childHops = rewireTransRead(hopName, innerTransTable, formerTransTable, outerTransTableList);
-           // Todo 정상적인 상황이 아님 (재귀함수인 경우는 어쩔 수 없음. 나머지는...? 함수인 경우에만 표시해서 패스?)
-           if (childHops != null){
-               rewireTable.put(hop.getHopID(), childHops);
+            List<Hop> childHops = rewireTransRead(hopName, innerTransTable, formerTransTable, outerTransTableList);
+            rewireTable.put(hop.getHopID(), childHops);
 
-               for (Hop childHop: childHops){
-                   rewireTable.computeIfAbsent(childHop.getHopID(), k -> new ArrayList<>()).add(hop);
-                   unRefTwriteSet.remove(childHop.getHopID());
-               }
+            for (Hop childHop: childHops){
+                rewireTable.computeIfAbsent(childHop.getHopID(), k -> new ArrayList<>()).add(hop);
+                unRefTwriteSet.remove(childHop.getHopID());
            }
        }
    }
@@ -273,37 +274,41 @@ public class FederatedPlanRewireTransTable {
                DataIdentifier liveInVar = fsb.liveIn().getVariable(argName);
                liveInVar.setDimensions(inputHop.getDim1(), inputHop.getDim2());
                liveInVar.setNnz(inputHop.getNnz());
+               liveInVar.setBlocksize(inputHop.getBlocksize());
                
-               // 데이터 타입과 값 타입도 업데이트 (필요한 경우)
-               if (liveInVar.getDataType() == inputHop.getDataType()) {
-                   liveInVar.setValueType(inputHop.getValueType());
-               }
-               
-               // 블록 크기 업데이트
-               if (inputHop.getBlocksize() > 0) {
-                   liveInVar.setBlocksize(inputHop.getBlocksize());
-               }
+               // 데이터 타입과 값 타입도 업데이트
+               liveInVar.setDataType(inputHop.getDataType());
+               liveInVar.setValueType(inputHop.getValueType());
            }
 
-           // 2. liveOut 변수 집합 업데이트 (함수 내에서 사용되고 함수 이후에도 살아있는 변수)
+           // 2. liveOut 변수 집합 업데이트
            if (fsb.liveOut().containsVariable(argName)) {
                DataIdentifier liveOutVar = fsb.liveOut().getVariable(argName);
                liveOutVar.setDimensions(inputHop.getDim1(), inputHop.getDim2());
                liveOutVar.setNnz(inputHop.getNnz());
+               liveOutVar.setBlocksize(inputHop.getBlocksize());
+               liveOutVar.setDataType(inputHop.getDataType());
+               liveOutVar.setValueType(inputHop.getValueType());
            }
            
-           // 3. _gen 변수 집합 업데이트 (함수 내에서 생성된 변수) - 직접 필드 접근
+           // 3. _gen 변수 집합 업데이트
            if (fsb.getGen() != null && fsb.getGen().containsVariable(argName)) {
                DataIdentifier genVar = fsb.getGen().getVariable(argName);
                genVar.setDimensions(inputHop.getDim1(), inputHop.getDim2());
                genVar.setNnz(inputHop.getNnz());
+               genVar.setBlocksize(inputHop.getBlocksize());
+               genVar.setDataType(inputHop.getDataType());
+               genVar.setValueType(inputHop.getValueType());
            }
            
-           // 4. _kill 변수 집합 업데이트 (함수 내에서 수정되는 변수) - 직접 필드 접근
+           // 4. _kill 변수 집합 업데이트
            if (fsb.getKill() != null && fsb.getKill().containsVariable(argName)) {
                DataIdentifier updatedVar = fsb.getKill().getVariable(argName);
                updatedVar.setDimensions(inputHop.getDim1(), inputHop.getDim2());
                updatedVar.setNnz(inputHop.getNnz());
+               updatedVar.setBlocksize(inputHop.getBlocksize());
+               updatedVar.setDataType(inputHop.getDataType());
+               updatedVar.setValueType(inputHop.getValueType());
            }
        }
 

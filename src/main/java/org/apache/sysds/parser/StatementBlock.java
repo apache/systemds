@@ -22,11 +22,14 @@ package org.apache.sysds.parser;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.stream.Collectors;
-
+import org.apache.sysds.parser.Expression;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -1427,8 +1430,10 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	 */
 	public StatementBlock deepCopy() {
 		StatementBlock copy;
-		if (this instanceof FunctionStatementBlock){
+		if (this instanceof FunctionStatementBlock) {
 			copy = new FunctionStatementBlock();
+		} else if (this instanceof IfStatementBlock) {
+			copy = new IfStatementBlock();
 		} else if (this instanceof ForStatementBlock){
 			copy = new ForStatementBlock();
 		} else if (this instanceof WhileStatementBlock){
@@ -1468,6 +1473,8 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		copy._constVarsIn.putAll(this._constVarsIn);
 		copy._constVarsOut.putAll(this._constVarsOut);
 
+		// DAG 분할 플래그 복사
+		copy.setSplitDag(false);
 		// 문장(statements) 깊은 복사
 		if (this._statements != null && !this._statements.isEmpty()) {
 			for (Statement stmt : this._statements) {
@@ -1475,18 +1482,14 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 
 				if (stmt instanceof AssignmentStatement) {
 					AssignmentStatement as = (AssignmentStatement)stmt;
-					AssignmentStatement newAs = new AssignmentStatement(
-						new DataIdentifier(as.getTarget()), as.getSource());
+					AssignmentStatement newAs = new AssignmentStatement(new DataIdentifier(as.getTarget()), as.getSource());
 					newAs.setParseInfo(as);
 					newAs.setAccumulator(as.isAccumulator());
 					copyStmt = newAs;
 				} 
 				else if (stmt instanceof MultiAssignmentStatement) {
 					MultiAssignmentStatement mas = (MultiAssignmentStatement)stmt;
-					ArrayList<DataIdentifier> newTargets = new ArrayList<>();
-					for (DataIdentifier di : mas.getTargetList())
-						newTargets.add(new DataIdentifier(di));
-					MultiAssignmentStatement newMas = new MultiAssignmentStatement(newTargets, mas.getSource());
+					MultiAssignmentStatement newMas = new MultiAssignmentStatement(mas.getTargetList(), mas.getSource());
 					newMas.setParseInfo(mas);
 					copyStmt = newMas;
 				} 
@@ -1495,46 +1498,19 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 					IfStatement newIs = new IfStatement();
 					newIs.setParseInfo(is);
 					newIs.setConditionalPredicate(is.getConditionalPredicate());
-					
-					// 조건부 본문 복사
-					ArrayList<StatementBlock> newIfBody = new ArrayList<>();
-					for (StatementBlock sb : is.getIfBody())
-						newIfBody.add(sb.deepCopy());
-					newIs.setIfBody(newIfBody);
-					
-					// else 본문 복사
-					ArrayList<StatementBlock> newElseBody = new ArrayList<>();
-					for (StatementBlock sb : is.getElseBody())
-						newElseBody.add(sb.deepCopy());
-					newIs.setElseBody(newElseBody);
-					
+					newIs.setIfBody(copyStatementBlocks(is.getIfBody()));
+					newIs.setElseBody(copyStatementBlocks(is.getElseBody()));
 					copyStmt = newIs;
 				} 
 				else if (stmt instanceof FunctionStatement) {
 					FunctionStatement fs = (FunctionStatement)stmt;
 					FunctionStatement newFs = new FunctionStatement();
-
-					// FunctionStatement 기본 속성 복사
 					newFs.setParseInfo(fs);
 					newFs.setName(fs.getName());
-
-					// 입력 및 출력 파라미터 복사 (한 번에 설정)
-					ArrayList<DataIdentifier> newInputParams = new ArrayList<>();
-					for (DataIdentifier di : fs.getInputParams())
-						newInputParams.add(new DataIdentifier(di));
-					newFs.setInputParams(newInputParams);
-
-					ArrayList<DataIdentifier> newOutputParams = new ArrayList<>();
-					for (DataIdentifier di : fs.getOutputParams())
-						newOutputParams.add(new DataIdentifier(di));
-					newFs.setOutputParams(newOutputParams);
-
-					// 함수 본문(body) 복사
-					ArrayList<StatementBlock> newBody = new ArrayList<>();
-					for (StatementBlock sb : fs.getBody()) {
-						newBody.add(sb.deepCopy());
-					}
-					newFs.setBody(newBody);
+					newFs.setInputParams(fs.getInputParams());
+					newFs.setInputDefaults(fs.getInputDefaults());
+					newFs.setOutputParams(fs.getOutputParams());
+					newFs.setBody(copyStatementBlocks(fs.getBody()));
 					copyStmt = newFs;
 				} 
 				else if (stmt instanceof ForStatement) {
@@ -1542,13 +1518,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 					ForStatement newFs = new ForStatement();
 					newFs.setParseInfo(fs);
 					newFs.setPredicate(fs.getIterablePredicate());
-					
-					// For 루프 본문 복사
-					ArrayList<StatementBlock> newBody = new ArrayList<>();
-					for (StatementBlock sb : fs.getBody())
-						newBody.add(sb.deepCopy());
-					newFs.setBody(newBody);
-					
+					newFs.setBody(copyStatementBlocks(fs.getBody()));
 					copyStmt = newFs;
 				} 
 				else if (stmt instanceof WhileStatement) {
@@ -1556,13 +1526,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 					WhileStatement newWs = new WhileStatement();
 					newWs.setParseInfo(ws);
 					newWs.setPredicate(ws.getConditionalPredicate());
-					
-					// While 루프 본문 복사
-					ArrayList<StatementBlock> newBody = new ArrayList<>();
-					for (StatementBlock sb : ws.getBody())
-						newBody.add(sb.deepCopy());
-					newWs.setBody(newBody);
-					
+					newWs.setBody(copyStatementBlocks(ws.getBody()));
 					copyStmt = newWs;
 				} 
 				else if (stmt instanceof PrintStatement) {
@@ -1571,12 +1535,41 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 					newPs.setParseInfo(ps);
 					copyStmt = newPs;
 				}
+				else if (stmt instanceof OutputStatement) {
+					OutputStatement os = (OutputStatement)stmt;
+					OutputStatement newOs = new OutputStatement(os.getIdentifier(), Expression.DataOp.WRITE, os);
+					newOs.setExprParams(os.getSource());
+					copyStmt = newOs;
+				}
+				else {
+					copyStmt = stmt;
+					copyStmt.setParseInfo(stmt);
+				}
+
 				// 복사된 명령문을 새로운 StatementBlock에 추가
 				if (copyStmt != null) {
 					copy.addStatement(copyStmt);
 				}
 			}
 		}
+
+		// _hops와 _lops는 null로 초기화
+		copy._hops = null;
+		copy._lops = null;
+
 		return copy;
+	}
+
+	/**
+	 * StatementBlock 리스트를 깊은 복사하는 메소드
+	 * @param body 복사할 StatementBlock 리스트
+	 * @return 깊은 복사된 StatementBlock 리스트
+	 */
+	private ArrayList<StatementBlock> copyStatementBlocks(ArrayList<StatementBlock> body) {
+		ArrayList<StatementBlock> newBody = new ArrayList<>();
+		for (StatementBlock sb : body) {
+			newBody.add(sb.deepCopy());
+		}
+		return newBody;
 	}
 }

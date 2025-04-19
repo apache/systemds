@@ -51,7 +51,6 @@
 									  double[][] childCumulativeCost, double[] childForwardingCost) {
 		 for (int i = 0; i < inputHops.size(); i++) {
 			 long childHopID = inputHops.get(i).getHopID();
-//			 System.out.println("[Read]" + hopCommon.getHopRef().getOpString() + "(" + hopCommon.getHopRef().getHopID() + ") ->" + inputHops.get(i).getOpString() + "(" + childHopID + ")");
 			 FedPlan childLOutFedPlan = memoTable.getFedPlanAfterPrune(childHopID, FederatedOutput.LOUT);
 			 FedPlan childFOutFedPlan = memoTable.getFedPlanAfterPrune(childHopID, FederatedOutput.FOUT);
 			 
@@ -59,8 +58,7 @@
 			 childCumulativeCost[i][0] = childLOutFedPlan.getCumulativeCostPerParents();
 			 childCumulativeCost[i][1] = childFOutFedPlan.getCumulativeCostPerParents();
 
-			 // Todo: TWrite, TRead 고려해야하고, /numOfParents 고려해야함
-			 childForwardingCost[i] = hopCommon.getChildFowardingWeight(childLOutFedPlan.getLoopContext()) * childLOutFedPlan.getForwardingCost();
+			 childForwardingCost[i] = hopCommon.getChildForwardingWeight(childLOutFedPlan.getLoopContext()) * childLOutFedPlan.getForwardingCostPerParents();
 		 }
 	 }
  
@@ -83,7 +81,6 @@
 			 } else if (((DataOp)hopCommon.hopRef).getOp() == Types.OpOpData.TRANSIENTREAD) {
 				 hopCommon.setSelfCost(0);
 				 // TRead may have a different FedOutType from its parent, so calculate forwarding cost
-				 // Todo: numOfParents 고려해야함
 				 hopCommon.setForwardingCost(computeHopForwardingCost(hopCommon.hopRef.getOutputMemEstimate()));
 				 return 0;
 			 }
@@ -206,11 +203,10 @@
 						 // Previously, calculated was LOUT and parent was FOUT, so network transfer cost occurred
 						 // (CASE 2) If maintaining calculated LOUT to current LOUT, subtract existing network transfer cost and calculate later
 						 isLOutForwarding = true;
-						 // Todo: forwarding cost weight 고려해서 다시 구현해야함.
-						 lOutAdditionalCost -= confilctLOutFedPlan.getForwardingCost();
+						 lOutAdditionalCost -= confilctLOutFedPlan.getForwardingCostPerParents();
  
 						 // (CASE 6) If changing from calculated LOUT to current FOUT, no network transfer cost occurs, so subtract it
-						 fOutAdditionalCost -= confilctLOutFedPlan.getForwardingCost();
+						 fOutAdditionalCost -= confilctLOutFedPlan.getForwardingCostPerParents();
 					 }
 				 } else {
 					 lOutAdditionalCost += confilctLOutFedPlan.getCumulativeCostPerParents() - confilctFOutFedPlan.getCumulativeCostPerParents();
@@ -219,8 +215,8 @@
 						 isLOutForwarding = true;
 					 } else {
 						 isFOutForwarding = true;
-						 lOutAdditionalCost -= confilctLOutFedPlan.getForwardingCost();
-						 fOutAdditionalCost -= confilctLOutFedPlan.getForwardingCost();
+						 lOutAdditionalCost -= conflictParentFedPlan.getChildForwardingWeight(confilctLOutFedPlan.getLoopContext()) *  confilctLOutFedPlan.getForwardingCostPerParents();
+						 fOutAdditionalCost -= conflictParentFedPlan.getChildForwardingWeight(confilctLOutFedPlan.getLoopContext()) *  confilctLOutFedPlan.getForwardingCostPerParents();
 					 }
 				 }
 			 }

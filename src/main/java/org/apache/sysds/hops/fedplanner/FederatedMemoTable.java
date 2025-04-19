@@ -28,7 +28,7 @@ import org.apache.sysds.hops.Hop;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
-
+import org.apache.sysds.common.Types.ExecType;
 /**
  * A Memoization Table for managing federated plans (FedPlan) based on combinations of Hops and fedOutTypes.
  * This table stores and manages different execution plan variants for each Hop and fedOutType combination,
@@ -95,10 +95,21 @@ public class FederatedMemoTable {
 		}
 		public double getSelfCost() {return fedPlanVariants.hopCommon.getSelfCost();}
 		public double getForwardingCost() {return fedPlanVariants.hopCommon.getForwardingCost();}
+		public double getForwardingCostPerParents() {
+			double forwardingCostPerParents = fedPlanVariants.hopCommon.getForwardingCost();
+			int numOfParents = fedPlanVariants.hopCommon.getNumOfParents();
+			if (numOfParents >= 2){
+				forwardingCostPerParents /= numOfParents;
+			}
+			return forwardingCostPerParents;
+		}
 		public double getComputeWeight() {return fedPlanVariants.hopCommon.getComputeWeight();}
 		public double getNetworkWeight() {return fedPlanVariants.hopCommon.getNetworkWeight();}
-		public List<Pair<Long, Double>> getLoopContext() {return fedPlanVariants.hopCommon.loopContext;}
+		public double getChildForwardingWeight(List<Pair<Long, Double>> childLoopContext) {return fedPlanVariants.hopCommon.getChildForwardingWeight(childLoopContext);}
+		public List<Pair<Long, Double>> getLoopContext() {return fedPlanVariants.hopCommon.getLoopContext();}
 		public List<Pair<Long, FederatedOutput>> getChildFedPlans() {return childFedPlans;}
+		public void setFederatedOutput(FederatedOutput fedOutType) {fedPlanVariants.hopCommon.hopRef.setFederatedOutput(fedOutType);}
+		public void setForcedExecType(ExecType execType) {fedPlanVariants.hopCommon.hopRef.setForcedExecType(execType);}
 	}
 
 	/**
@@ -171,7 +182,7 @@ public class FederatedMemoTable {
 		protected void setSelfCost(double selfCost) {this.selfCost = selfCost;}
 		protected void setForwardingCost(double forwardingCost) {this.forwardingCost = forwardingCost;}
 		
-		public double getChildFowardingWeight(List<Pair<Long, Double>> childLoopContext) {
+		public double getChildForwardingWeight(List<Pair<Long, Double>> childLoopContext) {
 			if (loopContext.isEmpty()) {
 				return networkWeight;
 			}

@@ -66,13 +66,12 @@ public class FederatedPlanCostEnumerator {
 	  * @param prog The DML program to enumerate.
 	  * @param isPrint A boolean indicating whether to print the federated plan tree.
 	  */
-	 public static void enumerateProgram(DMLProgram prog, boolean isPrint) {
+	 public static FedPlan enumerateProgram(DMLProgram prog, FederatedMemoTable memoTable, boolean isPrint) {
 		 Map<Long, List<Hop>> rewireTable = new HashMap<>();
 		 Set<Hop> progRootHopSet = new HashSet<>();
 		 Set<Long> unRefTwriteSet = new HashSet<>();
 		 FederatedPlanRewireTransTable.rewireProgram(prog, rewireTable, unRefTwriteSet, progRootHopSet);
 		 
-		 FederatedMemoTable memoTable = new FederatedMemoTable();
 		 List<Pair<Long, Double>> loopStack = new ArrayList<>();
 		 Set<String> fnStack = new HashSet<>();
 
@@ -89,9 +88,33 @@ public class FederatedPlanCostEnumerator {
 		 if (isPrint) {
 			 FederatedMemoTablePrinter.printFedPlanTree(optimalPlan, unRefTwriteSet, memoTable, additionalTotalCost);
 		 }
+		 
+		 return optimalPlan;
 	 }
 
+	 public static FedPlan enumerateFunctionDynamic(FunctionStatementBlock function, FederatedMemoTable memoTable, boolean isPrint) {
+		Map<Long, List<Hop>> rewireTable = new HashMap<>();
+		Set<Hop> progRootHopSet = new HashSet<>();
+		Set<Long> unRefTwriteSet = new HashSet<>();
+		FederatedPlanRewireTransTable.rewireFunctionDynamic(function, rewireTable, unRefTwriteSet, progRootHopSet);
+		
+		List<Pair<Long, Double>> loopStack = new ArrayList<>();
+		Set<String> fnStack = new HashSet<>();
 
+		enumerateStatementBlock(function, null, memoTable, rewireTable, unRefTwriteSet, fnStack, 1, 1, loopStack);
+		
+		FedPlan optimalPlan = getMinCostRootFedPlan(progRootHopSet, memoTable);
+
+		// Detect conflicts in the federated plans where different FedPlans have different FederatedOutput types
+		double additionalTotalCost = detectAndResolveConflictFedPlan(optimalPlan, memoTable);
+
+		// Print the federated plan tree if requested
+		if (isPrint) {
+			FederatedMemoTablePrinter.printFedPlanTree(optimalPlan, unRefTwriteSet, memoTable, additionalTotalCost);
+		}
+		
+		return optimalPlan;
+	}
 
 	 /**
 	  * Enumerates the statement block and updates the transient and memoization tables.
@@ -155,10 +178,6 @@ public class FederatedPlanCostEnumerator {
 				enumerateStatementBlock(innerFsb, prog, memoTable, rewireTable, unRefTwriteSet, fnStack, computeWeight, networkWeight, currentLoopStack);
 		 }
 		 else if (sb instanceof WhileStatementBlock) {
-			// TODO:  Loop 안의 TRead의 Parent가 Loop안에서 발생한 TWrite를 읽는 다면 동일한 fedoutputType을 가짐.
-			// Question: 만약 Loop안의 Twrite을 Loop 밖에서 읽는다면?
-			// 중첩 While문 일때는? 모름 자고 일어나서 하자
-
 			 WhileStatementBlock wsb = (WhileStatementBlock) sb;
 			 WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
 			 computeWeight *= DEFAULT_LOOP_WEIGHT;
@@ -224,6 +243,7 @@ public class FederatedPlanCostEnumerator {
 				 if(!fnStack.contains(fkey)) {
 					 fnStack.add(fkey);
 					 FunctionStatementBlock fsb = prog.getFunctionStatementBlock(fop.getFunctionNamespace(), fop.getFunctionName());
+					 // Todo (Future): hop reconstruction을 안하면 memoTable 따로 써야함.
 					 enumerateStatementBlock(fsb, prog, memoTable, rewireTable, unRefTwriteSet, fnStack, computeWeight, networkWeight, loopStack);
 				 }
 			 }
@@ -250,9 +270,8 @@ public class FederatedPlanCostEnumerator {
 		List<Hop> childHops = hop.getInput();
 		int numParentHops = hop.getParent().size();
 		boolean isTrans = false;
-		
-		// TODO: How about PWrite?
-		if ((hop instanceof DataOp) && !hop.getName().equals("__pred")) {
+	
+		if ((hop instanceof DataOp) && !hop.getName().equals("__pred") && !(((DataOp)hop).getOp() == Types.OpOpData.PERSISTENTWRITE)) {
 			Types.OpOpData opType = ((DataOp) hop).getOp();
 			if (opType == Types.OpOpData.TRANSIENTWRITE) {
 				List<Hop> transParentHops = rewireTable.get(hop.getHopID());

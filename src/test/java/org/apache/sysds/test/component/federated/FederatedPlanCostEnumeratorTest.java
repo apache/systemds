@@ -23,6 +23,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.HashMap;
+
+import org.apache.sysds.hops.fedplanner.FederatedMemoTable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
@@ -99,9 +101,26 @@ public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
 			DMLConfig conf = new DMLConfig(getCurConfigFile().getPath());
 			ConfigurationManager.setLocalConfig(conf);
 			
+			// FEDERATED_PLANNER 설정을 COMPILE_COST_BASED로 설정
+			ConfigurationManager.getDMLConfig().setTextValue(DMLConfig.FEDERATED_PLANNER, "compile_cost_based");
+			
 			//read script
 			String dmlScriptString = DMLScript.readDMLScript(true, HOME + scriptFilename);
-		
+
+			// 출력을 파일과 터미널 모두에 저장
+			String outputFile = testName + "_trace.txt";
+			File outputFileObj = new File(outputFile);
+			System.out.println("[INFO] Trace 파일: " + outputFileObj.getAbsolutePath());
+			PrintStream fileOut = new PrintStream(new FileOutputStream(outputFile));
+			TeeOutputStream teeOut = new TeeOutputStream(System.out, fileOut);
+			PrintStream teePrintStream = new PrintStream(teeOut);
+
+			// 원래 출력 스트림 저장
+			PrintStream originalOut = System.out;
+
+			// TeeOutputStream으로 출력 리다이렉션
+			System.setOut(teePrintStream);
+
 			//parsing and dependency analysis
 			ParserWrapper parser = ParserFactory.createParser();
 			DMLProgram prog = parser.parse(DMLScript.DML_FILE_PATH_ANTLR_PARSER, dmlScriptString, new HashMap<>());
@@ -111,23 +130,6 @@ public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
 			dmlt.constructHops(prog);
 			dmlt.rewriteHopsDAG(prog);
 
-			// 출력을 파일과 터미널 모두에 저장
-			String outputFile = testName + "_trace.txt";
-			File outputFileObj = new File(outputFile);
-			System.out.println("[INFO] Trace 파일: " + outputFileObj.getAbsolutePath());
-			PrintStream fileOut = new PrintStream(new FileOutputStream(outputFile));
-			TeeOutputStream teeOut = new TeeOutputStream(System.out, fileOut);
-			PrintStream teePrintStream = new PrintStream(teeOut);
-			
-			// 원래 출력 스트림 저장
-			PrintStream originalOut = System.out;
-			
-			// TeeOutputStream으로 출력 리다이렉션
-			System.setOut(teePrintStream);
-			
-			// 테스트 실행
-			FederatedPlanCostEnumerator.enumerateProgram(prog, true);
-			
 			// 원래 출력 스트림으로 복원
 			System.setOut(originalOut);
 			

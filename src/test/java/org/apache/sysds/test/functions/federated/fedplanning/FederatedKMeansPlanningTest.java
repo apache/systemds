@@ -67,6 +67,13 @@ public class FederatedKMeansPlanningTest extends AutomatedTestBase {
 	}
 
 	@Test
+	public void runKMeansCostBasedTest(){
+		String[] expectedHeavyHitters = new String[]{};
+		setTestConf("SystemDS-config-cost-based.xml");
+		loadAndRunTest(expectedHeavyHitters, TEST_NAME);
+	}
+
+	@Test
 	public void runRuntimeTest(){
 		String[] expectedHeavyHitters = new String[]{};
 		TEST_CONF_FILE = new File("src/test/config/SystemDS-config.xml");

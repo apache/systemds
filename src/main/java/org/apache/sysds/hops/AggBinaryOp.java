@@ -43,7 +43,6 @@ import org.apache.sysds.lops.MatMultCP;
 import org.apache.sysds.lops.PMMJ;
 import org.apache.sysds.lops.PMapMult;
 import org.apache.sysds.lops.Transform;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;

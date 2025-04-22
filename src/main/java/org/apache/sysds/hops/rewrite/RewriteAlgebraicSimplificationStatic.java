@@ -176,6 +176,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION)
 				hi = fuseBinarySubDAGToUnaryOperation(hop, hi, i);   //e.g., X*(1-X)-> sprop(X) || 1/(1+exp(-X)) -> sigmoid(X) || X*(X>0) -> selp(X)
 			hi = simplifyTraceMatrixMult(hop, hi, i);            //e.g., trace(X%*%Y)->sum(X*t(Y));
+			hi = simplifyTraceSum(hop, hi, i);                   //e.g. , trace(A+B)->trace(A)+trace(B);
+			hi = simplifyTraceTranspose(hop, hi, i);             //e.g. , trace(t(A))->trace(A)
 			hi = simplifySlicedMatrixMult(hop, hi, i);           //e.g., (X%*%Y)[1,1] -> X[1,] %*% Y[,1];
 			hi = simplifyListIndexing(hi);                       //e.g., L[i:i, 1:ncol(L)] -> L[i:i, 1:1]
 			hi = simplifyScalarIndexing(hop, hi, i);             //e.g., as.scalar(X[i,1])->X[i,1] w/ scalar output
@@ -200,7 +202,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 
 			hi = simplifyNotOverComparisons(hop, hi, i);         //e.g., !(A>B) -> (A<=B)
 			//hi = removeUnecessaryPPred(hop, hi, i);            //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
-
 
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
 			if( !descendFirst )
@@ -1600,6 +1601,45 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			}
 		}
 
+		return hi;
+	}
+
+	private static Hop simplifyTraceSum(Hop parent, Hop hi, int pos) {
+		if (hi instanceof AggUnaryOp && ((AggUnaryOp) hi).getOp() == AggOp.TRACE) {
+			Hop hi2 = hi.getInput().get(0);
+			if (HopRewriteUtils.isBinary(hi2, OpOp2.PLUS) && hi2.getParent().size() == 1) {
+				Hop left = hi2.getInput().get(0);
+				Hop right = hi2.getInput().get(1);
+
+				// Create trace nodes
+				AggUnaryOp traceLeft = HopRewriteUtils.createAggUnaryOp(left, AggOp.TRACE, Direction.RowCol);
+				AggUnaryOp traceRight = HopRewriteUtils.createAggUnaryOp(right, AggOp.TRACE, Direction.RowCol);
+
+				// Add them
+				BinaryOp sum = HopRewriteUtils.createBinary(traceLeft, traceRight, OpOp2.PLUS);
+
+				// Replace in DAG
+				HopRewriteUtils.replaceChildReference(parent, hi, sum, pos);
+				HopRewriteUtils.cleanupUnreferenced(hi, hi2);
+
+				LOG.debug("Applied simplifyTraceSum rewrite");
+				return sum;
+			}
+		}
+		return hi;
+	}
+
+	private static Hop simplifyTraceTranspose(Hop parent, Hop hi, int pos) {
+		// Check if the current Hop is a trace operation
+		if ( HopRewriteUtils.isAggUnaryOp(hi, AggOp.TRACE) ) {
+			Hop input = hi.getInput().get(0);
+
+			// Check if input is a transpose and it is only consumer
+			if (HopRewriteUtils.isReorg(input, ReOrgOp.TRANS) && input.getParent().size() == 1) {
+				HopRewriteUtils.replaceChildReference(hi, input, input.getInput(0));
+				LOG.debug("Applied simplifyTraceTranspose rewrite");
+			}
+		}
 		return hi;
 	}
 

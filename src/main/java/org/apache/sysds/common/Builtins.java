@@ -338,7 +338,7 @@ public enum Builtins {
 	TANH("tanh", false),
 	TO_ONE_HOT("toOneHot", true),
 	TOMEKLINK("tomeklink", true),
-	TRACE("trace", false),
+	TRACE("trace", "tr", false),
 	TRANS("t", false),
 	TSNE("tSNE", true),
 	TYPEOF("typeof", false),

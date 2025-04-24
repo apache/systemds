@@ -18,42 +18,54 @@
  */
 
  package org.apache.sysds.hops.fedplanner;
-
+ import org.apache.commons.lang3.tuple.Pair;
+ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.*;
 import org.apache.sysds.hops.FunctionOp.FunctionType;
 import org.apache.sysds.parser.*;
+import org.apache.sysds.hops.fedplanner.FederatedMemoTable.HopCommon;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.sysds.runtime.util.UtilFunctions;
 import java.util.*;
 
 public class FederatedPlanRewireTransTable {
-    public static void rewireProgram(DMLProgram prog, Map<Long, List<Hop>> rewireTable, Set<Long> unRefTwriteSet, Set<Hop> progRootHopSet) {
+    private static final double DEFAULT_LOOP_WEIGHT = 10.0;
+    private static final double DEFAULT_IF_ELSE_WEIGHT = 0.5;
+    
+    public static void rewireProgram(DMLProgram prog, Map<Long, List<Hop>> rewireTable, Map<Long, HopCommon> hopCommonTable, 
+                                        Set<Long> unRefTwriteSet, Set<Long> unRefSet, Set<Hop> progRootHopSet) {
         // Maps Hop ID and fedOutType pairs to their plan variants
         Set<Long> visitedHops = new HashSet<>();
         Set<String> fnStack = new HashSet<>();
+        List<Pair<Long, Double>> loopStack = new ArrayList<>();
 
         List<Map<String, List<Hop>>> outerTransTableList = new ArrayList<>();
         Map<String, List<Hop>> outerTransTable = new HashMap<>();
         outerTransTableList.add(outerTransTable);
 
         for (StatementBlock sb : prog.getStatementBlocks()) {
-           Map<String, List<Hop>> innerTransTable = rewireStatementBlock(sb, prog, visitedHops, rewireTable, outerTransTableList, null, unRefTwriteSet, progRootHopSet, fnStack);
+           Map<String, List<Hop>> innerTransTable = rewireStatementBlock(sb, prog, visitedHops, rewireTable, hopCommonTable, outerTransTableList, null, 
+                                                                            unRefTwriteSet, unRefSet, progRootHopSet, fnStack, 1, 1, loopStack);
            outerTransTableList.get(0).putAll(innerTransTable);
         }
     }
 
-    public static void rewireFunctionDynamic(FunctionStatementBlock function, Map<Long, List<Hop>> rewireTable, Set<Long> unRefTwriteSet, Set<Hop> progRootHopSet) {
+    public static void rewireFunctionDynamic(FunctionStatementBlock function, Map<Long, List<Hop>> rewireTable,  Map<Long, HopCommon> hopCommonTable, 
+                                                Set<Long> unRefTwriteSet, Set<Long> unRefSet, Set<Hop> progRootHopSet) {
         Set<Long> visitedHops = new HashSet<>();
         Set<String> fnStack = new HashSet<>();
-
+        List<Pair<Long, Double>> loopStack = new ArrayList<>();
         List<Map<String, List<Hop>>> outerTransTableList = new ArrayList<>();
         Map<String, List<Hop>> outerTransTable = new HashMap<>();
         outerTransTableList.add(outerTransTable);
         // Todo: not tested
-        rewireStatementBlock(function, null, visitedHops, rewireTable, outerTransTableList, null, unRefTwriteSet, progRootHopSet, fnStack);
+        rewireStatementBlock(function, null, visitedHops, rewireTable, hopCommonTable, outerTransTableList, null, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, 1, 1, loopStack);
     }
 
-    public static Map<String, List<Hop>> rewireStatementBlock(StatementBlock sb, DMLProgram prog, Set<Long> visitedHops, Map<Long,List<Hop>> rewireTable, List<Map<String, List<Hop>>> outerTransTableList,
-                                                                Map<String, List<Hop>> formerTransTable, Set<Long> unRefTwriteSet, Set<Hop> progRootHopSet, Set<String> fnStack) {
+    public static Map<String, List<Hop>> rewireStatementBlock(StatementBlock sb, DMLProgram prog, Set<Long> visitedHops, Map<Long,List<Hop>> rewireTable, Map<Long, HopCommon> hopCommonTable,
+                                                                List<Map<String, List<Hop>>> outerTransTableList, Map<String, List<Hop>> formerTransTable, Set<Long> unRefTwriteSet, Set<Long> unRefSet,
+                                                                Set<Hop> progRootHopSet, Set<String> fnStack, double computeWeight, double networkWeight, List<Pair<Long, Double>> parentLoopStack) {
         List<Map<String, List<Hop>>> newOuterTransTableList = new ArrayList<>();                                           
         if (outerTransTableList != null){
             for (Map<String, List<Hop>> outerTable: outerTransTableList){
@@ -73,18 +85,21 @@ public class FederatedPlanRewireTransTable {
             IfStatementBlock isb = (IfStatementBlock) sb;
             IfStatement istmt = (IfStatement)isb.getStatement(0);
 
-            Map<String, List<Hop>> elseFormerTransTable = new HashMap<>();
-
-            rewireHopDAG(isb.getPredicateHops(), prog, visitedHops, rewireTable, newOuterTransTableList, null, innerTransTable, unRefTwriteSet, progRootHopSet, fnStack);
+            rewireHopDAG(isb.getPredicateHops(), prog, visitedHops, rewireTable, hopCommonTable, newOuterTransTableList, null, innerTransTable, 
+                            unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight, networkWeight, parentLoopStack);
 
             newFormerTransTable.putAll(innerTransTable);
+            Map<String, List<Hop>> elseFormerTransTable = new HashMap<>();
             elseFormerTransTable.putAll(innerTransTable);
+            computeWeight *= DEFAULT_IF_ELSE_WEIGHT;
 
             for (StatementBlock innerIsb : istmt.getIfBody())
-                newFormerTransTable.putAll(rewireStatementBlock(innerIsb, prog, visitedHops, rewireTable, newOuterTransTableList, newFormerTransTable, unRefTwriteSet, progRootHopSet, fnStack));
+                newFormerTransTable.putAll(rewireStatementBlock(innerIsb, prog, visitedHops, rewireTable, hopCommonTable, newOuterTransTableList, newFormerTransTable, 
+                                                                    unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight, networkWeight, parentLoopStack));
 
             for (StatementBlock innerIsb : istmt.getElseBody())
-                elseFormerTransTable.putAll(rewireStatementBlock(innerIsb, prog, visitedHops, rewireTable, newOuterTransTableList, elseFormerTransTable, unRefTwriteSet, progRootHopSet, fnStack));
+                elseFormerTransTable.putAll(rewireStatementBlock(innerIsb, prog, visitedHops, rewireTable, hopCommonTable, newOuterTransTableList, elseFormerTransTable, 
+                                                                     unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight, networkWeight, parentLoopStack));
 
             // If there are common keys: merge elseValue list into ifValue list
             elseFormerTransTable.forEach((key, elseValue) -> {
@@ -98,35 +113,76 @@ public class FederatedPlanRewireTransTable {
             ForStatementBlock fsb = (ForStatementBlock) sb;
             ForStatement fstmt = (ForStatement)fsb.getStatement(0);
 
-            rewireHopDAG(fsb.getFromHops(), prog, visitedHops, rewireTable, newOuterTransTableList, null, innerTransTable, unRefTwriteSet, progRootHopSet, fnStack);
-            rewireHopDAG(fsb.getToHops(), prog, visitedHops, rewireTable, newOuterTransTableList, null, innerTransTable, unRefTwriteSet, progRootHopSet, fnStack);
-            rewireHopDAG(fsb.getIncrementHops(), prog, visitedHops, rewireTable, newOuterTransTableList, null, innerTransTable, unRefTwriteSet, progRootHopSet, fnStack);
+ 			 // Calculate for-loop iteration count if possible
+              double loopWeight = DEFAULT_LOOP_WEIGHT;
+              Hop from = fsb.getFromHops().getInput().get(0);
+              Hop to = fsb.getToHops().getInput().get(0);
+              Hop incr = (fsb.getIncrementHops() != null) ?
+                      fsb.getIncrementHops().getInput().get(0) : new LiteralOp(1);
+  
+              // Calculate for-loop iteration count (weight) if from, to, and incr are literal ops (constant values)
+              if( from instanceof LiteralOp && to instanceof LiteralOp && incr instanceof LiteralOp ) {
+                  double dfrom = HopRewriteUtils.getDoubleValue((LiteralOp) from);
+                  double dto = HopRewriteUtils.getDoubleValue((LiteralOp) to);
+                  double dincr = HopRewriteUtils.getDoubleValue((LiteralOp) incr);
+                  if( dfrom > dto && dincr == 1 )
+                      dincr = -1;
+                  loopWeight = UtilFunctions.getSeqLength(dfrom, dto, dincr, false);
+              }
+              computeWeight *= loopWeight;
+              networkWeight *= loopWeight;
+ 
+             // 현재 루프 컨텍스트 생성 (부모 컨텍스트 복사)
+             List<Pair<Long, Double>> currentLoopStack = new ArrayList<>(parentLoopStack);
+             currentLoopStack.add(Pair.of(sb.getSBID(), loopWeight));
+
+            rewireHopDAG(fsb.getFromHops(), prog, visitedHops, rewireTable, hopCommonTable, newOuterTransTableList, null,
+                            innerTransTable, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight, networkWeight, currentLoopStack);
+            rewireHopDAG(fsb.getToHops(), prog, visitedHops, rewireTable, hopCommonTable, newOuterTransTableList, null,
+                            innerTransTable, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight, networkWeight, currentLoopStack);
+
+            if (fsb.getIncrementHops() != null) {
+                rewireHopDAG(fsb.getIncrementHops(), prog, visitedHops, rewireTable, hopCommonTable, newOuterTransTableList, null, innerTransTable, 
+                                unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight, networkWeight, currentLoopStack);
+            }
             newFormerTransTable.putAll(innerTransTable);
 
             for (StatementBlock innerFsb : fstmt.getBody())
-               newFormerTransTable.putAll(rewireStatementBlock(innerFsb, prog, visitedHops, rewireTable, newOuterTransTableList, newFormerTransTable, unRefTwriteSet, progRootHopSet, fnStack));
+               newFormerTransTable.putAll(rewireStatementBlock(innerFsb, prog, visitedHops, rewireTable, hopCommonTable, newOuterTransTableList, newFormerTransTable, 
+                                            unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight, networkWeight, currentLoopStack));
         }
         else if (sb instanceof WhileStatementBlock) {
             WhileStatementBlock wsb = (WhileStatementBlock) sb;
             WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
+           
+            computeWeight *= DEFAULT_LOOP_WEIGHT;
+            networkWeight *= DEFAULT_LOOP_WEIGHT;
+            
+            // 현재 루프 컨텍스트 생성 (부모 컨텍스트 복사)
+            List<Pair<Long, Double>> currentLoopStack = new ArrayList<>(parentLoopStack);
+            currentLoopStack.add(Pair.of(sb.getSBID(), DEFAULT_LOOP_WEIGHT));
 
-            rewireHopDAG(wsb.getPredicateHops(), prog, visitedHops, rewireTable, newOuterTransTableList, null, innerTransTable, unRefTwriteSet, progRootHopSet, fnStack);
+            rewireHopDAG(wsb.getPredicateHops(), prog, visitedHops, rewireTable, hopCommonTable, newOuterTransTableList, null, 
+                            innerTransTable, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight, networkWeight, currentLoopStack);
             newFormerTransTable.putAll(innerTransTable);
 
             for (StatementBlock innerWsb : wstmt.getBody())
-               newFormerTransTable.putAll(rewireStatementBlock(innerWsb, prog, visitedHops, rewireTable, newOuterTransTableList, newFormerTransTable, unRefTwriteSet, progRootHopSet, fnStack));
+               newFormerTransTable.putAll(rewireStatementBlock(innerWsb, prog, visitedHops, rewireTable, hopCommonTable, newOuterTransTableList, newFormerTransTable, 
+                                            unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight, networkWeight, currentLoopStack));
         }
         else if (sb instanceof FunctionStatementBlock) {
             FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
             FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
 
             for (StatementBlock innerFsb : fstmt.getBody())
-               newFormerTransTable.putAll(rewireStatementBlock(innerFsb, prog, visitedHops, rewireTable, newOuterTransTableList, newFormerTransTable, unRefTwriteSet, progRootHopSet, fnStack));
+               newFormerTransTable.putAll(rewireStatementBlock(innerFsb, prog, visitedHops, rewireTable, hopCommonTable, newOuterTransTableList, newFormerTransTable, 
+                                            unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight, networkWeight, parentLoopStack));
         }
         else { //generic (last-level)
             if( sb.getHops() != null ){
                 for(Hop c : sb.getHops())
-                    rewireHopDAG(c, prog, visitedHops, rewireTable, newOuterTransTableList, null, innerTransTable, unRefTwriteSet, progRootHopSet, fnStack);
+                    rewireHopDAG(c, prog, visitedHops, rewireTable, hopCommonTable, newOuterTransTableList, null, innerTransTable, 
+                                    unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight, networkWeight, parentLoopStack);
             }
 
             return innerTransTable;
@@ -134,23 +190,33 @@ public class FederatedPlanRewireTransTable {
         return newFormerTransTable;
     }
 
-    private static void rewireHopDAG(Hop hop, DMLProgram prog, Set<Long> visitedHops, Map<Long,List<Hop>> rewireTable, List<Map<String, List<Hop>>> outerTransTableList,
-                                               Map<String, List<Hop>> formerTransTable, Map<String, List<Hop>> innerTransTable, Set<Long> unRefTwriteSet, Set<Hop> progRootHopSet, Set<String> fnStack) {
+    private static void rewireHopDAG(Hop hop, DMLProgram prog, Set<Long> visitedHops, Map<Long,List<Hop>> rewireTable,  Map<Long, HopCommon> hopCommonTable, List<Map<String, List<Hop>>> outerTransTableList,
+                                               Map<String, List<Hop>> formerTransTable, Map<String, List<Hop>> innerTransTable, Set<Long> unRefTwriteSet, Set<Long> unRefSet, Set<Hop> progRootHopSet, 
+                                               Set<String> fnStack, double computeWeight, double networkWeight, List<Pair<Long, Double>> loopStack) {
        // Process all input nodes first if not already in memo table
-       for (Hop inputHop : hop.getInput()) {
-           long inputHopID = inputHop.getHopID();
-           if (!visitedHops.contains(inputHopID)) {
-               visitedHops.add(inputHopID);
-               rewireHopDAG(inputHop, prog, visitedHops, rewireTable, outerTransTableList, formerTransTable, innerTransTable, unRefTwriteSet, progRootHopSet, fnStack);
-           }
-       }
-    
+
+        if (hop.getInput() != null){
+            for (Hop inputHop : hop.getInput()) {
+                long inputHopID = inputHop.getHopID();
+                if (!visitedHops.contains(inputHopID)) {
+                    visitedHops.add(inputHopID);
+                    rewireHopDAG(inputHop, prog, visitedHops, rewireTable, hopCommonTable, outerTransTableList, formerTransTable, innerTransTable, 
+                                    unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight, networkWeight, loopStack);
+                }
+            }    
+        }
+
+        hopCommonTable.put(hop.getHopID(), new HopCommon(hop, computeWeight, networkWeight, 0, loopStack));
+
         // Identify hops to connect to the root dummy node
         // Connect TWrite pred and u(print) to the root dummy node
         if ((hop instanceof DataOp && (hop.getName().equals("__pred"))) // TWrite "__pred"
             || (hop instanceof UnaryOp && ((UnaryOp)hop).getOp() == Types.OpOp1.PRINT) // u(print)
             || (hop instanceof DataOp && ((DataOp)hop).getOp() == Types.OpOpData.PERSISTENTWRITE)){ // PWrite
             progRootHopSet.add(hop);
+        } else if (!(hop instanceof DataOp && ((DataOp)hop).getOp() == Types.OpOpData.TRANSIENTWRITE)
+                    && hop.getParent().size() == 0) {
+            unRefSet.add(hop.getHopID());
         }
 
        if( hop instanceof FunctionOp )
@@ -160,17 +226,10 @@ public class FederatedPlanRewireTransTable {
            if( fop.getFunctionType() == FunctionType.DML )
            {
                String fkey = fop.getFunctionKey();
-               for (Hop inputHop : fop.getInput()){
-                   fkey += "," + inputHop.getName();
-               }
 
                if(!fnStack.contains(fkey)) {
                    fnStack.add(fkey);
                    FunctionStatementBlock fsb = prog.getFunctionStatementBlock(fop.getFunctionNamespace(), fop.getFunctionName());
-                   FunctionStatementBlock newFsb = updateFunctionStatementBlockVariables(fop, fsb);
-                   // Todo (Future): 인자로 분리 안하면 RewireTable, MemoTable 분리해야 함.
-                   fop.setFunctionName(fkey);
-                   prog.addFunctionStatementBlock(fkey, newFsb);
 
                    Map<String, List<Hop>> newFormerTransTable = new HashMap<>();
                    if (formerTransTable != null){
@@ -186,11 +245,13 @@ public class FederatedPlanRewireTransTable {
                        newFormerTransTable.computeIfAbsent(inputArgs[i], k -> new ArrayList<>()).add(inputHops.get(i));
                    }
 
-                   Map<String, List<Hop>> functionTransTable = rewireStatementBlock(newFsb, prog, visitedHops, rewireTable, outerTransTableList, newFormerTransTable, unRefTwriteSet, progRootHopSet, fnStack);
+                   // Todo (Future): 인자로 분리 안하면 RewireTable, MemoTable 분리해야 함.
+                   Map<String, List<Hop>> functionTransTable = rewireStatementBlock(fsb, prog, visitedHops, rewireTable, hopCommonTable, outerTransTableList, newFormerTransTable, 
+                                                                                        unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight, networkWeight, loopStack);
                    
                    for (int i = 0; i < fop.getOutputVariableNames().length; i++){
                        String tWriteName = fop.getOutputVariableNames()[i];
-                       List<Hop> outputHops = functionTransTable.get(newFsb.getOutputsofSB().get(i).getName());
+                       List<Hop> outputHops = functionTransTable.get(fsb.getOutputsofSB().get(i).getName());
                        innerTransTable.computeIfAbsent(tWriteName, k -> new ArrayList<>()).addAll(outputHops);
                        for (Hop outputHop: outputHops){
                            unRefTwriteSet.add(outputHop.getHopID());
@@ -200,15 +261,15 @@ public class FederatedPlanRewireTransTable {
            }
        }
 
-        rewireTransReadWrite(hop, rewireTable, outerTransTableList, formerTransTable, innerTransTable, unRefTwriteSet);
-   }
-
-   private static void rewireTransReadWrite(Hop hop, Map<Long,List<Hop>> rewireTable, List<Map<String, List<Hop>>> outerTransTableList,
-                                                   Map<String, List<Hop>> formerTransTable, Map<String, List<Hop>> innerTransTable, Set<Long> unRefTwriteSet) {
        if (!(hop instanceof DataOp) || hop.getName().equals("__pred") || (hop instanceof DataOp && ((DataOp)hop).getOp() == Types.OpOpData.PERSISTENTWRITE)) {
-           return; // Early exit for non-DataOp or __pred
+           return;
        }
 
+        rewireTransHop(hop, rewireTable, outerTransTableList, formerTransTable, innerTransTable, unRefTwriteSet);
+   }
+
+   private static void rewireTransHop(Hop hop, Map<Long,List<Hop>> rewireTable, List<Map<String, List<Hop>>> outerTransTableList, Map<String, List<Hop>> formerTransTable,
+                                    Map<String, List<Hop>> innerTransTable, Set<Long> unRefTwriteSet) {
        DataOp dataOp = (DataOp) hop;
        Types.OpOpData opType = dataOp.getOp();
        String hopName = dataOp.getName();
@@ -220,11 +281,15 @@ public class FederatedPlanRewireTransTable {
        else if (opType == Types.OpOpData.TRANSIENTREAD) {
             List<Hop> childHops = rewireTransRead(hopName, innerTransTable, formerTransTable, outerTransTableList);
             rewireTable.put(hop.getHopID(), childHops);
-
-            for (Hop childHop: childHops){
-                rewireTable.computeIfAbsent(childHop.getHopID(), k -> new ArrayList<>()).add(hop);
-                unRefTwriteSet.remove(childHop.getHopID());
-           }
+            
+            if (childHops != null && !childHops.isEmpty()){
+                for (Hop childHop: childHops){
+                    rewireTable.computeIfAbsent(childHop.getHopID(), k -> new ArrayList<>()).add(hop);
+                    unRefTwriteSet.remove(childHop.getHopID());
+                }
+            } else {
+                System.out.println("hopName : " + hopName + " hop.getHopID() : " + hop.getHopID());
+            }
        }
    }
 
@@ -251,71 +316,5 @@ public class FederatedPlanRewireTransTable {
        }
 
        return childHops;
-   }
-
-   /**
-    * FunctionOp의 입력 데이터 정보를 바탕으로 FunctionStatementBlock의 변수 정보를 업데이트합니다.
-    * 
-    * @param fop 함수 연산자
-    * @param fsb 함수 구문 블록
-    */
-   private static FunctionStatementBlock updateFunctionStatementBlockVariables(FunctionOp fop, StatementBlock originalFsb) {
-		// 새로운 FunctionStatementBlock 생성
-       FunctionStatementBlock fsb = (FunctionStatementBlock) originalFsb.deepCopy();
-       String[] inputArgs = fop.getInputVariableNames();
-       List<Hop> inputHops = fop.getInput();
-       
-       for (int i = 0; i < inputHops.size(); i++) {
-           Hop inputHop = inputHops.get(i);
-           String argName = inputArgs[i];
-
-           // 1. liveIn 변수 집합 업데이트
-           if (fsb.liveIn().containsVariable(argName)) {
-               DataIdentifier liveInVar = fsb.liveIn().getVariable(argName);
-               liveInVar.setDimensions(inputHop.getDim1(), inputHop.getDim2());
-               liveInVar.setNnz(inputHop.getNnz());
-               liveInVar.setBlocksize(inputHop.getBlocksize());
-               
-               // 데이터 타입과 값 타입도 업데이트
-               liveInVar.setDataType(inputHop.getDataType());
-               liveInVar.setValueType(inputHop.getValueType());
-           }
-
-           // 2. liveOut 변수 집합 업데이트
-           if (fsb.liveOut().containsVariable(argName)) {
-               DataIdentifier liveOutVar = fsb.liveOut().getVariable(argName);
-               liveOutVar.setDimensions(inputHop.getDim1(), inputHop.getDim2());
-               liveOutVar.setNnz(inputHop.getNnz());
-               liveOutVar.setBlocksize(inputHop.getBlocksize());
-               liveOutVar.setDataType(inputHop.getDataType());
-               liveOutVar.setValueType(inputHop.getValueType());
-           }
-           
-           // 3. _gen 변수 집합 업데이트
-           if (fsb.getGen() != null && fsb.getGen().containsVariable(argName)) {
-               DataIdentifier genVar = fsb.getGen().getVariable(argName);
-               genVar.setDimensions(inputHop.getDim1(), inputHop.getDim2());
-               genVar.setNnz(inputHop.getNnz());
-               genVar.setBlocksize(inputHop.getBlocksize());
-               genVar.setDataType(inputHop.getDataType());
-               genVar.setValueType(inputHop.getValueType());
-           }
-           
-           // 4. _kill 변수 집합 업데이트
-           if (fsb.getKill() != null && fsb.getKill().containsVariable(argName)) {
-               DataIdentifier updatedVar = fsb.getKill().getVariable(argName);
-               updatedVar.setDimensions(inputHop.getDim1(), inputHop.getDim2());
-               updatedVar.setNnz(inputHop.getNnz());
-               updatedVar.setBlocksize(inputHop.getBlocksize());
-               updatedVar.setDataType(inputHop.getDataType());
-               updatedVar.setValueType(inputHop.getValueType());
-           }
-       }
-
-       DMLTranslator dmlt = new DMLTranslator(new DMLProgram());
-       // Todo 더 복잡하게 해야할 듯...
-       dmlt.constructHops(fsb);
-
-       return fsb;
    }
 } 

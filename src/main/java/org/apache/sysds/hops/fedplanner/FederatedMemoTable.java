@@ -181,6 +181,7 @@ public class FederatedMemoTable {
 
 		protected void setSelfCost(double selfCost) {this.selfCost = selfCost;}
 		protected void setForwardingCost(double forwardingCost) {this.forwardingCost = forwardingCost;}
+		protected void setNumOfParentHops(int numOfParentHops) {this.numOfParents = numOfParentHops;}
 		
 		public double getChildForwardingWeight(List<Pair<Long, Double>> childLoopContext) {
 			if (loopContext.isEmpty()) {

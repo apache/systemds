@@ -1,15 +1,15 @@
 package org.apache.sysds.hops.fedplanner;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.fedplanner.FederatedMemoTable.FedPlan;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 public class FederatedMemoTablePrinter {
     /**
@@ -26,7 +26,7 @@ public class FederatedMemoTablePrinter {
         System.out.println("Additional Cost: " + additionalTotalCost);
         Set<Long> visited = new HashSet<>();
         printFedPlanTreeRecursive(rootFedPlan, memoTable, visited, 0);
-        
+
         for (Long hopID : rootHopStatSet) {
             FedPlan plan = memoTable.getFedPlanAfterPrune(hopID, FederatedOutput.LOUT);
             printNotReferencedFedPlanRecursive(plan, memoTable, visited, 1);
@@ -88,7 +88,7 @@ public class FederatedMemoTablePrinter {
 
         visited.add(hopID);
         printFedPlan(plan, memoTable, depth, false);
-
+        
         // Process child nodes
         List<Pair<Long, FEDInstruction.FederatedOutput>> childFedPlanPairs = plan.getChildFedPlans();
         for (int i = 0; i < childFedPlanPairs.size(); i++) {
@@ -117,7 +117,11 @@ public class FederatedMemoTablePrinter {
                     .append(" [");
 
             if (isNotReferenced) {
-                sb.append("NRef");
+                if (depth == 1) {
+                    sb.append("NRef(TOP)");
+                } else {
+                    sb.append("NRef");
+                }
             } else{
                 sb.append(plan.getFedOutType());
             }

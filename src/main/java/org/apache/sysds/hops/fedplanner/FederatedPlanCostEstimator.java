@@ -86,9 +86,6 @@
 			 }
 		 }
  
-		 // In loops, selfCost is repeated, but forwarding may not be
-		 // Therefore, the weight for forwarding follows the parent's weight (TODO: Q. Is the parent also receiving forwarding once?)
-		 // Todo. Multi-thread인 경우, worker 수에 따라 나누기
 		 double selfCost = hopCommon.getComputeWeight() * computeSelfCost(hopCommon.hopRef);
 		 double forwardingCost = computeHopForwardingCost(hopCommon.hopRef.getOutputMemEstimate());
 

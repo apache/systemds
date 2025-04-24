@@ -3,6 +3,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import os
 import glob
+import argparse
 
 try:
     import pygraphviz
@@ -13,6 +14,68 @@ except ImportError:
     print("[주의] pygraphviz를 찾을 수 없습니다. 'pip install pygraphviz' 후 사용하세요.\n"
           "      설치가 안 된 경우 spring_layout 등 다른 레이아웃을 대체 사용합니다.")
 
+
+# 연산자 및 변수 약어 사전 추가
+OPERATION_ABBR = {
+    # 일반 연산자
+    "TRead": "TR",
+    "TWrite": "TW",
+    "Aggregate": "Agg",
+    "AggregateUnary": "AgU",
+    "Binary": "Bin",
+    "Unary": "Un",
+    "Reorg": "Rog",
+    "MatrixIndexing": "MIdx",
+    "Transpose": "Trp",
+    "Reshape": "Rshp",
+    "Literal": "Lit",
+    
+    # 페더레이션 관련 연산자
+    "transferMatrix": "tMat",
+    "transferMatrixFromRemoteToLocal": "t2Loc",
+    "transferMatrixFromLocalToRemote": "t2Rem",
+    "federated": "fed",
+    "federatedOutput": "fOut",
+    "localOutput": "lOut",
+    "noderef": "nRef",
+    
+    # KMeans 알고리즘 관련 연산자
+    "kmeans": "KM",
+    "kmeansPredict": "KMP",
+    "m_kmeans": "mKM",
+    
+    # 기타 연산
+    "append": "app",
+    "cbind": "cb",
+    "rbind": "rb",
+    "matrix": "mat",
+    "conv2d": "c2d",
+    "maxpool": "mxp",
+    "convolution": "cnv",
+    "pooling": "pool",
+    "QuantizeMatrix": "QMat",
+    "DeQuantizeMatrix": "DQMat"
+}
+
+# 변수 약어 사전 (자주 사용되는 변수 이름)
+VARIABLE_ABBR = {
+    "matrix": "Mat",
+    "weight": "Wei",
+    "input": "In",
+    "output": "Out",
+    "image": "Img",
+    "prediction": "Pred",
+    "target": "Tgt",
+    "gradient": "Grad",
+    "activation": "Act",
+    "feature": "Feat",
+    "label": "Lbl",
+    "parameter": "Param",
+    "temp": "Tmp",
+    "temporary": "Tmp",
+    "intermediate": "Imd",
+    "result": "Res"
+}
 
 def parse_line(line: str):
     # 원본 라인 출력
@@ -239,8 +302,103 @@ def get_unique_filename(base_filename: str) -> str:
         counter += 1
 
 
-def visualize_plan(filename: str, output_dir: str = "visualization_output"):
+def format_number(num_str):
+    """숫자를 문자열로 포맷팅합니다. 3자리 이상은 수학적 지수 표현으로 변환합니다."""
+    try:
+        num = float(num_str)
+        if num >= 1000 or num <= -1000:
+            # 지수 계산
+            exponent = 0
+            base = abs(num)
+            while base >= 10:
+                base /= 10
+                exponent += 1
+            
+            sign = "-" if num < 0 else ""
+            # 소수점 첫째 자리까지 반올림
+            base_rounded = round(base, 1)
+            base_str = f"{sign}{base_rounded}"
+            
+            # 지수를 유니코드 상첨자로 변환
+            superscript_map = {
+                '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
+                '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
+                '+': '⁺', '-': '⁻'
+            }
+            
+            exp_str = str(exponent)
+            superscript_exp = ''.join(superscript_map[c] for c in exp_str)
+            
+            return f"{base_str}×10{superscript_exp}"
+        else:
+            # 소수점 첫째 자리까지 반올림
+            rounded_num = round(num, 1)
+            # 반올림 후 정수면 정수 형태로 표시, 아니면 소수점 첫째 자리까지 표시
+            if rounded_num == int(rounded_num):
+                return str(int(rounded_num))
+            else:
+                return str(rounded_num)
+    except (ValueError, TypeError):
+        return str(num_str)
+
+
+def get_abbreviated_label(label):
+    """
+    레이블을 약어 사전을 사용하여 축약합니다.
+    예: "transferMatrixFromRemoteToLocal" -> "t2Loc"
+    """
+    if not label:
+        return label
+    
+    # 레이블 단어 분리 (카멜케이스, 스네이크케이스, 공백 등으로 구분)
+    # 1. CamelCase -> spaced
+    spaced_label = re.sub(r'([a-z])([A-Z])', r'\1 \2', label)
+    # 2. snake_case -> spaced
+    spaced_label = spaced_label.replace('_', ' ')
+    # 3. 공백으로 분리
+    words = spaced_label.split()
+    
+    result = []
+    for word in words:
+        # 연산자 약어 확인
+        if (word.lower() == "op"):
+            continue
+
+        is_abbreviated = False
+        for op, abbr in OPERATION_ABBR.items():
+            if op.lower() == word.lower():
+                result.append(abbr)
+                is_abbreviated = True
+                break
+        # 변수 약어 확인
+        if not is_abbreviated:
+            for var, abbr in VARIABLE_ABBR.items():
+                if var.lower() == word.lower():
+                    result.append(abbr)
+                    break
+
+        if not is_abbreviated:
+            result.append(word)                 
+                
+    # 구분 문자를 사용하여 단어들을 연결 (·)
+    abbreviated = '·'.join(result)
+    abbreviated = truncate_label(abbreviated)
+
+    return abbreviated
+
+
+def truncate_label(label, max_length=8):
+    """레이블 이름을 지정된 최대 길이로 제한합니다."""
+    if not label or len(label) <= max_length:
+        return label
+    return label[:max_length-1]
+
+
+def visualize_plan(filename: str, output_dir: str = "visualization_output", 
+                node_cost_display: bool = True, edge_cost_display: bool = True):
     print(f"[INFO] 파일 '{filename}'을 시각화합니다.")
+    print(f"[INFO] 노드 비용 표시: {'활성화' if node_cost_display else '비활성화'}")
+    print(f"[INFO] 엣지 비용 표시: {'활성화' if edge_cost_display else '비활성화'}")
     
     # 출력 디렉토리 생성
     os.makedirs(output_dir, exist_ok=True)
@@ -312,35 +470,34 @@ def visualize_plan(filename: str, output_dir: str = "visualization_output"):
                         print(f"  자식 노드 {child_node}의 forward_cost 변환 실패: {edge_data['forward_cost']}")
         
         # 레이블 첫 줄: 노드 ID, 연산, 총 비용, 가중치
-        first_line = f"{node_id}: {label}"
-        if total_cost:
-            # 정수 부분만 출력
+        first_line = f"{node_id}: {get_abbreviated_label(label)}"
+        if node_cost_display:
+            if total_cost:
+                # 정수 부분만 출력하는 대신 format_number 함수 사용
+                formatted_total = format_number(total_cost)
+                first_line += f"\nC: {formatted_total}"
+            if weight:
+                # 정수 부분만 출력하는 대신 format_number 함수 사용
+                formatted_weight = format_number(weight)
+                first_line += f", W: {formatted_weight}"
+            
+            # 레이블 두 번째 줄: Self Cost, 자식 누적 비용 합, 자식 포워딩 비용 합을 슬래시(/)로 구분
             try:
-                first_line += f"\nC: {int(float(total_cost))}"
+                self_cost_formatted = format_number(self_cost) if self_cost else "0"
             except (ValueError, TypeError):
-                first_line += f"\nC: {total_cost}"
-        if weight:
-            # 정수 부분만 출력
-            try:
-                first_line += f", W: {int(float(weight))}"
-            except (ValueError, TypeError):
-                first_line += f", W: {weight}"
-        
-        # 레이블 두 번째 줄: Self Cost, 자식 누적 비용 합, 자식 포워딩 비용 합을 슬래시(/)로 구분
-        # 정수 부분만 출력
-        try:
-            self_cost_int = int(float(self_cost)) if self_cost else 0
-        except (ValueError, TypeError):
-            self_cost_int = 0
-        
-        child_cumulated_cost_int = int(child_cumulated_cost_sum)
-        child_forward_cost_int = int(child_forward_cost_sum)
-        
-        print(f"  최종 비용 합계: Self={self_cost_int}, Child Total={child_cumulated_cost_int}, Child Fwd={child_forward_cost_int}")
-        second_line = f"({self_cost_int}/{child_cumulated_cost_int}/{child_forward_cost_int})"
-        
-        # 최종 레이블
-        labels[n] = f"{first_line}\n{second_line}"
+                self_cost_formatted = "0"
+            
+            child_cumulated_cost_formatted = format_number(child_cumulated_cost_sum)
+            child_forward_cost_formatted = format_number(child_forward_cost_sum)
+            
+            print(f"  최종 비용 합계: Self={self_cost_formatted}, Child Total={child_cumulated_cost_formatted}, Child Fwd={child_forward_cost_formatted}")
+            second_line = f"({self_cost_formatted}/{child_cumulated_cost_formatted}/{child_forward_cost_formatted})"
+            
+            # 최종 레이블
+            labels[n] = f"{first_line}\n{second_line}"
+        else:
+            # 비용 표시 없이 노드 ID와 레이블만 표시
+            labels[n] = first_line
 
     # 노드별 색상 결정 (kind에 따라)
     def get_color(n):
@@ -351,6 +508,8 @@ def visualize_plan(filename: str, output_dir: str = "visualization_output"):
             return 'dodgerblue'
         elif k == 'nref':
             return 'mediumpurple'
+        elif k == 'nref(top)':
+            return 'darkviolet'
         else:
             return 'mediumseagreen'
 
@@ -448,55 +607,46 @@ def visualize_plan(filename: str, output_dir: str = "visualization_output"):
     # 엣지 레이블 추가 (forwarding cost와 weight 정보) - 배경을 완전히 투명하게 설정
     edge_labels = {}
     
-    # 발견된 엣지는 C/W/CC 형식으로 표시 (ROOT 노드 연결 제외)
-    for u, v, d in G.edges(data=True):
-        # ROOT 노드에 연결된 엣지는 레이블 표시 안함
-        if v == 'R' or u == 'R':
-            continue
-            
-        # 발견된 엣지는 정보 표시
-        if 'is_discovered' in d and d['is_discovered'] and 'forward_cost' in d and 'forward_weight' in d:
-            label_parts = []
+    # edge_cost_display가 True인 경우에만 엣지 레이블 추가
+    if edge_cost_display:
+        # 발견된 엣지는 C/W/CC 형식으로 표시 (ROOT 노드 연결 제외)
+        for u, v, d in G.edges(data=True):
+            # ROOT 노드에 연결된 엣지는 레이블 표시 안함
+            if v == 'R' or u == 'R':
+                continue
+                
+            # 발견된 엣지는 정보 표시
+            if 'is_discovered' in d and d['is_discovered'] and 'forward_cost' in d and 'forward_weight' in d:
+                label_parts = []
 
-            # 누적 비용이 있으면 추가 (정수 부분만)
-            if 'cumulative_cost' in d and d['cumulative_cost'] is not None:
-                try:
-                    cumulative_cost_int = int(float(d['cumulative_cost']))
-                    label_parts.append(f"C:{cumulative_cost_int}")
-                except ValueError:
-                    label_parts.append(f"C:{d['cumulative_cost']}")
+                # 누적 비용이 있으면 추가 (정수 부분만)
+                if 'cumulative_cost' in d and d['cumulative_cost'] is not None:
+                    cumulative_cost_formatted = format_number(d['cumulative_cost'])
+                    label_parts.append(f"C:{cumulative_cost_formatted}")
 
-
-            # 포워딩 비용 (정수 부분만)
-            try:
-                forward_cost_int = int(float(d['forward_cost']))
-                label_parts.append(f"FC:{forward_cost_int}")
-            except ValueError:
-                label_parts.append(f"FC:{d['forward_cost']}")
-            
-            # 가중치 (정수 부분만)
-            try:
-                forward_weight_int = int(float(d['forward_weight']))
-                label_parts.append(f"FW:{forward_weight_int}")
-            except ValueError:
-                label_parts.append(f"FW:{d['forward_weight']}")
-            
-
-            
-            edge_labels[(u, v)] = "\n".join(label_parts)
-        # 미발견 엣지는 "Undiscovered"로 표시
-        elif ('is_discovered' not in d or not d['is_discovered']) and 'forward_cost' in d and 'forward_weight' in d:
-            edge_labels[(u, v)] = "Undiscovered"
+                # 포워딩 비용 
+                forward_cost_formatted = format_number(d['forward_cost'])
+                label_parts.append(f"FC:{forward_cost_formatted}")
+                
+                # 가중치
+                forward_weight_formatted = format_number(d['forward_weight'])
+                label_parts.append(f"FW:{forward_weight_formatted}")
+                
+                edge_labels[(u, v)] = "\n".join(label_parts)
+            # 미발견 엣지는 "Undiscovered"로 표시
+            elif ('is_discovered' not in d or not d['is_discovered']) and 'forward_cost' in d and 'forward_weight' in d:
+                edge_labels[(u, v)] = "Undiscovered"
 
     # 엣지 레이블 추가 - 배경을 완전히 투명하게 설정
-    edge_label_dict = nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, 
-                                                 font_size=7, font_color='darkblue',
-                                                 bbox=dict(boxstyle="round", fc="w", ec="none", alpha=0),
-                                                 ax=ax)
-    
-    # 레이블 배경을 직접 투명하게 설정
-    for key, text in edge_label_dict.items():
-        text.set_bbox(dict(boxstyle="round", fc="none", ec="none", alpha=0))
+    if edge_labels:
+        edge_label_dict = nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, 
+                                                     font_size=7, font_color='darkblue',
+                                                     bbox=dict(boxstyle="round", fc="w", ec="none", alpha=0),
+                                                     ax=ax)
+        
+        # 레이블 배경을 직접 투명하게 설정
+        for key, text in edge_label_dict.items():
+            text.set_bbox(dict(boxstyle="round", fc="none", ec="none", alpha=0))
 
     # 노드 레이블 - 배경을 완전히 투명하게 설정
     label_dict = nx.draw_networkx_labels(G, pos, labels=labels, font_size=8, 
@@ -524,44 +674,29 @@ def visualize_plan(filename: str, output_dir: str = "visualization_output"):
     legend_x = 0.98  # 우측 상단 x 좌표
     legend_y = 0.98  # 우측 상단 y 좌표
     legend_spacing = 0.05  # 각 항목 간 간격
-
+    
     # 레이블 범례 (텍스트만)
-    plt.text(legend_x, legend_y, "[Node LABEL]\nhopID: hopNam\nC: Total Cost, W: Weight\n(Self / Child Cum. Cost / Child Fwd. Cost)", 
-             fontsize=12, ha='right', va='top', transform=ax.transAxes)
-
-    # # 엣지 유형 범례
-    # y_offset = legend_y - 0.3  # 엣지 범례 시작 y 위치
-    
-    # # 엣지 유형 제목
-    # plt.text(legend_x, y_offset, "Edge Types:", 
-    #          fontsize=12, ha='right', va='center', transform=ax.transAxes)
-    # y_offset -= legend_spacing
-    
-    # # Forwarding 엣지
-    # plt.plot([legend_x-0.13, legend_x-0.08], [y_offset, y_offset], 
-    #          color='red', linewidth=2, transform=ax.transAxes)
-    # plt.text(legend_x, y_offset, "Forwarding Cost (O)", 
-    #          fontsize=10, ha='right', va='center', transform=ax.transAxes)
-    # y_offset -= legend_spacing
-    
-    # # No Forwarding 엣지
-    # plt.plot([legend_x-0.13, legend_x-0.08], [y_offset, y_offset], 
-    #          color='black', linewidth=1, transform=ax.transAxes)
-    # plt.text(legend_x, y_offset, "No Forwarding Cost", 
-    #          fontsize=10, ha='right', va='center', transform=ax.transAxes)
-    # y_offset -= legend_spacing
-    
-    # # Undiscovered 엣지
-    # plt.plot([legend_x-0.13, legend_x-0.08], [y_offset, y_offset], 
-    #          color='purple', linewidth=2.5, alpha=0.7, transform=ax.transAxes)
-    # plt.text(legend_x, y_offset, "Undiscovered", 
-    #          fontsize=10, ha='right', va='center', transform=ax.transAxes)
+    if node_cost_display:
+        plt.text(legend_x, legend_y, "[Node LABEL]\nhopID: hopNam\nC: Total Cost, W: Weight\n(Self / Child Cum. Cost / Child Fwd. Cost)", 
+                fontsize=12, ha='right', va='top', transform=ax.transAxes)
+    else:
+        plt.text(legend_x, legend_y, "[Node LABEL]\nhopID: hopNam", 
+                fontsize=12, ha='right', va='top', transform=ax.transAxes)
 
     plt.axis("off")
 
     # 입력 파일 이름을 기반으로 출력 파일 이름 생성
     input_filename = os.path.basename(filename)
-    base_output_filename = os.path.splitext(input_filename)[0] + ".png"
+    base_output_filename = os.path.splitext(input_filename)[0]
+    
+    # 비용 표시 옵션에 따른 파일명 접미사 설정
+    suffix = ""
+    if not node_cost_display:
+        suffix += "_no_node_cost"
+    if not edge_cost_display:
+        suffix += "_no_edge_cost"
+    
+    base_output_filename += suffix + ".png"
     output_filename = os.path.join(output_dir, base_output_filename)
     
     # 중복 파일명 처리
@@ -573,18 +708,30 @@ def visualize_plan(filename: str, output_dir: str = "visualization_output"):
 
 
 def main():
-    import sys
-    print("사용법: python FederatedPlanVisualizer.py <trace_file>")
-    if len(sys.argv) != 2:
-        print("사용법: python FederatedPlanVisualizer.py <trace_file>")
+    import argparse
+    
+    # 인자 파서 설정
+    parser = argparse.ArgumentParser(description='연합 계획을 시각화하는 도구')
+    parser.add_argument('trace_file', help='시각화할 추적 파일의 경로')
+    parser.add_argument('--no-node-cost', action='store_true', help='노드 비용 정보를 표시하지 않음')
+    parser.add_argument('--no-edge-cost', action='store_true', help='엣지 비용 정보를 표시하지 않음')
+    parser.add_argument('--no-cost', action='store_true', help='모든 비용 정보를 표시하지 않음 (--no-node-cost와 --no-edge-cost를 동시에 적용)')
+    parser.add_argument('--output-dir', default='visualization_output', help='출력 디렉토리 경로 (기본값: visualization_output)')
+    
+    # 인자 파싱
+    args = parser.parse_args()
+    
+    # 파일 존재 확인
+    if not os.path.exists(args.trace_file):
+        print(f"[오류] 파일 '{args.trace_file}'을 찾을 수 없습니다.")
         sys.exit(1)
     
-    trace_file = sys.argv[1]
-    if not os.path.exists(trace_file):
-        print(f"[오류] 파일 '{trace_file}'을 찾을 수 없습니다.")
-        sys.exit(1)
+    # 비용 표시 옵션 설정
+    node_cost_display = not (args.no_node_cost or args.no_cost)
+    edge_cost_display = not (args.no_edge_cost or args.no_cost)
     
-    visualize_plan(trace_file)
+    # 시각화 실행
+    visualize_plan(args.trace_file, args.output_dir, node_cost_display, edge_cost_display)
 
 
 if __name__ == '__main__':

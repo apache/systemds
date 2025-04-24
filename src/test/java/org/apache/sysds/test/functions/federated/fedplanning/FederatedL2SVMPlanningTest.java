@@ -72,7 +72,12 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore //TODO
+	public void runL2SVMCostBasedTest(){
+		String[] expectedHeavyHitters = new String[]{};
+		setTestConf("SystemDS-config-cost-based.xml");
+		loadAndRunTest(expectedHeavyHitters, TEST_NAME);
+	}
+	@Test
 	public void runL2SVMFunctionFOUTTest(){
 		String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*", "fed_tak+*", "fed_+*",
 			"fed_max", "fed_1-*", "fed_tsmm", "fed_>"};
@@ -81,13 +86,18 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore //TODO
 	public void runL2SVMFunctionHeuristicTest(){
 		String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*"};
 		setTestConf("SystemDS-config-heuristic.xml");
 		loadAndRunTest(expectedHeavyHitters, TEST_NAME_2);
 	}
 
+	@Test
+	public void runL2SVMFunctionCostBasedTest(){
+		String[] expectedHeavyHitters = new String[]{};
+		setTestConf("SystemDS-config-cost-based.xml");
+		loadAndRunTest(expectedHeavyHitters, TEST_NAME_2);
+	}
 	private void setTestConf(String test_conf){
 		TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, test_conf);
 	}

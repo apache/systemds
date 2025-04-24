@@ -55,9 +55,6 @@ import org.apache.sysds.hops.Hop;
  import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class FederatedPlanCostEnumerator {
-	 private static final double DEFAULT_LOOP_WEIGHT = 10.0;
-	 private static final double DEFAULT_IF_ELSE_WEIGHT = 0.5;
- 
 	 /**
 	  * Enumerates the entire DML program to generate federated execution plans.
 	  * It processes each statement block, computes the optimal federated plan,
@@ -66,42 +63,44 @@ public class FederatedPlanCostEnumerator {
 	  * @param prog The DML program to enumerate.
 	  * @param isPrint A boolean indicating whether to print the federated plan tree.
 	  */
-	 public static FedPlan enumerateProgram(DMLProgram prog, FederatedMemoTable memoTable, boolean isPrint) {
+	 public static FedPlan enumerateProgram(DMLProgram prog, FederatedMemoTable memoTable, int numOfWorkers, boolean isPrint) {
 		 Map<Long, List<Hop>> rewireTable = new HashMap<>();
 		 Set<Hop> progRootHopSet = new HashSet<>();
 		 Set<Long> unRefTwriteSet = new HashSet<>();
-		 FederatedPlanRewireTransTable.rewireProgram(prog, rewireTable, unRefTwriteSet, progRootHopSet);
+		 Set<Long> unRefSet = new HashSet<>();
+		 Map<Long, HopCommon> hopCommonTable = new HashMap<>();
+		 FederatedPlanRewireTransTable.rewireProgram(prog, rewireTable, hopCommonTable, unRefTwriteSet, unRefSet, progRootHopSet);
 		 
-		 List<Pair<Long, Double>> loopStack = new ArrayList<>();
 		 Set<String> fnStack = new HashSet<>();
 
 		 for (StatementBlock sb : prog.getStatementBlocks()) {
-			enumerateStatementBlock(sb, prog, memoTable, rewireTable, unRefTwriteSet, fnStack, 1, 1, loopStack);
+			enumerateStatementBlock(sb, prog, memoTable, hopCommonTable, rewireTable, unRefTwriteSet, fnStack, numOfWorkers);
 		 }
 		 
 		 FedPlan optimalPlan = getMinCostRootFedPlan(progRootHopSet, memoTable);
  
 		 // Detect conflicts in the federated plans where different FedPlans have different FederatedOutput types
 		 double additionalTotalCost = detectAndResolveConflictFedPlan(optimalPlan, memoTable);
- 
+		 
+		 unRefSet.addAll(unRefTwriteSet);
 		 // Print the federated plan tree if requested
 		 if (isPrint) {
-			 FederatedMemoTablePrinter.printFedPlanTree(optimalPlan, unRefTwriteSet, memoTable, additionalTotalCost);
+			 FederatedMemoTablePrinter.printFedPlanTree(optimalPlan, unRefSet, memoTable, additionalTotalCost);
 		 }
 		 
 		 return optimalPlan;
 	 }
 
-	 public static FedPlan enumerateFunctionDynamic(FunctionStatementBlock function, FederatedMemoTable memoTable, boolean isPrint) {
+	 public static FedPlan enumerateFunctionDynamic(FunctionStatementBlock function, FederatedMemoTable memoTable, int numOfWorkers, boolean isPrint) {
 		Map<Long, List<Hop>> rewireTable = new HashMap<>();
 		Set<Hop> progRootHopSet = new HashSet<>();
 		Set<Long> unRefTwriteSet = new HashSet<>();
-		FederatedPlanRewireTransTable.rewireFunctionDynamic(function, rewireTable, unRefTwriteSet, progRootHopSet);
-		
-		List<Pair<Long, Double>> loopStack = new ArrayList<>();
+		Set<Long> unRefSet = new HashSet<>();
+		Map<Long, HopCommon> hopCommonTable = new HashMap<>();
+		FederatedPlanRewireTransTable.rewireFunctionDynamic(function, rewireTable, hopCommonTable, unRefTwriteSet, unRefSet, progRootHopSet);
+	
 		Set<String> fnStack = new HashSet<>();
-
-		enumerateStatementBlock(function, null, memoTable, rewireTable, unRefTwriteSet, fnStack, 1, 1, loopStack);
+		enumerateStatementBlock(function, null, memoTable, hopCommonTable, rewireTable, unRefTwriteSet, fnStack, numOfWorkers);
 		
 		FedPlan optimalPlan = getMinCostRootFedPlan(progRootHopSet, memoTable);
 
@@ -124,85 +123,56 @@ public class FederatedPlanCostEnumerator {
 	  *
 	  * @param sb The statement block to enumerate.
 	  * @param memoTable The memoization table to store plan variants.
-	  * @param weight The weight associated with the current Hop.
 	  * @param parentLoopStack The context of parent loops for loop-level context tracking.
 	  * @return A map of inner transient writes.
 	  */
-	 public static void enumerateStatementBlock(StatementBlock sb, DMLProgram prog, FederatedMemoTable memoTable, Map<Long, List<Hop>>rewireTable,
-																Set<Long> unRefTwriteSet, Set<String> fnStack, double computeWeight, double networkWeight, List<Pair<Long, Double>> parentLoopStack) {
+	 public static void enumerateStatementBlock(StatementBlock sb, DMLProgram prog, FederatedMemoTable memoTable, Map<Long, HopCommon> hopCommonTable, 
+	 											Map<Long, List<Hop>>rewireTable, Set<Long> unRefTwriteSet, Set<String> fnStack, int numOfWorkers) {
 		 if (sb instanceof IfStatementBlock) {
 			 IfStatementBlock isb = (IfStatementBlock) sb;
 			 IfStatement istmt = (IfStatement)isb.getStatement(0);
 
-			 computeWeight *= DEFAULT_IF_ELSE_WEIGHT;
-			 enumerateHopDAG(isb.getPredicateHops(), prog, memoTable, rewireTable, unRefTwriteSet, fnStack, computeWeight, networkWeight, parentLoopStack);
+			 enumerateHopDAG(isb.getPredicateHops(), prog, memoTable, hopCommonTable, rewireTable, unRefTwriteSet, fnStack, numOfWorkers);
 
 			 for (StatementBlock innerIsb : istmt.getIfBody())
-				 enumerateStatementBlock(innerIsb, prog, memoTable, rewireTable, unRefTwriteSet, fnStack, computeWeight, networkWeight, parentLoopStack);
+				 enumerateStatementBlock(innerIsb, prog, memoTable, hopCommonTable, rewireTable, unRefTwriteSet, fnStack, numOfWorkers);
 
 			 for (StatementBlock innerIsb : istmt.getElseBody())
-				 enumerateStatementBlock(innerIsb, prog, memoTable, rewireTable, unRefTwriteSet, fnStack, computeWeight, networkWeight, parentLoopStack);
+				 enumerateStatementBlock(innerIsb, prog, memoTable, hopCommonTable, rewireTable, unRefTwriteSet, fnStack, numOfWorkers);
 		 }
 		 else if (sb instanceof ForStatementBlock) { //incl parfor
 			 ForStatementBlock fsb = (ForStatementBlock) sb;
 			 ForStatement fstmt = (ForStatement)fsb.getStatement(0);
- 
-			 // Calculate for-loop iteration count if possible
-			 double loopWeight = DEFAULT_LOOP_WEIGHT;
-			 Hop from = fsb.getFromHops().getInput().get(0);
-			 Hop to = fsb.getToHops().getInput().get(0);
-			 Hop incr = (fsb.getIncrementHops() != null) ?
-					 fsb.getIncrementHops().getInput().get(0) : new LiteralOp(1);
- 
-			 // Calculate for-loop iteration count (weight) if from, to, and incr are literal ops (constant values)
-			 if( from instanceof LiteralOp && to instanceof LiteralOp && incr instanceof LiteralOp ) {
-				 double dfrom = HopRewriteUtils.getDoubleValue((LiteralOp) from);
-				 double dto = HopRewriteUtils.getDoubleValue((LiteralOp) to);
-				 double dincr = HopRewriteUtils.getDoubleValue((LiteralOp) incr);
-				 if( dfrom > dto && dincr == 1 )
-					 dincr = -1;
-				 loopWeight = UtilFunctions.getSeqLength(dfrom, dto, dincr, false);
-			 }
-			 computeWeight *= loopWeight;
-			 networkWeight *= loopWeight;
-
-			// 현재 루프 컨텍스트 생성 (부모 컨텍스트 복사)
-			List<Pair<Long, Double>> currentLoopStack = new ArrayList<>(parentLoopStack);
-			currentLoopStack.add(Pair.of(sb.getSBID(), loopWeight));
 			 
-			 enumerateHopDAG(fsb.getFromHops(), prog, memoTable, rewireTable, unRefTwriteSet, fnStack, computeWeight, networkWeight, currentLoopStack);
-			 enumerateHopDAG(fsb.getToHops(), prog, memoTable, rewireTable, unRefTwriteSet, fnStack, computeWeight, networkWeight, currentLoopStack);
-			 enumerateHopDAG(fsb.getIncrementHops(), prog, memoTable, rewireTable, unRefTwriteSet, fnStack, computeWeight, networkWeight, currentLoopStack);
+			 enumerateHopDAG(fsb.getFromHops(), prog, memoTable, hopCommonTable, rewireTable, unRefTwriteSet, fnStack, numOfWorkers);
+			 enumerateHopDAG(fsb.getToHops(), prog, memoTable, hopCommonTable, rewireTable, unRefTwriteSet, fnStack, numOfWorkers);
+			 if (fsb.getIncrementHops() != null) {
+				 enumerateHopDAG(fsb.getIncrementHops(), prog, memoTable, hopCommonTable, rewireTable, unRefTwriteSet, fnStack, numOfWorkers);
+			 }
 
 			 for (StatementBlock innerFsb : fstmt.getBody())
-				enumerateStatementBlock(innerFsb, prog, memoTable, rewireTable, unRefTwriteSet, fnStack, computeWeight, networkWeight, currentLoopStack);
+				enumerateStatementBlock(innerFsb, prog, memoTable, hopCommonTable, rewireTable, unRefTwriteSet, fnStack, numOfWorkers);
 		 }
 		 else if (sb instanceof WhileStatementBlock) {
 			 WhileStatementBlock wsb = (WhileStatementBlock) sb;
 			 WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
-			 computeWeight *= DEFAULT_LOOP_WEIGHT;
-			 networkWeight *= DEFAULT_LOOP_WEIGHT;
-			 
-			// 현재 루프 컨텍스트 생성 (부모 컨텍스트 복사)
-			List<Pair<Long, Double>> currentLoopStack = new ArrayList<>(parentLoopStack);
-			currentLoopStack.add(Pair.of(sb.getSBID(), DEFAULT_LOOP_WEIGHT));
  
-			 enumerateHopDAG(wsb.getPredicateHops(), prog, memoTable, rewireTable, unRefTwriteSet, fnStack, computeWeight, networkWeight, currentLoopStack);
+			 enumerateHopDAG(wsb.getPredicateHops(), prog, memoTable, hopCommonTable, rewireTable, unRefTwriteSet, fnStack, numOfWorkers);
 
 			 for (StatementBlock innerWsb : wstmt.getBody())
-				enumerateStatementBlock(innerWsb, prog, memoTable, rewireTable, unRefTwriteSet, fnStack, computeWeight, networkWeight, currentLoopStack);
+				enumerateStatementBlock(innerWsb, prog, memoTable, hopCommonTable, rewireTable, unRefTwriteSet, fnStack, numOfWorkers);
 		 }
 		 else if (sb instanceof FunctionStatementBlock) {
 			 FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
 			 FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
 			 
 			 for (StatementBlock innerFsb : fstmt.getBody())
-				enumerateStatementBlock(innerFsb, prog, memoTable, rewireTable, unRefTwriteSet, fnStack, computeWeight, networkWeight, parentLoopStack);
+				enumerateStatementBlock(innerFsb, prog, memoTable, hopCommonTable, rewireTable, unRefTwriteSet, fnStack, numOfWorkers);
 		 }
 		 else { //generic (last-level)
 			 if( sb.getHops() != null ){
 				 for(Hop c : sb.getHops())
-					 enumerateHopDAG(c, prog, memoTable, rewireTable, unRefTwriteSet, fnStack, computeWeight, networkWeight, parentLoopStack);
+					 enumerateHopDAG(c, prog, memoTable, hopCommonTable, rewireTable, unRefTwriteSet, fnStack, numOfWorkers);
 			 }
 		 }
 	 }
@@ -214,18 +184,16 @@ public class FederatedPlanCostEnumerator {
 	  *
 	  * @param hop The Hop for which to rewire and enumerate federated plans.
 	  * @param memoTable The memoization table to store plan variants.
-	  * @param computeWeight The weight associated with the current Hop.
-	  * @param networkWeight The weight associated with the current Hop.
 	  * @param loopStack The context of parent loops for loop-level context tracking.
 	  */
-	 private static void enumerateHopDAG(Hop hop, DMLProgram prog, FederatedMemoTable memoTable, Map<Long,List<Hop>> rewireTable, Set<Long> unRefTwriteSet,
-											Set<String> fnStack, double computeWeight, double networkWeight, List<Pair<Long, Double>> loopStack) {
+	 private static void enumerateHopDAG(Hop hop, DMLProgram prog, FederatedMemoTable memoTable, Map<Long,HopCommon> hopCommonTable, 
+											Map<Long,List<Hop>> rewireTable, Set<Long> unRefTwriteSet, Set<String> fnStack, int numOfWorkers) {
 		// Process all input nodes first if not already in memo table
 		for (Hop inputHop : hop.getInput()) {
 			long inputHopID = inputHop.getHopID();
 			if (!memoTable.contains(inputHopID, FederatedOutput.FOUT)
 					&& !memoTable.contains(inputHopID, FederatedOutput.LOUT)) {
-						enumerateHopDAG(inputHop, prog, memoTable, rewireTable, unRefTwriteSet, fnStack, computeWeight, networkWeight, loopStack);
+						enumerateHopDAG(inputHop, prog, memoTable, hopCommonTable, rewireTable, unRefTwriteSet, fnStack, numOfWorkers);
 			}
 		}
 
@@ -244,13 +212,13 @@ public class FederatedPlanCostEnumerator {
 					 fnStack.add(fkey);
 					 FunctionStatementBlock fsb = prog.getFunctionStatementBlock(fop.getFunctionNamespace(), fop.getFunctionName());
 					 // Todo (Future): hop reconstruction을 안하면 memoTable 따로 써야함.
-					 enumerateStatementBlock(fsb, prog, memoTable, rewireTable, unRefTwriteSet, fnStack, computeWeight, networkWeight, loopStack);
+					 enumerateStatementBlock(fsb, prog, memoTable, hopCommonTable, rewireTable, unRefTwriteSet, fnStack, numOfWorkers);
 				 }
 			 }
 		 }
 
 		// Enumerate the federated plan for the current Hop
-		enumerateFedPlan(hop, memoTable, rewireTable, unRefTwriteSet, computeWeight, networkWeight, loopStack);
+		enumerateHop(hop, memoTable, hopCommonTable, rewireTable, unRefTwriteSet, fnStack, numOfWorkers);
 	}
 
 	/**
@@ -261,11 +229,10 @@ public class FederatedPlanCostEnumerator {
 	  *
 	  * @param hop The Hop for which to enumerate federated plans.
 	  * @param memoTable The memoization table to store plan variants.
-	  * @param weight The weight associated with the current Hop.
 	  * @param loopStack The context of parent loops for loop-level context tracking.
 	  */
-	 private static void enumerateFedPlan(Hop hop, FederatedMemoTable memoTable, Map<Long,List<Hop>> rewireTable, Set<Long> unRefTwriteSet, 
-	 										double computeWeight, double networkWeight, List<Pair<Long, Double>> loopStack) {
+	 private static void enumerateHop(Hop hop, FederatedMemoTable memoTable, Map<Long,HopCommon> hopCommonTable, Map<Long,List<Hop>> rewireTable, 
+											Set<Long> unRefTwriteSet, Set<String> fnStack, int numOfWorkers) {
 		long hopID = hop.getHopID();
 		List<Hop> childHops = hop.getInput();
 		int numParentHops = hop.getParent().size();
@@ -298,7 +265,8 @@ public class FederatedPlanCostEnumerator {
 			}
 		}
 
-		 HopCommon hopCommon = new HopCommon(hop, computeWeight, networkWeight, numParentHops, loopStack);
+		 HopCommon hopCommon = hopCommonTable.get(hopID);
+		 hopCommon.setNumOfParentHops(numParentHops);
 		 double selfCost = FederatedPlanCostEstimator.computeHopCost(hopCommon);
  
 		 FedPlanVariants lOutFedPlanVariants = new FedPlanVariants(hopCommon, FederatedOutput.LOUT);
@@ -314,9 +282,9 @@ public class FederatedPlanCostEnumerator {
 		 FederatedPlanCostEstimator.getChildCosts(hopCommon, memoTable, childHops, childCumulativeCost, childForwardingCost);
 		
 		 if (isTrans){
-			 enumerateTransChildFedPlan(lOutFedPlanVariants, fOutFedPlanVariants, numInitInputs, numInputs, childHops, childCumulativeCost, selfCost);
+			 enumerateTransChildFedPlan(lOutFedPlanVariants, fOutFedPlanVariants, numInputs, childHops, childCumulativeCost, selfCost, numOfWorkers);
 		 } else {
-			 enumerateChildFedPlan(lOutFedPlanVariants, fOutFedPlanVariants, numInitInputs, childHops, childCumulativeCost, childForwardingCost, selfCost);
+			 enumerateChildFedPlan(lOutFedPlanVariants, fOutFedPlanVariants, numInputs, childHops, childCumulativeCost, childForwardingCost, selfCost, numOfWorkers);
 		 }
  
 		 // Prune the FedPlans to remove redundant plans
@@ -335,21 +303,21 @@ public class FederatedPlanCostEnumerator {
 	  *
 	  * @param lOutFedPlanVariants The FedPlanVariants object for LOUT output type.
 	  * @param fOutFedPlanVariants The FedPlanVariants object for FOUT output type.
-	  * @param numInitInputs The number of initial input hops.
 	  * @param childHops The list of child hops.
 	  * @param childCumulativeCost The cumulative costs for each child hop.
 	  * @param childForwardingCost The forwarding costs for each child hop.
 	  * @param selfCost The self cost of the current hop.
 	  */
-	 private static void enumerateChildFedPlan(FedPlanVariants lOutFedPlanVariants, FedPlanVariants fOutFedPlanVariants, int numInitInputs, List<Hop> childHops, 
-				 double[][] childCumulativeCost, double[] childForwardingCost, double selfCost){
+	 private static void enumerateChildFedPlan(FedPlanVariants lOutFedPlanVariants, FedPlanVariants fOutFedPlanVariants,
+											   	int numInputs, List<Hop> childHops, double[][] childCumulativeCost,
+											   	double[] childForwardingCost, double selfCost, int numOfWorkers){
 		 // Iterate 2^n times, generating two FedPlans (LOUT, FOUT) each time.
-		 for (int i = 0; i < (1 << numInitInputs); i++) {
-			 double[] cumulativeCost = new double[]{selfCost, selfCost};
+		 for (int i = 0; i < (1 << numInputs); i++) {
+			 double[] cumulativeCost = new double[]{selfCost, selfCost/numOfWorkers};
 			 List<Pair<Long, FederatedOutput>> planChilds = new ArrayList<>();
 
 			 // LOUT and FOUT share the same planChilds in each iteration (only forwarding cost differs).
-			 for (int j = 0; j < numInitInputs; j++) {
+			 for (int j = 0; j < numInputs; j++) {
 				Hop inputHop = childHops.get(j);
 				// Calculate the bit value to decide between FOUT and LOUT for the current input
 				final int bit = (i & (1 << j)) != 0 ? 1 : 0; // Determine the bit value (decides FOUT/LOUT)
@@ -371,21 +339,19 @@ public class FederatedPlanCostEnumerator {
 	  * This method calculates the cumulative costs for both LOUT and FOUT federated output types
 	  * considering that TRead/TWrite hops have only one child (TWrite/Child of TWrite).
 	  * Since TRead, TWrite and Child of TWrite have the same federated output type, it generates only
-	  * a single plan for each output type.
-	  *
+	  * a single plan for each output type
 	  * @param lOutFedPlanVariants The FedPlanVariants object for LOUT output type.
 	  * @param fOutFedPlanVariants The FedPlanVariants object for FOUT output type.
-	  * @param numInitInputs The number of initial input hops.
 	  * @param numInputs The total number of input hops, including additional TWrite hops.
 	  * @param childHops The list of child hops.
 	  * @param childCumulativeCost The cumulative costs for each child hop.
 	  * @param selfCost The self cost of the current hop.
 	  */
 	 private static void enumerateTransChildFedPlan(FedPlanVariants lOutFedPlanVariants, FedPlanVariants fOutFedPlanVariants,
-					 int numInitInputs, int numInputs, List<Hop> childHops, 
-					 double[][] childCumulativeCost, double selfCost){
+														int numInputs, List<Hop> childHops, double[][] childCumulativeCost,
+														double selfCost, int numOfWorkers){
 	 
-		 double[] cumulativeCost = new double[]{selfCost, selfCost};
+		 double[] cumulativeCost = new double[]{selfCost, selfCost/numOfWorkers};
 		 List<Pair<Long, FederatedOutput>> lOutTransPlanChilds = new ArrayList<>();
 		 List<Pair<Long, FederatedOutput>> fOutTransPlanChilds = new ArrayList<>();
 					

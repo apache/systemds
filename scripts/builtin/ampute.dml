@@ -184,8 +184,7 @@ return (Matrix[Double] freq, Matrix[Double] patterns, Matrix[Double] weights) {
 u_handleDefaults = function(Matrix[Double] freq, Matrix[Double] patterns, Matrix[Double] weights, String mech, Integer numFeatures)
 return (Matrix[Double] freq, Matrix[Double] patterns, Matrix[Double] weights) {
   # Patterns: Default is a quadratic matrix wherein pattern i amputes feature i.
-  empty = u_isEmpty(patterns)
-  if (empty) { # FIX ME
+  if (u_isEmpty(patterns)) {
     patterns = matrix(1, rows=numFeatures, cols=numFeatures) - diag(matrix(1, rows=numFeatures, cols=1))
   }
 
@@ -205,8 +204,7 @@ return (Matrix[Double] freq, Matrix[Double] patterns, Matrix[Double] weights) {
   }
 
   # Frequencies: Uniform by default.
-  empty = u_isEmpty(freq) # FIX ME
-  if (empty) {
+  if (u_isEmpty(freq)) {
     freq = matrix(1 / numPatterns, rows=numPatterns, cols=1)
   }
 }
@@ -282,7 +280,7 @@ return (Matrix[Double] probsArray) {
   while (counter < maxIter & (is.na(currentProb) | abs(currentProb - prop) >= epsilon)) {
     counter += 1
     shift = lowerRange + (upperRange - lowerRange) / 2
-    probsArray = u_sigmoid(zScores + shift) # Calculates Right-Sigmoid probability (R implementation's default).
+    probsArray = sigmoid(zScores + shift) # Calculates Right-Sigmoid probability (R implementation's default).
     currentProb = mean(probsArray)
     if (currentProb - prop > 0) {
       upperRange = shift
@@ -291,11 +289,6 @@ return (Matrix[Double] probsArray) {
       lowerRange = shift
     }
   }
-}
-
-u_sigmoid = function(Matrix[Double] X)
-return (Matrix[Double] sigmoided) {
-  sigmoided = 1 / (1 + exp(-X))
 }
 
 u_getBounds = function(Matrix[Double] numPerGroup, Integer groupSize, Integer patternNum)

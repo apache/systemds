@@ -503,7 +503,12 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		else if (current instanceof IfStatementBlock) {
 			IfStatementBlock isb = (IfStatementBlock) current;
 			IfStatement istmt = (IfStatement)isb.getStatement(0);
-			//TODO handle predicates
+			//handle predicate 
+			ArrayList<Statement> tmpPred = new ArrayList<>();
+			istmt.getConditionalPredicate().setPredicate(
+				rHoistFunctionCallsFromExpressions(
+					istmt.getConditionalPredicate().getPredicate(), false, tmpPred, prog));
+			//handle if and else body
 			ArrayList<StatementBlock> tmp = new ArrayList<>();
 			for (StatementBlock sb : istmt.getIfBody())
 				tmp.addAll(rHoistFunctionCallsFromExpressions(sb, prog));
@@ -514,6 +519,8 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 					tmp2.addAll(rHoistFunctionCallsFromExpressions(sb, prog));
 				istmt.setElseBody(tmp2);
 			}
+			if( !tmpPred.isEmpty() )
+				return createStatementBlocks(current, tmpPred);
 		}
 		else if (current instanceof ForStatementBlock) { //incl parfor
 			ForStatementBlock fsb = (ForStatementBlock) current;

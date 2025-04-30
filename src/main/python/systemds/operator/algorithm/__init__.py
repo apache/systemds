@@ -30,6 +30,7 @@ from .builtin.alsCG import alsCG
 from .builtin.alsDS import alsDS 
 from .builtin.alsPredict import alsPredict 
 from .builtin.alsTopkPredict import alsTopkPredict 
+from .builtin.ampute import ampute 
 from .builtin.arima import arima 
 from .builtin.auc import auc 
 from .builtin.autoencoder_2layer import autoencoder_2layer 
@@ -209,6 +210,7 @@ __all__ = ['WoE',
  'alsDS',
  'alsPredict',
  'alsTopkPredict',
+ 'ampute',
  'arima',
  'auc',
  'autoencoder_2layer',

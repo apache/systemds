@@ -30,7 +30,7 @@ on:
 jobs:
   on-success:
     name: Delete transient artifacts of successful workflow
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       # write permissions required for deleting artifacts
       actions: write

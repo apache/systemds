@@ -48,7 +48,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04]
         tests: [
           "org.apache.sysds.test.applications.**",
           "**.test.usertest.**",
@@ -86,8 +85,6 @@ jobs:
           "**.functions.transform.**","**.functions.unique.**",
           "**.functions.unary.matrix.**,**.functions.linearization.**,**.functions.jmlc.**"
         ]
-        java: ['11']
-        javadist: ['adopt']
     name: ${{ matrix.tests }}
     steps:
     - name: Checkout Repository
@@ -102,8 +99,6 @@ jobs:
     - name: Clean Github Artifact Name of Asterisks
       run: |
         ARTIFACT_NAME="transient_jacoco"
-        ARTIFACT_NAME+="-${{ matrix.os }}"
-        ARTIFACT_NAME+="-java-${{ matrix.java }}"
         ARTIFACT_NAME+="-${{ matrix.tests }}"
         ARTIFACT_NAME=${ARTIFACT_NAME//\*/x} # replace * with x
         echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
@@ -124,8 +119,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04]
-        java: ['11']
+        os: [ubuntu-24.04]
+        java: ['17']
         javadist: ['adopt']
     steps:
     - name: Checkout Repository

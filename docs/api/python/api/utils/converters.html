@@ -71,6 +71,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../script_building/dag.html">Dag</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../script_building/script.html">Script</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Converters</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#systemds.utils.converters.convert"><code class="docutils literal notranslate"><span class="pre">convert()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.utils.converters.frame_block_to_pandas"><code class="docutils literal notranslate"><span class="pre">frame_block_to_pandas()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.utils.converters.matrix_block_to_numpy"><code class="docutils literal notranslate"><span class="pre">matrix_block_to_numpy()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.utils.converters.numpy_to_matrix_block"><code class="docutils literal notranslate"><span class="pre">numpy_to_matrix_block()</span></code></a></li>
@@ -111,6 +112,25 @@
 <p>OPS! For internal use!</p>
 </div>
 <dl class="py function" id="module-systemds.utils.converters">
+<dt class="sig sig-object py" id="systemds.utils.converters.convert">
+<span class="sig-prename descclassname"><span class="pre">systemds.utils.converters.</span></span><span class="sig-name descname"><span class="pre">convert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">jvm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_elements</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pd_series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conversion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'column'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.utils.converters.convert" title="Link to this definition"></a></dt>
+<dd><p>Converts a given pandas column or row to a FrameBlock representation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>jvm</strong> – The JVMView of the current SystemDS context.</p></li>
+<li><p><strong>fb</strong> – The FrameBlock to add the column to.</p></li>
+<li><p><strong>idx</strong> – The current column/row index.</p></li>
+<li><p><strong>num_elements</strong> – The number of rows/columns in the pandas DataFrame.</p></li>
+<li><p><strong>value_type</strong> – The ValueType of the column/row.</p></li>
+<li><p><strong>pd_series</strong> – The pandas column or row to convert.</p></li>
+<li><p><strong>conversion</strong> – The type of conversion to perform. Can be either “column” or “row”.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="systemds.utils.converters.frame_block_to_pandas">
 <span class="sig-prename descclassname"><span class="pre">systemds.utils.converters.</span></span><span class="sig-name descname"><span class="pre">frame_block_to_pandas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">JavaObject</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.utils.converters.frame_block_to_pandas" title="Link to this definition"></a></dt>
 <dd><p>Converts a FrameBlock object in the JVM to a pandas dataframe.</p>

@@ -69,14 +69,12 @@
 <li class="toctree-l3"><a class="reference internal" href="#systemds.context.SystemDSContext.dict"><code class="docutils literal notranslate"><span class="pre">SystemDSContext.dict()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.context.SystemDSContext.exception_and_close"><code class="docutils literal notranslate"><span class="pre">SystemDSContext.exception_and_close()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.context.SystemDSContext.federated"><code class="docutils literal notranslate"><span class="pre">SystemDSContext.federated()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#systemds.context.SystemDSContext.fft"><code class="docutils literal notranslate"><span class="pre">SystemDSContext.fft()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.context.SystemDSContext.from_numpy"><code class="docutils literal notranslate"><span class="pre">SystemDSContext.from_numpy()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.context.SystemDSContext.from_pandas"><code class="docutils literal notranslate"><span class="pre">SystemDSContext.from_pandas()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.context.SystemDSContext.full"><code class="docutils literal notranslate"><span class="pre">SystemDSContext.full()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.context.SystemDSContext.get_stats"><code class="docutils literal notranslate"><span class="pre">SystemDSContext.get_stats()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.context.SystemDSContext.get_stderr"><code class="docutils literal notranslate"><span class="pre">SystemDSContext.get_stderr()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.context.SystemDSContext.get_stdout"><code class="docutils literal notranslate"><span class="pre">SystemDSContext.get_stdout()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#systemds.context.SystemDSContext.ifft"><code class="docutils literal notranslate"><span class="pre">SystemDSContext.ifft()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.context.SystemDSContext.list"><code class="docutils literal notranslate"><span class="pre">SystemDSContext.list()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.context.SystemDSContext.rand"><code class="docutils literal notranslate"><span class="pre">SystemDSContext.rand()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.context.SystemDSContext.read"><code class="docutils literal notranslate"><span class="pre">SystemDSContext.read()</span></code></a></li>
@@ -235,7 +233,7 @@ Afterwards capturing will be reset to the state it was before.</p>
 <dt class="sig sig-object py" id="systemds.context.SystemDSContext.combine">
 <span class="sig-name descname"><span class="pre">combine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Combine</span></span></span><a class="headerlink" href="#systemds.context.SystemDSContext.combine" title="Link to this definition"></a></dt>
 <dd><p>combine nodes to call compute on multiple operations.</p>
-<p>This is usefull for the case of having multiple writes in one script and wanting 
+<p>This is usefull for the case of having multiple writes in one script and wanting
 to execute all in one execution reusing intermediates.</p>
 <p>Note this combine does not allow to return anything to the user, so if used,
 please only use nodes that end with either writing or printing elements.</p>
@@ -285,14 +283,6 @@ please only use nodes that end with either writing or printing elements.</p>
 <dd class="field-even"><p>The Matrix containing the Federated data.</p>
 </dd>
 </dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="systemds.context.SystemDSContext.fft">
-<span class="sig-name descname"><span class="pre">fft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">real_input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../operator/node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">MultiReturn</span></span></span><a class="headerlink" href="#systemds.context.SystemDSContext.fft" title="Link to this definition"></a></dt>
-<dd><p>Performs the Fast Fourier Transform (FFT) on the matrix.
-:param real_input: The real part of the input matrix.
-:return: A MultiReturn object representing the real and imaginary parts of the FFT output.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -378,23 +368,6 @@ default -1 prints all current lines in the queue.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="systemds.context.SystemDSContext.ifft">
-<span class="sig-name descname"><span class="pre">ifft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">real_input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../operator/node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">imag_input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../operator/node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">MultiReturn</span></span></span><a class="headerlink" href="#systemds.context.SystemDSContext.ifft" title="Link to this definition"></a></dt>
-<dd><p>Performs the Inverse Fast Fourier Transform (IFFT) on a complex matrix.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>real_input</strong> – The real part of the input matrix.</p></li>
-<li><p><strong>imag_input</strong> – The imaginary part of the input matrix (optional).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A MultiReturn object representing the real and imaginary parts of the IFFT output.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="systemds.context.SystemDSContext.list">
 <span class="sig-name descname"><span class="pre">list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../operator/node/list.html#systemds.operator.List" title="systemds.operator.nodes.list.List"><span class="pre">List</span></a></span></span><a class="headerlink" href="#systemds.context.SystemDSContext.list" title="Link to this definition"></a></dt>
 <dd><p>Create a List object containing the given nodes.</p>
@@ -470,7 +443,7 @@ stop.</p>
 <span class="sig-name descname"><span class="pre">source</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../operator/node/source.html#systemds.operator.Source" title="systemds.operator.nodes.source.Source"><span class="pre">Source</span></a></span></span><a class="headerlink" href="#systemds.context.SystemDSContext.source" title="Link to this definition"></a></dt>
 <dd><p>Import methods from a given dml file.</p>
 <p>The importing is done through the DML command source, and adds all defined methods from
-the script to the Source object returned in python. This gives the flexibility to call the methods 
+the script to the Source object returned in python. This gives the flexibility to call the methods
 directly on the object returned.</p>
 <p>In systemds a method called func_01 can then be imported using</p>
 <p><code class="docutils literal notranslate"><span class="pre">`python</span>

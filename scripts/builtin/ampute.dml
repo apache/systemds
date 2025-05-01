@@ -91,9 +91,6 @@ u_validateInputs = function(Matrix[Double] X, Double prop, Matrix[Double] freq, 
 return (Matrix[Double] freq, Matrix[Double] patterns, Matrix[Double] weights) {
 
   errors = list()
-  freqProvided = !u_isEmpty(freq) # FIX ME
-  patternsProvided = !u_isEmpty(patterns) # FIX ME
-  weightsProvided = !u_isEmpty(weights) # FIX ME
 
   # About the input dataset:
   if (max(is.na(X)) == 1) {
@@ -107,7 +104,7 @@ return (Matrix[Double] freq, Matrix[Double] patterns, Matrix[Double] weights) {
   if (mech != "MAR" & mech != "MCAR" & mech != "MNAR") {
     errors = append(errors, "Invalid option provided for mech: " + mech + ".")
   }
-  else if (weightsProvided & mech == "MCAR") {
+  else if (!u_isEmpty(weights) & mech == "MCAR") {
     print("ampute warning: User-provided weights will be ignored when mechanism MCAR is chosen.")
   }
 
@@ -190,11 +187,10 @@ return (Matrix[Double] freq, Matrix[Double] patterns, Matrix[Double] weights) {
 
   # Weights: Various defaults based on chosen missingness mechanism:
   numPatterns = nrow(patterns)
-  empty = u_isEmpty(weights) # FIX ME
   if (mech == "MCAR") {
     weights = matrix(0, rows=numPatterns, cols=numFeatures) # MCAR: All 0's (weights don't matter). Overrides any provided weights.
   }
-  else if (empty) { # FIX ME
+  else if (u_isEmpty(weights)) {
     if (mech == "MAR") {
       weights = patterns # MAR: Missing features weighted with 0.
     }

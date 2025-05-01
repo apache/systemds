@@ -115,7 +115,16 @@ public abstract class MultiTenantTestBase extends AutomatedTestBase {
 
 		// create the processBuilder and redirect the stderr to its stdout
 		ProcessBuilder processBuilder = new ProcessBuilder(ArrayUtils
-			.addAll(new String[] {path, "-cp", classpath, DMLScript.class.getName()}, argsList.toArray(new String[0])));
+			.addAll(new String[] {path,
+				"-Xmx1000m", "-Xms1000m", "-Xmn100m", 
+				"--add-opens=java.base/java.nio=ALL-UNNAMED" ,
+				"--add-opens=java.base/java.io=ALL-UNNAMED" ,
+				"--add-opens=java.base/java.util=ALL-UNNAMED" ,
+				"--add-opens=java.base/java.lang=ALL-UNNAMED" ,
+				"--add-opens=java.base/java.lang.ref=ALL-UNNAMED" ,
+				"--add-opens=java.base/java.util.concurrent=ALL-UNNAMED" ,
+				"--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
+				"-cp", classpath, DMLScript.class.getName()}, argsList.toArray(new String[0])));
 
 		Process process = null;
 		try {

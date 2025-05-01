@@ -1,0 +1,64 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# clustered gradients (no better than random sampling)
+# Accuracy (%): 88.39168202158463
+# Accuracy (%): 83.76164636019249
+# Accuracy (%): 96.04281828551373
+# Accuracy (%): 78.03829220845705
+# Accuracy (%): 100.0
+# Accuracy (%): 66.66325381386301
+
+# clustered data (no better than random sampling)
+# Accuracy (%): 86.95270685268054
+# Accuracy (%): 83.3316269069315
+# Accuracy (%): 96.472755988418
+# Accuracy (%): 73.82000614313505
+# Accuracy (%): 100.0
+# Accuracy (%): 69.74505989556671
+
+X = read("data/Adult_X.csv")
+y = read("data/Adult_y.csv")
+B = read("data/Adult_W.csv")
+
+[Xtrain,Xtest,ytrain,ytest] = split(X=X,Y=y,f=0.7,cont=FALSE,seed=7)
+
+sf = matrix("0.1 0.01 0.001", rows=3, cols=1)
+for(i in 1:nrow(sf)) {
+  sfi = as.scalar(sf[i]);
+
+  w = B[1:ncol(X), ];
+  icpt = as.scalar(B[nrow(B),])
+  Xgrad = sigmoid(Xtrain %*% w + icpt)-(ytrain == 1)
+  [C,Y]=kmeans(X=Xgrad, k=sfi*nrow(Xtrain), seed=7)
+
+  Yone = table(seq(1,nrow(Xtrain)),Y)
+  I = rowIndexMax(Yone); #pick first in every cluster
+  P = table(seq(1,nrow(I)), I, nrow(I), nrow(Xtrain))
+  P = removeEmpty(target=P, margin="rows");
+  Xtrain2 = P %*% Xtrain
+  ytrain2 = P %*% ytrain
+  B = multiLogReg(X=Xtrain2, Y=ytrain2, maxii=50, icpt=2, reg=0.001, verbose=FALSE);
+
+  [M,yhat,acc] = multiLogRegPredict(X=Xtrain2, B=B, Y=ytrain2, verbose=TRUE);
+  [M,yhat,acc] = multiLogRegPredict(X=Xtest, B=B, Y=ytest, verbose=TRUE);
+}
+

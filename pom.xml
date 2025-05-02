@@ -67,7 +67,7 @@
 		<!-- aws-java-sdk-bundle version should align with hadoop-aws version -->
 		<!-- aws-java-sdk-bundle.version>1.12.367</aws-java-sdk-bundle.version -->
 		<!-- Set java compile level via argument, ex: 1.8 1.9 10 11-->
-		<java.level>11</java.level>
+		<java.level>17</java.level>
 		<java.version>{java.level}</java.version>
 		<!-->Testing settings<!-->
 		<maven.test.skip>false</maven.test.skip>
@@ -82,6 +82,17 @@
 		<automatedtestbase.outputbuffering>false</automatedtestbase.outputbuffering>
 		<argLine>-Xms3000m -Xmx3000m -Xmn300m</argLine>
 		<enableStats>false</enableStats>
+
+		<!-- Dependent on Spark open to access deprecated api components from <= Java 11. Should be removed once Spark updates fully to Java 17 -->
+		<jvm.addopens>
+			--add-opens=java.base/java.nio=ALL-UNNAMED 
+			--add-opens=java.base/java.io=ALL-UNNAMED 
+			--add-opens=java.base/java.util=ALL-UNNAMED 
+			--add-opens=java.base/java.lang=ALL-UNNAMED 
+			--add-opens=java.base/java.lang.ref=ALL-UNNAMED
+			--add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+			--add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+		</jvm.addopens>
 	</properties>
 
 	<repositories>
@@ -368,6 +379,9 @@
 					<systemPropertyVariables>
 						<log4j.configurationFile>file:src/test/resources/log4j.properties</log4j.configurationFile>
 					</systemPropertyVariables>
+					<argLine>
+						${jvm.addopens}
+					</argLine>
 				</configuration>
 			</plugin>
 

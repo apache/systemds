@@ -1656,7 +1656,15 @@ public abstract class AutomatedTestBase {
 		String separator = System.getProperty("file.separator");
 		String classpath = System.getProperty("java.class.path");
 		String path = System.getProperty("java.home") + separator + "bin" + separator + "java";
-		String[] args = new String[] {path, "-Xmx1000m", "-Xms1000m", "-Xmn100m", "-cp", classpath,
+		String[] args = new String[] {path, "-Xmx1000m", "-Xms1000m", "-Xmn100m", 
+			"--add-opens=java.base/java.nio=ALL-UNNAMED" ,
+			"--add-opens=java.base/java.io=ALL-UNNAMED" ,
+			"--add-opens=java.base/java.util=ALL-UNNAMED" ,
+			"--add-opens=java.base/java.lang=ALL-UNNAMED" ,
+			"--add-opens=java.base/java.lang.ref=ALL-UNNAMED" ,
+			"--add-opens=java.base/java.util.concurrent=ALL-UNNAMED" ,
+			"--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
+			"-cp", classpath,
 				DMLScript.class.getName(), "-w", Integer.toString(port), "-stats"};
 		if(addArgs != null)
 			args = ArrayUtils.addAll(args, addArgs);

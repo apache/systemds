@@ -48,8 +48,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
-        java: ['11']
+        os: [ubuntu-24.04]
+        java: ['17']
         javadist: ['adopt']
 
     steps:

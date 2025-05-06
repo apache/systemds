@@ -29,6 +29,9 @@ public class FederatedMemoTablePrinter {
 
         for (Long hopID : rootHopStatSet) {
             FedPlan plan = memoTable.getFedPlanAfterPrune(hopID, FederatedOutput.LOUT);
+            if (plan == null){
+                plan = memoTable.getFedPlanAfterPrune(hopID, FederatedOutput.FOUT);
+            }
             printNotReferencedFedPlanRecursive(plan, memoTable, visited, 1);
         }
     }

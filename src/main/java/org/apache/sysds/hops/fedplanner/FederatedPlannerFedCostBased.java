@@ -20,6 +20,7 @@
 package org.apache.sysds.hops.fedplanner;
 
 import java.util.Set;
+import java.util.Map;
 
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.hops.ipa.FunctionCallGraph;
@@ -39,35 +40,25 @@ import java.util.List;
  * forced federated operations.
  */
 public class FederatedPlannerFedCostBased extends AFederatedPlanner {
-	
-	private int numOfWorkers;
-
-	public FederatedPlannerFedCostBased() {
-		this.numOfWorkers = 4;
-	}
-
-	public FederatedPlannerFedCostBased(int numOfWorkers) {
-		this.numOfWorkers = numOfWorkers;
-	}
-	
 	@Override
 	public void rewriteProgram( DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes )
 	{
 		FederatedMemoTable memoTable = new FederatedMemoTable();
-		FedPlan optimalPlan = FederatedPlanCostEnumerator.enumerateProgram(prog, memoTable, numOfWorkers, true);
+		FedPlan optimalPlan = FederatedPlanCostEnumerator.enumerateProgram(prog, memoTable, true);
 		Set<Long> visited = new HashSet<>();
 
 		List<Pair<Long, FEDInstruction.FederatedOutput>> childFedPlanPairs = optimalPlan.getChildFedPlans();
-			for (Pair<Long, FEDInstruction.FederatedOutput> childFedPlanPair : childFedPlanPairs) {
-			FedPlan childPlan = memoTable.getFedPlanAfterPrune(childFedPlanPair);
-			rewriteHop(childPlan, memoTable, visited);
-		}
+		 for (Pair<Long, FEDInstruction.FederatedOutput> childFedPlanPair :
+		 childFedPlanPairs) {
+		 FedPlan childPlan = memoTable.getFedPlanAfterPrune(childFedPlanPair);
+		 rewriteHop(childPlan, memoTable, visited);
+		 }
 	}
 
 	@Override
 	public void rewriteFunctionDynamic(FunctionStatementBlock function, LocalVariableMap funcArgs) {
 		FederatedMemoTable memoTable = new FederatedMemoTable();
-		FedPlan optimalPlan = FederatedPlanCostEnumerator.enumerateFunctionDynamic(function, memoTable, numOfWorkers, true);
+		FedPlan optimalPlan = FederatedPlanCostEnumerator.enumerateFunctionDynamic(function, memoTable, true);
 		Set<Long> visited = new HashSet<>();
 		rewriteHop(optimalPlan, memoTable, visited);
 	}

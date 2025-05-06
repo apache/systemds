@@ -25,7 +25,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
@@ -90,6 +92,8 @@ import org.apache.sysds.utils.Statistics;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.apache.sysds.parser.DataExpression;
+import org.apache.wink.json4j.JSONObject;
 
 /**
  * <p>
@@ -2447,5 +2451,42 @@ public abstract class AutomatedTestBase {
 	public static void appendToJavaLibraryPath(String additional_path) {
 		String current_path = System.getProperty("java.library.path");
 		System.setProperty("java.library.path", current_path + File.pathSeparator + additional_path);
+	}
+
+	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR,
+		MatrixCharacteristics mc, String privacyConstraints) {
+		writeInputMatrix(name, matrix, bIncludeR);
+
+		// write metadata file
+		try {
+			String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
+			
+			if(privacyConstraints != null) {
+				// 메타데이터 파일을 직접 작성하기 위해 JSON 객체 생성
+				JSONObject mtd = new JSONObject();
+				mtd.put(DataExpression.DATATYPEPARAM, DataType.MATRIX.toString().toLowerCase());
+				mtd.put(DataExpression.VALUETYPEPARAM, ValueType.FP64.toExternalString().toLowerCase());
+				mtd.put(DataExpression.READROWPARAM, mc.getRows());
+				mtd.put(DataExpression.READCOLPARAM, mc.getCols());
+				mtd.put(DataExpression.READNNZPARAM, mc.getNonZeros());
+				mtd.put(DataExpression.FORMAT_TYPE, FileFormat.TEXT.toString());
+				mtd.put(DataExpression.PRIVACY, privacyConstraints);
+				
+				// 파일에 직접 쓰기
+				try (BufferedWriter bw = new BufferedWriter(new FileWriter(completeMTDPath))) {
+					bw.write(mtd.toString(4));
+				}
+			}
+			else {
+				// 기존 방식으로 메타데이터 파일 작성
+				HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, null, DataType.MATRIX, mc, FileFormat.TEXT);
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
+
+		return matrix;
 	}
 }

@@ -131,4 +131,10 @@ public class FTypes
 			return (this == COL || this == COL_T);
 		}
 	}
+
+	public enum Privacy {
+		PRIVATE,
+		PRIVATE_AGGREGATE,
+		PUBLIC
+	}
 }

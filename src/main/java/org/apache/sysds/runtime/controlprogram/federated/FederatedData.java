@@ -19,6 +19,9 @@
 
 package org.apache.sysds.runtime.controlprogram.federated;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
@@ -29,6 +32,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Future;
 
+import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -37,18 +41,25 @@ import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
-import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.meta.MetaData;
+import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.paramserv.NetworkTrafficCounter;
-import org.apache.sysds.runtime.meta.MetaData;
-
-import io.netty.bootstrap.Bootstrap;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.conf.DMLConfig;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
@@ -348,4 +359,76 @@ public class FederatedData {
 				return ctx.alloc().heapBuffer(initCapacity);
 		}
 	}
+
+	/**
+	 * Requests privacy constraints from the federated worker
+	 * 
+	 * @return Future containing the federated response with privacy constraints
+	 */
+	public Future<FederatedResponse> requestPrivacyConstraints() {
+		if (!isInitialized())
+			throw new DMLRuntimeException("Cannot request privacy constraints from uninitialized federated data");
+		
+		FederatedRequest request = new FederatedRequest(RequestType.EXEC_UDF, _varID, new GetPrivacyConstraints(_filepath));
+		return executeFederatedOperation(request);
+	}
+
+	public static class GetPrivacyConstraints extends FederatedUDF {
+		private final String filename;
+
+        public GetPrivacyConstraints(String filename) {
+            super(new long[] { });  // 정적 클래스이므로 부모 생성자에 빈 ID 배열 전달
+			this.filename = filename;
+        }
+    
+        @Override
+        public FederatedResponse execute(ExecutionContext ec, Data... data) {
+			String privacyConstraints = null;
+			FileSystem fs = null;
+			MetaDataAll mtd = null;
+		
+			try {
+				final String mtdName = DataExpression.getMTDFileName(filename);
+				Path path = new Path(mtdName);
+				fs = IOUtilFunctions.getFileSystem(mtdName);
+				try(BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)))) {
+					mtd = new MetaDataAll(br);
+					if(!mtd.mtdExists())
+						throw new FederatedWorkerHandlerException("Could not parse metadata file for " + filename);
+					privacyConstraints = mtd.getPrivacyConstraints();
+					
+					if(privacyConstraints == null)
+						LOG.warn("No privacy constraints found in metadata for " + filename);
+				}
+				
+				return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, privacyConstraints);
+			}
+			catch(IOException ex) {
+				String msg = "IO Exception when reading metadata file for " + filename;
+				LOG.error(msg, ex);
+				throw new FederatedWorkerHandlerException(msg, ex);
+			}
+			catch(Exception ex) {
+				String msg = "Exception of type " + ex.getClass() + " thrown when processing privacy constraints request for " + filename;
+				LOG.error(msg, ex);
+				throw new FederatedWorkerHandlerException(msg, ex);
+			}
+			finally {
+				IOUtilFunctions.closeSilently(fs);
+			}
+        }
+
+        @Override
+        public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+            String opcode = "fedprivconst"; // 적절한 연산 코드
+            
+            // 연산에 대한 입력 LineageItem 생성
+            LineageItem[] inputs = new LineageItem[] { 
+                new LineageItem(filename) // 문자열만 전달하여 리터럴 LineageItem 생성
+            };
+            
+            // 적절한 LineageItem 생성 (읽기 작업에 대한)
+            return Pair.of(opcode, new LineageItem(opcode, inputs));
+        }
+    }
 }

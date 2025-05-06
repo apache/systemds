@@ -58,6 +58,7 @@ public class MetaDataAll extends DataIdentifier {
 	protected String _delim = DataExpression.DEFAULT_DELIM_DELIMITER;
 	protected boolean _hasHeader = false;
 	protected boolean _sparseDelim = DataExpression.DEFAULT_DELIM_SPARSE;
+	private String _privacyConstraints;
 
 	public MetaDataAll() {
 		// do nothing
@@ -178,6 +179,9 @@ public class MetaDataAll extends DataIdentifier {
 					setHasHeader(false);
 				break;
 			case DataExpression.DELIM_SPARSE: setSparseDelim((boolean) val);
+			case DataExpression.PRIVACY:
+				setPrivacyConstraints((String) val);
+				break;
 		}
 	}
 
@@ -209,6 +213,10 @@ public class MetaDataAll extends DataIdentifier {
 		return _sparseDelim;
 	}
 
+	public String getPrivacyConstraints() {
+		return _privacyConstraints;
+	}
+
 	public void setSparseDelim(boolean sparseDelim) {
 		_sparseDelim = sparseDelim;
 	}
@@ -235,6 +243,17 @@ public class MetaDataAll extends DataIdentifier {
 		_formatTypeString = _formatTypeString != null && format == null && _metaObj != null ? (String)JSONHelper.get(_metaObj, DataExpression.FORMAT_TYPE) : format ;
 		if(_formatTypeString != null && EnumUtils.isValidEnum(Types.FileFormat.class, _formatTypeString.toUpperCase()))
 			setFileFormat(Types.FileFormat.safeValueOf(_formatTypeString));
+	}
+
+	public void setPrivacyConstraints(String privacyConstraints) {
+		if (privacyConstraints != null &&
+		   !privacyConstraints.equals("private") &&
+		   !privacyConstraints.equals("private-aggregate") &&
+		   !privacyConstraints.equals("public")) {
+			throw new DMLRuntimeException("Invalid privacy constraint: " + privacyConstraints
+				+ ". Must be 'private', 'private-aggregate', or 'public'.");
+		}
+		_privacyConstraints = privacyConstraints;
 	}
 	
 	public DataCharacteristics getDataCharacteristics() {

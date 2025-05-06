@@ -29,9 +29,12 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import org.apache.sysds.common.Types.ExecType;
+
 /**
- * A Memoization Table for managing federated plans (FedPlan) based on combinations of Hops and fedOutTypes.
- * This table stores and manages different execution plan variants for each Hop and fedOutType combination,
+ * A Memoization Table for managing federated plans (FedPlan) based on
+ * combinations of Hops and fedOutTypes.
+ * This table stores and manages different execution plan variants for each Hop
+ * and fedOutType combination,
  * facilitating the optimization of federated execution plans.
  */
 public class FederatedMemoTable {
@@ -46,9 +49,11 @@ public class FederatedMemoTable {
 		return hopMemoTable.get(fedPlanPair);
 	}
 
-	public FedPlan getFedPlanAfterPrune(long hopID, FederatedOutput fedOutType) {
-
-		FedPlanVariants fedPlanVariantList = hopMemoTable.get(new ImmutablePair<>(hopID, fedOutType));
+	public FedPlan getFedPlanAfterPrune(long hopID, FederatedOutput federatedOutput) {
+		FedPlanVariants fedPlanVariantList = hopMemoTable.get(new ImmutablePair<>(hopID, federatedOutput));
+		if (fedPlanVariantList == null || fedPlanVariantList.isEmpty()) {
+			return null;
+		}
 		return fedPlanVariantList._fedPlanVariants.get(0);
 	}
 
@@ -62,13 +67,17 @@ public class FederatedMemoTable {
 	}
 
 	/**
-	 * Represents a single federated execution plan with its associated costs and dependencies.
+	 * Represents a single federated execution plan with its associated costs and
+	 * dependencies.
 	 * This class contains:
-	 * 1. selfCost: Cost of the current hop (computation + input/output memory access).
-	 * 2. cumulativeCost: Total cost including this plan's selfCost and all child plans' cumulativeCost.
+	 * 1. selfCost: Cost of the current hop (computation + input/output memory
+	 * access).
+	 * 2. cumulativeCost: Total cost including this plan's selfCost and all child
+	 * plans' cumulativeCost.
 	 * 3. forwardingCost: Network transfer cost for this plan to the parent plan.
 	 * 
-	 * FedPlan is linked to FedPlanVariants, which in turn uses HopCommon to manage common properties and costs.
+	 * FedPlan is linked to FedPlanVariants, which in turn uses HopCommon to manage
+	 * common properties and costs.
 	 */
 	public static class FedPlan {
 		private double cumulativeCost;                  // Total cost = sum of selfCost + cumulativeCost of child plans

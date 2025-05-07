@@ -35,7 +35,6 @@ class TestWindowOperations(unittest.TestCase):
         cls.data_generator = ModalityRandomDataGenerator()
         cls.aggregations = ["mean", "sum", "max", "min"]
 
-
     def test_window_operations_on_audio_representations(self):
         window_size = 10
         self.run_window_operations_for_modality(ModalityType.AUDIO, window_size)
@@ -46,7 +45,7 @@ class TestWindowOperations(unittest.TestCase):
 
     def test_window_operations_on_text_representations(self):
         window_size = 10
-       
+
         self.run_window_operations_for_modality(ModalityType.TEXT, window_size)
 
     def run_window_operations_for_modality(self, modality_type, window_size):

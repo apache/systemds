@@ -138,7 +138,7 @@ class ResNet(UnimodalRepresentation):
             embeddings[video_id] = np.array(embeddings[video_id])
 
         transformed_modality = TransformedModality(
-            modality.modality_type, "resnet", modality.metadata
+            self.output_modality_type, "resnet", modality.modality_id, modality.metadata
         )
 
         transformed_modality.data = list(embeddings.values())

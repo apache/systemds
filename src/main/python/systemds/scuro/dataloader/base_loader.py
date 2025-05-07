@@ -69,6 +69,11 @@ class BaseLoader(ABC):
     def next_chunk(self):
         return self._next_chunk
 
+    def reset(self):
+        self._next_chunk = 0
+        self.data = []
+        self.metadata = {}
+
     def load(self):
         """
         Takes care of loading the raw data either chunk wise (if chunk size is defined) or all at once

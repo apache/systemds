@@ -22,12 +22,29 @@ import numpy as np
 import math
 
 from systemds.scuro.modality.type import DataLayout
+from systemds.scuro.drsearch.operator_registry import register_context_operator
+from systemds.scuro.representations.aggregate import Aggregation
+from systemds.scuro.representations.context import Context
 
 
-class WindowAggregation:
-    def __init__(self, window_size, aggregation_function):
+@register_context_operator()
+class WindowAggregation(Context):
+    def __init__(self, window_size=10, aggregation_function="mean"):
+        parameters = {
+            "window_size": [window_size],
+            "aggregation_function": list(Aggregation().get_aggregation_functions()),
+        }  # TODO: window_size should be dynamic and adapted to the shape of the data
+        super().__init__("WindowAggregation", parameters)
         self.window_size = window_size
         self.aggregation_function = aggregation_function
+
+    @property
+    def aggregation_function(self):
+        return self._aggregation_function
+
+    @aggregation_function.setter
+    def aggregation_function(self, value):
+        self._aggregation_function = Aggregation(value)
 
     def execute(self, modality):
         windowed_data = []
@@ -54,6 +71,8 @@ class WindowAggregation:
                 instance[i * self.window_size : i * self.window_size + self.window_size]
             )
 
+        if num_cols == 1:
+            result = result.reshape(-1)
         return result
 
     def window_aggregate_nested_level(self, instance, new_length):

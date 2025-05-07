@@ -21,25 +21,27 @@
 from functools import reduce
 from operator import or_
 
+from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.modality import Modality
-from systemds.scuro.representations.aggregate import Aggregation
 from systemds.scuro.representations.window import WindowAggregation
 
 
 class TransformedModality(Modality):
 
-    def __init__(self, modality_type, transformation, metadata):
+    def __init__(self, modality_type, transformation, modality_id, metadata):
         """
         Parent class of the different Modalities (unimodal & multimodal)
         :param modality_type: Type of the original modality(ies)
         :param transformation: Representation to be applied on the modality
         """
-        super().__init__(modality_type, metadata)
+        super().__init__(modality_type, modality_id, metadata)
         self.transformation = transformation
 
     def copy_from_instance(self):
-        return type(self)(self.modality_type, self.transformation, self.metadata)
+        return type(self)(
+            self.modality_type, self.transformation, self.modality_id, self.metadata
+        )
 
     def join(self, right, join_condition):
         chunked_execution = False
@@ -65,19 +67,23 @@ class TransformedModality(Modality):
 
     def window(self, windowSize, aggregation):
         transformed_modality = TransformedModality(
-            self.modality_type, "window", self.metadata
+            self.modality_type, "window", self.modality_id, self.metadata
         )
-        w = WindowAggregation(windowSize, Aggregation(aggregation))
+        w = WindowAggregation(windowSize, aggregation)
         transformed_modality.data = w.execute(self)
 
         return transformed_modality
 
-    def apply_representation(self, representation, aggregation):
+    def context(self, context_operator):
+        transformed_modality = TransformedModality(
+            self.modality_type, context_operator.name, self.modality_id, self.metadata
+        )
+
+        transformed_modality.data = context_operator.execute(self)
+        return transformed_modality
+
+    def apply_representation(self, representation):
         new_modality = representation.transform(self)
-
-        if aggregation:
-            new_modality.data = aggregation.window(new_modality)
-
         new_modality.update_metadata()
         return new_modality
 
@@ -88,8 +94,9 @@ class TransformedModality(Modality):
         :param fusion_method: The fusion method to be used to combine modalities
         """
         fused_modality = TransformedModality(
-            reduce(or_, (o.modality_type for o in other), self.modality_type),
+            ModalityType.EMBEDDING,
             fusion_method,
+            self.modality_id,
             self.metadata,
         )
         modalities = [self]

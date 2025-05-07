@@ -43,6 +43,7 @@ from systemds.scuro.representations.resnet import ResNet
 from systemds.scuro.representations.sum import Sum
 from tests.scuro.data_generator import setup_data
 
+
 import warnings
 
 warnings.filterwarnings("always")

@@ -42,6 +42,8 @@ class ModalitySchemas:
 
     TEXT_SCHEMA = {**BASE_SCHEMA, "length": "int"}
 
+    EMBEDDING_SCHEMA = {**BASE_SCHEMA, "length": "int"}
+
     AUDIO_SCHEMA = {**TEMPORAL_BASE_SCHEMA, "frequency": "integer"}
 
     VIDEO_SCHEMA = {
@@ -87,6 +89,8 @@ class ModalitySchemas:
         mdHandler = cls._metadata_handlers.get(name)
         if mdHandler:
             return mdHandler(md, data)
+
+        return md
 
     @classmethod
     def update_base_metadata(cls, md, data, data_is_single_instance=True):
@@ -179,6 +183,7 @@ class ModalityType(Flag):
     VIDEO = auto()
     IMAGE = auto()
     TIMESERIES = auto()
+    EMBEDDING = auto()
 
     def get_schema(self):
         return ModalitySchemas.get(self.name)

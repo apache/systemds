@@ -34,7 +34,7 @@ class TfIdf(UnimodalRepresentation):
 
     def transform(self, modality):
         transformed_modality = TransformedModality(
-            modality.modality_type, self, modality.metadata
+            modality.modality_type, self, modality.modality_id, modality.metadata
         )
 
         vectorizer = TfidfVectorizer(min_df=self.min_df)

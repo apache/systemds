@@ -46,7 +46,6 @@ class TestUnimodalRepresentations(unittest.TestCase):
     video = None
     data_generator = None
     num_instances = 0
-    indizes = []
 
     @classmethod
     def setUpClass(cls):

@@ -18,31 +18,24 @@
 # under the License.
 #
 # -------------------------------------------------------------
-import json
+import os
+import pickle
+from typing import List, Dict, Any, Union
+import tempfile
+from systemds.scuro.representations.representation import Representation
 
-from systemds.scuro.modality.type import ModalityType
-from systemds.scuro.dataloader.base_loader import BaseLoader
-from typing import Optional, List, Union
 
+class ModalityIdentifier:
+    """ """
 
-class JSONLoader(BaseLoader):
-    def __init__(
-        self,
-        source_path: str,
-        indices: List[str],
-        field: str,
-        chunk_size: Optional[int] = None,
-    ):
-        super().__init__(source_path, indices, chunk_size, ModalityType.TEXT)
-        self.field = field
+    _instance = None
+    id = -1
 
-    def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
-        self.file_sanity_check(file)
-        with open(file) as f:
-            json_file = json.load(f)
-            for idx in index:
-                sentence = json_file[idx][self.field]
-                self.data.append(sentence)
-                self.metadata[idx] = self.modality_type.create_text_metadata(
-                    len(sentence), sentence
-                )
+    def __new__(cls):
+        if not cls._instance:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def new_id(self):  # TODO: make threadsafe when parallelizing
+        self.id += 1
+        return self.id

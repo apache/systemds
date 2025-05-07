@@ -24,11 +24,12 @@ from typing import List
 import numpy as np
 
 from systemds.scuro.modality.type import ModalityType, DataLayout
+from systemds.scuro.representations import utils
 
 
 class Modality:
 
-    def __init__(self, modalityType: ModalityType, metadata={}):
+    def __init__(self, modalityType: ModalityType, modality_id=-1, metadata={}):
         """
         Parent class of the different Modalities (unimodal & multimodal)
         :param modality_type: Type of the modality
@@ -40,7 +41,7 @@ class Modality:
         self.data_type = None
         self.cost = None
         self.shape = None
-        self.dataIndex = None
+        self.modality_id = modality_id
 
     @property
     def data(self):
@@ -85,22 +86,33 @@ class Modality:
             updated_md = self.modality_type.update_metadata(md_v, self.data[i])
             self.metadata[md_k] = updated_md
 
-    def get_metadata_at_position(self, position: int):
-        return self.metadata[self.dataIndex][position]
-
-    def flatten(self):
+    def flatten(self, padding=True):
         """
         Flattens modality data by row-wise concatenation
         Prerequisite for some ML-models
         """
+        max_len = 0
         for num_instance, instance in enumerate(self.data):
             if type(instance) is np.ndarray:
                 self.data[num_instance] = instance.flatten()
-            elif type(instance) is list:
+            elif isinstance(instance, List):
                 self.data[num_instance] = np.array(
                     [item for sublist in instance for item in sublist]
-                )
+                ).flatten()
+            max_len = max(max_len, len(self.data[num_instance]))
 
+        if padding:
+            for i, instance in enumerate(self.data):
+                if isinstance(instance, np.ndarray):
+                    if len(instance) < max_len:
+                        padded_data = np.zeros(max_len, dtype=instance.dtype)
+                        padded_data[: len(instance)] = instance
+                        self.data[i] = padded_data
+                else:
+                    padded_data = []
+                    for entry in instance:
+                        padded_data.append(utils.pad_sequences(entry, max_len))
+                    self.data[i] = padded_data
         self.data = np.array(self.data)
         return self
 

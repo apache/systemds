@@ -33,7 +33,7 @@ class MelSpectrogram(UnimodalRepresentation):
 
     def transform(self, modality):
         transformed_modality = TransformedModality(
-            ModalityType.TIMESERIES, self, modality.metadata
+            self.output_modality_type, self, modality.modality_id, modality.metadata
         )
         result = []
         max_length = 0

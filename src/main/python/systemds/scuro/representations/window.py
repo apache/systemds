@@ -22,12 +22,12 @@ import numpy as np
 import math
 
 from systemds.scuro.modality.type import DataLayout
-from systemds.scuro.drsearch.operator_registry import register_context_operator
+# from systemds.scuro.drsearch.operator_registry import register_context_operator
 from systemds.scuro.representations.aggregate import Aggregation
 from systemds.scuro.representations.context import Context
 
 
-@register_context_operator()
+# @register_context_operator()
 class WindowAggregation(Context):
     def __init__(self, window_size=10, aggregation_function="mean"):
         parameters = {

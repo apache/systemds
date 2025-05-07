@@ -26,9 +26,33 @@ from scipy.io.wavfile import write
 import random
 import os
 
-from systemds.scuro import VideoLoader, AudioLoader, TextLoader, UnimodalModality
+from systemds.scuro import VideoLoader, AudioLoader, TextLoader, UnimodalModality, TransformedModality
 from systemds.scuro.modality.type import ModalityType
 
+
+class ModalityRandomDataGenerator:
+    
+    def __init__(self):
+        self._modality_id = 0
+       
+    def create1DModality(self, num_instances, num_features, modality_type, ):
+        data = np.random.rand(num_instances, num_features)
+        # TODO: write a dummy method to create the same metadata for all instances to avoid the for loop
+        metadata = {}
+        for i in range(num_instances):
+            if modality_type == ModalityType.AUDIO:
+                metadata[i] = modality_type.create_audio_metadata(num_features / 10, data[i])
+            elif modality_type == ModalityType.TEXT:
+                metadata[i] = modality_type.create_text_metadata(num_features / 10, data[i])
+            elif modality_type == ModalityType.VIDEO:
+                metadata[i] = modality_type.create_video_metadata(num_features / 30, 10, 0, 0, 1)
+            else:
+                raise NotImplementedError
+            
+        tf_modality = TransformedModality(modality_type, "test_transformation", self._modality_id, metadata)
+        tf_modality.data = data
+        self._modality_id += 1
+        return tf_modality
 
 def setup_data(modalities, num_instances, path):
     if os.path.isdir(path):

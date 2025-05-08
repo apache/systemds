@@ -126,14 +126,24 @@ public class SquaredProductChainTest extends AutomatedTestBase
 	public void testMatrixHistogramExceptCase2() {
 		runSparsityEstimateTest(new EstimatorMatrixHistogram(true), m, k, n, n2, case2);
 	}
-	
+
 	@Test
 	public void testLayeredGraphCase1() {
+		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, n2, case1);
+	}
+
+	@Test
+	public void testLayeredGraphCase2() {
+		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, n2, case2);
+	}
+	
+	@Test
+	public void testLayeredGraph32Case1() {
 		runSparsityEstimateTest(new EstimatorLayeredGraph(32), m, k, n, n2, case1);
 	}
 	
 	@Test
-	public void testLayeredGraphCase2() {
+	public void testLayeredGraph32Case2() {
 		runSparsityEstimateTest(new EstimatorLayeredGraph(32), m, k, n, n2, case2);
 	}
 	

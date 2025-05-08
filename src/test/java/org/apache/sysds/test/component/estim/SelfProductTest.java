@@ -146,6 +146,16 @@ public class SelfProductTest extends AutomatedTestBase
 		runSparsityEstimateTest(new EstimatorLayeredGraph(64), m, sparsity2);
 		runSparsityEstimateTest(new EstimatorLayeredGraph(64), m, sparsity3);
 	}
+
+	@Test
+	public void testLayeredGraphCase1() {
+		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, sparsity1);
+	}
+
+	@Test
+	public void testLayeredGraphCase2() {
+		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, sparsity2);
+	}
 	
 	private static void runSparsityEstimateTest(SparsityEstimator estim, int n, double sp) {
 		MatrixBlock m1 = MatrixBlock.randOperations(n, n, sp, 1, 1, "uniform", 3);
@@ -160,7 +170,7 @@ public class SelfProductTest extends AutomatedTestBase
 		double est = estim.estim(m1, m1);
 		TestUtils.compareScalars(est, m3.getSparsity(),
 			(estim instanceof EstimatorBitsetMM) ? eps3 : //exact
-			(estim instanceof EstimatorBasicWorst) ? eps1 : eps2);
+			(estim instanceof EstimatorBasicWorst || estim instanceof EstimatorLayeredGraph) ? eps1 : eps2);
 		TestUtils.compareScalars(m3.getSparsity(), spExact1, eps3);
 		TestUtils.compareScalars(m3.getSparsity(), spExact2, eps3);
 	}

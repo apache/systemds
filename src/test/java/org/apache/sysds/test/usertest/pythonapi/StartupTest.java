@@ -37,9 +37,11 @@ import java.util.List;
 /** Simple tests to verify startup of Python Gateway server happens without crashes */
 public class StartupTest {
 	private LoggingUtils.TestAppender appender;
+	@SuppressWarnings("removal")
 	private SecurityManager sm;
 
 	@Before
+	@SuppressWarnings("removal")
 	public void setUp() {
 		appender = LoggingUtils.overwrite();
 		sm = System.getSecurityManager();
@@ -49,6 +51,7 @@ public class StartupTest {
 	}
 
 	@After
+	@SuppressWarnings("removal")
 	public void tearDown() {
 		LoggingUtils.reinsert(appender);
 		System.setSecurityManager(sm);
@@ -129,6 +132,7 @@ public class StartupTest {
 		);
 	}
 
+	@SuppressWarnings("removal")
 	class NoExitSecurityManager extends SecurityManager {
 		@Override
 		public void checkPermission(Permission perm) { }

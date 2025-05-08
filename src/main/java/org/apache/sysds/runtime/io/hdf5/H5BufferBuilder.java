@@ -99,7 +99,7 @@ public class H5BufferBuilder {
 		}
 	}
 
-	public strictfp Double getNewVal(double d) {
+	public Double getNewVal(double d) {
 		return d;
 	}
 

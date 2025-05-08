@@ -21,7 +21,6 @@ package org.apache.sysds.hops.fedplanner;
 
 import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
-import org.apache.sysds.parser.FunctionStatement;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 
@@ -75,27 +74,5 @@ public class FederatedPlannerUtils {
 				paramMap.put(inputNames[i],funcOp.getInput(i));
 		}
 		return paramMap;
-	}
-
-	/**
-	 * Saves the HOPs (TWrite) of the function return values for
-	 * the variable name used when calling the function.
-	 *
-	 * Example:
-	 * <code>
-	 *     f = function() return (matrix[double] model) {a = rand(1, 1);}
-	 *     b = f();
-	 * </code>
-	 * This function saves the HOP writing to <code>a</code> for identifier <code>b</code>.
-	 *
-	 * @param sbHop The <code>FunctionOp</code> for the call
-	 * @param funcStatement The <code>FunctionStatement</code> of the called function
-	 * @param transientWrites map of transient writes
-	 */
-	public static void mapFunctionOutputs(FunctionOp sbHop, FunctionStatement funcStatement, Map<String,Hop> transientWrites) {
-		for (int i = 0; i < sbHop.getOutputVariableNames().length; ++i) {
-			Hop outputWrite = transientWrites.get(funcStatement.getOutputParams().get(i).getName());
-			transientWrites.put(sbHop.getOutputVariableNames()[i], outputWrite);
-		}
 	}
 }

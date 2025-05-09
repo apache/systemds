@@ -19,6 +19,7 @@
 
 package org.apache.sysds.lops;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
  
 import org.apache.sysds.common.Types.ExecType;
@@ -29,7 +30,7 @@ import org.apache.sysds.common.Types.ValueType;
 
 public class MapMult extends Lop 
 {
-	public static final String OPCODE = "mapmm";
+	public static final String OPCODE = Opcodes.MAPMM.toString();
 	
 	public enum CacheType {
 		RIGHT,

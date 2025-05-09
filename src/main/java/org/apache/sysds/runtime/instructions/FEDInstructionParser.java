@@ -19,9 +19,7 @@
 
 package org.apache.sysds.runtime.instructions;
 
-import org.apache.sysds.lops.Append;
-import org.apache.sysds.lops.LeftIndex;
-import org.apache.sysds.lops.RightIndex;
+import org.apache.sysds.common.InstructionType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.fed.AggregateBinaryFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.AggregateTernaryFEDInstruction;
@@ -31,7 +29,6 @@ import org.apache.sysds.runtime.instructions.fed.BinaryFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.CentralMomentFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.CovarianceFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
-import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FEDType;
 import org.apache.sysds.runtime.instructions.fed.IndexingFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.QuantilePickFEDInstruction;
@@ -40,76 +37,13 @@ import org.apache.sysds.runtime.instructions.fed.ReorgFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.TernaryFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.TsmmFEDInstruction;
 
-import java.util.HashMap;
-
 public class FEDInstructionParser extends InstructionParser
 {
-	public static final HashMap<String, FEDType> String2FEDInstructionType;
-	static {
-		String2FEDInstructionType = new HashMap<>();
-		String2FEDInstructionType.put( "fedinit"  , FEDType.Init );
-		String2FEDInstructionType.put( "tsmm"     , FEDType.Tsmm );
-		String2FEDInstructionType.put( "ba+*"     , FEDType.AggregateBinary );
-		String2FEDInstructionType.put( "tak+*"    , FEDType.AggregateTernary);
-
-		String2FEDInstructionType.put( "uak+"    , FEDType.AggregateUnary );
-		String2FEDInstructionType.put( "uark+"   , FEDType.AggregateUnary );
-		String2FEDInstructionType.put( "uack+"   , FEDType.AggregateUnary );
-		String2FEDInstructionType.put( "uamax"   , FEDType.AggregateUnary );
-		String2FEDInstructionType.put( "uacmax"  , FEDType.AggregateUnary );
-		String2FEDInstructionType.put( "uamin"   , FEDType.AggregateUnary );
-		String2FEDInstructionType.put( "uarmin"  , FEDType.AggregateUnary );
-		String2FEDInstructionType.put( "uasqk+"  , FEDType.AggregateUnary );
-		String2FEDInstructionType.put( "uarsqk+" , FEDType.AggregateUnary );
-		String2FEDInstructionType.put( "uacsqk+" , FEDType.AggregateUnary );
-		String2FEDInstructionType.put( "uavar"   , FEDType.AggregateUnary);
-		String2FEDInstructionType.put( "uarvar"  , FEDType.AggregateUnary);
-		String2FEDInstructionType.put( "uacvar"  , FEDType.AggregateUnary);
-
-		// Arithmetic Instruction Opcodes
-		String2FEDInstructionType.put( "+" ,  FEDType.Binary );
-		String2FEDInstructionType.put( "-" ,  FEDType.Binary );
-		String2FEDInstructionType.put( "*" ,  FEDType.Binary );
-		String2FEDInstructionType.put( "/" ,  FEDType.Binary );
-		String2FEDInstructionType.put( "1-*", FEDType.Binary); //special * case
-		String2FEDInstructionType.put( "^2" , FEDType.Binary); //special ^ case
-		String2FEDInstructionType.put( "*2" , FEDType.Binary); //special * case
-		String2FEDInstructionType.put( "max", FEDType.Binary );
-		String2FEDInstructionType.put( "==",  FEDType.Binary);
-		String2FEDInstructionType.put( "!=",  FEDType.Binary);
-		String2FEDInstructionType.put( "<",   FEDType.Binary);
-		String2FEDInstructionType.put( ">",   FEDType.Binary);
-		String2FEDInstructionType.put( "<=",  FEDType.Binary);
-		String2FEDInstructionType.put( ">=",  FEDType.Binary);
-
-		// Reorg Instruction Opcodes (repositioning of existing values)
-		String2FEDInstructionType.put( "r'"     , FEDType.Reorg );
-		String2FEDInstructionType.put( "rdiag"  , FEDType.Reorg );
-		String2FEDInstructionType.put( "rev"    , FEDType.Reorg );
-		String2FEDInstructionType.put( "roll"    , FEDType.Reorg );
-		//String2FEDInstructionType.put( "rshape" , FEDType.Reorg ); Not supported by ReorgFEDInstruction parser!
-		//String2FEDInstructionType.put( "rsort"  , FEDType.Reorg ); Not supported by ReorgFEDInstruction parser!
-
-		// Ternary Instruction Opcodes
-		String2FEDInstructionType.put( "+*" , FEDType.Ternary);
-		String2FEDInstructionType.put( "-*" , FEDType.Ternary);
-
-		//central moment, covariance, quantiles (sort/pick)
-		String2FEDInstructionType.put( "cm",    FEDType.CentralMoment);
-		String2FEDInstructionType.put( "cov",   FEDType.Covariance);
-		String2FEDInstructionType.put( "qsort", FEDType.QSort);
-		String2FEDInstructionType.put( "qpick", FEDType.QPick);
-
-		String2FEDInstructionType.put(RightIndex.OPCODE, FEDType.MatrixIndexing);
-		String2FEDInstructionType.put(LeftIndex.OPCODE, FEDType.MatrixIndexing);
-
-		String2FEDInstructionType.put(Append.OPCODE, FEDType.Append);
-	}
 
 	public static FEDInstruction parseSingleInstruction (String str ) {
 		if ( str == null || str.isEmpty() )
 			return null;
-		FEDType fedtype = InstructionUtils.getFEDType(str);
+		InstructionType fedtype = InstructionUtils.getFEDType(str);
 		if ( fedtype == null )
 			throw new DMLRuntimeException("Unable derive fedtype for instruction: " + str);
 		FEDInstruction cpinst = parseSingleInstruction(fedtype, str);
@@ -118,7 +52,7 @@ public class FEDInstructionParser extends InstructionParser
 		return cpinst;
 	}
 	
-	public static FEDInstruction parseSingleInstruction ( FEDType fedtype, String str ) {
+	public static FEDInstruction parseSingleInstruction ( InstructionType fedtype, String str ) {
 		if ( str == null || str.isEmpty() )
 			return null;
 		switch(fedtype) {

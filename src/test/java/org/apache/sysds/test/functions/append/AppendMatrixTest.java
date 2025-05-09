@@ -24,7 +24,6 @@ import java.util.Random;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.BinaryOp;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -146,18 +145,14 @@ public class AppendMatrixTest extends AutomatedTestBase
 	public void commonAppendTest(ExecMode platform, int rows, int cols1, int cols2, boolean sparse, AppendMethod forcedAppendMethod)
 	{
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
-		ExecMode prevPlfm=rtplatform;
+		ExecMode prevPlfm=setExecMode(platform);
 		double sparsity = (sparse) ? sparsity2 : sparsity1; 
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		
 		try {
 			if(forcedAppendMethod != null) {
 				BinaryOp.FORCED_APPEND_METHOD = forcedAppendMethod;
 			}
-			rtplatform = platform;
-			if( rtplatform == ExecMode.SPARK )
-				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-	
+		
 			config.addVariable("rows", rows);
 			config.addVariable("cols", cols1);
 	
@@ -192,9 +187,7 @@ public class AppendMatrixTest extends AutomatedTestBase
 			}
 		}
 		finally {
-			//reset execution platform
-			rtplatform = prevPlfm;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			resetExecMode(prevPlfm);
 			BinaryOp.FORCED_APPEND_METHOD = null;
 		}
 	}

@@ -156,6 +156,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = simplifyConstantConjunction(hop, hi, i);        //e.g., a & !a -> FALSE 
 			hi = simplifyReverseOperation(hop, hi, i);           //e.g., table(seq(1,nrow(X),1),seq(nrow(X),1,-1)) %*% X -> rev(X)
 			hi = simplifyReverseSequence(hop, hi, i);            //e.g., rev(seq(1,n)) -> seq(n,1)
+			hi = simplifyReverseSequenceStep(hop, hi, i);        //e.g., rev(seq(1,n,2)) -> rev(n,1,-2)
 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION)
 				hi = simplifyMultiBinaryToBinaryOperation(hi);       //e.g., 1-X*Y -> X 1-* Y
 			hi = simplifyDistributiveBinaryOperation(hop, hi, i);//e.g., (X-Y*X) -> (1-Y)*X
@@ -175,6 +176,8 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			if(OptimizerUtils.ALLOW_OPERATOR_FUSION)
 				hi = fuseBinarySubDAGToUnaryOperation(hop, hi, i);   //e.g., X*(1-X)-> sprop(X) || 1/(1+exp(-X)) -> sigmoid(X) || X*(X>0) -> selp(X)
 			hi = simplifyTraceMatrixMult(hop, hi, i);            //e.g., trace(X%*%Y)->sum(X*t(Y));
+			hi = simplifyTraceSum(hop, hi, i);                   //e.g. , trace(A+B)->trace(A)+trace(B);
+			hi = simplifyTraceTranspose(hop, hi, i);             //e.g. , trace(t(A))->trace(A)
 			hi = simplifySlicedMatrixMult(hop, hi, i);           //e.g., (X%*%Y)[1,1] -> X[1,] %*% Y[,1];
 			hi = simplifyListIndexing(hi);                       //e.g., L[i:i, 1:ncol(L)] -> L[i:i, 1:1]
 			hi = simplifyScalarIndexing(hop, hi, i);             //e.g., as.scalar(X[i,1])->X[i,1] w/ scalar output
@@ -199,7 +202,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 
 			hi = simplifyNotOverComparisons(hop, hi, i);         //e.g., !(A>B) -> (A<=B)
 			//hi = removeUnecessaryPPred(hop, hi, i);            //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
-
 
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
 			if( !descendFirst )
@@ -824,6 +826,59 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 
 		return hi;
 	}
+	
+	private static Hop simplifyReverseSequenceStep(Hop parent, Hop hi, int pos) {
+		if (HopRewriteUtils.isReorg(hi, ReOrgOp.REV)
+				&& hi.getInput(0) instanceof DataGenOp
+				&& ((DataGenOp) hi.getInput(0)).getOp() == OpOpDG.SEQ
+				&& hi.getInput(0).getParent().size() == 1) // only one consumer
+		{
+			DataGenOp seq = (DataGenOp) hi.getInput(0);
+			Hop from = seq.getInput().get(seq.getParamIndex(Statement.SEQ_FROM));
+			Hop to = seq.getInput().get(seq.getParamIndex(Statement.SEQ_TO));
+			Hop incr = seq.getInput().get(seq.getParamIndex(Statement.SEQ_INCR));
+
+			if (from instanceof LiteralOp && to instanceof LiteralOp && incr instanceof LiteralOp) {
+				double fromVal = ((LiteralOp) from).getDoubleValue();
+				double toVal = ((LiteralOp) to).getDoubleValue();
+				double incrVal = ((LiteralOp) incr).getDoubleValue();
+
+				// Skip if increment is zero (invalid sequence)
+				if (Math.abs(incrVal) < 1e-10)
+					return hi;
+
+				boolean isValidDirection = false;
+
+				// Checking direction compatibility
+				if ((incrVal > 0 && fromVal <= toVal) || (incrVal < 0 && fromVal >= toVal)) {
+					isValidDirection = true;
+				}
+
+				if (isValidDirection) {
+					// Calculate the number of elements and the last element
+					int numValues = (int)Math.floor(Math.abs((toVal - fromVal) / incrVal)) + 1;
+					double lastVal = fromVal + (numValues - 1) * incrVal;
+
+					// Create a new sequence based on actual last value
+					LiteralOp newFrom = new LiteralOp(lastVal);
+					LiteralOp newTo = new LiteralOp(fromVal);
+					LiteralOp newIncr = new LiteralOp(-incrVal);
+
+					// Replace the parameters
+					seq.getInput().set(seq.getParamIndex(Statement.SEQ_FROM), newFrom);
+					seq.getInput().set(seq.getParamIndex(Statement.SEQ_TO), newTo);
+					seq.getInput().set(seq.getParamIndex(Statement.SEQ_INCR), newIncr);
+
+					// Replace the old sequence with the new one
+					HopRewriteUtils.replaceChildReference(parent, hi, seq, pos);
+					HopRewriteUtils.cleanupUnreferenced(hi, seq);
+					hi = seq;
+					LOG.debug("Applied simplifyReverseSequenceStep (line " + hi.getBeginLine() + ").");
+				}
+			}
+		}
+		return hi;
+	}
 
 	private static Hop simplifyMultiBinaryToBinaryOperation( Hop hi )
 	{
@@ -886,10 +941,14 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						X = right;
 						Y = ( right == leftC1 ) ? leftC2 : leftC1;
 					}
-					if( X != null ){ //rewrite 'binary +/-' 
+					if( X != null && Y.dimsKnown() ){ //rewrite 'binary +/-' 
 						LiteralOp literal = new LiteralOp(1);
 						BinaryOp plus = HopRewriteUtils.createBinary(Y, literal, bop.getOp());
-						BinaryOp mult = HopRewriteUtils.createBinary(plus, X, OpOp2.MULT);
+						
+						BinaryOp mult = (plus.getDim1()==1 || plus.getDim2() == 1)
+								&& (X.getDim1()>1 && X.getDim2()>1) ?
+							HopRewriteUtils.createBinary(X, plus, OpOp2.MULT) :
+							HopRewriteUtils.createBinary(plus, X, OpOp2.MULT);
 						HopRewriteUtils.replaceChildReference(parent, hi, mult, pos);
 						HopRewriteUtils.cleanupUnreferenced(hi, left);
 						hi = mult;
@@ -908,10 +967,13 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 						X = left;
 						Y = ( left == rightC1 ) ? rightC2 : rightC1;
 					}
-					if( X != null ){ //rewrite '+/- binary'
+					if( X != null && Y.dimsKnown() ){ //rewrite '+/- binary'
 						LiteralOp literal = new LiteralOp(1);
 						BinaryOp plus = HopRewriteUtils.createBinary(literal, Y, bop.getOp());
-						BinaryOp mult = HopRewriteUtils.createBinary(plus, X, OpOp2.MULT);
+						BinaryOp mult = (plus.getDim1()==1 || plus.getDim2() == 1) 
+								&& (X.getDim1()>1 && X.getDim2()>1) ?
+							HopRewriteUtils.createBinary(X, plus, OpOp2.MULT) :
+							HopRewriteUtils.createBinary(plus, X, OpOp2.MULT);
 						HopRewriteUtils.replaceChildReference(parent, hi, mult, pos);
 						HopRewriteUtils.cleanupUnreferenced(hi, right);
 						hi = mult;
@@ -1539,6 +1601,45 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			}
 		}
 
+		return hi;
+	}
+
+	private static Hop simplifyTraceSum(Hop parent, Hop hi, int pos) {
+		if (hi instanceof AggUnaryOp && ((AggUnaryOp) hi).getOp() == AggOp.TRACE) {
+			Hop hi2 = hi.getInput().get(0);
+			if (HopRewriteUtils.isBinary(hi2, OpOp2.PLUS) && hi2.getParent().size() == 1) {
+				Hop left = hi2.getInput().get(0);
+				Hop right = hi2.getInput().get(1);
+
+				// Create trace nodes
+				AggUnaryOp traceLeft = HopRewriteUtils.createAggUnaryOp(left, AggOp.TRACE, Direction.RowCol);
+				AggUnaryOp traceRight = HopRewriteUtils.createAggUnaryOp(right, AggOp.TRACE, Direction.RowCol);
+
+				// Add them
+				BinaryOp sum = HopRewriteUtils.createBinary(traceLeft, traceRight, OpOp2.PLUS);
+
+				// Replace in DAG
+				HopRewriteUtils.replaceChildReference(parent, hi, sum, pos);
+				HopRewriteUtils.cleanupUnreferenced(hi, hi2);
+
+				LOG.debug("Applied simplifyTraceSum rewrite");
+				return sum;
+			}
+		}
+		return hi;
+	}
+
+	private static Hop simplifyTraceTranspose(Hop parent, Hop hi, int pos) {
+		// Check if the current Hop is a trace operation
+		if ( HopRewriteUtils.isAggUnaryOp(hi, AggOp.TRACE) ) {
+			Hop input = hi.getInput().get(0);
+
+			// Check if input is a transpose and it is only consumer
+			if (HopRewriteUtils.isReorg(input, ReOrgOp.TRANS) && input.getParent().size() == 1) {
+				HopRewriteUtils.replaceChildReference(hi, input, input.getInput(0));
+				LOG.debug("Applied simplifyTraceTranspose rewrite");
+			}
+		}
 		return hi;
 	}
 

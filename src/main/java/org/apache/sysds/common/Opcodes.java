@@ -19,15 +19,8 @@
 
 package org.apache.sysds.common;
 
-import org.apache.sysds.lops.Append;
-import org.apache.sysds.lops.Compression;
-import org.apache.sysds.lops.DataGen;
-import org.apache.sysds.lops.DeCompression;
-import org.apache.sysds.lops.LeftIndex;
-import org.apache.sysds.lops.Local;
-import org.apache.sysds.lops.RightIndex;
+import org.apache.sysds.lops.*;
 
-import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.hops.FunctionOp;
 
@@ -36,298 +29,407 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum Opcodes {
-	MMULT("ba+*", CPType.AggregateBinary),
-	TAKPM("tak+*", CPType.AggregateTernary),
-	TACKPM("tack+*", CPType.AggregateTernary),
+	MMULT("ba+*", InstructionType.AggregateBinary),
+	TAKPM("tak+*", InstructionType.AggregateTernary),
+	TACKPM("tack+*", InstructionType.AggregateTernary),
 
-	UAKP("uak+", CPType.AggregateUnary),
-	UARKP("uark+", CPType.AggregateUnary),
-	UACKP("uack+", CPType.AggregateUnary),
-	UASQKP("uasqk+", CPType.AggregateUnary),
-	UARSQKP("uarsqk+", CPType.AggregateUnary),
-	UACSQKP("uacsqk+", CPType.AggregateUnary),
-	UAMEAN("uamean", CPType.AggregateUnary),
-	UARMEAN("uarmean", CPType.AggregateUnary),
-	UACMEAN("uacmean", CPType.AggregateUnary),
-	UAVAR("uavar", CPType.AggregateUnary),
-	UARVAR("uarvar", CPType.AggregateUnary),
-	UACVAR("uacvar", CPType.AggregateUnary),
-	UAMAX("uamax", CPType.AggregateUnary),
-	UARMAX("uarmax", CPType.AggregateUnary),
-	UARIMAX("uarimax", CPType.AggregateUnary),
-	UACMAX("uacmax", CPType.AggregateUnary),
-	UAMIN("uamin", CPType.AggregateUnary),
-	UARMIN("uarmin", CPType.AggregateUnary),
-	UARIMIN("uarimin", CPType.AggregateUnary),
-	UACMIN("uacmin", CPType.AggregateUnary),
-	UAP("ua+", CPType.AggregateUnary),
-	UARP("uar+", CPType.AggregateUnary),
-	UACP("uac+", CPType.AggregateUnary),
-	UAM("ua*", CPType.AggregateUnary),
-	UARM("uar*", CPType.AggregateUnary),
-	UACM("uac*", CPType.AggregateUnary),
-	UATRACE("uatrace", CPType.AggregateUnary),
-	UAKTRACE("uaktrace", CPType.AggregateUnary),
+	UAKP("uak+", InstructionType.AggregateUnary),
+	UARKP("uark+", InstructionType.AggregateUnary),
+	UACKP("uack+", InstructionType.AggregateUnary),
+	UASQKP("uasqk+", InstructionType.AggregateUnary),
+	UARSQKP("uarsqk+", InstructionType.AggregateUnary),
+	UACSQKP("uacsqk+", InstructionType.AggregateUnary),
+	UAMEAN("uamean", InstructionType.AggregateUnary),
+	UARMEAN("uarmean", InstructionType.AggregateUnary),
+	UACMEAN("uacmean", InstructionType.AggregateUnary),
+	UAVAR("uavar", InstructionType.AggregateUnary),
+	UARVAR("uarvar", InstructionType.AggregateUnary),
+	UACVAR("uacvar", InstructionType.AggregateUnary),
+	UAMAX("uamax", InstructionType.AggregateUnary),
+	UARMAX("uarmax", InstructionType.AggregateUnary),
+	UARIMAX("uarimax", InstructionType.AggregateUnary),
+	UACMAX("uacmax", InstructionType.AggregateUnary),
+	UAMIN("uamin", InstructionType.AggregateUnary),
+	UARMIN("uarmin", InstructionType.AggregateUnary),
+	UARIMIN("uarimin", InstructionType.AggregateUnary),
+	UACMIN("uacmin", InstructionType.AggregateUnary),
+	UAP("ua+", InstructionType.AggregateUnary),
+	UARP("uar+", InstructionType.AggregateUnary),
+	UACP("uac+", InstructionType.AggregateUnary),
+	UAM("ua*", InstructionType.AggregateUnary),
+	UARM("uar*", InstructionType.AggregateUnary),
+	UACM("uac*", InstructionType.AggregateUnary),
+	UATRACE("uatrace", InstructionType.AggregateUnary),
+	UAKTRACE("uaktrace", InstructionType.AggregateUnary),
 
-	NROW("nrow", CPType.AggregateUnary),
-	NCOL("ncol", CPType.AggregateUnary),
-	LENGTH("length", CPType.AggregateUnary),
-	EXISTS("exists", CPType.AggregateUnary),
-	LINEAGE("lineage", CPType.AggregateUnary),
-	UACD("uacd", CPType.AggregateUnary),
-	UACDR("uacdr", CPType.AggregateUnary),
-	UACDC("uacdc", CPType.AggregateUnary),
-	UACDAP("uacdap", CPType.AggregateUnary),
-	UACDAPR("uacdapr", CPType.AggregateUnary),
-	UACDAPC("uacdapc", CPType.AggregateUnary),
-	UNIQUE("unique", CPType.AggregateUnary),
-	UNIQUER("uniquer", CPType.AggregateUnary),
-	UNIQUEC("uniquec", CPType.AggregateUnary),
+	NROW("nrow", InstructionType.AggregateUnary),
+	NCOL("ncol", InstructionType.AggregateUnary),
+	LENGTH("length", InstructionType.AggregateUnary),
+	EXISTS("exists", InstructionType.AggregateUnary),
+	LINEAGE("lineage", InstructionType.AggregateUnary),
+	UACD("uacd", InstructionType.AggregateUnary, InstructionType.AggregateUnarySketch),
+	UACDR("uacdr", InstructionType.AggregateUnary, InstructionType.AggregateUnarySketch),
+	UACDC("uacdc", InstructionType.AggregateUnary, InstructionType.AggregateUnarySketch),
+	UACDAP("uacdap", InstructionType.AggregateUnary, InstructionType.AggregateUnarySketch),
+	UACDAPR("uacdapr", InstructionType.AggregateUnary, InstructionType.AggregateUnarySketch),
+	UACDAPC("uacdapc", InstructionType.AggregateUnary, InstructionType.AggregateUnarySketch),
+	UNIQUE("unique", InstructionType.AggregateUnary),
+	UNIQUER("uniquer", InstructionType.AggregateUnary),
+	UNIQUEC("uniquec", InstructionType.AggregateUnary),
 
-	UAGGOUTERCHAIN("uaggouterchain", CPType.UaggOuterChain),
+	UAGGOUTERCHAIN("uaggouterchain", InstructionType.UaggOuterChain),
 
 	// Arithmetic Instruction Opcodes
-	PLUS("+", CPType.Binary),
-	MINUS("-", CPType.Binary),
-	MULT("*", CPType.Binary),
-	DIV("/", CPType.Binary),
-	MODULUS("%%", CPType.Binary),
-	INTDIV("%/%", CPType.Binary),
-	POW("^", CPType.Binary),
-	MINUS1_MULT("1-*", CPType.Binary),	  //special * case
-	POW2("^2", CPType.Binary),		//special ^ case
-	MULT2("*2", CPType.Binary),	   //special * case
-	MINUS_NZ("-nz", CPType.Binary),	 //special - case
+	PLUS("+", InstructionType.Binary),
+	MINUS("-", InstructionType.Binary),
+	MULT("*", InstructionType.Binary),
+	DIV("/", InstructionType.Binary),
+	MODULUS("%%", InstructionType.Binary),
+	INTDIV("%/%", InstructionType.Binary),
+	POW("^", InstructionType.Binary),
+	MINUS1_MULT("1-*", InstructionType.Binary),	  //special * case
+	POW2("^2", InstructionType.Binary),		//special ^ case
+	MULT2("*2", InstructionType.Binary),	   //special * case
+	MINUS_NZ("-nz", InstructionType.Binary),	 //special - case
 
 	// Boolean Instruction Opcodes
-	AND("&&", CPType.Binary),
-	OR("||", CPType.Binary),
-	XOR("xor", CPType.Binary),
-	BITWAND("bitwAnd", CPType.Binary),
-	BITWOR("bitwOr", CPType.Binary),
-	BITWXOR("bitwXor", CPType.Binary),
-	BITWSHIFTL("bitwShiftL", CPType.Binary),
-	BITWSHIFTR("bitwShiftR", CPType.Binary),
-	NOT("!", CPType.Unary),
+	AND("&&", InstructionType.Binary),
+	OR("||", InstructionType.Binary),
+	XOR("xor", InstructionType.Binary),
+	BITWAND("bitwAnd", InstructionType.Binary),
+	BITWOR("bitwOr", InstructionType.Binary),
+	BITWXOR("bitwXor", InstructionType.Binary),
+	BITWSHIFTL("bitwShiftL", InstructionType.Binary),
+	BITWSHIFTR("bitwShiftR", InstructionType.Binary),
+	NOT("!", InstructionType.Unary),
 
 	// Relational Instruction Opcodes
-	EQUAL("==", CPType.Binary),
-	NOTEQUAL("!=", CPType.Binary),
-	LESS("<", CPType.Binary),
-	GREATER(">", CPType.Binary),
-	LESSEQUAL("<=", CPType.Binary),
-	GREATEREQUAL(">=", CPType.Binary),
+	EQUAL("==", InstructionType.Binary),
+	NOTEQUAL("!=", InstructionType.Binary),
+	LESS("<", InstructionType.Binary),
+	GREATER(">", InstructionType.Binary),
+	LESSEQUAL("<=", InstructionType.Binary),
+	GREATEREQUAL(">=", InstructionType.Binary),
 
 	// Builtin Instruction Opcodes
-	LOG("log", CPType.Builtin),
-	LOGNZ("log_nz", CPType.Builtin),
+	LOG("log", InstructionType.Builtin),
+	LOGNZ("log_nz", InstructionType.Builtin),
 
-	SOLVE("solve", CPType.Binary),
-	MAX("max", CPType.Binary),
-	MIN("min", CPType.Binary),
-	DROPINVALIDTYPE("dropInvalidType", CPType.Binary),
-	DROPINVALIDLENGTH("dropInvalidLength", CPType.Binary),
-	FREPLICATE("freplicate", CPType.Binary),
-	VALUESWAP("valueSwap", CPType.Binary),
-	APPLYSCHEMA("applySchema", CPType.Binary),
-	MAP("_map", CPType.Ternary),
+	SOLVE("solve", InstructionType.Binary),
+	MAX("max", InstructionType.Binary),
+	MIN("min", InstructionType.Binary),
+	DROPINVALIDTYPE("dropInvalidType", InstructionType.Binary),
+	DROPINVALIDLENGTH("dropInvalidLength", InstructionType.Binary),
+	FREPLICATE("freplicate", InstructionType.Binary),
+	VALUESWAP("valueSwap", InstructionType.Binary),
+	APPLYSCHEMA("applySchema", InstructionType.Binary),
+	MAP("_map", InstructionType.Ternary),
 
-	NMAX("nmax", CPType.BuiltinNary),
-	NMIN("nmin", CPType.BuiltinNary),
-	NP("n+", CPType.BuiltinNary),
-	NM("n*", CPType.BuiltinNary),
+	NMAX("nmax", InstructionType.BuiltinNary),
+	NMIN("nmin", InstructionType.BuiltinNary),
+	NP("n+", InstructionType.BuiltinNary),
+	NM("n*", InstructionType.BuiltinNary),
 
-	EXP("exp", CPType.Unary),
-	ABS("abs", CPType.Unary),
-	SIN("sin", CPType.Unary),
-	COS("cos", CPType.Unary),
-	TAN("tan", CPType.Unary),
-	SINH("sinh", CPType.Unary),
-	COSH("cosh", CPType.Unary),
-	TANH("tanh", CPType.Unary),
-	ASIN("asin", CPType.Unary),
-	ACOS("acos", CPType.Unary),
-	ATAN("atan", CPType.Unary),
-	SIGN("sign", CPType.Unary),
-	SQRT("sqrt", CPType.Unary),
-	SQRT_MATRIX_JAVA("sqrt_matrix_java", CPType.Unary),
-	PLOGP("plogp", CPType.Unary),
-	PRINT("print", CPType.Unary),
-	ASSERT("assert", CPType.Unary),
-	ROUND("round", CPType.Unary),
-	CEIL("ceil", CPType.Unary),
-	FLOOR("floor", CPType.Unary),
-	UCUMKP("ucumk+", CPType.Unary),
-	UCUMM("ucum*", CPType.Unary),
-	UCUMKPM("ucumk+*", CPType.Unary),
-	UCUMMIN("ucummin", CPType.Unary),
-	UCUMMAX("ucummax", CPType.Unary),
-	STOP("stop", CPType.Unary),
-	INVERSE("inverse", CPType.Unary),
-	CHOLESKY("cholesky", CPType.Unary),
-	DET("det", CPType.Unary),
-	SPROP("sprop", CPType.Unary),
-	SIGMOID("sigmoid", CPType.Unary),
-	TYPEOF("typeOf", CPType.Unary),
-	DETECTSCHEMA("detectSchema", CPType.Unary),
-	COLNAMES("colnames", CPType.Unary),
-	ISNA("isna", CPType.Unary),
-	ISNAN("isnan", CPType.Unary),
-	ISINF("isinf", CPType.Unary),
-	PRINTF("printf", CPType.BuiltinNary),
-	CBIND("cbind", CPType.BuiltinNary),
-	RBIND("rbind", CPType.BuiltinNary),
-	EVAL("eval", CPType.BuiltinNary),
-	LIST("list", CPType.BuiltinNary),
+	EXP("exp", InstructionType.Unary),
+	ABS("abs", InstructionType.Unary),
+	SIN("sin", InstructionType.Unary),
+	COS("cos", InstructionType.Unary),
+	TAN("tan", InstructionType.Unary),
+	SINH("sinh", InstructionType.Unary),
+	COSH("cosh", InstructionType.Unary),
+	TANH("tanh", InstructionType.Unary),
+	ASIN("asin", InstructionType.Unary),
+	ACOS("acos", InstructionType.Unary),
+	ATAN("atan", InstructionType.Unary),
+	SIGN("sign", InstructionType.Unary),
+	SQRT("sqrt", InstructionType.Unary),
+	SQRT_MATRIX_JAVA("sqrt_matrix_java", InstructionType.Unary),
+	PLOGP("plogp", InstructionType.Unary),
+	PRINT("print", InstructionType.Unary),
+	ASSERT("assert", InstructionType.Unary),
+	ROUND("round", InstructionType.Unary),
+	CEIL("ceil", InstructionType.Unary),
+	FLOOR("floor", InstructionType.Unary),
+	UCUMKP("ucumk+", InstructionType.Unary),
+	UCUMM("ucum*", InstructionType.Unary),
+	UCUMKPM("ucumk+*", InstructionType.Unary),
+	UCUMMIN("ucummin", InstructionType.Unary),
+	UCUMMAX("ucummax", InstructionType.Unary),
+	STOP("stop", InstructionType.Unary),
+	INVERSE("inverse", InstructionType.Unary),
+	CHOLESKY("cholesky", InstructionType.Unary),
+	DET("det", InstructionType.Unary),
+	SPROP("sprop", InstructionType.Unary),
+	SIGMOID("sigmoid", InstructionType.Unary),
+	TYPEOF("typeOf", InstructionType.Unary),
+	DETECTSCHEMA("detectSchema", InstructionType.Unary),
+	COLNAMES("colnames", InstructionType.Unary),
+	ISNA("isna", InstructionType.Unary),
+	ISNAN("isnan", InstructionType.Unary),
+	ISINF("isinf", InstructionType.Unary),
+	PRINTF("printf", InstructionType.BuiltinNary),
+	CBIND("cbind", InstructionType.BuiltinNary),
+	RBIND("rbind", InstructionType.BuiltinNary),
+	EVAL("eval", InstructionType.BuiltinNary),
+	LIST("list", InstructionType.BuiltinNary),
 
 	//Parametrized builtin functions
-	AUTODIFF("autoDiff", CPType.ParameterizedBuiltin),
-	CONTAINS("contains", CPType.ParameterizedBuiltin),
-	PARAMSERV("paramserv", CPType.ParameterizedBuiltin),
-	NVLIST("nvlist", CPType.ParameterizedBuiltin),
-	CDF("cdf", CPType.ParameterizedBuiltin),
-	INVCDF("invcdf", CPType.ParameterizedBuiltin),
-	GROUPEDAGG("groupedagg", CPType.ParameterizedBuiltin),
-	RMEMPTY("rmempty", CPType.ParameterizedBuiltin),
-	REPLACE("replace", CPType.ParameterizedBuiltin),
-	LOWERTRI("lowertri", CPType.ParameterizedBuiltin),
-	UPPERTRI("uppertri", CPType.ParameterizedBuiltin),
-	REXPAND("rexpand", CPType.ParameterizedBuiltin),
-	TOSTRING("toString", CPType.ParameterizedBuiltin),
-	TOKENIZE("tokenize", CPType.ParameterizedBuiltin),
-	TRANSFORMAPPLY("transformapply", CPType.ParameterizedBuiltin),
-	TRANSFORMDECODE("transformdecode", CPType.ParameterizedBuiltin),
-	TRANSFORMCOLMAP("transformcolmap", CPType.ParameterizedBuiltin),
-	TRANSFORMMETA("transformmeta", CPType.ParameterizedBuiltin),
-	TRANSFORMENCODE("transformencode", CPType.MultiReturnParameterizedBuiltin),
+	AUTODIFF("autoDiff", InstructionType.ParameterizedBuiltin),
+	CONTAINS("contains", InstructionType.ParameterizedBuiltin),
+	PARAMSERV("paramserv", InstructionType.ParameterizedBuiltin),
+	NVLIST("nvlist", InstructionType.ParameterizedBuiltin),
+	CDF("cdf", InstructionType.ParameterizedBuiltin),
+	INVCDF("invcdf", InstructionType.ParameterizedBuiltin),
+	GROUPEDAGG("groupedagg", InstructionType.ParameterizedBuiltin),
+	RMEMPTY("rmempty", InstructionType.ParameterizedBuiltin),
+	REPLACE("replace", InstructionType.ParameterizedBuiltin),
+	LOWERTRI("lowertri", InstructionType.ParameterizedBuiltin),
+	UPPERTRI("uppertri", InstructionType.ParameterizedBuiltin),
+	REXPAND("rexpand", InstructionType.ParameterizedBuiltin),
+	TOSTRING("toString", InstructionType.ParameterizedBuiltin),
+	TOKENIZE("tokenize", InstructionType.ParameterizedBuiltin),
+	TRANSFORMAPPLY("transformapply", InstructionType.ParameterizedBuiltin),
+	TRANSFORMDECODE("transformdecode", InstructionType.ParameterizedBuiltin),
+	TRANSFORMCOLMAP("transformcolmap", InstructionType.ParameterizedBuiltin),
+	TRANSFORMMETA("transformmeta", InstructionType.ParameterizedBuiltin),
+	TRANSFORMENCODE("transformencode", InstructionType.MultiReturnParameterizedBuiltin,  InstructionType.MultiReturnBuiltin),
 
 	//Ternary instruction opcodes
-	PM("+*", CPType.Ternary),
-	MINUSMULT("-*", CPType.Ternary),
-	IFELSE("ifelse", CPType.Ternary),
+	PM("+*", InstructionType.Ternary),
+	MINUSMULT("-*", InstructionType.Ternary),
+	IFELSE("ifelse", InstructionType.Ternary),
 
 	//Variable instruction opcodes
-	ASSIGNVAR("assignvar", CPType.Variable),
-	CPVAR("cpvar", CPType.Variable),
-	MVVAR("mvvar", CPType.Variable),
-	RMVAR("rmvar", CPType.Variable),
-	RMFILEVAR("rmfilevar", CPType.Variable),
-	CAST_AS_SCALAR(OpOp1.CAST_AS_SCALAR.toString(), CPType.Variable),
-	CAST_AS_MATRIX(OpOp1.CAST_AS_MATRIX.toString(), CPType.Variable),
-	CAST_AS_FRAME_VAR("cast_as_frame", CPType.Variable),
-	CAST_AS_FRAME(OpOp1.CAST_AS_FRAME.toString(), CPType.Variable),
-	CAST_AS_LIST(OpOp1.CAST_AS_LIST.toString(), CPType.Variable),
-	CAST_AS_DOUBLE(OpOp1.CAST_AS_DOUBLE.toString(), CPType.Variable),
-	CAST_AS_INT(OpOp1.CAST_AS_INT.toString(), CPType.Variable),
-	CAST_AS_BOOLEAN(OpOp1.CAST_AS_BOOLEAN.toString(), CPType.Variable),
-	ATTACHFILETOVAR("attachfiletovar", CPType.Variable),
-	READ("read", CPType.Variable),
-	WRITE("write", CPType.Variable),
-	CREATEVAR("createvar", CPType.Variable),
+	ASSIGNVAR("assignvar", InstructionType.Variable),
+	CPVAR("cpvar", InstructionType.Variable),
+	MVVAR("mvvar", InstructionType.Variable),
+	RMVAR("rmvar", InstructionType.Variable),
+	RMFILEVAR("rmfilevar", InstructionType.Variable),
+	CAST_AS_SCALAR(OpOp1.CAST_AS_SCALAR.toString(), InstructionType.Variable),
+	CAST_AS_MATRIX(OpOp1.CAST_AS_MATRIX.toString(), InstructionType.Variable, InstructionType.Cast),
+	CAST_AS_FRAME_VAR("cast_as_frame", InstructionType.Variable),
+	CAST_AS_FRAME(OpOp1.CAST_AS_FRAME.toString(), InstructionType.Variable, InstructionType.Cast),
+	CAST_AS_LIST(OpOp1.CAST_AS_LIST.toString(), InstructionType.Variable),
+	CAST_AS_DOUBLE(OpOp1.CAST_AS_DOUBLE.toString(), InstructionType.Variable),
+	CAST_AS_INT(OpOp1.CAST_AS_INT.toString(), InstructionType.Variable),
+	CAST_AS_BOOLEAN(OpOp1.CAST_AS_BOOLEAN.toString(), InstructionType.Variable),
+	ATTACHFILETOVAR("attachfiletovar", InstructionType.Variable),
+	READ("read", InstructionType.Variable),
+	WRITE("write", InstructionType.Variable, InstructionType.Write),
+	CREATEVAR("createvar", InstructionType.Variable),
 
 	//Reorg instruction opcodes
-	TRANSPOSE("r'", CPType.Reorg),
-	REV("rev", CPType.Reorg),
-	ROLL("roll", CPType.Reorg),
-	DIAG("rdiag", CPType.Reorg),
-	RESHAPE("rshape", CPType.Reshape),
-	SORT("rsort", CPType.Reorg),
+	TRANSPOSE("r'", InstructionType.Reorg),
+	REV("rev", InstructionType.Reorg),
+	ROLL("roll", InstructionType.Reorg),
+	DIAG("rdiag", InstructionType.Reorg),
+	RESHAPE("rshape", InstructionType.Reshape, InstructionType.MatrixReshape),
+	SORT("rsort", InstructionType.Reorg),
 
 	// Opcodes related to convolutions
-	RELU_BACKWARD("relu_backward", CPType.Dnn),
-	RELU_MAXPOOLING("relu_maxpooling", CPType.Dnn),
-	RELU_MAXPOOLING_BACKWARD("relu_maxpooling_backward", CPType.Dnn),
-	MAXPOOLING("maxpooling", CPType.Dnn),
-	MAXPOOLING_BACKWARD("maxpooling_backward", CPType.Dnn),
-	AVGPOOLING("avgpooling", CPType.Dnn),
-	AVGPOOLING_BACKWARD("avgpooling_backward", CPType.Dnn),
-	CONV2D("conv2d", CPType.Dnn),
-	CONV2D_BIAS_ADD("conv2d_bias_add", CPType.Dnn),
-	CONV2D_BACKWARD_FILTER("conv2d_backward_filter", CPType.Dnn),
-	CONV2D_BACKWARD_DATA("conv2d_backward_data", CPType.Dnn),
-	BIAS_ADD("bias_add", CPType.Dnn),
-	BIAS_MULTIPLY("bias_multiply", CPType.Dnn),
-	BATCH_NORM2D("batch_norm2d", CPType.Dnn),
-	BATCH_NORM2D_BACKWARD("batch_norm2d_backward", CPType.Dnn),
-	LSTM("lstm", CPType.Dnn),
-	LSTM_BACKWARD("lstm_backward", CPType.Dnn),
+	RELU_BACKWARD("relu_backward", InstructionType.Dnn),
+	RELU_MAXPOOLING("relu_maxpooling", InstructionType.Dnn),
+	RELU_MAXPOOLING_BACKWARD("relu_maxpooling_backward", InstructionType.Dnn),
+	MAXPOOLING("maxpooling", InstructionType.Dnn),
+	MAXPOOLING_BACKWARD("maxpooling_backward", InstructionType.Dnn),
+	AVGPOOLING("avgpooling", InstructionType.Dnn),
+	AVGPOOLING_BACKWARD("avgpooling_backward", InstructionType.Dnn),
+	CONV2D("conv2d", InstructionType.Dnn),
+	CONV2D_BIAS_ADD("conv2d_bias_add", InstructionType.Dnn),
+	CONV2D_BACKWARD_FILTER("conv2d_backward_filter", InstructionType.Dnn),
+	CONV2D_BACKWARD_DATA("conv2d_backward_data", InstructionType.Dnn),
+	BIAS_ADD("bias_add", InstructionType.Dnn),
+	BIAS_MULTIPLY("bias_multiply", InstructionType.Dnn),
+	BATCH_NORM2D("batch_norm2d", InstructionType.Dnn),
+	BATCH_NORM2D_BACKWARD("batch_norm2d_backward", InstructionType.Dnn),
+	LSTM("lstm", InstructionType.Dnn),
+	LSTM_BACKWARD("lstm_backward", InstructionType.Dnn),
 
 	//Quaternary instruction opcodes
-	WSLOSS("wsloss", CPType.Quaternary),
-	WSIGMOID("wsigmoid", CPType.Quaternary),
-	WDIVMM("wdivmm", CPType.Quaternary),
-	WCEMM("wcemm", CPType.Quaternary),
-	WUMM("wumm", CPType.Quaternary),
+	WSLOSS("wsloss", InstructionType.Quaternary),
+	WSIGMOID("wsigmoid", InstructionType.Quaternary),
+	WDIVMM("wdivmm", InstructionType.Quaternary),
+	WCEMM("wcemm", InstructionType.Quaternary),
+	WUMM("wumm", InstructionType.Quaternary),
 
 	//User-defined function Opcodes
-	FCALL(FunctionOp.OPCODE, CPType.FCall),
+	FCALL(FunctionOp.OPCODE, InstructionType.FCall),
 
-	APPEND(Append.OPCODE, CPType.Append),
-	REMOVE("remove", CPType.Append),
+	APPEND(Append.OPCODE, InstructionType.Append),
+	REMOVE("remove", InstructionType.Append),
 
 	//data generation opcodes
-	RANDOM(DataGen.RAND_OPCODE, CPType.Rand),
-	SEQUENCE(DataGen.SEQ_OPCODE, CPType.Rand),
-	STRINGINIT(DataGen.SINIT_OPCODE, CPType.StringInit),
-	SAMPLE(DataGen.SAMPLE_OPCODE, CPType.Rand),
-	TIME(DataGen.TIME_OPCODE, CPType.Rand),
-	FRAME(DataGen.FRAME_OPCODE, CPType.Rand),
+	RANDOM(DataGen.RAND_OPCODE, InstructionType.Rand),
+	SEQUENCE(DataGen.SEQ_OPCODE, InstructionType.Rand),
+	STRINGINIT(DataGen.SINIT_OPCODE, InstructionType.StringInit),
+	SAMPLE(DataGen.SAMPLE_OPCODE, InstructionType.Rand),
+	TIME(DataGen.TIME_OPCODE, InstructionType.Rand),
+	FRAME(DataGen.FRAME_OPCODE, InstructionType.Rand),
 
-	CTABLE("ctable", CPType.Ctable),
-	CTABLEEXPAND("ctableexpand", CPType.Ctable),
+	CTABLE("ctable", InstructionType.Ctable),
+	CTABLEEXPAND("ctableexpand", InstructionType.Ctable),
 
 	//central moment, covariance, quantiles (sort/pick)
-	CM("cm", CPType.CentralMoment),
-	COV("cov", CPType.Covariance),
-	QSORT("qsort", CPType.QSort),
-	QPICK("qpick", CPType.QPick),
+	CM("cm", InstructionType.CentralMoment),
+	COV("cov", InstructionType.Covariance),
+	QSORT("qsort", InstructionType.QSort),
+	QPICK("qpick", InstructionType.QPick),
 
-	RIGHT_INDEX(RightIndex.OPCODE, CPType.MatrixIndexing),
-	LEFT_INDEX(LeftIndex.OPCODE, CPType.MatrixIndexing),
+	RIGHT_INDEX(RightIndex.OPCODE, InstructionType.MatrixIndexing),
+	LEFT_INDEX(LeftIndex.OPCODE, InstructionType.MatrixIndexing),
 
-	TSMM("tsmm", CPType.MMTSJ),
-	PMM("pmm", CPType.PMMJ),
-	MMCHAIN("mmchain", CPType.MMChain),
+	TSMM("tsmm", InstructionType.MMTSJ, InstructionType.TSMM, InstructionType.Tsmm),
+	PMM("pmm", InstructionType.PMMJ, InstructionType.PMM),
+	MMCHAIN("mmchain", InstructionType.MMChain),
 
-	QR("qr", CPType.MultiReturnBuiltin),
-	LU("lu", CPType.MultiReturnBuiltin),
-	EIGEN("eigen", CPType.MultiReturnBuiltin),
-	FFT("fft", CPType.MultiReturnBuiltin),
-	IFFT("ifft", CPType.MultiReturnComplexMatrixBuiltin),
-	FFT_LINEARIZED("fft_linearized", CPType.MultiReturnBuiltin),
-	IFFT_LINEARIZED("ifft_linearized", CPType.MultiReturnComplexMatrixBuiltin),
-	STFT("stft", CPType.MultiReturnComplexMatrixBuiltin),
-	SVD("svd", CPType.MultiReturnBuiltin),
-	RCM("rcm", CPType.MultiReturnComplexMatrixBuiltin),
+	QR("qr", InstructionType.MultiReturnBuiltin),
+	LU("lu", InstructionType.MultiReturnBuiltin),
+	EIGEN("eigen", InstructionType.MultiReturnBuiltin),
+	FFT("fft", InstructionType.MultiReturnBuiltin),
+	IFFT("ifft", InstructionType.MultiReturnComplexMatrixBuiltin),
+	FFT_LINEARIZED("fft_linearized", InstructionType.MultiReturnBuiltin),
+	IFFT_LINEARIZED("ifft_linearized", InstructionType.MultiReturnComplexMatrixBuiltin),
+	STFT("stft", InstructionType.MultiReturnComplexMatrixBuiltin),
+	SVD("svd", InstructionType.MultiReturnBuiltin),
+	RCM("rcm", InstructionType.MultiReturnComplexMatrixBuiltin),
 
-	PARTITION("partition", CPType.Partition),
-	COMPRESS(Compression.OPCODE, CPType.Compression),
-	DECOMPRESS(DeCompression.OPCODE, CPType.DeCompression),
-	SPOOF("spoof", CPType.SpoofFused),
-	PREFETCH("prefetch", CPType.Prefetch),
-	EVICT("_evict", CPType.EvictLineageCache),
-	BROADCAST("broadcast", CPType.Broadcast),
-	TRIGREMOTE("trigremote", CPType.TrigRemote),
-	LOCAL(Local.OPCODE, CPType.Local),
+	PARTITION("partition", InstructionType.Partition),
+	COMPRESS(Compression.OPCODE, InstructionType.Compression, InstructionType.Compression),
+	DECOMPRESS(DeCompression.OPCODE, InstructionType.DeCompression, InstructionType.DeCompression),
+	SPOOF("spoof", InstructionType.SpoofFused),
+	PREFETCH("prefetch", InstructionType.Prefetch),
+	EVICT("_evict", InstructionType.EvictLineageCache),
+	BROADCAST("broadcast", InstructionType.Broadcast),
+	TRIGREMOTE("trigremote", InstructionType.TrigRemote),
+	LOCAL(Local.OPCODE, InstructionType.Local),
 
-	SQL("sql", CPType.Sql);
+	SQL("sql", InstructionType.Sql),
 
-	// Constructor
-	Opcodes(String name, CPType type) {
+	//SP Opcodes
+	MAPMM("mapmm", InstructionType.MAPMM),
+	MAPMMCHAIN("mapmmchain", InstructionType.MAPMMCHAIN),
+	TSMM2("tsmm2", InstructionType.TSMM2),
+	CPMM("cpmm", InstructionType.CPMM),
+	RMM("rmm", InstructionType.RMM),
+	ZIPMM("zipmm", InstructionType.ZIPMM),
+	PMAPMM("pmapmm", InstructionType.PMAPMM),
+
+	MAPLEFTINDEX("mapLeftIndex", InstructionType.MatrixIndexing),
+
+	MAPPLUS("map+", InstructionType.Binary),
+	MAPMINUS("map-", InstructionType.Binary),
+	MAPMULT("map*", InstructionType.Binary),
+	MAPDIV("map/", InstructionType.Binary),
+	MAPMOD("map%%", InstructionType.Binary),
+	MAPINTDIV("map%/%", InstructionType.Binary),
+	MAPMINUS1_MULT("map1-*", InstructionType.Binary),
+	MAPPOW("map^", InstructionType.Binary),
+	MAPPM("map+*", InstructionType.Binary),
+	MAPMINUSMULT("map-*", InstructionType.Binary),
+	MAPDROPINVALIDLENGTH("mapdropInvalidLength", InstructionType.Binary),
+
+	MAPGT("map>", InstructionType.Binary),
+	MAPGE("map>=", InstructionType.Binary),
+	MAPLT("map<", InstructionType.Binary),
+	MAPLE("map<=", InstructionType.Binary),
+	MAPEQ("map==", InstructionType.Binary),
+	MAPNEQ("map!=", InstructionType.Binary),
+
+	MAPAND("map&&", InstructionType.Binary),
+	MAPOR("map||", InstructionType.Binary),
+	MAPXOR("mapxor", InstructionType.Binary),
+	MAPBITWAND("mapbitwAnd", InstructionType.Binary),
+	MAPBITWOR("mapbitwOr", InstructionType.Binary),
+	MAPBITWXOR("mapbitwXor", InstructionType.Binary),
+	MAPBITWSHIFTL("mapbitwShiftL", InstructionType.Binary),
+	MAPBITWSHIFTR("mapbitwShiftR", InstructionType.Binary),
+
+	MAPMAX("mapmax", InstructionType.Binary),
+	MAPMIN("mapmin", InstructionType.Binary),
+
+	//REBLOCK Instruction Opcodes
+	RBLK("rblk", null, InstructionType.Reblock),
+	CSVRBLK("csvrblk", InstructionType.CSVReblock),
+	LIBSVMRBLK("libsvmrblk", InstructionType.LIBSVMReblock),
+
+	//Spark-specific instructions
+	DEFAULTCPOPCODE(Checkpoint.DEFAULT_CP_OPCODE, InstructionType.Checkpoint),
+	ASYNCCPOPCODE(Checkpoint.ASYNC_CP_OPCODE, InstructionType.Checkpoint),
+
+	MAPGROUPEDAGG("mapgroupedagg", InstructionType.ParameterizedBuiltin),
+
+	MAPPEND("mappend", InstructionType.MAppend),
+	RAPPEND("rappend", InstructionType.RAppend),
+	GAPPEND("gappend", InstructionType.GAppend),
+	GALIGNEDAPPEND("galignedappend", InstructionType.GAlignedAppend),
+
+	//quaternary instruction opcodes
+	WEIGHTEDSQUAREDLOSS(WeightedSquaredLoss.OPCODE, InstructionType.Quaternary),
+	WEIGHTEDSQUAREDLOSSR(WeightedSquaredLossR.OPCODE, InstructionType.Quaternary),
+	WEIGHTEDSIGMOID(WeightedSigmoid.OPCODE, InstructionType.Quaternary),
+	WEIGHTEDSIGMOIDR(WeightedSigmoidR.OPCODE, InstructionType.Quaternary),
+	WEIGHTEDDIVMM(WeightedDivMM.OPCODE, InstructionType.Quaternary),
+	WEIGHTEDDIVMMR(WeightedDivMMR.OPCODE, InstructionType.Quaternary),
+	WEIGHTEDCROSSENTROPY(WeightedCrossEntropy.OPCODE, InstructionType.Quaternary),
+	WEIGHTEDCROSSENTROPYR(WeightedCrossEntropyR.OPCODE, InstructionType.Quaternary),
+	WEIGHTEDUNARYMM(WeightedUnaryMM.OPCODE, InstructionType.Quaternary),
+	WEIGHTEDUNARYMMR(WeightedUnaryMMR.OPCODE, InstructionType.Quaternary),
+
+	//cumsum/cumprod/cummin/cummax
+	UCUMACKP("ucumack+", InstructionType.CumsumAggregate),
+	UCUMACM("ucumac*", InstructionType.CumsumAggregate),
+	UCUMACPM("ucumac+*", InstructionType.CumsumAggregate),
+	UCUMACMIN("ucumacmin", InstructionType.CumsumAggregate),
+	UCUMACMAX("ucumacmax", InstructionType.CumsumAggregate),
+	BCUMOFFKP("bcumoffk+", InstructionType.CumsumOffset),
+	BCUMOFFM("bcumoff*", InstructionType.CumsumOffset),
+	BCUMOFFPM("bcumoff+*", InstructionType.CumsumOffset),
+	BCUMOFFMIN("bcumoffmin", InstructionType.CumsumOffset),
+	BCUMOFFMAX("bcumoffmax", InstructionType.CumsumOffset),
+
+	BINUAGGCHAIN("binuaggchain", InstructionType.BinUaggChain),
+
+	CASTDTM("castdtm", InstructionType.Cast),
+	CASTDTF("castdtf", InstructionType.Cast),
+
+	//FED Opcodes
+	FEDINIT("fedinit", InstructionType.Init);
+
+	// Constructors
+	Opcodes(String name, InstructionType type) {
 		this._name = name;
 		this._type = type;
+		this._spType=null;
+		this._fedType=null;
+	}
+
+	Opcodes(String name, InstructionType type, InstructionType spType){
+		this._name=name;
+		this._type=type;
+		this._spType=spType;
+		this._fedType=null;
+	}
+
+	Opcodes(String name, InstructionType type, InstructionType spType, InstructionType fedType){
+		this._name=name;
+		this._type=type;
+		this._spType=spType;
+		this._fedType=fedType;
 	}
 
 	// Fields
 	private final String _name;
-	private final CPType _type;
+	private final InstructionType _type;
+	private final InstructionType _spType;
+	private final InstructionType _fedType;
 
 	private static final Map<String, Opcodes> _lookupMap = new HashMap<>();
 
-	// Initialize lookup map
 	static {
 		for (Opcodes op : EnumSet.allOf(Opcodes.class)) {
-			_lookupMap.put(op.toString(), op);
+			if (op._name != null) {
+				_lookupMap.put(op._name.toLowerCase(), op);
+			}
 		}
 	}
 
@@ -337,16 +439,35 @@ public enum Opcodes {
 		return _name;
 	}
 
-	public CPType getType() {
+	public InstructionType getType() {
 		return _type;
 	}
 
-	public static CPType getCPTypeByOpcode(String opcode) {
+	public InstructionType getSpType() {
+		return _spType != null ? _spType : _type;
+	}
+
+	public InstructionType getFedType(){
+		return _fedType != null ? _fedType : _type;
+	}
+
+	public static InstructionType getTypeByOpcode(String opcode, Types.ExecType type) {
+		if (opcode == null || opcode.trim().isEmpty()) {
+			return null;
+		}
 		for (Opcodes op : Opcodes.values()) {
 			if (op.toString().equalsIgnoreCase(opcode.trim())) {
-				return op.getType();
+				switch (type) {
+					case SPARK:
+						return (op.getSpType() != null) ? op.getSpType() : op.getType();
+					case FED:
+						return (op.getFedType() != null) ? op.getFedType() : op.getType();
+					default:
+						return op.getType();
+				}
 			}
 		}
 		return null;
 	}
 }
+

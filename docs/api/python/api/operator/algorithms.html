@@ -62,11 +62,13 @@
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.WoE"><code class="docutils literal notranslate"><span class="pre">WoE()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.WoEApply"><code class="docutils literal notranslate"><span class="pre">WoEApply()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.abstain"><code class="docutils literal notranslate"><span class="pre">abstain()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.adasyn"><code class="docutils literal notranslate"><span class="pre">adasyn()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.als"><code class="docutils literal notranslate"><span class="pre">als()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.alsCG"><code class="docutils literal notranslate"><span class="pre">alsCG()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.alsDS"><code class="docutils literal notranslate"><span class="pre">alsDS()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.alsPredict"><code class="docutils literal notranslate"><span class="pre">alsPredict()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.alsTopkPredict"><code class="docutils literal notranslate"><span class="pre">alsTopkPredict()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.ampute"><code class="docutils literal notranslate"><span class="pre">ampute()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.arima"><code class="docutils literal notranslate"><span class="pre">arima()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.auc"><code class="docutils literal notranslate"><span class="pre">auc()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.autoencoder_2layer"><code class="docutils literal notranslate"><span class="pre">autoencoder_2layer()</span></code></a></li>
@@ -75,6 +77,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.components"><code class="docutils literal notranslate"><span class="pre">components()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.confusionMatrix"><code class="docutils literal notranslate"><span class="pre">confusionMatrix()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.cor"><code class="docutils literal notranslate"><span class="pre">cor()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.cov"><code class="docutils literal notranslate"><span class="pre">cov()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.cox"><code class="docutils literal notranslate"><span class="pre">cox()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.cspline"><code class="docutils literal notranslate"><span class="pre">cspline()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.csplineCG"><code class="docutils literal notranslate"><span class="pre">csplineCG()</span></code></a></li>
@@ -198,19 +201,24 @@
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.scaleApply"><code class="docutils literal notranslate"><span class="pre">scaleApply()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.scaleMinMax"><code class="docutils literal notranslate"><span class="pre">scaleMinMax()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.selectByVarThresh"><code class="docutils literal notranslate"><span class="pre">selectByVarThresh()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.ses"><code class="docutils literal notranslate"><span class="pre">ses()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.setdiff"><code class="docutils literal notranslate"><span class="pre">setdiff()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.sherlock"><code class="docutils literal notranslate"><span class="pre">sherlock()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.sherlockPredict"><code class="docutils literal notranslate"><span class="pre">sherlockPredict()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.shortestPath"><code class="docutils literal notranslate"><span class="pre">shortestPath()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.sigmoid"><code class="docutils literal notranslate"><span class="pre">sigmoid()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.skewness"><code class="docutils literal notranslate"><span class="pre">skewness()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.sliceLine"><code class="docutils literal notranslate"><span class="pre">sliceLine()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.sliceLineDebug"><code class="docutils literal notranslate"><span class="pre">sliceLineDebug()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.sliceLineExtract"><code class="docutils literal notranslate"><span class="pre">sliceLineExtract()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.slicefinder"><code class="docutils literal notranslate"><span class="pre">slicefinder()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.smape"><code class="docutils literal notranslate"><span class="pre">smape()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.smote"><code class="docutils literal notranslate"><span class="pre">smote()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.softmax"><code class="docutils literal notranslate"><span class="pre">softmax()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.solve"><code class="docutils literal notranslate"><span class="pre">solve()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.split"><code class="docutils literal notranslate"><span class="pre">split()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.splitBalanced"><code class="docutils literal notranslate"><span class="pre">splitBalanced()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.sqrtMatrix"><code class="docutils literal notranslate"><span class="pre">sqrtMatrix()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.stableMarriage"><code class="docutils literal notranslate"><span class="pre">stableMarriage()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.statsNA"><code class="docutils literal notranslate"><span class="pre">statsNA()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.algorithm.steplm"><code class="docutils literal notranslate"><span class="pre">steplm()</span></code></a></li>
@@ -386,6 +394,33 @@ Logistic Regression using Trust Region method</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="systemds.operator.algorithm.adasyn">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">adasyn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.adasyn" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Builtin function for handing class imbalance using Adaptive Synthetic Sampling (ADASYN)
+by Haibo He et. al. In International Joint Conference on Neural Networks (2008). 1322-1328</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> – Feature matrix [shape: n-by-m]</p></li>
+<li><p><strong>Y</strong> – Class labels [shape: n-by-1]</p></li>
+<li><p><strong>k</strong> – Number of nearest neighbors</p></li>
+<li><p><strong>beta</strong> – Desired balance level after generation of synthetic data [0, 1]</p></li>
+<li><p><strong>dth</strong> – Distribution threshold</p></li>
+<li><p><strong>seed</strong> – Seed for randomized data point selection</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Feature matrix of n original rows followed by G = (ml-ms)*beta synthetic rows</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Class labels aligned with output X</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="systemds.operator.algorithm.als">
 <span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">als</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.als" title="Link to this definition"></a></dt>
 <dd><blockquote>
@@ -546,6 +581,12 @@ at least once and all items have been rates at least once.</p>
 <dd class="field-odd"><p>A matrix containing the top-K predicted ratings for the specified users (rows)</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systemds.operator.algorithm.ampute">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">ampute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.ampute" title="Link to this definition"></a></dt>
+<dd><p>This function injects missing values into a multivariate a given dataset, similarly to the ampute() method in R’s MICE package.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -823,6 +864,27 @@ and actual labels. We return both the counts and relative frequency
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Correlation matrix of the input matrix</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systemds.operator.algorithm.cov">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">cov</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="node/scalar.html#systemds.operator.Scalar" title="systemds.operator.nodes.scalar.Scalar"><span class="pre">Scalar</span></a></span></span><a class="headerlink" href="#systemds.operator.algorithm.cov" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Returns the covariance between two 1-dimensional column matrices X and Y. The function takes an optional weights
+parameter W. All column matrices X, Y, and W (when specified) must have the exact same dimension.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> – 1-dimensional column matrices x</p></li>
+<li><p><strong>y</strong> – 1-dimensional column matrices y</p></li>
+<li><p><strong>w</strong> – (optional)  1-dimensional weight column matrix</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Covariance of the input matrices</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2636,7 +2698,7 @@ Related to [SYSTEMDS-2662] dependency function for cleaning pipelines</p>
 <div><p>This builtin function implements incSliceLine, a linear-algebra-based
 ML model debugging technique for finding the top-k data slices where
 a trained models performs significantly worse than on the overall
-dataset. IncSliceLine is designed for scenarios in which training data is updated incrementally. 
+dataset. IncSliceLine is designed for scenarios in which training data is updated incrementally.
 For a detailed description of the SliceLine algorithm and experimental results, see:
 Svetlana Sagadeeva, Matthias Boehm: SliceLine: Fast, Linear-Algebra-based Slice Finding for ML Model Debugging.(SIGMOD 2021)</p>
 </div></blockquote>
@@ -2667,6 +2729,9 @@ the initial minimum-support constraint and/or have zero error</p></li>
 <li><p><strong>prevTK</strong> – previous top-k slices (for incremental updates)</p></li>
 <li><p><strong>prevTKC</strong> – previous top-k scores (for incremental updates)</p></li>
 <li><p><strong>encodeLat</strong> – flag for encoding output lattice for less memory consumption</p></li>
+<li><p><strong>pruningStrat</strong> – pruning strategy: 0 all pruning, 1 all exact pruning,
+2 only score pruning, 3 only max score pruning,
+4 only size pruning, 5 no pruning</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -4279,6 +4344,26 @@ are introduced and columns that contain NaN will not be scaled or shifted.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="systemds.operator.algorithm.ses">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">ses</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.ses" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Builtin function for simple exponential smoothing (SES).</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> – Time series vector [shape: n-by-1]</p></li>
+<li><p><strong>h</strong> – Forecasting horizon</p></li>
+<li><p><strong>alpha</strong> – Smoothing parameter yhat_t = alpha * x_y + (1-alpha) * yhat_t-1</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Forecasts [shape: h-by-1]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="systemds.operator.algorithm.setdiff">
 <span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">setdiff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.setdiff" title="Link to this definition"></a></dt>
 <dd><blockquote>
@@ -4449,6 +4534,46 @@ output to a range between 0 and 1, which will make these functions useful in the
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="systemds.operator.algorithm.sliceLine">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">sliceLine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">e</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.sliceLine" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>This builtin function implements SliceLine, a linear-algebra-based
+ML model debugging technique for finding the top-k data slices where
+a trained models performs significantly worse than on the overall 
+dataset. For a detailed description and experimental results, see:
+Svetlana Sagadeeva, Matthias Boehm: SliceLine: Fast, Linear-Algebra-based
+Slice Finding for ML Model Debugging.(SIGMOD 2021)</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> – Feature matrix in recoded/binned representation</p></li>
+<li><p><strong>e</strong> – Error vector of trained model</p></li>
+<li><p><strong>k</strong> – Number of subsets required</p></li>
+<li><p><strong>maxL</strong> – maximum level L (conjunctions of L predicates), 0 unlimited</p></li>
+<li><p><strong>minSup</strong> – minimum support (min number of rows per slice)</p></li>
+<li><p><strong>alpha</strong> – weight [0,1]: 0 only size, 1 only error</p></li>
+<li><p><strong>tpEval</strong> – flag for task-parallel slice evaluation,
+otherwise data-parallel</p></li>
+<li><p><strong>tpBlksz</strong> – block size for task-parallel execution (num slices)</p></li>
+<li><p><strong>selFeat</strong> – flag for removing one-hot-encoded features that don’t satisfy
+the initial minimum-support constraint and/or have zero error</p></li>
+<li><p><strong>verbose</strong> – flag for verbose debug output</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>top-k slices (k x ncol(X) if successful)</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>score, total/max error, size of slices (k x 4)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>debug matrix, populated with enumeration stats if verbose</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="systemds.operator.algorithm.sliceLineDebug">
 <span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">sliceLineDebug</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">TK</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">TKC</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">tfmeta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/frame.html#systemds.operator.Frame" title="systemds.operator.nodes.frame.Frame"><span class="pre">Frame</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">tfspec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.sliceLineDebug" title="Link to this definition"></a></dt>
 <dd><blockquote>
@@ -4460,7 +4585,7 @@ readable debug output of the resulting top-k slices.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>TK</strong> – top-k slices (k x ncol(X) if successful)</p></li>
-<li><p><strong>TKC</strong> – score, size, error of slices (k x 3)</p></li>
+<li><p><strong>TKC</strong> – score, total/max error, size of slices (k x 4)</p></li>
 <li><p><strong>tfmeta</strong> – transformencode meta data</p></li>
 <li><p><strong>tfspec</strong> – transform specification</p></li>
 </ul>
@@ -4472,14 +4597,40 @@ readable debug output of the resulting top-k slices.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="systemds.operator.algorithm.sliceLineExtract">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">sliceLineExtract</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">e</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">TK</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">TKC</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.sliceLineExtract" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>This builtin function takes the outputs of SliceLine and allows</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> – Feature matrix in recoded/binned representation</p></li>
+<li><p><strong>e</strong> – Error vector of trained model</p></li>
+<li><p><strong>TK</strong> – top-k slices (k x ncol(X) if successful)</p></li>
+<li><p><strong>TKC</strong> – score, total/max error, size of slices (k x 4)</p></li>
+<li><p><strong>k2</strong> – fist k2 slices to extract with k2 &lt;= k</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Selected rows from X which belong to k2 top slices</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Selected rows from e which belong to k2 top slices</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="systemds.operator.algorithm.slicefinder">
 <span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">slicefinder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">e</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.slicefinder" title="Link to this definition"></a></dt>
 <dd><blockquote>
 <div><p>This builtin function implements SliceLine, a linear-algebra-based
 ML model debugging technique for finding the top-k data slices where
-a trained models performs significantly worse than on the overall 
+a trained models performs significantly worse than on the overall
 dataset. For a detailed description and experimental results, see:
-Svetlana Sagadeeva, Matthias Boehm: SliceLine: Fast, Linear-Algebra-based Slice Finding for ML Model Debugging.(SIGMOD 2021)</p>
+Svetlana Sagadeeva, Matthias Boehm: SliceLine: Fast, Linear-Algebra-based
+Slice Finding for ML Model Debugging.(SIGMOD 2021)</p>
 </div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -4577,6 +4728,26 @@ by Nitesh V. Chawla et. al. In Journal of Artificial Intelligence Research 16 (2
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="systemds.operator.algorithm.solve">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></span><a class="headerlink" href="#systemds.operator.algorithm.solve" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Computes the least squares solution for system of linear equations A %*% x = b i.e., it finds x such that
+||A%*%x – b|| is minimized. The solution vector x is computed using a QR decomposition of A.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>a</strong> – (m,n) matrix a</p></li>
+<li><p><strong>b</strong> – (m,1) matrix b</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(n, 1) matrix x</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="systemds.operator.algorithm.split">
 <span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">split</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.split" title="Link to this definition"></a></dt>
 <dd><blockquote>
@@ -4634,6 +4805,26 @@ Related to [SYSTEMDS-2902] dependency function for cleaning pipelines</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Test split of label matrix</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systemds.operator.algorithm.sqrtMatrix">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">sqrtMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">S</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.sqrtMatrix" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Computes the matrix square root B of a matrix A, such that
+A = B %*% B.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>A</strong> – Input Matrix A</p></li>
+<li><p><strong>S</strong> – Strategy (COMMON .. java-based commons-math, DML)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Output Matrix B</p>
 </dd>
 </dl>
 </dd></dl>

@@ -44,16 +44,20 @@ public class TraceTest extends AutomatedTestBase {
 
 	private final static String TEST_DIR = "functions/aggregate/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + TraceTest.class.getSimpleName() + "/";
-	private final static String TEST_GENERAL = "General";
-	private final static String TEST_SCALAR = "Scalar";
+	private final static String TEST_GENERAL = "TraceTest";
+	private final static String TEST_SCALAR = "TraceScalarTest";
+	private final static String TEST_INVALID1 = "TraceInvalid1";
+	private final static String TEST_INVALID2 = "TraceInvalid2";
 
 	@Override
 	public void setUp() {
 		// positive tests
-		addTestConfiguration(TEST_GENERAL, new TestConfiguration(TEST_CLASS_DIR, "TraceTest", new String[] {"b"}));
+		addTestConfiguration(TEST_GENERAL, new TestConfiguration(TEST_CLASS_DIR, TEST_GENERAL, new String[] {"b"}));
 
 		// negative tests
-		addTestConfiguration(TEST_SCALAR, new TestConfiguration(TEST_CLASS_DIR, "TraceScalarTest", new String[] {"b"}));
+		addTestConfiguration(TEST_SCALAR, new TestConfiguration(TEST_CLASS_DIR, TEST_SCALAR, new String[] {"b"}));
+		addTestConfiguration(TEST_INVALID1, new TestConfiguration(TEST_CLASS_DIR, TEST_INVALID1, new String[] {"b"}));
+		addTestConfiguration(TEST_INVALID2, new TestConfiguration(TEST_CLASS_DIR, TEST_INVALID2, new String[] {"b"}));
 	}
 
 	@Test
@@ -85,16 +89,25 @@ public class TraceTest extends AutomatedTestBase {
 
 	@Test
 	public void testScalar() {
-		int scalar = 12;
-
 		TestConfiguration config = getTestConfiguration(TEST_SCALAR);
-		config.addVariable("scalar", scalar);
+		config.addVariable("scalar", 12);
 
 		createHelperMatrix();
-
 		loadTestConfiguration(config);
-
+		runTest(true, LanguageException.class);
+	}
+	
+	@Test
+	public void testInvalid1() {
+		TestConfiguration config = getTestConfiguration(TEST_INVALID1);
+		loadTestConfiguration(config);
 		runTest(true, LanguageException.class);
 	}
 
+	@Test
+	public void testInvalid2() {
+		TestConfiguration config = getTestConfiguration(TEST_INVALID2);
+		loadTestConfiguration(config);
+		runTest(true, LanguageException.class);
+	}
 }

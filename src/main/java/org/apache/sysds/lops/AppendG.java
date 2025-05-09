@@ -19,6 +19,7 @@
 
 package org.apache.sysds.lops;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.common.Types.ExecType;
@@ -38,7 +39,7 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
  */
 public class AppendG extends Lop
 {
-	public static final String OPCODE = "gappend";
+	public static final String OPCODE = Opcodes.GAPPEND.toString();
 	
 	private boolean _cbind = true;
 	

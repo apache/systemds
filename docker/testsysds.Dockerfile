@@ -19,21 +19,20 @@
 #
 #-------------------------------------------------------------
 
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
-# Install Maven
-# Credit https://github.com/Zenika/alpine-maven/blob/7623e76e95af5973fe8397a9cabf17c4eb931ec1/jdk8/Dockerfile
-# InstallR Guide: https://cran.r-project.org/
 
 WORKDIR /usr/src/
-ENV MAVEN_VERSION 3.8.3
-ENV MAVEN_HOME /usr/lib/mvn
-ENV JAVA_HOME /usr/lib/jvm/java-11-openjdk-amd64
-ENV PATH $JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
-ENV LANG en_US.UTF-8
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/
+ENV MAVEN_VERSION=3.9.9
+ENV MAVEN_HOME=/usr/lib/mvn
+
+ENV JAVA_HOME=/usr/lib/jvm/jdk-17.0.15+6
+ENV PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
+
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LD_LIBRARY_PATH=/usr/local/lib/
 
 COPY ./src/test/scripts/installDependencies.R installDependencies.R
 COPY ./docker/entrypoint.sh /entrypoint.sh
@@ -50,6 +49,9 @@ RUN apt-get update -qq \
 		apt-transport-https \
 		wget \
 		ca-certificates \
+		git \
+		cmake \
+		patchelf \
 	&& apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 \
 	&& add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/" \
 	&& apt-get update -qq \
@@ -59,26 +61,25 @@ RUN apt-get update -qq \
 	&& /usr/sbin/update-locale LANG=en_US.UTF-8 \
 	&& mkdir -p /usr/lib/jvm \
 	&& wget -qO- \
-	https://github.com/AdoptOpenJDK/openjdk11-upstream-binaries/releases/download/jdk-11.0.13%2B8/OpenJDK11U-jdk_x64_linux_11.0.13_8.tar.gz | tar xzf - \
-	&& mv openjdk-11.0.13_8 /usr/lib/jvm/java-11-openjdk-amd64 \
+	https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.15%2B6/OpenJDK17U-jdk_x64_linux_hotspot_17.0.15_6.tar.gz  | tar xzf - \
+	&& mv jdk-17.0.15+6 /usr/lib/jvm/jdk-17.0.15+6 \
 	&& wget -qO- \
 	http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xzf - \
-	&& mv apache-maven-$MAVEN_VERSION /usr/lib/mvn \
-	&& apt-get install -y --no-install-recommends \
-		git \
-		cmake \
-		patchelf
+	&& mv apache-maven-$MAVEN_VERSION /usr/lib/mvn
 
+# Install R Base
 RUN apt-get install -y --no-install-recommends \
 		libssl-dev \
 		r-base \
 		r-base-dev \
-		r-base-core \
-	&& Rscript installDependencies.R \
+		r-base-core
+
+# Install R packages
+RUN Rscript installDependencies.R \
 	&& rm -rf installDependencies.R \
 	&& rm -rf /var/lib/apt/lists/*
 
-# SEAL
+# Install SEAL
 RUN wget -qO- https://github.com/microsoft/SEAL/archive/refs/tags/v3.7.0.tar.gz | tar xzf - \
     && cd SEAL-3.7.0 \
     && cmake -S . -B build -DBUILD_SHARED_LIBS=ON \

@@ -414,7 +414,7 @@ public class CostEstimator
 				output = getStatsWithDefaultScalar(vinst.getOutput().getName());
 				CPCostUtils.assignOutputMemoryStats(inst, output, input);
 			}
-			else if (opcode.equals("write")) {
+			else if (opcode.equals(Opcodes.WRITE.toString())) {
 				input = getStatsWithDefaultScalar(vinst.getInput1().getName());
 				time += IOCostUtils.getFileSystemWriteTime(input, driverMetrics); // I/O estimate
 			}

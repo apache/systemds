@@ -32,6 +32,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Builtins;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
@@ -1835,14 +1836,12 @@ public class DMLTranslator
 			constRight = (source.getRight().getOutput() instanceof ConstIdentifier);
 		}
 
-		if (constLeft || constRight) {
-			throw new RuntimeException(source.printErrorLocation() + "Boolean expression with constant unsupported");
-		}
-
-		Hop left = processExpression(source.getLeft(), null, hops);
+		Hop left = !constLeft ? processExpression(source.getLeft(), null, hops) : 
+			new LiteralOp(Boolean.valueOf(source.getLeft().getText().toLowerCase()));
 		Hop right = null;
 		if (source.getRight() != null) {
-			right = processExpression(source.getRight(), null, hops);
+			right = !constRight ? processExpression(source.getRight(), null, hops) :
+				new LiteralOp(Boolean.valueOf(source.getRight().getText().toLowerCase()));
 		}
 
 		//prepare target identifier and ensure that output type is boolean 
@@ -2453,17 +2452,17 @@ public class DMLTranslator
 			String sop = ((StringIdentifier)source.getThirdExpr()).getValue();
 			sop = sop.replace("\"", "");
 			OpOp2 operation;
-			if ( sop.equalsIgnoreCase(">=") )
+			if ( sop.equalsIgnoreCase(Opcodes.GREATEREQUAL.toString()) )
 				operation = OpOp2.GREATEREQUAL;
-			else if ( sop.equalsIgnoreCase(">") )
+			else if ( sop.equalsIgnoreCase(Opcodes.GREATER.toString()) )
 				operation = OpOp2.GREATER;
-			else if ( sop.equalsIgnoreCase("<=") )
+			else if ( sop.equalsIgnoreCase(Opcodes.LESSEQUAL.toString()) )
 				operation = OpOp2.LESSEQUAL;
-			else if ( sop.equalsIgnoreCase("<") )
+			else if ( sop.equalsIgnoreCase(Opcodes.LESS.toString()) )
 				operation = OpOp2.LESS;
-			else if ( sop.equalsIgnoreCase("==") )
+			else if ( sop.equalsIgnoreCase(Opcodes.EQUAL.toString()) )
 				operation = OpOp2.EQUAL;
-			else if ( sop.equalsIgnoreCase("!=") )
+			else if ( sop.equalsIgnoreCase(Opcodes.NOTEQUAL.toString()) )
 				operation = OpOp2.NOTEQUAL;
 			else {
 				throw new ParseException(source.printErrorLocation() + "Unknown argument (" + sop + ") for PPRED.");
@@ -2768,8 +2767,7 @@ public class DMLTranslator
 			if( op == null )
 				throw new HopsException("Unsupported outer vector binary operation: "+((LiteralOp)expr3).getStringValue());
 
-			currBuiltinOp = new BinaryOp(target.getName(), DataType.MATRIX, target.getValueType(), op, expr, expr2);
-			((BinaryOp)currBuiltinOp).setOuterVectorOperation(true); //flag op as specific outer vector operation
+			currBuiltinOp = new BinaryOp(target.getName(), DataType.MATRIX, target.getValueType(), op, expr, expr2, true);
 			currBuiltinOp.refreshSizeInformation(); //force size reevaluation according to 'outer' flag otherwise danger of incorrect dims
 			break;
 

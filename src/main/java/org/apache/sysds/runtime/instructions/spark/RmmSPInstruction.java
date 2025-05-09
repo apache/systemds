@@ -23,6 +23,7 @@ package org.apache.sysds.runtime.instructions.spark;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -58,7 +59,7 @@ public class RmmSPInstruction extends AggregateBinarySPInstruction {
 		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
-		if ( "rmm".equals(opcode) ) {
+		if ( Opcodes.RMM.toString().equals(opcode) ) {
 			CPOperand in1 = new CPOperand(parts[1]);
 			CPOperand in2 = new CPOperand(parts[2]);
 			CPOperand out = new CPOperand(parts[3]);

@@ -438,6 +438,8 @@ public class UtilFunctions {
 		//a very small increment. Hence, we use a different formulation 
 		//that exhibits better numerical stability by avoiding the subtraction
 		//of numbers of different magnitude.
+		//Additionally we check the resulting length and add 1 if this check
+		//allows inferring that round-off errors happened.
 		if( (isSpecial(from) || isSpecial(to) || isSpecial(incr) 
 			|| (from > to && incr > 0) || (from < to && incr < 0)) ) {
 			if( check )
@@ -445,7 +447,11 @@ public class UtilFunctions {
 			else
 				return 0; // invalid loop configuration
 		}
-		return 1L + (long) Math.floor(to/incr - from/incr);
+		long tmp = (long) Math.floor(to/incr - from/incr);
+		if( incr > 0 )
+			return 1L + tmp + ((from+(tmp+1)*incr <= to) ? 1 : 0);
+		else
+			return 1L + tmp + ((from+(tmp+1)*incr >= to) ? 1 : 0);
 	}
 	
 	/**

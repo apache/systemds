@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.quaternary;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -30,7 +31,6 @@ import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.QuaternaryOp;
 import org.apache.sysds.lops.WeightedCrossEntropy;
-import org.apache.sysds.lops.WeightedCrossEntropyR;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
@@ -213,8 +213,8 @@ public class WeightedCrossEntropyTest extends AutomatedTestBase
 				Assert.assertTrue("Missing opcode wcemm", Statistics.getCPHeavyHitterOpCodes().contains(WeightedCrossEntropy.OPCODE_CP));
 			else if( instType == ExecType.SPARK && rewrites ) {
 				Assert.assertTrue("Missing opcode sp_wcemm", 
-						!rep && Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+WeightedCrossEntropy.OPCODE)
-					  || rep && Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+WeightedCrossEntropyR.OPCODE) );
+						!rep && Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+Opcodes.WEIGHTEDCROSSENTROPY)
+					  || rep && Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+ Opcodes.WEIGHTEDCROSSENTROPYR) );
 			}
 		}
 		finally

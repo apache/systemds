@@ -26,6 +26,7 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -64,7 +65,7 @@ public class Tsmm2SPInstruction extends UnarySPInstruction {
 		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		//check supported opcode 
-		if ( !opcode.equalsIgnoreCase("tsmm2") )
+		if ( !opcode.equalsIgnoreCase(Opcodes.TSMM2.toString()) )
 			throw new DMLRuntimeException("Tsmm2SPInstruction.parseInstruction():: Unknown opcode " + opcode);
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);

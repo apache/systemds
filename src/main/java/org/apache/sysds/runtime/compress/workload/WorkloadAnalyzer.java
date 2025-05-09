@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
 
@@ -38,6 +39,8 @@ import org.apache.sysds.common.Types.OpOp3;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.common.Types.ParamBuiltinOp;
 import org.apache.sysds.common.Types.ReOrgOp;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
@@ -81,9 +84,15 @@ public class WorkloadAnalyzer {
 	private final DMLProgram prog;
 	private final Map<Long, Op> treeLookup;
 	private final Stack<Hop> stack;
+	private Stack<StatementBlock> lineage = new Stack<>();
 
 	public static Map<Long, WTreeRoot> getAllCandidateWorkloads(DMLProgram prog) {
 		// extract all compression candidates from program (in program order)
+		String configValue = ConfigurationManager.getDMLConfig()
+				.getTextValue(DMLConfig.COMPRESSED_LINALG_INTERMEDIATE);
+		// if set update it, otherwise keep it as set before
+		ALLOW_INTERMEDIATE_CANDIDATES = configValue != null && Objects.equals(configValue.toUpperCase(), "TRUE") ||
+										configValue == null && ALLOW_INTERMEDIATE_CANDIDATES;
 		List<Hop> candidates = getCandidates(prog);
 
 		// for each candidate, create pruned workload tree
@@ -115,6 +124,7 @@ public class WorkloadAnalyzer {
 		this.overlapping = new HashSet<>();
 		this.treeLookup = new HashMap<>();
 		this.stack = new Stack<>();
+		this.lineage = new Stack<>();
 	}
 
 	private WorkloadAnalyzer(DMLProgram prog, Set<Long> compressed, HashMap<String, Long> transientCompressed,
@@ -235,6 +245,7 @@ public class WorkloadAnalyzer {
 
 	private void createWorkloadTreeNodes(AWTreeNode n, StatementBlock sb, DMLProgram prog, Set<String> fStack) {
 		WTreeNode node;
+		lineage.add(sb);
 		if(sb instanceof FunctionStatementBlock) {
 			FunctionStatementBlock fsb = (FunctionStatementBlock) sb;
 			FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);
@@ -291,7 +302,7 @@ public class WorkloadAnalyzer {
 					if(hop instanceof FunctionOp) {
 						FunctionOp fop = (FunctionOp) hop;
 						if(HopRewriteUtils.isTransformEncode(fop))
-							return;
+							break;
 						else if(!fStack.contains(fop.getFunctionKey())) {
 							fStack.add(fop.getFunctionKey());
 							FunctionStatementBlock fsb = prog.getFunctionStatementBlock(fop.getFunctionKey());
@@ -323,9 +334,11 @@ public class WorkloadAnalyzer {
 					}
 				}
 			}
+			lineage.pop();
 			return;
 		}
 		n.addChild(node);
+		lineage.pop();
 	}
 
 	private void createStack(Hop hop) {
@@ -396,7 +409,22 @@ public class WorkloadAnalyzer {
 					return;
 				}
 				else {
-					o = new OpNormal(hop, false);
+					boolean compressedOut = false;
+					Hop parentHop = hop.getInput(0);
+					if(HopRewriteUtils.isBinary(parentHop, OpOp2.EQUAL, OpOp2.NOTEQUAL, OpOp2.LESS,
+							OpOp2.LESSEQUAL, OpOp2.GREATER, OpOp2.GREATEREQUAL)){
+						Hop leftIn = parentHop.getInput(0);
+						Hop rightIn = parentHop.getInput(1);
+						// input ops might be not in the current statement block -> check for transient reads
+						if(HopRewriteUtils.isAggUnaryOp(leftIn, AggOp.MIN, AggOp.MAX) ||
+								HopRewriteUtils.isAggUnaryOp(rightIn, AggOp.MIN, AggOp.MAX) ||
+								checkTransientRead(hop, leftIn) ||
+								checkTransientRead(hop, rightIn)
+						)
+							compressedOut = true;
+
+					}
+					o = new OpNormal(hop, compressedOut);
 				}
 			}
 			else if(hop instanceof UnaryOp) {
@@ -477,9 +505,17 @@ public class WorkloadAnalyzer {
 						if(!HopRewriteUtils.isBinarySparseSafe(hop))
 							o.setDensifying();
 
+					} else if(HopRewriteUtils.isBinaryMatrixColVectorOperation(hop) ) {
+						Hop leftIn = hop.getInput(0);
+						Hop rightIn = hop.getInput(1);
+						if(HopRewriteUtils.isBinary(hop, OpOp2.DIV) && rightIn instanceof AggUnaryOp && leftIn == rightIn.getInput(0)){
+							o = new OpNormal(hop, true);
+						} else {
+							setDecompressionOnAllInputs(hop, parent);
+							return;
+						}
 					}
 					else if(HopRewriteUtils.isBinaryMatrixMatrixOperation(hop) ||
-						HopRewriteUtils.isBinaryMatrixColVectorOperation(hop) ||
 						HopRewriteUtils.isBinaryMatrixMatrixOperationWithSharedInput(hop)) {
 						setDecompressionOnAllInputs(hop, parent);
 						return;
@@ -621,6 +657,40 @@ public class WorkloadAnalyzer {
 				"Unknown Matrix or Frame Hop:" + hop.getClass().getSimpleName() + "\n" + hop.getDataType() + "\n" + Explain.explain(hop));
 			parent.addOp(new OpNormal(hop, false));
 		}
+	}
+
+	private boolean checkTransientRead(Hop hop, Hop input) {
+		// op is not in current statement block
+		if(HopRewriteUtils.isData(input, OpOpData.TRANSIENTREAD)){
+			String varName = input.getName();
+			StatementBlock csb = lineage.peek();
+			StatementBlock parentStatement = lineage.get(lineage.size() -2);
+
+			if(parentStatement instanceof WhileStatementBlock) {
+				WhileStatementBlock wsb = (WhileStatementBlock) parentStatement;
+				WhileStatement wstmt = (WhileStatement) wsb.getStatement(0);
+				ArrayList<StatementBlock> stmts = wstmt.getBody();
+				boolean foundCurrent = false;
+				StatementBlock sb;
+
+				// traverse statement blocks in reverse to find the statement block, which came before the current
+				// if we iterate in default order, we might find an earlier updated version of the current variable
+				for (int i = stmts.size()-1; i >= 0; i--) {
+					sb = stmts.get(i);
+					if(foundCurrent && sb.variablesUpdated().containsVariable(varName)) {
+						for(Hop cand : sb.getHops()){
+							if(HopRewriteUtils.isData(cand, OpOpData.TRANSIENTWRITE) && cand.getName().equals(varName)
+									&& HopRewriteUtils.isAggUnaryOp( cand.getInput(0), AggOp.MIN, AggOp.MAX)){
+								return true;
+							}
+						}
+					} else if(sb == csb){
+						foundCurrent = true;
+					}
+				}
+			}
+		}
+		return false;
 	}
 
 	private boolean isCompressed(Hop hop) {

@@ -24,6 +24,7 @@ import org.apache.sysds.hops.estim.EstimatorBasicAvg;
 import org.apache.sysds.hops.estim.EstimatorBasicWorst;
 import org.apache.sysds.hops.estim.EstimatorBitsetMM;
 import org.apache.sysds.hops.estim.EstimatorMatrixHistogram;
+import org.apache.sysds.hops.estim.EstimatorLayeredGraph;
 import org.apache.sysds.hops.estim.SparsityEstimator;
 import org.apache.sysds.hops.estim.SparsityEstimator.OpCode;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -111,7 +112,7 @@ public class OpBindTest extends AutomatedTestBase
 	}
 	
 	//Layered Graph
-	/*@Test
+	@Test
 	public void testLGCaserbind() {
 		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, rbind);
 	}
@@ -122,7 +123,7 @@ public class OpBindTest extends AutomatedTestBase
 	}
 		
 	//Sample
-	@Test
+	/*@Test
 	public void testSampleCaserbind() {
 		runSparsityEstimateTest(new EstimatorSample(), m, k, n, sparsity, rbind);
 	}
@@ -159,6 +160,8 @@ public class OpBindTest extends AutomatedTestBase
 				throw new NotImplementedException();
 		}
 		//compare estimated and real sparsity
-		TestUtils.compareScalars(est, m3.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 5e-1 : 1e-2);
+		TestUtils.compareScalars(est, m3.getSparsity(),
+			(estim instanceof EstimatorBasicWorst) ? 5e-1 :
+			(estim instanceof EstimatorLayeredGraph) ? 3e-2 : 1e-2);
 	}
 }

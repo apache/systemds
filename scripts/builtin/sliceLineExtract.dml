@@ -39,7 +39,7 @@
 
 m_sliceLineExtract = function(Matrix[Double] X, Matrix[Double] e,
   Matrix[Double] TK, Matrix[Double] TKC, Integer k2 = -1)
-  return(Matrix[Double] Xtk, Matrix[Double] etk)
+  return(Matrix[Double] Xtk, Matrix[Double] etk, Matrix[Double] I)
 {
   # check valid parameters
   if( k2 > nrow(TK) )
@@ -50,7 +50,7 @@ m_sliceLineExtract = function(Matrix[Double] X, Matrix[Double] e,
   # extract first k2 slices from X and e
   I = matrix(0, k2, nrow(X));
   parfor(i in 1:k2) {
-    I[i,] = t(rowSums(X == TK[i,]) == sum(TK[i,]))
+    I[i,] = t(rowSums(X == TK[i,]) == sum(TK[i,] > 0))
   }
   I = t(colSums(I)); #union
 

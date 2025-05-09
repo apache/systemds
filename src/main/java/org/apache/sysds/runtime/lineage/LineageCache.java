@@ -26,7 +26,9 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.InstructionType;
 import org.apache.sysds.common.Opcodes;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
@@ -45,7 +47,6 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.instructions.Instruction;
-import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ComputationCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -1267,7 +1268,7 @@ public class LineageCache
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		double nflops = 0;
 		String instop= inst.getOpcode().contains(Opcodes.SPOOF.toString()) ? "spoof" : inst.getOpcode();
-		CPType cptype = Opcodes.getCPTypeByOpcode(instop);
+		InstructionType cptype = Opcodes.getTypeByOpcode(instop, Types.ExecType.CP);
 		//TODO: All other relevant instruction types.
 		switch (cptype)
 		{

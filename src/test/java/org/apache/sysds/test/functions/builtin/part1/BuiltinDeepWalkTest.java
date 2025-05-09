@@ -27,6 +27,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 
+
 public class BuiltinDeepWalkTest extends AutomatedTestBase {
 
 	private final static String TEST_NAME = "deepWalk";

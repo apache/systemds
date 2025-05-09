@@ -1,0 +1,299 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# This function injects missing values into a multivariate a given dataset, similarly to the ampute() method in R's MICE package.
+#
+# INPUT:
+# -------------------------------------------------------------------------------------
+# X            a multivariate numeric dataset [shape: n-by-m]
+# prop         a number in the (0, 1] range specifying the proportion of amputed rows across the entire dataset
+# patterns     a pattern matrix of 0's and 1's [shape: k-by-m] where each row corresponds to a pattern. 0 indicates that a variable should have missing values and 1 indicating that a variable should remain complete
+# freq         a vector [length: k] containing the relative frequency with which each pattern in the patterns matrix should occur
+# mech         a string [either "MAR", "MNAR", or "MCAR"] specifying the missingness mechanism. Chosen "MAR" and "MNAR" settings will be overridden if a non-default weight matrix is specified
+# weights      a weight matrix [shape: k-by-m], containing weights that will be used to calculate the weighted sum scores. Will be overridden if mech == "MCAR"
+# seed         a manually defined seed for reproducible RNG
+
+# -------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -------------------------------------------------------------------------------------
+# amputedX     amputed output dataset
+# -------------------------------------------------------------------------------------
+
+m_ampute = function(Matrix[Double] X,
+                    Double prop = 0.5,
+                    Matrix[Double] patterns = matrix(0, 0, 0),
+                    Matrix[Double] freq = matrix(0, 0, 0),
+                    String mech = "MAR",
+                    Matrix[Double] weights = matrix(0, 0, 0),
+                    Integer seed = -1) return(Matrix[Double] amputedX) {
+  # 1. Validate inputs, and set defaults for any empty freq, patterns, or weights matrices:
+  [freq, patterns, weights] = u_validateInputs(X, prop, freq, patterns, mech, weights) # FIX ME
+  # freq = nfreq
+  # patterns = npatterns
+  # weights = nweights
+
+  numSamples = nrow(X)
+  numFeatures = ncol(X)
+  numPatterns = nrow(patterns)
+  [groupAssignments, numPerGroup] = u_randomChoice(numSamples, freq, seed) # Assign samples to groups based on freq vector.
+  amputedX = matrix(0, rows=numSamples, cols=numFeatures + 1) # Create array to hold output.
+
+  parfor (patternNum in 1:numPatterns, check=0) {
+    groupSize = as.scalar(numPerGroup[patternNum])
+    if (groupSize == 0) {
+      print("ampute warning: Zero rows assigned to pattern " + patternNum + ". Consider increasing input data size or pattern frequency?")
+    }
+    else {
+      # 2. Collect group examples and mapping to original indices:
+      [groupSamples, backMapping] = u_getGroupSamples(X, groupAssignments, numSamples, groupSize, numFeatures, patternNum)
+
+      # 3. Get amputation probabilities:
+      sumScores = groupSamples %*% t(weights[patternNum])
+      probs = u_getProbs(sumScores, groupSize, prop)
+
+      # 4. Use probabilities to ampute pattern candidates:
+      random = rand(rows=groupSize, cols=1, min=0, max=1, pdf="uniform", seed=seed)
+      # Obtains matrix with 1's at indices to ampute.
+      amputeds = outer((random <= probs), (1 - patterns[patternNum]), "*")
+      groupSamples = groupSamples + replace(target=amputeds, pattern=1, replacement=NaN)
+
+      # 5. Update output matrix:
+      [start, end] = u_getBounds(numPerGroup, groupSize, patternNum)
+      amputedX[start:end, ] = cbind(groupSamples, backMapping)
+    }
+  }
+
+  # 6. Return amputed data in original order:
+  amputedX = order(target=amputedX, by=numFeatures + 1) # Sort by original indices.
+  amputedX = amputedX[, 1:numFeatures] # Remove index column.
+}
+
+u_validateInputs = function(Matrix[Double] X, Double prop, Matrix[Double] freq, Matrix[Double] patterns, String mech, Matrix[Double] weights)
+return (Matrix[Double] freq, Matrix[Double] patterns, Matrix[Double] weights) {
+
+  errors = list()
+
+  # About the input dataset:
+  if (max(is.na(X)) == 1) {
+    errors = append(errors, "Input dataset cannot contain any NaN values.")
+  }
+  if (ncol(X) < 2) {
+    errors = append(errors, "Input dataset must contain at least two columns. Only contained " + ncol(X) + ". Missingness patterns require multiple variables to be properly generated.")
+  }
+
+  # About mech:
+  if (mech != "MAR" & mech != "MCAR" & mech != "MNAR") {
+    errors = append(errors, "Invalid option provided for mech: " + mech + ".")
+  }
+  else if (!u_isEmpty(weights) & mech == "MCAR") {
+    print("ampute warning: User-provided weights will be ignored when mechanism MCAR is chosen.")
+  }
+
+  # About prop:
+  if (!(0 < prop & prop <= 1)) {
+    errors = append(errors, "Value of prop must be within the range of (0, 1]. Was " + prop + ".")
+  }
+
+  # Set defaults for empty freq, patterns and weights matrices:
+  numFeatures = ncol(X)
+  [freq, patterns, weights] = u_handleDefaults(freq, patterns, weights, mech, numFeatures)
+
+  # About freq:
+  if (nrow(freq) > 1 & ncol(freq) > 1) {
+    errors = append(errors, "freq provided as matrix with dimensions [" + nrow(freq) + ', ' + ncol(freq) + "], but must be a vector.")
+  }
+  else if (ncol(freq) > 1) {
+    freq = t(freq) # Transposes row to column vector for convenience.
+  }
+  if (length(freq) != nrow(patterns)) {
+    errors = append(errors, "Length of freq must be equal to the number of rows in the patterns matrix. freq has length "
+    + length(freq) + " while patterns contains " + nrow(patterns) + " rows.")
+  }
+  if (length(freq) != nrow(weights)) {
+    errors = append(errors, "Length of freq must be equal to the number of rows in the weights matrix. freq has length "
+    + length(freq) + " while weights contains " + nrow(weights) + " rows.")
+  }
+  if (abs(sum(freq) - 1) > 1e-7) {
+    errors = append(errors, "Values in freq vector must approximately sum to 1. Sum was " + sum(freq) + ".")
+  }
+
+  # About patterns
+  if (ncol(X) != ncol(patterns)) {
+    errors = append(errors, "Input dataset must contain the same number of columns as the patterns matrix. Dataset contains "
+    + ncol(X) + " columns while patterns contains " + ncol(patterns) + ".")
+  }
+  if (ncol(patterns) != ncol(weights)) {
+    errors = append(errors, "The patterns matrix must contain the same number of columns as the weights matrix. The patterns matrix contains "
+    + ncol(patterns) + " columns while weights contains " + ncol(weights) + ".")
+  }
+  if (max(patterns != 0 & patterns != 1) > 0) {
+    errorPatterns = rowMaxs(patterns > 1 | patterns < 0)
+    errorPatterns = removeEmpty(target=seq(1, nrow(patterns)), margin="rows", select=errorPatterns)
+    errorString = u_getErrorIndices(errorPatterns)
+    errors = append(errors, "The patterns matrix must contain only values of 0 or 1. The following rows in patterns break this rule: " + errorString + ".")
+  }
+  if (sum(rowMins(patterns)) > 0) {
+    errorPatterns = removeEmpty(target=seq(1, nrow(patterns)), margin="rows", select=rowMins(patterns) == 1)
+    errorString = u_getErrorIndices(errorPatterns)
+    errors = append(errors, "Each row in the patterns matrix must contain at least one value of 0. The following rows in patterns break this rule: " + errorString + ".")
+  }
+
+  # About weights:
+  if (mech != "MCAR" & sum(rowMaxs(weights)) < nrow(weights)) {
+    errorWeights = removeEmpty(target=seq(1, nrow(weights)), margin="rows", select=rowMaxs(weights) == 1)
+    errorString = u_getErrorIndices(errorWeights)
+    errors = append(errors, "Indicated weights of all 0's for some patterns when mechanism isn't MCAR. The following rows in weights break this rule: " + errorString + ".")
+  }
+  if (ncol(X) != ncol(weights)) {
+    errors = append(errors, "Input dataset must contain the same number of columns as the weights matrix. Dataset contains "
+    + ncol(X) + " columns while weights contains " + ncol(weights) + ".")
+  }
+
+  # Collect errors, if any:
+  if (length(errors) > 0) {
+    errorStrings = ""
+    for (i in 1:length(errors)) {
+      errorStrings = errorStrings + "\nampute: " + as.scalar(errors[i])
+    }
+    stop(errorStrings)
+  }
+}
+
+u_handleDefaults = function(Matrix[Double] freq, Matrix[Double] patterns, Matrix[Double] weights, String mech, Integer numFeatures)
+return (Matrix[Double] freq, Matrix[Double] patterns, Matrix[Double] weights) {
+  # Patterns: Default is a quadratic matrix wherein pattern i amputes feature i.
+  if (u_isEmpty(patterns)) {
+    patterns = matrix(1, rows=numFeatures, cols=numFeatures) - diag(matrix(1, rows=numFeatures, cols=1))
+  }
+
+  # Weights: Various defaults based on chosen missingness mechanism:
+  numPatterns = nrow(patterns)
+  if (mech == "MCAR") {
+    weights = matrix(0, rows=numPatterns, cols=numFeatures) # MCAR: All 0's (weights don't matter). Overrides any provided weights.
+  }
+  else if (u_isEmpty(weights)) {
+    if (mech == "MAR") {
+      weights = patterns # MAR: Missing features weighted with 0.
+    }
+    else {
+      weights = 1 - patterns # MNAR case: Observed features weighted with 0.
+    }
+  }
+
+  # Frequencies: Uniform by default.
+  if (u_isEmpty(freq)) {
+    freq = matrix(1 / numPatterns, rows=numPatterns, cols=1)
+  }
+}
+
+u_getErrorIndices = function(Matrix[Double] errorPatterns) return (String errorString) {
+  errorString = ""
+  for (i in 1:length(errorPatterns)) {
+    errorString = errorString + as.integer(as.scalar(errorPatterns[i]))
+    if (i < length(errorPatterns)) {
+      errorString = errorString + ", "
+    }
+  }
+}
+
+u_isEmpty = function(Matrix[Double] X) return (Boolean emptiness) {
+  emptiness = length(X) == 0
+}
+
+# Assigns numSamples to a number of catagories based on the frequencies provided in freq.
+u_randomChoice = function(Integer numSamples, Matrix[Double] freq, Double seed = -1)
+return (Matrix[Double] groupAssignments, Matrix[Double] groupCounts) {
+  numGroups = length(freq)
+  if (numGroups == 1) { # Assigns all samples to the same group.
+    groupCounts = matrix(numSamples, rows=1, cols=1)
+    groupAssignments = matrix(1, rows=numSamples, cols=1)
+  }
+  else { # Assigns based on cumulative probability thresholds:
+    cumSum = rbind(matrix(0, rows=1, cols=1), cumsum(freq)) # For, e.g., freq == [0.1, 0.4, 0.5], we get cumSum = [0.0, 0.1, 0.5, 1.0].
+    random = rand(rows=numSamples, cols=1, min=0, max=1, pdf="uniform", seed=seed)
+    groupCounts = matrix(0, rows=numGroups, cols=1)
+    groupAssignments = matrix(0, rows=numSamples, cols=1)
+
+    for (i in 1:numGroups) {
+      assigned = (random >= cumSum[i]) & (random < cumSum[i + 1])
+      groupCounts[i] = sum(assigned)
+      groupAssignments = groupAssignments + i * assigned
+    }
+  }
+}
+
+u_getGroupSamples = function(Matrix[Double] X, Matrix[Double] groupAssignments, Integer numSamples, Integer groupSize, Integer numFeatures, Integer patternNum)
+return (Matrix[Double] groupSamples, Matrix[Double] backMapping) {
+  mask = groupAssignments == patternNum
+  groupSamples = removeEmpty(target=X, margin="rows", select=mask)
+  backMapping = removeEmpty(target=seq(1, numSamples), margin="rows", select=mask)
+}
+
+# Assigns amputation probabilities to each sample:
+u_getProbs = function(Matrix[Double] sumScores, Integer groupSize, Double prop)
+return(Matrix[Double] probs) {
+  if (length(unique(sumScores)) == 0) { # Checks if weights are all the same value (including the zero-case), as is the case with, e.g., MCAR chosen.
+    probs = matrix(prop, rows=groupSize, cols=1)
+  }
+  else {
+    zScores = scale(X=sumScores)
+    rounded = round(prop * 100) / 100 # Rounds to two decimals for numeric stability.
+    probs = u_binaryShiftSearch(zScores=zScores, prop=rounded)
+  }
+}
+
+# Performs a binary search for the optimum shift transformation to the weighted sum scores in order to obtain the desired missingness proportion.
+u_binaryShiftSearch = function(Matrix[Double] zScores, Double prop)
+return (Matrix[Double] probsArray) {
+  shift = 0
+  counter = 0
+  probsArray = zScores
+  currentProb = NaN
+  lowerRange = -3
+  upperRange = 3
+  epsilon = 0.001
+  maxIter = 100
+
+  while (counter < maxIter & (is.na(currentProb) | abs(currentProb - prop) >= epsilon)) {
+    counter += 1
+    shift = lowerRange + (upperRange - lowerRange) / 2
+    probsArray = sigmoid(zScores + shift) # Calculates Right-Sigmoid probability (R implementation's default).
+    currentProb = mean(probsArray)
+    if (currentProb - prop > 0) {
+      upperRange = shift
+    }
+    else {
+      lowerRange = shift
+    }
+  }
+}
+
+u_getBounds = function(Matrix[Double] numPerGroup, Integer groupSize, Integer patternNum)
+return(Integer start, Integer end) {
+  if (patternNum == 1) {
+    start = 1
+  }
+  else {
+    start = sum(numPerGroup[1:(patternNum - 1), ]) + 1
+  }
+  end = start + groupSize - 1
+}

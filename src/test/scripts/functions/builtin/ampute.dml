@@ -1,0 +1,55 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+seed = $3
+header = $4 == "true"
+prop = $5
+oneRow = $6
+X = read($1, data_type="matrix", format="csv", header=header);
+if (oneRow == "true") {
+  X = X[1, ]
+}
+numRows = nrow(X)
+
+
+# Create three patterns with different probabilities, each amputing a single variable:
+numPatterns = 3
+freq = matrix(1, rows=numPatterns, cols=1)
+for (i in 1:numPatterns) {
+  freq[i, ] = i / 6
+}
+patterns = matrix(1, rows=numPatterns, cols=ncol(X))
+for (i in 1:numPatterns) {
+  patterns[i, i] = 0
+}
+
+res = ampute(X=X, seed=seed, freq=freq, patterns=patterns, prop=prop)
+
+numNaNs = sum(rowMaxs(is.na(res)))
+propNaNs = as.matrix(numNaNs / numRows)
+print("Proportion of total rows amputed (%): " + toString(propNaNs))
+
+groupProps = colSums(is.na(res)) / numNaNs
+print("Proportion of amputed rows by pattern (%): " + toString(groupProps))
+
+output = rbind(propNaNs, t(groupProps))
+
+write(output, $2);

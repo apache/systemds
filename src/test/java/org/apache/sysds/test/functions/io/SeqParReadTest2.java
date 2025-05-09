@@ -73,6 +73,10 @@ import org.apache.sysds.runtime.io.WriterTextCell;
 import org.apache.sysds.runtime.io.WriterTextCellParallel;
 import org.apache.sysds.runtime.io.WriterTextLIBSVM;
 import org.apache.sysds.runtime.io.WriterTextLIBSVMParallel;
+import org.apache.sysds.runtime.io.FrameReaderParquet;
+import org.apache.sysds.runtime.io.FrameReaderParquetParallel;
+import org.apache.sysds.runtime.io.FrameWriterParquet;
+import org.apache.sysds.runtime.io.FrameWriterParquetParallel;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -159,6 +163,10 @@ public class SeqParReadTest2 extends AutomatedTestBase {
 			{true, "libsvm", false, 0.1},
 			{true, "libsvm", true, 0.7},
 			{true, "libsvm", true, 0.1},
+			{false, "parquet", false, 0.7},
+			{false, "parquet", false, 0.1},
+			{false, "parquet", true, 0.7},
+			{false, "parquet", true, 0.1},
 		};
 		return Arrays.asList(data);
 	}
@@ -255,6 +263,7 @@ public class SeqParReadTest2 extends AutomatedTestBase {
 							new FrameWriterTextCSVParallel(new FileFormatPropertiesCSV()) :
 							new FrameWriterTextCSV(new FileFormatPropertiesCSV());
 			case BINARY: return par ? new FrameWriterBinaryBlockParallel() : new FrameWriterBinaryBlock();
+			case PARQUET: return par ? new FrameWriterParquetParallel() : new FrameWriterParquet();
 		}
 		return null;
 	}
@@ -268,6 +277,7 @@ public class SeqParReadTest2 extends AutomatedTestBase {
 							new FrameReaderTextCSVParallel(new FileFormatPropertiesCSV()) :
 							new FrameReaderTextCSV(new FileFormatPropertiesCSV());
 			case BINARY: return par ? new FrameReaderBinaryBlockParallel() : new FrameReaderBinaryBlock();
+			case PARQUET: return par ? new FrameReaderParquetParallel() : new FrameReaderParquet();
 		}
 		return null;
 	}

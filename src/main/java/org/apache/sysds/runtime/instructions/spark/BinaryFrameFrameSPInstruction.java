@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.spark;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.broadcast.Broadcast;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -32,7 +33,7 @@ import scala.Tuple2;
 
 public class BinaryFrameFrameSPInstruction extends BinarySPInstruction {
 	protected BinaryFrameFrameSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
-			String opcode, String istr) {
+											String opcode, String istr) {
 		super(SPType.Binary, op, in1, in2, out, opcode, istr);
 	}
 
@@ -44,22 +45,22 @@ public class BinaryFrameFrameSPInstruction extends BinarySPInstruction {
 		// Get input RDDs
 		JavaPairRDD<Long, FrameBlock> in1 = sec.getFrameBinaryBlockRDDHandleForVariable(input1.getName());
 		JavaPairRDD<Long, FrameBlock> out = null;
-		
-		if(getOpcode().equals("dropInvalidType")) {
+
+		if(getOpcode().equals(Opcodes.DROPINVALIDTYPE.toString())) {
 			// get schema frame-block
 			Broadcast<FrameBlock> fb = sec.getSparkContext().broadcast(sec.getFrameInput(input2.getName()));
 			out = in1.mapValues(new isCorrectbySchema(fb.getValue()));
 			//release input frame
 			sec.releaseFrameInput(input2.getName());
 		}
-		else if(getOpcode().equals("valueSwap")) {
+		else if(getOpcode().equals(Opcodes.VALUESWAP.toString())) {
 			// Perform computation using input frames, and produce the result frame
 			Broadcast<FrameBlock> fb = sec.getSparkContext().broadcast(sec.getFrameInput(input2.getName()));
 			out = in1.mapValues(new valueSwapBySchema(fb.getValue()));
 			// Attach result frame with FrameBlock associated with output_name
 			sec.releaseFrameInput(input2.getName());
 		}
-		else if(getOpcode().equals("applySchema")){
+		else if(getOpcode().equals(Opcodes.APPLYSCHEMA.toString())){
 			Broadcast<FrameBlock> fb = sec.getSparkContext().broadcast(sec.getFrameInput(input2.getName()));
 			out = in1.mapValues(new applySchema(fb.getValue()));
 			sec.releaseFrameInput(input2.getName());
@@ -71,13 +72,13 @@ public class BinaryFrameFrameSPInstruction extends BinarySPInstruction {
 			// check for binary operations
 			out = in1.join(in2).mapValues(new FrameComparison(dop));
 		}
-		
+
 		//set output RDD and maintain dependencies
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
-		if(!getOpcode().equals("dropInvalidType") && //
-			!getOpcode().equals("valueSwap") && //
-			!getOpcode().equals("applySchema"))
+		if(!getOpcode().equals(Opcodes.DROPINVALIDTYPE.toString()) && //
+				!getOpcode().equals(Opcodes.VALUESWAP.toString()) && //
+				!getOpcode().equals(Opcodes.APPLYSCHEMA.toString()))
 			sec.addLineageRDD(output.getName(), input2.getName());
 	}
 

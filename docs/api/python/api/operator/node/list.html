@@ -64,7 +64,6 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">List</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#systemds.operator.List"><code class="docutils literal notranslate"><span class="pre">List</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.List.__init__"><code class="docutils literal notranslate"><span class="pre">List.__init__()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#systemds.operator.List.code_line"><code class="docutils literal notranslate"><span class="pre">List.code_line()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.List.compute"><code class="docutils literal notranslate"><span class="pre">List.compute()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.List.pass_python_data_to_prepared_script"><code class="docutils literal notranslate"><span class="pre">List.pass_python_data_to_prepared_script()</span></code></a></li>
 </ul>
@@ -130,31 +129,9 @@ or construct one using either constructors <cite>array</cite>, <cite>dict</cite>
 <li><p><strong>operation</strong> – The name of the DML function to execute</p></li>
 <li><p><strong>unnamed_input_nodes</strong> – inputs identified by their position, not name</p></li>
 <li><p><strong>named_input_nodes</strong> – inputs with their respective parameter name</p></li>
-<li><p><strong>output_type</strong> – type of the output in DML (double, matrix etc.)</p></li>
-<li><p><strong>is_python_local_data</strong> – if the data is local in python e.g. Numpy arrays</p></li>
-<li><p><strong>number_of_outputs</strong> – If set to other value than 1 then it is expected
+<li><p><strong>is_python_local_data</strong> – if the data is local in python e.g. Numpy arrays
 that this operation node returns multiple values. If set remember to set the output_types value as well.</p></li>
-<li><p><strong>output_types</strong> – The types of output in a multi output scenario.
-Default is None, and means every multi output is a matrix.</p></li>
 </ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="systemds.operator.List.code_line">
-<span class="sig-name descname"><span class="pre">code_line</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unnamed_input_vars</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">named_input_vars</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#systemds.operator.List.code_line" title="Link to this definition"></a></dt>
-<dd><p>Generates the DML code line equal to the intended action of this node.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>var_name</strong> – Name of DML-variable this nodes result should be saved in</p></li>
-<li><p><strong>unnamed_input_vars</strong> – all strings representing the unnamed parameters</p></li>
-<li><p><strong>named_input_vars</strong> – all strings representing the named parameters (name value pairs)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>the DML code line that is equal to this operation</p>
 </dd>
 </dl>
 </dd></dl>

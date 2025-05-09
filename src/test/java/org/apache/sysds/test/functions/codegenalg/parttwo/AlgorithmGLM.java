@@ -22,6 +22,7 @@ package org.apache.sysds.test.functions.codegenalg.parttwo;
 import java.io.File;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.common.Types.ExecType;
@@ -330,7 +331,7 @@ public class AlgorithmGLM extends AutomatedTestBase
 			//HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromHDFS("w");
 			//HashMap<CellIndex, Double> rfile  = readRMatrixFromFS("w");
 			//TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			Assert.assertTrue(heavyHittersContainsSubString("spoof") || heavyHittersContainsSubString("sp_spoof"));
+			Assert.assertTrue(heavyHittersContainsSubString(Opcodes.SPOOF.toString()) || heavyHittersContainsSubString("sp_spoof"));
 		}
 		finally {
 			rtplatform = platformOld;

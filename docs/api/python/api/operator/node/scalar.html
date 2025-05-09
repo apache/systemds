@@ -69,13 +69,22 @@
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Scalar.acos"><code class="docutils literal notranslate"><span class="pre">Scalar.acos()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Scalar.asin"><code class="docutils literal notranslate"><span class="pre">Scalar.asin()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Scalar.atan"><code class="docutils literal notranslate"><span class="pre">Scalar.atan()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Scalar.ceil"><code class="docutils literal notranslate"><span class="pre">Scalar.ceil()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Scalar.code_line"><code class="docutils literal notranslate"><span class="pre">Scalar.code_line()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Scalar.compute"><code class="docutils literal notranslate"><span class="pre">Scalar.compute()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Scalar.cos"><code class="docutils literal notranslate"><span class="pre">Scalar.cos()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Scalar.cosh"><code class="docutils literal notranslate"><span class="pre">Scalar.cosh()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Scalar.exp"><code class="docutils literal notranslate"><span class="pre">Scalar.exp()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Scalar.floor"><code class="docutils literal notranslate"><span class="pre">Scalar.floor()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Scalar.isInf"><code class="docutils literal notranslate"><span class="pre">Scalar.isInf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Scalar.isNA"><code class="docutils literal notranslate"><span class="pre">Scalar.isNA()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Scalar.isNaN"><code class="docutils literal notranslate"><span class="pre">Scalar.isNaN()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Scalar.log"><code class="docutils literal notranslate"><span class="pre">Scalar.log()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Scalar.pass_python_data_to_prepared_script"><code class="docutils literal notranslate"><span class="pre">Scalar.pass_python_data_to_prepared_script()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Scalar.sign"><code class="docutils literal notranslate"><span class="pre">Scalar.sign()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Scalar.sin"><code class="docutils literal notranslate"><span class="pre">Scalar.sin()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Scalar.sinh"><code class="docutils literal notranslate"><span class="pre">Scalar.sinh()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Scalar.sqrt"><code class="docutils literal notranslate"><span class="pre">Scalar.sqrt()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Scalar.tan"><code class="docutils literal notranslate"><span class="pre">Scalar.tan()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Scalar.tanh"><code class="docutils literal notranslate"><span class="pre">Scalar.tanh()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#systemds.operator.Scalar.to_string"><code class="docutils literal notranslate"><span class="pre">Scalar.to_string()</span></code></a></li>
@@ -126,10 +135,10 @@
 the recommended way is to use the methods defined on <code class="docutils literal notranslate"><span class="pre">SystemDSContext</span></code>.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="systemds.operator.Scalar">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">systemds.operator.</span></span><span class="sig-name descname"><span class="pre">Scalar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sds_context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">operation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unnamed_input_nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">named_input_nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../script_building/dag.html#systemds.script_building.dag.OutputType" title="systemds.script_building.dag.OutputType"><span class="pre">OutputType</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">OutputType.DOUBLE</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assign</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.Scalar" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">systemds.operator.</span></span><span class="sig-name descname"><span class="pre">Scalar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sds_context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">operation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unnamed_input_nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">named_input_nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assign</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.Scalar" title="Link to this definition"></a></dt>
 <dd><dl class="py method">
 <dt class="sig sig-object py" id="systemds.operator.Scalar.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sds_context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">operation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unnamed_input_nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">named_input_nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../../script_building/dag.html#systemds.script_building.dag.OutputType" title="systemds.script_building.dag.OutputType"><span class="pre">OutputType</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">OutputType.DOUBLE</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assign</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Scalar" title="systemds.operator.Scalar"><span class="pre">Scalar</span></a></span></span><a class="headerlink" href="#systemds.operator.Scalar.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sds_context</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">operation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unnamed_input_nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">named_input_nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assign</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Scalar" title="systemds.operator.Scalar"><span class="pre">Scalar</span></a></span></span><a class="headerlink" href="#systemds.operator.Scalar.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create general <cite>OperationNode</cite></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -138,12 +147,8 @@ the recommended way is to use the methods defined on <code class="docutils liter
 <li><p><strong>operation</strong> – The name of the DML function to execute</p></li>
 <li><p><strong>unnamed_input_nodes</strong> – inputs identified by their position, not name</p></li>
 <li><p><strong>named_input_nodes</strong> – inputs with their respective parameter name</p></li>
-<li><p><strong>output_type</strong> – type of the output in DML (double, matrix etc.)</p></li>
-<li><p><strong>is_python_local_data</strong> – if the data is local in python e.g. Numpy arrays</p></li>
-<li><p><strong>number_of_outputs</strong> – If set to other value than 1 then it is expected
+<li><p><strong>is_python_local_data</strong> – if the data is local in python e.g. Numpy arrays
 that this operation node returns multiple values. If set remember to set the output_types value as well.</p></li>
-<li><p><strong>output_types</strong> – The types of output in a multi output scenario.
-Default is None, and means every multi output is a matrix.</p></li>
 </ul>
 </dd>
 </dl>
@@ -186,6 +191,17 @@ Default is None, and means every multi output is a matrix.</p></li>
 <dt class="sig sig-object py" id="systemds.operator.Scalar.atan">
 <span class="sig-name descname"><span class="pre">atan</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Scalar" title="systemds.operator.nodes.scalar.Scalar"><span class="pre">Scalar</span></a></span></span><a class="headerlink" href="#systemds.operator.Scalar.atan" title="Link to this definition"></a></dt>
 <dd><p>Calculate arctan.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><cite>Scalar</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systemds.operator.Scalar.ceil">
+<span class="sig-name descname"><span class="pre">ceil</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Scalar" title="systemds.operator.nodes.scalar.Scalar"><span class="pre">Scalar</span></a></span></span><a class="headerlink" href="#systemds.operator.Scalar.ceil" title="Link to this definition"></a></dt>
+<dd><p>Return the ceiling of the input, element-wise.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><cite>Scalar</cite> representing operation</p>
@@ -252,6 +268,71 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="systemds.operator.Scalar.exp">
+<span class="sig-name descname"><span class="pre">exp</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Scalar" title="systemds.operator.nodes.scalar.Scalar"><span class="pre">Scalar</span></a></span></span><a class="headerlink" href="#systemds.operator.Scalar.exp" title="Link to this definition"></a></dt>
+<dd><p>Calculate exponential.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><cite>Scalar</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systemds.operator.Scalar.floor">
+<span class="sig-name descname"><span class="pre">floor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Scalar" title="systemds.operator.nodes.scalar.Scalar"><span class="pre">Scalar</span></a></span></span><a class="headerlink" href="#systemds.operator.Scalar.floor" title="Link to this definition"></a></dt>
+<dd><p>Return the floor of the input, element-wise.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><cite>Scalar</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systemds.operator.Scalar.isInf">
+<span class="sig-name descname"><span class="pre">isInf</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Scalar" title="systemds.operator.nodes.scalar.Scalar"><span class="pre">Scalar</span></a></span></span><a class="headerlink" href="#systemds.operator.Scalar.isInf" title="Link to this definition"></a></dt>
+<dd><p>Computes a boolean indicator matrix of the same shape as the input, indicating where Inf (positive or
+negative infinity) values are located.
+:return: the OperationNode representing this operation</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systemds.operator.Scalar.isNA">
+<span class="sig-name descname"><span class="pre">isNA</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Scalar" title="systemds.operator.nodes.scalar.Scalar"><span class="pre">Scalar</span></a></span></span><a class="headerlink" href="#systemds.operator.Scalar.isNA" title="Link to this definition"></a></dt>
+<dd><p>Computes a boolean indicator matrix of the same shape as the input, indicating where NA (not available)
+values are located. Currently, NA is only capturing NaN values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the OperationNode representing this operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systemds.operator.Scalar.isNaN">
+<span class="sig-name descname"><span class="pre">isNaN</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Scalar" title="systemds.operator.nodes.scalar.Scalar"><span class="pre">Scalar</span></a></span></span><a class="headerlink" href="#systemds.operator.Scalar.isNaN" title="Link to this definition"></a></dt>
+<dd><p>Computes a boolean indicator matrix of the same shape as the input, indicating where NaN (not a number)
+values are located.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the OperationNode representing this operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systemds.operator.Scalar.log">
+<span class="sig-name descname"><span class="pre">log</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Scalar" title="systemds.operator.nodes.scalar.Scalar"><span class="pre">Scalar</span></a></span></span><a class="headerlink" href="#systemds.operator.Scalar.log" title="Link to this definition"></a></dt>
+<dd><p>Calculate logarithm.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><cite>Scalar</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="systemds.operator.Scalar.pass_python_data_to_prepared_script">
 <span class="sig-name descname"><span class="pre">pass_python_data_to_prepared_script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prepared_script</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">JavaObject</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#systemds.operator.Scalar.pass_python_data_to_prepared_script" title="Link to this definition"></a></dt>
 <dd><p>Passes data from python to the prepared script object.</p>
@@ -262,6 +343,18 @@ all operations are only building the DAG without actually executing (lazy evalua
 <li><p><strong>var_name</strong> – the variable name the data should get in java</p></li>
 <li><p><strong>prepared_script</strong> – the prepared script</p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systemds.operator.Scalar.sign">
+<span class="sig-name descname"><span class="pre">sign</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Scalar" title="systemds.operator.nodes.scalar.Scalar"><span class="pre">Scalar</span></a></span></span><a class="headerlink" href="#systemds.operator.Scalar.sign" title="Link to this definition"></a></dt>
+<dd><p>Returns a the signs of the input,
+where 1 represents positive, 0 represents zero, and -1 represents negative.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><cite>Scalar</cite> representing operation</p>
 </dd>
 </dl>
 </dd></dl>
@@ -281,6 +374,17 @@ all operations are only building the DAG without actually executing (lazy evalua
 <dt class="sig sig-object py" id="systemds.operator.Scalar.sinh">
 <span class="sig-name descname"><span class="pre">sinh</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Scalar" title="systemds.operator.nodes.scalar.Scalar"><span class="pre">Scalar</span></a></span></span><a class="headerlink" href="#systemds.operator.Scalar.sinh" title="Link to this definition"></a></dt>
 <dd><p>Calculate sin.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><cite>Scalar</cite> representing operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="systemds.operator.Scalar.sqrt">
+<span class="sig-name descname"><span class="pre">sqrt</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Scalar" title="systemds.operator.nodes.scalar.Scalar"><span class="pre">Scalar</span></a></span></span><a class="headerlink" href="#systemds.operator.Scalar.sqrt" title="Link to this definition"></a></dt>
+<dd><p>Calculate square root.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><cite>Scalar</cite> representing operation</p>

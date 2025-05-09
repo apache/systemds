@@ -599,7 +599,6 @@ public class ParForProgramBlock extends ForProgramBlock {
 		//OPTIMIZATION of ParFOR body (incl all child parfor PBs)
 		///////
 		if( _optMode != POptMode.NONE ) {
-			OptimizationWrapper.setLogLevel(_optLogLevel); //set optimizer log level
 			OptimizationWrapper.optimize(_optMode, sb, this, ec, _numRuns); //core optimize
 		}
 
@@ -835,8 +834,7 @@ public class ParForProgramBlock extends ForProgramBlock {
 	{
 		// Step 0) check and compile to CP (if forced remote parfor)
 		boolean flagForced = false;
-		if( FORCE_CP_ON_REMOTE_SPARK && (_optMode == POptMode.NONE 
-			|| (_optMode == POptMode.CONSTRAINED && _execMode==PExecMode.REMOTE_SPARK)) ) {
+		if( FORCE_CP_ON_REMOTE_SPARK && _execMode==PExecMode.REMOTE_SPARK ) {
 			//tid = 0  because replaced in remote parworker
 			flagForced = checkSparkAndRecompileToCP(0);
 		}

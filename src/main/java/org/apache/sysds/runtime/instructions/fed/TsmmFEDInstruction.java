@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.fed;
 
 import java.util.concurrent.Future;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -67,7 +68,7 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 	public static TsmmFEDInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		if(!opcode.equalsIgnoreCase("tsmm"))
+		if(!opcode.equalsIgnoreCase(Opcodes.TSMM.toString()))
 			throw new DMLRuntimeException("TsmmFedInstruction.parseInstruction():: Unknown opcode " + opcode);
 
 		InstructionUtils.checkNumFields(parts, 3, 4, 5);

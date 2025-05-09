@@ -390,7 +390,7 @@ public class DataOp extends Hop {
 			   || _op == OpOpData.TRANSIENTREAD ) 
 			{
 				double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
-				ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+				ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity, getDataType());
 			}
 			// output memory estimate is not required for "write" nodes (just input)
 		}

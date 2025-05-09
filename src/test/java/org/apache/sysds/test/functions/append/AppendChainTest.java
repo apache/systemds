@@ -23,7 +23,6 @@ import java.util.HashMap;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -104,15 +103,10 @@ public class AppendChainTest extends AutomatedTestBase
 	public void commonAppendTest(ExecMode platform, int rows, int cols1, int cols2, int cols3, boolean sparse)
 	{
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
-		ExecMode prevPlfm=rtplatform;
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		ExecMode prevPlfm=setExecMode(platform);
 		
 		try
 		{
-			rtplatform = platform;
-			if( rtplatform == ExecMode.SPARK )
-				DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-			
 			config.addVariable("rows", rows);
 			config.addVariable("cols", cols1);
 	
@@ -150,8 +144,7 @@ public class AppendChainTest extends AutomatedTestBase
 			}
 		}
 		finally {
-			rtplatform = prevPlfm;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			resetExecMode(prevPlfm);
 		}
 	}
 }

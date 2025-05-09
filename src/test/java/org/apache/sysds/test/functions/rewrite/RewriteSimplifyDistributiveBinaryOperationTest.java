@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -86,6 +87,11 @@ public class RewriteSimplifyDistributiveBinaryOperationTest extends AutomatedTes
 	public void testDistrBinaryOpMultAddRewrite() {
 		testSimplifyDistributiveBinaryOperation(4, true);    //pattern: (Y*X+X) -> (Y+1)*X
 	}
+	
+	@Test
+	public void testDistrBinaryOpMultMinusVectorRewrite() {
+		testSimplifyDistributiveBinaryOperation(5, true);    //pattern: (X*Y-X) -> (Y+1)*X, Y vector
+	}
 
 	private void testSimplifyDistributiveBinaryOperation(int ID, boolean rewrites) {
 		boolean oldFlag1 = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -104,7 +110,7 @@ public class RewriteSimplifyDistributiveBinaryOperationTest extends AutomatedTes
 
 			//create matrices
 			double[][] X = getRandomMatrix(rows, cols, -1, 1, 0.60d, 3);
-			double[][] Y = getRandomMatrix(rows, cols, -1, 1, 0.60d, 5);
+			double[][] Y = getRandomMatrix(rows, ID==5?1:cols, -1, 1, 0.60d, 5);
 			writeInputMatrixWithMTD("X", X, true);
 			writeInputMatrixWithMTD("Y", Y, true);
 
@@ -122,9 +128,9 @@ public class RewriteSimplifyDistributiveBinaryOperationTest extends AutomatedTes
 			 */
 
 			if(rewrites)
-				Assert.assertTrue(Statistics.getCPHeavyHitterCount("*") == 1);
+				Assert.assertTrue(Statistics.getCPHeavyHitterCount(Opcodes.MULT.toString()) == 1);
 			else
-				Assert.assertTrue(Statistics.getCPHeavyHitterCount("*") == 2);
+				Assert.assertTrue(Statistics.getCPHeavyHitterCount(Opcodes.MULT.toString()) == 2);
 
 		}
 		finally {

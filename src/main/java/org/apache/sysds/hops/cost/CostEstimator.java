@@ -388,7 +388,7 @@ public abstract class CostEstimator
 			setUnknownStats(vs);
 			
 			VariableCPInstruction varinst = (VariableCPInstruction) inst;
-			if( varinst.getOpcode().equals("write") ) {
+			if( varinst.getOpcode().equals(Opcodes.WRITE.toString()) ) {
 				//special handling write of matrix objects (non existing if scalar)
 				if( stats.containsKey( varinst.getInput1().getName() ) )
 					vs[0] = stats.get( varinst.getInput1().getName() );	

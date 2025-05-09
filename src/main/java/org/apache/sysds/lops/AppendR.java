@@ -19,6 +19,7 @@
 
 package org.apache.sysds.lops;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.DataType;
@@ -27,7 +28,7 @@ import org.apache.sysds.common.Types.ValueType;
 
 public class AppendR extends Lop
 {	
-	public static final String OPCODE = "rappend";
+	public static final String OPCODE = Opcodes.RAPPEND.toString();
 	
 	private boolean _cbind = true;
 	

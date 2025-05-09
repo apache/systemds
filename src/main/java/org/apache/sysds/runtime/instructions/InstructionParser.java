@@ -19,12 +19,10 @@
 
 package org.apache.sysds.runtime.instructions;
 
+import org.apache.sysds.common.InstructionType;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
-import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
-import org.apache.sysds.runtime.instructions.spark.SPInstruction.SPType;
 
 public class InstructionParser 
 {
@@ -36,12 +34,12 @@ public class InstructionParser
 		switch( et ) {
 			case CP:
 			case CP_FILE: 
-				CPType cptype = InstructionUtils.getCPType(str);
+				InstructionType cptype = InstructionUtils.getCPType(str);
 				if( cptype == null )
 					throw new DMLRuntimeException("Unknown CP instruction: " + str);
 				return CPInstructionParser.parseSingleInstruction (cptype, str);
 			case SPARK: 
-				SPType sptype = InstructionUtils.getSPType(str);
+				InstructionType sptype = InstructionUtils.getSPType(str);
 				if( sptype == null )
 					throw new DMLRuntimeException("Unknown SPARK instruction: " + str);
 				return SPInstructionParser.parseSingleInstruction (sptype, str);
@@ -51,7 +49,7 @@ public class InstructionParser
 					throw new DMLRuntimeException("Unknown GPU instruction: " + str);
 				return GPUInstructionParser.parseSingleInstruction (gputype, str);
 			case FED: 
-				FEDInstruction.FEDType fedtype = InstructionUtils.getFEDType(str);
+				InstructionType fedtype = InstructionUtils.getFEDType(str);
 				if( fedtype == null )
 					throw new DMLRuntimeException("Unknown FEDERATED instruction: " + str);
 				return FEDInstructionParser.parseSingleInstruction (fedtype, str);

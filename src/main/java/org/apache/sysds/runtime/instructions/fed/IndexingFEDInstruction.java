@@ -28,13 +28,12 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
-import org.apache.sysds.lops.LeftIndex;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.RightIndex;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
@@ -98,7 +97,7 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
-		if(opcode.equalsIgnoreCase(RightIndex.OPCODE)) {
+		if(opcode.equalsIgnoreCase(Opcodes.RIGHT_INDEX.toString())) {
 			if(parts.length == 7 || parts.length == 8) {
 				CPOperand in, rl, ru, cl, cu, out;
 				in = new CPOperand(parts[1]);
@@ -117,7 +116,7 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
 			}
 		}
-		else if(opcode.equalsIgnoreCase(LeftIndex.OPCODE) || opcode.equalsIgnoreCase("mapLeftIndex")) {
+		else if(opcode.equalsIgnoreCase(Opcodes.LEFT_INDEX.toString()) || opcode.equalsIgnoreCase("mapLeftIndex")) {
 			if ( parts.length == 8 || parts.length == 9) {
 				CPOperand lhsInput, rhsInput, rl, ru, cl, cu, out;
 				lhsInput = new CPOperand(parts[1]);
@@ -145,7 +144,7 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		if(getOpcode().equalsIgnoreCase(RightIndex.OPCODE))
+		if(getOpcode().equalsIgnoreCase(Opcodes.RIGHT_INDEX.toString()))
 			rightIndexing(ec);
 		else
 			leftIndexing(ec);

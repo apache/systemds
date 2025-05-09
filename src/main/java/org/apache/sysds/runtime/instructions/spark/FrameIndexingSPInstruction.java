@@ -22,10 +22,9 @@ package org.apache.sysds.runtime.instructions.spark;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.lops.LeftIndex;
-import org.apache.sysds.lops.RightIndex;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -75,7 +74,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 		IndexRange ixrange = new IndexRange(rl, ru, cl, cu);
 		
 		//right indexing
-		if( opcode.equalsIgnoreCase(RightIndex.OPCODE) )
+		if( opcode.equalsIgnoreCase(Opcodes.RIGHT_INDEX.toString()) )
 		{
 			//update and check output dimensions
 			DataCharacteristics mcIn = sec.getDataCharacteristics(input1.getName());
@@ -104,7 +103,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 				sec.getFrameObject(input1.getName()).getSchema((int)cl, (int)cu));
 		}
 		//left indexing
-		else if ( opcode.equalsIgnoreCase(LeftIndex.OPCODE) || opcode.equalsIgnoreCase("mapLeftIndex"))
+		else if ( opcode.equalsIgnoreCase(Opcodes.LEFT_INDEX.toString()) || opcode.equalsIgnoreCase(Opcodes.MAPLEFTINDEX.toString()))
 		{
 			JavaPairRDD<Long,FrameBlock> in1 = sec.getFrameBinaryBlockRDDHandleForVariable( input1.getName() );
 			PartitionedBroadcast<FrameBlock> broadcastIn2 = null;
@@ -128,7 +127,7 @@ public class FrameIndexingSPInstruction extends IndexingSPInstruction {
 				throw new DMLRuntimeException("Invalid index range of leftindexing: ["+rl+":"+ru+","+cl+":"+cu+"] vs ["+mcRight.getRows()+"x"+mcRight.getCols()+"]." );
 			}
 			
-			if(opcode.equalsIgnoreCase("mapLeftIndex")) 
+			if(opcode.equalsIgnoreCase(Opcodes.MAPLEFTINDEX.toString()))
 			{
 				broadcastIn2 = sec.getBroadcastForFrameVariable( input2.getName());
 				

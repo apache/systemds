@@ -20,6 +20,7 @@
 package org.apache.sysds.resource.enumeration;
 
 import org.apache.hadoop.util.Lists;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.resource.CloudInstance;
 import org.apache.sysds.resource.ResourceCompiler;
 import org.apache.sysds.runtime.controlprogram.*;
@@ -327,7 +328,7 @@ public class PruneBasedEnumerator extends Enumerator {
 			Instruction.IType iType = inst.getType();
 			if (iType.equals(Instruction.IType.SPARK)) {
 				String opcode = inst.getOpcode();
-				if (!(opcode.contains("rblk") || opcode.contains("chkpoint"))) {
+				if (!(opcode.contains(Opcodes.RBLK.toString()) || opcode.contains("chkpoint"))) {
 					// reblock and checkpoint instructions may occur in a program
 					// compiled for hybrid execution mode but without effective Spark instruction
 					return true;

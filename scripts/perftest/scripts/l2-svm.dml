@@ -1,0 +1,40 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+fmt = ifdef($fmt, "text")
+icpt = ifdef($icpt, 0)
+tol = ifdef($tol, 0.001)
+reg = ifdef($reg, 1.0)
+maxiter = ifdef($maxiter, 100)
+
+tol = as.double ($tol);
+X = read($X)
+Y = read($Y)
+
+model = l2svm(X = X, Y = Y, intercept = icpt, epsilon = tol, reg = reg, maxIterations = maxiter, verbose = FALSE)
+
+extra_model_params = matrix(0, rows=2, cols=ncol(model))
+extra_model_params[1, 1] = icpt
+extra_model_params[2, 1] = ncol(X)
+
+w = t(cbind(t(model), t(extra_model_params)))
+
+write(w, $model, format=fmt)

@@ -31,7 +31,7 @@ class Context(Representation):
         Parent class for different context operations
         :param name: Name of the context operator
         """
-        super().__init__(name) # TODO add parameters
+        super().__init__(name, parameters)
 
     @abc.abstractmethod
     def execute(self, modality: Modality):

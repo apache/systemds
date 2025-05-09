@@ -22,6 +22,7 @@ import numpy as np
 import math
 
 from systemds.scuro.modality.type import DataLayout
+
 # from systemds.scuro.drsearch.operator_registry import register_context_operator
 from systemds.scuro.representations.aggregate import Aggregation
 from systemds.scuro.representations.context import Context

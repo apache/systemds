@@ -41,7 +41,9 @@ class ResNet(UnimodalRepresentation):
     def __init__(self, layer="avgpool", model_name="ResNet18", output_file=None):
         self.model_name = model_name
         parameters = self._get_parameters()
-        super().__init__("ResNet", ModalityType.TIMESERIES, parameters) # TODO: TIMESERIES only for videos - images would be handled as EMBEDDIGN
+        super().__init__(
+            "ResNet", ModalityType.TIMESERIES, parameters
+        )  # TODO: TIMESERIES only for videos - images would be handled as EMBEDDIGN
 
         self.output_file = output_file
         self.layer_name = layer

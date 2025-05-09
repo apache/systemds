@@ -38,7 +38,9 @@ else:
 
 class ResNet(UnimodalRepresentation):
     def __init__(self, layer="avgpool", model_name="ResNet18", output_file=None):
-        super().__init__("ResNet")
+        self.model_name = model_name
+        parameters = self._get_parameters()
+        super().__init__("ResNet", ModalityType.TIMESERIES, parameters) # TODO: TIMESERIES only for videos - images would be handled as EMBEDDIGN
 
         self.output_file = output_file
         self.layer_name = layer
@@ -81,6 +83,25 @@ class ResNet(UnimodalRepresentation):
             )
         else:
             raise NotImplementedError
+
+    def _get_parameters(self, high_level=True):
+        parameters = {"model_name": [], "layer_name": []}
+        for m in ["ResNet18", "ResNet34", "ResNet50", "ResNet101", "ResNet152"]:
+            parameters["model_name"].append(m)
+
+        if high_level:
+            parameters["layer_name"] = [
+                "conv1",
+                "layer1",
+                "layer2",
+                "layer3",
+                "layer4",
+                "avgpool",
+            ]
+        else:
+            for name, layer in self.model.named_modules():
+                parameters["layer_name"].append(name)
+        return parameters
 
     def transform(self, modality):
 

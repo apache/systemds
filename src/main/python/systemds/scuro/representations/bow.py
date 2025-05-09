@@ -27,8 +27,9 @@ from systemds.scuro.representations.utils import save_embeddings
 
 
 class BoW(UnimodalRepresentation):
-    def __init__(self, ngram_range, min_df, output_file=None):
-        super().__init__("BoW")
+    def __init__(self, ngram_range=2, min_df=2, output_file=None):
+        parameters = {"ngram_range": [ngram_range], "min_df": [min_df]}
+        super().__init__("BoW", ModalityType.EMBEDDING, parameters)
         self.ngram_range = ngram_range
         self.min_df = min_df
         self.output_file = output_file

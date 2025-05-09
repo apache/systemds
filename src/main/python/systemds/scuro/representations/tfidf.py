@@ -27,8 +27,9 @@ from systemds.scuro.representations.utils import save_embeddings
 
 
 class TfIdf(UnimodalRepresentation):
-    def __init__(self, min_df, output_file=None):
-        super().__init__("TF-IDF")
+    def __init__(self, min_df=2, output_file=None):
+        parameters = {"min_df": [min_df]}
+        super().__init__("TF-IDF", ModalityType.EMBEDDING, parameters)
         self.min_df = min_df
         self.output_file = output_file
 

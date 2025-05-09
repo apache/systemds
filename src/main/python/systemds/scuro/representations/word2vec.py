@@ -40,8 +40,13 @@ def get_embedding(sentence, model):
 
 
 class W2V(UnimodalRepresentation):
-    def __init__(self, vector_size, min_count, window, output_file=None):
-        super().__init__("Word2Vec")
+    def __init__(self, vector_size=3, min_count=2, window=2, output_file=None):
+        parameters = {
+            "vector_size": [vector_size],
+            "min_count": [min_count],
+            "window": [window],
+        }  # TODO
+        super().__init__("Word2Vec", ModalityType.EMBEDDING, parameters)
         self.vector_size = vector_size
         self.min_count = min_count
         self.window = window

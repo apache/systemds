@@ -28,8 +28,16 @@ from systemds.scuro.representations.unimodal import UnimodalRepresentation
 
 
 class MelSpectrogram(UnimodalRepresentation):
-    def __init__(self):
-        super().__init__("MelSpectrogram")
+    def __init__(self, n_mels=128, hop_length=512, n_fft=2048):
+        parameters = {
+            "n_mels": [20, 32, 64, 128],
+            "hop_length": [256, 512, 1024, 2048],
+            "n_fft": [1024, 2048, 4096],
+        }
+        super().__init__("MelSpectrogram", ModalityType.TIMESERIES, parameters)
+        self.n_mels = n_mels
+        self.hop_length = hop_length
+        self.n_fft = n_fft
 
     def transform(self, modality):
         transformed_modality = TransformedModality(

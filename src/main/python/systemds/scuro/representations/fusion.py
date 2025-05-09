@@ -27,12 +27,12 @@ from systemds.scuro.representations.representation import Representation
 
 
 class Fusion(Representation):
-    def __init__(self, name):
+    def __init__(self, name, parameters=None):
         """
         Parent class for different multimodal fusion types
         :param name: Name of the fusion type
         """
-        super().__init__(name)
+        super().__init__(name, parameters)
 
     def transform(self, modalities: List[Modality]):
         """

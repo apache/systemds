@@ -29,8 +29,10 @@ from systemds.scuro.representations.utils import save_embeddings
 
 
 class Bert(UnimodalRepresentation):
-    def __init__(self, output_file=None):
-        super().__init__("Bert")
+    def __init__(self, model_name="bert", output_file=None):
+        parameters = {"model_name": "bert"}
+        self.model_name = model_name
+        super().__init__("Bert", ModalityType.EMBEDDING, parameters)
 
         self.output_file = output_file
 

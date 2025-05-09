@@ -26,12 +26,12 @@ from systemds.scuro.representations.representation import Representation
 
 
 class Context(Representation):
-    def __init__(self, name, parameters):
+    def __init__(self, name, parameters = None):
         """
         Parent class for different context operations
         :param name: Name of the context operator
         """
-        super().__init__(name, parameters)
+        super().__init__(name) # TODO add parameters
 
     @abc.abstractmethod
     def execute(self, modality: Modality):

@@ -25,6 +25,7 @@ from systemds.scuro.representations.utils import save_embeddings
 from gensim.models import Word2Vec
 from gensim.utils import tokenize
 
+from systemds.scuro.modality.type import ModalityType
 import nltk
 
 nltk.download("punkt_tab")

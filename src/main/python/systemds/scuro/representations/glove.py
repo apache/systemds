@@ -24,6 +24,7 @@ from gensim.utils import tokenize
 
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import read_data_from_file, save_embeddings
+from systemds.scuro.modality.type import ModalityType
 
 
 def load_glove_embeddings(file_path):

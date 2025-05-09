@@ -26,6 +26,7 @@ from systemds.scuro.representations.unimodal import UnimodalRepresentation
 import torch
 from transformers import BertTokenizer, BertModel
 from systemds.scuro.representations.utils import save_embeddings
+from systemds.scuro.modality.type import ModalityType
 
 
 class Bert(UnimodalRepresentation):

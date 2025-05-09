@@ -25,6 +25,7 @@ from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import save_embeddings
 
+from systemds.scuro.modality.type import ModalityType
 
 class TfIdf(UnimodalRepresentation):
     def __init__(self, min_df=2, output_file=None):

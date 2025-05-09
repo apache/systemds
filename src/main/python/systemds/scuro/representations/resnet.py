@@ -27,6 +27,7 @@ import torch
 import torchvision.models as models
 import torchvision.transforms as transforms
 import numpy as np
+from systemds.scuro.modality.type import ModalityType
 
 if torch.backends.mps.is_available():
     DEVICE = torch.device("mps")

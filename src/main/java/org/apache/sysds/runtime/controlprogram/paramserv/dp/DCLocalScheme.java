@@ -53,7 +53,8 @@ public class DCLocalScheme extends DataPartitionLocalScheme {
 	}
 
 	private static List<MatrixObject> doPartitioning(int k, MatrixBlock mb) {
-		return partition(k, mb).stream().map(ParamservUtils::newMatrixObject).collect(Collectors.toList());
+		return partition(k, mb).stream()
+			.map(m -> ParamservUtils.newMatrixObject(m, false)).collect(Collectors.toList());
 	}
 
 	@Override

@@ -49,7 +49,9 @@ public class SparkDataPartitionerTest extends BaseDataPartitionerTest {
 
 	private Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> doPartitioning(Statement.PSScheme scheme) {
 		MatrixBlock[] mbs = generateData();
-		return SparkParamservUtils.doPartitionOnSpark(_sec, ParamservUtils.newMatrixObject(mbs[0]), ParamservUtils.newMatrixObject(mbs[1]), scheme, WORKER_NUM).collectAsMap();
+		return SparkParamservUtils.doPartitionOnSpark(_sec,
+			ParamservUtils.newMatrixObject(mbs[0], false), 
+			ParamservUtils.newMatrixObject(mbs[1]), scheme, WORKER_NUM).collectAsMap();
 	}
 
 	@Test

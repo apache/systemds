@@ -103,12 +103,6 @@ jobs:
         ARTIFACT_NAME=${ARTIFACT_NAME//\*/x} # replace * with x
         echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
 
-    - name: Merge Jacoco SingleTest Artifacts
-      run: |
-        chown $(whoami) target/jacoco.exec
-        mvn jacoco:merge
-  
-
     - name: Save Java Test Coverage as Artifact
       uses: actions/upload-artifact@v4
       with:

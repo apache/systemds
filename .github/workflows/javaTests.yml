@@ -104,7 +104,9 @@ jobs:
         echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
 
     - name: Merge Jacoco SingleTest Artifacts
-      run: mvn jacoco:merge
+      run: |
+        chown $(whoami) target/jacoco.exec
+        mvn jacoco:merge
   
 
     - name: Save Java Test Coverage as Artifact

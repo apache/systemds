@@ -832,19 +832,6 @@ public class Connection implements Closeable
 	 * FrameBlock object. The column names in the meta data file 'column.names' is processed
 	 * with default separator ','.
 	 * 
-	 * @param metapath  hdfs file path to meta data directory
-	 * @return FrameBlock object representing transform metadata
-	 * @throws IOException if IOException occurs
-	 */
-	public FrameBlock readTransformMetaDataFromFile(String metapath) throws IOException {
-		return readTransformMetaDataFromFile(null, metapath, TfUtils.TXMTD_SEP);
-	}
-	
-	/**
-	 * Reads transform meta data from an HDFS file path and converts it into an in-memory
-	 * FrameBlock object. The column names in the meta data file 'column.names' is processed
-	 * with default separator ','.
-	 * 
 	 * @param spec      transform specification as json string
 	 * @param metapath  hdfs file path to meta data directory
 	 * @return FrameBlock object representing transform metadata

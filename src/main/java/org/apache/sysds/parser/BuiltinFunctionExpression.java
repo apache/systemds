@@ -2011,7 +2011,7 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 				output.setValueType(id.getValueType());
 			}
 			else
-				raiseValidateError("Compress/DeCompress instruction not allowed in dml script");
+				raiseValidateError("The compress or decompress instruction is not allowed in dml scripts");
 			break;
 		case QUANTIZE_COMPRESS:
 			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_QUANTIZE_COMPRESS_COMMAND) {
@@ -2039,6 +2039,8 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 					}
 				}
 			}
+			else 
+				raiseValidateError("The quantize_compress instruction not allowed in dml scripts");
 			break;
 
 		case ROW_COUNT_DISTINCT:

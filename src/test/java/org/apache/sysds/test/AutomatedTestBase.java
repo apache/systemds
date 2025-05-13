@@ -1672,7 +1672,6 @@ public abstract class AutomatedTestBase {
 
 		for(String arg : jvmArgs) {
 			// add code coverage report
-			System.out.println(arg);
 			if(arg.contains("org.jacoco.agent"))
 				args = ArrayUtils.addAll(args,
 					new String[] {arg.replace("target/jacoco.exec", String.format("target/jacoco-%d.exec", port))});

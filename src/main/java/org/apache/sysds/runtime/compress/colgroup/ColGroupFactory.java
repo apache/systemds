@@ -617,11 +617,9 @@ public class ColGroupFactory {
 	private AColGroup directCompressDDC(IColIndex colIndexes, CompressedSizeInfoColGroup cg) throws Exception {
 		// testing multicol
 		if(colIndexes.size() > 1) {
-			LOG.debug("DDC multi column");
 			return directCompressDDCMultiCol(colIndexes, cg);
 		}
 		else {
-			LOG.debug("DDC single column");
 			return directCompressDDCSingleCol(colIndexes, cg);
 		}
 	}
@@ -665,11 +663,9 @@ public class ColGroupFactory {
 		final DblArrayCountHashMap map = new DblArrayCountHashMap(Math.max(cg.getNumVals(), 64));
 		boolean extra;
 		if(nRow < CompressionSettings.PAR_DDC_THRESHOLD || k < csi.getNumberColGroups() || pool == null) {
-			LOG.debug("Non parallel");
 			extra = readToMapDDC(colIndexes, map, d, 0, nRow, fill);
 		}
 		else {
-			LOG.debug("Parallel");
 			extra = parallelReadToMapDDC(colIndexes, map, d, nRow, fill, k);
 		}
 

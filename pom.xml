@@ -459,7 +459,7 @@
 						<fileSet>
 							<directory>${project.build.directory}</directory>
 							<includes>
-								<include>*/jacoco.exec</include>
+								<include>*.exec</include>
 							</includes>
 						</fileSet>
 					</fileSets>

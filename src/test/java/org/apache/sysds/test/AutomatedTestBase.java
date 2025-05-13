@@ -28,6 +28,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.charset.Charset;
@@ -1663,9 +1665,22 @@ public abstract class AutomatedTestBase {
 			"--add-opens=java.base/java.lang=ALL-UNNAMED" ,
 			"--add-opens=java.base/java.lang.ref=ALL-UNNAMED" ,
 			"--add-opens=java.base/java.util.concurrent=ALL-UNNAMED" ,
-			"--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
+			"--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",};
+
+		RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+		List<String> jvmArgs = runtimeMxBean.getInputArguments();
+
+		for(String arg : jvmArgs) {
+			// add code coverage report
+			System.out.println(arg);
+			if(arg.contains("org.jacoco.agent"))
+				args = ArrayUtils.addAll(args,
+					new String[] {arg.replace("target/jacoco.exec", String.format("target/jacoco-%d.exec", port))});
+		}
+
+		args = ArrayUtils.addAll(args, new String[]{
 			"-cp", classpath,
-				DMLScript.class.getName(), "-w", Integer.toString(port), "-stats"};
+				DMLScript.class.getName(), "-w", Integer.toString(port), "-stats"});
 		if(addArgs != null)
 			args = ArrayUtils.addAll(args, addArgs);
 		

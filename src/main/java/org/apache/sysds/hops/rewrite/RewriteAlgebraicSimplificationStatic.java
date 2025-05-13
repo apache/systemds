@@ -200,7 +200,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = simplifyCumsumColOrFullAggregates(hi);          //e.g., colSums(cumsum(X)) -> cumSums(X*seq(nrow(X),1))
 			hi = simplifyCumsumReverse(hop, hi, i);              //e.g., rev(cumsum(rev(X))) -> X + colSums(X) - cumsum(X)
 			hi = simplifyNegatedSubtraction(hop, hi, i);         //e.g., -(B-A)->A-B
-			hi = simplifyTransposeAddition(hop, hi, i);          //e.g., t(A+1)+2 -> t(A)+1+2 -> t(A)+3
+			hi = simplifyTransposeAddition(hop, hi, i);          //e.g., t(A+s1)+s2 -> t(A)+(s1+s2) + potential constant folding
 			hi = simplifyNotOverComparisons(hop, hi, i);         //e.g., !(A>B) -> (A<=B)
 			//hi = removeUnecessaryPPred(hop, hi, i);            //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 
@@ -213,95 +213,46 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 	}
 
 	private static Hop simplifyTransposeAddition(Hop parent, Hop hi, int pos) {
-		if (!(hi instanceof BinaryOp)
-				|| ((BinaryOp)hi).getOp() != OpOp2.PLUS
-				|| hi.getDataType() != DataType.MATRIX)
-			return hi;
-
-		BinaryOp bop = (BinaryOp)hi;
-
-		ReorgOp tSide = null;
-		LiteralOp litSide = null;
-		Hop in0 = bop.getInput().get(0), in1 = bop.getInput().get(1);
-		if (in0 instanceof ReorgOp && ((ReorgOp)in0).getOp() == ReOrgOp.TRANS
-				&& in1 instanceof LiteralOp) {
-			tSide = (ReorgOp)in0;
-			litSide = (LiteralOp)in1;
+		//pattern: t(A+s1)+s2 -> t(A)+(s1+s2), and subsequent constant folding
+		if (HopRewriteUtils.isBinary(hi, OpOp2.PLUS) 
+			&& hi.isMatrix() && hi.getInput(1).isScalar()
+			&& HopRewriteUtils.isReorg(hi.getInput(0), ReOrgOp.TRANS)
+			&& hi.getInput(0).getParent().size() == 1
+			&& HopRewriteUtils.isBinary(hi.getInput(0).getInput(0), OpOp2.PLUS)
+			&& hi.getInput(0).getInput(0).getParent().size() == 1
+			&& (hi.getInput(0).getInput(0).getInput(0).isScalar()
+				|| hi.getInput(0).getInput(0).getInput(1).isScalar()))
+		{
+			int six = hi.getInput(0).getInput(0).getInput(0).isScalar() ? 0 : 1;
+			Hop A = hi.getInput(0).getInput(0).getInput(six==0 ? 1 : 0);
+			Hop s1 = hi.getInput(0).getInput(0).getInput(six);
+			Hop s2 = hi.getInput(1);
+			
+			Hop tA = HopRewriteUtils.createTranspose(A);
+			Hop s12 = HopRewriteUtils.createBinary(s1, s2, OpOp2.PLUS);
+			Hop newHop = HopRewriteUtils.createBinary(tA, s12, OpOp2.PLUS);
+			
+			HopRewriteUtils.replaceChildReference(parent, hi, newHop, pos);
+			HopRewriteUtils.cleanupUnreferenced(hi);
+			hi = newHop;
+			
+			LOG.debug("Applied simplifyTransposeAddition (line " + hi.getBeginLine() + ").");
 		}
-		else if (in1 instanceof ReorgOp && ((ReorgOp)in1).getOp() == ReOrgOp.TRANS
-				&& in0 instanceof LiteralOp) {
-			tSide = (ReorgOp)in1;
-			litSide = (LiteralOp)in0;
-		}
-		else
-			return hi;
-
-		//check if only consumer
-		if (tSide.getParent().size() > 1) {
-			return hi;
-		}
-
-		Hop inner = tSide.getInput().get(0);
-		if (!(inner instanceof BinaryOp)
-				|| ((BinaryOp)inner).getOp() != OpOp2.PLUS
-				|| inner.getDataType() != DataType.MATRIX)
-			return hi;
-
-		BinaryOp ib = (BinaryOp)inner;
-
-		Hop X = null;
-		LiteralOp lit1 = null;
-		Hop i0 = ib.getInput().get(0), i1 = ib.getInput().get(1);
-		if (i0 instanceof LiteralOp) {
-			lit1 = (LiteralOp)i0;
-			X = i1;
-		}
-		else if (i1 instanceof LiteralOp) {
-			lit1 = (LiteralOp)i1;
-			X = i0;
-		}
-		else
-			return hi;
-
-		double c = lit1.getDoubleValue() + litSide.getDoubleValue();
-
-		ReorgOp newT = HopRewriteUtils.createTranspose(X);
-		newT.setDim1(tSide.getDim1());
-		newT.setDim2(tSide.getDim2());
-
-		LiteralOp newLit = new LiteralOp(c);
-		newLit.setDim1(1);
-		newLit.setDim2(1);
-
-		//creating new binaryOp
-		BinaryOp newPlus = HopRewriteUtils.createBinary(newT, newLit, OpOp2.PLUS);
-		newPlus.setDim1(bop.getDim1());
-		newPlus.setDim2(bop.getDim2());
-
-		HopRewriteUtils.replaceChildReference(parent, bop, newPlus, pos);
-		HopRewriteUtils.cleanupUnreferenced(bop, tSide, ib, litSide);
-
-		LOG.debug("Applied simplifyTransposeAddition (line " + hi.getBeginLine() + ").");
-
-		return newPlus;
+		
+		return hi;
 	}
 
 	private static Hop simplifyNegatedSubtraction(Hop parent, Hop hi, int pos) {
-		if (hi instanceof BinaryOp
-				&& ((BinaryOp) hi).getOp() == OpOp2.MINUS
-				&& HopRewriteUtils.isLiteralOfValue(hi.getInput().get(0), 0)
-				&& hi.getParent().size() == 1
-				&& hi.getInput().get(1) instanceof BinaryOp
-				&& ((BinaryOp) hi.getInput().get(1)).getOp() == OpOp2.MINUS
-				&& hi.getInput().get(1).getParent().size() == 1)
+		//pattern: -(B-A)->A-B, but only of (B-A) consumed once
+		if (HopRewriteUtils.isBinary(hi, OpOp2.MINUS) 
+			&& HopRewriteUtils.isLiteralOfValue(hi.getInput(0), 0)
+			&& HopRewriteUtils.isBinary(hi.getInput(1), OpOp2.MINUS)
+			&& hi.getInput().get(1).getParent().size() == 1)
 		{
-			Hop innerMinus = hi.getInput().get(1);
-			Hop B = innerMinus.getInput().get(0);
-			Hop A = innerMinus.getInput().get(1);
+			Hop B = hi.getInput(1).getInput(0);
+			Hop A = hi.getInput(1).getInput(1);
 
 			BinaryOp newHop = HopRewriteUtils.createBinary(A, B, OpOp2.MINUS);
-
-			HopRewriteUtils.copyLineNumbers(hi, newHop);
 			HopRewriteUtils.replaceChildReference(parent, hi, newHop, pos);
 			HopRewriteUtils.cleanupUnreferenced(hi);
 			hi = newHop;

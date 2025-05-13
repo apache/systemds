@@ -21,6 +21,7 @@
 A = read($1);
 
 # Compute t(A+1)+2 which should be rewritten to t(A)+3
-result = t(A+1)+2;
+for(i in 1:2)
+  result = t(A+1)+2;
 
 write(result, $2);

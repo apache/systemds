@@ -82,8 +82,8 @@ public class RewriteSimplifyTransposeAdditionTest extends AutomatedTestBase {
 			HashMap<CellIndex, Double> r = readRMatrixFromExpectedDir("R");
 
 			Assert.assertEquals("DML and R outputs do not match", r, dml);
-			if( rewriteEnabled )
-				Assert.assertEquals(1, Statistics.getCPHeavyHitterCount("+"));
+			if( rewriteEnabled ) //no rewrite: 4 (2x2), rewrite: 3 (constant folding, 2x1)
+				Assert.assertEquals(3, Statistics.getCPHeavyHitterCount("+"));
 		}
 		finally {
 			// Reset optimizer flags

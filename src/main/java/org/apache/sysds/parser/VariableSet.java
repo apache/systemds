@@ -38,7 +38,8 @@ public class VariableSet
 	}
 	
 	public void addVariable(String name, DataIdentifier id) {
-		_variables.put(name,id);
+		if( name != null ) // for robustness
+			_variables.put(name,id);
 	}
 	
 	public void addVariables(VariableSet vs) {

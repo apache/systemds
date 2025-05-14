@@ -20,17 +20,19 @@
 # -------------------------------------------------------------
 from typing import List
 
+import numpy as np
+
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.representation import Representation
 
 
 class Fusion(Representation):
-    def __init__(self, name):
+    def __init__(self, name, parameters=None):
         """
         Parent class for different multimodal fusion types
         :param name: Name of the fusion type
         """
-        super().__init__(name)
+        super().__init__(name, parameters)
 
     def transform(self, modalities: List[Modality]):
         """
@@ -47,10 +49,20 @@ class Fusion(Representation):
         :param modalities: List of modalities
         :return: maximum embedding size
         """
-        max_size = modalities[0].data.shape[1]
+        if isinstance(modalities[0].data[0], list):
+            max_size = modalities[0].data[0][0].shape[1]
+        elif isinstance(modalities[0].data, np.ndarray):
+            max_size = modalities[0].data.shape[1]
+        else:
+            max_size = modalities[0].data[0].shape[1]
         for idx in range(1, len(modalities)):
-            curr_shape = modalities[idx].data.shape
-            if len(modalities[idx - 1].data) != curr_shape[0]:
+            if isinstance(modalities[idx].data[0], list):
+                curr_shape = modalities[idx].data[0][0].shape
+            elif isinstance(modalities[idx].data, np.ndarray):
+                curr_shape = modalities[idx].data.shape
+            else:
+                curr_shape = modalities[idx].data[0].shape
+            if len(modalities[idx - 1].data) != len(modalities[idx].data):
                 raise f"Modality sizes don't match!"
             elif curr_shape[1] > max_size:
                 max_size = curr_shape[1]

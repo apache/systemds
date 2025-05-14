@@ -46,7 +46,6 @@ class TestUnimodalRepresentations(unittest.TestCase):
     video = None
     data_generator = None
     num_instances = 0
-    indizes = []
 
     @classmethod
     def setUpClass(cls):
@@ -69,7 +68,7 @@ class TestUnimodalRepresentations(unittest.TestCase):
             self.data_generator.get_modality_path(ModalityType.AUDIO),
             self.data_generator.indices,
         )
-        audio = UnimodalModality(audio_data_loader, ModalityType.AUDIO)
+        audio = UnimodalModality(audio_data_loader)
 
         for representation in audio_representations:
             r = audio.apply_representation(representation)
@@ -82,20 +81,19 @@ class TestUnimodalRepresentations(unittest.TestCase):
             self.data_generator.get_modality_path(ModalityType.VIDEO),
             self.data_generator.indices,
         )
-        video = UnimodalModality(video_data_loader, ModalityType.VIDEO)
+        video = UnimodalModality(video_data_loader)
         for representation in video_representations:
             r = video.apply_representation(representation)
             assert r.data is not None
             assert len(r.data) == self.num_instances
 
     def test_text_representations(self):
-        # TODO: check params fro BOW, W2V, TfIdf
         test_representations = [BoW(2, 2), W2V(5, 2, 2), TfIdf(2), Bert()]
         text_data_loader = TextLoader(
             self.data_generator.get_modality_path(ModalityType.TEXT),
             self.data_generator.indices,
         )
-        text = UnimodalModality(text_data_loader, ModalityType.TEXT)
+        text = UnimodalModality(text_data_loader)
 
         for representation in test_representations:
             r = text.apply_representation(representation)
@@ -109,11 +107,12 @@ class TestUnimodalRepresentations(unittest.TestCase):
             self.data_generator.indices,
             chunk_size=2,
         )
-        video = UnimodalModality(video_data_loader, ModalityType.VIDEO)
+        video = UnimodalModality(video_data_loader)
         for representation in video_representations:
             r = video.apply_representation(representation)
             assert r.data is not None
             assert len(r.data) == self.num_instances
+            assert len(r.metadata) == self.num_instances
 
 
 if __name__ == "__main__":

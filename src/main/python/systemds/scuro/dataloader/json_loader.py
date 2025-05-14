@@ -20,6 +20,7 @@
 # -------------------------------------------------------------
 import json
 
+from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.dataloader.base_loader import BaseLoader
 from typing import Optional, List, Union
 
@@ -32,7 +33,7 @@ class JSONLoader(BaseLoader):
         field: str,
         chunk_size: Optional[int] = None,
     ):
-        super().__init__(source_path, indices, chunk_size)
+        super().__init__(source_path, indices, chunk_size, ModalityType.TEXT)
         self.field = field
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
@@ -40,4 +41,8 @@ class JSONLoader(BaseLoader):
         with open(file) as f:
             json_file = json.load(f)
             for idx in index:
-                self.data.append(json_file[idx][self.field])
+                sentence = json_file[idx][self.field]
+                self.data.append(sentence)
+                self.metadata[idx] = self.modality_type.create_text_metadata(
+                    len(sentence), sentence
+                )

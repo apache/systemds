@@ -19,28 +19,25 @@
 #
 # -------------------------------------------------------------
 import abc
+from typing import List
 
+from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.representation import Representation
 
 
-class UnimodalRepresentation(Representation):
-    def __init__(self, name: str, output_modality_type, parameters=None):
+class Context(Representation):
+    def __init__(self, name, parameters=None):
         """
-        Parent class for all unimodal representation types
-        :param name: name of the representation
-        :param parameters: parameters of the representation; name of the parameter and
-        possible parameter values
+        Parent class for different context operations
+        :param name: Name of the context operator
         """
         super().__init__(name, parameters)
-        self.output_modality_type = output_modality_type
-        if parameters is None:
-            parameters = {}
 
     @abc.abstractmethod
-    def transform(self, data):
-        raise f"Not implemented for {self.name}"
-
-
-class PixelRepresentation(UnimodalRepresentation):
-    def __init__(self):
-        super().__init__("Pixel")
+    def execute(self, modality: Modality):
+        """
+        Implemented for every child class and creates a contextualized representation for a given modality
+        :param modality: modality to use
+        :return: contextualized data
+        """
+        raise f"Not implemented for Context Operator: {self.name}"

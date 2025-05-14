@@ -18,29 +18,24 @@
 # under the License.
 #
 # -------------------------------------------------------------
-import abc
-
+import os
+import pickle
+from typing import List, Dict, Any, Union
+import tempfile
 from systemds.scuro.representations.representation import Representation
 
 
-class UnimodalRepresentation(Representation):
-    def __init__(self, name: str, output_modality_type, parameters=None):
-        """
-        Parent class for all unimodal representation types
-        :param name: name of the representation
-        :param parameters: parameters of the representation; name of the parameter and
-        possible parameter values
-        """
-        super().__init__(name, parameters)
-        self.output_modality_type = output_modality_type
-        if parameters is None:
-            parameters = {}
+class ModalityIdentifier:
+    """ """
 
-    @abc.abstractmethod
-    def transform(self, data):
-        raise f"Not implemented for {self.name}"
+    _instance = None
+    id = -1
 
+    def __new__(cls):
+        if not cls._instance:
+            cls._instance = super().__new__(cls)
+        return cls._instance
 
-class PixelRepresentation(UnimodalRepresentation):
-    def __init__(self):
-        super().__init__("Pixel")
+    def new_id(self):  # TODO: make threadsafe when parallelizing
+        self.id += 1
+        return self.id

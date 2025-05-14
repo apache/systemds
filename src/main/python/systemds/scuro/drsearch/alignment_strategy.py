@@ -18,7 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from aligner.similarity_measures import Measure
+from drsearch.similarity_measures import Measure
 
 
 class AlignmentStrategy:

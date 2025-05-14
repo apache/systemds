@@ -26,6 +26,7 @@ from gensim.models import Word2Vec
 from gensim.utils import tokenize
 
 from systemds.scuro.modality.type import ModalityType
+from systemds.scuro.drsearch.operator_registry import register_representation
 import nltk
 
 nltk.download("punkt_tab")
@@ -40,6 +41,7 @@ def get_embedding(sentence, model):
     return np.mean(vectors, axis=0) if vectors else np.zeros(model.vector_size)
 
 
+@register_representation(ModalityType.TEXT)
 class W2V(UnimodalRepresentation):
     def __init__(self, vector_size=3, min_count=2, window=2, output_file=None):
         parameters = {
@@ -71,5 +73,5 @@ class W2V(UnimodalRepresentation):
 
         if self.output_file is not None:
             save_embeddings(np.array(embeddings), self.output_file)
-        transformed_modality.data = np.array(embeddings)
+        transformed_modality.data = embeddings
         return transformed_modality

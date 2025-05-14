@@ -18,10 +18,10 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from aligner.alignment_strategy import AlignmentStrategy
+from drsearch.alignment_strategy import AlignmentStrategy
 from modality.modality import Modality
 from modality.representation import Representation
-from aligner.similarity_measures import Measure
+from drsearch.similarity_measures import Measure
 
 
 class Alignment:

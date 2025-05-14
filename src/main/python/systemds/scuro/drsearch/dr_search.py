@@ -22,7 +22,7 @@ import itertools
 import random
 from typing import List
 
-from systemds.scuro.aligner.task import Task
+from systemds.scuro.drsearch.task import Task
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.representation import Representation
 

@@ -18,27 +18,32 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import numpy as np
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
-from systemds.scuro.representations.utils import read_data_from_file, save_embeddings
+from systemds.scuro.representations.utils import save_embeddings
+
+from systemds.scuro.modality.type import ModalityType
 
 
 class TfIdf(UnimodalRepresentation):
-    def __init__(self, min_df, output_file=None):
-        super().__init__("TF-IDF")
+    def __init__(self, min_df=2, output_file=None):
+        parameters = {"min_df": [min_df]}
+        super().__init__("TF-IDF", ModalityType.EMBEDDING, parameters)
         self.min_df = min_df
         self.output_file = output_file
 
     def transform(self, modality):
         transformed_modality = TransformedModality(
-            modality.modality_type, self, modality.metadata
+            modality.modality_type, self, modality.modality_id, modality.metadata
         )
+
         vectorizer = TfidfVectorizer(min_df=self.min_df)
 
         X = vectorizer.fit_transform(modality.data)
-        X = X.toarray()
+        X = [np.array(x).reshape(1, -1) for x in X.toarray()]
 
         if self.output_file is not None:
             save_embeddings(X, self.output_file)

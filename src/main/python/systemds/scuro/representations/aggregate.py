@@ -21,31 +21,77 @@
 import numpy as np
 
 from systemds.scuro.modality.modality import Modality
-
-
-# TODO: make this a Representation and add a fusion method that fuses two modalities with each other
+from systemds.scuro.representations import utils
 
 
 class Aggregation:
-    def __init__(self, aggregation_function, field_name):
-        self.aggregation_function = aggregation_function
-        self.field_name = field_name
+    @staticmethod
+    def _mean_agg(data):
+        return np.mean(data, axis=0)
 
-    def aggregate(self, modality):
-        aggregated_modality = Modality(modality.modality_type, modality.metadata)
+    @staticmethod
+    def _max_agg(data):
+        return np.max(data, axis=0)
+
+    @staticmethod
+    def _min_agg(data):
+        return np.min(data, axis=0)
+
+    @staticmethod
+    def _sum_agg(data):
+        return np.sum(data, axis=0)
+
+    _aggregation_function = {
+        "mean": _mean_agg.__func__,
+        "max": _max_agg.__func__,
+        "min": _min_agg.__func__,
+        "sum": _sum_agg.__func__,
+    }
+
+    def __init__(self, aggregation_function="mean", pad_modality=False):
+        if aggregation_function not in self._aggregation_function.keys():
+            raise ValueError("Invalid aggregation function")
+        self._aggregation_func = self._aggregation_function[aggregation_function]
+        self.name = "Aggregation"
+        self.pad_modality = pad_modality
+
+    def execute(self, modality):
+        aggregated_modality = Modality(
+            modality.modality_type, modality.modality_id, modality.metadata
+        )
         aggregated_modality.data = []
+        max_len = 0
         for i, instance in enumerate(modality.data):
             aggregated_modality.data.append([])
-            for j, entry in enumerate(instance):
-                if self.aggregation_function == "sum":
-                    aggregated_modality.data[i].append(np.sum(entry, axis=0))
-                elif self.aggregation_function == "mean":
-                    aggregated_modality.data[i].append(np.mean(entry, axis=0))
-                elif self.aggregation_function == "min":
-                    aggregated_modality.data[i].append(np.min(entry, axis=0))
-                elif self.aggregation_function == "max":
-                    aggregated_modality.data[i].append(np.max(entry, axis=0))
+            if isinstance(instance, np.ndarray):
+                aggregated_data = self._aggregation_func(instance)
+            else:
+                aggregated_data = []
+                for entry in instance:
+                    aggregated_data.append(self._aggregation_func(entry))
+            max_len = max(max_len, len(aggregated_data))
+            aggregated_modality.data[i] = aggregated_data
+
+        if self.pad_modality:
+            for i, instance in enumerate(aggregated_modality.data):
+                if isinstance(instance, np.ndarray):
+                    if len(instance) < max_len:
+                        padded_data = np.zeros(max_len, dtype=instance.dtype)
+                        padded_data[: len(instance)] = instance
+                        aggregated_modality.data[i] = padded_data
                 else:
-                    raise ValueError("Invalid aggregation function")
+                    padded_data = []
+                    for entry in instance:
+                        padded_data.append(utils.pad_sequences(entry, max_len))
+                    aggregated_modality.data[i] = padded_data
 
         return aggregated_modality
+
+    def transform(self, modality):
+        return self.execute(modality)
+
+    def aggregate_instance(self, instance):
+        return self._aggregation_func(instance)
+
+    def get_aggregation_functions(self):
+        return self._aggregation_function.keys()

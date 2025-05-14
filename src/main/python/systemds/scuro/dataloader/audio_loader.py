@@ -22,23 +22,18 @@ from typing import List, Optional, Union
 
 import librosa
 from systemds.scuro.dataloader.base_loader import BaseLoader
-from systemds.scuro.utils.schema_helpers import create_timestamps
+from systemds.scuro.modality.type import ModalityType
 
 
 class AudioLoader(BaseLoader):
     def __init__(
-        self,
-        source_path: str,
-        indices: List[str],
-        chunk_size: Optional[int] = None,
+        self, source_path: str, indices: List[str], chunk_size: Optional[int] = None
     ):
-        super().__init__(source_path, indices, chunk_size)
+        super().__init__(source_path, indices, chunk_size, ModalityType.AUDIO)
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
         audio, sr = librosa.load(file)
-        self.metadata[file] = {"sample_rate": sr, "length": audio.shape[0]}
-        self.metadata[file]["timestamp"] = create_timestamps(
-            self.metadata[file]["sample_rate"], self.metadata[file]["length"]
-        )
+        self.metadata[file] = self.modality_type.create_audio_metadata(sr, audio)
+
         self.data.append(audio)

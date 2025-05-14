@@ -143,6 +143,7 @@ jobs:
     - name: Merge Jacoco Artifacts
       run: |
         ls
+        echo "And Now Target "
         ls target
         mvn jacoco:merge
 

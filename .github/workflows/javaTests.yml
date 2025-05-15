@@ -144,7 +144,7 @@ jobs:
       run: |
         ls
         echo "And Now Target "
-        ls target
+        ls -la target
         mvn jacoco:merge
 
     - name: Process Classes

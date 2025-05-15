@@ -15,18 +15,20 @@ public class MatrixMultiplicationPerf extends APerfTest<Object, Pair<MatrixBlock
 
 	// parallelization degree
 	private final int k;
+	private final boolean single;
 
-	public MatrixMultiplicationPerf(int N, IGenerate<Pair<MatrixBlock, MatrixBlock>> gen, int k) {
+	public MatrixMultiplicationPerf(int N, IGenerate<Pair<MatrixBlock, MatrixBlock>> gen, int k, boolean single) {
 		super(N, gen);
 		this.k = k;
+		this.single = single;
 	}
 
 	public void run() throws Exception {
 		warmup(() -> mm(k), 10);
-		execute(() -> mm(1), "mm SingleThread", N/10);
-		if(k != 1) {
+		if(single)
+			execute(() -> mm(1), "mm SingleThread", N/10);
+		if(k != 1)
 			execute(() -> mm(k), "mm MultiThread: " + k);
-		}
 	}
 
 	private void mm(int k) {
@@ -51,23 +53,23 @@ public class MatrixMultiplicationPerf extends APerfTest<Object, Pair<MatrixBlock
 		final int k;
 		final double sp1;
 		final double sp2;
+		final boolean single;
 		if(args.length == 0) {
-			i = Integer.parseInt(args[1]);
-			j = Integer.parseInt(args[2]);
-			k = Integer.parseInt(args[3]);
-
-			sp1 = Double.parseDouble(args[4]);
-			sp2 = Double.parseDouble(args[5]);
-
+			i = 10;
+			j = 10;
+			k = 10;
+			sp1 = 1.0;
+			sp2 = 1.0;
+			single= true;
 		}
 		else {
 
 			i = Integer.parseInt(args[1]);
 			j = Integer.parseInt(args[2]);
 			k = Integer.parseInt(args[3]);
-
 			sp1 = Double.parseDouble(args[4]);
 			sp2 = Double.parseDouble(args[5]);
+			single = Boolean.parseBoolean(args[6]);
 
 		}
 
@@ -83,6 +85,6 @@ public class MatrixMultiplicationPerf extends APerfTest<Object, Pair<MatrixBlock
 
 		System.out.println("MM Perf : rep " +N+ " -- " + Arrays.toString(args));
 
-		new MatrixMultiplicationPerf(N, gen, InfrastructureAnalyzer.getLocalParallelism()).run();
+		new MatrixMultiplicationPerf(N, gen, InfrastructureAnalyzer.getLocalParallelism(), single).run();
 	}
 }

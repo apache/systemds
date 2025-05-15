@@ -21,27 +21,24 @@
 #-------------------------------------------------------------
 
 
-mvn package > /dev/null
+mvn package 2>&1 > /dev/null
 
 cm="java --add-modules=jdk.incubator.vector -jar -XX:+UseNUMA target/systemds-3.4.0-SNAPSHOT-perf.jar 1009"
 
-$cm 5 5 5 1 1
-$cm 500 5 5 1 1
-$cm 5 500 5 1 1
-$cm 5 5 500 1 1
+$cm 5 5 5 1 1 true
+$cm 500 5 5 1 1 true
+$cm 5 500 5 1 1 true
+$cm 5 5 500 1 1 true
 
+$cm 100 100 100 1 1 true
+$cm 1000 100 100 1 1 true
+$cm 100 1000 100 1 1 true
+$cm 100 100 1000 1 1 true
 
-$cm 100 100 100 1 1
-$cm 1000 100 100 1 1
-$cm 100 1000 100 1 1
-$cm 100 100 1000 1 1
+$cm 1000 1000 1000 1 1 true
 
+$cm 10000 1000 1000 1 1 true
+$cm 1000 10000 1000 1 1 true
+$cm 1000 1000 10000 1 1 true
 
-$cm 1000 1000 1000 1 1
-
-$cm 10000 1000 1000 1 1
-$cm 1000 10000 1000 1 1
-$cm 1000 1000 10000 1 1
-
-
-$cm 10000 10000 10000 1 1
+$cm 10000 10000 10000 1 1 false

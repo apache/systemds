@@ -2129,7 +2129,7 @@ public class MatrixBlockDictionary extends ADictionary {
 		int bie, int bke, int cz, int az, int ls, int cut, int sOffT, int eOffT) {
 		final int vLen = SPECIES.length();
 		final DoubleVector vVec = DoubleVector.zero(SPECIES);
-		final int leftover = sOffT - eOffT % vLen; // leftover not vectorized
+		final int leftover = (eOffT - sOffT) % vLen; // leftover not vectorized
 		for(int i = bi; i < bie; i++) {
 			final int offI = i * cz;
 			final int offOutT = i * az + bj;

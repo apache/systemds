@@ -3933,8 +3933,7 @@ public class LibMatrixMult
 		for( int j = bn; j < len; j+=vLen, bi+=vLen, ci+=vLen) 
 		{
 			DoubleVector bVec = DoubleVector.fromArray(SPECIES, b, bi);
-			aVec = aVec.mul(bVec);
-			aVec.intoArray(c, ci);
+			aVec.mul(bVec).intoArray(c, ci);
 		}
 	}
 	
@@ -3984,8 +3983,7 @@ public class LibMatrixMult
 		{
 			DoubleVector aVec = DoubleVector.fromArray(SPECIES, a, ai);
 			DoubleVector bVec = DoubleVector.fromArray(SPECIES, b, bi);
-			aVec = aVec.mul(bVec);
-			aVec.intoArray(c, ci);
+			aVec.mul(bVec).intoArray(c, ci);
 		}
 	}
 	

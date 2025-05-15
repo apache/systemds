@@ -145,6 +145,7 @@ jobs:
         ls
         echo "And Now Target "
         ls -la target
+        ls -la target/transient_jacoco-xx.functions.homomorphicEncryption.xx.exec
         mvn jacoco:merge
 
     - name: Process Classes

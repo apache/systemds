@@ -101,7 +101,6 @@ jobs:
         ARTIFACT_NAME="transient_jacoco"
         ARTIFACT_NAME+="-${{ matrix.tests }}"
         ARTIFACT_NAME=${ARTIFACT_NAME//\*/x} # replace * with x
-        ARTIFACT_NAME+=".exec"
         echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
 
     - name: Save Java Test Coverage as Artifact
@@ -141,12 +140,7 @@ jobs:
         path: target
 
     - name: Merge Jacoco Artifacts
-      run: |
-        ls
-        echo "And Now Target "
-        ls -la target
-        ls -la target/transient_jacoco-xx.functions.homomorphicEncryption.xx.exec
-        mvn jacoco:merge
+      run: mvn jacoco:merge
 
     - name: Process Classes
       run: mvn process-classes

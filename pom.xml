@@ -459,7 +459,19 @@
 						<fileSet>
 							<directory>${project.build.directory}</directory>
 							<includes>
-								<include>*/jacoco.exec</include>
+								<include>*.exec</include>
+							</includes>
+						</fileSet>
+						<fileSet>
+							<directory>${project.build.directory}</directory>
+							<includes>
+								<include>transient_jacoco**/*.exec</include>
+							</includes>
+						</fileSet>
+						<fileSet>
+							<directory>${project.build.directory}</directory>
+							<includes>
+								<include>federated_jacoco/*.exec</include>
 							</includes>
 						</fileSet>
 					</fileSets>

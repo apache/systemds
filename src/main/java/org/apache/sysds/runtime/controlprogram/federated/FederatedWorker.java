@@ -28,13 +28,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLException;
 
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelOutboundHandlerAdapter;
-import io.netty.channel.ChannelPipeline;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLScript;
@@ -50,25 +43,32 @@ import org.apache.sysds.runtime.controlprogram.paramserv.NetworkTrafficCounter;
 import org.apache.sysds.runtime.lineage.LineageCache;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 import org.apache.sysds.utils.stats.Timing;
-import org.apache.sysds.runtime.lineage.LineageItem;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.serialization.ClassResolvers;
+import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
-import io.netty.handler.codec.serialization.ObjectDecoder;
-import io.netty.handler.codec.serialization.ClassResolvers;
 
 @SuppressWarnings("deprecation")
 public class FederatedWorker {
-	protected static Logger log = Logger.getLogger(FederatedWorker.class);
+	protected static Logger LOG = Logger.getLogger(FederatedWorker.class);
 
 	private final int _port;
 	private final FederatedLookupTable _flt;
@@ -96,7 +96,7 @@ public class FederatedWorker {
 	}
 
 	private void run() {
-		log.info("Setting up Federated Worker on port " + _port);
+		LOG.info("Setting up Federated Worker on port " + _port);
 		int par_conn = ConfigurationManager.getDMLConfig().getIntValue(DMLConfig.FEDERATED_PAR_CONN);
 		final int EVENT_LOOP_THREADS = (par_conn > 0) ? par_conn : InfrastructureAnalyzer.getLocalParallelism();
 		NioEventLoopGroup bossGroup = new NioEventLoopGroup(1);
@@ -113,22 +113,23 @@ public class FederatedWorker {
 			b.option(ChannelOption.SO_BACKLOG, 128);
 			b.childOption(ChannelOption.SO_KEEPALIVE, true);
 
-			log.info("Starting Federated Worker server at port: " + _port);
+			LOG.info("Starting Federated Worker server at port: " + _port);
 			ChannelFuture f = b.bind(_port).sync();
-			log.info("Started Federated Worker at port: " + _port);
+			LOG.info("Started Federated Worker at port: " + _port);
 			f.channel().closeFuture().sync();
-		}
+		} 
 		catch(Exception e) {
-			log.info("Federated worker interrupted");
+			LOG.info("Federated worker interrupted");
 			if(_debug) {
-				log.error(e.getMessage());
+				LOG.error(e.getMessage());
 				e.printStackTrace();
 			}
 		}
 		finally {
-			log.info("Federated Worker Shutting down.");
+			LOG.info("Federated Worker Shutting down.");
 			workerGroup.shutdownGracefully();
 			bossGroup.shutdownGracefully();
+			
 		}
 	}
 

@@ -50,7 +50,7 @@ export SYSTEMDS_ROOT=$(pwd)
 # specific steps for the extension
 export PATH=$PATH:$SYSTEMDS_ROOT/scripts/resource/bin
 ```
-The proper execution requires JDK 11 so make sure to export the correct JDK version to `$JAVA_HOME` environmental variable.
+The proper execution requires JDK 17 so make sure to export the correct JDK version to `$JAVA_HOME` environmental variable.
 
 ### Usage
 

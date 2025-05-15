@@ -27,7 +27,7 @@ SystemDS is a versatile system for the end-to-end data science lifecycle from da
 
 ## Getting started
 
-Requirements for running SystemDS are a bash shell and OpenJDK 11 or a Spark 3.5.x cluster installation (to run distributed jobs).
+Requirements for running SystemDS are a bash shell and OpenJDK 17 or a Spark 3.5.x cluster installation (to run distributed jobs).
 These requirements should be available via standard system packages in all major Linux distributions
 (make sure to have the right JDK version enabled, if you have multiple versions in your system).
 For Windows, a bash comes with [git for windows](http://git-scm.com) and OpenJDK builds can be obtained at <http://adoptopenjdk.net>

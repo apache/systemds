@@ -62,7 +62,7 @@ The Documentation is separated into different parts by sub folders.
    
    and install any other missing packages
 
-4. Make sure Maven and [Java 11 and above](https://www.java.com/releases/) are installed.
+4. Make sure Maven and [Java 17 and above](https://www.java.com/releases/) are installed.
 
    ```bash
    mvn --version

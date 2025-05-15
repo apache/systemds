@@ -263,8 +263,7 @@ public class MatrixMultiplyTest {
 				totalMessage += "\n\nExp" + exp;
 				totalMessage += "\n\nAct" + ret;
 			}
-			LOG.error(exp.slice(0, 10,0, 10));
-			LOG.error(ret.slice(0, 10,0, 10));
+
 			assertEquals(totalMessage, exp.getNonZeros(), ret.getNonZeros());
 			TestUtils.compareMatricesPercentageDistance(exp, ret, 0.999, 0.99999, totalMessage, false);
 		}

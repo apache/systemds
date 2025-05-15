@@ -3774,8 +3774,7 @@ public class LibMatrixMult
 	}
 
 	//note: public for use by codegen for consistency
-	public static void vectMultiplyAdd( final double aval, double[] b, double[] c, int bi, int ci, final int len )
-	{		
+	public static void vectMultiplyAdd(final double aval, double[] b, double[] c, int bi, int ci, final int len) {
 		final int bn = len%vLen;
 		
 		//rest, not aligned to vLen-blocks

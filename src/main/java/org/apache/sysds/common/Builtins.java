@@ -89,6 +89,7 @@ public enum Builtins {
 	COLVAR("colVars", false),
 	COMPONENTS("components", true),
 	COMPRESS("compress", false, ReturnType.MULTI_RETURN),
+	QUANTIZE_COMPRESS("quantize_compress", false, ReturnType.MULTI_RETURN),
 	CONFUSIONMATRIX("confusionMatrix", true),
 	CONV2D("conv2d", false),
 	CONV2D_BACKWARD_FILTER("conv2d_backward_filter", false),

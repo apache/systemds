@@ -36,6 +36,10 @@ mvn -ntp -B test -D maven.test.skip=false -D automatedtestbase.outputbuffering=t
 [ -f target/jacoco.exec ] && mv target/jacoco.exec target/jacoco_main.exec
 mvn -ntp -B jacoco:merge
 
+# Merge Federated test runs.
+[ -f target/jacoco.exec ] && mv target/jacoco.exec target/jacoco_main.exec
+mvn -ntp -B jacoco:merge
+
 grep_args="SUCCESS"
 grepvals="$( tail -n 100 $log | grep $grep_args)"
 

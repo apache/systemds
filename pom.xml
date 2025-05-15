@@ -465,7 +465,7 @@
 						<fileSet>
 							<directory>${project.build.directory}</directory>
 							<includes>
-								<include>trancient_jacoco**/*.exec</include>
+								<include>transient_jacoco**/*.exec</include>
 							</includes>
 						</fileSet>
 						<fileSet>

@@ -19,8 +19,7 @@
 #
 #-------------------------------------------------------------
 
-FROM ubuntu:24.04
-
+FROM ubuntu:24.04@sha256:6015f66923d7afbc53558d7ccffd325d43b4e249f41a6e93eef074c9505d2233
 
 WORKDIR /usr/src/
 ENV MAVEN_VERSION=3.9.9
@@ -33,9 +32,6 @@ ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 ENV LANG=en_US.UTF-8
 ENV LD_LIBRARY_PATH=/usr/local/lib/
-
-COPY ./src/test/scripts/installDependencies.R installDependencies.R
-COPY ./docker/entrypoint.sh /entrypoint.sh
 
 RUN apt-get update -qq \
 	&& apt-get upgrade -y \
@@ -74,7 +70,9 @@ RUN apt-get install -y --no-install-recommends \
 		r-base-dev \
 		r-base-core
 
+
 # Install R packages
+COPY ./src/test/scripts/installDependencies.R installDependencies.R		
 RUN Rscript installDependencies.R \
 	&& rm -rf installDependencies.R \
 	&& rm -rf /var/lib/apt/lists/*
@@ -85,5 +83,10 @@ RUN wget -qO- https://github.com/microsoft/SEAL/archive/refs/tags/v3.7.0.tar.gz 
     && cmake -S . -B build -DBUILD_SHARED_LIBS=ON \
     && cmake --build build \
     && cmake --install build
+
+# Finally copy the entrypoint script
+# This is last to enable quick updates to the script after initial local build.
+COPY ./docker/entrypoint.sh /entrypoint.sh
+
 
 ENTRYPOINT ["/entrypoint.sh"]

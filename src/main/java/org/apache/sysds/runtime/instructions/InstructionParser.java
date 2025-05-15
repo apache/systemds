@@ -63,8 +63,9 @@ public class InstructionParser
 			return null;
 		String[] strlist = str.split(Instruction.INSTRUCTION_DELIM);
 		Instruction[] inst = new Instruction[strlist.length];
-		for ( int i=0; i < inst.length; i++ )
+		for ( int i=0; i < inst.length; i++ ) {
 			inst[i] = parseSingleInstruction ( strlist[i] );
+		}
 		return inst;
 	}
 }

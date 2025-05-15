@@ -280,6 +280,15 @@ public class OptimizerUtils
 	 */
 	public static boolean ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND = true;
 
+	/**
+	 * This variable allows for insertion of Quantize and compress in the dml script from the user.
+	 */
+	public static boolean ALLOW_SCRIPT_LEVEL_QUANTIZE_COMPRESS_COMMAND = true;
+
+	/**
+	 * Boolean specifying if quantization-fused compression rewrite is allowed.
+	 */
+	public static boolean ALLOW_QUANTIZE_COMPRESS_REWRITE = true;
 
 	/**
 	 * Boolean specifying if compression rewrites is allowed. This is disabled at run time if the IPA for Workload aware compression

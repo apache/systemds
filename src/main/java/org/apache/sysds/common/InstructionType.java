@@ -50,6 +50,7 @@ public enum InstructionType {
     Partition,
     Compression,
     DeCompression,
+	 QuantizeCompression,
     SpoofFused,
     Prefetch,
     EvictLineageCache,

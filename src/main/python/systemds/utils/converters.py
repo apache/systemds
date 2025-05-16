@@ -72,6 +72,7 @@ def matrix_block_to_numpy(jvm: JVMView, mb: JavaObject):
     :param jvm: The current JVM instance running systemds.
     :param mb: A pointer to the JVM's MatrixBlock object.
     """
+    
     num_ros = mb.getNumRows()
     num_cols = mb.getNumColumns()
     buf = jvm.org.apache.sysds.runtime.util.Py4jConverterUtils.convertMBtoPy4JDenseArr(

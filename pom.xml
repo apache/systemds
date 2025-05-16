@@ -92,6 +92,7 @@
 			--add-opens=java.base/java.lang.ref=ALL-UNNAMED
 			--add-opens=java.base/java.util.concurrent=ALL-UNNAMED
 			--add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+			--add-modules=jdk.incubator.vector
 		</jvm.addopens>
 	</properties>
 
@@ -357,6 +358,9 @@
 					<source>${java.level}</source>
 					<target>${java.level}</target>
 					<release>${java.level}</release>
+					<compilerArgs>
+						<arg>--add-modules=jdk.incubator.vector</arg>
+					</compilerArgs>
 				</configuration>
 			</plugin>
 
@@ -904,6 +908,7 @@
 							<notimestamp>true</notimestamp>
 							<failOnWarnings>false</failOnWarnings>
 							<quiet>true</quiet>
+							<additionalJOption>--add-modules=jdk.incubator.vector</additionalJOption>
 							<skip>${doc.skip}</skip>
 							<show>public</show>
 							<source>${java.level}</source>

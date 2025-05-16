@@ -278,7 +278,7 @@ public enum Opcodes {
 	RIGHT_INDEX(RightIndex.OPCODE, InstructionType.MatrixIndexing),
 	LEFT_INDEX(LeftIndex.OPCODE, InstructionType.MatrixIndexing),
 
-	TSMM("tsmm", InstructionType.MMTSJ, InstructionType.TSMM, InstructionType.Tsmm),
+	TSMM("tsmm", InstructionType.MMTSJ, InstructionType.TSMM),
 	PMM("pmm", InstructionType.PMMJ, InstructionType.PMM),
 	MMCHAIN("mmchain", InstructionType.MMChain),
 

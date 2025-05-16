@@ -81,13 +81,20 @@ class OptimizationData:
         return f"Name: {self.representation_name}  mean: {self.mean_accuracy} max: {self.max_accuracy} min: {self.min_accuracy} num_times: {self.num_times_used}"
 
 
+def extract_names(operator_chain):
+    result = []
+    for op in operator_chain:
+        result.append(op.name if not isinstance(op, str) else op)
+    
+    return result
+
 class OptimizationStatistics:
     optimization_data: Dict[str, OptimizationData] = {}
     fusion_names = []
 
     def __init__(self, candidates):
         for candidate in candidates:
-            representation_name = "".join(candidate.operator_chain)
+            representation_name = "".join(extract_names(candidate.operator_chain))
             self.optimization_data[representation_name] = OptimizationData(
                 representation_name
             )
@@ -125,18 +132,18 @@ class OptimizationStatistics:
 
         return parts
 
-    def add_entry(self, representation_names, score):
+    def add_entry(self, representations, score):
         # names = self.parse_representation_name(representation_name)
 
-        for name in representation_names:
-            if isinstance(name[0], List):
-                for n in name:
-                    name = "".join(n)
+        for rep in representations:
+            if isinstance(rep[0], list):
+                for r in rep:
+                    name = "".join(extract_names(r))
                     if self.optimization_data.get(name) is None:
                         self.optimization_data[name] = OptimizationData(name)
                     self.optimization_data[name].add_entry(score)
             else:
-                name = "".join(name)
+                name = "".join(extract_names(rep))
                 if self.optimization_data.get(name) is None:
                     self.optimization_data[name] = OptimizationData(name)
                 self.optimization_data[name].add_entry(score)

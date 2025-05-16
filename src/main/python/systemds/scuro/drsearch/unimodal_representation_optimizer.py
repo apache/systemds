@@ -19,6 +19,7 @@
 #
 # -------------------------------------------------------------
 import copy
+import os
 import pickle
 import time
 from typing import List
@@ -30,7 +31,7 @@ from systemds.scuro.drsearch.task import Task
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.aggregate import Aggregation
 from systemds.scuro.representations.context import Context
-
+    
 
 class UnimodalRepresentationOptimizer:
     def __init__(
@@ -38,8 +39,8 @@ class UnimodalRepresentationOptimizer:
         modalities: List[Modality],
         tasks: List[Task],
         max_chain_depth=5,
-        debug=True,
-        folder_name="unimodal_reps",
+        debug=False,
+        folder_name=None,
     ):
         self.optimization_results = {}
         self.modalities = modalities
@@ -48,8 +49,11 @@ class UnimodalRepresentationOptimizer:
         self.initialize_optimization_results()
         self.max_chain_depth = max_chain_depth
         self.debug = debug
-        self.cache = RepresentationCache()
-        self.folder_name = folder_name
+        self.cache = RepresentationCache(self.debug)
+        if self.debug:
+            self.folder_name = folder_name
+            os.makedirs(self.folder_name, exist_ok=True)
+        
 
     def initialize_optimization_results(self):
         for modality in self.modalities:
@@ -76,14 +80,14 @@ class UnimodalRepresentationOptimizer:
                             ops.append(op.name)
                     if len(ops) > 0:
                         copy_results[model][i].operator_chain = ops
-
-                with open(
-                    f"{self.folder_name}/results_{model}_{modality.modality_type.name}.p",
-                    "wb",
-                ) as fp:
-                    pickle.dump(
-                        copy_results[model], fp, protocol=pickle.HIGHEST_PROTOCOL
-                    )
+                if self.debug:
+                    with open(
+                        f"{self.folder_name}/results_{model}_{modality.modality_type.name}.p",
+                        "wb",
+                    ) as fp:
+                        pickle.dump(
+                            copy_results[model], fp, protocol=pickle.HIGHEST_PROTOCOL
+                        )
 
     def get_k_best_results(self, modality: Modality, k: int):
         """
@@ -91,11 +95,15 @@ class UnimodalRepresentationOptimizer:
         :param modality: modality to get the best results for
         :param k: number of best results
         """
-        return sorted(
-            self.optimization_results[modality],
+        results = []
+        for task in self.tasks:
+            results.append(sorted(
+            self.optimization_results[modality.modality_id][task.name],
             key=lambda x: x.test_accuracy,
             reverse=True,
-        )[:k]
+        )[:k])
+        
+        return results
 
     def _optimize_modality(self, modality: Modality):
         """
@@ -149,25 +157,26 @@ class UnimodalRepresentationOptimizer:
     def _evaluate_with_flattened_data(
         self, modality, operator_chain, op_params, representation_time, task
     ):
+        from systemds.scuro.representations.aggregated_representation import AggregatedRepresentation
         results = []
-        for aggregation in ["mean", "max", "min", "sum"]:
+        for aggregation in Aggregation().get_aggregation_functions():
             start = time.time()
-            agg_operator = Aggregation(aggregation, True)
-            agg_modality = agg_operator.execute(modality)
+            agg_operator =  AggregatedRepresentation(Aggregation(aggregation, True))
+            agg_modality = agg_operator.transform(modality)
             end = time.time()
 
             agg_opperator_chain = operator_chain + [agg_operator]
             agg_params = dict(op_params)
-            agg_params.update({agg_operator.name: {"aggregation": aggregation}})
-
+            agg_params.update({agg_operator.name: agg_operator.parameters})
+          
             score = task.run(agg_modality.data)
             result = OptimizationResult(
                 operator_chain=agg_opperator_chain,
-                parameters=op_params,
+                parameters=agg_params,
                 train_accuracy=score[0],
                 test_accuracy=score[1],
-                train_min_it_acc=score[2],
-                test_min_it_acc=score[3],
+                # train_min_it_acc=score[2],
+                # test_min_it_acc=score[3],
                 training_runtime=task.training_time,
                 inference_runtime=task.inference_time,
                 representation_time=representation_time + end - start,
@@ -187,20 +196,23 @@ class UnimodalRepresentationOptimizer:
         self, modality, operator_chain, op_params, representation_time
     ):
         for task in self.tasks:
-            if task.expected_dim == 1 and modality.data[0].ndim > 1:
+            if isinstance(modality.data[0], str):
+                continue
+                
+            if task.expected_dim == 1 and not isinstance(modality.data[0], list) and modality.data[0].ndim > 1:
                 r = self._evaluate_with_flattened_data(
                     modality, operator_chain, op_params, representation_time, task
                 )
                 self.optimization_results[modality.modality_id][task.name].extend(r)
             else:
-                score = task.run(modality.data, True)
+                score = task.run(modality.data)
                 result = OptimizationResult(
                     operator_chain=operator_chain,
                     parameters=op_params,
                     train_accuracy=score[0],
                     test_accuracy=score[1],
-                    train_min_it_acc=score[2],
-                    test_min_it_acc=score[3],
+                    # train_min_it_acc=score[2],
+                    # test_min_it_acc=score[3],
                     training_runtime=task.training_time,
                     inference_runtime=task.inference_time,
                     representation_time=representation_time,

@@ -33,13 +33,14 @@ class RepresentationCache:
 
     _instance = None
     _cache_dir = None
-    debug = True
+    debug = False
 
-    def __new__(cls):
+    def __new__(cls, debug=False):
         if not cls._instance:
+            cls.debug = debug
             cls._instance = super().__new__(cls)
-            # cls._cache_dir = tempfile.TemporaryDirectory()
-            cls._cache_dir = "representation_cache"
+            cls._cache_dir = tempfile.TemporaryDirectory()
+            # cls._cache_dir = "representation_cache"
         return cls._instance
 
     def _generate_cache_filename(self, modality_id, operators):
@@ -59,7 +60,7 @@ class RepresentationCache:
                 op_names.append(operator.name)
                 filename += operator.name
 
-        return os.path.join(self._cache_dir, filename), op_names  # _cache_dir.name
+        return os.path.join(self._cache_dir.name, filename), op_names  # _cache_dir.name
 
     def save_to_cache(self, modality, used_op_names, operators):
         """

@@ -46,7 +46,7 @@ class ResNet(UnimodalRepresentation):
         parameters = self._get_parameters()
         super().__init__(
             "ResNet", ModalityType.TIMESERIES, parameters
-        )  # TODO: TIMESERIES only for videos - images would be handled as EMBEDDIGN
+        )  # TODO: TIMESERIES only for videos - images would be handled as EMBEDDING
 
         self.output_file = output_file
         self.layer_name = layer

@@ -18,6 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import importlib
 from functools import reduce
 from operator import or_
 
@@ -25,6 +26,9 @@ from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.window import WindowAggregation
+
+
+# from systemds.scuro.representations.window import WindowAggregation
 
 
 class TransformedModality(Modality):
@@ -100,7 +104,10 @@ class TransformedModality(Modality):
             self.metadata,
         )
         modalities = [self]
-        modalities.extend(other)
+        if isinstance(other, list):
+            modalities.extend(other)
+        else:
+            modalities.append(other)
         fused_modality.data = fusion_method.transform(modalities)
 
         return fused_modality

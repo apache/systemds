@@ -18,13 +18,13 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import importlib
 import sys
 
 import numpy as np
 
 from systemds.scuro.modality.joined_transformed import JoinedTransformedModality
 from systemds.scuro.modality.modality import Modality
-from systemds.scuro.representations.aggregate import Aggregation
 from systemds.scuro.representations.utils import pad_sequences
 
 
@@ -167,7 +167,9 @@ class JoinedModality(Modality):
     def aggregate(
         self, aggregation_function, field_name
     ):  # TODO: use the filed name to extract data entries from modalities
-        self.aggregation = Aggregation(aggregation_function, field_name)
+        module = importlib.import_module('systemds.scuro.representations.aggregate')
+
+        self.aggregation = module.Aggregation(aggregation_function, field_name)
 
         if not self.chunked_execution and self.joined_right:
             return self.aggregation.aggregate(self.joined_right)

@@ -65,6 +65,8 @@ class WindowAggregation(Context):
         return windowed_data
 
     def window_aggregate_single_level(self, instance, new_length):
+        if isinstance(instance, str):
+            return instance
         num_cols = instance.shape[1] if instance.ndim > 1 else 1
         result = np.empty((new_length, num_cols))
         for i in range(0, new_length):

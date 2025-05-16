@@ -25,7 +25,7 @@
 # --------------------------------------------------------------------------------------------
 # Model       Trained ff neural network model
 # X           Data used for making predictions
-# batch_size  Batch size
+# batchSize   Batch size
 # --------------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -35,7 +35,7 @@
 
 source("nn/layers/feedForward.dml") as ff_pass
 
-s_ffPredict = function(List[unknown] model, Matrix[Double] X, Integer batch_size = 128) 
+s_ffPredict = function(List[unknown] model, Matrix[Double] X, Integer batchSize = 128)
   return (Matrix[Double] pred) {
   
   rows = nrow(X)
@@ -43,9 +43,9 @@ s_ffPredict = function(List[unknown] model, Matrix[Double] X, Integer batch_size
   cols = ncol(out)
   pred = matrix(0, rows, cols)
   
-  iters = ceil(rows / batch_size)
+  iters = ceil(rows / batchSize)
 
-  batch = batch_size
+  batch = batchSize
   for(i in 1:iters) {
     begin = (i-1)*batch+1
     end = min(rows, begin + batch - 1)

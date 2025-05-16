@@ -60,8 +60,8 @@ def cox(X: Matrix,
         if R is not provided by default all variables are considered to be continuous
     :param alpha: Parameter to compute a 100*(1-alpha)% confidence interval for the betas
     :param tol: Tolerance ("epsilon")
-    :param moi: Max. number of outer (Newton) iterations
-    :param mii: Max. number of inner (conjugate gradient) iterations, 0 = no max
+    :param maxIter: Max. number of outer (Newton) iterations
+    :param maxInnerIter: Max. number of inner (conjugate gradient) iterations, 0 = no max
     :return: A D x 7 matrix M, where D denotes the number of covariates, with the following schema:
         M[,1]: betas
         M[,2]: exp(betas)

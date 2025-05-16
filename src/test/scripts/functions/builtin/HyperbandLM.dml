@@ -50,8 +50,8 @@ paramRanges[2,2] = 10^-12;
 
 # use lmCG, because this implementation of hyperband only makes sense with
 # iterative algorithms
-[B1, optHyperParams] = hyperband(X_train=X_train, y_train=y_train, X_val=X_val,
-  y_val=y_val, params=params, paramRanges=paramRanges, R=50, eta=3, verbose=TRUE);
+[B1, optHyperParams] = hyperband(X=X_train, Y=y_train, Xtest=X_val,
+  Ytest=y_val, params=params, paramRanges=paramRanges, R=50, eta=3, verbose=TRUE);
 
 # train reference with default values
 B2 = lmCG(X=X_train, y=y_train, verbose=FALSE);

@@ -61,11 +61,11 @@ def xgboost(X: Matrix,
         - R[,2]: 2 (categorical feature)
         Feature 1 is a scalar feature and features 2 is a categorical feature
         If R is not provided by default all variables are assumed to be scale (1)
-    :param sml_type: Supervised machine learning type: 1 = Regression(default), 2 = Classification
-    :param num_trees: Number of trees to be created in the xgboost model
-    :param learning_rate: Alias: eta. After each boosting step the learning rate controls the weights of the new predictions
-    :param max_depth: Maximum depth of a tree. Increasing this value will make the model more complex and more likely to overfit
-    :param lambda: L2 regularization term on weights. Increasing this value will make model more conservative and reduce amount of leaves of a tree
+    :param smlType: Supervised machine learning type: 1 = Regression(default), 2 = Classification
+    :param numTrees: Number of trees to be created in the xgboost model
+    :param lr: Alias: eta. After each boosting step the learning rate controls the weights of the new predictions
+    :param maxDepth: Maximum depth of a tree. Increasing this value will make the model more complex and more likely to overfit
+    :param reg: L2 regularization term on weights (lambda). Increasing this value will make model more conservative and reduce amount of leaves of a tree
     :return: Matrix M where each column corresponds to a node in the learned tree
     """
 

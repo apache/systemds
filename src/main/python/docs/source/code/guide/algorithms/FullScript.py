@@ -35,7 +35,7 @@ with SystemDSContext() as sds:
     # Train Data
     X_ds = sds.from_numpy(X)
     Y_ds = sds.from_numpy(Y) + 1.0
-    bias = multiLogReg(X_ds, Y_ds, maxi=30, verbose=False)
+    bias = multiLogReg(X_ds, Y_ds, maxIter=30, verbose=False)
     # Test data
     Xt_ds = sds.from_numpy(Xt)
     Yt_ds = sds.from_numpy(Yt) + 1.0

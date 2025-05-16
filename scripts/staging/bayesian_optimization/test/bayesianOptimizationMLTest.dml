@@ -39,7 +39,7 @@ return (Double index)
   index = as.scalar(rowIndexMin(t(alphas)));
 }
 
-params = list("icpt", "reg", "tol", "maxi", "verbose");
+params = list("intercept", "reg", "tol", "maxIter", "verbose");
 paramValues = list(as.matrix(0), 10^seq(0,-3), 10^seq(-6,-10), 10^seq(3,6), as.matrix(1));
 
 N = 200;
@@ -73,10 +73,10 @@ opt = bayOpt::m_bayesianOptimization(
 B1 = lm(
   X=xTrain,
   y=yTrain,
-  icpt = as.scalar(opt[1,1]),
+  intercept = as.scalar(opt[1,1]),
   reg = as.scalar(opt[1,2]),
   tol = as.scalar(opt[1,3]),
-  maxi = as.scalar(opt[1,4]),
+  maxIter = as.scalar(opt[1,4]),
   verbose = FALSE
 );
 

@@ -708,6 +708,10 @@ public class ParForProgramBlock extends ForProgramBlock {
 	private void executeLocalParFor( ExecutionContext ec, IntObject from, IntObject to, IntObject incr )
 		throws InterruptedException
 	{
+		if (DMLScript.USE_ACCELERATOR) {
+			_numThreads = Math.min(_numThreads, ec.getNumGPUContexts());
+		}
+
 		LOG.trace("Local Par For (multi-threaded) with degree of parallelism : " + _numThreads);
 		/* Step 1) init parallel workers, task queue and threads
 		 *         start threads (from now on waiting for tasks)
@@ -774,6 +778,12 @@ public class ParForProgramBlock extends ForProgramBlock {
 			LineageCacheConfig.setReuseLineageTraces(false); //disable lineage trace reuse
 			for( Thread thread : threads )
 				thread.join();
+
+			if (DMLScript.USE_ACCELERATOR) {
+				for(LocalParWorker worker : workers) {
+					LOG.trace("The worker of GPU " + worker.getExecutionContext().getGPUContext(0).toString() + " has executed " + worker.getExecutedTasks() + " tasks.");
+				}
+			}
 			
 			// Step 4) collecting results from each parallel worker
 			//obtain results and cleanup other intermediates before result merge

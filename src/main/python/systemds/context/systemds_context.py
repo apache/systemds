@@ -24,15 +24,18 @@ __all__ = ["SystemDSContext"]
 import json
 import logging
 import os
+import uuid
 import socket
 import sys
+import struct
 from contextlib import contextmanager
 from glob import glob
 from queue import Queue
 from subprocess import PIPE, Popen
 from threading import Thread
-from time import sleep
+from time import sleep, time
 from typing import Dict, Iterable, Sequence, Tuple, Union
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import pandas as pd
@@ -66,6 +69,14 @@ class SystemDSContext(object):
     _log: logging.Logger
     __stdout: Queue = None
     __stderr: Queue = None
+    executor_pool = None
+    FIFO_PATH = "/tmp/systemds/pipes/"
+    FIFO_PY2JAVA_BASE = "py2java"
+    FIFO_JAVA2PY_BASE = "java2py"
+    FIFO_PY2JAVA_PIPES = []
+    FIFO_JAVA2PY_PIPES = []
+    data_transfer_mode = 0
+    multi_pipe_enabled = False
 
     def __init__(
         self,
@@ -74,6 +85,8 @@ class SystemDSContext(object):
         capture_stdout: bool = False,
         logging_level: int = 20,
         py4j_logging_level: int = 50,
+        data_transfer_mode: int = 1,
+        multi_pipe_enabled: bool = False,
     ):
         """Starts a new instance of SystemDSContext, in which the connection to a JVM systemds instance is handled
         Any new instance of this SystemDS Context, would start a separate new JVM.
@@ -88,11 +101,106 @@ class SystemDSContext(object):
             The logging levels are as follows: 10 DEBUG, 20 INFO, 30 WARNING, 40 ERROR, 50 CRITICAL.
         :param py4j_logging_level: The logging level for Py4j to use, since all communication to the JVM is done through this,
             it can be verbose if not set high.
+        :param data_transfer_mode: default 0,
         """
+
         self.__setup_logging(logging_level, py4j_logging_level)
         self.__start(port, capture_stdout)
         self.capture_stats(capture_statistics)
         self._log.debug("Started JVM and SystemDS python context manager")
+        self.__setup_data_transfer(data_transfer_mode, multi_pipe_enabled)
+
+    def __setup_data_transfer(self, data_transfer_mode=0, multi_pipe_enabled=False):
+        self.data_transfer_mode = data_transfer_mode
+        self.multi_pipe_enabled = multi_pipe_enabled
+        if os.name == "posix" and data_transfer_mode == 1:
+            num_pipes = (os.cpu_count() or 2) if multi_pipe_enabled else 1
+            self.__make_fifo_named_pipes(num_pipes)
+            executor_pool, in_pipes, out_pipes = self.__init_pipes(num_pipes)
+
+            self._log.debug("Handshake done for {} IN / OUT Pipes".format(num_pipes))
+            self.executor_pool = executor_pool
+            self.FIFO_PY2JAVA_PIPES = out_pipes
+            self.FIFO_JAVA2PY_PIPES = in_pipes
+        else:
+            self.data_transfer_mode = 0
+
+    def __init_pipes(self, num_pipes):
+        executor_pool = ThreadPoolExecutor(
+            max_workers=num_pipes + 1
+        )  # + 1 for the py4j thread
+
+        def open_pipe_write(path, pipe_id):
+            self._log.debug("Opening {} for writing in Py".format(path))
+            pipe = open(path, "wb")
+            handshake = struct.pack("<i", pipe_id + 1000)
+            pipe.write(handshake)
+            pipe.flush()
+            return pipe
+
+        def open_pipe_read(path, expected_id):
+            expected_id += 1000
+            self._log.debug("Opening {} for reading in Py".format(path))
+            pipe = open(path, "rb")
+            handshake = pipe.read(4)
+            received_id = struct.unpack("<i", handshake)[0]
+            if received_id != expected_id:
+                self._log.debug(
+                    "Mismatch: {}, expected: {}".format(received_id, expected_id)
+                )
+            else:
+                self._log.debug("JAVA2PY pipe {} is ready!".format(expected_id - 1000))
+            return pipe
+
+        def open_pipes_java(ep, p, n):
+            ep.openPipes(p, n)
+
+        fut = executor_pool.submit(
+            open_pipes_java, self.java_gateway.entry_point, self.FIFO_PATH, num_pipes
+        )
+        out_f, in_f = ([], [])
+        for i in range(num_pipes):
+            out_f.append(
+                executor_pool.submit(
+                    open_pipe_write,
+                    "{}/{}-{}".format(self.FIFO_PATH, self.FIFO_PY2JAVA_BASE, i),
+                    i,
+                )
+            )
+            in_f.append(
+                executor_pool.submit(
+                    open_pipe_read,
+                    "{}/{}-{}".format(self.FIFO_PATH, self.FIFO_JAVA2PY_BASE, i),
+                    i,
+                )
+            )
+        fut.result()
+        out_pipes = [f.result() for f in out_f]
+        in_pipes = [f.result() for f in in_f]
+        return executor_pool, in_pipes, out_pipes
+
+    def __delete_tmp_files(self):
+        for root, dirs, files in os.walk(self.FIFO_PATH):
+            for file in files:
+                file_path = os.path.join(root, file)
+                os.remove(file_path)
+        os.rmdir(self.FIFO_PATH)
+        self._log.debug("Cleaned up tmp files")
+
+    def __make_fifo_named_pipes(self, num_pipes):
+        self.FIFO_PATH += str(uuid.uuid4())
+        os.makedirs(self.FIFO_PATH, exist_ok=True)
+        direction, name, i = (None, None, 0)
+        directions = [self.FIFO_PY2JAVA_BASE, self.FIFO_JAVA2PY_BASE]
+        try:
+            for direction in directions:
+                for i in range(num_pipes):
+                    name = direction + "-{}".format(i)
+                    os.mkfifo(self.FIFO_PATH + "/" + name)
+        except IOError:
+            # clean up already created pipes in self.FIFO_PATH
+            self.__delete_tmp_files()
+            raise Exception("Creating named pipe {} failed".format(name))
 
     def get_stdout(self, lines: int = -1):
         """Getter for the stdout of the java subprocess
@@ -143,6 +251,7 @@ class SystemDSContext(object):
         raise RuntimeError(message)
 
     def __try_startup(self, command: str, capture_stdout: bool) -> Popen:
+        command = command[:1] + ["-Xms28g", "-Xmx28g"] + command[1:]
         if capture_stdout:
             process = Popen(command, stdout=PIPE, stdin=PIPE, stderr=PIPE)
 
@@ -251,7 +360,7 @@ class SystemDSContext(object):
         command.append("org.apache.sysds.api.PythonDMLScript")
 
         # Find the configuration file for systemds.
-        # TODO: refine the choise of configuration file
+        # TODO: refine the choice of configuration file
         files = glob(os.path.join(root, "conf", "SystemDS*.xml"))
         if len(files) > 1:
             self._log.warning("Multiple config files found selecting: " + files[0])
@@ -351,8 +460,21 @@ class SystemDSContext(object):
     def close(self):
         """Close the connection to the java process and do necessary cleanup."""
         if hasattr(self, "java_gateway"):
-            self.__kill_Popen(self.java_gateway.java_process)
+            if self.data_transfer_mode == 1:
+                self._log.debug("Closing all Pipes in Python")
+                for pipe in self.FIFO_JAVA2PY_PIPES:
+                    pipe.close()
+                for pipe in self.FIFO_PY2JAVA_PIPES:
+                    pipe.close()
+                self._log.debug("All Pipes are closed in Python")
+
+                self._log.debug("Closing all Pipes in Java")
+                self.java_gateway.entry_point.closePipes()
+                self._log.debug("All Pipes are closed in Java")
+                self.__delete_tmp_files()
+
             self.java_gateway.shutdown()
+            self.__kill_Popen(self.java_gateway.java_process)
         if hasattr(self, "__process"):
             logging.error("Has process variable")
             self.__kill_Popen(self.__process)

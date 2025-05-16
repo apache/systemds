@@ -88,7 +88,4 @@ public enum InstructionType {
 	MatrixReshape,
 	Write,
 	Init,
-
-	//FED
-	Tsmm;
 }

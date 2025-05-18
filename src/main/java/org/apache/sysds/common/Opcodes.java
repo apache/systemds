@@ -200,6 +200,7 @@ public enum Opcodes {
 	TRANSFORMCOLMAP("transformcolmap", CPType.ParameterizedBuiltin),
 	TRANSFORMMETA("transformmeta", CPType.ParameterizedBuiltin),
 	TRANSFORMENCODE("transformencode", CPType.MultiReturnParameterizedBuiltin),
+	EINSUM("einsum", CPType.EINSUM),
 
 	//Ternary instruction opcodes
 	PM("+*", CPType.Ternary),

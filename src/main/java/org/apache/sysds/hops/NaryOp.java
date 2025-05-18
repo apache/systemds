@@ -235,6 +235,11 @@ public class NaryOp extends Hop {
 				setDim1(getInput().size());
 				setDim2(1);
 				break;
+			case EINSUM:
+				setDataType(DataType.MATRIX);
+				setDim1(getInput().size());
+				setDim2(1);
+				break;
 			case PRINTF:
 			case EVAL:
 				//do nothing:

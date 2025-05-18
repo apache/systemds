@@ -2447,7 +2447,10 @@ public class DMLTranslator
 				new NaryOp(target.getName(), target.getDataType(), target.getValueType(),
 					OpOpN.valueOf(source.getOpCode().name()), processAllExpressions(source.getAllExpr(), hops));
 			break;
-
+		case EINSUM:
+			currBuiltinOp = new NaryOp(target.getName(), target.getDataType(), target.getValueType(),
+					OpOpN.valueOf(source.getOpCode().name()), processAllExpressions(source.getAllExpr(), hops));
+			break;
 		case PPRED:
 			String sop = ((StringIdentifier)source.getThirdExpr()).getValue();
 			sop = sop.replace("\"", "");

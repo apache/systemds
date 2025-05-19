@@ -23,8 +23,11 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.codegen.cplan.CNode;
 import org.apache.sysds.hops.codegen.cplan.CNodeCell;
+import org.apache.sysds.hops.codegen.cplan.CNodeData;
 import org.apache.sysds.hops.codegen.cplan.CNodeRow;
 import org.apache.sysds.runtime.codegen.*;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -164,7 +167,9 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 
 			if(inputsChars.length == 2 && inputsChars[0].charAt(0)==inputsChars[1].charAt(0) && !einc.summingChars.contains(parts[1].charAt(0))){// ja,jb->...
 				// outer tmpl
-				CNodeRow cnode = new CNodeRow(new ArrayList<>(), null);
+				ArrayList<CNode> cnodeIn = new ArrayList<>();
+				cnodeIn.add(new CNodeData(new LiteralOp(3), 0, 0, DataType.SCALAR));
+				CNodeRow cnode = new CNodeRow(cnodeIn, null);
 //				cnode.setConstDim2(einc.outCols);
 //				cnode.setNumVectorIntermediates(1);
 				String src = tmpRow;
@@ -208,8 +213,9 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			else if(inputsChars.length == 2 && inputsChars[0].charAt(1)==inputsChars[1].charAt(0)){
 				ReorgOperator transpose =  new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);//todo move to separate op earlier
 				MatrixBlock first = (inputs.get(0)).reorgOperations(transpose, new MatrixBlock(), 0 ,0, 0);
-
-				CNodeRow cnode = new CNodeRow(new ArrayList<>(), null);
+				ArrayList<CNode> cnodeIn = new ArrayList<>();
+				cnodeIn.add(new CNodeData(new LiteralOp(3), 0, 0, DataType.SCALAR));
+				CNodeRow cnode = new CNodeRow(cnodeIn, null);
 				String src = tmpRow;
 
 				if(einc.outCols == 1){
@@ -246,7 +252,9 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 				}
 			}
 			else{ //fallback to cell
-				CNodeCell cnode = new CNodeCell(new ArrayList<>(), null);
+				ArrayList<CNode> cnodeIn = new ArrayList<>();
+				cnodeIn.add(new CNodeData(new LiteralOp(3), 0, 0, DataType.SCALAR));
+				CNodeCell cnode = new CNodeCell(cnodeIn, null);
 //				cnode.setCellType(SpoofCellwise.CellType.NO_AGG);
 				StringBuilder sb = new StringBuilder();
 

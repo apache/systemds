@@ -172,7 +172,7 @@ public enum Opcodes {
 	RBIND("rbind", InstructionType.BuiltinNary),
 	EVAL("eval", InstructionType.BuiltinNary),
 	LIST("list", InstructionType.BuiltinNary),
-	EINSUM("einsum", CPType.EINSUM),
+	EINSUM("einsum", InstructionType.BuiltinNary),
 	//Parametrized builtin functions
 	AUTODIFF("autoDiff", InstructionType.ParameterizedBuiltin),
 	CONTAINS("contains", InstructionType.ParameterizedBuiltin),

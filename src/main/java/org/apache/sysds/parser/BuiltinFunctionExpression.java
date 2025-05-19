@@ -750,12 +750,12 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 				metaOutput.setDataType(DataType.FRAME);
 				metaOutput.setDimensions(compressInput1.getDim1(), -1);
 			}
-			case EINSUM:
-				validateEinsum((DataIdentifier) getOutputs()[0]);
-
-				break;
 			else
 				raiseValidateError("Compress/DeCompress instruction not allowed in dml script");
+			break;
+		case EINSUM:
+			validateEinsum((DataIdentifier) getOutputs()[0]);
+
 			break;
 		default: //always unconditional
 			raiseValidateError("Unknown Builtin Function opcode: " + _opcode, false);

@@ -27,7 +27,6 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -72,7 +71,6 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore //TODO
 	public void runL2SVMFunctionFOUTTest(){
 		String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*", "fed_tak+*", "fed_+*",
 			"fed_max", "fed_1-*", "fed_tsmm", "fed_>"};
@@ -81,7 +79,6 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore //TODO
 	public void runL2SVMFunctionHeuristicTest(){
 		String[] expectedHeavyHitters = new String[]{ "fed_fedinit", "fed_ba+*"};
 		setTestConf("SystemDS-config-heuristic.xml");

@@ -232,7 +232,7 @@ public class ReorgOp extends MultiThreadedHop
 	protected double computeOutputMemEstimate( long dim1, long dim2, long nnz ) {
 		//no dedicated mem estimation per op type, because always propagated via refreshSizeInformation
 		double sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
-		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+		return OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity, getDataType());
 	}
 	
 	@Override

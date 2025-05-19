@@ -35,27 +35,27 @@ echo "-- Generating Dimension Reduction data." >> results/times.txt;
 
 #generate XS scenarios (80MB)
 if [ $MAXMEM -ge 80 ]; then
-  ${CMD} -f ../datagen/genRandData4PCA.dml --nvargs R=5000 C=2000 OUT=$BASE/pcaData5k_2k_dense FMT=$FORMAT &
+  ${CMD} -f datagen/genRandData4PCA.dml --nvargs R=5000 C=2000 OUT=$BASE/pcaData5k_2k_dense FMT=$FORMAT &
 fi
 
 #generate S scenarios (800MB)
 if [ $MAXMEM -ge 800 ]; then
-  ${CMD} -f ../datagen/genRandData4PCA.dml --nvargs R=50000 C=2000 OUT=$BASE/pcaData50k_2k_dense FMT=$FORMAT &
+  ${CMD} -f datagen/genRandData4PCA.dml --nvargs R=50000 C=2000 OUT=$BASE/pcaData50k_2k_dense FMT=$FORMAT &
 fi
 
 #generate M scenarios (8GB)
 if [ $MAXMEM -ge 8000 ]; then
-  ${CMD} -f ../datagen/genRandData4PCA.dml --nvargs R=500000 C=2000 OUT=$BASE/pcaData500k_2k_dense FMT=$FORMAT &
+  ${CMD} -f datagen/genRandData4PCA.dml --nvargs R=500000 C=2000 OUT=$BASE/pcaData500k_2k_dense FMT=$FORMAT &
 fi
 
 #generate L scenarios (80GB)
 if [ $MAXMEM -ge 80000 ]; then
-  ${CMD} -f ../datagen/genRandData4PCA.dml --nvargs R=5000000 C=2000 OUT=$BASE/pcaData5M_2k_dense FMT=$FORMAT
+  ${CMD} -f datagen/genRandData4PCA.dml --nvargs R=5000000 C=2000 OUT=$BASE/pcaData5M_2k_dense FMT=$FORMAT
 fi
 
 #generate XL scenarios (800GB)
 if [ $MAXMEM -ge 800000 ]; then
-  ${CMD} -f ${EXTRADOT}./datagen/genRandData4PCA.dml --nvargs R=50000000 C=2000 OUT=$BASE/pcaData50M_2k_dense FMT=$FORMAT
+  ${CMD} -f datagen/genRandData4PCA.dml --nvargs R=50000000 C=2000 OUT=$BASE/pcaData50M_2k_dense FMT=$FORMAT
 fi
 
 wait

@@ -109,6 +109,12 @@ public class BinaryOp extends MultiThreadedHop {
 		//compute unknown dims and nnz
 		refreshSizeInformation();
 	}
+	
+	public BinaryOp(String l, DataType dt, ValueType vt, OpOp2 o,
+			Hop inp1, Hop inp2, boolean outer) {
+		this(l, dt, vt, o, inp1, inp2);
+		setOuterVectorOperation(outer);
+	}
 
 	public OpOp2 getOp() {
 		return op;
@@ -448,6 +454,16 @@ public class BinaryOp extends MultiThreadedHop {
 		} 
 		else 
 		{
+			//check correct broadcasting dimensions
+			if( !outer && ((left.getDim1()==1 && right.getDim1() > 1)
+				|| (left.getDim2()==1 && right.getDim2() > 1)) )
+			{
+				throw new HopsException("Invalid binary broadcasting from left "
+					+ "(lines "+getBeginLine()+"-"+getEndLine()+"): "
+					+ left.getDataCharacteristics()+" "+getOp().name()+" "
+					+right.getDataCharacteristics());
+			}
+			
 			// Both operands are Matrixes or Tensors
 			ExecType et = optFindExecType();
 			boolean isGPUSoftmax = et == ExecType.GPU && op == OpOp2.DIV && 
@@ -562,7 +578,7 @@ public class BinaryOp extends MultiThreadedHop {
 			else //e.g., for append,pow or after inference
 				sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
 			
-			ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+			ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity, getDataType());
 		}
 		return ret;
 	}

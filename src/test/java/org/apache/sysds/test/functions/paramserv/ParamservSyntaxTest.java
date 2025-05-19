@@ -98,6 +98,5 @@ public class ParamservSyntaxTest extends AutomatedTestBase {
 		programArgs = new String[] { "-explain" };
 		fullDMLScriptName = HOME + testname + ".dml";
 		runTest(true, exceptionExpected, exceptionClass, errmsg, -1);
-		setOutputBuffering(false);
 	}
 }

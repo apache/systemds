@@ -32,6 +32,7 @@ import java.util.zip.Checksum;
 
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
@@ -274,7 +275,7 @@ public class MultiReturnParameterizedBuiltinFEDInstruction extends ComputationFE
 		Map<Integer, double[]> equiHeightBinsPerColumn = new HashMap<>();
 		for(Map.Entry<Integer, double[]> colQuantiles : quantilesPerColumn.entrySet()) {
 			QuantilePickFEDInstruction quantileInstr = new QuantilePickFEDInstruction(
-				null, input1, output, PickByCount.OperationTypes.VALUEPICK,true, "qpick", "");
+				null, input1, output, PickByCount.OperationTypes.VALUEPICK,true, Opcodes.QPICK.toString(), "");
 			MatrixBlock quantiles = quantileInstr.getEquiHeightBins(ec, colQuantiles.getKey(), colQuantiles.getValue());
 			equiHeightBinsPerColumn.put(colQuantiles.getKey(), quantiles.getDenseBlockValues());
 		}

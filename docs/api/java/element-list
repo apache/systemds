@@ -83,6 +83,7 @@ org.apache.sysds.runtime.instructions.spark.data
 org.apache.sysds.runtime.instructions.spark.functions
 org.apache.sysds.runtime.instructions.spark.utils
 org.apache.sysds.runtime.io
+org.apache.sysds.runtime.io.cog
 org.apache.sysds.runtime.io.hdf5
 org.apache.sysds.runtime.io.hdf5.message
 org.apache.sysds.runtime.iogen

@@ -27,21 +27,22 @@ from systemds.scuro.modality.modality import Modality
 from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.modality.type import ModalityType
+from systemds.scuro.modality.modality_identifier import ModalityIdentifier
 
 
 class UnimodalModality(Modality):
 
-    def __init__(self, data_loader: BaseLoader, modality_type: ModalityType):
+    def __init__(self, data_loader: BaseLoader):
         """
-        This class represents a unimodal modality.
+        This class represents an unimodal modality.
         :param data_loader: Defines how the raw data should be loaded
         :param modality_type: Type of the modality
         """
-        super().__init__(modality_type, None)
+        super().__init__(data_loader.modality_type, ModalityIdentifier().new_id(), None)
         self.data_loader = data_loader
 
     def copy_from_instance(self):
-        new_instance = type(self)(self.data_loader, self.modality_type)
+        new_instance = type(self)(self.data_loader)
         if self.metadata:
             new_instance.metadata = self.metadata.copy()
         return new_instance
@@ -73,29 +74,52 @@ class UnimodalModality(Modality):
             self.data_loader.chunk_size is not None,
         )
 
+        if self.data_loader.chunk_size is None:
+            self.extract_raw_data()
+            joined_modality.execute(0)
+            joined_modality.joined_right.update_metadata()
+
         return joined_modality
 
-    def apply_representation(self, representation, aggregation=None):
+    def context(self, context_operator):
+        if not self.has_data():
+            self.extract_raw_data()
+
+        transformed_modality = TransformedModality(
+            self.modality_type, context_operator.name, self.modality_id, self.metadata
+        )
+
+        transformed_modality.data = context_operator.execute(self)
+        return transformed_modality
+
+    def aggregate(self, aggregation_function):
+        if self.data is None:
+            raise Exception("Data is None")
+
+    def apply_representations(self, representations):
+        # TODO
+        pass
+
+    def apply_representation(self, representation):
         new_modality = TransformedModality(
-            self.modality_type, representation.name, self.data_loader.metadata.copy()
+            self.modality_type,
+            representation.name,
+            self.modality_id,
+            self.data_loader.metadata.copy(),
         )
         new_modality.data = []
 
         if self.data_loader.chunk_size:
+            self.data_loader.reset()
             while self.data_loader.next_chunk < self.data_loader.num_chunks:
                 self.extract_raw_data()
                 transformed_chunk = representation.transform(self)
-                if aggregation:
-                    transformed_chunk.data = aggregation.window(transformed_chunk)
                 new_modality.data.extend(transformed_chunk.data)
                 new_modality.metadata.update(transformed_chunk.metadata)
         else:
             if not self.data:
                 self.extract_raw_data()
             new_modality = representation.transform(self)
-
-            if aggregation:
-                new_modality.data = aggregation.window(new_modality)
 
         new_modality.update_metadata()
         return new_modality

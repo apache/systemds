@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -129,7 +130,7 @@ public class RewriteFusedRandTest extends AutomatedTestBase
 			//check for applied rewrites
 			if( rewrites ) {
 				boolean expected = testname.equals(TEST_NAME2) || pdf.equals("uniform");
-				Assert.assertTrue(expected == (!heavyHittersContainsString("+")
+				Assert.assertTrue(expected == (!heavyHittersContainsString(Opcodes.PLUS.toString())
 					&& !heavyHittersContainsString("*")));
 			}
 		}

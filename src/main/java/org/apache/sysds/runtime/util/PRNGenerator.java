@@ -20,7 +20,7 @@
 
 package org.apache.sysds.runtime.util;
 
-public abstract class PRNGenerator {
+public abstract class PRNGenerator implements IPRNGenerator {
 
 	public abstract void setSeed(long sd);
 

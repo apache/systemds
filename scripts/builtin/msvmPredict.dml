@@ -37,7 +37,7 @@
 m_msvmPredict = function(Matrix[Double] X, Matrix[Double] W)
   return(Matrix[Double] YRaw, Matrix[Double] Y)
 {
-  # Robustness for datasets with missing values 
+  # Robustness for datasets with missing values
   numNaNs = sum(isNaN(X))
   if( numNaNs > 0 ) {
     print("msvm: matrix X contains "+numNaNs+" missing values, replacing with 0.")

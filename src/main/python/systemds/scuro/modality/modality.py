@@ -18,28 +18,42 @@
 # under the License.
 #
 # -------------------------------------------------------------
+from copy import deepcopy
 from typing import List
 
 import numpy as np
 
-from systemds.scuro.modality.type import ModalityType
+from systemds.scuro.modality.type import ModalityType, DataLayout
+from systemds.scuro.representations import utils
 
 
 class Modality:
 
-    def __init__(self, modalityType: ModalityType, metadata=None):
+    def __init__(self, modalityType: ModalityType, modality_id=-1, metadata={}):
         """
         Parent class of the different Modalities (unimodal & multimodal)
         :param modality_type: Type of the modality
         """
         self.modality_type = modalityType
         self.schema = modalityType.get_schema()
+        self.metadata = metadata
         self.data = []
         self.data_type = None
         self.cost = None
         self.shape = None
-        self.dataIndex = None
-        self.metadata = metadata
+        self.modality_id = modality_id
+
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, value):
+        """
+        This method ensures that the data layout in the metadata is updated when the data changes
+        """
+        self._data = value
+        self.update_metadata()
 
     def get_modality_names(self) -> List[str]:
         """
@@ -50,64 +64,66 @@ class Modality:
         ]
 
     def copy_from_instance(self):
+        """
+        Create a copy of the modality instance
+        """
         return type(self)(self.modality_type, self.metadata)
 
     def update_metadata(self):
-        md_copy = self.metadata
+        """
+        Updates the metadata of the modality (i.e.: updates timestamps)
+        """
+        if (
+            not self.has_metadata()
+            or not self.has_data()
+            or len(self.data) < len(self.metadata)
+        ):
+            return
+
+        md_copy = deepcopy(self.metadata)
         self.metadata = {}
         for i, (md_k, md_v) in enumerate(md_copy.items()):
             updated_md = self.modality_type.update_metadata(md_v, self.data[i])
             self.metadata[md_k] = updated_md
 
-    def get_metadata_at_position(self, position: int):
-        return self.metadata[self.dataIndex][position]
-
-    def flatten(self):
+    def flatten(self, padding=True):
+        """
+        Flattens modality data by row-wise concatenation
+        Prerequisite for some ML-models
+        """
+        max_len = 0
         for num_instance, instance in enumerate(self.data):
             if type(instance) is np.ndarray:
                 self.data[num_instance] = instance.flatten()
-            elif type(instance) is list:
+            elif isinstance(instance, List):
                 self.data[num_instance] = np.array(
                     [item for sublist in instance for item in sublist]
-                )
+                ).flatten()
+            max_len = max(max_len, len(self.data[num_instance]))
 
+        if padding:
+            for i, instance in enumerate(self.data):
+                if isinstance(instance, np.ndarray):
+                    if len(instance) < max_len:
+                        padded_data = np.zeros(max_len, dtype=instance.dtype)
+                        padded_data[: len(instance)] = instance
+                        self.data[i] = padded_data
+                else:
+                    padded_data = []
+                    for entry in instance:
+                        padded_data.append(utils.pad_sequences(entry, max_len))
+                    self.data[i] = padded_data
         self.data = np.array(self.data)
         return self
 
     def get_data_layout(self):
-        if not self.data:
-            return self.data
+        if self.has_metadata():
+            return list(self.metadata.values())[0]["data_layout"]["representation"]
 
-        if isinstance(self.data[0], list):
-            return "list_of_lists_of_numpy_array"
-        elif isinstance(self.data[0], np.ndarray):
-            return "list_of_numpy_array"
+        return None
 
-    def get_data_shape(self):
-        layout = self.get_data_layout()
-        if not layout:
-            return None
+    def has_data(self):
+        return self.data is not None and len(self.data) != 0
 
-        if layout == "list_of_lists_of_numpy_array":
-            return self.data[0][0].shape
-        elif layout == "list_of_numpy_array":
-            return self.data[0].shape
-
-    def get_data_dtype(self):
-        layout = self.get_data_layout()
-        if not layout:
-            return None
-
-        if layout == "list_of_lists_of_numpy_array":
-            return self.data[0][0].dtype
-        elif layout == "list_of_numpy_array":
-            return self.data[0].dtype
-
-    def update_data_layout(self):
-        if not self.data:
-            return
-
-        self.schema["data_layout"]["representation"] = self.get_data_layout()
-
-        self.shape = self.get_data_shape()
-        self.schema["data_layout"]["type"] = self.get_data_dtype()
+    def has_metadata(self):
+        return self.metadata is not None and self.metadata != {}

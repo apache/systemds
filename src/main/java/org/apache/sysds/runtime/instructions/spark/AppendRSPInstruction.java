@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.spark;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.functionobjects.OffsetColumnIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -42,7 +43,7 @@ public abstract class AppendRSPInstruction extends AppendSPInstruction {
 		CPOperand out = new CPOperand(parts[3]);
 		boolean cbind = Boolean.parseBoolean(parts[4]);
 		
-		if(!opcode.equalsIgnoreCase("rappend"))
+		if(!opcode.equalsIgnoreCase(Opcodes.RAPPEND.toString()))
 			throw new DMLRuntimeException("Unknown opcode while parsing a MatrixAppendRSPInstruction: " + str);
 		
 		if( in1.getDataType().isMatrix() ) {

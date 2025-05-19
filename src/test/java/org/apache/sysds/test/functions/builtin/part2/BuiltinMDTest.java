@@ -28,7 +28,6 @@ import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -91,8 +90,6 @@ public class BuiltinMDTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
-	// https://issues.apache.org/jira/browse/SYSTEMDS-3716
 	public void testMDSP() {
 		double[][] D =  {
 			{7567, 231, 1231, 1232, 122, 321},

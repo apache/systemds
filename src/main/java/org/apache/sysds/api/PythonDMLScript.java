@@ -21,17 +21,20 @@ package org.apache.sysds.api;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.sysds.api.jmlc.Connection;
 
+import py4j.DefaultGatewayServerListener;
 import py4j.GatewayServer;
-import py4j.GatewayServerListener;
 import py4j.Py4JNetworkException;
-import py4j.Py4JServerConnection;
+
 
 public class PythonDMLScript {
 
 	private static final Log LOG = LogFactory.getLog(PythonDMLScript.class.getName());
 	final private Connection _connection;
+	public static GatewayServer GwS;
 
 	/**
 	 * Entry point for Python API.
@@ -42,7 +45,7 @@ public class PythonDMLScript {
 	public static void main(String[] args) throws Exception {
 		final DMLOptions dmlOptions = DMLOptions.parseCLArguments(args);
 		DMLScript.loadConfiguration(dmlOptions.configFile);
-		final GatewayServer GwS = new GatewayServer(new PythonDMLScript(), dmlOptions.pythonPort);
+		GwS = new GatewayServer(new PythonDMLScript(), dmlOptions.pythonPort);
 		GwS.addListener(new DMLGateWayListener());
 		try {
 			GwS.start();
@@ -67,38 +70,20 @@ public class PythonDMLScript {
 		_connection = new Connection();
 	}
 
+	public static void setDMLGateWayListenerLoggerLevel(Level l){
+		Logger.getLogger(DMLGateWayListener.class).setLevel(l);
+	}
+
 	public Connection getConnection() {
 		return _connection;
 	}
 
-	protected static class DMLGateWayListener implements GatewayServerListener {
+	protected static class DMLGateWayListener extends DefaultGatewayServerListener {
 		private static final Log LOG = LogFactory.getLog(DMLGateWayListener.class.getName());
-
-		@Override
-		public void connectionError(Exception e) {
-			LOG.warn("Connection error: " + e.getMessage());
-			System.exit(1);
-		}
-
-		@Override
-		public void connectionStarted(Py4JServerConnection gatewayConnection) {
-			LOG.debug("Connection Started: " + gatewayConnection.toString());
-		}
-
-		@Override
-		public void connectionStopped(Py4JServerConnection gatewayConnection) {
-			LOG.debug("Connection stopped: " + gatewayConnection.toString());
-		}
-
-		@Override
-		public void serverError(Exception e) {
-			LOG.error("Server Error " + e.getMessage());
-		}
 
 		@Override
 		public void serverPostShutdown() {
 			LOG.info("Shutdown done");
-			System.exit(0);
 		}
 
 		@Override
@@ -108,13 +93,12 @@ public class PythonDMLScript {
 
 		@Override
 		public void serverStarted() {
-			LOG.info("GatewayServer Started");
+			LOG.info("GatewayServer started");
 		}
 
 		@Override
 		public void serverStopped() {
-			LOG.info("GatewayServer Stopped");
-			System.exit(0);
+			LOG.info("GatewayServer stopped");
 		}
 	}
 

@@ -25,23 +25,27 @@ from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import save_embeddings
 
+from systemds.scuro.modality.type import ModalityType
+
 
 class BoW(UnimodalRepresentation):
-    def __init__(self, ngram_range, min_df, output_file=None):
-        super().__init__("BoW")
+    def __init__(self, ngram_range=2, min_df=2, output_file=None):
+        parameters = {"ngram_range": [ngram_range], "min_df": [min_df]}
+        super().__init__("BoW", ModalityType.EMBEDDING, parameters)
         self.ngram_range = ngram_range
         self.min_df = min_df
         self.output_file = output_file
 
     def transform(self, modality):
         transformed_modality = TransformedModality(
-            modality.modality_type, self, modality.metadata
+            modality.modality_type, self, modality.modality_id, modality.metadata
         )
         vectorizer = CountVectorizer(
             ngram_range=(1, self.ngram_range), min_df=self.min_df
         )
 
         X = vectorizer.fit_transform(modality.data).toarray()
+        X = [X[i : i + 1] for i in range(X.shape[0])]
 
         if self.output_file is not None:
             save_embeddings(X, self.output_file)

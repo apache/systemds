@@ -26,6 +26,7 @@ import java.util.Map;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.FileFormat;
@@ -63,8 +64,8 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 import org.apache.sysds.utils.MemoryEstimates;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
 public class OptimizerUtils 
 {
@@ -199,7 +200,7 @@ public class OptimizerUtils
 	public static boolean ALLOW_SUM_PRODUCT_REWRITES2 = true;
 
 	/**
-	 * Enables additional mmchain optimizations. in the future, this might be merged with
+	 * Enables additional mmchain optimizations. In the future, this might be merged with
 	 * ALLOW_SUM_PRODUCT_REWRITES.
 	 */
 	public static boolean ALLOW_ADVANCED_MMCHAIN_REWRITES = false;
@@ -279,6 +280,15 @@ public class OptimizerUtils
 	 */
 	public static boolean ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND = true;
 
+	/**
+	 * This variable allows for insertion of Quantize and compress in the dml script from the user.
+	 */
+	public static boolean ALLOW_SCRIPT_LEVEL_QUANTIZE_COMPRESS_COMMAND = true;
+
+	/**
+	 * Boolean specifying if quantization-fused compression rewrite is allowed.
+	 */
+	public static boolean ALLOW_QUANTIZE_COMPRESS_REWRITE = true;
 
 	/**
 	 * Boolean specifying if compression rewrites is allowed. This is disabled at run time if the IPA for Workload aware compression
@@ -820,6 +830,13 @@ public class OptimizerUtils
 	public static long estimateSizeExactSparsity(long nrows, long ncols, double sp) 
 	{
 		return MatrixBlock.estimateSizeInMemory(nrows,ncols,sp);
+	}
+
+	public static long estimateSizeExactSparsity(long nrows, long ncols, double sp, DataType dt){
+		if(dt == DataType.FRAME)
+			return estimateSizeExactFrame(nrows, ncols);
+		else 
+			return estimateSizeExactSparsity(nrows, ncols, sp);
 	}
 
 	/**

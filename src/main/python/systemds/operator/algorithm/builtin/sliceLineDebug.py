@@ -40,7 +40,7 @@ def sliceLineDebug(TK: Matrix,
     
     
     :param TK: top-k slices (k x ncol(X) if successful)
-    :param TKC: score, size, error of slices (k x 3)
+    :param TKC: score, total/max error, size of slices (k x 4)
     :param tfmeta: transformencode meta data
     :param tfspec: transform specification
     :return: debug output collected as a string

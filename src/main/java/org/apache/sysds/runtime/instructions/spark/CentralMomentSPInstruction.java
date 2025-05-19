@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.spark;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -55,7 +56,7 @@ public class CentralMomentSPInstruction extends UnarySPInstruction {
 		String opcode = parts[0]; 
 		
 		//check supported opcode
-		if( !opcode.equalsIgnoreCase("cm") ) {
+		if( !opcode.equalsIgnoreCase(Opcodes.CM.toString()) ) {
 			throw new DMLRuntimeException("Unsupported opcode "+opcode);
 		}
 			

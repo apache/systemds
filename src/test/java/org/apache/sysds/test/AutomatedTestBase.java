@@ -28,6 +28,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.charset.Charset;
@@ -1656,8 +1658,28 @@ public abstract class AutomatedTestBase {
 		String separator = System.getProperty("file.separator");
 		String classpath = System.getProperty("java.class.path");
 		String path = System.getProperty("java.home") + separator + "bin" + separator + "java";
-		String[] args = new String[] {path, "-Xmx1000m", "-Xms1000m", "-Xmn100m", "-cp", classpath,
-				DMLScript.class.getName(), "-w", Integer.toString(port), "-stats"};
+		String[] args = new String[] {path, "-Xmx1000m", "-Xms1000m", "-Xmn100m", 
+			"--add-opens=java.base/java.nio=ALL-UNNAMED" ,
+			"--add-opens=java.base/java.io=ALL-UNNAMED" ,
+			"--add-opens=java.base/java.util=ALL-UNNAMED" ,
+			"--add-opens=java.base/java.lang=ALL-UNNAMED" ,
+			"--add-opens=java.base/java.lang.ref=ALL-UNNAMED" ,
+			"--add-opens=java.base/java.util.concurrent=ALL-UNNAMED" ,
+			"--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",};
+
+		RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+		List<String> jvmArgs = runtimeMxBean.getInputArguments();
+
+		for(String arg : jvmArgs) {
+			// add code coverage report
+			if(arg.contains("org.jacoco.agent"))
+				args = ArrayUtils.addAll(args,
+					new String[] {arg.replace("target/jacoco.exec", String.format("target/federated_jacoco/jacoco-%d.exec", port))});
+		}
+
+		args = ArrayUtils.addAll(args, new String[]{
+			"-cp", classpath,
+				DMLScript.class.getName(), "-w", Integer.toString(port), "-stats"});
 		if(addArgs != null)
 			args = ArrayUtils.addAll(args, addArgs);
 		

@@ -23,8 +23,8 @@ from typing import List, Optional, Union
 import numpy as np
 
 from systemds.scuro.dataloader.base_loader import BaseLoader
-from systemds.scuro.utils.schema_helpers import create_timestamps
 import cv2
+from systemds.scuro.modality.type import ModalityType
 
 
 class VideoLoader(BaseLoader):
@@ -34,7 +34,7 @@ class VideoLoader(BaseLoader):
         indices: List[str],
         chunk_size: Optional[int] = None,
     ):
-        super().__init__(source_path, indices, chunk_size)
+        super().__init__(source_path, indices, chunk_size, ModalityType.VIDEO)
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
@@ -43,16 +43,14 @@ class VideoLoader(BaseLoader):
         if not cap.isOpened():
             raise f"Could not read video at path: {file}"
 
-        self.metadata[file] = {
-            "fps": cap.get(cv2.CAP_PROP_FPS),
-            "length": int(cap.get(cv2.CAP_PROP_FRAME_COUNT)),
-            "width": int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
-            "height": int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
-            "num_channels": 3,
-        }
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        num_channels = 3
 
-        self.metadata[file]["timestamp"] = create_timestamps(
-            self.metadata[file]["fps"], self.metadata[file]["length"]
+        self.metadata[file] = self.modality_type.create_video_metadata(
+            fps, length, width, height, num_channels
         )
 
         frames = []

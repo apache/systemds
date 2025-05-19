@@ -64,7 +64,8 @@ doSample = function(Matrix[Double] eX, Matrix[Double] eY, Double ratio, Matrix[D
   sampledY = eY
   sampled = floor(nrow(eX) * ratio)
 
-  if(sampled > MIN_SAMPLE & ratio != 1.0)
+#  if(sampled > MIN_SAMPLE & ratio != 1.0)
+  if(ratio != 1.0)
   {
     sampleVec = sample(nrow(eX), sampled, FALSE, 23)
     P = table(seq(1, nrow(sampleVec)), sampleVec, nrow(sampleVec), nrow(eX))

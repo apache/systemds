@@ -20,8 +20,6 @@
 package org.apache.sysds.hops.rewrite;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
@@ -90,7 +88,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 public class HopRewriteUtils {
-	private static final Log LOG = LogFactory.getLog(HopRewriteUtils.class.getName());
 
 	public static boolean isValueTypeCast( OpOp1 op ) {
 		return op == OpOp1.CAST_AS_BOOLEAN
@@ -657,8 +654,8 @@ public class HopRewriteUtils {
 		Hop mainInput = input1.getDataType().isMatrix() ? input1 :
 			input2.getDataType().isMatrix() ? input2 : input1;
 		Hop otherInput = mainInput==input1 ? input2 : input1;
-		BinaryOp bop = new BinaryOp(mainInput.getName(), mainInput.getDataType(),
-			mainInput.getValueType(), op, input1, input2);
+		BinaryOp bop = new BinaryOp(mainInput.getName(),
+			mainInput.getDataType(),mainInput.getValueType(), op, input1, input2, outer);
 		//cleanup value type for relational operations and others
 		if( otherInput.getValueType().isFP() && !mainInput.getValueType().isFP() )
 			bop.setValueType(otherInput.getValueType());
@@ -666,7 +663,6 @@ public class HopRewriteUtils {
 			bop.setValueType(ValueType.BOOLEAN);
 		if( bop.getDataType().isMatrix() )
 			bop.setValueType(ValueType.FP64);
-		bop.setOuterVectorOperation(outer);
 		bop.setBlocksize(mainInput.getBlocksize());
 		copyLineNumbers(mainInput, bop);
 		bop.refreshSizeInformation();
@@ -1713,7 +1709,6 @@ public class HopRewriteUtils {
 			// If the function keys are incorrect this exception is caught for robustness in error messages for users.
 			// Intensionally only catching the exception!
 			// For debugging if for some reason the error we encountered was something else we LOG the error.
-			LOG.error(ex);
 			return false;
 		}
 	}

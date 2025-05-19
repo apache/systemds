@@ -56,8 +56,8 @@ public class LineageCacheConfig
 		Opcodes.UAMEAN.toString(), Opcodes.MAX.toString(), Opcodes.MIN.toString(), Opcodes.IFELSE.toString(), Opcodes.MINUS.toString(), Opcodes.SQRT.toString(), Opcodes.LESS.toString(), Opcodes.GREATER.toString(), Opcodes.UAKP.toString(), Opcodes.LESSEQUAL.toString(),
 		Opcodes.POW.toString(), Opcodes.UAMAX.toString(), Opcodes.UARKP.toString(), Opcodes.UACMEAN.toString(), Opcodes.EIGEN.toString(),Opcodes.CTABLE.toString(), Opcodes.CTABLEEXPAND.toString(), Opcodes.REPLACE.toString(),
 		Opcodes.POW2.toString(), Opcodes.MULT2.toString(), Opcodes.UACKP.toString(), Opcodes.TAKPM.toString(), Opcodes.UACSQKP.toString(), Opcodes.UARKP.toString(), Opcodes.NP.toString(), Opcodes.UARIMAX.toString(), Opcodes.QSORT.toString(),
-		Opcodes.QPICK.toString(), Opcodes.TRANSFORMAPPLY.toString(), Opcodes.UARMAX.toString(), Opcodes.NP.toString(), Opcodes.MINUSMULT.toString(), "castdtm", Opcodes.LOWERTRI.toString(), Opcodes.MINUS1_MULT.toString(),
-		Opcodes.PREFETCH.toString(), "mapmm", Opcodes.CONTAINS.toString(), Opcodes.MMCHAIN.toString(), "mapmmchain", Opcodes.PM.toString(), Opcodes.EQUAL.toString(), Opcodes.RMEMPTY.toString(),
+		Opcodes.QPICK.toString(), Opcodes.TRANSFORMAPPLY.toString(), Opcodes.UARMAX.toString(), Opcodes.NP.toString(), Opcodes.MINUSMULT.toString(), Opcodes.CASTDTM.toString(), Opcodes.LOWERTRI.toString(), Opcodes.MINUS1_MULT.toString(),
+		Opcodes.PREFETCH.toString(), Opcodes.MAPMM.toString(), Opcodes.CONTAINS.toString(), Opcodes.MMCHAIN.toString(), Opcodes.MAPMMCHAIN.toString(), Opcodes.PM.toString(), Opcodes.EQUAL.toString(), Opcodes.RMEMPTY.toString(),
 		Opcodes.CONV2D_BIAS_ADD.toString(), Opcodes.RELU_MAXPOOLING.toString(), Opcodes.MAXPOOLING.toString(), Opcodes.BATCH_NORM2D.toString(), Opcodes.AVGPOOLING.toString(),
 		"softmax"
 		//TODO: Reuse everything.
@@ -65,17 +65,17 @@ public class LineageCacheConfig
 
 	// Relatively expensive instructions. Most include shuffles.
 	private static final String[] PERSIST_OPCODES1 = new String[] {
-		"cpmm", "rmm", Opcodes.PMM.toString(), "zipmm", Opcodes.REV.toString(), Opcodes.ROLL.toString(), Opcodes.RESHAPE.toString(), Opcodes.SORT.toString(), Opcodes.MINUS.toString(), Opcodes.MULT.toString(), Opcodes.PLUS.toString(),
+		Opcodes.CPMM.toString(), Opcodes.RMM.toString(), Opcodes.PMM.toString(), Opcodes.ZIPMM.toString(), Opcodes.REV.toString(), Opcodes.ROLL.toString(), Opcodes.RESHAPE.toString(), Opcodes.SORT.toString(), Opcodes.MINUS.toString(), Opcodes.MULT.toString(), Opcodes.PLUS.toString(),
 		Opcodes.DIV.toString(), Opcodes.MODULUS.toString(), Opcodes.INTDIV.toString(), Opcodes.MINUS1_MULT.toString(), Opcodes.POW.toString(), Opcodes.POW2.toString(), Opcodes.MULT2.toString(), Opcodes.EQUAL.toString(), Opcodes.NOTEQUAL.toString(), Opcodes.LESS.toString(), Opcodes.GREATER.toString(),
-		Opcodes.LESSEQUAL.toString(), Opcodes.GREATEREQUAL.toString(), Opcodes.AND.toString(), Opcodes.OR.toString(), Opcodes.XOR.toString(), Opcodes.MAX.toString(), Opcodes.MIN.toString(), Opcodes.RMEMPTY.toString(), "rappend",
-		"gappend", "galignedappend", Opcodes.RBIND.toString(), Opcodes.CBIND.toString(), Opcodes.NMIN.toString(), Opcodes.NMAX.toString(),
-		Opcodes.NP.toString(), Opcodes.CTABLE.toString(), "ucumack+", "ucumac*", "ucumacmin", "ucumacmax",
+		Opcodes.LESSEQUAL.toString(), Opcodes.GREATEREQUAL.toString(), Opcodes.AND.toString(), Opcodes.OR.toString(), Opcodes.XOR.toString(), Opcodes.MAX.toString(), Opcodes.MIN.toString(), Opcodes.RMEMPTY.toString(), Opcodes.RAPPEND.toString(),
+		Opcodes.GAPPEND.toString(), Opcodes.GALIGNEDAPPEND.toString(), Opcodes.RBIND.toString(), Opcodes.CBIND.toString(), Opcodes.NMIN.toString(), Opcodes.NMAX.toString(),
+		Opcodes.NP.toString(), Opcodes.CTABLE.toString(), Opcodes.UCUMACKP.toString(), Opcodes.UCUMACM.toString(), Opcodes.UCUMACMIN.toString(), Opcodes.UCUMACMAX.toString(),
 		Opcodes.QSORT.toString(), Opcodes.QPICK.toString()
 	};
 
 	// Relatively inexpensive instructions.
 	private static final String[] PERSIST_OPCODES2 = new String[] {
-		"mapmm", "isna", "leftIndex"
+		Opcodes.MAPMM.toString(), "isna", "leftIndex"
 	};
 
 	private static final String[] GPU_OPCODE_HEAVY = new String[] {

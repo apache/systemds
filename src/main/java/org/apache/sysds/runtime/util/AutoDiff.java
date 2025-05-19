@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Stack;
 
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.sysds.common.InstructionType;
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.DataGenOp;
@@ -45,7 +46,6 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionParser;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.instructions.cp.CPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
@@ -214,7 +214,7 @@ public class AutoDiff {
 				break;
 			}
 			case Instruction: {
-				CPInstruction.CPType ctype = Opcodes.getCPTypeByOpcode(item.getOpcode());
+				InstructionType ctype = Opcodes.getTypeByOpcode(item.getOpcode(), Types.ExecType.CP);
 
 				if(ctype != null) {
 					switch(ctype) {
@@ -238,7 +238,7 @@ public class AutoDiff {
 							//handle special cases of binary operations
 							String opcode = item.getOpcode();
 							Hop output = null;
-							if(opcode.equals("+"))
+							if(opcode.equals(Opcodes.PLUS.toString()))
 								output = HopRewriteUtils.createAggUnaryOp(mo, Types.AggOp.SUM, Types.Direction.Col);
 							operands.put(item.getId(), output);
 							allHops.add(output);

@@ -49,8 +49,8 @@ jobs:
       fail-fast: false
       matrix:
         python-version: [3.8]
-        os: [ubuntu-latest]
-        java: ['11']
+        os: [ubuntu-24.04]
+        java: ['17']
         javadist: ['adopt']
 
     name: ${{ matrix.os }} Java ${{ matrix.java }} ${{ matrix.javadist }} Python ${{ matrix.python-version }}
@@ -116,8 +116,9 @@ jobs:
           h5py \
           gensim \
           black \
-          opt-einsum
-                
+          opt-einsum \
+          nltk
+        
     - name: Build Python Package
       run: |
         cd src/main/python

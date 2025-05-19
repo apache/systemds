@@ -223,7 +223,7 @@ public class SpoofCompiler {
 			else {
 				local_tmp = System.getProperty("user.dir") + "/src/main".replace("/", File.separator);
 			}
-			
+			// TODO: Code is unreachable here
 			if(generator == GeneratorAPI.CUDA) {
 				// init GPUs with jCuda to avoid double initialization problems
 				GPUContextPool.initializeGPU();

@@ -41,7 +41,7 @@ Once the individual versions is set up skip to the common part of building the s
 
 ### Windows
 
-First setup java and maven to compile the system note the java version is 11, we suggest using Java OpenJDK 11.
+First setup java and maven to compile the system note the java version is 17, we suggest using Java OpenJDK 17.
 
 - <https://openjdk.org/>
 - <https://maven.apache.org/download.cgi?.>
@@ -62,10 +62,10 @@ A suggested starting point would be to run some of the component tests from your
 
 ### Ubuntu 22.04
 
-First setup java and maven to compile the system note that the java version is 11.
+First setup java and maven to compile the system note that the java version is 17.
 
 ```bash
-sudo apt install openjdk-11-jdk
+sudo apt install openjdk-17-jdk
 sudo apt install maven
 ```
 
@@ -79,15 +79,15 @@ mvn -version
 This should return something like:
 
 ```bash
-openjdk 11.0.17 2022-10-18
-OpenJDK Runtime Environment (build 11.0.17+8-post-Ubuntu-1ubuntu220.04)
-OpenJDK 64-Bit Server VM (build 11.0.17+8-post-Ubuntu-1ubuntu220.04, mixed mode, sharing)
+openjdk 17.0.11 2024-04-16
+OpenJDK Runtime Environment Temurin-17.0.11+9 (build 17.0.11+9)
+OpenJDK 64-Bit Server VM Temurin-17.0.11+9 (build 17.0.11+9, mixed mode, sharing)
 
-Apache Maven 3.6.3
-Maven home: /usr/share/maven
-Java version: 1.8.0_252, vendor: Private Build, runtime: /usr/lib/jvm/java-8-openjdk-amd64/jre
+Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937)
+Maven home: /home/usr/Programs/maven
+Java version: 17.0.11, vendor: Eclipse Adoptium, runtime: /home/usr/Programs/jdk-17.0.11+9
 Default locale: en_US, platform encoding: UTF-8
-OS name: "linux", version: "5.4.0-37-generic", arch: "amd64", family: "unix"
+OS name: "linux", version: "6.8.0-59-generic", arch: "amd64", family: "unix"
 ```
 
 #### Testing
@@ -120,9 +120,8 @@ Prerequisite install homebrew on the device.
 ```bash
 # To allow relative paths:
 brew install coreutils
-# To install open jdk 11.
-brew tap adoptopenjdk/openjdk
-brew cask install adoptopenjdk11
+# To install open jdk 17.
+brew install openjdk@17
 # Install maven to enable compilation of SystemDS.
 brew install maven
 ```
@@ -136,10 +135,10 @@ mvn --version
 
 This should print java version.
 
-Note that if you have multiple __java__ versions installed then you have to change the used version to 11, on __both java and javadoc__. This is done by setting the environment variable JAVA_HOME to the install path of open JDK 11 :
+Note that if you have multiple __java__ versions installed then you have to change the used version to 17, on __both java and javadoc__. This is done by setting the environment variable JAVA_HOME to the install path of open JDK 17 :
 
 ```bash
-export JAVA_HOME=`/usr/libexec/java_home -v 11`
+export JAVA_HOME=`/usr/libexec/java_home -v 17`
 ```
 
 For running all tests [r-base](https://cran.r-project.org/bin/macosx/) has to be installed as well since this is used as a secondary system to verify the correctness of our code, but it is not a requirement to enable building the project.

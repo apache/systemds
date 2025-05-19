@@ -754,9 +754,9 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 				raiseValidateError("Compress/DeCompress instruction not allowed in dml script");
 			break;
 		case EINSUM:
-				validateEinsum((DataIdentifier) getOutputs()[0]);
+			validateEinsum((DataIdentifier) getOutputs()[0]);
 
-				break;					
+			break;					
 		default: //always unconditional
 			raiseValidateError("Unknown Builtin Function opcode: " + _opcode, false);
 		}

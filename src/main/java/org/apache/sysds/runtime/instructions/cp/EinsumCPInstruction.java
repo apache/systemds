@@ -38,13 +38,14 @@ import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 
 import java.util.*;
 
 import static org.apache.sysds.runtime.instructions.cp.EinsumContext.getEinsumContext;
 
-public class EinsumCPInstruction extends ComputationCPInstruction {
+public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 
 	protected static final Log LOG = LogFactory.getLog(EinsumCPInstruction.class.getName());
 	public String eqStr;
@@ -53,16 +54,16 @@ public class EinsumCPInstruction extends ComputationCPInstruction {
 	private final int _numThreads;
 	private final CPOperand[] _in;
 
-	private EinsumCPInstruction(int k,
-								CPOperand[] in, CPOperand out, String opcode, String str, String eqStr)
+	public EinsumCPInstruction(Operator op, String opcode, String istr, CPOperand out, CPOperand... inputs)
 	{
-		super(CPType.EINSUM, null, null, null, out, opcode, str);
-		_class =null;
+		super(op, opcode, istr, out, inputs);
+		_class = null;
 		_op = null;
-		_numThreads = k;
-		_in = in;
-		this.eqStr = eqStr;
+		_numThreads = OptimizerUtils.getConstrainedNumThreads(-1);
+		_in = inputs;
+		this.eqStr = inputs[0].getName();
 	}
+
 
 	public SpoofOperator getSpoofOperator() {
 		return _op;
@@ -76,24 +77,24 @@ public class EinsumCPInstruction extends ComputationCPInstruction {
 	private static final int CONTRACT_RIGHT = 2;
 	private static final int CONTRACT_BOTH = 3;
 
-	public static EinsumCPInstruction parseInstruction(String str) {
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-
-		ArrayList<CPOperand> inlist = new ArrayList<>();
-
-		for (int i = 2; i < parts.length - 1; i++)
-		{
-			inlist.add(new CPOperand(parts[i]));
-		}
-
-		CPOperand out = new CPOperand(parts[parts.length-1]);
-//		int k = 1;//Integer.parseInt(parts[parts.length-1]);
-		int k = OptimizerUtils.getConstrainedNumThreads(-1);
-
-		String eqString = new CPOperand(parts[1]).getName(); //todo change
-
-		return new EinsumCPInstruction(k, inlist.toArray(new CPOperand[0]), out, parts[0], str, eqString);
-	}
+//	public static EinsumCPInstruction parseInstruction(String str) {
+//		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+//
+//		ArrayList<CPOperand> inlist = new ArrayList<>();
+//
+//		for (int i = 2; i < parts.length - 1; i++)
+//		{
+//			inlist.add(new CPOperand(parts[i]));
+//		}
+//
+//		CPOperand out = new CPOperand(parts[parts.length-1]);
+////		int k = 1;//Integer.parseInt(parts[parts.length-1]);
+//		int k = OptimizerUtils.getConstrainedNumThreads(-1);
+//
+//		String eqString = new CPOperand(parts[1]).getName(); //todo change
+//
+//		return new EinsumCPInstruction(k, inlist.toArray(new CPOperand[0]), out, parts[0], str, eqString);
+//	}
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
@@ -112,10 +113,10 @@ public class EinsumCPInstruction extends ComputationCPInstruction {
 				}
 				inputs.add(mb);
 			}
-			else if(input.getDataType()==DataType.SCALAR) {
-				//note: even if literal, it might be compiled as scalar placeholder
-				scalars.add(ec.getScalarInput(input));
-			}
+//			else if(input.getDataType()==DataType.SCALAR) {
+//				//note: even if literal, it might be compiled as scalar placeholder
+//				scalars.add(ec.getScalarInput(input));
+//			}
 		}
 
 		EinsumContext einc = getEinsumContext(eqStr,inputs);
@@ -423,21 +424,21 @@ public class EinsumCPInstruction extends ComputationCPInstruction {
 				ec.releaseMatrixInput(input.getName());
 	}
 
-	@Override
-	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
-		//return the lineage item if already traced once
-		LineageItem li = ec.getLineage().get(output.getName());
-		if (li != null)
-			return Pair.of(output.getName(), li);
-
-		//read and deepcopy the corresponding lineage DAG (pre-codegen)
-		LineageItem LIroot = LineageCodegenItem.getCodegenLTrace(getOperatorClass().getName()).deepCopy();
-
-		//replace the placeholders with original instruction inputs.
-		LineageItemUtils.replaceDagLeaves(ec, LIroot, _in);
-
-		return Pair.of(output.getName(), LIroot);
-	}
+//	@Override
+//	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+//		//return the lineage item if already traced once
+//		LineageItem li = ec.getLineage().get(output.getName());
+//		if (li != null)
+//			return Pair.of(output.getName(), li);
+//
+//		//read and deepcopy the corresponding lineage DAG (pre-codegen)
+//		LineageItem LIroot = LineageCodegenItem.getCodegenLTrace(getOperatorClass().getName()).deepCopy();
+//
+//		//replace the placeholders with original instruction inputs.
+//		LineageItemUtils.replaceDagLeaves(ec, LIroot, _in);
+//
+//		return Pair.of(output.getName(), LIroot);
+//	}
 
 	public CPOperand[] getInputs() {
 		return _in;

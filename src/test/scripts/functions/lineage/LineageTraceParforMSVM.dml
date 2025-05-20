@@ -43,7 +43,7 @@ msvm2 = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE,
   parfor(class in 1:max(Y), opt=CONSTRAINED, par=4, mode=REMOTE_SPARK) {
     Y_local = 2 * (Y == class) - 1
     w[,class] = l2svm(X=X, Y=Y_local, intercept=intercept,
-        epsilon=epsilon, reg=reg, maxIterations=maxIterations, 
+        tol=epsilon, reg=reg, maxIter=maxIterations,
         verbose= verbose, columnId=class)
   }
   

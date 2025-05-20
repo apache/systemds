@@ -55,7 +55,7 @@ def randomForest(X: Matrix,
         [4, 5, 1, 7, 0, 2, 0, 2, 0, 1, 0, 0, 0, 0]]  (2nd tree)
         |(L1)| |  (L2)   | |        (L3)         |
     
-       With feature sampling (feature_frac < 1), each tree is
+       With feature sampling (featureFrac < 1), each tree is
        prefixed by a one-hot vector of sampled features
        (e.g., [1,1,1,0] if we sampled a,b,c of the four features)
     
@@ -66,16 +66,16 @@ def randomForest(X: Matrix,
     :param y: Label matrix in recoded/binned representation
     :param ctypes: Row-Vector of column types [1 scale/ordinal, 2 categorical]
         of shape 1-by-(ncol(X)+1), where the last entry is the y type
-    :param num_trees: Number of trees to be learned in the random forest model
-    :param sample_frac: Sample fraction of examples for each tree in the forest
-    :param feature_frac: Sample fraction of features for each tree in the forest
-    :param max_depth: Maximum depth of the learned tree (stopping criterion)
-    :param min_leaf: Minimum number of samples in leaf nodes (stopping criterion)
-    :param min_split: Minimum number of samples in leaf for attempting a split
-    :param max_features: Parameter controlling the number of features used as split
-        candidates at tree nodes: m = ceil(num_features^max_features)
-    :param max_values: Parameter controlling the number of values per feature used
-        as split candidates: nb = ceil(num_values^max_values)
+    :param numTrees: Number of trees to be learned in the random forest model
+    :param sampleFrac: Sample fraction of examples for each tree in the forest
+    :param featureFrac: Sample fraction of features for each tree in the forest
+    :param maxDepth: Maximum depth of the learned tree (stopping criterion)
+    :param minLeaf: Minimum number of samples in leaf nodes (stopping criterion)
+    :param minSplit: Minimum number of samples in leaf for attempting a split
+    :param maxFeatures: Parameter controlling the number of features used as split
+        candidates at tree nodes: m = ceil(numFeatures^maxFeatures)
+    :param maxValues: Parameter controlling the number of values per feature used
+        as split candidates: nb = ceil(num_values^maxValues)
     :param impurity: Impurity measure: entropy, gini (default), rss (regression)
     :param seed: Fixed seed for randomization of samples and split candidates
     :param verbose: Flag indicating verbose debug output

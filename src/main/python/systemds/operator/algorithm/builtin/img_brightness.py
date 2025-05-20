@@ -28,21 +28,21 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
-def img_brightness(img_in: Matrix,
+def img_brightness(img: Matrix,
                    value: float,
-                   channel_max: int):
+                   maxValue: int):
     """
      The img_brightness-function is an image data augmentation function. It changes the brightness of the image.
     
     
     
-    :param img_in: Input matrix/image
+    :param img: Input matrix/image
     :param value: The amount of brightness to be changed for the image
-    :param channel_max: Maximum value of the brightness of the image
+    :param maxValue: Maximum channel value of the brightness of the image
     :return: Output matrix/image
     """
 
-    params_dict = {'img_in': img_in, 'value': value, 'channel_max': channel_max}
-    return Matrix(img_in.sds_context,
+    params_dict = {'img': img, 'value': value, 'maxValue': maxValue}
+    return Matrix(img.sds_context,
         'img_brightness',
         named_input_nodes=params_dict)

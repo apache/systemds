@@ -28,25 +28,25 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
-def img_crop(img_in: Matrix,
+def img_crop(img: Matrix,
              w: int,
              h: int,
-             x_offset: int,
-             y_offset: int):
+             offsetX: int,
+             offsetY: int):
     """
      The img_crop-function is an image data augmentation function. It cuts out a subregion of an image.
     
     
     
-    :param img_in: Input matrix/image
+    :param img: Input matrix/image
     :param w: The width of the subregion required
     :param h: The height of the subregion required
-    :param x_offset: The horizontal coordinate in the image to begin the crop operation
-    :param y_offset: The vertical coordinate in the image to begin the crop operation
+    :param offsetX: The horizontal coordinate in the image to begin the crop operation
+    :param offsetY: The vertical coordinate in the image to begin the crop operation
     :return: Cropped matrix/image
     """
 
-    params_dict = {'img_in': img_in, 'w': w, 'h': h, 'x_offset': x_offset, 'y_offset': y_offset}
-    return Matrix(img_in.sds_context,
+    params_dict = {'img': img, 'w': w, 'h': h, 'offsetX': offsetX, 'offsetY': offsetY}
+    return Matrix(img.sds_context,
         'img_crop',
         named_input_nodes=params_dict)

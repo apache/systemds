@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 X = rand(rows=13000, cols=150, seed=42); #sp_rand
-[W, H] = pnmf(X=X, rnk=100, verbose=FALSE);
+[W, H] = pnmf(X=X, rank=100, verbose=FALSE);
 
 print(sum(W %*% H));
 R = sum(W %*% H);

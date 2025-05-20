@@ -27,7 +27,7 @@
 # k               threshold values 1, 2, 3 for 68%, 95%, 99.7% respectively (3-sigma rule)
 # repairMethod    values: 0 = delete rows having outliers, 1 = replace outliers as  zeros
 #                 2 = replace outliers as missing values
-# max_iterations  values: 0 = arbitrary number of iteration until all outliers are removed,
+# maxIter         values: 0 = arbitrary number of iteration until all outliers are removed,
 #                 n = any constant defined by user
 # ----------------------------------------------------------------------------------------
 #
@@ -37,7 +37,7 @@
 # -------------------------------------------------------------------------------
 
 m_outlierBySd = function(Matrix[Double] X, Double k = 3, Integer repairMethod = 1, 
-  Integer max_iterations, Boolean verbose = TRUE) 
+  Integer maxIter, Boolean verbose = TRUE)
   return(Matrix[Double] out, Matrix[Double] colMean, Matrix[Double] colSD, Double k, Integer repairMethod) 
 {
   # variable initialization 
@@ -49,7 +49,7 @@ m_outlierBySd = function(Matrix[Double] X, Double k = 3, Integer repairMethod = 
   if( k < 1 | k > 10)
     stop("outlierBySd: invalid argument - k should be in range 1-10 found "+k)
 
-  while( max_iterations == 0 | counter < max_iterations )
+  while( maxIter == 0 | counter < maxIter )
   {
     [colMean, colSD] = getColMean_Sd(X)
     
@@ -67,7 +67,7 @@ m_outlierBySd = function(Matrix[Double] X, Double k = 3, Integer repairMethod = 
       sumNext = sum(temp)
     }
     else
-      max_iterations = - 1;
+      maxIter = - 1;
 
     counter = counter + 1; 
   }

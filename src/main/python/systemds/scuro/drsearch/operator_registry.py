@@ -22,9 +22,6 @@ from typing import Union, List
 
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations.representation import Representation
-from pkgutil import iter_modules
-from pathlib import Path
-from importlib import import_module
 
 
 class Registry:
@@ -44,7 +41,6 @@ class Registry:
             cls._instance = super().__new__(cls)
             for m_type in ModalityType:
                 cls._representations[m_type] = []
-            scan_to_register()
         return cls._instance
 
     def add_representation(
@@ -109,18 +105,3 @@ def register_fusion_operator():
         return cls
 
     return decorator
-
-
-def scan_to_register():
-    """
-    This method scans the representation module to register all Representations that
-    are decorated with the @register_representation decorator.
-    """
-
-    package_dir = Path(__file__).resolve().parent
-
-    if str(package_dir).split("/")[-1] != "scuro":
-        package_dir = package_dir.parent
-
-    for _, module_name, _ in iter_modules([package_dir]):
-        import_module(f"{__package__}.{module_name}")

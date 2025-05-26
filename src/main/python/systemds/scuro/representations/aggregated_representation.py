@@ -18,7 +18,8 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from systemds.scuro import TransformedModality, Representation
+from systemds.scuro.modality.transformed import TransformedModality
+from systemds.scuro.representations.representation import Representation
 
 
 class AggregatedRepresentation(Representation):

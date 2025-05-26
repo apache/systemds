@@ -39,7 +39,7 @@ def load_glove_embeddings(file_path):
     return embeddings
 
 
-@register_representation(ModalityType.TEXT)
+# @register_representation(ModalityType.TEXT)
 class GloVe(UnimodalRepresentation):
     def __init__(self, glove_path, output_file=None):
         super().__init__("GloVe", ModalityType.TEXT)

@@ -31,7 +31,7 @@ from systemds.scuro.drsearch.task import Task
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.aggregate import Aggregation
 from systemds.scuro.representations.context import Context
-    
+
 
 class UnimodalRepresentationOptimizer:
     def __init__(
@@ -53,13 +53,12 @@ class UnimodalRepresentationOptimizer:
         if self.debug:
             self.folder_name = folder_name
             os.makedirs(self.folder_name, exist_ok=True)
-        
 
     def initialize_optimization_results(self):
         for modality in self.modalities:
             self.optimization_results[modality.modality_id] = {}
             for task in self.tasks:
-                self.optimization_results[modality.modality_id][task.name] = []
+                self.optimization_results[modality.modality_id][task.model.name] = []
 
     def optimize(self):
         """
@@ -89,20 +88,18 @@ class UnimodalRepresentationOptimizer:
                             copy_results[model], fp, protocol=pickle.HIGHEST_PROTOCOL
                         )
 
-    def get_k_best_results(self, modality: Modality, k: int):
+    def get_k_best_results(self, modality: Modality, k: int, task: Task):
         """
         Get the k best results for the given modality
         :param modality: modality to get the best results for
         :param k: number of best results
         """
-        results = []
-        for task in self.tasks:
-            results.append(sorted(
-            self.optimization_results[modality.modality_id][task.name],
+        results = sorted(
+            self.optimization_results[modality.modality_id][task.model.name],
             key=lambda x: x.test_accuracy,
             reverse=True,
-        )[:k])
-        
+        )[:k]
+
         return results
 
     def _optimize_modality(self, modality: Modality):
@@ -157,18 +154,21 @@ class UnimodalRepresentationOptimizer:
     def _evaluate_with_flattened_data(
         self, modality, operator_chain, op_params, representation_time, task
     ):
-        from systemds.scuro.representations.aggregated_representation import AggregatedRepresentation
+        from systemds.scuro.representations.aggregated_representation import (
+            AggregatedRepresentation,
+        )
+
         results = []
         for aggregation in Aggregation().get_aggregation_functions():
             start = time.time()
-            agg_operator =  AggregatedRepresentation(Aggregation(aggregation, True))
+            agg_operator = AggregatedRepresentation(Aggregation(aggregation, True))
             agg_modality = agg_operator.transform(modality)
             end = time.time()
 
             agg_opperator_chain = operator_chain + [agg_operator]
             agg_params = dict(op_params)
             agg_params.update({agg_operator.name: agg_operator.parameters})
-          
+
             score = task.run(agg_modality.data)
             result = OptimizationResult(
                 operator_chain=agg_opperator_chain,
@@ -188,7 +188,7 @@ class UnimodalRepresentationOptimizer:
                 op_name = ""
                 for operator in agg_opperator_chain:
                     op_name += str(operator.__class__.__name__)
-                print(f"{task.name} {op_name}: {score[1]}")
+                print(f"{task.name} {task.model.name} {op_name}: {score[1]}")
 
         return results
 
@@ -198,12 +198,18 @@ class UnimodalRepresentationOptimizer:
         for task in self.tasks:
             if isinstance(modality.data[0], str):
                 continue
-                
-            if task.expected_dim == 1 and not isinstance(modality.data[0], list) and modality.data[0].ndim > 1:
+
+            if (
+                task.expected_dim == 1
+                and not isinstance(modality.data[0], list)
+                and modality.data[0].ndim > 1
+            ):
                 r = self._evaluate_with_flattened_data(
                     modality, operator_chain, op_params, representation_time, task
                 )
-                self.optimization_results[modality.modality_id][task.name].extend(r)
+                self.optimization_results[modality.modality_id][task.model.name].extend(
+                    r
+                )
             else:
                 score = task.run(modality.data)
                 result = OptimizationResult(
@@ -218,14 +224,14 @@ class UnimodalRepresentationOptimizer:
                     representation_time=representation_time,
                     output_shape=(1, 1),
                 )  # TODO
-                self.optimization_results[modality.modality_id][task.name].append(
+                self.optimization_results[modality.modality_id][task.model.name].append(
                     result
                 )
                 if self.debug:
                     op_name = ""
                     for operator in operator_chain:
                         op_name += str(operator.__class__.__name__)
-                    print(f"{task.name} - {op_name}: {score[1]}")
+                    print(f"{task.name} {task.model.name} - {op_name}: {score[1]}")
 
     def _apply_operator_chain(self, current_modality, operator_chain):
         op_params = {}

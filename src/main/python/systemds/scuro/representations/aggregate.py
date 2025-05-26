@@ -51,15 +51,18 @@ class Aggregation:
         if params is not None:
             aggregation_function = params["aggregation_function"]
             pad_modality = params["pad_modality"]
-            
+
         if aggregation_function not in self._aggregation_function.keys():
             raise ValueError("Invalid aggregation function")
-        
+
         self._aggregation_func = self._aggregation_function[aggregation_function]
         self.name = "Aggregation"
         self.pad_modality = pad_modality
-        
-        self.parameters = {"aggregation_function": aggregation_function, "pad_modality": pad_modality}
+
+        self.parameters = {
+            "aggregation_function": aggregation_function,
+            "pad_modality": pad_modality,
+        }
 
     def execute(self, modality):
         data = []

@@ -32,5 +32,3 @@ class AggregatedRepresentation(Representation):
         )
         aggregated_modality.data = self.aggregation.execute(modality)
         return aggregated_modality
-        
-

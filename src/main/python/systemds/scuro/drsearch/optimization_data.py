@@ -85,8 +85,9 @@ def extract_names(operator_chain):
     result = []
     for op in operator_chain:
         result.append(op.name if not isinstance(op, str) else op)
-    
+
     return result
+
 
 class OptimizationStatistics:
     optimization_data: Dict[str, OptimizationData] = {}

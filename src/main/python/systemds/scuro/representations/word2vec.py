@@ -29,8 +29,6 @@ from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.operator_registry import register_representation
 import nltk
 
-nltk.download("punkt_tab")
-
 
 def get_embedding(sentence, model):
     vectors = []

@@ -43,8 +43,8 @@ from systemds.scuro.modality.modality import Modality
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.modality.type import ModalityType
-from systemds.scuro.aligner.dr_search import DRSearch
-from systemds.scuro.aligner.task import Task
+from systemds.scuro.drsearch.dr_search import DRSearch
+from systemds.scuro.drsearch.task import Task
 
 
 __all__ = [

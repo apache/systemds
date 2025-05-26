@@ -21,11 +21,9 @@
 import copy
 import os
 import pickle
-from typing import List, Dict, Any, Union
 import tempfile
 
 from systemds.scuro.modality.transformed import TransformedModality
-from systemds.scuro.representations.representation import Representation
 
 
 class RepresentationCache:

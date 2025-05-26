@@ -167,7 +167,7 @@ class JoinedModality(Modality):
     def aggregate(
         self, aggregation_function, field_name
     ):  # TODO: use the filed name to extract data entries from modalities
-        module = importlib.import_module('systemds.scuro.representations.aggregate')
+        module = importlib.import_module("systemds.scuro.representations.aggregate")
 
         self.aggregation = module.Aggregation(aggregation_function, field_name)
 

@@ -28,6 +28,9 @@ from sklearn import svm
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 
+from systemds.scuro.representations.concatenation import Concatenation
+from systemds.scuro.representations.average import Average
+from systemds.scuro.drsearch.fusion_optimizer import FusionOptimizer
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.models.model import Model
 from systemds.scuro.drsearch.task import Task
@@ -39,12 +42,14 @@ from systemds.scuro.representations.spectrogram import Spectrogram
 from systemds.scuro.representations.word2vec import W2V
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.resnet import ResNet
-from tests.scuro.data_generator import setup_data
+from tests.scuro.data_generator import setup_data, ModalityRandomDataGenerator
 
 from systemds.scuro.dataloader.audio_loader import AudioLoader
 from systemds.scuro.dataloader.video_loader import VideoLoader
 from systemds.scuro.dataloader.text_loader import TextLoader
 from systemds.scuro.modality.type import ModalityType
+
+from unittest.mock import patch
 
 
 class TestSVM(Model):
@@ -97,17 +102,14 @@ class TestCNN(Model):
         )["accuracy"]
 
 
-from unittest.mock import patch
-
-
-class TestUnimodalRepresentationOptimizer(unittest.TestCase):
+class TestMultimodalRepresentationOptimizer(unittest.TestCase):
     test_file_path = None
     data_generator = None
     num_instances = 0
 
     @classmethod
     def setUpClass(cls):
-        cls.test_file_path = "unimodal_optimizer_test_data"
+        cls.test_file_path = "fusion_optimizer_test_data"
 
         cls.num_instances = 10
         cls.mods = [ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT]
@@ -144,32 +146,32 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
     def tearDownClass(cls):
         shutil.rmtree(cls.test_file_path)
 
-    def test_unimodal_optimizer_for_audio_modality(self):
+    def test_multimodal_fusion(self):
+        task = Task(
+            "UnimodalRepresentationTask1",
+            TestSVM(),
+            self.data_generator.labels,
+            self.train_indizes,
+            self.val_indizes,
+        )
         audio_data_loader = AudioLoader(
             self.data_generator.get_modality_path(ModalityType.AUDIO),
             self.data_generator.indices,
         )
         audio = UnimodalModality(audio_data_loader)
 
-        self.optimize_unimodal_representation_for_modality(audio)
-
-    def test_unimodal_optimizer_for_text_modality(self):
         text_data_loader = TextLoader(
             self.data_generator.get_modality_path(ModalityType.TEXT),
             self.data_generator.indices,
         )
         text = UnimodalModality(text_data_loader)
-        self.optimize_unimodal_representation_for_modality(text)
 
-    def test_unimodal_optimizer_for_video_modality(self):
         video_data_loader = VideoLoader(
             self.data_generator.get_modality_path(ModalityType.VIDEO),
             self.data_generator.indices,
         )
         video = UnimodalModality(video_data_loader)
-        self.optimize_unimodal_representation_for_modality(video)
 
-    def optimize_unimodal_representation_for_modality(self, modality):
         with patch.object(
             Registry,
             "_representations",
@@ -182,22 +184,19 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
             },
         ):
             registry = Registry()
-
+            registry._fusion_operators = [Average, Concatenation]
             unimodal_optimizer = UnimodalRepresentationOptimizer(
-                [modality], self.tasks, max_chain_depth=2
+                [text, audio, video], [task], max_chain_depth=2
             )
             unimodal_optimizer.optimize()
 
-            assert (
-                list(unimodal_optimizer.optimization_results.keys())[0]
-                == modality.modality_id
+            multimodal_optimizer = FusionOptimizer(
+                [audio, text, video],
+                task,
+                unimodal_optimizer.optimization_results,
+                unimodal_optimizer.cache,
+                2,
+                2,
+                debug=False,
             )
-            assert len(list(unimodal_optimizer.optimization_results.values())[0]) == 2
-            assert (
-                len(
-                    unimodal_optimizer.get_k_best_results(modality, 1, self.tasks[0])[
-                        0
-                    ].operator_chain
-                )
-                >= 1
-            )
+            multimodal_optimizer.optimize()

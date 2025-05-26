@@ -102,41 +102,42 @@ class FusionOptimizer:
                 self._optimize_candidate(modality, candidate, remaining_candidates, 1)
             )
 
-        with open(
-            f"fusion_statistics_{self.task.model.name}_{self.num_best_candidates}_{self.max_chain_depth}.pkl",
-            "wb",
-        ) as fp:
-            pickle.dump(
-                self.optimization_statistics,
-                fp,
-                protocol=pickle.HIGHEST_PROTOCOL,
-            )
+        if self.debug:
+            with open(
+                f"fusion_statistics_{self.task.model.name}_{self.num_best_candidates}_{self.max_chain_depth}.pkl",
+                "wb",
+            ) as fp:
+                pickle.dump(
+                    self.optimization_statistics,
+                    fp,
+                    protocol=pickle.HIGHEST_PROTOCOL,
+                )
 
-        opt_results = copy.deepcopy(self.optimization_results)
-        for i, opt_res in enumerate(self.optimization_results):
-            op_name = []
-            for op in opt_res.operator_chain:
-                if isinstance(op, list):
-                    for o in op:
-                        if isinstance(o, list):
-                            for j in o:
-                                op_name.append(j.name)
-                        elif isinstance(o, str):
-                            op_name.append(o)
-                        else:
-                            op_name.append(o.name)
-                elif isinstance(op, str):
-                    op_name.append(op)
-                else:
-                    op_name.append(op.name)
-            opt_results[i].operator_chain = op_name
-        with open(
-            f"fusion_results_{self.task.model.name}_{self.num_best_candidates}_{self.max_chain_depth}.pkl",
-            "wb",
-        ) as fp:
-            pickle.dump(opt_results, fp, protocol=pickle.HIGHEST_PROTOCOL)
+            opt_results = copy.deepcopy(self.optimization_results)
+            for i, opt_res in enumerate(self.optimization_results):
+                op_name = []
+                for op in opt_res.operator_chain:
+                    if isinstance(op, list):
+                        for o in op:
+                            if isinstance(o, list):
+                                for j in o:
+                                    op_name.append(j.name)
+                            elif isinstance(o, str):
+                                op_name.append(o)
+                            else:
+                                op_name.append(o.name)
+                    elif isinstance(op, str):
+                        op_name.append(op)
+                    else:
+                        op_name.append(op.name)
+                opt_results[i].operator_chain = op_name
+            with open(
+                f"fusion_results_{self.task.model.name}_{self.num_best_candidates}_{self.max_chain_depth}.pkl",
+                "wb",
+            ) as fp:
+                pickle.dump(opt_results, fp, protocol=pickle.HIGHEST_PROTOCOL)
 
-        self.optimization_statistics.print_statistics()
+            self.optimization_statistics.print_statistics()
 
     def get_k_best_results(self, k: int):
         """

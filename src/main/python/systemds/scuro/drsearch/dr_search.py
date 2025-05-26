@@ -111,7 +111,7 @@ class DRSearch:
         representation = random.choice(self.representations)
 
         modality = modality_combination[0].combine(
-            modality_combination[1:], representation
+            list(modality_combination[1:]), representation
         )
 
         scores = self.task.run(modality.data)

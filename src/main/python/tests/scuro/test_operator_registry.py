@@ -21,7 +21,6 @@
 
 import unittest
 
-from systemds.scuro import GloVe
 from systemds.scuro.representations.mfcc import MFCC
 from systemds.scuro.representations.wav2vec import Wav2Vec
 from systemds.scuro.representations.window import WindowAggregation
@@ -58,7 +57,7 @@ class TestMultimodalJoin(unittest.TestCase):
 
     def test_text_representations_in_registry(self):
         registry = Registry()
-        for representation in [BoW, TfIdf, W2V, Bert, GloVe]:
+        for representation in [BoW, TfIdf, W2V, Bert]:
             assert representation in registry.get_representations(ModalityType.TEXT)
 
     def test_context_operator_in_registry(self):

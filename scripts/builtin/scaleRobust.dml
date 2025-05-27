@@ -1,0 +1,32 @@
+# Robust scaling using median and IQR (Interquartile Range)
+# This transformation is resistant to outliers by centering
+# features with the median and scaling with IQR.
+#
+# INPUT:
+# -----------------------------------------------------------------------------------------
+# X      Input feature matrix of shape n-by-m
+# -----------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -----------------------------------------------------------------------------------------
+# Y      Scaled output matrix of shape n-by-m
+# med    Column medians (Q2) of shape 1-by-m
+# iqr    Column interquartile ranges (Q3 - Q1) of shape 1-by-m
+# -----------------------------------------------------------------------------------------
+
+m_scaleRobust = function(Matrix[Double] X)
+  return (Matrix[Double] Y, Matrix[Double] med, Matrix[Double] iqr)
+{
+  # Compute robust statistics
+  med = colQuantiles(X, 0.5)
+  q1  = colQuantiles(X, 0.25)
+  q3  = colQuantiles(X, 0.75)
+  iqr = q3 - q1
+
+  # Replace invalid IQRs (0 or NaN) with 1 to avoid division errors
+  iqr = replace(target=iqr, pattern=0, replacement=1)
+  iqr = replace(target=iqr, pattern=NaN, replacement=1)
+
+  # Apply robust scaling
+  Y = (X - med) / iqr
+}

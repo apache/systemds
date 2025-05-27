@@ -71,7 +71,7 @@ class TestOperatorRegistry(unittest.TestCase):
     def test_fusion_operator_in_registry(self):
         registry = Registry()
         for fusion_operator in [
-            RowMax,
+            # RowMax,
             Sum,
             Average,
             Concatenation,

@@ -89,8 +89,8 @@ class PythonAPIFileGenerator(object):
         with open(target_file, "w") as new_script:
             new_script.write(self.licence)
             new_script.write(self.generated_by)
-            new_script.write((self.generated_from + dml_file.replace("\\", "/") + "\n").replace(
-                "../", "").replace("src/main/python/generator/", ""))
+            relative_path = os.path.relpath(dml_file, start=self.source_path)
+            new_script.write(f"{self.generated_from}scripts/builtin/{relative_path}\n")
             new_script.write(self.imports)
             new_script.write(file_content)
 

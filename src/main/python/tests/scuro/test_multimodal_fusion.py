@@ -42,7 +42,7 @@ from systemds.scuro.representations.spectrogram import Spectrogram
 from systemds.scuro.representations.word2vec import W2V
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.resnet import ResNet
-from tests.scuro.data_generator import setup_data, ModalityRandomDataGenerator
+from tests.scuro.data_generator import setup_data
 
 from systemds.scuro.dataloader.audio_loader import AudioLoader
 from systemds.scuro.dataloader.video_loader import VideoLoader

@@ -18,48 +18,51 @@
 # under the License.
 #
 # -------------------------------------------------------------
-import librosa
 import numpy as np
-
+from transformers import Wav2Vec2Processor, Wav2Vec2Model
+import librosa
+import torch
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.transformed import TransformedModality
 
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.drsearch.operator_registry import register_representation
 
+import warnings
+
+warnings.filterwarnings("ignore", message="Some weights of")
+
 
 @register_representation(ModalityType.AUDIO)
-class MelSpectrogram(UnimodalRepresentation):
-    def __init__(self, n_mels=128, hop_length=512, n_fft=2048):
-        parameters = {
-            "n_mels": [20, 32, 64, 128],
-            "hop_length": [256, 512, 1024, 2048],
-            "n_fft": [1024, 2048, 4096],
-        }
-        super().__init__("MelSpectrogram", ModalityType.TIMESERIES, parameters)
-        self.n_mels = n_mels
-        self.hop_length = hop_length
-        self.n_fft = n_fft
+class Wav2Vec(UnimodalRepresentation):
+    def __init__(self):
+        super().__init__("Wav2Vec", ModalityType.TIMESERIES, {})
+        self.processor = Wav2Vec2Processor.from_pretrained(
+            "facebook/wav2vec2-base-960h"
+        )
+        self.model = Wav2Vec2Model.from_pretrained(
+            "facebook/wav2vec2-base-960h"
+        ).float()
 
     def transform(self, modality):
         transformed_modality = TransformedModality(
             self.output_modality_type, self, modality.modality_id, modality.metadata
         )
+
         result = []
-        max_length = 0
         for i, sample in enumerate(modality.data):
             sr = list(modality.metadata.values())[i]["frequency"]
-            S = librosa.feature.melspectrogram(
-                y=sample,
-                sr=sr,
-                n_mels=self.n_mels,
-                hop_length=self.hop_length,
-                n_fft=self.n_fft,
+            audio_resampled = librosa.resample(sample, orig_sr=sr, target_sr=16000)
+            input = self.processor(
+                audio_resampled, sampling_rate=16000, return_tensors="pt", padding=True
             )
-            S_dB = librosa.power_to_db(S, ref=np.max)
-            if S_dB.shape[-1] > max_length:
-                max_length = S_dB.shape[-1]
-            result.append(S_dB.T)
+            input.input_values = input.input_values.float()
+            input.data["input_values"] = input.data["input_values"].float()
+            with torch.no_grad():
+                outputs = self.model(**input)
+                features = outputs.extract_features
+                # TODO: check how to get intermediate representations
+            result.append(torch.flatten(features.mean(dim=1), 1).detach().cpu().numpy())
 
         transformed_modality.data = result
         return transformed_modality

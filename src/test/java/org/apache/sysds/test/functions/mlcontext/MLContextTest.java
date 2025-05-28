@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -57,6 +58,7 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.DoubleType;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
+import org.apache.sysds.api.mlcontext.MLContext;
 import org.apache.sysds.api.mlcontext.MLContextConversionUtil;
 import org.apache.sysds.api.mlcontext.MLContextException;
 import org.apache.sysds.api.mlcontext.MLContextUtil;
@@ -72,6 +74,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.Statistics;
 import org.junit.Assert;
 import org.junit.Test;
@@ -1963,5 +1966,29 @@ public class MLContextTest extends MLContextTestBase {
 		double ret = ml.execute(dml(s).out("R"))
 			.getScalarObject("R").getDoubleValue();
 		Assert.assertEquals(1000, ret, 1e-20);
+	}
+
+	@Test
+	public void testMLContextExecuteWithExplainType() {
+		LOG.debug("MLContextTest - test getter / setter");
+		ml.setExplain(true);
+		String s = "print(\"Hello World!\")";
+		for (MLContext.ExplainLevel el : MLContext.ExplainLevel.values()) {
+			ml.setExplainLevel(el);
+			String out  = executeAndCaptureStdOut(dml(s)).getRight();
+			String[] lines = out.split("\n");
+			Assert.assertTrue(lines[0].contains(el.getExplainType().toString()));
+		}
+	}
+
+	@Test
+	public void testMLContextExecuteWithExecutionType() {
+		LOG.debug("MLContextTest - test getter / setter");
+		ml.setExplain(false);
+		String s = "print(\"Hello World!\")";
+		for (MLContext.ExecutionType et : MLContext.ExecutionType.values()) {
+			ml.setExecutionType(et);
+			ml.execute(dml(s));
+		}
 	}
 }

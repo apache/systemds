@@ -18,23 +18,18 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from aligner.similarity_measures import Measure
+from systemds.scuro.modality.transformed import TransformedModality
+from systemds.scuro.representations.representation import Representation
 
 
-class AlignmentStrategy:
-    def __init__(self):
-        pass
+class AggregatedRepresentation(Representation):
+    def __init__(self, aggregation):
+        super().__init__("AggregatedRepresentation", aggregation.parameters)
+        self.aggregation = aggregation
 
-    def align_chunk(self, chunk_a, chunk_b, similarity_measure: Measure):
-        raise "Not implemented error"
-
-
-class ChunkedCrossCorrelation(AlignmentStrategy):
-    def __init__(self):
-        super().__init__()
-
-    def align_chunk(self, chunk_a, chunk_b, similarity_measure: Measure):
-        raise "Not implemented error"
-
-
-# TODO: Add additional alignment methods
+    def transform(self, modality):
+        aggregated_modality = TransformedModality(
+            modality.modality_type, self.name, modality.modality_id, modality.metadata
+        )
+        aggregated_modality.data = self.aggregation.execute(modality)
+        return aggregated_modality

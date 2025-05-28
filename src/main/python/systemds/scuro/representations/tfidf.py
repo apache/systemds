@@ -26,8 +26,10 @@ from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import save_embeddings
 
 from systemds.scuro.modality.type import ModalityType
+from systemds.scuro.drsearch.operator_registry import register_representation
 
 
+@register_representation(ModalityType.TEXT)
 class TfIdf(UnimodalRepresentation):
     def __init__(self, min_df=2, output_file=None):
         parameters = {"min_df": [min_df]}

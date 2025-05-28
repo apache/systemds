@@ -27,8 +27,10 @@ from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.utils import pad_sequences
 
 from systemds.scuro.representations.fusion import Fusion
+from systemds.scuro.drsearch.operator_registry import register_fusion_operator
 
 
+@register_fusion_operator()
 class Average(Fusion):
     def __init__(self):
         """
@@ -37,6 +39,9 @@ class Average(Fusion):
         super().__init__("Average")
 
     def transform(self, modalities: List[Modality]):
+        for modality in modalities:
+            modality.flatten()
+
         max_emb_size = self.get_max_embedding_size(modalities)
 
         padded_modalities = []

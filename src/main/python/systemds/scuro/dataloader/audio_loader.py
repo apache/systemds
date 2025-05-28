@@ -27,13 +27,22 @@ from systemds.scuro.modality.type import ModalityType
 
 class AudioLoader(BaseLoader):
     def __init__(
-        self, source_path: str, indices: List[str], chunk_size: Optional[int] = None
+        self,
+        source_path: str,
+        indices: List[str],
+        chunk_size: Optional[int] = None,
+        normalize: bool = True,
     ):
         super().__init__(source_path, indices, chunk_size, ModalityType.AUDIO)
+        self.normalize = normalize
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
         audio, sr = librosa.load(file)
+
+        if self.normalize:
+            audio = librosa.util.normalize(audio)
+
         self.metadata[file] = self.modality_type.create_audio_metadata(sr, audio)
 
         self.data.append(audio)

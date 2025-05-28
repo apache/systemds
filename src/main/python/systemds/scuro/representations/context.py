@@ -19,7 +19,6 @@
 #
 # -------------------------------------------------------------
 import abc
-from typing import List
 
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.representation import Representation

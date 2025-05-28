@@ -18,6 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import time
 from typing import List
 
 from systemds.scuro.models.model import Model
@@ -34,6 +35,7 @@ class Task:
         train_indices: List,
         val_indices: List,
         kfold=5,
+        measure_performance=True,
     ):
         """
         Parent class for the prediction task that is performed on top of the aligned representation
@@ -51,6 +53,10 @@ class Task:
         self.train_indices = train_indices
         self.val_indices = val_indices
         self.kfold = kfold
+        self.measure_performance = measure_performance
+        self.inference_time = []
+        self.training_time = []
+        self.expected_dim = 1
 
     def get_train_test_split(self, data):
         X_train = [data[i] for i in self.train_indices]
@@ -67,6 +73,8 @@ class Task:
          :param data: The aligned data used in the prediction process
          :return: the validation accuracy
         """
+        self.inference_time = []
+        self.training_time = []
         skf = KFold(n_splits=self.kfold, shuffle=True, random_state=11)
         train_scores = []
         test_scores = []
@@ -76,13 +84,21 @@ class Task:
         for train, test in skf.split(X, y):
             train_X = np.array(X)[train]
             train_y = np.array(y)[train]
-
+            train_start = time.time()
             train_score = self.model.fit(train_X, train_y, X_test, y_test)
+            train_end = time.time()
+            self.training_time.append(train_end - train_start)
             train_scores.append(train_score)
-
-            test_score = self.model.test(X_test, y_test)
+            test_start = time.time()
+            test_score = self.model.test(np.array(X_test), y_test)
+            test_end = time.time()
+            self.inference_time.append(test_end - test_start)
             test_scores.append(test_score)
 
             fold += 1
+
+        if self.measure_performance:
+            self.inference_time = np.mean(self.inference_time)
+            self.training_time = np.mean(self.training_time)
 
         return [np.mean(train_scores), np.mean(test_scores)]

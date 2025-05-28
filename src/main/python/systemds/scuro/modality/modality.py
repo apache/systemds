@@ -23,7 +23,7 @@ from typing import List
 
 import numpy as np
 
-from systemds.scuro.modality.type import ModalityType, DataLayout
+from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations import utils
 
 

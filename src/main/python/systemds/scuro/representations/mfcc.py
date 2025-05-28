@@ -29,17 +29,19 @@ from systemds.scuro.drsearch.operator_registry import register_representation
 
 
 @register_representation(ModalityType.AUDIO)
-class MelSpectrogram(UnimodalRepresentation):
-    def __init__(self, n_mels=128, hop_length=512, n_fft=2048):
+class MFCC(UnimodalRepresentation):
+    def __init__(self, n_mfcc=12, dct_type=2, n_mels=128, hop_length=512):
         parameters = {
-            "n_mels": [20, 32, 64, 128],
+            "n_mfcc": [x for x in range(10, 26)],
+            "dct_type": [1, 2, 3],
             "hop_length": [256, 512, 1024, 2048],
-            "n_fft": [1024, 2048, 4096],
-        }
-        super().__init__("MelSpectrogram", ModalityType.TIMESERIES, parameters)
+            "n_mels": [20, 32, 64, 128],
+        }  # TODO
+        super().__init__("MFCC", ModalityType.TIMESERIES, parameters)
+        self.n_mfcc = n_mfcc
+        self.dct_type = dct_type
         self.n_mels = n_mels
         self.hop_length = hop_length
-        self.n_fft = n_fft
 
     def transform(self, modality):
         transformed_modality = TransformedModality(
@@ -49,17 +51,18 @@ class MelSpectrogram(UnimodalRepresentation):
         max_length = 0
         for i, sample in enumerate(modality.data):
             sr = list(modality.metadata.values())[i]["frequency"]
-            S = librosa.feature.melspectrogram(
+            mfcc = librosa.feature.mfcc(
                 y=sample,
                 sr=sr,
-                n_mels=self.n_mels,
+                n_mfcc=self.n_mfcc,
+                dct_type=self.dct_type,
                 hop_length=self.hop_length,
-                n_fft=self.n_fft,
+                n_mels=self.n_mels,
             )
-            S_dB = librosa.power_to_db(S, ref=np.max)
-            if S_dB.shape[-1] > max_length:
-                max_length = S_dB.shape[-1]
-            result.append(S_dB.T)
+            mfcc = (mfcc - np.mean(mfcc)) / np.std(mfcc)
+            if mfcc.shape[-1] > max_length:  # TODO: check if this needs to be done
+                max_length = mfcc.shape[-1]
+            result.append(mfcc.T)
 
         transformed_modality.data = result
         return transformed_modality

@@ -20,7 +20,6 @@
 # -------------------------------------------------------------
 import numpy as np
 
-from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations import utils
 
 
@@ -48,21 +47,28 @@ class Aggregation:
         "sum": _sum_agg.__func__,
     }
 
-    def __init__(self, aggregation_function="mean", pad_modality=False):
+    def __init__(self, aggregation_function="mean", pad_modality=False, params=None):
+        if params is not None:
+            aggregation_function = params["aggregation_function"]
+            pad_modality = params["pad_modality"]
+
         if aggregation_function not in self._aggregation_function.keys():
             raise ValueError("Invalid aggregation function")
+
         self._aggregation_func = self._aggregation_function[aggregation_function]
         self.name = "Aggregation"
         self.pad_modality = pad_modality
 
+        self.parameters = {
+            "aggregation_function": aggregation_function,
+            "pad_modality": pad_modality,
+        }
+
     def execute(self, modality):
-        aggregated_modality = Modality(
-            modality.modality_type, modality.modality_id, modality.metadata
-        )
-        aggregated_modality.data = []
+        data = []
         max_len = 0
         for i, instance in enumerate(modality.data):
-            aggregated_modality.data.append([])
+            data.append([])
             if isinstance(instance, np.ndarray):
                 aggregated_data = self._aggregation_func(instance)
             else:
@@ -70,22 +76,22 @@ class Aggregation:
                 for entry in instance:
                     aggregated_data.append(self._aggregation_func(entry))
             max_len = max(max_len, len(aggregated_data))
-            aggregated_modality.data[i] = aggregated_data
+            data[i] = aggregated_data
 
         if self.pad_modality:
-            for i, instance in enumerate(aggregated_modality.data):
+            for i, instance in enumerate(data):
                 if isinstance(instance, np.ndarray):
                     if len(instance) < max_len:
                         padded_data = np.zeros(max_len, dtype=instance.dtype)
                         padded_data[: len(instance)] = instance
-                        aggregated_modality.data[i] = padded_data
+                        data[i] = padded_data
                 else:
                     padded_data = []
                     for entry in instance:
                         padded_data.append(utils.pad_sequences(entry, max_len))
-                    aggregated_modality.data[i] = padded_data
+                    data[i] = padded_data
 
-        return aggregated_modality
+        return data
 
     def transform(self, modality):
         return self.execute(modality)

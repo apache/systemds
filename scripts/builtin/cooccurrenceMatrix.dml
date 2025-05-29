@@ -18,18 +18,16 @@
 # under the License.
 #
 #-------------------------------------------------------------
-#
-# The implementation is based on
-# https://github.com/stanfordnlp/GloVe/blob/master/src/cooccur.c
-#
-#-------------------------------------------------------------
 
 ## Cleans and processes text data by removing punctuation, converting it to lowercase, and reformatting.
-## Adds an index column to the result.
+## Adds an index column to the result. The implementation is based on
+# https://github.com/stanfordnlp/GloVe/blob/master/src/cooccur.c
+#
 # INPUT:
 # ------------------------------------------------------------------------------
 # S     (Frame[Unknown]): 1D input data frame containing text data.
 # ------------------------------------------------------------------------------
+#
 # OUTPUT:
 # ------------------------------------------------------------------------------
 # result    (Frame[Unknown]): Processed text data with an index column.

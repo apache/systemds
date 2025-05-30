@@ -1,0 +1,240 @@
+#
+# There is insufficient memory for the Java Runtime Environment to continue.
+# Native memory allocation (mmap) failed to map 3145728000 bytes. Error detail: G1 virtual space
+# Possible reasons:
+#   The system is out of physical RAM or swap space
+#   This process is running with CompressedOops enabled, and the Java Heap may be blocking the growth of the native heap
+# Possible solutions:
+#   Reduce memory load on the system
+#   Increase physical memory or swap space
+#   Check if swap backing store is full
+#   Decrease Java heap size (-Xmx/-Xms)
+#   Decrease number of Java threads
+#   Decrease Java thread stack sizes (-Xss)
+#   Set larger code cache with -XX:ReservedCodeCacheSize=
+#   JVM is running with Zero Based Compressed Oops mode in which the Java heap is
+#     placed in the first 32GB address space. The Java Heap base address is the
+#     maximum limit for the native heap growth. Please use -XX:HeapBaseMinAddress
+#     to set the Java Heap base and to place the Java Heap above 32GB virtual address.
+# This output file may be truncated or incomplete.
+#
+#  Out of Memory Error (os_windows.cpp:3618), pid=4360, tid=19528
+#
+# JRE version:  (17.0.15+6) (build )
+# Java VM: OpenJDK 64-Bit Server VM (17.0.15+6, mixed mode, sharing, tiered, compressed oops, compressed class ptrs, g1 gc, windows-amd64)
+# No core dump will be written. Minidumps are not enabled by default on client versions of Windows
+#
+
+---------------  S U M M A R Y ------------
+
+Command Line: -javaagent:C:\\Users\\Kilian Batliner\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\dev\\systemds\\target\\jacoco.exec,includes=**,output=file -Xms3000m -Xmx3000m -Xmn300m --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.ref=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/sun.nio.ch=ALL-UNNAMED C:\Users\Kilian Batliner\AppData\Local\Temp\surefire6688401433696971357\surefirebooter-20250530174526261_84.jar C:\Users\Kilian Batliner\AppData\Local\Temp\surefire6688401433696971357 2025-05-30T17-45-25_430-jvmRun2 surefire-20250530174526261_82tmp surefire_27-20250530174526261_83tmp
+
+Host: Intel(R) Core(TM) i7-10510U CPU @ 1.80GHz, 8 cores, 15G,  Windows 11 , 64 bit Build 26100 (10.0.26100.3912)
+Time: Fri May 30 17:46:39 2025 Mitteleuropäische Sommerzeit elapsed time: 1.125979 seconds (0d 0h 0m 1s)
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x000002473329c970):  JavaThread "Unknown thread" [_thread_in_vm, id=19528, stack(0x0000007c7fb00000,0x0000007c7fc00000)]
+
+Stack: [0x0000007c7fb00000,0x0000007c7fc00000]
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+V  [jvm.dll+0x682fc9]
+V  [jvm.dll+0x839878]
+V  [jvm.dll+0x83b323]
+V  [jvm.dll+0x83b993]
+V  [jvm.dll+0x24725f]
+V  [jvm.dll+0x67fda9]
+V  [jvm.dll+0x674c9a]
+V  [jvm.dll+0x304d06]
+V  [jvm.dll+0x30c1c6]
+V  [jvm.dll+0x35dd4e]
+V  [jvm.dll+0x35df8d]
+V  [jvm.dll+0x2dc0cc]
+V  [jvm.dll+0x2dcfe4]
+V  [jvm.dll+0x80b7cb]
+V  [jvm.dll+0x36b781]
+V  [jvm.dll+0x7ea31f]
+V  [jvm.dll+0x3f237e]
+V  [jvm.dll+0x3f3eb1]
+C  [jli.dll+0x5278]
+C  [ucrtbase.dll+0x37b0]
+C  [KERNEL32.DLL+0x2e8d7]
+C  [ntdll.dll+0x9c5dc]
+
+
+---------------  P R O C E S S  ---------------
+
+Threads class SMR info:
+_java_thread_list=0x00007ff8aa857f58, length=0, elements={
+}
+
+Java Threads: ( => current thread )
+
+Other Threads:
+  0x00000247332f5230 GCTaskThread "GC Thread#0" [stack: 0x0000007c7fc00000,0x0000007c7fd00000] [id=26364]
+  0x0000024733301c10 ConcurrentGCThread "G1 Main Marker" [stack: 0x0000007c7fd00000,0x0000007c7fe00000] [id=8428]
+  0x0000024733302540 ConcurrentGCThread "G1 Conc#0" [stack: 0x0000000000000000,0x0000000000000000] [id=2796]
+
+[error occurred during error reporting (printing all threads), id 0xc0000005, EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x00007ff8aa00cbf7]
+
+VM state: not at safepoint (not fully initialized)
+
+VM Mutex/Monitor currently owned by a thread:  ([mutex/lock_event])
+[0x0000024733297cc0] Heap_lock - owner thread: 0x000002473329c970
+
+Heap address: 0x0000000744800000, size: 3000 MB, Compressed Oops mode: Zero based, Oop shift amount: 3
+
+CDS archive(s) mapped at: [0x0000000000000000-0x0000000000000000-0x0000000000000000), size 0, SharedBaseAddress: 0x0000000800000000, ArchiveRelocationMode: 1.
+Narrow klass base: 0x0000000000000000, Narrow klass shift: 0, Narrow klass range: 0x0
+
+GC Precious Log:
+<Empty>
+
+Heap:
+ garbage-first heap   total 0K, used 0K [0x0000000744800000, 0x0000000800000000)
+  region size 2048K, 0 young (0K), 0 survivors (0K)
+
+[error occurred during error reporting (printing heap information), id 0xc0000005, EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x00007ff8aa3fc689]
+
+GC Heap History (0 events):
+No events
+
+Dll operation events (1 events):
+Event: 1.014 Loaded shared library C:\Program Files\Eclipse Adoptium\jdk-17.0.15.6-hotspot\bin\java.dll
+
+Deoptimization events (0 events):
+No events
+
+Classes loaded (0 events):
+No events
+
+Classes unloaded (0 events):
+No events
+
+Classes redefined (0 events):
+No events
+
+Internal exceptions (0 events):
+No events
+
+VM Operations (0 events):
+No events
+
+Memory protections (0 events):
+No events
+
+Nmethod flushes (0 events):
+No events
+
+Events (0 events):
+No events
+
+
+Dynamic libraries:
+0x00007ff7a0070000 - 0x00007ff7a007e000 	C:\Program Files\Eclipse Adoptium\jdk-17.0.15.6-hotspot\bin\java.exe
+0x00007ff950880000 - 0x00007ff950ae6000 	C:\WINDOWS\SYSTEM32\ntdll.dll
+0x00007ff94fb20000 - 0x00007ff94fbe9000 	C:\WINDOWS\System32\KERNEL32.DLL
+0x00007ff94de30000 - 0x00007ff94e1fc000 	C:\WINDOWS\System32\KERNELBASE.dll
+0x00007ff94e430000 - 0x00007ff94e57b000 	C:\WINDOWS\System32\ucrtbase.dll
+0x00007ff93fb80000 - 0x00007ff93fb97000 	C:\Program Files\Eclipse Adoptium\jdk-17.0.15.6-hotspot\bin\jli.dll
+0x00007ff94f270000 - 0x00007ff94f43a000 	C:\WINDOWS\System32\USER32.dll
+0x00007ff94e610000 - 0x00007ff94e637000 	C:\WINDOWS\System32\win32u.dll
+0x00007ff94f240000 - 0x00007ff94f26b000 	C:\WINDOWS\System32\GDI32.dll
+0x00007ff94db70000 - 0x00007ff94dca2000 	C:\WINDOWS\System32\gdi32full.dll
+0x00007ff94e200000 - 0x00007ff94e2a3000 	C:\WINDOWS\System32\msvcp_win.dll
+0x00007ff93fb60000 - 0x00007ff93fb7e000 	C:\Program Files\Eclipse Adoptium\jdk-17.0.15.6-hotspot\bin\VCRUNTIME140.dll
+0x00007ff931cf0000 - 0x00007ff931f8a000 	C:\WINDOWS\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.26100.3912_none_3e07963ce335137e\COMCTL32.dll
+0x00007ff94f190000 - 0x00007ff94f239000 	C:\WINDOWS\System32\msvcrt.dll
+0x00007ff94f800000 - 0x00007ff94f830000 	C:\WINDOWS\System32\IMM32.DLL
+0x00007ff93fb50000 - 0x00007ff93fb5c000 	C:\Program Files\Eclipse Adoptium\jdk-17.0.15.6-hotspot\bin\vcruntime140_1.dll
+0x00007ff921fa0000 - 0x00007ff92202d000 	C:\Program Files\Eclipse Adoptium\jdk-17.0.15.6-hotspot\bin\msvcp140.dll
+0x00007ff8a9d20000 - 0x00007ff8aa98b000 	C:\Program Files\Eclipse Adoptium\jdk-17.0.15.6-hotspot\bin\server\jvm.dll
+0x00007ff94efb0000 - 0x00007ff94f062000 	C:\WINDOWS\System32\ADVAPI32.dll
+0x00007ff9506b0000 - 0x00007ff950756000 	C:\WINDOWS\System32\sechost.dll
+0x00007ff94f890000 - 0x00007ff94f9a6000 	C:\WINDOWS\System32\RPCRT4.dll
+0x00007ff94e850000 - 0x00007ff94e8c4000 	C:\WINDOWS\System32\WS2_32.dll
+0x00007ff94d150000 - 0x00007ff94d1ae000 	C:\WINDOWS\SYSTEM32\POWRPROF.dll
+0x00007ff915d20000 - 0x00007ff915d56000 	C:\WINDOWS\SYSTEM32\WINMM.dll
+0x00007ff93e760000 - 0x00007ff93e76b000 	C:\WINDOWS\SYSTEM32\VERSION.dll
+0x00007ff94d130000 - 0x00007ff94d144000 	C:\WINDOWS\SYSTEM32\UMPDC.dll
+0x00007ff94c790000 - 0x00007ff94c7aa000 	C:\WINDOWS\SYSTEM32\kernel.appcore.dll
+0x00007ff93fb40000 - 0x00007ff93fb4a000 	C:\Program Files\Eclipse Adoptium\jdk-17.0.15.6-hotspot\bin\jimage.dll
+0x00007ff94b2e0000 - 0x00007ff94b521000 	C:\WINDOWS\SYSTEM32\DBGHELP.DLL
+0x00007ff950320000 - 0x00007ff9506a4000 	C:\WINDOWS\System32\combase.dll
+0x00007ff94e8d0000 - 0x00007ff94e9b0000 	C:\WINDOWS\System32\OLEAUT32.dll
+0x00007ff9233b0000 - 0x00007ff9233e9000 	C:\WINDOWS\SYSTEM32\dbgcore.DLL
+0x00007ff94dad0000 - 0x00007ff94db69000 	C:\WINDOWS\System32\bcryptPrimitives.dll
+0x00007ff93fb00000 - 0x00007ff93fb0e000 	C:\Program Files\Eclipse Adoptium\jdk-17.0.15.6-hotspot\bin\instrument.dll
+0x00007ff93fb10000 - 0x00007ff93fb35000 	C:\Program Files\Eclipse Adoptium\jdk-17.0.15.6-hotspot\bin\java.dll
+
+dbghelp: loaded successfully - version: 4.0.5 - missing functions: none
+symbol engine: initialized successfully - sym options: 0x614 - pdb path: .;C:\Program Files\Eclipse Adoptium\jdk-17.0.15.6-hotspot\bin;C:\WINDOWS\SYSTEM32;C:\WINDOWS\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.26100.3912_none_3e07963ce335137e;C:\Program Files\Eclipse Adoptium\jdk-17.0.15.6-hotspot\bin\server
+
+VM Arguments:
+jvm_args: -javaagent:C:\\Users\\Kilian Batliner\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.12\\org.jacoco.agent-0.8.12-runtime.jar=destfile=C:\\dev\\systemds\\target\\jacoco.exec,includes=**,output=file -Xms3000m -Xmx3000m -Xmn300m --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.ref=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/sun.nio.ch=ALL-UNNAMED 
+java_command: C:\Users\Kilian Batliner\AppData\Local\Temp\surefire6688401433696971357\surefirebooter-20250530174526261_84.jar C:\Users\Kilian Batliner\AppData\Local\Temp\surefire6688401433696971357 2025-05-30T17-45-25_430-jvmRun2 surefire-20250530174526261_82tmp surefire_27-20250530174526261_83tmp
+java_class_path (initial): C:\Users\Kilian Batliner\AppData\Local\Temp\surefire6688401433696971357\surefirebooter-20250530174526261_84.jar
+Launcher Type: SUN_STANDARD
+
+[Global flags]
+     intx CICompilerCount                          = 4                                         {product} {ergonomic}
+     uint ConcGCThreads                            = 2                                         {product} {ergonomic}
+     uint G1ConcRefinementThreads                  = 8                                         {product} {ergonomic}
+   size_t G1HeapRegionSize                         = 2097152                                   {product} {ergonomic}
+    uintx GCDrainStackTargetSize                   = 64                                        {product} {ergonomic}
+   size_t InitialHeapSize                          = 3145728000                                {product} {command line}
+   size_t MarkStackSize                            = 4194304                                   {product} {ergonomic}
+   size_t MaxHeapSize                              = 3145728000                                {product} {command line}
+   size_t MaxNewSize                               = 314572800                                 {product} {command line}
+   size_t MinHeapDeltaBytes                        = 2097152                                   {product} {ergonomic}
+   size_t MinHeapSize                              = 3145728000                                {product} {command line}
+   size_t NewSize                                  = 314572800                                 {product} {command line}
+    uintx NonNMethodCodeHeapSize                   = 5839372                                {pd product} {ergonomic}
+    uintx NonProfiledCodeHeapSize                  = 122909434                              {pd product} {ergonomic}
+    uintx ProfiledCodeHeapSize                     = 122909434                              {pd product} {ergonomic}
+    uintx ReservedCodeCacheSize                    = 251658240                              {pd product} {ergonomic}
+     bool SegmentedCodeCache                       = true                                      {product} {ergonomic}
+   size_t SoftMaxHeapSize                          = 3145728000                             {manageable} {ergonomic}
+     bool UseCompressedClassPointers               = true                           {product lp64_product} {ergonomic}
+     bool UseCompressedOops                        = true                           {product lp64_product} {ergonomic}
+     bool UseG1GC                                  = true                                      {product} {ergonomic}
+     bool UseLargePagesIndividualAllocation        = false                                  {pd product} {ergonomic}
+
+Logging:
+Log output configuration:
+ #0: stdout all=warning uptime,level,tags
+ #1: stderr all=off uptime,level,tags
+
+Environment Variables:
+JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-17.0.15.6-hotspot
+PATH=C:\Program Files\Eclipse Adoptium\jdk-17.0.15.6-hotspot\bin;C:\Program Files (x86)\Common Files\Oracle\Java\java8path;C:\Program Files (x86)\Common Files\Oracle\Java\javapath;C:\gurobi1101\win64\bin;C:\Program Files\AdoptOpenJDK\jdk-11.0.11.9-hotspot\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Users\Kilian Batliner\Desktop\mingw-w64\i686-8.1.0-posix-dwarf-rt_v6-rev0\mingw32\bin;C:\Program Files\Git\cmd;C:\Program Files\dotnet\;C:\Program Files\Docker\Docker\resources\bin;C:\Program Files\nodejs\;C:\Program Files\PuTTY\;C:\msys64\mingw32\bin;C:\msys64\usr\bin;C:\Program Files\Apache\Maven\apache-maven-3.9.9\bin;C:\dev\systemds\src\test\config\hadoop_bin_windows\bin;C:\Users\Kilian Batliner\AppData\Local\Programs\Python\Python310\Scripts\;C:\Users\Kilian Batliner\AppData\Local\Programs\Python\Python310\;C:\Users\Kilian Batliner\AppData\Local\Microsoft\WindowsApps;C:\Users\Kilian Batliner\AppData\Local\atom\bin;C:\Users\Kilian Batliner\AppData\Local\Microsoft\WindowsApps;C:\Program Files\JetBrains\PyCharm Community Edition 2022.2.3\bin;;C:\Users\Kilian Batliner\AppData\Local\GitHubDesktop\bin;C:\Users\Kilian Batliner\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\Kilian Batliner\.dotnet\tools;C:\Users\Kilian Batliner\AppData\Roaming\npm;C:\msys64\ucrt64\bin;C:\Program Files\JetBrains\CLion 2024.2.3\bin;;C:\msys64\mingw32\bin;C:\Program Files\JetBrains\IntelliJ IDEA 2024.3\bin;;C:\dev\systemds\bin;
+USERNAME=Kilian Batliner
+OS=Windows_NT
+PROCESSOR_IDENTIFIER=Intel64 Family 6 Model 142 Stepping 12, GenuineIntel
+TMP=C:\Users\KILIAN~1\AppData\Local\Temp
+TEMP=C:\Users\KILIAN~1\AppData\Local\Temp
+
+
+
+Periodic native trim disabled
+
+
+---------------  S Y S T E M  ---------------
+
+OS:
+ Windows 11 , 64 bit Build 26100 (10.0.26100.3912)
+OS uptime: 13 days 2:15 hours
+Hyper-V role detected
+
+CPU: total 8 (initial active 8) (4 cores per cpu, 2 threads per core) family 6 model 142 stepping 12 microcode 0xde, cx8, cmov, fxsr, ht, mmx, 3dnowpref, sse, sse2, sse3, ssse3, sse4.1, sse4.2, popcnt, lzcnt, tsc, tscinvbit, avx, avx2, aes, erms, clmul, bmi1, bmi2, adx, fma, vzeroupper, clflush, clflushopt, hv
+Processor Information for all 8 processors :
+  Max Mhz: 2304, Current Mhz: 1803, Mhz Limit: 1797
+
+Memory: 4k page, system-wide physical 16161M (972M free)
+TotalPageFile size 65252M (AvailPageFile size 337M)
+current process WorkingSet (physical memory assigned to process): 12M, peak: 12M
+current process commit charge ("private bytes"): 60M, peak: 3060M
+
+vm_info: OpenJDK 64-Bit Server VM (17.0.15+6) for windows-amd64 JRE (17.0.15+6), built on Apr 15 2025 21:25:47 by "admin" with MS VC++ 17.7 (VS2022)
+
+END.

@@ -15,10 +15,14 @@
 m_scaleRobustApply = function(Matrix[Double] X, Matrix[Double] med, Matrix[Double] iqr)
   return (Matrix[Double] Y)
 {
+
+    # Ensure all inputs are treated as matrices
+    med = as.matrix(med) 
+    iqr = as.matrix(iqr)
+
   # Ensure robust scaling is safe by replacing invalid IQRs
   iqr = replace(target=iqr, pattern=0, replacement=1)
   iqr = replace(target=iqr, pattern=NaN, replacement=1)
-
   # Apply robust transformation
   Y = (X - med) / iqr
 }

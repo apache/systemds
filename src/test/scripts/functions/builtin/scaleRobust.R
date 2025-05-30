@@ -1,7 +1,6 @@
 args <- commandArgs(TRUE)
 options(digits=22)
 library("Matrix")
-library("caret")
 
 X = as.matrix(readMM(paste(args[1], "A.mtx", sep="")))
 colnames(X) = colnames(X, do.NULL=FALSE, prefix="C")

@@ -42,8 +42,6 @@ public class BuiltinScaleRobustTest extends AutomatedTestBase {
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			programArgs = new String[]{"-args", input("A"), output("B")};
 			rCmd = "Rscript " + fullRScriptName + " " + inputDir() + " " + expectedDir();
-            System.out.println("fullRScriptName: " + fullRScriptName);
-            System.out.println("rCmd: " + rCmd);
 
 			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 7);
 			writeInputMatrixWithMTD("A", A, true);

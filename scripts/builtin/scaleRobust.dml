@@ -1,37 +1,27 @@
-# Robust scaling using median and IQR (Interquartile Range)
-# Resistant to outliers by centering with the median and scaling with IQR.
-#
-# INPUT:
-#   X   Input feature matrix of shape n-by-m
-#
-# OUTPUT:
-#   Y   Scaled output matrix of shape n-by-m
-#   med Column medians (Q2) of shape 1-by-m
-#   iqr Column interquartile ranges (Q3 - Q1) of shape 1-by-m
-
 m_scaleRobust = function(Matrix[Double] X)
   return (Matrix[Double] Y, Matrix[Double] med, Matrix[Double] iqr)
 {
-  
-  
-  # Column-wise medians and quartiles
-  med = quantile(X, as.matrix(0.5), 2)           # 1×m: median (Q2)
-  q1  = quantile(X, as.matrix(0.25), 2)           # 1×m: first quartile
-  q3  = quantile(X, as.matrix(0.75), 2)           # 1×m: third quartile
-  
-  # Compute IQR = Q3 − Q1
-  iqr = q3 - q1                       # 1×m
+  n = nrow(X)
+  m = ncol(X)
 
-  # Ensure all results are treated as matrices
-    med = as.matrix(med)
-    q1 = as.matrix(q1)
-    q3 = as.matrix(q3)  
-    iqr = as.matrix(iqr)
-  
-  # Prevent division by zero or NaN: replace zeros/NaNs with 1
+  med = matrix(0.0, rows=1, cols=m)
+  q1  = matrix(0.0, rows=1, cols=m)
+  q3  = matrix(0.0, rows=1, cols=m)
+
+  # Loop over columns to compute quantiles
+  for (j in 1:m) {
+    col_j = X[,j]                        # get column vector
+    med[1,j] = quantile(col_j, 0.5)
+    q1[1,j]  = quantile(col_j, 0.25)
+    q3[1,j]  = quantile(col_j, 0.75)
+  }
+
+  iqr = q3 - q1
+
+  # Prevent division by 0 or NaN
   iqr = replace(target=iqr, pattern=0, replacement=1)
   iqr = replace(target=iqr, pattern=NaN, replacement=1)
-  
-  # Apply robust scaling: (X − med) ÷ iqr
+
+  # Robust scale
   Y = (X - med) / iqr
 }

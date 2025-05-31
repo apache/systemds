@@ -34,8 +34,8 @@ test = rbind(test, X[96:101,])
 test = rbind(test, X[146:150,])
 
 # train GMM
-[labels, prob, df, bic, mu, prec_chol, w] = gmm(X=train, n_components = $2,
-  model = $3, init_params = $4, iter = $5, reg_covar = $6, tol = $7, seed=$8, verbose=TRUE)
+[labels, prob, df, bic, mu, prec_chol, w] = gmm(X=train, nComponents = $2,
+  model = $3, initParams = $4, maxIter = $5, reg = $6, tol = $7, seed=$8, verbose=TRUE)
  
 # predict labels
 [pred, pp] = gmmPredict(test, w, mu, prec_chol, $3)  

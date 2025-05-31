@@ -25,11 +25,10 @@
 # -------------------------------------------------------------------------------------------
 # X               Matrix X
 # k               a constant used to discern outliers k*IQR
-# isIterative     iterative repair or single repair
 # repairMethod    values: 0 = delete rows having outliers,
 #                    1 = replace outliers with zeros
 #                    2 = replace outliers as missing values
-# max_iterations  values: 0 = arbitrary number of iteraition until all outliers are removed,
+# maxIter         values: 0 = arbitrary number of iteraition until all outliers are removed,
 #                 n = any constant defined by user
 # verbose         flag specifying if logging information should be printed
 # -------------------------------------------------------------------------------------------
@@ -40,7 +39,7 @@
 # ---------------------------------------------------------------------------------
 
 m_outlierByIQR = function(Matrix[Double] X, Double k =1.5, Integer repairMethod = 1, 
-  Integer max_iterations, Boolean verbose = TRUE) 
+  Integer maxIter, Boolean verbose = TRUE)
   return(Matrix[Double] Y, Matrix[Double] Q1, Matrix[Double] Q3, Matrix[Double] IQR, Double k, Integer repairMethod) 
 {
 
@@ -48,7 +47,7 @@ m_outlierByIQR = function(Matrix[Double] X, Double k =1.5, Integer repairMethod 
   sumNext = as.double(1)
   counter = 0
 
-  while( max_iterations == 0 | counter < max_iterations )
+  while( maxIter == 0 | counter < maxIter )
   {
     [Q1, Q3, IQR] = compute_quartiles(X)
     upperBound = (Q3 + (k * IQR));
@@ -63,7 +62,7 @@ m_outlierByIQR = function(Matrix[Double] X, Double k =1.5, Integer repairMethod 
       sumNext = sum(temp)
     }
     else
-      max_iterations = -1
+      maxIter = -1
 
     counter = counter + 1; 
   }

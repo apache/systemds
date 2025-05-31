@@ -60,7 +60,7 @@ m_gridSearch = function(Matrix[Double] X, Matrix[Double] y, String train, String
 {
   # Step 0) handling default arguments, which require access to passed data
   if( length(trainArgs) == 0 )
-    trainArgs = list(X=X, y=y, icpt=0, reg=-1, tol=-1, maxi=-1);
+    trainArgs = list(X=X, y=y, intercept=0, reg=-1, tol=-1, maxIter=-1);
   if( length(dataArgs) == 0 )
     dataArgs = list("X", "y");
   if( length(predictArgs) == 0 )

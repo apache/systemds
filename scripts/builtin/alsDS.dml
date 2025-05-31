@@ -26,30 +26,30 @@
 #
 # INPUT:
 # -------------------------------------------------------------------------------------------
-# X        Location to read the input matrix V to be factorized
-# rank     Rank of the factorization
-# reg      Regularization parameter, no regularization if 0.0
-# maxi     Maximum number of iterations
-# check    Check for convergence after every iteration, i.e., updating L and R once
-# thr      Assuming check is set to TRUE, the algorithm stops and convergence is declared
-#          if the decrease in loss in any two consecutive iterations falls below this threshold;
-#          if check is FALSE thr is ignored
-# seed     The seed to random parts of the algorithm
-# verbose  If the algorithm should run verbosely
+# X              Location to read the input matrix V to be factorized
+# rank           Rank of the factorization
+# reg            Regularization parameter, no regularization if 0.0
+# maxIter        Maximum number of iterations
+# check          Check for convergence after every iteration, i.e., updating L and R once
+# threshold      Assuming check is set to TRUE, the algorithm stops and convergence is declared
+#                if the decrease in loss in any two consecutive iterations falls below this threshold;
+#                if check is FALSE threshold is ignored
+# seed           The seed to random parts of the algorithm
+# verbose        If the algorithm should run verbosely
 # -------------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # -------------------------------------------------------------------------------------------
-# U     An m x r matrix where r is the factorization rank
-# V     An m x r matrix where r is the factorization rank
+# U              An m x r matrix where r is the factorization rank
+# V              An m x r matrix where r is the factorization rank
 # -------------------------------------------------------------------------------------------
 
 m_alsDS = function(Matrix[Double] X, Integer rank = 10, Double reg = 0.000001, 
-  Integer maxi = 50, Boolean check = FALSE, Double thr = 0.0001, Integer seed = 321452, Boolean verbose = TRUE)
+  Integer maxIter = 50, Boolean check = FALSE, Double threshold = 0.0001, Integer seed = 321452, Boolean verbose = TRUE)
   return (Matrix[Double] U, Matrix[Double] V)
 {
   r = rank;
-  max_iter = maxi;
+  max_iter = maxIter;
 
   # check the input matrix V, if some rows or columns contain only zeros remove them from V
   X_nonzero_ind = X != 0;
@@ -128,7 +128,7 @@ m_alsDS = function(Matrix[Double] X, Integer rank = 10, Double reg = 0.000001,
       loss_dec = (loss_init - loss_cur) / loss_init;
       if( verbose )
         print ("Train loss at iteration (X) " + it + ": " + loss_cur + " loss-dec " + loss_dec);
-      if (loss_dec >= 0 & loss_dec < thr | loss_init == 0) {
+      if (loss_dec >= 0 & loss_dec < threshold | loss_init == 0) {
         if( verbose )
           print ("----- ALS converged after " + it + " iterations!");
         converged = TRUE;

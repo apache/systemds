@@ -23,26 +23,26 @@
 #
 # INPUT:
 # --------------------------------------------------------------------------------------
-# X        Matrix of feature vectors
-# B        1-column matrix of weights.
-# ytest    test labels, used only for verbose output. can be set to matrix(0,1,1)
-#          if verbose output is not wanted
-# icpt     Intercept presence, shifting and rescaling the columns of X
-# verbose  If TRUE print messages are activated
+# X          Matrix of feature vectors
+# B          1-column matrix of weights.
+# Ytest      test labels, used only for verbose output. can be set to matrix(0,1,1)
+#            if verbose output is not wanted
+# intercept  Intercept presence, shifting and rescaling the columns of X
+# verbose    If TRUE print messages are activated
 # --------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # -----------------------------------------------------------------------------------
-# yhat  1-column matrix of classes
+# yhat       1-column matrix of classes
 # -----------------------------------------------------------------------------------
 
 m_lmPredict = function(Matrix[Double] X, Matrix[Double] B, 
-  Matrix[Double] ytest = matrix(0,1,1), Integer icpt = 0, Boolean verbose = FALSE) 
+  Matrix[Double] Ytest = matrix(0,1,1), Integer intercept = 0, Boolean verbose = FALSE)
   return (Matrix[Double] yhat)
 {
-  intercept = ifelse(icpt>0 | ncol(X)+1==nrow(B), as.scalar(B[nrow(B),]), 0);
+  intercept = ifelse(intercept>0 | ncol(X)+1==nrow(B), as.scalar(B[nrow(B),]), 0);
   yhat = X %*% B[1:ncol(X),] + intercept;
 
   if( verbose )
-    lmPredictStats(yhat, ytest, TRUE);
+    lmPredictStats(yhat, Ytest, TRUE);
 }

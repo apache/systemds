@@ -42,10 +42,10 @@ def msvm(X: Matrix,
     :param Y: Label vector y of class labels (shape: m x 1),
         where max(Y) is assumed to be the number of classes
     :param intercept: Indicator if a bias column should be added to X and the model
-    :param epsilon: Tolerance for early termination if the reduction of objective
-        function is less than epsilon times the initial objective
+    :param tol: Tolerance for early termination if the reduction of objective
+        function is less than tolerance times the initial objective
     :param reg: Regularization parameter (lambda) for L2 regularization
-    :param maxIterations: Maximum number of conjugate gradient (outer l2svm) iterations
+    :param maxIter: Maximum number of conjugate gradient (outer l2svm) iterations
     :param verbose: Indicator if training details should be printed
     :return: Trained model/weights (shape: n x max(Y), w/ intercept: n+1)
     """

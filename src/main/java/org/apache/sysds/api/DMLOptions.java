@@ -85,6 +85,7 @@ public class DMLOptions {
 	public boolean              federatedCompilation = false;     // Compile federated instructions based on input federation state and privacy constraints.
 	public boolean              noFedRuntimeConversion = false;   // If activated, no runtime conversion of CP instructions to FED instructions will be performed.
 	public int                  seed          = -1;               // The general seed for the execution, if -1 random (system time).
+	public boolean				sparseIntermediate = false;       // whether SparseRowIntermediates should be used for rowwise operations
 
 	public final static DMLOptions defaultOptions = new DMLOptions(null);
 
@@ -117,7 +118,8 @@ public class DMLOptions {
 			", w=" + fedWorker +
 			", federatedCompilation=" + federatedCompilation +
 			", noFedRuntimeConversion=" + noFedRuntimeConversion +
-			", seed=" + seed + 
+			", seed=" + seed +
+			", sparseIntermediate=" + sparseIntermediate +
 			'}';
 	}
 	
@@ -350,6 +352,10 @@ public class DMLOptions {
 			dmlOptions.seed = Integer.parseInt(line.getOptionValue("seed"));
 		}
 
+		if(line.hasOption("sparseIntermediate")){
+			dmlOptions.sparseIntermediate = true;
+		}
+
 		return dmlOptions;
 	}
 	
@@ -431,7 +437,10 @@ public class DMLOptions {
 		Option commandlineSeed = OptionBuilder
 			.withDescription("A general seed for the execution through the commandline")
 			.hasArg().create("seed");
-		
+		Option sparseRowIntermediates = OptionBuilder
+			.withDescription("If activated, sparseRowVector intermediates will be used to calculate rowwise operations.")
+			.create("sparseIntermediate");
+
 		options.addOption(configOpt);
 		options.addOption(cleanOpt);
 		options.addOption(statsOpt);
@@ -451,6 +460,7 @@ public class DMLOptions {
 		options.addOption(federatedCompilation);
 		options.addOption(noFedRuntimeConversion);
 		options.addOption(commandlineSeed);
+		options.addOption(sparseRowIntermediates);
 
 		// Either a clean(-clean), a file(-f), a script(-s) or help(-help) needs to be specified
 		OptionGroup fileOrScriptOpt = new OptionGroup()

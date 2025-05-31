@@ -19,6 +19,7 @@
 
 package org.apache.sysds.hops.codegen.cplan.java;
 
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary.BinType;
 import org.apache.sysds.hops.codegen.cplan.CodeTemplate;
 
@@ -70,11 +71,20 @@ public class Binary extends CodeTemplate {
 			//vector-scalar operations
 			case VECT_MULT_SCALAR:
 			case VECT_DIV_SCALAR:
-			case VECT_MINUS_SCALAR:
-			case VECT_PLUS_SCALAR:
-			case VECT_POW_SCALAR:
+			case VECT_POW_SCALAR: {
+				String vectName = type.getVectorPrimitiveName();
+				if( scalarVector )
+					return sparseRhs ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2v%, %IN2i%, %POS2%, alen, %LEN%);\n" :
+						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS2%, %LEN%);\n";
+				else if(DMLScript.SPARSE_INTERMEDIATE) {
+					return sparseLhs ? "    SparseRowVector %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%LEN%, %IN1v%, %IN2%, %IN1i%, %POS1%, %LEN1%);\n" :
+						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS1%, %LEN%);\n";
+				} else {
+					return sparseLhs ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" :
+						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS1%, %LEN%);\n";
+				}
+			}
 			case VECT_XOR_SCALAR:
-			case VECT_BITWAND_SCALAR:
 			case VECT_MIN_SCALAR:
 			case VECT_MAX_SCALAR:
 			case VECT_EQUAL_SCALAR:
@@ -82,7 +92,22 @@ public class Binary extends CodeTemplate {
 			case VECT_LESS_SCALAR:
 			case VECT_LESSEQUAL_SCALAR:
 			case VECT_GREATER_SCALAR:
-			case VECT_GREATEREQUAL_SCALAR: {
+			case VECT_GREATEREQUAL_SCALAR:
+			case VECT_BITWAND_SCALAR: {
+				String vectName = type.getVectorPrimitiveName();
+				if(scalarVector) {
+					if(sparseRhs)
+						return DMLScript.SPARSE_INTERMEDIATE ? "    SparseRowVector %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%LEN%, %IN1%, %IN2v%, %IN2i%, %POS2%, %LEN1%);\n" :
+							"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2v%, %IN2i%, %POS2%, alen, %LEN%);\n";
+				} else {
+					if(sparseLhs)
+						return DMLScript.SPARSE_INTERMEDIATE ? "    SparseRowVector %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%LEN%, %IN1v%, %IN2%, %IN1i%, %POS1%, %LEN1%);\n" :
+							"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n";
+				}
+				return 	"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS1%, %LEN%);\n";
+			}
+			case VECT_MINUS_SCALAR:
+			case VECT_PLUS_SCALAR: {
 				String vectName = type.getVectorPrimitiveName();
 				if( scalarVector )
 					return sparseRhs ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2v%, %IN2i%, %POS2%, alen, %LEN%);\n" :
@@ -115,20 +140,34 @@ public class Binary extends CodeTemplate {
 			case VECT_BIASMULT:
 			case VECT_MIN:
 			case VECT_MAX:
-			case VECT_EQUAL:
 			case VECT_NOTEQUAL:
 			case VECT_LESS:
-			case VECT_LESSEQUAL:
-			case VECT_GREATER:
-			case VECT_GREATEREQUAL: {
+			case VECT_GREATER:{
 				String vectName = type.getVectorPrimitiveName();
-				return sparseLhs ?
+				if(DMLScript.SPARSE_INTERMEDIATE && sparseLhs && sparseRhs) {
+					return "    SparseRowVector %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%LEN%, %IN1v%, %IN2v%, %IN1i%, %IN2i%, %POS1%, %POS2%, %LEN1%, %LEN2%);\n";
+				} else {
+					return sparseLhs ?
 						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen, %LEN%);\n" :
 						sparseRhs ?
-						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2v%, %POS1%, %IN2i%, %POS2%, alen, %LEN%);\n" :
-						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
+							"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2v%, %POS1%, %IN2i%, %POS2%, alen, %LEN%);\n" :
+							"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
+				}
 			}
-
+			case VECT_EQUAL:
+			case VECT_LESSEQUAL:
+			case VECT_GREATEREQUAL: {
+				String vectName = type.getVectorPrimitiveName();
+				if(DMLScript.SPARSE_INTERMEDIATE && sparseLhs && sparseRhs) {
+					return "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%LEN%, %IN1v%, %IN2v%, %IN1i%, %IN2i%, %POS1%, %POS2%, %LEN1%, %LEN2%);\n";
+				} else {
+					return sparseLhs ?
+						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen, %LEN%);\n" :
+						sparseRhs ?
+							"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2v%, %POS1%, %IN2i%, %POS2%, alen, %LEN%);\n" :
+							"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
+				}
+			}
 			//scalar-scalar operations
 			case MULT:
 				return "    double %TMP% = %IN1% * %IN2%;\n";

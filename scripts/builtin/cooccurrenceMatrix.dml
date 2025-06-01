@@ -19,8 +19,8 @@
 #
 #-------------------------------------------------------------
 
-## Cleans and processes text data by removing punctuation, converting it to lowercase, and reformatting.
-## Adds an index column to the result. The implementation is based on
+# Cleans and processes text data by removing punctuation, converting it to lowercase, and reformatting.
+# Adds an index column to the result. The implementation is based on
 # https://github.com/stanfordnlp/GloVe/blob/master/src/cooccur.c
 #
 # INPUT:
@@ -32,6 +32,7 @@
 # ------------------------------------------------------------------------------
 # result    (Frame[Unknown]): Processed text data with an index column.
 # ------------------------------------------------------------------------------
+
 processText = function(Frame[Unknown] S) return (Frame[Unknown] result){
     print("processText");
     tmpStr = map(S[,1], "x -> x.replaceAll(\"[.]\", \"\")");

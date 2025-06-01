@@ -30,7 +30,7 @@
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------
-# model_function  The function of the model to be evaluated as a String. This function has to take a matrix of samples
+# model_func      The function of the model to be evaluated as a String. This function has to take a matrix of samples
 #                 and return a vector of predictions.
 #                 It might be usefull to wrap the model into a function the takes and returns the desired shapes and
 #                 use this wrapper here.
@@ -51,9 +51,8 @@
 # S              Matrix holding the shapley values along the cols, one row per instance.
 # expected       Double holding the average prediction of all instances.
 # -----------------------------------------------------------------------------
-s_shapExplainer = function(String model_function, list[unknown] model_args, Matrix[Double] x_instances,
-    Matrix[Double] X_bg, Integer n_permutations = 10, Integer n_samples = 100, Integer remove_non_var=0,
-    Matrix[Double] partitions=as.matrix(-1), Integer seed = -1, Integer verbose = 0)
+
+s_shapExplainer = function(String model_func, list[unknown] model_args, Matrix[Double] x_instances, Matrix[Double] X_bg, Integer n_permutations = 10, Integer n_samples = 100, Integer remove_non_var=0, Matrix[Double] partitions=as.matrix(-1), Integer seed = -1, Integer verbose = 0)
   return (Matrix[Double] row_phis, Double expected)
 {
   u_printShapMessage("Parallel Permutation Explainer for "+nrow(x_instances)+" rows.", verbose)

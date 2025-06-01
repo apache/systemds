@@ -56,7 +56,6 @@ class TestNeuralNetwork(unittest.TestCase):
         cls.sds.close()
 
     def test_forward_pass(self):
-
         Xm = self.sds.from_numpy(self.X)
         nn = NeuralNetwork(self.sds, dim=1)
         # test forward pass through the network using static calls

@@ -30,7 +30,6 @@ np.random.seed(7)
 
 
 class TestLm(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

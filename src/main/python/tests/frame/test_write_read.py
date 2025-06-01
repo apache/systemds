@@ -27,7 +27,6 @@ from systemds.context import SystemDSContext
 
 
 class TestWriteRead(unittest.TestCase):
-
     sds: SystemDSContext = None
     temp_dir: str = "tests/frame/temp_write/"
     n_cols = 3

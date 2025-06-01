@@ -33,7 +33,6 @@ trace_test_1 = os.path.join(test_dir, "trace1.dml")
 
 
 class TestLineageTrace(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

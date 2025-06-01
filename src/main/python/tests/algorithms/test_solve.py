@@ -33,7 +33,6 @@ B = np.random.random(10)
 
 
 class TestSOLVE(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

@@ -31,7 +31,6 @@ from systemds.operator.algorithm import hyperband
 
 
 class TestHyperband(unittest.TestCase):
-
     sds: SystemDSContext = None
     np.random.seed(42)
     X_train = np.random.rand(50, 10)

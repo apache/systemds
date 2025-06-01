@@ -28,7 +28,6 @@ from systemds.operator.algorithm import pca
 
 
 class TestListOperationsUnknown(unittest.TestCase):
-
     sds: SystemDSContext = None
     src_path: str = "./tests/list/return_list.dml"
 

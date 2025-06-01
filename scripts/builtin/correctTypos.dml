@@ -34,10 +34,10 @@
 #
 # INPUT:
 # ----------------------------------------------------------------------------------------
-# strings              The nx1 input frame of corrupted strings
-# frequency_threshold  Strings that occur above this frequency level will not be corrected
-# distance_threshold   Max distance at which strings are considered similar
-# is_verbose           Print debug information
+# strings               The nx1 input frame of corrupted strings
+# frequency_threshold   Strings that occur above this frequency level will not be corrected
+# distance_threshold    Max distance at which strings are considered similar
+# is_verbose            Print debug information
 # ----------------------------------------------------------------------------------------
 #
 # OUTPUT:

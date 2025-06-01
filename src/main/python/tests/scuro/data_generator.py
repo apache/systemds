@@ -37,7 +37,6 @@ from systemds.scuro.modality.type import ModalityType
 
 
 class ModalityRandomDataGenerator:
-
     def __init__(self):
         self._modality_id = 0
 
@@ -104,7 +103,6 @@ def setup_data(modalities, num_instances, path):
 
 class TestDataGenerator:
     def __init__(self, modalities, path, balanced=True):
-
         self.modalities = modalities
         self.modalities_by_type = {}
         for modality in modalities:

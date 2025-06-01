@@ -39,7 +39,6 @@ distributions = ["norm", "uniform"]
 
 
 class TestRand(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

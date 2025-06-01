@@ -35,7 +35,6 @@ by = random.randrange(1, np.size(m, 1) + 1)
 
 
 class TestOrderBase(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod
@@ -48,7 +47,6 @@ class TestOrderBase(unittest.TestCase):
 
 
 class TestOrderValid(TestOrderBase):
-
     def test_basic(self):
         o = (
             self.sds.from_numpy(m)
@@ -78,7 +76,6 @@ class TestOrderValid(TestOrderBase):
 
 
 class TestOrderInvalid(TestOrderBase):
-
     def test_out_of_bounds(self):
         by_max = np.size(m, 1) + 2
         with self.assertRaises(Exception):

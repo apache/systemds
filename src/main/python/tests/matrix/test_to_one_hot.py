@@ -26,7 +26,6 @@ from systemds.context import SystemDSContext
 
 
 class TestMatrixOneHot(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

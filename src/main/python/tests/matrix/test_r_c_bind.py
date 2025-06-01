@@ -26,7 +26,6 @@ from systemds.context import SystemDSContext
 
 
 class TestRBind(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

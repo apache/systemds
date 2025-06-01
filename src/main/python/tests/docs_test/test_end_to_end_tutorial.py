@@ -27,7 +27,6 @@ logging.getLogger("root").setLevel(50)
 
 
 class TestEndToEnd(unittest.TestCase):
-
     network_dir: str = "tests/examples/docs_test/end_to_end"
 
     @classmethod

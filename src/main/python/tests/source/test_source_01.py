@@ -26,7 +26,6 @@ from systemds.context import SystemDSContext
 
 
 class TestSource_01(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

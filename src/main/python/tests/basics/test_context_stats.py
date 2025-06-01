@@ -28,7 +28,6 @@ np.random.seed(1412)
 
 
 class TestContextCreation(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

@@ -169,15 +169,19 @@ class TestDataLoaders(unittest.TestCase):
             self.val_indizes,
         )
         dr_search = DRSearch(self.mods, task, self.representations)
-        best_representation_enum, best_score_enum, best_modalities_enum = (
-            dr_search.fit_enumerate_all()
-        )
+        (
+            best_representation_enum,
+            best_score_enum,
+            best_modalities_enum,
+        ) = dr_search.fit_enumerate_all()
 
         dr_search.reset_best_params()
 
-        best_representation_rand, best_score_rand, best_modalities_rand = (
-            dr_search.fit_random(seed=42)
-        )
+        (
+            best_representation_rand,
+            best_score_rand,
+            best_modalities_rand,
+        ) = dr_search.fit_random(seed=42)
 
         assert best_score_rand <= best_score_enum
 

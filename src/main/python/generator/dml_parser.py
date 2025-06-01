@@ -23,12 +23,13 @@
 import json
 import os
 import re
-
+import textwrap
 
 class FunctionParser(object):
     header_input_pattern = r"^[ \t\n]*[#]+[ \t\n]*input[ \t\n\w:;.,#]*[\s#\-]*[#]+[\w\s\d:,.()\" \t\n\-]*[\s#\-]*$"
     header_output_pattern = r"[\s#\-]*[#]+[ \t]*(return|output)[ \t\w:;.,#]*[\s#\-]*[#]+[\w\s\d:,.()\" \t\-]*[\s#\-]*$"
-    function_pattern = r"^[ms]_[\w]+[ \t\n]*=[ \t\n]+function[^#{]*"
+    function_pattern = r"^[fms]_[\w]+[ \t\n]*=[ \t\n]+function[^#{]*"
+
     # parameter_pattern = r"^m_[\w]+[\s]+=[\s]+function[\s]*\([\s]*(?=return)[\s]*\)[\s]*return[\s]*\([\s]*([\w\[\]\s,\d=.\-_]*)[\s]*\)[\s]*"
     header_parameter_pattern = r"[\s#\-]*[#]+[ \t]*([\w|-]+)[\s]+([\w]+)[\s]+([\w,\d.\"\-]+)[\s]+([\w|\W]+)"
     divider_pattern = r"[\s#\-]*"
@@ -57,16 +58,14 @@ class FunctionParser(object):
         """
         file_name = os.path.basename(path)
         function_name, extension = os.path.splitext(file_name)
-        # try:
-        function_definition = self.find_function_definition(path)
-        # pattern = re.compile(
-        #     self.__class__.parameter_pattern, flags=re.I | re.M)
-        # match = pattern.match(function_definition)
+        try:
+            function_definition = self.find_function_definition(path)
+        except AttributeError:
+            print(f"[INFO] Skipping '{function_name}': does not match function name pattern. It is likely an internal function.")
+            return
 
-        # if match:
+        func_split = function_definition.split("function", 1)[1].split("return")
 
-        func_split = function_definition.split("function")[1].split("return")
-       
         param_str = self.extract_param_str(func_split[0])
         retval_str = None
         if(len(func_split)> 1):     
@@ -198,10 +197,20 @@ class FunctionParser(object):
             input_parameters = self.parse_input_output_string(h_input)
             output_parameters = self.parse_input_output_string(h_output)
        
+        code_block = None
+        with open(path, 'r') as f:
+            content = f.read()
+            match = re.search(r"#\s*\.\. code-block:: python.*?(?:#\s*-+\n)?(.*?)(?=\n\s*m_\w+\s*= function)", content, re.S)
+            if match:
+                raw_block = match.group(1)
+                # Remove leading `#`
+                code_lines = [line.lstrip("#") for line in raw_block.splitlines()]
+                code_block = textwrap.dedent("\n".join(code_lines))
 
         data = {'description': description,
                 'parameters': input_parameters,
-                'return_values': output_parameters}
+                'return_values': output_parameters,
+                'code_block': code_block}
         return data
 
     def parse_input_output_string(self, data: str):

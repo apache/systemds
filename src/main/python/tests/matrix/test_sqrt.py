@@ -32,7 +32,6 @@ class TestSQRT(unittest.TestCase):
         self.sds.close()
 
     def test_sqrt_basic(self):
-
         input_matrix = np.array(
             [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]]
         )
@@ -43,7 +42,6 @@ class TestSQRT(unittest.TestCase):
         assert np.allclose(sds_result, np_result_np, 1e-9)
 
     def test_sqrt_random(self):
-
         input_matrix = np.random.random((10, 10))
         sds_input = self.sds.from_numpy(input_matrix)
         sds_result = sds_input.sqrt().compute()

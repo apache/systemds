@@ -28,7 +28,6 @@ from systemds.context import SystemDSContext
 
 
 class TestTransformApply(unittest.TestCase):
-
     sds: SystemDSContext = None
     HOMES_PATH = "../../test/resources/datasets/homes/homes.csv"
     HOMES_SCHEMA = '"int,string,int,int,double,int,boolean,int,int"'

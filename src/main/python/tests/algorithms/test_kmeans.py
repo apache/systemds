@@ -27,7 +27,6 @@ from systemds.operator.algorithm import kmeans, kmeansPredict
 
 
 class TestKMeans(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

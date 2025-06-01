@@ -31,7 +31,6 @@ np.random.seed(7)
 
 
 class TestOrder(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

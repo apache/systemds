@@ -26,7 +26,6 @@ from systemds.context import SystemDSContext
 
 
 class TestSource_DefaultValues(unittest.TestCase):
-
     sds: SystemDSContext = None
     src_path: str = "./tests/source/source_with_default_values.dml"
 

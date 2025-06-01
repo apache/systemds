@@ -37,7 +37,6 @@ F = np.array([2, 1, 0])
 
 
 class TestCOV(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

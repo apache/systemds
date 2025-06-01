@@ -31,7 +31,6 @@ from systemds.context import SystemDSContext
 
 
 class TestReplaceFrame(unittest.TestCase):
-
     sds: SystemDSContext = None
     HOMES_PATH = "../../test/resources/datasets/homes/homes.csv"
     HOMES_SCHEMA = '"int,string,int,int,double,int,boolean,int,int"'
@@ -49,7 +48,6 @@ class TestReplaceFrame(unittest.TestCase):
         pass
 
     def test_apply_recode_bin(self):
-
         F1 = self.sds.read(
             self.HOMES_PATH,
             data_type="frame",

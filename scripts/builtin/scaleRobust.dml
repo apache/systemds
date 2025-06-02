@@ -18,6 +18,23 @@ m_scaleRobust = function(Matrix[Double] X)
 
   iqr = q3 - q1
 
+  # Logging
+  if (ncol(X) > 0) {
+    print("DML column 1:")
+    print("Q1:"); print(q1[1,1])
+    print("Median:"); print(med[1,1])
+    print("Q3:"); print(q3[1,1])
+    print("IQR:"); print(iqr[1,1])
+  }
+
+  if (ncol(X) > 1) {
+    print("DML column 2:")
+    print("Q1:"); print(q1[1,2])
+    print("Median:"); print(med[1,2])
+    print("Q3:"); print(q3[1,2])
+    print("IQR:"); print(iqr[1,2])
+  }
+
   # Prevent division by 0 or NaN
   iqr = replace(target=iqr, pattern=0, replacement=1)
   iqr = replace(target=iqr, pattern=NaN, replacement=1)

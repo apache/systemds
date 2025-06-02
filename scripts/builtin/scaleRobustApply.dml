@@ -16,13 +16,18 @@
 m_scaleRobustApply = function(Matrix[Double] X, Matrix[Double] med, Matrix[Double] q1, Matrix[Double] q3)
   return (Matrix[Double] Y)
 {
+
+  t0 = time();
+
   iqr = q3 - q1
 
   # Ensure robust scaling is safe by replacing invalid IQRs
   iqr = replace(target=iqr, pattern=0, replacement=1)
   iqr = replace(target=iqr, pattern=NaN, replacement=1)
 
-
   # Apply robust transformation
   Y = (X - med) / iqr
+
+  t1 = time();
+  print("DML scaleRobustApply time (ms):"); print((t1 - t0) / 1e6);
 }

@@ -24,6 +24,9 @@ m_scaleRobust = function(Matrix[Double] X)
   q1  = matrix(0.0, rows=1, cols=m)
   q3  = matrix(0.0, rows=1, cols=m)
 
+
+  t0 = time();
+
   # Loop over columns to compute quantiles
   for (j in 1:m) {
     col_j = X[,j]                        # get column vector
@@ -32,26 +35,18 @@ m_scaleRobust = function(Matrix[Double] X)
     q3[1,j]  = quantile(col_j, 0.75)
   }
 
-
+  t1 = time();
+  print("DML quantile computation time (ms):"); print((t1 - t0) / 1e6);  
 
 
 
   # Logging
-  if (ncol(X) > 0) {
-    print("DML column 1:")
-    print("Q1:"); print(q1[1,1])
-    print("Median:"); print(med[1,1])
-    print("Q3:"); print(q3[1,1])
-    
-  }
-
-  if (ncol(X) > 1) {
-    print("DML column 2:")
-    print("Q1:"); print(q1[1,2])
-    print("Median:"); print(med[1,2])
-    print("Q3:"); print(q3[1,2])
-    
-  }
+  #if (ncol(X) > 0) {
+  #  print("DML column 1:")
+  #  print("Q1:"); print(q1[1,1])
+  #  print("Median:"); print(med[1,1])
+  #  print("Q3:"); print(q3[1,1]) 
+  #}
 
 
 

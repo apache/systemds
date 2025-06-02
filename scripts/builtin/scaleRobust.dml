@@ -1,5 +1,21 @@
+# Robust scaling using median and IQR (Interquartile Range)
+# Resistant to outliers by centering with the median and scaling with IQR.
+#
+# INPUT:
+# -------------------------------------------------------------------------------------
+#   X   Input feature matrix of shape n-by-m
+# -------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -------------------------------------------------------------------------------------
+#   Y   Scaled output matrix of shape n-by-mAdd commentMore actions
+#   med Column medians (Q2) of shape 1-by-m
+#   q1 Column first quantiles (Q1) of shape 1-by-m
+#   q3 Column first quantiles (Q3) of shape 1-by-m
+# -------------------------------------------------------------------------------------
+
 m_scaleRobust = function(Matrix[Double] X)
-  return (Matrix[Double] Y, Matrix[Double] med, Matrix[Double] iqr)
+  return (Matrix[Double] Y, Matrix[Double] med, Matrix[Double] q1, Matrix[Double] q3)
 {
   n = nrow(X)
   m = ncol(X)
@@ -16,7 +32,9 @@ m_scaleRobust = function(Matrix[Double] X)
     q3[1,j]  = quantile(col_j, 0.75)
   }
 
-  iqr = q3 - q1
+
+
+
 
   # Logging
   if (ncol(X) > 0) {
@@ -24,7 +42,7 @@ m_scaleRobust = function(Matrix[Double] X)
     print("Q1:"); print(q1[1,1])
     print("Median:"); print(med[1,1])
     print("Q3:"); print(q3[1,1])
-    print("IQR:"); print(iqr[1,1])
+    
   }
 
   if (ncol(X) > 1) {
@@ -32,13 +50,10 @@ m_scaleRobust = function(Matrix[Double] X)
     print("Q1:"); print(q1[1,2])
     print("Median:"); print(med[1,2])
     print("Q3:"); print(q3[1,2])
-    print("IQR:"); print(iqr[1,2])
+    
   }
 
-  # Prevent division by 0 or NaN
-  iqr = replace(target=iqr, pattern=0, replacement=1)
-  iqr = replace(target=iqr, pattern=NaN, replacement=1)
 
-  # Robust scale
-  Y = (X - med) / iqr
+
+  Y = scaleRobustApply(X, med, q1, q3);
 }

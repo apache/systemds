@@ -4,7 +4,8 @@
 # -------------------------------------------------------------------------------------
 # X      Input feature matrix of shape n-by-m
 # med    Column medians (Q2) of shape 1-by-m
-# iqr    Column interquartile ranges (Q3 - Q1) of shape 1-by-m
+#   q1 Column first quantiles (Q1) of shape 1-by-m
+#   q3 Column first quantiles (Q3) of shape 1-by-m
 # -------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -12,17 +13,16 @@
 # Y      Scaled output matrix of shape n-by-m
 # -------------------------------------------------------------------------------------
 
-m_scaleRobustApply = function(Matrix[Double] X, Matrix[Double] med, Matrix[Double] iqr)
+m_scaleRobustApply = function(Matrix[Double] X, Matrix[Double] med, Matrix[Double] q1, Matrix[Double] q3)
   return (Matrix[Double] Y)
 {
-
-    # Ensure all inputs are treated as matrices
-    med = as.matrix(med) 
-    iqr = as.matrix(iqr)
+  iqr = q3 - q1
 
   # Ensure robust scaling is safe by replacing invalid IQRs
   iqr = replace(target=iqr, pattern=0, replacement=1)
   iqr = replace(target=iqr, pattern=NaN, replacement=1)
+
+
   # Apply robust transformation
   Y = (X - med) / iqr
 }

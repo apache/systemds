@@ -2218,6 +2218,13 @@ public class LibSpoofPrimitives
 		//		}
 	}
 
+	public static SparseRowVector vectDivWrite(int len, double bval, double[] a, int[] aix, int ai, int alen) {
+		SparseRowVector c = allocSparseVector(alen);
+		for(int j = 0; j < ai+alen; j++)
+			c.set(aix[j], bval / a[j]);
+		return c;
+	}
+
 	public static SparseRowVector vectDivWrite(int len, double[] a, double[] b, int[] aix, int[] bix, int ai, int bi, int alen, int blen) {
 		SparseRowVector c = allocSparseVector(alen);
 		if(alen != 0 && blen != 0) {

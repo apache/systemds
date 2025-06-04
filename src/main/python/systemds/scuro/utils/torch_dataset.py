@@ -26,14 +26,16 @@ import torchvision.transforms as transforms
 
 
 class CustomDataset(torch.utils.data.Dataset):
-    def __init__(self, data):
+    def __init__(self, data, data_type):
         self.data = data
+        data_type = numpy_dtype_to_torch_dtype(data_type)
         self.tf = transforms.Compose(
             [
                 transforms.ToPILImage(),
                 transforms.Resize(256),
                 transforms.CenterCrop(224),
                 transforms.ToTensor(),
+                transforms.ConvertImageDtype(dtype=data_type),
                 transforms.Normalize(
                     mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
                 ),
@@ -61,3 +63,29 @@ class CustomDataset(torch.utils.data.Dataset):
 
     def __len__(self) -> int:
         return len(self.data)
+
+
+def numpy_dtype_to_torch_dtype(dtype):
+    """
+    Convert a NumPy dtype (or dtype string) to the corresponding PyTorch dtype.
+    Raises ValueError if the dtype is not supported.
+    """
+    if isinstance(dtype, torch.dtype):
+        return dtype
+    
+    mapping = {
+        np.float32: torch.float32,
+        np.float64: torch.float64,
+        np.float16: torch.bfloat16,
+        np.uint8: torch.uint8,
+        np.int8: torch.int8,
+        np.int16: torch.int16,
+        np.int32: torch.int32,
+        np.int64: torch.int64,
+    }
+
+    np_dtype = np.dtype(dtype)
+    if np_dtype.type in mapping:
+        return mapping[np_dtype.type]
+    else:
+        raise ValueError(f"No corresponding torch dtype for NumPy dtype {np_dtype}")

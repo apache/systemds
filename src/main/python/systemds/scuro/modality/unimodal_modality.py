@@ -37,7 +37,7 @@ class UnimodalModality(Modality):
         :param data_loader: Defines how the raw data should be loaded
         :param modality_type: Type of the modality
         """
-        super().__init__(data_loader.modality_type, ModalityIdentifier().new_id(), None)
+        super().__init__(data_loader.modality_type, ModalityIdentifier().new_id(), None, data_loader.data_type)
         self.data_loader = data_loader
 
     def copy_from_instance(self):

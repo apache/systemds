@@ -45,18 +45,18 @@ class AudioLoader(BaseLoader):
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
-        if not self.load_data_from_file:
-            import numpy as np
+        # if not self.load_data_from_file:
+        #     import numpy as np
+        #
+        #     self.metadata[file] = self.modality_type.create_audio_metadata(
+        #         1000, np.array([0])
+        #     )
+        # else:
+        audio, sr = librosa.load(file, dtype=self._data_type)
 
-            self.metadata[file] = self.modality_type.create_audio_metadata(
-                1000, np.array([0])
-            )
-        else:
-            audio, sr = librosa.load(file, dtype=self._data_type)
+        if self.normalize:
+            audio = librosa.util.normalize(audio)
 
-            if self.normalize:
-                audio = librosa.util.normalize(audio)
+        self.metadata[file] = self.modality_type.create_audio_metadata(sr, audio)
 
-            self.metadata[file] = self.modality_type.create_audio_metadata(sr, audio)
-
-            self.data.append(audio)
+        self.data.append(audio)

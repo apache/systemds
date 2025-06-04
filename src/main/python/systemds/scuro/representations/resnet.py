@@ -110,7 +110,7 @@ class ResNet(UnimodalRepresentation):
         return parameters
 
     def transform(self, modality):
-        dataset = CustomDataset(modality.data)
+        dataset = CustomDataset(modality.data, modality.data_type)
         embeddings = {}
 
         res5c_output = None

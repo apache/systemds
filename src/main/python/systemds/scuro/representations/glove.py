@@ -21,7 +21,7 @@
 import numpy as np
 from gensim.utils import tokenize
 
-
+from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import save_embeddings
 from systemds.scuro.modality.type import ModalityType
@@ -46,11 +46,14 @@ class GloVe(UnimodalRepresentation):
         self.glove_path = glove_path
         self.output_file = output_file
 
-    def transform(self, data):
+    def transform(self, modality):
+        transformed_modality = TransformedModality(
+            modality, self
+        )
         glove_embeddings = load_glove_embeddings(self.glove_path)
 
         embeddings = []
-        for sentences in data:
+        for sentences in modality.data:
             tokens = list(tokenize(sentences.lower()))
             embeddings.append(
                 np.mean(
@@ -66,4 +69,5 @@ class GloVe(UnimodalRepresentation):
         if self.output_file is not None:
             save_embeddings(np.array(embeddings), self.output_file)
 
-        return np.array(embeddings)
+        transformed_modality.data = np.array(embeddings)
+        return transformed_modality

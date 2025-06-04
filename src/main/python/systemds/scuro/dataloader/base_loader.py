@@ -74,15 +74,15 @@ class BaseLoader(ABC):
     @property
     def next_chunk(self):
         return self._next_chunk
-    
+
     @property
     def data_type(self):
         return self._data_type
-    
+
     @data_type.setter
     def data_type(self, data_type):
         self._data_type = self.resolve_data_type(data_type)
-        
+
     def reset(self):
         self._next_chunk = 0
         self.data = []

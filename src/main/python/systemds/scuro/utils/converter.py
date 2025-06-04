@@ -18,18 +18,32 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from systemds.scuro.modality.transformed import TransformedModality
-from systemds.scuro.representations.representation import Representation
+
+import numpy as np
+import torch
 
 
-class AggregatedRepresentation(Representation):
-    def __init__(self, aggregation):
-        super().__init__("AggregatedRepresentation", aggregation.parameters)
-        self.aggregation = aggregation
+def numpy_dtype_to_torch_dtype(dtype):
+    """
+    Convert a NumPy dtype (or dtype string) to the corresponding PyTorch dtype.
+    Raises ValueError if the dtype is not supported.
+    """
+    if isinstance(dtype, torch.dtype):
+        return dtype
 
-    def transform(self, modality):
-        aggregated_modality = TransformedModality(
-            modality, self
-        )
-        aggregated_modality.data = self.aggregation.execute(modality)
-        return aggregated_modality
+    mapping = {
+        np.float32: torch.float32,
+        np.float64: torch.float64,
+        np.float16: torch.bfloat16,
+        np.uint8: torch.uint8,
+        np.int8: torch.int8,
+        np.int16: torch.int16,
+        np.int32: torch.int32,
+        np.int64: torch.int64,
+    }
+
+    np_dtype = np.dtype(dtype)
+    if np_dtype.type in mapping:
+        return mapping[np_dtype.type]
+    else:
+        raise ValueError(f"No corresponding torch dtype for NumPy dtype {np_dtype}")

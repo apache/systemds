@@ -74,4 +74,4 @@ class VideoLoader(BaseLoader):
 
             frames.append(frame)
 
-        self.data.append(frames)
+        self.data.append(np.stack(frames))

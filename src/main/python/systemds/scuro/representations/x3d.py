@@ -127,7 +127,7 @@ class X3D(UnimodalRepresentation):
             embeddings[video_id] = np.array(embeddings[video_id])
 
         transformed_modality = TransformedModality(
-            self.output_modality_type, "x3d", modality.modality_id, modality.metadata
+            modality, self, self.output_modality_type
         )
 
         transformed_modality.data = list(embeddings.values())

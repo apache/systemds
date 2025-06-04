@@ -29,7 +29,9 @@ from systemds.scuro.representations import utils
 
 class Modality:
 
-    def __init__(self, modalityType: ModalityType, modality_id=-1, metadata={}, data_type=None):
+    def __init__(
+        self, modalityType: ModalityType, modality_id=-1, metadata={}, data_type=None
+    ):
         """
         Parent class of the different Modalities (unimodal & multimodal)
         :param modality_type: Type of the modality
@@ -67,7 +69,7 @@ class Modality:
         """
         Create a copy of the modality instance
         """
-        return type(self)(self.modality_type, self.metadata)
+        return type(self)(self.modality_type, self.modality_id, self.metadata, self.data_type)
 
     def update_metadata(self):
         """

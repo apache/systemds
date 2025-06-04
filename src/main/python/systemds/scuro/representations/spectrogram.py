@@ -37,8 +37,7 @@ class Spectrogram(UnimodalRepresentation):
         self.n_fft = n_fft
 
     def transform(self, modality):
-        transformed_modality = TransformedModality(
-            self.output_modality_type, self, modality.modality_id, modality.metadata
+        transformed_modality = TransformedModality( modality, self, self.output_modality_type
         )
         result = []
         max_length = 0

@@ -101,7 +101,7 @@ class TestMultimodalJoin(unittest.TestCase):
         audio_data_loader = AudioLoader(
             self.data_generator.get_modality_path(ModalityType.AUDIO),
             self.data_generator.indices,
-            r_chunk_size,
+            chunk_size=r_chunk_size,
         )
         audio = UnimodalModality(audio_data_loader)
 

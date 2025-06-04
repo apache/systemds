@@ -21,6 +21,8 @@
 from typing import List, Optional, Union
 
 import librosa
+import numpy as np
+
 from systemds.scuro.dataloader.base_loader import BaseLoader
 from systemds.scuro.modality.type import ModalityType
 
@@ -30,19 +32,31 @@ class AudioLoader(BaseLoader):
         self,
         source_path: str,
         indices: List[str],
+        data_type: Union[np.dtype, str] = np.float32,
         chunk_size: Optional[int] = None,
         normalize: bool = True,
+        load=True,
     ):
-        super().__init__(source_path, indices, chunk_size, ModalityType.AUDIO)
+        super().__init__(
+            source_path, indices, data_type, chunk_size, ModalityType.AUDIO
+        )
         self.normalize = normalize
+        self.load_data_from_file = load
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
-        audio, sr = librosa.load(file)
+        if not self.load_data_from_file:
+            import numpy as np
 
-        if self.normalize:
-            audio = librosa.util.normalize(audio)
+            self.metadata[file] = self.modality_type.create_audio_metadata(
+                1000, np.array([0])
+            )
+        else:
+            audio, sr = librosa.load(file, dtype=self._data_type)
 
-        self.metadata[file] = self.modality_type.create_audio_metadata(sr, audio)
+            if self.normalize:
+                audio = librosa.util.normalize(audio)
 
-        self.data.append(audio)
+            self.metadata[file] = self.modality_type.create_audio_metadata(sr, audio)
+
+            self.data.append(audio)

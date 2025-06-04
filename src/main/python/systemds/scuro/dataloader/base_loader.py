@@ -21,6 +21,10 @@
 import os
 from abc import ABC, abstractmethod
 from typing import List, Optional, Union
+import math
+
+import numpy as np
+from tensorflow.python.ops.numpy_ops.np_dtypes import int16
 
 
 class BaseLoader(ABC):
@@ -28,6 +32,7 @@ class BaseLoader(ABC):
         self,
         source_path: str,
         indices: List[str],
+        data_type: Union[np.dtype, str],
         chunk_size: Optional[int] = None,
         modality_type=None,
     ):
@@ -48,6 +53,7 @@ class BaseLoader(ABC):
         self._next_chunk = 0
         self._num_chunks = 1
         self._chunk_size = None
+        self._data_type = self.resolve_data_type(data_type)
 
         if chunk_size:
             self.chunk_size = chunk_size
@@ -59,7 +65,7 @@ class BaseLoader(ABC):
     @chunk_size.setter
     def chunk_size(self, value):
         self._chunk_size = value
-        self._num_chunks = int(len(self.indices) / self._chunk_size)
+        self._num_chunks = int(math.ceil(len(self.indices) / self._chunk_size))
 
     @property
     def num_chunks(self):
@@ -110,16 +116,25 @@ class BaseLoader(ABC):
         return self._load(next_chunk_indices)
 
     def _load(self, indices: List[str]):
-        is_dir = True if os.path.isdir(self.source_path) else False
-
-        if is_dir:
-            _, ext = os.path.splitext(os.listdir(self.source_path)[0])
-            for index in indices:
-                self.extract(self.source_path + index + ext)
+        file_names = self.get_file_names(indices)
+        if isinstance(file_names, str):
+            self.extract(file_names, indices)
         else:
-            self.extract(self.source_path, indices)
+            for file_name in file_names:
+                self.extract(file_name)
 
         return self.data, self.metadata
+
+    def get_file_names(self, indices=None):
+        is_dir = True if os.path.isdir(self.source_path) else False
+        file_names = []
+        if is_dir:
+            _, ext = os.path.splitext(os.listdir(self.source_path)[0])
+            for index in self.indices if indices is None else indices:
+                file_names.append(self.source_path + index + ext)
+            return file_names
+        else:
+            return self.source_path
 
     @abstractmethod
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
@@ -137,3 +152,30 @@ class BaseLoader(ABC):
 
         if file_size == 0:
             raise ("File {0} is empty".format(file))
+
+    @staticmethod
+    def resolve_data_type(data_type):
+        if isinstance(data_type, str):
+            if data_type.lower() in [
+                "float16",
+                "float32",
+                "float64",
+                "int16",
+                "int32",
+                "int64",
+            ]:
+                return np.dtype(data_type)
+            else:
+                raise ValueError(f"Unsupported data_type string: {data_type}")
+        elif data_type in [
+            np.float16,
+            np.float32,
+            np.float64,
+            np.int16,
+            np.int32,
+            np.int64,
+            str,
+        ]:
+            return data_type
+        else:
+            raise ValueError(f"Unsupported data_type: {data_type}")

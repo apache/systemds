@@ -1188,8 +1188,8 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 			double sparsityB = (type2 == InputType.VECTOR_DENSE) ? sparsity1 : sparsity2;
 			MatrixBlock inB = MatrixBlock.randOperations(m, n, sparsityB, -5, 5, "uniform", 7);
 
-			boolean sparse = sparseOutput(bintype);
-			int testType = testType(bintype);
+			boolean sparse = getOutputType(bintype);
+			int testType = getTestType(bintype);
 
 			//get vector primitive via reflection
 			String meName = "vect"+StringUtils.camelize(bintype.name().split("_")[1])+"Write";
@@ -1278,7 +1278,12 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 		}
 	}
 
-	private static boolean sparseOutput(BinType type) {
+
+	/**
+	 * @param type
+	 * @return {@code true}, when the matching method has a sparse return
+	 */
+	private static boolean getOutputType(BinType type) {
 		switch(type) {
 			case VECT_EQUAL:
 			case VECT_LESSEQUAL:
@@ -1290,11 +1295,12 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 	}
 
 	/**
-	 * returns -1, for normal testing;
-	 * returns 0, for testing with 0 and non-zeros;
-	 * returns 1, for testing with negative and positive numbers;
+	 * @param type
+	 * @return returns {@code -1}, for normal testing;<br>
+	 *         returns {@code 0}, for testing with 0 and non-zeros;<br>
+	 *         returns {@code 1}, for testing with negative and positive numbers;
 	 */
-	private static int testType(BinType type) {
+	private static int getTestType(BinType type) {
 		switch(type) {
 			case VECT_DIV_SCALAR:
 			case VECT_EQUAL_SCALAR:

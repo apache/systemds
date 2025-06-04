@@ -40,33 +40,13 @@ public class SparseVectorAllocTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testAllocationWithValues1() {
-		testSparseVectorWithValues(1, 10,val1, indexes1);
-	}
-
-	@Test
-	public void testAllocationWithValues2() {
-		testSparseVectorWithValues(1, 10, val2, indexes2);
-	}
-
-	@Test
-	public void testAllocationWithIndexes1() {
-		testSparseVectorWithIndexes(1, 10, indexes1);
-	}
-
-	@Test
-	public void testAllocationWithIndexes2() {
-		testSparseVectorWithIndexes(1, 10, indexes2);
-	}
-
-	@Test
 	public void testVectorReuse1() {
-		testBufferReuse(1, 10, -1, 5, val1, indexes1);
+		testBufferReuse(3, 10, 5, 5);
 	}
 
 	@Test
 	public void testVectorReuse2() {
-		testBufferReuse(1, 10, -1, 5, val2, indexes2);
+		testBufferReuse(3, 10, -1, 5);
 	}
 
 	/** tests the allocation of an empty vector
@@ -85,52 +65,13 @@ public class SparseVectorAllocTest extends AutomatedTestBase
 		LibSpoofPrimitives.cleanupSparseThreadLocalMemory();
 	}
 
-	/** tests the allocation of a vector with certain values and indexes
-	 * @param numVectors number of vectors that should be pre-allocated
-	 * @param len the length of the vector
-	 * @param values expected values
-	 * @param indexes expected indexes
-	 */
-	public void testSparseVectorWithValues(int numVectors, int len, double[] values, int[] indexes) {
-		//test the allocation of a vector with preset values
-		LibSpoofPrimitives.setupSparseThreadLocalMemory(numVectors, len, -1);
-
-		SparseRowVector sparseVec = LibSpoofPrimitives.allocSparseVector(values.length, values, indexes);
-
-		Assert.assertEquals("Vector size should match input array length", values.length, sparseVec.size());
-		for(int j = 0; j < sparseVec.size(); j++) {
-			Assert.assertEquals("Value array should match input array", values[j], sparseVec.get(indexes[j]), 0.001);
-		}
-
-		LibSpoofPrimitives.cleanupSparseThreadLocalMemory();
-	}
-
-	/** tests the allocation of a vector with certain indexes
-	 * @param numVectors number of vectors that should be pre-allocated
-	 * @param len the length of the vector
-	 * @param indexes expected indexes
-	 */
-	public void testSparseVectorWithIndexes(int numVectors, int len, int[] indexes) {
-		//test allocation of a vector with preset indexes
-		LibSpoofPrimitives.setupSparseThreadLocalMemory(numVectors, len, -1);
-
-		SparseRowVector sparseVec = LibSpoofPrimitives.allocSparseVector(indexes.length, indexes);
-
-		Assert.assertEquals("Vector size should match input array length", indexes.length, sparseVec.size());
-		Assert.assertArrayEquals("Indexes array should match input array", indexes, sparseVec.indexes());
-
-		LibSpoofPrimitives.cleanupSparseThreadLocalMemory();
-	}
-
 	/** tests the allocation of a vector that is reused multiple times
 	 * @param numVectors number of vectors that should be pre-allocated
 	 * @param len1 length of the first vector
 	 * @param len2 length of the second vector
 	 * @param expLen expected length of allocated vector
-	 * @param values expected values
-	 * @param indexes expected indexes
 	 */
-	public void testBufferReuse(int numVectors, int len1, int len2, int expLen, double[] values, int[] indexes) {
+	public void testBufferReuse(int numVectors, int len1, int len2, int expLen) {
 		//test the reuse of the vectors in the ring buffer
 		LibSpoofPrimitives.setupSparseThreadLocalMemory(numVectors, len1, len2);
 
@@ -144,13 +85,29 @@ public class SparseVectorAllocTest extends AutomatedTestBase
 
 		Assert.assertEquals("Reused vector should be reset to size 0", 0, vec2.size());
 
-		//allocate third vector with values
-		SparseRowVector vec3 = LibSpoofPrimitives.allocSparseVector(values.length, values, indexes);
-
-		Assert.assertEquals("Vector size should match input", values.length, vec3.size());
-		for(int j = 0; j < vec3.size(); j++) {
-			Assert.assertEquals("Value array should match input array", values[j], vec3.get(indexes[j]), 0.001);
+		for(int j = 0; j < vec2.size(); j++) {
+			vec2.set(vec2.indexes()[j], vec2.get(vec2.indexes()[j]) * 32);
 		}
+
+		SparseRowVector vec3 = LibSpoofPrimitives.allocSparseVector(expLen);
+
+		Assert.assertEquals("Reused vector should be reset to size 0", 0, vec3.size());
+
+		SparseRowVector vec4 = LibSpoofPrimitives.allocSparseVector(expLen);
+
+		for(int j = 0; j < vec4.size(); j++) {
+			vec4.set(vec4.indexes()[j], vec4.get(vec3.indexes()[j]) * 32);
+		}
+
+		Assert.assertEquals("Reused vector should be reset to size 0", 0, vec4.size());
+
+		SparseRowVector vec5 = LibSpoofPrimitives.allocSparseVector(expLen);
+
+		for(int j = 0; j < vec5.size(); j++) {
+			vec2.set(vec5.indexes()[j], vec5.get(vec5.indexes()[j]) * 32);
+		}
+
+		Assert.assertEquals("Reused vector should be reset to size 0", 0, vec5.size());
 
 		LibSpoofPrimitives.cleanupSparseThreadLocalMemory();
 	}

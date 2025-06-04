@@ -2179,18 +2179,29 @@ public class LibSpoofPrimitives
 	 */
 
 	public static SparseRowVector vectMultWrite(int len, double[] a, double bval, int[] aix, int ai, int alen) {
-		if( a == null ) return allocSparseVector(alen);
-		SparseRowVector c = allocSparseVector(alen, aix);
-		LibMatrixMult.vectMultiplyWrite(bval, a, c.values(), ai, 0, alen);
+		SparseRowVector c = allocSparseVector(alen);
+		if( a == null ) return c;
+		for(int j = 0; j < ai+alen; j++)
+			c.set(aix[j], a[j]*bval);
 		return c;
 	}
 
 	public static SparseRowVector vectMultWrite(int len, double[] a, double[] b, int[] aix, int[] bix, int ai, int bi, int alen, int blen) {
 		SparseRowVector c = allocSparseVector(alen);
 		if( a == null || b == null ) return c;
-		SparseRowVector d = allocSparseVector(blen, b, bix);
-		for( int j = ai; j < ai+alen; j++ ) {
-			c.set(aix[j], a[j] * d.get(bi+aix[j]));
+		int aIndex = ai;
+		int bIndex = bi;
+		while(aIndex < ai+alen && bIndex < bi+blen) {
+			int aIdx = aix[aIndex];
+			int bIdx = bix[bIndex];
+			if(aIdx == bIdx) {
+				c.set(aIdx, a[aIndex] * b[bIndex]);
+				aIndex++;
+				bIndex++;
+			} else if(aIdx < bIdx)
+				aIndex++;
+			else
+				bIndex++;
 		}
 		return c;
 	}
@@ -2226,49 +2237,69 @@ public class LibSpoofPrimitives
 	}
 
 	public static SparseRowVector vectDivWrite(int len, double[] a, double[] b, int[] aix, int[] bix, int ai, int bi, int alen, int blen) {
+//		SparseRowVector c = allocSparseVector(alen);
+//		if(alen != 0 && blen != 0) {
+//			//decide between two versions. First is smaller for smaller alen and the other for smaller blen
+//			if(alen < blen) {
+//				SparseRowVector bSparse = allocSparseVector(blen, b, bix);
+//				for (int j = ai; j < ai+alen; j++) {
+//					c.set(aix[j], a[j] / bSparse.get(aix[j]));
+//				}
+//			} else {
+//				SparseRowVector aSparse = allocSparseVector(alen, a, aix);
+//				for (int j = ai; j < ai+alen; j++) {
+//					double aval = a[j];
+//					c.set(aix[j], (aval>0) ?
+//						Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY);
+//				}
+//				for (int j = bi; j < bi+blen; j++) {
+//					c.set(bix[j], aSparse.get(bix[j]) / b[j]);
+//				}
+//			}
+//		}
 		SparseRowVector c = allocSparseVector(alen);
-		if(alen != 0 && blen != 0) {
-			//decide between two versions. First is smaller for smaller alen and the other for smaller blen
-			if(alen < blen) {
-				SparseRowVector bSparse = allocSparseVector(blen, b, bix);
-				for (int j = ai; j < ai+alen; j++) {
-					c.set(aix[j], a[j] / bSparse.get(aix[j]));
-				}
+		int aIndex = ai;
+		int bIndex = bi;
+		while(aIndex < ai+alen && bIndex < bi+blen) {
+			int aIdx = aix[aIndex];
+			int bIdx = bix[bIndex];
+			if(aIdx == bIdx) {
+				c.set(aIdx, a[aIndex] / b[bIndex]);
+				aIndex++;
+				bIndex++;
+			} else if(aIdx < bIdx) {
+				c.set(aIdx, (a[aIndex]>0) ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY);
+				aIndex++;
 			} else {
-				SparseRowVector aSparse = allocSparseVector(alen, a, aix);
-				for (int j = ai; j < ai+alen; j++) {
-					double aval = a[j];
-					c.set(aix[j], (aval>0) ?
-						Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY);
-				}
-				for (int j = bi; j < bi+blen; j++) {
-					c.set(bix[j], aSparse.get(bix[j]) / b[j]);
-				}
+				bIndex++;
 			}
 		}
 		return c;
 	}
 
 	public static SparseRowVector vectMinusWrite(int len, double[] a, double[] b, int[] aix, int[] bix, int ai, int bi, int alen, int blen) {
-		SparseRowVector c = allocSparseVector(alen, a, aix);
-		for (int j = bi; j < bi+blen; j++) {
+		SparseRowVector c = allocSparseVector(alen);
+		for(int j = 0; j < ai+alen; j++)
+			c.set(aix[j], a[j]);
+		for (int j = bi; j < bi+blen; j++)
 			c.add(bix[j], -b[j]);
-		}
 		return c;
 	}
 
 	public static SparseRowVector vectPlusWrite(int len, double[] a, double[] b, int[] aix, int[] bix, int ai, int bi, int alen, int blen) {
 		if(alen < blen) {
-			SparseRowVector c = allocSparseVector(blen, b, bix);
-			for (int j = ai; j < ai+alen; j++) {
+			SparseRowVector c = allocSparseVector(blen);
+			for(int j = 0; j < bi+blen; j++)
+				c.set(bix[j], b[j]);
+			for(int j = ai; j < ai+alen; j++)
 				c.add(aix[j], a[j]);
-			}
 			return c;
 		} else {
-			SparseRowVector c = allocSparseVector(alen, a, aix);
-			for (int j = bi; j < bi+blen; j++) {
+			SparseRowVector c = allocSparseVector(alen);
+			for(int j = 0; j < ai+alen; j++)
+				c.set(aix[j], a[j]);
+			for(int j = bi; j < bi+blen; j++)
 				c.add(bix[j], b[j]);
-			}
 			return c;
 		}
 	}
@@ -2869,22 +2900,7 @@ public class LibSpoofPrimitives
 		return vect;
 	}
 
-	//allocate an empty vector
 	public static SparseRowVector allocSparseVector(int len) {
-		return allocSparseVector(len, null, null, false, false);
-	}
-
-	//allocate a vector with the vales and indexes filled
-	public static SparseRowVector allocSparseVector(int len, double[] values,int[] indexes) {
-		return allocSparseVector(len, values, indexes, true, false);
-	}
-
-	//allocate vector with only the indexes filled
-	public static SparseRowVector allocSparseVector(int len, int[] indexes) {
-		return allocSparseVector(len, null, indexes, false, true);
-	}
-
-	protected static SparseRowVector allocSparseVector(int len, double[] values, int[] indexes, boolean fill, boolean indexCopy) {
 		SparseVectorBuffer buff = sparseMemPool.get();
 
 		//find next matching vector in ring buffer or
@@ -2893,19 +2909,8 @@ public class LibSpoofPrimitives
 		if(vect == null)
 			vect = new SparseRowVector(len);
 			//reset vector for normal outputs
-		else
-			vect.reset(4, len);
-
-		//fill vector
-		if(fill) {
-			System.arraycopy(values, 0, vect.values(), 0, len);
-			System.arraycopy(indexes, 0, vect.indexes(), 0, len);
-			vect.setSize(len);
-			//indexes copy
-		} else if(indexCopy) {
-			vect.setIndexes(indexes);
-			vect.setSize(len);
-		}
+		else if(vect.size() != 0)
+			vect.reset(len, len);
 
 		return vect;
 	}

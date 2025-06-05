@@ -50,7 +50,7 @@ class ModalityRandomDataGenerator:
     ):
         data = np.random.rand(num_instances, num_features)
         data.dtype = self.data_type
-        
+
         # TODO: write a dummy method to create the same metadata for all instances to avoid the for loop
         self.modality_type = modality_type
         for i in range(num_instances):
@@ -69,9 +69,7 @@ class ModalityRandomDataGenerator:
             else:
                 raise NotImplementedError
 
-        tf_modality = TransformedModality(
-            self, "test_transformation"
-        )
+        tf_modality = TransformedModality(self, "test_transformation")
         tf_modality.data = data
         self.modality_id += 1
         return tf_modality

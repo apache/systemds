@@ -240,9 +240,7 @@ class UnimodalRepresentationOptimizer:
         representation_start = time.time()
         # try:
         cached_representation, representation_ops, used_op_names = (
-            self.cache.load_from_cache(
-                modified_modality, copy.deepcopy(operator_chain)
-            )
+            self.cache.load_from_cache(modified_modality, copy.deepcopy(operator_chain))
         )
         if cached_representation is not None:
             modified_modality = cached_representation

@@ -112,7 +112,8 @@ class RepresentationCache:
                 metadata = pickle.load(f)
 
             transformed_modality = TransformedModality(
-                modality, op_names,
+                modality,
+                op_names,
             )
             data = None
             with open(f"{filename}.pkl", "rb") as f:

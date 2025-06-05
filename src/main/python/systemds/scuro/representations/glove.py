@@ -47,9 +47,7 @@ class GloVe(UnimodalRepresentation):
         self.output_file = output_file
 
     def transform(self, modality):
-        transformed_modality = TransformedModality(
-            modality, self
-        )
+        transformed_modality = TransformedModality(modality, self)
         glove_embeddings = load_glove_embeddings(self.glove_path)
 
         embeddings = []

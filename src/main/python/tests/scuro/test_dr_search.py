@@ -113,7 +113,7 @@ class TestDataLoaders(unittest.TestCase):
         cls.resnet = (
             cls.data_generator.modalities_by_type[ModalityType.VIDEO]
             .apply_representation(ResNet())
-            .window(10, "mean")
+            .window_aggregation(10, "mean")
             .flatten()
         )
         cls.mods = [cls.bert, cls.mel_spe, cls.resnet]

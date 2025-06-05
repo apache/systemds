@@ -49,7 +49,6 @@ class OpticalFlow(UnimodalRepresentation):
     def transform(self, modality):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
-           
         )
 
         for video_id, instance in enumerate(modality.data):

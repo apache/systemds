@@ -38,9 +38,7 @@ class Bert(UnimodalRepresentation):
         self.output_file = output_file
 
     def transform(self, modality):
-        transformed_modality = TransformedModality(
-            modality, self
-        )
+        transformed_modality = TransformedModality(modality, self)
         model_name = "bert-base-uncased"
         tokenizer = BertTokenizer.from_pretrained(
             model_name, clean_up_tokenization_spaces=True

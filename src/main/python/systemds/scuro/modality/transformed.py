@@ -24,7 +24,7 @@ from operator import or_
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.modality import Modality
-from systemds.scuro.representations.window import WindowAggregation
+from systemds.scuro.representations.window_aggregation import WindowAggregation
 
 
 class TransformedModality(Modality):
@@ -37,15 +37,15 @@ class TransformedModality(Modality):
         """
         if new_modality_type is None:
             new_modality_type = modality.modality_type
-        
+
         metadata = modality.metadata.copy() if modality.metadata is not None else None
-        super().__init__(new_modality_type, modality.modality_id, metadata, modality.data_type)
+        super().__init__(
+            new_modality_type, modality.modality_id, metadata, modality.data_type
+        )
         self.transformation = transformation
 
     def copy_from_instance(self):
-        return type(self)(
-            self, self.transformation
-        )
+        return type(self)(self, self.transformation)
 
     def join(self, right, join_condition):
         chunked_execution = False
@@ -69,19 +69,15 @@ class TransformedModality(Modality):
 
         return joined_modality
 
-    def window(self, windowSize, aggregation):
+    def window_aggregation(self, windowSize, aggregation):
         w = WindowAggregation(windowSize, aggregation)
-        transformed_modality = TransformedModality(
-            self, w
-        )
+        transformed_modality = TransformedModality(self, w)
         transformed_modality.data = w.execute(self)
 
         return transformed_modality
 
     def context(self, context_operator):
-        transformed_modality = TransformedModality(
-            self, context_operator
-        )
+        transformed_modality = TransformedModality(self, context_operator)
 
         transformed_modality.data = context_operator.execute(self)
         return transformed_modality
@@ -97,7 +93,9 @@ class TransformedModality(Modality):
         :param other: The modality to be combined
         :param fusion_method: The fusion method to be used to combine modalities
         """
-        fused_modality = TransformedModality( self, fusion_method, ModalityType.EMBEDDING)
+        fused_modality = TransformedModality(
+            self, fusion_method, ModalityType.EMBEDDING
+        )
         modalities = [self]
         if isinstance(other, list):
             modalities.extend(other)

@@ -39,9 +39,7 @@ class BoW(UnimodalRepresentation):
         self.output_file = output_file
 
     def transform(self, modality):
-        transformed_modality = TransformedModality(
-            modality, self
-        )
+        transformed_modality = TransformedModality(modality, self)
         vectorizer = CountVectorizer(
             ngram_range=(1, self.ngram_range), min_df=self.min_df
         )

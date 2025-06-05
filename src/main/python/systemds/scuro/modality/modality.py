@@ -69,7 +69,9 @@ class Modality:
         """
         Create a copy of the modality instance
         """
-        return type(self)(self.modality_type, self.modality_id, self.metadata, self.data_type)
+        return type(self)(
+            self.modality_type, self.modality_id, self.metadata, self.data_type
+        )
 
     def update_metadata(self):
         """

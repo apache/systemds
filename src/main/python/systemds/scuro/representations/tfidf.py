@@ -38,9 +38,7 @@ class TfIdf(UnimodalRepresentation):
         self.output_file = output_file
 
     def transform(self, modality):
-        transformed_modality = TransformedModality(
-            modality, self
-        )
+        transformed_modality = TransformedModality(modality, self)
 
         vectorizer = TfidfVectorizer(min_df=self.min_df)
 

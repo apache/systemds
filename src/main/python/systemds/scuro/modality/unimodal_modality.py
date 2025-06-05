@@ -89,9 +89,7 @@ class UnimodalModality(Modality):
         if not self.has_data():
             self.extract_raw_data()
 
-        transformed_modality = TransformedModality(
-            self, context_operator
-        )
+        transformed_modality = TransformedModality(self, context_operator)
 
         transformed_modality.data = context_operator.execute(self)
         return transformed_modality

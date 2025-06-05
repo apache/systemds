@@ -24,7 +24,6 @@ from typing import List, Optional, Union
 import math
 
 import numpy as np
-from tensorflow.python.ops.numpy_ops.np_dtypes import int16
 
 
 class BaseLoader(ABC):

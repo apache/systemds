@@ -48,7 +48,7 @@ class ModalityRandomDataGenerator:
         num_features,
         modality_type,
     ):
-        data = np.random.rand(num_instances, num_features)
+        data = np.random.rand(num_instances, num_features).astype(self.data_type)
         data.dtype = self.data_type
 
         # TODO: write a dummy method to create the same metadata for all instances to avoid the for loop

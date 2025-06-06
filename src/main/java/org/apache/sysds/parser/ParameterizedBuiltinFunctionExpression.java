@@ -562,24 +562,26 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 	private void validateUniqueAggregationDirection(Identifier dataId, DataIdentifier output) {
 		HashMap<String, Expression> varParams = getVarParams();
+		String inputDirection = Types.Direction.RowCol.toString();
 		if (varParams.containsKey("dir")) {
-			String inputDirectionString = varParams.get("dir").toString().toUpperCase();
-
+			inputDirection = varParams.get("dir").toString().toUpperCase();
 			// unrecognized value for "dir" parameter
-			if (!inputDirectionString.equals(Types.Direction.Row.toString())
-					&& !inputDirectionString.equals(Types.Direction.Col.toString())
-					&& !inputDirectionString.equals(Types.Direction.RowCol.toString())) {
-				raiseValidateError("Invalid argument: " + inputDirectionString + " is not recognized");
+			if (!inputDirection.equals(Types.Direction.Row.toString())
+					&& !inputDirection.equals(Types.Direction.Col.toString())
+					&& !inputDirection.equals(Types.Direction.RowCol.toString())) {
+				raiseValidateError("Invalid argument: " + inputDirection + " is not recognized");
 			}
 		}
 
-		// rc/r/c -> unique return value is the same as the input in the worst case
 		// default to dir="rc"
 		output.setDataType(DataType.MATRIX);
-		output.setDimensions(dataId.getDim1(), dataId.getDim2());
+		output.setDimensions(
+			inputDirection.equals(Types.Direction.Row.toString()) ? dataId.getDim1() : -1,
+			inputDirection.equals(Types.Direction.Col.toString()) ? dataId.getDim2() : 
+				inputDirection.equals(Types.Direction.RowCol.toString()) ? 1 : -1);
 		output.setBlocksize(dataId.getBlocksize());
 		output.setValueType(ValueType.FP64);
-		output.setNnz(dataId.getNnz());
+		output.setNnz(-1);
 	}
 
 	private void checkStringParam(boolean optional, String fname, String pname, boolean conditional) {

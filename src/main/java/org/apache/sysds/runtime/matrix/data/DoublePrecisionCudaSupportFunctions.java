@@ -18,10 +18,15 @@
  */
 package org.apache.sysds.runtime.matrix.data;
 
+import static jcuda.jcusparse.JCusparse.cusparseCreateCsr;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
+import static jcuda.runtime.JCuda.cudaMalloc;
+import static jcuda.runtime.JCuda.cudaFree;
 
+import jcuda.jcusparse.cusparseSpMatDescr;
+import jcuda.jcusparse.cusparseSpGEMMDescr;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -36,73 +41,284 @@ import jcuda.jcusolver.cusolverDnHandle;
 import jcuda.jcusparse.JCusparse;
 import jcuda.jcusparse.cusparseHandle;
 import jcuda.jcusparse.cusparseMatDescr;
+import jcuda.jcusparse.cusparseDnVecDescr;
+import jcuda.jcusparse.cusparseDnMatDescr;
 
+import static jcuda.jcusparse.cusparseIndexType.CUSPARSE_INDEX_32I;
+import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
+import static jcuda.cudaDataType.CUDA_R_64F;
+import static jcuda.jcusparse.cusparseSpGEMMAlg.CUSPARSE_SPGEMM_DEFAULT;
+import static jcuda.jcusparse.cusparseStatus.CUSPARSE_STATUS_SUCCESS;
+import static jcuda.jcusparse.cusparseSpMVAlg.CUSPARSE_SPMV_ALG_DEFAULT;
+import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE;
+import static jcuda.jcusparse.cusparseOrder.CUSPARSE_ORDER_COL;
+import static jcuda.jcusparse.cusparseSpMMAlg.CUSPARSE_SPMM_ALG_DEFAULT;
+import static jcuda.jcusparse.cusparseCsr2CscAlg.CUSPARSE_CSR2CSC_ALG1;
+import static jcuda.jcusparse.cusparseSparseToDenseAlg.CUSPARSE_SPARSETODENSE_ALG_DEFAULT;
+import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ONE;
+import static jcuda.jcusparse.cusparseDenseToSparseAlg.CUSPARSE_DENSETOSPARSE_ALG_DEFAULT;
+import static jcuda.jcusparse.JCusparse.cusparseSpGEMM_createDescr;
+import static jcuda.jcusparse.JCusparse.cusparseCreateDnVec;
+import static jcuda.jcusparse.JCusparse.cusparseCreateDnMat;
 public class DoublePrecisionCudaSupportFunctions implements CudaSupportFunctions {
 
 	private static final Log LOG = LogFactory.getLog(DoublePrecisionCudaSupportFunctions.class.getName());
-	
+
 	@Override
 	public int cusparsecsrgemm(cusparseHandle handle, int transA, int transB, int m, int n, int k,
-			cusparseMatDescr descrA, int nnzA, Pointer csrValA, Pointer csrRowPtrA, Pointer csrColIndA,
-			cusparseMatDescr descrB, int nnzB, Pointer csrValB, Pointer csrRowPtrB, Pointer csrColIndB,
-			cusparseMatDescr descrC, Pointer csrValC, Pointer csrRowPtrC, Pointer csrColIndC) {
-		return JCusparse.cusparseDcsrgemm(handle, transA,  transB,  m,  n,  k,
-				 descrA,  nnzA,  csrValA,  csrRowPtrA,  csrColIndA,
-				 descrB,  nnzB,  csrValB,  csrRowPtrB,  csrColIndB,
-				 descrC,  csrValC,  csrRowPtrC,  csrColIndC);
+		cusparseMatDescr descrA, int nnzA, Pointer csrValA, Pointer csrRowPtrA, Pointer csrColIndA,
+		cusparseMatDescr descrB, int nnzB, Pointer csrValB, Pointer csrRowPtrB, Pointer csrColIndB,
+		cusparseMatDescr descrC, Pointer csrValC, Pointer csrRowPtrC, Pointer csrColIndC) {
+		/* ------------------------------------------------------------------ */
+		/* 0.   Wrap A, B, C in the new SpMat descriptors                     */
+		/* ------------------------------------------------------------------ */
+		cusparseSpMatDescr matA = new cusparseSpMatDescr();
+		cusparseSpMatDescr matB = new cusparseSpMatDescr();
+		cusparseSpMatDescr matC = new cusparseSpMatDescr();
+
+		cusparseCreateCsr(matA, m, k, nnzA, csrRowPtrA, csrColIndA, csrValA, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+			CUSPARSE_INDEX_BASE_ZERO, CUDA_R_64F);
+
+		cusparseCreateCsr(matB, k, n, nnzB, csrRowPtrB, csrColIndB, csrValB, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+			CUSPARSE_INDEX_BASE_ZERO, CUDA_R_64F);
+
+    /*  C’s nnz is not known yet -> start with 0 and rowPtr only.
+        colInd / val arrays are already allocated by the caller.         */
+		cusparseCreateCsr(matC, m, n, 0L, csrRowPtrC, csrColIndC, csrValC, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+			CUSPARSE_INDEX_BASE_ZERO, CUDA_R_64F);
+
+		/* ------------------------------------------------------------------ */
+		/* 1.   Create & configure the SpGEMM descriptor                      */
+		/* ------------------------------------------------------------------ */
+		cusparseSpGEMMDescr spgemm = new cusparseSpGEMMDescr();
+		cusparseSpGEMM_createDescr(spgemm);
+
+		Pointer alpha = Pointer.to(new double[] {1.0});
+		Pointer beta = Pointer.to(new double[] {0.0});
+		int alg = CUSPARSE_SPGEMM_DEFAULT;
+		int computeTp = CUDA_R_64F;
+
+		/* ------------------------------------------------------------------ */
+		/* 2.   Phase-1 : work-estimation                                     */
+		/* ------------------------------------------------------------------ */
+		long[] bufSz1 = {0};
+		int status = JCusparse.cusparseSpGEMM_workEstimation(handle, transA, transB, alpha, matA.asConst(),
+			matB.asConst(), beta, matC, computeTp, alg, spgemm, bufSz1, null);
+		if(status != CUSPARSE_STATUS_SUCCESS)
+			return status;
+
+		Pointer dBuf1 = new Pointer();
+		if(bufSz1[0] > 0)
+			cudaMalloc(dBuf1, bufSz1[0]);
+
+		status = JCusparse.cusparseSpGEMM_workEstimation(handle, transA, transB, alpha, matA.asConst(), matB.asConst(),
+			beta, matC, computeTp, alg, spgemm, bufSz1, dBuf1);
+		if(status != CUSPARSE_STATUS_SUCCESS)
+			return status;
+
+		/* ------------------------------------------------------------------ */
+		/* 3.   Phase-2 : compute structure / nnz(C)                          */
+		/* ------------------------------------------------------------------ */
+		long[] bufSz2 = {0};
+		status = JCusparse.cusparseSpGEMM_compute(handle, transA, transB, alpha, matA.asConst(), matB.asConst(), beta,
+			matC, computeTp, alg, spgemm, bufSz2, null);                       // query required buffer
+		if(status != CUSPARSE_STATUS_SUCCESS)
+			return status;
+
+		Pointer dBuf2 = new Pointer();
+		if(bufSz2[0] > 0)
+			cudaMalloc(dBuf2, bufSz2[0]);
+
+		status = JCusparse.cusparseSpGEMM_compute(handle, transA, transB, alpha, matA.asConst(), matB.asConst(), beta,
+			matC, computeTp, alg, spgemm, bufSz2, dBuf2);                      // real compute
+		if(status != CUSPARSE_STATUS_SUCCESS)
+			return status;
+
+		/* ------------------------------------------------------------------ */
+		/* 4.   Phase-3 : copy final CSR data into caller-provided buffers    */
+		/* ------------------------------------------------------------------ */
+		status = JCusparse.cusparseSpGEMM_copy(handle, transA, transB, alpha, matA.asConst(), matB.asConst(), beta,
+			matC, computeTp, alg, spgemm);
+		/* fall-through to CLEAN block */
+
+
+		/* ------------------------------------------------------------------ */
+		/* 5.   Cleanup                                                         */
+		/* ------------------------------------------------------------------ */
+		cudaFree(dBuf1);
+		cudaFree(dBuf2);
+
+		JCusparse.cusparseSpGEMM_destroyDescr(spgemm);
+		JCusparse.cusparseDestroySpMat(matA.asConst());
+		JCusparse.cusparseDestroySpMat(matB.asConst());
+		JCusparse.cusparseDestroySpMat(matC.asConst());
+
+		return status;
 	}
-	
+
 	@Override
 	public int cublasgeam(cublasHandle handle, int transa, int transb, int m, int n, Pointer alpha, Pointer A, int lda,
-			Pointer beta, Pointer B, int ldb, Pointer C, int ldc) {
+		Pointer beta, Pointer B, int ldb, Pointer C, int ldc) {
 		return JCublas2.cublasDgeam(handle, transa, transb, m, n, alpha, A, lda, beta, B, ldb, C, ldc);
 	}
-	
+
 	@Override
 	public int cusparsecsrmv(cusparseHandle handle, int transA, int m, int n, int nnz, Pointer alpha,
-			cusparseMatDescr descrA, Pointer csrValA, Pointer csrRowPtrA, Pointer csrColIndA, Pointer x, Pointer beta,
-			Pointer y) {
-		return JCusparse.cusparseDcsrmv(handle, transA, m, n, nnz, alpha, 
-				descrA, csrValA, csrRowPtrA, csrColIndA, x, beta, y);
+		cusparseMatDescr descrA, Pointer csrValA, Pointer csrRowPtrA, Pointer csrColIndA, Pointer x, Pointer beta,
+		Pointer y) {
+		/* Descriptors and workspace --------------------------------------- */
+		cusparseSpMatDescr matA = new cusparseSpMatDescr();
+		cusparseDnVecDescr vecX = new cusparseDnVecDescr();
+		cusparseDnVecDescr vecY = new cusparseDnVecDescr();
+		Pointer dBuf = new Pointer();
+		long dBufBytes = 0;
+		int status;
+
+		try {
+			/* 1. CSR matrix A --------------------------------------------- */
+			cusparseCreateCsr(matA, m, n, nnz, csrRowPtrA, csrColIndA, csrValA, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+				CUSPARSE_INDEX_BASE_ZERO, CUDA_R_64F);
+
+			/* 2. Dense vectors X and Y ------------------------------------ */
+			cusparseCreateDnVec(vecX, n, x, CUDA_R_64F);
+			cusparseCreateDnVec(vecY, m, y, CUDA_R_64F);
+
+			/* 3. Query workspace size ------------------------------------- */
+			long[] bufSize = {0};
+			status = JCusparse.cusparseSpMV_bufferSize(handle, transA, alpha, matA.asConst(), vecX.asConst(), beta,
+				vecY, CUDA_R_64F, CUSPARSE_SPMV_ALG_DEFAULT, bufSize);
+			if(status != CUSPARSE_STATUS_SUCCESS)
+				return status;
+
+			dBufBytes = bufSize[0];
+			if(dBufBytes > 0)
+				cudaMalloc(dBuf, dBufBytes);
+
+			/* 4. Perform SpMV -------------------------------------------- */
+			status = JCusparse.cusparseSpMV(handle, transA, alpha, matA.asConst(), vecX.asConst(), beta, vecY,
+				CUDA_R_64F, CUSPARSE_SPMV_ALG_DEFAULT, dBuf);
+
+			return status;
+		}
+		finally {
+			/* Cleanup ----------------------------------------------------- */
+			if(dBufBytes > 0)
+				cudaFree(dBuf);
+			JCusparse.cusparseDestroyDnVec(vecX.asConst());
+			JCusparse.cusparseDestroyDnVec(vecY.asConst());
+			JCusparse.cusparseDestroySpMat(matA.asConst());
+		}
 	}
-	
+
 	@Override
-	public int	cusparsecsrmm2(cusparseHandle handle, int transa, int transb, int m, int n, int k, int nnz, jcuda.Pointer alpha, cusparseMatDescr descrA, 
-			jcuda.Pointer csrValA, jcuda.Pointer csrRowPtrA, jcuda.Pointer csrColIndA, 
-			jcuda.Pointer B, int ldb, jcuda.Pointer beta, jcuda.Pointer C, int ldc) {
-		return JCusparse.cusparseDcsrmm2(handle, transa, transb, m, n, k, nnz, alpha, descrA, csrValA, 
-				csrRowPtrA, csrColIndA, B, ldb, beta, C, ldc);
+	public int cusparsecsrmm2(cusparseHandle handle, int transA, int transB, int m, int n, int k, int nnz,
+		Pointer alpha, cusparseMatDescr descrA, Pointer csrValA, Pointer csrRowPtrA, Pointer csrColIndA, Pointer B,
+		int ldb, Pointer beta, Pointer C, int ldc) {
+		/* Descriptors and workspace -------------------------------------- */
+		cusparseSpMatDescr matA = new cusparseSpMatDescr();
+		cusparseDnMatDescr matB = new cusparseDnMatDescr();
+		cusparseDnMatDescr matC = new cusparseDnMatDescr();
+		Pointer dBuf = new Pointer();
+		long dBufBytes = 0;
+		int status;
+
+		try {
+			/* 1. CSR matrix A -------------------------------------------- */
+			cusparseCreateCsr(matA, m, k, nnz, csrRowPtrA, csrColIndA, csrValA, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+				CUSPARSE_INDEX_BASE_ZERO, CUDA_R_64F);
+
+			/* 2. Dense matrix B  (col-major layout) ---------------------- */
+			int rowsB = (transB == CUSPARSE_OPERATION_NON_TRANSPOSE) ? k : n;
+			int colsB = (transB == CUSPARSE_OPERATION_NON_TRANSPOSE) ? n : k;
+			cusparseCreateDnMat(matB, rowsB, colsB, ldb, B, CUDA_R_64F, CUSPARSE_ORDER_COL);
+
+			/* 3. Dense matrix C  (output) -------------------------------- */
+			int rowsC = (transA == CUSPARSE_OPERATION_NON_TRANSPOSE) ? m : k;
+			int colsC = colsB;                       // always equals n
+			cusparseCreateDnMat(matC, rowsC, colsC, ldc, C, CUDA_R_64F, CUSPARSE_ORDER_COL);
+
+			/* 4. Query workspace size ------------------------------------ */
+			long[] bufSize = {0};
+			status = JCusparse.cusparseSpMM_bufferSize(handle, transA, transB, alpha, matA.asConst(), matB.asConst(),
+				beta, matC, CUDA_R_64F, CUSPARSE_SPMM_ALG_DEFAULT, bufSize);
+			if(status != CUSPARSE_STATUS_SUCCESS)
+				return status;
+
+			dBufBytes = bufSize[0];
+			if(dBufBytes > 0)
+				cudaMalloc(dBuf, dBufBytes);
+
+			/* 5. Execute SpMM ------------------------------------------- */
+			status = JCusparse.cusparseSpMM(handle, transA, transB, alpha, matA.asConst(), matB.asConst(), beta, matC,
+				CUDA_R_64F, CUSPARSE_SPMM_ALG_DEFAULT, dBuf);
+
+			return status;
+		}
+		finally {
+			/* Cleanup ---------------------------------------------------- */
+			if(dBufBytes > 0)
+				cudaFree(dBuf);
+			JCusparse.cusparseDestroyDnMat(matB.asConst());
+			JCusparse.cusparseDestroyDnMat(matC.asConst());
+			JCusparse.cusparseDestroySpMat(matA.asConst());
+		}
 	}
-	
+
 	@Override
 	public int cublasdot(cublasHandle handle, int n, Pointer x, int incx, Pointer y, int incy, Pointer result) {
 		return JCublas2.cublasDdot(handle, n, x, incx, y, incy, result);
 	}
-	
+
 	@Override
 	public int cublasgemv(cublasHandle handle, int trans, int m, int n, Pointer alpha, Pointer A, int lda, Pointer x,
-			int incx, Pointer beta, Pointer y, int incy) {
+		int incx, Pointer beta, Pointer y, int incy) {
 		return JCublas2.cublasDgemv(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy);
 	}
-	
+
 	@Override
 	public int cublasgemm(cublasHandle handle, int transa, int transb, int m, int n, int k, Pointer alpha, Pointer A,
-			int lda, Pointer B, int ldb, Pointer beta, Pointer C, int ldc) {
+		int lda, Pointer B, int ldb, Pointer beta, Pointer C, int ldc) {
 		return JCublas2.cublasDgemm(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
 	}
-	
+
 	@Override
 	public int cusparsecsr2csc(cusparseHandle handle, int m, int n, int nnz, Pointer csrVal, Pointer csrRowPtr,
-			Pointer csrColInd, Pointer cscVal, Pointer cscRowInd, Pointer cscColPtr, int copyValues, int idxBase) {
-		return JCusparse.cusparseDcsr2csc(handle, m, n, nnz, csrVal, csrRowPtr, csrColInd, cscVal, cscRowInd, cscColPtr, copyValues, idxBase);
+		Pointer csrColInd, Pointer cscVal, Pointer cscRowInd, Pointer cscColPtr, int copyValues, int idxBase) {
+		/* Constants ------------------------------------------------------- */
+		int valType = CUDA_R_64F;                     // double precision
+		int alg = CUSPARSE_CSR2CSC_ALG1;          // always supported
+
+		/* Query workspace size ------------------------------------------- */
+		long[] bufSize = {0};
+		int status = JCusparse.cusparseCsr2cscEx2_bufferSize(handle, m, n, nnz, csrVal, csrRowPtr, csrColInd, cscVal,
+			cscColPtr, cscRowInd, valType, copyValues, idxBase, alg, bufSize);
+		if(status != CUSPARSE_STATUS_SUCCESS)
+			return status;
+
+		/* Allocate temp buffer if needed --------------------------------- */
+		Pointer buffer = new Pointer();
+		if(bufSize[0] > 0)
+			cudaMalloc(buffer, bufSize[0]);
+
+		try {
+			/* Perform CSR -> CSC conversion ------------------------------- */
+			status = JCusparse.cusparseCsr2cscEx2(handle, m, n, nnz, csrVal, csrRowPtr, csrColInd, cscVal, cscColPtr,
+				cscRowInd, valType, copyValues, idxBase, alg, buffer);
+
+			return status;
+		}
+		finally {
+			if(bufSize[0] > 0)
+				cudaFree(buffer);
+		}
 	}
-	
+
 	@Override
 	public int cublassyrk(cublasHandle handle, int uplo, int trans, int n, int k, Pointer alpha, Pointer A, int lda,
-			Pointer beta, Pointer C, int ldc) {
+		Pointer beta, Pointer C, int ldc) {
 		return JCublas2.cublasDsyrk(handle, uplo, trans, n, k, alpha, A, lda, beta, C, ldc);
 	}
-	
+
 	@Override
 	public int cublasaxpy(cublasHandle handle, int n, Pointer alpha, Pointer x, int incx, Pointer y, int incy) {
 		return JCublas2.cublasDaxpy(handle, n, alpha, x, incx, y, incy);
@@ -127,35 +343,175 @@ public class DoublePrecisionCudaSupportFunctions implements CudaSupportFunctions
 
 	@Override
 	public int cusolverDnormqr(cusolverDnHandle handle, int side, int trans, int m, int n, int k, Pointer A, int lda,
-			Pointer tau, Pointer C, int ldc, Pointer work, int lwork, Pointer devInfo) {
+		Pointer tau, Pointer C, int ldc, Pointer work, int lwork, Pointer devInfo) {
 		return JCusolverDn.cusolverDnDormqr(handle, side, trans, m, n, k, A, lda, tau, C, ldc, work, lwork, devInfo);
 	}
-	
+
 	@Override
 	public int cusparsecsrgeam(cusparseHandle handle, int m, int n, Pointer alpha, cusparseMatDescr descrA, int nnzA,
-			Pointer csrValA, Pointer csrRowPtrA, Pointer csrColIndA, Pointer beta, cusparseMatDescr descrB, int nnzB,
-			Pointer csrValB, Pointer csrRowPtrB, Pointer csrColIndB, cusparseMatDescr descrC, Pointer csrValC,
-			Pointer csrRowPtrC, Pointer csrColIndC) {
-		return JCusparse.cusparseDcsrgeam(handle, m, n, alpha, descrA, nnzA, 
-				csrValA, csrRowPtrA, csrColIndA, beta, descrB, nnzB, 
-				csrValB, csrRowPtrB, csrColIndB, descrC, csrValC, csrRowPtrC, csrColIndC);
+		Pointer csrValA, Pointer csrRowPtrA, Pointer csrColIndA, Pointer beta, cusparseMatDescr descrB, int nnzB,
+		Pointer csrValB, Pointer csrRowPtrB, Pointer csrColIndB, cusparseMatDescr descrC, Pointer csrValC,
+		Pointer csrRowPtrC, Pointer csrColIndC) {
+		/* ------------------------------------------------------------------ */
+		/* 1. Query temporary-buffer size                                     */
+		/* ------------------------------------------------------------------ */
+		long[] bufSize = {0};
+
+		int status = JCusparse.cusparseDcsrgeam2_bufferSizeExt(handle, m, n, alpha, descrA, nnzA, csrValA, csrRowPtrA,
+			csrColIndA, beta, descrB, nnzB, csrValB, csrRowPtrB, csrColIndB, descrC, csrValC, csrRowPtrC, csrColIndC,
+			bufSize);
+		if(status != CUSPARSE_STATUS_SUCCESS)
+			return status;
+
+		/* ------------------------------------------------------------------ */
+		/* 2. Allocate workspace (if required)                                */
+		/* ------------------------------------------------------------------ */
+		Pointer buffer = new Pointer();
+		if(bufSize[0] > 0)
+			cudaMalloc(buffer, bufSize[0]);
+
+		try {
+			/* -------------------------------------------------------------- */
+			/* 3.  C = α*A  +  β*B  (sorted-CSR version 2)                     */
+			/* -------------------------------------------------------------- */
+			status = JCusparse.cusparseDcsrgeam2(handle, m, n, alpha, descrA, nnzA, csrValA, csrRowPtrA, csrColIndA,
+				beta, descrB, nnzB, csrValB, csrRowPtrB, csrColIndB, descrC, csrValC, csrRowPtrC, csrColIndC, buffer);
+
+			return status;
+		}
+		finally {
+			/* -------------------------------------------------------------- */
+			/* 4. Free workspace                                              */
+			/* -------------------------------------------------------------- */
+			if(bufSize[0] > 0)
+				cudaFree(buffer);
+		}
 	}
-	
+
 	@Override
 	public int cusparsecsr2dense(cusparseHandle handle, int m, int n, cusparseMatDescr descrA, Pointer csrValA,
-			Pointer csrRowPtrA, Pointer csrColIndA, Pointer A, int lda) {
-		return JCusparse.cusparseDcsr2dense(handle, m, n, descrA, csrValA, csrRowPtrA, csrColIndA, A, lda);
+		Pointer csrRowPtrA, Pointer csrColIndA, Pointer A, int lda) {
+		/* ------------------------------------------------------------- */
+		/* 1. Determine nnz from the last entry of csrRowPtrA            */
+		/* ------------------------------------------------------------- */
+		int[] last = {0};
+		cudaMemcpy(Pointer.to(last), csrRowPtrA.withByteOffset((long) m * Sizeof.INT), Sizeof.INT,
+			cudaMemcpyDeviceToHost);
+
+		/* Adjust for index base (0 or 1) ------------------------------ */
+		int base = JCusparse.cusparseGetMatIndexBase(descrA);
+		int nnz = (base == CUSPARSE_INDEX_BASE_ONE) ? last[0] - 1 : last[0];
+
+		/* ------------------------------------------------------------- */
+		/* 2. Create CSR SpMat and dense DnMat descriptors               */
+		/* ------------------------------------------------------------- */
+		cusparseSpMatDescr matA = new cusparseSpMatDescr();
+		JCusparse.cusparseCreateCsr(matA, m, n, nnz, csrRowPtrA, csrColIndA, csrValA, CUSPARSE_INDEX_32I,
+			CUSPARSE_INDEX_32I, base, CUDA_R_64F);
+
+		cusparseDnMatDescr matB = new cusparseDnMatDescr();
+		JCusparse.cusparseCreateDnMat(matB, m, n, lda, A, CUDA_R_64F, CUSPARSE_ORDER_COL);
+
+		/* ------------------------------------------------------------- */
+		/* 3. Query workspace size                                       */
+		/* ------------------------------------------------------------- */
+		long[] bufSize = {0};
+		int alg = CUSPARSE_SPARSETODENSE_ALG_DEFAULT;
+
+		int status = JCusparse.cusparseSparseToDense_bufferSize(handle, matA.asConst(), matB, alg, bufSize);
+		if(status != CUSPARSE_STATUS_SUCCESS) {
+			JCusparse.cusparseDestroyDnMat(matB.asConst());
+			JCusparse.cusparseDestroySpMat(matA.asConst());
+			return status;
+		}
+
+		/* ------------------------------------------------------------- */
+		/* 4. Allocate temporary buffer (if needed)                      */
+		/* ------------------------------------------------------------- */
+		Pointer buffer = new Pointer();
+		if(bufSize[0] > 0)
+			cudaMalloc(buffer, bufSize[0]);
+
+		try {
+			/* --------------------------------------------------------- */
+			/* 5. Perform CSR -> dense conversion                         */
+			/* --------------------------------------------------------- */
+			status = JCusparse.cusparseSparseToDense(handle, matA.asConst(), matB, alg, buffer);
+
+			return status;
+		}
+		finally {
+			/* --------------------------------------------------------- */
+			/* 6. Cleanup                                                */
+			/* --------------------------------------------------------- */
+			if(bufSize[0] > 0)
+				cudaFree(buffer);
+			JCusparse.cusparseDestroyDnMat(matB.asConst());
+			JCusparse.cusparseDestroySpMat(matA.asConst());
+		}
 	}
 
 	@Override
 	public int cusparsedense2csr(cusparseHandle handle, int m, int n, cusparseMatDescr descrA, Pointer A, int lda,
-			Pointer nnzPerRow, Pointer csrValA, Pointer csrRowPtrA, Pointer csrColIndA) {
-		return JCusparse.cusparseDdense2csr(handle, m, n, descrA, A, lda, nnzPerRow, csrValA, csrRowPtrA, csrColIndA);
+		Pointer nnzPerRow, Pointer csrValA, Pointer csrRowPtrA, Pointer csrColIndA) {
+		/* ------------------------------------------------------------------ */
+		/* 1. Determine index base and wrap the input/output in descriptors   */
+		/* ------------------------------------------------------------------ */
+		int idxBase = JCusparse.cusparseGetMatIndexBase(descrA);
+
+		cusparseDnMatDescr matDense = new cusparseDnMatDescr();
+		JCusparse.cusparseCreateDnMat(matDense, m, n, lda, A, CUDA_R_64F, CUSPARSE_ORDER_COL);
+
+		cusparseSpMatDescr matCsr = new cusparseSpMatDescr();
+		/* nnz initially 0 – cuSPARSE fills it during analysis phase */
+		JCusparse.cusparseCreateCsr(matCsr, m, n, 0L, csrRowPtrA, csrColIndA, csrValA, CUSPARSE_INDEX_32I,
+			CUSPARSE_INDEX_32I, idxBase, CUDA_R_64F);
+
+		/* ------------------------------------------------------------------ */
+		/* 2. Query temporary buffer size                                     */
+		/* ------------------------------------------------------------------ */
+		long[] bufSz = {0};
+		int alg = CUSPARSE_DENSETOSPARSE_ALG_DEFAULT;
+
+		int status = JCusparse.cusparseDenseToSparse_bufferSize(handle, matDense.asConst(), matCsr, alg, bufSz);
+		if(status != CUSPARSE_STATUS_SUCCESS) {
+			JCusparse.cusparseDestroySpMat(matCsr.asConst());
+			JCusparse.cusparseDestroyDnMat(matDense.asConst());
+			return status;
+		}
+
+		Pointer buffer = new Pointer();
+		if(bufSz[0] > 0)
+			cudaMalloc(buffer, bufSz[0]);
+
+		try {
+			/* -------------------------------------------------------------- */
+			/* 3. Symbolic pass: decide sparsity pattern, fill csrRowPtrA     */
+			/* -------------------------------------------------------------- */
+			status = JCusparse.cusparseDenseToSparse_analysis(handle, matDense.asConst(), matCsr, alg, buffer);
+			if(status != CUSPARSE_STATUS_SUCCESS)
+				return status;
+
+			/* -------------------------------------------------------------- */
+			/* 4. Numeric conversion: fill csrColIndA and csrValA             */
+			/* -------------------------------------------------------------- */
+			status = JCusparse.cusparseDenseToSparse_convert(handle, matDense.asConst(), matCsr, alg, buffer);
+			if(status != CUSPARSE_STATUS_SUCCESS)
+				return status;
+
+			return status;
+		}
+		finally {
+			if(bufSz[0] > 0)
+				cudaFree(buffer);
+			JCusparse.cusparseDestroySpMat(matCsr.asConst());
+			JCusparse.cusparseDestroyDnMat(matDense.asConst());
+		}
 	}
 
 	@Override
 	public int cusparsennz(cusparseHandle handle, int dirA, int m, int n, cusparseMatDescr descrA, Pointer A, int lda,
-			Pointer nnzPerRowCol, Pointer nnzTotalDevHostPtr) {
+		Pointer nnzPerRowCol, Pointer nnzTotalDevHostPtr) {
 		return JCusparse.cusparseDnnz(handle, dirA, m, n, descrA, A, lda, nnzPerRowCol, nnzTotalDevHostPtr);
 	}
 

@@ -28,7 +28,18 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
-def executePipeline(X: Matrix):
+def executePipeline(pipeline: Frame,
+                    Xtrain: Matrix,
+                    Ytrain: Matrix,
+                    Xtest: Matrix,
+                    Ytest: Matrix,
+                    metaList: List,
+                    hyperParameters: Matrix,
+                    flagsCount: int,
+                    verbose: bool,
+                    startInd: int,
+                    endInd: int,
+                    **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
      This function execute pipeline.
     
@@ -56,17 +67,30 @@ def executePipeline(X: Matrix):
     :return: ---
     """
 
-    params_dict = {'X': X}
+    params_dict = {'pipeline': pipeline, 'Xtrain': Xtrain, 'Ytrain': Ytrain, 'Xtest': Xtest, 'Ytest': Ytest, 'metaList': metaList, 'hyperParameters': hyperParameters, 'flagsCount': flagsCount, 'verbose': verbose, 'startInd': startInd, 'endInd': endInd}
+    params_dict.update(kwargs)
     
-    vX_0 = Matrix(X.sds_context, '')
-    vX_1 = Matrix(X.sds_context, '')
-    vX_2 = Matrix(X.sds_context, '')
-    output_nodes = [vX_0, vX_1, vX_2, ]
+    vX_0 = Matrix(pipeline.sds_context, '')
+    vX_1 = Matrix(pipeline.sds_context, '')
+    vX_2 = Matrix(pipeline.sds_context, '')
+    vX_3 = Matrix(pipeline.sds_context, '')
+    vX_4 = Scalar(pipeline.sds_context, '')
+    vX_5 = Matrix(pipeline.sds_context, '')
+    vX_6 = Matrix(pipeline.sds_context, '')
+    vX_7 = Scalar(pipeline.sds_context, '')
+    vX_8 = List(pipeline.sds_context, '')
+    output_nodes = [vX_0, vX_1, vX_2, vX_3, vX_4, vX_5, vX_6, vX_7, vX_8, ]
 
-    op = MultiReturn(X.sds_context, 'executePipeline', output_nodes, named_input_nodes=params_dict)
+    op = MultiReturn(pipeline.sds_context, 'executePipeline', output_nodes, named_input_nodes=params_dict)
 
     vX_0._unnamed_input_nodes = [op]
     vX_1._unnamed_input_nodes = [op]
     vX_2._unnamed_input_nodes = [op]
+    vX_3._unnamed_input_nodes = [op]
+    vX_4._unnamed_input_nodes = [op]
+    vX_5._unnamed_input_nodes = [op]
+    vX_6._unnamed_input_nodes = [op]
+    vX_7._unnamed_input_nodes = [op]
+    vX_8._unnamed_input_nodes = [op]
 
     return op

@@ -28,8 +28,8 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
-def lmPredictStats(yhat: Matrix,
-                   ytest: Matrix,
+def lmPredictStats(Y: Matrix,
+                   Ytest: Matrix,
                    lm: bool):
     """
      This builtin function computes and prints a summary of accuracy
@@ -37,13 +37,13 @@ def lmPredictStats(yhat: Matrix,
     
     
     
-    :param yhat: A column vector of predicted response values y
-    :param ytest: A column vector of actual response values y
+    :param Y: A column vector of predicted response values y
+    :param Ytest: A column vector of actual response values y
     :param lm: An indicator if used for linear regression model
     :return: A column vector holding avg_res, ss_avg_res, and R2
     """
 
-    params_dict = {'yhat': yhat, 'ytest': ytest, 'lm': lm}
-    return Matrix(yhat.sds_context,
+    params_dict = {'Y': Y, 'Ytest': Ytest, 'lm': lm}
+    return Matrix(Y.sds_context,
         'lmPredictStats',
         named_input_nodes=params_dict)

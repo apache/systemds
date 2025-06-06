@@ -38,7 +38,7 @@ def ffPredict(model: List,
     
     :param Model: Trained ff neural network model
     :param X: Data used for making predictions
-    :param batch_size: Batch size
+    :param batchSize: Batch size
     :return: Predicted value
     """
 

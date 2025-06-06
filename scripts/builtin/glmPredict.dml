@@ -65,7 +65,7 @@
 #          ncol(X)   x k: do not add intercept
 #          ncol(X)+1 x k: add intercept as given by the last B-row
 #          if k > 1, use only B[, 1] unless it is Multinomial Logit (dfam=3)
-# ytest    Response matrix Y, with the following dimensions:
+# Ytest    Response matrix Y, with the following dimensions:
 #          nrow(X) x 1  : for all distributions (dfam=1 or 2 or 3)
 #          nrow(X) x 2  : for Binomial (dfam=2) given by (#pos, #neg) counts
 #          nrow(X) x k+1: for Multinomial (dfam=3) given by category counts
@@ -89,7 +89,7 @@
 # -------------------------------------------------------------------------
 
 
-m_glmPredict = function(Matrix[Double] X, Matrix[Double] B, Matrix[Double] ytest=matrix(0,0,0),
+m_glmPredict = function(Matrix[Double] X, Matrix[Double] B, Matrix[Double] Ytest=matrix(0,0,0),
   Boolean intercept = FALSE, Integer dfam=1, Double vpow=0.0, Integer link=0, Double lpow=1.0,
   Double disp=1.0, Boolean verbose=TRUE)
   return(Matrix[Double] M)
@@ -136,9 +136,9 @@ m_glmPredict = function(Matrix[Double] X, Matrix[Double] B, Matrix[Double] ytest
     
   M = means;
 
-  if (nrow(ytest) > 0)
+  if (nrow(Ytest) > 0)
   {
-    Y = ytest;
+    Y = Ytest;
     ones_ctg = matrix (1, rows = ncol(Y), cols = 1);
 
     # Statistics To Compute:

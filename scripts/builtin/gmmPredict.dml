@@ -25,11 +25,11 @@
 # INPUT:
 # ------------------------------------------------------------------------------------------
 # X                     Dataset input to predict the labels from
-# weight                Weight of learned model:
+# W                     Weights of learned model:
 #                       A matrix whose [i,k]th entry is the probability
 #                       that observation i in the test data belongs to the kth class
-# mu                    Fitted clusters mean
-# precisions_cholesky   Fitted precision matrix for each mixture
+# Mu                    Fitted clusters mean
+# Precisions            Fitted precision cholesky matrix for each mixture
 # model                 "VVV": unequal variance (full),each component has its own general covariance matrix
 #                       "EEE": equal variance (tied), all components share the same general covariance matrix
 #                       "VVI": spherical, unequal volume (diag), each component has its own diagonal
@@ -43,23 +43,23 @@
 # predict_prob   Probability of the predictions given the X input dataset
 # ---------------------------------------------------------------------------------------------------
 
-m_gmmPredict = function(Matrix[Double] X, Matrix[Double] weight,
-  Matrix[Double] mu, Matrix[Double] precisions_cholesky, String model = "VVV")
+m_gmmPredict = function(Matrix[Double] X, Matrix[Double] W,
+  Matrix[Double] Mu, Matrix[Double] Precisions, String model = "VVV")
   return(Matrix[Double] labels, Matrix[Double] predict_prob)
 {
   # compute the posterior probabilities for new instances
-  weighted_log_prob =  compute_log_gaussian_prob(X, mu, precisions_cholesky, model) + log(weight)
+  weighted_log_prob =  compute_log_gaussian_prob(X, Mu, Precisions, model) + log(W)
   log_prob_norm = logSumExp(weighted_log_prob, "rows")
   log_resp = weighted_log_prob - log_prob_norm
   predict_prob = exp(log_resp)
   labels =  rowIndexMax(weighted_log_prob)
 }
 
-compute_log_gaussian_prob = function(Matrix[Double] X, Matrix[Double] mu,
+compute_log_gaussian_prob = function(Matrix[Double] X, Matrix[Double] Mu,
   Matrix[Double] prec_chol, String model)
   return(Matrix[Double] es_log_prob ) # nrow(X) * n_components
 {
-  n_components = nrow(mu)
+  n_components = nrow(Mu)
   d = ncol(X)
 
   if(model == "VVV") { 
@@ -68,7 +68,7 @@ compute_log_gaussian_prob = function(Matrix[Double] X, Matrix[Double] mu,
     i = 1
     for(k in 1:n_components) {
       prec = prec_chol[i:(k*ncol(X)),]
-      y = X %*% prec - mu[k,] %*% prec
+      y = X %*% prec - Mu[k,] %*% prec
       log_prob[, k] = rowSums(y*y)
       # compute log_det_cholesky
       log_det = sum(log(diag(t(prec))))
@@ -81,7 +81,7 @@ compute_log_gaussian_prob = function(Matrix[Double] X, Matrix[Double] mu,
     log_det_chol = as.matrix(sum(log(diag(prec_chol))))
     prec = prec_chol
     for(k in 1:n_components) {
-      y = X %*% prec - mu[k,] %*% prec
+      y = X %*% prec - Mu[k,] %*% prec
       log_prob[, k] = rowSums(y*y) 
     }
   }
@@ -89,17 +89,17 @@ compute_log_gaussian_prob = function(Matrix[Double] X, Matrix[Double] mu,
     log_det_chol = t(rowSums(log(prec_chol)))
     prec = prec_chol
     precisions = prec^2
-    bc_matrix = matrix(1,nrow(X), nrow(mu))
-    log_prob = (bc_matrix*t(rowSums(mu^2 * precisions)) 
-      - 2 * (X %*% t(mu * precisions)) + X^2 %*% t(precisions))
+    bc_matrix = matrix(1,nrow(X), nrow(Mu))
+    log_prob = (bc_matrix*t(rowSums(Mu^2 * precisions))
+      - 2 * (X %*% t(Mu * precisions)) + X^2 %*% t(precisions))
   }
   else if (model == "VII") {
     log_det_chol = t(d * log(prec_chol))
     prec = prec_chol
     precisions = prec^ 2
-    bc_matrix = matrix(1,nrow(X), nrow(mu))
-    log_prob = (bc_matrix * t(rowSums(mu^2) * precisions) 
-      - 2 * X %*% t(mu * precisions) + rowSums(X*X) %*% t(precisions) )
+    bc_matrix = matrix(1,nrow(X), nrow(Mu))
+    log_prob = (bc_matrix * t(rowSums(Mu^2) * precisions)
+      - 2 * X %*% t(Mu * precisions) + rowSums(X*X) %*% t(precisions) )
   }
   if(ncol(log_det_chol) == 1)
     log_det_chol = matrix(1, 1, ncol(log_prob)) * log_det_chol

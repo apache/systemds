@@ -25,5 +25,5 @@ parfor(i in 1:10, opt=CONSTRAINED, mode=REMOTE_SPARK) {
   if( i>5 )
     s = "outlierByIQR";
   print(toString(sum(eval(s,
-    list(X=X, k=1.5, repairMethod=1, max_iterations=0, verbose=FALSE)))));
+    list(X=X, k=1.5, repairMethod=1, maxIter=0, verbose=FALSE)))));
 }

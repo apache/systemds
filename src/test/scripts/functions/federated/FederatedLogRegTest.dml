@@ -22,5 +22,5 @@
 X = federated(addresses=list($in_X1, $in_X2),
     ranges=list(list(0, 0), list($rows / 2, $cols), list($rows / 2, 0), list($rows, $cols)))
 Y = read($in_Y)
-model = multiLogReg(X=X,  Y=Y, tol=1e-5, maxi=30, icpt = 0)
+model = multiLogReg(X=X,  Y=Y, tol=1e-5, maxIter=30, intercept = 0)
 write(model, $out)

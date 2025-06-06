@@ -41,12 +41,9 @@ def outlierBySdApply(X: Matrix,
     :param X: Matrix X
     :param colMean: Matrix X
     :param k: a constant used to discern outliers k*IQR
-    :param isIterative: iterative repair or single repair
     :param repairMethod: values: 0 = delete rows having outliers,
         1 = replace outliers with zeros
         2 = replace outliers as missing values
-    :param max_iterations: values: 0 = arbitrary number of iteraition until all outliers are removed,
-        n = any constant defined by user
     :param verbose: flag specifying if logging information should be printed
     :return: Matrix X with no outliers
     """

@@ -51,7 +51,7 @@ class TestWindowOperations(unittest.TestCase):
     def run_window_operations_for_modality(self, modality_type, window_size):
         r = self.data_generator.create1DModality(40, 100, modality_type)
         for aggregation in self.aggregations:
-            windowed_modality = r.window(window_size, aggregation)
+            windowed_modality = r.window_aggregation(window_size, aggregation)
 
             self.verify_window_operation(aggregation, r, windowed_modality, window_size)
 

@@ -23,6 +23,8 @@
 import shutil
 import unittest
 
+import numpy as np
+
 from systemds.scuro.modality.joined import JoinCondition
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
@@ -94,6 +96,7 @@ class TestMultimodalJoin(unittest.TestCase):
         video_data_loader = VideoLoader(
             self.data_generator.get_modality_path(ModalityType.VIDEO),
             self.data_generator.indices,
+            data_type=np.float32,
             chunk_size=l_chunk_size,
         )
         video = UnimodalModality(video_data_loader)
@@ -101,7 +104,8 @@ class TestMultimodalJoin(unittest.TestCase):
         audio_data_loader = AudioLoader(
             self.data_generator.get_modality_path(ModalityType.AUDIO),
             self.data_generator.indices,
-            r_chunk_size,
+            data_type=np.float32,
+            chunk_size=r_chunk_size,
         )
         audio = UnimodalModality(audio_data_loader)
 
@@ -115,7 +119,7 @@ class TestMultimodalJoin(unittest.TestCase):
                 right_modality, JoinCondition("timestamp", "timestamp", "<")
             )
             .apply_representation(ResNet(layer="layer1.0.conv2", model_name="ResNet50"))
-            .window(window_size, "mean")
+            .window_aggregation(window_size, "mean")
             .combine("concat")
         )
 

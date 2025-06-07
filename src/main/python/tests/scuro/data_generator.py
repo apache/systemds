@@ -37,7 +37,10 @@ from systemds.scuro.modality.type import ModalityType
 class ModalityRandomDataGenerator:
 
     def __init__(self):
-        self._modality_id = 0
+        self.modality_id = 0
+        self.modality_type = None
+        self.metadata = {}
+        self.data_type = np.float32
 
     def create1DModality(
         self,
@@ -45,30 +48,30 @@ class ModalityRandomDataGenerator:
         num_features,
         modality_type,
     ):
-        data = np.random.rand(num_instances, num_features)
+        data = np.random.rand(num_instances, num_features).astype(self.data_type)
+        data.dtype = self.data_type
+
         # TODO: write a dummy method to create the same metadata for all instances to avoid the for loop
-        metadata = {}
+        self.modality_type = modality_type
         for i in range(num_instances):
             if modality_type == ModalityType.AUDIO:
-                metadata[i] = modality_type.create_audio_metadata(
+                self.metadata[i] = modality_type.create_audio_metadata(
                     num_features / 10, data[i]
                 )
             elif modality_type == ModalityType.TEXT:
-                metadata[i] = modality_type.create_text_metadata(
+                self.metadata[i] = modality_type.create_text_metadata(
                     num_features / 10, data[i]
                 )
             elif modality_type == ModalityType.VIDEO:
-                metadata[i] = modality_type.create_video_metadata(
+                self.metadata[i] = modality_type.create_video_metadata(
                     num_features / 30, 10, 0, 0, 1
                 )
             else:
                 raise NotImplementedError
 
-        tf_modality = TransformedModality(
-            modality_type, "test_transformation", self._modality_id, metadata
-        )
+        tf_modality = TransformedModality(self, "test_transformation")
         tf_modality.data = data
-        self._modality_id += 1
+        self.modality_id += 1
         return tf_modality
 
 

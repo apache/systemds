@@ -238,32 +238,34 @@ class UnimodalRepresentationOptimizer:
         modified_modality = current_modality
 
         representation_start = time.time()
-        # try:
-        cached_representation, representation_ops, used_op_names = (
-            self.cache.load_from_cache(modified_modality, copy.deepcopy(operator_chain))
-        )
-        if cached_representation is not None:
-            modified_modality = cached_representation
-        store = False
-        for operator in representation_ops:
-            if isinstance(operator, Context):
-                modified_modality = modified_modality.context(operator)
-            else:
-                modified_modality = modified_modality.apply_representation(operator)
-            store = True
-            op_params[operator.name] = operator.get_current_parameters()
-        if store:
-            self.cache.save_to_cache(
-                modified_modality, used_op_names, representation_ops
+        try:
+            cached_representation, representation_ops, used_op_names = (
+                self.cache.load_from_cache(
+                    modified_modality, copy.deepcopy(operator_chain)
+                )
             )
-        representation_end = time.time()
+            if cached_representation is not None:
+                modified_modality = cached_representation
+            store = False
+            for operator in representation_ops:
+                if isinstance(operator, Context):
+                    modified_modality = modified_modality.context(operator)
+                else:
+                    modified_modality = modified_modality.apply_representation(operator)
+                store = True
+                op_params[operator.name] = operator.get_current_parameters()
+            if store:
+                self.cache.save_to_cache(
+                    modified_modality, used_op_names, representation_ops
+                )
+            representation_end = time.time()
 
-        self._evaluate_operator_chain(
-            modified_modality,
-            operator_chain,
-            op_params,
-            representation_end - representation_start,
-        )
-        # except Exception as e:
-        #     print(f"Failed to evaluate chain {operator_chain}: {str(e)}")
-        #     return
+            self._evaluate_operator_chain(
+                modified_modality,
+                operator_chain,
+                op_params,
+                representation_end - representation_start,
+            )
+        except Exception as e:
+            print(f"Failed to evaluate chain {operator_chain}: {str(e)}")
+            return

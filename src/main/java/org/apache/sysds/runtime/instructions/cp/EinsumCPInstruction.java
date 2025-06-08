@@ -49,7 +49,6 @@ import java.util.*;
 import static org.apache.sysds.runtime.instructions.cp.EinsumContext.getEinsumContext;
 
 public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
-	public static boolean oldCode= false;
 	public static boolean forceCell = false;
 	protected static final Log LOG = LogFactory.getLog(EinsumCPInstruction.class.getName());
 	public String eqStr;
@@ -81,24 +80,6 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 	private static final int CONTRACT_RIGHT = 2;
 	private static final int CONTRACT_BOTH = 3;
 
-//	public static EinsumCPInstruction parseInstruction(String str) {
-//		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-//
-//		ArrayList<CPOperand> inlist = new ArrayList<>();
-//
-//		for (int i = 2; i < parts.length - 1; i++)
-//		{
-//			inlist.add(new CPOperand(parts[i]));
-//		}
-//
-//		CPOperand out = new CPOperand(parts[parts.length-1]);
-////		int k = 1;//Integer.parseInt(parts[parts.length-1]);
-//		int k = OptimizerUtils.getConstrainedNumThreads(-1);
-//
-//		String eqString = new CPOperand(parts[1]).getName(); //todo change
-//
-//		return new EinsumCPInstruction(k, inlist.toArray(new CPOperand[0]), out, parts[0], str, eqString);
-//	}
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
@@ -235,464 +216,85 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		}
 
 
-//todo -> go througth dims to count and try to do row mults and order them
 		for(Character c :partsCharactersToIndices.keySet()){
 			ArrayList<Integer> a = partsCharactersToIndices.get(c);
 
 			System.out.println(c+" count= "+a.size());
 		}
-		if(oldCode) {
-			if (!forceCell && inputsChars.size() == 2 && inputsChars.get(0).charAt(0) == inputsChars.get(1).charAt(0) && !einc.summingChars.contains(parts[1].charAt(0))) {
 
 
-				// ja,jb->...
-				// outer tmpl
-				boolean oldWay = false;
-				if (oldWay) {
-					// outer tmpl
-					ArrayList<CNode> cnodeIn = new ArrayList<>();
-					cnodeIn.add(new CNodeData(new LiteralOp(3), 0, 0, DataType.SCALAR));
-					CNodeRow cnode = new CNodeRow(cnodeIn, null);
-//				cnode.setConstDim2(einc.outCols);
-//				cnode.setNumVectorIntermediates(1);
-					String src = tmpRow;
 
-					if (einc.outCols == 1) {
-//					cnode.setRowType(SpoofRowwise.RowType.ROW_AGG);
-//						src = src.replace("%TYPE%","ROW_AGG");
-						src = src.replace("%TYPE%", "COL_AGG_B1_T");
-
-					} else {
-//					cnode.setRowType(SpoofRowwise.RowType.COL_AGG_B1_T);
-						src = src.replace("%TYPE%", "COL_AGG_B1_T");
-
-					}
-					src = src.replace("%TMP%", cnode.createVarname());
-
-//				String src= cnode.codegenEinsum(false, SpoofCompiler.GeneratorAPI.JAVA);
-					src = src.replace("%CONST_DIM2%", einc.outCols.toString());// super(RowType.%TYPE%, %CONST_DIM2%, %TB1%, %VECT_MEM%);\n" +
-
-					System.out.println(src);
-					Class cla = CodegenUtils.compileClass("codegen." + cnode.getClassname(), src);
-//				Class cla = CodegenUtils.compileClass("codegen.TMP0", src);
-					SpoofOperator op = CodegenUtils.createInstance(cla);
-					MatrixBlock mb = new MatrixBlock();
-					mb.reset(einc.outRows, einc.outCols, false);
-					mb.allocateDenseBlock();
-					if (LibSpoofPrimitives.isFlipOuter(einc.outRows, einc.outCols)) {
-//					System.out.println("swapping");
-						ArrayList<MatrixBlock> m2 = new ArrayList<MatrixBlock>(2);
-
-						m2.add(inputs.get(1));
-						m2.add(inputs.get(0));
-						MatrixBlock out = op.execute(m2, scalars, mb, _numThreads);
-						ec.setMatrixOutput(output.getName(), out);
-					} else {
-//					System.out.println("NOTswapping");
-						MatrixBlock out = op.execute(inputs, scalars, mb, _numThreads);
-						ec.setMatrixOutput(output.getName(), out);
-					}
-				} else {
-					MatrixBlock first;
-					MatrixBlock second;
-					String firstName;
-					String secondName;
-					if (inputs.get(0).getNumColumns() == einc.outRows) {
-						first = inputs.get(0);
-						second = inputs.get(1);
-						firstName = inputsNames.get(0);
-						secondName = inputsNames.get(1);
-					} else {
-						first = inputs.get(1);
-						second = inputs.get(0);
-						firstName = inputsNames.get(1);
-						secondName = inputsNames.get(0);
-					}
-
-					ArrayList<MatrixBlock> thisInputs = new ArrayList<>(Arrays.asList(first, second));
-
-					ArrayList<CNode> cnodeIn = new ArrayList<>();
-
-					CNode c1 = new CNodeData(firstName, 1, first.getNumRows(), first.getNumColumns(), DataType.MATRIX);
-					CNode c2 = new CNodeData(secondName, 2, second.getNumRows(), second.getNumColumns(), DataType.MATRIX);
-					cnodeIn.add(c1);
-					cnodeIn.add(c2);
-					CNode cnodeOut = new CNodeBinary(c1, c2, CNodeBinary.BinType.VECT_OUTERMULT_ADD);
-					CNodeRow cnode = new CNodeRow(cnodeIn, cnodeOut);
-					if (inputs.get(0).getNumColumns() == einc.outRows) {
-						cnode.setConstDim2(einc.outCols); // output will be  in1.cols,in2.cols
-
-					} else {
-						cnode.setConstDim2(einc.outCols);
-
-					}
-					cnode.setRowType(SpoofRowwise.RowType.COL_AGG_B1_T);
-//					if (einc.outCols == 1) {
-//						cnode.setRowType(SpoofRowwise.RowType.COL_AGG_B1R);
-//
-////					cnode.setConstDim2(1);
-////					cnode.setNumVectorIntermediates(1);
-//
-//					} else {
-//						cnode.setRowType(SpoofRowwise.RowType.COL_AGG_B1_T);
-//					}
-					cnode.renameInputs();
-
-					String src = cnode.codegen(false, SpoofCompiler.GeneratorAPI.JAVA);
-
-					System.out.println(src);
-					Class cla = CodegenUtils.compileClass("codegen." + cnode.getClassname(), src);
-
-					SpoofOperator op = CodegenUtils.createInstance(cla);
-					MatrixBlock mb = new MatrixBlock();
-					mb.reset(einc.outRows, einc.outCols, false);
-					mb.allocateDenseBlock();
-
-//					MatrixBlock out = op.execute(inputs, scalars, mb, _numThreads);
-//					ec.setMatrixOutput(output.getName(), out);
-//					if(LibSpoofPrimitives.isFlipOuter(einc.outRows,einc.outCols)){
-//						ArrayList<MatrixBlock> m2 = new ArrayList<MatrixBlock>(2);
-//
-//						m2.add(inputs.get(1));
-//						m2.add(inputs.get(0));
-//						MatrixBlock out =op.execute(m2,scalars,mb,_numThreads);
-//						ec.setMatrixOutput(output.getName(), out);
-//					}else{
-////						ArrayList<MatrixBlock> m2 = new ArrayList<MatrixBlock>(2);
-////						.
-					MatrixBlock out = op.execute(thisInputs, scalars, mb, _numThreads);
-					ec.setMatrixOutput(output.getName(), out);
-//					}
-				}
-			} else if (!forceCell && inputsChars.size() == 2 && inputsChars.get(0).charAt(1) == inputsChars.get(1).charAt(0)) {
-				if (false) {
-					ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);//todo move to separate op earlier
-					MatrixBlock first = (inputs.get(0)).reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-					ArrayList<CNode> cnodeIn = new ArrayList<>();
-					cnodeIn.add(new CNodeData(new LiteralOp(3), 0, 0, DataType.SCALAR));
-					CNodeRow cnode = new CNodeRow(cnodeIn, null);
-					String src = tmpRow;
-
-					if (einc.outCols == 1) {
-						src = src.replace("%TYPE%", "ROW_AGG");
-
-					} else {
-						src = src.replace("%TYPE%", "COL_AGG_B1_T");
-
-					}
-					src = src.replace("%TMP%", cnode.createVarname());
-
-					src = src.replace("%CONST_DIM2%", einc.outCols.toString());// super(RowType.%TYPE%, %CONST_DIM2%, %TB1%, %VECT_MEM%);\n" +
-
-					System.out.println(src);
-					Class cla = CodegenUtils.compileClass("codegen." + cnode.getClassname(), src);
-					SpoofOperator op = CodegenUtils.createInstance(cla);
-					MatrixBlock mb = new MatrixBlock();
-					mb.reset(einc.outRows, einc.outCols, false);
-
-					mb.allocateDenseBlock();
-					if (LibSpoofPrimitives.isFlipOuter(einc.outRows, einc.outCols)) {
-						ArrayList<MatrixBlock> m2 = new ArrayList<MatrixBlock>(2);
-
-						m2.add(inputs.get(1));
-						m2.add(first);
-						MatrixBlock out = op.execute(m2, scalars, mb, _numThreads);
-						ec.setMatrixOutput(output.getName(), out);
-					} else {
-						ArrayList<MatrixBlock> m2 = new ArrayList<MatrixBlock>(2);
-						m2.add(first);
-						m2.add(inputs.get(1));
-						MatrixBlock out = op.execute(m2, scalars, mb, _numThreads);
-						ec.setMatrixOutput(output.getName(), out);
-					}
-				}
-				else {
-					MatrixBlock first = inputs.get(0);
-					MatrixBlock second = inputs.get(1);
-					String firstName = inputsNames.get(0);
-					String secondName = inputsNames.get(1);
-
-					ArrayList<MatrixBlock> thisInputs = new ArrayList<>(Arrays.asList(first, second));
-
-					ArrayList<CNode> cnodeIn = new ArrayList<>();
-
-					CNode c1 = new CNodeData(firstName, 1, first.getNumRows(), first.getNumColumns(), DataType.MATRIX);
-					CNode c2 = new CNodeData(secondName, 2, second.getNumRows(), second.getNumColumns(), DataType.MATRIX);
-					cnodeIn.add(c1);
-					cnodeIn.add(c2);
-					CNode cnodeOut = new CNodeBinary(c1, c2, CNodeBinary.BinType.VECT_MATRIXMULT);
-					CNodeRow cnode = new CNodeRow(cnodeIn, cnodeOut);
-//					if(inputs.get(0).getNumColumns() == einc.outRows) {
-//						cnode.setConstDim2(einc.outCols); // output will be  in1.cols,in2.cols
-//
-//					}else{
-//						cnode.setConstDim2(einc.outCols);
-//
-//					}
-					cnode.setRowType(SpoofRowwise.RowType.NO_AGG_B1);
-
-					cnode.renameInputs();
-
-					String src = cnode.codegen(false, SpoofCompiler.GeneratorAPI.JAVA);
-
-					System.out.println(src);
-					Class cla = CodegenUtils.compileClass("codegen." + cnode.getClassname(), src);
-
-					SpoofOperator op = CodegenUtils.createInstance(cla);
-					MatrixBlock mb = new MatrixBlock();
-					mb.reset(einc.outRows, einc.outCols, false);
-					mb.allocateDenseBlock();
-
-
-					MatrixBlock out = op.execute(thisInputs, scalars, mb, _numThreads);
-					ec.setMatrixOutput(output.getName(), out);
-				}
-			} else { //fallback to cell
-				ArrayList<CNode> cnodeIn = new ArrayList<>();
-				cnodeIn.add(new CNodeData(new LiteralOp(3), 0, 0, DataType.SCALAR));
-				CNodeCell cnode = new CNodeCell(cnodeIn, null);
-//				cnode.setCellType(SpoofCellwise.CellType.NO_AGG);
-				StringBuilder sb = new StringBuilder();
-
-				String outputChars = parts[1];
-				if (outputChars.length() == 2) {
-					einc.summingChars.remove(outputChars.charAt(0));
-					einc.summingChars.remove(outputChars.charAt(1));
-
-				} else if (outputChars.length() == 1) {
-					einc.summingChars.remove(outputChars.charAt(0));
-
-				}
-				boolean needsSumming = einc.summingChars.stream().anyMatch(x -> x != null);
-				String itVar0 = "TMP123";//+new IDSequence().getNextID(); todo: generate this var
-				String outVar = null;
-				if (needsSumming) {
-					outVar = "TMP123";//+new IDSequence().getNextID();
-					sb.append("double ");
-					sb.append(outVar);
-					sb.append("=0;\n");
-				}
-
-				HashSet<Character> summedCharacters = new HashSet<>();
-				Iterator<Character> hsIt = einc.summingChars.iterator();
-				while (hsIt.hasNext()) {
-
-					Character c = hsIt.next();
-					String itVar = itVar0 + c;
-					sb.append("for(int ");
-					sb.append(itVar);
-					sb.append("=0;");
-					sb.append(itVar);
-					sb.append("<");
-					sb.append(einc.charToDimensionSizeInt.get(c));
-					sb.append(";");
-					sb.append(itVar);
-					sb.append("++){\n");
-				}
-				if (needsSumming) {
-					sb.append(outVar);
-					sb.append("+=");
-				}
-
-				if (parts[1].length() == 2) {
-					for (int i = 0; i < inputsChars.size(); i++) {
-						if (einc.summingChars.contains(inputsChars.get(i).charAt(0))) {
-							sb.append("getValue(b[");
-							sb.append(i);
-							sb.append("],b[");
-							sb.append(i);
-							sb.append("].clen,");
-							sb.append(itVar0);
-							sb.append(inputsChars.get(i).charAt(0));
-							sb.append(",");
-						} else if (inputsChars.get(i).charAt(0) == outputChars.charAt(0)) {
-							sb.append("getValue(b[");
-							sb.append(i);
-							sb.append("],b[");
-							sb.append(i);
-							sb.append("].clen, rix,");
-						} else if (inputsChars.get(i).charAt(0) == outputChars.charAt(1)) {
-							sb.append("getValue(b[");
-							sb.append(i);
-							sb.append("],b[");
-							sb.append(i);
-							sb.append("].clen, cix,");
-						} else {
-							sb.append("getValue(b[");
-							sb.append(i);
-							sb.append("],b[");
-							sb.append(i);
-							sb.append("].clen, 0,");
-						}
-
-						if (einc.summingChars.contains(inputsChars.get(i).charAt(1))) {
-							sb.append(itVar0);
-							sb.append(inputsChars.get(i).charAt(1));
-							sb.append(")");
-						} else if (inputsChars.get(i).charAt(1) == outputChars.charAt(0)) {
-							sb.append("rix)");
-						} else if (inputsChars.get(i).charAt(1) == outputChars.charAt(1)) {
-							sb.append("cix)");
-
-						} else {
-							sb.append("0)");
-						}
-
-
-						if (i < inputsChars.size() - 1) {
-							sb.append("*");
-						}
-
-					}
-				} else {
-					for (int i = 0; i < inputsChars.size(); i++) {
-						if (inputsChars.size() == 2) {
-							if (einc.summingChars.contains(inputsChars.get(i).charAt(0))) {
-								sb.append("getValue(b[");
-								sb.append(i);
-								sb.append("],b[");
-								sb.append(i);
-								sb.append("].clen,");
-								sb.append(itVar0);
-								sb.append(inputsChars.get(i).charAt(0));
-								sb.append(",");
-							} else if (inputsChars.get(i).charAt(0) == outputChars.charAt(0)) {
-								sb.append("getValue(b[");
-								sb.append(i);
-								sb.append("],b[");
-								sb.append(i);
-								sb.append("].clen, rix,");
-							} else if (inputsChars.get(i).charAt(0) == outputChars.charAt(1)) {
-								sb.append("getValue(b[");
-								sb.append(i);
-								sb.append("],b[");
-								sb.append(i);
-								sb.append("].clen, cix,");
-							} else {
-								sb.append("getValue(b[");
-								sb.append(i);
-								sb.append("],b[");
-								sb.append(i);
-								sb.append("].clen, 0,");
-							}
-							sb.append("0)");
-
-							if (i < inputsChars.size() - 1) {
-								sb.append("*");
-							}
-
-						}
-					}
-				}
-				if (needsSumming) {
-					sb.append(";");
-				}
-				for (int si = 0; si < einc.summingChars.size(); si++) {
-					sb.append("}\n");
-				}
-				String src = tmpCell;
-				src = src.replace("%TMP%", cnode.createVarname());
-				if (needsSumming) {
-					src = src.replace("%BODY_dense%", sb.toString());
-					src = src.replace("%OUT%", outVar);
-				} else {
-					src = src.replace("%BODY_dense%", "");
-					src = src.replace("%OUT%", sb.toString());
-				}
-
-//				String src = needsSumming ? cnode.codegenEinsum(false, SpoofCompiler.GeneratorAPI.JAVA, sb.toString(), outVar) : cnode.codegenEinsum(false, SpoofCompiler.GeneratorAPI.JAVA, "", sb.toString());
-				System.out.println(src);
-				Class cla = CodegenUtils.compileClass("codegen." + cnode.getClassname(), src);
-				SpoofOperator op = CodegenUtils.createInstance(cla);
-				MatrixBlock resBlock = new MatrixBlock();
-				resBlock.reset(einc.outRows, einc.outCols);
-				inputs.add(0, resBlock);
-				MatrixBlock out = op.execute(inputs, scalars, new MatrixBlock(), _numThreads);
-				if (einc.outRows == 1 && einc.outCols == 1) {
-					ec.setScalarOutput(output.getName(), new DoubleObject(out.get(0, 0)));
-
-				} else {
-					ec.setMatrixOutput(output.getName(), out);
-
-				}
+		// compute scalars:
+		Double scalar = null;
+		for(int i=0;i< inputs.size(); i++){
+			String s = inputsChars.get(i);
+			if(s.equals("")){
+				MatrixBlock mb = inputs.get(i);
+				if (scalar == null) scalar = mb.get(0,0);
+				else scalar*= mb.get(0,0);
+				inputs.set(i,null);
+				inputsChars.set(i,null);
 			}
 
 		}
 
-	// sum the characters:
+		boolean anyCouldNotDo = true; // information to do cell tpl for remaining ones
 
-		boolean anyCouldNotDo = true;
-
-		if (!oldCode) {
-			// compute scalars:
-			Double scalar = null;
-			for(int i=0;i< inputs.size(); i++){
-				String s = inputsChars.get(i);
-				if(s.equals("")){
-					MatrixBlock mb = inputs.get(i);
-					if (scalar == null) scalar = mb.get(0,0);
-					else scalar*= mb.get(0,0);
-					inputs.set(i,null);
-					inputsChars.set(i,null);
+		while (!forceCell) {
+			List<Integer> toSum = null;
+			Character sumC = null;
+			anyCouldNotDo = false;
+			Character cInOut = null;
+			for (Character c : partsCharactersToIndices.keySet()) { // sum on dim at the time
+				if (c == outChar1 || c == outChar2)
+					continue;
+				toSum = partsCharactersToIndices.get(c).stream()
+						.filter(Objects::nonNull).toList();
+				if (toSum.size() > 2) {
+					anyCouldNotDo = true;
+					continue;
 				}
-
+				if (toSum.size() != 2)
+					continue;
+				sumC = c;
+				break;
+			}
+			if (anyCouldNotDo) {
+				break;
+			}
+			if (sumC == null) {
+				//check if maybe there are out-put characters only terms like a,a,ab->ba
+				List<String> remStrings = inputsChars.stream()
+						.filter(Objects::nonNull).toList();
+				List<MatrixBlock> remMbs = inputs.stream()
+						.filter(Objects::nonNull).toList();
+				if(remStrings.size() > 1){
+					Pair<MatrixBlock, String> res =  computRowSummationsOutputCharsOnly(remMbs, remStrings, parts[1],scalar);
+					scalar = null;
+					inputs = new ArrayList<>(Arrays.asList(res.getLeft()));
+					inputsChars = new ArrayList<>(Arrays.asList(res.getRight()));
+				}
+				break; //nothing left to sum
 			}
 
-			while (!forceCell) {
-				List<Integer> toSum = null;
-				Character sumC = null;
-				anyCouldNotDo = false;
-				Character cInOut = null;
-				for (Character c : partsCharactersToIndices.keySet()) {
-					if (c == outChar1 || c == outChar2)
-						continue;
-					toSum = partsCharactersToIndices.get(c).stream()
-							.filter(Objects::nonNull).toList();
-					if (toSum.size() > 2) {
-						anyCouldNotDo = true;
-						continue;
-					}
-					if (toSum.size() != 2)
-						continue;
-					sumC = c;
-					break;
-				}
-				if (anyCouldNotDo) {
-					break;
-				}
-				if (sumC == null) {
-					//check if maybe there are out-put characters only terms like a,a,ab->ba
-					List<String> remStrings = inputsChars.stream()
-							.filter(Objects::nonNull).toList();
-					List<MatrixBlock> remMbs = inputs.stream()
-							.filter(Objects::nonNull).toList();
-					if(remStrings.size() > 1){
-						Pair<MatrixBlock, String> res =  computRowSummationsOutputCharsOnly(remMbs, remStrings, parts[1],scalar);
-						scalar = null;
-						inputs = new ArrayList<>(Arrays.asList(res.getLeft()));
-						inputsChars = new ArrayList<>(Arrays.asList(res.getRight()));
-					}
-					break; //nothing left to sum
-				}
+			Pair<MatrixBlock, String> res = computeRowSummation(toSum, inputs, inputsChars, scalar);
+			scalar = null;
+			String newS = res.getRight();
 
-				Pair<MatrixBlock, String> res = computeRowSummation(toSum, inputs, inputsChars, scalar);
-				scalar = null;
-				String newS = res.getRight();
+//			var iter = toSum.listIterator();
+//			Integer ii = iter.next();
+			for (Integer idx : toSum) {
+				inputs.set(idx, null);
+				inputsChars.set(idx, null);
+			}
+			inputs.add(res.getLeft());
+			inputsChars.add(newS);
 
-				var iter = toSum.listIterator();
-				Integer ii = iter.next();
-				for (Integer idx : toSum) {
-					inputs.set(idx, null);
-					inputsChars.set(idx, null);
-				}
-				inputs.add(res.getLeft());
-				inputsChars.add(newS);
-
-				for (int i = 0; i < newS.length(); i++) {
-					char c = newS.charAt(i);
+			for (int i = 0; i < newS.length(); i++) {
+				char c = newS.charAt(i);
 //				partsCharactersToIndices.get(c).remove(c);
-					partsCharactersToIndices.get(c).add(inputs.size() - 1);
-				}
+				partsCharactersToIndices.get(c).add(inputs.size() - 1);
+			}
 
 
 //			for(int i=0;i<inputs.size();i++){
@@ -707,44 +309,44 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 //			inputs= newInputs;
 //			inputsChars = newInputChars;
 
-				partsCharactersToIndices.remove(sumC);
-			}
-			if (!anyCouldNotDo){
-				//check if any operations to do that were not-output dimension summations:
-				List<String> remStrings = inputsChars.stream()
-						.filter(Objects::nonNull).toList();
-				List<MatrixBlock> remMbs = inputs.stream()
-						.filter(Objects::nonNull).toList();
-				MatrixBlock res;
-				if(remStrings.size() == 1){
-					String s = remStrings.get(0);
-					if(s.equals(parts[1])){
-						res=remMbs.get(0);
-					}else if(s.charAt(0)==s.charAt(1)) {
-						// diagonal needed
-						ReorgOperator op = new ReorgOperator(DiagIndex.getDiagIndexFnObject());
-						res= remMbs.get(0).reorgOperations(op, new MatrixBlock(),0,0,0);
-					}else{
-						//it has to be transpose: ab->ba
-						ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);//todo move to separate op earlier
-						res = remMbs.get(0).reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-					}
+			partsCharactersToIndices.remove(sumC);
+		}
+		if (!anyCouldNotDo){
+			//check if any operations to do that were not-output dimension summations:
+			List<String> remStrings = inputsChars.stream()
+					.filter(Objects::nonNull).toList();
+			List<MatrixBlock> remMbs = inputs.stream()
+					.filter(Objects::nonNull).toList();
+			MatrixBlock res;
+			if(remStrings.size() == 1){
+				String s = remStrings.get(0);
+				if(s.equals(parts[1])){
+					res=remMbs.get(0);
+				}else if(s.charAt(0)==s.charAt(1)) {
+					// diagonal needed
+					ReorgOperator op = new ReorgOperator(DiagIndex.getDiagIndexFnObject());
+					res= remMbs.get(0).reorgOperations(op, new MatrixBlock(),0,0,0);
 				}else{
-					throw new RuntimeException("did not expect this!");
+					//it has to be transpose: ab->ba
+					ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);//todo move to separate op earlier
+					res = remMbs.get(0).reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
 				}
-				ec.setMatrixOutput(output.getName(), res);
+			}else{
+				throw new RuntimeException("did not expect this!");
 			}
+			ec.setMatrixOutput(output.getName(), res);
+		}
 
-			else {
-				ArrayList<MatrixBlock> mbs = new ArrayList<>();
-				ArrayList<String> chars = new ArrayList<>();
-				for (int i = 0; i < inputs.size(); i++) {
-					MatrixBlock mb = inputs.get(i);
-					if (mb != null) {
-						mbs.add(mb);
-						chars.add(inputsChars.get(i));
-					}
+		else {
+			ArrayList<MatrixBlock> mbs = new ArrayList<>();
+			ArrayList<String> chars = new ArrayList<>();
+			for (int i = 0; i < inputs.size(); i++) {
+				MatrixBlock mb = inputs.get(i);
+				if (mb != null) {
+					mbs.add(mb);
+					chars.add(inputsChars.get(i));
 				}
+			}
 //			HashSet<Character> summingChars = new HashSet<>();
 //			for(String s : inputsChars){
 //				if(s == null) continue;
@@ -754,21 +356,21 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 //					summingChars.add(s.charAt(1));
 //				}
 //			}
-				ArrayList summingChars = new ArrayList();
-				for (Character c : partsCharactersToIndices.keySet()) {
-					if (c != outChar1 && c != outChar2) summingChars.add(c);
-
-				}
-				//computeCellSummation(ArrayList<MatrixBlock> inputs, List<String> inputsChars, String resultString,
-				//														   HashMap<Character, Integer> charToDimensionSizeInt, List<Character> summingChars)
-				MatrixBlock res = computeCellSummation(mbs, chars, parts[1], einc.charToDimensionSizeInt, summingChars, einc.outRows, einc.outCols);
-
-				if (einc.outRows == 1 && einc.outCols == 1)
-					ec.setScalarOutput(output.getName(), new DoubleObject(res.get(0, 0)));
-				else ec.setMatrixOutput(output.getName(), res);
+			ArrayList summingChars = new ArrayList();
+			for (Character c : partsCharactersToIndices.keySet()) {
+				if (c != outChar1 && c != outChar2) summingChars.add(c);
 
 			}
+			//computeCellSummation(ArrayList<MatrixBlock> inputs, List<String> inputsChars, String resultString,
+			//														   HashMap<Character, Integer> charToDimensionSizeInt, List<Character> summingChars)
+			MatrixBlock res = computeCellSummation(mbs, chars, parts[1], einc.charToDimensionSizeInt, summingChars, einc.outRows, einc.outCols);
+
+			if (einc.outRows == 1 && einc.outCols == 1)
+				ec.setScalarOutput(output.getName(), new DoubleObject(res.get(0, 0)));
+			else ec.setMatrixOutput(output.getName(), res);
+
 		}
+
 		//final operation
 
 
@@ -1113,44 +715,12 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		}
 	}
 
-//	@Override
-//	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
-//		//return the lineage item if already traced once
-//		LineageItem li = ec.getLineage().get(output.getName());
-//		if (li != null)
-//			return Pair.of(output.getName(), li);
-//
-//		//read and deepcopy the corresponding lineage DAG (pre-codegen)
-//		LineageItem LIroot = LineageCodegenItem.getCodegenLTrace(getOperatorClass().getName()).deepCopy();
-//
-//		//replace the placeholders with original instruction inputs.
-//		LineageItemUtils.replaceDagLeaves(ec, LIroot, _in);
-//
-//		return Pair.of(output.getName(), LIroot);
-//	}
 
 	public CPOperand[] getInputs() {
 		return _in;
 	}
 
 	private static final IDSequence _idSeqfn = new IDSequence();
-
-	private final static String tmpRow = "package codegen;\n" +
-			"import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;\n" +
-			"import org.apache.sysds.runtime.codegen.SpoofOperator.SideInput;\n" +
-			"import org.apache.sysds.runtime.codegen.SpoofRowwise;\n" +
-			"import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;\n" +
-			"import org.apache.commons.math3.util.FastMath;\n" +
-			"\n" +
-			"public final class %TMP% extends SpoofRowwise { \n" +
-			"  public %TMP%() {\n" +
-			"    super(RowType.%TYPE%, %CONST_DIM2%, false, 1);\n" +
-			"  }\n" +
-			"  protected void genexec(double[] a, int ai, SideInput[] b, double[] scalars, double[] c, int ci, int len, long grix, int rix) { \n" +
-			"LibSpoofPrimitives.vectOuterMultAdd(a, b[0].values(rix), c, ai, b[0].pos(rix), 0, len, b[0].clen);  }\n" +
-			"  protected void genexec(double[] avals, int[] aix, int ai, SideInput[] b, double[] scalars, double[] c, int ci, int alen, int len, long grix, int rix) { \n" +
-			"  }\n" +
-			"}\n";
 
 	private final static String tmpCell =
 			"package codegen;\n" +

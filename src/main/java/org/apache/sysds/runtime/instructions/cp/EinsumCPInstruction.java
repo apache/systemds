@@ -240,7 +240,8 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 
 		boolean anyCouldNotDo = true; // information to do cell tpl for remaining ones
 
-		while (!forceCell) {
+		if(!forceCell)
+		while (true) {
 			List<Integer> toSum = null;
 			Character sumC = null;
 			anyCouldNotDo = false;
@@ -248,8 +249,15 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			for (Character c : partsCharactersToIndices.keySet()) { // sum on dim at the time
 				if (c == outChar1 || c == outChar2)
 					continue;
-				toSum = partsCharactersToIndices.get(c).stream()
-						.filter(Objects::nonNull).toList();
+				toSum = new ArrayList<>();
+				int count =0; //very temp solution, this part will be replaced anyway later probably
+				for(Integer idx : partsCharactersToIndices.get(c).stream()
+						.filter(Objects::nonNull).toList()){
+					if(inputs.get(idx) != null){
+						count++;
+						toSum.add(idx);
+					}
+				}
 				if (toSum.size() > 2) {
 					anyCouldNotDo = true;
 					continue;
@@ -498,8 +506,8 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			s1=s2;
 			s2=sTemp;
 
-			first = inputs.get(toSum.get(0));
-			second = inputs.get(toSum.get(1));
+			first = inputs.get(toSum.get(1));
+			second = inputs.get(toSum.get(0));
 			resS = String.valueOf(s1.charAt(0))+String.valueOf(s2.charAt(1));
 
 		}
@@ -518,13 +526,13 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			case Ba_a:
 				throw new NotImplementedException();
 			case Ba_aC: {
-				out = getCodegenMatrixBlock(first, second, CNodeBinary.BinType.VECT_MATRIXMULT, SpoofRowwise.RowType.NO_AGG, null, scalar);
+				out = getCodegenMatrixBlock(first, second, CNodeBinary.BinType.VECT_MATRIXMULT, SpoofRowwise.RowType.NO_AGG_B1,  Long.valueOf( second.getNumColumns()), scalar);
 				break;
 			}
 			case Ba_Ca:
 				ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
 				second = second.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-				out = getCodegenMatrixBlock(first, second, CNodeBinary.BinType.VECT_MATRIXMULT, SpoofRowwise.RowType.NO_AGG, null, scalar);
+				out = getCodegenMatrixBlock(first, second, CNodeBinary.BinType.VECT_MATRIXMULT, SpoofRowwise.RowType.NO_AGG_B1,  Long.valueOf( second.getNumColumns()), scalar);
 				break;
 			case aB_a:
 			case aB_aC: {

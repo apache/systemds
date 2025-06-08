@@ -48,6 +48,8 @@ public class EinsumTest extends AutomatedTestBase
 	private static final String TEST_EINSUM5 = TEST_NAME_EINSUM+"5";
 	private static final String TEST_EINSUM6 = TEST_NAME_EINSUM+"6";
 	private static final String TEST_EINSUM7 = TEST_NAME_EINSUM+"7";
+	private static final String TEST_EINSUM8 = TEST_NAME_EINSUM+"8";
+	private static final String TEST_EINSUM9 = TEST_NAME_EINSUM+"9";
 
 	private static final String TEST_DIR = "functions/einsum/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + EinsumTest.class.getSimpleName() + "/";
@@ -59,7 +61,7 @@ public class EinsumTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for(int i=1; i<=7; i++)
+		for(int i=1; i<=9; i++)
 			addTestConfiguration( TEST_NAME_EINSUM+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_EINSUM+i, new String[] { String.valueOf(i) }) );
 	}
 	@Test
@@ -89,6 +91,14 @@ public class EinsumTest extends AutomatedTestBase
 	@Test
 	public void testCodegenEinsum7CP() {
 		testCodegenIntegration( TEST_EINSUM7, false, ExecType.CP );
+	}
+	@Test
+	public void testCodegenEinsum8CP() {
+		testCodegenIntegration( TEST_EINSUM8, false, ExecType.CP );
+	}
+	@Test
+	public void testCodegenEinsum9CP() {
+		testCodegenIntegration( TEST_EINSUM9, false, ExecType.CP );
 	}
 
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )

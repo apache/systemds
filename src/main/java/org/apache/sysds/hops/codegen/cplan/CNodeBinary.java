@@ -187,9 +187,13 @@ public class CNodeBinary extends CNode {
 						varj.startsWith("b") ? (api == GeneratorAPI.JAVA ? varj + ".values(rix)" : 
 								(_type == BinType.VECT_MATRIXMULT ? varj : varj + ".vals(0)")) :
 							_inputs.get(j).getDataType() == DataType.MATRIX ? (api == GeneratorAPI.JAVA ? varj : varj + ".vals(0)") : varj);
-			
+
+			if(_type == BinType.VECT_OUTERMULT_ADD && (_inputs.get(j) instanceof CNodeData && _inputs.get(j).getDataType().isMatrix()) &&
+					(varj.startsWith("b")))
+				tmp = tmp.replace("%POS"+(j+1)+"%",varj + ".pos(rix)");
+			else
 			//replace start position of main input
-			tmp = tmp.replace("%POS"+(j+1)+"%", (_inputs.get(j) instanceof CNodeData 
+				tmp = tmp.replace("%POS"+(j+1)+"%", (_inputs.get(j) instanceof CNodeData
 					&& _inputs.get(j).getDataType().isMatrix()) ? (!varj.startsWith("b")) ? varj+"i" : 
 					((TemplateUtils.isMatrix(_inputs.get(j)) || (_type.isElementwise()
 						&& TemplateUtils.isColVector(_inputs.get(j)))) && _type!=BinType.VECT_MATRIXMULT) ?

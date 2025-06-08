@@ -34,6 +34,7 @@ public class EinsumContext {
     public Integer[] contractDims;
     public Integer[] summingDims;
     public HashSet<Character> summingChars;
+    public HashSet<Character> contractDimsSet;
 
     public static EinsumContext getEinsumContext(String eqStr, ArrayList<MatrixBlock> inputs){
         EinsumContext res = new EinsumContext();
@@ -47,6 +48,9 @@ public class EinsumContext {
         HashSet<Character> summingChars = new HashSet<>();
         Integer[] contractDims = new Integer[inputs.size()];//0==nothing, 1 = right, 2=left, 3 = both
         Integer[] summingDims = new Integer[inputs.size()];//0/null==nothing, 1 = right, 2=left, 3 = both
+        HashSet<Character> contractDimsSet = new HashSet();
+
+
         int arrIt = 0;
         for (i = 0; true; i++){
             char c = eqStr.charAt(i);
@@ -55,6 +59,7 @@ public class EinsumContext {
                 break;
             }
             if(c==','){
+
                 arrIt++;
                 curArr = it.next();
                 arrSizeIterator = 0;
@@ -102,8 +107,9 @@ public class EinsumContext {
                 if(summingChars.contains(c)){
 
                 }else{
+                    contractDimsSet.add(c);
                     if(contractDims[arrIt]==null){
-                        contractDims[arrIt]=arrSizeIterator +1;
+                        contractDims[arrIt] = arrSizeIterator +1;
 
                     }else {
                         contractDims[arrIt] += arrSizeIterator + 1;
@@ -130,6 +136,7 @@ public class EinsumContext {
                 }
 
                 if(summingChars.contains(c)){
+
                     if(summingDims[arrIt] == null){
                         summingDims[arrIt]=arrSizeIterator +1; // it=0->add 1, it==1->add 2
                     }else{
@@ -139,6 +146,8 @@ public class EinsumContext {
                 }else if(c==c1){
                     // this dim is remaining
                 }else{
+                    contractDimsSet.add(c);
+
                     if(contractDims[arrIt]==null){
                         contractDims[arrIt]=arrSizeIterator +1;
 
@@ -179,6 +188,8 @@ public class EinsumContext {
                 }else if(c==c1 || c==c2){
                     // this dim is remaining
                 }else{
+                    contractDimsSet.add(c);
+
                     if(contractDims[arrIt]==null){
                         contractDims[arrIt]=arrSizeIterator +1;
 
@@ -193,6 +204,7 @@ public class EinsumContext {
             throw new RuntimeException("output dim > 2 not supported for now");
         }
         res.contractDims=contractDims;
+        res.contractDimsSet = contractDimsSet;
         res.summingDims=summingDims;
 
         res.summingChars = summingChars;

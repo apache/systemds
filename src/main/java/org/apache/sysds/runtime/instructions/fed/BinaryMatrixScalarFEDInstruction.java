@@ -57,6 +57,16 @@ public class BinaryMatrixScalarFEDInstruction extends BinaryFEDInstruction
 		CPOperand scalar = input2.isScalar() ? input2 : input1;
 		MatrixObject mo = ec.getMatrixObject(matrix);
 
+		// Todo: Remove
+		// DEBUG: NPE 직전 상태 확인
+		System.out.println("[DEBUG-NPE-CHECK] Operation: " + getOpcode() + 
+			" | Matrix: " + matrix.getName() + 
+			" | Scalar: " + scalar.getName() +
+			" | MatrixIsFederated: " + mo.isFederated() +
+			" | FedMapping: " + (mo.getFedMapping() != null ? "EXISTS" : "NULL") +
+			" | MatrixDims: " + mo.getNumRows() + "x" + mo.getNumColumns() +
+			" | About to call getFedMapping()...");
+
 		//prepare federated request matrix-scalar
 		FederatedRequest fr1 = !scalar.isLiteral() ?
 			mo.getFedMapping().broadcast(ec.getScalarInput(scalar)) : null;

@@ -27,13 +27,13 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
     }
 
     @Override
-    public FrameBlock columnDecode(ColumnInput in, FrameBlock out) {
+    public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
         // TODO:先去搞Bin的，那边有提示
         return null;
     }
 
     @Override
-    public void columnDecode(ColumnInput in, FrameBlock out, int rl, int ru) {
+    public void columnDecode(MatrixBlock in, FrameBlock out, int rl, int ru) {
         // TODO:同
     }
 

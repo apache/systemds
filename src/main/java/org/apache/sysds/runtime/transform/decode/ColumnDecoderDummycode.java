@@ -3,6 +3,7 @@ package org.apache.sysds.runtime.transform.decode;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -20,13 +21,13 @@ public class ColumnDecoderDummycode extends ColumnDecoder {
     }
 
     @Override
-    public FrameBlock columnDecode(ColumnInput in, FrameBlock out) {
+    public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
         // TODO
         return null;
     }
 
     @Override
-    public void columnDecode(ColumnInput in, FrameBlock out, int rl, int ru) {
+    public void columnDecode(MatrixBlock in, FrameBlock out, int rl, int ru) {
         // TODO
     }
 

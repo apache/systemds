@@ -5,6 +5,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 
 import java.io.Externalizable;
@@ -36,6 +37,7 @@ public abstract class ColumnDecoder implements Externalizable {
         return _colnames;
     }
 
+    public int[] getColList() {return _colList;}
     /**
      * Block decode API converting a matrix block into a frame block.
      *
@@ -43,7 +45,7 @@ public abstract class ColumnDecoder implements Externalizable {
      * @param out Output frame block
      * @return returns given output frame block for convenience
      */
-    public abstract FrameBlock columnDecode(ColumnInput in, FrameBlock out);
+    public abstract FrameBlock columnDecode(MatrixBlock in, FrameBlock out);
 
     /**
      * Block decode API converting a matrix block into a frame block in parallel.
@@ -53,7 +55,7 @@ public abstract class ColumnDecoder implements Externalizable {
      * @param k   Parallelization degree
      * @return returns the given output frame block for convenience
      */
-    public FrameBlock columnDecode(ColumnInput in, FrameBlock out, int k) {
+    public FrameBlock columnDecode(MatrixBlock in, FrameBlock out, int k) {
         return columnDecode(in, out);
     }
 
@@ -65,7 +67,7 @@ public abstract class ColumnDecoder implements Externalizable {
      * @param rl  row start to decode
      * @param ru  row end to decode (not inclusive)
      */
-    public abstract void columnDecode(ColumnInput in, FrameBlock out, int rl, int ru);
+    public abstract void columnDecode(MatrixBlock in, FrameBlock out, int rl, int ru);
 
     /**
      * Returns a new Decoder that only handles a sub range of columns. The sub-range refers to the columns after

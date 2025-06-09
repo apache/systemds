@@ -9,4 +9,5 @@ public class ColumnInput {
 
     //
     public ValueType[] schema;
+    public ColumnDecoder decoder;
 }

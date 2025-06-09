@@ -33,13 +33,13 @@ public class ColumnDecoderRecode extends ColumnDecoder {
     }
 
     @Override
-    public FrameBlock columnDecode(ColumnInput in, FrameBlock out) {
+    public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
         // TODO
         return null;
     }
 
     @Override
-    public void columnDecode(ColumnInput in, FrameBlock out, int rl, int ru) {
+    public void columnDecode(MatrixBlock in, FrameBlock out, int rl, int ru) {
         // TODO
     }
     public ColumnDecoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {

@@ -4,6 +4,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 import java.io.IOException;
@@ -27,14 +28,14 @@ public class ColumnDecoderBin extends ColumnDecoder {
 
 
     @Override
-    public FrameBlock columnDecode(ColumnInput in, FrameBlock out) {
+    public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
         //TODO: 把DecoderBin那边的方法毛过来，传入的参数中，in.ColumnBlock.data是需要decode的数据
         // in.ColumnBlock.targetCols里面有每列在原来Block中的位置，位置最后写回的时候调用out.set(r, targetCols[xxx], value);就可以
         return null;
     }
 
     @Override
-    public void columnDecode(ColumnInput in, FrameBlock out, int rl, int ru) {
+    public void columnDecode(MatrixBlock in, FrameBlock out, int rl, int ru) {
         //TODO: 同上
     }
 

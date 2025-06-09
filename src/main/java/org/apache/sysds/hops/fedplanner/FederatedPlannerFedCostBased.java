@@ -48,10 +48,9 @@ public class FederatedPlannerFedCostBased extends AFederatedPlanner {
 		Set<Long> visited = new HashSet<>();
 
 		List<Pair<Long, FEDInstruction.FederatedOutput>> childFedPlanPairs = optimalPlan.getChildFedPlans();
-		 for (Pair<Long, FEDInstruction.FederatedOutput> childFedPlanPair :
-		 childFedPlanPairs) {
-		 FedPlan childPlan = memoTable.getFedPlanAfterPrune(childFedPlanPair);
-		 rewriteHop(childPlan, memoTable, visited);
+		 for (Pair<Long, FEDInstruction.FederatedOutput> childFedPlanPair : childFedPlanPairs) {
+			FedPlan childPlan = memoTable.getFedPlanAfterPrune(childFedPlanPair);
+			rewriteHop(childPlan, memoTable, visited);
 		 }
 	}
 

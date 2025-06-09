@@ -22,6 +22,7 @@ package org.apache.sysds.hops.fedplanner;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.ParamBuiltinOp;
 import org.apache.sysds.hops.*;
 import org.apache.sysds.hops.FunctionOp.FunctionType;
 import org.apache.sysds.parser.*;
@@ -189,6 +190,9 @@ public class FederatedPlanRewireTransTable {
                         hopCommonTable, newOuterTransTableList, newFormerTransTable,
                         privacyConstraintMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
                         networkWeight, currentLoopStack));
+
+            // Wire UnRefTwrite to liveOutHops
+            wireUnRefTwriteToLiveOut(fsb, unRefTwriteSet, hopCommonTable, newFormerTransTable);
         } else if (sb instanceof WhileStatementBlock) {
             WhileStatementBlock wsb = (WhileStatementBlock) sb;
             WhileStatement wstmt = (WhileStatement) wsb.getStatement(0);
@@ -211,6 +215,9 @@ public class FederatedPlanRewireTransTable {
                         hopCommonTable, newOuterTransTableList, newFormerTransTable,
                         privacyConstraintMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
                         networkWeight, currentLoopStack));
+
+            // Wire UnRefTwrite to liveOutHops
+            wireUnRefTwriteToLiveOut(wsb, unRefTwriteSet, hopCommonTable, newFormerTransTable);
         } else if (sb instanceof FunctionStatementBlock) {
             FunctionStatementBlock fsb = (FunctionStatementBlock) sb;
             FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);
@@ -315,7 +322,8 @@ public class FederatedPlanRewireTransTable {
         // Propagate Privacy Constraint
         if (!(hop instanceof DataOp) || hop.getName().equals("__pred")
                 || (((DataOp) hop).getOp() == Types.OpOpData.PERSISTENTWRITE)) {
-            privacyConstraintMap.put(hop.getHopID(), getPrivacyConstraint(hop, hop.getInput(), privacyConstraintMap));
+            privacyConstraintMap.put(hop.getHopID(),
+                    determinePrivacyConstraint(hop, hop.getInput(), privacyConstraintMap));
             return;
         }
 
@@ -339,7 +347,8 @@ public class FederatedPlanRewireTransTable {
             innerTransTable.computeIfAbsent(hopName, k -> new ArrayList<>()).add(hop);
             unRefTwriteSet.add(hop.getHopID());
             // Propagate Privacy Constraint
-            privacyConstraintMap.put(hop.getHopID(), getPrivacyConstraint(hop, hop.getInput(), privacyConstraintMap));
+            privacyConstraintMap.put(hop.getHopID(),
+                    determinePrivacyConstraint(hop, hop.getInput(), privacyConstraintMap));
         } else if (opType == Types.OpOpData.TRANSIENTREAD) {
             // Rewire TransWrite
             List<Hop> childHops = rewireTransRead(hopName, innerTransTable, formerTransTable, outerTransTableList);
@@ -351,10 +360,14 @@ public class FederatedPlanRewireTransTable {
                     unRefTwriteSet.remove(childHop.getHopID());
                 }
                 // Propagate Privacy Constraint
-                privacyConstraintMap.put(hop.getHopID(), getPrivacyConstraint(hop, childHops, privacyConstraintMap));
+                privacyConstraintMap.put(hop.getHopID(),
+                        determinePrivacyConstraint(hop, childHops, privacyConstraintMap));
             } else {
                 System.out.println("hopName : " + hopName + " hop.getHopID() : " + hop.getHopID());
             }
+        } else {
+            privacyConstraintMap.put(hop.getHopID(),
+                    determinePrivacyConstraint(hop, hop.getInput(), privacyConstraintMap));
         }
     }
 
@@ -482,7 +495,7 @@ public class FederatedPlanRewireTransTable {
         return privacyConstraint;
     }
 
-    private static Privacy getPrivacyConstraint(Hop hop, List<Hop> inputHops, Map<Long, Privacy> privacyMap) {
+    private static Privacy determinePrivacyConstraint(Hop hop, List<Hop> inputHops, Map<Long, Privacy> privacyMap) {
         Privacy[] pc = new Privacy[inputHops.size()];
         for (int i = 0; i < inputHops.size(); i++)
             pc[i] = privacyMap.get(inputHops.get(i).getHopID());
@@ -498,7 +511,21 @@ public class FederatedPlanRewireTransTable {
         }
 
         if (hasPrivateAggreate) {
-            if (hop instanceof AggUnaryOp || hop instanceof AggBinaryOp || hop instanceof TernaryOp) {
+            if (hop instanceof AggUnaryOp || hop instanceof AggBinaryOp || hop instanceof QuaternaryOp) {
+                return Privacy.PUBLIC;
+            } else if (hop instanceof TernaryOp) {
+                switch (((TernaryOp) hop).getOp()) {
+                    case MOMENT:
+                    case COV:
+                    case CTABLE:
+                    case INTERQUANTILE:
+                    case QUANTILE:
+                        return Privacy.PUBLIC;
+                    default:
+                        return Privacy.PRIVATE_AGGREGATE;
+                }
+            } else if (hop instanceof ParameterizedBuiltinOp
+                    && ((ParameterizedBuiltinOp) hop).getOp() == ParamBuiltinOp.GROUPEDAGG) {
                 return Privacy.PUBLIC;
             } else {
                 return Privacy.PRIVATE_AGGREGATE;
@@ -506,5 +533,42 @@ public class FederatedPlanRewireTransTable {
         }
 
         return Privacy.PUBLIC;
+    }
+
+    private static void wireUnRefTwriteToLiveOut(StatementBlock sb, Set<Long> unRefTwriteSet,
+            Map<Long, HopCommon> hopCommonTable, Map<String, List<Hop>> newFormerTransTable) {
+        VariableSet genHops = sb.getGen();
+        VariableSet updatedHops = sb.variablesUpdated();
+        VariableSet liveOutHops = sb.liveOut();
+
+        for (Long unRefTwriteHopID : unRefTwriteSet) {
+            Hop unRefTwriteHop = hopCommonTable.get(unRefTwriteHopID).getHopRef();
+            String unRefTwriteHopName = unRefTwriteHop.getName();
+
+            if (liveOutHops.containsVariable(unRefTwriteHopName)) {
+                continue;
+            }
+
+            if (genHops.containsVariable(unRefTwriteHopName) || updatedHops.containsVariable(unRefTwriteHopName)) {
+                Iterator<String> liveOutHopsIterator = liveOutHops.getVariableNames().iterator();
+
+                boolean isRewired = false;
+                while (liveOutHopsIterator.hasNext()) {
+                    String liveOutHopName = liveOutHopsIterator.next();
+                    List<Hop> liveOutHopsList = newFormerTransTable.get(liveOutHopName);
+
+                    if (liveOutHopsList != null && !liveOutHopsList.isEmpty()) {
+                        List<Hop> copyLiveOutHopsList = new ArrayList<>(liveOutHopsList);
+                        copyLiveOutHopsList.add(unRefTwriteHop);
+                        newFormerTransTable.put(liveOutHopName, copyLiveOutHopsList);
+                        isRewired = true;
+                        break;
+                    }
+                }
+                if (!isRewired) {
+                    throw new RuntimeException("No liveOutHops found for " + unRefTwriteHopName);
+                }
+            }
+        }
     }
 }

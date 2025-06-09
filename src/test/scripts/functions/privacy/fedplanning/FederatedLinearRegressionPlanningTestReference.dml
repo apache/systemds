@@ -1,0 +1,11 @@
+# Reference Linear Regression with normal matrices
+X1 = read($X1);
+X2 = read($X2);
+X = rbind(X1, X2);
+Y = read($Y);
+
+# Call built-in linear regression function
+B = lm(X=X, y=Y, icpt=1, reg=1e-3, tol=1e-9, verbose=TRUE);
+
+# Write result
+write(B, $B);

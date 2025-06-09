@@ -41,6 +41,18 @@ import java.util.concurrent.Future;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.hops.fedplanner.FTypes.Privacy;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.hops.fedplanner.FTypes.FType;
+import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.common.Types.OpOp1;
+import org.apache.sysds.common.Types.OpOp2;
+import org.apache.sysds.common.Types.OpOp3;
+import org.apache.sysds.common.Types.OpOpN;
+import org.apache.sysds.common.Types.OpOpDG;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Opcodes;
+import org.apache.sysds.common.Types.ReOrgOp;
+import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.lops.MMTSJ.MMTSJType;
 
 public class FederatedPlanRewireTransTable {
     private static final double DEFAULT_LOOP_WEIGHT = 10.0;
@@ -50,9 +62,9 @@ public class FederatedPlanRewireTransTable {
     public static final String FED_FRAME_IDENTIFIER = "frame";
 
     public static void rewireProgram(DMLProgram prog, Map<Long, List<Hop>> rewireTable,
-            Map<Long, HopCommon> hopCommonTable, Map<Long, Privacy> privacyConstraintMap,
-            List<Pair<FederatedRange, FederatedData>> fedMap, Set<Long> unRefTwriteSet, Set<Long> unRefSet,
-            Set<Hop> progRootHopSet) {
+             Map<Long, HopCommon> hopCommonTable, Map<Long, Privacy> privacyConstraintMap, Map<Long, FType> fTypeMap,
+             List<Pair<FederatedRange, FederatedData>> fedMap, Set<Long> unRefTwriteSet, Set<Long> unRefSet,
+             Set<Hop> progRootHopSet) {
         // Maps Hop ID and fedOutType pairs to their plan variants
         Set<Long> visitedHops = new HashSet<>();
         Set<String> fnStack = new HashSet<>();
@@ -64,32 +76,32 @@ public class FederatedPlanRewireTransTable {
 
         for (StatementBlock sb : prog.getStatementBlocks()) {
             Map<String, List<Hop>> innerTransTable = rewireStatementBlock(sb, prog, visitedHops, rewireTable,
-                    hopCommonTable, outerTransTableList, null, privacyConstraintMap,
+                    hopCommonTable, outerTransTableList, null, privacyConstraintMap, fTypeMap,
                     fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, 1, 1, loopStack);
             outerTransTableList.get(0).putAll(innerTransTable);
         }
     }
 
     public static void rewireFunctionDynamic(FunctionStatementBlock function, Map<Long, List<Hop>> rewireTable,
-            Map<Long, HopCommon> hopCommonTable, Map<Long, Privacy> privacyConstraintMap,
-            List<Pair<FederatedRange, FederatedData>> fedMap, Set<Long> unRefTwriteSet, Set<Long> unRefSet,
-            Set<Hop> progRootHopSet) {
+             Map<Long, HopCommon> hopCommonTable, Map<Long, Privacy> privacyConstraintMap, Map<Long, FType> fTypeMap,
+             List<Pair<FederatedRange, FederatedData>> fedMap, Set<Long> unRefTwriteSet, Set<Long> unRefSet,
+             Set<Hop> progRootHopSet) {
         Set<Long> visitedHops = new HashSet<>();
         Set<String> fnStack = new HashSet<>();
         List<Pair<Long, Double>> loopStack = new ArrayList<>();
         List<Map<String, List<Hop>>> outerTransTableList = new ArrayList<>();
         Map<String, List<Hop>> outerTransTable = new HashMap<>();
         outerTransTableList.add(outerTransTable);
-        // Todo: not tested
+        // Todo (Future): not tested & not used
         rewireStatementBlock(function, null, visitedHops, rewireTable, hopCommonTable, outerTransTableList, null,
-                privacyConstraintMap,
+                privacyConstraintMap, fTypeMap,
                 fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, 1, 1, loopStack);
     }
 
     public static Map<String, List<Hop>> rewireStatementBlock(StatementBlock sb, DMLProgram prog, Set<Long> visitedHops,
             Map<Long, List<Hop>> rewireTable, Map<Long, HopCommon> hopCommonTable,
             List<Map<String, List<Hop>>> outerTransTableList, Map<String, List<Hop>> formerTransTable,
-            Map<Long, Privacy> privacyConstraintMap,
+            Map<Long, Privacy> privacyConstraintMap, Map<Long, FType> fTypeMap,
             List<Pair<FederatedRange, FederatedData>> fedMap, Set<Long> unRefTwriteSet, Set<Long> unRefSet,
             Set<Hop> progRootHopSet, Set<String> fnStack,
             double computeWeight, double networkWeight, List<Pair<Long, Double>> parentLoopStack) {
@@ -114,7 +126,7 @@ public class FederatedPlanRewireTransTable {
 
             rewireHopDAG(isb.getPredicateHops(), prog, visitedHops, rewireTable, hopCommonTable, newOuterTransTableList,
                     null, innerTransTable,
-                    privacyConstraintMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
+                    privacyConstraintMap, fTypeMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
                     networkWeight, parentLoopStack);
 
             newFormerTransTable.putAll(innerTransTable);
@@ -125,13 +137,13 @@ public class FederatedPlanRewireTransTable {
             for (StatementBlock innerIsb : istmt.getIfBody())
                 newFormerTransTable.putAll(rewireStatementBlock(innerIsb, prog, visitedHops, rewireTable,
                         hopCommonTable, newOuterTransTableList, newFormerTransTable,
-                        privacyConstraintMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
+                        privacyConstraintMap, fTypeMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
                         networkWeight, parentLoopStack));
 
             for (StatementBlock innerIsb : istmt.getElseBody())
                 elseFormerTransTable.putAll(rewireStatementBlock(innerIsb, prog, visitedHops, rewireTable,
                         hopCommonTable, newOuterTransTableList, elseFormerTransTable,
-                        privacyConstraintMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
+                        privacyConstraintMap, fTypeMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
                         networkWeight, parentLoopStack));
 
             // If there are common keys: merge elseValue list into ifValue list
@@ -170,17 +182,17 @@ public class FederatedPlanRewireTransTable {
 
             rewireHopDAG(fsb.getFromHops(), prog, visitedHops, rewireTable, hopCommonTable, newOuterTransTableList,
                     null, innerTransTable,
-                    privacyConstraintMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
+                    privacyConstraintMap, fTypeMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
                     networkWeight, currentLoopStack);
             rewireHopDAG(fsb.getToHops(), prog, visitedHops, rewireTable, hopCommonTable, newOuterTransTableList, null,
                     innerTransTable,
-                    privacyConstraintMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
+                    privacyConstraintMap, fTypeMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
                     networkWeight, currentLoopStack);
 
             if (fsb.getIncrementHops() != null) {
                 rewireHopDAG(fsb.getIncrementHops(), prog, visitedHops, rewireTable, hopCommonTable,
                         newOuterTransTableList, null, innerTransTable,
-                        privacyConstraintMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
+                        privacyConstraintMap, fTypeMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
                         networkWeight, currentLoopStack);
             }
             newFormerTransTable.putAll(innerTransTable);
@@ -188,7 +200,7 @@ public class FederatedPlanRewireTransTable {
             for (StatementBlock innerFsb : fstmt.getBody())
                 newFormerTransTable.putAll(rewireStatementBlock(innerFsb, prog, visitedHops, rewireTable,
                         hopCommonTable, newOuterTransTableList, newFormerTransTable,
-                        privacyConstraintMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
+                        privacyConstraintMap, fTypeMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
                         networkWeight, currentLoopStack));
 
             // Wire UnRefTwrite to liveOutHops
@@ -206,14 +218,14 @@ public class FederatedPlanRewireTransTable {
 
             rewireHopDAG(wsb.getPredicateHops(), prog, visitedHops, rewireTable, hopCommonTable, newOuterTransTableList,
                     null, innerTransTable,
-                    privacyConstraintMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
+                    privacyConstraintMap, fTypeMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
                     networkWeight, currentLoopStack);
             newFormerTransTable.putAll(innerTransTable);
 
             for (StatementBlock innerWsb : wstmt.getBody())
                 newFormerTransTable.putAll(rewireStatementBlock(innerWsb, prog, visitedHops, rewireTable,
                         hopCommonTable, newOuterTransTableList, newFormerTransTable,
-                        privacyConstraintMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
+                        privacyConstraintMap, fTypeMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
                         networkWeight, currentLoopStack));
 
             // Wire UnRefTwrite to liveOutHops
@@ -225,14 +237,14 @@ public class FederatedPlanRewireTransTable {
             for (StatementBlock innerFsb : fstmt.getBody())
                 newFormerTransTable.putAll(rewireStatementBlock(innerFsb, prog, visitedHops, rewireTable,
                         hopCommonTable, newOuterTransTableList, newFormerTransTable,
-                        privacyConstraintMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
+                        privacyConstraintMap, fTypeMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
                         networkWeight, parentLoopStack));
         } else { // generic (last-level)
             if (sb.getHops() != null) {
                 for (Hop c : sb.getHops())
                     rewireHopDAG(c, prog, visitedHops, rewireTable, hopCommonTable, newOuterTransTableList, null,
                             innerTransTable,
-                            privacyConstraintMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack,
+                            privacyConstraintMap, fTypeMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack,
                             computeWeight, networkWeight, parentLoopStack);
             }
 
@@ -242,12 +254,12 @@ public class FederatedPlanRewireTransTable {
     }
 
     private static void rewireHopDAG(Hop hop, DMLProgram prog, Set<Long> visitedHops, Map<Long, List<Hop>> rewireTable,
-            Map<Long, HopCommon> hopCommonTable, List<Map<String, List<Hop>>> outerTransTableList,
-            Map<String, List<Hop>> formerTransTable, Map<String, List<Hop>> innerTransTable,
-            Map<Long, Privacy> privacyConstraintMap,
-            List<Pair<FederatedRange, FederatedData>> fedMap, Set<Long> unRefTwriteSet, Set<Long> unRefSet,
-            Set<Hop> progRootHopSet,
-            Set<String> fnStack, double computeWeight, double networkWeight, List<Pair<Long, Double>> loopStack) {
+             Map<Long, HopCommon> hopCommonTable, List<Map<String, List<Hop>>> outerTransTableList,
+             Map<String, List<Hop>> formerTransTable, Map<String, List<Hop>> innerTransTable,
+             Map<Long, Privacy> privacyConstraintMap, Map<Long, FType> fTypeMap,
+             List<Pair<FederatedRange, FederatedData>> fedMap, Set<Long> unRefTwriteSet, Set<Long> unRefSet,
+             Set<Hop> progRootHopSet,
+             Set<String> fnStack, double computeWeight, double networkWeight, List<Pair<Long, Double>> loopStack) {
         // Process all input nodes first if not already in memo table
 
         if (hop.getInput() != null) {
@@ -257,7 +269,7 @@ public class FederatedPlanRewireTransTable {
                     visitedHops.add(inputHopID);
                     rewireHopDAG(inputHop, prog, visitedHops, rewireTable, hopCommonTable, outerTransTableList,
                             formerTransTable, innerTransTable,
-                            privacyConstraintMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack,
+                            privacyConstraintMap, fTypeMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack,
                             computeWeight, networkWeight, loopStack);
                 }
             }
@@ -301,10 +313,9 @@ public class FederatedPlanRewireTransTable {
                         newFormerTransTable.computeIfAbsent(inputArgs[i], k -> new ArrayList<>()).add(inputHops.get(i));
                     }
 
-                    // Todo (Future): 인자로 분리 안하면 RewireTable, MemoTable 분리해야 함.
                     Map<String, List<Hop>> functionTransTable = rewireStatementBlock(fsb, prog, visitedHops,
                             rewireTable, hopCommonTable, outerTransTableList, newFormerTransTable,
-                            privacyConstraintMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack,
+                            privacyConstraintMap, fTypeMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack,
                             computeWeight, networkWeight, loopStack);
 
                     for (int i = 0; i < fop.getOutputVariableNames().length; i++) {
@@ -323,18 +334,37 @@ public class FederatedPlanRewireTransTable {
         if (!(hop instanceof DataOp) || hop.getName().equals("__pred")
                 || (((DataOp) hop).getOp() == Types.OpOpData.PERSISTENTWRITE)) {
             privacyConstraintMap.put(hop.getHopID(),
-                    determinePrivacyConstraint(hop, hop.getInput(), privacyConstraintMap));
+                    getPrivacyConstraint(hop, hop.getInput(), privacyConstraintMap));
+
+            if (allowsFederated(hop, fTypeMap)) {
+                FType resultFType = getFType(hop, fTypeMap);
+                fTypeMap.put(hop.getHopID(), resultFType);
+                System.out.println("[FType] HopID: " + hop.getHopID() +
+                        ", Name: " + (hop.getName() != null ? hop.getName() : "unnamed") +
+                        ", Type: " + hop.getClass().getSimpleName() +
+                        ", allowsFederated: true" +
+                        ", Result FType: " + resultFType +
+                        ", Reason: Hop allows federated execution, FType computed");
+            } else {
+                fTypeMap.put(hop.getHopID(), null);
+                System.out.println("[FType] HopID: " + hop.getHopID() +
+                        ", Name: " + (hop.getName() != null ? hop.getName() : "unnamed") +
+                        ", Type: " + hop.getClass().getSimpleName() +
+                        ", allowsFederated: false" +
+                        ", Result FType: null" +
+                        ", Reason: Hop does not allow federated execution");
+            }
             return;
         }
 
         rewireTransHop(hop, rewireTable, outerTransTableList, formerTransTable, innerTransTable, privacyConstraintMap,
-                fedMap, unRefTwriteSet);
+                fTypeMap, fedMap, unRefTwriteSet);
     }
 
     private static void rewireTransHop(Hop hop, Map<Long, List<Hop>> rewireTable,
-            List<Map<String, List<Hop>>> outerTransTableList, Map<String, List<Hop>> formerTransTable,
-            Map<String, List<Hop>> innerTransTable, Map<Long, Privacy> privacyConstraintMap,
-            List<Pair<FederatedRange, FederatedData>> fedMap, Set<Long> unRefTwriteSet) {
+           List<Map<String, List<Hop>>> outerTransTableList, Map<String, List<Hop>> formerTransTable,
+           Map<String, List<Hop>> innerTransTable, Map<Long, Privacy> privacyConstraintMap,
+           Map<Long, FType> fTypeMap, List<Pair<FederatedRange, FederatedData>> fedMap, Set<Long> unRefTwriteSet) {
         DataOp dataOp = (DataOp) hop;
         Types.OpOpData opType = dataOp.getOp();
         String hopName = dataOp.getName();
@@ -342,37 +372,110 @@ public class FederatedPlanRewireTransTable {
         if (opType == Types.OpOpData.FEDERATED) {
             Privacy privacy = getFedWorkerMetaData(fedMap, dataOp);
             privacyConstraintMap.put(hop.getHopID(), privacy);
+            FType fType = deriveFType((DataOp)hop);
+            fTypeMap.put(hop.getHopID(), fType);
+            System.out.println("[FType] OpOpData.FEDERATED - HopID: " + hop.getHopID() +
+                    ", Name: " + hopName +
+                    ", Privacy: " + privacy +
+                    ", FType: " + fType +
+                    ", Reason: Derived from federated data ranges");
         } else if (opType == Types.OpOpData.TRANSIENTWRITE) {
             // Rewire TransWrite
             innerTransTable.computeIfAbsent(hopName, k -> new ArrayList<>()).add(hop);
             unRefTwriteSet.add(hop.getHopID());
             // Propagate Privacy Constraint
             privacyConstraintMap.put(hop.getHopID(),
-                    determinePrivacyConstraint(hop, hop.getInput(), privacyConstraintMap));
+                    getPrivacyConstraint(hop, hop.getInput(), privacyConstraintMap));
+            // Propagate FType (TransWrite has only one input)
+            FType inputFType = fTypeMap.get(hop.getInput(0).getHopID());
+            fTypeMap.put(hop.getHopID(), inputFType);
+            System.out.println("[FType] OpOpData.TRANSIENTWRITE - HopID: " + hop.getHopID() +
+                    ", Name: " + hopName +
+                    ", Input FType: " + inputFType +
+                    ", Result FType: " + inputFType +
+                    ", Reason: Propagating FType from input");
         } else if (opType == Types.OpOpData.TRANSIENTREAD) {
-            // Rewire TransWrite
+            // Rewire TransRead
             List<Hop> childHops = rewireTransRead(hopName, innerTransTable, formerTransTable, outerTransTableList);
+            // Handle rewire table (TransRead -> TransWrite)
             rewireTable.put(hop.getHopID(), childHops);
 
-            if (childHops != null && !childHops.isEmpty()) {
-                for (Hop childHop : childHops) {
-                    rewireTable.computeIfAbsent(childHop.getHopID(), k -> new ArrayList<>()).add(hop);
-                    unRefTwriteSet.remove(childHop.getHopID());
-                }
-                // Propagate Privacy Constraint
-                privacyConstraintMap.put(hop.getHopID(),
-                        determinePrivacyConstraint(hop, childHops, privacyConstraintMap));
-            } else {
-                System.out.println("hopName : " + hopName + " hop.getHopID() : " + hop.getHopID());
+            // Todo: TRead의 Child가 없는 경우 예외 처리 (왜 없는 지 확인)
+            if (childHops == null || childHops.isEmpty()) {
+                System.out.println("[RewireTransHop] (hopName: " + hopName + ", hopID: " + hop.getHopID() + ") child hops is empty");
+                return;
             }
+
+            // Remove childHops that have different hopVarName
+            List<Hop> filteredChildHops = new ArrayList<>();
+            for (Hop childHop : childHops) {
+                String hopVarName = hop.getName();
+
+                if (hopVarName.equals(childHop.getName())) {
+                    filteredChildHops.add(childHop);
+                }
+            }
+
+            // Todo: TRead의 Filtered Child가 없는 경우 예외 처리 (왜 없는 지 확인)
+            if (filteredChildHops.isEmpty()) {
+                System.out.println("[RewireTransHop] (hopName: " + hopName + ", hopID: " + hop.getHopID() + ") filtered child hops is empty");
+                return;
+            }
+
+            FType inputFType = null;
+            for (int i = 0; i < filteredChildHops.size(); i++) {
+                Hop filteredChildHop = filteredChildHops.get(i);
+                long filteredChildHopID = filteredChildHop.getHopID();
+
+                // Rewire (TransWrite -> TransRead)
+                rewireTable.computeIfAbsent(filteredChildHopID, k -> new ArrayList<>()).add(hop);
+                // Remove refTWrite from unRefTwriteSet
+                unRefTwriteSet.remove(filteredChildHopID);
+
+                // Check FType consistency of childs(TransWrite)
+                if ( i==0 ) {
+                    inputFType = fTypeMap.get(filteredChildHopID);
+                } else if (inputFType != fTypeMap.get(filteredChildHopID)) {
+                    throw new DMLRuntimeException("TransRead의 입력 FType이 일치하지 않습니다. : " + inputFType + " != " + fTypeMap.get(filteredChildHopID));
+                }
+            }
+            // Propagate Privacy Constraint
+            privacyConstraintMap.put(hop.getHopID(),
+                    getPrivacyConstraint(hop, filteredChildHops, privacyConstraintMap));
+            // Propagate FType
+            fTypeMap.put(hop.getHopID(), inputFType);
+            System.out.println("[FType] OpOpData.TRANSIENTREAD - HopID: " + hop.getHopID() +
+                    ", Name: " + hopName +
+                    ", Filtered Child Hops Count: " + filteredChildHops.size() +
+                    ", Input FType: " + inputFType +
+                    ", Result FType: " + inputFType +
+                    ", Reason: Propagating FType from " + filteredChildHops.size() + " child TransWrite operations");
         } else {
             privacyConstraintMap.put(hop.getHopID(),
-                    determinePrivacyConstraint(hop, hop.getInput(), privacyConstraintMap));
+                    getPrivacyConstraint(hop, hop.getInput(), privacyConstraintMap));
+            if (allowsFederated(hop, fTypeMap)) {
+                FType resultFType = getFType(hop, fTypeMap);
+                fTypeMap.put(hop.getHopID(), resultFType);
+                System.out.println("[FType] HopID: " + hop.getHopID() +
+                        ", Name: " + hopName +
+                        ", Type: " + hop.getClass().getSimpleName() +
+                        ", allowsFederated: true" +
+                        ", Result FType: " + resultFType +
+                        ", Reason: DataOp allows federated execution, FType computed");
+            } else {
+                fTypeMap.put(hop.getHopID(), null);
+                System.out.println("[FType] HopID: " + hop.getHopID() +
+                        ", Name: " + hopName +
+                        ", Type: " + hop.getClass().getSimpleName() +
+                        ", allowsFederated: false" +
+                        ", Result FType: null" +
+                        ", Reason: DataOp does not allow federated execution");
+            }
         }
     }
 
     private static List<Hop> rewireTransRead(String hopName, Map<String, List<Hop>> innerTransTable,
-            Map<String, List<Hop>> formerTransTable, List<Map<String, List<Hop>>> outerTransTableList) {
+                                             Map<String, List<Hop>> formerTransTable, List<Map<String, List<Hop>>> outerTransTableList) {
         List<Hop> childHops = new ArrayList<>();
 
         // Read according to priority: inner -> former -> outer
@@ -495,7 +598,7 @@ public class FederatedPlanRewireTransTable {
         return privacyConstraint;
     }
 
-    private static Privacy determinePrivacyConstraint(Hop hop, List<Hop> inputHops, Map<Long, Privacy> privacyMap) {
+    private static Privacy getPrivacyConstraint(Hop hop, List<Hop> inputHops, Map<Long, Privacy> privacyMap) {
         Privacy[] pc = new Privacy[inputHops.size()];
         for (int i = 0; i < inputHops.size(); i++)
             pc[i] = privacyMap.get(inputHops.get(i).getHopID());
@@ -535,8 +638,159 @@ public class FederatedPlanRewireTransTable {
         return Privacy.PUBLIC;
     }
 
+     private static boolean allowsFederated(Hop hop, Map<Long, FType> fTypeMap) {
+     	//generically obtain the input FTypes
+     	FType[] ft = new FType[hop.getInput().size()];
+
+     	for( int i=0; i<hop.getInput().size(); i++ )
+     		ft[i] = fTypeMap.get(hop.getInput(i).getHopID());
+
+     	// AggUnaryOp operations
+     	if(hop instanceof AggUnaryOp && ft.length==1 && ft[0] != null) {
+     		AggOp aggOp = ((AggUnaryOp)hop).getOp();
+     		return aggOp == AggOp.SUM || aggOp == AggOp.MIN || aggOp == AggOp.MAX;
+     	}
+     	// AggBinaryOp operations
+     	else if( hop instanceof AggBinaryOp ) {
+     		return (ft[0] != null && ft[1] == null)
+     			|| (ft[0] == null && ft[1] != null)
+     			|| (ft[0] == FType.COL && ft[1] == FType.ROW);
+     	}
+     	// UnaryOp operations
+     	else if (hop instanceof UnaryOp) {
+     		UnaryOp uop = (UnaryOp) hop;
+     		OpOp1 op = uop.getOp();
+     		return !(op == OpOp1.PRINT || op == OpOp1.ASSERT || op == OpOp1.STOP
+     			|| op == OpOp1.TYPEOF || op == OpOp1.INVERSE || op == OpOp1.EIGEN
+     			|| op == OpOp1.CHOLESKY || op == OpOp1.DET || op == OpOp1.SVD
+     			|| op == OpOp1.SQRT_MATRIX_JAVA || op == OpOp1.LOG || op == OpOp1.ROUND
+     			|| hop.getInput().get(0).getDataType() == DataType.LIST
+     			|| uop.isMetadataOperation());
+     	}
+     	// BinaryOp operations (non-scalar)
+     	else if( hop instanceof BinaryOp && !hop.getDataType().isScalar() ) {
+     		OpOp2 op = ((BinaryOp) hop).getOp();
+     		if (op == OpOp2.MIN) {
+     			return false;
+     		}
+     		return (ft[0] != null && ft[1] == null)
+     			|| (ft[0] == null && ft[1] != null)
+     			|| (ft[0] != null && ft[0] == ft[1]);
+     	}
+     	// TernaryOp operations (non-scalar)
+     	else if( hop instanceof TernaryOp && !hop.getDataType().isScalar() ) {
+     		OpOp3 op = ((TernaryOp) hop).getOp();
+     		if (op == OpOp3.CTABLE || op == OpOp3.IFELSE) {
+     			return false;
+     		}
+     		return (ft[0] != null || ft[1] != null || ft[2] != null);
+     	}
+     	// ReorgOp operations
+     	else if ( hop instanceof ReorgOp && ((ReorgOp)hop).getOp() == ReOrgOp.TRANS ){
+     		return ft[0] == FType.COL || ft[0] == FType.ROW;
+     	}
+     	// DataOp operations
+     	else if (hop instanceof DataOp) {
+     		OpOpData op = ((DataOp) hop).getOp();
+     		return op == OpOpData.FEDERATED
+     			|| op == OpOpData.TRANSIENTWRITE
+     			|| op == OpOpData.TRANSIENTREAD;
+     	}
+     	// FunctionOp operations
+     	else if (hop instanceof FunctionOp) {
+     		FunctionOp fop = (FunctionOp) hop;
+     		return !fop.getFunctionName().equalsIgnoreCase(Opcodes.TRANSFORMENCODE.toString());
+     	}
+     	// NaryOp operations
+     	else if (hop instanceof NaryOp) {
+     		OpOpN op = ((NaryOp) hop).getOp();
+     		return !(op == OpOpN.PRINTF || op == OpOpN.EVAL || op == OpOpN.LIST
+     			// cbind/rbind of lists only support in CP right now
+     			|| (op == OpOpN.CBIND && hop.getInput().get(0).getDataType().isList())
+     			|| (op == OpOpN.RBIND && hop.getInput().get(0).getDataType().isList()));
+     	}
+     	// ParameterizedBuiltinOp operations
+     	else if (hop instanceof ParameterizedBuiltinOp) {
+     		ParamBuiltinOp op = ((ParameterizedBuiltinOp) hop).getOp();
+     		return !(op == ParamBuiltinOp.TOSTRING || op == ParamBuiltinOp.LIST
+     			|| op == ParamBuiltinOp.CDF || op == ParamBuiltinOp.INVCDF
+     			|| op == ParamBuiltinOp.PARAMSERV || op == ParamBuiltinOp.REXPAND
+     			|| op == ParamBuiltinOp.REPLACE);
+     	}
+     	// DataGenOp operations
+     	else if (hop instanceof DataGenOp) {
+     		OpOpDG op = ((DataGenOp) hop).getOp();
+     		return !(op == OpOpDG.TIME || op == OpOpDG.SINIT || op == OpOpDG.RAND || op == OpOpDG.SEQ);
+     	}
+     	// DnnOp operations
+     	else if (hop instanceof DnnOp) {
+     		return false;
+     	}
+     	return false;
+     }
+
+     private static FType getFType(Hop hop, Map<Long, FType> fTypeMap){
+         //generically obtain the input FTypes
+         FType[] ft = new FType[hop.getInput().size()];
+         for( int i=0; i<hop.getInput().size(); i++ )
+             ft[i] = fTypeMap.get(hop.getInput(i).getHopID());
+
+         if ( hop.isScalar() )
+     		return null;
+     	if( hop instanceof AggBinaryOp ) {
+     		MMTSJType mmtsj = ((AggBinaryOp) hop).checkTransposeSelf() ; //determine tsmm pattern
+     		if ( mmtsj != MMTSJType.NONE &&
+     			(( mmtsj.isLeft() && ft[0] == FType.ROW ) || ( mmtsj.isRight() && ft[0] == FType.COL ) ))
+     			return FType.BROADCAST;
+     		if( ft[0] != null )
+     			return ft[0] == FType.ROW ? FType.ROW : null;
+     	}
+     	else if( hop instanceof BinaryOp )
+     		return ft[0] != null ? ft[0] : ft[1];
+     	else if( hop instanceof TernaryOp )
+     		return ft[0] != null ? ft[0] : ft[1] != null ? ft[1] : ft[2];
+     	else if( HopRewriteUtils.isReorg(hop, ReOrgOp.TRANS) ){
+     		if (ft[0] == FType.ROW)
+     			return FType.COL;
+     		else if (ft[0] == FType.COL)
+     			return FType.ROW;
+     	}
+     	else if ( hop instanceof AggUnaryOp ){
+     		boolean isColAgg = ((AggUnaryOp) hop).getDirection().isCol();
+     		if ( (ft[0] == FType.ROW && isColAgg) || (ft[0] == FType.COL && !isColAgg) )
+     			return null;
+     		else if (ft[0] == FType.ROW || ft[0] == FType.COL)
+     			return ft[0];
+     	}
+     	else if ( HopRewriteUtils.isData(hop, Types.OpOpData.FEDERATED) )
+     		return deriveFType((DataOp)hop);
+     	else if ( HopRewriteUtils.isData(hop, Types.OpOpData.TRANSIENTWRITE)
+     		|| HopRewriteUtils.isData(hop, Types.OpOpData.TRANSIENTREAD) )
+     		return ft[0];
+     	return null;
+     }
+
+    private static FType deriveFType(DataOp fedInit) {
+        Hop ranges = fedInit.getInput(fedInit.getParameterIndex(DataExpression.FED_RANGES));
+        boolean rowPartitioned = true;
+        boolean colPartitioned = true;
+        for( int i=0; i<ranges.getInput().size()/2; i++ ) { // workers
+            Hop beg = ranges.getInput(2*i);
+            Hop end = ranges.getInput(2*i+1);
+            long rl = HopRewriteUtils.getIntValueSafe(beg.getInput(0));
+            long ru = HopRewriteUtils.getIntValueSafe(end.getInput(0));
+            long cl = HopRewriteUtils.getIntValueSafe(beg.getInput(1));
+            long cu = HopRewriteUtils.getIntValueSafe(end.getInput(1));
+            rowPartitioned &= (cu-cl == fedInit.getDim2());
+            colPartitioned &= (ru-rl == fedInit.getDim1());
+        }
+        return rowPartitioned && colPartitioned ?
+                FType.FULL : rowPartitioned ? FType.ROW :
+                colPartitioned ? FType.COL : FType.OTHER;
+    }
+
     private static void wireUnRefTwriteToLiveOut(StatementBlock sb, Set<Long> unRefTwriteSet,
-            Map<Long, HopCommon> hopCommonTable, Map<String, List<Hop>> newFormerTransTable) {
+             Map<Long, HopCommon> hopCommonTable, Map<String, List<Hop>> newFormerTransTable) {
         VariableSet genHops = sb.getGen();
         VariableSet updatedHops = sb.variablesUpdated();
         VariableSet liveOutHops = sb.liveOut();

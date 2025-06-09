@@ -31,26 +31,13 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.common.Types.DataType;
-import org.apache.sysds.common.Types.OpOp1;
-import org.apache.sysds.common.Types.OpOpDG;
-import org.apache.sysds.common.Types.OpOpN;
-import org.apache.sysds.common.Types.ParamBuiltinOp;
-import org.apache.sysds.hops.DataGenOp;
 import org.apache.sysds.hops.DataOp;
-import org.apache.sysds.hops.DnnOp;
 import org.apache.sysds.hops.FunctionOp;
-import org.apache.sysds.hops.ParameterizedBuiltinOp;
 import org.apache.sysds.hops.FunctionOp.FunctionType;
 import org.apache.sysds.hops.Hop;
-import org.apache.sysds.hops.NaryOp;
-import org.apache.sysds.hops.UnaryOp;
-import org.apache.sysds.hops.TernaryOp;
-import org.apache.sysds.common.Types.OpOp3;
 import org.apache.sysds.hops.fedplanner.FederatedMemoTable.HopCommon;
 import org.apache.sysds.hops.fedplanner.FederatedMemoTable.FedPlan;
 import org.apache.sysds.hops.fedplanner.FederatedMemoTable.FedPlanVariants;
-import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.ForStatement;
 import org.apache.sysds.parser.ForStatementBlock;
@@ -65,9 +52,6 @@ import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.hops.fedplanner.FTypes.Privacy;
-import org.apache.sysds.hops.BinaryOp;
-import org.apache.sysds.common.Types.OpOp2;
-import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
 
 public class FederatedPlanCostEnumerator {
@@ -87,21 +71,21 @@ public class FederatedPlanCostEnumerator {
 		Map<Long, HopCommon> hopCommonTable = new HashMap<>();
 
 		Map<Long, Privacy> privacyConstraintMap = new HashMap<>();
+		Map<Long, FType> fTypeMap = new HashMap<>();
 		List<Pair<FederatedRange, FederatedData>> fedMap = new ArrayList<>();
 
-		FederatedPlanRewireTransTable.rewireProgram(prog, rewireTable, hopCommonTable, privacyConstraintMap, fedMap,
+		FederatedPlanRewireTransTable.rewireProgram(prog, rewireTable, hopCommonTable, privacyConstraintMap, fTypeMap, fedMap,
 				unRefTwriteSet, unRefSet, progRootHopSet);
 
 		for (long hopID : unRefTwriteSet) {
-			// Todo: 나중에 더 확인해야함.
+			// Todo (Future): progRoot로 연결하는 unRefTwriteSet 확인 필요.
 			progRootHopSet.add(hopCommonTable.get(hopID).getHopRef());
 		}
 		Set<String> fnStack = new HashSet<>();
 
 		for (StatementBlock sb : prog.getStatementBlocks()) {
 			enumerateStatementBlock(sb, prog, memoTable, hopCommonTable, rewireTable, privacyConstraintMap,
-					unRefTwriteSet,
-					fnStack, fedMap.size());
+					fTypeMap, unRefTwriteSet, fnStack, fedMap.size());
 		}
 
 		FedPlan optimalPlan = getMinCostRootFedPlan(progRootHopSet, memoTable);
@@ -128,14 +112,15 @@ public class FederatedPlanCostEnumerator {
 		Map<Long, HopCommon> hopCommonTable = new HashMap<>();
 
 		Map<Long, Privacy> privacyConstraintMap = new HashMap<>();
+		Map<Long, FType> fTypeMap = new HashMap<>();
 		List<Pair<FederatedRange, FederatedData>> fedMap = new ArrayList<>();
 
-		FederatedPlanRewireTransTable.rewireFunctionDynamic(function, rewireTable, hopCommonTable, privacyConstraintMap,
+		FederatedPlanRewireTransTable.rewireFunctionDynamic(function, rewireTable, hopCommonTable, privacyConstraintMap, fTypeMap,
 				fedMap, unRefTwriteSet, unRefSet, progRootHopSet);
 
 		Set<String> fnStack = new HashSet<>();
 		enumerateStatementBlock(function, null, memoTable, hopCommonTable, rewireTable, privacyConstraintMap,
-				unRefTwriteSet, fnStack, fedMap.size());
+				fTypeMap, unRefTwriteSet, fnStack, fedMap.size());
 
 		FedPlan optimalPlan = getMinCostRootFedPlan(progRootHopSet, memoTable);
 
@@ -169,62 +154,61 @@ public class FederatedPlanCostEnumerator {
 	 */
 	public static void enumerateStatementBlock(StatementBlock sb, DMLProgram prog, FederatedMemoTable memoTable,
 			Map<Long, HopCommon> hopCommonTable, Map<Long, List<Hop>> rewireTable,
-			Map<Long, Privacy> privacyConstraintMap,
+			Map<Long, Privacy> privacyConstraintMap, Map<Long, FType> fTypeMap,
 			Set<Long> unRefTwriteSet, Set<String> fnStack, int numOfWorkers) {
 		if (sb instanceof IfStatementBlock) {
 			IfStatementBlock isb = (IfStatementBlock) sb;
 			IfStatement istmt = (IfStatement) isb.getStatement(0);
 
 			enumerateHopDAG(isb.getPredicateHops(), prog, memoTable, hopCommonTable, rewireTable, privacyConstraintMap,
-					unRefTwriteSet, fnStack, numOfWorkers);
+					fTypeMap, unRefTwriteSet, fnStack, numOfWorkers);
 
 			for (StatementBlock innerIsb : istmt.getIfBody())
 				enumerateStatementBlock(innerIsb, prog, memoTable, hopCommonTable, rewireTable, privacyConstraintMap,
-						unRefTwriteSet, fnStack, numOfWorkers);
+						fTypeMap, unRefTwriteSet, fnStack, numOfWorkers);
 
 			for (StatementBlock innerIsb : istmt.getElseBody())
 				enumerateStatementBlock(innerIsb, prog, memoTable, hopCommonTable, rewireTable, privacyConstraintMap,
-						unRefTwriteSet, fnStack, numOfWorkers);
+						fTypeMap, unRefTwriteSet, fnStack, numOfWorkers);
 		} else if (sb instanceof ForStatementBlock) { // incl parfor
 			ForStatementBlock fsb = (ForStatementBlock) sb;
 			ForStatement fstmt = (ForStatement) fsb.getStatement(0);
 
 			enumerateHopDAG(fsb.getFromHops(), prog, memoTable, hopCommonTable, rewireTable, privacyConstraintMap,
-					unRefTwriteSet, fnStack, numOfWorkers);
+					fTypeMap, unRefTwriteSet, fnStack, numOfWorkers);
 			enumerateHopDAG(fsb.getToHops(), prog, memoTable, hopCommonTable, rewireTable, privacyConstraintMap,
-					unRefTwriteSet, fnStack, numOfWorkers);
+					fTypeMap, unRefTwriteSet, fnStack, numOfWorkers);
 			if (fsb.getIncrementHops() != null) {
 				enumerateHopDAG(fsb.getIncrementHops(), prog, memoTable, hopCommonTable, rewireTable,
 						privacyConstraintMap,
-						unRefTwriteSet, fnStack, numOfWorkers);
+						fTypeMap, unRefTwriteSet, fnStack, numOfWorkers);
 			}
 
 			for (StatementBlock innerFsb : fstmt.getBody())
 				enumerateStatementBlock(innerFsb, prog, memoTable, hopCommonTable, rewireTable, privacyConstraintMap,
-						unRefTwriteSet, fnStack, numOfWorkers);
+						fTypeMap, unRefTwriteSet, fnStack, numOfWorkers);
 		} else if (sb instanceof WhileStatementBlock) {
 			WhileStatementBlock wsb = (WhileStatementBlock) sb;
 			WhileStatement wstmt = (WhileStatement) wsb.getStatement(0);
 
 			enumerateHopDAG(wsb.getPredicateHops(), prog, memoTable, hopCommonTable, rewireTable, privacyConstraintMap,
-					unRefTwriteSet, fnStack, numOfWorkers);
+					fTypeMap, unRefTwriteSet, fnStack, numOfWorkers);
 
 			for (StatementBlock innerWsb : wstmt.getBody())
 				enumerateStatementBlock(innerWsb, prog, memoTable, hopCommonTable, rewireTable, privacyConstraintMap,
-						unRefTwriteSet, fnStack, numOfWorkers);
+						fTypeMap, unRefTwriteSet, fnStack, numOfWorkers);
 		} else if (sb instanceof FunctionStatementBlock) {
 			FunctionStatementBlock fsb = (FunctionStatementBlock) sb;
 			FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);
 
 			for (StatementBlock innerFsb : fstmt.getBody())
 				enumerateStatementBlock(innerFsb, prog, memoTable, hopCommonTable, rewireTable, privacyConstraintMap,
-						unRefTwriteSet, fnStack, numOfWorkers);
+						fTypeMap, unRefTwriteSet, fnStack, numOfWorkers);
 		} else { // generic (last-level)
 			if (sb.getHops() != null) {
 				for (Hop c : sb.getHops())
 					enumerateHopDAG(c, prog, memoTable, hopCommonTable, rewireTable, privacyConstraintMap,
-							unRefTwriteSet,
-							fnStack, numOfWorkers);
+							fTypeMap, unRefTwriteSet, fnStack, numOfWorkers);
 			}
 		}
 	}
@@ -240,14 +224,15 @@ public class FederatedPlanCostEnumerator {
 	 */
 	private static void enumerateHopDAG(Hop hop, DMLProgram prog, FederatedMemoTable memoTable,
 			Map<Long, HopCommon> hopCommonTable, Map<Long, List<Hop>> rewireTable,
-			Map<Long, Privacy> privacyConstraintMap, Set<Long> unRefTwriteSet, Set<String> fnStack, int numOfWorkers) {
+			Map<Long, Privacy> privacyConstraintMap, Map<Long, FType> fTypeMap, Set<Long> unRefTwriteSet, 
+			Set<String> fnStack, int numOfWorkers) {
 		// Process all input nodes first if not already in memo table
 		for (Hop inputHop : hop.getInput()) {
 			long inputHopID = inputHop.getHopID();
 			if (!memoTable.contains(inputHopID, FederatedOutput.FOUT)
 					&& !memoTable.contains(inputHopID, FederatedOutput.LOUT)) {
 				enumerateHopDAG(inputHop, prog, memoTable, hopCommonTable, rewireTable, privacyConstraintMap,
-						unRefTwriteSet, fnStack, numOfWorkers);
+						fTypeMap, unRefTwriteSet, fnStack, numOfWorkers);
 			}
 		}
 
@@ -264,15 +249,15 @@ public class FederatedPlanCostEnumerator {
 					fnStack.add(fkey);
 					FunctionStatementBlock fsb = prog.getFunctionStatementBlock(fop.getFunctionNamespace(),
 							fop.getFunctionName());
-					// Todo (Future): hop reconstruction을 안하면 memoTable 따로 써야함.
+
 					enumerateStatementBlock(fsb, prog, memoTable, hopCommonTable, rewireTable, privacyConstraintMap,
-							unRefTwriteSet, fnStack, numOfWorkers);
+							fTypeMap, unRefTwriteSet, fnStack, numOfWorkers);
 				}
 			}
 		}
 
 		// Enumerate the federated plan for the current Hop
-		enumerateHop(hop, memoTable, hopCommonTable, rewireTable, privacyConstraintMap, unRefTwriteSet, fnStack,
+		enumerateHop(hop, memoTable, hopCommonTable, rewireTable, privacyConstraintMap, fTypeMap, unRefTwriteSet, fnStack,
 				numOfWorkers);
 	}
 
@@ -288,7 +273,7 @@ public class FederatedPlanCostEnumerator {
 	 */
 	private static void enumerateHop(Hop hop, FederatedMemoTable memoTable, Map<Long, HopCommon> hopCommonTable,
 			Map<Long, List<Hop>> rewireTable, Map<Long, Privacy> privacyConstraintMap,
-			Set<Long> unRefTwriteSet, Set<String> fnStack, int numOfWorkers) {
+			Map<Long, FType> fTypeMap, Set<Long> unRefTwriteSet, Set<String> fnStack, int numOfWorkers) {
 		long hopID = hop.getHopID();
 		List<Hop> childHops = new ArrayList<>(hop.getInput());
 		int numParentHops = hop.getParent().size();
@@ -347,9 +332,33 @@ public class FederatedPlanCostEnumerator {
 				fOUTOnlyinputHops, fOUTOnlychildCumulativeCost, fOUTOnlychildForwardingCost);
 
 		Privacy privacyConstraint = privacyConstraintMap.get(hopID);
+		FType fType = fTypeMap.get(hopID);
 
 		if (isTrans) {
-			// Todo 뭔가 Trans에서 안 꼬이나 확인해야함.
+			if (lOUTOnlyinputHops.size() > 0 && fOUTOnlyinputHops.size() > 0) {
+				// Todo: LOUT, FOUT Only Hops가 동시에 존재할 수 없음.
+				System.out.println("\n=== LOUT Only Input Hops ===");
+				for (Hop lOUTOnlyInputHop : lOUTOnlyinputHops) {
+					System.out.println("Name: " + lOUTOnlyInputHop.getName() + ", ID: " + lOUTOnlyInputHop.getHopID() + 
+						", Type: " + hop.getClass().getSimpleName() + 
+						", Parents: " + hop.getParent().size() + 
+						", Inputs: " + hop.getInput().size());
+				}
+				System.out.println("\n=== FOUT Only Input Hops ===");
+				for (Hop fOUTOnlyInputHop : fOUTOnlyinputHops) {
+					System.out.println("Name: " + fOUTOnlyInputHop.getName() + ", ID: " + fOUTOnlyInputHop.getHopID() + 
+						", Type: " + hop.getClass().getSimpleName() + 
+						", Parents: " + hop.getParent().size() + 
+						", Inputs: " + hop.getInput().size());
+				}
+				System.out.println("\n=== 충돌 정보 ===");
+				System.out.println("LOUT Only Hops 수: " + lOUTOnlyinputHops.size());
+				System.out.println("FOUT Only Hops 수: " + fOUTOnlyinputHops.size());
+				System.out.println("전체 Input Hops 수: " + numInputs);
+				System.out.println("\nLOUT, FOUT Only Hops가 동시에 존재할 수 없음.");
+				System.out.println("이 상황은 FederatedPlannerFedAll에서 모든 연산을 FOUT으로 강제하는 경우에 발생할 수 있습니다.");
+			}
+		
 			enumerateTransChildFedPlan(lOutFedPlanVariants, fOutFedPlanVariants, childHops, childCumulativeCost,
 					lOUTOnlyinputHops, lOUTOnlychildCumulativeCost, fOUTOnlyinputHops, fOUTOnlychildCumulativeCost,
 					selfCost, numOfWorkers);
@@ -359,36 +368,34 @@ public class FederatedPlanCostEnumerator {
 
 			memoTable.addFedPlanVariants(hopID, FederatedOutput.FOUT, fOutFedPlanVariants);
 			memoTable.addFedPlanVariants(hopID, FederatedOutput.LOUT, lOutFedPlanVariants);
-		} else {
-			if (isLocalForcedHop(hop)) {
-				singleTypeEnumerateChildFedPlan(lOutFedPlanVariants, FederatedOutput.LOUT,
-						childHops, childCumulativeCost, childForwardingCost, lOUTOnlyinputHops,
-						lOUTOnlychildCumulativeCost, lOUTOnlychildForwardingCost, fOUTOnlyinputHops,
-						fOUTOnlychildCumulativeCost, fOUTOnlychildForwardingCost, selfCost, numOfWorkers);
+		 } else if (fType == null) {
+		 	singleTypeEnumerateChildFedPlan(lOutFedPlanVariants, FederatedOutput.LOUT, childHops,
+		 		childCumulativeCost, childForwardingCost, lOUTOnlyinputHops, lOUTOnlychildCumulativeCost,
+		 		lOUTOnlychildForwardingCost, fOUTOnlyinputHops, fOUTOnlychildCumulativeCost,
+		 		fOUTOnlychildForwardingCost, selfCost, numOfWorkers);
 
-				lOutFedPlanVariants.pruneFedPlans();
-				memoTable.addFedPlanVariants(hopID, FederatedOutput.LOUT, lOutFedPlanVariants);
-			} else if (privacyConstraint == Privacy.PRIVATE || privacyConstraint == Privacy.PRIVATE_AGGREGATE) {
-				singleTypeEnumerateChildFedPlan(fOutFedPlanVariants, FederatedOutput.FOUT, childHops,
-						childCumulativeCost, childForwardingCost, lOUTOnlyinputHops, lOUTOnlychildCumulativeCost,
-						lOUTOnlychildForwardingCost, fOUTOnlyinputHops, fOUTOnlychildCumulativeCost,
-						fOUTOnlychildForwardingCost, selfCost, numOfWorkers);
+		 	lOutFedPlanVariants.pruneFedPlans();
+		 	memoTable.addFedPlanVariants(hopID, FederatedOutput.LOUT, lOutFedPlanVariants);
+		} else if (privacyConstraint == Privacy.PRIVATE || privacyConstraint == Privacy.PRIVATE_AGGREGATE){
+			singleTypeEnumerateChildFedPlan(fOutFedPlanVariants, FederatedOutput.FOUT, childHops,
+				childCumulativeCost, childForwardingCost, lOUTOnlyinputHops, lOUTOnlychildCumulativeCost,
+				lOUTOnlychildForwardingCost, fOUTOnlyinputHops, fOUTOnlychildCumulativeCost,
+				fOUTOnlychildForwardingCost, selfCost, numOfWorkers);
 
-				fOutFedPlanVariants.pruneFedPlans();
-				memoTable.addFedPlanVariants(hopID, FederatedOutput.FOUT, fOutFedPlanVariants);
-			} else {
-				enumerateChildFedPlan(lOutFedPlanVariants, fOutFedPlanVariants, childHops, childCumulativeCost,
-						childForwardingCost, lOUTOnlyinputHops, lOUTOnlychildCumulativeCost,
-						lOUTOnlychildForwardingCost,
-						fOUTOnlyinputHops, fOUTOnlychildCumulativeCost, fOUTOnlychildForwardingCost, selfCost,
-						numOfWorkers);
+			fOutFedPlanVariants.pruneFedPlans();
+			memoTable.addFedPlanVariants(hopID, FederatedOutput.FOUT, fOutFedPlanVariants);
+		} else { // privacyConstraint == PUBLIC, fType != null >> LOUT/FOUT 둘 다 가능
+			enumerateChildFedPlan(lOutFedPlanVariants, fOutFedPlanVariants, childHops, childCumulativeCost,
+				childForwardingCost, lOUTOnlyinputHops, lOUTOnlychildCumulativeCost,
+				lOUTOnlychildForwardingCost,
+				fOUTOnlyinputHops, fOUTOnlychildCumulativeCost, fOUTOnlychildForwardingCost, selfCost,
+				numOfWorkers);
 
-				lOutFedPlanVariants.pruneFedPlans();
-				fOutFedPlanVariants.pruneFedPlans();
+			lOutFedPlanVariants.pruneFedPlans();
+			fOutFedPlanVariants.pruneFedPlans();
 
-				memoTable.addFedPlanVariants(hopID, FederatedOutput.LOUT, lOutFedPlanVariants);
-				memoTable.addFedPlanVariants(hopID, FederatedOutput.FOUT, fOutFedPlanVariants);
-			}
+			memoTable.addFedPlanVariants(hopID, FederatedOutput.LOUT, lOutFedPlanVariants);
+			memoTable.addFedPlanVariants(hopID, FederatedOutput.FOUT, fOutFedPlanVariants);
 		}
 	}
 
@@ -536,18 +543,6 @@ public class FederatedPlanCostEnumerator {
 		int numLoutOnlyInputs = lOUTOnlyinputHops.size();
 		int numFoutOnlyInputs = fOUTOnlyinputHops.size();
 
-		if (numLoutOnlyInputs > 0 && numFoutOnlyInputs > 0) {
-			// Todo: 왜 이렇게 했는지 확인하고 해결해야 함.
-			System.out.println("=== LOUT Only Input Hops ===");
-			for (Hop hop : lOUTOnlyinputHops) {
-				System.out.println("Name: " + hop.getName() + ", ID: " + hop.getHopID());
-			}
-			System.out.println("=== FOUT Only Input Hops ===");
-			for (Hop hop : fOUTOnlyinputHops) {
-				System.out.println("Name: " + hop.getName() + ", ID: " + hop.getHopID());
-			}
-		}
-
 		if (numLoutOnlyInputs > 0) {
 			double lOUTcumulativeCost = selfCost;
 			List<Pair<Long, FederatedOutput>> lOutTransPlanChilds = new ArrayList<>();
@@ -642,72 +637,6 @@ public class FederatedPlanCostEnumerator {
 		}
 
 		return new FedPlan(cumulativeCost, null, rootFedPlanChilds);
-	}
-
-	private static boolean isLocalForcedHop(Hop hop) {
-//		if (hop instanceof AggUnaryOp) {
-//			AggUnaryOp aggUnaryOp = (AggUnaryOp) hop;
-//
-//			// 1) 입력이 Federated 인지 확인 (빠른 체크)
-//			Hop in = hop.getInput().get(0);
-//			if (!in.isFederated())          // 시스템 DS 1.3+  : Hop 에 내장
-//				return false;
-//
-//			// 2) 집계 방향이 분할 축과 충돌하는지 확인
-//			boolean isColAgg = aggUnaryOp.getDirection().isCol();
-//			if ( (in.getFederatedOutputType() == FType.ROW && isColAgg) ||
-//				 (in.getFederatedOutputType() == FType.COL && !isColAgg) )
-//				return true;                // 여기서 CP 로 강제
-//		}
-		
-		// DnnOp -> all local
-		if (hop instanceof DnnOp) {
-			return true;
-		}
-		// FunctionOp: all local, except for transformencode
-		else if (hop instanceof FunctionOp) {
-			FunctionOp fop = (FunctionOp) hop;
-			return fop.getFunctionName().equalsIgnoreCase(Opcodes.TRANSFORMENCODE.toString());
-		}
-		// NaryOp operations
-		else if (hop instanceof NaryOp) {
-			OpOpN op = ((NaryOp) hop).getOp();
-			return op == OpOpN.PRINTF || op == OpOpN.EVAL || op == OpOpN.LIST
-			// cbind/rbind of lists only support in CP right now
-					|| (op == OpOpN.CBIND && hop.getInput().get(0).getDataType().isList())
-					|| (op == OpOpN.RBIND && hop.getInput().get(0).getDataType().isList());
-		}
-		// ParameterizedBuiltin operations
-		else if (hop instanceof ParameterizedBuiltinOp) {
-			ParamBuiltinOp op = ((ParameterizedBuiltinOp) hop).getOp();
-			return op == ParamBuiltinOp.TOSTRING || op == ParamBuiltinOp.LIST
-					|| op == ParamBuiltinOp.CDF || op == ParamBuiltinOp.INVCDF
-					|| op == ParamBuiltinOp.PARAMSERV || op == ParamBuiltinOp.REXPAND
-					|| op == ParamBuiltinOp.REPLACE;
-		}
-		// UnaryOp operations
-		else if (hop instanceof UnaryOp) {
-			UnaryOp uop = (UnaryOp) hop;
-			OpOp1 op = uop.getOp();
-			return op == OpOp1.PRINT || op == OpOp1.ASSERT || op == OpOp1.STOP
-					|| op == OpOp1.TYPEOF || op == OpOp1.INVERSE || op == OpOp1.EIGEN
-					|| op == OpOp1.CHOLESKY || op == OpOp1.DET || op == OpOp1.SVD
-					|| op == OpOp1.SQRT_MATRIX_JAVA || op == OpOp1.LOG || op == OpOp1.ROUND
-					|| hop.getInput().get(0).getDataType() == DataType.LIST
-					|| uop.isMetadataOperation();
-		}
-		// DataGenOp operations
-		else if (hop instanceof DataGenOp) {
-			OpOpDG op = ((DataGenOp) hop).getOp();
-			return op == OpOpDG.TIME || op == OpOpDG.SINIT || op == OpOpDG.RAND || op == OpOpDG.SEQ;
-		} else if (hop instanceof TernaryOp) {
-			OpOp3 op = ((TernaryOp) hop).getOp();
-			return op == OpOp3.CTABLE || op == OpOp3.IFELSE;
-		} else if (hop instanceof BinaryOp) {
-			OpOp2 op = ((BinaryOp) hop).getOp();
-			return op == OpOp2.MIN;
-		}
-		return false;
 	}
 
 	/**

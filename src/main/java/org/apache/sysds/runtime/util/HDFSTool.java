@@ -446,7 +446,7 @@ public class HDFSTool
 		Path path = new Path(mtdfile);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path);
 		try( BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true))) ) {
-			String mtd = metaDataToString(vt, schema, dt, dc, fmt, formatProperties);
+			String mtd = metaDataToString(vt, schema, dt, dc, fmt, formatProperties, privacyConstraints);
 			br.write(mtd);
 		} catch (Exception e) {
 			throw new IOException("Error creating and writing metadata JSON file", e);

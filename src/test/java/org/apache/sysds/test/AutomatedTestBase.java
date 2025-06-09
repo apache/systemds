@@ -608,14 +608,8 @@ public abstract class AutomatedTestBase {
 		// write metadata file
 		try {
 			String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
-			if (privacyConstraints != null) {
-				// Use the enhanced HDFSTool method that supports privacy constraints
-				HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, null, DataType.MATRIX, mc, FileFormat.TEXT,
-						null, privacyConstraints);
-			} else {
-				// Use the standard HDFSTool method
-				HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, mc, FileFormat.TEXT);
-			}
+			HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, null, DataType.MATRIX, mc, FileFormat.TEXT,
+					null, privacyConstraints);
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new RuntimeException(e);

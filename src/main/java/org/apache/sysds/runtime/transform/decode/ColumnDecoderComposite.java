@@ -28,24 +28,20 @@ public class ColumnDecoderComposite extends ColumnDecoder {
         List<ColumnInput> inputs = new ArrayList<>();
 
         for (ColumnDecoder decoder : _decoders) {
-            int[] colIDs = decoder.getColList();  // 获取该 decoder 负责的列（1-based）
+            int[] colIDs = decoder.getColList();
 
-            // 从 mb 中切出对应列（0-based slice）
             int colStart = colIDs[0] - 1;
             int colEnd = colIDs[colIDs.length - 1] - 1;
 
-            // 注意这里简化为连续列，如果你要支持非连续列需要单独 slice 多次并拼接
             MatrixBlock subMb = mb.slice(0, mb.getNumRows() - 1, colStart, colEnd, new MatrixBlock());
 
-            // 构造 ColumnBlock
             ColumnBlock columnBlock = new ColumnBlock();
             columnBlock.data = subMb;
             columnBlock.targetCols = colIDs;
 
-            // 构造 ColumnInput
             ColumnInput columnInput = new ColumnInput();
             columnInput.columnBlock = columnBlock;
-            columnInput.schema = _schema;  // 可以是全局 schema，decoder 自行判断目标列类型
+            columnInput.schema = _schema;
             columnInput.decoder = decoder;
 
             inputs.add(columnInput);
@@ -57,9 +53,8 @@ public class ColumnDecoderComposite extends ColumnDecoder {
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
         List<ColumnInput> inputs = extractColumnInputs(in);
         for (ColumnInput columnInput : inputs) {
-            out = columnInput.decoder.columnDecode(columnInput.columnBlock.data, out);
+            out = columnInput.decoder.columnDecode(columnInput.columnBlock.data, out);// 很重要！！在decode的方法中将拆开的column放到正确的位置上去！！
         }
-        // TODO 这个毛不了了
         return out;
     }
 

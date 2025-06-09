@@ -29,14 +29,29 @@ public class ColumnDecoderBin extends ColumnDecoder {
 
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
-        //TODO: 把DecoderBin那边的方法毛过来，传入的参数中，in.ColumnBlock.data是需要decode的数据
+        out.ensureAllocatedColumns(in.getNumRows());
+        columnDecode(in, out, 0, in.getNumRows());
+        return out;
+
         // in.ColumnBlock.targetCols里面有每列在原来Block中的位置，位置最后写回的时候调用out.set(r, targetCols[xxx], value);就可以
-        return null;
     }
 
     @Override
     public void columnDecode(MatrixBlock in, FrameBlock out, int rl, int ru) {
-        //TODO: 同上
+        for (int i = rl; i < ru; i++) {
+            for (int j = 0; j < _colList.length; j++) {
+                double val = in.get(i, j);
+                if (!Double.isNaN(val)) {
+                    int key = (int) Math.round(val);
+                    double bmin = _binMins[j][key - 1];
+                    double bmax = _binMaxs[j][key - 1];
+                    double oval = bmin + (bmax - bmin) / 2 + (val - key) * (bmax - bmin);
+                    out.getColumn(_colList[j] - 1).set(i, oval);
+                } else {
+                    out.getColumn(_colList[j] - 1).set(i, val);
+                }
+            }
+        }
     }
 
     @Override

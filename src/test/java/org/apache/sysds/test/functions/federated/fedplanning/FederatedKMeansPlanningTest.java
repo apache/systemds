@@ -54,48 +54,38 @@ public class FederatedKMeansPlanningTest extends AutomatedTestBase {
 
 	@Test
 	public void runKMeansFOUTTest() {
-		String[] expectedHeavyHitters = new String[] {};
-		setTestConf("SystemDS-config-fout.xml");
-		loadAndRunTest(expectedHeavyHitters, TEST_NAME);
+		runTestWithConfig("SystemDS-config-fout.xml", null);
 	}
 
 	@Test
 	public void runKMeansHeuristicTest() {
-		String[] expectedHeavyHitters = new String[] {};
-		setTestConf("SystemDS-config-heuristic.xml");
-		loadAndRunTest(expectedHeavyHitters, TEST_NAME);
+		runTestWithConfig("SystemDS-config-heuristic.xml", null);
 	}
 
 	@Test
 	public void runKMeansCostBasedTestPrivate() {
-		String[] expectedHeavyHitters = new String[] {};
-		setTestConf("SystemDS-config-cost-based.xml");
-		loadAndRunTestWithPrivacy(expectedHeavyHitters, TEST_NAME, "private");
+		runTestWithConfig("SystemDS-config-cost-based.xml", "private");
 	}
 
 	@Test
 	public void runKMeansCostBasedTestPrivateAggregate() {
-		String[] expectedHeavyHitters = new String[] {};
-		setTestConf("SystemDS-config-cost-based.xml");
-		loadAndRunTestWithPrivacy(expectedHeavyHitters, TEST_NAME, "private-aggregate");
+		runTestWithConfig("SystemDS-config-cost-based.xml", "private-aggregate");
 	}
 
 	@Test
 	public void runKMeansCostBasedTestPublic() {
-		String[] expectedHeavyHitters = new String[] {};
-		setTestConf("SystemDS-config-cost-based.xml");
-		loadAndRunTestWithPrivacy(expectedHeavyHitters, TEST_NAME, "public");
+		runTestWithConfig("SystemDS-config-cost-based.xml", "public");
 	}
 
 	@Test
 	public void runRuntimeTest() {
-		String[] expectedHeavyHitters = new String[] {};
 		TEST_CONF_FILE = new File("src/test/config/SystemDS-config.xml");
-		loadAndRunTest(expectedHeavyHitters, TEST_NAME);
+		loadAndRunTest(new String[] {}, TEST_NAME, null);
 	}
 
-	private void setTestConf(String test_conf) {
-		TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, test_conf);
+	private void runTestWithConfig(String configFile, String privacyConstraints) {
+		TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, configFile);
+		loadAndRunTest(new String[] {}, TEST_NAME, privacyConstraints);
 	}
 
 	/**
@@ -110,92 +100,26 @@ public class FederatedKMeansPlanningTest extends AutomatedTestBase {
 		return TEST_CONF_FILE;
 	}
 
-	private void writeInputMatrices() {
-		writeStandardRowFedMatrix("X1", 65);
-		writeStandardRowFedMatrix("X2", 75);
-	}
-
-	private void writeInputMatricesWithPrivacyConstraints(String privacyConstraints) {
+	private void writeInputMatrices(String privacyConstraints) {
 		writeStandardRowFedMatrix("X1", 65, privacyConstraints);
 		writeStandardRowFedMatrix("X2", 75, privacyConstraints);
 	}
 
-	private void writeStandardMatrix(String matrixName, int numRows, double[][] matrix) {
-		MatrixCharacteristics mc = new MatrixCharacteristics(numRows, cols, blocksize, (long) numRows * cols);
-		writeInputMatrixWithMTD(matrixName, matrix, false, mc);
+	private void writeStandardRowFedMatrix(String matrixName, long seed, String privacyConstraints) {
+		double[][] matrix = getRandomMatrix(rows / 2, cols, 0, 1, 1, seed);
+		writeStandardMatrix(matrixName, rows / 2, matrix, privacyConstraints);
 	}
 
 	private void writeStandardMatrix(String matrixName, int numRows, double[][] matrix, String privacyConstraints) {
 		MatrixCharacteristics mc = new MatrixCharacteristics(numRows, cols, blocksize, (long) numRows * cols);
-		writeInputMatrixWithMTD(matrixName, matrix, false, mc, privacyConstraints);
-	}
-
-	private void writeStandardMatrix(String matrixName, long seed, int numRows) {
-		double[][] matrix = getRandomMatrix(numRows, cols, 0, 1, 1, seed);
-		writeStandardMatrix(matrixName, numRows, matrix);
-	}
-
-	private void writeStandardMatrix(String matrixName, long seed, int numRows, String privacyConstraints) {
-		double[][] matrix = getRandomMatrix(numRows, cols, 0, 1, 1, seed);
-		writeStandardMatrix(matrixName, numRows, matrix, privacyConstraints);
-	}
-
-	private void writeStandardRowFedMatrix(String matrixName, long seed) {
-		int halfRows = rows / 2;
-		writeStandardMatrix(matrixName, seed, halfRows);
-	}
-
-	private void writeStandardRowFedMatrix(String matrixName, long seed, String privacyConstraints) {
-		int halfRows = rows / 2;
-		writeStandardMatrix(matrixName, seed, halfRows, privacyConstraints);
-	}
-
-	private void loadAndRunTest(String[] expectedHeavyHitters, String testName) {
-
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		Types.ExecMode platformOld = rtplatform;
-		rtplatform = Types.ExecMode.SINGLE_NODE;
-
-		Thread t1 = null, t2 = null;
-
-		try {
-			getAndLoadTestConfiguration(testName);
-			String HOME = SCRIPT_DIR + TEST_DIR;
-
-			writeInputMatrices();
-
-			int port1 = getRandomAvailablePort();
-			int port2 = getRandomAvailablePort();
-			t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
-			t2 = startLocalFedWorkerThread(port2);
-
-			// Run actual dml script with federated matrix
-			fullDMLScriptName = HOME + testName + ".dml";
-			programArgs = new String[] { "-stats", "-nvargs",
-					"X1=" + TestUtils.federatedAddress(port1, input("X1")),
-					"X2=" + TestUtils.federatedAddress(port2, input("X2")),
-					"Y=" + input("Y"), "r=" + rows, "c=" + cols, "Z=" + output("Z") };
-			runTest(true, false, null, -1);
-
-			// Run reference dml script with normal matrix
-			fullDMLScriptName = HOME + testName + "Reference.dml";
-			programArgs = new String[] { "-nvargs", "X1=" + input("X1"), "X2=" + input("X2"),
-					"Y=" + input("Y"), "Z=" + expected("Z") };
-			runTest(true, false, null, -1);
-
-			// compare via files
-			compareResults(1e-9);
-			if (!heavyHittersContainsAllString(expectedHeavyHitters))
-				fail("The following expected heavy hitters are missing: "
-						+ Arrays.toString(missingHeavyHitters(expectedHeavyHitters)));
-		} finally {
-			TestUtils.shutdownThreads(t1, t2);
-			rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		if (privacyConstraints == null) {
+			writeInputMatrixWithMTD(matrixName, matrix, false, mc);
+		} else {
+			writeInputMatrixWithMTD(matrixName, matrix, false, mc, privacyConstraints);
 		}
 	}
 
-	private void loadAndRunTestWithPrivacy(String[] expectedHeavyHitters, String testName, String privacyConstraints) {
+	private void loadAndRunTest(String[] expectedHeavyHitters, String testName, String privacyConstraints) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 		rtplatform = Types.ExecMode.SINGLE_NODE;
@@ -206,7 +130,7 @@ public class FederatedKMeansPlanningTest extends AutomatedTestBase {
 			getAndLoadTestConfiguration(testName);
 			String HOME = SCRIPT_DIR + TEST_DIR;
 
-			writeInputMatricesWithPrivacyConstraints(privacyConstraints);
+			writeInputMatrices(privacyConstraints);
 
 			int port1 = getRandomAvailablePort();
 			int port2 = getRandomAvailablePort();

@@ -169,6 +169,7 @@ public class MetaDataAll extends DataIdentifier {
 			case DataExpression.VALUETYPEPARAM: setValueType(Types.ValueType.fromExternalString((String) val)); break;
 			case DataExpression.DELIM_DELIMITER: setDelim(val.toString()); break;
 			case DataExpression.SCHEMAPARAM: setSchema(val.toString()); break;
+			case DataExpression.PRIVACY: setPrivacyConstraints((String) val); break;
 			case DataExpression.DELIM_HAS_HEADER_ROW:
 				if(val instanceof Boolean){
 					boolean valB = (Boolean) val;
@@ -178,10 +179,7 @@ public class MetaDataAll extends DataIdentifier {
 				else
 					setHasHeader(false);
 				break;
-			case DataExpression.DELIM_SPARSE: setSparseDelim((boolean) val);
-			case DataExpression.PRIVACY:
-				setPrivacyConstraints((String) val);
-				break;
+			case DataExpression.DELIM_SPARSE: setSparseDelim((boolean) val); break;
 		}
 	}
 

@@ -584,15 +584,39 @@ public abstract class AutomatedTestBase {
 	}
 
 	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR,
-		MatrixCharacteristics mc) {
-		writeInputMatrix(name, matrix, bIncludeR);
+			MatrixCharacteristics mc) {
+		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc, null);
+	}
+
+	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR,
+			MatrixCharacteristics mc, String privacyConstraints) {
+		// Write matrix file
+		String completePath = baseDirectory + INPUT_DIR + name;
+		String completeRPath = baseDirectory + INPUT_DIR + name + ".mtx";
+
+		cleanupDir(baseDirectory + INPUT_DIR + name, bIncludeR);
+
+		TestUtils.writeTestMatrix(completePath, matrix);
+		if (bIncludeR) {
+			TestUtils.writeTestMatrix(completeRPath, matrix, true);
+			inputRFiles.add(completeRPath);
+		}
+		if (DEBUG)
+			TestUtils.writeTestMatrix(DEBUG_TEMP_DIR + completePath, matrix);
+		inputDirectories.add(baseDirectory + INPUT_DIR + name);
 
 		// write metadata file
 		try {
 			String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
-			HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, mc, FileFormat.TEXT);
-		}
-		catch(IOException e) {
+			if (privacyConstraints != null) {
+				// Use the enhanced HDFSTool method that supports privacy constraints
+				HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, null, DataType.MATRIX, mc, FileFormat.TEXT,
+						null, privacyConstraints);
+			} else {
+				// Use the standard HDFSTool method
+				HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, mc, FileFormat.TEXT);
+			}
+		} catch (Exception e) {
 			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
@@ -2453,40 +2477,4 @@ public abstract class AutomatedTestBase {
 		System.setProperty("java.library.path", current_path + File.pathSeparator + additional_path);
 	}
 
-	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR,
-		MatrixCharacteristics mc, String privacyConstraints) {
-		writeInputMatrix(name, matrix, bIncludeR);
-
-		// write metadata file
-		try {
-			String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
-			
-			if(privacyConstraints != null) {
-				// 메타데이터 파일을 직접 작성하기 위해 JSON 객체 생성
-				JSONObject mtd = new JSONObject();
-				mtd.put(DataExpression.DATATYPEPARAM, DataType.MATRIX.toString().toLowerCase());
-				mtd.put(DataExpression.VALUETYPEPARAM, ValueType.FP64.toExternalString().toLowerCase());
-				mtd.put(DataExpression.READROWPARAM, mc.getRows());
-				mtd.put(DataExpression.READCOLPARAM, mc.getCols());
-				mtd.put(DataExpression.READNNZPARAM, mc.getNonZeros());
-				mtd.put(DataExpression.FORMAT_TYPE, FileFormat.TEXT.toString());
-				mtd.put(DataExpression.PRIVACY, privacyConstraints);
-				
-				// 파일에 직접 쓰기
-				try (BufferedWriter bw = new BufferedWriter(new FileWriter(completeMTDPath))) {
-					bw.write(mtd.toString(4));
-				}
-			}
-			else {
-				// 기존 방식으로 메타데이터 파일 작성
-				HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, null, DataType.MATRIX, mc, FileFormat.TEXT);
-			}
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(e);
-		}
-
-		return matrix;
-	}
 }

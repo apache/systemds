@@ -410,29 +410,39 @@ public class HDFSTool
 	}
 
 	public static void writeMetaDataFile(String mtdfile, ValueType vt, DataCharacteristics mc, FileFormat fmt)
-		throws IOException {
-		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, mc, fmt, null);
+			throws IOException {
+		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, mc, fmt, null, null);
 	}
 
-	public static void writeMetaDataFile(String mtdfile, ValueType vt, ValueType[] schema, DataType dt, DataCharacteristics mc, FileFormat fmt)
-		throws IOException {
-		writeMetaDataFile(mtdfile, vt, schema, dt, mc, fmt, null);
+	public static void writeMetaDataFile(String mtdfile, ValueType vt, ValueType[] schema, DataType dt,
+			DataCharacteristics mc, FileFormat fmt)
+			throws IOException {
+		writeMetaDataFile(mtdfile, vt, schema, dt, mc, fmt, null, null);
 	}
 
-	public static void writeMetaDataFile(String mtdfile, ValueType vt, DataCharacteristics dc, FileFormat fmt, FileFormatProperties formatProperties)
-		throws IOException {
-		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, dc, fmt, formatProperties);
-	}
-	
-	public static void writeMetaDataFileFrame(String mtdfile, ValueType[] schema,  DataCharacteristics dc,
-		FileFormat fmt) throws IOException {
-		writeMetaDataFile(mtdfile, ValueType.UNKNOWN, schema, DataType.FRAME, dc, fmt, (FileFormatProperties) null);
+	public static void writeMetaDataFile(String mtdfile, ValueType vt, DataCharacteristics dc, FileFormat fmt,
+			FileFormatProperties formatProperties)
+			throws IOException {
+		writeMetaDataFile(mtdfile, vt, null, DataType.MATRIX, dc, fmt, formatProperties, null);
 	}
 
-	public static void writeMetaDataFile(String mtdfile, ValueType vt, ValueType[] schema, DataType dt, DataCharacteristics dc,
-			FileFormat fmt, FileFormatProperties formatProperties) 
-		throws IOException 
-	{
+	public static void writeMetaDataFileFrame(String mtdfile, ValueType[] schema, DataCharacteristics dc,
+			FileFormat fmt) throws IOException {
+		writeMetaDataFile(mtdfile, ValueType.UNKNOWN, schema, DataType.FRAME, dc, fmt, (FileFormatProperties) null,
+				null);
+	}
+
+	public static void writeMetaDataFile(String mtdfile, ValueType vt, ValueType[] schema, DataType dt,
+			DataCharacteristics dc,
+			FileFormat fmt, FileFormatProperties formatProperties)
+			throws IOException {
+		writeMetaDataFile(mtdfile, vt, schema, dt, dc, fmt, formatProperties, null);
+	}
+
+	public static void writeMetaDataFile(String mtdfile, ValueType vt, ValueType[] schema, DataType dt,
+			DataCharacteristics dc,
+			FileFormat fmt, FileFormatProperties formatProperties, String privacyConstraints)
+			throws IOException {
 		Path path = new Path(mtdfile);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path);
 		try( BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true))) ) {
@@ -458,9 +468,14 @@ public class HDFSTool
 	}
 
 	public static String metaDataToString(ValueType vt, ValueType[] schema, DataType dt,
-		DataCharacteristics dc, FileFormat fmt, FileFormatProperties formatProperties)
-		throws JSONException, DMLRuntimeException
-	{
+			DataCharacteristics dc, FileFormat fmt, FileFormatProperties formatProperties)
+			throws JSONException, DMLRuntimeException {
+		return metaDataToString(vt, schema, dt, dc, fmt, formatProperties, null);
+	}
+
+	public static String metaDataToString(ValueType vt, ValueType[] schema, DataType dt,
+			DataCharacteristics dc, FileFormat fmt, FileFormatProperties formatProperties, String privacyConstraints)
+			throws JSONException, DMLRuntimeException {
 		OrderedJSONObject mtd = new OrderedJSONObject(); // maintain order in output file
 
 		//handle data type and value types (incl schema for frames)
@@ -522,7 +537,20 @@ public class HDFSTool
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
 		mtd.put(DataExpression.CREATEDPARAM, sdf.format(new Date()));
 
-		return mtd.toString(4); // indent with 4 spaces	
+		// Add privacy constraints if specified (must be 'private', 'private-aggregate',
+		// or 'public')
+		if (privacyConstraints != null && !privacyConstraints.trim().isEmpty()) {
+			// Validate privacy constraint value
+			if (!privacyConstraints.equals("private") &&
+					!privacyConstraints.equals("private-aggregate") &&
+					!privacyConstraints.equals("public")) {
+				throw new DMLRuntimeException("Invalid privacy constraint: " + privacyConstraints
+						+ ". Must be 'private', 'private-aggregate', or 'public'.");
+			}
+			mtd.put(DataExpression.PRIVACY, privacyConstraints);
+		}
+
+		return mtd.toString(4); // indent with 4 spaces
 	}
 
 	public static double[][] readMatrixFromHDFS(String dir, FileFormat fmt, long rlen, long clen, int blen)

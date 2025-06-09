@@ -192,14 +192,14 @@ public abstract class Hop implements ParseInfo {
 	public void setFederatedOutput(FederatedOutput federatedOutput){
 		// Todo: Remove
 		// DEBUG: FOUT 태그 설정/변경 추적
-		System.out.println("[DEBUG-FOUT-TAG] HOP: " + this.getClass().getSimpleName() + 
-			" | ID: " + getHopID() +
-			" | Opcode: " + getOpString() +
-			" | Old: " + _federatedOutput +
-			" | New: " + federatedOutput +
-			" | Dims: " + getDim1() + "x" + getDim2() +
-			" | Caller: " + Thread.currentThread().getStackTrace()[2].getClassName() + 
-			"." + Thread.currentThread().getStackTrace()[2].getMethodName());
+		//		System.out.println("[DEBUG-FOUT-TAG] HOP: " + this.getClass().getSimpleName() +
+		//			" | ID: " + getHopID() +
+		//			" | Opcode: " + getOpString() +
+		//			" | Old: " + _federatedOutput +
+		//			" | New: " + federatedOutput +
+		//			" | Dims: " + getDim1() + "x" + getDim2() +
+		//			" | Caller: " + Thread.currentThread().getStackTrace()[2].getClassName() +
+		//			"." + Thread.currentThread().getStackTrace()[2].getMethodName());
 		_federatedOutput = federatedOutput;
 	}
 

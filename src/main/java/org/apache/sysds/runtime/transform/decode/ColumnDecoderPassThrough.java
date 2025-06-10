@@ -5,10 +5,14 @@ import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class ColumnDecoderPassThrough extends ColumnDecoder {
 
@@ -29,12 +33,25 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
         // TODO:先去搞Bin的，那边有提示
-        return null;
+        out.ensureAllocatedColumns(in.getNumRows());
+        columnDecode(in, out, 0, in.getNumRows());
+        return out;
+
     }
 
     @Override
     public void columnDecode(MatrixBlock in, FrameBlock out, int rl, int ru) {
         // TODO:同
+        int clen = Math.min(_colList.length, out.getNumColumns());
+        for( int i=rl; i<ru; i++ ) {
+            for( int j=0; j<clen; j++ ) {
+                int srcColID = _srcCols[j];
+                int tgtColID = _colList[j];
+                double val = in.get(i, srcColID-1);
+                out.set(i, tgtColID-1,
+                        UtilFunctions.doubleToObject(_schema[tgtColID-1], val));
+            }
+        }
     }
 
     public ColumnDecoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset){

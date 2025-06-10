@@ -35,12 +35,35 @@ public class ColumnDecoderRecode extends ColumnDecoder {
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
         // TODO
-        return null;
+        out.ensureAllocatedColumns(in.getNumRows());
+        columnDecode(in, out, 0, in.getNumRows());
+        return out;
     }
 
     @Override
     public void columnDecode(MatrixBlock in, FrameBlock out, int rl, int ru) {
         // TODO
+        if( _onOut ) { //recode on output (after dummy)
+            for( int i=rl; i<ru; i++ ) {
+                for( int j=0; j<_colList.length; j++ ) {
+                    int colID = _colList[j];
+                    double val = UtilFunctions.objectToDouble(
+                            out.getSchema()[colID-1], out.get(i, colID-1));
+                    long key = UtilFunctions.toLong(val);
+                    out.set(i, colID-1, getRcMapValue(j, key));
+                }
+            }
+        }
+        else { //recode on input (no dummy)
+            out.ensureAllocatedColumns(in.getNumRows());
+            for( int i=rl; i<ru; i++ ) {
+                for( int j=0; j<_colList.length; j++ ) {
+                    double val = in.get(i, _colList[j]-1);
+                    long key = UtilFunctions.toLong(val);
+                    out.set(i, _colList[j]-1, getRcMapValue(j, key));
+                }
+            }
+        }
     }
     public ColumnDecoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
         // TODO
@@ -77,6 +100,10 @@ public class ColumnDecoderRecode extends ColumnDecoder {
                 _rcMapsDirect[i] = arr;
             }
         }
+    }
+    public Object getRcMapValue(int i, long key) {
+        return (_rcMapsDirect != null) ?
+                _rcMapsDirect[i][(int)key-1] : _rcMaps[i].get(key);
     }
 
     /**

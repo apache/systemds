@@ -231,44 +231,45 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		Hop b = right;
 		OpOp2 innerOp = inner.getOp();
 
-		// Only consider flat expressions: a op1 A op2 b where a, b are scalars, A is matrix
+		// Check for valid types: a and b must be scalar, A must be matrix
 		java.util.function.Predicate<Hop> isScalar = h -> h.getDataType().isScalar();
 		if (!isScalar.test(a) || !isScalar.test(b) || A.getDataType() != DataType.MATRIX)
 			return hi;
 
-		BinaryOp scalarCombined = null;
-		BinaryOp result = null;
+		// Determine the scalarOp (between a and b) and matrixOp (with A)
+		OpOp2 scalarOp = null;
+		OpOp2 matrixOp = null;
 
-		// Rewrite cases
 		if (innerOp == OpOp2.MINUS && outerOp == OpOp2.MINUS) {
-			// a - A - b => (a - b) - A
-			scalarCombined = HopRewriteUtils.createBinary(a, b, OpOp2.MINUS);
-			result = HopRewriteUtils.createBinary(scalarCombined, A, OpOp2.MINUS);
+			scalarOp = OpOp2.MINUS;
+			matrixOp = OpOp2.MINUS;
 		}
 		else if (innerOp == OpOp2.PLUS && outerOp == OpOp2.MINUS) {
-			// a + A - b => (a - b) + A
-			scalarCombined = HopRewriteUtils.createBinary(a, b, OpOp2.MINUS);
-			result = HopRewriteUtils.createBinary(scalarCombined, A, OpOp2.PLUS);
+			scalarOp = OpOp2.MINUS;
+			matrixOp = OpOp2.PLUS;
 		}
 		else if (innerOp == OpOp2.MINUS && outerOp == OpOp2.PLUS) {
-			// a - A + b => (a + b) - A
-			scalarCombined = HopRewriteUtils.createBinary(a, b, OpOp2.PLUS);
-			result = HopRewriteUtils.createBinary(scalarCombined, A, OpOp2.MINUS);
+			scalarOp = OpOp2.PLUS;
+			matrixOp = OpOp2.MINUS;
 		}
 		else if (innerOp == OpOp2.PLUS && outerOp == OpOp2.PLUS) {
-			// a + A + b => (a + b) + A
-			scalarCombined = HopRewriteUtils.createBinary(a, b, OpOp2.PLUS);
-			result = HopRewriteUtils.createBinary(scalarCombined, A, OpOp2.PLUS);
+			scalarOp = OpOp2.PLUS;
+			matrixOp = OpOp2.PLUS;
+		}
+		else {
+			// No valid pattern
+			return hi;
 		}
 
-		if (result != null) {
-			HopRewriteUtils.replaceChildReference(parent, hi, result, pos);
-			LOG.debug("Applied simplifyMatrixScalarPMOperation");
-			return result;
-		}
+		// Create and replace the rewritten expression
+		Hop scalarCombined = HopRewriteUtils.createBinary(a, b, scalarOp);
+		Hop result = HopRewriteUtils.createBinary(scalarCombined, A, matrixOp);
 
-		return hi;
+		HopRewriteUtils.replaceChildReference(parent, hi, result, pos);
+		LOG.debug("Applied simplifyMatrixScalarPMOperation");
+		return result;
 	}
+
 
 	private static Hop simplifyTransposeAddition(Hop parent, Hop hi, int pos) {
 		//pattern: t(A+s1)+s2 -> t(A)+(s1+s2), and subsequent constant folding

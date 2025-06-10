@@ -231,7 +231,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		Hop b = right;
 		OpOp2 innerOp = inner.getOp();
 
-		// Check for valid types: a and b must be scalar, A must be matrix
 		java.util.function.Predicate<Hop> isScalar = h -> h.getDataType().isScalar();
 		if (!isScalar.test(a) || !isScalar.test(b) || A.getDataType() != DataType.MATRIX)
 			return hi;
@@ -257,11 +256,9 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			matrixOp = OpOp2.PLUS;
 		}
 		else {
-			// No valid pattern
 			return hi;
 		}
 
-		// Create and replace the rewritten expression
 		Hop scalarCombined = HopRewriteUtils.createBinary(a, b, scalarOp);
 		Hop result = HopRewriteUtils.createBinary(scalarCombined, A, matrixOp);
 

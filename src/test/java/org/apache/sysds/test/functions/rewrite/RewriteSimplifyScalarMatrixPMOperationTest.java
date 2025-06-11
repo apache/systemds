@@ -89,16 +89,6 @@ public class RewriteSimplifyScalarMatrixPMOperationTest extends AutomatedTestBas
 			writeInputMatrixWithMTD("A", A, true);
 			writeInputMatrixWithMTD("a", a, true);
 			writeInputMatrixWithMTD("b", b, true);
-			// Add this to your test to read and print the metadata content:
-			try {
-				String amtdContent = new String(Files.readAllBytes(Paths.get(inputDir() + "A.mtd")));
-				System.out.println("A.mtd content: " + amtdContent);
-
-				String bmtdContent = new String(Files.readAllBytes(Paths.get(inputDir() + "b.mtd")));
-				System.out.println("b.mtd content: " + bmtdContent);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
 
 			runTest(true, false, null, -1);
 			runRScript(true);

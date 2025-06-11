@@ -267,7 +267,6 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		return result;
 	}
 
-
 	private static Hop simplifyTransposeAddition(Hop parent, Hop hi, int pos) {
 		//pattern: t(A+s1)+s2 -> t(A)+(s1+s2), and subsequent constant folding
 		if (HopRewriteUtils.isBinary(hi, OpOp2.PLUS) 

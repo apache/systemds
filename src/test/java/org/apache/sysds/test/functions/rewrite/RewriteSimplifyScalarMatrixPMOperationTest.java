@@ -18,6 +18,7 @@
  */
 package org.apache.sysds.test.functions.rewrite;
 
+import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -26,6 +27,9 @@ import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 
 public class RewriteSimplifyScalarMatrixPMOperationTest extends AutomatedTestBase {
@@ -33,15 +37,15 @@ public class RewriteSimplifyScalarMatrixPMOperationTest extends AutomatedTestBas
 	private static final String TEST_NAME2 = "RewriteScalarPlusMatrixMinusScalar";
 	private static final String TEST_DIR = "functions/rewrite/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteSimplifyScalarMatrixPMOperationTest.class.getSimpleName() + "/";
-	private static final int rows = 10;
-	private static final int cols = 10;
+	private static final int rows = 100;
+	private static final int cols = 100;
 	private static final double eps = 1e-6;
 
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{"A", "a", "b", "R"}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{"A", "a", "b", "R"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[]{"A", "a", "b", "R"}));
 	}
 
 	@Test
@@ -78,13 +82,23 @@ public class RewriteSimplifyScalarMatrixPMOperationTest extends AutomatedTestBas
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewriteEnabled;
 
-			double[][] A = getRandomMatrix(rows, cols, -10, 10, 0.9, 3);
+			double[][] A = getRandomMatrix(rows, cols, -100, 100, 0.9, 3);
 			double[][] a = getRandomMatrix(1, 1, -10, 10, 1.0, 7);
 			double[][] b = getRandomMatrix(1, 1, -10, 10, 1.0, 5);
 
 			writeInputMatrixWithMTD("A", A, true);
 			writeInputMatrixWithMTD("a", a, true);
 			writeInputMatrixWithMTD("b", b, true);
+			// Add this to your test to read and print the metadata content:
+			try {
+				String amtdContent = new String(Files.readAllBytes(Paths.get(inputDir() + "A.mtd")));
+				System.out.println("A.mtd content: " + amtdContent);
+
+				String bmtdContent = new String(Files.readAllBytes(Paths.get(inputDir() + "b.mtd")));
+				System.out.println("b.mtd content: " + bmtdContent);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 
 			runTest(true, false, null, -1);
 			runRScript(true);

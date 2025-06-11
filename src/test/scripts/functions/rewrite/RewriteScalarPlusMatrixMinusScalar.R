@@ -25,6 +25,6 @@ A <- as.matrix(readMM(paste(args[1], "A.mtx", sep="")))
 a <- as.numeric(readMM(paste(args[1], "a.mtx", sep="")))
 b <- as.numeric(readMM(paste(args[1], "b.mtx", sep="")))
 
-R <- a + A - b
+R <- (a-b)+A
 
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "R", sep=""))

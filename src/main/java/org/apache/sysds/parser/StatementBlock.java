@@ -1423,10 +1423,10 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	}
 
 	/**
-	 * StatementBlock을 깊은 복사하는 함수
-	 * @param original 복사할 원본 StatementBlock
-	 * @return 깊은 복사된 StatementBlock
-	 * // Todo Hop 제외
+	 * Deep copy function for StatementBlock
+	 * @param original Original StatementBlock to copy
+	 * @return Deep copied StatementBlock
+	 * // Todo Exclude Hop
 	 */
 	public StatementBlock deepCopy() {
 		StatementBlock copy;
@@ -1442,7 +1442,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 			copy = new StatementBlock();
 		}
 
-		// 기본 메타데이터 복사
+		// Copy basic metadata
 		copy.setFilename(this.getFilename());
 		copy.setBeginLine(this.getBeginLine());
 		copy.setBeginColumn(this.getBeginColumn());
@@ -1450,10 +1450,10 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		copy.setEndColumn(this.getEndColumn());
 		copy.setText(this.getText());
 
-		// DML 프로그램 참조 복사
+		// Copy DML program reference
 		copy.setDMLProg(this.getDMLProg());
 
-		// LiveVariableAnalysis 정보 복사
+		// Copy LiveVariableAnalysis information
 		if (this.liveIn() != null)
 			copy.setLiveIn(this.liveIn());
 		if (this.liveOut() != null)
@@ -1469,13 +1469,13 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		if (this._warnSet != null)
 			copy._warnSet.addVariables(this._warnSet);
 
-		// 상수 변수 복사
+		// Copy constant variables
 		copy._constVarsIn.putAll(this._constVarsIn);
 		copy._constVarsOut.putAll(this._constVarsOut);
 
-		// DAG 분할 플래그 복사
+		// Copy DAG split flag
 		copy.setSplitDag(false);
-		// 문장(statements) 깊은 복사
+		// Deep copy statements
 		if (this._statements != null && !this._statements.isEmpty()) {
 			for (Statement stmt : this._statements) {
 				Statement copyStmt = null;
@@ -1546,14 +1546,14 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 					copyStmt.setParseInfo(stmt);
 				}
 
-				// 복사된 명령문을 새로운 StatementBlock에 추가
+				// Add copied statement to new StatementBlock
 				if (copyStmt != null) {
 					copy.addStatement(copyStmt);
 				}
 			}
 		}
 
-		// _hops와 _lops는 null로 초기화
+		// Initialize _hops and _lops to null
 		copy._hops = null;
 		copy._lops = null;
 
@@ -1561,9 +1561,9 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	}
 
 	/**
-	 * StatementBlock 리스트를 깊은 복사하는 메소드
-	 * @param body 복사할 StatementBlock 리스트
-	 * @return 깊은 복사된 StatementBlock 리스트
+	 * Method to deep copy StatementBlock list
+	 * @param body StatementBlock list to copy
+	 * @return Deep copied StatementBlock list
 	 */
 	private ArrayList<StatementBlock> copyStatementBlocks(ArrayList<StatementBlock> body) {
 		ArrayList<StatementBlock> newBody = new ArrayList<>();

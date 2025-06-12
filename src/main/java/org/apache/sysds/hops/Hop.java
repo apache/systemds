@@ -191,7 +191,7 @@ public abstract class Hop implements ParseInfo {
 
 	public void setFederatedOutput(FederatedOutput federatedOutput){
 		// Todo: Remove
-		// DEBUG: FOUT 태그 설정/변경 추적
+		// DEBUG: Track FOUT tag setting/changes
 		//		System.out.println("[DEBUG-FOUT-TAG] HOP: " + this.getClass().getSimpleName() +
 		//			" | ID: " + getHopID() +
 		//			" | Opcode: " + getOpString() +

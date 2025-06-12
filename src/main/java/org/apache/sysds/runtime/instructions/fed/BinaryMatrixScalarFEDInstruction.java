@@ -58,7 +58,7 @@ public class BinaryMatrixScalarFEDInstruction extends BinaryFEDInstruction
 		MatrixObject mo = ec.getMatrixObject(matrix);
 
 		// Todo: Remove
-		// DEBUG: NPE 직전 상태 확인
+		// DEBUG: Check state before NPE
 		//		System.out.println("[DEBUG-NPE-CHECK] Operation: " + getOpcode() +
 		//			" | Matrix: " + matrix.getName() +
 		//			" | Scalar: " + scalar.getName() +

@@ -101,24 +101,24 @@ public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
 			DMLConfig conf = new DMLConfig(getCurConfigFile().getPath());
 			ConfigurationManager.setLocalConfig(conf);
 			
-			// FEDERATED_PLANNER 설정을 COMPILE_COST_BASED로 설정
+			// Set FEDERATED_PLANNER configuration to COMPILE_COST_BASED
 			ConfigurationManager.getDMLConfig().setTextValue(DMLConfig.FEDERATED_PLANNER, "compile_cost_based");
 			
 			//read script
 			String dmlScriptString = DMLScript.readDMLScript(true, HOME + scriptFilename);
 
-			// 출력을 파일과 터미널 모두에 저장
+			// Save output to both file and terminal
 			String outputFile = testName + "_trace.txt";
 			File outputFileObj = new File(outputFile);
-			System.out.println("[INFO] Trace 파일: " + outputFileObj.getAbsolutePath());
+			System.out.println("[INFO] Trace file: " + outputFileObj.getAbsolutePath());
 			PrintStream fileOut = new PrintStream(new FileOutputStream(outputFile));
 			TeeOutputStream teeOut = new TeeOutputStream(System.out, fileOut);
 			PrintStream teePrintStream = new PrintStream(teeOut);
 
-			// 원래 출력 스트림 저장
+			// Save original output stream
 			PrintStream originalOut = System.out;
 
-			// TeeOutputStream으로 출력 리다이렉션
+			// Redirect output with TeeOutputStream
 			System.setOut(teePrintStream);
 
 			//parsing and dependency analysis
@@ -130,32 +130,32 @@ public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
 			dmlt.constructHops(prog);
 			dmlt.rewriteHopsDAG(prog);
 
-			// 원래 출력 스트림으로 복원
+			// Restore original output stream
 			System.setOut(originalOut);
 			
-			// 리소스 정리
+			// Clean up resources
 			fileOut.close();
 			teeOut.close();
 			teePrintStream.close();
 
-			// Python visualizer 실행 확인
+			// Check Python visualizer execution
 			File visualizerDir = new File("visualization_output");
 			if (!visualizerDir.exists()) {
 				visualizerDir.mkdirs();
-				System.out.println("[INFO] 시각화 출력 디렉토리 생성: " + visualizerDir.getAbsolutePath());
+				System.out.println("[INFO] Created visualization output directory: " + visualizerDir.getAbsolutePath());
 			}
 
-			// Python visualizer 스크립트 경로 확인
+			// Check Python visualizer script path
 			File scriptFile = new File("src/test/java/org/apache/sysds/test/component/federated/FederatedPlanVisualizer.py");
-			System.out.println("[INFO] Python 스크립트 존재 여부: " + scriptFile.exists());
-			System.out.println("[INFO] Python 스크립트 경로: " + scriptFile.getAbsolutePath());
+			System.out.println("[INFO] Python script exists: " + scriptFile.exists());
+			System.out.println("[INFO] Python script path: " + scriptFile.getAbsolutePath());
 			
 			if (!scriptFile.exists()) {
-				System.out.println("[오류] Python visualizer 스크립트를 찾을 수 없습니다: " + scriptFile.getAbsolutePath());
-				Assert.fail("Python visualizer 스크립트를 찾을 수 없습니다: " + scriptFile.getAbsolutePath());
+				System.out.println("[ERROR] Cannot find Python visualizer script: " + scriptFile.getAbsolutePath());
+				Assert.fail("Cannot find Python visualizer script: " + scriptFile.getAbsolutePath());
 			}
 			
-			// Python 인터프리터 확인
+			// Check Python interpreter
 			try {
 				ProcessBuilder checkPython = new ProcessBuilder("python3", "--version");
 				checkPython.redirectErrorStream(true);
@@ -163,46 +163,46 @@ public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
 				
 				BufferedReader pythonReader = new BufferedReader(new InputStreamReader(pythonCheck.getInputStream()));
 				String pythonVersion = pythonReader.readLine();
-				System.out.println("[INFO] Python 버전: " + pythonVersion);
+				System.out.println("[INFO] Python version: " + pythonVersion);
 				
 				pythonCheck.waitFor();
 			} catch (Exception e) {
-				System.out.println("[오류] Python 인터프리터를 확인할 수 없습니다: " + e.getMessage());
+				System.out.println("[ERROR] Cannot verify Python interpreter: " + e.getMessage());
 			}
 			
-			System.out.println("[INFO] Visualizer 실행 명령: python3 " + scriptFile.getAbsolutePath() + " " + outputFileObj.getAbsolutePath());
+			System.out.println("[INFO] Visualizer execution command: python3 " + scriptFile.getAbsolutePath() + " " + outputFileObj.getAbsolutePath());
 			ProcessBuilder pb = new ProcessBuilder("python3", scriptFile.getAbsolutePath(), outputFileObj.getAbsolutePath());
 			pb.redirectErrorStream(true);
 			Process p = pb.start();
 			
-			// Python 스크립트의 출력을 읽어서 표시
+			// Read and display Python script output
 			BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
 			String line;
-			System.out.println("[INFO] Python 스크립트 출력:");
+			System.out.println("[INFO] Python script output:");
 			while ((line = reader.readLine()) != null) {
 				System.out.println("[Python] " + line);
 			}
 			
-			// 프로세스 종료 코드 확인
+			// Check process exit code
 			int exitCode = p.waitFor();
-			System.out.println("[INFO] Python 프로세스 종료 코드: " + exitCode);
+			System.out.println("[INFO] Python process exit code: " + exitCode);
 			
 			if (exitCode == 0) {
-				System.out.println("[INFO] Visualizer 실행 성공 (종료 코드: 0)");
+				System.out.println("[INFO] Visualizer execution succeeded (exit code: 0)");
 				
-				// 생성된 이미지 파일 확인
-				System.out.println("[INFO] 생성된 시각화 파일:");
+				// Check generated image files
+				System.out.println("[INFO] Generated visualization files:");
 				File[] imageFiles = visualizerDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".png"));
 				if (imageFiles != null && imageFiles.length > 0) {
 					for (File imageFile : imageFiles) {
 						System.out.println("  - " + imageFile.getAbsolutePath());
 					}
 				} else {
-					System.out.println("[INFO] 시각화 파일이 생성되지 않았습니다.");
+					System.out.println("[INFO] No visualization files were generated.");
 				}
 			} else {
-				System.out.println("[오류] Visualizer 실행 실패 (종료 코드: " + exitCode + ")");
-				Assert.fail("Visualizer 실행 실패 (종료 코드: " + exitCode + ")");
+				System.out.println("[ERROR] Visualizer execution failed (exit code: " + exitCode + ")");
+				Assert.fail("Visualizer execution failed (exit code: " + exitCode + ")");
 			}
 		}
 		catch (IOException | InterruptedException e) {

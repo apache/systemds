@@ -367,7 +367,7 @@ public class FederatedPlanCostEnumerator {
 
 			fOutFedPlanVariants.pruneFedPlans();
 			memoTable.addFedPlanVariants(hopID, FederatedOutput.FOUT, fOutFedPlanVariants);
-		} else { // privacyConstraint == PUBLIC, fType != null >> LOUT/FOUT 둘 다 가능
+		} else { // privacyConstraint == PUBLIC, fType != null >> both LOUT/FOUT are possible
 			enumerateChildFedPlan(lOutFedPlanVariants, fOutFedPlanVariants, childHops, childCumulativeCost,
 				childForwardingCost, lOUTOnlyinputHops, lOUTOnlychildCumulativeCost,
 				lOUTOnlychildForwardingCost,

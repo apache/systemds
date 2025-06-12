@@ -432,7 +432,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	 */
 	public void setFedMapping(FederationMap fedMapping) {
 		// Todo (Future): Remove
-		// DEBUG: FedMapping 상태 변화 추적
+		// DEBUG: Track FedMapping state changes
 		//		System.out.println("[DEBUG-FEDMAPPING-CHANGE] Variable: " + getDebugName() +
 		//			" | Old: " + (_fedMapping != null ? "EXISTS" : "NULL") +
 		//			" | New: " + (fedMapping != null ? "EXISTS" : "NULL") +

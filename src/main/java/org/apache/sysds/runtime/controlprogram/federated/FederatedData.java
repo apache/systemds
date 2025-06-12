@@ -377,7 +377,7 @@ public class FederatedData {
 		private final String filename;
 
         public GetPrivacyConstraints(String filename) {
-            super(new long[] { });  // 정적 클래스이므로 부모 생성자에 빈 ID 배열 전달
+            super(new long[] { });  // Pass empty ID array to parent constructor as this is a static class
 			this.filename = filename;
         }
     
@@ -420,14 +420,14 @@ public class FederatedData {
 
         @Override
         public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
-            String opcode = "fedprivconst"; // 적절한 연산 코드
+            String opcode = "fedprivconst"; // Appropriate operation code
             
-            // 연산에 대한 입력 LineageItem 생성
+            // Create input LineageItem for the operation
             LineageItem[] inputs = new LineageItem[] { 
-                new LineageItem(filename) // 문자열만 전달하여 리터럴 LineageItem 생성
+                new LineageItem(filename) // Create literal LineageItem by passing only the string
             };
             
-            // 적절한 LineageItem 생성 (읽기 작업에 대한)
+            // Create appropriate LineageItem (for read operation)
             return Pair.of(opcode, new LineageItem(opcode, inputs));
         }
     }

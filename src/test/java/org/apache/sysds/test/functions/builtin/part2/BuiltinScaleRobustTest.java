@@ -18,8 +18,8 @@ public class BuiltinScaleRobustTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/builtin/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinScaleRobustTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
-	private final static int rows = 70;
-	private final static int cols = 50;
+	private final static int rows = 10000;
+	private final static int cols = 500;
     
 
 	@Override

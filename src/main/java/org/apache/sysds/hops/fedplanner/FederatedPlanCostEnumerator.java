@@ -78,7 +78,7 @@ public class FederatedPlanCostEnumerator {
 				unRefTwriteSet, unRefSet, progRootHopSet);
 
 		for (long hopID : unRefTwriteSet) {
-			// Todo (Future): progRoot로 연결하는 unRefTwriteSet 확인 필요.
+			// Todo (Future): Need to check unRefTwriteSet connecting to progRoot.
 			progRootHopSet.add(hopCommonTable.get(hopID).getHopRef());
 		}
 		Set<String> fnStack = new HashSet<>();
@@ -90,9 +90,14 @@ public class FederatedPlanCostEnumerator {
 
 		FedPlan optimalPlan = getMinCostRootFedPlan(progRootHopSet, memoTable);
 
+		// Todo : Fix & Update Conflict Resolve Plan
 		// Detect conflicts in the federated plans where different FedPlans have
 		// different FederatedOutput types
-		double additionalTotalCost = detectAndResolveConflictFedPlan(optimalPlan, memoTable);
+		// double additionalTotalCost = detectAndResolveConflictFedPlan(optimalPlan, memoTable);
+		
+		
+		double additionalTotalCost = 0.0;
+		System.out.println("[Todo]detectAndResolveConflictFedPlan call has been commented out.");
 
 		unRefSet.addAll(unRefTwriteSet);
 		// Print the federated plan tree if requested
@@ -126,6 +131,7 @@ public class FederatedPlanCostEnumerator {
 
 		// Detect conflicts in the federated plans where different FedPlans have
 		// different FederatedOutput types
+		// Todo : Fix & Update Conflict Resolve Plan
 		double additionalTotalCost = detectAndResolveConflictFedPlan(optimalPlan, memoTable);
 
 		// Print the federated plan tree if requested
@@ -334,48 +340,25 @@ public class FederatedPlanCostEnumerator {
 		Privacy privacyConstraint = privacyConstraintMap.get(hopID);
 		FType fType = fTypeMap.get(hopID);
 
-		if (isTrans) {
-			if (lOUTOnlyinputHops.size() > 0 && fOUTOnlyinputHops.size() > 0) {
-				// Todo: LOUT, FOUT Only Hops가 동시에 존재할 수 없음.
-				System.out.println("\n=== LOUT Only Input Hops ===");
-				for (Hop lOUTOnlyInputHop : lOUTOnlyinputHops) {
-					System.out.println("Name: " + lOUTOnlyInputHop.getName() + ", ID: " + lOUTOnlyInputHop.getHopID() + 
-						", Type: " + hop.getClass().getSimpleName() + 
-						", Parents: " + hop.getParent().size() + 
-						", Inputs: " + hop.getInput().size());
-				}
-				System.out.println("\n=== FOUT Only Input Hops ===");
-				for (Hop fOUTOnlyInputHop : fOUTOnlyinputHops) {
-					System.out.println("Name: " + fOUTOnlyInputHop.getName() + ", ID: " + fOUTOnlyInputHop.getHopID() + 
-						", Type: " + hop.getClass().getSimpleName() + 
-						", Parents: " + hop.getParent().size() + 
-						", Inputs: " + hop.getInput().size());
-				}
-				System.out.println("\n=== 충돌 정보 ===");
-				System.out.println("LOUT Only Hops 수: " + lOUTOnlyinputHops.size());
-				System.out.println("FOUT Only Hops 수: " + fOUTOnlyinputHops.size());
-				System.out.println("전체 Input Hops 수: " + numInputs);
-				System.out.println("\nLOUT, FOUT Only Hops가 동시에 존재할 수 없음.");
-				System.out.println("이 상황은 FederatedPlannerFedAll에서 모든 연산을 FOUT으로 강제하는 경우에 발생할 수 있습니다.");
-			}
-		
+		if (isTrans) {		
 			enumerateTransChildFedPlan(lOutFedPlanVariants, fOutFedPlanVariants, childHops, childCumulativeCost,
 					lOUTOnlyinputHops, lOUTOnlychildCumulativeCost, fOUTOnlyinputHops, fOUTOnlychildCumulativeCost,
 					selfCost, numOfWorkers);
 
+			// Todo: Can we really add both LOUT and FOUT plans?
 			lOutFedPlanVariants.pruneFedPlans();
 			fOutFedPlanVariants.pruneFedPlans();
 
 			memoTable.addFedPlanVariants(hopID, FederatedOutput.FOUT, fOutFedPlanVariants);
 			memoTable.addFedPlanVariants(hopID, FederatedOutput.LOUT, lOutFedPlanVariants);
-		 } else if (fType == null) {
-		 	singleTypeEnumerateChildFedPlan(lOutFedPlanVariants, FederatedOutput.LOUT, childHops,
-		 		childCumulativeCost, childForwardingCost, lOUTOnlyinputHops, lOUTOnlychildCumulativeCost,
-		 		lOUTOnlychildForwardingCost, fOUTOnlyinputHops, fOUTOnlychildCumulativeCost,
-		 		fOUTOnlychildForwardingCost, selfCost, numOfWorkers);
+		} else if (fType == null) {
+			singleTypeEnumerateChildFedPlan(lOutFedPlanVariants, FederatedOutput.LOUT, childHops,
+				childCumulativeCost, childForwardingCost, lOUTOnlyinputHops, lOUTOnlychildCumulativeCost,
+				lOUTOnlychildForwardingCost, fOUTOnlyinputHops, fOUTOnlychildCumulativeCost,
+				fOUTOnlychildForwardingCost, selfCost, numOfWorkers);
 
-		 	lOutFedPlanVariants.pruneFedPlans();
-		 	memoTable.addFedPlanVariants(hopID, FederatedOutput.LOUT, lOutFedPlanVariants);
+			lOutFedPlanVariants.pruneFedPlans();
+			memoTable.addFedPlanVariants(hopID, FederatedOutput.LOUT, lOutFedPlanVariants);
 		} else if (privacyConstraint == Privacy.PRIVATE || privacyConstraint == Privacy.PRIVATE_AGGREGATE){
 			singleTypeEnumerateChildFedPlan(fOutFedPlanVariants, FederatedOutput.FOUT, childHops,
 				childCumulativeCost, childForwardingCost, lOUTOnlyinputHops, lOUTOnlychildCumulativeCost,

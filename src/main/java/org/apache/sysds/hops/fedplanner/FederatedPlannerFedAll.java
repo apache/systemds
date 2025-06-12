@@ -141,7 +141,8 @@ public class FederatedPlannerFedAll extends AFederatedPlanner {
 		if( HopRewriteUtils.isData(hop, OpOpData.FEDERATED) )
 			memo.put(hop.getHopID(), deriveFType((DataOp)hop));
 		else if( HopRewriteUtils.isData(hop, OpOpData.TRANSIENTREAD) )
-			// Todo (Future): TransRead의 경우, 다수의 TransWrite가 있을 수 있지만 이를 지원하지 않음
+			// TODO: TransRead can have multiple TransWrite sources, 
+			// but this is not currently supported
 			memo.put(hop.getHopID(), fedVars.get(hop.getName()));
 		else if( allowsFederated(hop, memo) ) {
 			hop.setForcedExecType(ExecType.FED);

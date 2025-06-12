@@ -46,7 +46,7 @@ public class TransposeTest extends AutomatedTestBase {
 
 	private final static int rows = 1000;
 	private final static int cols_wide = 1000;
-	private final static int cols_skinny = 500;
+	//private final static int cols_skinny = 500;
 
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.1;

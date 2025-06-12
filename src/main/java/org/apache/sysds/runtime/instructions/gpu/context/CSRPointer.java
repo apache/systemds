@@ -307,23 +307,30 @@ public class CSRPointer {
 	 * @param m      Rows in C
 	 * @param n      Columns in C
 	 */
+
 	private static void step2GatherNNZGeam(GPUContext gCtx, cusparseHandle handle, CSRPointer A, CSRPointer B, CSRPointer C, int m, int n) {
 		LOG.trace("GPU : step2GatherNNZGeam for DGEAM" + ", GPUContext=" + gCtx);
+		long[] pBufferSizeInBytes = {0};
+		cusparseDcsrgeam2_bufferSizeExt(handle, m, n, Pointer.to(new double[]{1.0}), A.descr, toIntExact(A.nnz), A.val, A.rowPtr, A.colInd,
+			Pointer.to(new double[]{1.0}), B.descr, toIntExact(B.nnz), B.val, B.rowPtr, B.colInd, C.descr, C.val, C.rowPtr, C.colInd, pBufferSizeInBytes);
+		Pointer buffer = new Pointer();
+		cudaMalloc(buffer, pBufferSizeInBytes[0]);
 		int[] CnnzArray = {-1};
-		Pointer workspace = new Pointer();
-		cusparseXcsrgeam2Nnz(handle, m, n, A.descr, toIntExact(A.nnz), A.rowPtr, A.colInd, B.descr, toIntExact(B.nnz),
-			B.rowPtr, B.colInd, C.descr, C.rowPtr, Pointer.to(CnnzArray), workspace);
-		//cudaDeviceSynchronize;
+		cusparseXcsrgeam2Nnz(handle, m, n, A.descr, toIntExact(A.nnz), A.rowPtr, A.colInd, B.descr, toIntExact(B.nnz), B.rowPtr, B.colInd,
+			C.descr, C.rowPtr, Pointer.to(CnnzArray) ,buffer);
 		if(CnnzArray[0] != -1) {
 			C.nnz = CnnzArray[0];
 		}
-		else {
+		else {                            // fall-back (rare older devices)
 			int[] baseArray = {0};
-			cudaMemcpy(Pointer.to(CnnzArray), C.rowPtr.withByteOffset(getIntSizeOf(m)), getIntSizeOf(1),
-				cudaMemcpyDeviceToHost);
-			cudaMemcpy(Pointer.to(baseArray), C.rowPtr, getIntSizeOf(1), cudaMemcpyDeviceToHost);
+			cudaMemcpy(Pointer.to(CnnzArray),
+				C.rowPtr.withByteOffset((long)m * Sizeof.INT),
+				Sizeof.INT, cudaMemcpyDeviceToHost);
+			cudaMemcpy(Pointer.to(baseArray),
+				C.rowPtr, Sizeof.INT, cudaMemcpyDeviceToHost);
 			C.nnz = CnnzArray[0] - baseArray[0];
 		}
+		cudaFree(buffer);
 	}
 
 	/**

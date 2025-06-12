@@ -32,7 +32,6 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
 
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
-        // TODO:先去搞Bin的，那边有提示
         out.ensureAllocatedColumns(in.getNumRows());
         columnDecode(in, out, 0, in.getNumRows());
         return out;
@@ -41,7 +40,6 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
 
     @Override
     public void columnDecode(MatrixBlock in, FrameBlock out, int rl, int ru) {
-        // TODO:同
         int clen = Math.min(_colList.length, out.getNumColumns());
         for( int i=rl; i<ru; i++ ) {
             for( int j=0; j<clen; j++ ) {
@@ -49,7 +47,7 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
                 int tgtColID = _colList[j];
                 double val = in.get(i, srcColID-1);
                 out.set(i, tgtColID-1,
-                        UtilFunctions.doubleToObject(_schema[tgtColID-1], val));
+                    UtilFunctions.doubleToObject(_schema[tgtColID-1], val));
             }
         }
     }

@@ -57,9 +57,9 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 	
 	@Override
 	public DataCharacteristics estim(MMNode root) {
-		List<MatrixBlock> leafs = getMatrices(root, new ArrayList<>());
-		List<OpCode> ops = getOps(root, new ArrayList<>());
-		List<LayeredGraph> LGs = new ArrayList<>();
+		//List<MatrixBlock> leafs = getMatrices(root, new ArrayList<>());
+		//List<OpCode> ops = getOps(root, new ArrayList<>());
+		//List<LayeredGraph> LGs = new ArrayList<>();
 		LayeredGraph ret = traverse(root);
 		long nnz = ret.estimateNnz();
 		return root.setDataCharacteristics(new MatrixCharacteristics(
@@ -125,6 +125,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 		}
 	}
 	
+	@SuppressWarnings("unused")
 	private List<MatrixBlock> getMatrices(MMNode node, List<MatrixBlock> leafs) {
 		//NOTE: this extraction is only correct and efficient for chains, no DAGs
 		if( node.isLeaf() )
@@ -136,6 +137,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 		return leafs;
 	}
 
+	@SuppressWarnings("unused")
 	private List<OpCode> getOps(MMNode node, List<OpCode> ops) {
 		//NOTE: this extraction is only correct and efficient for chains, no DAGs
 		if(node.isLeaf()) {

@@ -33,9 +33,13 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
         out.ensureAllocatedColumns(in.getNumRows());
-        columnDecode(in, out, 0, in.getNumRows());
+        for (int i = 0; i < _colList.length; i++){
+            for (int r = 0; r < in.getNumRows(); r++) {
+                out.getColumn(_colList[i]-1).set(r, in.get(r, i));
+            }
+        }
+        //columnDecode(in, out, 0, in.getNumRows());
         return out;
-
     }
 
     @Override

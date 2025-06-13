@@ -44,6 +44,7 @@ eps = as.double (eps);
 
 beta = glm(X=X,Y=Y, dfam=distribution_type, vpow=variance_as_power_of_the_mean,
         link=link_type, lpow=link_as_power_of_the_mean, yneg=bernoulli_No_label,
-        icpt=intercept_status, reg=regularization, tol=eps, moi=max_iteration_IRLS, mii=max_iteration_CG)
+        intercept=intercept_status, reg=regularization, tol=eps, maxIter=max_iteration_IRLS,
+        maxInnerIter=max_iteration_CG)
 
 write (beta, fileB, format=fmtB);

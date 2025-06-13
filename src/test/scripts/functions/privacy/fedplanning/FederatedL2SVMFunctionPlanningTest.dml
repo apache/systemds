@@ -31,6 +31,6 @@
   reg = 1
   maxIterations = 100
 
-  model = l2svm(X=X,  Y=Y, intercept = FALSE, epsilon = epsilon, reg = reg, maxIterations = maxIterations)
+  model = l2svm(X=X,  Y=Y, intercept = FALSE, tol = epsilon, reg = reg, maxIter = maxIterations)
 
   write(model, $Z)

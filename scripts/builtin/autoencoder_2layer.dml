@@ -30,20 +30,21 @@
 # INPUT:
 # ---------------------------------------------------------------------------------------------
 # X             Filename where the input is stored
-# num_hidden1   Number of neurons in the 1st hidden layer
-# num_hidden2   Number of neurons in the 2nd hidden layer
-# max_epochs    Number of epochs to train for
-# full_obj      If TRUE, Computes objective function value (squared-loss)
+# numHidden1   Number of neurons in the 1st hidden layer
+# numHidden2   Number of neurons in the 2nd hidden layer
+# epochs        Number of epochs to train for
+# fullObj      If TRUE, Computes objective function value (squared-loss)
 #               at the end of each epoch. Note that, computing the full 
 #               objective can take a lot of time. 
-# batch_size    Mini-batch size (training parameter)
+# batchSize     Mini-batch size (training parameter)
 # step          Initial step size (training parameter)
 # decay         Decays step size after each epoch (training parameter)
 # mu            Momentum parameter (training parameter)
-# W1_rand       Weights might be initialized via input matrices
-# W2_rand       --- 
-# W3_rand       ---
-# W4_rand       ---
+# W1            Weights might be initialized via input matrices
+# W2            ---
+# W3            ---
+# W4            ---
+# Order         ---
 # ---------------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -59,21 +60,21 @@
 # HIDDEN   Matrix storing the hidden (2nd) layer representation if needed
 # ----------------------------------------------------------------------------------------------------
 
-m_autoencoder_2layer = function(Matrix[Double] X, Integer num_hidden1, Integer num_hidden2, Integer max_epochs,
-  Boolean full_obj = FALSE, Integer batch_size = 256, Double step = 1e-5, Double decay = 0.95, Double mu = 0.9,
-  Matrix[Double] W1_rand = matrix(0, rows=0, cols=0), Matrix[Double] W2_rand = matrix(0, rows=0, cols=0), 
-  Matrix[Double] W3_rand = matrix(0, rows=0, cols=0), Matrix[Double] W4_rand = matrix(0, rows=0, cols=0), 
-  Matrix[Double] order_rand = matrix(0, rows=0, cols=0))
+m_autoencoder_2layer = function(Matrix[Double] X, Integer numHidden1, Integer numHidden2, Integer epochs,
+  Boolean fullObj = FALSE, Integer batchSize = 256, Double step = 1e-5, Double decay = 0.95, Double mu = 0.9,
+  Matrix[Double] W1 = matrix(0, rows=0, cols=0), Matrix[Double] W2 = matrix(0, rows=0, cols=0), 
+  Matrix[Double] W3 = matrix(0, rows=0, cols=0), Matrix[Double] W4 = matrix(0, rows=0, cols=0), 
+  Matrix[Double] Order = matrix(0, rows=0, cols=0))
   return(Matrix[Double] W1, Matrix[Double] b1, Matrix[Double] W2, Matrix[Double] b2,
     Matrix[Double] W3, Matrix[Double] b3, Matrix[Double] W4, Matrix[Double] b4, Matrix[Double] reordered_H)
 {
   n = nrow(X)
   m = ncol(X)
   #randomly reordering rows
-  if(nrow(order_rand) == 0 & ncol(order_rand) == 0) 
+  if(nrow(Order) == 0 & ncol(Order) == 0)
     permut = table(seq(1,n,1), order(target=Rand(rows=n, cols=1, min=0, max=1, pdf="uniform"), by=1, index.return=TRUE), n, n)
   else 
-    permut = table(seq(1,n,1), order(target=order_rand, by=1, index.return=TRUE), n, n)
+    permut = table(seq(1,n,1), order(target=Order, by=1, index.return=TRUE), n, n)
   X = permut %*% X
 
   #z-transform, whitening operator is better
@@ -81,22 +82,22 @@ m_autoencoder_2layer = function(Matrix[Double] X, Integer num_hidden1, Integer n
   stds = sqrt((colSums(X^2)/n - means*means)*n/(n-1)) + 1e-17
   X = (X - means)/stds
   
-  if(nrow(W1_rand) == 0 & ncol(W1_rand) == 0) 
-    W1_rand = Rand(rows=num_hidden1, cols=m, min=-1, max=1, pdf="uniform")
-  if(nrow(W2_rand) == 0 & ncol(W2_rand) == 0) 
-    W2_rand = Rand(rows=num_hidden2, cols=num_hidden1, min=-1, max=1, pdf="uniform")
-  if(nrow(W3_rand) == 0 & ncol(W3_rand) == 0) 
-    W3_rand = Rand(rows=num_hidden1, cols=num_hidden2, min=-1, max=1, pdf="uniform")
-  if(nrow(W4_rand) == 0 & ncol(W4_rand) == 0) 
-    W4_rand = Rand(rows=m, cols=num_hidden1, min=-1, max=1, pdf="uniform")
+  if(nrow(W1) == 0 & ncol(W1) == 0) 
+    W1 = Rand(rows=numHidden1, cols=m, min=-1, max=1, pdf="uniform")
+  if(nrow(W2) == 0 & ncol(W2) == 0) 
+    W2 = Rand(rows=numHidden2, cols=numHidden1, min=-1, max=1, pdf="uniform")
+  if(nrow(W3) == 0 & ncol(W3) == 0) 
+    W3 = Rand(rows=numHidden1, cols=numHidden2, min=-1, max=1, pdf="uniform")
+  if(nrow(W4) == 0 & ncol(W4) == 0) 
+    W4 = Rand(rows=m, cols=numHidden1, min=-1, max=1, pdf="uniform")
 
-  W1 = sqrt(6)/sqrt(m + num_hidden1) * W1_rand 
-  b1 = matrix(0, rows=num_hidden1, cols=1)
-  W2 = sqrt(6)/sqrt(num_hidden1 + num_hidden2) * W2_rand 
-  b2 = matrix(0, rows=num_hidden2, cols=1)
-  W3 = sqrt(6)/sqrt(num_hidden2 + num_hidden1) * W3_rand 
-  b3 = matrix(0, rows=num_hidden1, cols=1)
-  W4 = sqrt(6)/sqrt(num_hidden2 + m) * W4_rand 
+  W1 = sqrt(6)/sqrt(m + numHidden1) * W1
+  b1 = matrix(0, rows=numHidden1, cols=1)
+  W2 = sqrt(6)/sqrt(numHidden1 + numHidden2) * W2
+  b2 = matrix(0, rows=numHidden2, cols=1)
+  W3 = sqrt(6)/sqrt(numHidden2 + numHidden1) * W3
+  b3 = matrix(0, rows=numHidden1, cols=1)
+  W4 = sqrt(6)/sqrt(numHidden2 + m) * W4
   b4 = matrix(0, rows=m, cols=1)
 
   upd_W1 = matrix(0, rows=nrow(W1), cols=ncol(W1))
@@ -108,7 +109,7 @@ m_autoencoder_2layer = function(Matrix[Double] X, Integer num_hidden1, Integer n
   upd_W4 = matrix(0, rows=nrow(W4), cols=ncol(W4))
   upd_b4 = matrix(0, rows=nrow(b4), cols=ncol(b4))
 
-  if( full_obj ){
+  if( fullObj ){
     [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat, 
      full_Yhat_prime, full_E] = feedForward(X, W1, b1, W2, b2, W3, b3, W4, b4, X)
     full_o = obj(full_E)
@@ -116,12 +117,12 @@ m_autoencoder_2layer = function(Matrix[Double] X, Integer num_hidden1, Integer n
   }
 
   iter = 0
-  num_iters_per_epoch = ceil(n / batch_size)
-  max_iterations = max_epochs * num_iters_per_epoch
+  num_iters_per_epoch = ceil(n / batchSize)
+  max_iterations = epochs * num_iters_per_epoch
   #print("num_iters_per_epoch=" + num_iters_per_epoch + " max_iterations=" + max_iterations)
   beg = 1
   while( iter < max_iterations ){
-    end = beg + batch_size - 1
+    end = beg + batchSize - 1
     if(end > n) end = n
     X_batch = X[beg:end,]
 
@@ -158,7 +159,7 @@ m_autoencoder_2layer = function(Matrix[Double] X, Integer num_hidden1, Integer n
 
     if( iter %% num_iters_per_epoch == 0 ) step = step * decay
 
-    if( full_obj & iter %% num_iters_per_epoch == 0 ){
+    if( fullObj & iter %% num_iters_per_epoch == 0 ){
       [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat, 
        full_Yhat_prime, full_E] = feedForward(X, W1, b1, W2, b2, W3, b3, W4, b4, X)
       full_o = obj(full_E)

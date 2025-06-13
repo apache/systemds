@@ -50,7 +50,7 @@ else {
 #matrix("1 1e-6 1e-9 1000", rows=1, cols=4)
 [topKPipelines, topKHyperParams, topKScores, baseLineScore, evalFunHp, applyFunc] = topk_cleaning(dataTrain=trainData, dataTest=testData,
   primitives=primitives, parameters=param, evaluationFunc=evalFunc, evalFunHp=as.matrix(NaN),
-  topK=topK, resource_val=resources, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE)
+  topK=topK, resourceVal=resources, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE)
 
 write(topKPipelines, output+"/pip.csv", format="csv")
 write(topKHyperParams, output+"/hp.csv", format="csv")
@@ -71,15 +71,15 @@ return(Matrix[Double] output)
   if(is.na(as.scalar(evalFunHp[1,1])))
   {
     # do the gridsearch for hyper-parameters
-    lArgs=list(X=X, y=Y, icpt=0, reg=-1, tol=-1, maxi=-1, verbose=FALSE);
-    params = list("icpt","reg", "tol");
+    lArgs=list(X=X, y=Y, intercept=0, reg=-1, tol=-1, maxIter=-1, verbose=FALSE);
+    params = list("intercept","reg", "tol");
     paramRanges = list(seq(0,2,1), 10^seq(0,-4), 10^seq(-6,-12));
     [B1, opt] = gridSearch(X=X, y=Y, train="lm", predict="wmape", trainArgs=lArgs,
       numB=ncol(X)+1, params=params, paramValues=paramRanges, cv=TRUE, cvk=3, verbose=FALSE);
     evalFunHp = as.matrix(opt)
   }
-  beta = lm(X=X, y=Y, icpt=as.scalar(evalFunHp[1,1]), reg=as.scalar(evalFunHp[1,2]), tol=as.scalar(evalFunHp[1,3]),
-    maxi=1000, verbose=FALSE);
+  beta = lm(X=X, y=Y, intercept=as.scalar(evalFunHp[1,1]), reg=as.scalar(evalFunHp[1,2]),
+    tol=as.scalar(evalFunHp[1,3]), maxIter=1000, verbose=FALSE);
 
   acc = wmape(Xtest, Ytest, beta)
   accuracy = (1 - acc)
@@ -88,14 +88,14 @@ return(Matrix[Double] output)
 
 # wmape = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) return (Matrix[Double] loss) {
   # # loss = as.matrix(sum((y - X%*%B)^2));
-  # pred = lmPredict(X=X, B=B, ytest=y);
+  # pred = lmPredict(X=X, B=B, Ytest=y);
   # WMAPE = sum(abs(y - pred))/sum(abs(y)) #this will give the lose into range of [0,1]
   # loss = ifelse(is.na(as.matrix(WMAPE)), as.matrix(0), as.matrix(WMAPE))
 # }
 
 wmape = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) return (Matrix[Double] loss) {
   # loss = as.matrix(sum((y - X%*%B)^2));
-  pred = lmPredict(X=X, B=B, ytest=y, verbose=FALSE);
+  pred = lmPredict(X=X, B=B, Ytest=y, verbose=FALSE);
   # print("WMAPO: "+(1 - (sum(abs((pred - y)/(pred + y)))/nrow(y))))
   WMAPE = 1 - (sum(abs((pred - y)/(pred + y)))/nrow(y)) #this will give the lose into range of [0,1]
   loss = ifelse(is.na(as.matrix(WMAPE)), as.matrix(0), as.matrix(WMAPE))

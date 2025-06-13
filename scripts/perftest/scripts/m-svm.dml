@@ -29,7 +29,7 @@ tol = as.double ($tol);
 X = read($X)
 Y = read($Y)
 
-model = msvm(X = X, Y = Y, intercept = icpt, epsilon = tol, reg = reg, maxIterations = maxiter, verbose = FALSE)
+model = msvm(X = X, Y = Y, intercept = icpt, tol = tol, reg = reg, maxIter = maxiter, verbose = FALSE)
 
 extra_model_params = matrix(0, rows=2, cols=ncol(model))
 extra_model_params[1, 1] = icpt

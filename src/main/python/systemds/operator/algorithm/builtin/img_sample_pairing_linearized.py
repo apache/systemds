@@ -28,22 +28,22 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
-def img_sample_pairing_linearized(img_in1: Matrix,
-                                  img_in2: Matrix,
+def img_sample_pairing_linearized(img1: Matrix,
+                                  img2: Matrix,
                                   weight: float):
     """
      The image sample pairing function blends two images together.
     
     
     
-    :param img_in1: input matrix/image (every row is a linearized image)
-    :param img_in2: Second input image (one image represented as a single row linearized matrix)
+    :param img1: input matrix/image (every row is a linearized image)
+    :param img2: Second input image (one image represented as a single row linearized matrix)
     :param weight: The weight given to the second image.
-        0 means only img_in1, 1 means only img_in2 will be visible
+        0 means only img1, 1 means only img2 will be visible
     :return: Output image
     """
 
-    params_dict = {'img_in1': img_in1, 'img_in2': img_in2, 'weight': weight}
-    return Matrix(img_in1.sds_context,
+    params_dict = {'img1': img1, 'img2': img2, 'weight': weight}
+    return Matrix(img1.sds_context,
         'img_sample_pairing_linearized',
         named_input_nodes=params_dict)

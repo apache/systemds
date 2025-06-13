@@ -29,33 +29,33 @@
 #
 # INPUT:
 # ----------------------------------------------------------------------------------------
-# X        Matrix of feature vectors.
-# rnk      Number of components into which matrix X is to be factored.
-# eps      Tolerance
-# maxi     Maximum number of conjugate gradient iterations.
-# verbose  If TRUE, 'iter' and 'obj' are printed.
+# X               Matrix of feature vectors.
+# rank            Number of components into which matrix X is to be factored.
+# tol             Tolerance
+# maxIter         Maximum number of conjugate gradient iterations.
+# verbose         If TRUE, 'iter' and 'obj' are printed.
 # ----------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # ------------------------------------------------------------------------------------
-# W     List of pattern matrices, one for each repetition.
-# H     List of amplitude matrices, one for each repetition.
+# W               List of pattern matrices, one for each repetition.
+# H               List of amplitude matrices, one for each repetition.
 # ------------------------------------------------------------------------------------
 
-m_pnmf = function(Matrix[Double] X, Integer rnk, Double eps = 1e-8, Integer maxi = 10, Boolean verbose=TRUE) 
+m_pnmf = function(Matrix[Double] X, Integer rank, Double tol = 1e-8, Integer maxIter = 10, Boolean verbose=TRUE)
   return (Matrix[Double] W, Matrix[Double] H) 
 {
   #initialize W and H
-  W = rand(rows=nrow(X), cols=rnk, min=0, max=0.025);
-  H = rand(rows=rnk, cols=ncol(X), min=0, max=0.025);
+  W = rand(rows=nrow(X), cols=rank, min=0, max=0.025);
+  H = rand(rows=rank, cols=ncol(X), min=0, max=0.025);
 
   i = 0;
-  while(i < maxi) {
-    H = (H*(t(W)%*%(X/(W%*%H+eps)))) / t(colSums(W));
-    W = (W*((X/(W%*%H+eps))%*%t(H))) / t(rowSums(H));
+  while(i < maxIter) {
+    H = (H*(t(W)%*%(X/(W%*%H+tol)))) / t(colSums(W));
+    W = (W*((X/(W%*%H+tol))%*%t(H))) / t(rowSums(H));
     i = i + 1;
     if( verbose ) {
-      obj = sum(W%*%H) - sum(X*log(W%*%H+eps));
+      obj = sum(W%*%H) - sum(X*log(W%*%H+tol));
       print("iter=" + i + " obj=" + obj);
     }
   }

@@ -24,10 +24,10 @@
 #
 # INPUT:
 # -----------------------------------------------------------------------------------
-# X_train         ---
-# Y_train         ---
-# X_test          ---
-# Y_test          ---
+# X          ---
+# Y          ---
+# Xtest           ---
+# Ytest           ---
 # metaList        ---
 # evaluationFunc  ---
 # evalFunHp       ---
@@ -40,7 +40,6 @@
 # cv              ---
 # cvk             ---
 # verbose         ---
-# output          ---
 # -----------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -48,7 +47,7 @@
 # perf    ---
 # --------------------------------------
 
-m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Double] X_test, Matrix[Double] Y_test, List[Unknown] metaList,
+m_bandit = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, List[Unknown] metaList,
   String evaluationFunc, Matrix[Double] evalFunHp, Frame[Unknown] lp, Matrix[Double] lpHp, Frame[Unknown] primitives, Frame[Unknown] param, Integer k = 3,
   Integer R=50, Double baseLineScore, Boolean cv,  Integer cvk = 2, Double ref = 0, Integer seed = -1, Boolean enablePruning = FALSE, Boolean verbose = TRUE)
   return (Frame[Unknown] bestPipeline, Matrix[Double] bestHyperparams, Matrix[Double] bestAccuracy, Frame[String] applyFunc) 
@@ -110,7 +109,7 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Doubl
       }
       configurations = configurations[1:n_i, ]
       pipelines_executed = pipelines_executed + (n_i * r_i)
-      [outPip,outHp, pruneCount] = run_with_hyperparam(ph_pip=configurations, r_i=r_i, X=X_train, Y=Y_train, Xtest=X_test, Ytest=Y_test, metaList=metaList,
+      [outPip,outHp, pruneCount] = run_with_hyperparam(ph_pip=configurations, r_i=r_i, X=X, Y=Y, Xtest=Xtest, Ytest=Ytest, metaList=metaList,
         evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, param=param, cv=cv, cvk=cvk, ref=ref, seed = seed, enablePruning=enablePruning)
       totalPruneCount = totalPruneCount + pruneCount
       # sort the pipelines by order of accuracy decreasing
@@ -310,7 +309,7 @@ run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i = 1, Matrix[Do
       else 
       {
         [eXtrain, eYtrain, eXtest, eYtest, Tr, hpForPruning, changesByOp, changesByPip] = executePipeline(pipeline=op, 
-          Xtrain=X, Ytrain=Y, Xtest=Xtest, Ytest=Ytest, metaList=metaList2,  hyperParameters=hp_matrix, hpForPruning=hpForPruning,
+          X=X, Y=Y, Xtest=Xtest, Ytest=Ytest, metaList=metaList2,  hyperParameters=hp_matrix, hpForPruning=hpForPruning,
           changesByOp=changesByOp, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE, startInd=1, endInd=ncol(op))
         if(max(eYtrain) == min(eYtrain)) 
           print("Y contains only one class")
@@ -539,7 +538,7 @@ return (Double accuracy, Matrix[Double] evalFunHp, Matrix[Double] hpForPruning, 
     if(as.scalar(pipList['flags']) != 0)  # this flag is zero when CV is called from the dirtyScore function, means only accuracy calculation but no pipeline execution
     {
       [trainX, trainy, testX, testy, Tr, hpForPruning, changesByOp, changesByPip] = executePipeline(pipeline=as.frame(pipList['ph']),
-        Xtrain=trainX, Ytrain=trainy, Xtest= testX, Ytest=testy, metaList=metaList, hyperParameters=as.matrix(pipList['hp']), hpForPruning=hpForPruning,
+        X=trainX, Y=trainy, Xtest= testX, Ytest=testy, metaList=metaList, hyperParameters=as.matrix(pipList['hp']), hpForPruning=hpForPruning,
         changesByOp=changesByOp, flagsCount=as.scalar(pipList['flags']), test=TRUE, verbose=FALSE, startInd=1, endInd=ncol(as.frame(pipList['ph'])))
       #TODO double check why this is necessary
       mincol = min(ncol(cvChanges),ncol(changesByOp))
@@ -669,7 +668,7 @@ run_with_hyperparamNested = function(Frame[Unknown] ph_pip, Integer r_i = 1, Mat
         else 
         {
           [eXtrain, eYtrain, eXtest, eYtest, Tr, hpForPruning, changesByOp, changesByPip] = executePipeline(pipeline=op, 
-            Xtrain=X, Ytrain=Y, Xtest=Xtest, Ytest=Ytest, metaList=metaList2,  hyperParameters=hp_matrix, hpForPruning=hpForPruning,
+            X=X, Y=Y, Xtest=Xtest, Ytest=Ytest, metaList=metaList2,  hyperParameters=hp_matrix, hpForPruning=hpForPruning,
             changesByOp=changesByOp, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE, startInd=1, endInd=ncol(op))
           if(max(eYtrain) == min(eYtrain)) 
             print("Y contains only one class")

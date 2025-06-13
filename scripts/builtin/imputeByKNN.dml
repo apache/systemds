@@ -41,7 +41,7 @@
 #                               with M<<N and S<<N, but suboptimal imputation.
 # seed        Root seed value for random/sample calls for deterministic behavior
 #             -1 for true randomization
-# sample_frac Sample fraction for 'dist_sample' (value between 0 and 1)
+# sampleFrac  Sample fraction for 'dist_sample' (value between 0 and 1)
 # ------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -49,7 +49,7 @@
 # result     Imputed dataset
 # ------------------------------------------------------------------------------
 
-m_imputeByKNN = function(Matrix[Double] X, String method="dist", Int seed=-1, Double sample_frac=0.1)
+m_imputeByKNN = function(Matrix[Double] X, String method="dist", Int seed=-1, Double sampleFrac=0.1)
   return(Matrix[Double] result)
 {
   #KNN-Imputation Script
@@ -82,7 +82,7 @@ m_imputeByKNN = function(Matrix[Double] X, String method="dist", Int seed=-1, Do
   }
   else if(method == "dist_sample"){
     #assuming large missing values
-    imputedValue = compute_missing_values(X, filled_matrix, seed, sample_frac)
+    imputedValue = compute_missing_values(X, filled_matrix, seed, sampleFrac)
   }
   else {
     stop("Method is unknown or not yet implemented")
@@ -93,20 +93,20 @@ m_imputeByKNN = function(Matrix[Double] X, String method="dist", Int seed=-1, Do
   result = result + (imputedValue * is.nan(X))
 }
 
-compute_missing_values = function (Matrix[Double] X, Matrix[Double] filled_matrix, Int seed, Double sample_frac)
+compute_missing_values = function (Matrix[Double] X, Matrix[Double] filledMatrix, Int seed, Double sampleFrac)
     return (Matrix[Double] imputedValue)
 {
     #Split the matrix into containing NaN values (missing records) and not containing NaN values (M2 records)
     maskNAN = is.nan(X)
     I = rowSums(maskNAN) != 0
-    missing = removeEmpty(target=filled_matrix, margin="rows", select=I)
+    missing = removeEmpty(target=filledMatrix, margin="rows", select=I)
 
     Y = (rowSums(maskNAN)==0)
     M2 = removeEmpty(target=X, margin = "rows", select = Y)
 
-    if (sample_frac != 1.0) {
-        #Create permutation matrix for sampling sample_frac*nrow(X) rows
-        I = rand(rows=nrow(M2), cols=1, seed=seed) <= sample_frac;
+    if (sampleFrac != 1.0) {
+        #Create permutation matrix for sampling sampleFrac*nrow(X) rows
+        I = rand(rows=nrow(M2), cols=1, seed=seed) <= sampleFrac;
         M2 = removeEmpty(target=M2, margin="rows", select=I);
     }
 

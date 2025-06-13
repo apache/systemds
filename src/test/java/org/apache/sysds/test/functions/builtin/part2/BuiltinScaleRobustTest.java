@@ -46,7 +46,21 @@ public class BuiltinScaleRobustTest extends AutomatedTestBase {
 			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 7);
 			writeInputMatrixWithMTD("A", A, true);
 
-			runTest(true, false, null, -1);
+			// Measure memory usage BEFORE DML execution
+			Runtime runtime = Runtime.getRuntime();
+			runtime.gc(); // Suggest garbage collection to get a cleaner measurement
+			long memBefore = runtime.totalMemory() - runtime.freeMemory();
+
+			runTest(true, false, null, -1); // Run DML script
+
+			// Measure memory usage AFTER DML execution
+			long memAfter = runtime.totalMemory() - runtime.freeMemory();
+			long memUsedBytes = memAfter - memBefore;
+			double memUsedMB = memUsedBytes / (1024.0 * 1024.0);
+
+			System.out.println("Memory used during DML execution (MB): " + memUsedMB);
+
+			// Run and compare with R
 			runRScript(true);
 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");

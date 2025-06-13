@@ -22,8 +22,9 @@ result <- peakRAM({
   }
 
   end_time <- Sys.time()
-  print("R overall time (s):")
-  print(end_time - start_time)
+  elapsed_ms <- as.numeric(difftime(end_time, start_time, units="secs")) * 1000
+  cat("R overall time (ms):\n")
+  print(elapsed_ms)
 
   writeMM(as(Y, "CsparseMatrix"), paste(args[2], "B", sep=""))
 })

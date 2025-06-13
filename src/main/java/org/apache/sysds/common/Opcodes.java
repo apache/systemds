@@ -172,7 +172,7 @@ public enum Opcodes {
 	RBIND("rbind", InstructionType.BuiltinNary),
 	EVAL("eval", InstructionType.BuiltinNary),
 	LIST("list", InstructionType.BuiltinNary),
-
+	EINSUM("einsum", InstructionType.BuiltinNary),
 	//Parametrized builtin functions
 	AUTODIFF("autoDiff", InstructionType.ParameterizedBuiltin),
 	CONTAINS("contains", InstructionType.ParameterizedBuiltin),
@@ -193,6 +193,7 @@ public enum Opcodes {
 	TRANSFORMCOLMAP("transformcolmap", InstructionType.ParameterizedBuiltin),
 	TRANSFORMMETA("transformmeta", InstructionType.ParameterizedBuiltin),
 	TRANSFORMENCODE("transformencode", InstructionType.MultiReturnParameterizedBuiltin,  InstructionType.MultiReturnBuiltin),
+
 
 	//Ternary instruction opcodes
 	PM("+*", InstructionType.Ternary),

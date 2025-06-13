@@ -58,7 +58,9 @@ class Concatenation(Fusion):
                     [
                         data,
                         pad_sequences(
-                            modality.data, maxlen=max_emb_size, dtype="float32"
+                            modality.data,
+                            maxlen=max_emb_size,
+                            dtype=modality.data.dtype,
                         ),
                     ],
                     axis=-1,

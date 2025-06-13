@@ -30,7 +30,6 @@ class NeuralNetwork:
     _X: Matrix
 
     def __init__(self, sds: SystemDSContext, dim: int):
-
         # first hidden layer
         self.affine1 = Affine(sds, dim, 128, seed=42)
         self.w1, self.b1 = self.affine1.weight, self.affine1.bias

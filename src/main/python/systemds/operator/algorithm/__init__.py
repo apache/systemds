@@ -31,6 +31,7 @@ from .builtin.alsDS import alsDS
 from .builtin.alsPredict import alsPredict 
 from .builtin.alsTopkPredict import alsTopkPredict 
 from .builtin.ampute import ampute 
+from .builtin.apply_pipeline import apply_pipeline 
 from .builtin.arima import arima 
 from .builtin.auc import auc 
 from .builtin.autoencoder_2layer import autoencoder_2layer 
@@ -38,7 +39,10 @@ from .builtin.bandit import bandit
 from .builtin.bivar import bivar 
 from .builtin.components import components 
 from .builtin.confusionMatrix import confusionMatrix 
+from .builtin.cooccurrenceMatrix import cooccurrenceMatrix 
 from .builtin.cor import cor 
+from .builtin.correctTypos import correctTypos 
+from .builtin.correctTyposApply import correctTyposApply 
 from .builtin.cov import cov 
 from .builtin.cox import cox 
 from .builtin.cspline import cspline 
@@ -50,15 +54,22 @@ from .builtin.dbscanApply import dbscanApply
 from .builtin.decisionTree import decisionTree 
 from .builtin.decisionTreePredict import decisionTreePredict 
 from .builtin.deepWalk import deepWalk 
+from .builtin.denialConstraints import denialConstraints 
 from .builtin.differenceStatistics import differenceStatistics 
 from .builtin.discoverFD import discoverFD 
 from .builtin.dist import dist 
+from .builtin.dmv import dmv 
+from .builtin.ema import ema 
 from .builtin.executePipeline import executePipeline 
 from .builtin.f1Score import f1Score 
 from .builtin.fdr import fdr 
 from .builtin.ffPredict import ffPredict 
 from .builtin.ffTrain import ffTrain 
+from .builtin.fit_pipeline import fit_pipeline 
+from .builtin.fixInvalidLengths import fixInvalidLengths 
+from .builtin.fixInvalidLengthsApply import fixInvalidLengthsApply 
 from .builtin.flattenQuantile import flattenQuantile 
+from .builtin.frameSort import frameSort 
 from .builtin.frequencyEncode import frequencyEncode 
 from .builtin.frequencyEncodeApply import frequencyEncodeApply 
 from .builtin.garch import garch 
@@ -97,6 +108,7 @@ from .builtin.img_translate_linearized import img_translate_linearized
 from .builtin.impurityMeasures import impurityMeasures 
 from .builtin.imputeByFD import imputeByFD 
 from .builtin.imputeByFDApply import imputeByFDApply 
+from .builtin.imputeByKNN import imputeByKNN 
 from .builtin.imputeByMean import imputeByMean 
 from .builtin.imputeByMeanApply import imputeByMeanApply 
 from .builtin.imputeByMedian import imputeByMedian 
@@ -126,6 +138,7 @@ from .builtin.mae import mae
 from .builtin.mape import mape 
 from .builtin.matrixProfile import matrixProfile 
 from .builtin.mcc import mcc 
+from .builtin.mdedup import mdedup 
 from .builtin.mice import mice 
 from .builtin.miceApply import miceApply 
 from .builtin.mse import mse 
@@ -153,6 +166,7 @@ from .builtin.pcaTransform import pcaTransform
 from .builtin.pnmf import pnmf 
 from .builtin.ppca import ppca 
 from .builtin.psnr import psnr 
+from .builtin.quantizeByCluster import quantizeByCluster 
 from .builtin.raGroupby import raGroupby 
 from .builtin.raJoin import raJoin 
 from .builtin.raSelection import raSelection 
@@ -165,6 +179,7 @@ from .builtin.scaleMinMax import scaleMinMax
 from .builtin.selectByVarThresh import selectByVarThresh 
 from .builtin.ses import ses 
 from .builtin.setdiff import setdiff 
+from .builtin.shapExplainer import shapExplainer 
 from .builtin.sherlock import sherlock 
 from .builtin.sherlockPredict import sherlockPredict 
 from .builtin.shortestPath import shortestPath 
@@ -189,10 +204,12 @@ from .builtin.symmetricDifference import symmetricDifference
 from .builtin.tSNE import tSNE 
 from .builtin.toOneHot import toOneHot 
 from .builtin.tomeklink import tomeklink 
+from .builtin.topk_cleaning import topk_cleaning 
 from .builtin.underSampling import underSampling 
 from .builtin.union import union 
 from .builtin.univar import univar 
 from .builtin.vectorToCsv import vectorToCsv 
+from .builtin.wer import wer 
 from .builtin.winsorize import winsorize 
 from .builtin.winsorizeApply import winsorizeApply 
 from .builtin.xdummy1 import xdummy1 
@@ -211,6 +228,7 @@ __all__ = ['WoE',
  'alsPredict',
  'alsTopkPredict',
  'ampute',
+ 'apply_pipeline',
  'arima',
  'auc',
  'autoencoder_2layer',
@@ -218,7 +236,10 @@ __all__ = ['WoE',
  'bivar',
  'components',
  'confusionMatrix',
+ 'cooccurrenceMatrix',
  'cor',
+ 'correctTypos',
+ 'correctTyposApply',
  'cov',
  'cox',
  'cspline',
@@ -230,15 +251,22 @@ __all__ = ['WoE',
  'decisionTree',
  'decisionTreePredict',
  'deepWalk',
+ 'denialConstraints',
  'differenceStatistics',
  'discoverFD',
  'dist',
+ 'dmv',
+ 'ema',
  'executePipeline',
  'f1Score',
  'fdr',
  'ffPredict',
  'ffTrain',
+ 'fit_pipeline',
+ 'fixInvalidLengths',
+ 'fixInvalidLengthsApply',
  'flattenQuantile',
+ 'frameSort',
  'frequencyEncode',
  'frequencyEncodeApply',
  'garch',
@@ -277,6 +305,7 @@ __all__ = ['WoE',
  'impurityMeasures',
  'imputeByFD',
  'imputeByFDApply',
+ 'imputeByKNN',
  'imputeByMean',
  'imputeByMeanApply',
  'imputeByMedian',
@@ -306,6 +335,7 @@ __all__ = ['WoE',
  'mape',
  'matrixProfile',
  'mcc',
+ 'mdedup',
  'mice',
  'miceApply',
  'mse',
@@ -333,6 +363,7 @@ __all__ = ['WoE',
  'pnmf',
  'ppca',
  'psnr',
+ 'quantizeByCluster',
  'raGroupby',
  'raJoin',
  'raSelection',
@@ -345,6 +376,7 @@ __all__ = ['WoE',
  'selectByVarThresh',
  'ses',
  'setdiff',
+ 'shapExplainer',
  'sherlock',
  'sherlockPredict',
  'shortestPath',
@@ -369,10 +401,12 @@ __all__ = ['WoE',
  'tSNE',
  'toOneHot',
  'tomeklink',
+ 'topk_cleaning',
  'underSampling',
  'union',
  'univar',
  'vectorToCsv',
+ 'wer',
  'winsorize',
  'winsorizeApply',
  'xdummy1',

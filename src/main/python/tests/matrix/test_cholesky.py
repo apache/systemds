@@ -32,7 +32,6 @@ A = np.matmul(A, A.transpose())
 
 
 class TestCholesky(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod
@@ -45,7 +44,6 @@ class TestCholesky(unittest.TestCase):
 
 
 class TestCholeskyValid(TestCholesky):
-
     def test_basic1(self):
         L = self.sds.from_numpy(A).cholesky().compute()
         self.assertTrue(np.allclose(L, np.linalg.cholesky(A)))
@@ -64,7 +62,6 @@ class TestCholeskyInvalid_1(TestCholesky):
 
 
 class TestCholeskyInvalid_2(TestCholesky):
-
     def test_symmetric_matrix(self):
         m2 = np.asarray([[4, 9], [1, 4]])
         np.linalg.cholesky(m2)

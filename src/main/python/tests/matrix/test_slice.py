@@ -31,7 +31,6 @@ m = np.random.rand(3, 4)
 
 
 class TestFederatedAggFn(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

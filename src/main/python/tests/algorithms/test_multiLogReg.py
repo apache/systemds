@@ -27,7 +27,6 @@ from systemds.operator.algorithm import multiLogReg, multiLogRegPredict
 
 
 class TestMultiLogReg(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

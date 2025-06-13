@@ -35,7 +35,6 @@ shape = (25, 25)
 
 
 class TestReplaceMatrix(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

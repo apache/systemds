@@ -26,7 +26,6 @@ from systemds.context import SystemDSContext
 
 
 class TestContextCreation(unittest.TestCase):
-
     def test_random_port(self):
         sds1 = SystemDSContext()
         sds1.close()

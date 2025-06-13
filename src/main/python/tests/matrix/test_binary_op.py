@@ -35,7 +35,6 @@ s = 3.02
 
 
 class TestBinaryOp(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

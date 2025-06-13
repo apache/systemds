@@ -29,7 +29,6 @@ from systemds.context import SystemDSContext
 
 
 class TestReadCSV(unittest.TestCase):
-
     sds: SystemDSContext = None
     temp_dir: str = "tests/iotests/temp_write_csv/"
     n_cols = 3

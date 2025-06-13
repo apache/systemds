@@ -39,4 +39,4 @@ and then run `make html`:
 make html
 ```
 
-The docs will then be created at: `/src/main/python/build`in HTML will be placed in the `./_build` directory.
+The docs will then be created at: `/src/main/python/docs/build/html/`.

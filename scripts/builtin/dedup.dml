@@ -51,22 +51,31 @@ dedup = function(Frame[String] X, Matrix[Double] gloveMatrix, Matrix[String] voc
   # Step 2: generate LSH Hyperplanes
   K = 10 # number of hash functions
   d = nCol(V)
-  H = rand(rows=K, cols=d, pdf="normal", seed=-1)
+  H = rand(rows=K, cols=d, pdf="normal", seed=-1) # matrix with random hyperplanes
 
   # Step 3: Compute LSH Hashcodes
-  hashcodes = computeLSH(V, H)
+  hashCodes = computeLSH(V, H)
 
   # Step 4: Form Buckets 
+  # Tuples with similar directions → often have the same hash code
+  bucketIDs = formBuckets(hashCodes)
 
   # Step 5: Candidate Pair Generation
+  pairs = findCandidatePairs(bucketIDs)
 
-  # Step 6: COmpute Similarity for Pairs
+  # Step 6: Compute Similarity for Pairs
+  sim = computeSimilarity(V, pairs, similarityMeasure)
 
   # Step 7: Filter Duplicates 
+  # define threshold
+  matches = filterDuplicates(pairs, sim, threshold)
 
   # Step 8: Return according to flag
-
-
+  if (returnDuplicates) {
+    Y = extractDuplicates
+  } else {
+    Y = removeDuplicates
+  }
 }
 
 computeDRMatrix = function(Frame[String] X, Matrix[String] vocab, Matrix[Double] gloveMatrix)
@@ -119,7 +128,25 @@ computeLSH = function(Matrix[Double] V, Matrix[Double] H)
     # if 1 -> 1*2-1 = 1
     hashCodes = (P > 0) * 2 - 1 
   }
-  
+
+formBuckets = function(Matrix[Int] hashCodes)
+  return (Matrix[Int] bucketIDs)
+  {
+    n = nrow(hashCodes)
+    K = ncol(hashCodes)
+
+    # convert 1/-1 to binary
+    bincodes = (hashCodes + 1) /2
+
+    # generate binary weighting vector (e.g. 2^n-1, ..., 2^0)
+    powers = matrix(0, rows=1, cols=K)
+    for (k in 1:K) {
+      powers[1, k] = 2^(K-k)
+    }
+    
+    # generate Bucket-IDs
+    bucketIDs = binCodes %*% t(powers)
+  }
 
 # extractDuplicates
 

@@ -19,17 +19,78 @@
 #
 #-------------------------------------------------------------
 
-# TODO: Documentation 
+# Builtin for deduplication using distributed representations (DRs) and
+# locality-sensitive hashing (LSH) based blocking.
+#
+# The function encodes each input tuple as a dense vector using pre-trained GloVe embeddings (simple averaging), 
+# groups semantically similar tuples via LSH into buckets, and compares only those pairs for deduplication.
+# 
+#
+# INPUT:
+# --------------------------------------------------------------------------------------
+# X                 Input Frame[String] with n rows and d columns (raw tuples)
+# gloveMatrix       Matrix[Double] of size |V| × e (pretrained GloVe embeddings) -> |V| number of words and e = embedding dimesnion
+# vocab             Matrix[String] of size |V| × 1 (vocabulary aligned with gloveMatrix)
+# similarityMeasure String specifying similarity metric: "cosine", "euclidean", etc.
+# returnDuplicates  Boolean: if TRUE, return only detected duplicate rows;
+#                   if FALSE, return input minus all detected duplicates
+# --------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# --------------------------------------------------------------------------------------
+# Y    Frame[String] of deduplicated or duplicate-only tuples
+# --------------------------------------------------------------------------------------
 
 
-dedup = function(Frame[String] X, String similarityMeasure, Boolean returnDuplicates)
+dedup = function(Frame[String] X, Matrix[Double] gloveMatrix, Matrix[String] vocab, String similarityMeasure, Boolean returnDuplicates)
   return(Frame[String] FinalData)
 {
+  # Step 1: Distributed Representation (DRs)
+  V = computeDRMatrix(X, vocab, gloveMatrix)
 
 }
 
-# loadEmbeddings 
- 
+computeDRMatrix = function(Frame[String] X, Matrix[String] vocab, Matrix[Double] gloveMatrix)
+  return (Matrix[Double] V)
+  {
+    n = nrow(X)
+    d = ncol(gloveMatrix)
+    V = matrix(0, rows=n, cols=d) # define output matrix
+
+    for (i in 1:n) {
+      line = concat(X[i,])              # z. B. "Bill Gates Seattle"
+      clean = lowerCase(trim(line))     # "bill gates seattle"
+      words = strsplit(clean, " ")      # [ "bill", "gates", "seattle" ]
+
+      sumVec = matrix(0, rows=1, cols=d)
+      count = 0
+
+      for (k in 1:length(words)) {
+        w = words[k]
+        idx = -1
+
+        # search for word in vocabulary
+        for (m in 1:nrow(vocab)) {
+          if (vocab[m,1] == w) {  # TODO: better solution ?
+            idx = m 
+            break
+          }
+        }
+        # word found 
+        if (idx > 0) {
+          sumVec = sumVec + gloveMatrix[idx,]
+          count = count + 1
+        }
+      }
+      if (count > 0) {
+        V[i,] = sumVec / count
+      }
+      else {
+        V[i,] = sumVec
+      }
+    }
+  }
+
 # computeTupleVector
 
 # lshBlocking

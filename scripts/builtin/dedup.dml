@@ -48,6 +48,25 @@ dedup = function(Frame[String] X, Matrix[Double] gloveMatrix, Matrix[String] voc
   # Step 1: Distributed Representation (DRs)
   V = computeDRMatrix(X, vocab, gloveMatrix)
 
+  # Step 2: generate LSH Hyperplanes
+  K = 10 # number of hash functions
+  d = nCol(V)
+  H = rand(rows=K, cols=d, pdf="normal", seed=-1)
+
+  # Step 3: Compute LSH Hashcodes
+  hashcodes = computeLSH(V, H)
+
+  # Step 4: Form Buckets 
+
+  # Step 5: Candidate Pair Generation
+
+  # Step 6: COmpute Similarity for Pairs
+
+  # Step 7: Filter Duplicates 
+
+  # Step 8: Return according to flag
+
+
 }
 
 computeDRMatrix = function(Frame[String] X, Matrix[String] vocab, Matrix[Double] gloveMatrix)
@@ -91,9 +110,16 @@ computeDRMatrix = function(Frame[String] X, Matrix[String] vocab, Matrix[Double]
     }
   }
 
-# computeTupleVector
-
-# lshBlocking
+computeLSH = function(Matrix[Double] V, Matrix[Double] H)
+  return (Matrix[Int] hashCodes)
+  {
+    # matrix multiplication: projection of each DR vector on hyperplanes
+    P = V %*% t(H) 
+    # if 0 -> 0*2-1 = -1
+    # if 1 -> 1*2-1 = 1
+    hashCodes = (P > 0) * 2 - 1 
+  }
+  
 
 # extractDuplicates
 

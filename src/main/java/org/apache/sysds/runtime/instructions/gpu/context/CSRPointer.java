@@ -211,14 +211,17 @@ public class CSRPointer {
 	 * @return CSR (compressed sparse row) pointer
 	 */
 	public static CSRPointer allocateForDgeam(GPUContext gCtx, cusparseHandle handle, CSRPointer A, CSRPointer B, int m, int n) {
-		if (A.nnz >= Integer.MAX_VALUE || B.nnz >= Integer.MAX_VALUE)
+		if(A.nnz >= Integer.MAX_VALUE || B.nnz >= Integer.MAX_VALUE)
 			throw new DMLRuntimeException("Number of non zeroes is larger than supported by cuSparse");
 		CSRPointer C = new CSRPointer(gCtx);
 		step1AllocateRowPointers(gCtx, handle, C, m);
+		ensureSorted(handle, m, n, toIntExact(A.nnz), A.rowPtr, A.colInd, A.descr);
+		ensureSorted(handle, m, n, toIntExact(B.nnz), B.rowPtr, B.colInd, B.descr);
 		step2GatherNNZGeam(gCtx, handle, A, B, C, m, n);
 		step3AllocateValNInd(gCtx, handle, C);
 		return C;
 	}
+
 
 	/**
 	 * Estimates the number of non-zero elements from the result of a sparse matrix multiplication C = A * B
@@ -450,6 +453,41 @@ public class CSRPointer {
 
 		C.val = gCtx.allocate(null, getDataTypeSizeOf(C.nnz), false);
 		C.colInd = gCtx.allocate(null, getIntSizeOf(C.nnz), false);
+	}
+
+	/**
+	 * Sort rows of matrix.
+	 *
+	 * @param handle
+	 * @param m
+	 * @param n
+	 * @param nnz
+	 * @param rowPtr
+	 * @param colInd
+	 * @param descr
+	 */
+	private static void ensureSorted(cusparseHandle handle, int m, int n, int nnz, Pointer rowPtr, Pointer colInd,
+		cusparseMatDescr descr) {
+
+		// 1. workspace size for sorting
+		long[] bufSize = {0};
+		JCusparse.cusparseXcsrsort_bufferSizeExt(handle, m, n, nnz, rowPtr, colInd, bufSize);
+
+		Pointer work = new Pointer();
+		if(bufSize[0] > 0)
+			cudaMalloc(work, bufSize[0]);
+
+		// 2. create a permutation array (can be NULL if you don’t care)
+		Pointer P = new Pointer();
+		cudaMalloc(P, (long) nnz * Sizeof.INT);
+		JCusparse.cusparseCreateIdentityPermutation(handle, nnz, P);
+
+		// 3. sort in-place
+		JCusparse.cusparseXcsrsort(handle, m, n, nnz, descr, rowPtr, colInd, P, work);
+
+		cudaFree(P);
+		if(bufSize[0] > 0)
+			cudaFree(work);
 	}
 
 	// ==============================================================================================

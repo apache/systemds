@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.instructions;
 
+import java.util.HashMap;
+
 import org.apache.sysds.common.InstructionType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.fed.AggregateBinaryFEDInstruction;
@@ -29,6 +31,7 @@ import org.apache.sysds.runtime.instructions.fed.BinaryFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.CentralMomentFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.CovarianceFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FEDType;
 import org.apache.sysds.runtime.instructions.fed.IndexingFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.QuantilePickFEDInstruction;
@@ -36,6 +39,9 @@ import org.apache.sysds.runtime.instructions.fed.QuantileSortFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.ReorgFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.TernaryFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.TsmmFEDInstruction;
+import org.apache.sysds.lops.RightIndex;
+import org.apache.sysds.lops.LeftIndex;
+import org.apache.sysds.lops.Append;
 
 public class FEDInstructionParser extends InstructionParser
 {

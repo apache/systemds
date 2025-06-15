@@ -56,8 +56,20 @@ public class ColumnDecoderBin extends ColumnDecoder {
 
     @Override
     public ColumnDecoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
-        // federated not supported yet
-        throw new NotImplementedException();
+        if (colEnd - colStart != 1)
+            throw new NotImplementedException();
+
+        for (int i = 0; i < _colList.length; i++) {
+            if (_colList[i] == colStart) {
+                ValueType[] schema = (_schema != null) ? new ValueType[]{_schema[colStart - 1]} : null;
+                ColumnDecoderBin sub = new ColumnDecoderBin(schema, new int[]{colStart});
+                sub._numBins = new int[]{_numBins[i]};
+                sub._binMins = new double[][]{_binMins[i]};
+                sub._binMaxs = new double[][]{_binMaxs[i]};
+                return sub;
+            }
+        }
+        return null;
     }
 
     @Override

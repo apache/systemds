@@ -244,6 +244,9 @@ public class FederatedPlanRewireTransTable {
                         hopCommonTable, newOuterTransTableList, newFormerTransTable,
                         privacyConstraintMap, fTypeMap, fedMap, unRefTwriteSet, unRefSet, progRootHopSet, fnStack, computeWeight,
                         networkWeight, parentLoopStack));
+
+            // Wire fcall operation to liveOutHops
+            wireUnRefTwriteToLiveOut(fsb, unRefTwriteSet, hopCommonTable, newFormerTransTable);
         } else { // generic (last-level)
             if (sb.getHops() != null) {
                 for (Hop c : sb.getHops())
@@ -295,6 +298,8 @@ public class FederatedPlanRewireTransTable {
         if (hop instanceof FunctionOp) {
             // maintain counters and investigate functions if not seen so far
             FunctionOp fop = (FunctionOp) hop;
+            unRefTwriteSet.add(fop.getHopID());
+
             if (fop.getFunctionType() == FunctionType.DML) {
                 String fkey = fop.getFunctionKey();
 
@@ -339,13 +344,9 @@ public class FederatedPlanRewireTransTable {
                 || (((DataOp) hop).getOp() == Types.OpOpData.PERSISTENTWRITE)) {
             privacyConstraintMap.put(hop.getHopID(),
                     getPrivacyConstraint(hop, hop.getInput(), privacyConstraintMap));
-                    
-            if (allowsFederated(hop, fTypeMap)) {
-                FType resultFType = getFType(hop, fTypeMap);
-                fTypeMap.put(hop.getHopID(), resultFType);
-            } else {
-                fTypeMap.put(hop.getHopID(), null);
-            }
+            fTypeMap.put(hop.getHopID(), getFederatedType(hop, fTypeMap));
+            // Todo: Remove this after debugging
+//            FederatedPlannerLogger.logHopInfo(hop, privacyConstraintMap, fTypeMap, "RewireTransHop");
             return;
         }
 
@@ -952,11 +953,16 @@ public class FederatedPlanRewireTransTable {
 
     private static void wireUnRefTwriteToLiveOut(StatementBlock sb, Set<Long> unRefTwriteSet,
             Map<Long, HopCommon> hopCommonTable, Map<String, List<Hop>> newFormerTransTable) {
+        if (unRefTwriteSet.isEmpty())
+            return;
+
         VariableSet genHops = sb.getGen();
         VariableSet updatedHops = sb.variablesUpdated();
         VariableSet liveOutHops = sb.liveOut();
 
-        for (Long unRefTwriteHopID : unRefTwriteSet) {
+        Iterator<Long> unRefTwriteIterator = unRefTwriteSet.iterator();
+        while (unRefTwriteIterator.hasNext()) {
+            Long unRefTwriteHopID = unRefTwriteIterator.next();
             Hop unRefTwriteHop = hopCommonTable.get(unRefTwriteHopID).getHopRef();
             String unRefTwriteHopName = unRefTwriteHop.getName();
 
@@ -964,7 +970,7 @@ public class FederatedPlanRewireTransTable {
                 continue;
             }
 
-            if (genHops.containsVariable(unRefTwriteHopName) || updatedHops.containsVariable(unRefTwriteHopName)) {
+            if (unRefTwriteHop instanceof FunctionOp || genHops.containsVariable(unRefTwriteHopName) || updatedHops.containsVariable(unRefTwriteHopName)) {
                 Iterator<String> liveOutHopsIterator = liveOutHops.getVariableNames().iterator();
 
                 boolean isRewired = false;
@@ -976,6 +982,7 @@ public class FederatedPlanRewireTransTable {
                         List<Hop> copyLiveOutHopsList = new ArrayList<>(liveOutHopsList);
                         copyLiveOutHopsList.add(unRefTwriteHop);
                         newFormerTransTable.put(liveOutHopName, copyLiveOutHopsList);
+                        unRefTwriteIterator.remove();
                         isRewired = true;
                         break;
                     }

@@ -263,9 +263,6 @@ public class FederatedPlanCostEnumerator {
 			FunctionOp fop = (FunctionOp) hop;
 			if (fop.getFunctionType() == FunctionType.DML) {
 				String fkey = fop.getFunctionKey();
-				for (Hop inputHop : fop.getInput()) {
-					fkey += "," + inputHop.getName();
-				}
 
 				if (!fnStack.contains(fkey)) {
 					fnStack.add(fkey);
@@ -279,8 +276,11 @@ public class FederatedPlanCostEnumerator {
 		}
 
 		// Enumerate the federated plan for the current Hop
-		enumerateHop(hop, memoTable, hopCommonTable, rewireTable, privacyConstraintMap, fTypeMap, unRefTwriteSet, fnStack,
-				numOfWorkers);
+		enumerateHop(hop, memoTable, hopCommonTable, rewireTable, privacyConstraintMap, 
+			fTypeMap, unRefTwriteSet, fnStack, numOfWorkers);
+
+//		FederatedPlanRewireTransTable.logHopInfo(hop, privacyConstraintMap, fTypeMap, "enumerateHopDAG");
+
 	}
 
 	/**

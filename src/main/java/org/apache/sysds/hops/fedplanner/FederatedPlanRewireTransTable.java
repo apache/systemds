@@ -633,137 +633,303 @@ public class FederatedPlanRewireTransTable {
         for (int i = 0; i < hop.getInput().size(); i++)
             ft[i] = fTypeMap.get(hop.getInput(i).getHopID());
 
-		// AggBinaryOp operations
-		if( hop instanceof AggBinaryOp ) {
-			return (ft[0] != null && ft[1] == null)
-				|| (ft[0] == null && ft[1] != null)
-				|| (ft[0] == FType.COL && ft[1] == FType.ROW);
-		}
-		// AggUnaryOp operations
-		else if(hop instanceof AggUnaryOp && ft.length==1 && ft[0] != null) {
-			AggOp aggOp = ((AggUnaryOp)hop).getOp();
-			return aggOp == AggOp.SUM || aggOp == AggOp.MIN || aggOp == AggOp.MAX;
-		}
-		// BinaryOp operations (non-scalar)
-		else if( hop instanceof BinaryOp && !hop.getDataType().isScalar() ) {
-			OpOp2 op = ((BinaryOp) hop).getOp();
-			if (op == OpOp2.MIN) {
-				return false;
-			}
-			return (ft[0] != null && ft[1] == null)
-				|| (ft[0] == null && ft[1] != null)
-				|| (ft[0] != null && ft[0] == ft[1]);
-		}
-		// DataGenOp operations
-		else if (hop instanceof DataGenOp) {
-			OpOpDG op = ((DataGenOp) hop).getOp();
-			return !(op == OpOpDG.TIME || op == OpOpDG.SINIT || op == OpOpDG.RAND || op == OpOpDG.SEQ);
-		}
-		// DataOp operations
-		else if (hop instanceof DataOp) {
-			OpOpData op = ((DataOp) hop).getOp();
-			return op == OpOpData.FEDERATED
-				|| op == OpOpData.TRANSIENTWRITE
-				|| op == OpOpData.TRANSIENTREAD;
-		}
-		// DnnOp operations
-		else if (hop instanceof DnnOp) {
-			return false;
-		}
-		// FunctionOp operations
-		else if (hop instanceof FunctionOp) {
-			FunctionOp fop = (FunctionOp) hop;
-			return !fop.getFunctionName().equalsIgnoreCase(Opcodes.TRANSFORMENCODE.toString());
-		}
-		// NaryOp operations
-		else if (hop instanceof NaryOp) {
-			OpOpN op = ((NaryOp) hop).getOp();
-			return !(op == OpOpN.PRINTF || op == OpOpN.EVAL || op == OpOpN.LIST
-				// cbind/rbind of lists only support in CP right now
-				|| (op == OpOpN.CBIND && hop.getInput().get(0).getDataType().isList())
-				|| (op == OpOpN.RBIND && hop.getInput().get(0).getDataType().isList()));
-		}
-		// ParameterizedBuiltinOp operations
-		else if (hop instanceof ParameterizedBuiltinOp) {
-			ParamBuiltinOp op = ((ParameterizedBuiltinOp) hop).getOp();
-			return !(op == ParamBuiltinOp.TOSTRING || op == ParamBuiltinOp.LIST
-				|| op == ParamBuiltinOp.CDF || op == ParamBuiltinOp.INVCDF
-				|| op == ParamBuiltinOp.PARAMSERV || op == ParamBuiltinOp.REXPAND
-				|| op == ParamBuiltinOp.REPLACE);
-		}
-		// ReorgOp operations
-		else if ( hop instanceof ReorgOp && ((ReorgOp)hop).getOp() == ReOrgOp.TRANS ){
-			return ft[0] == FType.COL || ft[0] == FType.ROW;
-		}
-		// TernaryOp operations (non-scalar)
-		else if( hop instanceof TernaryOp && !hop.getDataType().isScalar() ) {
-			OpOp3 op = ((TernaryOp) hop).getOp();
-			if (op == OpOp3.CTABLE || op == OpOp3.IFELSE) {
-				return false;
-			}
-			return (ft[0] != null || ft[1] != null || ft[2] != null);
-		}
-		// UnaryOp operations
-		else if (hop instanceof UnaryOp) {
-			UnaryOp uop = (UnaryOp) hop;
-			OpOp1 op = uop.getOp();
-			return !(op == OpOp1.PRINT || op == OpOp1.ASSERT || op == OpOp1.STOP
-				|| op == OpOp1.TYPEOF || op == OpOp1.INVERSE || op == OpOp1.EIGEN
-				|| op == OpOp1.CHOLESKY || op == OpOp1.DET || op == OpOp1.SVD
-				|| op == OpOp1.SQRT_MATRIX_JAVA || op == OpOp1.LOG || op == OpOp1.ROUND
-				|| hop.getInput().get(0).getDataType() == DataType.LIST
-				|| uop.isMetadataOperation());
-		}
-		return false;
-	}
+        // Handle operations with no inputs
+        if (ft.length == 0) {
+            return null;
+        }
 
+        // Common patterns used across multiple operation types
+        FType firstFType = ft[0];
+        boolean hasFederatedFirstInput = firstFType != null;
 
-   private static FType getFType(Hop hop, Map<Long, FType> fTypeMap){
-       //generically obtain the input FTypes
-       FType[] ft = new FType[hop.getInput().size()];
-       for( int i=0; i<hop.getInput().size(); i++ )
-           ft[i] = fTypeMap.get(hop.getInput(i).getHopID());
+        // ========================================================================
+        // PART 2: Operations NOT requiring federated first input
+        // ========================================================================
+        
+        // NaryOp: N-ary operations with matrix/list support
+        if (hop instanceof NaryOp) {
+            OpOpN op = ((NaryOp) hop).getOp();
+            
+            // Unsupported operations:
+            // - PRINTF/EVAL: Output operations, execute on coordinator only
+            // - LIST: List operations not federated
+            // - CBIND/RBIND on lists: Only matrix operations supported
+            // - Cell operations on all scalars: No distribution benefit
+            if (op == OpOpN.PRINTF || op == OpOpN.EVAL || op == OpOpN.LIST ||
+                ((op == OpOpN.CBIND || op == OpOpN.RBIND) && 
+                hop.getInput().get(0).getDataType().isList()) ||
+                (op.isCellOp() && 
+                hop.getInput().stream().allMatch(h -> h.getDataType().isScalar()))) {
+                return null;
+            }
+            
+            // Supported matrix operations: CBIND/RBIND (matrix concat), PLUS/MULT (arithmetic), MIN/MAX (comparison)
+            if (op == OpOpN.CBIND || op == OpOpN.RBIND ||
+                op == OpOpN.PLUS || op == OpOpN.MULT ||
+                op == OpOpN.MIN || op == OpOpN.MAX) {
+                FType secondFType = ft.length > 1 ? ft[1] : null;
+                return firstFType != null ? firstFType : secondFType;
+            }
+            
+            // Other NaryOp operations not supported
+            return null;
+        }
+        
+        // TernaryOp: Three-input operations with complex federation patterns
+        if (hop instanceof TernaryOp) {
+            // Scalar output operations don't have FType
+            if (hop.getDataType().isScalar()) {
+                return null;
+            }
+            
+            // Operations that produce scalar output or are unsupported:
+            // - MOMENT/COV: Aggregation operations produce scalar
+            // - IFELSE/MAP: No federated implementation
+            OpOp3 op = ((TernaryOp) hop).getOp();
+            if (op == OpOp3.MOMENT || op == OpOp3.COV ||
+                op == OpOp3.IFELSE || op == OpOp3.MAP) {
+                return null;
+            }
 
-       if ( hop.isScalar() )
-			return null;
-		if( hop instanceof AggBinaryOp ) {
-			MMTSJType mmtsj = ((AggBinaryOp) hop).checkTransposeSelf() ; //determine tsmm pattern
-			FType ret = null;
+            // Check if any input is federated
+            boolean hasAnyFederatedInput = false;
+            boolean hasRowPartition = false;
+            for (FType f : ft) {
+                if (f == FType.ROW) {
+                    hasRowPartition = true;
+                    hasAnyFederatedInput = true;
+                    break;
+                } else if (f != null) {
+                    hasAnyFederatedInput = true;
+                }
+            }
+            
+            // Requires at least one federated input
+            // CTABLE: Special ROW partition requirement
+            if (!hasAnyFederatedInput || (!hasRowPartition && op == OpOp3.CTABLE)) {
+                return null;
+            }
 
-           if ( mmtsj != MMTSJType.NONE &&
-				(( mmtsj.isLeft() && ft[0] == FType.ROW ) || ( mmtsj.isRight() && ft[0] == FType.COL ) ))
-				ret =  FType.BROADCAST;
-			else if( ft[0] != null )
-				ret = ft[0] == FType.ROW ? FType.ROW : null;
-           		//apply operator-specific heuristics
-			if( (ret == FType.ROW && hop.getDim2()==1) || (ret == FType.COL && hop.getDim1()==1) )
-				ret = null; //get local vectors
-			return ret;
-		}
-		else if ( hop instanceof AggUnaryOp ){
-			boolean isColAgg = ((AggUnaryOp) hop).getDirection().isCol();
-			if ( (ft[0] == FType.ROW && isColAgg) || (ft[0] == FType.COL && !isColAgg) )
-				return null;
-			else if (ft[0] == FType.ROW || ft[0] == FType.COL)
-				return ft[0];
-		}
-		else if( hop instanceof BinaryOp )
-			return ft[0] != null ? ft[0] : ft[1];
-		else if ( HopRewriteUtils.isData(hop, Types.OpOpData.FEDERATED) )
-			return deriveFType((DataOp)hop);
-		else if ( HopRewriteUtils.isData(hop, Types.OpOpData.TRANSIENTWRITE)
-			|| HopRewriteUtils.isData(hop, Types.OpOpData.TRANSIENTREAD) )
-			return ft[0];
-		else if( HopRewriteUtils.isReorg(hop, ReOrgOp.TRANS) ){
-			if (ft[0] == FType.ROW)
-				return FType.COL;
-			else if (ft[0] == FType.COL)
-				return FType.ROW;
-		}
-		else if( hop instanceof TernaryOp )
-			return ft[0] != null ? ft[0] : ft[1] != null ? ft[1] : ft[2];
-		return null;
-	}
+            // All supported operations propagate first non-null FType
+            FType secondFType = ft.length > 1 ? ft[1] : null;
+            return firstFType != null ? firstFType : 
+                secondFType != null ? secondFType : 
+                ft.length > 2 ? ft[2] : null;
+        }
+        
+        // AggBinaryOp: Matrix multiplication and aggregation operations
+        if (hop instanceof AggBinaryOp) {
+            FType secondFType = ft.length > 1 ? ft[1] : null;
+            boolean hasFederatedSecondInput = secondFType != null;
+            
+            // Check supported federation patterns
+            if(!((hasFederatedFirstInput != hasFederatedSecondInput) || // One federated, one not
+            (firstFType != null && firstFType == secondFType) || // Both federated with same type
+            (firstFType == FType.COL && secondFType == FType.ROW))) { // Special matrix multiplication patterns
+                return null;
+            }
+
+            // Determine output FType based on operation type
+            MMTSJType mmtsj = ((AggBinaryOp) hop).checkTransposeSelf();
+            
+            // Self-transpose matrix multiplication (X'X or XX') results in BROADCAST
+            if (mmtsj != MMTSJType.NONE &&
+                ((mmtsj.isLeft() && firstFType == FType.ROW) || 
+                (mmtsj.isRight() && firstFType == FType.COL))) {
+                return FType.BROADCAST;
+            }
+            // One federated input: propagate its FType
+            else if ((firstFType != null) != (secondFType != null)) {
+                return firstFType != null ? firstFType : secondFType;
+            }
+            // COL x ROW multiplication results in ROW partitioning
+            else if (firstFType == FType.COL && secondFType == FType.ROW) {
+                return FType.ROW;
+            }
+            // Same partition type: maintain it
+            else if ((firstFType == FType.ROW && secondFType == FType.ROW) || 
+                    (firstFType == FType.COL && secondFType == FType.COL)) {
+                return firstFType;
+            }
+            return null;
+        }
+        
+        // BinaryOp: Standard binary operations (+, -, *, /, min, max)
+        if (hop instanceof BinaryOp) {
+            // Scalar operations don't have FType
+            if (hop.getDataType().isScalar()) {
+                return null;
+            }
+            
+            FType secondFType = ft.length > 1 ? ft[1] : null;
+            boolean hasFederatedSecondInput = secondFType != null;
+            
+            // Unsupported patterns: no federated inputs, or both federated with different types
+            if ((!hasFederatedFirstInput && !hasFederatedSecondInput) ||
+                (hasFederatedFirstInput && hasFederatedSecondInput && firstFType != secondFType)) {
+                return null;
+            }
+
+            // Propagate first non-null FType
+            return firstFType != null ? firstFType : secondFType;
+        }
+
+        // ========================================================================
+        // PART 3: Operations REQUIRING federated first input
+        // ========================================================================
+        
+        // All remaining operations require federated first input
+        if (!hasFederatedFirstInput) {
+            return null;
+        }
+        
+        // Simple operations that maintain input structure:
+        // - IndexingOp: Right indexing X[i:j, k:l] - subset of federated matrix remains federated
+        // - LeftIndexingOp: Left-hand side indexing X[i:j, k:l] = Y - updates preserve partitioning
+        if (hop instanceof IndexingOp || hop instanceof LeftIndexingOp) {
+            return firstFType;
+        }
+        
+        // UnaryOp: Element-wise unary operations
+        if (hop instanceof UnaryOp) {
+            UnaryOp uop = (UnaryOp) hop;
+            OpOp1 op = uop.getOp();
+            
+            // Unsupported operations:
+            // - Output operations (PRINT, ASSERT, STOP): Execute on coordinator
+            // - Type/metadata operations (TYPEOF, NROW, NCOL): Return scalars
+            // - Complex decompositions (INVERSE, EIGEN, etc.): CP-only algorithms
+            // - SQRT_MATRIX_JAVA: Special matrix square root, CP only
+            // - List operations: List datatype not federated
+            // - Metadata operations: Return scalar metadata
+            if (op == OpOp1.PRINT || op == OpOp1.ASSERT || op == OpOp1.STOP ||
+                op == OpOp1.TYPEOF || op == OpOp1.INVERSE || op == OpOp1.EIGEN ||
+                op == OpOp1.CHOLESKY || op == OpOp1.DET || op == OpOp1.SVD ||
+                op == OpOp1.SQRT_MATRIX_JAVA ||
+                hop.getInput().get(0).getDataType() == DataType.LIST ||
+                uop.isMetadataOperation()) {
+                return null;
+            }
+            
+            // Element-wise operations maintain structure
+            return firstFType;
+        }
+        
+        // QuaternaryOp: Four-input weighted operations
+        if (hop instanceof QuaternaryOp) {
+            Types.OpOp4 op = ((QuaternaryOp) hop).getOp();
+            
+            // Scalar output operations:
+            // - WSLOSS: Weighted squared loss (returns scalar loss value)
+            // - WCEMM: Weighted cross entropy (returns scalar loss value)
+            if (op == Types.OpOp4.WSLOSS || op == Types.OpOp4.WCEMM) {
+                return null;
+            }
+            
+            // Operations maintaining first input's structure:
+            // - WSIGMOID: Weighted sigmoid
+            // - WUMM: Weighted unary matrix multiplication
+            if (op == Types.OpOp4.WSIGMOID || op == Types.OpOp4.WUMM) {
+                return firstFType;
+            }
+            
+            // WDIVMM: Weighted division matrix multiplication - use first non-null FType
+            if (op == Types.OpOp4.WDIVMM) {
+                FType firstNonNullFType = null;
+                for (FType f : ft) {
+                    if (f != null) {
+                        firstNonNullFType = f;
+                        break;
+                    }
+                }
+                return firstNonNullFType;
+            }
+            
+            // Default: maintain first input's FType
+            return firstFType;
+        }
+        
+        // AggUnaryOp: Aggregate unary operations with direction awareness
+        if (hop instanceof AggUnaryOp) {
+            AggOp aggOp = ((AggUnaryOp)hop).getOp();
+            
+            // Check if aggregation OpCode is supported
+            // Supported: SUM, MIN, MAX, SUM_SQ, MEAN, VAR, MAXINDEX, MININDEX
+            if (!(aggOp == AggOp.SUM || aggOp == AggOp.MIN || aggOp == AggOp.MAX 
+                || aggOp == AggOp.SUM_SQ || aggOp == AggOp.MEAN || aggOp == AggOp.VAR
+                || aggOp == AggOp.MAXINDEX || aggOp == AggOp.MININDEX)) {
+                return null;
+            }
+            
+            // Determine output FType based on aggregation direction
+            boolean isColAgg = ((AggUnaryOp) hop).getDirection().isCol();
+            
+            // Full aggregation produces scalar result:
+            // - ROW partition + column aggregation → scalar per row → local result
+            // - COL partition + row aggregation → scalar per column → local result
+            if ((firstFType == FType.ROW && isColAgg) || 
+                (firstFType == FType.COL && !isColAgg)) {
+                return null;
+            }
+            
+            // Partial aggregation maintains structure:
+            // - ROW partition + row aggregation → maintains ROW
+            // - COL partition + column aggregation → maintains COL
+            if (firstFType == FType.ROW || firstFType == FType.COL) {
+                return firstFType;
+            }
+            
+            // Other FTypes (FULL, BROADCAST) not affected by direction
+            return null;
+        }
+        
+        // ReorgOp: Reorganization operations that transform structure
+        if (hop instanceof ReorgOp) {
+            ReOrgOp op = ((ReorgOp)hop).getOp();
+            
+            // Unsupported operations:
+            // - RESHAPE: Dimension changes break partitioning assumptions
+            // - SORT: Requires global ordering across all partitions
+            if (op == ReOrgOp.RESHAPE || op == ReOrgOp.SORT) {
+                return null;
+            }
+            
+            // TRANS: Transpose swaps ROW↔COL partitioning
+            if (op == ReOrgOp.TRANS) {
+                if (firstFType == FType.ROW) return FType.COL;
+                if (firstFType == FType.COL) return FType.ROW;
+                return firstFType; // FULL/BROADCAST unchanged
+            }
+            
+            // Structure-maintaining operations: DIAG, REV, ROLL
+            return firstFType;
+        }
+        
+        // ParameterizedBuiltinOp: Builtin operations with parameters
+        if (hop instanceof ParameterizedBuiltinOp) {
+            ParamBuiltinOp op = ((ParameterizedBuiltinOp) hop).getOp();
+            
+            // CONTAINS returns scalar boolean result
+            if (op == ParamBuiltinOp.CONTAINS) {
+                return null;
+            }
+            
+            // Check if operation is supported
+            // Supported: REPLACE, RMEMPTY, LOWER_TRI, UPPER_TRI, TRANSFORMDECODE, TRANSFORMAPPLY, TOKENIZE
+            if (!(op == ParamBuiltinOp.REPLACE || op == ParamBuiltinOp.RMEMPTY ||
+                op == ParamBuiltinOp.LOWER_TRI || op == ParamBuiltinOp.UPPER_TRI ||
+                op == ParamBuiltinOp.TRANSFORMDECODE || op == ParamBuiltinOp.TRANSFORMAPPLY ||
+                op == ParamBuiltinOp.TOKENIZE)) {
+                return null;
+            }
+            
+            // Structure-preserving operations maintain input FType
+            return firstFType;
+        }
+
+        // Default: Unknown operation type or unhandled case
+        return null;
+    }
 
 	private static FType deriveFType(DataOp fedInit) {
 		Hop ranges = fedInit.getInput(fedInit.getParameterIndex(DataExpression.FED_RANGES));

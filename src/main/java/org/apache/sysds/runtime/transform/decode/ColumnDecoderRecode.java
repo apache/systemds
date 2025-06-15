@@ -58,8 +58,8 @@ public class ColumnDecoderRecode extends ColumnDecoder {
             out.ensureAllocatedColumns(in.getNumRows());
             for( int i=rl; i<ru; i++ ) {
                 for( int j=0; j<_colList.length; j++ ) {
-                    double val = in.get(i, _colList[j]-1);
-                    long key = UtilFunctions.toLong(val);
+                    //double val = in.get(i, _colList[j]-1);
+                    long key = UtilFunctions.toLong(in.get(i, j));
                     out.set(i, _colList[j]-1, getRcMapValue(j, key));
                 }
             }

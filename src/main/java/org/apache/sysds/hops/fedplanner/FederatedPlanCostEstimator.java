@@ -53,30 +53,34 @@ public class FederatedPlanCostEstimator {
 			List<Double> lOUTOnlychildCumulativeCost, List<Double> lOUTOnlychildForwardingCost,
 			List<Hop> fOUTOnlyinputHops, List<Double> fOUTOnlychildCumulativeCost,
 			List<Double> fOUTOnlychildForwardingCost) {
-		for (int i = 0; i < inputHops.size(); i++) {
-			Hop childHop = inputHops.get(i);
+
+		List<Hop> copyInputHops = new ArrayList<>(inputHops);
+		Iterator<Hop> iterator = copyInputHops.iterator();
+		int currentIndex = 0;
+
+		while (iterator.hasNext()) {
+			Hop childHop = iterator.next();
 			long childHopID = childHop.getHopID();
 
 			FedPlan childFOutFedPlan = memoTable.getFedPlanAfterPrune(childHopID, FederatedOutput.FOUT);
 			if (childFOutFedPlan == null) {
 				lOUTOnlyinputHops.add(childHop);
-				inputHops.remove(i);
-				i--;
+				iterator.remove();
 				continue;
 			}
 
 			FedPlan childLOutFedPlan = memoTable.getFedPlanAfterPrune(childHopID, FederatedOutput.LOUT);
 			if (childLOutFedPlan == null) {
 				fOUTOnlyinputHops.add(childHop);
-				inputHops.remove(i);
-				i--;
+				iterator.remove();
 				continue;
 			}
 
-			childCumulativeCost[i][0] = childLOutFedPlan.getCumulativeCostPerParents();
-			childCumulativeCost[i][1] = childFOutFedPlan.getCumulativeCostPerParents();
-			childForwardingCost[i] = hopCommon.getChildForwardingWeight(childLOutFedPlan.getLoopContext())
+			childCumulativeCost[currentIndex][0] = childLOutFedPlan.getCumulativeCostPerParents();
+			childCumulativeCost[currentIndex][1] = childFOutFedPlan.getCumulativeCostPerParents();
+			childForwardingCost[currentIndex] = hopCommon.getChildForwardingWeight(childLOutFedPlan.getLoopContext())
 					* childLOutFedPlan.getForwardingCostPerParents();
+			currentIndex++;
 		}
 
 		for (int i = 0; i < lOUTOnlyinputHops.size(); i++) {
@@ -84,6 +88,10 @@ public class FederatedPlanCostEstimator {
 			long childHopID = childHop.getHopID();
 
 			FedPlan childLOutFedPlan = memoTable.getFedPlanAfterPrune(childHopID, FederatedOutput.LOUT);
+			
+			if (childLOutFedPlan == null) {
+				throw new RuntimeException("childLOutFedPlan is null for hopID: " + childHopID + " (see details above)");
+			}
 			lOUTOnlychildCumulativeCost.add(childLOutFedPlan.getCumulativeCostPerParents());
 			lOUTOnlychildForwardingCost.add(hopCommon.getChildForwardingWeight(childLOutFedPlan.getLoopContext())
 					* childLOutFedPlan.getForwardingCostPerParents());
@@ -94,6 +102,10 @@ public class FederatedPlanCostEstimator {
 			long childHopID = childHop.getHopID();
 
 			FedPlan childFOutFedPlan = memoTable.getFedPlanAfterPrune(childHopID, FederatedOutput.FOUT);
+
+			if (childFOutFedPlan == null) {
+				throw new RuntimeException("childFOutFedPlan is null for hopID: " + childHopID + " (see details above)");
+			}
 			fOUTOnlychildCumulativeCost.add(childFOutFedPlan.getCumulativeCostPerParents());
 			fOUTOnlychildForwardingCost.add(hopCommon.getChildForwardingWeight(childFOutFedPlan.getLoopContext())
 					* childFOutFedPlan.getForwardingCostPerParents());
@@ -207,6 +219,12 @@ public class FederatedPlanCostEstimator {
 			// Retrieve the conflicting federated plans for LOUT and FOUT types
 			FedPlan confilctLOutFedPlan = memoTable.getFedPlanAfterPrune(conflictHopID, FederatedOutput.LOUT);
 			FedPlan confilctFOutFedPlan = memoTable.getFedPlanAfterPrune(conflictHopID, FederatedOutput.FOUT);
+
+			if (confilctLOutFedPlan == null || confilctFOutFedPlan == null) {
+				// Todo: Handle Error
+				FederatedPlannerLogger.logConflictResolutionError(conflictHopID, confilctLOutFedPlan, "Resolve Conflict");
+				continue;
+			}
 
 			// Variables to store additional costs for LOUT and FOUT types
 			double lOutAdditionalCost = 0;

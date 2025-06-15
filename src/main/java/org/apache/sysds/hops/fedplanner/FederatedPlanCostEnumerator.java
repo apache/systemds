@@ -357,17 +357,18 @@ public class FederatedPlanCostEnumerator {
 		Privacy privacyConstraint = privacyConstraintMap.get(hopID);
 		FType fType = fTypeMap.get(hopID);
 
-		if (isTrans) {		
+		if (isTrans) {
+			// TODO: If any child is LOUT/FOUT only, create transHop as LOUT/FOUT only as well. Need to verify if this is correct.
 			enumerateTransChildFedPlan(lOutFedPlanVariants, fOutFedPlanVariants, childHops, childCumulativeCost,
 					lOUTOnlyinputHops, lOUTOnlychildCumulativeCost, fOUTOnlyinputHops, fOUTOnlychildCumulativeCost,
 					selfCost, numOfWorkers);
 
-			// Todo: Can we really add both LOUT and FOUT plans?
-			lOutFedPlanVariants.pruneFedPlans();
-			fOutFedPlanVariants.pruneFedPlans();
-
-			memoTable.addFedPlanVariants(hopID, FederatedOutput.FOUT, fOutFedPlanVariants);
-			memoTable.addFedPlanVariants(hopID, FederatedOutput.LOUT, lOutFedPlanVariants);
+			if (lOutFedPlanVariants.pruneFedPlans()){
+				memoTable.addFedPlanVariants(hopID, FederatedOutput.LOUT, lOutFedPlanVariants);
+			};
+			if (fOutFedPlanVariants.pruneFedPlans()){
+				memoTable.addFedPlanVariants(hopID, FederatedOutput.FOUT, fOutFedPlanVariants);
+			}
 		} else if (fType == null) {
 			singleTypeEnumerateChildFedPlan(lOutFedPlanVariants, FederatedOutput.LOUT, childHops,
 				childCumulativeCost, childForwardingCost, lOUTOnlyinputHops, lOUTOnlychildCumulativeCost,
@@ -701,6 +702,11 @@ public class FederatedPlanCostEnumerator {
 				// Iterate over each child plan of the current plan
 				for (Pair<Long, FederatedOutput> childPlanPair : currentPlan.getChildFedPlans()) {
 					FedPlan childFedPlan = memoTable.getFedPlanAfterPrune(childPlanPair);
+
+					if (childFedPlan == null) {
+						// Todo: Handle Error
+						FederatedPlannerLogger.logNullFedPlanError(childPlanPair.getLeft(), "Resolve Conflict");
+					}
 
 					// Check if the child plan ID is already visited
 					if (conflictCheckMap.containsKey(childPlanPair.getLeft())) {

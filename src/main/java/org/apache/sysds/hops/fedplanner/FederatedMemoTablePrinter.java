@@ -196,13 +196,21 @@ public class FederatedMemoTablePrinter {
             for (Pair<Long, FederatedOutput> childPair : plan.getChildFedPlans()){
                 // Add forwarding weight for each edge
                 FedPlan childPlan = memoTable.getFedPlanAfterPrune(childPair.getLeft(), childPair.getRight());
-                String isForwardingCostOccured = "";
-                if (childPair.getRight() == plan.getFedOutType()){
-                    isForwardingCostOccured = "X";
+                
+                if (childPlan == null) {
+                    sb.append(String.format("(ID:%d, NULL)", childPair.getLeft()));
                 } else {
-                    isForwardingCostOccured = "O";
+                    String isForwardingCostOccured = "";
+                    if (childPair.getRight() == plan.getFedOutType()){
+                        isForwardingCostOccured = "X";
+                    } else {
+                        isForwardingCostOccured = "O";
+                    }
+                    sb.append(String.format("(ID:%d, %s, C:%.1f, F:%.1f, FW:%.1f)", childPair.getLeft(), isForwardingCostOccured, 
+                                childPlan.getCumulativeCostPerParents(), 
+                                plan.getChildForwardingWeight(childPlan.getLoopContext()) * childPlan.getForwardingCostPerParents(), 
+                                plan.getChildForwardingWeight(childPlan.getLoopContext())));
                 }
-                sb.append(String.format("(ID:%d, %s, C:%.1f, F:%.1f, FW:%.1f)", childPair.getLeft(), isForwardingCostOccured, childPlan.getCumulativeCostPerParents(), plan.getChildForwardingWeight(childPlan.getLoopContext()) * childPlan.getForwardingCostPerParents(), plan.getChildForwardingWeight(childPlan.getLoopContext())));
                 sb.append(childAdded?",":"");
             }
             sb.append("}");

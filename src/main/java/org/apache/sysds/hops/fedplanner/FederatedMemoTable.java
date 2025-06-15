@@ -59,6 +59,9 @@ public class FederatedMemoTable {
 
 	public FedPlan getFedPlanAfterPrune(Pair<Long, FederatedOutput> fedPlanPair) {
 		FedPlanVariants fedPlanVariantList = hopMemoTable.get(fedPlanPair);
+		if (fedPlanVariantList == null || fedPlanVariantList.isEmpty()) {
+			return null;
+		}
 		return fedPlanVariantList._fedPlanVariants.get(0);
 	}
 
@@ -142,8 +145,8 @@ public class FederatedMemoTable {
 		public List<FedPlan> getFedPlanVariants() {return _fedPlanVariants;}
 		public FederatedOutput getFedOutType() {return fedOutType;}
 
-		public void pruneFedPlans() {
-			if (_fedPlanVariants.size() > 1) {
+		public boolean pruneFedPlans() {
+			if (!_fedPlanVariants.isEmpty()) {
 				// Find the FedPlan with the minimum cumulative cost
 				FedPlan minCostPlan = _fedPlanVariants.stream()
 						.min(Comparator.comparingDouble(FedPlan::getCumulativeCost))
@@ -152,7 +155,9 @@ public class FederatedMemoTable {
 				// Retain only the minimum cost plan
 				_fedPlanVariants.clear();
 				_fedPlanVariants.add(minCostPlan);
+				return true;
 			}
+			return false;
 		}
 	}
 

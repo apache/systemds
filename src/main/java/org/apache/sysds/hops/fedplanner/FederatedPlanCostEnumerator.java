@@ -489,7 +489,6 @@ public class FederatedPlanCostEnumerator {
 				planChilds.add(Pair.of(inputHop.getHopID(), childType));
 
 				// Update the cumulative cost for LOUT, FOUT
-				// LOUT
 				cumulativeCost += childCumulativeCost[j][bit];
 				cumulativeCost += fedOutType == FederatedOutput.LOUT ? childForwardingCost[j] * (bit)
 						: childForwardingCost[j] * (1 - bit);

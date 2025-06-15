@@ -352,6 +352,8 @@ public class FederatedPlanRewireTransTable {
 
         rewireTransHop(hop, rewireTable, outerTransTableList, formerTransTable, innerTransTable, privacyConstraintMap,
                 fTypeMap, fedMap, unRefTwriteSet);
+        // Todo: Remove this after debugging
+//        FederatedPlannerLogger.logHopInfo(hop, privacyConstraintMap, fTypeMap, "RewireTransHop");
     }
 
     private static void rewireTransHop(Hop hop, Map<Long, List<Hop>> rewireTable,
@@ -385,7 +387,7 @@ public class FederatedPlanRewireTransTable {
 
             // Todo: Handle exception when TRead has no Child (check why it's missing)
             if (childHops == null || childHops.isEmpty()) {
-                System.out.println("[RewireTransHop] (hopName: " + hopName + ", hopID: " + hop.getHopID() + ") child hops is empty");
+                FederatedPlannerLogger.logTransReadRewireDebug(hopName, hop.getHopID(), childHops, true, "RewireTransHop");
                 return;
             }
 
@@ -401,7 +403,7 @@ public class FederatedPlanRewireTransTable {
 
             // Todo: Handle exception when TRead has no Filtered Child (check why it's missing)
             if (filteredChildHops.isEmpty()) {
-                System.out.println("[RewireTransHop] (hopName: " + hopName + ", hopID: " + hop.getHopID() + ") filtered child hops is empty");
+                FederatedPlannerLogger.logFilteredChildHopsDebug(hopName, hop.getHopID(), filteredChildHops, true, "RewireTransHop");
                 return;
             }
 
@@ -419,7 +421,14 @@ public class FederatedPlanRewireTransTable {
                 if ( i==0 ) {
                     inputFType = fTypeMap.get(filteredChildHopID);
                 } else if (inputFType != fTypeMap.get(filteredChildHopID)) {
-                    throw new DMLRuntimeException("TransRead input FType mismatch: " + inputFType + " != " + fTypeMap.get(filteredChildHopID));
+                    // Todo: Handle exception when TRead has different FType
+                    FType mismatchedFType = fTypeMap.get(filteredChildHopID);
+                    FederatedPlannerLogger.logFTypeMismatchError(hop, filteredChildHops, fTypeMap, inputFType, mismatchedFType, i);
+                    
+                    if (inputFType == null) {
+                        inputFType = mismatchedFType;
+                    }
+                    // throw new DMLRuntimeException("TransRead input FType mismatch: " + inputFType + " != " + mismatchedFType);
                 }
             }
             // Propagate Privacy Constraint

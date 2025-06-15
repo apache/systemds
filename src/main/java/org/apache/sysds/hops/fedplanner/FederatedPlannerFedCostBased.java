@@ -73,6 +73,13 @@ public class FederatedPlannerFedCostBased extends AFederatedPlanner {
 
         for (Pair<Long, FEDInstruction.FederatedOutput> childFedPlanPair : optimalPlan.getChildFedPlans()) {
             FedPlan childPlan = memoTable.getFedPlanAfterPrune(childFedPlanPair);
+            
+            // DEBUG: Check if getFedPlanAfterPrune returns null
+            if (childPlan == null) {
+				FederatedPlannerLogger.logNullChildPlanDebug(childFedPlanPair, optimalPlan, memoTable);
+                continue;
+            }
+            
 			rewriteHop(childPlan, memoTable, visited);
         }
 

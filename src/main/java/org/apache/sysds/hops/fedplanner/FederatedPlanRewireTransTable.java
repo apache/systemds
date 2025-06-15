@@ -631,7 +631,7 @@ public class FederatedPlanRewireTransTable {
         // - DnnOp: Deep learning operations designed exclusively for CP/GPU (CuDNN dependencies)
         // - FunctionOp: Function calls execute locally on coordinator (no 'fcall' in FEDInstructionParser)
         // - LiteralOp: Constants without computation, created at coordinator only
-        // - DataOp: Data operations (FEDERATED, TRANSIENTREAD, TRANSIENTWRITE) 은 따로 처리, 나머지는 지원 안함 (PERSISTENTWRITE/READ, FUNCTIONOUTPUT, SQLREAD)
+        // - DataOp: Data operations (FEDERATED, TRANSIENTREAD, TRANSIENTWRITE) are handled separately, others are not supported (PERSISTENTWRITE/READ, FUNCTIONOUTPUT, SQLREAD)
         if (hop instanceof DataGenOp || hop instanceof DnnOp || 
             hop instanceof FunctionOp || hop instanceof LiteralOp ||
             hop instanceof DataOp) {

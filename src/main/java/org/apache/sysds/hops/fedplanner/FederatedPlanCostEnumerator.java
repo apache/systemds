@@ -138,7 +138,7 @@ public class FederatedPlanCostEnumerator {
 
 		// Print the federated plan tree if requested
 		if (isPrint) {
-			FederatedMemoTablePrinter.printFedPlanTree(optimalPlan, unRefTwriteSet, memoTable, additionalTotalCost);
+			FederatedPlannerLogger.printFedPlanTree(optimalPlan, unRefTwriteSet, memoTable, additionalTotalCost);
 		}
 
 		return optimalPlan;

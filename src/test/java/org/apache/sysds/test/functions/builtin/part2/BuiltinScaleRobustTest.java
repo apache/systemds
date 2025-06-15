@@ -1,5 +1,8 @@
 package org.apache.sysds.test.functions.builtin.part2;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.IOException;
 import java.util.HashMap;
 
 import org.junit.Assert;
@@ -40,35 +43,66 @@ public class BuiltinScaleRobustTest extends AutomatedTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			fullRScriptName = HOME + TEST_NAME + ".R";
+			String fullPyScriptName = HOME + TEST_NAME + ".py";
 			programArgs = new String[]{"-args", input("A"), output("B")};
 			rCmd = "Rscript " + fullRScriptName + " " + inputDir() + " " + expectedDir();
+			String pyCmd = "python " + fullPyScriptName + " " + inputDir() + " " + expectedDir();
 
 			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 7);
 			writeInputMatrixWithMTD("A", A, true);
 
 			// Measure memory usage BEFORE DML execution
 			Runtime runtime = Runtime.getRuntime();
-			runtime.gc(); // Suggest garbage collection to get a cleaner measurement
+			runtime.gc(); 
 			long memBefore = runtime.totalMemory() - runtime.freeMemory();
 
-			runTest(true, false, null, -1); // Run DML script
+			runTest(true, false, null, -1); // Run DML 
 
 			// Measure memory usage AFTER DML execution
 			long memAfter = runtime.totalMemory() - runtime.freeMemory();
 			long memUsedBytes = memAfter - memBefore;
 			double memUsedMB = memUsedBytes / (1024.0 * 1024.0);
-
 			System.out.println("Memory used during DML execution (MB): " + memUsedMB);
 
-			// Run and compare with R
+			// Run R
 			runRScript(true);
 
+			// Run Python script and wait for completion
+			System.out.println("Running Python script...");
+			Process p = Runtime.getRuntime().exec(pyCmd);
+			// Capture stdout
+			BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+
+			String s;
+			while ((s = stdInput.readLine()) != null) {
+				System.out.println("[PYTHON OUT] " + s);
+			}
+			while ((s = stdError.readLine()) != null) {
+				System.err.println("[PYTHON ERR] " + s);
+			}
+
+			int exitCode = p.waitFor();
+			if(exitCode != 0) {
+				throw new RuntimeException("Python script failed with exit code: " + exitCode);
+			}
+
+			// Read matrices and compare
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("B");
+			HashMap<CellIndex, Double> pyfile = readRMatrixFromExpectedDir("B"); 
+
+			System.out.println("Comparing DML vs R...");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "DML", "R");
-		}
-		finally {
+
+			System.out.println("Comparing DML vs Python...");
+			TestUtils.compareMatrices(dmlfile, pyfile, eps, "DML", "Python");
+
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		} finally {
 			rtplatform = old;
 		}
 	}
+
 }

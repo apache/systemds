@@ -1,0 +1,14 @@
+# Reference CNN Training with normal matrices
+X1 = read($X1);
+X2 = read($X2);
+X = rbind(X1, X2);
+Y = read($Y);
+
+# Source CNN training utilities from builtin scripts
+source("scripts/nn/examples/mnist_lenet.dml") as mnist_lenet;
+
+# Train CNN model with normal data
+model = mnist_lenet::train(X, Y, X, Y, C=1, Hin=28, Win=28, epochs=3);
+
+# Write trained model
+write(model, $model);

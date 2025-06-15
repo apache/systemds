@@ -1,0 +1,12 @@
+# Reference Feed-forward Neural Network Training with normal matrices
+X1 = read($X1);
+X2 = read($X2);
+X = rbind(X1, X2);
+Y = read($Y);
+
+# Call built-in feed-forward neural network training function
+model = ffTrain(X=X, Y=Y, epochs=3, batch_size=64,
+               hidden_layers=[128, 64], out_activation="softmax", loss_fcn="cel");
+
+# Write trained model
+write(model, $model);

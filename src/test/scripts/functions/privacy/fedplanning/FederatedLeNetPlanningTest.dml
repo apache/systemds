@@ -1,0 +1,13 @@
+# LeNet CNN Training with federated input matrices X1, X2 and labels Y
+X = rbind($X1, $X2);
+Y = read($Y);
+X_val = read($X_val);
+Y_val = read($Y_val);
+
+# Call built-in LeNet training function
+model = lenetTrain(X=X, Y=Y, X_val=X_val, Y_val=Y_val, 
+                  C=as.integer($channels), Hin=as.integer($height), Win=as.integer($width), 
+                  epochs=as.integer($epochs));
+
+# Write trained model
+write(model, $model);

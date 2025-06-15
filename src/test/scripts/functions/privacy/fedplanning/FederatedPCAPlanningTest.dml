@@ -1,0 +1,9 @@
+# PCA with federated input matrices X1, X2, X3, X4
+X = rbind($X1, $X2, $X3, $X4);
+
+# Call built-in PCA function with K=2 components
+[PC, V] = pca(X=X, K=$K, scale=TRUE, center=TRUE);
+
+# Write results
+write(PC, $PC);
+write(V, $V);

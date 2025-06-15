@@ -626,7 +626,7 @@ public class Dag<N extends Lop>
 					}
 				}
 				
-				try {
+//				try {
 					if( LOG.isTraceEnabled() )
 						LOG.trace("Generating instruction - "+ inst_string);
 					Instruction currInstr = InstructionParser.parseSingleInstruction(inst_string);
@@ -641,10 +641,10 @@ public class Dag<N extends Lop>
 						currInstr.setLocation(node.getInputs().get(0));
 					
 					inst.add(currInstr);
-				} catch (Exception e) {
-					throw new LopsException(node.printErrorLocation() + "Problem generating simple inst - "
-							+ inst_string, e);
-				}
+//				} catch (Exception e) {
+//					throw new LopsException(node.printErrorLocation() + "Problem generating simple inst - "
+//							+ inst_string, e);
+//				}
 
 				markedNodes.add(node);
 				doRmVar = true;

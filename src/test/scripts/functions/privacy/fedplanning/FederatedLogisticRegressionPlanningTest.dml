@@ -1,0 +1,9 @@
+# Logistic Regression with federated input matrices X1, X2 and labels Y
+X = rbind($X1, $X2);
+Y = read($Y);
+
+# Call built-in multi-class logistic regression function
+B = multiLogReg(X=X, Y=Y, tol=1e-5, maxi=30, icpt=0);
+
+# Write result
+write(B, $B);

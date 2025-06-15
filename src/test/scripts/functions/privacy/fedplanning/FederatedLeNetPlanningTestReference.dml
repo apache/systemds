@@ -1,0 +1,14 @@
+# Reference LeNet CNN Training with normal matrices
+X1 = read($X1);
+X2 = read($X2);
+X = rbind(X1, X2);
+Y = read($Y);
+X_val = read($X_val);
+Y_val = read($Y_val);
+
+# Call built-in LeNet training function
+model = lenetTrain(X=X, Y=Y, X_val=X_val, Y_val=Y_val, 
+                  C=1, Hin=28, Win=28, epochs=3);
+
+# Write trained model
+write(model, $model);

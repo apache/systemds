@@ -25,7 +25,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
@@ -92,6 +94,8 @@ import org.apache.sysds.utils.Statistics;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.apache.sysds.parser.DataExpression;
+import org.apache.wink.json4j.JSONObject;
 
 /**
  * <p>
@@ -582,15 +586,33 @@ public abstract class AutomatedTestBase {
 	}
 
 	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR,
-		MatrixCharacteristics mc) {
-		writeInputMatrix(name, matrix, bIncludeR);
+			MatrixCharacteristics mc) {
+		return writeInputMatrixWithMTD(name, matrix, bIncludeR, mc, null);
+	}
+
+	protected double[][] writeInputMatrixWithMTD(String name, double[][] matrix, boolean bIncludeR,
+			MatrixCharacteristics mc, String privacyConstraints) {
+		// Write matrix file
+		String completePath = baseDirectory + INPUT_DIR + name;
+		String completeRPath = baseDirectory + INPUT_DIR + name + ".mtx";
+
+		cleanupDir(baseDirectory + INPUT_DIR + name, bIncludeR);
+
+		TestUtils.writeTestMatrix(completePath, matrix);
+		if (bIncludeR) {
+			TestUtils.writeTestMatrix(completeRPath, matrix, true);
+			inputRFiles.add(completeRPath);
+		}
+		if (DEBUG)
+			TestUtils.writeTestMatrix(DEBUG_TEMP_DIR + completePath, matrix);
+		inputDirectories.add(baseDirectory + INPUT_DIR + name);
 
 		// write metadata file
 		try {
 			String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
-			HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, mc, FileFormat.TEXT);
-		}
-		catch(IOException e) {
+			HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, null, DataType.MATRIX, mc, FileFormat.TEXT,
+					null, privacyConstraints);
+		} catch (Exception e) {
 			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
@@ -2471,4 +2493,5 @@ public abstract class AutomatedTestBase {
 		String current_path = System.getProperty("java.library.path");
 		System.setProperty("java.library.path", current_path + File.pathSeparator + additional_path);
 	}
+
 }

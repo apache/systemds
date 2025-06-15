@@ -1,0 +1,13 @@
+# Reference PCA with normal matrices
+X1 = read($X1);
+X2 = read($X2);
+X3 = read($X3);
+X4 = read($X4);
+X = rbind(X1, X2, X3, X4);
+
+# Call built-in PCA function with K=2 components
+[PC, V] = pca(X=X, K=2, scale=TRUE, center=TRUE);
+
+# Write results
+write(PC, $PC);
+write(V, $V);

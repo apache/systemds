@@ -4,11 +4,12 @@ library("peakRAM")
 args <- commandArgs(TRUE)
 options(digits=22)
 
-result <- peakRAM({
-  X = as.matrix(readMM(paste(args[1], "A.mtx", sep="")))
-  colnames(X) = colnames(X, do.NULL=FALSE, prefix="C")
-  Y = X
 
+X = as.matrix(readMM(paste(args[1], "A.mtx", sep="")))
+colnames(X) = colnames(X, do.NULL=FALSE, prefix="C")
+Y = X
+
+result <- peakRAM({
   start_time <- Sys.time()
 
   for (j in 1:ncol(X)) {
@@ -22,11 +23,13 @@ result <- peakRAM({
   }
 
   end_time <- Sys.time()
-  elapsed_ms <- as.numeric(difftime(end_time, start_time, units="secs")) * 1000
-  cat("R overall time (ms):\n")
-  print(elapsed_ms)
-
-  writeMM(as(Y, "CsparseMatrix"), paste(args[2], "B", sep=""))
 })
+
+elapsed_ms <- as.numeric(difftime(end_time, start_time, units="secs")) * 1000
+cat("R overall time (ms):\n")
+print(elapsed_ms)
+
+writeMM(as(Y, "CsparseMatrix"), paste(args[2], "B", sep=""))
+
 
 print(result[, c("Elapsed_Time_sec", "Total_RAM_Used_MiB", "Peak_RAM_Used_MiB")])

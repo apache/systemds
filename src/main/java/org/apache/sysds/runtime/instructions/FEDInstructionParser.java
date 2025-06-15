@@ -58,6 +58,7 @@ public class FEDInstructionParser extends InstructionParser
 		String2FEDInstructionType.put( "uamax"   , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uacmax"  , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uamin"   , FEDType.AggregateUnary );
+		String2FEDInstructionType.put( "uacmin"  , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uarmin"  , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uasqk+"  , FEDType.AggregateUnary );
 		String2FEDInstructionType.put( "uarsqk+" , FEDType.AggregateUnary );
@@ -75,6 +76,7 @@ public class FEDInstructionParser extends InstructionParser
 		String2FEDInstructionType.put( "^2" , FEDType.Binary); //special ^ case
 		String2FEDInstructionType.put( "*2" , FEDType.Binary); //special * case
 		String2FEDInstructionType.put( "max", FEDType.Binary );
+		String2FEDInstructionType.put( "min", FEDType.Binary );
 		String2FEDInstructionType.put( "==",  FEDType.Binary);
 		String2FEDInstructionType.put( "!=",  FEDType.Binary);
 		String2FEDInstructionType.put( "<",   FEDType.Binary);

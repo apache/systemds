@@ -429,12 +429,7 @@ public class FederatedPlanRewireTransTable {
         } else {
             privacyConstraintMap.put(hop.getHopID(),
                     getPrivacyConstraint(hop, hop.getInput(), privacyConstraintMap));
-            if (allowsFederated(hop, fTypeMap)) {
-                FType resultFType = getFType(hop, fTypeMap);
-                fTypeMap.put(hop.getHopID(), resultFType);
-            } else {
-                fTypeMap.put(hop.getHopID(), null);
-            }
+            fTypeMap.put(hop.getHopID(), getFederatedType(hop, fTypeMap));
         }
     }
 
@@ -602,12 +597,41 @@ public class FederatedPlanRewireTransTable {
         return Privacy.PUBLIC;
     }
 
-	private static boolean allowsFederated(Hop hop, Map<Long, FType> fTypeMap) {
-		//generically obtain the input FTypes
-		FType[] ft = new FType[hop.getInput().size()];
+    /**
+     * Determines the federated partition type (FType) for the output of a given hop operation.
+     * This method combines the logic of checking federated support and determining output FType.
+     * 
+     * @param hop The hop operation to analyze
+     * @param fTypeMap Map containing FType information for all processed hops
+     * @return The FType of the output, or null if the operation doesn't support federated execution
+     *         or produces non-federated output
+     */
+    private static FType getFederatedType(Hop hop, Map<Long, FType> fTypeMap) {
+        // ========================================================================
+        // PART 1: Universal constraints - operations that NEVER support federated
+        // ========================================================================
+        
+        // Scalar values don't have FType (no partitioning concept for scalars)
+        if (hop.isScalar()) {
+            return null;
+        }
+        
+        // Operations architecturally incompatible with federated execution:
+        // - DataGenOp: All data generation requires centralized execution (RAND seed sync, SEQ global coords, etc.)
+        // - DnnOp: Deep learning operations designed exclusively for CP/GPU (CuDNN dependencies)
+        // - FunctionOp: Function calls execute locally on coordinator (no 'fcall' in FEDInstructionParser)
+        // - LiteralOp: Constants without computation, created at coordinator only
+        // - DataOp: Data operations (FEDERATED, TRANSIENTREAD, TRANSIENTWRITE) 은 따로 처리, 나머지는 지원 안함 (PERSISTENTWRITE/READ, FUNCTIONOUTPUT, SQLREAD)
+        if (hop instanceof DataGenOp || hop instanceof DnnOp || 
+            hop instanceof FunctionOp || hop instanceof LiteralOp ||
+            hop instanceof DataOp) {
+            return null;
+        }
 
-		for( int i=0; i<hop.getInput().size(); i++ )
-			ft[i] = fTypeMap.get(hop.getInput(i).getHopID());
+        // Extract input FTypes for analysis
+        FType[] ft = new FType[hop.getInput().size()];
+        for (int i = 0; i < hop.getInput().size(); i++)
+            ft[i] = fTypeMap.get(hop.getInput(i).getHopID());
 
 		// AggBinaryOp operations
 		if( hop instanceof AggBinaryOp ) {

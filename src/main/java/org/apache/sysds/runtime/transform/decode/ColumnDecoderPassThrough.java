@@ -57,8 +57,31 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
     }
 
     public ColumnDecoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset){
-        // TODO:不知道是干嘛的，毛就完了，稍微研究一下
-        return null;
+        List<Integer> colList = new ArrayList<>();
+        List<Integer> dcList = new ArrayList<>();
+        List<Integer> srcList = new ArrayList<>();
+
+        for (int i = 0; i < _colList.length; i++) {
+            int colID = _colList[i];
+            if (colID >= colStart && colID < colEnd) {
+                colList.add(colID - (colStart - 1));
+                srcList.add(_srcCols[i] - dummycodedOffset);
+            }
+        }
+
+        Arrays.stream(_dcCols)
+                .filter(c -> c >= colStart && c < colEnd)
+                .forEach(dcList::add);
+
+        if (colList.isEmpty())
+            return null;
+
+        ColumnDecoderPassThrough dec = new ColumnDecoderPassThrough(
+                Arrays.copyOfRange(_schema, colStart - 1, colEnd - 1),
+                colList.stream().mapToInt(i -> i).toArray(),
+                dcList.stream().mapToInt(i -> i).toArray());
+        dec._srcCols = srcList.stream().mapToInt(i -> i).toArray();
+        return dec;
     }
     @Override
     public void initMetaData(FrameBlock meta) {

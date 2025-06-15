@@ -11,9 +11,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class ColumnDecoderRecode extends ColumnDecoder {
 
@@ -67,8 +65,23 @@ public class ColumnDecoderRecode extends ColumnDecoder {
     }
     public ColumnDecoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
         // TODO
-        return null;
-    }
+        List<Integer> cols = new ArrayList<>();
+        List<HashMap<Long, Object>> rcMaps = new ArrayList<>();
+        for(int i = 0; i < _colList.length; i++) {
+            int col = _colList[i];
+            if(col >= colStart && col < colEnd) {
+                cols.add(col - (colStart - 1));
+                rcMaps.add(new HashMap<>(_rcMaps[i]));
+            }
+        }
+        if(cols.isEmpty())
+            return null;
+
+        int[] colList = cols.stream().mapToInt(v -> v).toArray();
+        ColumnDecoderRecode dec = new ColumnDecoderRecode(
+                Arrays.copyOfRange(_schema, colStart - 1, colEnd - 1), _onOut, colList);
+        dec._rcMaps = rcMaps.toArray(new HashMap[0]);
+        return dec;    }
 
     @Override
     @SuppressWarnings("unchecked")

@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -26,8 +27,8 @@ public class ColumnDecoderComposite extends ColumnDecoder {
 
     private List<MatrixBlock> sliceColumns(MatrixBlock mb, int[] cols) {
         List<MatrixBlock> list = new ArrayList<>();
-        MatrixBlock ret = new MatrixBlock(mb.getNumRows(), 1, false);
         for (int col : cols) {
+            MatrixBlock ret = new MatrixBlock(mb.getNumRows(), 1, false);
             for (int i = 0; i < mb.getNumRows(); i++) {
                 ret.set(i, 0, mb.get(i, col - 1));
             }
@@ -75,8 +76,13 @@ public class ColumnDecoderComposite extends ColumnDecoder {
 
     @Override
     public ColumnDecoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
-        // TODO
-        return null;
+        List<ColumnDecoder> subDecoders = new ArrayList<>();
+        for (ColumnDecoder dec : _decoders) {
+            ColumnDecoder sub = dec.subRangeDecoder(colStart, colEnd, dummycodedOffset);
+            if (sub != null)
+                subDecoders.add(sub);
+        }
+        return new ColumnDecoderComposite(Arrays.copyOfRange(_schema, colStart-1, colEnd-1), subDecoders);
     }
 
     @Override

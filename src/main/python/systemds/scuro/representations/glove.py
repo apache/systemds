@@ -23,7 +23,9 @@ from gensim.utils import tokenize
 
 
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
-from systemds.scuro.representations.utils import read_data_from_file, save_embeddings
+from systemds.scuro.representations.utils import save_embeddings
+from systemds.scuro.modality.type import ModalityType
+from systemds.scuro.drsearch.operator_registry import register_representation
 
 
 def load_glove_embeddings(file_path):
@@ -37,9 +39,10 @@ def load_glove_embeddings(file_path):
     return embeddings
 
 
+# @register_representation(ModalityType.TEXT)
 class GloVe(UnimodalRepresentation):
     def __init__(self, glove_path, output_file=None):
-        super().__init__("GloVe")
+        super().__init__("GloVe", ModalityType.TEXT)
         self.glove_path = glove_path
         self.output_file = output_file
 

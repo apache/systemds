@@ -79,9 +79,9 @@ f_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   # apply sampling on training data for pipeline enumeration
   # TODO why recoding/sampling twice (within getDirtyScore)
   print("---- class-stratified sampling of feature matrix w/ f="+sample);
-  if(nrow(eYtrain) >= rowCount & sample == 1.0 & sum(mask) > ncol(mask)/2)  # & 
-    [eXtrain, eYtrain ] = utils::doErrorSample(eXtrain, eYtrain, lq, uq, rowCount)
-  else 
+#  if(nrow(eYtrain) >= rowCount & sample == 1.0 & sum(mask) > ncol(mask)/2)  # & 
+#    [eXtrain, eYtrain ] = utils::doErrorSample(eXtrain, eYtrain, lq, uq, rowCount)
+#  else 
     [eXtrain, eYtrain] = utils::doSample(eXtrain, eYtrain, sample, mask, metaR, TRUE)
   t5 = time(); print("---- finalized in: "+(t5-t4)/1e9+"s");
 
@@ -112,6 +112,7 @@ f_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   metaList['distY'] = dist
 
   print("-- Cleaning - Enum Logical Pipelines: ");
+  print("---- Data Dimension before Cleaning: "+ nrow(eXtrain) + ", " + ncol(eXtrain));
   [bestLogical, bestHp, con, refChanges, acc] = lg::enumerateLogical(X=eXtrain, y=eYtrain, Xtest=eXtest, ytest=eYtest,
   initial_population=logical, refSol=refSol, seed = seed,  max_iter=max_iter, metaList = metaList,
   evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, primitives=primitives, param=parameters,

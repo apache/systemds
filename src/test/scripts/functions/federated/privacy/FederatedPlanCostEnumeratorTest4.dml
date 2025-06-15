@@ -22,5 +22,7 @@
 a = matrix(7,10,10);
 if (sum(a) > 0.5)
     b = a * 2;
+else
+    b = a * 3;
 c = sqrt(b);
 print(sum(c));

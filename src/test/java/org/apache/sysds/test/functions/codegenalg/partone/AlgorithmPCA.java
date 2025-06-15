@@ -22,6 +22,7 @@ package org.apache.sysds.test.functions.codegenalg.partone;
 import java.io.File;
 import java.util.HashMap;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.common.Types.ExecType;
@@ -186,7 +187,7 @@ public class AlgorithmPCA extends AutomatedTestBase
 			HashMap<CellIndex, Double> revec = readDMLMatrixFromOutputDir("dominant.eigen.vectors");
 			//TestUtils.compareMatrices(dmleval, reval, eps, "Stat-DML", "Stat-R");
 			TestUtils.compareMatrices(dmlevec, revec, eps, "Stat-DML", "Stat-R");
-			Assert.assertTrue(heavyHittersContainsSubString("spoof") || heavyHittersContainsSubString("sp_spoof"));
+			Assert.assertTrue(heavyHittersContainsSubString(Opcodes.SPOOF.toString()) || heavyHittersContainsSubString("sp_spoof"));
 		}
 		finally {
 			resetExecMode(platformOld);

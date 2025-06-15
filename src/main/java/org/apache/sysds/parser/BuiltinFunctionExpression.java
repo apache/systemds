@@ -751,7 +751,7 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			else
 				raiseValidateError("Compress/DeCompress instruction not allowed in dml script");
 			break;
-
+							
 		default: //always unconditional
 			raiseValidateError("Unknown Builtin Function opcode: " + _opcode, false);
 		}
@@ -2011,8 +2011,38 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 				output.setValueType(id.getValueType());
 			}
 			else
-				raiseValidateError("Compress/DeCompress instruction not allowed in dml script");
+				raiseValidateError("The compress or decompress instruction is not allowed in dml scripts");
 			break;
+		case QUANTIZE_COMPRESS:
+			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_QUANTIZE_COMPRESS_COMMAND) {
+				checkNumParameters(2);
+				Expression firstExpr = getFirstExpr();
+				Expression secondExpr = getSecondExpr();
+
+				checkMatrixParam(getFirstExpr());
+
+				if(secondExpr != null) {
+					// check if scale factor is a scalar, vector or matrix
+					checkMatrixScalarParam(secondExpr);
+					// if scale factor is a vector or matrix, make sure it has an appropriate shape
+					if(secondExpr.getOutput().getDataType() != DataType.SCALAR) {
+						if(is1DMatrix(secondExpr)) {
+							long vectorLength = secondExpr.getOutput().getDim1();
+							if(vectorLength != firstExpr.getOutput().getDim1()) {
+								raiseValidateError(
+									"The length of the row-wise scale factor vector must match the number of rows in the matrix.");
+							}
+						}
+						else {
+							checkMatchingDimensions(firstExpr, secondExpr);
+						}
+					}
+				}
+			}
+			else 
+				raiseValidateError("The quantize_compress instruction not allowed in dml scripts");
+			break;
+
 		case ROW_COUNT_DISTINCT:
 			checkNumParameters(1);
 			checkMatrixParam(getFirstExpr());

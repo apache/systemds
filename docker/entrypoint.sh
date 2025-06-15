@@ -30,7 +30,17 @@ export MAVEN_OPTS="-Xmx512m"
 
 log="/tmp/sysdstest.log"
 mvn -ntp -B test-compile 2>&1 | grep -E "BUILD|Total time:|---|Building SystemDS"
-mvn -ntp -B test -D maven.test.skip=false -D automatedtestbase.outputbuffering=true -D test=$1 2>&1 | grep -v "already exists in destination." | tee $log
+mvn -ntp -B test -D maven.test.skip=false -D automatedtestbase.outputbuffering=true -D test=$1 2>&1 \
+	| grep -v "already exists in destination." \
+	| grep -v 'WARNING: Using incubator modules' | tee $log
+
+# Merge Federated test runs.
+[ -f target/jacoco.exec ] && mv target/jacoco.exec target/jacoco_main.exec
+mvn -ntp -B jacoco:merge
+
+# Merge Federated test runs.
+[ -f target/jacoco.exec ] && mv target/jacoco.exec target/jacoco_main.exec
+mvn -ntp -B jacoco:merge
 
 grep_args="SUCCESS"
 grepvals="$( tail -n 100 $log | grep $grep_args)"

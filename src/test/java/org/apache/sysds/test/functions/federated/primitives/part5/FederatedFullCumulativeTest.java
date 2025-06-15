@@ -22,6 +22,7 @@ package org.apache.sysds.test.functions.federated.primitives.part5;
 import java.util.Arrays;
 import java.util.Collection;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -229,7 +230,7 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 
 			if(instType != ExecType.SPARK) { // verify output is federated
 				if (type == OpType.SUMPROD && !rowPartitioned) {
-					Assert.assertTrue(heavyHittersContainsString("uak+"));
+					Assert.assertTrue(heavyHittersContainsString(Opcodes.UAKP.toString()));
 				} else {
 					Assert.assertTrue(heavyHittersContainsString("fed_uak+"));
 				}

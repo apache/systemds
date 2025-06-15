@@ -28,7 +28,7 @@ mvn package
 Example of running it:
 
 ```bash
-java -jar target/systemds-3.3.0-SNAPSHOT-perf.jar 1
+java -jar target/systemds-3.4.0-SNAPSHOT-perf.jar 1
 ```
 
 example result of the above job:
@@ -49,45 +49,45 @@ Running Steam Compression Test
 With profiler:
 
 ```bash
-java -jar -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html target/systemds-3.3.0-SNAPSHOT-perf.jar 12 10000 100 4 1.0 16 1000 -1
+java -jar -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html target/systemds-3.4.0-SNAPSHOT-perf.jar 12 10000 100 4 1.0 16 1000 -1
 ```
 
 Take a Matrix and perform serialization
 
 ```bash 
-java -jar -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html target/systemds-3.3.0-SNAPSHOT-perf.jar 13 16 100 "temp/test.csv" -1
+java -jar -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html target/systemds-3.4.0-SNAPSHOT-perf.jar 13 16 100 "temp/test.csv" -1
 ```
 
 Take a Frame and transform into a Matrix and perform serialization.
 
 ```bash 
-java -jar -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html target/systemds-3.3.0-SNAPSHOT-perf.jar 14 16 1000 "src/test/resources/datasets/titanic/titanic.csv" "src/test/resources/datasets/titanic/tfspec.json" -1
+java -jar -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html target/systemds-3.4.0-SNAPSHOT-perf.jar 14 16 1000 "src/test/resources/datasets/titanic/titanic.csv" "src/test/resources/datasets/titanic/tfspec.json" -1
 ```
 
 Frame Operation timings
 
 ```bash
-java -jar -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html target/systemds-3.3.0-SNAPSHOT-perf.jar 15 16 10 "src/test/resources/datasets/titanic/titanic.csv" "src/test/resources/datasets/titanic/tfspec.json"
+java -jar -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html target/systemds-3.4.0-SNAPSHOT-perf.jar 15 16 10 "src/test/resources/datasets/titanic/titanic.csv" "src/test/resources/datasets/titanic/tfspec.json"
 ```
 
 Reshape Sparse
 
 ```bash
-java -cp "target/systemds-3.3.0-SNAPSHOT-perf.jar:target/lib/*" -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html  org.apache.sysds.performance.Main 1005
+java -cp "target/systemds-3.4.0-SNAPSHOT-perf.jar:target/lib/*" -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html  org.apache.sysds.performance.Main 1005
 ```
 
 
 Binary Operations
 
 ```bash
-java -jar -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html -XX:+UseNUMA target/systemds-3.3.0-SNAPSHOT-perf.jar 1006 500
+java -jar -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html -XX:+UseNUMA target/systemds-3.4.0-SNAPSHOT-perf.jar 1006 500
 ```
 
 
 transform encode 
 
 ```bash
-java -jar -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html -XX:+UseNUMA target/systemds-3.3.0-SNAPSHOT-perf.jar 1007
+java -jar -agentpath:$HOME/Programs/profiler/lib/libasyncProfiler.so=start,event=cpu,file=temp/log.html -XX:+UseNUMA target/systemds-3.4.0-SNAPSHOT-perf.jar 1007
 ```
 
 
@@ -95,4 +95,11 @@ append matrix sequence
 
 ```bash
 ./src/test/scripts/performance/append.sh
+```
+
+
+matrix multiplication 
+
+```bash
+./src/test/scripts/performance/matrixMultiplication.sh
 ```

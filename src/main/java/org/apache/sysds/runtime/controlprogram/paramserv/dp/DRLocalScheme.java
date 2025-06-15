@@ -49,7 +49,8 @@ public class DRLocalScheme extends DataPartitionLocalScheme {
 	}
 
 	private static List<MatrixObject> internalDoPartitioning(int k, MatrixBlock mb, MatrixBlock permutation) {
-		return partition(k, mb, permutation).stream().map(ParamservUtils::newMatrixObject).collect(Collectors.toList());
+		return partition(k, mb, permutation).stream()
+			.map(m -> ParamservUtils.newMatrixObject(m, false)).collect(Collectors.toList());
 	}
 
 	@Override

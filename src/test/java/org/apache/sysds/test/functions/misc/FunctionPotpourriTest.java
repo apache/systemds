@@ -63,6 +63,8 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 		"FunPotpourriParforEvalBuiltin",
 		"FunPotpourriParforEvalSpark",
 		"FunPotpourriEvalNamespace3",
+		"FunPotpourriDefaultParams",
+		"FunPotpourriListHandling"
 	};
 	
 	private final static String TEST_DIR = "functions/misc/";
@@ -277,6 +279,16 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 		runFunctionTest( TEST_NAMES[29], null, false );
 	}
 	
+	@Test
+	public void testFunctionDefaultParams() {
+		runFunctionTest( TEST_NAMES[30], null, false );
+	}
+	
+	@Test
+	public void testFunctionListHandling() {
+		runFunctionTest( TEST_NAMES[31], null, false );
+	}
+	
 	private void runFunctionTest(String testName, Class<?> error) {
 		runFunctionTest(testName, error, false);
 	}
@@ -300,6 +312,8 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 				Assert.assertTrue(heavyHittersContainsString(Opcodes.PRINT.toString()));
 			if( evalRewrite && !testName.equals(TEST_NAMES[28]) )
 				Assert.assertTrue(!heavyHittersContainsString(Opcodes.EVAL.toString()));
+			if( testName.equals(TEST_NAMES[31]) ) //print used for error
+				Assert.assertFalse(heavyHittersContainsString(Opcodes.PRINT.toString()));
 		}
 		finally {
 			OptimizerUtils.ALLOW_EVAL_FCALL_REPLACEMENT = oldFlag;

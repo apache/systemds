@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.component.federated;
+ package org.apache.sysds.test.component.federated;
 
 import java.io.FileOutputStream;
 import java.io.IOException;

@@ -29,8 +29,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 
 from systemds.scuro.modality.type import ModalityType
-from systemds.scuro.aligner.dr_search import DRSearch
-from systemds.scuro.aligner.task import Task
+from systemds.scuro.drsearch.dr_search import DRSearch
+from systemds.scuro.drsearch.task import Task
 from systemds.scuro.models.model import Model
 from systemds.scuro.representations.average import Average
 from systemds.scuro.representations.bert import Bert
@@ -42,6 +42,7 @@ from systemds.scuro.representations.multiplication import Multiplication
 from systemds.scuro.representations.resnet import ResNet
 from systemds.scuro.representations.sum import Sum
 from tests.scuro.data_generator import setup_data
+
 
 import warnings
 
@@ -70,6 +71,7 @@ class TestSVM(Model):
 
 
 def scale_data(data, train_indizes):
+    data = np.array(data).reshape(len(data), -1)
     scaler = MinMaxScaler(feature_range=(0, 1))
     scaler.fit(data[train_indizes])
     return scaler.transform(data)
@@ -111,7 +113,7 @@ class TestDataLoaders(unittest.TestCase):
         cls.resnet = (
             cls.data_generator.modalities_by_type[ModalityType.VIDEO]
             .apply_representation(ResNet())
-            .window(10, "avg")
+            .window(10, "mean")
             .flatten()
         )
         cls.mods = [cls.bert, cls.mel_spe, cls.resnet]

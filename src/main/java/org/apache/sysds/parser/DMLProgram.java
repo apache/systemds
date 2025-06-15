@@ -89,12 +89,14 @@ public class DMLProgram
 	 */
 	public FunctionStatementBlock getFunctionStatementBlock(String fkey) {
 		String[] tmp = splitFunctionKey(fkey);
-		return getFunctionStatementBlock(tmp[0], tmp[1]);
+		return tmp.length < 2 ? null : 
+			getFunctionStatementBlock(tmp[0], tmp[1]);
 	}
 	
 	public void removeFunctionStatementBlock(String fkey) {
 		String[] tmp = splitFunctionKey(fkey);
-		removeFunctionStatementBlock(tmp[0], tmp[1]);
+		if( tmp.length == 2 )
+			removeFunctionStatementBlock(tmp[0], tmp[1]);
 	}
 	
 	public FunctionStatementBlock getFunctionStatementBlock(String namespaceKey, String functionName) {

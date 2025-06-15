@@ -30,6 +30,7 @@ from .builtin.alsCG import alsCG
 from .builtin.alsDS import alsDS 
 from .builtin.alsPredict import alsPredict 
 from .builtin.alsTopkPredict import alsTopkPredict 
+from .builtin.ampute import ampute 
 from .builtin.arima import arima 
 from .builtin.auc import auc 
 from .builtin.autoencoder_2layer import autoencoder_2layer 
@@ -162,6 +163,7 @@ from .builtin.scale import scale
 from .builtin.scaleApply import scaleApply 
 from .builtin.scaleMinMax import scaleMinMax 
 from .builtin.selectByVarThresh import selectByVarThresh 
+from .builtin.ses import ses 
 from .builtin.setdiff import setdiff 
 from .builtin.sherlock import sherlock 
 from .builtin.sherlockPredict import sherlockPredict 
@@ -170,6 +172,7 @@ from .builtin.sigmoid import sigmoid
 from .builtin.skewness import skewness 
 from .builtin.sliceLine import sliceLine 
 from .builtin.sliceLineDebug import sliceLineDebug 
+from .builtin.sliceLineExtract import sliceLineExtract 
 from .builtin.slicefinder import slicefinder 
 from .builtin.smape import smape 
 from .builtin.smote import smote 
@@ -177,6 +180,7 @@ from .builtin.softmax import softmax
 from .builtin.solve import solve 
 from .builtin.split import split 
 from .builtin.splitBalanced import splitBalanced 
+from .builtin.sqrtMatrix import sqrtMatrix 
 from .builtin.stableMarriage import stableMarriage 
 from .builtin.statsNA import statsNA 
 from .builtin.steplm import steplm 
@@ -206,6 +210,7 @@ __all__ = ['WoE',
  'alsDS',
  'alsPredict',
  'alsTopkPredict',
+ 'ampute',
  'arima',
  'auc',
  'autoencoder_2layer',
@@ -338,6 +343,7 @@ __all__ = ['WoE',
  'scaleApply',
  'scaleMinMax',
  'selectByVarThresh',
+ 'ses',
  'setdiff',
  'sherlock',
  'sherlockPredict',
@@ -346,6 +352,7 @@ __all__ = ['WoE',
  'skewness',
  'sliceLine',
  'sliceLineDebug',
+ 'sliceLineExtract',
  'slicefinder',
  'smape',
  'smote',
@@ -353,6 +360,7 @@ __all__ = ['WoE',
  'solve',
  'split',
  'splitBalanced',
+ 'sqrtMatrix',
  'stableMarriage',
  'statsNA',
  'steplm',

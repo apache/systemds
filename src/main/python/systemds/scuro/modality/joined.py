@@ -18,13 +18,13 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import importlib
 import sys
 
 import numpy as np
 
 from systemds.scuro.modality.joined_transformed import JoinedTransformedModality
 from systemds.scuro.modality.modality import Modality
-from systemds.scuro.representations.aggregate import Aggregation
 from systemds.scuro.representations.utils import pad_sequences
 
 
@@ -104,7 +104,7 @@ class JoinedModality(Modality):
                 self.joined_right.data[i - starting_idx].append([])
                 right = np.array([])
                 if self.condition.join_type == "<":
-                    while c < len(idx_2) and idx_2[c] < nextIdx[j]:
+                    while c < len(idx_2) - 1 and idx_2[c] < nextIdx[j]:
                         if right.size == 0:
                             right = self.right_modality.data[i][c]
                             if right.ndim == 1:
@@ -125,7 +125,7 @@ class JoinedModality(Modality):
                                 )
                         c = c + 1
                 else:
-                    while c < len(idx_2) and idx_2[c] <= idx_1[j]:
+                    while c < len(idx_2) - 1 and idx_2[c] <= idx_1[j]:
                         if idx_2[c] == idx_1[j]:
                             right.append(self.right_modality.data[i][c])
                         c = c + 1
@@ -141,18 +141,17 @@ class JoinedModality(Modality):
 
                 self.joined_right.data[i - starting_idx][j] = right
 
-    def apply_representation(self, representation, aggregation):
+    def apply_representation(self, representation, aggregation=None):
         self.aggregation = aggregation
         if self.chunked_execution:
             return self._handle_chunked_execution(representation)
-        elif self.left_type.__name__.__contains__("Unimodal"):
-            self.left_modality.extract_raw_data()
-            if self.left_type == self.right_type:
-                self.right_modality.extract_raw_data()
-        elif self.right_type.__name__.__contains__("Unimodal"):
-            self.right_modality.extract_raw_data()
+        # elif self.left_type.__name__.__contains__("Unimodal"):
+        #     self.left_modality.extract_raw_data()
+        #     if self.left_type == self.right_type:
+        #         self.right_modality.extract_raw_data()
+        # elif self.right_type.__name__.__contains__("Unimodal") and not self.right_modality.has_data():
+        #     self.right_modality.extract_raw_data()
 
-        self.execute()
         left_transformed = self._apply_representation(
             self.left_modality, representation
         )
@@ -168,7 +167,9 @@ class JoinedModality(Modality):
     def aggregate(
         self, aggregation_function, field_name
     ):  # TODO: use the filed name to extract data entries from modalities
-        self.aggregation = Aggregation(aggregation_function, field_name)
+        module = importlib.import_module("systemds.scuro.representations.aggregate")
+
+        self.aggregation = module.Aggregation(aggregation_function, field_name)
 
         if not self.chunked_execution and self.joined_right:
             return self.aggregation.aggregate(self.joined_right)
@@ -263,12 +264,12 @@ class JoinedModality(Modality):
 
     def _apply_representation(self, modality, representation):
         transformed = representation.transform(modality)
-        if self.aggregation:
-            aggregated_data_left = self.aggregation.window(transformed)
-            transformed = Modality(
-                transformed.modality_type,
-                transformed.metadata,
-            )
-            transformed.data = aggregated_data_left
+        # if self.aggregation:
+        #     aggregated_data_left = self.aggregation.execute(transformed)
+        #     transformed = Modality(
+        #         transformed.modality_type,
+        #         transformed.metadata,
+        #     )
+        #     transformed.data = aggregated_data_left
 
         return transformed

@@ -21,7 +21,8 @@ package org.apache.sysds.lops;
 
 import java.util.HashMap;
 
- 
+
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 
 import org.apache.sysds.parser.Statement;
@@ -37,7 +38,7 @@ import org.apache.sysds.common.Types.ValueType;
  */
 public class GroupedAggregateM extends Lop 
 {	
-	public static final String OPCODE = "mapgroupedagg";
+	public static final String OPCODE = Opcodes.MAPGROUPEDAGG.toString();
 
 	public enum CacheType {
 		RIGHT,

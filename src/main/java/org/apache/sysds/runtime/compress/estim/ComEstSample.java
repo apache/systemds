@@ -90,7 +90,7 @@ public class ComEstSample extends AComEst {
 				_data.getSparseBlock().isEmpty(colIndexes.get(0))))
 			return new CompressedSizeInfoColGroup(colIndexes, getNumRows(), CompressionType.EMPTY);
 
-		final IEncode map = EncodingFactory.createFromMatrixBlock(_sample, _transposed, colIndexes);
+		final IEncode map = EncodingFactory.createFromMatrixBlock(_sample, _transposed, colIndexes, _cs.scaleFactors);
 		return extractInfo(map, colIndexes, maxDistinct);
 	}
 

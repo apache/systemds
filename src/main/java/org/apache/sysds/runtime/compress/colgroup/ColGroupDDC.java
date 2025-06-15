@@ -26,8 +26,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
-// import jdk.incubator.vector.DoubleVector;
-// import jdk.incubator.vector.VectorSpecies;
+import jdk.incubator.vector.DoubleVector;
+import jdk.incubator.vector.VectorSpecies;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -75,7 +75,7 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 
 	protected final AMapToData _data;
 
-	// static final VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_PREFERRED;
+	static final VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_PREFERRED;
 
 	private ColGroupDDC(IColIndex colIndexes, IDictionary dict, AMapToData data, int[] cachedCounts) {
 		super(colIndexes, dict, cachedCounts);
@@ -625,7 +625,8 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 		final double[] b = right.getDenseBlockValues();
 		final double[] c = ret.getDenseBlockValues();
 		final int jd = right.getNumColumns();
-		final int vLen = 8;
+		final DoubleVector vVec = DoubleVector.zero(SPECIES);
+		final int vLen = SPECIES.length();
 		final int lenJ = cru - crl;
 		final int end = cru - (lenJ % vLen);
 		for(int i = rl; i < ru; i++) {
@@ -633,8 +634,7 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 			final int offOut = i * jd + crl;
 			final double aa = 1;
 			final int k_right = _colIndexes.get(k);
-			vectMM(aa, b, c, end, jd, crl, cru, offOut, k_right, vLen);
-
+			vectMM(aa, b, c, end, jd, crl, cru, offOut, k_right, vLen, vVec);
 		}
 	}
 
@@ -644,8 +644,8 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 		final double[] c = ret.getDenseBlockValues();
 		final int kd = _colIndexes.size();
 		final int jd = right.getNumColumns();
-		// final DoubleVector vVec = DoubleVector.zero(SPECIES);
-		final int vLen = 8;
+		final DoubleVector vVec = DoubleVector.zero(SPECIES);
+		final int vLen = SPECIES.length();
 
 		final int blkzI = 32;
 		final int blkzK = 24;
@@ -661,32 +661,22 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 					for(int k = bk; k < bke; k++) {
 						final double aa = a[offi + k];
 						final int k_right = _colIndexes.get(k);
-						vectMM(aa, b, c, end, jd, crl, cru, offOut, k_right, vLen);
+						vectMM(aa, b, c, end, jd, crl, cru, offOut, k_right, vLen, vVec);
 					}
 				}
 			}
 		}
 	}
 
-	final void vectMM(double aa, double[] b, double[] c, int endT, int jd, int crl, int cru, int offOut, int k,
-		int vLen) {
-		// vVec = vVec.broadcast(aa);
+	final void vectMM(double aa, double[] b, double[] c, int endT, int jd, int crl, int cru, int offOut, int k, int vLen, DoubleVector vVec) {
+		vVec = vVec.broadcast(aa);
 		final int offj = k * jd;
 		final int end = endT + offj;
 		for(int j = offj + crl; j < end; j += vLen, offOut += vLen) {
-			// DoubleVector res = DoubleVector.fromArray(SPECIES, c, offOut);
-			// DoubleVector bVec = DoubleVector.fromArray(SPECIES, b, j);
-			// res = vVec.fma(bVec, res);
-			// res.intoArray(c, offOut);
-
-			c[offOut] += aa * b[j];
-			c[offOut + 1] += aa * b[j + 1];
-			c[offOut + 2] += aa * b[j + 2];
-			c[offOut + 3] += aa * b[j + 3];
-			c[offOut + 4] += aa * b[j + 4];
-			c[offOut + 5] += aa * b[j + 5];
-			c[offOut + 6] += aa * b[j + 6];
-			c[offOut + 7] += aa * b[j + 7];
+			DoubleVector res = DoubleVector.fromArray(SPECIES, c, offOut);
+			DoubleVector bVec = DoubleVector.fromArray(SPECIES, b, j);
+			res = vVec.fma(bVec, res);
+			res.intoArray(c, offOut);
 		}
 		for(int j = end; j < cru + offj; j++, offOut++) {
 			double bb = b[j];

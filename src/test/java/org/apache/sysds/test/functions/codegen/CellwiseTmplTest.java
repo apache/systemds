@@ -67,6 +67,10 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	private static final String TEST_NAME25 = TEST_NAME+25; //bias_add
 	private static final String TEST_NAME26 = TEST_NAME+26; //bias_mult
 	private static final String TEST_NAME27 = TEST_NAME+27; //outer < +7 negative
+	private static final String TEST_NAME28 = TEST_NAME+28; //colProds(X^2 + 1)
+	private static final String TEST_NAME29 = TEST_NAME+29; //colProds(2*log(X))
+	private static final String TEST_NAME30 = TEST_NAME+30;	//rowProds(X^2 + 1)
+	private static final String TEST_NAME31 = TEST_NAME+31;	//rowProds(2*log(X))
 
 	private static final String TEST_DIR = "functions/codegen/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CellwiseTmplTest.class.getSimpleName() + "/";
@@ -79,7 +83,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for( int i=1; i<=27; i++ ) {
+		for( int i=1; i<=31; i++ ) {
 			addTestConfiguration( TEST_NAME+i, new TestConfiguration(
 				TEST_CLASS_DIR, TEST_NAME+i, new String[] {String.valueOf(i)}) );
 		}
@@ -444,7 +448,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	public void testCodegenCellwiseRewrite26_sp() {
 		testCodegenIntegration( TEST_NAME26, true, ExecType.SPARK );
 	}
-	
+
 	@Test
 	public void testCodegenCellwiseRewrite27() {
 		testCodegenIntegration( TEST_NAME27, true, ExecType.CP );
@@ -455,8 +459,69 @@ public class CellwiseTmplTest extends AutomatedTestBase
 		testCodegenIntegration( TEST_NAME27, false, ExecType.CP );
 	}
 
+	@Test
 	public void testCodegenCellwiseRewrite27_sp() {
 		testCodegenIntegration( TEST_NAME27, true, ExecType.SPARK );
+	}
+
+	@Test
+	public void testCodegenCellwiseRewrite28() {
+		testCodegenIntegration( TEST_NAME28, true, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwise28() {
+		testCodegenIntegration( TEST_NAME28, false, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwiseRewrite28_sp() {
+		testCodegenIntegration( TEST_NAME28, true, ExecType.SPARK );
+	}
+
+	@Test
+	public void testCodegenCellwiseRewrite29() {
+		testCodegenIntegration( TEST_NAME29, true, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwise29() {
+		testCodegenIntegration( TEST_NAME29, false, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwiseRewrite29_sp() {
+		testCodegenIntegration( TEST_NAME29, true, ExecType.SPARK );
+	}
+
+	@Test
+	public void testCodegenCellwiseRewrite30() {
+		testCodegenIntegration( TEST_NAME30, true, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwise30() {
+		testCodegenIntegration( TEST_NAME30, false, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwiseRewrite30_sp() {
+		testCodegenIntegration( TEST_NAME30, true, ExecType.SPARK );
+	}
+
+	@Test
+	public void testCodegenCellwiseRewrite31() {
+		testCodegenIntegration( TEST_NAME31, true, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwise31() {
+		testCodegenIntegration( TEST_NAME31, false, ExecType.CP );
+	}
+
+	@Test
+	public void testCodegenCellwiseRewrite31_sp() {
+		testCodegenIntegration( TEST_NAME31, true, ExecType.SPARK );
 	}
 
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
@@ -467,7 +532,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 		
 		if( testname.equals(TEST_NAME9) )
 			TEST_CONF = TEST_CONF6;
-		
+		  
 		try
 		{
 			TestConfiguration config = getTestConfiguration(testname);
@@ -475,7 +540,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-stats", "-args", output("S") };
+			programArgs = new String[]{"-explain", "codegen", "-stats", "-args", output("S") };
 			
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());

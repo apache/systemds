@@ -634,8 +634,9 @@ public interface Types {
 		//fused ML-specific operators for performance
 		MINUS_NZ(false), //sparse-safe minus: X-(mean*ppred(X,0,!=))
 		LOG_NZ(false), //sparse-safe log; ppred(X,0,"!=")*log(X,0.5)
-		MINUS1_MULT(false); //1-X*Y
-		
+		MINUS1_MULT(false), //1-X*Y
+		QUANTIZE_COMPRESS(false); //quantization-fused compression
+
 		private final boolean _validOuter;
 		
 		private OpOp2(boolean outer) {
@@ -868,6 +869,7 @@ public interface Types {
 		PROTO,  // protocol buffer representation
 		HDF5,   // Hierarchical Data Format (HDF)
 		COG,   // Cloud-optimized GeoTIFF
+		PARQUET, // parquet format for columnar data storage
 		UNKNOWN;
 		
 		public boolean isIJV() {

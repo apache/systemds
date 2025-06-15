@@ -130,12 +130,8 @@ the recommended way is to use the methods defined on <code class="docutils liter
 <li><p><strong>operation</strong> – The name of the DML function to execute</p></li>
 <li><p><strong>unnamed_input_nodes</strong> – inputs identified by their position, not name</p></li>
 <li><p><strong>named_input_nodes</strong> – inputs with their respective parameter name</p></li>
-<li><p><strong>output_type</strong> – type of the output in DML (double, matrix etc.)</p></li>
-<li><p><strong>is_python_local_data</strong> – if the data is local in python e.g. Numpy arrays</p></li>
-<li><p><strong>number_of_outputs</strong> – If set to other value than 1 then it is expected
+<li><p><strong>is_python_local_data</strong> – if the data is local in python e.g. Numpy arrays
 that this operation node returns multiple values. If set remember to set the output_types value as well.</p></li>
-<li><p><strong>output_types</strong> – The types of output in a multi output scenario.
-Default is None, and means every multi output is a matrix.</p></li>
 </ul>
 </dd>
 </dl>
@@ -144,7 +140,7 @@ Default is None, and means every multi output is a matrix.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="systemds.operator.Frame.cbind">
 <span class="sig-name descname"><span class="pre">cbind</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Frame" title="systemds.operator.nodes.frame.Frame"><span class="pre">Frame</span></a></span></span><a class="headerlink" href="#systemds.operator.Frame.cbind" title="Link to this definition"></a></dt>
-<dd><p>Column-wise frame concatenation, by concatenating the second frame as additional columns to the first frame. 
+<dd><p>Column-wise frame concatenation, by concatenating the second frame as additional columns to the first frame.
 :param: The other frame to bind to the right hand side.
 :return: The Frame containing the concatenated frames.</p>
 </dd></dl>
@@ -203,7 +199,7 @@ all operations are only building the DAG without actually executing (lazy evalua
 <dl class="py method">
 <dt class="sig sig-object py" id="systemds.operator.Frame.rbind">
 <span class="sig-name descname"><span class="pre">rbind</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#systemds.operator.Frame" title="systemds.operator.nodes.frame.Frame"><span class="pre">Frame</span></a></span></span><a class="headerlink" href="#systemds.operator.Frame.rbind" title="Link to this definition"></a></dt>
-<dd><p>Row-wise frame concatenation, by concatenating the second frame as additional rows to the first frame. 
+<dd><p>Row-wise frame concatenation, by concatenating the second frame as additional rows to the first frame.
 :param: The other frame to bind to the right hand side
 :return: The OperationNode containing the concatenated frames.</p>
 </dd></dl>
@@ -219,7 +215,7 @@ all operations are only building the DAG without actually executing (lazy evalua
 
 <dl class="py method">
 <dt class="sig sig-object py" id="systemds.operator.Frame.to_string">
-<span class="sig-name descname"><span class="pre">to_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="scalar.html#systemds.operator.Scalar" title="systemds.operator.nodes.scalar.Scalar"><span class="pre">Scalar</span></a></span></span><a class="headerlink" href="#systemds.operator.Frame.to_string" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">to_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../../script_building/dag.html#systemds.script_building.dag.DAGNode" title="systemds.script_building.dag.DAGNode"><span class="pre">DAGNode</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="scalar.html#systemds.operator.Scalar" title="systemds.operator.Scalar"><span class="pre">Scalar</span></a></span></span><a class="headerlink" href="#systemds.operator.Frame.to_string" title="Link to this definition"></a></dt>
 <dd><p>Converts the input to a string representation.
 :return: <cite>Scalar</cite> containing the string.</p>
 </dd></dl>

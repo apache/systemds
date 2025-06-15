@@ -25,6 +25,7 @@ import java.util.HashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.common.Types.ExecType;
@@ -424,7 +425,7 @@ public class AlgorithmMLogreg extends AutomatedTestBase {
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("w");
 			HashMap<CellIndex, Double> rfile  = readRMatrixFromExpectedDir("w");
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
-			Assert.assertTrue(heavyHittersContainsSubString("spoof")
+			Assert.assertTrue(heavyHittersContainsSubString(Opcodes.SPOOF.toString())
 				|| heavyHittersContainsSubString("sp_spoof"));
 		}
 		finally {

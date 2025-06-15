@@ -20,8 +20,10 @@
 package org.apache.sysds.runtime.matrix.data;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.util.IPRNGenerator;
 import org.apache.sysds.runtime.util.NormalPRNGenerator;
-import org.apache.sysds.runtime.util.PRNGenerator;
+import org.apache.sysds.runtime.util.PhiloxNormalCBPRNGenerator;
+import org.apache.sysds.runtime.util.PhiloxUniformCBPRNGenerator;
 import org.apache.sysds.runtime.util.PoissonPRNGenerator;
 import org.apache.sysds.runtime.util.UniformPRNGenerator;
 
@@ -31,14 +33,14 @@ public class RandomMatrixGenerator {
 	 * Types of Probability density functions
 	 */
 	public enum PDF {
-		NORMAL, UNIFORM, POISSON
+		NORMAL, UNIFORM, POISSON, CB_UNIFORM, CB_NORMAL
 	}
 
 	PDF _pdf;
 	int _rows, _cols, _blocksize;
 	double _sparsity, _mean; 
 	double _min, _max; 
-	PRNGenerator _valuePRNG;
+	IPRNGenerator _valuePRNG;
 
 	public RandomMatrixGenerator() {
 		_pdf = PDF.UNIFORM;
@@ -165,6 +167,12 @@ public class RandomMatrixGenerator {
 			if(_mean <= 0)
 				throw new DMLRuntimeException("Invalid parameter (" + _mean + ") for Poisson distribution.");
 			_valuePRNG = new PoissonPRNGenerator(_mean);
+			break;
+		case CB_UNIFORM:
+			_valuePRNG = new PhiloxUniformCBPRNGenerator();
+			break;
+		case CB_NORMAL:
+			_valuePRNG = new PhiloxNormalCBPRNGenerator();
 			break;
 		default:
 			throw new DMLRuntimeException("Unsupported probability density function");

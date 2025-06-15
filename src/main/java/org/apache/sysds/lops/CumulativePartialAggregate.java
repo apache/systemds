@@ -19,6 +19,7 @@
 
 package org.apache.sysds.lops;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.AggOp;
@@ -56,11 +57,11 @@ public class CumulativePartialAggregate extends Lop
 	
 	private String getOpcode() {
 		switch( _op ) {
-			case SUM:      return "ucumack+";
-			case PROD:     return "ucumac*";
-			case SUM_PROD: return "ucumac+*";
-			case MIN:      return "ucumacmin";
-			case MAX:      return "ucumacmax";
+			case SUM:      return Opcodes.UCUMACKP.toString();
+			case PROD:     return Opcodes.UCUMACM.toString();
+			case SUM_PROD: return Opcodes.UCUMACPM.toString();
+			case MIN:      return Opcodes.UCUMACMIN.toString();
+			case MAX:      return Opcodes.UCUMACMAX.toString();
 			default:       return null;
 		}
 	}

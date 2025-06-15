@@ -18,8 +18,24 @@
 # under the License.
 #
 # -------------------------------------------------------------
+from abc import abstractmethod
 
 
 class Representation:
-    def __init__(self, name):
+    def __init__(self, name, parameters):
         self.name = name
+        self._parameters = parameters
+
+    @property
+    def parameters(self):
+        return self._parameters
+
+    def get_current_parameters(self):
+        current_params = {}
+        for parameter in self.parameters.keys():
+            current_params[parameter] = getattr(self, parameter)
+        return current_params
+
+    def set_parameters(self, parameters):
+        for parameter in parameters:
+            setattr(self, parameter, parameters[parameter])

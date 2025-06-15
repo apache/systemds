@@ -58,4 +58,3 @@ github:
 staging:
   profile: beta
   whoami: main
-  outputdir: docs

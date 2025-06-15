@@ -25,8 +25,8 @@ from systemds.scuro.representations.average import Average
 from systemds.scuro.representations.concatenation import Concatenation
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.models.discrete_model import DiscreteModel
-from systemds.scuro.aligner.task import Task
-from systemds.scuro.aligner.dr_search import DRSearch
+from systemds.scuro.drsearch.task import Task
+from systemds.scuro.drsearch.dr_search import DRSearch
 
 from systemds.scuro.dataloader.audio_loader import AudioLoader
 from systemds.scuro.dataloader.text_loader import TextLoader

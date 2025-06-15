@@ -19,7 +19,6 @@
 
 package org.apache.sysds.test.functions.builtin.part2;
 
-
 import org.junit.Test;
 
 import java.util.HashMap;

@@ -81,7 +81,7 @@ public class ColGroupUncompressed extends AColGroup {
 	private final MatrixBlock _data;
 
 	/**
-	 * Do not use this constructor of column group uncompressed, instead uce the create constructor.
+	 * Do not use this constructor of column group uncompressed, instead use the create constructor.
 	 * @param mb The contained data.
 	 * @param colIndexes Column indexes for this Columngroup
 	 */
@@ -90,6 +90,25 @@ public class ColGroupUncompressed extends AColGroup {
 		_data = mb;
 	}
 
+	/**
+	 * Do not use this constructor of column group quantization-fused uncompressed, instead use the create constructor.
+	 * @param mb The contained data.
+	 * @param scaleFactors  For quantization-fused compression, scale factors per row, or a single value for entire matrix
+	 * @param colIndexes Column indexes for this Columngroup
+	 */
+	protected ColGroupUncompressed(MatrixBlock mb, IColIndex colIndexes, double[] scaleFactors) {
+		super(colIndexes);
+		// Apply scaling and flooring 
+		// TODO: Use internal matrix prod 
+		for(int r = 0; r < mb.getNumRows(); r++) {
+			double scaleFactor = scaleFactors.length == 1 ? scaleFactors[0] : scaleFactors[r];
+			for(int c = 0; c < mb.getNumColumns(); c++) {
+				double newValue = Math.floor(mb.get(r, c) * scaleFactor);
+				mb.set(r, c, newValue);
+			}
+		}
+		_data = mb;
+	}	
 	/**
 	 * Create an Uncompressed Matrix Block, where the columns are offset by col indexes.
 	 * 
@@ -104,6 +123,97 @@ public class ColGroupUncompressed extends AColGroup {
 			return new ColGroupEmpty(colIndexes);
 		else
 			return new ColGroupUncompressed(mb, colIndexes);
+	}
+
+	/**
+	 * Create ana quantization-fused uncompressed Matrix Block, where the columns are offset by col indexes.
+	 * 
+	 * It is assumed that the size of the colIndexes and number of columns in mb is matching.
+	 * 
+	 * @param mb         The MB / data to contain in the uncompressed column
+	 * @param colIndexes The column indexes for the group
+	 * @param scaleFactors  For quantization-fused compression, scale factors per row, or a single value for entire matrix
+	 * @return An Uncompressed Column group
+	 */
+	public static AColGroup createQuantized(MatrixBlock mb, IColIndex colIndexes, double[] scaleFactors) {
+		if(mb == null || mb.isEmpty())
+			// TODO: handle quantization-fused compression if deemed necessary,
+			// but if the matrix reaches here, it likely doesn't need quantization.
+			return new ColGroupEmpty(colIndexes);
+		else
+			return new ColGroupUncompressed(mb, colIndexes, scaleFactors);
+	}
+
+	/**
+	 * Main constructor for a quantization-fused uncompressed ColGroup.
+	 * 
+	 * @param colIndexes 	Indices (relative to the current block) of the columns that this column group represents.
+	 * @param rawBlock   	The uncompressed block; uncompressed data must be present at the time that the constructor is
+	 *                   	called
+	 * @param transposed 	Says if the input matrix raw block have been transposed.
+	 * @param scaleFactors  For quantization-fused compression, scale factors per row, or a single value for entire matrix
+	 * @return AColGroup.
+	 */
+	public static AColGroup createQuantized(IColIndex colIndexes, MatrixBlock rawBlock, boolean transposed, double[] scaleFactors) {
+
+		// special cases
+		if(rawBlock.isEmptyBlock(false)) // empty input
+			// TODO: handle quantization-fused compression if deemed necessary,
+			// but if the matrix reaches here, it likely doesn't need quantization.
+			return new ColGroupEmpty(colIndexes);
+		else if(!transposed && colIndexes.size() == rawBlock.getNumColumns())
+			// full input to uncompressedColumnGroup
+			return new ColGroupUncompressed(rawBlock, colIndexes, scaleFactors);
+
+		MatrixBlock mb;
+		final int _numRows = transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows();
+
+		if(colIndexes.size() == 1) {
+			final int col = colIndexes.get(0);
+			if(transposed) {
+				mb = rawBlock.slice(col, col, 0, rawBlock.getNumColumns() - 1);
+				mb = LibMatrixReorg.transposeInPlace(mb, InfrastructureAnalyzer.getLocalParallelism());
+			}
+			else
+				mb = rawBlock.slice(0, rawBlock.getNumRows() - 1, col, col);
+
+			return createQuantized(mb, colIndexes, scaleFactors);
+		}
+
+		// Create a matrix with just the requested rows of the original block
+		mb = new MatrixBlock(_numRows, colIndexes.size(), rawBlock.isInSparseFormat());
+
+		final int m = _numRows;
+		final int n = colIndexes.size();
+
+		if(transposed) {
+			if (scaleFactors.length == 1) {
+				for(int i = 0; i < m; i++)
+					for(int j = 0; j < n; j++)
+						mb.appendValue(i, j, Math.floor(rawBlock.get(i, colIndexes.get(j)) * scaleFactors[0]));
+			} else {
+				for(int i = 0; i < m; i++)
+					for(int j = 0; j < n; j++)
+						mb.appendValue(i, j, Math.floor(rawBlock.get(i, colIndexes.get(j)) * scaleFactors[j]));
+			}
+		}
+		else {
+			if (scaleFactors.length == 1) {
+				for(int i = 0; i < m; i++)
+					for(int j = 0; j < n; j++)
+						mb.appendValue(i, j, Math.floor(rawBlock.get(i, colIndexes.get(j)) * scaleFactors[0]));
+			} else {
+				for(int i = 0; i < m; i++)
+					for(int j = 0; j < n; j++)
+						mb.appendValue(i, j, Math.floor(rawBlock.get(i, colIndexes.get(j)) * scaleFactors[i]));
+			}
+		}
+
+		mb.recomputeNonZeros();
+		mb.examSparsity();
+
+		return create(mb, colIndexes);
+
 	}
 
 	/**

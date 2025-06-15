@@ -20,6 +20,7 @@
 # -------------------------------------------------------------
 from systemds.scuro.dataloader.base_loader import BaseLoader
 from typing import Optional, Pattern, List, Union
+from systemds.scuro.modality.type import ModalityType
 import re
 
 
@@ -31,7 +32,7 @@ class TextLoader(BaseLoader):
         chunk_size: Optional[int] = None,
         prefix: Optional[Pattern[str]] = None,
     ):
-        super().__init__(source_path, indices, chunk_size)
+        super().__init__(source_path, indices, chunk_size, ModalityType.TEXT)
         self.prefix = prefix
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
@@ -41,5 +42,7 @@ class TextLoader(BaseLoader):
                 if self.prefix:
                     line = re.sub(self.prefix, "", line)
                 line = line.replace("\n", "")
-                self.metadata[file] = {"length": len(line.split())}
+                self.metadata[file] = self.modality_type.create_text_metadata(
+                    len(line.split()), line
+                )
                 self.data.append(line)

@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.spark;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.broadcast.Broadcast;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
@@ -103,7 +104,7 @@ public class DnnSPInstruction extends UnarySPInstruction {
 
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
-		if (opcode.equalsIgnoreCase("maxpooling") || opcode.equalsIgnoreCase("relu_maxpooling")) {
+		if (opcode.equalsIgnoreCase(Opcodes.MAXPOOLING.toString()) || opcode.equalsIgnoreCase(Opcodes.RELU_MAXPOOLING.toString())) {
 			InstructionUtils.checkNumFields(parts, 14);
 			// stride1, stride2, padding1, padding2
 			// input_shape1, input_shape2, input_shape3, input_shape4,
@@ -131,10 +132,10 @@ public class DnnSPInstruction extends UnarySPInstruction {
 			return new DnnSPInstruction(in, out, opcode, str, stride,
 					padding, input_shape, filter_shape);
 		} 
-		else if (opcode.equalsIgnoreCase("maxpooling_backward")
-				|| opcode.equalsIgnoreCase("conv2d")
-				|| opcode.equalsIgnoreCase("conv2d_backward_filter")
-				|| opcode.equalsIgnoreCase("conv2d_backward_data")) {
+		else if (opcode.equalsIgnoreCase(Opcodes.MAXPOOLING_BACKWARD.toString())
+				|| opcode.equalsIgnoreCase(Opcodes.CONV2D.toString())
+				|| opcode.equalsIgnoreCase(Opcodes.CONV2D_BACKWARD_FILTER.toString())
+				|| opcode.equalsIgnoreCase(Opcodes.CONV2D_BACKWARD_DATA.toString())) {
 			InstructionUtils.checkNumFields(parts, 15);
 			// dout, stride1, stride2, padding1, padding2
 			// input_shape1, input_shape2, input_shape3, input_shape4,
@@ -164,7 +165,7 @@ public class DnnSPInstruction extends UnarySPInstruction {
 			return new DnnSPInstruction(in, in2, out, opcode, str, stride,
 					padding, input_shape, filter_shape);
 		}
-		else if (opcode.equalsIgnoreCase("conv2d_bias_add")) {
+		else if (opcode.equalsIgnoreCase(Opcodes.CONV2D_BIAS_ADD.toString())) {
 			InstructionUtils.checkNumFields(parts, 16);
 			// dout, stride1, stride2, padding1, padding2
 			// input_shape1, input_shape2, input_shape3, input_shape4,
@@ -196,7 +197,7 @@ public class DnnSPInstruction extends UnarySPInstruction {
 			return new DnnSPInstruction(in, in2, in3, out, opcode, str, stride,
 					padding, input_shape, filter_shape);
 		}
-		else if (opcode.equalsIgnoreCase("bias_add")) {
+		else if (opcode.equalsIgnoreCase(Opcodes.BIAS_ADD.toString())) {
 			InstructionUtils.checkNumFields(parts, 3);
 			in.split(parts[1]);
 			CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
@@ -232,8 +233,8 @@ public class DnnSPInstruction extends UnarySPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
-		if(instOpcode.equalsIgnoreCase("conv2d") || instOpcode.equalsIgnoreCase("conv2d_bias_add")
-			|| instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling")) {
+		if(instOpcode.equalsIgnoreCase(Opcodes.CONV2D.toString()) || instOpcode.equalsIgnoreCase(Opcodes.CONV2D_BIAS_ADD.toString())
+			|| instOpcode.equalsIgnoreCase(Opcodes.MAXPOOLING.toString()) || instOpcode.equalsIgnoreCase(Opcodes.RELU_MAXPOOLING.toString())) {
 			String rddVar = input1.getName();
 			int numRowsPerBlock = 1;
 			JavaPairRDD<MatrixIndexes,MatrixBlock> inputRDD = reblockAsRectangularMatrices(sec, rddVar, numRowsPerBlock);
@@ -243,10 +244,10 @@ public class DnnSPInstruction extends UnarySPInstruction {
 			// TODO: Handle large filters > 2G
 			Broadcast<MatrixBlock> filterBroadcast = null;
 			Broadcast<MatrixBlock> biasBroadcast = null;
-			if(instOpcode.equalsIgnoreCase("conv2d")) {
+			if(instOpcode.equalsIgnoreCase(Opcodes.CONV2D.toString())) {
 				filterBroadcast = getBroadcast(sec, _in2.getName());
 			}
-			else if(instOpcode.equalsIgnoreCase("conv2d_bias_add")) {
+			else if(instOpcode.equalsIgnoreCase(Opcodes.CONV2D_BIAS_ADD.toString())) {
 				filterBroadcast = getBroadcast(sec, _in3.getName());
 				biasBroadcast = getBroadcast(sec, _in2.getName());
 			}
@@ -278,7 +279,7 @@ public class DnnSPInstruction extends UnarySPInstruction {
 			
 			long nnz = -1; // TODO: Handle nnz
 			long numCols = ((long)K)*((long)P)*Q;
-			if(instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling")) {
+			if(instOpcode.equalsIgnoreCase(Opcodes.MAXPOOLING.toString()) || instOpcode.equalsIgnoreCase(Opcodes.RELU_MAXPOOLING.toString())) {
 				numCols = ((long)C)*((long)P)*Q;
 			}
 			if(numCols > Integer.MAX_VALUE) {
@@ -316,7 +317,7 @@ public class DnnSPInstruction extends UnarySPInstruction {
 		
 		private MatrixBlock processRectangularBlock(MatrixBlock matBlock) throws Exception {
 			MatrixBlock outputBlock = null;
-			if(instOpcode.equalsIgnoreCase("conv2d")) {
+			if(instOpcode.equalsIgnoreCase(Opcodes.CONV2D.toString())) {
 				MatrixBlock filter = filterBroadcast.getValue();
 				if(filter.isEmptyBlock() || matBlock.isEmptyBlock()) {
 					outputBlock = new MatrixBlock(params.N, params.K*params.P*params.Q, true);
@@ -329,7 +330,7 @@ public class DnnSPInstruction extends UnarySPInstruction {
 						LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
 				}
 			}
-			else if (instOpcode.equalsIgnoreCase("conv2d_bias_add")) {
+			else if (instOpcode.equalsIgnoreCase(Opcodes.CONV2D_BIAS_ADD.toString())) {
 				MatrixBlock filter = filterBroadcast.getValue();
 				MatrixBlock bias = biasBroadcast.getValue();
 				if((filter.isEmptyBlock() || matBlock.isEmptyBlock()) && bias.isEmptyBlock()) {
@@ -345,18 +346,18 @@ public class DnnSPInstruction extends UnarySPInstruction {
 						LibMatrixDNN.conv2d(matBlock, filter, outputBlock, params);
 				}
 			}
-			else if(instOpcode.equalsIgnoreCase("maxpooling") || instOpcode.equalsIgnoreCase("relu_maxpooling")) {
+			else if(instOpcode.equalsIgnoreCase(Opcodes.MAXPOOLING.toString()) || instOpcode.equalsIgnoreCase(Opcodes.RELU_MAXPOOLING.toString())) {
 				if(matBlock.isEmptyBlock()) {
 					outputBlock = new MatrixBlock(params.N, params.C*params.P*params.Q, true);
 				}
 				else {
 					outputBlock = new MatrixBlock(params.N, params.C*params.P*params.Q, false).allocateBlock();
-					if(instOpcode.equalsIgnoreCase("maxpooling"))
+					if(instOpcode.equalsIgnoreCase(Opcodes.MAXPOOLING.toString()))
 						outputBlock.getDenseBlock().set(-Double.MAX_VALUE);
 					LibMatrixDNN.pooling(matBlock, outputBlock, params, PoolingType.MAX);
 				}
 			}
-			else if(instOpcode.equalsIgnoreCase("avgpooling") || instOpcode.equalsIgnoreCase("relu_avgpooling")) {
+			else if(instOpcode.equalsIgnoreCase(Opcodes.AVGPOOLING.toString()) || instOpcode.equalsIgnoreCase("relu_avgpooling")) {
 				if(matBlock.isEmptyBlock()) {
 					outputBlock = new MatrixBlock(params.N, params.C*params.P*params.Q, true);
 				}

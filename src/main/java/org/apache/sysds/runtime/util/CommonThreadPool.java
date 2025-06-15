@@ -115,7 +115,7 @@ public class CommonThreadPool implements ExecutorService {
 		final boolean mainThread = threadName.contains("main");
 		if(size == k && mainThread)
 			return shared; // use the default thread pool if main thread and max parallelism.
-		else if(mainThread || threadName.contains("PARFOR")) {
+		else if(mainThread || threadName.contains("PARFOR") || threadName.contains("FedExec")) {
 			CommonThreadPool pool;
 			if(shared2 == null) // If there is no current shared pool allocate one.
 				shared2 = new ConcurrentHashMap<>();

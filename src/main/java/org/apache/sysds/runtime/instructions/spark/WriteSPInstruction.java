@@ -30,6 +30,7 @@ import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.util.LongAccumulator;
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
@@ -76,7 +77,7 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType ( str );
 		String opcode = parts[0];
 
-		if( !opcode.equals("write") ) {
+		if( !opcode.equals(Opcodes.WRITE.toString()) ) {
 			throw new DMLRuntimeException("Unsupported opcode");
 		}
 

@@ -43,6 +43,8 @@ public class FederatedMemoTable {
 
 	public void addFedPlanVariants(long hopID, FederatedOutput fedOutType, FedPlanVariants fedPlanVariants) {
 		hopMemoTable.put(new ImmutablePair<>(hopID, fedOutType), fedPlanVariants);
+	public void addFedPlanVariants(long hopID, FederatedOutput fedOutType, FedPlanVariants fedPlanVariants) {
+		hopMemoTable.put(new ImmutablePair<>(hopID, fedOutType), fedPlanVariants);
 	}
 
 	public FedPlanVariants getFedPlanVariants(Pair<Long, FederatedOutput> fedPlanPair) {
@@ -136,10 +138,13 @@ public class FederatedMemoTable {
 
 		public FedPlanVariants(HopCommon hopCommon, FederatedOutput fedOutType) {
 			this.hopCommon = hopCommon;
+		public FedPlanVariants(HopCommon hopCommon, FederatedOutput fedOutType) {
+			this.hopCommon = hopCommon;
 			this.fedOutType = fedOutType;
 			this._fedPlanVariants = new ArrayList<>();
 		}
 
+		public boolean isEmpty() {return _fedPlanVariants.isEmpty();}
 		public boolean isEmpty() {return _fedPlanVariants.isEmpty();}
 		public void addFedPlan(FedPlan fedPlan) {_fedPlanVariants.add(fedPlan);}
 		public List<FedPlan> getFedPlanVariants() {return _fedPlanVariants;}
@@ -149,6 +154,7 @@ public class FederatedMemoTable {
 			if (!_fedPlanVariants.isEmpty()) {
 				// Find the FedPlan with the minimum cumulative cost
 				FedPlan minCostPlan = _fedPlanVariants.stream()
+						.min(Comparator.comparingDouble(FedPlan::getCumulativeCost))
 						.min(Comparator.comparingDouble(FedPlan::getCumulativeCost))
 						.orElse(null);
 

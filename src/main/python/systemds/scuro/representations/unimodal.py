@@ -18,17 +18,25 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import abc
+
 from systemds.scuro.representations.representation import Representation
 
 
 class UnimodalRepresentation(Representation):
-    def __init__(self, name):
+    def __init__(self, name: str, output_modality_type, parameters=None):
         """
         Parent class for all unimodal representation types
         :param name: name of the representation
+        :param parameters: parameters of the representation; name of the parameter and
+        possible parameter values
         """
-        super().__init__(name)
+        super().__init__(name, parameters)
+        self.output_modality_type = output_modality_type
+        if parameters is None:
+            parameters = {}
 
+    @abc.abstractmethod
     def transform(self, data):
         raise f"Not implemented for {self.name}"
 

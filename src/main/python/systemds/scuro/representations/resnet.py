@@ -18,15 +18,16 @@
 # under the License.
 #
 # -------------------------------------------------------------
-
+from systemds.scuro.utils.torch_dataset import CustomDataset
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from typing import Callable, Dict, Tuple, Any
+from systemds.scuro.drsearch.operator_registry import register_representation
 import torch.utils.data
 import torch
 import torchvision.models as models
-import torchvision.transforms as transforms
 import numpy as np
+from systemds.scuro.modality.type import ModalityType
 
 if torch.backends.mps.is_available():
     DEVICE = torch.device("mps")
@@ -36,13 +37,19 @@ else:
     DEVICE = torch.device("cpu")
 
 
+@register_representation(
+    [ModalityType.IMAGE, ModalityType.VIDEO, ModalityType.TIMESERIES]
+)
 class ResNet(UnimodalRepresentation):
     def __init__(self, layer="avgpool", model_name="ResNet18", output_file=None):
-        super().__init__("ResNet")
+        self.model_name = model_name
+        parameters = self._get_parameters()
+        super().__init__(
+            "ResNet", ModalityType.TIMESERIES, parameters
+        )  # TODO: TIMESERIES only for videos - images would be handled as EMBEDDING
 
         self.output_file = output_file
         self.layer_name = layer
-        self.model = model_name
         self.model.eval()
         for param in self.model.parameters():
             param.requires_grad = False
@@ -54,49 +61,56 @@ class ResNet(UnimodalRepresentation):
         self.model.fc = Identity()
 
     @property
-    def model(self):
-        return self._model
+    def model_name(self):
+        return self._model_name
 
-    @model.setter
-    def model(self, model):
-        if model == "ResNet18":
-            self._model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT).to(
+    @model_name.setter
+    def model_name(self, model_name):
+        self._model_name = model_name
+        if model_name == "ResNet18":
+            self.model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT).to(
                 DEVICE
             )
-        elif model == "ResNet34":
-            self._model = models.resnet34(weights=models.ResNet34_Weights.DEFAULT).to(
+        elif model_name == "ResNet34":
+            self.model = models.resnet34(weights=models.ResNet34_Weights.DEFAULT).to(
                 DEVICE
             )
-        elif model == "ResNet50":
-            self._model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT).to(
+        elif model_name == "ResNet50":
+            self.model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT).to(
                 DEVICE
             )
-        elif model == "ResNet101":
-            self._model = models.resnet101(weights=models.ResNet101_Weights.DEFAULT).to(
+        elif model_name == "ResNet101":
+            self.model = models.resnet101(weights=models.ResNet101_Weights.DEFAULT).to(
                 DEVICE
             )
-        elif model == "ResNet152":
-            self._model = models.resnet152(weights=models.ResNet152_Weights.DEFAULT).to(
+        elif model_name == "ResNet152":
+            self.model = models.resnet152(weights=models.ResNet152_Weights.DEFAULT).to(
                 DEVICE
             )
         else:
             raise NotImplementedError
 
-    def transform(self, modality):
+    def _get_parameters(self, high_level=True):
+        parameters = {"model_name": [], "layer_name": []}
+        for m in ["ResNet18", "ResNet34", "ResNet50", "ResNet101", "ResNet152"]:
+            parameters["model_name"].append(m)
 
-        t = transforms.Compose(
-            [
-                transforms.ToPILImage(),
-                transforms.Resize(256),
-                transforms.CenterCrop(224),
-                transforms.ToTensor(),
-                transforms.Normalize(
-                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-                ),
+        if high_level:
+            parameters["layer_name"] = [
+                "conv1",
+                "layer1",
+                "layer2",
+                "layer3",
+                "layer4",
+                "avgpool",
             ]
-        )
+        else:
+            for name, layer in self.model.named_modules():
+                parameters["layer_name"].append(name)
+        return parameters
 
-        dataset = ResNetDataset(modality.data, t)
+    def transform(self, modality):
+        dataset = CustomDataset(modality.data)
         embeddings = {}
 
         res5c_output = None
@@ -135,38 +149,12 @@ class ResNet(UnimodalRepresentation):
                     torch.flatten(pooled, 1).detach().cpu().numpy()
                 )
 
+            embeddings[video_id] = np.array(embeddings[video_id])
+
         transformed_modality = TransformedModality(
-            modality.modality_type, "resnet", modality.metadata
+            self.output_modality_type, "resnet", modality.modality_id, modality.metadata
         )
+
         transformed_modality.data = list(embeddings.values())
-        transformed_modality.update_data_layout()
 
         return transformed_modality
-
-
-class ResNetDataset(torch.utils.data.Dataset):
-    def __init__(self, data: str, tf: Callable = None):
-        self.data = data
-        self.tf = tf
-
-    def __getitem__(self, index) -> Dict[str, object]:
-        data = self.data[index]
-        if type(data) is np.ndarray:
-            output = torch.empty((1, 3, 224, 224))
-            d = torch.tensor(data)
-            d = d.repeat(3, 1, 1)
-            output[0] = self.tf(d)
-        else:
-            output = torch.empty((len(data), 3, 224, 224))
-
-            for i, d in enumerate(data):
-                if data[0].ndim < 3:
-                    d = torch.tensor(d)
-                    d = d.repeat(3, 1, 1)
-
-                output[i] = self.tf(d)
-
-        return {"id": index, "data": output}
-
-    def __len__(self) -> int:
-        return len(self.data)

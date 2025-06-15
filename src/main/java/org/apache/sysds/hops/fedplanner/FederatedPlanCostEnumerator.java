@@ -103,7 +103,7 @@ public class FederatedPlanCostEnumerator {
 		unRefSet.addAll(unRefTwriteSet);
 		// Print the federated plan tree if requested
 		if (isPrint) {
-			FederatedMemoTablePrinter.printFedPlanTree(optimalPlan, unRefSet, memoTable, additionalTotalCost);
+			FederatedPlannerLogger.printFedPlanTree(optimalPlan, unRefSet, memoTable, additionalTotalCost);
 		}
 
 		return optimalPlan;
@@ -134,8 +134,11 @@ public class FederatedPlanCostEnumerator {
 		// Detect conflicts in the federated plans where different FedPlans have
 		// different FederatedOutput types
 		// Todo : Fix & Update Conflict Resolve Plan
-		double additionalTotalCost = detectAndResolveConflictFedPlan(optimalPlan, memoTable);
+		// double additionalTotalCost = detectAndResolveConflictFedPlan(optimalPlan, memoTable);
 
+		double additionalTotalCost = 0.0;
+		System.out.println("[Todo]detectAndResolveConflictFedPlan call has been commented out.");
+		
 		// Print the federated plan tree if requested
 		if (isPrint) {
 			FederatedPlannerLogger.printFedPlanTree(optimalPlan, unRefTwriteSet, memoTable, additionalTotalCost);
@@ -301,8 +304,9 @@ public class FederatedPlanCostEnumerator {
 		int numParentHops = hop.getParent().size();
 		boolean isTrans = false;
 
-		if ((hop instanceof DataOp) && !hop.getName().equals("__pred")
-				&& !(((DataOp) hop).getOp() == Types.OpOpData.PERSISTENTWRITE)) {
+		if ((hop instanceof DataOp) &&
+				(((DataOp) hop).getOp() == Types.OpOpData.TRANSIENTWRITE && !hop.getName().equals("__pred")
+					|| (((DataOp) hop).getOp() == Types.OpOpData.TRANSIENTREAD))) {
 			Types.OpOpData opType = ((DataOp) hop).getOp();
 			if (opType == Types.OpOpData.TRANSIENTWRITE) {
 				List<Hop> transParentHops = rewireTable.get(hop.getHopID());
@@ -318,6 +322,7 @@ public class FederatedPlanCostEnumerator {
 				isTrans = true;
 			}
 		} else {
+			// Todo: Cannot understand this code
 			for (Hop parentHop : hop.getParent()) {
 				if (parentHop instanceof DataOp
 						&& ((DataOp) parentHop).getOp() == Types.OpOpData.TRANSIENTWRITE

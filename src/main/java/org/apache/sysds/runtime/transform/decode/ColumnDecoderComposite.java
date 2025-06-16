@@ -40,7 +40,7 @@ public class ColumnDecoderComposite extends ColumnDecoder {
 
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
-        return columnDecode(in, out, 5);
+        return columnDecode(in, out, 4);
         //out.ensureAllocatedColumns(in.getNumRows());
         //for (ColumnDecoder dec : _decoders) {
         //    List<MatrixBlock> slices = sliceColumns(in, dec.getColList());
@@ -64,7 +64,10 @@ public class ColumnDecoderComposite extends ColumnDecoder {
         try{
             List<Future<FrameBlock>> tasks = new ArrayList<>();
             for (ColumnDecoder dec : _decoders) {
+                long t1 = System.nanoTime();
                 List<MatrixBlock> slices = sliceColumns(in, dec.getColList());
+                long t2 = System.nanoTime();
+                System.out.println((t2 - t1) / 1e6 + " ms");
                 for (int c = 0; c < slices.size(); c++) {
                     ColumnDecoder sub = dec.getColList().length == 1 ? dec :
                             dec.subRangeDecoder(dec.getColList()[c], dec.getColList()[c] + 1, 0);

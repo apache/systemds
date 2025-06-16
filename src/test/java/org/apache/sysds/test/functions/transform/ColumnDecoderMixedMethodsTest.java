@@ -25,18 +25,21 @@ public class ColumnDecoderMixedMethodsTest extends AutomatedTestBase {
     public void testColumnDecoderMixedMethods() {
         try {
             int rows = 1000000;
-            double[][] arr = new double[rows][5];
+            double[][] arr = new double[rows][8];
             for (int i = 0; i < rows; i++) {
                 arr[i][0] = (i % 4) + 1; // recode column
                 arr[i][1] = i + 1;       // bin column
                 arr[i][2] = 101 + i;     // recode column
                 arr[i][3] = 2*i + 1;       // bin column
                 arr[i][4] = 100 + i;     // pass through column
+                arr[i][5] = 100 + i;     // pass through column
+                arr[i][6] = 2*i + 1;       // bin column
+                arr[i][7] = 2*i + 1;       // bin column
 
             }
             MatrixBlock mb = DataConverter.convertToMatrixBlock(arr);
             FrameBlock data = DataConverter.convertToFrameBlock(mb);
-            String spec = "{ids:true, recode:[1,3], bin:[{id:2, method:equi-width, numbins:4},{id:4, method:equi-width, numbins:4}]}";//
+            String spec = "{ids:true, recode:[1,3], bin:[{id:2, method:equi-width, numbins:4},{id:4, method:equi-width, numbins:4},{id:6, method:equi-width, numbins:4},{id:7, method:equi-width, numbins:4}]}";//
 
             MultiColumnEncoder enc = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(), null);
             MatrixBlock encoded = enc.encode(data);

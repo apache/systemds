@@ -64,14 +64,17 @@ public class ColumnDecoderRecode extends ColumnDecoder {
         }
     }
     public ColumnDecoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
-        // TODO
         List<Integer> cols = new ArrayList<>();
         List<HashMap<Long, Object>> rcMaps = new ArrayList<>();
+        List<Object[]> rcMapsDirect = (_rcMapsDirect != null) ? new ArrayList<>() : null;
         for(int i = 0; i < _colList.length; i++) {
             int col = _colList[i];
             if(col >= colStart && col < colEnd) {
                 cols.add(col - (colStart - 1));
-                rcMaps.add(new HashMap<>(_rcMaps[i]));
+                //rcMaps.add(new HashMap<>(_rcMaps[i]));
+                rcMaps.add(_rcMaps[i]);
+                if(rcMapsDirect != null)
+                    rcMapsDirect.add(_rcMapsDirect[i]);
             }
         }
         if(cols.isEmpty())
@@ -81,6 +84,8 @@ public class ColumnDecoderRecode extends ColumnDecoder {
         ColumnDecoderRecode dec = new ColumnDecoderRecode(
                 Arrays.copyOfRange(_schema, colStart - 1, colEnd - 1), _onOut, colList);
         dec._rcMaps = rcMaps.toArray(new HashMap[0]);
+        if(rcMapsDirect != null)
+            dec._rcMapsDirect = rcMapsDirect.toArray(new Object[0][]);
         return dec;    }
 
     @Override

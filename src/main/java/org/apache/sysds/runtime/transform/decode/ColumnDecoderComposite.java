@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class ColumnDecoderComposite extends ColumnDecoder {
@@ -39,34 +40,50 @@ public class ColumnDecoderComposite extends ColumnDecoder {
 
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
-        out.ensureAllocatedColumns(in.getNumRows());
-        for (ColumnDecoder dec : _decoders) {
-            List<MatrixBlock> slices = sliceColumns(in, dec.getColList());
-            for (int c = 0; c < slices.size(); c++) {
-                ColumnDecoder sub = dec.getColList().length == 1 ? dec :
-                        dec.subRangeDecoder(dec.getColList()[c], dec.getColList()[c] + 1, 0);
-                if (sub == null)
-                    throw new RuntimeException("Decoder does not support column slicing: " + dec.getClass());
-                sub.columnDecode(slices.get(c), out);
-            }
-        }
-        return out;
+        return columnDecode(in, out, 5);
+        //out.ensureAllocatedColumns(in.getNumRows());
+        //for (ColumnDecoder dec : _decoders) {
+        //    List<MatrixBlock> slices = sliceColumns(in, dec.getColList());
+        //    for (int c = 0; c < slices.size(); c++) {
+        //        ColumnDecoder sub = dec.getColList().length == 1 ? dec :
+        //                dec.subRangeDecoder(dec.getColList()[c], dec.getColList()[c] + 1, 0);
+        //        if (sub == null)
+        //            throw new RuntimeException("Decoder does not support column slicing: " + dec.getClass());
+        //        if (sub != dec)
+        //            sub._colList = new int[]{dec.getColList()[c]};
+        //        sub.columnDecode(slices.get(c), out);
+        //    }
+        //}
+        //return out;
     }
 
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out, final int k) {
-        //final ExecutorService pool = CommonThreadPool.get(k);
-        //List<Future<ColumnInput>> futures = new ArrayList<>();
-        //try {
-        //    for (ColumnInput columnInput : inputs) {
-//
-        //    }
-        //}
-        //catch (Exception e) {
-        //    throw new RuntimeException(e);
-        //}
-//
-        return null;
+        final ExecutorService pool = CommonThreadPool.get(k);
+        out.ensureAllocatedColumns(in.getNumRows());
+        try{
+            List<Future<FrameBlock>> tasks = new ArrayList<>();
+            for (ColumnDecoder dec : _decoders) {
+                List<MatrixBlock> slices = sliceColumns(in, dec.getColList());
+                for (int c = 0; c < slices.size(); c++) {
+                    ColumnDecoder sub = dec.getColList().length == 1 ? dec :
+                            dec.subRangeDecoder(dec.getColList()[c], dec.getColList()[c] + 1, 0);
+                    if (sub == null)
+                        throw new RuntimeException("Decoder does not support column slicing: " + dec.getClass());
+                    if (sub != dec)
+                        sub._colList = new int[]{dec.getColList()[c]};
+                    int finalC = c;
+                    tasks.add(pool.submit(() -> sub.columnDecode(slices.get(finalC), out)));
+                }
+            }
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        finally {
+            pool.shutdown();
+        }
+        return out;
     }
 
     @Override

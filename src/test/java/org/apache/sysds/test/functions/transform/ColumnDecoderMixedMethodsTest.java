@@ -24,7 +24,7 @@ public class ColumnDecoderMixedMethodsTest extends AutomatedTestBase {
     @Test
     public void testColumnDecoderMixedMethods() {
         try {
-            int rows = 10;
+            int rows = 1000000;
             double[][] arr = new double[rows][5];
             for (int i = 0; i < rows; i++) {
                 arr[i][0] = (i % 4) + 1; // recode column

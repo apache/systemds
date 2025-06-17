@@ -21,7 +21,6 @@ package org.apache.sysds.test.functions.einsum;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -29,8 +28,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -51,6 +48,7 @@ public class EinsumTest extends AutomatedTestBase
 	private static final String TEST_EINSUM8 = TEST_NAME_EINSUM+"8";
 	private static final String TEST_EINSUM9 = TEST_NAME_EINSUM+"9";
 	private static final String TEST_EINSUM10 = TEST_NAME_EINSUM+"10";
+	private static final String TEST_EINSUM11 = TEST_NAME_EINSUM+"11";
 
 	private static final String TEST_DIR = "functions/einsum/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + EinsumTest.class.getSimpleName() + "/";
@@ -62,7 +60,7 @@ public class EinsumTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for(int i=1; i<=10; i++)
+		for(int i=1; i<=11; i++)
 			addTestConfiguration( TEST_NAME_EINSUM+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_EINSUM+i, new String[] { String.valueOf(i) }) );
 	}
 	@Test
@@ -100,8 +98,12 @@ public class EinsumTest extends AutomatedTestBase
 		testCodegenIntegration( TEST_EINSUM9, false, ExecType.CP );
 	}
 	@Test
-	public void testCodegenEinsum91CP() {
+	public void testCodegenEinsum10CP() {
 		testCodegenIntegration( TEST_EINSUM10, false, ExecType.CP );
+	}
+	@Test
+	public void testCodegenEinsum11CP() {
+		testCodegenIntegration( TEST_EINSUM11, false, ExecType.CP );
 	}
 
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )

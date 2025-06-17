@@ -755,8 +755,7 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			break;
 		case EINSUM:
 			validateEinsum((DataIdentifier) getOutputs()[0]);
-
-			break;					
+			break;
 		default: //always unconditional
 			raiseValidateError("Unknown Builtin Function opcode: " + _opcode, false);
 		}
@@ -2070,7 +2069,6 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			break;
 		case EINSUM:
 			validateEinsum(output);
-
 			break;
 		default:
 			if( isMathFunction() ) {
@@ -2114,10 +2112,9 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 					LanguageErrorCodes.INVALID_PARAMETERS);
 
 		String eq_string = ((StringIdentifier)getFirstExpr()).getValue();
+		String[] eqStringParts = eq_string.split("->");
 
-		String[] parts = eq_string.split("->");
-
-		if(parts.length != 2)
+		if(eqStringParts.length != 2)
 			raiseValidateError("Einsum: equation str should contain one '->' substring", false,
 					LanguageErrorCodes.INVALID_PARAMETERS);
 
@@ -2127,96 +2124,82 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 		LinkedList<Identifier> matrixBlocks = new LinkedList();
 		for (int i=1;i<expressions.length; i++){
 			checkMatrixParam(expressions[i]);
-
 			if(!(expressions[i]).getOutput().dimsKnown()){
 				allDimsKnown = false;
 				break;
 			}
-
 			matrixBlocks.add((expressions[i].getOutput()));
 		}
 
-		if(allDimsKnown) {
+		if(allDimsKnown) { // validate dimension sizes as well
 			HashMap<Character, Long> charToDimensionSize = new HashMap<>();
-
 			Iterator<Identifier> it = matrixBlocks.iterator();
-			Identifier curArr = it.next();
+			Identifier currArr = it.next();
 			int arrSizeIterator = 0;
 			int numberOfMatrices = 1;
-			for (int i = 0; i<parts[0].length(); i++) {
+			for (int i = 0; i < eqStringParts[0].length(); i++) {
 				char c = eq_string.charAt(i);
 				if(c==','){
 					if(!it.hasNext())
 						raiseValidateError("Einsum: Provided less operands than specified in equation str",
 								false, LanguageErrorCodes.INVALID_PARAMETERS);
-					curArr = it.next();
+					currArr = it.next();
 					arrSizeIterator = 0;
 					numberOfMatrices++;
 				}else if(c==' '){
 					continue;
 				}
 				else{
+					long thisCharDimension = arrSizeIterator == 0 ? currArr.getDim1() : currArr.getDim2();
 					if (charToDimensionSize.containsKey(c)){
-						// check if size matches
-						if (arrSizeIterator==0) {
-							if (charToDimensionSize.get(c) != curArr.getDim1())
-								raiseValidateError("Einsum: Character '" + c + "' expected to be dim " + charToDimensionSize.get(c) + ", but found " + curArr.getDim1(),
-										false, LanguageErrorCodes.INVALID_PARAMETERS);
-						}
-						else {//if(arrSizeIterator==1)
-							if (charToDimensionSize.get(c) != curArr.getDim2())
-								raiseValidateError("Einsum: Character '" + c + "' expected to be dim " + charToDimensionSize.get(c) + ", but found " + curArr.getDim2(),
-										false, LanguageErrorCodes.INVALID_PARAMETERS);
-						}
+						if (charToDimensionSize.get(c) != thisCharDimension)
+							raiseValidateError("Einsum: Character '" + c + "' expected to be dim " + charToDimensionSize.get(c) + ", but found " + thisCharDimension,
+									false, LanguageErrorCodes.INVALID_PARAMETERS);
 					}else{
-						if(arrSizeIterator==0)
-							charToDimensionSize.put(c, curArr.getDim1());
-						else //if(arrSizeIterator==1)
-							charToDimensionSize.put(c, curArr.getDim2());
+						charToDimensionSize.put(c, thisCharDimension);
 					}
 					arrSizeIterator++;
 				}
 			}
-			if (getAllExpr().length-1 > numberOfMatrices){
+			if (getAllExpr().length - 1 > numberOfMatrices)
 				raiseValidateError("Einsum: Provided more operands than specified in equation str",
 						false, LanguageErrorCodes.INVALID_PARAMETERS);
-			}
+
 			int numberOfDimensions = 0;
-			long dim1 = 0;
-			long dim2 = 0;
-			for (int i = 0; i<parts[1].length(); i++) {
-				char c = parts[i].charAt(i);
+			long dim1 = 1;
+			long dim2 = 1;
+			for (int i = 0; i < eqStringParts[1].length(); i++) {
+				char c = eqStringParts[i].charAt(i);
 				if(c!=' '){
-					numberOfDimensions++;
-					if(dim1 == 0){
+					if(numberOfDimensions == 0){
 						dim1 = charToDimensionSize.get(c);
 					}else{
 						dim2 = charToDimensionSize.get(c);
 					}
+					numberOfDimensions++;
 				}
 			}
-			if(numberOfDimensions==0){
+			if(numberOfDimensions == 0){
 				output.setDataType(DataType.SCALAR);
 				output.setDimensions(-1, -1);
-			}else if(numberOfDimensions>2){
+			}else if(numberOfDimensions > 2){
 				raiseValidateError("Einsum: output matrices with with no. dims > 2 not supported",
 						false, LanguageErrorCodes.INVALID_PARAMETERS);
 			}else {
 				output.setDataType(DataType.MATRIX);
 				output.setDimensions(dim1, dim2);
 			}
-		}else{
+		} else { // dimensions unknown
 			int numberOfMatrices = 1;
-			for (int i = 0; i < parts[0].length(); i++) {
-				if(parts[0].charAt(i) == ',')
+			for (int i = 0; i < eqStringParts[0].length(); i++) {
+				if(eqStringParts[0].charAt(i) == ',')
 					numberOfMatrices++;
 			}
 			checkNumParameters(numberOfMatrices+1);
 
 			int numberOfDimensions = 0;
-
-			for (int i = 0; i<parts[1].length(); i++) {
-				char c = parts[i].charAt(i);
+			for (int i = 0; i < eqStringParts[1].length(); i++) {
+				char c = eqStringParts[i].charAt(i);
 				if(c!=' '){
 					numberOfDimensions++;
 				}

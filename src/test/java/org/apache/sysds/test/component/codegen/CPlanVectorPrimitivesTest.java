@@ -789,6 +789,11 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 	//scalar - vector
 
 	@Test
+	public void testScalarVectorDivSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_DIV_SCALAR, InputType.SCALAR, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
 	public void testScalarVectorMinSparseToSparse() {
 		testVectorBinarySparsePrimitive(BinType.VECT_MIN_SCALAR, InputType.SCALAR, InputType.VECTOR_SPARSE);
 	}
@@ -1270,7 +1275,7 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 				}
 
 				//compare results
-				TestUtils.compareMatrices(ret1, ret2, eps);
+				TestUtils.compareMatrices(ret2, ret1, eps);
 			}
 		}
 		catch( Exception ex ) {

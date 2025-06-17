@@ -236,9 +236,20 @@ public class NaryOp extends Hop {
 				setDim2(1);
 				break;
 			case EINSUM:
-				setDataType(DataType.MATRIX);
-				setDim1(getInput().size());
-				setDim2(1);
+				String outStr = ((LiteralOp) _input.get(0)).getStringValue().split("->")[1];
+				int count = 0;
+				for (int i = 0; i < outStr.length(); i++){
+					if(outStr.charAt(i) != ' ') count++;
+				}
+				if(count==0) {
+					setDataType(DataType.SCALAR);
+					setDim1(0);
+					setDim2(0);
+				}
+				else{
+					setDim1( HopRewriteUtils.getMaxInputDim(this, true));
+					setDim2(count==1 ? 1 : HopRewriteUtils.getMaxInputDim(this, false));
+				}
 				break;
 			case PRINTF:
 			case EVAL:

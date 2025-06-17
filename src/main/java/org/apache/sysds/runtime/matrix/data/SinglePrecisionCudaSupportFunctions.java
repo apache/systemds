@@ -209,38 +209,23 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 	@Override
 	public int cusparsecsr2csc(cusparseHandle handle, int m, int n, int nnz, Pointer csrVal, Pointer csrRowPtr,
 		Pointer csrColInd, Pointer cscVal, Pointer cscRowInd, Pointer cscColPtr, int copyValues, int idxBase) {
-		final int alg = CUSPARSE_CSR2CSC_ALG1;		// Algorithm 1 is universally supported
-		final int valType = CUDA_R_32F;				// single-precision
 
-		/* ------------------------------------------------------------------ */
-		/* 1. Query required workspace size                                   */
-		/* ------------------------------------------------------------------ */
-		long[] bufSize = {0};
-		int status = JCusparse.cusparseCsr2cscEx2_bufferSize(handle, m, n, nnz, csrVal, csrRowPtr, csrColInd, cscVal,
-			cscColPtr, cscRowInd, valType, copyValues, idxBase, alg, bufSize);
-		if(status != CUSPARSE_STATUS_SUCCESS)
-			return status;
+		int valType = CUDA_R_32F;            // single precision
+		int alg = CUSPARSE_CSR2CSC_ALG1;     // always supported
 
-		/* ------------------------------------------------------------------ */
-		/* 2. Allocate workspace (if needed)                                  */
-		/* ------------------------------------------------------------------ */
-		Pointer buffer = null;
-		if(bufSize[0] > 0) {
-			buffer = new Pointer();
-			cudaMalloc(buffer, bufSize[0]);
-		}
+		long[] bufferSize = {0};
+		cusparseCsr2cscEx2_bufferSize(handle, m, n, nnz, csrVal, csrRowPtr, csrColInd, cscVal, cscColPtr, cscRowInd,
+			valType, copyValues, idxBase, alg, bufferSize);
 
+		Pointer buffer = new Pointer();
+		if(bufferSize[0] > 0)
+			cudaMalloc(buffer, bufferSize[0]);
 		try {
-			/* -------------------------------------------------------------- */
-			/* 3. Perform CSR -> CSC conversion                                */
-			/* -------------------------------------------------------------- */
-			status = JCusparse.cusparseCsr2cscEx2(handle, m, n, nnz, csrVal, csrRowPtr, csrColInd, cscVal, cscColPtr,
-				cscRowInd, valType, copyValues, idxBase, alg, buffer);
-
-			return status;
+			return cusparseCsr2cscEx2(handle, m, n, nnz, csrVal, csrRowPtr, csrColInd, cscVal, cscColPtr, cscRowInd,
+				valType, copyValues, idxBase, alg, buffer);
 		}
 		finally {
-			if(buffer != null)
+			if(bufferSize[0] > 0)
 				cudaFree(buffer);
 		}
 	}

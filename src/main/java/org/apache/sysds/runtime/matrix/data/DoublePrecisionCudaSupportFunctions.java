@@ -197,31 +197,23 @@ public class DoublePrecisionCudaSupportFunctions implements CudaSupportFunctions
 	@Override
 	public int cusparsecsr2csc(cusparseHandle handle, int m, int n, int nnz, Pointer csrVal, Pointer csrRowPtr,
 		Pointer csrColInd, Pointer cscVal, Pointer cscRowInd, Pointer cscColPtr, int copyValues, int idxBase) {
-		/* Constants ------------------------------------------------------- */
-		int valType = CUDA_R_64F;                     // double precision
-		int alg = CUSPARSE_CSR2CSC_ALG1;          // always supported
 
-		/* Query workspace size ------------------------------------------- */
-		long[] bufSize = {0};
-		int status = JCusparse.cusparseCsr2cscEx2_bufferSize(handle, m, n, nnz, csrVal, csrRowPtr, csrColInd, cscVal,
-			cscColPtr, cscRowInd, valType, copyValues, idxBase, alg, bufSize);
-		if(status != CUSPARSE_STATUS_SUCCESS)
-			return status;
+		int valType = CUDA_R_64F;            // double precision
+		int alg = CUSPARSE_CSR2CSC_ALG1;     // always supported
 
-		/* Allocate temp buffer if needed --------------------------------- */
+		long[] bufferSize = {0};
+		cusparseCsr2cscEx2_bufferSize(handle, m, n, nnz, csrVal, csrRowPtr, csrColInd, cscVal, cscColPtr, cscRowInd,
+			valType, copyValues, idxBase, alg, bufferSize);
+
 		Pointer buffer = new Pointer();
-		if(bufSize[0] > 0)
-			cudaMalloc(buffer, bufSize[0]);
-
+		if(bufferSize[0] > 0)
+			cudaMalloc(buffer, bufferSize[0]);
 		try {
-			/* Perform CSR -> CSC conversion ------------------------------- */
-			status = JCusparse.cusparseCsr2cscEx2(handle, m, n, nnz, csrVal, csrRowPtr, csrColInd, cscVal, cscColPtr,
-				cscRowInd, valType, copyValues, idxBase, alg, buffer);
-
-			return status;
+			return cusparseCsr2cscEx2(handle, m, n, nnz, csrVal, csrRowPtr, csrColInd, cscVal, cscColPtr, cscRowInd,
+				valType, copyValues, idxBase, alg, buffer);
 		}
 		finally {
-			if(bufSize[0] > 0)
+			if(bufferSize[0] > 0)
 				cudaFree(buffer);
 		}
 	}

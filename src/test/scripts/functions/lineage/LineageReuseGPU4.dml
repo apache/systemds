@@ -31,8 +31,8 @@ randColSet = function(Matrix[Double] X, Integer seed, Double sample) return (Mat
   Xi = removeEmpty(target = X, margin = "cols", select = temp);
 }
 
-X = rand(rows=100, cols=100, sparsity=1.0, seed=1);
-y = rand(rows=100, cols=1, sparsity=1.0, seed=1);
+X = rand(rows=100, cols=100, sparsity=0.2, seed=1);
+y = rand(rows=100, cols=1, sparsity=0.2, seed=1);
 
 Rbeta = matrix(0, rows=525, cols=ncol(X)); #nrows = 5*5*3*7 = 525
 Rloss = matrix(0, rows=525, cols=1);

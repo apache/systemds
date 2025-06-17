@@ -51,9 +51,11 @@ RUN mkdir -p /usr/lib/jvm \
 	&& mv apache-maven-$MAVEN_VERSION /usr/lib/mvn
 
 # Build the system
-RUN git clone --depth 1 https://github.com/alexanderschmi/systemds.git systemds && \
+RUN git clone -b SYSTEMDS-3877 --depth 1 https://github.com/alexanderschmi/systemds.git systemds && \
 	cd /usr/src/systemds/ && \
 	mvn --no-transfer-progress clean package -P distribution
+
+COPY docker/mountFolder/main.dml /input/main.dml
 
 # Remove all unnecessary files from the Image
 RUN	cd /usr/src/systemds/ && \
@@ -70,9 +72,10 @@ RUN	cd /usr/src/systemds/ && \
 	rm -rf /usr/lib/mvn && \
 	rm -rf CONTRIBUTING.md && \
 	rm -rf pom.xml && \ 
-	rm -rf ~/.m2
-
-COPY docker/mountFolder/main.dml /input/main.dml
+	rm -rf ~/.m2 && \
+	rm -rf docker && \
+	rm -rf .mvn && \
+	rm -rf LICENSE
 
 FROM alpine:3.20@sha256:de4fe7064d8f98419ea6b49190df1abbf43450c1702eeb864fe9ced453c1cc5f
 

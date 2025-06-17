@@ -45,12 +45,12 @@ public class GPUFullReuseTest extends AutomatedTestBase{
 	protected static final int TEST_VARIANTS = 4;
 	protected String TEST_CLASS_DIR = TEST_DIR + GPUFullReuseTest.class.getSimpleName() + "/";
 
-	@BeforeClass
+	/*@BeforeClass
 	public static void checkGPU() {
 		// Skip all the tests if no GPU is available
 		// FIXME: Fails to skip if gpu available but no libraries
 		Assume.assumeTrue(TestUtils.isGPUAvailable() == cudaError.cudaSuccess);
-	}
+	}*/
 
 	@Override
 	public void setUp() {

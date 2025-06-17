@@ -22,6 +22,7 @@ import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE
 import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
+import static jcuda.jcusparse.cusparseSpMMAlg.CUSPARSE_SPMM_ALG_DEFAULT;
 import jcuda.Pointer;
 
 import org.apache.commons.logging.Log;
@@ -154,18 +155,16 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 
 			// Step 1: Allocate output => sparse format
 			ec.allocateGPUMatrixObject(outputName, outRLen, outCLen);
-
 			// Step 2: Get the handles to sparse/dense pointers for left, right
 			// and output
 			CSRPointer A = left.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
 			CSRPointer B = right.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
 			CSRPointer C = CSRPointer.allocateForMatrixMultiply(gCtx, getCusparseHandle(gCtx), A, transa, B, transb,
-					params.m, params.n, params.k);
+				params.m, params.n, params.k, sizeOfDataType);
 		
 			// Step 3: Invoke the kernel
-			cudaSupportFunctions.cusparsecsrgemm(getCusparseHandle(gCtx), transa, transb, params.m, params.n, params.k, A.descr,
-					(int) A.nnz, A.val, A.rowPtr, A.colInd, B.descr, (int) B.nnz, B.val, B.rowPtr, B.colInd, C.descr,
-					C.val, C.rowPtr, C.colInd);
+			cudaSupportFunctions.cusparsecsrgemm(getCusparseHandle(gCtx), transa, transb, CUSPARSE_SPMM_ALG_DEFAULT,
+				A.spMatDescr, B.spMatDescr, C.spMatDescr, C.spgemmDesc);
 			output.getGPUObject(gCtx).setSparseMatrixCudaPointer(C);
 			// -------------------------------------------------------------------------------------
 		} else if (!isM1Sparse && isM2Sparse) {

@@ -36,6 +36,10 @@ import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
 import static jcuda.jcusparse.cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL;
 import static jcuda.runtime.JCuda.*;
 import static jcuda.runtime.cudaMemcpyKind.*;
+import static jcuda.jcusparse.cusparseIndexType.CUSPARSE_INDEX_32I;
+import static jcuda.cudaDataType.CUDA_R_64F;
+import static jcuda.cudaDataType.CUDA_R_32F;
+import static jcuda.jcusparse.cusparseSpGEMMAlg.CUSPARSE_SPGEMM_DEFAULT;
 
 /**
  * Compressed Sparse Row (CSR) format for CUDA
@@ -89,6 +93,16 @@ public class CSRPointer {
 	public cusparseMatDescr descr;
 
 	/**
+	 * descriptor of sparse matrix
+	 */
+	public cusparseSpMatDescr spMatDescr;
+
+	/**
+	 * descriptor for sparse GEMM, only use for result matrix.
+	 */
+	public cusparseSpGEMMDescr spgemmDesc;
+
+	/**
 	 * Default constructor to help with Factory method {@link #allocateEmpty(GPUContext, long, long)}
 	 *
 	 * @param gCtx a valid {@link GPUContext}
@@ -98,6 +112,8 @@ public class CSRPointer {
 		val = new Pointer();
 		rowPtr = new Pointer();
 		colInd = new Pointer();
+		spMatDescr = new cusparseSpMatDescr();
+		spgemmDesc = null;
 		allocateMatDescrPointer();
 	}
 
@@ -239,12 +255,13 @@ public class CSRPointer {
 	 * @return a {@link CSRPointer} instance that encapsulates the CSR matrix on GPU
 	 */
 	public static CSRPointer allocateForMatrixMultiply(GPUContext gCtx, cusparseHandle handle, CSRPointer A, int transA,
-			CSRPointer B, int transB, int m, int n, int k) {
-		// Following the code example at http://docs.nvidia.com/cuda/cusparse/#cusparse-lt-t-gt-csrgemm and at
-		// https://github.com/jcuda/jcuda-matrix-utils/blob/master/JCudaMatrixUtils/src/test/java/org/jcuda/matrix/samples/JCusparseSampleDgemm.java
+		CSRPointer B, int transB, int m, int n, int k, int sizeOfDataType) {
+
 		CSRPointer C = new CSRPointer(gCtx);
 		step1AllocateRowPointers(gCtx, handle, C, m);
-		step2GatherNNZGemm(gCtx, handle, A, transA, B, transB, C, m, n, k);
+		ensureSorted(handle, m, n, toIntExact(A.nnz), A.rowPtr, A.colInd, A.descr);
+		ensureSorted(handle, m, n, toIntExact(B.nnz), B.rowPtr, B.colInd, B.descr);
+		step2GatherNNZGemm(gCtx, handle, A, transA, B, transB, C, m, n, k, sizeOfDataType);
 		step3AllocateValNInd(gCtx, handle, C);
 		return C;
 	}
@@ -352,92 +369,73 @@ public class CSRPointer {
 	 */
 
 	private static void step2GatherNNZGemm(GPUContext gCtx, cusparseHandle handle, CSRPointer A, int transA,
-		CSRPointer B, int transB, CSRPointer C, int m, int n, int k)            // C = op(A)·op(B)  (m×k)·(k×n)
+		CSRPointer B, int transB, CSRPointer C, int m, int n, int k,
+		int sizeOfDataType)            // C = op(A)·op(B)  (m×k)·(k×n)
 	{
 		LOG.trace("GPU : step2GatherNNZGemm (SpGEMM), GPUContext=" + gCtx);
 
-		/* ---------- quick guard ---------------------------------------- */
+		// Ensure that NNZ does not exceed limit
 		if(A.nnz >= Integer.MAX_VALUE || B.nnz >= Integer.MAX_VALUE)
 			throw new DMLRuntimeException("Number of non-zeros exceeds cuSPARSE 32-bit limit");
 
-		/* ---------- 1. CSR descriptors for A, B, C --------------------- */
-		cusparseSpMatDescr matA = new cusparseSpMatDescr();
-		cusparseSpMatDescr matB = new cusparseSpMatDescr();
-		cusparseSpMatDescr matC = new cusparseSpMatDescr();
+		// set correct floating point precision, default is double
+		int dataType = CUDA_R_64F;
+		if(sizeOfDataType == 4)
+			dataType = CUDA_R_32F;
 
-		cusparseCreateCsr(matA, m, k, A.nnz, A.rowPtr, A.colInd, A.val, cusparseIndexType.CUSPARSE_INDEX_32I,
-			cusparseIndexType.CUSPARSE_INDEX_32I, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO, cudaDataType.CUDA_R_64F);
+		// Get index base -> 0 or 1
+		int baseA = cusparseGetMatIndexBase(A.descr);
+		int baseB = cusparseGetMatIndexBase(B.descr);
+		int baseC = cusparseGetMatIndexBase(C.descr);
 
-		cusparseCreateCsr(matB, k, n, B.nnz, B.rowPtr, B.colInd, B.val, cusparseIndexType.CUSPARSE_INDEX_32I,
-			cusparseIndexType.CUSPARSE_INDEX_32I, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO, cudaDataType.CUDA_R_64F);
+		// cuSPARSE 12 requires using cusparseSpMatDescr
+		// We do not recreate the existing matrices but only register the data with
+		// A.spMatDescr, B.spMatDescr, C.spMatDescr descriptors are merely registrations of the existing CSR arrays so cuSPARSE can reference them
+		cusparseCreateCsr(A.spMatDescr, m, k, A.nnz, A.rowPtr, A.colInd, A.val, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+			baseA, dataType);
+		cusparseCreateCsr(B.spMatDescr, k, n, B.nnz, B.rowPtr, B.colInd, B.val, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+			baseB, dataType);
+		cusparseCreateCsr(C.spMatDescr, m, n, 0, C.rowPtr, null, null, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, baseC,
+			dataType);
 
-		cusparseCreateCsr(matC, m, n, 0L,                 // nnz(C) unknown
-			C.rowPtr, Pointer.to(new int[] {0}), Pointer.to(new double[] {0}), cusparseIndexType.CUSPARSE_INDEX_32I,
-			cusparseIndexType.CUSPARSE_INDEX_32I, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO, cudaDataType.CUDA_R_64F);
+		// SpGEMM Computation
+		C.spgemmDesc = new cusparseSpGEMMDescr();
+		cusparseSpGEMM_createDescr(C.spgemmDesc);
+		double[] alpha = {1.0};
+		double[] beta = {0.0};
+		Pointer alphaPtr = Pointer.to(alpha);
+		Pointer betaPtr = Pointer.to(beta);
+		int alg = CUSPARSE_SPGEMM_DEFAULT;
 
-		/* ---------- 2. SpGEMM descriptor ------------------------------- */
-		cusparseSpGEMMDescr spgemmDesc = new cusparseSpGEMMDescr();
-		cusparseSpGEMM_createDescr(spgemmDesc);
+		// ask bufferSize1 bytes for external memory
+		long[] bufferSize1 = {0};
+		cusparseSpGEMM_workEstimation(handle, transA, transB, alphaPtr, A.spMatDescr.asConst(), B.spMatDescr.asConst(),
+			betaPtr, C.spMatDescr, dataType, alg, C.spgemmDesc, bufferSize1, null);
+		Pointer buffer1 = new Pointer();
+		if(bufferSize1[0] > 0)
+			cudaMalloc(buffer1, bufferSize1[0]);
+		// inspect the matrices A and B to understand the memory requirement for the next step
+		cusparseSpGEMM_workEstimation(handle, transA, transB, alphaPtr, A.spMatDescr.asConst(), B.spMatDescr.asConst(),
+			betaPtr, C.spMatDescr, dataType, alg, C.spgemmDesc, bufferSize1, buffer1);
 
-		Pointer alpha = Pointer.to(new double[] {1.0});
-		Pointer beta = Pointer.to(new double[] {0.0});
-		int alg = cusparseSpGEMMAlg.CUSPARSE_SPGEMM_DEFAULT;
+		// ask bufferSize2 bytes for external memory
+		long[] bufferSize2 = {0};
+		cusparseSpGEMM_compute(handle, transA, transB, alphaPtr, A.spMatDescr.asConst(), B.spMatDescr.asConst(),
+			betaPtr, C.spMatDescr, dataType, alg, C.spgemmDesc, bufferSize2, null);
+		Pointer buffer2 = new Pointer();
+		if(bufferSize2[0] > 0)
+			cudaMalloc(buffer2, bufferSize2[0]);
 
-		/* ---------- 3. Phase-1 : work-estimation ----------------------- */
-		long[] bufSize1 = {0};
-		cusparseSpGEMM_workEstimation(handle, transA, transB, alpha, matA.asConst(), matB.asConst(), beta, matC,
-			cudaDataType.CUDA_R_64F, alg, spgemmDesc, bufSize1, null);                               // first query
+		// compute the intermediate product of A * B
+		cusparseSpGEMM_compute(handle, transA, transB, alphaPtr, A.spMatDescr.asConst(), B.spMatDescr.asConst(),
+			betaPtr, C.spMatDescr, dataType, alg, C.spgemmDesc, bufferSize2, buffer2);
 
-		Pointer dBuf1 = new Pointer();
-		if(bufSize1[0] > 0)
-			cudaMalloc(dBuf1, bufSize1[0]);
-
-		cusparseSpGEMM_workEstimation(handle, transA, transB, alpha, matA.asConst(), matB.asConst(), beta, matC,
-			cudaDataType.CUDA_R_64F, alg, spgemmDesc, bufSize1, dBuf1);                              // real run
-
-		/* ---------- 4. Phase-2 : compute structure / nnz --------------- */
-		long[] bufSize2 = {0};
-		cusparseSpGEMM_compute(                           // size query
-			handle, transA, transB, alpha, matA.asConst(), matB.asConst(), beta, matC, cudaDataType.CUDA_R_64F, alg,
-			spgemmDesc, bufSize2, null);                              // ← 13 args
-
-		Pointer dBuf2 = new Pointer();
-		if(bufSize2[0] > 0)
-			cudaMalloc(dBuf2, bufSize2[0]);
-
-		cusparseSpGEMM_compute(                           // actual compute
-			handle, transA, transB, alpha, matA.asConst(), matB.asConst(), beta, matC, cudaDataType.CUDA_R_64F, alg,
-			spgemmDesc, bufSize2, dBuf2);
-
-		/* ---------- 5. read nnz(C) ------------------------------------- */
-		long[] rows = {0}, cols = {0}, nnz = {0};
-		cusparseSpMatGetSize(matC.asConst(), rows, cols, nnz);
-		C.nnz = (int) nnz[0];
-
-		/* ---------- 6. temp col/val arrays so COPY can write them ------ */
-		Pointer dCcol = new Pointer();
-		Pointer dCval = new Pointer();
-		if(C.nnz > 0) {
-			cudaMalloc(dCcol, C.nnz * Sizeof.INT);
-			cudaMalloc(dCval, C.nnz * Sizeof.DOUBLE);
-		}
-		cusparseCsrSetPointers(matC, C.rowPtr, dCcol, dCval);
-
-		/* ---------- 7. Phase-3 : copy final CSR into user arrays ------- */
-		cusparseSpGEMM_copy(                              // ← 11 args
-			handle, transA, transB, alpha, matA.asConst(), matB.asConst(), beta, matC, cudaDataType.CUDA_R_64F, alg,
-			spgemmDesc);
-
-		/* ---------- 8. clean-up --------------------------------------- */
-		cudaFree(dCcol);
-		cudaFree(dCval);
-		cudaFree(dBuf1);
-		cudaFree(dBuf2);
-
-		cusparseSpGEMM_destroyDescr(spgemmDesc);
-		cusparseDestroySpMat(matA.asConst());
-		cusparseDestroySpMat(matB.asConst());
-		cusparseDestroySpMat(matC.asConst());
+		// obtain nnz of C
+		long[] rows = {0};
+		long[] cols = {0};
+		long[] nnz = {0};
+		cusparseSpMatGetSize(C.spMatDescr.asConst(), rows, cols, nnz);
+		C.nnz = nnz[0];
 	}
 
 	/**
@@ -453,6 +451,11 @@ public class CSRPointer {
 
 		C.val = gCtx.allocate(null, getDataTypeSizeOf(C.nnz), false);
 		C.colInd = gCtx.allocate(null, getIntSizeOf(C.nnz), false);
+
+		// special case for sparse GEMM
+		// requires cusparseSpGEMMDescr since CUDA 12
+		if(C.spgemmDesc != null)
+			cusparseCsrSetPointers(C.spMatDescr, C.rowPtr, C.colInd, C.val);
 	}
 
 	/**

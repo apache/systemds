@@ -24,6 +24,8 @@ import jcuda.jcusolver.cusolverDnHandle;
 import jcuda.jcusparse.cusparseHandle;
 import jcuda.jcusparse.cusparseMatDescr;
 
+import jcuda.jcusparse.cusparseSpGEMMDescr;
+import jcuda.jcusparse.cusparseSpMatDescr;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 
 import jcuda.Pointer;
@@ -59,12 +61,12 @@ import jcuda.Pointer;
  */
 public interface CudaSupportFunctions {
 	public static boolean PERFORM_CONVERSION_ON_DEVICE = true;
-	public int cusparsecsrgemm(cusparseHandle handle, int transA, int transB, int m, int n, int k, 
-			cusparseMatDescr descrA, int nnzA, Pointer csrValA, Pointer csrRowPtrA, Pointer csrColIndA, 
-			cusparseMatDescr descrB, int nnzB, Pointer csrValB, Pointer csrRowPtrB, Pointer csrColIndB, 
-			cusparseMatDescr descrC, Pointer csrValC, Pointer csrRowPtrC, Pointer csrColIndC);
-	public int	cublasgeam(cublasHandle handle, int transa, int transb, int m, int n, jcuda.Pointer alpha, jcuda.Pointer A, 
-			int lda, jcuda.Pointer beta, jcuda.Pointer B, int ldb, jcuda.Pointer C, int ldc);
+
+	int cusparsecsrgemm(cusparseHandle handle, int transA, int transB, int alg, cusparseSpMatDescr spMatDescrA,
+		cusparseSpMatDescr spMatDescrB, cusparseSpMatDescr spMatDescrC, cusparseSpGEMMDescr spgemmDescr);
+
+	int cublasgeam(cublasHandle handle, int transa, int transb, int m, int n, jcuda.Pointer alpha,
+		jcuda.Pointer A, int lda, jcuda.Pointer beta, jcuda.Pointer B, int ldb, jcuda.Pointer C, int ldc);
 	public int	cusparsecsrmv(cusparseHandle handle, int transA, int m, int n, int nnz, jcuda.Pointer alpha, cusparseMatDescr descrA, jcuda.Pointer csrValA, jcuda.Pointer csrRowPtrA, jcuda.Pointer csrColIndA, 
 			jcuda.Pointer x, jcuda.Pointer beta, jcuda.Pointer y);
 	public int	cusparsecsrmm2(cusparseHandle handle, int transa, int transb, int m, int n, int k, int nnz, jcuda.Pointer alpha, cusparseMatDescr descrA, jcuda.Pointer csrValA, jcuda.Pointer csrRowPtrA, jcuda.Pointer csrColIndA, 

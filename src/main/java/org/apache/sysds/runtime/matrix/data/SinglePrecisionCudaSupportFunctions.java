@@ -71,96 +71,12 @@ public class SinglePrecisionCudaSupportFunctions implements CudaSupportFunctions
 	private static final Log LOG = LogFactory.getLog(SinglePrecisionCudaSupportFunctions.class.getName());
 
 	@Override
-	public int cusparsecsrgemm(cusparseHandle handle, int transA, int transB, int m, int n, int k,
-		cusparseMatDescr descrA, int nnzA, Pointer csrValA, Pointer csrRowPtrA, Pointer csrColIndA,
-		cusparseMatDescr descrB, int nnzB, Pointer csrValB, Pointer csrRowPtrB, Pointer csrColIndB,
-		cusparseMatDescr descrC, Pointer csrValC, Pointer csrRowPtrC, Pointer csrColIndC) {
-		/* ------------------------------------------------------------------ */
-		/* Descriptors and temporaries                                        */
-		/* ------------------------------------------------------------------ */
-		cusparseSpMatDescr matA = new cusparseSpMatDescr();
-		cusparseSpMatDescr matB = new cusparseSpMatDescr();
-		cusparseSpMatDescr matC = new cusparseSpMatDescr();
-		cusparseSpGEMMDescr spgemm = new cusparseSpGEMMDescr();
-
-		Pointer dBuf1 = null;
-		Pointer dBuf2 = null;
-		int status;
-
-		try {
-			/* Create CSR descriptors (FP32, 32-bit indices) ---------------- */
-			cusparseCreateCsr(matA, m, k, nnzA, csrRowPtrA, csrColIndA, csrValA, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
-				CUSPARSE_INDEX_BASE_ZERO, CUDA_R_32F);
-
-			cusparseCreateCsr(matB, k, n, nnzB, csrRowPtrB, csrColIndB, csrValB, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
-				CUSPARSE_INDEX_BASE_ZERO, CUDA_R_32F);
-
-			cusparseCreateCsr(matC, m, n, 0L,            // nnz unknown yet
-				csrRowPtrC, csrColIndC, csrValC, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO,
-				CUDA_R_32F);
-
-			/* SpGEMM descriptor ------------------------------------------- */
-			cusparseSpGEMM_createDescr(spgemm);
-
-			Pointer alpha = Pointer.to(new float[] {1.0f});
-			Pointer beta = Pointer.to(new float[] {0.0f});
-			int alg = CUSPARSE_SPGEMM_DEFAULT;
-			int type = CUDA_R_32F;
-
-			/* -------- Phase-1 : work-estimation -------------------------- */
-			long[] bufSz1 = {0};
-			status = JCusparse.cusparseSpGEMM_workEstimation(handle, transA, transB, alpha, matA.asConst(),
-				matB.asConst(), beta, matC, type, alg, spgemm, bufSz1, null);
-			if(status != CUSPARSE_STATUS_SUCCESS)
-				return status;
-
-			if(bufSz1[0] > 0) {
-				dBuf1 = new Pointer();
-				cudaMalloc(dBuf1, bufSz1[0]);
-			}
-
-			status = JCusparse.cusparseSpGEMM_workEstimation(handle, transA, transB, alpha, matA.asConst(),
-				matB.asConst(), beta, matC, type, alg, spgemm, bufSz1, dBuf1);
-			if(status != CUSPARSE_STATUS_SUCCESS)
-				return status;
-
-			/* -------- Phase-2 : compute ---------------------------------- */
-			long[] bufSz2 = {0};
-			status = JCusparse.cusparseSpGEMM_compute(handle, transA, transB, alpha, matA.asConst(), matB.asConst(),
-				beta, matC, type, alg, spgemm, bufSz2, null);
-			if(status != CUSPARSE_STATUS_SUCCESS)
-				return status;
-
-			if(bufSz2[0] > 0) {
-				dBuf2 = new Pointer();
-				cudaMalloc(dBuf2, bufSz2[0]);
-			}
-
-			status = JCusparse.cusparseSpGEMM_compute(handle, transA, transB, alpha, matA.asConst(), matB.asConst(),
-				beta, matC, type, alg, spgemm, bufSz2, dBuf2);
-			if(status != CUSPARSE_STATUS_SUCCESS)
-				return status;
-
-			/* -------- Phase-3 : copy result ------------------------------ */
-			status = JCusparse.cusparseSpGEMM_copy(handle, transA, transB, alpha, matA.asConst(), matB.asConst(), beta,
-				matC, type, alg, spgemm);
-
-			return status;
-		}
-		finally {
-			/* ------------------------------------------------------------------ */
-			/* Cleanup always runs, success or error                              */
-			/* ------------------------------------------------------------------ */
-			if(dBuf1 != null)
-				cudaFree(dBuf1);
-			if(dBuf2 != null)
-				cudaFree(dBuf2);
-
-			JCusparse.cusparseSpGEMM_destroyDescr(spgemm);
-			JCusparse.cusparseDestroySpMat(matA.asConst());
-			JCusparse.cusparseDestroySpMat(matB.asConst());
-			JCusparse.cusparseDestroySpMat(matC.asConst());
-		}
+	public int cusparsecsrgemm(cusparseHandle handle, int transA, int transB, int alg, cusparseSpMatDescr spMatDescrA,
+		cusparseSpMatDescr spMatDescrB, cusparseSpMatDescr spMatDescrC, cusparseSpGEMMDescr spgemmDescr) {
+		double[] alpha = {1.0}, beta = {0.0};
+		Pointer alphaPtr = Pointer.to(alpha), betaPtr = Pointer.to(beta);
+		return cusparseSpGEMM_copy(handle, transA, transB, alphaPtr, spMatDescrA.asConst(), spMatDescrB.asConst(),
+			betaPtr, spMatDescrC, CUDA_R_32F, alg, spgemmDescr);
 	}
 
 	@Override

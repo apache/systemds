@@ -19,6 +19,8 @@ public class ColumnDecoderDummycode extends ColumnDecoder {
 
     private int[] _clPos = null;
     private int[] _cuPos = null;
+    // category index for dedicated single-column decoders (-1 if not used)
+    private int _category = -1;
 
     protected ColumnDecoderDummycode(Types.ValueType[] schema, int[] colList) {
         super(schema, colList);
@@ -33,39 +35,65 @@ public class ColumnDecoderDummycode extends ColumnDecoder {
 
     @Override
     public void columnDecode(MatrixBlock in, FrameBlock out, int rl, int ru) {
-        for( int i=rl; i<ru; i++ )
-            for( int j=0; j<_colList.length; j++ )
-                for( int k=_clPos[j]; k<_cuPos[j]; k++ )
-                    if( in.get(i, k-1) != 0 ) {
-                        int col = _colList[j] - 1;
-                        out.set(i, col,
-                                UtilFunctions.doubleToObject(out.getSchema()[col], k-_clPos[j]+1));
-                    }
+        if(_category >= 0) {
+            int col = _colList[0] - 1;
+            Object val = UtilFunctions.doubleToObject(out.getSchema()[col], _category);
+            for(int i = rl; i < ru; i++)
+                if(in.get(i, _clPos[0]-1) == 1)
+                    synchronized(out) { out.set(i, col, val); }
+        }
+        else {
+            for( int i=rl; i<ru; i++ )
+                for( int j=0; j<_colList.length; j++ )
+                    for( int k=_clPos[j]; k<_cuPos[j]; k++ )
+                        if( in.get(i, k-1) != 0 ) {
+                            int col = _colList[j] - 1;
+                            Object val = UtilFunctions.doubleToObject(out.getSchema()[col], k-_clPos[j]+1);
+                            synchronized(out) { out.set(i, col, val); }
+                        }
+        }
     }
 
     @Override
     public ColumnDecoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
-        List<Integer> dcList = new ArrayList<>();
-        List<Integer> clPosList = new ArrayList<>();
-        List<Integer> cuPosList = new ArrayList<>();
-
-        for( int j=0; j<_colList.length; j++ ) {
-            int colID = _colList[j];
-            if (colID >= colStart && colID < colEnd) {
-                dcList.add(colID - (colStart - 1));
-                clPosList.add(_clPos[j] - dummycodedOffset);
-                cuPosList.add(_cuPos[j] - dummycodedOffset);
-            }
-        }
-        if (dcList.isEmpty())
+        // special case: request for exactly one encoded column
+        if(colEnd - colStart == 1) {
+            int encCol = colStart;
+            for(int j=0; j<_clPos.length; j++)
+                if(encCol >= _clPos[j] && encCol < _cuPos[j]) {
+                    ColumnDecoderDummycode dec = new ColumnDecoderDummycode(
+                            new Types.ValueType[]{_schema[_colList[j]-1]},
+                            new int[]{_colList[j]});
+                    dec._clPos = new int[]{1};
+                    dec._cuPos = new int[]{2};
+                    dec._category = encCol - _clPos[j] + 1;
+                    return dec;
+                }
             return null;
+        }
+        else {
+            List<Integer> dcList = new ArrayList<>();
+            List<Integer> clPosList = new ArrayList<>();
+            List<Integer> cuPosList = new ArrayList<>();
 
-        ColumnDecoderDummycode dec = new ColumnDecoderDummycode(
-                Arrays.copyOfRange(_schema, colStart - 1, colEnd - 1),
-                dcList.stream().mapToInt(i -> i).toArray());
-        dec._clPos = clPosList.stream().mapToInt(i -> i).toArray();
-        dec._cuPos = cuPosList.stream().mapToInt(i -> i).toArray();
-        return dec;
+            for( int j=0; j<_colList.length; j++ ) {
+                int colID = _colList[j];
+                if (colID >= colStart && colID < colEnd) {
+                    dcList.add(colID - (colStart - 1));
+                    clPosList.add(_clPos[j] - dummycodedOffset);
+                    cuPosList.add(_cuPos[j] - dummycodedOffset);
+                }
+            }
+            if (dcList.isEmpty())
+                return null;
+
+            ColumnDecoderDummycode dec = new ColumnDecoderDummycode(
+                    Arrays.copyOfRange(_schema, colStart - 1, colEnd - 1),
+                    dcList.stream().mapToInt(i -> i).toArray());
+            dec._clPos = clPosList.stream().mapToInt(i -> i).toArray();
+            dec._cuPos = cuPosList.stream().mapToInt(i -> i).toArray();
+            return dec;
+        }
     }
 
     @Override

@@ -54,8 +54,7 @@ public class FederatedPlanCostEstimator {
 			List<Hop> fOUTOnlyinputHops, List<Double> fOUTOnlychildCumulativeCost,
 			List<Double> fOUTOnlychildForwardingCost) {
 
-		List<Hop> copyInputHops = new ArrayList<>(inputHops);
-		Iterator<Hop> iterator = copyInputHops.iterator();
+		Iterator<Hop> iterator = inputHops.iterator();
 		int currentIndex = 0;
 
 		while (iterator.hasNext()) {

@@ -1,0 +1,12 @@
+# Read the date.tbl as a frame
+date = read("/Users/ghafekalsaho/LDE/LDECode/systemds/data/test/date.tbl",
+    format="csv", header=TRUE, sep=",", data_type="frame");
+
+# Read transform spec
+
+
+# Print the results
+print("Encoded date matrix:");
+print(date_matrix);
+print("Metadata:");
+print(metadata);

@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<config>
+    <sysds>
+        <spark>
+            <spark.app.name>SSB_Q1_1_Test</spark.app.name>
+            <spark.master>local[*]</spark.master>
+            <spark.driver.memory>4g</spark.driver.memory>
+            <spark.executor.memory>4g</spark.executor.memory>
+            <spark.driver.maxResultSize>2g</spark.driver.maxResultSize>
+        </spark>
+    </sysds>
+</config>

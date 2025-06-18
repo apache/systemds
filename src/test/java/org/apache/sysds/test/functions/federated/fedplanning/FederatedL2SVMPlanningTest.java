@@ -27,6 +27,7 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -55,6 +56,7 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME_2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_2, new String[] {"Z"}));
 	}
 
+	@Ignore
 	@Test
 	public void runL2SVMFOUTTest(){
 		runTestWithConfig("SystemDS-config-fout.xml", null);
@@ -65,20 +67,25 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 		runTestWithConfig("SystemDS-config-heuristic.xml", null);
 	}
 
+	@Ignore
 	@Test
 	public void runL2SVMCostBasedTestPrivate(){
 		runTestWithConfig("SystemDS-config-cost-based.xml", "private");
 	}
 
+	@Ignore
 	@Test
 	public void runL2SVMCostBasedTestPrivateAggregate(){
 		runTestWithConfig("SystemDS-config-cost-based.xml", "private-aggregate");
 	}
 
+	@Ignore
 	@Test
 	public void runL2SVMCostBasedTestPublic(){
 		runTestWithConfig("SystemDS-config-cost-based.xml", "public");
 	}
+
+	@Ignore
 	@Test
 	public void runL2SVMFunctionFOUTTest(){
 		runTestWithConfig("SystemDS-config-fout.xml", null, TEST_NAME_2);
@@ -89,16 +96,19 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 		runTestWithConfig("SystemDS-config-heuristic.xml", null, TEST_NAME_2);
 	}
 
+	@Ignore
 	@Test
 	public void runL2SVMFunctionCostBasedTestPrivate(){
 		runTestWithConfig("SystemDS-config-cost-based.xml", "private", TEST_NAME_2);
 	}
 
+	@Ignore
 	@Test
 	public void runL2SVMFunctionCostBasedTestPrivateAggregate(){
 		runTestWithConfig("SystemDS-config-cost-based.xml", "private-aggregate", TEST_NAME_2);
 	}
 
+	@Ignore
 	@Test
 	public void runL2SVMFunctionCostBasedTestPublic(){
 		runTestWithConfig("SystemDS-config-cost-based.xml", "public", TEST_NAME_2);

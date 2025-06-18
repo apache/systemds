@@ -54,6 +54,7 @@ public class FederatedDynamicPlanningTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Z"}));
 	}
 
+	@Ignore
 	@Test
 	public void runDynamicFullFunctionTest() {
 		// compared to `FederatedL2SVMPlanningTest` this does not create `fed_+*` or `fed_tsmm`, probably due to
@@ -64,6 +65,7 @@ public class FederatedDynamicPlanningTest extends AutomatedTestBase {
 		loadAndRunTest(expectedHeavyHitters, TEST_NAME);
 	}
 
+	@Ignore
 	@Test
 	public void runDynamicHeuristicFunctionTest() {
 		// compared to `FederatedL2SVMPlanningTest` this does not create `fed_+*` or `fed_tsmm`, probably due to

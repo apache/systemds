@@ -2362,12 +2362,28 @@ public class LibSpoofPrimitives
 	}
 
 	public static SparseRowVector vectXorWrite(int len, double[] a, double bval, int[] aix, int ai, int alen) {
-		//todo: test if this is faster, when SparseRowVector is allocated first
 		if(bval != 0) {
-			double[] c = allocVector(len, true, 1);
-			for(int j = ai; j < ai+alen; j++)
-				c[aix[j]] = (a[j] != 0) ? 0 : 1;
-			return new SparseRowVector(c);
+			SparseRowVector c = allocSparseVector(len);
+			int[] indexes = c.indexes();
+			double[] values = c.values();
+			int index = 0;
+			int aIndex = 0;
+			while(aIndex < ai+alen && index < len) {
+				indexes[index] = index;
+				if(aix[aIndex] == index) {
+					values[index] = !(a[aIndex] != 0) ? 1 : 0;
+					aIndex++;
+				} else {
+					values[index] = 1;
+				}
+				index++;
+			}
+			for(; index < len; index++) {
+				indexes[index] = index;
+				values[index] = 1;
+			}
+			c.setSize(len);
+			return c;
 		} else {
 			SparseRowVector c = allocSparseVector(alen);
 			int[] indexes = c.indexes();

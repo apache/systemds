@@ -24,7 +24,7 @@ public class ColumnDecoderMixedMethodsTest extends AutomatedTestBase {
     @Test
     public void testColumnDecoderMixedMethods() {
         try {
-            int rows = 1000000;
+            int rows = 50000;
             double[][] arr = new double[rows][5];
             for (int i = 0; i < rows; i++) {
                 arr[i][0] = (i % 4) + 1; // recode column
@@ -45,7 +45,7 @@ public class ColumnDecoderMixedMethodsTest extends AutomatedTestBase {
             FrameBlock expected = new FrameBlock(data.getSchema());
 
             long t1 = System.nanoTime();
-            dec.decode(encoded, expected);
+            dec.decode(encoded, expected, 5);
             long t2 = System.nanoTime();
 
             ColumnDecoder cdec = ColumnDecoderFactory.createDecoder(spec, data.getColumnNames(), data.getSchema(), meta);

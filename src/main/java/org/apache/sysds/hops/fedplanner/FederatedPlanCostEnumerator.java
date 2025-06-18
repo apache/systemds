@@ -156,12 +156,6 @@ public class FederatedPlanCostEnumerator {
 	 * corresponding tables.
 	 * The method also calculates weights recursively for if-else/loops and handles
 	 * inner and outer block distinctions.
-	 *
-	 * @param sb              The statement block to enumerate.
-	 * @param memoTable       The memoization table to store plan variants.
-	 * @param parentLoopStack The context of parent loops for loop-level context
-	 *                        tracking.
-	 * @return A map of inner transient writes.
 	 */
 	public static void enumerateStatementBlock(StatementBlock sb, DMLProgram prog, FederatedMemoTable memoTable,
 			Map<Long, HopCommon> hopCommonTable, Map<Long, List<Hop>> rewireTable,
@@ -228,10 +222,6 @@ public class FederatedPlanCostEnumerator {
 	 * Rewires and enumerates federated execution plans for a given Hop.
 	 * This method processes all input nodes, rewires TWrite and TRead operations,
 	 * and generates federated plan variants for both inner and outer code blocks.
-	 *
-	 * @param hop       The Hop for which to rewire and enumerate federated plans.
-	 * @param memoTable The memoization table to store plan variants.
-	 * @param loopStack The context of parent loops for loop-level context tracking.
 	 */
 	private static void enumerateHopDAG(Hop hop, DMLProgram prog, FederatedMemoTable memoTable,
 			Map<Long, HopCommon> hopCommonTable, Map<Long, List<Hop>> rewireTable,
@@ -280,7 +270,7 @@ public class FederatedPlanCostEnumerator {
 
 		// Enumerate the federated plan for the current Hop
 		enumerateHop(hop, memoTable, hopCommonTable, rewireTable, privacyConstraintMap, 
-			fTypeMap, unRefTwriteSet, fnStack, numOfWorkers);
+			fTypeMap, unRefTwriteSet, numOfWorkers);
 
 //		FederatedPlanRewireTransTable.logHopInfo(hop, privacyConstraintMap, fTypeMap, "enumerateHopDAG");
 
@@ -291,24 +281,18 @@ public class FederatedPlanCostEnumerator {
 	 * This method calculates the self cost and child costs for the Hop,
 	 * generates federated plan variants for both LOUT and FOUT output types,
 	 * and prunes redundant plans before adding them to the memo table.
-	 *
-	 * @param hop       The Hop for which to enumerate federated plans.
-	 * @param memoTable The memoization table to store plan variants.
-	 * @param loopStack The context of parent loops for loop-level context tracking.
 	 */
 	private static void enumerateHop(Hop hop, FederatedMemoTable memoTable, Map<Long, HopCommon> hopCommonTable,
 			Map<Long, List<Hop>> rewireTable, Map<Long, Privacy> privacyConstraintMap,
-			Map<Long, FType> fTypeMap, Set<Long> unRefTwriteSet, Set<String> fnStack, int numOfWorkers) {
+			Map<Long, FType> fTypeMap, Set<Long> unRefTwriteSet, int numOfWorkers) {
 		long hopID = hop.getHopID();
 		List<Hop> childHops = new ArrayList<>(hop.getInput());
 		int numParentHops = hop.getParent().size();
 		boolean isTrans = false;
 
-		if ((hop instanceof DataOp) &&
-				(((DataOp) hop).getOp() == Types.OpOpData.TRANSIENTWRITE && !hop.getName().equals("__pred")
-					|| (((DataOp) hop).getOp() == Types.OpOpData.TRANSIENTREAD))) {
+		if (hop instanceof DataOp){
 			Types.OpOpData opType = ((DataOp) hop).getOp();
-			if (opType == Types.OpOpData.TRANSIENTWRITE) {
+			if (opType == Types.OpOpData.TRANSIENTWRITE && !hop.getName().equals("__pred")) {
 				List<Hop> transParentHops = rewireTable.get(hop.getHopID());
 				if (transParentHops != null) {
 					numParentHops += transParentHops.size();
@@ -322,11 +306,8 @@ public class FederatedPlanCostEnumerator {
 				isTrans = true;
 			}
 		} else {
-			// Todo: Cannot understand this code
 			for (Hop parentHop : hop.getParent()) {
 				if (parentHop instanceof DataOp
-						&& ((DataOp) parentHop).getOp() == Types.OpOpData.TRANSIENTWRITE
-						&& !parentHop.getName().equals("__pred")
 						&& unRefTwriteSet.contains(parentHop.getHopID())) {
 					numParentHops--;
 				}
@@ -336,10 +317,6 @@ public class FederatedPlanCostEnumerator {
 		HopCommon hopCommon = hopCommonTable.get(hopID);
 		hopCommon.setNumOfParentHops(numParentHops);
 		double selfCost = FederatedPlanCostEstimator.computeHopCost(hopCommon);
-
-		FedPlanVariants lOutFedPlanVariants = new FedPlanVariants(hopCommon, FederatedOutput.LOUT);
-		FedPlanVariants fOutFedPlanVariants = new FedPlanVariants(hopCommon, FederatedOutput.FOUT);
-
 		int numInputs = childHops.size();
 
 		double[][] childCumulativeCost = new double[numInputs][2]; // # of child, LOUT/FOUT of child
@@ -362,19 +339,25 @@ public class FederatedPlanCostEnumerator {
 		Privacy privacyConstraint = privacyConstraintMap.get(hopID);
 		FType fType = fTypeMap.get(hopID);
 
-		if (isTrans) {
-			// TODO: If any child is LOUT/FOUT only, create transHop as LOUT/FOUT only as well. Need to verify if this is correct.
-			enumerateTransChildFedPlan(lOutFedPlanVariants, fOutFedPlanVariants, childHops, childCumulativeCost,
-					lOUTOnlyinputHops, lOUTOnlychildCumulativeCost, fOUTOnlyinputHops, fOUTOnlychildCumulativeCost,
-					selfCost, numOfWorkers);
+//		if (isTrans) {
+//			FedPlanVariants lOutFedPlanVariants = new FedPlanVariants(hopCommon, FederatedOutput.LOUT);
+//			FedPlanVariants fOutFedPlanVariants = new FedPlanVariants(hopCommon, FederatedOutput.FOUT);
+//
+//			// TODO: If any child is LOUT/FOUT only, create transHop as LOUT/FOUT only as well. Need to verify if this is correct.
+//			enumerateTransChildFedPlan(lOutFedPlanVariants, fOutFedPlanVariants, childHops, childCumulativeCost,
+//					lOUTOnlyinputHops, lOUTOnlychildCumulativeCost, fOUTOnlyinputHops, fOUTOnlychildCumulativeCost,
+//					selfCost, numOfWorkers);
+//
+//			if (lOutFedPlanVariants.pruneFedPlans()){
+//				memoTable.addFedPlanVariants(hopID, FederatedOutput.LOUT, lOutFedPlanVariants);
+//			}
+//			if (fOutFedPlanVariants.pruneFedPlans()){
+//				memoTable.addFedPlanVariants(hopID, FederatedOutput.FOUT, fOutFedPlanVariants);
+//			}
+//		} else
+		if (fType == null) {
+			FedPlanVariants lOutFedPlanVariants = new FedPlanVariants(hopCommon, FederatedOutput.LOUT);
 
-			if (lOutFedPlanVariants.pruneFedPlans()){
-				memoTable.addFedPlanVariants(hopID, FederatedOutput.LOUT, lOutFedPlanVariants);
-			};
-			if (fOutFedPlanVariants.pruneFedPlans()){
-				memoTable.addFedPlanVariants(hopID, FederatedOutput.FOUT, fOutFedPlanVariants);
-			}
-		} else if (fType == null) {
 			singleTypeEnumerateChildFedPlan(lOutFedPlanVariants, FederatedOutput.LOUT, childHops,
 				childCumulativeCost, childForwardingCost, lOUTOnlyinputHops, lOUTOnlychildCumulativeCost,
 				lOUTOnlychildForwardingCost, fOUTOnlyinputHops, fOUTOnlychildCumulativeCost,
@@ -383,6 +366,8 @@ public class FederatedPlanCostEnumerator {
 			lOutFedPlanVariants.pruneFedPlans();
 			memoTable.addFedPlanVariants(hopID, FederatedOutput.LOUT, lOutFedPlanVariants);
 		} else if (privacyConstraint == Privacy.PRIVATE || privacyConstraint == Privacy.PRIVATE_AGGREGATE){
+			FedPlanVariants fOutFedPlanVariants = new FedPlanVariants(hopCommon, FederatedOutput.FOUT);
+
 			singleTypeEnumerateChildFedPlan(fOutFedPlanVariants, FederatedOutput.FOUT, childHops,
 				childCumulativeCost, childForwardingCost, lOUTOnlyinputHops, lOUTOnlychildCumulativeCost,
 				lOUTOnlychildForwardingCost, fOUTOnlyinputHops, fOUTOnlychildCumulativeCost,
@@ -391,6 +376,9 @@ public class FederatedPlanCostEnumerator {
 			fOutFedPlanVariants.pruneFedPlans();
 			memoTable.addFedPlanVariants(hopID, FederatedOutput.FOUT, fOutFedPlanVariants);
 		} else { // privacyConstraint == PUBLIC, fType != null >> both LOUT/FOUT are possible
+			FedPlanVariants lOutFedPlanVariants = new FedPlanVariants(hopCommon, FederatedOutput.LOUT);
+			FedPlanVariants fOutFedPlanVariants = new FedPlanVariants(hopCommon, FederatedOutput.FOUT);
+
 			enumerateChildFedPlan(lOutFedPlanVariants, fOutFedPlanVariants, childHops, childCumulativeCost,
 				childForwardingCost, lOUTOnlyinputHops, lOUTOnlychildCumulativeCost,
 				lOUTOnlychildForwardingCost,
@@ -409,14 +397,7 @@ public class FederatedPlanCostEnumerator {
 	 * Enumerates federated execution plans for initial child hops only.
 	 * This method generates all possible combinations of federated output types
 	 * (LOUT and FOUT)
-	 * for the initial child hops and calculates their cumulative costs.
-	 *
-	 * @param lOutFedPlanVariants The FedPlanVariants object for LOUT output type.
-	 * @param fOutFedPlanVariants The FedPlanVariants object for FOUT output type.
-	 * @param childHops           The list of child hops.
-	 * @param childCumulativeCost The cumulative costs for each child hop.
-	 * @param childForwardingCost The forwarding costs for each child hop.
-	 * @param selfCost            The self cost of the current hop.
+	 * for the initial child hops and calculates their cumulative costs
 	 */
 	private static void enumerateChildFedPlan(FedPlanVariants lOutFedPlanVariants, FedPlanVariants fOutFedPlanVariants,
 			List<Hop> childHops, double[][] childCumulativeCost, double[] childForwardingCost,
@@ -528,14 +509,6 @@ public class FederatedPlanCostEnumerator {
 	 * Since TRead, TWrite and Child of TWrite have the same federated output type,
 	 * it generates only
 	 * a single plan for each output type
-	 * 
-	 * @param lOutFedPlanVariants The FedPlanVariants object for LOUT output type.
-	 * @param fOutFedPlanVariants The FedPlanVariants object for FOUT output type.
-	 * @param numInputs           The total number of input hops, including
-	 *                            additional TWrite hops.
-	 * @param childHops           The list of child hops.
-	 * @param childCumulativeCost The cumulative costs for each child hop.
-	 * @param selfCost            The self cost of the current hop.
 	 */
 	private static void enumerateTransChildFedPlan(FedPlanVariants lOutFedPlanVariants,
 			FedPlanVariants fOutFedPlanVariants,
@@ -673,12 +646,6 @@ public class FederatedPlanCostEnumerator {
 	 * the plan.
 	 * - Re-running BFS with resolved conflicts to ensure all inconsistencies are
 	 * addressed.
-	 *
-	 * @param rootPlan  The root federated plan from which to start the conflict
-	 *                  detection.
-	 * @param memoTable The memoization table used to retrieve pruned federated
-	 *                  plans.
-	 * @return The cumulative additional cost for resolving conflicts.
 	 */
 	private static double detectAndResolveConflictFedPlan(FedPlan rootPlan, FederatedMemoTable memoTable) {
 		// Map to track conflicts: maps a plan ID to its federated output type and list

@@ -1,0 +1,28 @@
+# Enable debug mode
+debug = TRUE;
+
+# Load lineorder and date data
+LO_raw = read("/Users/ghafekalsaho/LDE/LDECode/systemds/data/test/lineorder.tbl", format="csv", header=FALSE, sep=",", data_type="frame");
+D_raw = read("/Users/ghafekalsaho/LDE/LDECode/systemds/data/test/date.tbl", format="csv", header=FALSE, sep=",", data_type="frame");
+
+# Load JSON specs
+jspec_lo = read("/Users/ghafekalsaho/LDE/LDECode/systemds/scripts/specs/lineorder_spec.json", data_type="scalar", value_type="string");
+jspec_d = read("/Users/ghafekalsaho/LDE/LDECode/systemds/scripts/specs/date_spec.json", data_type="scalar", value_type="string");
+
+# Transformencode
+[LO, LO_meta] = transformencode(target=LO_raw, spec=jspec_lo, apply_pass_through=TRUE);
+[D, D_meta] = transformencode(target=D_raw, spec=jspec_d, apply_pass_through=TRUE);
+
+# Apply selections
+LO_f = raSelect(LO, "lo_discount BETWEEN 1 AND 3 AND lo_quantity < 25");
+D_f = raSelect(D, "d_year == 1992");
+
+# Join on lo_orderdate = d_datekey
+J = raJoin(LO_f, D_f, "lo_orderdate", "d_datekey");
+
+# Compute revenue as lo_extendedprice * lo_discount
+revenue_vec = J[, "lo_extendedprice"] * J[, "lo_discount"];
+REVENUE = sum(revenue_vec);
+
+print("REVENUE:");
+print(REVENUE);

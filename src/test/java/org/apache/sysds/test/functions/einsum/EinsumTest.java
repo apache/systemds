@@ -49,6 +49,7 @@ public class EinsumTest extends AutomatedTestBase
 	private static final String TEST_EINSUM9 = TEST_NAME_EINSUM+"9";
 	private static final String TEST_EINSUM10 = TEST_NAME_EINSUM+"10";
 	private static final String TEST_EINSUM11 = TEST_NAME_EINSUM+"11";
+	private static final String TEST_EINSUM12 = TEST_NAME_EINSUM+"12";
 
 	private static final String TEST_DIR = "functions/einsum/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + EinsumTest.class.getSimpleName() + "/";
@@ -60,7 +61,7 @@ public class EinsumTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for(int i=1; i<=11; i++)
+		for(int i=1; i<=12; i++)
 			addTestConfiguration( TEST_NAME_EINSUM+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_EINSUM+i, new String[] { String.valueOf(i) }) );
 	}
 	@Test
@@ -105,7 +106,10 @@ public class EinsumTest extends AutomatedTestBase
 	public void testCodegenEinsum11CP() {
 		testCodegenIntegration( TEST_EINSUM11, false, ExecType.CP );
 	}
-
+	@Test
+	public void testCodegenEinsum12CP() {
+		testCodegenIntegration( TEST_EINSUM12, false, ExecType.CP );
+	}
 	private void testCodegenIntegration( String testname, boolean rewrites, ExecType instType )
 	{
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;

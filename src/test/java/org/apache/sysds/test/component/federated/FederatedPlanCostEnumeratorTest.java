@@ -19,9 +19,6 @@
 
  package org.apache.sysds.test.component.federated;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
 import java.util.HashMap;
 
 import org.junit.Assert;
@@ -35,9 +32,6 @@ import org.apache.sysds.parser.ParserFactory;
 import org.apache.sysds.parser.ParserWrapper;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.File;
 
 public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
 {
@@ -104,18 +98,6 @@ public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
 			//read script
 			String dmlScriptString = DMLScript.readDMLScript(true, HOME + scriptFilename);
 
-			// Save output to file
-			String outputFile = testName + "_trace.txt";
-			File outputFileObj = new File(outputFile);
-			System.out.println("[INFO] Trace file: " + outputFileObj.getAbsolutePath());
-			PrintStream fileOut = new PrintStream(new FileOutputStream(outputFile));
-
-			// Save original output stream
-			PrintStream originalOut = System.out;
-
-			// Redirect output to file
-			System.setOut(fileOut);
-
 			//parsing and dependency analysis
 			ParserWrapper parser = ParserFactory.createParser();
 			DMLProgram prog = parser.parse(DMLScript.DML_FILE_PATH_ANTLR_PARSER, dmlScriptString, new HashMap<>());
@@ -124,81 +106,8 @@ public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
 			dmlt.validateParseTree(prog);
 			dmlt.constructHops(prog);
 			dmlt.rewriteHopsDAG(prog);
-
-			// Restore original output stream
-			System.setOut(originalOut);
-			
-			// Clean up resources
-			fileOut.close();
-
-			// Check Python visualizer execution
-			File visualizerDir = new File("visualization_output");
-			if (!visualizerDir.exists()) {
-				visualizerDir.mkdirs();
-				System.out.println("[INFO] Created visualization output directory: " + visualizerDir.getAbsolutePath());
-			}
-
-			// Check Python visualizer script path
-			File scriptFile = new File("src/test/java/org/apache/sysds/test/component/federated/FederatedPlanVisualizer.py");
-			System.out.println("[INFO] Python script exists: " + scriptFile.exists());
-			System.out.println("[INFO] Python script path: " + scriptFile.getAbsolutePath());
-			
-			if (!scriptFile.exists()) {
-				System.out.println("[ERROR] Cannot find Python visualizer script: " + scriptFile.getAbsolutePath());
-				Assert.fail("Cannot find Python visualizer script: " + scriptFile.getAbsolutePath());
-			}
-			
-			// Check Python interpreter
-			try {
-				ProcessBuilder checkPython = new ProcessBuilder("python3", "--version");
-				checkPython.redirectErrorStream(true);
-				Process pythonCheck = checkPython.start();
-				
-				BufferedReader pythonReader = new BufferedReader(new InputStreamReader(pythonCheck.getInputStream()));
-				String pythonVersion = pythonReader.readLine();
-				System.out.println("[INFO] Python version: " + pythonVersion);
-				
-				pythonCheck.waitFor();
-			} catch (Exception e) {
-				System.out.println("[ERROR] Cannot verify Python interpreter: " + e.getMessage());
-			}
-			
-			System.out.println("[INFO] Visualizer execution command: python3 " + scriptFile.getAbsolutePath() + " " + outputFileObj.getAbsolutePath());
-			ProcessBuilder pb = new ProcessBuilder("python3", scriptFile.getAbsolutePath(), outputFileObj.getAbsolutePath());
-			pb.redirectErrorStream(true);
-			Process p = pb.start();
-			
-			// Read and display Python script output
-			BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			String line;
-			System.out.println("[INFO] Python script output:");
-			while ((line = reader.readLine()) != null) {
-				System.out.println("[Python] " + line);
-			}
-			
-			// Check process exit code
-			int exitCode = p.waitFor();
-			System.out.println("[INFO] Python process exit code: " + exitCode);
-			
-			if (exitCode == 0) {
-				System.out.println("[INFO] Visualizer execution succeeded (exit code: 0)");
-				
-				// Check generated image files
-				System.out.println("[INFO] Generated visualization files:");
-				File[] imageFiles = visualizerDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".png"));
-				if (imageFiles != null && imageFiles.length > 0) {
-					for (File imageFile : imageFiles) {
-						System.out.println("  - " + imageFile.getAbsolutePath());
-					}
-				} else {
-					System.out.println("[INFO] No visualization files were generated.");
-				}
-			} else {
-				System.out.println("[ERROR] Visualizer execution failed (exit code: " + exitCode + ")");
-				Assert.fail("Visualizer execution failed (exit code: " + exitCode + ")");
-			}
 		}
-		catch (IOException | InterruptedException e) {
+		catch (Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.getMessage());
 		}

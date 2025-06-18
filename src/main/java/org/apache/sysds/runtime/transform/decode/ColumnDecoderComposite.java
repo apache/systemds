@@ -68,16 +68,21 @@ public class ColumnDecoderComposite extends ColumnDecoder {
             List<Future<FrameBlock>> tasks = new ArrayList<>();
             for (ColumnDecoder dec : _decoders) {
                 long t1 = System.nanoTime();
-                List<MatrixBlock> slices = sliceColumns(in, dec.getColList());
-                for (int c = 0; c < slices.size(); c++) {
-                    ColumnDecoder sub = dec.getColList().length == 1 ? dec :
-                            dec.subRangeDecoder(dec.getColList()[c], dec.getColList()[c] + 1, 0);
-                    if (sub == null)
-                        throw new RuntimeException("Decoder does not support column slicing: " + dec.getClass());
-                    if (sub != dec)
-                        sub._colList = new int[]{dec.getColList()[c]};
-                    int finalC = c;
-                    tasks.add(pool.submit(() -> sub.columnDecode(slices.get(finalC), out)));
+                if(dec instanceof ColumnDecoderDummycode) {
+                    tasks.add(pool.submit(() -> dec.columnDecode(in, out)));
+                }
+                else {
+                    List<MatrixBlock> slices = sliceColumns(in, dec.getColList());
+                    for (int c = 0; c < slices.size(); c++) {
+                        ColumnDecoder sub = dec.getColList().length == 1 ? dec :
+                                dec.subRangeDecoder(dec.getColList()[c], dec.getColList()[c] + 1, 0);
+                        if (sub == null)
+                            throw new RuntimeException("Decoder does not support column slicing: " + dec.getClass());
+                        if (sub != dec)
+                            sub._colList = new int[]{dec.getColList()[c]};
+                        int finalC = c;
+                        tasks.add(pool.submit(() -> sub.columnDecode(slices.get(finalC), out)));
+                    }
                 }
                 long t2 = System.nanoTime();
                 System.out.println(dec + "time: " + (t2 - t1) / 1e6 + " ms");
@@ -95,6 +100,8 @@ public class ColumnDecoderComposite extends ColumnDecoder {
     @Override
     public void columnDecode(MatrixBlock in, FrameBlock out, int rl, int ru) {
         // TODO
+        for( ColumnDecoder dec : _decoders )
+            dec.columnDecode(in, out, rl, ru);
     }
 
     @Override

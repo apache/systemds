@@ -2761,30 +2761,66 @@ public class LibSpoofPrimitives
 	}
 
 	public static SparseRowVector vectNotequalWrite(int len, double[] a, double[] b, int[] aix, int[] bix, int ai, int bi, int alen, int blen) {
-		SparseRowVector c = allocSparseVector(alen);
+		SparseRowVector c = allocSparseVector(alen+blen);
 		int aIndex = ai;
 		int bIndex = bi;
+		int index = 0;
+		int[] indexes = c.indexes();
+		double[] values = c.values();
 		while(aIndex < ai+alen && bIndex < bi+blen) {
 			int aIdx = aix[aIndex];
 			int bIdx = bix[bIndex];
 			if(aIdx == bIdx) {
-				c.set(aIdx, (a[aIndex] != b[bIndex]) ? 1 : 0);
+				indexes[index] = aIdx;
+				values[index] = (a[aIndex] != b[bIndex]) ? 1 : 0;
 				aIndex++;
 				bIndex++;
+				index++;
 			} else if(aIdx < bIdx) {
-				//todo: this might be too unsafe
-				c.set(aIdx, (a[aIndex] != 0) ? 1 : 0);
-				//				c.set(aIdx, 1);
+				indexes[index] = aIdx;
+				values[index] = a[aIndex] != 0 ? 1 : 0;
 				aIndex++;
+				index++;
 			} else {
-				c.set(bIdx, (b[bIndex] != 0) ? 1 : 0);
-				//				c.set(bIdx, 1);
+				indexes[index] = bIdx;
+				values[index] = b[bIndex] != 0 ? 1 : 0;
 				bIndex++;
+				index++;
 			}
 		}
-		for (; aIndex < ai+alen; aIndex++)  c.set(aix[aIndex], (a[aIndex] != 0) ? 1 : 0);
-		for (; bIndex < bi+blen; bIndex++)  c.set(bix[bIndex], (b[bIndex] != 0) ? 1 : 0);
+		for (; aIndex < ai+alen; aIndex++) {
+			indexes[index] = aix[aIndex];
+			values[index] = a[aIndex] != 0 ? 1 : 0;
+			index++;
+		}
+		for (; bIndex < bi+blen; bIndex++) {
+			indexes[index] = bix[bIndex];
+			values[index] = b[bIndex] != 0 ? 1 : 0;
+			index++;
+		}
+		c.setSize(index);
 		return c;
+//		SparseRowVector c = allocSparseVector(alen);
+//		int aIndex = ai;
+//		int bIndex = bi;
+//		while(aIndex < ai+alen && bIndex < bi+blen) {
+//			int aIdx = aix[aIndex];
+//			int bIdx = bix[bIndex];
+//			if(aIdx == bIdx) {
+//				c.set(aIdx, (a[aIndex] != b[bIndex]) ? 1 : 0);
+//				aIndex++;
+//				bIndex++;
+//			} else if(aIdx < bIdx) {
+//				c.set(aIdx, (a[aIndex] != 0) ? 1 : 0);
+//				aIndex++;
+//			} else {
+//				c.set(bIdx, (b[bIndex] != 0) ? 1 : 0);
+//				bIndex++;
+//			}
+//		}
+//		for (; aIndex < ai+alen; aIndex++)  c.set(aix[aIndex], (a[aIndex] != 0) ? 1 : 0);
+//		for (; bIndex < bi+blen; bIndex++)  c.set(bix[bIndex], (b[bIndex] != 0) ? 1 : 0);
+//		return c;
 	}
 
 	public static SparseRowVector vectLessWrite(int len, double[] a, double bval, int[] aix, int ai, int alen) {

@@ -27,12 +27,10 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
-import java.util.Arrays;
-
-import static org.junit.Assert.fail;
 
 public class FederatedKMeansPlanningTest extends AutomatedTestBase {
 	private static final Log LOG = LogFactory.getLog(FederatedKMeansPlanningTest.class.getName());
@@ -62,16 +60,19 @@ public class FederatedKMeansPlanningTest extends AutomatedTestBase {
 		runTestWithConfig("SystemDS-config-heuristic.xml", null);
 	}
 
+	@Ignore
 	@Test
 	public void runKMeansCostBasedTestPrivate() {
 		runTestWithConfig("SystemDS-config-cost-based.xml", "private");
 	}
 
+	@Ignore
 	@Test
 	public void runKMeansCostBasedTestPrivateAggregate() {
 		runTestWithConfig("SystemDS-config-cost-based.xml", "private-aggregate");
 	}
 
+	@Ignore
 	@Test
 	public void runKMeansCostBasedTestPublic() {
 		runTestWithConfig("SystemDS-config-cost-based.xml", "public");

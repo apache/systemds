@@ -67,7 +67,6 @@ public class ColumnDecoderComposite extends ColumnDecoder {
         try{
             List<Future<FrameBlock>> tasks = new ArrayList<>();
             for (ColumnDecoder dec : _decoders) {
-                long t1 = System.nanoTime();
                 List<MatrixBlock> slices = sliceColumns(in, dec.getColList());
                 for (int c = 0; c < slices.size(); c++) {
                     ColumnDecoder sub = dec.getColList().length == 1 ? dec :
@@ -79,8 +78,6 @@ public class ColumnDecoderComposite extends ColumnDecoder {
                     int finalC = c;
                     tasks.add(pool.submit(() -> sub.columnDecode(slices.get(finalC), out)));
                 }
-                long t2 = System.nanoTime();
-                System.out.println(dec + "time: " + (t2 - t1) / 1e6 + " ms");
             }
         }
         catch (Exception e) {

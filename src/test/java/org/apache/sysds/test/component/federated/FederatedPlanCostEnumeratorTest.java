@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.HashMap;
 
-import org.apache.sysds.hops.fedplanner.FederatedMemoTable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
@@ -36,8 +35,6 @@ import org.apache.sysds.parser.ParserFactory;
 import org.apache.sysds.parser.ParserWrapper;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
-import org.apache.sysds.hops.fedplanner.FederatedPlanCostEnumerator;
-import org.apache.sysds.utils.TeeOutputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.File;
@@ -107,19 +104,17 @@ public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
 			//read script
 			String dmlScriptString = DMLScript.readDMLScript(true, HOME + scriptFilename);
 
-			// Save output to both file and terminal
+			// Save output to file
 			String outputFile = testName + "_trace.txt";
 			File outputFileObj = new File(outputFile);
 			System.out.println("[INFO] Trace file: " + outputFileObj.getAbsolutePath());
 			PrintStream fileOut = new PrintStream(new FileOutputStream(outputFile));
-			TeeOutputStream teeOut = new TeeOutputStream(System.out, fileOut);
-			PrintStream teePrintStream = new PrintStream(teeOut);
 
 			// Save original output stream
 			PrintStream originalOut = System.out;
 
-			// Redirect output with TeeOutputStream
-			System.setOut(teePrintStream);
+			// Redirect output to file
+			System.setOut(fileOut);
 
 			//parsing and dependency analysis
 			ParserWrapper parser = ParserFactory.createParser();
@@ -135,8 +130,6 @@ public class FederatedPlanCostEnumeratorTest extends AutomatedTestBase
 			
 			// Clean up resources
 			fileOut.close();
-			teeOut.close();
-			teePrintStream.close();
 
 			// Check Python visualizer execution
 			File visualizerDir = new File("visualization_output");

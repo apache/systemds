@@ -22,14 +22,11 @@ package org.apache.sysds.parser;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.sysds.parser.Expression;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -1435,156 +1432,5 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 
 	public HashMap<Lop.Type, List<Lop.Type>> getCheckpointPositions() {
 		return _checkpointPositions;
-	}
-
-	/**
-	 * Deep copy function for StatementBlock
-	 * @param original Original StatementBlock to copy
-	 * @return Deep copied StatementBlock
-	 * // Todo Exclude Hop
-	 */
-	public StatementBlock deepCopy() {
-		StatementBlock copy;
-		if (this instanceof FunctionStatementBlock) {
-			copy = new FunctionStatementBlock();
-		} else if (this instanceof IfStatementBlock) {
-			copy = new IfStatementBlock();
-		} else if (this instanceof ForStatementBlock){
-			copy = new ForStatementBlock();
-		} else if (this instanceof WhileStatementBlock){
-			copy = new WhileStatementBlock();
-		} else {
-			copy = new StatementBlock();
-		}
-
-		// Copy basic metadata
-		copy.setFilename(this.getFilename());
-		copy.setBeginLine(this.getBeginLine());
-		copy.setBeginColumn(this.getBeginColumn());
-		copy.setEndLine(this.getEndLine());
-		copy.setEndColumn(this.getEndColumn());
-		copy.setText(this.getText());
-
-		// Copy DML program reference
-		copy.setDMLProg(this.getDMLProg());
-
-		// Copy LiveVariableAnalysis information
-		if (this.liveIn() != null)
-			copy.setLiveIn(this.liveIn());
-		if (this.liveOut() != null)
-			copy.setLiveOut(this.liveOut());
-		if (this._gen != null)
-			copy._gen.addVariables(this._gen);
-		if (this._kill != null)
-			copy._kill.addVariables(this._kill);
-		if (this._read != null)
-			copy._read.addVariables(this._read);
-		if (this._updated != null)
-			copy._updated.addVariables(this._updated);
-		if (this._warnSet != null)
-			copy._warnSet.addVariables(this._warnSet);
-
-		// Copy constant variables
-		copy._constVarsIn.putAll(this._constVarsIn);
-		copy._constVarsOut.putAll(this._constVarsOut);
-
-		// Copy DAG split flag
-		copy.setSplitDag(false);
-		// Deep copy statements
-		if (this._statements != null && !this._statements.isEmpty()) {
-			for (Statement stmt : this._statements) {
-				Statement copyStmt = null;
-
-				if (stmt instanceof AssignmentStatement) {
-					AssignmentStatement as = (AssignmentStatement)stmt;
-					AssignmentStatement newAs = new AssignmentStatement(new DataIdentifier(as.getTarget()), as.getSource());
-					newAs.setParseInfo(as);
-					newAs.setAccumulator(as.isAccumulator());
-					copyStmt = newAs;
-				} 
-				else if (stmt instanceof MultiAssignmentStatement) {
-					MultiAssignmentStatement mas = (MultiAssignmentStatement)stmt;
-					MultiAssignmentStatement newMas = new MultiAssignmentStatement(mas.getTargetList(), mas.getSource());
-					newMas.setParseInfo(mas);
-					copyStmt = newMas;
-				} 
-				else if (stmt instanceof IfStatement) {
-					IfStatement is = (IfStatement)stmt;
-					IfStatement newIs = new IfStatement();
-					newIs.setParseInfo(is);
-					newIs.setConditionalPredicate(is.getConditionalPredicate());
-					newIs.setIfBody(copyStatementBlocks(is.getIfBody()));
-					newIs.setElseBody(copyStatementBlocks(is.getElseBody()));
-					copyStmt = newIs;
-				} 
-				else if (stmt instanceof FunctionStatement) {
-					FunctionStatement fs = (FunctionStatement)stmt;
-					FunctionStatement newFs = new FunctionStatement();
-					newFs.setParseInfo(fs);
-					newFs.setName(fs.getName());
-					newFs.setInputParams(fs.getInputParams());
-					newFs.setInputDefaults(fs.getInputDefaults());
-					newFs.setOutputParams(fs.getOutputParams());
-					newFs.setBody(copyStatementBlocks(fs.getBody()));
-					copyStmt = newFs;
-				} 
-				else if (stmt instanceof ForStatement) {
-					ForStatement fs = (ForStatement)stmt;
-					ForStatement newFs = new ForStatement();
-					newFs.setParseInfo(fs);
-					newFs.setPredicate(fs.getIterablePredicate());
-					newFs.setBody(copyStatementBlocks(fs.getBody()));
-					copyStmt = newFs;
-				} 
-				else if (stmt instanceof WhileStatement) {
-					WhileStatement ws = (WhileStatement)stmt;
-					WhileStatement newWs = new WhileStatement();
-					newWs.setParseInfo(ws);
-					newWs.setPredicate(ws.getConditionalPredicate());
-					newWs.setBody(copyStatementBlocks(ws.getBody()));
-					copyStmt = newWs;
-				} 
-				else if (stmt instanceof PrintStatement) {
-					PrintStatement ps = (PrintStatement)stmt;
-					PrintStatement newPs = new PrintStatement(ps.getType(), ps.getExpressions());
-					newPs.setParseInfo(ps);
-					copyStmt = newPs;
-				}
-				else if (stmt instanceof OutputStatement) {
-					OutputStatement os = (OutputStatement)stmt;
-					OutputStatement newOs = new OutputStatement(os.getIdentifier(), Expression.DataOp.WRITE, os);
-					newOs.setExprParams(os.getSource());
-					copyStmt = newOs;
-				}
-				else {
-					copyStmt = stmt;
-					copyStmt.setParseInfo(stmt);
-				}
-
-				// Add copied statement to new StatementBlock
-				if (copyStmt != null) {
-					copy.addStatement(copyStmt);
-				}
-			}
-		}
-
-		// Initialize _hops and _lops to null
-		copy._hops = null;
-		copy._lops = null;
-
-		return copy;
-	}
-
-	/**
-	 * Method to deep copy StatementBlock list
-	 * @param body StatementBlock list to copy
-	 * @return Deep copied StatementBlock list
-	 */
-	private ArrayList<StatementBlock> copyStatementBlocks(ArrayList<StatementBlock> body) {
-		ArrayList<StatementBlock> newBody = new ArrayList<>();
-		for (StatementBlock sb : body) {
-			newBody.add(sb.deepCopy());
-		}
-		return newBody;
 	}
 }

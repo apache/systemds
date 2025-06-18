@@ -89,15 +89,6 @@ public abstract class FEDInstruction extends Instruction {
 		instString = istr;
 		instOpcode = opcode;
 		_fedOut = fedOut;
-
-		// Todo (Future): Remove
-		//		// Debug output to terminal
-		//		System.out.println("[FED-CREATE] " + this.getClass().getSimpleName() +
-		//			" | Type: " + _fedType +
-		//			" | Opcode: " + instOpcode +
-		//			" | Output: " + _fedOut +
-		//			" | TID: " + _tid +
-		//			" | Thread: " + Thread.currentThread().getName());
 	}
 
 	@Override

@@ -73,7 +73,6 @@ public abstract class AFederatedPlanner {
 	}
 
 	protected boolean allowsFederated(Hop hop, FType[] ft){
-		// Todo : Extend to support more operators.
 		if( hop instanceof AggBinaryOp ) {
 			return (ft[0] != null && ft[1] == null)
 				|| (ft[0] == null && ft[1] != null)
@@ -98,6 +97,7 @@ public abstract class AFederatedPlanner {
 			return HopRewriteUtils.isReorg(hop, ReOrgOp.TRANS)
 				|| HopRewriteUtils.isAggUnaryOp(hop, AggOp.SUM, AggOp.MIN, AggOp.MAX);
 		}
+
 		return false;
 	}
 

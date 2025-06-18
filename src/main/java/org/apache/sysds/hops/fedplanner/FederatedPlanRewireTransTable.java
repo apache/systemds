@@ -678,6 +678,7 @@ public class FederatedPlanRewireTransTable {
                 op == OpOpN.PLUS || op == OpOpN.MULT ||
                 op == OpOpN.MIN || op == OpOpN.MAX) {
                 FType secondFType = ft.length > 1 ? ft[1] : null;
+                // Todo: propagate 3rd one if 2nd is null -> N
                 return firstFType != null ? firstFType : secondFType;
             }
             

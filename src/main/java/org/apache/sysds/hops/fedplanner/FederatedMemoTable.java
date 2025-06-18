@@ -31,10 +31,8 @@ import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import org.apache.sysds.common.Types.ExecType;
 
 /**
- * A Memoization Table for managing federated plans (FedPlan) based on
- * combinations of Hops and fedOutTypes.
- * This table stores and manages different execution plan variants for each Hop
- * and fedOutType combination,
+ * A Memoization Table for managing federated plans (FedPlan) based on combinations of Hops and fedOutTypes.
+ * This table stores and manages different execution plan variants for each Hop and fedOutType combination,
  * facilitating the optimization of federated execution plans.
  */
 public class FederatedMemoTable {

@@ -23,6 +23,7 @@ import java.util.Arrays;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -111,10 +112,12 @@ public class CNodeUnary extends CNode
 		sb.append(_inputs.get(0).codegen(sparse, api));
 		
 		//generate unary operation
-		boolean lsparse = sparse && (_inputs.get(0) instanceof CNodeData
-			&& _inputs.get(0).getVarname().startsWith("a")
-			&& !_inputs.get(0).isLiteral());
-		String var = createVarname();
+		boolean lsparse = sparse &&
+			((_inputs.get(0) instanceof CNodeData
+				&& _inputs.get(0).getVarname().startsWith("a")
+				&& !_inputs.get(0).isLiteral())
+				|| (DMLScript.SPARSE_INTERMEDIATE && _inputs.get(0).getVarname().startsWith("STMP")));
+		String var = createVarname(DMLScript.SPARSE_INTERMEDIATE && lsparse && getOutputType());
 		String tmp = getLanguageTemplateClass(this, api).getTemplate(_type, lsparse);
 		tmp = tmp.replaceAll("%TMP%", var);
 		
@@ -129,6 +132,24 @@ public class CNodeUnary extends CNode
 		_generated = true;
 		
 		return sb.toString();
+	}
+
+	public boolean getOutputType() {
+		switch(_type) {
+			case VECT_SQRT:
+			case VECT_ABS:
+			case VECT_ROUND:
+			case VECT_CEIL:
+			case VECT_FLOOR:
+			case VECT_SIN:
+			case VECT_TAN:
+			case VECT_ASIN:
+			case VECT_ATAN:
+			case VECT_SINH:
+			case VECT_TANH:
+			case VECT_SIGN: return true;
+			default: return false;
+		}
 	}
 	
 	@Override

@@ -24,6 +24,7 @@ import java.util.Arrays;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Opcodes;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.codegen.template.TemplateUtils;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -127,6 +128,7 @@ public class CNodeBinary extends CNode {
 	}
 	
 	private final BinType _type;
+	private boolean sparseRows = false;
 	
 	public CNodeBinary( CNode in1, CNode in2, BinType type ) {
 		//canonicalize commutative matrix-scalar operations
@@ -146,6 +148,19 @@ public class CNodeBinary extends CNode {
 
 	public BinType getType() {
 		return _type;
+	}
+
+	public void setSparseRows() {
+		if(this._inputs == null) {
+			return;
+		}
+		for(CNode input : this._inputs) {
+			if(input instanceof CNodeBinary)
+				((CNodeBinary)input).setSparseRows();
+			else if(input instanceof CNodeUnary)
+				((CNodeUnary)input).iterator();
+		}
+		this.sparseRows = true;
 	}
 	
 	@Override
@@ -284,6 +299,13 @@ public class CNodeBinary extends CNode {
 			if( getInput().get(i).getDataType().isMatrix() )
 				return getInput().get(i);
 		return null;
+	}
+
+	private boolean getSparsity() {
+//		double sparsity = OptimizerUtils.getBinaryOpSparsity();
+		switch(_type) {
+			default: return true;
+		}
 	}
 
 	public boolean getOutputType(boolean scalarVector, boolean lsparseLhs, boolean lsparseRhs) {

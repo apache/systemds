@@ -101,11 +101,15 @@ public interface MatrixBlockFromFrame {
 			else
 				return convertGeneric(frame, mb, n, rl, ru);
 		}
-		catch(NumberFormatException e) {
-			LOG.error(
-				"Failed to convert to Matrix because of number format errors, falling back to NaN on incompatible cells",
-				e);
-			return convertSafeCast(frame, mb, n, rl, ru);
+		catch(DMLRuntimeException e) {
+			if(e.getMessage().contains("Unable to change to double")){
+				LOG.error(
+					"Failed to convert to Matrix because of number format errors, falling back to NaN on incompatible cells",
+					e);
+				return convertSafeCast(frame, mb, n, rl, ru);
+			}
+			else 
+				throw e;
 		}
 	}
 
@@ -204,7 +208,7 @@ public interface MatrixBlockFromFrame {
 				try{
 					lnnz += (cvals[cpos + j] = frame.getDoubleNaN(i, j)) != 0 ? 1 : 0;
 				}
-				catch(NumberFormatException e){
+				catch(DMLRuntimeException e){
 					lnnz += 1;
 					cvals[cpos + j] = Double.NaN;
 				}

@@ -76,6 +76,7 @@ import org.apache.sysds.runtime.frame.data.columns.ArrayWrapper;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixCell;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 
 import io.airlift.compress.lzo.LzoCodec;
@@ -695,10 +696,10 @@ public class IOUtilFunctions {
 			try {
 				if( reader.next(key, value) ) {
 					boolean hasValue = true;
-					// if( value.toString().startsWith(TfUtils.TXMTD_MVPREFIX) )
-					// 	hasValue = reader.next(key, value);
-					// if( value.toString().startsWith(TfUtils.TXMTD_NDPREFIX) )
-					// 	hasValue = reader.next(key, value);
+					if( value.toString().startsWith(TfUtils.TXMTD_MVPREFIX) )
+						hasValue = reader.next(key, value);
+					if( value.toString().startsWith(TfUtils.TXMTD_NDPREFIX) )
+						hasValue = reader.next(key, value);
 					String row = value.toString().trim();
 					if( hasValue && !row.isEmpty() ) {
 						ncol = IOUtilFunctions.countTokensCSV(row, delim);

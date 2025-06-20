@@ -320,7 +320,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 			int m = toInt(param.rightNumRows);
 			int n = toInt(param.rightNumCols);
 			int transa = reverseCusparseOp(cusparseOp(param.isLeftTransposed));
-			cudaSupportFunctions.cusparsecsrmv(handle, transa, m, n, toInt(B.nnz), one(), B.descr, B.val, B.rowPtr, B.colInd, A,
+			cudaSupportFunctions.cusparsecsrmv(handle, transa, m, n, toInt(B.nnz), one(), B.spMatDescr, B.descr, B.val, B.rowPtr, B.colInd, A,
 					zero(), C);
 		} else {
 			int m = toInt(param.rightNumRows);

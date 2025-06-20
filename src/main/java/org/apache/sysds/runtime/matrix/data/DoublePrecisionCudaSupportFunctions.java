@@ -19,6 +19,7 @@
 package org.apache.sysds.runtime.matrix.data;
 
 import static jcuda.jcusparse.JCusparse.*;
+import static jcuda.jcusparse.JCusparse.cusparseGetMatIndexBase;
 import static jcuda.runtime.JCuda.*;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
@@ -77,49 +78,36 @@ public class DoublePrecisionCudaSupportFunctions implements CudaSupportFunctions
 
 	@Override
 	public int cusparsecsrmv(cusparseHandle handle, int transA, int m, int n, int nnz, Pointer alpha,
-		cusparseMatDescr descrA, Pointer csrValA, Pointer csrRowPtrA, Pointer csrColIndA, Pointer x, Pointer beta,
-		Pointer y) {
-		/* Descriptors and workspace --------------------------------------- */
-		cusparseSpMatDescr matA = new cusparseSpMatDescr();
+		cusparseSpMatDescr spMatDescrA, cusparseMatDescr descrA, Pointer csrValA, Pointer csrRowPtrA,
+		Pointer csrColIndA, Pointer x, Pointer beta, Pointer y) {
+		// Create sparse matrix A in CSR format
+		int idxBase = cusparseGetMatIndexBase(descrA);
+		int dataType = CUDA_R_64F;
+		cusparseCreateCsr(spMatDescrA, m, n, nnz, csrRowPtrA, csrColIndA, csrValA, CUSPARSE_INDEX_32I,
+			CUSPARSE_INDEX_32I, idxBase, dataType);
+		// Create dense vectors vecX and vecY
 		cusparseDnVecDescr vecX = new cusparseDnVecDescr();
 		cusparseDnVecDescr vecY = new cusparseDnVecDescr();
-		Pointer dBuf = new Pointer();
-		long dBufBytes = 0;
-		int status;
-
+		cusparseCreateDnVec(vecX, n, x, dataType);
+		cusparseCreateDnVec(vecY, m, y, dataType);
+		// allocate an external buffer if needed
+		long[] bufferSize = {0};
+		int alg = CUSPARSE_SPMV_ALG_DEFAULT;
+		cusparseSpMV_bufferSize(handle, transA, alpha, spMatDescrA.asConst(), vecX.asConst(), beta, vecY, dataType, alg,
+			bufferSize);
+		// execute SpMV
+		Pointer dBuffer = new Pointer();
+		if(bufferSize[0] > 0)
+			cudaMalloc(dBuffer, bufferSize[0]);
 		try {
-			/* 1. CSR matrix A --------------------------------------------- */
-			cusparseCreateCsr(matA, m, n, nnz, csrRowPtrA, csrColIndA, csrValA, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
-				CUSPARSE_INDEX_BASE_ZERO, CUDA_R_64F);
-
-			/* 2. Dense vectors X and Y ------------------------------------ */
-			cusparseCreateDnVec(vecX, n, x, CUDA_R_64F);
-			cusparseCreateDnVec(vecY, m, y, CUDA_R_64F);
-
-			/* 3. Query workspace size ------------------------------------- */
-			long[] bufSize = {0};
-			status = JCusparse.cusparseSpMV_bufferSize(handle, transA, alpha, matA.asConst(), vecX.asConst(), beta,
-				vecY, CUDA_R_64F, CUSPARSE_SPMV_ALG_DEFAULT, bufSize);
-			if(status != CUSPARSE_STATUS_SUCCESS)
-				return status;
-
-			dBufBytes = bufSize[0];
-			if(dBufBytes > 0)
-				cudaMalloc(dBuf, dBufBytes);
-
-			/* 4. Perform SpMV -------------------------------------------- */
-			status = JCusparse.cusparseSpMV(handle, transA, alpha, matA.asConst(), vecX.asConst(), beta, vecY,
-				CUDA_R_64F, CUSPARSE_SPMV_ALG_DEFAULT, dBuf);
-
-			return status;
+			return cusparseSpMV(handle, transA, alpha, spMatDescrA.asConst(), vecX.asConst(), beta, vecY, dataType, alg,
+				dBuffer);
 		}
 		finally {
-			/* Cleanup ----------------------------------------------------- */
-			if(dBufBytes > 0)
-				cudaFree(dBuf);
-			JCusparse.cusparseDestroyDnVec(vecX.asConst());
-			JCusparse.cusparseDestroyDnVec(vecY.asConst());
-			JCusparse.cusparseDestroySpMat(matA.asConst());
+			if(bufferSize[0] > 0)
+				cudaFree(dBuffer);
+			cusparseDestroyDnVec(vecX.asConst());
+			cusparseDestroyDnVec(vecY.asConst());
 		}
 	}
 

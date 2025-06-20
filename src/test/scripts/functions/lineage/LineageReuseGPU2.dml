@@ -32,8 +32,8 @@ stp = (0.1 - 0.0001)/no_lamda;
 lamda = 0.0001;
 lim = 0.1;
 
-X = rand(rows=1000, cols=100, seed=42);
-y = rand(rows=1000, cols=1, seed=42);
+X = rand(rows=1000, cols=100, sparsity=0.2, seed=42);
+y = rand(rows=1000, cols=1, sparsity=0.2, seed=42);
 N = ncol(X);
 R = matrix(0, rows=N, cols=no_lamda+2);
 i = 1;

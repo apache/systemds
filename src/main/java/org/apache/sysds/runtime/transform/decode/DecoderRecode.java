@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
@@ -131,13 +132,19 @@ public class DecoderRecode extends Decoder
 		for( int j=0; j<_colList.length; j++ ) {
 			HashMap<Long, Object> map = new HashMap<>();
 			for( int i=0; i<meta.getNumRows(); i++ ) {
-				if( meta.get(i, _colList[j]-1)==null )
-					break; //reached end of recode map
-				String[] tmp = ColumnEncoderRecode.splitRecodeMapEntry(meta.get(i, _colList[j]-1).toString());
-				Object obj = UtilFunctions.stringToObject(_schema[_colList[j]-1], tmp[0]);
-				long lval = Long.parseLong(tmp[1]);
-				map.put(lval, obj);
-				max[j] = Math.max(lval, max[j]);
+				try{
+
+					if( meta.get(i, _colList[j]-1)==null )
+						break; //reached end of recode map
+					String[] tmp = ColumnEncoderRecode.splitRecodeMapEntry(meta.get(i, _colList[j]-1).toString());
+					Object obj = UtilFunctions.stringToObject(_schema[_colList[j]-1], tmp[0]);
+					long lval = Long.parseLong(tmp[1]);
+					map.put(lval, obj);
+					max[j] = Math.max(lval, max[j]);
+				}
+				catch(Exception e){
+					throw new DMLRuntimeException("Failed to reinitialize recode map from: " + (meta.getColumn(_colList[j]-1)));
+				}
 			}
 			_rcMaps[j] = map;
 		}

@@ -71,8 +71,8 @@ public class DecoderBin extends Decoder {
 					try{
 
 						final int key = (int) Math.round(val);
-						double bmin = _binMins[j][key - 1];
-						double bmax = _binMaxs[j][key - 1];
+						double bmin = _binMins[j][key];
+						double bmax = _binMaxs[j][key];
 						double oval = bmin + (bmax - bmin) / 2 // bin center
 							+ (val - key) * (bmax - bmin); // bin fractions
 						a.set(i, oval);

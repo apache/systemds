@@ -94,10 +94,23 @@ public interface MatrixBlockFromFrame {
 	}
 
 	private static long convert(FrameBlock frame, MatrixBlock mb, int n, int rl, int ru) {
-		if(mb.getDenseBlock().isContiguous())
-			return convertContiguous(frame, mb, n, rl, ru);
-		else
-			return convertGeneric(frame, mb, n, rl, ru);
+		try {
+
+			if(mb.getDenseBlock().isContiguous())
+				return convertContiguous(frame, mb, n, rl, ru);
+			else
+				return convertGeneric(frame, mb, n, rl, ru);
+		}
+		catch(DMLRuntimeException e) {
+			if(e.getMessage().contains("Unable to change to double")){
+				LOG.error(
+					"Failed to convert to Matrix because of number format errors, falling back to NaN on incompatible cells",
+					e);
+				return convertSafeCast(frame, mb, n, rl, ru);
+			}
+			else 
+				throw e;
+		}
 	}
 
 	private static long convertParallel(FrameBlock frame, MatrixBlock mb, int m, int n, int k) throws Exception {
@@ -169,4 +182,39 @@ public interface MatrixBlockFromFrame {
 		}
 		return lnnz;
 	}
+
+
+
+	private static long convertSafeCast(final FrameBlock frame, final MatrixBlock mb, final int n, final int rl, final int ru){
+		final DenseBlock c = mb.getDenseBlock();
+		long lnnz = 0;
+		for(int bi = rl; bi < ru; bi += blocksizeIJ) {
+			for(int bj = 0; bj < n; bj += blocksizeIJ) {
+				int bimin = Math.min(bi + blocksizeIJ, ru);
+				int bjmin = Math.min(bj + blocksizeIJ, n);
+				lnnz = convertBlockSafeCast(frame, lnnz, c, bi, bj, bimin, bjmin);
+			}
+		}
+		return lnnz;
+	}
+
+
+	private static long convertBlockSafeCast(final FrameBlock frame, long lnnz, final DenseBlock c, final int rl,
+		final int cl, final int ru, final int cu) {
+		for(int i = rl; i < ru; i++) {
+			final double[] cvals = c.values(i);
+			final int cpos = c.pos(i);
+			for(int j = cl; j < cu; j++){
+				try{
+					lnnz += (cvals[cpos + j] = frame.getDoubleNaN(i, j)) != 0 ? 1 : 0;
+				}
+				catch(DMLRuntimeException e){
+					lnnz += 1;
+					cvals[cpos + j] = Double.NaN;
+				}
+			}
+		}
+		return lnnz;
+	}
+
 }

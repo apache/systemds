@@ -113,55 +113,39 @@ public class DoublePrecisionCudaSupportFunctions implements CudaSupportFunctions
 
 	@Override
 	public int cusparsecsrmm2(cusparseHandle handle, int transA, int transB, int m, int n, int k, int nnz,
-		Pointer alpha, cusparseMatDescr descrA, Pointer csrValA, Pointer csrRowPtrA, Pointer csrColIndA, Pointer B,
-		int ldb, Pointer beta, Pointer C, int ldc) {
-		/* Descriptors and workspace -------------------------------------- */
-		cusparseSpMatDescr matA = new cusparseSpMatDescr();
-		cusparseDnMatDescr matB = new cusparseDnMatDescr();
-		cusparseDnMatDescr matC = new cusparseDnMatDescr();
-		Pointer dBuf = new Pointer();
-		long dBufBytes = 0;
-		int status;
+		Pointer alpha, cusparseMatDescr descrA, cusparseSpMatDescr spMatDescrA, Pointer csrValA, Pointer csrRowPtrA,
+		Pointer csrColIndA, Pointer B, int ldb, Pointer beta, Pointer C, int ldc) {
 
+		int dataType = CUDA_R_64F;
+		int idxBase = cusparseGetMatIndexBase(descrA);
+		// Create sparse matrix A in CSR format
+		cusparseCreateCsr(spMatDescrA, m, n, nnz, csrRowPtrA, csrColIndA, csrValA, CUSPARSE_INDEX_32I,
+			CUSPARSE_INDEX_32I, idxBase, dataType);
+		// Create dense matrix B
+		cusparseDnMatDescr dnMatB = new cusparseDnMatDescr();
+		cusparseCreateDnMat(dnMatB, k, n, ldb, B, dataType, CUSPARSE_ORDER_COL);
+		// Create dense matrix C
+		cusparseDnMatDescr dnMatC = new cusparseDnMatDescr();
+		cusparseCreateDnMat(dnMatC, m, n, ldc, C, dataType, CUSPARSE_ORDER_COL);
+		// allocate an external buffer if needed
+		long[] bufferSize = {0};
+		int alg = CUSPARSE_SPMM_ALG_DEFAULT;
+		cusparseSpMM_bufferSize(handle, transA, transB, alpha, spMatDescrA.asConst(), dnMatB.asConst(), beta, dnMatC,
+			dataType, alg, bufferSize);
+		// execute SpMM
+		Pointer dBuffer = new Pointer();
+		if(bufferSize[0] > 0)
+			cudaMalloc(dBuffer, bufferSize[0]);
 		try {
-			/* 1. CSR matrix A -------------------------------------------- */
-			cusparseCreateCsr(matA, m, k, nnz, csrRowPtrA, csrColIndA, csrValA, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
-				CUSPARSE_INDEX_BASE_ZERO, CUDA_R_64F);
-
-			/* 2. Dense matrix B  (col-major layout) ---------------------- */
-			int rowsB = (transB == CUSPARSE_OPERATION_NON_TRANSPOSE) ? k : n;
-			int colsB = (transB == CUSPARSE_OPERATION_NON_TRANSPOSE) ? n : k;
-			cusparseCreateDnMat(matB, rowsB, colsB, ldb, B, CUDA_R_64F, CUSPARSE_ORDER_COL);
-
-			/* 3. Dense matrix C  (output) -------------------------------- */
-			int rowsC = (transA == CUSPARSE_OPERATION_NON_TRANSPOSE) ? m : k;
-			int colsC = colsB;                       // always equals n
-			cusparseCreateDnMat(matC, rowsC, colsC, ldc, C, CUDA_R_64F, CUSPARSE_ORDER_COL);
-
-			/* 4. Query workspace size ------------------------------------ */
-			long[] bufSize = {0};
-			status = JCusparse.cusparseSpMM_bufferSize(handle, transA, transB, alpha, matA.asConst(), matB.asConst(),
-				beta, matC, CUDA_R_64F, CUSPARSE_SPMM_ALG_DEFAULT, bufSize);
-			if(status != CUSPARSE_STATUS_SUCCESS)
-				return status;
-
-			dBufBytes = bufSize[0];
-			if(dBufBytes > 0)
-				cudaMalloc(dBuf, dBufBytes);
-
-			/* 5. Execute SpMM ------------------------------------------- */
-			status = JCusparse.cusparseSpMM(handle, transA, transB, alpha, matA.asConst(), matB.asConst(), beta, matC,
-				CUDA_R_64F, CUSPARSE_SPMM_ALG_DEFAULT, dBuf);
-
-			return status;
+			return cusparseSpMM(handle, transA, transB, alpha, spMatDescrA.asConst(), dnMatB.asConst(), beta, dnMatC,
+				dataType, alg, dBuffer);
 		}
 		finally {
-			/* Cleanup ---------------------------------------------------- */
-			if(dBufBytes > 0)
-				cudaFree(dBuf);
-			JCusparse.cusparseDestroyDnMat(matB.asConst());
-			JCusparse.cusparseDestroyDnMat(matC.asConst());
-			JCusparse.cusparseDestroySpMat(matA.asConst());
+			if(bufferSize[0] > 0)
+				cudaFree(dBuffer);
+			cusparseDestroySpMat(spMatDescrA.asConst());
+			cusparseDestroyDnMat(dnMatB.asConst());
+			cusparseDestroyDnMat(dnMatC.asConst());
 		}
 	}
 

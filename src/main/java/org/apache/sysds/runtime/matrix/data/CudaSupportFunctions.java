@@ -53,24 +53,24 @@ import jcuda.Pointer;
  * 	matrix_atan(A, C, size);
  * } 
  * </code>
- * 
+ *
  * 2. The CUDA library calls (such as CuBLAS, CuSPARSE, etc) go through this interface.
  * The naming and parameters of the methods in this class are consistent with that of CUDA library to simplify development.
- * 
+ *
  * 3. During SystemDS initialization, the appropriate class implementing CudaKernels interface is set based on the configuration property sysds.dataType.
  */
 public interface CudaSupportFunctions {
 	public static boolean PERFORM_CONVERSION_ON_DEVICE = true;
 
-	int cusparsecsrgemm(cusparseHandle handle, int transA, int transB, int alg, cusparseSpMatDescr spMatDescrA,
+	public int cusparsecsrgemm(cusparseHandle handle, int transA, int transB, int alg, cusparseSpMatDescr spMatDescrA,
 		cusparseSpMatDescr spMatDescrB, cusparseSpMatDescr spMatDescrC, cusparseSpGEMMDescr spgemmDescr);
-
-	int cublasgeam(cublasHandle handle, int transa, int transb, int m, int n, jcuda.Pointer alpha,
+	public int cublasgeam(cublasHandle handle, int transa, int transb, int m, int n, jcuda.Pointer alpha,
 		jcuda.Pointer A, int lda, jcuda.Pointer beta, jcuda.Pointer B, int ldb, jcuda.Pointer C, int ldc);
-	public int	cusparsecsrmv(cusparseHandle handle, int transA, int m, int n, int nnz, jcuda.Pointer alpha, cusparseSpMatDescr spMatDescrA, cusparseMatDescr descA, jcuda.Pointer csrValA, jcuda.Pointer csrRowPtrA, jcuda.Pointer csrColIndA,
-			jcuda.Pointer x, jcuda.Pointer beta, jcuda.Pointer y);
-	public int	cusparsecsrmm2(cusparseHandle handle, int transa, int transb, int m, int n, int k, int nnz, jcuda.Pointer alpha, cusparseMatDescr descrA, jcuda.Pointer csrValA, jcuda.Pointer csrRowPtrA, jcuda.Pointer csrColIndA, 
-			jcuda.Pointer B, int ldb, jcuda.Pointer beta, jcuda.Pointer C, int ldc);
+	public int cusparsecsrmv(cusparseHandle handle, int transA, int m, int n, int nnz, jcuda.Pointer alpha,
+		cusparseSpMatDescr spMatDescrA, cusparseMatDescr descrA, jcuda.Pointer csrValA, jcuda.Pointer csrRowPtrA,
+		jcuda.Pointer csrColIndA, jcuda.Pointer x, jcuda.Pointer beta, jcuda.Pointer y);
+	public int cusparsecsrmm2(cusparseHandle handle, int transa, int transb, int m, int n, int k, int nnz, jcuda.Pointer alpha, cusparseMatDescr descrA, cusparseSpMatDescr spMatDescrA, jcuda.Pointer csrValA, jcuda.Pointer csrRowPtrA, jcuda.Pointer csrColIndA,
+		jcuda.Pointer B, int ldb, jcuda.Pointer beta, jcuda.Pointer C, int ldc);
 	public int cublasdot(cublasHandle handle, int n, jcuda.Pointer x, int incx, jcuda.Pointer y, int incy, jcuda.Pointer result);
 	public int cublasgemv(cublasHandle handle, int trans, int m, int n, jcuda.Pointer alpha, jcuda.Pointer A, int lda, jcuda.Pointer x, int incx, jcuda.Pointer beta, jcuda.Pointer y, int incy);
 	public int cublasgemm(cublasHandle handle, int transa, int transb, int m, int n, int k, jcuda.Pointer alpha, jcuda.Pointer A, int lda, jcuda.Pointer B, int ldb, jcuda.Pointer beta, jcuda.Pointer C, int ldc);

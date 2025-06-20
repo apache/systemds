@@ -46,7 +46,7 @@ public class DecoderRecode extends Decoder
 	private static final long serialVersionUID = -3784249774608228805L;
 
 	private HashMap<Long, Object>[] _rcMaps = null;
-	private Object[][] _rcMapsDirect = null;
+	// private Object[][] _rcMapsDirect = null;
 	private boolean _onOut = false;
 
 	public DecoderRecode() {
@@ -59,9 +59,10 @@ public class DecoderRecode extends Decoder
 	}
 	
 	public Object getRcMapValue(int i, long key) {
-		LOG.error(_rcMapsDirect);
-		return (_rcMapsDirect != null) ?
-			_rcMapsDirect[i][(int)key-1] : _rcMaps[i].get(key);
+		// LOG.error(_rcMapsDirect);
+		// return (_rcMapsDirect != null) ?
+			// _rcMapsDirect[i][(int)key-1] :
+		return _rcMaps[i].get(key);
 	}
 
 	@Override
@@ -142,15 +143,15 @@ public class DecoderRecode extends Decoder
 		}
 		
 		//convert to direct lookup arrays
-		if( Arrays.stream(max).allMatch(v -> v < Integer.MAX_VALUE) ) {
-			_rcMapsDirect = new Object[_rcMaps.length][];
-			for( int i=0; i<_rcMaps.length; i++ ) {
-				Object[] arr = new Object[(int)max[i]];
-				for(Entry<Long,Object> e1 : _rcMaps[i].entrySet())
-					arr[e1.getKey().intValue()-1] = e1.getValue();
-				_rcMapsDirect[i] = arr;
-			}
-		}
+		// if( Arrays.stream(max).allMatch(v -> v < Integer.MAX_VALUE) ) {
+		// 	_rcMapsDirect = new Object[_rcMaps.length][];
+		// 	for( int i=0; i<_rcMaps.length; i++ ) {
+		// 		Object[] arr = new Object[(int)max[i]];
+		// 		for(Entry<Long,Object> e1 : _rcMaps[i].entrySet())
+		// 			arr[e1.getKey().intValue()-1] = e1.getValue();
+		// 		_rcMapsDirect[i] = arr;
+		// 	}
+		// }
 	}
 	
 	/**

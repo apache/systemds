@@ -37,6 +37,7 @@ import org.apache.sysds.hops.NaryOp;
 import org.apache.sysds.hops.ParameterizedBuiltinOp;
 import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.UnaryOp;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.codegen.cplan.CNode;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysds.hops.codegen.cplan.CNodeData;
@@ -440,7 +441,11 @@ public class TemplateRow extends TemplateBase
 						cdata1 = new CNodeUnary(cdata1, UnaryType.LOOKUP_R);
 					if( TemplateUtils.isColVector(cdata2) )
 						cdata2 = new CNodeUnary(cdata2, UnaryType.LOOKUP_R);
-					out = getVectorBinary(cdata1, cdata2, ((BinaryOp)hop).getOp().name());
+					String opName = ((BinaryOp)hop).getOp().name();
+					double sparsityEst = OptimizerUtils.getBinaryOpSparsity(
+						OptimizerUtils.getSparsity(hop.getInput(0)),
+						OptimizerUtils.getSparsity(hop.getInput(1)), OpOp2.valueOf(opName), true);
+					out = getVectorBinary(cdata1, cdata2, opName, sparsityEst);
 					if( cdata1 instanceof CNodeData && !inHops2.containsKey("X")
 						&& !(cdata1.getDataType()==DataType.SCALAR) ) {
 						inHops2.put("X", hop.getInput().get(0));
@@ -569,7 +574,17 @@ public class TemplateRow extends TemplateBase
 			return new CNodeBinary(cdata1, cdata2, BinType.valueOf("VECT_"+name+"_SCALAR"));
 		}
 	}
-	
+
+	private static CNodeBinary getVectorBinary(CNode cdata1, CNode cdata2, String name, double sparsity) {
+		if( TemplateUtils.isMatrix(cdata1) && (TemplateUtils.isMatrix(cdata2)
+			|| TemplateUtils.isRowVector(cdata2)) ) {
+			return new CNodeBinary(cdata1, cdata2, BinType.valueOf("VECT_"+name), sparsity);
+		}
+		else {
+			return new CNodeBinary(cdata1, cdata2, BinType.valueOf("VECT_"+name+"_SCALAR"), sparsity);
+		}
+	}
+
 	/**
 	 * Comparator to order input hops of the row aggregate template. We try 
 	 * to order matrices-vectors-scalars via sorting by number of cells but 

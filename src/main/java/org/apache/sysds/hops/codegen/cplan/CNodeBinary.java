@@ -24,7 +24,6 @@ import java.util.Arrays;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Opcodes;
-import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.codegen.template.TemplateUtils;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -128,8 +127,8 @@ public class CNodeBinary extends CNode {
 	}
 	
 	private final BinType _type;
-	private boolean sparseRows = false;
-	
+	private boolean sparseTemplate;
+
 	public CNodeBinary( CNode in1, CNode in2, BinType type ) {
 		//canonicalize commutative matrix-scalar operations
 		//to increase reuse potential
@@ -146,21 +145,25 @@ public class CNodeBinary extends CNode {
 		setOutputDims();
 	}
 
-	public BinType getType() {
-		return _type;
+	public CNodeBinary( CNode in1, CNode in2, BinType type, double sparsityEst ) {
+		//canonicalize commutative matrix-scalar operations
+		//to increase reuse potential
+		if( type.isCommutative() && in1 instanceof CNodeData
+			&& in1.getDataType()==DataType.SCALAR ) {
+			CNode tmp = in1;
+			in1 = in2;
+			in2 = tmp;
+		}
+
+		_inputs.add(in1);
+		_inputs.add(in2);
+		_type = type;
+		setOutputDims();
+		sparseTemplate = getTemplateTpe(sparsityEst);
 	}
 
-	public void setSparseRows() {
-		if(this._inputs == null) {
-			return;
-		}
-		for(CNode input : this._inputs) {
-			if(input instanceof CNodeBinary)
-				((CNodeBinary)input).setSparseRows();
-			else if(input instanceof CNodeUnary)
-				((CNodeUnary)input).iterator();
-		}
-		this.sparseRows = true;
+	public BinType getType() {
+		return _type;
 	}
 	
 	@Override
@@ -178,7 +181,7 @@ public class CNodeBinary extends CNode {
 		 * todo: remember that only certain primitives will be called through this method,
 		 *  because the optimizer will choose which primitive functions should be calculated sparse and which not
 		 */
-		if(DMLScript.SPARSE_INTERMEDIATE) {
+		if(sparseTemplate) {
 			//generate binary operation (use sparse template, if data input)
 			boolean lsparseLhs = sparse ? _inputs.get(0) instanceof CNodeData
 				&& _inputs.get(0).getVarname().startsWith("a") ||
@@ -195,7 +198,7 @@ public class CNodeBinary extends CNode {
 				&& _inputs.get(1).getDataType().isMatrix();
 			String var = createVarname(sparse && getOutputType(scalarVector, lsparseLhs, lsparseRhs));
 			String tmp = getLanguageTemplateClass(this, api)
-				.getTemplate(_type, lsparseLhs, lsparseRhs, scalarVector, scalarInput, vectorVector);
+				.getTemplate(_type, lsparseLhs, lsparseRhs, scalarVector, scalarInput, vectorVector, sparseTemplate);
 
 			tmp = tmp.replace("%TMP%", var);
 
@@ -249,7 +252,7 @@ public class CNodeBinary extends CNode {
 			boolean vectorVector = _inputs.get(0).getDataType().isMatrix() && _inputs.get(1).getDataType().isMatrix();
 			String var = createVarname();
 			String tmp = getLanguageTemplateClass(this, api).getTemplate(_type, lsparseLhs, lsparseRhs, scalarVector,
-				scalarInput, vectorVector);
+				scalarInput, vectorVector, false);
 
 			tmp = tmp.replace("%TMP%", var);
 
@@ -301,10 +304,17 @@ public class CNodeBinary extends CNode {
 		return null;
 	}
 
-	private boolean getSparsity() {
-//		double sparsity = OptimizerUtils.getBinaryOpSparsity();
-		switch(_type) {
-			default: return true;
+	private boolean getTemplateTpe(double sparsityEst) {
+		if(!DMLScript.SPARSE_INTERMEDIATE) {
+			return false;
+		} else {
+			switch(_type) {
+				case VECT_MULT: return sparsityEst < 0.08 ? true : false;
+				case VECT_MULT_SCALAR: return sparsityEst < 0.15 ? true : false;
+				case VECT_LESS_SCALAR: return false;
+				case VECT_LESS: return sparsityEst < 0.035 ? true : false;
+				default: return true;
+			}
 		}
 	}
 

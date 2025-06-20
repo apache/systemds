@@ -607,7 +607,6 @@ public class StringArray extends Array<String> {
 
 	private static double getAsDouble(String s) {
 		try {
-
 			return DoubleArray.parseDouble(s);
 		}
 		catch(Exception e) {

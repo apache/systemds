@@ -41,8 +41,8 @@
 # Y    Frame[String] of deduplicated or duplicate-only tuples
 # --------------------------------------------------------------------------------------
 
-
-dedup = function(Frame[String] X, Matrix[Double] gloveMatrix, Matrix[String] vocab, String similarityMeasure, Boolean returnDuplicates)
+# TODO: define default parameter 
+f_dedup = function(Frame[String] X, Matrix[Double] gloveMatrix, Matrix[String] vocab, String similarityMeasure, Boolean returnDuplicates)
   return(Frame[String] FinalData)
 {
   # Step 1: Distributed Representation (DRs)
@@ -51,6 +51,7 @@ dedup = function(Frame[String] X, Matrix[Double] gloveMatrix, Matrix[String] voc
   # Step 2: generate LSH Hyperplanes
   K = 10 # number of hash functions
   d = nCol(V)
+  # TODO ggf 'uniform' 
   H = rand(rows=K, cols=d, pdf="normal", seed=-1) # matrix with random hyperplanes
 
   # Step 3: Compute LSH Hashcodes
@@ -67,8 +68,10 @@ dedup = function(Frame[String] X, Matrix[Double] gloveMatrix, Matrix[String] voc
   sim = computeSimilarity(V, pairs, similarityMeasure)
 
   # Step 7: Filter Duplicates 
-  # define threshold
+  # define threshold as parameter 
   matches = filterDuplicates(pairs, sim, threshold)
+
+  # if missing columns, merge tuple with duplicated 
 
   # Step 8: Return according to flag
   if (returnDuplicates) {
@@ -76,11 +79,14 @@ dedup = function(Frame[String] X, Matrix[Double] gloveMatrix, Matrix[String] voc
   } else {
     Y = removeDuplicates
   }
+  # TODO: Return always dupicated tuples, kein flag nötig -> beides zurückgeben 
 }
 
 computeDRMatrix = function(Frame[String] X, Matrix[String] vocab, Matrix[Double] gloveMatrix)
   return (Matrix[Double] V)
 {
+  # TODO: 
+  # Vectorize this implementation with dedicated transform incode permutation matrices
   n = nrow(X)
   d = ncol(gloveMatrix)
   V = matrix(0, rows=n, cols=d) # define output matrix
@@ -122,6 +128,7 @@ computeDRMatrix = function(Frame[String] X, Matrix[String] vocab, Matrix[Double]
 computeLSH = function(Matrix[Double] V, Matrix[Double] H)
   return (Matrix[Int] hashCodes)
 {
+  # TODO: auf 0/1 anpassen 
   # matrix multiplication: projection of each DR vector on hyperplanes
   P = V %*% t(H) 
   # if 0 -> 0*2-1 = -1
@@ -132,6 +139,7 @@ computeLSH = function(Matrix[Double] V, Matrix[Double] H)
 formBuckets = function(Matrix[Int] hashCodes)
   return (Matrix[Int] bucketIDs)
 {
+  # TODO vectorize 
   n = nrow(hashCodes)
   K = ncol(hashCodes)
 

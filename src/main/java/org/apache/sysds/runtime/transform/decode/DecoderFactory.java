@@ -67,23 +67,15 @@ public class DecoderFactory
 			List<Decoder> ldecoders = new ArrayList<>();
 			
 			//create decoders 'bin', 'recode', 'dummy' and 'pass-through'
-			List<Integer> rcIDs = Arrays.asList(ArrayUtils
-				.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.RECODE.toString(), minCol, maxCol)));
-			List<Integer> haIDs = Arrays.asList(ArrayUtils
-				.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.HASH.toString(), minCol, maxCol)));
-			List<Integer> dcIDs = Arrays.asList(ArrayUtils
-				.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.DUMMYCODE.toString(), minCol, maxCol)));
-			
-			
 			List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames, minCol, maxCol);
-			List<Integer> weIDs = Arrays.asList(ArrayUtils
-					.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.WORD_EMBEDDING.toString(), minCol, maxCol)));
-			List<Integer> bowIDs = Arrays.asList(ArrayUtils
-					.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.BAG_OF_WORDS.toString(), minCol, maxCol)));
-
-			dcIDs.removeAll(haIDs);
-			rcIDs.removeAll(haIDs);
-			
+			List<Integer> rcIDs = Arrays.asList(ArrayUtils.toObject(
+					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.RECODE.toString(), minCol, maxCol)));
+			List<Integer> hcIDs = Arrays.asList(ArrayUtils.toObject(
+					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.HASH.toString(), minCol, maxCol)));
+			List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
+					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.DUMMYCODE.toString(), minCol, maxCol)));
+			rcIDs = unionDistinct(rcIDs, dcIDs);
+			rcIDs = except(rcIDs, hcIDs);
 			int len = dcIDs.isEmpty() ? Math.min(meta.getNumColumns(), clen) : meta.getNumColumns();
 			List<Integer> ptIDs = except(except(UtilFunctions.getSeqList(1, len, 1), rcIDs), binIDs);
 			

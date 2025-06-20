@@ -79,6 +79,7 @@ public class DecoderBin extends Decoder {
 					}
 					catch(Exception e){
 						LOG.error(a);
+						LOG.error(in.slice(0, in.getNumRows()-1, _colList[j]-1,_colList[j]-1));
 						LOG.error( val);
 						throw e;
 					}

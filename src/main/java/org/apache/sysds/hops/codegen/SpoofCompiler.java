@@ -503,8 +503,6 @@ public class SpoofCompiler {
 			//remove empty templates with single cnodedata input, remove spurious lookups,
 			//perform common subexpression elimination)
 			cplans = cleanupCPlans(memo, cplans);
-
-			cPlanRowOptimizer(cplans);
 			
 			//explain before modification
 			if( LOG.isTraceEnabled() && !cplans.isEmpty() ) { //existing cplans
@@ -674,17 +672,6 @@ public class SpoofCompiler {
 		JAVA_COMPILER = (type != CompilerType.AUTO) ? type :
 			OptimizerUtils.isSparkExecutionMode() ? 
 			CompilerType.JANINO : CompilerType.JAVAC;
-	}
-
-	private static void cPlanRowOptimizer(HashMap<Long, Pair<Hop[],CNodeTpl>> cplans) {
-		for( Entry<Long, Pair<Hop[],CNodeTpl>> e : cplans.entrySet() ) {
-			CNodeTpl tpl = e.getValue().getValue();
-			Hop[] inHops = e.getValue().getKey();
-
-			if(tpl.getOutput() instanceof CNodeBinary) {
-				((CNodeBinary) tpl.getOutput()).setSparseRows();
-			}
-		}
 	}
 	
 	////////////////////

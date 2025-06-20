@@ -101,18 +101,6 @@ public class CNodeUnary extends CNode
 		_type = type;
 	}
 
-	public void iterator() {
-		if(this._inputs == null) {
-			return;
-		}
-		for(CNode input : this._inputs) {
-			if(input instanceof CNodeBinary)
-				((CNodeBinary)input).setSparseRows();
-			else if(input instanceof CNodeUnary)
-				((CNodeUnary)input).iterator();
-		}
-	}
-
 	@Override
 	public String codegen(boolean sparse, GeneratorAPI api) {
 		if( isGenerated() )

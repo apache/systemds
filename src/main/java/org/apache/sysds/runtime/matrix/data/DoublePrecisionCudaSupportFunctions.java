@@ -298,58 +298,52 @@ public class DoublePrecisionCudaSupportFunctions implements CudaSupportFunctions
 	@Override
 	public int cusparsedense2csr(cusparseHandle handle, int m, int n, cusparseMatDescr descrA, Pointer A, int lda,
 		Pointer nnzPerRow, Pointer csrValA, Pointer csrRowPtrA, Pointer csrColIndA) {
-		/* ------------------------------------------------------------------ */
-		/* 1. Determine index base and wrap the input/output in descriptors   */
-		/* ------------------------------------------------------------------ */
-		int idxBase = JCusparse.cusparseGetMatIndexBase(descrA);
-
-		cusparseDnMatDescr matDense = new cusparseDnMatDescr();
-		JCusparse.cusparseCreateDnMat(matDense, m, n, lda, A, CUDA_R_64F, CUSPARSE_ORDER_COL);
-
-		cusparseSpMatDescr matCsr = new cusparseSpMatDescr();
-		/* nnz initially 0 – cuSPARSE fills it during analysis phase */
-		JCusparse.cusparseCreateCsr(matCsr, m, n, 0L, csrRowPtrA, csrColIndA, csrValA, CUSPARSE_INDEX_32I,
-			CUSPARSE_INDEX_32I, idxBase, CUDA_R_64F);
-
-		/* ------------------------------------------------------------------ */
-		/* 2. Query temporary buffer size                                     */
-		/* ------------------------------------------------------------------ */
-		long[] bufSz = {0};
+		// setup
+		int dataType = CUDA_R_64F;
+		cusparseSpMatDescr csrDesc = new cusparseSpMatDescr();
+		cusparseDnMatDescr denseDesc = new cusparseDnMatDescr();
+		int idxBase = cusparseGetMatIndexBase(descrA);
 		int alg = CUSPARSE_DENSETOSPARSE_ALG_DEFAULT;
+		long[] bufferSize = {0};
+		Pointer dBuffer = new Pointer();
 
-		int status = JCusparse.cusparseDenseToSparse_bufferSize(handle, matDense.asConst(), matCsr, alg, bufSz);
-		if(status != CUSPARSE_STATUS_SUCCESS) {
-			JCusparse.cusparseDestroySpMat(matCsr.asConst());
-			JCusparse.cusparseDestroyDnMat(matDense.asConst());
-			return status;
-		}
+		// Create dense matrix A
+		cusparseCreateDnMat(denseDesc, m, n, lda, A, dataType, CUSPARSE_ORDER_COL);
 
-		Pointer buffer = new Pointer();
-		if(bufSz[0] > 0)
-			cudaMalloc(buffer, bufSz[0]);
+		// Create sparse matrix B in CSR format
+		cusparseCreateCsr(csrDesc, m, n, 0, csrRowPtrA, csrColIndA, csrValA, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+			idxBase, dataType);
+
+		// allocate an external buffer if needed
+		cusparseDenseToSparse_bufferSize(handle, denseDesc.asConst(), csrDesc, alg, bufferSize);
+		if(bufferSize[0] > 0)
+			cudaMalloc(dBuffer, bufferSize[0]);
+
+		// prepare Sparse to Dense conversion
+		cusparseDenseToSparse_analysis(handle, denseDesc.asConst(), csrDesc, alg, dBuffer);
+
+		/** Keep this in case needed later for debugging*/
+		/*long[] rowsTmp = {0}, colsTmp = {0}, nnz  = {0};
+		JCusparse.cusparseSpMatGetSize(csrDesc.asConst(), rowsTmp, colsTmp, nnz);
+
+		// only allocate if caller passed null pointers
+		if (csrColIndA == null)
+			cudaMalloc(csrColIndA, nnz[0] * Sizeof.INT);
+		if (csrValA == null)
+			cudaMalloc(csrValA, nnz[0] * Sizeof.DOUBLE);*/
+
+		// re-attach column & value pointers
+		JCusparse.cusparseCsrSetPointers(csrDesc, csrRowPtrA, csrColIndA, csrValA);
 
 		try {
-			/* -------------------------------------------------------------- */
-			/* 3. Symbolic pass: decide sparsity pattern, fill csrRowPtrA     */
-			/* -------------------------------------------------------------- */
-			status = JCusparse.cusparseDenseToSparse_analysis(handle, matDense.asConst(), matCsr, alg, buffer);
-			if(status != CUSPARSE_STATUS_SUCCESS)
-				return status;
-
-			/* -------------------------------------------------------------- */
-			/* 4. Numeric conversion: fill csrColIndA and csrValA             */
-			/* -------------------------------------------------------------- */
-			status = JCusparse.cusparseDenseToSparse_convert(handle, matDense.asConst(), matCsr, alg, buffer);
-			if(status != CUSPARSE_STATUS_SUCCESS)
-				return status;
-
-			return status;
+			// execute Sparse to Dense conversion
+			return cusparseDenseToSparse_convert(handle, denseDesc.asConst(), csrDesc, alg, dBuffer);
 		}
 		finally {
-			if(bufSz[0] > 0)
-				cudaFree(buffer);
-			JCusparse.cusparseDestroySpMat(matCsr.asConst());
-			JCusparse.cusparseDestroyDnMat(matDense.asConst());
+			cusparseDestroyDnMat(denseDesc.asConst());
+			cusparseDestroySpMat(csrDesc.asConst());
+			if(bufferSize[0] > 0)
+				cudaFree(dBuffer);
 		}
 	}
 

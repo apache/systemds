@@ -27,8 +27,6 @@ import java.util.Map.Entry;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.hops.UnaryOp;
-import org.apache.sysds.runtime.instructions.cp.DoubleObject;
-import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.hops.BinaryOp;
 
 import org.apache.sysds.common.Types.DataType;

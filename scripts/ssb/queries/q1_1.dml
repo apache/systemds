@@ -1,23 +1,19 @@
-source("/Users/ghafekalsaho/LDE/LDECode/systemds/scripts/builtin/raSelection.dml") as raSel
-source("/Users/ghafekalsaho/LDE/LDECode/systemds/scripts/builtin/raGroupby.dml") as raGrp
-source("/Users/ghafekalsaho/LDE/LDECode/systemds/scripts/builtin/raJoin.dml") as raJoin
+source("./scripts/builtin/raSelection.dml") as raSel
+source("./scripts/builtin/raGroupby.dml") as raGrp
+source("./scripts/builtin/raJoin.dml") as raJoin
 
 
 
 
 # READ INPUT
-date = read("/Users/ghafekalsaho/LDE/LDECode/systemds/data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-
-data_jspec = read("/Users/ghafekalsaho/LDE/LDECode/systemds/scripts/specs/date.tfspec_recode.json", data_type="scalar", value_type="string");
+date = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+data_jspec = read("./scripts/specs/date.tfspec_recode.json", data_type="scalar", value_type="string");
 
 [date_matrix, date_meta] = transformencode(target=date, spec=data_jspec);
 print("date loaded and transformed.");
 
-lineorder = read("/Users/ghafekalsaho/LDE/LDECode/systemds/data/lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-
-lineorder_jspec = read("/Users/ghafekalsaho/LDE/LDECode/systemds/scripts/specs/lineorder.tfspec_recode.json", data_type="scalar", value_type="string");
-
-
+lineorder = read("./data/lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+lineorder_jspec = read("./scripts/specs/lineorder.tfspec_recode.json", data_type="scalar", value_type="string");
 [lineorder_matrix, lineorder_meta] = transformencode(target=lineorder, spec=lineorder_jspec);
 print("lineorder loaded and transformed.");
 

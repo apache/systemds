@@ -2191,7 +2191,7 @@ public class LibSpoofPrimitives
 		return c;
 	}
 
-	public static SparseRowVector vectMultWrite(int len, double[] a, double[] b, int[] aix, int[] bix, int ai, int bi, int alen, int blen) {
+	public static SparseRowVector vectMultWriteB(int len, double[] a, double[] b, int[] aix, int[] bix, int ai, int bi, int alen, int blen) {
 		SparseRowVector c = allocSparseVector(Math.min(alen, blen));
 		if( a == null || b == null ) return c;
 		int aIndex = ai;
@@ -2212,6 +2212,26 @@ public class LibSpoofPrimitives
 				aIndex++;
 			else
 				bIndex++;
+		}
+		c.setSize(index);
+		return c;
+	}
+
+	public static SparseRowVector vectMultWrite(int len, double[] a, double[] b, int[] aix, int[] bix, int ai, int bi, int alen, int blen) {
+		SparseRowVector c = allocSparseVector(Math.min(alen, blen));
+		int index = 0;
+		int aItr = ai;
+		int bItr = bi;
+		int[] indexes = c.indexes();
+		double[] values = c.values();
+		while(aItr < ai+alen && bItr < bi+blen) {
+			int aIdx = aix[aItr];
+			int bIdx = bix[bItr];
+			indexes[index] = aIdx;
+			values[index] = a[aItr] * b[bItr];
+			index += aIdx == bIdx ? 1 : 0;
+			aItr += aIdx <= bIdx ? 1 : 0;
+			bItr += aIdx >= bIdx ? 1 : 0;
 		}
 		c.setSize(index);
 		return c;
@@ -2248,7 +2268,7 @@ public class LibSpoofPrimitives
 		return c;
 	}
 
-	public static SparseRowVector vectDivWrite(int len, double[] a, double[] b, int[] aix, int[] bix, int ai, int bi, int alen, int blen) {
+	public static SparseRowVector vectDivWriteB(int len, double[] a, double[] b, int[] aix, int[] bix, int ai, int bi, int alen, int blen) {
 		SparseRowVector c = allocSparseVector(alen);
 		int aIndex = ai;
 		int bIndex = bi;
@@ -2272,6 +2292,26 @@ public class LibSpoofPrimitives
 			} else {
 				bIndex++;
 			}
+		}
+		c.setSize(index);
+		return c;
+	}
+
+	public static SparseRowVector vectDivWrite(int len, double[] a, double[] b, int[] aix, int[] bix, int ai, int bi, int alen, int blen) {
+		SparseRowVector c = allocSparseVector(Math.min(alen, blen));
+		int index = 0;
+		int aItr = ai;
+		int bItr = bi;
+		int[] indexes = c.indexes();
+		double[] values = c.values();
+		while(aItr < ai+alen && bItr < bi+blen) {
+			int aIdx = aix[aItr];
+			int bIdx = bix[bItr];
+			indexes[index] = aIdx;
+			values[index] = a[aItr] / b[bItr];
+			index += aIdx == bIdx ? 1 : 0;
+			aItr += aIdx <= bIdx ? 1 : 0;
+			bItr += aIdx >= bIdx ? 1 : 0;
 		}
 		c.setSize(index);
 		return c;

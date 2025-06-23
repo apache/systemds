@@ -14,14 +14,14 @@ lineorder_jspec = read("./scripts/specs/lineorder.tfspec_recode.json", data_type
 [lineorder_matrix, lineorder_meta] = transformencode(target=lineorder, spec=lineorder_jspec);
 print("lineorder loaded and transformed.");
 
-part = read("/Users/ghafekalsaho/LDE/LDECode/systemds/data/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-part_jspec = read("/Users/ghafekalsaho/Downloads/build/part.tfspec_recode.json", data_type="scalar", value_type="string");
+part = read("./data/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+part_jspec = read("./scripts/specs/part.tfspec_recode.json", data_type="scalar", value_type="string");
 [part_matrix, part_meta] = transformencode(target=part, spec=part_jspec);
 print("part loaded and transformed.");
 #print(part_meta);
 
-supplier = read("/Users/ghafekalsaho/LDE/LDECode/systemds/data/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-supplier_jspec = read("/Users/ghafekalsaho/LDE/LDECode/systemds/scripts/specs/supplier.tfspec_recode.json", data_type="scalar", value_type="string");
+supplier = read("./data/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+supplier_jspec = read("./scripts/specs/supplier.tfspec_recode.json", data_type="scalar", value_type="string");
 [supplier_matrix, supplier_meta] = transformencode(target=supplier, spec=supplier_jspec);
 print("supplier loaded and transformed.");
 #print(supplier_meta);

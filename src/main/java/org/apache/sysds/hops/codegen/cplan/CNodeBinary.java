@@ -159,10 +159,6 @@ public class CNodeBinary extends CNode {
 		sb.append(_inputs.get(0).codegen(sparse, api));
 		sb.append(_inputs.get(1).codegen(sparse, api));
 
-		/**
-		 * todo: remember that only certain primitives will be called through this method,
-		 *  because the optimizer will choose which primitive functions should be calculated sparse and which not
-		 */
 		if(DMLScript.SPARSE_INTERMEDIATE) {
 			//generate binary operation (use sparse template, if data input)
 			boolean lsparseLhs = sparse ? _inputs.get(0) instanceof CNodeData
@@ -206,7 +202,6 @@ public class CNodeBinary extends CNode {
 						&& TemplateUtils.isColVector(_inputs.get(j)))) && _type!=BinType.VECT_MATRIXMULT) ?
 						varj + ".pos(rix)" : "0" : "0");
 			}
-			//todo: the following if else block could be simplified, because the first condition won't be true
 			//replace length information (e.g., after matrix mult)
 			if( _type == BinType.VECT_OUTERMULT_ADD || (_type == BinType.VECT_CBIND && vectorVector)) {
 				for( int j=0; j<2; j++ )

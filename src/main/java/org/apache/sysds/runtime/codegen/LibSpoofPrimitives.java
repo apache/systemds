@@ -2736,13 +2736,10 @@ public class LibSpoofPrimitives
 				aItr++;
 				bItr++;
 			} else if(aIdx < bIdx) {
-				//todo: this might be too unsafe
 				c[aIdx] = a[aItr] == 0 ? 1 : 0;
-				//				c[aIdx] = 0;
 				aItr++;
 			} else {
 				c[bIdx] = b[bItr] == 0 ? 1 : 0;
-				//				c[bIdx] = 0;
 				bItr++;
 			}
 		}

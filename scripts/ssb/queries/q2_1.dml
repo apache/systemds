@@ -1,76 +1,115 @@
-source("./scripts/builtin/raSelection.dml") as raSel
-source("./scripts/builtin/raGroupby.dml") as raGrp
-source("./scripts/builtin/raJoin.dml") as raJoin
+source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raSelection.dml") as raSel
+source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raGroupby.dml") as raGrp
+source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raJoin.dml") as raJoin
 
 # READ INPUTS
-date = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-data_jspec = read("./scripts/specs/date.tfspec_recode.json", data_type="scalar", value_type="string");
+date = read("../date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+data_jspec = read("../date.tfspec_recode.json", data_type="scalar", value_type="string");
 [date_matrix, date_meta] = transformencode(target=date, spec=data_jspec);
 print("date loaded and transformed.");
 
-lineorder = read("./data/lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-lineorder_jspec = read("./scripts/specs/lineorder.tfspec_recode.json", data_type="scalar", value_type="string");
+lineorder = read("../lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+lineorder_jspec = read("../lineorder.tfspec_recode.json", data_type="scalar", value_type="string");
 [lineorder_matrix, lineorder_meta] = transformencode(target=lineorder, spec=lineorder_jspec);
 print("lineorder loaded and transformed.");
 
-part = read("./data/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-part_jspec = read("./scripts/specs/part.tfspec_recode.json", data_type="scalar", value_type="string");
+part = read("../part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+part_jspec = read("../part.tfspec_recode.json", data_type="scalar", value_type="string");
 [part_matrix, part_meta] = transformencode(target=part, spec=part_jspec);
 print("part loaded and transformed.");
-#print(part_meta);
 
-supplier = read("./data/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-supplier_jspec = read("./scripts/specs/supplier.tfspec_recode.json", data_type="scalar", value_type="string");
+supplier = read("../supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+supplier_jspec = read("../supplier.tfspec_recode.json", data_type="scalar", value_type="string");
 [supplier_matrix, supplier_meta] = transformencode(target=supplier, spec=supplier_jspec);
 print("supplier loaded and transformed.");
-#print(supplier_meta);
 
-# JOIN: lineorder ⨝ date on lo_orderdate = d_datekey (colA=6, colB=1)
-lo_date = raJoin::m_raJoin(A=lineorder_matrix, colA=6, B=date_matrix, colB=1, method="sort-merge");
 
-# JOIN: ⨝ part on lo_partkey = p_partkey (colA=3, colB=1)
-lo_date_part = raJoin::m_raJoin(A=lo_date, colA=4, B=part_matrix, colB=1, method="sort-merge");
-
-# JOIN: ⨝ supplier on lo_suppkey = s_suppkey (colA=4, colB=1)
-joined_matrix = raJoin::m_raJoin(A=lo_date_part, colA=5, B=supplier_matrix, colB=1, method="sort-merge");
-print("All tables joined.");
+#date = 0;
+#lineorder = 0;
+#part = 0;
+#supplier = 0;
 
 
 # FILTERS
 # "MFGR#12"
-filt_cat = raSel::m_raSelection(joined_matrix, col=(4 + ncol(lineorder_matrix) + ncol(date_matrix)), op="==", val=2);
+part_filt = raSel::m_raSelection(part_matrix, col=4, op="==", val=2);
 
-# s_region = 'AMERICA'
-filt_region = raSel::m_raSelection(filt_cat, col=(6 + ncol(lineorder_matrix) + ncol(date_matrix) + ncol(part_matrix)), op="==", val=1);
+# 'AMERICA'
+sup_filt = raSel::m_raSelection(supplier_matrix, col=6, op="==", val=1);
+print("Selection done.");
+
+
+# JOIN: lineorder ⨝ date
+lo_date = raJoin::m_raJoin(A=lineorder_matrix, colA=6, B=date_matrix, colB=1, method="sort-merge");
+print("lo-date joined");
+
+# JOIN: ⨝ part 
+lo_date_part = raJoin::m_raJoin(A=lo_date, colA=4, B= part_filt, colB=1, method="sort-merge");
+print("lo-date-part joined");
+
+# JOIN: ⨝ supplier 
+joined_matrix = raJoin::m_raJoin(A=lo_date_part, colA=5, B= sup_filt, colB=1, method="sort-merge");
+print("lo-date-part-supplier joined");
+print("All tables joined.");
 
 
 # PREPARE GROUPBY
-revenue = filt_region[,13];
-d_year = filt_region[,(ncol(lineorder_matrix) + 5)];
-p_brand = filt_region[,(ncol(lineorder_matrix) + ncol(date_matrix) + 5)];
+revenue = joined_matrix[,13];
+d_year = joined_matrix[,(ncol(lineorder_matrix) + 5)];
+p_brand = joined_matrix[,(ncol(lineorder_matrix) + ncol(date_matrix) + 5)];
+print(p_brand);
 
 
 # GROUPBY
-group_input = cbind(revenue, d_year, p_brand);
-#go = order(target=group_input, by=1, decreasing=FALSE, index.return=FALSE);
-#print(go);
-#print(nrow(go) + ", " + ncol(go));
-
 year_brand = d_year * 1000 + p_brand
 group2_input = cbind(revenue, year_brand);
 
 agg_result = raGrp::m_raGroupby(X=group2_input, col=2, method="nested-loop");
-print(agg_result);
-print(nrow(agg_result) + ", " + ncol(agg_result));
-ordered_result = order(target= agg_result, by=2, decreasing=FALSE, index.return=FALSE);
-print(ordered_result);
+#print(agg_result);
 
-/*
-agg_result2 = raGrp::m_raGroupby(X= agg_result, col=3, method="nested-loop");
-#print(agg_result2);
+c_1 = agg_result[, 1];
+c_2 = agg_result[, 2] + agg_result[, 3];
+summed_result = cbind(c_1, c_2);
 
-ordered_result = order(target=agg_result2, by=3, decreasing=FALSE, index.return=FALSE);
+ordered_result = order(target=summed_result, by=2, decreasing=FALSE, index.return=FALSE);
+#print(ordered_result);
+
+p_brand2 = ((ordered_result[, 1] / 1000) - floor(ordered_result[, 1] / 1000)) * 1000;
+d_year2 = ordered_result[,1] / 1000 - p_brand2 / 1000;
+result = cbind(ordered_result[,2], d_year2, p_brand2);
+result_ordered = order(target=result, by=1, decreasing=FALSE, index.return=FALSE);
+print(p_brand2);
 
 print("Aggregated revenue grouped by year and brand:");
-#print(ordered_result);
-*/
+#print(result_ordered);
+
+#print(part_meta);
+#write(part, "../test.tbl", format="csv");
+#write(part_matrix, "../testMatrix.tbl", format="csv");
+#write(part_meta, "../testMeta.tbl", format="csv", header=FALSE);
+
+A = part_meta[, 5];
+#print(A);
+#write(A, "../testA.tbl", format="csv", header=FALSE);
+
+part_jspec2 = read("../part2.tfspec_recode.json", data_type="scalar", value_type="string");
+
+B = transformdecode(target=result_ordered[, 3], spec=part_jspec2, meta=A);
+#print(B);
+
+B_1 = transformdecode(target=p_brand, spec=part_jspec2, meta=A);
+print(B_1);
+
+tmp = matrix(982, 1, 1);
+print(tmp); 
+print(result_ordered[1, 3]);
+B_2 = transformdecode(target=tmp, spec=part_jspec2, meta=A);
+B_3 = transformdecode(target=p_brand2[1], spec=part_jspec2, meta=A);
+print(B_2);
+print(B_3);
+
+res = cbind(as.frame(result_ordered[, 1]), as.frame(result_ordered[, 2]), B);
+#print(res);
+
+
+

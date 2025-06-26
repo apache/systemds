@@ -28,7 +28,7 @@ library("einsum")
 X = matrix(seq(1,6000), 600, 10, byrow=TRUE);
 P = matrix(seq(1,3000), 600, 5, byrow=TRUE);
 
-# R = rowSums(P) * rowSums(X)
-R = einsum("ji,jz->j",P,X)
+# R = colSums(t(P) %*% X);
+R = einsum("ji,jz->z",P,X)
 
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep="")); 

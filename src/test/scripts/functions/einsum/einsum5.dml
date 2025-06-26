@@ -18,13 +18,12 @@
 # under the License.
 #
 #-------------------------------------------------------------
-
-X = matrix(seq(1,6000), 600, 10);
 P = matrix(seq(1,3000), 600, 5)
+X = matrix(seq(1,6000), 600, 10);
 
 while(FALSE){}
 
 #R = colSums(t(P) %*% X) ;
 
-R = einsum("ji,jz->j",P,X)
+R = einsum("ji,jz->z",P,X)
 write(R, $1)

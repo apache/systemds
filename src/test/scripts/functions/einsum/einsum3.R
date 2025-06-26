@@ -25,8 +25,8 @@ library("Matrix")
 library("matrixStats")
 library("einsum")
 
-X = matrix(seq(1,6000), 600, 10, byrow=TRUE);
 P = matrix(seq(1,3000), 600, 5, byrow=TRUE);
+X = matrix(seq(1,6000), 600, 10, byrow=TRUE);
 
 # R = sum(t(P) %*% X);
 R = einsum("ji,jz->i",P,X)

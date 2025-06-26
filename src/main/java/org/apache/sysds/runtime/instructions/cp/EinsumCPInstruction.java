@@ -39,6 +39,7 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.functionobjects.*;
+import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
@@ -165,8 +166,12 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 				AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 
 				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), _numThreads);
-				MatrixBlock newB = (MatrixBlock)inputs.get(i).aggregateUnaryOperations(aggun,new MatrixBlock(),inputs.get(i).getNumRows(),null);
-				inputs.set(i, newB);
+				MatrixBlock res = new MatrixBlock();
+				res.setNumRows(1);
+				res.setNumColumns(1);
+				LibMatrixAgg.aggregateUnaryMatrix(inputs.get(i), res, aggun, _numThreads);
+//				MatrixBlock newB = (MatrixBlock)inputs.get(i).aggregateUnaryOperations(aggun,new MatrixBlock(),inputs.get(i).getNumRows(),null);
+				inputs.set(i, res);
 
 			}else if(einc.contractDims[i] == CONTRACT_RIGHT){
 				//rowSums (remove 2nd dim)
@@ -174,8 +179,12 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 				AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 
 				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), _numThreads);
-				MatrixBlock newB = (MatrixBlock)inputs.get(i).aggregateUnaryOperations(aggun,new MatrixBlock(),inputs.get(i).getNumRows(),null);
-				inputs.set(i, newB);
+				MatrixBlock res = new MatrixBlock();
+				res.setNumRows(inputs.get(i).getNumRows());
+				res.setNumColumns(1);
+				LibMatrixAgg.aggregateUnaryMatrix(inputs.get(i), res, aggun, _numThreads);
+//				MatrixBlock newB = (MatrixBlock)inputs.get(i).aggregateUnaryOperations(aggun,new MatrixBlock(),inputs.get(i).getNumRows(),null);
+				inputs.set(i, res);
 
 			}else if(einc.contractDims[i] == CONTRACT_LEFT){
 				//colSums (remove 1st dim)
@@ -183,8 +192,12 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 				AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 
 				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), _numThreads);
-				MatrixBlock newB = (MatrixBlock)inputs.get(i).aggregateUnaryOperations(aggun,new MatrixBlock(),inputs.get(i).getNumColumns(),null);
-				inputs.set(i, newB);
+				MatrixBlock res = new MatrixBlock();
+				res.setNumRows(inputs.get(i).getNumColumns());
+				res.setNumColumns(1);
+				LibMatrixAgg.aggregateUnaryMatrix(inputs.get(i), res, aggun, _numThreads);
+//				MatrixBlock newB = (MatrixBlock)inputs.get(i).aggregateUnaryOperations(aggun,new MatrixBlock(),inputs.get(i).getNumColumns(),null);
+				inputs.set(i, res);
 			}
 		}
 		for(Integer idx : diagMatrices){

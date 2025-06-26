@@ -18,11 +18,17 @@
 # under the License.
 #
 #-------------------------------------------------------------
-P = matrix(seq(1,3000), 600, 5)
-X = matrix(seq(1,6000), 10, 600);
 
-while(FALSE){}
+args<-commandArgs(TRUE)
+options(digits=22)
+library("Matrix")
+library("matrixStats")
+library("einsum")
 
+X = matrix(seq(1,6000), 600, 10, byrow=TRUE);
+P = matrix(seq(1,30), 6, 5, byrow=TRUE);
 
-R = einsum("ji,zj->i",P,X)
-write(R, $1)
+# R = P * sum(X)
+R = einsum("ab,cd->ba",P,X)
+
+writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep="")); 

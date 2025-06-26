@@ -64,7 +64,6 @@ import org.apache.sysds.runtime.instructions.cp.TernaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UaggOuterChainCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.EinsumCPInstruction;
 import org.apache.sysds.runtime.instructions.cpfile.MatrixIndexingCPFileInstruction;
 
 public class CPInstructionParser extends InstructionParser {
@@ -219,6 +218,7 @@ public class CPInstructionParser extends InstructionParser {
 
 			case EvictLineageCache:
 				return EvictCPInstruction.parseInstruction(str);
+
 			default:
 				throw new DMLRuntimeException("Invalid CP Instruction Type: " + cptype );
 		}

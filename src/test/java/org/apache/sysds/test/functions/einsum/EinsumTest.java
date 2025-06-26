@@ -51,6 +51,7 @@ public class EinsumTest extends AutomatedTestBase
 	private static final String TEST_EINSUM11 = TEST_NAME_EINSUM+"11";
 	private static final String TEST_EINSUM12 = TEST_NAME_EINSUM+"12";
 	private static final String TEST_EINSUM13 = TEST_NAME_EINSUM+"13";
+	private static final String TEST_EINSUM14 = TEST_NAME_EINSUM+"14";
 	private static final String TEST_DIR = "functions/einsum/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + EinsumTest.class.getSimpleName() + "/";
 	private final static String TEST_CONF = "SystemDS-config-codegen.xml";
@@ -61,7 +62,7 @@ public class EinsumTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		for(int i=1; i<=13; i++)
+		for(int i=1; i<=14; i++)
 			addTestConfiguration( TEST_NAME_EINSUM+i, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_EINSUM+i, new String[] { String.valueOf(i) }) );
 	}
 	@Test
@@ -113,6 +114,10 @@ public class EinsumTest extends AutomatedTestBase
 	@Test
 	public void testCodegenEinsum13CP() {
 		testCodegenIntegration( TEST_EINSUM13, ExecType.CP, true );
+	}
+	@Test
+	public void testCodegenEinsum14CP() {
+		testCodegenIntegration( TEST_EINSUM14, ExecType.CP);
 	}
 	private void testCodegenIntegration( String testname, ExecType instType) { testCodegenIntegration(testname, instType, false);  }
 	private void testCodegenIntegration( String testname, ExecType instType, boolean outputScalar )

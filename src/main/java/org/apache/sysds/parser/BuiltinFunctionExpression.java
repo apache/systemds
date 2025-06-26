@@ -2112,11 +2112,12 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 					LanguageErrorCodes.INVALID_PARAMETERS);
 
 		String eq_string = ((StringIdentifier)getFirstExpr()).getValue();
-		String[] eqStringParts = eq_string.split("->");
 
-		if(eqStringParts.length != 2)
-			raiseValidateError("Einsum: equation str should contain one '->' substring", false,
-					LanguageErrorCodes.INVALID_PARAMETERS);
+		if (eq_string.length() == 0) raiseValidateError("Einsum: equation str too short", false, LanguageErrorCodes.INVALID_PARAMETERS);
+		if (eq_string.charAt(0) == '-' || eq_string.charAt(0) == ',') raiseValidateError("Einsum: equation str invalid", false, LanguageErrorCodes.INVALID_PARAMETERS);
+
+		String[] eqStringParts = eq_string.split("->"); // length 2 if "...->..." , length 1 if "...->"
+		boolean isResultScalar = eqStringParts.length == 1;
 
 		Expression[] expressions = getAllExpr();
 		boolean allDimsKnown = true;
@@ -2131,6 +2132,8 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			matrixBlocks.add((expressions[i].getOutput()));
 		}
 
+		StringBuilder newEqString = new StringBuilder();
+
 		if(allDimsKnown) { // validate dimension sizes as well
 			HashMap<Character, Long> charToDimensionSize = new HashMap<>();
 			Iterator<Identifier> it = matrixBlocks.iterator();
@@ -2139,6 +2142,8 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			int numberOfMatrices = 1;
 			for (int i = 0; i < eqStringParts[0].length(); i++) {
 				char c = eq_string.charAt(i);
+				if(c==' ') continue;
+				newEqString.append(c);
 				if(c==','){
 					if(!it.hasNext())
 						raiseValidateError("Einsum: Provided less operands than specified in equation str",
@@ -2146,10 +2151,7 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 					currArr = it.next();
 					arrSizeIterator = 0;
 					numberOfMatrices++;
-				}else if(c==' '){
-					continue;
-				}
-				else{
+				} else{
 					long thisCharDimension = arrSizeIterator == 0 ? currArr.getDim1() : currArr.getDim2();
 					if (charToDimensionSize.containsKey(c)){
 						if (charToDimensionSize.get(c) != thisCharDimension)
@@ -2164,60 +2166,76 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			if (getAllExpr().length - 1 > numberOfMatrices)
 				raiseValidateError("Einsum: Provided more operands than specified in equation str",
 						false, LanguageErrorCodes.INVALID_PARAMETERS);
+			newEqString.append("->");
 
-			int numberOfDimensions = 0;
-			long dim1 = 1;
-			long dim2 = 1;
-			for (int i = 0; i < eqStringParts[1].length(); i++) {
-				char c = eqStringParts[i].charAt(i);
-				if(c!=' '){
-					if(numberOfDimensions == 0){
-						dim1 = charToDimensionSize.get(c);
-					}else{
-						dim2 = charToDimensionSize.get(c);
-					}
-					numberOfDimensions++;
-				}
-			}
-			if(numberOfDimensions == 0){
+			if (isResultScalar){
 				output.setDataType(DataType.SCALAR);
 				output.setDimensions(-1, -1);
-			}else if(numberOfDimensions > 2){
-				raiseValidateError("Einsum: output matrices with with no. dims > 2 not supported",
-						false, LanguageErrorCodes.INVALID_PARAMETERS);
 			}else {
-				output.setDataType(DataType.MATRIX);
-				output.setDimensions(dim1, dim2);
+				int numberOfOutDimensions = 0;
+				Character dim1Char = null;
+				long dim1 = 1;
+				long dim2 = 1;
+				for (int i = 0; i < eqStringParts[1].length(); i++) {
+					char c = eqStringParts[1].charAt(i);
+					if (c == ' ') continue;
+					newEqString.append(c);
+					if (numberOfOutDimensions == 0) {
+						dim1Char = c;
+						dim1 = charToDimensionSize.get(c);
+					} else {
+						if(c==dim1Char) raiseValidateError("Einsum: output character "+c+" provided multiple times",false, LanguageErrorCodes.INVALID_PARAMETERS);
+						dim2 = charToDimensionSize.get(c);
+					}
+					numberOfOutDimensions++;
+				}
+				if (numberOfOutDimensions > 2) {
+					raiseValidateError("Einsum: output matrices with with no. dims > 2 not supported",false, LanguageErrorCodes.INVALID_PARAMETERS);
+				} else {
+					output.setDataType(DataType.MATRIX);
+					output.setDimensions(dim1, dim2);
+				}
 			}
 		} else { // dimensions unknown
 			int numberOfMatrices = 1;
 			for (int i = 0; i < eqStringParts[0].length(); i++) {
-				if(eqStringParts[0].charAt(i) == ',')
+				char c = eqStringParts[0].charAt(i);
+				if(c == ' ') continue;
+				newEqString.append(c);
+				if(c == ',')
 					numberOfMatrices++;
 			}
 			checkNumParameters(numberOfMatrices+1);
+			newEqString.append("->");
 
-			int numberOfDimensions = 0;
-			for (int i = 0; i < eqStringParts[1].length(); i++) {
-				char c = eqStringParts[i].charAt(i);
-				if(c!=' '){
-					numberOfDimensions++;
-				}
-			}
-
-			if(numberOfDimensions==0){
+			if(isResultScalar){
 				output.setDataType(DataType.SCALAR);
 				output.setDimensions(-1, -1);
-			}else if(numberOfDimensions>2){
-				raiseValidateError("Einsum: output matrices with with no. dims > 2 not supported",
-						false, LanguageErrorCodes.INVALID_PARAMETERS);
-			}else{
-				output.setDataType(DataType.MATRIX);
-				output.setDimensions(-1, -1);
+			}else {
+				int numberOfDimensions = 0;
+				Character dim1Char = null;
+				for (int i = 0; i < eqStringParts[1].length(); i++) {
+					char c = eqStringParts[i].charAt(i);
+					if(c == ' ') continue;
+					newEqString.append(c);
+					numberOfDimensions++;
+					if (numberOfDimensions == 1 && c == dim1Char)
+						raiseValidateError("Einsum: output character "+c+" provided multiple times",false, LanguageErrorCodes.INVALID_PARAMETERS);
+					dim1Char = c;
+				}
+
+				if (numberOfDimensions > 2) {
+					raiseValidateError("Einsum: output matrices with with no. dims > 2 not supported",
+							false, LanguageErrorCodes.INVALID_PARAMETERS);
+				} else {
+					output.setDataType(DataType.MATRIX);
+					output.setDimensions(-1, -1);
+				}
 			}
 		}
 		output.setValueType(ValueType.FP64);
 		output.setBlocksize(getSecondExpr().getOutput().getBlocksize());
+		((StringIdentifier) getFirstExpr()).setValue(newEqString.toString());
 	}
 
 	private void setBinaryOutputProperties(DataIdentifier output) {

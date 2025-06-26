@@ -54,29 +54,16 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 	public static boolean FORCE_CELL_TPL = false;
 	protected static final Log LOG = LogFactory.getLog(EinsumCPInstruction.class.getName());
 	public String eqStr;
-	private final Class<?> _class;
-	private final SpoofOperator _op;
 	private final int _numThreads;
 	private final CPOperand[] _in;
 
 	public EinsumCPInstruction(Operator op, String opcode, String istr, CPOperand out, CPOperand... inputs)
 	{
 		super(op, opcode, istr, out, inputs);
-		_class = null;
-		_op = null;
 		_numThreads = OptimizerUtils.getConstrainedNumThreads(-1);
 		_in = inputs;
 		this.eqStr = inputs[0].getName();
 		Logger.getLogger(EinsumCPInstruction.class).setLevel(Level.TRACE);
-	}
-
-
-	public SpoofOperator getSpoofOperator() {
-		return _op;
-	}
-
-	public Class<?> getOperatorClass() {
-		return _class;
 	}
 
 	private static final int CONTRACT_LEFT = 1;
@@ -262,7 +249,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 					res = remMbs.get(0).reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
 				}
 			}else{
-				throw new RuntimeException("did not expect this!");
+				throw new RuntimeException("Einsum runtime error"); // should not happen
 			}
 			ec.setMatrixOutput(output.getName(), res);
 		}
@@ -277,20 +264,16 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 					chars.add(inputsChars.get(i));
 				}
 			}
-			if(chars.size()==1 && chars.get(0).equals(parts[1])){ // maybe result is correct after all... (need to improve logic if cell is needed but for now just check if maybe all is OK)
-				ec.setMatrixOutput(output.getName(), mbs.get(0));
-			}else {
-				ArrayList summingChars = new ArrayList();
-				for (Character c : partsCharactersToIndices.keySet()) {
-					if (c != outChar1 && c != outChar2) summingChars.add(c);
-				}
-
-				MatrixBlock res = computeCellSummation(mbs, chars, parts[1], einc.charToDimensionSizeInt, summingChars, einc.outRows, einc.outCols);
-
-				if (einc.outRows == 1 && einc.outCols == 1)
-					ec.setScalarOutput(output.getName(), new DoubleObject(res.get(0, 0)));
-				else ec.setMatrixOutput(output.getName(), res);
+			ArrayList summingChars = new ArrayList();
+			for (Character c : partsCharactersToIndices.keySet()) {
+				if (c != outChar1 && c != outChar2) summingChars.add(c);
 			}
+
+			MatrixBlock res = computeCellSummation(mbs, chars, parts[1], einc.charToDimensionSizeInt, summingChars, einc.outRows, einc.outCols);
+
+			if (einc.outRows == 1 && einc.outCols == 1)
+				ec.setScalarOutput(output.getName(), new DoubleObject(res.get(0, 0)));
+			else ec.setMatrixOutput(output.getName(), res);
 		}
 
 		releaseMatrixInputs(ec);
@@ -318,15 +301,11 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 
 	/*  handle situation: ji,ji or ij,ji */
 	private boolean multiplyTerms(HashMap<Character, ArrayList<Integer>> partsCharactersToIndices, ArrayList<MatrixBlock> inputs, ArrayList<String> inputsChars, Character outChar1, Character outChar2 ) {
-		ArrayList<Integer> multiplyIdxs = new ArrayList<>();
-		ArrayList<Integer> transposeMultiplyIdxs = new ArrayList<>();
-
 		HashMap<String, ArrayList<Integer>> stringToIndex = new HashMap<>();
 
 		for(int i = 0; i < inputsChars.size(); i++){
 			String s = inputsChars.get(i);
 			if(s==null) continue;
-//			if(s.length() != 2) continue;
 
 			if (stringToIndex.containsKey(s)) stringToIndex.get(s).add(i);
 			else { ArrayList<Integer> list = new ArrayList<>(); list.add(i); stringToIndex.put(s, list); }
@@ -353,8 +332,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 					sb.append(inputsChars.get(idx));
 					sb.append(",");
 				}
-				if(idxsT != null)
-				for(Integer idx : idxsT){
+				if(idxsT != null) for(Integer idx : idxsT){
 					sb.append(inputsChars.get(idx));
 					sb.append(",");
 				}
@@ -366,8 +344,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 				inputsChars.set(idx, null);
 			}
 			ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
-			if(idxsT != null)
-			for(Integer idx : idxsT){
+			if(idxsT != null) for(Integer idx : idxsT){
 				mbs.add(inputs.get(idx).reorgOperations(transpose, new MatrixBlock(), 0, 0, 0));
 				inputs.set(idx, null);
 				inputsChars.set(idx, null);
@@ -377,25 +354,25 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 
 			inputs.add(mb);
 			inputsChars.add(s);
-
 			for (int i = 0; i < s.length(); i++) { // for each char in string, add pointer to newly created entry
 				char c = s.charAt(i);
 				partsCharactersToIndices.get(c).add(inputs.size() - 1);
 			}
 
-			if(idxsT != null)
-			stringToIndex.remove(sT);
+			if(idxsT != null) stringToIndex.remove(sT);
 		}
 
 		return doneAnything;
 	}
 
+	// returns true if left with summation with more than 2 inputs
 	private boolean sumCharactersWherePossible(HashMap<Character, ArrayList<Integer>> partsCharactersToIndices, ArrayList<MatrixBlock> inputs, ArrayList<String> inputsChars, Character outChar1, Character outChar2) {
 		boolean anyCouldNotDo = false;
 
 		while (true) {
 			List<Integer> toSum = null;
 			Character sumC = null;
+			anyCouldNotDo = false;
 			for (Character c : partsCharactersToIndices.keySet()) { // sum one dim at the time
 				if (c == outChar1 || c == outChar2)
 					continue;
@@ -447,51 +424,6 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		aB_aB, Ba_Ba, Ba_aB, aB_Ba,// mult and sums, something like ij,ij->i
 	}
 
-	private enum AggregateAtEnd{
-		Left,
-		Right,
-		Both,
-		None,
-	}
-	private Pair<MatrixBlock, String> computRowSummationsOutputCharsOnly(List<MatrixBlock> inputs, List<String> inputsChars, String resString, Double scalar ){
-		if(resString.length() == 1){
-			// dont expect more than two of these, throw error if happens
-			if(inputs.size() != 2) throw new RuntimeException("did not expects this, please fix me");
-			MatrixBlock mb = getRowCodegenMatrixBlock(inputs.get(0), inputs.get(1), CNodeBinary.BinType.VECT_MULT, SpoofRowwise.RowType.NO_AGG);
-			return Pair.of(mb, inputsChars.get(0));
-		}else{ // resString.length() == 2
-			// something like a,a,b,b,ab,ba
-			// group them
-
-			ArrayList<MatrixBlock> a = new ArrayList<>();
-			ArrayList<MatrixBlock> b = new ArrayList<>();
-			ArrayList<MatrixBlock> ab = new ArrayList<>();
-			ArrayList<MatrixBlock> ba = new ArrayList<>();
-			for(int i =0;i< inputs.size(); i++){
-				String s = inputsChars.get(i);
-				if(s.length() == 2){
-					if(s.equals(resString)) ab.add(inputs.get(i));
-					else ba.add(inputs.get(i));
-				}else{
-					if(s.charAt(0)==resString.charAt(0)) a.add(inputs.get(i));
-					else b.add(inputs.get(i));
-				}
-			}
-			// mult all a-s:
-			// mult all b-s:
-			// check if there is ab or ba
-			// if no:
-			//   then do outer product axb or bxa
-			// if there is then:
-			//   mult ba and a
-			//   mult ab and b
-			//   transp ba into ab
-			//   mult 2 ab and ab
-			return Pair.of( ab.get(0) ,resString);
-//			throw new NotImplementedException("todo");
-//			return null;
-		}
-	}
 	private Pair<MatrixBlock, String> computeRowSummation(List<Integer> toSum, ArrayList<MatrixBlock> inputs, List<String> inputsChars, Character sumChar) {
 		return computeRowSummation(toSum,inputs,inputsChars, null, sumChar);
 	}
@@ -859,7 +791,6 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			src = src.replace("%OUT%", sb.toString());
 		}
 
-//				String src = needsSumming ? cnode.codegenEinsum(false, SpoofCompiler.GeneratorAPI.JAVA, sb.toString(), outVar) : cnode.codegenEinsum(false, SpoofCompiler.GeneratorAPI.JAVA, "", sb.toString());
 		LOG.trace(src);
 		Class cla = CodegenUtils.compileClass("codegen." + cnode.getClassname(), src);
 		SpoofOperator op = CodegenUtils.createInstance(cla);
@@ -871,46 +802,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		return out;
 	}
 
-
 	public CPOperand[] getInputs() {
 		return _in;
 	}
-
-	private static final IDSequence _idSeqfn = new IDSequence();
-
-	private final static String tmpCell =
-			"package codegen;\n" +
-			"import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;\n" +
-			"import org.apache.sysds.runtime.codegen.SpoofCellwise;\n" +
-			"import org.apache.sysds.runtime.codegen.SpoofCellwise.AggOp;\n" +
-			"import org.apache.sysds.runtime.codegen.SpoofCellwise.CellType;\n" +
-			"import org.apache.sysds.runtime.codegen.SpoofOperator.SideInput;\n" +
-			"import org.apache.commons.math3.util.FastMath;\n" +
-			"public final class %TMP% extends SpoofCellwise {\n" +
-			"  public %TMP%() {\n" +
-			"    super(CellType.NO_AGG, false, true, null);\n" +
-			"  }\n" +
-			"  protected double genexec(double a, SideInput[] b, double[] scalars, int m, int n, long grix, int rix, int cix) { \n" +
-			"    %BODY_dense%" +
-			"    return %OUT%;\n" +
-			"  }\n" +
-			"}";
-	public static final String JAVA_TEMPLATE =
-			"package codegen;\n"
-					+ "import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;\n"
-					+ "import org.apache.sysds.runtime.codegen.SpoofCellwise;\n"
-					+ "import org.apache.sysds.runtime.codegen.SpoofCellwise.AggOp;\n"
-					+ "import org.apache.sysds.runtime.codegen.SpoofCellwise.CellType;\n"
-					+ "import org.apache.sysds.runtime.codegen.SpoofOperator.SideInput;\n"
-					+ "import org.apache.commons.math3.util.FastMath;\n"
-					+ "\n"
-					+ "public final class %TMP% extends SpoofCellwise {\n"
-					+ "  public %TMP%() {\n"
-					+ "    super(CellType.%TYPE%, %SPARSE_SAFE%, %SEQ%, %AGG_OP_NAME%);\n"
-					+ "  }\n"
-					+ "  protected double genexec(double a, SideInput[] b, double[] scalars, int m, int n, long grix, int rix, int cix) { \n"
-					+ "%BODY_dense%"
-					+ "    return %OUT%;\n"
-					+ "  }\n"
-					+ "}\n";
 }

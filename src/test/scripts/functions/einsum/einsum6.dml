@@ -24,7 +24,5 @@ P = matrix(seq(1,30), 6, 5)
 
 while(FALSE){}
 
-#R = colSums(t(P) %*% X) ;
-
-R = einsum("ab,cd->ab",P,X)
+R = einsum("ab,cd->ba",P,X)
 write(R, $1)

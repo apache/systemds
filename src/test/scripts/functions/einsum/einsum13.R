@@ -28,7 +28,6 @@ library("einsum")
 X = matrix(seq(1,6000), 600, 10, byrow=TRUE);
 P = matrix(seq(1,30), 6, 5, byrow=TRUE);
 
-# R = P * sum(X)
-R = einsum("ab,cd->ba",P,X)
+R = einsum("ab,cd->",P,X)
 
-writeMM(as(R, "CsparseMatrix"), paste(args[2], "S", sep="")); 
+write(R, paste(args[2], "S", sep=""));

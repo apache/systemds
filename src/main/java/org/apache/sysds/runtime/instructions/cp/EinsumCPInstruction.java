@@ -86,35 +86,30 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-
 		//get input matrices and scalars, incl pinning of matrices
 		ArrayList<MatrixBlock> inputs = new ArrayList<>();
-		ArrayList<String> inputsNames = new ArrayList<>();
 		for (CPOperand input : _in) {
 			if(input.getDataType()==DataType.MATRIX){
 				MatrixBlock mb = ec.getMatrixInput(input.getName());
-				//FIXME fused codegen operators already support compressed main inputs 
 				if(mb instanceof CompressedMatrixBlock){
 					mb = ((CompressedMatrixBlock) mb).getUncompressed("Spoof instruction");
 				}
 				inputs.add(mb);
-				inputsNames.add(input.getName());
 			}
 		}
 
 		EinsumContext einc = getEinsumContext(eqStr,inputs);
 		this.einc = einc;
- //todo not throwing err when output char is not in input
 
 		String[] parts = einc.equationString.split("->");
-//		ArrayList<String> inputsChars = new ArrayList<>(Arrays.asList(parts[0].split(",")));
 
 		if( LOG.isDebugEnabled() ) LOG.trace("outrows:"+einc.outRows+", outcols:"+einc.outCols);
 
 		Character outChar1 = null;
 		Character outChar2 = null;
 
-		if(parts[1].length()>=2){
+		if(parts.length == 1){ }
+		else if(parts[1].length() >= 2){
 			outChar1 = parts[1].charAt(0);
 			outChar2 = parts[1].charAt(1);
 		}else if (parts[1].length()==1){
@@ -146,14 +141,9 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 					arrCounter++;
 				}
 				else if(!einc.contractDimsSet.contains(c2)){
-					if (c2==c ){
+					if (c2 == c){
 						diagMatrices.add(arrCounter);
 					}
-
-//					if(partsCharactersCounter.containsKey(c2))
-//						partsCharactersCounter.put(c2, partsCharactersCounter.get(c2)+1);
-//					else partsCharactersCounter.put(c2, 1);
-
 					if(!partsCharactersToIndices.containsKey(c2))
 						partsCharactersToIndices.put(c2, new ArrayList<>());
 
@@ -162,17 +152,14 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 				}
 
 				i++;
-
 			}
 			newEquationStringSplit.add(s);
 		}
 		ArrayList<String> inputsChars = newEquationStringSplit;
 		LOG.trace(String.join(",",newEquationStringSplit));
-		//todo move to separate op earlier:
 		for(int i=0;i<einc.contractDims.length; i++){
-			if(einc.contractDims[i] == null){
-
-			}else if(einc.contractDims[i] == CONTRACT_BOTH) {
+			if(einc.contractDims[i] == null){ }
+			else if(einc.contractDims[i] == CONTRACT_BOTH) {
  				//sum all
 //				AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(),Types.CorrectionLocationType.LASTCOLUMN);
 				AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
@@ -206,16 +193,39 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			inputs.set(idx, mb.reorgOperations(op, new MatrixBlock(),0,0,0));
 		}
 
+		if(LOG.isTraceEnabled()) for(Character c :partsCharactersToIndices.keySet()){
+			ArrayList<Integer> a = partsCharactersToIndices.get(c);
+			LOG.trace(c+" count= "+a.size());
+		}
 
-		if(LOG.isTraceEnabled())
-			for(Character c :partsCharactersToIndices.keySet()){
-				ArrayList<Integer> a = partsCharactersToIndices.get(c);
-				LOG.trace(c+" count= "+a.size());
-			}
-
-
-
+		// compute scalar by suming-all matrices:
 		Double scalar = null;
+		for(int i=0;i< inputs.size(); i++){
+			String s = inputsChars.get(i);
+			if(s.equals("")){
+				MatrixBlock mb = inputs.get(i);
+				if (scalar == null) scalar = mb.get(0,0);
+				else scalar*= mb.get(0,0);
+				inputs.set(i,null);
+				inputsChars.set(i,null);
+			}
+		}
+
+		if (scalar != null) {
+			boolean appliedToSomeMatrix = false;
+			for(int i = 0; i < inputs.size(); i++){
+				if(inputs.get(i) != null){
+					inputs.set(i, getScalarMultiplyMatrixBlock(inputs.get(i), scalar));
+					appliedToSomeMatrix = true; break;
+				}
+			}
+			if(!appliedToSomeMatrix){
+				ec.setScalarOutput(output.getName(), new DoubleObject(scalar));
+				releaseMatrixInputs(ec);
+				return;
+			}
+		}
+
 		boolean anyCouldNotDo = FORCE_CELL_TPL ? true : generatePlanAndExecute(partsCharactersToIndices, inputs, inputsChars, outChar1, outChar2); // information to do cell tpl for remaining ones
 
 		if (!anyCouldNotDo){
@@ -270,29 +280,16 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			}
 		}
 
-		//final operation
+		releaseMatrixInputs(ec);
+	}
 
-
-		// release input matrices
+	private void releaseMatrixInputs(ExecutionContext ec){
 		for (CPOperand input : _in)
 			if(input.getDataType()==DataType.MATRIX)
 				ec.releaseMatrixInput(input.getName());
 	}
 
 	private boolean generatePlanAndExecute(HashMap<Character, ArrayList<Integer>> partsCharactersToIndices, ArrayList<MatrixBlock> inputs, ArrayList<String> inputsChars, Character outChar1, Character outChar2) {
-		// compute scalars:
-		Double scalar = null;
-		for(int i=0;i< inputs.size(); i++){
-			String s = inputsChars.get(i);
-			if(s.equals("")){
-				MatrixBlock mb = inputs.get(i);
-				if (scalar == null) scalar = mb.get(0,0);
-				else scalar*= mb.get(0,0);
-				inputs.set(i,null);
-				inputsChars.set(i,null);
-			}
-
-		}
 		boolean anyCouldNotDo;
 		boolean didAnything = false;
 		do {
@@ -689,6 +686,34 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		ArrayList<ScalarObject> scalars = new ArrayList<>();
 		if(scalar != null) scalars.add(new DoubleObject(scalar));
 	    MatrixBlock	out = op.execute(thisInputs, scalars, mb, _numThreads);
+		return out;
+	}
+
+	private MatrixBlock getScalarMultiplyMatrixBlock(MatrixBlock mbIn, Double scalar){
+		ArrayList<MatrixBlock> thisInputs = new ArrayList<>(Arrays.asList(mbIn));
+
+		ArrayList<CNode> cnodeIn = new ArrayList<>();
+
+		CNode c1 = new CNodeData("c1", 1, mbIn.getNumRows(), mbIn.getNumColumns(), DataType.MATRIX);
+		CNode c2 = new CNodeData(new LiteralOp(scalar), 0, 0, DataType.SCALAR);
+		cnodeIn.add(c1);
+		cnodeIn.add(c2);
+
+		CNode cnodeOut = new CNodeBinary(c1,c2, CNodeBinary.BinType.MULT);
+		CNodeCell cnode = new CNodeCell(cnodeIn, cnodeOut);
+		cnode.setCellType(SpoofCellwise.CellType.NO_AGG);
+		cnode.renameInputs();
+
+		String src = cnode.codegen(false, SpoofCompiler.GeneratorAPI.JAVA);
+		if( LOG.isTraceEnabled()) LOG.trace(CodegenUtils.printWithLineNumber(src));
+		Class cla = CodegenUtils.compileClass("codegen." + cnode.getClassname(), src);
+
+		SpoofOperator op = CodegenUtils.createInstance(cla);
+		MatrixBlock mb = new MatrixBlock();
+
+		ArrayList<ScalarObject> scalars = new ArrayList<>();
+		if(scalar != null) scalars.add(new DoubleObject(scalar));
+		MatrixBlock	out = op.execute(thisInputs, scalars, mb, _numThreads);
 		return out;
 	}
 	private static void indent(StringBuilder sb, int level) {

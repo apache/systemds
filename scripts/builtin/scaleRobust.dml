@@ -8,7 +8,7 @@
 #
 # OUTPUT:
 # -------------------------------------------------------------------------------------
-#   Y   Scaled output matrix of shape n-by-mAdd commentMore actions
+#   Y   Scaled output matrix of shape n-by-m
 #   med Column medians (Q2) of shape 1-by-m
 #   q1 Column first quantiles (Q1) of shape 1-by-m
 #   q3 Column first quantiles (Q3) of shape 1-by-m

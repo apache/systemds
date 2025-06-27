@@ -1,6 +1,6 @@
-source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raSelection.dml") as raSel
-source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raGroupby.dml") as raGrp
-source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raJoin.dml") as raJoin
+source("./scripts/builtin/raSelection.dml") as raSel
+source("./scripts/builtin/raGroupby.dml") as raGrp
+source("./scripts/builtin/raJoin.dml") as raJoinn
 
 # READ INPUTS
 date = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
@@ -39,7 +39,7 @@ part_filt = matrix(0, rows=0, cols=ncol(part_matrix));
 for (i in 1:nrow(vals)) {
     temp = raSel::m_raSelection(part_matrix, col=5, op="==", val=as.scalar(vals[i, 1]));
     #print(as.scalar(vals[i, 1]) + ": " + nrow(temp));
-    part_filt = rbind(part_filt, temp);  
+    part_filt = rbind(part_filt, temp);
 }
 
 # region = 'ASIA'
@@ -52,11 +52,11 @@ print("Selection done.");
 lo_date = raJoin::m_raJoin(A=lineorder_matrix, colA=6, B=date_matrix, colB=1, method="sort-merge");
 print("lo-date joined");
 
-# JOIN: ⨝ part 
+# JOIN: ⨝ part
 lo_date_part = raJoin::m_raJoin(A=lo_date, colA=4, B=part_filt, colB=1, method="sort-merge");
 print("lo-date-part joined");
 
-# JOIN: ⨝ supplier 
+# JOIN: ⨝ supplier
 joined_matrix = raJoin::m_raJoin(A=lo_date_part, colA=5, B=sup_filt, colB=1, method="sort-merge");
 print("lo-date-part-supplier joined");
 
@@ -85,7 +85,7 @@ summed_result = matrix(0, rows=nrow(agg_result), cols=1);
 for (i in 2:ncol(agg_result)) {
     temp = agg_result[, i];
     summed_result = summed_result + temp;
-    
+
 }
 
 group_result = cbind(c_1, summed_result);

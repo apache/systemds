@@ -3,25 +3,26 @@ source("./scripts/builtin/raGroupby.dml") as raGrp
 source("./scripts/builtin/raJoin.dml") as raJoin
 
 # READ INPUTS
-date = read("../date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-data_jspec = read("../date.tfspec_recode.json", data_type="scalar", value_type="string");
+date = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+data_jspec = read("./scripts/specs/date.tfspec_recode.json", data_type="scalar", value_type="string");
 [date_matrix, date_meta] = transformencode(target=date, spec=data_jspec);
 print("date loaded and transformed.");
 
-lineorder = read("../lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-lineorder_jspec = read("../lineorder.tfspec_recode.json", data_type="scalar", value_type="string");
-[lineorder_matrix, lineorder_meta] = transformencode(target=lineorder, spec=lineorder_jspec);
-print("lineorder loaded and transformed.");
 
-customer = read("../customer.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-customer_jspec = read("../customer.tfspec_recode.json", data_type="scalar", value_type="string");
+customer = read("./data/customer.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+customer_jspec = read("./scripts/specs/customer.tfspec_recode.json", data_type="scalar", value_type="string");
 [customer_matrix, customer_meta] = transformencode(target=customer, spec=customer_jspec);
 print("customer loaded and transformed.");
 
-supplier = read("../supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-supplier_jspec = read("../supplier.tfspec_recode.json", data_type="scalar", value_type="string");
+supplier = read("./data/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+supplier_jspec = read("./scripts/specs/supplier.tfspec_recode.json", data_type="scalar", value_type="string");
 [supplier_matrix, supplier_meta] = transformencode(target=supplier, spec=supplier_jspec);
 print("supplier loaded and transformed.");
+
+lineorder = read("./data/lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+lineorder_jspec = read("./scripts/specs/lineorder.tfspec_recode.json", data_type="scalar", value_type="string");
+[lineorder_matrix, lineorder_meta] = transformencode(target=lineorder, spec=lineorder_jspec);
+print("lineorder loaded and transformed.");
 
 
 #date = 0;
@@ -124,7 +125,7 @@ result = order(target=result, by=3, decreasing=FALSE, index.return=FALSE);
 
 
 # DECODING p_brand
-cust_jspec2 = read("../part2.tfspec_recode.json", data_type="scalar", value_type="string");
+cust_jspec2 = read("./scripts/specs/part2.tfspec_recode.json", data_type="scalar", value_type="string");
 cust_meta_col = customer_meta[, 4];
 sup_meta_col = supplier_meta[, 4];
 c_cit_dec = transformdecode(target=result[, 1], spec=cust_jspec2, meta=cust_meta_col);

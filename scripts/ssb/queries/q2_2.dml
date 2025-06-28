@@ -1,6 +1,6 @@
 source("./scripts/builtin/raSelection.dml") as raSel
 source("./scripts/builtin/raGroupby.dml") as raGrp
-source("./scripts/builtin/raJoin.dml") as raJoinn
+source("./scripts/builtin/raJoin.dml") as raJoin
 
 # READ INPUTS
 date = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");

@@ -1,6 +1,6 @@
-source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raSelection.dml") as raSel
-source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raGroupby.dml") as raGrp
-source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raJoin.dml") as raJoin
+source("./scripts/builtin/raSelection.dml") as raSel
+source("./scripts/builtin/raGroupby.dml") as raGrp
+source("./scripts/builtin/raJoin.dml") as raJoin
 
 # READ INPUTS
 date = read("../date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
@@ -56,11 +56,11 @@ print("Selection done.");
 lo_date = raJoin::m_raJoin(A=lineorder_matrix, colA=6, B=date_filt, colB=1, method="sort-merge");
 print("lo-date joined");
 
-# JOIN: ⨝ customer 
+# JOIN: ⨝ customer
 lo_date_cust = raJoin::m_raJoin(A=lo_date, colA=3, B=cust_filt, colB=1, method="sort-merge");
 print("lo-date-customer joined");
 
-# JOIN: ⨝ supplier 
+# JOIN: ⨝ supplier
 joined_matrix = raJoin::m_raJoin(A=lo_date_cust, colA=5, B=sup_filt, colB=1, method="sort-merge");
 print("lo-date-customer-supplier joined");
 
@@ -100,7 +100,7 @@ summed_result = matrix(0, rows=nrow(agg_result), cols=1);
 for (i in 2:ncol(agg_result)) {
     temp = agg_result[, i];
     summed_result = summed_result + temp;
-    
+
 }
 
 group_result = cbind(key, summed_result);

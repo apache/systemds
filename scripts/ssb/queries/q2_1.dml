@@ -2,7 +2,6 @@ source("./scripts/builtin/raSelection.dml") as raSel
 source("./scripts/builtin/raGroupby.dml") as raGrp
 source("./scripts/builtin/raJoin.dml") as raJoin
 
-
 # READ INPUTS
 date = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 data_jspec = read("./scripts/specs/date.tfspec_recode.json", data_type="scalar", value_type="string");
@@ -45,11 +44,11 @@ print("Selection done.");
 lo_date = raJoin::m_raJoin(A=lineorder_matrix, colA=6, B=date_matrix, colB=1, method="sort-merge");
 print("lo-date joined");
 
-# JOIN: ⨝ part 
+# JOIN: ⨝ part
 lo_date_part = raJoin::m_raJoin(A=lo_date, colA=4, B=part_filt, colB=1, method="sort-merge");
 print("lo-date-part joined");
 
-# JOIN: ⨝ supplier 
+# JOIN: ⨝ supplier
 joined_matrix = raJoin::m_raJoin(A=lo_date_part, colA=5, B=sup_filt, colB=1, method="sort-merge");
 print("lo-date-part-supplier joined");
 
@@ -74,7 +73,7 @@ c_1 = agg_result[, 1];
 c_2 = agg_result[, 2] + agg_result[, 3]; #SUM LOOP
 summed_result = cbind(c_1, c_2);
 
-ordered_result = order(target=summed_result, by=2, decreasing=FALSE, index.return=FALSE); 
+ordered_result = order(target=summed_result, by=2, decreasing=FALSE, index.return=FALSE);
 
 p_brand2 = round(((ordered_result[, 1] / scale_factor) - floor(ordered_result[, 1] / scale_factor)) * scale_factor);
 d_year2 = round((ordered_result[,1] / scale_factor - p_brand2 / scale_factor));

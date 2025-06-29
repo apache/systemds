@@ -751,9 +751,44 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			else
 				raiseValidateError("Compress/DeCompress instruction not allowed in dml script");
 			break;
+
+		case GETNAMES:
+				checkNumParameters(1);
+				Expression getNamesExpr = getFirstExpr();
+				validFrameInput(getNamesExpr, _opcode.toString());
+
+				DataIdentifier getNamesOut = (DataIdentifier) getOutputs()[0];
+				getNamesOut.setDataType(DataType.FRAME);
+				getNamesOut.setValueType(ValueType.STRING);
+				getNamesOut.setDimensions(1, getNamesExpr.getOutput().getDim2());
+				getNamesOut.setBlocksize(getNamesExpr.getOutput().getBlocksize());
+				break;
+
+		case SETNAMES:
+				checkNumParameters(2);
+				Expression target = getFirstExpr();
+				Expression nameRow = getSecondExpr();
+				validFrameInput(target, _opcode + " (first parameter)");
+				validFrameInput(nameRow, _opcode + " (second parameter)");
+				if (nameRow.getOutput().getDim1() != 1) {
+				raiseValidateError("Second parameter of set names must be a single row frame", false);
+				}
+				DataIdentifier setNamesOut = (DataIdentifier) getOutputs()[0];
+				setNamesOut.setDataType(DataType.FRAME);
+				setNamesOut.setValueType(target.getOutput().getValueType());
+				setNamesOut.setDimensions(target.getOutput().getDim1(), target.getOutput().getDim2());
+				setNamesOut.setBlocksize(target.getOutput().getBlocksize());
+				break;
 							
 		default: //always unconditional
 			raiseValidateError("Unknown Builtin Function opcode: " + _opcode, false);
+		}
+	}
+
+	private void validFrameInput(Expression expr, String context) {
+		if (expr == null || expr.getOutput() == null || expr.getOutput().getDataType() != DataType.FRAME) {
+			String dtype = (expr != null && expr.getOutput() != null) ? expr.getOutput().getDataType().toString() : "null";
+			raiseValidateError("Expecting frame parameter for " + context, false);
 		}
 	}
 

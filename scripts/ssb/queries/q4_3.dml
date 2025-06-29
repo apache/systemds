@@ -1,68 +1,98 @@
-source("./scripts/builtin/raSelection.dml") as raSel
-source("./scripts/builtin/raGroupby.dml") as raGrp
-source("./scripts/builtin/raJoin.dml") as raJoin
-
-# READ INPUTS
-date = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-data_jspec = read("./scripts/specs/date.tfspec_recode.json", data_type="scalar", value_type="string");
-[date_matrix, date_meta] = transformencode(target=date, spec=data_jspec);
+# DML-script implementing the ssb query Q4.3 in SystemDS.
 
 
-customer = read("./data/customer.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-customer_jspec = read("./scripts/specs/customer.tfspec_recode.json", data_type="scalar", value_type="string");
-[customer_matrix, customer_meta] = transformencode(target=customer, spec=customer_jspec);
-
-supplier = read("./data/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-supplier_jspec = read("./scripts/specs/supplier.tfspec_recode.json", data_type="scalar", value_type="string");
-[supplier_matrix, supplier_meta] = transformencode(target=supplier, spec=supplier_jspec);
-
-lineorder = read("./data/lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-lineorder_jspec = read("./scripts/specs/lineorder.tfspec_recode.json", data_type="scalar", value_type="string");
-[lineorder_matrix, lineorder_meta] = transformencode(target=lineorder, spec=lineorder_jspec);
-
-part = read("./data/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-part_jspec = read("./scripts/specs/part.tfspec_recode.json", data_type="scalar", value_type="string");
-[part_matrix, part_meta] = transformencode(target=part, spec=part_jspec);
+# -- SOURCING THE RA-FUNCTIONS --
+source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raSelection.dml") as raSel
+source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raGroupby.dml") as raGrp
+source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raJoin.dml") as raJoin
 
 
-# FILTERS
-# s_nation = 'UNITED STATES' (9)
-#sup_meta_col = supplier_meta[, 5];
-#print(sup_meta_col);
-sup_filt = raSel::m_raSelection(supplier_matrix, col=5, op="==", val=9);
+# -- READING INPUT FILES --
+# CSV TABLES
+date_csv = read("../date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+lineorder_csv = read("../lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+part_csv = read("../part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+supplier_csv = read("../supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+customer_csv = read("../customer.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 
-# p_category = 'MFGR#14' (15)
-#part_meta_col = part_meta[, 4];
-#write(part_meta_col, "B.tbl");
-part_filt = raSel::m_raSelection(part_matrix, col=4, op="==", val=15);
-
-# d_year = 1997 OR 1998
-date_filt_97 = raSel::m_raSelection(date_matrix, col=5, op="==", val=1997);
-date_filt_98 = raSel::m_raSelection(date_matrix, col=5, op="==", val=1998);
-date_filt = rbind(date_filt_97, date_filt_98);
-
-# JOIN: lineorder ⨝ date
-lo_date = raJoin::m_raJoin(A=lineorder_matrix, colA=6, B=date_filt, colB=1, method="sort-merge");
-
-# JOIN: ⨝ part
-lo_date_part = raJoin::m_raJoin(A=lo_date, colA=4, B=part_filt, colB=1, method="sort-merge");
-
-# JOIN: ⨝ customer
-lo_date_part_cust = raJoin::m_raJoin(A=lo_date_part, colA=3, B=customer_matrix, colB=1, method="sort-merge");
-
-# JOIN: ⨝ supplier
-joined_matrix = raJoin::m_raJoin(A=lo_date_part_cust, colA=5, B=sup_filt, colB=1, method="sort-merge");
-
-# PREPARE GROUPBY
-revenue = joined_matrix[,13];
-supplycost = joined_matrix[,14];
-profit = revenue - supplycost;
-d_year = joined_matrix[,(ncol(lineorder_matrix) + 5)];
-s_city = joined_matrix[,(ncol(lineorder_matrix) + ncol(date_matrix) + ncol(part_matrix) + ncol(customer_matrix) + 4)];
-p_brand = joined_matrix[,(ncol(lineorder_matrix) + ncol(date_matrix) + 5)];
+# META DATA
+part_meta = read("./meta/part_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
+customer_meta = read("./meta/customer_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
+supplier_meta = read("./meta/supplier_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
 
 
-# Skalierungsfaktoren (max + 1) für s_city und p_brand
+# -- PREPARING --
+# EXTRACTING MINIMAL DATE DATA TO OPTIMIZE RUNTIME => COL-1 : DATE-KEY | COL-5 : D_YEAR
+date_csv_min = cbind(date_csv[, 1], date_csv[, 5]);
+date_matrix_min = as.matrix(date_csv_min);
+
+# EXTRACTING MINIMAL LINEORDER DATA TO OPTIMIZE RUNTIME => COL-3 : LO_CUSTKEY | COL-4 : LO_PARTKEY |
+# COL-5 : LO_SUPPKEY | COL-6 : LO_ORDERDATE | COL-13 : LO_REVENUE | COL-14 : LO_SUPPLYCOST
+lineorder_csv_min = cbind(lineorder_csv[, 3], lineorder_csv[, 4], lineorder_csv[, 5], lineorder_csv[, 6], lineorder_csv[, 13], lineorder_csv[, 14]);
+lineorder_matrix_min = as.matrix(lineorder_csv_min);
+
+# EXTRACTING MINIMAL PART DATA TO OPTIMIZE RUNTIME => COL-1 : PART-KEY | COL-4 : P_CATEGORY | 
+# COL-5 : P_BRAND
+part_csv_min = cbind(part_csv[, 1], part_csv[, 4], part_csv[, 5]);
+part_enc_meta = cbind(part_meta[, 1], part_meta[, 4], part_meta[, 5]);
+part_enc_spec = "{ \"recode\": [\"C2\", \"C3\"] }";
+part_matrix_min = transformapply(target=part_csv_min, meta=part_enc_meta, spec=part_enc_spec);
+
+# EXTRACTING MINIMAL CUSTOMER DATA TO OPTIMIZE RUNTIME => COL-1 : CUSTOMER-KEY
+cust_csv_min = customer_csv[, 1];
+cust_matrix_min = as.matrix(cust_csv_min);
+
+# EXTRACTING MINIMAL SUPPLIERS DATA TO OPTIMIZE RUNTIME => COL-1 : SUP-KEY | COL-4 : S_CITY |
+# COL-5 : S_NATION 
+sup_csv_min = cbind(supplier_csv[, 1], supplier_csv[, 4], supplier_csv[, 5]);
+sup_enc_meta = cbind(supplier_meta[, 1], supplier_meta[, 4], supplier_meta[, 5]);
+sup_enc_spec = "{ \"recode\": [\"C2\", \"C3\"] }";
+sup_matrix_min = transformapply(target=sup_csv_min, meta=sup_enc_meta, spec=sup_enc_spec);
+
+
+# -- FILTERING THE DATA WITH RA-SELECTION FUNCTION --
+# S_NATION = 'UNITED STATES' : 9 (MAPPED VALUE IN SUPLLIER_META.CSV)
+s_nat_filt = raSel::m_raSelection(sup_matrix_min, col=3, op="==", val=9);
+ 
+# P_CATEGORY = 'MFGR#14' : 15 (MAPPED VALUE IN PART_META.CSV)
+p_cat_filt = raSel::m_raSelection(part_matrix_min, col=2, op="==", val=15);
+
+# D_YEAR = 1997 OR 1998
+d_year_filt_1 = raSel::m_raSelection(date_matrix_min, col=2, op="==", val=1997);
+d_year_filt_2 = raSel::m_raSelection(date_matrix_min, col=2, op="==", val=1998);
+d_year_filt = rbind(d_year_filt_1, d_year_filt_2);
+
+
+# -- JOIN TABLES WITH RA-JOIN FUNCTION --
+# JOINING MINIMIZED LINEORDER TABLE WITH FILTERED SUPPLIER TABLE WHERE LO_SUPPKEY = S_SUPPKEY 
+lo_sup = raJoin::m_raJoin(A=lineorder_matrix_min, colA=3, B=s_nat_filt, colB=1, method="sort-merge");
+
+# JOIN: ⨝ PART WHERE LO_PARTKEY = P_PARTKEY 
+lo_sup_part = raJoin::m_raJoin(A=lo_sup, colA=2, B=p_cat_filt, colB=1, method="sort-merge");
+
+# JOIN: ⨝ DATE WHERE LO_ORDERDATE = D_DATEKEY 
+lo_sup_part_date = raJoin::m_raJoin(A=lo_sup_part, colA=4, B=d_year_filt, colB=1, method="sort-merge");
+
+# JOIN: ⨝ CUSTOMER WHERE LO_CUSTKEY = C_CUSTKEY
+joined_matrix = raJoin::m_raJoin(A=lo_sup_part_date, colA=1, B=cust_matrix_min, colB=1, method="sort-merge"); 
+#print(nrow(joined_matrix));
+
+
+# -- GROUP-BY & AGGREGATION --
+# LO_REVENUE : COLUMN 5 OF LINEORDER-MIN-MATRIX
+lo_revenue = joined_matrix[, 5];
+# LO_SUPPLYCOST : COLUMN 6 OF LINEORDER-MIN-MATRIX
+lo_supplycost = joined_matrix[, 6]; 
+# D_YEAR : COLUMN 2 OF DATE-MIN-MATRIX
+d_year = joined_matrix[,(ncol(lineorder_matrix_min) + ncol(sup_matrix_min) + ncol(part_matrix_min) + 2)];
+# S_CITY : COLUMN 2 OF SUPPLIER-MIN-MATRIX
+s_city = joined_matrix[,(ncol(lineorder_matrix_min) + 2)];
+# P_BRAND : COLUMN 3 OF PART-MIN-MATRIX
+p_brand = joined_matrix[,(ncol(lineorder_matrix_min) + ncol(sup_matrix_min) + 3)];
+
+profit = lo_revenue - lo_supplycost;
+
+# CALCULATING COMBINATION KEY WITH PRIORITY: D_YEAR, S_CITY, P_BRAND
 max_s_city = max(s_city);
 max_p_brand = max(p_brand);
 max_d_year = max(d_year);
@@ -71,33 +101,38 @@ s_city_scale_f = ceil(max_s_city) + 1;
 p_brand_scale_f = ceil(max_p_brand) + 1;
 d_year_scale_f = ceil(max_d_year) + 1;
 
-# Kombinierter Schlüssel mit Sortierpriorität d_year, s_city, p_brand
-# Das ist das klassische Prinzip, eine Kombination von Gruppier-/Sortierschlüsseln in einen einzigen Schlüssel umzuwandeln.
 combined_key = d_year * s_city_scale_f * p_brand_scale_f + s_city * p_brand_scale_f + p_brand;
 
 group_input = cbind(profit, combined_key);
 agg_result = raGrp::m_raGroupby(X=group_input, col=2, method="nested-loop");
 
 key = agg_result[, 1];
-summed_result = rowSums(agg_result[, 2:ncol(agg_result)]);
+profit = rowSums(agg_result[, 2:ncol(agg_result)]);
 
+# EXTRACTING D_YEAR, S_CITY, P_BRAND
 d_year = round(floor(key / (s_city_scale_f * p_brand_scale_f)));
 s_city = round(floor((key %% (s_city_scale_f * p_brand_scale_f)) / p_brand_scale_f));
 p_brand = round(key %% p_brand_scale_f);
 
-result = cbind(d_year, s_city, p_brand, summed_result, key);
+result = cbind(d_year, s_city, p_brand, profit, key);
 
-# EINMALIGE Sortierung nach combined_key
-result = order(target=result, by=5, decreasing=FALSE, index.return=FALSE);
+# -- SORTING --
+# PRIORITY 1 D_YEAR, 2 S_CITY, 3 P_BRAND
+result_ordered = order(target=result, by=5, decreasing=FALSE, index.return=FALSE);
+print(result_ordered);
 
-# Decoding
-cust_jspec2 = read("./scripts/specs/part2.tfspec_recode.json", data_type="scalar", value_type="string");
-s_meta_col = supplier_meta[, 4];
-p_meta_col = part_meta[, 5];
+# -- DECODING S_CITY & P_BRAND --
+sup_dec_meta = supplier_meta[, 4];
+sup_dec_spec = "{ \"recode\": [\"C1\"] }";
 
-s_nat_dec = transformdecode(target=result[, 2], spec=cust_jspec2, meta=s_meta_col);
-p_cat_dec = transformdecode(target=result[, 3], spec=cust_jspec2, meta=p_meta_col);
+part_dec_meta = part_meta[, 5];
+part_dec_spec = "{ \"recode\": [\"C1\"] }";
 
-res = cbind(as.frame(result[, 1]), s_nat_dec, p_cat_dec, as.frame(result[, 4]));
+s_nat_dec = transformdecode(target=result_ordered[, 2], spec=sup_dec_spec, meta=sup_dec_meta);
+p_cat_dec = transformdecode(target=result_ordered[, 3], spec=part_dec_spec, meta=part_dec_meta);
+
+res = cbind(as.frame(result_ordered[, 1]), s_nat_dec, p_cat_dec, as.frame(result_ordered[, 4]));
 
 print(res);
+#print("Q4.3 finished");
+

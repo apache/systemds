@@ -1,34 +1,57 @@
-source("./scripts/builtin/raSelection.dml") as raSel
-source("./scripts/builtin/raGroupby.dml") as raGrp
-source("./scripts/builtin/raJoin.dml") as raJoin
+# DML-script implementing the ssb query Q1.3 in SystemDS.
 
 
-# READ INPUT
-date = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-data_jspec = read("./scripts/specs/date.tfspec_recode.json", data_type="scalar", value_type="string");
-[date_matrix, date_meta] = transformencode(target=date, spec=data_jspec);
-
-lineorder = read("./data/lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-lineorder_jspec = read("./scripts/specs/lineorder.tfspec_recode.json", data_type="scalar", value_type="string");
-[lineorder_matrix, lineorder_meta] = transformencode(target=lineorder, spec=lineorder_jspec);
+# -- SOURCING THE RA-FUNCTIONS --
+source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raSelection.dml") as raSel
+source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raJoin.dml") as raJoin
 
 
-# JOIN
-joined_matrix = raJoin::m_raJoin(A=lineorder_matrix, colA=6, B=date_matrix, colB=1, method="sort-merge");
+# -- READING INPUT FILES --
+# CSV TABLES
+date_csv = read("../date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+lineorder_csv = read("../lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+
+# META DATA
+date_meta = read("./meta/date_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
 
 
-# SELECTION
-filtered_weeknum = raSel::m_raSelection(joined_matrix, col=30, op="==", val=6);
-filtered_year = raSel::m_raSelection(filtered_weeknum, col=23, op="==", val=1994);
+# -- PREPARING --
+# EXTRACTING MINIMAL DATE DATA TO OPTIMIZE RUNTIME => COL-1 : DATE-KEY | COL-5 : D_YEAR |
+# COL-12 : D_WEEKNUMINYEAR
+date_csv_min = cbind(date_csv[, 1], date_csv[, 5], date_csv[, 12]);
+date_matrix_min = as.matrix(date_csv_min);
 
-filter_disc1 = raSel::m_raSelection(filtered_year, col=12, op=">=", val=5);
-filter_disc2 = raSel::m_raSelection(filter_disc1, col=12, op="<=", val=7);
+# EXTRACTING MINIMAL LINEORDER DATA TO OPTIMIZE RUNTIME => COL-6 : LO_ORDERDATE | 
+# COL-9 : LO_QUANTITY | COL-10 : LO_EXTPRICE | COL-12 : LO_DISCOUNT
+lineorder_csv_min = cbind(lineorder_csv[, 6], lineorder_csv[, 9], lineorder_csv[, 10], lineorder_csv[, 12]);
+lineorder_matrix_min = as.matrix(lineorder_csv_min);
 
-filter_quan1 = raSel::m_raSelection(filter_disc2, col=9, op=">=", val=26);
-filter_quan2 = raSel::m_raSelection(filter_quan1, col=9, op="<=", val=35);
 
-# REVENUE
-extprice = filter_quan2[,10];
-discount = filter_quan2[,12];
-revenue = sum(extprice * discount);
-print("revenue: " + as.integer(revenue));
+# -- FILTERING THE DATA WITH RA-SELECTION FUNCTION --
+# D_WEEKNUMINYEAR = '6' AND D_YEAR = '1994'
+d_weeknumiy_filt = raSel::m_raSelection(date_matrix_min, col=3, op="==", val=6); 
+d_weeknumiy_year_filt = raSel::m_raSelection(d_weeknumiy_filt, col=2, op="==", val=1994);
+
+# LO_QUANTITY BETWEEN 26 AND 35
+lo_quan_filt = raSel::m_raSelection(lineorder_matrix_min, col=2, op=">=", val=26); 
+lo_quan_filt = raSel::m_raSelection(lo_quan_filt, col=2, op="<=", val=35);
+
+# LO_DISCOUNT BETWEEN 5 AND 7
+lo_quan_disc_filt = raSel::m_raSelection(lo_quan_filt, col=4, op=">=", val=6);
+lo_quan_disc_filt = raSel::m_raSelection(lo_quan_disc_filt, col=4, op="<=", val=7);
+
+
+# -- JOIN TABLES WITH RA-JOIN FUNCTION --
+# JOINING FILTERED LINEORDER TABLE WITH FILTERED DATE TABLE WHERE LO_ORDERDATE = D_DATEKEY 
+joined_matrix = raJoin::m_raJoin(A=lo_quan_disc_filt, colA=1, B=d_weeknumiy_year_filt, colB=1, method="sort-merge");
+#print("LO-DATE JOINED.");
+
+
+# -- AGGREGATION --
+lo_extprice = joined_matrix[, 3];		#LO_EXTPRICE : 3 COLUMN OF JOINED-MATRIX
+lo_disc = joined_matrix[, 4];			#LO_DISCOUNT : 4 COLUMN OF JOINED-MATRIX
+revenue = sum(lo_extprice * lo_disc);
+
+print("REVENUE: " + as.integer(revenue));
+
+#print("Q1.3 finished.\n");

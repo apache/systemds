@@ -1,0 +1,11 @@
+{
+    "data_type": "frame",
+    "schema": "STRING,STRING,STRING,STRING,STRING,STRING,STRING,STRING,STRING,STRING,STRING,STRING,STRING,STRING,STRING,STRING,STRING,STRING,",
+    "rows": 2557,
+    "cols": 18,
+    "format": "csv",
+    "author": "can",
+    "header": false,
+    "sep": "|",
+    "created": "2025-06-29 13:56:05 MESZ"
+}

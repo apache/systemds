@@ -1,24 +1,23 @@
 # DML-script implementing the ssb query Q3.4 in SystemDS.
 
-
 # -- SOURCING THE RA-FUNCTIONS --
-source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raSelection.dml") as raSel
-source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raGroupby.dml") as raGrp
-source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raJoin.dml") as raJoin
+source("./scripts/builtin/raSelection.dml") as raSel
+source("./scripts/builtin/raJoin.dml") as raJoin
+source("./scripts/builtin/raGroupby.dml") as raGrp
 
 
 # -- READING INPUT FILES --
 # CSV TABLES
-date_csv = read("../date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-lineorder_csv = read("../lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-#part_csv = read("../part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-supplier_csv = read("../supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-customer_csv = read("../customer.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+date_csv = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+lineorder_csv = read("./data/lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+#part_csv = read("./data/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+supplier_csv = read("./data/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+customer_csv = read("./data/customer.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 
 # META DATA
-date_meta = read("./meta/date_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
-customer_meta = read("./meta/customer_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
-supplier_meta = read("./meta/supplier_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
+date_meta = read("./data/meta/date_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
+customer_meta = read("./data/meta/customer_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
+supplier_meta = read("./data/meta/supplier_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
 
 
 # -- PREPARING --
@@ -34,13 +33,13 @@ date_matrix_min = transformapply(target=date_csv_min, meta=date_enc_meta, spec=d
 lineorder_csv_min = cbind(lineorder_csv[, 3], lineorder_csv[, 4], lineorder_csv[, 5], lineorder_csv[, 6], lineorder_csv[, 13]);
 lineorder_matrix_min = as.matrix(lineorder_csv_min);
 
-# EXTRACTING MINIMAL CUSTOMER DATA TO OPTIMIZE RUNTIME => COL-1 : CUSTOMER-KEY | COL-4 : C_CITY 
+# EXTRACTING MINIMAL CUSTOMER DATA TO OPTIMIZE RUNTIME => COL-1 : CUSTOMER-KEY | COL-4 : C_CITY
 cust_csv_min = cbind(customer_csv[, 1], customer_csv[, 4]);
 cust_enc_meta = cbind(customer_meta[, 1], customer_meta[, 4]);
 cust_enc_spec = "{ \"recode\": [\"C2\"] }";
 cust_matrix_min = transformapply(target=cust_csv_min, meta=cust_enc_meta, spec=cust_enc_spec);
 
-# EXTRACTING MINIMAL SUPPLIERS DATA TO OPTIMIZE RUNTIME => COL-1 : SUP-KEY | COL-4 : S_CITY 
+# EXTRACTING MINIMAL SUPPLIERS DATA TO OPTIMIZE RUNTIME => COL-1 : SUP-KEY | COL-4 : S_CITY
 sup_csv_min = cbind(supplier_csv[, 1], supplier_csv[, 4]);
 sup_enc_meta = cbind(supplier_meta[, 1], supplier_meta[, 4]);
 sup_enc_spec = "{ \"recode\": [\"C2\"] }";
@@ -64,19 +63,19 @@ d_year_filt = raSel::m_raSelection(date_matrix_min, col=3, op=">=", val=72);
 
 # -- JOIN TABLES WITH RA-JOIN FUNCTION --
 # JOINING MINIMIZED LINEORDER TABLE WITH FILTERED CUSTOMER TABLE WHERE LO_CUSTKEY = C_CUSTKEY
-lo_cust = raJoin::m_raJoin(A=lineorder_matrix_min, colA=1, B=c_city_filt, colB=1, method="sort-merge"); 
+lo_cust = raJoin::m_raJoin(A=lineorder_matrix_min, colA=1, B=c_city_filt, colB=1, method="sort-merge");
 
-# JOIN: ⨝ SUPPLIER WHERE LO_SUPPKEY = S_SUPPKEY 
+# JOIN: ⨝ SUPPLIER WHERE LO_SUPPKEY = S_SUPPKEY
 lo_cust_sup = raJoin::m_raJoin(A=lo_cust, colA=3, B=s_city_filt, colB=1, method="sort-merge");
 
-# JOIN: ⨝ DATE WHERE LO_ORDERDATE = D_DATEKEY 
+# JOIN: ⨝ DATE WHERE LO_ORDERDATE = D_DATEKEY
 joined_matrix = raJoin::m_raJoin(A=lo_cust_sup, colA=4, B=d_year_filt, colB=1, method="sort-merge");
 #print(nrow(joined_matrix));
 
 
 # -- GROUP-BY & AGGREGATION --
 # LO_REVENUE : COLUMN 5 OF LINEORDER-MIN-MATRIX
-revenue = joined_matrix[, 5]; 
+revenue = joined_matrix[, 5];
 # D_YEAR : COLUMN 2 OF DATE-MIN-MATRIX
 d_year = joined_matrix[,(ncol(lineorder_matrix_min) + ncol(cust_matrix_min) + ncol(sup_matrix_min) + 2)];
 # C_CITY : COLUMN 2 OF CUST-MIN-MATRIX
@@ -115,7 +114,7 @@ result_ordered = order(target=result, by=4, decreasing=TRUE, index.return=FALSE)
 result_ordered = order(target=result_ordered, by=3, decreasing=FALSE, index.return=FALSE);
 
 
-# -- DECODING C_CITY & S_CITY -- 
+# -- DECODING C_CITY & S_CITY --
 cust_dec_meta = customer_meta[, 4];
 cust_dec_spec = "{ \"recode\": [\"C1\"] }";
 
@@ -128,4 +127,3 @@ res = cbind(c_city_dec, s_city_dec, as.frame(result_ordered[, 3]), as.frame(resu
 
 print(res);
 #print("Q3.4 finished");
-

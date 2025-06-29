@@ -2,17 +2,17 @@
 
 
 # -- SOURCING THE RA-FUNCTIONS --
-source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raSelection.dml") as raSel
-source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raJoin.dml") as raJoin
+source("./scripts/builtin/raSelection.dml") as raSel
+source("./scripts/builtin/raJoin.dml") as raJoin
 
 
 # -- READING INPUT FILES --
 # CSV TABLES
-date_csv = read("../date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-lineorder_csv = read("../lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+date_csv = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+lineorder_csv = read("./data/lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 
 # META DATA
-date_meta = read("./meta/date_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
+date_meta = read("./data/meta/date_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
 
 
 # -- PREPARING --
@@ -21,7 +21,7 @@ date_meta = read("./meta/date_meta.csv", data_type="frame", format="csv", header
 date_csv_min = cbind(date_csv[, 1], date_csv[, 5], date_csv[, 12]);
 date_matrix_min = as.matrix(date_csv_min);
 
-# EXTRACTING MINIMAL LINEORDER DATA TO OPTIMIZE RUNTIME => COL-6 : LO_ORDERDATE | 
+# EXTRACTING MINIMAL LINEORDER DATA TO OPTIMIZE RUNTIME => COL-6 : LO_ORDERDATE |
 # COL-9 : LO_QUANTITY | COL-10 : LO_EXTPRICE | COL-12 : LO_DISCOUNT
 lineorder_csv_min = cbind(lineorder_csv[, 6], lineorder_csv[, 9], lineorder_csv[, 10], lineorder_csv[, 12]);
 lineorder_matrix_min = as.matrix(lineorder_csv_min);
@@ -29,11 +29,11 @@ lineorder_matrix_min = as.matrix(lineorder_csv_min);
 
 # -- FILTERING THE DATA WITH RA-SELECTION FUNCTION --
 # D_WEEKNUMINYEAR = '6' AND D_YEAR = '1994'
-d_weeknumiy_filt = raSel::m_raSelection(date_matrix_min, col=3, op="==", val=6); 
+d_weeknumiy_filt = raSel::m_raSelection(date_matrix_min, col=3, op="==", val=6);
 d_weeknumiy_year_filt = raSel::m_raSelection(d_weeknumiy_filt, col=2, op="==", val=1994);
 
 # LO_QUANTITY BETWEEN 26 AND 35
-lo_quan_filt = raSel::m_raSelection(lineorder_matrix_min, col=2, op=">=", val=26); 
+lo_quan_filt = raSel::m_raSelection(lineorder_matrix_min, col=2, op=">=", val=26);
 lo_quan_filt = raSel::m_raSelection(lo_quan_filt, col=2, op="<=", val=35);
 
 # LO_DISCOUNT BETWEEN 5 AND 7
@@ -42,7 +42,7 @@ lo_quan_disc_filt = raSel::m_raSelection(lo_quan_disc_filt, col=4, op="<=", val=
 
 
 # -- JOIN TABLES WITH RA-JOIN FUNCTION --
-# JOINING FILTERED LINEORDER TABLE WITH FILTERED DATE TABLE WHERE LO_ORDERDATE = D_DATEKEY 
+# JOINING FILTERED LINEORDER TABLE WITH FILTERED DATE TABLE WHERE LO_ORDERDATE = D_DATEKEY
 joined_matrix = raJoin::m_raJoin(A=lo_quan_disc_filt, colA=1, B=d_weeknumiy_year_filt, colB=1, method="sort-merge");
 #print("LO-DATE JOINED.");
 
@@ -53,5 +53,3 @@ lo_disc = joined_matrix[, 4];			#LO_DISCOUNT : 4 COLUMN OF JOINED-MATRIX
 revenue = sum(lo_extprice * lo_disc);
 
 print("REVENUE: " + as.integer(revenue));
-
-#print("Q1.3 finished.\n");

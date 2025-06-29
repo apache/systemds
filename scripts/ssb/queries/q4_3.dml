@@ -2,23 +2,23 @@
 
 
 # -- SOURCING THE RA-FUNCTIONS --
-source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raSelection.dml") as raSel
-source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raGroupby.dml") as raGrp
-source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raJoin.dml") as raJoin
+source("./scripts/builtin/raSelection.dml") as raSel
+source("./scripts/builtin/raJoin.dml") as raJoin
+source("./scripts/builtin/raGroupby.dml") as raGrp
 
 
 # -- READING INPUT FILES --
 # CSV TABLES
-date_csv = read("../date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-lineorder_csv = read("../lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-part_csv = read("../part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-supplier_csv = read("../supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-customer_csv = read("../customer.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+date_csv = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+lineorder_csv = read("./data/lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+part_csv = read("./data/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+supplier_csv = read("./data/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+customer_csv = read("./data/customer.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 
 # META DATA
-part_meta = read("./meta/part_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
-customer_meta = read("./meta/customer_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
-supplier_meta = read("./meta/supplier_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
+part_meta = read("./data/meta/part_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
+customer_meta = read("./data/meta/customer_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
+supplier_meta = read("./data/meta/supplier_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
 
 
 # -- PREPARING --
@@ -43,7 +43,7 @@ cust_csv_min = customer_csv[, 1];
 cust_matrix_min = as.matrix(cust_csv_min);
 
 # EXTRACTING MINIMAL SUPPLIERS DATA TO OPTIMIZE RUNTIME => COL-1 : SUP-KEY | COL-4 : S_CITY |
-# COL-5 : S_NATION 
+# COL-5 : S_NATION
 sup_csv_min = cbind(supplier_csv[, 1], supplier_csv[, 4], supplier_csv[, 5]);
 sup_enc_meta = cbind(supplier_meta[, 1], supplier_meta[, 4], supplier_meta[, 5]);
 sup_enc_spec = "{ \"recode\": [\"C2\", \"C3\"] }";
@@ -53,7 +53,7 @@ sup_matrix_min = transformapply(target=sup_csv_min, meta=sup_enc_meta, spec=sup_
 # -- FILTERING THE DATA WITH RA-SELECTION FUNCTION --
 # S_NATION = 'UNITED STATES' : 9 (MAPPED VALUE IN SUPLLIER_META.CSV)
 s_nat_filt = raSel::m_raSelection(sup_matrix_min, col=3, op="==", val=9);
- 
+
 # P_CATEGORY = 'MFGR#14' : 15 (MAPPED VALUE IN PART_META.CSV)
 p_cat_filt = raSel::m_raSelection(part_matrix_min, col=2, op="==", val=15);
 
@@ -64,17 +64,17 @@ d_year_filt = rbind(d_year_filt_1, d_year_filt_2);
 
 
 # -- JOIN TABLES WITH RA-JOIN FUNCTION --
-# JOINING MINIMIZED LINEORDER TABLE WITH FILTERED SUPPLIER TABLE WHERE LO_SUPPKEY = S_SUPPKEY 
+# JOINING MINIMIZED LINEORDER TABLE WITH FILTERED SUPPLIER TABLE WHERE LO_SUPPKEY = S_SUPPKEY
 lo_sup = raJoin::m_raJoin(A=lineorder_matrix_min, colA=3, B=s_nat_filt, colB=1, method="sort-merge");
 
-# JOIN: ⨝ PART WHERE LO_PARTKEY = P_PARTKEY 
+# JOIN: ⨝ PART WHERE LO_PARTKEY = P_PARTKEY
 lo_sup_part = raJoin::m_raJoin(A=lo_sup, colA=2, B=p_cat_filt, colB=1, method="sort-merge");
 
-# JOIN: ⨝ DATE WHERE LO_ORDERDATE = D_DATEKEY 
+# JOIN: ⨝ DATE WHERE LO_ORDERDATE = D_DATEKEY
 lo_sup_part_date = raJoin::m_raJoin(A=lo_sup_part, colA=4, B=d_year_filt, colB=1, method="sort-merge");
 
 # JOIN: ⨝ CUSTOMER WHERE LO_CUSTKEY = C_CUSTKEY
-joined_matrix = raJoin::m_raJoin(A=lo_sup_part_date, colA=1, B=cust_matrix_min, colB=1, method="sort-merge"); 
+joined_matrix = raJoin::m_raJoin(A=lo_sup_part_date, colA=1, B=cust_matrix_min, colB=1, method="sort-merge");
 #print(nrow(joined_matrix));
 
 
@@ -82,7 +82,7 @@ joined_matrix = raJoin::m_raJoin(A=lo_sup_part_date, colA=1, B=cust_matrix_min, 
 # LO_REVENUE : COLUMN 5 OF LINEORDER-MIN-MATRIX
 lo_revenue = joined_matrix[, 5];
 # LO_SUPPLYCOST : COLUMN 6 OF LINEORDER-MIN-MATRIX
-lo_supplycost = joined_matrix[, 6]; 
+lo_supplycost = joined_matrix[, 6];
 # D_YEAR : COLUMN 2 OF DATE-MIN-MATRIX
 d_year = joined_matrix[,(ncol(lineorder_matrix_min) + ncol(sup_matrix_min) + ncol(part_matrix_min) + 2)];
 # S_CITY : COLUMN 2 OF SUPPLIER-MIN-MATRIX

@@ -2,21 +2,21 @@
 
 
 # -- SOURCING THE RA-FUNCTIONS --
-source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raSelection.dml") as raSel
-source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raGroupby.dml") as raGrp
-source("/Users/can/Desktop/LDE/systemds/scripts/builtin/raJoin.dml") as raJoin
+source("./scripts/builtin/raSelection.dml") as raSel
+source("./scripts/builtin/raJoin.dml") as raJoin
+source("./scripts/builtin/raGroupby.dml") as raGrp
 
 
 # -- READING INPUT FILES --
 # CSV TABLES
-date_csv = read("../date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-lineorder_csv = read("../lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-part_csv = read("../part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-supplier_csv = read("../supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+date_csv = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+lineorder_csv = read("./data/lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+part_csv = read("./data/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+supplier_csv = read("./data/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 
 # META DATA
-part_meta = read("./meta/part_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
-supplier_meta = read("./meta/supplier_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
+part_meta = read("./data/meta/part_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
+supplier_meta = read("./data/meta/supplier_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
 
 
 # -- PREPARING --
@@ -37,7 +37,7 @@ part_matrix_min = transformapply(target=part_csv_min, meta=part_enc_meta, spec=p
 #print(part_matrix_min);
 #part_jspec = read("../part.tfspec_recode.json", data_type="scalar", value_type="string");
 #[part_matrix, part_meta] = transformencode(target=part_csv, spec=part_jspec);
-#write(part_meta, "./meta/part_meta.csv", format="csv", sep="|");
+#write(part_meta, "./data/meta/part_meta.csv", format="csv", sep="|");
 
 # EXTRACTING MINIMAL SUPPLIERS DATA TO OPTIMIZE RUNTIME => COL-1 : SUP-KEY | COL-6 : S_REGION
 sup_csv_min = cbind(supplier_csv[, 1], supplier_csv[, 6]);
@@ -47,7 +47,7 @@ sup_matrix_min = transformapply(target=sup_csv_min, meta=sup_enc_meta, spec=sup_
 #print(sup_matrix_min);
 #supplier_jspec = read("../supplier.tfspec_recode.json", data_type="scalar", value_type="string");
 #[supplier_matrix, supplier_meta] = transformencode(target=supplier_csv, spec=supplier_jspec);
-#write(supplier_meta, "./meta/supplier_meta.csv", format="csv", sep="|");
+#write(supplier_meta, "./data/meta/supplier_meta.csv", format="csv", sep="|");
 
 
 # -- FILTERING THE DATA WITH RA-SELECTION FUNCTION --
@@ -57,30 +57,30 @@ p_brand_filt = matrix(0, rows=0, cols=ncol(part_matrix_min));
 
 for (i in 1:nrow(vals)) {
     tmp_brand_filt = raSel::m_raSelection(part_matrix_min, col=2, op="==", val=as.scalar(vals[i, 1]));
-    p_brand_filt = rbind(p_brand_filt, tmp_brand_filt);  
+    p_brand_filt = rbind(p_brand_filt, tmp_brand_filt);
 }
 
-# S_REGION = 'ASIA' : 5 (MAPPED VALUE IN SUPPLIER_META.CSV)) 
+# S_REGION = 'ASIA' : 5 (MAPPED VALUE IN SUPPLIER_META.CSV))
 s_reg_filt = raSel::m_raSelection(sup_matrix_min, col=2, op="==", val=5);
 
 
 # -- JOIN TABLES WITH RA-JOIN FUNCTION --
 # JOINING MINIMIZED LINEORDER TABLE WITH FILTERED PART TABLE WHERE LO_PARTKEY = P_PARTKEY
-lo_part = raJoin::m_raJoin(A=lineorder_matrix_min, colA=1, B=p_brand_filt, colB=1, method="sort-merge"); 
+lo_part = raJoin::m_raJoin(A=lineorder_matrix_min, colA=1, B=p_brand_filt, colB=1, method="sort-merge");
 
-# JOIN: ⨝ SUPPLIER WHERE LO_SUPPKEY = S_SUPPKEY 
+# JOIN: ⨝ SUPPLIER WHERE LO_SUPPKEY = S_SUPPKEY
 lo_part_sup = raJoin::m_raJoin(A=lo_part, colA=2, B=s_reg_filt, colB=1, method="sort-merge");
 
-# JOIN: ⨝ DATE WHERE LO_ORDERDATE = D_DATEKEY 
+# JOIN: ⨝ DATE WHERE LO_ORDERDATE = D_DATEKEY
 joined_matrix = raJoin::m_raJoin(A=lo_part_sup, colA=3, B=date_matrix_min, colB=1, method="sort-merge");
 #print(nrow(joined_matrix));
 
 
 # -- GROUP-BY & AGGREGATION --
 # LO_REVENUE : COLUMN 4 OF LINEORDER-MIN-MATRIX
-revenue = joined_matrix[, 4]; 
+revenue = joined_matrix[, 4];
 # D_YEAR : COLUMN 2 OF DATE-MIN-MATRIX
-d_year = joined_matrix[,(ncol(lineorder_matrix_min) + ncol(part_matrix_min) + ncol(sup_matrix_min) + 2)]; 
+d_year = joined_matrix[,(ncol(lineorder_matrix_min) + ncol(part_matrix_min) + ncol(sup_matrix_min) + 2)];
 # P_BRAND : COLUMN 2 OF PART-MIN-MATRIX
 p_brand = joined_matrix[,(ncol(lineorder_matrix_min) + 2)];
 
@@ -105,7 +105,7 @@ result_ordered = order(target=result_ordered, by=2, decreasing=FALSE, index.retu
 print(result_ordered)
 
 
-# -- DECODING P_BRAND -- 
+# -- DECODING P_BRAND --
 part_dec_meta = part_meta[, 5];
 part_dec_spec = "{ \"recode\": [\"C1\"] }";
 p_brand_dec = transformdecode(target=result_ordered[, 3], spec=part_dec_spec, meta=part_dec_meta);

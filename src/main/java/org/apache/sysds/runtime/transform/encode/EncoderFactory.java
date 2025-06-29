@@ -120,13 +120,15 @@ public interface EncoderFactory {
 					.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.WORD_EMBEDDING.toString(), minCol, maxCol)));
 			List<Integer> bowIDs = Arrays.asList(ArrayUtils
 					.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.BAG_OF_WORDS.toString(), minCol, maxCol)));
+			List<Integer> ragIDs = Arrays.asList(ArrayUtils
+					.toObject(TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.RAGGED.toString(), minCol, maxCol)));
 
 			// NOTE: any dummycode column requires recode as preparation, unless the dummycode
 			// column follows binning or feature hashing
 			rcIDs = unionDistinct(rcIDs, except(except(dcIDs, binIDs), haIDs));
 			// Error out if the first level encoders have overlaps
-			if (intersect(rcIDs, binIDs, haIDs, weIDs, bowIDs))
-				throw new DMLRuntimeException("More than one encoders (recode, binning, hashing, word_embedding, bag_of_words) on one column is not allowed:\n" + spec);
+			if (intersect(rcIDs, binIDs, haIDs, weIDs, bowIDs, ragIDs))
+				throw new DMLRuntimeException("More than one encoders (recode, binning, hashing, word_embedding, bag_of_words, ragIDs) on one column is not allowed:\n" + spec);
 
 			List<Integer> ptIDs = except(UtilFunctions.getSeqList(1, clen, 1), naryUnionDistinct(rcIDs, haIDs, binIDs, weIDs, bowIDs));
 			List<Integer> oIDs = new ArrayList<>(Arrays.asList(ArrayUtils
@@ -158,6 +160,9 @@ public interface EncoderFactory {
 			if(!weIDs.isEmpty())
 				for(Integer id : weIDs)
 					addEncoderToMap(new ColumnEncoderWordEmbedding(id), colEncoders);
+			if(!ragIDs.isEmpty())
+    			for(Integer id : ragIDs)
+        			addEncoderToMap(new ColumnEncoderRagged(id), colEncoders);
 			if(!bowIDs.isEmpty())
 				for(Integer id : bowIDs)
 					addEncoderToMap(new ColumnEncoderBagOfWords(id), colEncoders);
@@ -287,6 +292,8 @@ public interface EncoderFactory {
 				return new ColumnEncoderWordEmbedding();
 			case BagOfWords:
 				return new ColumnEncoderBagOfWords();
+			case Ragged:
+    			return new ColumnEncoderRagged();
 			default:
 				throw new DMLRuntimeException("Unsupported encoder type: " + etype);
 		}

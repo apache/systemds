@@ -6,30 +6,19 @@ source("./scripts/builtin/raJoin.dml") as raJoin
 date = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 data_jspec = read("./scripts/specs/date.tfspec_recode.json", data_type="scalar", value_type="string");
 [date_matrix, date_meta] = transformencode(target=date, spec=data_jspec);
-print("date loaded and transformed.");
 
 
 customer = read("./data/customer.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 customer_jspec = read("./scripts/specs/customer.tfspec_recode.json", data_type="scalar", value_type="string");
 [customer_matrix, customer_meta] = transformencode(target=customer, spec=customer_jspec);
-print("customer loaded and transformed.");
 
 supplier = read("./data/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 supplier_jspec = read("./scripts/specs/supplier.tfspec_recode.json", data_type="scalar", value_type="string");
 [supplier_matrix, supplier_meta] = transformencode(target=supplier, spec=supplier_jspec);
-print("supplier loaded and transformed.");
 
 lineorder = read("./data/lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 lineorder_jspec = read("./scripts/specs/lineorder.tfspec_recode.json", data_type="scalar", value_type="string");
 [lineorder_matrix, lineorder_meta] = transformencode(target=lineorder, spec=lineorder_jspec);
-print("lineorder loaded and transformed.");
-
-
-#date = 0;
-#lineorder = 0;
-#customer = 0;
-#supplier = 0;
-
 
 # FILTERS
 #  c_city = 'UNITED KI1' (207) OR 'UNITED KI5' (15)
@@ -38,7 +27,6 @@ print("lineorder loaded and transformed.");
 cust_filt_KI1 = raSel::m_raSelection(customer_matrix, col=4, op="==", val=207);
 cust_filt_KI5 = raSel::m_raSelection(customer_matrix, col=4, op="==", val=15);
 cust_filt = rbind(cust_filt_KI1, cust_filt_KI5);
-print(nrow(cust_filt));
 
 # s_city = 'UNITED KI1'(60) OR 'UNITED KI5' (153)
 #sup_meta_col = supplier_meta[, 4];
@@ -46,34 +34,20 @@ print(nrow(cust_filt));
 sup_filt_KI1 = raSel::m_raSelection(supplier_matrix, col=4, op="==", val=60);
 sup_filt_KI5 = raSel::m_raSelection(supplier_matrix, col=4, op="==", val=153);
 sup_filt = rbind(sup_filt_KI1, sup_filt_KI5);
-print(nrow(sup_filt));
 
 # d_yearmonth = 'Dec1997' (72)
 #date_meta_col = date_meta[, 7];
 #write(date_meta_col, "B.tbl");
 date_filt = raSel::m_raSelection(date_matrix, col=7, op="==", val=72);
-print(nrow(date_filt));
-
-print("Selection done.");
-
 
 # JOIN: lineorder ⨝ date
 lo_date = raJoin::m_raJoin(A=lineorder_matrix, colA=6, B=date_filt, colB=1, method="sort-merge");
-print("lo-date joined");
 
 # JOIN: ⨝ customer
 lo_date_cust = raJoin::m_raJoin(A=lo_date, colA=3, B=cust_filt, colB=1, method="sort-merge");
-print("lo-date-customer joined");
 
 # JOIN: ⨝ supplier
-print(nrow(sup_filt));
 joined_matrix = raJoin::m_raJoin(A=lo_date_cust, colA=5, B=sup_filt, colB=1, method="sort-merge");
-print("lo-date-customer-supplier joined");
-
-print("All tables joined.");
-
-print(nrow(joined_matrix));
-
 
 # PREPARE GROUPBY
 revenue = joined_matrix[,13];
@@ -97,7 +71,6 @@ combined_key = c_city * s_city_scale_f * d_year_scale_f + s_city * d_year_scale_
 
 group_input = cbind(revenue, combined_key);
 agg_result = raGrp::m_raGroupby(X=group_input, col=2, method="nested-loop");
-#print(agg_result);
 
 
 key = agg_result[, 1];
@@ -110,7 +83,6 @@ for (i in 2:ncol(agg_result)) {
 }
 
 group_result = cbind(key, summed_result);
-#print(group_result);
 
 revenue = group_result[, 2];
 d_year = round(key %% d_year_scale_f);
@@ -119,11 +91,6 @@ s_city = round((floor(key / d_year_scale_f)) %% s_city_scale_f);
 
 
 result = cbind(c_city, s_city, d_year, revenue);
-#print(result);
-#print(nrow(result));
-
-print("Aggregated revenue grouped by year and brand.");
-
 
 result = order(target=result, by=4, decreasing=TRUE, index.return=FALSE);
 result = order(target=result, by=3, decreasing=FALSE, index.return=FALSE);
@@ -138,5 +105,3 @@ s_cit_dec = transformdecode(target=result[, 2], spec=cust_jspec2, meta=sup_meta_
 res = cbind(c_cit_dec, s_cit_dec, as.frame(result[, 3]), as.frame(result[, 4]));
 
 print(res);
-print("Q3.4 finished");
-

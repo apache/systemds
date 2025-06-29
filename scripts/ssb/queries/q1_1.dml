@@ -10,36 +10,26 @@ date = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, se
 data_jspec = read("./scripts/specs/date.tfspec_recode.json", data_type="scalar", value_type="string");
 
 [date_matrix, date_meta] = transformencode(target=date, spec=data_jspec);
-print("date loaded and transformed.");
 
 lineorder = read("./data/lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 lineorder_jspec = read("./scripts/specs/lineorder.tfspec_recode.json", data_type="scalar", value_type="string");
 [lineorder_matrix, lineorder_meta] = transformencode(target=lineorder, spec=lineorder_jspec);
-print("lineorder loaded and transformed.");
 
 
 # JOIN
 joined_matrix = raJoin::m_raJoin(A=lineorder_matrix, colA=6, B=date_matrix, colB=1, method="sort-merge");
-#print(joined_matrix);
-print("Joined");
 
 
 # SELECTION
 filtered_year = raSel::m_raSelection(joined_matrix, col=23, op="==", val=1993);
-#print(filtered_year);
 
 filter_disc1 = raSel::m_raSelection(filtered_year, col=12, op=">=", val=1);
 filter_disc3 = raSel::m_raSelection(filter_disc1, col=12, op="<=", val=3);
-#print(filter_disc3);
 
 filter_quan = raSel::m_raSelection(filter_disc3, col=9, op="<", val=25);
-#print(filter_quan);
 
 # REVENUE
 extprice = filter_quan[,10];
 discount = filter_quan[,12];
 revenue = sum(extprice * discount);
-print("revenue: " + as.integer(revenue));
-
-#date_decode = transformdecode(target=date_filtered, spec= data_jspec, meta=date_meta);
-print("Q1.1 finished.");
+print("Revenue: " + as.integer(revenue));

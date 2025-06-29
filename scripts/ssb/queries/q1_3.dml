@@ -7,42 +7,28 @@ source("./scripts/builtin/raJoin.dml") as raJoin
 date = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 data_jspec = read("./scripts/specs/date.tfspec_recode.json", data_type="scalar", value_type="string");
 [date_matrix, date_meta] = transformencode(target=date, spec=data_jspec);
-#print(date_meta);
-print("date loaded and transformed.");
 
 lineorder = read("./data/lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 lineorder_jspec = read("./scripts/specs/lineorder.tfspec_recode.json", data_type="scalar", value_type="string");
 [lineorder_matrix, lineorder_meta] = transformencode(target=lineorder, spec=lineorder_jspec);
-#print(lineorder_matrix[nrow(lineorder_matrix), ]);
-print("lineorder loaded and transformed.");
 
 
 # JOIN
 joined_matrix = raJoin::m_raJoin(A=lineorder_matrix, colA=6, B=date_matrix, colB=1, method="sort-merge");
-#print(joined_matrix);
-print("Joined");
-#print("joined rows: " + nrow(joined_matrix));
 
 
 # SELECTION
 filtered_weeknum = raSel::m_raSelection(joined_matrix, col=30, op="==", val=6);
-#print("weeknum rows: " + nrow(filtered_weeknum));
 filtered_year = raSel::m_raSelection(filtered_weeknum, col=23, op="==", val=1994);
-#print(filtered_year);
 
 filter_disc1 = raSel::m_raSelection(filtered_year, col=12, op=">=", val=5);
 filter_disc2 = raSel::m_raSelection(filter_disc1, col=12, op="<=", val=7);
-#print(filter_disc2);
 
 filter_quan1 = raSel::m_raSelection(filter_disc2, col=9, op=">=", val=26);
 filter_quan2 = raSel::m_raSelection(filter_quan1, col=9, op="<=", val=35);
-#print(filter_quan2);
 
 # REVENUE
 extprice = filter_quan2[,10];
 discount = filter_quan2[,12];
 revenue = sum(extprice * discount);
 print("revenue: " + as.integer(revenue));
-
-#date_decode = transformdecode(target=date_filtered, spec= data_jspec, meta=date_meta);
-print("Q1.3 finished.");

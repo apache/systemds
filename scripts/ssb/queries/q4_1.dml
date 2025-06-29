@@ -6,49 +6,31 @@ source("./scripts/builtin/raJoin.dml") as raJoin
 date = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 data_jspec = read("./scripts/specs/date.tfspec_recode.json", data_type="scalar", value_type="string");
 [date_matrix, date_meta] = transformencode(target=date, spec=data_jspec);
-print("date loaded and transformed.");
-
 
 customer = read("./data/customer.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 customer_jspec = read("./scripts/specs/customer.tfspec_recode.json", data_type="scalar", value_type="string");
 [customer_matrix, customer_meta] = transformencode(target=customer, spec=customer_jspec);
-print("customer loaded and transformed.");
 
 supplier = read("./data/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 supplier_jspec = read("./scripts/specs/supplier.tfspec_recode.json", data_type="scalar", value_type="string");
 [supplier_matrix, supplier_meta] = transformencode(target=supplier, spec=supplier_jspec);
-print("supplier loaded and transformed.");
 
 lineorder = read("./data/lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 lineorder_jspec = read("./scripts/specs/lineorder.tfspec_recode.json", data_type="scalar", value_type="string");
 [lineorder_matrix, lineorder_meta] = transformencode(target=lineorder, spec=lineorder_jspec);
-print("lineorder loaded and transformed.");
 
 part = read("./data/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 part_jspec = read("./scripts/specs/part.tfspec_recode.json", data_type="scalar", value_type="string");
 [part_matrix, part_meta] = transformencode(target=part, spec=part_jspec);
-print("part loaded and transformed.");
-
-
-#date = 0;
-#lineorder = 0;
-#part = 0;
-#customer = 0;
-#supplier = 0;
-
 
 # FILTERS
 #  c_region = 'AMERICA' (3)
 #cust_meta_col = customer_meta[, 6];
-#print(cust_meta_col);
 cust_filt = raSel::m_raSelection(customer_matrix, col=6, op="==", val=3);
-#print(nrow(cust_filt));
 
 # s_region = 'AMERICA' (1)
 #sup_meta_col = supplier_meta[, 6];
-#print(sup_meta_col);
 sup_filt = raSel::m_raSelection(supplier_matrix, col=6, op="==", val=1);
-#print(nrow(sup_filt));
 
 # p_mfgr = 'MFGR#1' (1) OR 'MFGR#2' (4)
 #part_meta_col = part_meta[, 3];
@@ -56,31 +38,18 @@ sup_filt = raSel::m_raSelection(supplier_matrix, col=6, op="==", val=1);
 part_filt_1 = raSel::m_raSelection(part_matrix, col=3, op="==", val=1);
 part_filt_2 = raSel::m_raSelection(part_matrix, col=3, op="==", val=4);
 part_filt = rbind(part_filt_1, part_filt_2);
-#print(nrow(part_filt));
-
-print("Selection done.");
-
 
 # JOIN: lineorder ⨝ date
 lo_date = raJoin::m_raJoin(A=lineorder_matrix, colA=6, B=date_matrix, colB=1, method="sort-merge");
-print("lo-date joined");
 
 # JOIN: ⨝ part
 lo_date_part = raJoin::m_raJoin(A=lo_date, colA=4, B=part_filt, colB=1, method="sort-merge");
-print("lo-date-part joined");
 
 # JOIN: ⨝ customer
 lo_date_part_cust = raJoin::m_raJoin(A=lo_date_part, colA=3, B=cust_filt, colB=1, method="sort-merge");
-print("lo-date-part-customer joined");
 
 # JOIN: ⨝ supplier
 joined_matrix = raJoin::m_raJoin(A=lo_date_part_cust, colA=5, B=sup_filt, colB=1, method="sort-merge");
-print("lo-date-part-customer-supplier joined");
-
-print("All tables joined.");
-
-#print(nrow(joined_matrix));
-
 
 # PREPARE GROUPBY
 revenue = joined_matrix[,13];
@@ -88,7 +57,6 @@ supplycost = joined_matrix[,14];
 profit = revenue - supplycost;
 d_year = joined_matrix[,(ncol(lineorder_matrix) + 5)];
 c_nation = joined_matrix[,(ncol(lineorder_matrix) + ncol(date_matrix) + ncol(part_matrix) + 5)];
-
 
 # GROUPBY c_nation, s_nation, d_year
 # Berechne maximale Werte:
@@ -103,8 +71,6 @@ combined_key = c_nation * d_year_scale_f + d_year;
 
 group_input = cbind(profit, combined_key);
 agg_result = raGrp::m_raGroupby(X=group_input, col=2, method="nested-loop");
-#print(agg_result);
-
 
 key = agg_result[, 1];
 summed_result = matrix(0, rows=nrow(agg_result), cols=1);
@@ -116,23 +82,14 @@ for (i in 2:ncol(agg_result)) {
 }
 
 group_result = cbind(key, summed_result);
-#print(group_result);
 
 d_year = round(key %% d_year_scale_f);
 c_nation = round(floor(key / d_year_scale_f));
 
-
 result = cbind(d_year, c_nation, summed_result);
-#print(result);
-#print(nrow(result));
-
-print("Aggregated revenue grouped by year and brand.");
-
 
 result = order(target=result, by=2, decreasing=FALSE, index.return=FALSE);
 result = order(target=result, by=1, decreasing=FALSE, index.return=FALSE);
-print(result);
-
 
 # DECODING p_brand
 cust_jspec2 = read("./scripts/specs/part2.tfspec_recode.json", data_type="scalar", value_type="string");
@@ -141,5 +98,3 @@ c_nat_dec = transformdecode(target=result[, 2], spec=cust_jspec2, meta=cust_meta
 res = cbind(as.frame(result[, 1]), c_nat_dec, as.frame(result[, 3]));
 
 print(res);
-print("Q4.1 finished");
-

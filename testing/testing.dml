@@ -1,0 +1,51 @@
+# create an input matrix
+input_matrix = round(rand(rows = 10, cols = 10, min = 1, max = 5))
+
+# load functions
+source("scripts/builtin/raGroupby.dml") as ra_old
+source("scripts/builtin/raGroupby_exp1.dml") as ra_new
+
+# use the initial ra_groupby function
+old_func = ra_old::m_raGroupby(input_matrix, 2, "nested-loop")
+
+# use the new ra_groupby function
+new_func = ra_new::m_raGroupby_new(input_matrix, 2, "nested-loop")
+
+# check if the new function still operates correctly
+for(i in 1:nrow(old_func)){
+    for(j in 1:ncol(old_func)){
+        old_val = as.scalar(old_func[i,j])
+        new_val = as.scalar(new_func[i,j])
+        if (old_val != new_val){
+            print("The values are not identical")
+            print("The index is i x j")
+            print(i)
+            print(j)
+        }else{
+            if(j == 1){
+                print("The first value was correct")
+            }
+            if(j == ncol(old_func)){
+                print("The last value was correct")
+            }
+        }
+    }
+}
+
+print("The amount of rows in the old matrix")
+print(nrow(old_func))
+
+print("The amount of col in the old matrix")
+print(ncol(old_func))
+
+print("The amount of rows * columns in the old matrix")
+print(ncol(old_func)*nrow(old_func))
+
+print("The amount of rows in the new matrix")
+print(nrow(new_func))
+
+print("The amount of col in the new matrix")
+print(ncol(new_func))
+
+print("The amount of rows * columns in the new matrix")
+print(ncol(new_func)*nrow(new_func))

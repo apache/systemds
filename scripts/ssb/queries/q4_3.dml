@@ -6,35 +6,23 @@ source("./scripts/builtin/raJoin.dml") as raJoin
 date = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 data_jspec = read("./scripts/specs/date.tfspec_recode.json", data_type="scalar", value_type="string");
 [date_matrix, date_meta] = transformencode(target=date, spec=data_jspec);
-print("date loaded and transformed.");
 
 
 customer = read("./data/customer.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 customer_jspec = read("./scripts/specs/customer.tfspec_recode.json", data_type="scalar", value_type="string");
 [customer_matrix, customer_meta] = transformencode(target=customer, spec=customer_jspec);
-print("customer loaded and transformed.");
 
 supplier = read("./data/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 supplier_jspec = read("./scripts/specs/supplier.tfspec_recode.json", data_type="scalar", value_type="string");
 [supplier_matrix, supplier_meta] = transformencode(target=supplier, spec=supplier_jspec);
-print("supplier loaded and transformed.");
 
 lineorder = read("./data/lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 lineorder_jspec = read("./scripts/specs/lineorder.tfspec_recode.json", data_type="scalar", value_type="string");
 [lineorder_matrix, lineorder_meta] = transformencode(target=lineorder, spec=lineorder_jspec);
-print("lineorder loaded and transformed.");
 
 part = read("./data/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 part_jspec = read("./scripts/specs/part.tfspec_recode.json", data_type="scalar", value_type="string");
 [part_matrix, part_meta] = transformencode(target=part, spec=part_jspec);
-print("part loaded and transformed.");
-
-
-#date = 0;
-#lineorder = 0;
-#part = 0;
-#customer = 0;
-#supplier = 0;
 
 
 # FILTERS
@@ -42,43 +30,28 @@ print("part loaded and transformed.");
 #sup_meta_col = supplier_meta[, 5];
 #print(sup_meta_col);
 sup_filt = raSel::m_raSelection(supplier_matrix, col=5, op="==", val=9);
-print(nrow(sup_filt));
 
 # p_category = 'MFGR#14' (15)
 #part_meta_col = part_meta[, 4];
 #write(part_meta_col, "B.tbl");
 part_filt = raSel::m_raSelection(part_matrix, col=4, op="==", val=15);
-print(nrow(part_filt));
 
 # d_year = 1997 OR 1998
 date_filt_97 = raSel::m_raSelection(date_matrix, col=5, op="==", val=1997);
 date_filt_98 = raSel::m_raSelection(date_matrix, col=5, op="==", val=1998);
 date_filt = rbind(date_filt_97, date_filt_98);
-print(nrow(date_filt));
-
-print("Selection done.");
-
 
 # JOIN: lineorder ⨝ date
 lo_date = raJoin::m_raJoin(A=lineorder_matrix, colA=6, B=date_filt, colB=1, method="sort-merge");
-print("lo-date joined");
 
 # JOIN: ⨝ part
 lo_date_part = raJoin::m_raJoin(A=lo_date, colA=4, B=part_filt, colB=1, method="sort-merge");
-print("lo-date-part joined");
 
 # JOIN: ⨝ customer
 lo_date_part_cust = raJoin::m_raJoin(A=lo_date_part, colA=3, B=customer_matrix, colB=1, method="sort-merge");
-print("lo-date-part-customer joined");
 
 # JOIN: ⨝ supplier
 joined_matrix = raJoin::m_raJoin(A=lo_date_part_cust, colA=5, B=sup_filt, colB=1, method="sort-merge");
-print("lo-date-part-customer-supplier joined");
-
-print("All tables joined.");
-
-print(nrow(joined_matrix));
-
 
 # PREPARE GROUPBY
 revenue = joined_matrix[,13];
@@ -112,13 +85,10 @@ d_year = round(floor(key / (s_city_scale_f * p_brand_scale_f)));
 s_city = round(floor((key %% (s_city_scale_f * p_brand_scale_f)) / p_brand_scale_f));
 p_brand = round(key %% p_brand_scale_f);
 
-
 result = cbind(d_year, s_city, p_brand, summed_result, key);
-
 
 # EINMALIGE Sortierung nach combined_key
 result = order(target=result, by=5, decreasing=FALSE, index.return=FALSE);
-print(result);
 
 # Decoding
 cust_jspec2 = read("./scripts/specs/part2.tfspec_recode.json", data_type="scalar", value_type="string");
@@ -131,5 +101,3 @@ p_cat_dec = transformdecode(target=result[, 3], spec=cust_jspec2, meta=p_meta_co
 res = cbind(as.frame(result[, 1]), s_nat_dec, p_cat_dec, as.frame(result[, 4]));
 
 print(res);
-print("Q4.3 finished");
-

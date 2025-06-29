@@ -6,29 +6,18 @@ source("./scripts/builtin/raJoin.dml") as raJoin
 date = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 data_jspec = read("./scripts/specs/date.tfspec_recode.json", data_type="scalar", value_type="string");
 [date_matrix, date_meta] = transformencode(target=date, spec=data_jspec);
-print("date loaded and transformed.");
 
 lineorder = read("./data/lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 lineorder_jspec = read("./scripts/specs/lineorder.tfspec_recode.json", data_type="scalar", value_type="string");
 [lineorder_matrix, lineorder_meta] = transformencode(target=lineorder, spec=lineorder_jspec);
-print("lineorder loaded and transformed.");
 
 part = read("./data/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 part_jspec = read("./scripts/specs/part.tfspec_recode.json", data_type="scalar", value_type="string");
 [part_matrix, part_meta] = transformencode(target=part, spec=part_jspec);
-print("part loaded and transformed.");
 
 supplier = read("./data/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 supplier_jspec = read("./scripts/specs/supplier.tfspec_recode.json", data_type="scalar", value_type="string");
 [supplier_matrix, supplier_meta] = transformencode(target=supplier, spec=supplier_jspec);
-print("supplier loaded and transformed.");
-
-
-#date = 0;
-#lineorder = 0;
-#part = 0;
-#supplier = 0;
-
 
 # FILTERS
 # "MFGR#12"
@@ -37,23 +26,14 @@ part_filt = raSel::m_raSelection(part_matrix, col=4, op="==", val=2);
 # 'AMERICA'
 sup_filt = raSel::m_raSelection(supplier_matrix, col=6, op="==", val=1);
 
-print("Selection done.");
-
-
 # JOIN: lineorder ⨝ date
 lo_date = raJoin::m_raJoin(A=lineorder_matrix, colA=6, B=date_matrix, colB=1, method="sort-merge");
-print("lo-date joined");
 
 # JOIN: ⨝ part
 lo_date_part = raJoin::m_raJoin(A=lo_date, colA=4, B=part_filt, colB=1, method="sort-merge");
-print("lo-date-part joined");
 
 # JOIN: ⨝ supplier
 joined_matrix = raJoin::m_raJoin(A=lo_date_part, colA=5, B=sup_filt, colB=1, method="sort-merge");
-print("lo-date-part-supplier joined");
-
-print("All tables joined.");
-
 
 # PREPARE GROUPBY
 revenue = joined_matrix[,13];
@@ -80,9 +60,7 @@ d_year2 = round((ordered_result[,1] / scale_factor - p_brand2 / scale_factor));
 
 result = cbind(ordered_result[,2], d_year2, p_brand2);
 result_ordered = order(target=result, by=1, decreasing=FALSE, index.return=FALSE); # 1=REVENUE
-#print(result_ordered);
 
-print("Aggregated revenue grouped by year and brand:");
 
 # DECODING p_brand
 part_jspec2 = read("./scripts/specs/part2.tfspec_recode.json", data_type="scalar", value_type="string");
@@ -91,6 +69,3 @@ B = transformdecode(target=result_ordered[, 3], spec=part_jspec2, meta=A);
 res = cbind(as.frame(result_ordered[, 1]), as.frame(result_ordered[, 2]), B);
 
 print(res);
-print("Q2.1 finished");
-
-

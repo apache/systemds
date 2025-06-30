@@ -109,6 +109,7 @@ public class DecoderFactory
 					ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0]))));
 			}
 			if( !rcIDs.isEmpty() ) {
+				// todo figure out if we need to handle rc columns with regards to dictionary offsets.
 				ldecoders.add(new DecoderRecode(schema, !dcIDs.isEmpty(),
 					ArrayUtils.toPrimitive(rcIDs.toArray(new Integer[0]))));
 			}

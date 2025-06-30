@@ -142,8 +142,8 @@ public class DecoderBin extends Decoder {
 				}
 				else { //_colList[ix1] > _dcCols[ix2]
 					ColumnMetadata d =meta.getColumnMetadata()[_dcCols[ix2]-1];
-					String v = meta.getString( _dcCols[ix2]-1, 0);
-					if(v.charAt(0) == '¿'){
+					String v = meta.getString(0, _dcCols[ix2]-1);
+					if(v.length() > 1 && v.charAt(0) == '¿'){
 						off += UtilFunctions.parseToLong(v.substring(1));
 					}
 					else {

@@ -86,11 +86,19 @@ public class CNodeUnary extends CNode
 	}
 	
 	private UnaryType _type;
+	private boolean sparseTemplate;
 	
 	public CNodeUnary( CNode in1, UnaryType type ) {
 		_inputs.add(in1);
 		_type = type;
 		setOutputDims();
+	}
+
+	public CNodeUnary( CNode in1, UnaryType type, double sparsity ) {
+		_inputs.add(in1);
+		_type = type;
+		setOutputDims();
+		sparseTemplate = getTemplateType(sparsity);
 	}
 	
 	public UnaryType getType() {
@@ -116,8 +124,8 @@ public class CNodeUnary extends CNode
 			((_inputs.get(0) instanceof CNodeData
 				&& _inputs.get(0).getVarname().startsWith("a")
 				&& !_inputs.get(0).isLiteral())
-				|| (DMLScript.SPARSE_INTERMEDIATE && _inputs.get(0).getVarname().startsWith("STMP")));
-		String var = createVarname(DMLScript.SPARSE_INTERMEDIATE && lsparse && getOutputType());
+				|| (sparseTemplate && _inputs.get(0).getVarname().startsWith("STMP")));
+		String var = createVarname(sparseTemplate && lsparse && getOutputType());
 		String tmp = getLanguageTemplateClass(this, api).getTemplate(_type, lsparse);
 		tmp = tmp.replaceAll("%TMP%", var);
 		
@@ -132,6 +140,28 @@ public class CNodeUnary extends CNode
 		_generated = true;
 		
 		return sb.toString();
+	}
+
+	public boolean getTemplateType(double sparsity) {
+		if(!DMLScript.SPARSE_INTERMEDIATE)
+			return false;
+		else {
+			switch(_type) {
+				case VECT_SQRT:
+				case VECT_ABS:
+				case VECT_ROUND:
+				case VECT_CEIL:
+				case VECT_FLOOR:
+				case VECT_SIN:
+				case VECT_TAN:
+				case VECT_ASIN:
+				case VECT_ATAN:
+				case VECT_SINH:
+				case VECT_TANH:
+				case VECT_SIGN: return sparsity < 0.3;
+				default: return false;
+			}
+		}
 	}
 
 	public boolean getOutputType() {

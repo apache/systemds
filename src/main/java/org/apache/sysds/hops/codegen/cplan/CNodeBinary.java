@@ -145,25 +145,6 @@ public class CNodeBinary extends CNode {
 		setOutputDims();
 	}
 
-	//constructor for sparse VECT-VECT functions
-	public CNodeBinary( CNode in1, CNode in2, BinType type, double sparsityEst ) {
-		//canonicalize commutative matrix-scalar operations
-		//to increase reuse potential
-		if( type.isCommutative() && in1 instanceof CNodeData
-			&& in1.getDataType()==DataType.SCALAR ) {
-			CNode tmp = in1;
-			in1 = in2;
-			in2 = tmp;
-		}
-
-		_inputs.add(in1);
-		_inputs.add(in2);
-		_type = type;
-		setOutputDims();
-		sparseTemplate = getTemplateType(sparsityEst);
-	}
-
-	//constructor for sparse SCALAR-VECT/VECT-SCALAR functions
 	public CNodeBinary( CNode in1, CNode in2, BinType type, double sparsityEst, double scalarVal ) {
 		//canonicalize commutative matrix-scalar operations
 		//to increase reuse potential
@@ -178,7 +159,7 @@ public class CNodeBinary extends CNode {
 		_inputs.add(in2);
 		_type = type;
 		setOutputDims();
-		sparseTemplate = getTemplateType(sparsityEst);
+		sparseTemplate = getTemplateType(sparsityEst, scalarVal);
 	}
 
 	public BinType getType() {
@@ -323,18 +304,46 @@ public class CNodeBinary extends CNode {
 		return null;
 	}
 
-	private boolean getTemplateType(double sparsityEst) {
-		if(!DMLScript.SPARSE_INTERMEDIATE) {
+	private boolean getTemplateType(double sparsityEst, double scalarVal) {
+		if(!DMLScript.SPARSE_INTERMEDIATE)
 			return false;
-		} else {
+		else {
 			switch(_type) {
-				case VECT_MULT: return sparsityEst < 0.08 ? true : false;
-				case VECT_MULT_SCALAR: return sparsityEst < 0.15 ? true : false;
+				case VECT_MULT: return sparsityEst < 0.008;
+				case VECT_DIV: return sparsityEst < 0.04;
+				case VECT_LESS: return sparsityEst < 0.035;
+				case VECT_MINUS:
+				case VECT_PLUS:
+				case VECT_XOR:
+				case VECT_BITWAND:
+				case VECT_BIASADD:
+				case VECT_BIASMULT:
+				case VECT_MIN:
+				case VECT_MAX:
+				case VECT_NOTEQUAL:
+				case VECT_GREATER:
+				case VECT_EQUAL:
+				case VECT_LESSEQUAL:
+				case VECT_GREATEREQUAL: return sparsityEst < 0.3;
+				case VECT_MULT_SCALAR: return sparsityEst < 0.15;
+				case VECT_POW_SCALAR:
+				case VECT_DIV_SCALAR:
+				case VECT_XOR_SCALAR:
+				case VECT_MIN_SCALAR:
+				case VECT_MAX_SCALAR:
+				case VECT_EQUAL_SCALAR:
+				case VECT_NOTEQUAL_SCALAR: return sparsityEst < 0.3;
 				case VECT_LESS_SCALAR: {
-					_inputs.get(0);
-					return false;
+					if(scalarVal != Double.NaN) {
+						return _inputs.get(0).getDataType().isScalar() ? scalarVal <= 0 && sparsityEst < 0.09
+							: _inputs.get(0).getDataType().isScalar() && scalarVal > 0 && sparsityEst < 0.09;
+					} else
+						return false;
 				}
-				case VECT_LESS: return sparsityEst < 0.035 ? true : false;
+				case VECT_LESSEQUAL_SCALAR:
+				case VECT_GREATER_SCALAR:
+				case VECT_GREATEREQUAL_SCALAR:
+				case VECT_BITWAND_SCALAR: return sparsityEst < 0.3;
 				default: return sparsityEst < 0.3 ? true : false;
 			}
 		}

@@ -404,7 +404,7 @@ public class TemplateRow extends TemplateBase
 			{
 				cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
 				String primitiveOpName = ((UnaryOp)hop).getOp().name();
-				out = new CNodeUnary(cdata1, UnaryType.valueOf(primitiveOpName));
+				out = new CNodeUnary(cdata1, UnaryType.valueOf(primitiveOpName), OptimizerUtils.getSparsity(hop));
 			}
 		}
 		else if(HopRewriteUtils.isBinary(hop, OpOp2.CBIND)) {
@@ -448,7 +448,7 @@ public class TemplateRow extends TemplateBase
 						OptimizerUtils.getSparsity(hopIn1),
 						OptimizerUtils.getSparsity(hopIn2), OpOp2.valueOf(opName), true);
 					double literalVal = hopIn1 instanceof LiteralOp ? ((LiteralOp) hopIn1).getDoubleValue()
-						: hopIn2 instanceof LiteralOp ? ((LiteralOp) hopIn2).getDoubleValue() : Double.NEGATIVE_INFINITY;
+						: hopIn2 instanceof LiteralOp ? ((LiteralOp) hopIn2).getDoubleValue() : Double.NaN;
 					out = getVectorBinary(cdata1, cdata2, opName, sparsityEst, literalVal);
 					if( cdata1 instanceof CNodeData && !inHops2.containsKey("X")
 						&& !(cdata1.getDataType()==DataType.SCALAR) ) {
@@ -582,7 +582,7 @@ public class TemplateRow extends TemplateBase
 	private static CNodeBinary getVectorBinary(CNode cdata1, CNode cdata2, String name, double sparsity, double literalVal) {
 		if( TemplateUtils.isMatrix(cdata1) && (TemplateUtils.isMatrix(cdata2)
 			|| TemplateUtils.isRowVector(cdata2)) ) {
-			return new CNodeBinary(cdata1, cdata2, BinType.valueOf("VECT_"+name), sparsity);
+			return new CNodeBinary(cdata1, cdata2, BinType.valueOf("VECT_"+name), sparsity, literalVal);
 		}
 		else {
 			return new CNodeBinary(cdata1, cdata2, BinType.valueOf("VECT_"+name+"_SCALAR"), sparsity, literalVal);

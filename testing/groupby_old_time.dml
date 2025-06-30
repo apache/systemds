@@ -1,0 +1,8 @@
+# create an input matrix
+input_matrix = round(rand(rows = 10000, cols = 5, min = 1, max = 5))
+
+# load functions
+source("scripts/builtin/raGroupby.dml") as ra_old
+
+# use the initial ra_groupby function
+old_func = ra_old::m_raGroupby(input_matrix, 2, "nested-loop")

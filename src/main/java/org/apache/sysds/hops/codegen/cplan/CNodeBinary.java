@@ -145,6 +145,7 @@ public class CNodeBinary extends CNode {
 		setOutputDims();
 	}
 
+	//constructor for sparse VECT-VECT functions
 	public CNodeBinary( CNode in1, CNode in2, BinType type, double sparsityEst ) {
 		//canonicalize commutative matrix-scalar operations
 		//to increase reuse potential
@@ -159,7 +160,25 @@ public class CNodeBinary extends CNode {
 		_inputs.add(in2);
 		_type = type;
 		setOutputDims();
-		sparseTemplate = getTemplateTpe(sparsityEst);
+		sparseTemplate = getTemplateType(sparsityEst);
+	}
+
+	//constructor for sparse SCALAR-VECT/VECT-SCALAR functions
+	public CNodeBinary( CNode in1, CNode in2, BinType type, double sparsityEst, double scalarVal ) {
+		//canonicalize commutative matrix-scalar operations
+		//to increase reuse potential
+		if( type.isCommutative() && in1 instanceof CNodeData
+			&& in1.getDataType()==DataType.SCALAR ) {
+			CNode tmp = in1;
+			in1 = in2;
+			in2 = tmp;
+		}
+
+		_inputs.add(in1);
+		_inputs.add(in2);
+		_type = type;
+		setOutputDims();
+		sparseTemplate = getTemplateType(sparsityEst);
 	}
 
 	public BinType getType() {
@@ -304,16 +323,19 @@ public class CNodeBinary extends CNode {
 		return null;
 	}
 
-	private boolean getTemplateTpe(double sparsityEst) {
+	private boolean getTemplateType(double sparsityEst) {
 		if(!DMLScript.SPARSE_INTERMEDIATE) {
 			return false;
 		} else {
 			switch(_type) {
 				case VECT_MULT: return sparsityEst < 0.08 ? true : false;
 				case VECT_MULT_SCALAR: return sparsityEst < 0.15 ? true : false;
-				case VECT_LESS_SCALAR: return false;
+				case VECT_LESS_SCALAR: {
+					_inputs.get(0);
+					return false;
+				}
 				case VECT_LESS: return sparsityEst < 0.035 ? true : false;
-				default: return true;
+				default: return sparsityEst < 0.3 ? true : false;
 			}
 		}
 	}

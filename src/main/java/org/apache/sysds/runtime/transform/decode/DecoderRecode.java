@@ -77,6 +77,7 @@ public class DecoderRecode extends Decoder
 					int colID = _colList[j];
 					double val = UtilFunctions.objectToDouble(
 							out.getSchema()[colID-1], out.get(i, colID-1));
+
 					long key = UtilFunctions.toLong(val);
 					out.set(i, colID-1, getRcMapValue(j, key));
 				}

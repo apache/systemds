@@ -76,10 +76,11 @@ public class DecoderPassThrough extends Decoder
 		catch(Exception e){
 			String decode_cols = Arrays.toString(_dcCols);
 			String source_cols = Arrays.toString(_srcCols);
+			String column_list = Arrays.toString(_colList);
 
 			// LOG.error(Arrays.toString(_dcCols));
 			// LOG.error(Arrays.toString( ))
-			throw new RuntimeException("Failed decoding with decode: " + decode_cols + " and source : " + source_cols,e);
+			throw new RuntimeException("Failed decoding with \ndecode: " + decode_cols + "\nsource : " + source_cols + "\ncolumn list : " + column_list,e);
 		}
 	}
 

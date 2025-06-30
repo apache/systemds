@@ -50,9 +50,9 @@ public class DecoderRecode extends Decoder
 	// private Object[][] _rcMapsDirect = null;
 	private boolean _onOut = false;
 
-	public DecoderRecode() {
-		super(null, null);
-	}
+	// public DecoderRecode() {
+	// 	super(null, null);
+	// }
 
 	protected DecoderRecode(ValueType[] schema, boolean onOut, int[] rcCols) {
 		super(schema, rcCols);

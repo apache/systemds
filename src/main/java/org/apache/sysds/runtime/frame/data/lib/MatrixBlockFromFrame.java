@@ -37,7 +37,7 @@ public class MatrixBlockFromFrame {
 
 	public static final int blocksizeIJ = 32;
 
-	public static boolean WARNED_FOR_FAILED_CAST = false;
+	public static Boolean WARNED_FOR_FAILED_CAST = false;
 
 	private MatrixBlockFromFrame(){
 		// private constructor for code coverage.
@@ -108,12 +108,13 @@ public class MatrixBlockFromFrame {
 				return convertGeneric(frame, mb, n, rl, ru);
 		}
 		catch(NumberFormatException | DMLRuntimeException e) {
-			if(!WARNED_FOR_FAILED_CAST) {
-
-				LOG.error(
-					"Failed to convert to Matrix because of number format errors, falling back to NaN on incompatible cells",
-					e);
-				WARNED_FOR_FAILED_CAST = true;
+			synchronized(WARNED_FOR_FAILED_CAST){
+				if(!WARNED_FOR_FAILED_CAST) {
+					LOG.error(
+						"Failed to convert to Matrix because of number format errors, falling back to NaN on incompatible cells",
+						e);
+					WARNED_FOR_FAILED_CAST = true;
+				}
 			}
 			return convertSafeCast(frame, mb, n, rl, ru);
 

@@ -64,9 +64,8 @@ public class DecoderFactory
 		try {
 			//parse transform specification
 			JSONObject jSpec = new JSONObject(spec);
-			List<Decoder> ldecoders = new ArrayList<>();
 			
-			//create decoders 'bin', 'recode', 'dummy' and 'pass-through'
+			//create decoders 'bin', 'recode', 'hash', 'dummy', and 'pass-through'
 			List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames, minCol, maxCol);
 			List<Integer> rcIDs = Arrays.asList(ArrayUtils.toObject(
 					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.RECODE.toString(), minCol, maxCol)));
@@ -74,10 +73,20 @@ public class DecoderFactory
 					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.HASH.toString(), minCol, maxCol)));
 			List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
 					TfMetaUtils.parseJsonIDList(jSpec, colnames, TfMethod.DUMMYCODE.toString(), minCol, maxCol)));
+			// only specially treat the columns with both recode and dictionary
 			rcIDs = unionDistinct(rcIDs, dcIDs);
+			// remove hash recoded. // todo potentially wrong and remove?
 			rcIDs = except(rcIDs, hcIDs);
+
 			int len = dcIDs.isEmpty() ? Math.min(meta.getNumColumns(), clen) : meta.getNumColumns();
-			List<Integer> ptIDs = except(except(UtilFunctions.getSeqList(1, len, 1), rcIDs), binIDs);
+
+			// set the remaining columns to passthrough.
+			List<Integer> ptIDs = UtilFunctions.getSeqList(1, len, 1);
+			// except recoded columns
+			ptIDs = except(ptIDs, rcIDs);
+			// binned columns
+			ptIDs = except(ptIDs, binIDs);
+			// hashed columns
 			ptIDs = except(ptIDs, hcIDs); // remove hashed columns
 
 			//create default schema if unspecified (with double columns for pass-through)
@@ -86,10 +95,14 @@ public class DecoderFactory
 				for( Integer col : ptIDs )
 					schema[col-1] = ValueType.FP64;
 			}
+
+			// collect all the decoders in one list.
+			List<Decoder> ldecoders = new ArrayList<>();
 			
 			if( !binIDs.isEmpty() ) {
 				ldecoders.add(new DecoderBin(schema, 
-					ArrayUtils.toPrimitive(binIDs.toArray(new Integer[0]))));
+					ArrayUtils.toPrimitive(binIDs.toArray(new Integer[0])),
+					ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0]))));
 			}
 			if( !dcIDs.isEmpty() ) {
 				ldecoders.add(new DecoderDummycode(schema, 

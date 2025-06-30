@@ -50,7 +50,7 @@ public class DecoderComposite extends Decoder
 		_decoders = decoders;
 	}
 
-	public DecoderComposite() { super(null, null); }
+	// public DecoderComposite() { super(null, null); }
 
 	@Override
 	public FrameBlock decode(MatrixBlock in, FrameBlock out) {

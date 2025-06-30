@@ -27,10 +27,10 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
  * Simple atomic decoder for dummycoded columns. This decoder builds internally
@@ -61,14 +61,47 @@ public class DecoderDummycode extends Decoder
 	public void decode(MatrixBlock in, FrameBlock out, int rl, int ru) {
 		//TODO perf (exploit sparse representation for better asymptotic behavior)
 		// out.ensureAllocatedColumns(in.getNumRows());
-		for( int i=rl; i<ru; i++ )
-			for( int j=0; j<_colList.length; j++ )
-				for( int k=_clPos[j]; k<_cuPos[j]; k++ )
-					if( in.get(i, k-1) != 0 ) {
-						int col = _colList[j] - 1;
-						out.set(i, col, UtilFunctions.doubleToObject(
-							out.getSchema()[col], k-_clPos[j]+1));
+		if(in.isInSparseFormat()){
+			SparseBlock sb = in.getSparseBlock();
+			for(int i = rl; i < ru; i++){
+				if(!sb.isEmpty(i)){
+					int apos = sb.pos(i);
+					int alen = sb.size(i) + apos;
+					int[] aix = sb.indexes(i);
+					// double[] val = sb.values(i); always 1...
+					int h = 0;
+					for(int j = 0; j < _colList.length && h < alen; j++){
+						// find k, the index in aix, within the range of low and high
+						int low = _clPos[j];
+						int high = _cuPos[j];
+						while(h < alen && aix[h] < low){
+							h++;
+						}
+						if(h < alen && aix[h] >= low && aix[h] < high){
+							int k = aix[h];
+							int col = _colList[j] - 1;
+							out.getColumn(col).set(i, k - _clPos[j] + 1);
+						}
+						while(h < alen && aix[h] < high){
+							h++;
+						}
 					}
+				}
+			}
+		}
+		else{
+			for(int i = rl; i < ru; i++)
+				for(int j = 0; j < _colList.length; j++)
+					for(int k = _clPos[j]; k < _cuPos[j]; k++)
+						if(in.get(i, k - 1) != 0) {
+							int col = _colList[j] - 1;
+							out.getColumn(col).set(i, k - _clPos[j] + 1);
+							// if the non zero is found, we can skip the rest of k.
+							continue; 
+						}
+		}
+
+		
 	}
 	
 	@Override

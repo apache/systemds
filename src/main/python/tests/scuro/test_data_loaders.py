@@ -102,6 +102,6 @@ class TestDataLoaders(unittest.TestCase):
     #     for i in range(0, self.num_instances):
     #         np.testing.assert_almost_equal(self.text_ref.data[i], text.data[i])
 
-
-if __name__ == "__main__":
-    unittest.main()
+#
+# if __name__ == "__main__":
+#     unittest.main()

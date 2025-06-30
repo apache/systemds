@@ -1,5 +1,5 @@
 # create an input matrix
-input_matrix = round(rand(rows = 1000, cols = 10, min = 1))
+input_matrix = round(rand(rows = 10000, cols = 5, min = 1, max = 5))
 
 # load functions
 source("scripts/builtin/raGroupby_exp1.dml") as ra_new

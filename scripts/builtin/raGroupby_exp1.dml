@@ -58,28 +58,28 @@ m_raGroupby_new = function (Matrix[Double] X, Integer col, String method)
     rows_per_group = matrix(0, numGroups, 1)
 
     # order the initial matrix
-    #Xordered = order(target = X[,col], by = col)
     Xordered = order(target = X, by = col, decreasing = FALSE, index.return = FALSE)
+
+    # create a Matrix with the ordered groups
+    Yordered = order(target = Y, by = 1, decreasing = FALSE, index.return = FALSE)
 
     # the amount of unique groups that are remaining
     restingGroups = nrow(uniqueValues)
 
     # intial group
     Ypos = 1
-    currentGroup = as.scalar(Y[Ypos,1])
 
     # intial positon in the row final matrix
     YrowStart = 1
+    i = 1
 
     #loop over the initial matrix
     while(restingGroups > 0){
 
-        current_group = as.scalar(Y[Ypos,1])
+        currentGroup = as.scalar(Yordered[Ypos,1])
 
         #amount of rows that need to be copied
         amountRows = 0
-
-        i = YrowStart
 
         GROUP = 1
 
@@ -94,27 +94,37 @@ m_raGroupby_new = function (Matrix[Double] X, Integer col, String method)
             else{
                GROUP = 0
             }
-
         }
 
         # row position in the final matrix
         restingGroups = restingGroups - 1
 
         if (amountRows > 0){
+
             # copy the values into the final matrix
             YrowEnd = YrowStart + amountRows - 1
             newMatrix = cbind(Xordered[YrowStart:YrowEnd, 1:(col-1)], Xordered[YrowStart:YrowEnd, (col+1):ncol(X)])
+
             #flatten the new row
             newRow = matrix(newMatrix, rows = 1, cols = nrow(newMatrix) * ncol(newMatrix))
             newRowColumns = amountRows * (ncol(X)-1)
-            Y[Ypos, 2: (newRowColumns + 1)] = newRow
-        }
 
+            # sort the ordered Y matrix back to the initial order
+            rowFinder = 1
+            while(currentGroup != as.scalar(Y[rowFinder, 1])){
+                rowFinder = rowFinder + 1
+            }
+            Y[rowFinder, 2: (newRowColumns + 1)] = newRow
+        }
         # continue with the next group
         Ypos = Ypos + 1
         YrowStart = YrowStart + amountRows
 
     }
+
+
+
+
 
   }
   else if (method == "permutation-matrix") {

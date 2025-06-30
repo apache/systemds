@@ -101,7 +101,7 @@ public interface MatrixBlockFromFrame {
 			else
 				return convertGeneric(frame, mb, n, rl, ru);
 		}
-		catch(DMLRuntimeException e) {
+		catch(NumberFormatException | DMLRuntimeException e) {
 			if(e.getMessage().contains("Unable to change to double")){
 				LOG.error(
 					"Failed to convert to Matrix because of number format errors, falling back to NaN on incompatible cells",

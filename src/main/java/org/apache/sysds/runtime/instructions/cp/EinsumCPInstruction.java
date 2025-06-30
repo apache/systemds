@@ -34,13 +34,16 @@ import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysds.hops.codegen.cplan.CNodeCell;
 import org.apache.sysds.hops.codegen.cplan.CNodeData;
 import org.apache.sysds.hops.codegen.cplan.CNodeRow;
+import org.apache.sysds.hops.codegen.template.TemplateUtils;
 import org.apache.sysds.runtime.codegen.*;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.functionobjects.*;
 import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
+import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -129,16 +132,16 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 					arrCounter++;
 				}
 				else if(!einc.contractDimsSet.contains(c2)){
-					if (c2 == c){
-						diagMatrices.add(arrCounter);
-					}
+
 					if(!partsCharactersToIndices.containsKey(c2))
 						partsCharactersToIndices.put(c2, new ArrayList<>());
 
 					partsCharactersToIndices.get(c2).add(arrCounter);
-					s+=c2;
+					if (c2 == c)
+						diagMatrices.add(arrCounter);
+					else
+						s += c2;
 				}
-
 				i++;
 			}
 			newEquationStringSplit.add(s);
@@ -191,6 +194,16 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			ReorgOperator op = new ReorgOperator(DiagIndex.getDiagIndexFnObject());
 			MatrixBlock mb = inputs.get(idx);
 			inputs.set(idx, mb.reorgOperations(op, new MatrixBlock(),0,0,0));
+			inputsChars.set(idx, String.valueOf(inputsChars.get(idx).charAt(0)));
+		}
+
+		//make all vetors col vectors
+		for(int i = 0; i < inputs.size(); i++){
+			if(inputs.get(i) != null && inputsChars.get(i).length() == 1 && inputs.get(i).getNumColumns() > 1){
+				inputs.get(i).setNumRows(inputs.get(i).getNumColumns());
+				inputs.get(i).setNumColumns(1);
+				inputs.get(i).getDenseBlock().resetNoFill(inputs.get(i).getNumColumns(),1);
+			}
 		}
 
 		if(LOG.isTraceEnabled()) for(Character c :partsCharactersToIndices.keySet()){
@@ -249,7 +262,36 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 					res = remMbs.get(0).reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
 				}
 			}else{
-				throw new RuntimeException("Einsum runtime error"); // should not happen
+				// maybe the leftovers are i,j and result should be ij or ji -> outer multp.
+				if(remStrings.size() == 2 && remStrings.get(0).length()==1 && remStrings.get(1).length()==1){
+					MatrixBlock first;
+					MatrixBlock second;
+
+					if(remStrings.get(0).charAt(0) == outChar1 && remStrings.get(1).charAt(0) == outChar2){
+						first = remMbs.get(0);
+						second = remMbs.get(1);
+					}else if(remStrings.get(0).charAt(0) == outChar2 && remStrings.get(1).charAt(0) == outChar1){
+						first = remMbs.get(1);
+						second = remMbs.get(0);
+					}else{
+						throw new RuntimeException("Einsum runtime error: left with 2 vectors that cannot produce final result "+remStrings.get(0)+" , "+remStrings.get(1)); // should not happen
+					}
+					if(first.getNumColumns() > 1){
+						int r = first.getNumColumns();
+						first.setNumRows(r);
+						first.setNumColumns(1);
+						first.getDenseBlock().resetNoFill(r,1);
+					}
+					if(second.getNumRows() > 1){
+						int c = second.getNumRows();
+						second.setNumRows(1);
+						second.setNumColumns(c);
+						second.getDenseBlock().resetNoFill(1,c);
+					}
+					res = LibMatrixMult.matrixMult(first,second, _numThreads);
+				}else {
+					throw new RuntimeException("Einsum runtime error, reductions and multiplications finished but the did not produce one result"); // should not happen
+				}
 			}
 			ec.setMatrixOutput(output.getName(), res);
 		}
@@ -299,7 +341,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		return anyCouldNotDo;
 	}
 
-	/*  handle situation: ji,ji or ij,ji */
+	/*  handle situation: ji,ji or ij,ji, j,j */
 	private boolean multiplyTerms(HashMap<Character, ArrayList<Integer>> partsCharactersToIndices, ArrayList<MatrixBlock> inputs, ArrayList<String> inputsChars, Character outChar1, Character outChar2 ) {
 		HashMap<String, ArrayList<Integer>> stringToIndex = new HashMap<>();
 

@@ -71,7 +71,7 @@ public class DecoderRecode extends Decoder
 
 	@Override
 	public void decode(MatrixBlock in, FrameBlock out, int rl, int ru) {
-		if( _onOut ) { //recode on output (after dummy)
+ 		if( _onOut ) { //recode on output (after dummy)
 			for( int i=rl; i<ru; i++ ) {
 				for( int j=0; j<_colList.length; j++ ) {
 					int colID = _colList[j];

@@ -51,9 +51,13 @@ public class ColumnDecoderRecode extends ColumnDecoder {
 
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
+
+        long r1 = System.nanoTime();
         // TODO
         out.ensureAllocatedColumns(in.getNumRows());
         columnDecode(in, out, 0, in.getNumRows());
+        long r2 = System.nanoTime();
+        System.out.println(this.getClass() + "time: " + (r2 - r1) / 1e6 + " ms");
         return out;
     }
 

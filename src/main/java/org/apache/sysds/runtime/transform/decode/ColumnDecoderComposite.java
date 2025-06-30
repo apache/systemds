@@ -85,7 +85,6 @@ public class ColumnDecoderComposite extends ColumnDecoder {
         try{
             List<Future<FrameBlock>> tasks = new ArrayList<>();
             for (ColumnDecoder dec : _decoders) {
-                long t1 = System.nanoTime();
                 if(dec instanceof ColumnDecoderDummycode) {
                     tasks.add(pool.submit(() -> dec.columnDecode(in, out)));
                 }
@@ -102,9 +101,10 @@ public class ColumnDecoderComposite extends ColumnDecoder {
                         tasks.add(pool.submit(() -> sub.columnDecode(slices.get(finalC), out)));
                     }
                 }
-                long t2 = System.nanoTime();
-                System.out.println(dec + "time: " + (t2 - t1) / 1e6 + " ms");
             }
+            for(Future<?> f : tasks)
+                f.get();
+            return out;
         }
         catch (Exception e) {
             throw new RuntimeException(e);
@@ -112,7 +112,6 @@ public class ColumnDecoderComposite extends ColumnDecoder {
         finally {
             pool.shutdown();
         }
-        return out;
     }
 
     @Override

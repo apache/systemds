@@ -48,6 +48,8 @@ public class ColumnDecoderBin extends ColumnDecoder {
 
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
+
+        long b1 = System.nanoTime();
         out.ensureAllocatedColumns(in.getNumRows());
         for (int i = 0; i < in.getNumRows(); i++) {
             for (int j = 0; j < _colList.length; j++) {
@@ -64,6 +66,8 @@ public class ColumnDecoderBin extends ColumnDecoder {
             }
         }
         //columnDecode(in, out, 0, in.getNumRows());
+        long b2 = System.nanoTime();
+        System.out.println(this.getClass() + "time: " + (b2 - b1) / 1e6 + " ms");
         return out;
     }
 

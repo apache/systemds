@@ -42,8 +42,8 @@ public class ColumnDecoderMixedMethodsTest extends AutomatedTestBase {
     @Test
     public void testColumnDecoderMixedMethods() {
         try {
-            int rows = 50000;
-            double[][] arr = new double[rows][6];
+            int rows = 100000;
+            double[][] arr = new double[rows][5];
             for (int i = 0; i < rows; i++) {
                 arr[i][0] = (i % 4) + 2; // dummy column
                 arr[i][1] = 2*i + 1;     // bin column
@@ -54,7 +54,7 @@ public class ColumnDecoderMixedMethodsTest extends AutomatedTestBase {
             }
             MatrixBlock mb = DataConverter.convertToMatrixBlock(arr);
             FrameBlock data = DataConverter.convertToFrameBlock(mb);
-            String spec = "{ids:true,recode:[1,3], bin:[{id:2, method:equi-width, numbins:4},{id:5, method:equi-width, numbins:4}]}";//, dummycode:[6]
+            String spec = "{ids:true,recode:[3], bin:[{id:2, method:equi-width, numbins:4},{id:5, method:equi-width, numbins:4}]}";//, dummycode:[6]
             //
             MultiColumnEncoder enc = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(), null);
             MatrixBlock encoded = enc.encode(data);
@@ -62,12 +62,11 @@ public class ColumnDecoderMixedMethodsTest extends AutomatedTestBase {
 
             Decoder dec = DecoderFactory.createDecoder(spec, data.getColumnNames(), data.getSchema(), meta, encoded.getNumColumns());
             FrameBlock expected = new FrameBlock(data.getSchema());
-            System.out.println(mb);
-            System.out.println(encoded);
+
             long t1 = System.nanoTime();
             dec.decode(encoded, expected,5);
             long t2 = System.nanoTime();
-            System.out.println("ColumnDecoder time: " + (t2 - t1) / 1e6 + " ms");
+            System.out.println("Decoder time: " + (t2 - t1) / 1e6 + " ms");
 
             ColumnDecoder cdec = ColumnDecoderFactory.createDecoder(spec, data.getColumnNames(), data.getSchema(), meta);
             FrameBlock actual = new FrameBlock(data.getSchema());
@@ -75,9 +74,7 @@ public class ColumnDecoderMixedMethodsTest extends AutomatedTestBase {
             long t3 = System.nanoTime();
             cdec.columnDecode(encoded, actual);
             long t4 = System.nanoTime();
-
             System.out.println("ColumnDecoder time: " + (t4 - t3) / 1e6 + " ms");
-
             TestUtils.compareFrames(expected, actual, false);
         }
         catch(Exception ex) {

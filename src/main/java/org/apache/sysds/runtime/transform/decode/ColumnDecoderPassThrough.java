@@ -50,6 +50,7 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
 
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
+        long p1 = System.nanoTime();
         out.ensureAllocatedColumns(in.getNumRows());
         for (int i = 0; i < _colList.length; i++){
             for (int r = 0; r < in.getNumRows(); r++) {
@@ -57,6 +58,8 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
             }
         }
         //columnDecode(in, out, 0, in.getNumRows());
+        long p2 = System.nanoTime();
+        System.out.println(this.getClass() + "time: " + (p2 - p1) / 1e6 + " ms");
         return out;
     }
 

@@ -143,7 +143,7 @@ public class DecoderRecode extends Decoder
 					max[j] = Math.max(lval, max[j]);
 				}
 				catch(Exception e){
-					throw new DMLRuntimeException("Failed to reinitialize recode map from: " + (meta.getColumn(_colList[j]-1)));
+					throw new DMLRuntimeException("Failed to reinitialize recode map from: " + (meta.getColumn(_colList[j]-1)), e);
 				}
 			}
 			_rcMaps[j] = map;

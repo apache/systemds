@@ -78,8 +78,8 @@ public class DecoderFactory
 			rcIDs = except(rcIDs, hcIDs);
 			int len = dcIDs.isEmpty() ? Math.min(meta.getNumColumns(), clen) : meta.getNumColumns();
 			List<Integer> ptIDs = except(except(UtilFunctions.getSeqList(1, len, 1), rcIDs), binIDs);
-			ptIDs = except(rcIDs, hcIDs); // remove hashed columns
-			
+			ptIDs = except(ptIDs, hcIDs); // remove hashed columns
+
 			//create default schema if unspecified (with double columns for pass-through)
 			if( schema == null ) {
 				schema = UtilFunctions.nCopies(len, ValueType.STRING);

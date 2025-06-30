@@ -203,7 +203,7 @@ public interface MatrixBlockFromFrame {
 				try {
 					lnnz += (cvals[cpos + j] = frame.getDoubleNaN(i, j)) != 0 ? 1 : 0;
 				}
-				catch(DMLRuntimeException e) {
+				catch(NumberFormatException | DMLRuntimeException e) {
 					lnnz += 1;
 					cvals[cpos + j] = Double.NaN;
 				}

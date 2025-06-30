@@ -32,10 +32,16 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
-public interface MatrixBlockFromFrame {
+public class MatrixBlockFromFrame {
 	public static final Log LOG = LogFactory.getLog(MatrixBlockFromFrame.class.getName());
 
 	public static final int blocksizeIJ = 32;
+
+	public static boolean WARNED_FOR_FAILED_CAST = false;
+
+	private MatrixBlockFromFrame(){
+		// private constructor for code coverage.
+	}
 
 	/**
 	 * Converts a frame block with arbitrary schema into a matrix block. Since matrix block only supports value type
@@ -102,9 +108,13 @@ public interface MatrixBlockFromFrame {
 				return convertGeneric(frame, mb, n, rl, ru);
 		}
 		catch(NumberFormatException | DMLRuntimeException e) {
-			LOG.error(
-				"Failed to convert to Matrix because of number format errors, falling back to NaN on incompatible cells",
-				e);
+			if(!WARNED_FOR_FAILED_CAST) {
+
+				LOG.error(
+					"Failed to convert to Matrix because of number format errors, falling back to NaN on incompatible cells",
+					e);
+				WARNED_FOR_FAILED_CAST = true;
+			}
 			return convertSafeCast(frame, mb, n, rl, ru);
 
 		}

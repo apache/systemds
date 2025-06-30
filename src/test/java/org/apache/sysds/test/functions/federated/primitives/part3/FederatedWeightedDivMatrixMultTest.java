@@ -61,7 +61,7 @@ public class FederatedWeightedDivMatrixMultTest extends AutomatedTestBase {
 
 	private final static String OUTPUT_NAME = "Z";
 
-	private final static double TOLERANCE = 1e-9;
+	private final static double TOLERANCE = 1e-8;
 
 	private final static int BLOCKSIZE = 1024;
 

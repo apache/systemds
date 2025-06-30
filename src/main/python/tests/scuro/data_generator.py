@@ -205,7 +205,7 @@ class TestDataGenerator:
 
     def __create_audio_data(self, idx, duration, speed_factor):
         path = f"{self.path}/AUDIO/{idx}.wav"
-        sample_rate = 44100
+        sample_rate = 16000
 
         t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
         frequency_variation = random.uniform(200.0, 500.0)

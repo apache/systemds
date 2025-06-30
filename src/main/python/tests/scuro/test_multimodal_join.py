@@ -96,7 +96,7 @@ class TestMultimodalJoin(unittest.TestCase):
         video_data_loader = VideoLoader(
             self.data_generator.get_modality_path(ModalityType.VIDEO),
             self.data_generator.indices,
-            data_type=np.float32,
+            data_type=np.float16,
             chunk_size=l_chunk_size,
         )
         video = UnimodalModality(video_data_loader)

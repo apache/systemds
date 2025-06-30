@@ -60,27 +60,15 @@ public class DecoderPassThrough extends Decoder
 	
 	@Override
 	public void decode(MatrixBlock in, FrameBlock out, int rl, int ru) {
-		try{
-
-			int clen = Math.min(_colList.length, out.getNumColumns());
-			for( int i=rl; i<ru; i++ ) {
-				for( int j=0; j<clen; j++ ) {
-					int srcColID = _srcCols[j];
-					int tgtColID = _colList[j];
-					double val = in.get(i, srcColID-1);
-					out.set(i, tgtColID-1,
-						UtilFunctions.doubleToObject(_schema[tgtColID-1], val));
-				}
+		int clen = Math.min(_colList.length, out.getNumColumns());
+		for( int i=rl; i<ru; i++ ) {
+			for( int j=0; j<clen; j++ ) {
+				int srcColID = _srcCols[j];
+				int tgtColID = _colList[j];
+				double val = in.get(i, srcColID-1);
+				out.set(i, tgtColID-1,
+					UtilFunctions.doubleToObject(_schema[tgtColID-1], val));
 			}
-		}
-		catch(Exception e){
-			String decode_cols = Arrays.toString(_dcCols);
-			String source_cols = Arrays.toString(_srcCols);
-			String column_list = Arrays.toString(_colList);
-
-			// LOG.error(Arrays.toString(_dcCols));
-			// LOG.error(Arrays.toString( ))
-			throw new RuntimeException("Failed decoding with \ndecode: " + decode_cols + "\nsource : " + source_cols + "\ncolumn list : " + column_list,e);
 		}
 	}
 

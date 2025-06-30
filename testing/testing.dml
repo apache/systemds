@@ -1,5 +1,5 @@
 # create an input matrix
-input_matrix = round(rand(rows = 10, cols = 10, min = 1, max = 5))
+input_matrix = round(rand(rows = 5, cols = 5, min = 1, max = 5))
 
 # load functions
 source("scripts/builtin/raGroupby.dml") as ra_old

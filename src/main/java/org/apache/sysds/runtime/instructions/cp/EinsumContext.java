@@ -61,6 +61,7 @@ public class EinsumContext {
         int arrSizeIterator=0;
         int arrayIterator = 0;
         int i;
+        // first iteration through string: collect information on character-size and what characters are summing characters
         for (i = 0; true; i++) {
             char c = eqStr.charAt(i);
             if(c == '-'){
@@ -89,6 +90,7 @@ public class EinsumContext {
                 arrSizeIterator++;
             }
         }
+
         int numOfRemainingChars = eqStr.length() - i;
 
         if (numOfRemainingChars > 2)
@@ -102,6 +104,7 @@ public class EinsumContext {
         res.outCols=(numOfRemainingChars > 1 ? res.charToDimensionSizeInt.get(outChar2) : 1);
 
         arrayIterator=0;
+        // second iteration through string: collect remaining information
         for (i = 0; true; i++) {
             char c = eqStr.charAt(i);
             if (c == '-') {

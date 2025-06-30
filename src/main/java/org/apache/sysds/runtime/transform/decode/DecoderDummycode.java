@@ -59,37 +59,35 @@ public class DecoderDummycode extends Decoder
 
 	@Override
 	public void decode(MatrixBlock in, FrameBlock out, int rl, int ru) {
-		//TODO perf (exploit sparse representation for better asymptotic behavior)
-		// out.ensureAllocatedColumns(in.getNumRows());
-		if(in.isInSparseFormat()){
+		if(in.isInSparseFormat()) {
 			SparseBlock sb = in.getSparseBlock();
-			for(int i = rl; i < ru; i++){
-				if(!sb.isEmpty(i)){
+			for(int i = rl; i < ru; i++) {
+				if(!sb.isEmpty(i)) {
 					int apos = sb.pos(i);
 					int alen = sb.size(i) + apos;
 					int[] aix = sb.indexes(i);
-					// double[] val = sb.values(i); always 1...
+					// double[] val = sb.values(i); always 1... therefore not needed
 					int h = 0;
-					for(int j = 0; j < _colList.length && h < alen; j++){
+					for(int j = 0; j < _colList.length && h < alen; j++) {
 						// find k, the index in aix, within the range of low and high
 						int low = _clPos[j];
 						int high = _cuPos[j];
-						while(h < alen && aix[h] < low){
+						while(h < alen && aix[h] < low) {
 							h++;
 						}
-						if(h < alen && aix[h] >= low && aix[h] < high){
+						if(h < alen && aix[h] >= low && aix[h] < high) {
 							int k = aix[h];
 							int col = _colList[j] - 1;
 							out.getColumn(col).set(i, k - _clPos[j] + 1);
 						}
-						while(h < alen && aix[h] < high){
+						while(h < alen && aix[h] < high) {
 							h++;
 						}
 					}
 				}
 			}
 		}
-		else{
+		else {
 			for(int i = rl; i < ru; i++)
 				for(int j = 0; j < _colList.length; j++)
 					for(int k = _clPos[j]; k < _cuPos[j]; k++)
@@ -97,13 +95,11 @@ public class DecoderDummycode extends Decoder
 							int col = _colList[j] - 1;
 							out.getColumn(col).set(i, k - _clPos[j] + 1);
 							// if the non zero is found, we can skip the rest of k.
-							continue; 
+							continue;
 						}
 		}
-
-		
 	}
-	
+
 	@Override
 	public Decoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
 		List<Integer> dcList = new ArrayList<>();

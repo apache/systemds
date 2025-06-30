@@ -43,7 +43,7 @@ public class ColumnDecoderMixedMethodsTest extends AutomatedTestBase {
     public void testColumnDecoderMixedMethods() {
         try {
             int rows = 50000;
-            double[][] arr = new double[rows][6];
+            double[][] arr = new double[rows][5];
             for (int i = 0; i < rows; i++) {
                 arr[i][0] = (i % 4) + 2; // dummy column
                 arr[i][1] = 2*i + 1;     // bin column

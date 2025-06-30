@@ -200,3 +200,7 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
                 debug=False,
             )
             multimodal_optimizer.optimize()
+
+
+if __name__ == "__main__":
+    unittest.main()

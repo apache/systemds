@@ -102,14 +102,11 @@ public interface MatrixBlockFromFrame {
 				return convertGeneric(frame, mb, n, rl, ru);
 		}
 		catch(NumberFormatException | DMLRuntimeException e) {
-			if(e.getMessage().contains("Unable to change to double")){
-				LOG.error(
-					"Failed to convert to Matrix because of number format errors, falling back to NaN on incompatible cells",
-					e);
-				return convertSafeCast(frame, mb, n, rl, ru);
-			}
-			else 
-				throw e;
+			LOG.error(
+				"Failed to convert to Matrix because of number format errors, falling back to NaN on incompatible cells",
+				e);
+			return convertSafeCast(frame, mb, n, rl, ru);
+
 		}
 	}
 
@@ -183,9 +180,8 @@ public interface MatrixBlockFromFrame {
 		return lnnz;
 	}
 
-
-
-	private static long convertSafeCast(final FrameBlock frame, final MatrixBlock mb, final int n, final int rl, final int ru){
+	private static long convertSafeCast(final FrameBlock frame, final MatrixBlock mb, final int n, final int rl,
+		final int ru) {
 		final DenseBlock c = mb.getDenseBlock();
 		long lnnz = 0;
 		for(int bi = rl; bi < ru; bi += blocksizeIJ) {
@@ -198,17 +194,16 @@ public interface MatrixBlockFromFrame {
 		return lnnz;
 	}
 
-
 	private static long convertBlockSafeCast(final FrameBlock frame, long lnnz, final DenseBlock c, final int rl,
 		final int cl, final int ru, final int cu) {
 		for(int i = rl; i < ru; i++) {
 			final double[] cvals = c.values(i);
 			final int cpos = c.pos(i);
-			for(int j = cl; j < cu; j++){
-				try{
+			for(int j = cl; j < cu; j++) {
+				try {
 					lnnz += (cvals[cpos + j] = frame.getDoubleNaN(i, j)) != 0 ? 1 : 0;
 				}
-				catch(DMLRuntimeException e){
+				catch(DMLRuntimeException e) {
 					lnnz += 1;
 					cvals[cpos + j] = Double.NaN;
 				}

@@ -114,8 +114,8 @@ public class DecoderPassThrough extends Decoder
 				else { //_colList[ix1] > _dcCols[ix2]
 					ColumnMetadata d =meta.getColumnMetadata()[_dcCols[ix2]-1];
 					String v = meta.getString( 0,_dcCols[ix2]-1);
-					if(v.charAt(0) == '¿'){
-						off += UtilFunctions.parseToLong(v.substring(1));
+					if(v.length() > 1 && v.charAt(0) == '¿'){
+						off += UtilFunctions.parseToLong(v.substring(1)) -1;
 					}
 					else {
 						off += d.isDefault() ? -1 : d.getNumDistinct() - 1;

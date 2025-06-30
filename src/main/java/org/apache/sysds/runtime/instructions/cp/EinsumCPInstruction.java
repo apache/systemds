@@ -34,16 +34,12 @@ import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysds.hops.codegen.cplan.CNodeCell;
 import org.apache.sysds.hops.codegen.cplan.CNodeData;
 import org.apache.sysds.hops.codegen.cplan.CNodeRow;
-import org.apache.sysds.hops.codegen.template.TemplateUtils;
 import org.apache.sysds.runtime.codegen.*;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.functionobjects.*;
-import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -69,10 +65,6 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		Logger.getLogger(EinsumCPInstruction.class).setLevel(Level.TRACE);
 	}
 
-	private static final int CONTRACT_LEFT = 1;
-	private static final int CONTRACT_RIGHT = 2;
-	private static final int CONTRACT_BOTH = 3;
-
 	private EinsumContext einc = null;
 
 	@Override
@@ -89,113 +81,18 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			}
 		}
 
-		EinsumContext einc = getEinsumContext(eqStr,inputs);
-		this.einc = einc;
+		EinsumContext einc = getEinsumContext(eqStr, inputs);
 
-		String[] parts = einc.equationString.split("->");
+		this.einc = einc;
+		String resultString = einc.outChar2 != null ? String.valueOf(einc.outChar1) + einc.outChar2 : einc.outChar1 != null ? String.valueOf(einc.outChar1) : null;
 
 		if( LOG.isDebugEnabled() ) LOG.trace("outrows:"+einc.outRows+", outcols:"+einc.outCols);
 
-		Character outChar1 = null;
-		Character outChar2 = null;
+		ArrayList<String> inputsChars = einc.newEquationStringSplit;
 
-		if(parts.length == 1){ }
-		else if(parts[1].length() >= 2){
-			outChar1 = parts[1].charAt(0);
-			outChar2 = parts[1].charAt(1);
-		}else if (parts[1].length()==1){
-			outChar1 = parts[1].charAt(0);
-		}
-		HashMap<Character, ArrayList<Integer>> partsCharactersToIndices = new HashMap<>();
-		ArrayList<String> newEquationStringSplit = new ArrayList();
+		if(LOG.isTraceEnabled()) LOG.trace(String.join(",",einc.newEquationStringSplit));
 
-		ArrayList<Integer> diagMatrices = new ArrayList<>();
-		int arrCounter=0;
-		for(int i=0;i<parts[0].length(); i++){
-			char c  =parts[0].charAt(i);
-			if(c==','){
-				arrCounter++;
-				continue;
-			}
-			String s="";
-			if(!einc.contractDimsSet.contains(c)){
-
-				if(!partsCharactersToIndices.containsKey(c))
-					partsCharactersToIndices.put(c, new ArrayList<>());
-
-				partsCharactersToIndices.get(c).add(arrCounter);
-				s+=c;
-			}
-			if(i+1<parts[0].length()){
-				char c2 = parts[0].charAt(i+1);
-				if(c2==','){
-					arrCounter++;
-				}
-				else if(!einc.contractDimsSet.contains(c2)){
-
-					if(!partsCharactersToIndices.containsKey(c2))
-						partsCharactersToIndices.put(c2, new ArrayList<>());
-
-					partsCharactersToIndices.get(c2).add(arrCounter);
-					if (c2 == c)
-						diagMatrices.add(arrCounter);
-					else
-						s += c2;
-				}
-				i++;
-			}
-			newEquationStringSplit.add(s);
-		}
-		ArrayList<String> inputsChars = newEquationStringSplit;
-		LOG.trace(String.join(",",newEquationStringSplit));
-		for(int i=0;i<einc.contractDims.length; i++){
-			if(einc.contractDims[i] == null){ }
-			else if(einc.contractDims[i] == CONTRACT_BOTH) {
- 				//sum all
-//				AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(),Types.CorrectionLocationType.LASTCOLUMN);
-				AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-
-				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), _numThreads);
-				MatrixBlock res = new MatrixBlock();
-				res.setNumRows(1);
-				res.setNumColumns(1);
-				LibMatrixAgg.aggregateUnaryMatrix(inputs.get(i), res, aggun, _numThreads);
-//				MatrixBlock newB = (MatrixBlock)inputs.get(i).aggregateUnaryOperations(aggun,new MatrixBlock(),inputs.get(i).getNumRows(),null);
-				inputs.set(i, res);
-
-			}else if(einc.contractDims[i] == CONTRACT_RIGHT){
-				//rowSums (remove 2nd dim)
-//				AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), Types.CorrectionLocationType.LASTCOLUMN);
-				AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-
-				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), _numThreads);
-				MatrixBlock res = new MatrixBlock();
-				res.setNumRows(inputs.get(i).getNumRows());
-				res.setNumColumns(1);
-				LibMatrixAgg.aggregateUnaryMatrix(inputs.get(i), res, aggun, _numThreads);
-//				MatrixBlock newB = (MatrixBlock)inputs.get(i).aggregateUnaryOperations(aggun,new MatrixBlock(),inputs.get(i).getNumRows(),null);
-				inputs.set(i, res);
-
-			}else if(einc.contractDims[i] == CONTRACT_LEFT){
-				//colSums (remove 1st dim)
-//				AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), Types.CorrectionLocationType.LASTROW);
-				AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-
-				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), _numThreads);
-				MatrixBlock res = new MatrixBlock();
-				res.setNumRows(inputs.get(i).getNumColumns());
-				res.setNumColumns(1);
-				LibMatrixAgg.aggregateUnaryMatrix(inputs.get(i), res, aggun, _numThreads);
-//				MatrixBlock newB = (MatrixBlock)inputs.get(i).aggregateUnaryOperations(aggun,new MatrixBlock(),inputs.get(i).getNumColumns(),null);
-				inputs.set(i, res);
-			}
-		}
-		for(Integer idx : diagMatrices){
-			ReorgOperator op = new ReorgOperator(DiagIndex.getDiagIndexFnObject());
-			MatrixBlock mb = inputs.get(idx);
-			inputs.set(idx, mb.reorgOperations(op, new MatrixBlock(),0,0,0));
-			inputsChars.set(idx, String.valueOf(inputsChars.get(idx).charAt(0)));
-		}
+		contractDimensionsAndComputeDiagonals(einc, inputs);
 
 		//make all vetors col vectors
 		for(int i = 0; i < inputs.size(); i++){
@@ -206,8 +103,8 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			}
 		}
 
-		if(LOG.isTraceEnabled()) for(Character c :partsCharactersToIndices.keySet()){
-			ArrayList<Integer> a = partsCharactersToIndices.get(c);
+		if(LOG.isTraceEnabled()) for(Character c : einc.partsCharactersToIndices.keySet()){
+			ArrayList<Integer> a = einc.partsCharactersToIndices.get(c);
 			LOG.trace(c+" count= "+a.size());
 		}
 
@@ -239,20 +136,20 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			}
 		}
 
-		boolean anyCouldNotDo = FORCE_CELL_TPL ? true : generatePlanAndExecute(partsCharactersToIndices, inputs, inputsChars, outChar1, outChar2); // information to do cell tpl for remaining ones
+		boolean needToDoCellTemplate = FORCE_CELL_TPL ? true : generatePlanAndExecute(inputs, einc);
 
-		if (!anyCouldNotDo){
+		if (!needToDoCellTemplate){
 			//check if any operations to do that were not-output dimension summations:
 			List<String> remStrings = inputsChars.stream()
 					.filter(Objects::nonNull).toList();
 			List<MatrixBlock> remMbs = inputs.stream()
 					.filter(Objects::nonNull).toList();
 			MatrixBlock res;
-			if(remStrings.size() == 1){
+			if(remStrings.size() == 1) {
 				String s = remStrings.get(0);
-				if(s.equals(parts[1])){
+				if(s.equals(resultString)){
 					res=remMbs.get(0);
-				}else if(s.charAt(0)==s.charAt(1)) {
+				}else if(s.charAt(0) == s.charAt(1)) {
 					// diagonal needed
 					ReorgOperator op = new ReorgOperator(DiagIndex.getDiagIndexFnObject());
 					res= remMbs.get(0).reorgOperations(op, new MatrixBlock(),0,0,0);
@@ -261,16 +158,16 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 					ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
 					res = remMbs.get(0).reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
 				}
-			}else{
+			} else{
 				// maybe the leftovers are i,j and result should be ij or ji -> outer multp.
 				if(remStrings.size() == 2 && remStrings.get(0).length()==1 && remStrings.get(1).length()==1){
 					MatrixBlock first;
 					MatrixBlock second;
 
-					if(remStrings.get(0).charAt(0) == outChar1 && remStrings.get(1).charAt(0) == outChar2){
+					if(remStrings.get(0).charAt(0) == einc.outChar1 && remStrings.get(1).charAt(0) == einc.outChar2){
 						first = remMbs.get(0);
 						second = remMbs.get(1);
-					}else if(remStrings.get(0).charAt(0) == outChar2 && remStrings.get(1).charAt(0) == outChar1){
+					}else if(remStrings.get(0).charAt(0) == einc.outChar2 && remStrings.get(1).charAt(0) == einc.outChar1){
 						first = remMbs.get(1);
 						second = remMbs.get(0);
 					}else{
@@ -307,11 +204,11 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 				}
 			}
 			ArrayList summingChars = new ArrayList();
-			for (Character c : partsCharactersToIndices.keySet()) {
-				if (c != outChar1 && c != outChar2) summingChars.add(c);
+			for (Character c : einc.partsCharactersToIndices.keySet()) {
+				if (c != einc.outChar1 && c != einc.outChar2) summingChars.add(c);
 			}
 
-			MatrixBlock res = computeCellSummation(mbs, chars, parts[1], einc.charToDimensionSizeInt, summingChars, einc.outRows, einc.outCols);
+			MatrixBlock res = computeCellSummation(mbs, chars, resultString, einc.charToDimensionSizeInt, summingChars, einc.outRows, einc.outCols);
 
 			if (einc.outRows == 1 && einc.outCols == 1)
 				ec.setScalarOutput(output.getName(), new DoubleObject(res.get(0, 0)));
@@ -321,20 +218,56 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		releaseMatrixInputs(ec);
 	}
 
+	private void contractDimensionsAndComputeDiagonals(EinsumContext einc, ArrayList<MatrixBlock> inputs) {
+		for(int i = 0; i< einc.contractDims.length; i++){
+			//AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(),Types.CorrectionLocationType.LASTCOLUMN);
+			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
+
+			if(einc.diagonalInputs[i]){
+				ReorgOperator op = new ReorgOperator(DiagIndex.getDiagIndexFnObject());
+				inputs.set(i, inputs.get(i).reorgOperations(op, new MatrixBlock(),0,0,0));
+			}
+			switch (einc.contractDims[i]){
+				case EinsumContext.CONTRACT_BOTH: {
+					AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), _numThreads);
+					MatrixBlock res = new MatrixBlock(1, 1, false);
+					inputs.get(i).aggregateUnaryOperations(aggun, res, 0, null);
+					inputs.set(i, res);
+					break;
+				}
+				case EinsumContext.CONTRACT_RIGHT: {
+					AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), _numThreads);
+					MatrixBlock res = new MatrixBlock(inputs.get(i).getNumRows(), 1, false);
+					inputs.get(i).aggregateUnaryOperations(aggun, res, 0, null);
+					inputs.set(i, res);
+					break;
+				}
+				case EinsumContext.CONTRACT_LEFT: {
+					AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), _numThreads);
+					MatrixBlock res = new MatrixBlock(inputs.get(i).getNumColumns(), 1, false);
+					inputs.get(i).aggregateUnaryOperations(aggun, res, 0, null);
+					inputs.set(i, res);
+					break;
+				}
+			}
+		}
+	}
+
 	private void releaseMatrixInputs(ExecutionContext ec){
 		for (CPOperand input : _in)
 			if(input.getDataType()==DataType.MATRIX)
 				ec.releaseMatrixInput(input.getName());
 	}
 
-	private boolean generatePlanAndExecute(HashMap<Character, ArrayList<Integer>> partsCharactersToIndices, ArrayList<MatrixBlock> inputs, ArrayList<String> inputsChars, Character outChar1, Character outChar2) {
+	// returns true if there are elements that appear more than 2 times and cannot be summed
+	private boolean generatePlanAndExecute(ArrayList<MatrixBlock> inputs, EinsumContext einc) {
 		boolean anyCouldNotDo;
-		boolean didAnything = false;
+		boolean didAnything = false; // maybe multiplication will make it summable
 		do {
-			anyCouldNotDo = sumCharactersWherePossible(partsCharactersToIndices, inputs, inputsChars, outChar1, outChar2);
+			anyCouldNotDo = sumCharactersWherePossible(einc.partsCharactersToIndices, inputs, einc.newEquationStringSplit, einc.outChar1, einc.outChar2);
 			didAnything = false;
-			if(inputsChars.stream().filter(Objects::nonNull).count() > 1)
-				didAnything = multiplyTerms(partsCharactersToIndices, inputs, inputsChars, outChar1, outChar2);
+			if(einc.newEquationStringSplit.stream().filter(Objects::nonNull).count() > 1)
+				didAnything = multiplyTerms(einc.partsCharactersToIndices, inputs, einc.newEquationStringSplit, einc.outChar1, einc.outChar2);
 		}
 		while(didAnything);
 
@@ -448,7 +381,8 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 
 			for (int i = 0; i < newS.length(); i++) { // for each char in string, add pointer to newly created entry
 				char c = newS.charAt(i);
-				partsCharactersToIndices.get(c).add(inputs.size() - 1);
+				if(partsCharactersToIndices.containsKey(c))
+					partsCharactersToIndices.get(c).add(inputs.size() - 1);
 			}
 			partsCharactersToIndices.remove(sumC);
 		}
@@ -467,9 +401,6 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 	}
 
 	private Pair<MatrixBlock, String> computeRowSummation(List<Integer> toSum, ArrayList<MatrixBlock> inputs, List<String> inputsChars, Character sumChar) {
-		return computeRowSummation(toSum,inputs,inputsChars, null, sumChar);
-	}
-	private Pair<MatrixBlock, String> computeRowSummation(List<Integer> toSum, ArrayList<MatrixBlock> inputs, List<String> inputsChars, Double scalar, Character sumChar) {
 
 		if(toSum.size() != 2){
 			return null;
@@ -572,44 +503,44 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			case Ba_a:
 				throw new NotImplementedException();
 			case Ba_aC: {
-				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.VECT_MATRIXMULT, SpoofRowwise.RowType.NO_AGG_B1,  Long.valueOf( second.getNumColumns()), scalar);
+				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.VECT_MATRIXMULT, SpoofRowwise.RowType.NO_AGG_B1,  Long.valueOf( second.getNumColumns()));
 				break;
 			}
 			case Ba_Ca: {
 				ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
 				second = second.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.VECT_MATRIXMULT, SpoofRowwise.RowType.NO_AGG_B1, Long.valueOf(second.getNumColumns()), scalar);
+				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.VECT_MATRIXMULT, SpoofRowwise.RowType.NO_AGG_B1, Long.valueOf(second.getNumColumns()));
 				break;
 			}
 			case aB_a:
 			case aB_aC: {
-				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.VECT_OUTERMULT_ADD, SpoofRowwise.RowType.COL_AGG_B1_T, Long.valueOf( second.getNumColumns()),scalar);
+				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.VECT_OUTERMULT_ADD, SpoofRowwise.RowType.COL_AGG_B1_T, Long.valueOf( second.getNumColumns()));
 				break;
 			}
 			case a_a:
-				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.VECT_MULT, SpoofRowwise.RowType.NO_AGG,null, scalar);
+				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.VECT_MULT, SpoofRowwise.RowType.NO_AGG,null);
 				break;
 			case aB_aB: {
 				ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
 				first = first.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
 				second = second.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.DOT_PRODUCT, SpoofRowwise.RowType.COL_AGG, null, scalar);
+				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.DOT_PRODUCT, SpoofRowwise.RowType.COL_AGG, null);
 				break;
 			}
 			case Ba_Ba: {
-				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.DOT_PRODUCT, SpoofRowwise.RowType.ROW_AGG, null, scalar);
+				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.DOT_PRODUCT, SpoofRowwise.RowType.ROW_AGG, null);
 				break;
 			}
 			case aB_Ba: {
 				ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
 				first = first.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.VECT_MATRIXMULT, SpoofRowwise.RowType.ROW_AGG,null, scalar);
+				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.VECT_MATRIXMULT, SpoofRowwise.RowType.ROW_AGG,null);
 				break;
 			}
 			case Ba_aB: {
 				ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
 				second = second.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.DOT_PRODUCT, SpoofRowwise.RowType.ROW_AGG,null, scalar);
+				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.DOT_PRODUCT, SpoofRowwise.RowType.ROW_AGG,null);
 				break;
 			}
 
@@ -618,9 +549,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		}
 		return Pair.of(out , resS);
 	}
-	private MatrixBlock getRowCodegenMatrixBlock(MatrixBlock first, MatrixBlock second, CNodeBinary.BinType binaryType, SpoofRowwise.RowType rowType){
-		return getRowCodegenMatrixBlock(first, second, binaryType,rowType,null, null);
-	}
+
 	private MatrixBlock getCodegenElemwiseMult(ArrayList<MatrixBlock> mbs) {
 
 		ArrayList<CNode> cnodeIn = new ArrayList<>();
@@ -646,7 +575,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		MatrixBlock	out = op.execute(mbs, scalars, mb, _numThreads);
 		return out;
 	}
-	private MatrixBlock getRowCodegenMatrixBlock(MatrixBlock first, MatrixBlock second, CNodeBinary.BinType binaryType, SpoofRowwise.RowType rowType, Long secondDim, Double scalar) {
+	private MatrixBlock getRowCodegenMatrixBlock(MatrixBlock first, MatrixBlock second, CNodeBinary.BinType binaryType, SpoofRowwise.RowType rowType, Long secondDim) {
 		ArrayList<MatrixBlock> thisInputs = new ArrayList<>(Arrays.asList(first, second));
 
 		ArrayList<CNode> cnodeIn = new ArrayList<>();
@@ -671,7 +600,6 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		MatrixBlock mb = new MatrixBlock();
 
 		ArrayList<ScalarObject> scalars = new ArrayList<>();
-		if(scalar != null) scalars.add(new DoubleObject(scalar));
 	    MatrixBlock	out = op.execute(thisInputs, scalars, mb, _numThreads);
 		return out;
 	}
@@ -720,7 +648,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		indent(sb, indent);
 
 		boolean needsSumming = summingChars.stream().anyMatch(x -> x != null);
-		;
+
 		String itVar0 = cnode.createVarname();
 		String outVar = itVar0;
 		if (needsSumming) {

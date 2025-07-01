@@ -102,6 +102,8 @@ from unittest.mock import patch
 
 class TestUnimodalRepresentationOptimizer(unittest.TestCase):
     pass
+
+
 #     test_file_path = None
 #     data_generator = None
 #     num_instances = 0
@@ -206,4 +208,3 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
 #
 # if __name__ == "__main__":
 #     unittest.main()
-

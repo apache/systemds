@@ -30,6 +30,8 @@ from systemds.scuro.modality.type import ModalityType
 
 class TestWindowOperations(unittest.TestCase):
     pass
+
+
 #     @classmethod
 #     def setUpClass(cls):
 #         cls.num_instances = 40

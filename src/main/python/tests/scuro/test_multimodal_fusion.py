@@ -104,6 +104,8 @@ class TestCNN(Model):
 
 class TestMultimodalRepresentationOptimizer(unittest.TestCase):
     pass
+
+
 #     test_file_path = None
 #     data_generator = None
 #     num_instances = 0

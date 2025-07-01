@@ -43,6 +43,8 @@ from systemds.scuro.representations.sum import Sum
 
 class TestOperatorRegistry(unittest.TestCase):
     pass
+
+
 #     def test_audio_representations_in_registry(self):
 #         registry = Registry()
 #         for representation in [Spectrogram, MelSpectrogram, Wav2Vec, MFCC]:

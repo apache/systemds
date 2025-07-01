@@ -41,7 +41,7 @@ from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
 from systemds.scuro.representations.multiplication import Multiplication
 from systemds.scuro.representations.resnet import ResNet
 from systemds.scuro.representations.sum import Sum
-from tests.scuro.data_generator import setup_data
+from tests.scuro.data_generator import ModalityRandomDataGenerator
 
 
 import warnings
@@ -93,34 +93,26 @@ class TestDataLoaders(unittest.TestCase):
     def setUpClass(cls):
         cls.test_file_path = "test_data_dr_search"
         cls.num_instances = 20
-        modalities = [ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT]
+        cls.data_generator = ModalityRandomDataGenerator()
 
-        cls.data_generator = setup_data(
-            modalities, cls.num_instances, cls.test_file_path
-        )
-        os.makedirs(f"{cls.test_file_path}/embeddings")
-
+        cls.labels = np.random.choice([0, 1], size=cls.num_instances)
         # TODO: adapt the representation so they return non aggregated values. Apply windowing operation instead
 
-        cls.bert = cls.data_generator.modalities_by_type[
-            ModalityType.TEXT
-        ].apply_representation(Bert())
-        cls.mel_spe = (
-            cls.data_generator.modalities_by_type[ModalityType.AUDIO]
-            .apply_representation(MelSpectrogram())
-            .flatten()
+        cls.video = cls.data_generator.create1DModality(
+            cls.num_instances, 100, ModalityType.VIDEO
         )
-        cls.resnet = (
-            cls.data_generator.modalities_by_type[ModalityType.VIDEO]
-            .apply_representation(ResNet())
-            .window_aggregation(10, "mean")
-            .flatten()
+        cls.text = cls.data_generator.create1DModality(
+            cls.num_instances, 100, ModalityType.TEXT
         )
-        cls.mods = [cls.bert, cls.mel_spe, cls.resnet]
+        cls.audio = cls.data_generator.create1DModality(
+            cls.num_instances, 100, ModalityType.AUDIO
+        )
+
+        cls.mods = [cls.video, cls.audio, cls.text]
 
         split = train_test_split(
-            cls.data_generator.indices,
-            cls.data_generator.labels,
+            np.array(range(cls.num_instances)),
+            cls.labels,
             test_size=0.2,
             random_state=42,
         )
@@ -149,7 +141,7 @@ class TestDataLoaders(unittest.TestCase):
         task = Task(
             "TestTask",
             TestSVM(),
-            self.data_generator.labels,
+            self.labels,
             self.train_indizes,
             self.val_indizes,
         )
@@ -164,7 +156,7 @@ class TestDataLoaders(unittest.TestCase):
         task = Task(
             "TestTask",
             TestSVM(),
-            self.data_generator.labels,
+            self.labels,
             self.train_indizes,
             self.val_indizes,
         )

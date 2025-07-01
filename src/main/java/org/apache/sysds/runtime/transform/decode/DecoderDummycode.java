@@ -84,30 +84,29 @@ public class DecoderDummycode extends Decoder {
 	}
 
 	private void decodeSparseRow(FrameBlock out, final SparseBlock sb, int i) {
-		if(!sb.isEmpty(i)) {
-			final int apos = sb.pos(i);
-			final int alen = sb.size(i) + apos;
-			final int[] aix = sb.indexes(i);
-			// double[] val = sb.values(i); always 1... therefore not needed
-			int h = 0;
-			for(int j = 0; j < _colList.length && h < alen; j++) { // for each decode column.
-				// find k, the index in aix, within the range of low and high
-				int low = _clPos[j];
-				int high = _cuPos[j];
-				while(h < alen && aix[h] < low) {
-					h++;
-				}
-				if(h < alen && aix[h] >= low && aix[h] < high) {
-					int k = aix[h];
-					int col = _colList[j] - 1;
-					out.getColumn(col).set(i, k - _clPos[j] + 1);
-					h++;
-				}
-				while(h < alen && aix[h] < high) {
-					h++;
-				}
+		if(sb.isEmpty(i))
+			return;
+		int apos = sb.pos(i);
+		final int alen = sb.size(i) + apos;
+		final int[] aix = sb.indexes(i);
+
+		for(int j = 0; j < _colList.length; j++) { // for each decode column.
+			// find k, the index in aix, within the range of low and high
+			final int low = _clPos[j];
+			final int high = _cuPos[j];
+			int h = Arrays.binarySearch(aix, apos, alen, low); // start h at column.
+			if(h < 0) // search gt col index (see binary search)
+				h = Math.abs(h + 1);
+
+			if(h < alen && aix[h] >= low && aix[h] < high) {
+				int k = aix[h];
+				int col = _colList[j] - 1;
+				out.getColumn(col).set(i, k - _clPos[j] + 1);
 			}
+			// limit the binary search.
+			apos = h;
 		}
+
 	}
 
 	@Override

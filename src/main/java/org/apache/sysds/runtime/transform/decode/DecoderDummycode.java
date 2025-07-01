@@ -170,7 +170,7 @@ public class DecoderDummycode extends Decoder
 			
 			_clPos[j] = off + colID;
 			_cuPos[j] = _clPos[j] + ndist;
-			off += ndist - 1;
+			off += ndist;
 		}
 	}
 

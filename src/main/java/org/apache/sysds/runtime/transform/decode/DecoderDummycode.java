@@ -169,7 +169,7 @@ public class DecoderDummycode extends Decoder
 			ndist = ndist < -1 ? 0: ndist; // safety if all values was null.
 			
 			_clPos[j] = off + colID;
-			_cuPos[j] = _clPos[j] + ndist;
+			_cuPos[j] = _clPos[j] + ndist - 1;
 			off += ndist;
 		}
 	}

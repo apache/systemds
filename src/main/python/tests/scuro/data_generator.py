@@ -98,15 +98,67 @@ class ModalityRandomDataGenerator:
         return data, metadata
 
     def create_text_data(self, num_instances):
-        nltk.download("webtext")
-        sentences = nltk.corpus.webtext.sents()[:num_instances]
+        subjects = [
+            "The cat",
+            "A dog",
+            "The student",
+            "The teacher",
+            "The bird",
+            "The child",
+            "The programmer",
+            "The scientist",
+            "A researcher",
+        ]
+        verbs = [
+            "reads",
+            "writes",
+            "studies",
+            "analyzes",
+            "creates",
+            "develops",
+            "designs",
+            "implements",
+            "examines",
+        ]
+        objects = [
+            "the document",
+            "the code",
+            "the data",
+            "the problem",
+            "the solution",
+            "the project",
+            "the research",
+            "the paper",
+        ]
+        adverbs = [
+            "carefully",
+            "quickly",
+            "efficiently",
+            "thoroughly",
+            "diligently",
+            "precisely",
+            "methodically",
+        ]
+
+        sentences = []
+        for _ in range(num_instances):
+            include_adverb = np.random.random() < 0.7
+
+            subject = np.random.choice(subjects)
+            verb = np.random.choice(verbs)
+            obj = np.random.choice(objects)
+            adverb = np.random.choice(adverbs) if include_adverb else ""
+
+            sentence = f"{subject} {adverb} {verb} {obj}"
+
+            sentences.append(sentence)
 
         metadata = {
             i: ModalityType.TEXT.create_text_metadata(len(sentences[i]), sentences[i])
             for i in range(num_instances)
         }
 
-        return [" ".join(sentence) for sentence in sentences], metadata
+        return sentences, metadata
 
     def create_visual_modality(self, num_instances, num_frames=1, height=28, width=28):
         if num_frames == 1:

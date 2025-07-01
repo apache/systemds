@@ -91,7 +91,6 @@ class TestDataLoaders(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.test_file_path = "test_data_dr_search"
         cls.num_instances = 20
         cls.data_generator = ModalityRandomDataGenerator()
 
@@ -131,11 +130,6 @@ class TestDataLoaders(unittest.TestCase):
             Sum(),
             LSTM(width=256, depth=3),
         ]
-
-    @classmethod
-    def tearDownClass(cls):
-        print("Cleaning up test data")
-        shutil.rmtree(cls.test_file_path)
 
     def test_enumerate_all(self):
         task = Task(

@@ -26,12 +26,26 @@ from scipy.io.wavfile import write
 import random
 import os
 
+import nltk
+
+from systemds.scuro.dataloader.base_loader import BaseLoader
 from systemds.scuro.dataloader.video_loader import VideoLoader
 from systemds.scuro.dataloader.audio_loader import AudioLoader
 from systemds.scuro.dataloader.text_loader import TextLoader
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.modality.type import ModalityType
+
+
+class TestDataLoader(BaseLoader):
+    def __init__(self, indices, chunk_size, modality_type, data, data_type, metadata):
+        super().__init__("", indices, data_type, chunk_size, modality_type)
+
+        self.metadata = metadata
+        self.test_data = data
+
+    def extract(self, file, indices):
+        self.data = self.test_data
 
 
 class ModalityRandomDataGenerator:
@@ -73,6 +87,44 @@ class ModalityRandomDataGenerator:
         tf_modality.data = data
         self.modality_id += 1
         return tf_modality
+
+    def create_audio_data(self, num_instances, num_features):
+        data = np.random.rand(num_instances, num_features).astype(np.float32)
+        metadata = {
+            i: ModalityType.AUDIO.create_audio_metadata(num_features / 10, data[i])
+            for i in range(num_instances)
+        }
+
+        return data, metadata
+
+    def create_text_data(self, num_instances):
+        nltk.download("webtext")
+        sentences = nltk.corpus.webtext.sents()[:num_instances]
+
+        metadata = {
+            i: ModalityType.TEXT.create_text_metadata(len(sentences[i]), sentences[i])
+            for i in range(num_instances)
+        }
+
+        return [" ".join(sentence) for sentence in sentences], metadata
+
+    def create_visual_modality(self, num_instances, num_frames=1, height=28, width=28):
+        if num_frames == 1:
+            print(f"TODO: create image metadata")
+        else:
+            metadata = {
+                i: ModalityType.VIDEO.create_video_metadata(
+                    num_instances / 30, num_frames / 30, width, height, 1
+                )
+                for i in range(num_instances)
+            }
+
+        return (
+            np.random.randint(
+                0, 256, (num_instances, num_frames, height, width)
+            ).astype(np.float16),
+            metadata,
+        )
 
 
 def setup_data(modalities, num_instances, path):

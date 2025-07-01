@@ -42,7 +42,7 @@ public class ColumnDecoderMixedMethodsTest extends AutomatedTestBase {
     @Test
     public void testColumnDecoderMixedMethods() {
         try {
-            int rows = 50000;
+            int rows = 500000;
             double[][] arr = new double[rows][5];
             for (int i = 0; i < rows; i++) {
                 arr[i][0] = (i % 4) + 2; // dummy column
@@ -62,12 +62,10 @@ public class ColumnDecoderMixedMethodsTest extends AutomatedTestBase {
 
             Decoder dec = DecoderFactory.createDecoder(spec, data.getColumnNames(), data.getSchema(), meta, encoded.getNumColumns());
             FrameBlock expected = new FrameBlock(data.getSchema());
-            System.out.println(mb);
-            System.out.println(encoded);
             long t1 = System.nanoTime();
             dec.decode(encoded, expected,5);
             long t2 = System.nanoTime();
-            System.out.println("ColumnDecoder time: " + (t2 - t1) / 1e6 + " ms");
+            System.out.println("Decoder time: " + (t2 - t1) / 1e6 + " ms");
 
             ColumnDecoder cdec = ColumnDecoderFactory.createDecoder(spec, data.getColumnNames(), data.getSchema(), meta);
             FrameBlock actual = new FrameBlock(data.getSchema());
@@ -77,7 +75,6 @@ public class ColumnDecoderMixedMethodsTest extends AutomatedTestBase {
             long t4 = System.nanoTime();
 
             System.out.println("ColumnDecoder time: " + (t4 - t3) / 1e6 + " ms");
-
             TestUtils.compareFrames(expected, actual, false);
         }
         catch(Exception ex) {

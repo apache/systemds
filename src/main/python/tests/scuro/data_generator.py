@@ -26,8 +26,6 @@ from scipy.io.wavfile import write
 import random
 import os
 
-import nltk
-
 from systemds.scuro.dataloader.base_loader import BaseLoader
 from systemds.scuro.dataloader.video_loader import VideoLoader
 from systemds.scuro.dataloader.audio_loader import AudioLoader

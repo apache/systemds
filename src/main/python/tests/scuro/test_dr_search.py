@@ -78,110 +78,109 @@ def scale_data(data, train_indizes):
 
 
 class TestDataLoaders(unittest.TestCase):
-    pass
-#     train_indizes = None
-#     val_indizes = None
-#     test_file_path = None
-#     mods = None
-#     text = None
-#     audio = None
-#     video = None
-#     data_generator = None
-#     num_instances = 0
-#     representations = None
-#
-#     @classmethod
-#     def setUpClass(cls):
-#         cls.test_file_path = "test_data_dr_search"
-#         cls.num_instances = 20
-#         modalities = [ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT]
-#
-#         cls.data_generator = setup_data(
-#             modalities, cls.num_instances, cls.test_file_path
-#         )
-#         os.makedirs(f"{cls.test_file_path}/embeddings")
-#
-#         # TODO: adapt the representation so they return non aggregated values. Apply windowing operation instead
-#
-#         cls.bert = cls.data_generator.modalities_by_type[
-#             ModalityType.TEXT
-#         ].apply_representation(Bert())
-#         cls.mel_spe = (
-#             cls.data_generator.modalities_by_type[ModalityType.AUDIO]
-#             .apply_representation(MelSpectrogram())
-#             .flatten()
-#         )
-#         cls.resnet = (
-#             cls.data_generator.modalities_by_type[ModalityType.VIDEO]
-#             .apply_representation(ResNet())
-#             .window_aggregation(10, "mean")
-#             .flatten()
-#         )
-#         cls.mods = [cls.bert, cls.mel_spe, cls.resnet]
-#
-#         split = train_test_split(
-#             cls.data_generator.indices,
-#             cls.data_generator.labels,
-#             test_size=0.2,
-#             random_state=42,
-#         )
-#         cls.train_indizes, cls.val_indizes = [int(i) for i in split[0]], [
-#             int(i) for i in split[1]
-#         ]
-#
-#         for m in cls.mods:
-#             m.data = scale_data(m.data, cls.train_indizes)
-#
-#         cls.representations = [
-#             Concatenation(),
-#             Average(),
-#             RowMax(100),
-#             Multiplication(),
-#             Sum(),
-#             LSTM(width=256, depth=3),
-#         ]
-#
-#     @classmethod
-#     def tearDownClass(cls):
-#         print("Cleaning up test data")
-#         shutil.rmtree(cls.test_file_path)
-#
-#     def test_enumerate_all(self):
-#         task = Task(
-#             "TestTask",
-#             TestSVM(),
-#             self.data_generator.labels,
-#             self.train_indizes,
-#             self.val_indizes,
-#         )
-#         dr_search = DRSearch(self.mods, task, self.representations)
-#         best_representation, best_score, best_modalities = dr_search.fit_enumerate_all()
-#
-#         for r in dr_search.scores.values():
-#             for scores in r.values():
-#                 assert scores[1] <= best_score
-#
-#     def test_enumerate_all_vs_random(self):
-#         task = Task(
-#             "TestTask",
-#             TestSVM(),
-#             self.data_generator.labels,
-#             self.train_indizes,
-#             self.val_indizes,
-#         )
-#         dr_search = DRSearch(self.mods, task, self.representations)
-#         best_representation_enum, best_score_enum, best_modalities_enum = (
-#             dr_search.fit_enumerate_all()
-#         )
-#
-#         dr_search.reset_best_params()
-#
-#         best_representation_rand, best_score_rand, best_modalities_rand = (
-#             dr_search.fit_random(seed=42)
-#         )
-#
-#         assert best_score_rand <= best_score_enum
-#
-#
-# if __name__ == "__main__":
-#     unittest.main()
+    train_indizes = None
+    val_indizes = None
+    test_file_path = None
+    mods = None
+    text = None
+    audio = None
+    video = None
+    data_generator = None
+    num_instances = 0
+    representations = None
+
+    @classmethod
+    def setUpClass(cls):
+        cls.test_file_path = "test_data_dr_search"
+        cls.num_instances = 20
+        modalities = [ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT]
+
+        cls.data_generator = setup_data(
+            modalities, cls.num_instances, cls.test_file_path
+        )
+        os.makedirs(f"{cls.test_file_path}/embeddings")
+
+        # TODO: adapt the representation so they return non aggregated values. Apply windowing operation instead
+
+        cls.bert = cls.data_generator.modalities_by_type[
+            ModalityType.TEXT
+        ].apply_representation(Bert())
+        cls.mel_spe = (
+            cls.data_generator.modalities_by_type[ModalityType.AUDIO]
+            .apply_representation(MelSpectrogram())
+            .flatten()
+        )
+        cls.resnet = (
+            cls.data_generator.modalities_by_type[ModalityType.VIDEO]
+            .apply_representation(ResNet())
+            .window_aggregation(10, "mean")
+            .flatten()
+        )
+        cls.mods = [cls.bert, cls.mel_spe, cls.resnet]
+
+        split = train_test_split(
+            cls.data_generator.indices,
+            cls.data_generator.labels,
+            test_size=0.2,
+            random_state=42,
+        )
+        cls.train_indizes, cls.val_indizes = [int(i) for i in split[0]], [
+            int(i) for i in split[1]
+        ]
+
+        for m in cls.mods:
+            m.data = scale_data(m.data, cls.train_indizes)
+
+        cls.representations = [
+            Concatenation(),
+            Average(),
+            RowMax(100),
+            Multiplication(),
+            Sum(),
+            LSTM(width=256, depth=3),
+        ]
+
+    @classmethod
+    def tearDownClass(cls):
+        print("Cleaning up test data")
+        shutil.rmtree(cls.test_file_path)
+
+    def test_enumerate_all(self):
+        task = Task(
+            "TestTask",
+            TestSVM(),
+            self.data_generator.labels,
+            self.train_indizes,
+            self.val_indizes,
+        )
+        dr_search = DRSearch(self.mods, task, self.representations)
+        best_representation, best_score, best_modalities = dr_search.fit_enumerate_all()
+
+        for r in dr_search.scores.values():
+            for scores in r.values():
+                assert scores[1] <= best_score
+
+    def test_enumerate_all_vs_random(self):
+        task = Task(
+            "TestTask",
+            TestSVM(),
+            self.data_generator.labels,
+            self.train_indizes,
+            self.val_indizes,
+        )
+        dr_search = DRSearch(self.mods, task, self.representations)
+        best_representation_enum, best_score_enum, best_modalities_enum = (
+            dr_search.fit_enumerate_all()
+        )
+
+        dr_search.reset_best_params()
+
+        best_representation_rand, best_score_rand, best_modalities_rand = (
+            dr_search.fit_random(seed=42)
+        )
+
+        assert best_score_rand <= best_score_enum
+
+
+if __name__ == "__main__":
+    unittest.main()

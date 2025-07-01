@@ -361,7 +361,7 @@ generate_dummy_data = function()
    *  - Win: Input width.
    */
   # Generate dummy input data
-  N = 1024  # num examples
+  N = 128  # num examples
   C = 1  # num input channels
   Hin = 28  # input height
   Win = 28  # input width

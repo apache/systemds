@@ -157,20 +157,20 @@ public class DecoderDummycode extends Decoder
 		for( int j=0, off=0; j<_colList.length; j++ ) {
 			int colID = _colList[j];
 			ColumnMetadata d = meta.getColumnMetadata()[colID-1];
-			String v = meta.getString( 0, colID-1);
+			String v = meta.getString(0, colID-1);
 			int ndist;
 			if(v.length() > 1 && v.charAt(0) == '¿'){
 				ndist = UtilFunctions.parseToInt(v.substring(1));
 			}
 			else {
-				ndist = d.isDefault() ? -1 : (int)d.getNumDistinct() ;
+				ndist = d.isDefault() ? 0 : (int)d.getNumDistinct() ;
 			}
 
 			ndist = ndist < -1 ? 0: ndist; // safety if all values was null.
 			
 			_clPos[j] = off + colID;
-			_cuPos[j] = _clPos[j] + ndist - 1;
-			off += ndist;
+			_cuPos[j] = _clPos[j] + ndist ;
+			off += ndist - 1;
 		}
 	}
 

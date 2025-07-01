@@ -89,7 +89,7 @@ public abstract class Decoder implements Externalizable{
 		out.ensureAllocatedColumns(in.getNumRows());
 		try {
 			final List<Future<?>> tasks = new ArrayList<>();
-			int blz = Math.max(in.getNumRows() / k, 1000);
+			int blz = Math.max((in.getNumRows() + k) / k, 1000);
 			
 			for(int i = 0; i < in.getNumRows(); i += blz){
 				final int start = i;

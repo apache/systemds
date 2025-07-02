@@ -1629,7 +1629,7 @@ public class LibMatrixCUDA {
 			if (in1 == in2 && isLeftTransposed == true && isLeftTransposed == isRightTransposed) {
 				// Special case for transpose
 
-				int nnz = (int)A.nnz;
+				int nnz = toInt(A.nnz);
 				CSRPointer C = CSRPointer.allocateEmpty(gCtx, nnz, n);
 				out.getGPUObject(gCtx).setSparseMatrixCudaPointer(C);
 				cudaSupportFunctions.cusparsecsr2csc(getCusparseHandle(gCtx), m, n, nnz, A.val, A.rowPtr, A.colInd, C.val, C.colInd, C.rowPtr, cusparseAction.CUSPARSE_ACTION_NUMERIC, cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO);

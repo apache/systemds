@@ -1,0 +1,54 @@
+# Robust scaling using median and IQR (Interquartile Range)
+# Resistant to outliers by centering with the median and scaling with IQR.
+#
+# INPUT:
+# -------------------------------------------------------------------------------------
+#   X   Input feature matrix of shape n-by-m
+# -------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -------------------------------------------------------------------------------------
+#   Y   Scaled output matrix of shape n-by-m
+#   med Column medians (Q2) of shape 1-by-m
+#   q1 Column first quantiles (Q1) of shape 1-by-m
+#   q3 Column first quantiles (Q3) of shape 1-by-m
+# -------------------------------------------------------------------------------------
+
+m_scaleRobust = function(Matrix[Double] X)
+  return (Matrix[Double] Y, Matrix[Double] med, Matrix[Double] q1, Matrix[Double] q3)
+{
+  n = nrow(X)
+  m = ncol(X)
+
+  med = matrix(0.0, rows=1, cols=m)
+  q1  = matrix(0.0, rows=1, cols=m)
+  q3  = matrix(0.0, rows=1, cols=m)
+
+
+  t0 = time();
+
+  # Loop over columns to compute quantiles
+  for (j in 1:m) {
+    col_j = X[,j]                        # get column vector
+    med[1,j] = quantile(col_j, 0.5)
+    q1[1,j]  = quantile(col_j, 0.25)
+    q3[1,j]  = quantile(col_j, 0.75)
+  }
+
+  t1 = time();
+  print("DML quantile computation time (ms):"); print((t1 - t0) / 1e6);  
+
+
+
+  # Logging
+  #if (ncol(X) > 0) {
+  #  print("DML column 1:")
+  #  print("Q1:"); print(q1[1,1])
+  #  print("Median:"); print(med[1,1])
+  #  print("Q3:"); print(q3[1,1]) 
+  #}
+
+
+
+  Y = scaleRobustApply(X, med, q1, q3);
+}

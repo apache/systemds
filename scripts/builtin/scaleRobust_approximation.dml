@@ -1,0 +1,107 @@
+# Approximate quantiles via histogram binning 
+m_scaleRobust = function(Matrix[Double] X)
+  return (Matrix[Double] Y, Matrix[Double] med, Matrix[Double] q1, Matrix[Double] q3)
+{
+  bins = 100;
+
+  n = nrow(X)
+  m = ncol(X)
+
+  
+  
+  q1 = matrix(0.0, rows=1, cols=m)
+  med = matrix(0.0, rows=1, cols=m)
+  q3 = matrix(0.0, rows=1, cols=m)
+
+  mins = colMins(X)
+  maxs = colMaxs(X)
+  widths = (maxs - mins) / bins
+
+  t0 = time()
+
+  for (j in 1:m) {
+    col = X[,j];
+    min_j = as.scalar(mins[1,j]);
+    max_j = as.scalar(maxs[1,j]);
+    width_j = as.scalar(widths[1,j]);
+
+
+    if (width_j == 0) {
+      q1[1,j] = min_j;
+      med[1,j] = min_j;
+      q3[1,j] = min_j;
+    } 
+    else {
+      bin_idx = ceil((col - min_j) / width_j);
+      bin_idx = ifelse(bin_idx == 0, 1, bin_idx);
+      tmp = bin_idx > bins;
+      bin_idx = ifelse(tmp, bins, bin_idx);
+
+
+
+      bin_counts = t(table(bin_idx, bins))
+
+
+      cum_counts = cumsum(bin_counts)
+
+
+
+      q1_bin = bins;
+      for (b in 1:bins) {
+        val = as.scalar(cum_counts[1, b]);
+        if (val >= 0.25 * n & b < q1_bin) {
+          q1_bin = b;
+        }
+      }
+
+      med_bin = bins;
+      for (b in 1:bins) {
+        val = as.scalar(cum_counts[1, b]);
+        if (val >= 0.5 * n & b < med_bin) {
+          med_bin = b;
+        }
+      }
+
+      q3_bin = bins;
+      for (b in 1:bins) {
+        val = as.scalar(cum_counts[1, b]);
+        if (val >= 0.75 * n & b < q3_bin) {
+          q3_bin = b;
+        }
+      }
+
+
+
+
+
+      # q1_bin = ifelse(sum(cum_counts >= 0.25 * n) > 0, which(cum_counts >= 0.25 * n)[1], 1);
+      # med_bin = ifelse(sum(cum_counts >= 0.5 * n) > 0, which(cum_counts >= 0.5 * n)[1], 1);
+      # q3_bin = ifelse(sum(cum_counts >= 0.75 * n) > 0, which(cum_counts >= 0.75 * n)[1], 1);
+
+      # q1_bin = which(cum_counts >= 0.25 * n)[1];
+      # med_bin = which(cum_counts >= 0.5 * n)[1];
+      # q3_bin = which(cum_counts >= 0.75 * n)[1];
+
+
+
+      q1[1,j] = min_j + width_j * (q1_bin - 0.5);
+      med[1,j] = min_j + width_j * (med_bin - 0.5);
+      q3[1,j] = min_j + width_j * (q3_bin - 0.5);
+    }
+  }
+  print("Shape of q1:"); print(nrow(q1)); print(ncol(q1));
+  print("Shape of med:"); print(nrow(med)); print(ncol(med));
+  print("Shape of q3:"); print(nrow(q3)); print(ncol(q3));
+
+  print("q1_bin:"); print(q1_bin);
+  print("med_bin:"); print(med_bin);
+  print("q3_bin:"); print(q3_bin);
+
+
+  t1 = time()
+  print("Approximate quantile computation time (ms):")
+  print((t1 - t0) / 1e6)
+
+  Y = scaleRobustApply(X, med, q1, q3);
+  
+}

@@ -35,7 +35,6 @@ df = pd.DataFrame(
 
 
 class TestFederatedAggFn(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

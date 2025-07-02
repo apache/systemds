@@ -32,7 +32,6 @@ s = 3.02
 
 
 class TestTrigonometricOp(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

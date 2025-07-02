@@ -26,7 +26,6 @@ from systemds.context import SystemDSContext
 
 
 class TestSourceReuse(unittest.TestCase):
-
     sds: SystemDSContext = None
     source_reuse = None
 

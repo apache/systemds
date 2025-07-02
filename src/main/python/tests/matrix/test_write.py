@@ -27,7 +27,6 @@ from systemds.context import SystemDSContext
 
 
 class TestWrite(unittest.TestCase):
-
     sds: SystemDSContext = None
     temp_dir: str = "tests/matrix/temp_write/"
 

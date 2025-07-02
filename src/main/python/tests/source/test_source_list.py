@@ -27,7 +27,6 @@ from systemds.operator.algorithm.builtin.scale import scale
 
 
 class TestSource_01(unittest.TestCase):
-
     sds: SystemDSContext = None
     source_path: str = "./tests/source/source_with_list_input.dml"
 

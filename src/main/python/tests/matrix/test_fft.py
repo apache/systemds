@@ -32,7 +32,6 @@ class TestFFT(unittest.TestCase):
         self.sds.close()
 
     def test_fft_basic(self):
-
         input_matrix = np.array(
             [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]]
         )
@@ -90,7 +89,6 @@ class TestFFT(unittest.TestCase):
             np.testing.assert_array_almost_equal(imag_part, expected_imag, decimal=5)
 
     def test_fft_non_power_of_two_matrix(self):
-
         input_matrix = np.random.rand(3, 5)
         sds_input = self.sds.from_numpy(input_matrix)
 

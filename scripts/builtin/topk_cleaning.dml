@@ -21,6 +21,17 @@
 
 # This function cleans top-K item (where K is given as input)for a given list of users.
 # metaData[3, ncol(X)] : metaData[1] stores mask, metaData[2] stores schema, metaData[3] stores FD mask
+#
+# INPUT:
+#-------------------------------------------------------------------------------
+# TODO  TODO
+#-------------------------------------------------------------------------------
+#
+# OUTPUT:
+#-------------------------------------------------------------------------------
+# TODO  TODO
+#-------------------------------------------------------------------------------
+
 
 source("scripts/pipelines/scripts/utils.dml") as utils;
 source("scripts/pipelines/scripts/enumerateLogical.dml") as lg;

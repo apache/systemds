@@ -40,7 +40,6 @@ def create_dataframe(n_rows, n_cols, mixed=True):
 
 
 class TestPandasFromToSystemds(unittest.TestCase):
-
     sds: SystemDSContext = None
     temp_dir: str = "tests/iotests/temp_write_csv/"
 

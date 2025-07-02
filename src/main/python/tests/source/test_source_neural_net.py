@@ -26,7 +26,6 @@ from systemds.context import SystemDSContext
 
 
 class TestSource_NeuralNet(unittest.TestCase):
-
     sds: SystemDSContext = None
     src_path: str = "./tests/source/neural_net_source.dml"
 

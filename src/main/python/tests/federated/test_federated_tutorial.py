@@ -24,7 +24,6 @@ import unittest
 
 
 class TestFederatedAggFn(unittest.TestCase):
-
     @classmethod
     def tearDownClass(cls):
         shutil.rmtree("temp")

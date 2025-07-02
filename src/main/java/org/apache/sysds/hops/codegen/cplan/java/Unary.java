@@ -20,6 +20,7 @@
 package org.apache.sysds.hops.codegen.cplan.java;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.codegen.cplan.CNodeUnary.UnaryType;
 import org.apache.sysds.hops.codegen.cplan.CodeTemplate;
 
@@ -32,31 +33,37 @@ public class Unary extends CodeTemplate {
 			case ROW_MINS:
 			case ROW_MAXS:
 			case ROW_MEANS:
-			case ROW_VARS:
 			case ROW_COUNTNNZS: {
 				String vectName = StringUtils.capitalize(type.name().substring(4, type.name().length()-1).toLowerCase());
 				return sparse ? "    double %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1v%, %IN1i%, %POS1%, alen, len);\n":
 						"    double %TMP% = LibSpoofPrimitives.vect"+vectName+"(%IN1%, %POS1%, %LEN%);\n";
 			}
-			case VECT_EXP:
-			case VECT_POW2:
-			case VECT_MULT2:
+
 			case VECT_SQRT:
-			case VECT_LOG:
 			case VECT_ABS:
 			case VECT_ROUND:
 			case VECT_CEIL:
 			case VECT_FLOOR:
-			case VECT_SIGN:
 			case VECT_SIN:
-			case VECT_COS:
 			case VECT_TAN:
 			case VECT_ASIN:
-			case VECT_ACOS:
 			case VECT_ATAN:
 			case VECT_SINH:
-			case VECT_COSH:
 			case VECT_TANH:
+			case VECT_SIGN:{
+				String vectName = type.getVectorPrimitiveName();
+				return sparse ? DMLScript.SPARSE_INTERMEDIATE ?
+					"    SparseRowVector %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(len, %IN1v%, %IN1i%, %POS1%, alen);\n" :
+					"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %POS1%, %LEN%);\n" :
+					"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %POS1%, %LEN%);\n";
+			}
+			case VECT_EXP:
+			case VECT_POW2:
+			case VECT_MULT2:
+			case VECT_LOG:
+			case VECT_COS:
+			case VECT_ACOS:
+			case VECT_COSH:
 			case VECT_CUMSUM:
 			case VECT_CUMMIN:
 			case VECT_CUMMAX:

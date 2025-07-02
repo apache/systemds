@@ -19,4 +19,15 @@
 #
 #-------------------------------------------------------------
 
-print("Hello, World!");
+# kmeans_test.dml
+# Simple KMeans clustering test
+
+# Arguments
+X = read("test.bin")
+
+# Run KMeans
+[centroids, assignments] = kmeans(X=X, k=2, max_iter=100, eps=0.01)
+
+print(centroids)
+print(assignments)
+write(centroids, "centroids.bin")

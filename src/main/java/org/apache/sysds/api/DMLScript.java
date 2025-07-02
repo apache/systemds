@@ -153,6 +153,9 @@ public class DMLScript
 	// Global seed 
 	public static int               SEED                 = -1;
 
+	// Sparse row flag
+	public static boolean 			SPARSE_INTERMEDIATE = false;
+
 	public static String MONITORING_ADDRESS = null;
 
 	// flag that indicates whether or not to suppress any prints to stdout
@@ -275,6 +278,7 @@ public class DMLScript
 			LINEAGE_ESTIMATE      = dmlOptions.lineage_estimate;
 			LINEAGE_DEBUGGER      = dmlOptions.lineage_debugger;
 			SEED                  = dmlOptions.seed;
+			SPARSE_INTERMEDIATE	  = dmlOptions.sparseIntermediate;
 
 
 			String fnameOptConfig = dmlOptions.configFile;

@@ -21,6 +21,7 @@ package org.apache.sysds.test.component.codegen;
 
 import java.lang.reflect.Method;
 
+import org.apache.sysds.runtime.data.SparseRowVector;
 import org.junit.Test;
 import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary.BinType;
@@ -716,6 +717,282 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 		testVectorBinaryPrimitive(BinType.VECT_BITWAND, InputType.VECTOR_SPARSE, InputType.VECTOR_DENSE);
 	}
 
+	//********************testing with sparse intermediates********************//
+	//vector - scalar
+
+	@Test
+	public void testVectorScalarMultSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_MULT_SCALAR, InputType.VECTOR_SPARSE, InputType.SCALAR);
+	}
+
+	@Test
+	public void testVectorScalarDivSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_DIV_SCALAR, InputType.VECTOR_SPARSE, InputType.SCALAR);
+	}
+
+	@Test
+	public void testVectorScalarMinSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_MIN_SCALAR, InputType.VECTOR_SPARSE, InputType.SCALAR);
+	}
+
+	@Test
+	public void testVectorScalarMaxSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_MAX_SCALAR, InputType.VECTOR_SPARSE, InputType.SCALAR);
+	}
+
+	@Test
+	public void testVectorScalarPowSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_POW_SCALAR, InputType.VECTOR_SPARSE, InputType.SCALAR);
+	}
+
+	@Test
+	public void testVectorScalarEqualSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_EQUAL_SCALAR, InputType.VECTOR_SPARSE, InputType.SCALAR);
+	}
+
+	@Test
+	public void testVectorScalarNotEqualSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_NOTEQUAL_SCALAR, InputType.VECTOR_SPARSE, InputType.SCALAR);
+	}
+
+	@Test
+	public void testVectorScalarLessSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_LESS_SCALAR, InputType.VECTOR_SPARSE, InputType.SCALAR);
+	}
+
+	@Test
+	public void testVectorScalarLessEqualSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_LESSEQUAL_SCALAR, InputType.VECTOR_SPARSE, InputType.SCALAR);
+	}
+
+	@Test
+	public void testVectorScalarGreaterSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_GREATER_SCALAR, InputType.VECTOR_SPARSE, InputType.SCALAR);
+	}
+
+	@Test
+	public void testVectorScalarGreaterEqualSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_GREATEREQUAL_SCALAR, InputType.VECTOR_SPARSE, InputType.SCALAR);
+	}
+
+	//todo: this only makes sense, when bval is 0
+	@Test
+	public void testVectorScalarXorSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_XOR_SCALAR, InputType.VECTOR_SPARSE, InputType.SCALAR);
+	}
+
+	@Test
+	public void testVectorScalarBitwAndSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_BITWAND_SCALAR, InputType.VECTOR_SPARSE, InputType.SCALAR);
+	}
+
+	//scalar - vector
+
+	@Test
+	public void testScalarVectorDivSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_DIV_SCALAR, InputType.SCALAR, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testScalarVectorMinSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_MIN_SCALAR, InputType.SCALAR, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testScalarVectorMaxSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_MAX_SCALAR, InputType.SCALAR, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testScalarVectorEqualSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_EQUAL_SCALAR, InputType.SCALAR, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testScalarVectorNotEqualSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_NOTEQUAL_SCALAR, InputType.SCALAR, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testScalarVectorLessSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_LESS_SCALAR, InputType.SCALAR, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testScalarVectorLessEqualSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_LESSEQUAL_SCALAR, InputType.SCALAR, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testScalarVectorGreaterSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_GREATER_SCALAR, InputType.SCALAR, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testScalarVectorGreaterEqualSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_GREATEREQUAL_SCALAR, InputType.SCALAR, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testScalarVectorXorSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_XOR_SCALAR, InputType.SCALAR, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testScalarVectorBitwAndSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_BITWAND_SCALAR, InputType.SCALAR, InputType.VECTOR_SPARSE);
+	}
+
+	//special binary
+
+	//	@Test
+	//	public void testVectorPow2SparseToSparse() {
+	//		testVectorUnarySparsePrimitive(UnaryType.VECT_POW2, InputType.VECTOR_SPARSE);
+	//	}
+	//
+	//	@Test
+	//	public void testVectorMult2SparseToSparse() {
+	//		testVectorUnarySparsePrimitive(UnaryType.VECT_MULT2, InputType.VECTOR_SPARSE);
+	//	}
+
+	//vector - vector
+
+	@Test
+	public void testVectorVectorMultSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_MULT, InputType.VECTOR_SPARSE, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorVectorDivSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_DIV, InputType.VECTOR_SPARSE, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorVectorPlusSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_PLUS, InputType.VECTOR_SPARSE, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorVectorMinusSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_MINUS, InputType.VECTOR_SPARSE, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorVectorMinSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_MIN, InputType.VECTOR_SPARSE, InputType.VECTOR_SPARSE);
+	}
+	@Test
+	public void testVectorVectorMaxSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_MAX, InputType.VECTOR_SPARSE, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorVectorEqualSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_EQUAL, InputType.VECTOR_SPARSE, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorVectorNotEqualSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_NOTEQUAL, InputType.VECTOR_SPARSE, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorVectorLessSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_LESS, InputType.VECTOR_SPARSE, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorVectorLessEqualSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_LESSEQUAL, InputType.VECTOR_SPARSE, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorVectorGreaterSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_GREATER, InputType.VECTOR_SPARSE, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorVectorGreaterEqualSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_GREATEREQUAL, InputType.VECTOR_SPARSE, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorVectorXorSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_XOR, InputType.VECTOR_SPARSE, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorVectorBitwAndSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_BITWAND, InputType.VECTOR_SPARSE, InputType.VECTOR_SPARSE);
+	}
+
+	//	@Test
+	//	public void testVectorVectorMatrixMultSparseToSparse() {
+	//		testVectorBinarySparsePrimitive(BinType.VECT_MATRIXMULT, InputType.VECTOR_SPARSE, InputType.VECTOR_SPARSE);
+	//	}
+
+	//unary primitives with sparse intermediates
+
+	@Test
+	public void testVectorSqrtSparseToSparse() {
+		testVectorUnarySparsePrimitive(UnaryType.VECT_SQRT, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorAbsSparseToSparse() {
+		testVectorUnarySparsePrimitive(UnaryType.VECT_ABS, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorRoundSparseToSparse() {
+		testVectorUnarySparsePrimitive(UnaryType.VECT_ROUND, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorCeilSparseToSparse() {
+		testVectorUnarySparsePrimitive(UnaryType.VECT_CEIL, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorFloorSparseToSparse() {
+		testVectorUnarySparsePrimitive(UnaryType.VECT_FLOOR, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorSinSparseToSparse() {
+		testVectorUnarySparsePrimitive(UnaryType.VECT_SIN, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorTanSparseToSparse() {
+		testVectorUnarySparsePrimitive(UnaryType.VECT_TAN, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorAsinSparseToSparse() {
+		testVectorUnarySparsePrimitive(UnaryType.VECT_ASIN, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorAtanSparseToSparse() {
+		testVectorUnarySparsePrimitive(UnaryType.VECT_ATAN, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorSinhSparseToSparse() {
+		testVectorUnarySparsePrimitive(UnaryType.VECT_SINH, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorTanhSparseToSparse() {
+		testVectorUnarySparsePrimitive(UnaryType.VECT_TANH, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
+	public void testVectorSignSparseToSparse() {
+		testVectorUnarySparsePrimitive(UnaryType.VECT_SIGN, InputType.VECTOR_SPARSE);
+	}
+
 	@SuppressWarnings("incomplete-switch")
 	private static void testVectorAggPrimitive(UnaryType aggtype, InputType type1)
 	{
@@ -788,6 +1065,45 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 				TestUtils.compareMatrices(ret1, ret2, eps);
 			}
 		} 
+		catch( Exception ex ) {
+			throw new RuntimeException(ex);
+		}
+	}
+
+	private static void testVectorUnarySparsePrimitive(UnaryType utype, InputType type1)
+	{
+		try {
+			//generate input data
+			double sparsity = (type1 == InputType.VECTOR_DENSE) ? sparsity1 : sparsity2;
+			MatrixBlock in = MatrixBlock.randOperations(m, n, sparsity, -1, 1, "uniform", 7);
+
+			//get vector primitive via reflection
+			String meName = "vect"+StringUtils.camelize(utype.name().split("_")[1])+"Write";
+			Method me = LibSpoofPrimitives.class.getMethod(meName, new Class[]{int.class, double[].class, int[].class, int.class, int.class});
+
+
+			for( int i=0; i<m; i++ ) {
+				double[] ret1 = new double[n];
+				//execute vector primitive via reflection
+				SparseRowVector retX = (SparseRowVector) me.invoke(null, n, in.getSparseBlock().values(i), in.getSparseBlock().indexes(i),
+					in.getSparseBlock().pos(i), in.getSparseBlock().size(i));
+
+				int[] indexes = retX.indexes();
+				for (int j = 0; j < retX.size(); j++) {
+					ret1[indexes[j]] = retX.get(indexes[j]);
+				}
+
+				//execute comparison operation
+				String opcode = utype.name().split("_")[1].toLowerCase();
+				UnaryOperator uop = new UnaryOperator(Builtin.getBuiltinFnObject(opcode));
+				double[] ret2 = DataConverter.convertToDoubleVector(
+					in.slice(i, i, 0, n-1, new MatrixBlock())
+						.unaryOperations(uop, new MatrixBlock()), false);
+
+				//compare results
+				TestUtils.compareMatrices(ret1, ret2, eps);
+			}
+		}
 		catch( Exception ex ) {
 			throw new RuntimeException(ex);
 		}
@@ -866,6 +1182,146 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 		} 
 		catch( Exception ex ) {
 			throw new RuntimeException(ex);
+		}
+	}
+
+	private static void testVectorBinarySparsePrimitive(BinType bintype, InputType type1, InputType type2) {
+		try {
+			//generate input data (scalar later derived if needed)
+			double sparsityA = (type1 == InputType.VECTOR_DENSE) ? sparsity1 : sparsity2;
+			MatrixBlock inA = MatrixBlock.randOperations(m, n, sparsityA, -5, 5, "uniform", 3);
+			double sparsityB = (type2 == InputType.VECTOR_DENSE) ? sparsity1 : sparsity2;
+			MatrixBlock inB = MatrixBlock.randOperations(m, n, sparsityB, -5, 5, "uniform", 7);
+
+			boolean sparse = getOutputType(bintype);
+			int testType = getTestType(bintype);
+
+			//get vector primitive via reflection
+			String meName = "vect"+StringUtils.camelize(bintype.name().split("_")[1])+"Write";
+			final Method me ;
+			if( type1==InputType.VECTOR_SPARSE && type2==InputType.SCALAR )
+				me = LibSpoofPrimitives.class.getMethod(meName, new Class[]{int.class, double[].class, double.class, int[].class, int.class, int.class});
+			else if( type1==InputType.SCALAR && type2==InputType.VECTOR_SPARSE )
+				me = LibSpoofPrimitives.class.getMethod(meName, new Class[]{int.class, double.class, double[].class, int[].class, int.class, int.class});
+			else //if( type1==InputType.VECTOR_SPARSE && type2==InputType.VECTOR_SPARSE )
+				me = LibSpoofPrimitives.class.getMethod(meName, new Class[]{int.class, double[].class, double[].class, int[].class, int[].class, int.class, int.class, int.class, int.class});
+
+			for( int i=0; i<m; i++ ) {
+				//execute vector primitive via reflection
+				double[] ret1 = new double[n];
+				SparseRowVector retX = null;
+				if( type1==InputType.VECTOR_SPARSE && type2==InputType.SCALAR )
+					if(testType >= 0 && i == m-1) {
+						if(testType == 0) {
+							retX = (SparseRowVector) me.invoke(null, n, inA.getSparseBlock().values(i), 0, inA.getSparseBlock().indexes(i),
+								inA.getSparseBlock().pos(i), inA.getSparseBlock().size(i));
+						} else {
+							retX = (SparseRowVector) me.invoke(null, n, inA.getSparseBlock().values(i), inB.min(), inA.getSparseBlock().indexes(i),
+								inA.getSparseBlock().pos(i), inA.getSparseBlock().size(i));
+						}
+					} else {
+						retX = (SparseRowVector) me.invoke(null, n, inA.getSparseBlock().values(i), inB.max(), inA.getSparseBlock().indexes(i),
+							inA.getSparseBlock().pos(i), inA.getSparseBlock().size(i));
+					}
+				else if( type1==InputType.SCALAR && type2==InputType.VECTOR_SPARSE )
+					if(testType >= 0 && i == m-1) {
+						if(testType == 0) {
+							retX = (SparseRowVector) me.invoke(null, n, 0, inB.getSparseBlock().values(i),
+								inB.getSparseBlock().indexes(i), inB.getSparseBlock().pos(i), inB.getSparseBlock().size(i));
+						} else {
+							retX = (SparseRowVector) me.invoke(null, n, inA.min(), inB.getSparseBlock().values(i),
+								inB.getSparseBlock().indexes(i), inB.getSparseBlock().pos(i), inB.getSparseBlock().size(i));
+						}
+					} else {
+						retX = (SparseRowVector) me.invoke(null, n, inA.max(), inB.getSparseBlock().values(i),
+							inB.getSparseBlock().indexes(i), inB.getSparseBlock().pos(i), inB.getSparseBlock().size(i));
+					}
+				else if( type1==InputType.VECTOR_SPARSE && type2==InputType.VECTOR_SPARSE )
+					if(sparse)
+						retX = (SparseRowVector) me.invoke(null, n, inA.getSparseBlock().values(i), inB.getSparseBlock().values(i),
+							inA.getSparseBlock().indexes(i), inB.getSparseBlock().indexes(i), inA.getSparseBlock().pos(i), inB.getSparseBlock().pos(i), inA.getSparseBlock().size(i), inB.getSparseBlock().size(i));
+					else
+						ret1 = (double[]) me.invoke(null, n, inA.getSparseBlock().values(i), inB.getSparseBlock().values(i),
+							inA.getSparseBlock().indexes(i), inB.getSparseBlock().indexes(i), inA.getSparseBlock().pos(i), inB.getSparseBlock().pos(i), inA.getSparseBlock().size(i), inB.getSparseBlock().size(i));
+
+				if(sparse) {
+					int[] indexes = retX.indexes();
+					for (int j = 0; j < retX.size(); j++) {
+						ret1[indexes[j]] = retX.get(indexes[j]);
+					}
+				}
+
+				//execute comparison operation
+				String opcode = OpOp2.valueOf(bintype.name().split("_")[1]).toString();
+				MatrixBlock in1 = inA.slice(i, i, 0, n-1, new MatrixBlock());
+				MatrixBlock in2 = inB.slice(i, i, 0, n-1, new MatrixBlock());
+				double[] ret2 = null;
+				if( type1 == InputType.SCALAR ) {
+					ScalarOperator bop = InstructionUtils.parseScalarBinaryOperator(opcode, true);
+					bop = bop.setConstant(testType >= 0 && i == m-1 ? testType == 0 ? 0 : inA.min() : inA.max());
+					ret2 = DataConverter.convertToDoubleVector(
+						in2.scalarOperations(bop, new MatrixBlock()), false);
+				}
+				else if( type2 == InputType.SCALAR ) {
+					ScalarOperator bop = InstructionUtils.parseScalarBinaryOperator(opcode, false);
+					bop = bop.setConstant(testType >= 0 && i == m-1 ? testType == 0 ? 0 : inB.min() : inB.max());
+					ret2 = DataConverter.convertToDoubleVector(
+						in1.scalarOperations(bop, new MatrixBlock()), false);
+				}
+				else { //vector-vector
+					BinaryOperator bop = InstructionUtils.parseBinaryOperator(opcode);
+					ret2 = DataConverter.convertToDoubleVector(
+						in1.binaryOperations(bop, in2, new MatrixBlock()), false);
+				}
+
+				//compare results
+				TestUtils.compareMatrices(ret2, ret1, eps);
+			}
+		}
+		catch( Exception ex ) {
+			throw new RuntimeException(ex);
+		}
+	}
+
+
+	/**
+	 * @param type
+	 * @return {@code true}, when the matching method has a sparse return
+	 */
+	private static boolean getOutputType(BinType type) {
+		switch(type) {
+			case VECT_EQUAL:
+			case VECT_LESSEQUAL:
+			case VECT_GREATEREQUAL:
+				return false;
+			default:
+				return true;
+		}
+	}
+
+	/**
+	 * @param type
+	 * @return returns {@code -1}, for normal testing;<br>
+	 *         returns {@code 0}, for testing with 0 and non-zeros;<br>
+	 *         returns {@code 1}, for testing with negative and positive numbers;
+	 */
+	private static int getTestType(BinType type) {
+		switch(type) {
+			case VECT_DIV_SCALAR:
+			case VECT_EQUAL_SCALAR:
+			case VECT_NOTEQUAL_SCALAR:
+			case VECT_XOR_SCALAR:
+				//			case VECT_POW_SCALAR:
+				return 0;
+			case VECT_GREATER_SCALAR:
+			case VECT_GREATEREQUAL_SCALAR:
+			case VECT_LESS_SCALAR:
+			case VECT_LESSEQUAL_SCALAR:
+			case VECT_MIN_SCALAR:
+			case VECT_MAX_SCALAR:
+				return 1;
+			default:
+				return -1;
 		}
 	}
 }

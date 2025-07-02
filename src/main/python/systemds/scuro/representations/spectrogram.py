@@ -29,15 +29,10 @@ from systemds.scuro.drsearch.operator_registry import register_representation
 
 
 @register_representation(ModalityType.AUDIO)
-class MelSpectrogram(UnimodalRepresentation):
-    def __init__(self, n_mels=128, hop_length=512, n_fft=2048):
-        parameters = {
-            "n_mels": [20, 32, 64, 128],
-            "hop_length": [256, 512, 1024, 2048],
-            "n_fft": [1024, 2048, 4096],
-        }
-        super().__init__("MelSpectrogram", ModalityType.TIMESERIES, parameters)
-        self.n_mels = n_mels
+class Spectrogram(UnimodalRepresentation):
+    def __init__(self, hop_length=512, n_fft=2048):
+        parameters = {"hop_length": [256, 512, 1024, 2048], "n_fft": [1024, 2048, 4096]}
+        super().__init__("Spectrogram", ModalityType.TIMESERIES, parameters)
         self.hop_length = hop_length
         self.n_fft = n_fft
 
@@ -48,15 +43,10 @@ class MelSpectrogram(UnimodalRepresentation):
         result = []
         max_length = 0
         for i, sample in enumerate(modality.data):
-            sr = list(modality.metadata.values())[i]["frequency"]
-            S = librosa.feature.melspectrogram(
-                y=sample,
-                sr=sr,
-                n_mels=self.n_mels,
-                hop_length=self.hop_length,
-                n_fft=self.n_fft,
+            spectrogram = librosa.stft(
+                y=sample, hop_length=self.hop_length, n_fft=self.n_fft
             )
-            S_dB = librosa.power_to_db(S, ref=np.max)
+            S_dB = librosa.amplitude_to_db(np.abs(spectrogram))
             if S_dB.shape[-1] > max_length:
                 max_length = S_dB.shape[-1]
             result.append(S_dB.T)

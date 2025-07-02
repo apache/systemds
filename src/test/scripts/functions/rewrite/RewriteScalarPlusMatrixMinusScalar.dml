@@ -1,4 +1,4 @@
-# -------------------------------------------------------------
+#-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,26 +17,12 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-# -------------------------------------------------------------
-import numpy as np
+#-------------------------------------------------------------
+A = read($1);
+a = as.scalar(read($2));
+b = as.scalar(read($3));
 
+# Original form: a + A - b
+R = a + A - b;
 
-def create_timestamps(frequency, sample_length, start_datetime=None):
-    start_time = (
-        start_datetime
-        if start_datetime is not None
-        else np.datetime64("1970-01-01T00:00:00.000000")
-    )
-    time_increment = 1 / frequency
-    time_increments_array = np.arange(sample_length) * np.timedelta64(
-        int(time_increment * 1e6)
-    )
-    timestamps = start_time + time_increments_array
-
-    return timestamps.astype(np.int64)
-
-
-def calculate_new_frequency(new_length, old_length, old_frequency):
-    duration = old_length / old_frequency
-    new_frequency = new_length / duration
-    return new_frequency
+write(R, $4);

@@ -20,11 +20,9 @@
 package org.apache.sysds.common;
 
 import org.apache.sysds.lops.*;
-
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.hops.FunctionOp;
 
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -392,8 +390,8 @@ public enum Opcodes {
 
 	BINUAGGCHAIN("binuaggchain", InstructionType.BinUaggChain),
 
-	CASTDTM("castdtm", InstructionType.Cast),
-	CASTDTF("castdtf", InstructionType.Cast),
+	CASTDTM("castdtm", InstructionType.Variable, InstructionType.Cast),
+	CASTDTF("castdtf", InstructionType.Variable, InstructionType.Cast),
 
 	//FED Opcodes
 	FEDINIT("fedinit", InstructionType.Init);
@@ -429,7 +427,7 @@ public enum Opcodes {
 	private static final Map<String, Opcodes> _lookupMap = new HashMap<>();
 
 	static {
-		for (Opcodes op : EnumSet.allOf(Opcodes.class)) {
+		for (Opcodes op : Opcodes.values()) {
 			if (op._name != null) {
 				_lookupMap.put(op._name.toLowerCase(), op);
 			}
@@ -458,19 +456,17 @@ public enum Opcodes {
 		if (opcode == null || opcode.trim().isEmpty()) {
 			return null;
 		}
-		for (Opcodes op : Opcodes.values()) {
-			if (op.toString().equalsIgnoreCase(opcode.trim())) {
-				switch (type) {
-					case SPARK:
-						return (op.getSpType() != null) ? op.getSpType() : op.getType();
-					case FED:
-						return (op.getFedType() != null) ? op.getFedType() : op.getType();
-					default:
-						return op.getType();
-				}
+		Opcodes op = _lookupMap.get(opcode.trim().toLowerCase());
+		if( op != null ) {
+			switch (type) {
+				case SPARK:
+					return (op.getSpType() != null) ? op.getSpType() : op.getType();
+				case FED:
+					return (op.getFedType() != null) ? op.getFedType() : op.getType();
+				default:
+					return op.getType();
 			}
 		}
 		return null;
 	}
 }
-

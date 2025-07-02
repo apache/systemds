@@ -28,7 +28,10 @@ import numpy as np
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.fusion import Fusion
 
+from systemds.scuro.drsearch.operator_registry import register_fusion_operator
 
+
+@register_fusion_operator()
 class LSTM(Fusion):
     def __init__(self, width=128, depth=1, dropout_rate=0.1):
         """

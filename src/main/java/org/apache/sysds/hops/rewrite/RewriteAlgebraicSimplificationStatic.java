@@ -203,6 +203,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = simplifyNegatedSubtraction(hop, hi, i);         //e.g., -(B-A)->A-B
 			hi = simplifyTransposeAddition(hop, hi, i);          //e.g., t(A+s1)+s2 -> t(A)+(s1+s2) + potential constant folding
 			hi = simplifyNotOverComparisons(hop, hi, i);         //e.g., !(A>B) -> (A<=B)
+			hi = simplifyMatrixScalarPMOperation(hop, hi, i);    //e.g., a-A-b -> (a-b)-A; a+A-b -> (a-b)+A
 			//hi = removeUnecessaryPPred(hop, hi, i);            //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
 
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
@@ -211,6 +212,40 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		}
 
 		hop.setVisited();
+	}
+
+	private Hop simplifyMatrixScalarPMOperation(Hop parent, Hop hi, int pos) {
+		if (!(hi instanceof BinaryOp))
+			return hi;
+
+		BinaryOp outer = (BinaryOp) hi;
+		Hop left = outer.getInput(0);
+		Hop right = outer.getInput(1);
+		OpOp2 outerOp = outer.getOp();
+
+		if((outerOp != OpOp2.PLUS && outerOp != OpOp2.MINUS) || !(left instanceof BinaryOp))
+			return hi;
+
+		Hop a = left.getInput(0);
+		Hop A = left.getInput(1);
+		Hop b = right;
+		
+		java.util.function.Predicate<Hop> isScalar = h -> h.getDataType().isScalar();
+		if (!isScalar.test(a) || !isScalar.test(b) || A.getDataType() != DataType.MATRIX)
+			return hi;
+
+		// Determine the scalarOp (between a and b) and matrixOp (with A)
+		OpOp2 innerOp = ((BinaryOp)left).getOp();
+		if( innerOp != OpOp2.PLUS && innerOp != OpOp2.MINUS )
+			return hi;
+		OpOp2 scalarOp = (outerOp == OpOp2.PLUS) ? OpOp2.PLUS : OpOp2.MINUS;
+		OpOp2 matrixOp = (innerOp == OpOp2.PLUS) ? OpOp2.PLUS : OpOp2.MINUS;
+		Hop scalarCombined = HopRewriteUtils.createBinary(a, b, scalarOp);
+		Hop result = HopRewriteUtils.createBinary(scalarCombined, A, matrixOp);
+
+		HopRewriteUtils.replaceChildReference(parent, hi, result, pos);
+		LOG.debug("Applied simplifyMatrixScalarPMOperation");
+		return result;
 	}
 
 	private static Hop simplifyTransposeAddition(Hop parent, Hop hi, int pos) {

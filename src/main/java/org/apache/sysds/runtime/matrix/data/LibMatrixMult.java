@@ -3717,26 +3717,22 @@ public class LibMatrixMult
 	public static double dotProduct( double[] a, double[] b, int[] aix, int ai, final int bi, final int len )
 	{
 		double val = 0;
-		final int bn = len%8;
+		final int bn = len%vLen;
 				
 		//compute rest
 		for( int i = ai; i < ai+bn; i++ )
 			val += a[ i ] * b[ bi+aix[i] ];
 		
-		//unrolled 8-block (for better instruction-level parallelism)
-		for( int i = ai+bn; i < ai+len; i+=8 )
+		//unrolled vLen-block (for better instruction-level parallelism)
+		for( int i = ai+bn; i < ai+len; i+=vLen)
 		{
 			//read 64B cacheline of a
 			//read 64B of b via 'gather'
 			//compute cval' = sum(a * b) + cval
-			val += a[ i+0 ] * b[ bi+aix[i+0] ]
-			     + a[ i+1 ] * b[ bi+aix[i+1] ]
-			     + a[ i+2 ] * b[ bi+aix[i+2] ]
-			     + a[ i+3 ] * b[ bi+aix[i+3] ]
-			     + a[ i+4 ] * b[ bi+aix[i+4] ]
-			     + a[ i+5 ] * b[ bi+aix[i+5] ]
-			     + a[ i+6 ] * b[ bi+aix[i+6] ]
-			     + a[ i+7 ] * b[ bi+aix[i+7] ];
+			var aVec = DoubleVector.fromArray(SPECIES, a, i);
+			var bVec = DoubleVector.fromArray(SPECIES, b, bi, aix, i);
+			val += aVec.mul(bVec).reduceLanes(VectorOperators.ADD);
+
 		}
 		
 		//scalar result

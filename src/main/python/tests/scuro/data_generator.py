@@ -26,13 +26,11 @@ from scipy.io.wavfile import write
 import random
 import os
 
-from systemds.scuro import (
-    VideoLoader,
-    AudioLoader,
-    TextLoader,
-    UnimodalModality,
-    TransformedModality,
-)
+from systemds.scuro.dataloader.video_loader import VideoLoader
+from systemds.scuro.dataloader.audio_loader import AudioLoader
+from systemds.scuro.dataloader.text_loader import TextLoader
+from systemds.scuro.modality.unimodal_modality import UnimodalModality
+from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.modality.type import ModalityType
 
 

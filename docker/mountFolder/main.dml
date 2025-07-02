@@ -23,10 +23,11 @@
 # Simple KMeans clustering test
 
 # Arguments
-X = matrix("1.0 2.0 1.5 1.8 5.0 8.0 8.0 8.0 1.0 0.6 9.0 11.0", rows = 6, cols = 2)
+X = read("test.bin")
 
 # Run KMeans
 [centroids, assignments] = kmeans(X=X, k=2, max_iter=100, eps=0.01)
 
 print(centroids)
 print(assignments)
+write(centroids, "centroids.bin")

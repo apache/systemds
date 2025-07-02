@@ -92,6 +92,8 @@ public enum Opcodes {
 	MULT2("*2", InstructionType.Binary),	   //special * case
 	MINUS_NZ("-nz", InstructionType.Binary),	 //special - case
 
+	UNION_DISTINCT("union_distinct", InstructionType.Union),
+
 	// Boolean Instruction Opcodes
 	AND("&&", InstructionType.Binary),
 	OR("||", InstructionType.Binary),

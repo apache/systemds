@@ -27,12 +27,7 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -4925,7 +4920,61 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			LibMatrixOuterAgg.aggregateMatrix(mbLeft, mbOut, bv, bvi, bOp, uaggOp);
 		} else
 			throw new DMLRuntimeException("Unsupported operator for unary aggregate operations.");
-		
+	
+		return mbOut;
+	}
+
+	public MatrixBlock unionOperations(MatrixBlock m1, MatrixBlock m2) {
+		HashSet<List<Double>> set = new HashSet<>();
+		boolean[] toAddArr = new boolean[m1.getNumRows() + m2.getNumRows()];
+		int id = 0;
+		for(int i = 0; i < m1.getNumRows(); i++) {
+			List<Double> row = new ArrayList<>();
+			for(int j = 0; j < m1.getNumColumns(); j++) {
+				row.add(m1.get(i, j));
+			}
+			if(!set.contains(row)) {
+				set.add(row);
+				toAddArr[id] = true;
+			}
+			id++;
+		}
+
+		for(int i = 0; i < m2.getNumRows(); i++) {
+			List<Double> row = new ArrayList<>();
+			for(int j = 0; j < m2.getNumColumns(); j++) {
+				row.add(m2.get(i, j));
+			}
+			if(!set.contains(row)) {
+				set.add(row);
+				toAddArr[id] = true;
+			}
+			id++;
+		}
+
+		MatrixBlock mbOut = new MatrixBlock(set.size(), m1.getNumColumns(), false);
+		int rowOut = 0;
+		int rowId = 0;
+		for(boolean toAdd : toAddArr) {
+			if(toAdd) {
+				if(rowId < m1.getNumRows()) {
+					// is first matrix
+					for(int i = 0; i < m1.getNumColumns(); i++) {
+						mbOut.set(rowOut, i, m1.get(rowId, i));
+					}
+				}
+				else {
+					// is second matrix
+					int tempRowId = rowId - m1.getNumRows();
+					for(int i = 0; i < m2.getNumColumns(); i++) {
+						mbOut.set(rowOut, i, m2.get(tempRowId, i));
+					}
+				}
+				rowOut++;
+			}
+			rowId++;
+		}
+
 		return mbOut;
 	}
 	

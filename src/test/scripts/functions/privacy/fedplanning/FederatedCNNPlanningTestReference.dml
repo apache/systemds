@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,15 +19,17 @@
 #
 #-------------------------------------------------------------
 
-# Recursive function: Calculate factorial
-factorialUser = function(Integer n) return (Integer result) {
-    if (n <= 1) {
-        result = 1; # base case
-    } else {
-        result = n * factorialUser(n - 1); # recursive call
-    }
-}
+# Reference CNN Training with normal matrices
+X1 = read($X1);
+X2 = read($X2);
+X = rbind(X1, X2);
+Y = read($Y);
 
-number = 5;
-fact_result = factorialUser(number);
-print("Factorial of " + number + ": " + fact_result);
+# Source CNN training utilities from builtin scripts
+source("scripts/nn/examples/mnist_lenet.dml") as mnist_lenet;
+
+# Train CNN model with normal data
+model = mnist_lenet::train(X, Y, X, Y, C=1, Hin=28, Win=28, epochs=3);
+
+# Write trained model
+write(model, $model);

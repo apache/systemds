@@ -31,7 +31,7 @@ minMaxUser = function( matrix[double] M) return (double minVal, double maxVal) {
 }
 
 # Recursive function: Calculate factorial
-factorialUser = function(int n) return (int result) {
+factorialUser = function(Integer n) return (Integer result) {
     if (n <= 1) {
         result = 1; # base case
     } else {

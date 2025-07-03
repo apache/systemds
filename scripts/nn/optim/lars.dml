@@ -52,7 +52,6 @@ update = function(matrix[double] X, matrix[double] dX, double lr, double mu,
    *  - v: Updated velocity, of same shape as input v.
    */
 
-
   # Step 1: Add weight decay to the gradient to form g'.
   # This corresponds to `g_t' + βw_t'` in Algorithm 1.
   dX_wd = dX + lambda * X;

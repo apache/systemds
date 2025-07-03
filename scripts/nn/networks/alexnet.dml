@@ -358,7 +358,7 @@ init = function(int C, int Hin, int Win, int num_classes, int seed)
    * Outputs:
    * - model: List of initialized model parameters
    */
-  
+   
   # Calculate fully connected input size based on actual input dimensions
   fc_input_size = calculate_conv_output_size(Hin, Win)
   
@@ -539,7 +539,7 @@ compute_loss = function(matrix[double] predictions, matrix[double] targets, list
   reg_loss = 0
   for (i in seq(1, length(model), 2)) {  # Only weights, skip biases
     W = as.matrix(model[i])
-          reg_loss = reg_loss + l2_reg::forward(W, 1)
+    reg_loss = reg_loss + l2_reg::forward(W, 1)
   }
   loss = data_loss + weight_decay * reg_loss
 }
@@ -1131,6 +1131,7 @@ backward_with_bn = function(matrix[double] dOut, list[unknown] cached_out,
                    dW5, db5, dgamma5, dbeta5, matrix(0, rows=nrow(dgamma5), cols=ncol(dgamma5)), matrix(0, rows=nrow(dgamma5), cols=ncol(dgamma5)),
                    dW6, db6, dW7, db7, dW8, db8)
 }
+
 evaluate_with_bn = function(matrix[double] X, matrix[double] Y, int C, int Hin, int Win,
                            list[unknown] model, int batch_size)
     return (double loss, double accuracy) {

@@ -37,7 +37,7 @@ for(outer in 1:10) {
         s = b %*% A;
       }
     }
-asd
+
     A = A %*% A;
     s = b %*% A;
   }

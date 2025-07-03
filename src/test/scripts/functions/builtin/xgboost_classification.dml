@@ -24,5 +24,5 @@ y = read($2);
 R = read($3);
 sml_type = 2;
 num_trees = 2;
-M = xgboost(X = X, y = y, R = R, sml_type = sml_type, num_trees = num_trees);
+M = xgboost(X = X, y = y, R = R, smlType = sml_type, numTrees = num_trees);
 write(M, $6);

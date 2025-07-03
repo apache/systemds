@@ -25,7 +25,6 @@
 from typing import Dict, Iterable
 
 from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
-from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
@@ -48,9 +47,9 @@ def correctTypos(strings: Frame,
     
     
     :param strings: The nx1 input frame of corrupted strings
-    :param frequency_threshold: Strings that occur above this frequency level will not be corrected
-    :param distance_threshold: Max distance at which strings are considered similar
-    :param is_verbose: Print debug information
+    :param frequencyThreshold: Strings that occur above this frequency level will not be corrected
+    :param distanceThreshold: Max distance at which strings are considered similar
+    :param verbose: Print debug information
     :return: Corrected nx1 output frame
     """
 

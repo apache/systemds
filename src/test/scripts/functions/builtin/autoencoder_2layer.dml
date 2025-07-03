@@ -19,10 +19,10 @@
 #
 #-------------------------------------------------------------
 
-[W1, b1, W2, b2, W3, b3, W4, b4, hidden] = autoencoder_2layer(X = read($X), W1_rand = read($W1_rand), W2_rand = read($W2_rand), 
-  W3_rand = read($W3_rand), W4_rand = read($W4_rand), order_rand = read($order_rand),
-  num_hidden1 = $H1, num_hidden2 = $H2, max_epochs = $EPOCH, full_obj = $OBJ, 
-  batch_size = $BATCH, step = $STEP, decay = $DECAY, mu = $MOMENTUM)
+[W1, b1, W2, b2, W3, b3, W4, b4, hidden] = autoencoder_2layer(X = read($X), W1 = read($W1_rand), W2 = read($W2_rand),
+  W3 = read($W3_rand), W4 = read($W4_rand), Order = read($order_rand),
+  numHidden1 = $H1, numHidden2 = $H2, epochs = $EPOCH, fullObj = $OBJ,
+  batchSize = $BATCH, step = $STEP, decay = $DECAY, mu = $MOMENTUM)
 
 write(W1, $W1_out);
 write(b1, $b1_out);

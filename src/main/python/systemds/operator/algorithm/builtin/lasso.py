@@ -42,7 +42,7 @@ def lasso(X: Matrix,
     :param tol: target convergence tolerance
     :param M: history length
     :param tau: regularization component
-    :param maxi: maximum number of iterations until convergence
+    :param maxIter: maximum number of iterations until convergence
     :param verbose: if the builtin should be verbose
     :return: model matrix
     """

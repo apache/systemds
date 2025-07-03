@@ -27,5 +27,5 @@ if ($rP) {
 }
 Y = read($in_Y)
 
-model = glm(X=X, Y=Y, icpt = FALSE, tol = 1e-6, reg = 0.01)
+model = glm(X=X, Y=Y, intercept = FALSE, tol = 1e-6, reg = 0.01)
 write(model, $out)

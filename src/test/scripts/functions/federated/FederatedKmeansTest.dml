@@ -25,6 +25,6 @@ else
   X = federated(addresses=list($in_X1, $in_X2),
     ranges=list(list(0, 0), list($rows / 2, $cols), list($rows / 2, 0), list($rows, $cols)))
 
-[C,Y] = kmeans(X=X, k=4, runs=$runs, max_iter=150)
+[C,Y] = kmeans(X=X, k=4, runs=$runs, maxIter=150)
 
 write(C, $out)

@@ -47,15 +47,15 @@
 # y               Label matrix in recoded/binned representation
 # ctypes          Row-Vector of column types [1 scale/ordinal, 2 categorical]
 #                 of shape 1-by-(ncol(X)+1), where the last entry is the y type
-# max_depth       Maximum depth of the learned tree (stopping criterion)
-# min_leaf        Minimum number of samples in leaf nodes (stopping criterion),
+# maxDepth        Maximum depth of the learned tree (stopping criterion)
+# minLeaf         Minimum number of samples in leaf nodes (stopping criterion),
 #                 odd number recommended to avoid 50/50 leaf label decisions
-# min_split       Minimum number of samples in leaf for attempting a split
-# max_features    Parameter controlling the number of features used as split
-#                 candidates at tree nodes: m = ceil(num_features^max_features)
-# max_values      Parameter controlling the number of values per feature used
-#                 as split candidates: nb = ceil(num_values^max_values)
-# max_dataratio   Parameter in [0,1] controlling when to materialize data
+# minSplit        Minimum number of samples in leaf for attempting a split
+# maxFeatures     Parameter controlling the number of features used as split
+#                 candidates at tree nodes: m = ceil(numFeatures^maxFeatures)
+# maxValues       Parameter controlling the number of values per feature used
+#                 as split candidates: nb = ceil(numValues^maxValues)
+# maxDataRatio    Parameter in [0,1] controlling when to materialize data
 #                 subsets of X and y on node splits. When set to 0, we always
 #                 scan the original X and y, which has the benefit of avoiding
 #                 the allocation and maintenance of data for all active nodes.
@@ -72,16 +72,16 @@
 # ------------------------------------------------------------------------------
 
 m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] ctypes,
-    Int max_depth = 10, Int min_leaf = 20, Int min_split = 50,
-    Double max_features = 0.5, Double max_values = 1.0, Double max_dataratio = 0.25,
+    Int maxDepth = 10, Int minLeaf = 20, Int minSplit = 50,
+    Double maxFeatures = 0.5, Double maxValues = 1.0, Double maxDataRatio = 0.25,
     String impurity = "gini", Int seed = -1, Boolean verbose = FALSE)
   return(Matrix[Double] M)
 {
   t1 = time();
 
   # validation checks
-  if( max_depth > 32 )
-    stop("decisionTree: invalid max_depth > 32: "+max_depth);
+  if( maxDepth > 32 )
+    stop("decisionTree: invalid maxDepth > 32: "+maxDepth);
   if( sum(X<=0) != 0 )
     stop("decisionTree: feature matrix X is not properly recoded/binned (values <= 0): "+sum(X<=0));
   if( sum(abs(X-round(X))>1e-14) != 0 )
@@ -105,8 +105,8 @@ m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
   I = matrix(1, rows=1, cols=nrow(X));
 
   if( verbose ) {
-    print("decisionTree: initialize with max_depth=" + max_depth + ", max_features="
-      + max_features +", max_dataratio=" + max_dataratio + ", impurity="
+    print("decisionTree: initialize with maxDepth=" + maxDepth + ", maxFeatures="
+      + maxFeatures +", maxDataRatio=" + maxDataRatio + ", impurity="
       + impurity + ", seed=" + seed + ".");
     print("decisionTree: basic statistics:");
     print("-- impurity: " + as.scalar(computeImpurity(y2, I, impurity)));
@@ -115,7 +115,7 @@ m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
   }
 
   # queue-based node splitting
-  M = matrix(0, rows=1, cols=2*(2^max_depth-1))
+  M = matrix(0, rows=1, cols=2*(2^maxDepth-1))
   queue = list(list(1,I,X2,y2)); # node IDs / data indicators
   maxPath = 1;
   while( length(queue) > 0 ) {
@@ -130,7 +130,7 @@ m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
       print("decisionTree: attempting split of node "+nID+" ("+sum(nI)+" rows)");
 
     # optional rematerialization of data per node
-    if( sum(nI) < max_dataratio*ncol(nI) ) {
+    if( sum(nI) < maxDataRatio*ncol(nI) ) {
       if(verbose)
         print("-- compacting data: "+ncol(nI)+" --> "+sum(nI));
       X2 = removeEmpty(target=X2, margin="rows", select=t(nI));
@@ -141,8 +141,8 @@ m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
     # find best split attribute
     nSeed = ifelse(seed==-1, seed, seed*nID);
     [f, v, IDleft, Ileft, IDright, Iright] = findBestSplit(
-      X2, y2, foffb, foffe, nID, nI, min_leaf, max_features, max_values, impurity, nSeed);
-    validSplit = sum(Ileft) >= min_leaf & sum(Iright) >= min_leaf;
+      X2, y2, foffb, foffe, nID, nI, minLeaf, maxFeatures, maxValues, impurity, nSeed);
+    validSplit = sum(Ileft) >= minLeaf & sum(Iright) >= minLeaf;
     if(verbose)
       print("-- best split: f"+f+" <= "+v+" --> valid="+validSplit);
     if( validSplit )
@@ -153,11 +153,11 @@ m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
 
     # split data, finalize or recurse
     if( validSplit ) {
-      if( sum(Ileft) >= min_split & floor(log(IDleft,2))+2 < max_depth )
+      if( sum(Ileft) >= minSplit & floor(log(IDleft,2))+2 < maxDepth )
         queue = append(queue, list(IDleft,Ileft,X2,y2));
       else
         M[,2*IDleft] = computeLeafLabel(y2, Ileft, classify, verbose)
-      if( sum(Iright) >= min_split & floor(log(IDright,2))+2 < max_depth )
+      if( sum(Iright) >= minSplit & floor(log(IDright,2))+2 < maxDepth )
         queue = append(queue, list(IDright,Iright,X2,y2));
       else
         M[,2*IDright] = computeLeafLabel(y2, Iright, classify, verbose)
@@ -175,15 +175,15 @@ m_decisionTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cty
 }
 
 findBestSplit = function(Matrix[Double] X2, Matrix[Double] y2, Matrix[Double] foffb, Matrix[Double] foffe,
-    Int ID, Matrix[Double] I, Int min_leaf, Double max_features, Double max_values, String impurity, Int seed)
+    Int ID, Matrix[Double] I, Int minLeaf, Double maxFeatures, Double maxValues, String impurity, Int seed)
   return(Int f, Int v, Int IDleft, Matrix[Double] Ileft, Int IDright, Matrix[Double] Iright)
 {
-  # sample features iff max_features < 1
+  # sample features iff maxFeatures < 1
   n = ncol(foffb);
   numI = sum(I);
   feat = seq(1,n);
-  if( max_features < 1.0 ) {
-    rI = rand(rows=n, cols=1, seed=seed) <= (n^max_features/n);
+  if( maxFeatures < 1.0 ) {
+    rI = rand(rows=n, cols=1, seed=seed) <= (n^maxFeatures/n);
     feat = removeEmpty(target=feat, margin="rows", select=rI);
     if( sum(feat) == 0 ) #sample at least one
       feat[1,1] = round(rand(rows=1, cols=1, min=1, max=n));
@@ -205,8 +205,8 @@ findBestSplit = function(Matrix[Double] X2, Matrix[Double] y2, Matrix[Double] fo
     # (vectorized evaluation, each column in P is a split candidate)
     fP = upper.tri(target=matrix(1,belen,belen), diag=TRUE);
     vI = seq(1,belen);
-    if( max_values < 1.0 & ncol(fP)>10 ) {
-      rI2 = rand(rows=ncol(fP),cols=1,seed=seed) <= (ncol(fP)^max_values/ncol(fP));
+    if( maxValues < 1.0 & ncol(fP)>10 ) {
+      rI2 = rand(rows=ncol(fP),cols=1,seed=seed) <= (ncol(fP)^maxValues/ncol(fP));
       fP = removeEmpty(target=fP, margin="cols", select=t(rI2));
       vI = removeEmpty(target=vI, margin="rows", select=rI2);
     }
@@ -222,7 +222,7 @@ findBestSplit = function(Matrix[Double] X2, Matrix[Double] y2, Matrix[Double] fo
     ig = replace(target=ig, pattern=NaN, replacement=0);
 
     # track best split value and index, incl validity
-    valid = (rowSums(Ileft)>=min_leaf) & (rowSums(Iright)>=min_leaf);
+    valid = (rowSums(Ileft)>=minLeaf) & (rowSums(Iright)>=minLeaf);
     bestig = max(valid*ig);
     bestv = ifelse(bestig>0, nrow(valid)-as.scalar(rowIndexMax(t(rev(valid*ig))))+beg, -1);
     if( bestv >= 0 )

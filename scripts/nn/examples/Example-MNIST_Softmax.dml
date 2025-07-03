@@ -23,7 +23,7 @@
 source("nn/examples/mnist_softmax.dml") as mnist_softmax
 
 # Read training data
-data = read("mnist_data/mnist_train.csv", format="csv")
+data = read("mnist_data/mnist_train.csv", format="csv", header=TRUE)
 n = nrow(data)
 
 # Extract images and labels
@@ -45,7 +45,7 @@ epochs = 1
 [W, b] = mnist_softmax::train(X, y, X_val, y_val, epochs)
 
 # Read test data
-data = read("mnist_data/mnist_test.csv", format="csv")
+data = read("mnist_data/mnist_test.csv", format="csv", header=TRUE)
 n = nrow(data)
 
 # Extract images and labels

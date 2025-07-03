@@ -1,0 +1,913 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * AlexNet: Deep Convolutional Neural Network
+ * 
+ * Reference: "ImageNet Classification with Deep Convolutional Neural Networks"
+ * by Alex Krizhevsky, Ilya Sutskever, and Geoffrey E. Hinton (2012)
+ * 
+ * This implementation provides a flexible, modular AlexNet architecture
+ * suitable for various computer vision tasks.
+ */
+
+# Import layer implementations
+source("nn/layers/affine.dml") as affine
+source("nn/layers/conv2d_builtin.dml") as conv2d
+source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
+source("nn/layers/dropout.dml") as dropout
+source("nn/layers/l2_reg.dml") as l2_reg
+source("nn/layers/max_pool2d_builtin.dml") as max_pool2d
+source("nn/layers/relu.dml") as relu
+source("nn/layers/softmax.dml") as softmax
+
+# Import optimizers
+source("nn/optim/sgd.dml") as sgd
+source("nn/optim/sgd_momentum.dml") as sgd_momentum
+source("nn/optim/sgd_nesterov.dml") as sgd_nesterov
+source("nn/optim/adam.dml") as adam
+source("nn/optim/adagrad.dml") as adagrad
+source("nn/optim/rmsprop.dml") as rmsprop
+source("nn/optim/lars.dml") as lars
+
+# Import batch normalization
+source("nn/layers/batch_norm2d.dml") as batch_norm2d
+
+/*
+ * Forward and backward pass.
+ */
+
+forward = function(matrix[double] X, int C, int Hin, int Win,
+                   list[unknown] model, string mode, double dropout_prob)
+    return (matrix[double] out, list[unknown] cached_out) {
+  /*
+   * Forward pass of the AlexNet model.
+   *
+   * Architecture:
+   * - Conv1: 96 filters, 11x11, stride 4, pad 0 -> ReLU -> MaxPool 3x3, stride 2
+   * - Conv2: 256 filters, 5x5, stride 1, pad 2 -> ReLU -> MaxPool 3x3, stride 2  
+   * - Conv3: 384 filters, 3x3, stride 1, pad 1 -> ReLU
+   * - Conv4: 384 filters, 3x3, stride 1, pad 1 -> ReLU
+   * - Conv5: 256 filters, 3x3, stride 1, pad 1 -> ReLU -> MaxPool 3x3, stride 2
+   * - FC1: 4096 neurons -> ReLU -> Dropout
+   * - FC2: 4096 neurons -> ReLU -> Dropout
+   * - FC3: num_classes neurons -> Softmax
+   *
+   * Inputs:
+   * - X: Input data, of shape (N, C*Hin*Win).
+   * - C: Number of input channels (3 for RGB).
+   * - Hin: Input height (224 for ImageNet).
+   * - Win: Input width (224 for ImageNet).
+   * - model: List of model parameters with the following structure:
+   *   -> 1: Conv1 weights, of shape (96, C*11*11)
+   *   -> 2: Conv1 bias, of shape (96, 1)
+   *   -> 3: Conv2 weights, of shape (256, 96*5*5)
+   *   -> 4: Conv2 bias, of shape (256, 1)
+   *   -> 5: Conv3 weights, of shape (384, 256*3*3)
+   *   -> 6: Conv3 bias, of shape (384, 1)
+   *   -> 7: Conv4 weights, of shape (384, 384*3*3)
+   *   -> 8: Conv4 bias, of shape (384, 1)
+   *   -> 9: Conv5 weights, of shape (256, 384*3*3)
+   *   -> 10: Conv5 bias, of shape (256, 1)
+   *   -> 11: FC1 weights, of shape (fc_input_size, 4096)
+   *   -> 12: FC1 bias, of shape (1, 4096)
+   *   -> 13: FC2 weights, of shape (4096, 4096)
+   *   -> 14: FC2 bias, of shape (1, 4096)
+   *   -> 15: FC3 weights, of shape (4096, num_classes)
+   *   -> 16: FC3 bias, of shape (1, num_classes)
+   * - mode: 'train' or 'test' for dropout behavior
+   * - dropout_prob: Dropout probability (typically 0.5)
+   *
+   * Outputs:
+   * - out: Output predictions, of shape (N, num_classes)
+   * - cached_out: Cached intermediate outputs for backward pass
+   */
+  
+  # Extract model parameters
+  W1 = as.matrix(model[1]); b1 = as.matrix(model[2])
+  W2 = as.matrix(model[3]); b2 = as.matrix(model[4])
+  W3 = as.matrix(model[5]); b3 = as.matrix(model[6])
+  W4 = as.matrix(model[7]); b4 = as.matrix(model[8])
+  W5 = as.matrix(model[9]); b5 = as.matrix(model[10])
+  W6 = as.matrix(model[11]); b6 = as.matrix(model[12])
+  W7 = as.matrix(model[13]); b7 = as.matrix(model[14])
+  W8 = as.matrix(model[15]); b8 = as.matrix(model[16])
+
+  # Forward pass
+  # Conv1 -> ReLU -> MaxPool1
+  [outc1, Houtc1, Woutc1] = conv2d::forward(X, W1, b1, C, Hin, Win, 11, 11, 4, 4, 0, 0)
+  outr1 = relu::forward(outc1)
+  [outp1, Houtp1, Woutp1] = max_pool2d::forward(outr1, 96, Houtc1, Woutc1, 3, 3, 2, 2, 0, 0)
+  
+  # Conv2 -> ReLU -> MaxPool2
+  [outc2, Houtc2, Woutc2] = conv2d::forward(outp1, W2, b2, 96, Houtp1, Woutp1, 5, 5, 1, 1, 2, 2)
+  outr2 = relu::forward(outc2)
+  [outp2, Houtp2, Woutp2] = max_pool2d::forward(outr2, 256, Houtc2, Woutc2, 3, 3, 2, 2, 0, 0)
+  
+  # Conv3 -> ReLU
+  [outc3, Houtc3, Woutc3] = conv2d::forward(outp2, W3, b3, 256, Houtp2, Woutp2, 3, 3, 1, 1, 1, 1)
+  outr3 = relu::forward(outc3)
+  
+  # Conv4 -> ReLU
+  [outc4, Houtc4, Woutc4] = conv2d::forward(outr3, W4, b4, 384, Houtc3, Woutc3, 3, 3, 1, 1, 1, 1)
+  outr4 = relu::forward(outc4)
+  
+  # Conv5 -> ReLU -> MaxPool3
+  [outc5, Houtc5, Woutc5] = conv2d::forward(outr4, W5, b5, 384, Houtc4, Woutc4, 3, 3, 1, 1, 1, 1)
+  outr5 = relu::forward(outc5)
+  [outp5, Houtp5, Woutp5] = max_pool2d::forward(outr5, 256, Houtc5, Woutc5, 3, 3, 2, 2, 0, 0)
+  
+  # FC1 -> ReLU -> Dropout
+  outa6 = affine::forward(outp5, W6, b6)
+  outr6 = relu::forward(outa6)
+  if (mode == "train") {
+    [outd6, maskd6] = dropout::forward(outr6, dropout_prob, -1)
+  } else {
+    outd6 = outr6
+    maskd6 = matrix(1, rows=nrow(outr6), cols=ncol(outr6))
+  }
+  
+  # FC2 -> ReLU -> Dropout
+  outa7 = affine::forward(outd6, W7, b7)
+  outr7 = relu::forward(outa7)
+  if (mode == "train") {
+    [outd7, maskd7] = dropout::forward(outr7, dropout_prob, -1)
+  } else {
+    outd7 = outr7
+    maskd7 = matrix(1, rows=nrow(outr7), cols=ncol(outr7))
+  }
+  
+  # FC3 -> Softmax
+  outa8 = affine::forward(outd7, W8, b8)
+  out = softmax::forward(outa8)
+
+  # Cache intermediate outputs for backward pass
+  cached_out = list(X, outc1, Houtc1, Woutc1, outr1, outp1, Houtp1, Woutp1,
+                    outc2, Houtc2, Woutc2, outr2, outp2, Houtp2, Woutp2,
+                    outc3, Houtc3, Woutc3, outr3, outc4, Houtc4, Woutc4, outr4,
+                    outc5, Houtc5, Woutc5, outr5, outp5, Houtp5, Woutp5,
+                    outa6, outr6, outd6, maskd6, outa7, outr7, outd7, maskd7, outa8)
+}
+
+backward = function(matrix[double] dOut, list[unknown] cached_out,
+                    list[unknown] model, int C, int Hin, int Win, double dropout_prob)
+    return (matrix[double] dX, list[unknown] gradients) {
+  /*
+   * Backward pass of the AlexNet model.
+   *
+   * Inputs:
+   * - dOut: Gradient w.r.t. output, of shape (N, num_classes)
+   * - cached_out: Cached outputs from forward pass
+   * - model: Model parameters (same structure as forward pass)
+   * - C, Hin, Win: Input dimensions
+   * - dropout_prob: Dropout probability used in forward pass
+   *
+   * Outputs:
+   * - dX: Gradient w.r.t. input, of shape (N, C*Hin*Win)
+   * - gradients: List of gradients for all parameters (same structure as model)
+   */
+  
+  # Extract model parameters
+  W1 = as.matrix(model[1]); b1 = as.matrix(model[2])
+  W2 = as.matrix(model[3]); b2 = as.matrix(model[4])
+  W3 = as.matrix(model[5]); b3 = as.matrix(model[6])
+  W4 = as.matrix(model[7]); b4 = as.matrix(model[8])
+  W5 = as.matrix(model[9]); b5 = as.matrix(model[10])
+  W6 = as.matrix(model[11]); b6 = as.matrix(model[12])
+  W7 = as.matrix(model[13]); b7 = as.matrix(model[14])
+  W8 = as.matrix(model[15]); b8 = as.matrix(model[16])
+
+  # Extract cached outputs
+  X = as.matrix(cached_out[1])
+  outc1 = as.matrix(cached_out[2]); Houtc1 = as.scalar(cached_out[3]); Woutc1 = as.scalar(cached_out[4])
+  outr1 = as.matrix(cached_out[5])
+  outp1 = as.matrix(cached_out[6]); Houtp1 = as.scalar(cached_out[7]); Woutp1 = as.scalar(cached_out[8])
+  outc2 = as.matrix(cached_out[9]); Houtc2 = as.scalar(cached_out[10]); Woutc2 = as.scalar(cached_out[11])
+  outr2 = as.matrix(cached_out[12])
+  outp2 = as.matrix(cached_out[13]); Houtp2 = as.scalar(cached_out[14]); Woutp2 = as.scalar(cached_out[15])
+  outc3 = as.matrix(cached_out[16]); Houtc3 = as.scalar(cached_out[17]); Woutc3 = as.scalar(cached_out[18])
+  outr3 = as.matrix(cached_out[19])
+  outc4 = as.matrix(cached_out[20]); Houtc4 = as.scalar(cached_out[21]); Woutc4 = as.scalar(cached_out[22])
+  outr4 = as.matrix(cached_out[23])
+  outc5 = as.matrix(cached_out[24]); Houtc5 = as.scalar(cached_out[25]); Woutc5 = as.scalar(cached_out[26])
+  outr5 = as.matrix(cached_out[27])
+  outp5 = as.matrix(cached_out[28]); Houtp5 = as.scalar(cached_out[29]); Woutp5 = as.scalar(cached_out[30])
+  outa6 = as.matrix(cached_out[31]); outr6 = as.matrix(cached_out[32])
+  outd6 = as.matrix(cached_out[33]); maskd6 = as.matrix(cached_out[34])
+  outa7 = as.matrix(cached_out[35]); outr7 = as.matrix(cached_out[36])
+  outd7 = as.matrix(cached_out[37]); maskd7 = as.matrix(cached_out[38])
+  outa8 = as.matrix(cached_out[39])
+
+  # Backward pass
+  # FC3
+  douta8 = softmax::backward(dOut, outa8)
+  [doutd7, dW8, db8] = affine::backward(douta8, outd7, W8, b8)
+  
+  # FC2
+  doutr7 = dropout::backward(doutd7, outr7, dropout_prob, maskd7)
+  douta7 = relu::backward(doutr7, outa7)
+  [doutd6, dW7, db7] = affine::backward(douta7, outd6, W7, b7)
+  
+  # FC1
+  doutr6 = dropout::backward(doutd6, outr6, dropout_prob, maskd6)
+  douta6 = relu::backward(doutr6, outa6)
+  [doutp5, dW6, db6] = affine::backward(douta6, outp5, W6, b6)
+  
+  # Conv5
+  doutr5 = max_pool2d::backward(doutp5, Houtp5, Woutp5, outr5, 256, Houtc5, Woutc5, 3, 3, 2, 2, 0, 0)
+  doutc5 = relu::backward(doutr5, outc5)
+  [doutr4, dW5, db5] = conv2d::backward(doutc5, Houtc5, Woutc5, outr4, W5, b5, 384, Houtc4, Woutc4, 3, 3, 1, 1, 1, 1)
+  
+  # Conv4
+  doutc4 = relu::backward(doutr4, outc4)
+  [doutr3, dW4, db4] = conv2d::backward(doutc4, Houtc4, Woutc4, outr3, W4, b4, 384, Houtc3, Woutc3, 3, 3, 1, 1, 1, 1)
+  
+  # Conv3
+  doutc3 = relu::backward(doutr3, outc3)
+  [doutp2, dW3, db3] = conv2d::backward(doutc3, Houtc3, Woutc3, outp2, W3, b3, 256, Houtp2, Woutp2, 3, 3, 1, 1, 1, 1)
+  
+  # Conv2
+  doutr2 = max_pool2d::backward(doutp2, Houtp2, Woutp2, outr2, 256, Houtc2, Woutc2, 3, 3, 2, 2, 0, 0)
+  doutc2 = relu::backward(doutr2, outc2)
+  [doutp1, dW2, db2] = conv2d::backward(doutc2, Houtc2, Woutc2, outp1, W2, b2, 96, Houtp1, Woutp1, 5, 5, 1, 1, 2, 2)
+  
+  # Conv1
+  doutr1 = max_pool2d::backward(doutp1, Houtp1, Woutp1, outr1, 96, Houtc1, Woutc1, 3, 3, 2, 2, 0, 0)
+  doutc1 = relu::backward(doutr1, outc1)
+  [dX, dW1, db1] = conv2d::backward(doutc1, Houtc1, Woutc1, X, W1, b1, C, Hin, Win, 11, 11, 4, 4, 0, 0)
+
+  # Package gradients
+  gradients = list(dW1, db1, dW2, db2, dW3, db3, dW4, db4, dW5, db5, dW6, db6, dW7, db7, dW8, db8)
+}
+
+/*
+ * Model initialization.
+ */
+
+init = function(int C, int Hin, int Win, int num_classes, int seed)
+    return (list[unknown] model) {
+  /*
+   * Initialize AlexNet model parameters.
+   *
+   * Inputs:
+   * - C: Number of input channels (3 for RGB)
+   * - Hin: Input height (224 for ImageNet)
+   * - Win: Input width (224 for ImageNet)  
+   * - num_classes: Number of output classes
+   * - seed: Random seed for initialization
+   *
+   * Outputs:
+   * - model: List of initialized model parameters
+   */
+  
+  # Calculate fully connected input size based on convolution output
+  # After all convolutions and pooling: 5x5 feature maps with 256 channels
+  fc_input_size = 256 * 5 * 5  # 6400
+  
+  # Initialize convolutional layers
+  [W1, b1] = conv2d::init(96, C, 11, 11, seed)      # Conv1: 96 11x11 filters
+  [W2, b2] = conv2d::init(256, 96, 5, 5, seed)      # Conv2: 256 5x5 filters  
+  [W3, b3] = conv2d::init(384, 256, 3, 3, seed)     # Conv3: 384 3x3 filters
+  [W4, b4] = conv2d::init(384, 384, 3, 3, seed)     # Conv4: 384 3x3 filters
+  [W5, b5] = conv2d::init(256, 384, 3, 3, seed)     # Conv5: 256 3x3 filters
+
+  # Initialize fully connected layers
+  [W6, b6] = affine::init(fc_input_size, 4096, seed)  # FC1
+  [W7, b7] = affine::init(4096, 4096, seed)           # FC2
+  [W8, b8] = affine::init(4096, num_classes, seed)    # FC3 (output)
+  
+  # Scale final layer for better convergence
+  W8 = W8 / sqrt(2)
+
+  # Package model
+  model = list(W1, b1, W2, b2, W3, b3, W4, b4, W5, b5, W6, b6, W7, b7, W8, b8)
+}
+
+/*
+ * Utility functions for optimizers.
+ */
+
+update_params_with_sgd = function(list[unknown] model, list[unknown] gradients, double lr)
+    return (list[unknown] model_upd) {
+  /*
+   * Update model parameters with SGD optimizer.
+   */
+  model_upd = list()
+  for (i in 1:length(model)) {
+    param = as.matrix(model[i])
+    grad = as.matrix(gradients[i])
+    param_upd = sgd::update(param, grad, lr)
+    model_upd = append(model_upd, param_upd)
+  }
+}
+
+init_sgd_momentum_optim_params = function(list[unknown] model)
+    return (list[unknown] optim_state) {
+  /*
+   * Initialize SGD momentum optimizer state.
+   */
+  optim_state = list()
+  for (i in 1:length(model)) {
+    param = as.matrix(model[i])
+    momentum_state = sgd_momentum::init(param)
+    optim_state = append(optim_state, momentum_state)
+  }
+}
+
+update_params_with_sgd_momentum = function(list[unknown] model, list[unknown] gradients,
+                                           double lr, double mu, list[unknown] optim_state)
+    return (list[unknown] model_upd, list[unknown] optim_state_upd) {
+  /*
+   * Update model parameters with SGD momentum optimizer.
+   */
+  model_upd = list()
+  optim_state_upd = list()
+  for (i in 1:length(model)) {
+    param = as.matrix(model[i])
+    grad = as.matrix(gradients[i])
+    momentum_state = as.matrix(optim_state[i])
+    [param_upd, momentum_state_upd] = sgd_momentum::update(param, grad, lr, mu, momentum_state)
+    model_upd = append(model_upd, param_upd)
+    optim_state_upd = append(optim_state_upd, momentum_state_upd)
+  }
+}
+
+init_adam_optim_params = function(list[unknown] model)
+    return (list[unknown] optim_state) {
+  /*
+   * Initialize Adam optimizer state.
+   */
+  optim_state = list()
+  for (i in 1:length(model)) {
+    param = as.matrix(model[i])
+    [m_state, v_state] = adam::init(param)
+    adam_state = list(m_state, v_state)
+    optim_state = append(optim_state, adam_state)
+  }
+}
+
+update_params_with_adam = function(list[unknown] model, list[unknown] gradients,
+                                   double lr, double beta1, double beta2, double epsilon, int t,
+                                   list[unknown] optim_state)
+    return (list[unknown] model_upd, list[unknown] optim_state_upd) {
+  /*
+   * Update model parameters with Adam optimizer.
+   */
+  model_upd = list()
+  optim_state_upd = list()
+  for (i in 1:length(model)) {
+    param = as.matrix(model[i])
+    grad = as.matrix(gradients[i])
+    adam_state = as.list(optim_state[i])
+    m_state = as.matrix(adam_state[1])
+    v_state = as.matrix(adam_state[2])
+    [param_upd, m_state_upd, v_state_upd] = adam::update(param, grad, lr, beta1, beta2, epsilon, t, m_state, v_state)
+    adam_state_upd = list(m_state_upd, v_state_upd)
+    model_upd = append(model_upd, param_upd)
+    optim_state_upd = append(optim_state_upd, adam_state_upd)
+  }
+}
+
+init_lars_optim_params = function(list[unknown] model)
+    return (list[unknown] optim_state) {
+  /*
+   * Initialize LARS optimizer state.
+   */
+  optim_state = list()
+  for (i in 1:length(model)) {
+    param = as.matrix(model[i])
+    momentum_state = lars::init(param)
+    optim_state = append(optim_state, momentum_state)
+  }
+}
+
+update_params_with_lars = function(list[unknown] model, list[unknown] gradients,
+                                   double lr, double mu, double weight_decay, double trust_coeff,
+                                   list[unknown] optim_state)
+    return (list[unknown] model_upd, list[unknown] optim_state_upd) {
+  /*
+   * Update model parameters with LARS optimizer.
+   *
+   * LARS (Layer-wise Adaptive Rate Scaling) applies different learning
+   * rates to different layers based on the ratio of parameter norm
+   * to gradient norm, enabling stable large-batch training.
+   */
+  model_upd = list()
+  optim_state_upd = list()
+  for (i in 1:length(model)) {
+    param = as.matrix(model[i])
+    grad = as.matrix(gradients[i])
+    momentum_state = as.matrix(optim_state[i])
+    [param_upd, momentum_state_upd] = lars::update(param, grad, lr, mu, momentum_state, weight_decay, trust_coeff)
+    model_upd = append(model_upd, param_upd)
+    optim_state_upd = append(optim_state_upd, momentum_state_upd)
+  }
+}
+
+/*
+ * Training and evaluation utilities.
+ */
+
+compute_loss = function(matrix[double] predictions, matrix[double] targets, list[unknown] model, double weight_decay)
+    return (double loss) {
+  /*
+   * Compute cross-entropy loss with L2 regularization.
+   */
+  data_loss = cross_entropy_loss::forward(predictions, targets)
+  reg_loss = 0
+  for (i in seq(1, length(model), 2)) {  # Only weights, skip biases
+    W = as.matrix(model[i])
+    reg_loss = reg_loss + l2_reg::forward(W, 1)
+  }
+  loss = data_loss + weight_decay * reg_loss
+}
+
+compute_accuracy = function(matrix[double] predictions, matrix[double] targets)
+    return (double accuracy) {
+  /*
+   * Compute classification accuracy.
+   */
+  pred_labels = rowIndexMax(predictions)
+  true_labels = rowIndexMax(targets)
+  accuracy = mean(pred_labels == true_labels)
+}
+
+evaluate = function(matrix[double] X, matrix[double] Y, int C, int Hin, int Win,
+                    list[unknown] model, int batch_size)
+    return (double loss, double accuracy) {
+  /*
+   * Evaluate model on a dataset.
+   */
+  N = nrow(X)
+  total_loss = 0
+  total_acc = 0
+  num_batches = ceil(N / batch_size)
+  
+  for (i in 1:num_batches) {
+    beg = ((i-1) * batch_size) %% N + 1
+    end = min(N, beg + batch_size - 1)
+    X_batch = X[beg:end,]
+    Y_batch = Y[beg:end,]
+    
+    [predictions, cached_out] = forward(X_batch, C, Hin, Win, model, "test", 0.0)
+    batch_loss = compute_loss(predictions, Y_batch, model, 0.0)
+    batch_acc = compute_accuracy(predictions, Y_batch)
+    
+    total_loss = total_loss + batch_loss
+    total_acc = total_acc + batch_acc
+  }
+  
+  loss = total_loss / num_batches
+  accuracy = total_acc / num_batches
+}
+
+/*
+ * AlexNet-BN variant initialization (with Batch Normalization).
+ */
+
+init_with_bn = function(int C, int Hin, int Win, int num_classes, int seed)
+    return (list[unknown] model, list[unknown] emas) {
+  /*
+   * Initialize AlexNet-BN model parameters (with Batch Normalization).
+   * 
+   * This variant adds batch normalization after each convolutional layer,
+   * as described in the LARS paper for improved large-batch training.
+   *
+   * Inputs:
+   * - C: Number of input channels (3 for RGB)
+   * - Hin: Input height (224 for ImageNet)
+   * - Win: Input width (224 for ImageNet)
+   * - num_classes: Number of output classes
+   * - seed: Random seed for initialization
+   *
+   * Outputs:
+   * - model: List of model parameters including BN parameters
+   * - emas: List of exponential moving averages for BN layers
+   */
+  
+  # Calculate fully connected input size
+  fc_input_size = 256 * 5 * 5  # 6400
+  
+  # Initialize convolutional layers (same as before)
+  [W1, b1] = conv2d::init(96, C, 11, 11, seed)      # Conv1
+  [W2, b2] = conv2d::init(256, 96, 5, 5, seed)      # Conv2
+  [W3, b3] = conv2d::init(384, 256, 3, 3, seed)     # Conv3
+  [W4, b4] = conv2d::init(384, 384, 3, 3, seed)     # Conv4
+  [W5, b5] = conv2d::init(256, 384, 3, 3, seed)     # Conv5
+  
+  # Initialize batch normalization parameters for each conv layer
+  [gamma1, beta1, ema_mean1, ema_var1] = batch_norm2d::init(96)
+  [gamma2, beta2, ema_mean2, ema_var2] = batch_norm2d::init(256)
+  [gamma3, beta3, ema_mean3, ema_var3] = batch_norm2d::init(384)
+  [gamma4, beta4, ema_mean4, ema_var4] = batch_norm2d::init(384)
+  [gamma5, beta5, ema_mean5, ema_var5] = batch_norm2d::init(256)
+  
+  # Initialize fully connected layers
+  [W6, b6] = affine::init(fc_input_size, 4096, seed)  # FC1
+  [W7, b7] = affine::init(4096, 4096, seed)           # FC2
+  [W8, b8] = affine::init(4096, num_classes, seed)    # FC3 (output)
+  
+  # Scale final layer for better convergence
+  W8 = W8 / sqrt(2)
+  
+  # Package model with BN parameters
+  # Order: W, b, gamma, beta, ema_mean, ema_var for each conv layer, then FC layers
+  model = list(W1, b1, gamma1, beta1, ema_mean1, ema_var1,
+               W2, b2, gamma2, beta2, ema_mean2, ema_var2,
+               W3, b3, gamma3, beta3, ema_mean3, ema_var3,
+               W4, b4, gamma4, beta4, ema_mean4, ema_var4,
+               W5, b5, gamma5, beta5, ema_mean5, ema_var5,
+               W6, b6, W7, b7, W8, b8)
+  
+  # Package EMA parameters for easy access
+  emas = list(ema_mean1, ema_var1, ema_mean2, ema_var2, ema_mean3, ema_var3,
+              ema_mean4, ema_var4, ema_mean5, ema_var5)
+}
+
+forward_with_bn = function(matrix[double] X, int C, int Hin, int Win,
+                          list[unknown] model, string mode, double dropout_prob)
+    return (matrix[double] out, list[unknown] cached_out, list[unknown] emas_upd) {
+  /*
+   * Forward pass of the AlexNet-BN model (with Batch Normalization).
+   *
+   * Architecture:
+   * - Conv1 -> BN -> ReLU -> MaxPool
+   * - Conv2 -> BN -> ReLU -> MaxPool
+   * - Conv3 -> BN -> ReLU
+   * - Conv4 -> BN -> ReLU
+   * - Conv5 -> BN -> ReLU -> MaxPool
+   * - FC1 -> ReLU -> Dropout
+   * - FC2 -> ReLU -> Dropout
+   * - FC3 -> Softmax
+   */
+  
+  # Extract model parameters (with BN)
+  W1 = as.matrix(model[1]); b1 = as.matrix(model[2])
+  gamma1 = as.matrix(model[3]); beta1 = as.matrix(model[4])
+  ema_mean1 = as.matrix(model[5]); ema_var1 = as.matrix(model[6])
+  
+  W2 = as.matrix(model[7]); b2 = as.matrix(model[8])
+  gamma2 = as.matrix(model[9]); beta2 = as.matrix(model[10])
+  ema_mean2 = as.matrix(model[11]); ema_var2 = as.matrix(model[12])
+  
+  W3 = as.matrix(model[13]); b3 = as.matrix(model[14])
+  gamma3 = as.matrix(model[15]); beta3 = as.matrix(model[16])
+  ema_mean3 = as.matrix(model[17]); ema_var3 = as.matrix(model[18])
+  
+  W4 = as.matrix(model[19]); b4 = as.matrix(model[20])
+  gamma4 = as.matrix(model[21]); beta4 = as.matrix(model[22])
+  ema_mean4 = as.matrix(model[23]); ema_var4 = as.matrix(model[24])
+  
+  W5 = as.matrix(model[25]); b5 = as.matrix(model[26])
+  gamma5 = as.matrix(model[27]); beta5 = as.matrix(model[28])
+  ema_mean5 = as.matrix(model[29]); ema_var5 = as.matrix(model[30])
+  
+  W6 = as.matrix(model[31]); b6 = as.matrix(model[32])
+  W7 = as.matrix(model[33]); b7 = as.matrix(model[34])
+  W8 = as.matrix(model[35]); b8 = as.matrix(model[36])
+
+  # Forward pass with batch normalization
+  # Conv1 -> BN -> ReLU -> MaxPool
+  [outc1, Houtc1, Woutc1] = conv2d::forward(X, W1, b1, C, Hin, Win, 11, 11, 4, 4, 0, 0)
+  [outbn1, ema_mean1_upd, ema_var1_upd, cache_mean1, cache_inv_var1] = batch_norm2d::forward(outc1, gamma1, beta1, 96, Houtc1, Woutc1, mode, ema_mean1, ema_var1, 0.99, 1e-5)
+  outr1 = relu::forward(outbn1)
+  [outp1, Houtp1, Woutp1] = max_pool2d::forward(outr1, 96, Houtc1, Woutc1, 3, 3, 2, 2, 0, 0)
+  
+  # Conv2 -> BN -> ReLU -> MaxPool
+  [outc2, Houtc2, Woutc2] = conv2d::forward(outp1, W2, b2, 96, Houtp1, Woutp1, 5, 5, 1, 1, 2, 2)
+  [outbn2, ema_mean2_upd, ema_var2_upd, cache_mean2, cache_inv_var2] = batch_norm2d::forward(outc2, gamma2, beta2, 256, Houtc2, Woutc2, mode, ema_mean2, ema_var2, 0.99, 1e-5)
+  outr2 = relu::forward(outbn2)
+  [outp2, Houtp2, Woutp2] = max_pool2d::forward(outr2, 256, Houtc2, Woutc2, 3, 3, 2, 2, 0, 0)
+  
+  # Conv3 -> BN -> ReLU
+  [outc3, Houtc3, Woutc3] = conv2d::forward(outp2, W3, b3, 256, Houtp2, Woutp2, 3, 3, 1, 1, 1, 1)
+  [outbn3, ema_mean3_upd, ema_var3_upd, cache_mean3, cache_inv_var3] = batch_norm2d::forward(outc3, gamma3, beta3, 384, Houtc3, Woutc3, mode, ema_mean3, ema_var3, 0.99, 1e-5)
+  outr3 = relu::forward(outbn3)
+  
+  # Conv4 -> BN -> ReLU
+  [outc4, Houtc4, Woutc4] = conv2d::forward(outr3, W4, b4, 384, Houtc3, Woutc3, 3, 3, 1, 1, 1, 1)
+  [outbn4, ema_mean4_upd, ema_var4_upd, cache_mean4, cache_inv_var4] = batch_norm2d::forward(outc4, gamma4, beta4, 384, Houtc4, Woutc4, mode, ema_mean4, ema_var4, 0.99, 1e-5)
+  outr4 = relu::forward(outbn4)
+  
+  # Conv5 -> BN -> ReLU -> MaxPool
+  [outc5, Houtc5, Woutc5] = conv2d::forward(outr4, W5, b5, 384, Houtc4, Woutc4, 3, 3, 1, 1, 1, 1)
+  [outbn5, ema_mean5_upd, ema_var5_upd, cache_mean5, cache_inv_var5] = batch_norm2d::forward(outc5, gamma5, beta5, 256, Houtc5, Woutc5, mode, ema_mean5, ema_var5, 0.99, 1e-5)
+  outr5 = relu::forward(outbn5)
+  [outp5, Houtp5, Woutp5] = max_pool2d::forward(outr5, 256, Houtc5, Woutc5, 3, 3, 2, 2, 0, 0)
+  
+  # FC1 -> ReLU -> Dropout
+  outa6 = affine::forward(outp5, W6, b6)
+  outr6 = relu::forward(outa6)
+  if (mode == "train") {
+    [outd6, maskd6] = dropout::forward(outr6, dropout_prob, -1)
+  } else {
+    outd6 = outr6
+    maskd6 = matrix(1, rows=nrow(outr6), cols=ncol(outr6))
+  }
+  
+  # FC2 -> ReLU -> Dropout
+  outa7 = affine::forward(outd6, W7, b7)
+  outr7 = relu::forward(outa7)
+  if (mode == "train") {
+    [outd7, maskd7] = dropout::forward(outr7, dropout_prob, -1)
+  } else {
+    outd7 = outr7
+    maskd7 = matrix(1, rows=nrow(outr7), cols=ncol(outr7))
+  }
+  
+  # FC3 -> Softmax
+  outa8 = affine::forward(outd7, W8, b8)
+  out = softmax::forward(outa8)
+
+  # Cache intermediate outputs for backward pass
+  cached_out = list(X, outc1, Houtc1, Woutc1, outbn1, cache_mean1, cache_inv_var1, outr1, outp1, Houtp1, Woutp1,
+                    outc2, Houtc2, Woutc2, outbn2, cache_mean2, cache_inv_var2, outr2, outp2, Houtp2, Woutp2,
+                    outc3, Houtc3, Woutc3, outbn3, cache_mean3, cache_inv_var3, outr3,
+                    outc4, Houtc4, Woutc4, outbn4, cache_mean4, cache_inv_var4, outr4,
+                    outc5, Houtc5, Woutc5, outbn5, cache_mean5, cache_inv_var5, outr5, outp5, Houtp5, Woutp5,
+                    outa6, outr6, outd6, maskd6, outa7, outr7, outd7, maskd7, outa8)
+  
+  # Updated EMA parameters
+  emas_upd = list(ema_mean1_upd, ema_var1_upd, ema_mean2_upd, ema_var2_upd, ema_mean3_upd, ema_var3_upd,
+                  ema_mean4_upd, ema_var4_upd, ema_mean5_upd, ema_var5_upd)
+}
+
+/*
+ * LARS Training Utilities
+ */
+
+get_lr_with_warmup = function(double base_lr, int epoch, int iter, int total_epochs,
+                              int iters_per_epoch, int batch_size, int base_batch_size,
+                              int warmup_epochs, double decay_power)
+    return (double lr) {
+  /*
+   * Learning rate scheduler with warmup, batch scaling, and polynomial decay.
+   * Implements the LARS paper's learning rate schedule.
+   *
+   * Inputs:
+   * - base_lr: Base learning rate (before scaling)
+   * - epoch, iter: Current epoch and iteration
+   * - total_epochs: Total number of training epochs
+   * - iters_per_epoch: Iterations per epoch
+   * - batch_size: Current batch size
+   * - base_batch_size: Reference batch size for scaling (typically 256)
+   * - warmup_epochs: Number of warmup epochs
+   * - decay_power: Power for polynomial decay (typically 2)
+   *
+   * Outputs:
+   * - lr: Scaled learning rate for current iteration
+   */
+  
+  # Scale base LR by batch size (linear scaling rule)
+  scaled_base_lr = base_lr * (batch_size / base_batch_size)
+  
+  # Calculate total progress
+  total_iters = total_epochs * iters_per_epoch
+  warmup_iters = warmup_epochs * iters_per_epoch
+  current_iter = (epoch - 1) * iters_per_epoch + iter
+  
+  if (current_iter <= warmup_iters) {
+    # Linear warmup from 0 to scaled_base_lr
+    lr = scaled_base_lr * (current_iter / warmup_iters)
+  } else {
+    # Polynomial decay after warmup
+    progress = (current_iter - warmup_iters) / (total_iters - warmup_iters)
+    lr = scaled_base_lr * (1 - progress)^decay_power
+  }
+}
+
+get_lars_hyperparams = function(int batch_size, boolean use_bn)
+    return (double base_lr, int warmup_epochs, int total_epochs) {
+  /*
+   * Get recommended LARS hyperparameters based on batch size.
+   * Based on Table 3 from the LARS paper.
+   *
+   * Inputs:
+   * - batch_size: Training batch size
+   * - use_bn: Whether using batch normalization
+   *
+   * Outputs:
+   * - base_lr: Base learning rate (before batch scaling)
+   * - warmup_epochs: Number of warmup epochs
+   * - total_epochs: Recommended total training epochs
+   */
+  
+  if (use_bn) {
+    # AlexNet-BN (better scaling properties)
+    if (batch_size <= 512) {
+      base_lr = 0.02
+      warmup_epochs = 5
+      total_epochs = 100
+    } else if (batch_size <= 4096) {
+      base_lr = 0.02  # Will be scaled to ~0.32 for 4K batch
+      warmup_epochs = 5
+      total_epochs = 100
+    } else if (batch_size <= 8192) {
+      base_lr = 0.02  # Will be scaled to ~0.64 for 8K batch
+      warmup_epochs = 5
+      total_epochs = 100
+    } else if (batch_size <= 16384) {
+      base_lr = 0.02  # Will be scaled to ~1.28 for 16K batch
+      warmup_epochs = 5
+      total_epochs = 100
+    } else {  # 32K and above
+      base_lr = 0.02  # Will be scaled to ~2.56 for 32K batch
+      warmup_epochs = 5
+      total_epochs = 200  # Need more epochs for very large batch
+    }
+  } else {
+    # Regular AlexNet (limited scaling)
+    if (batch_size <= 512) {
+      base_lr = 0.01
+      warmup_epochs = 2
+      total_epochs = 100
+    } else if (batch_size <= 4096) {
+      base_lr = 0.01  # Will be scaled proportionally
+      warmup_epochs = 2
+      total_epochs = 100
+    } else {
+      # Regular AlexNet doesn't scale well beyond 4K
+      print("Warning: Regular AlexNet (without BN) doesn't scale well beyond batch size 4K")
+      base_lr = 0.01
+      warmup_epochs = 2
+      total_epochs = 100
+    }
+  }
+}
+
+train_with_lars = function(matrix[double] X_train, matrix[double] Y_train,
+                          matrix[double] X_val, matrix[double] Y_val,
+                          int C, int Hin, int Win, int num_classes,
+                          int epochs, int batch_size, double base_lr,
+                          boolean use_bn, int seed)
+    return (list[unknown] model, matrix[double] train_losses, matrix[double] val_accs) {
+  /*
+   * Train AlexNet with LARS optimizer following paper's best practices.
+   *
+   * Inputs:
+   * - X_train, Y_train: Training data and labels
+   * - X_val, Y_val: Validation data and labels
+   * - C, Hin, Win: Input dimensions
+   * - num_classes: Number of output classes
+   * - epochs: Number of training epochs
+   * - batch_size: Training batch size
+   * - base_lr: Base learning rate (before batch scaling)
+   * - use_bn: Whether to use batch normalization (recommended for LARS)
+   * - seed: Random seed for reproducibility
+   *
+   * Outputs:
+   * - model: Trained model parameters
+   * - train_losses: Training losses per epoch
+   * - val_accs: Validation accuracies per epoch
+   */
+  
+  N = nrow(X_train)
+  
+  # Initialize model
+  if (use_bn) {
+    [model, emas] = init_with_bn(C, Hin, Win, num_classes, seed)
+  } else {
+    model = init(C, Hin, Win, num_classes, seed)
+  }
+  
+  # LARS hyperparameters from paper
+  base_batch_size = 256
+  warmup_epochs = ifelse(use_bn, 5, 2)  # 5 for BN, 2 for regular
+  decay_power = 2
+  weight_decay = 0.0005
+  momentum = 0.9
+  trust_coeff = 0.001
+  
+  # Initialize optimizer state
+  optim_state = init_lars_optim_params(model)
+  
+  # Training metrics
+  train_losses = matrix(0, rows=epochs, cols=1)
+  val_accs = matrix(0, rows=epochs, cols=1)
+  
+  # Print training info
+  print("Training AlexNet with LARS optimizer")
+  print("Batch size: " + batch_size + ", Base LR: " + base_lr)
+  print("Scaled LR: " + (base_lr * batch_size / base_batch_size))
+  print("Warmup epochs: " + warmup_epochs + ", Using BN: " + use_bn)
+  print("")
+  
+  iters_per_epoch = ceil(N / batch_size)
+  
+  for (epoch in 1:epochs) {
+    epoch_loss = 0
+    
+    for (iter in 1:iters_per_epoch) {
+      # Get learning rate with warmup and decay
+      lr = get_lr_with_warmup(base_lr, epoch, iter, epochs, iters_per_epoch,
+                              batch_size, base_batch_size, warmup_epochs, decay_power)
+      
+      # Get batch
+      beg = ((iter-1) * batch_size) %% N + 1
+      end = min(N, beg + batch_size - 1)
+      X_batch = X_train[beg:end,]
+      Y_batch = Y_train[beg:end,]
+      
+      # Forward pass
+      if (use_bn) {
+        [predictions, cached_out, emas] = forward_with_bn(X_batch, C, Hin, Win, model, "train", 0.5)
+      } else {
+        [predictions, cached_out] = forward(X_batch, C, Hin, Win, model, "train", 0.5)
+      }
+      
+      # Compute loss
+      loss = compute_loss(predictions, Y_batch, model, weight_decay)
+      epoch_loss = epoch_loss + loss
+      
+      # Backward pass
+      dprobs = cross_entropy_loss::backward(predictions, Y_batch)
+      if (use_bn) {
+        # Note: BN backward pass would need to be implemented separately
+        [dX, gradients] = backward(dprobs, cached_out, model, C, Hin, Win, 0.5)
+      } else {
+        [dX, gradients] = backward(dprobs, cached_out, model, C, Hin, Win, 0.5)
+      }
+      
+      # Add L2 regularization gradients
+      for (i in seq(1, length(gradients), 2)) {  # Only weights
+        if (i <= length(model)) {
+          W = as.matrix(model[i])
+          dW = as.matrix(gradients[i])
+          gradients[i] = dW + weight_decay * l2_reg::backward(W, 1)
+        }
+      }
+      
+      # Update with LARS
+      [model, optim_state] = update_params_with_lars(model, gradients, lr, 
+                                                      momentum, weight_decay, 
+                                                      trust_coeff, optim_state)
+      
+      # Print progress
+      if (iter %% 50 == 0) {
+        print("Epoch " + epoch + "/" + epochs + ", Iter " + iter + "/" + 
+              iters_per_epoch + ", LR: " + lr + ", Loss: " + loss)
+      }
+    }
+    
+    # Epoch metrics
+    train_losses[epoch,1] = epoch_loss / iters_per_epoch
+    
+    # Validation
+    if (use_bn) {
+      [val_loss, val_acc] = evaluate_with_bn(X_val, Y_val, C, Hin, Win, model, batch_size)
+    } else {
+      [val_loss, val_acc] = evaluate(X_val, Y_val, C, Hin, Win, model, batch_size)
+    }
+    val_accs[epoch,1] = val_acc
+    
+    print("Epoch " + epoch + " - Train Loss: " + train_losses[epoch,1] + 
+          ", Val Acc: " + val_acc)
+  }
+}
+
+evaluate_with_bn = function(matrix[double] X, matrix[double] Y, int C, int Hin, int Win,
+                           list[unknown] model, int batch_size)
+    return (double loss, double accuracy) {
+  /*
+   * Evaluate AlexNet-BN model on a dataset.
+   */
+  N = nrow(X)
+  total_loss = 0
+  total_acc = 0
+  num_batches = ceil(N / batch_size)
+  
+  for (i in 1:num_batches) {
+    beg = ((i-1) * batch_size) %% N + 1
+    end = min(N, beg + batch_size - 1)
+    X_batch = X[beg:end,]
+    Y_batch = Y[beg:end,]
+    
+    [predictions, cached_out, emas] = forward_with_bn(X_batch, C, Hin, Win, model, "test", 0.0)
+    batch_loss = compute_loss(predictions, Y_batch, model, 0.0)
+    batch_acc = compute_accuracy(predictions, Y_batch)
+    
+    total_loss = total_loss + batch_loss
+    total_acc = total_acc + batch_acc
+  }
+  
+  loss = total_loss / num_batches
+  accuracy = total_acc / num_batches
+} 

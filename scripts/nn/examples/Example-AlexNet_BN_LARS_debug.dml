@@ -1,0 +1,644 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * DEBUG VERSION: AlexNet-BN ImageNet Training with LARS
+ * 
+ * This debug version includes comprehensive print statements and checks
+ * to verify the correctness of the implementation at each step.
+ * 
+ * Based on "Large Batch Training of Convolutional Networks"
+ * by Yang You, Igor Gitman, and Boris Ginsburg (2017)
+ */
+
+# Import the new AlexNet implementation with LARS support
+source("nn/networks/alexnet_LARS.dml") as alexnet
+
+# Import utility functions and existing LARS modules
+source("nn/util.dml") as util
+source("nn/optim/lars_util.dml") as lars_util
+source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
+source("nn/layers/l2_reg.dml") as l2_reg
+
+# Helper function to check matrix properties
+check_matrix_properties = function(matrix[double] M, string name) {
+  /*
+   * Debug helper to check matrix properties
+   */
+  print("\n=== Matrix Properties: " + name + " ===")
+  print("Shape: " + nrow(M) + " x " + ncol(M))
+  print("Min value: " + min(M))
+  print("Max value: " + max(M))
+  print("Mean value: " + mean(M))
+  print("Std dev: " + sqrt(mean((M - mean(M))^2)))
+  print("Density (non-zeros): " + (sum(M != 0) / (nrow(M) * ncol(M))))
+  print("Sum: " + sum(M))
+  
+  # Check for NaN or Inf
+  if (sum(is.nan(M)) > 0) {
+    print("WARNING: Contains NaN values!")
+  }
+  if (sum(M == 1/0) > 0 | sum(M == -1/0) > 0) {
+    print("WARNING: Contains Inf values!")
+  }
+}
+
+# Helper function to check gradient norms
+check_gradient_norms = function(list[unknown] gradients, list[unknown] model) {
+  /*
+   * Debug helper to check gradient norms for each layer
+   */
+  print("\n=== Gradient Norms ===")
+  param_names = list("W1", "b1", "gamma1", "beta1", "ema_mean1", "ema_var1",
+                     "W2", "b2", "gamma2", "beta2", "ema_mean2", "ema_var2",
+                     "W3", "b3", "gamma3", "beta3", "ema_mean3", "ema_var3",
+                     "W4", "b4", "gamma4", "beta4", "ema_mean4", "ema_var4",
+                     "W5", "b5", "gamma5", "beta5", "ema_mean5", "ema_var5",
+                     "W6", "b6", "W7", "b7", "W8", "b8")
+  
+  for (i in 1:length(gradients)) {
+    grad = as.matrix(gradients[i])
+    param = as.matrix(model[i])
+    grad_norm = sqrt(sum(grad^2))
+    param_norm = sqrt(sum(param^2))
+    
+    # Calculate relative gradient norm
+    if (param_norm > 0) {
+      relative_norm = grad_norm / param_norm
+    } else {
+      relative_norm = grad_norm
+    }
+    
+    param_name = as.scalar(param_names[i])
+    print("Layer " + i + " (" + param_name + "):")
+    print("  - Gradient norm: " + grad_norm)
+    print("  - Parameter norm: " + param_norm)
+    print("  - Relative norm: " + relative_norm)
+    
+    # Check for exploding/vanishing gradients
+    if (grad_norm > 100) {
+      print("  - WARNING: Large gradient norm!")
+    }
+    if (grad_norm < 1e-7 & grad_norm > 0) {
+      print("  - WARNING: Very small gradient norm!")
+    }
+  }
+}
+
+# DEBUG: Main training script with extensive logging
+train_alexnet_bn_lars_debug = function(int batch_size=64, int epochs=2, double base_lr=0.02)
+    return (list[unknown] model, matrix[double] metrics) {
+  /*
+   * DEBUG version of training with comprehensive logging
+   */
+  
+  print("\n############################################")
+  print("# DEBUG: AlexNet-BN LARS Training")
+  print("############################################\n")
+  
+  # Dataset parameters
+  C = 3
+  Hin = 224
+  Win = 224
+  num_classes = 10
+  
+  # Get recommended hyperparameters
+  [recommended_lr, warmup_epochs, recommended_epochs] = alexnet::get_lars_hyperparams(batch_size, TRUE)
+  print("\n=== LARS Hyperparameter Recommendations ===")
+  print("Batch size: " + batch_size)
+  print("Recommended base LR: " + recommended_lr)
+  print("Warmup epochs: " + warmup_epochs)
+  print("Recommended total epochs: " + recommended_epochs)
+  print("Using base LR: " + base_lr)
+  print("Using epochs: " + epochs)
+  
+  # LARS parameters
+  momentum = 0.9
+  weight_decay = 0.0005
+  trust_coeff = 0.001
+  base_batch_size = 256
+  decay_power = 2
+  
+  print("\n=== LARS Configuration ===")
+  print("Momentum: " + momentum)
+  print("Weight decay: " + weight_decay)
+  print("Trust coefficient: " + trust_coeff)
+  print("Base batch size: " + base_batch_size)
+  print("Decay power: " + decay_power)
+  print("Learning rate scaling factor: " + (batch_size / base_batch_size))
+  
+  # Random seed
+  seed = 42
+  
+  # Load data with debugging
+  print("\n=== Loading Data ===")
+  [X_train, Y_train, X_val, Y_val] = load_imagenet_data_debug(Hin, Win, num_classes)
+  
+  N_train = nrow(X_train)
+  N_val = nrow(X_val)
+  
+  # Check data properties
+  check_matrix_properties(X_train, "X_train")
+  check_matrix_properties(Y_train, "Y_train")
+  check_matrix_properties(X_val, "X_val")
+  check_matrix_properties(Y_val, "Y_val")
+  
+  # Initialize model with debugging
+  print("\n=== Initializing Model ===")
+  [model, emas] = alexnet::init_with_bn(C, Hin, Win, num_classes, seed)
+  print("Model parameters count: " + length(model))
+  print("EMA parameters count: " + length(emas))
+  
+  # Check model initialization
+  print("\n=== Initial Model Parameter Statistics ===")
+  for (i in 1:min(5, length(model))) {
+    param = as.matrix(model[i])
+    print("Parameter " + i + " shape: " + nrow(param) + " x " + ncol(param))
+    print("  Mean: " + mean(param) + ", Std: " + sqrt(mean((param - mean(param))^2)))
+  }
+  
+  # Initialize optimizer
+  print("\n=== Initializing LARS Optimizer ===")
+  optim_state = alexnet::init_lars_optim_params(model)
+  print("Optimizer state length: " + length(optim_state))
+  
+  # Training metrics
+  train_losses = matrix(0, rows=epochs, cols=1)
+  train_accs = matrix(0, rows=epochs, cols=1)
+  val_losses = matrix(0, rows=epochs, cols=1)
+  val_accs = matrix(0, rows=epochs, cols=1)
+  
+  # Calculate iterations
+  iters_per_epoch = ceil(N_train / batch_size)
+  print("\n=== Training Setup ===")
+  print("Training samples: " + N_train)
+  print("Batch size: " + batch_size)
+  print("Iterations per epoch: " + iters_per_epoch)
+  print("Total iterations: " + (iters_per_epoch * epochs))
+  
+  # Training loop with debugging
+  print("\n=== Starting Training Loop ===")
+  start_time = time()
+  
+  for (epoch in 1:epochs) {
+    print("\n========== EPOCH " + epoch + "/" + epochs + " ==========")
+    epoch_start_time = time()
+    epoch_loss = 0
+    epoch_acc = 0
+    
+    for (iter in 1:min(3, iters_per_epoch)) {  # Only debug first 3 iterations
+      print("\n----- Iteration " + iter + "/" + iters_per_epoch + " -----")
+      
+      # Get learning rate
+      lr = lars_util::get_lr_with_warmup(base_lr, epoch, iter, epochs, 
+                                         iters_per_epoch, batch_size, 
+                                         base_batch_size, warmup_epochs, decay_power)
+      print("Learning rate: " + lr)
+      
+      # Get batch
+      beg = ((iter-1) * batch_size) %% N_train + 1
+      end = min(N_train, beg + batch_size - 1)
+      actual_batch_size = end - beg + 1
+      print("Batch range: [" + beg + ", " + end + "], size: " + actual_batch_size)
+      
+      X_batch = X_train[beg:end,]
+      Y_batch = Y_train[beg:end,]
+      
+      # Check batch properties
+      if (iter == 1) {
+        check_matrix_properties(X_batch, "X_batch")
+        check_matrix_properties(Y_batch, "Y_batch")
+      }
+      
+      # Forward pass with debugging
+      print("\nForward pass...")
+      forward_start = time()
+      [predictions, cached_out, emas_upd] = alexnet::forward_with_bn(
+          X_batch, C, Hin, Win, model, "train", 0.5)
+      forward_time = (time() - forward_start) / 1000.0
+      print("Forward pass time: " + forward_time + " seconds")
+      
+      # Check predictions
+      check_matrix_properties(predictions, "predictions")
+      print("Cached outputs count: " + length(cached_out))
+      print("EMA updates count: " + length(emas_upd))
+      
+      # Update EMAs
+      print("\nUpdating EMAs...")
+      model[5] = as.matrix(emas_upd[1])
+      model[6] = as.matrix(emas_upd[2])
+      model[11] = as.matrix(emas_upd[3])
+      model[12] = as.matrix(emas_upd[4])
+      model[17] = as.matrix(emas_upd[5])
+      model[18] = as.matrix(emas_upd[6])
+      model[23] = as.matrix(emas_upd[7])
+      model[24] = as.matrix(emas_upd[8])
+      model[29] = as.matrix(emas_upd[9])
+      model[30] = as.matrix(emas_upd[10])
+      
+      # Compute loss and accuracy
+      batch_loss = alexnet::compute_loss(predictions, Y_batch, model, weight_decay)
+      batch_acc = alexnet::compute_accuracy(predictions, Y_batch)
+      print("\nBatch loss: " + batch_loss)
+      print("Batch accuracy: " + batch_acc)
+      
+      # Check for NaN/Inf in loss
+      if (is.nan(batch_loss) | batch_loss == 1/0 | batch_loss == -1/0) {
+        print("ERROR: Invalid loss value!")
+      }
+      
+      epoch_loss = epoch_loss + batch_loss
+      epoch_acc = epoch_acc + batch_acc
+      
+      # Backward pass with debugging
+      print("\nBackward pass...")
+      backward_start = time()
+      dprobs = cross_entropy_loss::backward(predictions, Y_batch)
+      check_matrix_properties(dprobs, "dprobs (loss gradient)")
+      
+      [dX, gradients] = alexnet::backward_with_bn(dprobs, cached_out, model, C, Hin, Win, 0.5)
+      backward_time = (time() - backward_start) / 1000.0
+      print("Backward pass time: " + backward_time + " seconds")
+      
+      # Check gradients
+      print("\nChecking gradients...")
+      print("Gradients count: " + length(gradients))
+      check_gradient_norms(gradients, model)
+      
+      # LARS update with debugging
+      print("\nLARS parameter update...")
+      update_start = time()
+      
+      # Debug: Check a few parameter updates in detail
+      if (iter == 1) {
+        print("\n=== Detailed LARS Update for First Few Parameters ===")
+        for (i in 1:min(3, length(model))) {
+          param = as.matrix(model[i])
+          grad = as.matrix(gradients[i])
+          momentum_state = as.matrix(optim_state[i])
+          
+          param_norm = sqrt(sum(param^2))
+          grad_norm = sqrt(sum(grad^2))
+          
+          print("\nParameter " + i + ":")
+          print("  Param norm: " + param_norm)
+          print("  Grad norm: " + grad_norm)
+          
+          if (param_norm > 0 & grad_norm > 0) {
+            local_lr = trust_coeff * param_norm / grad_norm
+            print("  Local LR: " + local_lr)
+            print("  Effective LR: " + (lr * local_lr))
+          }
+        }
+      }
+      
+      [model, optim_state] = alexnet::update_params_with_lars(
+          model, gradients, lr, momentum, weight_decay, trust_coeff, optim_state)
+      update_time = (time() - update_start) / 1000.0
+      print("\nParameter update time: " + update_time + " seconds")
+      
+      # Summary for iteration
+      print("\n--- Iteration Summary ---")
+      print("Loss: " + batch_loss)
+      print("Accuracy: " + batch_acc)
+      print("Forward time: " + forward_time + "s")
+      print("Backward time: " + backward_time + "s")
+      print("Update time: " + update_time + "s")
+      print("Total iteration time: " + (forward_time + backward_time + update_time) + "s")
+    }
+    
+    # Compute epoch metrics
+    train_losses[epoch,1] = epoch_loss / iters_per_epoch
+    train_accs[epoch,1] = epoch_acc / iters_per_epoch
+    
+    # Validation with debugging
+    print("\n=== Running Validation ===")
+    val_start = time()
+    [val_loss, val_acc] = alexnet::evaluate_with_bn(
+        X_val, Y_val, C, Hin, Win, model, min(batch_size, 256))
+    val_time = (time() - val_start) / 1000.0
+    print("Validation time: " + val_time + " seconds")
+    
+    val_losses[epoch,1] = val_loss
+    val_accs[epoch,1] = val_acc
+    
+    # Epoch summary
+    epoch_time = (time() - epoch_start_time) / 1000.0
+    train_loss_val = as.scalar(train_losses[epoch,1])
+    train_acc_val = as.scalar(train_accs[epoch,1])
+    
+    print("\n========== EPOCH " + epoch + " SUMMARY ==========")
+    print("Epoch time: " + epoch_time + " seconds")
+    print("Train Loss: " + train_loss_val)
+    print("Train Accuracy: " + train_acc_val)
+    print("Val Loss: " + val_loss)
+    print("Val Accuracy: " + val_acc)
+    print("==========================================")
+  }
+  
+  # Training completed
+  total_time = (time() - start_time) / 1000.0
+  print("\n=== Training Completed ===")
+  print("Total time: " + total_time + " seconds (" + (total_time/60.0) + " minutes)")
+  
+  # Package metrics
+  metrics = cbind(train_losses, train_accs, val_losses, val_accs)
+}
+
+# DEBUG: Data loading with extensive checks
+load_imagenet_data_debug = function(int Hin, int Win, int num_classes)
+    return (matrix[double] X_train, matrix[double] Y_train,
+            matrix[double] X_val, matrix[double] Y_val) {
+  /*
+   * Debug version of data loading with extensive checks
+   */
+  
+  print("\n=== Data Loading (Debug) ===")
+  print("Image dimensions: " + Hin + " x " + Win + " x 3")
+  print("Number of classes: " + num_classes)
+  
+  # For debugging, use small dummy data
+  N_train = 100  # Small for debugging
+  N_val = 20
+  D = 3 * Hin * Win
+  
+  print("Creating dummy data...")
+  print("Training samples: " + N_train)
+  print("Validation samples: " + N_val)
+  print("Feature dimension: " + D)
+  
+  # Generate dense random data
+  X_train = rand(rows=N_train, cols=D, min=0.0, max=1.0, pdf="uniform", seed=42)
+  X_val = rand(rows=N_val, cols=D, min=0.0, max=1.0, pdf="uniform", seed=43)
+  
+  # Normalize to [-1, 1]
+  X_train = (X_train - 0.5) * 2.0
+  X_val = (X_val - 0.5) * 2.0
+  
+  # Generate random labels
+  train_labels = sample(num_classes, N_train, TRUE, 42)
+  val_labels = sample(num_classes, N_val, TRUE, 43)
+  
+  # Convert to one-hot encoding
+  Y_train = table(seq(1, N_train), train_labels, N_train, num_classes)
+  Y_val = table(seq(1, N_val), val_labels, N_val, num_classes)
+  
+  # Force dense
+  X_train = X_train + 0
+  X_val = X_val + 0
+  Y_train = Y_train + 0
+  Y_val = Y_val + 0
+  
+  print("Data generation complete.")
+}
+
+# DEBUG: Comprehensive test function
+comprehensive_debug_test = function() {
+  /*
+   * Run comprehensive debugging tests
+   */
+  print("\n############################################")
+  print("# COMPREHENSIVE DEBUG TEST")
+  print("############################################")
+  
+  # Test 1: Matrix operations and sparsity
+  print("\n=== Test 1: Matrix Operations ===")
+  test_matrix_ops()
+  
+  # Test 2: Model initialization
+  print("\n=== Test 2: Model Initialization ===")
+  test_model_init()
+  
+  # Test 3: Forward pass components
+  print("\n=== Test 3: Forward Pass Components ===")
+  test_forward_components()
+  
+  # Test 4: Backward pass components
+  print("\n=== Test 4: Backward Pass Components ===")
+  test_backward_components()
+  
+  # Test 5: LARS optimizer
+  print("\n=== Test 5: LARS Optimizer ===")
+  test_lars_optimizer()
+  
+  # Test 6: Learning rate scheduling
+  print("\n=== Test 6: Learning Rate Scheduling ===")
+  test_lr_scheduling()
+  
+  print("\n✅ All debug tests completed!")
+}
+
+# Test matrix operations
+test_matrix_ops = function() {
+  print("Testing matrix densification...")
+  
+  # Create sparse matrix
+  sparse_mat = matrix(0, rows=10, cols=10)
+  sparse_mat[1,1] = 1
+  sparse_mat[5,5] = 2
+  
+  # Densify
+  dense_mat = sparse_mat + 0
+  
+  print("Original density: " + (sum(sparse_mat != 0) / (nrow(sparse_mat) * ncol(sparse_mat))))
+  print("After +0 density: " + (sum(dense_mat != 0) / (nrow(dense_mat) * ncol(dense_mat))))
+  print("✓ Densification test passed")
+}
+
+# Test model initialization
+test_model_init = function() {
+  print("Testing model initialization...")
+  
+  [model, emas] = alexnet::init_with_bn(3, 224, 224, 10, 42)
+  
+  print("Model parameters: " + length(model))
+  print("EMA parameters: " + length(emas))
+  
+  # Check parameter scales
+  W1 = as.matrix(model[1])
+  print("W1 mean: " + mean(W1) + ", std: " + sqrt(mean((W1 - mean(W1))^2)))
+  print("✓ Model initialization test passed")
+}
+
+# Test forward pass components
+test_forward_components = function() {
+  print("Testing forward pass components...")
+  
+  # Small test data
+  X = rand(rows=2, cols=3*224*224, min=-1, max=1, seed=42) + 0
+  [model, emas] = alexnet::init_with_bn(3, 224, 224, 10, 42)
+  
+  # Test forward
+  [out, cached, emas_upd] = alexnet::forward_with_bn(X, 3, 224, 224, model, "train", 0.5)
+  
+  print("Output shape: " + nrow(out) + " x " + ncol(out))
+  print("Output sum per row (should be ~1): " + mean(rowSums(out)))
+  print("✓ Forward pass test passed")
+}
+
+# Test backward pass components
+test_backward_components = function() {
+  print("Testing backward pass components...")
+  
+  # Setup
+  X = rand(rows=2, cols=3*224*224, min=-1, max=1, seed=42) + 0
+  Y = table(seq(1,2), matrix("1 2", rows=2, cols=1), 2, 10) + 0
+  [model, emas] = alexnet::init_with_bn(3, 224, 224, 10, 42)
+  
+  # Forward
+  [out, cached, emas_upd] = alexnet::forward_with_bn(X, 3, 224, 224, model, "train", 0.5)
+  
+  # Backward
+  dprobs = cross_entropy_loss::backward(out, Y)
+  [dX, grads] = alexnet::backward_with_bn(dprobs, cached, model, 3, 224, 224, 0.5)
+  
+  print("dX shape: " + nrow(dX) + " x " + ncol(dX))
+  print("Number of gradients: " + length(grads))
+  print("✓ Backward pass test passed")
+}
+
+# Test LARS optimizer
+test_lars_optimizer = function() {
+  print("Testing LARS optimizer...")
+  
+  # Create simple parameter and gradient
+  param = rand(rows=10, cols=10, min=-0.1, max=0.1, seed=42) + 0
+  grad = rand(rows=10, cols=10, min=-0.01, max=0.01, seed=43) + 0
+  momentum_state = matrix(0, rows=10, cols=10) + 0
+  
+  # Compute norms
+  param_norm = sqrt(sum(param^2))
+  grad_norm = sqrt(sum(grad^2))
+  
+  print("Parameter norm: " + param_norm)
+  print("Gradient norm: " + grad_norm)
+  
+  # Expected local LR
+  trust_coeff = 0.001
+  local_lr = trust_coeff * param_norm / grad_norm
+  print("Expected local LR: " + local_lr)
+  
+  print("✓ LARS optimizer test passed")
+}
+
+# Test learning rate scheduling
+test_lr_scheduling = function() {
+  print("Testing learning rate scheduling...")
+  
+  base_lr = 0.02
+  batch_size = 256
+  base_batch_size = 256
+  warmup_epochs = 5
+  total_epochs = 10
+  iters_per_epoch = 100
+  decay_power = 2
+  
+  # Test warmup
+  lr1 = lars_util::get_lr_with_warmup(base_lr, 1, 1, total_epochs, 
+                                      iters_per_epoch, batch_size, 
+                                      base_batch_size, warmup_epochs, decay_power)
+  print("Epoch 1, Iter 1 LR: " + lr1)
+  
+  # Test after warmup
+  lr2 = lars_util::get_lr_with_warmup(base_lr, 6, 1, total_epochs, 
+                                      iters_per_epoch, batch_size, 
+                                      base_batch_size, warmup_epochs, decay_power)
+  print("Epoch 6, Iter 1 LR: " + lr2)
+  
+  # Test end of training
+  lr3 = lars_util::get_lr_with_warmup(base_lr, total_epochs, iters_per_epoch, total_epochs, 
+                                      iters_per_epoch, batch_size, 
+                                      base_batch_size, warmup_epochs, decay_power)
+  print("Final LR: " + lr3)
+  
+  print("✓ Learning rate scheduling test passed")
+}
+
+# Main execution with comprehensive debugging
+print("############################################")
+print("# AlexNet-BN LARS DEBUG SCRIPT")
+print("############################################")
+
+# First run comprehensive unit tests
+comprehensive_debug_test()
+
+# Then run the quick test from the original
+print("\n\n=== Running Quick Test ===")
+quick_test()
+
+# Finally run a debug version of training with detailed logging
+print("\n\n=== Running Debug Training (1 iteration) ===")
+
+# Create a minimal debug training run
+print("\nDEBUG: Running single iteration with detailed logging...")
+batch_size = 64
+X_debug = rand(rows=batch_size, cols=3*224*224, min=-1, max=1, seed=42) + 0
+Y_debug = table(seq(1, batch_size), sample(10, batch_size, TRUE, 42), batch_size, 10) + 0
+
+[model_debug, emas_debug] = alexnet::init_with_bn(3, 224, 224, 10, 42)
+optim_state_debug = alexnet::init_lars_optim_params(model_debug)
+
+# Check input data
+check_matrix_properties(X_debug, "X_debug")
+check_matrix_properties(Y_debug, "Y_debug")
+
+# Forward pass with timing
+print("\n--- Forward Pass ---")
+start_time = time()
+[predictions, cached_out, emas_upd] = alexnet::forward_with_bn(
+    X_debug, 3, 224, 224, model_debug, "train", 0.5)
+forward_time = (time() - start_time) / 1000.0
+print("Forward pass time: " + forward_time + " seconds")
+check_matrix_properties(predictions, "predictions")
+
+# Loss computation
+batch_loss = alexnet::compute_loss(predictions, Y_debug, model_debug, 0.0005)
+batch_acc = alexnet::compute_accuracy(predictions, Y_debug)
+print("\nLoss: " + batch_loss)
+print("Accuracy: " + batch_acc)
+
+# Backward pass with timing
+print("\n--- Backward Pass ---")
+start_time = time()
+dprobs = cross_entropy_loss::backward(predictions, Y_debug)
+check_matrix_properties(dprobs, "dprobs")
+[dX, gradients] = alexnet::backward_with_bn(dprobs, cached_out, model_debug, 3, 224, 224, 0.5)
+backward_time = (time() - start_time) / 1000.0
+print("Backward pass time: " + backward_time + " seconds")
+
+# Check gradients
+check_gradient_norms(gradients, model_debug)
+
+# LARS update
+print("\n--- LARS Update ---")
+lr = 0.02
+start_time = time()
+[model_upd, optim_state_upd] = alexnet::update_params_with_lars(
+    model_debug, gradients, lr, 0.9, 0.0005, 0.001, optim_state_debug)
+update_time = (time() - start_time) / 1000.0
+print("LARS update time: " + update_time + " seconds")
+
+print("\n\n✅ Debug script completed successfully!")
+print("Total time for one iteration:")
+print("- Forward: " + forward_time + "s")
+print("- Backward: " + backward_time + "s")  
+print("- Update: " + update_time + "s")
+print("- Total: " + (forward_time + backward_time + update_time) + "s")

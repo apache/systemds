@@ -1,0 +1,95 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * Layer-wise Adaptive Rate Scaling (LARS) optimizer.
+ */
+
+update = function(matrix[double] X, matrix[double] dX, double lr, double mu, 
+                  matrix[double] v, double lambda, double trust_coeff)
+    return (matrix[double] X, matrix[double] v) {
+  /*
+   * Performs a LARS update with layer-wise adaptive learning rate.
+   *
+   * Reference:
+   * - Large Batch Training of Convolutional Networks
+   *   https://arxiv.org/abs/1708.03888
+   *
+   * The LARS algorithm adapts the learning rate for each layer by 
+   * computing a local learning rate based on the ratio between the
+   * L2 norm of the weights and the L2 norm of the gradients.
+   *
+   * Inputs:
+   *  - X: Parameters to update, of shape (any, any).
+   *  - dX: Gradient of the loss function w.r.t. X, of same shape as X.
+   *  - lr: Global learning rate.
+   *  - mu: Momentum coefficient.
+   *  - v: Velocity (momentum state), of same shape as X.
+   *  - lambda: L2 regularization strength (weight decay).
+   *  - trust_coeff: Trust coefficient for LARS (typically 0.001).
+   *
+   * Outputs:
+   *  - X: Updated parameters X, of same shape as input X.
+   *  - v: Updated velocity, of same shape as input v.
+   */
+  # Add weight decay to gradient
+  dX_wd = dX + lambda * X
+  
+  # Compute L2 norms
+  X_norm = sqrt(sum(X^2))
+  dX_norm = sqrt(sum(dX^2))  # Use gradient norm WITHOUT weight decay for LARS computation
+  
+  # Compute local learning rate according to LARS paper
+  # The exact formula from the paper is:
+  # local_lr = trust_coeff * ||w|| / ||∇L(w)||
+  # where trust_coeff (η) is typically 0.001
+  epsilon = 1e-8
+  local_lr = trust_coeff * X_norm / (dX_norm + epsilon)
+  
+  # Apply global learning rate scaling
+  # The paper mentions that for bias and BN parameters, they skip LARS
+  effective_lr = lr * local_lr
+  
+  # For very small layers (like biases), skip LARS and use regular SGD
+  # This follows the paper's recommendation for bias terms
+  if (X_norm < 1e-3 | ncol(X) == 1) {  # Check for small params or bias vectors
+    effective_lr = lr  # Use global lr for small parameters (like biases)
+  }
+  
+  # SGD with momentum update using the adaptive learning rate
+  # Note: We still use dX_wd (gradient with weight decay) for the actual update
+  v = mu * v - effective_lr * dX_wd
+  X = X + v
+}
+
+init = function(matrix[double] X)
+    return (matrix[double] v) {
+  /*
+   * Initialize the state for LARS (momentum).
+   *
+   * Inputs:
+   *  - X: Parameters to update, of shape (any, any).
+   *
+   * Outputs:
+   *  - v: Initial velocity (zeros), of same shape as X.
+   */
+  v = matrix(0, rows=nrow(X), cols=ncol(X))
+}

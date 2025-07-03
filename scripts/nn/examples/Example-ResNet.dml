@@ -48,7 +48,7 @@ classes = 1000
 # *** adagrad
 # optimizer_params = resnet18::init_adagrad_optim_params(classes)
 # *** adam
-optimizer_params = resnet18::init_adam_optim_params(classes)
+# optimizer_params = resnet18::init_adam_optim_params(classes)
 # *** rmsprop
 # optimizer_params = resnet18::init_rmsprop_optim_params(classes)
 # *** sgd
@@ -57,6 +57,8 @@ optimizer_params = resnet18::init_adam_optim_params(classes)
 # optimizer_params = resnet18::init_sgd_momentumg_optim_params(classes)
 # *** sgd nesterov
 # optimizer_params = resnet18::init_sgd_nesterov_optim_params(classes)
+# *** lars
+optimizer_params = resnet18::init_lars_optim_params(classes)
 
 # create random data
 N = 100
@@ -90,6 +92,11 @@ train = function(matrix[double] X, matrix[double] Y, list[unknown] model, list[u
     decay_rate = 0.99
     # sgd momentum & nesterov
     momentum = 0.8
+    # lars
+    trust_coeff = 0.001
+    momentum = 0.9
+    weight_decay = 0.0001
+    decay_power = 2
 
     learned_model = list()
     learned_emas = list()
@@ -127,9 +134,9 @@ train = function(matrix[double] X, matrix[double] Y, list[unknown] model, list[u
             # *** adagrad
             # [model, optim_params] = resnet18::update_params_with_adagrad(model, gradients, lr, epsilon, optim_params)
             # *** adam
-            [model, optim_params] = resnet18::update_params_with_adam(model, gradients, lr, beta1, beta2, epsilon,
-                t, optim_params)
-            t = t + 1
+            # [model, optim_params] = resnet18::update_params_with_adam(model, gradients, lr, beta1, beta2, epsilon,
+            #    t, optim_params)
+            # t = t + 1
             # *** rmsprop
             # [model, optim_params] = resnet18::update_params_with_rmsprop(model, gradients, lr, decay_rate, epsilon,
             #     optim_params)
@@ -141,6 +148,9 @@ train = function(matrix[double] X, matrix[double] Y, list[unknown] model, list[u
             # *** sgd nesterov
             # [model, optim_params] = resnet18::update_params_with_sgd_nesterov(model, gradients, lr, momentum,
             #     optim_params)
+            # *** lars
+            [model, optim_params] = resnet18::update_params_with_lars(model, gradients, lr, momentum, weight_decay, trust_coeff,
+                  optim_params)
         }
 
         # reshuffle mini batches

@@ -19,12 +19,13 @@
 #
 #-------------------------------------------------------------
 
-source("scripts/nn/layers/batch_norm2d_old.dml") as bn2d
-source("scripts/nn/layers/conv2d_builtin.dml") as conv2d
-source("scripts/nn/layers/relu.dml") as relu
-source("scripts/nn/layers/max_pool2d_builtin.dml") as mp2d
-source("scripts/nn/layers/global_avg_pool2d.dml") as ap2d
-source("scripts/nn/layers/affine.dml") as fc
+source("nn/layers/batch_norm2d.dml") as bn2d
+source("nn/layers/conv2d_builtin.dml") as conv2d
+source("nn/layers/relu.dml") as relu
+source("nn/layers/max_pool2d_builtin.dml") as mp2d
+source("nn/layers/global_avg_pool2d.dml") as ap2d
+source("nn/layers/affine.dml") as fc
+source("nn/layers/softmax.dml") as softmax
 
 conv3x3_forward = function(matrix[double] X, matrix[double] W,
                            int C_in, int C_out, int Hin, int Win,
@@ -863,7 +864,7 @@ resnet_forward = function(matrix[double] X, int Hin, int Win,
     ema_means_vars_upd = list(ema_mean_bn1_upd, ema_var_bn1_upd, emas1_upd, emas2_upd, emas3_upd, emas4_upd)
     cached_out = list(X, Hin, Win, out_conv1, Hout_conv1, Wout_conv1, out_bn1, out_re1, out_mp, Hout_mp, Wout_mp,
         cached_out_l1, cached_out_l2, cached_out_l3, cached_out_l4, out_res, Hout_res, Wout_res, out_ap, Hout_ap,
-        Wout_ap)
+        Wout_ap, out_fc)
     cached_means_vars = list(cached_m, cached_v, cached_mv_l1, cached_mv_l2, cached_mv_l3, cached_mv_l4)
 
     out = out_fc

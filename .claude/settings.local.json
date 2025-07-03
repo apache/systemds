@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(./bin/systemds:*)"
-    ],
-    "deny": []
-  }
-}

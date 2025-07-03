@@ -1,0 +1,73 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * Softmax Cross-Entropy loss function.
+ * This combines the Softmax activation with the Cross-Entropy loss.
+ */
+
+forward = function(matrix[double] logits, matrix[double] y)
+    return (double loss) {
+  /*
+   * Computes the forward pass for a Softmax Cross-Entropy loss function.
+   *
+   * Inputs:
+   * - logits: Raw scores from the network, of shape (N, K).
+   * - y: Target one-hot encoded labels, of shape (N, K).
+   *
+   * Outputs:
+   * - loss: Average loss.
+   */
+  N = nrow(y)
+  
+  # Numerically stable Softmax
+  # Subtracting the max logit from each row prevents overflow when taking exp()
+  shifted_logits = logits - rowMaxs(logits)
+  probs = exp(shifted_logits) / rowSums(exp(shifted_logits))
+
+  # Cross-entropy loss calculation
+  # Adding a small epsilon for numerical stability to avoid log(0)
+  eps = 1e-9
+  loss = -sum(y * log(probs + eps)) / N
+}
+
+backward = function(matrix[double] logits, matrix[double] y)
+    return (matrix[double] d_logits) {
+  /*
+   * Computes the backward pass for a Softmax Cross-Entropy loss function.
+   * The gradient of the combined Softmax and Cross-Entropy is remarkably simple.
+   *
+   * Inputs:
+   * - logits: Raw scores from the network, of shape (N, K).
+   * - y: Target one-hot encoded labels, of shape (N, K).
+   *
+   * Outputs:
+   * - d_logits: Gradient with respect to the input logits, of shape (N, K).
+   */
+  N = nrow(y)
+  
+  # Recompute the probabilities (softmax)
+  shifted_logits = logits - rowMaxs(logits)
+  probs = exp(shifted_logits) / rowSums(exp(shifted_logits))
+
+  # The gradient is simply (probabilities - true_labels)
+  d_logits = (probs - y) / N
+}

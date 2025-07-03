@@ -1,0 +1,307 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# ImageNet Resnet - Train
+#
+# This script trains a convolutional net using the "ResNet" architecture
+# on 64x64 ImageNet images using LARS optimizer.
+#
+# Inputs:
+#  - train_data: File containing ImageNet training images (features)
+#  - train_labels: File containing ImageNet training labels (one-hot)
+#  - val_data: File containing ImageNet validation images (features) 
+#  - val_labels: File containing ImageNet validation labels (one-hot)
+#  - epochs: [DEFAULT: 30] Total number of full training loops
+#  - batch_size: [DEFAULT: 256] Mini-batch size for training
+#  - out_dir: [DEFAULT: "scripts/nn/examples/model/imagenet_resnet"] Directory to store results
+#
+# Outputs:
+#  - accuracy: File containing validation accuracy over epochs
+#  - loss: File containing training loss over epochs
+#
+# Sample Invocation:
+#   ```
+#   java -Xmx8g -Xms8g -cp "target/systemds-3.4.0-SNAPSHOT.jar:target/lib/*" \
+#   org.apache.sysds.api.DMLScript -f scripts/nn/examples/imagenet_resnet.dml \
+#   -exec singlenode -gpu
+#   ```
+
+source("nn/networks/resnet50.dml") as resnet
+source("scripts/nn/layers/softmax_cross_entropy_loss.dml") as loss_nn
+
+# Read the ImageNet data
+fmt = "csv"
+print("Loading ImageNet data...")
+train_data = read("imagenet_data/systemds_ready/imagenet_train_6GB.csv", format=fmt)
+train_labels = read("imagenet_data/systemds_ready/imagenet_train_labels_6GB.csv", format=fmt)
+val_data = read("imagenet_data/systemds_ready/imagenet_val_6GB.csv", format=fmt)
+val_labels = read("imagenet_data/systemds_ready/imagenet_val_labels_6GB.csv", format=fmt)
+out_dir = "scripts/nn/examples/model/imagenet_resnet"
+
+print("Data loaded successfully.")
+
+# Get dataset dimensions
+N = nrow(train_data)
+N_val = nrow(val_data)
+classes = 1000
+
+print("Dataset info:")
+print("- Training samples: " + N)
+print("- Validation samples: " + N_val)  
+print("- Features: " + ncol(train_data))
+print("- Classes: " + classes)
+
+# Scale images to [-1,1] (data is already in [0,1] range from preprocessing)
+X = (train_data - 0.5) * 2
+X_val = (val_data - 0.5) * 2
+
+# Labels are already one-hot encoded from preprocessing
+Y = train_labels
+Y_val = val_labels
+
+print("Data preprocessing completed.")
+print("- Image range: [" + min(X) + ", " + max(X) + "]")
+print("- Label sum check: " + mean(rowSums(Y)))
+
+# Get initial model parameters
+print("Initializing ResNet-18 model...")
+[model, ema_means_vars] = resnet::init(classes, -1)
+
+# Get initial optimizer parameters  
+print("Initializing LARS optimizer...")
+optimizer_params = resnet::init_lars_optim_params(classes)
+
+# Define image properties
+Hin = 64
+Win = 64
+
+# Define training parameters
+epochs = 90
+batch_size = 256
+
+print("Training configuration:")
+print("- Image size: " + Hin + "x" + Win + "x3")
+print("- Epochs: " + epochs)
+print("- Batch size: " + batch_size)
+print("")
+
+print("Starting training...")
+[accuracy, loss_metric, learned_model, learned_emas] = train(X, Y, X_val, Y_val, model, ema_means_vars, N, Hin, Win, epochs, batch_size, optimizer_params)
+
+print("Saving results...")
+write(accuracy, out_dir + "/imagenet_resnet_accuracy.csv", format="csv")
+write(loss_metric, out_dir + "/imagenet_resnet_loss.csv", format="csv")
+
+# Save final metrics
+final_accuracy = as.scalar(accuracy[epochs, 1])
+print("Final validation accuracy: " + final_accuracy)
+
+print("Training completed!")
+
+# Train function
+train = function(matrix[double] X, matrix[double] Y, matrix[double] X_val, matrix[double] Y_val, list[unknown] model, list[unknown] emas, int samples, int Hin,
+    int Win, int epochs, int batch_size, list[unknown] optim_params)
+    return (matrix[double] accuracy, matrix[double] loss_metric, 
+            list[unknown] learned_model, list[unknown] learned_emas) {
+
+    # --- LEARNING RATE SCHEDULE HYPERPARAMETERS ---
+    # The learning rate we want to reach AFTER warmup
+    initial_lr = 0.01 
+    # A very small final learning rate to decay towards
+    end_lr = 0.0001 
+    # Number of warmup epochs, as per the paper
+    warmup_epochs = 5
+    # The exponent for the polynomial decay, as per the paper
+    power = 2.0
+
+    # Optimizer hyperparameters
+    momentum = 0.9
+    trust_coeff = 0.001
+    weight_decay = 0.0001
+    
+    # Calculate total iterations for the schedule
+    iterations_per_epoch = ceil(samples / batch_size)
+    total_iterations = epochs * iterations_per_epoch
+    warmup_iterations = warmup_epochs * iterations_per_epoch
+    decay_iterations = total_iterations - warmup_iterations
+
+    # Initialize metrics
+    learned_model = list()
+    learned_emas = list()
+    accuracy = matrix(0, rows=epochs, cols=1)
+    loss_metric = matrix(0, rows=epochs, cols=1)
+
+    iterations = ceil(samples/batch_size)
+    mode = "train"
+
+    for (epoch in 1:epochs) {
+        loss_avg = 0.0
+
+        print("Start epoch: " + epoch + "/" + epochs)
+
+        for (i in 1:iterations) {
+            print(" - Iteration: " + i + "/" + iterations)
+
+            # --- START DYNAMIC LEARNING RATE LOGIC ---
+            current_iteration = (epoch - 1) * iterations_per_epoch + i
+            current_lr = 0.0
+
+            if (current_iteration < warmup_iterations) {
+                # 1. Linear Warmup Phase
+                # Linearly increase LR from 0 to initial_lr over warmup_iterations
+                current_lr = initial_lr * (as.double(current_iteration) / warmup_iterations)
+            } else {
+                # 2. Polynomial Decay Phase
+                decay_step = current_iteration - warmup_iterations
+                decay_progress = as.double(decay_step) / decay_iterations
+                current_lr = end_lr + (initial_lr - end_lr) * (1 - decay_progress)^power
+            }
+            
+            if (i == 1) { # Print LR once per epoch to reduce log spam
+                print("Using Learning Rate: " + current_lr)
+            }
+            # --- END DYNAMIC LEARNING RATE LOGIC ---
+
+            # Get batch
+            start = (i - 1) * batch_size + 1
+            end = min(samples, i * batch_size)
+            X_batch = X[start:end,]
+            Y_batch = Y[start:end,]
+
+            # Forward pass
+            [out, emas, cached_out, cached_means_vars] = resnet::forward(X_batch, Hin, Win, model, mode, emas)
+
+            # Loss
+            loss = loss_nn::forward(out, Y_batch)
+            if (i %% 10 == 0) { # Print loss same frequency as MNIST
+                print(" - Iteration: " + i + "/" + iterations + ", Loss: " + loss)
+            }
+            loss_avg = (loss_avg * (i - 1) + loss) / i
+
+            # Backward
+            dOut = loss_nn::backward(out, Y_batch)
+            [dX, gradients] = resnet::backward(dOut, cached_out, model, cached_means_vars)
+
+            # Update parameters
+            [model, optim_params] = resnet::update_params_with_lars(model, gradients, current_lr, momentum, weight_decay, trust_coeff,
+                  optim_params)
+        }
+
+        # Reshuffle mini batches
+        r = rand(rows=nrow(Y), cols=1, min=0, max=1, pdf="uniform")
+        X_tmp = order(target=cbind(r, X), by=1)
+        Y_tmp = order(target=cbind(r, Y), by=1)
+        X = X_tmp[,2:ncol(X_tmp)]
+        Y = Y_tmp[,2:ncol(Y_tmp)]
+
+        print("Computing metrics for current epoch...")
+
+        # Predict on the validation dataset with batching to avoid OOM
+        accuracy_scalar = predict_and_eval_batched(X_val, Y_val, Hin, Win, model, emas, batch_size)
+
+        # Append to the epoch-wise metrics
+        loss_metric[epoch, 1] = loss_avg
+        accuracy[epoch, 1] = accuracy_scalar
+
+        print("Epoch Avg. Loss: " + loss_avg)
+        print("Epoch Accuracy: " + accuracy_scalar)
+    }
+
+    learned_model = model
+    learned_emas = emas
+}
+
+predict = function(matrix[double] X, int Hin, int Win, 
+    list[unknown] model, list[unknown] emas) 
+    return(matrix[double] out) {
+    /*
+    * Computes the class probability predictions of a convolutional
+    * net using the "ResNet" architecture.
+    *
+    * The input matrix, X, has N examples, each represented as a 3D
+    * volume unrolled into a single vector.
+    *
+    * Inputs:
+    *  - X: Input data matrix, of shape (N, C*Hin*Win).
+    *
+    * Outputs:
+    *  - probs: Class probabilities, of shape (N, K).
+    */
+    
+    # Predict on validation dataset
+    mode = "train"
+    [out, temp_emas, temp_cached_out, temp_cached_means_vars] = resnet::forward(X, Hin, Win, model, mode, emas)
+}
+
+predict_and_eval_batched = function(matrix[double] X_val, matrix[double] Y_val, int Hin, int Win, 
+    list[unknown] model, list[unknown] emas, int batch_size)
+    return(double accuracy) {
+    /*
+    * Batched prediction and evaluation to avoid memory issues with large validation sets
+    */
+    
+    N_val = nrow(X_val)
+    val_iterations = ceil(N_val / batch_size)
+    correct_total = 0
+    mode = "train"
+    
+    print("  Evaluating validation set in " + val_iterations + " batches...")
+    
+    for (i in 1:val_iterations) {
+        if (i %% 10 == 1) {
+            print("    Validation batch: " + i + "/" + val_iterations)
+        }
+        
+        start = (i - 1) * batch_size + 1
+        end = min(N_val, i * batch_size)
+        X_batch = X_val[start:end,]
+        Y_batch = Y_val[start:end,]
+        
+        # Forward pass
+        [out_batch, temp_emas, temp_cached_out, temp_cached_means_vars] = resnet::forward(X_batch, Hin, Win, model, mode, emas)
+        
+        # Count correct predictions
+        correct_pred = rowIndexMax(out_batch) == rowIndexMax(Y_batch)
+        correct_total = correct_total + sum(correct_pred)
+    }
+    
+    accuracy = correct_total / N_val
+}
+
+eval = function(matrix[double] probs, matrix[double] Y)
+    return(double accuracy) {
+    /*
+    * Evaluates a convolutional net using the "ResNet" architecture.
+    *
+    * The probs matrix contains the class probability predictions
+    * of K classes over N examples.  The targets, Y, have K classes,
+    * and are one-hot encoded.
+    *
+    * Inputs:
+    *  - probs: Class probabilities, of shape (N, K).
+    *  - Y: Target matrix, of shape (N, K).
+    *
+    * Outputs:
+    *  - accuracy: Scalar accuracy, of shape (1).
+    */
+    correct_pred = rowIndexMax(probs) == rowIndexMax(Y)
+    accuracy = mean(correct_pred)
+}

@@ -434,3 +434,50 @@ update_params_with_sgd_nesterov = function(list[unknown] model,
         layer_sizes)
 }
 
+init_lars_optim_params = function(int classes)
+    return(list[unknown] params) {
+    /*
+     * Initializes the state of the LARS optimizer for every
+     * learnable parameter of ResNet 50.
+     *
+     * Inputs:
+     * - classes: Number of network output classes.
+     *
+     * Outputs:
+     * - params: List of state parameters with the same structure
+     *     as weights of the forward and backward pass. It can be
+     *     directly passed to the update parameter function.
+     */
+    layer_sizes = list(2, 2, 2, 2)
+    params = util::init_optim("lars", classes, "basic", layer_sizes)
+}
+
+update_params_with_lars = function(list[unknown] model, list[unknown] gradients,
+                                   double lr, double mu, double weight_decay,
+                                   double trust_coeff, list[unknown] optim_state)
+    return (list[unknown] model_upd, list[unknown] optim_state_upd) {
+    /*
+     * Updates all learnable parameters with the LARS optimizer.
+     *
+     * LARS (Layer-wise Adaptive Rate Scaling) applies different learning
+     * rates to different layers based on the ratio of parameter norm
+     * to gradient norm, enabling stable large-batch training.
+     *
+     * Inputs:
+     * - model: Model parameters, same as for forward and backward pass.
+     * - gradients: Gradients, returned from the backward pass.
+     * - lr: Global learning rate.
+     * - mu: Momentum value. Recommended: 0.9
+     * - weight_decay: L2 regularization strength. Recommended: 5e-4
+     * - trust_coeff: Trust coefficient for LARS. Recommended: 0.001
+     * - optim_state: Optimizer states for all model parameters.
+     *
+     * Outputs:
+     * - model_upd: Updated model parameters.
+     * - optim_state_upd: Updated model states for all parameters.
+     */
+    layer_sizes = list(2, 2, 2, 2)
+    hyper_params = list(lr, mu, weight_decay, trust_coeff)
+    [optim_state_upd, model_upd] = util::update_params("lars", optim_state, hyper_params, gradients, model, "basic", 
+        layer_sizes)
+}

@@ -1,0 +1,153 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * Local Response Normalization (LRN) layer.
+ */
+
+forward = function(matrix[double] X, int C, int Hin, int Win,
+                   int N, double alpha, double beta, double K)
+    return (matrix[double] Y) {
+  /*
+   * Computes the forward pass for a Local Response Normalization
+   * (LRN) layer.  The LRN layer performs a lateral normalization
+   * over channels at each spatial location.
+   *
+   * This is the cross-channel LRN used in AlexNet:
+   * `y_{x,y}^i = x_{x,y}^i / (K + alpha * sum_{j=max(0,i-n/2)}^{min(C-1,i+n/2)} (x_{x,y}^j)^2)^beta`
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (N, C*Hin*Win).
+   *  - C: Number of input channels.
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - N: Number of channels to sum over (i.e. size of local region).
+   *  - alpha: Scaling parameter.
+   *  - beta: Exponent parameter.
+   *  - K: Additive constant to avoid divide-by-zero.
+   *
+   * Outputs:
+   *  - Y: Outputs, of shape (N, C*Hin*Win).
+   */
+  N_batch = nrow(X)
+  
+  # Initialize output
+  Y = matrix(0, rows=N_batch, cols=C*Hin*Win)
+  
+  # Reshape for easier manipulation
+  X_reshaped = matrix(X, rows=N_batch, cols=C*Hin*Win)
+  
+  # Compute normalization
+  half_N = as.integer(N / 2)
+  
+  for (i in 1:N_batch) {
+    # Get current sample
+    x = matrix(X_reshaped[i,], rows=C, cols=Hin*Win, byrow=TRUE)
+    y = matrix(0, rows=C, cols=Hin*Win)
+    
+    # For each channel
+    for (c in 1:C) {
+      # Define the local region
+      j_start = max(1, c - half_N)
+      j_end = min(C, c + half_N)
+      
+      # Compute sum of squares in the local region
+      scale = matrix(K, rows=1, cols=Hin*Win)
+      for (j in j_start:j_end) {
+        scale = scale + alpha * (x[j,])^2
+      }
+      
+      # Apply normalization
+      y[c,] = x[c,] / (scale^beta)
+    }
+    
+    # Reshape back and store
+    Y[i,] = matrix(y, rows=1, cols=C*Hin*Win, byrow=TRUE)
+  }
+}
+
+backward = function(matrix[double] dY, matrix[double] X, int C, int Hin, int Win,
+                    int N, double alpha, double beta, double K)
+    return (matrix[double] dX) {
+  /*
+   * Computes the backward pass for a Local Response Normalization layer.
+   *
+   * Inputs:
+   *  - dY: Gradient wrt Y, of shape (N, C*Hin*Win).
+   *  - X: Inputs, of shape (N, C*Hin*Win).
+   *  - C: Number of input channels.
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - N: Number of channels to sum over.
+   *  - alpha: Scaling parameter.
+   *  - beta: Exponent parameter.
+   *  - K: Additive constant.
+   *
+   * Outputs:
+   *  - dX: Gradient wrt X, of shape (N, C*Hin*Win).
+   */
+  N_batch = nrow(X)
+  
+  # Initialize gradient
+  dX = matrix(0, rows=N_batch, cols=C*Hin*Win)
+  
+  # Reshape for easier manipulation
+  X_reshaped = matrix(X, rows=N_batch, cols=C*Hin*Win)
+  dY_reshaped = matrix(dY, rows=N_batch, cols=C*Hin*Win)
+  
+  half_N = as.integer(N / 2)
+  
+  for (i in 1:N_batch) {
+    # Get current sample
+    x = matrix(X_reshaped[i,], rows=C, cols=Hin*Win, byrow=TRUE)
+    dy = matrix(dY_reshaped[i,], rows=C, cols=Hin*Win, byrow=TRUE)
+    dx = matrix(0, rows=C, cols=Hin*Win)
+    
+    # First, compute the scale values for all channels
+    scale = matrix(K, rows=C, cols=Hin*Win)
+    for (c in 1:C) {
+      j_start = max(1, c - half_N)
+      j_end = min(C, c + half_N)
+      for (j in j_start:j_end) {
+        scale[c,] = scale[c,] + alpha * (x[j,])^2
+      }
+    }
+    
+    # Compute gradients
+    for (c in 1:C) {
+      # Channels that this channel influences
+      k_start = max(1, c - half_N)
+      k_end = min(C, c + half_N)
+      
+      for (k in k_start:k_end) {
+        if (k == c) {
+          # Gradient from own normalization
+          dx[c,] = dx[c,] + dy[k,] * scale[k,]^(-beta)
+        }
+        # Gradient from normalizing other channels
+        dx[c,] = dx[c,] - 2 * alpha * beta * dy[k,] * x[k,] * x[c,] * scale[k,]^(-beta-1)
+      }
+    }
+    
+    # Reshape back and store
+    dX[i,] = matrix(dx, rows=1, cols=C*Hin*Win, byrow=TRUE)
+  }
+} 

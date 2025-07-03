@@ -25,6 +25,7 @@ source("nn/optim/rmsprop.dml") as rmsprop
 source("nn/optim/sgd.dml") as sgd
 source("nn/optim/sgd_momentum.dml") as sgd_momentum
 source("nn/optim/sgd_nesterov.dml") as sgd_nesterov
+source("nn/optim/lars.dml") as lars
 
 
 init_optim_adam_basic_block = function(int C_in, int C_base, boolean downsample)
@@ -52,6 +53,33 @@ init_optim_adam_basic_block = function(int C_in, int C_base, boolean downsample)
         block_params = append(block_params, list(m_W_conv3, v_W_conv3))
         block_params = append(block_params, list(m_W_bn3, v_W_bn3))
         block_params = append(block_params, list(m_b_bn3, v_b_bn3))
+    }
+}
+
+init_optim_lars_basic_block = function(int C_in, int C_base, boolean downsample)
+    return (list[unknown] block_params) {
+    # Conv 1
+    v_W_conv1 = matrix(0, rows=C_base, cols=C_in*3*3)
+    # BN 1
+    v_W_bn1 = matrix(0, rows=C_base, cols=1)
+    v_b_bn1 = matrix(0, rows=C_base, cols=1)
+    # Conv 2
+    v_W_conv2 = matrix(0, rows=C_base, cols=C_base*3*3)
+    # BN 2
+    v_W_bn2 = matrix(0, rows=C_base, cols=1)
+    v_b_bn2 = matrix(0, rows=C_base, cols=1)
+
+    block_params = list(v_W_conv1, v_W_bn1, v_b_bn1, v_W_conv2, v_W_bn2, v_b_bn2)
+
+    if (downsample) {
+        # Conv 3
+        v_W_conv3 = matrix(0, rows=C_base, cols=C_in)
+        # BN 3
+        v_W_bn3 = matrix(0, rows=C_base, cols=1)
+        v_b_bn3 = matrix(0, rows=C_base, cols=1)
+        block_params = append(block_params, v_W_conv3)
+        block_params = append(block_params, v_W_bn3)
+        block_params = append(block_params, v_b_bn3)
     }
 }
 
@@ -114,6 +142,38 @@ init_optim_other_bottleneck_block = function(int C_in, int C_base, boolean downs
     }
 }
 
+init_optim_lars_bottleneck_block = function(int C_in, int C_base, boolean downsample)
+    return (list[unknown] block_params) {
+    # Conv 1
+    v_W_conv1 = matrix(0, rows=C_base, cols=C_in)
+    # BN 1
+    v_W_bn1 = matrix(0, rows=C_base, cols=1)
+    v_b_bn1 = matrix(0, rows=C_base, cols=1)
+    # Conv 2
+    v_W_conv2 = matrix(0, rows=C_base, cols=C_base*3*3)
+    # BN 2
+    v_W_bn2 = matrix(0, rows=C_base, cols=1)
+    v_b_bn2 = matrix(0, rows=C_base, cols=1)
+    # Conv 3
+    v_W_conv3 = matrix(0, rows=4*C_base, cols=C_base)
+    # BN 3
+    v_W_bn3 = matrix(0, rows=4*C_base, cols=1)
+    v_b_bn3 = matrix(0, rows=4*C_base, cols=1)
+
+    block_params = list(v_W_conv1, v_W_bn1, v_b_bn1, v_W_conv2, v_W_bn2, v_b_bn2, v_W_conv3, v_W_bn3, v_b_bn3)
+
+    if (downsample) {
+        # Conv 4
+        v_W_conv4 = matrix(0, rows=4*C_base, cols=C_in)
+        # BN 4
+        v_W_bn4 = matrix(0, rows=4*C_base, cols=1)
+        v_b_bn4 = matrix(0, rows=4*C_base, cols=1)
+        block_params = append(block_params, v_W_conv4)
+        block_params = append(block_params, v_W_bn4)
+        block_params = append(block_params, v_b_bn4)
+    }
+}
+
 init_optim_adam_bottleneck_block = function(int C_in, int C_base, boolean downsample)
     return (list[unknown] block_params) {
     # Conv 1
@@ -158,6 +218,9 @@ init_optim = function(string optimizer, int classes, string block_type, list[unk
         m_W_conv1 = matrix(0, rows=64, cols=C_in*7*7)
         v_W_conv1 = matrix(0, rows=64, cols=C_in*7*7)
         params = append(params, list(m_W_conv1, v_W_conv1))
+    } else if (optimizer == "lars") {
+        v_W_conv1 = matrix(0, rows=64, cols=C_in*7*7)
+        params = append(params, v_W_conv1)
     } else {
         s_W_conv1 = matrix(0, rows=64, cols=C_in*7*7)
         params = append(params, s_W_conv1)
@@ -169,6 +232,11 @@ init_optim = function(string optimizer, int classes, string block_type, list[unk
         m_b_bn1 = matrix(0, rows=C_in, cols=1); v_b_bn1 = matrix(0, rows=C_in, cols=1)
         params = append(params, list(m_W_bn1, v_W_bn1))
         params = append(params, list(m_b_bn1, v_b_bn1))
+    } else if (optimizer == "lars") {
+        v_W_bn1 = matrix(0, rows=C_in, cols=1)
+        v_b_bn1 = matrix(0, rows=C_in, cols=1)
+        params = append(params, v_W_bn1)
+        params = append(params, v_b_bn1)
     } else {
         s_W_bn1 = matrix(0, rows=C_in, cols=1)
         s_b_bn1 = matrix(0, rows=C_in, cols=1)
@@ -191,6 +259,8 @@ init_optim = function(string optimizer, int classes, string block_type, list[unk
                 downsample = block == 1 & stride > 1
                 if (optimizer == "adam")
                     optim_block = init_optim_adam_basic_block(C_in, C_base, downsample)
+                else if (optimizer == "lars")
+                    optim_block = init_optim_lars_basic_block(C_in, C_base, downsample)
                 else
                     optim_block = init_optim_other_basic_block(C_in, C_base, downsample)
                 optim_layer = append(optim_layer, optim_block)
@@ -203,6 +273,8 @@ init_optim = function(string optimizer, int classes, string block_type, list[unk
                 downsample = block == 1
                 if (optimizer == "adam")
                     optim_block = init_optim_adam_bottleneck_block(C_in, C_base, downsample)
+                else if (optimizer == "lars")
+                    optim_block = init_optim_lars_bottleneck_block(C_in, C_base, downsample)
                 else
                     optim_block = init_optim_other_bottleneck_block(C_in, C_base, downsample)
                 optim_layer = append(optim_layer, optim_block)
@@ -220,6 +292,11 @@ init_optim = function(string optimizer, int classes, string block_type, list[unk
         m_b_fc = matrix(0, rows=1, cols=classes); v_b_fc = matrix(0, rows=1, cols=classes)
         params = append(params, list(m_W_fc, v_W_fc))
         params = append(params, list(m_b_fc, v_b_fc))
+    } else if (optimizer == "lars") {
+        v_W_fc = matrix(0, rows=C_in, cols=classes)
+        v_b_fc = matrix(0, rows=1, cols=classes)
+        params = append(params, v_W_fc)
+        params = append(params, v_b_fc)
     } else {
         s_W_fc = matrix(0, rows=C_in, cols=classes)
         s_b_fc = matrix(0, rows=1, cols=classes)
@@ -283,6 +360,15 @@ update_param = function(int index, string optimizer, list[unknown] optim_params,
         v = as.matrix(optim_params[index])
 
         [param_upd, v_upd] = sgd_nesterov::update(param, grad, lr, mu, v)
+        optim_params_upd = append(optim_params_upd, v_upd)
+    } else if (optimizer == "lars") {
+        lr = as.scalar(optim_hyper_params[1])
+        mu = as.scalar(optim_hyper_params[2])
+        lambda = as.scalar(optim_hyper_params[3])
+        trust_coeff = as.scalar(optim_hyper_params[4])
+
+        v = as.matrix(optim_params[index])
+        [param_upd, v_upd] = lars::update(param, grad, lr, mu, v, lambda, trust_coeff)
         optim_params_upd = append(optim_params_upd, v_upd)
     }
     params_upd = append(params_upd, param_upd)

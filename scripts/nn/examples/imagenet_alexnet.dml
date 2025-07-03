@@ -1,0 +1,334 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# ImageNet AlexNet - Train
+#
+# This script trains a convolutional net using the "AlexNet" architecture
+# on 224x224 ImageNet images using LARS optimizer.
+#
+# Inputs:
+#  - train_data: File containing ImageNet training images (features)
+#  - train_labels: File containing ImageNet training labels (one-hot)
+#  - val_data: File containing ImageNet validation images (features)
+#  - val_labels: File containing ImageNet validation labels (one-hot)
+#  - epochs: [DEFAULT: 30] Total number of full training loops
+#  - batch_size: [DEFAULT: 256] Mini-batch size for training
+#  - out_dir: [DEFAULT: "scripts/nn/examples/model/imagenet_alexnet"] Directory to store results
+#
+# Outputs:
+#  - accuracy: File containing validation accuracy over epochs
+#  - loss: File containing training loss over epochs
+#
+# Sample Invocation:
+#   ```
+#   java -Xmx8g -Xms8g -cp "target/systemds-3.4.0-SNAPSHOT.jar:target/lib/*" \
+#   org.apache.sysds.api.DMLScript -f scripts/nn/examples/imagenet_alexnet.dml \
+#   -exec singlenode -gpu
+#   java -Xmx8g -Xms8g -cp "target/systemds-3.4.0-SNAPSHOT.jar:target/lib/*" org.apache.sysds.api.DMLScript -f scripts/nn/examples/imagenet_alexnet.dml -exec singlenode -gpu
+#   ```
+
+
+
+source("nn/networks/alexnet.dml") as alexnet
+source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
+
+# Read the ImageNet data
+fmt = "csv"
+target_size = 224  # For display purposes
+
+print("Loading ImageNet data (224x224)...")
+print("Data directory: imagenet_data/224x224")
+print("")
+
+# Read the data files with constant string paths
+print("Reading training data...")
+train_data = read("imagenet_data/224x224/imagenet_224x224_train.csv", format=fmt)
+train_labels = read("imagenet_data/224x224/imagenet_224x224_train_labels.csv", format=fmt)
+print("Reading validation data...")
+val_data = read("imagenet_data/224x224/imagenet_224x224_test.csv", format=fmt)
+val_labels = read("imagenet_data/224x224/imagenet_224x224_test_labels.csv", format=fmt)
+out_dir = "scripts/nn/examples/model/imagenet_alexnet"
+
+print("Data loaded successfully.")
+
+# Get dataset dimensions
+N = nrow(train_data)
+N_val = nrow(val_data)
+classes = 1000
+
+print("Dataset info:")
+print("- Training samples: " + N)
+print("- Validation samples: " + N_val)
+print("- Features: " + ncol(train_data))
+print("- Classes: " + classes)
+
+# Scale images to [-1,1] (data is already in [0,1] range from preprocessing)
+X = (train_data - 0.5) * 2
+X_val = (val_data - 0.5) * 2
+
+# Labels are already one-hot encoded from preprocessing
+Y = train_labels
+Y_val = val_labels
+
+print("Data preprocessing completed.")
+print("- Image range: [" + min(X) + ", " + max(X) + "]")
+print("- Label sum check: " + mean(rowSums(Y)))
+
+# Get initial model parameters
+print("Initializing AlexNet model...")
+use_bn = FALSE  # Use batch normalization
+if (use_bn) {
+    print("Using AlexNet with Batch Normalization")
+    [model, emas] = alexnet::init_with_bn(3, 224, 224, classes, 42)
+} else {
+    print("Using standard AlexNet")
+    model = alexnet::init(3, 224, 224, classes, 42)
+    emas = list()  # Empty for non-BN version
+}
+
+# Get initial optimizer parameters
+print("Initializing LARS optimizer...")
+optimizer_params = alexnet::init_lars_optim_params(model)
+
+# Define image properties
+Hin = target_size
+Win = target_size
+C = 3
+
+# Define training parameters
+epochs = 30
+batch_size = 256
+
+print("Training configuration:")
+print("- Image size: " + Hin + "x" + Win + "x" + C + " (features: " + (Hin*Win*C) + ")")
+print("- Epochs: " + epochs)
+print("- Batch size: " + batch_size)
+print("- Use Batch Normalization: " + use_bn)
+print("")
+
+print("Starting training...")
+[accuracy, loss_metric, learned_model, learned_emas] = train(X, Y, X_val, Y_val, model, emas, N, C, Hin, Win, epochs, batch_size, optimizer_params, use_bn)
+
+print("Saving results...")
+write(accuracy, out_dir + "/imagenet_alexnet_accuracy.csv", format="csv")
+write(loss_metric, out_dir + "/imagenet_alexnet_loss.csv", format="csv")
+
+# Save final metrics
+final_accuracy = as.scalar(accuracy[epochs, 1])
+print("Final validation accuracy: " + final_accuracy)
+
+print("Training completed!")
+
+train = function(matrix[double] X, matrix[double] Y, matrix[double] X_val, matrix[double] Y_val, list[unknown] model, list[unknown] emas, 
+    int samples, int C, int Hin, int Win, int epochs, int batch_size, list[unknown] optim_params, boolean use_bn)
+    return (matrix[double] accuracy, matrix[double] loss_metric, 
+            list[unknown] learned_model, list[unknown] learned_emas) {
+
+    # --- HYPERPARAMETERS ---
+    base_batch_size = 256  # Reference batch size for LR scaling
+    initial_lr = 0.01 * (batch_size / base_batch_size)  # Linear scaling rule
+    end_lr = 0.00001 
+    warmup_epochs = 5
+    power = 2.0
+    momentum = 0.9
+    trust_coeff = 0.001
+    weight_decay = 0.0005
+    
+    iterations_per_epoch = ceil(samples / batch_size)
+    total_iterations = epochs * iterations_per_epoch
+    warmup_iterations = warmup_epochs * iterations_per_epoch
+    decay_iterations = total_iterations - warmup_iterations
+
+    print("LARS Configuration:")
+    print("- Base LR: " + (0.01) + " (scaled to " + initial_lr + " for batch size " + batch_size + ")")
+    print("- End LR: " + end_lr)
+    print("- Warmup epochs: " + warmup_epochs)
+    print("- Momentum: " + momentum)
+    print("- Weight decay: " + weight_decay)
+    print("- Trust coefficient: " + trust_coeff)
+    print("- Use BN: " + use_bn)
+    print("")
+
+    accuracy = matrix(0, rows=epochs, cols=1)
+    loss_metric = matrix(0, rows=epochs, cols=1)
+    mode = "train"
+
+    for (epoch in 1:epochs) {
+        loss_avg = 0.0
+        print("Start epoch: " + epoch + "/" + epochs)
+
+        for (i in 1:iterations_per_epoch) {
+            if (i %% 50 == 1) { print(" - Iteration: " + i + "/" + iterations_per_epoch) }
+
+            # --- DYNAMIC LEARNING RATE ---
+            current_iteration = (epoch - 1) * iterations_per_epoch + i
+            if (current_iteration < warmup_iterations) {
+                current_lr = initial_lr * (as.double(current_iteration) / warmup_iterations)
+            } else {
+                decay_step = current_iteration - warmup_iterations
+                decay_progress = as.double(decay_step) / decay_iterations
+                current_lr = end_lr + (initial_lr - end_lr) * (1 - decay_progress)^power
+            }
+            if (i == 1) { print("Using Learning Rate: " + current_lr) }
+
+            # --- BATCH PREPARATION ---
+            start = (i - 1) * batch_size + 1
+            end = min(samples, i * batch_size)
+            X_batch = X[start:end,]
+            Y_batch = Y[start:end,]
+
+            # --- FORWARD AND BACKWARD PASS ---
+            if (use_bn) { 
+                [out, cached_out, emas] = alexnet::forward_with_bn(X_batch, C, Hin, Win, model, "train", 0.5) 
+            } else { 
+                [out, cached_out] = alexnet::forward(X_batch, C, Hin, Win, model, "train", 0.5) 
+            }
+            
+            # Compute loss with L2 regularization
+            loss = alexnet::compute_loss(out, Y_batch, model, weight_decay)
+            loss_avg = (loss_avg * (i - 1) + loss) / i
+            
+            # Backward pass
+            dOut = cross_entropy_loss::backward(out, Y_batch)
+            if (use_bn) { 
+                [dX, gradients] = alexnet::backward_with_bn(dOut, cached_out, model, C, Hin, Win, 0.5) 
+            } else { 
+                [dX, gradients] = alexnet::backward(dOut, cached_out, model, C, Hin, Win, 0.5) 
+            }
+            
+            # Update with LARS (weight decay is handled internally by LARS)
+            [model, optim_params] = alexnet::update_params_with_lars(
+                model, gradients, current_lr, momentum, weight_decay, 
+                trust_coeff, optim_params)
+        }
+
+        # --- EVALUATION ---
+        print("Computing metrics for current epoch...")
+        if (use_bn) { 
+            accuracy_scalar = predict_and_eval_batched_with_bn(X_val, Y_val, C, Hin, Win, model, emas, batch_size) 
+        } else { 
+            accuracy_scalar = predict_and_eval_batched(X_val, Y_val, C, Hin, Win, model, batch_size) 
+        }
+
+        loss_metric[epoch, 1] = loss_avg
+        accuracy[epoch, 1] = accuracy_scalar
+        print("Epoch " + epoch + " completed:")
+        print("- Avg. Loss: " + loss_avg)
+        print("- Validation Accuracy: " + accuracy_scalar)
+        print("")
+    }
+    learned_model = model
+    learned_emas = emas
+}
+
+predict = function(matrix[double] X, int C, int Hin, int Win, 
+    list[unknown] model) 
+    return(matrix[double] out) {
+    /*
+    * Computes the class probability predictions using standard AlexNet.
+    */
+    
+    # Predict on validation dataset
+    mode = "test"
+    [out, cached_out] = alexnet::forward(X, C, Hin, Win, model, mode, 0.0)
+}
+
+predict_with_bn = function(matrix[double] X, int C, int Hin, int Win, 
+    list[unknown] model, list[unknown] emas) 
+    return(matrix[double] out) {
+    /*
+    * Computes the class probability predictions using AlexNet with Batch Normalization.
+    */
+    
+    # Predict on validation dataset
+    mode = "test"
+    [out, cached_out, emas_temp] = alexnet::forward_with_bn(X, C, Hin, Win, model, mode, 0.0)
+}
+
+predict_and_eval_batched = function(matrix[double] X_val, matrix[double] Y_val, int C, int Hin, int Win, 
+    list[unknown] model, int batch_size)
+    return(double accuracy) {
+    /*
+    * Batched prediction and evaluation for standard AlexNet to avoid memory issues
+    */
+    
+    N_val = nrow(X_val)
+    val_iterations = ceil(N_val / batch_size)
+    correct_total = 0
+    mode = "test"
+    
+    print("  Evaluating validation set in " + val_iterations + " batches...")
+    
+    for (i in 1:val_iterations) {
+        if (i %% 10 == 1) {
+            print("    Validation batch: " + i + "/" + val_iterations)
+        }
+        
+        start = (i - 1) * batch_size + 1
+        end = min(N_val, i * batch_size)
+        X_batch = X_val[start:end,]
+        Y_batch = Y_val[start:end,]
+        
+        # Forward pass
+        [out_batch, cached_out] = alexnet::forward(X_batch, C, Hin, Win, model, mode, 0.0)
+        
+        # Count correct predictions
+        correct_pred = rowIndexMax(out_batch) == rowIndexMax(Y_batch)
+        correct_total = correct_total + sum(correct_pred)
+    }
+    
+    accuracy = correct_total / N_val
+}
+
+predict_and_eval_batched_with_bn = function(matrix[double] X_val, matrix[double] Y_val, int C, int Hin, int Win, 
+    list[unknown] model, list[unknown] emas, int batch_size)
+    return(double accuracy) {
+    /*
+    * Batched prediction and evaluation for AlexNet with BN to avoid memory issues
+    */
+    
+    N_val = nrow(X_val)
+    val_iterations = ceil(N_val / batch_size)
+    correct_total = 0
+    mode = "test"
+    
+    print("  Evaluating validation set in " + val_iterations + " batches...")
+    
+    for (i in 1:val_iterations) {
+        if (i %% 10 == 1) {
+            print("    Validation batch: " + i + "/" + val_iterations)
+        }
+        
+        start = (i - 1) * batch_size + 1
+        end = min(N_val, i * batch_size)
+        X_batch = X_val[start:end,]
+        Y_batch = Y_val[start:end,]
+        
+        # Forward pass
+        [out_batch, cached_out, emas_temp] = alexnet::forward_with_bn(X_batch, C, Hin, Win, model, mode, 0.0)
+        
+        # Count correct predictions
+        correct_pred = rowIndexMax(out_batch) == rowIndexMax(Y_batch)
+        correct_total = correct_total + sum(correct_pred)
+    }
+    
+    accuracy = correct_total / N_val
+}

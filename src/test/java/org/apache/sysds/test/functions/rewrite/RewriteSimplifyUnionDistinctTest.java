@@ -29,7 +29,7 @@ import org.junit.Test;
 import java.util.HashMap;
 
 public class RewriteSimplifyUnionDistinctTest extends AutomatedTestBase {
-	private static final String TEST_NAME = "rewriteSimplifyUnionDistinct";
+	private static final String TEST_NAME = "RewriteSimplifyUnion";
 	private static final String TEST_DIR = "functions/rewrite/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RewriteSimplifyUnionDistinctTest.class.getSimpleName()
 		+ "/";

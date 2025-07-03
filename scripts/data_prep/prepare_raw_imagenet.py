@@ -35,7 +35,6 @@ import time
 import gc
 from PIL import Image
 import csv
-java -Xmx16g -Xms16g -cp "target/systemds-3.4.0-SNAPSHOT.jar:target/lib/*" org.apache.sysds.api.DMLScript -f scripts/nn/examples/imagenet_alexnet.dml -exec singlenode
 
 class RawImageNetProcessor:
     """Raw ImageNet JPG image processor for SystemDS."""

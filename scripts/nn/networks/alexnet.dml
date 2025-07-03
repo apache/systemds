@@ -74,8 +74,8 @@ forward = function(matrix[double] X, int C, int Hin, int Win,
    * Inputs:
    * - X: Input data, of shape (N, C*Hin*Win).
    * - C: Number of input channels (3 for RGB).
-   * - Hin: Input height (224 for ImageNet).
-   * - Win: Input width (224 for ImageNet).
+   * - Hin: Input height (256 for ImageNet).
+   * - Win: Input width (256 for ImageNet).
    * - model: List of model parameters with the following structure:
    *   -> 1: Conv1 weights, of shape (96, C*11*11)
    *   -> 2: Conv1 bias, of shape (96, 1)
@@ -113,7 +113,7 @@ forward = function(matrix[double] X, int C, int Hin, int Win,
 
   # Forward pass
   # Conv1 -> ReLU -> MaxPool1
-  [outc1, Houtc1, Woutc1] = conv2d::forward(X, W1, b1, C, Hin, Win, 11, 11, 4, 4, 0, 0)
+  [outc1, Houtc1, Woutc1] = conv2d::forward(X, W1, b1, C, Hin, Win, 11, 11, 4, 4, 2, 2)
   outr1 = relu::forward(outc1)
   [outp1, Houtp1, Woutp1] = max_pool2d::forward(outr1, 96, Houtc1, Woutc1, 3, 3, 2, 2, 0, 0)
   
@@ -252,10 +252,91 @@ backward = function(matrix[double] dOut, list[unknown] cached_out,
   # Conv1
   doutr1 = max_pool2d::backward(doutp1, Houtp1, Woutp1, outr1, 96, Houtc1, Woutc1, 3, 3, 2, 2, 0, 0)
   doutc1 = relu::backward(doutr1, outc1)
-  [dX, dW1, db1] = conv2d::backward(doutc1, Houtc1, Woutc1, X, W1, b1, C, Hin, Win, 11, 11, 4, 4, 0, 0)
+  [dX, dW1, db1] = conv2d::backward(doutc1, Houtc1, Woutc1, X, W1, b1, C, Hin, Win, 11, 11, 4, 4, 2, 2)
 
   # Package gradients
   gradients = list(dW1, db1, dW2, db2, dW3, db3, dW4, db4, dW5, db5, dW6, db6, dW7, db7, dW8, db8)
+}
+
+/*
+ * Helper function to calculate output dimensions after convolutions and pooling
+ */
+
+calculate_conv_output_size = function(int Hin, int Win)
+    return (int fc_input_size) {
+  /*
+   * Calculate the input size for the first fully connected layer
+   * based on the actual input dimensions after all conv and pooling layers.
+   *
+   * Current AlexNet architecture:
+   * 1. Conv1: 96 filters, 11x11, stride 4, pad 2
+   * 2. MaxPool1: 3x3, stride 2, pad 0  
+   * 3. Conv2: 256 filters, 5x5, stride 1, pad 2
+   * 4. MaxPool2: 3x3, stride 2, pad 0
+   * 5. Conv3: 384 filters, 3x3, stride 1, pad 1
+   * 6. Conv4: 384 filters, 3x3, stride 1, pad 1
+   * 7. Conv5: 256 filters, 3x3, stride 1, pad 1
+   * 8. MaxPool3: 3x3, stride 2, pad 0
+   */
+  
+  # Start with input dimensions
+  H = as.double(Hin)
+  W = as.double(Win)
+  
+  print("Input dimensions: " + Hin + "x" + Win)
+  
+  # Conv1: 11x11, stride 4, pad 2
+  H = floor((H - 11 + 4) / 4) + 1  # pad 2 on each side = 4 total
+  W = floor((W - 11 + 4) / 4) + 1
+  print("After Conv1: " + as.integer(H) + "x" + as.integer(W))
+  
+  # MaxPool1: 3x3, stride 2, pad 0
+  H = floor((H - 3 + 0) / 2) + 1
+  W = floor((W - 3 + 0) / 2) + 1
+  print("After MaxPool1: " + as.integer(H) + "x" + as.integer(W))
+  
+  # Conv2: 5x5, stride 1, pad 2
+  H = floor((H - 5 + 4) / 1) + 1
+  W = floor((W - 5 + 4) / 1) + 1
+  print("After Conv2: " + as.integer(H) + "x" + as.integer(W))
+  
+  # MaxPool2: 3x3, stride 2, pad 0
+  H = floor((H - 3 + 0) / 2) + 1
+  W = floor((W - 3 + 0) / 2) + 1
+  print("After MaxPool2: " + as.integer(H) + "x" + as.integer(W))
+  
+  # Conv3: 3x3, stride 1, pad 1
+  H = floor((H - 3 + 2) / 1) + 1
+  W = floor((W - 3 + 2) / 1) + 1
+  print("After Conv3: " + as.integer(H) + "x" + as.integer(W))
+  
+  # Conv4: 3x3, stride 1, pad 1  
+  H = floor((H - 3 + 2) / 1) + 1
+  W = floor((W - 3 + 2) / 1) + 1
+  print("After Conv4: " + as.integer(H) + "x" + as.integer(W))
+  
+  # Conv5: 3x3, stride 1, pad 1
+  H = floor((H - 3 + 2) / 1) + 1
+  W = floor((W - 3 + 2) / 1) + 1
+  print("After Conv5: " + as.integer(H) + "x" + as.integer(W))
+  
+  # MaxPool3: 3x3, stride 2, pad 0
+  H = floor((H - 3 + 0) / 2) + 1
+  W = floor((W - 3 + 0) / 2) + 1
+  print("After MaxPool3: " + as.integer(H) + "x" + as.integer(W))
+  
+  # Handle edge case where dimensions become 0 or negative
+  if (H <= 0 | W <= 0) {
+    print("ERROR: Spatial dimensions became 0 or negative!")
+    print("Input size " + Hin + "x" + Win + " is too small for AlexNet architecture.")
+    print("Consider using larger input images or adjusting the architecture.")
+    stop("Invalid spatial dimensions")
+  }
+  
+  # Final dimensions: 256 channels with H x W spatial size
+  fc_input_size = as.integer(256 * H * W)
+  
+  print("Final FC input size: " + fc_input_size + " (spatial: " + as.integer(H) + "x" + as.integer(W) + " x 256 channels)")
 }
 
 /*
@@ -269,8 +350,8 @@ init = function(int C, int Hin, int Win, int num_classes, int seed)
    *
    * Inputs:
    * - C: Number of input channels (3 for RGB)
-   * - Hin: Input height (224 for ImageNet)
-   * - Win: Input width (224 for ImageNet)  
+   * - Hin: Input height (supports various sizes, e.g., 224, 256)
+   * - Win: Input width (supports various sizes, e.g., 224, 256)
    * - num_classes: Number of output classes
    * - seed: Random seed for initialization
    *
@@ -278,23 +359,46 @@ init = function(int C, int Hin, int Win, int num_classes, int seed)
    * - model: List of initialized model parameters
    */
   
-  # Calculate fully connected input size based on convolution output
-  # After all convolutions and pooling: 5x5 feature maps with 256 channels
-  fc_input_size = 256 * 5 * 5  # 6400
+  # Calculate fully connected input size based on actual input dimensions
+  fc_input_size = calculate_conv_output_size(Hin, Win)
   
-  # Initialize convolutional layers
-  [W1, b1] = conv2d::init(96, C, 11, 11, seed)      # Conv1: 96 11x11 filters
-  [W2, b2] = conv2d::init(256, 96, 5, 5, seed)      # Conv2: 256 5x5 filters  
-  [W3, b3] = conv2d::init(384, 256, 3, 3, seed)     # Conv3: 384 3x3 filters
-  [W4, b4] = conv2d::init(384, 384, 3, 3, seed)     # Conv4: 384 3x3 filters
-  [W5, b5] = conv2d::init(256, 384, 3, 3, seed)     # Conv5: 256 3x3 filters
+  # --- Explicit AlexNet weight init for Conv layers ---
+  # All weights ∼ N(0,0.01), all biases = 0 (following original AlexNet paper)
+  
+  # Conv1: 96 11x11 filters
+  W1 = rand(rows=96, cols=C * 11 * 11, pdf="normal", seed=seed) * 0.01      # 96 × (C·11·11)
+  b1 = matrix(0.0, rows=96, cols=1)
+  
+  # Conv2: 256 5x5 filters
+  W2 = rand(rows=256, cols=96 * 5 * 5, pdf="normal", seed=seed) * 0.01      # 256 × (96·5·5)
+  b2 = matrix(0.0, rows=256, cols=1)
+  
+  # Conv3: 384 3x3 filters
+  W3 = rand(rows=384, cols=256 * 3 * 3, pdf="normal", seed=seed) * 0.01     # 384 × (256·3·3)
+  b3 = matrix(0.0, rows=384, cols=1)
+  
+  # Conv4: 384 3x3 filters
+  W4 = rand(rows=384, cols=384 * 3 * 3, pdf="normal", seed=seed) * 0.01     # 384 × (384·3·3)
+  b4 = matrix(0.0, rows=384, cols=1)
+  
+  # Conv5: 256 3x3 filters
+  W5 = rand(rows=256, cols=384 * 3 * 3, pdf="normal", seed=seed) * 0.01     # 256 × (384·3·3)
+  b5 = matrix(0.0, rows=256, cols=1)
 
-  # Initialize fully connected layers
-  [W6, b6] = affine::init(fc_input_size, 4096, seed)  # FC1
-  [W7, b7] = affine::init(4096, 4096, seed)           # FC2
-  [W8, b8] = affine::init(4096, num_classes, seed)    # FC3 (output)
+  # --- Explicit AlexNet weight init for FC layers ---
+  # FC1: fc_input_size → 4096
+  W6 = rand(rows=fc_input_size, cols=4096, pdf="normal", seed=seed) * 0.01
+  b6 = matrix(0.0, rows=1, cols=4096)
   
-  # Scale final layer for better convergence
+  # FC2: 4096 → 4096
+  W7 = rand(rows=4096, cols=4096, pdf="normal", seed=seed) * 0.01
+  b7 = matrix(0.0, rows=1, cols=4096)
+  
+  # FC3: 4096 → num_classes (output layer)
+  W8 = rand(rows=4096, cols=num_classes, pdf="normal", seed=seed) * 0.01
+  b8 = matrix(0.0, rows=1, cols=num_classes)
+  
+  # Scale final layer for better convergence (as mentioned in your image)
   W8 = W8 / sqrt(2)
 
   # Package model
@@ -435,7 +539,7 @@ compute_loss = function(matrix[double] predictions, matrix[double] targets, list
   reg_loss = 0
   for (i in seq(1, length(model), 2)) {  # Only weights, skip biases
     W = as.matrix(model[i])
-    reg_loss = reg_loss + l2_reg::forward(W, 1)
+          reg_loss = reg_loss + l2_reg::forward(W, 1)
   }
   loss = data_loss + weight_decay * reg_loss
 }
@@ -468,8 +572,8 @@ evaluate = function(matrix[double] X, matrix[double] Y, int C, int Hin, int Win,
     Y_batch = Y[beg:end,]
     
     [predictions, cached_out] = forward(X_batch, C, Hin, Win, model, "test", 0.0)
-    batch_loss = compute_loss(predictions, Y_batch, model, 0.0)
-    batch_acc = compute_accuracy(predictions, Y_batch)
+    batch_loss = compute_loss(predictions=predictions, targets=Y_batch, model=model, weight_decay=0.0)
+    batch_acc = compute_accuracy(predictions=predictions, targets=Y_batch)
     
     total_loss = total_loss + batch_loss
     total_acc = total_acc + batch_acc
@@ -493,8 +597,8 @@ init_with_bn = function(int C, int Hin, int Win, int num_classes, int seed)
    *
    * Inputs:
    * - C: Number of input channels (3 for RGB)
-   * - Hin: Input height (224 for ImageNet)
-   * - Win: Input width (224 for ImageNet)
+   * - Hin: Input height (supports various sizes, e.g., 64, 224)
+   * - Win: Input width (supports various sizes, e.g., 64, 224)
    * - num_classes: Number of output classes
    * - seed: Random seed for initialization
    *
@@ -503,29 +607,53 @@ init_with_bn = function(int C, int Hin, int Win, int num_classes, int seed)
    * - emas: List of exponential moving averages for BN layers
    */
   
-  # Calculate fully connected input size
-  fc_input_size = 256 * 5 * 5  # 6400
+  # Calculate fully connected input size based on actual input dimensions
+  fc_input_size = calculate_conv_output_size(Hin, Win)
   
-  # Initialize convolutional layers (same as before)
-  [W1, b1] = conv2d::init(96, C, 11, 11, seed)      # Conv1
-  [W2, b2] = conv2d::init(256, 96, 5, 5, seed)      # Conv2
-  [W3, b3] = conv2d::init(384, 256, 3, 3, seed)     # Conv3
-  [W4, b4] = conv2d::init(384, 384, 3, 3, seed)     # Conv4
-  [W5, b5] = conv2d::init(256, 384, 3, 3, seed)     # Conv5
+  # --- Explicit AlexNet weight init for Conv layers ---
+  # All weights ∼ N(0,0.01), all biases = 0 (following original AlexNet paper)
   
-  # Initialize batch normalization parameters for each conv layer
+  # Conv1: 96 11x11 filters
+  W1 = rand(rows=96, cols=C * 11 * 11, pdf="normal", seed=seed) * 0.01      # 96 × (C·11·11)
+  b1 = matrix(0.0, rows=96, cols=1)
+  
+  # Conv2: 256 5x5 filters
+  W2 = rand(rows=256, cols=96 * 5 * 5, pdf="normal", seed=seed) * 0.01      # 256 × (96·5·5)
+  b2 = matrix(0.0, rows=256, cols=1)
+  
+  # Conv3: 384 3x3 filters
+  W3 = rand(rows=384, cols=256 * 3 * 3, pdf="normal", seed=seed) * 0.01     # 384 × (256·3·3)
+  b3 = matrix(0.0, rows=384, cols=1)
+  
+  # Conv4: 384 3x3 filters
+  W4 = rand(rows=384, cols=384 * 3 * 3, pdf="normal", seed=seed) * 0.01     # 384 × (384·3·3)
+  b4 = matrix(0.0, rows=384, cols=1)
+  
+  # Conv5: 256 3x3 filters
+  W5 = rand(rows=256, cols=384 * 3 * 3, pdf="normal", seed=seed) * 0.01     # 256 × (384·3·3)
+  b5 = matrix(0.0, rows=256, cols=1)
+
+  # --- Initialize batch normalization parameters for each conv layer ---
   [gamma1, beta1, ema_mean1, ema_var1] = batch_norm2d::init(96)
   [gamma2, beta2, ema_mean2, ema_var2] = batch_norm2d::init(256)
   [gamma3, beta3, ema_mean3, ema_var3] = batch_norm2d::init(384)
   [gamma4, beta4, ema_mean4, ema_var4] = batch_norm2d::init(384)
   [gamma5, beta5, ema_mean5, ema_var5] = batch_norm2d::init(256)
   
-  # Initialize fully connected layers
-  [W6, b6] = affine::init(fc_input_size, 4096, seed)  # FC1
-  [W7, b7] = affine::init(4096, 4096, seed)           # FC2
-  [W8, b8] = affine::init(4096, num_classes, seed)    # FC3 (output)
+  # --- Explicit AlexNet weight init for FC layers ---
+  # FC1: fc_input_size → 4096
+  W6 = rand(rows=fc_input_size, cols=4096, pdf="normal", seed=seed) * 0.01
+  b6 = matrix(0.0, rows=1, cols=4096)
   
-  # Scale final layer for better convergence
+  # FC2: 4096 → 4096
+  W7 = rand(rows=4096, cols=4096, pdf="normal", seed=seed) * 0.01
+  b7 = matrix(0.0, rows=1, cols=4096)
+  
+  # FC3: 4096 → num_classes (output layer)
+  W8 = rand(rows=4096, cols=num_classes, pdf="normal", seed=seed) * 0.01
+  b8 = matrix(0.0, rows=1, cols=num_classes)
+  
+  # Scale final layer for better convergence (as mentioned in your image)
   W8 = W8 / sqrt(2)
   
   # Package model with BN parameters
@@ -586,7 +714,7 @@ forward_with_bn = function(matrix[double] X, int C, int Hin, int Win,
 
   # Forward pass with batch normalization
   # Conv1 -> BN -> ReLU -> MaxPool
-  [outc1, Houtc1, Woutc1] = conv2d::forward(X, W1, b1, C, Hin, Win, 11, 11, 4, 4, 0, 0)
+  [outc1, Houtc1, Woutc1] = conv2d::forward(X, W1, b1, C, Hin, Win, 11, 11, 4, 4, 2, 2)
   [outbn1, ema_mean1_upd, ema_var1_upd, cache_mean1, cache_inv_var1] = batch_norm2d::forward(outc1, gamma1, beta1, 96, Houtc1, Woutc1, mode, ema_mean1, ema_var1, 0.99, 1e-5)
   outr1 = relu::forward(outbn1)
   [outp1, Houtp1, Woutp1] = max_pool2d::forward(outr1, 96, Houtc1, Woutc1, 3, 3, 2, 2, 0, 0)
@@ -883,6 +1011,126 @@ train_with_lars = function(matrix[double] X_train, matrix[double] Y_train,
   }
 }
 
+backward_with_bn = function(matrix[double] dOut, list[unknown] cached_out,
+                            list[unknown] model, int C, int Hin, int Win, double dropout_prob)
+    return (matrix[double] dX, list[unknown] gradients) {
+  /*
+   * Backward pass of the AlexNet-BN model (with Batch Normalization).
+   *
+   * Inputs:
+   * - dOut: Gradient w.r.t. output, of shape (N, num_classes)
+   * - cached_out: Cached outputs from forward pass
+   * - model: Model parameters (same structure as forward pass)
+   * - C, Hin, Win: Input dimensions
+   * - dropout_prob: Dropout probability used in forward pass
+   *
+   * Outputs:
+   * - dX: Gradient w.r.t. input, of shape (N, C*Hin*Win)
+   * - gradients: List of gradients for all parameters (same structure as model)
+   */
+  
+  # Extract model parameters (with BN)
+  W1 = as.matrix(model[1]); b1 = as.matrix(model[2])
+  gamma1 = as.matrix(model[3]); beta1 = as.matrix(model[4])
+  
+  W2 = as.matrix(model[7]); b2 = as.matrix(model[8])
+  gamma2 = as.matrix(model[9]); beta2 = as.matrix(model[10])
+  
+  W3 = as.matrix(model[13]); b3 = as.matrix(model[14])
+  gamma3 = as.matrix(model[15]); beta3 = as.matrix(model[16])
+  
+  W4 = as.matrix(model[19]); b4 = as.matrix(model[20])
+  gamma4 = as.matrix(model[21]); beta4 = as.matrix(model[22])
+  
+  W5 = as.matrix(model[25]); b5 = as.matrix(model[26])
+  gamma5 = as.matrix(model[27]); beta5 = as.matrix(model[28])
+  
+  W6 = as.matrix(model[31]); b6 = as.matrix(model[32])
+  W7 = as.matrix(model[33]); b7 = as.matrix(model[34])
+  W8 = as.matrix(model[35]); b8 = as.matrix(model[36])
+
+  # Extract cached outputs
+  X = as.matrix(cached_out[1])
+  outc1 = as.matrix(cached_out[2]); Houtc1 = as.scalar(cached_out[3]); Woutc1 = as.scalar(cached_out[4])
+  outbn1 = as.matrix(cached_out[5]); cache_mean1 = as.matrix(cached_out[6]); cache_inv_var1 = as.matrix(cached_out[7])
+  outr1 = as.matrix(cached_out[8])
+  outp1 = as.matrix(cached_out[9]); Houtp1 = as.scalar(cached_out[10]); Woutp1 = as.scalar(cached_out[11])
+  
+  outc2 = as.matrix(cached_out[12]); Houtc2 = as.scalar(cached_out[13]); Woutc2 = as.scalar(cached_out[14])
+  outbn2 = as.matrix(cached_out[15]); cache_mean2 = as.matrix(cached_out[16]); cache_inv_var2 = as.matrix(cached_out[17])
+  outr2 = as.matrix(cached_out[18])
+  outp2 = as.matrix(cached_out[19]); Houtp2 = as.scalar(cached_out[20]); Woutp2 = as.scalar(cached_out[21])
+  
+  outc3 = as.matrix(cached_out[22]); Houtc3 = as.scalar(cached_out[23]); Woutc3 = as.scalar(cached_out[24])
+  outbn3 = as.matrix(cached_out[25]); cache_mean3 = as.matrix(cached_out[26]); cache_inv_var3 = as.matrix(cached_out[27])
+  outr3 = as.matrix(cached_out[28])
+  
+  outc4 = as.matrix(cached_out[29]); Houtc4 = as.scalar(cached_out[30]); Woutc4 = as.scalar(cached_out[31])
+  outbn4 = as.matrix(cached_out[32]); cache_mean4 = as.matrix(cached_out[33]); cache_inv_var4 = as.matrix(cached_out[34])
+  outr4 = as.matrix(cached_out[35])
+  
+  outc5 = as.matrix(cached_out[36]); Houtc5 = as.scalar(cached_out[37]); Woutc5 = as.scalar(cached_out[38])
+  outbn5 = as.matrix(cached_out[39]); cache_mean5 = as.matrix(cached_out[40]); cache_inv_var5 = as.matrix(cached_out[41])
+  outr5 = as.matrix(cached_out[42])
+  outp5 = as.matrix(cached_out[43]); Houtp5 = as.scalar(cached_out[44]); Woutp5 = as.scalar(cached_out[45])
+  
+  outa6 = as.matrix(cached_out[46]); outr6 = as.matrix(cached_out[47])
+  outd6 = as.matrix(cached_out[48]); maskd6 = as.matrix(cached_out[49])
+  outa7 = as.matrix(cached_out[50]); outr7 = as.matrix(cached_out[51])
+  outd7 = as.matrix(cached_out[52]); maskd7 = as.matrix(cached_out[53])
+  outa8 = as.matrix(cached_out[54])
+
+  # Backward pass
+  # FC3
+  douta8 = softmax::backward(dOut, outa8)
+  [doutd7, dW8, db8] = affine::backward(douta8, outd7, W8, b8)
+  
+  # FC2
+  doutr7 = dropout::backward(doutd7, outr7, dropout_prob, maskd7)
+  douta7 = relu::backward(doutr7, outa7)
+  [doutd6, dW7, db7] = affine::backward(douta7, outd6, W7, b7)
+  
+  # FC1
+  doutr6 = dropout::backward(doutd6, outr6, dropout_prob, maskd6)
+  douta6 = relu::backward(doutr6, outa6)
+  [doutp5, dW6, db6] = affine::backward(douta6, outp5, W6, b6)
+  
+  # Conv5
+  doutr5 = max_pool2d::backward(doutp5, Houtp5, Woutp5, outr5, 256, Houtc5, Woutc5, 3, 3, 2, 2, 0, 0)
+  doutbn5 = relu::backward(doutr5, outbn5)
+  [doutc5, dgamma5, dbeta5] = batch_norm2d::backward(doutbn5, cache_mean5, cache_inv_var5, outc5, gamma5, 256, Houtc5, Woutc5, 1e-5)
+  [doutr4, dW5, db5] = conv2d::backward(doutc5, Houtc5, Woutc5, outr4, W5, b5, 384, Houtc4, Woutc4, 3, 3, 1, 1, 1, 1)
+  
+  # Conv4
+  doutbn4 = relu::backward(doutr4, outbn4)
+  [doutc4, dgamma4, dbeta4] = batch_norm2d::backward(doutbn4, cache_mean4, cache_inv_var4, outc4, gamma4, 384, Houtc4, Woutc4, 1e-5)
+  [doutr3, dW4, db4] = conv2d::backward(doutc4, Houtc4, Woutc4, outr3, W4, b4, 384, Houtc3, Woutc3, 3, 3, 1, 1, 1, 1)
+  
+  # Conv3
+  doutbn3 = relu::backward(doutr3, outbn3)
+  [doutc3, dgamma3, dbeta3] = batch_norm2d::backward(doutbn3, cache_mean3, cache_inv_var3, outc3, gamma3, 384, Houtc3, Woutc3, 1e-5)
+  [doutp2, dW3, db3] = conv2d::backward(doutc3, Houtc3, Woutc3, outp2, W3, b3, 256, Houtp2, Woutp2, 3, 3, 1, 1, 1, 1)
+  
+  # Conv2
+  doutr2 = max_pool2d::backward(doutp2, Houtp2, Woutp2, outr2, 256, Houtc2, Woutc2, 3, 3, 2, 2, 0, 0)
+  doutbn2 = relu::backward(doutr2, outbn2)
+  [doutc2, dgamma2, dbeta2] = batch_norm2d::backward(doutbn2, cache_mean2, cache_inv_var2, outc2, gamma2, 256, Houtc2, Woutc2, 1e-5)
+  [doutp1, dW2, db2] = conv2d::backward(doutc2, Houtc2, Woutc2, outp1, W2, b2, 96, Houtp1, Woutp1, 5, 5, 1, 1, 2, 2)
+  
+  # Conv1
+  doutr1 = max_pool2d::backward(doutp1, Houtp1, Woutp1, outr1, 96, Houtc1, Woutc1, 3, 3, 2, 2, 0, 0)
+  doutbn1 = relu::backward(doutr1, outbn1)
+  [doutc1, dgamma1, dbeta1] = batch_norm2d::backward(doutbn1, cache_mean1, cache_inv_var1, outc1, gamma1, 96, Houtc1, Woutc1, 1e-5)
+  [dX, dW1, db1] = conv2d::backward(doutc1, Houtc1, Woutc1, X, W1, b1, C, Hin, Win, 11, 11, 4, 4, 2, 2)
+
+  # Package gradients (with BN parameters)
+  gradients = list(dW1, db1, dgamma1, dbeta1, matrix(0, rows=nrow(dgamma1), cols=ncol(dgamma1)), matrix(0, rows=nrow(dgamma1), cols=ncol(dgamma1)),
+                   dW2, db2, dgamma2, dbeta2, matrix(0, rows=nrow(dgamma2), cols=ncol(dgamma2)), matrix(0, rows=nrow(dgamma2), cols=ncol(dgamma2)),
+                   dW3, db3, dgamma3, dbeta3, matrix(0, rows=nrow(dgamma3), cols=ncol(dgamma3)), matrix(0, rows=nrow(dgamma3), cols=ncol(dgamma3)),
+                   dW4, db4, dgamma4, dbeta4, matrix(0, rows=nrow(dgamma4), cols=ncol(dgamma4)), matrix(0, rows=nrow(dgamma4), cols=ncol(dgamma4)),
+                   dW5, db5, dgamma5, dbeta5, matrix(0, rows=nrow(dgamma5), cols=ncol(dgamma5)), matrix(0, rows=nrow(dgamma5), cols=ncol(dgamma5)),
+                   dW6, db6, dW7, db7, dW8, db8)
+}
 evaluate_with_bn = function(matrix[double] X, matrix[double] Y, int C, int Hin, int Win,
                            list[unknown] model, int batch_size)
     return (double loss, double accuracy) {

@@ -149,6 +149,7 @@ venv/*
 
 # resource optimization
 scripts/resource/output
+scripts/.claude
 *.pem
 scripts/nn/examples/mnist_data/mnist_test.csv
 scripts/nn/examples/mnist_data/mnist_train.csv
@@ -160,5 +161,5 @@ libcudnn7-dev_7.6.5.32-1+cuda10.2_amd64.deb.1
 nvidia-machine-learning-repo-ubuntu1804_1.0.0-1_amd64.deb
 nvidia-machine-learning-repo-ubuntu1804_1.0.0-1_amd64.deb.1
 index.html
-imagenet_data/imagenet_train.csv
-imagenet_data/imagenet_val.csv
+imagenet_data/
+

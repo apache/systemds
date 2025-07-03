@@ -42,11 +42,6 @@ public class RewriteSimplifyUnionDistinctTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testPrint() {
-		System.out.println("Test rewriteSimplifyUnionDistinct");
-	}
-
-	@Test
 	public void testUnionDistinctNoRewrite() {
 		testRewriteSimplifyUnionDistinct(2, false);
 	}

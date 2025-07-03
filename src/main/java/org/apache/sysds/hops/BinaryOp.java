@@ -864,6 +864,9 @@ public class BinaryOp extends MultiThreadedHop {
 			_etype = ExecType.CP;
 		}
 
+		if( op == OpOp2.GET_CATEGORICAL_MASK)
+			_etype = ExecType.CP;
+
 		//mark for recompile (forever)
 		setRequiresRecompileIfNecessary();
 		

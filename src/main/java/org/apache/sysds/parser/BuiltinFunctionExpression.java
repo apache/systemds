@@ -2013,6 +2013,11 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			else
 				raiseValidateError("The compress or decompress instruction is not allowed in dml scripts");
 			break;
+		case GET_CATEGORICAL_MASK: 
+			checkNumParameters(2);
+			checkFrameParam(getFirstExpr());
+			checkScalarParam(getSecondExpr());
+			break;
 		case QUANTIZE_COMPRESS:
 			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_QUANTIZE_COMPRESS_COMMAND) {
 				checkNumParameters(2);
@@ -2331,6 +2336,13 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 	protected void checkMatrixFrameParam(Expression e) { //always unconditional
 		if (e.getOutput().getDataType() != DataType.MATRIX && e.getOutput().getDataType() != DataType.FRAME) {
 			raiseValidateError("Expecting matrix or frame parameter for function "+ getOpCode(), false, LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
+		}
+	}
+
+	protected void checkFrameParam(Expression e) {
+		if(e.getOutput().getDataType() != DataType.FRAME) {
+			raiseValidateError("Expecting frame parameter for function " + getOpCode(), false,
+				LanguageErrorCodes.UNSUPPORTED_PARAMETERS);
 		}
 	}
 	

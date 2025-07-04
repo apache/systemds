@@ -64,18 +64,14 @@ public class BinaryFrameScalarCPInstruction extends BinaryCPInstruction {
 			// MatrixBlock ret = new MatrixBlock();
 			int nCol = f.getNumColumns();
 
-			// System.out.println(spec);
 			JSONObject jSpec = new JSONObject(spec.getStringValue());
-			// System.out.println(jSpec);
+
 			if(!jSpec.containsKey("ids") && jSpec.getBoolean("ids")) {
 				throw new DMLRuntimeException("not supported non ID based spec for get_categorical_mask");
 			}
 
 			String recode = TfMethod.RECODE.toString();
 			String dummycode = TfMethod.DUMMYCODE.toString();
-			String hashCode = TfMethod.HASH.toString();
-
-			System.out.println(jSpec.keySet());
 
 			int[] lengths = new int[nCol];
 			// assume all columns encode to at least one column.

@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
@@ -1340,5 +1341,57 @@ public class Dictionary extends ACachingMBDictionary {
 		System.arraycopy(row, 0, retV, _values.length, row.length);
 		return new Dictionary(retV);
 	}
+
+	@Override 
+	public Pair<IDictionary, int[]> sort(){
+		return sort(_values);
+	}
+
+
+	protected static Pair<IDictionary, int[]> sort(double[] vals){
+		int[] indices = new int[vals.length];
+		for(int i = 0; i < indices.length; i++){
+			indices[i]  = i;
+		} 
+
+		quicksort(indices, vals, 0, indices.length-1);
+
+		double[] sorted = new double[vals.length];
+
+		for(int i = 0; i < vals.length; i++){
+			sorted[i] = vals[indices[i]];
+		}
+
+		return new Pair<>(Dictionary.create(vals), indices);
+	}
+
+	protected static void quicksort(int[] indices, double[] values, int low, int high){
+		if (low < high) {
+            int pivotIndex = partition(indices, values, low, high);
+            quicksort(indices, values, low, pivotIndex - 1);
+            quicksort(indices, values, pivotIndex + 1, high);
+        }
+	}
+
+    static int partition(int[] indices, double[] values, int low, int high) {
+        double pivotValue = values[indices[high]];
+        int i = low - 1;
+
+        for (int j = low; j < high; j++) {
+            if (values[indices[j]] <= pivotValue) {
+                i++;
+                swap(indices, i, j);
+            }
+        }
+
+        swap(indices, i + 1, high);
+        return i + 1;
+    }
+
+    static void swap(int[] arr, int i, int j) {
+        int tmp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = tmp;
+    }
 
 }

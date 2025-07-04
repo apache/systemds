@@ -401,8 +401,9 @@ public abstract class AColGroup implements Serializable {
 	 * @param cru   The right hand side column upper
 	 * @param nRows The number of rows in this column group
 	 */
-	public void rightDecompressingMult(MatrixBlock right, MatrixBlock ret, int rl, int ru, int nRows, int crl, int cru){
-		throw new NotImplementedException("not supporting right Decompressing Multiply on class: " + this.getClass().getSimpleName());
+	public void rightDecompressingMult(MatrixBlock right, MatrixBlock ret, int rl, int ru, int nRows, int crl, int cru) {
+		throw new NotImplementedException(
+			"not supporting right Decompressing Multiply on class: " + this.getClass().getSimpleName());
 	}
 
 	/**
@@ -806,7 +807,7 @@ public abstract class AColGroup implements Serializable {
 		else
 			denseSelection(selection, points, ret, rl, ru);
 	}
-	
+
 	/**
 	 * Get an approximate sparsity of this column group
 	 * 
@@ -972,6 +973,15 @@ public abstract class AColGroup implements Serializable {
 		return splitReshape(multiplier, nRow, nColOrg);
 	}
 
+	/**
+	 * Sort the values of the column group according to double < > operations and return as another compressed group.
+	 * 
+	 * This sorting assumes that the column group is sorted independently of everything else.
+	 * 
+	 * @return The sorted group
+	 */
+	public abstract AColGroup sort();
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -981,4 +991,5 @@ public abstract class AColGroup implements Serializable {
 		sb.append(_colIndexes);
 		return sb.toString();
 	}
+
 }

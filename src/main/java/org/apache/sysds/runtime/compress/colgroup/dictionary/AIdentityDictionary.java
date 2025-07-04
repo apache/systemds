@@ -19,7 +19,9 @@
 
 package org.apache.sysds.runtime.compress.colgroup.dictionary;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.matrix.data.Pair;
 
 public abstract class AIdentityDictionary extends ACachingMBDictionary {
 	private static final long serialVersionUID = 5013713435287705877L;
@@ -73,5 +75,10 @@ public abstract class AIdentityDictionary extends ACachingMBDictionary {
 		for(int i = 0; i < defaultTuple.length; i++)
 			ret[ret.length - 1] *= defaultTuple[i];
 		return ret;
+	}
+
+	@Override 
+	public Pair<IDictionary, int[]> sort(){
+		throw new NotImplementedException();
 	}
 }

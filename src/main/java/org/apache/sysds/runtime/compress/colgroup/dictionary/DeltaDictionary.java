@@ -27,6 +27,7 @@ import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 /**
@@ -119,6 +120,11 @@ public class DeltaDictionary extends ADictionary {
 
 	@Override
 	public IDictionary clone() {
+		throw new NotImplementedException();
+	}
+
+	@Override 
+	public Pair<IDictionary, int[]> sort(){
 		throw new NotImplementedException();
 	}
 }

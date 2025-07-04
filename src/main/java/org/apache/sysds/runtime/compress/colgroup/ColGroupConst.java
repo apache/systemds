@@ -758,4 +758,9 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	protected boolean allowShallowIdentityRightMult() {
 		return true;
 	}
+
+	@Override 
+	public AColGroup sort(){
+		return this;	
+	}
 }

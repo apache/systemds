@@ -64,6 +64,7 @@ import org.apache.sysds.runtime.compress.lib.CLALibReshape;
 import org.apache.sysds.runtime.compress.lib.CLALibRexpand;
 import org.apache.sysds.runtime.compress.lib.CLALibScalar;
 import org.apache.sysds.runtime.compress.lib.CLALibSlice;
+import org.apache.sysds.runtime.compress.lib.CLALibSort;
 import org.apache.sysds.runtime.compress.lib.CLALibSquash;
 import org.apache.sysds.runtime.compress.lib.CLALibTSMM;
 import org.apache.sysds.runtime.compress.lib.CLALibTernaryOp;
@@ -845,8 +846,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock sortOperations(MatrixValue weights, MatrixBlock result, int k) {
-		MatrixBlock right = getUncompressed(weights);
-		return getUncompressed("sortOperations").sortOperations(right, result);
+		return CLALibSort.sort(this, weights, result, k);
 	}
 
 	@Override

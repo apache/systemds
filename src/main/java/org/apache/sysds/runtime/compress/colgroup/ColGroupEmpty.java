@@ -476,4 +476,9 @@ public class ColGroupEmpty extends AColGroupCompressed
 
 		return new ColGroupEmpty(combinedIndex);
 	}
+
+	@Override 
+	public AColGroup sort(){
+		return this;	
+	}
 }

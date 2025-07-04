@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
@@ -280,6 +281,11 @@ public class ColGroupUncompressedArray extends AColGroup {
 	@Override
 	public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
 		throw new UnsupportedOperationException("Unimplemented method 'splitReshape'");
+	}
+
+	@Override 
+	public AColGroup sort(){
+		throw new NotImplementedException("Unimplemented method 'sort'");
 	}
 
 }

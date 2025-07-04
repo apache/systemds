@@ -25,8 +25,11 @@ import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
 
 public abstract class AColGroupValue extends ADictBasedColGroup {
@@ -210,6 +213,36 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 	@Override
 	public void clear() {
 		counts = null;
+	}
+
+	@Override 
+	public AColGroup sort(){
+		// TODO restore support for run length encoding.
+
+		int[] counts = getCounts();
+
+		Pair<IDictionary, int[]> r = _dict.sort();
+
+		int[] newCounts = r.getValue();
+		int nRows = 0;
+		for(int i = 0; i < counts.length; i++){
+			// set the new counts to the sorted indexes.
+			newCounts[i] = counts[newCounts[i]];
+			nRows += newCounts[i];
+		}
+
+		// TODO restore support for run length encoding.
+		// This here allocates a ddc array instead.
+		AMapToData m = MapToFactory.create(nRows, counts.length);
+		int off = 0;
+		for(int i = 0; i < counts.length; i++){
+			for(int j = 0; j < newCounts[i]; j++){
+				m.set(off++, j);
+			}
+		}
+
+		return ColGroupDDC.create(_colIndexes, r.getKey(), m, newCounts);
+
 	}
 
 	@Override

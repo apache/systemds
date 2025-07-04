@@ -1102,18 +1102,20 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 
 		// find default value position.
 		// todo use binary search for minor improvements.
-		int defIdx = -1;
-		int nondefault = 0;
+		int defIdx = counts.length;
 		for(int i = 0; i < r.length; i++) {
-			if(defIdx == -1 && _dict.getValue(r[i], 0, 1) >= 0) {
+			if(_dict.getValue(r[i], 0, 1) >= 0) {
 				defIdx = i;
+				break;
 			}
-			nondefault += counts[i];
 		}
 
+
+		int nondefault = _data.size();
 		int defaultLength = _numRows - nondefault;
-		AMapToData m = MapToFactory.create(_data.size(), counts.length);
+		AMapToData m = MapToFactory.create(nondefault, counts.length);
 		int[] offsets = new int[nondefault];
+
 
 		int off = 0;
 		for(int i = 0; i < counts.length; i++) {

@@ -732,10 +732,10 @@ public class ColGroupSDCSingle extends ASDC {
 		// find default value position.
 		// todo use binary search for minor improvements.
 		final double def = _defaultTuple[0];
-		int defIdx = -1;
+		int defIdx = counts.length;
 		int nondefault = 0;
 		for(int i = 0; i < r.length; i++) {
-			if(defIdx == -1 && _dict.getValue(r[i], 0, 1) >= def) {
+			if(defIdx == counts.length && _dict.getValue(r[i], 0, 1) >= def) {
 				defIdx = i;
 			}
 			nondefault += counts[i];

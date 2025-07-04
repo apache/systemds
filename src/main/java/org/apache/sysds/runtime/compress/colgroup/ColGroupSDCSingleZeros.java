@@ -1062,10 +1062,10 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 
 		// find default value position.
 		// todo use binary search for minor improvements.
-		int defIdx = -1;
+		int defIdx = counts.length;
 		int nondefault = 0;
 		for(int i = 0; i < r.length; i++) {
-			if(defIdx == -1 && _dict.getValue(r[i], 0, 1) >= 0) {
+			if(defIdx == counts.length && _dict.getValue(r[i], 0, 1) >= 0) {
 				defIdx = i;
 			}
 			nondefault += counts[i];

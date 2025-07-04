@@ -413,6 +413,7 @@ if [ $WORKER == 1 ]; then
   print_out "#  starting Federated worker on port $PORT"
   CMD=" \
   java $SYSTEMDS_STANDALONE_OPTS \
+  --add-modules=jdk.incubator.vector \
   $LOG4JPROPFULL \
   -jar $SYSTEMDS_JAR_FILE \
   -w $PORT \
@@ -422,6 +423,7 @@ elif [ "$FEDMONITORING" == 1 ]; then
   print_out "#  starting Federated backend monitoring on port $PORT"
   CMD=" \
   java $SYSTEMDS_STANDALONE_OPTS \
+  --add-modules=jdk.incubator.vector \
   $LOG4JPROPFULL \
   -jar $SYSTEMDS_JAR_FILE \
   -fedMonitoring $PORT \
@@ -433,6 +435,7 @@ elif [ $SYSDS_DISTRIBUTED == 0 ]; then
   CMD=" \
   java $SYSTEMDS_STANDALONE_OPTS \
   $LOG4JPROPFULL \
+  --add-modules=jdk.incubator.vector \
   -jar $SYSTEMDS_JAR_FILE \
   -f $SCRIPT_FILE \
   -exec $SYSDS_EXEC_MODE \
@@ -442,6 +445,7 @@ else
   print_out "#  Running script $SCRIPT_FILE distributed with opts: $*"
   CMD=" \
   spark-submit $SYSTEMDS_DISTRIBUTED_OPTS \
+  --add-modules=jdk.incubator.vector \
   $SYSTEMDS_JAR_FILE \
   -f $SCRIPT_FILE \
   -exec $SYSDS_EXEC_MODE \

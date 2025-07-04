@@ -29,8 +29,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 
 from systemds.scuro.modality.type import ModalityType
-from systemds.scuro.aligner.dr_search import DRSearch
-from systemds.scuro.aligner.task import Task
+from systemds.scuro.drsearch.dr_search import DRSearch
+from systemds.scuro.drsearch.task import Task
 from systemds.scuro.models.model import Model
 from systemds.scuro.representations.average import Average
 from systemds.scuro.representations.bert import Bert

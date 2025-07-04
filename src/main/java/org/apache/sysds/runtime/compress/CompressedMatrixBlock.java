@@ -1236,6 +1236,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock pickValues(MatrixValue quantiles, MatrixValue ret) {
+		LOG.error(this);
 		return getUncompressed("pickValues").pickValues(quantiles, ret);
 	}
 

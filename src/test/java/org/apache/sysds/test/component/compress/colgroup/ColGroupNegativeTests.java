@@ -777,5 +777,11 @@ public class ColGroupNegativeTests {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException("Unimplemented method 'splitReshapePushDown'");
 		}
+
+		@Override
+		public AColGroup sort() {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'sort'");
+		}
 	}
 }

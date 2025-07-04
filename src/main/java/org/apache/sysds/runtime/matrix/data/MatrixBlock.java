@@ -4763,7 +4763,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * @param ret The result matrix
 	 * @return The result matrix
 	 */
-	public MatrixBlock pickValues(MatrixValue quantiles, MatrixValue ret) {
+	public final MatrixBlock pickValues(MatrixValue quantiles, MatrixValue ret) {
 	
 		MatrixBlock qs=checkType(quantiles);
 		

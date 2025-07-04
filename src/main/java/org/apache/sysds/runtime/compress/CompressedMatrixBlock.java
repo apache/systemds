@@ -1235,11 +1235,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public MatrixBlock pickValues(MatrixValue quantiles, MatrixValue ret) {
-		return getUncompressed("pickValues").pickValues(quantiles, ret);
-	}
-
-	@Override
 	public double sumWeightForQuantile() {
 		return getUncompressed("sumWeightForQuantile").sumWeightForQuantile();
 	}

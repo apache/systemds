@@ -1,5 +1,5 @@
 # create an input matrix
-input_matrix = round(rand(rows = 5, cols = 5, min = 1, max = 5))
+input_matrix = round(rand(rows = 100, cols = 100, min = 1, max = 50))
 
 # load functions
 source("scripts/builtin/raGroupby.dml") as ra_old
@@ -32,20 +32,12 @@ for(i in 1:nrow(old_func)){
     }
 }
 
-print("The amount of rows in the old matrix")
-print(nrow(old_func))
 
-print("The amount of col in the old matrix")
-print(ncol(old_func))
+print("This is the input matrix")
+print(toString(input_matrix))
 
-print("The amount of rows * columns in the old matrix")
-print(ncol(old_func)*nrow(old_func))
+print("This is the old func")
+print(toString(old_func))
 
-print("The amount of rows in the new matrix")
-print(nrow(new_func))
-
-print("The amount of col in the new matrix")
-print(ncol(new_func))
-
-print("The amount of rows * columns in the new matrix")
-print(ncol(new_func)*nrow(new_func))
+print("This is the new func")
+print(toString(new_func))

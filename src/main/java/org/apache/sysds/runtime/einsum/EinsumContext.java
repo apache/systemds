@@ -26,31 +26,34 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 
+
 public class EinsumContext {
+    public enum ContractDimensions {
+        CONTRACT_LEFT,
+        CONTRACT_RIGHT,
+        CONTRACT_BOTH,
+    }
     public Integer outRows;
     public Integer outCols;
     public Character outChar1;
     public Character outChar2;
-    public HashMap<Character, Integer> charToDimensionSizeInt;
+    public HashMap<Character, Integer> charToDimensionSize;
     public String equationString;
     public boolean[] diagonalInputs;
     public HashSet<Character> summingChars;
     public HashSet<Character> contractDimsSet;
-    public static final int CONTRACT_LEFT = 1;
-    public static final int CONTRACT_RIGHT = 2;
-    public static final int CONTRACT_BOTH = 3;
-    public int[] contractDims;
-    public ArrayList<String> newEquationStringSplit;
-    public HashMap<Character, ArrayList<Integer>> partsCharactersToIndices; // for each character, this tells in which inputs it appears
+    public ContractDimensions[] contractDims;
+    public ArrayList<String> newEquationStringInputsSplit;
+    public HashMap<Character, ArrayList<Integer>> characterAppearanceIndexes; // for each character, this tells in which inputs it appears
 
     private EinsumContext(){};
     public static EinsumContext getEinsumContext(String eqStr, ArrayList<MatrixBlock> inputs){
         EinsumContext res = new EinsumContext();
 
         res.equationString = eqStr;
-        res.charToDimensionSizeInt  = new HashMap<Character, Integer>();
+        res.charToDimensionSize = new HashMap<Character, Integer>();
         HashSet<Character> summingChars = new HashSet<>();
-        int[] contractDims = new int[inputs.size()];
+        ContractDimensions[] contractDims = new ContractDimensions[inputs.size()];
         boolean[] diagonalInputs = new boolean[inputs.size()]; // all false by default
         HashSet<Character> contractDimsSet = new HashSet();
         HashMap<Character, ArrayList<Integer>> partsCharactersToIndices = new HashMap<>();
@@ -58,7 +61,7 @@ public class EinsumContext {
 
         Iterator<MatrixBlock> it = inputs.iterator();
         MatrixBlock curArr = it.next();
-        int arrSizeIterator=0;
+        int arrSizeIterator = 0;
         int arrayIterator = 0;
         int i;
         // first iteration through string: collect information on character-size and what characters are summing characters
@@ -74,17 +77,17 @@ public class EinsumContext {
                 arrSizeIterator = 0;
             }
             else{
-                if (res.charToDimensionSizeInt.containsKey(c)) { // sanity check if dims match, this is already checked at validation
-                    if(arrSizeIterator == 0 && res.charToDimensionSizeInt.get(c) != curArr.getNumRows())
+                if (res.charToDimensionSize.containsKey(c)) { // sanity check if dims match, this is already checked at validation
+                    if(arrSizeIterator == 0 && res.charToDimensionSize.get(c) != curArr.getNumRows())
                         throw new RuntimeException("Einsum: character "+c+" has multiple conflicting sizes");
-                    else if(arrSizeIterator == 1 && res.charToDimensionSizeInt.get(c) != curArr.getNumColumns())
+                    else if(arrSizeIterator == 1 && res.charToDimensionSize.get(c) != curArr.getNumColumns())
                         throw new RuntimeException("Einsum: character "+c+" has multiple conflicting sizes");
                     summingChars.add(c);
                 } else {
                     if(arrSizeIterator == 0)
-                        res.charToDimensionSizeInt.put(c, curArr.getNumRows());
+                        res.charToDimensionSize.put(c, curArr.getNumRows());
                     else if(arrSizeIterator == 1)
-                        res.charToDimensionSizeInt.put(c, curArr.getNumColumns());
+                        res.charToDimensionSize.put(c, curArr.getNumColumns());
                 }
 
                 arrSizeIterator++;
@@ -100,8 +103,8 @@ public class EinsumContext {
 
         Character outChar1 = numOfRemainingChars > 0 ? eqStr.charAt(i) : null;
         Character outChar2 = numOfRemainingChars > 1 ? eqStr.charAt(i+1) : null;
-        res.outRows=(numOfRemainingChars > 0 ? res.charToDimensionSizeInt.get(outChar1) : 1);
-        res.outCols=(numOfRemainingChars > 1 ? res.charToDimensionSizeInt.get(outChar2) : 1);
+        res.outRows=(numOfRemainingChars > 0 ? res.charToDimensionSize.get(outChar1) : 1);
+        res.outCols=(numOfRemainingChars > 1 ? res.charToDimensionSize.get(outChar2) : 1);
 
         arrayIterator=0;
         // second iteration through string: collect remaining information
@@ -128,7 +131,7 @@ public class EinsumContext {
             }
             else {
                 contractDimsSet.add(c);
-                contractDims[arrayIterator] = CONTRACT_LEFT;
+                contractDims[arrayIterator] = ContractDimensions.CONTRACT_LEFT;
             }
 
             if(i + 1 < eqStr.length()) { // process next character together
@@ -139,7 +142,7 @@ public class EinsumContext {
 
                 if (c2 == c){
                     diagonalInputs[arrayIterator] = true;
-                    if (contractDims[arrayIterator] == CONTRACT_LEFT) contractDims[arrayIterator] = CONTRACT_BOTH;
+                    if (contractDims[arrayIterator] == ContractDimensions.CONTRACT_LEFT) contractDims[arrayIterator] = ContractDimensions.CONTRACT_BOTH;
                 }
                 else{
                     if(summingChars.contains(c2)) {
@@ -153,7 +156,7 @@ public class EinsumContext {
                     }
                     else {
                         contractDimsSet.add(c2);
-                        contractDims[arrayIterator] += CONTRACT_RIGHT;
+                        contractDims[arrayIterator] = contractDims[arrayIterator] == ContractDimensions.CONTRACT_LEFT ? ContractDimensions.CONTRACT_BOTH : ContractDimensions.CONTRACT_RIGHT;
                     }
                 }
             }
@@ -167,8 +170,8 @@ public class EinsumContext {
         res.summingChars = summingChars;
         res.outChar1 = outChar1;
         res.outChar2 = outChar2;
-        res.newEquationStringSplit = newEquationStringSplit;
-        res.partsCharactersToIndices = partsCharactersToIndices;
+        res.newEquationStringInputsSplit = newEquationStringSplit;
+        res.characterAppearanceIndexes = partsCharactersToIndices;
         return res;
     }
 }

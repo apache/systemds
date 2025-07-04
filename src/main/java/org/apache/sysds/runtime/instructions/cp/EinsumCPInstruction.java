@@ -87,9 +87,9 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 
 		if( LOG.isDebugEnabled() ) LOG.trace("outrows:"+einc.outRows+", outcols:"+einc.outCols);
 
-		ArrayList<String> inputsChars = einc.newEquationStringSplit;
+		ArrayList<String> inputsChars = einc.newEquationStringInputsSplit;
 
-		if(LOG.isTraceEnabled()) LOG.trace(String.join(",",einc.newEquationStringSplit));
+		if(LOG.isTraceEnabled()) LOG.trace(String.join(",",einc.newEquationStringInputsSplit));
 
 		contractDimensionsAndComputeDiagonals(einc, inputs);
 
@@ -102,8 +102,8 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			}
 		}
 
-		if(LOG.isTraceEnabled()) for(Character c : einc.partsCharactersToIndices.keySet()){
-			ArrayList<Integer> a = einc.partsCharactersToIndices.get(c);
+		if(LOG.isTraceEnabled()) for(Character c : einc.characterAppearanceIndexes.keySet()){
+			ArrayList<Integer> a = einc.characterAppearanceIndexes.get(c);
 			LOG.trace(c+" count= "+a.size());
 		}
 
@@ -192,7 +192,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			ec.setMatrixOutput(output.getName(), res);
 		}
 
-		else {
+		else { // if (needToDoCellTemplate)
 			ArrayList<MatrixBlock> mbs = new ArrayList<>();
 			ArrayList<String> chars = new ArrayList<>();
 			for (int i = 0; i < inputs.size(); i++) {
@@ -203,11 +203,11 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 				}
 			}
 			ArrayList summingChars = new ArrayList();
-			for (Character c : einc.partsCharactersToIndices.keySet()) {
+			for (Character c : einc.characterAppearanceIndexes.keySet()) {
 				if (c != einc.outChar1 && c != einc.outChar2) summingChars.add(c);
 			}
 
-			MatrixBlock res = computeCellSummation(mbs, chars, resultString, einc.charToDimensionSizeInt, summingChars, einc.outRows, einc.outCols);
+			MatrixBlock res = computeCellSummation(mbs, chars, resultString, einc.charToDimensionSize, summingChars, einc.outRows, einc.outCols);
 
 			if (einc.outRows == 1 && einc.outCols == 1)
 				ec.setScalarOutput(output.getName(), new DoubleObject(res.get(0, 0)));
@@ -226,28 +226,31 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 				ReorgOperator op = new ReorgOperator(DiagIndex.getDiagIndexFnObject());
 				inputs.set(i, inputs.get(i).reorgOperations(op, new MatrixBlock(),0,0,0));
 			}
+			if (einc.contractDims[i] == null) continue;
 			switch (einc.contractDims[i]){
-				case EinsumContext.CONTRACT_BOTH: {
+				case CONTRACT_BOTH: {
 					AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), _numThreads);
 					MatrixBlock res = new MatrixBlock(1, 1, false);
 					inputs.get(i).aggregateUnaryOperations(aggun, res, 0, null);
 					inputs.set(i, res);
 					break;
 				}
-				case EinsumContext.CONTRACT_RIGHT: {
+				case CONTRACT_RIGHT: {
 					AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), _numThreads);
 					MatrixBlock res = new MatrixBlock(inputs.get(i).getNumRows(), 1, false);
 					inputs.get(i).aggregateUnaryOperations(aggun, res, 0, null);
 					inputs.set(i, res);
 					break;
 				}
-				case EinsumContext.CONTRACT_LEFT: {
+				case CONTRACT_LEFT: {
 					AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), _numThreads);
 					MatrixBlock res = new MatrixBlock(inputs.get(i).getNumColumns(), 1, false);
 					inputs.get(i).aggregateUnaryOperations(aggun, res, 0, null);
 					inputs.set(i, res);
 					break;
 				}
+				default:
+					break;
 			}
 		}
 	}
@@ -263,10 +266,10 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		boolean anyCouldNotDo;
 		boolean didAnything = false; // maybe multiplication will make it summable
 		do {
-			anyCouldNotDo = sumCharactersWherePossible(einc.partsCharactersToIndices, inputs, einc.newEquationStringSplit, einc.outChar1, einc.outChar2);
+			anyCouldNotDo = sumCharactersWherePossible(einc.characterAppearanceIndexes, inputs, einc.newEquationStringInputsSplit, einc.outChar1, einc.outChar2);
 			didAnything = false;
-			if(einc.newEquationStringSplit.stream().filter(Objects::nonNull).count() > 1)
-				didAnything = multiplyTerms(einc.partsCharactersToIndices, inputs, einc.newEquationStringSplit, einc.outChar1, einc.outChar2);
+			if(einc.newEquationStringInputsSplit.stream().filter(Objects::nonNull).count() > 1)
+				didAnything = multiplyTerms(einc.characterAppearanceIndexes, inputs, einc.newEquationStringInputsSplit, einc.outChar1, einc.outChar2);
 		}
 		while(didAnything);
 
@@ -341,7 +344,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 
 	// returns true if left with summation with more than 2 inputs
 	private boolean sumCharactersWherePossible(HashMap<Character, ArrayList<Integer>> partsCharactersToIndices, ArrayList<MatrixBlock> inputs, ArrayList<String> inputsChars, Character outChar1, Character outChar2) {
-		boolean anyCouldNotDo = false;
+		boolean anyCouldNotDo;
 
 		while (true) {
 			List<Integer> toSum = null;

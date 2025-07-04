@@ -844,7 +844,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public MatrixBlock sortOperations(MatrixValue weights, MatrixBlock result) {
+	public MatrixBlock sortOperations(MatrixValue weights, MatrixBlock result, int k) {
 		MatrixBlock right = getUncompressed(weights);
 		return getUncompressed("sortOperations").sortOperations(right, result);
 	}

@@ -4649,7 +4649,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return sortOperations(weights, null);
 	}
 
-	public MatrixBlock sortOperations(MatrixValue weights, MatrixBlock result) {
+	public final MatrixBlock sortOperations(MatrixValue weights, MatrixBlock result) {
 		return sortOperations(weights, result, 1);
 	}
 

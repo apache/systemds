@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.instructions.cp;
+package org.apache.sysds.runtime.einsum;
 
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 

@@ -26,6 +26,7 @@ import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.Nary;
+import org.apache.sysds.runtime.einsum.EinsumEquationValidator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
@@ -236,21 +237,12 @@ public class NaryOp extends Hop {
 				setDim2(1);
 				break;
 			case EINSUM:
-				String eqString = ((LiteralOp) _input.get(0)).getStringValue();
-				if (eqString.charAt(eqString.length()-1)=='>'){
-					setDataType(DataType.SCALAR);
-					setDim1(0);
-					setDim2(0);
-					break;
-				}
-				String outStr = eqString.split("->")[1];
-				int count = 0;
-				for (int i = 0; i < outStr.length(); i++){
-					if(outStr.charAt(i) != ' ') count++;
-				}
-				// not true: todo later - set correct out size
-				setDim1( HopRewriteUtils.getMaxInputDim(this, true));
-				setDim2(count==1 ? 1 : HopRewriteUtils.getMaxInputDim(this, false));
+				String equationString = ((LiteralOp) _input.get(0)).getStringValue();
+				var dims = EinsumEquationValidator.validateEinsumEquationAndReturnDimensions(equationString, this.getInput().subList(1, this.getInput().size()));
+
+				setDim1(dims.getLeft());
+				setDim2(dims.getMiddle());
+				setDataType(dims.getRight());
 				break;
 			case PRINTF:
 			case EVAL:

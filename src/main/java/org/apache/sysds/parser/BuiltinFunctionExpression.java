@@ -24,7 +24,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.Iterator;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.lang3.ArrayUtils;
@@ -37,6 +36,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.parser.LanguageException.LanguageErrorCodes;
+import org.apache.sysds.runtime.einsum.EinsumEquationValidator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DnnUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -2111,13 +2111,10 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			raiseValidateError("Einsum: first argument has to be equation str", false,
 					LanguageErrorCodes.INVALID_PARAMETERS);
 
-		String eq_string = ((StringIdentifier)getFirstExpr()).getValue();
+		String equationString = ((StringIdentifier)getFirstExpr()).getValue();
 
-		if (eq_string.length() == 0) raiseValidateError("Einsum: equation str too short", false, LanguageErrorCodes.INVALID_PARAMETERS);
-		if (eq_string.charAt(0) == '-' || eq_string.charAt(0) == ',') raiseValidateError("Einsum: equation str invalid", false, LanguageErrorCodes.INVALID_PARAMETERS);
-
-		String[] eqStringParts = eq_string.split("->"); // length 2 if "...->..." , length 1 if "...->"
-		boolean isResultScalar = eqStringParts.length == 1;
+		if (equationString.length() == 0) raiseValidateError("Einsum: equation str too short", false, LanguageErrorCodes.INVALID_PARAMETERS);
+		if (equationString.charAt(0) == '-' || equationString.charAt(0) == ',') raiseValidateError("Einsum: equation str invalid", false, LanguageErrorCodes.INVALID_PARAMETERS);
 
 		Expression[] expressions = getAllExpr();
 		boolean allDimsKnown = true;
@@ -2132,110 +2129,20 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			matrixBlocks.add((expressions[i].getOutput()));
 		}
 
-		StringBuilder newEqString = new StringBuilder();
+		if(allDimsKnown){
+			var dims = EinsumEquationValidator.validateEinsumEquationAndReturnDimensions(equationString, matrixBlocks);
 
-		if(allDimsKnown) { // validate dimension sizes as well
-			HashMap<Character, Long> charToDimensionSize = new HashMap<>();
-			Iterator<Identifier> it = matrixBlocks.iterator();
-			Identifier currArr = it.next();
-			int arrSizeIterator = 0;
-			int numberOfMatrices = 1;
-			for (int i = 0; i < eqStringParts[0].length(); i++) {
-				char c = eq_string.charAt(i);
-				if(c==' ') continue;
-				newEqString.append(c);
-				if(c==','){
-					if(!it.hasNext())
-						raiseValidateError("Einsum: Provided less operands than specified in equation str",
-								false, LanguageErrorCodes.INVALID_PARAMETERS);
-					currArr = it.next();
-					arrSizeIterator = 0;
-					numberOfMatrices++;
-				} else{
-					long thisCharDimension = arrSizeIterator == 0 ? currArr.getDim1() : currArr.getDim2();
-					if (charToDimensionSize.containsKey(c)){
-						if (charToDimensionSize.get(c) != thisCharDimension)
-							raiseValidateError("Einsum: Character '" + c + "' expected to be dim " + charToDimensionSize.get(c) + ", but found " + thisCharDimension,
-									false, LanguageErrorCodes.INVALID_PARAMETERS);
-					}else{
-						charToDimensionSize.put(c, thisCharDimension);
-					}
-					arrSizeIterator++;
-				}
-			}
-			if (getAllExpr().length - 1 > numberOfMatrices)
-				raiseValidateError("Einsum: Provided more operands than specified in equation str",
-						false, LanguageErrorCodes.INVALID_PARAMETERS);
-			newEqString.append("->");
+			output.setDataType(dims.getRight());
+			output.setDimensions(dims.getLeft(), dims.getMiddle());
+		}else{
+			DataType dataType = EinsumEquationValidator.validateEinsumEquationNoDimensions(equationString, _args.length - 1);
 
-			if (isResultScalar){
-				output.setDataType(DataType.SCALAR);
-				output.setDimensions(-1, -1);
-			}else {
-				int numberOfOutDimensions = 0;
-				Character dim1Char = null;
-				long dim1 = 1;
-				long dim2 = 1;
-				for (int i = 0; i < eqStringParts[1].length(); i++) {
-					char c = eqStringParts[1].charAt(i);
-					if (c == ' ') continue;
-					newEqString.append(c);
-					if (numberOfOutDimensions == 0) {
-						dim1Char = c;
-						dim1 = charToDimensionSize.get(c);
-					} else {
-						if(c==dim1Char) raiseValidateError("Einsum: output character "+c+" provided multiple times",false, LanguageErrorCodes.INVALID_PARAMETERS);
-						dim2 = charToDimensionSize.get(c);
-					}
-					numberOfOutDimensions++;
-				}
-				if (numberOfOutDimensions > 2) {
-					raiseValidateError("Einsum: output matrices with with no. dims > 2 not supported",false, LanguageErrorCodes.INVALID_PARAMETERS);
-				} else {
-					output.setDataType(DataType.MATRIX);
-					output.setDimensions(dim1, dim2);
-				}
-			}
-		} else { // dimensions unknown
-			int numberOfMatrices = 1;
-			for (int i = 0; i < eqStringParts[0].length(); i++) {
-				char c = eqStringParts[0].charAt(i);
-				if(c == ' ') continue;
-				newEqString.append(c);
-				if(c == ',')
-					numberOfMatrices++;
-			}
-			checkNumParameters(numberOfMatrices+1);
-			newEqString.append("->");
-
-			if(isResultScalar){
-				output.setDataType(DataType.SCALAR);
-				output.setDimensions(-1, -1);
-			}else {
-				int numberOfDimensions = 0;
-				Character dim1Char = null;
-				for (int i = 0; i < eqStringParts[1].length(); i++) {
-					char c = eqStringParts[i].charAt(i);
-					if(c == ' ') continue;
-					newEqString.append(c);
-					numberOfDimensions++;
-					if (numberOfDimensions == 1 && c == dim1Char)
-						raiseValidateError("Einsum: output character "+c+" provided multiple times",false, LanguageErrorCodes.INVALID_PARAMETERS);
-					dim1Char = c;
-				}
-
-				if (numberOfDimensions > 2) {
-					raiseValidateError("Einsum: output matrices with with no. dims > 2 not supported",
-							false, LanguageErrorCodes.INVALID_PARAMETERS);
-				} else {
-					output.setDataType(DataType.MATRIX);
-					output.setDimensions(-1, -1);
-				}
-			}
+			output.setDataType(dataType);
+			output.setDimensions(-1l, -1l);
 		}
+
 		output.setValueType(ValueType.FP64);
 		output.setBlocksize(getSecondExpr().getOutput().getBlocksize());
-		((StringIdentifier) getFirstExpr()).setValue(newEqString.toString());
 	}
 
 	private void setBinaryOutputProperties(DataIdentifier output) {

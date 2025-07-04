@@ -37,6 +37,7 @@ import org.apache.sysds.hops.codegen.cplan.CNodeRow;
 import org.apache.sysds.runtime.codegen.*;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.einsum.EinsumContext;
 import org.apache.sysds.runtime.functionobjects.*;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -46,8 +47,6 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 
 import java.util.*;
-
-import static org.apache.sysds.runtime.instructions.cp.EinsumContext.getEinsumContext;
 
 public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 	public static boolean FORCE_CELL_TPL = false;
@@ -81,7 +80,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			}
 		}
 
-		EinsumContext einc = getEinsumContext(eqStr, inputs);
+		EinsumContext einc = EinsumContext.getEinsumContext(eqStr, inputs);
 
 		this.einc = einc;
 		String resultString = einc.outChar2 != null ? String.valueOf(einc.outChar1) + einc.outChar2 : einc.outChar1 != null ? String.valueOf(einc.outChar1) : null;

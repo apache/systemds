@@ -27,8 +27,6 @@ import java.math.MathContext;
 import java.util.Arrays;
 import java.util.Set;
 
-import jdk.incubator.vector.DoubleVector;
-import jdk.incubator.vector.VectorSpecies;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ArrayIndex;
@@ -60,6 +58,9 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
+
+import jdk.incubator.vector.DoubleVector;
+import jdk.incubator.vector.VectorSpecies;
 
 public class MatrixBlockDictionary extends ADictionary {
 
@@ -2799,6 +2800,15 @@ public class MatrixBlockDictionary extends ADictionary {
 				ret[offOut + sIdx[k]] += v * sVals[k];
 			}
 		}
+	}
+
+	@Override 
+	public int[] sort(){
+		if(_data.getNumColumns() > 1)
+			throw new RuntimeException("Not supported sort on multicolumn dictionaries");
+		_data.sparseToDense();
+
+		return Dictionary.sort(_data.getDenseBlockValues());
 	}
 
 }

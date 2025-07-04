@@ -740,4 +740,8 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 		throw new NotImplementedException("Unimplemented method 'splitReshape'");
 	}
 
+	@Override 
+	public AColGroup sort(){
+		throw new NotImplementedException("Unimplemented method 'sort'");
+	}
 }

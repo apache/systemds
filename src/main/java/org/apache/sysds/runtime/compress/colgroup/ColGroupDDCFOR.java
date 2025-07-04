@@ -546,6 +546,27 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 		return false;
 	}
 
+
+	@Override
+	public AColGroup sort() {
+		// TODO restore support for run length encoding.
+
+		int[] counts = getCounts();
+		// get the sort index
+		int[] r = _dict.sort();
+
+		AMapToData m = MapToFactory.create(_data.size(), counts.length);
+		int off = 0;
+		for(int i = 0; i < counts.length; i++) {
+			for(int j = 0; j < counts[r[i]]; j++) {
+				m.set(off++, r[i]);
+			}
+		}
+
+		return ColGroupDDCFOR.create(_colIndexes, _dict, m, counts, _reference);
+
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

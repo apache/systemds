@@ -621,6 +621,51 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup, IFrameOfRef
 	}
 
 	@Override
+	public AColGroup sort() {
+		if(getNumCols() > 1)
+			throw new NotImplementedException();
+		// TODO restore support for run length encoding.
+
+		final int[] counts = getCounts();
+		// get the sort index
+		final int[] r = _dict.sort();
+
+		// find default value position.
+		// todo use binary search for minor improvements.
+		int defIdx = counts.length;
+		for(int i = 0; i < r.length; i++) {
+			if( _dict.getValue(r[i], 0, 1) >= 0) {
+				defIdx = i;
+				break;
+			}
+		}
+
+		int nondefault = _data.size();
+		int defaultLength = _numRows - nondefault;
+		AMapToData m = MapToFactory.create(nondefault, counts.length);
+		int[] offsets = new int[nondefault];
+
+		int off = 0;
+		for(int i = 0; i < counts.length; i++) {
+			if(i < defIdx) {
+				for(int j = 0; j < counts[r[i]]; j++) {
+					offsets[off] = off;
+					m.set(off++, r[i]);
+				}
+			}
+			else {// if( i >= defIdx){
+				for(int j = 0; j < counts[r[i]]; j++) {
+					offsets[off] = off + defaultLength;
+					m.set(off++, r[i]);
+				}
+			}
+		}
+
+		AOffset o = OffsetFactory.createOffset(offsets);
+		return ColGroupSDCFOR.create(_colIndexes, _numRows, _dict, o, m, counts, _reference);
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());

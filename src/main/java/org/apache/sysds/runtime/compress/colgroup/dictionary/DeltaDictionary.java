@@ -121,4 +121,9 @@ public class DeltaDictionary extends ADictionary {
 	public IDictionary clone() {
 		throw new NotImplementedException();
 	}
+
+	@Override 
+	public int[] sort(){
+		throw new NotImplementedException();
+	}
 }

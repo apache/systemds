@@ -607,7 +607,6 @@ public class StringArray extends Array<String> {
 
 	private static double getAsDouble(String s) {
 		try {
-
 			return DoubleArray.parseDouble(s);
 		}
 		catch(Exception e) {
@@ -617,7 +616,8 @@ public class StringArray extends Array<String> {
 			else if(ls.equals("false") || ls.equals("f"))
 				return 0;
 			else
-				throw new DMLRuntimeException("Unable to change to double: " + s, e);
+				throw e; // for efficiency
+				// throw new DMLRuntimeException("Unable to change to double: " + s, e);
 		}
 	}
 

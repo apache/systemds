@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
@@ -46,12 +47,12 @@ public class DecoderRecode extends Decoder
 	private static final long serialVersionUID = -3784249774608228805L;
 
 	private HashMap<Long, Object>[] _rcMaps = null;
-	private Object[][] _rcMapsDirect = null;
+	// private Object[][] _rcMapsDirect = null;
 	private boolean _onOut = false;
 
-	public DecoderRecode() {
-		super(null, null);
-	}
+	// public DecoderRecode() {
+	// 	super(null, null);
+	// }
 
 	protected DecoderRecode(ValueType[] schema, boolean onOut, int[] rcCols) {
 		super(schema, rcCols);
@@ -59,8 +60,10 @@ public class DecoderRecode extends Decoder
 	}
 	
 	public Object getRcMapValue(int i, long key) {
-		return (_rcMapsDirect != null) ?
-			_rcMapsDirect[i][(int)key-1] : _rcMaps[i].get(key);
+		// LOG.error(_rcMapsDirect);
+		// return (_rcMapsDirect != null) ?
+			// _rcMapsDirect[i][(int)key-1] :
+		return _rcMaps[i].get(key);
 	}
 
 	@Override
@@ -129,27 +132,33 @@ public class DecoderRecode extends Decoder
 		for( int j=0; j<_colList.length; j++ ) {
 			HashMap<Long, Object> map = new HashMap<>();
 			for( int i=0; i<meta.getNumRows(); i++ ) {
-				if( meta.get(i, _colList[j]-1)==null )
-					break; //reached end of recode map
-				String[] tmp = ColumnEncoderRecode.splitRecodeMapEntry(meta.get(i, _colList[j]-1).toString());
-				Object obj = UtilFunctions.stringToObject(_schema[_colList[j]-1], tmp[0]);
-				long lval = Long.parseLong(tmp[1]);
-				map.put(lval, obj);
-				max[j] = Math.max(lval, max[j]);
+				try{
+
+					if( meta.get(i, _colList[j]-1)==null )
+						break; //reached end of recode map
+					String[] tmp = ColumnEncoderRecode.splitRecodeMapEntry(meta.get(i, _colList[j]-1).toString());
+					Object obj = UtilFunctions.stringToObject(_schema[_colList[j]-1], tmp[0]);
+					long lval = Long.parseLong(tmp[1]);
+					map.put(lval, obj);
+					max[j] = Math.max(lval, max[j]);
+				}
+				catch(Exception e){
+					throw new DMLRuntimeException("Failed to reinitialize recode map from: " + (meta.getColumn(_colList[j]-1)), e);
+				}
 			}
 			_rcMaps[j] = map;
 		}
 		
 		//convert to direct lookup arrays
-		if( Arrays.stream(max).allMatch(v -> v < Integer.MAX_VALUE) ) {
-			_rcMapsDirect = new Object[_rcMaps.length][];
-			for( int i=0; i<_rcMaps.length; i++ ) {
-				Object[] arr = new Object[(int)max[i]];
-				for(Entry<Long,Object> e1 : _rcMaps[i].entrySet())
-					arr[e1.getKey().intValue()-1] = e1.getValue();
-				_rcMapsDirect[i] = arr;
-			}
-		}
+		// if( Arrays.stream(max).allMatch(v -> v < Integer.MAX_VALUE) ) {
+		// 	_rcMapsDirect = new Object[_rcMaps.length][];
+		// 	for( int i=0; i<_rcMaps.length; i++ ) {
+		// 		Object[] arr = new Object[(int)max[i]];
+		// 		for(Entry<Long,Object> e1 : _rcMaps[i].entrySet())
+		// 			arr[e1.getKey().intValue()-1] = e1.getValue();
+		// 		_rcMapsDirect[i] = arr;
+		// 	}
+		// }
 	}
 	
 	/**

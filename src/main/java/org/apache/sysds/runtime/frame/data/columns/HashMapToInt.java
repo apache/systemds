@@ -174,6 +174,29 @@ public class HashMapToInt<K> implements Map<K, Integer>, Serializable, Cloneable
 
 	}
 
+
+	public int putIfAbsentReturnValHash(K key, int value) {
+
+		if(key == null) {
+			if(nullV == -1) {
+				size++;
+				nullV = value;
+				return -1;
+			}
+			else
+				return nullV;
+		}
+		else {
+			final int ix = hash(key);
+			Node<K> b = buckets[ix];
+			if(b == null)
+				return createBucketReturnVal(ix, key, value);
+			else
+				return putIfAbsentBucketReturnval(ix, key, value);
+		}
+
+	}
+
 	private int putIfAbsentBucket(int ix, K key, int value) {
 		Node<K> b = buckets[ix];
 		while(true) {

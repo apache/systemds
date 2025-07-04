@@ -2817,6 +2817,9 @@ public class DMLTranslator
 				DataType.MATRIX, target.getValueType(), AggOp.COUNT_DISTINCT, Direction.Col, expr);
 			break;
 
+		case GET_CATEGORICAL_MASK:
+			currBuiltinOp = new BinaryOp(target.getName(), DataType.MATRIX, target.getValueType(), OpOp2.GET_CATEGORICAL_MASK,  expr, expr2);
+			break;
 		default:
 			throw new ParseException("Unsupported builtin function type: "+source.getOpCode());
 		}

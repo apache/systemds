@@ -1051,4 +1051,14 @@ public interface IDictionary {
 	 * @return The nonzero count of each column in the dictionary.
 	 */
 	public int[] countNNZZeroColumns(int[] counts);
+
+	/**
+	 * Sort the values of this dictionary via an index of how the values mapped previously.
+	 * 
+	 * In practice this design means we can reuse the previous dictionary for the resulting column group
+	 * 
+	 * @return The sorted index.
+	 */
+	public int[] sort();
+
 }

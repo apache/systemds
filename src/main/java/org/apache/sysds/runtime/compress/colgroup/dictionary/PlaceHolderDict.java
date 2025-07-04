@@ -101,4 +101,8 @@ public class PlaceHolderDict extends ADictionary {
 		throw new RuntimeException("invalid to get dictionary type for PlaceHolderDict");
 	}
 
+	@Override 
+	public int[] sort(){
+		throw new RuntimeException("Invalid call");
+	}
 }

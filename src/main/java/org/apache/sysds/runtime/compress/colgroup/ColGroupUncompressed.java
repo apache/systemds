@@ -1294,6 +1294,11 @@ public class ColGroupUncompressed extends AColGroup {
 		// throw new NotImplementedException("Unimplemented method 'splitReshape'");
 	}
 
+	@Override 
+	public AColGroup sort(){
+		return new ColGroupUncompressed(_data.sortOperations(), _colIndexes);
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

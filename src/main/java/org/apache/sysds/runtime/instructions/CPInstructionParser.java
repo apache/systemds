@@ -218,7 +218,7 @@ public class CPInstructionParser extends InstructionParser {
 
 			case EvictLineageCache:
 				return EvictCPInstruction.parseInstruction(str);
-			
+
 			default:
 				throw new DMLRuntimeException("Invalid CP Instruction Type: " + cptype );
 		}

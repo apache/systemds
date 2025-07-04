@@ -24,7 +24,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.sysds.runtime.io.IOUtilFunctions;
-import org.apache.sysds.runtime.matrix.data.Pair;
 
 public class PlaceHolderDict extends ADictionary {
 
@@ -103,7 +102,7 @@ public class PlaceHolderDict extends ADictionary {
 	}
 
 	@Override 
-	public Pair<IDictionary, int[]> sort(){
+	public int[] sort(){
 		throw new RuntimeException("Invalid call");
 	}
 }

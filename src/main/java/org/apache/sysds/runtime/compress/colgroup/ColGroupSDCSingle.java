@@ -717,6 +717,50 @@ public class ColGroupSDCSingle extends ASDC {
 		}
 		return res;
 	}
+	
+
+	@Override
+	public AColGroup sort() {
+		if(getNumCols() > 1)
+			throw new NotImplementedException();
+		// TODO restore support for run length encoding.
+
+		final int[] counts = getCounts();
+		// get the sort index
+		final int[] r = _dict.sort();
+
+		// find default value position.
+		// todo use binary search for minor improvements.
+		final double def = _defaultTuple[0];
+		int defIdx = -1;
+		int nondefault = 0;
+		for(int i = 0; i < r.length; i++) {
+			if(defIdx == -1 && _dict.getValue(r[i], 0, 1) >= def) {
+				defIdx = i;
+			}
+			nondefault += counts[i];
+		}
+
+		int defaultLength = _numRows - nondefault;
+		int[] offsets = new int[nondefault];
+
+		int off = 0;
+		for(int i = 0; i < counts.length; i++) {
+			if(i < defIdx) {
+				for(int j = 0; j < counts[r[i]]; j++) {
+					offsets[off] = off;
+				}
+			}
+			else {// if( i >= defIdx){
+				for(int j = 0; j < counts[r[i]]; j++) {
+					offsets[off] = off + defaultLength;
+				}
+			}
+		}
+
+		AOffset o = OffsetFactory.createOffset(offsets);
+		return ColGroupSDCSingle.create(_colIndexes, _numRows, _dict, _defaultTuple, o, counts);
+	}
 
 	@Override
 	public String toString() {

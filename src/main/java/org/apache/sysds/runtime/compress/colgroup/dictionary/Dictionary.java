@@ -40,7 +40,6 @@ import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
@@ -1343,12 +1342,12 @@ public class Dictionary extends ACachingMBDictionary {
 	}
 
 	@Override 
-	public Pair<IDictionary, int[]> sort(){
+	public  int[] sort(){
 		return sort(_values);
 	}
 
 
-	protected static Pair<IDictionary, int[]> sort(double[] vals){
+	protected static int[] sort(double[] vals){
 		int[] indices = new int[vals.length];
 		for(int i = 0; i < indices.length; i++){
 			indices[i]  = i;
@@ -1356,13 +1355,7 @@ public class Dictionary extends ACachingMBDictionary {
 
 		quicksort(indices, vals, 0, indices.length-1);
 
-		double[] sorted = new double[vals.length];
-
-		for(int i = 0; i < vals.length; i++){
-			sorted[i] = vals[indices[i]];
-		}
-
-		return new Pair<>(Dictionary.create(vals), indices);
+		return  indices;
 	}
 
 	protected static void quicksort(int[] indices, double[] values, int low, int high){

@@ -31,7 +31,6 @@ import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
@@ -1054,10 +1053,12 @@ public interface IDictionary {
 	public int[] countNNZZeroColumns(int[] counts);
 
 	/**
-	 * Sort the values of this dictionary and construct an index how the values mapped previously.
+	 * Sort the values of this dictionary via an index of how the values mapped previously.
 	 * 
-	 * @return A pair of a sorted dictionary and the index.
+	 * In practice this design means we can reuse the previous dictionary for the resulting column group
+	 * 
+	 * @return The sorted index.
 	 */
-	public Pair<IDictionary, int[]> sort();
+	public int[] sort();
 
 }

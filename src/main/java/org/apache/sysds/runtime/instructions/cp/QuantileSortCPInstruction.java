@@ -108,6 +108,7 @@ public class QuantileSortCPInstruction extends UnaryCPInstruction {
 			wtBlock = ec.getMatrixInput(input2.getName());
 		}
 		
+		LOG.error("Sorting: " + matBlock.getClass().getSimpleName());
  		//process core instruction
 		MatrixBlock resultBlock = matBlock.sortOperations(wtBlock, new MatrixBlock(), _numThreads);
 		

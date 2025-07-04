@@ -4822,8 +4822,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	public final double pickValue(double quantile, boolean average) {
 		if(this.getNumColumns() == 1)
 			return pickUnweightedValue(quantile, average);
-		
-
 		return pickWeightedValue(quantile, average);
 	}
 

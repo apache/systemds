@@ -1241,11 +1241,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public double pickValue(double quantile, boolean average) {
-		return getUncompressed("pickValue").pickValue(quantile, average);
-	}
-
-	@Override
 	public double sumWeightForQuantile() {
 		return getUncompressed("sumWeightForQuantile").sumWeightForQuantile();
 	}

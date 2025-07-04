@@ -4753,6 +4753,16 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return (sum + q25Part*q25Val - q75Part*q75Val) / (sum_wt*0.5); 
 	}
 	
+	/**
+	 * Pick the quantiles out of this matrix. If this matrix contains two columns it is weighted quantile picking.
+	 * If a single column it is unweighted.
+	 * 
+	 * Note the values are assumed to be sorted
+	 * 
+	 * @param quantiles The quantiles to pick
+	 * @param ret The result matrix
+	 * @return The result matrix
+	 */
 	public MatrixBlock pickValues(MatrixValue quantiles, MatrixValue ret) {
 	
 		MatrixBlock qs=checkType(quantiles);
@@ -4774,17 +4784,58 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		
 		return output;
 	}
-	
+		
+	/**
+	 * Pick the median quantile from this matrix. if this matrix is two columns, it is weighted picking else it is unweighted.
+	 * 
+	 * Note the values are assumed to be sorted
+	 * 
+	 * @param quantile The quantile to pick
+	 * @return The quantile
+	 */
 	public double median() {
 		double sum_wt = sumWeightForQuantile();
 		return pickValue(0.5, sum_wt%2==0);
 	}
-	
+
+	/**
+	 * Pick a specific quantile from this matrix. if this matrix is two columns, it is weighted picking else it is unweighted.
+	 * 
+	 * Note the values are assumed to be sorted
+	 * 
+	 * @param quantile The quantile to pick
+	 * @return The quantile
+	 */
 	public final double pickValue(double quantile){
 		return pickValue(quantile, false);
 	}
 	
-	public double pickValue(double quantile, boolean average) {
+	/**
+	 * Pick a specific quantile from this matrix. if this matrix is two columns, it is weighted picking else it is unweighted.
+	 * 
+	 * Note the values are assumed to be sorted
+	 * 
+	 * @param quantile The quantile to pick
+	 * @param average If the quantile is averaged.
+	 * @return The quantile
+	 */
+	public final double pickValue(double quantile, boolean average) {
+		if(this.getNumColumns() == 1)
+			return pickUnweightedValue(quantile, average);
+		
+
+		return pickWeightedValue(quantile, average);
+	}
+
+	private double pickUnweightedValue(double quantile, boolean average) {
+		double pos = quantile * rlen;
+		if(average && (int) pos != pos)
+			return (get((int) Math.floor(pos), 0) + get(Math.min(rlen - 1, (int) Math.ceil(pos)), 0)) / 2;
+		else
+			return get(Math.min(rlen - 1, (int) Math.round(pos)), 0);
+	}
+
+	private double pickWeightedValue(double quantile, boolean average) {
 		double sum_wt = sumWeightForQuantile();
 		
 		// do averaging only if it is asked for; and sum_wt is even

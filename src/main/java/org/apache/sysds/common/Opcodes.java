@@ -192,7 +192,6 @@ public enum Opcodes {
 	TRANSFORMMETA("transformmeta", InstructionType.ParameterizedBuiltin),
 	TRANSFORMENCODE("transformencode", InstructionType.MultiReturnParameterizedBuiltin,  InstructionType.MultiReturnBuiltin),
 
-
 	//Ternary instruction opcodes
 	PM("+*", InstructionType.Ternary),
 	MINUSMULT("-*", InstructionType.Ternary),

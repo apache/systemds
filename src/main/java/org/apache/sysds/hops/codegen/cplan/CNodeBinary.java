@@ -188,8 +188,8 @@ public class CNodeBinary extends CNode {
 								(_type == BinType.VECT_MATRIXMULT ? varj : varj + ".vals(0)")) :
 							_inputs.get(j).getDataType() == DataType.MATRIX ? (api == GeneratorAPI.JAVA ? varj : varj + ".vals(0)") : varj);
 
-			if(_type == BinType.VECT_OUTERMULT_ADD && (_inputs.get(j) instanceof CNodeData && _inputs.get(j).getDataType().isMatrix()) &&
-					(varj.startsWith("b")))
+			if (_type == BinType.VECT_OUTERMULT_ADD && (_inputs.get(j) instanceof CNodeData && _inputs.get(j).getDataType().isMatrix()) && (varj.startsWith("b")
+				&& j > 0 && TemplateUtils.isMatrix(_inputs.get(j-1))))
 				tmp = tmp.replace("%POS"+(j+1)+"%",varj + ".pos(rix)");
 			else
 			//replace start position of main input

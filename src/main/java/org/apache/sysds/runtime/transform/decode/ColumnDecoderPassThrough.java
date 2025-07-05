@@ -39,23 +39,21 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
     private int[] _dcCols = null;
     private int[] _srcCols = null;
 
-    protected ColumnDecoderPassThrough(ValueType[] schema, int[] ptCols, int[] dcCols) {
-        super(schema, ptCols);
+    protected ColumnDecoderPassThrough(ValueType schema, int ptCols, int[] dcCols, int offset) {
+        super(schema, ptCols, offset);
         _dcCols = dcCols;
     }
 
     public ColumnDecoderPassThrough() {
-        super(null, null);
+        super(null, -1, -1);
     }
 
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
         long p1 = System.nanoTime();
         out.ensureAllocatedColumns(in.getNumRows());
-        for (int i = 0; i < _colList.length; i++){
-            for (int r = 0; r < in.getNumRows(); r++) {
-                out.getColumn(_colList[i]-1).set(r, in.get(r, i));
-            }
+        for (int r = 0; r < in.getNumRows(); r++) {
+            out.getColumn(_colID).set(r, in.get(r, _colID));
         }
         //columnDecode(in, out, 0, in.getNumRows());
         long p2 = System.nanoTime();
@@ -72,37 +70,38 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
                 int tgtColID = _colList[j];
                 double val = in.get(i, srcColID-1);
                 out.set(i, tgtColID-1,
-                    UtilFunctions.doubleToObject(_schema[tgtColID-1], val));
+                    UtilFunctions.doubleToObject(_schema, val));
             }
         }
     }
 
     public ColumnDecoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset){
-        List<Integer> colList = new ArrayList<>();
-        List<Integer> dcList = new ArrayList<>();
-        List<Integer> srcList = new ArrayList<>();
-
-        for (int i = 0; i < _colList.length; i++) {
-            int colID = _colList[i];
-            if (colID >= colStart && colID < colEnd) {
-                colList.add(colID - (colStart - 1));
-                srcList.add(_srcCols[i] - dummycodedOffset);
-            }
-        }
-
-        Arrays.stream(_dcCols)
-                .filter(c -> c >= colStart && c < colEnd)
-                .forEach(dcList::add);
-
-        if (colList.isEmpty())
-            return null;
-
-        ColumnDecoderPassThrough dec = new ColumnDecoderPassThrough(
-                Arrays.copyOfRange(_schema, colStart - 1, colEnd - 1),
-                colList.stream().mapToInt(i -> i).toArray(),
-                dcList.stream().mapToInt(i -> i).toArray());
-        dec._srcCols = srcList.stream().mapToInt(i -> i).toArray();
-        return dec;
+        return null;
+        //List<Integer> colList = new ArrayList<>();
+        //List<Integer> dcList = new ArrayList<>();
+        //List<Integer> srcList = new ArrayList<>();
+//
+        //for (int i = 0; i < _colList.length; i++) {
+        //    int colID = _colList[i];
+        //    if (colID >= colStart && colID < colEnd) {
+        //        colList.add(colID - (colStart - 1));
+        //        srcList.add(_srcCols[i] - dummycodedOffset);
+        //    }
+        //}
+//
+        //Arrays.stream(_dcCols)
+        //        .filter(c -> c >= colStart && c < colEnd)
+        //        .forEach(dcList::add);
+//
+        //if (colList.isEmpty())
+        //    return null;
+//
+        //ColumnDecoderPassThrough dec = new ColumnDecoderPassThrough(
+        //        Arrays.copyOfRange(_schema, colStart - 1, colEnd - 1),
+        //        colList.stream().mapToInt(i -> i).toArray(),
+        //        dcList.stream().mapToInt(i -> i).toArray());
+        //dec._srcCols = srcList.stream().mapToInt(i -> i).toArray();
+        //return dec;
     }
     @Override
     public void initMetaData(FrameBlock meta) {

@@ -41,8 +41,8 @@ public class ColumnDecoderDummycode extends ColumnDecoder {
     // category index for dedicated single-column decoders (-1 if not used)
     private int _category = -1;
 
-    protected ColumnDecoderDummycode(Types.ValueType[] schema, int[] colList) {
-        super(schema, colList);
+    protected ColumnDecoderDummycode(Types.ValueType[] schema, int[] colList, int offset) {
+        super(schema, colList, offset);
     }
 
     @Override
@@ -76,43 +76,45 @@ public class ColumnDecoderDummycode extends ColumnDecoder {
     @Override
     public ColumnDecoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
         // special case: request for exactly one encoded column
-        if(colEnd - colStart == 1) {
-            int encCol = colStart;
-            for(int j=0; j<_clPos.length; j++)
-                if(encCol >= _clPos[j] && encCol < _cuPos[j]) {
-                    ColumnDecoderDummycode dec = new ColumnDecoderDummycode(
-                            new Types.ValueType[]{_schema[_colList[j]-1]},
-                            new int[]{_colList[j]});
-                    dec._clPos = new int[]{1};
-                    dec._cuPos = new int[]{2};
-                    dec._category = encCol - _clPos[j] + 1;
-                    return dec;
-                }
-            return null;
-        }
-        else {
-            List<Integer> dcList = new ArrayList<>();
-            List<Integer> clPosList = new ArrayList<>();
-            List<Integer> cuPosList = new ArrayList<>();
-
-            for( int j=0; j<_colList.length; j++ ) {
-                int colID = _colList[j];
-                if (colID >= colStart && colID < colEnd) {
-                    dcList.add(colID - (colStart - 1));
-                    clPosList.add(_clPos[j] - dummycodedOffset);
-                    cuPosList.add(_cuPos[j] - dummycodedOffset);
-                }
-            }
-            if (dcList.isEmpty())
-                return null;
-
-            ColumnDecoderDummycode dec = new ColumnDecoderDummycode(
-                    Arrays.copyOfRange(_schema, colStart - 1, colEnd - 1),
-                    dcList.stream().mapToInt(i -> i).toArray());
-            dec._clPos = clPosList.stream().mapToInt(i -> i).toArray();
-            dec._cuPos = cuPosList.stream().mapToInt(i -> i).toArray();
-            return dec;
-        }
+        return null;
+        // TODO
+        //if(colEnd - colStart == 1) {
+        //    int encCol = colStart;
+        //    for(int j=0; j<_clPos.length; j++)
+        //        if(encCol >= _clPos[j] && encCol < _cuPos[j]) {
+        //            ColumnDecoderDummycode dec = new ColumnDecoderDummycode(
+        //                    new Types.ValueType[]{_multiSchema[_colList[j]-1]},
+        //                    new int[]{_colList[j]});
+        //            dec._clPos = new int[]{1};
+        //            dec._cuPos = new int[]{2};
+        //            dec._category = encCol - _clPos[j] + 1;
+        //            return dec;
+        //        }
+        //    return null;
+        //}
+        //else {
+        //    List<Integer> dcList = new ArrayList<>();
+        //    List<Integer> clPosList = new ArrayList<>();
+        //    List<Integer> cuPosList = new ArrayList<>();
+//
+        //    for( int j=0; j<_colList.length; j++ ) {
+        //        int colID = _colList[j];
+        //        if (colID >= colStart && colID < colEnd) {
+        //            dcList.add(colID - (colStart - 1));
+        //            clPosList.add(_clPos[j] - dummycodedOffset);
+        //            cuPosList.add(_cuPos[j] - dummycodedOffset);
+        //        }
+        //    }
+        //    if (dcList.isEmpty())
+        //        return null;
+//
+        //    ColumnDecoderDummycode dec = new ColumnDecoderDummycode(
+        //            Arrays.copyOfRange(_multiSchema, colStart - 1, colEnd - 1),
+        //            dcList.stream().mapToInt(i -> i).toArray());
+        //    dec._clPos = clPosList.stream().mapToInt(i -> i).toArray();
+        //    dec._cuPos = cuPosList.stream().mapToInt(i -> i).toArray();
+        //    return dec;
+        //}
     }
 
     @Override

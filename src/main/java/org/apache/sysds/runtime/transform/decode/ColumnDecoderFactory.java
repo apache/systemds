@@ -61,6 +61,7 @@ public class ColumnDecoderFactory {
                                         FrameBlock meta, int clen, int minCol, int maxCol)
     {
         ColumnDecoder decoder = null;
+        int currOffset = 0;
 
         try {
             //parse transform specification
@@ -85,21 +86,24 @@ public class ColumnDecoderFactory {
             }
 
             if( !binIDs.isEmpty() ) {
-                ldecoders.add(new ColumnDecoderBin(schema,
-                        ArrayUtils.toPrimitive(binIDs.toArray(new Integer[0]))));
+                for (int col : binIDs) {
+                    ldecoders.add(new ColumnDecoderBin(schema[col - 1], col - 1, currOffset));
+                    currOffset++;
+                }
             }
             if( !dcIDs.isEmpty() ) {
                 ldecoders.add(new ColumnDecoderDummycode(schema,
-                        ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0]))));
+                        ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0])),currOffset));
             }
             if( !rcIDs.isEmpty() ) {
                 ldecoders.add(new ColumnDecoderRecode(schema, !dcIDs.isEmpty(),
-                        ArrayUtils.toPrimitive(rcIDs.toArray(new Integer[0]))));
+                        ArrayUtils.toPrimitive(rcIDs.toArray(new Integer[0])),currOffset));
             }
             if( !ptIDs.isEmpty() ) {
-                ldecoders.add(new ColumnDecoderPassThrough(schema,
-                        ArrayUtils.toPrimitive(ptIDs.toArray(new Integer[0])),
-                        ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0]))));
+                for (int col : ptIDs) {
+                    ldecoders.add(new ColumnDecoderPassThrough(schema[col - 1], col - 1,
+                            ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0])), currOffset));
+                }
             }
 
             //create composite decoder of all created decoders
@@ -131,9 +135,9 @@ public class ColumnDecoderFactory {
 
         // create instance
         switch(dtype) {
-            case Dummycode:   return new ColumnDecoderDummycode(null, null);
-            case PassThrough: return new ColumnDecoderPassThrough(null, null, null);
-            case Recode:      return new ColumnDecoderRecode(null, false, null);
+            case Dummycode:   return new ColumnDecoderDummycode(null, null, -1);
+            case PassThrough: return new ColumnDecoderPassThrough(null, -1, null, -1);
+            case Recode:      return new ColumnDecoderRecode(null, false, null, -1);
             default:
                 throw new DMLRuntimeException("Unsupported Encoder Type used:  " + dtype);
         }

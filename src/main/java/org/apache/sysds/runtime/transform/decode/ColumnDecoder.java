@@ -36,17 +36,37 @@ public abstract class ColumnDecoder implements Externalizable {
     protected static final Log LOG = LogFactory.getLog(Decoder.class.getName());
     private static final long serialVersionUID = -1732411001366177787L;
 
-    protected ValueType[] _schema;
+    protected ValueType _schema;
+    protected int _colID;
+    protected ValueType[] _multiSchema;
     protected int[] _colList;
     protected String[] _colnames = null;
-    protected ColumnDecoder(ValueType[] schema, int[] colList) {
+    protected int _offset;
+
+    protected ColumnDecoder(ValueType schema, int colID, int offset) {
         _schema = schema;
-        _colList = colList;
+        _colID = colID;
+        _offset = offset;
     }
 
-    public ValueType[] getSchema() {
+    protected ColumnDecoder(ValueType[] multiSchema, int[] colList, int offset) {
+        _multiSchema = multiSchema;
+        _colList = colList;
+        _offset = offset;
+    }
+    public ValueType getSchema() {
         return _schema;
     }
+
+    public ValueType[] getMultiSchema() {
+        return _multiSchema;
+    }
+
+    public int getColID() {
+        return _colID;
+    }
+
+    public int[] getColList() {return _colList;}
 
     public void setColnames(String[] colnames) {
         _colnames = colnames;
@@ -56,7 +76,6 @@ public abstract class ColumnDecoder implements Externalizable {
         return _colnames;
     }
 
-    public int[] getColList() {return _colList;}
     /**
      * Block decode API converting a matrix block into a frame block.
      *
@@ -135,10 +154,10 @@ public abstract class ColumnDecoder implements Externalizable {
         for(int j = 0; j < size2; j++)
             os.writeUTF(_colnames[j]);
 
-        int size3 = (_schema == null) ? 0 : _schema.length;
-        os.writeInt(size3);
-        for(int j = 0; j < size3; j++)
-            os.writeByte(_schema[j].ordinal());
+        //int size3 = (_schema == null) ? 0 : _schema.length;
+        //os.writeInt(size3);
+        //for(int j = 0; j < size3; j++)
+        //    os.writeByte(_schema[j].ordinal());
     }
 
     /**
@@ -163,10 +182,10 @@ public abstract class ColumnDecoder implements Externalizable {
             _colnames[j] = in.readUTF();
         }
 
-        int size3 = in.readInt();
-        _schema = (size3 == 0) ? null : new ValueType[size3];
-        for(int j = 0; j < size3; j++) {
-            _schema[j] = ValueType.values()[in.readByte()];
-        }
+        //int size3 = in.readInt();
+        //_schema = (size3 == 0) ? null : new ValueType[size3];
+        //for(int j = 0; j < size3; j++) {
+        //    _schema[j] = ValueType.values()[in.readByte()];
+        //}
     }
 }

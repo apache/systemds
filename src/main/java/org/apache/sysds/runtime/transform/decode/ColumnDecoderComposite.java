@@ -19,9 +19,8 @@
 
 package org.apache.sysds.runtime.transform.decode;
 
-import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
-import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
@@ -38,27 +37,29 @@ public class ColumnDecoderComposite extends ColumnDecoder {
     private static final long serialVersionUID = 5790600547144743716L;
 
     private List<ColumnDecoder> _decoders = null;
-    protected ColumnDecoderComposite(Types.ValueType[] schema, List<ColumnDecoder> decoders) {
-        super(schema, null);
+    protected ColumnDecoderComposite(ValueType[] schema, List<ColumnDecoder> decoders) {
+        super(schema, null,-1);
         _decoders = decoders;
     }
 
-    public ColumnDecoderComposite() { super(null, null); }
+    //public ColumnDecoderComposite() {
+    //    super(null, -1);
+    //}
 
-    private List<MatrixBlock> sliceColumns(MatrixBlock mb, int[] cols) {
-        List<MatrixBlock> list = new ArrayList<>(cols.length);
-        for (int col : cols) {
-            //MatrixBlock ret = new MatrixBlock(mb.getNumRows(), 1, false);
-            //for (int i = 0; i < mb.getNumRows(); i++) {
-            //    ret.set(i, 0, mb.get(i, col - 1));
-            //}
-            //list.add(ret);
-            MatrixBlock slice = mb.slice(0, mb.getNumRows() - 1,
-                    col - 1, col - 1, new MatrixBlock());
-            list.add(slice);
-        }
-        return list;
-    }
+    //private List<MatrixBlock> sliceColumns(MatrixBlock mb, int[] cols) {
+    //    List<MatrixBlock> list = new ArrayList<>(cols.length);
+    //    for (int col : cols) {
+    //        //MatrixBlock ret = new MatrixBlock(mb.getNumRows(), 1, false);
+    //        //for (int i = 0; i < mb.getNumRows(); i++) {
+    //        //    ret.set(i, 0, mb.get(i, col - 1));
+    //        //}
+    //        //list.add(ret);
+    //        MatrixBlock slice = mb.slice(0, mb.getNumRows() - 1,
+    //                col - 1, col - 1, new MatrixBlock());
+    //        list.add(slice);
+    //    }
+    //    return list;
+    //}
 
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
@@ -119,64 +120,73 @@ public class ColumnDecoderComposite extends ColumnDecoder {
 
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out, final int k) {
+        long t3 = System.nanoTime();
         final ExecutorService pool = CommonThreadPool.get(k);
         out.ensureAllocatedColumns(in.getNumRows());
 
         try {
             List<Future<FrameBlock>> tasks = new ArrayList<>();
             for (ColumnDecoder dec : _decoders) {
-                if (dec instanceof ColumnDecoderDummycode) {
-                    // Dummycode is assumed to be thread-safe or handles its own parallelism
-                    tasks.add(pool.submit(() -> dec.columnDecode(in, new FrameBlock(_schema))));
-                } else {
-                    List<MatrixBlock> slices = sliceColumns(in, dec.getColList());
-                    for (int c = 0; c < slices.size(); c++) {
-                        final int colIx = dec.getColList()[c];
-                        ColumnDecoder sub = dec.subRangeDecoder(colIx, colIx + 1, 0);
-
-                        if (sub == null)
-                            throw new RuntimeException("Decoder does not support column slicing: " + dec.getClass());
-
-                        final MatrixBlock slice = slices.get(c);
-                        final int colPos = colIx - 1;
-                        final Types.ValueType vt = _schema[colPos];
-
-                        tasks.add(pool.submit(() -> {
-                            FrameBlock partial = new FrameBlock(new Types.ValueType[]{vt});
-                            sub.columnDecode(slice, partial);
-                            return partial;
-                        }));
-                    }
-                }
+                tasks.add(pool.submit(() -> {
+                    dec.columnDecode(in, out);
+                    return null;
+                }));
             }
-
-            // Wait for tasks to finish and merge column-wise
-            int taskIndex = 0;
-            for (ColumnDecoder dec : _decoders) {
-                if (dec instanceof ColumnDecoderDummycode) {
-                    FrameBlock partial = tasks.get(taskIndex++).get();
-                    for (int i = 0; i < dec.getColList().length; i++) {
-                        int outCol = dec.getColList()[i] - 1;
-                        out.setColumn(outCol, partial.getColumn(i));
-                    }
-                } else {
-                    for (int c = 0; c < dec.getColList().length; c++) {
-                        FrameBlock partial = tasks.get(taskIndex++).get();
-                        int outCol = dec.getColList()[c] - 1;
-                        out.setColumn(outCol, partial.getColumn(0));
-                    }
-                }
-            }
-
+            for (Future<?> task : tasks)
+                task.get();
+            long t4 = System.nanoTime();
+            System.out.println("ColumnDecoder time: " + (t4 - t3) / 1e6 + " ms");
             return out;
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
-            pool.shutdown(); // Optional: could skip if using shared pool
+            pool.shutdown();
         }
     }
 
+//if (dec instanceof ColumnDecoderDummycode) {
+    //    // Dummycode is assumed to be thread-safe or handles its own parallelism
+    //    //tasks.add(pool.submit(() -> dec.columnDecode(in, new FrameBlock(_schema))));
+    //} else if (dec instanceof ColumnDecoderRecode) {
+    //    //tasks.add(pool.submit(() -> dec.columnDecode(in, new FrameBlock(_schema))));
+    //} else {
+    //    for (int c = 0; c < slices.size(); c++) {
+    //        final int colIx = dec.getColList()[c];
+    //        ColumnDecoder sub = dec.subRangeDecoder(colIx, colIx + 1, 0);
+//
+    //        if (sub == null)
+    //            throw new RuntimeException("Decoder does not support column slicing: " + dec.getClass());
+//
+    //        final MatrixBlock slice = slices.get(c);
+    //        //final int colPos = colIx - 1;
+    //        final ValueType vt = _schema;
+//
+    //        tasks.add(pool.submit(() -> {
+    //            FrameBlock partial = new FrameBlock(new ValueType[]{vt});
+    //            sub.columnDecode(slice, partial);
+    //            return partial;
+    //        }));
+    //    }
+    //}
 
+
+// Wait for tasks to finish and merge column-wise
+//int taskIndex = 0;
+//for (ColumnDecoder dec : _decoders) {
+//    if (dec instanceof ColumnDecoderDummycode) {
+//        FrameBlock partial = tasks.get(taskIndex++).get();
+//        for (int i = 0; i < dec.getColList().length; i++) {
+//            int outCol = dec.getColList()[i] - 1;
+//            out.setColumn(outCol, partial.getColumn(i));
+//        }
+//    } else {
+//        for (int c = 0; c < dec.getColList().length; c++) {
+//            FrameBlock partial = tasks.get(taskIndex++).get();
+//            int outCol = dec.getColList()[c] - 1;
+//            out.setColumn(outCol, partial.getColumn(0));
+//        }
+//    }
+//}
 
     @Override
     public void columnDecode(MatrixBlock in, FrameBlock out, int rl, int ru) {
@@ -187,13 +197,15 @@ public class ColumnDecoderComposite extends ColumnDecoder {
 
     @Override
     public ColumnDecoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
-        List<ColumnDecoder> subDecoders = new ArrayList<>();
-        for (ColumnDecoder dec : _decoders) {
-            ColumnDecoder sub = dec.subRangeDecoder(colStart, colEnd, dummycodedOffset);
-            if (sub != null)
-                subDecoders.add(sub);
-        }
-        return new ColumnDecoderComposite(Arrays.copyOfRange(_schema, colStart-1, colEnd-1), subDecoders);
+        //Todo
+        return null;
+        //List<ColumnDecoder> subDecoders = new ArrayList<>();
+        //for (ColumnDecoder dec : _decoders) {
+        //    ColumnDecoder sub = dec.subRangeDecoder(colStart, colEnd, dummycodedOffset);
+        //    if (sub != null)
+        //        subDecoders.add(sub);
+        //}
+        //return new ColumnDecoderComposite(Arrays.copyOfRange(_schema, colStart-1, colEnd-1), subDecoders);
     }
 
     @Override
@@ -210,13 +222,14 @@ public class ColumnDecoderComposite extends ColumnDecoder {
 
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
-        super.writeExternal(out);
-        out.writeInt(_decoders.size());
-        out.writeInt(_schema == null ? 0:_schema.length); //write #columns
-        for(ColumnDecoder decoder : _decoders) {
-            out.writeByte(ColumnDecoderFactory.getDecoderType(decoder));
-            decoder.writeExternal(out);
-        }
+        //TODO
+    //    super.writeExternal(out);
+    //    out.writeInt(_decoders.size());
+    //    out.writeInt(_schema == null ? 0:_schema.length); //write #columns
+    //    for(ColumnDecoder decoder : _decoders) {
+    //        out.writeByte(ColumnDecoderFactory.getDecoderType(decoder));
+    //        decoder.writeExternal(out);
+    //    }
     }
 
     @Override

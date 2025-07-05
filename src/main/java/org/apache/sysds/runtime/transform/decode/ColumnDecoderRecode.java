@@ -36,16 +36,16 @@ public class ColumnDecoderRecode extends ColumnDecoder {
 
     private static final long serialVersionUID = -3784249774608228805L;
 
-    private HashMap<Long, Object>[] _rcMaps = null;
-    private Object[][] _rcMapsDirect = null;
+    private HashMap<Long, Object> _rcMaps = null;
+    private Object[] _rcMapsDirect = null;
     private boolean _onOut = false;
 
     public ColumnDecoderRecode() {
-        super(null, null);
+        super(null, -1, -1);
     }
 
-    protected ColumnDecoderRecode(ValueType[] schema, boolean onOut, int[] rcCols) {
-        super(schema, rcCols);
+    protected ColumnDecoderRecode(ValueType[] schema, boolean onOut, int[] rcCols, int offset) {
+        super(schema, rcCols,offset);
         _onOut = onOut;
     }
 
@@ -87,64 +87,69 @@ public class ColumnDecoderRecode extends ColumnDecoder {
         }
     }
     public ColumnDecoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
-        List<Integer> cols = new ArrayList<>();
-        List<HashMap<Long, Object>> rcMaps = new ArrayList<>();
-        List<Object[]> rcMapsDirect = (_rcMapsDirect != null) ? new ArrayList<>() : null;
-        for(int i = 0; i < _colList.length; i++) {
-            int col = _colList[i];
-            if(col >= colStart && col < colEnd) {
-                cols.add(col - (colStart - 1));
-                //rcMaps.add(new HashMap<>(_rcMaps[i]));
-                rcMaps.add(_rcMaps[i]);
-                if(rcMapsDirect != null)
-                    rcMapsDirect.add(_rcMapsDirect[i]);
-            }
-        }
-        if(cols.isEmpty())
-            return null;
+        return null;
 
-        int[] colList = cols.stream().mapToInt(v -> v).toArray();
-        ColumnDecoderRecode dec = new ColumnDecoderRecode(
-                Arrays.copyOfRange(_schema, colStart - 1, colEnd - 1), _onOut, colList);
-        dec._rcMaps = rcMaps.toArray(new HashMap[0]);
-        if(rcMapsDirect != null)
-            dec._rcMapsDirect = rcMapsDirect.toArray(new Object[0][]);
-        return dec;    }
+        //List<Integer> cols = new ArrayList<>();
+        //List<HashMap<Long, Object>> rcMaps = new ArrayList<>();
+        //List<Object[]> rcMapsDirect = (_rcMapsDirect != null) ? new ArrayList<>() : null;
+        //for(int i = 0; i < _colList.length; i++) {
+        //    int col = _colList[i];
+        //    if(col >= colStart && col < colEnd) {
+        //        cols.add(col - (colStart - 1));
+        //        //rcMaps.add(new HashMap<>(_rcMaps[i]));
+        //        rcMaps.add(_rcMaps[i]);
+        //        if(rcMapsDirect != null)
+        //            rcMapsDirect.add(_rcMapsDirect[i]);
+        //    }
+        //}
+        //if(cols.isEmpty())
+        //    return null;
+//
+        //int[] colList = cols.stream().mapToInt(v -> v).toArray();
+        //ColumnDecoderRecode dec = new ColumnDecoderRecode(
+        //        Arrays.copyOfRange(_multiSchema, colStart - 1, colEnd - 1), _onOut, colList);
+        //dec._rcMaps = rcMaps.toArray(new HashMap[0]);
+        //if(rcMapsDirect != null)
+        //    dec._rcMapsDirect = rcMapsDirect.toArray(new Object[0][]);
+        //return dec;
+    }
 
     @Override
     @SuppressWarnings("unchecked")
     public void initMetaData(FrameBlock meta) {
-        //initialize recode maps according to schema
-        _rcMaps = new HashMap[_colList.length];
-        long[] max = new long[_colList.length];
-        for( int j=0; j<_colList.length; j++ ) {
-            HashMap<Long, Object> map = new HashMap<>();
-            for( int i=0; i<meta.getNumRows(); i++ ) {
-                if( meta.get(i, _colList[j]-1)==null )
-                    break; //reached end of recode map
-                String[] tmp = ColumnEncoderRecode.splitRecodeMapEntry(meta.get(i, _colList[j]-1).toString());
-                Object obj = UtilFunctions.stringToObject(_schema[_colList[j]-1], tmp[0]);
-                long lval = Long.parseLong(tmp[1]);
-                map.put(lval, obj);
-                max[j] = Math.max(lval, max[j]);
-            }
-            _rcMaps[j] = map;
-        }
 
-        //convert to direct lookup arrays
-        if( Arrays.stream(max).allMatch(v -> v < Integer.MAX_VALUE) ) {
-            _rcMapsDirect = new Object[_rcMaps.length][];
-            for( int i=0; i<_rcMaps.length; i++ ) {
-                Object[] arr = new Object[(int)max[i]];
-                for(Map.Entry<Long,Object> e1 : _rcMaps[i].entrySet())
-                    arr[e1.getKey().intValue()-1] = e1.getValue();
-                _rcMapsDirect[i] = arr;
-            }
-        }
+        //initialize recode maps according to schema
+        //_rcMaps = new HashMap[_colList.length];
+        //long[] max = new long[_colList.length];
+        //for( int j=0; j<_colList.length; j++ ) {
+        //    HashMap<Long, Object> map = new HashMap<>();
+        //    for( int i=0; i<meta.getNumRows(); i++ ) {
+        //        if( meta.get(i, _colList[j]-1)==null )
+        //            break; //reached end of recode map
+        //        String[] tmp = ColumnEncoderRecode.splitRecodeMapEntry(meta.get(i, _colList[j]-1).toString());
+        //        Object obj = UtilFunctions.stringToObject(_multiSchema[_colList[j]-1], tmp[0]);
+        //        long lval = Long.parseLong(tmp[1]);
+        //        map.put(lval, obj);
+        //        max[j] = Math.max(lval, max[j]);
+        //    }
+        //    _rcMaps[j] = map;
+        //}
+//
+        ////convert to direct lookup arrays
+        //if( Arrays.stream(max).allMatch(v -> v < Integer.MAX_VALUE) ) {
+        //    _rcMapsDirect = new Object[_rcMaps.length][];
+        //    for( int i=0; i<_rcMaps.length; i++ ) {
+        //        Object[] arr = new Object[(int)max[i]];
+        //        for(Map.Entry<Long,Object> e1 : _rcMaps[i].entrySet())
+        //            arr[e1.getKey().intValue()-1] = e1.getValue();
+        //        _rcMapsDirect[i] = arr;
+        //    }
+        //}
     }
     public Object getRcMapValue(int i, long key) {
-        return (_rcMapsDirect != null) ?
-                _rcMapsDirect[i][(int)key-1] : _rcMaps[i].get(key);
+        return null;
+        //return (_rcMapsDirect != null) ?
+        //        _rcMapsDirect[i][(int)key-1] : _rcMaps[i].get(key);
     }
 
     /**
@@ -166,30 +171,31 @@ public class ColumnDecoderRecode extends ColumnDecoder {
 
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
-        super.writeExternal(out);
-        out.writeBoolean(_onOut);
-        out.writeInt(_rcMaps.length);
-        for(int i = 0; i < _rcMaps.length; i++) {
-            out.writeInt(_rcMaps[i].size());
-            for(Map.Entry<Long,Object> e1 : _rcMaps[i].entrySet()) {
-                out.writeLong(e1.getKey());
-                out.writeUTF(e1.getValue().toString());
-            }
-        }
+
+        //super.writeExternal(out);
+        //out.writeBoolean(_onOut);
+        //out.writeInt(_rcMaps.length);
+        //for(int i = 0; i < _rcMaps.length; i++) {
+        //    out.writeInt(_rcMaps[i].size());
+        //    for(Map.Entry<Long,Object> e1 : _rcMaps[i].entrySet()) {
+        //        out.writeLong(e1.getKey());
+        //        out.writeUTF(e1.getValue().toString());
+        //    }
+        //}
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public void readExternal(ObjectInput in) throws IOException {
-        super.readExternal(in);
-        _onOut = in.readBoolean();
-        _rcMaps = new HashMap[in.readInt()];
-        for(int i = 0; i < _rcMaps.length; i++) {
-            HashMap<Long, Object> maps = new HashMap<>();
-            int size = in.readInt();
-            for(int j = 0; j < size; j++)
-                maps.put(in.readLong(), in.readUTF());
-            _rcMaps[i] = maps;
-        }
+        //super.readExternal(in);
+        //_onOut = in.readBoolean();
+        //_rcMaps = new HashMap[in.readInt()];
+        //for(int i = 0; i < _rcMaps.length; i++) {
+        //    HashMap<Long, Object> maps = new HashMap<>();
+        //    int size = in.readInt();
+        //    for(int j = 0; j < size; j++)
+        //        maps.put(in.readLong(), in.readUTF());
+        //    _rcMaps[i] = maps;
+        //}
     }
 }

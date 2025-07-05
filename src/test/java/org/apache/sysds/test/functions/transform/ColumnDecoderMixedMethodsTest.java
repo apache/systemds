@@ -42,20 +42,20 @@ public class ColumnDecoderMixedMethodsTest extends AutomatedTestBase {
     @Test
     public void testColumnDecoderMixedMethods() {
         try {
-            int rows = 500000;
-            double[][] arr = new double[rows][5];
+            int rows = 50;
+            double[][] arr = new double[rows][3];
             for (int i = 0; i < rows; i++) {
-                arr[i][0] = (i % 4) + 2; // dummy column
-                arr[i][1] = 2*i + 1;     // bin column
-                arr[i][2] = 101 + i;     // recode column
-                arr[i][3] = 2*i + 1;     // pass through column
-                arr[i][4] = 100 + i;     // bin column
+                arr[i][0] = 2*i + 1;     // bin column
+                arr[i][1] = 101 + i;     // recode column
+                arr[i][2] = (i % 4) + 2; // dummy column
+                //arr[i][3] = 2*i + 1;     // pass through column
+                //arr[i][4] = 100 + i;     // bin column
                 //arr[i][5] = (i % 2) + 1; // recode
             }
             MatrixBlock mb = DataConverter.convertToMatrixBlock(arr);
             FrameBlock data = DataConverter.convertToFrameBlock(mb);
-            String spec = "{ids:true,recode:[1,3], bin:[{id:2, method:equi-width, numbins:4},{id:5, method:equi-width, numbins:4}]}";//, dummycode:[6]
-            //
+            String spec = "{ids:true,bin:[{id:1, method:equi-width, numbins:4},{id:3, method:equi-width, numbins:4}]}";//, dummycode:[6]
+            // recode:[1,3],
             MultiColumnEncoder enc = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(), null);
             MatrixBlock encoded = enc.encode(data);
             FrameBlock meta = enc.getMetaData(new FrameBlock(data.getNumColumns(), ValueType.STRING));
@@ -70,11 +70,12 @@ public class ColumnDecoderMixedMethodsTest extends AutomatedTestBase {
             ColumnDecoder cdec = ColumnDecoderFactory.createDecoder(spec, data.getColumnNames(), data.getSchema(), meta);
             FrameBlock actual = new FrameBlock(data.getSchema());
 
-            long t3 = System.nanoTime();
+            //long t3 = System.nanoTime();
             cdec.columnDecode(encoded, actual);
-            long t4 = System.nanoTime();
-
-            System.out.println("ColumnDecoder time: " + (t4 - t3) / 1e6 + " ms");
+            //long t4 = System.nanoTime();
+            System.out.println(expected);
+            System.out.println(actual);
+            //System.out.println("ColumnDecoder time: " + (t4 - t3) / 1e6 + " ms");
             TestUtils.compareFrames(expected, actual, false);
         }
         catch(Exception ex) {

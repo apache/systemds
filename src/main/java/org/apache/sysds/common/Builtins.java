@@ -121,6 +121,7 @@ public enum Builtins {
 	DENIALCONSTRAINTS("denialConstraints", true),
 	DIFFERENCESTATISTICS("differenceStatistics", true),
 	DIAG("diag", false),
+	DISCOVER_DR("dedup", true), 
 	DISCOVER_FD("discoverFD", true),
 	DISCOVER_MD("mdedup", true),
 	SETDIFF("setdiff", true),

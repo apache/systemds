@@ -133,7 +133,9 @@ computeLSH = function(Matrix[Double] V, Matrix[Double] H)
   P = V %*% t(H) 
   # if 0 -> 0*2-1 = -1
   # if 1 -> 1*2-1 = 1
-  hashCodes = (P > 0) * 2 - 1 
+
+  # compare elementwise 
+  hashCodes = (P >= 0) # returns 1 for true, 0 for false
 }
 
 formBuckets = function(Matrix[Int] hashCodes)
@@ -143,9 +145,6 @@ formBuckets = function(Matrix[Int] hashCodes)
   n = nrow(hashCodes)
   K = ncol(hashCodes)
 
-  # convert 1/-1 to binary
-  bincodes = (hashCodes + 1) /2
-
   # generate binary weighting vector (e.g. 2^n-1, ..., 2^0)
   powers = matrix(0, rows=1, cols=K)
   for (k in 1:K) {
@@ -153,7 +152,7 @@ formBuckets = function(Matrix[Int] hashCodes)
   }
   
   # generate Bucket-IDs
-  bucketIDs = binCodes %*% t(powers)
+  bucketIDs = hashCodes %*% t(powers)
 }
 
 # extractDuplicates

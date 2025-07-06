@@ -38,7 +38,6 @@ m_raGroupby = function (Matrix[Double] X, Integer col, String method)
   return (Matrix[Double] Y)
 {
   if (method == "nested-loop") {
-    # print(toString(X))
     # Extract and sort unique values from the specified column (1-based index)
     uniqueValues = unique(X[, col])
     order_uniqueValues = order(target = uniqueValues, by = 1);

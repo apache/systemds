@@ -52,37 +52,97 @@ m_raGroupby = function (Matrix[Double] X, Integer col, String method)
     Y = matrix(0,numGroups,maxRowsInGroup*(ncol(X)-1)+1)
 
     # Put the ordered uniqueValues into first column of Y as group_id
-    #Y[,1] = order_uniqueValues
     Y[,1] = uniqueValues
 
-    # Loop for each group
-    for(i in 1:numGroups){
-      index = 0
+    # save the initial order of the groups in Y
+    Yindexes = order(target = Y, by = 1, index.return = TRUE)
 
-      # Iterate each row in matrix X to deal with group data
-      for ( j in 1:nrow(X) ) {
-        if ( as.scalar( X[j,col] == uniqueValues[i,1] )) {
-          # Define the formula of the start and end column position
-          startCol = index*(ncol(X)-1) +2
-          endCol = startCol + (ncol(X)-2)
+    # order Y by the groups increasing
+    Y = order(target = Y, by = 1, decreasing = FALSE, index.return = FALSE)
 
-          if (col == 1) {
-            # Case when the selected column is the first column
-            Y[i,startCol:endCol] = X[j,2:ncol(X)]
-          }
-          else if (col == ncol(X)) {
-            # Case when the selected column is the last column
-            Y[i,startCol:endCol] = X[j,1:(ncol(X)-1)]
-          }
-          else {
-            # General case
-            newRow = cbind(X[j, 1:(col-1)], X[j, (col+1):ncol(X)])
-            Y[i,startCol:endCol] = newRow
-          }
-          index = index +1
+    # order the initial matrix
+    Xindexes = order(target = X, by = col, index.return = TRUE)
+    X = order(target = X, by = col, decreasing = FALSE, index.return = FALSE)
+
+    # the amount of unique groups that are remaining
+    restingGroups = nrow(uniqueValues)
+
+    # intial group to copy the values into Y
+    Ypos = 1
+
+    # start positon in the row final matrix
+    YrowStart = 1
+    i = 1
+
+    #loop over the initial matrix
+    while(restingGroups > 0){
+
+        currentGroup = as.scalar(Y[Ypos,1])
+
+        # amount of rows that need to be copied
+        amountRows = 0
+
+        # find the rows for the current group
+        GROUP = 1
+        while(GROUP > 0){
+            # break if there are no more row left in X
+            if(i > nrow(X)){
+                GROUP = 0
+            }
+            # check if the row belongs to the current group
+            else if(as.scalar(X[i, col]) == currentGroup){
+                amountRows = amountRows + 1
+                i = i + 1
+            }
+            # break if the row does not belong to the current group
+            else{
+               GROUP = 0
+            }
         }
-      }
+
+        # copy the values into the final matrix
+        if (amountRows > 0){
+            # create a matrix of the row that should be copied without the group column
+            YrowEnd = YrowStart + amountRows - 1
+
+            # case selected column is first column
+            if (col == 1){
+                newMatrix = X[YrowStart:YrowEnd, (col+1):ncol(X)]
+            }
+            # case selected column is last column
+            else if (col == ncol(X)) {
+                newMatrix = X [YrowStart:YrowEnd, 1:col-1]
+            }
+            # normal case
+            else {
+                newMatrix = cbind(X[YrowStart:YrowEnd, 1:(col-1)], X[YrowStart:YrowEnd, (col+1):ncol(X)])
+            }
+
+            # flatten the new row
+            newRow = matrix(newMatrix, rows = 1, cols = nrow(newMatrix) * ncol(newMatrix))
+            newRowColumns = amountRows * (ncol(X)-1)
+
+            # add the new row into Y at the current group
+            Y[Ypos, 2: (newRowColumns + 1)] = newRow
+        }
+
+        # continue with the next group
+        Ypos = Ypos + 1
+        YrowStart = YrowStart + amountRows
+        restingGroups = restingGroups - 1
     }
+
+    #restore the initial order of X
+    X = cbind(X, Xindexes)
+    ncol_X = ncol(X)
+    X = order(target = X, by= ncol_X)
+    X = X[, 1:ncol_X-1]
+
+    #restore the initial order of Y
+    Y = cbind(Y, Yindexes)
+    ncol_Y = ncol(Y)
+    Y = order(target = Y, by= ncol_Y)
+    Y = Y[, 1:ncol_Y-1]
   }
   else if (method == "permutation-matrix") {
     # Extract the grouping column and create unique groups

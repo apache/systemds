@@ -143,8 +143,6 @@ m_raGroupby = function (Matrix[Double] X, Integer col, String method)
     ncol_Y = ncol(Y)
     Y = order(target = Y, by= ncol_Y)
     Y = Y[, 1:ncol_Y-1]
-
-    print(toString(Y))
   }
   else if (method == "permutation-matrix") {
    # Extract the grouping column and create unique groups

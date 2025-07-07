@@ -31,34 +31,33 @@
 # X                 Input Frame[String] with n rows and d columns (raw tuples)
 # gloveMatrix       Matrix[Double] of size |V| × e (pretrained GloVe embeddings) -> |V| number of words and e = embedding dimesnion
 # vocab             Matrix[String] of size |V| × 1 (vocabulary aligned with gloveMatrix)
-# similarityMeasure String specifying similarity metric: "cosine", "euclidean", etc.
-# returnDuplicates  Boolean: if TRUE, return only detected duplicate rows;
-#                   if FALSE, return input minus all detected duplicates
+# similarityMeasure (optional) String specifying similarity metric: "cosine", "euclidean"
+# threshold         (optional) Double: threshold value above which tuples are considered duplicates
 # --------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # --------------------------------------------------------------------------------------
-# Y    Frame[String] of deduplicated or duplicate-only tuples
+# Y_unique           Frame[String] with deduplicated tuples
+#                    (first occurrence of each duplicate group is retained)
+# Y_duplicates       Frame[String] with all detected duplicates
+#                    (i.e., tuples removed from the input) 
 # --------------------------------------------------------------------------------------
 
-# TODO: define default parameter 
-f_dedup = function(Frame[String] X, Matrix[Double] gloveMatrix, Matrix[String] vocab, String similarityMeasure, Boolean returnDuplicates)
-  return(Frame[String] FinalData)
+f_dedup = function(Frame[String] X, Matrix[Double] gloveMatrix, Matrix[String] vocab, String similarityMeasure = "cosine", Double threshold = 0.8)
+  return(Frame[String] Y_unique, Frame[String] Y_duplicates)
 {
   # Step 1: Distributed Representation (DRs)
   V = computeDRMatrix(X, vocab, gloveMatrix)
 
   # Step 2: generate LSH Hyperplanes
   K = 10 # number of hash functions
-  d = nCol(V)
-  # TODO ggf 'uniform' 
-  H = rand(rows=K, cols=d, pdf="normal", seed=-1) # matrix with random hyperplanes
+  d = ncol(V)
+  H = rand(rows=K, cols=d, pdf="uniform", seed=-1) 
 
   # Step 3: Compute LSH Hashcodes
   hashCodes = computeLSH(V, H)
 
   # Step 4: Form Buckets 
-  # Tuples with similar directions → often have the same hash code
   bucketIDs = formBuckets(hashCodes)
 
   # Step 5: Candidate Pair Generation
@@ -68,25 +67,32 @@ f_dedup = function(Frame[String] X, Matrix[Double] gloveMatrix, Matrix[String] v
   sim = computeSimilarity(V, pairs, similarityMeasure)
 
   # Step 7: Filter Duplicates 
-  # define threshold as parameter 
   matches = filterDuplicates(pairs, sim, threshold)
 
-  # if missing columns, merge tuple with duplicated 
-
-  # Step 8: Return according to flag
-  if (returnDuplicates) {
-    Y = extractDuplicates
-  } else {
-    Y = removeDuplicates
+  # Step 8: Extract duplicate indices
+  dupIndices = matrix(0, rows=0, cols=1)
+  if (nrow(matches) > 0) {
+    dupIndices = matches[,2]  # keep first tuple
   }
-  # TODO: Return always dupicated tuples, kein flag nötig -> beides zurückgeben 
+
+  # remove duplicate rows
+  keepMask = matrix(1, rows=nrow(X), cols=1)
+  for (i in 1:nrow(dupIndices)) {
+    keepMask[dupIndices[i,1],1] = 0
+  }
+  keepIDs = matrix(0, rows=0, cols=1)
+  for (i in 1:nrow(keepMask)) {
+    if (keepMask[i,1] == 1)
+      keepIDs = rbind(keepIDs, matrix(i,1,1))
+  }
+  Y_duplicates = X[dupIndices, ]
+  Y_unique = X[keepIDs, ]
 }
 
 computeDRMatrix = function(Frame[String] X, Matrix[String] vocab, Matrix[Double] gloveMatrix)
   return (Matrix[Double] V)
 {
-  # TODO: 
-  # Vectorize this implementation with dedicated transform incode permutation matrices
+  # TODO: Vectorize this implementation with dedicated transform incode permutation matrices
   n = nrow(X)
   d = ncol(gloveMatrix)
   V = matrix(0, rows=n, cols=d) # define output matrix
@@ -155,8 +161,66 @@ formBuckets = function(Matrix[Int] hashCodes)
   bucketIDs = hashCodes %*% t(powers)
 }
 
-# extractDuplicates
+findCandidatePairs = function(Matrix[Int] bucketIDs)
+  return (Matrix[Int] pairs)
+{
+  n = nrow(bucketIDs)
+  pairs = matrix(0, rows=0, cols=2)
 
-# removeDuplicates
+  # O(n^2)-Vergleich TODO: ggf. mit Java verbessern
+  for (i in 1:(n - 1)) {
+    for (j in (i + 1):n) {
+      if (bucketIDs[i,1] == bucketIDs[j,1]) {
+        pairs = rbind(pairs, matrix(c(i, j), rows=1, cols=2))
+      }
+    }
+  }
+}
 
+computeSimilarity = function(Matrix[Double] V, Matrix[Int] pairs, String similarityMeasure)
+  return (Matrix[Double] similarities)
+{
+  m = nrow(pairs)
+  d = ncol(V)
+  similarities = matrix(0.0, rows=m, cols=1)
 
+  for (k in 1:m) {
+    i = as.scalar(pairs[k,1])
+    j = as.scalar(pairs[k,2])
+
+    vi = V[i,]  # Vektor i
+    vj = V[j,]  # Vektor j
+
+    if (similarityMeasure == "cosine") {
+      dot = sum(vi * vj)
+      norm_i = sqrt(sum(vi^2))
+      norm_j = sqrt(sum(vj^2))
+      sim = dot / (norm_i * norm_j)
+    }
+    else if (similarityMeasure == "euclidean") {
+      diff = vi - vj
+      sim = -1 * sqrt(sum(diff^2)) 
+    }
+    else {
+      stop("Unsupported similarity measure: " + similarityMeasure)
+    }
+
+    similarities[k,1] = sim
+  }
+}
+
+filterDuplicates = function(Matrix[Int] pairs, Matrix[Double] similarities, Double threshold)
+  return (Matrix[Int] matches)
+{
+  m = nrow(pairs)
+  matches = matrix(0, rows=0, cols=2)
+
+  for (i in 1:m) {
+    sim = similarities[i,1]
+
+    if (sim >= threshold) {
+      row = pairs[i,]
+      matches = rbind(matches, row)
+    }
+  }
+}

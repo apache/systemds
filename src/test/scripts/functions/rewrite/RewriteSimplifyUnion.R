@@ -30,13 +30,21 @@ library("Matrix")
 library("matrixStats")
 
 # Read matrices
-X = seq(1, 7)
-Y = seq(4, 10)
+colNum = as.integer(args[1])
+rowNum = as.integer(args[2])
+X = matrix(rep(1, colNum), nrow=1, ncol=colNum)
+Y = matrix(rep(1 + floor(rowNum / 2), colNum), nrow=1, ncol=colNum)
+
+if(rowNum != 1) {
+    for(i in 2 : rowNum - 1) {
+        X = rbind(X, rep(i + 1, colNum))
+        Y = rbind(Y, rep(i + 1 + floor(rowNum / 2), colNum))
+    }
+}
 
 # Perform operations
-combined = c(rbind(X,Y));
+combined = rbind(X,Y);
 R = unique(combined);
-R = sort(R);
 
 #Write result matrix R
-writeMM(as(R, "CsparseMatrix"), paste(args[2], "R", sep=""))
+writeMM(as(R, "CsparseMatrix"), paste(args[3], "R", sep=""))

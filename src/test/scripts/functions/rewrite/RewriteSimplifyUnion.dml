@@ -21,13 +21,21 @@
 
 
 
-# type = $1
-A = matrix("1 2 3 4 5 6 7", rows=7, cols=1)
-B = matrix("4 5 6 7 8 9 10", rows=7, cols=1)
-C = rbind(A,B)
-D = unique(C)
-D = order(target=D)
-# print(D)
+colNum = $1
+rowNum = $2
+
+X = matrix(1, rows=rowNum, cols=colNum)
+Y = matrix(1, rows=rowNum, cols=colNum)
+for (i in 1 : rowNum) {
+    for (j in 1 : colNum) {
+        X[i, j] = i
+        Y[i, j] = i + floor(rowNum/2)
+    }
+}
+
+C = rbind(X,Y)
+R = unique(C)
+R = order(target=R)
 
 # Write the result matrix R
-write(D, $2)
+write(R, $3)

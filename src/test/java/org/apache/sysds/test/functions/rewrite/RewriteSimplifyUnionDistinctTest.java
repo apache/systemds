@@ -42,8 +42,18 @@ public class RewriteSimplifyUnionDistinctTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testUnionDistinctNoRewrite() {
-		testRewriteSimplifyUnionDistinct(2, false);
+	public void testUnionDistinctRewriteOne() {
+		testRewriteSimplifyUnionDistinct(1, true);
+	}
+
+	@Test
+	public void testUnionDistinctRewriteFifty() {
+		testRewriteSimplifyUnionDistinct(50, true);
+	}
+
+	@Test
+	public void testUnionDistinctRewriteOneThousand() {
+		testRewriteSimplifyUnionDistinct(1000, true);
 	}
 
 	@Test
@@ -59,9 +69,11 @@ public class RewriteSimplifyUnionDistinctTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-explain", "-stats", "-args", String.valueOf(ID), output("R")};
+			int rowNum = (int) (Math.random() * 1000);
+			programArgs = new String[] {"-explain", "-stats", "-args", String.valueOf(ID), String.valueOf(rowNum),
+				output("R")};
 			fullRScriptName = HOME + TEST_NAME + ".R";
-			rCmd = getRCmd(String.valueOf(ID), expectedDir());
+			rCmd = getRCmd(String.valueOf(ID), String.valueOf(rowNum), expectedDir());
 
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 

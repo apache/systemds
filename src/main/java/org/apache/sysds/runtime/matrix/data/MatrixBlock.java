@@ -34,6 +34,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.HashSet;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -4931,57 +4933,113 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 
 	public MatrixBlock unionOperations(MatrixBlock m1, MatrixBlock m2) {
-		HashSet<List<Double>> set = new HashSet<>();
-		boolean[] toAddArr = new boolean[m1.getNumRows() + m2.getNumRows()];
-		int id = 0;
-		for(int i = 0; i < m1.getNumRows(); i++) {
-			List<Double> row = new ArrayList<>();
-			for(int j = 0; j < m1.getNumColumns(); j++) {
-				row.add(m1.get(i, j));
+		if(m1.getNumColumns() == 1) {
+			HashSet<Double> set = new HashSet<>();
+			boolean[] toAddArr = new boolean[m1.getNumRows() + m2.getNumRows()];
+			int id = 0;
+			for(int i = 0; i < m1.getNumRows(); i++) {
+				Double val = m1.get(i, 0);
+				if(!set.contains(val)) {
+					set.add(val);
+					toAddArr[id] = true;
+				}
+				id++;
 			}
-			if(!set.contains(row)) {
-				set.add(row);
-				toAddArr[id] = true;
-			}
-			id++;
-		}
 
-		for(int i = 0; i < m2.getNumRows(); i++) {
-			List<Double> row = new ArrayList<>();
-			for(int j = 0; j < m2.getNumColumns(); j++) {
-				row.add(m2.get(i, j));
+			for(int i = 0; i < m2.getNumRows(); i++) {
+				Double val = m2.get(i, 0);
+				if(!set.contains(val)) {
+					set.add(val);
+					toAddArr[id] = true;
+				}
+				id++;
 			}
-			if(!set.contains(row)) {
-				set.add(row);
-				toAddArr[id] = true;
-			}
-			id++;
-		}
 
-		MatrixBlock mbOut = new MatrixBlock(set.size(), m1.getNumColumns(), false);
-		int rowOut = 0;
-		int rowId = 0;
-		for(boolean toAdd : toAddArr) {
-			if(toAdd) {
-				if(rowId < m1.getNumRows()) {
-					// is first matrix
-					for(int i = 0; i < m1.getNumColumns(); i++) {
-						mbOut.set(rowOut, i, m1.get(rowId, i));
+			MatrixBlock mbOut = new MatrixBlock(set.size(), m1.getNumColumns(), false);
+			int rowOut = 0;
+			int rowId = 0;
+			for(boolean toAdd : toAddArr) {
+				if(toAdd) {
+					if(rowId < m1.getNumRows()) {
+						// is first matrix
+						mbOut.set(rowOut, 0, m1.get(rowId, 0));
+					}
+					else {
+						// is second matrix
+						int tempRowId = rowId - m1.getNumRows();
+						mbOut.set(rowOut, 0, m2.get(tempRowId, 0));
+					}
+					rowOut++;
+				}
+				rowId++;
+			}
+
+			return mbOut;
+		}
+		else {
+			Set<double[]> set = new TreeSet<>((o1, o2) -> {
+				for(int i = 0; i < o1.length; i++) {
+					if(o1[i] < o2[i]) {
+						return -1;
+					}
+					else if(o1[i] > o2[i]) {
+						return 1;
 					}
 				}
-				else {
-					// is second matrix
-					int tempRowId = rowId - m1.getNumRows();
-					for(int i = 0; i < m2.getNumColumns(); i++) {
-						mbOut.set(rowOut, i, m2.get(tempRowId, i));
-					}
+				return 0;
+			});
+			boolean[] toAddArr = new boolean[m1.getNumRows() + m2.getNumRows()];
+			int id = 0;
+			for(int i = 0; i < m1.getNumRows(); i++) {
+				double[] row = new double[m1.getNumColumns()];
+				for(int j = 0; j < m1.getNumColumns(); j++) {
+					// row.add(m1.get(i, j));
+					row[j] = m1.get(i, j);
 				}
-				rowOut++;
+				if(!set.contains(row)) {
+					set.add(row);
+					toAddArr[id] = true;
+				}
+				id++;
 			}
-			rowId++;
-		}
 
-		return mbOut;
+			for(int i = 0; i < m2.getNumRows(); i++) {
+				double[] row = new double[m2.getNumColumns()];
+				for(int j = 0; j < m2.getNumColumns(); j++) {
+					row[j] = m2.get(i, j);
+				}
+				if(!set.contains(row)) {
+					set.add(row);
+					toAddArr[id] = true;
+				}
+				id++;
+			}
+
+			MatrixBlock mbOut = new MatrixBlock(set.size(), m1.getNumColumns(), false);
+			int rowOut = 0;
+			int rowId = 0;
+			for(boolean toAdd : toAddArr) {
+				if(toAdd) {
+					if(rowId < m1.getNumRows()) {
+						// is first matrix
+						for(int i = 0; i < m1.getNumColumns(); i++) {
+							mbOut.set(rowOut, i, m1.get(rowId, i));
+						}
+					}
+					else {
+						// is second matrix
+						int tempRowId = rowId - m1.getNumRows();
+						for(int i = 0; i < m2.getNumColumns(); i++) {
+							mbOut.set(rowOut, i, m2.get(tempRowId, i));
+						}
+					}
+					rowOut++;
+				}
+				rowId++;
+			}
+
+			return mbOut;
+		}
 	}
 	
 		

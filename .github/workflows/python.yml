@@ -118,7 +118,7 @@ jobs:
           black \
           opt-einsum \
           nltk
-        
+
     - name: Build Python Package
       run: |
         cd src/main/python

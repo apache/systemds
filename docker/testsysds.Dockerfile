@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 # Stage 1: Build SEAL
-FROM debian:bullseye-slim AS seal-build
+FROM debian:bullseye-slim@sha256:b5f9bc44bdfbd9d551dfdd432607cbc6bb5d9d6dea726a1191797d7749166973 AS seal-build
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -40,7 +40,7 @@ RUN wget -qO- https://github.com/microsoft/SEAL/archive/refs/tags/v3.7.0.tar.gz 
     && cmake --install build --prefix /seal-install
 
 # Stage 2: Final image with R, JDK, Maven, SEAL
-FROM debian:bullseye-slim
+FROM debian:bullseye-slim@sha256:b5f9bc44bdfbd9d551dfdd432607cbc6bb5d9d6dea726a1191797d7749166973
 
 WORKDIR /usr/src/
 ENV MAVEN_VERSION=3.9.9

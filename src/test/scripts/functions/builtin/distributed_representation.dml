@@ -25,6 +25,6 @@ vocab = read($3, format = "frame")
 similarity = $4
 threshold = as.double($5)
 
-[Y_unique, Y_duplicates] = f_dedup(X, gloveMatrix, vocab, similarity, threshold)
+[Y_unique, Y_duplicates] = dedup(X, gloveMatrix, vocab, similarity, threshold)
 
 write(Y_unique, $6, format="frame")

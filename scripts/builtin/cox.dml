@@ -25,28 +25,28 @@
 # 
 # INPUT:
 # -------------------------------------------------------------------------------------------------
-# X      Location to read the input matrix X containing the survival data 
-#        containing the following information
-#        1: timestamps 
-#        2: whether an event occurred (1) or data is censored (0)
-#        3: feature vectors
-# TE     Column indices of X as a column vector which contain timestamp 
-#        (first row) and event information (second row)
-# F      Column indices of X as a column vector which are to be used for 
-#        fitting the Cox model
-# R      If factors (categorical variables) are available in the input matrix
-#        X, location to read matrix R containing the start and end indices of
-#        the factors in X
-#        R[,1]: start indices
-#        R[,2]: end indices
-#        Alternatively, user can specify the indices of the baseline level of
-#        each factor which needs to be removed from X; in this case the start
-#        and end indices corresponding to the baseline level need to be the same;
-#        if R is not provided by default all variables are considered to be continuous 
-# alpha  Parameter to compute a 100*(1-alpha)% confidence interval for the betas  
-# tol    Tolerance ("epsilon")
-# moi    Max. number of outer (Newton) iterations
-# mii    Max. number of inner (conjugate gradient) iterations, 0 = no max   
+# X             Location to read the input matrix X containing the survival data
+#               containing the following information
+#               1: timestamps
+#               2: whether an event occurred (1) or data is censored (0)
+#               3: feature vectors
+# TE            Column indices of X as a column vector which contain timestamp
+#               (first row) and event information (second row)
+# F             Column indices of X as a column vector which are to be used for
+#               fitting the Cox model
+# R             If factors (categorical variables) are available in the input matrix
+#               X, location to read matrix R containing the start and end indices of
+#               the factors in X
+#               R[,1]: start indices
+#               R[,2]: end indices
+#               Alternatively, user can specify the indices of the baseline level of
+#               each factor which needs to be removed from X; in this case the start
+#               and end indices corresponding to the baseline level need to be the same;
+#               if R is not provided by default all variables are considered to be continuous
+# alpha         Parameter to compute a 100*(1-alpha)% confidence interval for the betas
+# tol           Tolerance ("epsilon")
+# maxIter       Max. number of outer (Newton) iterations
+# maxInnerIter  Max. number of inner (conjugate gradient) iterations, 0 = no max
 #
 # -------------------------------------------------------------------------------------------------
 #
@@ -80,7 +80,7 @@
 # ------------------------------------------------------------------------------------------------------
 
 m_cox = function(Matrix[Double] X, Matrix[Double] TE, Matrix[Double] F, Matrix[Double] R,
-    Double alpha = 0.05, Double tol = 0.000001, Integer moi = 100, Integer mii = 0)
+    Double alpha = 0.05, Double tol = 0.000001, Integer maxIter = 100, Integer maxInnerIter = 0)
   return (Matrix[Double] M, Matrix[Double] S, Matrix[Double] T, Matrix[Double] COV, Matrix[Double] RT, Matrix[Double] XO) {
 
   X_orig = X;
@@ -201,7 +201,7 @@ m_cox = function(Matrix[Double] X, Matrix[Double] TE, Matrix[Double] F, Matrix[D
   delta = 0.5 * sqrt (D) / max (sqrt (rowSums (X ^ 2)));
   initial_g2 = sum (g ^ 2);
   exit_g2 = initial_g2 * tol ^ 2;
-  maxiter = 100;
+  maxiter = maxIter;
   maxinneriter = min (D, 100);
   i = 0;
   sum_g2 = sum (g ^ 2);

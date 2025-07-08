@@ -32,13 +32,13 @@
 # M                             Number of subspaces
 # k                             Number of vectors in the subcodebooks
 # runs                          Number of runs (with different initial centroids)
-# max_iter                      Maximum number of iterations per run
-# eps                           Tolerance (epsilon) for WCSS change ratio
-# avg_sample_size_per_centroid  Average number of records per centroid in data samples
+# maxIter                       Maximum number of iterations per run
+# tol                           Tolerance (epsilon) for WCSS change ratio
+# avgSampleSizePerCentroid      Average number of records per centroid in data samples
 # separate                      Cluster subspaces separately. If value is set to true,
 #                               kmeans is run M times, once for each subspace. Otherwise
 #                               kmeans is run only once.
-# space_decomp                  Decompose the vector space by multiplying the input
+# spaceDecomp                   Decompose the vector space by multiplying the input
 #                               matrix X with an orthogonal matrix R. Assumes the data
 #                               follows a parametric Gaussian distribution.
 #                               Time complexity in O(nrow(X)^2 * min(nrow(X), ncol(X))).
@@ -55,11 +55,12 @@
 #           onto a vector of codes. The entries in the codes matrix are the indices of
 #           the vectors in the codebook. The codes matrix has the dimensions [nrow(X) x M].
 # R         The orthogonal matrix R which is applied to the input matrix X before performing
-#           the product quantization. Only relevant when space_decomp = TRUE.
+#           the product quantization. Only relevant when spaceDecomp = TRUE.
 # ------------------------------------------------------------------------------------------
 
-m_quantizeByCluster = function(Matrix[Double]X, Integer M = 4, Integer k = 10, Integer runs = 10,
-    Integer max_iter = 1000, Double eps = 1e-6, Integer avg_sample_size_per_centroid = 50, Boolean separate=TRUE, Boolean space_decomp=FALSE, Integer seed = -1)
+m_quantizeByCluster = function(Matrix[Double] X, Integer M = 4, Integer k = 10, Integer runs = 10,
+    Integer maxIter = 1000, Double tol = 1e-6, Integer avgSampleSizePerCentroid = 50, Boolean separate=TRUE,
+    Boolean spaceDecomp=FALSE, Integer seed = -1)
   return(Matrix[Double] codebook, Matrix[Double] codes, Matrix[Double] R)
 {
   #Pad the data with zeros if the number of columns of the input matrix X is not divisible by M
@@ -69,8 +70,9 @@ m_quantizeByCluster = function(Matrix[Double]X, Integer M = 4, Integer k = 10, I
   }
   subvector_size = ncol(X) / M
   #Transform the vector space by an orthogonal matrix R.
-  #R is computed by reordering the principal directions of the input matrix X such that the variance of each subspace is balanced.
-  if(space_decomp) {
+  #R is computed by reordering the principal directions of the input matrix X such that the variance of each subspace
+  #is balanced.
+  if(spaceDecomp) {
     #Perform PCA using SVD
     X2 = X - colMeans(X)
     [U, S, V] = svd(X2)
@@ -97,7 +99,7 @@ m_quantizeByCluster = function(Matrix[Double]X, Integer M = 4, Integer k = 10, I
   #The ith entry of a code vector has a value in [1, k*M].
   if(!separate) {
     A = matrix(X, rows= nrow(X) * M, cols=subvector_size)
-    [codebook, B] = kmeans(A, k * M, runs, max_iter, eps, FALSE, avg_sample_size_per_centroid, seed)
+    [codebook, B] = kmeans(A, k * M, runs, maxIter, tol, FALSE, avgSampleSizePerCentroid, seed)
     codes = matrix(B, rows = nrow(B) / M, cols = ncol(B) * M)
   }
   #Kmeans is run for every subspace separately. Subvectors are mapped to a subset of k vectors of the codebook.
@@ -106,7 +108,7 @@ m_quantizeByCluster = function(Matrix[Double]X, Integer M = 4, Integer k = 10, I
     codebook = matrix(1, rows=k*M, cols=subvector_size)
     codes = matrix(1, rows=nrow(X), cols=M)
     for(i in 1:M, check=0) {
-      [tmp_cbook, tmp_c] = kmeans(X[,(i-1)*subvector_size+1:i*subvector_size], k, runs, max_iter, eps, FALSE, avg_sample_size_per_centroid, seed)
+      [tmp_cbook, tmp_c] = kmeans(X[,(i-1)*subvector_size+1:i*subvector_size], k, runs, maxIter, tol, FALSE, avgSampleSizePerCentroid, seed)
       #If no output is produced, use a single centroid
       if(as.scalar(tmp_c[1,1]) < 1) {
         tmp_cbook = matrix(0, rows=k, cols=subvector_size)

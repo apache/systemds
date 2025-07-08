@@ -88,8 +88,8 @@ Kc = floor(ncol(A) * 0.8);
 
 for (i in 1:10) {
   newA1 = PCA(A=A, K=Kc+i);
-  beta1 = lm(X=newA1, y=y, icpt=1, reg=0.0001, verbose=FALSE);
-  y_predict1 = lmPredict(X=newA1, B=beta1, ytest=matrix(0,1,1), icpt=1);
+  beta1 = lm(X=newA1, y=y, intercept=1, reg=0.0001, verbose=FALSE);
+  y_predict1 = lmPredict(X=newA1, B=beta1, Ytest=matrix(0,1,1), intercept=1);
   R2_ad1 = checkR2(newA1, y, y_predict1, beta1, 1);
   R[,i] = R2_ad1;
 }

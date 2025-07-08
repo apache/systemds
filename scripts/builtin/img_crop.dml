@@ -23,11 +23,11 @@
 #
 # INPUT:
 # ----------------------------------------------------------------------------------------
-# img_in    Input matrix/image
+# img       Input matrix/image
 # w         The width of the subregion required
 # h         The height of the subregion required
-# x_offset  The horizontal coordinate in the image to begin the crop operation
-# y_offset  The vertical coordinate in the image to begin the crop operation
+# offsetX   The horizontal coordinate in the image to begin the crop operation
+# offsetY   The vertical coordinate in the image to begin the crop operation
 # ----------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -35,25 +35,25 @@
 # img_out  Cropped matrix/image
 # --------------------------------------------------------------------------------------------------
 
-m_img_crop = function(Matrix[Double] img_in, Integer w, Integer h, Integer x_offset, Integer y_offset) return (Matrix[Double] img_out) {
+m_img_crop = function(Matrix[Double] img, Integer w, Integer h, Integer offsetX, Integer offsetY) return (Matrix[Double] img_out) {
   # crop - cut out a subregion of an image. Adapted from image_utils.dml
-  orig_w = ncol(img_in)
-  orig_h = nrow(img_in)
+  orig_w = ncol(img)
+  orig_h = nrow(img)
 
-  start_h = (ceil((orig_h - h) / 2)) + y_offset
+  start_h = (ceil((orig_h - h) / 2)) + offsetY
   end_h = (start_h + h - 1) 
-  start_w = (ceil((orig_w - w) / 2)) + x_offset
+  start_w = (ceil((orig_w - w) / 2)) + offsetX
   end_w = (start_w + w - 1) 
 
   if((start_h < 0) | (end_h > orig_h) | (start_w < 0) | (end_w > orig_w)) {
     print("Offset out of bounds! Returning input.")
-    img_out = img_in
+    img_out = img
   }
   else {
     mask = matrix(0, rows=orig_h, cols=orig_w)
     temp_mask = matrix(1, rows=h , cols=w )
     mask[start_h:end_h, start_w:end_w] = temp_mask
     mask = matrix(mask, rows=1, cols=orig_w * orig_h)
-    img_out = matrix(removeEmpty(target=(matrix(img_in+1, 1, orig_w * orig_h)), margin="cols", select=mask) - 1, h, w)
+    img_out = matrix(removeEmpty(target=(matrix(img+1, 1, orig_w * orig_h)), margin="cols", select=mask) - 1, h, w)
   }
 }

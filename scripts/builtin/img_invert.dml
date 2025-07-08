@@ -23,8 +23,8 @@
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------------
-# img_in     Input image
-# max_value  The maximum value pixels can have
+# img        Input image
+# maxValue   The maximum value pixels can have
 # ---------------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -32,6 +32,6 @@
 # img_out  Output image
 # -------------------------------------------------------------------------------------------
 
-m_img_invert = function(Matrix[Double] img_in, Double max_value) return (Matrix[Double] img_out) {
-  img_out = max_value - img_in
+m_img_invert = function(Matrix[Double] img, Double maxValue) return (Matrix[Double] img_out) {
+  img_out = maxValue - img
 }

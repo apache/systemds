@@ -26,7 +26,7 @@ y = dataset[1:nrow(dataset), 3]
 
 R = matrix("1.0 2.0", rows=1, cols=ncol(X))
 
-M = xgboost(X = X, y = y, R = R, sml_type=2)
+M = xgboost(X = X, y = y, R = R, smlType=2)
 P = xgboostPredictClassification(X = X, M = M)
 
 write(P, $1)

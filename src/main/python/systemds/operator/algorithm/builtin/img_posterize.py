@@ -28,7 +28,7 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
-def img_posterize(img_in: Matrix,
+def img_posterize(img: Matrix,
                   bits: int):
     """
      The Image Posterize function limits pixel values to 2^bits different values in the range [0, 255].
@@ -36,13 +36,13 @@ def img_posterize(img_in: Matrix,
     
     
     
-    :param img_in: Input image
+    :param img: Input image
     :param bits: The number of bits keep for the values.
         1 means black and white, 8 means every integer between 0 and 255.
     :return: Output image
     """
 
-    params_dict = {'img_in': img_in, 'bits': bits}
-    return Matrix(img_in.sds_context,
+    params_dict = {'img': img, 'bits': bits}
+    return Matrix(img.sds_context,
         'img_posterize',
         named_input_nodes=params_dict)

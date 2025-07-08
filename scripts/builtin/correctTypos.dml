@@ -35,9 +35,9 @@
 # INPUT:
 # ----------------------------------------------------------------------------------------
 # strings              The nx1 input frame of corrupted strings
-# frequency_threshold  Strings that occur above this frequency level will not be corrected
-# distance_threshold   Max distance at which strings are considered similar
-# is_verbose           Print debug information
+# frequencyThreshold   Strings that occur above this frequency level will not be corrected
+# distanceThreshold    Max distance at which strings are considered similar
+# verbose              Print debug information
 # ----------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -47,14 +47,14 @@
 
 # TODO: future: add parameter for list of words that are sure to be correct
 
-f_correctTypos = function(Frame[String] strings, Double frequency_threshold=0.05, Integer distance_threshold=2,  Boolean is_verbose=FALSE)
-  return (Frame[String] Y, Double frequency_threshold, Integer distance_threshold, Matrix[Double] distance_matrix, Frame[Unknown] dict)
+f_correctTypos = function(Frame[String] strings, Double frequencyThreshold=0.05, Integer distanceThreshold=2,  Boolean verbose=FALSE)
+  return (Frame[String] Y, Double frequencyThreshold, Integer distanceThreshold, Matrix[Double] distance_matrix, Frame[Unknown] dict)
 {
-  if(is_verbose)
+  if(verbose)
     print ("BEGIN CORRECT-TYPOS SCRIPT");
   num_strings = length(strings);
 
-  if(is_verbose)
+  if(verbose)
     print("num strings: " + num_strings + "\n")
 
   strings = map(strings, "s -> s.toLowerCase()");
@@ -67,7 +67,7 @@ f_correctTypos = function(Frame[String] strings, Double frequency_threshold=0.05
   lengths = as.matrix(map(strings, "s -> s.length()"));
   
   num_different_strings = nrow(strings);
-  if (is_verbose) {
+  if (verbose) {
     print("dict:" )
     print(toString(dict));
     print("lengths:")
@@ -76,7 +76,7 @@ f_correctTypos = function(Frame[String] strings, Double frequency_threshold=0.05
 
   # generate ascii matrix
   max_len = max(lengths);
-  if (is_verbose) {
+  if (verbose) {
     print("max_len: " + max_len + "\n");
   }
   # TODO: when proper lambda expressions are supported: rewrite in not so hacky
@@ -87,7 +87,7 @@ f_correctTypos = function(Frame[String] strings, Double frequency_threshold=0.05
       ascii_matrix[j, i] = tmp[1, 1];
     }
   }
-  if (is_verbose) {
+  if (verbose) {
     print("ascii_matrix: ")
     print(toString(ascii_matrix));
   }
@@ -97,12 +97,12 @@ f_correctTypos = function(Frame[String] strings, Double frequency_threshold=0.05
   parfor (i in 1:num_different_strings) {
     parfor (j in i:num_different_strings) {
       if (i != j) {
-        if(abs(as.scalar(lengths[i, 1]) - as.scalar(lengths[j , 1])) >= distance_threshold) {
+        if(abs(as.scalar(lengths[i, 1]) - as.scalar(lengths[j , 1])) >= distanceThreshold) {
           distance_matrix[i, j] = 42000;
         } else {
           A = ascii_matrix[1:as.scalar(lengths[i,1]), i];
           B = ascii_matrix[1:as.scalar(lengths[j,1]), j];
-          d = damerauLevenshteinDistanceBound(A, B, distance_threshold, FALSE);
+          d = damerauLevenshteinDistanceBound(A, B, distanceThreshold, FALSE);
           distance_matrix[i, j] = ifelse(d == -1, 42000, d);
         }
       }
@@ -110,7 +110,7 @@ f_correctTypos = function(Frame[String] strings, Double frequency_threshold=0.05
   }
   upper_triangle = upper.tri(target=distance_matrix, values=TRUE);
   distance_matrix = distance_matrix + t(upper_triangle) + diag(matrix(42000, num_different_strings, 1));
-  Y = correctTyposApply(Y, frequency_threshold, distance_threshold, distance_matrix, dict)
+  Y = correctTyposApply(Y, frequencyThreshold, distanceThreshold, distance_matrix, dict)
 }
 
 replaceStrings = function(String replacement, String to_replace, Frame[String] strings)
@@ -129,7 +129,7 @@ buildDictionary = function(Frame[String] S)
   dict = cbind(dstr, as.frame(frequencies));
 }
 
-damerauLevenshteinDistanceBound = function(matrix[double] A, matrix[double] B, double bound, Boolean is_verbose) 
+damerauLevenshteinDistanceBound = function(matrix[double] A, matrix[double] B, double bound, Boolean verbose)
   return(double dl_distance) {
 
   dl_matrix = matrix(0, rows = length(A) + 1, cols = length(B) + 1);
@@ -176,7 +176,7 @@ damerauLevenshteinDistanceBound = function(matrix[double] A, matrix[double] B, d
     break_condition = min(dl_matrix[i - 1, ]) > bound & min(dl_matrix[i, ]) > bound;
   }
 
-  if (is_verbose){
+  if (verbose){
     print("dl distance matrix:")
     print(toString(dl_matrix));
   }

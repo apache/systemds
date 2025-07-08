@@ -35,7 +35,7 @@
 #   BETA_MIN_INDEX        Column index for the smallest beta value
 #   BETA_MAX              Largest beta value (regression coefficient), excluding the intercept
 #   BETA_MAX_INDEX        Column index for the largest beta value
-#   INTERCEPT             Intercept value, or NaN if there is no intercept (if icpt=0)
+#   INTERCEPT             Intercept value, or NaN if there is no intercept (if intercept=0)
 #   DISPERSION            Dispersion used to scale deviance, provided as "disp" input parameter
 #                         or estimated (same as DISPERSION_EST) if the "disp" parameter is <= 0
 #   DISPERSION_EST        Dispersion estimated from the dataset
@@ -93,39 +93,39 @@
 #
 # INPUT:
 # --------------------------------------------------------------------------------------------
-# X        matrix X of feature vectors
-# Y        matrix Y with either 1 or 2 columns:
-#          if dfam = 2, Y is 1-column Bernoulli or 2-column Binomial (#pos, #neg)
-# dfam     Distribution family code: 1 = Power, 2 = Binomial
-# vpow     Power for Variance defined as (mean)^power (ignored if dfam != 1):
-#          0.0 = Gaussian, 1.0 = Poisson, 2.0 = Gamma, 3.0 = Inverse Gaussian
-# link     Link function code: 0 = canonical (depends on distribution),
-#          1 = Power, 2 = Logit, 3 = Probit, 4 = Cloglog, 5 = Cauchit
-# lpow     Power for Link function defined as (mean)^power (ignored if link != 1):
-#          -2.0 = 1/mu^2, -1.0 = reciprocal, 0.0 = log, 0.5 = sqrt, 1.0 = identity
-# yneg     Response value for Bernoulli "No" label, usually 0.0 or -1.0
-# icpt     Intercept presence, X columns shifting and rescaling:
-#          0 = no intercept, no shifting, no rescaling;
-#          1 = add intercept, but neither shift nor rescale X;
-#          2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
-# reg      Regularization parameter (lambda) for L2 regularization
-# tol      Tolerance (epsilon)
-# disp     (Over-)dispersion value, or 0.0 to estimate it from data
-# moi      Maximum number of outer (Newton / Fisher Scoring) iterations
-# mii      Maximum number of inner (Conjugate Gradient) iterations, 0 = no maximum
-# verbose  if the Algorithm should be verbose
+# X                  matrix X of feature vectors
+# Y                  matrix Y with either 1 or 2 columns:
+#                    if dfam = 2, Y is 1-column Bernoulli or 2-column Binomial (#pos, #neg)
+# dfam               Distribution family code: 1 = Power, 2 = Binomial
+# vpow               Power for Variance defined as (mean)^power (ignored if dfam != 1):
+#                    0.0 = Gaussian, 1.0 = Poisson, 2.0 = Gamma, 3.0 = Inverse Gaussian
+# link               Link function code: 0 = canonical (depends on distribution),
+#                    1 = Power, 2 = Logit, 3 = Probit, 4 = Cloglog, 5 = Cauchit
+# lpow               Power for Link function defined as (mean)^power (ignored if link != 1):
+#                    -2.0 = 1/mu^2, -1.0 = reciprocal, 0.0 = log, 0.5 = sqrt, 1.0 = identity
+# yneg               Response value for Bernoulli "No" label, usually 0.0 or -1.0
+# intercept          Intercept presence, X columns shifting and rescaling:
+#                    0 = no intercept, no shifting, no rescaling;
+#                    1 = add intercept, but neither shift nor rescale X;
+#                    2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
+# reg                Regularization parameter (lambda) for L2 regularization
+# tol                Tolerance (epsilon)
+# disp               (Over-)dispersion value, or 0.0 to estimate it from data
+# maxIter            Maximum number of outer (Newton / Fisher Scoring) iterations
+# maxInnerIter       Maximum number of inner (Conjugate Gradient) iterations, 0 = no maximum
+# verbose            if the Algorithm should be verbose
 # ------------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # --------------------------------------------------------------------------------------------
-# beta  Matrix beta, whose size depends on icpt:
-#       icpt=0: ncol(X) x 1;  icpt=1: (ncol(X) + 1) x 1;  icpt=2: (ncol(X) + 1) x 2
+# beta  Matrix beta, whose size depends on intercept:
+#       intercept=0: ncol(X) x 1;  intercept=1: (ncol(X) + 1) x 1;  intercept=2: (ncol(X) + 1) x 2
 #---------------------------------------------------------------------------------------------
 
 m_glm = function(Matrix[Double] X, Matrix[Double] Y, Integer dfam=1, 
   Double vpow=0.0, Integer link=0, Double lpow=1.0, Double yneg=0.0,
-  Integer icpt = 0, Double disp=0.0, Double reg=0.0, Double tol=0.000001,
-  Integer moi=200, Integer mii=0, Boolean verbose=TRUE)
+  Integer intercept = 0, Double disp=0.0, Double reg=0.0, Double tol=0.000001,
+  Integer maxIter=200, Integer maxInnerIter=0, Boolean verbose=TRUE)
   return(Matrix[Double] betas)
 { 
   distribution_type = dfam;
@@ -133,12 +133,12 @@ m_glm = function(Matrix[Double] X, Matrix[Double] Y, Integer dfam=1,
   link_type = link;
   link_as_power_of_the_mean = lpow;
   bernoulli_No_label = yneg;
-  intercept_status = icpt;
+  intercept_status = intercept;
   dispersion = disp;
   regularization = reg;
   eps = tol;
-  max_iteration_IRLS = moi;
-  max_iteration_CG = mii;
+  max_iteration_IRLS = maxIter;
+  max_iteration_CG = maxInnerIter;
 
   # variance_as_power_of_the_mean = as.double (variance_as_power_of_the_mean);
   # link_as_power_of_the_mean = as.double (link_as_power_of_the_mean);

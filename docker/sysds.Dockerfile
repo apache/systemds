@@ -51,7 +51,7 @@ RUN mkdir -p /usr/lib/jvm \
 	&& mv apache-maven-$MAVEN_VERSION /usr/lib/mvn
 
 # Build the system
-RUN git clone -b SYSTEMDS-3877 --depth 1 https://github.com/alexanderschmi/systemds.git systemds && \
+RUN git clone --depth 1 https://github.com/apache/systemds.git systemds && \
 	cd /usr/src/systemds/ && \
 	mvn --no-transfer-progress clean package -P distribution
 

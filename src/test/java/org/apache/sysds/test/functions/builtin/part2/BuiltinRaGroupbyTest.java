@@ -80,6 +80,16 @@ public class BuiltinRaGroupbyTest extends AutomatedTestBase
 		testRaGroupbyTestwithOneGroup("permutation-matrix");
 	}
 
+	@Test
+	public void testRaGroupbyTestwithMultipleGroupRows1() {
+		testRaGroupbyTestwithMultipleGroupRows("nested-loop");
+	}
+
+	@Test
+	public void testRaGroupbyTestwithMultipleGroupRows2() {
+		testRaGroupbyTestwithMultipleGroupRows("permutation-matrix");
+	}
+
 	public void testRaGroupbyTest(String method) {
 		//generate actual dataset and variables
 		double[][] X = {
@@ -155,6 +165,41 @@ public class BuiltinRaGroupbyTest extends AutomatedTestBase
 		// Expected output matrix
 		double[][] Y = {
 				{8, 1, 2, 3, 2, 4, 7, 8, 3, 1, 3, 6, 4, 4, 7, 8, 5, 4, 8, 9, 6},
+		};
+
+		runRaGroupbyTest(X, select_col, Y, method);
+	}
+
+	public void testRaGroupbyTestwithMultipleGroupRows(String method) {
+		// Test case with multiple groups having different numbers of rows
+		// 10 rows x 5 columns, grouping by column 2
+		// Groups: 1->3 rows, 2->2 rows, 3->2 rows, 4->2 rows, 5->1 row
+		double[][] X = {
+				{1, 1, 11, 12, 13},
+				{1, 2, 21, 22, 23},
+				{1, 3, 31, 32, 33},
+				{1, 4, 41, 42, 43},
+				{2, 1, 14, 15, 16},
+				{2, 2, 24, 25, 26},
+				{2, 3, 34, 35, 36},
+				{2, 4, 44, 45, 46},
+				{2, 5, 54, 55, 56},
+				{3, 1, 17, 18, 19}};
+		int select_col = 2;
+
+		// Expected output matrix (grouping by column 2, removing column 2)
+		// Note: Groups are ordered as they appear in the unique() function output
+		// Group 1: 3 rows -> [1,11,12,13], [2,14,15,16], [3,17,18,19]
+		// Group 2: 2 rows -> [1,21,22,23], [2,24,25,26]
+		// Group 4: 2 rows -> [1,41,42,43], [2,44,45,46]
+		// Group 5: 1 row  -> [2,54,55,56]
+		// Group 3: 2 rows -> [1,31,32,33], [2,34,35,36]
+		double[][] Y = {
+				{1, 1, 11, 12, 13, 2, 14, 15, 16, 3, 17, 18, 19},
+				{2, 1, 21, 22, 23, 2, 24, 25, 26, 0, 0, 0, 0},
+				{4, 1, 41, 42, 43, 2, 44, 45, 46, 0, 0, 0, 0},
+				{5, 2, 54, 55, 56, 0, 0, 0, 0, 0, 0, 0, 0},
+				{3, 1, 31, 32, 33, 2, 34, 35, 36, 0, 0, 0, 0}
 		};
 
 		runRaGroupbyTest(X, select_col, Y, method);

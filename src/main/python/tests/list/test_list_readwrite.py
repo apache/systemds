@@ -27,7 +27,6 @@ from systemds.context import SystemDSContext
 
 
 class TestListOperations(unittest.TestCase):
-
     sds: SystemDSContext = None
     temp_dir: str = "tests/list/tmp/readwrite/"
 

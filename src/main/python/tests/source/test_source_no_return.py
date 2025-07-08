@@ -26,7 +26,6 @@ from systemds.context import SystemDSContext
 
 
 class TestSource_NoReturn(unittest.TestCase):
-
     sds: SystemDSContext = None
     src_path: str = "./tests/source/source_with_no_return.dml"
 

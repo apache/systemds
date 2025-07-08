@@ -70,7 +70,6 @@ fed_r3_file = tempdir + "m_r3.fed"
 
 
 class TestFederatedAggFn(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

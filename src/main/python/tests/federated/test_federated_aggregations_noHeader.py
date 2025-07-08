@@ -65,7 +65,6 @@ fed2 = "localhost:8002/" + tempdir + "m2.csv"
 
 
 class TestFederatedAggFn(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

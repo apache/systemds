@@ -27,7 +27,6 @@ from systemds.operator.algorithm import l2svm
 
 
 class TestL2svm(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

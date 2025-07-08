@@ -34,7 +34,6 @@ my = np.random.rand(shape[0], 1)
 
 
 class TestTranspose(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

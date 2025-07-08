@@ -26,7 +26,6 @@ from systemds.context import SystemDSContext
 
 
 class TestRCBind(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     # shape (2, 3)

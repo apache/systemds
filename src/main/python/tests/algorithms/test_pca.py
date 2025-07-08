@@ -27,7 +27,6 @@ from systemds.operator.algorithm import pca
 
 
 class TestPCA(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

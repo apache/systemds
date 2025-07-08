@@ -26,7 +26,6 @@ from systemds.context import SystemDSContext
 
 
 class Test_rIndexing(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

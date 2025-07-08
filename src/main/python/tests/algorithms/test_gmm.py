@@ -26,7 +26,6 @@ from systemds.operator.algorithm import gmm, gmmPredict
 
 
 class TestGMM(unittest.TestCase):
-
     sds: SystemDSContext = None
 
     @classmethod

@@ -43,7 +43,7 @@
 #                    (i.e., tuples removed from the input) 
 # --------------------------------------------------------------------------------------
 
-f_dedup = function(Frame[String] X, Matrix[Double] gloveMatrix, Matrix[String] vocab, String similarityMeasure = "cosine", Double threshold = 0.8)
+f_dedup = function(Frame[String] X, Matrix[Double] gloveMatrix, Frame[String] vocab, String similarityMeasure = "cosine", Double threshold = 0.8)
   return(Frame[String] Y_unique, Frame[String] Y_duplicates)
 {
   # Step 1: Distributed Representation (DRs)
@@ -224,4 +224,5 @@ filterDuplicates = function(Matrix[Int] pairs, Matrix[Double] similarities, Doub
     }
   }
 }
+
 

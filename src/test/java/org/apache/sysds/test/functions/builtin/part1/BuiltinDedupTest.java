@@ -101,7 +101,7 @@ public class BuiltinDedupTest extends AutomatedTestBase {
 			ValueType[] schemaX = new ValueType[]{ValueType.STRING, ValueType.STRING};
 			FrameBlock fbX = new FrameBlock(schemaX);
 			for (String[] row : X) fbX.appendRow(row);
-			writeInputFrameWithMTD("X", fbX, true, new MatrixCharacteristics(X.length, X[0].length, -1, -1), schemaX, FileFormat.CSV);
+			writeInputFrameWithMTD("X", fbX, true, new MatrixCharacteristics(X.length, X[0].length, -1, -1), schemaX, FileFormat.BINARY);
 
 			// ----- Vocab -----
 			String[][] vocab = new String[][]{
@@ -111,7 +111,7 @@ public class BuiltinDedupTest extends AutomatedTestBase {
 			ValueType[] schemaVocab = new ValueType[]{ValueType.STRING};
 			FrameBlock fbVocab = new FrameBlock(schemaVocab);
 			for (String[] row : vocab) fbVocab.appendRow(row);
-			writeInputFrameWithMTD("vocab", fbVocab, true, new MatrixCharacteristics(vocab.length, 1, -1, -1), schemaVocab, FileFormat.CSV);
+			writeInputFrameWithMTD("vocab", fbVocab, true, new MatrixCharacteristics(vocab.length, 1, -1, -1), schemaVocab, FileFormat.BINARY);
 
 			// ----- Glove-Matrix -----
 			double[][] gloveMatrix = getRandomMatrix(vocab.length, 50, -0.5, 0.5, 1, 123);

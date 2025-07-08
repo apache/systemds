@@ -1,0 +1,101 @@
+#-------------------------------------------------------------
+#
+# Script to load ImageNet CSV data and convert to binary format
+#
+#-------------------------------------------------------------
+
+# Function to load and preprocess ImageNet CSV data
+load_and_save_imagenet_data = function() {
+  print("Loading ImageNet CSV data...")
+  
+  # Parameters
+  num_classes = 10  # Adjust based on your data
+  
+  # Use relative paths
+  train_csv = "imagenet_data/imagenet_train.csv"
+  val_csv = "imagenet_data/imagenet_val.csv"
+  
+  # Output binary files
+  train_data_file = "imagenet_data/train_data.bin"
+  train_labels_file = "imagenet_data/train_labels.bin"
+  val_data_file = "imagenet_data/val_data.bin"
+  val_labels_file = "imagenet_data/val_labels.bin"
+  
+  print("Loading training data from CSV...")
+  # Read CSV file
+  train_data = read(train_csv, format="csv", header=FALSE)
+  
+  # Force dense
+  train_data = train_data + 0
+  
+  # Extract labels and features
+  train_labels = train_data[,1]
+  train_features = train_data[,2:ncol(train_data)]
+  
+  # Get sizes
+  N_train = nrow(train_features)
+  D = ncol(train_features)
+  
+  print("Training samples: " + N_train)
+  print("Feature dimension: " + D)
+  
+  # Normalize features to [0, 1]
+  train_features = train_features / 255.0
+  
+  # Convert labels to one-hot encoding
+  # Adjust labels to be 1-based if they are 0-based
+  min_label = min(train_labels)
+  if (min_label == 0) {
+    train_labels = train_labels + 1
+  }
+  
+  train_labels_onehot = table(seq(1, N_train), train_labels, N_train, num_classes)
+  
+  # Save training data in binary format
+  print("Saving training data to binary format...")
+  write(train_features, train_data_file, format="binary")
+  write(train_labels_onehot, train_labels_file, format="binary")
+  
+  print("Loading validation data from CSV...")
+  # Read validation CSV
+  val_data = read(val_csv, format="csv", header=FALSE)
+  
+  # Force dense
+  val_data = val_data + 0
+  
+  # Extract labels and features
+  val_labels = val_data[,1]
+  val_features = val_data[,2:ncol(val_data)]
+  
+  N_val = nrow(val_features)
+  print("Validation samples: " + N_val)
+  
+  # Normalize features
+  val_features = val_features / 255.0
+  
+  # Convert labels to one-hot encoding
+  if (min_label == 0) {
+    val_labels = val_labels + 1
+  }
+  
+  val_labels_onehot = table(seq(1, N_val), val_labels, N_val, num_classes)
+  
+  # Save validation data in binary format
+  print("Saving validation data to binary format...")
+  write(val_features, val_data_file, format="binary")
+  write(val_labels_onehot, val_labels_file, format="binary")
+  
+  print("")
+  print("Data conversion completed!")
+  print("Binary files created:")
+  print("- " + train_data_file + " (shape: " + N_train + " x " + D + ")")
+  print("- " + train_labels_file + " (shape: " + N_train + " x " + num_classes + ")")
+  print("- " + val_data_file + " (shape: " + N_val + " x " + D + ")")
+  print("- " + val_labels_file + " (shape: " + N_val + " x " + num_classes + ")")
+}
+
+# Run the conversion
+load_and_save_imagenet_data()
+
+print("")
+print("You can now use these binary files in your training script for better performance!") 

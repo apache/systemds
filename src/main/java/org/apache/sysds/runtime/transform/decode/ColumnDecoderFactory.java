@@ -96,8 +96,10 @@ public class ColumnDecoderFactory {
                         ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0])),currOffset));
             }
             if( !rcIDs.isEmpty() ) {
-                ldecoders.add(new ColumnDecoderRecode(schema, !dcIDs.isEmpty(),
-                        ArrayUtils.toPrimitive(rcIDs.toArray(new Integer[0])),currOffset));
+                for( int col : rcIDs ) {
+                    ldecoders.add(new ColumnDecoderRecode(schema[col-1], !dcIDs.isEmpty(), col-1, currOffset));
+                    currOffset++;
+                }
             }
             if( !ptIDs.isEmpty() ) {
                 for (int col : ptIDs) {
@@ -137,7 +139,7 @@ public class ColumnDecoderFactory {
         switch(dtype) {
             case Dummycode:   return new ColumnDecoderDummycode(null, null, -1);
             case PassThrough: return new ColumnDecoderPassThrough(null, -1, null, -1);
-            case Recode:      return new ColumnDecoderRecode(null, false, null, -1);
+            case Recode:      return new ColumnDecoderRecode(null, false, -1, -1);
             default:
                 throw new DMLRuntimeException("Unsupported Encoder Type used:  " + dtype);
         }

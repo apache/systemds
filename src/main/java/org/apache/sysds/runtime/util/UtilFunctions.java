@@ -1459,4 +1459,19 @@ public class UtilFunctions {
 		//wer = number of edits / length
 		return (double)p[n] / Math.max(n, m);
 	}
+
+	public static String[] cleanAndTokenizeRow(String[] row) {
+		if (row == null || row.length == 0) {
+			return new String[0];
+		}
+		StringBuilder sb = new StringBuilder();
+		for (String s : row) {
+			if (s != null) {
+				sb.append(s).append(" ");
+			}
+		}
+		String joined = sb.toString().trim().toLowerCase();  
+		
+		return joined.split("\\s+");
+	}
 }

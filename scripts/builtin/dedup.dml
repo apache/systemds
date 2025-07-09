@@ -68,30 +68,52 @@ f_dedup = function(Frame[String] X, Matrix[Double] gloveMatrix, Frame[String] vo
 
   # Step 7: Filter Duplicates 
   matches = filterDuplicates(pairs, sim, threshold)
-
+  
   # Step 8: Extract duplicate indices
+  rows = nrow(matches)
+  
   dupIndices = matrix(0, rows=0, cols=1)
-  if (nrow(matches) > 0) {
-    dupIndices = matches[,2]  # keep first tuple
-  }
-  else {
-    dupIndices = matrix(0, rows=0, cols=1)
-  }
+  dupIndicesTmp = matches[1:rows, 2:2]
+  mask = (rows > 0)
+  dupIndices = ifelse(mask, dupIndicesTmp, dupIndices)  
 
   # remove duplicate rows
   keepMask = matrix(1, rows=nrow(X), cols=1)
-  for (i in 1:nrow(dupIndices)) {
-    keepMask[dupIndices[i,1],1] = 0
+
+  if (nrow(dupIndices) > 0) {
+    for (i in 1:nrow(dupIndices)) {
+      keepMask[dupIndices[i,1],1] = 0
+    }
   }
+
   keepIDs = matrix(0, rows=0, cols=1)
   for (i in 1:nrow(keepMask)) {
-    if (keepMask[i,1] == 1) {
+    if (as.scalar(keepMask[i,1]) == 1) {
       keepIDs = rbind(keepIDs, matrix(i,1,1))
     }
   }
-  print("DEBUG: reached this point")
-  Y_duplicates = X[dupIndices, ]
-  Y_unique = X[keepIDs, ]
+  
+  # Step 9: Extract duplicates and unique rows from X
+  Y_duplicates = removeEmpty(target=X[1,], margin="rows")
+  Y_unique = removeEmpty(target=X[1,], margin="rows")
+
+  # Append duplicate rows
+  if (nrow(dupIndices) > 0) {
+    for (i in 1:nrow(dupIndices)) {
+      id = as.scalar(dupIndices[i, 1])
+      row = X[id, ]
+      Y_duplicates = rbind(Y_duplicates, row)
+    }
+  }
+
+  # Append unique rows
+  if (nrow(keepIDs) > 0) {
+    for (i in 1:nrow(keepIDs)) {
+      id = as.scalar(keepIDs[i, 1])
+      row = X[id, ]
+      Y_unique = rbind(Y_unique, row)
+    }
+  }
 }
 
 computeDRMatrix = function(Frame[String] X, Frame[String] vocab, Matrix[Double] gloveMatrix)
@@ -103,9 +125,8 @@ computeDRMatrix = function(Frame[String] X, Frame[String] vocab, Matrix[Double] 
   V = matrix(0, rows=n, cols=d) # define output matrix
 
   for (i in 1:n) {
-    line = concat(X[i,])              # z. B. "Bill Gates Seattle"
-    clean = lowerCase(trim(line))     # "bill gates seattle"
-    words = strsplit(clean, " ")      # [ "bill", "gates", "seattle" ]
+    row = X[i,]
+    words = transformapply(row, "UtilFunctions.cleanAndTokenizeRow")
 
     sumVec = matrix(0, rows=1, cols=d)
     count = 0
@@ -138,7 +159,7 @@ computeDRMatrix = function(Frame[String] X, Frame[String] vocab, Matrix[Double] 
 }
 
 computeLSH = function(Matrix[Double] V, Matrix[Double] H)
-  return(Matrix[Int] hashCodes)
+  return(Matrix[Double] hashCodes)
 {
   # TODO: auf 0/1 anpassen 
   # matrix multiplication: projection of each DR vector on hyperplanes
@@ -150,8 +171,8 @@ computeLSH = function(Matrix[Double] V, Matrix[Double] H)
   hashCodes = (P >= 0) # returns 1 for true, 0 for false
 }
 
-formBuckets = function(Matrix[Int] hashCodes)
-  return(Matrix[Int] bucketIDs)
+formBuckets = function(Matrix[Double] hashCodes)
+  return(Matrix[Double] bucketIDs)
 {
   # TODO vectorize 
   n = nrow(hashCodes)
@@ -167,8 +188,8 @@ formBuckets = function(Matrix[Int] hashCodes)
   bucketIDs = hashCodes %*% t(powers)
 }
 
-findCandidatePairs = function(Matrix[Int] bucketIDs)
-  return(Matrix[Int] pairs)
+findCandidatePairs = function(Matrix[Double] bucketIDs)
+  return(Matrix[Double] pairs)
 {
   n = nrow(bucketIDs)
   pairs = matrix(0, rows=0, cols=2)
@@ -176,14 +197,14 @@ findCandidatePairs = function(Matrix[Int] bucketIDs)
   # O(n^2)-Vergleich TODO: ggf. mit Java verbessern
   for (i in 1:(n - 1)) {
     for (j in (i + 1):n) {
-      if (bucketIDs[i,1] == bucketIDs[j,1]) {
-        pairs = rbind(pairs, matrix(c(i, j), rows=1, cols=2))
+      if (as.scalar(bucketIDs[i,1]) == as.scalar(bucketIDs[j,1])) {
+        pairs = rbind(pairs, matrix([i, j], rows=1, cols=2))
       }
     }
   }
 }
 
-computeSimilarity = function(Matrix[Double] V, Matrix[Int] pairs, String similarityMeasure)
+computeSimilarity = function(Matrix[Double] V, Matrix[Double] pairs, String similarityMeasure)
   return(Matrix[Double] similarities)
 {
   m = nrow(pairs)
@@ -215,8 +236,8 @@ computeSimilarity = function(Matrix[Double] V, Matrix[Int] pairs, String similar
   }
 }
 
-filterDuplicates = function(Matrix[Int] pairs, Matrix[Double] similarities, Double threshold)
-  return(Matrix[Int] matches)
+filterDuplicates = function(Matrix[Double] pairs, Matrix[Double] similarities, Double threshold)
+  return(Matrix[Double] matches)
 {
   m = nrow(pairs)
   matches = matrix(0, rows=0, cols=2)
@@ -230,5 +251,3 @@ filterDuplicates = function(Matrix[Int] pairs, Matrix[Double] similarities, Doub
     }
   }
 }
-
-

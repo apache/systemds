@@ -44,7 +44,7 @@ public class BuiltinScaleRobustTest extends AutomatedTestBase {
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			String fullPyScriptName = HOME + TEST_NAME + ".py";
-			programArgs = new String[]{"-args", input("A"), output("B")};
+			programArgs = new String[]{"-exec", "singlenode", "-stats", "-args", input("A"), output("B")};
 			rCmd = "Rscript " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 			String pyCmd = "python " + fullPyScriptName + " " + inputDir() + " " + expectedDir();
 

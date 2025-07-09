@@ -24,15 +24,22 @@ m_scaleRobust = function(Matrix[Double] X)
   q1  = matrix(0.0, rows=1, cols=m)
   q3  = matrix(0.0, rows=1, cols=m)
 
+  # Define quantile probabilities once, outside the loop
+  q_probs = matrix(0.0, rows=3, cols=1)
+  q_probs[1,1] = 0.25
+  q_probs[2,1] = 0.5
+  q_probs[3,1] = 0.75
+
 
   t0 = time();
 
   # Loop over columns to compute quantiles
-  for (j in 1:m) {
+  parfor (j in 1:m) {
     col_j = X[,j]                        # get column vector
-    med[1,j] = quantile(col_j, 0.5)
-    q1[1,j]  = quantile(col_j, 0.25)
-    q3[1,j]  = quantile(col_j, 0.75)
+    q = quantile(col_j, q_probs)
+    med[1,j] = q[2,1]
+    q1[1,j]  = q[1,1]
+    q3[1,j]  = q[3,1]
   }
 
   t1 = time();

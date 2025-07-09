@@ -20,6 +20,8 @@
 # -------------------------------------------------------------
 import json
 
+import numpy as np
+
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.dataloader.base_loader import BaseLoader
 from typing import Optional, List, Union
@@ -31,9 +33,10 @@ class JSONLoader(BaseLoader):
         source_path: str,
         indices: List[str],
         field: str,
+        data_type: Union[np.dtype, str] = str,
         chunk_size: Optional[int] = None,
     ):
-        super().__init__(source_path, indices, chunk_size, ModalityType.TEXT)
+        super().__init__(source_path, indices, data_type, chunk_size, ModalityType.TEXT)
         self.field = field
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):

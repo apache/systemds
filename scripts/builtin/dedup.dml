@@ -74,6 +74,9 @@ f_dedup = function(Frame[String] X, Matrix[Double] gloveMatrix, Frame[String] vo
   if (nrow(matches) > 0) {
     dupIndices = matches[,2]  # keep first tuple
   }
+  else {
+    dupIndices = matrix(0, rows=0, cols=1)
+  }
 
   # remove duplicate rows
   keepMask = matrix(1, rows=nrow(X), cols=1)
@@ -82,15 +85,17 @@ f_dedup = function(Frame[String] X, Matrix[Double] gloveMatrix, Frame[String] vo
   }
   keepIDs = matrix(0, rows=0, cols=1)
   for (i in 1:nrow(keepMask)) {
-    if (keepMask[i,1] == 1)
+    if (keepMask[i,1] == 1) {
       keepIDs = rbind(keepIDs, matrix(i,1,1))
+    }
   }
+  print("DEBUG: reached this point")
   Y_duplicates = X[dupIndices, ]
   Y_unique = X[keepIDs, ]
 }
 
-computeDRMatrix = function(Frame[String] X, Matrix[String] vocab, Matrix[Double] gloveMatrix)
-  return (Matrix[Double] V)
+computeDRMatrix = function(Frame[String] X, Frame[String] vocab, Matrix[Double] gloveMatrix)
+  return(Matrix[Double] V)
 {
   # TODO: Vectorize this implementation with dedicated transform incode permutation matrices
   n = nrow(X)
@@ -108,12 +113,13 @@ computeDRMatrix = function(Frame[String] X, Matrix[String] vocab, Matrix[Double]
     for (k in 1:length(words)) {
       w = words[k]
       idx = -1
+      found = FALSE 
 
       # search for word in vocabulary
       for (m in 1:nrow(vocab)) {
-        if (vocab[m,1] == w) {  # TODO: better solution ?
+        if (!found & vocab[m,1] == w) {  
           idx = m 
-          break
+          found = TRUE
         }
       }
       # word found 
@@ -132,7 +138,7 @@ computeDRMatrix = function(Frame[String] X, Matrix[String] vocab, Matrix[Double]
 }
 
 computeLSH = function(Matrix[Double] V, Matrix[Double] H)
-  return (Matrix[Int] hashCodes)
+  return(Matrix[Int] hashCodes)
 {
   # TODO: auf 0/1 anpassen 
   # matrix multiplication: projection of each DR vector on hyperplanes
@@ -145,7 +151,7 @@ computeLSH = function(Matrix[Double] V, Matrix[Double] H)
 }
 
 formBuckets = function(Matrix[Int] hashCodes)
-  return (Matrix[Int] bucketIDs)
+  return(Matrix[Int] bucketIDs)
 {
   # TODO vectorize 
   n = nrow(hashCodes)
@@ -162,7 +168,7 @@ formBuckets = function(Matrix[Int] hashCodes)
 }
 
 findCandidatePairs = function(Matrix[Int] bucketIDs)
-  return (Matrix[Int] pairs)
+  return(Matrix[Int] pairs)
 {
   n = nrow(bucketIDs)
   pairs = matrix(0, rows=0, cols=2)
@@ -178,7 +184,7 @@ findCandidatePairs = function(Matrix[Int] bucketIDs)
 }
 
 computeSimilarity = function(Matrix[Double] V, Matrix[Int] pairs, String similarityMeasure)
-  return (Matrix[Double] similarities)
+  return(Matrix[Double] similarities)
 {
   m = nrow(pairs)
   d = ncol(V)
@@ -210,7 +216,7 @@ computeSimilarity = function(Matrix[Double] V, Matrix[Int] pairs, String similar
 }
 
 filterDuplicates = function(Matrix[Int] pairs, Matrix[Double] similarities, Double threshold)
-  return (Matrix[Int] matches)
+  return(Matrix[Int] matches)
 {
   m = nrow(pairs)
   matches = matrix(0, rows=0, cols=2)
@@ -219,7 +225,7 @@ filterDuplicates = function(Matrix[Int] pairs, Matrix[Double] similarities, Doub
     sim = similarities[i,1]
 
     if (sim >= threshold) {
-      row = pairs[i,]
+      row = matrix(pairs[i,], rows=1, cols=2) #row = pairs[i,]
       matches = rbind(matches, row)
     }
   }

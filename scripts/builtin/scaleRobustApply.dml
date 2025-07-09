@@ -1,0 +1,33 @@
+# Apply robust scaling using precomputed medians and IQRs
+#
+# INPUT:
+# -------------------------------------------------------------------------------------
+# X      Input feature matrix of shape n-by-m
+# med    Column medians (Q2) of shape 1-by-m
+#   q1 Column first quantiles (Q1) of shape 1-by-m
+#   q3 Column first quantiles (Q3) of shape 1-by-m
+# -------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -------------------------------------------------------------------------------------
+# Y      Scaled output matrix of shape n-by-m
+# -------------------------------------------------------------------------------------
+
+m_scaleRobustApply = function(Matrix[Double] X, Matrix[Double] med, Matrix[Double] q1, Matrix[Double] q3)
+  return (Matrix[Double] Y)
+{
+
+  t0 = time();
+
+  iqr = q3 - q1
+
+  # Ensure robust scaling is safe by replacing invalid IQRs
+  iqr = replace(target=iqr, pattern=0, replacement=1)
+  iqr = replace(target=iqr, pattern=NaN, replacement=1)
+
+  # Apply robust transformation
+  Y = (X - med) / iqr
+
+  t1 = time();
+  print("DML scaleRobustApply time (ms):"); print((t1 - t0) / 1e6);
+}

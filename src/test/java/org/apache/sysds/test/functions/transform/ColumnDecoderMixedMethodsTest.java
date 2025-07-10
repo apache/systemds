@@ -42,7 +42,7 @@ public class ColumnDecoderMixedMethodsTest extends AutomatedTestBase {
     @Test
     public void testColumnDecoderMixedMethods() {
         try {
-            int rows = 50;
+            int rows = 1000000;
             double[][] arr = new double[rows][3];
             for (int i = 0; i < rows; i++) {
                 arr[i][0] = 2*i + 1;     // bin column
@@ -73,9 +73,9 @@ public class ColumnDecoderMixedMethodsTest extends AutomatedTestBase {
             //long t3 = System.nanoTime();
             cdec.columnDecode(encoded, actual);
             //long t4 = System.nanoTime();
-            System.out.println(expected);
-            System.out.println(actual);
             //System.out.println("ColumnDecoder time: " + (t4 - t3) / 1e6 + " ms");
+            //System.out.println(expected);
+            //System.out.println(actual);
             TestUtils.compareFrames(expected, actual, false);
         }
         catch(Exception ex) {

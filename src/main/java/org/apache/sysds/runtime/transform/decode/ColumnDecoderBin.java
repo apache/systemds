@@ -48,31 +48,6 @@ public class ColumnDecoderBin extends ColumnDecoder {
     }
 
 
-    //@Override
-    //public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
-//
-    //    long b1 = System.nanoTime();
-    //    out.ensureAllocatedColumns(in.getNumRows());
-    //    for (int i = 0; i < in.getNumRows(); i++) {
-    //        for (int j = 0; j < _colList.length; j++) {
-    //            double val = in.get(i, j);
-    //            if (!Double.isNaN(val)) {
-    //                int key = (int) Math.round(val);
-    //                double bmin = _binMins[j][key - 1];
-    //                double bmax = _binMaxs[j][key - 1];
-    //                double oval = bmin + (bmax - bmin) / 2 + (val - key) * (bmax - bmin);
-    //                out.getColumn(_colList[j] - 1).set(i, oval);
-    //            } else {
-    //                out.getColumn(_colList[j] - 1).set(i, val);
-    //            }
-    //        }
-    //    }
-    //    //columnDecode(in, out, 0, in.getNumRows());
-    //    long b2 = System.nanoTime();
-    //    System.out.println(this.getClass() + "time: " + (b2 - b1) / 1e6 + " ms");
-    //    return out;
-    //}
-
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
         long b1 = System.nanoTime();
@@ -103,43 +78,13 @@ public class ColumnDecoderBin extends ColumnDecoder {
 
     @Override
     public void columnDecode(MatrixBlock in, FrameBlock out, int rl, int ru) {
-        //for (int i = rl; i < ru; i++) {
-        //    for (int j = 0; j < _colList.length; j++) {
-        //        double val = in.get(i, j);
-        //        if (!Double.isNaN(val)) {
-        //            int key = (int) Math.round(val);
-        //            double bmin = _binMins[j][key - 1];
-        //            double bmax = _binMaxs[j][key - 1];
-        //            double oval = bmin + (bmax - bmin) / 2 + (val - key) * (bmax - bmin);
-        //            out.getColumn(_colList[j] - 1).set(i, oval);
-        //        } else {
-        //            out.getColumn(_colList[j] - 1).set(i, val);
-        //        }
-        //    }
-        //}
+        //TODO
     }
-
-    //@Override
-    //public ColumnDecoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
-    //    if (colEnd - colStart != 1)
-    //        throw new NotImplementedException();
-//
-    //    for (int i = 0; i < _colList.length; i++) {
-    //        if (_colList[i] == colStart) {
-    //            ValueType[] schema = (_schema != null) ? new ValueType[]{_schema[colStart - 1]} : null;
-    //            ColumnDecoderBin sub = new ColumnDecoderBin(schema, new int[]{colStart});
-    //            sub._numBins = new int[]{_numBins[i]};
-    //            sub._binMins = new double[][]{_binMins[i]};
-    //            sub._binMaxs = new double[][]{_binMaxs[i]};
-    //            return sub;
-    //        }
-    //    }
-    //    return null;
-    //}
 
     @Override
     public ColumnDecoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
         return null;
+        // TODO
         //for (int i = 0; i < _colList.length; i++) {
         //    long b1 = System.nanoTime();
         //    ValueType[] schema = (_schema != null) ? new ValueType[]{_schema[colStart - 1]} : null;
@@ -203,8 +148,8 @@ public class ColumnDecoderBin extends ColumnDecoder {
     //    }
     //}
 
-    @Override
-    public void writeExternal(ObjectOutput out) throws IOException {
+    //@Override
+    //public void writeExternal(ObjectOutput out) throws IOException {
     //    super.writeExternal(out);
     //    for( int i=0; i<_colList.length; i++ ) {
     //        int len = _numBins[i];
@@ -214,10 +159,35 @@ public class ColumnDecoderBin extends ColumnDecoder {
     //            out.writeDouble(_binMaxs[i][j]);
     //        }
     //    }
+    //}
+    @Override
+    public void writeExternal(ObjectOutput out) throws IOException {
+        // Not tested yet
+        super.writeExternal(out);
+        out.writeInt(_numBins);
+        for (int i = 0; i < _numBins; i++) {
+            out.writeDouble(_binMins[i]);
+            out.writeDouble(_binMaxs[i]);
+        }
     }
 
     @Override
     public void readExternal(ObjectInput in) throws IOException {
+        super.readExternal(in);
+        // Not tested yet
+
+        _numBins = in.readInt();
+        _binMins = new double[_numBins];
+        _binMaxs = new double[_numBins];
+
+        for (int i = 0; i < _numBins; i++) {
+            _binMins[i] = in.readDouble();
+            _binMaxs[i] = in.readDouble();
+        }
+    }
+
+    //@Override
+    //public void readExternal(ObjectInput in) throws IOException {
     //    super.readExternal(in);
     //    _numBins = new int[_colList.length];
     //    _binMins = new double[_colList.length][];
@@ -230,5 +200,5 @@ public class ColumnDecoderBin extends ColumnDecoder {
     //            _binMaxs[i][j] = in.readDouble();
     //        }
     //    }
-    }
+    //}
 }

@@ -67,7 +67,7 @@
 		<!-- aws-java-sdk-bundle version should align with hadoop-aws version -->
 		<!-- aws-java-sdk-bundle.version>1.12.367</aws-java-sdk-bundle.version -->
 		<!-- Set java compile level via argument, ex: 1.8 1.9 10 11-->
-		<java.level>17</java.level>
+		<java.level>11</java.level>
 		<java.version>{java.level}</java.version>
 		<!-->Testing settings<!-->
 		<maven.test.skip>false</maven.test.skip>

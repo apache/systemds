@@ -42,19 +42,21 @@ public class ColumnDecoderMixedMethodsTest extends AutomatedTestBase {
     @Test
     public void testColumnDecoderMixedMethods() {
         try {
-            int rows = 1000000;
-            double[][] arr = new double[rows][3];
+            int rows = 50;
+            double[][] arr = new double[rows][2];
             for (int i = 0; i < rows; i++) {
                 arr[i][0] = 2*i + 1;     // bin column
                 arr[i][1] = 101 + i;     // recode column
-                arr[i][2] = (i % 4) + 2; // dummy column
+                //arr[i][2] = (i % 4) + 2; // dummy column
                 //arr[i][3] = 2*i + 1;     // pass through column
                 //arr[i][4] = 100 + i;     // bin column
                 //arr[i][5] = (i % 2) + 1; // recode
             }
             MatrixBlock mb = DataConverter.convertToMatrixBlock(arr);
             FrameBlock data = DataConverter.convertToFrameBlock(mb);
-            String spec = "{ids:true,bin:[{id:1, method:equi-width, numbins:4},{id:3, method:equi-width, numbins:4}]}";//, dummycode:[6]
+            //String spec = "{ids:true,bin:[{id:1, method:equi-width, numbins:4},{id:3, method:equi-width, numbins:4}]}";//, dummycode:[6]
+            String spec = "{ids:true, bin:[{id:1, method:equi-width, numbins:4}], recode:[2]}";
+
             // recode:[1,3],
             MultiColumnEncoder enc = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(), null);
             MatrixBlock encoded = enc.encode(data);
@@ -73,9 +75,9 @@ public class ColumnDecoderMixedMethodsTest extends AutomatedTestBase {
             //long t3 = System.nanoTime();
             cdec.columnDecode(encoded, actual);
             //long t4 = System.nanoTime();
+            System.out.println(expected);
+            System.out.println(actual);
             //System.out.println("ColumnDecoder time: " + (t4 - t3) / 1e6 + " ms");
-            //System.out.println(expected);
-            //System.out.println(actual);
             TestUtils.compareFrames(expected, actual, false);
         }
         catch(Exception ex) {

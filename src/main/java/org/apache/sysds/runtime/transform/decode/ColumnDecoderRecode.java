@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.transform.decode;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.ABooleanArray;
+import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.transform.TfUtils;
@@ -36,53 +38,41 @@ public class ColumnDecoderRecode extends ColumnDecoder {
 
     private static final long serialVersionUID = -3784249774608228805L;
 
-    private HashMap<Long, Object> _rcMaps = null;
-    private Object[] _rcMapsDirect = null;
+    private HashMap<Long, Object> _rcMap = null;
+    private Object[] _rcMapDirect = null;
     private boolean _onOut = false;
 
     public ColumnDecoderRecode() {
         super(null, -1, -1);
     }
 
-    protected ColumnDecoderRecode(ValueType[] schema, boolean onOut, int[] rcCols, int offset) {
-        super(schema, rcCols,offset);
+    protected ColumnDecoderRecode(ValueType schema, boolean onOut, int rcCol, int offset) {
+        super(schema, rcCol, offset);
         _onOut = onOut;
     }
 
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
 
-        long r1 = System.nanoTime();
-        // TODO
         out.ensureAllocatedColumns(in.getNumRows());
         columnDecode(in, out, 0, in.getNumRows());
-        long r2 = System.nanoTime();
-        System.out.println(this.getClass() + "time: " + (r2 - r1) / 1e6 + " ms");
         return out;
     }
 
     @Override
     public void columnDecode(MatrixBlock in, FrameBlock out, int rl, int ru) {
         // TODO
-        if( _onOut ) { //recode on output (after dummy)
-            for( int i=rl; i<ru; i++ ) {
-                for( int j=0; j<_colList.length; j++ ) {
-                    int colID = _colList[j];
-                    double val = UtilFunctions.objectToDouble(
-                            out.getSchema()[colID-1], out.get(i, colID-1));
-                    long key = UtilFunctions.toLong(val);
-                    out.set(i, colID-1, getRcMapValue(j, key));
-                }
-            }
+        Array<?> a = out.getColumn(_colID);
+        if(_onOut) {
+            for(int i = rl; i < ru; i++) {
+                double val = UtilFunctions.objectToDouble(_schema, a.get(i));
+                long key = UtilFunctions.toLong(val);
+                setArrayValue(a, i, getRcMapValue(key));            }
         }
-        else { //recode on input (no dummy)
-            out.ensureAllocatedColumns(in.getNumRows());
-            for( int i=rl; i<ru; i++ ) {
-                for( int j=0; j<_colList.length; j++ ) {
-                    //double val = in.get(i, _colList[j]-1);
-                    long key = UtilFunctions.toLong(in.get(i, j));
-                    out.set(i, _colList[j]-1, getRcMapValue(j, key));
-                }
+        else {
+            for(int i = rl; i < ru; i++) {
+                long key = UtilFunctions.toLong(in.get(i, _colID));
+                setArrayValue(a, i, getRcMapValue(key));
             }
         }
     }
@@ -117,7 +107,24 @@ public class ColumnDecoderRecode extends ColumnDecoder {
     @Override
     @SuppressWarnings("unchecked")
     public void initMetaData(FrameBlock meta) {
-
+        int col = _colID; // already 0-based
+        _rcMap = new HashMap<>();
+        long max = 0;
+        for(int i=0; i<meta.getNumRows(); i++) {
+            Object val = meta.get(i, col);
+            if(val == null)
+                break;
+            String[] tmp = ColumnEncoderRecode.splitRecodeMapEntry(val.toString());
+            Object obj = UtilFunctions.stringToObject(_schema, tmp[0]);
+            long lval = Long.parseLong(tmp[1]);
+            _rcMap.put(lval, obj);
+            max = Math.max(max, lval);
+        }
+        if(max < Integer.MAX_VALUE) {
+            _rcMapDirect = new Object[(int)max];
+            for(Map.Entry<Long,Object> e : _rcMap.entrySet())
+                _rcMapDirect[e.getKey().intValue()-1] = e.getValue();
+        }
         //initialize recode maps according to schema
         //_rcMaps = new HashMap[_colList.length];
         //long[] max = new long[_colList.length];
@@ -146,12 +153,29 @@ public class ColumnDecoderRecode extends ColumnDecoder {
         //    }
         //}
     }
-    public Object getRcMapValue(int i, long key) {
-        return null;
-        //return (_rcMapsDirect != null) ?
-        //        _rcMapsDirect[i][(int)key-1] : _rcMaps[i].get(key);
+    public Object getRcMapValue(long key) {
+        return (_rcMapDirect != null && key > 0 && key <= _rcMapDirect.length) ?
+                _rcMapDirect[(int)key-1] : _rcMap.get(key);
     }
-
+    private void setArrayValue(Array<?> a, int index, Object val) {
+        if(val == null) {
+            if(_schema == ValueType.STRING || _schema == ValueType.CHARACTER)
+                a.set(index, (String)null);
+            else if(_schema == ValueType.BOOLEAN)
+                ((ABooleanArray)a).set(index, (Boolean)null);
+            else
+                a.set(index, Double.NaN);
+        }
+        else if(_schema.isNumeric()) {
+            a.set(index, UtilFunctions.objectToDouble(_schema, val));
+        }
+        else if(_schema == ValueType.BOOLEAN) {
+            ((ABooleanArray)a).set(index, UtilFunctions.objectToBoolean(_schema, val));
+        }
+        else { // STRING or CHARACTER
+            a.set(index, val.toString());
+        }
+        }
     /**
      * Parses a line of &lt;token, ID, count&gt; into &lt;token, ID&gt; pairs, where
      * quoted tokens (potentially including separators) are supported.
@@ -182,6 +206,13 @@ public class ColumnDecoderRecode extends ColumnDecoder {
         //        out.writeUTF(e1.getValue().toString());
         //    }
         //}
+        super.writeExternal(out);
+        out.writeBoolean(_onOut);
+        out.writeInt(_rcMap.size());
+        for(Map.Entry<Long,Object> e : _rcMap.entrySet()) {
+            out.writeLong(e.getKey());
+            out.writeUTF(e.getValue().toString());
+        }
     }
 
     @Override
@@ -197,5 +228,21 @@ public class ColumnDecoderRecode extends ColumnDecoder {
         //        maps.put(in.readLong(), in.readUTF());
         //    _rcMaps[i] = maps;
         //}
+        super.readExternal(in);
+        _onOut = in.readBoolean();
+        int size = in.readInt();
+        _rcMap = new HashMap<>();
+        long max = 0;
+        for(int i = 0; i < size; i++) {
+            long key = in.readLong();
+            String val = in.readUTF();
+            _rcMap.put(key, val);
+            max = Math.max(max, key);
+        }
+        if(max < Integer.MAX_VALUE) {
+            _rcMapDirect = new Object[(int)max];
+            for(Map.Entry<Long,Object> e : _rcMap.entrySet())
+                _rcMapDirect[e.getKey().intValue()-1] = e.getValue();
+        }
     }
 }

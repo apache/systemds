@@ -389,6 +389,51 @@ public class LibMatrixReorg {
 		return out;
 	}
 
+	public static MatrixBlock rev(MatrixBlock in, MatrixBlock out, int k) {
+		if (k <= 1 || in.isEmptyBlock(false)) {
+			return rev(in, out); // fallback to single-threaded
+		}
+		final int numRows = in.getNumRows();
+		final int numCols = in.getNumColumns();
+		final boolean sparse = in.isInSparseFormat();
+
+		// Prepare output block
+		out.reset(numRows, numCols, sparse);
+
+		// Set up thread pool
+		ExecutorService pool = CommonThreadPool.get(k);
+		try {
+			int blklen = (int) Math.ceil((double) numRows / k);
+			List<Future<?>> tasks = new ArrayList<>();
+
+			for (int i = 0; i < k; i++) {
+				final int startRow = i * blklen;
+				final int endRow = Math.min((i + 1) * blklen, numRows);
+
+				tasks.add(pool.submit(() -> {
+					for (int r = startRow; r < endRow; r++) {
+						int revRow = numRows - r - 1;
+						// copy dense row
+						System.arraycopy(in.getDenseBlockValues(), revRow * numCols,
+								out.getDenseBlockValues(), r * numCols,
+								numCols);
+					}
+				}));
+			}
+
+			// Wait for all threads
+			for (Future<?> task : tasks) {
+				task.get();
+			}
+		} catch (Exception ex) {
+			throw new DMLRuntimeException(ex);
+		} finally {
+			pool.shutdown();
+		}
+		out.recomputeNonZeros();
+		return out;
+	}
+
 	public static void rev( IndexedMatrixValue in, long rlen, int blen, ArrayList<IndexedMatrixValue> out ) {
 		//input block reverse 
 		MatrixIndexes inix = in.getIndexes();

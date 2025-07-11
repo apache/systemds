@@ -263,6 +263,9 @@ public abstract class Hop implements ParseInfo {
 				if(_etypeForced != ExecType.CP && _etypeForced != ExecType.GPU)
 					_etypeForced = ExecType.CP;
 			}
+			else if (DMLScript.USE_OOC){
+				_etypeForced = ExecType.OOC;
+			}
 			else {
 				// enabled with -exec singlenode option
 				_etypeForced = ExecType.CP;

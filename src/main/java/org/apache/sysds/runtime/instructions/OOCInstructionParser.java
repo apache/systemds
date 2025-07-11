@@ -38,6 +38,7 @@ import org.apache.sysds.runtime.instructions.ooc.UnaryOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.MatrixVectorBinaryOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.TransposeOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.TeeOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.OOCInstruction;
 
 public class OOCInstructionParser extends InstructionParser {
 	protected static final Log LOG = LogFactory.getLog(OOCInstructionParser.class.getName());

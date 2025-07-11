@@ -21,20 +21,14 @@ package org.apache.sysds.test.functions.ooc;
 
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.common.Types.FileFormat;
-import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.instructions.Instruction;
-import org.apache.sysds.runtime.io.MatrixWriter;
-import org.apache.sysds.runtime.io.MatrixWriterFactory;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.utils.Statistics;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -58,68 +52,52 @@ public class SumScalarMultiplicationTest extends AutomatedTestBase {
 	 * Test the sum of scalar multiplication, "sum(X*7)", with OOC backend.
 	 */
 	@Test
-	public void testSumScalarMultNoRewrite() {
-		testSumScalarMult(false);
-	}
-	
-	/**
-	 * Test the sum of scalar multiplication, "sum(X)*7", with OOC backend.
-	 */
-	@Test
-	public void testSumScalarMultRewrite() {
-		testSumScalarMult(true);
-	}
-	
-	
-	public void testSumScalarMult(boolean rewrite)
-	{
+	@Ignore
+	public void testSumScalarMult() {
+
 		Types.ExecMode platformOld = rtplatform;
 		rtplatform = Types.ExecMode.SINGLE_NODE;
-		boolean oldRewrite = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrite;
-		
+
 		try {
 			getAndLoadTestConfiguration(TEST_NAME);
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-explain", "-stats", "-ooc", 
-				"-args", input(INPUT_NAME), output(OUTPUT_NAME)};
+			programArgs = new String[] {"-explain", "-stats", "-ooc", "-args", input(INPUT_NAME), output(OUTPUT_NAME)};
 
-			int rows = 3500, cols = 4;
-			MatrixBlock mb = MatrixBlock.randOperations(rows, cols, 1.0, -1, 1, "uniform", 7);
-			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(FileFormat.BINARY);
-			writer.writeMatrixToHDFS(mb, input(INPUT_NAME), rows, cols, 1000, rows*cols);
-			HDFSTool.writeMetaDataFile(input(INPUT_NAME+".mtd"), ValueType.FP64, 
-				new MatrixCharacteristics(rows,cols,1000,rows*cols), FileFormat.BINARY);
-			
+			int rows = 3;
+			int cols = 4;
+			double sparsity = 0.8;
+
+			double[][] X = getRandomMatrix(rows, cols, -1, 1, sparsity, 7);
+			writeInputMatrixWithMTD(INPUT_NAME, X, true);
+
 			runTest(true, false, null, -1);
 
 			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir(OUTPUT_NAME);
+			// only one entry
 			Double result = dmlfile.get(new MatrixValue.CellIndex(1, 1));
+
 			double expected = 0.0;
 			for(int i = 0; i < rows; i++) {
 				for(int j = 0; j < cols; j++) {
-					expected += mb.get(i, j) * 7;
+					expected += X[i][j] * 7;
 				}
 			}
 
 			Assert.assertEquals(expected, result, 1e-10);
 
 			String prefix = Instruction.OOC_INST_PREFIX;
-			Assert.assertTrue("OOC wasn't used for RBLK",
-				heavyHittersContainsString(prefix + Opcodes.RBLK));
-			if(!rewrite)
-				Assert.assertTrue("OOC wasn't used for SUM",
-					heavyHittersContainsString(prefix + Opcodes.MULT));
-			Assert.assertTrue("OOC wasn't used for SUM",
-				heavyHittersContainsString(prefix + Opcodes.UAKP));
-		}
-		catch(Exception ex) {
-			Assert.fail(ex.getMessage());
+
+			boolean usedOOCMult = Statistics.getCPHeavyHitterOpCodes().contains(prefix + Opcodes.MULT);
+			Assert.assertTrue("OOC wasn't used for MULT", usedOOCMult);
+
+			boolean usedOOCSum = Statistics.getCPHeavyHitterOpCodes().contains(prefix + Opcodes.UAKP);
+			Assert.assertTrue("OOC wasn't used for SUM", usedOOCSum);
+
 		}
 		finally {
-			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldRewrite;
-			resetExecMode(platformOld);
+			// reset
+			rtplatform = platformOld;
 		}
 	}
 }

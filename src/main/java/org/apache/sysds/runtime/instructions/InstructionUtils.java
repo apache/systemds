@@ -281,6 +281,11 @@ public class InstructionUtils {
 		return Opcodes.getTypeByOpcode(op, Types.ExecType.FED);
 	}
 
+	public static InstructionType getOOCType(String str) {
+		String op = getOpCode(str);
+		return Opcodes.getTypeByOpcode(op, Types.ExecType.OOC);
+	}
+
 	public static boolean isBuiltinFunction( String opcode ) {
 		Builtin.BuiltinCode bfc = Builtin.String2BuiltinCode.get(opcode);
 		return (bfc != null);

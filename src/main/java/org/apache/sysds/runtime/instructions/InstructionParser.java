@@ -53,6 +53,11 @@ public class InstructionParser
 				if( fedtype == null )
 					throw new DMLRuntimeException("Unknown FEDERATED instruction: " + str);
 				return FEDInstructionParser.parseSingleInstruction (fedtype, str);
+			case OOC:
+				InstructionType ooctype = InstructionUtils.getOOCType(str);
+				if( ooctype == null )
+					throw new DMLRuntimeException("Unknown OOC instruction: " + str);
+				return OOCInstructionParser.parseSingleInstruction (ooctype, str);
 			default:
 				throw new DMLRuntimeException("Unknown execution type in instruction: " + str);
 		}

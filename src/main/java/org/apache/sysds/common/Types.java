@@ -32,7 +32,7 @@ public interface Types {
 	 * Execution mode for entire script. This setting specify which {@link ExecType}s are allowed.
 	 */
 	public enum ExecMode {
-		/** Execute all operations in {@link ExecType#CP} and if available {@link ExecType#GPU} */
+		/** Execute all operations in {@link ExecType#CP}, {@link ExecType#OOC} and if available {@link ExecType#GPU} */
 		SINGLE_NODE,
 		/**
 		 * The default and encouraged ExecMode. Execute operations while leveraging all available options:
@@ -58,6 +58,8 @@ public interface Types {
 		GPU,
 		/** FED: indicate that the instruction should be executed as a Federated instruction */
 		FED,
+		/** Out of Core: indicate that the operation should be executed out of core. */
+		OOC,
 		/** invalid is used for debugging or if it is undecided where the current instruction should be executed */
 		INVALID
 	}

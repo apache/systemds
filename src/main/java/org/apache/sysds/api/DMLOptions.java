@@ -65,6 +65,7 @@ public class DMLOptions {
 	public ExecMode             execMode      = OptimizerUtils.getDefaultExecutionMode();  // Execution mode standalone, MR, Spark or a hybrid
 	public boolean              gpu           = false;            // Whether to use the GPU
 	public boolean              forceGPU      = false;            // Whether to ignore memory & estimates and always use the GPU
+	public boolean              ooc           = false;            // Whether to use the OOC backend
 	public boolean              debug         = false;            // to go into debug mode to be able to step through a program
 	public String               filePath      = null;             // path to script
 	public String               script        = null;             // the script itself
@@ -109,6 +110,7 @@ public class DMLOptions {
 			", execMode=" + execMode +
 			", gpu=" + gpu +
 			", forceGPU=" + forceGPU +
+			", ooc=" + ooc +
 			", debug=" + debug +
 			", filePath='" + filePath + '\'' +
 			", script='" + script + '\'' +
@@ -182,6 +184,7 @@ public class DMLOptions {
 				}
 			}
 		}
+		dmlOptions.ooc = line.hasOption("ooc");
 		if (line.hasOption("exec")){
 			String execMode = line.getOptionValue("exec");
 			if (execMode.equalsIgnoreCase("singlenode")) dmlOptions.execMode = ExecMode.SINGLE_NODE;
@@ -388,6 +391,8 @@ public class DMLOptions {
 		Option gpuOpt = OptionBuilder.withArgName("force")
 			.withDescription("uses CUDA instructions when reasonable; set <force> option to skip conservative memory estimates and use GPU wherever possible; default off")
 			.hasOptionalArg().create("gpu");
+		Option oocOpt = OptionBuilder.withDescription("uses OOC backend")
+			.create("ooc");
 		Option debugOpt = OptionBuilder.withDescription("runs in debug mode; default off")
 			.create("debug");
 		Option pythonOpt = OptionBuilder
@@ -441,6 +446,7 @@ public class DMLOptions {
 		options.addOption(explainOpt);
 		options.addOption(execOpt);
 		options.addOption(gpuOpt);
+		options.addOption(oocOpt);
 		options.addOption(debugOpt);
 		options.addOption(lineageOpt);
 		options.addOption(fedOpt);

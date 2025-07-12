@@ -169,7 +169,7 @@ public class FederatedMemoTablePrinter {
 				plan.getCumulativeCost(),
 				plan.getSelfCost(),
 				plan.getForwardingCost(),
-				plan.getWeight()));
+				plan.getComputeWeight()));
 
 		// Add matrix characteristics
 		sb.append(" [")

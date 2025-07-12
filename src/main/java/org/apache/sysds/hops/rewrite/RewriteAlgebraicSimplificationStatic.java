@@ -182,6 +182,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = simplifyListIndexing(hi);                       //e.g., L[i:i, 1:ncol(L)] -> L[i:i, 1:1]
 			hi = simplifyScalarIndexing(hop, hi, i);             //e.g., as.scalar(X[i,1])->X[i,1] w/ scalar output
 			hi = simplifyConstantSort(hop, hi, i);               //e.g., order(matrix())->matrix/seq;
+			hi = simplifyUnionDistinct(hop, hi, i);              //e.g., unique(rbind(A, B)) -> union_distinct(A, B);
 			hi = simplifyOrderedSort(hop, hi, i);                //e.g., order(matrix())->seq;
 			hi = fuseOrderOperationChain(hi);                    //e.g., order(order(X,2),1) -> order(X,(12))
 			hi = removeUnnecessaryReorgOperation(hop, hi, i);    //e.g., t(t(X))->X; rev(rev(X))->X potentially introduced by other rewrites
@@ -1837,7 +1838,26 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				}
 			}
 		}
+		
+		return hi;
+	}
+	
 
+	private static Hop simplifyUnionDistinct(Hop parent, Hop hi, int pos) {
+		// pattern: unique(rbind(A, B)) -> union_distinct(A, B)
+		if(HopRewriteUtils.isAggUnaryOp(hi, AggOp.UNIQUE) 
+			&& HopRewriteUtils.isBinary(hi.getInput(0), OpOp2.RBIND)) {
+			Hop rbindAB = hi.getInput(0);
+			if(rbindAB.getParent().size() == 1) {
+				// make sure that rbind is only used here
+				Hop A = rbindAB.getInput(0);
+				Hop B = rbindAB.getInput(1);
+				Hop unionDistinct = HopRewriteUtils.createBinary(A, B, OpOp2.UNION_DISTINCT);
+				HopRewriteUtils.replaceChildReference(parent, hi, unionDistinct, pos);
+				HopRewriteUtils.cleanupUnreferenced(hi, rbindAB);
+				LOG.debug("Applied simplifyUnionDistinct");
+			}
+		}
 		return hi;
 	}
 

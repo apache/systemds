@@ -128,7 +128,10 @@ public class LibMatrixReorg {
 				else
 					return transpose(in, out);
 			case REV:
-				return rev(in, out);
+				if (op.getNumThreads() > 1)
+					return rev(in, out, op.getNumThreads());
+				else
+					return rev(in, out);
 			case ROLL:
 				RollIndex rix = (RollIndex) op.fn;
 				return roll(in, out, rix.getShift());
@@ -411,12 +414,25 @@ public class LibMatrixReorg {
 				final int endRow = Math.min((i + 1) * blklen, numRows);
 
 				tasks.add(pool.submit(() -> {
-					for (int r = startRow; r < endRow; r++) {
-						int revRow = numRows - r - 1;
-						// copy dense row
-						System.arraycopy(in.getDenseBlockValues(), revRow * numCols,
-								out.getDenseBlockValues(), r * numCols,
-								numCols);
+					if (!sparse) {
+						// Dense case
+						double[] inVals = in.getDenseBlockValues();
+						double[] outVals = out.getDenseBlockValues();
+						for (int r = startRow; r < endRow; r++) {
+							int revRow = numRows - r - 1;
+							System.arraycopy(inVals, revRow * numCols, outVals, r * numCols,
+									numCols);
+						}
+					} else {
+						// Sparse case
+						SparseBlock inBlk = in.getSparseBlock();
+						SparseBlock outBlk = out.getSparseBlock();
+						for (int r = startRow; r < endRow; r++) {
+							int revRow = numRows - r - 1;
+							if (!inBlk.isEmpty(revRow)) {
+								outBlk.set(r, inBlk.get(revRow), true);
+							}
+						}
 					}
 				}));
 			}
@@ -437,7 +453,7 @@ public class LibMatrixReorg {
 	public static void rev( IndexedMatrixValue in, long rlen, int blen, ArrayList<IndexedMatrixValue> out ) {
 		//input block reverse 
 		MatrixIndexes inix = in.getIndexes();
-		MatrixBlock inblk = (MatrixBlock) in.getValue(); 
+		MatrixBlock inblk = (MatrixBlock) in.getValue();
 		MatrixBlock tmpblk = rev(inblk, new MatrixBlock(inblk.getNumRows(), inblk.getNumColumns(), inblk.isInSparseFormat()));
 		
 		//split and expand block if necessary (at most 2 blocks)

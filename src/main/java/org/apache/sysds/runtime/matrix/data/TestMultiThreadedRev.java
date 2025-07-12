@@ -3,7 +3,7 @@ package org.apache.sysds.runtime.matrix.data;
 
 public class TestMultiThreadedRev {
     public static void main(String[] args) {
-        int rows = 5000, cols = 10000;
+        int rows = 10000, cols = 5000;
         int numThreads = 8;
 
         // Create and fill the input matrix with a recognizable pattern

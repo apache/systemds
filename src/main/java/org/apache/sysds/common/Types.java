@@ -547,7 +547,7 @@ public interface Types {
 		CEIL, CHOLESKY, COS, COSH, CUMMAX, CUMMIN, CUMPROD, CUMSUM,
 		CUMSUMPROD, DET, DETECTSCHEMA, COLNAMES, EIGEN, EXISTS, EXP, FLOOR, INVERSE,
 		IQM, ISNA, ISNAN, ISINF, LENGTH, LINEAGE, LOG, NCOL, NOT, NROW,
-		MEDIAN, PREFETCH, PRINT, ROUND, SIN, SINH, SIGN, SOFTMAX, SQRT, STOP, _EVICT,
+		MEDIAN, PREFETCH, PRINT, ROUND, ROWCUMSUM, SIN, SINH, SIGN, SOFTMAX, SQRT, STOP, _EVICT,
 		SVD, TAN, TANH, TYPEOF, TRIGREMOTE, SQRT_MATRIX_JAVA,
 		//fused ML-specific operators for performance 
 		SPROP, //sample proportion: P * (1 - P)
@@ -591,6 +591,7 @@ public interface Types {
 				case MULT2:           return Opcodes.MULT2.toString();
 				case NOT:             return Opcodes.NOT.toString();
 				case POW2:            return Opcodes.POW2.toString();
+				case ROWCUMSUM:		  return Opcodes.UROWCUMKP.toString();
 				case TYPEOF:          return Opcodes.TYPEOF.toString();
 				default:              return name().toLowerCase();
 			}
@@ -610,6 +611,7 @@ public interface Types {
 				case "ucummin": return CUMMIN;
 				case "ucum*":   return CUMPROD;
 				case "ucumk+":  return CUMSUM;
+				case "urowcumk+":  return ROWCUMSUM;
 				case "ucumk+*": return CUMSUMPROD;
 				case "detectSchema":    return DETECTSCHEMA;
 				case "*2":      return MULT2;

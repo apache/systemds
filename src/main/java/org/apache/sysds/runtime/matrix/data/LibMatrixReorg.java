@@ -128,10 +128,10 @@ public class LibMatrixReorg {
 				else
 					return transpose(in, out);
 			case REV:
-				if (op.getNumThreads() > 1)
-					return rev(in, out, op.getNumThreads());
-				else
-					return rev(in, out);
+//				if (op.getNumThreads() > 1)
+					return rev(in, out, 4);
+//				else
+//					return rev(in, out);
 			case ROLL:
 				RollIndex rix = (RollIndex) op.fn;
 				return roll(in, out, rix.getShift());
@@ -394,7 +394,9 @@ public class LibMatrixReorg {
 
 	public static MatrixBlock rev(MatrixBlock in, MatrixBlock out, int k) {
 		if (k <= 1 || in.isEmptyBlock(false)) {
+			System.out.println("choosing single thread");
 			return rev(in, out); // fallback to single-threaded
+
 		}
 		final int numRows = in.getNumRows();
 		final int numCols = in.getNumColumns();
@@ -402,6 +404,11 @@ public class LibMatrixReorg {
 
 		// Prepare output block
 		out.reset(numRows, numCols, sparse);
+
+		// Before starting threads, ensure the output sparse block is allocated!
+		if (sparse) {
+			out.allocateSparseRowsBlock(false);
+		}
 
 		// Set up thread pool
 		ExecutorService pool = CommonThreadPool.get(k);
@@ -416,6 +423,7 @@ public class LibMatrixReorg {
 				tasks.add(pool.submit(() -> {
 					if (!sparse) {
 						// Dense case
+						System.out.println("dense case");
 						double[] inVals = in.getDenseBlockValues();
 						double[] outVals = out.getDenseBlockValues();
 						for (int r = startRow; r < endRow; r++) {
@@ -425,6 +433,7 @@ public class LibMatrixReorg {
 						}
 					} else {
 						// Sparse case
+						System.out.println("Sparse case");
 						SparseBlock inBlk = in.getSparseBlock();
 						SparseBlock outBlk = out.getSparseBlock();
 						for (int r = startRow; r < endRow; r++) {
@@ -454,6 +463,7 @@ public class LibMatrixReorg {
 		//input block reverse 
 		MatrixIndexes inix = in.getIndexes();
 		MatrixBlock inblk = (MatrixBlock) in.getValue();
+		System.out.println("inside rev");
 		MatrixBlock tmpblk = rev(inblk, new MatrixBlock(inblk.getNumRows(), inblk.getNumColumns(), inblk.isInSparseFormat()));
 		
 		//split and expand block if necessary (at most 2 blocks)
@@ -2522,6 +2532,7 @@ public class LibMatrixReorg {
 	private static void reverseDense(MatrixBlock in, MatrixBlock out) {
 		final int m = in.rlen;
 		final int n = in.clen;
+		System.out.println("inside reverseDense");
 		
 		//set basic meta data and allocate output
 		out.sparse = false;
@@ -2547,6 +2558,7 @@ public class LibMatrixReorg {
 
 	private static void reverseSparse(MatrixBlock in, MatrixBlock out) {
 		final int m = in.rlen;
+		System.out.println("inside reverseSparse");
 		
 		//set basic meta data and allocate output
 		out.sparse = true;

@@ -30,7 +30,7 @@ import org.apache.sysds.test.functions.dnn.ReluBackwardTest;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class NeuralNetworkGPUTest extends AutomatedTestBase {
+public class DNNOperationsGPUTest extends AutomatedTestBase {
 
 	@Override
 	public void setUp() {

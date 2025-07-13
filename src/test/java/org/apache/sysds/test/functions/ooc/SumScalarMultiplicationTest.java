@@ -92,11 +92,11 @@ public class SumScalarMultiplicationTest extends AutomatedTestBase {
 			String prefix = Instruction.OOC_INST_PREFIX;
 			Assert.assertTrue("OOC wasn't used for RBLK",
 				heavyHittersContainsString(prefix + Opcodes.RBLK));
+			Assert.assertTrue("OOC wasn't used for SUM",
+				heavyHittersContainsString(prefix + Opcodes.UAKP));
 			
 //			boolean usedOOCMult = Statistics.getCPHeavyHitterOpCodes().contains(prefix + Opcodes.MULT);
 //			Assert.assertTrue("OOC wasn't used for MULT", usedOOCMult);
-//			boolean usedOOCSum = Statistics.getCPHeavyHitterOpCodes().contains(prefix + Opcodes.UAKP);
-//			Assert.assertTrue("OOC wasn't used for SUM", usedOOCSum);
 		}
 		catch(Exception ex) {
 			Assert.fail(ex.getMessage());

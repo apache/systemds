@@ -35,7 +35,7 @@ def confusionMatrix(P: Matrix,
      and actual labels. We return both the counts and relative frequency
      (normalized by sum of true labels)
     
-     .. code-block::
+     .. code-block:: text
     
                        True Labels
                          1    2

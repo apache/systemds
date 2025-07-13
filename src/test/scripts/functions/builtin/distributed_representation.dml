@@ -27,4 +27,5 @@ threshold = as.double($5)
 
 [Y_unique, Y_duplicates] = dedup(X, gloveMatrix, vocab, similarity, threshold)
 
-write(Y_unique, $6)
+write(Y_unique, $6, format="binary")
+write(Y_duplicates, $7, format="binary")

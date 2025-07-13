@@ -68,36 +68,44 @@ f_dedup = function(Frame[String] X, Matrix[Double] gloveMatrix, Frame[String] vo
 
   # Step 7: Filter Duplicates 
   matches = filterDuplicates(pairs, sim, threshold)
-  
+
   # Step 8: Extract duplicate indices
   rows = nrow(matches)
-  
-  dupIndices = matrix(0, rows=0, cols=1)
-  dupIndicesTmp = matches[1:rows, 2:2]
-  mask = (rows > 0)
-  dupIndices = ifelse(mask, dupIndicesTmp, dupIndices)  
 
-  # remove duplicate rows
+  tmp1 = ifelse(rows > 0, matches[1:rows, 1:1], matrix(0, rows=0, cols=1))
+  tmp2 = ifelse(rows > 0, matches[1:rows, 2:2], matrix(0, rows=0, cols=1))
+  allDupIDs = rbind(tmp1, tmp2)
+  allDupIDs = ifelse(nrow(allDupIDs) > 0, unique(allDupIDs), matrix(0, rows=0, cols=1))
+
+  # Step 9: Keep the first index, remove all others
   keepMask = matrix(1, rows=nrow(X), cols=1)
 
-  if (nrow(dupIndices) > 0) {
-    for (i in 1:nrow(dupIndices)) {
-      keepMask[dupIndices[i,1],1] = 0
+  if (nrow(allDupIDs) > 0) {
+    # Find the first index (minimum) among the duplicates
+    minIdx = min(allDupIDs)
+    for (i in 1:nrow(allDupIDs)) {
+      idx = as.scalar(allDupIDs[i,1])
+      if (idx != minIdx) {
+        keepMask[idx,1] = 0
+      }
     }
   }
 
+  # extract IDs from keepMask
   keepIDs = matrix(0, rows=0, cols=1)
+  dupIndices = matrix(0, rows=0, cols=1)
   for (i in 1:nrow(keepMask)) {
     if (as.scalar(keepMask[i,1]) == 1) {
       keepIDs = rbind(keepIDs, matrix(i,1,1))
+    } else {
+      dupIndices = rbind(dupIndices, matrix(i,1,1))
     }
   }
   
-  # Step 9: Extract duplicates and unique rows from X
+  # Step 10: Extract duplicates and unique rows from X
   Y_duplicates = removeEmpty(target=X[1,], margin="rows")
   Y_unique = removeEmpty(target=X[1,], margin="rows")
 
-  # Append duplicate rows
   if (nrow(dupIndices) > 0) {
     for (i in 1:nrow(dupIndices)) {
       id = as.scalar(dupIndices[i, 1])
@@ -105,8 +113,6 @@ f_dedup = function(Frame[String] X, Matrix[Double] gloveMatrix, Frame[String] vo
       Y_duplicates = rbind(Y_duplicates, row)
     }
   }
-
-  # Append unique rows
   if (nrow(keepIDs) > 0) {
     for (i in 1:nrow(keepIDs)) {
       id = as.scalar(keepIDs[i, 1])

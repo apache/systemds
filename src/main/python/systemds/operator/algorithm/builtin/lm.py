@@ -36,6 +36,30 @@ def lm(X: Matrix,
      method or the conjugate gradient algorithm depending on the input size
      of the matrices (See lmDS-function and lmCG-function respectively).
     
+     .. code-block:: python
+    
+       >>> import numpy as np
+       >>> from systemds.context import SystemDSContext
+       >>> from systemds.operator.algorithm import lm
+       >>> from sklearn.linear_model import LinearRegression
+       >>>
+       >>> np.random.seed(7)
+       >>> X = np.random.rand(30, 1)
+       >>> Y = np.random.rand(30, 1)
+       >>> regressor = LinearRegression(fit_intercept=False)
+       >>> model = regressor.fit(X, Y).coef_
+       >>>
+       >>> with SystemDSContext() as sds:
+       ...     X_sds = sds.from_numpy(X)
+       ...     Y_sds = sds.from_numpy(Y)
+       ...     sds_model_weights = lm(X_sds, Y_sds, verbose=False).compute()
+       ...     model = model.reshape(sds_model_weights.shape)
+       ...     eps = 1e-03
+       ...
+       ...     print(np.allclose(sds_model_weights, model, eps))
+       True
+    
+    
     
     
     :param X: Matrix of feature vectors.

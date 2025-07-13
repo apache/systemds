@@ -66,4 +66,9 @@ The output should be similar to
   [ 0.37957689]]
 
 .. automodule:: systemds.operator.algorithm
-  :members:
+  
+.. toctree::
+   :maxdepth: 1
+   :glob:
+
+   algorithms/*

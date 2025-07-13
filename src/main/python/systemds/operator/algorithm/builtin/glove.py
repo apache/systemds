@@ -42,12 +42,10 @@ def glove(input: Frame,
           distanceWeighting: bool,
           symmetric: bool):
     """
-     Computes the vector embeddings for words by analyzing their co-occurrence statistics in a large text corpus.
     
     
     
-    :param cooc_matrix: Precomputed co-occurrence matrix of shape (N, N).
-    :param cooc_index: Index file mapping words to their positions in the co-occurrence matrix. The second column should contain the word list in the same order as the matrix.
+    :param input: 1DInput corpus in CSV format.
     :param seed: Random seed for reproducibility.
     :param vector_size: Dimensionality of word vectors, V.
     :param eta: Learning rate for optimization, recommended value: 0.05.
@@ -56,7 +54,11 @@ def glove(input: Frame,
     :param tol: Tolerance value to avoid overfitting, recommended value: 1e-4.
     :param iterations: Total number of training iterations.
     :param print_loss_it: Interval (in iterations) for printing the loss.
-    :return: frame of the word indices and their word vectors, of shape (N, V). Each represented as a vector, of shape (1,V)
+    :param maxTokens: Maximum number of tokens per text entry.
+    :param windowSize: Context window size.
+    :param distanceWeighting: Whether to apply distance-based weighting.
+    :param symmetric: Determines if the matrix is symmetric (TRUE) or asymmetric (FALSE).
+    :return: The word indices and their word vectors, of shape (N, V). Each represented as a vector, of shape (1,V)
     """
 
     params_dict = {'input': input, 'seed': seed, 'vector_size': vector_size, 'alpha': alpha, 'eta': eta, 'x_max': x_max, 'tol': tol, 'iterations': iterations, 'print_loss_it': print_loss_it, 'maxTokens': maxTokens, 'windowSize': windowSize, 'distanceWeighting': distanceWeighting, 'symmetric': symmetric}

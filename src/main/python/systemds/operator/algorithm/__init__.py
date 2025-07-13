@@ -77,6 +77,7 @@ from .builtin.gaussianClassifier import gaussianClassifier
 from .builtin.getAccuracy import getAccuracy 
 from .builtin.glm import glm 
 from .builtin.glmPredict import glmPredict 
+from .builtin.glove import glove 
 from .builtin.gmm import gmm 
 from .builtin.gmmPredict import gmmPredict 
 from .builtin.gnmf import gnmf 
@@ -274,6 +275,7 @@ __all__ = ['WoE',
  'getAccuracy',
  'glm',
  'glmPredict',
+ 'glove',
  'gmm',
  'gmmPredict',
  'gnmf',

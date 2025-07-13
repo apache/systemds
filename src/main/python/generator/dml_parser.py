@@ -200,7 +200,19 @@ class FunctionParser(object):
         code_block = None
         with open(path, 'r') as f:
             content = f.read()
-            match = re.search(r"#\s*\.\. code-block:: python.*?(?:#\s*-+\n)?(.*?)(?=\n\s*m_\w+\s*= function)", content, re.S)
+            pat = re.compile(
+                r"""
+                ^\s*\#\s*\.\.\s*code-block::\s*python      #  .. code-block:: python
+                (?:\s*\#.*\n)*?                            #  optional adornments / blank lines
+                (.*?)                                      #  ← capture the actual example
+                (?=                                        #  stop just *before* …
+                    (?:\s*\#\s*\n){2}                      #  … two consecutive “blank” # lines
+                )
+                """,
+                re.MULTILINE | re.DOTALL | re.VERBOSE,
+            )
+            match = pat.search(content)
+#            match = re.search(r"#\s*\.\. code-block:: python.*?(?:#\s*-+\n)?(.*?)(?=\n\s*m_\w+\s*= function)", content, re.S)
             if match:
                 raw_block = match.group(1)
                 # Remove leading `#`

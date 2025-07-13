@@ -33,10 +33,24 @@ def toOneHot(X: Matrix,
     """
      The toOneHot-function encodes unordered categorical vector to multiple binary vectors.
     
+     .. code-block:: python
+    
+       >>> import numpy as np
+       >>> from systemds.context import SystemDSContext
+       >>> with SystemDSContext() as sds:
+       ...     X = sds.from_numpy(np.array([[1], [3], [2], [3]]))
+       ...     Y = toOneHot(X, numClasses=3).compute()
+       ...     print(Y)
+       [[1. 0. 0.]
+        [0. 0. 1.]
+        [0. 1. 0.]
+        [0. 0. 1.]]
+    
+    
     
     
     :param X: Vector with N integer entries between 1 and numClasses
-    :param numclasses: Number of columns, must be be greater than or equal to largest value in X
+    :param numClasses: Number of columns, must be be greater than or equal to largest value in X
     :return: One-hot-encoded matrix with shape (N, numClasses)
     """
 

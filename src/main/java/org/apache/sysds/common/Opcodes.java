@@ -349,7 +349,7 @@ public enum Opcodes {
 	MAPMIN("mapmin", InstructionType.Binary),
 
 	//REBLOCK Instruction Opcodes
-	RBLK("rblk", null, InstructionType.Reblock),
+	RBLK("rblk", null, InstructionType.Reblock, null, InstructionType.Reblock),
 	CSVRBLK("csvrblk", InstructionType.CSVReblock),
 	LIBSVMRBLK("libsvmrblk", InstructionType.LIBSVMReblock),
 
@@ -398,24 +398,23 @@ public enum Opcodes {
 
 	// Constructors
 	Opcodes(String name, InstructionType type) {
-		this._name = name;
-		this._type = type;
-		this._spType=null;
-		this._fedType=null;
+		this(name, type, null, null, null);
 	}
 
 	Opcodes(String name, InstructionType type, InstructionType spType){
-		this._name=name;
-		this._type=type;
-		this._spType=spType;
-		this._fedType=null;
+		this(name, type, spType, null, null);
 	}
 
 	Opcodes(String name, InstructionType type, InstructionType spType, InstructionType fedType){
+		this(name, type, spType, fedType, null);
+	}
+	
+	Opcodes(String name, InstructionType type, InstructionType spType, InstructionType fedType, InstructionType oocType){
 		this._name=name;
 		this._type=type;
 		this._spType=spType;
 		this._fedType=fedType;
+		this._oocType=oocType;
 	}
 
 	// Fields
@@ -423,6 +422,7 @@ public enum Opcodes {
 	private final InstructionType _type;
 	private final InstructionType _spType;
 	private final InstructionType _fedType;
+	private final InstructionType _oocType;
 
 	private static final Map<String, Opcodes> _lookupMap = new HashMap<>();
 
@@ -451,6 +451,10 @@ public enum Opcodes {
 	public InstructionType getFedType(){
 		return _fedType != null ? _fedType : _type;
 	}
+	
+	public InstructionType getOocType(){
+		return _oocType != null ? _oocType : _type;
+	}
 
 	public static InstructionType getTypeByOpcode(String opcode, Types.ExecType type) {
 		if (opcode == null || opcode.trim().isEmpty()) {
@@ -463,6 +467,8 @@ public enum Opcodes {
 					return (op.getSpType() != null) ? op.getSpType() : op.getType();
 				case FED:
 					return (op.getFedType() != null) ? op.getFedType() : op.getType();
+				case OOC:
+					return (op.getOocType() != null) ? op.getOocType() : op.getType();
 				default:
 					return op.getType();
 			}

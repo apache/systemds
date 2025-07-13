@@ -256,6 +256,8 @@ public abstract class Hop implements ParseInfo {
 	{
 		if(DMLScript.USE_ACCELERATOR && DMLScript.FORCE_ACCELERATOR && isGPUEnabled())
 			_etypeForced = ExecType.GPU; // enabled with -gpu force option
+		else if (DMLScript.USE_OOC)
+			_etypeForced = ExecType.OOC;
 		else if ( DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE && _etypeForced != ExecType.FED ) {
 			if(OptimizerUtils.isMemoryBasedOptLevel() && DMLScript.USE_ACCELERATOR && isGPUEnabled()) {
 				// enabled with -exec singlenode -gpu option
@@ -406,7 +408,7 @@ public abstract class Hop implements ParseInfo {
 	private void constructAndSetReblockLopIfRequired() 
 	{
 		//determine execution type
-		ExecType et = ExecType.CP;
+		ExecType et = DMLScript.USE_OOC ? ExecType.OOC : ExecType.CP;
 		if( DMLScript.getGlobalExecMode() != ExecMode.SINGLE_NODE 
 			&& !(getDataType()==DataType.SCALAR) )
 		{

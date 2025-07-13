@@ -42,7 +42,9 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.ReaderWriterFederated;
@@ -442,8 +444,10 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 		// Read matrix and maintain meta data,
 		// if the MatrixObject is federated there is nothing extra to read, and therefore only acquire read and release
 		int blen = mc.getBlocksize() <= 0 ? ConfigurationManager.getBlocksize() : mc.getBlocksize();
-		MatrixBlock newData = isFederated() ? acquireReadAndRelease() : DataConverter.readMatrixFromHDFS(fname,
-			iimd.getFileFormat(), rlen, clen, blen, mc.getNonZeros(), getFileFormatProperties());
+		MatrixBlock newData = 
+			isFederated() ? acquireReadAndRelease() : 
+			DataConverter.readMatrixFromHDFS(fname, iimd.getFileFormat(),
+				rlen, clen, blen, mc.getNonZeros(), getFileFormatProperties());
 
 		if(iimd.getFileFormat() == FileFormat.CSV) {
 			_metaData = _metaData instanceof MetaDataFormat ? new MetaDataFormat(newData.getDataCharacteristics(),
@@ -517,6 +521,32 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 			throw new IOException("Unable to load matrix from rdd.");
 
 		return mb;
+	}
+	
+
+	@Override
+	protected MatrixBlock readBlobFromStream(LocalTaskQueue<IndexedMatrixValue> stream) throws IOException {
+		MatrixBlock ret = new MatrixBlock((int)getNumRows(), (int)getNumColumns(), false);
+		IndexedMatrixValue tmp = null;
+		try {
+			int blen = getBlocksize(), lnnz = 0;
+			while( (tmp = stream.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS ) {
+				// compute row/column block offsets
+				final int row_offset = (int) (tmp.getIndexes().getRowIndex() - 1) * blen;
+				final int col_offset = (int) (tmp.getIndexes().getColumnIndex() - 1) * blen;
+
+				// Add the values of this block into the output block.
+				((MatrixBlock)tmp.getValue()).putInto(ret, row_offset, col_offset, true);
+				
+				// incremental maintenance nnz
+				lnnz += tmp.getValue().getNonZeros();
+			}
+			ret.setNonZeros(lnnz);
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+		return ret;
 	}
 
 	@Override

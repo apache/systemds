@@ -33,7 +33,9 @@ import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
@@ -303,6 +305,12 @@ public class FrameObject extends CacheableData<FrameBlock>
 		//note: the write of an RDD to HDFS might trigger
 		//lazy evaluation of pending transformations.
 		SparkExecutionContext.writeFrameRDDtoHDFS(rdd, fname, iimd.getFileFormat());
+	}
+
+	@Override
+	protected FrameBlock readBlobFromStream(LocalTaskQueue<IndexedMatrixValue> stream) throws IOException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
 	@Override

@@ -30,7 +30,7 @@ public abstract class OOCInstruction extends Instruction {
 	protected static final Log LOG = LogFactory.getLog(OOCInstruction.class.getName());
 
 	public enum OOCType {
-		AggregateUnary, Binary
+		Reblock, AggregateUnary, Binary
 	}
 
 	protected final OOCInstruction.OOCType _ooctype;

@@ -24,6 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.InstructionType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.ooc.OOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.ReblockOOCInstruction;
 
 public class OOCInstructionParser extends InstructionParser {
 	protected static final Log LOG = LogFactory.getLog(OOCInstructionParser.class.getName());
@@ -44,7 +45,9 @@ public class OOCInstructionParser extends InstructionParser {
 		if(str == null || str.isEmpty())
 			return null;
 		switch(ooctype) {
-
+			case Reblock:
+				return ReblockOOCInstruction.parseInstruction(str);
+			
 			// TODO:
 			case AggregateUnary:
 			case Binary:

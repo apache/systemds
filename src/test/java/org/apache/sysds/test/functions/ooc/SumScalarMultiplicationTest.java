@@ -73,7 +73,7 @@ public class SumScalarMultiplicationTest extends AutomatedTestBase {
 			MatrixBlock mb = MatrixBlock.randOperations(rows, cols, 1.0, -1, 1, "uniform", 7);
 			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(FileFormat.BINARY);
 			writer.writeMatrixToHDFS(mb, input(INPUT_NAME), rows, cols, 1000, rows*cols);
-			HDFSTool.writeMetaDataFile(input(INPUT_NAME+"mtd"), ValueType.FP64, 
+			HDFSTool.writeMetaDataFile(input(INPUT_NAME+".mtd"), ValueType.FP64, 
 				new MatrixCharacteristics(rows,cols,1000,rows*cols), FileFormat.BINARY);
 			
 			runTest(true, false, null, -1);

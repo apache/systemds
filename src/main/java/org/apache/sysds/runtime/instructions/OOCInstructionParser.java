@@ -80,7 +80,7 @@ public class OOCInstructionParser extends InstructionParser {
 			case Tee:
 				return TeeOOCInstruction.parseInstruction(str);
 			case CentralMoment:
-				return  CentralMomentOOCInstruction.parseInstruction(str);
+				return CentralMomentOOCInstruction.parseInstruction(str);
 			case Ctable:
 				return CtableOOCInstruction.parseInstruction(str);
 			case ParameterizedBuiltin:

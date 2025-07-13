@@ -409,9 +409,6 @@ public class AggUnaryOp extends MultiThreadedHop
 		else
 			setRequiresRecompileIfNecessary();
 		
-		if( _etype == ExecType.OOC ) //TODO
-			setExecType(ExecType.CP);
-		
 		return _etype;
 	}
 

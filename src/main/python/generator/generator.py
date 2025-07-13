@@ -35,6 +35,10 @@ class PythonAPIFileGenerator(object):
 
     target_path = os.path.join(os.path.dirname(os.path.dirname(
         __file__)), 'systemds', 'operator', 'algorithm', 'builtin')
+    test_path = os.path.join(os.path.dirname(os.path.dirname(
+        __file__)), 'tests', 'auto_tests')
+    rst_path = os.path.join(os.path.dirname(os.path.dirname(
+        __file__)), 'docs', 'source', 'api', 'operator', 'algorithms')
     licence_path = os.path.join('resources', 'template_python_script_license')
     template_path = os.path.join('resources', 'template_python_script_imports')
 
@@ -55,6 +59,8 @@ class PythonAPIFileGenerator(object):
 
         self.extension = '.{extension}'.format(extension=extension)
         os.makedirs(self.__class__.target_path, exist_ok=True)
+        os.makedirs(self.__class__.test_path, exist_ok=True)
+        os.makedirs(self.__class__.rst_path, exist_ok=True)
         self.function_names = list()
         for name in manually_added_algorithm_builtins:
             # only add files which actually exist, to avoid breaking
@@ -89,12 +95,60 @@ class PythonAPIFileGenerator(object):
         with open(target_file, "w") as new_script:
             new_script.write(self.licence)
             new_script.write(self.generated_by)
-            new_script.write((self.generated_from + dml_file.replace("\\", "/") + "\n").replace(
-                "../", "").replace("src/main/python/generator/", ""))
+            relative_path = os.path.relpath(dml_file, start=self.source_path)
+            new_script.write(f"{self.generated_from}scripts/builtin/{relative_path}\n")
             new_script.write(self.imports)
             new_script.write(file_content)
 
         self.function_names.append(filename)
+
+    def generate_test_file(self, function_name: str, code_block: str = None):
+        """
+        Generates a test file for the given function
+        """
+        target_file = os.path.join(self.test_path, f"test_{function_name}") + self.extension
+        with open(target_file, "w") as test_script:
+            test_script.write(self.licence)
+            test_script.write(self.generated_by)
+            test_script.write("import unittest, contextlib, io\n")
+            test_script.write(f"from systemds.context import SystemDSContext\n")
+            test_script.write(f"from systemds.operator.algorithm.builtin.{function_name} import {function_name}\n\n\n")
+
+            test_script.write(f"class Test{function_name.upper()}(unittest.TestCase):\n")            
+            test_script.write(f"    def test_{function_name}(self):\n")
+            if code_block:
+                test_script.write("        # Example test case provided in python the code block\n")
+                test_script.write("        buf = io.StringIO()\n")
+                test_script.write("        with contextlib.redirect_stdout(buf):\n")
+
+                expected =""
+                for raw_line in code_block.splitlines(keepends=True):   # keepends=True → ‘\n’ is preserved
+                    stripped = raw_line.lstrip()
+                    if stripped.startswith((">>>", "...")):
+                        code_line = stripped[4:]        
+                        if code_line.strip():
+                            test_script.write(f"            {code_line}") 
+                        else:
+                            test_script.write("\n")
+                    else:
+                        expected += raw_line          
+                expected = expected.lstrip("\n")
+                test_script.write(f'\n            expected="""{expected}"""\n')
+                test_script.write(f"        self.assertEqual(buf.getvalue().strip(), expected)\n")
+
+            test_script.write("\nif __name__ == '__main__':\n")
+            test_script.write("    unittest.main()\n")
+
+    def generate_rst_file(self, function_name: str):
+        """
+        Generates an rst file for the given function
+        """        
+        target_file = os.path.join(self.rst_path, f"{function_name}") + ".rst"
+        with open(target_file, "w") as rst_script:
+           # rst_script.write(self.licence)
+            rst_script.write(function_name + "\n")
+            rst_script.write("=" * len(function_name) + "\n\n")
+            rst_script.write(f".. autofunction:: systemds.operator.algorithm.{function_name}")
 
     def generate_init_file(self):
         with open(self.init_path, "w") as init_file:
@@ -390,6 +444,8 @@ if __name__ == "__main__":
         try:
             header_data = f_parser.parse_header(dml_file)
             data = f_parser.parse_function(dml_file)
+            if not data:
+                continue
             f_parser.check_parameters(header_data, data)
             doc_generator.generate_documentation(header_data, data)
 
@@ -404,5 +460,13 @@ if __name__ == "__main__":
             continue
         file_generator.generate_file(
             data["function_name"], script_content, dml_file)
+        # TODO: multiple code blocks -> multiple test_files
+        test_example = header_data.get("code_block", None)
+        if test_example:
+            # TODO: dml test file
+            # TODO: logs should have funcs without test cases
+            # TODO: imports should be exlicitly added to the examples
+            file_generator.generate_test_file(data["function_name"], test_example)
+        file_generator.generate_rst_file(data["function_name"])
     file_generator.function_names.sort()
     file_generator.generate_init_file()

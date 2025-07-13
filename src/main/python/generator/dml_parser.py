@@ -23,7 +23,7 @@
 import json
 import os
 import re
-
+import textwrap
 
 class FunctionParser(object):
     header_input_pattern = r"^[ \t\n]*[#]+[ \t\n]*input[ \t\n\w:;.,#]*[\s#\-]*[#]+[\w\s\d:,.()\" \t\n\-]*[\s#\-]*$"
@@ -196,10 +196,30 @@ class FunctionParser(object):
             input_parameters = self.parse_input_output_string(h_input)
             output_parameters = self.parse_input_output_string(h_output)
        
+        code_block = None
+        with open(path, 'r') as f:
+            content = f.read()
+            pat = re.compile(
+                r"""
+                ^\s*\#\s*\.\.\s*code-block::\s*python      #  .. code-block:: python
+                (?:\s*\#.*\n)*?                            #  optional adornments / blank lines
+                (.*?)                                      #  ← capture the actual example
+                (?=                                        #  stop just *before* …
+                    (?:\s*\#\s*\n){2}                      #  … two consecutive “blank” # lines
+                )
+                """,
+                re.MULTILINE | re.DOTALL | re.VERBOSE,
+            )
+            match = pat.search(content)
+            if match:
+                raw_block = match.group(1)
+                code_lines = [line.lstrip("#") for line in raw_block.splitlines()] # Remove leading #
+                code_block = textwrap.dedent("\n".join(code_lines))
 
         data = {'description': description,
                 'parameters': input_parameters,
-                'return_values': output_parameters}
+                'return_values': output_parameters,
+                'code_block': code_block}
         return data
 
     def parse_input_output_string(self, data: str):

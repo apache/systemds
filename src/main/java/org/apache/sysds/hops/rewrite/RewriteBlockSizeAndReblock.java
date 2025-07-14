@@ -29,6 +29,7 @@ import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.HopsException;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 
 /**
@@ -80,8 +81,12 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 		{
 			DataOp dop = (DataOp) hop;
 			
+			if( DMLScript.USE_OOC && dop.getOp() == OpOpData.PERSISTENTREAD ) {
+				dop.setRequiresReblock(true);
+				dop.setBlocksize(blocksize);
+			}
 			// if block size does not match
-			if(   (dop.getDataType() == DataType.MATRIX && (dop.getBlocksize() != blocksize))
+			else if(   (dop.getDataType() == DataType.MATRIX && (dop.getBlocksize() != blocksize))
 				||(dop.getDataType() == DataType.FRAME && OptimizerUtils.isSparkExecutionMode() 
 				&& (dop.getFileFormat()==FileFormat.TEXT || dop.getFileFormat()==FileFormat.CSV)) )
 			{

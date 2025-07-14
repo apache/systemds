@@ -46,8 +46,8 @@ public class ReBlock extends Lop {
 		_blocksize = blen;
 		_outputEmptyBlocks = outputEmptyBlocks;
 		
-		if(et == ExecType.SPARK) 
-			lps.setProperties(inputs, ExecType.SPARK);
+		if(et == ExecType.SPARK || et == ExecType.OOC) 
+			lps.setProperties(inputs, et);
 		else 
 			throw new LopsException("Incorrect execution type for Reblock:" + et);
 	}

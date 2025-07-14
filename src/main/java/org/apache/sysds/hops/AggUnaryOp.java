@@ -116,7 +116,7 @@ public class AggUnaryOp extends MultiThreadedHop
 			ExecType et = optFindExecType();
 			Hop input = getInput().get(0);
 			
-			if ( et == ExecType.CP || et == ExecType.GPU || et == ExecType.FED )
+			if ( et == ExecType.CP || et == ExecType.GPU || et == ExecType.FED || et == ExecType.OOC  )
 			{
 				Lop agg1 = null; 
 				if( isTernaryAggregateRewriteApplicable() ) {

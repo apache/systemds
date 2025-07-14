@@ -132,7 +132,22 @@ m_raGroupby = function (Matrix[Double] X, Integer col, String method)
     # Set value of final output
     Y = matrix(0, rows=numGroups, cols=totalCells)
     Y[,1] = key_unique
-    Y[,2:ncol(Y)] = matrix(Y_temp_reduce, rows=numGroups, cols=totalCells-1)
+
+    # The permutation matrix creates a structure where each group's data
+    # may not fill exactly maxRowsInGroup rows.
+    # If needed, we need to pad to the expected size first.
+    expectedRows = numGroups * maxRowsInGroup
+    actualRows = nrow(Y_temp_reduce)
+
+    if(actualRows < expectedRows) {
+      # Pad Y_temp_reduce with zeros to match expected structure
+      Y_tmp_padded = matrix(0, rows=expectedRows, cols=ncol(Y_temp_reduce))
+      Y_tmp_padded[1:actualRows,] = Y_temp_reduce
+    } else {
+      Y_tmp_padded = Y_temp_reduce
+    }
+
+    Y[,2:ncol(Y)] = matrix(Y_tmp_padded, rows=numGroups, cols=totalCells-1)
   }
 }
 

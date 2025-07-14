@@ -42,12 +42,14 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.instructions.spark.data.BroadcastObject;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
@@ -210,13 +212,15 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	private boolean _requiresLocalWrite = false; //flag if local write for read obj
 	private boolean _isAcquireFromEmpty = false; //flag if read from status empty 
 	
-	//spark-specific handles
+	//backend-specific handles
 	//note: we use the abstraction of LineageObjects for two reasons: (1) to keep track of cleanup
 	//for lazily evaluated RDDs, and (2) as abstraction for environments that do not necessarily have spark libraries available
 	private RDDObject _rddHandle = null; //RDD handle
 	private BroadcastObject<T> _bcHandle = null; //Broadcast handle
 	protected HashMap<GPUContext, GPUObject> _gpuObjects = null; //Per GPUContext object allocated on GPU
-
+	//TODO generalize for frames
+	private LocalTaskQueue<IndexedMatrixValue> _streamHandle = null;
+	
 	private LineageItem _lineage = null;
 	
 	/**
@@ -460,6 +464,10 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	public boolean hasBroadcastHandle() {
 		return  _bcHandle != null && _bcHandle.hasBackReference();
 	}
+	
+	public LocalTaskQueue<IndexedMatrixValue> getStreamHandle() {
+		return _streamHandle;
+	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void setBroadcastHandle( BroadcastObject bc ) {
@@ -489,6 +497,10 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	
 	public synchronized void removeGPUObject(GPUContext gCtx) {
 		_gpuObjects.remove(gCtx);
+	}
+
+	public synchronized void setStreamHandle(LocalTaskQueue<IndexedMatrixValue> q) {
+		_streamHandle = q;
 	}
 	
 	// *********************************************
@@ -579,6 +591,9 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 
 					//mark for initial local write despite read operation
 					_requiresLocalWrite = false;
+				}
+				else if( getStreamHandle() != null ) {
+					_data = readBlobFromStream( getStreamHandle() );
 				}
 				else if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() ) {
 					if( DMLScript.STATISTICS )
@@ -1097,6 +1112,9 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 
 	//RDD read
 	protected abstract T readBlobFromRDD(RDDObject rdd, MutableBoolean status)
+		throws IOException;
+
+	protected abstract T readBlobFromStream(LocalTaskQueue<IndexedMatrixValue> stream)
 		throws IOException;
 
 	// Federated read

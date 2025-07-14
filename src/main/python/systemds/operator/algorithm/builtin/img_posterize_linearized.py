@@ -34,10 +34,29 @@ def img_posterize_linearized(img_in: Matrix,
      The Linearized Image Posterize function limits pixel values to 2^bits different values in the range [0, 255].
      Assumes the input image can attain values in the range [0, 255].
     
+     .. code-block:: python
+    
+       >>> import numpy as np
+       >>> from systemds.context import SystemDSContext
+       >>> from systemds.operator.algorithm import img_posterize_linearized
+       >>> 
+       >>> with SystemDSContext() as sds:
+       ...     img = sds.from_numpy(
+       ...         np.array([[ 10., 20., 30.,
+       ...                     40., 255., 60.,
+       ...                     70., 80., 90. ]], dtype=np.float32)
+       ...     )
+       ...     result_img = img_posterize_linearized(img, 1).compute()
+       ...     print(result_img.reshape(3, 3))
+       [[  0.   0.   0.]
+        [  0. 128.   0.]
+        [  0.   0.   0.]]
     
     
-    :param img_in: Row linearized input images as 2D matrix
-    :param bits: The number of bits keep for the values.
+    
+    
+    :param img_in: Input images as linearized 2D matrix with top left corner at [1, 1] (every row represents a linearized matrix/image)
+    :param bits: The number of bits to keep for the values.
         1 means black and white, 8 means every integer between 0 and 255.
     :return: Row linearized output images as 2D matrix
     """

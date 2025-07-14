@@ -201,11 +201,10 @@ class FunctionParser(object):
             content = f.read()
             pat = re.compile(
                 r"""
-                ^\s*\#\s*\.\.\s*code-block::\s*python      #  .. code-block:: python
-                (?:\s*\#.*\n)*?                            #  optional adornments / blank lines
-                (.*?)                                      #  ← capture the actual example
-                (?=                                        #  stop just *before* …
-                    (?:\s*\#\s*\n){2}                      #  … two consecutive “blank” # lines
+                ^\#\s*\.\.\s*code-block::\s*python      #  .. code-block:: python
+                (.*?)                                   #  ← capture the actual example
+                (?=                                     #  stop just before
+                    ^\#\s*INPUT:                        # INPUT:
                 )
                 """,
                 re.MULTILINE | re.DOTALL | re.VERBOSE,
@@ -214,7 +213,7 @@ class FunctionParser(object):
             if match:
                 raw_block = match.group(1)
                 code_lines = [line.lstrip("#") for line in raw_block.splitlines()] # Remove leading #
-                code_block = textwrap.dedent("\n".join(code_lines))
+                code_block = textwrap.dedent("\n".join([code_line for code_line in code_lines if code_line != ""]))
 
         data = {'description': description,
                 'parameters': input_parameters,

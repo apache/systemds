@@ -111,8 +111,6 @@ class PythonAPIFileGenerator(object):
             test_script.write(self.licence)
             test_script.write(self.generated_by)
             test_script.write("import unittest, contextlib, io\n")
-            test_script.write(f"from systemds.context import SystemDSContext\n")
-            test_script.write(f"from systemds.operator.algorithm.builtin.{function_name} import {function_name}\n\n\n")
 
             test_script.write(f"class Test{function_name.upper()}(unittest.TestCase):\n")            
             test_script.write(f"    def test_{function_name}(self):\n")

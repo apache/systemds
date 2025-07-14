@@ -34,10 +34,29 @@ def img_mirror(img_in: Matrix,
      This function is an image data augmentation function.
      It flips an image on the X (horizontal) or Y (vertical) axis.
     
+     .. code-block:: python
+    
+       >>> import numpy as np
+       >>> from systemds.context import SystemDSContext
+       >>> from systemds.operator.algorithm import img_mirror
+       >>> 
+       >>> with SystemDSContext() as sds:
+       ...     img = sds.from_numpy(
+       ...         np.array([[ 10., 20., 30.],
+       ...                   [ 40., 50., 60.],
+       ...                   [ 70., 80., 90.]], dtype=np.float32)
+       ...     )
+       ...     result_img = img_mirror(img, False).compute()
+       ...     print(result_img)
+       [[30. 20. 10.]
+        [60. 50. 40.]
+        [90. 80. 70.]]
     
     
-    :param img_in: Input matrix/image
-    :param max_value: The maximum value pixels can have
+    
+    
+    :param img_in: Input image as 2D matrix with top left corner at [1, 1]
+    :param horizontal_axis: Flip either in X or Y axis
     :return: Flipped matrix/image
     """
 

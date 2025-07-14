@@ -37,8 +37,28 @@ def img_mirror_linearized(img_matrix: Matrix,
      the same time. Each row of the input and output matrix represents a linearized image/matrix
      It flips an image on the X (horizontal) or Y (vertical) axis.
     
+     .. code-block:: python
     
-    :param img_matrix: Input matrix/image (every row represents a linearized matrix/image)
+       >>> import numpy as np
+       >>> from systemds.context import SystemDSContext
+       >>> from systemds.operator.algorithm import img_mirror_linearized
+       >>> 
+       >>> with SystemDSContext() as sds:
+       ...     img = sds.from_numpy(
+       ...         np.array([[ 10., 20., 30.,
+       ...                     40., 50., 60.,
+       ...                     70., 80., 90. ]], dtype=np.float32)
+       ...     )
+       ...     result_img = img_mirror_linearized(img, True, 3, 3).compute()
+       ...     print(result_img.reshape(3, 3))
+       [[70. 80. 90.]
+        [40. 50. 60.]
+        [10. 20. 30.]]
+    
+    
+    
+    
+    :param img_matrix: Input images as linearized 2D matrix with top left corner at [1, 1] (every row represents a linearized matrix/image)
     :param horizontal_axis: flip either in X or Y axis
     :param original_rows: number of rows in the original 2-D images
     :param original_cols: number of cols in the original 2-D images

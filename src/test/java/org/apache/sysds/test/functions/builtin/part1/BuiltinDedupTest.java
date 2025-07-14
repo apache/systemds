@@ -32,11 +32,6 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
-//import org.junit.runner.RunWith;
-//import org.junit.runners.Parameterized;
-
-//@RunWith(value = Parameterized.class)
-//@net.jcip.annotations.NotThreadSafe
 public class BuiltinDedupTest extends AutomatedTestBase {
 	private final static String TEST_NAME = "distributed_representation"; 
 	private final static String TEST_DIR = "functions/builtin/";

@@ -30,7 +30,7 @@
 # --------------------------------------------------------------------------------------
 # X                 Input Frame[String] with n rows and d columns (raw tuples)
 # gloveMatrix       Matrix[Double] of size |V| × e (pretrained GloVe embeddings) -> |V| number of words and e = embedding dimesnion
-# vocab             Matrix[String] of size |V| × 1 (vocabulary aligned with gloveMatrix)
+# vocab             Frame[String] of size |V| × 1 (vocabulary aligned with gloveMatrix)
 # similarityMeasure (optional) String specifying similarity metric: "cosine", "euclidean"
 # threshold         (optional) Double: threshold value above which tuples are considered duplicates
 # --------------------------------------------------------------------------------------
@@ -167,11 +167,8 @@ computeDRMatrix = function(Frame[String] X, Frame[String] vocab, Matrix[Double] 
 computeLSH = function(Matrix[Double] V, Matrix[Double] H)
   return(Matrix[Double] hashCodes)
 {
-  # TODO: auf 0/1 anpassen 
   # matrix multiplication: projection of each DR vector on hyperplanes
   P = V %*% t(H) 
-  # if 0 -> 0*2-1 = -1
-  # if 1 -> 1*2-1 = 1
 
   # compare elementwise 
   hashCodes = (P >= 0) # returns 1 for true, 0 for false

@@ -23,6 +23,7 @@ import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.io.MatrixWriter;
 import org.apache.sysds.runtime.io.MatrixWriterFactory;
@@ -57,11 +58,26 @@ public class SumScalarMultiplicationTest extends AutomatedTestBase {
 	 * Test the sum of scalar multiplication, "sum(X*7)", with OOC backend.
 	 */
 	@Test
-	public void testSumScalarMult() {
-
+	public void testSumScalarMultNoRewrite() {
+		testSumScalarMult(false);
+	}
+	
+	/**
+	 * Test the sum of scalar multiplication, "sum(X)*7", with OOC backend.
+	 */
+	@Test
+	public void testSumScalarMultRewrite() {
+		testSumScalarMult(true);
+	}
+	
+	
+	public void testSumScalarMult(boolean rewrite)
+	{
 		Types.ExecMode platformOld = rtplatform;
 		rtplatform = Types.ExecMode.SINGLE_NODE;
-
+		boolean oldRewrite = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
+		OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrite;
+		
 		try {
 			getAndLoadTestConfiguration(TEST_NAME);
 			String HOME = SCRIPT_DIR + TEST_DIR;
@@ -92,16 +108,17 @@ public class SumScalarMultiplicationTest extends AutomatedTestBase {
 			String prefix = Instruction.OOC_INST_PREFIX;
 			Assert.assertTrue("OOC wasn't used for RBLK",
 				heavyHittersContainsString(prefix + Opcodes.RBLK));
+			if(!rewrite)
+				Assert.assertTrue("OOC wasn't used for SUM",
+					heavyHittersContainsString(prefix + Opcodes.MULT));
 			Assert.assertTrue("OOC wasn't used for SUM",
 				heavyHittersContainsString(prefix + Opcodes.UAKP));
-			
-//			boolean usedOOCMult = Statistics.getCPHeavyHitterOpCodes().contains(prefix + Opcodes.MULT);
-//			Assert.assertTrue("OOC wasn't used for MULT", usedOOCMult);
 		}
 		catch(Exception ex) {
 			Assert.fail(ex.getMessage());
 		}
 		finally {
+			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldRewrite;
 			resetExecMode(platformOld);
 		}
 	}

@@ -105,6 +105,8 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
     }
     @Override
     public void initMetaData(FrameBlock meta) {
+        if (_colList == null)
+            return; // nothing to initialize for passthrough columns
         if( _dcCols.length > 0 ) {
             //prepare source column id mapping w/ dummy coding
             _srcCols = new int[_colList.length];

@@ -54,6 +54,11 @@ public abstract class ColumnDecoder implements Externalizable {
         _colList = colList;
         _offset = offset;
     }
+
+    public int getColOffset() {
+        return _offset;
+    }
+
     public ValueType getSchema() {
         return _schema;
     }

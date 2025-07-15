@@ -92,8 +92,10 @@ public class ColumnDecoderFactory {
                 }
             }
             if( !dcIDs.isEmpty() ) {
-                ldecoders.add(new ColumnDecoderDummycode(schema,
-                        ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0])),currOffset));
+                for (int col : dcIDs) {
+                    ldecoders.add(new ColumnDecoderDummycode(schema[col - 1], col - 1, currOffset));
+                    currOffset++;
+                }
             }
             if( !rcIDs.isEmpty() ) {
                 for( int col : rcIDs ) {
@@ -113,6 +115,12 @@ public class ColumnDecoderFactory {
             decoder = new ColumnDecoderComposite(schema, ldecoders);
             decoder.setColnames(colnames);
             decoder.initMetaData(meta);
+            System.out.println("Creating decoder for spec: " + spec);
+            System.out.println("Creating decoder types:");
+            for (ColumnDecoder dec : ldecoders) {
+                System.out.println(dec.getClass() + " for column ID: " + dec.getColID() + ", offset=" + dec.getColOffset());
+            }
+
         }
         catch(Exception ex) {
             throw new DMLRuntimeException(ex);
@@ -137,7 +145,7 @@ public class ColumnDecoderFactory {
 
         // create instance
         switch(dtype) {
-            case Dummycode:   return new ColumnDecoderDummycode(null, null, -1);
+            case Dummycode:   return new ColumnDecoderDummycode(null, -1, -1);
             case PassThrough: return new ColumnDecoderPassThrough(null, -1, null, -1);
             case Recode:      return new ColumnDecoderRecode(null, false, -1, -1);
             default:

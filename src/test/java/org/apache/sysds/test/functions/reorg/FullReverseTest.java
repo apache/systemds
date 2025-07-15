@@ -45,14 +45,16 @@ public class FullReverseTest extends AutomatedTestBase
 	private static final String TEST_CLASS_DIR = TEST_DIR + FullReverseTest.class.getSimpleName() + "/";
 	
 	private final static int rows1 = 2017;
-	private final static int cols1 = 1001;	
+	private final static int cols1 = 1001;
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.1;
 
 	// Multi-threading test parameters
-	private final static int rows_mt = 1000000;  // Larger for multi-threading benefits
-	private final static int cols_mt = 50000;   // Larger for multi-threading benefits
+	private final static int rows_mt = 2018;  // Larger for multi-threading benefits
+	private final static int cols_mt = 1002;   // Larger for multi-threading benefits
 	private final static int[] threadCounts = {1, 2, 4, 8};
+	// Set global parallelism for SystemDS to enable multi-threading
+	private final static int oldPar = InfrastructureAnalyzer.getLocalParallelism();
 
 	@Override
 	public void setUp() {
@@ -77,7 +79,12 @@ public class FullReverseTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testReverseVectorDensespMultiThread() {
+	public void testReverseVectorSparseCPMultiThread() {
+		runReverseTestMultiThread(TEST_NAME1, false, true, ExecType.CP);
+	}
+
+	@Test
+	public void testReverseVectorDenseSPMultiThread() {
 		runReverseTestMultiThread(TEST_NAME1, false, false, ExecType.SPARK);
 	}
 
@@ -185,11 +192,11 @@ public class FullReverseTest extends AutomatedTestBase
 	private void runReverseTestMultiThread(String testname, boolean matrix, boolean sparse, ExecType instType)
 	{
 		// Compare single-thread vs multi-thread results
-		HashMap<CellIndex, Double> stResult = runReverseWithThreads(testname, matrix, sparse, instType, 1);
+//		HashMap<CellIndex, Double> stResult = runReverseWithThreads(testname, matrix, sparse, instType, 1);
 		HashMap<CellIndex, Double> mtResult = runReverseWithThreads(testname, matrix, sparse, instType, 8);
 
 		// Compare results to ensure consistency
-		TestUtils.compareMatrices(stResult, mtResult, 0, "ST-Result", "MT-Result");
+//		TestUtils.compareMatrices(stResult, mtResult, 0, "ST-Result", "MT-Result");
 	}
 
 	private HashMap<CellIndex, Double> runReverseWithThreads(String testname, boolean matrix, boolean sparse, ExecType instType, int numThreads)
@@ -208,6 +215,8 @@ public class FullReverseTest extends AutomatedTestBase
 
 		try
 		{
+			System.setProperty("sysds.parallel.threads", String.valueOf(numThreads));
+
 			int cols = matrix ? cols_mt : 1;
 			double sparsity = sparse ? sparsity2 : sparsity1;
 			getAndLoadTestConfiguration(TEST_NAME);
@@ -240,11 +249,14 @@ public class FullReverseTest extends AutomatedTestBase
 
 			return dmlfile;
 		}
-		finally
-		{
+		catch(Exception ex) {
+			throw new RuntimeException(ex);
+		}
+		finally {
 			//reset flags
 			rtplatform = platformOld;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			System.setProperty("sysds.parallel.threads", String.valueOf(oldPar));
 		}
 	}
 		

@@ -128,10 +128,11 @@ public class LibMatrixReorg {
 				else
 					return transpose(in, out);
 			case REV:
-//				if (op.getNumThreads() > 1)
-					return rev(in, out, 4);
-//				else
-//					return rev(in, out);
+//				System.out.println("Reorg: rev() called with numThreads: " + op.getNumThreads());
+				if (op.getNumThreads() > 1)
+					return rev(in, out, op.getNumThreads());
+				else
+					return rev(in, out);
 			case ROLL:
 				RollIndex rix = (RollIndex) op.fn;
 				return roll(in, out, rix.getShift());

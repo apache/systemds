@@ -196,7 +196,6 @@ class FunctionParser(object):
             input_parameters = self.parse_input_output_string(h_input)
             output_parameters = self.parse_input_output_string(h_output)
        
-        code_block = None
         with open(path, 'r') as f:
             content = f.read()
             pat = re.compile(
@@ -204,21 +203,23 @@ class FunctionParser(object):
                 ^\#\s*\.\.\s*code-block::\s*python      #  .. code-block:: python
                 (.*?)                                   #  ← capture the actual example
                 (?=                                     #  stop just before
-                    ^\#\s*INPUT:                        # INPUT:
+                    ^\#\s*(?:INPUT:|                      #   → “# INPUT:”  OR
+                        \.\.\s*code-block::\s*python)  #   → another “# .. code-block:: python”
                 )
                 """,
                 re.MULTILINE | re.DOTALL | re.VERBOSE,
             )
-            match = pat.search(content)
-            if match:
+            code_blocks = []
+            for match in pat.finditer(content):
                 raw_block = match.group(1)
                 code_lines = [line.lstrip("#") for line in raw_block.splitlines()] # Remove leading #
                 code_block = textwrap.dedent("\n".join([code_line for code_line in code_lines if code_line != ""]))
+                code_blocks.append(code_block)
 
         data = {'description': description,
                 'parameters': input_parameters,
                 'return_values': output_parameters,
-                'code_block': code_block}
+                'code_blocks': code_blocks}
         return data
 
     def parse_input_output_string(self, data: str):

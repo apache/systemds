@@ -56,6 +56,32 @@ def img_mirror_linearized(img_matrix: Matrix,
         [10. 20. 30.]]
     
     
+     .. code-block:: python
+    
+       >>> import numpy as np
+       >>> from systemds.context import SystemDSContext
+       >>> from systemds.operator.algorithm import img_mirror_linearized
+       >>> 
+       >>> with SystemDSContext() as sds:
+       ...     imgs = sds.from_numpy(
+       ...         np.array([[ 10., 20., 30.,
+       ...                     40., 50., 60.,
+       ...                     70., 80., 90. ],
+       ...                   [ 70., 80., 90.,
+       ...                     40., 50., 60.,
+       ...                     10., 20., 30. ]], dtype=np.float32)
+       ...     )
+       ...     result_imgs = img_mirror_linearized(imgs, True, 3, 3).compute()
+       ...     print(result_imgs[0].reshape(3, 3))
+       ...     print(result_imgs[1].reshape(3, 3))
+       [[70. 80. 90.]
+        [40. 50. 60.]
+        [10. 20. 30.]]
+       [[10. 20. 30.]
+        [40. 50. 60.]
+        [70. 80. 90.]]
+    
+    
     
     
     :param img_matrix: Input images as linearized 2D matrix with top left corner at [1, 1] (every row represents a linearized matrix/image)

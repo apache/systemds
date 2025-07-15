@@ -458,13 +458,22 @@ if __name__ == "__main__":
             continue
         file_generator.generate_file(
             data["function_name"], script_content, dml_file)
-        # TODO: multiple code blocks -> multiple test_files
-        test_example = header_data.get("code_block", None)
-        if test_example:
-            # TODO: dml test file
-            # TODO: logs should have funcs without test cases
-            # TODO: imports should be exlicitly added to the examples
-            file_generator.generate_test_file(data["function_name"], test_example)
+        
+        # Generate test cases using the code blocks
+        test_examples = header_data.get("code_blocks", None)
+        if test_examples:
+            for i, test_example in enumerate(test_examples):
+                test_example_name = data["function_name"]
+                # Don't add test number if only one example
+                if len(test_examples) > 1:
+                    test_example_name += f"_{i}"
+                file_generator.generate_test_file(test_example_name, test_example)
+                # TODO: dml test case files should also be created
+        else:
+            print(f"[INFO] Skipping python test case creation for '{data['function_name']}': No code example.")
+        
+        # Generate rst file
         file_generator.generate_rst_file(data["function_name"])
+
     file_generator.function_names.sort()
     file_generator.generate_init_file()

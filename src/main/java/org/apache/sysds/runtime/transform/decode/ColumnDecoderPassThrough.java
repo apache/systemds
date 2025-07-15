@@ -20,7 +20,7 @@
 package org.apache.sysds.runtime.transform.decode;
 
 import org.apache.sysds.runtime.frame.data.FrameBlock;
-
+import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -28,17 +28,20 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class ColumnDecoderPassThrough extends ColumnDecoder {
 
     private static final long serialVersionUID = -8525203889417422598L;
 
-    //private int[] _dcCols = null;
-    //private int[] _srcCols = null;
+    private int[] _dcCols = null;
+    private int[] _srcCols = null;
 
     protected ColumnDecoderPassThrough(ValueType schema, int ptCols, int[] dcCols, int offset) {
         super(schema, ptCols, offset);
-        //_dcCols = dcCols;
+        _dcCols = dcCols;
     }
 
     public ColumnDecoderPassThrough() {
@@ -50,7 +53,7 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
         long p1 = System.nanoTime();
         out.ensureAllocatedColumns(in.getNumRows());
         for (int r = 0; r < in.getNumRows(); r++) {
-            out.getColumn(_colID).set(r, in.get(r, _offset));
+            out.getColumn(_colID).set(r, in.get(r, _colID));
         }
         //columnDecode(in, out, 0, in.getNumRows());
         long p2 = System.nanoTime();
@@ -58,12 +61,17 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
         return out;
     }
 
-
     @Override
     public void columnDecode(MatrixBlock in, FrameBlock out, int rl, int ru) {
-        for (int r = rl; r < ru; r++) {
-            double val = in.get(r, _offset);
-            out.set(r, _colID, UtilFunctions.doubleToObject(_schema, val));
+        int clen = Math.min(_colList.length, out.getNumColumns());
+        for( int i=rl; i<ru; i++ ) {
+            for( int j=0; j<clen; j++ ) {
+                int srcColID = _srcCols[j];
+                int tgtColID = _colList[j];
+                double val = in.get(i, srcColID-1);
+                out.set(i, tgtColID-1,
+                    UtilFunctions.doubleToObject(_schema, val));
+            }
         }
     }
 
@@ -97,7 +105,6 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
     }
     @Override
     public void initMetaData(FrameBlock meta) {
-        /*
         if (_colList == null)
             return; // nothing to initialize for passthrough columns
         if( _dcCols.length > 0 ) {
@@ -120,8 +127,6 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
             //prepare direct source column mapping
             _srcCols = _colList;
         }
-        */
-
     }
 
     @Override
@@ -129,7 +134,6 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
             throws IOException
     {
         super.writeExternal(os);
-        /*
         os.writeInt(_srcCols.length);
         for(int i = 0; i < _srcCols.length; i++)
             os.writeInt(_srcCols[i]);
@@ -137,8 +141,6 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
         os.writeInt(_dcCols.length);
         for(int i = 0; i < _dcCols.length; i++)
             os.writeInt(_dcCols[i]);
-
-         */
     }
 
     @Override
@@ -146,7 +148,6 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
             throws IOException
     {
         super.readExternal(in);
-        /*
         _srcCols = new int[in.readInt()];
         for(int i = 0; i < _srcCols.length; i++)
             _srcCols[i] = in.readInt();
@@ -154,7 +155,5 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
         _dcCols = new int[in.readInt()];
         for(int i = 0; i < _dcCols.length; i++)
             _dcCols[i] = in.readInt();
-
-         */
     }
 }

@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.apache.sysds.runtime.util.CollectionUtils.except;
+import static org.apache.sysds.runtime.util.CollectionUtils.unionDistinct;
 
 public class ColumnDecoderFactory {
     public enum DecoderType {
@@ -42,6 +43,7 @@ public class ColumnDecoderFactory {
         Recode,
     }
 
+
     public static ColumnDecoder createDecoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta) {
         return createDecoder(spec, colnames, schema, meta, meta.getNumColumns(), -1, -1);
     }
@@ -50,63 +52,77 @@ public class ColumnDecoderFactory {
         return createDecoder(spec, colnames, schema, meta, clen, -1, -1);
     }
 
-    public static ColumnDecoder createDecoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta, int minCol, int maxCol) {
+    public static ColumnDecoder createDecoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta, int minCol,
+                                        int maxCol) {
         return createDecoder(spec, colnames, schema, meta, meta.getNumColumns(), minCol, maxCol);
     }
 
     public static ColumnDecoder createDecoder(String spec, String[] colnames, ValueType[] schema,
-                                              FrameBlock meta, int clen, int minCol, int maxCol) {
-        ColumnDecoder decoder;
+                                        FrameBlock meta, int clen, int minCol, int maxCol)
+    {
+        ColumnDecoder decoder = null;
         int currOffset = 0;
 
         try {
+            //parse transform specification
             JSONObject jSpec = new JSONObject(spec);
             List<ColumnDecoder> ldecoders = new ArrayList<>();
 
-            List<Integer> fullSeq = UtilFunctions.getSeqList(1, clen, 1);
+            //create decoders 'bin', 'recode', 'dummy' and 'pass-through'
             List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames, minCol, maxCol);
-            List<Integer> recodeIDs = Arrays.asList(ArrayUtils.toObject(
+            List<Integer> rcIDs = Arrays.asList(ArrayUtils.toObject(
                     TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TfMethod.RECODE.toString(), minCol, maxCol)));
-            List<Integer> dummyIDs = Arrays.asList(ArrayUtils.toObject(
+            List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
                     TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TfMethod.DUMMYCODE.toString(), minCol, maxCol)));
+            rcIDs = unionDistinct(rcIDs, dcIDs);
+            int len = dcIDs.isEmpty() ? Math.min(meta.getNumColumns(), clen) : meta.getNumColumns();
+            List<Integer> ptIDs = except(except(UtilFunctions.getSeqList(1, len, 1), rcIDs), binIDs);
 
-            List<Integer> ptIDs = except(except(UtilFunctions.getSeqList(1, clen, 1), recodeIDs), binIDs);
-            ptIDs = except(ptIDs, dummyIDs);
+            //create default schema if unspecified (with double columns for pass-through)
+            if( schema == null ) {
+                schema = UtilFunctions.nCopies(len, ValueType.STRING);
+                for( Integer col : ptIDs )
+                    schema[col-1] = ValueType.FP64;
+            }
 
-            for (int colID : fullSeq) {
-                if (binIDs.contains(colID)) {
-                    ColumnDecoder dec = new ColumnDecoderBin(schema[colID - 1], colID - 1, currOffset);
-                    ldecoders.add(dec);
-                    currOffset += 1;
+            if( !binIDs.isEmpty() ) {
+                for (int col : binIDs) {
+                    ldecoders.add(new ColumnDecoderBin(schema[col - 1], col - 1, currOffset));
+                    currOffset++;
                 }
-                else if (dummyIDs.contains(colID)) {
-                    int numDummy = (int) meta.getColumnMetadata(colID - 1).getNumDistinct();
-                    ColumnDecoder dec = new ColumnDecoderDummycode(schema[colID - 1], colID - 1, currOffset);
-                    ldecoders.add(dec);
-                    currOffset += numDummy;
+            }
+            if( !dcIDs.isEmpty() ) {
+                for (int col : dcIDs) {
+                    ldecoders.add(new ColumnDecoderDummycode(schema[col - 1], col - 1, currOffset));
+                    currOffset++;
                 }
-                else if (recodeIDs.contains(colID)) {
-                    ColumnDecoder dec = new ColumnDecoderRecode(schema[colID - 1], false, colID - 1, currOffset);
-                    ldecoders.add(dec);
-                    currOffset += 1;
+            }
+            if( !rcIDs.isEmpty() ) {
+                for( int col : rcIDs ) {
+                    ldecoders.add(new ColumnDecoderRecode(schema[col-1], !dcIDs.isEmpty(), col-1, currOffset));
+                    currOffset++;
                 }
-                else if (ptIDs.contains(colID)) {
-                    ColumnDecoder dec = new ColumnDecoderPassThrough(schema[colID - 1], colID - 1,
-                            ArrayUtils.toPrimitive(dummyIDs.toArray(new Integer[0])), currOffset);
-                    ldecoders.add(dec);
-                    currOffset += 1;
-                }
-                else {
-                    throw new DMLRuntimeException("Decoder not supported: " + colID);
+            }
+            if( !ptIDs.isEmpty() ) {
+                for (int col : ptIDs) {
+                    ldecoders.add(new ColumnDecoderPassThrough(schema[col - 1], col - 1,
+                            ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0])), currOffset));
                 }
             }
 
-
+            //create composite decoder of all created decoders
+            //and initialize with given meta data (recode, dummy, bin)
             decoder = new ColumnDecoderComposite(schema, ldecoders);
             decoder.setColnames(colnames);
             decoder.initMetaData(meta);
+            System.out.println("Creating decoder for spec: " + spec);
+            System.out.println("Creating decoder types:");
+            for (ColumnDecoder dec : ldecoders) {
+                System.out.println(dec.getClass() + " for column ID: " + dec.getColID() + ", offset=" + dec.getColOffset());
+            }
 
-        } catch (Exception ex) {
+        }
+        catch(Exception ex) {
             throw new DMLRuntimeException(ex);
         }
 
@@ -114,26 +130,26 @@ public class ColumnDecoderFactory {
     }
 
     public static int getDecoderType(ColumnDecoder decoder) {
-        if (decoder instanceof ColumnDecoderDummycode)
-            return DecoderType.Dummycode.ordinal();
-        else if (decoder instanceof ColumnDecoderRecode)
-            return DecoderType.Recode.ordinal();
-        else if (decoder instanceof ColumnDecoderPassThrough)
-            return DecoderType.PassThrough.ordinal();
-        throw new DMLRuntimeException("Unsupported decoder type: " + decoder.getClass().getCanonicalName());
+        if( decoder instanceof ColumnDecoderDummycode )
+            return ColumnDecoderFactory.DecoderType.Dummycode.ordinal();
+        else if( decoder instanceof ColumnDecoderRecode )
+            return ColumnDecoderFactory.DecoderType.Recode.ordinal();
+        else if( decoder instanceof ColumnDecoderPassThrough )
+            return ColumnDecoderFactory.DecoderType.PassThrough.ordinal();
+        throw new DMLRuntimeException("Unsupported decoder type: "
+                + decoder.getClass().getCanonicalName());
     }
 
     public static ColumnDecoder createInstance(int type) {
-        DecoderType dtype = DecoderType.values()[type];
-        switch (dtype) {
-            case Dummycode:
-                return new ColumnDecoderDummycode(null, -1, -1);
-            case PassThrough:
-                return new ColumnDecoderPassThrough(null, -1, null, -1);
-            case Recode:
-                return new ColumnDecoderRecode(null, false, -1, -1);
+        ColumnDecoderFactory.DecoderType dtype = ColumnDecoderFactory.DecoderType.values()[type];
+
+        // create instance
+        switch(dtype) {
+            case Dummycode:   return new ColumnDecoderDummycode(null, -1, -1);
+            case PassThrough: return new ColumnDecoderPassThrough(null, -1, null, -1);
+            case Recode:      return new ColumnDecoderRecode(null, false, -1, -1);
             default:
-                throw new DMLRuntimeException("Unsupported Decoder Type used: " + dtype);
+                throw new DMLRuntimeException("Unsupported Encoder Type used:  " + dtype);
         }
     }
 }

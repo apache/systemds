@@ -23,8 +23,13 @@ public class ColumnDecoderDummycode extends ColumnDecoder {
 
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
+        long t0 = System.nanoTime(); // 开始计时
+
         out.ensureAllocatedColumns(in.getNumRows());
         columnDecode(in, out, 0, in.getNumRows());
+
+        long t1 = System.nanoTime(); // 结束计时
+        System.out.println(this.getClass() + " time: " + (t1 - t0) / 1e6 + " ms");
         return out;
     }
 

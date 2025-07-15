@@ -57,24 +57,22 @@ public class ColumnDecoderRecode extends ColumnDecoder {
         out.ensureAllocatedColumns(in.getNumRows());
         columnDecode(in, out, 0, in.getNumRows());
         return out;
+
+
     }
 
     @Override
     public void columnDecode(MatrixBlock in, FrameBlock out, int rl, int ru) {
-        // TODO
-        Array<?> a = out.getColumn(_colID);
-        if(_onOut) {
-            for(int i = rl; i < ru; i++) {
-                double val = UtilFunctions.objectToDouble(_schema, a.get(i));
-                long key = UtilFunctions.toLong(val);
-                setArrayValue(a, i, getRcMapValue(key));            }
+        long t0 = System.nanoTime();
+
+        for (int i = rl; i < ru; i++) {
+            long val = UtilFunctions.toLong(in.get(i, _colID)); // 修复类型错误
+            Object obj = getRcMapValue(val);
+            out.set(i, _colID, obj);
         }
-        else {
-            for(int i = rl; i < ru; i++) {
-                long key = UtilFunctions.toLong(in.get(i, _colID));
-                setArrayValue(a, i, getRcMapValue(key));
-            }
-        }
+
+        long t1 = System.nanoTime();
+        System.out.println(this.getClass() + " time: " + (t1 - t0) / 1e6 + " ms");
     }
     public ColumnDecoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
         return null;
@@ -157,25 +155,7 @@ public class ColumnDecoderRecode extends ColumnDecoder {
         return (_rcMapDirect != null && key > 0 && key <= _rcMapDirect.length) ?
                 _rcMapDirect[(int)key-1] : _rcMap.get(key);
     }
-    private void setArrayValue(Array<?> a, int index, Object val) {
-        if(val == null) {
-            if(_schema == ValueType.STRING || _schema == ValueType.CHARACTER)
-                a.set(index, (String)null);
-            else if(_schema == ValueType.BOOLEAN)
-                ((ABooleanArray)a).set(index, (Boolean)null);
-            else
-                a.set(index, Double.NaN);
-        }
-        else if(_schema.isNumeric()) {
-            a.set(index, UtilFunctions.objectToDouble(_schema, val));
-        }
-        else if(_schema == ValueType.BOOLEAN) {
-            ((ABooleanArray)a).set(index, UtilFunctions.objectToBoolean(_schema, val));
-        }
-        else { // STRING or CHARACTER
-            a.set(index, val.toString());
-        }
-        }
+
     /**
      * Parses a line of &lt;token, ID, count&gt; into &lt;token, ID&gt; pairs, where
      * quoted tokens (potentially including separators) are supported.

@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.runtime.transform.decode;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -14,7 +33,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.apache.sysds.runtime.util.CollectionUtils.except;
-import static org.apache.sysds.runtime.util.CollectionUtils.unionDistinct;
 
 public class ColumnDecoderFactory {
     public enum DecoderType {
@@ -38,68 +56,55 @@ public class ColumnDecoderFactory {
 
     public static ColumnDecoder createDecoder(String spec, String[] colnames, ValueType[] schema,
                                               FrameBlock meta, int clen, int minCol, int maxCol) {
-        ColumnDecoder decoder = null;
+        ColumnDecoder decoder;
         int currOffset = 0;
 
         try {
             JSONObject jSpec = new JSONObject(spec);
             List<ColumnDecoder> ldecoders = new ArrayList<>();
 
-            // 获取各类列索引
+            List<Integer> fullSeq = UtilFunctions.getSeqList(1, clen, 1);
             List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames, minCol, maxCol);
             List<Integer> recodeIDs = Arrays.asList(ArrayUtils.toObject(
                     TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TfMethod.RECODE.toString(), minCol, maxCol)));
             List<Integer> dummyIDs = Arrays.asList(ArrayUtils.toObject(
                     TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TfMethod.DUMMYCODE.toString(), minCol, maxCol)));
 
-            // 注意：dummy 不再参与 recode 解码
             List<Integer> ptIDs = except(except(UtilFunctions.getSeqList(1, clen, 1), recodeIDs), binIDs);
-            ptIDs = except(ptIDs, dummyIDs); // dummy 列也不能 pass-through
+            ptIDs = except(ptIDs, dummyIDs);
 
-            if (schema == null) {
-                schema = UtilFunctions.nCopies(clen, ValueType.STRING);
-                for (Integer col : ptIDs)
-                    schema[col - 1] = ValueType.FP64;
-            }
-
-            // Bin decoder
-            for (int col : binIDs) {
-                ldecoders.add(new ColumnDecoderBin(schema[col - 1], col - 1, currOffset));
-                currOffset++;
-            }
-
-            // Dummycode decoder
-            for (int col : dummyIDs) {
-                ldecoders.add(new ColumnDecoderDummycode(schema[col - 1], col - 1, currOffset));
-                currOffset++;
-            }
-
-            // Recode decoder
-            for (int col : recodeIDs) {
-                if (!dummyIDs.contains(col)) { // 避免 dummy 列重复 recode 解码
-                    ldecoders.add(new ColumnDecoderRecode(schema[col - 1], false, col - 1, currOffset));
-                    currOffset++;
+            for (int colID : fullSeq) {
+                if (binIDs.contains(colID)) {
+                    ColumnDecoder dec = new ColumnDecoderBin(schema[colID - 1], colID - 1, currOffset);
+                    ldecoders.add(dec);
+                    currOffset += 1;
+                }
+                else if (dummyIDs.contains(colID)) {
+                    int numDummy = (int) meta.getColumnMetadata(colID - 1).getNumDistinct();
+                    ColumnDecoder dec = new ColumnDecoderDummycode(schema[colID - 1], colID - 1, currOffset);
+                    ldecoders.add(dec);
+                    currOffset += numDummy;
+                }
+                else if (recodeIDs.contains(colID)) {
+                    ColumnDecoder dec = new ColumnDecoderRecode(schema[colID - 1], false, colID - 1, currOffset);
+                    ldecoders.add(dec);
+                    currOffset += 1;
+                }
+                else if (ptIDs.contains(colID)) {
+                    ColumnDecoder dec = new ColumnDecoderPassThrough(schema[colID - 1], colID - 1,
+                            ArrayUtils.toPrimitive(dummyIDs.toArray(new Integer[0])), currOffset);
+                    ldecoders.add(dec);
+                    currOffset += 1;
+                }
+                else {
+                    throw new DMLRuntimeException("Decoder not supported: " + colID);
                 }
             }
 
-            // PassThrough decoder
-            for (int col : ptIDs) {
-                ldecoders.add(new ColumnDecoderPassThrough(schema[col - 1], col - 1,
-                        ArrayUtils.toPrimitive(dummyIDs.toArray(new Integer[0])), currOffset));
-                currOffset++;
-            }
 
-            // Composite
             decoder = new ColumnDecoderComposite(schema, ldecoders);
             decoder.setColnames(colnames);
             decoder.initMetaData(meta);
-
-            // 调试信息
-            System.out.println("Creating decoder for spec: " + spec);
-            System.out.println("Creating decoder types:");
-            for (ColumnDecoder dec : ldecoders) {
-                System.out.println(dec.getClass() + " for column ID: " + dec.getColID() + ", offset=" + dec.getColOffset());
-            }
 
         } catch (Exception ex) {
             throw new DMLRuntimeException(ex);

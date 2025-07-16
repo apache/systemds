@@ -20,7 +20,7 @@
 package org.apache.sysds.runtime.transform.decode;
 
 import org.apache.sysds.runtime.frame.data.FrameBlock;
-import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
+
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -28,9 +28,6 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public class ColumnDecoderPassThrough extends ColumnDecoder {
 
@@ -53,7 +50,7 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
         long p1 = System.nanoTime();
         out.ensureAllocatedColumns(in.getNumRows());
         for (int r = 0; r < in.getNumRows(); r++) {
-            out.getColumn(_colID).set(r, in.get(r, _colID));
+            out.getColumn(_colID).set(r, in.get(r, _offset));
         }
         //columnDecode(in, out, 0, in.getNumRows());
         long p2 = System.nanoTime();

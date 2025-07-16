@@ -28,6 +28,7 @@ import org.apache.sysds.hops.Hop;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
+import org.apache.sysds.common.Types.ExecType;
 
 /**
  * A Memoization Table for managing federated plans (FedPlan) based on combinations of Hops and fedOutTypes.
@@ -46,13 +47,19 @@ public class FederatedMemoTable {
 		return hopMemoTable.get(fedPlanPair);
 	}
 
-	public FedPlan getFedPlanAfterPrune(long hopID, FederatedOutput fedOutType) {
-		FedPlanVariants fedPlanVariantList = hopMemoTable.get(new ImmutablePair<>(hopID, fedOutType));
+	public FedPlan getFedPlanAfterPrune(long hopID, FederatedOutput federatedOutput) {
+		FedPlanVariants fedPlanVariantList = hopMemoTable.get(new ImmutablePair<>(hopID, federatedOutput));
+		if (fedPlanVariantList == null || fedPlanVariantList.isEmpty()) {
+			return null;
+		}
 		return fedPlanVariantList._fedPlanVariants.get(0);
 	}
 
 	public FedPlan getFedPlanAfterPrune(Pair<Long, FederatedOutput> fedPlanPair) {
 		FedPlanVariants fedPlanVariantList = hopMemoTable.get(fedPlanPair);
+		if (fedPlanVariantList == null || fedPlanVariantList.isEmpty()) {
+			return null;
+		}
 		return fedPlanVariantList._fedPlanVariants.get(0);
 	}
 
@@ -61,13 +68,17 @@ public class FederatedMemoTable {
 	}
 
 	/**
-	 * Represents a single federated execution plan with its associated costs and dependencies.
+	 * Represents a single federated execution plan with its associated costs and
+	 * dependencies.
 	 * This class contains:
-	 * 1. selfCost: Cost of the current hop (computation + input/output memory access).
-	 * 2. cumulativeCost: Total cost including this plan's selfCost and all child plans' cumulativeCost.
+	 * 1. selfCost: Cost of the current hop (computation + input/output memory
+	 * access).
+	 * 2. cumulativeCost: Total cost including this plan's selfCost and all child
+	 * plans' cumulativeCost.
 	 * 3. forwardingCost: Network transfer cost for this plan to the parent plan.
 	 * 
-	 * FedPlan is linked to FedPlanVariants, which in turn uses HopCommon to manage common properties and costs.
+	 * FedPlan is linked to FedPlanVariants, which in turn uses HopCommon to manage
+	 * common properties and costs.
 	 */
 	public static class FedPlan {
 		private double cumulativeCost;                  // Total cost = sum of selfCost + cumulativeCost of child plans
@@ -84,10 +95,31 @@ public class FederatedMemoTable {
 		public long getHopID() {return fedPlanVariants.hopCommon.getHopRef().getHopID();}
 		public FederatedOutput getFedOutType() {return fedPlanVariants.getFedOutType();}
 		public double getCumulativeCost() {return cumulativeCost;}
+		public double getCumulativeCostPerParents() {
+			double cumulativeCostPerParents = cumulativeCost;
+			int numOfParents = fedPlanVariants.hopCommon.getNumOfParents();
+			if (numOfParents >= 2){
+				cumulativeCostPerParents /= numOfParents;
+			}
+			return cumulativeCostPerParents;
+		}
 		public double getSelfCost() {return fedPlanVariants.hopCommon.getSelfCost();}
 		public double getForwardingCost() {return fedPlanVariants.hopCommon.getForwardingCost();}
-		public double getWeight() {return fedPlanVariants.hopCommon.getWeight();}
+		public double getForwardingCostPerParents() {
+			double forwardingCostPerParents = fedPlanVariants.hopCommon.getForwardingCost();
+			int numOfParents = fedPlanVariants.hopCommon.getNumOfParents();
+			if (numOfParents >= 2){
+				forwardingCostPerParents /= numOfParents;
+			}
+			return forwardingCostPerParents;
+		}
+		public double getComputeWeight() {return fedPlanVariants.hopCommon.getComputeWeight();}
+		public double getNetworkWeight() {return fedPlanVariants.hopCommon.getNetworkWeight();}
+		public double getChildForwardingWeight(List<Pair<Long, Double>> childLoopContext) {return fedPlanVariants.hopCommon.getChildForwardingWeight(childLoopContext);}
+		public List<Pair<Long, Double>> getLoopContext() {return fedPlanVariants.hopCommon.getLoopContext();}
 		public List<Pair<Long, FederatedOutput>> getChildFedPlans() {return childFedPlans;}
+		public void setFederatedOutput(FederatedOutput fedOutType) {fedPlanVariants.hopCommon.hopRef.setFederatedOutput(fedOutType);}
+		public void setForcedExecType(ExecType execType) {fedPlanVariants.hopCommon.hopRef.setForcedExecType(execType);}
 	}
 
 	/**
@@ -111,8 +143,8 @@ public class FederatedMemoTable {
 		public List<FedPlan> getFedPlanVariants() {return _fedPlanVariants;}
 		public FederatedOutput getFedOutType() {return fedOutType;}
 
-		public void pruneFedPlans() {
-			if (_fedPlanVariants.size() > 1) {
+		public boolean pruneFedPlans() {
+			if (!_fedPlanVariants.isEmpty()) {
 				// Find the FedPlan with the minimum cumulative cost
 				FedPlan minCostPlan = _fedPlanVariants.stream()
 						.min(Comparator.comparingDouble(FedPlan::getCumulativeCost))
@@ -121,33 +153,63 @@ public class FederatedMemoTable {
 				// Retain only the minimum cost plan
 				_fedPlanVariants.clear();
 				_fedPlanVariants.add(minCostPlan);
+				return true;
 			}
+			return false;
 		}
 	}
 
 	/**
 	 * Represents common properties and costs associated with a Hop.
 	 * This class holds a reference to the Hop and tracks its execution and network forwarding (transfer) costs.
+	 * It also maintains the loop context information to properly calculate forwarding costs within loops.
 	 */
 	public static class HopCommon {
 		protected final Hop hopRef; // Reference to the associated Hop
 		protected double selfCost; // Cost of the hop's computation and memory access
 		protected double forwardingCost; // Cost of forwarding the hop's output to its parent
-		protected double weight; // Weight used to calculate cost based on hop execution frequency
+		protected int numOfParents;
+		protected double computeWeight; // Weight used to calculate cost based on hop execution frequency
+		protected double networkWeight; // Weight used to calculate cost based on hop execution frequency
+		protected List<Pair<Long, Double>> loopContext; // Loop context in which this hop exists
 
-		public HopCommon(Hop hopRef, double weight) {
+		public HopCommon(Hop hopRef, double computeWeight, double networkWeight, int numOfParents, List<Pair<Long, Double>> loopContext) {
 			this.hopRef = hopRef;
 			this.selfCost = 0;
 			this.forwardingCost = 0;
-			this.weight = weight;
+			this.numOfParents = numOfParents;
+			this.computeWeight = computeWeight;
+			this.networkWeight = networkWeight;
+			this.loopContext = loopContext != null ? new ArrayList<>(loopContext) : new ArrayList<>();
 		}
 
 		public Hop getHopRef() {return hopRef;}
 		public double getSelfCost() {return selfCost;}
 		public double getForwardingCost() {return forwardingCost;}
-		public double getWeight() {return weight;}
+		public double getComputeWeight() {return computeWeight;}
+		public double getNetworkWeight() {return networkWeight;}
+		public int getNumOfParents() {return numOfParents;}
+		public List<Pair<Long, Double>> getLoopContext() {return loopContext;}
 
 		protected void setSelfCost(double selfCost) {this.selfCost = selfCost;}
 		protected void setForwardingCost(double forwardingCost) {this.forwardingCost = forwardingCost;}
+		protected void setNumOfParentHops(int numOfParentHops) {this.numOfParents = numOfParentHops;}
+		
+		public double getChildForwardingWeight(List<Pair<Long, Double>> childLoopContext) {
+			if (loopContext.isEmpty()) {
+				return networkWeight;
+			}
+
+			double forwardingWeight = this.networkWeight;
+			
+			for (int i = 0; i < loopContext.size(); i++) {
+				if (i >= childLoopContext.size() || loopContext.get(i).getLeft() != childLoopContext.get(i).getLeft()) {
+					forwardingWeight /=loopContext.get(i).getRight();
+				}
+			}
+
+			// Check if the innermost loops are the same
+			return forwardingWeight;
+		}
 	}
 }

@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.transform.decode;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
@@ -30,7 +29,6 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.Arrays;
 
 public class ColumnDecoderBin extends ColumnDecoder {
     private static final long serialVersionUID = -3784249774608228805L;
@@ -57,7 +55,7 @@ public class ColumnDecoderBin extends ColumnDecoder {
         final int nRows = in.getNumRows();
         Array<?> a = out.getColumn(_colID);
         for (int i = 0; i < nRows; i++) {
-            double val = in.get(i, _colID);
+            double val = in.get(i, _offset);
             double decoded;
             if (!Double.isNaN(val)) {
                 int key = (int) Math.round(val);

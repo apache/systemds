@@ -21,8 +21,6 @@ package org.apache.sysds.runtime.transform.decode;
 
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
-import org.apache.sysds.runtime.frame.data.columns.ABooleanArray;
-import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.transform.TfUtils;
@@ -53,26 +51,26 @@ public class ColumnDecoderRecode extends ColumnDecoder {
 
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
-
+        long t0 = System.nanoTime();
         out.ensureAllocatedColumns(in.getNumRows());
-        columnDecode(in, out, 0, in.getNumRows());
+        for (int i = 0; i < in.getNumRows(); i++) {
+            double val = in.get(i, _offset);
+            Object obj = _rcMapDirect[(int)val-1];
+            out.set(i, _colID, obj);
+        }
+        long t1 = System.nanoTime();
+        System.out.println(this.getClass() + " time: " + (t1 - t0) / 1e6 + " ms");
         return out;
-
-
     }
 
     @Override
     public void columnDecode(MatrixBlock in, FrameBlock out, int rl, int ru) {
-        long t0 = System.nanoTime();
-
         for (int i = rl; i < ru; i++) {
-            long val = UtilFunctions.toLong(in.get(i, _colID)); // 修复类型错误
+            long val = UtilFunctions.toLong(in.get(i, _offset)); // 修复类型错误
             Object obj = getRcMapValue(val);
             out.set(i, _colID, obj);
         }
 
-        long t1 = System.nanoTime();
-        System.out.println(this.getClass() + " time: " + (t1 - t0) / 1e6 + " ms");
     }
     public ColumnDecoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
         return null;
@@ -105,6 +103,7 @@ public class ColumnDecoderRecode extends ColumnDecoder {
     @Override
     @SuppressWarnings("unchecked")
     public void initMetaData(FrameBlock meta) {
+        long t0 = System.nanoTime();
         int col = _colID; // already 0-based
         _rcMap = new HashMap<>();
         long max = 0;
@@ -123,6 +122,9 @@ public class ColumnDecoderRecode extends ColumnDecoder {
             for(Map.Entry<Long,Object> e : _rcMap.entrySet())
                 _rcMapDirect[e.getKey().intValue()-1] = e.getValue();
         }
+
+        long t1 = System.nanoTime();
+        System.out.println(this.getClass() + " meta time: " + (t1 - t0) / 1e6 + " ms");
         //initialize recode maps according to schema
         //_rcMaps = new HashMap[_colList.length];
         //long[] max = new long[_colList.length];

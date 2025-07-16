@@ -107,18 +107,12 @@ public abstract class CNode
 				return "len";
 			if(getVarname().startsWith("b"))
 				return getVarname() + ".clen";
+			else if(getVarname().startsWith("STMP"))
+				return "len";
 			else if(_dataType == DataType.MATRIX)
 				return getVarname() + ".length";
 		}
 		return "";
-	}
-
-	public String getVectorLength(GeneratorAPI api, boolean sparse) {
-		if(sparse && getVarname().startsWith("STMP")) {
-			return "len";
-		} else {
-			return getVectorLength(api);
-		}
 	}
 	
 	public String getClassname() {

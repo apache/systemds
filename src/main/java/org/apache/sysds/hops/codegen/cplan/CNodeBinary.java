@@ -163,12 +163,10 @@ public class CNodeBinary extends CNode {
 			//generate binary operation (use sparse template, if data input)
 			boolean lsparseLhs = sparse ? _inputs.get(0) instanceof CNodeData
 				&& _inputs.get(0).getVarname().startsWith("a") ||
-				(_inputs.get(0).getVarname().startsWith("STMP"))
-					&& _inputs.get(0).getDataType().isMatrix() : false;
+				_inputs.get(0).getVarname().startsWith("STMP") : false;
 			boolean lsparseRhs = sparse ? _inputs.get(1) instanceof CNodeData
 				&& _inputs.get(1).getVarname().startsWith("a") ||
-				(_inputs.get(1).getVarname().startsWith("STMP"))
-					&& _inputs.get(1).getDataType().isMatrix() : false;
+				_inputs.get(1).getVarname().startsWith("STMP") : false;
 			boolean scalarInput = _inputs.get(0).getDataType().isScalar();
 			boolean scalarVector = (_inputs.get(0).getDataType().isScalar()
 				&& _inputs.get(1).getDataType().isMatrix());
@@ -210,7 +208,7 @@ public class CNodeBinary extends CNode {
 			else { //general case
 				CNode mInput = getIntermediateInputVector();
 				if( mInput != null )
-					tmp = tmp.replace("%LEN%", mInput.getVectorLength(api, sparse));
+					tmp = tmp.replace("%LEN%", mInput.getVectorLength(api));
 			}
 
 			sb.append(tmp);

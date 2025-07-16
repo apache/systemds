@@ -880,15 +880,17 @@ public class UtilFunctions {
 	}
 	
 	public static int computeNnz(final double[] a, final int ai, final int len) {
-		int lnnz = 0;
 		final int end = ai + len;
 		final int rest = (end - ai) % vLen;
+		int lnnz = len;
 
+		//start from len and subtract number of zeros because
+		//DoubleVector defines an eq but no neq operation
 		for(int i = ai; i < ai + rest; i++)
-			lnnz += (a[i] != 0.0) ? 1 : 0;
-		for(int i = ai + rest; i < end; i += 8) {
+			lnnz -= (a[i] == 0.0) ? 1 : 0;
+		for(int i = ai + rest; i < end; i += vLen) {
 			DoubleVector aVec = DoubleVector.fromArray(SPECIES, a, i);
-			lnnz += vLen-aVec.eq(0).trueCount();
+			lnnz -= aVec.eq(0).trueCount();
 		}
 		return lnnz;
 	}

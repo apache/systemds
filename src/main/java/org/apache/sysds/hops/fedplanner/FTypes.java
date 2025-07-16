@@ -34,6 +34,7 @@ public class FTypes
 				case COMPILE_FED_HEURISTIC:
 					return new FederatedPlannerFedHeuristic();
 				case COMPILE_COST_BASED:
+					return new FederatedPlannerFedCostBased();
 				case NONE:
 				case RUNTIME:
 				default:
@@ -129,5 +130,11 @@ public class FTypes
 		public boolean isColType() {
 			return (this == COL || this == COL_T);
 		}
+	}
+
+	public enum Privacy {
+		PRIVATE,
+		PRIVATE_AGGREGATE,
+		PUBLIC
 	}
 }

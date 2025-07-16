@@ -44,8 +44,15 @@ public class ColumnDecoderDummycode extends ColumnDecoder {
         long t0 = System.nanoTime();
 
         out.ensureAllocatedColumns(in.getNumRows());
-        columnDecode(in, out, 0, in.getNumRows());
-
+        int col = _colID; // already 0-based
+        for (int i = 0; i < in.getNumRows(); i++) {
+            for (int k = _cl; k < _cu; k++) {
+                if (in.get(i, k) != 0) {
+                    out.set(i, col, _coldata[k - _offset]);
+                    break;
+                }
+            }
+        }
         long t1 = System.nanoTime();
         System.out.println(this.getClass() + " time: " + (t1 - t0) / 1e6 + " ms");
         return out;
@@ -56,8 +63,8 @@ public class ColumnDecoderDummycode extends ColumnDecoder {
         int col = _colID; // already 0-based
         for (int i = rl; i < ru; i++) {
             for (int k = _cl; k < _cu; k++) {
-                if (in.get(i, k - 1) != 0) {
-                    out.set(i, col, _coldata[k - _offset - 1]);
+                if (in.get(i, k) != 0) {
+                    out.set(i, col, _coldata[k - _offset]);
                     break;
                 }
             }
@@ -81,7 +88,7 @@ public class ColumnDecoderDummycode extends ColumnDecoder {
         _coldata = v;
         int ndist = d.isDefault() ? 0 : (int) d.getNumDistinct();
         ndist = ndist < -1 ? 0 : ndist;
-        _cl = _offset + 1;
+        _cl = _offset;
         _cu = _cl + ndist;
     }
 

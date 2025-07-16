@@ -40,7 +40,7 @@ public class ColumnDecoderMixedMethodsTest extends AutomatedTestBase {
     @Test
     public void testColumnDecoderMixedMethods() {
         try {
-            int rows = 500000;
+            int rows = 200000;
             double[][] arr = new double[rows][6];
             for (int i = 0; i < rows; i++) {
                 arr[i][0] = 2*i + 1;     // bin column

@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,15 +19,16 @@
 #
 #-------------------------------------------------------------
 
-# Recursive function: Calculate factorial
-factorialUser = function(Integer n) return (Integer result) {
-    if (n <= 1) {
-        result = 1; # base case
-    } else {
-        result = n * factorialUser(n - 1); # recursive call
-    }
-}
+# Reference PCA with normal matrices
+X1 = read($X1);
+X2 = read($X2);
+X3 = read($X3);
+X4 = read($X4);
+X = rbind(X1, X2, X3, X4);
 
-number = 5;
-fact_result = factorialUser(number);
-print("Factorial of " + number + ": " + fact_result);
+# Call built-in PCA function with K=2 components
+[PC, V] = pca(X=X, K=2, scale=TRUE, center=TRUE);
+
+# Write results
+write(PC, $PC);
+write(V, $V);

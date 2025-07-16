@@ -25,10 +25,14 @@ c= rand();
 d= rand();
 e= rand();
 f= rand();
+g= rand();
 h= rand();
 i= rand();
+j= rand();
+k= rand();
+l= rand();
 
-if (a < 30){
+if (a < 10){
 	a = a + b;
 
 	if (a < 20) {
@@ -36,14 +40,23 @@ if (a < 30){
 	} else {
 		a = a + d;
 
-		if (a < 10) {
+		if (a < 30) {
 			a = a + e;
+			
+			if (a < 40){
+				a = a + f;
+			} else {
+				a = a + g;
+			}
+
+			a = a + h;
 		} else {
-			a = a + f;
+			a = a + i;
 		}
+		a = a + j;
 	}
 } else {
-	a = a + h;
+	a = a + k;
 }
-c = a + i;
+c = a + l;
 print(mean(c))

@@ -19,15 +19,9 @@
 #
 #-------------------------------------------------------------
 
-# Recursive function: Calculate factorial
-factorialUser = function(Integer n) return (Integer result) {
-    if (n <= 1) {
-        result = 1; # base case
-    } else {
-        result = n * factorialUser(n - 1); # recursive call
-    }
+fun = function(Matrix[Double] X) return(Matrix[Double] Y) {
+   Y = X + 7;
 }
 
-number = 5;
-fact_result = factorialUser(number);
-print("Factorial of " + number + ": " + fact_result);
+X = matrix(1, 10, 10);
+print(sum(fun(X)));

@@ -19,15 +19,11 @@
 
 package org.apache.sysds.test.gpu.cudaSupportFunctions;
 
-import jcuda.CudaException;
-import jcuda.runtime.JCuda;
-import jcuda.runtime.cudaError;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -45,26 +41,8 @@ public class CudaCublasGeamTest extends AutomatedTestBase {
     private static final double eps = Math.pow(10, -10);
 
     @BeforeClass
-    public static void checkGPU() {
-        boolean gpuAvailable = false;
-        try {
-            // Ask JCuda to throw Java exceptions (much nicer than error codes)
-            JCuda.setExceptionsEnabled(true);
-
-            // How many devices does the runtime see?
-            int[] devCount = {0};
-            int status = JCuda.cudaGetDeviceCount(devCount);
-
-            gpuAvailable = (status == cudaError.cudaSuccess) && (devCount[0] > 0);
-        }
-        catch(UnsatisfiedLinkError | CudaException ex) {
-            // - native JCuda libs not on the class-path
-            // - or they were built for the wrong CUDA version
-            gpuAvailable = false;
-        }
-
-        Assume.assumeTrue("Skipping GPU test: no compatible CUDA device " + "or JCuda native libraries not available.",
-            gpuAvailable);
+    public static void ensureGPU() {
+        TestUtils.checkGPU();
     }
 
     @Override

@@ -52,6 +52,9 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
 
+import jcuda.CudaException;
+import jcuda.runtime.JCuda;
+import jcuda.runtime.cudaError;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.NotImplementedException;
@@ -95,6 +98,7 @@ import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.junit.Assert;
+import org.junit.Assume;
 
 /**
  * <p>
@@ -3917,7 +3921,7 @@ public class TestUtils {
 				return true;
 		return false;
 	}
-	
+
 	public static int isGPUAvailable() {
 		// returns cudaSuccess if at least one gpu is available
 		//final int[] deviceCount = new int[1];
@@ -3926,10 +3930,32 @@ public class TestUtils {
 		return 1; //return false for now
 	}
 
-	public static MatrixBlock mockNonContiguousMatrix(MatrixBlock db){
+	public static void checkGPU() {
+		boolean gpuAvailable = false;
+		try {
+			// Ask JCuda to throw Java exceptions (much nicer than error codes)
+			JCuda.setExceptionsEnabled(true);
+
+			// How many devices does the runtime see?
+			int[] devCount = {0};
+			int status = JCuda.cudaGetDeviceCount(devCount);
+
+			gpuAvailable = (status == cudaError.cudaSuccess) && (devCount[0] > 0);
+		}
+		catch(UnsatisfiedLinkError | CudaException ex) {
+			// - native JCuda libs not on the class-path
+			// - or they were built for the wrong CUDA version
+			gpuAvailable = false;
+		}
+
+		Assume.assumeTrue("Skipping GPU test: no compatible CUDA device " + "or JCuda native libraries not available.",
+			gpuAvailable);
+	}
+
+	public static MatrixBlock mockNonContiguousMatrix(MatrixBlock db) {
 		db.sparseToDense();
 		double[] vals = db.getDenseBlockValues();
-		int[] dims = new int[]{db.getNumRows(), db.getNumColumns()};
+		int[] dims = new int[] {db.getNumRows(), db.getNumColumns()};
 		MatrixBlock m = new MatrixBlock(db.getNumRows(), db.getNumColumns(), new DenseBlockFP64Mock(dims, vals));
 		m.setNonZeros(db.getNonZeros());
 		return m;

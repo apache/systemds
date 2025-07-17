@@ -2191,6 +2191,11 @@ public class LibSpoofPrimitives
 		return c;
 	}
 
+	public static SparseRowVector vectMultWrite(int len, double bval, double[] a, int[] aix, int ai, int alen) {
+		return vectMultWrite(len, a, bval, aix, ai, alen);
+	}
+
+	//version with branching
 	public static SparseRowVector vectMultWriteB(int len, double[] a, double[] b, int[] aix, int[] bix, int ai, int bi, int alen, int blen) {
 		SparseRowVector c = allocSparseVector(Math.min(alen, blen));
 		if( a == null || b == null ) return c;
@@ -2217,6 +2222,7 @@ public class LibSpoofPrimitives
 		return c;
 	}
 
+	//version without branching
 	public static SparseRowVector vectMultWrite(int len, double[] a, double[] b, int[] aix, int[] bix, int ai, int bi, int alen, int blen) {
 		SparseRowVector c = allocSparseVector(Math.min(alen, blen));
 		int index = 0;
@@ -2240,8 +2246,9 @@ public class LibSpoofPrimitives
 	public static void vectWrite(SparseRowVector a, double[] c, int ci, int len) {
 		if( a == null ) return;
 		int[] aix = a.indexes();
+		double[] avals = a.values();
 		for(int j = 0; j < a.size(); j++)
-			c[ci+aix[j]] = a.get(aix[j]);
+			c[ci+aix[j]] = avals[j];
 	}
 
 	public static SparseRowVector vectDivWrite(int len, double[] a, double bval, int[] aix, int ai, int alen) {
@@ -2268,6 +2275,7 @@ public class LibSpoofPrimitives
 		return c;
 	}
 
+	//version with branching
 	public static SparseRowVector vectDivWriteB(int len, double[] a, double[] b, int[] aix, int[] bix, int ai, int bi, int alen, int blen) {
 		SparseRowVector c = allocSparseVector(alen);
 		int aItr = ai;
@@ -2297,6 +2305,7 @@ public class LibSpoofPrimitives
 		return c;
 	}
 
+	//version without branching
 	public static SparseRowVector vectDivWrite(int len, double[] a, double[] b, int[] aix, int[] bix, int ai, int bi, int alen, int blen) {
 		SparseRowVector c = allocSparseVector(Math.min(alen, blen));
 		int index = 0;
@@ -2483,7 +2492,8 @@ public class LibSpoofPrimitives
 		return c;
 	}
 
-	public static SparseRowVector vectPowWrite(int len, double[] a, double bval, int[] aix, int ai, int alen) {
+	//version with branching
+	public static SparseRowVector vectPowWriteB(int len, double[] a, double bval, int[] aix, int ai, int alen) {
 		if(bval == 0) {
 			SparseRowVector c = allocSparseVector(len);
 			int[] indexes = c.indexes();

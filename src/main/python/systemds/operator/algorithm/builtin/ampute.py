@@ -33,6 +33,16 @@ def ampute(X: Matrix,
     """
      This function injects missing values into a multivariate a given dataset, similarly to the ampute() method in R's MICE package.
     
+    
+    
+    :param X: a multivariate numeric dataset [shape: n-by-m]
+    :param prop: a number in the (0, 1] range specifying the proportion of amputed rows across the entire dataset
+    :param patterns: a pattern matrix of 0's and 1's [shape: k-by-m] where each row corresponds to a pattern. 0 indicates that a variable should have missing values and 1 indicating that a variable should remain complete
+    :param freq: a vector [length: k] containing the relative frequency with which each pattern in the patterns matrix should occur
+    :param mech: a string [either "MAR", "MNAR", or "MCAR"] specifying the missingness mechanism. Chosen "MAR" and "MNAR" settings will be overridden if a non-default weight matrix is specified
+    :param weights: a weight matrix [shape: k-by-m], containing weights that will be used to calculate the weighted sum scores. Will be overridden if mech == "MCAR"
+    :param seed: a manually defined seed for reproducible RNG
+    :return: amputed output dataset
     """
 
     params_dict = {'X': X}

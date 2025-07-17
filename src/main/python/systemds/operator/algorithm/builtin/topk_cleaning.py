@@ -25,7 +25,6 @@
 from typing import Dict, Iterable
 
 from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
-from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
@@ -36,8 +35,39 @@ def topk_cleaning(dataTrain: Frame,
                   evalFunHp: Matrix,
                   **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
-     This function cleans top-K item (where K is given as input)for a given list of users.
+     This function cleans top-K item (where K is given as input) for a given list of users.
      metaData[3, ncol(X)] : metaData[1] stores mask, metaData[2] stores schema, metaData[3] stores FD mask
+    
+    
+    
+    :param dataTrain: Training set
+    :param dataTest: Test set ignored when cv is set to True
+    :param metaData: 3×n frame with schema, categorical mask, and FD mask for dataTrain
+    :param primitives: Library of primitive cleaning operators
+    :param parameters: Hyperparameter search space that matches the primitives
+    :param refSol: Reference solution
+    :param evaluationFunc: Name of a SystemDS DML function that scores a pipeline
+    :param evalFunHp: Hyperparameter matrix for the above evaluation function
+    :param topK: Number of best pipelines to return
+    :param resource_val: Maximum resource R for the Bandit search
+    :param max_iter: Maximum iterations while enumerating logical pipelines
+    :param lq: Lower quantile used by utils::doErrorSample when triggered
+    :param uq: Upper quantile used by utils::doErrorSample when triggered
+    :param sample: Fraction of rows to subsample from dataTrain
+    :param expectedIncrease: Minimum improvement over dirtyScore that a candidate must deliver
+    :param seed: Seed number
+    :param cv: TRUE means k-fold CV, FALSE means hold-out split
+    :param cvk: Number of folds if cv = TRUE
+    :param isLastLabel: TRUE if the last column is the label
+    :param rowCount: Row-count threshold above which doErrorSample may replace uniform sampling
+    :param correctTypos: Run spelling correction in the string preprocessing step
+    :param enablePruning: Enable pruning inside the Bandit phase
+    :return: K cleaned-data pipelines
+    :return: Hyperparameter matrix with rows aligning with topKPipelines
+    :return: Evaluation scores with rows aligning with topKPipelines
+    :return: Baseline score on the unclean data
+    :return: Updated evaluation function hyperparameters
+    :return: Frame of “apply” functions for deploying each of the top-K pipelines
     """
 
     params_dict = {'dataTrain': dataTrain, 'primitives': primitives, 'parameters': parameters, 'evaluationFunc': evaluationFunc, 'evalFunHp': evalFunHp}

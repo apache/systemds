@@ -28,6 +28,11 @@
 # X        First Matrix to compare
 # Y        Second Matrix to compare
 # --------------------------------------------------------------------------------
+#
+# OUTPUT:
+# -------------------------------------------------------------------------------------
+# stats.   Difference statistics
+# -------------------------------------------------------------------------------------
 
 m_differenceStatistics = function(Matrix[Double] X, Matrix[Double] Y)  {
 

@@ -33,6 +33,20 @@ def normalize(X: Matrix):
      Min-max normalization (a.k.a. min-max scaling) to range [0,1]. For matrices 
      of positive values, this normalization preserves the input sparsity.
     
+     .. code-block:: python
+    
+       >>> import numpy as np
+       >>> from systemds.context import SystemDSContext
+       >>> from systemds.operator.algorithm import normalize
+       >>> 
+       >>> with SystemDSContext() as sds:
+       ...     X = sds.from_numpy(np.array([[1, 2], [3, 4]]))
+       ...     Y, cmin, cmax = normalize(X).compute()
+       ...     print(Y)
+       [[0. 0.]
+        [1. 1.]]
+    
+    
     
     
     :param X: Input feature matrix of shape n-by-m

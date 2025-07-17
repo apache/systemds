@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.gpu;
+package org.apache.sysds.test.gpu.nn;
 
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.functions.dnn.Conv1DTest;

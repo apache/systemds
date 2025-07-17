@@ -23,7 +23,7 @@ import unittest
 
 from systemds.scuro.representations.mfcc import MFCC
 from systemds.scuro.representations.wav2vec import Wav2Vec
-from systemds.scuro.representations.window import WindowAggregation
+from systemds.scuro.representations.window_aggregation import WindowAggregation
 from systemds.scuro.representations.bow import BoW
 from systemds.scuro.representations.word2vec import W2V
 from systemds.scuro.representations.tfidf import TfIdf

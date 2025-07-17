@@ -54,9 +54,7 @@ class W2V(UnimodalRepresentation):
         self.output_file = output_file
 
     def transform(self, modality):
-        transformed_modality = TransformedModality(
-            modality.modality_type, self, modality.modality_id, modality.metadata
-        )
+        transformed_modality = TransformedModality(modality, self)
         t = [list(tokenize(s.lower())) for s in modality.data]
         model = Word2Vec(
             sentences=t,

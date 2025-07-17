@@ -118,7 +118,8 @@ public class ReorgOp extends MultiThreadedHop
 	@Override
 	public boolean isMultiThreadedOpType() {
 		return _op == ReOrgOp.TRANS
-			|| _op == ReOrgOp.SORT;
+			|| _op == ReOrgOp.SORT
+			|| _op == ReOrgOp.REV;
 	}
 
 	@Override
@@ -150,9 +151,10 @@ public class ReorgOp extends MultiThreadedHop
 			}
 			case DIAG:
 			case REV: {
+				int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 				Transform transform1 = new Transform(
 					getInput().get(0).constructLops(),
-					_op, getDataType(), getValueType(), et);
+					_op, getDataType(), getValueType(), et, k);
 				setOutputDimensions(transform1);
 				setLineNumbers(transform1);
 				setLops(transform1);

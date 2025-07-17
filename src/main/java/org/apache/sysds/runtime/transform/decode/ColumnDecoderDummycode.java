@@ -38,6 +38,9 @@ public class ColumnDecoderDummycode extends ColumnDecoder {
     public ColumnDecoderDummycode(Types.ValueType schema, int colID, int offset) {
         super(schema, colID, offset); // _colID = colID
     }
+    public ColumnDecoderDummycode() {
+        super(null, -1, -1);
+    }
 
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
@@ -83,7 +86,7 @@ public class ColumnDecoderDummycode extends ColumnDecoder {
         Object[] v = new Object[valid];
         for (int i = 0; i < valid; i++) {
             String[] parts = a[i].split("·");
-            v[i] = parts[0];
+            v[Integer.parseInt(parts[1])-1] = parts[0];
         }
         _coldata = v;
         int ndist = d.isDefault() ? 0 : (int) d.getNumDistinct();

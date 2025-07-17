@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.apache.sysds.runtime.util.CollectionUtils.except;
+import static org.apache.sysds.runtime.util.CollectionUtils.unionDistinct;
 
 public class ColumnDecoderFactory {
     public enum DecoderType {
@@ -64,14 +65,31 @@ public class ColumnDecoderFactory {
             List<ColumnDecoder> ldecoders = new ArrayList<>();
 
             List<Integer> fullSeq = UtilFunctions.getSeqList(1, clen, 1);
-            List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames, minCol, maxCol);
-            List<Integer> recodeIDs = Arrays.asList(ArrayUtils.toObject(
-                    TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TfMethod.RECODE.toString(), minCol, maxCol)));
-            List<Integer> dummyIDs = Arrays.asList(ArrayUtils.toObject(
-                    TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TfMethod.DUMMYCODE.toString(), minCol, maxCol)));
+            //List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames, minCol, maxCol);
+            //List<Integer> recodeIDs = Arrays.asList(ArrayUtils.toObject(
+            //        TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TfMethod.RECODE.toString(), minCol, maxCol)));
+            //List<Integer> dummyIDs = Arrays.asList(ArrayUtils.toObject(
+            //        TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TfMethod.DUMMYCODE.toString(), minCol, maxCol)));
+//
+            //int len = dummyIDs.isEmpty() ? Math.min(meta.getNumColumns(), clen) : meta.getNumColumns();
+            //List<Integer> ptIDs = except(except(UtilFunctions.getSeqList(1, clen, 1), recodeIDs), binIDs);
+            //ptIDs = except(ptIDs, dummyIDs);
 
-            List<Integer> ptIDs = except(except(UtilFunctions.getSeqList(1, clen, 1), recodeIDs), binIDs);
-            ptIDs = except(ptIDs, dummyIDs);
+            //create decoders 'bin', 'recode', 'dummy' and 'pass-through'
+            List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames, minCol, maxCol);
+            List<Integer> rcIDs = Arrays.asList(ArrayUtils.toObject(
+                    TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TfMethod.RECODE.toString(), minCol, maxCol)));
+            List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
+                    TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TfMethod.DUMMYCODE.toString(), minCol, maxCol)));
+            rcIDs = unionDistinct(rcIDs, dcIDs);
+            int len = dcIDs.isEmpty() ? Math.min(meta.getNumColumns(), clen) : meta.getNumColumns();
+            List<Integer> ptIDs = except(except(UtilFunctions.getSeqList(1, len, 1), rcIDs), binIDs);
+
+            if( schema == null ) {
+                schema = UtilFunctions.nCopies(len, ValueType.STRING);
+                for( Integer col : ptIDs )
+                    schema[col-1] = ValueType.FP64;
+            }
 
             for (int colID : fullSeq) {
                 if (binIDs.contains(colID)) {
@@ -79,20 +97,20 @@ public class ColumnDecoderFactory {
                     ldecoders.add(dec);
                     currOffset += 1;
                 }
-                else if (dummyIDs.contains(colID)) {
+                else if (dcIDs.contains(colID)) {
                     int numDummy = (int) meta.getColumnMetadata(colID - 1).getNumDistinct();
                     ColumnDecoder dec = new ColumnDecoderDummycode(schema[colID - 1], colID - 1, currOffset);
                     ldecoders.add(dec);
                     currOffset += numDummy;
                 }
-                else if (recodeIDs.contains(colID)) {
+                else if (rcIDs.contains(colID)) {
                     ColumnDecoder dec = new ColumnDecoderRecode(schema[colID - 1], false, colID - 1, currOffset);
                     ldecoders.add(dec);
                     currOffset += 1;
                 }
                 else if (ptIDs.contains(colID)) {
                     ColumnDecoder dec = new ColumnDecoderPassThrough(schema[colID - 1], colID - 1,
-                            ArrayUtils.toPrimitive(dummyIDs.toArray(new Integer[0])), currOffset);
+                            ArrayUtils.toPrimitive(dcIDs.toArray(new Integer[0])), currOffset);
                     ldecoders.add(dec);
                     currOffset += 1;
                 }

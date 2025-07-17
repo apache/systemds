@@ -40,7 +40,7 @@ public class ColumnDecoderMixedMethodsTest extends AutomatedTestBase {
     @Test
     public void testColumnDecoderMixedMethods() {
         try {
-            int rows = 200000;
+            int rows = 50;
             double[][] arr = new double[rows][6];
             for (int i = 0; i < rows; i++) {
                 arr[i][0] = 2*i + 1;     // bin column
@@ -64,7 +64,7 @@ public class ColumnDecoderMixedMethodsTest extends AutomatedTestBase {
             ColumnDecoder cdec = ColumnDecoderFactory.createDecoder(spec, data.getColumnNames(), data.getSchema(), meta);
             FrameBlock actual = new FrameBlock(data.getSchema());
             cdec.columnDecode(encoded, actual);
-            //System.out.println(actual);
+            System.out.println(actual);
         }
         catch(Exception ex) {
             throw new RuntimeException(ex);

@@ -39,7 +39,6 @@ public class ColumnDecoderRecode extends ColumnDecoder {
     private HashMap<Long, Object> _rcMap = null;
     private Object[] _rcMapDirect = null;
     private boolean _onOut = false;
-
     public ColumnDecoderRecode() {
         super(null, -1, -1);
     }
@@ -54,8 +53,7 @@ public class ColumnDecoderRecode extends ColumnDecoder {
         long t0 = System.nanoTime();
         out.ensureAllocatedColumns(in.getNumRows());
         for (int i = 0; i < in.getNumRows(); i++) {
-            double val = in.get(i, _offset);
-            Object obj = _rcMapDirect[(int)val-1];
+            Object obj = getRcMapValue((int)in.get(i, _offset));
             out.set(i, _colID, obj);
         }
         long t1 = System.nanoTime();
@@ -66,7 +64,7 @@ public class ColumnDecoderRecode extends ColumnDecoder {
     @Override
     public void columnDecode(MatrixBlock in, FrameBlock out, int rl, int ru) {
         for (int i = rl; i < ru; i++) {
-            long val = UtilFunctions.toLong(in.get(i, _offset)); // 修复类型错误
+            long val = UtilFunctions.toLong(in.get(i, _offset));
             Object obj = getRcMapValue(val);
             out.set(i, _colID, obj);
         }
@@ -101,7 +99,6 @@ public class ColumnDecoderRecode extends ColumnDecoder {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void initMetaData(FrameBlock meta) {
         long t0 = System.nanoTime();
         int col = _colID; // already 0-based
@@ -153,6 +150,7 @@ public class ColumnDecoderRecode extends ColumnDecoder {
         //    }
         //}
     }
+
     public Object getRcMapValue(long key) {
         return (_rcMapDirect != null && key > 0 && key <= _rcMapDirect.length) ?
                 _rcMapDirect[(int)key-1] : _rcMap.get(key);

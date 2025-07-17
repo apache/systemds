@@ -128,7 +128,7 @@ public class LibMatrixReorg {
 				else
 					return transpose(in, out);
 			case REV:
-//				System.out.println("Reorg: rev() called with numThreads: " + op.getNumThreads());
+				System.out.println("Reorg: rev() called with numThreads: " + op.getNumThreads());
 				if (op.getNumThreads() > 1)
 					return rev(in, out, op.getNumThreads());
 				else
@@ -394,7 +394,10 @@ public class LibMatrixReorg {
 	}
 
 	public static MatrixBlock rev(MatrixBlock in, MatrixBlock out, int k) {
-		if (k <= 1 || in.isEmptyBlock(false)) {
+		if (k <= 1 || in.isEmptyBlock(false) ) {
+//			|| (in.rlen * in.clen < PAR_NUMCELL_THRESHOLD)
+//			&& !in.sparse && !out.sparse && (in.rlen==1 || in.clen==1) )
+//			|| (in.sparse && !out.sparse && in.rlen==1) || out.sparse
 			System.out.println("choosing single thread");
 			return rev(in, out); // fallback to single-threaded
 
@@ -456,7 +459,6 @@ public class LibMatrixReorg {
 		} finally {
 			pool.shutdown();
 		}
-		out.recomputeNonZeros();
 		return out;
 	}
 

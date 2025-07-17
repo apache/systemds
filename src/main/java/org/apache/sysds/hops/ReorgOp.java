@@ -23,6 +23,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ReOrgOp;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.common.Types.ExecType;
@@ -149,9 +150,23 @@ public class ReorgOp extends MultiThreadedHop
 				}
 				break;
 			}
-			case DIAG:
+			case DIAG: {
+				Transform transform1 = new Transform(
+						getInput().get(0).constructLops(),
+						_op, getDataType(), getValueType(), et);
+				setOutputDimensions(transform1);
+				setLineNumbers(transform1);
+				setLops(transform1);
+				break;
+				}
 			case REV: {
-				int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
+				// Get the number of elements in the input matrix
+				long numel = getDim1() * getDim2();
+
+				// Only use multi-threading if the work is substantial (e.g., > 1 block size)
+				System.out.println("The block size is: " + getBlocksize() + "; numelements is: " + numel);
+				int k = (numel < 3000_000) ?
+						1 : OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 				Transform transform1 = new Transform(
 					getInput().get(0).constructLops(),
 					_op, getDataType(), getValueType(), et, k);

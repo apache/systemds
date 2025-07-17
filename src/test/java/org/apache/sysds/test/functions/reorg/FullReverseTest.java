@@ -50,8 +50,8 @@ public class FullReverseTest extends AutomatedTestBase
 	private final static double sparsity2 = 0.1;
 
 	// Multi-threading test parameters
-	private final static int rows_mt = 2018;  // Larger for multi-threading benefits
-	private final static int cols_mt = 1002;   // Larger for multi-threading benefits
+	private final static int rows_mt = 5018;  // Larger for multi-threading benefits
+	private final static int cols_mt = 1001;   // Larger for multi-threading benefits
 	private final static int[] threadCounts = {1, 2, 4, 8};
 	// Set global parallelism for SystemDS to enable multi-threading
 	private final static int oldPar = InfrastructureAnalyzer.getLocalParallelism();
@@ -213,11 +213,13 @@ public class FullReverseTest extends AutomatedTestBase
 
 		String TEST_NAME = testname;
 
+		System.out.println("I am trying to run multi-thread");
+
 		try
 		{
 			System.setProperty("sysds.parallel.threads", String.valueOf(numThreads));
 
-			int cols = matrix ? cols_mt : 1;
+//			int cols = matrix ? cols_mt : 1;
 			double sparsity = sparse ? sparsity2 : sparsity1;
 			getAndLoadTestConfiguration(TEST_NAME);
 
@@ -232,7 +234,7 @@ public class FullReverseTest extends AutomatedTestBase
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 			//generate actual dataset
-			double[][] A = getRandomMatrix(rows_mt, cols, -1, 1, sparsity, 7);
+			double[][] A = getRandomMatrix(rows_mt, cols_mt, -1, 1, sparsity, 7);
 			writeInputMatrixWithMTD("A", A, true);
 
 			// Run with specified thread count (this is the key part)

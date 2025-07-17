@@ -160,11 +160,7 @@ public class ReorgOp extends MultiThreadedHop
 				break;
 				}
 			case REV: {
-				// Get the number of elements in the input matrix
 				long numel = getDim1() * getDim2();
-
-				// Only use multi-threading if the work is substantial (e.g., > 1 block size)
-				System.out.println("The block size is: " + getBlocksize() + "; numelements is: " + numel);
 				int k = (numel < 3000_000) ?
 						1 : OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 				Transform transform1 = new Transform(

@@ -789,6 +789,11 @@ public class CPlanVectorPrimitivesTest extends AutomatedTestBase
 	//scalar - vector
 
 	@Test
+	public void testScalarVectorMultSparseToSparse() {
+		testVectorBinarySparsePrimitive(BinType.VECT_MULT_SCALAR, InputType.SCALAR, InputType.VECTOR_SPARSE);
+	}
+
+	@Test
 	public void testScalarVectorDivSparseToSparse() {
 		testVectorBinarySparsePrimitive(BinType.VECT_DIV_SCALAR, InputType.SCALAR, InputType.VECTOR_SPARSE);
 	}

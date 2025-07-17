@@ -31,7 +31,7 @@ import java.util.HashMap;
 
 public class CudaCusparseCsrMMTest extends AutomatedTestBase {
 
-	private static final String TEST_NAME = "CudaCusparseCsrMM";
+	private static final String TEST_NAME = "CudaSupportFunctionsMM";
 	private static final String TEST_DIR = "gpu/cudaSupportFunctions/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CudaCusparseCsrMMTest.class.getSimpleName() + "/";
 

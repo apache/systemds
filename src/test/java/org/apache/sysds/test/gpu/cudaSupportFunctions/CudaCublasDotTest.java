@@ -31,7 +31,7 @@ import java.util.HashMap;
 
 public class CudaCublasDotTest extends AutomatedTestBase {
 
-	private static final String TEST_NAME = "CudaCublasDot";
+	private static final String TEST_NAME = "CudaSupportFunctionsDot";
 	private static final String TEST_DIR = "gpu/cudaSupportFunctions/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CudaCublasDotTest.class.getSimpleName() + "/";
 

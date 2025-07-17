@@ -29,11 +29,11 @@ import org.junit.Test;
 
 import java.util.HashMap;
 
-public class CudaCusparseCsrMVTest extends AutomatedTestBase {
+public class CudaCublasGemmTest extends AutomatedTestBase {
 
-	private static final String TEST_NAME = "CudaSupportFunctionsMV";
+	private static final String TEST_NAME = "CudaSupportFunctionsMM";
 	private static final String TEST_DIR = "gpu/cudaSupportFunctions/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + CudaCusparseCsrMVTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + CudaCublasGemmTest.class.getSimpleName() + "/";
 
 	private static final int rows = 200;
 	private static final int cols = 200;
@@ -51,31 +51,40 @@ public class CudaCusparseCsrMVTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testCusparseCsrMVNoTranspose() {
-		testCusparseCsrMV(1);
+	public void testCudaCublasGemmNoTranspose(){
+		testCublasGemm(1);
 	}
 
 	@Test
-	public void testCusparseCsrMVLeftTranspose() {
-		testCusparseCsrMV(2);
+	public void testCudaCublasGemmLeftTranspose(){
+		testCublasGemm(2);
 	}
 
-	private void testCusparseCsrMV(int ID) {
+	@Test
+	public void testCudaCublasGemmRightTranspose(){
+		testCublasGemm(3);
+	}
 
+	@Test
+	public void testCudaCublasGemmBothTranspose(){
+		testCublasGemm(4);
+	}
+
+	private void testCublasGemm(int ID){
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		loadTestConfiguration(config);
 
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-stats", "-gpu", "-args", input("A"), input("X"), String.valueOf(ID), output("R")};
+		programArgs = new String[] {"-stats", "-gpu", "-args", input("A"), input("B"), String.valueOf(ID), output("R")};
 		fullRScriptName = HOME + TEST_NAME + ".R";
 		rCmd = getRCmd(inputDir(), String.valueOf(ID), expectedDir());
 
-		// A is sparse matrix, X dense vector
-		double[][] A = getRandomMatrix(rows, cols, -1, 1, 0.20d, 5);
-		double[][] X = getRandomMatrix(rows, 1, -1, 1, 0.80d, 3);
+		// A is dense matrix, B is a dense vector
+		double[][] A = getRandomMatrix(rows, cols, -1, 1, 0.70d, 5);
+		double[][] B = getRandomMatrix(rows, cols, -1, 1, 0.80d, 3);
 		writeInputMatrixWithMTD("A", A, true);
-		writeInputMatrixWithMTD("X", X, true);
+		writeInputMatrixWithMTD("B", B, true);
 
 		runTest(true, false, null, -1);
 		runRScript(true);
@@ -86,6 +95,5 @@ public class CudaCusparseCsrMVTest extends AutomatedTestBase {
 		TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 
 		Assert.assertTrue(heavyHittersContainsString("gpu_ba+*"));
-
 	}
 }

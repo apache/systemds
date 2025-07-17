@@ -29,11 +29,9 @@ options(digits=22)
 library("Matrix")
 library("matrixStats")
 
-# Read matrices and operation type
+# Read matrices
 A = as.matrix(readMM(paste(args[1], "A.mtx", sep="")))
 B = as.matrix(readMM(paste(args[1], "B.mtx", sep="")))
-
-
 
 # Perform operations
 R=A%*%B

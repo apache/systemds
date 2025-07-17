@@ -20,31 +20,24 @@
 #-------------------------------------------------------------
 
 
-args <- commandArgs(TRUE)
-
-# Set options for numeric precision
-options(digits=22)
-
-# Load required libraries
-library("Matrix")
-library("matrixStats")
-
-# Read matrices and operation type
-A = as.matrix(readMM(paste(args[1], "A.mtx", sep="")))
-B = as.matrix(readMM(paste(args[1], "B.mtx", sep="")))
-type = as.integer(args[2])
-
+# Read matrices A, B, and operation type
+A = read($1)
+B = read($2)
+type = $3
 
 # Perform operations
 if(type==1){
     R = A %*% B
-} else if(type==2) {
+}
+else if(type==2) {
     R = t(A) %*% B
-} else if(type==3) {
-     R = A %*% t(B)
-} else if(type==4) {
-     R = t(A) %*% t(B)
+}
+else if(type==3) {
+    R = A %*% t(B)
+}
+else if(type==4) {
+    R = t(A) %*% t(B)
 }
 
-#Write result matrix R
-writeMM(as(R, "CsparseMatrix"), paste(args[3], "R", sep=""));
+# Write the result matrix R
+write(R, $4)

@@ -19,6 +19,7 @@
 #
 #-------------------------------------------------------------
 
+
 # Read matrices A, B, and operation type
 A = read($1)
 B = read($2)
@@ -37,5 +38,6 @@ else if(type==3) {
 else if(type==4) {
     R = t(A) + t(B)
 }
+
 # Write the result matrix R
 write(R, $4)

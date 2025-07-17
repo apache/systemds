@@ -31,7 +31,7 @@ import java.util.HashMap;
 
 public class CudaCublasGeMVTest extends AutomatedTestBase {
 
-	private static final String TEST_NAME = "CudaCublasGeMV";
+	private static final String TEST_NAME = "CudaSupportFunctionsMV";
 	private static final String TEST_DIR = "gpu/cudaSupportFunctions/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + CudaCublasGeMVTest.class.getSimpleName() + "/";
 
@@ -51,26 +51,32 @@ public class CudaCublasGeMVTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testCudaCublasGeMV() {
-		testCudaCublasGeMVTest();
+	public void testCublasGeMV() {
+		testCudaCublasGeMVTest(1);
 	}
 
-	private void testCudaCublasGeMVTest() {
+	@Test
+	public void testCublasGeMVLeftTranspose() {
+		testCudaCublasGeMVTest(2);
+	}
+
+
+	private void testCudaCublasGeMVTest(int ID) {
 
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		loadTestConfiguration(config);
 
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-stats", "-gpu", "-args", input("A"), input("B"), output("R")};
+		programArgs = new String[] {"-stats", "-gpu", "-args", input("A"), input("X"), String.valueOf(ID), output("R")};
 		fullRScriptName = HOME + TEST_NAME + ".R";
-		rCmd = getRCmd(inputDir(), expectedDir());
+		rCmd = getRCmd(inputDir(),  String.valueOf(ID), expectedDir());
 
 		// A is dense matrix, B is a dense vector
 		double[][] A = getRandomMatrix(rows, cols, -1, 1, 0.70d, 5);
-		double[][] B = getRandomMatrix(rows, 1, -1, 1, 0.80d, 3);
+		double[][] X = getRandomMatrix(rows, 1, -1, 1, 0.80d, 3);
 		writeInputMatrixWithMTD("A", A, true);
-		writeInputMatrixWithMTD("B", B, true);
+		writeInputMatrixWithMTD("X", X, true);
 
 		runTest(true, false, null, -1);
 		runRScript(true);

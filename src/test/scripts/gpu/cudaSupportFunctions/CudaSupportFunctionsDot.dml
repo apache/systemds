@@ -19,23 +19,12 @@
 #
 #-------------------------------------------------------------
 
-# Read matrices, and operation type
+# Read matrices
 A = read($1)
 B = read($2)
-type = $3
 
 # Perform operations
-if(type==1){
-    R = A %*% B
-}
-else if(type==2) {
-    R = t(A) %*% B
-}
-else if(type==3) {
-    R = A %*% t(B)
-}
-else if(type==4) {
-    R = t(A) %*% t(B)
-}
+R = A%*%B
+
 # Write the result matrix R
-write(R, $4)
+write(R, $3)

@@ -177,10 +177,7 @@ public class CNodeBinary extends CNode {
 		sb.append(_inputs.get(0).codegen(sparse, api));
 		sb.append(_inputs.get(1).codegen(sparse, api));
 
-		/**
-		 * todo: remember that only certain primitives will be called through this method,
-		 *  because the optimizer will choose which primitive functions should be calculated sparse and which not
-		 */
+		//todo: this if clause can be deleted
 		if(sparseTemplate) {
 			//generate binary operation (use sparse template, if data input)
 			boolean lsparseLhs = sparse ? _inputs.get(0) instanceof CNodeData
@@ -194,7 +191,7 @@ public class CNodeBinary extends CNode {
 				&& _inputs.get(1).getDataType().isMatrix());
 			boolean vectorVector = _inputs.get(0).getDataType().isMatrix()
 				&& _inputs.get(1).getDataType().isMatrix();
-			String var = createVarname(sparse && getOutputType(scalarVector, lsparseLhs, lsparseRhs));
+			String var = createVarname(sparse && sparseTemplate && getOutputType(scalarVector, lsparseLhs, lsparseRhs));
 			String tmp = getLanguageTemplateClass(this, api)
 				.getTemplate(_type, lsparseLhs, lsparseRhs, scalarVector, scalarInput, vectorVector, sparseTemplate);
 

@@ -29,11 +29,11 @@ import org.junit.Test;
 
 import java.util.HashMap;
 
-public class CudaCublasDotTest extends AutomatedTestBase {
+public class CudaCublasGeMVTest extends AutomatedTestBase {
 
-	private static final String TEST_NAME = "CudaCublasDot";
+	private static final String TEST_NAME = "CudaCublasGeMV";
 	private static final String TEST_DIR = "gpu/cudaSupportFunctions/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + CudaCublasDotTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + CudaCublasGeMVTest.class.getSimpleName() + "/";
 
 	private static final int rows = 200;
 	private static final int cols = 200;
@@ -51,11 +51,12 @@ public class CudaCublasDotTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testCublasDot() {
-		testCudaCublasDot();
+	public void testCudaCublasGeMV() {
+		testCudaCublasGeMVTest();
 	}
 
-	private void testCudaCublasDot() {
+	private void testCudaCublasGeMVTest() {
+
 		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		loadTestConfiguration(config);
 
@@ -65,8 +66,8 @@ public class CudaCublasDotTest extends AutomatedTestBase {
 		fullRScriptName = HOME + TEST_NAME + ".R";
 		rCmd = getRCmd(inputDir(), expectedDir());
 
-		// A is dense vector, B is a dense vector
-		double[][] A = getRandomMatrix(1, cols, -1, 1, 0.70d, 5);
+		// A is dense matrix, B is a dense vector
+		double[][] A = getRandomMatrix(rows, cols, -1, 1, 0.70d, 5);
 		double[][] B = getRandomMatrix(rows, 1, -1, 1, 0.80d, 3);
 		writeInputMatrixWithMTD("A", A, true);
 		writeInputMatrixWithMTD("B", B, true);

@@ -1,0 +1,33 @@
+get_lr_with_warmup = function(double base_lr, int epoch, int iter, int total_epochs,
+                              int iters_per_epoch, int batch_size, int base_batch_size,
+                              int warmup_epochs, int decay_power)
+    return (double lr) {
+    /*
+     * Compute learning rate with linear warmup and polynomial decay.
+     * 
+     * Implements the learning rate schedule from LARS paper:
+     * - Linear warmup for first warmup_epochs
+     * - Polynomial decay afterwards
+     * - Linear scaling with batch size
+     */
+    
+    # Scale learning rate linearly with batch size
+    scaled_lr = base_lr * batch_size / base_batch_size
+    
+    # Total number of iterations
+    total_iters = total_epochs * iters_per_epoch
+    warmup_iters = warmup_epochs * iters_per_epoch
+    current_iter = (epoch - 1) * iters_per_epoch + iter
+    
+    if (current_iter <= warmup_iters) {
+        # Linear warmup
+        lr = scaled_lr * current_iter / warmup_iters
+    } else {
+        # Polynomial decay
+        decay_iters = total_iters - warmup_iters
+        decay_current = current_iter - warmup_iters
+        decay_factor = (1 - decay_current / decay_iters) ^ decay_power
+        lr = scaled_lr * decay_factor
+    }
+}
+

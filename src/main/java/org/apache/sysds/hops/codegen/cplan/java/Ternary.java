@@ -51,7 +51,7 @@ public class Ternary extends CodeTemplate {
 
 			case LOOKUP_RC1:
 				return sparse ?
-					"    double %TMP% = getValue(%IN1v%, %IN1i%, ai, alen, %IN3%-1);\n" :
+					"    double %TMP% = getValue(%IN1v%, %IN1i%, %POS%, %LEN%, %IN3%-1);\n" :
 					"    double %TMP% = getValue(%IN1%, %IN2%, rix, %IN3%-1);\n";
 
 			case LOOKUP_RVECT1:

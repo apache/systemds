@@ -47,12 +47,12 @@ def km(X: Matrix,
     :param SI: Column indices of X corresponding to the factors to be used for stratifying
     :param alpha: Parameter to compute 100*(1-alpha)% confidence intervals for the survivor
         function and its median
-    :param err_type: "greenwood" Parameter to specify the error type according to "greenwood" (the default) or "peto"
-    :param conf_type: Parameter to modify the confidence interval; "plain" keeps the lower and
+    :param err: "greenwood" Parameter to specify the error type according to "greenwood" (the default) or "peto"
+    :param conf: Parameter to modify the confidence interval; "plain" keeps the lower and
         upper bound of the confidence interval unmodified, "log" (the default)
         corresponds to logistic transformation and "log-log" corresponds to the
         complementary log-log transformation
-    :param test_type: If survival data for multiple groups is available specifies which test to
+    :param test: If survival data for multiple groups is available specifies which test to
         perform for comparing survival data across multiple groups: "none" (the default)
         "log-rank" or "wilcoxon" test
     :return: Matrix KM whose dimension depends on the number of groups (denoted by g) and

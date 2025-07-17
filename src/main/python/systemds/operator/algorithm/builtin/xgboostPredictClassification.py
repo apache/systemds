@@ -39,7 +39,7 @@ def xgboostPredictClassification(X: Matrix,
     
     :param X: Matrix of feature vectors we want to predict (X_test)
     :param M: The model created at xgboost
-    :param learning_rate: The learning rate used in the model
+    :param lr: The learning rate used in the model
     :return: The predictions of the samples using the given xgboost model. (y_prediction)
     """
 

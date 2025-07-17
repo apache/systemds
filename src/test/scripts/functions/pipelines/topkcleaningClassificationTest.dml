@@ -58,8 +58,8 @@ metaInfo = metaInfo[, 2:ncol(metaInfo)]
 
 [topKPipelines, topKHyperParams, topKScores, baseLineScore, evalFunHp, applyFunc] = topk_cleaning(dataTrain=trainData, dataTest=testData, metaData=metaInfo, primitives=primitives, parameters=param, 
   refSol = frame(["imputeByMean", "scale", "dummycoding"], rows=1, cols=3),
-  evaluationFunc=evalFunc, evalFunHp=as.matrix(NaN),topK=topK, resource_val=resources, enablePruning=TRUE,
-  expectedIncrease=expectedIncrease, seed = 23, max_iter=max_iter, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE) 
+  evaluationFunc=evalFunc, evalFunHp=as.matrix(NaN),topK=topK, resourceVal=resources, enablePruning=TRUE,
+  expectedIncrease=expectedIncrease, seed = 23, maxIter=max_iter, cv=testCV, cvk=cvk, sample=sample, isLastLabel=TRUE, correctTypos=FALSE)
 
 write(topKPipelines, output+"/pip.csv", format="csv")
 write(topKHyperParams, output+"/hp.csv", format="csv")
@@ -82,7 +82,7 @@ return(Matrix[Double] output, Matrix[Double] error)
     nc = max(Y);
     params = list("icpt", "reg", "tol")
     paramRanges = list(seq(0, 2, 1), 10^seq(1,-3), 10^seq(1,-5));
-    trainArgs = list(X=X, Y=Y, icpt=-1, reg=-1, tol=1e-9, maxi=1000, maxii=-1, verbose=FALSE);
+    trainArgs = list(X=X, Y=Y, intercept=-1, reg=-1, tol=1e-9, maxIter=1000, maxInnerIter=-1, verbose=FALSE);
     dataArgs = list("X", "Y");
     # [B1,opt] = gridSearch(X=X, y=Y, train="multiLogReg", predict="accuracy", numB=(ncol(X)+1)*(nc-1),
       # params=params, paramValues=paramRanges, dataArgs=dataArgs, trainArgs=trainArgs, cv=TRUE, cvk=3, verbose=TRUE);
@@ -96,8 +96,8 @@ return(Matrix[Double] output, Matrix[Double] error)
     a = 0
   }
   else {
-    beta = multiLogReg(X=X, Y=Y, icpt=as.scalar(evalFunHp[1,1]), reg=as.scalar(evalFunHp[1,2]), tol=as.scalar(evalFunHp[1,3]), 
-      maxi=1000, maxii=0, verbose=FALSE);
+    beta = multiLogReg(X=X, Y=Y, intercept=as.scalar(evalFunHp[1,1]), reg=as.scalar(evalFunHp[1,2]), tol=as.scalar(evalFunHp[1,3]),
+      maxIter=1000, maxInnerIter=0, verbose=FALSE);
     [prob, yhat, accuracy] = multiLogRegPredict(Xtest, beta, Ytest, FALSE)
     error = yhat != Ytest
     accuracy = as.matrix(accuracy)
@@ -118,9 +118,9 @@ return(Matrix[Double] output, Matrix[Double] error)
   if(is.na(as.scalar(evalFunHp[1,1])))
   {
     nc = max(Y);
-    params = list("intercept", "reg", "epsilon")
+    params = list("intercept", "reg", "tol")
     paramRanges = list(seq(0, 1), 10^seq(1,-3), 10^seq(1,-5));
-    trainArgs = list(X=X, Y=Y, intercept=-1, reg=-1, epsilon=-1, maxIterations=1000,  verbose=FALSE);
+    trainArgs = list(X=X, Y=Y, intercept=-1, reg=-1, tol=-1, maxIterations=1000,  verbose=FALSE);
     dataArgs = list("X", "Y");
     [B1,opt] = gridSearch(X=X, y=Y, train="msvm", predict="accuracyMSVM", numB=(ncol(X)+1)*(nc),
       params=params, paramValues=paramRanges, dataArgs=dataArgs, trainArgs=trainArgs, cv=TRUE, cvk=3, verbose=FALSE);
@@ -134,8 +134,8 @@ return(Matrix[Double] output, Matrix[Double] error)
     a = 0
   }
   else {
-    beta = msvm(X=X, Y=Y, intercept=as.scalar(evalFunHp[1,1]), reg=as.scalar(evalFunHp[1,2]), epsilon=as.scalar(evalFunHp[1,3]), 
-      maxIterations=1000, verbose=FALSE);
+    beta = msvm(X=X, Y=Y, intercept=as.scalar(evalFunHp[1,1]), reg=as.scalar(evalFunHp[1,2]), tol=as.scalar(evalFunHp[1,3]),
+      maxIter=1000, verbose=FALSE);
     yhat = msvmPredict(X=Xtest, W=beta);
     yhat = rowIndexMax(yhat)
     accuracy = mean(yhat == Ytest) * 100

@@ -21,5 +21,5 @@
 
 X = read($X)
 Y = read($Y)
-betas= multiLogReg(X=X,  Y=Y, icpt = $inc, tol = $tol, reg = $reg, maxi = $maxOut, maxii=$maxIn, verbose=$verbose)
+betas= multiLogReg(X=X,  Y=Y, intercept = $inc, tol = $tol, reg = $reg, maxIter = $maxOut, maxInnerIter=$maxIn, verbose=$verbose)
 write(betas, $output)

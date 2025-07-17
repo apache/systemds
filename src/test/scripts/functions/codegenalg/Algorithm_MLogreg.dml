@@ -21,6 +21,6 @@
 
 X = read($X);
 Y = read($Y);
-w = multiLogReg(X=X, Y=Y, icpt=$icpt, tol=$tol, reg=$reg, maxi=$moi);
+w = multiLogReg(X=X, Y=Y, intercept=$icpt, tol=$tol, reg=$reg, maxIter=$moi);
 write(w, $B);
 

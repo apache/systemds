@@ -26,10 +26,10 @@
 # X                             The input Matrix to do KMeans on.
 # k                             Number of centroids
 # runs                          Number of runs (with different initial centroids)
-# max_iter                      Maximum number of iterations per run
-# eps                           Tolerance (epsilon) for WCSS change ratio
-# is_verbose                    do not print per-iteration stats
-# avg_sample_size_per_centroid  Average number of records per centroid in data samples
+# maxIter                       Maximum number of iterations per run
+# tol                           Tolerance (epsilon) for WCSS change ratio
+# verbose                       do not print per-iteration stats
+# avgSampleSizePerCentroid      Average number of records per centroid in data samples
 # seed                          The seed used for initial sampling. If set to -1
 #                               random seeds are selected.
 # ---------------------------------------------------------------------------------------
@@ -40,12 +40,12 @@
 # C     The output matrix with the centroids
 # ---------------------------------------------------------------
 
-m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer max_iter = 1000,
-    Double eps = 0.000001, Boolean is_verbose = FALSE, Integer avg_sample_size_per_centroid = 50,
+m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer maxIter = 1000,
+    Double tol = 0.000001, Boolean verbose = FALSE, Integer avgSampleSizePerCentroid = 50,
     Integer seed = -1)
   return (Matrix[Double] C, Matrix[Double] Y)
 {
-  if( is_verbose )
+  if( verbose )
     print ("BEGIN K-MEANS SCRIPT");
   
   num_records   = nrow (X);
@@ -53,24 +53,24 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
   num_centroids = k;
   num_runs = runs;
 
-  if(is_verbose)
+  if(verbose)
     print("dim X=" + nrow(X) + "x" + ncol(X))
 
   sumXsq = sum (X ^ 2);
 
   # STEP 1: INITIALIZE CENTROIDS FOR ALL RUNS FROM DATA SAMPLES:
 
-  if( is_verbose )
+  if( verbose )
     print ("Taking data samples for initialization...");
 
   [sample_maps, samples_vs_runs_map, sample_block_size] = get_sample_maps(
-    num_records, num_runs, num_centroids * avg_sample_size_per_centroid, seed);
+    num_records, num_runs, num_centroids * avgSampleSizePerCentroid, seed);
 
   is_row_in_samples = rowSums (sample_maps);
   X_samples = sample_maps %*% X;
   X_samples_sq_norms = rowSums (X_samples ^ 2);
 
-  if( is_verbose )
+  if( verbose )
     print ("Initializing the centroids for all runs...");
   
   All_Centroids = matrix (0, num_runs * num_centroids, num_features);
@@ -116,7 +116,7 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
   final_wcss = matrix (0, rows = num_runs, cols = 1);
   num_iterations = matrix (0, rows = num_runs, cols = 1);
 
-  if( is_verbose )
+  if( verbose )
     print ("Performing k-means iterations for all runs...");
 
   parfor (run_index in 1 : num_runs, check = 0)
@@ -136,7 +136,7 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
       # Compute the current centroid-based within-cluster sum of squares (WCSS)
       wcss_old = wcss;
       wcss = sumXsq + sum (minD);
-      if( is_verbose ) {
+      if( verbose ) {
         if (iter_count == 0)
           print ("Run " + run_index + ", At Start-Up:  Centroid WCSS = " + wcss);
         else
@@ -156,9 +156,9 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
 
       # Check if convergence or maximum iteration has been reached
       iter_count = iter_count + 1
-      if(wcss_old - wcss < eps * wcss)
+      if(wcss_old - wcss < tol * wcss)
         term_code = 1; # Convergence reached
-      else if(iter_count >= max_iter)
+      else if(iter_count >= maxIter)
         term_code = 2; # Max iteration reached
       else if(sum (P_denom <= 0) > 0)
         term_code = 3; # "Runaway" centroid (0.0 denom)
@@ -166,7 +166,7 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
         C_old = C; C = C_new;
     }
 
-    if(is_verbose)
+    if(verbose)
       print ("Run " + run_index + ", Iteration " + iter_count + ":  Terminated with code = "
         + term_code + ",  Centroid WCSS = " + wcss);
 
@@ -183,7 +183,7 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
   termination_bitmap [, 1 : ncol(termination_bitmap_raw)] = termination_bitmap_raw;
   termination_stats = colSums (termination_bitmap);
 
-  if(is_verbose){
+  if(verbose){
 
     print ("Number of successful runs = " + as.integer (as.scalar (termination_stats [1, 1])));
     print ("Number of incomplete runs = " + as.integer (as.scalar (termination_stats [1, 2])));
@@ -202,7 +202,7 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
     aggr_best_index_vector = cumsum (best_index_vector);
     best_index = as.integer (sum (aggr_best_index_vector == 0) + 1);
 
-    if(is_verbose)
+    if(verbose)
       print ("Successful runs:  Best run is " + best_index + " with Centroid WCSS = " + best_wcss
              + ";  Avg WCSS = " + avg_wcss + ";  Worst WCSS = " + worst_wcss);
 
@@ -212,11 +212,11 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
     aggr_P = t(cumsum (t(P)));
     Y = rowSums (aggr_P == 0) + 1
 
-    if(is_verbose)
+    if(verbose)
       print("dim C=" + nrow(C) + "x" + ncol(C) + ", dim Y=" + nrow(Y) + "x" + ncol(Y))
   }
   else{
-    print ("K-means: No output is produced. Try increasing the number of iterations and/or lower eps.");
+    print ("K-means: No output is produced. Try increasing the number of iterations and/or lower tolerance.");
     C = matrix(0, num_centroids,  num_records)
     Y = matrix(-1, 1, num_records)
   }

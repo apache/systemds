@@ -21,6 +21,6 @@
 
 X = read($X);
 Y = read($Y);
-w = l2svm(X=X, Y=Y, intercept=$icpt, epsilon=$tol, reg=$reg, maxIterations=$maxiter);
+w = l2svm(X=X, Y=Y, intercept=$icpt, tol=$tol, reg=$reg, maxIter=$maxiter);
 write(w, $model);
 

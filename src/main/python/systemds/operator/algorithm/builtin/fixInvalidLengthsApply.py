@@ -25,28 +25,27 @@
 from typing import Dict, Iterable
 
 from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
-from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def fixInvalidLengthsApply(X: Frame,
-                           mask: Matrix,
-                           qLow: Matrix,
-                           qUp: Matrix):
+                           Mask: Matrix,
+                           QL: Matrix,
+                           QU: Matrix):
     """
      Fix invalid lengths
     
     
     
     :param X: ---
-    :param mask: ---
-    :param ql: ---
-    :param qu: ---
+    :param Mask: ---
+    :param QL: ---
+    :param QU: ---
     :return: ---
     :return: ---
     """
 
-    params_dict = {'X': X, 'mask': mask, 'qLow': qLow, 'qUp': qUp}
+    params_dict = {'X': X, 'Mask': Mask, 'QL': QL, 'QU': QU}
     return Matrix(X.sds_context,
         'fixInvalidLengthsApply',
         named_input_nodes=params_dict)

@@ -25,24 +25,24 @@
 #
 # INPUT:
 #-------------------------------------------------------------------------------
-# X              Feature matrix X (shape: m x n)
-# Y              Label vector y of class labels (shape: m x 1),
-#                where max(Y) is assumed to be the number of classes
-# intercept      Indicator if a bias column should be added to X and the model
-# epsilon        Tolerance for early termination if the reduction of objective
-#                function is less than epsilon times the initial objective
-# reg            Regularization parameter (lambda) for L2 regularization
-# maxIterations  Maximum number of conjugate gradient (outer l2svm) iterations
-# verbose        Indicator if training details should be printed
+# X               Feature matrix X (shape: m x n)
+# Y               Label vector y of class labels (shape: m x 1),
+#                 where max(Y) is assumed to be the number of classes
+# intercept       Indicator if a bias column should be added to X and the model
+# tol             Tolerance for early termination if the reduction of objective
+#                 function is less than tolerance times the initial objective
+# reg             Regularization parameter (lambda) for L2 regularization
+# maxIter         Maximum number of conjugate gradient (outer l2svm) iterations
+# verbose         Indicator if training details should be printed
 # ------------------------------------------------------------------------------
 #
 # OUTPUT:
 #-------------------------------------------------------------------------------
-# model          Trained model/weights (shape: n x max(Y), w/ intercept: n+1)
+# model           Trained model/weights (shape: n x max(Y), w/ intercept: n+1)
 #-------------------------------------------------------------------------------
 
 m_msvm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE,
-    Double epsilon = 0.001, Double reg = 1.0, Integer maxIterations = 100,
+    Double tol = 0.001, Double reg = 1.0, Integer maxIter = 100,
     Boolean verbose = FALSE)
   return(Matrix[Double] model)
 {
@@ -75,7 +75,7 @@ m_msvm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE,
     nnzY = sum(Y == class);
     if( nnzY > 0 ) {
       w[,class] = l2svm(X=X, Y=Y_local, intercept=FALSE,
-        epsilon=epsilon, reg=reg, maxIterations=maxIterations,
+        tol=tol, reg=reg, maxIter=maxIter,
         verbose=verbose, columnId=class)
     }
     else {

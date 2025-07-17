@@ -41,7 +41,7 @@ def adasyn(X: Matrix,
     :param Y: Class labels [shape: n-by-1]
     :param k: Number of nearest neighbors
     :param beta: Desired balance level after generation of synthetic data [0, 1]
-    :param dth: Distribution threshold
+    :param threshold: Distribution threshold
     :param seed: Seed for randomized data point selection
     :return: Feature matrix of n original rows followed by G = (ml-ms)*beta synthetic rows
     :return: Class labels aligned with output X

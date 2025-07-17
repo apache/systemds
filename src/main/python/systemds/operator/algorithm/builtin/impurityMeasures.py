@@ -43,7 +43,7 @@ def impurityMeasures(X: Matrix,
     :param Y: Target vector containing 0 and 1 values.
     :param R: Vector indicating whether a feature is categorical or continuous.
         1 denotes a continuous feature, 2 denotes a categorical feature.
-    :param n_bins: Number of bins for binning in case of scale features.
+    :param n: Number of bins for binning in case of scale features.
     :param method: String indicating the method to use; either "entropy" or "gini".
     :return: (1 x ncol(X)) row vector containing information/gini gain for
         each feature of the dataset.

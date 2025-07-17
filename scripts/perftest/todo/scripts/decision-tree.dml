@@ -79,7 +79,7 @@ fmtO = ifdef($fmt, "text");
 X = read($X);
 Y_bin = read($Y);
 R = matrix(1, rows=1, cols=ncol(X));
-
-M = decisionTree(X = X, Y = Y_bin, R = R, bins = num_bins, depth = depth);
+# TODO: deprecated decisionTree functon call
+M = decisionTree(X = X, Y = Y_bin, R = R, bins = num_bins, maxDepth = depth);
 
 write (M, fileM, format = fmtO);

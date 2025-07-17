@@ -34,5 +34,5 @@ tol = as.double ($tol);
 X = read (fileX);
 Y_vec = read (fileY);
 
-B_out = multiLogReg(X = X, Y = Y_vec, icpt = intercept_status, tol = tol, reg = regularization, maxi = maxiter, maxii = maxinneriter, verbose = TRUE)
+B_out = multiLogReg(X = X, Y = Y_vec, intercept = intercept_status, tol = tol, reg = regularization, maxIter = maxiter, maxInnerIter = maxinneriter, verbose = TRUE)
 write (B_out, fileB, format=fmtB);

@@ -21,6 +21,9 @@
 
 import unittest
 import logging
+import io
+import sys
+from contextlib import redirect_stdout, redirect_stderr
 
 from systemds.context import SystemDSContext
 
@@ -60,6 +63,21 @@ class TestContextCreation(unittest.TestCase):
         b.close()
         c.close()
         d.close()
+
+    def test_random_port_debug(self):
+        stderr_buffer = io.StringIO()
+
+        with redirect_stderr(stderr_buffer):
+            sds1 = SystemDSContext(logging_level=10)
+            sds1.close()
+
+        err = stderr_buffer.getvalue()
+
+        print("Captured STDERR:\n", err)
+        print("END OF STDERR\n")
+        # If logs are in stderr (as usual with Java), assert there
+        self.assertIn("SystemDS- DEBUG - Logging setup done", err)
+
 
 
 if __name__ == "__main__":

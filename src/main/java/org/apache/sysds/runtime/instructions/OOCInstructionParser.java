@@ -24,6 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.InstructionType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.ooc.AggregateUnaryOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.BinaryOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.OOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.ReblockOOCInstruction;
 
@@ -50,10 +51,9 @@ public class OOCInstructionParser extends InstructionParser {
 				return ReblockOOCInstruction.parseInstruction(str);
 			case AggregateUnary:
 				return AggregateUnaryOOCInstruction.parseInstruction(str);
-			
-			// TODO:
 			case Binary:
-
+				return BinaryOOCInstruction.parseInstruction(str);
+			
 			default:
 				throw new DMLRuntimeException("Invalid OOC Instruction Type: " + ooctype);
 		}

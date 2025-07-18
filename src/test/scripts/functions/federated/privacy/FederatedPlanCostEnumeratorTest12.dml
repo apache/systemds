@@ -19,15 +19,28 @@
 #
 #-------------------------------------------------------------
 
-# Recursive function: Calculate factorial
-factorialUser = function(Integer n) return (Integer result) {
-    if (n <= 1) {
-        result = 1; # base case
-    } else {
-        result = n * factorialUser(n - 1); # recursive call
+A = matrix(7, rows=10, cols=10);
+b = rand(rows = nrow(A), cols = ncol(A), min = 1, max = 2);
+i = 1;
+
+for(outer in 1:10) {
+  b = A + b;
+
+  for(mid in 1:10) {
+    b = b %*% A;
+
+    for(inner in 1:10) {
+      if(sum(b) < i) {
+        i = i + 1;
+        b = b + i;
+        A = A %*% A;
+        s = b %*% A;
+      }
     }
+
+    A = A %*% A;
+    s = b %*% A;
+  }
 }
 
-number = 5;
-fact_result = factorialUser(number);
-print("Factorial of " + number + ": " + fact_result);
+print(sum(s));

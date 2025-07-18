@@ -58,9 +58,15 @@ import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.meta.TensorCharacteristics;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 
+import jdk.incubator.vector.DoubleVector;
+import jdk.incubator.vector.VectorSpecies;
+
 public class UtilFunctions {
 	protected static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
+	private static final VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_PREFERRED;
+	private static final int vLen = SPECIES.length();
 
+	
 	private UtilFunctions(){
 		// empty private constructor
 		// making all calls static
@@ -874,27 +880,18 @@ public class UtilFunctions {
 	}
 	
 	public static int computeNnz(final double[] a, final int ai, final int len) {
-		int lnnz = 0;
 		final int end = ai + len;
-		final int h = (end - ai) % 8;
+		final int rest = (end - ai) % vLen;
+		int lnnz = len;
 
-		for(int i = ai; i < ai + h; i++)
-			lnnz += (a[i] != 0.0) ? 1 : 0;
-		for(int i = ai + h; i < end; i += 8)
-			lnnz += computeNnzBy8(a, i);
-		return lnnz;
-	}
-
-	private static int computeNnzBy8(final double[] a, final int i) {
-		int lnnz = 0;
-		lnnz += (a[i] != 0.0) ? 1 : 0;
-		lnnz += (a[i+1] != 0.0) ? 1 : 0;
-		lnnz += (a[i+2] != 0.0) ? 1 : 0;
-		lnnz += (a[i+3] != 0.0) ? 1 : 0;
-		lnnz += (a[i+4] != 0.0) ? 1 : 0;
-		lnnz += (a[i+5] != 0.0) ? 1 : 0;
-		lnnz += (a[i+6] != 0.0) ? 1 : 0;
-		lnnz += (a[i+7] != 0.0) ? 1 : 0;
+		//start from len and subtract number of zeros because
+		//DoubleVector defines an eq but no neq operation
+		for(int i = ai; i < ai + rest; i++)
+			lnnz -= (a[i] == 0.0) ? 1 : 0;
+		for(int i = ai + rest; i < end; i += vLen) {
+			DoubleVector aVec = DoubleVector.fromArray(SPECIES, a, i);
+			lnnz -= aVec.eq(0).trueCount();
+		}
 		return lnnz;
 	}
 

@@ -79,6 +79,5 @@ class TestContextCreation(unittest.TestCase):
         self.assertIn("SystemDS- DEBUG - Logging setup done", err)
 
 
-
 if __name__ == "__main__":
     unittest.main(exit=False)

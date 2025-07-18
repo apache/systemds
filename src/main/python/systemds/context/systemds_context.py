@@ -779,12 +779,14 @@ class SystemDSContext(object):
         py4j.propagate = False
 
         self._log = logging.getLogger(self.__class__.__name__)
-        self._log.setLevel(level)  # fix: make sure logger accepts the messages
-        self._log.handlers.clear()  # optional: ensure clean state
+        self._log.setLevel(level)
+        self._log.handlers.clear()
 
         f_handler = logging.StreamHandler()
         f_handler.setLevel(level)
-        f_handler.setFormatter(logging.Formatter("%(asctime)s - SystemDS- %(levelname)s - %(message)s"))
+        f_handler.setFormatter(
+            logging.Formatter("%(asctime)s - SystemDS- %(levelname)s - %(message)s")
+        )
 
         self._log.addHandler(f_handler)
         self._log.propagate = False

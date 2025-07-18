@@ -75,7 +75,7 @@ class TestContextCreation(unittest.TestCase):
 
         print("Captured STDERR:\n", err)
         print("END OF STDERR\n")
-        # If logs are in stderr (as usual with Java), assert there
+
         self.assertIn("SystemDS- DEBUG - Logging setup done", err)
 
 

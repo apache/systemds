@@ -37,9 +37,9 @@ Z= cbind(J, W, J)
 Y = matrix(0, 10, 18)
 K = rbind(Z, Y, Y, Y, Y, Y, Y, Y, Y)
 
-S = (X < rowSums(X*K))
+# S = (X < rowSums(X*K))
 # S = X*rowMins(K)*X
-# S = X*rowSums(K*v)*X
+S = X*rowSums(K*v)*X
 # S = (X*v)/rowSums(X*v)
 # S = abs((X*v)/rowSums(X*v))
 # S = (X/v)+rowMeans(X-v)

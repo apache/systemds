@@ -779,21 +779,22 @@ class SystemDSContext(object):
         :param level: The SystemDS logging part logging level.
         :param py4j_level: The Py4J logging level.
         """
+
         logging.basicConfig()
         py4j = logging.getLogger("py4j.java_gateway")
         py4j.setLevel(py4j_level)
         py4j.propagate = False
 
         self._log = logging.getLogger(self.__class__.__name__)
+        self._log.setLevel(level)
+        self._log.handlers.clear()
+
         f_handler = logging.StreamHandler()
         f_handler.setLevel(level)
-        f_format = logging.Formatter(
-            "%(asctime)s - SystemDS- %(levelname)s - %(message)s"
+        f_handler.setFormatter(
+            logging.Formatter("%(asctime)s - SystemDS- %(levelname)s - %(message)s")
         )
-        f_handler.setFormatter(f_format)
-        self._log.addHandler
-        # avoid the logger to call loggers above.
+
+        self._log.addHandler(f_handler)
         self._log.propagate = False
-        # Reset all handlers to only this new handler.
-        self._log.handlers = [f_handler]
         self._log.debug("Logging setup done")

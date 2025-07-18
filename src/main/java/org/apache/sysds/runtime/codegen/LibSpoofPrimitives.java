@@ -2492,8 +2492,7 @@ public class LibSpoofPrimitives
 		return c;
 	}
 
-	//version with branching
-	public static SparseRowVector vectPowWriteB(int len, double[] a, double bval, int[] aix, int ai, int alen) {
+	public static SparseRowVector vectPowWrite(int len, double[] a, double bval, int[] aix, int ai, int alen) {
 		if(bval == 0) {
 			SparseRowVector c = allocSparseVector(len);
 			int[] indexes = c.indexes();

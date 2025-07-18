@@ -446,7 +446,7 @@ public class TemplateRow extends TemplateBase
 					Hop hopIn2 = hop.getInput(1);
 					double sparsityEst = OptimizerUtils.getBinaryOpSparsity(
 						OptimizerUtils.getSparsity(hopIn1),
-						OptimizerUtils.getSparsity(hopIn2), OpOp2.valueOf(opName), true);
+						OptimizerUtils.getSparsity(hopIn2), OpOp2.valueOf(opName), false);
 					double literalVal = hopIn1 instanceof LiteralOp ? ((LiteralOp) hopIn1).getDoubleValue()
 						: hopIn2 instanceof LiteralOp ? ((LiteralOp) hopIn2).getDoubleValue() : Double.NaN;
 					out = getVectorBinary(cdata1, cdata2, opName, sparsityEst, literalVal);

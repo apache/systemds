@@ -33,6 +33,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -4925,11 +4928,93 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 			LibMatrixOuterAgg.aggregateMatrix(mbLeft, mbOut, bv, bvi, bOp, uaggOp);
 		} else
 			throw new DMLRuntimeException("Unsupported operator for unary aggregate operations.");
-		
+	
 		return mbOut;
 	}
+
+	public MatrixBlock unionOperations(MatrixBlock m1, MatrixBlock m2) {
+		if(m1.getNumColumns() == 1) {
+			HashSet<Double> set = new HashSet<>();
+			boolean[] toAddArr = new boolean[m1.getNumRows() + m2.getNumRows()];
+			int id = 0;
+			for(MatrixBlock m : new MatrixBlock[] {m1,m2}) {
+				for(int i = 0; i < m.getNumRows(); i++) {
+					Double val = m.get(i, 0);
+					if(!set.contains(val)) {
+						set.add(val);
+						toAddArr[id] = true;
+					}
+					id++;
+				}
+			}
+
+			MatrixBlock mbOut = new MatrixBlock(set.size(), m1.getNumColumns(), false);
+			int rowOut = 0;
+			int rowId = 0;
+			for(boolean toAdd : toAddArr) {
+				if(toAdd) {
+					if(rowId < m1.getNumRows()) { // is first matrix
+						mbOut.set(rowOut, 0, m1.get(rowId, 0));
+					}
+					else { // is second matrix
+						int tempRowId = rowId - m1.getNumRows();
+						mbOut.set(rowOut, 0, m2.get(tempRowId, 0));
+					}
+					rowOut++;
+				}
+				rowId++;
+			}
+
+			return mbOut;
+		}
+		else {
+			Set<double[]> set = new TreeSet<>((o1, o2) -> {
+				return Arrays.compare(o1, o2);
+			});
+			boolean[] toAddArr = new boolean[m1.getNumRows() + m2.getNumRows()];
+			int id = 0;
+			
+			//TODO perf dense zero-copy and sparse
+			for(MatrixBlock m : new MatrixBlock[] {m1,m2}) {
+				for(int i = 0; i < m.getNumRows(); i++) {
+					double[] row = new double[m.getNumColumns()];
+					for(int j = 0; j < m.getNumColumns(); j++)
+						row[j] = m.get(i, j);
+					if(!set.contains(row)) {
+						set.add(row);
+						toAddArr[id] = true;
+					}
+					id++;
+				}
+			}
+
+			MatrixBlock mbOut = new MatrixBlock(set.size(), m1.getNumColumns(), false);
+			int rowOut = 0;
+			int rowId = 0;
+			for(boolean toAdd : toAddArr) {
+				if(toAdd) {
+					if(rowId < m1.getNumRows()) {
+						// is first matrix
+						for(int i = 0; i < m1.getNumColumns(); i++) {
+							mbOut.set(rowOut, i, m1.get(rowId, i));
+						}
+					}
+					else {
+						// is second matrix
+						int tempRowId = rowId - m1.getNumRows();
+						for(int i = 0; i < m2.getNumColumns(); i++) {
+							mbOut.set(rowOut, i, m2.get(tempRowId, i));
+						}
+					}
+					rowOut++;
+				}
+				rowId++;
+			}
+
+			return mbOut;
+		}
+	}
 	
-		
 	/**
 	 * Invocation from CP instructions. The aggregate is computed on the groups object
 	 * against target and weights. 

@@ -20,11 +20,9 @@
 package org.apache.sysds.common;
 
 import org.apache.sysds.lops.*;
-
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.hops.FunctionOp;
 
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -91,6 +89,8 @@ public enum Opcodes {
 	POW2("^2", InstructionType.Binary),		//special ^ case
 	MULT2("*2", InstructionType.Binary),	   //special * case
 	MINUS_NZ("-nz", InstructionType.Binary),	 //special - case
+
+	UNION_DISTINCT("union_distinct", InstructionType.Union),
 
 	// Boolean Instruction Opcodes
 	AND("&&", InstructionType.Binary),
@@ -349,7 +349,7 @@ public enum Opcodes {
 	MAPMIN("mapmin", InstructionType.Binary),
 
 	//REBLOCK Instruction Opcodes
-	RBLK("rblk", null, InstructionType.Reblock),
+	RBLK("rblk", null, InstructionType.Reblock, null, InstructionType.Reblock),
 	CSVRBLK("csvrblk", InstructionType.CSVReblock),
 	LIBSVMRBLK("libsvmrblk", InstructionType.LIBSVMReblock),
 
@@ -390,32 +390,31 @@ public enum Opcodes {
 
 	BINUAGGCHAIN("binuaggchain", InstructionType.BinUaggChain),
 
-	CASTDTM("castdtm", InstructionType.Cast),
-	CASTDTF("castdtf", InstructionType.Cast),
+	CASTDTM("castdtm", InstructionType.Variable, InstructionType.Cast),
+	CASTDTF("castdtf", InstructionType.Variable, InstructionType.Cast),
 
 	//FED Opcodes
 	FEDINIT("fedinit", InstructionType.Init);
 
 	// Constructors
 	Opcodes(String name, InstructionType type) {
-		this._name = name;
-		this._type = type;
-		this._spType=null;
-		this._fedType=null;
+		this(name, type, null, null, null);
 	}
 
 	Opcodes(String name, InstructionType type, InstructionType spType){
-		this._name=name;
-		this._type=type;
-		this._spType=spType;
-		this._fedType=null;
+		this(name, type, spType, null, null);
 	}
 
 	Opcodes(String name, InstructionType type, InstructionType spType, InstructionType fedType){
+		this(name, type, spType, fedType, null);
+	}
+	
+	Opcodes(String name, InstructionType type, InstructionType spType, InstructionType fedType, InstructionType oocType){
 		this._name=name;
 		this._type=type;
 		this._spType=spType;
 		this._fedType=fedType;
+		this._oocType=oocType;
 	}
 
 	// Fields
@@ -423,11 +422,12 @@ public enum Opcodes {
 	private final InstructionType _type;
 	private final InstructionType _spType;
 	private final InstructionType _fedType;
+	private final InstructionType _oocType;
 
 	private static final Map<String, Opcodes> _lookupMap = new HashMap<>();
 
 	static {
-		for (Opcodes op : EnumSet.allOf(Opcodes.class)) {
+		for (Opcodes op : Opcodes.values()) {
 			if (op._name != null) {
 				_lookupMap.put(op._name.toLowerCase(), op);
 			}
@@ -451,24 +451,28 @@ public enum Opcodes {
 	public InstructionType getFedType(){
 		return _fedType != null ? _fedType : _type;
 	}
+	
+	public InstructionType getOocType(){
+		return _oocType != null ? _oocType : _type;
+	}
 
 	public static InstructionType getTypeByOpcode(String opcode, Types.ExecType type) {
 		if (opcode == null || opcode.trim().isEmpty()) {
 			return null;
 		}
-		for (Opcodes op : Opcodes.values()) {
-			if (op.toString().equalsIgnoreCase(opcode.trim())) {
-				switch (type) {
-					case SPARK:
-						return (op.getSpType() != null) ? op.getSpType() : op.getType();
-					case FED:
-						return (op.getFedType() != null) ? op.getFedType() : op.getType();
-					default:
-						return op.getType();
-				}
+		Opcodes op = _lookupMap.get(opcode.trim().toLowerCase());
+		if( op != null ) {
+			switch (type) {
+				case SPARK:
+					return (op.getSpType() != null) ? op.getSpType() : op.getType();
+				case FED:
+					return (op.getFedType() != null) ? op.getFedType() : op.getType();
+				case OOC:
+					return (op.getOocType() != null) ? op.getOocType() : op.getType();
+				default:
+					return op.getType();
 			}
 		}
 		return null;
 	}
 }
-

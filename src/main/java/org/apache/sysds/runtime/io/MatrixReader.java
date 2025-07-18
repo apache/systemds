@@ -111,7 +111,7 @@ public abstract class MatrixReader
 		return ret;
 	}
 
-	protected static void checkValidInputFile(FileSystem fs, Path path) 
+	public static void checkValidInputFile(FileSystem fs, Path path) 
 		throws IOException
 	{
 		//check non-existing file
@@ -121,7 +121,6 @@ public abstract class MatrixReader
 		//check for empty file
 		if( HDFSTool.isFileEmpty(fs, path) )
 			throw new EOFException("Empty input file "+ path.toString() +".");
-		
 	}
 
 	protected static void sortSparseRowsParallel(MatrixBlock dest, long rlen, int k, ExecutorService pool) 

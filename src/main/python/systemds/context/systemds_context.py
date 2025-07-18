@@ -773,27 +773,19 @@ class SystemDSContext(object):
         return List(self, named_input_nodes=kwargs)
 
     def __setup_logging(self, level: int, py4j_level: int):
-        """Setup the logging infrastructure of the Python API, note this does not effect the JVM part.
-        This method also reset the loggers to only have one handler.
-
-        :param level: The SystemDS logging part logging level.
-        :param py4j_level: The Py4J logging level.
-        """
         logging.basicConfig()
         py4j = logging.getLogger("py4j.java_gateway")
         py4j.setLevel(py4j_level)
         py4j.propagate = False
 
         self._log = logging.getLogger(self.__class__.__name__)
+        self._log.setLevel(level)  # fix: make sure logger accepts the messages
+        self._log.handlers.clear()  # optional: ensure clean state
+
         f_handler = logging.StreamHandler()
         f_handler.setLevel(level)
-        f_format = logging.Formatter(
-            "%(asctime)s - SystemDS- %(levelname)s - %(message)s"
-        )
-        f_handler.setFormatter(f_format)
-        self._log.addHandler
-        # avoid the logger to call loggers above.
+        f_handler.setFormatter(logging.Formatter("%(asctime)s - SystemDS- %(levelname)s - %(message)s"))
+
+        self._log.addHandler(f_handler)
         self._log.propagate = False
-        # Reset all handlers to only this new handler.
-        self._log.handlers = [f_handler]
         self._log.debug("Logging setup done")

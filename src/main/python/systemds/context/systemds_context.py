@@ -66,6 +66,7 @@ class SystemDSContext(object):
     _log: logging.Logger
     __stdout: Queue = None
     __stderr: Queue = None
+    _logging_initialized = False
 
     def __init__(
         self,
@@ -779,21 +780,34 @@ class SystemDSContext(object):
         :param level: The SystemDS logging part logging level.
         :param py4j_level: The Py4J logging level.
         """
-        logging.basicConfig()
+        # Set py4j level every time
         py4j = logging.getLogger("py4j.java_gateway")
         py4j.setLevel(py4j_level)
         py4j.propagate = False
 
+        if not SystemDSContext._logging_initialized:
+            # Add handler only once
+            logging.basicConfig()
+
+            root_logger = logging.getLogger(self.__class__.__name__)
+            root_logger.handlers.clear()
+
+            f_handler = logging.StreamHandler()
+            f_handler.setLevel(logging.NOTSET)
+            f_handler.setFormatter(
+                logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s", "%y/%m/%d %H:%M:%S")
+            )
+
+            root_logger.addHandler(f_handler)
+            root_logger.propagate = False
+
+            SystemDSContext._logging_initialized = True
+
+        # Per-instance logger setup
         self._log = logging.getLogger(self.__class__.__name__)
-        f_handler = logging.StreamHandler()
-        f_handler.setLevel(level)
-        f_format = logging.Formatter(
-            "%(asctime)s - SystemDS- %(levelname)s - %(message)s"
+        self._log.setLevel(level)
+        self._log.debug(
+            "Logging setup done (SystemDS level: %s, Py4J level: %s)",
+            logging.getLevelName(level),
+            logging.getLevelName(py4j_level),
         )
-        f_handler.setFormatter(f_format)
-        self._log.addHandler
-        # avoid the logger to call loggers above.
-        self._log.propagate = False
-        # Reset all handlers to only this new handler.
-        self._log.handlers = [f_handler]
-        self._log.debug("Logging setup done")

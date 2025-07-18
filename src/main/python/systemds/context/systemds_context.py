@@ -773,6 +773,13 @@ class SystemDSContext(object):
         return List(self, named_input_nodes=kwargs)
 
     def __setup_logging(self, level: int, py4j_level: int):
+        """Setup the logging infrastructure of the Python API, note this does not effect the JVM part.
+        This method also reset the loggers to only have one handler.
+
+        :param level: The SystemDS logging part logging level.
+        :param py4j_level: The Py4J logging level.
+        """
+
         logging.basicConfig()
         py4j = logging.getLogger("py4j.java_gateway")
         py4j.setLevel(py4j_level)

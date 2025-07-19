@@ -3504,11 +3504,11 @@ public class LibSpoofPrimitives
 			_len2 = len2;
 		}
 		public SparseRowVector next(int len) {
-			if( _len1!=len && _len2!=len )
+			if( _len1<len && _len2<len )
 				return null;
 			do {
 				_pos = (_pos+1>=_data.length) ? 0 : _pos+1;
-			} while( _data[_pos].values().length!=len );
+			} while( _data[_pos].values().length<len );
 			return _data[_pos];
 		}
 		@SuppressWarnings("unused")

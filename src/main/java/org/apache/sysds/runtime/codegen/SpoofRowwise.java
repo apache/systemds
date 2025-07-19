@@ -189,8 +189,7 @@ public abstract class SpoofRowwise extends SpoofOperator
 		//setup thread-local memory if necessary
 		if( allocTmp &&_reqVectMem > 0 )
 			if(inputs.get(0).isInSparseFormat() && DMLScript.SPARSE_INTERMEDIATE) {
-				//todo: look at wether n, n2 are correct for vector - vector calculations
-				LibSpoofPrimitives.setupSparseThreadLocalMemory(_reqVectMem, n, n2);
+				LibSpoofPrimitives.setupSparseThreadLocalMemory(_reqVectMem, n/2, n2);
 				LibSpoofPrimitives.setupThreadLocalMemory(_reqVectMem, n, n2);
 			} else {
 				LibSpoofPrimitives.setupThreadLocalMemory(_reqVectMem, n, n2);

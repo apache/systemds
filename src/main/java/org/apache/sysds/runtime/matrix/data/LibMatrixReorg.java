@@ -382,10 +382,19 @@ public class LibMatrixReorg {
 			return out;
 		}
 		
-		if( in.sparse )
-			reverseSparse( in, out );
-		else
-			reverseDense( in, out );
+		//set basic meta data and allocate output
+		out.sparse = in.sparse;
+		out.nonZeros = in.nonZeros;
+				
+		
+		if( in.sparse ) {
+			out.allocateSparseRowsBlock(false);
+			reverseSparse(in, out, 0, in.rlen);
+		}
+		else {
+			out.allocateDenseBlock(false);
+			reverseDense(in, out, 0, in.rlen);
+		}
 		
 		//System.out.println("rev ("+in.rlen+", "+in.clen+", "+in.sparse+") in "+time.stop()+" ms.");
 
@@ -393,7 +402,9 @@ public class LibMatrixReorg {
 	}
 
 	public static MatrixBlock rev(MatrixBlock in, MatrixBlock out, int k) {
-		if (k <= 1 || in.isEmptyBlock(false) ) {
+		if (k <= 1 || in.isEmptyBlock(false)
+			|| in.getLength() < PAR_NUMCELL_THRESHOLD ) 
+		{
 			return rev(in, out); // fallback to single-threaded
 
 		}
@@ -405,10 +416,11 @@ public class LibMatrixReorg {
 		out.reset(numRows, numCols, sparse);
 
 		// Before starting threads, ensure the output sparse block is allocated!
-		if (sparse) {
+		if (sparse)
 			out.allocateSparseRowsBlock(false);
-		}
-
+		else
+			out.allocateDenseBlock(false);
+		
 		// Set up thread pool
 		ExecutorService pool = CommonThreadPool.get(k);
 		try {
@@ -420,25 +432,10 @@ public class LibMatrixReorg {
 				final int endRow = Math.min((i + 1) * blklen, numRows);
 
 				tasks.add(pool.submit(() -> {
-					if (!sparse) {
-						// Dense case
-						double[] inVals = in.getDenseBlockValues();
-						double[] outVals = out.getDenseBlockValues();
-						for (int r = startRow; r < endRow; r++) {
-							int revRow = numRows - r - 1;
-							System.arraycopy(inVals, revRow * numCols, outVals, r * numCols, numCols);
-						}
-					} else {
-						// Sparse case
-						SparseBlock inBlk = in.getSparseBlock();
-						SparseBlock outBlk = out.getSparseBlock();
-						for (int r = startRow; r < endRow; r++) {
-							int revRow = numRows - r - 1;
-							if (!inBlk.isEmpty(revRow)) {
-								outBlk.set(r, inBlk.get(revRow), true);
-							}
-						}
-					}
+					if( in.sparse )
+						reverseSparse(in, out, startRow, endRow);
+					else
+						reverseDense(in, out, startRow, endRow);
 				}));
 			}
 
@@ -2523,40 +2520,29 @@ public class LibMatrixReorg {
 		return cnt;
 	}
 
-	private static void reverseDense(MatrixBlock in, MatrixBlock out) {
+	private static void reverseDense(MatrixBlock in, MatrixBlock out, int rl, int ru) {
 		final int m = in.rlen;
 		final int n = in.clen;
-		
-		//set basic meta data and allocate output
-		out.sparse = false;
-		out.nonZeros = in.nonZeros;
-		out.allocateDenseBlock(false);
 		
 		//copy all rows into target positions
 		if( n == 1 ) { //column vector
 			double[] a = in.getDenseBlockValues();
 			double[] c = out.getDenseBlockValues();
-			for( int i=0; i<m; i++ )
+			for( int i=rl; i<ru; i++ )
 				c[m-1-i] = a[i];
 		}
 		else { //general matrix case
 			DenseBlock a = in.getDenseBlock();
 			DenseBlock c = out.getDenseBlock();
-			for( int i=0; i<m; i++ ) {
+			for( int i=rl; i<ru; i++ ) {
 				final int ri = m - 1 - i;
 				System.arraycopy(a.values(i), a.pos(i), c.values(ri), c.pos(ri), n);
 			}
 		}
 	}
 
-	private static void reverseSparse(MatrixBlock in, MatrixBlock out) {
+	private static void reverseSparse(MatrixBlock in, MatrixBlock out, int rl, int ru) {
 		final int m = in.rlen;
-		
-		//set basic meta data and allocate output
-		out.sparse = true;
-		out.nonZeros = in.nonZeros;
-		
-		out.allocateSparseRowsBlock(false);
 		
 		//copy all rows into target positions
 		SparseBlock a = in.getSparseBlock();

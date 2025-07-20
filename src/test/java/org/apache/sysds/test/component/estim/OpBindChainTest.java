@@ -116,12 +116,16 @@ public class OpBindChainTest extends AutomatedTestBase
 	//Layered Graph
 	@Test
 	public void testLGCaserbind() {
-		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, rbind);
+		runSparsityEstimateTest(
+			new EstimatorLayeredGraph(EstimatorLayeredGraph.ROUNDS, 7), 
+			m, k, n, sparsity, rbind);
 	}
 			
 	@Test
 	public void testLGCasecbind() {
-		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, cbind);
+		runSparsityEstimateTest(
+			new EstimatorLayeredGraph(EstimatorLayeredGraph.ROUNDS, 3), 
+			m, k, n, sparsity, cbind);
 	}
 	
 	

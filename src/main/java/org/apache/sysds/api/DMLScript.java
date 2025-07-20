@@ -78,6 +78,7 @@ import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.LocalFileUtils;
+import org.apache.sysds.runtime.util.MemoryMonitor;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.Explain.ExplainCounts;
 import org.apache.sysds.utils.Explain.ExplainType;
@@ -320,6 +321,9 @@ public class DMLScript
 			Map<String, String> argVals = dmlOptions.argVals;
 
 			DML_FILE_PATH_ANTLR_PARSER = dmlOptions.filePath;
+
+			// Start memory monitor in a background thread
+			// new Thread(new MemoryMonitor()).start();
 			
 			//Step 3: invoke dml script
 			printInvocationInfo(fileOrScript, fnameOptConfig, argVals);

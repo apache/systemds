@@ -109,8 +109,13 @@ public class ReorgCPInstruction extends UnaryCPInstruction {
 			return new ReorgCPInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject(), k), in, out, opcode, str);
 		} 
 		else if ( opcode.equalsIgnoreCase(Opcodes.REV.toString()) ) {
-			parseUnaryInstruction(str, in, out); //max 2 operands
-			return new ReorgCPInstruction(new ReorgOperator(RevIndex.getRevIndexFnObject()), in, out, opcode, str);
+			InstructionUtils.checkNumFields(str, 2, 3);
+			in.split(parts[1]);
+			out.split(parts[2]);
+			// Safely parse the number of threads 'k' if it exists
+			int k = (parts.length > 3) ? Integer.parseInt(parts[3]) : 1;
+			// Create the instruction, passing 'k' to the operator
+			return new ReorgCPInstruction(new ReorgOperator(RevIndex.getRevIndexFnObject(), k), in, out, opcode, str);
 		}
 		else if (opcode.equalsIgnoreCase(Opcodes.ROLL.toString())) {
 			InstructionUtils.checkNumFields(str, 3);

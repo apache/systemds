@@ -128,7 +128,10 @@ public class LibMatrixReorg {
 				else
 					return transpose(in, out);
 			case REV:
-				return rev(in, out);
+				if (op.getNumThreads() > 1)
+					return rev(in, out, op.getNumThreads());
+				else
+					return rev(in, out);
 			case ROLL:
 				RollIndex rix = (RollIndex) op.fn;
 				return roll(in, out, rix.getShift());
@@ -389,10 +392,72 @@ public class LibMatrixReorg {
 		return out;
 	}
 
+	public static MatrixBlock rev(MatrixBlock in, MatrixBlock out, int k) {
+		if (k <= 1 || in.isEmptyBlock(false) ) {
+			return rev(in, out); // fallback to single-threaded
+
+		}
+		final int numRows = in.getNumRows();
+		final int numCols = in.getNumColumns();
+		final boolean sparse = in.isInSparseFormat();
+
+		// Prepare output block
+		out.reset(numRows, numCols, sparse);
+
+		// Before starting threads, ensure the output sparse block is allocated!
+		if (sparse) {
+			out.allocateSparseRowsBlock(false);
+		}
+
+		// Set up thread pool
+		ExecutorService pool = CommonThreadPool.get(k);
+		try {
+			int blklen = (int) Math.ceil((double) numRows / k);
+			List<Future<?>> tasks = new ArrayList<>();
+
+			for (int i = 0; i < k; i++) {
+				final int startRow = i * blklen;
+				final int endRow = Math.min((i + 1) * blklen, numRows);
+
+				tasks.add(pool.submit(() -> {
+					if (!sparse) {
+						// Dense case
+						double[] inVals = in.getDenseBlockValues();
+						double[] outVals = out.getDenseBlockValues();
+						for (int r = startRow; r < endRow; r++) {
+							int revRow = numRows - r - 1;
+							System.arraycopy(inVals, revRow * numCols, outVals, r * numCols, numCols);
+						}
+					} else {
+						// Sparse case
+						SparseBlock inBlk = in.getSparseBlock();
+						SparseBlock outBlk = out.getSparseBlock();
+						for (int r = startRow; r < endRow; r++) {
+							int revRow = numRows - r - 1;
+							if (!inBlk.isEmpty(revRow)) {
+								outBlk.set(r, inBlk.get(revRow), true);
+							}
+						}
+					}
+				}));
+			}
+
+			// Wait for all threads
+			for (Future<?> task : tasks) {
+				task.get();
+			}
+		} catch (Exception ex) {
+			throw new DMLRuntimeException(ex);
+		} finally {
+			pool.shutdown();
+		}
+		return out;
+	}
+
 	public static void rev( IndexedMatrixValue in, long rlen, int blen, ArrayList<IndexedMatrixValue> out ) {
 		//input block reverse 
 		MatrixIndexes inix = in.getIndexes();
-		MatrixBlock inblk = (MatrixBlock) in.getValue(); 
+		MatrixBlock inblk = (MatrixBlock) in.getValue();
 		MatrixBlock tmpblk = rev(inblk, new MatrixBlock(inblk.getNumRows(), inblk.getNumColumns(), inblk.isInSparseFormat()));
 		
 		//split and expand block if necessary (at most 2 blocks)

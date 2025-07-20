@@ -159,12 +159,10 @@ public class ReorgOp extends MultiThreadedHop
 				break;
 				}
 			case REV: {
-				long numel = getDim1() * getDim2();
-				int k = (numel < 3000_000) ?
-						1 : OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 				Transform transform1 = new Transform(
 					getInput().get(0).constructLops(),
-					_op, getDataType(), getValueType(), et, k);
+					_op, getDataType(), getValueType(), et,
+					OptimizerUtils.getConstrainedNumThreads(_maxNumThreads));
 				setOutputDimensions(transform1);
 				setLineNumbers(transform1);
 				setLops(transform1);

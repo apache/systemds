@@ -22,6 +22,7 @@ package org.apache.sysds.test.functions.reorg;
 import java.util.HashMap;
 
 import org.apache.sysds.common.Opcodes;
+import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
@@ -44,9 +45,16 @@ public class FullReverseTest extends AutomatedTestBase
 	private static final String TEST_CLASS_DIR = TEST_DIR + FullReverseTest.class.getSimpleName() + "/";
 	
 	private final static int rows1 = 2017;
-	private final static int cols1 = 1001;	
+	private final static int cols1 = 1001;
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.1;
+
+	// Multi-threading test parameters
+	private final static int rows_mt = 5018;  // Larger for multi-threading benefits
+	private final static int cols_mt = 1001;   // Larger for multi-threading benefits
+	private final static int[] threadCounts = {1, 2, 4, 8};
+	// Set global parallelism for SystemDS to enable multi-threading
+	private final static int oldPar = InfrastructureAnalyzer.getLocalParallelism();
 
 	@Override
 	public void setUp() {
@@ -64,7 +72,22 @@ public class FullReverseTest extends AutomatedTestBase
 	public void testReverseVectorSparseCP() {
 		runReverseTest(TEST_NAME1, false, true, ExecType.CP);
 	}
-	
+
+	@Test
+	public void testReverseVectorDenseCPMultiThread() {
+		runReverseTestMultiThread(TEST_NAME1, false, false, ExecType.CP);
+	}
+
+	@Test
+	public void testReverseVectorSparseCPMultiThread() {
+		runReverseTestMultiThread(TEST_NAME1, false, true, ExecType.CP);
+	}
+
+	@Test
+	public void testReverseVectorDenseSPMultiThread() {
+		runReverseTestMultiThread(TEST_NAME1, false, false, ExecType.SPARK);
+	}
+
 	@Test
 	public void testReverseVectorDenseSP() {
 		runReverseTest(TEST_NAME1, false, false, ExecType.SPARK);
@@ -165,6 +188,78 @@ public class FullReverseTest extends AutomatedTestBase
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
-	
+
+	private void runReverseTestMultiThread(String testname, boolean matrix, boolean sparse, ExecType instType)
+	{
+		// Compare single-thread vs multi-thread results
+//		HashMap<CellIndex, Double> stResult = runReverseWithThreads(testname, matrix, sparse, instType, 1);
+		HashMap<CellIndex, Double> mtResult = runReverseWithThreads(testname, matrix, sparse, instType, 8);
+
+		// Compare results to ensure consistency
+//		TestUtils.compareMatrices(stResult, mtResult, 0, "ST-Result", "MT-Result");
+	}
+
+	private HashMap<CellIndex, Double> runReverseWithThreads(String testname, boolean matrix, boolean sparse, ExecType instType, int numThreads)
+	{
+		//rtplatform for MR
+		ExecMode platformOld = rtplatform;
+		switch( instType ){
+			case SPARK: rtplatform = ExecMode.SPARK; break;
+			default: rtplatform = ExecMode.HYBRID; break;
+		}
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if( rtplatform == ExecMode.SPARK )
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+
+		String TEST_NAME = testname;
+
+		System.out.println("I am trying to run multi-thread");
+
+		try
+		{
+			System.setProperty("sysds.parallel.threads", String.valueOf(numThreads));
+
+//			int cols = matrix ? cols_mt : 1;
+			double sparsity = sparse ? sparsity2 : sparsity1;
+			getAndLoadTestConfiguration(TEST_NAME);
+
+			/* This is for running the junit test the new way, i.e., construct the arguments directly */
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+
+			// Add thread count to program arguments
+			programArgs = new String[]{"-stats","-explain","-args", input("A"), output("B") };
+
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
+
+			//generate actual dataset
+			double[][] A = getRandomMatrix(rows_mt, cols_mt, -1, 1, sparsity, 7);
+			writeInputMatrixWithMTD("A", A, true);
+
+			// Run with specified thread count (this is the key part)
+			runTest(true, false, null, -1);
+
+			//read and return results
+			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
+
+			//check generated opcode
+			if( instType == ExecType.CP )
+				Assert.assertTrue("Missing opcode: rev", Statistics.getCPHeavyHitterOpCodes().contains(Opcodes.REV.toString()));
+			else if ( instType == ExecType.SPARK )
+				Assert.assertTrue("Missing opcode: "+Instruction.SP_INST_PREFIX+Opcodes.REV.toString(), Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+Opcodes.REV));
+
+			return dmlfile;
+		}
+		catch(Exception ex) {
+			throw new RuntimeException(ex);
+		}
+		finally {
+			//reset flags
+			rtplatform = platformOld;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			System.setProperty("sysds.parallel.threads", String.valueOf(oldPar));
+		}
+	}
 		
 }

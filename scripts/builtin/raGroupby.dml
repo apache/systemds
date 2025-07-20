@@ -146,54 +146,69 @@ m_raGroupby = function (Matrix[Double] X, Integer col, String method)
 
   }
   else if (method == "permutation-matrix") {
-   # Extract the grouping column and create unique groups
-       key = X[,col]
-       key_unique = unique(X[, col])
-       numGroups = nrow(key_unique)
+    # Extract the grouping column and create unique groups
+    key = X[,col]
+    key_unique = unique(X[, col])
+    numGroups = nrow(key_unique)
 
-       # Matrix for comparison
-       key_compare = key_unique %*% matrix(1, rows=1, cols=nrow(X))
-       key_matrix = matrix(1, rows=nrow(key_unique), cols=1) %*% t(key)
+    # Matrix for comparison
+    key_compare = key_unique %*% matrix(1, rows=1, cols=nrow(X))
+    key_matrix = matrix(1, rows=nrow(key_unique), cols=1) %*% t(key)
 
-       # Find group index
-       groupIndex = rowIndexMax(t(key_compare == key_matrix))
+    # Find group index
+    groupIndex = rowIndexMax(t(key_compare == key_matrix))
 
-       # Determine the maximum number of rows in any group
-       maxRowsInGroup = max(table(X[,col],1))
-       totalCells = (maxRowsInGroup) * (ncol(X)-1) +1
+    # Determine the maximum number of rows in any group
+    maxRowsInGroup = max(table(X[,col],1))
+    totalCells = (maxRowsInGroup) * (ncol(X)-1) +1
 
-       # Create permutation matrix P copy relevant tuples with a single matrix multiplication
-       P = matrix(0, rows=nrow(X), cols=numGroups * maxRowsInGroup)
-       # Create offsets to store the first column of each group
-       offsets = matrix(seq(0, (numGroups-1)*maxRowsInGroup, maxRowsInGroup), rows=numGroups, cols=1)
+    # Create permutation matrix P copy relevant tuples with a single matrix multiplication
+    P = matrix(0, rows=nrow(X), cols=numGroups * maxRowsInGroup)
+    # Create offsets to store the first column of each group
+    offsets = matrix(seq(0, (numGroups-1)*maxRowsInGroup, maxRowsInGroup), rows=numGroups, cols=1)
 
-       # Create row and column index for the permutation matrix
-       rowIndex = seq(1, nrow(X))
-       indexWithInGroups = cumsum(t(table(groupIndex, seq(1, nrow(X)), numGroups, nrow(X))))
-       selectedMatrix = table(seq(1, nrow(indexWithInGroups)), groupIndex)
-       colIndex = groupIndex * maxRowsInGroup - maxRowsInGroup + rowSums(indexWithInGroups * selectedMatrix)
+    # Create row and column index for the permutation matrix
+    rowIndex = seq(1, nrow(X))
+    indexWithInGroups = cumsum(t(table(groupIndex, seq(1, nrow(X)), numGroups, nrow(X))))
+    selectedMatrix = table(seq(1, nrow(indexWithInGroups)), groupIndex)
+    colIndex = groupIndex * maxRowsInGroup - maxRowsInGroup + rowSums(indexWithInGroups * selectedMatrix)
 
-       # Set values in P
-       P = table(seq(1, nrow(X)), colIndex)
+    # Set values in P
+    P = table(seq(1, nrow(X)), colIndex)
 
-       # Perform matrix multiplication
-       Y_temp = t(P) %*% X
+    # Perform matrix multiplication
+    Y_temp = t(P) %*% X
 
-       # Remove the selected column from Y_temp
-       if( col == 1 ) {
-           Y_temp_reduce = Y_temp[, col+1:ncol(Y_temp)]
-       }
-       else if( col == ncol(X) ) {
-           Y_temp_reduce = Y_temp[, 1:col-1]
-       }
-       else{
-           Y_temp_reduce = cbind(Y_temp[, 1:col-1],Y_temp[, col+1:ncol(Y_temp)])
-       }
+    # Remove the selected column from Y_temp
+    if( col == 1 ) {
+        Y_temp_reduce = Y_temp[, col+1:ncol(Y_temp)]
+    }
+    else if( col == ncol(X) ) {
+        Y_temp_reduce = Y_temp[, 1:col-1]
+    }
+    else{
+        Y_temp_reduce = cbind(Y_temp[, 1:col-1],Y_temp[, col+1:ncol(Y_temp)])
+    }
 
-       # Set value of final output
-       Y = matrix(0, rows=numGroups, cols=totalCells)
-       Y[,1] = key_unique
-       Y[,2:ncol(Y)] = matrix(Y_temp_reduce, rows=numGroups, cols=totalCells-1)
-     }
+    # Set value of final output
+    Y = matrix(0, rows=numGroups, cols=totalCells)
+    Y[,1] = key_unique
+
+    # The permutation matrix creates a structure where each group's data
+    # may not fill exactly maxRowsInGroup rows.
+    # If needed, we need to pad to the expected size first.
+    expectedRows = numGroups * maxRowsInGroup
+    actualRows = nrow(Y_temp_reduce)
+
+    if(actualRows < expectedRows) {
+      # Pad Y_temp_reduce with zeros to match expected structure
+      Y_tmp_padded = matrix(0, rows=expectedRows, cols=ncol(Y_temp_reduce))
+      Y_tmp_padded[1:actualRows,] = Y_temp_reduce
+    } else {
+      Y_tmp_padded = Y_temp_reduce
+    }
+
+    Y[,2:ncol(Y)] = matrix(Y_tmp_padded, rows=numGroups, cols=totalCells-1)
+  }
 }
 

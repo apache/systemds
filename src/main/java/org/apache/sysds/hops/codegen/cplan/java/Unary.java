@@ -55,7 +55,7 @@ public class Unary extends CodeTemplate {
 				String vectName = type.getVectorPrimitiveName();
 				return sparse ? DMLScript.SPARSE_INTERMEDIATE ?
 					"    SparseRowVector %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(len, %IN1v%, %IN1i%, %POS1%, alen);\n" :
-					"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write%IN1v%, %IN1i%, %POS1%, alen, len);\n" :
+					"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN1i%, %POS1%, alen, len);\n" :
 					"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %POS1%, %LEN%);\n";
 			}
 			case VECT_EXP:

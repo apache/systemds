@@ -24,7 +24,6 @@ import java.util.HashMap;
 import org.apache.sysds.common.Opcodes;
 import org.junit.Assert;
 import org.junit.Test;
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -43,8 +42,13 @@ public class FullReverseTest extends AutomatedTestBase
 	private final static String TEST_DIR = "functions/reorg/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + FullReverseTest.class.getSimpleName() + "/";
 	
-	private final static int rows1 = 2017;
-	private final static int cols1 = 1001;	
+	//single-threaded execution
+	private final static int rows1 = 201;
+	private final static int cols1 = 100;
+	//multi-threaded / distributed execution
+	private final static int rows2 = 2017;
+	private final static int cols2 = 1001;
+	
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.1;
 
@@ -57,82 +61,74 @@ public class FullReverseTest extends AutomatedTestBase
 
 	@Test
 	public void testReverseVectorDenseCP() {
-		runReverseTest(TEST_NAME1, false, false, ExecType.CP);
+		runReverseTest(TEST_NAME1, false, rows1, 1, ExecType.CP);
 	}
 	
 	@Test
 	public void testReverseVectorSparseCP() {
-		runReverseTest(TEST_NAME1, false, true, ExecType.CP);
+		runReverseTest(TEST_NAME1, true, rows1, 1, ExecType.CP);
 	}
-	
+
+	@Test
+	public void testReverseVectorDenseCPMultiThread() {
+		runReverseTest(TEST_NAME1, false, rows2, 1, ExecType.CP);
+	}
+
+	@Test
+	public void testReverseVectorSparseCPMultiThread() {
+		runReverseTest(TEST_NAME1, true, rows2, 1, ExecType.CP);
+	}
+
 	@Test
 	public void testReverseVectorDenseSP() {
-		runReverseTest(TEST_NAME1, false, false, ExecType.SPARK);
+		runReverseTest(TEST_NAME1, false, rows2, 1, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testReverseVectorSparseSP() {
-		runReverseTest(TEST_NAME1, false, true, ExecType.SPARK);
+		runReverseTest(TEST_NAME1, true, rows2, 1, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testReverseMatrixDenseCP() {
-		runReverseTest(TEST_NAME1, true, false, ExecType.CP);
+		runReverseTest(TEST_NAME1, false, rows1, cols1, ExecType.CP);
 	}
 	
 	@Test
 	public void testReverseMatrixSparseCP() {
-		runReverseTest(TEST_NAME1, true, true, ExecType.CP);
+		runReverseTest(TEST_NAME1, true, rows1, cols1, ExecType.CP);
 	}
 	
 	@Test
 	public void testReverseMatrixDenseSP() {
-		runReverseTest(TEST_NAME1, true, false, ExecType.SPARK);
+		runReverseTest(TEST_NAME1, false, rows2, cols2, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testReverseMatrixSparseSP() {
-		runReverseTest(TEST_NAME1, true, true, ExecType.SPARK);
+		runReverseTest(TEST_NAME1, true, rows2, cols2, ExecType.SPARK);
 	}	
 
 	@Test
 	public void testReverseVectorDenseRewriteCP() {
-		runReverseTest(TEST_NAME2, false, false, ExecType.CP);
+		runReverseTest(TEST_NAME2, false, rows1, 1, ExecType.CP);
 	}
 	
 	@Test
 	public void testReverseMatrixDenseRewriteCP() {
-		runReverseTest(TEST_NAME2, true, false, ExecType.CP);
-	}	
-
+		runReverseTest(TEST_NAME2, false, rows1, 1, ExecType.CP);
+	}
 	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
-	private void runReverseTest(String testname, boolean matrix, boolean sparse, ExecType instType)
+	private void runReverseTest(String testname, boolean sparse, int rows, int cols, ExecType instType)
 	{
-		//rtplatform for MR
-		ExecMode platformOld = rtplatform;
-		switch( instType ){
-			case SPARK: rtplatform = ExecMode.SPARK; break;
-			default: rtplatform = ExecMode.HYBRID; break;
-		}
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == ExecMode.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		
+		ExecMode platformOld = setExecMode(instType);
 		String TEST_NAME = testname;
 		
 		try
 		{
-			int cols = matrix ? cols1 : 1;
 			double sparsity = sparse ? sparsity2 : sparsity1;
 			getAndLoadTestConfiguration(TEST_NAME);
 			
-			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-stats","-explain","-args", input("A"), output("B") };
@@ -141,10 +137,10 @@ public class FullReverseTest extends AutomatedTestBase
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 	
 			//generate actual dataset 
-			double[][] A = getRandomMatrix(rows1, cols, -1, 1, sparsity, 7); 
+			double[][] A = getRandomMatrix(rows, cols, -1, 1, sparsity, 7); 
 			writeInputMatrixWithMTD("A", A, true);
 	
-			runTest(true, false, null, -1); 		
+			runTest(true, false, null, -1); 
 			runRScript(true); 
 		
 			//compare matrices 
@@ -158,13 +154,8 @@ public class FullReverseTest extends AutomatedTestBase
 			else if ( instType == ExecType.SPARK )
 				Assert.assertTrue("Missing opcode: "+Instruction.SP_INST_PREFIX+Opcodes.REV.toString(), Statistics.getCPHeavyHitterOpCodes().contains(Instruction.SP_INST_PREFIX+Opcodes.REV));
 		}
-		finally
-		{
-			//reset flags
-			rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		finally {
+			resetExecMode(platformOld);
 		}
 	}
-	
-		
 }

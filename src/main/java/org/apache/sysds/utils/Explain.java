@@ -62,6 +62,7 @@ import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.instructions.gpu.GPUInstruction;
+import org.apache.sysds.runtime.instructions.ooc.OOCInstruction;
 import org.apache.sysds.runtime.instructions.spark.CSVReblockSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.CheckpointSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.ReblockSPInstruction;
@@ -837,8 +838,9 @@ public class Explain
 	private static String explainGenericInstruction( Instruction inst, int level )
 	{
 		String tmp = null;
-		if ( inst instanceof SPInstruction || inst instanceof CPInstruction || inst instanceof GPUInstruction ||
-				inst instanceof FEDInstruction )
+		if ( inst instanceof SPInstruction || inst instanceof CPInstruction 
+			|| inst instanceof GPUInstruction || inst instanceof FEDInstruction
+			|| inst instanceof OOCInstruction)
 			tmp = inst.toString();
 
 		if( REPLACE_SPECIAL_CHARACTERS && tmp != null){

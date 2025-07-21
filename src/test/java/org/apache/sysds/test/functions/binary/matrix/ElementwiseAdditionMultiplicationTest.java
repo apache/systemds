@@ -53,10 +53,11 @@ public class ElementwiseAdditionMultiplicationTest extends AutomatedTestBase
 		config.addVariable("cols", cols);
 		loadTestConfiguration(config);
 
-		double[][] a = createRandomMatrix("a", rows, cols, 0, 10, 1, new Date().getTime());
-		double[][] b = createRandomMatrix("b", rows, cols, 0, 10, 1, new Date().getTime() + 1);
-		double[][] c = createRandomMatrix("c", rows, cols, 0, 10, 1, new Date().getTime() + 2);
-		double[][] d = createRandomMatrix("d", rows, cols, 0, 10, 1, new Date().getTime() + 4);
+		cleanupDir(baseDirectory + INPUT_DIR, true);
+		double[][] a = getRandomMatrix( rows, cols, 0, 10, 1, new Date().getTime());
+		double[][] b = getRandomMatrix(rows, cols, 0, 10, 1, new Date().getTime() + 1);
+		double[][] c = getRandomMatrix(rows, cols, 0, 10, 1, new Date().getTime() + 2);
+		double[][] d = getRandomMatrix(rows, cols, 0, 10, 1, new Date().getTime() + 4);
 		writeInputMatrixWithMTD("a", a, false);
 		writeInputMatrixWithMTD("b", b, false);
 		writeInputMatrixWithMTD("c", c, false);
@@ -85,9 +86,9 @@ public class ElementwiseAdditionMultiplicationTest extends AutomatedTestBase
 		config.addVariable("cols", cols);
 		loadTestConfiguration(config);
 
-		double[][] a = createRandomMatrix("a", rows, cols, 0, 10, 1, new Date().getTime());
-		double[][] b = createRandomMatrix("b", rows, cols, 0, 10, 1, new Date().getTime() + 1);
-		double[][] c = createRandomMatrix("c", rows, cols, 0, 10, 1, new Date().getTime() + 4);
+		double[][] a = getRandomMatrix(rows, cols, 0, 10, 1, new Date().getTime());
+		double[][] b = getRandomMatrix(rows, cols, 0, 10, 1, new Date().getTime() + 1);
+		double[][] c = getRandomMatrix(rows, cols, 0, 10, 1, new Date().getTime() + 4);
 		writeInputMatrixWithMTD("a", a, false);
 		writeInputMatrixWithMTD("b", b, false);
 		writeInputMatrixWithMTD("c", c, false);
@@ -115,9 +116,9 @@ public class ElementwiseAdditionMultiplicationTest extends AutomatedTestBase
 		config.addVariable("cols", cols);
 		loadTestConfiguration(config);
 
-		double[][] a = createRandomMatrix("a", rows, cols, 0, 10, 1, new Date().getTime());
-		double[][] b = createRandomMatrix("b", rows, cols, 0, 10, 1, new Date().getTime() + 1);
-		double[][] c = createRandomMatrix("c", rows, cols, 0, 10, 1, new Date().getTime() + 2);
+		double[][] a = getRandomMatrix(rows, cols, 0, 10, 1, new Date().getTime());
+		double[][] b = getRandomMatrix(rows, cols, 0, 10, 1, new Date().getTime() + 1);
+		double[][] c = getRandomMatrix(rows, cols, 0, 10, 1, new Date().getTime() + 2);
 		writeInputMatrixWithMTD("a", a, false);
 		writeInputMatrixWithMTD("b", b, false);
 		writeInputMatrixWithMTD("c", c, false);

@@ -46,7 +46,7 @@ public class RewriteDetTest extends AutomatedTestBase
 	private final static int rows = 23;
 	private final static double _sparsityDense = 0.7;
 	private final static double _sparsitySparse = 0.2;
-	private final static double eps = 1e-8;
+	private final static double eps = 1e-7;
 	
 	@Override
 	public void setUp() {

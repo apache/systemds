@@ -100,7 +100,10 @@ class TransformedModality(Modality):
             self.metadata,
         )
         modalities = [self]
-        modalities.extend(other)
+        if isinstance(other, list):
+            modalities.extend(other)
+        else:
+            modalities.append(other)
         fused_modality.data = fusion_method.transform(modalities)
 
         return fused_modality

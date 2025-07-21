@@ -25,8 +25,10 @@ from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.transformed import TransformedModality
 
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
+from systemds.scuro.drsearch.operator_registry import register_representation
 
 
+@register_representation(ModalityType.AUDIO)
 class MelSpectrogram(UnimodalRepresentation):
     def __init__(self, n_mels=128, hop_length=512, n_fft=2048):
         parameters = {
@@ -45,8 +47,15 @@ class MelSpectrogram(UnimodalRepresentation):
         )
         result = []
         max_length = 0
-        for sample in modality.data:
-            S = librosa.feature.melspectrogram(y=sample, sr=22050)
+        for i, sample in enumerate(modality.data):
+            sr = list(modality.metadata.values())[i]["frequency"]
+            S = librosa.feature.melspectrogram(
+                y=sample,
+                sr=sr,
+                n_mels=self.n_mels,
+                hop_length=self.hop_length,
+                n_fft=self.n_fft,
+            )
             S_dB = librosa.power_to_db(S, ref=np.max)
             if S_dB.shape[-1] > max_length:
                 max_length = S_dB.shape[-1]

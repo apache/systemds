@@ -204,6 +204,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			hi = simplifyNotOverComparisons(hop, hi, i);         //e.g., !(A>B) -> (A<=B)
 			hi = simplifyMatrixScalarPMOperation(hop, hi, i);    //e.g., a-A-b -> (a-b)-A; a+A-b -> (a-b)+A
 			//hi = removeUnecessaryPPred(hop, hi, i);            //e.g., ppred(X,X,"==")->matrix(1,rows=nrow(X),cols=ncol(X))
+			hi = simplifyTransposedCumsum(hop, hi, i);					 //e.g., t(cumsum(t(X))) -> rowcumsum(X)
 
 			//process childs recursively after rewrites (to investigate pattern newly created by rewrites)
 			if( !descendFirst )
@@ -211,6 +212,28 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 		}
 
 		hop.setVisited();
+	}
+
+	private static Hop simplifyTransposedCumsum( Hop parent, Hop hi, int pos )
+	{
+		//e.g., t(cumsum(t(X))) -> rowcumsum(X)
+		if(   HopRewriteUtils.isTransposeOperation(hi)
+				&& hi.getInput(0) instanceof UnaryOp
+				&& ((UnaryOp)hi.getInput(0)).getOp() == OpOp1.CUMSUM
+				&& hi.getInput(0).getParent().size() == 1
+				&& HopRewriteUtils.isTransposeOperation(hi.getInput(0).getInput(0), 1)) //inner transpose with single consumer
+		{
+			UnaryOp cumsum=(UnaryOp)hi.getInput(0);
+			Hop innerMatrix = cumsum.getInput(0).getInput(0);
+
+			UnaryOp rowcumsumOp = HopRewriteUtils.createUnary(innerMatrix, OpOp1.ROWCUMSUM);
+			HopRewriteUtils.replaceChildReference(parent,hi, rowcumsumOp, pos);
+
+			hi = rowcumsumOp;
+			LOG.debug("Applied simplifyTransposedCumsum (line "+hi.getBeginLine()+").");
+		}
+
+		return hi;
 	}
 
 	private Hop simplifyMatrixScalarPMOperation(Hop parent, Hop hi, int pos) {

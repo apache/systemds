@@ -37,7 +37,7 @@ import java.util.HashMap;
 
 public class FullRowcumsumTest extends AutomatedTestBase
 {
-    private final static String TEST_NAME = "rowcumsum";
+    private final static String TEST_NAME = "Rowcumsum";
     private final static String TEST_DIR = "functions/unary/matrix/";
     private static final String TEST_CLASS_DIR = TEST_DIR + FullRowcumsumTest.class.getSimpleName() + "/";
 
@@ -77,82 +77,102 @@ public class FullRowcumsumTest extends AutomatedTestBase
     }
 
     @Test
-    public void testCumsumColVectorDenseCP() {
+    public void testRowcumsumColVectorDenseCP() {
         runColAggregateOperationTest(InputType.COL_VECTOR, false, ExecType.CP);
     }
 
     @Test
-    public void testCumsumRowVectorDenseCP() {
+    public void testRowcumsumRowVectorDenseCP() {
         runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.CP);
     }
 
     @Test
-    public void testCumsumRowVectorDenseNoRewritesCP() {
+    public void testRowcumsumRowVectorDenseNoRewritesCP() {
         runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.CP, false);
     }
 
     @Test
-    public void testCumsumMatrixDenseCP() {
+    public void testRowcumsumColVectorDenseNoRewritesCP() {
+        runColAggregateOperationTest(InputType.COL_VECTOR, false, ExecType.CP, false);
+    }
+
+    @Test
+    public void testRowcumsumMatrixDenseCP() {
         runColAggregateOperationTest(InputType.MATRIX, false, ExecType.CP);
     }
 
     @Test
-    public void testCumsumColVectorSparseCP() {
+    public void testRowcumsumColVectorSparseCP() {
         runColAggregateOperationTest(InputType.COL_VECTOR, true, ExecType.CP);
     }
 
     @Test
-    public void testCumsumRowVectorSparseCP() {
+    public void testRowcumsumRowVectorSparseCP() {
         runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.CP);
     }
 
     @Test
-    public void testCumsumRowVectorSparseNoRewritesCP() {
+    public void testRowcumsumRowVectorSparseNoRewritesCP() {
         runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.CP, false);
     }
 
     @Test
-    public void testCumsumMatrixSparseCP() {
+    public void testRowcumsumColVectorSparseNoRewritesCP() {
+        runColAggregateOperationTest(InputType.COL_VECTOR, true, ExecType.CP, false);
+    }
+
+    @Test
+    public void testRowcumsumMatrixSparseCP() {
         runColAggregateOperationTest(InputType.MATRIX, true, ExecType.CP);
     }
 
     @Test
-    public void testCumsumColVectorDenseSP() {
+    public void testRowcumsumColVectorDenseSP() {
         runColAggregateOperationTest(InputType.COL_VECTOR, false, ExecType.SPARK);
     }
 
     @Test
-    public void testCumsumRowVectorDenseSP() {
+    public void testRowcumsumRowVectorDenseSP() {
         runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.SPARK);
     }
 
     @Test
-    public void testCumsumRowVectorDenseNoRewritesSP() {
+    public void testRowcumsumRowVectorDenseNoRewritesSP() {
         runColAggregateOperationTest(InputType.ROW_VECTOR, false, ExecType.SPARK, false);
     }
 
     @Test
-    public void testCumsumMatrixDenseSP() {
+    public void testRowcumsumColVectorDenseNoRewritesSP() {
+        runColAggregateOperationTest(InputType.COL_VECTOR, false, ExecType.SPARK, false);
+    }
+
+    @Test
+    public void testRowcumsumMatrixDenseSP() {
         runColAggregateOperationTest(InputType.MATRIX, false, ExecType.SPARK);
     }
 
     @Test
-    public void testCumsumColVectorSparseSP() { //das hier testen
+    public void testRowcumsumColVectorSparseSP() {
         runColAggregateOperationTest(InputType.COL_VECTOR, true, ExecType.SPARK);
     }
 
     @Test
-    public void testCumsumRowVectorSparseSP() {
+    public void testRowcumsumRowVectorSparseSP() {
         runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.SPARK);
     }
 
     @Test
-    public void testCumsumRowVectorSparseNoRewritesSP() {
+    public void testRowcumsumRowVectorSparseNoRewritesSP() {
         runColAggregateOperationTest(InputType.ROW_VECTOR, true, ExecType.SPARK, false);
     }
 
     @Test
-    public void testCumsumMatrixSparseSP() {
+    public void testRowcumsumColVectorSparseNoRewritesSP() {
+        runColAggregateOperationTest(InputType.COL_VECTOR, true, ExecType.SPARK, false);
+    }
+
+    @Test
+    public void testRowcumsumMatrixSparseSP() {
         runColAggregateOperationTest(InputType.MATRIX, true, ExecType.SPARK);
     }
 

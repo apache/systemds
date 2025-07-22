@@ -98,13 +98,6 @@ public class RewriteSimplifyTransposedCumsumTest extends AutomatedTestBase{
     @Test public void testRewriteRowVectorSparseSP()    { testRewriteSimplifyRowcumsum(InputType.ROW_VECTOR, true, ExecType.SPARK, true); }
 
 
-    /**
-     * Helper method to run the rewrite test with specified input type, sparsity, execution type, and rewrite flag.
-     * @param type The type of the input matrix (MATRIX, COL_VECTOR, ROW_VECTOR).
-     * @param sparse True if the matrix should be sparse, false for dense.
-     * @param instType The execution type (CP or SPARK).
-     * @param rewrites True if algebraic simplifications (rewrites) should be enabled, false otherwise.
-     */
     private void testRewriteSimplifyRowcumsum(InputType type, boolean sparse, ExecType instType, boolean rewrites) {
 
         ExecMode platformOld = rtplatform;
@@ -159,16 +152,14 @@ public class RewriteSimplifyTransposedCumsumTest extends AutomatedTestBase{
 
             // Assertions for opcodes
             if(rewrites) {
-                // rewrite is enabled, double transposed cumsum operation is ROWCUMSUM operation instead
+                // rewrite is enabled: double transposed CUMSUM and CUMSUM is not found, ROWCUMSUM operation is found
                 Assert.assertFalse(heavyHittersContainsString(Opcodes.TRANSPOSE.toString()) || heavyHittersContainsString("sp_r'"));
+                Assert.assertFalse(heavyHittersContainsString(Opcodes.UCUMKP.toString()) || heavyHittersContainsString("sp_bcumoffk+"));
                 Assert.assertTrue(heavyHittersContainsString(Opcodes.UROWCUMKP.toString()) || heavyHittersContainsString("sp_urowcumk+"));
             } else {
-                // rewrite is disabled, use TRANSPOSE and CUMSUM operation
-                boolean transposeFound = heavyHittersContainsString(Opcodes.TRANSPOSE.toString()) || heavyHittersContainsString("sp_r'");
-                Assert.assertTrue(transposeFound);
+                // rewrite is disabled: double transposed CUMSUM and CUMSUM is found, ROWCUMSUM operation is not found
+                Assert.assertTrue(heavyHittersContainsString(Opcodes.TRANSPOSE.toString()) || heavyHittersContainsString("sp_r'"));
                 Assert.assertTrue(heavyHittersContainsString(Opcodes.UCUMKP.toString()) || heavyHittersContainsString("sp_bcumoffk+"));
-
-                // Check that neither CP nor Spark ROWCUMSUM is present
                 Assert.assertFalse(heavyHittersContainsString(Opcodes.UROWCUMKP.toString()) || heavyHittersContainsString("sp_urowcumk+"));
             }
         }

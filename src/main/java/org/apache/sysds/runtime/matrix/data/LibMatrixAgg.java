@@ -2130,14 +2130,14 @@ public class LibMatrixAgg {
 	/**
 	 * ROWCUMSUM, opcode: urowcumk+, dense input.
 	 *
-	 * @param a
-	 * @param agg
-	 * @param c
-	 * @param n
-	 * @param kbuff
-	 * @param kplus
-	 * @param rl
-	 * @param ru
+	 * @param a input matrix
+	 * @param agg initial array
+	 * @param c output matrix
+	 * @param n number of rows
+	 * @param kbuff collects sum
+	 * @param kplus sums up
+	 * @param rl row lower index
+	 * @param ru row upper index
 	 */
 	private static void d_urowcumkp( DenseBlock a, double[] agg, DenseBlock c, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) {
 		//row-wise cumulative sum w/ optional row offsets
@@ -2814,13 +2814,13 @@ public class LibMatrixAgg {
 	/**
 	 * ROWCUMSUM, opcode: urowcumk+, sparse input.
 	 *
-	 * @param a ?
-	 * @param agg ?
-	 * @param c ?
-	 * @param m ?
-	 * @param n ?
-	 * @param kbuff ?
-	 * @param kplus ?
+	 * @param a input matrix
+	 * @param agg intial array
+	 * @param c output matrix
+	 * @param m number of columns
+	 * @param n number of rows
+	 * @param kbuff collects sum
+	 * @param kplus sums up
 	 * @param rl row lower index
 	 * @param ru row upper index
 	 */

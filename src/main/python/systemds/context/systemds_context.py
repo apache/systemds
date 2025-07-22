@@ -251,7 +251,6 @@ class SystemDSContext(object):
         raise RuntimeError(message)
 
     def __try_startup(self, command: str, capture_stdout: bool) -> Popen:
-        command = command[:1] + ["-Xms28g", "-Xmx28g"] + command[1:]
         if capture_stdout:
             process = Popen(command, stdout=PIPE, stdin=PIPE, stderr=PIPE)
 

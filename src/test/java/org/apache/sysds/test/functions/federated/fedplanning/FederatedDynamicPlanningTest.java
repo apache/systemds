@@ -75,6 +75,13 @@ public class FederatedDynamicPlanningTest extends AutomatedTestBase {
 		loadAndRunTest(expectedHeavyHitters, TEST_NAME);
 	}
 
+	@Test
+	public void runDynamicCostBasedFunctionTest() {
+		String[] expectedHeavyHitters = new String[] {};
+		setTestConf("SystemDS-config-cost-based.xml");
+		loadAndRunTest(expectedHeavyHitters, TEST_NAME);
+	}
+
 	private void setTestConf(String test_conf) {
 		TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, test_conf);
 	}

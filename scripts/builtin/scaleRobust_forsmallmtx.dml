@@ -1,0 +1,102 @@
+for (i in 1:1){
+
+    M = rand (rows = 4 ,cols = 4)
+ 
+    #Robust scaler
+    [Y,med,Q1,Q3]=scaleRobust(M)
+
+    
+
+    #
+    m = nrow(M)
+    n = ncol(M)
+
+    print(M)
+
+    
+    medians=matrix(0,rows=1, cols=n)
+    iqrs=matrix(0,rows=1, cols=n)
+    quantile1=matrix(0,rows=1,cols=n)
+    quantile3=matrix(0,rows=1,cols=n)
+    parfor(i in 1:n){
+
+        #sort column
+        
+        #print(M)
+        tm=t(M)
+        #write(tm, "M.csv", format="csv",sep=",", header=FALSE, sparse=FALSE);
+        #slice out column
+        c=M[,i]
+        sortedColumn=order(target=c,decreasing=FALSE,index.return=FALSE)
+      
+
+        
+        #median
+        #even number of elements in column
+        if (m %% 2 ==0){  
+            medianIndexA=(m/2)
+            medianIndexB=(m/2)+1
+            print("medianIndexA:"+medianIndexA)
+            print("medianIndexB:"+medianIndexB) 
+       
+            median=(sortedColumn[medianIndexA]+sortedColumn[medianIndexB]) /2
+        }
+
+        #odd number of elements in column
+        else {
+            median=sortedColumn[m %/% 2 +1]        
+        }
+
+        #medians of halves
+       
+        #even number of elements per half
+        if ((m/2) %% 2 ==0){  
+            foo=(sortedColumn[24]-sortedColumn[25])/2
+            #print( as.scalar(foo))
+            q1= (sortedColumn[(m/4)]  +   sortedColumn[(m/4)+1]) /2
+            #print("q1   "+as.scalar(q1))
+            q3= (sortedColumn[(3*m/4)] + sortedColumn[(3*m/4)+1]) /2
+            #print("q3   "+as.scalar(q3))
+        }
+
+        #odd number of elements per half
+        else{
+            print("oddhalf"+((m %/% 4)+1))
+            q1=sortedColumn[(m %/% 4)+1]
+            print("oddhalf2 "+((3*m %/%4)+1))
+            q3=sortedColumn[(3*m %/% 4) +1] 
+        }
+        
+        interquartile_range=q3-q1
+
+        medians[1,i]=median
+        quantile1[1,i]=q1
+        quantile3[1,i]=q3
+        iqrs[1,i]=interquartile_range
+    }
+
+
+    M_scaled=(M-medians)/iqrs
+
+    print("my medians")
+    print(medians)
+    print("dml medians")
+    print(med)
+    print("my q1")  
+    print(quantile1)
+    print("dml q1")
+    print(Q1)
+    print("my q3")
+    print(quantile3)
+    print("dml q3")
+    print(Q3)
+
+    #print("q1 "+as.scalar(Q1)+' '+as.scalar(quantile1))
+    #print("q3 "+as.scalar(Q3)+' '+as.scalar(quantile3))
+    #print(iqrs)
+    print(Y)
+    print(M_scaled)
+
+}
+
+

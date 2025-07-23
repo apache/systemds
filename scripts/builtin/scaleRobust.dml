@@ -1,3 +1,24 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
 # Robust scaling using median and IQR (Interquartile Range)
 # Resistant to outliers by centering with the median and scaling with IQR.
 #
@@ -31,8 +52,6 @@ m_scaleRobust = function(Matrix[Double] X)
   q_probs[3,1] = 0.75
 
 
-  t0 = time();
-
   # Loop over columns to compute quantiles
   parfor (j in 1:m) {
     col_j = X[,j]                        # get column vector
@@ -41,21 +60,6 @@ m_scaleRobust = function(Matrix[Double] X)
     q1[1,j]  = q[1,1]
     q3[1,j]  = q[3,1]
   }
-
-  t1 = time();
-  print("DML quantile computation time (ms):"); print((t1 - t0) / 1e6);  
-
-
-
-  # Logging
-  #if (ncol(X) > 0) {
-  #  print("DML column 1:")
-  #  print("Q1:"); print(q1[1,1])
-  #  print("Median:"); print(med[1,1])
-  #  print("Q3:"); print(q3[1,1]) 
-  #}
-
-
 
   Y = scaleRobustApply(X, med, q1, q3);
 }

@@ -220,49 +220,54 @@ m_raGroupby = function (Matrix[Double] X, Integer col, String method)
     print("missing padding")
     print(toString(missingpadding))
     amountofzerorows = sum(missingpadding)
-    print(amountofzerorows)
-    paddingwithoutgroups = matrix(0, rows=amountofzerorows, cols=(ncol(X)))
-    print("padding without groups")
-    print(toString(paddingwithoutgroups))
+    if (amountofzerorows > 0){
+        print(amountofzerorows)
+        paddingwithoutgroups = matrix(0, rows=amountofzerorows, cols=(ncol(X)))
+        print("padding without groups")
+        print(toString(paddingwithoutgroups))
 
-    # group col for padding
-    print("key unique")
-    print(toString(key_unique))
-    missingpadding_t = t(missingpadding)
-    print("missingpadding t")
-    print(toString(missingpadding_t))
+        # group col for padding
+        print("key unique")
+        print(toString(key_unique))
+        missingpadding_t = t(missingpadding)
+        print("missingpadding t")
+        print(toString(missingpadding_t))
 
-    r = missingpadding_t
-    g = key_unique
+        r = missingpadding_t
+        g = key_unique
 
-    n_g = nrow(g)
-    n_r = nrow(r)
-    total = sum(r)
+        n_g = nrow(g)
+        n_r = nrow(r)
+        total = sum(r)
 
-    r_sliced = r[1:n_r-1,]
-    starts = cumsum(rbind(matrix(0, rows=n_r-nrow(r_sliced), cols=1), r_sliced))
-    output_positions = seq(0, total-1)
-    output_positions_row = t(output_positions %*% matrix(1, rows=1, cols=n_g))
+        r_sliced = r[1:n_r-1,]
+        starts = cumsum(rbind(matrix(0, rows=n_r-nrow(r_sliced), cols=1), r_sliced))
+        output_positions = seq(0, total-1)
+        output_positions_row = t(output_positions %*% matrix(1, rows=1, cols=n_g))
 
-    starts_col = starts %*% matrix(1, rows=1, cols=n_r)
-    starts_col = starts_col[, 1:total]
+        starts_col = starts %*% matrix(1, rows=1, cols=n_r)
+        starts_col = starts_col[, 1:total]
 
-    ends_col = (starts + r ) %*% matrix(1, rows=1, cols=n_r)
-    ends_col = ends_col[, 1:total]
+        ends_col = (starts + r ) %*% matrix(1, rows=1, cols=n_r)
+        ends_col = ends_col[, 1:total]
 
-    in_group = (output_positions_row >= starts_col) & (output_positions_row < ends_col)
-    result = t(in_group) %*% g
+        in_group = (output_positions_row >= starts_col) & (output_positions_row < ends_col)
+        result = t(in_group) %*% g
 
-    print(toString(result))
+        print(toString(result))
 
-    # insert group into the missing padding
-    paddingwithoutgroups [, col] = result
-    print("paddingwithoutgroups")
-    print(toString(paddingwithoutgroups))
-    Y_temp = X
-    Y_temp = rbind(Y_temp, paddingwithoutgroups)
-    Y_temp = order(target = Y_temp, by = col, decreasing = FALSE, index.return = FALSE)
-
+        # insert group into the missing padding
+        paddingwithoutgroups [, col] = result
+        print("paddingwithoutgroups")
+        print(toString(paddingwithoutgroups))
+        Y_temp = X
+        Y_temp = rbind(Y_temp, paddingwithoutgroups)
+        Y_temp = order(target = Y_temp, by = col, decreasing = FALSE, index.return = FALSE)
+    }
+    else{
+        Y_temp = X
+        Y_temp = order(target = Y_temp, by = col, decreasing = FALSE, index.return = FALSE)
+    }
     print("Y_temp")
     print(toString(Y_temp))
     # end new implementation

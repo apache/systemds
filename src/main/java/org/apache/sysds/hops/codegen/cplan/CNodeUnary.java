@@ -116,7 +116,7 @@ public class CNodeUnary extends CNode
 			((_inputs.get(0) instanceof CNodeData
 				&& _inputs.get(0).getVarname().startsWith("a")
 				&& !_inputs.get(0).isLiteral())
-				|| (DMLScript.SPARSE_INTERMEDIATE && _inputs.get(0).getVarname().startsWith("STMP")));
+				|| (_inputs.get(0).getVarname().startsWith("STMP")));
 		String var = createVarname(DMLScript.SPARSE_INTERMEDIATE && lsparse && getOutputType());
 		String tmp = getLanguageTemplateClass(this, api).getTemplate(_type, lsparse);
 		tmp = tmp.replaceAll("%TMP%", var);

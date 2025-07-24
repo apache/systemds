@@ -146,149 +146,86 @@ m_raGroupby = function (Matrix[Double] X, Integer col, String method)
 
   }
   else if (method == "permutation-matrix") {
-    print("X")
-    print(toString(X))
     # Extract the grouping column and create unique groups
     key = X[,col]
     key_unique = unique(X[, col])
     numGroups = nrow(key_unique)
 
-    # Matrix for comparison
-    key_compare = key_unique %*% matrix(1, rows=1, cols=nrow(X))
-    key_matrix = matrix(1, rows=nrow(key_unique), cols=1) %*% t(key)
-
-    # Find group index
-    groupIndex = rowIndexMax(t(key_compare == key_matrix))
-
     # Determine the maximum number of rows in any group
     maxRowsInGroup = max(table(X[,col],1))
-    print("maxRowsin group")
-    print(toString(maxRowsInGroup))
-    totalCells = (maxRowsInGroup) * (ncol(X)-1) +1
 
-    # Create permutation matrix P copy relevant tuples with a single matrix multiplication
-    P = matrix(0, rows=nrow(X), cols=numGroups * maxRowsInGroup)
+    #calculate the frequency of each group
+    freqPerGroup = table(key, 1)
+    freqPerGroup = removeEmpty(target = freqPerGroup, margin = "rows")
+    freqPerGroupIdx = order(target = key_unique, by = 1, index.return = TRUE)
 
-    # Create row and column index for the permutation matrix
-    rowIndex = seq(1, nrow(X))
-    indexWithInGroups = cumsum(t(table(groupIndex, seq(1, nrow(X)), numGroups, nrow(X))))
-    selectedMatrix = table(seq(1, nrow(indexWithInGroups)), groupIndex)
-    print("selected Matrix")
-    print(toString(selectedMatrix))
+    # match the length of freqPerGroup to key_uniqe and sort it accordingly
+    freqPerGroup = cbind(freqPerGroup, freqPerGroupIdx)
+    ncol_fpg = ncol(freqPerGroup)
+    freqPerGroup = order(target = freqPerGroup, by= ncol_fpg)
+    freqPerGroup = freqPerGroup[, 1:ncol_fpg-1]
 
-    colIndex = groupIndex * maxRowsInGroup - maxRowsInGroup + rowSums(indexWithInGroups * selectedMatrix)
-    print(toString(indexWithInGroups))
-    print(toString(colIndex))
-
-    # Set values in P
-    P = table(seq(1, nrow(X)), colIndex)
-    print("P")
-    print(toString(t(P)))
-    # Perform matrix multiplication
-    Y_temp = t(P) %*% X
-
-
-    #Y_temp = X
-    print("Y_temp")
-    print(toString(Y_temp))
-
-
-    # new implementation
-    # order the initial matrix
-    Xindexes = order(target = X, by = col, index.return = TRUE)
-    X = order(target = X, by = col, decreasing = FALSE, index.return = FALSE)
-
-    rowPerGroup = cumsum(selectedMatrix)
-    rowPerGroup = rowPerGroup[nrow(rowPerGroup):nrow(rowPerGroup),]
-    print("rowsPerGroup")
-    print(toString(rowPerGroup))
+    rowPerGroup = t(freqPerGroup)
 
     longestRowY = maxRowsInGroup*(ncol(X)-1)+1
     biggestGroup = max(rowPerGroup)
-    print("longest row")
-    print(longestRowY)
-    print("biggest group")
-    print(biggestGroup)
-
-    n_rpg = ncol(rowPerGroup)
 
     #create matrix with the missing padding
-    biggroupseq = matrix(biggestGroup, nrow(rowPerGroup), ncol(rowPerGroup))
-    print("bi9ggroupsq")
-    print(toString(biggroupseq))
-    missingpadding = biggroupseq - rowPerGroup
-    print("missing padding")
-    print(toString(missingpadding))
-    amountofzerorows = sum(missingpadding)
-    if (amountofzerorows > 0){
-        print(amountofzerorows)
-        paddingwithoutgroups = matrix(0, rows=amountofzerorows, cols=(ncol(X)))
-        print("padding without groups")
-        print(toString(paddingwithoutgroups))
+    biggestGroupSeq = matrix(biggestGroup, nrow(rowPerGroup), ncol(rowPerGroup))
+    missingPadding = biggestGroupSeq - rowPerGroup
+    amountOfZeroRows = sum(missingPadding)
+
+    if (amountOfZeroRows > 0){
+        paddingwithoutgroups = matrix(0, rows=amountOfZeroRows, cols=(ncol(X)))
 
         # group col for padding
-        print("key unique")
-        print(toString(key_unique))
-        missingpadding_t = t(missingpadding)
-        print("missingpadding t")
-        print(toString(missingpadding_t))
-
-        r = missingpadding_t
+        r = t(missingPadding)
         g = key_unique
 
-        n_g = nrow(g)
-        n_r = nrow(r)
-        total = sum(r)
+        #loop start
+        total_repeats = sum(r)
+        A = matrix(0, rows=total_repeats, cols=1)
 
-        r_sliced = r[1:n_r-1,]
-        starts = cumsum(rbind(matrix(0, rows=n_r-nrow(r_sliced), cols=1), r_sliced))
-        output_positions = seq(0, total-1)
-        output_positions_row = t(output_positions %*% matrix(1, rows=1, cols=n_g))
+        row_idx = 1
+        A_idx_s = 1
+        for(i in 1:nrow(r)) {
+           repeat_count = as.scalar(r[i,1])
+           if(repeat_count > 0){
+               temp = matrix(as.scalar(g[i, 1]), rows=repeat_count, cols = 1)
 
-        starts_col = starts %*% matrix(1, rows=1, cols=n_r)
-        starts_col = starts_col[, 1:total]
+               A_idx_e = A_idx_s + repeat_count - 1
 
-        ends_col = (starts + r ) %*% matrix(1, rows=1, cols=n_r)
-        ends_col = ends_col[, 1:total]
-
-        in_group = (output_positions_row >= starts_col) & (output_positions_row < ends_col)
-        result = t(in_group) %*% g
-
-        print(toString(result))
+               A[A_idx_s:A_idx_e, 1] = temp
+               A_idx_s = A_idx_e + 1
+           }
+        }
 
         # insert group into the missing padding
-        paddingwithoutgroups [, col] = result
-        print("paddingwithoutgroups")
-        print(toString(paddingwithoutgroups))
-        Y_temp = X
-        Y_temp = rbind(Y_temp, paddingwithoutgroups)
+        paddingwithoutgroups [, col] = A
+        Y_temp = rbind(X, paddingwithoutgroups)
         Y_temp = order(target = Y_temp, by = col, decreasing = FALSE, index.return = FALSE)
     }
     else{
         Y_temp = X
         Y_temp = order(target = Y_temp, by = col, decreasing = FALSE, index.return = FALSE)
     }
-    print("Y_temp")
-    print(toString(Y_temp))
     # end new implementation
 
 
     # Remove the selected column from Y_temp
     if( col == 1 ) {
-        Y_temp_reduce = Y_temp[, col+1:ncol(Y_temp)]
+        Y_temp = Y_temp[, col+1:ncol(Y_temp)]
     }
     else if( col == ncol(X) ) {
-        Y_temp_reduce = Y_temp[, 1:col-1]
+        Y_temp = Y_temp[, 1:col-1]
     }
     else{
-        Y_temp_reduce = cbind(Y_temp[, 1:col-1],Y_temp[, col+1:ncol(Y_temp)])
+        Y_temp = cbind(Y_temp[, 1:col-1],Y_temp[, col+1:ncol(Y_temp)])
     }
 
-    print("Y_temp reduce")
-    print(toString(Y_temp_reduce))
 
     # Set value of final output
-    Y = matrix(0, rows=numGroups, cols=totalCells)
+    Y = matrix(0, rows=numGroups, cols=longestRowY)
     Y[,1] = key_unique
 
     # save the initial order of the groups in Y
@@ -297,24 +234,8 @@ m_raGroupby = function (Matrix[Double] X, Integer col, String method)
     # order Y by the groups increasing
     Y = order(target = Y, by = 1, decreasing = FALSE, index.return = FALSE)
 
-
-    # The permutation matrix creates a structure where each group's data
-    # may not fill exactly maxRowsInGroup rows.
-    # If needed, we need to pad to the expected size first.
-    expectedRows = numGroups * maxRowsInGroup
-    actualRows = nrow(Y_temp_reduce)
-
-    if(actualRows < expectedRows) {
-      # Pad Y_temp_reduce with zeros to match expected structure
-      Y_tmp_padded = matrix(0, rows=expectedRows, cols=ncol(Y_temp_reduce))
-      Y_tmp_padded[1:actualRows,] = Y_temp_reduce
-    } else {
-      Y_tmp_padded = Y_temp_reduce
-    }
-    print("Y_temp padded ")
-    print(toString(Y_tmp_padded))
-
-    Y[,2:ncol(Y)] = matrix(Y_tmp_padded, rows=numGroups, cols=totalCells-1)
+    # copy the values into Y
+    Y[,2:ncol(Y)] = matrix(Y_temp, rows=numGroups, cols=longestRowY-1)
 
     #restore the initial order of Y
     Y = cbind(Y, Yindexes)
@@ -322,8 +243,6 @@ m_raGroupby = function (Matrix[Double] X, Integer col, String method)
     Y = order(target = Y, by= ncol_Y)
     Y = Y[, 1:ncol_Y-1]
 
-    print("Y")
-    print(toString(Y))
 
   }
 }

@@ -52,7 +52,7 @@ from systemds.scuro.representations.swin_video_transformer import SwinVideoTrans
 from systemds.scuro.representations.tfidf import TfIdf
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.wav2vec import Wav2Vec
-from systemds.scuro.representations.window import WindowAggregation
+from systemds.scuro.representations.window_aggregation import WindowAggregation
 from systemds.scuro.representations.word2vec import W2V
 from systemds.scuro.representations.x3d import X3D
 from systemds.scuro.models.model import Model

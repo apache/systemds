@@ -470,7 +470,7 @@ public class SpoofCompiler {
 	 * @param recompile true if invoked during dynamic recompilation
 	 * @return dag root nodes of modified dag 
 	 */
-	public static ArrayList<Hop> optimize(ArrayList<Hop> roots, boolean recompile) 
+	public static ArrayList<Hop> optimize(ArrayList<Hop> roots, boolean recompile)
 	{
 		if( roots == null || roots.isEmpty() )
 			return roots;

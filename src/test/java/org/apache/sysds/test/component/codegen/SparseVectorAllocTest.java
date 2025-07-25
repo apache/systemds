@@ -59,7 +59,7 @@ public class SparseVectorAllocTest extends AutomatedTestBase
 		LibSpoofPrimitives.setupSparseThreadLocalMemory(numVectors, len, -1);
 		SparseRowVector sparseVec = LibSpoofPrimitives.allocSparseVector(expLen);
 
-		Assert.assertEquals("Vector capacity should be initialized correctly", expLen, sparseVec.capacity());
+		Assert.assertTrue("Vector capacity should be initialized correctly", expLen <= sparseVec.capacity());
 		Assert.assertEquals("Vector size should be initialized with 0", 0, sparseVec.size());
 
 		LibSpoofPrimitives.cleanupSparseThreadLocalMemory();

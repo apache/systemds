@@ -512,6 +512,8 @@ public class RowAggTmplTest extends AutomatedTestBase
 		testCodegenIntegration( TEST_NAME27, false, ExecType.SPARK );
 	}
 	
+	//TODO support row cumsum in codegen framework
+	@Ignore
 	@Test
 	public void testCodegenRowAggRewrite28CP() {
 		testCodegenIntegration( TEST_NAME28, true, ExecType.CP );

@@ -392,7 +392,7 @@ public class TemplateRow extends TemplateBase
 			{
 				if( HopRewriteUtils.isUnary(hop, SUPPORTED_VECT_UNARY) ) {
 					String opname = "VECT_"+((UnaryOp)hop).getOp().name();
-					out = new CNodeUnary(cdata1, UnaryType.valueOf(opname));
+					out = new CNodeUnary(cdata1, UnaryType.valueOf(opname), hop.getInput(0).getSparsity());
 					if( cdata1 instanceof CNodeData && !inHops2.containsKey("X") )
 						inHops2.put("X", hop.getInput().get(0));
 				}
@@ -445,8 +445,7 @@ public class TemplateRow extends TemplateBase
 					Hop hopIn1 = hop.getInput(0);
 					Hop hopIn2 = hop.getInput(1);
 					double sparsityEst = OptimizerUtils.getBinaryOpSparsity(
-						OptimizerUtils.getSparsity(hopIn1),
-						OptimizerUtils.getSparsity(hopIn2), OpOp2.valueOf(opName), false);
+						hopIn1.getSparsity(), hopIn2.getSparsity(), OpOp2.valueOf(opName), false);
 					double literalVal = hopIn1 instanceof LiteralOp ? ((LiteralOp) hopIn1).getDoubleValue()
 						: hopIn2 instanceof LiteralOp ? ((LiteralOp) hopIn2).getDoubleValue() : Double.NaN;
 					out = getVectorBinary(cdata1, cdata2, opName, sparsityEst, literalVal);

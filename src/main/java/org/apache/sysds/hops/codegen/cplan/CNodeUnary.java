@@ -87,7 +87,7 @@ public class CNodeUnary extends CNode
 	
 	private UnaryType _type;
 	private boolean sparseTemplate;
-	
+
 	public CNodeUnary( CNode in1, UnaryType type ) {
 		_inputs.add(in1);
 		_type = type;
@@ -100,7 +100,7 @@ public class CNodeUnary extends CNode
 		setOutputDims();
 		sparseTemplate = getTemplateType(sparsity);
 	}
-	
+
 	public UnaryType getType() {
 		return _type;
 	}

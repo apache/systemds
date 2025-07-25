@@ -557,6 +557,8 @@ public class InstructionUtils {
 		Builtin f = (Builtin)uop.fn;
 		if( f.getBuiltinCode()==BuiltinCode.CUMSUM ) 
 			return parseBasicAggregateUnaryOperator(Opcodes.UACKP.toString()) ;
+		else if( f.getBuiltinCode()==BuiltinCode.ROWCUMSUM )
+			return parseBasicAggregateUnaryOperator(Opcodes.UARCKP.toString()) ;
 		else if( f.getBuiltinCode()==BuiltinCode.CUMPROD ) 
 			return parseBasicAggregateUnaryOperator(Opcodes.UACM.toString()) ;
 		else if( f.getBuiltinCode()==BuiltinCode.CUMMIN ) 

@@ -291,6 +291,7 @@ public enum Builtins {
 	ROLL("roll", false),
 	ROUND("round", false),
 	ROW_COUNT_DISTINCT("rowCountDistinct",false),
+	ROWCUMSUM("rowcumsum", false),
 	ROWINDEXMAX("rowIndexMax", false),
 	ROWINDEXMIN("rowIndexMin", false),
 	ROWMAX("rowMaxs", false),

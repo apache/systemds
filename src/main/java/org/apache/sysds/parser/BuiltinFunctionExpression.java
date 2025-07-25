@@ -1034,6 +1034,7 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			break;
 		
 		case CUMSUM:
+		case ROWCUMSUM:
 		case CUMPROD:
 		case CUMSUMPROD:
 		case CUMMIN:

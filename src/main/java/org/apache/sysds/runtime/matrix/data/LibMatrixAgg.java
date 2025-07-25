@@ -112,6 +112,7 @@ public class LibMatrixAgg {
 		SUM, 
 		SUM_SQ,
 		CUM_KAHAN_SUM,
+		ROW_CUM_SUM,
 		CUM_MIN,
 		CUM_MAX,
 		CUM_PROD,
@@ -783,6 +784,7 @@ public class LibMatrixAgg {
 			BuiltinCode bfunc = ((Builtin) vfn).bFunc;
 			switch( bfunc ) {
 				case CUMSUM:     return AggType.CUM_KAHAN_SUM;
+				case ROWCUMSUM:	 return AggType.ROW_CUM_SUM;
 				case CUMPROD:    return AggType.CUM_PROD;
 				case CUMMIN:     return AggType.CUM_MIN;
 				case CUMMAX:     return AggType.CUM_MAX;
@@ -1548,6 +1550,12 @@ public class LibMatrixAgg {
 				d_ucumkp(in.getDenseBlock(), null, out.getDenseBlock(), n, kbuff, kplus, rl, ru);
 				break;
 			}
+			case ROW_CUM_SUM: { //ROWCUMSUM
+				KahanObject kbuff = new KahanObject(0, 0);
+				KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+				d_urowcumkp(in.getDenseBlock(), null, out.getDenseBlock(), n, kbuff, kplus, rl, ru);
+				break;
+			}
 			case CUM_PROD: { //CUMPROD
 				d_ucumm(in.getDenseBlockValues(), null, out.getDenseBlockValues(), n, rl, ru);
 				break;
@@ -1666,6 +1674,12 @@ public class LibMatrixAgg {
 				s_ucumkp(a, null, out.getDenseBlock(), m, n, kbuff, kplus, rl, ru);
 				break;
 			}
+			case ROW_CUM_SUM: { //ROWCUMSUM
+				KahanObject kbuff = new KahanObject(0, 0);
+				KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+				s_urowcumkp(a, null, out.getDenseBlock(), m, n, kbuff, kplus, rl, ru);
+				break;
+			}
 			case CUM_PROD: { //CUMPROD
 				s_ucumm(a, null, out.getDenseBlockValues(), n, rl, ru);
 				break;
@@ -1747,6 +1761,12 @@ public class LibMatrixAgg {
 				d_ucumkp(da, agg, dc, n, kbuff, kplus, rl, ru);
 				break;
 			}
+			case ROW_CUM_SUM: { //ROWCUMSUM
+				KahanObject kbuff = new KahanObject(0, 0);
+				KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+				d_urowcumkp(da, agg, dc, n, kbuff, kplus, rl, ru);
+				break;
+			}
 			case CUM_SUM_PROD: { //CUMSUMPROD
 				if( n != 2 )
 					throw new DMLRuntimeException("Cumsumprod expects two-column input (n="+n+").");
@@ -1791,6 +1811,12 @@ public class LibMatrixAgg {
 				s_ucumkp(a, agg, dc, m, n, kbuff, kplus, rl, ru);
 				break;
 			}
+			case ROW_CUM_SUM: { //ROWCUMSUM
+				KahanObject kbuff = new KahanObject(0, 0);
+				KahanPlus kplus = KahanPlus.getKahanPlusFnObject();
+				s_urowcumkp(a, agg, dc, m, n, kbuff, kplus, rl, ru);
+				break;
+			}
 			case CUM_SUM_PROD: { //CUMSUMPROD
 				if( n != 2 )
 					throw new DMLRuntimeException("Cumsumprod expects two-column input (n="+n+").");
@@ -1821,6 +1847,7 @@ public class LibMatrixAgg {
 				case SUM: 
 				case SUM_SQ:
 				case KAHAN_SUM:
+				case ROW_CUM_SUM:
 				case KAHAN_SUM_SQ: val = 0; break;
 				case MIN:          val = Double.POSITIVE_INFINITY; break;
 				case MAX:          val = Double.NEGATIVE_INFINITY; break;
@@ -1838,7 +1865,7 @@ public class LibMatrixAgg {
 		if(optype == AggType.KAHAN_SUM || optype == AggType.KAHAN_SUM_SQ
 				|| optype == AggType.SUM || optype == AggType.SUM_SQ 
 				|| optype == AggType.MIN || optype == AggType.MAX || optype == AggType.PROD
-				|| optype == AggType.CUM_KAHAN_SUM || optype == AggType.CUM_PROD
+				|| optype == AggType.CUM_KAHAN_SUM || optype == AggType.ROW_CUM_SUM || optype == AggType.CUM_PROD
 				|| optype == AggType.CUM_MIN || optype == AggType.CUM_MAX)
 		{
 			return out;
@@ -2097,6 +2124,39 @@ public class LibMatrixAgg {
 		for( int i=rl; i<ru; i++ ) {
 			sumAgg( a.values(i), csums, a.pos(i), n, kbuff, kplus );
 			c.set(i, csums.values(0));
+		}
+	}
+
+	/**
+	 * ROWCUMSUM, opcode: urowcumk+, dense input.
+	 *
+	 * @param a input matrix
+	 * @param agg initial array
+	 * @param c output matrix
+	 * @param n number of rows
+	 * @param kbuff collects sum
+	 * @param kplus sums up
+	 * @param rl row lower index
+	 * @param ru row upper index
+	 */
+	private static void d_urowcumkp( DenseBlock a, double[] agg, DenseBlock c, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru ) {
+		//row-wise cumulative sum w/ optional row offsets
+		for (int i = rl; i < ru; i++) {
+			double start = 0.0;
+			int localRow = i - rl;
+			if (agg != null) {
+				if (localRow >= 0 && localRow < agg.length) {
+					start = agg[localRow];
+				}
+			}
+			kbuff.set(start, 0);
+			//compute cumulative sum over row
+			for (int j = 0; j < n; j++) {
+				double val = a.get(i, j);
+				kplus.execute2(kbuff, val);
+				c.set(i, j, kbuff._sum);
+			}
+
 		}
 	}
 	
@@ -2748,6 +2808,51 @@ public class LibMatrixAgg {
 				sumAgg( a.values(i), csums, a.indexes(i), a.pos(i), a.size(i), n, kbuff, kplus );
 			//always copy current sum (not sparse-safe)
 			c.set(i, csums.values(0));
+		}
+	}
+
+	/**
+	 * ROWCUMSUM, opcode: urowcumk+, sparse input.
+	 *
+	 * @param a input matrix
+	 * @param agg intial array
+	 * @param c output matrix
+	 * @param m number of columns
+	 * @param n number of rows
+	 * @param kbuff collects sum
+	 * @param kplus sums up
+	 * @param rl row lower index
+	 * @param ru row upper index
+	 */
+	private static void s_urowcumkp(SparseBlock a, double[] agg, DenseBlock c, int m, int n, KahanObject kbuff, KahanPlus kplus, int rl, int ru) {
+		//scan rows and compute row-wise prefix sums
+		for (int i = rl; i < ru; i++) {
+			double start = 0.0;
+			int localRow = i - rl;
+			if (agg != null && localRow >= 0 && localRow < agg.length)
+				start = agg[localRow];
+			if (!a.isEmpty(i)) {
+				double[] ain = a.values(i);
+				int[] aix = a.indexes(i);
+				int apos = a.pos(i);
+				int alen = a.size(i);
+				kbuff.set(start, 0);
+				int sparseIdx = 0;
+				//prefix sum over sparse row
+				for (int j = 0; j < n; j++) {
+					if (sparseIdx < alen && aix[apos + sparseIdx] == j) {
+						kplus.execute2(kbuff, ain[apos + sparseIdx]);
+						start = kbuff._sum;
+						sparseIdx++;
+					}
+					c.set(i, j, start);
+				}
+			}
+			else {
+				//fill empty row with start value
+				for (int j = 0; j < n; j++)
+					c.set(i, j, start);
+			}
 		}
 	}
 	

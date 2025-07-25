@@ -2243,12 +2243,16 @@ public class LibSpoofPrimitives
 		return c;
 	}
 
-	public static void vectWrite(SparseRowVector a, double[] c, int ci, int len) {
+	public static void vectWrite(double[] a, int[] aix, double[] c, int ci, int len) {
 		if( a == null ) return;
-		int[] aix = a.indexes();
-		double[] avals = a.values();
-		for(int j = 0; j < a.size(); j++)
-			c[ci+aix[j]] = avals[j];
+		for(int j = 0; j < len; j++)
+			c[ci+aix[j]] = a[j];
+	}
+
+	public static void vectWrite(int len, double[] a, double[] c, int[] aix, int ai, int ci, int alen) {
+		if( a == null ) return;
+		for(int j = 0; j < ai+alen; j++)
+			c[ci+aix[j]] = a[j];
 	}
 
 	public static SparseRowVector vectDivWrite(int len, double[] a, double bval, int[] aix, int ai, int alen) {

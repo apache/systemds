@@ -21,11 +21,72 @@
 
 import unittest
 import logging
+import io
+import sys
+from contextlib import redirect_stdout, redirect_stderr
 
 from systemds.context import SystemDSContext
 
 
 class TestContextCreation(unittest.TestCase):
+
+    def test_random_port_debug(self):
+        SystemDSContext._logging_initialized = False
+
+        stderr_buffer = io.StringIO()
+
+        with redirect_stderr(stderr_buffer):
+            sds1 = SystemDSContext(logging_level=10)
+            sds1.close()
+
+        err = stderr_buffer.getvalue()
+        print("Captured STDERR:\n", err)
+        print("END OF STDERR\n")
+
+        self.assertIn("DEBUG SystemDSContext: Logging setup done", err)
+
+    def test_random_port_debug2(self):
+        SystemDSContext._logging_initialized = False
+
+        stderr_buffer = io.StringIO()
+
+        with redirect_stderr(stderr_buffer):
+            sds1 = SystemDSContext()
+            sds1.close()
+
+            err = stderr_buffer.getvalue()
+            print("\nCaptured STDERR (ctx1):\n", err)
+            print("END OF STDERR\n")
+
+            # clear the buffer
+            stderr_buffer.seek(0)
+            stderr_buffer.truncate(0)
+
+            sds2 = SystemDSContext(logging_level=10)
+            sds2.close()
+
+        err = stderr_buffer.getvalue()
+        print("\nCaptured STDERR (ctx2):\n", err)
+        print("END OF STDERR\n")
+
+        self.assertIn("DEBUG SystemDSContext: Logging setup done", err)
+
+    def test_random_port_debug3(self):
+        SystemDSContext._logging_initialized = False
+
+        sds1 = SystemDSContext()
+        sds1.close()
+        stderr_buffer = io.StringIO()
+
+        with redirect_stderr(stderr_buffer):
+            sds2 = SystemDSContext(logging_level=10)
+            sds2.close()
+
+        err = stderr_buffer.getvalue()
+        print("\nCaptured STDERR (ctx2):\n", err)
+        print("END OF STDERR\n")
+
+        self.assertIn("DEBUG SystemDSContext: Logging setup done", err)
 
     def test_random_port(self):
         sds1 = SystemDSContext()

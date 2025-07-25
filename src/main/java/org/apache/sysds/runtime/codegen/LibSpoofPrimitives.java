@@ -2249,7 +2249,7 @@ public class LibSpoofPrimitives
 			c[ci+aix[j]] = a[j];
 	}
 
-	public static void vectWrite(int len, double[] a, double[] c, int[] aix, int ai, int ci, int alen) {
+	public static void vectWrite(double[] a, double[] c, int[] aix, int ai, int ci, int alen) {
 		if( a == null ) return;
 		for(int j = 0; j < ai+alen; j++)
 			c[ci+aix[j]] = a[j];

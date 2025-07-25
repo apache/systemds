@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-source("nn/layers/batch_norm2d.dml") as bn2d
+source("nn/layers/batch_norm2d_old.dml") as bn2d
 source("nn/layers/conv2d_builtin.dml") as conv2d
 source("nn/layers/relu.dml") as relu
 source("nn/layers/max_pool2d_builtin.dml") as mp2d

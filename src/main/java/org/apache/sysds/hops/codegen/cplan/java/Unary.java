@@ -26,7 +26,7 @@ import org.apache.sysds.hops.codegen.cplan.CodeTemplate;
 
 public class Unary extends CodeTemplate {
 	@Override
-	public String getTemplate(UnaryType type, boolean sparse) {
+	public String getTemplate(UnaryType type, boolean sparse, boolean sparseTemplate) {
 		switch( type ) {
 			case ROW_SUMS:
 			case ROW_SUMSQS:
@@ -53,7 +53,7 @@ public class Unary extends CodeTemplate {
 			case VECT_TANH:
 			case VECT_SIGN:{
 				String vectName = type.getVectorPrimitiveName();
-				return sparse ? DMLScript.SPARSE_INTERMEDIATE ?
+				return sparse ? sparseTemplate ?
 					"    SparseRowVector %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(len, %IN1v%, %IN1i%, %POS1%, alen);\n" :
 					"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN1i%, %POS1%, alen, len);\n" :
 					"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %POS1%, %LEN%);\n";

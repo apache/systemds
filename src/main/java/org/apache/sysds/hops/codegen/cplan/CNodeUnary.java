@@ -126,7 +126,7 @@ public class CNodeUnary extends CNode
 				&& !_inputs.get(0).isLiteral())
 				|| _inputs.get(0).getVarname().startsWith("STMP"));
 		String var = createVarname(sparseTemplate && lsparse && getOutputType());
-		String tmp = getLanguageTemplateClass(this, api).getTemplate(_type, lsparse);
+		String tmp = getLanguageTemplateClass(this, api).getTemplate(_type, lsparse, sparseTemplate);
 		tmp = tmp.replaceAll("%TMP%", var);
 		
 		//replace sparse and dense inputs

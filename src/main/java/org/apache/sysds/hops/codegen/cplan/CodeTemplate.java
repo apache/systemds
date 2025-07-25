@@ -52,6 +52,10 @@ public abstract class CodeTemplate {
 	public String getTemplate(CNodeUnary.UnaryType type, boolean sparse) {
 		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
 	}
+
+	public String getTemplate(CNodeUnary.UnaryType type, boolean sparse, boolean sparseTemplate) {
+		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
+	}
 	
 	public static String getTemplate(String templateFileName) {
 		try {

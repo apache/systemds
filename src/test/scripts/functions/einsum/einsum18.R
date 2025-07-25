@@ -25,12 +25,12 @@ library("Matrix")
 library("matrixStats")
 library("einsum")
 
-A0 = matrix(seq(1,500), 10, 50, byrow=TRUE) * 0.0001
-A1 = matrix(seq(1,800), 10, 80, byrow=TRUE) * 0.0001
+A0 = matrix(seq(1,250), 10, 25, byrow=TRUE) * 0.0001
+A1 = matrix(seq(1,200), 10, 20, byrow=TRUE) * 0.0001
 A2 = matrix(seq(1,30), 10, 3, byrow=TRUE) * 0.0001
-A3 = matrix(seq(1,4000), 50, 80, byrow=TRUE) * 0.0001
-A4 = matrix(seq(1,120), 3, 40, byrow=TRUE) * 0.0001
-A5 = seq(1,40) * 0.0001
+A3 = matrix(seq(1,500), 25, 20, byrow=TRUE) * 0.0001
+A4 = matrix(seq(1,33), 3, 11, byrow=TRUE) * 0.0001
+A5 = seq(1,11) * 0.0001
 A6 = seq(1,3) * 0.0001
 
 R = einsum("fx,fg,fz,xg,pq,q,p->zp", A0, A1, A2, A3, A4, A5, A6)

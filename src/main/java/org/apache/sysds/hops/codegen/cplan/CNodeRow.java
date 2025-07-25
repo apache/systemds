@@ -163,8 +163,8 @@ private static final String TEMPLATE_ROWAGG_OUT_CUDA  = "\t\tif(threadIdx.x == 0
 			case NO_AGG_B1:
 			case NO_AGG_CONST:
 				if(api == GeneratorAPI.JAVA)
-					return TEMPLATE_NOAGG_OUT.replace("%IN%", varName).replace("%LEN%",
-						_output.getVarname().startsWith("STMP") ? _output.getVarname()+".size()" : _output.getVarname()+".length");
+					return TEMPLATE_NOAGG_OUT.replace("%IN%", varName.startsWith("STMP")?varName+".values(), "+varName+".indexes()":varName).replace("%LEN%",
+						varName.startsWith("STMP") ? varName+".size()" : _output.getVarname()+".length");
 				else
 					return TEMPLATE_NOAGG_CONST_OUT_CUDA.replace("%IN%", varName + ".vals(0)").replaceAll("%LEN%", _output.getVarname()+".length");
 			case FULL_AGG:

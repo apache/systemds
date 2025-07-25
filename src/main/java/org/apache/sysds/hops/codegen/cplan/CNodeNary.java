@@ -60,7 +60,10 @@ public class CNodeNary extends CNode
 							sb.append( sparseInput ?
 								"    LibSpoofPrimitives.vectWrite("+varj+"vals, %TMP%, "
 									+varj+"ix, "+pos+", "+off+", "+input._cols+");\n" :
-								"    LibSpoofPrimitives.vectWrite("+(varj.startsWith("b")?varj+".values(rix)":varj)
+								varj.startsWith("STMP") ?
+									"    LibSpoofPrimitives.vectWrite("+input._cols+", "+varj+".values(), %TMP%, "
+										+varj+".indexes(), "+pos+", "+off+", "+varj+".size());\n" :
+									"    LibSpoofPrimitives.vectWrite("+(varj.startsWith("b")?varj+".values(rix)":varj)
 									+", %TMP%, "+pos+", "+off+", "+input._cols+");\n");
 							off += input._cols;	
 						}

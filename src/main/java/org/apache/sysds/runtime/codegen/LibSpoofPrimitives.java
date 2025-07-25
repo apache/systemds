@@ -2259,7 +2259,7 @@ public class LibSpoofPrimitives
 		SparseRowVector c = allocSparseVector(alen);
 		int[] indexes = c.indexes();
 		double[] values = c.values();
-		for( int j = ai; j < ai+alen; j++ ) {
+		for( int j = 0; j < ai+alen; j++ ) {
 			indexes[j] = aix[j];
 			values[j] = a[j] / bval;
 		}

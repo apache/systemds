@@ -187,13 +187,13 @@ public class CNodeBinary extends CNode {
 						varj.startsWith("b") ? (api == GeneratorAPI.JAVA ? varj + ".values(rix)" : 
 								(_type == BinType.VECT_MATRIXMULT ? varj : varj + ".vals(0)")) :
 							_inputs.get(j).getDataType() == DataType.MATRIX ? (api == GeneratorAPI.JAVA ? varj : varj + ".vals(0)") : varj);
-
+			
 			//replace start position of main input
-			tmp = tmp.replace("%POS"+(j+1)+"%", (_inputs.get(j) instanceof CNodeData
-					&& _inputs.get(j).getDataType().isMatrix()) ? (!varj.startsWith("b")) ? varj+"i" :
+			tmp = tmp.replace("%POS"+(j+1)+"%", (_inputs.get(j) instanceof CNodeData 
+					&& _inputs.get(j).getDataType().isMatrix()) ? (!varj.startsWith("b")) ? varj+"i" : 
 					((TemplateUtils.isMatrix(_inputs.get(j)) || (_type.isElementwise()
-							&& TemplateUtils.isColVector(_inputs.get(j)))) && _type!=BinType.VECT_MATRIXMULT) ?
-							varj + ".pos(rix)" : "0" : "0");
+						&& TemplateUtils.isColVector(_inputs.get(j)))) && _type!=BinType.VECT_MATRIXMULT) ?
+					varj + ".pos(rix)" : "0" : "0");
 		}
 		//replace length information (e.g., after matrix mult)
 		if( _type == BinType.VECT_OUTERMULT_ADD || (_type == BinType.VECT_CBIND && vectorVector) ) {

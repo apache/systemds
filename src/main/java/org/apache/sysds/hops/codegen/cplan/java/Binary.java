@@ -76,7 +76,7 @@ public class Binary extends CodeTemplate {
 					return sparseRhs ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2v%, %IN2i%, %POS2%, alen, %LEN%);\n" :
 						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS2%, %LEN%);\n";
 				else if(DMLScript.SPARSE_INTERMEDIATE) {
-					return sparseLhs ? "    SparseRowVector %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%LEN%, %IN1v%, %IN2%, %IN1i%, %POS1%, %LEN1%);\n" :
+					return sparseLhs ? "    SparseRowVector %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%LEN%, %IN1v%, %IN2%, %IN1i%, %POS1%, %SLEN1%);\n" :
 						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS1%, %LEN%);\n";
 				} else {
 					return sparseLhs ? "    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" :
@@ -97,11 +97,11 @@ public class Binary extends CodeTemplate {
 				String vectName = type.getVectorPrimitiveName();
 				if(scalarVector) {
 					if(sparseRhs)
-						return DMLScript.SPARSE_INTERMEDIATE ? "    SparseRowVector %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%LEN%, %IN1%, %IN2v%, %IN2i%, %POS2%, %LEN1%);\n" :
+						return DMLScript.SPARSE_INTERMEDIATE ? "    SparseRowVector %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%LEN%, %IN1%, %IN2v%, %IN2i%, %POS2%, %SLEN1%);\n" :
 							"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2v%, %IN2i%, %POS2%, alen, %LEN%);\n";
 				} else {
 					if(sparseLhs)
-						return DMLScript.SPARSE_INTERMEDIATE ? "    SparseRowVector %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%LEN%, %IN1v%, %IN2%, %IN1i%, %POS1%, %LEN1%);\n" :
+						return DMLScript.SPARSE_INTERMEDIATE ? "    SparseRowVector %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%LEN%, %IN1v%, %IN2%, %IN1i%, %POS1%, %SLEN1%);\n" :
 							"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n";
 				}
 				return 	"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS1%, %LEN%);\n";

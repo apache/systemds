@@ -179,14 +179,8 @@ m_raGroupby = function (Matrix[Double] X, Integer col, String method)
 
 
     if (amountOfZeroRows > 0){
-
-        paddingwithoutgroups = matrix(0, rows = amountOfZeroRows, cols = (ncol(X)))
+        #paddingwithoutgroups = matrix(0, rows = amountOfZeroRows, cols = (ncol(X)))
         missingPadding = t(missingPadding)
-
-        g = key_unique
-
-        length_g = nrow(key_unique)
-        max_mp = sum(missingPadding)
 
         removemask = (missingPadding != 0)
 
@@ -198,34 +192,46 @@ m_raGroupby = function (Matrix[Double] X, Integer col, String method)
         keysPadding = missingPadding[,1]
         missingPadding = missingPadding[,2]
 
-        lenKeysPadding = nrow(keysPadding)
+       g = keysPadding
+       r = missingPadding
+
+       total_repeats = sum(r)
+       A = matrix(0, rows=total_repeats, cols=1)
+
+       row_idx = 1
+       A_idx_s = 1
+       for(i in 1:nrow(r)) {
+          repeat_count = as.scalar(r[i,1])
+          if(repeat_count > 0){
+              temp = matrix(as.scalar(g[i, 1]), rows=repeat_count, cols = 1)
+              A_idx_e = A_idx_s + repeat_count - 1
+              A[A_idx_s:A_idx_e, 1] = temp
+              A_idx_s = A_idx_e + 1
+          }
+       }
+
+        #paddingwithoutgroups [, col] = A
+        #paddingwithoutgroups = paddingwithoutgroups [, col:col+1]
+        padding = matrix(0, rows = nrow(A), cols = 1)
+        paddingwithoutgroups = cbind(A, padding)
+        key_e = key %*% matrix(1, rows = 1, cols = 2)
+
+        Y_temp = rbind(key_e, paddingwithoutgroups)
+
+        Y_temp = order(target = Y_temp, by = 1, decreasing = FALSE, index.return = FALSE)
+        zero = Y_temp[, 2]
 
 
-        missingPadding = missingPadding %*% matrix(1, rows=1, cols = amountOfZeroRows)
+        Y_temp_idx = order(target = Y_temp, by = 1, decreasing = FALSE, index.return = TRUE)
+        Y_temp_idx = removeEmpty(target = Y_temp_idx, margin = "rows", select = (zero!=0))
 
+        P = table(seq(1, nrow(X)), Y_temp_idx)
 
-        mask = t(seq(1, amountOfZeroRows))
+        # order the initial matrix
+        Xindexes = order(target = X, by = col, index.return = TRUE)
+        X = order(target = X, by = col, decreasing = FALSE, index.return = FALSE)
 
-        mask = matrix(1, rows=lenKeysPadding, cols = 1) %*% mask
-
-
-        mask = mask - missingPadding
-        mask = (mask <= 0)
-
-        keysPadding =  keysPadding %*% matrix(1, rows=1, cols = amountOfZeroRows)
-
-
-        missingPadding = keysPadding * mask
-        total_cells = nrow(missingPadding)*ncol(missingPadding)
-
-        missingPadding = matrix(missingPadding, rows = total_cells, cols =1)
-        missingPadding = removeEmpty(target = missingPadding, margin = "rows")
-
-
-        # insert group into the missing padding
-        paddingwithoutgroups [, col] = missingPadding
-        Y_temp = rbind(X, paddingwithoutgroups)
-        Y_temp = order(target = Y_temp, by = col, decreasing = FALSE, index.return = FALSE)
+        Y_temp = t(P) %*% X
     }
     else{
         Y_temp = X
@@ -250,6 +256,22 @@ m_raGroupby = function (Matrix[Double] X, Integer col, String method)
     Y = matrix(0, rows=numGroups, cols=longestRowY)
     Y[,1] = key_unique
 
+    # The permutation matrix creates a structure where each group's data
+    # may not fill exactly maxRowsInGroup rows.
+    # If needed, we need to pad to the expected size first.
+    expectedRows = numGroups * maxRowsInGroup
+    actualRows = nrow(Y_temp)
+
+    if(actualRows < expectedRows) {
+      # Pad Y_temp with zeros to match expected structure
+      Y_tmp_padded = matrix(0, rows=expectedRows, cols=ncol(Y_temp))
+      Y_tmp_padded[1:actualRows,] = Y_temp
+    } else {
+      Y_tmp_padded = Y_temp
+    }
+
+
+
     # save the initial order of the groups in Y
     Yindexes = order(target = Y, by = 1, index.return = TRUE)
 
@@ -257,14 +279,14 @@ m_raGroupby = function (Matrix[Double] X, Integer col, String method)
     Y = order(target = Y, by = 1, decreasing = FALSE, index.return = FALSE)
 
     # copy the values into Y
-    Y[,2:ncol(Y)] = matrix(Y_temp, rows=numGroups, cols=longestRowY-1)
-
+    #Y[,2:ncol(Y)] = matrix(Y_temp, rows=numGroups, cols=longestRowY-1)
+    Y[,2:ncol(Y)] = matrix(Y_tmp_padded, rows=numGroups, cols=longestRowY-1)
+    #Y = X
     #restore the initial order of Y
     Y = cbind(Y, Yindexes)
     ncol_Y = ncol(Y)
     Y = order(target = Y, by= ncol_Y)
     Y = Y[, 1:ncol_Y-1]
-
 
   }
 }

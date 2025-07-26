@@ -172,36 +172,58 @@ m_raGroupby = function (Matrix[Double] X, Integer col, String method)
 
     #create matrix with the missing padding
     biggestGroupSeq = matrix(biggestGroup, nrow(rowPerGroup), ncol(rowPerGroup))
+
     missingPadding = biggestGroupSeq - rowPerGroup
+
     amountOfZeroRows = sum(missingPadding)
 
-    if (amountOfZeroRows > 0){
-        paddingwithoutgroups = matrix(0, rows=amountOfZeroRows, cols=(ncol(X)))
 
-        # group col for padding
-        r = t(missingPadding)
+    if (amountOfZeroRows > 0){
+
+        paddingwithoutgroups = matrix(0, rows = amountOfZeroRows, cols = (ncol(X)))
+        missingPadding = t(missingPadding)
+
         g = key_unique
 
-        #loop start
-        total_repeats = sum(r)
-        A = matrix(0, rows=total_repeats, cols=1)
+        length_g = nrow(key_unique)
+        max_mp = sum(missingPadding)
 
-        row_idx = 1
-        A_idx_s = 1
-        for(i in 1:nrow(r)) {
-           repeat_count = as.scalar(r[i,1])
-           if(repeat_count > 0){
-               temp = matrix(as.scalar(g[i, 1]), rows=repeat_count, cols = 1)
+        removemask = (missingPadding != 0)
 
-               A_idx_e = A_idx_s + repeat_count - 1
+        missingPadding = cbind(key_unique, missingPadding)
 
-               A[A_idx_s:A_idx_e, 1] = temp
-               A_idx_s = A_idx_e + 1
-           }
-        }
+        missingPadding = removeEmpty(target = missingPadding, margin = "rows", select = removemask)
+
+
+        keysPadding = missingPadding[,1]
+        missingPadding = missingPadding[,2]
+
+        lenKeysPadding = nrow(keysPadding)
+
+
+        missingPadding = missingPadding %*% matrix(1, rows=1, cols = amountOfZeroRows)
+
+
+        mask = t(seq(1, amountOfZeroRows))
+
+        mask = matrix(1, rows=lenKeysPadding, cols = 1) %*% mask
+
+
+        mask = mask - missingPadding
+        mask = (mask <= 0)
+
+        keysPadding =  keysPadding %*% matrix(1, rows=1, cols = amountOfZeroRows)
+
+
+        missingPadding = keysPadding * mask
+        total_cells = nrow(missingPadding)*ncol(missingPadding)
+
+        missingPadding = matrix(missingPadding, rows = total_cells, cols =1)
+        missingPadding = removeEmpty(target = missingPadding, margin = "rows")
+
 
         # insert group into the missing padding
-        paddingwithoutgroups [, col] = A
+        paddingwithoutgroups [, col] = missingPadding
         Y_temp = rbind(X, paddingwithoutgroups)
         Y_temp = order(target = Y_temp, by = col, decreasing = FALSE, index.return = FALSE)
     }

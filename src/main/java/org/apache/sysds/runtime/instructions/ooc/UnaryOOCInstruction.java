@@ -22,7 +22,7 @@ public class UnaryOOCInstruction extends ComputationOOCInstruction {
         CPOperand out = new CPOperand(parts[2]);
 
         UnaryOperator uopcode = InstructionUtils.parseUnaryOperator(opcode);
-        return new UnaryOOCInstruction(OOCType.Unary, uopcode, in1, out, str);
+        return new UnaryOOCInstruction(OOCType.Unary, uopcode, in1, out, str, str);
     }
 
     public void processInstruction( ExecutionContext ec ) {

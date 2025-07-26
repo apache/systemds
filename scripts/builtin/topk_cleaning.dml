@@ -19,8 +19,44 @@
 #
 #-------------------------------------------------------------
 
-# This function cleans top-K item (where K is given as input)for a given list of users.
+# This function cleans top-K item (where K is given as input) for a given list of users.
 # metaData[3, ncol(X)] : metaData[1] stores mask, metaData[2] stores schema, metaData[3] stores FD mask
+#
+# INPUT:
+# ------------------------------------------------------------------------------
+# dataTrain           Training set
+# dataTest            Test set ignored when cv is set to True
+# metaData            3×n frame with schema, categorical mask, and FD mask for dataTrain
+# primitives          Library of primitive cleaning operators
+# parameters          Hyperparameter search space that matches the primitives
+# refSol              Reference solution
+# evaluationFunc      Name of a SystemDS DML function that scores a pipeline
+# evalFunHp           Hyperparameter matrix for the above evaluation function
+# topK                Number of best pipelines to return
+# resource_val        Maximum resource R for the Bandit search
+# max_iter            Maximum iterations while enumerating logical pipelines
+# lq                  Lower quantile used by utils::doErrorSample when triggered
+# uq                  Upper quantile used by utils::doErrorSample when triggered
+# sample              Fraction of rows to subsample from dataTrain
+# expectedIncrease    Minimum improvement over dirtyScore that a candidate must deliver
+# seed                Seed number
+# cv                  TRUE means k-fold CV, FALSE means hold-out split
+# cvk                 Number of folds if cv = TRUE
+# isLastLabel         TRUE if the last column is the label
+# rowCount            Row-count threshold above which doErrorSample may replace uniform sampling
+# correctTypos        Run spelling correction in the string preprocessing step
+# enablePruning       Enable pruning inside the Bandit phase
+# ------------------------------------------------------------------------------
+#
+# OUTPUT:
+#-------------------------------------------------------------------------------
+# topKPipelines       K cleaned-data pipelines
+# topKHyperParams     Hyperparameter matrix with rows aligning with topKPipelines
+# topKScores          Evaluation scores with rows aligning with topKPipelines
+# dirtyScore          Baseline score on the unclean data
+# evalFunHps          Updated evaluation function hyperparameters
+# evalFunHp           Frame of “apply” functions for deploying each of the top-K pipelines
+#-------------------------------------------------------------------------------
 
 source("scripts/pipelines/scripts/utils.dml") as utils;
 source("scripts/pipelines/scripts/enumerateLogical.dml") as lg;
@@ -32,7 +68,7 @@ f_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   Boolean isLastLabel = TRUE, Integer rowCount = 3700,
   Boolean correctTypos=FALSE, Boolean enablePruning = FALSE)
   return (Frame[Unknown] topKPipelines, Matrix[Double] topKHyperParams, Matrix[Double] topKScores,
-    Double dirtyScore, Matrix[Double] evalFunHp, Frame[Unknown] applyFunc)
+    Double dirtyScore, Matrix[Double] evalFunHp, Frame[Unknown] evalFunHp)
 {
   t1 = time(); print("TopK-Cleaning:");
   

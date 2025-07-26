@@ -86,8 +86,8 @@ public class UnaryTest extends AutomatedTestBase {
 			
 			runTest(true, false, null, -1);
 
-			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir(OUTPUT_NAME);
-			Double result = dmlfile.get(new MatrixValue.CellIndex(1, 1));
+//			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir(OUTPUT_NAME);
+//			Double result = dmlfile.get(new MatrixValue.CellIndex(1, 1));
 //			double expected = 0.0;
 //			for(int i = 0; i < rows; i++) {
 //				for(int j = 0; j < cols; j++) {

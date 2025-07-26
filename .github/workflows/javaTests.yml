@@ -83,7 +83,8 @@ jobs:
           "**.functions.unary.scalar.**,**.functions.updateinplace.**,**.functions.vect.**",
           "**.functions.reorg.**,**.functions.rewrite.**,**.functions.ternary.**",
           "**.functions.transform.**","**.functions.unique.**",
-          "**.functions.unary.matrix.**,**.functions.linearization.**,**.functions.jmlc.**"
+          "**.functions.unary.matrix.**,**.functions.linearization.**,**.functions.jmlc.**",
+          "**.functions.einsum.**",
         ]
     name: ${{ matrix.tests }}
     steps:

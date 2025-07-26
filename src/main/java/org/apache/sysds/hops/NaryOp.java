@@ -26,6 +26,7 @@ import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.Nary;
+import org.apache.sysds.runtime.einsum.EinsumEquationValidator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
@@ -234,6 +235,14 @@ public class NaryOp extends Hop {
 			case LIST:
 				setDim1(getInput().size());
 				setDim2(1);
+				break;
+			case EINSUM:
+				String equationString = ((LiteralOp) _input.get(0)).getStringValue();
+				var dims = EinsumEquationValidator.validateEinsumEquationAndReturnDimensions(equationString, this.getInput().subList(1, this.getInput().size()));
+
+				setDim1(dims.getLeft());
+				setDim2(dims.getMiddle());
+				setDataType(dims.getRight());
 				break;
 			case PRINTF:
 			case EVAL:

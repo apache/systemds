@@ -77,7 +77,7 @@ public class UnaryTest extends AutomatedTestBase {
 			programArgs = new String[] {"-explain", "-stats", "-ooc", 
 				"-args", input(INPUT_NAME), output(OUTPUT_NAME)};
 
-			int rows = 3500, cols = 4;
+			int rows = 3500, cols = 1000;
 			MatrixBlock mb = MatrixBlock.randOperations(rows, cols, 1.0, -1, 1, "uniform", 7);
 			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(FileFormat.BINARY);
 			writer.writeMatrixToHDFS(mb, input(INPUT_NAME), rows, cols, 1000, rows*cols);

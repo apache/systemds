@@ -50,8 +50,6 @@ public class UnaryOOCInstruction extends ComputationOOCInstruction {
         CPOperand in1 = new CPOperand(parts[1]);
         CPOperand out = new CPOperand(parts[2]);
 
-        System.out.println("Here at UnaryOOCInstruction parseInstruction");
-
         UnaryOperator uopcode = InstructionUtils.parseUnaryOperator(opcode);
         return new UnaryOOCInstruction(OOCType.Unary, uopcode, in1, out, opcode, str);
     }
@@ -63,7 +61,6 @@ public class UnaryOOCInstruction extends ComputationOOCInstruction {
         LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
         LocalTaskQueue<IndexedMatrixValue> qOut = new LocalTaskQueue<>();
         ec.getMatrixObject(output).setStreamHandle(qOut);
-        System.out.println("Here at UnaryOOCInstruction processInstruction ExecutionContext");
 
 
         ExecutorService pool = CommonThreadPool.get();
@@ -73,7 +70,6 @@ public class UnaryOOCInstruction extends ComputationOOCInstruction {
                 try {
                     while ((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
                         IndexedMatrixValue tmpOut = new IndexedMatrixValue();
-                        System.out.println("Here at Inside thread");
                         tmpOut.set(tmp.getIndexes(),
                                 tmp.getValue().unaryOperations(uop, new MatrixBlock()));
                         qOut.enqueueTask(tmpOut);

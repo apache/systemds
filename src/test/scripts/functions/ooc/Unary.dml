@@ -23,6 +23,7 @@
 X = read($1);
 #print(toString(X))
 Y = ceil(X);
-print(toString(Y))
+#print(toString(Y))
+res = as.matrix(sum(Y));
 # Write the final matrix result
-#write(Y, $2, format="binary");
+write(res, $2);

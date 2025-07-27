@@ -26,7 +26,7 @@ public class UnaryOOCInstruction extends ComputationOOCInstruction {
     }
 
     public static UnaryOOCInstruction parseInstruction(String str) {
-        String[] parts = InstructionUtils.getInstructionParts(str);
+        String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
         InstructionUtils.checkNumFields(parts, 2);
         String opcode = parts[0];
         CPOperand in1 = new CPOperand(parts[1]);

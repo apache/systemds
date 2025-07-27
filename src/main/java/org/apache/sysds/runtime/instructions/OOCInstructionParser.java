@@ -27,6 +27,7 @@ import org.apache.sysds.runtime.instructions.ooc.AggregateUnaryOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.BinaryOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.OOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.ReblockOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.UnaryOOCInstruction;
 
 public class OOCInstructionParser extends InstructionParser {
 	protected static final Log LOG = LogFactory.getLog(OOCInstructionParser.class.getName());
@@ -51,6 +52,8 @@ public class OOCInstructionParser extends InstructionParser {
 				return ReblockOOCInstruction.parseInstruction(str);
 			case AggregateUnary:
 				return AggregateUnaryOOCInstruction.parseInstruction(str);
+			case Unary:
+				return UnaryOOCInstruction.parseInstruction(str);
 			case Binary:
 				return BinaryOOCInstruction.parseInstruction(str);
 			

@@ -35,7 +35,7 @@ public class UnaryOOCInstruction extends ComputationOOCInstruction {
         System.out.println("Here at UnaryOOCInstruction parseInstruction");
 
         UnaryOperator uopcode = InstructionUtils.parseUnaryOperator(opcode);
-        return new UnaryOOCInstruction(OOCType.Unary, uopcode, in1, out, str, str);
+        return new UnaryOOCInstruction(OOCType.Unary, uopcode, in1, out, opcode, str);
     }
 
     public void processInstruction( ExecutionContext ec ) {

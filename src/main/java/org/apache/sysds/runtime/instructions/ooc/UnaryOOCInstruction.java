@@ -14,7 +14,9 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 public class UnaryOOCInstruction extends ComputationOOCInstruction {
     private UnaryOperator _uop = null;
@@ -47,9 +49,10 @@ public class UnaryOOCInstruction extends ComputationOOCInstruction {
         ec.getMatrixObject(output).setStreamHandle(qOut);
         System.out.println("Here at UnaryOOCInstruction processInstruction ExecutionContext");
 
+
         ExecutorService pool = CommonThreadPool.get();
         try {
-            pool.submit(() -> {
+            Future<?> task =pool.submit(() -> {
                 IndexedMatrixValue tmp = null;
                 try {
                     while ((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
@@ -68,8 +71,10 @@ public class UnaryOOCInstruction extends ComputationOOCInstruction {
                 }
 
             });
-        }
-        finally {
+            task.get();
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally {
             pool.shutdown();
         }
     }

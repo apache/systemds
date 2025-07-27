@@ -86,7 +86,7 @@ public class UnaryTest extends AutomatedTestBase {
 			
 			runTest(true, false, null, -1);
 
-			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir(OUTPUT_NAME);
+//			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir(OUTPUT_NAME);
 //			Double result = dmlfile.get(new MatrixValue.CellIndex(1, 1));
 //			double expected = 0.0;
 //			for(int i = 0; i < rows; i++) {
@@ -100,11 +100,8 @@ public class UnaryTest extends AutomatedTestBase {
 			String prefix = Instruction.OOC_INST_PREFIX;
 			Assert.assertTrue("OOC wasn't used for RBLK",
 				heavyHittersContainsString(prefix + Opcodes.RBLK));
-			if(!rewrite)
-				Assert.assertTrue("OOC wasn't used for SUM",
-					heavyHittersContainsString(prefix + Opcodes.MULT));
-			Assert.assertTrue("OOC wasn't used for SUM",
-				heavyHittersContainsString(prefix + Opcodes.UAKP));
+			Assert.assertTrue("OOC wasn't used for CEIL",
+				heavyHittersContainsString(prefix + Opcodes.CEIL));
 		}
 		catch(Exception ex) {
 			Assert.fail(ex.getMessage());

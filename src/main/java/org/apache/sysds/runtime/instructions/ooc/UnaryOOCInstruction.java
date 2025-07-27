@@ -62,14 +62,11 @@ public class UnaryOOCInstruction extends ComputationOOCInstruction {
                                 tmp.getValue().unaryOperations(uop, new MatrixBlock()));
                         qOut.enqueueTask(tmpOut);
                     }
+                    qOut.closeInput();
                 }
                 catch(Exception ex) {
                     throw new DMLRuntimeException(ex);
                 }
-                finally {
-                    qOut.closeInput();
-                }
-
             });
             task.get();
         } catch (ExecutionException | InterruptedException e) {

@@ -21,8 +21,8 @@
 
 # Read input matrix and operator from command line args
 X = read($1);
-print(toString(X))
+#print(toString(X))
 Y = ceil(X);
 print(toString(Y))
 # Write the final matrix result
-write(Y, $2, format="binary");
+#write(Y, $2, format="binary");

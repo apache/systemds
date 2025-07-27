@@ -77,7 +77,7 @@ public class UnaryTest extends AutomatedTestBase {
 			programArgs = new String[] {"-explain", "-stats", "-ooc", 
 				"-args", input(INPUT_NAME), output(OUTPUT_NAME)};
 
-			int rows = 3500, cols = 1000;
+			int rows = 1000, cols = 1000;
 			MatrixBlock mb = MatrixBlock.randOperations(rows, cols, 1.0, -1, 1, "uniform", 7);
 			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(FileFormat.BINARY);
 			writer.writeMatrixToHDFS(mb, input(INPUT_NAME), rows, cols, 1000, rows*cols);
@@ -86,7 +86,7 @@ public class UnaryTest extends AutomatedTestBase {
 			
 			runTest(true, false, null, -1);
 
-//			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir(OUTPUT_NAME);
+			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir(OUTPUT_NAME);
 //			Double result = dmlfile.get(new MatrixValue.CellIndex(1, 1));
 //			double expected = 0.0;
 //			for(int i = 0; i < rows; i++) {

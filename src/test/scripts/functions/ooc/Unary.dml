@@ -25,4 +25,4 @@ print(toString(X))
 Y = ceil(X);
 print(toString(Y))
 # Write the final matrix result
-write(Y, $2);
+write(Y, $2, format="binary");

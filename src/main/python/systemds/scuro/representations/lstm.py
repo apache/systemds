@@ -18,6 +18,9 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import os
+import random
+
 import torch
 
 from torch import nn
@@ -31,6 +34,8 @@ from systemds.scuro.representations.fusion import Fusion
 from systemds.scuro.drsearch.operator_registry import register_fusion_operator
 
 
+# TODO: concatenate before embedding
+# Make this a hyperparameter
 @register_fusion_operator()
 class LSTM(Fusion):
     def __init__(self, width=128, depth=1, dropout_rate=0.1):
@@ -42,8 +47,18 @@ class LSTM(Fusion):
         self.width = width
         self.dropout_rate = dropout_rate
         self.unimodal_embeddings = {}
+        seed = 42
+
+        os.environ["PYTHONHASHSEED"] = str(seed)
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
 
     def transform(self, modalities: List[Modality]):
+        self.unimodal_embeddings = {}
         size = len(modalities[0].data)
 
         result = np.zeros((size, 0))
@@ -60,6 +75,9 @@ class LSTM(Fusion):
         return result
 
     def run_lstm(self, data):
+        if isinstance(data, list):
+            data = np.array(data)
+
         d = data.astype(np.float32)
         dim = d.shape[-1]
         d = torch.from_numpy(d)

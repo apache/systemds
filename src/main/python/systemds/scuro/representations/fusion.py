@@ -33,6 +33,9 @@ class Fusion(Representation):
         :param name: Name of the fusion type
         """
         super().__init__(name, parameters)
+        self.associative = False
+        self.commutative = False
+        self.needs_alignment = False
 
     def transform(self, modalities: List[Modality]):
         """

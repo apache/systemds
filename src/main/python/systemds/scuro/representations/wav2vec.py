@@ -46,7 +46,7 @@ class Wav2Vec(UnimodalRepresentation):
 
     def transform(self, modality):
         transformed_modality = TransformedModality(
-            self.output_modality_type, self, modality.modality_id, modality.metadata
+            modality, self, self.output_modality_type
         )
 
         result = []

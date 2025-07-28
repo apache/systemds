@@ -37,6 +37,8 @@ class Average(Fusion):
         Combines modalities using averaging
         """
         super().__init__("Average")
+        self.associative = True
+        self.commutative = True
 
     def transform(self, modalities: List[Modality]):
         for modality in modalities:

@@ -42,7 +42,11 @@ from systemds.scuro.representations.spectrogram import Spectrogram
 from systemds.scuro.representations.word2vec import W2V
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.resnet import ResNet
-from tests.scuro.data_generator import setup_data
+from tests.scuro.data_generator import (
+    setup_data,
+    TestDataLoader,
+    ModalityRandomDataGenerator,
+)
 
 from systemds.scuro.dataloader.audio_loader import AudioLoader
 from systemds.scuro.dataloader.video_loader import VideoLoader
@@ -109,15 +113,14 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.test_file_path = "fusion_optimizer_test_data"
-
         cls.num_instances = 10
         cls.mods = [ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT]
+        cls.labels = np.random.choice([0, 1], size=cls.num_instances)
+        cls.indices = np.array(range(cls.num_instances))
 
-        cls.data_generator = setup_data(cls.mods, cls.num_instances, cls.test_file_path)
         split = train_test_split(
-            cls.data_generator.indices,
-            cls.data_generator.labels,
+            cls.indices,
+            cls.labels,
             test_size=0.2,
             random_state=42,
         )
@@ -129,48 +132,52 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
             Task(
                 "UnimodalRepresentationTask1",
                 TestSVM(),
-                cls.data_generator.labels,
+                cls.labels,
                 cls.train_indizes,
                 cls.val_indizes,
             ),
             Task(
                 "UnimodalRepresentationTask2",
                 TestCNN(),
-                cls.data_generator.labels,
+                cls.labels,
                 cls.train_indizes,
                 cls.val_indizes,
             ),
         ]
 
-    @classmethod
-    def tearDownClass(cls):
-        shutil.rmtree(cls.test_file_path)
-
     def test_multimodal_fusion(self):
         task = Task(
             "UnimodalRepresentationTask1",
             TestSVM(),
-            self.data_generator.labels,
+            self.labels,
             self.train_indizes,
             self.val_indizes,
         )
-        audio_data_loader = AudioLoader(
-            self.data_generator.get_modality_path(ModalityType.AUDIO),
-            self.data_generator.indices,
-        )
-        audio = UnimodalModality(audio_data_loader)
 
-        text_data_loader = TextLoader(
-            self.data_generator.get_modality_path(ModalityType.TEXT),
-            self.data_generator.indices,
+        audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
+            self.num_instances, 100
         )
-        text = UnimodalModality(text_data_loader)
-
-        video_data_loader = VideoLoader(
-            self.data_generator.get_modality_path(ModalityType.VIDEO),
-            self.data_generator.indices,
+        text_data, text_md = ModalityRandomDataGenerator().create_text_data(
+            self.num_instances
         )
-        video = UnimodalModality(video_data_loader)
+        video_data, video_md = ModalityRandomDataGenerator().create_visual_modality(
+            self.num_instances, 60
+        )
+        audio = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.AUDIO, audio_data, np.float32, audio_md
+            )
+        )
+        video = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.VIDEO, video_data, np.float32, video_md
+            )
+        )
+        text = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.TEXT, text_data, str, text_md
+            )
+        )
 
         with patch.object(
             Registry,
@@ -200,3 +207,7 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
                 debug=False,
             )
             multimodal_optimizer.optimize()
+
+
+if __name__ == "__main__":
+    unittest.main()

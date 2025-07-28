@@ -481,6 +481,7 @@ public class CPCostUtils {
 						costs = 40;
 						break;
 					case "ucumk+":
+					case "urowcumk+":
 					case "ucummin":
 					case "ucummax":
 					case "ucum*":

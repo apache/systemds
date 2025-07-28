@@ -190,6 +190,14 @@ class ModalityType(Flag):
 
     def update_metadata(self, md, data):
         return ModalitySchemas.update_metadata(self.name, md, data)
+    
+    def add_alignment(self, md, alignment_timestamps):
+        md["alignment_timestamps"] = alignment_timestamps
+        return md
+    
+    def add_field(self, md, field, data):
+        md[field] = data
+        return md
 
     def create_audio_metadata(self, sampling_rate, data):
         md = deepcopy(self.get_schema())

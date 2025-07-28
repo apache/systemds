@@ -39,40 +39,46 @@ else:
     DEVICE = torch.device("cpu")
 
 
-@register_representation([ModalityType.TEXT, ModalityType.AUDIO, ModalityType.VIDEO])
+# @register_representation([ModalityType.TEXT, ModalityType.AUDIO, ModalityType.VIDEO])
 class ImageBind(UnimodalRepresentation):
     def __init__(self):
         parameters = {}
         super().__init__("ImageBind", ModalityType.EMBEDDING, parameters)
+        self.model = imagebind_model.imagebind_huge(pretrained=True)
+        for param in self.model.parameters():
+            param.requires_grad = False
+        self.model.eval()
+        self.model.to(DEVICE)
 
     def transform(self, modality):
         transformed_modality = TransformedModality(
-            modality.modality_type, self, modality.modality_id, modality.metadata
+            modality, self, ModalityType.EMBEDDING
         )
-
-        model = imagebind_model.imagebind_huge(pretrained=True)
-        for param in model.parameters():
-            param.requires_grad = False
-        model.eval()
-        model.to(DEVICE)
 
         result = []
         if modality.modality_type == ModalityType.TEXT:
             for i, instance in enumerate(modality.data):
                 text_inputs = data.load_and_transform_text(instance, DEVICE)
-                text_embeddings = model({IBModalityType.TEXT: text_inputs})[
+                text_embeddings =self.model({IBModalityType.TEXT: text_inputs})[
                     IBModalityType.TEXT
                 ]
                 result.append(text_embeddings.mean(axis=0).cpu().detach().numpy())
         if modality.modality_type == ModalityType.AUDIO:
             audio_inputs = data.load_and_transform_audio_data(
-                list(modality.metadata),
+                list(modality.metadata)[
+                (modality.data_loader.next_chunk - 1)
+                * (modality.data_loader.chunk_size): (
+                                                             modality.data_loader.next_chunk - 1
+                                                     )
+                                                     * (modality.data_loader.chunk_size)
+                                                     + (modality.data_loader.chunk_size)
+                ],
                 DEVICE,
             )
-            audio_embeddings = model({IBModalityType.AUDIO: audio_inputs})[
+            audio_embeddings = self.model({IBModalityType.AUDIO: audio_inputs})[
                 IBModalityType.AUDIO
             ]
-            result.append(audio_embeddings.mean(axis=0).cpu().detach().numpy())
+            result.extend(audio_embeddings.cpu().detach().numpy())
         if modality.modality_type == ModalityType.VIDEO:
             video_inputs = data.load_and_transform_video_data(
                 list(modality.metadata)[
@@ -85,10 +91,10 @@ class ImageBind(UnimodalRepresentation):
                 ],
                 DEVICE,
             )
-            video_embeddings = model({IBModalityType.VISION: video_inputs})[
+            video_embeddings = self.model({IBModalityType.VISION: video_inputs})[
                 IBModalityType.VISION
             ]
-            result.append(video_embeddings.mean(axis=0).cpu().detach().numpy())
+            result.extend(video_embeddings.cpu().detach().numpy())
 
         transformed_modality.data = result
         return transformed_modality

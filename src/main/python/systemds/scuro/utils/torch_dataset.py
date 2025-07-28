@@ -25,15 +25,19 @@ import torchvision.transforms as transforms
 
 
 class CustomDataset(torch.utils.data.Dataset):
-    def __init__(self, data, data_type, device):
+    def __init__(self, data, data_type, device, size=None):
         self.data = data
         self.data_type = data_type
         self.device = device
+        self.size = size
+        if size is None:
+            self.size = (256, 224)
+            
         self.tf = transforms.Compose(
             [
                 transforms.ToPILImage(),
-                transforms.Resize(256),
-                transforms.CenterCrop(224),
+                transforms.Resize(self.size[0]),
+                transforms.CenterCrop(self.size[1]),
                 transforms.ToTensor(),
                 transforms.ConvertImageDtype(dtype=self.data_type),
                 transforms.Normalize(
@@ -45,7 +49,7 @@ class CustomDataset(torch.utils.data.Dataset):
     def __getitem__(self, index) -> Dict[str, object]:
         data = self.data[index]
         output = torch.empty(
-            (len(data), 3, 224, 224), dtype=self.data_type, device=self.device
+            (len(data), 3, self.size[1], self.size[1]), dtype=self.data_type, device=self.device
         )
 
         for i, d in enumerate(data):

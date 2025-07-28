@@ -38,7 +38,7 @@ from systemds.scuro.representations.concatenation import Concatenation
 from systemds.scuro.representations.lstm import LSTM
 from systemds.scuro.representations.max import RowMax
 from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
-from systemds.scuro.representations.multiplication import Multiplication
+from systemds.scuro.representations.hadamard import Hadamard
 from systemds.scuro.representations.resnet import ResNet
 from systemds.scuro.representations.sum import Sum
 from tests.scuro.data_generator import ModalityRandomDataGenerator
@@ -125,8 +125,8 @@ class TestDataLoaders(unittest.TestCase):
         cls.representations = [
             Concatenation(),
             Average(),
-            RowMax(100),
-            Multiplication(),
+            RowMax(),
+            Hadamard(),
             Sum(),
             LSTM(width=256, depth=3),
         ]

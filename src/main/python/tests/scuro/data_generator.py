@@ -41,9 +41,16 @@ class TestDataLoader(BaseLoader):
 
         self.metadata = metadata
         self.test_data = data
-
+    
+    def reset(self):
+        self._next_chunk = 0
+        self.data = []
+        
     def extract(self, file, indices):
-        self.data = self.test_data
+        if isinstance(self.test_data, list):
+            self.data = [self.test_data[i] for i in indices]
+        else:
+            self.data = self.test_data[indices]
 
 
 class ModalityRandomDataGenerator:
@@ -89,7 +96,7 @@ class ModalityRandomDataGenerator:
     def create_audio_data(self, num_instances, num_features):
         data = np.random.rand(num_instances, num_features).astype(np.float32)
         metadata = {
-            i: ModalityType.AUDIO.create_audio_metadata(num_features / 10, data[i])
+            i: ModalityType.AUDIO.create_audio_metadata(16000, data[i])
             for i in range(num_instances)
         }
 
@@ -164,7 +171,7 @@ class ModalityRandomDataGenerator:
         else:
             metadata = {
                 i: ModalityType.VIDEO.create_video_metadata(
-                    num_instances / 30, num_frames / 30, width, height, 1
+                    30, num_frames, width, height, 1
                 )
                 for i in range(num_instances)
             }
@@ -172,6 +179,7 @@ class ModalityRandomDataGenerator:
         return (
             np.random.randint(
                 0, 256, (num_instances, num_frames, height, width)
+            # ).astype(np.float16).tolist(),
             ).astype(np.float16),
             metadata,
         )

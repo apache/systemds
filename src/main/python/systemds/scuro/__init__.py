@@ -39,7 +39,7 @@ from systemds.scuro.representations.lstm import LSTM
 from systemds.scuro.representations.max import RowMax
 from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
 from systemds.scuro.representations.mfcc import MFCC
-from systemds.scuro.representations.multiplication import Multiplication
+from systemds.scuro.representations.hadamard import Hadamard
 from systemds.scuro.representations.optical_flow import OpticalFlow
 from systemds.scuro.representations.representation import Representation
 from systemds.scuro.representations.representation_dataloader import NPY
@@ -94,7 +94,7 @@ __all__ = [
     "RowMax",
     "MelSpectrogram",
     "MFCC",
-    "Multiplication",
+    "Hadamard",
     "OpticalFlow",
     "Representation",
     "NPY",

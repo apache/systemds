@@ -23,9 +23,10 @@ import os
 from importlib.util import find_spec
 from itertools import chain
 from typing import Dict, Iterable
-
+import torch
 from systemds.utils.consts import MODULE_NAME
 
+DEVICE = 'cuda' if torch.cuda.is_available() else 'mps' if torch.mps.is_available() else 'cpu'
 
 def create_params_string(
     unnamed_parameters: Iterable[str], named_parameters: Dict[str, str]

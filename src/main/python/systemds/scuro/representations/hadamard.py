@@ -24,31 +24,23 @@ from typing import List
 import numpy as np
 
 from systemds.scuro.modality.modality import Modality
-from systemds.scuro.representations.utils import pad_sequences
 
 from systemds.scuro.representations.fusion import Fusion
 
 from systemds.scuro.drsearch.operator_registry import register_fusion_operator
-
-
 @register_fusion_operator()
-class Multiplication(Fusion):
+class Hadamard(Fusion):
     def __init__(self):
         """
-        Combines modalities using elementwise multiply
+        Combines modalities using elementwise multiply (Hadamard product)
         """
-        super().__init__("Multiplication")
+        super().__init__("Hadamard")
+        self.needs_alignment = True # zero padding falsifies the result
+        self.commutative = True
+        self.associative = True
 
     def transform(self, modalities: List[Modality], train_indices=None):
-        max_emb_size = self.get_max_embedding_size(modalities)
-
-        data = pad_sequences(modalities[0].data, maxlen=max_emb_size, dtype="float32")
-
-        for m in range(1, len(modalities)):
-            # scaled = self.scale_data(modalities[m].data, train_indices)
-            data = np.multiply(
-                data,
-                pad_sequences(modalities[m].data, maxlen=max_emb_size, dtype="float32"),
-            )
-
-        return data
+        # TODO: check for alignment in the metadata
+        fused_data = np.prod([m.data for m in modalities], axis=0)
+        
+        return fused_data

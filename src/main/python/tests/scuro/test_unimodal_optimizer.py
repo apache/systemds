@@ -101,111 +101,110 @@ from unittest.mock import patch
 
 
 class TestUnimodalRepresentationOptimizer(unittest.TestCase):
-    pass
-#     data_generator = None
-#     num_instances = 0
-#
-#     @classmethod
-#     def setUpClass(cls):
-#         cls.num_instances = 10
-#         cls.mods = [ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT]
-#         cls.labels = np.random.choice([0, 1], size=cls.num_instances)
-#         cls.indices = np.array(range(cls.num_instances))
-#
-#         split = train_test_split(
-#             cls.indices,
-#             cls.labels,
-#             test_size=0.2,
-#             random_state=42,
-#         )
-#         cls.train_indizes, cls.val_indizes = [int(i) for i in split[0]], [
-#             int(i) for i in split[1]
-#         ]
-#
-#         cls.tasks = [
-#             Task(
-#                 "UnimodalRepresentationTask1",
-#                 TestSVM(),
-#                 cls.labels,
-#                 cls.train_indizes,
-#                 cls.val_indizes,
-#             ),
-#             Task(
-#                 "UnimodalRepresentationTask2",
-#                 TestCNN(),
-#                 cls.labels,
-#                 cls.train_indizes,
-#                 cls.val_indizes,
-#             ),
-#         ]
-#
-#     def test_unimodal_optimizer_for_audio_modality(self):
-#         audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
-#             self.num_instances, 30000
-#         )
-#         audio = UnimodalModality(
-#             TestDataLoader(
-#                 self.indices, None, ModalityType.AUDIO, audio_data, np.float32, audio_md
-#             )
-#         )
-#
-#         self.optimize_unimodal_representation_for_modality(audio)
-#
-#     def test_unimodal_optimizer_for_text_modality(self):
-#         text_data, text_md = ModalityRandomDataGenerator().create_text_data(
-#             self.num_instances
-#         )
-#         text = UnimodalModality(
-#             TestDataLoader(
-#                 self.indices, None, ModalityType.TEXT, text_data, str, text_md
-#             )
-#         )
-#         self.optimize_unimodal_representation_for_modality(text)
-#
-#     def test_unimodal_optimizer_for_video_modality(self):
-#         video_data, video_md = ModalityRandomDataGenerator().create_visual_modality(
-#             self.num_instances, 60
-#         )
-#         video = UnimodalModality(
-#             TestDataLoader(
-#                 self.indices, None, ModalityType.VIDEO, video_data, np.float32, video_md
-#             )
-#         )
-#         self.optimize_unimodal_representation_for_modality(video)
-#
-#     def optimize_unimodal_representation_for_modality(self, modality):
-#         with patch.object(
-#             Registry,
-#             "_representations",
-#             {
-#                 ModalityType.TEXT: [W2V],
-#                 ModalityType.AUDIO: [Spectrogram],
-#                 ModalityType.TIMESERIES: [ResNet],
-#                 ModalityType.VIDEO: [ResNet],
-#                 ModalityType.EMBEDDING: [],
-#             },
-#         ):
-#             registry = Registry()
-#
-#             unimodal_optimizer = UnimodalRepresentationOptimizer(
-#                 [modality], self.tasks, max_chain_depth=2
-#             )
-#             unimodal_optimizer.optimize()
-#
-#             assert (
-#                 list(unimodal_optimizer.optimization_results.keys())[0]
-#                 == modality.modality_id
-#             )
-#             assert len(list(unimodal_optimizer.optimization_results.values())[0]) == 2
-#             assert (
-#                 len(
-#                     unimodal_optimizer.get_k_best_results(modality, 1, self.tasks[0])[
-#                         0
-#                     ].operator_chain
-#                 )
-#                 >= 1
-#             )
-#
-#
-# if __name__ == "__main__":
-#     unittest.main()
+    data_generator = None
+    num_instances = 0
+
+    @classmethod
+    def setUpClass(cls):
+        cls.num_instances = 10
+        cls.mods = [ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT]
+        cls.labels = np.random.choice([0, 1], size=cls.num_instances)
+        cls.indices = np.array(range(cls.num_instances))
+
+        split = train_test_split(
+            cls.indices,
+            cls.labels,
+            test_size=0.2,
+            random_state=42,
+        )
+        cls.train_indizes, cls.val_indizes = [int(i) for i in split[0]], [
+            int(i) for i in split[1]
+        ]
+
+        cls.tasks = [
+            Task(
+                "UnimodalRepresentationTask1",
+                TestSVM(),
+                cls.labels,
+                cls.train_indizes,
+                cls.val_indizes,
+            ),
+            Task(
+                "UnimodalRepresentationTask2",
+                TestCNN(),
+                cls.labels,
+                cls.train_indizes,
+                cls.val_indizes,
+            ),
+        ]
+
+    def test_unimodal_optimizer_for_audio_modality(self):
+        audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
+            self.num_instances, 100
+        )
+        audio = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.AUDIO, audio_data, np.float32, audio_md
+            )
+        )
+
+        self.optimize_unimodal_representation_for_modality(audio)
+
+    def test_unimodal_optimizer_for_text_modality(self):
+        text_data, text_md = ModalityRandomDataGenerator().create_text_data(
+            self.num_instances
+        )
+        text = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.TEXT, text_data, str, text_md
+            )
+        )
+        self.optimize_unimodal_representation_for_modality(text)
+
+    def test_unimodal_optimizer_for_video_modality(self):
+        video_data, video_md = ModalityRandomDataGenerator().create_visual_modality(
+            self.num_instances, 60
+        )
+        video = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.VIDEO, video_data, np.float32, video_md
+            )
+        )
+        self.optimize_unimodal_representation_for_modality(video)
+
+    def optimize_unimodal_representation_for_modality(self, modality):
+        with patch.object(
+            Registry,
+            "_representations",
+            {
+                ModalityType.TEXT: [W2V],
+                ModalityType.AUDIO: [Spectrogram],
+                ModalityType.TIMESERIES: [ResNet],
+                ModalityType.VIDEO: [ResNet],
+                ModalityType.EMBEDDING: [],
+            },
+        ):
+            registry = Registry()
+
+            unimodal_optimizer = UnimodalRepresentationOptimizer(
+                [modality], self.tasks, max_chain_depth=2
+            )
+            unimodal_optimizer.optimize()
+
+            assert (
+                list(unimodal_optimizer.optimization_results.keys())[0]
+                == modality.modality_id
+            )
+            assert len(list(unimodal_optimizer.optimization_results.values())[0]) == 2
+            assert (
+                len(
+                    unimodal_optimizer.get_k_best_results(modality, 1, self.tasks[0])[
+                        0
+                    ].operator_chain
+                )
+                >= 1
+            )
+
+
+if __name__ == "__main__":
+    unittest.main()

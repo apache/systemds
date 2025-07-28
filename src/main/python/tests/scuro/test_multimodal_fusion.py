@@ -155,7 +155,7 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
         )
 
         audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
-            self.num_instances, 30000
+            self.num_instances, 100
         )
         text_data, text_md = ModalityRandomDataGenerator().create_text_data(
             self.num_instances

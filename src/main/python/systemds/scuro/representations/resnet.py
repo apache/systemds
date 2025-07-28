@@ -18,10 +18,11 @@
 # under the License.
 #
 # -------------------------------------------------------------
+from systemds.scuro.utils.converter import numpy_dtype_to_torch_dtype
 from systemds.scuro.utils.torch_dataset import CustomDataset
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
-from typing import Callable, Dict, Tuple, Any
+from typing import Tuple, Any
 from systemds.scuro.drsearch.operator_registry import register_representation
 import torch.utils.data
 import torch
@@ -42,6 +43,7 @@ else:
 )
 class ResNet(UnimodalRepresentation):
     def __init__(self, layer="avgpool", model_name="ResNet18", output_file=None):
+        self.data_type = torch.bfloat16
         self.model_name = model_name
         parameters = self._get_parameters()
         super().__init__(
@@ -68,25 +70,38 @@ class ResNet(UnimodalRepresentation):
     def model_name(self, model_name):
         self._model_name = model_name
         if model_name == "ResNet18":
-            self.model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT).to(
-                DEVICE
+            self.model = (
+                models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
+                .to(DEVICE)
+                .to(self.data_type)
             )
+
         elif model_name == "ResNet34":
             self.model = models.resnet34(weights=models.ResNet34_Weights.DEFAULT).to(
                 DEVICE
             )
+            self.model = self.model.to(self.data_type)
         elif model_name == "ResNet50":
-            self.model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT).to(
-                DEVICE
+            self.model = (
+                models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
+                .to(DEVICE)
+                .to(self.data_type)
             )
+
         elif model_name == "ResNet101":
-            self.model = models.resnet101(weights=models.ResNet101_Weights.DEFAULT).to(
-                DEVICE
+            self.model = (
+                models.resnet101(weights=models.ResNet101_Weights.DEFAULT)
+                .to(DEVICE)
+                .to(self.data_type)
             )
+
         elif model_name == "ResNet152":
-            self.model = models.resnet152(weights=models.ResNet152_Weights.DEFAULT).to(
-                DEVICE
+            self.model = (
+                models.resnet152(weights=models.ResNet152_Weights.DEFAULT)
+                .to(DEVICE)
+                .to(self.data_type)
             )
+
         else:
             raise NotImplementedError
 
@@ -110,7 +125,11 @@ class ResNet(UnimodalRepresentation):
         return parameters
 
     def transform(self, modality):
-        dataset = CustomDataset(modality.data)
+        self.data_type = numpy_dtype_to_torch_dtype(modality.data_type)
+        if next(self.model.parameters()).dtype != self.data_type:
+            self.model = self.model.to(self.data_type)
+
+        dataset = CustomDataset(modality.data, self.data_type, DEVICE)
         embeddings = {}
 
         res5c_output = None
@@ -132,7 +151,7 @@ class ResNet(UnimodalRepresentation):
 
         for instance in torch.utils.data.DataLoader(dataset):
             video_id = instance["id"][0]
-            frames = instance["data"][0].to(DEVICE)
+            frames = instance["data"][0]
             embeddings[video_id] = []
             batch_size = 64
 
@@ -146,13 +165,18 @@ class ResNet(UnimodalRepresentation):
                 pooled = torch.nn.functional.adaptive_avg_pool2d(values, (1, 1))
 
                 embeddings[video_id].extend(
-                    torch.flatten(pooled, 1).detach().cpu().numpy()
+                    torch.flatten(pooled, 1)
+                    .detach()
+                    .cpu()
+                    .float()
+                    .numpy()
+                    .astype(modality.data_type)
                 )
 
             embeddings[video_id] = np.array(embeddings[video_id])
 
         transformed_modality = TransformedModality(
-            self.output_modality_type, "resnet", modality.modality_id, modality.metadata
+            modality, self, self.output_modality_type
         )
 
         transformed_modality.data = list(embeddings.values())

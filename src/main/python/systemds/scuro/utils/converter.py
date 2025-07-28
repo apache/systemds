@@ -18,33 +18,32 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from typing import List
 
 import numpy as np
-
-from systemds.scuro.modality.modality import Modality
-from systemds.scuro.representations.fusion import Fusion
-
-from systemds.scuro.drsearch.operator_registry import register_fusion_operator
+import torch
 
 
-@register_fusion_operator()
-class RowMax(Fusion):
-    def __init__(self):
-        """
-        Combines modalities by computing the outer product of a modality combination and
-        taking the row max
-        """
-        super().__init__("RowMax")
-        self.needs_alignment = True
-        self.associative = True
-        self.commutative = True
+def numpy_dtype_to_torch_dtype(dtype):
+    """
+    Convert a NumPy dtype (or dtype string) to the corresponding PyTorch dtype.
+    Raises ValueError if the dtype is not supported.
+    """
+    if isinstance(dtype, torch.dtype):
+        return dtype
 
-    def transform(
-        self,
-        modalities: List[Modality],
-    ):
-        # TODO: need to check if data is aligned - same number of dimension
-        fused_data = np.maximum.reduce([m.data for m in modalities])
+    mapping = {
+        np.float32: torch.float32,
+        np.float64: torch.float64,
+        np.float16: torch.bfloat16,
+        np.uint8: torch.uint8,
+        np.int8: torch.int8,
+        np.int16: torch.int16,
+        np.int32: torch.int32,
+        np.int64: torch.int64,
+    }
 
-        return fused_data
+    np_dtype = np.dtype(dtype)
+    if np_dtype.type in mapping:
+        return mapping[np_dtype.type]
+    else:
+        raise ValueError(f"No corresponding torch dtype for NumPy dtype {np_dtype}")

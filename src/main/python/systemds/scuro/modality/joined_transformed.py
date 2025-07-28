@@ -25,7 +25,7 @@ import numpy as np
 
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.utils import pad_sequences
-from systemds.scuro.representations.window import WindowAggregation
+from systemds.scuro.representations.window_aggregation import WindowAggregation
 
 
 class JoinedTransformedModality(Modality):
@@ -70,7 +70,7 @@ class JoinedTransformedModality(Modality):
         self.data = pad_sequences(self.data)
         return self
 
-    def window(self, window_size, aggregation):
+    def window_aggregation(self, window_size, aggregation):
         w = WindowAggregation(window_size, aggregation)
         self.left_modality.data = w.execute(self.left_modality)
         self.right_modality.data = w.execute(self.right_modality)

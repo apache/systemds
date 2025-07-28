@@ -28,8 +28,6 @@ class AggregatedRepresentation(Representation):
         self.aggregation = aggregation
 
     def transform(self, modality):
-        aggregated_modality = TransformedModality(
-            modality.modality_type, self.name, modality.modality_id, modality.metadata
-        )
+        aggregated_modality = TransformedModality(modality, self)
         aggregated_modality.data = self.aggregation.execute(modality)
         return aggregated_modality

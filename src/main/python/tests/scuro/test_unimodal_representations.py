@@ -29,6 +29,7 @@ from systemds.scuro.representations.tfidf import TfIdf
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.bert import Bert
 from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
+from systemds.scuro.representations.mfcc import MFCC
 from systemds.scuro.representations.resnet import ResNet
 from tests.scuro.data_generator import setup_data
 
@@ -63,7 +64,7 @@ class TestUnimodalRepresentations(unittest.TestCase):
         shutil.rmtree(cls.test_file_path)
 
     def test_audio_representations(self):
-        audio_representations = [MelSpectrogram()]  # TODO: add FFT, TFN, 1DCNN
+        audio_representations = [MFCC()]  # TODO: add FFT, TFN, 1DCNN
         audio_data_loader = AudioLoader(
             self.data_generator.get_modality_path(ModalityType.AUDIO),
             self.data_generator.indices,

@@ -29,10 +29,11 @@ class TextLoader(BaseLoader):
         self,
         source_path: str,
         indices: List[str],
+        data_type: str = str,
         chunk_size: Optional[int] = None,
         prefix: Optional[Pattern[str]] = None,
     ):
-        super().__init__(source_path, indices, chunk_size, ModalityType.TEXT)
+        super().__init__(source_path, indices, data_type, chunk_size, ModalityType.TEXT)
         self.prefix = prefix
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):

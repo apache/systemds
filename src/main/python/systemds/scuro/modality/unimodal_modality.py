@@ -37,7 +37,12 @@ class UnimodalModality(Modality):
         :param data_loader: Defines how the raw data should be loaded
         :param modality_type: Type of the modality
         """
-        super().__init__(data_loader.modality_type, ModalityIdentifier().new_id(), None)
+        super().__init__(
+            data_loader.modality_type,
+            ModalityIdentifier().new_id(),
+            {},
+            data_loader.data_type,
+        )
         self.data_loader = data_loader
 
     def copy_from_instance(self):
@@ -84,9 +89,7 @@ class UnimodalModality(Modality):
         if not self.has_data():
             self.extract_raw_data()
 
-        transformed_modality = TransformedModality(
-            self.modality_type, context_operator.name, self.modality_id, self.metadata
-        )
+        transformed_modality = TransformedModality(self, context_operator)
 
         transformed_modality.data = context_operator.execute(self)
         return transformed_modality
@@ -101,10 +104,8 @@ class UnimodalModality(Modality):
 
     def apply_representation(self, representation):
         new_modality = TransformedModality(
-            self.modality_type,
-            representation.name,
-            self.modality_id,
-            self.data_loader.metadata.copy(),
+            self,
+            representation,
         )
         new_modality.data = []
 

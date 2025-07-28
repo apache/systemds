@@ -46,6 +46,5 @@ class RowMax(Fusion):
     ):
         # TODO: need to check if data is aligned - same number of dimension
         fused_data = np.maximum.reduce([m.data for m in modalities])
-        
+
         return fused_data
-    

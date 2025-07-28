@@ -41,55 +41,54 @@ class TestFusionOrders(unittest.TestCase):
         cls.r_1 = cls.data_generator.create1DModality(40, 100, ModalityType.AUDIO)
         cls.r_2 = cls.data_generator.create1DModality(40, 100, ModalityType.TEXT)
         cls.r_3 = cls.data_generator.create1DModality(40, 100, ModalityType.TEXT)
-    
+
     def test_fusion_order_avg(self):
         r_1_r_2 = self.r_1.combine(self.r_2, Average())
         r_2_r_1 = self.r_2.combine(self.r_1, Average())
         r_1_r_2_r_3 = r_1_r_2.combine(self.r_3, Average())
         r_2_r_1_r_3 = r_2_r_1.combine(self.r_3, Average())
-        
+
         r1_r2_r3 = self.r_1.combine([self.r_2, self.r_3], Average())
-        
+
         self.assertTrue(np.array_equal(r_1_r_2.data, r_2_r_1.data))
         self.assertTrue(np.array_equal(r_1_r_2_r_3.data, r_2_r_1_r_3.data))
         self.assertFalse(np.array_equal(r_1_r_2_r_3.data, r1_r2_r3.data))
         self.assertFalse(np.array_equal(r_1_r_2.data, r1_r2_r3.data))
-        
-        
+
     def test_fusion_order_concat(self):
         r_1_r_2 = self.r_1.combine(self.r_2, Concatenation())
         r_2_r_1 = self.r_2.combine(self.r_1, Concatenation())
         r_1_r_2_r_3 = r_1_r_2.combine(self.r_3, Concatenation())
         r_2_r_1_r_3 = r_2_r_1.combine(self.r_3, Concatenation())
-        
+
         r1_r2_r3 = self.r_1.combine([self.r_2, self.r_3], Concatenation())
-        
+
         self.assertFalse(np.array_equal(r_1_r_2.data, r_2_r_1.data))
         self.assertFalse(np.array_equal(r_1_r_2_r_3.data, r_2_r_1_r_3.data))
         self.assertFalse(np.array_equal(r_1_r_2_r_3.data, r1_r2_r3.data))
         self.assertFalse(np.array_equal(r_1_r_2.data, r1_r2_r3.data))
-    
+
     def test_fusion_order_max(self):
         r_1_r_2 = self.r_1.combine(self.r_2, RowMax())
         r_2_r_1 = self.r_2.combine(self.r_1, RowMax())
         r_1_r_2_r_3 = r_1_r_2.combine(self.r_3, RowMax())
         r_2_r_1_r_3 = r_2_r_1.combine(self.r_3, RowMax())
-        
+
         r1_r2_r3 = self.r_1.combine([self.r_2, self.r_3], RowMax())
-        
+
         self.assertTrue(np.array_equal(r_1_r_2.data, r_2_r_1.data))
         self.assertTrue(np.array_equal(r_1_r_2_r_3.data, r_2_r_1_r_3.data))
         self.assertTrue(np.array_equal(r_1_r_2_r_3.data, r1_r2_r3.data))
         self.assertFalse(np.array_equal(r_1_r_2.data, r1_r2_r3.data))
-    
+
     def test_fusion_order_hadamard(self):
         r_1_r_2 = self.r_1.combine(self.r_2, Hadamard())
         r_2_r_1 = self.r_2.combine(self.r_1, Hadamard())
         r_1_r_2_r_3 = r_1_r_2.combine(self.r_3, Hadamard())
         r_2_r_1_r_3 = r_2_r_1.combine(self.r_3, Hadamard())
-        
+
         r1_r2_r3 = self.r_1.combine([self.r_2, self.r_3], Hadamard())
-        
+
         self.assertTrue(np.array_equal(r_1_r_2.data, r_2_r_1.data))
         self.assertTrue(np.array_equal(r_1_r_2_r_3.data, r_2_r_1_r_3.data))
         self.assertTrue(np.array_equal(r_1_r_2_r_3.data, r1_r2_r3.data))

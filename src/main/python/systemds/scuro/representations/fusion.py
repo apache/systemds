@@ -36,7 +36,6 @@ class Fusion(Representation):
         self.associative = False
         self.commutative = False
         self.needs_alignment = False
-        
 
     def transform(self, modalities: List[Modality]):
         """

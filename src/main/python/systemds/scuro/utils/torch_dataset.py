@@ -32,7 +32,7 @@ class CustomDataset(torch.utils.data.Dataset):
         self.size = size
         if size is None:
             self.size = (256, 224)
-            
+
         self.tf = transforms.Compose(
             [
                 transforms.ToPILImage(),
@@ -49,7 +49,9 @@ class CustomDataset(torch.utils.data.Dataset):
     def __getitem__(self, index) -> Dict[str, object]:
         data = self.data[index]
         output = torch.empty(
-            (len(data), 3, self.size[1], self.size[1]), dtype=self.data_type, device=self.device
+            (len(data), 3, self.size[1], self.size[1]),
+            dtype=self.data_type,
+            device=self.device,
         )
 
         for i, d in enumerate(data):

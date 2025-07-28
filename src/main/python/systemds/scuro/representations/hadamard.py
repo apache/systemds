@@ -28,6 +28,8 @@ from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.fusion import Fusion
 
 from systemds.scuro.drsearch.operator_registry import register_fusion_operator
+
+
 @register_fusion_operator()
 class Hadamard(Fusion):
     def __init__(self):
@@ -35,12 +37,12 @@ class Hadamard(Fusion):
         Combines modalities using elementwise multiply (Hadamard product)
         """
         super().__init__("Hadamard")
-        self.needs_alignment = True # zero padding falsifies the result
+        self.needs_alignment = True  # zero padding falsifies the result
         self.commutative = True
         self.associative = True
 
     def transform(self, modalities: List[Modality], train_indices=None):
         # TODO: check for alignment in the metadata
         fused_data = np.prod([m.data for m in modalities], axis=0)
-        
+
         return fused_data

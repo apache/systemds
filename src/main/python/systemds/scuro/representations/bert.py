@@ -28,6 +28,7 @@ from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.operator_registry import register_representation
 
 import os
+
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
@@ -50,7 +51,7 @@ class Bert(UnimodalRepresentation):
         model = BertModel.from_pretrained(model_name)
 
         embeddings = self.create_embeddings(modality, model, tokenizer)
-        
+
         if self.output_file is not None:
             save_embeddings(embeddings, self.output_file)
 
@@ -60,12 +61,22 @@ class Bert(UnimodalRepresentation):
     def create_embeddings(self, modality, model, tokenizer):
         embeddings = []
         for i, d in enumerate(modality.data):
-            inputs = tokenizer(d, return_offsets_mapping=True, return_tensors="pt", padding=True, truncation=True)
-          
-            ModalityType.TEXT.add_field(list(modality.metadata.values())[i], "token_to_character_mapping", inputs.data['offset_mapping'][0].tolist())
-            
-            del inputs.data['offset_mapping']
-            
+            inputs = tokenizer(
+                d,
+                return_offsets_mapping=True,
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+            )
+
+            ModalityType.TEXT.add_field(
+                list(modality.metadata.values())[i],
+                "token_to_character_mapping",
+                inputs.data["offset_mapping"][0].tolist(),
+            )
+
+            del inputs.data["offset_mapping"]
+
             with torch.no_grad():
                 outputs = model(**inputs)
 

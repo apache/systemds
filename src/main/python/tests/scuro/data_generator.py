@@ -41,11 +41,11 @@ class TestDataLoader(BaseLoader):
 
         self.metadata = metadata
         self.test_data = data
-    
+
     def reset(self):
         self._next_chunk = 0
         self.data = []
-        
+
     def extract(self, file, indices):
         if isinstance(self.test_data, list):
             self.data = [self.test_data[i] for i in indices]
@@ -178,8 +178,10 @@ class ModalityRandomDataGenerator:
 
         return (
             np.random.randint(
-                0, 256, (num_instances, num_frames, height, width)
-            # ).astype(np.float16).tolist(),
+                0,
+                256,
+                (num_instances, num_frames, height, width),
+                # ).astype(np.float16).tolist(),
             ).astype(np.float16),
             metadata,
         )

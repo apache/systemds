@@ -26,6 +26,7 @@ from typing import Dict, Iterable
 import torch
 from systemds.utils.consts import MODULE_NAME
 
+
 def create_params_string(
     unnamed_parameters: Iterable[str], named_parameters: Dict[str, str]
 ) -> str:

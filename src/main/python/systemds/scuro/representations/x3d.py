@@ -31,14 +31,13 @@ import numpy as np
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.operator_registry import register_representation
 import math
+
 if torch.backends.mps.is_available():
     DEVICE = torch.device("mps")
-# elif torch.cuda.is_available():
-#     DEVICE = torch.device("cuda")
+elif torch.cuda.is_available():
+    DEVICE = torch.device("cuda")
 else:
     DEVICE = torch.device("cpu")
-    
-DEVICE = torch.device("cpu")
 
 
 # @register_representation([ModalityType.VIDEO])
@@ -135,26 +134,28 @@ class X3D(UnimodalRepresentation):
         transformed_modality.data = list(embeddings.values())
 
         return transformed_modality
-    
+
 
 class I3D(UnimodalRepresentation):
     def __init__(self, layer="avgpool", model_name="i3d", output_file=None):
         self.model_name = model_name
         parameters = self._get_parameters()
-        self.model = torch.hub.load("facebookresearch/pytorchvideo", "i3d_r50", pretrained=True).to(DEVICE)
+        self.model = torch.hub.load(
+            "facebookresearch/pytorchvideo", "i3d_r50", pretrained=True
+        ).to(DEVICE)
         super().__init__("I3D", ModalityType.TIMESERIES, parameters)
-        
+
         self.output_file = output_file
         self.layer_name = layer
         self.model.eval()
         for param in self.model.parameters():
             param.requires_grad = False
- 
+
     def _get_parameters(self, high_level=True):
         parameters = {"model_name": [], "layer_name": []}
         for m in ["r3d", "s3d"]:
             parameters["model_name"].append(m)
-        
+
         if high_level:
             parameters["layer_name"] = [
                 "conv1",
@@ -168,37 +169,35 @@ class I3D(UnimodalRepresentation):
             for name, layer in self.model.named_modules():
                 parameters["layer_name"].append(name)
         return parameters
-    
+
     def transform(self, modality):
         dataset = CustomDataset(modality.data, torch.float32, DEVICE)
         embeddings = {}
-        
+
         features = None
-        
+
         def hook(module, input, output):
             pooled = torch.nn.functional.adaptive_avg_pool3d(output, 1).squeeze()
             nonlocal features
             features = pooled.detach().cpu().numpy()
-        
+
         handle = self.model.blocks[6].dropout.register_forward_hook(hook)
-        
+
         for instance in dataset:
             video_id = instance["id"]
             frames = instance["data"].to(DEVICE)
             embeddings[video_id] = []
-            
-           
+
             batch = torch.transpose(frames, 1, 0)
             batch = batch.unsqueeze(0)
             _ = self.model(batch)
-        
+
             embeddings[video_id] = features
-        
+
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )
-        
-        transformed_modality.data = list(embeddings.values())
-        
-        return transformed_modality
 
+        transformed_modality.data = list(embeddings.values())
+
+        return transformed_modality

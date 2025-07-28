@@ -30,7 +30,6 @@ from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.bert import Bert
 from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
 from systemds.scuro.representations.mfcc import MFCC
-from systemds.scuro.representations.x3d import I3D
 from systemds.scuro.representations.resnet import ResNet
 from tests.scuro.data_generator import setup_data
 
@@ -78,10 +77,11 @@ class TestUnimodalRepresentations(unittest.TestCase):
             assert len(r.data) == self.num_instances
 
     def test_video_representations(self):
-        video_representations = [I3D()]  # Todo: add other video representations
+        video_representations = [ResNet()]  # Todo: add other video representations
         video_data_loader = VideoLoader(
             self.data_generator.get_modality_path(ModalityType.VIDEO),
-            self.data_generator.indices, fps=5
+            self.data_generator.indices,
+            fps=5,
         )
         video = UnimodalModality(video_data_loader)
         for representation in video_representations:

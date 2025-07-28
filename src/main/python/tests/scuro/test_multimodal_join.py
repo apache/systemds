@@ -53,9 +53,9 @@ class TestMultimodalJoin(unittest.TestCase):
         cls.audio_data, cls.audio_md = ModalityRandomDataGenerator().create_audio_data(
             cls.num_instances, 32000
         )
-        
-        cls.video_data, cls.video_md = ModalityRandomDataGenerator().create_visual_modality(
-            cls.num_instances, 60
+
+        cls.video_data, cls.video_md = (
+            ModalityRandomDataGenerator().create_visual_modality(cls.num_instances, 60)
         )
 
     def test_video_audio_join(self):
@@ -94,12 +94,22 @@ class TestMultimodalJoin(unittest.TestCase):
     def _prepare_data(self, l_chunk_size=None, r_chunk_size=None):
         audio = UnimodalModality(
             TestDataLoader(
-                self.indices, r_chunk_size, ModalityType.AUDIO, copy.deepcopy(self.audio_data), np.float32, copy.deepcopy(self.audio_md)
+                self.indices,
+                r_chunk_size,
+                ModalityType.AUDIO,
+                copy.deepcopy(self.audio_data),
+                np.float32,
+                copy.deepcopy(self.audio_md),
             )
         )
         video = UnimodalModality(
             TestDataLoader(
-                self.indices, l_chunk_size, ModalityType.VIDEO, copy.deepcopy(self.video_data), np.float32, copy.deepcopy(self.video_md)
+                self.indices,
+                l_chunk_size,
+                ModalityType.VIDEO,
+                copy.deepcopy(self.video_data),
+                np.float32,
+                copy.deepcopy(self.video_md),
             )
         )
 

@@ -59,19 +59,19 @@ class ImageBind(UnimodalRepresentation):
         if modality.modality_type == ModalityType.TEXT:
             for i, instance in enumerate(modality.data):
                 text_inputs = data.load_and_transform_text(instance, DEVICE)
-                text_embeddings =self.model({IBModalityType.TEXT: text_inputs})[
+                text_embeddings = self.model({IBModalityType.TEXT: text_inputs})[
                     IBModalityType.TEXT
                 ]
                 result.append(text_embeddings.mean(axis=0).cpu().detach().numpy())
         if modality.modality_type == ModalityType.AUDIO:
             audio_inputs = data.load_and_transform_audio_data(
                 list(modality.metadata)[
-                (modality.data_loader.next_chunk - 1)
-                * (modality.data_loader.chunk_size): (
-                                                             modality.data_loader.next_chunk - 1
-                                                     )
-                                                     * (modality.data_loader.chunk_size)
-                                                     + (modality.data_loader.chunk_size)
+                    (modality.data_loader.next_chunk - 1)
+                    * (modality.data_loader.chunk_size) : (
+                        modality.data_loader.next_chunk - 1
+                    )
+                    * (modality.data_loader.chunk_size)
+                    + (modality.data_loader.chunk_size)
                 ],
                 DEVICE,
             )

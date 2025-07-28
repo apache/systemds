@@ -81,7 +81,6 @@ class TestUnimodalRepresentations(unittest.TestCase):
         video_data_loader = VideoLoader(
             self.data_generator.get_modality_path(ModalityType.VIDEO),
             self.data_generator.indices,
-            fps=5,
         )
         video = UnimodalModality(video_data_loader)
         for representation in video_representations:

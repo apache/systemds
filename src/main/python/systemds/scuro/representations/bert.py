@@ -19,16 +19,16 @@
 #
 # -------------------------------------------------------------
 
-import numpy as np
-
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 import torch
 from transformers import BertTokenizer, BertModel
 from systemds.scuro.representations.utils import save_embeddings
 from systemds.scuro.modality.type import ModalityType
+from systemds.scuro.drsearch.operator_registry import register_representation
 
 
+@register_representation(ModalityType.TEXT)
 class Bert(UnimodalRepresentation):
     def __init__(self, model_name="bert", output_file=None):
         parameters = {"model_name": "bert"}
@@ -49,7 +49,7 @@ class Bert(UnimodalRepresentation):
         model = BertModel.from_pretrained(model_name)
 
         embeddings = self.create_embeddings(modality.data, model, tokenizer)
-        embeddings = [embeddings[i : i + 1] for i in range(embeddings.shape[0])]
+
         if self.output_file is not None:
             save_embeddings(embeddings, self.output_file)
 
@@ -65,7 +65,6 @@ class Bert(UnimodalRepresentation):
                 outputs = model(**inputs)
 
                 cls_embedding = outputs.last_hidden_state[:, 0, :].squeeze().numpy()
-                embeddings.append(cls_embedding)
+                embeddings.append(cls_embedding.reshape(1, -1))
 
-        embeddings = np.array(embeddings)
-        return embeddings.reshape((embeddings.shape[0], embeddings.shape[-1]))
+        return embeddings

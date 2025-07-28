@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.transform.decode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -32,29 +31,66 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
+/**
+ * Abstract base class for column-level decoders used in the transform framework.
+ * Each decoder implements logic to transform encoded columns (e.g., bin, dummy, recode)
+ * into decoded values during execution (typically from MatrixBlock to FrameBlock).
+ *
+ * This class handles metadata fields (e.g., column schema, names, index), provides
+ * basic serialization logic, and defines abstract decoding methods to be implemented
+ * by concrete decoders.
+ */
 public abstract class ColumnDecoder implements Externalizable {
+    // Logger instance for debugging
     protected static final Log LOG = LogFactory.getLog(Decoder.class.getName());
     private static final long serialVersionUID = -1732411001366177787L;
 
+    // Schema for single-column decoders
     protected ValueType _schema;
+
+    // Index of the target column (0-based)
     protected int _colID;
+
+    // For multi-column decoders: value types for all columns
     protected ValueType[] _multiSchema;
+
+    // Column indices this decoder applies to
     protected int[] _colList;
+
+    // Column names for metadata tracking (optional)
     protected String[] _colnames = null;
+
+    // Offset in the input MatrixBlock (0-based)
     protected int _offset;
 
+    /**
+     * Constructor for single-column decoders.
+     *
+     * @param schema value type of the column
+     * @param colID  column ID (0-based)
+     * @param offset matrix column index
+     */
     protected ColumnDecoder(ValueType schema, int colID, int offset) {
         _schema = schema;
         _colID = colID;
         _offset = offset;
     }
 
+
+    /**
+     * Constructor for multi-column decoders.
+     *
+     * @param multiSchema value types of all involved columns
+     * @param colList     list of column indices
+     * @param offset      offset in input matrix
+     */
     protected ColumnDecoder(ValueType[] multiSchema, int[] colList, int offset) {
         _multiSchema = multiSchema;
         _colList = colList;
         _offset = offset;
     }
 
+    // Basic getter/setter methods for decoder metadata
     public int getColOffset() {
         return _offset;
     }
@@ -112,19 +148,6 @@ public abstract class ColumnDecoder implements Externalizable {
      */
     public abstract void columnDecode(MatrixBlock in, FrameBlock out, int rl, int ru);
 
-    /**
-     * Returns a new Decoder that only handles a sub range of columns. The sub-range refers to the columns after
-     * decoding.
-     *
-     * @param colStart         the start index of the sub-range (1-based, inclusive)
-     * @param colEnd           the end index of the sub-range (1-based, exclusive)
-     * @param dummycodedOffset the offset of dummycoded segments before colStart
-     * @return a decoder of the same type, just for the sub-range
-     */
-    public ColumnDecoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
-        throw new DMLRuntimeException(
-                getClass().getSimpleName() + " does not support the creation of a sub-range decoder");
-    }
 
     /**
      * Update index-ranges to after decoding. Note that only Dummycoding changes the ranges.
@@ -159,10 +182,9 @@ public abstract class ColumnDecoder implements Externalizable {
         for(int j = 0; j < size2; j++)
             os.writeUTF(_colnames[j]);
 
-        //int size3 = (_schema == null) ? 0 : _schema.length;
-        //os.writeInt(size3);
-        //for(int j = 0; j < size3; j++)
-        //    os.writeByte(_schema[j].ordinal());
+        int size3 = (_schema == null) ? 0 : _schema.ordinal();
+        os.writeInt(size3);
+        os.writeByte(_schema.ordinal());
     }
 
     /**

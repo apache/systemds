@@ -33,38 +33,71 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
+/**
+ * Unit test for validating recode column decoding in SystemDS.
+ *
+ * This test ensures that columns transformed with recoding
+ * (mapping categorical/string values to numeric IDs)
+ * can be correctly decoded back to their original values.
+ *
+ * It compares decoding outputs from the legacy {@link Decoder} API
+ * and the newer {@link ColumnDecoder} API to verify equivalence.
+ */
 public class ColumnDecoderRecodeTest extends AutomatedTestBase {
+
+    /**
+     * Clears any previous assertion information before running tests.
+     */
     @Override
     public void setUp() {
         TestUtils.clearAssertionInformation();
     }
 
+    /**
+     * Test recode decoding process using both Decoder and ColumnDecoder APIs.
+     *
+     * Steps:
+     * 1. Create synthetic categorical column data (repeating values 1-4).
+     * 2. Apply recode transformation using {@link MultiColumnEncoder}.
+     * 3. Decode encoded data using:
+     *    - Legacy {@link Decoder} API (baseline expected result).
+     *    - New {@link ColumnDecoder} API.
+     * 4. Compare decoded outputs for equality.
+     */
     @Test
     public void testColumnEncoderDecoderRecode() {
         try {
+            // Step 1: Generate categorical data
             int rows = 20;
             double[][] arr = new double[rows][1];
+
+            // Fill single column with repeating sequence: 1, 2, 3, 4, 1, 2, ...
             for (int i = 0; i < rows; i++)
                 arr[i][0] = (i % 4) + 1;
+
+            // Convert array to SystemDS data structures
             MatrixBlock mb = DataConverter.convertToMatrixBlock(arr);
             FrameBlock data = DataConverter.convertToFrameBlock(mb);
+
+            // Step 2: Define recode transformation spec
             String spec = "{ids:true, recode:[1]}";
 
-            // encode using column encoder
+            // Step 3: Encode data using MultiColumnEncoder
             MultiColumnEncoder enc = EncoderFactory.createEncoder(spec, data.getColumnNames(), 1, null);
             MatrixBlock encoded = enc.encode(data);
             FrameBlock meta = enc.getMetaData(new FrameBlock(1, ValueType.STRING));
 
-            // baseline decode using existing decoder
+            // Step 4a: Decode using legacy Decoder API
             Decoder dec = DecoderFactory.createDecoder(spec, data.getColumnNames(), data.getSchema(), meta, encoded.getNumColumns());
             FrameBlock expected = new FrameBlock(data.getSchema());
             dec.decode(encoded, expected);
 
-            // decode using column decoder implementation
+            // Step 4b: Decode using new ColumnDecoder API
             ColumnDecoder cdec = ColumnDecoderFactory.createDecoder(spec, data.getColumnNames(), data.getSchema(), meta);
             FrameBlock actual = new FrameBlock(data.getSchema());
             cdec.columnDecode(encoded, actual);
 
+            // Step 5: Validate decoded outputs are identical
             TestUtils.compareFrames(expected, actual, false);
         }
         catch(Exception ex) {

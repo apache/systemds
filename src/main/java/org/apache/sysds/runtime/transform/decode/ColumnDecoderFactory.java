@@ -35,6 +35,16 @@ import java.util.List;
 import static org.apache.sysds.runtime.util.CollectionUtils.except;
 import static org.apache.sysds.runtime.util.CollectionUtils.unionDistinct;
 
+/**
+ * Factory class for constructing appropriate column decoders from transformation specifications.
+ * This class interprets the JSON-based spec (used in transform scripts) and generates a
+ * ColumnDecoderComposite which handles decoding for multiple column types:
+ *
+ * - Recode: Converts IDs back to original categorical values
+ * - Bin:    Reconstructs approximate numeric values from bins
+ * - Dummycode: Converts one-hot encodings back to categories
+ * - PassThrough: For columns that require no decoding
+ */
 public class ColumnDecoderFactory {
     public enum DecoderType {
         Bin,
@@ -43,6 +53,17 @@ public class ColumnDecoderFactory {
         Recode,
     }
 
+    /**
+     * Creates a decoder using the full signature (column names, schema, metadata, etc.).
+     * This method parses the spec, determines which transformation applies to which column,
+     * and instantiates the corresponding decoder implementations.
+     *
+     * @param spec     JSON specification of the transform pipeline
+     * @param colnames column names in the input
+     * @param schema   value types for each column
+     * @param meta     metadata frame block containing transformation metadata
+     * @return a composite column decoder that handles all specified decoding logic
+     */
     public static ColumnDecoder createDecoder(String spec, String[] colnames, ValueType[] schema, FrameBlock meta) {
         return createDecoder(spec, colnames, schema, meta, meta.getNumColumns(), -1, -1);
     }
@@ -55,42 +76,54 @@ public class ColumnDecoderFactory {
         return createDecoder(spec, colnames, schema, meta, meta.getNumColumns(), minCol, maxCol);
     }
 
+    /**
+     * Core decoder creation method.
+     *
+     * @param spec     transform JSON spec
+     * @param colnames column names
+     * @param schema   value types
+     * @param meta     metadata block
+     * @param clen     number of columns
+     * @param minCol   optional column range lower bound (1-based)
+     * @param maxCol   optional column range upper bound (1-based)
+     * @return decoder instance (composite or single)
+     */
     public static ColumnDecoder createDecoder(String spec, String[] colnames, ValueType[] schema,
                                               FrameBlock meta, int clen, int minCol, int maxCol) {
         ColumnDecoder decoder;
+
+        // tracks current column offset in matrix block
         int currOffset = 0;
 
         try {
             JSONObject jSpec = new JSONObject(spec);
             List<ColumnDecoder> ldecoders = new ArrayList<>();
 
+            // Get full list of columns [1, 2, ..., clen]
             List<Integer> fullSeq = UtilFunctions.getSeqList(1, clen, 1);
-            //List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames, minCol, maxCol);
-            //List<Integer> recodeIDs = Arrays.asList(ArrayUtils.toObject(
-            //        TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TfMethod.RECODE.toString(), minCol, maxCol)));
-            //List<Integer> dummyIDs = Arrays.asList(ArrayUtils.toObject(
-            //        TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TfMethod.DUMMYCODE.toString(), minCol, maxCol)));
-//
-            //int len = dummyIDs.isEmpty() ? Math.min(meta.getNumColumns(), clen) : meta.getNumColumns();
-            //List<Integer> ptIDs = except(except(UtilFunctions.getSeqList(1, clen, 1), recodeIDs), binIDs);
-            //ptIDs = except(ptIDs, dummyIDs);
 
-            //create decoders 'bin', 'recode', 'dummy' and 'pass-through'
+            // Parse column ID lists from spec JSON
             List<Integer> binIDs = TfMetaUtils.parseBinningColIDs(jSpec, colnames, minCol, maxCol);
             List<Integer> rcIDs = Arrays.asList(ArrayUtils.toObject(
                     TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TfMethod.RECODE.toString(), minCol, maxCol)));
             List<Integer> dcIDs = Arrays.asList(ArrayUtils.toObject(
                     TfMetaUtils.parseJsonIDList(jSpec, colnames, TfUtils.TfMethod.DUMMYCODE.toString(), minCol, maxCol)));
+
+            // Merge dummycode columns into recode set
             rcIDs = unionDistinct(rcIDs, dcIDs);
+
+            // Determine pass-through columns (not in recode or bin sets)
             int len = dcIDs.isEmpty() ? Math.min(meta.getNumColumns(), clen) : meta.getNumColumns();
             List<Integer> ptIDs = except(except(UtilFunctions.getSeqList(1, len, 1), rcIDs), binIDs);
 
+            // Default schema fallback
             if( schema == null ) {
                 schema = UtilFunctions.nCopies(len, ValueType.STRING);
                 for( Integer col : ptIDs )
                     schema[col-1] = ValueType.FP64;
             }
 
+            // Create per-column decoders
             for (int colID : fullSeq) {
                 if (binIDs.contains(colID)) {
                     ColumnDecoder dec = new ColumnDecoderBin(schema[colID - 1], colID - 1, currOffset);
@@ -119,7 +152,7 @@ public class ColumnDecoderFactory {
                 }
             }
 
-
+            // Combine into a single composite decoder
             decoder = new ColumnDecoderComposite(schema, ldecoders);
             decoder.setColnames(colnames);
             decoder.initMetaData(meta);
@@ -131,6 +164,12 @@ public class ColumnDecoderFactory {
         return decoder;
     }
 
+    /**
+     * Gets the decoder type enum value for a given decoder instance.
+     *
+     * @param decoder a column decoder instance
+     * @return ordinal of the decoder type
+     */
     public static int getDecoderType(ColumnDecoder decoder) {
         if (decoder instanceof ColumnDecoderDummycode)
             return DecoderType.Dummycode.ordinal();
@@ -141,6 +180,13 @@ public class ColumnDecoderFactory {
         throw new DMLRuntimeException("Unsupported decoder type: " + decoder.getClass().getCanonicalName());
     }
 
+    /**
+     * Creates an empty decoder instance of the given type.
+     * Used primarily for deserialization or instantiation via type ID.
+     *
+     * @param type the decoder type ordinal
+     * @return a new (uninitialized) decoder instance
+     */
     public static ColumnDecoder createInstance(int type) {
         DecoderType dtype = DecoderType.values()[type];
         switch (dtype) {

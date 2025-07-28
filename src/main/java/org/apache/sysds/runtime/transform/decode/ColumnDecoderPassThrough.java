@@ -29,22 +29,42 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
+/**
+ * ColumnDecoderPassThrough is a no-op decoder that simply copies
+ * values from the input matrix into the output frame as-is.
+ *
+ * It is used for numeric columns or columns that do not require
+ * recoding, binning, or dummy decoding.
+ */
 public class ColumnDecoderPassThrough extends ColumnDecoder {
-
     private static final long serialVersionUID = -8525203889417422598L;
 
-    //private int[] _dcCols = null;
-    //private int[] _srcCols = null;
-
+    /**
+     * Constructor for pass-through decoder with schema, column index, and offset.
+     *
+     * @param schema  value type of the column (e.g., DOUBLE)
+     * @param ptCols  output column index
+     * @param dcCols  unused here, but consistent with decoder constructor pattern
+     * @param offset  input matrix column offset
+     */
     protected ColumnDecoderPassThrough(ValueType schema, int ptCols, int[] dcCols, int offset) {
         super(schema, ptCols, offset);
-        //_dcCols = dcCols;
     }
 
+    /**
+     * Default constructor for deserialization.
+     */
     public ColumnDecoderPassThrough() {
         super(null, -1, -1);
     }
 
+    /**
+     * Copies values from the input matrix to the output frame without transformation.
+     *
+     * @param in  the input MatrixBlock containing raw data
+     * @param out the output FrameBlock where values are written
+     * @return    the updated FrameBlock
+     */
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
         long p1 = System.nanoTime();
@@ -52,13 +72,20 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
         for (int r = 0; r < in.getNumRows(); r++) {
             out.getColumn(_colID).set(r, in.get(r, _offset));
         }
-        //columnDecode(in, out, 0, in.getNumRows());
         long p2 = System.nanoTime();
         System.out.println(this.getClass() + "time: " + (p2 - p1) / 1e6 + " ms");
         return out;
     }
 
-
+    /**
+     * Partial row decoding, useful for parallel execution.
+     * Converts each double to the proper typed object before storing.
+     *
+     * @param in  the input matrix block
+     * @param out the output frame block
+     * @param rl  row start index (inclusive)
+     * @param ru  row end index (exclusive)
+     */
     @Override
     public void columnDecode(MatrixBlock in, FrameBlock out, int rl, int ru) {
         for (int r = rl; r < ru; r++) {
@@ -67,94 +94,39 @@ public class ColumnDecoderPassThrough extends ColumnDecoder {
         }
     }
 
-    public ColumnDecoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset){
-        return null;
-        //List<Integer> colList = new ArrayList<>();
-        //List<Integer> dcList = new ArrayList<>();
-        //List<Integer> srcList = new ArrayList<>();
-//
-        //for (int i = 0; i < _colList.length; i++) {
-        //    int colID = _colList[i];
-        //    if (colID >= colStart && colID < colEnd) {
-        //        colList.add(colID - (colStart - 1));
-        //        srcList.add(_srcCols[i] - dummycodedOffset);
-        //    }
-        //}
-//
-        //Arrays.stream(_dcCols)
-        //        .filter(c -> c >= colStart && c < colEnd)
-        //        .forEach(dcList::add);
-//
-        //if (colList.isEmpty())
-        //    return null;
-//
-        //ColumnDecoderPassThrough dec = new ColumnDecoderPassThrough(
-        //        Arrays.copyOfRange(_schema, colStart - 1, colEnd - 1),
-        //        colList.stream().mapToInt(i -> i).toArray(),
-        //        dcList.stream().mapToInt(i -> i).toArray());
-        //dec._srcCols = srcList.stream().mapToInt(i -> i).toArray();
-        //return dec;
-    }
+    /**
+     * No metadata initialization required for pass-through decoder.
+     * This method is intentionally left empty.
+     *
+     * @param meta metadata frame block (unused)
+     */
     @Override
     public void initMetaData(FrameBlock meta) {
-        /*
-        if (_colList == null)
-            return; // nothing to initialize for passthrough columns
-        if( _dcCols.length > 0 ) {
-            //prepare source column id mapping w/ dummy coding
-            _srcCols = new int[_colList.length];
-            int ix1 = 0, ix2 = 0, off = 0;
-            while( ix1<_colList.length ) {
-                if( ix2>=_dcCols.length || _colList[ix1] < _dcCols[ix2] ) {
-                    _srcCols[ix1] = _colList[ix1] + off;
-                    ix1 ++;
-                }
-                else { //_colList[ix1] > _dcCols[ix2]
-                    ColumnMetadata d =meta.getColumnMetadata()[_dcCols[ix2]-1];
-                    off += d.isDefault() ? -1 : d.getNumDistinct() - 1;
-                    ix2 ++;
-                }
-            }
-        }
-        else {
-            //prepare direct source column mapping
-            _srcCols = _colList;
-        }
-        */
-
     }
 
+    /**
+     * Custom serialization using Hadoop Externalizable.
+     *
+     * @param os object output stream
+     * @throws IOException if an I/O error occurs
+     */
     @Override
     public void writeExternal(ObjectOutput os)
             throws IOException
     {
         super.writeExternal(os);
-        /*
-        os.writeInt(_srcCols.length);
-        for(int i = 0; i < _srcCols.length; i++)
-            os.writeInt(_srcCols[i]);
-
-        os.writeInt(_dcCols.length);
-        for(int i = 0; i < _dcCols.length; i++)
-            os.writeInt(_dcCols[i]);
-
-         */
     }
 
+    /**
+     * Custom deserialization using Hadoop Externalizable.
+     *
+     * @param in object input stream
+     * @throws IOException if an I/O error occurs
+     */
     @Override
     public void readExternal(ObjectInput in)
             throws IOException
     {
         super.readExternal(in);
-        /*
-        _srcCols = new int[in.readInt()];
-        for(int i = 0; i < _srcCols.length; i++)
-            _srcCols[i] = in.readInt();
-
-        _dcCols = new int[in.readInt()];
-        for(int i = 0; i < _dcCols.length; i++)
-            _dcCols[i] = in.readInt();
-
-         */
     }
 }

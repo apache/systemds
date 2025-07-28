@@ -30,41 +30,90 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
+/**
+ * ColumnDecoderBin is a decoder for bin-based encoded columns.
+ * It is used to reverse the binning transformation, restoring the original
+ * approximate value based on the bin's min and max bounds.
+ *
+ * For example, if a continuous feature was discretized into bins with numeric
+ * IDs (e.g., 1, 2, 3...), this decoder estimates the original value by computing
+ * the midpoint of the bin or a linearly interpolated value within the bin.
+ */
 public class ColumnDecoderBin extends ColumnDecoder {
     private static final long serialVersionUID = -3784249774608228805L;
 
+    // Number of bins for the column
     private int _numBins;
+
+    // Minimum and maximum values for each bin (index: binID - 1)
     private double[] _binMins = null;
     private double[] _binMaxs = null;
 
+    /**
+     * Default constructor for deserialization.
+     */
     public ColumnDecoderBin() {
         super(null, -1, -1);
     }
 
+    /**
+     * Constructor for bin decoder with column schema and index.
+     *
+     * @param schema  ValueType of the column
+     * @param binCols Number of columns handled by this decoder (typically 1)
+     * @param offset  Offset position of the column in the input matrix
+     */
     protected ColumnDecoderBin(ValueType schema, int binCols, int offset) {
         super(schema, binCols, offset);
     }
 
-
+    /**
+     * Decodes the entire column from bin IDs to approximate values.
+     * The decoding uses the midpoint of the bin with optional interpolation
+     * if the original transformation retained more precision.
+     *
+     * @param in  Input MatrixBlock containing encoded bin IDs
+     * @param out Output FrameBlock to store decoded values
+     * @return    The updated FrameBlock with decoded values
+     */
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
         long b1 = System.nanoTime();
+        // Ensure the output FrameBlock has allocated memory for columns
         out.ensureAllocatedColumns(in.getNumRows());
+
+        // Cache bin min and max arrays
         final double[] binMins = _binMins;
         final double[] binMaxs = _binMaxs;
+
+        // total number of rows to decode
         final int nRows = in.getNumRows();
+
+        // Get the column array in the output FrameBlock where decoded values will be stored
         Array<?> a = out.getColumn(_colID);
+
+        // Iterate over each row
         for (int i = 0; i < nRows; i++) {
+            // Get the encoded bin value from the input matrix
             double val = in.get(i, _offset);
             double decoded;
+
             if (!Double.isNaN(val)) {
+                // Round the value to get the bin ID (1-based)
                 int key = (int) Math.round(val);
+
+                // Lookup the min and max range of the bin
                 double bmin = binMins[key - 1];
                 double bmax = binMaxs[key - 1];
+
+                // Compute decoded value
                 decoded = bmin + (bmax - bmin) / 2
                         + (val - key) * (bmax - bmin);
+
+                // Store decoded value
                 a.set(i, decoded);
             } else {
+                // If input is NaN (missing), preserve it
                 a.set(i, val);
             }
         }
@@ -73,31 +122,25 @@ public class ColumnDecoderBin extends ColumnDecoder {
         return out;
     }
 
-
+    /**
+     * (Not yet implemented) Decodes a subset of rows between rl and ru.
+     *
+     * @param in  Input MatrixBlock
+     * @param out Output FrameBlock
+     * @param rl  Start row (inclusive)
+     * @param ru  End row (exclusive)
+     */
     @Override
     public void columnDecode(MatrixBlock in, FrameBlock out, int rl, int ru) {
-        //TODO
+        //TODO: future work: row based multithreading in column decoder
     }
 
-    @Override
-    public ColumnDecoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
-        return null;
-        // TODO
-        //for (int i = 0; i < _colList.length; i++) {
-        //    long b1 = System.nanoTime();
-        //    ValueType[] schema = (_schema != null) ? new ValueType[]{_schema[colStart - 1]} : null;
-        //    if (_colList[i] == colStart) {
-        //        ColumnDecoderBin sub = new ColumnDecoderBin(schema, new int[]{colStart});
-        //        sub._numBins = new int[]{_numBins[i]};
-        //        sub._binMins = new double[][]{_binMins[i]};
-        //        sub._binMaxs = new double[][]{_binMaxs[i]};
-        //        return sub;
-        //    }
-        //    long b2 = System.nanoTime();
-        //    System.out.println("time: " + (b2 - b1) / 1e6 + " ms");
-        //}
-        //return null;
-    }
+    /**
+     * Initializes bin metadata from the given metadata FrameBlock.
+     * Each row in the metadata should contain a string of the form "min:max".
+     *
+     * @param meta FrameBlock containing bin ranges for the column
+     */
     @Override
     public void initMetaData(FrameBlock meta) {
         int col = _colID; // already 0-based
@@ -119,48 +162,15 @@ public class ColumnDecoderBin extends ColumnDecoder {
             _binMaxs[i] = Double.parseDouble(parts[1]);
         }
     }
-    //@Override
-    //public void initMetaData(FrameBlock meta) {
-    //    System.out.println("11");
-    //    //initialize bin boundaries
-    //    _numBins = new int[_colList.length];
-    //    _binMins = new double[_colList.length][];
-    //    _binMaxs = new double[_colList.length][];
-//
-    //    //parse and insert bin boundaries
-    //    for( int j=0; j<_colList.length; j++ ) {
-    //        int numBins = (int)meta.getColumnMetadata(_colList[j]-1).getNumDistinct();
-    //        _binMins[j] = new double[numBins];
-    //        _binMaxs[j] = new double[numBins];
-    //        for( int i=0; i<meta.getNumRows() & i<numBins; i++ ) {
-    //            if( meta.get(i, _colList[j]-1)==null  ) {
-    //                if( i+1 < numBins )
-    //                    throw new DMLRuntimeException("Did not reach number of bins: "+(i+1)+"/"+numBins);
-    //                break; //reached end of bins
-    //            }
-    //            String[] parts = UtilFunctions.splitRecodeEntry(
-    //                    meta.get(i, _colList[j]-1).toString());
-    //            _binMins[j][i] = Double.parseDouble(parts[0]);
-    //            _binMaxs[j][i] = Double.parseDouble(parts[1]);
-    //        }
-    //    }
-    //}
 
-    //@Override
-    //public void writeExternal(ObjectOutput out) throws IOException {
-    //    super.writeExternal(out);
-    //    for( int i=0; i<_colList.length; i++ ) {
-    //        int len = _numBins[i];
-    //        out.writeInt(len);
-    //        for(int j=0; j<len; j++) {
-    //            out.writeDouble(_binMins[i][j]);
-    //            out.writeDouble(_binMaxs[i][j]);
-    //        }
-    //    }
-    //}
+    /**
+     * Serialization method to write decoder state.
+     *
+     * @param out ObjectOutput stream
+     * @throws IOException If an I/O error occurs
+     */
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
-        // Not tested yet
         super.writeExternal(out);
         out.writeInt(_numBins);
         for (int i = 0; i < _numBins; i++) {
@@ -169,11 +179,15 @@ public class ColumnDecoderBin extends ColumnDecoder {
         }
     }
 
+    /**
+     * Deserialization method to restore decoder state.
+     *
+     * @param in ObjectInput stream
+     * @throws IOException If an I/O error occurs
+     */
     @Override
     public void readExternal(ObjectInput in) throws IOException {
         super.readExternal(in);
-        // Not tested yet
-
         _numBins = in.readInt();
         _binMins = new double[_numBins];
         _binMaxs = new double[_numBins];
@@ -183,20 +197,4 @@ public class ColumnDecoderBin extends ColumnDecoder {
             _binMaxs[i] = in.readDouble();
         }
     }
-
-    //@Override
-    //public void readExternal(ObjectInput in) throws IOException {
-    //    super.readExternal(in);
-    //    _numBins = new int[_colList.length];
-    //    _binMins = new double[_colList.length][];
-    //    _binMaxs = new double[_colList.length][];
-    //    for( int i=0; i<_colList.length; i++ ) {
-    //        int len = in.readInt();
-    //        _numBins[i] = len;
-    //        for(int j=0; j<len; j++) {
-    //            _binMins[i][j] = in.readDouble();
-    //            _binMaxs[i][j] = in.readDouble();
-    //        }
-    //    }
-    //}
 }

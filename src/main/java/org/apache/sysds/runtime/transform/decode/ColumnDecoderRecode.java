@@ -32,26 +32,60 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.*;
 
+/**
+ * ColumnDecoderRecode is a decoder used to reverse the recode (categorical-to-ID) transformation.
+ * It maps encoded integer IDs back to their original string or typed categorical values.
+ *
+ * It supports fast lookup via a direct array for small key ranges and uses a HashMap for general cases.
+ */
 public class ColumnDecoderRecode extends ColumnDecoder {
 
     private static final long serialVersionUID = -3784249774608228805L;
 
+    // Map from recode ID (Long) to original object value (e.g., String, Integer)
     private HashMap<Long, Object> _rcMap = null;
+
+    // Optional fast array-based lookup if keys are dense and within int range
     private Object[] _rcMapDirect = null;
+
+    // Whether the decoding applies to output frame (used during transformation pipeline)
     private boolean _onOut = false;
+
+    /**
+     * Default constructor for deserialization.
+     */
     public ColumnDecoderRecode() {
         super(null, -1, -1);
     }
 
+    /**
+     * Constructor with schema and metadata.
+     *
+     * @param schema  value type of the column
+     * @param onOut   whether decoding applies to the output frame
+     * @param rcCol   column index
+     * @param offset  input matrix column offset
+     */
     protected ColumnDecoderRecode(ValueType schema, boolean onOut, int rcCol, int offset) {
         super(schema, rcCol, offset);
         _onOut = onOut;
     }
 
+    /**
+     * Decodes the column from the input MatrixBlock into the output FrameBlock.
+     * Each encoded value (usually an integer ID) is mapped back to its original string
+     * or object value using the recode map.
+     *
+     * @param in  the input MatrixBlock containing encoded integer values
+     * @param out the output FrameBlock where decoded values will be stored
+     * @return    the updated FrameBlock with decoded categorical values
+     */
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
         long t0 = System.nanoTime();
         out.ensureAllocatedColumns(in.getNumRows());
+
+        // Iterate over each row, decode the ID to original value
         for (int i = 0; i < in.getNumRows(); i++) {
             Object obj = getRcMapValue((int)in.get(i, _offset));
             out.set(i, _colID, obj);
@@ -61,41 +95,24 @@ public class ColumnDecoderRecode extends ColumnDecoder {
         return out;
     }
 
+    /**
+     * Decodes a subset of rows (from rl to ru) from the input MatrixBlock into the output FrameBlock.
+     * This method is intended for parallel execution where decoding can be split by row range.
+     *
+     * @param in  the input MatrixBlock containing encoded values
+     * @param out the output FrameBlock to hold decoded results
+     * @param rl  the starting row index (inclusive)
+     * @param ru  the ending row index (exclusive)
+     */
     @Override
     public void columnDecode(MatrixBlock in, FrameBlock out, int rl, int ru) {
+        out.ensureAllocatedColumns(in.getNumRows());
         for (int i = rl; i < ru; i++) {
             long val = UtilFunctions.toLong(in.get(i, _offset));
             Object obj = getRcMapValue(val);
             out.set(i, _colID, obj);
         }
-
-    }
-    public ColumnDecoder subRangeDecoder(int colStart, int colEnd, int dummycodedOffset) {
-        return null;
-
-        //List<Integer> cols = new ArrayList<>();
-        //List<HashMap<Long, Object>> rcMaps = new ArrayList<>();
-        //List<Object[]> rcMapsDirect = (_rcMapsDirect != null) ? new ArrayList<>() : null;
-        //for(int i = 0; i < _colList.length; i++) {
-        //    int col = _colList[i];
-        //    if(col >= colStart && col < colEnd) {
-        //        cols.add(col - (colStart - 1));
-        //        //rcMaps.add(new HashMap<>(_rcMaps[i]));
-        //        rcMaps.add(_rcMaps[i]);
-        //        if(rcMapsDirect != null)
-        //            rcMapsDirect.add(_rcMapsDirect[i]);
-        //    }
-        //}
-        //if(cols.isEmpty())
-        //    return null;
-//
-        //int[] colList = cols.stream().mapToInt(v -> v).toArray();
-        //ColumnDecoderRecode dec = new ColumnDecoderRecode(
-        //        Arrays.copyOfRange(_multiSchema, colStart - 1, colEnd - 1), _onOut, colList);
-        //dec._rcMaps = rcMaps.toArray(new HashMap[0]);
-        //if(rcMapsDirect != null)
-        //    dec._rcMapsDirect = rcMapsDirect.toArray(new Object[0][]);
-        //return dec;
+        //TODO: future work: row based multithreading in column decoder
     }
 
     @Override
@@ -122,70 +139,27 @@ public class ColumnDecoderRecode extends ColumnDecoder {
 
         long t1 = System.nanoTime();
         System.out.println(this.getClass() + " meta time: " + (t1 - t0) / 1e6 + " ms");
-        //initialize recode maps according to schema
-        //_rcMaps = new HashMap[_colList.length];
-        //long[] max = new long[_colList.length];
-        //for( int j=0; j<_colList.length; j++ ) {
-        //    HashMap<Long, Object> map = new HashMap<>();
-        //    for( int i=0; i<meta.getNumRows(); i++ ) {
-        //        if( meta.get(i, _colList[j]-1)==null )
-        //            break; //reached end of recode map
-        //        String[] tmp = ColumnEncoderRecode.splitRecodeMapEntry(meta.get(i, _colList[j]-1).toString());
-        //        Object obj = UtilFunctions.stringToObject(_multiSchema[_colList[j]-1], tmp[0]);
-        //        long lval = Long.parseLong(tmp[1]);
-        //        map.put(lval, obj);
-        //        max[j] = Math.max(lval, max[j]);
-        //    }
-        //    _rcMaps[j] = map;
-        //}
-//
-        ////convert to direct lookup arrays
-        //if( Arrays.stream(max).allMatch(v -> v < Integer.MAX_VALUE) ) {
-        //    _rcMapsDirect = new Object[_rcMaps.length][];
-        //    for( int i=0; i<_rcMaps.length; i++ ) {
-        //        Object[] arr = new Object[(int)max[i]];
-        //        for(Map.Entry<Long,Object> e1 : _rcMaps[i].entrySet())
-        //            arr[e1.getKey().intValue()-1] = e1.getValue();
-        //        _rcMapsDirect[i] = arr;
-        //    }
-        //}
     }
 
+    /**
+     * Lookup method to retrieve original value from encoded ID.
+     *
+     * @param key recode ID
+     * @return decoded object
+     */
     public Object getRcMapValue(long key) {
         return (_rcMapDirect != null && key > 0 && key <= _rcMapDirect.length) ?
                 _rcMapDirect[(int)key-1] : _rcMap.get(key);
     }
 
     /**
-     * Parses a line of &lt;token, ID, count&gt; into &lt;token, ID&gt; pairs, where
-     * quoted tokens (potentially including separators) are supported.
+     * Serialization method to write decoder state.
      *
-     * @param entry entry line (token, ID, count)
-     * @param pair token-ID pair
+     * @param out ObjectOutput stream
+     * @throws IOException If an I/O error occurs
      */
-    public static void parseRecodeMapEntry(String entry, Pair<String,String> pair) {
-        int ixq = entry.lastIndexOf('"');
-        String token = UtilFunctions.unquote(entry.substring(0,ixq+1));
-        int idx = ixq+2;
-        while(entry.charAt(idx) != TfUtils.TXMTD_SEP.charAt(0))
-            idx++;
-        String id = entry.substring(ixq+2,idx);
-        pair.set(token, id);
-    }
-
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
-
-        //super.writeExternal(out);
-        //out.writeBoolean(_onOut);
-        //out.writeInt(_rcMaps.length);
-        //for(int i = 0; i < _rcMaps.length; i++) {
-        //    out.writeInt(_rcMaps[i].size());
-        //    for(Map.Entry<Long,Object> e1 : _rcMaps[i].entrySet()) {
-        //        out.writeLong(e1.getKey());
-        //        out.writeUTF(e1.getValue().toString());
-        //    }
-        //}
         super.writeExternal(out);
         out.writeBoolean(_onOut);
         out.writeInt(_rcMap.size());
@@ -195,19 +169,14 @@ public class ColumnDecoderRecode extends ColumnDecoder {
         }
     }
 
+    /**
+     * Deserialization method to restore decoder state.
+     *
+     * @param in ObjectInput stream
+     * @throws IOException If an I/O error occurs
+     */
     @Override
-    @SuppressWarnings("unchecked")
     public void readExternal(ObjectInput in) throws IOException {
-        //super.readExternal(in);
-        //_onOut = in.readBoolean();
-        //_rcMaps = new HashMap[in.readInt()];
-        //for(int i = 0; i < _rcMaps.length; i++) {
-        //    HashMap<Long, Object> maps = new HashMap<>();
-        //    int size = in.readInt();
-        //    for(int j = 0; j < size; j++)
-        //        maps.put(in.readLong(), in.readUTF());
-        //    _rcMaps[i] = maps;
-        //}
         super.readExternal(in);
         _onOut = in.readBoolean();
         int size = in.readInt();

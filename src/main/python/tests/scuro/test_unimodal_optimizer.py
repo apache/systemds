@@ -20,7 +20,6 @@
 # -------------------------------------------------------------
 
 
-import shutil
 import unittest
 
 import numpy as np
@@ -31,8 +30,8 @@ from sklearn.model_selection import train_test_split
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.models.model import Model
 from systemds.scuro.drsearch.task import Task
-from systemds.scuro.drsearch.unimodal_representation_optimizer import (
-    UnimodalRepresentationOptimizer,
+from systemds.scuro.drsearch.unimodal_optimizer import (
+    UnimodalOptimizer,
 )
 
 from systemds.scuro.representations.spectrogram import Spectrogram
@@ -41,9 +40,6 @@ from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.resnet import ResNet
 from tests.scuro.data_generator import ModalityRandomDataGenerator, TestDataLoader
 
-from systemds.scuro.dataloader.audio_loader import AudioLoader
-from systemds.scuro.dataloader.video_loader import VideoLoader
-from systemds.scuro.dataloader.text_loader import TextLoader
 from systemds.scuro.modality.type import ModalityType
 
 
@@ -186,21 +182,21 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
         ):
             registry = Registry()
 
-            unimodal_optimizer = UnimodalRepresentationOptimizer(
-                [modality], self.tasks, max_chain_depth=2
+            unimodal_optimizer = UnimodalOptimizer(
+                [modality], self.tasks
             )
             unimodal_optimizer.optimize()
 
             assert (
-                list(unimodal_optimizer.optimization_results.keys())[0]
+                list(unimodal_optimizer.operator_performance.keys())[0]
                 == modality.modality_id
             )
-            assert len(list(unimodal_optimizer.optimization_results.values())[0]) == 2
+            assert len(list(unimodal_optimizer.operator_performance.values())[0]) == 2
             assert (
                 len(
                     unimodal_optimizer.get_k_best_results(modality, 1, self.tasks[0])[
                         0
-                    ].operator_chain
+                    ].representations
                 )
                 >= 1
             )

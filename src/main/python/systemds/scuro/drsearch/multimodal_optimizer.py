@@ -21,38 +21,73 @@ class MultimodalOptimizer:
         self.operator_registry = Registry()
         self.optimization_results = {}
 
+        for modality in self.modalities:
+            self.optimization_results[modality.modality_id] = {}
+            for task in tasks:
+                self.optimization_results[modality.modality_id][task.model.name] = (
+                    MultimodalResults(modality, task.name)
+                )
+
     def optimize(self):
         for task in self.tasks:
             for modality in self.modalities:
                 representations = self.k_best_modalities[task][modality.modality_id]
-                applied_representations = []
-                for i in range(0, len(representations)):
-                    applied_representation = modality
-                    for j, rep in enumerate(representations[i].representations):
-                        representation, is_context = (
-                            self.operator_registry.get_representation_by_name(
-                                rep, modality.modality_type
-                            )
+                applied_representations = self.extract_representations(
+                    representations, modality
+                )
+                combined_representations = []
+                for i in range(1, len(applied_representations)):
+                    for fusion_method in self.operator_registry.get_fusion_operators():
+                        combined = applied_representations[i - 1].combine(
+                            applied_representations[i], fusion_method()
                         )
-                        if representation is None:
-                            if rep == AggregatedRepresentation.__name__:
-                                representation = AggregatedRepresentation(Aggregation())
-                        else:
-                            representation = representation()
-                        representation.set_parameters(representations[i].params[j])
-                        if is_context:
-                            applied_representation = applied_representation.context(
-                                representation
+                        self.evaluate(
+                            task,
+                            combined,
+                            [i - 1, i],
+                            fusion_method,
+                            [modality.modality_id],
+                        )
+                        if not fusion_method().commutative:
+                            combined_comm = applied_representations[i].combine(
+                                applied_representations[i - 1], fusion_method()
                             )
-                        else:
-                            applied_representation = (
-                                applied_representation.apply_representation(
-                                    representation
-                                )
+                            self.evaluate(
+                                task,
+                                combined_comm,
+                                [i, i - 1],
+                                fusion_method,
+                                [modality.modality_id],
                             )
-                    applied_representations.append(applied_representation)
 
-    def evaluate(self, task, modality, representation_names, params):
+    def extract_representations(self, representations, modality):
+        applied_representations = []
+        for i in range(0, len(representations)):
+            applied_representation = modality
+            for j, rep in enumerate(representations[i].representations):
+                representation, is_context = (
+                    self.operator_registry.get_representation_by_name(
+                        rep, modality.modality_type
+                    )
+                )
+                if representation is None:
+                    if rep == AggregatedRepresentation.__name__:
+                        representation = AggregatedRepresentation(Aggregation())
+                else:
+                    representation = representation()
+                representation.set_parameters(representations[i].params[j])
+                if is_context:
+                    applied_representation = applied_representation.context(
+                        representation
+                    )
+                else:
+                    applied_representation = (
+                        applied_representation.apply_representation(representation)
+                    )
+            applied_representations.append(applied_representation)
+        return applied_representations
+
+    def evaluate(self, task, modality, representations, fusion, modality_ids):
         if task.expected_dim == 1 and get_shape(modality.metadata) > 1:
             for aggregation in Aggregation().get_aggregation_functions():
                 # padding should not be necessary here
@@ -60,18 +95,16 @@ class MultimodalOptimizer:
                 agg_modality = agg_operator.transform(modality)
 
                 scores = task.run(agg_modality.data)
-                rep_names = representation_names.copy()
-                rep_names.append(agg_operator.name)
+                reps = representations.copy()
+                reps.append(agg_operator)
 
-                rep_params = params.copy()
-                rep_params.append(agg_operator.parameters)
                 self.optimization_results[modality.modality_id][
                     task.model.name
-                ].add_result(scores, rep_names, rep_params)
+                ].add_result(scores, reps, fusion, modality_ids, task)
         else:
             scores = task.run(modality.data)
             self.optimization_results[modality.modality_id][task.model.name].add_result(
-                scores, representation_names, params
+                scores, representations, fusion, modality_ids, task
             )
 
     def extract_k_best_modalities_per_task(self):
@@ -91,6 +124,20 @@ class MultimodalResults:
 
         self.results = []
 
+    def add_result(
+        self, scores, best_representation_idx, fusion_method, modality_ids, task
+    ):
+
+        entry = MultimodalResultEntry(
+            representations=best_representation_idx,
+            train_score=scores[0],
+            val_score=scores[1],
+            fusion_method=fusion_method.__name__,
+            modality_ids=modality_ids,
+            task=task,
+        )
+        self.results.append(entry)
+
 
 @dataclasses.dataclass
 class MultimodalResultEntry:
@@ -98,6 +145,5 @@ class MultimodalResultEntry:
     modality_ids: list
     representations: list
     fusion_method: str
-    representation_params: list
     train_score: float
-    fusion_params: list
+    task: str

@@ -36,14 +36,14 @@ class UnimodalOptimizer:
         self.tasks = tasks
 
         self.operator_registry = Registry()
-        self.operator_performance = {}
+        self.operator_performance = UnimodalResults(modalities, tasks)
 
-        for modality in self.modalities:
-            self.operator_performance[modality.modality_id] = {}
-            for task in tasks:
-                self.operator_performance[modality.modality_id][task.model.name] = (
-                    UnimodalResults(modality.modality_id, task.name)
-                )
+        # for modality in self.modalities:
+        #     self.operator_performance[modality.modality_id] = {}
+        #     for task in tasks:
+        #         self.operator_performance[modality.modality_id][task.model.name] = (
+        #             UnimodalResults(modality.modality_id, task.name)
+        #         )
 
     def get_k_best_results(self, modality, k, task):
         """
@@ -109,23 +109,28 @@ class UnimodalOptimizer:
                     reps = representations.copy()
                     reps.append(agg_operator)
 
-                    self.operator_performance[modality.modality_id][
-                        task.model.name
-                    ].add_result(scores, reps)
+                    self.operator_performance.add_result(
+                        scores, reps, modality.modality_id, task.model.name
+                    )
             else:
                 scores = task.run(modality.data)
-                self.operator_performance[modality.modality_id][
-                    task.model.name
-                ].add_result(scores, representations)
+                self.operator_performance.add_result(
+                    scores, representations, modality.modality_id, task.model.name
+                )
 
 
 class UnimodalResults:
-    def __init__(self, modality_id, task_name):
-        self.modality_id = modality_id
-        self.task_name = task_name
-        self.results = []
+    def __init__(self, modalities, tasks):
+        self.modality_ids = [modality.modality_id for modality in modalities]
+        self.task_names = [task.model.name for task in tasks]
+        self.results = {}
 
-    def add_result(self, scores, representations):
+        for modality in self.modality_ids:
+            self.results[modality] = {}
+            for task_name in self.task_names:
+                self.results[modality][task_name] = []
+
+    def add_result(self, scores, representations, modality_id, task_name):
         parameters = []
         representation_names = []
 
@@ -152,7 +157,13 @@ class UnimodalResults:
             train_score=scores[0],
             val_score=scores[1],
         )
-        self.results.append(entry)
+        self.results[modality_id][task_name].append(entry)
+
+    def print_results(self):
+        for modality in self.modality_ids:
+            for task_name in self.task_names:
+                for entry in self.results[modality][task_name]:
+                    print(f"{modality}_{task_name}: {entry}")
 
 
 @dataclass

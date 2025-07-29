@@ -82,10 +82,13 @@ public class CNodeTernary extends CNode
 			String varj = _inputs.get(j-1).getVarname();
 			//replace sparse and dense inputs
 			tmp = tmp.replace("%IN"+j+"v%", 
-				varj+(varj.startsWith("a")?"vals":"") );
+				varj+(varj.startsWith("a")?"vals" : varj.startsWith("STMP") ? ".values()" :"") );
 			tmp = tmp.replace("%IN"+j+"i%", 
-				varj+(varj.startsWith("a")?"ix":"") );
+				varj+(varj.startsWith("a")?"ix": varj.startsWith("STMP") ? ".indexes()" :"") );
 			tmp = tmp.replace("%IN"+j+"%", varj );
+			tmp = tmp.replace("%POS%", varj.startsWith("a") ? varj+"i" : varj.startsWith("STMP") ? "0" : "");
+			tmp = tmp.replace("%LEN%",
+				varj.startsWith("a") ? "alen" : varj.startsWith("STMP") ? varj+".size()" : "");
 		}
 		sb.append(tmp);
 		

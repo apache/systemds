@@ -41,11 +41,13 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FileFormatPropertiesHDF5;
@@ -1060,19 +1062,27 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			HDFSTool.writeScalarToHDFS(ec.getScalarInput(getInput1()), fname);
 		}
 		else if( getInput1().getDataType() == DataType.MATRIX ) {
-			if( fmt == FileFormat.MM )
-				writeMMFile(ec, fname);
-			else if( fmt == FileFormat.CSV )
-				writeCSVFile(ec, fname);
-			else if(fmt == FileFormat.LIBSVM)
-				writeLIBSVMFile(ec, fname);
-			else if(fmt == FileFormat.HDF5)
-				writeHDF5File(ec, fname);
+
+			MatrixObject mo = ec.getMatrixObject(getInput1().getName());
+			LocalTaskQueue<IndexedMatrixValue> stream = mo.getStreamHandle();
+
+			if (stream != null) {
+				System.out.println("Write OOC instruction: " + getInput1().getName() );
+			}
 			else {
-				// Default behavior (text, binary)
-				MatrixObject mo = ec.getMatrixObject(getInput1().getName());
-				int blen = Integer.parseInt(getInput4().getName());
-				mo.exportData(fname, fmtStr, new FileFormatProperties(blen));
+				if( fmt == FileFormat.MM )
+					writeMMFile(ec, fname);
+				else if( fmt == FileFormat.CSV )
+					writeCSVFile(ec, fname);
+				else if(fmt == FileFormat.LIBSVM)
+					writeLIBSVMFile(ec, fname);
+				else if(fmt == FileFormat.HDF5)
+					writeHDF5File(ec, fname);
+				else {
+					// Default behavior (text, binary)
+					int blen = Integer.parseInt(getInput4().getName());
+					mo.exportData(fname, fmtStr, new FileFormatProperties(blen));
+				}
 			}
 		}
 		else if( getInput1().getDataType() == DataType.FRAME ) {

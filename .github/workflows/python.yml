@@ -55,7 +55,7 @@ jobs:
         javadist: ['adopt']
         test_mode: [env, noenv, federated]
 
-    name: ${{ matrix.os }} Java ${{ matrix.java }} ${{ matrix.javadist }} Python ${{ matrix.python-version }}
+    name: ${{ matrix.os }} Java ${{ matrix.java }} ${{ matrix.javadist }} Python ${{ matrix.python-version }}/ ${{ matrix.test_mode}}
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4

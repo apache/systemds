@@ -120,6 +120,20 @@ class Modality:
         self.data = np.array(self.data)
         return self
 
+    def pad(self, value=0):
+        try:
+            result = np.array(self.data)
+        except:
+            maxlen = max([len(seq) for seq in self.data])
+
+            result = np.full((len(self.data), maxlen), value, dtype=self.data_type)
+
+            for i, seq in enumerate(self.data):
+                data = seq[:maxlen]
+                result[i, : len(data)] = data
+
+        self.data = result
+
     def get_data_layout(self):
         if self.has_metadata():
             return list(self.metadata.values())[0]["data_layout"]["representation"]

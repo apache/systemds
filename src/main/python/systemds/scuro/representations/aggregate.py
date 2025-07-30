@@ -58,6 +58,7 @@ class Aggregation:
         self._aggregation_func = self._aggregation_function[aggregation_function]
         self.name = "Aggregation"
         self.pad_modality = pad_modality
+        self.aggregation_function_name = aggregation_function
 
         self.parameters = {
             "aggregation_function": aggregation_function,

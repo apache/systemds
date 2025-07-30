@@ -117,7 +117,7 @@ class UnimodalModality(Modality):
                 new_modality.data.extend(transformed_chunk.data)
                 new_modality.metadata.update(transformed_chunk.metadata)
         else:
-            if not self.data:
+            if not self.has_data():
                 self.extract_raw_data()
             new_modality = representation.transform(self)
 

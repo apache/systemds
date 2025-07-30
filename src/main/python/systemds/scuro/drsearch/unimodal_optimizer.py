@@ -31,19 +31,20 @@ from systemds.scuro.utils.schema_helpers import get_shape
 
 
 class UnimodalOptimizer:
-    def __init__(self, modalities, tasks):
+    def __init__(self, modalities, tasks, debug=True):
         self.modalities = modalities
         self.tasks = tasks
 
         self.operator_registry = Registry()
-        self.operator_performance = UnimodalResults(modalities, tasks)
+        self.operator_performance = UnimodalResults(modalities, tasks, debug)
 
-        # for modality in self.modalities:
-        #     self.operator_performance[modality.modality_id] = {}
-        #     for task in tasks:
-        #         self.operator_performance[modality.modality_id][task.model.name] = (
-        #             UnimodalResults(modality.modality_id, task.name)
-        #         )
+        self._tasks_require_same_dims = True
+        self.expected_dimensions = None
+
+        for i in range(1, len(self.tasks)):
+            self.expected_dimensions = tasks[i].expected_dim
+            if tasks[i - 1].expected_dim != tasks[i].expected_dim:
+                self._tasks_require_same_dims = False
 
     def get_k_best_results(self, modality, k, task):
         """
@@ -53,7 +54,7 @@ class UnimodalOptimizer:
         """
 
         results = sorted(
-            self.operator_performance[modality.modality_id][task.model.name].results,
+            self.operator_performance.results[modality.modality_id][task.model.name],
             key=lambda x: x.val_score,
             reverse=True,
         )[:k]
@@ -96,34 +97,61 @@ class UnimodalOptimizer:
                         self.evaluate(mod, [mod_op, con_op_after])
 
     def evaluate(self, modality, representations):
-        for task in self.tasks:
-            if task.expected_dim == 1 and get_shape(modality.metadata) > 1:
+        if self._tasks_require_same_dims:
+            if self.expected_dimensions == 1 and get_shape(modality.metadata) > 1:
                 for aggregation in Aggregation().get_aggregation_functions():
-                    # padding should not be necessary here
                     agg_operator = AggregatedRepresentation(
                         Aggregation(aggregation, False)
                     )
                     agg_modality = agg_operator.transform(modality)
 
-                    scores = task.run(agg_modality.data)
                     reps = representations.copy()
                     reps.append(agg_operator)
+                    agg_modality.pad()
+                    for task in self.tasks:
+                        scores = task.run(agg_modality.data)
 
-                    self.operator_performance.add_result(
-                        scores, reps, modality.modality_id, task.model.name
-                    )
+                        self.operator_performance.add_result(
+                            scores, reps, modality.modality_id, task.model.name
+                        )
             else:
-                scores = task.run(modality.data)
-                self.operator_performance.add_result(
-                    scores, representations, modality.modality_id, task.model.name
-                )
+                modality.pad()
+                for task in self.tasks:
+                    scores = task.run(modality.data)
+                    self.operator_performance.add_result(
+                        scores, representations, modality.modality_id, task.model.name
+                    )
+        else:
+            for task in self.tasks:
+                if task.expected_dim == 1 and get_shape(modality.metadata) > 1:
+                    for aggregation in Aggregation().get_aggregation_functions():
+                        agg_operator = AggregatedRepresentation(
+                            Aggregation(aggregation, False)
+                        )
+                        agg_modality = agg_operator.transform(modality)
+
+                        reps = representations.copy()
+                        reps.append(agg_operator)
+                        modality.pad()
+                        scores = task.run(agg_modality.data)
+
+                        self.operator_performance.add_result(
+                            scores, reps, modality.modality_id, task.model.name
+                        )
+                else:
+                    modality.pad()
+                    scores = task.run(modality.data)
+                    self.operator_performance.add_result(
+                        scores, representations, modality.modality_id, task.model.name
+                    )
 
 
 class UnimodalResults:
-    def __init__(self, modalities, tasks):
+    def __init__(self, modalities, tasks, debug=False):
         self.modality_ids = [modality.modality_id for modality in modalities]
         self.task_names = [task.model.name for task in tasks]
         self.results = {}
+        self.debug = debug
 
         for modality in self.modality_ids:
             self.results[modality] = {}
@@ -158,6 +186,9 @@ class UnimodalResults:
             val_score=scores[1],
         )
         self.results[modality_id][task_name].append(entry)
+
+        if self.debug:
+            print(f"{modality_id}_{task_name}: {entry}")
 
     def print_results(self):
         for modality in self.modality_ids:

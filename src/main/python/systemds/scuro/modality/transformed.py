@@ -20,6 +20,7 @@
 # -------------------------------------------------------------
 from functools import reduce
 from operator import or_
+from typing import Union, List
 
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.joined import JoinedModality
@@ -87,7 +88,7 @@ class TransformedModality(Modality):
         new_modality.update_metadata()
         return new_modality
 
-    def combine(self, other, fusion_method):
+    def combine(self, other: Union[Modality, List[Modality]], fusion_method):
         """
         Combines two or more modalities with each other using a dedicated fusion method
         :param other: The modality to be combined

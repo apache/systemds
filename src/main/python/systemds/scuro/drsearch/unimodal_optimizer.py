@@ -96,7 +96,6 @@ class UnimodalOptimizer:
             context_representation = None
             if modality.modality_type != ModalityType.TEXT:
                 con_op = context_operator()
-                print("context_operator ", con_op.name)
                 context_representation = modality.context(con_op)
                 self._evaluate_local(context_representation, [con_op], local_results)
 
@@ -107,14 +106,10 @@ class UnimodalOptimizer:
                 mod_context = None
                 mod_op = modality_specific_operator()
                 if context_representation is not None:
-                    print("before context" + mod_op.name)
                     mod_context = context_representation.apply_representation(mod_op)
-                    print("after context" + mod_op.name)
                     self._evaluate_local(mod_context, [con_op, mod_op], local_results)
 
-                print("before " + mod_op.name)
                 mod = modality.apply_representation(mod_op)
-                print("after " + mod_op.name)
                 self._evaluate_local(mod, [mod_op], local_results)
 
                 for context_operator_after in context_operators:
@@ -141,11 +136,9 @@ class UnimodalOptimizer:
     def _evaluate_local(self, modality, representations, local_results):
         if self._tasks_require_same_dims:
             if self.expected_dimensions == 1 and get_shape(modality.metadata) > 1:
-                print("aggregate")
                 # for aggregation in Aggregation().get_aggregation_functions():
                 agg_operator = AggregatedRepresentation(Aggregation())
                 agg_modality = agg_operator.transform(modality)
-                print("aggregated")
                 reps = representations.copy()
                 reps.append(agg_operator)
                 agg_modality.pad()
@@ -156,9 +149,7 @@ class UnimodalOptimizer:
                         scores, reps, modality.modality_id, task.model.name
                     )
             else:
-                print("padd")
                 modality.pad()
-                print("done pad")
                 for task in self.tasks:
                     scores = task.run(modality.data)
                     local_results.add_result(

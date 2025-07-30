@@ -11,7 +11,7 @@ import dataclasses
 
 
 class MultimodalOptimizer:
-    def __init__(self, modalities, unimodal_optimizer, tasks, k=2):
+    def __init__(self, modalities, unimodal_optimizer, tasks, k=2, debug=True):
         self.k_best_modalities = None
         self.modalities = modalities
         self.unimodal_optimizer = unimodal_optimizer
@@ -19,20 +19,17 @@ class MultimodalOptimizer:
         self.k = k
         self.extract_k_best_modalities_per_task()
         self.operator_registry = Registry()
-        self.optimization_results = {}
+        self.optimization_results = MultimodalResults(
+            modalities, tasks, debug, self.k_best_modalities
+        )
         self.cache = {}
-
-        for modality in self.modalities:
-            self.optimization_results[modality.modality_id] = {}
-            for task in tasks:
-                self.optimization_results[modality.modality_id][task.model.name] = (
-                    MultimodalResults(modality, task.name)
-                )
 
     def optimize(self):
         for task in self.tasks:
             for modality in self.modalities:
-                representations = self.k_best_modalities[task][modality.modality_id]
+                representations = self.k_best_modalities[task.model.name][
+                    modality.modality_id
+                ]
                 applied_representations = self.extract_representations(
                     representations, modality
                 )
@@ -54,7 +51,10 @@ class MultimodalOptimizer:
                             combined,
                             [i - 1, i],
                             fusion_method,
-                            [modality.modality_id],
+                            [
+                                applied_representations[i - 1].modality_id,
+                                applied_representations[i].modality_id,
+                            ],
                         )
                         if not fusion_method().commutative:
                             combined_comm = applied_representations[i].combine(
@@ -65,7 +65,10 @@ class MultimodalOptimizer:
                                 combined_comm,
                                 [i, i - 1],
                                 fusion_method,
-                                [modality.modality_id],
+                                [
+                                    applied_representations[i - 1].modality_id,
+                                    applied_representations[i].modality_id,
+                                ],
                             )
 
     def extract_representations(self, representations, modality):
@@ -106,13 +109,13 @@ class MultimodalOptimizer:
                 reps = representations.copy()
                 reps.append(agg_operator)
 
-                self.optimization_results[modality.modality_id][
-                    task.model.name
-                ].add_result(scores, reps, fusion, modality_ids, task)
+                self.optimization_results.add_result(
+                    scores, reps, [fusion], modality_ids, task.model.name
+                )
         else:
             scores = task.run(modality.data)
-            self.optimization_results[modality.modality_id][task.model.name].add_result(
-                scores, representations, fusion, modality_ids, task
+            self.optimization_results.add_result(
+                scores, representations, [fusion], modality_ids, task.model.name
             )
 
     def add_to_cache(self, result_idx, combined_modality):
@@ -121,33 +124,80 @@ class MultimodalOptimizer:
     def extract_k_best_modalities_per_task(self):
         self.k_best_modalities = {}
         for task in self.tasks:
-            self.k_best_modalities[task] = {}
+            self.k_best_modalities[task.model.name] = {}
             for modality in self.modalities:
-                self.k_best_modalities[task][modality.modality_id] = (
+                self.k_best_modalities[task.model.name][modality.modality_id] = (
                     self.unimodal_optimizer.get_k_best_results(modality, self.k, task)
                 )
 
 
 class MultimodalResults:
-    def __init__(self, modality, task):
-        self.modality_id = modality.modality_id
-        self.task = task
-
-        self.results = []
+    def __init__(self, modalities, tasks, debug, k_best_modalities):
+        self.modality_ids = [modality.modality_id for modality in modalities]
+        self.task_names = [task.model.name for task in tasks]
+        self.results = {}
+        self.debug = debug
+        self.k_best_modalities = k_best_modalities
 
     def add_result(
-        self, scores, best_representation_idx, fusion_method, modality_ids, task
+        self, scores, best_representation_idx, fusion_methods, modality_ids, task_name
     ):
 
         entry = MultimodalResultEntry(
             representations=best_representation_idx,
             train_score=scores[0],
             val_score=scores[1],
-            fusion_method=fusion_method.__name__,
+            fusion_methods=[fusion_method.__name__ for fusion_method in fusion_methods],
             modality_ids=modality_ids,
-            task=task,
+            task=task_name,
         )
-        self.results.append(entry)
+
+        modality_id_strings = "_".join(list(map(str, modality_ids)))
+        if not modality_id_strings in self.results:
+            self.results[modality_id_strings] = {}
+            self.results[modality_id_strings][task_name] = []
+
+        self.results[modality_id_strings][task_name].append(entry)
+
+    def print_results(self):
+        for modality in self.results.keys():
+            for task_name in self.task_names:
+                for entry in self.results[modality][task_name]:
+                    reps = []
+                    for i, mod_idx in enumerate(entry.modality_ids):
+                        reps.append(
+                            self.k_best_modalities[task_name][mod_idx][
+                                entry.representations[i]
+                            ]
+                        )
+
+                    print(
+                        f"{modality}_{task_name}: "
+                        f"Validation score: {entry.val_score} - Training score: {entry.train_score}"
+                    )
+                    for i, rep in enumerate(reps):
+                        print(
+                            f"    Representation: {entry.modality_ids[i]} - {rep.representations}"
+                        )
+                        if i < len(reps) - 1:
+                            print(f"    Fusion: {entry.fusion_methods[i]} ")
+
+    def store_results(self):
+        for modality in self.results.keys():
+            for task_name in self.task_names:
+                for entry in self.results[modality][task_name]:
+                    reps = []
+                    for i, mod_idx in enumerate(entry.modality_ids):
+                        reps.append(
+                            self.k_best_modalities[task_name][mod_idx][
+                                entry.representations[i]
+                            ]
+                        )
+                    entry.representations = reps
+
+        import pickle
+
+        pickle.dump(self.results, open("multimodal_results.p", "wb"))
 
 
 @dataclasses.dataclass
@@ -155,6 +205,6 @@ class MultimodalResultEntry:
     val_score: float
     modality_ids: list
     representations: list
-    fusion_method: str
+    fusion_methods: list
     train_score: float
     task: str

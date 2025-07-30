@@ -62,7 +62,7 @@ class WindowAggregation(Context):
 
             windowed_data.append(windowed_instance)
 
-        return windowed_data
+        return np.array(windowed_data)
 
     def window_aggregate_single_level(self, instance, new_length):
         if isinstance(instance, str):

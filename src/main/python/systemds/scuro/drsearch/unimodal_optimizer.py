@@ -18,8 +18,11 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import pickle
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
 
+import multiprocessing as mp
 from systemds.scuro.representations.window_aggregation import WindowAggregation
 
 from build.lib.systemds.scuro.representations.aggregated_representation import (
@@ -39,9 +42,9 @@ class UnimodalOptimizer:
         self.operator_performance = UnimodalResults(modalities, tasks, debug)
 
         self._tasks_require_same_dims = True
-        self.expected_dimensions = None
+        self.expected_dimensions = tasks[0].expected_dim
 
-        for i in range(1, len(self.tasks)):
+        for i in range(1, len(tasks)):
             self.expected_dimensions = tasks[i].expected_dim
             if tasks[i - 1].expected_dim != tasks[i].expected_dim:
                 self._tasks_require_same_dims = False
@@ -61,73 +64,111 @@ class UnimodalOptimizer:
 
         return results
 
-    def optimize(self):
+    def optimize_parallel(self, n_workers=None):
+        if n_workers is None:
+            n_workers = min(len(self.modalities), mp.cpu_count())
+
+        with ProcessPoolExecutor(max_workers=n_workers) as executor:
+            future_to_modality = {
+                executor.submit(self._process_modality, modality): modality
+                for modality in self.modalities
+            }
+
+            for future in as_completed(future_to_modality):
+                modality = future_to_modality[future]
+                # try:
+                results = future.result()
+                self._merge_results(results)
+                # except Exception as exc:
+                #     print(f'Modality {modality.modality_id} generated an exception: {exc}')
+
+    def optimize(self, n_workers=None):
         for modality in self.modalities:
-            context_operators = self.operator_registry.get_context_operators()
+            self._process_modality(modality)
 
-            for context_operator in context_operators:
-                context_representation = None
-                if modality.modality_type != ModalityType.TEXT:
-                    con_op = context_operator()
-                    context_representation = modality.context(con_op)
-                    self.evaluate(context_representation, [con_op])
+    def _process_modality(self, modality):
+        local_results = UnimodalResults(
+            modalities=[modality], tasks=self.tasks, debug=False
+        )
+        context_operators = self.operator_registry.get_context_operators()
 
-                modality_specific_operators = (
-                    self.operator_registry.get_representations(modality.modality_type)
-                )
-                for modality_specific_operator in modality_specific_operators:
-                    mod_context = None
-                    mod_op = modality_specific_operator()
-                    if context_representation is not None:
-                        mod_context = context_representation.apply_representation(
-                            mod_op
+        for context_operator in context_operators:
+            context_representation = None
+            if modality.modality_type != ModalityType.TEXT:
+                con_op = context_operator()
+                print("context_operator ", con_op.name)
+                context_representation = modality.context(con_op)
+                self._evaluate_local(context_representation, [con_op], local_results)
+
+            modality_specific_operators = self.operator_registry.get_representations(
+                modality.modality_type
+            )
+            for modality_specific_operator in modality_specific_operators:
+                mod_context = None
+                mod_op = modality_specific_operator()
+                if context_representation is not None:
+                    print("before context" + mod_op.name)
+                    mod_context = context_representation.apply_representation(mod_op)
+                    print("after context" + mod_op.name)
+                    self._evaluate_local(mod_context, [con_op, mod_op], local_results)
+
+                print("before " + mod_op.name)
+                mod = modality.apply_representation(mod_op)
+                print("after " + mod_op.name)
+                self._evaluate_local(mod, [mod_op], local_results)
+
+                for context_operator_after in context_operators:
+                    con_op_after = context_operator_after()
+                    if mod_context is not None:
+                        mod_context = mod_context.context(con_op_after)
+                        self._evaluate_local(
+                            mod_context, [con_op, mod_op, con_op_after], local_results
                         )
-                        self.evaluate(mod_context, [con_op, mod_op])
 
-                    mod = modality.apply_representation(mod_op)
-                    self.evaluate(mod, [mod_op])
+                    mod = mod.context(con_op_after)
+                    self._evaluate_local(mod, [mod_op, con_op_after], local_results)
 
-                    for context_operator_after in context_operators:
-                        con_op_after = context_operator_after()
-                        if mod_context is not None:
-                            mod_context = mod_context.context(con_op_after)
-                            self.evaluate(mod_context, [con_op, mod_op, con_op_after])
+            return local_results
 
-                        mod = mod.context(con_op_after)
-                        self.evaluate(mod, [mod_op, con_op_after])
+    def _merge_results(self, local_results):
+        """Merge local results into the main results"""
+        for modality_id in local_results.results:
+            for task_name in local_results.results[modality_id]:
+                self.operator_performance.results[modality_id][task_name].extend(
+                    local_results.results[modality_id][task_name]
+                )
 
-    def evaluate(self, modality, representations):
+    def _evaluate_local(self, modality, representations, local_results):
         if self._tasks_require_same_dims:
             if self.expected_dimensions == 1 and get_shape(modality.metadata) > 1:
+                print("aggregate")
                 # for aggregation in Aggregation().get_aggregation_functions():
-                agg_operator = AggregatedRepresentation(
-                    Aggregation()
-                )
+                agg_operator = AggregatedRepresentation(Aggregation())
                 agg_modality = agg_operator.transform(modality)
-
+                print("aggregated")
                 reps = representations.copy()
                 reps.append(agg_operator)
                 agg_modality.pad()
                 for task in self.tasks:
                     scores = task.run(agg_modality.data)
 
-                    self.operator_performance.add_result(
+                    local_results.add_result(
                         scores, reps, modality.modality_id, task.model.name
                     )
             else:
+                print("padd")
                 modality.pad()
+                print("done pad")
                 for task in self.tasks:
                     scores = task.run(modality.data)
-                    self.operator_performance.add_result(
+                    local_results.add_result(
                         scores, representations, modality.modality_id, task.model.name
                     )
         else:
             for task in self.tasks:
                 if task.expected_dim == 1 and get_shape(modality.metadata) > 1:
                     # for aggregation in Aggregation().get_aggregation_functions():
-                    agg_operator = AggregatedRepresentation(
-                        Aggregation()
-                    )
+                    agg_operator = AggregatedRepresentation(Aggregation())
                     agg_modality = agg_operator.transform(modality)
 
                     reps = representations.copy()
@@ -135,13 +176,13 @@ class UnimodalOptimizer:
                     modality.pad()
                     scores = task.run(agg_modality.data)
 
-                    self.operator_performance.add_result(
+                    local_results.add_result(
                         scores, reps, modality.modality_id, task.model.name
                     )
                 else:
                     modality.pad()
                     scores = task.run(modality.data)
-                    self.operator_performance.add_result(
+                    local_results.add_result(
                         scores, representations, modality.modality_id, task.model.name
                     )
 
@@ -169,7 +210,7 @@ class UnimodalResults:
                 continue
 
             params = {}
-            for param in rep.parameters.keys():
+            for param in list(rep.parameters.keys()):
                 params[param] = getattr(rep, param)
 
             if isinstance(rep, WindowAggregation):

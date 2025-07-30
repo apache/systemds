@@ -99,11 +99,15 @@ class ModalitySchemas:
         dtype = np.nan
         shape = None
         if data_layout is DataLayout.SINGLE_LEVEL:
-            dtype = data.dtype
-            shape = data.shape
-        elif data_layout is DataLayout.NESTED_LEVEL:
-            shape = data[0].shape
             dtype = data[0].dtype
+            shape = data[0].shape
+        elif data_layout is DataLayout.NESTED_LEVEL:
+            if data_is_single_instance:
+                dtype = data.dtype
+                shape = data.shape
+            else:
+                shape = data[0].shape
+                dtype = data[0].dtype
 
         md["data_layout"].update(
             {"representation": data_layout, "type": dtype, "shape": shape}
@@ -241,9 +245,9 @@ class DataLayout(Enum):
 
         if data_is_single_instance:
             if isinstance(data, list):
-                return DataLayout.NESTED_LEVEL
-            elif isinstance(data, np.ndarray):
                 return DataLayout.SINGLE_LEVEL
+            elif isinstance(data, np.ndarray):
+                return DataLayout.NESTED_LEVEL
 
         if isinstance(data[0], list):
             return DataLayout.NESTED_LEVEL

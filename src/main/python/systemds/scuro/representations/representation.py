@@ -32,7 +32,7 @@ class Representation:
 
     def get_current_parameters(self):
         current_params = {}
-        for parameter in self.parameters.keys():
+        for parameter in list(self.parameters.keys()):
             current_params[parameter] = getattr(self, parameter)
         return current_params
 

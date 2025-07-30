@@ -20,6 +20,7 @@ class MultimodalOptimizer:
         self.extract_k_best_modalities_per_task()
         self.operator_registry = Registry()
         self.optimization_results = {}
+        self.cache = {}
 
         for modality in self.modalities:
             self.optimization_results[modality.modality_id] = {}
@@ -38,6 +39,13 @@ class MultimodalOptimizer:
                 combined_representations = []
                 for i in range(1, len(applied_representations)):
                     for fusion_method in self.operator_registry.get_fusion_operators():
+                        if (
+                            fusion_method().needs_alignment
+                            and not applied_representations[i - 1].is_aligned(
+                                applied_representations[i]
+                            )
+                        ):
+                            continue
                         combined = applied_representations[i - 1].combine(
                             applied_representations[i], fusion_method()
                         )
@@ -106,6 +114,9 @@ class MultimodalOptimizer:
             self.optimization_results[modality.modality_id][task.model.name].add_result(
                 scores, representations, fusion, modality_ids, task
             )
+
+    def add_to_cache(self, result_idx, combined_modality):
+        self.cache[result_idx] = combined_modality
 
     def extract_k_best_modalities_per_task(self):
         self.k_best_modalities = {}

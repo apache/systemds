@@ -145,3 +145,15 @@ class Modality:
 
     def has_metadata(self):
         return self.metadata is not None and self.metadata != {}
+
+    def is_aligned(self, other_modality):
+        aligned = True
+        for i in range(len(self.data)):
+            if (
+                list(self.metadata.values())[i]["data_layout"]["shape"]
+                != list(other_modality.metadata.values())[i]["data_layout"]["shape"]
+            ):
+                aligned = False
+                continue
+
+        return aligned

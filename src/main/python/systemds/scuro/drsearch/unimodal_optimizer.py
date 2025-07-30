@@ -99,21 +99,21 @@ class UnimodalOptimizer:
     def evaluate(self, modality, representations):
         if self._tasks_require_same_dims:
             if self.expected_dimensions == 1 and get_shape(modality.metadata) > 1:
-                for aggregation in Aggregation().get_aggregation_functions():
-                    agg_operator = AggregatedRepresentation(
-                        Aggregation(aggregation, False)
+                # for aggregation in Aggregation().get_aggregation_functions():
+                agg_operator = AggregatedRepresentation(
+                    Aggregation()
+                )
+                agg_modality = agg_operator.transform(modality)
+
+                reps = representations.copy()
+                reps.append(agg_operator)
+                agg_modality.pad()
+                for task in self.tasks:
+                    scores = task.run(agg_modality.data)
+
+                    self.operator_performance.add_result(
+                        scores, reps, modality.modality_id, task.model.name
                     )
-                    agg_modality = agg_operator.transform(modality)
-
-                    reps = representations.copy()
-                    reps.append(agg_operator)
-                    agg_modality.pad()
-                    for task in self.tasks:
-                        scores = task.run(agg_modality.data)
-
-                        self.operator_performance.add_result(
-                            scores, reps, modality.modality_id, task.model.name
-                        )
             else:
                 modality.pad()
                 for task in self.tasks:
@@ -124,20 +124,20 @@ class UnimodalOptimizer:
         else:
             for task in self.tasks:
                 if task.expected_dim == 1 and get_shape(modality.metadata) > 1:
-                    for aggregation in Aggregation().get_aggregation_functions():
-                        agg_operator = AggregatedRepresentation(
-                            Aggregation(aggregation, False)
-                        )
-                        agg_modality = agg_operator.transform(modality)
+                    # for aggregation in Aggregation().get_aggregation_functions():
+                    agg_operator = AggregatedRepresentation(
+                        Aggregation()
+                    )
+                    agg_modality = agg_operator.transform(modality)
 
-                        reps = representations.copy()
-                        reps.append(agg_operator)
-                        modality.pad()
-                        scores = task.run(agg_modality.data)
+                    reps = representations.copy()
+                    reps.append(agg_operator)
+                    modality.pad()
+                    scores = task.run(agg_modality.data)
 
-                        self.operator_performance.add_result(
-                            scores, reps, modality.modality_id, task.model.name
-                        )
+                    self.operator_performance.add_result(
+                        scores, reps, modality.modality_id, task.model.name
+                    )
                 else:
                     modality.pad()
                     scores = task.run(modality.data)

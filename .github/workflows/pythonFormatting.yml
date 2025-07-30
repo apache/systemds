@@ -40,8 +40,17 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Black Code Formatter
-        uses: psf/black@stable
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          options: "--check --exclude operator/algorithm"
-          src: "src/main/python/systemds src/main/python/tests"
+          python-version: '3.x'
+
+      - name: Install Black
+        run: |
+          pip install --upgrade pip
+          pip install black
+
+      - name: Run Black Check
+        run: |
+          black --check --exclude operator/algorithm \
+          src/main/python/systemds src/main/python/tests

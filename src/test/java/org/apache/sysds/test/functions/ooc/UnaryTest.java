@@ -87,15 +87,17 @@ public class UnaryTest extends AutomatedTestBase {
 			runTest(true, false, null, -1);
 
 			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir(OUTPUT_NAME);
-			Double result = dmlfile.get(new MatrixValue.CellIndex(1, 1));
+
 			double expected = 0.0;
 			for(int i = 0; i < rows; i++) {
 				for(int j = 0; j < cols; j++) {
-					expected += Math.ceil(mb.get(i, j));
+					Double dmlResult = dmlfile.get(new MatrixValue.CellIndex(i+1 , j+1 )); // Note: MM format is 1-based index
+					double actualValue = (dmlResult == null) ? 0.0 : dmlResult;
+					expected = Math.abs(Math.ceil(mb.get(i, j)));
+					Assert.assertEquals(expected, actualValue, 1e-10);
+					System.out.println("("+i+","+j+"): " + actualValue + "actual: " + expected);
 				}
 			}
-
-			Assert.assertEquals(expected, result, 1e-10);
 
 			String prefix = Instruction.OOC_INST_PREFIX;
 			Assert.assertTrue("OOC wasn't used for RBLK",

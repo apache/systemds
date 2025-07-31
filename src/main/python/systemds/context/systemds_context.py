@@ -965,7 +965,7 @@ class DynamicStderrHandler(logging.StreamHandler):
     def __init__(self, level=logging.NOTSET, formatter=None):
         # Avoid setting stream directly to sys.stderr, we will do that dynamically
         # For more info see test case: tests/basics/test_context_creation/test_random_port_debug3
-        # where we redirect the err channel in between different contexts
+        # where we redirect the err channel between different contexts
         super().__init__(stream=None)
         self.setLevel(level)
         if formatter:

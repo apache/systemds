@@ -56,7 +56,7 @@ public class UnaryTest extends AutomatedTestBase {
 	}
 
 	/**
-	 * Test the sum of scalar multiplication, "sum(X*7)", with OOC backend.
+	 * Test the unary operation, "ceil(X)", with OOC backend.
 	 */
 	@Test
 	public void testUnary() {
@@ -77,7 +77,7 @@ public class UnaryTest extends AutomatedTestBase {
 			programArgs = new String[] {"-explain", "-stats", "-ooc", 
 				"-args", input(INPUT_NAME), output(OUTPUT_NAME)};
 
-			int rows = 1000, cols = 1000;
+			int rows = 5000, cols = 5000;
 			MatrixBlock mb = MatrixBlock.randOperations(rows, cols, 1.0, -1, 1, "uniform", 7);
 			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(FileFormat.BINARY);
 			writer.writeMatrixToHDFS(mb, input(INPUT_NAME), rows, cols, 1000, rows*cols);
@@ -94,8 +94,8 @@ public class UnaryTest extends AutomatedTestBase {
 					Double dmlResult = dmlfile.get(new MatrixValue.CellIndex(i+1 , j+1 )); // Note: MM format is 1-based index
 					double actualValue = (dmlResult == null) ? 0.0 : dmlResult;
 					expected = Math.abs(Math.ceil(mb.get(i, j)));
-					Assert.assertEquals(expected, actualValue, 1e-10);
 					System.out.println("("+i+","+j+"): " + actualValue + "actual: " + expected);
+					Assert.assertEquals(expected, actualValue, 1e-10);
 				}
 			}
 
@@ -104,6 +104,8 @@ public class UnaryTest extends AutomatedTestBase {
 				heavyHittersContainsString(prefix + Opcodes.RBLK));
 			Assert.assertTrue("OOC wasn't used for CEIL",
 				heavyHittersContainsString(prefix + Opcodes.CEIL));
+			Assert.assertTrue("Stream Aware WRITE wasn't used",
+					heavyHittersContainsString(String.valueOf(Opcodes.WRITE)));
 		}
 		catch(Exception ex) {
 			Assert.fail(ex.getMessage());

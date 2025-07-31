@@ -26,9 +26,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.hadoop.fs.Options;
 import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.api.mlcontext.MatrixMetadata;
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
@@ -50,11 +48,22 @@ import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
-import org.apache.sysds.runtime.io.*;
+import org.apache.sysds.runtime.io.FileFormatProperties;
+import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
+import org.apache.sysds.runtime.io.FileFormatPropertiesHDF5;
+import org.apache.sysds.runtime.io.FileFormatPropertiesLIBSVM;
+import org.apache.sysds.runtime.io.ListReader;
+import org.apache.sysds.runtime.io.ListWriter;
+import org.apache.sysds.runtime.io.MatrixWriter;
+import org.apache.sysds.runtime.io.MatrixWriterFactory;
+import org.apache.sysds.runtime.io.WriterHDF5;
+import org.apache.sysds.runtime.io.WriterMatrixMarket;
+import org.apache.sysds.runtime.io.WriterTextCSV;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
@@ -1061,31 +1070,25 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			LocalTaskQueue<IndexedMatrixValue> stream = mo.getStreamHandle();
 
 			if (stream != null) {
-				System.out.println("Write OOC instruction: " + getInput1().getName() + "to file name: " + fname);
 
 				try {
 					IndexedMatrixValue tmp = null;
 					MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(fmt);
-					System.out.println("mo details: "+ mo.getDataCharacteristics());
-
 
 					while((tmp = stream.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
 						MatrixBlock mb = (MatrixBlock)tmp.getValue();
+						MatrixIndexes mi = tmp.getIndexes();
 
+						// Construct a unique filename for each part-file inside the output directory
+						String partFilePath = fname + "/part-" + mi.getRowIndex() + "-" + mi.getColumnIndex();
 
-//						writer.writeMatrixToHDFS(tmp.getValue(), fname, FileFormat.HDF5, mo.getMetaData().getDataCharacteristics());
-						writer.writeMatrixToHDFS(mb, fname, mb.getNumRows(), mb.getNumColumns(), mo.getBlocksize(),mb.getNonZeros());
-//						writer.writeMatrixToHDFS((MatrixBlock)tmp.getValue(), fname, mc.getRows(), mc.getCols(),
-//								mc.getBlocksize(), mc.getNonZeros());
-						System.out.println(tmp);
-
+						writer.writeMatrixToHDFS(mb, partFilePath, mb.getNumRows(), mb.getNumColumns(), (int) mb.getLength() , mb.getNonZeros());
 					}
-//					IOUtilFunctions.closeSilently(writer);
-					HDFSTool.writeMetaDataFile(fname + ".mtd", mo.getValueType(),
+					HDFSTool.writeMetaDataFile(fname + "/.mtd", mo.getValueType(),
 							mo.getMetaData().getDataCharacteristics(), FileFormat.HDF5, _formatProperties);
 				}
 				catch(Exception ex) {
-					throw new DMLRuntimeException(ex);
+					throw new DMLRuntimeException("Failed to write OOC stream to " + fname, ex);
 				}
 			}
 			else {

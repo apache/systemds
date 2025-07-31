@@ -1,0 +1,342 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+conv2d_forward = function(matrix[double] X, matrix[double] W, matrix[double] b,
+  int C, int Hin, int Win, int Hf, int Wf, int strideh, int stridew,
+  int padh, int padw) return (matrix[double] out, int Hout, int Wout)
+{
+  N = nrow(X)
+  F = nrow(W)
+  Hout = as.integer(floor((Hin + 2*padh - Hf)/strideh + 1))
+  Wout = as.integer(floor((Win + 2*padw - Wf)/stridew + 1))
+  # Convolution - built-in implementation
+  out = conv2d(X, W, input_shape=[N,C,Hin,Win], filter_shape=[F,C,Hf,Wf],
+               stride=[strideh,stridew], padding=[padh,padw])
+  # Add bias term to each output filter
+  out = bias_add(out, b)
+}
+
+conv2d_backward = function(matrix[double] dout, int Hout, int Wout, matrix[double] X,
+  matrix[double] W, matrix[double] b, int C, int Hin, int Win, int Hf, int Wf,
+  int strideh, int stridew, int padh, int padw)
+  return (matrix[double] dX, matrix[double] dW, matrix[double] db)
+{
+  N = nrow(X)
+  F = nrow(W)
+  # Partial derivatives for convolution - built-in implementation
+  dW = conv2d_backward_filter(X, dout, stride=[strideh,stridew], padding=[padh,padw],
+                              input_shape=[N,C,Hin,Win], filter_shape=[F,C,Hf,Wf])
+  dX = conv2d_backward_data(W, dout, stride=[strideh,stridew], padding=[padh,padw],
+                            input_shape=[N,C,Hin,Win], filter_shape=[F,C,Hf,Wf])
+  # Partial derivatives for bias vector
+  # Here we sum each column, reshape to (F, Hout*Wout), and sum each row
+  # to result in the summation for each channel.
+  db = rowSums(matrix(colSums(dout), rows=F, cols=Hout*Wout))  # shape (F, 1)
+}
+
+conv2d_init = function(int F, int C, int Hf, int Wf, int seed = -1)
+  return (matrix[double] W, matrix[double] b) {
+  W = rand(rows=F, cols=C*Hf*Wf, pdf="normal", seed=seed) * sqrt(2.0/(C*Hf*Wf))
+  b = matrix(0, rows=F, cols=1)
+}
+
+bn2d_forward = function(matrix[double] X, int C, int Hin, int Win,
+    double mu, double epsilon) return (matrix[double] out)
+{
+    gamma = matrix(1, rows=C, cols=1)
+    beta = matrix(0, rows=C, cols=1)
+    ema_mean = matrix(0, rows=C, cols=1)
+    ema_var = matrix(1, rows=C, cols=1)
+    ema_mean_upd = ema_mean;
+    ema_var_upd = ema_var;
+    cache_mean = ema_mean;
+    cache_inv_var = ema_var
+    mode = 'train';
+    [out, ema_mean_upd, ema_var_upd, cache_mean, cache_inv_var] = batch_norm2d(X, gamma, beta, ema_mean, ema_var, mode, epsilon, mu)
+}
+
+affine_forward = function(matrix[double] X, matrix[double] W, matrix[double] b) return (matrix[double] out) {
+  out = X %*% W + b;
+}
+
+affine_init = function(int D, int M, int seed = -1 ) return (matrix[double] W, matrix[double] b) {
+  W = rand(rows=D, cols=M, pdf="normal", seed=seed) * sqrt(2.0/D);
+  b = matrix(0, rows=1, cols=M);
+}
+
+relu_forward = function(matrix[double] X) return (matrix[double] out) {
+  out = max(0, X);
+}
+
+max_pool2d_forward = function(matrix[double] X, int C, int Hin, int Win, int Hf, int Wf,
+  int strideh, int stridew, int padh, int padw) return(matrix[double] out, int Hout, int Wout)
+{
+  N = nrow(X)
+  Hout = as.integer(floor((Hin + 2*padh - Hf)/strideh + 1))
+  Wout = as.integer(floor((Win + 2*padw - Wf)/stridew + 1))
+  out = max_pool(X, input_shape=[N,C,Hin,Win], pool_size=[Hf,Wf],
+    stride=[strideh,stridew], padding=[padh,padw])
+}
+
+avg_pool2d_forward = function(matrix[double] X, int C, int Hin, int Win)
+  return (matrix[double] out, int Hout, int Wout) {
+  N = nrow(X)
+  Hout = 1
+  Wout = 1
+  out = avg_pool(X, input_shape=[N,C,Hin,Win], pool_size=[Hin,Win], stride=[1,1], padding=[0, 0])
+}
+
+softmax_forward = function(matrix[double] scores) return (matrix[double] probs) {
+  scores = scores - rowMaxs(scores);  # numerical stability
+  unnorm_probs = exp(scores);  # unnormalized probabilities
+  probs = unnorm_probs / rowSums(unnorm_probs);  # normalized probabilities
+}
+
+basic_block = function(matrix[double] X, int C, int C_base, int Hin, int Win, int strideh,
+    int stridew, matrix[double] WC1, matrix[double] bC1, matrix[double] WC2, matrix[double] bC2)
+  return (matrix[double] out, int Hout, int Wout)
+{
+  mu_bn = 0.1;
+  ep_bn = 1e-05;
+  downsample = strideh > 1 | stridew > 1 | C != C_base;
+  if (downsample) {
+    [WC3, bC3] = conv2d_init(C_base, C, Hf=1, Wf=1, 42);
+  }
+  # Residual Path
+  # conv1 -> bn1 -> relu1
+  [out, Hout, Wout] = conv2d_forward(X,WC1,bC1,C,Hin,Win,3,3,strideh,stridew,1,1);
+  out = bn2d_forward(out,C_base,Hout,Wout,mu_bn,ep_bn);
+  out = relu_forward(out);
+  # conv2 -> bn2 -> relu2
+  [out, Hout, Wout] = conv2d_forward(out,WC2,bC2,C_base,Hout,Wout,3,3,1,1,1,1);
+  out = bn2d_forward(out,C_base,Hout,Wout,mu_bn,ep_bn);
+  # Identity Path
+  identity = X;
+  if (downsample) {
+    # Downsample input
+    [identity, Hout, Wout] = conv2d_forward(X,WC3,bC3,C,Hin,Win,1,1,strideh,stridew,0,0);
+    out = bn2d_forward(identity,C_base,Hout,Wout,mu_bn,ep_bn);
+  }
+  out = relu_forward(out + identity);
+}
+
+getWeights = function(int fel, int lid,
+    matrix[double] W_pt, matrix[double] b_pt,
+    matrix[double] W_init, matrix[double] b_init)
+  return (matrix[double] Wl, matrix[double] bl)
+{
+  if (lid < fel) { #extract pretrained features
+    Wl = W_pt;
+    bl = b_pt;
+  }
+  else {  #use initialized weights
+    Wl = W_init;
+    bl = b_init;
+  }
+}
+
+rwRowIndexMax = function(matrix[double] X, matrix[double] oneVec, matrix[double] idxSeq)
+    return (matrix[double] index) {
+  rm = rowMaxs(X) %*% oneVec;
+  I = X == rm;
+  index = rowMaxs(I * idxSeq);
+}
+
+resnet18_forward = function(matrix[double] X, int C, int Hin, int Win, int K)
+  return (matrix[double] Y_pred)
+{
+  mu_bn = 0.1;
+  ep_bn = 1e-05;
+
+  # Get the transferred layers. FIXME: use pretrained weights
+  [W1_pt, b1_pt] = conv2d_init(64, C, Hf=7, Wf=7, 42);
+  [W2_pt, b2_pt] = conv2d_init(64, 64, Hf=3, Wf=3, 42);
+  [W3_pt, b3_pt] = conv2d_init(64, 64, Hf=3, Wf=3, 42);
+  [W4_pt, b4_pt] = conv2d_init(64, 64, Hf=3, Wf=3, 42);
+  [W5_pt, b5_pt] = conv2d_init(64, 64, Hf=3, Wf=3, 42);
+  [W6_pt, b6_pt] = conv2d_init(128, 64, Hf=3, Wf=3, 42);
+  [W7_pt, b7_pt] = conv2d_init(128, 128, Hf=3, Wf=3, 42);
+  [W8_pt, b8_pt] = conv2d_init(128, 128, Hf=3, Wf=3, 42);
+  [W9_pt, b9_pt] = conv2d_init(128, 128, Hf=3, Wf=3, 42);
+  [W10_pt, b10_pt] = conv2d_init(256, 128, Hf=3, Wf=3, 42);
+  [W11_pt, b11_pt] = conv2d_init(256, 256, Hf=3, Wf=3, 42);
+  [W12_pt, b12_pt] = conv2d_init(256, 256, Hf=3, Wf=3, 42);
+  [W13_pt, b13_pt] = conv2d_init(256, 256, Hf=3, Wf=3, 42);
+  [W14_pt, b14_pt] = conv2d_init(512, 256, Hf=3, Wf=3, 42);
+  [W15_pt, b15_pt] = conv2d_init(512, 512, Hf=3, Wf=3, 42);
+  [W16_pt, b16_pt] = conv2d_init(512, 512, Hf=3, Wf=3, 42);
+  [W17_pt, b17_pt] = conv2d_init(512, 512, Hf=3, Wf=3, 42);
+  [W18_pt, b18_pt] = affine_init(512, K, 42);
+  W18_pt = W18_pt/sqrt(2);
+
+  # Initialize the weights for the non-transferred layers
+  [W1_init, b1_init] = conv2d_init(64, C, Hf=7, Wf=7, 43);
+  [W2_init, b2_init] = conv2d_init(64, 64, Hf=3, Wf=3, 43);
+  [W3_init, b3_init] = conv2d_init(64, 64, Hf=3, Wf=3, 43);
+  [W4_init, b4_init] = conv2d_init(64, 64, Hf=3, Wf=3, 43);
+  [W5_init, b5_init] = conv2d_init(64, 64, Hf=3, Wf=3, 43);
+  [W6_init, b6_init] = conv2d_init(128, 64, Hf=3, Wf=3, 43);
+  [W7_init, b7_init] = conv2d_init(128, 128, Hf=3, Wf=3, 43);
+  [W8_init, b8_init] = conv2d_init(128, 128, Hf=3, Wf=3, 43);
+  [W9_init, b9_init] = conv2d_init(128, 128, Hf=3, Wf=3, 43);
+  [W10_init, b10_init] = conv2d_init(256, 128, Hf=3, Wf=3, 42);
+  [W11_init, b11_init] = conv2d_init(256, 256, Hf=3, Wf=3, 42);
+  [W12_init, b12_init] = conv2d_init(256, 256, Hf=3, Wf=3, 42);
+  [W13_init, b13_init] = conv2d_init(256, 256, Hf=3, Wf=3, 42);
+  [W14_init, b14_init] = conv2d_init(512, 256, Hf=3, Wf=3, 42);
+  [W15_init, b15_init] = conv2d_init(512, 512, Hf=3, Wf=3, 42);
+  [W16_init, b16_init] = conv2d_init(512, 512, Hf=3, Wf=3, 42);
+  [W17_init, b17_init] = conv2d_init(512, 512, Hf=3, Wf=3, 42);
+  [W18_init, b18_init] = affine_init(512, K, 42);
+  W18_init = W18_init/sqrt(2);
+
+  # Compute prediction over mini-batches
+  N = nrow(X);
+  Y_pred = matrix(0, rows=N, cols=3);
+  batch_size = 64;
+  oneVec = matrix(1, rows=1, cols=K);
+  idxSeq = matrix(1, rows=batch_size, cols=1) %*% t(seq(1, K));
+  iters = ceil (N / batch_size);
+
+  for (i in 1:iters) {
+    # Get next batch
+    beg = ((i-1) * batch_size) %% N + 1;
+    end = min(N, beg+batch_size-1);
+    X_batch = X[beg:end,];
+
+    # Extract 3 layers
+    j = 1;
+    fel = 10; #extract 9, 8, 7, 6
+    while (j < 4) {
+      # Compute forward pass
+      # Layer1: conv2d 7x7 -> bn -> relu -> maxpool 3x3
+      lid = 1;
+      [Wl1, bl1] = getWeights(fel, lid, W1_pt, b1_pt, W1_init, b1_init);
+      [outc1, Houtc1, Woutc1] = conv2d_forward(X_batch,Wl1,bl1,C,Hin,Win,7,7,2,2,3,3);
+      outb1 = bn2d_forward(outc1,64,Houtc1,Woutc1,mu_bn,ep_bn);
+      outr1 = relu_forward(outb1);
+      [outp1, Houtp1, Woutp1] = max_pool2d_forward(outr1,64,Houtc1, Woutc1,3,3,2,2,1,1);
+
+      # Layer2: residual block1
+      lid = 2;
+      [Wc1, bc1] = getWeights(fel, lid, W2_pt, b2_pt, W2_init, b2_init);
+      [Wc2, bc2] = getWeights(fel, lid, W3_pt, b3_pt, W3_init, b3_init);
+      [outrb1, Houtrb1, Woutrb1] = basic_block(outp1,64,64,Houtp1,Woutp1,1,1,Wc1,bc1,Wc2,bc2);
+      print(nrow(outrb1)+" "+ncol(outrb1));
+
+      # Layer3: residual block2
+      lid = 3;
+      [Wc1, bc1] = getWeights(fel, lid, W4_pt, b4_pt, W4_init, b4_init);
+      [Wc2, bc2] = getWeights(fel, lid, W5_pt, b5_pt, W5_init, b5_init);
+      [outrb2, Houtrb2, Woutrb2] = basic_block(outrb1,64,64,Houtrb1,Woutrb1,1,1,Wc1,bc1,Wc2,bc2);
+      print(nrow(outrb2)+" "+ncol(outrb2));
+
+      # Layer4: residual block3
+      lid = 4;
+      [Wc1, bc1] = getWeights(fel, lid, W6_pt, b6_pt, W6_init, b6_init);
+      [Wc2, bc2] = getWeights(fel, lid, W7_pt, b7_pt, W7_init, b7_init);
+      [outrb3, Houtrb3, Woutrb3] = basic_block(outrb2,64,128,Houtrb2,Woutrb2,2,2,Wc1,bc1,Wc2,bc2);
+      print(nrow(outrb3)+" "+ncol(outrb3));
+
+      # Layer5: residual block4
+      lid = 5;
+      [Wc1, bc1] = getWeights(fel, lid, W8_pt, b8_pt, W8_init, b8_init);
+      [Wc2, bc2] = getWeights(fel, lid, W9_pt, b9_pt, W9_init, b9_init);
+      [outrb4, Houtrb4, Woutrb4] = basic_block(outrb3,128,128,Houtrb3,Woutrb3,1,1,Wc1,bc1,Wc2,bc2);
+      print(nrow(outrb4)+" "+ncol(outrb4));
+
+      # Layer6: residual block5
+      lid = 6;
+      [Wc1, bc1] = getWeights(fel, lid, W10_pt, b10_pt, W10_init, b10_init);
+      [Wc2, bc2] = getWeights(fel, lid, W11_pt, b11_pt, W11_init, b11_init);
+      [outrb5, Houtrb5, Woutrb5] = basic_block(outrb4,128,256,Houtrb4,Woutrb4,2,2,Wc1,bc1,Wc2,bc2);
+      print(nrow(outrb5)+" "+ncol(outrb5));
+
+      # Layer7: residual block6
+      lid = 7;
+      [Wc1, bc1] = getWeights(fel, lid, W12_pt, b12_pt, W12_init, b12_init);
+      [Wc2, bc2] = getWeights(fel, lid, W13_pt, b13_pt, W13_init, b13_init);
+      [outrb6, Houtrb6, Woutrb6] = basic_block(outrb5,256,256,Houtrb5,Woutrb5,1,1,Wc1,bc1,Wc2,bc2);
+      print(nrow(outrb6)+" "+ncol(outrb6));
+
+      # Layer8: residual block7
+      lid = 8;
+      [Wc1, bc1] = getWeights(fel, lid, W14_pt, b14_pt, W14_init, b14_init);
+      [Wc2, bc2] = getWeights(fel, lid, W15_pt, b15_pt, W15_init, b15_init);
+      [outrb7, Houtrb7, Woutrb7] = basic_block(outrb6,256,512,Houtrb6,Woutrb6,2,2,Wc1,bc1,Wc2,bc2);
+      print(nrow(outrb7)+" "+ncol(outrb7));
+
+      # Layer9: residual block8
+      lid = 9;
+      [Wc1, bc1] = getWeights(fel, lid, W16_pt, b16_pt, W16_init, b16_init);
+      [Wc2, bc2] = getWeights(fel, lid, W17_pt, b17_pt, W17_init, b17_init);
+      [outrb8, Houtrb8, Woutrb8] = basic_block(outrb7,512,512,Houtrb7,Woutrb7,1,1,Wc1,bc1,Wc2,bc2);
+      print(nrow(outrb8)+" "+ncol(outrb8));
+
+      # Global average pooling
+      [outap1, Houtap1, Houtap2] = avg_pool2d_forward(outrb8, 512, Houtrb8, Woutrb8);
+
+      # layer10 : Fully connected layer
+      lid = 10;
+      [Wl10, bl10] = getWeights(fel, lid, W18_pt, b18_pt, W18_init, b18_init);
+      outa1 = affine_forward(outap1, Wl10, bl10);
+      probs_batch = softmax_forward(outa1);
+
+      # Store the predictions
+      Y_pred[beg:end,j] = rwRowIndexMax(probs_batch, oneVec, idxSeq);
+      j = j + 1;
+      fel = fel - 1;
+    }
+  }
+
+}
+
+generate_dummy_data = function(int N, int C, int Hin, int Win, int K)
+  return (matrix[double] X, matrix[double] Y) {
+  X = rand(rows=N, cols=C*Hin*Win, pdf="normal", seed=45) #linearized images
+  classes = round(rand(rows=N, cols=1, min=1, max=K, pdf="uniform", seed=46))
+  Y = table(seq(1, N), classes, N, K)  #one-hot encoding
+}
+
+# Read training data and settings
+N = 64;    #num of images in the target dataset
+C = 3;       #num of color channels
+Hin = 224;   #input image height
+Win = 224;   #input image width
+K = 10;      #num of classes
+
+# Generate dummy data
+[X, Y] = generate_dummy_data(N, C, Hin, Win, K);
+
+# Load the CuDNN libraries by calling a conv2d
+print("Eagerly loading cuDNN library");
+[W1, b1] = conv2d_init(96, C, Hf=11, Wf=11, 42);
+[outc1, Houtc1, Woutc1] = conv2d_forward(X[1:8,], W1, b1, C, Hin, Win, 11, 11, 1, 1, 2, 2);
+print(sum(outc1));
+
+print("Starting exploratory feature transfers");
+t1 = time();
+Y_pred = resnet18_forward(X, C, Hin, Win, K);
+R = colSums(Y_pred)
+print(R);
+
+t2 = time();
+print("Elapsed time for feature transfers = "+floor((t2-t1)/1000000)+" millsec");
+
+write(R, $1)

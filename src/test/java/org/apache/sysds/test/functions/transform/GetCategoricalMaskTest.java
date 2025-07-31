@@ -104,6 +104,37 @@ public class GetCategoricalMaskTest extends AutomatedTestBase {
 
 	}
 
+	@Test
+	public void testHash3() throws Exception {
+		FrameBlock fb = TestUtils.generateRandomFrameBlock(100, new ValueType[] {ValueType.UINT8, ValueType.INT64,ValueType.UINT8}, 32);
+		MatrixBlock expected = new MatrixBlock(1, 7, new double[] {1, 1, 1, 0, 1, 1, 1});
+
+		String spec = "{\"ids\": true, \"dummycode\": [1,3], \"hash\": [1,3], \"K\": 3}";
+		runTransformTest(fb, spec, expected);
+
+	}
+
+
+	@Test
+	public void testHybrid1() throws Exception {
+		FrameBlock fb = TestUtils.generateRandomFrameBlock(100, new ValueType[] {ValueType.UINT8, ValueType.INT64,ValueType.UINT8, ValueType.BOOLEAN}, 32);
+		MatrixBlock expected = new MatrixBlock(1, 9, new double[] {1, 1, 1, 0, 1, 1, 1,1,1});
+
+		String spec = "{\"ids\": true, \"dummycode\": [1,3,4], \"hash\": [1,3], \"K\": 3}";
+		runTransformTest(fb, spec, expected);
+
+	}
+
+	@Test
+	public void testHybrid2() throws Exception {
+		FrameBlock fb = TestUtils.generateRandomFrameBlock(100, new ValueType[] {ValueType.UINT8, ValueType.BOOLEAN,ValueType.UINT8, ValueType.BOOLEAN}, 32);
+		MatrixBlock expected = new MatrixBlock(1, 10, new double[] {1, 1, 1, 1,1, 1, 1, 1,1,1});
+
+		String spec = "{\"ids\": true, \"dummycode\": [1,2,3,4], \"hash\": [1,3], \"K\": 3}";
+		runTransformTest(fb, spec, expected);
+
+	}
+
 	private void runTransformTest(FrameBlock fb, String spec, MatrixBlock expected) throws Exception {
 		try {
 
@@ -119,7 +150,7 @@ public class GetCategoricalMaskTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-			programArgs = new String[] {"-args", inF, inS, out};
+			programArgs = new String[] {"-args", inF, inS, out, expected.getNumColumns() + ""};
 
 			runTest(true, false, null, -1);
 

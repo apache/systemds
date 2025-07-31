@@ -2017,6 +2017,10 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			checkNumParameters(2);
 			checkFrameParam(getFirstExpr());
 			checkScalarParam(getSecondExpr());
+			output.setDataType(DataType.MATRIX);
+			output.setDimensions(1, -1);
+			output.setBlocksize( id.getBlocksize());
+			output.setValueType(ValueType.FP64);
 			break;
 		case QUANTIZE_COMPRESS:
 			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_QUANTIZE_COMPRESS_COMMAND) {

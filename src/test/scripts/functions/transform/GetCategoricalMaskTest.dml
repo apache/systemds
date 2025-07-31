@@ -26,6 +26,12 @@ jspec = read($2, data_type="scalar", value_type="string");
 [X, M] = transformencode(target=F1, spec=jspec);
 
 Cm = getCategoricalMask(M, jspec)
+expectedColumns = $4
+if(ncol(Cm) != expectedColumns){
+    stop("Wrong number of metadata columns in categorical mask")
+}
+# print mean to verify that Cm is a matrix, not a Frame according to compiler
+print(mean(Cm)) 
 
 write(Cm, $3, format="csv");
 

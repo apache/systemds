@@ -81,7 +81,9 @@ class MultiReturn(OperationNode):
             output = self._outputs[idx]
             if str(output) == "MatrixNode":
                 result_var.append(
-                    matrix_block_to_numpy(jvmV, result_variables.getMatrixBlock(v))
+                    matrix_block_to_numpy(
+                        self.sds_context, result_variables.getMatrixBlock(v)
+                    )
                 )
             elif str(output) == "FrameNode":
                 result_var.append(

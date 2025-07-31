@@ -109,7 +109,7 @@ class Matrix(OperationNode):
 
     def _parse_output_result_variables(self, result_variables):
         return matrix_block_to_numpy(
-            self.sds_context.java_gateway.jvm,
+            self.sds_context,
             result_variables.getMatrixBlock(self._script.out_var_name[0]),
         )
 

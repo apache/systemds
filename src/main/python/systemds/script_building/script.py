@@ -95,7 +95,7 @@ class DMLScript:
             exception_str = "Py4JNetworkError: no connection to JVM, most likely due to previous crash or closed JVM from calls to close()"
             trace_back_limit = 0
         except Exception as e:
-            exception_str = str(e)
+            exception_str = e
             trace_back_limit = None
         self.sds_context.exception_and_close(exception_str, trace_back_limit)
 

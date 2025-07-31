@@ -73,7 +73,7 @@ class Test_MatrixBlockConverter(unittest.TestCase):
     def convert_back_and_forth(self, array):
         matrix_block = numpy_to_matrix_block(self.sds, array)
         # use the ability to call functions on matrix_block.
-        returned = matrix_block_to_numpy(self.sds.java_gateway.jvm, matrix_block)
+        returned = matrix_block_to_numpy(self.sds, matrix_block)
         self.assertTrue(np.allclose(array, returned))
 
 

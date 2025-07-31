@@ -124,7 +124,9 @@ def numpy_to_matrix_block(sds, np_arr: np.array):
         )
         if use_single_pipe:
             sds._log.debug(
-                "Using single FIFO pipe for reading {}".format(format_bytes(total_bytes))
+                "Using single FIFO pipe for reading {}".format(
+                    format_bytes(total_bytes)
+                )
             )
             pipe_id = 0
             pipe = sds._FIFO_PY2JAVA_PIPES[pipe_id]

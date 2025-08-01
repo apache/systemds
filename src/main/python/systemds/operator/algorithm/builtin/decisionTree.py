@@ -44,9 +44,9 @@ def decisionTree(X: Matrix,
        and the following trees, M would look as follows:
     
        (L1)               |d<5|
-                         /     \
+                         /     \\
        (L2)           P1:2    |a<7|
-                              /   \
+                              /   \\
        (L3)                 P2:2 P3:1
     
        --> M :=

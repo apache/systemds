@@ -41,17 +41,21 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FileFormatPropertiesHDF5;
 import org.apache.sysds.runtime.io.FileFormatPropertiesLIBSVM;
 import org.apache.sysds.runtime.io.ListReader;
 import org.apache.sysds.runtime.io.ListWriter;
+import org.apache.sysds.runtime.io.MatrixWriter;
+import org.apache.sysds.runtime.io.MatrixWriterFactory;
 import org.apache.sysds.runtime.io.WriterHDF5;
 import org.apache.sysds.runtime.io.WriterMatrixMarket;
 import org.apache.sysds.runtime.io.WriterTextCSV;
@@ -59,6 +63,7 @@ import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
@@ -1060,19 +1065,46 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			HDFSTool.writeScalarToHDFS(ec.getScalarInput(getInput1()), fname);
 		}
 		else if( getInput1().getDataType() == DataType.MATRIX ) {
-			if( fmt == FileFormat.MM )
-				writeMMFile(ec, fname);
-			else if( fmt == FileFormat.CSV )
-				writeCSVFile(ec, fname);
-			else if(fmt == FileFormat.LIBSVM)
-				writeLIBSVMFile(ec, fname);
-			else if(fmt == FileFormat.HDF5)
-				writeHDF5File(ec, fname);
+
+			MatrixObject mo = ec.getMatrixObject(getInput1().getName());
+			LocalTaskQueue<IndexedMatrixValue> stream = mo.getStreamHandle();
+
+			if (stream != null) {
+
+				try {
+					IndexedMatrixValue tmp = null;
+					MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(fmt);
+
+					while((tmp = stream.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
+						MatrixBlock mb = (MatrixBlock)tmp.getValue();
+						MatrixIndexes mi = tmp.getIndexes();
+
+						// Construct a unique filename for each part-file inside the output directory
+						String partFilePath = fname + "/part-" + mi.getRowIndex() + "-" + mi.getColumnIndex();
+
+						writer.writeMatrixToHDFS(mb, partFilePath, mb.getNumRows(), mb.getNumColumns(), (int) mb.getLength() , mb.getNonZeros());
+					}
+					HDFSTool.writeMetaDataFile(fname + "/.mtd", mo.getValueType(),
+							mo.getMetaData().getDataCharacteristics(), FileFormat.HDF5, _formatProperties);
+				}
+				catch(Exception ex) {
+					throw new DMLRuntimeException("Failed to write OOC stream to " + fname, ex);
+				}
+			}
 			else {
-				// Default behavior (text, binary)
-				MatrixObject mo = ec.getMatrixObject(getInput1().getName());
-				int blen = Integer.parseInt(getInput4().getName());
-				mo.exportData(fname, fmtStr, new FileFormatProperties(blen));
+				if( fmt == FileFormat.MM )
+					writeMMFile(ec, fname);
+				else if( fmt == FileFormat.CSV )
+					writeCSVFile(ec, fname);
+				else if(fmt == FileFormat.LIBSVM)
+					writeLIBSVMFile(ec, fname);
+				else if(fmt == FileFormat.HDF5)
+					writeHDF5File(ec, fname);
+				else {
+					// Default behavior (text, binary)
+					int blen = Integer.parseInt(getInput4().getName());
+					mo.exportData(fname, fmtStr, new FileFormatProperties(blen));
+				}
 			}
 		}
 		else if( getInput1().getDataType() == DataType.FRAME ) {

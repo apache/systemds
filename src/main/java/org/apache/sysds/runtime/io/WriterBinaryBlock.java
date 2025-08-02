@@ -30,6 +30,8 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.util.HDFSTool;
@@ -228,4 +230,9 @@ public class WriterBinaryBlock extends MatrixWriter {
 			IOUtilFunctions.closeSilently(writer);
 		}
 	}
+
+	@Override
+	public void writeMatrixFromStream(String fname, LocalTaskQueue<IndexedMatrixValue> stream, long rlen, long clen, int blen) {
+		throw new UnsupportedOperationException("Writing from an OOC stream is not supported for the HDF5 format.");
+	};
 }

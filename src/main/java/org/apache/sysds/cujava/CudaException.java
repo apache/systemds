@@ -19,5 +19,15 @@
 
 package org.apache.sysds.cujava;
 
-public class CudaException {
+public class CudaException extends RuntimeException {
+
+	private static final long serialVersionUID = 1587809813906124159L;
+
+	public CudaException(String message) {
+		super(message);
+	}
+
+	public CudaException(String message, Throwable cause) {
+		super(message, cause);
+	}
 }

@@ -19,5 +19,5 @@
 
 package org.apache.sysds.cujava.runtime;
 
-public class cudaMemcpyKind {
+public class CudaMemcpyKind {
 }

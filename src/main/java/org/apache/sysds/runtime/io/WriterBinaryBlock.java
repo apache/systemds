@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.io;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -35,6 +36,8 @@ import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.util.HDFSTool;
+
+import static org.apache.sysds.runtime.util.HDFSTool.getHDFSDataOutputStream;
 
 public class WriterBinaryBlock extends MatrixWriter {
 	protected int _replication = -1;
@@ -233,6 +236,25 @@ public class WriterBinaryBlock extends MatrixWriter {
 
 	@Override
 	public void writeMatrixFromStream(String fname, LocalTaskQueue<IndexedMatrixValue> stream, long rlen, long clen, int blen) {
-		throw new UnsupportedOperationException("Writing from an OOC stream is not supported for the HDF5 format.");
-	};
+		DataOutputStream dostream = null;
+		try {
+			dostream = getHDFSDataOutputStream(fname, true);
+			dostream.writeLong(rlen);
+			dostream.writeLong(clen);
+
+			IndexedMatrixValue i_val =  null;
+			while((i_val = stream.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
+				MatrixBlock mb = (MatrixBlock) i_val.getValue();
+				mb.write(dostream);
+			}
+
+		} catch (IOException ex) {
+            throw new RuntimeException(ex);
+        } catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		} finally {
+			IOUtilFunctions.closeSilently(dostream);
+		}
+
+    };
 }

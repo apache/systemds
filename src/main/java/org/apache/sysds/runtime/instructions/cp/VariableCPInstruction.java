@@ -41,20 +41,14 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.io.FileFormatProperties;
-import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
-import org.apache.sysds.runtime.io.FileFormatPropertiesHDF5;
-import org.apache.sysds.runtime.io.FileFormatPropertiesLIBSVM;
-import org.apache.sysds.runtime.io.ListReader;
-import org.apache.sysds.runtime.io.ListWriter;
-import org.apache.sysds.runtime.io.WriterHDF5;
-import org.apache.sysds.runtime.io.WriterMatrixMarket;
-import org.apache.sysds.runtime.io.WriterTextCSV;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
+import org.apache.sysds.runtime.io.*;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
@@ -1060,6 +1054,24 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			HDFSTool.writeScalarToHDFS(ec.getScalarInput(getInput1()), fname);
 		}
 		else if( getInput1().getDataType() == DataType.MATRIX ) {
+			MatrixObject mo = ec.getMatrixObject(getInput1().getName());
+			int blen = Integer.parseInt(getInput4().getName());
+			LocalTaskQueue<IndexedMatrixValue> stream = mo.getStreamHandle();
+
+			if (stream != null) {
+
+				try {
+					MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(fmt);
+
+					writer.writeMatrixFromStream(fname, stream, mo.getNumRows(), mo.getNumColumns(), blen);
+					HDFSTool.writeMetaDataFile(fname + ".mtd", mo.getValueType(),
+							mo.getMetaData().getDataCharacteristics(), fmt);
+
+				}
+				catch(Exception ex) {
+					throw new DMLRuntimeException("Failed to write OOC stream to " + fname, ex);
+				}
+			}
 			if( fmt == FileFormat.MM )
 				writeMMFile(ec, fname);
 			else if( fmt == FileFormat.CSV )
@@ -1070,8 +1082,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				writeHDF5File(ec, fname);
 			else {
 				// Default behavior (text, binary)
-				MatrixObject mo = ec.getMatrixObject(getInput1().getName());
-				int blen = Integer.parseInt(getInput4().getName());
+//				MatrixObject mo = ec.getMatrixObject(getInput1().getName());
+//				int blen = Integer.parseInt(getInput4().getName());
 				mo.exportData(fname, fmtStr, new FileFormatProperties(blen));
 			}
 		}

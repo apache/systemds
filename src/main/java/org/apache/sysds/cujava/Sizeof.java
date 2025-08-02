@@ -20,4 +20,28 @@
 package org.apache.sysds.cujava;
 
 public class Sizeof {
+
+	/**
+	 * CUDA expects sizes in bytes. The JDK provides sizes in bits.
+	 * Hence, we divide the sizes provided by the JDK by 8 to obtain bytes.
+	 */
+
+	public static final int BYTE = Byte.SIZE / 8;
+
+	public static final int CHAR = Character.SIZE / 8;
+
+	public static final int SHORT = Short.SIZE / 8;
+
+	public static final int INT = Integer.SIZE / 8;
+
+	public static final int FLOAT = Float.SIZE / 8;
+
+	public static final int LONG = Long.SIZE / 8;
+
+	public static final int DOUBLE = Double.SIZE / 8;
+
+	// Keep constructor private to prevent instantiation
+	private Sizeof() {
+	}
+
 }

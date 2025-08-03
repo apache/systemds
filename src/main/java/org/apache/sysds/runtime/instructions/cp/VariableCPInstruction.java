@@ -1075,7 +1075,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 
 					// 2. Clear its dirty flag and update its file path to the result we just wrote.
 					// This tells the system that the data for this variable now lives in 'fname'.
-					mo.setFileName(fname);
+//					mo.setFileName(fname);
+					HDFSTool.copyFileOnHDFS(fname, mo.getFileName());
 					mo.setDirty(false);
 
 				}

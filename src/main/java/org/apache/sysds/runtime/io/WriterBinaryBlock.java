@@ -19,9 +19,12 @@
 
 package org.apache.sysds.runtime.io;
 
+import java.io.DataInput;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile.Writer;
@@ -283,7 +286,34 @@ public class WriterBinaryBlock extends MatrixWriter {
 			// MERGE STEP: Use HDFS concat for metadata-only merge
 			fs.concat(finalPath, new Path[]{dataPath, headerPath});
 
-		} catch (IOException ex) {
+		} catch (UnsupportedOperationException ex) {
+			LOG.warn(ex.getMessage());
+
+			DataInputStream distream_header = null;
+			DataInputStream distream_data = null;
+			DataOutputStream dostream_final = null;
+
+			try {
+				dostream_final = fs.create(finalPath, true);
+
+				// 1. Copy header file content
+				distream_header = fs.open(headerPath);
+				IOUtils.copy(distream_header, dostream_final);
+				IOUtilFunctions.closeSilently(distream_header);
+
+				// 2. Copy data file content
+				distream_data = fs.open(dataPath);
+				IOUtils.copy(distream_data, dostream_final);
+				IOUtilFunctions.closeSilently(distream_data);
+			}
+			finally {
+				IOUtilFunctions.closeSilently(dostream_final);
+			}
+
+
+//			throw new IOException("The filesystem doesn't support concat, required for OOC", ex);
+		}
+		catch (IOException ex) {
             throw new RuntimeException(ex);
         } catch (InterruptedException e) {
 			throw new RuntimeException(e);

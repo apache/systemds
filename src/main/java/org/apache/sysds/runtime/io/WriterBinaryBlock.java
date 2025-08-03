@@ -26,12 +26,14 @@ import java.io.IOException;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
@@ -237,6 +239,39 @@ public class WriterBinaryBlock extends MatrixWriter {
 
 	@Override
 	public long writeMatrixFromStream(String fname, LocalTaskQueue<IndexedMatrixValue> stream, long rlen, long clen, int blen) throws IOException {
+		JobConf conf = ConfigurationManager.getCachedJobConf();
+		Path path = new Path(fname);
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
+
+		SequenceFile.Writer writer = null;
+
+		long totalNnz = 0;
+		try {
+			// 1. Create Sequence file writer for the final destination file
+			writer = new SequenceFile.Writer(fs, conf, path, MatrixIndexes.class, MatrixBlock.class);
+
+			// 2. Loop through OOC stream
+			IndexedMatrixValue i_val =  null;
+			while((i_val = stream.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
+				MatrixBlock mb = (MatrixBlock) i_val.getValue();
+				MatrixIndexes ix = i_val.getIndexes();
+
+				// 3. Append (key, value) record as a new value in the file
+				writer.append(ix, mb);
+
+				totalNnz += mb.getNonZeros();
+			}
+
+		} catch (IOException | InterruptedException e) {
+			throw new DMLRuntimeException(e);
+        } finally {
+			IOUtilFunctions.closeSilently(writer);
+		}
+
+        return totalNnz;
+	}
+
+	public long writeMatrixFromStream1(String fname, LocalTaskQueue<IndexedMatrixValue> stream, long rlen, long clen, int blen) throws IOException {
 		DataOutputStream dostream_data = null;
 		DataOutputStream dostream_header = null;
 
@@ -245,6 +280,7 @@ public class WriterBinaryBlock extends MatrixWriter {
 		Path dataPath = new Path(tempDataFname);
 		Path headerPath = new Path(tempHeaderFname);
 		Path finalPath = new Path(fname);
+
 
 		FileSystem fs = null;
 		long totalNnz = 0;
@@ -284,9 +320,11 @@ public class WriterBinaryBlock extends MatrixWriter {
 
 			// MERGE STEP: Use HDFS concat for metadata-only merge
 			fs.concat(finalPath, new Path[]{dataPath, headerPath});
+			System.out.println("merged file available");
 
 		} catch (UnsupportedOperationException ex) {
 			LOG.warn(ex.getMessage());
+			System.out.println("concat is not available");
 
 			DataInputStream distream_header = null;
 			DataInputStream distream_data = null;

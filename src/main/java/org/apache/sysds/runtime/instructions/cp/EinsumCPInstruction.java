@@ -82,7 +82,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		EinsumContext einc = EinsumContext.getEinsumContext(eqStr, inputs);
 
 		this.einc = einc;
-		String resultString = einc.outChar2 != null ? String.valueOf(einc.outChar1) + einc.outChar2 : einc.outChar1 != null ? String.valueOf(einc.outChar1) : null;
+		String resultString = einc.outChar2 != null ? String.valueOf(einc.outChar1) + einc.outChar2 : einc.outChar1 != null ? String.valueOf(einc.outChar1) : "";
 
 		if( LOG.isDebugEnabled() ) LOG.trace("outrows:"+einc.outRows+", outcols:"+einc.outCols);
 
@@ -184,7 +184,9 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 					throw new RuntimeException("Einsum runtime error, reductions and multiplications finished but the did not produce one result"); // should not happen
 				}
 			}
-			ec.setMatrixOutput(output.getName(), res);
+			if (einc.outRows == 1 && einc.outCols == 1)
+				ec.setScalarOutput(output.getName(), new DoubleObject(res.get(0, 0)));
+			else ec.setMatrixOutput(output.getName(), res);
 		}
 
 		else { // if (needToDoCellTemplate)
@@ -294,6 +296,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 	/*  handle situation: ji,ji or ij,ji, j,j */
 	private boolean multiplyTerms(HashMap<Character, ArrayList<Integer>> partsCharactersToIndices, ArrayList<MatrixBlock> inputs, ArrayList<String> inputsChars, Character outChar1, Character outChar2 ) {
 		HashMap<String, LinkedList<Integer>> matrixStringToIndex = new HashMap<>();
+		HashSet<String> matrixStringToIndexSkip = new HashSet<>();
 		HashMap<String, LinkedList<Integer>> vectorStringToIndex = new HashMap<>();
 
 		for(int i = 0; i < inputsChars.size(); i++){
@@ -352,7 +355,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		}
 
 		for(var s : matrixStringToIndex.keySet()){
-			if(!matrixStringToIndex.containsKey(s)) continue; // entries can be removed
+			if(matrixStringToIndexSkip.contains(s)) continue;
 
 			String sT = s.length() == 2 ? String.valueOf(s.charAt(1)) + s.charAt(0) : null;
 			LinkedList<Integer> idxs = matrixStringToIndex.get(s);
@@ -459,7 +462,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 				if (partsCharactersToIndices.containsKey(c)) partsCharactersToIndices.get(c).add(inputs.size() - 1);
 			}
 
-			if(idxsT != null) matrixStringToIndex.remove(sT);
+			if(idxsT != null) matrixStringToIndexSkip.add(sT);
 		}
 
 
@@ -542,9 +545,11 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		String resS;
 		SumOperation sumOp;
 
-		if(s1.length()==1 && s2.length() == 1){ //remove never happening here
+		if(s1.length()==1 && s2.length() == 1){
 			sumOp = SumOperation.a_a;
 			resS = "";
+			first = inputs.get(toSum.get(0));
+			second = inputs.get(toSum.get(1));
 		}
 		else if(s2.length() == 1 || s1.length() == 1){
 			if(s1.length() == 1){

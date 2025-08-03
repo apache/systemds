@@ -1069,6 +1069,15 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 					MatrixCharacteristics mc = new MatrixCharacteristics(nrows, ncols, blen, totalNnz);
                     HDFSTool.writeMetaDataFile(fname + ".mtd", mo.getValueType(), mc, fmt);
 
+					// 1. Update the metadata of the MatrixObject in the symbol table.
+					mo.updateDataCharacteristics(mc);
+					System.out.println("MO characterstics updated to avoid recompilation");
+
+					// 2. Clear its dirty flag and update its file path to the result we just wrote.
+					// This tells the system that the data for this variable now lives in 'fname'.
+					mo.setFileName(fname);
+					mo.setDirty(false);
+
 				}
 				catch(Exception ex) {
 					throw new DMLRuntimeException("Failed to write OOC stream to " + fname, ex);

@@ -56,7 +56,7 @@ public abstract class MatrixWriter {
 	 * @param blen The block size
 	 * @throws IOException if an I/O error occurs
 	 */
-	public abstract void writeMatrixFromStream(String fname, LocalTaskQueue<IndexedMatrixValue> stream,
+	public abstract long writeMatrixFromStream(String fname, LocalTaskQueue<IndexedMatrixValue> stream,
 											   long rlen, long clen, int blen) throws IOException;
 	
 	public void setForcedParallel(boolean par) {

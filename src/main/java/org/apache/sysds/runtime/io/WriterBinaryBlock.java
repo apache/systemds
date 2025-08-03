@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.io;
 
-import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -40,7 +39,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.util.HDFSTool;
 
-import static org.apache.sysds.runtime.util.HDFSTool.getHDFSDataOutputStream;
 
 public class WriterBinaryBlock extends MatrixWriter {
 	protected int _replication = -1;
@@ -238,7 +236,7 @@ public class WriterBinaryBlock extends MatrixWriter {
 	}
 
 	@Override
-	public void writeMatrixFromStream(String fname, LocalTaskQueue<IndexedMatrixValue> stream, long rlen, long clen, int blen) throws IOException {
+	public long writeMatrixFromStream(String fname, LocalTaskQueue<IndexedMatrixValue> stream, long rlen, long clen, int blen) throws IOException {
 		DataOutputStream dostream_data = null;
 		DataOutputStream dostream_header = null;
 
@@ -249,7 +247,7 @@ public class WriterBinaryBlock extends MatrixWriter {
 		Path finalPath = new Path(fname);
 
 		FileSystem fs = null;
-
+		long totalNnz = 0;
 		try {
 			// PASS 1: Stream to a temporary raw data file and count NNZ
 			fs = IOUtilFunctions.getFileSystem(dataPath);
@@ -258,7 +256,7 @@ public class WriterBinaryBlock extends MatrixWriter {
 //			dostream_data.writeLong(rlen);
 //			dostream_data.writeLong(clen);
 
-			long totalNnz = 0;
+//			long totalNnz = 0;
 			IndexedMatrixValue i_val =  null;
 			while((i_val = stream.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
 				MatrixBlock mb = (MatrixBlock) i_val.getValue();
@@ -327,6 +325,6 @@ public class WriterBinaryBlock extends MatrixWriter {
 //				if (fs.exists(headerPath)) fs.delete(headerPath, false);
 //			}
 		}
-
+		return totalNnz;
     };
 }

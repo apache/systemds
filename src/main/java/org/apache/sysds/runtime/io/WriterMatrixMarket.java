@@ -224,7 +224,7 @@ public class WriterMatrixMarket extends MatrixWriter
 	}
 
 	@Override
-	public void writeMatrixFromStream(String fname, LocalTaskQueue<IndexedMatrixValue> stream, long rlen, long clen, int blen) {
-		throw new UnsupportedOperationException("Writing from an OOC stream is not supported for the HDF5 format.");
+	public long writeMatrixFromStream(String fname, LocalTaskQueue<IndexedMatrixValue> stream, long rlen, long clen, int blen) {
+		throw new UnsupportedOperationException("Writing from an OOC stream is not supported for the MatrixMarket format.");
 	};
 }

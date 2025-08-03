@@ -1062,10 +1062,12 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 
 				try {
 					MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(fmt);
+                    long nrows = mo.getNumRows();
+                    long ncols = mo.getNumColumns();
 
-					writer.writeMatrixFromStream(fname, stream, mo.getNumRows(), mo.getNumColumns(), blen);
-					HDFSTool.writeMetaDataFile(fname + ".mtd", mo.getValueType(),
-							mo.getMetaData().getDataCharacteristics(), fmt);
+					long totalNnz = writer.writeMatrixFromStream(fname, stream, nrows, ncols, blen);
+					MatrixCharacteristics mc = new MatrixCharacteristics(nrows, ncols, blen, totalNnz);
+                    HDFSTool.writeMetaDataFile(fname + ".mtd", mo.getValueType(), mc, fmt);
 
 				}
 				catch(Exception ex) {

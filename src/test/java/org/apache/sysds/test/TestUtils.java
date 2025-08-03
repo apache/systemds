@@ -3493,21 +3493,23 @@ public class TestUtils {
 		if( t != null ) {
 			sendSigInt(t);// Attempt graceful termination
 			try {
-            // Wait up to 1 second for the process to exit
-            if (!t.waitFor(10, TimeUnit.SECONDS)) {
-                // If still alive after 1 second, force kill
-                Process forciblyDestroyed = t.destroyForcibly();
-                forciblyDestroyed.waitFor(); // Wait until it's definitely terminated
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+				// Wait up to 1 second for the process to exit
+				if (!t.waitFor(10, TimeUnit.SECONDS)) {
+					// If still alive after 1 second, force kill
+					Process forciblyDestroyed = t.destroyForcibly();
+					forciblyDestroyed.waitFor(); // Wait until it's definitely terminated
+				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
 	public static void sendSigInt(Process process) {
 		long pid = process.pid();
-		ProcessBuilder pb = new ProcessBuilder("kill", "-SIGINT", Long.toString(pid));
+		ProcessBuilder pb = System.getProperty("os.name").startsWith("Win") ?
+			new ProcessBuilder("taskkill", "/pid", Long.toString(pid)) : // add "/F" to force
+			new ProcessBuilder("kill", "-SIGINT", Long.toString(pid));
 		try {
 			pb.inheritIO().start().waitFor();
 		}

@@ -2619,6 +2619,7 @@ public class DMLTranslator
 		case CEIL:
 		case FLOOR:
 		case CUMSUM:
+		case ROWCUMSUM:
 		case CUMPROD:
 		case CUMSUMPROD:
 		case CUMMIN:

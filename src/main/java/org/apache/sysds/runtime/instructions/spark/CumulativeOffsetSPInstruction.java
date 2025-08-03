@@ -56,6 +56,8 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 
 		if (Opcodes.BCUMOFFKP.toString().equals(opcode))
 			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucumk+"));
+		else if (Opcodes.BROWCUMOFFKP.toString().equals(opcode))
+			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("urowcumk+"));
 		else if (Opcodes.BCUMOFFM.toString().equals(opcode))
 			_uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucum*"));
 		else if (Opcodes.BCUMOFFPM.toString().equals(opcode)) {

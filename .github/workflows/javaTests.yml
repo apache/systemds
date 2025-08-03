@@ -29,6 +29,7 @@ on:
       - '*.html'
       - 'src/main/python/**'
       - 'dev/**'
+      - '.github/workflows/python.yml'
     branches:
       - main
   pull_request:
@@ -38,6 +39,7 @@ on:
       - '*.html'
       - 'src/main/python/**'
       - 'dev/**'
+      - '.github/workflows/python.yml'
     branches:
       - main
 

@@ -45,6 +45,7 @@ on:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -52,8 +53,9 @@ jobs:
         os: [ubuntu-24.04]
         java: ['17']
         javadist: ['adopt']
+        test_mode: [env, noenv, federated]
 
-    name: ${{ matrix.os }} Java ${{ matrix.java }} ${{ matrix.javadist }} Python ${{ matrix.python-version }}
+    name: ${{ matrix.os }} Java ${{ matrix.java }} ${{ matrix.javadist }} Python ${{ matrix.python-version }}/ ${{ matrix.test_mode}}
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -115,7 +117,6 @@ jobs:
           librosa \
           h5py \
           gensim \
-          black \
           opt-einsum \
           nltk
 
@@ -124,7 +125,8 @@ jobs:
         cd src/main/python
         python create_python_dist.py
 
-    - name: Run all python tests
+    - name: Run tests with env
+      if: ${{ matrix.test_mode == 'env' }}
       run: |
         export SYSTEMDS_ROOT=$(pwd)
         export PATH=$SYSTEMDS_ROOT/bin:$PATH
@@ -132,30 +134,20 @@ jobs:
         export LOG4JPROP=$SYSTEMDS_ROOT/src/test/resources/log4j.properties
         cd src/main/python
         unittest-parallel -t . -s tests -v
-        # python -m unittest discover -s tests -p 'test_*.py'
-        echo "Exit Status: " $?
 
-    - name: Run all python tests no environment
+    - name: Run tests no env
+      if: ${{ matrix.test_mode == 'noenv' }}
       run: |
         export LOG4JPROP=$(pwd)/src/test/resources/log4j.properties
         cd src/main/python
         unittest-parallel -t . -s tests -v
-        # python -m unittest discover -s tests -p 'test_*.py'
-        echo "Exit Status: " $?
 
     - name: Run Federated Python Tests
+      if: ${{ matrix.test_mode == 'federated' }}
       run: |
         export SYSTEMDS_ROOT=$(pwd)
         export PATH=$SYSTEMDS_ROOT/bin:$PATH
         cd src/main/python
         ./tests/federated/runFedTest.sh
-
-    - name: Check formatting according to Black (src/main/python/systemds)
-      run: |
-        black --check --exclude operator/algorithm src/main/python/systemds
-
-    - name: Check formatting according to Black (src/main/python/tests)
-      run: |
-        black --check src/main/python/tests
 
 

@@ -263,6 +263,7 @@ public class WriterBinaryBlock extends MatrixWriter {
 				totalNnz += mb.getNonZeros();
 
 				double[] denseValues = mb.getDenseBlockValues();
+				System.out.println("totalNnz: " + totalNnz);
 				if (denseValues != null) {
 					for (double v : denseValues) {
 						dostream_data.writeDouble(v);

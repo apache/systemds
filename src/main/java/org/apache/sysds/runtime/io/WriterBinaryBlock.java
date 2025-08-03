@@ -19,11 +19,8 @@
 
 package org.apache.sysds.runtime.io;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
@@ -33,7 +30,6 @@ import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
@@ -247,8 +243,7 @@ public class WriterBinaryBlock extends MatrixWriter {
 
 		long totalNnz = 0;
 		try {
-			// 1. Create Sequence file writer for the final destination file
-//			writer = new SequenceFile.Writer(fs, conf, path, MatrixIndexes.class, MatrixBlock.class);
+			// 1. Create Sequence file writer for the final destination file			writer = new SequenceFile.Writer(fs, conf, path, MatrixIndexes.class, MatrixBlock.class);
             writer = SequenceFile.createWriter(fs, conf, path, MatrixIndexes.class, MatrixBlock.class);
 
 			// 2. Loop through OOC stream
@@ -271,100 +266,4 @@ public class WriterBinaryBlock extends MatrixWriter {
 
         return totalNnz;
 	}
-
-	public long writeMatrixFromStream1(String fname, LocalTaskQueue<IndexedMatrixValue> stream, long rlen, long clen, int blen) throws IOException {
-		DataOutputStream dostream_data = null;
-		DataOutputStream dostream_header = null;
-
-		String tempDataFname = fname + "._data";
-		String tempHeaderFname = fname + "._header";
-		Path dataPath = new Path(tempDataFname);
-		Path headerPath = new Path(tempHeaderFname);
-		Path finalPath = new Path(fname);
-
-
-		FileSystem fs = null;
-		long totalNnz = 0;
-		try {
-			// PASS 1: Stream to a temporary raw data file and count NNZ
-			fs = IOUtilFunctions.getFileSystem(dataPath);
-//			dostream = getHDFSDataOutputStream(fname, true);
-			dostream_data = fs.create(dataPath, true);
-//			dostream_data.writeLong(rlen);
-//			dostream_data.writeLong(clen);
-
-//			long totalNnz = 0;
-			IndexedMatrixValue i_val =  null;
-			while((i_val = stream.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
-				MatrixBlock mb = (MatrixBlock) i_val.getValue();
-				totalNnz += mb.getNonZeros();
-
-				double[] denseValues = mb.getDenseBlockValues();
-				System.out.println("totalNnz: " + totalNnz);
-				if (denseValues != null) {
-					for (double v : denseValues) {
-						dostream_data.writeDouble(v);
-					}
-				}
-//				mb.write(dostream);
-			}
-			IOUtilFunctions.closeSilently(dostream_data);
-
-			// PASS 2: Create a header file in RAM (very small)
-			dostream_header = fs.create(headerPath, true);
-			dostream_header.writeLong(rlen);
-			dostream_header.writeLong(clen);
-			dostream_header.writeInt(blen);
-			dostream_header.writeBoolean(false); // isSparse
-			dostream_header.writeLong(totalNnz);
-			IOUtilFunctions.closeSilently(dostream_header);
-
-			// MERGE STEP: Use HDFS concat for metadata-only merge
-			fs.concat(finalPath, new Path[]{dataPath, headerPath});
-			System.out.println("merged file available");
-
-		} catch (UnsupportedOperationException ex) {
-			LOG.warn(ex.getMessage());
-			System.out.println("concat is not available");
-
-			DataInputStream distream_header = null;
-			DataInputStream distream_data = null;
-			DataOutputStream dostream_final = null;
-
-			try {
-				dostream_final = fs.create(finalPath, true);
-
-				// 1. Copy header file content
-				distream_header = fs.open(headerPath);
-				IOUtils.copy(distream_header, dostream_final);
-				IOUtilFunctions.closeSilently(distream_header);
-
-				// 2. Copy data file content
-				distream_data = fs.open(dataPath);
-				IOUtils.copy(distream_data, dostream_final);
-				IOUtilFunctions.closeSilently(distream_data);
-			}
-			finally {
-				IOUtilFunctions.closeSilently(dostream_final);
-			}
-
-
-//			throw new IOException("The filesystem doesn't support concat, required for OOC", ex);
-		}
-		catch (IOException ex) {
-            throw new RuntimeException(ex);
-        } catch (InterruptedException e) {
-			throw new RuntimeException(e);
-		} finally {
-			// Cleanup incase of failure before concat
-//			IOUtilFunctions.closeSilently(dostream_data);
-//			IOUtilFunctions.closeSilently(dostream_header);
-//
-//			if (fs != null) {
-//				if (fs.exists(dataPath)) fs.delete(dataPath, false);
-//				if (fs.exists(headerPath)) fs.delete(headerPath, false);
-//			}
-		}
-		return totalNnz;
-    };
 }

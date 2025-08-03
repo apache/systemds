@@ -48,7 +48,17 @@ import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
-import org.apache.sysds.runtime.io.*;
+import org.apache.sysds.runtime.io.FileFormatProperties;
+import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
+import org.apache.sysds.runtime.io.FileFormatPropertiesHDF5;
+import org.apache.sysds.runtime.io.FileFormatPropertiesLIBSVM;
+import org.apache.sysds.runtime.io.ListReader;
+import org.apache.sysds.runtime.io.ListWriter;
+import org.apache.sysds.runtime.io.WriterHDF5;
+import org.apache.sysds.runtime.io.WriterMatrixMarket;
+import org.apache.sysds.runtime.io.WriterTextCSV;
+import org.apache.sysds.runtime.io.MatrixWriterFactory;
+import org.apache.sysds.runtime.io.MatrixWriter;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
@@ -1075,7 +1085,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 
 					// 2. Clear its dirty flag and update its file path to the result we just wrote.
 					// This tells the system that the data for this variable now lives in 'fname'.
-//					mo.setFileName(fname);
 					HDFSTool.copyFileOnHDFS(fname, mo.getFileName());
 					mo.setDirty(false);
 
@@ -1094,8 +1103,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				writeHDF5File(ec, fname);
 			else {
 				// Default behavior (text, binary)
-//				MatrixObject mo = ec.getMatrixObject(getInput1().getName());
-//				int blen = Integer.parseInt(getInput4().getName());
 				mo.exportData(fname, fmtStr, new FileFormatProperties(blen));
 			}
 		}

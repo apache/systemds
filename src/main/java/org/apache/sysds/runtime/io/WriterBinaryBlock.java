@@ -235,25 +235,67 @@ public class WriterBinaryBlock extends MatrixWriter {
 	}
 
 	@Override
-	public void writeMatrixFromStream(String fname, LocalTaskQueue<IndexedMatrixValue> stream, long rlen, long clen, int blen) {
-		DataOutputStream dostream = null;
-		try {
-			dostream = getHDFSDataOutputStream(fname, true);
-			dostream.writeLong(rlen);
-			dostream.writeLong(clen);
+	public void writeMatrixFromStream(String fname, LocalTaskQueue<IndexedMatrixValue> stream, long rlen, long clen, int blen) throws IOException {
+		DataOutputStream dostream_data = null;
+		DataOutputStream dostream_header = null;
 
+		String tempDataFname = fname + "._data";
+		String tempHeaderFname = fname + "._header";
+		Path dataPath = new Path(tempDataFname);
+		Path headerPath = new Path(tempHeaderFname);
+		Path finalPath = new Path(fname);
+
+		FileSystem fs = null;
+
+		try {
+			// PASS 1: Stream to a temporary raw data file and count NNZ
+			fs = IOUtilFunctions.getFileSystem(dataPath);
+//			dostream = getHDFSDataOutputStream(fname, true);
+			dostream_data = fs.create(dataPath, true);
+//			dostream_data.writeLong(rlen);
+//			dostream_data.writeLong(clen);
+
+			long totalNnz = 0;
 			IndexedMatrixValue i_val =  null;
 			while((i_val = stream.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
 				MatrixBlock mb = (MatrixBlock) i_val.getValue();
-				mb.write(dostream);
+				totalNnz += mb.getNonZeros();
+
+				double[] denseValues = mb.getDenseBlockValues();
+				if (denseValues != null) {
+					for (double v : denseValues) {
+						dostream_data.writeDouble(v);
+					}
+				}
+//				mb.write(dostream);
 			}
+			IOUtilFunctions.closeSilently(dostream_data);
+
+			// PASS 2: Create a header file in RAM (very small)
+			dostream_header = fs.create(headerPath, true);
+			dostream_header.writeLong(rlen);
+			dostream_header.writeLong(clen);
+			dostream_header.writeInt(blen);
+			dostream_header.writeBoolean(false); // isSparse
+			dostream_header.writeLong(totalNnz);
+			IOUtilFunctions.closeSilently(dostream_header);
+
+			// MERGE STEP: Use HDFS concat for metadata-only merge
+			fs.concat(finalPath, new Path[]{dataPath, headerPath});
 
 		} catch (IOException ex) {
             throw new RuntimeException(ex);
         } catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		} finally {
-			IOUtilFunctions.closeSilently(dostream);
+			// Cleanup incase of failure before concat
+//			IOUtilFunctions.closeSilently(dostream_data);
+//			IOUtilFunctions.closeSilently(dostream_header);
+//
+//			if (fs != null) {
+//				if (fs.exists(dataPath)) fs.delete(dataPath, false);
+//				if (fs.exists(headerPath)) fs.delete(headerPath, false);
+//			}
 		}
 
     };

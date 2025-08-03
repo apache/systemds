@@ -20,4 +20,34 @@
 package org.apache.sysds.cujava.runtime;
 
 public class CudaMemcpyKind {
+
+	/**
+	 * Host -> Host
+	 */
+	public static final int cudaMemcpyHostToHost = 0;
+
+	/**
+	 * Host -> Device
+	 */
+	public static final int cudaMemcpyHostToDevice = 1;
+
+	/**
+	 * Device -> Host
+	 */
+	public static final int cudaMemcpyDeviceToHost = 2;
+
+	/**
+	 * Device -> Device
+	 */
+	public static final int cudaMemcpyDeviceToDevice = 3;
+
+	/**
+	 * Autodetect the copy direction (host↔device or device↔device) based on the source and destination pointers.
+	 * Requires Unified Virtual Addressing (UVA).
+	 */
+	public static final int cudaMemcpyDefault = 4;
+
+	private CudaMemcpyKind() {
+		// Private constructor to prevent instantiation.
+	}
 }

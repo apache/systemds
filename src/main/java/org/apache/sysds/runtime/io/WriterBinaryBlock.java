@@ -248,7 +248,8 @@ public class WriterBinaryBlock extends MatrixWriter {
 		long totalNnz = 0;
 		try {
 			// 1. Create Sequence file writer for the final destination file
-			writer = new SequenceFile.Writer(fs, conf, path, MatrixIndexes.class, MatrixBlock.class);
+//			writer = new SequenceFile.Writer(fs, conf, path, MatrixIndexes.class, MatrixBlock.class);
+            writer = SequenceFile.createWriter(fs, conf, path, MatrixIndexes.class, MatrixBlock.class);
 
 			// 2. Loop through OOC stream
 			IndexedMatrixValue i_val =  null;

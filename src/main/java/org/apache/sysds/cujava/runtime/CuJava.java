@@ -19,5 +19,36 @@
 
 package org.apache.sysds.cujava.runtime;
 
+import org.apache.sysds.cujava.CuJavaLibLoader;
+import org.apache.sysds.cujava.Pointer;
+import org.apache.sysds.cujava.CudaException;
+import org.apache.sysds.cujava.runtime.CudaError;
+
 public class CuJava {
+
+	private static boolean exceptionsEnabled = true;
+
+	private CuJava(){
+
+	}
+
+	static {
+		CuJavaLibLoader.load();
+	}
+
+	private static int checkCudaError(int result)
+	{
+		if (exceptionsEnabled && result != CudaError.cudaSuccess)
+		{
+			throw new CudaException(CudaError.errorString(result));
+		}
+		return result;
+	}
+
+	public static int cudaMemcpy(Pointer dst, Pointer src, long count, int cudaMemcpyKind_kind) {
+		return checkCudaError(cudaMemcpyNative(dst, src, count, cudaMemcpyKind_kind));
+	}
+	private static native int cudaMemcpyNative(Pointer dst, Pointer src, long count, int cudaMemcpyKind_kind);
+
+
 }

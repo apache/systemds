@@ -113,7 +113,7 @@ public final class CLALibBinaryCellOp {
 			return selectProcessingBasedOnAccessType(op, m1, that, atype, true);
 		}
 		catch(Exception e) {
-			throw new DMLRuntimeException("Failed Left Binary Compressed Operation", e);
+			throw new DMLRuntimeException("Failed Left Binary Compressed Operation: " + op, e);
 		}
 	}
 

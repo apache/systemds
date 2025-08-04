@@ -85,7 +85,7 @@ public class BinaryMatrixMatrixCPInstruction extends BinaryCPInstruction {
 					inBlock1 = CompressedMatrixBlock.getUncompressed(inBlock1, getOpcode());
 				
 				if(compressedRight)
-					inBlock1 = CompressedMatrixBlock.getUncompressed(inBlock2, getOpcode());
+					inBlock2 = CompressedMatrixBlock.getUncompressed(inBlock2, getOpcode());
 
 				retBlock = LibCommonsMath.matrixMatrixOperations(inBlock1, inBlock2, getOpcode());
 			}

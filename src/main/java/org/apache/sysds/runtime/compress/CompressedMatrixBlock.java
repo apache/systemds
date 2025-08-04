@@ -871,7 +871,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	public MatrixBlock removeEmptyOperations(MatrixBlock ret, boolean rows, boolean emptyReturn, MatrixBlock select) {
 		printDecompressWarning("removeEmptyOperations");
 		MatrixBlock tmp = getUncompressed();
-		return tmp.removeEmptyOperations(ret, rows, emptyReturn, select);
+		MatrixBlock select2 = getUncompressed(select);
+		return tmp.removeEmptyOperations(ret, rows, emptyReturn, select2);
 	}
 
 	@Override

@@ -752,7 +752,7 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 				raiseValidateError("Compress/DeCompress instruction not allowed in dml script");
 			break;
 
-		case GETNAMES:
+		case GETCOLNAMES:
 				checkNumParameters(1);
 				Expression getNamesExpr = getFirstExpr();
 				validFrameInput(getNamesExpr, _opcode.toString());
@@ -764,7 +764,7 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 				getNamesOut.setBlocksize(getNamesExpr.getOutput().getBlocksize());
 				break;
 
-		case SETNAMES:
+		case SETCOLNAMES:
 				checkNumParameters(2);
 				Expression target = getFirstExpr();
 				Expression nameRow = getSecondExpr();

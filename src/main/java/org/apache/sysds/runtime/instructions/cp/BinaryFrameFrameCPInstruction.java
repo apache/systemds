@@ -63,6 +63,12 @@ public class BinaryFrameFrameCPInstruction extends BinaryCPInstruction {
 			final FrameBlock out = FrameLibApplySchema.applySchema(inBlock1, inBlock2, k);
 			ec.setFrameOutput(output.getName(), out);
 		}
+		else if (getOpcode().equals(Opcodes.SETCOLNAMES.toString())) {
+			FrameBlock fb = ec.getFrameInput(input1.getName());
+			FrameBlock nameRow = ec.getFrameInput(input2.getName());
+			fb.setColNames(nameRow);
+			ec.setFrameOutput(output.getName(), fb);
+		}
 		else {
 			// Execute binary operations
 			BinaryOperator dop = (BinaryOperator) _optr;

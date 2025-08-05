@@ -19,58 +19,39 @@
 
 package org.apache.sysds.test.functions.builtin.part1;
 
-import org.apache.sysds.test.TestConfiguration;
-import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Test;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.common.Types.ExecMode;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import static org.junit.Assert.fail;
-import static org.junit.Assert.assertArrayEquals;
 
 public class BuiltinGetSetNamesScriptTest extends AutomatedTestBase {
-
-    private static final Log LOG = LogFactory.getLog(BuiltinGetSetNamesScriptTest.class);
-
     private static final String TEST_NAME = "BuiltinGetSetNamesTest";
-    private static final String TEST_DIR = "functions/builtin/part1/";
+    private static final String TEST_DIR = "functions/builtin/";
     private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinGetSetNamesScriptTest.class.getSimpleName() + "/";
 
     @Override
     public void setUp() {
-        addTestConfiguration(TEST_NAME,
-                new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"N"}));
+        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"B"}));
+        setExecMode(ExecMode.SINGLE_NODE);
     }
 
     @Test
-    public void testSetNamesAndGetNames() {
-        TestConfiguration config = getTestConfiguration(TEST_NAME);
-        loadTestConfiguration(config);
-
+    public void testGetSetNames() {
         fullDMLScriptName = SCRIPT_DIR + TEST_DIR + TEST_NAME + ".dml";
-        programArgs = new String[] { "-args", output("N") };
-
+        String tempFilePath = output("B");
+        loadTestConfiguration(getTestConfiguration(TEST_NAME));
+        programArgs = new String[]{"-args", tempFilePath};
         runTest(true, false, null, -1);
-
-        String actualOutputPath = output("N");
-        String actualContent;
-
-        try {
-            actualContent = new String(Files.readAllBytes(Paths.get(actualOutputPath))).trim();
-            String[] actualNames = actualContent.split(",");
-
-            String[] expectedNames = new String[]{"name", "age"};
-
-            assertArrayEquals("Column names mismatch.", expectedNames, actualNames);
-
+        try (BufferedReader br = new BufferedReader(new FileReader(tempFilePath))) {
+            String header = br.readLine();
+            if (header == null || !header.equals("ID,Value")) {
+                throw new AssertionError("Test failed: Expected header 'ID,Value', but got: " + header);
+            }
         } catch (IOException e) {
-            LOG.error("Failed to read test files: " + e.getMessage(), e);
-            fail("Failed to read test files: " + e.getMessage());
+            throw new AssertionError("Test failed: Unable to read output file: " + e.getMessage());
         }
     }
 }
-

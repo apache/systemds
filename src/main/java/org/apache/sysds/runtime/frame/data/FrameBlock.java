@@ -366,11 +366,11 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 	 * @return an array of column names
 	 * The actual function is the same to getColumnNamesAsFrame()
 	 */
-	public FrameBlock getNames() {
+	public FrameBlock getColNames() {
 		return getColumnNamesAsFrame();
 	}
 
-	public void setNames(FrameBlock names) {
+	public void setColNames(FrameBlock names) {
 		if (names == null){
 			throw new DMLRuntimeException("Input FrameBlock can not be null.");
 		}

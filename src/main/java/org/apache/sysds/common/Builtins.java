@@ -404,8 +404,8 @@ public enum Builtins {
 	UPPER_TRI("upper.tri", false, true),
 	XDUMMY1("xdummy1", true), //error handling test
 	XDUMMY2("xdummy2", true), //error handling test
-	GETNAMES("getNames", false, true),
-	SETNAMES("setNames", false, true);
+	GETCOLNAMES("getColNames", false, true),
+	SETCOLNAMES("setColNames", false, true);
 
 	Builtins(String name, boolean script) {
 		this(name, null, script, false, ReturnType.SINGLE_RETURN);

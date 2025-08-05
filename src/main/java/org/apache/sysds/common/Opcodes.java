@@ -123,6 +123,7 @@ public enum Opcodes {
 	FREPLICATE("freplicate", InstructionType.Binary),
 	VALUESWAP("valueSwap", InstructionType.Binary),
 	APPLYSCHEMA("applySchema", InstructionType.Binary),
+	SETCOLNAMES("setColNames", InstructionType.Binary),
 	MAP("_map", InstructionType.Ternary),
 
 	NMAX("nmax", InstructionType.BuiltinNary),
@@ -164,6 +165,7 @@ public enum Opcodes {
 	TYPEOF("typeOf", InstructionType.Unary),
 	DETECTSCHEMA("detectSchema", InstructionType.Unary),
 	COLNAMES("colnames", InstructionType.Unary),
+	GETCOLNAMES("getColNames", InstructionType.Unary),
 	ISNA("isna", InstructionType.Unary),
 	ISNAN("isnan", InstructionType.Unary),
 	ISINF("isinf", InstructionType.Unary),

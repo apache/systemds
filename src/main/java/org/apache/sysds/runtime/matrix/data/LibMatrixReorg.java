@@ -782,16 +782,29 @@ public class LibMatrixReorg {
 	}
 
 	/**
-	 * CP rmempty operation (single input, single output matrix) 
+	 * CP rmempty operation (single input, single output matrix)
 	 * 
-	 * @param in input matrix
-	 * @param ret output matrix
-	 * @param rows ?
-	 * @param emptyReturn return row/column of zeros for empty input
-	 * @param select ?
-	 * @return matrix block
+	 * @param in          The input matrix
+	 * @param ret         The output matrix
+	 * @param rows        If we are removing based on rows, or columns.
+	 * @param emptyReturn Return row/column of zeros for empty input
+	 * @param select      An optional selection vector, to remove based on rather than empty rows or columns
+	 * @return The result MatrixBlock
 	 */
 	public static MatrixBlock rmempty(MatrixBlock in, MatrixBlock ret, boolean rows, boolean emptyReturn, MatrixBlock select) {
+		if(ret == null)
+			ret = new MatrixBlock();
+		MatrixBlock ret2 = rmemptyEarlyAbort(in, ret, rows, emptyReturn, select);
+		if(ret2 != null )
+			return ret2;
+		// core removeEmpty
+		if( rows )
+			return removeEmptyRows(in, ret, select, emptyReturn);
+		else // cols
+			return removeEmptyColumns(in, ret, select, emptyReturn);
+	}
+
+	public static MatrixBlock rmemptyEarlyAbort(MatrixBlock in, MatrixBlock ret, boolean rows, boolean emptyReturn, MatrixBlock select){
 		//check for empty inputs 
 		//(the semantics of removeEmpty are that for an empty m-by-n matrix, the output 
 		//is an empty 1-by-n or m-by-1 matrix because we don't allow matrices with dims 0)
@@ -808,12 +821,8 @@ public class LibMatrixReorg {
 		if( select != null && (select.nonZeros == (rows?in.rlen:in.clen)) ) {
 			return in;
 		}
-		
-		// core removeEmpty
-		if( rows )
-			return removeEmptyRows(in, ret, select, emptyReturn);
-		else //cols
-			return removeEmptyColumns(in, ret, select, emptyReturn);
+
+		return null;
 	}
 
 	/**

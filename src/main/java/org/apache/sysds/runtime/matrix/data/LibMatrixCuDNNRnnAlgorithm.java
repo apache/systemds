@@ -26,7 +26,18 @@ import static jcuda.jcudnn.JCudnn.cudnnDestroyTensorDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnSetTensorNdDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnDestroyDropoutDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnDestroyRNNDescriptor;
+import static jcuda.jcudnn.JCudnn.cudnnGetRNNWeightSpaceSize;
 import static jcuda.jcudnn.cudnnTensorFormat.CUDNN_TENSOR_NCHW;
+import static jcuda.jcudnn.cudnnDataType.CUDNN_DATA_HALF;
+import static jcuda.jcudnn.cudnnDataType.CUDNN_DATA_BFLOAT16;
+import static jcuda.jcudnn.cudnnMathType.CUDNN_DEFAULT_MATH;
+import static jcuda.jcudnn.cudnnMathType.CUDNN_TENSOR_OP_MATH;
+import static jcuda.jcudnn.cudnnRNNAlgo.CUDNN_RNN_ALGO_STANDARD;
+import static jcuda.jcudnn.cudnnRNNBiasMode.CUDNN_RNN_DOUBLE_BIAS;
+import static jcuda.jcudnn.cudnnDirectionMode.CUDNN_UNIDIRECTIONAL;
+import static jcuda.jcudnn.cudnnRNNInputMode.CUDNN_LINEAR_INPUT;
+import static jcuda.jcudnn.cudnnRNNDataLayout.CUDNN_RNN_DATA_LAYOUT_SEQ_MAJOR_PACKED;
+import static jcuda.jcudnn.cudnnForwardMode.CUDNN_FWD_MODE_TRAINING;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Opcodes;
@@ -35,9 +46,6 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 
 import static jcuda.jcudnn.JCudnn.cudnnCreateRNNDescriptor;
-import static jcuda.jcudnn.cudnnRNNInputMode.CUDNN_LINEAR_INPUT;
-import static jcuda.jcudnn.cudnnDirectionMode.CUDNN_UNIDIRECTIONAL;
-import static jcuda.jcudnn.cudnnRNNAlgo.CUDNN_RNN_ALGO_STANDARD;
 
 import jcuda.Pointer;
 import jcuda.jcudnn.JCudnn;
@@ -45,6 +53,7 @@ import jcuda.jcudnn.cudnnDropoutDescriptor;
 import jcuda.jcudnn.cudnnFilterDescriptor;
 import jcuda.jcudnn.cudnnRNNDescriptor;
 import jcuda.jcudnn.cudnnTensorDescriptor;
+import jcuda.jcudnn.cudnnRNNDataDescriptor;
 
 public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 	GPUContext gCtx;
@@ -52,6 +61,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 	cudnnDropoutDescriptor dropoutDesc;
 	cudnnRNNDescriptor rnnDesc;
 	cudnnTensorDescriptor[] xDesc, dxDesc, yDesc, dyDesc; // of length T
+	cudnnRNNDataDescriptor xDataDesc;
 	cudnnTensorDescriptor hxDesc, cxDesc, hyDesc, cyDesc, dhxDesc, dcxDesc, dhyDesc, dcyDesc; 
 	cudnnFilterDescriptor wDesc;
 	cudnnFilterDescriptor dwDesc;
@@ -90,25 +100,37 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		JCudnn.cudnnDropoutGetStatesSize(gCtx.getCudnnHandle(), _dropOutSizeInBytes);
 		dropOutSizeInBytes = _dropOutSizeInBytes[0];
 		dropOutStateSpace = new Pointer();
-		if (dropOutSizeInBytes != 0)
+		if(dropOutSizeInBytes != 0)
 			dropOutStateSpace = gCtx.allocate(instName, dropOutSizeInBytes, false);
-		JCudnn.cudnnSetDropoutDescriptor(dropoutDesc, gCtx.getCudnnHandle(), 0, dropOutStateSpace, dropOutSizeInBytes, 12345);
-		
+		JCudnn.cudnnSetDropoutDescriptor(dropoutDesc, gCtx.getCudnnHandle(), 0, dropOutStateSpace, dropOutSizeInBytes,
+			12345);
+
 		// Initialize RNN descriptor
 		rnnDesc = new cudnnRNNDescriptor();
 		cudnnCreateRNNDescriptor(rnnDesc);
-		JCudnn.cudnnSetRNNDescriptor_v6(gCtx.getCudnnHandle(), rnnDesc, M, 1, dropoutDesc, 
-				CUDNN_LINEAR_INPUT, CUDNN_UNIDIRECTIONAL, 
-				getCuDNNRnnMode(rnnMode), CUDNN_RNN_ALGO_STANDARD, LibMatrixCUDA.CUDNN_DATA_TYPE);
-		
+		int mathType = (LibMatrixCUDA.CUDNN_DATA_TYPE == CUDNN_DATA_HALF ||
+			LibMatrixCUDA.CUDNN_DATA_TYPE == CUDNN_DATA_BFLOAT16) ? CUDNN_TENSOR_OP_MATH : CUDNN_DEFAULT_MATH;
+		int mathPrec = LibMatrixCUDA.CUDNN_DATA_TYPE;
+		JCudnn.cudnnSetRNNDescriptor_v8(rnnDesc, CUDNN_RNN_ALGO_STANDARD, getCuDNNRnnMode(rnnMode),
+			CUDNN_RNN_DOUBLE_BIAS, CUDNN_UNIDIRECTIONAL, CUDNN_LINEAR_INPUT, LibMatrixCUDA.CUDNN_DATA_TYPE, mathPrec,
+			mathType, D, M, 0, 1, dropoutDesc, 0);
+
+		// ── inside the constructor, after rnnDesc has been configured ──
+		xDataDesc = new cudnnRNNDataDescriptor();
+		JCudnn.cudnnCreateRNNDataDescriptor(xDataDesc);
+		JCudnn.cudnnSetRNNDataDescriptor(xDataDesc, LibMatrixCUDA.CUDNN_DATA_TYPE,
+			CUDNN_RNN_DATA_LAYOUT_SEQ_MAJOR_PACKED, T, N, D, null, null);
+
 		// Allocate filter descriptor
 		int expectedNumWeights = getExpectedNumWeights();
-		if(rnnMode.equalsIgnoreCase(Opcodes.LSTM.toString()) && (D+M+2)*4*M != expectedNumWeights) {
-			throw new DMLRuntimeException("Incorrect number of RNN parameters " +  (D+M+2)*4*M + " != " +  expectedNumWeights + ", where numFeatures=" + D + ", hiddenSize=" + M);
+		if(rnnMode.equalsIgnoreCase(Opcodes.LSTM.toString()) && (D + M + 2) * 4 * M != expectedNumWeights) {
+			throw new DMLRuntimeException(
+				"Incorrect number of RNN parameters " + (D + M + 2) * 4 * M + " != " + expectedNumWeights +
+					", where numFeatures=" + D + ", hiddenSize=" + M);
 		}
 		wDesc = allocateFilterDescriptor(expectedNumWeights);
 		dwDesc = allocateFilterDescriptor(expectedNumWeights);
-		
+
 		// Setup workspace
 		workSpace = new Pointer(); reserveSpace = new Pointer();
 		sizeInBytes = getWorkspaceSize(T);
@@ -142,15 +164,25 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 	}
 	
 	private long getWorkspaceSize(int seqLength) {
-		long [] sizeInBytesArray = new long[1];
-		JCudnn.cudnnGetRNNWorkspaceSize(gCtx.getCudnnHandle(), rnnDesc, seqLength, xDesc, sizeInBytesArray);
-		return sizeInBytesArray[0];
+		long[] workSize = {0};
+		long[] reserveSize = {0};          // v9 returns both sizes in one call
+
+		JCudnn.cudnnGetRNNTempSpaceSizes(gCtx.getCudnnHandle(), rnnDesc, CUDNN_FWD_MODE_TRAINING, xDataDesc, workSize,
+			reserveSize);
+
+		// keep reserveSpaceSizeInBytes in sync with the new API
+		reserveSpaceSizeInBytes = reserveSize[0];
+		return workSize[0];
 	}
 	
 	private long getReservespaceSize(int seqLength) {
-		long [] sizeInBytesArray = new long[1];
-		JCudnn.cudnnGetRNNTrainingReserveSize(gCtx.getCudnnHandle(), rnnDesc, seqLength, xDesc, sizeInBytesArray);
-		return sizeInBytesArray[0];
+		long[] workSize = {0};
+		long[] reserveSize = {0};
+
+		JCudnn.cudnnGetRNNTempSpaceSizes(gCtx.getCudnnHandle(), rnnDesc, CUDNN_FWD_MODE_TRAINING, xDataDesc, workSize,
+			reserveSize);
+
+		return reserveSize[0];
 	}
 	
 	private static int getCuDNNRnnMode(String rnnMode) throws DMLRuntimeException {
@@ -174,10 +206,17 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 	}
 	
 	private int getExpectedNumWeights() throws DMLRuntimeException {
-		long [] weightSizeInBytesArray = {-1}; // (D+M+2)*4*M
-		JCudnn.cudnnGetRNNParamsSize(gCtx.getCudnnHandle(), rnnDesc, xDesc[0], weightSizeInBytesArray, LibMatrixCUDA.CUDNN_DATA_TYPE);
-		// check if (D+M+2)*4M == weightsSize / sizeof(dataType) where weightsSize is given by 'cudnnGetRNNParamsSize'.
-		return LibMatrixCUDA.toInt(weightSizeInBytesArray[0]/LibMatrixCUDA.sizeOfDataType);
+		long[] weightSpaceBytes = {-1};
+
+		// v9 API: returns the size (in bytes) of the packed “weight space”
+		cudnnGetRNNWeightSpaceSize(gCtx.getCudnnHandle(), rnnDesc, weightSpaceBytes);
+
+		if(weightSpaceBytes[0] < 0)
+			throw new DMLRuntimeException("cuDNN returned a negative weight-space size");
+
+		// convert from bytes to number of scalars
+		long numScalars = weightSpaceBytes[0] / LibMatrixCUDA.sizeOfDataType;
+		return LibMatrixCUDA.toInt(numScalars);
 	}
 	
 	private static cudnnFilterDescriptor allocateFilterDescriptor(int numWeights) {

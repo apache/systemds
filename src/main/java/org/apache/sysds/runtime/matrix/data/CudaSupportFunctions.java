@@ -24,6 +24,8 @@ import jcuda.jcusolver.cusolverDnHandle;
 import jcuda.jcusparse.cusparseHandle;
 import jcuda.jcusparse.cusparseMatDescr;
 
+import jcuda.jcusparse.cusparseSpGEMMDescr;
+import jcuda.jcusparse.cusparseSpMatDescr;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 
 import jcuda.Pointer;
@@ -51,24 +53,24 @@ import jcuda.Pointer;
  * 	matrix_atan(A, C, size);
  * } 
  * </code>
- * 
+ *
  * 2. The CUDA library calls (such as CuBLAS, CuSPARSE, etc) go through this interface.
  * The naming and parameters of the methods in this class are consistent with that of CUDA library to simplify development.
- * 
+ *
  * 3. During SystemDS initialization, the appropriate class implementing CudaKernels interface is set based on the configuration property sysds.dataType.
  */
 public interface CudaSupportFunctions {
 	public static boolean PERFORM_CONVERSION_ON_DEVICE = true;
-	public int cusparsecsrgemm(cusparseHandle handle, int transA, int transB, int m, int n, int k, 
-			cusparseMatDescr descrA, int nnzA, Pointer csrValA, Pointer csrRowPtrA, Pointer csrColIndA, 
-			cusparseMatDescr descrB, int nnzB, Pointer csrValB, Pointer csrRowPtrB, Pointer csrColIndB, 
-			cusparseMatDescr descrC, Pointer csrValC, Pointer csrRowPtrC, Pointer csrColIndC);
-	public int	cublasgeam(cublasHandle handle, int transa, int transb, int m, int n, jcuda.Pointer alpha, jcuda.Pointer A, 
-			int lda, jcuda.Pointer beta, jcuda.Pointer B, int ldb, jcuda.Pointer C, int ldc);
-	public int	cusparsecsrmv(cusparseHandle handle, int transA, int m, int n, int nnz, jcuda.Pointer alpha, cusparseMatDescr descrA, jcuda.Pointer csrValA, jcuda.Pointer csrRowPtrA, jcuda.Pointer csrColIndA, 
-			jcuda.Pointer x, jcuda.Pointer beta, jcuda.Pointer y);
-	public int	cusparsecsrmm2(cusparseHandle handle, int transa, int transb, int m, int n, int k, int nnz, jcuda.Pointer alpha, cusparseMatDescr descrA, jcuda.Pointer csrValA, jcuda.Pointer csrRowPtrA, jcuda.Pointer csrColIndA, 
-			jcuda.Pointer B, int ldb, jcuda.Pointer beta, jcuda.Pointer C, int ldc);
+
+	public int cusparsecsrgemm(cusparseHandle handle, int transA, int transB, int alg, cusparseSpMatDescr spMatDescrA,
+		cusparseSpMatDescr spMatDescrB, cusparseSpMatDescr spMatDescrC, cusparseSpGEMMDescr spgemmDescr);
+	public int cublasgeam(cublasHandle handle, int transa, int transb, int m, int n, jcuda.Pointer alpha,
+		jcuda.Pointer A, int lda, jcuda.Pointer beta, jcuda.Pointer B, int ldb, jcuda.Pointer C, int ldc);
+	public int cusparsecsrmv(cusparseHandle handle, int transA, int m, int n, int nnz, jcuda.Pointer alpha,
+		cusparseSpMatDescr spMatDescrA, cusparseMatDescr descrA, jcuda.Pointer csrValA, jcuda.Pointer csrRowPtrA,
+		jcuda.Pointer csrColIndA, jcuda.Pointer x, jcuda.Pointer beta, jcuda.Pointer y);
+	public int cusparsecsrmm2(cusparseHandle handle, int transa, int transb, int m, int n, int k, int nnz, jcuda.Pointer alpha, cusparseMatDescr descrA, cusparseSpMatDescr spMatDescrA, jcuda.Pointer csrValA, jcuda.Pointer csrRowPtrA, jcuda.Pointer csrColIndA,
+		jcuda.Pointer B, int ldb, jcuda.Pointer beta, jcuda.Pointer C, int ldc);
 	public int cublasdot(cublasHandle handle, int n, jcuda.Pointer x, int incx, jcuda.Pointer y, int incy, jcuda.Pointer result);
 	public int cublasgemv(cublasHandle handle, int trans, int m, int n, jcuda.Pointer alpha, jcuda.Pointer A, int lda, jcuda.Pointer x, int incx, jcuda.Pointer beta, jcuda.Pointer y, int incy);
 	public int cublasgemm(cublasHandle handle, int transa, int transb, int m, int n, int k, jcuda.Pointer alpha, jcuda.Pointer A, int lda, jcuda.Pointer B, int ldb, jcuda.Pointer beta, jcuda.Pointer C, int ldc);
@@ -80,7 +82,7 @@ public interface CudaSupportFunctions {
 	public int cusolverDngeqrf(cusolverDnHandle handle, int m, int n, Pointer A, int lda, Pointer TAU, Pointer Workspace, int Lwork, Pointer devInfo);
 	public int cusolverDnormqr(cusolverDnHandle handle, int side, int trans, int m, int n, int k, Pointer A, int lda, Pointer tau, Pointer C, int ldc, Pointer work, int lwork, Pointer devInfo);
 	public int cusparsecsrgeam(cusparseHandle handle, int m, int n, jcuda.Pointer alpha, cusparseMatDescr descrA, int nnzA, jcuda.Pointer csrValA, jcuda.Pointer csrRowPtrA, jcuda.Pointer csrColIndA, jcuda.Pointer beta, cusparseMatDescr descrB, int nnzB, jcuda.Pointer csrValB, jcuda.Pointer csrRowPtrB, jcuda.Pointer csrColIndB, cusparseMatDescr descrC, jcuda.Pointer csrValC, jcuda.Pointer csrRowPtrC, jcuda.Pointer csrColIndC);
-	public int cusparsecsr2dense(cusparseHandle handle, int m, int n, cusparseMatDescr descrA, jcuda.Pointer csrValA, jcuda.Pointer csrRowPtrA, jcuda.Pointer csrColIndA, jcuda.Pointer A, int lda) ;
+	public int cusparsecsr2dense(cusparseHandle handle, int m, int n, cusparseMatDescr descrA, jcuda.Pointer csrValA, jcuda.Pointer csrRowPtrA, jcuda.Pointer csrColIndA, jcuda.Pointer A, int lda, long nnz) ;
 	public int cusparsedense2csr(cusparseHandle handle, int m, int n, cusparseMatDescr descrA, jcuda.Pointer A, int lda, jcuda.Pointer nnzPerRow, jcuda.Pointer csrValA, jcuda.Pointer csrRowPtrA, jcuda.Pointer csrColIndA);
 	public int cusparsennz(cusparseHandle handle, int dirA, int m, int n, cusparseMatDescr descrA, jcuda.Pointer A, int lda, jcuda.Pointer nnzPerRowCol, jcuda.Pointer nnzTotalDevHostPtr);
 	public void deviceToHost(GPUContext gCtx, Pointer src, double [] dest, String instName, boolean isEviction);

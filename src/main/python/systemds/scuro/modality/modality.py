@@ -44,6 +44,7 @@ class Modality:
         self.cost = None
         self.shape = None
         self.modality_id = modality_id
+        self.transform_time = None
 
     @property
     def data(self):

@@ -26,6 +26,7 @@ from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.window_aggregation import WindowAggregation
+import time
 
 
 class TransformedModality(Modality):
@@ -73,19 +74,23 @@ class TransformedModality(Modality):
     def window_aggregation(self, windowSize, aggregation):
         w = WindowAggregation(windowSize, aggregation)
         transformed_modality = TransformedModality(self, w)
+        start = time.time()
         transformed_modality.data = w.execute(self)
-
+        transformed_modality.transform_time = time.time() - start
         return transformed_modality
 
     def context(self, context_operator):
         transformed_modality = TransformedModality(self, context_operator)
-
+        start = time.time()
         transformed_modality.data = context_operator.execute(self)
+        transformed_modality.transform_time = time.time() - start
         return transformed_modality
 
     def apply_representation(self, representation):
+        start = time.time()
         new_modality = representation.transform(self)
         new_modality.update_metadata()
+        new_modality.transform_time = time.time() - start
         return new_modality
 
     def combine(self, other: Union[Modality, List[Modality]], fusion_method):

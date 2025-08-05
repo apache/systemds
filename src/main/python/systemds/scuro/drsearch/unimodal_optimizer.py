@@ -19,6 +19,7 @@
 #
 # -------------------------------------------------------------
 import pickle
+import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
 
@@ -157,17 +158,31 @@ class UnimodalOptimizer:
                 reps.append(agg_operator)
                 agg_modality.pad()
                 for task in self.tasks:
+                    start = time.time()
                     scores = task.run(agg_modality.data)
+                    end = time.time()
 
                     local_results.add_result(
-                        scores, reps, modality.modality_id, task.model.name
+                        scores,
+                        reps,
+                        modality.modality_id,
+                        task.model.name,
+                        modality.transform_time,
+                        end - start,
                     )
             else:
                 modality.pad()
                 for task in self.tasks:
+                    start = time.time()
                     scores = task.run(modality.data)
+                    end = time.time()
                     local_results.add_result(
-                        scores, representations, modality.modality_id, task.model.name
+                        scores,
+                        representations,
+                        modality.modality_id,
+                        task.model.name,
+                        modality.transform_time,
+                        end - start,
                     )
         else:
             for task in self.tasks:
@@ -179,16 +194,29 @@ class UnimodalOptimizer:
                     reps = representations.copy()
                     reps.append(agg_operator)
                     modality.pad()
+                    start = time.time()
                     scores = task.run(agg_modality.data)
-
+                    end = time.time()
                     local_results.add_result(
-                        scores, reps, modality.modality_id, task.model.name
+                        scores,
+                        reps,
+                        modality.modality_id,
+                        task.model.name,
+                        modality.transform_time,
+                        end - start,
                     )
                 else:
                     modality.pad()
+                    start = time.time()
                     scores = task.run(modality.data)
+                    end = time.time()
                     local_results.add_result(
-                        scores, representations, modality.modality_id, task.model.name
+                        scores,
+                        representations,
+                        modality.modality_id,
+                        task.model.name,
+                        modality.transform_time,
+                        end - start,
                     )
 
 
@@ -204,7 +232,9 @@ class UnimodalResults:
             for task_name in self.task_names:
                 self.results[modality][task_name] = []
 
-    def add_result(self, scores, representations, modality_id, task_name):
+    def add_result(
+        self, scores, representations, modality_id, task_name, rep_time, task_time
+    ):
         parameters = []
         representation_names = []
 
@@ -230,6 +260,8 @@ class UnimodalResults:
             params=parameters,
             train_score=scores[0],
             val_score=scores[1],
+            representation_time=rep_time,
+            task_time=task_time,
         )
         self.results[modality_id][task_name].append(entry)
 
@@ -249,3 +281,5 @@ class ResultEntry:
     representations: list
     params: list
     train_score: float
+    representation_time: float
+    task_time: float

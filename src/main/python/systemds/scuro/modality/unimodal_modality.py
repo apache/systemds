@@ -20,7 +20,7 @@
 # -------------------------------------------------------------
 from functools import reduce
 from operator import or_
-
+import time
 
 from systemds.scuro.dataloader.base_loader import BaseLoader
 from systemds.scuro.modality.modality import Modality
@@ -86,12 +86,14 @@ class UnimodalModality(Modality):
         return joined_modality
 
     def context(self, context_operator):
+        start = time.time()
         if not self.has_data():
             self.extract_raw_data()
 
         transformed_modality = TransformedModality(self, context_operator)
 
         transformed_modality.data = context_operator.execute(self)
+        transformed_modality.transform_time = time.time() - start
         return transformed_modality
 
     def aggregate(self, aggregation_function):
@@ -108,7 +110,7 @@ class UnimodalModality(Modality):
             representation,
         )
         new_modality.data = []
-
+        start = time.time()
         if self.data_loader.chunk_size:
             self.data_loader.reset()
             while self.data_loader.next_chunk < self.data_loader.num_chunks:
@@ -122,4 +124,5 @@ class UnimodalModality(Modality):
             new_modality = representation.transform(self)
 
         new_modality.update_metadata()
+        new_modality.transform_time = time.time() - start
         return new_modality

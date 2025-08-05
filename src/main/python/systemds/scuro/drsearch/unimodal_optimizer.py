@@ -49,6 +49,16 @@ class UnimodalOptimizer:
             if tasks[i - 1].expected_dim != tasks[i].expected_dim:
                 self._tasks_require_same_dims = False
 
+    def store_results(self, file_name=None):
+        if file_name is None:
+            import time
+
+            timestr = time.strftime("%Y%m%d-%H%M%S")
+            file_name = "unimodal_optimizer" + timestr + ".pkl"
+
+        with open(file_name, "wb") as f:
+            pickle.dump(self.operator_performance, f)
+
     def get_k_best_results(self, modality, k, task):
         """
         Get the k best results for the given modality
@@ -82,9 +92,10 @@ class UnimodalOptimizer:
                 # except Exception as exc:
                 #     print(f'Modality {modality.modality_id} generated an exception: {exc}')
 
-    def optimize(self, n_workers=None):
+    def optimize(self):
         for modality in self.modalities:
-            self._process_modality(modality)
+            local_result = self._process_modality(modality)
+            self._merge_results(local_result)
 
     def _process_modality(self, modality):
         local_results = UnimodalResults(
@@ -94,7 +105,10 @@ class UnimodalOptimizer:
 
         for context_operator in context_operators:
             context_representation = None
-            if modality.modality_type != ModalityType.TEXT:
+            if (
+                modality.modality_type != ModalityType.TEXT
+                and modality.modality_type != ModalityType.VIDEO
+            ):
                 con_op = context_operator()
                 context_representation = modality.context(con_op)
                 self._evaluate_local(context_representation, [con_op], local_results)

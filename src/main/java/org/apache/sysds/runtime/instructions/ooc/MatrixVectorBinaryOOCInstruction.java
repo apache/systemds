@@ -45,7 +45,7 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
 
     public static MatrixVectorBinaryOOCInstruction parseInstruction(String str) {
         String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-        InstructionUtils.checkNumFields(parts, 3);
+        InstructionUtils.checkNumFields(parts, 4);
         String opcode = parts[0];
         CPOperand in1 = new CPOperand(parts[1]); // the larget matrix (streamed)
         CPOperand in2 = new CPOperand(parts[2]); // the small vector (in-memory)
@@ -54,7 +54,7 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
         AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
         AggregateBinaryOperator ba = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
 
-        return new MatrixVectorBinaryOOCInstruction(OOCType.MAPMM, ba, in1, in2, out, opcode, str);
+        return new MatrixVectorBinaryOOCInstruction(OOCType.AggregateBinary, ba, in1, in2, out, opcode, str);
     }
 
     @Override

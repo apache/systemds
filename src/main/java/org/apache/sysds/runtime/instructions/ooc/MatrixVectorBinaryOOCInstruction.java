@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.ooc;
 
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -56,12 +57,14 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
         AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
         AggregateBinaryOperator ba = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
 
+        // TODO: update the OOCType to specialized operation matrix multiplication
         return new MatrixVectorBinaryOOCInstruction(OOCType.AggregateBinary, ba, in1, in2, out, opcode, str);
     }
 
     @Override
     public void processInstruction( ExecutionContext ec ) {
 
+        // Setup: main thread
         // 1. Identify the inputs
         MatrixObject min = ec.getMatrixObject(input1); // big matrix
         MatrixObject vin = ec.getMatrixObject(input2); // in-memory vector
@@ -97,11 +100,13 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
 
         ExecutorService pool = CommonThreadPool.get();
         try {
-            pool.submit(() -> {
+            // Core logic: background thread
+            Future<?> task = pool.submit(() -> {
                 IndexedMatrixValue tmp = null;
                 try {
                     while((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
                         IndexedMatrixValue tmpOut = new IndexedMatrixValue();
+//                        MatrixBlock partialResult = MatrixBlock.aggregateBinaryOperations();
 //                        tmpOut.set(tmp.getIndexes(),
 //                                tmp.getValue().binaryOperations();
 //                        qOut.enqueueTask(tmpOut);

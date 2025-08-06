@@ -26,6 +26,7 @@ from systemds.scuro.utils.schema_helpers import (
     calculate_new_frequency,
     create_timestamps,
 )
+import torch
 
 
 # TODO: needs a way to define if data comes from a dataset with multiple instances or is like a streaming scenario where we only have one instance
@@ -203,6 +204,12 @@ class ModalityType(Flag):
         md[field] = data
         return md
 
+    def add_field_for_instances(self, md, field, data):
+        for key, value in zip(md.keys(), data):
+            md[key].update({field: value})
+
+        return md
+
     def create_audio_metadata(self, sampling_rate, data):
         md = deepcopy(self.get_schema())
         md = ModalitySchemas.update_base_metadata(md, data, True)
@@ -246,7 +253,7 @@ class DataLayout(Enum):
         if data_is_single_instance:
             if isinstance(data, list):
                 return DataLayout.SINGLE_LEVEL
-            elif isinstance(data, np.ndarray):
+            elif isinstance(data, np.ndarray) or isinstance(data, torch.Tensor):
                 return DataLayout.NESTED_LEVEL
 
         if isinstance(data[0], list):

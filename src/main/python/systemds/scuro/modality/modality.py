@@ -62,9 +62,11 @@ class Modality:
         """
         Extracts the individual unimodal modalities for a given transformed modality.
         """
-        return [
+        modality_names = [
             modality.name for modality in ModalityType if modality in self.modality_type
         ]
+        modality_names.append(str(self.modality_id))
+        return modality_names
 
     def copy_from_instance(self):
         """

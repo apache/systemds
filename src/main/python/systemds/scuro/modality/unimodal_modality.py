@@ -21,7 +21,8 @@
 from functools import reduce
 from operator import or_
 import time
-
+import numpy as np
+from systemds.scuro import ModalityType
 from systemds.scuro.dataloader.base_loader import BaseLoader
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.modality.joined import JoinedModality
@@ -113,11 +114,44 @@ class UnimodalModality(Modality):
         start = time.time()
         if self.data_loader.chunk_size:
             self.data_loader.reset()
+            original_lengths = []
             while self.data_loader.next_chunk < self.data_loader.num_chunks:
                 self.extract_raw_data()
                 transformed_chunk = representation.transform(self)
                 new_modality.data.extend(transformed_chunk.data)
+                for d in transformed_chunk.data:
+                    original_lengths.append(d.shape[0])
                 new_modality.metadata.update(transformed_chunk.metadata)
+
+            target_length = max(original_lengths)
+            padded_embeddings = []
+            for embeddings in new_modality.data:
+                current_length = embeddings.shape[0]
+                if current_length < target_length:
+                    padding_needed = target_length - current_length
+
+                    padded = np.pad(
+                        embeddings,
+                        pad_width=(
+                            (0, padding_needed),
+                            (0, 0),
+                        ),  # (before, after) for each axis
+                        mode="constant",
+                        constant_values=0,
+                    )
+                    padded_embeddings.append(padded)
+                else:
+                    padded_embeddings.append(embeddings)
+
+            attention_masks = np.zeros((len(new_modality.data), target_length))
+            for i, length in enumerate(original_lengths):
+                attention_masks[i, :length] = 1
+
+            ModalityType(self.modality_type).add_field_for_instances(
+                new_modality.metadata, "attention_masks", attention_masks
+            )
+            new_modality.data = padded_embeddings
+
         else:
             if not self.has_data():
                 self.extract_raw_data()

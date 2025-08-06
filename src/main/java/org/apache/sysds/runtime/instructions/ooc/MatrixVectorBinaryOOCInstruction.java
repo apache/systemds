@@ -19,9 +19,11 @@
 
 package org.apache.sysds.runtime.instructions.ooc;
 
+import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -60,14 +62,35 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
     @Override
     public void processInstruction( ExecutionContext ec ) {
 
-        //get operator and scalar
-        CPOperand scalar = ( input1.getDataType() == DataType.MATRIX ) ? input2 : input1;
-        ScalarObject constant = ec.getScalarInput(scalar);
-        ScalarOperator sc_op = ((ScalarOperator)_optr).setConstant(constant.getDoubleValue());
+        // 1. Identify the inputs
+        MatrixObject min = ec.getMatrixObject(input1); // big matrix
+        MatrixObject vin = ec.getMatrixObject(input2); // in-memory vector
 
-        //create thread and process binary operation
-        MatrixObject min = ec.getMatrixObject(input1);
-        MatrixObject vin = ec.getMatrixObject(input2);
+        // 2. Load the vector in-memory
+        MatrixBlock vector = ec.getMatrixInput(input2.getName());
+        System.out.println("vector: ");
+        System.out.println(vector);
+
+        // 3. Pre-partition the in-memory vector into a hashmap
+        HashMap<Long, MatrixBlock> partitionedVector = new HashMap<>();
+        int blksize = vector.getDataCharacteristics().getBlocksize();
+        if (blksize < 0) {
+            blksize = ConfigurationManager.getBlocksize();
+            System.out.println("ConfigurationManager.getBlocksize(): "+blksize);
+        }
+        for (int i=0; i<vector.getNumRows(); i+=blksize) {
+            long key = (long) (i/blksize) + 1; // the key starts at 1
+            System.out.println("i + blksize + 1: " + i + blksize + 1 );
+            System.out.println("vector.getNumRows() - 1: " + vector.getNumRows() + 1);
+            MatrixBlock vectorSlice = vector.slice(i, Math.min(i + blksize - 1, vector.getNumRows() - 1));
+            System.out.println("vectorSlices: ");
+            System.out.println(vectorSlice);
+            partitionedVector.put(key, vectorSlice);
+        }
+        System.out.println("partitionedVector.get(0): " + partitionedVector.get(0).toString());
+        System.out.println("partitionedVector.get(1): " + partitionedVector.get(1).toString());
+        System.out.println("partitionedVector.size(): " + partitionedVector.size());
+
         LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
         LocalTaskQueue<IndexedMatrixValue> qOut = new LocalTaskQueue<>();
         ec.getMatrixObject(output).setStreamHandle(qOut);
@@ -79,11 +102,11 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
                 try {
                     while((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
                         IndexedMatrixValue tmpOut = new IndexedMatrixValue();
-                        tmpOut.set(tmp.getIndexes(),
-                                tmp.getValue().scalarOperations(sc_op, new MatrixBlock()));
-                        qOut.enqueueTask(tmpOut);
+//                        tmpOut.set(tmp.getIndexes(),
+//                                tmp.getValue().binaryOperations();
+//                        qOut.enqueueTask(tmpOut);
                     }
-                    qOut.closeInput();
+//                    qOut.closeInput();
                 }
                 catch(Exception ex) {
                     throw new DMLRuntimeException(ex);

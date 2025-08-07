@@ -21,9 +21,12 @@
 import pickle
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from dataclasses import dataclass
+from dataclasses import dataclass, field, asdict
 
 import multiprocessing as mp
+from typing import Union
+
+import numpy as np
 from systemds.scuro.representations.window_aggregation import WindowAggregation
 
 from build.lib.systemds.scuro.representations.aggregated_representation import (
@@ -60,28 +63,13 @@ class UnimodalOptimizer:
         with open(file_name, "wb") as f:
             pickle.dump(self.operator_performance, f)
 
-    def get_k_best_results(self, modality, k, task):
-        """
-        Get the k best results for the given modality
-        :param modality: modality to get the best results for
-        :param k: number of best results
-        """
-
-        results = sorted(
-            self.operator_performance.results[modality.modality_id][task.model.name],
-            key=lambda x: x.val_score,
-            reverse=True,
-        )[:k]
-
-        return results
-
     def optimize_parallel(self, n_workers=None):
         if n_workers is None:
             n_workers = min(len(self.modalities), mp.cpu_count())
 
         with ProcessPoolExecutor(max_workers=n_workers) as executor:
             future_to_modality = {
-                executor.submit(self._process_modality, modality): modality
+                executor.submit(self._process_modality, modality, True): modality
                 for modality in self.modalities
             }
 
@@ -95,13 +83,17 @@ class UnimodalOptimizer:
 
     def optimize(self):
         for modality in self.modalities:
-            local_result = self._process_modality(modality)
-            self._merge_results(local_result)
+            local_result = self._process_modality(modality, False)
+            # self._merge_results(local_result)
 
-    def _process_modality(self, modality):
-        local_results = UnimodalResults(
-            modalities=[modality], tasks=self.tasks, debug=False
-        )
+    def _process_modality(self, modality, parallel):
+        if parallel:
+            local_results = UnimodalResults(
+                modalities=[modality], tasks=self.tasks, debug=False
+            )
+        else:
+            local_results = self.operator_performance
+
         context_operators = self.operator_registry.get_context_operators()
 
         for context_operator in context_operators:
@@ -148,6 +140,11 @@ class UnimodalOptimizer:
                     local_results.results[modality_id][task_name]
                 )
 
+        for modality in self.modalities:
+            for task_name in local_results.cache[modality]:
+                for key, value in local_results.cache[modality][task_name].items():
+                    self.operator_performance.cache[modality][task_name][key] = value
+
     def _evaluate_local(self, modality, representations, local_results):
         if self._tasks_require_same_dims:
             if self.expected_dimensions == 1 and get_shape(modality.metadata) > 1:
@@ -165,9 +162,8 @@ class UnimodalOptimizer:
                     local_results.add_result(
                         scores,
                         reps,
-                        modality.modality_id,
+                        modality,
                         task.model.name,
-                        modality.transform_time,
                         end - start,
                     )
             else:
@@ -179,9 +175,8 @@ class UnimodalOptimizer:
                     local_results.add_result(
                         scores,
                         representations,
-                        modality.modality_id,
+                        modality,
                         task.model.name,
-                        modality.transform_time,
                         end - start,
                     )
         else:
@@ -200,9 +195,8 @@ class UnimodalOptimizer:
                     local_results.add_result(
                         scores,
                         reps,
-                        modality.modality_id,
+                        modality,
                         task.model.name,
-                        modality.transform_time,
                         end - start,
                     )
                 else:
@@ -213,9 +207,8 @@ class UnimodalOptimizer:
                     local_results.add_result(
                         scores,
                         representations,
-                        modality.modality_id,
+                        modality,
                         task.model.name,
-                        modality.transform_time,
                         end - start,
                     )
 
@@ -226,15 +219,16 @@ class UnimodalResults:
         self.task_names = [task.model.name for task in tasks]
         self.results = {}
         self.debug = debug
+        self.cache = {}
 
         for modality in self.modality_ids:
             self.results[modality] = {}
+            self.cache[modality] = {}
             for task_name in self.task_names:
+                self.cache[modality][task_name] = {}
                 self.results[modality][task_name] = []
 
-    def add_result(
-        self, scores, representations, modality_id, task_name, rep_time, task_time
-    ):
+    def add_result(self, scores, representations, modality, task_name, task_time):
         parameters = []
         representation_names = []
 
@@ -260,13 +254,16 @@ class UnimodalResults:
             params=parameters,
             train_score=scores[0],
             val_score=scores[1],
-            representation_time=rep_time,
+            representation_time=modality.transform_time,
             task_time=task_time,
         )
-        self.results[modality_id][task_name].append(entry)
+        self.results[modality.modality_id][task_name].append(entry)
+        self.cache[modality.modality_id][task_name][
+            (tuple(representation_names), scores[1], modality.transform_time)
+        ] = modality
 
         if self.debug:
-            print(f"{modality_id}_{task_name}: {entry}")
+            print(f"{modality.modality_id}_{task_name}: {entry}")
 
     def print_results(self):
         for modality in self.modality_ids:
@@ -274,8 +271,30 @@ class UnimodalResults:
                 for entry in self.results[modality][task_name]:
                     print(f"{modality}_{task_name}: {entry}")
 
+    def get_k_best_results(self, modality, k, task):
+        """
+        Get the k best results for the given modality
+        :param modality: modality to get the best results for
+        :param k: number of best results
+        """
+        items = self.results[modality.modality_id][task.model.name]
+        sorted_indices = sorted(
+            range(len(items)), key=lambda x: items[x].val_score, reverse=True
+        )[:k]
 
-@dataclass
+        results = sorted(
+            self.results[modality.modality_id][task.model.name],
+            key=lambda x: x.val_score,
+            reverse=True,
+        )[:k]
+
+        items = list(self.cache[modality.modality_id][task.model.name].items())
+        reordered_cache = [items[i][1] for i in sorted_indices]
+
+        return results, list(reordered_cache)
+
+
+@dataclass(frozen=True)
 class ResultEntry:
     val_score: float
     representations: list

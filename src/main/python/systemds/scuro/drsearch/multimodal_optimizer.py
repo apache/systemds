@@ -1,3 +1,5 @@
+import itertools
+
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
@@ -11,13 +13,17 @@ import dataclasses
 
 
 class MultimodalOptimizer:
-    def __init__(self, modalities, unimodal_optimizer, tasks, k=2, debug=True):
+    def __init__(
+        self, modalities, unimodal_optimization_results, tasks, k=2, debug=True
+    ):
+        self.k_best_cache = None
         self.k_best_modalities = None
         self.modalities = modalities
-        self.unimodal_optimizer = unimodal_optimizer
+        self.unimodal_optimization_results = unimodal_optimization_results
         self.tasks = tasks
         self.k = k
         self.extract_k_best_modalities_per_task()
+
         self.operator_registry = Registry()
         self.optimization_results = MultimodalResults(
             modalities, tasks, debug, self.k_best_modalities
@@ -26,7 +32,7 @@ class MultimodalOptimizer:
 
     def optimize(self):
         for task in self.tasks:
-            self.optimize_intramodal_representations(task)
+            # self.optimize_intramodal_representations(task)
             self.optimize_intermodal_representations(task)
 
     def optimize_intramodal_representations(self, task):
@@ -35,7 +41,7 @@ class MultimodalOptimizer:
                 modality.modality_id
             ]
             applied_representations = self.extract_representations(
-                representations, modality
+                representations, modality, task.model.name
             )
 
             for i in range(1, len(applied_representations)):
@@ -73,33 +79,76 @@ class MultimodalOptimizer:
                         )
 
     def optimize_intermodal_representations(self, task):
-        pass
+        modality_combos = []
+        n = len(self.k_best_cache[task.model.name])
 
-    def extract_representations(self, representations, modality):
+        # Generate combinations in depth-first order
+        def generate_extensions(current_combo, remaining_indices):
+            # Add current combination if it has at least 2 elements
+            if len(current_combo) >= 2:
+                combo_tuple = tuple(i for i in current_combo)
+                modality_combos.append(combo_tuple)
+            # Generate all possible extensions
+            for i in remaining_indices:
+                new_combo = current_combo + [i]
+                new_remaining = [j for j in remaining_indices if j > i]
+                generate_extensions(new_combo, new_remaining)
+
+        # Start with each possible first element
+        for start_idx in range(n):
+            remaining = list(range(start_idx + 1, n))
+            generate_extensions([start_idx], remaining)
+
+        print(modality_combos)
+
+    def _evaluate_inter_modal(self, task, modality_combo):
+        fused_representation = None
+        for modality_id in modality_combo:
+            fused_representation = self.evaluate(task, modality_id, None, None, None)
+
+    def extract_representations(self, representations, modality, task_name):
         applied_representations = []
         for i in range(0, len(representations)):
-            applied_representation = modality
-            for j, rep in enumerate(representations[i].representations):
-                representation, is_context = (
-                    self.operator_registry.get_representation_by_name(
-                        rep, modality.modality_type
-                    )
+            cache_key = (
+                tuple(representations[i].representations),
+                representations[i].task_time,
+                representations[i].representation_time,
+            )
+            if (
+                cache_key
+                in self.unimodal_optimization_results.cache[modality.modality_id][
+                    task_name
+                ]
+            ):
+                applied_representations.append(
+                    self.unimodal_optimization_results.cache[modality.modality_id][
+                        task_name
+                    ][cache_key]
                 )
-                if representation is None:
-                    if rep == AggregatedRepresentation.__name__:
-                        representation = AggregatedRepresentation(Aggregation())
-                else:
-                    representation = representation()
-                representation.set_parameters(representations[i].params[j])
-                if is_context:
-                    applied_representation = applied_representation.context(
-                        representation
+            else:
+                applied_representation = modality
+                for j, rep in enumerate(representations[i].representations):
+                    representation, is_context = (
+                        self.operator_registry.get_representation_by_name(
+                            rep, modality.modality_type
+                        )
                     )
-                else:
-                    applied_representation = (
-                        applied_representation.apply_representation(representation)
-                    )
-            applied_representations.append(applied_representation)
+                    if representation is None:
+                        if rep == AggregatedRepresentation.__name__:
+                            representation = AggregatedRepresentation(Aggregation())
+                    else:
+                        representation = representation()
+                    representation.set_parameters(representations[i].params[j])
+                    if is_context:
+                        applied_representation = applied_representation.context(
+                            representation
+                        )
+                    else:
+                        applied_representation = (
+                            applied_representation.apply_representation(representation)
+                        )
+                self.k_best_cache[task_name].append(applied_representation)
+                applied_representations.append(applied_representation)
         return applied_representations
 
     def evaluate(self, task, modality, representations, fusion, modality_ids):
@@ -127,12 +176,31 @@ class MultimodalOptimizer:
 
     def extract_k_best_modalities_per_task(self):
         self.k_best_modalities = {}
+        self.k_best_cache = {}
         for task in self.tasks:
             self.k_best_modalities[task.model.name] = {}
+            self.k_best_cache[task.model.name] = []
             for modality in self.modalities:
-                self.k_best_modalities[task.model.name][modality.modality_id] = (
-                    self.unimodal_optimizer.get_k_best_results(modality, self.k, task)
+                k_best_results, cached_data = (
+                    self.unimodal_optimization_results.get_k_best_results(
+                        modality, self.k, task
+                    )
                 )
+
+                self.k_best_modalities[task.model.name][
+                    modality.modality_id
+                ] = k_best_results
+                self.k_best_cache[task.model.name].extend(cached_data)
+
+    def create_modality_index(self, task):
+        counter = 0
+        k_best_idx = []
+        for modality_id, values in self.k_best_modalities[task].items():
+            for _ in values:
+                k_best_idx.append((modality_id, counter))
+                counter += 1
+
+        return k_best_idx
 
 
 class MultimodalResults:

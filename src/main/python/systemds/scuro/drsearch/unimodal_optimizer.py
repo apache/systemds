@@ -156,7 +156,7 @@ class UnimodalOptimizer:
                 agg_modality = agg_operator.transform(modality)
                 reps = representations.copy()
                 reps.append(agg_operator)
-                agg_modality.pad()
+                # agg_modality.pad()
                 for task in self.tasks:
                     start = time.time()
                     scores = task.run(agg_modality.data)
@@ -171,7 +171,7 @@ class UnimodalOptimizer:
                         end - start,
                     )
             else:
-                modality.pad()
+                # modality.pad()
                 for task in self.tasks:
                     start = time.time()
                     scores = task.run(modality.data)
@@ -193,7 +193,7 @@ class UnimodalOptimizer:
 
                     reps = representations.copy()
                     reps.append(agg_operator)
-                    modality.pad()
+                    # modality.pad()
                     start = time.time()
                     scores = task.run(agg_modality.data)
                     end = time.time()
@@ -206,7 +206,7 @@ class UnimodalOptimizer:
                         end - start,
                     )
                 else:
-                    modality.pad()
+                    # modality.pad()
                     start = time.time()
                     scores = task.run(modality.data)
                     end = time.time()

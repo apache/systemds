@@ -112,9 +112,9 @@ class UnimodalModality(Modality):
         )
         new_modality.data = []
         start = time.time()
+        original_lengths = []
         if self.data_loader.chunk_size:
             self.data_loader.reset()
-            original_lengths = []
             while self.data_loader.next_chunk < self.data_loader.num_chunks:
                 self.extract_raw_data()
                 transformed_chunk = representation.transform(self)
@@ -122,7 +122,18 @@ class UnimodalModality(Modality):
                 for d in transformed_chunk.data:
                     original_lengths.append(d.shape[0])
                 new_modality.metadata.update(transformed_chunk.metadata)
+        else:
+            if not self.has_data():
+                self.extract_raw_data()
+            new_modality = representation.transform(self)
 
+            if not all(
+                "attention_masks" in entry for entry in new_modality.metadata.values()
+            ):
+                for d in new_modality.data:
+                    original_lengths.append(d.shape[0])
+
+        if len(original_lengths) > 0 and min(original_lengths) < max(original_lengths):
             target_length = max(original_lengths)
             padded_embeddings = []
             for embeddings in new_modality.data:
@@ -135,7 +146,7 @@ class UnimodalModality(Modality):
                         pad_width=(
                             (0, padding_needed),
                             (0, 0),
-                        ),  # (before, after) for each axis
+                        ),
                         mode="constant",
                         constant_values=0,
                     )
@@ -151,12 +162,6 @@ class UnimodalModality(Modality):
                 new_modality.metadata, "attention_masks", attention_masks
             )
             new_modality.data = padded_embeddings
-
-        else:
-            if not self.has_data():
-                self.extract_raw_data()
-            new_modality = representation.transform(self)
-
         new_modality.update_metadata()
         new_modality.transform_time = time.time() - start
         return new_modality

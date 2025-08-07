@@ -20,7 +20,6 @@
 
 # TODO: Test edge cases: unequal number of audio-video timestamps (should still work and add the average over all audio/video samples)
 
-import shutil
 import unittest
 
 import numpy as np
@@ -30,9 +29,6 @@ from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
 from systemds.scuro.representations.resnet import ResNet
 from tests.scuro.data_generator import TestDataLoader, ModalityRandomDataGenerator
-
-from systemds.scuro.dataloader.audio_loader import AudioLoader
-from systemds.scuro.dataloader.video_loader import VideoLoader
 from systemds.scuro.modality.type import ModalityType
 
 

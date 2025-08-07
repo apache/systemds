@@ -48,20 +48,19 @@ class MFCC(UnimodalRepresentation):
             modality, self, self.output_modality_type
         )
         result = []
-        max_length = 0
+
         for i, sample in enumerate(modality.data):
             sr = list(modality.metadata.values())[i]["frequency"]
             mfcc = librosa.feature.mfcc(
-                y=sample,
+                y=np.array(sample),
                 sr=sr,
                 n_mfcc=self.n_mfcc,
                 dct_type=self.dct_type,
                 hop_length=self.hop_length,
                 n_mels=self.n_mels,
-            )
+            ).astype(modality.data_type)
             mfcc = (mfcc - np.mean(mfcc)) / np.std(mfcc)
-            if mfcc.shape[-1] > max_length:  # TODO: check if this needs to be done
-                max_length = mfcc.shape[-1]
+
             result.append(mfcc.T)
 
         transformed_modality.data = result

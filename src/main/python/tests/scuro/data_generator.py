@@ -93,10 +93,14 @@ class ModalityRandomDataGenerator:
         self.modality_id += 1
         return tf_modality
 
-    def create_audio_data(self, num_instances, num_features):
-        data = np.random.rand(num_instances, num_features).astype(np.float32)
+    def create_audio_data(self, num_instances, max_audio_length):
+        data = [
+            [random.random() for _ in range(random.randint(1, max_audio_length))]
+            for _ in range(num_instances)
+        ]
+
         metadata = {
-            i: ModalityType.AUDIO.create_audio_metadata(16000, data[i])
+            i: ModalityType.AUDIO.create_audio_metadata(16000, np.array(data[i]))
             for i in range(num_instances)
         }
 
@@ -165,26 +169,29 @@ class ModalityRandomDataGenerator:
 
         return sentences, metadata
 
-    def create_visual_modality(self, num_instances, num_frames=1, height=28, width=28):
-        if num_frames == 1:
+    def create_visual_modality(
+        self, num_instances, max_num_frames=1, height=28, width=28
+    ):
+        data = [
+            np.random.randint(
+                0,
+                256,
+                (np.random.randint(5, max_num_frames + 1), height, width, 3),
+                dtype=np.uint8,
+            )
+            for _ in range(num_instances)
+        ]
+        if max_num_frames == 1:
             print(f"TODO: create image metadata")
         else:
             metadata = {
                 i: ModalityType.VIDEO.create_video_metadata(
-                    30, num_frames, width, height, 1
+                    30, data[i].shape[0], width, height, 3
                 )
                 for i in range(num_instances)
             }
 
-        return (
-            np.random.randint(
-                0,
-                256,
-                (num_instances, num_frames, height, width),
-                # ).astype(np.float16).tolist(),
-            ).astype(np.float16),
-            metadata,
-        )
+        return (data, metadata)
 
 
 def setup_data(modalities, num_instances, path):

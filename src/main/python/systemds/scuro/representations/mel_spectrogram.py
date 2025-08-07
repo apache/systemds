@@ -46,19 +46,18 @@ class MelSpectrogram(UnimodalRepresentation):
             modality, self, self.output_modality_type
         )
         result = []
-        max_length = 0
+
         for i, sample in enumerate(modality.data):
             sr = list(modality.metadata.values())[i]["frequency"]
             S = librosa.feature.melspectrogram(
-                y=sample,
+                y=np.array(sample),
                 sr=sr,
                 n_mels=self.n_mels,
                 hop_length=self.hop_length,
                 n_fft=self.n_fft,
-            )
+            ).astype(modality.data_type)
             S_dB = librosa.power_to_db(S, ref=np.max)
-            if S_dB.shape[-1] > max_length:
-                max_length = S_dB.shape[-1]
+
             result.append(S_dB.T)
 
         transformed_modality.data = result

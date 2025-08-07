@@ -65,7 +65,9 @@ class W2V(UnimodalRepresentation):
         embeddings = []
         for sentences in modality.data:
             tokens = list(tokenize(sentences.lower()))
-            embeddings.append(np.array(get_embedding(tokens, model)).reshape(1, -1))
+            embeddings.append(
+                np.array(get_embedding(tokens, model)).reshape(1, -1).astype(np.float32)
+            )
 
         if self.output_file is not None:
             save_embeddings(np.array(embeddings), self.output_file)

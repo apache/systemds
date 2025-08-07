@@ -36,7 +36,8 @@ class JoinedTransformedModality(Modality):
         :param transformation: Representation to be applied on the modality
         """
         super().__init__(
-            reduce(or_, [left_modality.modality_type], right_modality.modality_type)
+            reduce(or_, [left_modality.modality_type], right_modality.modality_type),
+            data_type=left_modality.data_type,
         )
         self.transformation = transformation
         self.left_modality = left_modality

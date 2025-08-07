@@ -100,8 +100,12 @@ class ModalitySchemas:
         dtype = np.nan
         shape = None
         if data_layout is DataLayout.SINGLE_LEVEL:
-            dtype = data[0].dtype
-            shape = data[0].shape
+            if isinstance(data, list):
+                dtype = data[0].dtype
+                shape = data[0].shape
+            elif isinstance(data, np.ndarray):
+                dtype = data.dtype
+                shape = data.shape
         elif data_layout is DataLayout.NESTED_LEVEL:
             if data_is_single_instance:
                 dtype = data.dtype
@@ -210,9 +214,9 @@ class ModalityType(Flag):
 
         return md
 
-    def create_audio_metadata(self, sampling_rate, data):
+    def create_audio_metadata(self, sampling_rate, data, is_single_instance=True):
         md = deepcopy(self.get_schema())
-        md = ModalitySchemas.update_base_metadata(md, data, True)
+        md = ModalitySchemas.update_base_metadata(md, data, is_single_instance)
         md["frequency"] = sampling_rate
         md["length"] = data.shape[0]
         md["timestamp"] = create_timestamps(sampling_rate, md["length"])
@@ -251,7 +255,11 @@ class DataLayout(Enum):
             return None
 
         if data_is_single_instance:
-            if isinstance(data, list):
+            if (
+                isinstance(data, list)
+                or isinstance(data, np.ndarray)
+                and data.ndim == 1
+            ):
                 return DataLayout.SINGLE_LEVEL
             elif isinstance(data, np.ndarray) or isinstance(data, torch.Tensor):
                 return DataLayout.NESTED_LEVEL

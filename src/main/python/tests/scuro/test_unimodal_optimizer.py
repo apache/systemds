@@ -182,23 +182,17 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
         ):
             registry = Registry()
 
-            unimodal_optimizer = UnimodalOptimizer(
-                [modality], self.tasks
-            )
+            unimodal_optimizer = UnimodalOptimizer([modality], self.tasks)
             unimodal_optimizer.optimize()
 
             assert (
-                list(unimodal_optimizer.operator_performance.keys())[0]
+                unimodal_optimizer.operator_performance.modality_ids[0]
                 == modality.modality_id
             )
-            assert len(list(unimodal_optimizer.operator_performance.values())[0]) == 2
+            assert len(unimodal_optimizer.operator_performance.task_names) == 2
             assert (
-                len(
-                    unimodal_optimizer.get_k_best_results(modality, 1, self.tasks[0])[
-                        0
-                    ].representations
-                )
-                >= 1
+                len(unimodal_optimizer.get_k_best_results(modality, 1, self.tasks[0]))
+                == 1
             )
 
 

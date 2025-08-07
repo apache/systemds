@@ -41,14 +41,13 @@ class Spectrogram(UnimodalRepresentation):
             modality, self, self.output_modality_type
         )
         result = []
-        max_length = 0
+
         for i, sample in enumerate(modality.data):
             spectrogram = librosa.stft(
-                y=sample, hop_length=self.hop_length, n_fft=self.n_fft
-            )
+                y=np.array(sample), hop_length=self.hop_length, n_fft=self.n_fft
+            ).astype(modality.data_type)
             S_dB = librosa.amplitude_to_db(np.abs(spectrogram))
-            if S_dB.shape[-1] > max_length:
-                max_length = S_dB.shape[-1]
+
             result.append(S_dB.T)
 
         transformed_modality.data = result

@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.ooc;
 
 import java.util.HashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -90,11 +91,20 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
             System.out.println(vectorSlice);
             partitionedVector.put(key, vectorSlice);
         }
-        System.out.println("partitionedVector.get(0): " + partitionedVector.get(0).toString());
-        System.out.println("partitionedVector.get(1): " + partitionedVector.get(1).toString());
-        System.out.println("partitionedVector.size(): " + partitionedVector.size());
+        System.out.println("partitionedVector: \n" + partitionedVector);
 
         LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
+
+        // --- THE WORKAROUND: Wait for the input stream to be ready ---
+//        LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
+//        int retries = 0;
+//        while (qIn == null && retries < 100) { // Poll up to 10 seconds
+//            try { Thread.sleep(100); } catch (InterruptedException e) {}
+//            qIn = min.getStreamHandle();
+//            retries++;
+//        }
+        // --- END OF WORKAROUND ---
+
         LocalTaskQueue<IndexedMatrixValue> qOut = new LocalTaskQueue<>();
         ec.getMatrixObject(output).setStreamHandle(qOut);
 
@@ -104,8 +114,23 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
             Future<?> task = pool.submit(() -> {
                 IndexedMatrixValue tmp = null;
                 try {
+
+                    HashMap<Long, MatrixBlock> tmpResult = new  HashMap<>();
+
                     while((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
                         IndexedMatrixValue tmpOut = new IndexedMatrixValue();
+                        MatrixBlock matrixBlock = (MatrixBlock) tmp.getValue();
+                        long rowIndex = tmp.getIndexes().getRowIndex();
+                        long colIndex = tmp.getIndexes().getColumnIndex();
+
+                        MatrixBlock vectorSlice = partitionedVector.get(rowIndex);
+                        System.out.println("vectorSlice: " + vectorSlice);
+//                        System.out.println("tmp: \n" + tmp);
+                        MatrixBlock partialResult = matrixBlock.aggregateBinaryOperations(matrixBlock, vectorSlice,
+                                new MatrixBlock(), (AggregateBinaryOperator) _optr);
+                        System.out.println("partialResult: " + partialResult);
+
+//                        aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op)
 //                        MatrixBlock partialResult = MatrixBlock.aggregateBinaryOperations();
 //                        tmpOut.set(tmp.getIndexes(),
 //                                tmp.getValue().binaryOperations();
@@ -117,9 +142,13 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
                     throw new DMLRuntimeException(ex);
                 }
             });
+
+            task.get();
+        } catch (ExecutionException | InterruptedException e) {
+            throw new DMLRuntimeException(e);
         }
-        finally {
-            pool.shutdown();
-        }
+//        finally {
+//            pool.shutdown();
+//        }
     }
 }

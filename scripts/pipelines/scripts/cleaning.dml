@@ -104,7 +104,7 @@ startCleaning = function(Frame[Unknown] F, Frame[Unknown] logical, String target
 
 
 
-  [pip, hp, acc] = bandit(X_train=X_train, Y_train=y_train,  mask=getMask, MLhp=opt,
+  [pip, hp, acc] = bandit(X=X_train, Y=y_train,  mask=getMask, MLhp=opt,
     schema=getSchema, lp=logical, primitives=primitives, param=param, k=k, testAccuracy=d_accuracy,
     isWeighted=isWeighted, R=R, cv=cv, verbose=TRUE);
   # acc = as.matrix(1)
@@ -158,12 +158,12 @@ testBestPipeline = function(Frame[Unknown] pip, Matrix[Double] hp, Matrix[Double
   y_test_clean = Y_train[trRow+1:nrow(X_train), ]
 
   # classify after cleaning  
-  betas = multiLogReg(X=X_train_clean, Y=y_train_clean, icpt=1,
-    reg=as.scalar(MLhp[1,1]), tol= 1e-9, maxi=as.scalar(MLhp[1,2]), 
-    maxii= 50, verbose=FALSE);
+  betas = multiLogReg(X=X_train_clean, Y=y_train_clean, intercept=1,
+    reg=as.scalar(MLhp[1,1]), tol= 1e-9, maxIter=as.scalar(MLhp[1,2]),
+    maxInnerIter= 50, verbose=FALSE);
     
   [c_prob, c_yhat, c_accuracy] = multiLogRegPredict(X_test_clean, betas, y_test_clean, FALSE)
-    c_accuracy = getAccuracy(y_test_clean, c_yhat, isWeighted)
+    c_accuracy = getAccuracy(c_yhat, y_test_clean, isWeighted)
   [confusionCount_c, confusionAVG_c] = confusionMatrix(P=c_yhat, Y=y_test_clean)
   
   print("accuracy of dirty data  "+dirAcc)
@@ -338,7 +338,7 @@ return(Matrix[Double] sortedX, Matrix[Double] sortedY)
   # print('ncol in dx train '+ncol(dX_train))
   while(FALSE){}
   # learn model
-  B = multiLogReg(X=dX_train, Y=y, icpt=1, reg=0, tol=1e-6, maxi = 100, maxii= 0, verbose=FALSE);
+  B = multiLogReg(X=dX_train, Y=y, intercept=1, reg=0, tol=1e-6, maxIter = 100, maxInnerIter= 0, verbose=FALSE);
   [prob,yhat,accuracy] = multiLogRegPredict(X=dX_train, B=B, Y=y, verbose=FALSE);
   # print("the accuracy "+accuracy)
   
@@ -480,7 +480,7 @@ classifyDirty = function(Matrix[Double] Xtrain, Matrix[Double] ytrain, Matrix[Do
   accuracy = mean(accuracy)
 
   # # learn model
-  # B = multiLogReg(X=dX_train, Y=ytrain, icpt=2, reg=as.scalar(opt[1,1]), maxi = as.scalar(opt[1,2]), maxii= 0, verbose=FALSE);
+  # B = multiLogReg(X=dX_train, Y=ytrain, intercept=2, reg=as.scalar(opt[1,1]), maxIter = as.scalar(opt[1,2]), maxInnerIter= 0, verbose=FALSE);
   # [M,pred,accuracy] = multiLogRegPredict(X=dX_test, B=B, Y=ytest, verbose=FALSE);
 
   # if(isWeighted) 
@@ -536,8 +536,8 @@ return (Matrix[Double] accuracyMatrix)
       trainy = trainset[, 1]
       testX = testset[, 2:ncol(testset)]
       testy = testset[, 1]
-      beta = multiLogReg(X=trainX, Y=trainy, icpt=1, reg=as.scalar(MLhp[1,1]), tol= 1e-9, 
-      maxi=as.scalar(MLhp[1,2]), maxii= 50, verbose=FALSE);
+      beta = multiLogReg(X=trainX, Y=trainy, intercept=1, reg=as.scalar(MLhp[1,1]), tol= 1e-9,
+      maxIter=as.scalar(MLhp[1,2]), maxInnerIter= 50, verbose=FALSE);
       [prob, yhat, a] = multiLogRegPredict(testX, beta, testy, FALSE)
       accuracy = getAccuracy(testy, yhat, isWeighted)
       accuracyMatrix[i] = accuracy

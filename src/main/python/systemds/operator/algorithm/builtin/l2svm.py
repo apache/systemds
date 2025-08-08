@@ -41,11 +41,11 @@ def l2svm(X: Matrix,
     :param Y: Label vector y of class labels (shape: m x 1), assumed binary
         in -1/+1 or 1/2 encoding.
     :param intercept: Indicator if a bias column should be added to X and the model
-    :param epsilon: Tolerance for early termination if the reduction of objective
-        function is less than epsilon times the initial objective
+    :param tol: Tolerance (epsilon) for early termination if the reduction of objective
+        function is less than tolerance times the initial objective
     :param reg: Regularization parameter (lambda) for L2 regularization
-    :param maxIterations: Maximum number of conjugate gradient (outer) iterations
-    :param maxii: Maximum number of line search (inner) iterations
+    :param maxIter: Maximum number of conjugate gradient (outer) iterations
+    :param maxInnerIter: Maximum number of line search (inner) iterations
     :param verbose: Indicator if training details should be printed
     :param columnId: An optional class ID used in verbose print output,
         eg. used when L2SVM is used in MSVM.

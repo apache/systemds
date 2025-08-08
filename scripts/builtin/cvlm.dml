@@ -25,12 +25,12 @@
 #
 # INPUT:
 # ----------------------------------------------------------------------------------
-# X      Recorded Data set into matrix
-# y      1-column matrix of response values.
-# k      Number of subsets needed, It should always be more than 1 and less than nrow(X)
-# icpt   Intercept presence, shifting and rescaling the columns of X
-# reg    Regularization constant (lambda) for L2-regularization. set to nonzero for
-#        highly dependant/sparse/numerous features
+# X          Recorded Data set into matrix
+# y          1-column matrix of response values.
+# k          Number of subsets needed, It should always be more than 1 and less than nrow(X)
+# intercept  Intercept presence, shifting and rescaling the columns of X
+# reg        Regularization constant (lambda) for L2-regularization. set to nonzero for
+#            highly dependant/sparse/numerous features
 # ----------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -39,7 +39,7 @@
 # allbeta     Validated data set
 # --------------------------------------------------------------------------------------------
 
-m_cvlm = function(Matrix[Double] X, Matrix[Double] y, Integer k, Integer icpt = 0, Double reg = 1e-7)
+m_cvlm = function(Matrix[Double] X, Matrix[Double] y, Integer k, Integer intercept = 0, Double reg = 1e-7)
     return (Matrix[Double] y_predict, Matrix[Double] allbeta)
 {
   M = nrow(X);
@@ -67,8 +67,8 @@ m_cvlm = function(Matrix[Double] X, Matrix[Double] y, Integer k, Integer icpt = 
       trainRes = rbind(y[1:testS-1,], y[testE+1:M,]);
     }
 
-    beta = lm(X=trainSet, y=trainRes, icpt=icpt, reg=reg);
-    pred = lmPredict(X=testSet, B=beta, ytest=matrix(0,1,1), icpt=icpt);
+    beta = lm(X=trainSet, y=trainRes, intercept=intercept, reg=reg);
+    pred = lmPredict(X=testSet, B=beta, Ytest=matrix(0,1,1), intercept=intercept);
     y_predict[testS:testE,] = pred;
     allbeta[i,] = t(beta);
   }

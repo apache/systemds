@@ -36,7 +36,7 @@ moi = ifdef ($moi, 200);
 mii = ifdef ($mii, 0);
 
 beta_out = glm(X=X, Y=Y, dfam=dfam, vpow=vpow, link=link, lpow=lpow,
-  yneg=yneg, icpt=icpt, disp=disp, reg=reg, tol=eps, moi=moi, mii=mii);
+  yneg=yneg, intercept=icpt, disp=disp, reg=reg, tol=eps, maxIter=moi, maxInnerIter=mii);
 
 write (beta_out, $B, format=fmtB);
 

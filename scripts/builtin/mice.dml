@@ -28,8 +28,8 @@
 # INPUT:
 # ------------------------------------------------------------------------------------
 # X          Data Matrix (Recoded Matrix for categorical features)
-# cMask      A 0/1 row vector for identifying numeric (0) and categorical features (1)
-# iter       Number of iteration for multiple imputations
+# ctypes     A 0/1 row vector for identifying numeric (0) and categorical features (1)
+# maxIter    Number of iteration for multiple imputations
 # threshold  confidence value [0, 1] for robust imputation, values will only be imputed
 #            if the predicted value has probability greater than threshold,
 #            only applicable for categorical data
@@ -41,7 +41,7 @@
 # output  imputed dataset
 # ---------------------------------------------------------------------------------
 
-m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3, 
+m_mice= function(Matrix[Double] X, Matrix[Double] ctypes, Integer maxIter = 3,
   Double threshold = 0.8, Boolean verbose = FALSE)
   return(Matrix[Double] output, Matrix[Double] meta, Double threshold, Frame[String] dM, List[Unknown] betaList)
 {
@@ -49,35 +49,35 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3,
     stop("MICE can not be applied on single vectors.
          expected number of columns > 1 found: "+ncol(X))
 
-  if(ncol(cMask) != ncol(X))
+  if(ncol(ctypes) != ncol(X))
     stop("MICE Dimension mismatch: the columns in X != columns in mask")
   
   
   lastIndex = ncol(X);
-  sumMax = sum(cMask);
+  sumMax = sum(ctypes);
   
   # if all features are numeric add a categorical features
   # if all features are categorical add a numeric features
-  if(sumMax == 0 | sumMax == ncol(cMask)) {
+  if(sumMax == 0 | sumMax == ncol(ctypes)) {
     X = cbind(X, matrix(1, nrow(X), 1))
-    cMask = cbind(cMask, matrix(ifelse(sumMax==0, 1, 0), 1, 1))
+    ctypes = cbind(ctypes, matrix(ifelse(sumMax==0, 1, 0), 1, 1))
   }
 
   # impute by mean 
   Mask1 = is.na(X)
-  meta = rbind(cMask, (colSums(Mask1) > 0))
+  meta = rbind(ctypes, (colSums(Mask1) > 0))
   X = replace(target=X, pattern=NaN, replacement=0);
-  imputationVec = getInitialImputation(X, cMask)
+  imputationVec = getInitialImputation(X, ctypes)
   X1 = X + (Mask1 * imputationVec)
   d = ncol(X1)
   n = nrow(X1)
   # compute index of categorical features
-  index = vectorToCsv(cMask)
+  index = vectorToCsv(ctypes)
   # specifications for one-hot encoding of categorical features
   jspecDC = "{ids:true, dummycode:["+index+"]}";
   [dX, dM] = transformencode(target=as.frame(X1), spec=jspecDC);
-  dist = colDist(X1, cMask) # number of distinct items in categorical features
-  for(k in 1:iter) # start iterative imputation
+  dist = colDist(X1, ctypes) # number of distinct items in categorical features
+  for(k in 1:maxIter) # start iterative imputation
   {
     betaList = list()
     betaList = append(betaList, imputationVec)
@@ -91,7 +91,7 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3,
     {
       j = (i + as.scalar(dist[1,in_c])) - 1 # index value for iterating OHE columns
       beta = as.matrix(0)
-      if(sum(Mask1[, in_c]) > 0 & as.scalar(cMask[, in_c]) == 0) # impute numeric features
+      if(sum(Mask1[, in_c]) > 0 & as.scalar(ctypes[, in_c]) == 0) # impute numeric features
       {
         # construct column selector
         selX = matrix(1,1,ncol(dX))
@@ -110,16 +110,16 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3,
         test_Y = slice2a[,in_c]
 
         # learn a regression line
-        beta = lm(X=train_X, y=train_Y, verbose=FALSE, icpt=1, reg = 1e-7, tol = 1e-7);
+        beta = lm(X=train_X, y=train_Y, verbose=FALSE, intercept=1, reg = 1e-7, tol = 1e-7);
         # predicting missing values 
-        pred = lmPredict(X=test_X, B=beta, ytest= matrix(0,1,1), icpt=1, verbose = FALSE)
+        pred = lmPredict(X=test_X, B=beta, Ytest= matrix(0,1,1), intercept=1, verbose = FALSE)
         # imputing missing column values (assumes Mask_Filled being 0/1-matrix)
         R = removeEmpty(target=Mask_Filled[, in_c] * seq(1,n), margin="rows");
         # TODO modify removeEmpty to return zero row and n columns
         if(!(nrow(R) == 1 & as.scalar(R[1,1] == 0))) 
           Mask_Filled[,in_c] = table(R, 1, pred, n, 1);
       }
-      else if (sum(Mask1[, in_c]) > 0 & as.scalar(cMask[, in_c]) != 0) # impute categorical features
+      else if (sum(Mask1[, in_c]) > 0 & as.scalar(ctypes[, in_c]) != 0) # impute categorical features
       {
         # construct column selector
         selX = matrix(1,1,ncol(dX))
@@ -141,8 +141,8 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3,
           prob = matrix(1, nrow(test_Y), 1)
         }
         else {
-          beta = multiLogReg(X=train_X, Y=train_Y, icpt = 1, tol = 0.0001, reg = 0.00001, 
-            maxi = 20, maxii=20, verbose=FALSE)
+          beta = multiLogReg(X=train_X, Y=train_Y, intercept = 1, tol = 0.0001, reg = 0.00001,
+            maxIter = 20, maxInnerIter=20, verbose=FALSE)
           # predicting missing values 
           [prob, pred, acc] = multiLogRegPredict(X=test_X, B=beta, Y = test_Y)
           prob = rowMaxs(prob)

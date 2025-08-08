@@ -28,22 +28,22 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
-def getAccuracy(y: Matrix,
-                yhat: Matrix,
+def getAccuracy(Y: Matrix,
+                Ytest: Matrix,
                 **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
      This builtin function compute the weighted and simple accuracy for given predictions
     
     
     
-    :param y: Ground truth (Actual Labels)
-    :param yhat: Predictions (Predicted labels)
+    :param Y: Predictions (Predicted labels)
+    :param Ytest: Ground truth (Actual Labels)
     :param isWeighted: Flag for weighted or non-weighted accuracy calculation
     :return: accuracy of the predicted labels
     """
 
-    params_dict = {'y': y, 'yhat': yhat}
+    params_dict = {'Y': Y, 'Ytest': Ytest}
     params_dict.update(kwargs)
-    return Matrix(y.sds_context,
+    return Matrix(Y.sds_context,
         'getAccuracy',
         named_input_nodes=params_dict)

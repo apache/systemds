@@ -34,9 +34,9 @@ ytrain = y[1:N,];
 Xtest = X[(N+1):nrow(X),];
 ytest = y[(N+1):nrow(X),];
 
-params = list("icpt", "reg", "maxii");
+params = list("intercept", "reg", "maxInnerIter");
 paramRanges = list(seq(0,2),10^seq(1,-6), 10^seq(1,3));
-trainArgs = list(X=Xtrain, Y=ytrain, icpt=-1, reg=-1, tol=1e-9, maxi=100, maxii=-1);
+trainArgs = list(X=Xtrain, Y=ytrain, intercept=-1, reg=-1, tol=1e-9, maxIter=100, maxInnerIter=-1);
 [B1,opt] = gridSearch(X=Xtrain, y=ytrain, train="multiLogReg", predict="accuracy", numB=(ncol(X)+1)*(nc-1),
   params=params, paramValues=paramRanges, trainArgs=trainArgs, verbose=TRUE);
 B2 = multiLogReg(X=Xtrain, Y=ytrain, verbose=TRUE);

@@ -28,10 +28,10 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
-def bandit(X_train: Matrix,
-           Y_train: Matrix,
-           X_test: Matrix,
-           Y_test: Matrix,
+def bandit(X: Matrix,
+           Y: Matrix,
+           Xtest: Matrix,
+           Ytest: Matrix,
            metaList: List,
            evaluationFunc: str,
            evalFunHp: Matrix,
@@ -48,10 +48,10 @@ def bandit(X_train: Matrix,
     
     
     
-    :param X_train: ---
-    :param Y_train: ---
-    :param X_test: ---
-    :param Y_test: ---
+    :param X: ---
+    :param Y: ---
+    :param Xtest: ---
+    :param Ytest: ---
     :param metaList: ---
     :param evaluationFunc: ---
     :param evalFunHp: ---
@@ -64,20 +64,19 @@ def bandit(X_train: Matrix,
     :param cv: ---
     :param cvk: ---
     :param verbose: ---
-    :param output: ---
     :return: ---
     """
 
-    params_dict = {'X_train': X_train, 'Y_train': Y_train, 'X_test': X_test, 'Y_test': Y_test, 'metaList': metaList, 'evaluationFunc': evaluationFunc, 'evalFunHp': evalFunHp, 'lp': lp, 'lpHp': lpHp, 'primitives': primitives, 'param': param, 'baseLineScore': baseLineScore, 'cv': cv}
+    params_dict = {'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'metaList': metaList, 'evaluationFunc': evaluationFunc, 'evalFunHp': evalFunHp, 'lp': lp, 'lpHp': lpHp, 'primitives': primitives, 'param': param, 'baseLineScore': baseLineScore, 'cv': cv}
     params_dict.update(kwargs)
     
-    vX_0 = Frame(X_train.sds_context, '')
-    vX_1 = Matrix(X_train.sds_context, '')
-    vX_2 = Matrix(X_train.sds_context, '')
-    vX_3 = Frame(X_train.sds_context, '')
+    vX_0 = Frame(X.sds_context, '')
+    vX_1 = Matrix(X.sds_context, '')
+    vX_2 = Matrix(X.sds_context, '')
+    vX_3 = Frame(X.sds_context, '')
     output_nodes = [vX_0, vX_1, vX_2, vX_3, ]
 
-    op = MultiReturn(X_train.sds_context, 'bandit', output_nodes, named_input_nodes=params_dict)
+    op = MultiReturn(X.sds_context, 'bandit', output_nodes, named_input_nodes=params_dict)
 
     vX_0._unnamed_input_nodes = [op]
     vX_1._unnamed_input_nodes = [op]

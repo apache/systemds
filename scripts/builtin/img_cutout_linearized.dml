@@ -23,14 +23,14 @@
 #
 # INPUT:
 # ---------------------------------------------------------------------------------------------
-# img_in      Input images as linearized 2D matrix with top left corner at [1, 1]
+# img         Input images as linearized 2D matrix with top left corner at [1, 1]
 # x           Column index of the top left corner of the rectangle (starting at 1)
 # y           Row index of the top left corner of the rectangle (starting at 1)
-# width       Width of the rectangle (must be positive)
-# height      Height of the rectangle (must be positive)
-# fill_value   The value to set for the rectangle
-# s_cols      Width of a single image
-# s_rows      Height of a single image
+# w           Width of the rectangle (must be positive)
+# h      Height of the rectangle (must be positive)
+# value       The value to set for the rectangle
+# sW          Width of a single image
+# sH          Height of a single image
 # ---------------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -38,33 +38,33 @@
 # img_out     Output images as linearized 2D matrix with top left corner at [1, 1]
 # ------------------------------------------------------------------------------------------
 
-m_img_cutout_linearized = function(Matrix[Double] img_in, Integer x, Integer y, Integer width, Integer height, 
-  Double fill_value, Integer s_cols, Integer s_rows) return (Matrix[Double] img_out) {
-  rows = nrow(img_in) 
-  cols = ncol(img_in) 
+m_img_cutout_linearized = function(Matrix[Double] img, Integer x, Integer y, Integer w, Integer h,
+  Double value, Integer sW, Integer sH) return (Matrix[Double] img_out) {
+  rows = nrow(img)
+  cols = ncol(img)
 
-  if (width < 1 | height < 1) {
-    print("Invalid width or height. Returning input")
-    img_out = img_in
+  if (w < 1 | h < 1) {
+    print("Invalid w or h. Returning input")
+    img_out = img
   } else {
 
     start_x = max(1, x)
     start_y = max(1, y)
 
-    end_x = start_x + width - 1
-    end_x = min(s_cols, end_x)
+    end_x = start_x + w - 1
+    end_x = min(sW, end_x)
 
-    end_y = start_y + height - 1
-    end_y = min(s_rows, end_y)
+    end_y = start_y + h - 1
+    end_y = min(sH, end_y)
 
-    img_out = img_in
+    img_out = img
 
     # Iterate through each row of the rectangular region
     for (i in start_y: end_y){
-      start_idx = (i-1) * s_cols + start_x
-      end_idx = (i-1) * s_cols + end_x
+      start_idx = (i-1) * sW + start_x
+      end_idx = (i-1) * sW + end_x
 
-      img_out[, start_idx:end_idx] = matrix(fill_value, rows=rows, cols=(end_x-start_x+1))
+      img_out[, start_idx:end_idx] = matrix(value, rows=rows, cols=(end_x-start_x+1))
     }
   }
 }

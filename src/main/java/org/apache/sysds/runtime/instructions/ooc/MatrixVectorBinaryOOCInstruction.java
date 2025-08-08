@@ -95,6 +95,7 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
             int chunk_len = end_row - i;
             MatrixBlock vectorChunk = new MatrixBlock(chunk_len, 1, false);
             vector.copy(i, end_row - 1, 0, 0, vectorChunk, true);
+            vectorChunk.recomputeNonZeros();
 
             partitionedVector.put(key, vectorChunk);
         }

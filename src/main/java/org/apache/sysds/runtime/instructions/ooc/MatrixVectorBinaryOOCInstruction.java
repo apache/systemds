@@ -116,17 +116,17 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
                     HashMap<Long, MatrixBlock> tmpResult = new  HashMap<>();
 
                     while((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
-                        IndexedMatrixValue tmpOut = new IndexedMatrixValue();
+//                        IndexedMatrixValue tmpOut = new IndexedMatrixValue();
                         MatrixBlock matrixBlock = (MatrixBlock) tmp.getValue();
                         long rowIndex = tmp.getIndexes().getRowIndex();
                         long colIndex = tmp.getIndexes().getColumnIndex();
 
-                        MatrixBlock vectorSlice = partitionedVector.get(rowIndex);
+                        MatrixBlock vectorSlice = partitionedVector.get(colIndex);
                         System.out.println("vectorSlice: " + vectorSlice);
 //                        System.out.println("tmp: \n" + tmp);
-//                        MatrixBlock partialResult = matrixBlock.aggregateBinaryOperations(matrixBlock, vectorSlice,
-//                                new MatrixBlock(), (AggregateBinaryOperator) _optr);
-//                        System.out.println("partialResult: " + partialResult);
+                        MatrixBlock partialResult = matrixBlock.aggregateBinaryOperations(matrixBlock, vectorSlice,
+                                new MatrixBlock(), (AggregateBinaryOperator) _optr);
+                        System.out.println("partialResult: " + partialResult);
 
 //                        aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op)
 //                        MatrixBlock partialResult = MatrixBlock.aggregateBinaryOperations();

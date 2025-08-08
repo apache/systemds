@@ -84,26 +84,23 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
         }
         for (int i=0; i<vector.getNumRows(); i+=blksize) {
             long key = (long) (i/blksize) + 1; // the key starts at 1
-            System.out.println("i + blksize + 1: " + i + blksize + 1 );
-            System.out.println("vector.getNumRows() - 1: " + vector.getNumRows() + 1);
-            MatrixBlock vectorSlice = vector.slice(i, Math.min(i + blksize - 1, vector.getNumRows() - 1));
-            System.out.println("vectorSlices: ");
-            System.out.println(vectorSlice);
-            partitionedVector.put(key, vectorSlice);
+//            System.out.println("i + blksize + 1: " + i + blksize + 1 );
+//            System.out.println("vector.getNumRows() - 1: " + vector.getNumRows() + 1);
+//            MatrixBlock vectorSlice = vector.slice(i, Math.min(i + blksize - 1, vector.getNumRows() - 1));
+//            System.out.println("vectorSlices: ");
+//            System.out.println(vectorSlice);
+//            partitionedVector.put(key, vectorSlice);
+
+            int end_row = Math.min(i + blksize, vector.getNumRows());
+            int chunk_len = end_row - i;
+            MatrixBlock vectorChunk = new MatrixBlock(chunk_len, 1, false);
+            vector.copy(i, end_row - 1, 0, 0, vectorChunk, true);
+
+            partitionedVector.put(key, vectorChunk);
         }
         System.out.println("partitionedVector: \n" + partitionedVector);
 
         LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
-
-        // --- THE WORKAROUND: Wait for the input stream to be ready ---
-//        LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
-//        int retries = 0;
-//        while (qIn == null && retries < 100) { // Poll up to 10 seconds
-//            try { Thread.sleep(100); } catch (InterruptedException e) {}
-//            qIn = min.getStreamHandle();
-//            retries++;
-//        }
-        // --- END OF WORKAROUND ---
 
         LocalTaskQueue<IndexedMatrixValue> qOut = new LocalTaskQueue<>();
         ec.getMatrixObject(output).setStreamHandle(qOut);
@@ -126,9 +123,9 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
                         MatrixBlock vectorSlice = partitionedVector.get(rowIndex);
                         System.out.println("vectorSlice: " + vectorSlice);
 //                        System.out.println("tmp: \n" + tmp);
-                        MatrixBlock partialResult = matrixBlock.aggregateBinaryOperations(matrixBlock, vectorSlice,
-                                new MatrixBlock(), (AggregateBinaryOperator) _optr);
-                        System.out.println("partialResult: " + partialResult);
+//                        MatrixBlock partialResult = matrixBlock.aggregateBinaryOperations(matrixBlock, vectorSlice,
+//                                new MatrixBlock(), (AggregateBinaryOperator) _optr);
+//                        System.out.println("partialResult: " + partialResult);
 
 //                        aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op)
 //                        MatrixBlock partialResult = MatrixBlock.aggregateBinaryOperations();

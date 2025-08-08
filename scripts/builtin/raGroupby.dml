@@ -37,170 +37,142 @@
 m_raGroupby = function (Matrix[Double] X, Integer col, String method)
   return (Matrix[Double] Y)
 {
-  if (method == "nested-loop") {
-    # Extract and sort unique values from the specified column (1-based index)
-    uniqueValues = unique(X[, col])
-    order_uniqueValues = order(target = uniqueValues, by = 1);
-
-    # Calcute the number of groups
-    numGroups = nrow(uniqueValues)
-
-    # Determine the maximum number of rows in any group
+    if (method == "nested-loop") {
+    # Extract and sort unique group values from the specified column (1-based index)
+    groupsUnique = unique(X[, col])
+    groupsUniqueOrdered = order(target = groupsUnique, by = 1)
+    numGroups = nrow(groupsUnique)
     maxRowsInGroup = max(table(X[,col],1));
 
-    # Define a zero matrix to put the group data into
-    Y = matrix(0,numGroups,maxRowsInGroup*(ncol(X)-1)+1)
-
-    # Put the ordered uniqueValues into first column of Y as group_id
-    Y[,1] = uniqueValues
-
-    # save the initial order of the groups in Y
-    Yindexes = order(target = Y, by = 1, index.return = TRUE)
-
-    # order Y by the groups increasing
+    # Define a zero output matrix, save the initial order of the groups, and sort increasingly
+    Y = matrix(0, numGroups, maxRowsInGroup*(ncol(X) - 1) + 1)
+    Y[,1] = groupsUnique
+    indicesY = order(target = Y, by = 1, index.return = TRUE)
     Y = order(target = Y, by = 1, decreasing = FALSE, index.return = FALSE)
 
-    # order the initial matrix
-    Xindexes = order(target = X, by = col, index.return = TRUE)
+    # Order the input matrix by the grouping column
+    indicesX = order(target = X, by = col, index.return = TRUE)
     X = order(target = X, by = col, decreasing = FALSE, index.return = FALSE)
 
-    # the amount of unique groups that are remaining
-    restingGroups = nrow(uniqueValues)
-
-    # intial group to copy the values into Y
-    Ypos = 1
-
-    # start positon in the row final matrix
-    YrowStart = 1
+    currentGroupX = 1
+    currentGroupY = 1
     i = 1
 
-    #loop over the initial matrix
-    while(restingGroups > 0){
+    # Iterate over the input matrix
+    while (numGroups > 0) {
+        currentGroup = as.scalar(Y[currentGroupX,1])
+        nRowsToCopy = 0
 
-        currentGroup = as.scalar(Y[Ypos,1])
-
-        # amount of rows that need to be copied
-        amountRows = 0
-
-        # find the rows for the current group
-        GROUP = 1
-        while(GROUP > 0){
-            # break if there are no more row left in X
-            if(i > nrow(X)){
-                GROUP = 0
+        # Find the rows for the current group
+        group = 1
+        while (group > 0) {
+            # Break if there are no more rows left in X
+            if (i > nrow(X)) {
+                group = 0
             }
-            # check if the row belongs to the current group
-            else if(as.scalar(X[i, col]) == currentGroup){
-                amountRows = amountRows + 1
+            # Check if the row belongs to the current group
+            else if (as.scalar(X[i, col]) == currentGroup) {
+                nRowsToCopy = nRowsToCopy + 1
                 i = i + 1
             }
-            # break if the row does not belong to the current group
-            else{
-               GROUP = 0
-            }
-        }
-
-        # copy the values into the final matrix
-        if (amountRows > 0){
-            # create a matrix of the row that should be copied without the group column
-            YrowEnd = YrowStart + amountRows - 1
-
-            # case selected column is first column
-            if (col == 1){
-                newMatrix = X[YrowStart:YrowEnd, (col+1):ncol(X)]
-            }
-            # case selected column is last column
-            else if (col == ncol(X)) {
-                newMatrix = X [YrowStart:YrowEnd, 1:col-1]
-            }
-            # normal case
+            # Break if the row does not belong to the current group
             else {
-                newMatrix = cbind(X[YrowStart:YrowEnd, 1:(col-1)], X[YrowStart:YrowEnd, (col+1):ncol(X)])
+               group = 0
             }
-
-            # flatten the new row
-            newRow = matrix(newMatrix, rows = 1, cols = nrow(newMatrix) * ncol(newMatrix))
-            newRowColumns = amountRows * (ncol(X)-1)
-
-            # add the new row into Y at the current group
-            Y[Ypos, 2: (newRowColumns + 1)] = newRow
         }
 
-        # continue with the next group
-        Ypos = Ypos + 1
-        YrowStart = YrowStart + amountRows
-        restingGroups = restingGroups - 1
+        # Copy the values into the output matrix
+        if (nRowsToCopy > 0) {
+            nRowsCurrentGroup = currentGroupY + nRowsToCopy - 1
+
+            # 1. Grouping column is the first column
+            if (col == 1) {
+                newMatrix = X[currentGroupY:nRowsCurrentGroup, (col+1):ncol(X)]
+            }
+            # 2. Grouping column is the last column
+            else if (col == ncol(X)) {
+                newMatrix = X [currentGroupY:nRowsCurrentGroup, 1:col-1]
+            }
+            # 3. Grouping column has an intermediate position
+            else {
+                newMatrix = cbind(X[currentGroupY:nRowsCurrentGroup, 1:(col-1)], X[currentGroupY:nRowsCurrentGroup, (col+1):ncol(X)])
+            }
+
+            # Flatten the new row
+            newRow = matrix(newMatrix, rows = 1, cols = nrow(newMatrix) * ncol(newMatrix))
+            newRowColIdx = nRowsToCopy * (ncol(X)-1)
+
+            # Add the new row into Y at the current group
+            Y[currentGroupX, 2: (newRowColIdx + 1)] = newRow
+        }
+
+        # Continue with the next group
+        currentGroupX = currentGroupX + 1
+        currentGroupY = currentGroupY + nRowsToCopy
+        numGroups = numGroups - 1
     }
 
-    #restore the initial order of X
-    X = cbind(X, Xindexes)
-    ncol_X = ncol(X)
-    X = order(target = X, by= ncol_X)
-    X = X[, 1:ncol_X-1]
+    # Restore the initial order of X
+    X = cbind(X, indicesX)
+    nColX = ncol(X)
+    X = order(target = X, by= nColX)
+    X = X[, 1:nColX-1]
 
-    #restore the initial order of Y
-    Y = cbind(Y, Yindexes)
-    ncol_Y = ncol(Y)
-    Y = order(target = Y, by= ncol_Y)
-    Y = Y[, 1:ncol_Y-1]
-
+    # Restore the initial order of Y
+    Y = cbind(Y, indicesY)
+    nColY = ncol(Y)
+    Y = order(target = Y, by= nColY)
+    Y = Y[, 1:nColY-1]
   }
+
   else if (method == "permutation-matrix") {
     # Extract the grouping column and create unique groups
     key = X[,col]
     keyUnique = unique(X[, col])
     numGroups = nrow(keyUnique)
-
-    # Determine the maximum number of rows in any group
     maxRowsInGroup = max(table(X[,col],1))
 
-    # calculate the frequency of each group
+    # Calculate the frequency of each group
     freqPerKey = table(key, 1)
     freqPerKey = removeEmpty(target = freqPerKey, margin = "rows")
-    freqPerKeyIndexes = order(target = keyUnique, by = 1, index.return = TRUE)
+    freqPerKeyIndices = order(target = keyUnique, by = 1, index.return = TRUE)
 
-    # match the length of freqPerKey to key_uniqe and sort it accordingly
-    freqPerKey = cbind(freqPerKey, freqPerKeyIndexes)
-    ncolFpk = ncol(freqPerKey)
-    freqPerKey = order(target = freqPerKey, by= ncolFpk)
-    freqPerKey = freqPerKey[, 1:ncolFpk-1]
+    # Match the length of freqPerKey to keyUnique and sort it accordingly
+    freqPerKey = cbind(freqPerKey, freqPerKeyIndices)
+    nColFpk = ncol(freqPerKey)
+    freqPerKey = order(target = freqPerKey, by= nColFpk)
+    freqPerKey = freqPerKey[, 1:nColFpk-1]
     freqPerKey = t(freqPerKey)
 
-    # calculate the longest row in Y, which is the biggest key in X
-    longestRowY = maxRowsInGroup*(ncol(X)-1)+1
-    biggestKey = max(freqPerKey)
+    # Find the group with the most values
+    groupMaxVal = maxRowsInGroup*(ncol(X)-1)+1
+    groupMaxValKey = max(freqPerKey)
 
-    # caclulate the amount of rows that need padding and the amount of padding per key
-    biggestKeySeq = matrix(biggestKey, nrow(freqPerKey), ncol(freqPerKey))
-    missingPadding = biggestKeySeq - freqPerKey
+    # Calculate the amount of rows that need padding and the amount of padding per key
+    groupMaxValKeySeq = matrix(groupMaxValKey, nrow(freqPerKey), ncol(freqPerKey))
+    missingPadding = groupMaxValKeySeq - freqPerKey
     amountOfZeroRows = sum(missingPadding)
 
-    # case padding is needed
-    if (amountOfZeroRows > 0){
+    # 1. Padding is required
+    if (amountOfZeroRows > 0) {
         missingPadding = t(missingPadding)
 
-        # remove the keys that dont need padding
-        removemask = (missingPadding != 0)
+        # Remove the keys that dont need padding
+        removeMask = (missingPadding != 0)
         missingPadding = cbind(keyUnique, missingPadding)
-        missingPadding = removeEmpty(target = missingPadding, margin = "rows", select = removemask)
+        missingPadding = removeEmpty(target = missingPadding, margin = "rows", select = removeMask)
 
-        # save the keys that need padding
+        # Keys that need padding and padding length per group
         keysPadding = missingPadding[,1]
-
-        # save the amount of padding per group
         missingPadding = missingPadding[,2]
-
         repeatKeys = matrix(0, rows=amountOfZeroRows, cols=1)
 
-        # uses a loop to generate the repeting keys
-        # loop to heap space problem with larger data sets
-
-        #start index for the repeatKeys
+        # Generate the repeating keys
         repeatKeysIdxS = 1
 
-        for(i in 1:nrow(missingPadding)) {
+        for (i in 1:nrow(missingPadding)) {
            repeat_count = as.scalar(missingPadding[i,1])
-           if(repeat_count > 0){
+           if (repeat_count > 0) {
               temp = matrix(as.scalar(keysPadding[i, 1]), rows=repeat_count, cols = 1)
               repeatKeysIdxE = repeatKeysIdxS + repeat_count - 1
               repeatKeys[repeatKeysIdxS:repeatKeysIdxE, 1] = temp
@@ -208,85 +180,87 @@ m_raGroupby = function (Matrix[Double] X, Integer col, String method)
            }
         }
 
-        # combine the keys that need padding with the actual padding
+        # Combine the keys that need padding with the actual padding
         padding = matrix(0, rows = nrow(repeatKeys), cols = 1)
         padding = cbind(repeatKeys, padding)
 
-        # extend the existing keys to a second column to match the padded keys
+        # Extend the existing keys to a second column to match the padded keys
         key = key %*% matrix(1, rows = 1, cols = 2)
 
-        # combine the keys with the padded keys and sort them increasingly
+        # Combine the keys with the padded keys and sort them increasingly
         tempY = rbind(key, padding)
         tempY = order(target = tempY, by = 1, decreasing = FALSE, index.return = FALSE)
 
-        # remove the padded rows and save the indexes of the combined keys for the permutation matrix
+        # Remove the padded rows and save the Indices of the combined keys for the permutation matrix
         paddedRows = tempY[, 2]
-        tempYindexes = order(target = tempY, by = 1, decreasing = FALSE, index.return = TRUE)
-        tempYindexes = removeEmpty(target = tempYindexes, margin = "rows", select = (paddedRows!=0))
+        tempIndicesY = order(target = tempY, by = 1, decreasing = FALSE, index.return = TRUE)
+        tempIndicesY = removeEmpty(target = tempIndicesY, margin = "rows", select = (paddedRows!=0))
 
-        # create the permutation matrix by using the indexes of the combined keys
-        P = table(seq(1, nrow(X)), tempYindexes)
+        # Create the permutation matrix by using the Indices of the combined keys
+        P = table(seq(1, nrow(X)), tempIndicesY)
 
-        # order the initial matrix to match the sorted keys with padding
-        Xindexes = order(target = X, by = col, index.return = TRUE)
+        # Order the initial matrix to match the sorted keys with padding
+        indicesX = order(target = X, by = col, index.return = TRUE)
+        X = order(target = X, by = col, decreasing = FALSE, index.return = FALSE)
         X = order(target = X, by = col, decreasing = FALSE, index.return = FALSE)
 
-        # perform the matrix multiplication
+        # Perform the matrix multiplication
         tempY = t(P) %*% X
     }
-    # case no padding is needed
-    else{
+
+    # 2. Padding is not required
+    else {
         tempY = X
         tempY = order(target = tempY, by = col, decreasing = FALSE, index.return = FALSE)
     }
 
     # Remove the selected column from tempY
-    if( col == 1 ) {
+    if (col == 1) {
         tempY = tempY[, col+1:ncol(tempY)]
     }
-    else if( col == ncol(X) ) {
+    else if (col == ncol(X)) {
         tempY = tempY[, 1:col-1]
     }
-    else{
+    else {
         tempY = cbind(tempY[, 1:col-1],tempY[, col+1:ncol(tempY)])
     }
 
-    # Set value of final output
-    Y = matrix(0, rows=numGroups, cols=longestRowY)
+    # Set the value of the final output
+    Y = matrix(0, rows=numGroups, cols=groupMaxVal)
     Y[,1] = keyUnique
 
-    # The permutation matrix creates a structure where each group's data
-    # may not fill exactly maxRowsInGroup rows.
-    # If needed, we need to pad to the expected size first.
+    # Each group's data may not fill exactly maxRowsInGroup rows
+    # If needed, we need to pad to the expected size first
     expectedRows = numGroups * maxRowsInGroup
     actualRows = nrow(tempY)
 
-    if(actualRows < expectedRows) {
+    if (actualRows < expectedRows) {
       # Pad tempY with zeros to match expected structure
-      tempYpadded = matrix(0, rows=expectedRows, cols=ncol(tempY))
-      tempYpadded[1:actualRows,] = tempY
-    } else {
-      tempYpadded = tempY
+      tempYPadded = matrix(0, rows=expectedRows, cols=ncol(tempY))
+      tempYPadded[1:actualRows,] = tempY
+    }
+    else {
+      tempYPadded = tempY
     }
 
-    # save the initial order of the groups in Y and order Y to match the sorted tempYpadded
-    Yindexes = order(target = Y, by = 1, index.return = TRUE)
+    # Save the initial order of the groups in Y and order Y to match the sorted tempYPadded
+    indicesY = order(target = Y, by = 1, index.return = TRUE)
     Y = order(target = Y, by = 1, decreasing = FALSE, index.return = FALSE)
 
-    # copy the values into Y
-    Y[,2:ncol(Y)] = matrix(tempYpadded, rows=numGroups, cols=longestRowY-1)
+    # Copy the values into Y
+    Y[,2:ncol(Y)] = matrix(tempYPadded, rows=numGroups, cols=groupMaxVal-1)
 
-    #restore the initial order of X
-    X = cbind(X, Xindexes)
-    ncol_X = ncol(X)
-    X = order(target = X, by= ncol_X)
-    X = X[, 1:ncol_X-1]
+    # Restore the initial order of X
+    X = cbind(X, indicesX)
+    nColX = ncol(X)
+    X = order(target = X, by= nColX)
+    X = X[, 1:nColX-1]
 
-    #restore the initial order of Y
-    Y = cbind(Y, Yindexes)
-    ncol_Y = ncol(Y)
-    Y = order(target = Y, by= ncol_Y)
-    Y = Y[, 1:ncol_Y-1]
+    # Restore the initial order of Y
+    Y = cbind(Y, indicesY)
+    nColY = ncol(Y)
+    Y = order(target = Y, by= nColY)
+    Y = Y[, 1:nColY-1]
   }
 }
 

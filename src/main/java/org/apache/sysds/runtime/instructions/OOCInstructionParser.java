@@ -53,6 +53,7 @@ public class OOCInstructionParser extends InstructionParser {
 			case Binary:
 				return BinaryOOCInstruction.parseInstruction(str);
 			case AggregateBinary:
+			case MAPMM:
 				return MatrixVectorBinaryOOCInstruction.parseInstruction(str);
 			
 			default:

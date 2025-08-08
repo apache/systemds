@@ -4,6 +4,7 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.MatrixWriter;
 import org.apache.sysds.runtime.io.MatrixWriterFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
@@ -13,15 +14,17 @@ import org.apache.sysds.test.functions.binary.matrix.MatrixVectorTest;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.HashMap;
 
 public class MatrixVectorBinaryMultiplicationTest extends AutomatedTestBase {
     private final static String TEST_NAME1 = "MatrixVectorMultiplication";
     private final static String TEST_DIR = "functions/ooc/";
     private final static String TEST_CLASS_DIR = TEST_DIR + MatrixVectorTest.class.getSimpleName() + "/";
     private final static double eps = 1e-10;
+    private static final String OUTPUT_NAME = "res";
 
-    private final static int rows = 3500;
-    private final static int cols_wide = 1500;
+    private final static int rows = 5000;
+    private final static int cols_wide = 5000;
     private final static int cols_skinny = 500;
 
     private final static double sparsity1 = 0.7;
@@ -87,6 +90,7 @@ public class MatrixVectorBinaryMultiplicationTest extends AutomatedTestBase {
             HDFSTool.writeMetaDataFile(input("x.mtd"), Types.ValueType.FP64,
                     new MatrixCharacteristics(cols, 1, 1000, x_mb.getNonZeros()), Types.FileFormat.BINARY);
 
+//            HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir(OUTPUT_NAME);
 
             boolean exceptionExpected = false;
             runTest(true, exceptionExpected, null, -1);

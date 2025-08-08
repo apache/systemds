@@ -62,7 +62,7 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
         AggregateBinaryOperator ba = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
 
         // TODO: update the OOCType to specialized operation matrix multiplication
-        return new MatrixVectorBinaryOOCInstruction(OOCType.AggregateBinary, ba, in1, in2, out, opcode, str);
+        return new MatrixVectorBinaryOOCInstruction(OOCType.MAPMM, ba, in1, in2, out, opcode, str);
     }
 
     @Override
@@ -156,7 +156,8 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
             throw new DMLRuntimeException(e);
         }
         finally {
-            pool.shutdown();
+//            pool.shutdown();
+            ec.releaseMatrixInput(input1.getName());
         }
     }
 }

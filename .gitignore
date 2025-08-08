@@ -150,4 +150,3 @@ venv/*
 # resource optimization
 scripts/resource/output
 *.pem
-ADDED_Testing/hello.dml

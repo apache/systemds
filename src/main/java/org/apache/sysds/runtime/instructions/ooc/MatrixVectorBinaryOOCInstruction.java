@@ -20,10 +20,12 @@
 package org.apache.sysds.runtime.instructions.ooc;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -37,6 +39,7 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.*;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
@@ -113,7 +116,7 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
                 IndexedMatrixValue tmp = null;
                 try {
 
-                    HashMap<Long, MatrixBlock> tmpResult = new  HashMap<>();
+                    HashMap<Long, MatrixBlock> partialResults = new  HashMap<>();
 
                     while((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
 //                        IndexedMatrixValue tmpOut = new IndexedMatrixValue();
@@ -128,16 +131,23 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
                                 new MatrixBlock(), (AggregateBinaryOperator) _optr);
                         System.out.println("partialResult: " + partialResult);
 
-//                        aggregateBinaryOperations(matBlock1, matBlock2, new MatrixBlock(), ab_op)
-//                        MatrixBlock partialResult = MatrixBlock.aggregateBinaryOperations();
-//                        tmpOut.set(tmp.getIndexes(),
-//                                tmp.getValue().binaryOperations();
-//                        qOut.enqueueTask(tmpOut);
+                        MatrixBlock currAgg = partialResults.get(rowIndex);
+                        if (currAgg == null) {
+                            partialResults.put(rowIndex, partialResult);
+                        } else {
+                            currAgg.binaryOperationsInPlace(InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString()), partialResult);
+                        }
+
                     }
-//                    qOut.closeInput();
+                    for (Map.Entry<Long, MatrixBlock> entry : partialResults.entrySet()) {
+                        MatrixIndexes outIndexes = new MatrixIndexes(entry.getKey(), 1L);
+                        qOut.enqueueTask(new IndexedMatrixValue(outIndexes, entry.getValue()));
+                    }
                 }
                 catch(Exception ex) {
                     throw new DMLRuntimeException(ex);
+                } finally {
+                    qOut.closeInput();
                 }
             });
 
@@ -145,8 +155,8 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
         } catch (ExecutionException | InterruptedException e) {
             throw new DMLRuntimeException(e);
         }
-//        finally {
-//            pool.shutdown();
-//        }
+        finally {
+            pool.shutdown();
+        }
     }
 }

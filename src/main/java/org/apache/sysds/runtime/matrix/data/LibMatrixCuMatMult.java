@@ -25,7 +25,6 @@ import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
 import static jcuda.jcusparse.cusparseSpMMAlg.CUSPARSE_SPMM_ALG_DEFAULT;
-import static org.apache.sysds.runtime.instructions.gpu.context.CSRPointer.getCSRMatrixInfo;
 import static org.apache.sysds.runtime.instructions.gpu.context.CSRPointer.transposeCSR;
 
 import jcuda.Pointer;

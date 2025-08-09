@@ -31,9 +31,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
-import java.util.Arrays;
-
-import static org.junit.Assert.fail;
 
 @net.jcip.annotations.NotThreadSafe
 public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
@@ -147,6 +144,7 @@ public class FederatedL2SVMPlanningTest extends AutomatedTestBase {
 	}
 
 
+	@SuppressWarnings("unused")
 	private void writeStandardMatrix(String matrixName, long seed, int numRows, String privacyConstraints){
 		double[][] matrix = getRandomMatrix(numRows, cols, 0, 1, 1, seed);
 		writeStandardMatrix(matrixName, numRows, matrix, privacyConstraints);

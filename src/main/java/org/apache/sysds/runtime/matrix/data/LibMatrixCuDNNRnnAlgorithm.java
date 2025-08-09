@@ -219,6 +219,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 		return LibMatrixCUDA.toInt(numScalars);
 	}
 	
+	@SuppressWarnings("deprecation")
 	private static cudnnFilterDescriptor allocateFilterDescriptor(int numWeights) {
 		cudnnFilterDescriptor filterDesc = new cudnnFilterDescriptor();
 		cudnnCreateFilterDescriptor(filterDesc);
@@ -238,6 +239,7 @@ public class LibMatrixCuDNNRnnAlgorithm implements java.lang.AutoCloseable {
 	}
 
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public void close() {
 		if(dropoutDesc != null)

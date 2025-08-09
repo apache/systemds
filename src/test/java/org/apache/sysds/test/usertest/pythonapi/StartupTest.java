@@ -68,6 +68,7 @@ public class StartupTest {
 		System.setSecurityManager(sm);
 	}
 
+	@SuppressWarnings("unused")
 	private void assertLogMessages(String... expectedMessages) {
 		assertLogMessages(true, expectedMessages);
 	}

@@ -374,15 +374,16 @@ public class FederatedData {
 	}
 
 	public static class GetPrivacyConstraints extends FederatedUDF {
+		private static final long serialVersionUID = 1637852940793579590L;
 		private final String filename;
 
-        public GetPrivacyConstraints(String filename) {
-            super(new long[] { });  // Pass empty ID array to parent constructor as this is a static class
+		public GetPrivacyConstraints(String filename) {
+			super(new long[] { });  // Pass empty ID array to parent constructor as this is a static class
 			this.filename = filename;
-        }
-    
-        @Override
-        public FederatedResponse execute(ExecutionContext ec, Data... data) {
+		}
+	
+		@Override
+		public FederatedResponse execute(ExecutionContext ec, Data... data) {
 			String privacyConstraints = null;
 			FileSystem fs = null;
 			MetaDataAll mtd = null;
@@ -416,19 +417,19 @@ public class FederatedData {
 			finally {
 				IOUtilFunctions.closeSilently(fs);
 			}
-        }
+		}
 
-        @Override
-        public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
-            String opcode = "fedprivconst"; // Appropriate operation code
-            
-            // Create input LineageItem for the operation
-            LineageItem[] inputs = new LineageItem[] { 
-                new LineageItem(filename) // Create literal LineageItem by passing only the string
-            };
-            
-            // Create appropriate LineageItem (for read operation)
-            return Pair.of(opcode, new LineageItem(opcode, inputs));
-        }
-    }
+		@Override
+		public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+			String opcode = "fedprivconst"; // Appropriate operation code
+			
+			// Create input LineageItem for the operation
+			LineageItem[] inputs = new LineageItem[] { 
+				new LineageItem(filename) // Create literal LineageItem by passing only the string
+			};
+			
+			// Create appropriate LineageItem (for read operation)
+			return Pair.of(opcode, new LineageItem(opcode, inputs));
+		}
+	}
 }

@@ -39,8 +39,6 @@ public class ResNet18GPUTest extends AutomatedTestBase {
 	private static final String TEST_DIR = "gpu/nn/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + ResNet18GPUTest.class.getSimpleName() + "/";
 
-	private static final double eps = Math.pow(10, -10);
-
 	@BeforeClass
 	public static void checkGPU() {
 		boolean gpuAvailable = false;

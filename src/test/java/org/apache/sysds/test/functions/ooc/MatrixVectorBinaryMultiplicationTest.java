@@ -88,13 +88,6 @@ public class MatrixVectorBinaryMultiplicationTest extends AutomatedTestBase {
             fullRScriptName = HOME + TEST_NAME1 + ".R";
             rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
-            //generate actual dataset
-//            double[][] A = getRandomMatrix(rows, cols, 0, 1, sparse?sparsity2:sparsity1, 10);
-//            MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, -1, -1);
-//            writeInputMatrixWithMTD("A", A, true, mc);
-//            double[][] x = getRandomMatrix(cols, 1, 0, 1, 1.0, 10);
-//            mc = new MatrixCharacteristics(cols, 1, -1, cols);
-//            writeInputMatrixWithMTD("x", x, true, mc);
             // 1. Generate the data in-memory as MatrixBlock objects
             double[][] A_data = getRandomMatrix(rows, cols, 0, 1, sparse?sparsity2:sparsity1, 10);
             double[][] x_data = getRandomMatrix(cols, 1, 0, 1, 1.0, 10);
@@ -116,21 +109,22 @@ public class MatrixVectorBinaryMultiplicationTest extends AutomatedTestBase {
             HDFSTool.writeMetaDataFile(input(INPUT_NAME2 + ".mtd"), Types.ValueType.FP64,
                     new MatrixCharacteristics(cols, 1, 1000, x_mb.getNonZeros()), Types.FileFormat.BINARY);
 
-//            HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir(OUTPUT_NAME);
-//            double[][] C1 = readMatrix(output(OUTPUT_NAME), Types.FileFormat.BINARY, rows, cols, 1000, 1000);
-//
-//            double result = 0.0;
-//            for(int i = 0; i < rows; i++) {
-//                double expected = 0.0;
-//                for(int j = 0; j < cols; j++) {
-//                    expected += A_mb.get(i, j) * x_mb.get(j,0);
-//                }
-//                result = C1[i][0];
-//                Assert.assertEquals(expected, result, 1e-10);
-//            }
-
             boolean exceptionExpected = false;
             runTest(true, exceptionExpected, null, -1);
+
+            double[][] C1 = readMatrix(output(OUTPUT_NAME), Types.FileFormat.BINARY, rows, cols, 1000, 1000);
+            double result = 0.0;
+            for(int i = 0; i < rows; i++) { // verify the results with Java
+                double expected = 0.0;
+                for(int j = 0; j < cols; j++) {
+                    expected += A_mb.get(i, j) * x_mb.get(j,0);
+                }
+
+                result = C1[i][0];
+                Assert.assertEquals(expected, result, 1e-10);
+                System.out.println("Expected, result: " + expected + "," + result);
+            }
+
 //            runRScript(true);
 //            compareResultsWithR(eps);
 

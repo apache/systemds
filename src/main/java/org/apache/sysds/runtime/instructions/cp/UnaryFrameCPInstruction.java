@@ -52,6 +52,12 @@ public class UnaryFrameCPInstruction extends UnaryCPInstruction {
 			ec.releaseFrameInput(input1.getName());
 			ec.setFrameOutput(output.getName(), retBlock);
 		}
+		else if (getOpcode().equals(Opcodes.GETCOLNAMES.toString())) {
+			FrameBlock inBlock = ec.getFrameInput(input1.getName());
+			FrameBlock retBlock = inBlock.getColNames();
+			ec.releaseFrameInput(input1.getName());
+			ec.setFrameOutput(output.getName(), retBlock);
+		}
 		else
 			throw new DMLScriptException("Opcode '" + getOpcode() + "' is not a valid UnaryFrameCPInstruction");
 	}

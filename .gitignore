@@ -150,3 +150,7 @@ venv/*
 # resource optimization
 scripts/resource/output
 *.pem
+*.log
+build_log.txt
+*.log
+build_log.txt

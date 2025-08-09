@@ -116,7 +116,7 @@ public class MatrixVectorBinaryMultiplicationTest extends AutomatedTestBase {
                 }
                 result = C1[i][0];
                 Assert.assertEquals(expected, result, 1e-10);
-                System.out.println("Expected, result: " + expected + "," + result);
+//                System.out.println("Expected, result: " + expected + "," + result);
             }
 
         } catch (IOException e) {

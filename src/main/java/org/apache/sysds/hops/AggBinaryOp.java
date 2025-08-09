@@ -241,7 +241,6 @@ public class AggBinaryOp extends MultiThreadedHop {
 						throw new HopsException(this.printErrorLocation() + "Invalid Matrix Mult Method (" + _method + ") while constructing SPARK lops.");
 				}
 			} else if (et == ExecType.OOC) {
-				System.out.println("trying to construct OOC Lops");
 				Lop in1 = getInput().get(0).constructLops();
 				Lop in2 = getInput().get(1).constructLops();
 				int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);

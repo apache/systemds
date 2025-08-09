@@ -189,6 +189,13 @@ public class TensorObject extends CacheableData<TensorBlock> {
 		if( DMLScript.STATISTICS )
 			CacheStatistics.incrementHDFSWrites();
 	}
+	
+	@Override
+	protected long writeStreamToHDFS(String fname, String ofmt, int rep, FileFormatProperties fprop)
+		throws IOException, DMLRuntimeException 
+	{
+		throw new UnsupportedOperationException();
+	}
 
 	@Override
 	protected ValueType[] getSchema() {

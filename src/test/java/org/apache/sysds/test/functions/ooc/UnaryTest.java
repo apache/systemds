@@ -29,7 +29,6 @@ import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.io.MatrixWriter;
 import org.apache.sysds.runtime.io.MatrixWriterFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
@@ -40,13 +39,10 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.HashMap;
-
-import static org.apache.sysds.test.TestUtils.readDMLMatrixFromHDFS;
 
 public class UnaryTest extends AutomatedTestBase {
 
-	private static final String TEST_NAME = "Unary";
+	private static final String TEST_NAME = "UnaryWrite";
 	private static final String TEST_DIR = "functions/ooc/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + UnaryTest.class.getSimpleName() + "/";
 	private static final String INPUT_NAME = "X";
@@ -55,16 +51,17 @@ public class UnaryTest extends AutomatedTestBase {
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		TestConfiguration config = new TestConfiguration(TEST_CLASS_DIR, TEST_NAME);
-		addTestConfiguration(TEST_NAME, config);
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME));
 	}
 
-	/**
-	 * Test the sum of scalar multiplication, "sum(X*7)", with OOC backend.
-	 */
 	@Test
-	public void testUnary() {
+	public void testWriteNoRewrite() {
 		testUnaryOperation(false);
+	}
+	
+	@Test
+	public void testWriteRewrite() {
+		testUnaryOperation(true);
 	}
 	
 	
@@ -116,8 +113,9 @@ public class UnaryTest extends AutomatedTestBase {
 		}
 	}
 
-	private static double[][] readMatrix( String fname, FileFormat fmt, long rows, long cols, int brows, int bcols )
-			throws IOException
+	private static double[][] readMatrix( String fname, FileFormat fmt, 
+		long rows, long cols, int brows, int bcols )
+		throws IOException
 	{
 		MatrixBlock mb = DataConverter.readMatrixFromHDFS(fname, fmt, rows, cols, brows, bcols);
 		double[][] C = DataConverter.convertToDoubleMatrix(mb);

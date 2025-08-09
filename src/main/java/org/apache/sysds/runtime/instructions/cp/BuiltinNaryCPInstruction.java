@@ -91,10 +91,13 @@ public abstract class BuiltinNaryCPInstruction extends CPInstruction
 			return new MatrixBuiltinNaryCPInstruction(
 					new SimpleOperator(Multiply.getMultiplyFnObject()), opcode, str, outputOperand, inputOperands);
 		}
+		else if( opcode.equals(Opcodes.EINSUM.toString()) ) {
+			return new EinsumCPInstruction(null, opcode, str, outputOperand, inputOperands);
+		}
 		else if (OpOpN.EVAL.name().equalsIgnoreCase(opcode)) {
 			return new EvalNaryCPInstruction(null, opcode, str, outputOperand, inputOperands);
 		}
-		
+
 		throw new DMLRuntimeException("Opcode (" + opcode + ") not recognized in BuiltinMultipleCPInstruction");
 	}
 }

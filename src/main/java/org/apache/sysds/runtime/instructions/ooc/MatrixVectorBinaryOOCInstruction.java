@@ -122,7 +122,7 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
             partitionedVector.put(key, vectorChunk);
         }
         System.out.println("partitionedVector: \n" + partitionedVector);
-        ec.releaseMatrixInput(input2.getName());
+//        ec.releaseMatrixInput(input2.getName());
 
         LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
 
@@ -149,37 +149,37 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
 //                        System.out.println("tmp: \n" + tmp);
 
 //                        // method 1
-//                        AggregateOperator sum = new AggregateOperator(0, Plus.getPlusFnObject());
-//                        AggregateBinaryOperator matmult_op = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), sum);
-//                        System.out.println("matmult_op: " + matmult_op.binaryFn);
-//                        System.out.println("_optr: " + _optr);
-//
-//                        // Now, call the operation with the correct, specific operator.
-//                        MatrixBlock partialResult = matrixBlock.aggregateBinaryOperations(matrixBlock, vectorSlice,
-//                                new MatrixBlock(), matmult_op); // (AggregateBinaryOperator) _optr);
-////                        System.out.println("partialResult: " + partialResult);
+                        AggregateOperator sum = new AggregateOperator(0, Plus.getPlusFnObject());
+                        AggregateBinaryOperator matmult_op = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), sum);
+                        System.out.println("matmult_op: " + matmult_op.binaryFn);
+                        System.out.println("_optr: " + _optr);
+
+                        // Now, call the operation with the correct, specific operator.
+                        MatrixBlock partialResult = matrixBlock.aggregateBinaryOperations(matrixBlock, vectorSlice,
+                                new MatrixBlock(), (AggregateBinaryOperator) _optr);
+//                        System.out.println("partialResult: " + partialResult);
 
                         // method 2:
-                        int m = matrixBlock.getNumRows(); // Rows in the matrix block
-                        int n = matrixBlock.getNumColumns(); // Cols in the matrix block
-                        int v_len = vectorSlice.getNumRows(); // Rows in the vector chunk
-
-                        // Sanity check for dimension match
-                        if (n != v_len) {
-                            throw new DMLRuntimeException("Dimension mismatch for direct MM: " + n + " != " + v_len);
-                        }
-
-                        // 2. Create a new block for the partial result
-                        MatrixBlock partialResult = new MatrixBlock(m, 1, false);
-
-                        // 3. Perform the matrix-vector multiplication with explicit loops
-                        for (int i = 0; i < m; i++) { // Iterate over rows of the matrix block
-                            double sum = 0;
-                            for (int k = 0; k < n; k++) { // Iterate over columns (the inner dimension)
-                                sum += matrixBlock.get(i, k) * vectorSlice.get(k, 0);
-                            }
-                            partialResult.set(i, 0, sum);
-                        }
+//                        int m = matrixBlock.getNumRows(); // Rows in the matrix block
+//                        int n = matrixBlock.getNumColumns(); // Cols in the matrix block
+//                        int v_len = vectorSlice.getNumRows(); // Rows in the vector chunk
+//
+//                        // Sanity check for dimension match
+//                        if (n != v_len) {
+//                            throw new DMLRuntimeException("Dimension mismatch for direct MM: " + n + " != " + v_len);
+//                        }
+//
+//                        // 2. Create a new block for the partial result
+//                        MatrixBlock partialResult = new MatrixBlock(m, 1, false);
+//
+//                        // 3. Perform the matrix-vector multiplication with explicit loops
+//                        for (int i = 0; i < m; i++) { // Iterate over rows of the matrix block
+//                            double sum = 0;
+//                            for (int k = 0; k < n; k++) { // Iterate over columns (the inner dimension)
+//                                sum += matrixBlock.get(i, k) * vectorSlice.get(k, 0);
+//                            }
+//                            partialResult.set(i, 0, sum);
+//                        }
                         partialResult.recomputeNonZeros();
                         System.out.println("partialResult: \n"+partialResult);
 

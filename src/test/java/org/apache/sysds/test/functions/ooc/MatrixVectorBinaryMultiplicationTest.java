@@ -46,8 +46,8 @@ public class MatrixVectorBinaryMultiplicationTest extends AutomatedTestBase {
     private static final String INPUT_NAME2 = "v";
     private static final String OUTPUT_NAME = "res";
 
-    private final static int rows = 1000;
-    private final static int cols_wide = 1000;
+    private final static int rows = 5000;
+    private final static int cols_wide = 5000;
     private final static int cols_skinny = 500;
 
     private final static double sparsity1 = 0.7;

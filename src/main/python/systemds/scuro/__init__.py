@@ -39,7 +39,7 @@ from systemds.scuro.representations.lstm import LSTM
 from systemds.scuro.representations.max import RowMax
 from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
 from systemds.scuro.representations.mfcc import MFCC
-from systemds.scuro.representations.multiplication import Multiplication
+from systemds.scuro.representations.hadamard import Hadamard
 from systemds.scuro.representations.optical_flow import OpticalFlow
 from systemds.scuro.representations.representation import Representation
 from systemds.scuro.representations.representation_dataloader import NPY
@@ -52,7 +52,7 @@ from systemds.scuro.representations.swin_video_transformer import SwinVideoTrans
 from systemds.scuro.representations.tfidf import TfIdf
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.wav2vec import Wav2Vec
-from systemds.scuro.representations.window import WindowAggregation
+from systemds.scuro.representations.window_aggregation import WindowAggregation
 from systemds.scuro.representations.word2vec import W2V
 from systemds.scuro.representations.x3d import X3D
 from systemds.scuro.models.model import Model
@@ -94,7 +94,7 @@ __all__ = [
     "RowMax",
     "MelSpectrogram",
     "MFCC",
-    "Multiplication",
+    "Hadamard",
     "OpticalFlow",
     "Representation",
     "NPY",

@@ -23,11 +23,13 @@
 import shutil
 import unittest
 
+import numpy as np
+import copy
 from systemds.scuro.modality.joined import JoinCondition
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
 from systemds.scuro.representations.resnet import ResNet
-from tests.scuro.data_generator import setup_data
+from tests.scuro.data_generator import TestDataLoader, ModalityRandomDataGenerator
 
 from systemds.scuro.dataloader.audio_loader import AudioLoader
 from systemds.scuro.dataloader.video_loader import VideoLoader
@@ -46,16 +48,15 @@ class TestMultimodalJoin(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.test_file_path = "join_test_data"
         cls.num_instances = 4
-        cls.mods = [ModalityType.VIDEO, ModalityType.AUDIO]
+        cls.indices = np.array(range(cls.num_instances))
+        cls.audio_data, cls.audio_md = ModalityRandomDataGenerator().create_audio_data(
+            cls.num_instances, 32000
+        )
 
-        cls.data_generator = setup_data(cls.mods, cls.num_instances, cls.test_file_path)
-
-    @classmethod
-    def tearDownClass(cls):
-        print("Cleaning up test data")
-        shutil.rmtree(cls.test_file_path)
+        cls.video_data, cls.video_md = (
+            ModalityRandomDataGenerator().create_visual_modality(cls.num_instances, 60)
+        )
 
     def test_video_audio_join(self):
         self._execute_va_join()
@@ -91,19 +92,26 @@ class TestMultimodalJoin(unittest.TestCase):
         self._join(audio, video, 2)
 
     def _prepare_data(self, l_chunk_size=None, r_chunk_size=None):
-        video_data_loader = VideoLoader(
-            self.data_generator.get_modality_path(ModalityType.VIDEO),
-            self.data_generator.indices,
-            chunk_size=l_chunk_size,
+        audio = UnimodalModality(
+            TestDataLoader(
+                self.indices,
+                r_chunk_size,
+                ModalityType.AUDIO,
+                copy.deepcopy(self.audio_data),
+                np.float32,
+                copy.deepcopy(self.audio_md),
+            )
         )
-        video = UnimodalModality(video_data_loader)
-
-        audio_data_loader = AudioLoader(
-            self.data_generator.get_modality_path(ModalityType.AUDIO),
-            self.data_generator.indices,
-            r_chunk_size,
+        video = UnimodalModality(
+            TestDataLoader(
+                self.indices,
+                l_chunk_size,
+                ModalityType.VIDEO,
+                copy.deepcopy(self.video_data),
+                np.float32,
+                copy.deepcopy(self.video_md),
+            )
         )
-        audio = UnimodalModality(audio_data_loader)
 
         mel_audio = audio.apply_representation(MelSpectrogram())
 
@@ -114,8 +122,8 @@ class TestMultimodalJoin(unittest.TestCase):
             left_modality.join(
                 right_modality, JoinCondition("timestamp", "timestamp", "<")
             )
-            .apply_representation(ResNet(layer="layer1.0.conv2", model_name="ResNet50"))
-            .window(window_size, "mean")
+            .apply_representation(ResNet(layer="layer1.0.conv2", model_name="ResNet18"))
+            .window_aggregation(window_size, "mean")
             .combine("concat")
         )
 

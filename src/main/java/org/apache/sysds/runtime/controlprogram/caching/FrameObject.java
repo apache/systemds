@@ -296,6 +296,14 @@ public class FrameObject extends CacheableData<FrameBlock>
 	}
 
 	@Override
+	protected long writeStreamToHDFS(String fname, String ofmt, int rep, FileFormatProperties fprop)
+		throws IOException, DMLRuntimeException 
+	{
+		throw new UnsupportedOperationException();
+	}
+
+	
+	@Override
 	protected void writeBlobFromRDDtoHDFS(RDDObject rdd, String fname, String ofmt)
 		throws IOException, DMLRuntimeException 
 	{

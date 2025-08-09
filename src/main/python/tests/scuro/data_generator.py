@@ -26,6 +26,7 @@ from scipy.io.wavfile import write
 import random
 import os
 
+from systemds.scuro.dataloader.base_loader import BaseLoader
 from systemds.scuro.dataloader.video_loader import VideoLoader
 from systemds.scuro.dataloader.audio_loader import AudioLoader
 from systemds.scuro.dataloader.text_loader import TextLoader
@@ -34,10 +35,31 @@ from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.modality.type import ModalityType
 
 
+class TestDataLoader(BaseLoader):
+    def __init__(self, indices, chunk_size, modality_type, data, data_type, metadata):
+        super().__init__("", indices, data_type, chunk_size, modality_type)
+
+        self.metadata = metadata
+        self.test_data = data
+
+    def reset(self):
+        self._next_chunk = 0
+        self.data = []
+
+    def extract(self, file, indices):
+        if isinstance(self.test_data, list):
+            self.data = [self.test_data[i] for i in indices]
+        else:
+            self.data = self.test_data[indices]
+
+
 class ModalityRandomDataGenerator:
 
     def __init__(self):
-        self._modality_id = 0
+        self.modality_id = 0
+        self.modality_type = None
+        self.metadata = {}
+        self.data_type = np.float32
 
     def create1DModality(
         self,
@@ -45,31 +67,124 @@ class ModalityRandomDataGenerator:
         num_features,
         modality_type,
     ):
-        data = np.random.rand(num_instances, num_features)
+        data = np.random.rand(num_instances, num_features).astype(self.data_type)
+        data.dtype = self.data_type
+
         # TODO: write a dummy method to create the same metadata for all instances to avoid the for loop
-        metadata = {}
+        self.modality_type = modality_type
         for i in range(num_instances):
             if modality_type == ModalityType.AUDIO:
-                metadata[i] = modality_type.create_audio_metadata(
+                self.metadata[i] = modality_type.create_audio_metadata(
                     num_features / 10, data[i]
                 )
             elif modality_type == ModalityType.TEXT:
-                metadata[i] = modality_type.create_text_metadata(
+                self.metadata[i] = modality_type.create_text_metadata(
                     num_features / 10, data[i]
                 )
             elif modality_type == ModalityType.VIDEO:
-                metadata[i] = modality_type.create_video_metadata(
+                self.metadata[i] = modality_type.create_video_metadata(
                     num_features / 30, 10, 0, 0, 1
                 )
             else:
                 raise NotImplementedError
 
-        tf_modality = TransformedModality(
-            modality_type, "test_transformation", self._modality_id, metadata
-        )
+        tf_modality = TransformedModality(self, "test_transformation")
         tf_modality.data = data
-        self._modality_id += 1
+        self.modality_id += 1
         return tf_modality
+
+    def create_audio_data(self, num_instances, num_features):
+        data = np.random.rand(num_instances, num_features).astype(np.float32)
+        metadata = {
+            i: ModalityType.AUDIO.create_audio_metadata(16000, data[i])
+            for i in range(num_instances)
+        }
+
+        return data, metadata
+
+    def create_text_data(self, num_instances):
+        subjects = [
+            "The cat",
+            "A dog",
+            "The student",
+            "The teacher",
+            "The bird",
+            "The child",
+            "The programmer",
+            "The scientist",
+            "A researcher",
+        ]
+        verbs = [
+            "reads",
+            "writes",
+            "studies",
+            "analyzes",
+            "creates",
+            "develops",
+            "designs",
+            "implements",
+            "examines",
+        ]
+        objects = [
+            "the document",
+            "the code",
+            "the data",
+            "the problem",
+            "the solution",
+            "the project",
+            "the research",
+            "the paper",
+        ]
+        adverbs = [
+            "carefully",
+            "quickly",
+            "efficiently",
+            "thoroughly",
+            "diligently",
+            "precisely",
+            "methodically",
+        ]
+
+        sentences = []
+        for _ in range(num_instances):
+            include_adverb = np.random.random() < 0.7
+
+            subject = np.random.choice(subjects)
+            verb = np.random.choice(verbs)
+            obj = np.random.choice(objects)
+            adverb = np.random.choice(adverbs) if include_adverb else ""
+
+            sentence = f"{subject} {adverb} {verb} {obj}"
+
+            sentences.append(sentence)
+
+        metadata = {
+            i: ModalityType.TEXT.create_text_metadata(len(sentences[i]), sentences[i])
+            for i in range(num_instances)
+        }
+
+        return sentences, metadata
+
+    def create_visual_modality(self, num_instances, num_frames=1, height=28, width=28):
+        if num_frames == 1:
+            print(f"TODO: create image metadata")
+        else:
+            metadata = {
+                i: ModalityType.VIDEO.create_video_metadata(
+                    30, num_frames, width, height, 1
+                )
+                for i in range(num_instances)
+            }
+
+        return (
+            np.random.randint(
+                0,
+                256,
+                (num_instances, num_frames, height, width),
+                # ).astype(np.float16).tolist(),
+            ).astype(np.float16),
+            metadata,
+        )
 
 
 def setup_data(modalities, num_instances, path):
@@ -202,7 +317,7 @@ class TestDataGenerator:
 
     def __create_audio_data(self, idx, duration, speed_factor):
         path = f"{self.path}/AUDIO/{idx}.wav"
-        sample_rate = 44100
+        sample_rate = 16000
 
         t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
         frequency_variation = random.uniform(200.0, 500.0)

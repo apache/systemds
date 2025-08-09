@@ -1068,8 +1068,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				writeLIBSVMFile(ec, fname);
 			else if(fmt == FileFormat.HDF5)
 				writeHDF5File(ec, fname);
-			else {
-				// Default behavior (text, binary)
+			else { // Default behavior (text, binary)
 				MatrixObject mo = ec.getMatrixObject(getInput1().getName());
 				int blen = Integer.parseInt(getInput4().getName());
 				mo.exportData(fname, fmtStr, new FileFormatProperties(blen));

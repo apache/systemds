@@ -20,11 +20,62 @@
 # -------------------------------------------------------------
 
 import struct
+import tempfile
+import mmap
+import time
 
 import numpy as np
 import pandas as pd
 import concurrent.futures
 from py4j.java_gateway import JavaClass, JavaGateway, JavaObject, JVMView
+import os
+
+
+def format_bytes(size):
+    for unit in ["Bytes", "KB", "MB", "GB", "TB", "PB"]:
+        if size < 1024.0:
+            return f"{size:.2f} {unit}"
+        size /= 1024.0
+
+
+def pipe_transfer_header(pipe, pipe_id):
+    handshake = struct.pack("<i", pipe_id + 1000)
+    os.write(pipe.fileno(), handshake)
+
+
+def pipe_transfer_bytes(pipe, offset, end, batch_size_bytes, mem_view):
+    while offset < end:
+        # Slice the memoryview without copying
+        slice_end = min(offset + batch_size_bytes, end)
+        chunk = mem_view[offset:slice_end]
+        written = os.write(pipe.fileno(), chunk)
+        if written == 0:
+            raise Exception("Buffer issue")
+        offset += written
+
+
+def pipe_receive_header(pipe, pipe_id, logger):
+    expected_handshake = pipe_id + 1000
+    header = os.read(pipe.fileno(), 4)  # pipe.read(4)
+    if len(header) < 4:
+        raise IOError("Failed to read handshake header")
+    received = struct.unpack("<i", header)[0]
+    if received != expected_handshake:
+        raise ValueError(
+            f"Handshake mismatch: expected {expected_handshake}, got {received}"
+        )
+    logger.debug("Read handshake successfully")
+
+
+def pipe_receive_bytes(pipe, view, offset, end, batch_size_bytes, logger):
+    while offset < end:
+        slice_end = min(offset + batch_size_bytes, end)
+        chunk = os.read(pipe.fileno(), slice_end - offset)
+        if not chunk:
+            raise IOError("Pipe read returned empty data unexpectedly")
+        actual_size = len(chunk)
+        view[offset : offset + actual_size] = chunk
+        offset += actual_size
 
 
 def numpy_to_matrix_block(sds, np_arr: np.array):
@@ -37,13 +88,17 @@ def numpy_to_matrix_block(sds, np_arr: np.array):
     rows = np_arr.shape[0]
     cols = np_arr.shape[1] if np_arr.ndim == 2 else 1
 
+    if rows > 2147483647:
+        raise Exception("")
+
     # If not numpy array then convert to numpy array
     if not isinstance(np_arr, np.ndarray):
         np_arr = np.asarray(np_arr, dtype=np.float64)
 
     jvm: JVMView = sds.java_gateway.jvm
+    ep = sds.java_gateway.entry_point
 
-    # flatten and prepare byte buffer.
+    # flatten and set value type
     if np_arr.dtype is np.dtype(np.uint8):
         arr = np_arr.ravel()
         value_type = jvm.org.apache.sysds.common.Types.ValueType.UINT8
@@ -56,31 +111,139 @@ def numpy_to_matrix_block(sds, np_arr: np.array):
     else:
         arr = np_arr.ravel().astype(np.float64)
         value_type = jvm.org.apache.sysds.common.Types.ValueType.FP64
-    buf = arr.tobytes()
 
-    # Send data to java.
-    try:
+    if sds._data_transfer_mode == 1:
+        mv = memoryview(arr).cast("B")
+        total_bytes = mv.nbytes
+        min_bytes_per_pipe = 1024 * 1024 * 1024 * 1
+        batch_size_bytes = 32 * 1024  # pipe's ring buffer is 64KB
+
+        # Using multiple pipes is disabled by default
+        use_single_pipe = (
+            not sds._multi_pipe_enabled or total_bytes < 2 * min_bytes_per_pipe
+        )
+        if use_single_pipe:
+            sds._log.debug(
+                "Using single FIFO pipe for reading {}".format(
+                    format_bytes(total_bytes)
+                )
+            )
+            pipe_id = 0
+            pipe = sds._FIFO_PY2JAVA_PIPES[pipe_id]
+            fut = sds._executor_pool.submit(
+                ep.startReadingMbFromPipe, pipe_id, rows, cols, value_type
+            )
+
+            pipe_transfer_header(pipe, pipe_id)  # start
+            pipe_transfer_bytes(pipe, 0, total_bytes, batch_size_bytes, mv)
+            pipe_transfer_header(pipe, pipe_id)  # end
+
+            return fut.result()  # Java returns MatrixBlock
+        else:
+            num_pipes = min(
+                len(sds._FIFO_PY2JAVA_PIPES), total_bytes // min_bytes_per_pipe
+            )
+            # align blocks per element
+            num_elems = len(arr)
+            elem_size = np_arr.dtype.itemsize
+            min_elems_block = num_elems // num_pipes
+            left_over = num_elems % num_pipes
+            block_sizes = sds.java_gateway.new_array(jvm.int, num_pipes)
+            for i in range(num_pipes):
+                block_sizes[i] = min_elems_block + int(i < left_over)
+
+            # run java readers in parallel
+            fut_java = sds._executor_pool.submit(
+                ep.startReadingMbFromPipes, block_sizes, rows, cols, value_type
+            )
+
+            # run writers in parallel
+            def _pipe_write_task(_pipe_id, _pipe, memview, start, end):
+                pipe_transfer_header(_pipe, _pipe_id)
+                pipe_transfer_bytes(_pipe, start, end, batch_size_bytes, memview)
+                pipe_transfer_header(_pipe, _pipe_id)
+
+            cur = 0
+            futures = []
+            for i, size in enumerate(block_sizes):
+                pipe = sds._FIFO_PY2JAVA_PIPES[i]
+                start_byte = cur * elem_size
+                cur += size
+                end_byte = cur * elem_size
+
+                fut = sds._executor_pool.submit(
+                    _pipe_write_task, i, pipe, mv, start_byte, end_byte
+                )
+                futures.append(fut)
+
+            return fut_java.result()  # Java returns MatrixBlock
+    else:
+        # prepare byte buffer.
+        buf = arr.tobytes()
+
+        # Send data to java.
         j_class: JavaClass = jvm.org.apache.sysds.runtime.util.Py4jConverterUtils
         return j_class.convertPy4JArrayToMB(buf, rows, cols, value_type)
-    except Exception as e:
-        sds.exception_and_close(e)
 
 
-def matrix_block_to_numpy(jvm: JVMView, mb: JavaObject):
+def matrix_block_to_numpy(sds, mb: JavaObject):
     """Converts a MatrixBlock object in the JVM to a numpy array.
 
-    :param jvm: The current JVM instance running systemds.
+    :param sds: The current systemds context.
     :param mb: A pointer to the JVM's MatrixBlock object.
     """
+    jvm: JVMView = sds.java_gateway.jvm
+    ep = sds.java_gateway.entry_point
 
-    num_ros = mb.getNumRows()
-    num_cols = mb.getNumColumns()
-    buf = jvm.org.apache.sysds.runtime.util.Py4jConverterUtils.convertMBtoPy4JDenseArr(
-        mb
-    )
-    return np.frombuffer(buf, count=num_ros * num_cols, dtype=np.float64).reshape(
-        (num_ros, num_cols)
-    )
+    rows = mb.getNumRows()
+    cols = mb.getNumColumns()
+    try:
+        if sds._data_transfer_mode == 1:
+            dtype = np.float64
+
+            elem_size = np.dtype(dtype).itemsize
+            num_elements = rows * cols
+            total_bytes = num_elements * elem_size
+            batch_size_bytes = 32 * 1024  # 32 KB
+
+            arr = np.empty(num_elements, dtype=dtype)
+            mv = memoryview(arr).cast("B")
+
+            pipe_id = 0
+            pipe = sds._FIFO_JAVA2PY_PIPES[pipe_id]
+
+            sds._log.debug(
+                "Using single FIFO pipe for reading {}".format(
+                    format_bytes(total_bytes)
+                )
+            )
+
+            # Java starts writing to pipe in background
+            fut = sds._executor_pool.submit(ep.startWritingMbToPipe, pipe_id, mb)
+
+            pipe_receive_header(pipe, pipe_id, sds._log)
+            sds._log.debug(
+                "Py4j task for writing {} [{}] is: done=[{}], running=[{}]".format(
+                    format_bytes(total_bytes), sds._FIFO_PATH, fut.done(), fut.running()
+                )
+            )
+            pipe_receive_bytes(pipe, mv, 0, total_bytes, batch_size_bytes, sds._log)
+            pipe_receive_header(pipe, pipe_id, sds._log)
+
+            fut.result()
+            sds._log.debug("Reading is done for {}".format(format_bytes(total_bytes)))
+            return arr.reshape((rows, cols))
+
+        else:
+            buf = jvm.org.apache.sysds.runtime.util.Py4jConverterUtils.convertMBtoPy4JDenseArr(
+                mb
+            )
+            return np.frombuffer(buf, count=rows * cols, dtype=np.float64).reshape(
+                (rows, cols)
+            )
+    except Exception as e:
+        sds.exception_and_close(e)
+        return None
 
 
 def convert(jvm, fb, idx, num_elements, value_type, pd_series, conversion="column"):

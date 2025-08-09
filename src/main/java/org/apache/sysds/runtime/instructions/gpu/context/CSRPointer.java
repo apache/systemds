@@ -19,19 +19,10 @@
 
 package org.apache.sysds.runtime.instructions.gpu.context;
 
-import static jcuda.jcusparse.JCusparse.cusparseCreateMatDescr;
-import static jcuda.jcusparse.JCusparse.cusparseSetMatIndexBase;
-import static jcuda.jcusparse.JCusparse.cusparseSetMatType;
-import static jcuda.jcusparse.JCusparse.cusparseSetPointerMode;
-import static jcuda.jcusparse.JCusparse.cusparseXcsrgeamNnz;
-import static jcuda.jcusparse.JCusparse.cusparseXcsrgemmNnz;
-import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
-import static jcuda.jcusparse.cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL;
-import static jcuda.runtime.JCuda.cudaMemcpy;
-import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToDevice;
-import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
-import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
-
+import jcuda.Pointer;
+import jcuda.Sizeof;
+import jcuda.jcublas.cublasHandle;
+import jcuda.jcusparse.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
@@ -39,12 +30,14 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCUDA;
 import org.apache.sysds.utils.Statistics;
 
-import jcuda.Pointer;
-import jcuda.Sizeof;
-import jcuda.jcublas.cublasHandle;
-import jcuda.jcusparse.cusparseHandle;
-import jcuda.jcusparse.cusparseMatDescr;
-import jcuda.jcusparse.cusparsePointerMode;
+import static jcuda.jcusparse.JCusparse.*;
+import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
+import static jcuda.jcusparse.cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL;
+import static jcuda.runtime.JCuda.*;
+import static jcuda.runtime.cudaMemcpyKind.*;
+import static jcuda.jcusparse.cusparseIndexType.CUSPARSE_INDEX_32I;
+import static jcuda.jcusparse.cusparseSpGEMMAlg.CUSPARSE_SPGEMM_DEFAULT;
+import static org.apache.sysds.runtime.matrix.data.LibMatrixCUDA.cudaSupportFunctions;
 
 /**
  * Compressed Sparse Row (CSR) format for CUDA
@@ -98,6 +91,16 @@ public class CSRPointer {
 	public cusparseMatDescr descr;
 
 	/**
+	 * descriptor of sparse matrix
+	 */
+	public cusparseSpMatDescr spMatDescr;
+
+	/**
+	 * descriptor for sparse GEMM, only use for result matrix.
+	 */
+	public cusparseSpGEMMDescr spgemmDesc;
+
+	/**
 	 * Default constructor to help with Factory method {@link #allocateEmpty(GPUContext, long, long)}
 	 *
 	 * @param gCtx a valid {@link GPUContext}
@@ -107,6 +110,8 @@ public class CSRPointer {
 		val = new Pointer();
 		rowPtr = new Pointer();
 		colInd = new Pointer();
+		spMatDescr = new cusparseSpMatDescr();
+		spgemmDesc = null;
 		allocateMatDescrPointer();
 	}
 
@@ -183,7 +188,7 @@ public class CSRPointer {
 		if(rowPtr.length < rows + 1) throw new DMLRuntimeException("The length of rowPtr needs to be greater than or equal to " + (rows + 1));
 		if(colInd.length < nnz) throw new DMLRuntimeException("The length of colInd needs to be greater than or equal to " + nnz);
 		if(values.length < nnz) throw new DMLRuntimeException("The length of values needs to be greater than or equal to " + nnz);
-		LibMatrixCUDA.cudaSupportFunctions.hostToDevice(gCtx, values, r.val, null);
+		cudaSupportFunctions.hostToDevice(gCtx, values, r.val, null);
 		cudaMemcpy(r.rowPtr, Pointer.to(rowPtr), getIntSizeOf(rows + 1), cudaMemcpyHostToDevice);
 		cudaMemcpy(r.colInd, Pointer.to(colInd), getIntSizeOf(nnz), cudaMemcpyHostToDevice);
 		//if (DMLScript.STATISTICS)
@@ -220,14 +225,17 @@ public class CSRPointer {
 	 * @return CSR (compressed sparse row) pointer
 	 */
 	public static CSRPointer allocateForDgeam(GPUContext gCtx, cusparseHandle handle, CSRPointer A, CSRPointer B, int m, int n) {
-		if (A.nnz >= Integer.MAX_VALUE || B.nnz >= Integer.MAX_VALUE)
+		if(A.nnz >= Integer.MAX_VALUE || B.nnz >= Integer.MAX_VALUE)
 			throw new DMLRuntimeException("Number of non zeroes is larger than supported by cuSparse");
 		CSRPointer C = new CSRPointer(gCtx);
 		step1AllocateRowPointers(gCtx, handle, C, m);
+		ensureSorted(handle, m, n, toIntExact(A.nnz), A.rowPtr, A.colInd, A.descr);
+		ensureSorted(handle, m, n, toIntExact(B.nnz), B.rowPtr, B.colInd, B.descr);
 		step2GatherNNZGeam(gCtx, handle, A, B, C, m, n);
 		step3AllocateValNInd(gCtx, handle, C);
 		return C;
 	}
+
 
 	/**
 	 * Estimates the number of non-zero elements from the result of a sparse matrix multiplication C = A * B
@@ -245,12 +253,10 @@ public class CSRPointer {
 	 * @return a {@link CSRPointer} instance that encapsulates the CSR matrix on GPU
 	 */
 	public static CSRPointer allocateForMatrixMultiply(GPUContext gCtx, cusparseHandle handle, CSRPointer A, int transA,
-			CSRPointer B, int transB, int m, int n, int k) {
-		// Following the code example at http://docs.nvidia.com/cuda/cusparse/#cusparse-lt-t-gt-csrgemm and at
-		// https://github.com/jcuda/jcuda-matrix-utils/blob/master/JCudaMatrixUtils/src/test/java/org/jcuda/matrix/samples/JCusparseSampleDgemm.java
+		CSRPointer B, int transB, int m, int n, int k, int dataType) {
 		CSRPointer C = new CSRPointer(gCtx);
 		step1AllocateRowPointers(gCtx, handle, C, m);
-		step2GatherNNZGemm(gCtx, handle, A, transA, B, transB, C, m, n, k);
+		step2GatherNNZGemm(gCtx, handle, A, transA, B, transB, C, m, n, k, dataType);
 		step3AllocateValNInd(gCtx, handle, C);
 		return C;
 	}
@@ -316,21 +322,30 @@ public class CSRPointer {
 	 * @param m      Rows in C
 	 * @param n      Columns in C
 	 */
+
 	private static void step2GatherNNZGeam(GPUContext gCtx, cusparseHandle handle, CSRPointer A, CSRPointer B, CSRPointer C, int m, int n) {
 		LOG.trace("GPU : step2GatherNNZGeam for DGEAM" + ", GPUContext=" + gCtx);
-		int[] CnnzArray = { -1 };
-		cusparseXcsrgeamNnz(handle, m, n, A.descr, toIntExact(A.nnz), A.rowPtr, A.colInd, B.descr, toIntExact(B.nnz),
-				B.rowPtr, B.colInd, C.descr, C.rowPtr, Pointer.to(CnnzArray));
-		//cudaDeviceSynchronize;
-		if (CnnzArray[0] != -1) {
+		long[] pBufferSizeInBytes = {0};
+		cusparseDcsrgeam2_bufferSizeExt(handle, m, n, Pointer.to(new double[]{1.0}), A.descr, toIntExact(A.nnz), A.val, A.rowPtr, A.colInd,
+			Pointer.to(new double[]{1.0}), B.descr, toIntExact(B.nnz), B.val, B.rowPtr, B.colInd, C.descr, C.val, C.rowPtr, C.colInd, pBufferSizeInBytes);
+		Pointer buffer = new Pointer();
+		cudaMalloc(buffer, pBufferSizeInBytes[0]);
+		int[] CnnzArray = {-1};
+		cusparseXcsrgeam2Nnz(handle, m, n, A.descr, toIntExact(A.nnz), A.rowPtr, A.colInd, B.descr, toIntExact(B.nnz), B.rowPtr, B.colInd,
+			C.descr, C.rowPtr, Pointer.to(CnnzArray) ,buffer);
+		if(CnnzArray[0] != -1) {
 			C.nnz = CnnzArray[0];
-		} else {
-			int baseArray[] = { 0 };
-			cudaMemcpy(Pointer.to(CnnzArray), C.rowPtr.withByteOffset(getIntSizeOf(m)), getIntSizeOf(1),
-					cudaMemcpyDeviceToHost);
-			cudaMemcpy(Pointer.to(baseArray), C.rowPtr, getIntSizeOf(1), cudaMemcpyDeviceToHost);
+		}
+		else {                            // fall-back (rare older devices)
+			int[] baseArray = {0};
+			cudaMemcpy(Pointer.to(CnnzArray),
+				C.rowPtr.withByteOffset((long)m * Sizeof.INT),
+				Sizeof.INT, cudaMemcpyDeviceToHost);
+			cudaMemcpy(Pointer.to(baseArray),
+				C.rowPtr, Sizeof.INT, cudaMemcpyDeviceToHost);
 			C.nnz = CnnzArray[0] - baseArray[0];
 		}
+		cudaFree(buffer);
 	}
 
 	/**
@@ -347,25 +362,68 @@ public class CSRPointer {
 	 * @param n      Number of columns of sparse matrix op ( B ) and C
 	 * @param k      Number of columns/rows of sparse matrix op ( A ) / op ( B )
 	 */
+
 	private static void step2GatherNNZGemm(GPUContext gCtx, cusparseHandle handle, CSRPointer A, int transA,
-			CSRPointer B, int transB, CSRPointer C, int m, int n, int k) {
-		LOG.trace("GPU : step2GatherNNZGemm for DGEMM" + ", GPUContext=" + gCtx);
-		int[] CnnzArray = { -1 };
-		if (A.nnz >= Integer.MAX_VALUE || B.nnz >= Integer.MAX_VALUE) {
-			throw new DMLRuntimeException("Number of non zeroes is larger than supported by cuSparse");
-		}
-		cusparseXcsrgemmNnz(handle, transA, transB, m, n, k, A.descr, toIntExact(A.nnz), A.rowPtr, A.colInd, B.descr,
-				toIntExact(B.nnz), B.rowPtr, B.colInd, C.descr, C.rowPtr, Pointer.to(CnnzArray));
-		//cudaDeviceSynchronize;
-		if (CnnzArray[0] != -1) {
-			C.nnz = CnnzArray[0];
-		} else {
-			int baseArray[] = { 0 };
-			cudaMemcpy(Pointer.to(CnnzArray), C.rowPtr.withByteOffset(getIntSizeOf(m)), getIntSizeOf(1),
-					cudaMemcpyDeviceToHost);
-			cudaMemcpy(Pointer.to(baseArray), C.rowPtr, getIntSizeOf(1), cudaMemcpyDeviceToHost);
-			C.nnz = CnnzArray[0] - baseArray[0];
-		}
+		CSRPointer B, int transB, CSRPointer C, int m, int n, int k,
+		int dataType)            // C = op(A)·op(B)  (m×k)·(k×n)
+	{
+		LOG.trace("GPU : step2GatherNNZGemm (SpGEMM), GPUContext=" + gCtx);
+
+		// Ensure that NNZ does not exceed limit
+		if(A.nnz >= Integer.MAX_VALUE || B.nnz >= Integer.MAX_VALUE)
+			throw new DMLRuntimeException("Number of non-zeros exceeds cuSPARSE 32-bit limit");
+
+		// Get index base -> 0 or 1
+		int baseA = cusparseGetMatIndexBase(A.descr);
+		int baseB = cusparseGetMatIndexBase(B.descr);
+		int baseC = cusparseGetMatIndexBase(C.descr);
+
+		// cuSPARSE 12 requires using cusparseSpMatDescr
+		// We do not recreate the existing matrices but only register the data with
+		// A.spMatDescr, B.spMatDescr, C.spMatDescr descriptors are merely registrations of the existing CSR arrays so cuSPARSE can reference them
+		cusparseCreateCsr(A.spMatDescr, m, k, A.nnz, A.rowPtr, A.colInd, A.val, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+			baseA, dataType);
+		cusparseCreateCsr(B.spMatDescr, k, n, B.nnz, B.rowPtr, B.colInd, B.val, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+			baseB, dataType);
+		cusparseCreateCsr(C.spMatDescr, m, n, 0, C.rowPtr, null, null, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, baseC,
+			dataType);
+		// SpGEMM Computation
+		C.spgemmDesc = new cusparseSpGEMMDescr();
+		cusparseSpGEMM_createDescr(C.spgemmDesc);
+		double[] alpha = {1.0};
+		double[] beta = {0.0};
+		Pointer alphaPtr = Pointer.to(alpha);
+		Pointer betaPtr = Pointer.to(beta);
+		int alg = CUSPARSE_SPGEMM_DEFAULT;
+
+		// ask bufferSize1 bytes for external memory
+		long[] bufferSize1 = {0};
+		cusparseSpGEMM_workEstimation(handle, transA, transB, alphaPtr, A.spMatDescr.asConst(), B.spMatDescr.asConst(),
+			betaPtr, C.spMatDescr, dataType, alg, C.spgemmDesc, bufferSize1, null);
+		Pointer buffer1 = new Pointer();
+		if(bufferSize1[0] > 0)
+			cudaMalloc(buffer1, bufferSize1[0]);
+		// inspect the matrices A and B to understand the memory requirement for the next step
+		cusparseSpGEMM_workEstimation(handle, transA, transB, alphaPtr, A.spMatDescr.asConst(), B.spMatDescr.asConst(),
+			betaPtr, C.spMatDescr, dataType, alg, C.spgemmDesc, bufferSize1, buffer1);
+
+		// ask bufferSize2 bytes for external memory
+		long[] bufferSize2 = {0};
+		cusparseSpGEMM_compute(handle, transA, transB, alphaPtr, A.spMatDescr.asConst(), B.spMatDescr.asConst(),
+			betaPtr, C.spMatDescr, dataType, alg, C.spgemmDesc, bufferSize2, null);
+		Pointer buffer2 = new Pointer();
+		if(bufferSize2[0] > 0)
+			cudaMalloc(buffer2, bufferSize2[0]);
+		// compute the intermediate product of A * B
+		cusparseSpGEMM_compute(handle, transA, transB, alphaPtr, A.spMatDescr.asConst(), B.spMatDescr.asConst(),
+			betaPtr, C.spMatDescr, dataType, alg, C.spgemmDesc, bufferSize2, buffer2);
+
+		// obtain nnz of C
+		long[] rows = {0};
+		long[] cols = {0};
+		long[] nnz = {0};
+		cusparseSpMatGetSize(C.spMatDescr.asConst(), rows, cols, nnz);
+		C.nnz = nnz[0];
 	}
 
 	/**
@@ -381,6 +439,100 @@ public class CSRPointer {
 
 		C.val = gCtx.allocate(null, getDataTypeSizeOf(C.nnz), false);
 		C.colInd = gCtx.allocate(null, getIntSizeOf(C.nnz), false);
+
+		// special case for sparse GEMM
+		// requires cusparseSpGEMMDescr since CUDA 12
+		if(C.spgemmDesc != null)
+			cusparseCsrSetPointers(C.spMatDescr, C.rowPtr, C.colInd, C.val);
+	}
+
+	/**
+	 * Sort rows of matrix.
+	 *
+	 * @param handle
+	 * @param m
+	 * @param n
+	 * @param nnz
+	 * @param rowPtr
+	 * @param colInd
+	 * @param descr
+	 */
+	private static void ensureSorted(cusparseHandle handle, int m, int n, int nnz, Pointer rowPtr, Pointer colInd,
+		cusparseMatDescr descr) {
+
+		// 1. workspace size for sorting
+		long[] bufSize = {0};
+		JCusparse.cusparseXcsrsort_bufferSizeExt(handle, m, n, nnz, rowPtr, colInd, bufSize);
+
+		Pointer work = new Pointer();
+		if(bufSize[0] > 0)
+			cudaMalloc(work, bufSize[0]);
+
+		// 2. create a permutation array (can be NULL if you don’t care)
+		Pointer P = new Pointer();
+		cudaMalloc(P, (long) nnz * Sizeof.INT);
+		JCusparse.cusparseCreateIdentityPermutation(handle, nnz, P);
+
+		// 3. sort in-place
+		JCusparse.cusparseXcsrsort(handle, m, n, nnz, descr, rowPtr, colInd, P, work);
+
+		cudaFree(P);
+		if(bufSize[0] > 0)
+			cudaFree(work);
+
+	}
+
+	/**
+	 * Physically transpose a CSR matrix (srcRows × srcCols ➜ srcCols × srcRows). The trick:  CSR ➜ CSC of the original
+	 * matrix is bit-for-bit the CSR of the transposed matrix, so we leverage cuSPARSE csr2cscEx2.
+	 *
+	 * @param gCtx
+	 * @param handle
+	 * @param src
+	 * @param srcRows
+	 * @param srcCols
+	 * @param dataType
+	 * @return
+	 */
+	public static CSRPointer transposeCSR(GPUContext gCtx, cusparseHandle handle, CSRPointer src, int srcRows,
+		int srcCols, int dataType) {
+
+		CSRPointer dst = new CSRPointer(gCtx);
+		dst.nnz = src.nnz;
+
+		// allocate transposed arrays: rows = srcCols, cols = srcRows
+		dst.rowPtr = gCtx.allocate(null, getIntSizeOf((long) srcCols + 1), true);
+		dst.colInd = gCtx.allocate(null, getIntSizeOf(dst.nnz), false);
+		dst.val = gCtx.allocate(null, getDataTypeSizeOf(dst.nnz), false);
+
+		// CSR -> CSC (of src) == CSR (of t(src))
+		int copyValues = 1;
+		int idxBase = cusparseGetMatIndexBase(src.descr);
+		cudaSupportFunctions.cusparsecsr2csc(handle, srcRows, srcCols, toIntExact(dst.nnz), src.val, src.rowPtr,
+			src.colInd, dst.val, dst.colInd, dst.rowPtr, copyValues, idxBase);
+
+		// classical descriptor (needed by ensureSorted)
+		cusparseCreateMatDescr(dst.descr);
+		cusparseSetMatIndexBase(dst.descr, idxBase);
+
+		// cuSPARSE 12 SpMat descriptor
+		cusparseCreateCsr(dst.spMatDescr,
+			/*rows*/ srcCols,   // m
+			/*cols*/ srcRows,   // k
+			dst.nnz, dst.rowPtr, dst.colInd, dst.val, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, idxBase, dataType);
+
+		return dst;
+	}
+
+	/**
+	 * Helper function to check matrix dimensions
+	 *
+	 * @param desc
+	 */
+	public static void getCSRMatrixInfo(cusparseSpMatDescr desc) {
+		long[] r = {0}, c = {0}, z = {0};
+		cusparseSpMatGetSize(desc.asConst(), r, c, z);
+		System.err.println("DEBUG  A  rows=" + r[0] + " cols=" + c[0] + " nnz=" + z[0]);
 	}
 
 	// ==============================================================================================
@@ -468,7 +620,7 @@ public class CSRPointer {
 		// If this sparse block is empty, the allocated dense matrix, initialized to zeroes, will be returned.
 		if (val != null && rowPtr != null && colInd != null && nnz > 0) {
 			// Note: cusparseDcsr2dense method cannot handle empty blocks
-			LibMatrixCUDA.cudaSupportFunctions.cusparsecsr2dense(cusparseHandle, rows, cols, descr, val, rowPtr, colInd, A, rows);
+			cudaSupportFunctions.cusparsecsr2dense(cusparseHandle, rows, cols, descr, val, rowPtr, colInd, A, rows, nnz);
 			//cudaDeviceSynchronize;
 		} else {
 			LOG.debug("in CSRPointer, the values array, row pointers array or column indices array was null");

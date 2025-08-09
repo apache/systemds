@@ -35,7 +35,9 @@ import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.HDFSTool;
@@ -220,4 +222,9 @@ public class WriterMatrixMarket extends MatrixWriter
 			throw new IOException(src.toString() + ": No such file or directory");
 		}
 	}
+
+	@Override
+	public long writeMatrixFromStream(String fname, LocalTaskQueue<IndexedMatrixValue> stream, long rlen, long clen, int blen) {
+		throw new UnsupportedOperationException("Writing from an OOC stream is not supported for the MatrixMarket format.");
+	};
 }

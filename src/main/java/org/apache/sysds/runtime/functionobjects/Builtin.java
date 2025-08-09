@@ -49,7 +49,7 @@ public class Builtin extends ValueFunction
 	
 	public enum BuiltinCode { AUTODIFF, SIN, COS, TAN, SINH, COSH, TANH, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN,
 		MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, PRINTF, NROW, NCOL, LENGTH, LINEAGE, ROUND, MAXINDEX, MININDEX,
-		STOP, CEIL, FLOOR, CUMSUM, CUMPROD, CUMMIN, CUMMAX, CUMSUMPROD, INVERSE, SPROP, SIGMOID, EVAL, LIST,
+		STOP, CEIL, FLOOR, CUMSUM, ROWCUMSUM, CUMPROD, CUMMIN, CUMMAX, CUMSUMPROD, INVERSE, SPROP, SIGMOID, EVAL, LIST,
 		TYPEOF, APPLY_SCHEMA, DETECTSCHEMA, ISNA, ISNAN, ISINF, DROP_INVALID_TYPE, 
 		DROP_INVALID_LENGTH, VALUE_SWAP, FRAME_ROW_REPLICATE,
 		MAP, COUNT_DISTINCT, COUNT_DISTINCT_APPROX, UNIQUE}
@@ -95,6 +95,7 @@ public class Builtin extends ValueFunction
 		String2BuiltinCode.put( "ceil"   , BuiltinCode.CEIL);
 		String2BuiltinCode.put( "floor"  , BuiltinCode.FLOOR);
 		String2BuiltinCode.put( "ucumk+" , BuiltinCode.CUMSUM);
+		String2BuiltinCode.put( "urowcumk+" , BuiltinCode.ROWCUMSUM);
 		String2BuiltinCode.put( "ucum*"  , BuiltinCode.CUMPROD);
 		String2BuiltinCode.put( "ucumk+*", BuiltinCode.CUMSUMPROD);
 		String2BuiltinCode.put( "ucummin", BuiltinCode.CUMMIN);

@@ -58,6 +58,7 @@ class Registry:
         return self._representations[modality]
 
     def get_context_operators(self):
+        # TODO: return modality specific context operations
         return self._context_operators
 
     def get_fusion_operators(self):

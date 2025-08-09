@@ -47,6 +47,8 @@ import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
+import org.apache.sysds.runtime.io.MatrixWriter;
+import org.apache.sysds.runtime.io.MatrixWriterFactory;
 import org.apache.sysds.runtime.io.ReaderWriterFederated;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageRecomputeUtils;
@@ -600,6 +602,17 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 
 		if(DMLScript.STATISTICS)
 			CacheStatistics.incrementHDFSWrites();
+	}
+	
+	@Override
+	protected long writeStreamToHDFS(String fname, String ofmt, int rep, FileFormatProperties fprop)
+		throws IOException, DMLRuntimeException 
+	{
+		MetaDataFormat iimd = (MetaDataFormat) _metaData;
+		FileFormat fmt = (ofmt != null ? FileFormat.safeValueOf(ofmt) : iimd.getFileFormat());
+		MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(fmt, rep, fprop);
+		return writer.writeMatrixFromStream(fname, getStreamHandle(), 
+			getNumRows(), getNumColumns(), ConfigurationManager.getBlocksize());
 	}
 
 	@Override

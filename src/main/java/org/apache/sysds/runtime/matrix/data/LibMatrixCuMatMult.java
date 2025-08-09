@@ -18,10 +18,15 @@
  */
 package org.apache.sysds.runtime.matrix.data;
 
+import static jcuda.cudaDataType.CUDA_R_32F;
+import static jcuda.cudaDataType.CUDA_R_64F;
 import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE;
 import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyHostToDevice;
+import static jcuda.jcusparse.cusparseSpMMAlg.CUSPARSE_SPMM_ALG_DEFAULT;
+import static org.apache.sysds.runtime.instructions.gpu.context.CSRPointer.transposeCSR;
+
 import jcuda.Pointer;
 
 import org.apache.commons.logging.Log;
@@ -149,23 +154,31 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 			// -------------------------------------------------------------------------------------
 			// sparse-sparse matrix multiplication
 			params.validate();
-			int transa = cusparseOp(isLeftTransposed);
-			int transb = cusparseOp(isRightTransposed);
+			int transA = cusparseOp(isLeftTransposed);
+			int transB = cusparseOp(isRightTransposed);
+			int dataType = (sizeOfDataType == 4) ? CUDA_R_32F : CUDA_R_64F;
 
 			// Step 1: Allocate output => sparse format
 			ec.allocateGPUMatrixObject(outputName, outRLen, outCLen);
-
 			// Step 2: Get the handles to sparse/dense pointers for left, right
 			// and output
 			CSRPointer A = left.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
 			CSRPointer B = right.getGPUObject(gCtx).getJcudaSparseMatrixPtr();
-			CSRPointer C = CSRPointer.allocateForMatrixMultiply(gCtx, getCusparseHandle(gCtx), A, transa, B, transb,
-					params.m, params.n, params.k);
-		
+			// transpose if required
+			// cusparseSpGEMM works only with CUSPARSE_OPERATION_NON_TRANSPOSE
+			if(transA == CUSPARSE_OPERATION_TRANSPOSE) {
+				A = transposeCSR(gCtx, getCusparseHandle(gCtx), A, params.k, params.m, dataType);
+			}
+			if(transB == CUSPARSE_OPERATION_TRANSPOSE) {
+				B = transposeCSR(gCtx, getCusparseHandle(gCtx), B, params.n, params.k, dataType);
+			}
+			transA = CUSPARSE_OPERATION_NON_TRANSPOSE;
+			transB = CUSPARSE_OPERATION_NON_TRANSPOSE;
+			CSRPointer C = CSRPointer.allocateForMatrixMultiply(gCtx, getCusparseHandle(gCtx), A, transA, B, transB,
+				params.m, params.n, params.k, dataType);
 			// Step 3: Invoke the kernel
-			cudaSupportFunctions.cusparsecsrgemm(getCusparseHandle(gCtx), transa, transb, params.m, params.n, params.k, A.descr,
-					(int) A.nnz, A.val, A.rowPtr, A.colInd, B.descr, (int) B.nnz, B.val, B.rowPtr, B.colInd, C.descr,
-					C.val, C.rowPtr, C.colInd);
+			cudaSupportFunctions.cusparsecsrgemm(getCusparseHandle(gCtx), transA, transB, CUSPARSE_SPMM_ALG_DEFAULT,
+				A.spMatDescr, B.spMatDescr, C.spMatDescr, C.spgemmDesc);
 			output.getGPUObject(gCtx).setSparseMatrixCudaPointer(C);
 			// -------------------------------------------------------------------------------------
 		} else if (!isM1Sparse && isM2Sparse) {
@@ -306,7 +319,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 			int m = toInt(param.rightNumRows);
 			int n = toInt(param.rightNumCols);
 			int transa = reverseCusparseOp(cusparseOp(param.isLeftTransposed));
-			cudaSupportFunctions.cusparsecsrmv(handle, transa, m, n, toInt(B.nnz), one(), B.descr, B.val, B.rowPtr, B.colInd, A,
+			cudaSupportFunctions.cusparsecsrmv(handle, transa, m, n, toInt(B.nnz), one(), B.spMatDescr, B.descr, B.val, B.rowPtr, B.colInd, A,
 					zero(), C);
 		} else {
 			int m = toInt(param.rightNumRows);
@@ -316,7 +329,7 @@ public class LibMatrixCuMatMult extends LibMatrixCUDA {
 			int transa = reverseCusparseOp(cusparseOp(param.isLeftTransposed));
 			int transb = cusparseOp(param.isRightTransposed);
 			LOG.debug(" GPU Sparse-Dense Matrix Multiply (rhs transpose) ");
-			cudaSupportFunctions.cusparsecsrmm2(handle, transa, transb, m, param.n, k, toInt(B.nnz), one(), B.descr, B.val,
+			cudaSupportFunctions.cusparsecsrmm2(handle, transa, transb, m, param.n, k, toInt(B.nnz), one(), B.descr, B.spMatDescr, B.val,
 					B.rowPtr, B.colInd, A, param.ldb, zero(), C, param.ldc);
 		}
 	}

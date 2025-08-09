@@ -49,6 +49,7 @@ public class LibMatrixCuDNNPoolingDescriptors implements java.lang.AutoCloseable
 	public cudnnTensorDescriptor dyDesc; 
 	public cudnnPoolingDescriptor poolingDesc;
 	
+	@SuppressWarnings("deprecation")
 	@Override
 	public void close() {
 		if(xDesc != null) 
@@ -155,6 +156,7 @@ public class LibMatrixCuDNNPoolingDescriptors implements java.lang.AutoCloseable
 	 * @param poolingType type of pooling
 	 * @return cudnn pooling descriptor
 	 */
+	@SuppressWarnings("deprecation")
 	private static cudnnPoolingDescriptor allocatePoolingDescriptor(int R, int S, int pad_h, int pad_w, int stride_h, int stride_w, PoolingType poolingType) {
 		cudnnPoolingDescriptor poolingDesc = new cudnnPoolingDescriptor();
 		cudnnCreatePoolingDescriptor(poolingDesc);

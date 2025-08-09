@@ -20,11 +20,15 @@
 package org.apache.sysds.runtime.matrix.data;
 
 import jcuda.Pointer;
-import jcuda.jcudnn.cudnnConvolutionBwdFilterPreference;
+import jcuda.jcudnn.cudnnConvolutionBwdDataAlgo;
+import jcuda.jcudnn.cudnnConvolutionBwdDataAlgoPerf;
+import jcuda.jcudnn.cudnnConvolutionBwdFilterAlgo;
+import jcuda.jcudnn.cudnnConvolutionBwdFilterAlgoPerf;
 import jcuda.jcudnn.cudnnConvolutionDescriptor;
 import jcuda.jcudnn.cudnnConvolutionFwdAlgo;
 import jcuda.jcudnn.cudnnFilterDescriptor;
 import jcuda.jcudnn.cudnnTensorDescriptor;
+
 import static jcuda.jcudnn.JCudnn.cudnnCreateConvolutionDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnCreateFilterDescriptor;
 import static jcuda.jcudnn.JCudnn.cudnnCreateTensorDescriptor;
@@ -81,6 +85,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 	/**
 	 * Deallocates the tensor and filter descriptors as well as allocated workspace
 	 */
+	@SuppressWarnings("deprecation")
 	@Override
 	public void close() {
 		if(nchwTensorDesc != null)
@@ -121,6 +126,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 	 * @param workspaceLimit maximum intermediate memory to use
 	 * @return algorithm wrapper
 	 */
+	@SuppressWarnings("deprecation")
 	public static LibMatrixCuDNNConvolutionAlgorithm cudnnGetConvolutionForwardAlgorithm(
 			GPUContext gCtx, String instName, int N, int C, int H, int W, int K, int R, int S, 
 			int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q, long workspaceLimit) {
@@ -164,25 +170,42 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 	 * @param workspaceLimit maximum intermediate memory to use
 	 * @return algorithm wrapper
 	 */
+	@SuppressWarnings("deprecation")
 	public static LibMatrixCuDNNConvolutionAlgorithm cudnnGetConvolutionBackwardFilterAlgorithm(
 			GPUContext gCtx, String instName, int N, int C, int H, int W, int K, int R, int S, 
 			int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q, long workspaceLimit) {
-		LibMatrixCuDNNConvolutionAlgorithm ret = new LibMatrixCuDNNConvolutionAlgorithm(gCtx, instName, N, C, H, W, K, R, S, 
-				pad_h, pad_w, stride_h, stride_w, P, Q);
-		
-		int[] algos = {-1};
-		long[] sizeInBytesArray = {Math.min(workspaceLimit, MAX_WORKSPACE_LIMIT_BYTES)};
-		jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardFilterAlgorithm(
-				LibMatrixCuDNN.getCudnnHandle(gCtx), 
-				ret.nchwTensorDesc, ret.nkpqTensorDesc, ret.convDesc, ret.filterDesc, 
-				cudnnConvolutionBwdFilterPreference.CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT, sizeInBytesArray[0], algos);
-		jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardFilterWorkspaceSize(LibMatrixCuDNN.getCudnnHandle(gCtx), 
-				ret.nchwTensorDesc, ret.nkpqTensorDesc, ret.convDesc, ret.filterDesc, algos[0], sizeInBytesArray);
-		if (sizeInBytesArray[0] != 0)
+		LibMatrixCuDNNConvolutionAlgorithm ret = new LibMatrixCuDNNConvolutionAlgorithm(gCtx, instName, N, C, H, W, K,
+			R, S, pad_h, pad_w, stride_h, stride_w, P, Q);
+
+		final int maxAlgos = cudnnConvolutionBwdFilterAlgo.CUDNN_CONVOLUTION_BWD_FILTER_ALGO_COUNT;
+		cudnnConvolutionBwdFilterAlgoPerf[] perf = new cudnnConvolutionBwdFilterAlgoPerf[maxAlgos];
+		for(int i = 0; i < maxAlgos; ++i)
+			perf[i] = new cudnnConvolutionBwdFilterAlgoPerf();
+		int[] returnedAlgoCount = {0};
+		jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardFilterAlgorithm_v7(LibMatrixCuDNN.getCudnnHandle(gCtx),
+			ret.nchwTensorDesc, ret.nkpqTensorDesc, ret.convDesc, ret.filterDesc, maxAlgos, returnedAlgoCount, perf);
+
+		long workspaceCap = Math.min(workspaceLimit, MAX_WORKSPACE_LIMIT_BYTES);
+		int chosenAlgo = cudnnConvolutionBwdFilterAlgo.CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
+		long chosenWs = 0;
+
+		for(int i = 0; i < returnedAlgoCount[0]; ++i) {
+			if(perf[i].memory <= workspaceCap) {
+				chosenAlgo = perf[i].algo;
+				chosenWs = perf[i].memory;
+				break;
+			}
+		}
+
+		long[] sizeInBytesArray = {chosenWs};
+
+		jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardFilterWorkspaceSize(LibMatrixCuDNN.getCudnnHandle(gCtx),
+			ret.nchwTensorDesc, ret.nkpqTensorDesc, ret.convDesc, ret.filterDesc, chosenAlgo, sizeInBytesArray);
+		if(sizeInBytesArray[0] != 0)
 			ret.workSpace = gCtx.allocate(instName, sizeInBytesArray[0], false);
 		ret.sizeInBytes = sizeInBytesArray[0];
-		ret.algo = algos[0];
-		
+		ret.algo = chosenAlgo;
+
 		return ret;
 	}
 	
@@ -207,6 +230,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 	 * @param workspaceLimit maximum intermediate memory to use
 	 * @return algorithm wrapper
 	 */
+	@SuppressWarnings("deprecation")
 	public static LibMatrixCuDNNConvolutionAlgorithm cudnnGetConvolutionBackwardDataAlgorithm(
 			GPUContext gCtx, String instName, int N, int C, int H, int W, int K, int R, int S, 
 			int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q, long workspaceLimit) {
@@ -220,18 +244,36 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 			ret.algo = jcuda.jcudnn.cudnnConvolutionBwdDataAlgo.CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
 		}
 		else {
-			int[] algos = {-1};
-			long[] sizeInBytesArray = {Math.min(workspaceLimit, MAX_WORKSPACE_LIMIT_BYTES)};
-			jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardDataAlgorithm(
-					LibMatrixCuDNN.getCudnnHandle(gCtx), 
-					ret.filterDesc, ret.nkpqTensorDesc, ret.convDesc, ret.nchwTensorDesc,
-					jcuda.jcudnn.cudnnConvolutionBwdDataPreference.CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT, sizeInBytesArray[0], algos);
-			jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardDataWorkspaceSize(LibMatrixCuDNN.getCudnnHandle(gCtx), 
-					ret.filterDesc, ret.nkpqTensorDesc, ret.convDesc, ret.nchwTensorDesc, algos[0], sizeInBytesArray);
-			if (sizeInBytesArray[0] != 0)
+			final int max = cudnnConvolutionBwdDataAlgo.CUDNN_CONVOLUTION_BWD_DATA_ALGO_COUNT;
+			cudnnConvolutionBwdDataAlgoPerf[] perf = new cudnnConvolutionBwdDataAlgoPerf[max];
+			for(int i = 0; i < max; ++i)
+				perf[i] = new cudnnConvolutionBwdDataAlgoPerf();
+			int[] nReturned = {0};
+
+			jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardDataAlgorithm_v7(LibMatrixCuDNN.getCudnnHandle(gCtx),
+				ret.filterDesc, ret.nkpqTensorDesc, ret.convDesc, ret.nchwTensorDesc, max, nReturned, perf);
+
+			long cap = Math.min(workspaceLimit, MAX_WORKSPACE_LIMIT_BYTES);
+			int chosenAlgo = cudnnConvolutionBwdDataAlgo.CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
+			long chosenWs = 0;
+
+			for(int i = 0; i < nReturned[0]; ++i) {
+				if(perf[i].memory <= cap) {
+					chosenAlgo = perf[i].algo;
+					chosenWs = perf[i].memory;
+					break;
+				}
+			}
+
+			long[] sizeInBytesArray = {chosenWs};
+			jcuda.jcudnn.JCudnn.cudnnGetConvolutionBackwardDataWorkspaceSize(LibMatrixCuDNN.getCudnnHandle(gCtx),
+				ret.filterDesc, ret.nkpqTensorDesc, ret.convDesc, ret.nchwTensorDesc, chosenAlgo, sizeInBytesArray);
+
+			if(sizeInBytesArray[0] != 0)
 				ret.workSpace = gCtx.allocate(instName, sizeInBytesArray[0], false);
+
 			ret.sizeInBytes = sizeInBytesArray[0];
-			ret.algo = algos[0];
+			ret.algo = chosenAlgo;
 		}
 		return ret;
 	}
@@ -251,6 +293,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 		return tensorDescriptor;
 	}
 	
+	@SuppressWarnings("deprecation")
 	private static cudnnFilterDescriptor allocateFilterDescriptor(int K, int C, int R, int S) {
 		cudnnFilterDescriptor filterDesc = new cudnnFilterDescriptor();
 		cudnnCreateFilterDescriptor(filterDesc);
@@ -258,6 +301,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 		return filterDesc;
 	}
 	
+	@SuppressWarnings("deprecation")
 	private static cudnnConvolutionDescriptor allocateConvolutionDescriptor(int padding [], int strides []) {
 		cudnnConvolutionDescriptor convDesc = new cudnnConvolutionDescriptor();
 		cudnnCreateConvolutionDescriptor(convDesc);

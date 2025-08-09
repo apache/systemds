@@ -282,6 +282,7 @@ public class FederatedPlanCostEnumerator {
 	 * generates federated plan variants for both LOUT and FOUT output types,
 	 * and prunes redundant plans before adding them to the memo table.
 	 */
+	@SuppressWarnings("unused")
 	private static void enumerateHop(Hop hop, FederatedMemoTable memoTable, Map<Long, HopCommon> hopCommonTable,
 			Map<Long, List<Hop>> rewireTable, Map<Long, Privacy> privacyConstraintMap,
 			Map<Long, FType> fTypeMap, Set<Long> unRefTwriteSet, int numOfWorkers) {
@@ -510,6 +511,7 @@ public class FederatedPlanCostEnumerator {
 	 * it generates only
 	 * a single plan for each output type
 	 */
+	@SuppressWarnings("unused")
 	private static void enumerateTransChildFedPlan(FedPlanVariants lOutFedPlanVariants,
 			FedPlanVariants fOutFedPlanVariants,
 			List<Hop> childHops, double[][] childCumulativeCost,
@@ -647,6 +649,7 @@ public class FederatedPlanCostEnumerator {
 	 * - Re-running BFS with resolved conflicts to ensure all inconsistencies are
 	 * addressed.
 	 */
+	@SuppressWarnings("unused")
 	private static double detectAndResolveConflictFedPlan(FedPlan rootPlan, FederatedMemoTable memoTable) {
 		// Map to track conflicts: maps a plan ID to its federated output type and list
 		// of parent plans

@@ -22,8 +22,8 @@
 # Read input matrix and operator from command line args
 X = read($1);
 #print(toString(X))
-Y = ceil(X);
+res = ceil(X);
 #print(toString(Y))
-res = as.matrix(sum(Y));
+#res = as.matrix(sum(Y));
 # Write the final matrix result
-write(res, $2);
+write(res, $2, format="binary");

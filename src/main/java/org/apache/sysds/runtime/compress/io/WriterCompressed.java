@@ -46,7 +46,9 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.lib.CLALibSeparator;
 import org.apache.sysds.runtime.compress.lib.CLALibSeparator.SeparatedGroups;
 import org.apache.sysds.runtime.compress.lib.CLALibSlice;
+import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.instructions.spark.CompressionSPInstruction.CompressionFunction;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
@@ -406,5 +408,10 @@ public final class WriterCompressed extends MatrixWriter {
 		}
 
 	}
+
+	@Override
+	public long writeMatrixFromStream(String fname, LocalTaskQueue<IndexedMatrixValue> stream, long rlen, long clen, int blen) {
+		throw new UnsupportedOperationException("Writing from an OOC stream is not supported for the HDF5 format.");
+	};
 
 }

@@ -23,6 +23,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
@@ -30,9 +31,12 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.util.HDFSTool;
+
 
 public class WriterBinaryBlock extends MatrixWriter {
 	protected int _replication = -1;
@@ -227,5 +231,39 @@ public class WriterBinaryBlock extends MatrixWriter {
 		finally {
 			IOUtilFunctions.closeSilently(writer);
 		}
+	}
+
+	@Override
+	public long writeMatrixFromStream(String fname, LocalTaskQueue<IndexedMatrixValue> stream, long rlen, long clen, int blen) throws IOException {
+		JobConf conf = ConfigurationManager.getCachedJobConf();
+		Path path = new Path(fname);
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
+
+		SequenceFile.Writer writer = null;
+
+		long totalNnz = 0;
+		try {
+			// 1. Create Sequence file writer for the final destination file			writer = new SequenceFile.Writer(fs, conf, path, MatrixIndexes.class, MatrixBlock.class);
+            writer = SequenceFile.createWriter(fs, conf, path, MatrixIndexes.class, MatrixBlock.class);
+
+			// 2. Loop through OOC stream
+			IndexedMatrixValue i_val =  null;
+			while((i_val = stream.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
+				MatrixBlock mb = (MatrixBlock) i_val.getValue();
+				MatrixIndexes ix = i_val.getIndexes();
+
+				// 3. Append (key, value) record as a new value in the file
+				writer.append(ix, mb);
+
+				totalNnz += mb.getNonZeros();
+			}
+
+		} catch (IOException | InterruptedException e) {
+			throw new DMLRuntimeException(e);
+        } finally {
+			IOUtilFunctions.closeSilently(writer);
+		}
+
+        return totalNnz;
 	}
 }

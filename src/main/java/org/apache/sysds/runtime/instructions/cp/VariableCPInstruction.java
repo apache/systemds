@@ -41,13 +41,11 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FileFormatPropertiesHDF5;
@@ -57,8 +55,6 @@ import org.apache.sysds.runtime.io.ListWriter;
 import org.apache.sysds.runtime.io.WriterHDF5;
 import org.apache.sysds.runtime.io.WriterMatrixMarket;
 import org.apache.sysds.runtime.io.WriterTextCSV;
-import org.apache.sysds.runtime.io.MatrixWriterFactory;
-import org.apache.sysds.runtime.io.MatrixWriter;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
@@ -1066,33 +1062,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		else if( getInput1().getDataType() == DataType.MATRIX ) {
 			MatrixObject mo = ec.getMatrixObject(getInput1().getName());
 			int blen = Integer.parseInt(getInput4().getName());
-			LocalTaskQueue<IndexedMatrixValue> stream = mo.getStreamHandle();
 
-			if (stream != null) {
-
-				try {
-					MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(fmt);
-                    long nrows = mo.getNumRows();
-                    long ncols = mo.getNumColumns();
-
-					long totalNnz = writer.writeMatrixFromStream(fname, stream, nrows, ncols, blen);
-					MatrixCharacteristics mc = new MatrixCharacteristics(nrows, ncols, blen, totalNnz);
-                    HDFSTool.writeMetaDataFile(fname + ".mtd", mo.getValueType(), mc, fmt);
-
-					// 1. Update the metadata of the MatrixObject in the symbol table.
-					mo.updateDataCharacteristics(mc);
-					System.out.println("MO characterstics updated to avoid recompilation");
-
-					// 2. Clear its dirty flag and update its file path to the result we just wrote.
-					// This tells the system that the data for this variable now lives in 'fname'.
-					HDFSTool.copyFileOnHDFS(fname, mo.getFileName());
-					mo.setDirty(false);
-
-				}
-				catch(Exception ex) {
-					throw new DMLRuntimeException("Failed to write OOC stream to " + fname, ex);
-				}
-			}
 			if( fmt == FileFormat.MM )
 				writeMMFile(ec, fname);
 			else if( fmt == FileFormat.CSV )

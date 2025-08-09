@@ -235,16 +235,13 @@ public class WriterBinaryBlock extends MatrixWriter {
 
 	@Override
 	public long writeMatrixFromStream(String fname, LocalTaskQueue<IndexedMatrixValue> stream, long rlen, long clen, int blen) throws IOException {
-		JobConf conf = ConfigurationManager.getCachedJobConf();
 		Path path = new Path(fname);
-		FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
-
 		SequenceFile.Writer writer = null;
 
 		long totalNnz = 0;
 		try {
-			// 1. Create Sequence file writer for the final destination file			writer = new SequenceFile.Writer(fs, conf, path, MatrixIndexes.class, MatrixBlock.class);
-            writer = SequenceFile.createWriter(fs, conf, path, MatrixIndexes.class, MatrixBlock.class);
+			// 1. Create Sequence file writer for the final destination file
+			writer = IOUtilFunctions.getSeqWriter(path, job, _replication);
 
 			// 2. Loop through OOC stream
 			IndexedMatrixValue i_val =  null;
@@ -257,13 +254,12 @@ public class WriterBinaryBlock extends MatrixWriter {
 
 				totalNnz += mb.getNonZeros();
 			}
-
-		} catch (IOException | InterruptedException e) {
+		} catch (Exception e) {
 			throw new DMLRuntimeException(e);
-        } finally {
+		} finally {
 			IOUtilFunctions.closeSilently(writer);
 		}
 
-        return totalNnz;
+		return totalNnz;
 	}
 }

@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.io.MatrixWriterFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -38,7 +39,10 @@ import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.HashMap;
+
+import static org.apache.sysds.test.TestUtils.readDMLMatrixFromHDFS;
 
 public class UnaryTest extends AutomatedTestBase {
 
@@ -86,16 +90,16 @@ public class UnaryTest extends AutomatedTestBase {
 			
 			runTest(true, false, null, -1);
 
-			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir(OUTPUT_NAME);
-			Double result = dmlfile.get(new MatrixValue.CellIndex(1, 1));
+			double[][] C1 = readMatrix(output(OUTPUT_NAME), FileFormat.BINARY, rows, cols, 1000, 1000);
 			double expected = 0.0;
+			double result = 0.0;
 			for(int i = 0; i < rows; i++) {
 				for(int j = 0; j < cols; j++) {
-					expected += Math.ceil(mb.get(i, j));
+					expected = Math.ceil(mb.get(i, j));
+					result = C1[i][j];
+					Assert.assertEquals(expected, result, 1e-10);
 				}
 			}
-
-			Assert.assertEquals(expected, result, 1e-10);
 
 			String prefix = Instruction.OOC_INST_PREFIX;
 			Assert.assertTrue("OOC wasn't used for RBLK",
@@ -110,5 +114,13 @@ public class UnaryTest extends AutomatedTestBase {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldRewrite;
 			resetExecMode(platformOld);
 		}
+	}
+
+	private static double[][] readMatrix( String fname, FileFormat fmt, long rows, long cols, int brows, int bcols )
+			throws IOException
+	{
+		MatrixBlock mb = DataConverter.readMatrixFromHDFS(fname, fmt, rows, cols, brows, bcols);
+		double[][] C = DataConverter.convertToDoubleMatrix(mb);
+		return C;
 	}
 }

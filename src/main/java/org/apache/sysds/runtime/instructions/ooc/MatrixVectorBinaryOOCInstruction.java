@@ -122,6 +122,7 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
             partitionedVector.put(key, vectorChunk);
         }
         System.out.println("partitionedVector: \n" + partitionedVector);
+        ec.releaseMatrixInput(input2.getName());
 
         LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
 
@@ -206,9 +207,9 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
         } catch (ExecutionException | InterruptedException e) {
             throw new DMLRuntimeException(e);
         }
-        finally {
-//            pool.shutdown();
-            ec.releaseMatrixInput(input2.getName());
-        }
+//        finally {
+////            pool.shutdown();
+//            ec.releaseMatrixInput(input2.getName());
+//        }
     }
 }

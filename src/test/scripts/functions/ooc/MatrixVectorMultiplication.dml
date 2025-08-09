@@ -24,7 +24,6 @@ X = read($1);
 v = read($2);
 
 # Operation under test
-y_ooc = X %*% v;
+res = X %*% v;
 
-write(y_ooc, $3, format="binary")
-
+write(res, $3, format="binary")

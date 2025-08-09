@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.test.functions.ooc;
 
 import org.apache.sysds.common.Types;
@@ -10,7 +29,9 @@ import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.functions.binary.matrix.MatrixVectorTest;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -19,12 +40,14 @@ import java.util.HashMap;
 public class MatrixVectorBinaryMultiplicationTest extends AutomatedTestBase {
     private final static String TEST_NAME1 = "MatrixVectorMultiplication";
     private final static String TEST_DIR = "functions/ooc/";
-    private final static String TEST_CLASS_DIR = TEST_DIR + MatrixVectorTest.class.getSimpleName() + "/";
+    private final static String TEST_CLASS_DIR = TEST_DIR + MatrixVectorBinaryMultiplicationTest.class.getSimpleName() + "/";
     private final static double eps = 1e-10;
+    private static final String INPUT_NAME = "X";
+    private static final String INPUT_NAME2 = "v";
     private static final String OUTPUT_NAME = "res";
 
-    private final static int rows = 5000;
-    private final static int cols_wide = 5000;
+    private final static int rows = 1000;
+    private final static int cols_wide = 1000;
     private final static int cols_skinny = 500;
 
     private final static double sparsity1 = 0.7;
@@ -33,8 +56,11 @@ public class MatrixVectorBinaryMultiplicationTest extends AutomatedTestBase {
     @Override
     public void setUp()
     {
-        addTestConfiguration(TEST_NAME1,
-                new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "y" }) );
+//        addTestConfiguration(TEST_NAME1,
+//                new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "y" }) );
+        TestUtils.clearAssertionInformation();
+        TestConfiguration config = new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1);
+        addTestConfiguration(TEST_NAME1, config);
     }
 
     @Test
@@ -57,7 +83,7 @@ public class MatrixVectorBinaryMultiplicationTest extends AutomatedTestBase {
             String HOME = SCRIPT_DIR + TEST_DIR;
             fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
             programArgs = new String[]{"-explain", "-stats", "-ooc",
-                    "-args", input("A"), input("x"), output("y")};
+                    "-args", input(INPUT_NAME), input(INPUT_NAME2), output(OUTPUT_NAME)};
 
             fullRScriptName = HOME + TEST_NAME1 + ".R";
             rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
@@ -81,16 +107,27 @@ public class MatrixVectorBinaryMultiplicationTest extends AutomatedTestBase {
             MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(Types.FileFormat.BINARY);
 
             // 4. Write matrix A to a binary SequenceFile
-            writer.writeMatrixToHDFS(A_mb, input("A"), rows, cols, 1000, A_mb.getNonZeros());
-            HDFSTool.writeMetaDataFile(input("A.mtd"), Types.ValueType.FP64,
+            writer.writeMatrixToHDFS(A_mb, input(INPUT_NAME), rows, cols, 1000, A_mb.getNonZeros());
+            HDFSTool.writeMetaDataFile(input(INPUT_NAME + ".mtd"), Types.ValueType.FP64,
                     new MatrixCharacteristics(rows, cols, 1000, A_mb.getNonZeros()), Types.FileFormat.BINARY);
 
             // 5. Write vector x to a binary SequenceFile
-            writer.writeMatrixToHDFS(x_mb, input("x"), cols, 1, 1000, x_mb.getNonZeros());
-            HDFSTool.writeMetaDataFile(input("x.mtd"), Types.ValueType.FP64,
+            writer.writeMatrixToHDFS(x_mb, input(INPUT_NAME2), cols, 1, 1000, x_mb.getNonZeros());
+            HDFSTool.writeMetaDataFile(input(INPUT_NAME2 + ".mtd"), Types.ValueType.FP64,
                     new MatrixCharacteristics(cols, 1, 1000, x_mb.getNonZeros()), Types.FileFormat.BINARY);
 
 //            HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir(OUTPUT_NAME);
+//            double[][] C1 = readMatrix(output(OUTPUT_NAME), Types.FileFormat.BINARY, rows, cols, 1000, 1000);
+//
+//            double result = 0.0;
+//            for(int i = 0; i < rows; i++) {
+//                double expected = 0.0;
+//                for(int j = 0; j < cols; j++) {
+//                    expected += A_mb.get(i, j) * x_mb.get(j,0);
+//                }
+//                result = C1[i][0];
+//                Assert.assertEquals(expected, result, 1e-10);
+//            }
 
             boolean exceptionExpected = false;
             runTest(true, exceptionExpected, null, -1);

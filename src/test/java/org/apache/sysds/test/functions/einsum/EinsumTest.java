@@ -45,7 +45,7 @@ import java.util.List;
 public class EinsumTest extends AutomatedTestBase
 {
 	final private static List<Config> TEST_CONFIGS = List.of(
-			new Config("ij,jk->ik", List.of(shape(5, 600), shape(600, 10))), // mm
+			new Config("ij,jk->ik", List.of(shape(50, 600), shape(600, 10))), // mm
 			new Config("ji,jk->ik", List.of(shape(600, 5), shape(600, 10))),
 			new Config("ji,kj->ik", List.of(shape(600, 5), shape(10, 600))),
 			new Config("ij,kj->ik", List.of(shape(5, 600), shape(10, 600))),
@@ -59,35 +59,38 @@ public class EinsumTest extends AutomatedTestBase
 			new Config("ji,jk->j", List.of(shape(600, 5), shape(600, 10))),
 
 			new Config("ji,ji->ji", List.of(shape(600, 5), shape(600, 5))), // elemwise mult
+			new Config("ji,ji,ji->ji", List.of(shape(600, 5),shape(600, 5), shape(600, 5)),
+					List.of(0.0001, 0.0005, 0.001)),
 			new Config("ji,ij->ji", List.of(shape(600, 5), shape(5, 600))), // elemwise mult
 
 
-			new Config("ij,i->ij",   List.of(shape(1000, 50), shape(1000))), // col mult
-			new Config("ji,i->ij",   List.of(shape(50, 1000), shape(1000))), // row mult
-			new Config("ij,i->i",   List.of(shape(1000, 50), shape(1000))),
-			new Config("ij,i->j",   List.of(shape(1000, 50), shape(1000))),
+			new Config("ij,i->ij",   List.of(shape(100, 50), shape(100))), // col mult
+			new Config("ji,i->ij",   List.of(shape(50, 100), shape(100))), // row mult
+			new Config("ij,i->i",   List.of(shape(100, 50), shape(100))),
+			new Config("ij,i->j",   List.of(shape(100, 50), shape(100))),
 
-			new Config("i,i->",     List.of(shape(500), shape(500))),
-			new Config("i,j->",     List.of(shape(500), shape(800))),
-			new Config("i,j->ij",     List.of(shape(500), shape(800))), // outer vect mult
-			new Config("i,j->ji",     List.of(shape(500), shape(800))), // outer vect mult
+			new Config("i,i->",     List.of(shape(50), shape(50))),
+			new Config("i,j->",     List.of(shape(50), shape(80))),
+			new Config("i,j->ij",     List.of(shape(50), shape(80))), // outer vect mult
+			new Config("i,j->ji",     List.of(shape(50), shape(80))), // outer vect mult
 
-			new Config("ij->",     List.of(shape(1000, 50))), // sum
-			new Config("ij->i",     List.of(shape(1000, 50))), // sum(1)
-			new Config("ij->j",     List.of(shape(1000, 50))), // sum(0)
-			new Config("ij->ji",     List.of(shape(1000, 50))), // T
+			new Config("ij->",     List.of(shape(100, 50))), // sum
+			new Config("ij->i",     List.of(shape(100, 50))), // sum(1)
+			new Config("ij->j",     List.of(shape(100, 50))), // sum(0)
+			new Config("ij->ji",     List.of(shape(100, 50))), // T
 
 			new Config("ab,cd->ba",     List.of(shape( 600, 10), shape(6, 5))),
+			new Config("ab,cd,g->ba",     List.of(shape( 600, 10), shape(6, 5), shape(3))),
 
 			new Config("ab,bc,cd,de->ae",   List.of(shape(5, 600), shape(600, 10), shape(10, 5), shape(5, 4))), // chain of mm
 
 			new Config("ji,jz,zx->ix",   List.of(shape(600, 5), shape( 600, 10), shape(10, 2))),
 			new Config("fx,fg,fz,xg->z",   List.of(shape(600, 5), shape( 600, 10), shape(600, 6), shape(5, 10))),
 			new Config("fx,fg,fz,xg,zx,zg->g", // each idx 3 times (cell tpl)
-					List.of(shape(5, 60), shape(5, 30), shape(5, 100), shape(60, 30), shape(100, 60), shape(100, 30))),
+					List.of(shape(5, 60), shape(5, 30), shape(5, 10), shape(60, 30), shape(10, 60), shape(10, 30))),
 
-			new Config("i->",     List.of(shape(1000))),
-			new Config("i->i",     List.of(shape(1000)))
+			new Config("i->",     List.of(shape(100))),
+			new Config("i->i",     List.of(shape(100)))
 	);
 
 	private final int id;
@@ -146,7 +149,7 @@ public class EinsumTest extends AutomatedTestBase
 		for (int i = 0; i < config.shapes.size(); i++) {
 			int[] dims = config.shapes.get(i);
 
-			double factor = 0.0001;
+			double factor = config.factors != null ? config.factors.get(i) : 0.0001;
 			sb.append("A");
 			sb.append(i);
 
@@ -174,13 +177,13 @@ public class EinsumTest extends AutomatedTestBase
 		sb.append(config.einsumStr);
 		sb.append("\", ");
 
-		for (int i = 0; i < config.shapes.size()-1; i++) {
+		for (int i = 0; i < config.shapes.size() - 1; i++) {
 			sb.append("A");
 			sb.append(i);
 			sb.append(", ");
 		}
 		sb.append("A");
-		sb.append(config.shapes.size()-1);
+		sb.append(config.shapes.size() - 1);
 		sb.append(")");
 
 		sb.append("\n\n");
@@ -199,8 +202,8 @@ public class EinsumTest extends AutomatedTestBase
 
 		for (int i = 0; i < config.shapes.size(); i++) {
 			int[] dims = config.shapes.get(i);
-
-			double factor = 0.0001;
+			
+			double factor = config.factors != null ? config.factors.get(i) : 0.0001;
 			sb.append("A");
 			sb.append(i);
 
@@ -268,12 +271,19 @@ public class EinsumTest extends AutomatedTestBase
 	}
 
 	private static class Config {
+		public List<Double> factors;
 		String einsumStr;
 		List<int[]> shapes;
 
 		Config(String einsum, List<int[]> shapes) {
 			this.einsumStr = einsum;
 			this.shapes = shapes;
+			this.factors = null;
+		}
+		Config(String einsum, List<int[]> shapes, List<Double> factors) {
+			this.einsumStr = einsum;
+			this.shapes = shapes;
+			this.factors = factors;
 		}
 	}
 

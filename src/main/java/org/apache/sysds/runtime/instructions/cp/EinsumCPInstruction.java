@@ -19,7 +19,9 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
@@ -32,6 +34,7 @@ import org.apache.sysds.hops.codegen.cplan.CNode;
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysds.hops.codegen.cplan.CNodeCell;
 import org.apache.sysds.hops.codegen.cplan.CNodeData;
+import org.apache.sysds.hops.codegen.cplan.CNodeNary;
 import org.apache.sysds.hops.codegen.cplan.CNodeRow;
 import org.apache.sysds.runtime.codegen.*;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -42,10 +45,13 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 	public static boolean FORCE_CELL_TPL = false;
@@ -116,89 +122,70 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		}
 
 		if (scalar != null) {
-			boolean appliedToSomeMatrix = false;
-			for(int i = 0; i < inputs.size(); i++){
-				if(inputs.get(i) != null){
-					inputs.set(i, getScalarMultiplyMatrixBlock(inputs.get(i), scalar));
-					appliedToSomeMatrix = true; break;
-				}
-			}
-			if(!appliedToSomeMatrix){
-				ec.setScalarOutput(output.getName(), new DoubleObject(scalar));
-				releaseMatrixInputs(ec);
-				return;
-			}
+			inputsChars.add("");
+			inputs.add(new MatrixBlock(scalar));
 		}
 
-		boolean needToDoCellTemplate = FORCE_CELL_TPL ? true : generatePlanAndExecute(inputs, einc);
+		HashMap<Character, Integer> characterToOccurences = new HashMap<>();
+		for (Character key :einc.characterAppearanceIndexes.keySet()) {
+			characterToOccurences.put(key, einc.characterAppearanceIndexes.get(key).size());
+		}
+		for (Character key :einc.charToDimensionSize.keySet()) {
+			if(!characterToOccurences.containsKey(key))
+				characterToOccurences.put(key, 1);
+		}
 
-		if (!needToDoCellTemplate){
-			//check if any operations to do that were not-output dimension summations:
-			List<String> remStrings = inputsChars.stream()
-					.filter(Objects::nonNull).toList();
-			List<MatrixBlock> remMbs = inputs.stream()
-					.filter(Objects::nonNull).toList();
-			MatrixBlock res;
-			if(remStrings.size() == 1) {
-				String s = remStrings.get(0);
-				if(s.equals(resultString)){
-					res=remMbs.get(0);
-				}else if(s.charAt(0) == s.charAt(1)) {
-					// diagonal needed
-					ReorgOperator op = new ReorgOperator(DiagIndex.getDiagIndexFnObject());
-					res= remMbs.get(0).reorgOperations(op, new MatrixBlock(),0,0,0);
-				}else{
-					//it has to be transpose: ab->ba
+		ArrayList<EOpNode> eOpNodes = new ArrayList<>(inputsChars.size());
+		for (int i = 0; i < inputsChars.size(); i++) {
+			if (inputsChars.get(i) == null) continue;
+			EOpNodeData n = new EOpNodeData(inputsChars.get(i).length() > 0 ? inputsChars.get(i).charAt(0) : null, inputsChars.get(i).length() > 1 ? inputsChars.get(i).charAt(1) : null, i);
+			eOpNodes.add(n);
+		}
+		Pair<Integer, List<EOpNode> > plan = FORCE_CELL_TPL ? null : generatePlan(0, eOpNodes, einc.charToDimensionSize, characterToOccurences, einc.outChar1, einc.outChar2);
+
+
+		ArrayList<MatrixBlock> resMatrices = FORCE_CELL_TPL ? null : executePlan(plan.getRight(), inputs);
+//		ArrayList<MatrixBlock> resMatrices = executePlan(plan.getRight(), inputs, true);
+
+		if(!FORCE_CELL_TPL && resMatrices.size() == 1){
+			EOpNode resNode = plan.getRight().get(0);
+			if (einc.outChar1 != null && einc.outChar2 != null){
+				if(resNode.c1 == einc.outChar1 && resNode.c2 == einc.outChar2){
+					ec.setMatrixOutput(output.getName(), resMatrices.get(0));
+				}
+				else if(resNode.c1 == einc.outChar2 && resNode.c2 == einc.outChar1){
 					ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
-					res = remMbs.get(0).reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
+					MatrixBlock resM = resMatrices.get(0).reorgOperations(transpose, new MatrixBlock(),0,0,0);
+					ec.setMatrixOutput(output.getName(), resM);
+				}else{
+					if(LOG.isTraceEnabled()) LOG.trace("Einsum expected: "+resultString + ", got: "+resNode.c1+resNode.c2);
+					throw new RuntimeException("Einsum plan produced different result");
 				}
-			} else{
-				// maybe the leftovers are i,j and result should be ij or ji -> outer multp.
-				if(remStrings.size() == 2 && remStrings.get(0).length()==1 && remStrings.get(1).length()==1){
-					MatrixBlock first;
-					MatrixBlock second;
-
-					if(remStrings.get(0).charAt(0) == einc.outChar1 && remStrings.get(1).charAt(0) == einc.outChar2){
-						first = remMbs.get(0);
-						second = remMbs.get(1);
-					}else if(remStrings.get(0).charAt(0) == einc.outChar2 && remStrings.get(1).charAt(0) == einc.outChar1){
-						first = remMbs.get(1);
-						second = remMbs.get(0);
-					}else{
-						throw new RuntimeException("Einsum runtime error: left with 2 vectors that cannot produce final result "+remStrings.get(0)+" , "+remStrings.get(1)); // should not happen
-					}
-					if(first.getNumColumns() > 1){
-						int r = first.getNumColumns();
-						first.setNumRows(r);
-						first.setNumColumns(1);
-						first.getDenseBlock().resetNoFill(r,1);
-					}
-					if(second.getNumRows() > 1){
-						int c = second.getNumRows();
-						second.setNumRows(1);
-						second.setNumColumns(c);
-						second.getDenseBlock().resetNoFill(1,c);
-					}
-					res = LibMatrixMult.matrixMult(first,second, _numThreads);
-				}else {
-					throw new RuntimeException("Einsum runtime error, reductions and multiplications finished but the did not produce one result"); // should not happen
+			}else if (einc.outChar1 != null){
+				if(resNode.c1 == einc.outChar1  && resNode.c2 == null){
+					ec.setMatrixOutput(output.getName(), resMatrices.get(0));
+				}else{
+					if(LOG.isTraceEnabled()) LOG.trace("Einsum expected: "+resultString + ", got: "+resNode.c1+resNode.c2);
+					throw new RuntimeException("Einsum plan produced different result");
+				}
+			}else{
+				if(resNode.c1 == null && resNode.c2 == null){
+					ec.setScalarOutput(output.getName(), new DoubleObject(resMatrices.get(0).get(0, 0)));;
 				}
 			}
-			if (einc.outRows == 1 && einc.outCols == 1)
-				ec.setScalarOutput(output.getName(), new DoubleObject(res.get(0, 0)));
-			else ec.setMatrixOutput(output.getName(), res);
-		}
-
-		else { // if (needToDoCellTemplate)
-			ArrayList<MatrixBlock> mbs = new ArrayList<>();
+		}else{
+			// use cell template with loops for remaining
+			ArrayList<MatrixBlock> mbs = resMatrices;
 			ArrayList<String> chars = new ArrayList<>();
-			for (int i = 0; i < inputs.size(); i++) {
-				MatrixBlock mb = inputs.get(i);
-				if (mb != null) {
-					mbs.add(mb);
-					chars.add(inputsChars.get(i));
-				}
+
+			for (int i = 0; i < plan.getRight().size(); i++) {
+				String s;
+				if(plan.getRight().get(i).c1 == null) s = "";
+				else if(plan.getRight().get(i).c2 == null) s = plan.getRight().get(i).c1.toString();
+				else s = plan.getRight().get(i).c1.toString() + plan.getRight().get(i).c2;
+				chars.add(s);
 			}
+
 			ArrayList summingChars = new ArrayList();
 			for (Character c : einc.characterAppearanceIndexes.keySet()) {
 				if (c != einc.outChar1 && c != einc.outChar2) summingChars.add(c);
@@ -211,10 +198,10 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 				ec.setScalarOutput(output.getName(), new DoubleObject(res.get(0, 0)));
 			else ec.setMatrixOutput(output.getName(), res);
 		}
-
 		if(LOG.isTraceEnabled()) LOG.trace("EinsumCPInstruction Finished");
 
 		releaseMatrixInputs(ec);
+
 	}
 
 	private void contractDimensionsAndComputeDiagonals(EinsumContext einc, ArrayList<MatrixBlock> inputs) {
@@ -255,27 +242,455 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		}
 	}
 
+	private enum EBinaryOperand { // upper case: char has to remain, lower case: to be summed
+		////// summations:   //////
+		aB_a,// -> B
+		Ba_a, // -> B
+		Ba_aC, // mmult -> BC
+		aB_Ca,
+		Ba_Ca, // -> BC
+		aB_aC, // outer mult, possibly with transposing first -> BC
+		a_a,// dot ->
+
+		////// elementwisemult and sums, something like ij,ij->i   //////
+		aB_aB,// elemwise and colsum -> B
+		Ba_Ba, // elemwise and rowsum ->B
+		Ba_aB, // elemwise, either colsum or rowsum -> B
+//		aB_Ba,
+
+		////// elementwise, no summations:   //////
+		A_A,// v-elemwise -> A
+		AB_AB,// M-M elemwise -> AB
+		AB_BA, // M-M.T elemwise -> AB
+		AB_A, // M-v colwise -> BA!?
+		BA_A, // M-v rowwise -> BA
+		ab_ab,//M-M sum all
+		ab_ba, //M-M.T sum all
+		////// other   //////
+		A_B, // outer mult -> AB
+		A_scalar, // v-scalar
+		AB_scalar, // m-scalar
+		scalar_scalar
+	}
+	private abstract class EOpNode {
+		public Character c1;
+		public Character c2; // nullable
+		public EOpNode(Character c1, Character c2){
+			this.c1 = c1;
+			this.c2 = c2;
+		}
+	}
+	private class EOpNodeBinary extends EOpNode {
+		public EOpNode left;
+		public EOpNode right;
+		public EBinaryOperand operand;
+		public EOpNodeBinary(Character c1, Character c2, EOpNode left, EOpNode right, EBinaryOperand operand){
+			super(c1,c2);
+			this.left = left;
+			this.right = right;
+			this.operand = operand;
+		}
+	}
+	private class EOpNodeData extends EOpNode {
+		public int matrixIdx;
+		public EOpNodeData(Character c1, Character c2, int matrixIdx){
+			super(c1,c2);
+			this.matrixIdx = matrixIdx;
+		}
+	}
+
+	private Pair<Integer, List<EOpNode> /* ideally with one element */> generatePlan(int cost, ArrayList<EOpNode> operands, HashMap<Character, Integer> charToSizeMap, HashMap<Character, Integer> charToOccurences, Character outChar1, Character outChar2) {
+		Integer minCost = cost;
+		List<EOpNode> minNodes = operands;
+
+		if (operands.size() == 2){
+			boolean swap = (operands.get(0).c2 == null && operands.get(1).c2 != null) || operands.get(0).c1 == null;
+			EOpNode n1 = operands.get(!swap ? 0 : 1);
+			EOpNode n2 = operands.get(!swap ? 1 : 0);
+			Triple<Integer, EBinaryOperand, Pair<Character, Character>> t = TryCombineAndCost(n1, n2, charToSizeMap, charToOccurences, outChar1, outChar2);
+			if (t != null) {
+				EOpNodeBinary newNode = new EOpNodeBinary(t.getRight().getLeft(), t.getRight().getRight(), n1, n2, t.getMiddle());
+				int thisCost = cost + t.getLeft();
+				return Pair.of(thisCost, Arrays.asList(newNode));
+			}
+			return Pair.of(cost, operands);
+		}
+		else if (operands.size() == 1){
+			// check for transpose
+			return Pair.of(cost, operands);
+		}
+
+		for(int i = 0; i < operands.size()-1; i++){
+			for (int j = i+1; j < operands.size(); j++){
+				boolean swap = (operands.get(i).c2 == null && operands.get(j).c2 != null) || operands.get(i).c1 == null;
+				EOpNode n1 = operands.get(!swap ? i : j);
+				EOpNode n2 = operands.get(!swap ? j : i);
+
+
+				Triple<Integer, EBinaryOperand, Pair<Character, Character>> t = TryCombineAndCost(n1, n2, charToSizeMap, charToOccurences, outChar1, outChar2);
+				if (t != null){
+					EOpNodeBinary newNode = new EOpNodeBinary(t.getRight().getLeft(), t.getRight().getRight(), n1, n2, t.getMiddle());
+					int thisCost = cost + t.getLeft();
+
+					if(n1.c1 != null) charToOccurences.put(n1.c1, charToOccurences.get(n1.c1)-1);
+					if(n1.c2 != null) charToOccurences.put(n1.c2, charToOccurences.get(n1.c2)-1);
+					if(n2.c1 != null) charToOccurences.put(n2.c1, charToOccurences.get(n2.c1)-1);
+					if(n2.c2 != null) charToOccurences.put(n2.c2, charToOccurences.get(n2.c2)-1);
+
+					if(newNode.c1 != null) charToOccurences.put(newNode.c1, charToOccurences.get(newNode.c1)+1);
+					if(newNode.c2 != null) charToOccurences.put(newNode.c2, charToOccurences.get(newNode.c2)+1);
+
+					ArrayList<EOpNode> newOperands = new ArrayList<>(operands.size()-1);
+					for(int z = 0; z < operands.size(); z++){
+						if(z != i && z != j) newOperands.add(operands.get(z));
+					}
+					newOperands.add(newNode);
+
+					Pair<Integer, List<EOpNode>> furtherPlan = generatePlan(thisCost, newOperands,charToSizeMap, charToOccurences, outChar1, outChar2);
+					if(furtherPlan.getRight().size() < (minNodes.size()) || furtherPlan.getLeft() < minCost){
+						minCost = furtherPlan.getLeft();
+						minNodes = furtherPlan.getRight();
+					}
+
+					if(n1.c1 != null) charToOccurences.put(n1.c1, charToOccurences.get(n1.c1)+1);
+					if(n1.c2 != null) charToOccurences.put(n1.c2, charToOccurences.get(n1.c2)+1);
+					if(n2.c1 != null) charToOccurences.put(n2.c1, charToOccurences.get(n2.c1)+1);
+					if(n2.c2 != null) charToOccurences.put(n2.c2, charToOccurences.get(n2.c2)+1);
+					if(newNode.c1 != null) charToOccurences.put(newNode.c1, charToOccurences.get(newNode.c1)-1);
+					if(newNode.c2 != null) charToOccurences.put(newNode.c2, charToOccurences.get(newNode.c2)-1);
+				}
+			}
+		}
+
+		return Pair.of(minCost, minNodes);
+	}
+
+	private static Triple<Integer, EBinaryOperand, Pair<Character, Character>> TryCombineAndCost(EOpNode n1 , EOpNode n2, HashMap<Character, Integer> charToSizeMap, HashMap<Character, Integer> charToOccurences, Character outChar1, Character outChar2){
+		Predicate<Character> cannotBeSummed = (c) ->
+				c == outChar1 || c == outChar2 || charToOccurences.get(c) > 2;
+
+		if(n1.c1 == null) {
+			// n2.c1 also has to be null
+			return Triple.of(1, EBinaryOperand.scalar_scalar, Pair.of(null, null));
+		}
+
+		if(n2.c1 == null) {
+			if(n1.c2 == null)
+				return Triple.of(charToSizeMap.get(n1.c1), EBinaryOperand.A_scalar, Pair.of(n1.c1, null));
+			return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.AB_scalar, Pair.of(n1.c1, n1.c2));
+		}
+
+		if(n1.c1 == n2.c1){
+			if(n1.c2 != null){
+				if ( n1.c2 == n2.c2){
+					if( cannotBeSummed.test(n1.c1)){
+						if(cannotBeSummed.test(n1.c2)){
+							return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.AB_AB, Pair.of(n1.c1, n1.c2));
+						}
+						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.Ba_Ba, Pair.of(n1.c1, null));
+					}
+
+					if(cannotBeSummed.test(n1.c2)){
+						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.aB_aB, Pair.of(n1.c2, null));
+					}
+
+					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.ab_ab, Pair.of(null, null));
+
+				}
+
+				else if(n2.c2 == null){
+					if(cannotBeSummed.test(n1.c1)){
+						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*2, EBinaryOperand.AB_A, Pair.of(n1.c1, n1.c2));
+					}
+					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*2, EBinaryOperand.aB_a, Pair.of(n1.c2, null)); // in theory (null, n1.c2)
+				}
+				else if(n1.c1 ==outChar1 || n1.c1==outChar2|| charToOccurences.get(n1.c1) > 2){
+					return null;// AB,AC
+				}
+				else {
+					return Triple.of((charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2))+(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*charToSizeMap.get(n2.c2)), EBinaryOperand.aB_aC, Pair.of(n1.c2, n2.c2)); // or n2.c2, n1.c2
+				}
+			}else{ // n1.c2 = null -> c2.c2 = null
+				if(n1.c1 ==outChar1 || n1.c1==outChar2 || charToOccurences.get(n1.c1) > 2){
+					return Triple.of(charToSizeMap.get(n1.c1), EBinaryOperand.A_A, Pair.of(n1.c1, null));
+				}
+				return Triple.of(charToSizeMap.get(n1.c1), EBinaryOperand.a_a, Pair.of(null, null));
+			}
+
+
+		}else{ // n1.c1 != n2.c1
+			if(n1.c2 == null) {
+				return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n2.c1), EBinaryOperand.A_B, Pair.of(n1.c1, n2.c1));
+			}
+			else if(n2.c2 == null) { // ab,c
+				if (n1.c2 == n2.c1) {
+					if(cannotBeSummed.test(n1.c2)){
+						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n2.c1), EBinaryOperand.BA_A, Pair.of(n1.c1, n1.c2));
+					}
+					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n2.c1), EBinaryOperand.Ba_a, Pair.of(n1.c1, null));
+				}
+				return null; // AB,C
+			}
+			else if (n1.c2 == n2.c1) {
+				if(n1.c1 == n2.c2){ // ab,ba
+					if(cannotBeSummed.test(n1.c1)){
+						if(cannotBeSummed.test(n1.c2)){
+							return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.AB_BA, Pair.of(n1.c1, n1.c2));
+						}
+						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.Ba_aB, Pair.of(n1.c1, null));
+					}
+					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.ab_ba, Pair.of(null, null));
+				}
+				if(cannotBeSummed.test(n1.c2)){
+					return null; // AB_B
+				}else{
+					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*charToSizeMap.get(n2.c2), EBinaryOperand.Ba_aC, Pair.of(n1.c1, n2.c2));
+//					if(n1.c1 ==outChar1 || n1.c1==outChar2|| charToOccurences.get(n1.c1) > 2){
+//						return null; // AB_B
+//					}
+//					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.Ba_a, Pair.of(n1.c1, null));
+				}
+			}
+			if(n1.c1 == n2.c2) {
+				if(cannotBeSummed.test(n1.c1)){
+					return null; // AB_B
+				}
+				return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*charToSizeMap.get(n2.c1), EBinaryOperand.aB_Ca, Pair.of(n2.c1, n1.c2)); // * its just reorder of mmult
+			}
+			else if (n1.c2 == n2.c2) {
+				if(n1.c2 ==outChar1 || n1.c2==outChar2|| charToOccurences.get(n1.c2) > 2){
+					return null; // BA_CA
+				}else{
+					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2) +(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*charToSizeMap.get(n2.c1)), EBinaryOperand.Ba_Ca, Pair.of(n1.c1, n2.c1)); // or n2.c1, n1.c1
+				}
+			}
+			else { // we have something like ab,cd
+				return null;
+			}
+		}
+	}
+
+	private ArrayList<MatrixBlock /* #els = #els of plan */> executePlan(List<EOpNode> plan, ArrayList<MatrixBlock> inputs){
+		return executePlan(plan, inputs, false);
+	}
+	private ArrayList<MatrixBlock /* #els = #els of plan */> executePlan(List<EOpNode> plan, ArrayList<MatrixBlock> inputs, boolean codegen) {
+		ArrayList<MatrixBlock> res = new ArrayList<>(plan.size());
+		for(EOpNode p : plan){
+			if(codegen) res.add(ComputeEOpNodeCodegen(p, inputs));
+			else res.add(ComputeEOpNode(p, inputs));
+		}
+		return res;
+	}
+
+	private MatrixBlock ComputeEOpNode(EOpNode eOpNode, ArrayList<MatrixBlock> inputs){
+		if(eOpNode instanceof EOpNodeData eOpNodeData){
+			return inputs.get(eOpNodeData.matrixIdx);
+		}
+		EOpNodeBinary bin = (EOpNodeBinary) eOpNode;
+		MatrixBlock left = ComputeEOpNode(bin.left, inputs);
+		MatrixBlock right = ComputeEOpNode(bin.right, inputs);
+
+		AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
+
+		switch (bin.operand){
+			case AB_AB -> {
+				var res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
+				return res;
+			}
+			case A_A -> {
+				EnsureMatrixBlockColumnVector(left);
+				EnsureMatrixBlockColumnVector(right);
+				var res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
+				return res;
+			}
+			case a_a -> {
+				EnsureMatrixBlockColumnVector(left);
+				EnsureMatrixBlockColumnVector(right);
+				var res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
+				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), _numThreads);
+				res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
+				return res;
+			}
+			////////////
+			case Ba_Ba -> {
+				var res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
+				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), _numThreads);
+				res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
+				return res;
+			}
+			case aB_aB -> {
+				var res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
+				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), _numThreads);
+				res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
+				EnsureMatrixBlockColumnVector(res);
+				return res;
+			}
+			case ab_ab -> {
+				var res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
+				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), _numThreads);
+				res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
+				return res;
+			}
+			case ab_ba -> {
+				ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
+				right = right.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
+				var res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
+				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), _numThreads);
+				res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
+				return res;
+			}
+			case Ba_aB -> {
+				ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
+				right = right.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
+				var res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
+				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), _numThreads);
+				res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
+				return res;
+			}
+
+			/////////
+			case AB_BA -> {
+				ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
+				right = right.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
+				var res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
+				return res;
+			}
+			case Ba_aC -> {
+				var res = LibMatrixMult.matrixMult(left,right, new MatrixBlock(), _numThreads);
+				return res;
+			}
+			case aB_Ca -> {
+				var res = LibMatrixMult.matrixMult(right,left, new MatrixBlock(), _numThreads);
+				return res;
+			}
+			case Ba_Ca -> {
+				ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
+				right = right.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
+				var res = LibMatrixMult.matrixMult(left,right, new MatrixBlock(), _numThreads);
+				return res;
+			}
+			case aB_aC -> {
+				ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
+				left = left.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
+				var res = LibMatrixMult.matrixMult(left,right, new MatrixBlock(), _numThreads);
+				return res;
+			}
+			case A_scalar, AB_scalar -> {
+				var res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left},new ScalarObject[]{new DoubleObject(right.get(0,0))}, new MatrixBlock());
+				return res;
+			}
+			case BA_A -> {
+				EnsureMatrixBlockRowVector(right);
+				var res = left.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), right);
+				return res;
+			}
+			case Ba_a -> {
+				EnsureMatrixBlockRowVector(right);
+				var res = left.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), right);
+				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), _numThreads);
+				res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
+				return res;
+			}
+
+			case AB_A -> {
+				EnsureMatrixBlockColumnVector(right);
+				var res = left.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), right);
+				return res;
+			}
+			case aB_a -> {
+				EnsureMatrixBlockColumnVector(right);
+				var res = left.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), right);
+				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), _numThreads);
+				res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
+				EnsureMatrixBlockColumnVector(res);
+				return res;
+			}
+
+			case A_B -> {
+				EnsureMatrixBlockColumnVector(left);
+				EnsureMatrixBlockRowVector(right);
+				var res = left.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), right);
+				return res;
+			}
+			case scalar_scalar -> {
+				return new MatrixBlock(left.get(0,0)*right.get(0,0));
+			}
+			default -> {
+				throw new IllegalArgumentException("Unexpected value: " + bin.operand.toString());
+			}
+
+		}
+	}
+
+	private static MatrixBlock ComputeEOpNodeCodegen(EOpNode eOpNode, ArrayList<MatrixBlock> inputs){
+		return rComputeEOpNodeCodegen(eOpNode, inputs);
+//		throw new NotImplementedException();
+	}
+	private static CNodeData MatrixBlockToCNodeData(MatrixBlock mb, int id){
+		return new CNodeData("ce"+id, id, mb.getNumRows(), mb.getNumColumns(), DataType.MATRIX);
+	}
+	private static MatrixBlock rComputeEOpNodeCodegen(EOpNode eOpNode, ArrayList<MatrixBlock> inputs) {
+		if (eOpNode instanceof EOpNodeData eOpNodeData){
+			return inputs.get(eOpNodeData.matrixIdx);
+//			return new CNodeData("ce"+eOpNodeData.matrixIdx, eOpNodeData.matrixIdx, inputs.get(eOpNodeData.matrixIdx).getNumRows(), inputs.get(eOpNodeData.matrixIdx).getNumColumns(), DataType.MATRIX);
+		}
+
+		EOpNodeBinary bin = (EOpNodeBinary) eOpNode;
+//		CNodeData dataLeft = null;
+//		if (bin.left instanceof EOpNodeData eOpNodeData) dataLeft = new CNodeData("ce"+eOpNodeData.matrixIdx, eOpNodeData.matrixIdx, inputs.get(eOpNodeData.matrixIdx).getNumRows(), inputs.get(eOpNodeData.matrixIdx).getNumColumns(), DataType.MATRIX);
+//		CNodeData dataRight = null;
+//		if (bin.right instanceof EOpNodeData eOpNodeData) dataRight = new CNodeData("ce"+eOpNodeData.matrixIdx, eOpNodeData.matrixIdx, inputs.get(eOpNodeData.matrixIdx).getNumRows(), inputs.get(eOpNodeData.matrixIdx).getNumColumns(), DataType.MATRIX);
+
+		if(bin.operand == EBinaryOperand.AB_AB){
+			if (bin.right instanceof EOpNodeBinary rBinary && rBinary.operand  == EBinaryOperand.AB_AB){
+				MatrixBlock left = rComputeEOpNodeCodegen(bin.left, inputs);
+
+				MatrixBlock right1 = rComputeEOpNodeCodegen(((EOpNodeBinary) bin.right).left, inputs);
+				MatrixBlock right2 = rComputeEOpNodeCodegen(((EOpNodeBinary) bin.right).right, inputs);
+
+				CNodeData d0 = MatrixBlockToCNodeData(left, 0);
+				CNodeData d1 = MatrixBlockToCNodeData(right1, 1);
+				CNodeData d2 = MatrixBlockToCNodeData(right2, 2);
+//				CNodeNary nary = new CNodeNary(cnodeIn, CNodeNary.NaryType.)
+				CNodeBinary rightBinary = new CNodeBinary(d1, d2, CNodeBinary.BinType.VECT_MULT);
+				CNodeBinary cNodeBinary = new CNodeBinary(d0, rightBinary, CNodeBinary.BinType.VECT_MULT);
+				ArrayList<CNode> cnodeIn = new ArrayList<>();
+				cnodeIn.add(d0);
+				cnodeIn.add(d1);
+				cnodeIn.add(d2);
+
+				CNodeRow cnode = new CNodeRow(cnodeIn, cNodeBinary);
+
+				cnode.setRowType(SpoofRowwise.RowType.NO_AGG);
+				cnode.renameInputs();
+
+
+				String src = cnode.codegen(false, SpoofCompiler.GeneratorAPI.JAVA);
+				if( LOG.isTraceEnabled()) LOG.trace(CodegenUtils.printWithLineNumber(src));
+				Class cla = CodegenUtils.compileClass("codegen." + cnode.getClassname(), src);
+
+				SpoofOperator op = CodegenUtils.createInstance(cla);
+				MatrixBlock mb = new MatrixBlock();
+
+				ArrayList<ScalarObject> scalars = new ArrayList<>();
+				ArrayList<MatrixBlock> mbs = new ArrayList<>(3);
+				mbs.add(left);
+				mbs.add(right1);
+				mbs.add(right2);
+				MatrixBlock	out = op.execute(mbs, scalars, mb, 6);
+
+				return out;
+			}
+		}
+
+		throw new NotImplementedException();
+	}
+
+
 	private void releaseMatrixInputs(ExecutionContext ec){
 		for (CPOperand input : _in)
 			if(input.getDataType()==DataType.MATRIX)
-				ec.releaseMatrixInput(input.getName());
-	}
-
-	// returns true if there are elements that appear more than 2 times and cannot be summed
-	private boolean generatePlanAndExecute(ArrayList<MatrixBlock> inputs, EinsumContext einc) {
-		boolean anyCouldNotDo;
-		boolean didAnything = false; // maybe multiplication will make it summable
-		do {
-			anyCouldNotDo = sumCharactersWherePossible(einc.characterAppearanceIndexes, inputs, einc.newEquationStringInputsSplit, einc.outChar1, einc.outChar2);
-			didAnything = false;
-			if(einc.newEquationStringInputsSplit.stream().filter(Objects::nonNull).count() > 1)
-				didAnything = multiplyTerms(einc.characterAppearanceIndexes, inputs, einc.newEquationStringInputsSplit, einc.outChar1, einc.outChar2);
-		}
-		while(didAnything);
-
-		if(LOG.isTraceEnabled()) LOG.trace("generatePlanAndExecute() finished");
-
-		return anyCouldNotDo;
+				ec.releaseMatrixInput(input.getName()); //todo release other
 	}
 
 	private static void EnsureMatrixBlockColumnVector(MatrixBlock mb){
@@ -293,484 +708,6 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		}
 	}
 
-	/*  handle situation: ji,ji or ij,ji, j,j */
-	private boolean multiplyTerms(HashMap<Character, ArrayList<Integer>> partsCharactersToIndices, ArrayList<MatrixBlock> inputs, ArrayList<String> inputsChars, Character outChar1, Character outChar2 ) {
-		HashMap<String, LinkedList<Integer>> matrixStringToIndex = new HashMap<>();
-		HashSet<String> matrixStringToIndexSkip = new HashSet<>();
-		HashMap<String, LinkedList<Integer>> vectorStringToIndex = new HashMap<>();
-
-		for(int i = 0; i < inputsChars.size(); i++){
-			String s = inputsChars.get(i);
-			if(s==null) continue;
-
-			if(s.length() == 1){
-				if (vectorStringToIndex.containsKey(s)) vectorStringToIndex.get(s).add(i);
-				else { LinkedList<Integer> list = new LinkedList<>(); list.add(i); vectorStringToIndex.put(s, list); }
-			}else{
-				if (matrixStringToIndex.containsKey(s)) matrixStringToIndex.get(s).add(i);
-				else { LinkedList<Integer> list = new LinkedList<>(); list.add(i); matrixStringToIndex.put(s, list); }
-			}
-		}
-
-		boolean doneAnything = false;
-
-		// first do the vector-vector multipl.
-		for(var s : vectorStringToIndex.keySet()){
-			if(vectorStringToIndex.get(s).size() <= 1) continue;
-
-			doneAnything = true;
-
-			Integer vectorIdx0 = vectorStringToIndex.get(s).removeFirst();
-
-			if(LOG.isTraceEnabled()){
-				StringBuilder sb = new StringBuilder();
-
-				LOG.trace("Element wise multiplying: "+s);
-			}
-			MatrixBlock mb = inputs.get(vectorIdx0);
-			EnsureMatrixBlockColumnVector(mb);
-
-			do{ // do all vectors with same char
-				Integer vectorIdx1 = vectorStringToIndex.get(s).removeFirst();
-
-				ArrayList<MatrixBlock> mbs = new ArrayList<>();
-
-				mbs.add(mb);
-				mbs.add(inputs.get(vectorIdx1));
-				EnsureMatrixBlockColumnVector(mbs.get(1));
-
-				mb = getCodegenElemwiseMult(mbs);
-
-				inputs.set(vectorIdx1, null);
-				inputsChars.set(vectorIdx1, null);
-			} while (vectorStringToIndex.get(s).size() > 1);
-
-			inputs.set(vectorIdx0, null);
-			inputsChars.set(vectorIdx0, null);
-
-			inputs.add(mb);
-			inputsChars.add(s);
-			if (partsCharactersToIndices.containsKey(s.charAt(0))) partsCharactersToIndices.get(s.charAt(0)).add(inputs.size() - 1);
-			vectorStringToIndex.get(s).add(inputs.size() - 1);
-		}
-
-		for(var s : matrixStringToIndex.keySet()){
-			if(matrixStringToIndexSkip.contains(s)) continue;
-
-			String sT = s.length() == 2 ? String.valueOf(s.charAt(1)) + s.charAt(0) : null;
-			LinkedList<Integer> idxs = matrixStringToIndex.get(s);
-			LinkedList<Integer> idxsT = sT != null ? matrixStringToIndex.containsKey(sT) ? matrixStringToIndex.get(sT) : null : null;
-
-			Integer vectorIdx0 = null;
-			Integer vectorIdx1 = null;
-			String char0 = String.valueOf(s.charAt(0));
-			if(vectorStringToIndex.containsKey(char0)){
-				// ab,a-> ab
-				vectorIdx0 = vectorStringToIndex.get(char0).removeFirst(); // only one should left
-			}
-
-			String char1 = String.valueOf(s.charAt(1));
-			if(vectorStringToIndex.containsKey(char1)){
-				// ab,b -> ab
-				vectorIdx1 = vectorStringToIndex.get(char1).removeFirst(); // only one should left
-			}
-
-			if(idxs.size() <= 1 && idxsT == null && vectorIdx0 == null && vectorIdx1 == null) continue;
-
-			doneAnything = true;
-
-			// do decision if transpose idxs or idxsT: right now just always transpose second
-			if(LOG.isTraceEnabled()){
-				StringBuilder sb = new StringBuilder();
-				for(Integer idx : idxs){
-					sb.append(inputsChars.get(idx));
-					sb.append(",");
-				}
-				if(idxsT != null) for(Integer idx : idxsT){
-					sb.append(inputsChars.get(idx));
-					sb.append(",");
-				}
-				if(vectorIdx0 != null) {  sb.append(s.charAt(0)).append(","); }
-				if(vectorIdx1 != null) {  sb.append(s.charAt(1)).append(","); }
-
-				LOG.trace("Element wise multiplying: "+sb.toString());
-			}
-			Integer matrixIdx0 = idxs.removeFirst();
-
-			MatrixBlock mb = inputs.get(matrixIdx0);
-
-			inputs.set(matrixIdx0, null);
-			inputsChars.set(matrixIdx0, null);
-
-			while (!idxs.isEmpty()){
-				Integer matrixIdx1 = idxs.removeFirst();
-
-				ArrayList<MatrixBlock> mbs = new ArrayList<>();
-				mbs.add(mb);
-				mbs.add(inputs.get(matrixIdx1));
-
-				mb = getCodegenElemwiseMult(mbs);
-
-				inputs.set(matrixIdx1, null);
-				inputsChars.set(matrixIdx1, null);
-			}
-
-			if(idxsT != null) while(!idxsT.isEmpty()) {
-				ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
-
-				Integer matrixIdx1 = idxsT.removeFirst();
-
-				ArrayList<MatrixBlock> mbs = new ArrayList<>();
-				mbs.add(mb);
-				mbs.add(inputs.get(matrixIdx1).reorgOperations(transpose, new MatrixBlock(), 0, 0, 0));
-
-				mb = getCodegenElemwiseMult(mbs);
-
-				inputs.set(matrixIdx1, null);
-				inputsChars.set(matrixIdx1, null);
-			}
-
-			if(vectorIdx1 != null){ // ab,b->ab
-				EnsureMatrixBlockRowVector(inputs.get(vectorIdx1));
-
-				mb = getRowCodegenMatrixBlock(mb, inputs.get(vectorIdx1), CNodeBinary.BinType.VECT_MULT, SpoofRowwise.RowType.NO_AGG,  null);
-
-				inputs.set(vectorIdx1, null);
-				inputsChars.set(vectorIdx1, null);
-			}
-
-			if(vectorIdx0 != null){ // ab,a->ab
-				EnsureMatrixBlockRowVector(inputs.get(vectorIdx0));
-
-//				mb = getRowCodegenMatrixBlock(mb, inputs.get(vectorIdx0), CNodeBinary.BinType.VECT_MULT, SpoofRowwise.RowType.NO_AGG,null);
-//				mb = getRowCodegenMatrixBlock(mb, inputs.get(vectorIdx0), CNodeBinary.BinType.VECT_MULT_SCALAR, SpoofRowwise.RowType.NO_AGG, Long.valueOf( inputs.get(vectorIdx0).getNumColumns()));
-				{
-					ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
-					mb = mb.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-					mb = getRowCodegenMatrixBlock(mb, inputs.get(vectorIdx0), CNodeBinary.BinType.VECT_MULT, SpoofRowwise.RowType.NO_AGG, null);
-				}
-
-				inputs.set(vectorIdx0, null);
-				inputsChars.set(vectorIdx0, null);
-				s = String.valueOf(s.charAt(1))+String.valueOf(s.charAt(0));
-			}
-
-			inputs.add(mb);
-			inputsChars.add(s);
-			for (int i = 0; i < s.length(); i++) { // for each char in string, add pointer to newly created entry
-				char c = s.charAt(i);
-				if (partsCharactersToIndices.containsKey(c)) partsCharactersToIndices.get(c).add(inputs.size() - 1);
-			}
-
-			if(idxsT != null) matrixStringToIndexSkip.add(sT);
-		}
-
-
-
-		return doneAnything;
-	}
-
-	// returns true if left with summation with more than 2 inputs
-	private boolean sumCharactersWherePossible(HashMap<Character, ArrayList<Integer>> partsCharactersToIndices, ArrayList<MatrixBlock> inputs, ArrayList<String> inputsChars, Character outChar1, Character outChar2) {
-		boolean anyCouldNotDo;
-
-		while (true) {
-			List<Integer> toSum = null;
-			Character sumC = null;
-			anyCouldNotDo = false;
-			for (Character c : partsCharactersToIndices.keySet()) { // sum one dim at the time
-				if (c == outChar1 || c == outChar2)
-					continue;
-				toSum = new ArrayList<>();
-				for (Integer idx : partsCharactersToIndices.get(c).stream().filter(Objects::nonNull).toList()) {
-					if (inputs.get(idx) != null) {
-						toSum.add(idx);
-					}
-				}
-				if (toSum.size() > 2) {
-					anyCouldNotDo = true;
-					continue;
-				}
-				if (toSum.size() != 2)
-					continue;
-				sumC = c;
-				break;
-			}
-
-			if(sumC == null) break;
-
-			Pair<MatrixBlock, String> res = computeRowSummation(toSum, inputs, inputsChars, sumC);
-			String newS = res.getRight();
-
-			for (Integer idx : toSum) {
-				inputs.set(idx, null);
-				inputsChars.set(idx, null);
-			}
-			inputs.add(res.getLeft());
-			inputsChars.add(newS);
-
-			for (int i = 0; i < newS.length(); i++) { // for each char in string, add pointer to newly created entry
-				char c = newS.charAt(i);
-				if(partsCharactersToIndices.containsKey(c))
-					partsCharactersToIndices.get(c).add(inputs.size() - 1);
-			}
-			partsCharactersToIndices.remove(sumC);
-		}
-		return anyCouldNotDo;
-	}
-
-	private enum SumOperation {
-		aB_a,
-		Ba_a,
-		Ba_aC, // mmult -> BC
-//		aB_Ca,
-		Ba_Ca,
-		aB_aC, // outer mult
-		a_a,
-		aB_aB, Ba_Ba, Ba_aB, aB_Ba,// mult and sums, something like ij,ij->i
-	}
-
-	private Pair<MatrixBlock, String> computeRowSummation(List<Integer> toSum, ArrayList<MatrixBlock> inputs, List<String> inputsChars, Character sumChar) {
-
-		if(toSum.size() != 2){
-			return null;
-		}
-
-		String s1 = inputsChars.get(toSum.get(0));
-		String s2 = inputsChars.get(toSum.get(1));
-
-		MatrixBlock first = null;
-		MatrixBlock second = null;
-
-		String resS;
-		SumOperation sumOp;
-
-		if(s1.length()==1 && s2.length() == 1){
-			sumOp = SumOperation.a_a;
-			resS = "";
-			first = inputs.get(toSum.get(0));
-			second = inputs.get(toSum.get(1));
-		}
-		else if(s2.length() == 1 || s1.length() == 1){
-			if(s1.length() == 1){
-				String sTemp = s1;
-				s1=s2;
-				s2=sTemp;
-
-				first = inputs.get(toSum.get(1));
-				second = inputs.get(toSum.get(0));
-			}else{
-				first = inputs.get(toSum.get(0));
-				second = inputs.get(toSum.get(1));
-			}
-
-			if(s1.charAt(0) == s2.charAt(0)){
-				sumOp = SumOperation.aB_a;
-				resS = String.valueOf(s1.charAt(1));
-			}else{
-				sumOp = SumOperation.Ba_a;
-				resS = String.valueOf(s1.charAt(0));
-			}
-		} else if (s1.equals(s2)) {
-			if(s1.charAt(0) == sumChar){
-				sumOp = SumOperation.aB_aB;
-				first = inputs.get(toSum.get(0));
-				second = inputs.get(toSum.get(1));
-				resS = String.valueOf(s1.charAt(1));
-			}else{
-				sumOp = SumOperation.Ba_Ba;
-				first = inputs.get(toSum.get(0));
-				second = inputs.get(toSum.get(1));
-				resS = String.valueOf(s1.charAt(0));
-			}
-		}else if (s1.charAt(0) == s2.charAt(1) && s1.charAt(1) == s2.charAt(0)) {
-			if(s1.charAt(0) == sumChar){
-				sumOp = SumOperation.aB_Ba;
-				first = inputs.get(toSum.get(0));
-				second = inputs.get(toSum.get(1));
-				resS = String.valueOf(s1.charAt(1));
-			}else{
-				sumOp = SumOperation.Ba_aB;
-				first = inputs.get(toSum.get(0));
-				second = inputs.get(toSum.get(1));
-				resS = String.valueOf(s1.charAt(0));
-			}
-		} else if(s1.charAt(0) == s2.charAt(0)){
-			sumOp = SumOperation.aB_aC;
-			first = inputs.get(toSum.get(0));
-			second = inputs.get(toSum.get(1));
-			resS = String.valueOf(s1.charAt(1))+String.valueOf(s2.charAt(1));
-
-		}
-		else if(s1.charAt(1) == s2.charAt(1)){
-			sumOp = SumOperation.Ba_Ca;
-			first = inputs.get(toSum.get(0));
-			second = inputs.get(toSum.get(1));
-			resS = String.valueOf(s1.charAt(0))+String.valueOf(s2.charAt(0));
-		}
-		else if(s1.charAt(0) == s2.charAt(1)){
-			sumOp = SumOperation.Ba_aC;
-			String sTemp = s1;
-			s1=s2;
-			s2=sTemp;
-
-			first = inputs.get(toSum.get(1));
-			second = inputs.get(toSum.get(0));
-			resS = String.valueOf(s1.charAt(0))+String.valueOf(s2.charAt(1));
-
-		}
-		else if(s1.charAt(1) == s2.charAt(0)){
-			sumOp = SumOperation.Ba_aC;
-			first = inputs.get(toSum.get(0));
-			second = inputs.get(toSum.get(1));
-			resS = String.valueOf(s1.charAt(0))+String.valueOf(s2.charAt(1));
-
-		}else{
-			throw new RuntimeException("Error when choosing row multiplication operation");
-		}
-		MatrixBlock out;
-
-		if(LOG.isTraceEnabled()) LOG.trace("remaining: "+String.join(",",inputsChars.stream().filter(Objects::nonNull).toList()));
-		if(LOG.isTraceEnabled()) LOG.trace("Summing: "+s1+","+s2+"->"+resS);
-		switch (sumOp) {
-			case aB_a:{
-				ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
-				first = first.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.DOT_PRODUCT, SpoofRowwise.RowType.ROW_AGG,  null);
-				break;
-			}
-			case Ba_a:
-				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.DOT_PRODUCT, SpoofRowwise.RowType.ROW_AGG,  null);
-				break;
-			case Ba_aC: {
-				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.VECT_MATRIXMULT, SpoofRowwise.RowType.NO_AGG_B1,  Long.valueOf( second.getNumColumns()));
-				break;
-			}
-			case Ba_Ca: {
-				ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
-				second = second.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.VECT_MATRIXMULT, SpoofRowwise.RowType.NO_AGG_B1, Long.valueOf(second.getNumColumns()));
-				break;
-			}
-//			case aB_a:
-			case aB_aC: {
-				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.VECT_OUTERMULT_ADD, SpoofRowwise.RowType.COL_AGG_B1_T, Long.valueOf( second.getNumColumns()));
-				break;
-			}
-			case a_a:
-				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.VECT_MULT, SpoofRowwise.RowType.NO_AGG,null);
-				break;
-			case aB_aB: {
-				ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
-				first = first.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-				second = second.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.DOT_PRODUCT, SpoofRowwise.RowType.COL_AGG, null);
-				break;
-			}
-			case Ba_Ba: {
-				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.DOT_PRODUCT, SpoofRowwise.RowType.ROW_AGG, null);
-				break;
-			}
-			case aB_Ba: {
-				ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
-				first = first.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.VECT_MATRIXMULT, SpoofRowwise.RowType.ROW_AGG,null);
-				break;
-			}
-			case Ba_aB: {
-				ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
-				second = second.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-				out = getRowCodegenMatrixBlock(first, second, CNodeBinary.BinType.DOT_PRODUCT, SpoofRowwise.RowType.ROW_AGG,null);
-				break;
-			}
-
-			default:
-				throw new IllegalStateException("Unexpected value: " + sumOp);
-		}
-		return Pair.of(out , resS);
-	}
-
-	private MatrixBlock getCodegenElemwiseMult(ArrayList<MatrixBlock> mbs) {
-
-		ArrayList<CNode> cnodeIn = new ArrayList<>();
-		for(int i=0;i<mbs.size(); i++){
-			CNode c = new CNodeData("c"+i, i, mbs.get(i).getNumRows(), mbs.get(i).getNumColumns(), DataType.MATRIX);
-			cnodeIn.add(c);
-		}
-		CNode cnodeOut = new CNodeBinary(cnodeIn.get(0), cnodeIn.get(1), CNodeBinary.BinType.VECT_MULT);
-
-		CNodeRow cnode = new CNodeRow(cnodeIn, cnodeOut);
-
-		cnode.setRowType(SpoofRowwise.RowType.NO_AGG);
-		cnode.renameInputs();
-
-		String src = cnode.codegen(false, SpoofCompiler.GeneratorAPI.JAVA);
-		if( LOG.isTraceEnabled()) LOG.trace(CodegenUtils.printWithLineNumber(src));
-		Class cla = CodegenUtils.compileClass("codegen." + cnode.getClassname(), src);
-
-		SpoofOperator op = CodegenUtils.createInstance(cla);
-		MatrixBlock mb = new MatrixBlock();
-
-		ArrayList<ScalarObject> scalars = new ArrayList<>();
-		MatrixBlock	out = op.execute(mbs, scalars, mb, _numThreads);
-		return out;
-	}
-	private MatrixBlock getRowCodegenMatrixBlock(MatrixBlock first, MatrixBlock second, CNodeBinary.BinType binaryType, SpoofRowwise.RowType rowType, Long secondDim) {
-		ArrayList<MatrixBlock> thisInputs = new ArrayList<>(Arrays.asList(first, second));
-
-		ArrayList<CNode> cnodeIn = new ArrayList<>();
-
-		CNode c1 = new CNodeData("c1", 1, first.getNumRows(), first.getNumColumns(), DataType.MATRIX);
-		CNode c2 = new CNodeData("c2", 2, second.getNumRows(), second.getNumColumns(), DataType.MATRIX);
-		cnodeIn.add(c1);
-		cnodeIn.add(c2);
-		CNode cnodeOut = new CNodeBinary(c1, c2, binaryType);
-		CNodeRow cnode = new CNodeRow(cnodeIn, cnodeOut);
-
-		cnode.setRowType(rowType);
-
-		if(secondDim != null) cnode.setConstDim2(secondDim);
-		cnode.renameInputs();
-
-		String src = cnode.codegen(false, SpoofCompiler.GeneratorAPI.JAVA);
-		if( LOG.isTraceEnabled()) LOG.trace(CodegenUtils.printWithLineNumber(src));
-		Class cla = CodegenUtils.compileClass("codegen." + cnode.getClassname(), src);
-
-		SpoofOperator op = CodegenUtils.createInstance(cla);
-		MatrixBlock mb = new MatrixBlock();
-
-		ArrayList<ScalarObject> scalars = new ArrayList<>();
-	    MatrixBlock	out = op.execute(thisInputs, scalars, mb, _numThreads);
-		return out;
-	}
-
-	private MatrixBlock getScalarMultiplyMatrixBlock(MatrixBlock mbIn, Double scalar){
-		ArrayList<MatrixBlock> thisInputs = new ArrayList<>(Arrays.asList(mbIn));
-
-		ArrayList<CNode> cnodeIn = new ArrayList<>();
-
-		CNode c1 = new CNodeData("c1", 1, mbIn.getNumRows(), mbIn.getNumColumns(), DataType.MATRIX);
-		CNode c2 = new CNodeData(new LiteralOp(scalar), 0, 0, DataType.SCALAR);
-		cnodeIn.add(c1);
-		cnodeIn.add(c2);
-
-		CNode cnodeOut = new CNodeBinary(c1,c2, CNodeBinary.BinType.MULT);
-		CNodeCell cnode = new CNodeCell(cnodeIn, cnodeOut);
-		cnode.setCellType(SpoofCellwise.CellType.NO_AGG);
-		cnode.renameInputs();
-
-		String src = cnode.codegen(false, SpoofCompiler.GeneratorAPI.JAVA);
-		if( LOG.isTraceEnabled()) LOG.trace(CodegenUtils.printWithLineNumber(src));
-		Class cla = CodegenUtils.compileClass("codegen." + cnode.getClassname(), src);
-
-		SpoofOperator op = CodegenUtils.createInstance(cla);
-		MatrixBlock mb = new MatrixBlock();
-
-		ArrayList<ScalarObject> scalars = new ArrayList<>();
-		if(scalar != null) scalars.add(new DoubleObject(scalar));
-		MatrixBlock	out = op.execute(thisInputs, scalars, mb, _numThreads);
-		return out;
-	}
 	private static void indent(StringBuilder sb, int level) {
 		for (int i = 0; i < level; i++) {
 			sb.append("  ");
@@ -901,7 +838,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			src = src.replace("%OUT%", sb.toString());
 		}
 
-		LOG.trace(src);
+		if( LOG.isTraceEnabled()) LOG.trace(src);
 		Class cla = CodegenUtils.compileClass("codegen." + cnode.getClassname(), src);
 		SpoofOperator op = CodegenUtils.createInstance(cla);
 		MatrixBlock resBlock = new MatrixBlock();

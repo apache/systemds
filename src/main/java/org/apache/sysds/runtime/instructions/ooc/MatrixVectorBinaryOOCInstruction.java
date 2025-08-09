@@ -93,6 +93,7 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
 
         for (int i=0; i<vector.getNumRows(); i+=blksize) {
             long key = (long) (i/blksize) + 1; // the key starts at 1
+//            Method 1:
 //            System.out.println("i + blksize + 1: " + i + blksize + 1 );
 //            System.out.println("vector.getNumRows() - 1: " + vector.getNumRows() + 1);
 //            MatrixBlock vectorSlice = vector.slice(i, Math.min(i + blksize - 1, vector.getNumRows() - 1));
@@ -101,6 +102,7 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
 //            partitionedVector.put(key, vectorSlice);
 
             int end_row = Math.min(i + blksize, vector.getNumRows());
+//            Method 2:
 //            int chunk_len = end_row - i;
 //            MatrixBlock vectorChunk = new MatrixBlock(chunk_len, 1, false);
 //            vector.copy(i, end_row - 1, 0, 0, vectorChunk, true);
@@ -108,9 +110,7 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
 //
 //            partitionedVector.put(key, vectorChunk);
 
-            // --- THIS IS THE FIX ---
-            // Use a manual loop to create the vector chunk. This is the most robust
-            // way to ensure the dimensions and data are set correctly.
+
             int chunk_len = end_row - i;
             MatrixBlock vectorChunk = new MatrixBlock(chunk_len, 1, false);
             for(int k=0; k < chunk_len; k++) {
@@ -122,7 +122,7 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
             partitionedVector.put(key, vectorChunk);
         }
         System.out.println("partitionedVector: \n" + partitionedVector);
-//        ec.releaseMatrixInput(input2.getName());
+        ec.releaseMatrixInput(input2.getName());
 
         LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
 
@@ -145,10 +145,7 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
                         long colIndex = tmp.getIndexes().getColumnIndex();
 
                         MatrixBlock vectorSlice = partitionedVector.get(colIndex);
-//                        System.out.println("vectorSlice: " + vectorSlice);
-//                        System.out.println("tmp: \n" + tmp);
 
-//                        // method 1
                         AggregateOperator sum = new AggregateOperator(0, Plus.getPlusFnObject());
                         AggregateBinaryOperator matmult_op = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), sum);
                         System.out.println("matmult_op: " + matmult_op.binaryFn);
@@ -157,29 +154,7 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
                         // Now, call the operation with the correct, specific operator.
                         MatrixBlock partialResult = matrixBlock.aggregateBinaryOperations(matrixBlock, vectorSlice,
                                 new MatrixBlock(), (AggregateBinaryOperator) _optr);
-//                        System.out.println("partialResult: " + partialResult);
 
-                        // method 2:
-//                        int m = matrixBlock.getNumRows(); // Rows in the matrix block
-//                        int n = matrixBlock.getNumColumns(); // Cols in the matrix block
-//                        int v_len = vectorSlice.getNumRows(); // Rows in the vector chunk
-//
-//                        // Sanity check for dimension match
-//                        if (n != v_len) {
-//                            throw new DMLRuntimeException("Dimension mismatch for direct MM: " + n + " != " + v_len);
-//                        }
-//
-//                        // 2. Create a new block for the partial result
-//                        MatrixBlock partialResult = new MatrixBlock(m, 1, false);
-//
-//                        // 3. Perform the matrix-vector multiplication with explicit loops
-//                        for (int i = 0; i < m; i++) { // Iterate over rows of the matrix block
-//                            double sum = 0;
-//                            for (int k = 0; k < n; k++) { // Iterate over columns (the inner dimension)
-//                                sum += matrixBlock.get(i, k) * vectorSlice.get(k, 0);
-//                            }
-//                            partialResult.set(i, 0, sum);
-//                        }
                         partialResult.recomputeNonZeros();
                         System.out.println("partialResult: \n"+partialResult);
 
@@ -207,9 +182,9 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
         } catch (ExecutionException | InterruptedException e) {
             throw new DMLRuntimeException(e);
         }
-//        finally {
-////            pool.shutdown();
+        finally {
+            pool.shutdown();
 //            ec.releaseMatrixInput(input2.getName());
-//        }
+        }
     }
 }

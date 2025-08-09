@@ -56,8 +56,6 @@ public class MatrixVectorBinaryMultiplicationTest extends AutomatedTestBase {
     @Override
     public void setUp()
     {
-//        addTestConfiguration(TEST_NAME1,
-//                new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "y" }) );
         TestUtils.clearAssertionInformation();
         TestConfiguration config = new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1);
         addTestConfiguration(TEST_NAME1, config);
@@ -84,9 +82,6 @@ public class MatrixVectorBinaryMultiplicationTest extends AutomatedTestBase {
             fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
             programArgs = new String[]{"-explain", "-stats", "-ooc",
                     "-args", input(INPUT_NAME), input(INPUT_NAME2), output(OUTPUT_NAME)};
-
-            fullRScriptName = HOME + TEST_NAME1 + ".R";
-            rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
             // 1. Generate the data in-memory as MatrixBlock objects
             double[][] A_data = getRandomMatrix(rows, cols, 0, 1, sparse?sparsity2:sparsity1, 10);
@@ -119,14 +114,10 @@ public class MatrixVectorBinaryMultiplicationTest extends AutomatedTestBase {
                 for(int j = 0; j < cols; j++) {
                     expected += A_mb.get(i, j) * x_mb.get(j,0);
                 }
-
                 result = C1[i][0];
                 Assert.assertEquals(expected, result, 1e-10);
                 System.out.println("Expected, result: " + expected + "," + result);
             }
-
-//            runRScript(true);
-//            compareResultsWithR(eps);
 
         } catch (IOException e) {
             throw new RuntimeException(e);

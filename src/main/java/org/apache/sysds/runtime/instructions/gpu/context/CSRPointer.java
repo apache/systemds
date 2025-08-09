@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.instructions.gpu.context;
 
 import jcuda.Pointer;
 import jcuda.Sizeof;
-import jcuda.cudaDataType;
 import jcuda.jcublas.cublasHandle;
 import jcuda.jcusparse.*;
 import org.apache.commons.logging.Log;
@@ -37,12 +36,8 @@ import static jcuda.jcusparse.cusparseMatrixType.CUSPARSE_MATRIX_TYPE_GENERAL;
 import static jcuda.runtime.JCuda.*;
 import static jcuda.runtime.cudaMemcpyKind.*;
 import static jcuda.jcusparse.cusparseIndexType.CUSPARSE_INDEX_32I;
-import static jcuda.cudaDataType.CUDA_R_64F;
-import static jcuda.cudaDataType.CUDA_R_32F;
 import static jcuda.jcusparse.cusparseSpGEMMAlg.CUSPARSE_SPGEMM_DEFAULT;
 import static org.apache.sysds.runtime.matrix.data.LibMatrixCUDA.cudaSupportFunctions;
-import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_TRANSPOSE;
-import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE;
 
 /**
  * Compressed Sparse Row (CSR) format for CUDA

@@ -85,6 +85,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 	/**
 	 * Deallocates the tensor and filter descriptors as well as allocated workspace
 	 */
+	@SuppressWarnings("deprecation")
 	@Override
 	public void close() {
 		if(nchwTensorDesc != null)
@@ -125,6 +126,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 	 * @param workspaceLimit maximum intermediate memory to use
 	 * @return algorithm wrapper
 	 */
+	@SuppressWarnings("deprecation")
 	public static LibMatrixCuDNNConvolutionAlgorithm cudnnGetConvolutionForwardAlgorithm(
 			GPUContext gCtx, String instName, int N, int C, int H, int W, int K, int R, int S, 
 			int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q, long workspaceLimit) {
@@ -168,6 +170,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 	 * @param workspaceLimit maximum intermediate memory to use
 	 * @return algorithm wrapper
 	 */
+	@SuppressWarnings("deprecation")
 	public static LibMatrixCuDNNConvolutionAlgorithm cudnnGetConvolutionBackwardFilterAlgorithm(
 			GPUContext gCtx, String instName, int N, int C, int H, int W, int K, int R, int S, 
 			int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q, long workspaceLimit) {
@@ -227,6 +230,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 	 * @param workspaceLimit maximum intermediate memory to use
 	 * @return algorithm wrapper
 	 */
+	@SuppressWarnings("deprecation")
 	public static LibMatrixCuDNNConvolutionAlgorithm cudnnGetConvolutionBackwardDataAlgorithm(
 			GPUContext gCtx, String instName, int N, int C, int H, int W, int K, int R, int S, 
 			int pad_h, int pad_w, int stride_h, int stride_w, int P, int Q, long workspaceLimit) {
@@ -289,6 +293,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 		return tensorDescriptor;
 	}
 	
+	@SuppressWarnings("deprecation")
 	private static cudnnFilterDescriptor allocateFilterDescriptor(int K, int C, int R, int S) {
 		cudnnFilterDescriptor filterDesc = new cudnnFilterDescriptor();
 		cudnnCreateFilterDescriptor(filterDesc);
@@ -296,6 +301,7 @@ public class LibMatrixCuDNNConvolutionAlgorithm implements java.lang.AutoCloseab
 		return filterDesc;
 	}
 	
+	@SuppressWarnings("deprecation")
 	private static cudnnConvolutionDescriptor allocateConvolutionDescriptor(int padding [], int strides []) {
 		cudnnConvolutionDescriptor convDesc = new cudnnConvolutionDescriptor();
 		cudnnCreateConvolutionDescriptor(convDesc);

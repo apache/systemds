@@ -345,6 +345,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param output   the output matrix allocated on the GPU
 	 * @param algo     cudnn algorithm wrapper
 	 */
+	@SuppressWarnings("deprecation")
 	private static void cudnnConv2d(GPUContext gCtx, String instName, Pointer image, Pointer filter, Pointer output, 
 			LibMatrixCuDNNConvolutionAlgorithm algo) {
 		if(LOG.isTraceEnabled()) {
@@ -458,6 +459,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param dwPointer  output errors
 	 * @param algo     cudnn algorithm wrapper
 	 */
+	@SuppressWarnings("deprecation")
 	private static void cudnnConv2dBackwardFilter(GPUContext gCtx, String instName, Pointer imagePointer, Pointer doutPointer,
 			Pointer dwPointer, LibMatrixCuDNNConvolutionAlgorithm algo) {
 		if(LOG.isTraceEnabled()) {
@@ -558,6 +560,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param dx pointer to  output errors
 	 * @param algo cudnn algorithm wrapper
 	 */
+	@SuppressWarnings("deprecation")
 	private static void cudnnConv2dBackwardData(GPUContext gCtx, String instName, Pointer w, Pointer dy,
 			Pointer dx, LibMatrixCuDNNConvolutionAlgorithm algo) {
 		if(LOG.isTraceEnabled()) {
@@ -625,6 +628,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		}
 	}
 
+	@SuppressWarnings("deprecation")
 	private static void cudnnPoolingHelper(GPUContext gCtx, String instName, Pointer x,
 			Pointer y, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,
@@ -714,6 +718,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		}
 	}
 	
+	@SuppressWarnings("deprecation")
 	private static void cudnnPoolingBackwardHelper(GPUContext gCtx, String instName, 
 			Pointer x, Pointer dy, Pointer y, Pointer dx, 
 			int N, int C, int H, int W, int K, int R,
@@ -751,6 +756,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 		}
 	}
 
+	@SuppressWarnings("deprecation")
 	private static void cudnnReLU(GPUContext gCtx, String instName, MatrixObject in, Pointer dstData, cudnnTensorDescriptor srcTensorDesc) {
 		try {
 			if(LOG.isTraceEnabled()) {
@@ -1076,6 +1082,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param resultSaveInvVariance (output) running variance accumulated during training phase: shape [1, C, 1, 1]
 	 * @throws DMLRuntimeException if error occurs
 	 */
+	@SuppressWarnings("deprecation")
 	public static void batchNormalizationForwardTraining(GPUContext gCtx, String instName, MatrixObject image,
 			MatrixObject scale,  MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar,
 			MatrixObject ret, MatrixObject retRunningMean, MatrixObject retRunningVar, 
@@ -1132,6 +1139,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param epsilon epsilon value used in the batch normalization formula
 	 * @throws DMLRuntimeException if error occurs
 	 */
+	@SuppressWarnings("deprecation")
 	public static void batchNormalizationForwardInference(GPUContext gCtx, String instName, MatrixObject image,
 			MatrixObject scale, MatrixObject bias, MatrixObject runningMean, MatrixObject runningVar,
 			MatrixObject ret, double epsilon) throws DMLRuntimeException {
@@ -1179,6 +1187,7 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param resultSaveInvVariance (input) running variance accumulated during training phase: shape [1, C, 1, 1]
 	 * @throws DMLRuntimeException if error occurs
 	 */
+	@SuppressWarnings("deprecation")
 	public static void batchNormalizationBackward(GPUContext gCtx, String instName, MatrixObject image, MatrixObject dout,
 			MatrixObject scale, MatrixObject dX, MatrixObject dScale, MatrixObject dBias,
 			double epsilon, MatrixObject resultSaveMean, MatrixObject resultSaveInvVariance) throws DMLRuntimeException {

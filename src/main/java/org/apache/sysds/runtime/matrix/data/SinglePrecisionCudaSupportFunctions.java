@@ -18,7 +18,6 @@
  */
 package org.apache.sysds.runtime.matrix.data;
 
-import static jcuda.cudaDataType.CUDA_R_64F;
 import static jcuda.jcusparse.JCusparse.*;
 import static jcuda.runtime.JCuda.cudaMemcpy;
 import static jcuda.runtime.cudaMemcpyKind.cudaMemcpyDeviceToHost;
@@ -48,17 +47,13 @@ import jcuda.jcusparse.cusparseSpMatDescr;
 import jcuda.jcusparse.cusparseSpGEMMDescr;
 
 import static jcuda.jcusparse.cusparseIndexType.CUSPARSE_INDEX_32I;
-import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ZERO;
 import static jcuda.cudaDataType.CUDA_R_32F;
-import static jcuda.jcusparse.cusparseSpGEMMAlg.CUSPARSE_SPGEMM_DEFAULT;
 import static jcuda.jcusparse.cusparseStatus.CUSPARSE_STATUS_SUCCESS;
 import static jcuda.jcusparse.cusparseSpMVAlg.CUSPARSE_SPMV_ALG_DEFAULT;
-import static jcuda.jcusparse.cusparseOperation.CUSPARSE_OPERATION_NON_TRANSPOSE;
 import static jcuda.jcusparse.cusparseOrder.CUSPARSE_ORDER_COL;
 import static jcuda.jcusparse.cusparseSpMMAlg.CUSPARSE_SPMM_ALG_DEFAULT;
 import static jcuda.jcusparse.cusparseCsr2CscAlg.CUSPARSE_CSR2CSC_ALG1;
 import static jcuda.jcusparse.cusparseSparseToDenseAlg.CUSPARSE_SPARSETODENSE_ALG_DEFAULT;
-import static jcuda.jcusparse.cusparseIndexBase.CUSPARSE_INDEX_BASE_ONE;
 import static jcuda.jcusparse.cusparseDenseToSparseAlg.CUSPARSE_DENSETOSPARSE_ALG_DEFAULT;
 import static jcuda.runtime.JCuda.cudaMalloc;
 import static jcuda.runtime.JCuda.cudaFree;

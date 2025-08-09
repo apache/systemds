@@ -20,7 +20,6 @@
 package org.apache.sysds.hops.fedplanner;
 
 import java.util.Set;
-import java.util.Map;
 
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.hops.ipa.FunctionCallGraph;

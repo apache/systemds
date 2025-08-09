@@ -26,5 +26,5 @@ v = read($2);
 # Operation under test
 y_ooc = X %*% v;
 
-print(toString(y_ooc))
+write(y_ooc, $3, format="binary")
 

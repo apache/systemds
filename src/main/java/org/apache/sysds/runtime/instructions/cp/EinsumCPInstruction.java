@@ -492,125 +492,107 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 
 		AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 
+		MatrixBlock res;
 		switch (bin.operand){
 			case AB_AB -> {
-				var res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
-				return res;
+				res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
 			}
 			case A_A -> {
 				EnsureMatrixBlockColumnVector(left);
 				EnsureMatrixBlockColumnVector(right);
-				var res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
-				return res;
+				res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
 			}
 			case a_a -> {
 				EnsureMatrixBlockColumnVector(left);
 				EnsureMatrixBlockColumnVector(right);
-				var res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
+				res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
 				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), _numThreads);
 				res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
-				return res;
 			}
 			////////////
 			case Ba_Ba -> {
-				var res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
+				res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
 				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), _numThreads);
 				res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
-				return res;
 			}
 			case aB_aB -> {
-				var res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
+				res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
 				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), _numThreads);
 				res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
 				EnsureMatrixBlockColumnVector(res);
-				return res;
 			}
 			case ab_ab -> {
-				var res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
+				res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
 				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), _numThreads);
 				res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
-				return res;
 			}
 			case ab_ba -> {
 				ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
 				right = right.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-				var res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
+				res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
 				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), _numThreads);
 				res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
-				return res;
 			}
 			case Ba_aB -> {
 				ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
 				right = right.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-				var res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
+				res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
 				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), _numThreads);
 				res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
-				return res;
 			}
 
 			/////////
 			case AB_BA -> {
 				ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
 				right = right.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-				var res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
-				return res;
+				res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
 			}
 			case Ba_aC -> {
-				var res = LibMatrixMult.matrixMult(left,right, new MatrixBlock(), _numThreads);
-				return res;
+				res = LibMatrixMult.matrixMult(left,right, new MatrixBlock(), _numThreads);
 			}
 			case aB_Ca -> {
-				var res = LibMatrixMult.matrixMult(right,left, new MatrixBlock(), _numThreads);
-				return res;
+				res = LibMatrixMult.matrixMult(right,left, new MatrixBlock(), _numThreads);
 			}
 			case Ba_Ca -> {
 				ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
 				right = right.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-				var res = LibMatrixMult.matrixMult(left,right, new MatrixBlock(), _numThreads);
-				return res;
+				res = LibMatrixMult.matrixMult(left,right, new MatrixBlock(), _numThreads);
 			}
 			case aB_aC -> {
 				ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
 				left = left.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-				var res = LibMatrixMult.matrixMult(left,right, new MatrixBlock(), _numThreads);
-				return res;
+				res = LibMatrixMult.matrixMult(left,right, new MatrixBlock(), _numThreads);
 			}
 			case A_scalar, AB_scalar -> {
-				var res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left},new ScalarObject[]{new DoubleObject(right.get(0,0))}, new MatrixBlock());
-				return res;
+				res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left},new ScalarObject[]{new DoubleObject(right.get(0,0))}, new MatrixBlock());
 			}
 			case BA_A -> {
 				EnsureMatrixBlockRowVector(right);
-				var res = left.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), right);
-				return res;
+				res = left.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), right);
 			}
 			case Ba_a -> {
 				EnsureMatrixBlockRowVector(right);
-				var res = left.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), right);
+				res = left.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), right);
 				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), _numThreads);
 				res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
-				return res;
 			}
 
 			case AB_A -> {
 				EnsureMatrixBlockColumnVector(right);
-				var res = left.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), right);
-				return res;
+				res = left.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), right);
 			}
 			case aB_a -> {
 				EnsureMatrixBlockColumnVector(right);
-				var res = left.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), right);
+				res = left.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), right);
 				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), _numThreads);
 				res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
 				EnsureMatrixBlockColumnVector(res);
-				return res;
 			}
 
 			case A_B -> {
 				EnsureMatrixBlockColumnVector(left);
 				EnsureMatrixBlockRowVector(right);
-				var res = left.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), right);
-				return res;
+				res = left.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), right);
 			}
 			case scalar_scalar -> {
 				return new MatrixBlock(left.get(0,0)*right.get(0,0));
@@ -620,6 +602,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			}
 
 		}
+		return res;
 	}
 
 	private static MatrixBlock ComputeEOpNodeCodegen(EOpNode eOpNode, ArrayList<MatrixBlock> inputs){

@@ -59,7 +59,7 @@ public class DecoderRecode extends Decoder
 	}
 	
 	public Object getRcMapValue(int i, long key) {
-		return (_rcMapsDirect != null) ?
+		return (_rcMapsDirect != null && key > 0) ?
 			_rcMapsDirect[i][(int)key-1] : _rcMaps[i].get(key);
 	}
 

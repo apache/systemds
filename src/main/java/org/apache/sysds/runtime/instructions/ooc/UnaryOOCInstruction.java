@@ -65,7 +65,7 @@ public class UnaryOOCInstruction extends ComputationOOCInstruction {
 
         ExecutorService pool = CommonThreadPool.get();
         try {
-            Future<?> task =pool.submit(() -> {
+            pool.submit(() -> {
                 IndexedMatrixValue tmp = null;
                 try {
                     while ((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
@@ -80,9 +80,8 @@ public class UnaryOOCInstruction extends ComputationOOCInstruction {
                     throw new DMLRuntimeException(ex);
                 }
             });
-            task.get();
-        } catch (ExecutionException | InterruptedException e) {
-            throw new RuntimeException(e);
+        } catch (Exception ex) {
+            throw new DMLRuntimeException(ex);
         } finally {
             pool.shutdown();
         }

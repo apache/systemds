@@ -332,7 +332,7 @@ public class EinsumTest extends AutomatedTestBase
 			runRScript(true);
 
 			if(outputScalar){
-				HashMap<CellIndex, Double> dmlfile = readDMLScalarFromExpectedDir("S");
+				HashMap<CellIndex, Double> dmlfile = readDMLScalarFromOutputDir("S");
 				HashMap<CellIndex, Double> rfile = readRScalarFromExpectedDir("S");
 				TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 			}else {

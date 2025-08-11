@@ -35,6 +35,11 @@ def differenceStatistics(X: Matrix,
      they are different. This can be used for instance in comparison of lossy
      compression techniques, that reduce the fidelity of the data. 
     
+    
+    
+    :param X: First Matrix to compare
+    :param Y: Second Matrix to compare
+    :return: Difference statistics
     """
 
     params_dict = {'X': X, 'Y': Y}

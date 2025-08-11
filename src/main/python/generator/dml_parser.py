@@ -28,7 +28,7 @@ import re
 class FunctionParser(object):
     header_input_pattern = r"^[ \t\n]*[#]+[ \t\n]*input[ \t\n\w:;.,#]*[\s#\-]*[#]+[\w\s\d:,.()\" \t\n\-]*[\s#\-]*$"
     header_output_pattern = r"[\s#\-]*[#]+[ \t]*(return|output)[ \t\w:;.,#]*[\s#\-]*[#]+[\w\s\d:,.()\" \t\-]*[\s#\-]*$"
-    function_pattern = r"^[ms]_[\w]+[ \t\n]*=[ \t\n]+function[^#{]*"
+    function_pattern = r"^[fms]_[\w]+[ \t\n]*=[ \t\n]+function[^#{]*"
     # parameter_pattern = r"^m_[\w]+[\s]+=[\s]+function[\s]*\([\s]*(?=return)[\s]*\)[\s]*return[\s]*\([\s]*([\w\[\]\s,\d=.\-_]*)[\s]*\)[\s]*"
     header_parameter_pattern = r"[\s#\-]*[#]+[ \t]*([\w|-]+)[\s]+([\w]+)[\s]+([\w,\d.\"\-]+)[\s]+([\w|\W]+)"
     divider_pattern = r"[\s#\-]*"
@@ -57,15 +57,13 @@ class FunctionParser(object):
         """
         file_name = os.path.basename(path)
         function_name, extension = os.path.splitext(file_name)
-        # try:
-        function_definition = self.find_function_definition(path)
-        # pattern = re.compile(
-        #     self.__class__.parameter_pattern, flags=re.I | re.M)
-        # match = pattern.match(function_definition)
+        try:
+            function_definition = self.find_function_definition(path)
+        except AttributeError:
+            print(f"[INFO] Skipping '{function_name}': does not match function name pattern. It is likely an internal function.")
+            return
 
-        # if match:
-
-        func_split = function_definition.split("function")[1].split("return")
+        func_split = function_definition.split("function", 1)[1].split("return")
        
         param_str = self.extract_param_str(func_split[0])
         retval_str = None

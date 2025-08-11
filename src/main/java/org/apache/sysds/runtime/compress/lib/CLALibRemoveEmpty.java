@@ -43,8 +43,12 @@ public class CLALibRemoveEmpty {
 		if(select == null)
 			return fallback(in, true, emptyReturn, select, ret);
 
-		final int rOut = (int) select.getNonZeros();
+		int rOut = (int) select.getNonZeros();
+		if(rOut == -1)
+			rOut = (int) select.recomputeNonZeros();
+		
 		//TODO: add optimization to avoid linear scan and make selectV indexes, if selection is small relative to number of rows
+		//TODO: add decompress to boolean vector.
 		final boolean[] selectV = DataConverter.convertToBooleanVector(CompressedMatrixBlock.getUncompressed(select, "decompressing selection in rmempty"));
 
 		final List<AColGroup> inG = in.getColGroups();

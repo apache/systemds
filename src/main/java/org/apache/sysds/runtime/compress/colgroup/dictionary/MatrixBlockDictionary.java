@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.RangeIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.SingleIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.TwoIndex;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
@@ -2802,13 +2803,41 @@ public class MatrixBlockDictionary extends ADictionary {
 		}
 	}
 
-	@Override 
-	public int[] sort(){
+	@Override
+	public int[] sort() {
 		if(_data.getNumColumns() > 1)
 			throw new RuntimeException("Not supported sort on multicolumn dictionaries");
 		_data.sparseToDense();
 
 		return Dictionary.sort(_data.getDenseBlockValues());
+	}
+
+	@Override
+	public IDictionary sliceColumns(IntArrayList selectedColumns, int nCol) {
+
+		final double[] ret = sliceColumns(_data, selectedColumns);
+
+		return new Dictionary(ret);
+	}
+
+	public static double[] sliceColumns(MatrixBlock mb, IntArrayList selectedColumns) {
+		//TODO: Optimize to allow sparse outputs. and change output type to MatrixBlock.
+		final int outC = selectedColumns.size();
+		if((long) mb.getNumRows() * outC > (long) Integer.MAX_VALUE)
+			throw new NotImplementedException("Not supported large output blocks for slicing dictionary columns");
+		mb.sparseToDense();
+		final DenseBlock db = mb.getDenseBlock();
+		final double[] ret = new double[mb.getNumRows() * outC];
+
+		for(int i = 0; i < mb.getNumRows(); i++) {
+			double[] vals = db.values(i);
+			int offIn = db.pos(i);
+			int offOut = i * outC;
+			for(int j = 0; j < outC; j++) {
+				ret[offOut + j] = vals[offIn + selectedColumns.get(j)];
+			}
+		}
+		return ret;
 	}
 
 }

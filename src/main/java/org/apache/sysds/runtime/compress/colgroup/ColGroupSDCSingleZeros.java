@@ -238,9 +238,8 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 			return;
 		else if(it.value() >= ru)
 			return;
-			// _indexes.cacheIterator(it, ru);
-		else 
-		if(ru > last) {
+		// _indexes.cacheIterator(it, ru);
+		else if(ru > last) {
 			final int apos = sb.pos(0);
 			final int alen = sb.size(0) + apos;
 			final int[] aix = sb.indexes(0);
@@ -284,7 +283,8 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	}
 
 	@Override
-	public void decompressToSparseBlockDenseDictionaryWithProvidedIterator(SparseBlock ret, int rl, int ru, int offR, int offC, double[] values, final AIterator it) {
+	public void decompressToSparseBlockDenseDictionaryWithProvidedIterator(SparseBlock ret, int rl, int ru, int offR,
+		int offC, double[] values, final AIterator it) {
 		if(ru > _indexes.getOffsetToLast()) {
 			final int nCol = _colIndexes.size();
 			final int lastOff = _indexes.getOffsetToLast();
@@ -970,7 +970,7 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	protected void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
 		throw new NotImplementedException();
 	}
-	
+
 	protected void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru, SparseBlock sb) {
 		throw new NotImplementedException();
 	}
@@ -1050,7 +1050,6 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 		return res;
 	}
 
-
 	@Override
 	public AColGroup sort() {
 		if(getNumCols() > 1)
@@ -1093,14 +1092,19 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 		return ColGroupSDCSingleZeros.create(_colIndexes, _numRows, _dict, o, counts);
 	}
 
-
 	@Override
 	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
 		// TODO optimize by not constructing boolean array.
 		final RemoveEmptyOffsetsTmp offsetTmp = _indexes.removeEmptyRows(selectV, rOut);
-		return ColGroupSDCSingleZeros.create(_colIndexes, rOut, _dict,  offsetTmp.retOffset, null);
+		return ColGroupSDCSingleZeros.create(_colIndexes, rOut, _dict, offsetTmp.retOffset, null);
 	}
 
+	@Override
+	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns) {
+
+		return ColGroupSDCSingleZeros.create(newColumnIDs, _numRows, _dict.sliceColumns(selectedColumns, getNumCols()),
+			_indexes, null);
+	}
 
 	@Override
 	public String toString() {

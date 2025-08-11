@@ -928,6 +928,16 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 	}
 
 	@Override
+	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns) {
+		double[] ref = new double[selectedColumns.size()];
+		for(int i = 0; i < selectedColumns.size(); i++) {
+			ref[i] = _defaultTuple[selectedColumns.get(i)];
+		}
+		return ColGroupSDC.create(newColumnIDs, _numRows, _dict.sliceColumns(selectedColumns, getNumCols()), ref,
+			_indexes, _data, null);
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());

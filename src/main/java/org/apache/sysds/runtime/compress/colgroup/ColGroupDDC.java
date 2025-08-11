@@ -50,6 +50,7 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
@@ -669,7 +670,8 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 		}
 	}
 
-	final void vectMM(double aa, double[] b, double[] c, int endT, int jd, int crl, int cru, int offOut, int k, int vLen, DoubleVector vVec) {
+	final void vectMM(double aa, double[] b, double[] c, int endT, int jd, int crl, int cru, int offOut, int k, int vLen,
+		DoubleVector vVec) {
 		vVec = vVec.broadcast(aa);
 		final int offj = k * jd;
 		final int end = endT + offj;
@@ -1112,17 +1114,20 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 
 	}
 
-	@Override 
-	public AColGroup removeEmptyRows(boolean[] selectV, int rOut){
+	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
 		return ColGroupDDC.create(_colIndexes, _dict, _data.removeEmpty(selectV, rOut), null);
 	}
-
 
 	@Override
 	protected boolean allowShallowIdentityRightMult() {
 		return true;
 	}
 
+	@Override
+	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns) {
+		return ColGroupDDC.create(newColumnIDs, _dict.sliceColumns(selectedColumns, getNumCols()), _data, null);
+	}
 
 	@Override
 	public String toString() {
@@ -1132,7 +1137,5 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 		sb.append(_data);
 		return sb.toString();
 	}
-
-	
 
 }

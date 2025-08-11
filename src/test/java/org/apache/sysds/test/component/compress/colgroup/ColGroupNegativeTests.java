@@ -49,6 +49,7 @@ import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
@@ -480,6 +481,12 @@ public class ColGroupNegativeTests {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException("Unimplemented method 'removeEmptyRows'");
 		}
+
+		@Override
+		protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'removeEmptyColsSubset'");
+		}
 	}
 
 	private class FakeDictBasedColGroup extends ADictBasedColGroup {
@@ -800,6 +807,12 @@ public class ColGroupNegativeTests {
 		public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException("Unimplemented method 'removeEmptyRows'");
+		}
+
+		@Override
+		protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'removeEmptyColsSubset'");
 		}
 	}
 }

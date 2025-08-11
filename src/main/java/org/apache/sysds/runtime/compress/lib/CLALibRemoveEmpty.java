@@ -34,8 +34,35 @@ public class CLALibRemoveEmpty {
 
 		if(rows)
 			return rmEmptyRows(in, ret, emptyReturn, select);
+		else
+			return rmEmptyCols(in, ret, emptyReturn, select);
+	}
 
-		return fallback(in, rows, emptyReturn, select, ret);
+	private static MatrixBlock rmEmptyCols(CompressedMatrixBlock in, MatrixBlock ret, boolean emptyReturn,
+		MatrixBlock select) {
+		if(select == null)
+			return fallback(in, false, emptyReturn, select, ret);
+
+		int cOut = (int) select.getNonZeros();
+		if(cOut == -1)
+			cOut = (int) select.recomputeNonZeros();
+		if(cOut == 0){
+			ret.reset(in.getNumRows(), !emptyReturn ? 0 : 1);
+			return ret;
+		}
+
+		final boolean[] selectV = DataConverter
+			.convertToBooleanVector(CompressedMatrixBlock.getUncompressed(select, "decompressing selection in rmempty"));
+
+		final List<AColGroup> inG = in.getColGroups();
+		final List<AColGroup> retG = new ArrayList<>(inG.size());
+		for(int i = 0; i < inG.size(); i++) {
+			AColGroup tmp = inG.get(i).removeEmptyCols(selectV);
+			if(tmp != null)
+				retG.add(tmp);
+		}
+		return new CompressedMatrixBlock(in.getNumRows(), cOut, -1, in.isOverlapping(), retG);
+
 	}
 
 	private static MatrixBlock rmEmptyRows(CompressedMatrixBlock in, MatrixBlock ret, boolean emptyReturn,
@@ -46,10 +73,16 @@ public class CLALibRemoveEmpty {
 		int rOut = (int) select.getNonZeros();
 		if(rOut == -1)
 			rOut = (int) select.recomputeNonZeros();
-		
-		//TODO: add optimization to avoid linear scan and make selectV indexes, if selection is small relative to number of rows
-		//TODO: add decompress to boolean vector.
-		final boolean[] selectV = DataConverter.convertToBooleanVector(CompressedMatrixBlock.getUncompressed(select, "decompressing selection in rmempty"));
+		if(rOut == 0){
+			ret.reset(!emptyReturn ? 0 : 1, in.getNumColumns());
+			return ret;
+		}
+
+		// TODO: add optimization to avoid linear scan and make selectV indexes, if selection is small relative to number
+		// of rows
+		// TODO: add decompress to boolean vector.
+		final boolean[] selectV = DataConverter
+			.convertToBooleanVector(CompressedMatrixBlock.getUncompressed(select, "decompressing selection in rmempty"));
 
 		final List<AColGroup> inG = in.getColGroups();
 		final List<AColGroup> retG = new ArrayList<>(inG.size());

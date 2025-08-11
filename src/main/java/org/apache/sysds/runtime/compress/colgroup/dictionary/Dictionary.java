@@ -28,10 +28,13 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.compress.utils.Util;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Multiply;
@@ -1346,12 +1349,17 @@ public class Dictionary extends ACachingMBDictionary {
 		return sort(_values);
 	}
 
+	@Override
+	public IDictionary sliceColumns(IntArrayList selectedColumns, int nCol) {
+		// TODO: make specialized version for this.
+		return getMBDict(nCol).sliceColumns(selectedColumns, nCol);
+	}
+
 	protected static int[] sort(double[] values) {
 		int[] indices = new int[values.length];
 		for(int i = 0; i < indices.length; i++) {
 			indices[i] = i;
 		}
-
 
 		// quicksort with stack
 		int[] stack = new int[values.length];

@@ -41,8 +41,28 @@ def img_translate_linearized(img_in: Matrix,
      the same time. Each row of the input and output matrix represents a linearized image/matrix
      It translates the image and Optionally resizes the image (without scaling).
     
+     .. code-block:: python
     
-    :param img_in: Input matrix/image (every row represents a linearized matrix/image)
+       >>> import numpy as np
+       >>> from systemds.context import SystemDSContext
+       >>> from systemds.operator.algorithm import img_translate_linearized
+       >>> 
+       >>> with SystemDSContext() as sds:
+       ...     img = sds.from_numpy(
+       ...         np.array([[ 10., 20., 30.,
+       ...                     40., 50., 60.,
+       ...                     70., 80., 90. ]], dtype=np.float32)
+       ...     )
+       ...     result_img = img_translate_linearized(img, 1., 1., 3, 3, 255.0, 3, 3).compute()
+       ...     print(result_img.reshape(3, 3))
+       [[255. 255. 255.]
+        [255.  10.  20.]
+        [255.  40.  50.]]
+    
+    
+    
+    
+    :param img_in: Input images as linearized 2D matrix with top left corner at [1, 1] (every row represents a linearized matrix/image)
     :param offset_x: The distance to move the image in x direction
     :param offset_y: The distance to move the image in y direction
     :param out_w: Width of the output image

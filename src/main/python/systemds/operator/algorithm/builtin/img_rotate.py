@@ -35,6 +35,25 @@ def img_rotate(img_in: Matrix,
      The Image Rotate function rotates the input image counter-clockwise around the center.
      Uses nearest neighbor sampling.
     
+     .. code-block:: python
+    
+       >>> import numpy as np
+       >>> from systemds.context import SystemDSContext
+       >>> from systemds.operator.algorithm import img_rotate
+       >>> 
+       >>> with SystemDSContext() as sds:
+       ...     img = sds.from_numpy(
+       ...         np.array([[ 10., 20., 30.],
+       ...                   [ 40., 50., 60.],
+       ...                   [ 70., 80., 90.]], dtype=np.float32)
+       ...     )
+       ...     result_img = img_rotate(img, 3.14159, 255.).compute()
+       ...     print(result_img)
+       [[90. 80. 70.]
+        [60. 50. 40.]
+        [30. 20. 10.]]
+    
+    
     
     
     :param img_in: Input image as 2D matrix with top left corner at [1, 1]

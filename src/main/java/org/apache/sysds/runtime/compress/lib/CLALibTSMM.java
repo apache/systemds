@@ -31,6 +31,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
@@ -69,7 +70,7 @@ public final class CLALibTSMM {
 		ret.allocateDenseBlock();
 		final List<AColGroup> groups = cmb.getColGroups();
 
-		if(groups.size() >= numColumns) {
+		if(groups.size() >= numColumns || containsUncompressedColGroup(groups)) {
 			MatrixBlock m = cmb.getUncompressed("TSMM to many columngroups", k);
 			LibMatrixMult.matrixMultTransposeSelf(m, ret, true, k);
 			return ret;
@@ -80,7 +81,7 @@ public final class CLALibTSMM {
 			final double[] constV = new double[numColumns];
 			final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(groups, constV);
 			tsmmColGroups(filteredGroups, ret, numRows, overlapping, k);
-			addCorrectionLayer(filteredGroups, ret, numRows, numColumns, constV);
+			addCorrectionLayer(filteredGroups, ret, numRows, numColumns, constV, k);
 		}
 		else {
 
@@ -92,8 +93,15 @@ public final class CLALibTSMM {
 		return ret;
 	}
 
+	private static boolean containsUncompressedColGroup(List<AColGroup> groups) {
+		for(AColGroup g : groups)
+			if(g instanceof ColGroupUncompressed)
+				return true;
+		return false;
+	}
+
 	private static void addCorrectionLayer(List<AColGroup> filteredGroups, MatrixBlock result, int nRows, int nCols,
-		double[] constV) {
+		double[] constV, int k) {
 		final double[] retV = result.getDenseBlockValues();
 		final double[] filteredColSum = CLALibUtils.getColSum(filteredGroups, nCols, nRows);
 		addCorrectionLayer(constV, filteredColSum, nRows, retV);

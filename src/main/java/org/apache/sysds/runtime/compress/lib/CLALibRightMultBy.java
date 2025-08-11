@@ -73,10 +73,10 @@ public final class CLALibRightMultBy {
 				if(m2 instanceof CompressedMatrixBlock)
 					m2 = ((CompressedMatrixBlock) m2).getUncompressed("Uncompressed right side of right MM", k);
 
-				if(betterIfDecompressed(m1)) {
-					// perform uncompressed multiplication.
-					return decompressingMatrixMult(m1, m2, k);
-				}
+				// if(betterIfDecompressed(m1)) {
+				// 	// perform uncompressed multiplication.
+				// 	return decompressingMatrixMult(m1, m2, k);
+				// }
 
 				if(!allowOverlap) {
 					LOG.trace("Overlapping output not allowed in call to Right MM");

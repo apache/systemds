@@ -1299,6 +1299,13 @@ public class ColGroupUncompressed extends AColGroup {
 		return new ColGroupUncompressed(_data.sortOperations(), _colIndexes);
 	}
 
+	@Override 
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut){
+		MatrixBlock tmp = new MatrixBlock();
+		tmp = LibMatrixReorg.removeEmptyRows(_data, tmp, false, false, selectV, rOut);
+		return ColGroupUncompressed.create(_colIndexes, tmp, false);
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

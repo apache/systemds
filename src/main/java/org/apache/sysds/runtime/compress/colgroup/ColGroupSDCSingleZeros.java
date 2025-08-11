@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.MapToZero;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.RemoveEmptyOffsetsTmp;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetEmpty;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
@@ -1091,6 +1092,15 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 		AOffset o = OffsetFactory.createOffset(offsets);
 		return ColGroupSDCSingleZeros.create(_colIndexes, _numRows, _dict, o, counts);
 	}
+
+
+	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+		// TODO optimize by not constructing boolean array.
+		final RemoveEmptyOffsetsTmp offsetTmp = _indexes.removeEmptyRows(selectV, rOut);
+		return ColGroupSDCSingleZeros.create(_colIndexes, rOut, _dict,  offsetTmp.retOffset, null);
+	}
+
 
 	@Override
 	public String toString() {

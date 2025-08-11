@@ -42,6 +42,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.RemoveEmptyOffsetsTmp;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
@@ -917,6 +918,13 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 
 		AOffset o = OffsetFactory.createOffset(offsets);
 		return ColGroupSDC.create(_colIndexes, _numRows, _dict, _defaultTuple, o, m, counts);
+	}
+
+	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+		final RemoveEmptyOffsetsTmp offsetTmp = _indexes.removeEmptyRows(selectV, rOut);
+		final AMapToData nm = _data.removeEmpty(offsetTmp.select);
+		return ColGroupSDC.create(_colIndexes, rOut, _dict, _defaultTuple, offsetTmp.retOffset, nm, null);
 	}
 
 	@Override

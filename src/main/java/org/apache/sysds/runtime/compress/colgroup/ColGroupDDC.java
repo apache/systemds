@@ -1112,6 +1112,17 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 
 	}
 
+	@Override 
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut){
+		return ColGroupDDC.create(_colIndexes, _dict, _data.removeEmpty(selectV, rOut), null);
+	}
+
+
+	@Override
+	protected boolean allowShallowIdentityRightMult() {
+		return true;
+	}
+
 
 	@Override
 	public String toString() {
@@ -1120,11 +1131,6 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 		sb.append(String.format("\n%15s", "Data: "));
 		sb.append(_data);
 		return sb.toString();
-	}
-
-	@Override
-	protected boolean allowShallowIdentityRightMult() {
-		return true;
 	}
 
 	

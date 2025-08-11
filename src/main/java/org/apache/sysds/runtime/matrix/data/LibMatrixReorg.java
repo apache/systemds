@@ -798,6 +798,11 @@ public class LibMatrixReorg {
 		if(ret2 != null )
 			return ret2;
 		// core removeEmpty
+		return rmemptyUnsafe(in, ret, rows, emptyReturn, select);
+	}
+
+	public static MatrixBlock rmemptyUnsafe(MatrixBlock in, MatrixBlock ret, boolean rows, boolean emptyReturn,
+		MatrixBlock select) {
 		if( rows )
 			return removeEmptyRows(in, ret, select, emptyReturn);
 		else // cols
@@ -3458,6 +3463,25 @@ public class LibMatrixReorg {
 			rlen2 = (int)select.getNonZeros();
 		}
 
+		return removeEmptyRows(in, ret, emptyReturn, select == null, flags, rlen2);
+	}
+
+	/**
+	 * Remove selected rows, based on the boolean array given. Note this function is internal use only, and require a
+	 * boolean vector to be constructed first.
+	 * 
+	 * @param in          Input to remove rows from
+	 * @param ret         Output to assign the result into
+	 * @param emptyReturn If the output is allowed to be empty.
+	 * @param selectNull  If the original caller did not have a selection matrix.
+	 * @param flags       The boolean selection vector to specify which rows to keep.
+	 * @param rlen2       The number of true values in the flags argument.
+	 * @return Another reference to the ret matrix input argument.
+	 */
+	public static MatrixBlock removeEmptyRows(MatrixBlock in, MatrixBlock ret, boolean emptyReturn, boolean selectNull,
+		boolean[] flags, int rlen2) {
+		final int m = in.rlen;
+		final int n = in.clen;
 		//Step 2: reset result and copy rows
 		//dense stays dense if correct input representation (but robust for any input), 
 		//sparse might be dense/sparse
@@ -3467,7 +3491,7 @@ public class LibMatrixReorg {
 		if( in.isEmptyBlock(false) )
 			return ret;
 		
-		if( SHALLOW_COPY_REORG && m == rlen2 && select == null ) {
+		if( SHALLOW_COPY_REORG && m == rlen2 && selectNull ) {
 			// the condition m==rlen2 is not enough with non-empty 1-row input but empty 
 			// 1-row select vector because if emptyReturn should output a single empty row
 			ret.sparse = in.sparse;
@@ -3510,7 +3534,7 @@ public class LibMatrixReorg {
 		}
 		
 		//check sparsity
-		ret.nonZeros = (select==null) ?
+		ret.nonZeros = (selectNull) ?
 			in.nonZeros : ret.recomputeNonZeros();
 		ret.examSparsity();
 		

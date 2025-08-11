@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.MapToZero;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.RemoveEmptyOffsetsTmp;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetEmpty;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
@@ -469,10 +470,10 @@ public class ColGroupSDCSingle extends ASDC {
 		IDictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.size());
 		final int def = (int) _defaultTuple[0];
 		if(d == null) {
-			if(def <= 0){
+			if(def <= 0) {
 				if(max > 0)
 					return ColGroupEmpty.create(max);
-				else 
+				else
 					return null;
 			}
 			else if(def > max && max > 0)
@@ -717,7 +718,6 @@ public class ColGroupSDCSingle extends ASDC {
 		}
 		return res;
 	}
-	
 
 	@Override
 	public AColGroup sort() {
@@ -760,6 +760,13 @@ public class ColGroupSDCSingle extends ASDC {
 
 		AOffset o = OffsetFactory.createOffset(offsets);
 		return ColGroupSDCSingle.create(_colIndexes, _numRows, _dict, _defaultTuple, o, counts);
+	}
+
+	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+		// TODO optimize by not constructing boolean array.
+		final RemoveEmptyOffsetsTmp offsetTmp = _indexes.removeEmptyRows(selectV, rOut);
+		return ColGroupSDCSingle.create(_colIndexes, rOut, _dict, _defaultTuple, offsetTmp.retOffset, null);
 	}
 
 	@Override

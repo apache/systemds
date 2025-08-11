@@ -708,11 +708,27 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		removeEmptyOperations(true, true, null);
 	}
 
+	@Test
+	public void removeEmptyOperationsSelect1() {
+		if(rows < 5000) {
+			MatrixBlock s = TestUtils.generateTestMatrixBlock(rows, 1, 1, 1, 0.05, 321);
+			removeEmptyOperations(true, false, s);
+		}
+	}
+
+	@Test
+	public void removeEmptyOperationsSelect2() {
+		if(rows < 5000) {
+			MatrixBlock s = TestUtils.generateTestMatrixBlock(1, cols, 1, 1, 0.5, 321);
+			removeEmptyOperations(false, false, s);
+		}
+	}
+
 	public void removeEmptyOperations(boolean rows, boolean emptyReturn, MatrixBlock select) {
 		try {
 			MatrixBlock a = cmb.removeEmptyOperations(null, rows, emptyReturn, select);
 			MatrixBlock b = mb.removeEmptyOperations(null, rows, emptyReturn, select);
-			compareResultMatrices(a, b, 0);
+			compareResultMatrices(b, a, 0);
 		}
 		catch(Exception e) {
 			e.printStackTrace();

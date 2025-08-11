@@ -546,7 +546,6 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 		return false;
 	}
 
-
 	@Override
 	public AColGroup sort() {
 		// TODO restore support for run length encoding.
@@ -565,6 +564,11 @@ public class ColGroupDDCFOR extends AMorphingMMColGroup implements IFrameOfRefer
 
 		return ColGroupDDCFOR.create(_colIndexes, _dict, m, counts, _reference);
 
+	}
+
+	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+		return ColGroupDDCFOR.create(_colIndexes, _dict, _data.removeEmpty(selectV, rOut), null, _reference);
 	}
 
 	@Override

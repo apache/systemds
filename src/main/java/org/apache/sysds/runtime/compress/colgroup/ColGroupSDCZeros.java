@@ -45,6 +45,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.MapToUByte;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.RemoveEmptyOffsetsTmp;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
@@ -1089,7 +1090,6 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 		return res;
 	}
 
-
 	@Override
 	public AColGroup sort() {
 		if(getNumCols() > 1)
@@ -1110,12 +1110,10 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 			}
 		}
 
-
 		int nondefault = _data.size();
 		int defaultLength = _numRows - nondefault;
 		AMapToData m = MapToFactory.create(nondefault, counts.length);
 		int[] offsets = new int[nondefault];
-
 
 		int off = 0;
 		for(int i = 0; i < counts.length; i++) {
@@ -1134,7 +1132,14 @@ public class ColGroupSDCZeros extends ASDCZero implements IMapToDataGroup {
 		}
 
 		AOffset o = OffsetFactory.createOffset(offsets);
-		return ColGroupSDCZeros.create(_colIndexes, _numRows, _dict,  o, m, counts);
+		return ColGroupSDCZeros.create(_colIndexes, _numRows, _dict, o, m, counts);
+	}
+
+	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+		final RemoveEmptyOffsetsTmp offsetTmp = _indexes.removeEmptyRows(selectV, rOut);
+		final AMapToData nm = _data.removeEmpty(offsetTmp.select);
+		return ColGroupSDCZeros.create(_colIndexes, rOut, _dict, offsetTmp.retOffset, nm, null);
 	}
 
 	@Override

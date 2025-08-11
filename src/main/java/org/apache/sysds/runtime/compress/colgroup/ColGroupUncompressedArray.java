@@ -288,4 +288,8 @@ public class ColGroupUncompressedArray extends AColGroup {
 		throw new NotImplementedException("Unimplemented method 'sort'");
 	}
 
+	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+		throw new NotImplementedException("Unimplemented method 'removeEmptyRows'");
+	}
 }

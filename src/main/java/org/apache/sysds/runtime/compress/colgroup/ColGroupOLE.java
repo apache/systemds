@@ -736,4 +736,9 @@ public class ColGroupOLE extends AColGroupOffset {
 		throw new NotImplementedException();
 	}
 
+	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+		throw new NotImplementedException("Unimplemented method 'removeEmptyRows'");
+	}
+
 }

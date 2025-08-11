@@ -29,9 +29,9 @@ import java.util.concurrent.ExecutorService;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.SliceResult;
@@ -992,4 +992,14 @@ public abstract class AColGroup implements Serializable {
 		return sb.toString();
 	}
 
+   /**
+	 * Return a new column group containing only the selected rows in the given boolean vector.
+	 * 
+	 * Whenever possible only modify the index structure, not the dictionary of the column groups.
+	 * 
+	 * @param selectV The selection vector
+	 * @param rOut The number of rows in the output
+	 * @return The new column group
+	 */
+	public abstract AColGroup removeEmptyRows(boolean[] selectV, int rOut);
 }

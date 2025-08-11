@@ -474,6 +474,12 @@ public class ColGroupNegativeTests {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException("Unimplemented method 'sort'");
 		}
+
+		@Override
+		public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'removeEmptyRows'");
+		}
 	}
 
 	private class FakeDictBasedColGroup extends ADictBasedColGroup {
@@ -788,6 +794,12 @@ public class ColGroupNegativeTests {
 		public AColGroup sort() {
 			// TODO Auto-generated method stub
 			throw new UnsupportedOperationException("Unimplemented method 'sort'");
+		}
+
+		@Override
+		public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+			// TODO Auto-generated method stub
+			throw new UnsupportedOperationException("Unimplemented method 'removeEmptyRows'");
 		}
 	}
 }

@@ -481,4 +481,9 @@ public class ColGroupEmpty extends AColGroupCompressed
 	public AColGroup sort(){
 		return this;	
 	}
+
+	@Override 
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut){
+		return this;
+	}
 }

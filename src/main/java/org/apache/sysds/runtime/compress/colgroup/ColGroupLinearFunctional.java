@@ -740,8 +740,13 @@ public class ColGroupLinearFunctional extends AColGroupCompressed {
 		throw new NotImplementedException("Unimplemented method 'splitReshape'");
 	}
 
-	@Override 
-	public AColGroup sort(){
+	@Override
+	public AColGroup sort() {
 		throw new NotImplementedException("Unimplemented method 'sort'");
+	}
+
+	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+		throw new NotImplementedException("Unimplemented method 'removeEmptyRows'");
 	}
 }

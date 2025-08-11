@@ -145,6 +145,7 @@ public final class CLALibRightMultBy {
 
 	private static boolean betterIfDecompressed(CompressedMatrixBlock m) {
 		for(AColGroup g : m.getColGroups()) {
+			// TODO add subpport for decompressing RMM to ASDC and ASDCZero
 			if(!(g instanceof ColGroupUncompressed || g instanceof ASDC || g instanceof ASDCZero) &&
 				g.getNumValues() * 2 >= m.getNumRows()) {
 				return true;

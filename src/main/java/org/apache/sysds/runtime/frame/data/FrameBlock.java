@@ -360,6 +360,36 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		_colnames[index] = name;
 	}
 
+	/**
+	 * Returns the column names of FrameBlock
+	 * If column names are not set, return default names (e.g. "C1", "C2"...)
+	 * @return an array of column names
+	 * The actual function is the same to getColumnNamesAsFrame()
+	 */
+	public FrameBlock getColNames() {
+		return getColumnNamesAsFrame();
+	}
+
+	public void setColNames(FrameBlock names) {
+		if (names == null){
+			throw new DMLRuntimeException("Input FrameBlock can not be null.");
+		}
+		if (names.getNumRows() != 1) {
+			throw new DMLRuntimeException("Input FrameBlock must be single line.");
+		}
+		if (names.getNumColumns() != this.getNumColumns()) {
+			throw new DMLRuntimeException("Number of columns does not match.");
+		}
+		this._colnames = new String[names.getNumColumns()];
+		for (int j = 0; j < names.getNumColumns(); j++) {
+			String name = names.getString(0, j);
+			if (name == null) {
+				throw new DMLRuntimeException("Column names can not contain null values");
+			}
+			_colnames[j] = name;
+		}
+	}
+
 	public ColumnMetadata[] getColumnMetadata() {
 		return _colmeta;
 	}

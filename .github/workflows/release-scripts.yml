@@ -42,7 +42,7 @@ jobs:
     steps:
     # Java setup docs:
     # https://github.com/actions/setup-java/blob/main/docs/advanced-usage.md#installing-custom-java-package-type
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:

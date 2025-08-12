@@ -90,7 +90,7 @@ jobs:
     name: ${{ matrix.tests }}
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: ${{ matrix.tests }}
       uses: ./.github/action/
@@ -126,7 +126,7 @@ jobs:
         javadist: ['adopt']
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Cache Maven Dependencies
       uses: actions/cache@v4

@@ -85,6 +85,8 @@ X = read($X);
 Y_bin = read($Y);
 R = matrix(0, cols=0, rows=0);
 
+
+# TODO: deprecated randomForest function call
 [M, C, S_map, C_map] = randomForest(X = X, Y = Y_bin, R = R,
     bins = num_bins, depth = depth, num_leaf = num_leaf, num_samples = threshold,
     num_trees = num_trees, subsamp_rate = rate, feature_subset = fpow, impurity = imp);

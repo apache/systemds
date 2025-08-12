@@ -31,7 +31,7 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 def knn(Train: Matrix,
         Test: Matrix,
         CL: Matrix,
-        START_SELECTED: Matrix,
+        initSelectFeature: Matrix,
         **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
      This script implements KNN (K Nearest Neighbor) algorithm.
@@ -41,29 +41,29 @@ def knn(Train: Matrix,
     :param Train: The input matrix as features
     :param Test: The input matrix for nearest neighbor search
     :param CL: The input matrix as target
-    :param CL_T: The target type of matrix CL whether
+    :param ctypes: The target type of matrix CL whether
         columns in CL are continuous ( =1 ) or
         categorical ( =2 ) or not specified ( =0 )
-    :param trans_continuous: Option flag for continuous feature transformed to [-1,1]:
+    :param transCont: Option flag for continuous feature transformed to [-1,1]:
         FALSE = do not transform continuous variable;
         TRUE = transform continuous variable;
-    :param k_value: k value for KNN, ignore if select_k enable
-    :param select_k: Use k selection algorithm to estimate k (TRUE means yes)
-    :param k_min: Min k value(  available if select_k = 1 )
-    :param k_max: Max k value(  available if select_k = 1 )
-    :param select_feature: Use feature selection algorithm to select feature (TRUE means yes)
-    :param feature_max: Max feature selection
-    :param interval: Interval value for K selecting (  available if select_k = 1 )
-    :param feature_importance: Use feature importance algorithm to estimate each feature
+    :param k: k value for KNN, ignore if selectK enable
+    :param selectK: Use k selection algorithm to estimate k (TRUE means yes)
+    :param minK: Min k value(  available if selectK = 1 )
+    :param maxK: Max k value(  available if selectK = 1 )
+    :param selectFeature: Use feature selection algorithm to select feature (TRUE means yes)
+    :param maxFeatures: Max feature selection
+    :param interval: Interval value for K selecting (  available if selectK = 1 )
+    :param featureImportance: Use feature importance algorithm to estimate each feature
         (TRUE means yes)
-    :param predict_con_tg: Continuous  target predict function: mean(=0) or median(=1)
-    :param START_SELECTED: feature selection initial value
+    :param predictCont: Continuous target predict function: mean(=0) or median(=1)
+    :param initSelectFeature: initial feature selection matrix
     :return: Applied clusters to X
     :return: Cluster matrix
     :return: Feature importance value
     """
 
-    params_dict = {'Train': Train, 'Test': Test, 'CL': CL, 'START_SELECTED': START_SELECTED}
+    params_dict = {'Train': Train, 'Test': Test, 'CL': CL, 'initSelectFeature': initSelectFeature}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(Train.sds_context, '')

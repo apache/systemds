@@ -23,23 +23,21 @@
 #
 # INPUT:
 # --------------------------------------------------------------------------------------
-# X          Matrix X
-# source     source attribute to use for imputation and error correction
-# target     attribute to be fixed
-# threshold  threshold value in interval [0, 1] for robust FDs
+# X           Matrix X
+# imputedVec  source attribute to use for imputation and error correction
 # --------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # ---------------------------------------------------------------------------------
-# X     Matrix with possible imputations
+# X           imputed dataset
 # ---------------------------------------------------------------------------------
 
-m_imputeByFDApply = function(Matrix[Double] X, Matrix[Double] Y_imp)
+m_imputeByFDApply = function(Matrix[Double] X, Matrix[Double] imputedVec)
   return(Matrix[Double] imputed_Y)
 {
   X = replace(target = X, pattern=NaN, replacement=1)
   X = replace(target = X, pattern=0, replacement=1)
-  imputed_Y = table(seq(1,nrow(X)), X, 1, nrow(X), nrow(Y_imp)) %*% Y_imp;
+  imputed_Y = table(seq(1,nrow(X)), X, 1, nrow(X), nrow(imputedVec)) %*% imputedVec;
 
   if(sum(imputed_Y) == 0)
     imputed_Y = imputed_Y + NaN

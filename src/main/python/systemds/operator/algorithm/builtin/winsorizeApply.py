@@ -29,8 +29,8 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def winsorizeApply(X: Matrix,
-                   qLower: Matrix,
-                   qUpper: Matrix):
+                   QL: Matrix,
+                   QU: Matrix):
     """
      winsorizeApply takes the upper and lower quantile values per column, and
      remove outliers by replacing them with these upper and lower bound values.
@@ -38,12 +38,12 @@ def winsorizeApply(X: Matrix,
     
     
     :param X: Input feature matrix
-    :param qLower: row vector of upper bounds per column
-    :param qUpper: row vector of lower bounds per column
+    :param QL: row vector of upper bounds per column
+    :param QU: row vector of lower bounds per column
     :return: Matrix without outlier values
     """
 
-    params_dict = {'X': X, 'qLower': qLower, 'qUpper': qUpper}
+    params_dict = {'X': X, 'QL': QL, 'QU': QU}
     return Matrix(X.sds_context,
         'winsorizeApply',
         named_input_nodes=params_dict)

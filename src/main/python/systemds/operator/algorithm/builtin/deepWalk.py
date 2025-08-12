@@ -44,7 +44,7 @@ def deepWalk(Graph: Matrix,
     :param d: embedding size
     :param gamma: walks per vertex
     :param t: walk length
-    :param alpha: learning rate
+    :param lr: learning rate
     :param beta: factor for decreasing learning rate
     :return: matrix of vertex/word representation (n x d)
     """

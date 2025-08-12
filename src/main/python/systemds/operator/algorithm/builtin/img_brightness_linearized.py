@@ -28,21 +28,21 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
-def img_brightness_linearized(img_in: Matrix,
+def img_brightness_linearized(img: Matrix,
                               value: float,
-                              channel_max: int):
+                              maxValue: int):
     """
      The img_brightness_linearized-function is an image data augmentation function. It changes the brightness of one or multiple images.
     
     
     
-    :param img_in: Input matrix/image (can represent multiple images every row of the matrix represents a linearized image)
+    :param img: Input matrix/image (can represent multiple images every row of the matrix represents a linearized image)
     :param value: The amount of brightness to be changed for the image
-    :param channel_max: Maximum value of the brightness of the image
+    :param maxValue: Maximum channel value of the brightness of the image
     :return: Output matrix/images  (every row of the matrix represents a linearized image)
     """
 
-    params_dict = {'img_in': img_in, 'value': value, 'channel_max': channel_max}
-    return Matrix(img_in.sds_context,
+    params_dict = {'img': img, 'value': value, 'maxValue': maxValue}
+    return Matrix(img.sds_context,
         'img_brightness_linearized',
         named_input_nodes=params_dict)

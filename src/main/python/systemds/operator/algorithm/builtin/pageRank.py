@@ -41,7 +41,7 @@ def pageRank(G: Matrix,
     :param e: additional customization, default vector of ones
     :param u: personalization vector (number of nodes), default vector of ones
     :param alpha: teleport probability
-    :param max_iter: maximum number of iterations
+    :param maxIter: maximum number of iterations
     :param seed: seed for default rand initialization of page rank vector
     :return: computed pagerank
     """

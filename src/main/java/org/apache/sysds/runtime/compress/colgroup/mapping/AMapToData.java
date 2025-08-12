@@ -30,6 +30,7 @@ import java.util.concurrent.Future;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.IMapToDataGroup;
@@ -1044,14 +1045,25 @@ public abstract class AMapToData implements Serializable {
 	}
 
 	public AMapToData removeEmpty(final boolean[] selectV, final int rOut) {
-		final AMapToData ret = MapToFactory.create(rOut, getUnique());
-		final int s = size();
-		int t = 0;
-		for(int i = 0; i < s; i++)
-			if(selectV[i] == true)
-				ret.set(t++, getIndex(i));
-		
-		return ret;
+		try{
+
+			final AMapToData ret = MapToFactory.create(rOut, getUnique());
+			final int s = size();
+			int t = 0;
+			for(int i = 0; i < s; i++)
+				if(selectV[i] == true)
+					ret.set(t++, getIndex(i));
+			
+			return ret;
+		}
+		catch(ArrayIndexOutOfBoundsException e){
+
+			int trueCount = 0;
+			for(boolean a : selectV){
+				if(a) trueCount ++;
+			}
+			throw new DMLRuntimeException("actual number of true values " + trueCount + " vs argument " + rOut,e);
+		}
 	}
 
 	/**

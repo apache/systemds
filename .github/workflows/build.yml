@@ -68,7 +68,7 @@ jobs:
           ]
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Setup Java ${{ matrix.java }} ${{ matrix.javadist }}
       uses: actions/setup-java@v4

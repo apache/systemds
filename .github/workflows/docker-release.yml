@@ -40,7 +40,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - run: git checkout ${{ github.event.inputs.branch_or_tag }}
 
     # https://github.com/docker/metadata-action

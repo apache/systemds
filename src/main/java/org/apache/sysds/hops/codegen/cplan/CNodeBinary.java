@@ -268,21 +268,45 @@ public class CNodeBinary extends CNode {
 				case VECT_DIV_SCALAR:
 				case VECT_XOR_SCALAR:
 				case VECT_BITWAND_SCALAR: return sparsityEst < 0.3;
-				case VECT_GREATER_SCALAR:
-				case VECT_GREATEREQUAL_SCALAR:
-				case VECT_MIN_SCALAR: {
+				case VECT_GREATER_SCALAR: {
 					if(scalarVal != Double.NaN) {
 						return _inputs.get(1).getDataType().isScalar() ? scalarVal >= 0 && sparsityEst < 0.2
 							: _inputs.get(0).getDataType().isScalar() && scalarVal < 0 && sparsityEst < 0.2;
 					} else
 						return false;
 				}
-				case VECT_LESS_SCALAR:
-				case VECT_LESSEQUAL_SCALAR:
-				case VECT_MAX_SCALAR: {
+				case VECT_GREATEREQUAL_SCALAR: {
+					if(scalarVal != Double.NaN) {
+						return _inputs.get(1).getDataType().isScalar() ? scalarVal > 0 && sparsityEst < 0.2
+							: _inputs.get(0).getDataType().isScalar() && scalarVal <= 0 && sparsityEst < 0.2;
+					} else
+						return false;
+				}
+				case VECT_MIN_SCALAR: {
+					if(scalarVal != Double.NaN) {
+						return _inputs.get(1).getDataType().isScalar() ? scalarVal >= 0 && sparsityEst < 0.2
+							: _inputs.get(0).getDataType().isScalar() && scalarVal >= 0 && sparsityEst < 0.2;
+					} else
+						return false;
+				}
+				case VECT_LESS_SCALAR: {
 					if(scalarVal != Double.NaN) {
 						return _inputs.get(1).getDataType().isScalar() ? scalarVal <= 0 && sparsityEst < 0.2
 							: _inputs.get(0).getDataType().isScalar() && scalarVal > 0 && sparsityEst < 0.2;
+					} else
+						return false;
+				}
+				case VECT_LESSEQUAL_SCALAR: {
+					if(scalarVal != Double.NaN) {
+						return _inputs.get(1).getDataType().isScalar() ? scalarVal < 0 && sparsityEst < 0.2
+							: _inputs.get(0).getDataType().isScalar() && scalarVal >= 0 && sparsityEst < 0.2;
+					} else
+						return false;
+				}
+				case VECT_MAX_SCALAR: {
+					if(scalarVal != Double.NaN) {
+						return _inputs.get(1).getDataType().isScalar() ? scalarVal <= 0 && sparsityEst < 0.2
+							: _inputs.get(0).getDataType().isScalar() && scalarVal <= 0 && sparsityEst < 0.2;
 					} else
 						return false;
 				}

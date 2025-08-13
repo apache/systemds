@@ -248,9 +248,9 @@ public class CNodeBinary extends CNode {
 			return false;
 		else {
 			switch(_type) {
-				case VECT_MULT: return sparsityEst < 0.008;
-				case VECT_DIV: return sparsityEst < 0.04;
-				case VECT_LESS: return sparsityEst < 0.035;
+				case VECT_MULT:
+				case VECT_DIV:
+				case VECT_LESS:
 				case VECT_MINUS:
 				case VECT_PLUS:
 				case VECT_XOR:
@@ -260,30 +260,48 @@ public class CNodeBinary extends CNode {
 				case VECT_MIN:
 				case VECT_MAX:
 				case VECT_NOTEQUAL:
-				case VECT_GREATER:
+				case VECT_GREATER: return sparsityEst < 0.1;
 				case VECT_EQUAL:
 				case VECT_LESSEQUAL:
-				case VECT_GREATEREQUAL: return sparsityEst < 0.3;
-				case VECT_MULT_SCALAR: return sparsityEst < 0.15;
-				case VECT_POW_SCALAR:
+				case VECT_GREATEREQUAL: return sparsityEst < 0.5;
+			 	case VECT_MULT_SCALAR: return sparsityEst < 0.2;
 				case VECT_DIV_SCALAR:
 				case VECT_XOR_SCALAR:
-				case VECT_MIN_SCALAR:
-				case VECT_MAX_SCALAR:
-				case VECT_EQUAL_SCALAR:
-				case VECT_NOTEQUAL_SCALAR: return sparsityEst < 0.3;
-				case VECT_LESS_SCALAR: {
+				case VECT_BITWAND_SCALAR: return sparsityEst < 0.3;
+				case VECT_GREATER_SCALAR:
+				case VECT_GREATEREQUAL_SCALAR:
+				case VECT_MIN_SCALAR: {
 					if(scalarVal != Double.NaN) {
-						return _inputs.get(0).getDataType().isScalar() ? scalarVal <= 0 && sparsityEst < 0.09
-							: _inputs.get(0).getDataType().isScalar() && scalarVal > 0 && sparsityEst < 0.09;
+						return _inputs.get(1).getDataType().isScalar() ? scalarVal >= 0 && sparsityEst < 0.2
+							: _inputs.get(0).getDataType().isScalar() && scalarVal < 0 && sparsityEst < 0.2;
 					} else
 						return false;
 				}
+				case VECT_LESS_SCALAR:
 				case VECT_LESSEQUAL_SCALAR:
-				case VECT_GREATER_SCALAR:
-				case VECT_GREATEREQUAL_SCALAR:
-				case VECT_BITWAND_SCALAR: return sparsityEst < 0.3;
-				default: return sparsityEst < 0.3 ? true : false;
+				case VECT_MAX_SCALAR: {
+					if(scalarVal != Double.NaN) {
+						return _inputs.get(1).getDataType().isScalar() ? scalarVal <= 0 && sparsityEst < 0.2
+							: _inputs.get(0).getDataType().isScalar() && scalarVal > 0 && sparsityEst < 0.2;
+					} else
+						return false;
+				}
+				case VECT_POW_SCALAR:
+				case VECT_EQUAL_SCALAR:{
+					if(scalarVal != Double.NaN) {
+						return _inputs.get(1).getDataType().isScalar() ? scalarVal != 0 && sparsityEst < 0.2
+							: _inputs.get(0).getDataType().isScalar() && scalarVal != 0 && sparsityEst < 0.2;
+					} else
+						return false;
+				}
+				case VECT_NOTEQUAL_SCALAR:{
+					if(scalarVal != Double.NaN) {
+						return _inputs.get(1).getDataType().isScalar() ? scalarVal == 0 && sparsityEst < 0.2
+							: _inputs.get(0).getDataType().isScalar() && scalarVal == 0 && sparsityEst < 0.2;
+					} else
+						return false;
+				}
+				default: return sparsityEst < 0.3;
 			}
 		}
 	}

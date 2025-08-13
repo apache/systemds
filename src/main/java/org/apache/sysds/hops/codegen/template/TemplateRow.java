@@ -404,7 +404,7 @@ public class TemplateRow extends TemplateBase
 			{
 				cdata1 = TemplateUtils.wrapLookupIfNecessary(cdata1, hop.getInput().get(0));
 				String primitiveOpName = ((UnaryOp)hop).getOp().name();
-				out = new CNodeUnary(cdata1, UnaryType.valueOf(primitiveOpName), OptimizerUtils.getSparsity(hop));
+				out = new CNodeUnary(cdata1, UnaryType.valueOf(primitiveOpName), hop.getInput(0).getSparsity());
 			}
 		}
 		else if(HopRewriteUtils.isBinary(hop, OpOp2.CBIND)) {

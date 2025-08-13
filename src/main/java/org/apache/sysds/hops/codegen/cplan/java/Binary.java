@@ -69,7 +69,6 @@ public class Binary extends CodeTemplate {
 			}
 
 			//vector-scalar operations
-			case VECT_MULT_SCALAR:
 			case VECT_POW_SCALAR: {
 				String vectName = type.getVectorPrimitiveName();
 				if( scalarVector )
@@ -83,6 +82,7 @@ public class Binary extends CodeTemplate {
 						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS1%, %LEN%);\n";
 				}
 			}
+			case VECT_MULT_SCALAR:
 			case VECT_DIV_SCALAR:
 			case VECT_XOR_SCALAR:
 			case VECT_MIN_SCALAR:

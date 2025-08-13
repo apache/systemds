@@ -281,8 +281,8 @@ public class CNodeBinary extends CNode {
 
 	public boolean getOutputType(boolean scalarVector, boolean lsparseLhs, boolean lsparseRhs) {
 		switch(_type) {
-			case VECT_MULT_SCALAR:
 			case VECT_POW_SCALAR: return !scalarVector && lsparseLhs;
+			case VECT_MULT_SCALAR:
 			case VECT_DIV_SCALAR:
 			case VECT_XOR_SCALAR:
 			case VECT_MIN_SCALAR:

@@ -1,0 +1,37 @@
+# Read input data and spec using position arguments
+data = read($1, data_type="frame", format="csv", header=TRUE);
+jspec2 = "{\"ids\":true,"
+       + "\"recode\":[2,4,6,7,8,9,10,14,15],"
+       + "\"bin\":[{\"id\":1,\"method\":\"equi-width\",\"numbins\":5},"
+       + "{\"id\":3,\"method\":\"equi-width\",\"numbins\":5},"
+       + "{\"id\":11,\"method\":\"equi-width\",\"numbins\":5},"
+       + "{\"id\":12,\"method\":\"equi-width\",\"numbins\":5},"
+       + "{\"id\":13,\"method\":\"equi-width\",\"numbins\":5}],"
+       + "\"dummycode\":[2,4,6,7,8,9,10,14,15]}";
+
+
+print("(" + nrow(data) + ", " + ncol(data) + ")");
+
+# First encode to get X and metadata M
+[X, M] = transformencode(target=data, spec=jspec2);
+
+# Now benchmark transformdecode
+lim = 10;
+R = matrix(0, rows=lim, cols=1);
+
+for (i in 1:lim) {
+  print("INFO: starting transformdecode");
+  t1 = time();
+  decoded = transformdecode(target=X, spec=jspec2, meta=M);
+  t2 = time();
+  R[i,1] = floor((t2-t1)/1000000);
+  print("Elapsed time for transformdecode using SystemDS = "
+      + floor((t2-t1)/1000000) + " millsec");
+}
+
+# Sort timings and take best 5
+R = order(target=R, by=1);
+res = R[1:5,];
+
+print("Decoded shape: " + nrow(decoded) + ", " + ncol(decoded) + ")");
+print(R)

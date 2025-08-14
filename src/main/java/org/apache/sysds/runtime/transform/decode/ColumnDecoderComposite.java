@@ -83,7 +83,7 @@ public class ColumnDecoderComposite extends ColumnDecoder {
      */
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out, final int k) {
-        long t3 = System.nanoTime();
+        long t0 = System.nanoTime();
         final ExecutorService pool = CommonThreadPool.get(k);
         out.ensureAllocatedColumns(in.getNumRows());
 
@@ -97,8 +97,8 @@ public class ColumnDecoderComposite extends ColumnDecoder {
             }
             for (Future<?> task : tasks)
                 task.get();
-            long t4 = System.nanoTime();
-            System.out.println("ColumnDecoder time: " + (t4 - t3) / 1e6 + " ms");
+            long t1 = System.nanoTime();
+            System.out.println("total time: " + (t1 - t0) / 1e6 + " ms");
             return out;
         } catch (Exception e) {
             throw new RuntimeException(e);

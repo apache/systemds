@@ -76,9 +76,7 @@ public class ColumnDecoderDummycode extends ColumnDecoder {
      */
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
-        long t0 = System.nanoTime();
         out.ensureAllocatedColumns(in.getNumRows());
-
         int col = _colID;
 
         for (int i = 0; i < in.getNumRows(); i++) {
@@ -91,8 +89,6 @@ public class ColumnDecoderDummycode extends ColumnDecoder {
                 }
             }
         }
-        long t1 = System.nanoTime();
-        System.out.println(this.getClass() + " time: " + (t1 - t0) / 1e6 + " ms");
         return out;
     }
 

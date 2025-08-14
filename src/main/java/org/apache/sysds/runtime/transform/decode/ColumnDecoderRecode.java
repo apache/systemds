@@ -22,8 +22,6 @@ package org.apache.sysds.runtime.transform.decode;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.Pair;
-import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -82,16 +80,12 @@ public class ColumnDecoderRecode extends ColumnDecoder {
      */
     @Override
     public FrameBlock columnDecode(MatrixBlock in, FrameBlock out) {
-        long t0 = System.nanoTime();
         out.ensureAllocatedColumns(in.getNumRows());
-
         // Iterate over each row, decode the ID to original value
         for (int i = 0; i < in.getNumRows(); i++) {
             Object obj = getRcMapValue((int)in.get(i, _offset));
             out.set(i, _colID, obj);
         }
-        long t1 = System.nanoTime();
-        System.out.println(this.getClass() + " time: " + (t1 - t0) / 1e6 + " ms");
         return out;
     }
 
@@ -117,7 +111,6 @@ public class ColumnDecoderRecode extends ColumnDecoder {
 
     @Override
     public void initMetaData(FrameBlock meta) {
-        long t0 = System.nanoTime();
         int col = _colID; // already 0-based
         _rcMap = new HashMap<>();
         long max = 0;
@@ -136,9 +129,6 @@ public class ColumnDecoderRecode extends ColumnDecoder {
             for(Map.Entry<Long,Object> e : _rcMap.entrySet())
                 _rcMapDirect[e.getKey().intValue()-1] = e.getValue();
         }
-
-        long t1 = System.nanoTime();
-        System.out.println(this.getClass() + " meta time: " + (t1 - t0) / 1e6 + " ms");
     }
 
     /**

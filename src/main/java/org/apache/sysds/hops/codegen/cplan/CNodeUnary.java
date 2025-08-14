@@ -158,7 +158,7 @@ public class CNodeUnary extends CNode
 				case VECT_ATAN:
 				case VECT_SINH:
 				case VECT_TANH:
-				case VECT_SIGN: return sparsity <= 0.4;
+				case VECT_SIGN: return sparsity <= 0.3;
 				default: return false;
 			}
 		}

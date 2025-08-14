@@ -260,11 +260,11 @@ public class CNodeBinary extends CNode {
 				case VECT_MIN:
 				case VECT_MAX:
 				case VECT_NOTEQUAL:
-				case VECT_GREATER: return sparsityEst < 0.1;
+				case VECT_GREATER:
 				case VECT_EQUAL:
 				case VECT_LESSEQUAL:
-				case VECT_GREATEREQUAL: return sparsityEst < 0.5;
-			 	case VECT_MULT_SCALAR: return sparsityEst < 0.2;
+				case VECT_GREATEREQUAL: return sparsityEst < 0.1;
+			 	case VECT_MULT_SCALAR:
 				case VECT_DIV_SCALAR:
 				case VECT_XOR_SCALAR:
 				case VECT_BITWAND_SCALAR: return sparsityEst < 0.3;

@@ -19,19 +19,9 @@
 #
 #-------------------------------------------------------------
 
-m_tee = externalFunction(matrix[double] A) return (matrix[double] B, matrix[double] C)
-           implemented in (classname="org.apache.sysds.runtime.instructions.ooc.TeeOOCInstruction", exectype="ooc");
-
 # Read the input matrix as a stream
 X = read($1);
 
-# Use the tee operator to split the stream of X into two identical streams
-[X1, X2] = m_tee(X);
+res = t(X) %*% X;
 
-# Perform two independent operations on the two output streams
-s1 = sum(X1);
-s2 = sum(X2);
-
-# Write the two scalar results to separate files for verification
-write(s1, $2);
-write(s2, $3);
+write(res, $2, format="binary");

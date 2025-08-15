@@ -46,7 +46,7 @@ public class TeeTest extends AutomatedTestBase {
 	private static final String TEST_CLASS_DIR = TEST_DIR + TeeTest.class.getSimpleName() + "/";
 	private static final String INPUT_NAME = "X";
 	private static final String OUTPUT_NAME = "res";
-	private static final String OUTPUT_NAME2 = "res2";
+	private final static double eps = 1e-10;
 
 	@Override
 	public void setUp() {
@@ -76,7 +76,7 @@ public class TeeTest extends AutomatedTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[] {"-explain", "-stats", "-ooc", 
-				"-args", input(INPUT_NAME), output(OUTPUT_NAME), output(OUTPUT_NAME2)};
+				"-args", input(INPUT_NAME), output(OUTPUT_NAME)};
 
 			int rows = 1000, cols = 1000;
 			MatrixBlock mb = MatrixBlock.randOperations(rows, cols, 1.0, -1, 1, "uniform", 7);
@@ -87,16 +87,19 @@ public class TeeTest extends AutomatedTestBase {
 			
 			runTest(true, false, null, -1);
 
-//			double[][] C1 = readMatrix(output(OUTPUT_NAME), FileFormat.BINARY, rows, cols, 1000, 1000);
-//			double expected = 0.0;
-//			double result = 0.0;
-//			for(int i = 0; i < rows; i++) {
-//				for(int j = 0; j < cols; j++) {
-//					expected = Math.ceil(mb.get(i, j));
-//					result = C1[i][j];
-//					Assert.assertEquals(expected, result, 1e-10);
-//				}
-//			}
+
+			double[][] C1 = readMatrix(output(OUTPUT_NAME), FileFormat.BINARY, rows, cols, 1000, 1000);
+			double result = 0.0;
+			for(int i = 0; i < cols; i++) { // verify the results with Java
+				for(int j = 0; j < cols; j++) {
+					double expected = 0.0;
+					for (int k = 0; k < rows; k++) {
+						expected += mb.get(k, i) * mb.get(k, j);
+					}
+					result = C1[i][j];
+					Assert.assertEquals( "value mismatch at cell ("+i+","+j+")",expected, result, eps);
+				}
+			}
 
 			String prefix = Instruction.OOC_INST_PREFIX;
 			Assert.assertTrue("OOC wasn't used for RBLK",

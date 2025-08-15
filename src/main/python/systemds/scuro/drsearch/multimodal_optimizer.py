@@ -23,6 +23,7 @@ class MultimodalOptimizer:
         self.tasks = tasks
         self.k = k
         self.extract_k_best_modalities_per_task()
+        self.debug = debug
 
         self.operator_registry = Registry()
         self.optimization_results = MultimodalResults(
@@ -80,6 +81,7 @@ class MultimodalOptimizer:
     def optimize_intermodal_representations(self, task):
         modality_combos = []
         n = len(self.k_best_cache[task.model.name])
+        reuse_cache = {}
 
         def generate_extensions(current_combo, remaining_indices):
             # Add current combination if it has at least 2 elements
@@ -99,19 +101,33 @@ class MultimodalOptimizer:
         fused_representations = []
         reuse_fused_representations = False
         for i, modality_combo in enumerate(modality_combos):
+            # clear reuse cache
+            
             if i != 0:
                 reuse_fused_representations = self.is_prefix_match(
-                    modality_combos[i], modality_combo
-                )
-            if self.debug:
-                print(
-                    f"New modality combo: {modality_combo} - Reuse: {reuse_fused_representations} - # fused reps: {len(fused_representations)}"
+                    modality_combos[i-1], modality_combo
                 )
             if reuse_fused_representations:
                 mods = [
                     self.k_best_cache[task.model.name][mod_idx]
                     for mod_idx in modality_combo[len(modality_combos[i - 1]) :]
                 ]
+                fused_representations = reuse_cache[modality_combos[i - 1]]
+            else:
+                prefix_idx = self.compute_equal_prefix_index(modality_combos[i-1], modality_combo)
+                if prefix_idx > 1:
+                    fused_representations = reuse_cache[modality_combos[i - 1][:prefix_idx]]
+                    reuse_fused_representations = True
+                    mods = [
+                        self.k_best_cache[task.model.name][mod_idx]
+                        for mod_idx in modality_combo[prefix_idx:]
+                    ]
+            if self.debug:
+                print(
+                    f"New modality combo: {modality_combo} - Reuse: {reuse_fused_representations} - # fused reps: {len(fused_representations)}"
+                )
+                
+                
             all_mods = [
                 self.k_best_cache[task.model.name][mod_idx]
                 for mod_idx in modality_combo
@@ -147,7 +163,9 @@ class MultimodalOptimizer:
                             fusion_method,
                             modality_combo,
                         )
-            fused_representations = temp_fused_reps
+        
+            if len(modality_combo) < len(self.k_best_cache[task.model.name]) and i +1 < len(modality_combos) and self.is_prefix_match(modality_combos[i], modality_combos[i+1]):
+                reuse_cache[modality_combo] = temp_fused_reps
             reuse_fused_representations = False
 
     def is_prefix_match(self, seq1, seq2):
@@ -162,11 +180,21 @@ class MultimodalOptimizer:
             Boolean indicating whether seq1 is a prefix of seq2
         """
         # seq1 can only be a prefix if it's not longer than seq2
+        
         if len(seq1) > len(seq2):
             return False
 
         # Check if seq1 matches the beginning of seq2
         return seq2[: len(seq1)] == seq1
+    
+    
+    def compute_equal_prefix_index(self, seq1, seq2):
+        max_len = min(len(seq1), len(seq2))
+        i = 0
+        while i < max_len and seq1[i] == seq2[i]:
+            i += 1
+            
+        return i
 
     def extract_representations(self, representations, modality, task_name):
         applied_representations = []

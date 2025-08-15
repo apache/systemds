@@ -61,7 +61,7 @@ class UnimodalOptimizer:
             file_name = "unimodal_optimizer" + timestr + ".pkl"
 
         with open(file_name, "wb") as f:
-            pickle.dump(self.operator_performance, f)
+            pickle.dump(self.operator_performance.results, f)
 
     def optimize_parallel(self, n_workers=None):
         if n_workers is None:
@@ -167,7 +167,7 @@ class UnimodalOptimizer:
                         end - start,
                     )
             else:
-                # modality.pad()
+                modality.pad()
                 for task in self.tasks:
                     start = time.time()
                     scores = task.run(modality.data)

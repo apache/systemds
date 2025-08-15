@@ -32,7 +32,6 @@ class MultimodalOptimizer:
 
     def optimize(self):
         for task in self.tasks:
-            # self.optimize_intramodal_representations(task)
             self.optimize_intermodal_representations(task)
 
     def optimize_intramodal_representations(self, task):
@@ -82,29 +81,92 @@ class MultimodalOptimizer:
         modality_combos = []
         n = len(self.k_best_cache[task.model.name])
 
-        # Generate combinations in depth-first order
         def generate_extensions(current_combo, remaining_indices):
             # Add current combination if it has at least 2 elements
             if len(current_combo) >= 2:
                 combo_tuple = tuple(i for i in current_combo)
                 modality_combos.append(combo_tuple)
-            # Generate all possible extensions
+
             for i in remaining_indices:
                 new_combo = current_combo + [i]
                 new_remaining = [j for j in remaining_indices if j > i]
                 generate_extensions(new_combo, new_remaining)
 
-        # Start with each possible first element
         for start_idx in range(n):
             remaining = list(range(start_idx + 1, n))
             generate_extensions([start_idx], remaining)
+        fusion_methods = self.operator_registry.get_fusion_operators()
+        fused_representations = []
+        reuse_fused_representations = False
+        for i, modality_combo in enumerate(modality_combos):
+            if i != 0:
+                reuse_fused_representations = self.is_prefix_match(
+                    modality_combos[i], modality_combo
+                )
+            if self.debug:
+                print(
+                    f"New modality combo: {modality_combo} - Reuse: {reuse_fused_representations} - # fused reps: {len(fused_representations)}"
+                )
+            if reuse_fused_representations:
+                mods = [
+                    self.k_best_cache[task.model.name][mod_idx]
+                    for mod_idx in modality_combo[len(modality_combos[i - 1]) :]
+                ]
+            all_mods = [
+                self.k_best_cache[task.model.name][mod_idx]
+                for mod_idx in modality_combo
+            ]
+            temp_fused_reps = []
+            for j, fusion_method in enumerate(fusion_methods):
+                # Evaluate all mods
+                fused_rep = all_mods[0].combine(all_mods[1:], fusion_method())
+                temp_fused_reps.append(fused_rep)
+                self.evaluate(
+                    task,
+                    fused_rep,
+                    [
+                        self.k_best_modalities[task.model.name][k].representations
+                        for k in modality_combo
+                    ],
+                    fusion_method,
+                    modality_combo,
+                )
+                if reuse_fused_representations:
+                    for fused_representation in fused_representations:
+                        fused_rep = fused_representation.combine(mods, fusion_method())
+                        temp_fused_reps.append(fused_rep)
+                        self.evaluate(
+                            task,
+                            fused_rep,
+                            [
+                                self.k_best_modalities[task.model.name][
+                                    k
+                                ].representations
+                                for k in modality_combo
+                            ],
+                            fusion_method,
+                            modality_combo,
+                        )
+            fused_representations = temp_fused_reps
+            reuse_fused_representations = False
 
-        print(modality_combos)
+    def is_prefix_match(self, seq1, seq2):
+        """
+        Check if seq1 is a prefix of seq2.
 
-    def _evaluate_inter_modal(self, task, modality_combo):
-        fused_representation = None
-        for modality_id in modality_combo:
-            fused_representation = self.evaluate(task, modality_id, None, None, None)
+        Args:
+            seq1: First sequence (list)
+            seq2: Second sequence (list)
+
+        Returns:
+            Boolean indicating whether seq1 is a prefix of seq2
+        """
+        # seq1 can only be a prefix if it's not longer than seq2
+        if len(seq1) > len(seq2):
+            return False
+
+        # Check if seq1 matches the beginning of seq2
+        return seq2[: len(seq1)] == seq1
 
     def extract_representations(self, representations, modality, task_name):
         applied_representations = []
@@ -151,10 +213,9 @@ class MultimodalOptimizer:
                 applied_representations.append(applied_representation)
         return applied_representations
 
-    def evaluate(self, task, modality, representations, fusion, modality_ids):
+    def evaluate(self, task, modality, representations, fusion, modality_combo):
         if task.expected_dim == 1 and get_shape(modality.metadata) > 1:
             for aggregation in Aggregation().get_aggregation_functions():
-                # padding should not be necessary here
                 agg_operator = AggregatedRepresentation(Aggregation(aggregation, False))
                 agg_modality = agg_operator.transform(modality)
 
@@ -163,12 +224,20 @@ class MultimodalOptimizer:
                 reps.append(agg_operator)
 
                 self.optimization_results.add_result(
-                    scores, reps, [fusion], modality_ids, task.model.name
+                    scores,
+                    reps,
+                    modality.transformation,
+                    modality_combo,
+                    task.model.name,
                 )
         else:
             scores = task.run(modality.data)
             self.optimization_results.add_result(
-                scores, representations, [fusion], modality_ids, task.model.name
+                scores,
+                representations,
+                modality.transformation,
+                modality_combo,
+                task.model.name,
             )
 
     def add_to_cache(self, result_idx, combined_modality):
@@ -178,7 +247,7 @@ class MultimodalOptimizer:
         self.k_best_modalities = {}
         self.k_best_cache = {}
         for task in self.tasks:
-            self.k_best_modalities[task.model.name] = {}
+            self.k_best_modalities[task.model.name] = []
             self.k_best_cache[task.model.name] = []
             for modality in self.modalities:
                 k_best_results, cached_data = (
@@ -187,20 +256,8 @@ class MultimodalOptimizer:
                     )
                 )
 
-                self.k_best_modalities[task.model.name][
-                    modality.modality_id
-                ] = k_best_results
+                self.k_best_modalities[task.model.name].extend(k_best_results)
                 self.k_best_cache[task.model.name].extend(cached_data)
-
-    def create_modality_index(self, task):
-        counter = 0
-        k_best_idx = []
-        for modality_id, values in self.k_best_modalities[task].items():
-            for _ in values:
-                k_best_idx.append((modality_id, counter))
-                counter += 1
-
-        return k_best_idx
 
 
 class MultimodalResults:
@@ -215,35 +272,36 @@ class MultimodalResults:
             self.results[task.model.name] = {}
 
     def add_result(
-        self, scores, best_representation_idx, fusion_methods, modality_ids, task_name
+        self, scores, best_representation_idx, fusion_methods, modality_combo, task_name
     ):
 
         entry = MultimodalResultEntry(
             representations=best_representation_idx,
             train_score=scores[0],
             val_score=scores[1],
-            fusion_methods=[fusion_method.__name__ for fusion_method in fusion_methods],
-            modality_ids=modality_ids,
+            fusion_methods=[
+                fusion_method.__class__.__name__ for fusion_method in fusion_methods
+            ],
+            modality_combo=modality_combo,
             task=task_name,
         )
 
-        modality_id_strings = "_".join(list(map(str, modality_ids)))
+        modality_id_strings = "_".join(list(map(str, modality_combo)))
         if not modality_id_strings in self.results[task_name]:
             self.results[task_name][modality_id_strings] = []
 
         self.results[task_name][modality_id_strings].append(entry)
+
+        if self.debug:
+            print(f"{modality_id_strings}_{task_name}: {entry}")
 
     def print_results(self):
         for task_name in self.task_names:
             for modality in self.results[task_name].keys():
                 for entry in self.results[task_name][modality]:
                     reps = []
-                    for i, mod_idx in enumerate(entry.modality_ids):
-                        reps.append(
-                            self.k_best_modalities[task_name][mod_idx][
-                                entry.representations[i]
-                            ]
-                        )
+                    for i, mod_idx in enumerate(entry.modality_combo):
+                        reps.append(self.k_best_modalities[task_name][mod_idx])
 
                     print(
                         f"{modality}_{task_name}: "
@@ -251,22 +309,18 @@ class MultimodalResults:
                     )
                     for i, rep in enumerate(reps):
                         print(
-                            f"    Representation: {entry.modality_ids[i]} - {rep.representations}"
+                            f"    Representation: {entry.modality_combo[i]} - {rep.representations}"
                         )
-                        if i < len(reps) - 1:
-                            print(f"    Fusion: {entry.fusion_methods[i]} ")
+                        # if i < len(reps) - 1:
+                    print(f"    Fusion: {entry.fusion_methods[0]} ")
 
     def store_results(self, file_name=None):
         for task_name in self.task_names:
             for modality in self.results[task_name].keys():
                 for entry in self.results[task_name][modality]:
                     reps = []
-                    for i, mod_idx in enumerate(entry.modality_ids):
-                        reps.append(
-                            self.k_best_modalities[task_name][mod_idx][
-                                entry.representations[i]
-                            ]
-                        )
+                    for i, mod_idx in enumerate(entry.modality_combo):
+                        reps.append(self.k_best_modalities[task_name][mod_idx])
                     entry.representations = reps
 
         import pickle
@@ -284,7 +338,7 @@ class MultimodalResults:
 @dataclasses.dataclass
 class MultimodalResultEntry:
     val_score: float
-    modality_ids: list
+    modality_combo: list
     representations: list
     fusion_methods: list
     train_score: float

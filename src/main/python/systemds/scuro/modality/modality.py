@@ -22,6 +22,7 @@ from copy import deepcopy
 from typing import List
 
 import numpy as np
+from numpy.f2py.auxfuncs import throw_error
 
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations import utils
@@ -127,17 +128,23 @@ class Modality:
         self.data = np.array(data)
         return self
 
-    def pad(self, value=0):
+    def pad(self, value=0, max_len=None):
         try:
-            result = np.array(self.data)
+            if max_len is None:
+                result = np.array(self.data)
+            else:
+                raise "Needs padding to max_len"
         except:
-            maxlen = max([len(seq) for seq in self.data])
+            maxlen = (
+                max([len(seq) for seq in self.data]) if max_len is None else max_len
+            )
 
             result = np.full((len(self.data), maxlen), value, dtype=self.data_type)
 
             for i, seq in enumerate(self.data):
                 data = seq[:maxlen]
                 result[i, : len(data)] = data
+                # TODO: add padding to metadata as attention_masks
 
         self.data = result
 

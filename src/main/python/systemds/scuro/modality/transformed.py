@@ -27,6 +27,7 @@ from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.window_aggregation import WindowAggregation
 import time
+import copy
 
 
 class TransformedModality(Modality):
@@ -44,7 +45,22 @@ class TransformedModality(Modality):
         super().__init__(
             new_modality_type, modality.modality_id, metadata, modality.data_type
         )
-        self.transformation = transformation
+        self.transformation = None
+        self.add_transformation(transformation, modality)
+
+    def add_transformation(self, transformation, modality):
+        if (
+            transformation.__class__.__bases__[0].__name__ == "Fusion"
+            and modality.transformation[0].__class__.__bases__[0].__name__ != "Fusion"
+        ):
+            self.transformation = []
+        else:
+            self.transformation = (
+                []
+                if type(modality).__name__ != "TransformedModality"
+                else copy.deepcopy(modality.transformation)
+            )
+        self.transformation.append(transformation)
 
     def copy_from_instance(self):
         return type(self)(self, self.transformation)

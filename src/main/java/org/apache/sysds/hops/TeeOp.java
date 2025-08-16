@@ -30,16 +30,30 @@ public class TeeOp extends Hop {
 
 	private final ArrayList<Hop> _outputs = new ArrayList<>();
 
+	private TeeOp() {
+		// default constructor
+	}
+
+	/**
+	 * Takes in a single Hop input and gives two outputs
+	 *
+	 * @param input
+	 * @param outputs
+	 */
 	public TeeOp(Hop input, ArrayList<Hop> outputs) {
 		super(input.getName(), input.getDataType(), input._valueType);
 
+		// add single input for this hop
 		getInput().add(0, input);
 		input.getParent().add(this);
 
+		// output variables list to feed tee output into
 		for (Hop out:  outputs) {
 			_outputs.add(out);
 		}
 
+		// This characteristics are same as the input
+		refreshSizeInformation();
 	}
 
 	@Override
@@ -66,7 +80,7 @@ public class TeeOp extends Hop {
 
 	@Override
 	protected ExecType optFindExecType(boolean transitive) {
-		return null;
+		return ExecType.OOC;
 	}
 
 	@Override
@@ -122,7 +136,10 @@ public class TeeOp extends Hop {
 	 */
 	@Override
 	public void refreshSizeInformation() {
-
+		Hop input1 =  getInput().get(0);
+		setDim1(input1.getDim1());
+		setDim2(input1.getDim2());
+		setNnz(input1.getNnz());
 	}
 
 	@Override

@@ -19,6 +19,7 @@
 
 package org.apache.sysds.hops.rewrite;
 
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.TeeOp;
@@ -82,8 +83,10 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
         boolean isOOC = (hop.getForcedExecType() == Types.ExecType.OOC);
         boolean multipleConsumers = parents.size() > 1;
         boolean isNotAlreadyTee =  !(hop instanceof TeeOp);
+        boolean isOOCEnabled = DMLScript.USE_OOC;
 
-        if (isOOC && multipleConsumers && isNotAlreadyTee) {
+
+        if ( isOOCEnabled && multipleConsumers && isNotAlreadyTee) {
             System.out.println("perform rewrite");
         }
 

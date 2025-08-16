@@ -92,6 +92,9 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
         if ( isOOCEnabled && multipleConsumers && isNotAlreadyTee) {
             System.out.println("perform rewrite");
 
+            // Take a defensive copy even before any rewrite
+            ArrayList<Hop> consumers = new ArrayList<>(hop.getParent());
+
             // 1. Create a list of placeholder hops for tee outputs
             ArrayList<Hop> teeOutputs = new ArrayList<>();
             for (int i = 0 ; i < parents.size() ; i++) {
@@ -160,7 +163,7 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
             // 3. Rewire the graph:
             //   For each original consumer, change its input from the original hop
             //   to one of the new outputs of the TeeOp
-            ArrayList<Hop> consumers = new ArrayList<>(hop.getParent());
+//            ArrayList<Hop> consumers = new ArrayList<>(hop.getParent());
             for (int i = 0 ; i < consumers.size() ; i++) {
                 Hop consumer = consumers.get(i);
                 Hop teeOuput = teeOp.getOutput(i);

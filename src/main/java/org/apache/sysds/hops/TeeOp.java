@@ -30,7 +30,7 @@ public class TeeOp extends Hop {
 
 	private final ArrayList<Hop> _outputs = new ArrayList<>();
 
-	protected TeeOp(Hop input, ArrayList<Hop> outputs) {
+	public TeeOp(Hop input, ArrayList<Hop> outputs) {
 		super(input.getName(), input.getDataType(), input._valueType);
 
 		getInput().add(0, input);
@@ -135,4 +135,7 @@ public class TeeOp extends Hop {
 		return false;
 	}
 
+	public Hop getOutput(int index) {
+		return _outputs.get(index);
+	}
 }

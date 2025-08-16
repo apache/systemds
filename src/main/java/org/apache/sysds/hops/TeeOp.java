@@ -23,10 +23,23 @@ import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 
+import java.util.ArrayList;
+
 
 public class TeeOp extends Hop {
 
-	protected TeeOp() {
+	private final ArrayList<Hop> _outputs = new ArrayList<>();
+
+	protected TeeOp(Hop input, ArrayList<Hop> outputs) {
+		super(input.getName(), input.getDataType(), input._valueType);
+
+		getInput().add(0, input);
+		input.getParent().add(this);
+
+		for (Hop out:  outputs) {
+			_outputs.add(out);
+		}
+
 	}
 
 	@Override
@@ -58,7 +71,7 @@ public class TeeOp extends Hop {
 
 	@Override
 	public String getOpString() {
-		return "";
+		return "tee";
 	}
 
 	/**

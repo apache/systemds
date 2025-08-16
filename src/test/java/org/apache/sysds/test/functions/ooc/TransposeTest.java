@@ -19,7 +19,9 @@
 
 package org.apache.sysds.test.functions.ooc;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.io.MatrixWriter;
 import org.apache.sysds.runtime.io.MatrixWriterFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -34,17 +36,16 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-public class MatrixVectorBinaryMultiplicationTest extends AutomatedTestBase {
-	private final static String TEST_NAME1 = "MatrixVectorMultiplication";
+public class TransposeTest extends AutomatedTestBase {
+	private final static String TEST_NAME1 = "Transpose";
 	private final static String TEST_DIR = "functions/ooc/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + MatrixVectorBinaryMultiplicationTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + TransposeTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
 	private static final String INPUT_NAME = "X";
-	private static final String INPUT_NAME2 = "v";
 	private static final String OUTPUT_NAME = "res";
 
-	private final static int rows = 5000;
-	private final static int cols_wide = 2000;
+	private final static int rows = 1000;
+	private final static int cols_wide = 1000;
 	private final static int cols_skinny = 500;
 
 	private final static double sparsity1 = 0.7;
@@ -58,16 +59,16 @@ public class MatrixVectorBinaryMultiplicationTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testMVBinaryMultiplication1() {
-		runMatrixVectorMultiplicationTest(cols_wide, false);
+	public void testTranspose1() {
+		runTransposeTest(cols_wide, false);
 	}
 
 	@Test
-	public void testMVBinaryMultiplication2() {
-		runMatrixVectorMultiplicationTest(cols_skinny, false);
+	public void testTranspose2() {
+		runTransposeTest(cols_skinny, false);
 	}
 
-	private void runMatrixVectorMultiplicationTest(int cols, boolean sparse )
+	private void runTransposeTest(int cols, boolean sparse )
 	{
 		Types.ExecMode platformOld = setExecMode(Types.ExecMode.SINGLE_NODE);
 
@@ -77,15 +78,13 @@ public class MatrixVectorBinaryMultiplicationTest extends AutomatedTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 			programArgs = new String[]{"-explain", "-stats", "-ooc",
-					"-args", input(INPUT_NAME), input(INPUT_NAME2), output(OUTPUT_NAME)};
+					"-args", input(INPUT_NAME), output(OUTPUT_NAME)};
 
-			// 1. Generate the data in-memory as MatrixBlock objects
+			// 1. Generate the data as MatrixBlock object
 			double[][] A_data = getRandomMatrix(rows, cols, 0, 1, sparse?sparsity2:sparsity1, 10);
-			double[][] x_data = getRandomMatrix(cols, 1, 0, 1, 1.0, 10);
 
-			// 2. Convert the double arrays to MatrixBlock objects
+			// 2. Convert the double arrays to MatrixBlock object
 			MatrixBlock A_mb = DataConverter.convertToMatrixBlock(A_data);
-			MatrixBlock x_mb = DataConverter.convertToMatrixBlock(x_data);
 
 			// 3. Create a binary matrix writer
 			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(Types.FileFormat.BINARY);
@@ -95,11 +94,6 @@ public class MatrixVectorBinaryMultiplicationTest extends AutomatedTestBase {
 			HDFSTool.writeMetaDataFile(input(INPUT_NAME + ".mtd"), Types.ValueType.FP64,
 					new MatrixCharacteristics(rows, cols, 1000, A_mb.getNonZeros()), Types.FileFormat.BINARY);
 
-			// 5. Write vector x to a binary SequenceFile
-			writer.writeMatrixToHDFS(x_mb, input(INPUT_NAME2), cols, 1, 1000, x_mb.getNonZeros());
-			HDFSTool.writeMetaDataFile(input(INPUT_NAME2 + ".mtd"), Types.ValueType.FP64,
-					new MatrixCharacteristics(cols, 1, 1000, x_mb.getNonZeros()), Types.FileFormat.BINARY);
-
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1);
 
@@ -108,11 +102,18 @@ public class MatrixVectorBinaryMultiplicationTest extends AutomatedTestBase {
 			for(int i = 0; i < rows; i++) { // verify the results with Java
 				double expected = 0.0;
 				for(int j = 0; j < cols; j++) {
-					expected += A_mb.get(i, j) * x_mb.get(j,0);
+					expected = A_mb.get(i, j);
+					result = C1[j][i];
+					Assert.assertEquals(expected, result, eps);
 				}
-				result = C1[i][0];
-				Assert.assertEquals(expected, result, eps);
+
 			}
+
+			String prefix = Instruction.OOC_INST_PREFIX;
+			Assert.assertTrue("OOC wasn't used for RBLK",
+					heavyHittersContainsString(prefix + Opcodes.RBLK));
+			Assert.assertTrue("OOC wasn't used for TRANSPOSE",
+					heavyHittersContainsString(prefix + Opcodes.TRANSPOSE));
 		}
 		catch (IOException e) {
 			throw new RuntimeException(e);

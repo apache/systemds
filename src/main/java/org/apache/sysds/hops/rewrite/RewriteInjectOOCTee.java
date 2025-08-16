@@ -79,7 +79,7 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
         // 1. Is the operation an OOC operation?
         // 2. Does it have more than one parent (i.e., is it consumed by multiple operations)?
         // 3. Is it not already a Tee operation (to prevent infinite rewrite loops)?
-        boolean isOOC = (hop.getExecType() == Types.ExecType.OOC);
+        boolean isOOC = (hop.getForcedExecType() == Types.ExecType.OOC);
         boolean multipleConsumers = parents.size() > 1;
         boolean isNotAlreadyTee =  !(hop instanceof TeeOp);
 

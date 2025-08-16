@@ -22,6 +22,6 @@
 # Read the input matrix as a stream
 X = read($1);
 
-res = t(X) %*% X;
+res = t(X);
 
 write(res, $2, format="binary");

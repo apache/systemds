@@ -21,9 +21,7 @@ package org.apache.sysds.hops.rewrite;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.hops.Hop;
-import org.apache.sysds.hops.MemoTable;
-import org.apache.sysds.hops.TeeOp;
+import org.apache.sysds.hops.*;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 
@@ -89,77 +87,30 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
         boolean isOOCEnabled = DMLScript.USE_OOC;
 
 
-        if ( isOOCEnabled && multipleConsumers && isNotAlreadyTee) {
-            System.out.println("perform rewrite");
+        boolean isTransposeMM = false;
+        if (hop instanceof DataOp && hop.getDataType() == Types.DataType.MATRIX) {
+            isTransposeMM = isTranposePattern(hop);
+        }
+
+//        boolean isTranpose = (hop instanceof ReorgOp);
+//                && (((ReorgOp) hop).getOp() == Types.ReOrgOp.TRANS));
+
+        if (hop.getParent().size() > 1) {
+            System.out.println("DEBUG: Hop " + hop.getClass().getSimpleName() +
+                    " (" + hop.getOpString() + ") has " +
+                    hop.getParent().size() + " parents:");
+            for (Hop parent : hop.getParent()) {
+                System.out.println("  - " + parent.getClass().getSimpleName() +
+                        " (" + parent.getOpString() + ")");
+            }
+        }
+
+
+        if ( isOOCEnabled && multipleConsumers && isNotAlreadyTee && isTransposeMM) {
+            System.out.println("perform rewrite on hop: " + hop.getHopID());
 
             // Take a defensive copy even before any rewrite
             ArrayList<Hop> consumers = new ArrayList<>(hop.getParent());
-
-            // 1. Create a list of placeholder hops for tee outputs
-//            ArrayList<Hop> teeOutputs = new ArrayList<>();
-//            for (int i = 0 ; i < parents.size() ; i++) {
-//                teeOutputs.add(new Hop("tee_out_"+i, hop.getDataType(), hop.getValueType()) {
-//                                   @Override
-//                                   public boolean allowsAllExecTypes() {
-//                                       return false;
-//                                   }
-//
-//                                   @Override
-//                                   protected DataCharacteristics inferOutputCharacteristics(MemoTable memo) {
-//                                       return null;
-//                                   }
-//
-//                                   @Override
-//                                   public Lop constructLops() {
-//                                       if (this.getLops() == null) {
-//                                           System.out.println("we are at constructLops");
-//                                           this.setLops(hop.getLops());
-//                                       }
-//                                       return this.getLops();
-//                                   }
-//
-//                                   @Override
-//                                   protected Types.ExecType optFindExecType(boolean transitive) {
-//                                       return null;
-//                                   }
-//
-//                                   @Override
-//                                   public String getOpString() {
-//                                       return "";
-//                                   }
-//
-//                                   @Override
-//                                   public boolean isGPUEnabled() {
-//                                       return false;
-//                                   }
-//
-//                                   @Override
-//                                   protected double computeOutputMemEstimate(long dim1, long dim2, long nnz) {
-//                                       return 0;
-//                                   }
-//
-//                                   @Override
-//                                   protected double computeIntermediateMemEstimate(long dim1, long dim2, long nnz) {
-//                                       return 0;
-//                                   }
-//
-//                                   @Override
-//                                   public void refreshSizeInformation() {
-//
-//                                   }
-//
-//                                   @Override
-//                                   public Object clone() throws CloneNotSupportedException {
-//                                       return null;
-//                                   }
-//
-//                                   @Override
-//                                   public boolean compare(Hop that) {
-//                                       return false;
-//                                   }
-//                               }
-//                );
-//            }
 
             // 2. Create the new TeeOp. Take original hop as input
             TeeOp teeOp = new TeeOp(hop);
@@ -167,14 +118,33 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
             // 3. Rewire the graph:
             //   For each original consumer, change its input from the original hop
             //   to one of the new outputs of the TeeOp
-//            ArrayList<Hop> consumers = new ArrayList<>(hop.getParent());
             for (int i = 0 ; i < consumers.size() ; i++) {
                 Hop consumer = consumers.get(i);
-//                Hop teeOuput = teeOp.getOutput(i);
                 HopRewriteUtils.replaceChildReference(consumer, hop, teeOp);
             }
 
         }
 
+    }
+
+    private boolean isTranposePattern (Hop hop) {
+        boolean hasTransposeConsumer = false; // t(X)
+        boolean hasMatrixMultiplyConsumer = false; // %*%
+
+        for (Hop parent: hop.getParent()) {
+            String opString = parent.getOpString();
+            if (parent instanceof ReorgOp) {
+                System.out.println("Reorgop, opString: " + opString);
+                if (opString.contains("r'") || opString.contains("transpose")) {
+                    hasTransposeConsumer = true;
+                }
+            }
+            else if (parent instanceof AggBinaryOp)
+                System.out.println("AggBinaryOp, opString: " + opString);
+                if (opString.contains("*") || opString.contains("ba+*")) {
+                    hasMatrixMultiplyConsumer = true;
+                }
+            }
+        return hasTransposeConsumer &&  hasMatrixMultiplyConsumer;
     }
 }

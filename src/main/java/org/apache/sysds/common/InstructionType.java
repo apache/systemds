@@ -88,5 +88,5 @@ public enum InstructionType {
 	PMM,
 	MatrixReshape,
 	Write,
-	Init,
+	Init, Tee,
 }

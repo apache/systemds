@@ -96,69 +96,73 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
             ArrayList<Hop> consumers = new ArrayList<>(hop.getParent());
 
             // 1. Create a list of placeholder hops for tee outputs
-            ArrayList<Hop> teeOutputs = new ArrayList<>();
-            for (int i = 0 ; i < parents.size() ; i++) {
-                teeOutputs.add(new Hop("tee_out_"+i, hop.getDataType(), hop.getValueType()) {
-                                   @Override
-                                   public boolean allowsAllExecTypes() {
-                                       return false;
-                                   }
-
-                                   @Override
-                                   protected DataCharacteristics inferOutputCharacteristics(MemoTable memo) {
-                                       return null;
-                                   }
-
-                                   @Override
-                                   public Lop constructLops() {
-                                       return null;
-                                   }
-
-                                   @Override
-                                   protected Types.ExecType optFindExecType(boolean transitive) {
-                                       return null;
-                                   }
-
-                                   @Override
-                                   public String getOpString() {
-                                       return "";
-                                   }
-
-                                   @Override
-                                   public boolean isGPUEnabled() {
-                                       return false;
-                                   }
-
-                                   @Override
-                                   protected double computeOutputMemEstimate(long dim1, long dim2, long nnz) {
-                                       return 0;
-                                   }
-
-                                   @Override
-                                   protected double computeIntermediateMemEstimate(long dim1, long dim2, long nnz) {
-                                       return 0;
-                                   }
-
-                                   @Override
-                                   public void refreshSizeInformation() {
-
-                                   }
-
-                                   @Override
-                                   public Object clone() throws CloneNotSupportedException {
-                                       return null;
-                                   }
-
-                                   @Override
-                                   public boolean compare(Hop that) {
-                                       return false;
-                                   }
-                               }
-                );
-            }
+//            ArrayList<Hop> teeOutputs = new ArrayList<>();
+//            for (int i = 0 ; i < parents.size() ; i++) {
+//                teeOutputs.add(new Hop("tee_out_"+i, hop.getDataType(), hop.getValueType()) {
+//                                   @Override
+//                                   public boolean allowsAllExecTypes() {
+//                                       return false;
+//                                   }
+//
+//                                   @Override
+//                                   protected DataCharacteristics inferOutputCharacteristics(MemoTable memo) {
+//                                       return null;
+//                                   }
+//
+//                                   @Override
+//                                   public Lop constructLops() {
+//                                       if (this.getLops() == null) {
+//                                           System.out.println("we are at constructLops");
+//                                           this.setLops(hop.getLops());
+//                                       }
+//                                       return this.getLops();
+//                                   }
+//
+//                                   @Override
+//                                   protected Types.ExecType optFindExecType(boolean transitive) {
+//                                       return null;
+//                                   }
+//
+//                                   @Override
+//                                   public String getOpString() {
+//                                       return "";
+//                                   }
+//
+//                                   @Override
+//                                   public boolean isGPUEnabled() {
+//                                       return false;
+//                                   }
+//
+//                                   @Override
+//                                   protected double computeOutputMemEstimate(long dim1, long dim2, long nnz) {
+//                                       return 0;
+//                                   }
+//
+//                                   @Override
+//                                   protected double computeIntermediateMemEstimate(long dim1, long dim2, long nnz) {
+//                                       return 0;
+//                                   }
+//
+//                                   @Override
+//                                   public void refreshSizeInformation() {
+//
+//                                   }
+//
+//                                   @Override
+//                                   public Object clone() throws CloneNotSupportedException {
+//                                       return null;
+//                                   }
+//
+//                                   @Override
+//                                   public boolean compare(Hop that) {
+//                                       return false;
+//                                   }
+//                               }
+//                );
+//            }
 
             // 2. Create the new TeeOp. Take original hop as input
-            TeeOp teeOp = new TeeOp(hop, teeOutputs);
+            TeeOp teeOp = new TeeOp(hop);
 
             // 3. Rewire the graph:
             //   For each original consumer, change its input from the original hop
@@ -166,8 +170,8 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
 //            ArrayList<Hop> consumers = new ArrayList<>(hop.getParent());
             for (int i = 0 ; i < consumers.size() ; i++) {
                 Hop consumer = consumers.get(i);
-                Hop teeOuput = teeOp.getOutput(i);
-                HopRewriteUtils.replaceChildReference(consumer, hop, teeOuput);
+//                Hop teeOuput = teeOp.getOutput(i);
+                HopRewriteUtils.replaceChildReference(consumer, hop, teeOp);
             }
 
         }

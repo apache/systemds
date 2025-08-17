@@ -39,9 +39,9 @@ public class TeeOp extends Hop {
 	 * Takes in a single Hop input and gives two outputs
 	 *
 	 * @param input
-	 * @param outputs
+//	 * @param outputs
 	 */
-	public TeeOp(Hop input, ArrayList<Hop> outputs) {
+	public TeeOp(Hop input) {
 		super(input.getName(), input.getDataType(), input._valueType);
 
 		// add single input for this hop
@@ -49,9 +49,9 @@ public class TeeOp extends Hop {
 		input.getParent().add(this);
 
 		// output variables list to feed tee output into
-		for (Hop out:  outputs) {
-			_outputs.add(out);
-		}
+//		for (Hop out:  outputs) {
+//			_outputs.add(out);
+//		}
 
 		// This characteristics are same as the input
 		refreshSizeInformation();

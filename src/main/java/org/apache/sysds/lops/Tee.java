@@ -48,12 +48,25 @@ public class Tee extends Lop {
 
     @Override
     public String getInstructions(String input1, String outputs) {
+
+        String output2 = outputs + "_copy";
+        System.out.println("DEBUG: Tee.getInstructions() called with:");
+        System.out.println("  input1: " + input1);
+        System.out.println("  output1: " + outputs);
+        System.out.println("  This Tee node: " + this);
+//        System.out.println("  Stack trace:");
+//        Thread.dumpStack();
+
+        // Return a temporary instruction to see if this fixes the empty string
+        System.out.println("OOC" + OPERAND_DELIMITOR + "tee" + OPERAND_DELIMITOR + input1 + OPERAND_DELIMITOR + outputs + OPERAND_DELIMITOR + "TEMP_OUTPUT2");
         // This method generates the instruction string: OOC°tee°input°output1°output2...
         String ret = InstructionUtils.concatOperands(
                 getExecType().name(), OPCODE,
                 getInputs().get(0).prepInputOperand(input1),
-                prepOutputOperand(outputs)
+                prepOutputOperand(outputs),
+                prepInputOperand(output2)
         );
+        System.out.println("DEBUG: Tee.getInstructions() returned: " + ret);
 
         return ret;
     }

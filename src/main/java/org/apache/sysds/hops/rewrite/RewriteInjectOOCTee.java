@@ -56,6 +56,7 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
      */
     @Override
     public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
+//        System.out.println("RewriteInjectOOCTee running in phase: " + state.toString());
         if (root.isVisited()) {
             return root;
         }
@@ -100,6 +101,8 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
         if (hop instanceof DataOp && hop.getDataType() == Types.DataType.MATRIX) {
             isTransposeMM = isTranposePattern(hop);
         }
+//        boolean isTranspose = ((hop instanceof ReorgOp)
+//                && (((ReorgOp) hop).getOp() == Types.ReOrgOp.TRANS));
 
         if (hop.getParent().size() > 1) {
             System.out.println("DEBUG: Hop " + hop.getClass().getSimpleName() +
@@ -113,6 +116,7 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
 
 
         if ( isOOCEnabled && multipleConsumers && isNotAlreadyTee && isTransposeMM) {
+//                && isTranspose) {
             System.out.println("perform rewrite on hop: " + hop.getHopID());
 
             // Take a defensive copy even before any rewrite

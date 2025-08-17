@@ -33,32 +33,33 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 import java.util.concurrent.ExecutorService;
 
 public class TeeOOCInstruction extends ComputationOOCInstruction {
-	private UnaryOperator _uop = null;
+	private CPOperand output2 = null;
 
-	protected TeeOOCInstruction(OOCType type, UnaryOperator op, CPOperand in1, CPOperand out, String opcode, String istr) {
-		super(type, op, in1, out, opcode, istr);
-
-		_uop = op;
+	protected TeeOOCInstruction(OOCType type, CPOperand in1, CPOperand out, CPOperand out2, String opcode, String istr) {
+		super(type, null, in1, out, opcode, istr);
+		this.output2 = out2;
 	}
 
 	public static TeeOOCInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		InstructionUtils.checkNumFields(parts, 2);
+		InstructionUtils.checkNumFields(parts, 3);
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
+		CPOperand out2 = new CPOperand(parts[2]);
 
-		UnaryOperator uopcode = InstructionUtils.parseUnaryOperator(opcode);
-		return new TeeOOCInstruction(OOCType.Unary, uopcode, in1, out, opcode, str);
+		return new TeeOOCInstruction(OOCType.Tee, in1, out, out2, opcode, str);
 	}
 
 	public void processInstruction( ExecutionContext ec ) {
-		UnaryOperator uop = (UnaryOperator) _uop;
+
 		// Create thread and process the unary operation
 		MatrixObject min = ec.getMatrixObject(input1);
 		LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
 		LocalTaskQueue<IndexedMatrixValue> qOut = new LocalTaskQueue<>();
 		ec.getMatrixObject(output).setStreamHandle(qOut);
+
+		System.out.println("We are reaching here");
 
 
 		ExecutorService pool = CommonThreadPool.get();
@@ -67,9 +68,11 @@ public class TeeOOCInstruction extends ComputationOOCInstruction {
 				IndexedMatrixValue tmp = null;
 				try {
 					while ((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
+						System.out.println("print tmp:");
+						System.out.println(tmp);
 						IndexedMatrixValue tmpOut = new IndexedMatrixValue();
-						tmpOut.set(tmp.getIndexes(),
-								tmp.getValue().unaryOperations(uop, new MatrixBlock()));
+//						tmpOut.set(tmp.getIndexes(),
+//								tmp.getValue().unaryOperations(uop, new MatrixBlock()));
 						qOut.enqueueTask(tmpOut);
 					}
 					qOut.closeInput();

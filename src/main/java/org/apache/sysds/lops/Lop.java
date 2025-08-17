@@ -38,7 +38,7 @@ import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 public abstract class Lop 
 {
 	protected static final Log LOG =  LogFactory.getLog(Lop.class.getName());
-	
+
 	public enum Type {
 		Data, DataGen,                                      //CP/MR read/write/datagen 
 		ReBlock, CSVReBlock,                                //MR reblock operations
@@ -63,7 +63,8 @@ public abstract class Lop
 		PlusMult, MinusMult,                                //CP
 		SpoofFused,                                         //CP/SP generated fused operator
 		Sql,                                                //CP sql read
-		Federated                                           //FED federated read
+		Federated,                                           //FED federated read
+		Tee,                                                //OOC Tee operator
 	}
 	
 

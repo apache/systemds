@@ -21,6 +21,7 @@ package org.apache.sysds.hops;
 
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.Lop;
+import org.apache.sysds.lops.Tee;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 import java.util.ArrayList;
@@ -75,7 +76,18 @@ public class TeeOp extends Hop {
 
 	@Override
 	public Lop constructLops() {
-		return null;
+		// return already created Lops
+		if (getLops() != null) {
+			return getLops();
+		}
+
+		Tee teeLop = new Tee(getInput().get(0).constructLops(),
+				getDataType(), getValueType());
+		setOutputDimensions(teeLop);
+		setLineNumbers(teeLop);
+		setLops(teeLop);
+
+		return getLops();
 	}
 
 	@Override

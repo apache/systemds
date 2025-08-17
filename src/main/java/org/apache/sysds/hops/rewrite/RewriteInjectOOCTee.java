@@ -71,6 +71,15 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
     }
 
     /**
+     * Applies Tee transformation to the Hop node when it matches with specific patterns
+     * the require stream duplication for Out-of-Core (OOC) operations.
+     *
+     * <p>In OOC execution, the data streams can only be consumed once. For certain operations
+     * such as {@code t(X) %*% X} requires same data multiple times.This method identifies such
+     * patterns and inserts TeeOp to split the stream into multiple independent copies to be
+     * consumed separately.
+     * </p>
+     *
      *
      *
      * @param hop

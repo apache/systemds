@@ -92,9 +92,6 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
             isTransposeMM = isTranposePattern(hop);
         }
 
-//        boolean isTranpose = (hop instanceof ReorgOp);
-//                && (((ReorgOp) hop).getOp() == Types.ReOrgOp.TRANS));
-
         if (hop.getParent().size() > 1) {
             System.out.println("DEBUG: Hop " + hop.getClass().getSimpleName() +
                     " (" + hop.getOpString() + ") has " +

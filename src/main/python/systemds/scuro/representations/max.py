@@ -40,11 +40,9 @@ class RowMax(Fusion):
         self.associative = True
         self.commutative = True
 
-    def transform(
+    def execute(
         self,
         modalities: List[Modality],
     ):
-        # TODO: need to check if data is aligned - same number of dimension
         fused_data = np.maximum.reduce([m.data for m in modalities])
-
         return fused_data

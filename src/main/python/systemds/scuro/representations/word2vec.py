@@ -69,5 +69,6 @@ class W2V(UnimodalRepresentation):
 
         if self.output_file is not None:
             save_embeddings(np.array(embeddings), self.output_file)
-        transformed_modality.data = embeddings
+        transformed_modality.data_type = np.float32
+        transformed_modality.data = np.array(embeddings)
         return transformed_modality

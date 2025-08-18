@@ -47,5 +47,6 @@ class TfIdf(UnimodalRepresentation):
         if self.output_file is not None:
             save_embeddings(X, self.output_file)
 
+        transformed_modality.data_type = np.float32
         transformed_modality.data = X
         return transformed_modality

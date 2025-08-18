@@ -29,7 +29,7 @@ from typing import Union
 import numpy as np
 from systemds.scuro.representations.window_aggregation import WindowAggregation
 
-from build.lib.systemds.scuro.representations.aggregated_representation import (
+from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
 from systemds.scuro import ModalityType, Aggregation

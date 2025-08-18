@@ -18,7 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
-
+import numpy as np
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 import torch
@@ -56,6 +56,7 @@ class Bert(UnimodalRepresentation):
         if self.output_file is not None:
             save_embeddings(embeddings, self.output_file)
 
+        transformed_modality.data_type = np.float32
         transformed_modality.data = embeddings
         return transformed_modality
 

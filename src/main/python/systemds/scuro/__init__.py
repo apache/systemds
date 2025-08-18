@@ -73,6 +73,8 @@ from systemds.scuro.drsearch.representation_cache import RepresentationCache
 from systemds.scuro.drsearch.unimodal_representation_optimizer import (
     UnimodalRepresentationOptimizer,
 )
+from systemds.scuro.drsearch.multimodal_optimizer import MultimodalOptimizer
+from systemds.scuro.drsearch.unimodal_optimizer import UnimodalOptimizer
 
 
 __all__ = [
@@ -127,4 +129,6 @@ __all__ = [
     "OptimizationData",
     "RepresentationCache",
     "UnimodalRepresentationOptimizer",
+    "UnimodalOptimizer",
+    "MultimodalOptimizer",
 ]

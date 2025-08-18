@@ -102,10 +102,12 @@ class MultimodalOptimizer:
         reuse_fused_representations = False
         for i, modality_combo in enumerate(modality_combos):
             # clear reuse cache
-            
+            if i % 5 == 0:
+                reuse_cache = self.prune_cache(modality_combos[i:], reuse_cache)
+
             if i != 0:
                 reuse_fused_representations = self.is_prefix_match(
-                    modality_combos[i-1], modality_combo
+                    modality_combos[i - 1], modality_combo
                 )
             if reuse_fused_representations:
                 mods = [
@@ -114,9 +116,13 @@ class MultimodalOptimizer:
                 ]
                 fused_representations = reuse_cache[modality_combos[i - 1]]
             else:
-                prefix_idx = self.compute_equal_prefix_index(modality_combos[i-1], modality_combo)
+                prefix_idx = self.compute_equal_prefix_index(
+                    modality_combos[i - 1], modality_combo
+                )
                 if prefix_idx > 1:
-                    fused_representations = reuse_cache[modality_combos[i - 1][:prefix_idx]]
+                    fused_representations = reuse_cache[
+                        modality_combos[i - 1][:prefix_idx]
+                    ]
                     reuse_fused_representations = True
                     mods = [
                         self.k_best_cache[task.model.name][mod_idx]
@@ -126,8 +132,7 @@ class MultimodalOptimizer:
                 print(
                     f"New modality combo: {modality_combo} - Reuse: {reuse_fused_representations} - # fused reps: {len(fused_representations)}"
                 )
-                
-                
+
             all_mods = [
                 self.k_best_cache[task.model.name][mod_idx]
                 for mod_idx in modality_combo
@@ -163,37 +168,37 @@ class MultimodalOptimizer:
                             fusion_method,
                             modality_combo,
                         )
-        
-            if len(modality_combo) < len(self.k_best_cache[task.model.name]) and i +1 < len(modality_combos) and self.is_prefix_match(modality_combos[i], modality_combos[i+1]):
+
+            if (
+                len(modality_combo) < len(self.k_best_cache[task.model.name])
+                and i + 1 < len(modality_combos)
+                and self.is_prefix_match(modality_combos[i], modality_combos[i + 1])
+            ):
                 reuse_cache[modality_combo] = temp_fused_reps
             reuse_fused_representations = False
 
+    def prune_cache(self, sequences, cache):
+        seqs_as_tuples = [tuple(seq) for seq in sequences]
+
+        def still_used(key):
+            return any(self.is_prefix_match(key, seq) for seq in seqs_as_tuples)
+
+        cache = {key: value for key, value in cache.items() if still_used(key)}
+        return cache
+
     def is_prefix_match(self, seq1, seq2):
-        """
-        Check if seq1 is a prefix of seq2.
-
-        Args:
-            seq1: First sequence (list)
-            seq2: Second sequence (list)
-
-        Returns:
-            Boolean indicating whether seq1 is a prefix of seq2
-        """
-        # seq1 can only be a prefix if it's not longer than seq2
-        
         if len(seq1) > len(seq2):
             return False
 
         # Check if seq1 matches the beginning of seq2
         return seq2[: len(seq1)] == seq1
-    
-    
+
     def compute_equal_prefix_index(self, seq1, seq2):
         max_len = min(len(seq1), len(seq2))
         i = 0
         while i < max_len and seq1[i] == seq2[i]:
             i += 1
-            
+
         return i
 
     def extract_representations(self, representations, modality, task_name):
@@ -339,7 +344,7 @@ class MultimodalResults:
                         print(
                             f"    Representation: {entry.modality_combo[i]} - {rep.representations}"
                         )
-                        # if i < len(reps) - 1:
+
                     print(f"    Fusion: {entry.fusion_methods[0]} ")
 
     def store_results(self, file_name=None):

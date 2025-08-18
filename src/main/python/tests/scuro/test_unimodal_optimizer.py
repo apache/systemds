@@ -104,7 +104,9 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
     def setUpClass(cls):
         cls.num_instances = 10
         cls.mods = [ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT]
-        cls.labels = np.random.choice([0, 1], size=cls.num_instances)
+        cls.labels = ModalityRandomDataGenerator().create_balanced_labels(
+            num_instances=cls.num_instances
+        )
         cls.indices = np.array(range(cls.num_instances))
 
         split = train_test_split(
@@ -182,7 +184,7 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
         ):
             registry = Registry()
 
-            unimodal_optimizer = UnimodalOptimizer([modality], self.tasks)
+            unimodal_optimizer = UnimodalOptimizer([modality], self.tasks, False)
             unimodal_optimizer.optimize()
 
             assert (
@@ -190,10 +192,11 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
                 == modality.modality_id
             )
             assert len(unimodal_optimizer.operator_performance.task_names) == 2
-            assert (
-                len(unimodal_optimizer.get_k_best_results(modality, 1, self.tasks[0]))
-                == 1
+            result, cached = unimodal_optimizer.operator_performance.get_k_best_results(
+                modality, 1, self.tasks[0]
             )
+            assert len(result) == 1
+            assert len(cached) == 1
 
 
 if __name__ == "__main__":

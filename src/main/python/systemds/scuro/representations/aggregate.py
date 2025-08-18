@@ -92,7 +92,7 @@ class Aggregation:
                         padded_data.append(utils.pad_sequences(entry, max_len))
                     data[i] = padded_data
 
-        return data
+        return np.array(data)
 
     def transform(self, modality):
         return self.execute(modality)

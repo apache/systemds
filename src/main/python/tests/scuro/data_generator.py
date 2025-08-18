@@ -193,6 +193,18 @@ class ModalityRandomDataGenerator:
 
         return (data, metadata)
 
+    def create_balanced_labels(self, num_instances, num_classes=2):
+        if num_instances % num_classes != 0:
+            raise ValueError("Size must be even to have equal numbers of classes.")
+
+        class_size = int(num_instances / num_classes)
+        vector = np.array([0] * class_size)
+        for i in range(num_classes - 1):
+            vector = np.concatenate((vector, np.array([1] * class_size)))
+
+        np.random.shuffle(vector)
+        return vector
+
 
 def setup_data(modalities, num_instances, path):
     if os.path.isdir(path):

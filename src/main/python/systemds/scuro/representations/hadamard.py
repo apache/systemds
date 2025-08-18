@@ -41,8 +41,7 @@ class Hadamard(Fusion):
         self.commutative = True
         self.associative = True
 
-    def transform(self, modalities: List[Modality], train_indices=None):
-        # TODO: check for alignment in the metadata
+    def execute(self, modalities: List[Modality], train_indices=None):
         fused_data = np.prod([m.data for m in modalities], axis=0)
 
         return fused_data

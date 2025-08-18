@@ -52,7 +52,9 @@ class Wav2Vec(UnimodalRepresentation):
         result = []
         for i, sample in enumerate(modality.data):
             sr = list(modality.metadata.values())[i]["frequency"]
-            audio_resampled = librosa.resample(sample, orig_sr=sr, target_sr=16000)
+            audio_resampled = librosa.resample(
+                np.array(sample), orig_sr=sr, target_sr=16000
+            )
             input = self.processor(
                 audio_resampled, sampling_rate=16000, return_tensors="pt", padding=True
             )

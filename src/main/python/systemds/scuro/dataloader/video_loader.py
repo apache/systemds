@@ -35,11 +35,13 @@ class VideoLoader(BaseLoader):
         data_type: Union[np.dtype, str] = np.float16,
         chunk_size: Optional[int] = None,
         load=True,
+        fps=None,
     ):
         super().__init__(
             source_path, indices, data_type, chunk_size, ModalityType.VIDEO
         )
         self.load_data_from_file = load
+        self.fps = fps
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
@@ -53,25 +55,33 @@ class VideoLoader(BaseLoader):
         if not cap.isOpened():
             raise f"Could not read video at path: {file}"
 
-        fps = cap.get(cv2.CAP_PROP_FPS)
+        orig_fps = cap.get(cv2.CAP_PROP_FPS)
+        frame_interval = 1
+        if self.fps is not None and self.fps < orig_fps:
+            frame_interval = int(round(orig_fps / self.fps))
+        else:
+            self.fps = orig_fps
+
         length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         num_channels = 3
 
         self.metadata[file] = self.modality_type.create_video_metadata(
-            fps, length, width, height, num_channels
+            self.fps, length, width, height, num_channels
         )
 
         frames = []
+        idx = 0
         while cap.isOpened():
             ret, frame = cap.read()
 
             if not ret:
                 break
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame = frame.astype(self._data_type) / 255.0
-
-            frames.append(frame)
+            if idx % frame_interval == 0:
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                frame = frame.astype(self._data_type) / 255.0
+                frames.append(frame)
+            idx += 1
 
         self.data.append(np.stack(frames))

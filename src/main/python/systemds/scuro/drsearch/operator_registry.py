@@ -64,6 +64,18 @@ class Registry:
     def get_fusion_operators(self):
         return self._fusion_operators
 
+    def get_representation_by_name(self, representation_name, modality_type):
+        for representation in self._context_operators:
+            if representation.__name__ == representation_name:
+                return representation, True
+
+        if modality_type is not None:
+            for representation in self._representations[modality_type]:
+                if representation.__name__ == representation_name:
+                    return representation, False
+
+        return None, False
+
 
 def register_representation(modalities: Union[ModalityType, List[ModalityType]]):
     """

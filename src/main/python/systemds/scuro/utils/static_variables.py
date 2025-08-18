@@ -18,31 +18,19 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from typing import List
-
 import numpy as np
+import torch
 
-from systemds.scuro.modality.modality import Modality
-from systemds.scuro.representations.fusion import Fusion
-
-from systemds.scuro.drsearch.operator_registry import register_fusion_operator
+global_rng = np.random.default_rng(42)
 
 
-@register_fusion_operator()
-class RowMax(Fusion):
-    def __init__(self):
-        """
-        Combines modalities by computing the outer product of a modality combination and
-        taking the row max
-        """
-        super().__init__("RowMax")
-        self.needs_alignment = True
-        self.associative = True
-        self.commutative = True
+def get_seed():
+    return global_rng.integers(0, 1024)
 
-    def execute(
-        self,
-        modalities: List[Modality],
-    ):
-        fused_data = np.maximum.reduce([m.data for m in modalities])
-        return fused_data
+
+def get_device():
+    return torch.device(
+        "cuda:0"
+        if torch.cuda.is_available()
+        else "mps" if torch.mps.is_available() else "cpu"
+    )

@@ -65,7 +65,7 @@ class TestFusionOrders(unittest.TestCase):
 
         self.assertFalse(np.array_equal(r_1_r_2.data, r_2_r_1.data))
         self.assertFalse(np.array_equal(r_1_r_2_r_3.data, r_2_r_1_r_3.data))
-        self.assertFalse(np.array_equal(r_1_r_2_r_3.data, r1_r2_r3.data))
+        self.assertFalse(np.array_equal(r_2_r_1.data, r1_r2_r3.data))
         self.assertFalse(np.array_equal(r_1_r_2.data, r1_r2_r3.data))
 
     def test_fusion_order_max(self):

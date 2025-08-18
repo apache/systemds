@@ -18,7 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
-
+import numpy as np
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 import torch
@@ -34,12 +34,13 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 @register_representation(ModalityType.TEXT)
 class Bert(UnimodalRepresentation):
-    def __init__(self, model_name="bert", output_file=None):
+    def __init__(self, model_name="bert", output_file=None, max_seq_length=512):
         parameters = {"model_name": "bert"}
         self.model_name = model_name
         super().__init__("Bert", ModalityType.EMBEDDING, parameters)
 
         self.output_file = output_file
+        self.max_seq_length = max_seq_length
 
     def transform(self, modality):
         transformed_modality = TransformedModality(modality, self)
@@ -55,32 +56,33 @@ class Bert(UnimodalRepresentation):
         if self.output_file is not None:
             save_embeddings(embeddings, self.output_file)
 
+        transformed_modality.data_type = np.float32
         transformed_modality.data = embeddings
         return transformed_modality
 
     def create_embeddings(self, modality, model, tokenizer):
-        embeddings = []
-        for i, d in enumerate(modality.data):
-            inputs = tokenizer(
-                d,
-                return_offsets_mapping=True,
-                return_tensors="pt",
-                padding=True,
-                truncation=True,
-            )
+        inputs = tokenizer(
+            modality.data,
+            return_offsets_mapping=True,
+            return_tensors="pt",
+            padding="longest",
+            return_attention_mask=True,
+            truncation=True,
+        )
+        ModalityType.TEXT.add_field_for_instances(
+            modality.metadata,
+            "token_to_character_mapping",
+            inputs.data["offset_mapping"].tolist(),
+        )
 
-            ModalityType.TEXT.add_field(
-                list(modality.metadata.values())[i],
-                "token_to_character_mapping",
-                inputs.data["offset_mapping"][0].tolist(),
-            )
+        ModalityType.TEXT.add_field_for_instances(
+            modality.metadata, "attention_masks", inputs.data["attention_mask"].tolist()
+        )
+        del inputs.data["offset_mapping"]
 
-            del inputs.data["offset_mapping"]
+        with torch.no_grad():
+            outputs = model(**inputs)
 
-            with torch.no_grad():
-                outputs = model(**inputs)
+            cls_embedding = outputs.last_hidden_state.detach().numpy()
 
-                cls_embedding = outputs.last_hidden_state[0].numpy()
-                embeddings.append(cls_embedding)
-
-        return embeddings
+        return cls_embedding

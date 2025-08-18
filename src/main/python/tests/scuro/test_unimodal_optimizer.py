@@ -20,7 +20,6 @@
 # -------------------------------------------------------------
 
 
-import shutil
 import unittest
 
 import numpy as np
@@ -31,8 +30,8 @@ from sklearn.model_selection import train_test_split
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.models.model import Model
 from systemds.scuro.drsearch.task import Task
-from systemds.scuro.drsearch.unimodal_representation_optimizer import (
-    UnimodalRepresentationOptimizer,
+from systemds.scuro.drsearch.unimodal_optimizer import (
+    UnimodalOptimizer,
 )
 
 from systemds.scuro.representations.spectrogram import Spectrogram
@@ -41,9 +40,6 @@ from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.resnet import ResNet
 from tests.scuro.data_generator import ModalityRandomDataGenerator, TestDataLoader
 
-from systemds.scuro.dataloader.audio_loader import AudioLoader
-from systemds.scuro.dataloader.video_loader import VideoLoader
-from systemds.scuro.dataloader.text_loader import TextLoader
 from systemds.scuro.modality.type import ModalityType
 
 
@@ -108,7 +104,9 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
     def setUpClass(cls):
         cls.num_instances = 10
         cls.mods = [ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT]
-        cls.labels = np.random.choice([0, 1], size=cls.num_instances)
+        cls.labels = ModalityRandomDataGenerator().create_balanced_labels(
+            num_instances=cls.num_instances
+        )
         cls.indices = np.array(range(cls.num_instances))
 
         split = train_test_split(
@@ -186,24 +184,19 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
         ):
             registry = Registry()
 
-            unimodal_optimizer = UnimodalRepresentationOptimizer(
-                [modality], self.tasks, max_chain_depth=2
-            )
+            unimodal_optimizer = UnimodalOptimizer([modality], self.tasks, False)
             unimodal_optimizer.optimize()
 
             assert (
-                list(unimodal_optimizer.optimization_results.keys())[0]
+                unimodal_optimizer.operator_performance.modality_ids[0]
                 == modality.modality_id
             )
-            assert len(list(unimodal_optimizer.optimization_results.values())[0]) == 2
-            assert (
-                len(
-                    unimodal_optimizer.get_k_best_results(modality, 1, self.tasks[0])[
-                        0
-                    ].operator_chain
-                )
-                >= 1
+            assert len(unimodal_optimizer.operator_performance.task_names) == 2
+            result, cached = unimodal_optimizer.operator_performance.get_k_best_results(
+                modality, 1, self.tasks[0]
             )
+            assert len(result) == 1
+            assert len(cached) == 1
 
 
 if __name__ == "__main__":

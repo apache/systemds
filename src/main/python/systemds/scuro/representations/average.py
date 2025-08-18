@@ -18,7 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
-
+import copy
 from typing import List
 
 import numpy as np
@@ -37,23 +37,14 @@ class Average(Fusion):
         Combines modalities using averaging
         """
         super().__init__("Average")
+        self.needs_alignment = True
         self.associative = True
         self.commutative = True
 
-    def transform(self, modalities: List[Modality]):
-        for modality in modalities:
-            modality.flatten()
-
-        max_emb_size = self.get_max_embedding_size(modalities)
-
-        padded_modalities = []
-        for modality in modalities:
-            d = pad_sequences(modality.data, maxlen=max_emb_size, dtype="float32")
-            padded_modalities.append(d)
-
-        data = padded_modalities[0]
+    def execute(self, modalities: List[Modality]):
+        data = copy.deepcopy(modalities[0].data)
         for i in range(1, len(modalities)):
-            data += padded_modalities[i]
+            data += modalities[i].data
 
         data /= len(modalities)
 

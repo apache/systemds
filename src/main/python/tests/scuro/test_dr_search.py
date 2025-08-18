@@ -94,7 +94,9 @@ class TestDataLoaders(unittest.TestCase):
         cls.num_instances = 20
         cls.data_generator = ModalityRandomDataGenerator()
 
-        cls.labels = np.random.choice([0, 1], size=cls.num_instances)
+        cls.labels = ModalityRandomDataGenerator().create_balanced_labels(
+            num_instances=cls.num_instances
+        )
         # TODO: adapt the representation so they return non aggregated values. Apply windowing operation instead
 
         cls.video = cls.data_generator.create1DModality(

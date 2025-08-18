@@ -21,9 +21,11 @@
 from typing import List
 
 import numpy as np
+from systemds.scuro import AggregatedRepresentation, Aggregation
 
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.representation import Representation
+from systemds.scuro.utils.schema_helpers import get_shape
 
 
 class Fusion(Representation):
@@ -44,6 +46,21 @@ class Fusion(Representation):
         :param modalities: List of modalities used in the fusion
         :return: fused data
         """
+        mods = []
+        for modality in modalities:
+            agg_modality = None
+            if get_shape(modality.metadata) > 1:
+                agg_operator = AggregatedRepresentation(Aggregation())
+                agg_modality = agg_operator.transform(modality)
+            mods.append(agg_modality if agg_modality else modality)
+
+        if self.needs_alignment:
+            max_len = self.get_max_embedding_size(mods)
+            for modality in mods:
+                modality.pad(max_len=max_len)
+        return self.execute(mods)
+
+    def execute(self, modalities: List[Modality]):
         raise f"Not implemented for Fusion: {self.name}"
 
     def get_max_embedding_size(self, modalities: List[Modality]):

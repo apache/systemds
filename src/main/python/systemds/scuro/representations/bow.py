@@ -18,7 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
-
+import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 
 from systemds.scuro.modality.transformed import TransformedModality
@@ -50,5 +50,6 @@ class BoW(UnimodalRepresentation):
         if self.output_file is not None:
             save_embeddings(X, self.output_file)
 
+        transformed_modality.data_type = np.float32
         transformed_modality.data = X
         return transformed_modality

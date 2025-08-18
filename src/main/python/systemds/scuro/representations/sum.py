@@ -37,15 +37,12 @@ class Sum(Fusion):
         Combines modalities using colum-wise sum
         """
         super().__init__("Sum")
+        self.needs_alignment = True
 
-    def transform(self, modalities: List[Modality]):
-        max_emb_size = self.get_max_embedding_size(modalities)
-
-        data = pad_sequences(modalities[0].data, maxlen=max_emb_size, dtype="float32")
+    def execute(self, modalities: List[Modality]):
+        data = modalities[0].data
 
         for m in range(1, len(modalities)):
-            data += pad_sequences(
-                modalities[m].data, maxlen=max_emb_size, dtype="float32"
-            )
+            data += modalities[m].data
 
         return data

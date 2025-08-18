@@ -40,3 +40,7 @@ def calculate_new_frequency(new_length, old_length, old_frequency):
     duration = old_length / old_frequency
     new_frequency = new_length / duration
     return new_frequency
+
+
+def get_shape(metadata):
+    return len(list(metadata.values())[0]["data_layout"]["shape"])

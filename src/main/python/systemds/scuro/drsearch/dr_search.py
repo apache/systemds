@@ -76,7 +76,7 @@ class DRSearch:
         """
 
         # check if modality name is already in dictionary
-        if "_".join(modality_names) not in self.scores.keys():
+        if "_".join(modality_names) not in list(self.scores.keys()):
             # if not add it to dictionary
             self.scores["_".join(modality_names)] = {}
 

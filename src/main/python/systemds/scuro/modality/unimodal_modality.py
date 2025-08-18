@@ -20,8 +20,9 @@
 # -------------------------------------------------------------
 from functools import reduce
 from operator import or_
-
-
+import time
+import numpy as np
+from systemds.scuro import ModalityType
 from systemds.scuro.dataloader.base_loader import BaseLoader
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.modality.joined import JoinedModality
@@ -86,12 +87,14 @@ class UnimodalModality(Modality):
         return joined_modality
 
     def context(self, context_operator):
+        start = time.time()
         if not self.has_data():
             self.extract_raw_data()
 
         transformed_modality = TransformedModality(self, context_operator)
 
         transformed_modality.data = context_operator.execute(self)
+        transformed_modality.transform_time = time.time() - start
         return transformed_modality
 
     def aggregate(self, aggregation_function):
@@ -108,18 +111,57 @@ class UnimodalModality(Modality):
             representation,
         )
         new_modality.data = []
-
+        start = time.time()
+        original_lengths = []
         if self.data_loader.chunk_size:
             self.data_loader.reset()
             while self.data_loader.next_chunk < self.data_loader.num_chunks:
                 self.extract_raw_data()
                 transformed_chunk = representation.transform(self)
                 new_modality.data.extend(transformed_chunk.data)
+                for d in transformed_chunk.data:
+                    original_lengths.append(d.shape[0])
                 new_modality.metadata.update(transformed_chunk.metadata)
         else:
-            if not self.data:
+            if not self.has_data():
                 self.extract_raw_data()
             new_modality = representation.transform(self)
 
+            if not all(
+                "attention_masks" in entry for entry in new_modality.metadata.values()
+            ):
+                for d in new_modality.data:
+                    original_lengths.append(d.shape[0])
+
+        if len(original_lengths) > 0 and min(original_lengths) < max(original_lengths):
+            target_length = max(original_lengths)
+            padded_embeddings = []
+            for embeddings in new_modality.data:
+                current_length = embeddings.shape[0]
+                if current_length < target_length:
+                    padding_needed = target_length - current_length
+
+                    padded = np.pad(
+                        embeddings,
+                        pad_width=(
+                            (0, padding_needed),
+                            (0, 0),
+                        ),
+                        mode="constant",
+                        constant_values=0,
+                    )
+                    padded_embeddings.append(padded)
+                else:
+                    padded_embeddings.append(embeddings)
+
+            attention_masks = np.zeros((len(new_modality.data), target_length))
+            for i, length in enumerate(original_lengths):
+                attention_masks[i, :length] = 1
+
+            ModalityType(self.modality_type).add_field_for_instances(
+                new_modality.metadata, "attention_masks", attention_masks
+            )
+            new_modality.data = padded_embeddings
         new_modality.update_metadata()
+        new_modality.transform_time = time.time() - start
         return new_modality

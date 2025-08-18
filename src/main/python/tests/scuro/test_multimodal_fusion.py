@@ -22,12 +22,15 @@
 
 import shutil
 import unittest
+from multiprocessing import freeze_support
 
 import numpy as np
 from sklearn import svm
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 
+from systemds.scuro.drsearch.multimodal_optimizer import MultimodalOptimizer
+from systemds.scuro.drsearch.unimodal_optimizer import UnimodalOptimizer
 from systemds.scuro.representations.concatenation import Concatenation
 from systemds.scuro.representations.average import Average
 from systemds.scuro.drsearch.fusion_optimizer import FusionOptimizer
@@ -115,7 +118,9 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
     def setUpClass(cls):
         cls.num_instances = 10
         cls.mods = [ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT]
-        cls.labels = np.random.choice([0, 1], size=cls.num_instances)
+        cls.labels = ModalityRandomDataGenerator().create_balanced_labels(
+            num_instances=cls.num_instances
+        )
         cls.indices = np.array(range(cls.num_instances))
 
         split = train_test_split(
@@ -123,31 +128,15 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
             cls.labels,
             test_size=0.2,
             random_state=42,
+            stratify=cls.labels,
         )
         cls.train_indizes, cls.val_indizes = [int(i) for i in split[0]], [
             int(i) for i in split[1]
         ]
 
-        cls.tasks = [
-            Task(
-                "UnimodalRepresentationTask1",
-                TestSVM(),
-                cls.labels,
-                cls.train_indizes,
-                cls.val_indizes,
-            ),
-            Task(
-                "UnimodalRepresentationTask2",
-                TestCNN(),
-                cls.labels,
-                cls.train_indizes,
-                cls.val_indizes,
-            ),
-        ]
-
     def test_multimodal_fusion(self):
         task = Task(
-            "UnimodalRepresentationTask1",
+            "MM_Fusion_Task1",
             TestSVM(),
             self.labels,
             self.train_indizes,
@@ -192,22 +181,47 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
         ):
             registry = Registry()
             registry._fusion_operators = [Average, Concatenation]
-            unimodal_optimizer = UnimodalRepresentationOptimizer(
-                [text, audio, video], [task], max_chain_depth=2
+            unimodal_optimizer = UnimodalOptimizer(
+                [audio, text, video], [task], debug=False
             )
             unimodal_optimizer.optimize()
+            unimodal_optimizer.operator_performance.get_k_best_results(audio, 2, task)
 
-            multimodal_optimizer = FusionOptimizer(
+            multimodal_optimizer = MultimodalOptimizer(
                 [audio, text, video],
-                task,
-                unimodal_optimizer.optimization_results,
-                unimodal_optimizer.cache,
-                2,
-                2,
+                unimodal_optimizer.operator_performance,
+                [task],
                 debug=False,
             )
+
             multimodal_optimizer.optimize()
+
+            assert (
+                len(multimodal_optimizer.optimization_results.results["TestSVM"].keys())
+                == 57
+            )
+            assert (
+                len(
+                    multimodal_optimizer.optimization_results.results["TestSVM"][
+                        "0_1_2_3_4_5"
+                    ]
+                )
+                == 62
+            )
+            assert (
+                len(
+                    multimodal_optimizer.optimization_results.results["TestSVM"][
+                        "3_4_5"
+                    ]
+                )
+                == 6
+            )
+            assert (
+                len(multimodal_optimizer.optimization_results.results["TestSVM"]["0_1"])
+                == 2
+            )
 
 
 if __name__ == "__main__":
+    freeze_support()
     unittest.main()

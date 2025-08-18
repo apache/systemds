@@ -52,12 +52,13 @@ class Aggregation:
             aggregation_function = params["aggregation_function"]
             pad_modality = params["pad_modality"]
 
-        if aggregation_function not in self._aggregation_function.keys():
+        if aggregation_function not in list(self._aggregation_function.keys()):
             raise ValueError("Invalid aggregation function")
 
         self._aggregation_func = self._aggregation_function[aggregation_function]
         self.name = "Aggregation"
         self.pad_modality = pad_modality
+        self.aggregation_function_name = aggregation_function
 
         self.parameters = {
             "aggregation_function": aggregation_function,
@@ -91,7 +92,7 @@ class Aggregation:
                         padded_data.append(utils.pad_sequences(entry, max_len))
                     data[i] = padded_data
 
-        return data
+        return np.array(data)
 
     def transform(self, modality):
         return self.execute(modality)
@@ -100,4 +101,4 @@ class Aggregation:
         return self._aggregation_func(instance)
 
     def get_aggregation_functions(self):
-        return self._aggregation_function.keys()
+        return list(self._aggregation_function.keys())

@@ -20,11 +20,14 @@
 # -------------------------------------------------------------
 from functools import reduce
 from operator import or_
+from typing import Union, List
 
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.window_aggregation import WindowAggregation
+import time
+import copy
 
 
 class TransformedModality(Modality):
@@ -42,7 +45,22 @@ class TransformedModality(Modality):
         super().__init__(
             new_modality_type, modality.modality_id, metadata, modality.data_type
         )
-        self.transformation = transformation
+        self.transformation = None
+        self.add_transformation(transformation, modality)
+
+    def add_transformation(self, transformation, modality):
+        if (
+            transformation.__class__.__bases__[0].__name__ == "Fusion"
+            and modality.transformation[0].__class__.__bases__[0].__name__ != "Fusion"
+        ):
+            self.transformation = []
+        else:
+            self.transformation = (
+                []
+                if type(modality).__name__ != "TransformedModality"
+                else copy.deepcopy(modality.transformation)
+            )
+        self.transformation.append(transformation)
 
     def copy_from_instance(self):
         return type(self)(self, self.transformation)
@@ -72,22 +90,26 @@ class TransformedModality(Modality):
     def window_aggregation(self, windowSize, aggregation):
         w = WindowAggregation(windowSize, aggregation)
         transformed_modality = TransformedModality(self, w)
+        start = time.time()
         transformed_modality.data = w.execute(self)
-
+        transformed_modality.transform_time = time.time() - start
         return transformed_modality
 
     def context(self, context_operator):
         transformed_modality = TransformedModality(self, context_operator)
-
+        start = time.time()
         transformed_modality.data = context_operator.execute(self)
+        transformed_modality.transform_time = time.time() - start
         return transformed_modality
 
     def apply_representation(self, representation):
+        start = time.time()
         new_modality = representation.transform(self)
         new_modality.update_metadata()
+        new_modality.transform_time = time.time() - start
         return new_modality
 
-    def combine(self, other, fusion_method):
+    def combine(self, other: Union[Modality, List[Modality]], fusion_method):
         """
         Combines two or more modalities with each other using a dedicated fusion method
         :param other: The modality to be combined

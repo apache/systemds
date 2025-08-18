@@ -20,7 +20,7 @@
 # -------------------------------------------------------------
 
 from typing import List
-
+import copy
 import numpy as np
 
 from systemds.scuro.modality.modality import Modality
@@ -33,14 +33,13 @@ from systemds.scuro.drsearch.operator_registry import register_fusion_operator
 
 @register_fusion_operator()
 class Concatenation(Fusion):
-    def __init__(self, padding=True):
+    def __init__(self):
         """
         Combines modalities using concatenation
         """
         super().__init__("Concatenation")
-        self.padding = padding
 
-    def transform(self, modalities: List[Modality]):
+    def execute(self, modalities: List[Modality]):
         if len(modalities) == 1:
             return np.array(modalities[0].data)
 
@@ -53,19 +52,6 @@ class Concatenation(Fusion):
             data = np.zeros((size, 0))
 
         for modality in modalities:
-            if self.padding:
-                data = np.concatenate(
-                    [
-                        data,
-                        pad_sequences(
-                            modality.data,
-                            maxlen=max_emb_size,
-                            dtype=modality.data.dtype,
-                        ),
-                    ],
-                    axis=-1,
-                )
-            else:
-                data = np.concatenate([data, modality.data], axis=-1)
+            data = np.concatenate([data, copy.deepcopy(modality.data)], axis=-1)
 
         return np.array(data)

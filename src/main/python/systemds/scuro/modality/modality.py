@@ -22,6 +22,7 @@ from copy import deepcopy
 from typing import List
 
 import numpy as np
+from numpy.f2py.auxfuncs import throw_error
 
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations import utils
@@ -44,6 +45,7 @@ class Modality:
         self.cost = None
         self.shape = None
         self.modality_id = modality_id
+        self.transform_time = None
 
     @property
     def data(self):
@@ -61,9 +63,11 @@ class Modality:
         """
         Extracts the individual unimodal modalities for a given transformed modality.
         """
-        return [
+        modality_names = [
             modality.name for modality in ModalityType if modality in self.modality_type
         ]
+        modality_names.append(str(self.modality_id))
+        return modality_names
 
     def copy_from_instance(self):
         """
@@ -90,35 +94,59 @@ class Modality:
             updated_md = self.modality_type.update_metadata(md_v, self.data[i])
             self.metadata[md_k] = updated_md
 
-    def flatten(self, padding=True):
+    def flatten(self, padding=False):
         """
         Flattens modality data by row-wise concatenation
         Prerequisite for some ML-models
         """
         max_len = 0
+        data = []
         for num_instance, instance in enumerate(self.data):
             if type(instance) is np.ndarray:
-                self.data[num_instance] = instance.flatten()
+                d = instance.flatten()
+                max_len = max(max_len, len(d))
+                data.append(d)
             elif isinstance(instance, List):
-                self.data[num_instance] = np.array(
+                d = np.array(
                     [item for sublist in instance for item in sublist]
                 ).flatten()
-            max_len = max(max_len, len(self.data[num_instance]))
+                max_len = max(max_len, len(d))
+                data.append(d)
 
         if padding:
-            for i, instance in enumerate(self.data):
+            for i, instance in enumerate(data):
                 if isinstance(instance, np.ndarray):
                     if len(instance) < max_len:
                         padded_data = np.zeros(max_len, dtype=instance.dtype)
                         padded_data[: len(instance)] = instance
-                        self.data[i] = padded_data
+                        data[i] = padded_data
                 else:
                     padded_data = []
                     for entry in instance:
                         padded_data.append(utils.pad_sequences(entry, max_len))
-                    self.data[i] = padded_data
-        self.data = np.array(self.data)
+                    data[i] = padded_data
+        self.data = np.array(data)
         return self
+
+    def pad(self, value=0, max_len=None):
+        try:
+            if max_len is None:
+                result = np.array(self.data)
+            else:
+                raise "Needs padding to max_len"
+        except:
+            maxlen = (
+                max([len(seq) for seq in self.data]) if max_len is None else max_len
+            )
+
+            result = np.full((len(self.data), maxlen), value, dtype=self.data_type)
+
+            for i, seq in enumerate(self.data):
+                data = seq[:maxlen]
+                result[i, : len(data)] = data
+                # TODO: add padding to metadata as attention_masks
+
+        self.data = result
 
     def get_data_layout(self):
         if self.has_metadata():
@@ -131,3 +159,15 @@ class Modality:
 
     def has_metadata(self):
         return self.metadata is not None and self.metadata != {}
+
+    def is_aligned(self, other_modality):
+        aligned = True
+        for i in range(len(self.data)):
+            if (
+                list(self.metadata.values())[i]["data_layout"]["shape"]
+                != list(other_modality.metadata.values())[i]["data_layout"]["shape"]
+            ):
+                aligned = False
+                continue
+
+        return aligned

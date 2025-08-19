@@ -38,8 +38,8 @@ while(FALSE) { }
 # S = B * rowSums(v)
 # S = (X < rowSums(X*K))
 # S = X*(k>1)*X
-# S = X*rowSums(K*v)*X
-S = (X*v)/rowSums(X*v)
+S = X*rowSums(K*v)*X
+# S = (X*v)/rowSums(X*v)
 # S = abs((X*v)/rowSums(X*v))
 # S = (X/v)+rowMeans(X-v)
 # S = (X*v)+rowSums(X*v)

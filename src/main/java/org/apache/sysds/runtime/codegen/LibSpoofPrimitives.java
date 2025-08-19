@@ -2195,7 +2195,7 @@ public class LibSpoofPrimitives
 		return vectMultWrite(len, a, bval, aix, ai, alen);
 	}
 
-	//version with branching
+	//old version with branching (not used)
 	public static SparseRowVector vectMultWriteB(int len, double[] a, double[] b, int[] aix, int[] bix, int ai, int bi, int alen, int blen) {
 		SparseRowVector c = allocSparseVector(Math.min(alen, blen));
 		if( a == null || b == null ) return c;
@@ -2279,7 +2279,7 @@ public class LibSpoofPrimitives
 		return c;
 	}
 
-	//version with branching
+	//old version with branching (not used)
 	public static SparseRowVector vectDivWriteB(int len, double[] a, double[] b, int[] aix, int[] bix, int ai, int bi, int alen, int blen) {
 		SparseRowVector c = allocSparseVector(alen);
 		int aItr = ai;
@@ -3317,31 +3317,6 @@ public class LibSpoofPrimitives
 		c.setSize(alen);
 		return c;
 	}
-
-	//todo MatrixMult, pow2 and mult2 drafts
-//	public static SparseRowVector vectMatrixMult(int len, double[] a, double[] b, int[] aix, int[] bix, int ai, int bi, int alen, int blen) {
-//		//note: assumption b is already transposed for efficient dot products
-//		int m2clen = b.length / len;
-//		SparseRowVector c = allocSparseVector(m2clen);
-//		for(int i = 0; i < m2clen; i++) {
-//			c.set(bix[i], LibMatrixMult.dotProduct(a, aix, ai, alen, b, bix, bi, blen));
-//		}
-//		return c;
-//	}
-//
-//	public static SparseRowVector vectPow2Write(int len, double[] a, int[] aix, int ai, int alen) {
-//		SparseRowVector c = allocSparseVector(len);
-//		for(int j = 0; j < ai+alen; j++)
-//			c.set(aix[j], a[j] * a[j]);
-//		return c;
-//	}
-//
-//	public static SparseRowVector vectMult2Write(int len, double[] a, int[] aix, int ai, int alen) {
-//		SparseRowVector c = allocSparseVector(len);
-//		for(int j = 0; j < ai+alen; j++)
-//			c.set(aix[j], a[j] + a[j]);
-//		return c;
-//	}
 
 	//complex builtin functions that are not directly generated
 	//(included here in order to reduce the number of imports)

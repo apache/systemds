@@ -30,7 +30,7 @@ print("LMCG")
 
 X = scale(X=X, scale=TRUE, center=TRUE);
 B = lmCG(X=X, y=y, verbose=TRUE);
-p = lmPredict(X=X, B=B, ytest=y, verbose=TRUE);
+p = lmPredict(X=X, B=B, Ytest=y, verbose=TRUE);
 
 classifications = (p > 0.1)
 

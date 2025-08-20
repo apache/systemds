@@ -49,13 +49,15 @@
 # changesByOp    ---
 # --------------------------------------------------------------------------------------
 
-f_executePipeline = function(Frame[String] pipeline, Matrix[Double] Xtrain,  Matrix[Double] Ytrain, 
+f_executePipeline = function(Frame[String] pipeline, Matrix[Double] X,  Matrix[Double] Y,
   Matrix[Double] Xtest,  Matrix[Double] Ytest, List[Unknown] metaList, Matrix[Double] hyperParameters, Matrix[Double] hpForPruning = as.matrix(0),
   Matrix[Double] changesByOp = as.matrix(0), Integer flagsCount, Boolean test = FALSE, Boolean verbose,
   Integer startInd, Integer endInd)
   return (Matrix[Double] Xtrain, Matrix[Double] Ytrain, Matrix[Double] Xtest, Matrix[Double] Ytest,
     Double t2, Matrix[Double] hpForPruning, Matrix[Double] changesByOp, Double changesAll, List[Unknown] internalStates)
 {
+  Xtrain = X
+  Ytrain = Y
   internalStates = list()
   mask=as.matrix(metaList['mask'])
   applyFunc = as.frame(metaList['applyFunc'])
@@ -96,8 +98,8 @@ f_executePipeline = function(Frame[String] pipeline, Matrix[Double] Xtrain,  Mat
 
       # dataFlag 0 = only on numeric, 1 = on whole data
       if(yFlag) {
-        [L, Y] =  remove(L, 1);
-        Ytrain = as.matrix(Y)
+        [L, Y_] =  remove(L, 1);
+        Ytrain = as.matrix(Y_)
       }
       # Xtrain = confirmMeta(Xtrain, mask)
       # Xtest = confirmMeta(Xtest, mask)
@@ -427,7 +429,7 @@ return (Matrix[Double] X, Matrix[Double] Y)
   classes1 = table(Y, 1)
   if(min(Y) != max(Y) & nrow(Y) > 1 & max(Y) <= 2)
   {
-    betas = multiLogReg(X=X, Y=Y, icpt=1, reg=1e-4, maxi=100, maxii=0, verbose=FALSE)
+    betas = multiLogReg(X=X, Y=Y, intercept=1, reg=1e-4, maxIter=100, maxInnerIter=0, verbose=FALSE)
     [prob, yhat, accuracy] = multiLogRegPredict(X, betas, Y, FALSE)
     inc = ((yhat != Y) & (rowMaxs(prob) > threshold))
     while(sum(inc) > 0 & maxIter > 0 & min(Y) != max(Y) & nrow(Y) > 1)
@@ -446,7 +448,7 @@ return (Matrix[Double] X, Matrix[Double] Y)
       Y = rbind(Ycor, Yinc)
       maxIter = maxIter - 1
       if(min(Y) != max(Y) & nrow(Y) > 1) {
-        betas = multiLogReg(X=X, Y=Y, icpt=1, reg=1e-4, maxi=100, maxii=0, verbose=FALSE)
+        betas = multiLogReg(X=X, Y=Y, intercept=1, reg=1e-4, maxIter=100, maxInnerIter=0, verbose=FALSE)
         [prob, yhat, accuracy] = multiLogRegPredict(X, betas, Y, FALSE)
         inc = ((yhat != Y) & (rowMaxs(prob) > threshold))
       }

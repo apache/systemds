@@ -27,7 +27,7 @@ reg = $in_lambda;
 maxi = $in_maxi;
 thr = $in_thr;
 
-[U, V] = alsCG(X = X, rank = rank, regType = regType, reg = reg, maxi = maxi, check = TRUE, thr = thr);
+[U, V] = alsCG(X = X, rank = rank, regType = regType, reg = reg, maxIter = maxi, check = TRUE, threshold = thr);
 
 Z = U %*% V;
 

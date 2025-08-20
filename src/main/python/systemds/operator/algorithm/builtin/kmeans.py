@@ -38,10 +38,10 @@ def kmeans(X: Matrix,
     :param X: The input Matrix to do KMeans on.
     :param k: Number of centroids
     :param runs: Number of runs (with different initial centroids)
-    :param max_iter: Maximum number of iterations per run
-    :param eps: Tolerance (epsilon) for WCSS change ratio
-    :param is_verbose: do not print per-iteration stats
-    :param avg_sample_size_per_centroid: Average number of records per centroid in data samples
+    :param maxIter: Maximum number of iterations per run
+    :param tol: Tolerance (epsilon) for WCSS change ratio
+    :param verbose: do not print per-iteration stats
+    :param avgSampleSizePerCentroid: Average number of records per centroid in data samples
     :param seed: The seed used for initial sampling. If set to -1
         random seeds are selected.
     :return: The mapping of records to centroids

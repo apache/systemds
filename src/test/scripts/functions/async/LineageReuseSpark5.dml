@@ -27,9 +27,9 @@ X = rand(rows=M, cols=N, sparsity=sp, seed=42);
 y = rand(rows=M, cols=1, min=0, max=2, seed=42);
 y = ceil(y);
 
-model_svm = l2svm(X=X, Y=y, intercept=TRUE, epsilon=1e-12,
- reg=0.001, maxIterations=20, verbose=FALSE);
-model_mlr = multiLogReg(X=X, Y=y, icpt=2, tol=1e-6, reg=0.001, maxi=20, maxii=20, verbose=FALSE);
+model_svm = l2svm(X=X, Y=y, intercept=TRUE, tol=1e-12,
+ reg=0.001, maxIter=20, verbose=FALSE);
+model_mlr = multiLogReg(X=X, Y=y, intercept=2, tol=1e-6, reg=0.001, maxIter=20, maxInnerIter=20, verbose=FALSE);
 
 # Assign random weights and grid search top-k models
 bestAcc = 0;

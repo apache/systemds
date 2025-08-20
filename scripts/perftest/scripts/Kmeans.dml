@@ -25,7 +25,7 @@ num_centroids = $k;
 max_iter   = ifdef ($maxi, 1000);    # $maxi=1000;
 eps        = ifdef ($tol, 0.000001); # $tol=0.000001;
 
-[C, Y] = kmeans(X = X, k = num_centroids, max_iter = max_iter, eps = eps)
+[C, Y] = kmeans(X = X, k = num_centroids, maxIter = max_iter, tol = eps)
 
 write (C, fileC, format="text");
 write (Y, $prY, format="text");

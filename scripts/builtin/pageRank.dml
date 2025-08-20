@@ -29,7 +29,7 @@
 # e           additional customization, default vector of ones
 # u           personalization vector (number of nodes), default vector of ones
 # alpha       teleport probability
-# max_iter    maximum number of iterations
+# maxIter    maximum number of iterations
 # seed        seed for default rand initialization of page rank vector
 # ------------------------------------------------------------------------------
 #
@@ -40,7 +40,7 @@
 
 m_pageRank = function (Matrix[Double] G, Matrix[Double] p = as.matrix(1),
   Matrix[Double] e = as.matrix(1), Matrix[Double] u = as.matrix(1),
-  Double alpha = 0.85, Int max_iter = 20, Int seed = -1)
+  Double alpha = 0.85, Int maxIter = 20, Int seed = -1)
   return (Matrix[double] pprime)
 {
   # default vectorized if not passed
@@ -53,7 +53,7 @@ m_pageRank = function (Matrix[Double] G, Matrix[Double] p = as.matrix(1),
 
   # page rank computation via power iterations
   i = 0;
-  while( i < max_iter ) {
+  while( i < maxIter ) {
     p = alpha * (G %*% p) + (1 - alpha) * (e %*% u %*% p);
     i += 1;
   }

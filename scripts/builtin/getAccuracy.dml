@@ -23,8 +23,8 @@
 #
 # INPUT:
 # --------------------------------------------------------------------------------------
-# y           Ground truth (Actual Labels)
-# yhat        Predictions (Predicted labels)
+# Y           Predictions (Predicted labels)
+# Ytest       Ground truth (Actual Labels)
 # isWeighted  Flag for weighted or non-weighted accuracy calculation
 # --------------------------------------------------------------------------------------
 #
@@ -33,23 +33,23 @@
 # accuracy  accuracy of the predicted labels
 # --------------------------------------------------------------------------------------------
 
-m_getAccuracy = function(Matrix[Double] y, Matrix[Double] yhat, Boolean isWeighted = FALSE)
+m_getAccuracy = function(Matrix[Double] Y, Matrix[Double] Ytest, Boolean isWeighted = FALSE)
 return (Double accuracy)
 {
   if(!isWeighted)
   {
-    sum = sum(y == yhat)
-    accuracy = (sum/nrow(y)) * 100
+    sum = sum(Ytest == Y)
+    accuracy = (sum/nrow(Ytest)) * 100
   }
   else 
   {
-    n = nrow(y)
-    classes = table(y, 1, max(y), 1)
-    resp = matrix(0, nrow(y), nrow(classes))
+    n = nrow(Ytest)
+    classes = table(Ytest, 1, max(Ytest), 1)
+    resp = matrix(0, nrow(Ytest), nrow(classes))
     resp = resp + t(seq(1, nrow(classes)))
 
-    respY = resp == y
-    respYhat = resp == yhat
+    respY = resp == Ytest
+    respYhat = resp == Y
     
     pred = respY * respYhat
     classes = replace(target = classes, pattern = 0, replacement = 1)

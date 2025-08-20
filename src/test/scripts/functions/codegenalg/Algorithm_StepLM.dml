@@ -31,7 +31,7 @@ thr = ifdef ($thr, 0.001);
 X_orig = read (fileX);
 y = read (fileY);
 
-[beta_out, Selected] = steplm(X=X_orig, y=y, icpt=intercept, verbose=FALSE);
+[beta_out, Selected] = steplm(X=X_orig, y=y, intercept=intercept, verbose=FALSE);
 
 write(Selected, fileS, format=fmt);
 write(beta_out, fileB, format=fmt);

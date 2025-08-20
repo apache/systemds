@@ -29,13 +29,13 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def garch(X: Matrix,
-          kmax: int,
+          iter: int,
           momentum: float,
-          start_stepsize: float,
-          end_stepsize: float,
-          start_vicinity: float,
-          end_vicinity: float,
-          sim_seed: int,
+          startStepsize: float,
+          endStepsize: float,
+          startVicinity: float,
+          endVicinity: float,
+          seed: int,
           verbose: bool):
     """
      This is a builtin function that implements GARCH(1,1), a statistical model used in analyzing time-series data where the variance
@@ -49,13 +49,13 @@ def garch(X: Matrix,
     
     
     :param X: The input Matrix to apply Arima on.
-    :param kmax: Number of iterations
+    :param iter: Number of iterations
     :param momentum: Momentum for momentum-gradient descent (set to 0 to deactivate)
-    :param start_stepsize: Initial gradient-descent stepsize
-    :param end_stepsize: gradient-descent stepsize at end (linear descent)
-    :param start_vicinity: proportion of randomness of restart-location for gradient descent at beginning
-    :param end_vicinity: same at end (linear decay)
-    :param sim_seed: seed for simulation of process on fitted coefficients
+    :param startStepsize: Initial gradient-descent stepsize
+    :param endStepsize: gradient-descent stepsize at end (linear descent)
+    :param startVicinity: proportion of randomness of restart-location for gradient descent at beginning
+    :param endVicinity: same at end (linear decay)
+    :param seed: seed for simulation of process on fitted coefficients
     :param verbose: verbosity, comments during fitting
     :return: simulated garch(1,1) process on fitted coefficients
     :return: variances of simulated fitted process
@@ -64,7 +64,7 @@ def garch(X: Matrix,
     :return: 1-st garch-coefficient of fitted process
     """
 
-    params_dict = {'X': X, 'kmax': kmax, 'momentum': momentum, 'start_stepsize': start_stepsize, 'end_stepsize': end_stepsize, 'start_vicinity': start_vicinity, 'end_vicinity': end_vicinity, 'sim_seed': sim_seed, 'verbose': verbose}
+    params_dict = {'X': X, 'iter': iter, 'momentum': momentum, 'startStepsize': startStepsize, 'endStepsize': endStepsize, 'startVicinity': startVicinity, 'endVicinity': endVicinity, 'seed': seed, 'verbose': verbose}
     
     vX_0 = Matrix(X.sds_context, '')
     vX_1 = Matrix(X.sds_context, '')

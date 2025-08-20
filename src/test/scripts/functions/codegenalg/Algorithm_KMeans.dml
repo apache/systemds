@@ -20,6 +20,6 @@
 #-------------------------------------------------------------
 
 X = read($X);
-C = kmeans(X=X, k=$k, runs=$runs, eps=$tol, max_iter=$maxi);
+C = kmeans(X=X, k=$k, runs=$runs, tol=$tol, maxIter=$maxi);
 write(C, $C);
 

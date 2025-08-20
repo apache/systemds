@@ -27,9 +27,9 @@
 # ----------------------------------------------------------------------------------------------
 # X          n x m input feature matrix
 # k          indicates dimension of the new vector space constructed from eigen vectors
-# maxi       maximum number of iterations until convergence
-# tolobj     objective function tolerance value to stop ppca algorithm
-# tolrecerr  reconstruction error tolerance value to stop the algorithm
+# maxIter    maximum number of iterations until convergence
+# tol        objective function tolerance value to stop ppca algorithm
+# tolRecon   reconstruction error tolerance value to stop the algorithm
 # verbose    verbose debug output
 # ----------------------------------------------------------------------------------------------
 #
@@ -39,8 +39,8 @@
 # Mout  Output dominant eigen vectors (can be used for projections)
 # -------------------------------------------------------------------------------------------------
 
-m_ppca = function(Matrix[Double] X, Integer K=2, Integer maxi = 10, 
-  Double tolobj = 0.00001, Double tolrecerr = 0.02, Boolean verbose = TRUE)
+m_ppca = function(Matrix[Double] X, Integer K=2, Integer maxIter = 10,
+  Double tol = 0.00001, Double tolRecon = 0.02, Boolean verbose = TRUE)
   return(Matrix[Double] Xout, Matrix[Double] Mout)
 {
   n = nrow(X);
@@ -57,13 +57,13 @@ m_ppca = function(Matrix[Double] X, Integer K=2, Integer maxi = 10,
     PC = C;
 
     # initilizing reconstruction error
-    RE = tolrecerr+1;
+    RE = tolRecon+1;
     REBest = RE;
 
     Z = matrix(0,rows=1,cols=1);
 
     #Objective function value
-    ObjRelChng = tolobj+1;
+    ObjRelChng = tol+1;
 
     # mean centered input matrix - dim -> [n,m]
     Xm = X - colMeans(X);
@@ -73,7 +73,7 @@ m_ppca = function(Matrix[Double] X, Integer K=2, Integer maxi = 10,
     I = diag(ITMP);
 
     i = 0;
-    while (i < maxi & ObjRelChng > tolobj & RE > tolrecerr){
+    while (i < maxIter & ObjRelChng > tol & RE > tolRecon){
       #Estimation step - Covariance matrix
       #M -> k x k
       M = t(C) %*% C + I*ss;

@@ -25,13 +25,38 @@
 from typing import Dict, Iterable
 
 from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
-from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def imputeByKNN(X: Matrix,
                 **kwargs: Dict[str, VALID_INPUT_TYPES]):
+    """
+     Imputes missing values, indicated by NaNs, using KNN-based methods
+     (k-nearest neighbors by euclidean distance). In order to avoid NaNs in
+     distance computation and meaningful nearest neighbor search, we initialize
+     the missing values by column means. Currently, only the column with the most
+     missing values is actually imputed.
     
+     ------------------------------------------------------------------------------
+    
+    
+    :param X: Matrix with missing values, which are represented as NaNs
+    :param method: Method used for imputing missing values with different performance
+        and accuracy tradeoffs:
+        'dist' (default): Compute all-pairs distances and impute the
+        missing values by closest. O(N^2 * #features)
+        'dist_missing':   Compute distances between data and records with
+        missing values. O(N*M * #features), assuming
+        that the number of records with MV is M<<N.
+        'dist_sample':    Compute distances between sample of data and
+        records with missing values. O(S*M * #features)
+        with M<<N and S<<N, but suboptimal imputation.
+    :param seed: Root seed value for random/sample calls for deterministic behavior
+        -1 for true randomization
+    :param sampleFrac: Sample fraction for 'dist_sample' (value between 0 and 1)
+    :return: Imputed dataset
+    """
+
     params_dict = {'X': X}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,

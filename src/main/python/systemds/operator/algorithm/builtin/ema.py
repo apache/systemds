@@ -25,12 +25,11 @@
 from typing import Dict, Iterable
 
 from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
-from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def ema(X: Frame,
-        search_iterations: int,
+        iter: int,
         mode: str,
         freq: int,
         alpha: float,
@@ -42,7 +41,7 @@ def ema(X: Frame,
     
     
     :param X: Frame that contains time series data that needs to be imputed
-        search_iterations	Integer	--	Budget iterations for parameter optimization,
+    :param iter: Integer	--	Budget iterations for parameter optimization,
         used if parameters weren't set
     :param mode: Type of EMA method. Either "single", "double" or "triple"
     :param freq: Seasonality when using triple EMA.
@@ -52,7 +51,7 @@ def ema(X: Frame,
     :return: Frame with EMA results
     """
 
-    params_dict = {'X': X, 'search_iterations': search_iterations, 'mode': mode, 'freq': freq, 'alpha': alpha, 'beta': beta, 'gamma': gamma}
+    params_dict = {'X': X, 'iter': iter, 'mode': mode, 'freq': freq, 'alpha': alpha, 'beta': beta, 'gamma': gamma}
     return Matrix(X.sds_context,
         'ema',
         named_input_nodes=params_dict)

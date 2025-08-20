@@ -46,10 +46,10 @@ X = scale(X=X, center=TRUE, scale=TRUE);
 [Xtrain , Xtest, ytrain, ytest] = split(X=X, Y=y, cont=$cont, seed=7)
 
 # train regression model
-B = lm(X=Xtrain, y=ytrain, icpt=1, reg=1e-3, tol=1e-9, verbose=TRUE)
+B = lm(X=Xtrain, y=ytrain, intercept=1, reg=1e-3, tol=1e-9, verbose=TRUE)
 
 # model evaluation on test split
-yhat = lmPredict(X=Xtest, B=B, icpt=1, ytest=ytest, verbose=TRUE);
+yhat = lmPredict(X=Xtest, B=B, intercept=1, Ytest=ytest, verbose=TRUE);
 
 # write trained model and meta data
 write(B, $out)

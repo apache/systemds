@@ -24,6 +24,6 @@ n = ifdef($n, 1000);
 rank = ifdef($rank, 10);
 X = rand(rows=m, cols=n);
 
-[w, h] = pnmf(X=X, rnk=rank, verbose=FALSE);
+[w, h] = pnmf(X=X, rank=rank, verbose=FALSE);
 print(sum(w));
 

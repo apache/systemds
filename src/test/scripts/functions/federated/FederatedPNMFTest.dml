@@ -25,7 +25,7 @@ X = federated(addresses=list($in_X1, $in_X2),
 rank = $in_rank;
 max_iter = $in_max_iter;
 
-[W, H] = pnmf(X = X, rnk = rank, maxi = max_iter);
+[W, H] = pnmf(X = X, rank = rank, maxIter = max_iter);
 
 Z = W %*% H;
 

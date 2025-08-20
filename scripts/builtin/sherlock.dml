@@ -30,8 +30,8 @@
 #
 # INPUT:
 # ----------------------------------------------------------------------------------------
-# X_train  matrix of feature vectors
-# y_train  matrix Y of class labels of semantic data type
+# X  matrix of feature vectors
+# Y  matrix Y of class labels of semantic data type
 # ----------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -50,7 +50,7 @@
 
 source("scripts/nn/examples/sherlockNet.dml") as sherlockNet
 
-m_sherlock = function(Matrix[Double] X_train, Matrix[Double] y_train)
+m_sherlock = function(Matrix[Double] X, Matrix[Double] Y)
       return (Matrix[Double] cW1, Matrix[Double] cb1,
             Matrix[Double] cW2, Matrix[Double] cb2,
             Matrix[Double] cW3, Matrix[Double] cb3,
@@ -66,22 +66,22 @@ m_sherlock = function(Matrix[Double] X_train, Matrix[Double] y_train)
             Matrix[Double] fW1, Matrix[Double] fb1,
             Matrix[Double] fW2, Matrix[Double] fb2,
             Matrix[Double] fW3, Matrix[Double] fb3) {
-  train_cols = ncol(X_train)
-  train_rows = nrow(X_train)
-  [cW1, cb1, cW2, cb2, cW3, cb3] = sherlockNet::train(X_train[1:train_rows, 224:1183], y_train, 300)
-  [wW1, wb1, wW2, wb2, wW3, wb3] = sherlockNet::train(cbind(X_train[1:train_rows, 13:212], X_train[1:train_rows, 1188]), y_train, 200)
-  [pW1, pb1, pW2, pb2, pW3, pb3] = sherlockNet::train(X_train[1:train_rows, 1189:1588], y_train, 400)
-  [sW1, sb1, sW2, sb2, sW3, sb3] = sherlockNet::train(cbind(X_train[1:train_rows, 1:12], X_train[1:train_rows, 213:223], X_train[1:train_rows, 1184:1187]), y_train, 80)
+  train_cols = ncol(X)
+  train_rows = nrow(X)
+  [cW1, cb1, cW2, cb2, cW3, cb3] = sherlockNet::train(X[1:train_rows, 224:1183], Y, 300)
+  [wW1, wb1, wW2, wb2, wW3, wb3] = sherlockNet::train(cbind(X[1:train_rows, 13:212], X[1:train_rows, 1188]), Y, 200)
+  [pW1, pb1, pW2, pb2, pW3, pb3] = sherlockNet::train(X[1:train_rows, 1189:1588], Y, 400)
+  [sW1, sb1, sW2, sb2, sW3, sb3] = sherlockNet::train(cbind(X[1:train_rows, 1:12], X[1:train_rows, 213:223], X[1:train_rows, 1184:1187]), Y, 80)
 
   # train features seperate
-  cprobs = sherlockNet::predict(X_train[1:train_rows, 224:1183], cW1, cb1, cW2, cb2, cW3, cb3)
-  wprobs = sherlockNet::predict(cbind(X_train[1:train_rows, 13:212], X_train[1:train_rows, 1188]), wW1,wb1, wW2, wb2, wW3, wb3)
-  pprobs = sherlockNet::predict(X_train[1:train_rows, 1189:1588], pW1, pb1, pW2, pb2, pW3, pb3)
-  sprobs = sherlockNet::predict(cbind(X_train[1:train_rows, 1:12], X_train[1:train_rows, 213:223], X_train[1:train_rows, 1184:1187]), sW1, sb1, sW2, sb2, sW3, sb3)
+  cprobs = sherlockNet::predict(X[1:train_rows, 224:1183], cW1, cb1, cW2, cb2, cW3, cb3)
+  wprobs = sherlockNet::predict(cbind(X[1:train_rows, 13:212], X[1:train_rows, 1188]), wW1,wb1, wW2, wb2, wW3, wb3)
+  pprobs = sherlockNet::predict(X[1:train_rows, 1189:1588], pW1, pb1, pW2, pb2, pW3, pb3)
+  sprobs = sherlockNet::predict(cbind(X[1:train_rows, 1:12], X[1:train_rows, 213:223], X[1:train_rows, 1184:1187]), sW1, sb1, sW2, sb2, sW3, sb3)
 
   #use trained features to train final net
   first_predictions = cbind(cprobs, wprobs, pprobs, sprobs)
-  [fW1, fb1, fW2, fb2, fW3, fb3] = sherlockNet::train(first_predictions, y_train, 500)
+  [fW1, fb1, fW2, fb2, fW3, fb3] = sherlockNet::train(first_predictions, Y, 500)
 }
 
 # ---------------------------------------------------------------------------------------------

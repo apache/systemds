@@ -30,13 +30,13 @@
 # INPUT:
 # -----------------------------------------------------------------------------------------
 # X                The input Matrix to apply Arima on.
-# kmax             Number of iterations
+# iter             Number of iterations
 # momentum         Momentum for momentum-gradient descent (set to 0 to deactivate)
-# start_stepsize   Initial gradient-descent stepsize
-# end_stepsize     gradient-descent stepsize at end (linear descent)
-# start_vicinity   proportion of randomness of restart-location for gradient descent at beginning
-# end_vicinity     same at end (linear decay)
-# sim_seed         seed for simulation of process on fitted coefficients
+# startStepsize    Initial gradient-descent stepsize
+# endStepsize      gradient-descent stepsize at end (linear descent)
+# startVicinity    proportion of randomness of restart-location for gradient descent at beginning
+# endVicinity      same at end (linear decay)
+# seed             seed for simulation of process on fitted coefficients
 # verbose          verbosity, comments during fitting
 # -----------------------------------------------------------------------------------------
 #
@@ -49,8 +49,8 @@
 # best_var_coef    1-st garch-coefficient of fitted process
 # --------------------------------------------------------------------------------------------------
 
-m_garch = function(Matrix[Double] X, Integer kmax, Double momentum, Double start_stepsize, Double end_stepsize, Double start_vicinity,
-  Double end_vicinity, Integer sim_seed, Boolean verbose)
+m_garch = function(Matrix[Double] X, Integer iter, Double momentum, Double startStepsize, Double endStepsize, Double startVicinity,
+  Double endVicinity, Integer seed, Boolean verbose)
 return (Matrix[Double] fitted_X, Matrix[Double] fitted_var_hist, Double best_a0, Double best_arch_coef, Double best_var_coef) {
 
   [a0, arch_coef, var_coef] = sample_feasible_params() # initialize startpoint
@@ -68,20 +68,20 @@ return (Matrix[Double] fitted_X, Matrix[Double] fitted_var_hist, Double best_a0,
   last_change_var_coef = 0
 
   # initialize stepsize (linear decay)
-  stepsize = start_stepsize
+  stepsize = startStepsize
 
   # initialize vicinity (linear decay)
-  vicinity = start_vicinity
+  vicinity = startVicinity
 
   # all coeffs need be >0 to provide a feasible solution; clip at this constant
   clip_at = 0.00001
 
   # do gradient descent
-  for (k in 1:kmax-1) {
+  for (k in 1:iter-1) {
     # update vicinity and stepsize
-    progress = k/kmax
-    stepsize = (1-progress) * start_stepsize + progress*end_stepsize
-    vicinity = (1-progress) * start_vicinity + progress*end_vicinity
+    progress = k/iter
+    stepsize = (1-progress) * startStepsize + progress*endStepsize
+    vicinity = (1-progress) * startVicinity + progress*endVicinity
 
     # get gradient
     [d_a0, d_arch_coef, d_var_coef] = gradient(X, a0, arch_coef, var_coef)
@@ -168,7 +168,7 @@ return (Matrix[Double] fitted_X, Matrix[Double] fitted_var_hist, Double best_a0,
 
   # simulate process from best solution
   sim_steps = nrow(X)
-  [fitted_X, fitted_var_hist] = sim_garch(best_a0, best_arch_coef, best_var_coef, sim_steps, sim_seed)
+  [fitted_X, fitted_var_hist] = sim_garch(best_a0, best_arch_coef, best_var_coef, sim_steps, seed)
 
   # logging: report output
   if (verbose) {

@@ -39,9 +39,9 @@ def ppca(X: Matrix,
     
     :param X: n x m input feature matrix
     :param k: indicates dimension of the new vector space constructed from eigen vectors
-    :param maxi: maximum number of iterations until convergence
-    :param tolobj: objective function tolerance value to stop ppca algorithm
-    :param tolrecerr: reconstruction error tolerance value to stop the algorithm
+    :param maxIter: maximum number of iterations until convergence
+    :param tol: objective function tolerance value to stop ppca algorithm
+    :param tolRecon: reconstruction error tolerance value to stop the algorithm
     :param verbose: verbose debug output
     :return: Output feature matrix with K columns
     :return: Output dominant eigen vectors (can be used for projections)

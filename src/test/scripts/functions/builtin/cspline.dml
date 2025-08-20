@@ -34,15 +34,15 @@ max_iter = as.integer(max_iter)
 
 if (mode == "CG")
 {
-  [result, K] = csplineCG(X=X, Y=Y, inp_x=inp_x, tol=tolerance, maxi=max_iter);
+  [result, K] = csplineCG(X=X, Y=Y, xPred=inp_x, tol=tolerance, maxIter=max_iter);
 }
 else if (mode == "DS")
 {
-  [result, K] = csplineDS(X=X, Y=Y, inp_x=inp_x);
+  [result, K] = csplineDS(X=X, Y=Y, xPred=inp_x);
 }
 else
 {
-  [result, K] = cspline(X=X, Y=Y, inp_x=inp_x, tol=tolerance, maxi=max_iter);
+  [result, K] = cspline(X=X, Y=Y, xPred=inp_x, tol=tolerance, maxIter=max_iter);
 }
 
 write(result, y_output);

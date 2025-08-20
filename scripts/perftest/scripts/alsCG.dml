@@ -32,7 +32,7 @@ check = ifdef($check, TRUE);
 
 X = read($X);
 
-[U, V] = alsCG(X=X, rank=rank, regType=regType, reg=reg, maxi=maxiter, check=check, thr=thr, verbose=verbose);
+[U, V] = alsCG(X=X, rank=rank, regType=regType, reg=reg, maxIterations=maxiter, check=check, threshold=thr, verbose=verbose);
 
 write(U, $modelU, format=fmt);
 write(V, $modelV, format=fmt);

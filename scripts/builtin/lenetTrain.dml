@@ -25,14 +25,14 @@
 #
 # INPUT:
 # ----------------------------------------------------------
-# X           Input data matrix, of shape (N, C*Hin*Win)
+# X           Input data matrix, of shape (N, c*h*w)
 # Y           Target matrix, of shape (N, K)
-# X_val       Validation data matrix, of shape (N, C*Hin*Win)
-# Y_val       Validation target matrix, of shape (N, K)
-# C           Number of input channels (dimensionality of input depth)
-# Hin         Input width
-# Win         Input height
-# batch_size  Batch size
+# Xtest       Validation data matrix, of shape (N, c*h*w)
+# Ytest       Validation target matrix, of shape (N, K)
+# c           Number of input channels (dimensionality of input depth)
+# h           Input width
+# w           Input height
+# batchSize   Batch size
 # epochs      Number of epochs
 # lr          Learning rate
 # mu          Momentum value
@@ -58,8 +58,8 @@ source("nn/layers/softmax.dml") as softmax
 source("nn/optim/sgd_nesterov.dml") as sgd_nesterov
 source("nn/layers/lenetForwardPass.dml") as lenet_fw
 
-m_lenetTrain = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] X_val, 
-  Matrix[Double] Y_val, Integer C, Integer Hin, Integer Win, Integer batch_size=64, 
+m_lenetTrain = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest,
+  Matrix[Double] Ytest, Integer c, Integer h, Integer w, Integer batchSize=64,
   Integer epochs=20, Double lr=0.01, Double mu=0.9, Double decay=0.95, Double reg=5e-04, 
   Boolean verbose=FALSE, Integer seed=-1)
   return (List[unknown] model)
@@ -80,9 +80,9 @@ m_lenetTrain = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] X_val
   N3 = 512  # num nodes in affine3
   # Note: affine4 has K nodes, which is equal to the number of target dimensions (num classes)
 
-  [W1, b1] = conv2d::init(F1, C, Hf, Wf, seed)  # inputs: (N, C*Hin*Win)
-  [W2, b2] = conv2d::init(F2, F1, Hf, Wf, seed)  # inputs: (N, F1*(Hin/2)*(Win/2))
-  [W3, b3] = affine::init(F2*(Hin/2/2)*(Win/2/2), N3, seed)  # inputs: (N, F2*(Hin/2/2)*(Win/2/2))
+  [W1, b1] = conv2d::init(F1, c, Hf, Wf, seed)  # inputs: (N, c*h*w)
+  [W2, b2] = conv2d::init(F2, F1, Hf, Wf, seed)  # inputs: (N, F1*(h/2)*(w/2))
+  [W3, b3] = affine::init(F2*(h/2/2)*(w/2/2), N3, seed)  # inputs: (N, F2*(h/2/2)*(w/2/2))
   [W4, b4] = affine::init(N3, K, seed)  # inputs: (N, N3)
   W4 = W4 / sqrt(2)  # different initialization, since being fed into softmax, instead of relu
 
@@ -94,35 +94,35 @@ m_lenetTrain = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] X_val
   vW4 = sgd_nesterov::init(W4); vb4 = sgd_nesterov::init(b4)
 
   # Optimize  
-  iters = ceil(N / batch_size)
+  iters = ceil(N / batchSize)
   for (e in 1:epochs) {
     loss = 0
     val_loss = 0
     val_acc = 0
     for(i in 1:iters) {
       # Get next batch
-      beg = ((i-1) * batch_size) %% N + 1
-      end = min(N, beg + batch_size - 1)
+      beg = ((i-1) * batchSize) %% N + 1
+      end = min(N, beg + batchSize - 1)
       X_batch = X[beg:end,]
       y_batch = Y[beg:end,]
 
       model = list(W1=W1, b1=b1, W2=W2, b2=b2, W3=W3, b3=b3, W4=W4, b4=b4)
 
-      cache = lenet_fw::lenetForward(X=X_batch, C=C, Hin=Hin, Win=Win, model=model)
+      cache = lenet_fw::lenetForward(X=X_batch, C=c, Hin=h, Win=w, model=model)
       
       # loss
       if(verbose){
         loss = loss + cross_entropy_loss::forward(as.matrix(cache["probs"]), y_batch)
-        val_cache = lenet_fw::lenetForward(X=X_val, C=C, Hin=Hin, Win=Win, model=model)
-        val_loss = val_loss + cross_entropy_loss::forward(as.matrix(val_cache["probs"]), Y_val)
-        val_acc = val_acc + mean(rowIndexMax(as.matrix(val_cache["probs"])) == rowIndexMax(Y_val))
+        val_cache = lenet_fw::lenetForward(X=Xtest, C=c, Hin=h, Win=w, model=model)
+        val_loss = val_loss + cross_entropy_loss::forward(as.matrix(val_cache["probs"]), Ytest)
+        val_acc = val_acc + mean(rowIndexMax(as.matrix(val_cache["probs"])) == rowIndexMax(Ytest))
       }
       
       dprobs = cross_entropy_loss::backward(as.matrix(cache["probs"]), y_batch)
 
       # Compute data backward pass
       [dW1, db1, dW2, db2, dW3, db3, dW4, db4] = feed_backward(
-        X_batch, C, Hin, Win, reg, model, dprobs, cache)
+        X_batch, c, h, w, reg, model, dprobs, cache)
 
       # Optimize with SGD w/ Nesterov momentum
       [W1, vW1] = sgd_nesterov::update(W1, dW1, lr, mu, vW1)

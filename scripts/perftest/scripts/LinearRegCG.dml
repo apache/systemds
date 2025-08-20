@@ -32,6 +32,6 @@ regularization = ifdef ($reg, 0.000001); # $reg=0.000001;
 X = read (fileX);
 y = read (fileY);
 
-beta_out = lmCG(X = X, y = y, icpt = intercept_status, reg = regularization, tol = tolerance, maxi = max_iteration, verbose = TRUE)
+beta_out = lmCG(X = X, y = y, intercept = intercept_status, reg = regularization, tol = tolerance, maxIter = max_iteration, verbose = TRUE)
 
 write (beta_out, fileB, format=fmtB);

@@ -21,5 +21,6 @@
 
 X = read($X);
 Y = read($Y);
-betas= glm(X=X,  Y=Y, dfam = $dfam, vpow = $vpow, link = $link, lpow = $lpow, yneg = $yneg, icpt = $icpt, disp=$disp, reg = $reg, tol = $tol, moi = $moi, mii=$mii, verbose=TRUE)
+betas= glm(X=X,  Y=Y, dfam = $dfam, vpow = $vpow, link = $link, lpow = $lpow, yneg = $yneg, intercept = $icpt,
+  disp = $disp, reg = $reg, tol= $tol, maxIter = $moi, maxInnerIter = $mii, verbose=TRUE)
 write(betas, $B)

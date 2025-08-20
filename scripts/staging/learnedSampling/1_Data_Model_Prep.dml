@@ -35,7 +35,7 @@ X = scale(X=X)
 [Xtrain,Xtest,ytrain,ytest] = split(X=X,Y=y,f=0.7,cont=FALSE,seed=7)
 
 # learn model
-B = multiLogReg(X=Xtrain, Y=ytrain, maxii=50, icpt=2, reg=0.001, verbose=TRUE);
+B = multiLogReg(X=Xtrain, Y=ytrain, maxInnerIter=50, intercept=2, reg=0.001, verbose=TRUE);
 [M,yhat,acc] = multiLogRegPredict(X=Xtrain, B=B, Y=ytrain, verbose=TRUE);
 [M,yhat,acc] = multiLogRegPredict(X=Xtest, B=B, Y=ytest, verbose=TRUE);
 

@@ -30,11 +30,11 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def lenetTrain(X: Matrix,
                Y: Matrix,
-               X_val: Matrix,
-               Y_val: Matrix,
-               C: int,
-               Hin: int,
-               Win: int,
+               Xtest: Matrix,
+               Ytest: Matrix,
+               c: int,
+               h: int,
+               w: int,
                **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
      This builtin function trains LeNet CNN. The architecture of the
@@ -43,14 +43,14 @@ def lenetTrain(X: Matrix,
     
     
     
-    :param X: Input data matrix, of shape (N, C*Hin*Win)
+    :param X: Input data matrix, of shape (N, c*h*w)
     :param Y: Target matrix, of shape (N, K)
-    :param X_val: Validation data matrix, of shape (N, C*Hin*Win)
-    :param Y_val: Validation target matrix, of shape (N, K)
-    :param C: Number of input channels (dimensionality of input depth)
-    :param Hin: Input width
-    :param Win: Input height
-    :param batch_size: Batch size
+    :param Xtest: Validation data matrix, of shape (N, c*h*w)
+    :param Ytest: Validation target matrix, of shape (N, K)
+    :param c: Number of input channels (dimensionality of input depth)
+    :param h: Input width
+    :param w: Input height
+    :param batchSize: Batch size
     :param epochs: Number of epochs
     :param lr: Learning rate
     :param mu: Momentum value
@@ -61,7 +61,7 @@ def lenetTrain(X: Matrix,
     :return: Trained model which can be used in lenetPredict
     """
 
-    params_dict = {'X': X, 'Y': Y, 'X_val': X_val, 'Y_val': Y_val, 'C': C, 'Hin': Hin, 'Win': Win}
+    params_dict = {'X': X, 'Y': Y, 'Xtest': Xtest, 'Ytest': Ytest, 'c': c, 'h': h, 'w': w}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,
         'lenetTrain',

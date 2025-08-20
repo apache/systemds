@@ -29,20 +29,18 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def imputeByFDApply(X: Matrix,
-                    Y_imp: Matrix):
+                    imputedVec: Matrix):
     """
      Implements builtin for imputing missing values from observed values (if exist) using robust functional dependencies
     
     
     
     :param X: Matrix X
-    :param source: source attribute to use for imputation and error correction
-    :param target: attribute to be fixed
-    :param threshold: threshold value in interval [0, 1] for robust FDs
-    :return: Matrix with possible imputations
+    :param imputedVec: source attribute to use for imputation and error correction
+    :return: imputed dataset
     """
 
-    params_dict = {'X': X, 'Y_imp': Y_imp}
+    params_dict = {'X': X, 'imputedVec': imputedVec}
     return Matrix(X.sds_context,
         'imputeByFDApply',
         named_input_nodes=params_dict)

@@ -23,6 +23,6 @@ X = read($in_X)
 T = read($in_T)
 k = $in_k
 
-NNR = knnbf(X=X,  T=T, k_value = k)
+NNR = knnbf(X=X,  T=T, k = k)
 
 write(NNR, $out_B)

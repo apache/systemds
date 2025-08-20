@@ -26,46 +26,46 @@
 #
 # .. code-block:: 
 #
-#   return: Matrix of regression parameters (the betas) and its size depend on icpt input value:
-#           OUTPUT SIZE:   OUTPUT CONTENTS:                HOW TO PREDICT Y FROM X AND B:
-#   icpt=0: ncol(X)   x 1  Betas for X only                Y ~ X %*% B[1:ncol(X), 1], or just X %*% B
-#   icpt=1: ncol(X)+1 x 1  Betas for X and intercept       Y ~ X %*% B[1:ncol(X), 1] + B[ncol(X)+1, 1]
-#   icpt=2: ncol(X)+1 x 2  Col.1: betas for X & intercept  Y ~ X %*% B[1:ncol(X), 1] + B[ncol(X)+1, 1]
-#                          Col.2: betas for shifted/rescaled X and intercept
+#   return: Matrix of regression parameters (the betas) and its size depend on intercept input value:
+#                OUTPUT SIZE:   OUTPUT CONTENTS:                HOW TO PREDICT Y FROM X AND B:
+#   intercept=0: ncol(X)   x 1  Betas for X only                Y ~ X %*% B[1:ncol(X), 1], or just X %*% B
+#   intercept=1: ncol(X)+1 x 1  Betas for X and intercept       Y ~ X %*% B[1:ncol(X), 1] + B[ncol(X)+1, 1]
+#   intercept=2: ncol(X)+1 x 2  Col.1: betas for X & intercept  Y ~ X %*% B[1:ncol(X), 1] + B[ncol(X)+1, 1]
+#                               Col.2: betas for shifted/rescaled X and intercept
 #
 # In addition, in the last run of linear regression some statistics are provided in CSV format, one comma-separated
 # name-value pair per each line, as follows:
 #
 # INPUT:
 # ------------------------------------------------------------------------------------------
-# X        Matrix X of feature vectors
-# Y        Single-column Matrix Y of response values
-# icpt     Intercept presence, shifting and rescaling the columns of X:
-#          0 = no intercept, no shifting, no rescaling;
-#          1 = add intercept, but neither shift nor rescale X;
-#          2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
-# reg      Regularization parameter, 0 for no penalty
-# tol      Tolerance threshold to train until achieved
-# maxi     Maximum iterations 0 means until tolerance is reached
-# verbose  Indicator for verbose debug output
+# X              Matrix X of feature vectors
+# Y              Single-column Matrix Y of response values
+# intercept      Intercept presence, shifting and rescaling the columns of X:
+#                0 = no intercept, no shifting, no rescaling;
+#                1 = add intercept, but neither shift nor rescale X;
+#                2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
+# reg            Regularization parameter, 0 for no penalty
+# tol            Tolerance threshold to train until achieved
+# maxIter        Maximum iterations 0 means until tolerance is reached
+# verbose        Indicator for verbose debug output
 # ------------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # -----------------------------------------------------------------------------------------------
-# B     Matrix of regression parameters (the betas) and its size depend on icpt input value.
-# S     Matrix of selected features ordered as computed by the algorithm.
+# B              Matrix of regression parameters (the betas) and its size depend on intercept input value.
+# S              Matrix of selected features ordered as computed by the algorithm.
 # -----------------------------------------------------------------------------------------------
 
-m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
-  Double reg = 1e-7, Double tol = 1e-7, Integer maxi = 0, Boolean verbose = TRUE)
+m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer intercept = 0,
+  Double reg = 1e-7, Double tol = 1e-7, Integer maxIter = 0, Boolean verbose = TRUE)
   return(Matrix[Double] B, Matrix[Double] S)
 {
-  if( icpt!=0 & icpt!=1 & icpt!=2 )
-    stop("Invalid steplm invocation with icpt="+icpt+" (valid values: 0,1,2).");
+  if( intercept!=0 & intercept!=1 & intercept!=2 )
+    stop("Invalid steplm invocation with intercept="+intercept+" (valid values: 0,1,2).");
 
   # NOTE: currently only the forward selection strategy in supported:
   # start from one feature and iteratively add features until AIC improves
-  thr = 0.001;
+  threshold = 0.001;
 
   if(verbose)
     print("BEGIN STEPWISE LINEAR REGRESSION SCRIPT");
@@ -80,7 +80,7 @@ m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
   # X_global stores the best model found at each step
   X_global = matrix(0, n, 1);
 
-  if (icpt == 1 | icpt == 2) {
+  if (intercept == 1 | intercept == 2) {
     beta = mean(y);
     AIC_best_orig = 2 + n * log(sum((beta - y) ^ 2) / n);
   } else {
@@ -89,27 +89,27 @@ m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
   }
   if(verbose)
     print("Best AIC without any features: " + AIC_best_orig);
-  boa_ncol = ncol(X_orig) + as.integer(icpt!=0);
+  boa_ncol = ncol(X_orig) + as.integer(intercept!=0);
   beta_out_all = matrix(0, boa_ncol, m_orig);
 
   # First pass to examine single features
   AICs = matrix(0, 1, m_orig);
   parfor (i in 1:m_orig) {
-    [AIC_1, beta_out_i] = linear_regression(X_orig[, i], y, icpt, reg, tol, maxi, verbose);
+    [AIC_1, beta_out_i] = linear_regression(X_orig[, i], y, intercept, reg, tol, maxIter, verbose);
     AICs[1, i] = AIC_1;
     beta_out_all[1:nrow(beta_out_i), i] = beta_out_i;
   }
   AIC_best = min(min(AICs), AIC_best_orig);
-  AIC_check = checkAIC(AIC_best, AIC_best_orig, thr);
+  AIC_check = checkAIC(AIC_best, AIC_best_orig, threshold);
   column_best = ifelse(AIC_check, as.scalar(rowIndexMin(AICs)), 0);
 
   # beta best so far
   beta_best = beta_out_all[, column_best];
   if (column_best == 0) {
     if(verbose)
-      print("AIC of an empty model is " + AIC_best + " and adding no feature achieves more than " + (thr * 100) + "% decrease in AIC!");
+      print("AIC of an empty model is " + AIC_best + " and adding no feature achieves more than " + (threshold * 100) + "% decrease in AIC!");
     B = matrix(0, m_orig, 1);
-    if (icpt != 0)
+    if (intercept != 0)
       B = rbind(B, as.matrix(beta));
     S = matrix(0, 1, 1);
   }
@@ -130,7 +130,7 @@ m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
         if (as.scalar(columns_fixed[1, i]) == 0) {
           # Construct the feature matrix
           Xi = cbind(X_global, X_orig[, i]);
-          [AIC_2, beta_out_i2] = linear_regression(Xi, y, icpt, reg, tol, maxi, verbose);
+          [AIC_2, beta_out_i2] = linear_regression(Xi, y, intercept, reg, tol, maxIter, verbose);
           AICs_2[1, i] = AIC_2;
           beta_out_all_2[1:nrow(beta_out_i2), i] = beta_out_i2;
         }
@@ -142,7 +142,7 @@ m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
       # Determine the best AIC
       AIC_best_orig = AIC_best;
       AIC_best = min(min(AICs_2), AIC_best_orig);
-      AIC_check = checkAIC(AIC_best, AIC_best_orig, thr);
+      AIC_check = checkAIC(AIC_best, AIC_best_orig, threshold);
       column_best = ifelse(AIC_check, as.scalar(rowIndexMin(AICs_2)), column_best);
 
       # have the best beta store in the matrix
@@ -169,24 +169,24 @@ m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
     # run linear regression with selected set of features
     if( verbose )
       print("Running linear regression with selected features...");
-    [AIC, beta_out] = linear_regression(X_global, y, icpt, reg, tol, maxi, verbose);
+    [AIC, beta_out] = linear_regression(X_global, y, intercept, reg, tol, maxIter, verbose);
     S = columns_fixed_ordered;
-    if (icpt != 0)
+    if (intercept != 0)
       S = cbind(S, matrix(boa_ncol, 1, 1))
     B = reorder_matrix(boa_ncol, beta_out, S);
   }
 }
 
 # Computes linear regression using lm and outputs AIC.
-linear_regression = function(Matrix[Double] X, Matrix[Double] y, Integer icpt,
-  Double reg, Double tol, Integer maxi, Boolean verbose)
+linear_regression = function(Matrix[Double] X, Matrix[Double] y, Integer intercept,
+  Double reg, Double tol, Integer maxIter, Boolean verbose)
   return(Double AIC, Matrix[Double] beta)
 {
   # BEGIN THE DIRECT SOLVE ALGORITHM (EXTERNAL CALL)
-  beta = lm(X = X, y = y, icpt = icpt, reg=reg, tol=tol, maxi=maxi, verbose=FALSE);
+  beta = lm(X = X, y = y, intercept = intercept, reg=reg, tol=tol, maxIter=maxIter, verbose=FALSE);
 
   # PREPARE X for SCORING
-  if( icpt != 0 )
+  if( intercept != 0 )
     X = cbind(X, matrix(1,nrow(X),1))
 
   # COMPUTE AIC

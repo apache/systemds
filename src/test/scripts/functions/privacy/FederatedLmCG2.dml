@@ -23,6 +23,6 @@ X = federated(addresses=list($X1, $X2),
               ranges=list(list(0, 0), list($r / 2, $c), list($r / 2, 0), list($r, $c)))
 y = federated(addresses=list($y1, $y2),
               ranges=list(list(0, 0), list($r / 2, 1), list($r / 2, 0), list($r, 1)))
-C = lmCG(X = X, y = y, reg = 1e-12, maxi = 2, verbose=FALSE)
+C = lmCG(X = X, y = y, reg = 1e-12, maxIter = 2, verbose=FALSE)
 write(C, $C)
 

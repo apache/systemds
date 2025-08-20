@@ -29,7 +29,7 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def gnmf(X: Matrix,
-         rnk: int,
+         rank: int,
          **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
      The gnmf-function does Gaussian Non-Negative Matrix Factorization. In this, a matrix X is factorized into two
@@ -44,14 +44,14 @@ def gnmf(X: Matrix,
     
     
     :param X: Matrix of feature vectors.
-    :param rnk: Number of components into which matrix X is to be factored
-    :param eps: Tolerance
-    :param maxi: Maximum number of conjugate gradient iterations
+    :param rank: Number of components into which matrix X is to be factored
+    :param tol: Tolerance
+    :param maxIter: Maximum number of conjugate gradient iterations
     :return: List of pattern matrices, one for each repetition
     :return: List of amplitude matrices, one for each repetition
     """
 
-    params_dict = {'X': X, 'rnk': rnk}
+    params_dict = {'X': X, 'rank': rank}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')

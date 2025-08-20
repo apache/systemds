@@ -47,7 +47,7 @@ X = scale(X=X)
 [Xtrain,Xtest,ytrain,ytest] = split(X=X,Y=y,f=0.7,cont=FALSE,seed=7)
 
 # learn baseline model
-B = multiLogReg(X=Xtrain, Y=ytrain, maxii=50, icpt=2, reg=0.001, verbose=FALSE);
+B = multiLogReg(X=Xtrain, Y=ytrain, maxInnerIter=50, intercept=2, reg=0.001, verbose=FALSE);
 [M,yhat,acc] = multiLogRegPredict(X=Xtrain, B=B, Y=ytrain, verbose=TRUE);
 [M,yhat,acc] = multiLogRegPredict(X=Xtest, B=B, Y=ytest, verbose=TRUE);
 
@@ -67,7 +67,7 @@ for(k in 2:16) {
     Xi = removeEmpty(target=Xtrain, margin="rows", select=I);
     yi = removeEmpty(target=ytrain, margin="rows", select=I);
     if( sum(I) > 15 & (max(yi)-min(yi)) > 0 ) {
-      Bi = multiLogReg(X=Xi, Y=yi, maxii=50, icpt=2, reg=0.001, verbose=FALSE);
+      Bi = multiLogReg(X=Xi, Y=yi, maxInnerIter=50, intercept=2, reg=0.001, verbose=FALSE);
       [Mi,yhati,acci] = multiLogRegPredict(X=Xi, B=Bi, Y=yi, verbose=FALSE);
       acctrain += acci*nrow(Xi); count = count+nrow(Xi);
       models = append(models, Bi);

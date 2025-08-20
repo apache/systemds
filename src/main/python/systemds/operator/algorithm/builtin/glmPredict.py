@@ -78,7 +78,7 @@ def glmPredict(X: Matrix,
         ncol(X)   x k: do not add intercept
         ncol(X)+1 x k: add intercept as given by the last B-row
         if k > 1, use only B[, 1] unless it is Multinomial Logit (dfam=3)
-    :param ytest: Response matrix Y, with the following dimensions:
+    :param Ytest: Response matrix Y, with the following dimensions:
         nrow(X) x 1  : for all distributions (dfam=1 or 2 or 3)
         nrow(X) x 2  : for Binomial (dfam=2) given by (#pos, #neg) counts
         nrow(X) x k+1: for Multinomial (dfam=3) given by category counts

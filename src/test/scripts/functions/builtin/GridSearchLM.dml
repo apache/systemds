@@ -33,8 +33,8 @@ ytrain = y[1:N,];
 Xtest = X[(N+1):nrow(X),];
 ytest = y[(N+1):nrow(X),];
 
-args = list(X=X, y=y, icpt=0, reg=-1, tol=-1, maxi=-1, verbose=FALSE);
-params = list("reg", "tol", "maxi", "verbose");
+args = list(X=X, y=y, intercept=0, reg=-1, tol=-1, maxIter=-1, verbose=FALSE);
+params = list("reg", "tol", "maxIter", "verbose");
 paramRanges = list(10^seq(0,-4), 10^seq(-6,-12), 10^seq(1,3), as.matrix(as.double(verbose)));
 [B1, opt] = gridSearch(X=Xtrain, y=ytrain, train="lm", predict="l2norm",
   numB=ncol(X), params=params, paramValues=paramRanges, trainArgs=args);

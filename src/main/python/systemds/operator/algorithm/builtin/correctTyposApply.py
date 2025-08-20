@@ -25,12 +25,11 @@
 from typing import Dict, Iterable
 
 from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
-from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def correctTyposApply(strings: Frame,
-                      distance_matrix: Matrix,
+                      distances: Matrix,
                       dict: Frame,
                       **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
@@ -53,14 +52,14 @@ def correctTyposApply(strings: Frame,
     
     :param strings: The nx1 input frame of corrupted strings
     :param nullMask: ---
-    :param frequency_threshold: Strings that occur above this frequency level will not be corrected
-    :param distance_threshold: Max distance at which strings are considered similar
-    :param distance matrix: ---
+    :param frequencyThreshold: Strings that occur above this frequency level will not be corrected
+    :param distanceThreshold: Max distance at which strings are considered similar
+    :param distances: ---
     :param dict: ---
     :return: Corrected nx1 output frame
     """
 
-    params_dict = {'strings': strings, 'distance_matrix': distance_matrix, 'dict': dict}
+    params_dict = {'strings': strings, 'distances': distances, 'dict': dict}
     params_dict.update(kwargs)
     return Matrix(strings.sds_context,
         'correctTyposApply',

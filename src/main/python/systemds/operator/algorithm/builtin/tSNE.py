@@ -48,18 +48,18 @@ def tSNE(X: Matrix,
     
     :param X: Data Matrix of shape
         (number of data points, input dimensionality)
-    :param reduced_dims: Output dimensionality
+    :param reducedDims: Output dimensionality
     :param perplexity: Perplexity Parameter
     :param lr: Learning rate
     :param momentum: Momentum Parameter
-    :param max_iter: Number of iterations
+    :param maxIter: Number of iterations
     :param tol: Tolerance for early stopping in gradient descent
     :param seed: The seed used for initial values.
         If set to -1 random seeds are selected.
-    :param is_verbose: Print debug information
-    :param print_iter: Intervals of printing out the L1 norm values. Parameter not relevant if
-        is_verbose = FALSE.
-    :return: Data Matrix of shape (number of data points, reduced_dims)
+    :param verbose: Print debug information
+    :param printIter: Intervals of printing out the L1 norm values. Parameter not relevant if
+        verbose = FALSE.
+    :return: Data Matrix of shape (number of data points, reducedDims)
     """
 
     params_dict = {'X': X}

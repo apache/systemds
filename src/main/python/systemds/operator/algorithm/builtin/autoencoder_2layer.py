@@ -29,9 +29,9 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def autoencoder_2layer(X: Matrix,
-                       num_hidden1: int,
-                       num_hidden2: int,
-                       max_epochs: int,
+                       numHidden1: int,
+                       numHidden2: int,
+                       epochs: int,
                        **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
      Trains a 2-layer autoencoder with minibatch SGD and step-size decay.
@@ -45,20 +45,21 @@ def autoencoder_2layer(X: Matrix,
     
     
     :param X: Filename where the input is stored
-    :param num_hidden1: Number of neurons in the 1st hidden layer
-    :param num_hidden2: Number of neurons in the 2nd hidden layer
-    :param max_epochs: Number of epochs to train for
-    :param full_obj: If TRUE, Computes objective function value (squared-loss)
+    :param numHidden1: Number of neurons in the 1st hidden layer
+    :param numHidden2: Number of neurons in the 2nd hidden layer
+    :param epochs: Number of epochs to train for
+    :param fullObj: If TRUE, Computes objective function value (squared-loss)
         at the end of each epoch. Note that, computing the full
         objective can take a lot of time.
-    :param batch_size: Mini-batch size (training parameter)
+    :param batchSize: Mini-batch size (training parameter)
     :param step: Initial step size (training parameter)
     :param decay: Decays step size after each epoch (training parameter)
     :param mu: Momentum parameter (training parameter)
-    :param W1_rand: Weights might be initialized via input matrices
-    :param W2_rand: ---
-    :param W3_rand: ---
-    :param W4_rand: ---
+    :param W1: Weights might be initialized via input matrices
+    :param W2: ---
+    :param W3: ---
+    :param W4: ---
+    :param Order: ---
     :return: Matrix storing weights between input layer and 1st hidden layer
     :return: Matrix storing bias between input layer and 1st hidden layer
     :return: Matrix storing weights between 1st hidden layer and 2nd hidden layer
@@ -70,7 +71,7 @@ def autoencoder_2layer(X: Matrix,
     :return: Matrix storing the hidden (2nd) layer representation if needed
     """
 
-    params_dict = {'X': X, 'num_hidden1': num_hidden1, 'num_hidden2': num_hidden2, 'max_epochs': max_epochs}
+    params_dict = {'X': X, 'numHidden1': numHidden1, 'numHidden2': numHidden2, 'epochs': epochs}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')

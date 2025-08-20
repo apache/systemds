@@ -26,18 +26,15 @@
 # X               Matrix X
 # colMean         Matrix X
 # k               a constant used to discern outliers k*IQR
-# isIterative     iterative repair or single repair
 # repairMethod    values: 0 = delete rows having outliers,
 #                    1 = replace outliers with zeros
 #                    2 = replace outliers as missing values
-# max_iterations  values: 0 = arbitrary number of iteraition until all outliers are removed,
-#                 n = any constant defined by user
 # verbose         flag specifying if logging information should be printed
 # -------------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # ---------------------------------------------------------------------------------
-# Y     Matrix X with no outliers
+# Y               Matrix X with no outliers
 # ---------------------------------------------------------------------------------
 
 m_outlierBySdApply = function(Matrix[Double] X, Matrix[Double] colMean, Matrix[Double] colSD, Double k, Integer repairMethod) 

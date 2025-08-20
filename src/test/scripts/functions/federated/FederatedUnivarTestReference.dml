@@ -22,5 +22,5 @@
 #X = rbind(read($1), read($2), read($3), read($4));
 X = cbind(read($1), read($2), read($3), read($4));
 types = read($5);
-B = univar(X=X, types=types);
+B = univar(X=X, ctypes=types);
 write(B, $6);

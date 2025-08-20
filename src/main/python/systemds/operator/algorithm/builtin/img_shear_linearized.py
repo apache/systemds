@@ -28,26 +28,26 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
-def img_shear_linearized(img_in: Matrix,
-                         shear_x: float,
-                         shear_y: float,
-                         fill_value: float,
-                         s_cols: int,
-                         s_rows: int):
+def img_shear_linearized(img: Matrix,
+                         shearX: float,
+                         shearY: float,
+                         value: float,
+                         sW: int,
+                         sH: int):
     """
      This function applies a shearing transformation to linearized images.
      Uses nearest neighbor sampling.
     
     
     
-    :param img_in: Linearized input images as 2D matrix with top left corner at [1, 1]
-    :param shear_x: Shearing factor for horizontal shearing
-    :param shear_y: Shearing factor for vertical shearing
-    :param fill_value: The background color revealed by the shearing
+    :param img: Linearized input images as 2D matrix with top left corner at [1, 1]
+    :param shearX: Shearing factor for horizontal shearing
+    :param shearY: Shearing factor for vertical shearing
+    :param value: The background color revealed by the shearing
     :return: Output images in linearized form as 2D matrix with top left corner at [1, 1]
     """
 
-    params_dict = {'img_in': img_in, 'shear_x': shear_x, 'shear_y': shear_y, 'fill_value': fill_value, 's_cols': s_cols, 's_rows': s_rows}
-    return Matrix(img_in.sds_context,
+    params_dict = {'img': img, 'shearX': shearX, 'shearY': shearY, 'value': value, 'sW': sW, 'sH': sH}
+    return Matrix(img.sds_context,
         'img_shear_linearized',
         named_input_nodes=params_dict)

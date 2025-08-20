@@ -23,10 +23,10 @@
 #
 # INPUT:
 # -------------------------------------------------------------------------------------------
-# img_in1  input matrix/image (every row is a linearized image)
-# img_in2  Second input image (one image represented as a single row linearized matrix)
+# img1     input matrix/image (every row is a linearized image)
+# img2     Second input image (one image represented as a single row linearized matrix)
 # weight   The weight given to the second image.
-#          0 means only img_in1, 1 means only img_in2 will be visible
+#          0 means only img1, 1 means only img2 will be visible
 # -------------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -34,15 +34,15 @@
 # img_out  Output image
 # --------------------------------------------------------------------------------------------
 
-m_img_sample_pairing_linearized= function(Matrix[Double] img_in1, Matrix[Double] img_in2, Double weight) return (Matrix[Double] img_out) {
+m_img_sample_pairing_linearized= function(Matrix[Double] img1, Matrix[Double] img2, Double weight) return (Matrix[Double] img_out) {
   if (weight < 0 | 1 < weight) {
     print("Invalid weight. Set weight to 0.5")
     weight = 0.5
   }
-  num_images= nrow(img_in1)
-  img_out = matrix (0 ,rows=nrow(img_in1),cols=ncol(img_in2))
+  num_images= nrow(img1)
+  img_out = matrix (0 ,rows=nrow(img1),cols=ncol(img2))
   parfor(i in 1:num_images) {
-    img_out[i,] = (1 - weight) * img_in1[i,]+ weight * img_in2
+    img_out[i,] = (1 - weight) * img1[i,]+ weight * img2
   }
  
 }

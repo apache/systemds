@@ -23,6 +23,6 @@ X = read($1)
 n = max(X);
 G = table(X[,1], X[, 2], n, n)
 G = G + t(G); #symmetry
-C = components(G=G, maxi=$2, verbose=FALSE)
+C = components(G=G, maxIter=$2, verbose=FALSE)
 
 write(C, $3)

@@ -31,7 +31,7 @@ check = ifdef($check, TRUE);
 
 X = read($X);
 
-[U, V] = alsDS(X=X, rank=rank, reg=reg, maxi=maxiter, check=check, thr=thr, verbose=verbose);
+[U, V] = alsDS(X=X, rank=rank, reg=reg, maxIterations=maxiter, check=check, threshold=thr, verbose=verbose);
 
 write(U, $modelU, format=fmt);
 write(V, $modelV, format=fmt);

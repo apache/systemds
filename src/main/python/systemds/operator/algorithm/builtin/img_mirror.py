@@ -28,20 +28,20 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 
-def img_mirror(img_in: Matrix,
-               horizontal_axis: bool):
+def img_mirror(img: Matrix,
+               horizontal: bool):
     """
      This function is an image data augmentation function.
      It flips an image on the X (horizontal) or Y (vertical) axis.
     
     
     
-    :param img_in: Input matrix/image
-    :param max_value: The maximum value pixels can have
+    :param img: Input matrix/image
+    :param horizontal: Boolean, True for horizental
     :return: Flipped matrix/image
     """
 
-    params_dict = {'img_in': img_in, 'horizontal_axis': horizontal_axis}
-    return Matrix(img_in.sds_context,
+    params_dict = {'img': img, 'horizontal': horizontal}
+    return Matrix(img.sds_context,
         'img_mirror',
         named_input_nodes=params_dict)

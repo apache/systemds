@@ -22,5 +22,5 @@
 A = read($1)
 b = rand(rows= nrow(A), cols = 1, min = 0, max =1)
 b = round(b)
-m = lmDS(X=A ,y=b, verbose=$2, icpt=$3)
+m = lmDS(X=A ,y=b, verbose=$2, intercept=$3)
 print(mean(m))

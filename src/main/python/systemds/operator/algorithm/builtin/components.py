@@ -40,13 +40,13 @@ def components(G: Matrix,
     
     :param X: Location to read the matrix of feature vectors
     :param Y: Location to read the matrix with category labels
-    :param icpt: Intercept presence, shifting and rescaling X columns: 0 = no intercept,
+    :param intercept: Intercept presence, shifting and rescaling X columns: 0 = no intercept,
         no shifting, no rescaling; 1 = add intercept, but neither shift nor rescale X;
         2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
     :param tol: tolerance ("epsilon")
     :param reg: regularization parameter (lambda = 1/C); intercept is not regularized
-    :param maxi: max. number of outer (Newton) iterations
-    :param maxii: max. number of inner (conjugate gradient) iterations, 0 = no max
+    :param maxIter: max. number of outer (Newton) iterations
+    :param maxInnerIter: max. number of inner (conjugate gradient) iterations, 0 = no max
     :param verbose: flag specifying if logging information should be printed
     :return: regression betas as output for prediction
     """

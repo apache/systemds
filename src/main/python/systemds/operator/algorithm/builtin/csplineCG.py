@@ -30,7 +30,7 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def csplineCG(X: Matrix,
               Y: Matrix,
-              inp_x: float,
+              xPred: float,
               **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
      Builtin that solves cubic spline interpolation using conjugate gradient algorithm
@@ -40,7 +40,7 @@ def csplineCG(X: Matrix,
     :param X: 1-column matrix of x values knots. It is assumed that x values are
         monotonically increasing and there is no duplicates points in X
     :param Y: 1-column matrix of corresponding y values knots
-    :param inp_x: the given input x, for which the cspline will find predicted y.
+    :param xPred: the given input x, for which the cspline will find predicted y.
     :param tol: Tolerance (epsilon); conjugate gradient procedure terminates early if
         L2 norm of the beta-residual is less than tolerance * its initial norm
     :param maxi: Maximum number of conjugate gradient iterations, 0 = no maximum
@@ -48,7 +48,7 @@ def csplineCG(X: Matrix,
     :return: Matrix of k parameters
     """
 
-    params_dict = {'X': X, 'Y': Y, 'inp_x': inp_x}
+    params_dict = {'X': X, 'Y': Y, 'xPred': xPred}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')

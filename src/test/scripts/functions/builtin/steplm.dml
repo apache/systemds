@@ -22,7 +22,7 @@
 X = read($1);
 y = read($2);
 
-[C, S] = steplm(X = X, y = y, icpt = 1);
+[C, S] = steplm(X = X, y = y, intercept = 1);
 
 write(C, $3);
 write(S, $4);

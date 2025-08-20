@@ -24,7 +24,7 @@
 # INPUT:
 # ------------------------------------------------------------------------------------------
 # X                 The input Matrix to apply Arima on.
-# max_func_invoc    ---
+# maxIter           max_func_invoc
 # p                 non-seasonal AR order
 # d                 non-seasonal differencing order
 # q                 non-seasonal MA order
@@ -32,7 +32,7 @@
 # D                 seasonal differencing order
 # Q                 seasonal MA order
 # s                 period in terms of number of time-steps
-# include_mean      center to mean 0, and include in result
+# includeMean      center to mean 0, and include in result
 # solver            solver, is either "cg" or "jacobi"
 # ------------------------------------------------------------------------------------------
 #
@@ -41,15 +41,15 @@
 # best_point   The calculated coefficients
 # ----------------------------------------------------------------------------------------
 
-m_arima = function(Matrix[Double] X, Integer max_func_invoc=1000, Integer p=0,
+m_arima = function(Matrix[Double] X, Integer maxIter=1000, Integer p=0,
   Integer d=0, Integer q=0, Integer P=0, Integer D=0, Integer Q=0, Integer s=1,
-  Boolean include_mean=FALSE, String solver="jacobi")
+  Boolean includeMean=FALSE, String solver="jacobi")
   return (Matrix[Double] best_point)
 {
   totcols = 1+p+P+Q+q #target col (X), p-P cols, q-Q cols
   #print ("totcols=" + totcols)
 
-  #TODO: check max_func_invoc < totcols --> print warning (stop here ??)
+  #TODO: check maxIter < totcols --> print warning (stop here ??)
 
   num_rows = nrow(X)
   #print("nrows of X: " + num_rows)
@@ -57,7 +57,7 @@ m_arima = function(Matrix[Double] X, Integer max_func_invoc=1000, Integer p=0,
     print("non-seasonal differencing order should be smaller than length of the time-series")
 
   mu = 0.0
-  if(include_mean == 1){
+  if(includeMean == 1){
     mu = mean(X)
     X = X - mu
   }
@@ -117,7 +117,7 @@ m_arima = function(Matrix[Double] X, Integer max_func_invoc=1000, Integer p=0,
   tol = 1.5 * 10^(-8) * as.scalar(objvals[1,1])
 
   continue = TRUE
-  while(continue & num_func_invoc <= max_func_invoc){
+  while(continue & num_func_invoc <= maxIter){
     best_index = as.scalar(rowIndexMin(objvals))
     worst_index = as.scalar(rowIndexMax(objvals))
 
@@ -170,7 +170,7 @@ m_arima = function(Matrix[Double] X, Integer max_func_invoc=1000, Integer p=0,
   }
 
   best_point = simplex[,best_index]
-  if(include_mean)
+  if(includeMean)
     best_point = rbind(best_point, as.matrix(mu))
 }
 

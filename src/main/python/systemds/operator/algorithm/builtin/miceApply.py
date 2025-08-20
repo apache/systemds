@@ -43,7 +43,7 @@ def miceApply(X: Matrix,
     
     
     :param X: Data Matrix (Recoded Matrix for categorical features)
-    :param mtea: A meta matrix with each rows storing values 1) mask of original matrix,
+    :param meta: A meta matrix with each rows storing values 1) mask of original matrix,
         2) information of columns with missing values on  original data 0 for no missing value in column and 1 otherwise
         3) dist values in each columns in original data 1 for continuous columns and colMax for categorical
     :param threshold: confidence value [0, 1] for robust imputation, values will only be imputed

@@ -26,7 +26,7 @@
 # X      1-column matrix of x values knots. It is assumed that x values are
 #          monotonically increasing and there is no duplicates points in X
 # Y      1-column matrix of corresponding y values knots
-# inp_x  the given input x, for which the cspline will find predicted y.
+# xPred  the given input x, for which the cspline will find predicted y.
 # tol    Tolerance (epsilon); conjugate gradient procedure terminates early if
 #        L2 norm of the beta-residual is less than tolerance * its initial norm
 # maxi   Maximum number of conjugate gradient iterations, 0 = no maximum
@@ -38,12 +38,12 @@
 # K       Matrix of k parameters
 # ------------------------------------------------------------------------------------------------------
 
-m_csplineCG = function (Matrix[Double] X, Matrix[Double] Y, Double inp_x, Double tol = 0.000001, Integer maxi = 0) 
+m_csplineCG = function (Matrix[Double] X, Matrix[Double] Y, Double xPred, Double tol = 0.000001, Integer maxIter = 0)
   return (Matrix[Double] pred_Y, Matrix[Double] K) 
 {
-  K = calcKnotsDerivKsCG(X, Y, maxi, tol)
+  K = calcKnotsDerivKsCG(X, Y, maxIter, tol)
 
-  y = interpSplineCG(inp_x, X, Y, K)
+  y = interpSplineCG(xPred, X, Y, K)
 
   pred_Y = matrix(y, 1, 1)
 }

@@ -26,7 +26,7 @@
 # X       1-column matrix of x values knots. It is assumed that x values are
 #         monotonically increasing and there is no duplicates points in X
 # Y       1-column matrix of corresponding y values knots
-# inp_x   the given input x, for which the cspline will find predicted y.
+# xPred   the given input x, for which the cspline will find predicted y.
 # --------------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -35,12 +35,12 @@
 # K       Matrix of k parameters
 # ------------------------------------------------------------------------------------------------------
 
-m_csplineDS = function (Matrix[Double] X, Matrix[Double] Y, Double inp_x) 
+m_csplineDS = function (Matrix[Double] X, Matrix[Double] Y, Double xPred)
   return (Matrix[Double] pred_Y, Matrix[Double] K) 
 {
   K = calcKnotsDerivKs(X, Y)
 
-  y = interpSpline(inp_x, X, Y, K)
+  y = interpSpline(xPred, X, Y, K)
 
   pred_Y = matrix(y, 1, 1)
 }

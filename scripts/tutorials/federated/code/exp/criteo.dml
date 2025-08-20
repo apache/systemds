@@ -38,7 +38,7 @@ jspec1 = read("code/exp/criteo_spec1.json", data_type="scalar", value_type="stri
 
 y = X0[,1] + 1; 
 X = X0[,2:ncol(X0)]
-B = multiLogReg(X=X, Y=y, icpt=2, maxi=30, verbose=TRUE);
+B = multiLogReg(X=X, Y=y, intercept=2, maxIter=30, verbose=TRUE);
 
 ## done
 [m, pred, acc] = multiLogRegPredict(X=X, B=B, Y=y, verbose=TRUE)

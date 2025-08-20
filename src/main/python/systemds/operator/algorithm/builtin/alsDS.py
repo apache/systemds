@@ -41,11 +41,11 @@ def alsDS(X: Matrix,
     :param X: Location to read the input matrix V to be factorized
     :param rank: Rank of the factorization
     :param reg: Regularization parameter, no regularization if 0.0
-    :param maxi: Maximum number of iterations
+    :param maxIter: Maximum number of iterations
     :param check: Check for convergence after every iteration, i.e., updating L and R once
-    :param thr: Assuming check is set to TRUE, the algorithm stops and convergence is declared
+    :param threshold: Assuming check is set to TRUE, the algorithm stops and convergence is declared
         if the decrease in loss in any two consecutive iterations falls below this threshold;
-        if check is FALSE thr is ignored
+        if check is FALSE threshold is ignored
     :param seed: The seed to random parts of the algorithm
     :param verbose: If the algorithm should run verbosely
     :return: An m x r matrix where r is the factorization rank

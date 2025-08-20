@@ -24,7 +24,7 @@ T = read($in_T)
 CL = read($in_CL)
 k = $in_k
 
-[NNR, PR, FI] = knn(Train=X,  Test=T, CL=CL, k_value=k, predict_con_tg=1);
+[NNR, PR, FI] = knn(Train=X,  Test=T, CL=CL, k=k, predictCont=1);
 
 PR_val = matrix(0, 0, ncol(T));
 for(i in 1:nrow(T)) {

@@ -24,22 +24,22 @@
 #
 # INPUT:
 # --------------------------------------------------------------------------------------
-# X        Feature matrix [shape: n-by-m]
-# Y        Class labels [shape: n-by-1]
-# k        Number of nearest neighbors
-# beta     Desired balance level after generation of synthetic data [0, 1]
-# dth      Distribution threshold
-# seed     Seed for randomized data point selection
+# X          Feature matrix [shape: n-by-m]
+# Y          Class labels [shape: n-by-1]
+# k          Number of nearest neighbors
+# beta       Desired balance level after generation of synthetic data [0, 1]
+# threshold  Distribution threshold
+# seed       Seed for randomized data point selection
 # --------------------------------------------------------------------------------------
 #
 # OUTPUT:
 # -------------------------------------------------------------------------------------
-# Xp       Feature matrix of n original rows followed by G = (ml-ms)*beta synthetic rows
-# Yp       Class labels aligned with output X
+# Xp         Feature matrix of n original rows followed by G = (ml-ms)*beta synthetic rows
+# Yp         Class labels aligned with output X
 # -------------------------------------------------------------------------------------
 
 m_adasyn = function(Matrix[Double] X, Matrix[Double] Y, Integer k = 2,
-  Double beta = 1.0, Double dth = 0.9, Integer seed = -1)
+  Double beta = 1.0, Double threshold = 0.9, Integer seed = -1)
   return (Matrix[Double] Xp, Matrix[Double] Yp)
 {
   if(k < 1) {
@@ -60,7 +60,7 @@ m_adasyn = function(Matrix[Double] X, Matrix[Double] Y, Integer k = 2,
   # Check if imbalance is lower than predefined threshold
   print("ADASYN: class imbalance: " + d)
 
-  if(d >= dth) {
+  if(d >= threshold) {
       stop("ADASYN: Class imbalance not large enough.")
   }
 

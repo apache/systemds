@@ -31,15 +31,15 @@ X = X[, 1:ncol(X)-1]
 X = imputeByMode(X);
 
 if( $3==1 ) {
-  M = decisionTree(X=X, y=Y, ctypes=R, max_features=1, max_values=$4,
-                   min_split=10, min_leaf=4, seed=7, verbose=TRUE);
+  M = decisionTree(X=X, y=Y, ctypes=R, maxFeatures=1, maxValues=$4,
+                   minSplit=10, minLeaf=4, seed=7, verbose=TRUE);
   yhat = decisionTreePredict(X=X, y=Y, ctypes=R, M=M)
 }
 else {
   sf = 1.0/($3-1);
-  M = randomForest(X=X, y=Y, ctypes=R, sample_frac=sf, num_trees=$3-1,
-                   max_features=1, max_values=$4,
-                   min_split=10, min_leaf=4, seed=7, verbose=TRUE);
+  M = randomForest(X=X, y=Y, ctypes=R, sampleFrac=sf, numTrees=$3-1,
+                   maxFeatures=1, maxValues=$4,
+                   minSplit=10, minLeaf=4, seed=7, verbose=TRUE);
   yhat = randomForestPredict(X=X, y=Y, ctypes=R,  M=M)
 }
 

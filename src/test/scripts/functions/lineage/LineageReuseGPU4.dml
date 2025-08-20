@@ -48,7 +48,7 @@ for (i in 1:5)
         reg = 10^h1;
         icpt = h2;
         tol = 10^h3;
-        beta = lm(X=Xi, y=y, icpt=icpt, reg=reg, tol=tol, maxi=0, verbose=FALSE);
+        beta = lm(X=Xi, y=y, intercept=icpt, reg=reg, tol=tol, maxIter=0, verbose=FALSE);
         Rbeta[k, 1:nrow(beta)] = t(beta);
         Rloss[k,] = l2norm(Xi, y, beta, icpt);
         k = k + 1;

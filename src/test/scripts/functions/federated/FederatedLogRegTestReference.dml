@@ -21,5 +21,5 @@
 
 X = rbind(read($1), read($2))
 Y = read($3)
-model = multiLogReg(X=X,  Y=Y, tol=1e-5, maxi=30,  icpt = 0)
+model = multiLogReg(X=X,  Y=Y, tol=1e-5, maxIter=30,  intercept = 0)
 write(model, $4)

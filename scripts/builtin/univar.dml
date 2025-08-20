@@ -23,9 +23,9 @@
 #
 # INPUT:
 # ----------------------------------------------------------------------------------
-# X      Input matrix of the shape (N, D)
-# TYPES  Matrix of the shape (1, D) with features types:
-#        1 for scale, 2 for nominal, 3 for ordinal
+# X       Input matrix of the shape (N, D)
+# CTYPES  Row-Vector of the shape (1, D) of column types:
+#         1 for scale, 2 for nominal, 3 for ordinal
 # ----------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -33,10 +33,10 @@
 # univarStats  univariate statistics for all attributes
 # ----------------------------------------------------------------------------------------
 
-m_univar = function(Matrix[Double] X, Matrix[Double] types)
+m_univar = function(Matrix[Double] X, Matrix[Double] ctypes)
 return(Matrix[Double] univarStats)
 {
-  max_kind = max(types);
+  max_kind = max(ctypes);
   N = nrow(X);
   D = ncol(X);
 
@@ -45,12 +45,12 @@ return(Matrix[Double] univarStats)
   univarStats = matrix(0, rows=numBaseStats, cols=D);
 
   # Compute max domain size among all categorical attributes
-  maxDomain = as.integer(max((types > 1) * colMaxs(X)));
+  maxDomain = as.integer(max((ctypes > 1) * colMaxs(X)));
 
   parfor(i in 1:D, check=0) {
     F = X[,i];
 
-    type = as.scalar(types[1,i]);
+    type = as.scalar(ctypes[1,i]);
     minF = min(F);
     maxF = max(F);
 

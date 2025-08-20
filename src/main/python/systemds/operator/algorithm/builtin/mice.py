@@ -29,7 +29,7 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def mice(X: Matrix,
-         cMask: Matrix,
+         ctypes: Matrix,
          **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
      This Builtin function implements multiple imputation using Chained Equations (MICE)
@@ -41,8 +41,8 @@ def mice(X: Matrix,
     
     
     :param X: Data Matrix (Recoded Matrix for categorical features)
-    :param cMask: A 0/1 row vector for identifying numeric (0) and categorical features (1)
-    :param iter: Number of iteration for multiple imputations
+    :param ctypes: A 0/1 row vector for identifying numeric (0) and categorical features (1)
+    :param maxIter: Number of iteration for multiple imputations
     :param threshold: confidence value [0, 1] for robust imputation, values will only be imputed
         if the predicted value has probability greater than threshold,
         only applicable for categorical data
@@ -50,7 +50,7 @@ def mice(X: Matrix,
     :return: imputed dataset
     """
 
-    params_dict = {'X': X, 'cMask': cMask}
+    params_dict = {'X': X, 'ctypes': ctypes}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')

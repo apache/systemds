@@ -24,8 +24,8 @@
 #
 # INPUT:
 # ------------------------------------------------------------
-# yhat     A column vector of predicted response values y
-# ytest    A column vector of actual response values y
+# Y        A column vector of predicted response values y
+# Ytest    A column vector of actual response values y
 # lm       An indicator if used for linear regression model
 # ------------------------------------------------------------
 #
@@ -34,24 +34,24 @@
 # R        A column vector holding avg_res, ss_avg_res, and R2
 # ------------------------------------------------------------
 
-m_lmPredictStats = function(Matrix[Double] yhat, Matrix[Double] ytest, Boolean lm)
+m_lmPredictStats = function(Matrix[Double] Y, Matrix[Double] Ytest, Boolean lm)
   return (Matrix[Double] R)
 {
   print ("\n\nComputing the statistics...");
-  n = nrow(ytest)
+  n = nrow(Ytest)
 
-  sum_y_test = sum(ytest)
+  sum_y_test = sum(Ytest)
   mean_y_test = sum_y_test / n
-  sum_sq_y_test = sum(ytest^2)
+  sum_sq_y_test = sum(Ytest^2)
 
-  y_residual = ytest - yhat;
+  y_residual = Ytest - Y;
   avg_res = sum(y_residual) / n;
   ss_res = sum(y_residual^2);
   ss_avg_res = ss_res - n * avg_res^2;
   if( lm )
     R2 = 1 - ss_res / (sum_sq_y_test - n * (sum_y_test/n)^2);
   else
-    R2 = sum((yhat - mean_y_test)^2) / sum((ytest - mean_y_test)^2)
+    R2 = sum((Y - mean_y_test)^2) / sum((Ytest - mean_y_test)^2)
 
   avg_tot = sum_y_test / n;
   ss_tot = sum_sq_y_test;
@@ -59,8 +59,8 @@ m_lmPredictStats = function(Matrix[Double] yhat, Matrix[Double] ytest, Boolean l
   var_tot = ss_avg_tot / (n - 1);
   R2_nobias = 1 - ss_avg_res / ss_avg_tot;
 
-  print("sum(ytest) = " + sum_y_test)
-  print("sum(yhat) = " + sum(yhat))
+  print("sum(Ytest) = " + sum_y_test)
+  print("sum(Y) = " + sum(Y))
   print("SS_AVG_RES_Y: " + ss_avg_res)
   # Average of the response value Y
   print("AVG_TOT_Y, " + avg_tot)

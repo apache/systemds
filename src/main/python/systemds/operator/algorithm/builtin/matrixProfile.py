@@ -46,11 +46,11 @@ def matrixProfile(ts: Matrix,
     
     
     :param ts: Time series to profile
-    :param window_size: Sliding window size
-    :param sample_percent: Degree of approximation
+    :param windowSize: Sliding window size
+    :param sampleFrac: Degree of approximation
         between zero and one (1
         computes the exact solution)
-    :param is_verbose: Print debug information
+    :param verbose: Print debug information
     :return: The computed matrix profile
     :return: Indices of least distances
     """

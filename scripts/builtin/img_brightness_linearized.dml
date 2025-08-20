@@ -23,9 +23,9 @@
 #
 # INPUT:
 # -----------------------------------------------------------------------------------------
-# img_in       Input matrix/image (can represent multiple images every row of the matrix represents a linearized image)
+# img          Input matrix/image (can represent multiple images every row of the matrix represents a linearized image)
 # value        The amount of brightness to be changed for the image
-# channel_max  Maximum value of the brightness of the image
+# maxValue     Maximum channel value of the brightness of the image
 # -----------------------------------------------------------------------------------------
 #
 # OUTPUT:
@@ -33,6 +33,6 @@
 # img_out  Output matrix/images  (every row of the matrix represents a linearized image)
 # ----------------------------------------------------------------------------------------------------------------------
 
-m_img_brightness_linearized = function(Matrix[Double] img_in, Double value, Integer channel_max) return (Matrix[Double] img_out) {
-  img_out = img_brightness(img_in,value,channel_max)
+m_img_brightness_linearized = function(Matrix[Double] img, Double value, Integer maxValue) return (Matrix[Double] img_out) {
+  img_out = img_brightness(img,value,maxValue)
 }

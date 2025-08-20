@@ -62,24 +62,24 @@ public class CudaError {
 	public static final int cudaErrorProfilerDisabled = 5;
 
 	/**
+	 * @deprecated
 	 * This error return is deprecated as of CUDA 5.0. It is no longer an error to attempt to enable/disable the
 	 * profiling via cudaProfilerStart or cudaProfilerStop without initialization.
 	 */
-	@Deprecated
 	public static final int cudaErrorProfilerNotInitialized = 6;
 
 	/**
+	 * @deprecated
 	 * This error return is deprecated as of CUDA 5.0. It is no longer an error to call cudaProfilerStart() when
 	 * profiling is already enabled.
 	 */
-	@Deprecated
 	public static final int cudaErrorProfilerAlreadyStarted = 7;
 
 	/**
+	 * @deprecated
 	 * This error return is deprecated as of CUDA 5.0. It is no longer an error to call cudaProfilerStop() when
 	 * profiling is already disabled.
 	 */
-	@Deprecated
 	public static final int cudaErrorProfilerAlreadyStopped = 8;
 
 	/**
@@ -101,17 +101,17 @@ public class CudaError {
 	public static final int cudaErrorInvalidSymbol = 13;
 
 	/**
+	 * @deprecated
 	 * This indicates that at least one host pointer passed to the API call is not a valid host pointer. This error
 	 * return is deprecated as of CUDA 10.1.
 	 */
-	@Deprecated
 	public static final int cudaErrorInvalidHostPointer = 16;
 
 	/**
+	 * @deprecated
 	 * This indicates that at least one device pointer passed to the API call is not a valid device pointer. This error
 	 * return is deprecated as of CUDA 10.1.
 	 */
-	@Deprecated
 	public static final int cudaErrorInvalidDevicePointer = 17;
 
 	/**
@@ -138,35 +138,35 @@ public class CudaError {
 	public static final int cudaErrorInvalidMemcpyDirection = 21;
 
 	/**
+	 * @deprecated
 	 * This indicated that the user has taken the address of a constant variable, which was forbidden up until the CUDA
 	 * 3.1 release. This error return is deprecated as of CUDA 3.1. Variables in constant memory may now have their
 	 * address taken by the runtime via cudaGetSymbolAddress().
 	 */
-	@Deprecated
 	public static final int cudaErrorAddressOfConstant = 22;
 
 	/**
+	 * @deprecated
 	 * This indicated that a texture fetch was not able to be performed. This was previously used for device emulation
 	 * of texture operations. This error return is deprecated as of CUDA 3.1. Device emulation mode was removed with the
 	 * CUDA 3.1 release.
 	 */
-	@Deprecated
 	public static final int cudaErrorTextureFetchFailed = 23;
 
 	/**
+	 * @deprecated
 	 * This indicated that a texture was not bound for access. This was previously used for device emulation of texture
 	 * operations. his error return is deprecated as of CUDA 3.1. Device emulation mode was removed with the CUDA 3.1
 	 * release
 	 */
-	@Deprecated
 	public static final int cudaErrorTextureNotBound = 24;
 
 	/**
+	 * @deprecated
 	 * This indicated that a synchronization operation had failed. This was previously used for some device emulation
 	 * functions. This error return is deprecated as of CUDA 3.1. Device emulation mode was removed with the CUDA 3.1
 	 * release.
 	 */
-	@Deprecated
 	public static final int cudaErrorSynchronizationError = 25;
 
 	/**
@@ -181,17 +181,17 @@ public class CudaError {
 	public static final int cudaErrorInvalidNormSetting = 27;
 
 	/**
+	 * @deprecated
 	 * Mixing of device and device emulation code was not allowed. This error return is deprecated as of CUDA 3.1.
 	 * Device emulation mode was removed with the CUDA 3.1 release.
 	 */
-	@Deprecated
 	public static final int cudaErrorMixedDeviceExecution = 28;
 
 	/**
+	 * @deprecated
 	 * This indicates that the API call is not yet implemented. Production releases of CUDA will never return this
 	 * error. This error return is deprecated as of CUDA 4.1.
 	 */
-	@Deprecated
 	public static final int cudaErrorNotYetImplemented = 31;
 
 	/**
@@ -266,11 +266,11 @@ public class CudaError {
 	public static final int cudaErrorMissingConfiguration = 52;
 
 	/**
+	 * @deprecated
 	 * This indicated that a previous kernel launch failed. This was previously used for device emulation of kernel
 	 * launches. This error return is deprecated as of CUDA 3.1. Device emulation mode was removed with the CUDA 3.1
 	 * release.
 	 */
-	@Deprecated
 	public static final int cudaErrorPriorLaunchFailure = 53;
 
 	/**

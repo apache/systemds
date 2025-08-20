@@ -22,8 +22,7 @@
 #include "cujava_runtime_common.hpp"
 
 
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
-{
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
     JNIEnv *env = nullptr;
     if (jvm->GetEnv((void **)&env, JNI_VERSION_1_4)) {
         return JNI_ERR;
@@ -37,21 +36,17 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 }
 
 
-JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved)
-{
+JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
 }
 
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemcpyNative
-  (JNIEnv *env, jclass cls, jobject dst, jobject src, jlong count, jint kind)
-{
-    if (dst == NULL)
-    {
+  (JNIEnv *env, jclass cls, jobject dst, jobject src, jlong count, jint kind) {
+    if (dst == NULL) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'dst' is null for cudaMemcpy");
         return CUJAVA_INTERNAL_ERROR;
     }
-    if (src == NULL)
-    {
+    if (src == NULL) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'src' is null for cudaMemcpy");
         return CUJAVA_INTERNAL_ERROR;
     }
@@ -59,40 +54,33 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemcpyNat
 
     // Obtain the destination and source pointers
     PointerData *dstPointerData = initPointerData(env, dst);
-    if (dstPointerData == NULL)
-    {
+    if (dstPointerData == NULL) {
         return CUJAVA_INTERNAL_ERROR;
     }
     PointerData *srcPointerData = initPointerData(env, src);
-    if (srcPointerData == NULL)
-    {
+    if (srcPointerData == NULL) {
         return CUJAVA_INTERNAL_ERROR;
     }
 
     // Execute the cudaMemcpy operation
     int result = CUJAVA_INTERNAL_ERROR;
-    if (kind == cudaMemcpyHostToHost)
-    {
+    if (kind == cudaMemcpyHostToHost) {
         Logger::log(LOG_TRACE, "Copying %ld bytes from host to host\n", (long)count);
         result = cudaMemcpy((void*)dstPointerData->getPointer(env), (void*)srcPointerData->getPointer(env), (size_t)count, cudaMemcpyHostToHost);
     }
-    else if (kind == cudaMemcpyHostToDevice)
-    {
+    else if (kind == cudaMemcpyHostToDevice) {
         Logger::log(LOG_TRACE, "Copying %ld bytes from host to device\n", (long)count);
         result = cudaMemcpy((void*)dstPointerData->getPointer(env), (void*)srcPointerData->getPointer(env), (size_t)count, cudaMemcpyHostToDevice);
     }
-    else if (kind == cudaMemcpyDeviceToHost)
-    {
+    else if (kind == cudaMemcpyDeviceToHost) {
         Logger::log(LOG_TRACE, "Copying %ld bytes from device to host\n", (long)count);
         result = cudaMemcpy((void*)dstPointerData->getPointer(env), (void*)srcPointerData->getPointer(env), (size_t)count, cudaMemcpyDeviceToHost);
     }
-    else if (kind == cudaMemcpyDeviceToDevice)
-    {
+    else if (kind == cudaMemcpyDeviceToDevice) {
         Logger::log(LOG_TRACE, "Copying %ld bytes from device to device\n", (long)count);
         result = cudaMemcpy((void*)dstPointerData->getPointer(env), (void*)srcPointerData->getPointer(env), (size_t)count, cudaMemcpyDeviceToDevice);
     }
-    else
-    {
+    else {
         Logger::log(LOG_ERROR, "Invalid cudaMemcpyKind given: %d\n", kind);
         return cudaErrorInvalidMemcpyDirection;
     }
@@ -105,10 +93,8 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemcpyNat
 
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMallocNative
-  (JNIEnv *env, jclass cls, jobject devPtr, jlong size)
-{
-    if (devPtr == NULL)
-    {
+  (JNIEnv *env, jclass cls, jobject devPtr, jlong size) {
+    if (devPtr == NULL) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'devPtr' is null for cudaMalloc");
         return CUJAVA_INTERNAL_ERROR;
     }
@@ -123,10 +109,8 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMallocNat
 
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaFreeNative
-  (JNIEnv *env, jclass cls, jobject devPtr)
-{
-    if (devPtr == NULL)
-    {
+  (JNIEnv *env, jclass cls, jobject devPtr) {
+    if (devPtr == NULL) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'devPtr' is null for cudaFree");
         return CUJAVA_INTERNAL_ERROR;
     }
@@ -135,6 +119,21 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaFreeNativ
     void *nativeDevPtr = NULL;
     nativeDevPtr = getPointer(env, devPtr);
     int result = cudaFree(nativeDevPtr);
+    return result;
+}
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemsetNative
+  (JNIEnv *env, jclass cls, jobject mem, jint c, jlong count) {
+    if (mem == NULL) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'mem' is null for cudaMemset");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    Logger::log(LOG_TRACE, "Executing cudaMemset\n");
+
+    void *nativeMem = getPointer(env, mem);
+
+    int result = cudaMemset(nativeMem, (int)c, (size_t)count);
     return result;
 }
 

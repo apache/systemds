@@ -32,6 +32,7 @@ extern "C" {
  *  - cudaMemcpyNative
  *  - cudaMallocNative
  *  - cudaFreeNative
+ *  - cudaMemsetnative
  */
 
 
@@ -44,6 +45,9 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMallocNat
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaFreeNative
   (JNIEnv *env, jclass cls, jobject devPtr);
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemsetNative
+  (JNIEnv *env, jclass cls, jobject mem, jint c, jlong count);
 
 #ifdef __cplusplus
 }

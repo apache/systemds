@@ -31,9 +31,17 @@ public abstract class CodeTemplate {
 	public String getTemplate() {
 		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
 	}
-	
+
+	/**
+	 * @param sparseTemplate added to turn SparseRowVector intermediates on and off
+	 */
 	public String getTemplate(CNodeBinary.BinType type, boolean sparseLhs, boolean sparseRhs, boolean scalarVector,
-		boolean scalarInput, boolean vectorVector) {
+		boolean scalarInput, boolean vectorVector, boolean sparseTemplate) {
+		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
+	}
+
+	public String getTemplate(CNodeBinary.BinType type, boolean sparseLhs, boolean sparseRhs,
+		boolean scalarVector, boolean scalarInput, boolean vectorVector) {
 		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
 	}
 	
@@ -42,6 +50,10 @@ public abstract class CodeTemplate {
 	}
 	
 	public String getTemplate(CNodeUnary.UnaryType type, boolean sparse) {
+		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
+	}
+
+	public String getTemplate(CNodeUnary.UnaryType type, boolean sparse, boolean sparseTemplate) {
 		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
 	}
 	
@@ -68,5 +80,5 @@ public abstract class CodeTemplate {
 			return null;
 		}
 	}
-	
+
 }

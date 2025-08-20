@@ -22,6 +22,7 @@ package org.apache.sysds.hops.codegen.cplan;
 import java.util.Arrays;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.hops.codegen.template.TemplateUtils;
 import org.apache.sysds.common.Types.DataType;
@@ -126,7 +127,8 @@ public class CNodeBinary extends CNode {
 	}
 	
 	private final BinType _type;
-	
+	private boolean sparseTemplate;
+
 	public CNodeBinary( CNode in1, CNode in2, BinType type ) {
 		//canonicalize commutative matrix-scalar operations
 		//to increase reuse potential
@@ -143,6 +145,23 @@ public class CNodeBinary extends CNode {
 		setOutputDims();
 	}
 
+	public CNodeBinary( CNode in1, CNode in2, BinType type, double sparsityEst, double scalarVal ) {
+		//canonicalize commutative matrix-scalar operations
+		//to increase reuse potential
+		if( type.isCommutative() && in1 instanceof CNodeData
+			&& in1.getDataType()==DataType.SCALAR ) {
+			CNode tmp = in1;
+			in1 = in2;
+			in2 = tmp;
+		}
+
+		_inputs.add(in1);
+		_inputs.add(in2);
+		_type = type;
+		setOutputDims();
+		sparseTemplate = getTemplateType(sparsityEst, scalarVal);
+	}
+
 	public BinType getType() {
 		return _type;
 	}
@@ -157,60 +176,63 @@ public class CNodeBinary extends CNode {
 		//generate children
 		sb.append(_inputs.get(0).codegen(sparse, api));
 		sb.append(_inputs.get(1).codegen(sparse, api));
-		
+
 		//generate binary operation (use sparse template, if data input)
-		boolean lsparseLhs = sparse && _inputs.get(0) instanceof CNodeData 
-			&& _inputs.get(0).getVarname().startsWith("a");
-		boolean lsparseRhs = sparse && _inputs.get(1) instanceof CNodeData 
-			&& _inputs.get(1).getVarname().startsWith("a");
+		boolean lsparseLhs = sparse ? _inputs.get(0) instanceof CNodeData
+			&& _inputs.get(0).getVarname().startsWith("a") ||
+			_inputs.get(0).getVarname().startsWith("STMP") : false;
+		boolean lsparseRhs = sparse ? _inputs.get(1) instanceof CNodeData
+			&& _inputs.get(1).getVarname().startsWith("a") ||
+			_inputs.get(1).getVarname().startsWith("STMP") : false;
 		boolean scalarInput = _inputs.get(0).getDataType().isScalar();
 		boolean scalarVector = (_inputs.get(0).getDataType().isScalar()
 			&& _inputs.get(1).getDataType().isMatrix());
 		boolean vectorVector = _inputs.get(0).getDataType().isMatrix()
 			&& _inputs.get(1).getDataType().isMatrix();
-		String var = createVarname();
+		String var = createVarname(sparse && sparseTemplate && getOutputType(scalarVector, lsparseLhs, lsparseRhs));
 		String tmp = getLanguageTemplateClass(this, api)
-			.getTemplate(_type, lsparseLhs, lsparseRhs, scalarVector, scalarInput, vectorVector);
+			.getTemplate(_type, lsparseLhs, lsparseRhs, scalarVector, scalarInput, vectorVector, sparseTemplate);
 
 		tmp = tmp.replace("%TMP%", var);
-		
+
 		//replace input references and start indexes
 		for( int j=0; j<2; j++ ) {
 			String varj = _inputs.get(j).getVarname(api);
-			
 			//replace sparse and dense inputs
-			tmp = tmp.replace("%IN"+(j+1)+"v%", varj+"vals");
-			tmp = tmp.replace("%IN"+(j+1)+"i%", varj+"ix");
+			tmp = tmp.replace("%IN"+(j+1)+"v%", varj.startsWith("STMP") ? varj+".values()" : varj+"vals");
+			tmp = tmp.replace("%IN"+(j+1)+"i%", varj.startsWith("STMP") ? varj+".indexes()" : varj+"ix");
 			tmp = tmp.replace("%IN"+(j+1)+"%",
-					varj.startsWith("a") ? (api == GeneratorAPI.JAVA ? varj : 
-						(_inputs.get(j).getDataType() == DataType.MATRIX ? varj + ".vals(0)" : varj)) :
-						varj.startsWith("b") ? (api == GeneratorAPI.JAVA ? varj + ".values(rix)" : 
-								(_type == BinType.VECT_MATRIXMULT ? varj : varj + ".vals(0)")) :
-							_inputs.get(j).getDataType() == DataType.MATRIX ? (api == GeneratorAPI.JAVA ? varj : varj + ".vals(0)") : varj);
-			
+				varj.startsWith("a") ? (api == GeneratorAPI.JAVA ? varj :
+					(_inputs.get(j).getDataType() == DataType.MATRIX ? varj + ".vals(0)" : varj)) :
+					varj.startsWith("b") ? (api == GeneratorAPI.JAVA ? varj + ".values(rix)" :
+						(_type == BinType.VECT_MATRIXMULT ? varj : varj + ".vals(0)")) :
+						_inputs.get(j).getDataType() == DataType.MATRIX ? (api == GeneratorAPI.JAVA ? varj : varj + ".vals(0)") : varj);
+
+				tmp = tmp.replace("%SLEN"+(j+1)+"%", varj.startsWith("STMP") ? varj+".size()" : varj.startsWith("a") ? "alen" : "blen");
+
 			//replace start position of main input
-			tmp = tmp.replace("%POS"+(j+1)+"%", (_inputs.get(j) instanceof CNodeData 
-					&& _inputs.get(j).getDataType().isMatrix()) ? (!varj.startsWith("b")) ? varj+"i" : 
-					((TemplateUtils.isMatrix(_inputs.get(j)) || (_type.isElementwise()
-						&& TemplateUtils.isColVector(_inputs.get(j)))) && _type!=BinType.VECT_MATRIXMULT) ?
+			tmp = tmp.replace("%POS"+(j+1)+"%", (_inputs.get(j) instanceof CNodeData
+				&& _inputs.get(j).getDataType().isMatrix()) ? (!varj.startsWith("b")) ? varj+"i" :
+				((TemplateUtils.isMatrix(_inputs.get(j)) || (_type.isElementwise()
+					&& TemplateUtils.isColVector(_inputs.get(j)))) && _type!=BinType.VECT_MATRIXMULT) ?
 					varj + ".pos(rix)" : "0" : "0");
 		}
 		//replace length information (e.g., after matrix mult)
-		if( _type == BinType.VECT_OUTERMULT_ADD || (_type == BinType.VECT_CBIND && vectorVector) ) {
+		if( _type == BinType.VECT_OUTERMULT_ADD || (_type == BinType.VECT_CBIND && vectorVector)) {
 			for( int j=0; j<2; j++ )
 				tmp = tmp.replace("%LEN"+(j+1)+"%", _inputs.get(j).getVectorLength(api));
 		}
-		else { //general case 
+		else { //general case
 			CNode mInput = getIntermediateInputVector();
 			if( mInput != null )
 				tmp = tmp.replace("%LEN%", mInput.getVectorLength(api));
 		}
-		
+
 		sb.append(tmp);
-		
+
 		//mark as generated
 		_generated = true;
-		
+
 		return sb.toString();
 	}
 	
@@ -219,7 +241,126 @@ public class CNodeBinary extends CNode {
 			if( getInput().get(i).getDataType().isMatrix() )
 				return getInput().get(i);
 		return null;
-	} 
+	}
+
+	private boolean getTemplateType(double sparsityEst, double scalarVal) {
+		if(!DMLScript.SPARSE_INTERMEDIATE)
+			return false;
+		else {
+			switch(_type) {
+				case VECT_MULT:
+				case VECT_DIV:
+				case VECT_LESS:
+				case VECT_MINUS:
+				case VECT_PLUS:
+				case VECT_XOR:
+				case VECT_BITWAND:
+				case VECT_BIASADD:
+				case VECT_BIASMULT:
+				case VECT_MIN:
+				case VECT_MAX:
+				case VECT_NOTEQUAL:
+				case VECT_GREATER:
+				case VECT_EQUAL:
+				case VECT_LESSEQUAL:
+				case VECT_GREATEREQUAL: return sparsityEst < 0.1;
+			 	case VECT_MULT_SCALAR:
+				case VECT_DIV_SCALAR:
+				case VECT_XOR_SCALAR:
+				case VECT_BITWAND_SCALAR: return sparsityEst < 0.3;
+				case VECT_GREATER_SCALAR: {
+					if(scalarVal != Double.NaN) {
+						return _inputs.get(1).getDataType().isScalar() ? scalarVal >= 0 && sparsityEst < 0.2
+							: _inputs.get(0).getDataType().isScalar() && scalarVal < 0 && sparsityEst < 0.2;
+					} else
+						return false;
+				}
+				case VECT_GREATEREQUAL_SCALAR: {
+					if(scalarVal != Double.NaN) {
+						return _inputs.get(1).getDataType().isScalar() ? scalarVal > 0 && sparsityEst < 0.2
+							: _inputs.get(0).getDataType().isScalar() && scalarVal <= 0 && sparsityEst < 0.2;
+					} else
+						return false;
+				}
+				case VECT_MIN_SCALAR: {
+					if(scalarVal != Double.NaN) {
+						return _inputs.get(1).getDataType().isScalar() ? scalarVal >= 0 && sparsityEst < 0.2
+							: _inputs.get(0).getDataType().isScalar() && scalarVal >= 0 && sparsityEst < 0.2;
+					} else
+						return false;
+				}
+				case VECT_LESS_SCALAR: {
+					if(scalarVal != Double.NaN) {
+						return _inputs.get(1).getDataType().isScalar() ? scalarVal <= 0 && sparsityEst < 0.2
+							: _inputs.get(0).getDataType().isScalar() && scalarVal > 0 && sparsityEst < 0.2;
+					} else
+						return false;
+				}
+				case VECT_LESSEQUAL_SCALAR: {
+					if(scalarVal != Double.NaN) {
+						return _inputs.get(1).getDataType().isScalar() ? scalarVal < 0 && sparsityEst < 0.2
+							: _inputs.get(0).getDataType().isScalar() && scalarVal >= 0 && sparsityEst < 0.2;
+					} else
+						return false;
+				}
+				case VECT_MAX_SCALAR: {
+					if(scalarVal != Double.NaN) {
+						return _inputs.get(1).getDataType().isScalar() ? scalarVal <= 0 && sparsityEst < 0.2
+							: _inputs.get(0).getDataType().isScalar() && scalarVal <= 0 && sparsityEst < 0.2;
+					} else
+						return false;
+				}
+				case VECT_POW_SCALAR:
+				case VECT_EQUAL_SCALAR:{
+					if(scalarVal != Double.NaN) {
+						return _inputs.get(1).getDataType().isScalar() ? scalarVal != 0 && sparsityEst < 0.2
+							: _inputs.get(0).getDataType().isScalar() && scalarVal != 0 && sparsityEst < 0.2;
+					} else
+						return false;
+				}
+				case VECT_NOTEQUAL_SCALAR:{
+					if(scalarVal != Double.NaN) {
+						return _inputs.get(1).getDataType().isScalar() ? scalarVal == 0 && sparsityEst < 0.2
+							: _inputs.get(0).getDataType().isScalar() && scalarVal == 0 && sparsityEst < 0.2;
+					} else
+						return false;
+				}
+				default: return sparsityEst < 0.3;
+			}
+		}
+	}
+
+	public boolean getOutputType(boolean scalarVector, boolean lsparseLhs, boolean lsparseRhs) {
+		switch(_type) {
+			case VECT_POW_SCALAR: return !scalarVector && lsparseLhs;
+			case VECT_MULT_SCALAR:
+			case VECT_DIV_SCALAR:
+			case VECT_XOR_SCALAR:
+			case VECT_MIN_SCALAR:
+			case VECT_MAX_SCALAR:
+			case VECT_EQUAL_SCALAR:
+			case VECT_NOTEQUAL_SCALAR:
+			case VECT_LESS_SCALAR:
+			case VECT_LESSEQUAL_SCALAR:
+			case VECT_GREATER_SCALAR:
+			case VECT_GREATEREQUAL_SCALAR:
+			case VECT_BITWAND_SCALAR: return lsparseLhs || lsparseRhs;
+			case VECT_MULT:
+			case VECT_DIV:
+			case VECT_MINUS:
+			case VECT_PLUS:
+			case VECT_XOR:
+			case VECT_BITWAND:
+			case VECT_BIASADD:
+			case VECT_BIASMULT:
+			case VECT_MIN:
+			case VECT_MAX:
+			case VECT_NOTEQUAL:
+			case VECT_LESS:
+			case VECT_GREATER: return lsparseLhs && lsparseRhs;
+			default: return false;
+		}
+	}
 	
 	@Override
 	public String toString() {

@@ -75,5 +75,9 @@ public class CuJava {
 	}
 	private static native int cudaDeviceSynchronizeNative();
 
+	public static void setExceptionsEnabled(boolean enabled) {
+		exceptionsEnabled = enabled;
+	}
+
 
 }

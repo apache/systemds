@@ -59,5 +59,11 @@ public class CuJava {
 	}
 	private static native int cudaMallocNative(Pointer devPtr, long size);
 
+	public static int cudaFree(Pointer devPtr)
+	{
+		return checkCudaError(cudaFreeNative(devPtr));
+	}
+	private static native int cudaFreeNative(Pointer devPtr);
+
 
 }

@@ -20,7 +20,6 @@
 
 #include "cujava_runtime.hpp"
 #include "cujava_runtime_common.hpp"
-//#include "../common/cujava_pointer_utils.hpp"
 
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
@@ -121,3 +120,23 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMallocNat
 
     return result;
 }
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaFreeNative
+  (JNIEnv *env, jclass cls, jobject devPtr)
+{
+    if (devPtr == NULL)
+    {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'devPtr' is null for cudaFree");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    Logger::log(LOG_TRACE, "Executing cudaFree\n");
+
+    void *nativeDevPtr = NULL;
+    nativeDevPtr = getPointer(env, devPtr);
+    int result = cudaFree(nativeDevPtr);
+    return result;
+}
+
+
+

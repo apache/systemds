@@ -28,14 +28,22 @@ extern "C" {
 
 /*
  * Class:     org.apache.sysds.cujava.runtime.CuJava
- * Method:    cudaMemcpyNative
- * Signature: (Lorg/apache/sysds/cujava/Pointer;Lorg/apache/sysds/cujava/Pointer;JI)I
+ * Methods:
+ *  - cudaMemcpyNative
+ *  - cudaMallocNative
+ *  - cudaFreeNative
  */
+
+
+
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemcpyNative
   (JNIEnv *, jclass, jobject, jobject, jlong, jint);
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMallocNative
   (JNIEnv *env, jclass cls, jobject devPtr, jlong size);
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaFreeNative
+  (JNIEnv *env, jclass cls, jobject devPtr);
 
 #ifdef __cplusplus
 }

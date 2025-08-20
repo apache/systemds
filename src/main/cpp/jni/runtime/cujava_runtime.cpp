@@ -147,4 +147,28 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaDeviceSyn
 }
 
 
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMallocManagedNative
+  (JNIEnv *env, jclass cls, jobject devPtr, jlong size, jint flags) {
+    if (devPtr == NULL) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'devPtr' is null for cudaMallocManaged");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    Logger::log(LOG_TRACE, "Executing cudaMallocManaged of %ld bytes\n", (long)size);
+
+    void *nativeDevPtr = NULL;
+    int result = cudaMallocManaged(&nativeDevPtr, (size_t)size, (unsigned int)flags);
+    if (result == cudaSuccess) {
+        if (flags == cudaMemAttachHost) {
+            jobject object = env->NewDirectByteBuffer(nativeDevPtr, size);
+            env->SetObjectField(devPtr, Pointer_buffer, object);
+            env->SetObjectField(devPtr, Pointer_pointers, NULL);
+            env->SetLongField(devPtr, Pointer_byteOffset, 0);
+        }
+        env->SetLongField(devPtr, NativePointerObject_nativePointer, (jlong)nativeDevPtr);
+    }
+
+    return result;
+}
+
+
 

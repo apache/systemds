@@ -75,9 +75,16 @@ public class CuJava {
 	}
 	private static native int cudaDeviceSynchronizeNative();
 
+
 	public static void setExceptionsEnabled(boolean enabled) {
 		exceptionsEnabled = enabled;
 	}
+
+
+	public static int cudaMallocManaged(Pointer devPtr, long size, int flags) {
+		return checkCudaError(cudaMallocManagedNative(devPtr, size, flags));
+	}
+	private static native int cudaMallocManagedNative(Pointer devPtr, long size, int flags);
 
 
 }

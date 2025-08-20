@@ -98,6 +98,9 @@ class MultimodalOptimizer:
                             ],
                         )
 
+    # TODO: check if order matters for reused reps - only compute once - check in cache
+    # TODO: parallelize - whenever an item of len 0 comes along give it to a new thread - merge results
+    # TODO: change the algorithm so that one representation is used until there is no more representations to add - saves a lot of memory
     def optimize_intermodal_representations(self, task):
         modality_combos = []
         n = len(self.k_best_cache[task.model.name])
@@ -122,8 +125,7 @@ class MultimodalOptimizer:
         reuse_fused_representations = False
         for i, modality_combo in enumerate(modality_combos):
             # clear reuse cache
-            if i % 5 == 0:
-                reuse_cache = self.prune_cache(modality_combos[i:], reuse_cache)
+            reuse_cache = self.prune_cache(modality_combos[i:], reuse_cache)
 
             if i != 0:
                 reuse_fused_representations = self.is_prefix_match(

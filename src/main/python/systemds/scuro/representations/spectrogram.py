@@ -48,7 +48,7 @@ class Spectrogram(UnimodalRepresentation):
             ).astype(modality.data_type)
             S_dB = librosa.amplitude_to_db(np.abs(spectrogram))
 
-            result.append(S_dB.T.reshape(-1))
+            result.append(S_dB.T)
 
         transformed_modality.data = result
         return transformed_modality

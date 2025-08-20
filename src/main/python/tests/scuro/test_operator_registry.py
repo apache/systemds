@@ -21,7 +21,14 @@
 
 import unittest
 
+from systemds.scuro.representations.covarep_audio_features import (
+    ZeroCrossing,
+    Spectral,
+    Pitch,
+    RMSE,
+)
 from systemds.scuro.representations.mfcc import MFCC
+from systemds.scuro.representations.swin_video_transformer import SwinVideoTransformer
 from systemds.scuro.representations.wav2vec import Wav2Vec
 from systemds.scuro.representations.window_aggregation import WindowAggregation
 from systemds.scuro.representations.bow import BoW
@@ -44,14 +51,23 @@ from systemds.scuro.representations.sum import Sum
 class TestOperatorRegistry(unittest.TestCase):
     def test_audio_representations_in_registry(self):
         registry = Registry()
-        for representation in [Spectrogram, MelSpectrogram, Wav2Vec, MFCC]:
-            assert representation in registry.get_representations(
-                ModalityType.AUDIO
-            ), f"{representation} not in registry"
+        assert registry.get_representations(ModalityType.AUDIO) == [
+            MelSpectrogram,
+            MFCC,
+            Spectrogram,
+            Wav2Vec,
+            Spectral,
+            ZeroCrossing,
+            RMSE,
+            Pitch,
+        ]
 
     def test_video_representations_in_registry(self):
         registry = Registry()
-        assert registry.get_representations(ModalityType.VIDEO) == [ResNet]
+        assert registry.get_representations(ModalityType.VIDEO) == [
+            ResNet,
+            SwinVideoTransformer,
+        ]
 
     def test_timeseries_representations_in_registry(self):
         registry = Registry()
@@ -68,19 +84,16 @@ class TestOperatorRegistry(unittest.TestCase):
         registry = Registry()
         assert registry.get_context_operators() == [WindowAggregation]
 
-    # def test_fusion_operator_in_registry(self):
-    #     registry = Registry()
-    #     for fusion_operator in [
-    #         # RowMax,
-    #         Sum,
-    #         Average,
-    #         Concatenation,
-    #         LSTM,
-    #         Multiplication,
-    #     ]:
-    #         assert (
-    #             fusion_operator in registry.get_fusion_operators()
-    #         ), f"{fusion_operator} not in registry"
+    def test_fusion_operator_in_registry(self):
+        registry = Registry()
+        assert registry.get_fusion_operators() == [
+            Average,
+            Concatenation,
+            LSTM,
+            RowMax,
+            Hadamard,
+            Sum,
+        ]
 
 
 if __name__ == "__main__":

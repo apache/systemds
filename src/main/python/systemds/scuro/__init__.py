@@ -73,6 +73,12 @@ from systemds.scuro.drsearch.representation_cache import RepresentationCache
 from systemds.scuro.drsearch.unimodal_representation_optimizer import (
     UnimodalRepresentationOptimizer,
 )
+from systemds.scuro.representations.covarep_audio_features import (
+    RMSE,
+    Spectral,
+    ZeroCrossing,
+    Pitch,
+)
 from systemds.scuro.drsearch.multimodal_optimizer import MultimodalOptimizer
 from systemds.scuro.drsearch.unimodal_optimizer import UnimodalOptimizer
 
@@ -131,4 +137,8 @@ __all__ = [
     "UnimodalRepresentationOptimizer",
     "UnimodalOptimizer",
     "MultimodalOptimizer",
+    "ZeroCrossing",
+    "Pitch",
+    "RMSE",
+    "Spectral",
 ]

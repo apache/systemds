@@ -84,7 +84,6 @@ class UnimodalOptimizer:
     def optimize(self):
         for modality in self.modalities:
             local_result = self._process_modality(modality, False)
-            # self._merge_results(local_result)
 
     def _process_modality(self, modality, parallel):
         if parallel:

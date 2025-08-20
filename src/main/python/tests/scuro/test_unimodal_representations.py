@@ -22,8 +22,18 @@
 import os
 import shutil
 import unittest
+import copy
+import numpy as np
 
 from systemds.scuro.representations.bow import BoW
+from systemds.scuro.representations.covarep_audio_features import (
+    Spectral,
+    RMSE,
+    Pitch,
+    ZeroCrossing,
+)
+from systemds.scuro.representations.wav2vec import Wav2Vec
+from systemds.scuro.representations.spectrogram import Spectrogram
 from systemds.scuro.representations.word2vec import W2V
 from systemds.scuro.representations.tfidf import TfIdf
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
@@ -31,8 +41,13 @@ from systemds.scuro.representations.bert import Bert
 from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
 from systemds.scuro.representations.mfcc import MFCC
 from systemds.scuro.representations.resnet import ResNet
+from systemds.scuro.representations.swin_video_transformer import SwinVideoTransformer
 from tests.scuro.data_generator import setup_data
-
+from tests.scuro.data_generator import (
+    setup_data,
+    TestDataLoader,
+    ModalityRandomDataGenerator,
+)
 from systemds.scuro.dataloader.audio_loader import AudioLoader
 from systemds.scuro.dataloader.video_loader import VideoLoader
 from systemds.scuro.dataloader.text_loader import TextLoader
@@ -50,52 +65,70 @@ class TestUnimodalRepresentations(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.test_file_path = "unimodal_test_data"
-
         cls.num_instances = 4
-        cls.mods = [ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT]
-
-        cls.data_generator = setup_data(cls.mods, cls.num_instances, cls.test_file_path)
-        os.makedirs(f"{cls.test_file_path}/embeddings")
-
-    @classmethod
-    def tearDownClass(cls):
-        print("Cleaning up test data")
-        shutil.rmtree(cls.test_file_path)
+        cls.indices = np.array(range(cls.num_instances))
 
     def test_audio_representations(self):
-        audio_representations = [MFCC()]  # TODO: add FFT, TFN, 1DCNN
-        audio_data_loader = AudioLoader(
-            self.data_generator.get_modality_path(ModalityType.AUDIO),
-            self.data_generator.indices,
+        audio_representations = [
+            MFCC(),
+            MelSpectrogram(),
+            Spectrogram(),
+            Wav2Vec(),
+            Spectral(),
+            ZeroCrossing(),
+            RMSE(),
+            Pitch(),
+        ]  # TODO: add FFT, TFN, 1DCNN
+        audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
+            self.num_instances, 1000
         )
-        audio = UnimodalModality(audio_data_loader)
+
+        audio = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.AUDIO, audio_data, np.float32, audio_md
+            )
+        )
+
+        audio.extract_raw_data()
+        original_data = copy.deepcopy(audio.data)
 
         for representation in audio_representations:
             r = audio.apply_representation(representation)
             assert r.data is not None
             assert len(r.data) == self.num_instances
+            for i in range(self.num_instances):
+                assert (audio.data[i] == original_data[i]).all()
+            assert r.data[0].ndim == 2
 
     def test_video_representations(self):
-        video_representations = [ResNet()]  # Todo: add other video representations
-        video_data_loader = VideoLoader(
-            self.data_generator.get_modality_path(ModalityType.VIDEO),
-            self.data_generator.indices,
+        video_representations = [
+            ResNet(),
+            SwinVideoTransformer(),
+        ]  # Todo: add other video representations
+        video_data, video_md = ModalityRandomDataGenerator().create_visual_modality(
+            self.num_instances, 60
         )
-        video = UnimodalModality(video_data_loader)
+        video = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.VIDEO, video_data, np.float32, video_md
+            )
+        )
         for representation in video_representations:
             r = video.apply_representation(representation)
             assert r.data is not None
             assert len(r.data) == self.num_instances
+            assert r.data[0].ndim == 2
 
     def test_text_representations(self):
         test_representations = [BoW(2, 2), W2V(5, 2, 2), TfIdf(2), Bert()]
-        text_data_loader = TextLoader(
-            self.data_generator.get_modality_path(ModalityType.TEXT),
-            self.data_generator.indices,
+        text_data, text_md = ModalityRandomDataGenerator().create_text_data(
+            self.num_instances
         )
-        text = UnimodalModality(text_data_loader)
-
+        text = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.TEXT, text_data, str, text_md
+            )
+        )
         for representation in test_representations:
             r = text.apply_representation(representation)
             assert r.data is not None
@@ -103,12 +136,14 @@ class TestUnimodalRepresentations(unittest.TestCase):
 
     def test_chunked_video_representations(self):
         video_representations = [ResNet()]
-        video_data_loader = VideoLoader(
-            self.data_generator.get_modality_path(ModalityType.VIDEO),
-            self.data_generator.indices,
-            chunk_size=2,
+        video_data, video_md = ModalityRandomDataGenerator().create_visual_modality(
+            self.num_instances, 60
         )
-        video = UnimodalModality(video_data_loader)
+        video = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.VIDEO, video_data, np.float32, video_md
+            )
+        )
         for representation in video_representations:
             r = video.apply_representation(representation)
             assert r.data is not None

@@ -301,7 +301,7 @@ public class CudaError {
 	 * cudaLimitDevRuntimeSyncDepth limit to the cudaDeviceSetLimit api before the host-side launch of a kernel using
 	 * the device runtime. Keep in mind that additional levels of sync depth require the runtime to reserve large
 	 * amounts of device memory that cannot be used for user allocations. Note that cudaDeviceSynchronize made from
-	 * device runtime is only supported on devices of compute capability < 9.0.
+	 * device runtime is only supported on devices of compute capability lass than 9.0.
 	 */
 	public static final int cudaErrorSyncDepthExceeded = 68;
 

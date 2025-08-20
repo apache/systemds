@@ -70,4 +70,10 @@ public class CuJava {
 	private static native int cudaMemsetNative(Pointer mem, int c, long count);
 
 
+	public static int cudaDeviceSynchronize() {
+		return checkCudaError(cudaDeviceSynchronizeNative());
+	}
+	private static native int cudaDeviceSynchronizeNative();
+
+
 }

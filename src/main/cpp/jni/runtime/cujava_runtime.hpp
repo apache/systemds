@@ -18,7 +18,6 @@
  */
 
 #include <jni.h>
-/* Header for class org.apache.sysds.cujava.runtime.CuJava */
 
 #ifndef _Included_org_apache_sysds_cujava_runtime_CuJava
 #define _Included_org_apache_sysds_cujava_runtime_CuJava
@@ -33,6 +32,7 @@ extern "C" {
  *  - cudaMallocNative
  *  - cudaFreeNative
  *  - cudaMemsetnative
+ *  - cudaDeviceSynchronizeNative
  */
 
 
@@ -48,6 +48,9 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaFreeNativ
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemsetNative
   (JNIEnv *env, jclass cls, jobject mem, jint c, jlong count);
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaDeviceSynchronizeNative
+  (JNIEnv *env, jclass cls);
 
 #ifdef __cplusplus
 }

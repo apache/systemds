@@ -138,4 +138,13 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemsetNat
 }
 
 
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaDeviceSynchronizeNative
+  (JNIEnv *env, jclass cls) {
+    Logger::log(LOG_TRACE, "Executing cudaDeviceSynchronize\n");
+
+    int result = cudaDeviceSynchronize();
+    return result;
+}
+
+
 

@@ -20,8 +20,35 @@
 #-------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.18)
-project(cujava_jni LANGUAGES CXX)
 
-# Build the two subprojects
-add_subdirectory(common)
-add_subdirectory(runtime)
+project(CuJavaCommonJNI LANGUAGES CXX)
+
+find_package(JNI REQUIRED)
+
+add_library(CuJavaCommonJNI STATIC
+    cujava_logger.cpp
+    cujava_jni_utils.cpp
+    cujava_pointer_utils.cpp
+)
+
+# PIC because this static lib is linked into shared libs
+set_target_properties(CuJavaCommonJNI PROPERTIES
+    CXX_STANDARD 11
+    POSITION_INDEPENDENT_CODE ON
+    ARCHIVE_OUTPUT_DIRECTORY  ${CMAKE_CURRENT_SOURCE_DIR}/../../lib
+    LIBRARY_OUTPUT_DIRECTORY  ${CMAKE_CURRENT_SOURCE_DIR}/../../lib
+    RUNTIME_OUTPUT_DIRECTORY  ${CMAKE_CURRENT_SOURCE_DIR}/../../lib
+)
+
+target_include_directories(CuJavaCommonJNI
+    PUBLIC
+        ${JNI_INCLUDE_DIRS}
+        ${CMAKE_CURRENT_SOURCE_DIR}          # headers in common/
+)
+
+# Propagate JNI to consumers (runtime, etc.)
+target_link_libraries(CuJavaCommonJNI
+    PUBLIC
+        ${JNI_LIBRARIES}
+)
+

@@ -112,8 +112,12 @@ public class Pointer extends NativePointerObject {
 		return new Pointer(this, byteOffset);
 	}
 
-	protected long getByteOffset() {
+	public long getByteOffset() {
 		return byteOffset;
+	}
+
+	public long address() {                      // nativePointer + byteOffset
+		return getNativePointer() + getByteOffset();
 	}
 
 	public ByteBuffer getByteBuffer(long byteOffset, long byteSize) {

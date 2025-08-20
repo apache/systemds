@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -19,9 +20,20 @@
 #
 #-------------------------------------------------------------
 
-cmake_minimum_required(VERSION 3.18)
-project(cujava_jni LANGUAGES CXX)
+set -euo pipefail
 
-# Build the two subprojects
-add_subdirectory(common)
-add_subdirectory(runtime)
+# Usage (from src/main/cpp/jni):
+#   chmod +x build_cujava_libs.sh
+#   ./build_cujava_libs.sh            # default build dir: ./build, type: Release
+
+BUILD_DIR="${1:-build}"
+BUILD_TYPE="${BUILD_TYPE:-Release}"
+
+echo "==> Configuring (BUILD_DIR=$BUILD_DIR, BUILD_TYPE=$BUILD_TYPE)"
+cmake -S . -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE="$BUILD_TYPE"
+
+echo "==> Building"
+cmake --build "$BUILD_DIR" --config "$BUILD_TYPE" -j
+
+echo "==> Done. Artifacts should be in ../../lib"
+ls -l ../lib/libcujava_runtime.so || true

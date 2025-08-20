@@ -16,3 +16,31 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
+package org.apache.sysds.cujava.interop;
+
+import java.lang.reflect.Field;
+
+public class JCudaAdapter {
+	private JCudaAdapter() {}
+
+	public static jcuda.Pointer toJCuda(org.apache.sysds.cujava.Pointer p) {
+		try {
+			jcuda.Pointer q = new jcuda.Pointer();
+
+			// jcuda.NativePointerObject.nativePointer = cuJava nativePointer
+			Field np = jcuda.NativePointerObject.class.getDeclaredField("nativePointer");
+			np.setAccessible(true);
+			np.setLong(q, p.getNativePointer());
+
+			// jcuda.Pointer.byteOffset = cuJava byteOffset
+			Field bo = jcuda.Pointer.class.getDeclaredField("byteOffset");
+			bo.setAccessible(true);
+			bo.setLong(q, p.getByteOffset());
+
+			return q;
+		} catch (ReflectiveOperationException e) {
+			throw new IllegalStateException("cuJava→JCuda pointer adaptation failed", e);
+		}
+	}
+}

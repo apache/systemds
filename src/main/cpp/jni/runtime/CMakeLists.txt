@@ -20,8 +20,36 @@
 #-------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.18)
-project(cujava_jni LANGUAGES CXX)
 
-# Build the two subprojects
-add_subdirectory(common)
-add_subdirectory(runtime)
+project(CuJavaRuntime LANGUAGES CXX)
+
+find_package(JNI REQUIRED)
+find_package(CUDAToolkit REQUIRED)  # for CUDA::cudart
+
+add_library(CuJavaRuntime SHARED
+    cujava_runtime.cpp
+)
+
+set_target_properties(CuJavaRuntime PROPERTIES
+    CXX_STANDARD 11
+    OUTPUT_NAME cujava_runtime                         # -> libcujava_runtime.so
+    LIBRARY_OUTPUT_DIRECTORY  ${CMAKE_CURRENT_SOURCE_DIR}/../../lib
+    RUNTIME_OUTPUT_DIRECTORY  ${CMAKE_CURRENT_SOURCE_DIR}/../../lib
+    ARCHIVE_OUTPUT_DIRECTORY  ${CMAKE_CURRENT_SOURCE_DIR}/../../lib
+)
+
+target_include_directories(CuJavaRuntime
+    PRIVATE
+        ${JNI_INCLUDE_DIRS}
+        ${CUDAToolkit_INCLUDE_DIRS}
+        ${CMAKE_CURRENT_SOURCE_DIR}            # headers in runtime/
+        ${CMAKE_CURRENT_SOURCE_DIR}/../common  # if you include common headers without ../
+)
+
+target_link_libraries(CuJavaRuntime
+    PRIVATE
+        CuJavaCommonJNI
+        CUDA::cudart
+        ${JNI_LIBRARIES}
+)
+

@@ -28,12 +28,14 @@ public class CuJava {
 
 	private static boolean exceptionsEnabled = true;
 
+	private static final String LIB_BASE = "cujava_runtime";
+
 	private CuJava(){
 
 	}
 
 	static {
-		CuJavaLibLoader.load();
+		CuJavaLibLoader.load(LIB_BASE);
 	}
 
 	private static int checkCudaError(int result)
@@ -49,6 +51,13 @@ public class CuJava {
 		return checkCudaError(cudaMemcpyNative(dst, src, count, cudaMemcpyKind_kind));
 	}
 	private static native int cudaMemcpyNative(Pointer dst, Pointer src, long count, int cudaMemcpyKind_kind);
+
+
+	public static int cudaMalloc(Pointer devPtr, long size)
+	{
+		return checkCudaError(cudaMallocNative(devPtr, size));
+	}
+	private static native int cudaMallocNative(Pointer devPtr, long size);
 
 
 }

@@ -22,20 +22,22 @@ package org.apache.sysds.cujava;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.*;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class CuJavaLibLoader {
 
-	private static final String LIB_BASE = "cujava";  // -> libcujava.so / cujava.dll / libcujava.dylib
 	private static volatile boolean loaded = false;   // fast-path guard
+	private static final Set<String> LOADED = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
 	/** Public entry – call from static blocks in binding classes. */
-	public static synchronized void load() {
-		if (loaded)                                   // already done
-			return;
+	public static synchronized void load(String lib) {
+		if (!LOADED.add(lib)) return; // already loaded
 
 		// 1) Standard lookup (java.library.path or OS default locations)
 		try {
-			System.loadLibrary(LIB_BASE);
-			loaded = true;
+			System.loadLibrary(lib);
 			return;
 		}
 		catch (UnsatisfiedLinkError ignored) {
@@ -43,7 +45,7 @@ public class CuJavaLibLoader {
 		}
 
 		// 2) Extract the library from the JAR (/lib/...) to a temp file
-		String fileName = System.mapLibraryName(LIB_BASE);   // platform-specific
+		String fileName = System.mapLibraryName(lib);   // platform-specific
 		String resource = "/lib/" + fileName;                // matches <targetPath>lib in the POM
 
 		try (InputStream in = CuJavaLibLoader.class.getResourceAsStream(resource)) {
@@ -56,9 +58,9 @@ public class CuJavaLibLoader {
 			Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
 
 			System.load(tmp.toAbsolutePath().toString());
-			loaded = true;
 		}
 		catch (IOException | UnsatisfiedLinkError e) {
+			LOADED.remove(lib);
 			throw (UnsatisfiedLinkError)
 				new UnsatisfiedLinkError("Failed to load native CUDA bridge: " + e).initCause(e);
 		}

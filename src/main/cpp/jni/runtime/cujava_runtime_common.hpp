@@ -17,26 +17,19 @@
  * under the License.
  */
 
-package org.apache.sysds.cujava;
+#ifndef CUJAVA_RUNTIME_COMMON_HPP
+#define CUJAVA_RUNTIME_COMMON_HPP
 
-public abstract class NativePointerObject {
+#include <jni.h>
+#include <cuda_runtime_api.h>
+#include <cuda.h>
 
-	private long nativePointer;
+#include "../common/cujava_logger.hpp"
+#include "../common/cujava_jni_utils.hpp"
+#include "../common/cujava_pointer_utils.hpp"
 
-	protected NativePointerObject() {
-		nativePointer = 0;
-	}
+#define CUJAVA_INTERNAL_ERROR 0x80000001
 
-	protected NativePointerObject(long nativePointer) {
-		this.nativePointer = nativePointer;
-	}
 
-	protected NativePointerObject(NativePointerObject other) {
-		this.nativePointer = other.nativePointer;
-	}
 
-	public long getNativePointer() {
-		return nativePointer;
-	}
-
-}
+#endif // CUJAVA_RUNTIME_COMMON_HPP

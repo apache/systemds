@@ -17,26 +17,25 @@
  * under the License.
  */
 
-package org.apache.sysds.cujava;
+#include "cujava_logger.hpp"
+#include <cstdarg>
+#include <cstdio>
 
-public abstract class NativePointerObject {
+LogLevel Logger::currentLogLevel = LOG_ERROR;
 
-	private long nativePointer;
+void Logger::log(LogLevel level, const char *message, ...)
+{
+    if (level <= Logger::currentLogLevel)
+    {
+        va_list argp;
+        va_start(argp, message);
+        vfprintf(stdout, message, argp);
+        va_end(argp);
+        fflush(stdout);
+    }
+}
 
-	protected NativePointerObject() {
-		nativePointer = 0;
-	}
-
-	protected NativePointerObject(long nativePointer) {
-		this.nativePointer = nativePointer;
-	}
-
-	protected NativePointerObject(NativePointerObject other) {
-		this.nativePointer = other.nativePointer;
-	}
-
-	public long getNativePointer() {
-		return nativePointer;
-	}
-
+void Logger::setLogLevel(LogLevel level)
+{
+    Logger::currentLogLevel = level;
 }

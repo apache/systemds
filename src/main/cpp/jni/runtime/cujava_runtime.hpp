@@ -17,26 +17,27 @@
  * under the License.
  */
 
-package org.apache.sysds.cujava;
+#include <jni.h>
+/* Header for class org.apache.sysds.cujava.runtime.CuJava */
 
-public abstract class NativePointerObject {
+#ifndef _Included_org_apache_sysds_cujava_runtime_CuJava
+#define _Included_org_apache_sysds_cujava_runtime_CuJava
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-	private long nativePointer;
+/*
+ * Class:     org.apache.sysds.cujava.runtime.CuJava
+ * Method:    cudaMemcpyNative
+ * Signature: (Lorg/apache/sysds/cujava/Pointer;Lorg/apache/sysds/cujava/Pointer;JI)I
+ */
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemcpyNative
+  (JNIEnv *, jclass, jobject, jobject, jlong, jint);
 
-	protected NativePointerObject() {
-		nativePointer = 0;
-	}
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMallocNative
+  (JNIEnv *env, jclass cls, jobject devPtr, jlong size);
 
-	protected NativePointerObject(long nativePointer) {
-		this.nativePointer = nativePointer;
-	}
-
-	protected NativePointerObject(NativePointerObject other) {
-		this.nativePointer = other.nativePointer;
-	}
-
-	public long getNativePointer() {
-		return nativePointer;
-	}
-
+#ifdef __cplusplus
 }
+#endif
+#endif

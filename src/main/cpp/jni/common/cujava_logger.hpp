@@ -17,26 +17,21 @@
  * under the License.
  */
 
-package org.apache.sysds.cujava;
 
-public abstract class NativePointerObject {
+#ifndef CUJAVA_LOGGER_HPP
+#define CUJAVA_LOGGER_HPP
 
-	private long nativePointer;
+#include <cstdarg>
+#include <cstdio>
 
-	protected NativePointerObject() {
-		nativePointer = 0;
-	}
+enum LogLevel {LOG_QUIET, LOG_ERROR, LOG_WARNING, LOG_INFO, LOG_DEBUG, LOG_TRACE, LOG_DEBUGTRACE};
 
-	protected NativePointerObject(long nativePointer) {
-		this.nativePointer = nativePointer;
-	}
+class Logger {
+public:
+    static void log(LogLevel level, const char* message, ...);
+    static void setLogLevel(LogLevel level);
+private:
+    static LogLevel currentLogLevel;
+};
 
-	protected NativePointerObject(NativePointerObject other) {
-		this.nativePointer = other.nativePointer;
-	}
-
-	public long getNativePointer() {
-		return nativePointer;
-	}
-
-}
+#endif

@@ -186,7 +186,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 				chars.add(s);
 			}
 
-			ArrayList summingChars = new ArrayList();
+			ArrayList<Character> summingChars = new ArrayList<>();
 			for (Character c : einc.characterAppearanceIndexes.keySet()) {
 				if (c != einc.outChar1 && c != einc.outChar2) summingChars.add(c);
 			}

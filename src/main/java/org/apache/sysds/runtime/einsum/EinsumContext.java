@@ -55,9 +55,9 @@ public class EinsumContext {
         HashSet<Character> summingChars = new HashSet<>();
         ContractDimensions[] contractDims = new ContractDimensions[inputs.size()];
         boolean[] diagonalInputs = new boolean[inputs.size()]; // all false by default
-        HashSet<Character> contractDimsSet = new HashSet();
+        HashSet<Character> contractDimsSet = new HashSet<>();
         HashMap<Character, ArrayList<Integer>> partsCharactersToIndices = new HashMap<>();
-        ArrayList<String> newEquationStringSplit = new ArrayList();
+        ArrayList<String> newEquationStringSplit = new ArrayList<>();
 
         Iterator<MatrixBlock> it = inputs.iterator();
         MatrixBlock curArr = it.next();

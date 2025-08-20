@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.instructions.ooc;
 
 import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.sysds.common.Opcodes;
@@ -82,6 +81,9 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
 			partitionedVector.put(key, vectorSlice);
 		}
 
+		// number of colBlocks for early block output
+		long nBlocks = min.getDataCharacteristics().getNumColBlocks();
+
 		LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
 		LocalTaskQueue<IndexedMatrixValue> qOut = new LocalTaskQueue<>();
 		BinaryOperator plus = InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString());
@@ -94,6 +96,7 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
 				IndexedMatrixValue tmp = null;
 				try {
 					HashMap<Long, MatrixBlock> partialResults = new  HashMap<>();
+					HashMap<Long, Integer> cnt = new HashMap<>();
 					while((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
 						MatrixBlock matrixBlock = (MatrixBlock) tmp.getValue();
 						long rowIndex = tmp.getIndexes().getRowIndex();
@@ -109,19 +112,26 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
 							qOut.enqueueTask(new IndexedMatrixValue(tmp.getIndexes(), partialResult));
 						}
 						else {
+							// aggregation
 							MatrixBlock currAgg = partialResults.get(rowIndex);
-							if (currAgg == null)
+							if (currAgg == null) {
 								partialResults.put(rowIndex, partialResult);
-							else
+								cnt.put(rowIndex, 1);
+							}
+							else {
 								currAgg.binaryOperationsInPlace(plus, partialResult);
-						}
-					}
-					
-					// emit aggregated blocks
-					if( min.getNumColumns() > min.getBlocksize() ) {
-						for (Map.Entry<Long, MatrixBlock> entry : partialResults.entrySet()) {
-							MatrixIndexes outIndexes = new MatrixIndexes(entry.getKey(), 1L);
-							qOut.enqueueTask(new IndexedMatrixValue(outIndexes, entry.getValue()));
+								int newCnt = cnt.get(rowIndex) + 1;
+								cnt.replace(rowIndex, newCnt);
+
+								if(newCnt == nBlocks){
+									// early block output: emit aggregated block
+									MatrixIndexes idx = new MatrixIndexes(rowIndex, 1L);
+									MatrixBlock result = partialResults.get(rowIndex);
+									qOut.enqueueTask(new IndexedMatrixValue(idx, result));
+									partialResults.remove(rowIndex);
+									cnt.remove(rowIndex);
+								}
+							}
 						}
 					}
 				}

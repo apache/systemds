@@ -28,14 +28,15 @@ extern "C" {
 /*
  * Class:     org.apache.sysds.cujava.runtime.CuJava
  * Methods:
- *  - cudaMemcpyNative
- *  - cudaMallocNative
- *  - cudaFreeNative
- *  - cudaMemsetnative
- *  - cudaDeviceSynchronizeNative
- *  - cudaMallocManagedNative
- *  - cudaMemGetInfoNative
- *  - cudaGetDeviceCountNative
+ *  - cudaMemcpy
+ *  - cudaMalloc
+ *  - cudaFree
+ *  - cudaMemset
+ *  - cudaDeviceSynchronize
+ *  - cudaMallocManaged
+ *  - cudaMemGetInfo
+ *  - cudaGetDeviceCount
+ *  - cudaSetDevice
  */
 
 
@@ -63,6 +64,9 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemGetInf
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaGetDeviceCountNative
   (JNIEnv *env, jclass cls, jintArray count);
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaSetDeviceNative
+  (JNIEnv *env, jclass cls, jint device);
 
 #ifdef __cplusplus
 }

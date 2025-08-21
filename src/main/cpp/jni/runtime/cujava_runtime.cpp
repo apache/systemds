@@ -210,5 +210,13 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaGetDevice
 }
 
 
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaSetDeviceNative
+  (JNIEnv *env, jclass cls, jint device) {
+    Logger::log(LOG_TRACE, "Executing cudaSetDevice\n");
+
+    return cudaSetDevice(device);
+}
+
+
 
 

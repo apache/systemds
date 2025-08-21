@@ -101,4 +101,10 @@ public class CuJava {
 	private static native int cudaGetDeviceCountNative(int count[]);
 
 
+	public static int cudaSetDevice(int device) {
+		return checkCudaError(cudaSetDeviceNative(device));
+	}
+	private static native int cudaSetDeviceNative(int device);
+
+
 }

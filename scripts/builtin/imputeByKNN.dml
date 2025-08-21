@@ -25,23 +25,16 @@
 # the missing values by column means. Currently, only the column with the most
 # missing values is actually imputed.
 #
-# ------------------------------------------------------------------------------
 # INPUT:
 # ------------------------------------------------------------------------------
-# X           Matrix with missing values, which are represented as NaNs
-# method      Method used for imputing missing values with different performance
-#             and accuracy tradeoffs:
-#             'dist' (default): Compute all-pairs distances and impute the
-#                               missing values by closest. O(N^2 * #features)
-#             'dist_missing':   Compute distances between data and records with
-#                               missing values. O(N*M * #features), assuming
-#                               that the number of records with MV is M<<N.
-#             'dist_sample':    Compute distances between sample of data and
-#                               records with missing values. O(S*M * #features)
-#                               with M<<N and S<<N, but suboptimal imputation.
-# seed        Root seed value for random/sample calls for deterministic behavior
-#             -1 for true randomization
-# sample_frac Sample fraction for 'dist_sample' (value between 0 and 1)
+# X             Matrix with missing values, which are represented as NaNs
+# method        Method used for imputing missing values with different performance and accuracy tradeoffs:\n
+#               - 'dist' (default): Compute all-pairs distances and impute the missing values by closest. O(N^2 * #features)
+#               - 'dist_missing': Compute distances between data and records with missing values. O(N*M * #features), assuming that the number of records with MV is M<<N.
+#               - 'dist_sample': Compute distances between sample of data and records with missing values. O(S*M * #features) with M<<N and S<<N, but suboptimal imputation.
+#
+# seed          Root seed value for random/sample calls for deterministic behavior. -1 for true randomization
+# sample_frac   Sample fraction for 'dist_sample' (value between 0 and 1)
 # ------------------------------------------------------------------------------
 #
 # OUTPUT:

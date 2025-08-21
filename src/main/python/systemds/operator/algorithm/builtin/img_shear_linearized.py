@@ -38,12 +38,33 @@ def img_shear_linearized(img_in: Matrix,
      This function applies a shearing transformation to linearized images.
      Uses nearest neighbor sampling.
     
+     .. code-block:: python
+    
+       >>> import numpy as np
+       >>> from systemds.context import SystemDSContext
+       >>> from systemds.operator.algorithm import img_shear_linearized
+       >>> 
+       >>> with SystemDSContext() as sds:
+       ...     img = sds.from_numpy(
+       ...         np.array([[ 10., 20., 30.,
+       ...                     40., 50., 60.,
+       ...                     70., 80., 90. ]], dtype=np.float32)
+       ...     )
+       ...     result_img = img_shear_linearized(img, 1., 0., 0., 3, 3).compute()
+       ...     print(result_img.reshape(3, 3))
+       [[10. 20. 30.]
+        [ 0. 40. 50.]
+        [ 0.  0. 70.]]
     
     
-    :param img_in: Linearized input images as 2D matrix with top left corner at [1, 1]
+    
+    
+    :param img_in: Input images as linearized 2D matrix with top left corner at [1, 1] (every row represents a linearized matrix/image)
     :param shear_x: Shearing factor for horizontal shearing
     :param shear_y: Shearing factor for vertical shearing
     :param fill_value: The background color revealed by the shearing
+    :param s_cols: Width of a single image
+    :param s_rows: Height of a single image
     :return: Output images in linearized form as 2D matrix with top left corner at [1, 1]
     """
 

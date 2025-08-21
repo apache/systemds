@@ -109,7 +109,7 @@ void ThrowByName(JNIEnv *env, const char *name, const char *msg) {
     }
 }
 
-/** Utility to set one element of a Java long\[] (ja\[index] = value) from native code. */
+/** Utility to set one element of a long[] array. */
 bool set(JNIEnv *env, jlongArray ja, int index, jlong value) {
     if (ja == nullptr) return true;
 
@@ -124,8 +124,26 @@ bool set(JNIEnv *env, jlongArray ja, int index, jlong value) {
     if (a == nullptr) return false;
 
     a[index] = value;
+    env->ReleasePrimitiveArrayCritical(ja, a, 0);
+    return true;
+}
 
-    // IMPORTANT: use '0' (commit) — don't change to JNI_ABORT here
+/** Utility to set one element of an int[] array. */
+bool set(JNIEnv *env, jintArray ja, int index, jint value) {
+    if (ja == nullptr) {
+        return true;
+    }
+    jsize len = env->GetArrayLength(ja);
+    if (index < 0 || index >= len) {
+        ThrowByName(env, "java/lang/ArrayIndexOutOfBoundsException",
+            "Array index out of bounds");
+        return false;
+    }
+    jint *a = (jint*)env->GetPrimitiveArrayCritical(ja, NULL);
+    if (a == nullptr) {
+        return false;
+    }
+    a[index] = value;
     env->ReleasePrimitiveArrayCritical(ja, a, 0);
     return true;
 }

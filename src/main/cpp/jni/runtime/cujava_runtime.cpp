@@ -179,7 +179,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemGetInf
     }
     if (totalBytes == NULL) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'freeBytes' is null for cudaMemGetInfo");
-        return JCUDA_INTERNAL_ERROR;
+        return CUJAVA_INTERNAL_ERROR;
     }
     Logger::log(LOG_TRACE, "Executing cudaMemGetInfo\n");
 
@@ -191,6 +191,21 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemGetInf
     if (!set(env, freeBytes, 0, (jlong)nativeFreeBytes)) return CUJAVA_INTERNAL_ERROR;
     if (!set(env, totalBytes, 0, (jlong)nativeTotalBytes)) return CUJAVA_INTERNAL_ERROR;
 
+    return result;
+}
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaGetDeviceCountNative
+  (JNIEnv *env, jclass cls, jintArray count) {
+    if (count == NULL) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'count' is null for cudaGetDeviceCount");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    Logger::log(LOG_TRACE, "Executing cudaGetDeviceCount\n");
+
+    int nativeCount = 0;
+    int result = cudaGetDeviceCount(&nativeCount);
+    if (!set(env, count, 0, nativeCount)) return CUJAVA_INTERNAL_ERROR;
     return result;
 }
 

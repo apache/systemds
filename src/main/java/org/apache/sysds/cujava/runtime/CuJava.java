@@ -95,4 +95,10 @@ public class CuJava {
 	private static native int cudaMemGetInfoNative(long free[], long total[]);
 
 
+	public static int cudaGetDeviceCount(int count[]) {
+		return checkCudaError(cudaGetDeviceCountNative(count));
+	}
+	private static native int cudaGetDeviceCountNative(int count[]);
+
+
 }

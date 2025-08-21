@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 /*
- * Class:     org.apache.sysds.cujava.runtime.CuJava
+ * Class:  org.apache.sysds.cujava.runtime.CuJava
  * Methods:
  *  - cudaMemcpy
  *  - cudaMalloc
@@ -37,6 +37,7 @@ extern "C" {
  *  - cudaMemGetInfo
  *  - cudaGetDeviceCount
  *  - cudaSetDevice
+ *  - cudaSetDeviceFlags
  */
 
 

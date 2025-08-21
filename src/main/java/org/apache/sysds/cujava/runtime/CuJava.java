@@ -20,9 +20,8 @@
 package org.apache.sysds.cujava.runtime;
 
 import org.apache.sysds.cujava.CuJavaLibLoader;
-import org.apache.sysds.cujava.Pointer;
 import org.apache.sysds.cujava.CudaException;
-import org.apache.sysds.cujava.runtime.CudaError;
+import org.apache.sysds.cujava.Pointer;
 
 public class CuJava {
 
@@ -118,5 +117,11 @@ public class CuJava {
 	}
 
 	private static native int cudaGetDeviceNative(int device[]);
+
+	public static int cudaGetDeviceProperties(CudaDeviceProp prop, int device) {
+		return checkCudaError(cudaGetDevicePropertiesNative(prop, device));
+	}
+
+	private static native int cudaGetDevicePropertiesNative(CudaDeviceProp prop, int device);
 
 }

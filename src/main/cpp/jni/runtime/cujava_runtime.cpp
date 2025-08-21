@@ -241,5 +241,21 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaGetDevice
 }
 
 
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaGetDevicePropertiesNative
+  (JNIEnv *env, jclass cls, jobject prop, jint device) {
+    if (prop == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'prop' is null for cudaGetDeviceProperties");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    Logger::log(LOG_TRACE, "Executing cudaGetDeviceProperties\n");
+
+    cudaDeviceProp nativeProp;
+    int result = cudaGetDeviceProperties(&nativeProp, device);
+
+    setCudaDeviceProp(env, prop, nativeProp);
+    return result;
+}
+
+
 
 

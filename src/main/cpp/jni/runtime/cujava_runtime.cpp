@@ -218,5 +218,13 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaSetDevice
 }
 
 
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaSetDeviceFlagsNative
+  (JNIEnv *env, jclass cls, jint flags) {
+    Logger::log(LOG_TRACE, "Executing cudaSetDeviceFlags\n");
+
+    return cudaSetDeviceFlags((int)flags);
+}
+
+
 
 

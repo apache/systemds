@@ -107,4 +107,10 @@ public class CuJava {
 	private static native int cudaSetDeviceNative(int device);
 
 
+	public static int cudaSetDeviceFlags(int flags) {
+		return checkCudaError(cudaSetDeviceFlagsNative(flags));
+	}
+	private static native int cudaSetDeviceFlagsNative(int flags);
+
+
 }

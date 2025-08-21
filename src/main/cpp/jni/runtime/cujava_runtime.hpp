@@ -68,6 +68,9 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaGetDevice
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaSetDeviceNative
   (JNIEnv *env, jclass cls, jint device);
 
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaSetDeviceFlagsNative
+  (JNIEnv *env, jclass cls, jint flags);
+
 #ifdef __cplusplus
 }
 #endif

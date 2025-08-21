@@ -226,5 +226,20 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaSetDevice
 }
 
 
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaGetDeviceNative
+  (JNIEnv *env, jclass cls, jintArray device) {
+    if (device == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'device' is null for cudaGetDevice");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    Logger::log(LOG_TRACE, "Executing cudaGetDevice\n");
+
+    int nativeDevice = 0;
+    int result = cudaGetDevice(&nativeDevice);
+    if (!set(env, device, 0, nativeDevice)) return JCUDA_INTERNAL_ERROR;
+    return result;
+}
+
+
 
 

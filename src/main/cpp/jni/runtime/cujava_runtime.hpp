@@ -38,6 +38,7 @@ extern "C" {
  *  - cudaGetDeviceCount
  *  - cudaSetDevice
  *  - cudaSetDeviceFlags
+ *  - cudaGetDevice
  */
 
 
@@ -71,6 +72,9 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaSetDevice
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaSetDeviceFlagsNative
   (JNIEnv *env, jclass cls, jint flags);
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaGetDeviceNative
+  (JNIEnv *env, jclass cls, jintArray device);
 
 #ifdef __cplusplus
 }

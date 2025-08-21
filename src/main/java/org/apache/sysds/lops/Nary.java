@@ -111,6 +111,7 @@ public class Nary extends Lop {
 			case RBIND:
 			case EVAL:
 			case LIST:
+			case EINSUM:
 				return operationType.name().toLowerCase();
 			case MIN:
 			case MAX:

@@ -31,7 +31,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class CNodeCell extends CNodeTpl 
 {
-	protected static final String JAVA_TEMPLATE = 
+	public static final String JAVA_TEMPLATE =
 		  "package codegen;\n"
 		+ "import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;\n"
 		+ "import org.apache.sysds.runtime.codegen.SpoofCellwise;\n"

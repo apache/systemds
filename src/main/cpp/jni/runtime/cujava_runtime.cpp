@@ -236,7 +236,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaGetDevice
 
     int nativeDevice = 0;
     int result = cudaGetDevice(&nativeDevice);
-    if (!set(env, device, 0, nativeDevice)) return JCUDA_INTERNAL_ERROR;
+    if (!set(env, device, 0, nativeDevice)) return CUJAVA_INTERNAL_ERROR;
     return result;
 }
 

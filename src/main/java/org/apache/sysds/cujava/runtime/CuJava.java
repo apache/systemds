@@ -30,6 +30,8 @@ public class CuJava {
 
 	private static final String LIB_BASE = "cujava_runtime";
 
+	public static final int cudaDeviceScheduleBlockingSync = 4;
+
 	private CuJava(){
 
 	}

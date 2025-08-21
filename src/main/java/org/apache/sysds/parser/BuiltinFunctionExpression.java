@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.lang3.ArrayUtils;
@@ -35,6 +36,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.parser.LanguageException.LanguageErrorCodes;
+import org.apache.sysds.runtime.einsum.EinsumEquationValidator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DnnUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -751,7 +753,9 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			else
 				raiseValidateError("Compress/DeCompress instruction not allowed in dml script");
 			break;
-							
+		case EINSUM:
+			validateEinsum((DataIdentifier) getOutputs()[0]);
+			break;
 		default: //always unconditional
 			raiseValidateError("Unknown Builtin Function opcode: " + _opcode, false);
 		}
@@ -2063,7 +2067,9 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 			output.setValueType(ValueType.INT64);
 			output.setNnz(id.getDim2());
 			break;
-
+		case EINSUM:
+			validateEinsum(output);
+			break;
 		default:
 			if( isMathFunction() ) {
 				checkMathFunctionParam();
@@ -2094,6 +2100,49 @@ public class BuiltinFunctionExpression extends DataIdentifier {
 					raiseValidateError("Unsupported function "+op, false, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		}
+	}
+
+	private void validateEinsum(DataIdentifier output){
+		if(getSecondExpr() == null)
+			raiseValidateError("Einsum: at least one input matrix required", false,
+					LanguageErrorCodes.INVALID_PARAMETERS);
+
+		if(!(getFirstExpr() instanceof StringIdentifier))
+			raiseValidateError("Einsum: first argument has to be equation str", false,
+					LanguageErrorCodes.INVALID_PARAMETERS);
+
+		String equationString = ((StringIdentifier)getFirstExpr()).getValue();
+
+		if (equationString.length() == 0) raiseValidateError("Einsum: equation str too short", false, LanguageErrorCodes.INVALID_PARAMETERS);
+		if (equationString.charAt(0) == '-' || equationString.charAt(0) == ',') raiseValidateError("Einsum: equation str invalid", false, LanguageErrorCodes.INVALID_PARAMETERS);
+
+		Expression[] expressions = getAllExpr();
+		boolean allDimsKnown = true;
+
+		LinkedList<Identifier> matrixBlocks = new LinkedList<>();
+		for (int i=1;i<expressions.length; i++){
+			checkMatrixParam(expressions[i]);
+			if(!(expressions[i]).getOutput().dimsKnown()){
+				allDimsKnown = false;
+				break;
+			}
+			matrixBlocks.add((expressions[i].getOutput()));
+		}
+
+		if(allDimsKnown){
+			var dims = EinsumEquationValidator.validateEinsumEquationAndReturnDimensions(equationString, matrixBlocks);
+
+			output.setDataType(dims.getRight());
+			output.setDimensions(dims.getLeft(), dims.getMiddle());
+		}else{
+			DataType dataType = EinsumEquationValidator.validateEinsumEquationNoDimensions(equationString, _args.length - 1);
+
+			output.setDataType(dataType);
+			output.setDimensions(-1l, -1l);
+		}
+
+		output.setValueType(ValueType.FP64);
+		output.setBlocksize(getSecondExpr().getOutput().getBlocksize());
 	}
 
 	private void setBinaryOutputProperties(DataIdentifier output) {

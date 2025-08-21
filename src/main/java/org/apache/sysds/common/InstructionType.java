@@ -62,6 +62,7 @@ public enum InstructionType {
 	PMMJ,
 	MMChain,
 	Union,
+	EINSUM,
 
 	//SP Types
 	MAPMM,

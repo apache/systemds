@@ -56,6 +56,14 @@ public class CNodeData extends CNode
 		_cols = node.getNumCols();
 		_dataType = node.getDataType();
 	}
+
+	public CNodeData(String name, long hopID, long rows, long cols, DataType dataType) {
+		_name = name;
+		_hopID = hopID;
+		_rows = rows;
+		_cols = cols;
+		_dataType = dataType;
+	}
 	
 	@Override
 	public String getVarname() {

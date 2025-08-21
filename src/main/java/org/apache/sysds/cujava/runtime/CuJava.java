@@ -87,4 +87,10 @@ public class CuJava {
 	private static native int cudaMallocManagedNative(Pointer devPtr, long size, int flags);
 
 
+	public static int cudaMemGetInfo(long free[], long total[]) {
+		return checkCudaError(cudaMemGetInfoNative(free, total));
+	}
+	private static native int cudaMemGetInfoNative(long free[], long total[]);
+
+
 }

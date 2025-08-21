@@ -171,4 +171,29 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMallocMan
 }
 
 
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemGetInfoNative
+  (JNIEnv *env, jclass cls, jlongArray freeBytes, jlongArray totalBytes) {
+    if (freeBytes == NULL) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'freeBytes' is null for cudaMemGetInfo");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (totalBytes == NULL) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'freeBytes' is null for cudaMemGetInfo");
+        return JCUDA_INTERNAL_ERROR;
+    }
+    Logger::log(LOG_TRACE, "Executing cudaMemGetInfo\n");
+
+    size_t nativeFreeBytes = 0;
+    size_t nativeTotalBytes = 0;
+
+    int result = cudaMemGetInfo(&nativeFreeBytes, &nativeTotalBytes);
+
+    if (!set(env, freeBytes, 0, (jlong)nativeFreeBytes)) return CUJAVA_INTERNAL_ERROR;
+    if (!set(env, totalBytes, 0, (jlong)nativeTotalBytes)) return CUJAVA_INTERNAL_ERROR;
+
+    return result;
+}
+
+
+
 

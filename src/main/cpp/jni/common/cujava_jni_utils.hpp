@@ -17,26 +17,27 @@
  * under the License.
  */
 
- #ifndef CUJAVA_JNI_UTILS_HPP
- #define CUJAVA_JNI_UTILS_HPP
+#ifndef CUJAVA_JNI_UTILS_HPP
+#define CUJAVA_JNI_UTILS_HPP
 
- #include <jni.h>
+#include <jni.h>
 
- bool init(JNIEnv* env, jclass& cls, const char* name);
- bool initGlobal(JNIEnv* env, jclass& globalCls, const char* className);
- bool init(JNIEnv* env, jclass cls, jfieldID& field, const char* name, const char* signature);
- bool init(JNIEnv* env, jclass cls, jmethodID& method, const char* name, const char* signature);
- bool init(JNIEnv* env, jclass& globalCls, jmethodID& constructor, const char* className);
- bool initNativePointer(JNIEnv* env, jfieldID& field, const char* className);
+bool init(JNIEnv* env, jclass& cls, const char* name);
+bool initGlobal(JNIEnv* env, jclass& globalCls, const char* className);
+bool init(JNIEnv* env, jclass cls, jfieldID& field, const char* name, const char* signature);
+bool init(JNIEnv* env, jclass cls, jmethodID& method, const char* name, const char* signature);
+bool init(JNIEnv* env, jclass& globalCls, jmethodID& constructor, const char* className);
+bool initNativePointer(JNIEnv* env, jfieldID& field, const char* className);
+bool set(JNIEnv *env, jlongArray ja, int index, jlong value);
 
- // ---- Exceptions ----
- void ThrowByName(JNIEnv* env, const char* name, const char* msg);
+// ---- Exceptions ----
+void ThrowByName(JNIEnv* env, const char* name, const char* msg);
 
- // ---- Module init (optional; keep if called from JNI_OnLoad) ----
- int initJNIUtils(JNIEnv* env);
+// ---- Module init (optional; keep if called from JNI_OnLoad) ----
+int initJNIUtils(JNIEnv* env);
 
- // ---- Cached IDs (minimal) ----
- extern jmethodID String_getBytes; // ()[B
+// ---- Cached IDs (minimal) ----
+extern jmethodID String_getBytes; // ()[B
 
- #endif // CUJAVA_JNI_UTILS_HPP
+#endif // CUJAVA_JNI_UTILS_HPP
 

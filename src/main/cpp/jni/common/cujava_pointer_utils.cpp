@@ -45,8 +45,7 @@ jmethodID Pointer_constructor = nullptr;        // ()V
 // -----------------------------------------------------------------------------
 // Initialize field- and method IDs for Pointer/Buffer plumbing
 // -----------------------------------------------------------------------------
-int initPointerUtils(JNIEnv *env)
-{
+int initPointerUtils(JNIEnv *env) {
     jclass cls = nullptr;
 
     // java.lang.Object#getClass()
@@ -84,16 +83,13 @@ int initPointerUtils(JNIEnv *env)
 // -----------------------------------------------------------------------------
 // Helper: validate newly created PointerData
 // -----------------------------------------------------------------------------
-static PointerData* validatePointerData(JNIEnv *env, jobject nativePointerObject, PointerData *pointerData)
-{
-    if (pointerData == nullptr)
-    {
+static PointerData* validatePointerData(JNIEnv *env, jobject nativePointerObject, PointerData *pointerData) {
+    if (pointerData == nullptr) {
         ThrowByName(env, "java/lang/OutOfMemoryError",
             "Out of memory while creating pointer data");
         return nullptr;
     }
-    if (!pointerData->init(env, nativePointerObject))
-    {
+    if (!pointerData->init(env, nativePointerObject)) {
         delete pointerData;
         return nullptr;
     }
@@ -108,13 +104,11 @@ static PointerData* validatePointerData(JNIEnv *env, jobject nativePointerObject
 //  else Pointer(nativePointer+byteOffset) -> NativePointerData,
 //  else non-Pointer/NULL -> NativePointerObjectPointerData)
 // -----------------------------------------------------------------------------
-PointerData* initPointerData(JNIEnv *env, jobject nativePointerObject)
-{
+PointerData* initPointerData(JNIEnv *env, jobject nativePointerObject) {
     Logger::log(LOG_DEBUGTRACE, "Initializing pointer data for Java NativePointerObject %p\n", nativePointerObject);
 
     // NULL -> NativePointerObjectPointerData
-    if (nativePointerObject == nullptr)
-    {
+    if (nativePointerObject == nullptr) {
         Logger::log(LOG_DEBUGTRACE, "Initializing NativePointerObjectPointerData\n");
         auto *pd = new NativePointerObjectPointerData();
         return validatePointerData(env, nativePointerObject, pd);
@@ -122,8 +116,7 @@ PointerData* initPointerData(JNIEnv *env, jobject nativePointerObject)
 
     // If not an instance of Pointer -> NativePointerObjectPointerData
     jboolean isPointer = env->IsInstanceOf(nativePointerObject, Pointer_class);
-    if (!isPointer)
-    {
+    if (!isPointer) {
         Logger::log(LOG_DEBUGTRACE, "Initializing NativePointerObjectPointerData\n");
         auto *pd = new NativePointerObjectPointerData();
         return validatePointerData(env, nativePointerObject, pd);
@@ -131,8 +124,7 @@ PointerData* initPointerData(JNIEnv *env, jobject nativePointerObject)
 
     // If Pointer.pointers != null -> PointersArrayPointerData
     jobjectArray pointersArray = (jobjectArray)env->GetObjectField(nativePointerObject, Pointer_pointers);
-    if (pointersArray != nullptr)
-    {
+    if (pointersArray != nullptr) {
         Logger::log(LOG_DEBUGTRACE, "Initializing PointersArrayPointerData\n");
         auto *pd = new PointersArrayPointerData();
         return validatePointerData(env, nativePointerObject, pd);
@@ -140,13 +132,11 @@ PointerData* initPointerData(JNIEnv *env, jobject nativePointerObject)
 
     // If Pointer.buffer != null -> Buffer paths
     jobject buffer = env->GetObjectField(nativePointerObject, Pointer_buffer);
-    if (buffer != nullptr)
-    {
+    if (buffer != nullptr) {
         // Direct buffer?
         jboolean isDirect = env->CallBooleanMethod(buffer, Buffer_isDirect);
         if (env->ExceptionCheck()) return nullptr;
-        if (isDirect == JNI_TRUE)
-        {
+        if (isDirect == JNI_TRUE) {
             Logger::log(LOG_DEBUGTRACE, "Initializing DirectBufferPointerData\n");
             auto *pd = new DirectBufferPointerData();
             return validatePointerData(env, nativePointerObject, pd);
@@ -155,8 +145,7 @@ PointerData* initPointerData(JNIEnv *env, jobject nativePointerObject)
         // Backed by primitive array?
         jboolean hasArray = env->CallBooleanMethod(buffer, Buffer_hasArray);
         if (env->ExceptionCheck()) return nullptr;
-        if (hasArray == JNI_TRUE)
-        {
+        if (hasArray == JNI_TRUE) {
             Logger::log(LOG_DEBUGTRACE, "Initializing ArrayBufferPointerData\n");
             auto *pd = new ArrayBufferPointerData();
             return validatePointerData(env, nativePointerObject, pd);
@@ -178,8 +167,7 @@ PointerData* initPointerData(JNIEnv *env, jobject nativePointerObject)
 // -----------------------------------------------------------------------------
 // Release helper: calls PointerData::release and deletes the object
 // -----------------------------------------------------------------------------
-bool releasePointerData(JNIEnv *env, PointerData* &pointerData, jint mode)
-{
+bool releasePointerData(JNIEnv *env, PointerData* &pointerData, jint mode) {
     if (pointerData == nullptr) return true;
     if (!pointerData->release(env, mode)) return false;
     delete pointerData;
@@ -190,52 +178,45 @@ bool releasePointerData(JNIEnv *env, PointerData* &pointerData, jint mode)
 // -----------------------------------------------------------------------------
 // Misc helpers
 // -----------------------------------------------------------------------------
-bool isDirectByteBuffer(JNIEnv *env, jobject buffer)
-{
+bool isDirectByteBuffer(JNIEnv *env, jobject buffer) {
     if (buffer == nullptr) return false;
     jboolean isDirect = env->CallBooleanMethod(buffer, Buffer_isDirect);
     if (env->ExceptionCheck()) return false;
     return (isDirect == JNI_TRUE);
 }
 
-bool isPointerBackedByNativeMemory(JNIEnv *env, jobject object)
-{
+bool isPointerBackedByNativeMemory(JNIEnv *env, jobject object) {
     if (object == nullptr) return false;
 
     jlong np = env->GetLongField(object, NativePointerObject_nativePointer);
     if (np != 0) return true;
 
     jboolean isPtr = env->IsInstanceOf(object, Pointer_class);
-    if (isPtr)
-    {
+    if (isPtr) {
         jobject buffer = env->GetObjectField(object, Pointer_buffer);
         return isDirectByteBuffer(env, buffer);
     }
     return false;
 }
 
-void setNativePointerValue(JNIEnv *env, jobject nativePointerObject, jlong pointer)
-{
+void setNativePointerValue(JNIEnv *env, jobject nativePointerObject, jlong pointer) {
     if (nativePointerObject == nullptr) return;
     env->SetLongField(nativePointerObject, NativePointerObject_nativePointer, pointer);
 }
 
-void* getNativePointerValue(JNIEnv *env, jobject nativePointerObject)
-{
+void* getNativePointerValue(JNIEnv *env, jobject nativePointerObject) {
     if (nativePointerObject == nullptr) return nullptr;
     jlong p = env->GetLongField(nativePointerObject, NativePointerObject_nativePointer);
     return (void*)(uintptr_t)p;
 }
 
-void setPointer(JNIEnv *env, jobject pointerObject, jlong pointer)
-{
+void setPointer(JNIEnv *env, jobject pointerObject, jlong pointer) {
     if (pointerObject == nullptr) return;
     env->SetLongField(pointerObject, NativePointerObject_nativePointer, pointer);
     env->SetLongField(pointerObject, Pointer_byteOffset, 0);
 }
 
-void* getPointer(JNIEnv *env, jobject pointerObject)
-{
+void* getPointer(JNIEnv *env, jobject pointerObject) {
     if (pointerObject == nullptr) return nullptr;
     jlong start = env->GetLongField(pointerObject, NativePointerObject_nativePointer);
     jlong off   = env->GetLongField(pointerObject, Pointer_byteOffset);

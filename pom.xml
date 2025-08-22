@@ -838,7 +838,6 @@
 									</descriptors>
 									<archive>
 										<manifestEntries>
-											<Build-Time>${maven.build.timestamp}</Build-Time>
 											<Artifact-Id>${project.artifactId}-extra</Artifact-Id>
 											<Version>${project.version}</Version>
 										</manifestEntries>

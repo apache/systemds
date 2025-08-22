@@ -1,0 +1,8 @@
+/home/rene/projects/systemds/src/main/cpp/jni/build/CMakeFiles/edit_cache.dir
+/home/rene/projects/systemds/src/main/cpp/jni/build/CMakeFiles/rebuild_cache.dir
+/home/rene/projects/systemds/src/main/cpp/jni/build/common/CMakeFiles/CuJavaCommonJNI.dir
+/home/rene/projects/systemds/src/main/cpp/jni/build/common/CMakeFiles/edit_cache.dir
+/home/rene/projects/systemds/src/main/cpp/jni/build/common/CMakeFiles/rebuild_cache.dir
+/home/rene/projects/systemds/src/main/cpp/jni/build/runtime/CMakeFiles/CuJavaRuntime.dir
+/home/rene/projects/systemds/src/main/cpp/jni/build/runtime/CMakeFiles/edit_cache.dir
+/home/rene/projects/systemds/src/main/cpp/jni/build/runtime/CMakeFiles/rebuild_cache.dir

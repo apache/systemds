@@ -21,6 +21,7 @@
 #define CUJAVA_JNI_UTILS_HPP
 
 #include <jni.h>
+#include <new>
 
 bool init(JNIEnv* env, jclass& cls, const char* name);
 bool initGlobal(JNIEnv* env, jclass& globalCls, const char* className);

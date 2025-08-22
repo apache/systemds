@@ -50,7 +50,7 @@ jobs:
       uses: actions/checkout@v5
 
     - name: Setup Java ${{ matrix.java }} ${{ matrix.javadist }}
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         distribution: ${{ matrix.javadist }}
         java-version: ${{ matrix.java }}

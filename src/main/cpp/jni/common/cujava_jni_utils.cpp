@@ -148,4 +148,44 @@ bool set(JNIEnv *env, jintArray ja, int index, jint value) {
     return true;
 }
 
+/** Helpers for setting cudaDeviceProperties. */
+bool setFieldBytes(JNIEnv* env, jobject obj, jfieldID fid, const jbyte* src, jsize n) {
+    jbyteArray arr = (jbyteArray)env->GetObjectField(obj, fid);
+    if (arr == nullptr || env->GetArrayLength(arr) < n) {
+        jbyteArray tmp = env->NewByteArray(n);
+        if (tmp == nullptr) return false;
+        env->SetObjectField(obj, fid, tmp);
+        arr = tmp;
+    }
+    env->SetByteArrayRegion(arr, 0, n, src);
+    return !env->ExceptionCheck();
+}
+
+bool setFieldInts(JNIEnv* env, jobject obj, jfieldID fid, const jint* src, jsize n) {
+    jintArray arr = (jintArray)env->GetObjectField(obj, fid);
+    if (arr == nullptr || env->GetArrayLength(arr) < n) {
+        jintArray tmp = env->NewIntArray(n);
+        if (tmp == nullptr) return false;
+        env->SetObjectField(obj, fid, tmp);
+        arr = tmp;
+    }
+    env->SetIntArrayRegion(arr, 0, n, src);
+    return !env->ExceptionCheck();
+}
+
+bool zeroFieldInts(JNIEnv* env, jobject obj, jfieldID fid) {
+    jintArray arr = (jintArray)env->GetObjectField(obj, fid);
+    if (arr == nullptr) return true;
+    jsize n = env->GetArrayLength(arr);
+    if (n <= 0) return true;
+    jint* zeros = new (std::nothrow) jint[n]();
+    if (!zeros) {
+        ThrowByName(env, "java/lang/OutOfMemoryError", "Out of memory zeroing int array");
+        return false;
+    }
+    env->SetIntArrayRegion(arr, 0, n, zeros);
+    delete[] zeros;
+    return !env->ExceptionCheck();
+}
+
 

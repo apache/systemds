@@ -30,6 +30,9 @@ bool init(JNIEnv* env, jclass& globalCls, jmethodID& constructor, const char* cl
 bool initNativePointer(JNIEnv* env, jfieldID& field, const char* className);
 bool set(JNIEnv *env, jlongArray ja, int index, jlong value);
 bool set(JNIEnv *env, jintArray ja, int index, jint value);
+bool setFieldBytes(JNIEnv* env, jobject obj, jfieldID fid, const jbyte* src, jsize n);
+bool setFieldInts (JNIEnv* env, jobject obj, jfieldID fid, const jint*  src, jsize n);
+bool zeroFieldInts(JNIEnv* env, jobject obj, jfieldID fid);
 
 // ---- Exceptions ----
 void ThrowByName(JNIEnv* env, const char* name, const char* msg);

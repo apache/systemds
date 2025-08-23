@@ -20,4 +20,6 @@
 package org.apache.sysds.cujava.driver;
 
 public class CuJavaDriver {
+
+	private static final String LIB_BASE = "cujava_driver";
 }

@@ -22,12 +22,14 @@ package org.apache.sysds.hops.rewrite;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.*;
-import org.apache.sysds.lops.Lop;
-import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 public class RewriteInjectOOCTee extends HopRewriteRule {
+
+    private static final Set<Long> rewrittenHops = new HashSet<>();
 
     /**
      * Handle a generic (last-level) hop DAG with multiple roots.
@@ -56,15 +58,16 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
      */
     @Override
     public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
-//        System.out.println("RewriteInjectOOCTee running in phase: " + state.toString());
         if (root.isVisited()) {
             return root;
         }
 
+        // Recurse down to the leaf node first
         for (int i = 0; i < root.getInput().size(); i++) {
             root.getInput().set(i, rewriteHopDAG(root.getInput().get(i), state));
         }
 
+        // Apply rewrite at the current hop
         applyTeeRewrite(root, new ArrayList<Hop>(root.getParent()));
 
         root.setVisited(true);
@@ -91,18 +94,30 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
         // 1. Is the operation an OOC operation?
         // 2. Does it have more than one parent (i.e., is it consumed by multiple operations)?
         // 3. Is it not already a Tee operation (to prevent infinite rewrite loops)?
+        if (rewrittenHops.contains(hop.getHopID()))
+            return;
+
         boolean isOOC = (hop.getForcedExecType() == Types.ExecType.OOC);
         boolean multipleConsumers = parents.size() > 1;
-        boolean isNotAlreadyTee =  !(hop instanceof TeeOp);
+        boolean isNotAlreadyTee = isNotAlreadyTee(hop);
         boolean isOOCEnabled = DMLScript.USE_OOC;
 
+        boolean consumesSharedNode = false;
+        for (Hop input : hop.getParent()) {
+            if (input.getParent().size() > 1 ) {
+                consumesSharedNode = true;
+                break;
+            }
+        }
+
+        if (consumesSharedNode) {
+            return;
+        }
 
         boolean isTransposeMM = false;
         if (hop instanceof DataOp && hop.getDataType() == Types.DataType.MATRIX) {
             isTransposeMM = isTranposePattern(hop);
         }
-//        boolean isTranspose = ((hop instanceof ReorgOp)
-//                && (((ReorgOp) hop).getOp() == Types.ReOrgOp.TRANS));
 
         if (hop.getParent().size() > 1) {
             System.out.println("DEBUG: Hop " + hop.getClass().getSimpleName() +
@@ -116,8 +131,7 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
 
 
         if ( isOOCEnabled && multipleConsumers && isNotAlreadyTee && isTransposeMM) {
-//                && isTranspose) {
-            System.out.println("perform rewrite on hop: " + hop.getHopID());
+            rewrittenHops.add(hop.getHopID());
 
             // Take a defensive copy even before any rewrite
             ArrayList<Hop> consumers = new ArrayList<>(hop.getParent());
@@ -128,13 +142,33 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
             // 3. Rewire the graph:
             //   For each original consumer, change its input from the original hop
             //   to one of the new outputs of the TeeOp
-            for (int i = 0 ; i < consumers.size() ; i++) {
-                Hop consumer = consumers.get(i);
-                HopRewriteUtils.replaceChildReference(consumer, hop, teeOp);
-            }
+            for (Hop consumer : consumers) {
+//                HopRewriteUtils.replaceChildReference(consumer, hop, teeOp);
+                for (int j = 0 ; j < consumer.getInput().size(); j++) {
+                    if (consumer.getInput().get(j) == hop ||
+                    consumer.getInput().get(j).getHopID() ==  hop.getHopID()) {
 
+                        // Do the replacement
+                        consumer.getInput().set(j, teeOp);
+                        break;
+                    }
+                }
+                teeOp.getParent().add(consumer);
+                hop.getParent().remove(consumer);
+            }
         }
 
+    }
+
+    private boolean isNotAlreadyTee(Hop hop) {
+        if (hop.getParent().size() > 1) {
+            for (Hop consumer : hop.getParent()) {
+                if (consumer instanceof TeeOp) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private boolean isTranposePattern (Hop hop) {
@@ -144,13 +178,11 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
         for (Hop parent: hop.getParent()) {
             String opString = parent.getOpString();
             if (parent instanceof ReorgOp) {
-                System.out.println("Reorgop, opString: " + opString);
                 if (opString.contains("r'") || opString.contains("transpose")) {
                     hasTransposeConsumer = true;
                 }
             }
             else if (parent instanceof AggBinaryOp)
-                System.out.println("AggBinaryOp, opString: " + opString);
                 if (opString.contains("*") || opString.contains("ba+*")) {
                     hasMatrixMultiplyConsumer = true;
                 }

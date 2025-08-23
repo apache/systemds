@@ -1,2 +1,0 @@
-/usr/bin/ar qc /home/rene/projects/systemds/src/main/cpp/lib/libCuJavaCommonJNI.a CMakeFiles/CuJavaCommonJNI.dir/cujava_logger.cpp.o CMakeFiles/CuJavaCommonJNI.dir/cujava_jni_utils.cpp.o CMakeFiles/CuJavaCommonJNI.dir/cujava_pointer_utils.cpp.o
-/usr/bin/ranlib /home/rene/projects/systemds/src/main/cpp/lib/libCuJavaCommonJNI.a

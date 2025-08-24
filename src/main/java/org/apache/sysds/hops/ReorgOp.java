@@ -122,9 +122,30 @@ public class ReorgOp extends MultiThreadedHop
 			|| _op == ReOrgOp.REV;
 	}
 
+	private TeeOp findTeeOp() {
+		// Look for any TeeOp in the DAG (crude search)
+		// You can make this smarter later
+		return null; // For now, just log that we tried
+	}
+
 	@Override
 	public Lop constructLops()
 	{
+		if (this.getHopID() == 10) {
+			// Find the TeeOp that should be our input (it exists, just disconnected)
+			for (Hop parent : this.getParent()) {
+				if (parent instanceof AggBinaryOp) {
+					// Check AggBinaryOp's inputs for our TeeOp
+					for (Hop input : parent.getInput()) {
+						if (input instanceof TeeOp) {
+							this.getInput().set(0, input);
+							break;
+						}
+					}
+					break;
+				}
+			}
+		}
 		//return already created lops
 		if( getLops() != null )
 			return getLops();

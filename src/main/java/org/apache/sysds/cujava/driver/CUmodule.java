@@ -19,5 +19,10 @@
 
 package org.apache.sysds.cujava.driver;
 
-public class CUmodule {
+import org.apache.sysds.cujava.NativePointerObject;
+
+public class CUmodule extends NativePointerObject {
+
+	public CUmodule() {
+	}
 }

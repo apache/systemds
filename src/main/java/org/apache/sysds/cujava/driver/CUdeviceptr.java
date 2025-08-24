@@ -19,5 +19,23 @@
 
 package org.apache.sysds.cujava.driver;
 
-public class CUdeviceptr {
+import org.apache.sysds.cujava.Pointer;
+
+public class CUdeviceptr extends Pointer {
+
+	public CUdeviceptr() {
+	}
+
+	protected CUdeviceptr(CUdeviceptr other) {
+		super(other);
+	}
+
+	protected CUdeviceptr(CUdeviceptr other, long byteOffset) {
+		super(other, byteOffset);
+	}
+
+	@Override
+	public CUdeviceptr withByteOffset(long byteOffset) {
+		return new CUdeviceptr(this, byteOffset);
+	}
 }

@@ -751,6 +751,6 @@ public class CUdevice_attribute {
 	public static final int CU_DEVICE_ATTRIBUTE_D3D12_CIG_SUPPORTED = 135;
 
 	//CU_DEVICE_ATTRIBUTE_MAX
-	
+
 
 }

@@ -19,5 +19,9 @@
 
 package org.apache.sysds.cujava.driver;
 
-public class CUdevice {
+import org.apache.sysds.cujava.NativePointerObject;
+
+public class CUdevice extends NativePointerObject {
+
+	public CUdevice() {}
 }

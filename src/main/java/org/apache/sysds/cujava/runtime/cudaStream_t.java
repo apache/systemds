@@ -17,12 +17,10 @@
  * under the License.
  */
 
-package org.apache.sysds.cujava.driver;
+package org.apache.sysds.cujava.runtime;
 
 import org.apache.sysds.cujava.NativePointerObject;
+import org.apache.sysds.cujava.driver.CUstream;
 
-public class CUstream extends NativePointerObject {
-
-	public CUstream() {
-	}
+public class cudaStream_t extends NativePointerObject {
 }

@@ -19,6 +19,11 @@
 
 package org.apache.sysds.cujava.driver;
 
+/**
+ * The descriptions are directly taken from:
+ * https://docs.nvidia.com/cuda/archive/12.6.1/pdf/CUDA_Driver_API.pdf
+ */
+
 public class CUresult {
 
 

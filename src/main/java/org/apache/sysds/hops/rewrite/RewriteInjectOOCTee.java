@@ -23,8 +23,29 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+/**
+ * This Rewrite rule injects a Tee Operator for specific Out-Of-Core (OOC) patterns
+ * where a value or an intermediate result is shared twice. Since for OOC we data streams
+ * can only be consumed once.
+ *
+ * <p>
+ *   Pattern identified {@code t(X) %*% X}, where the data {@code X} will be shared by
+ *   {@code t(X)} and {@code %*%} multiplication.
+ * </p>
+ *
+ * The rewrite uses a stable two-pass approach:
+ * 1. <b>Find candidates (Read-Only):</b> Traverse the entire HOP DAG to identify candidates
+ * the fit the target pattern.
+ * 2. <b>Apply Rewrites (Modification):</b> Iterate over the collected candidate and put
+ * {@code TeeOp}, and safely rewire the graph.
+ */
 public class RewriteInjectOOCTee extends HopRewriteRule {
 
     private static final Set<Long> rewrittenHops = new HashSet<>();
@@ -139,113 +160,6 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
     }
 
     /**
-     * Applies Tee transformation to the Hop node when it matches with specific patterns
-     * the require stream duplication for Out-of-Core (OOC) operations.
-     *
-     * <p>In OOC execution, the data streams can only be consumed once. For certain operations
-     * such as {@code t(X) %*% X} requires same data multiple times.This method identifies such
-     * patterns and inserts TeeOp to split the stream into multiple independent copies to be
-     * consumed separately.
-     * </p>
-     *
-     *
-     *
-     * @param hop
-     * @param parents
-     */
-    private void applyTeeRewrite(Hop hop, ArrayList<Hop> parents) {
-        // --- RULE TRIGGERS ---
-        // 1. Is the operation an OOC operation?
-        // 2. Does it have more than one parent (i.e., is it consumed by multiple operations)?
-        // 3. Is it not already a Tee operation (to prevent infinite rewrite loops)?
-        if (rewrittenHops.contains(hop.getHopID()))
-            return;
-
-//        boolean isOOC = (hop.getForcedExecType() == Types.ExecType.OOC);
-        boolean multipleConsumers = parents.size() > 1;
-        boolean isNotAlreadyTee = isNotAlreadyTee(hop);
-        boolean isOOCEnabled = DMLScript.USE_OOC;
-
-        boolean consumesSharedNode = false;
-        for (Hop input : hop.getParent()) {
-            if (input.getParent().size() > 1 ) {
-                consumesSharedNode = true;
-                break;
-            }
-        }
-
-        if (consumesSharedNode) {
-            return;
-        }
-
-        boolean isTransposeMM = false;
-        if (hop instanceof DataOp && hop.getDataType() == Types.DataType.MATRIX) {
-            isTransposeMM = isTranposePattern(hop);
-        }
-
-        if (hop.getParent().size() > 1) {
-            System.out.println("DEBUG: Hop " + hop.getClass().getSimpleName() +
-                    " (" + hop.getOpString() + ") has " +
-                    hop.getParent().size() + " parents:");
-            for (Hop parent : hop.getParent()) {
-                System.out.println("  - " + parent.getClass().getSimpleName() +
-                        " (" + parent.getOpString() + ")");
-            }
-        }
-
-
-        if ( isOOCEnabled && multipleConsumers && isNotAlreadyTee && isTransposeMM) {
-            rewrittenHops.add(hop.getHopID());
-
-            // Take a defensive copy even before any rewrite
-            ArrayList<Hop> consumers = new ArrayList<>(hop.getParent());
-
-            // 2. Create the new TeeOp. Take original hop as input
-            TeeOp teeOp = new TeeOp(hop);
-
-            // 3. Rewire the graph:
-            //   For each original consumer, change its input from the original hop
-            //   to one of the new outputs of the TeeOp
-            int i = 0;
-            for (Hop consumer : consumers) {
-                Hop placeholder = new DataOp("tee_out_" + hop.getHopID() + "_" + i,
-                        hop.getDataType(),
-                        hop.getValueType(),
-                        Types.OpOpData.TRANSIENTREAD,
-                        null,
-                        hop.getDim1(),
-                        hop.getDim2(),
-                        hop.getNnz(),
-                        hop.getBlocksize()
-                );
-
-                // Copy essential metadata
-                placeholder.setBeginLine(hop.getBeginLine());
-                placeholder.setEndLine(hop.getBeginColumn());
-                placeholder.setEndLine(hop.getEndLine());
-                placeholder.setEndColumn(hop.getEndColumn());
-
-                HopRewriteUtils.addChildReference(teeOp, placeholder);
-                HopRewriteUtils.replaceChildReference(consumer, hop, placeholder);
-
-//                for (int j = 0 ; j < consumer.getInput().size(); j++) {
-//                    if (consumer.getInput().get(j) == hop ||
-//                    consumer.getInput().get(j).getHopID() ==  hop.getHopID()) {
-//
-//                        // Do the replacement
-//                        consumer.getInput().set(j, teeOp);
-//                        break;
-//                    }
-//                }
-//                teeOp.getParent().add(consumer);
-//                hop.getParent().remove(consumer);
-                i++;
-            }
-        }
-
-    }
-
-    /**
      * Second pass: Apply the TeeOp transformation to a candidate hop.
      * This safely rewires the graph by creating a TeeOp node and placeholders.
      *
@@ -262,12 +176,6 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
 
         // Create the new TeeOp with the original hop as input
         TeeOp teeOp = new TeeOp(sharedInput);
-
-        // Copy metadata
-//        teeOp.setBeginLine(sharedInput.getBeginLine());
-//        teeOp.setBeginColumn(sharedInput.getBeginColumn());
-//        teeOp.setEndLine(sharedInput.getEndLine());
-//        teeOp.setEndColumn(sharedInput.getEndColumn());
 
         // Rewire the graph: replace original connections with TeeOp outputs
         int i = 0;
@@ -292,7 +200,6 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
             // Connect placeholder to TeeOp and consumer
             HopRewriteUtils.addChildReference(placeholder, teeOp);
             HopRewriteUtils.replaceChildReference(consumer, sharedInput, placeholder);
-//            HopRewriteUtils.replaceChildReference(consumer, sharedInput, teeOp);
 
             i++;
         }
@@ -301,63 +208,6 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
         handledHop.put(sharedInput.getHopID(), teeOp);
         rewrittenHops.add(sharedInput.getHopID());
     }
-//    private void applyTopDownTeeRewrite(Hop hop, ArrayList<Hop> parents) {
-
-//        boolean multipleConsumers = parents.size() > 1;
-//        boolean isNotAlreadyTee = isNotAlreadyTee(hop);
-//        boolean isOOCEnabled = DMLScript.USE_OOC;
-//        boolean isTransposeMM = false;
-//
-//        for (Hop sharedInput : new ArrayList<>(hop.getInput())) {
-//            if (hop instanceof DataOp && hop.getDataType() == Types.DataType.MATRIX) {
-//                isTransposeMM = isTranposePattern(hop);
-//            }
-//
-//            if (isOOCEnabled && multipleConsumers && isNotAlreadyTee && isTransposeMM) {
-//                if (handledHop.containsKey(sharedInput.getHopID())) {
-//                    return;
-//                }
-//
-//                // Take a defensive copy even before any rewrite
-//                ArrayList<Hop> consumers = new ArrayList<>(sharedInput.getParent());
-//
-//                // 2. Create the new TeeOp. Take original hop as input
-//                TeeOp teeOp = new TeeOp(sharedInput);
-//
-//                // 3. Rewire the graph:
-//                //   For each original consumer, change its input from the original hop
-//                //   to one of the new outputs of the TeeOp
-//                int i = 0;
-//                for (Hop consumer : consumers) {
-//                    Hop placeholder = new DataOp("tee_out_" + sharedInput.getHopID() + "_" + i,
-//                            sharedInput.getDataType(),
-//                            sharedInput.getValueType(),
-//                            Types.OpOpData.TRANSIENTREAD,
-//                            null,
-//                            sharedInput.getDim1(),
-//                            sharedInput.getDim2(),
-//                            sharedInput.getNnz(),
-//                            sharedInput.getBlocksize()
-//                    );
-//
-//                    // Copy essential metadata
-//                    placeholder.setBeginLine(sharedInput.getBeginLine());
-//                    placeholder.setEndLine(sharedInput.getBeginColumn());
-//                    placeholder.setEndLine(sharedInput.getEndLine());
-//                    placeholder.setEndColumn(sharedInput.getEndColumn());
-//
-//                    HopRewriteUtils.addChildReference(teeOp, placeholder);
-//                    HopRewriteUtils.replaceChildReference(consumer, sharedInput, placeholder);
-//
-//                    i++;
-//                }
-//
-//                handledHop.put(sharedInput.getHopID(), teeOp);
-//
-//                break;
-//            }
-//        }
-//    }
 
     private boolean isNotAlreadyTee(Hop hop) {
         if (hop.getParent().size() > 1) {

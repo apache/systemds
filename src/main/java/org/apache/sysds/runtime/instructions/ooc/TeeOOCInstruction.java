@@ -26,18 +26,22 @@ import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 public class TeeOOCInstruction extends ComputationOOCInstruction {
+
+	private final List<CPOperand> _outputs;
 	private CPOperand output2 = null;
 
 	protected TeeOOCInstruction(OOCType type, CPOperand in1, CPOperand out, CPOperand out2, String opcode, String istr) {
 		super(type, null, in1, out, opcode, istr);
 		this.output2 = out2;
+		_outputs = Arrays.asList(out, out2);
 	}
 
 	public static TeeOOCInstruction parseInstruction(String str) {
@@ -59,9 +63,14 @@ public class TeeOOCInstruction extends ComputationOOCInstruction {
 
 //		MatrixObject min = ec.getMatrixObject(input1);
 //		LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
-		LocalTaskQueue<IndexedMatrixValue> qOut = new LocalTaskQueue<>();
-		ec.getMatrixObject(output).setStreamHandle(qOut);
-
+		List<LocalTaskQueue<IndexedMatrixValue>> qOuts = new ArrayList<>();
+		for (CPOperand out : _outputs) {
+			MatrixObject mout = ec.createMatrixObject(min.getDataCharacteristics());
+			ec.setVariable(out.getName(), mout);
+			LocalTaskQueue<IndexedMatrixValue> qOut = new LocalTaskQueue<>();
+			mout.setStreamHandle(qOut);
+			qOuts.add(qOut);
+		}
 
 		ExecutorService pool = CommonThreadPool.get();
 		try {
@@ -69,12 +78,14 @@ public class TeeOOCInstruction extends ComputationOOCInstruction {
 				IndexedMatrixValue tmp = null;
 				try {
 					while ((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
-						IndexedMatrixValue tmpOut = new IndexedMatrixValue();
-//						tmpOut.set(tmp.getIndexes(),
-//								tmp.getValue().unaryOperations(uop, new MatrixBlock()));
-						qOut.enqueueTask(tmpOut);
+
+						for (int i = 0; i < qOuts.size(); i++) {
+							qOuts.get(i).enqueueTask(new  IndexedMatrixValue(tmp));
+						}
 					}
-					qOut.closeInput();
+					for (LocalTaskQueue<IndexedMatrixValue> qOut : qOuts) {
+						qOut.closeInput();
+					}
 				}
 				catch(Exception ex) {
 					throw new DMLRuntimeException(ex);

@@ -104,6 +104,8 @@ public class TeeTest extends AutomatedTestBase {
 			String prefix = Instruction.OOC_INST_PREFIX;
 			Assert.assertTrue("OOC wasn't used for RBLK",
 				heavyHittersContainsString(prefix + Opcodes.RBLK));
+			Assert.assertTrue("OOC wasn't used for TEE",
+							heavyHittersContainsString(prefix + "tee"));
 		}
 		catch(Exception ex) {
 			Assert.fail(ex.getMessage());

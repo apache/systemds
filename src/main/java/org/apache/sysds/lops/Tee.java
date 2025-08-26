@@ -57,7 +57,7 @@ public class Tee extends Lop {
                 getExecType().name(), OPCODE,
                 getInputs().get(0).prepInputOperand(input1),
                 prepOutputOperand(out[0]),
-                prepOutputOperand(out[0])
+                prepOutputOperand(out[1])
         );
 
         return ret;

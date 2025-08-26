@@ -46,7 +46,7 @@ public class TeeOOCInstruction extends ComputationOOCInstruction {
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
-		CPOperand out2 = new CPOperand(parts[2]);
+		CPOperand out2 = new CPOperand(parts[3]);
 
 		return new TeeOOCInstruction(OOCType.Tee, in1, out, out2, opcode, str);
 	}
@@ -54,62 +54,21 @@ public class TeeOOCInstruction extends ComputationOOCInstruction {
 	public void processInstruction( ExecutionContext ec ) {
 
 		// Create thread and process the tee operation
-		System.out.println("DEBUG: TeeOOCInstruction.processInstruction()");
-
 		MatrixObject min = ec.getMatrixObject(input1);
 		LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
 
-		if (qIn == null) {
-			throw new DMLRuntimeException("Stream handle is null");
-		}
-
-		// CHECK STREAM STATE
-		System.out.println("=== STREAM DEBUGGING ===");
-		System.out.println("  Stream object: " + qIn);
-
-		// Try to peek at stream size/content
-		try {
-			System.out.println("  Stream size (approx): " + qIn.toString());
-		} catch (Exception e) {
-			System.out.println("  Cannot get stream size: " + e.getMessage());
-		}
-		System.out.println("DEBUG: TeeOOCInstruction.processInstruction()");
-		System.out.println("  Input1: " + input1.getName());
-		System.out.println("  Output1: " + output.getName());
-		System.out.println("  Output2: " + output2.getName());
-
-//		MatrixObject min = ec.getMatrixObject(input1);
-		System.out.println("  Input matrix object: " + min);
-		System.out.println("  Matrix has stream handle: " + (min.getStreamHandle() != null));
-
-		if (min.getStreamHandle() == null) {
-			System.out.println("  Matrix is materialized: " + min.isCached(false));
-			System.out.println("  Matrix metadata: " + min.getMetaData());
-		}
-
-//		LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
-
-		if (qIn == null) {
-			throw new DMLRuntimeException("Stream handle is null for input: " + input1.getName() +
-					". This suggests the input stream was not properly created or was already consumed.");
-		}
 //		MatrixObject min = ec.getMatrixObject(input1);
 //		LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
 		LocalTaskQueue<IndexedMatrixValue> qOut = new LocalTaskQueue<>();
 		ec.getMatrixObject(output).setStreamHandle(qOut);
 
-		System.out.println("We are reaching here");
-
 
 		ExecutorService pool = CommonThreadPool.get();
-//		Thread.dumpStack();
 		try {
 			pool.submit(() -> {
 				IndexedMatrixValue tmp = null;
 				try {
 					while ((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
-						System.out.println("print tmp:");
-						System.out.println(tmp);
 						IndexedMatrixValue tmpOut = new IndexedMatrixValue();
 //						tmpOut.set(tmp.getIndexes(),
 //								tmp.getValue().unaryOperations(uop, new MatrixBlock()));

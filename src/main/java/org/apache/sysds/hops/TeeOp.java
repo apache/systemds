@@ -152,6 +152,7 @@ public class TeeOp extends Hop {
 		setDim1(input1.getDim1());
 		setDim2(input1.getDim2());
 		setNnz(input1.getNnz());
+		setBlocksize(input1.getBlocksize());
 	}
 
 	@Override

@@ -263,13 +263,19 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
         // Create the new TeeOp with the original hop as input
         TeeOp teeOp = new TeeOp(sharedInput);
 
+        // Copy metadata
+//        teeOp.setBeginLine(sharedInput.getBeginLine());
+//        teeOp.setBeginColumn(sharedInput.getBeginColumn());
+//        teeOp.setEndLine(sharedInput.getEndLine());
+//        teeOp.setEndColumn(sharedInput.getEndColumn());
+
         // Rewire the graph: replace original connections with TeeOp outputs
         int i = 0;
         for (Hop consumer : consumers) {
-            Hop placeholder = new DataOp("tee_out_" + sharedInput.getHopID() + "_" + i,
+            Hop placeholder = new DataOp("tee_out_" + sharedInput.getName() + "_" + i,
                     sharedInput.getDataType(),
                     sharedInput.getValueType(),
-                    Types.OpOpData.TRANSIENTREAD,
+                    Types.OpOpData.TRANSIENTWRITE,
                     null,
                     sharedInput.getDim1(),
                     sharedInput.getDim2(),
@@ -284,8 +290,9 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
             placeholder.setEndColumn(sharedInput.getEndColumn());
 
             // Connect placeholder to TeeOp and consumer
-            HopRewriteUtils.addChildReference(teeOp, placeholder);
+            HopRewriteUtils.addChildReference(placeholder, teeOp);
             HopRewriteUtils.replaceChildReference(consumer, sharedInput, placeholder);
+//            HopRewriteUtils.replaceChildReference(consumer, sharedInput, teeOp);
 
             i++;
         }

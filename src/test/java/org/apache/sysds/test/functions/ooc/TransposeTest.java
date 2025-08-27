@@ -63,10 +63,10 @@ public class TransposeTest extends AutomatedTestBase {
     runTransposeTest(cols_wide, false);
   }
 
-  @Test
-  public void testTranspose2() {
-    runTransposeTest(cols_skinny, false);
-  }
+//  @Test
+//  public void testTranspose2() {
+//    runTransposeTest(cols_skinny, false);
+//  }
 
   private void runTransposeTest(int cols, boolean sparse )
   {

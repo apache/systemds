@@ -17,35 +17,19 @@
  * under the License.
  */
 
-package org.apache.sysds.cujava.driver;
+#ifndef CUJAVA_DRIVER_COMMON_HPP
+#define CUJAVA_DRIVER_COMMON_HPP
 
-import org.apache.sysds.cujava.CuJavaLibLoader;
-import org.apache.sysds.cujava.CudaException;
+#include <jni.h>
+#include <cuda_runtime_api.h>
+#include <cuda.h>
 
-public class CuJavaDriver {
+#include "../common/cujava_logger.hpp"
+#include "../common/cujava_jni_utils.hpp"
+#include "../common/cujava_pointer_utils.hpp"
 
-	private static boolean exceptionsEnabled = true;
+#define CUJAVA_INTERNAL_ERROR 0x80000001
 
-	private static final String LIB_BASE = "cujava_driver";
 
-	private CuJavaDriver() {
 
-	}
-
-	static {
-		CuJavaLibLoader.load(LIB_BASE);
-	}
-
-	private static int checkCudaResult(int result) {
-		if(exceptionsEnabled && result != CUresult.CUDA_SUCCESS) {
-			throw new CudaException(CUresult.resultString(result));
-		}
-		return result;
-	}
-
-	public static int cuCtxCreate(CUcontext pctx, int flags, CUdevice dev) {
-		return checkCudaResult(cuCtxCreateNative(pctx, flags, dev));
-	}
-
-	private static native int cuCtxCreateNative(CUcontext pctx, int flags, CUdevice dev);
-}
+#endif // CUJAVA_DRIVER_COMMON_HPP

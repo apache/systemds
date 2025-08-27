@@ -19,7 +19,27 @@
 
 package org.apache.sysds.cujava.driver;
 
+import org.apache.sysds.cujava.CuJavaLibLoader;
+import org.apache.sysds.cujava.CudaException;
+
 public class CuJavaDriver {
 
+	private static boolean exceptionsEnabled = true;
+
 	private static final String LIB_BASE = "cujava_driver";
+
+	private CuJavaDriver() {
+
+	}
+
+	static {
+		CuJavaLibLoader.load(LIB_BASE);
+	}
+
+	private static int checkCudaError(int result) {
+		if(exceptionsEnabled && result != CUresult.CUDA_SUCCESS) {
+			throw new CudaException(CUresult.resultString(result));
+		}
+		return result;
+	}
 }

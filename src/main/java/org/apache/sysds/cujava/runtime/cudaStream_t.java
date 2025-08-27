@@ -23,4 +23,15 @@ import org.apache.sysds.cujava.NativePointerObject;
 import org.apache.sysds.cujava.driver.CUstream;
 
 public class cudaStream_t extends NativePointerObject {
+
+	public cudaStream_t() {
+	}
+
+	public cudaStream_t(CUstream stream) {
+		super(stream);
+	}
+
+	cudaStream_t(long value) {
+		super(value);
+	}
 }

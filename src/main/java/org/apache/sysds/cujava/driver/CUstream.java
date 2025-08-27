@@ -20,9 +20,18 @@
 package org.apache.sysds.cujava.driver;
 
 import org.apache.sysds.cujava.NativePointerObject;
+import org.apache.sysds.cujava.runtime.cudaStream_t;
 
 public class CUstream extends NativePointerObject {
 
 	public CUstream() {
+	}
+
+	public CUstream(cudaStream_t stream) {
+		super(stream);
+	}
+
+	CUstream(long value) {
+		super(value);
 	}
 }

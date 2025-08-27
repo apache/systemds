@@ -488,7 +488,7 @@ public class Dag<N extends Lop>
 				markedNodes.add(node);
 				continue;
 			}
-			
+
 			// output scalar instructions and mark nodes for deletion
 			if (!node.isDataExecLocation()) {
 
@@ -547,6 +547,18 @@ public class Dag<N extends Lop>
 					for( Lop out : node.getOutputs() )
 						outputs[count++] = out.getOutputParameters().getLabel();
 					inst_string = node.getInstructions(inputs, outputs);
+				}
+				else if ( node.getType() == Type.Tee ) {
+					String input = node.getInputs().get(0).getOutputParameters().getLabel();
+
+					ArrayList<String> outputs = new  ArrayList<>();
+					for( Lop out : node.getOutputs() ) {
+						outputs.add(out.getOutputParameters().getLabel());
+					}
+
+					String packedOutputs = String.join(Lop.OPERAND_DELIMITOR, outputs);
+
+					inst_string = node.getInstructions(input, packedOutputs);
 				}
 				else if (node.getType() == Lop.Type.Nary) {
 					String[] inputs = new String[node.getInputs().size()];

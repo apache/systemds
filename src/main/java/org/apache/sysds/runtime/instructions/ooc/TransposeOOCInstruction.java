@@ -37,54 +37,54 @@ import java.util.concurrent.ExecutorService;
 
 public class TransposeOOCInstruction extends ComputationOOCInstruction {
 
-	protected TransposeOOCInstruction(OOCType type, ReorgOperator op, CPOperand in1, CPOperand out, String opcode, String istr) {
-		super(type, op, in1, out, opcode, istr);
+  protected TransposeOOCInstruction(OOCType type, ReorgOperator op, CPOperand in1, CPOperand out, String opcode, String istr) {
+    super(type, op, in1, out, opcode, istr);
 
-	}
+  }
 
-	public static TransposeOOCInstruction parseInstruction(String str) {
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		InstructionUtils.checkNumFields(parts, 2);
-		String opcode = parts[0];
-		CPOperand in1 = new CPOperand(parts[1]);
-		CPOperand out = new CPOperand(parts[2]);
+  public static TransposeOOCInstruction parseInstruction(String str) {
+    String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+    InstructionUtils.checkNumFields(parts, 2);
+    String opcode = parts[0];
+    CPOperand in1 = new CPOperand(parts[1]);
+    CPOperand out = new CPOperand(parts[2]);
 
-		ReorgOperator reorg = new ReorgOperator(SwapIndex.getSwapIndexFnObject());
-		return new TransposeOOCInstruction(OOCType.Reorg, reorg, in1, out, opcode, str);
-	}
+    ReorgOperator reorg = new ReorgOperator(SwapIndex.getSwapIndexFnObject());
+    return new TransposeOOCInstruction(OOCType.Reorg, reorg, in1, out, opcode, str);
+  }
 
-	public void processInstruction( ExecutionContext ec ) {
+  public void processInstruction( ExecutionContext ec ) {
 
-		// Create thread and process the transpose operation
-		MatrixObject min = ec.getMatrixObject(input1);
-		LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
-		LocalTaskQueue<IndexedMatrixValue> qOut = new LocalTaskQueue<>();
-		ec.getMatrixObject(output).setStreamHandle(qOut);
+    // Create thread and process the transpose operation
+    MatrixObject min = ec.getMatrixObject(input1);
+    LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
+    LocalTaskQueue<IndexedMatrixValue> qOut = new LocalTaskQueue<>();
+    ec.getMatrixObject(output).setStreamHandle(qOut);
 
 
-		ExecutorService pool = CommonThreadPool.get();
-		try {
-			pool.submit(() -> {
-				IndexedMatrixValue tmp = null;
-				try {
-					while ((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
-						MatrixBlock inBlock = (MatrixBlock)tmp.getValue();
-						long oldRowIdx = tmp.getIndexes().getRowIndex();
-						long oldColIdx = tmp.getIndexes().getColumnIndex();
+    ExecutorService pool = CommonThreadPool.get();
+    try {
+      pool.submit(() -> {
+        IndexedMatrixValue tmp = null;
+        try {
+          while ((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
+            MatrixBlock inBlock = (MatrixBlock)tmp.getValue();
+            long oldRowIdx = tmp.getIndexes().getRowIndex();
+            long oldColIdx = tmp.getIndexes().getColumnIndex();
 
-						MatrixBlock outBlock = inBlock.reorgOperations((ReorgOperator) _optr, new MatrixBlock(), -1, -1, -1);
-						qOut.enqueueTask(new IndexedMatrixValue(new MatrixIndexes(oldColIdx, oldRowIdx), outBlock));
-					}
-					qOut.closeInput();
-				}
-				catch(Exception ex) {
-					throw new DMLRuntimeException(ex);
-				}
-			});
-		} catch (Exception ex) {
-			throw new DMLRuntimeException(ex);
-		} finally {
-			pool.shutdown();
-		}
-	}
+            MatrixBlock outBlock = inBlock.reorgOperations((ReorgOperator) _optr, new MatrixBlock(), -1, -1, -1);
+            qOut.enqueueTask(new IndexedMatrixValue(new MatrixIndexes(oldColIdx, oldRowIdx), outBlock));
+          }
+          qOut.closeInput();
+        }
+        catch(Exception ex) {
+          throw new DMLRuntimeException(ex);
+        }
+      });
+    } catch (Exception ex) {
+      throw new DMLRuntimeException(ex);
+    } finally {
+      pool.shutdown();
+    }
+  }
 }

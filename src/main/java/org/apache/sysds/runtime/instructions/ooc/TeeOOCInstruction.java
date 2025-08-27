@@ -35,66 +35,64 @@ import java.util.concurrent.ExecutorService;
 
 public class TeeOOCInstruction extends ComputationOOCInstruction {
 
-	private final List<CPOperand> _outputs;
-	private CPOperand output2 = null;
+  private final List<CPOperand> _outputs;
 
-	protected TeeOOCInstruction(OOCType type, CPOperand in1, CPOperand out, CPOperand out2, String opcode, String istr) {
-		super(type, null, in1, out, opcode, istr);
-		this.output2 = out2;
-		_outputs = Arrays.asList(out, out2);
-	}
+  protected TeeOOCInstruction(OOCType type, CPOperand in1, CPOperand out, CPOperand out2, String opcode, String istr) {
+    super(type, null, in1, out, opcode, istr);
+    _outputs = Arrays.asList(out, out2);
+  }
 
-	public static TeeOOCInstruction parseInstruction(String str) {
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		InstructionUtils.checkNumFields(parts, 3);
-		String opcode = parts[0];
-		CPOperand in1 = new CPOperand(parts[1]);
-		CPOperand out = new CPOperand(parts[2]);
-		CPOperand out2 = new CPOperand(parts[3]);
+  public static TeeOOCInstruction parseInstruction(String str) {
+    String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+    InstructionUtils.checkNumFields(parts, 3);
+    String opcode = parts[0];
+    CPOperand in1 = new CPOperand(parts[1]);
+    CPOperand out = new CPOperand(parts[2]);
+    CPOperand out2 = new CPOperand(parts[3]);
 
-		return new TeeOOCInstruction(OOCType.Tee, in1, out, out2, opcode, str);
-	}
+    return new TeeOOCInstruction(OOCType.Tee, in1, out, out2, opcode, str);
+  }
 
-	public void processInstruction( ExecutionContext ec ) {
+  public void processInstruction( ExecutionContext ec ) {
 
-		// Create thread and process the tee operation
-		MatrixObject min = ec.getMatrixObject(input1);
-		LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
+    // Create thread and process the tee operation
+    MatrixObject min = ec.getMatrixObject(input1);
+    LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
 
 //		MatrixObject min = ec.getMatrixObject(input1);
 //		LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
-		List<LocalTaskQueue<IndexedMatrixValue>> qOuts = new ArrayList<>();
-		for (CPOperand out : _outputs) {
-			MatrixObject mout = ec.createMatrixObject(min.getDataCharacteristics());
-			ec.setVariable(out.getName(), mout);
-			LocalTaskQueue<IndexedMatrixValue> qOut = new LocalTaskQueue<>();
-			mout.setStreamHandle(qOut);
-			qOuts.add(qOut);
-		}
+    List<LocalTaskQueue<IndexedMatrixValue>> qOuts = new ArrayList<>();
+    for (CPOperand out : _outputs) {
+      MatrixObject mout = ec.createMatrixObject(min.getDataCharacteristics());
+      ec.setVariable(out.getName(), mout);
+      LocalTaskQueue<IndexedMatrixValue> qOut = new LocalTaskQueue<>();
+      mout.setStreamHandle(qOut);
+      qOuts.add(qOut);
+    }
 
-		ExecutorService pool = CommonThreadPool.get();
-		try {
-			pool.submit(() -> {
-				IndexedMatrixValue tmp = null;
-				try {
-					while ((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
+    ExecutorService pool = CommonThreadPool.get();
+    try {
+      pool.submit(() -> {
+        IndexedMatrixValue tmp = null;
+        try {
+          while ((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
 
-						for (int i = 0; i < qOuts.size(); i++) {
-							qOuts.get(i).enqueueTask(new  IndexedMatrixValue(tmp));
-						}
-					}
-					for (LocalTaskQueue<IndexedMatrixValue> qOut : qOuts) {
-						qOut.closeInput();
-					}
-				}
-				catch(Exception ex) {
-					throw new DMLRuntimeException(ex);
-				}
-			});
-		} catch (Exception ex) {
-			throw new DMLRuntimeException(ex);
-		} finally {
-			pool.shutdown();
-		}
-	}
+            for (int i = 0; i < qOuts.size(); i++) {
+              qOuts.get(i).enqueueTask(new  IndexedMatrixValue(tmp));
+            }
+          }
+          for (LocalTaskQueue<IndexedMatrixValue> qOut : qOuts) {
+            qOut.closeInput();
+          }
+        }
+        catch(Exception ex) {
+          throw new DMLRuntimeException(ex);
+        }
+      });
+    } catch (Exception ex) {
+      throw new DMLRuntimeException(ex);
+    } finally {
+      pool.shutdown();
+    }
+  }
 }

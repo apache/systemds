@@ -41,87 +41,87 @@ import java.io.IOException;
 
 public class TeeTest extends AutomatedTestBase {
 
-	private static final String TEST_NAME = "Tee";
-	private static final String TEST_DIR = "functions/ooc/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + TeeTest.class.getSimpleName() + "/";
-	private static final String INPUT_NAME = "X";
-	private static final String OUTPUT_NAME = "res";
-	private final static double eps = 1e-10;
+  private static final String TEST_NAME = "Tee";
+  private static final String TEST_DIR = "functions/ooc/";
+  private static final String TEST_CLASS_DIR = TEST_DIR + TeeTest.class.getSimpleName() + "/";
+  private static final String INPUT_NAME = "X";
+  private static final String OUTPUT_NAME = "res";
+  private final static double eps = 1e-10;
 
-	@Override
-	public void setUp() {
-		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME));
-	}
+  @Override
+  public void setUp() {
+    TestUtils.clearAssertionInformation();
+    addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME));
+  }
 
-	@Test
-	public void testTeeNoRewrite() {
-		testTeeOperation(false);
-	}
-	
-	@Test
-	public void testTeeRewrite() {
-		testTeeOperation(true);
-	}
-	
-	
-	public void testTeeOperation(boolean rewrite)
-	{
-		ExecMode platformOld = setExecMode(ExecMode.SINGLE_NODE);
-		boolean oldRewrite = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
-		OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrite;
-		
-		try {
-			getAndLoadTestConfiguration(TEST_NAME);
-			String HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-explain", "-stats", "-ooc", 
-				"-args", input(INPUT_NAME), output(OUTPUT_NAME)};
+  @Test
+  public void testTeeNoRewrite() {
+    testTeeOperation(false);
+  }
 
-			int rows = 1000, cols = 1000;
-			MatrixBlock mb = MatrixBlock.randOperations(rows, cols, 1.0, -1, 1, "uniform", 7);
-			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(FileFormat.BINARY);
-			writer.writeMatrixToHDFS(mb, input(INPUT_NAME), rows, cols, 1000, rows*cols);
-			HDFSTool.writeMetaDataFile(input(INPUT_NAME+".mtd"), ValueType.FP64, 
-				new MatrixCharacteristics(rows,cols,1000,rows*cols), FileFormat.BINARY);
-			
-			runTest(true, false, null, -1);
+  @Test
+  public void testTeeRewrite() {
+    testTeeOperation(true);
+  }
 
 
-			double[][] C1 = readMatrix(output(OUTPUT_NAME), FileFormat.BINARY, rows, cols, 1000, 1000);
-			double result = 0.0;
-			for(int i = 0; i < cols; i++) { // verify the results with Java
-				for(int j = 0; j < cols; j++) {
-					double expected = 0.0;
-					for (int k = 0; k < rows; k++) {
-						expected += mb.get(k, i) * mb.get(k, j);
-					}
-					result = C1[i][j];
-					Assert.assertEquals( "value mismatch at cell ("+i+","+j+")",expected, result, eps);
-				}
-			}
+  public void testTeeOperation(boolean rewrite)
+  {
+    ExecMode platformOld = setExecMode(ExecMode.SINGLE_NODE);
+    boolean oldRewrite = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
+    OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrite;
 
-			String prefix = Instruction.OOC_INST_PREFIX;
-			Assert.assertTrue("OOC wasn't used for RBLK",
-				heavyHittersContainsString(prefix + Opcodes.RBLK));
-			Assert.assertTrue("OOC wasn't used for TEE",
-							heavyHittersContainsString(prefix + "tee"));
-		}
-		catch(Exception ex) {
-			Assert.fail(ex.getMessage());
-		}
-		finally {
-			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldRewrite;
-			resetExecMode(platformOld);
-		}
-	}
+    try {
+      getAndLoadTestConfiguration(TEST_NAME);
+      String HOME = SCRIPT_DIR + TEST_DIR;
+      fullDMLScriptName = HOME + TEST_NAME + ".dml";
+      programArgs = new String[] {"-explain", "-stats", "-ooc",
+              "-args", input(INPUT_NAME), output(OUTPUT_NAME)};
 
-	private static double[][] readMatrix( String fname, FileFormat fmt, 
-		long rows, long cols, int brows, int bcols )
-		throws IOException
-	{
-		MatrixBlock mb = DataConverter.readMatrixFromHDFS(fname, fmt, rows, cols, brows, bcols);
-		double[][] C = DataConverter.convertToDoubleMatrix(mb);
-		return C;
-	}
+      int rows = 1000, cols = 1000;
+      MatrixBlock mb = MatrixBlock.randOperations(rows, cols, 1.0, -1, 1, "uniform", 7);
+      MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(FileFormat.BINARY);
+      writer.writeMatrixToHDFS(mb, input(INPUT_NAME), rows, cols, 1000, rows*cols);
+      HDFSTool.writeMetaDataFile(input(INPUT_NAME+".mtd"), ValueType.FP64,
+              new MatrixCharacteristics(rows,cols,1000,rows*cols), FileFormat.BINARY);
+
+      runTest(true, false, null, -1);
+
+
+      double[][] C1 = readMatrix(output(OUTPUT_NAME), FileFormat.BINARY, rows, cols, 1000, 1000);
+      double result = 0.0;
+      for(int i = 0; i < cols; i++) { // verify the results with Java
+        for(int j = 0; j < cols; j++) {
+          double expected = 0.0;
+          for (int k = 0; k < rows; k++) {
+            expected += mb.get(k, i) * mb.get(k, j);
+          }
+          result = C1[i][j];
+          Assert.assertEquals( "value mismatch at cell ("+i+","+j+")",expected, result, eps);
+        }
+      }
+
+      String prefix = Instruction.OOC_INST_PREFIX;
+      Assert.assertTrue("OOC wasn't used for RBLK",
+              heavyHittersContainsString(prefix + Opcodes.RBLK));
+      Assert.assertTrue("OOC wasn't used for TEE",
+              heavyHittersContainsString(prefix + "tee"));
+    }
+    catch(Exception ex) {
+      Assert.fail(ex.getMessage());
+    }
+    finally {
+      OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldRewrite;
+      resetExecMode(platformOld);
+    }
+  }
+
+  private static double[][] readMatrix( String fname, FileFormat fmt,
+                                        long rows, long cols, int brows, int bcols )
+          throws IOException
+  {
+    MatrixBlock mb = DataConverter.readMatrixFromHDFS(fname, fmt, rows, cols, brows, bcols);
+    double[][] C = DataConverter.convertToDoubleMatrix(mb);
+    return C;
+  }
 }

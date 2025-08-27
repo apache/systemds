@@ -54,13 +54,6 @@ public class InstructionParser
 					throw new DMLRuntimeException("Unknown FEDERATED instruction: " + str);
 				return FEDInstructionParser.parseSingleInstruction (fedtype, str);
 			case OOC:
-				// --- THIS IS THE WORKAROUND ---
-				// Manually check for our new 'tee' opcode before the general lookup.
-				if ( InstructionUtils.getOpCode(str).equals("tee") ) {
-					return OOCInstructionParser.parseSingleInstruction(
-							InstructionType.Tee, str);
-				}
-				// --- END OF WORKAROUND ---
 				InstructionType ooctype = InstructionUtils.getOOCType(str);
 				if( ooctype == null )
 					throw new DMLRuntimeException("Unknown OOC instruction: " + str);

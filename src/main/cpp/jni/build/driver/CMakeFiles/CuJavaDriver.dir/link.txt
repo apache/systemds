@@ -1,1 +1,0 @@
-/usr/bin/c++ -fPIC -O3 -DNDEBUG -shared -Wl,-soname,libcujava_driver.so -o /home/rene/projects/systemds/src/main/cpp/lib/libcujava_driver.so CMakeFiles/CuJavaDriver.dir/cujava_driver.cpp.o 

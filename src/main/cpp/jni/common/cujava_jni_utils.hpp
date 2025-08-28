@@ -34,6 +34,8 @@ bool set(JNIEnv *env, jintArray ja, int index, jint value);
 bool setFieldBytes(JNIEnv* env, jobject obj, jfieldID fid, const jbyte* src, jsize n);
 bool setFieldInts (JNIEnv* env, jobject obj, jfieldID fid, const jint*  src, jsize n);
 bool zeroFieldInts(JNIEnv* env, jobject obj, jfieldID fid);
+char* toNativeCString(JNIEnv* env, jstring js, int* length = nullptr);
+
 
 // ---- Exceptions ----
 void ThrowByName(JNIEnv* env, const char* name, const char* msg);

@@ -25,7 +25,7 @@ import org.apache.sysds.cujava.Pointer;
 
 public class CuJava {
 
-	private static boolean exceptionsEnabled = true;
+	private static boolean exceptionsEnabled = false;
 
 	private static final String LIB_BASE = "cujava_runtime";
 

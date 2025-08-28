@@ -189,3 +189,35 @@ bool zeroFieldInts(JNIEnv* env, jobject obj, jfieldID fid) {
 }
 
 
+char* toNativeCString(JNIEnv* env, jstring js, int* length) {
+    if (js == nullptr) return nullptr;
+
+    if (env->EnsureLocalCapacity(2) < 0) {
+        ThrowByName(env, "java/lang/OutOfMemoryError",
+                    "Out of memory during string reference creation");
+        return nullptr;
+    }
+
+    jbyteArray bytes = (jbyteArray)env->CallObjectMethod(js, String_getBytes);
+    if (env->ExceptionCheck() || bytes == nullptr) {
+        return nullptr;
+    }
+
+    jint len = env->GetArrayLength(bytes);
+    if (length) *length = (int)len;
+
+    char* out = new char[len + 1];
+    if (out == nullptr) {
+        ThrowByName(env, "java/lang/OutOfMemoryError",
+                    "Out of memory during string creation");
+        env->DeleteLocalRef(bytes);
+        return nullptr;
+    }
+
+    env->GetByteArrayRegion(bytes, 0, len, (jbyte*)out);
+    out[len] = '\0';
+    env->DeleteLocalRef(bytes);
+    return out;
+}
+
+

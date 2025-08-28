@@ -25,3 +25,4 @@ project(cujava_jni LANGUAGES CXX)
 # Build the two subprojects
 add_subdirectory(common)
 add_subdirectory(runtime)
+add_subdirectory(driver)

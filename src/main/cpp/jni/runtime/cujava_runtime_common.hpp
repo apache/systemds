@@ -21,8 +21,8 @@
 #define CUJAVA_RUNTIME_COMMON_HPP
 
 #include <jni.h>
+#include <cstdint>
 #include <cuda_runtime_api.h>
-#include <cuda.h>
 
 #include "../common/cujava_logger.hpp"
 #include "../common/cujava_jni_utils.hpp"

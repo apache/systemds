@@ -21,35 +21,34 @@
 
 cmake_minimum_required(VERSION 3.18)
 
-project(CuJavaRuntime LANGUAGES CXX)
+project(CuJavaDriver LANGUAGES CXX)
 
 find_package(JNI REQUIRED)
-find_package(CUDAToolkit REQUIRED)  # for CUDA::cudart
+find_package(CUDAToolkit REQUIRED)  # for CUDA::cuda_driver
 
-add_library(CuJavaRuntime SHARED
-    cujava_runtime.cpp
+add_library(CuJavaDriver SHARED
+    cujava_driver.cpp
 )
 
-set_target_properties(CuJavaRuntime PROPERTIES
+set_target_properties(CuJavaDriver PROPERTIES
     CXX_STANDARD 11
-    OUTPUT_NAME cujava_runtime                         # -> libcujava_runtime.so
+    OUTPUT_NAME cujava_driver                         # -> libcujava_driver.so
     LIBRARY_OUTPUT_DIRECTORY  ${CMAKE_CURRENT_SOURCE_DIR}/../../lib
     RUNTIME_OUTPUT_DIRECTORY  ${CMAKE_CURRENT_SOURCE_DIR}/../../lib
     ARCHIVE_OUTPUT_DIRECTORY  ${CMAKE_CURRENT_SOURCE_DIR}/../../lib
 )
 
-target_include_directories(CuJavaRuntime
+target_include_directories(CuJavaDriver
     PRIVATE
         ${JNI_INCLUDE_DIRS}
         ${CUDAToolkit_INCLUDE_DIRS}
-        ${CMAKE_CURRENT_SOURCE_DIR}            # headers in runtime/
+        ${CMAKE_CURRENT_SOURCE_DIR}            # headers in driver/
         ${CMAKE_CURRENT_SOURCE_DIR}/../common  # if including common headers
 )
 
 target_link_libraries(CuJavaRuntime
     PRIVATE
         CuJavaCommonJNI
-        CUDA::cudart
+        CUDA::cuda_driver            # driver API (libcuda)
         ${JNI_LIBRARIES}
 )
-

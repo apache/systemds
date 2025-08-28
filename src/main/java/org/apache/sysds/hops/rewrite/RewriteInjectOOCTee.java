@@ -21,7 +21,10 @@ package org.apache.sysds.hops.rewrite;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.hops.*;
+import org.apache.sysds.hops.AggBinaryOp;
+import org.apache.sysds.hops.DataOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.ReorgOp;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -175,7 +178,20 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
 		ArrayList<Hop> consumers = new ArrayList<>(sharedInput.getParent());
 
 		// Create the new TeeOp with the original hop as input
-		TeeOp teeOp = new TeeOp(sharedInput);
+//		TeeOp teeOp = new TeeOp(sharedInput);
+		DataOp teeOp	= new DataOp("tee_out_" + sharedInput.getName(),
+						sharedInput.getDataType(),
+						sharedInput.getValueType(),
+						Types.OpOpData.TRANSIENTWRITE,
+						null,
+						sharedInput.getDim1(),
+						sharedInput.getDim2(),
+						sharedInput.getNnz(),
+						sharedInput.getBlocksize()
+		);
+
+		teeOp.setIsTeeOp(true);
+		HopRewriteUtils.addChildReference(teeOp, sharedInput);
 
 		// Rewire the graph: replace original connections with TeeOp outputs
 		int i = 0;
@@ -212,7 +228,7 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
 	private boolean isNotAlreadyTee(Hop hop) {
 		if (hop.getParent().size() > 1) {
 			for (Hop consumer : hop.getParent()) {
-				if (consumer instanceof TeeOp) {
+				if (consumer instanceof DataOp) {
 					return false;
 				}
 			}

@@ -304,30 +304,30 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuMemFre
 
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuMemcpyDtoHNative
-  (JNIEnv *env, jclass cls, jobject dstHost, jobject srcDevice, jlong ByteCount) {
-    if (dstHost == NULL) {
+  (JNIEnv *env, jclass, jobject dstHost, jobject srcDevice, jlong ByteCount) {
+    if (dstHost == nullptr) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'dstHost' is null for cuMemcpyDtoH");
         return CUJAVA_INTERNAL_ERROR;
     }
-    if (srcDevice == NULL) {
+    if (srcDevice == nullptr){
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'srcDevice' is null for cuMemcpyDtoH");
         return CUJAVA_INTERNAL_ERROR;
     }
-    Logger::log(LOG_TRACE, "Executing cuMemcpyDtoH of %d bytes\n", (size_t)ByteCount);
+    Logger::log(LOG_TRACE, "Executing cuMemcpyDtoH of %ld bytes\n", (long)ByteCount);
 
-    PointerData *dstHostPointerData = initPointerData(env, dstHost);
-    if (dstHostPointerData == NULL) {
-        return CUJAVA_INTERNAL_ERROR;
-    }
-    CUdeviceptr nativeSrcDevice = (CUdeviceptr)getPointer(env, srcDevice);
-    void *nativeDstHost = (void*)dstHostPointerData->getPointer(env);
+    PointerData *dstHostPD = initPointerData(env, dstHost);
+    if (dstHostPD == nullptr) return CUJAVA_INTERNAL_ERROR;
+
+    // Correct: CUdeviceptr from CUdeviceptr wrapper
+    CUdeviceptr nativeSrcDevice = (CUdeviceptr)(uintptr_t)getNativePointerValue(env, srcDevice);
+    void *nativeDstHost = dstHostPD->getPointer(env);
 
     int result = cuMemcpyDtoH(nativeDstHost, nativeSrcDevice, (size_t)ByteCount);
 
-    if (!releasePointerData(env, dstHostPointerData, 0)) return CUJAVA_INTERNAL_ERROR;
-
+    if (!releasePointerData(env, dstHostPD, 0)) return CUJAVA_INTERNAL_ERROR; // commit host writes
     return result;
 }
+
 
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuCtxSynchronizeNative

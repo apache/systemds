@@ -24,7 +24,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+
+import java.util.HashMap;
 
 public abstract class OOCInstruction extends Instruction {
 	protected static final Log LOG = LogFactory.getLog(OOCInstruction.class.getName());
@@ -81,5 +84,62 @@ public abstract class OOCInstruction extends Instruction {
 	public void postprocessInstruction(ExecutionContext ec) {
 		if(DMLScript.LINEAGE_DEBUGGER)
 			ec.maintainLineageDebuggerInfo(this);
+	}
+
+	/**
+	 * Tracks blocks and their counts to enable early emission
+	 * once all blocks for a given index are processed.
+	 */
+	public static class OOCMatrixBlockTracker {
+		private final long emissionThreshold;
+		private final HashMap<Long, MatrixBlock> blocks;
+		private final HashMap<Long, Integer> cnt;
+
+		public OOCMatrixBlockTracker(long emissionThreshold) {
+			this.emissionThreshold = emissionThreshold;
+			this.blocks = new HashMap<>();
+			this.cnt = new HashMap<>();
+		}
+
+		/**
+		 * Adds or updates a block for the given index and updates its internal count.
+		 * @param idx   block index
+		 * @param block MatrixBlock
+		 * @return true if the block count reached the threshold (ready to emit), false otherwise
+		 */
+		public boolean putAndIncrementCount(Long idx, MatrixBlock block) {
+			blocks.put(idx, block);
+			int newCnt = cnt.getOrDefault(idx, 0) + 1;
+			if (newCnt == emissionThreshold) {
+				return true;
+			} else {
+				cnt.put(idx, newCnt);
+				return false;
+			}
+		}
+
+		public boolean incrementCount(Long idx) {
+			int newCnt = cnt.get(idx) + 1;
+			if (newCnt == emissionThreshold) {
+				return true;
+			} else {
+				cnt.put(idx, newCnt);
+				return false;
+			}
+		}
+
+		public void putAndInitCount(Long idx, MatrixBlock block) {
+			blocks.put(idx, block);
+			cnt.put(idx, 0);
+		}
+
+		public MatrixBlock get(Long idx) {
+			return blocks.get(idx);
+		}
+
+		public void remove(Long idx) {
+			blocks.remove(idx);
+			cnt.remove(idx);
+		}
 	}
 }

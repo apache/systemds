@@ -438,14 +438,14 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusp
     cusparseHandle_t handle_native;
     cusparseOperation_t opA_native;
     cusparseOperation_t opB_native;
-    void * alpha_native = NULL;
+    void * alpha_native = nullptr;
     cusparseConstSpMatDescr_t matA_native;
     cusparseConstDnMatDescr_t matB_native;
-    void * beta_native = NULL;
+    void * beta_native = nullptr;
     cusparseDnMatDescr_t matC_native;
     cudaDataType computeType_native;
     cusparseSpMMAlg_t alg_native;
-    void * externalBuffer_native = NULL;
+    void * externalBuffer_native = nullptr;
 
     handle_native = (cusparseHandle_t)getNativePointerValue(env, handle);
     opA_native = (cusparseOperation_t)opA;
@@ -521,11 +521,11 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusp
     void * alpha_native = NULL;
     cusparseConstSpMatDescr_t matA_native;
     cusparseConstDnMatDescr_t matB_native;
-    void * beta_native = NULL;
+    void * beta_native = nullptr;
     cusparseDnMatDescr_t matC_native;
     cudaDataType computeType_native;
     cusparseSpMMAlg_t alg_native;
-    size_t * bufferSize_native = NULL;
+    size_t * bufferSize_native = nullptr;
 
     handle_native = (cusparseHandle_t)getNativePointerValue(env, handle);
     opA_native = (cusparseOperation_t)opA;
@@ -554,6 +554,533 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusp
     if (!releasePointerData(env, alpha_pointerData, JNI_ABORT)) return CUJAVA_INTERNAL_ERROR;
     if (!releasePointerData(env, beta_pointerData, JNI_ABORT)) return CUJAVA_INTERNAL_ERROR;
     if (!releaseNative(env, bufferSize_native, bufferSize, true)) return CUJAVA_INTERNAL_ERROR;
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseCreateDnMatNative
+    (JNIEnv *env, jclass cls, jobject dnMatDescr, jlong rows, jlong cols, jlong ld, jobject values, jint valueType, jint order) {
+
+    if (dnMatDescr == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'dnMatDescr' is null for cusparseCreateDnMat");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (values == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'values' is null for cusparseCreateDnMat");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+
+    Logger::log(LOG_TRACE, "Executing cusparseCreateDnMat(dnMatDescr=%p, rows=%ld, cols=%ld, ld=%ld, values=%p, valueType=%d, order=%d)\n",
+        dnMatDescr, rows, cols, ld, values, valueType, order);
+
+    cusparseDnMatDescr_t dnMatDescr_native;
+    int64_t rows_native = 0;
+    int64_t cols_native = 0;
+    int64_t ld_native = 0;
+    void * values_native = nullptr;
+    cudaDataType valueType_native;
+    cusparseOrder_t order_native;
+
+    rows_native = (int64_t)rows;
+    cols_native = (int64_t)cols;
+    ld_native = (int64_t)ld;
+    values_native = (void *)getPointer(env, values);
+    valueType_native = (cudaDataType)valueType;
+    order_native = (cusparseOrder_t)order;
+
+    cusparseStatus_t jniResult_native = cusparseCreateDnMat(&dnMatDescr_native, rows_native, cols_native, ld_native,
+        values_native, valueType_native, order_native);
+    setNativePointerValue(env, dnMatDescr, (jlong)dnMatDescr_native);
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseCsrSetPointersNative
+    (JNIEnv *env, jclass cls, jobject spMatDescr, jobject csrRowOffsets, jobject csrColInd, jobject csrValues) {
+    if (spMatDescr == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'spMatDescr' is null for cusparseCsrSetPointers");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (csrRowOffsets == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrRowOffsets' is null for cusparseCsrSetPointers");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (csrColInd == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrColInd' is null for cusparseCsrSetPointers");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (csrValues == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrValues' is null for cusparseCsrSetPointers");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+
+    Logger::log(LOG_TRACE, "Executing cusparseCsrSetPointers(spMatDescr=%p, csrRowOffsets=%p, csrColInd=%p, csrValues=%p)\n",
+        spMatDescr, csrRowOffsets, csrColInd, csrValues);
+
+    cusparseSpMatDescr_t spMatDescr_native;
+    void * csrRowOffsets_native = nullptr;
+    void * csrColInd_native = nullptr;
+    void * csrValues_native = nullptr;
+
+    spMatDescr_native = (cusparseSpMatDescr_t)getNativePointerValue(env, spMatDescr);
+    csrRowOffsets_native = (void *)getPointer(env, csrRowOffsets);
+    csrColInd_native = (void *)getPointer(env, csrColInd);
+    csrValues_native = (void *)getPointer(env, csrValues);
+    cusparseStatus_t jniResult_native = cusparseCsrSetPointers(spMatDescr_native, csrRowOffsets_native, csrColInd_native, csrValues_native);
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseCsr2cscEx2Native
+    (JNIEnv *env, jclass cls, jobject handle, jint m, jint n, jint nnz, jobject csrVal, jobject csrRowPtr,
+     jobject csrColInd, jobject cscVal, jobject cscColPtr, jobject cscRowInd, jint valType, jint copyValues, jint idxBase, jint alg, jobject buffer) {
+    if (handle == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'handle' is null for cusparseCsr2cscEx2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+
+    if (csrVal == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrVal' is null for cusparseCsr2cscEx2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (csrRowPtr == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrRowPtr' is null for cusparseCsr2cscEx2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (csrColInd == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrColInd' is null for cusparseCsr2cscEx2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (cscVal == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'cscVal' is null for cusparseCsr2cscEx2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (cscColPtr == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'cscColPtr' is null for cusparseCsr2cscEx2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (cscRowInd == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'cscRowInd' is null for cusparseCsr2cscEx2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (buffer == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'buffer' is null for cusparseCsr2cscEx2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+
+    Logger::log(LOG_TRACE, "Executing cusparseCsr2cscEx2(handle=%p, m=%d, n=%d, nnz=%d, csrVal=%p, csrRowPtr=%p, csrColInd=%p, cscVal=%p, cscColPtr=%p, cscRowInd=%p, valType=%d, copyValues=%d, idxBase=%d, alg=%d, buffer=%p)\n",
+        handle, m, n, nnz, csrVal, csrRowPtr, csrColInd, cscVal, cscColPtr, cscRowInd, valType, copyValues, idxBase, alg, buffer);
+
+    cusparseHandle_t handle_native;
+    int m_native = 0;
+    int n_native = 0;
+    int nnz_native = 0;
+    void * csrVal_native = nullptr;
+    int * csrRowPtr_native = nullptr;
+    int * csrColInd_native = nullptr;
+    void * cscVal_native = nullptr;
+    int * cscColPtr_native = nullptr;
+    int * cscRowInd_native = nullptr;
+    cudaDataType valType_native;
+    cusparseAction_t copyValues_native;
+    cusparseIndexBase_t idxBase_native;
+    cusparseCsr2CscAlg_t alg_native;
+    void * buffer_native = nullptr;
+
+    // Native arguments
+    handle_native = (cusparseHandle_t)getNativePointerValue(env, handle);
+    m_native = (int)m;
+    n_native = (int)n;
+    nnz_native = (int)nnz;
+    csrVal_native = (void *)getPointer(env, csrVal);
+    csrRowPtr_native = (int *)getPointer(env, csrRowPtr);
+    csrColInd_native = (int *)getPointer(env, csrColInd);
+    cscVal_native = (void *)getPointer(env, cscVal);
+    cscColPtr_native = (int *)getPointer(env, cscColPtr);
+    cscRowInd_native = (int *)getPointer(env, cscRowInd);
+    valType_native = (cudaDataType)valType;
+    copyValues_native = (cusparseAction_t)copyValues;
+    idxBase_native = (cusparseIndexBase_t)idxBase;
+    alg_native = (cusparseCsr2CscAlg_t)alg;
+    buffer_native = (void *)getPointer(env, buffer);
+
+    cusparseStatus_t jniResult_native = cusparseCsr2cscEx2(handle_native, m_native, n_native, nnz_native,
+        csrVal_native, csrRowPtr_native, csrColInd_native, cscVal_native, cscColPtr_native, cscRowInd_native,
+        valType_native, copyValues_native, idxBase_native, alg_native, buffer_native);
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseCsr2cscEx2_1bufferSizeNative
+    (JNIEnv *env, jclass cls, jobject handle, jint m, jint n, jint nnz, jobject csrVal, jobject csrRowPtr, jobject csrColInd,
+     jobject cscVal, jobject cscColPtr, jobject cscRowInd, jint valType, jint copyValues, jint idxBase, jint alg, jlongArray bufferSize) {
+
+    if (handle == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'handle' is null for cusparseCsr2cscEx2_bufferSize");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (csrVal == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrVal' is null for cusparseCsr2cscEx2_bufferSize");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (csrRowPtr == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrRowPtr' is null for cusparseCsr2cscEx2_bufferSize");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (csrColInd == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrColInd' is null for cusparseCsr2cscEx2_bufferSize");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (cscVal == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'cscVal' is null for cusparseCsr2cscEx2_bufferSize");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (cscColPtr == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'cscColPtr' is null for cusparseCsr2cscEx2_bufferSize");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (cscRowInd == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'cscRowInd' is null for cusparseCsr2cscEx2_bufferSize");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (bufferSize == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'bufferSize' is null for cusparseCsr2cscEx2_bufferSize");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+
+    Logger::log(LOG_TRACE, "Executing cusparseCsr2cscEx2_bufferSize(handle=%p, m=%d, n=%d, nnz=%d, csrVal=%p, csrRowPtr=%p, csrColInd=%p, cscVal=%p, cscColPtr=%p, cscRowInd=%p, valType=%d, copyValues=%d, idxBase=%d, alg=%d, bufferSize=%p)\n",
+        handle, m, n, nnz, csrVal, csrRowPtr, csrColInd, cscVal, cscColPtr, cscRowInd, valType, copyValues, idxBase, alg, bufferSize);
+
+    // declare native arguments
+    cusparseHandle_t handle_native;
+    int m_native = 0;
+    int n_native = 0;
+    int nnz_native = 0;
+    void * csrVal_native = NULL;
+    int * csrRowPtr_native = NULL;
+    int * csrColInd_native = NULL;
+    void * cscVal_native = NULL;
+    int * cscColPtr_native = NULL;
+    int * cscRowInd_native = NULL;
+    cudaDataType valType_native;
+    cusparseAction_t copyValues_native;
+    cusparseIndexBase_t idxBase_native;
+    cusparseCsr2CscAlg_t alg_native;
+    size_t * bufferSize_native = NULL;
+
+    // get Native arguments
+    handle_native = (cusparseHandle_t)getNativePointerValue(env, handle);
+    m_native = (int)m;
+    n_native = (int)n;
+    nnz_native = (int)nnz;
+    csrVal_native = (void *)getPointer(env, csrVal);
+    csrRowPtr_native = (int *)getPointer(env, csrRowPtr);
+    csrColInd_native = (int *)getPointer(env, csrColInd);
+    cscVal_native = (void *)getPointer(env, cscVal);
+    cscColPtr_native = (int *)getPointer(env, cscColPtr);
+    cscRowInd_native = (int *)getPointer(env, cscRowInd);
+    valType_native = (cudaDataType)valType;
+    copyValues_native = (cusparseAction_t)copyValues;
+    idxBase_native = (cusparseIndexBase_t)idxBase;
+    alg_native = (cusparseCsr2CscAlg_t)alg;
+    if (!initNative(env, bufferSize, bufferSize_native, true)) return CUJAVA_INTERNAL_ERROR;
+
+    cusparseStatus_t jniResult_native = cusparseCsr2cscEx2_bufferSize
+        (handle_native, m_native, n_native, nnz_native, csrVal_native, csrRowPtr_native, csrColInd_native, cscVal_native,
+         cscColPtr_native, cscRowInd_native, valType_native, copyValues_native, idxBase_native, alg_native, bufferSize_native);
+    if (!releaseNative(env, bufferSize_native, bufferSize, true)) return CUJAVA_INTERNAL_ERROR;
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseDcsrgeam2Native
+    (JNIEnv *env, jclass cls, jobject handle, jint m, jint n, jobject alpha, jobject descrA, jint nnzA, jobject csrSortedValA,
+     jobject csrSortedRowPtrA, jobject csrSortedColIndA, jobject beta, jobject descrB, jint nnzB, jobject csrSortedValB,
+     jobject csrSortedRowPtrB, jobject csrSortedColIndB, jobject descrC, jobject csrSortedValC, jobject csrSortedRowPtrC, jobject csrSortedColIndC, jobject pBuffer) {
+    if (handle == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'handle' is null for cusparseDcsrgeam2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (alpha == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'alpha' is null for cusparseDcsrgeam2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (descrA == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'descrA' is null for cusparseDcsrgeam2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    // nnzA is primitive
+    if (csrSortedValA == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrSortedValA' is null for cusparseDcsrgeam2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (csrSortedRowPtrA == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrSortedRowPtrA' is null for cusparseDcsrgeam2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (csrSortedColIndA == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrSortedColIndA' is null for cusparseDcsrgeam2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (beta == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'beta' is null for cusparseDcsrgeam2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (descrB == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'descrB' is null for cusparseDcsrgeam2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    // nnzB is primitive
+    if (csrSortedValB == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrSortedValB' is null for cusparseDcsrgeam2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (csrSortedRowPtrB == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrSortedRowPtrB' is null for cusparseDcsrgeam2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (csrSortedColIndB == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrSortedColIndB' is null for cusparseDcsrgeam2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (descrC == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'descrC' is null for cusparseDcsrgeam2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (csrSortedValC == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrSortedValC' is null for cusparseDcsrgeam2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (csrSortedRowPtrC == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrSortedRowPtrC' is null for cusparseDcsrgeam2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (csrSortedColIndC == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrSortedColIndC' is null for cusparseDcsrgeam2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (pBuffer == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'pBuffer' is null for cusparseDcsrgeam2");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+
+    // Log message
+    Logger::log(LOG_TRACE, "Executing cusparseDcsrgeam2(handle=%p, m=%d, n=%d, alpha=%p, descrA=%p, nnzA=%d, csrSortedValA=%p, csrSortedRowPtrA=%p, csrSortedColIndA=%p, beta=%p, descrB=%p, nnzB=%d, csrSortedValB=%p, csrSortedRowPtrB=%p, csrSortedColIndB=%p, descrC=%p, csrSortedValC=%p, csrSortedRowPtrC=%p, csrSortedColIndC=%p, pBuffer=%p)\n",
+        handle, m, n, alpha, descrA, nnzA, csrSortedValA, csrSortedRowPtrA, csrSortedColIndA, beta, descrB, nnzB, csrSortedValB, csrSortedRowPtrB, csrSortedColIndB, descrC, csrSortedValC, csrSortedRowPtrC, csrSortedColIndC, pBuffer);
+
+    // Native variable declarations
+    cusparseHandle_t handle_native;
+    int m_native = 0;
+    int n_native = 0;
+    double * alpha_native = nullptr;
+    cusparseMatDescr_t descrA_native;
+    int nnzA_native = 0;
+    double * csrSortedValA_native = nullptr;
+    int * csrSortedRowPtrA_native = NULL;
+    int * csrSortedColIndA_native = NULL;
+    double * beta_native = NULL;
+    cusparseMatDescr_t descrB_native;
+    int nnzB_native = 0;
+    double * csrSortedValB_native = NULL;
+    int * csrSortedRowPtrB_native = NULL;
+    int * csrSortedColIndB_native = NULL;
+    cusparseMatDescr_t descrC_native;
+    double * csrSortedValC_native = NULL;
+    int * csrSortedRowPtrC_native = NULL;
+    int * csrSortedColIndC_native = NULL;
+    void * pBuffer_native = NULL;
+
+    // Obtain native variable values
+    handle_native = (cusparseHandle_t)getNativePointerValue(env, handle);
+    m_native = (int)m;
+    n_native = (int)n;
+    PointerData *alpha_pointerData = initPointerData(env, alpha);
+    if (alpha_pointerData == nullptr) {
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    alpha_native = (double *)alpha_pointerData->getPointer(env);
+    descrA_native = (cusparseMatDescr_t)getNativePointerValue(env, descrA);
+    nnzA_native = (int)nnzA;
+    csrSortedValA_native = (double *)getPointer(env, csrSortedValA);
+    csrSortedRowPtrA_native = (int *)getPointer(env, csrSortedRowPtrA);
+    csrSortedColIndA_native = (int *)getPointer(env, csrSortedColIndA);
+    PointerData *beta_pointerData = initPointerData(env, beta);
+    if (beta_pointerData == nullptr) {
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    beta_native = (double *)beta_pointerData->getPointer(env);
+    descrB_native = (cusparseMatDescr_t)getNativePointerValue(env, descrB);
+    nnzB_native = (int)nnzB;
+    csrSortedValB_native = (double *)getPointer(env, csrSortedValB);
+    csrSortedRowPtrB_native = (int *)getPointer(env, csrSortedRowPtrB);
+    csrSortedColIndB_native = (int *)getPointer(env, csrSortedColIndB);
+    descrC_native = (cusparseMatDescr_t)getNativePointerValue(env, descrC);
+    csrSortedValC_native = (double *)getPointer(env, csrSortedValC);
+    csrSortedRowPtrC_native = (int *)getPointer(env, csrSortedRowPtrC);
+    csrSortedColIndC_native = (int *)getPointer(env, csrSortedColIndC);
+    pBuffer_native = (void *)getPointer(env, pBuffer);
+
+    cusparseStatus_t jniResult_native = cusparseDcsrgeam2(handle_native, m_native, n_native, alpha_native, descrA_native,
+        nnzA_native, csrSortedValA_native, csrSortedRowPtrA_native, csrSortedColIndA_native, beta_native, descrB_native,
+         nnzB_native, csrSortedValB_native, csrSortedRowPtrB_native, csrSortedColIndB_native, descrC_native, csrSortedValC_native,
+         csrSortedRowPtrC_native, csrSortedColIndC_native, pBuffer_native);
+
+    if (!releasePointerData(env, alpha_pointerData, JNI_ABORT)) return CUJAVA_INTERNAL_ERROR;
+    if (!releasePointerData(env, beta_pointerData, JNI_ABORT)) return CUJAVA_INTERNAL_ERROR;
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseDcsrgeam2_1bufferSizeExtNative
+    (JNIEnv *env, jclass cls, jobject handle, jint m, jint n, jobject alpha, jobject descrA, jint nnzA, jobject csrSortedValA,
+     jobject csrSortedRowPtrA, jobject csrSortedColIndA, jobject beta, jobject descrB, jint nnzB, jobject csrSortedValB, jobject csrSortedRowPtrB,
+     jobject csrSortedColIndB, jobject descrC, jobject csrSortedValC, jobject csrSortedRowPtrC, jobject csrSortedColIndC, jlongArray pBufferSizeInBytes) {
+    if (handle == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'handle' is null for cusparseDcsrgeam2_bufferSizeExt");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (alpha == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'alpha' is null for cusparseDcsrgeam2_bufferSizeExt");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (descrA == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'descrA' is null for cusparseDcsrgeam2_bufferSizeExt");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    // nnzA is primitive
+    if (csrSortedValA == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrSortedValA' is null for cusparseDcsrgeam2_bufferSizeExt");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (csrSortedRowPtrA == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrSortedRowPtrA' is null for cusparseDcsrgeam2_bufferSizeExt");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (csrSortedColIndA == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrSortedColIndA' is null for cusparseDcsrgeam2_bufferSizeExt");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (beta == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'beta' is null for cusparseDcsrgeam2_bufferSizeExt");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (descrB == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'descrB' is null for cusparseDcsrgeam2_bufferSizeExt");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    // nnzB is primitive
+    if (csrSortedValB == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrSortedValB' is null for cusparseDcsrgeam2_bufferSizeExt");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (csrSortedRowPtrB == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrSortedRowPtrB' is null for cusparseDcsrgeam2_bufferSizeExt");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (csrSortedColIndB == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrSortedColIndB' is null for cusparseDcsrgeam2_bufferSizeExt");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (descrC == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'descrC' is null for cusparseDcsrgeam2_bufferSizeExt");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (csrSortedValC == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrSortedValC' is null for cusparseDcsrgeam2_bufferSizeExt");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (csrSortedRowPtrC == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrSortedRowPtrC' is null for cusparseDcsrgeam2_bufferSizeExt");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (csrSortedColIndC == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'csrSortedColIndC' is null for cusparseDcsrgeam2_bufferSizeExt");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (pBufferSizeInBytes == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'pBufferSizeInBytes' is null for cusparseDcsrgeam2_bufferSizeExt");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+
+    Logger::log(LOG_TRACE, "Executing cusparseDcsrgeam2_bufferSizeExt(handle=%p, m=%d, n=%d, alpha=%p, descrA=%p, nnzA=%d, csrSortedValA=%p, csrSortedRowPtrA=%p, csrSortedColIndA=%p, beta=%p, descrB=%p, nnzB=%d, csrSortedValB=%p, csrSortedRowPtrB=%p, csrSortedColIndB=%p, descrC=%p, csrSortedValC=%p, csrSortedRowPtrC=%p, csrSortedColIndC=%p, pBufferSizeInBytes=%p)\n",
+        handle, m, n, alpha, descrA, nnzA, csrSortedValA, csrSortedRowPtrA, csrSortedColIndA, beta, descrB, nnzB, csrSortedValB, csrSortedRowPtrB, csrSortedColIndB, descrC, csrSortedValC, csrSortedRowPtrC, csrSortedColIndC, pBufferSizeInBytes);
+
+    cusparseHandle_t handle_native;
+    int m_native = 0;
+    int n_native = 0;
+    double * alpha_native = NULL;
+    cusparseMatDescr_t descrA_native;
+    int nnzA_native = 0;
+    double * csrSortedValA_native = NULL;
+    int * csrSortedRowPtrA_native = NULL;
+    int * csrSortedColIndA_native = NULL;
+    double * beta_native = NULL;
+    cusparseMatDescr_t descrB_native;
+    int nnzB_native = 0;
+    double * csrSortedValB_native = NULL;
+    int * csrSortedRowPtrB_native = NULL;
+    int * csrSortedColIndB_native = NULL;
+    cusparseMatDescr_t descrC_native;
+    double * csrSortedValC_native = NULL;
+    int * csrSortedRowPtrC_native = NULL;
+    int * csrSortedColIndC_native = NULL;
+    size_t * pBufferSizeInBytes_native = NULL;
+
+    handle_native = (cusparseHandle_t)getNativePointerValue(env, handle);
+    m_native = (int)m;
+    n_native = (int)n;
+    PointerData *alpha_pointerData = initPointerData(env, alpha);
+    if (alpha_pointerData == nullptr) {
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    alpha_native = (double *)alpha_pointerData->getPointer(env);
+    descrA_native = (cusparseMatDescr_t)getNativePointerValue(env, descrA);
+    nnzA_native = (int)nnzA;
+    csrSortedValA_native = (double *)getPointer(env, csrSortedValA);
+    csrSortedRowPtrA_native = (int *)getPointer(env, csrSortedRowPtrA);
+    csrSortedColIndA_native = (int *)getPointer(env, csrSortedColIndA);
+    PointerData *beta_pointerData = initPointerData(env, beta);
+    if (beta_pointerData == nullptr) {
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    beta_native = (double *)beta_pointerData->getPointer(env);
+    descrB_native = (cusparseMatDescr_t)getNativePointerValue(env, descrB);
+    nnzB_native = (int)nnzB;
+    csrSortedValB_native = (double *)getPointer(env, csrSortedValB);
+    csrSortedRowPtrB_native = (int *)getPointer(env, csrSortedRowPtrB);
+    csrSortedColIndB_native = (int *)getPointer(env, csrSortedColIndB);
+    descrC_native = (cusparseMatDescr_t)getNativePointerValue(env, descrC);
+    csrSortedValC_native = (double *)getPointer(env, csrSortedValC);
+    csrSortedRowPtrC_native = (int *)getPointer(env, csrSortedRowPtrC);
+    csrSortedColIndC_native = (int *)getPointer(env, csrSortedColIndC);
+    if (!initNative(env, pBufferSizeInBytes, pBufferSizeInBytes_native, true)) return CUJAVA_INTERNAL_ERROR;
+
+    cusparseStatus_t jniResult_native = cusparseDcsrgeam2_bufferSizeExt(handle_native, m_native, n_native, alpha_native,
+        descrA_native, nnzA_native, csrSortedValA_native, csrSortedRowPtrA_native, csrSortedColIndA_native, beta_native,
+        descrB_native, nnzB_native, csrSortedValB_native, csrSortedRowPtrB_native, csrSortedColIndB_native, descrC_native,
+        csrSortedValC_native, csrSortedRowPtrC_native, csrSortedColIndC_native, pBufferSizeInBytes_native);
+
+    if (!releasePointerData(env, alpha_pointerData, JNI_ABORT)) return CUJAVA_INTERNAL_ERROR;
+    if (!releasePointerData(env, beta_pointerData, JNI_ABORT)) return CUJAVA_INTERNAL_ERROR;
+    if (!releaseNative(env, pBufferSizeInBytes_native, pBufferSizeInBytes, true)) return CUJAVA_INTERNAL_ERROR;
 
     jint jniResult = (jint)jniResult_native;
     return jniResult;

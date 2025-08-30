@@ -19,11 +19,38 @@
 #
 #-------------------------------------------------------------
 
-cmake_minimum_required(VERSION 3.18)
-project(cujava_jni LANGUAGES CXX)
 
-# Build the subprojects
-add_subdirectory(common)
-add_subdirectory(runtime)
-add_subdirectory(driver)
-add_subdirectory(cusparse)
+cmake_minimum_required(VERSION 3.18)
+
+project(CuJavaCusparse LANGUAGES CXX)
+
+find_package(JNI REQUIRED)
+find_package(CUDAToolkit REQUIRED)  # for CUDA::cusparse
+
+add_library(CuJavaCusparse SHARED
+    cujava_cusparse.cpp
+)
+
+set_target_properties(CuJavaCusparse PROPERTIES
+    CXX_STANDARD 11
+    OUTPUT_NAME cujava_cusparse                      # -> libcujava_cusparse.so
+    LIBRARY_OUTPUT_DIRECTORY  ${CMAKE_CURRENT_SOURCE_DIR}/../../lib
+    RUNTIME_OUTPUT_DIRECTORY  ${CMAKE_CURRENT_SOURCE_DIR}/../../lib
+    ARCHIVE_OUTPUT_DIRECTORY  ${CMAKE_CURRENT_SOURCE_DIR}/../../lib
+)
+
+target_include_directories(CuJavaCusparse
+    PRIVATE
+        ${JNI_INCLUDE_DIRS}
+        ${CUDAToolkit_INCLUDE_DIRS}
+        ${CMAKE_CURRENT_SOURCE_DIR}            # headers in cusparse/
+        ${CMAKE_CURRENT_SOURCE_DIR}/../common  # if you include common headers
+)
+
+target_link_libraries(CuJavaCusparse
+    PRIVATE
+        CuJavaCommonJNI
+        CUDA::cusparse
+        ${JNI_LIBRARIES}
+)
+

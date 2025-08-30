@@ -17,17 +17,21 @@
  * under the License.
  */
 
-package org.apache.sysds.cujava.cusparse;
 
-import org.apache.sysds.cujava.NativePointerObject;
+#ifndef CUJAVA_CUSPARSE_COMMON_HPP
+#define CUJAVA_CUSPARSE_COMMON_HPP
 
-public class cusparseSpMatDescr extends NativePointerObject {
+#include <jni.h>
+#include <cstdint>
+#include <cusparse.h>
+#include <cuda_runtime.h>
 
-	public cusparseSpMatDescr() {
-		// Default constructor
-	}
+#include "../common/cujava_logger.hpp"
+#include "../common/cujava_jni_utils.hpp"
+#include "../common/cujava_pointer_utils.hpp"
 
-	public cusparseConstSpMatDescr asConst() {
-		return new cusparseConstSpMatDescr(this);
-	}
-}
+#define CUJAVA_INTERNAL_ERROR 0x80000001
+
+
+
+#endif // CUJAVA_CUSPARSE_COMMON_HPP

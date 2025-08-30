@@ -35,6 +35,10 @@ bool setFieldBytes(JNIEnv* env, jobject obj, jfieldID fid, const jbyte* src, jsi
 bool setFieldInts (JNIEnv* env, jobject obj, jfieldID fid, const jint*  src, jsize n);
 bool zeroFieldInts(JNIEnv* env, jobject obj, jfieldID fid);
 char* toNativeCString(JNIEnv* env, jstring js, int* length = nullptr);
+bool allocNativeArrayFromJLongs(JNIEnv* env, jlongArray javaArr, size_t*& nativeArr, bool copyFromJava);
+bool commitAndFreeNativeArrayToJLongs(JNIEnv* env, size_t*& nativeArr, jlongArray javaArr, bool copyToJava);
+bool initNative(JNIEnv* env, jlongArray javaArr, size_t*& nativeArr, bool fill);
+bool releaseNative(JNIEnv* env, size_t*& nativeArr, jlongArray javaArr, bool writeBack);
 
 
 // ---- Exceptions ----

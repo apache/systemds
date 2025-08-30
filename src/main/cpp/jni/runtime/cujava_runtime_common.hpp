@@ -22,7 +22,7 @@
 
 #include <jni.h>
 #include <cstdint>
-#include <cuda_runtime_api.h>
+#include <cuda_runtime.h>
 
 #include "../common/cujava_logger.hpp"
 #include "../common/cujava_jni_utils.hpp"

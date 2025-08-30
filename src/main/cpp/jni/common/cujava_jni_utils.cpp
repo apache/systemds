@@ -221,3 +221,56 @@ char* toNativeCString(JNIEnv* env, jstring js, int* length) {
 }
 
 
+bool allocNativeArrayFromJLongs(JNIEnv* env, jlongArray javaArr, size_t*& nativeArr, bool copyFromJava) {
+    if (javaArr == nullptr) {
+        nativeArr = nullptr;
+        return true;
+    }
+    jsize n = env->GetArrayLength(javaArr);
+
+    size_t* tmp = new (std::nothrow) size_t[(size_t)n];
+    if (!tmp) {
+        ThrowByName(env, "java/lang/OutOfMemoryError", "Out of memory during array creation");
+        nativeArr = nullptr;
+        return false;
+    }
+
+    if (copyFromJava) {
+        jlong* jptr = (jlong*)env->GetPrimitiveArrayCritical(javaArr, nullptr);
+        if (!jptr) {
+            delete[] tmp; nativeArr = nullptr; return false;
+        }
+        for (jsize i = 0; i < n; ++i) tmp[i] = (size_t)jptr[i];
+        env->ReleasePrimitiveArrayCritical(javaArr, jptr, JNI_ABORT); // input-only
+    }
+
+    nativeArr = tmp;
+    return true;
+}
+
+bool commitAndFreeNativeArrayToJLongs(JNIEnv* env, size_t*& nativeArr, jlongArray javaArr, bool copyToJava) {
+    if (javaArr == nullptr) {
+        delete[] nativeArr; nativeArr = nullptr; return true;
+    }
+    if (copyToJava && nativeArr) {
+        jsize n = env->GetArrayLength(javaArr);
+        jlong* jptr = (jlong*)env->GetPrimitiveArrayCritical(javaArr, nullptr);
+        if (!jptr) {
+            delete[] nativeArr; nativeArr = nullptr;
+            return false;
+        }
+        for (jsize i = 0; i < n; ++i) jptr[i] = (jlong)nativeArr[i];
+        env->ReleasePrimitiveArrayCritical(javaArr, jptr, 0); // commit
+    }
+    delete[] nativeArr;
+    nativeArr = nullptr;
+    return true;
+}
+
+// Back-compat wrappers
+bool initNative(JNIEnv* env, jlongArray javaArr, size_t*& nativeArr, bool fill) {
+    return allocNativeArrayFromJLongs(env, javaArr, nativeArr, fill);
+}
+bool releaseNative(JNIEnv* env, size_t*& nativeArr, jlongArray javaArr, bool writeBack) {
+    return commitAndFreeNativeArrayToJLongs(env, nativeArr, javaArr, writeBack);
+}

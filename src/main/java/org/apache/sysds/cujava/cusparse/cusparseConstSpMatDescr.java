@@ -21,13 +21,13 @@ package org.apache.sysds.cujava.cusparse;
 
 import org.apache.sysds.cujava.NativePointerObject;
 
-public class cusparseSpMatDescr extends NativePointerObject {
+public class cusparseConstSpMatDescr extends NativePointerObject {
 
-	public cusparseSpMatDescr() {
+	public cusparseConstSpMatDescr() {
 		// Default constructor
 	}
 
-	public cusparseConstSpMatDescr asConst() {
-		return new cusparseConstSpMatDescr(this);
+	cusparseConstSpMatDescr(cusparseSpMatDescr other) {
+		super(other);
 	}
 }

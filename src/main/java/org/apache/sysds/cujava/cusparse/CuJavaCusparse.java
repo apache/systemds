@@ -227,4 +227,53 @@ public class CuJavaCusparse {
 		Pointer csrSortedColIndB, cusparseMatDescr descrC, Pointer csrSortedValC, Pointer csrSortedRowPtrC,
 		Pointer csrSortedColIndC, long[] pBufferSizeInBytes);
 
+	public static int cusparseSparseToDense(cusparseHandle handle, cusparseConstSpMatDescr matA,
+		cusparseDnMatDescr matB, int alg, Pointer externalBuffer) {
+		return checkCusparseStatus(cusparseSparseToDenseNative(handle, matA, matB, alg, externalBuffer));
+	}
+
+	private static native int cusparseSparseToDenseNative(cusparseHandle handle, cusparseConstSpMatDescr matA,
+		cusparseDnMatDescr matB, int alg, Pointer externalBuffer);
+
+	public static int cusparseSparseToDense_bufferSize(cusparseHandle handle, cusparseConstSpMatDescr matA,
+		cusparseDnMatDescr matB, int alg, long[] bufferSize) {
+		return checkCusparseStatus(cusparseSparseToDense_bufferSizeNative(handle, matA, matB, alg, bufferSize));
+	}
+
+	private static native int cusparseSparseToDense_bufferSizeNative(cusparseHandle handle,
+		cusparseConstSpMatDescr matA, cusparseDnMatDescr matB, int alg, long[] bufferSize);
+
+	public static int cusparseDenseToSparse_bufferSize(cusparseHandle handle, cusparseConstDnMatDescr matA,
+		cusparseSpMatDescr matB, int alg, long[] bufferSize) {
+		return checkCusparseStatus(cusparseDenseToSparse_bufferSizeNative(handle, matA, matB, alg, bufferSize));
+	}
+
+	private static native int cusparseDenseToSparse_bufferSizeNative(cusparseHandle handle,
+		cusparseConstDnMatDescr matA, cusparseSpMatDescr matB, int alg, long[] bufferSize);
+
+	public static int cusparseDenseToSparse_analysis(cusparseHandle handle, cusparseConstDnMatDescr matA,
+		cusparseSpMatDescr matB, int alg, Pointer externalBuffer) {
+		return checkCusparseStatus(cusparseDenseToSparse_analysisNative(handle, matA, matB, alg, externalBuffer));
+	}
+
+	private static native int cusparseDenseToSparse_analysisNative(cusparseHandle handle, cusparseConstDnMatDescr matA,
+		cusparseSpMatDescr matB, int alg, Pointer externalBuffer);
+
+	public static int cusparseDenseToSparse_convert(cusparseHandle handle, cusparseConstDnMatDescr matA,
+		cusparseSpMatDescr matB, int alg, Pointer externalBuffer) {
+		return checkCusparseStatus(cusparseDenseToSparse_convertNative(handle, matA, matB, alg, externalBuffer));
+	}
+
+	private static native int cusparseDenseToSparse_convertNative(cusparseHandle handle, cusparseConstDnMatDescr matA,
+		cusparseSpMatDescr matB, int alg, Pointer externalBuffer);
+
+	public static int cusparseDnnz(cusparseHandle handle, int dirA, int m, int n, cusparseMatDescr descrA, Pointer A,
+		int lda, Pointer nnzPerRowCol, Pointer nnzTotalDevHostPtr) {
+		return checkCusparseStatus(
+			cusparseDnnzNative(handle, dirA, m, n, descrA, A, lda, nnzPerRowCol, nnzTotalDevHostPtr));
+	}
+
+	private static native int cusparseDnnzNative(cusparseHandle handle, int dirA, int m, int n, cusparseMatDescr descrA,
+		Pointer A, int lda, Pointer nnzPerRowCol, Pointer nnzTotalDevHostPtr);
+
 }

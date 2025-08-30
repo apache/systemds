@@ -51,6 +51,7 @@ target_link_libraries(CuJavaCusparse
     PRIVATE
         CuJavaCommonJNI
         CUDA::cusparse
+        CUDA::cudart         # needed for cudaDeviceSynchronize()
         ${JNI_LIBRARIES}
 )
 

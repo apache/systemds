@@ -1085,3 +1085,268 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusp
     jint jniResult = (jint)jniResult_native;
     return jniResult;
 }
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseSparseToDenseNative
+    (JNIEnv *env, jclass cls, jobject handle, jobject matA, jobject matB, jint alg, jobject externalBuffer) {
+
+    if (handle == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'handle' is null for cusparseSparseToDense");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (matA == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'matA' is null for cusparseSparseToDense");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (matB == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'matB' is null for cusparseSparseToDense");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+
+    Logger::log(LOG_TRACE, "Executing cusparseSparseToDense(handle=%p, matA=%p, matB=%p, alg=%d, externalBuffer=%p)\n",
+        handle, matA, matB, alg, externalBuffer);
+
+    cusparseHandle_t handle_native;
+    cusparseConstSpMatDescr_t matA_native;
+    cusparseDnMatDescr_t matB_native;
+    cusparseSparseToDenseAlg_t alg_native;
+    void * externalBuffer_native = NULL;
+
+    handle_native = (cusparseHandle_t)getNativePointerValue(env, handle);
+    matA_native = (cusparseConstSpMatDescr_t)getNativePointerValue(env, matA);
+    matB_native = (cusparseDnMatDescr_t)getNativePointerValue(env, matB);
+    alg_native = (cusparseSparseToDenseAlg_t)alg;
+    externalBuffer_native = (void *)getPointer(env, externalBuffer);
+
+    cusparseStatus_t jniResult_native = cusparseSparseToDense(handle_native, matA_native, matB_native, alg_native, externalBuffer_native);
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseSparseToDense_1bufferSizeNative
+    (JNIEnv *env, jclass cls, jobject handle, jobject matA, jobject matB, jint alg, jlongArray bufferSize) {
+    if (handle == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'handle' is null for cusparseSparseToDense_bufferSize");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (matA == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'matA' is null for cusparseSparseToDense_bufferSize");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (matB == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'matB' is null for cusparseSparseToDense_bufferSize");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (bufferSize == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'bufferSize' is null for cusparseSparseToDense_bufferSize");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+
+    Logger::log(LOG_TRACE, "Executing cusparseSparseToDense_bufferSize(handle=%p, matA=%p, matB=%p, alg=%d, bufferSize=%p)\n",
+        handle, matA, matB, alg, bufferSize);
+
+    cusparseHandle_t handle_native;
+    cusparseConstSpMatDescr_t matA_native;
+    cusparseDnMatDescr_t matB_native;
+    cusparseSparseToDenseAlg_t alg_native;
+    size_t * bufferSize_native = NULL;
+
+    handle_native = (cusparseHandle_t)getNativePointerValue(env, handle);
+    matA_native = (cusparseConstSpMatDescr_t)getNativePointerValue(env, matA);
+    matB_native = (cusparseDnMatDescr_t)getNativePointerValue(env, matB);
+    alg_native = (cusparseSparseToDenseAlg_t)alg;
+    if (!initNative(env, bufferSize, bufferSize_native, true)) return CUJAVA_INTERNAL_ERROR;
+
+    cusparseStatus_t jniResult_native = cusparseSparseToDense_bufferSize(handle_native, matA_native, matB_native, alg_native, bufferSize_native);
+
+    if (!releaseNative(env, bufferSize_native, bufferSize, true)) return CUJAVA_INTERNAL_ERROR;
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseDenseToSparse_1bufferSizeNative
+    (JNIEnv *env, jclass cls, jobject handle, jobject matA, jobject matB, jint alg, jlongArray bufferSize) {
+    // Null-checks for non-primitive arguments
+    if (handle == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'handle' is null for cusparseDenseToSparse_bufferSize");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (matA == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'matA' is null for cusparseDenseToSparse_bufferSize");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (matB == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'matB' is null for cusparseDenseToSparse_bufferSize");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (bufferSize == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'bufferSize' is null for cusparseDenseToSparse_bufferSize");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+
+    Logger::log(LOG_TRACE, "Executing cusparseDenseToSparse_bufferSize(handle=%p, matA=%p, matB=%p, alg=%d, bufferSize=%p)\n", handle, matA, matB, alg, bufferSize);
+
+    cusparseHandle_t handle_native;
+    cusparseConstDnMatDescr_t matA_native;
+    cusparseSpMatDescr_t matB_native;
+    cusparseDenseToSparseAlg_t alg_native;
+    size_t * bufferSize_native = nullptr;
+
+    handle_native = (cusparseHandle_t)getNativePointerValue(env, handle);
+    matA_native = (cusparseConstDnMatDescr_t)getNativePointerValue(env, matA);
+    matB_native = (cusparseSpMatDescr_t)getNativePointerValue(env, matB);
+    alg_native = (cusparseDenseToSparseAlg_t)alg;
+    if (!initNative(env, bufferSize, bufferSize_native, true)) return CUJAVA_INTERNAL_ERROR;
+
+    cusparseStatus_t jniResult_native = cusparseDenseToSparse_bufferSize(handle_native, matA_native, matB_native, alg_native, bufferSize_native);
+
+    if (!releaseNative(env, bufferSize_native, bufferSize, true)) return CUJAVA_INTERNAL_ERROR;
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseDenseToSparse_1analysisNative
+    (JNIEnv *env, jclass cls, jobject handle, jobject matA, jobject matB, jint alg, jobject externalBuffer) {
+    if (handle == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'handle' is null for cusparseDenseToSparse_analysis");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (matA == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'matA' is null for cusparseDenseToSparse_analysis");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (matB == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'matB' is null for cusparseDenseToSparse_analysis");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+
+    Logger::log(LOG_TRACE, "Executing cusparseDenseToSparse_analysis(handle=%p, matA=%p, matB=%p, alg=%d, externalBuffer=%p)\n",
+        handle, matA, matB, alg, externalBuffer);
+
+    cusparseHandle_t handle_native;
+    cusparseConstDnMatDescr_t matA_native;
+    cusparseSpMatDescr_t matB_native;
+    cusparseDenseToSparseAlg_t alg_native;
+    void * externalBuffer_native = NULL;
+
+    handle_native = (cusparseHandle_t)getNativePointerValue(env, handle);
+    matA_native = (cusparseConstDnMatDescr_t)getNativePointerValue(env, matA);
+    matB_native = (cusparseSpMatDescr_t)getNativePointerValue(env, matB);
+    alg_native = (cusparseDenseToSparseAlg_t)alg;
+    externalBuffer_native = (void *)getPointer(env, externalBuffer);
+
+    cusparseStatus_t jniResult_native = cusparseDenseToSparse_analysis(handle_native, matA_native, matB_native, alg_native, externalBuffer_native);
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseDenseToSparse_1convertNative
+    (JNIEnv *env, jclass cls, jobject handle, jobject matA, jobject matB, jint alg, jobject externalBuffer) {
+    if (handle == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'handle' is null for cusparseDenseToSparse_convert");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (matA == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'matA' is null for cusparseDenseToSparse_convert");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (matB == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'matB' is null for cusparseDenseToSparse_convert");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+
+    Logger::log(LOG_TRACE, "Executing cusparseDenseToSparse_convert(handle=%p, matA=%p, matB=%p, alg=%d, externalBuffer=%p)\n",
+        handle, matA, matB, alg, externalBuffer);
+
+    cusparseHandle_t handle_native;
+    cusparseConstDnMatDescr_t matA_native;
+    cusparseSpMatDescr_t matB_native;
+    cusparseDenseToSparseAlg_t alg_native;
+    void * externalBuffer_native = nullptr;
+
+    handle_native = (cusparseHandle_t)getNativePointerValue(env, handle);
+    matA_native = (cusparseConstDnMatDescr_t)getNativePointerValue(env, matA);
+    matB_native = (cusparseSpMatDescr_t)getNativePointerValue(env, matB);
+    alg_native = (cusparseDenseToSparseAlg_t)alg;
+    externalBuffer_native = (void *)getPointer(env, externalBuffer);
+
+    cusparseStatus_t jniResult_native = cusparseDenseToSparse_convert(handle_native, matA_native, matB_native, alg_native, externalBuffer_native);
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseDnnzNative
+    (JNIEnv *env, jclass cls, jobject handle, jint dirA, jint m, jint n, jobject descrA, jobject A, jint lda, jobject nnzPerRowCol, jobject nnzTotalDevHostPtr) {
+    if (handle == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'handle' is null for cusparseDnnz");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (descrA == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'descrA' is null for cusparseDnnz");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (A == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'A' is null for cusparseDnnz");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (nnzPerRowCol == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'nnzPerRowCol' is null for cusparseDnnz");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    if (nnzTotalDevHostPtr == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'nnzTotalDevHostPtr' is null for cusparseDnnz");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+
+    Logger::log(LOG_TRACE, "Executing cusparseDnnz(handle=%p, dirA=%d, m=%d, n=%d, descrA=%p, A=%p, lda=%d, nnzPerRowCol=%p, nnzTotalDevHostPtr=%p)\n",
+        handle, dirA, m, n, descrA, A, lda, nnzPerRowCol, nnzTotalDevHostPtr);
+
+    cusparseHandle_t handle_native;
+    cusparseDirection_t dirA_native;
+    int m_native = 0;
+    int n_native = 0;
+    cusparseMatDescr_t descrA_native;
+    double * A_native = NULL;
+    int lda_native = 0;
+    int * nnzPerRowCol_native = NULL;
+    int * nnzTotalDevHostPtr_native = NULL;
+
+    handle_native = (cusparseHandle_t)getNativePointerValue(env, handle);
+    dirA_native = (cusparseDirection_t)dirA;
+    m_native = (int)m;
+    n_native = (int)n;
+    descrA_native = (cusparseMatDescr_t)getNativePointerValue(env, descrA);
+    A_native = (double *)getPointer(env, A);
+    lda_native = (int)lda;
+    nnzPerRowCol_native = (int *)getPointer(env, nnzPerRowCol);
+    PointerData *nnzTotalDevHostPtr_pointerData = initPointerData(env, nnzTotalDevHostPtr);
+    if (nnzTotalDevHostPtr_pointerData == nullptr) {
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    nnzTotalDevHostPtr_native = (int *)nnzTotalDevHostPtr_pointerData->getPointer(env);
+
+    cusparseStatus_t jniResult_native = cusparseDnnz(handle_native, dirA_native, m_native, n_native, descrA_native, A_native, lda_native, nnzPerRowCol_native, nnzTotalDevHostPtr_native);
+
+    if (!isPointerBackedByNativeMemory(env, nnzTotalDevHostPtr)) {
+        cudaDeviceSynchronize();
+    }
+    if (!releasePointerData(env, nnzTotalDevHostPtr_pointerData, 0)) return CUJAVA_INTERNAL_ERROR;
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}

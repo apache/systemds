@@ -21,7 +21,16 @@
 #include "cujava_runtime.hpp"
 #include "cujava_runtime_common.hpp"
 
-// ---- cudaDeviceProp jfieldIDs (all you listed) ----
+#define CUJAVA_REQUIRE_NONNULL(env, obj, name, method)                           \
+    do {                                                                          \
+        if ((obj) == nullptr) {                                                   \
+            ThrowByName((env), "java/lang/NullPointerException",                  \
+                        "Parameter '" name "' is null for " method);              \
+            return CUJAVA_INTERNAL_ERROR;                                         \
+        }                                                                         \
+    } while (0)
+
+// ---- cudaDeviceProp jfieldIDs ----
 static jclass  cudaDeviceProp_class = nullptr;
 
 #define F(name) static jfieldID name = nullptr;
@@ -350,14 +359,11 @@ static void setCudaDeviceProp(JNIEnv* env, jobject prop, const cudaDeviceProp& p
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemcpyNative
   (JNIEnv *env, jclass cls, jobject dst, jobject src, jlong count, jint kind) {
-    if (dst == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'dst' is null for cudaMemcpy");
-        return CUJAVA_INTERNAL_ERROR;
-    }
-    if (src == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'src' is null for cudaMemcpy");
-        return CUJAVA_INTERNAL_ERROR;
-    }
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, dst, "dst", "cudaMemcpy");
+    CUJAVA_REQUIRE_NONNULL(env, src, "src", "cudaMemcpy");
+
     Logger::log(LOG_TRACE, "Executing cudaMemcpy of %ld bytes\n", (long)count);
 
     // Obtain the destination and source pointers
@@ -402,10 +408,10 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemcpyNat
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMallocNative
   (JNIEnv *env, jclass cls, jobject devPtr, jlong size) {
-    if (devPtr == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'devPtr' is null for cudaMalloc");
-        return CUJAVA_INTERNAL_ERROR;
-    }
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, devPtr, "devPtr", "cudaMalloc");
+
     Logger::log(LOG_TRACE, "Executing cudaMalloc of %ld bytes\n", (long)size);
 
     void *nativeDevPtr = nullptr;
@@ -418,10 +424,10 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMallocNat
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaFreeNative
   (JNIEnv *env, jclass cls, jobject devPtr) {
-    if (devPtr == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'devPtr' is null for cudaFree");
-        return CUJAVA_INTERNAL_ERROR;
-    }
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, devPtr, "devPtr", "cudaFree");
+
     Logger::log(LOG_TRACE, "Executing cudaFree\n");
 
     void *nativeDevPtr = nullptr;
@@ -433,10 +439,10 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaFreeNativ
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemsetNative
   (JNIEnv *env, jclass cls, jobject mem, jint c, jlong count) {
-    if (mem == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'mem' is null for cudaMemset");
-        return CUJAVA_INTERNAL_ERROR;
-    }
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, mem, "mem", "cudaMemset");
+
     Logger::log(LOG_TRACE, "Executing cudaMemset\n");
 
     void *nativeMem = getPointer(env, mem);
@@ -457,10 +463,10 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaDeviceSyn
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMallocManagedNative
   (JNIEnv *env, jclass cls, jobject devPtr, jlong size, jint flags) {
-    if (devPtr == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'devPtr' is null for cudaMallocManaged");
-        return CUJAVA_INTERNAL_ERROR;
-    }
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, devPtr, "devPtr", "cudaMallocManaged");
+
     Logger::log(LOG_TRACE, "Executing cudaMallocManaged of %ld bytes\n", (long)size);
 
     void *nativeDevPtr = nullptr;
@@ -481,14 +487,11 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMallocMan
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemGetInfoNative
   (JNIEnv *env, jclass cls, jlongArray freeBytes, jlongArray totalBytes) {
-    if (freeBytes == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'freeBytes' is null for cudaMemGetInfo");
-        return CUJAVA_INTERNAL_ERROR;
-    }
-    if (totalBytes == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'freeBytes' is null for cudaMemGetInfo");
-        return CUJAVA_INTERNAL_ERROR;
-    }
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, freeBytes, "freeBytes", "cudaMemGetInfo");
+    CUJAVA_REQUIRE_NONNULL(env, totalBytes, "totalBytes", "cudaMemGetInfo");
+
     Logger::log(LOG_TRACE, "Executing cudaMemGetInfo\n");
 
     size_t nativeFreeBytes = 0;
@@ -505,10 +508,10 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemGetInf
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaGetDeviceCountNative
   (JNIEnv *env, jclass cls, jintArray count) {
-    if (count == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'count' is null for cudaGetDeviceCount");
-        return CUJAVA_INTERNAL_ERROR;
-    }
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, count, "count", "cudaGetDeviceCount");
+
     Logger::log(LOG_TRACE, "Executing cudaGetDeviceCount\n");
 
     int nativeCount = 0;
@@ -536,10 +539,10 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaSetDevice
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaGetDeviceNative
   (JNIEnv *env, jclass cls, jintArray device) {
-    if (device == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'device' is null for cudaGetDevice");
-        return CUJAVA_INTERNAL_ERROR;
-    }
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, device, "device", "cudaGetDevice");
+
     Logger::log(LOG_TRACE, "Executing cudaGetDevice\n");
 
     int nativeDevice = 0;
@@ -551,10 +554,10 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaGetDevice
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaGetDevicePropertiesNative
   (JNIEnv *env, jclass cls, jobject prop, jint device) {
-    if (prop == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'prop' is null for cudaGetDeviceProperties");
-        return CUJAVA_INTERNAL_ERROR;
-    }
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, prop, "prop", "cudaGetDeviceProperties");
+
     Logger::log(LOG_TRACE, "Executing cudaGetDeviceProperties\n");
 
     cudaDeviceProp nativeProp;

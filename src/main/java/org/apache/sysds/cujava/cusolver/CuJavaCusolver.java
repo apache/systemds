@@ -17,5 +17,13 @@
  * under the License.
  */
 
+package org.apache.sysds.cujava.cusolver;
 
-// TODO: Implement jni wrapper for cuSolver
+public class CuJavaCusolver {
+
+	private CuJavaCusolver() {
+		// prevent instantiation
+	}
+
+	// TODO: Implement java wrapper for cuSOLVER
+}

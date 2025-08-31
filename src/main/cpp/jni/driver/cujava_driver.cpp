@@ -20,6 +20,16 @@
 #include "cujava_driver.hpp"
 #include "cujava_driver_common.hpp"
 
+#define CUJAVA_REQUIRE_NONNULL(env, obj, name, method)                           \
+    do {                                                                          \
+        if ((obj) == nullptr) {                                                   \
+            ThrowByName((env), "java/lang/NullPointerException",                  \
+                        "Parameter '" name "' is null for " method);              \
+            return CUJAVA_INTERNAL_ERROR;                                         \
+        }                                                                         \
+    } while (0)
+
+
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
     JNIEnv *env = nullptr;
@@ -41,17 +51,13 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
 
 
 
-
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuCtxCreateNative
   (JNIEnv *env, jclass cls, jobject pctx, jint flags, jobject dev) {
-    if (pctx == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'pctx' is null for cuCtxCreate");
-        return CUJAVA_INTERNAL_ERROR;
-    }
-    if (dev == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'dev' is null for cuCtxCreate");
-        return CUJAVA_INTERNAL_ERROR;
-    }
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, pctx, "pctx", "cuCtxCreate");
+    CUJAVA_REQUIRE_NONNULL(env, dev, "dev", "cuCtxCreate");
+
     Logger::log(LOG_TRACE, "Executing cuCtxCreate\n");
 
     CUdevice nativeDev = (CUdevice)(intptr_t)getNativePointerValue(env, dev);
@@ -63,12 +69,12 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuCtxCre
 }
 
 
+
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuDeviceGetNative
   (JNIEnv *env, jclass cls, jobject device, jint ordinal) {
-    if (device == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'device' is null for cuDeviceGet");
-        return CUJAVA_INTERNAL_ERROR;
-    }
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, device, "device", "cuDeviceGet");
 
     Logger::log(LOG_TRACE, "Executing cuDeviceGet for device %ld\n", ordinal);
 
@@ -81,10 +87,9 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuDevice
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuDeviceGetCountNative
   (JNIEnv *env, jclass cls, jintArray count) {
-    if (count == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'count' is null for cuDeviceGetCount");
-        return CUJAVA_INTERNAL_ERROR;
-    }
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, count, "count", "cuDeviceGetCount");
 
     Logger::log(LOG_TRACE, "Executing cuDeviceGetCount\n");
 
@@ -108,10 +113,10 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuLaunch
   (JNIEnv *env, jclass, jobject f, jint gridDimX, jint gridDimY, jint gridDimZ,
    jint blockDimX, jint blockDimY, jint blockDimZ, jint sharedMemBytes,
    jobject hStream, jobject kernelParams, jobject extra) {
-    if (f == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'f' is null for cuLaunchKernel");
-        return CUJAVA_INTERNAL_ERROR;
-    }
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, f, "f", "cuLaunchKernel");
+
     Logger::log(LOG_TRACE, "Executing cuLaunchKernel\n");
 
     CUfunction nativeF    = (CUfunction)getNativePointerValue(env, f);
@@ -152,18 +157,11 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuLaunch
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuModuleGetFunctionNative
   (JNIEnv *env, jclass, jobject hfunc, jobject hmod, jstring name) {
-    if (hfunc == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'hfunc' is null for cuModuleGetFunction");
-        return CUJAVA_INTERNAL_ERROR;
-    }
-    if (hmod  == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'hmod' is null for cuModuleGetFunction");
-        return CUJAVA_INTERNAL_ERROR;
-    }
-    if (name  == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'name' is null for cuModuleGetFunction");
-        return CUJAVA_INTERNAL_ERROR;
-    }
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, hfunc, "hfunc", "cuModuleGetFunction");
+    CUJAVA_REQUIRE_NONNULL(env, hmod, "hmod", "cuModuleGetFunction");
+    CUJAVA_REQUIRE_NONNULL(env, name, "name", "cuModuleGetFunction");
 
     Logger::log(LOG_TRACE, "Executing cuModuleGetFunction\n");
 
@@ -181,24 +179,13 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuModule
 
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuModuleLoadDataExNative
-  (JNIEnv *env, jclass, jobject phMod, jobject p, jint numOptions, jintArray options, jobject optionValues)
-{
-    if (phMod == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'phMod' is null for cuModuleLoadDataEx");
-        return CUJAVA_INTERNAL_ERROR;
-    }
-    if (p == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'p' is null for cuModuleLoadDataEx");
-        return CUJAVA_INTERNAL_ERROR;
-    }
-    if (options == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'options' is null for cuModuleLoadDataEx");
-        return CUJAVA_INTERNAL_ERROR;
-    }
-    if (optionValues == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'optionValues' is null for cuModuleLoadDataEx");
-        return CUJAVA_INTERNAL_ERROR;
-    }
+  (JNIEnv *env, jclass, jobject phMod, jobject p, jint numOptions, jintArray options, jobject optionValues) {
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, phMod, "phMod", "cuModuleLoadDataEx");
+    CUJAVA_REQUIRE_NONNULL(env, p, "p", "cuModuleLoadDataEx");
+    CUJAVA_REQUIRE_NONNULL(env, options, "options", "cuModuleLoadDataEx");
+    CUJAVA_REQUIRE_NONNULL(env, optionValues, "optionValues", "cuModuleLoadDataEx");
 
     Logger::log(LOG_TRACE, "Executing cuModuleLoadDataEx\n");
 
@@ -248,10 +235,10 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuModule
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuMemAllocNative
   (JNIEnv *env, jclass cls, jobject dptr, jlong bytesize) {
-    if (dptr == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'dptr' is null for cuMemAlloc");
-        return CUJAVA_INTERNAL_ERROR;
-    }
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, dptr, "dptr", "cuMemAlloc");
+
     Logger::log(LOG_TRACE, "Executing cuMemAlloc of %ld bytes\n", (long)bytesize);
 
     CUdeviceptr nativeDptr;
@@ -263,10 +250,10 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuMemAll
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuModuleUnloadNative
   (JNIEnv *env, jclass cls, jobject hmod) {
-    if (hmod == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'hmod' is null for cuModuleUnload");
-        return CUJAVA_INTERNAL_ERROR;
-    }
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, hmod, "hmod", "cuModuleUnload");
+
     Logger::log(LOG_TRACE, "Executing cuModuleUnload\n");
 
     CUmodule nativeHmod = (CUmodule)getNativePointerValue(env, hmod);
@@ -277,10 +264,10 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuModule
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuCtxDestroyNative
   (JNIEnv *env, jclass cls, jobject ctx) {
-    if (ctx == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'ctx' is null for cuCtxDestroy");
-        return CUJAVA_INTERNAL_ERROR;
-    }
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, ctx, "ctx", "cuCtxDestroy");
+
     Logger::log(LOG_TRACE, "Executing cuCtxDestroy\n");
 
     CUcontext nativeCtx = (CUcontext)getNativePointerValue(env, ctx);
@@ -291,10 +278,10 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuCtxDes
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuMemFreeNative
   (JNIEnv *env, jclass cls, jobject dptr) {
-    if (dptr == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'dptr' is null for cuMemFree");
-        return CUJAVA_INTERNAL_ERROR;
-    }
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, dptr, "dptr", "cuMemFree");
+
     Logger::log(LOG_TRACE, "Executing cuMemFree\n");
 
     CUdeviceptr nativeDptr = (CUdeviceptr)getPointer(env, dptr);
@@ -305,14 +292,11 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuMemFre
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuMemcpyDtoHNative
   (JNIEnv *env, jclass, jobject dstHost, jobject srcDevice, jlong ByteCount) {
-    if (dstHost == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'dstHost' is null for cuMemcpyDtoH");
-        return CUJAVA_INTERNAL_ERROR;
-    }
-    if (srcDevice == nullptr){
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'srcDevice' is null for cuMemcpyDtoH");
-        return CUJAVA_INTERNAL_ERROR;
-    }
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, dstHost, "dstHost", "cuMemcpyDtoH");
+    CUJAVA_REQUIRE_NONNULL(env, srcDevice, "srcDevice", "cuMemcpyDtoH");
+
     Logger::log(LOG_TRACE, "Executing cuMemcpyDtoH of %ld bytes\n", (long)ByteCount);
 
     PointerData *dstHostPD = initPointerData(env, dstHost);
@@ -341,14 +325,11 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuCtxSyn
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuDeviceGetAttributeNative
   (JNIEnv *env, jclass cls, jintArray pi, jint CUdevice_attribute_attrib, jobject dev) {
-    if (pi == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'pi' is null for cuDeviceGetAttribute");
-        return CUJAVA_INTERNAL_ERROR;
-    }
-    if (dev == nullptr) {
-        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'dev' is null for cuDeviceGetAttribute");
-        return CUJAVA_INTERNAL_ERROR;
-    }
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, pi, "pi", "cuDeviceGetAttribute");
+    CUJAVA_REQUIRE_NONNULL(env, dev, "dev", "cuDeviceGetAttribute");
+
     Logger::log(LOG_TRACE, "Executing cuDeviceGetAttribute\n");
 
     CUdevice nativeDev = (CUdevice)(intptr_t)getNativePointerValue(env, dev);

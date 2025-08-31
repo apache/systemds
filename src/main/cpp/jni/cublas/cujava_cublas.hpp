@@ -33,10 +33,11 @@ extern "C" {
  *  - cublasDestroy
  *  - cublasDgeam
  *  - cublasDdot
- *  -
- *  -
- *  -
- *  -
+ *  - cublasDgemv
+ *  - cublasDgemm
+ *  - cublasDsyrk
+ *  - cublasDaxpy
+ *  - cublasDtrsm
  */
 
 
@@ -54,6 +55,30 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cublas_CuJavaCublas_cublasDg
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cublas_CuJavaCublas_cublasDdotNative
     (JNIEnv *env, jclass cls, jobject handle, jint n, jobject x, jint incx, jobject y, jint incy, jobject result);
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cublas_CuJavaCublas_cublasDgemvNative
+    (JNIEnv *env, jclass cls, jobject handle, jint trans, jint m, jint n, jobject alpha, jobject A, jint lda,
+     jobject x, jint incx, jobject beta, jobject y, jint incy);
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cublas_CuJavaCublas_cublasDgemmNative
+    (JNIEnv *env, jclass cls, jobject handle, jint transa, jint transb, jint m, jint n, jint k, jobject alpha,
+     jobject A, jint lda, jobject B, jint ldb, jobject beta, jobject C, jint ldc);
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cublas_CuJavaCublas_cublasDsyrkNative
+    (JNIEnv *env, jclass cls, jobject handle, jint uplo, jint trans, jint n, jint k, jobject alpha,
+     jobject A, jint lda, jobject beta, jobject C, jint ldc);
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cublas_CuJavaCublas_cublasDaxpyNative
+    (JNIEnv *env, jclass cls, jobject handle, jint n, jobject alpha, jobject x, jint incx, jobject y, jint incy);
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cublas_CuJavaCublas_cublasDtrsmNative
+    (JNIEnv *env, jclass cls, jobject handle, jint side, jint uplo, jint trans, jint diag, jint m,
+     jint n, jobject alpha, jobject A, jint lda, jobject B, jint ldb);
 
 
 #ifdef __cplusplus

@@ -17,6 +17,7 @@
  * under the License.
  */
 
+
 #ifndef CUJAVA_CUBLAS_COMMON_HPP
 #define CUJAVA_CUBLAS_COMMON_HPP
 

@@ -79,4 +79,44 @@ public class CuJavaCublas {
 
 	private static native int cublasDdotNative(cublasHandle handle, int n, Pointer x, int incx, Pointer y, int incy,
 		Pointer result);
+
+	public static int cublasDgemv(cublasHandle handle, int trans, int m, int n, Pointer alpha, Pointer A, int lda,
+		Pointer x, int incx, Pointer beta, Pointer y, int incy) {
+		return checkCublasStatus(cublasDgemvNative(handle, trans, m, n, alpha, A, lda, x, incx, beta, y, incy));
+	}
+
+	private static native int cublasDgemvNative(cublasHandle handle, int trans, int m, int n, Pointer alpha, Pointer A,
+		int lda, Pointer x, int incx, Pointer beta, Pointer y, int incy);
+
+	public static int cublasDgemm(cublasHandle handle, int transa, int transb, int m, int n, int k, Pointer alpha,
+		Pointer A, int lda, Pointer B, int ldb, Pointer beta, Pointer C, int ldc) {
+		return checkCublasStatus(
+			cublasDgemmNative(handle, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc));
+	}
+
+	private static native int cublasDgemmNative(cublasHandle handle, int transa, int transb, int m, int n, int k,
+		Pointer alpha, Pointer A, int lda, Pointer B, int ldb, Pointer beta, Pointer C, int ldc);
+
+	public static int cublasDsyrk(cublasHandle handle, int uplo, int trans, int n, int k, Pointer alpha, Pointer A,
+		int lda, Pointer beta, Pointer C, int ldc) {
+		return checkCublasStatus(cublasDsyrkNative(handle, uplo, trans, n, k, alpha, A, lda, beta, C, ldc));
+	}
+
+	private static native int cublasDsyrkNative(cublasHandle handle, int uplo, int trans, int n, int k, Pointer alpha,
+		Pointer A, int lda, Pointer beta, Pointer C, int ldc);
+
+	public static int cublasDaxpy(cublasHandle handle, int n, Pointer alpha, Pointer x, int incx, Pointer y, int incy) {
+		return checkCublasStatus(cublasDaxpyNative(handle, n, alpha, x, incx, y, incy));
+	}
+
+	private static native int cublasDaxpyNative(cublasHandle handle, int n, Pointer alpha, Pointer x, int incx,
+		Pointer y, int incy);
+
+	public static int cublasDtrsm(cublasHandle handle, int side, int uplo, int trans, int diag, int m, int n,
+		Pointer alpha, Pointer A, int lda, Pointer B, int ldb) {
+		return checkCublasStatus(cublasDtrsmNative(handle, side, uplo, trans, diag, m, n, alpha, A, lda, B, ldb));
+	}
+
+	private static native int cublasDtrsmNative(cublasHandle handle, int side, int uplo, int trans, int diag, int m,
+		int n, Pointer alpha, Pointer A, int lda, Pointer B, int ldb);
 }

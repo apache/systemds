@@ -1,0 +1,12 @@
+{
+    "data_type": "matrix",
+    "value_type": "double",
+    "rows": 2557,
+    "cols": 4,
+    "rows_in_block": 1000,
+    "cols_in_block": 1000,
+    "nnz": 10228,
+    "format": "binary",
+    "author": "ghafekalsaho",
+    "created": "2025-08-11 18:21:48 CEST"
+}

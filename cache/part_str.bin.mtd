@@ -1,0 +1,10 @@
+{
+    "data_type": "frame",
+    "schema": "STRING,STRING,STRING,STRING,",
+    "rows": 200000,
+    "cols": 4,
+    "format": "binary",
+    "description": "1000",
+    "author": "ghafekalsaho",
+    "created": "2025-08-11 18:21:49 CEST"
+}

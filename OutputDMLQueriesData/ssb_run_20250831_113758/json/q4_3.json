@@ -1,0 +1,10 @@
+{
+  "query": "q4_3",
+  "timestamp": "2025-08-31 09:38:32 UTC",
+  "seed": 295685394,
+  "result": "1997.000 19.000 315.000 1454976.000 85390115.000 1997.000 44.000 949.000 6807659.000 85414499.000 1997 UNITED ST9 MFGR#144 1454976 1997 UNITED ST4 MFGR#1433 6807659 SystemDS Statistics: Total execution time:		1.421 sec. ",
+  "metadata": {
+    "systemds_version": "3.4.0-SNAPSHOT",
+    "hostname": "eduroam-141-23-175-117.wlan.tu-berlin.de"
+  }
+}

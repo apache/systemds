@@ -4755,7 +4755,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	}
 	
 	public MatrixBlock pickValues(MatrixValue quantiles, MatrixValue ret) {
+		return pickValues(quantiles, ret, false);
+	}
 	
+	public MatrixBlock pickValues(MatrixValue quantiles, MatrixValue ret, boolean average) {
 		MatrixBlock qs=checkType(quantiles);
 		
 		if ( qs.clen != 1 ) {

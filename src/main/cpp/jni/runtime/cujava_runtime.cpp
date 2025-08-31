@@ -350,11 +350,11 @@ static void setCudaDeviceProp(JNIEnv* env, jobject prop, const cudaDeviceProp& p
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemcpyNative
   (JNIEnv *env, jclass cls, jobject dst, jobject src, jlong count, jint kind) {
-    if (dst == NULL) {
+    if (dst == nullptr) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'dst' is null for cudaMemcpy");
         return CUJAVA_INTERNAL_ERROR;
     }
-    if (src == NULL) {
+    if (src == nullptr) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'src' is null for cudaMemcpy");
         return CUJAVA_INTERNAL_ERROR;
     }
@@ -362,11 +362,11 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemcpyNat
 
     // Obtain the destination and source pointers
     PointerData *dstPointerData = initPointerData(env, dst);
-    if (dstPointerData == NULL) {
+    if (dstPointerData == nullptr) {
         return CUJAVA_INTERNAL_ERROR;
     }
     PointerData *srcPointerData = initPointerData(env, src);
-    if (srcPointerData == NULL) {
+    if (srcPointerData == nullptr) {
         return CUJAVA_INTERNAL_ERROR;
     }
 
@@ -402,13 +402,13 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemcpyNat
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMallocNative
   (JNIEnv *env, jclass cls, jobject devPtr, jlong size) {
-    if (devPtr == NULL) {
+    if (devPtr == nullptr) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'devPtr' is null for cudaMalloc");
         return CUJAVA_INTERNAL_ERROR;
     }
     Logger::log(LOG_TRACE, "Executing cudaMalloc of %ld bytes\n", (long)size);
 
-    void *nativeDevPtr = NULL;
+    void *nativeDevPtr = nullptr;
     int result = cudaMalloc(&nativeDevPtr, (size_t)size);
     setPointer(env, devPtr, (jlong)nativeDevPtr);
 
@@ -418,13 +418,13 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMallocNat
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaFreeNative
   (JNIEnv *env, jclass cls, jobject devPtr) {
-    if (devPtr == NULL) {
+    if (devPtr == nullptr) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'devPtr' is null for cudaFree");
         return CUJAVA_INTERNAL_ERROR;
     }
     Logger::log(LOG_TRACE, "Executing cudaFree\n");
 
-    void *nativeDevPtr = NULL;
+    void *nativeDevPtr = nullptr;
     nativeDevPtr = getPointer(env, devPtr);
     int result = cudaFree(nativeDevPtr);
     return result;
@@ -433,7 +433,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaFreeNativ
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemsetNative
   (JNIEnv *env, jclass cls, jobject mem, jint c, jlong count) {
-    if (mem == NULL) {
+    if (mem == nullptr) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'mem' is null for cudaMemset");
         return CUJAVA_INTERNAL_ERROR;
     }
@@ -457,19 +457,19 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaDeviceSyn
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMallocManagedNative
   (JNIEnv *env, jclass cls, jobject devPtr, jlong size, jint flags) {
-    if (devPtr == NULL) {
+    if (devPtr == nullptr) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'devPtr' is null for cudaMallocManaged");
         return CUJAVA_INTERNAL_ERROR;
     }
     Logger::log(LOG_TRACE, "Executing cudaMallocManaged of %ld bytes\n", (long)size);
 
-    void *nativeDevPtr = NULL;
+    void *nativeDevPtr = nullptr;
     int result = cudaMallocManaged(&nativeDevPtr, (size_t)size, (unsigned int)flags);
     if (result == cudaSuccess) {
         if (flags == cudaMemAttachHost) {
             jobject object = env->NewDirectByteBuffer(nativeDevPtr, size);
             env->SetObjectField(devPtr, Pointer_buffer, object);
-            env->SetObjectField(devPtr, Pointer_pointers, NULL);
+            env->SetObjectField(devPtr, Pointer_pointers, nullptr);
             env->SetLongField(devPtr, Pointer_byteOffset, 0);
         }
         env->SetLongField(devPtr, NativePointerObject_nativePointer, (jlong)nativeDevPtr);
@@ -481,11 +481,11 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMallocMan
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemGetInfoNative
   (JNIEnv *env, jclass cls, jlongArray freeBytes, jlongArray totalBytes) {
-    if (freeBytes == NULL) {
+    if (freeBytes == nullptr) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'freeBytes' is null for cudaMemGetInfo");
         return CUJAVA_INTERNAL_ERROR;
     }
-    if (totalBytes == NULL) {
+    if (totalBytes == nullptr) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'freeBytes' is null for cudaMemGetInfo");
         return CUJAVA_INTERNAL_ERROR;
     }
@@ -505,7 +505,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaMemGetInf
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_runtime_CuJava_cudaGetDeviceCountNative
   (JNIEnv *env, jclass cls, jintArray count) {
-    if (count == NULL) {
+    if (count == nullptr) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'count' is null for cudaGetDeviceCount");
         return CUJAVA_INTERNAL_ERROR;
     }

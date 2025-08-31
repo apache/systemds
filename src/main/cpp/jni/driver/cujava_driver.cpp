@@ -65,7 +65,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuCtxCre
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuDeviceGetNative
   (JNIEnv *env, jclass cls, jobject device, jint ordinal) {
-    if (device == NULL) {
+    if (device == nullptr) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'device' is null for cuDeviceGet");
         return CUJAVA_INTERNAL_ERROR;
     }
@@ -81,7 +81,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuDevice
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuDeviceGetCountNative
   (JNIEnv *env, jclass cls, jintArray count) {
-    if (count == NULL) {
+    if (count == nullptr) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'count' is null for cuDeviceGetCount");
         return CUJAVA_INTERNAL_ERROR;
     }
@@ -248,7 +248,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuModule
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuMemAllocNative
   (JNIEnv *env, jclass cls, jobject dptr, jlong bytesize) {
-    if (dptr == NULL) {
+    if (dptr == nullptr) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'dptr' is null for cuMemAlloc");
         return CUJAVA_INTERNAL_ERROR;
     }
@@ -263,7 +263,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuMemAll
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuModuleUnloadNative
   (JNIEnv *env, jclass cls, jobject hmod) {
-    if (hmod == NULL) {
+    if (hmod == nullptr) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'hmod' is null for cuModuleUnload");
         return CUJAVA_INTERNAL_ERROR;
     }
@@ -277,7 +277,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuModule
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuCtxDestroyNative
   (JNIEnv *env, jclass cls, jobject ctx) {
-    if (ctx == NULL) {
+    if (ctx == nullptr) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'ctx' is null for cuCtxDestroy");
         return CUJAVA_INTERNAL_ERROR;
     }
@@ -291,7 +291,7 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuCtxDes
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuMemFreeNative
   (JNIEnv *env, jclass cls, jobject dptr) {
-    if (dptr == NULL) {
+    if (dptr == nullptr) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'dptr' is null for cuMemFree");
         return CUJAVA_INTERNAL_ERROR;
     }
@@ -341,11 +341,11 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuCtxSyn
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_driver_CuJavaDriver_cuDeviceGetAttributeNative
   (JNIEnv *env, jclass cls, jintArray pi, jint CUdevice_attribute_attrib, jobject dev) {
-    if (pi == NULL) {
+    if (pi == nullptr) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'pi' is null for cuDeviceGetAttribute");
         return CUJAVA_INTERNAL_ERROR;
     }
-    if (dev == NULL) {
+    if (dev == nullptr) {
         ThrowByName(env, "java/lang/NullPointerException", "Parameter 'dev' is null for cuDeviceGetAttribute");
         return CUJAVA_INTERNAL_ERROR;
     }

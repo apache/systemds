@@ -30,7 +30,7 @@
 #include "../common/cujava_jni_utils.hpp"
 #include "../common/cujava_pointer_utils.hpp"
 
-#define CUJAVA_INTERNAL_ERROR 0x80000001
+#define CUJAVA_CUSPARSE_INTERNAL_ERROR (-1)
 
 
 

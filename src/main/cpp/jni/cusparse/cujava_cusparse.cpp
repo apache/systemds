@@ -21,6 +21,15 @@
 #include "cujava_cusparse.hpp"
 #include "cujava_cusparse_common.hpp"
 
+#define CUJAVA_REQUIRE_NONNULL(env, obj, name, method)                           \
+    do {                                                                          \
+        if ((obj) == nullptr) {                                                   \
+            ThrowByName((env), "java/lang/NullPointerException",                  \
+                        "Parameter '" name "' is null for " method);              \
+            return CUJAVA_INTERNAL_ERROR;                                         \
+        }                                                                         \
+    } while (0)
+
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
     JNIEnv *env = nullptr;
@@ -1346,6 +1355,456 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusp
         cudaDeviceSynchronize();
     }
     if (!releasePointerData(env, nnzTotalDevHostPtr_pointerData, 0)) return CUJAVA_INTERNAL_ERROR;
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseSetMatTypeNative
+    (JNIEnv *env, jclass cls, jobject descrA, jint type) {
+    if (descrA == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'descrA' is null for cusparseSetMatType");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+
+    Logger::log(LOG_TRACE, "Executing cusparseSetMatType(descrA=%p, type=%d)\n", descrA, type);
+
+    cusparseMatDescr_t descrA_native;
+    cusparseMatrixType_t type_native;
+
+    descrA_native = (cusparseMatDescr_t)getNativePointerValue(env, descrA);
+    type_native = (cusparseMatrixType_t)type;
+
+    cusparseStatus_t jniResult_native = cusparseSetMatType(descrA_native, type_native);
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseSetMatIndexBaseNative
+    (JNIEnv *env, jclass cls, jobject descrA, jint base) {
+    if (descrA == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'descrA' is null for cusparseSetMatIndexBase");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+
+    Logger::log(LOG_TRACE, "Executing cusparseSetMatIndexBase(descrA=%p, base=%d)\n", descrA, base);
+
+    cusparseMatDescr_t descrA_native;
+    cusparseIndexBase_t base_native;
+
+    descrA_native = (cusparseMatDescr_t)getNativePointerValue(env, descrA);
+    base_native = (cusparseIndexBase_t)base;
+
+    cusparseStatus_t jniResult_native = cusparseSetMatIndexBase(descrA_native, base_native);
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseSetPointerModeNative
+    (JNIEnv *env, jclass cls, jobject handle, jint mode) {
+    if (handle == nullptr) {
+        ThrowByName(env, "java/lang/NullPointerException", "Parameter 'handle' is null for cusparseSetPointerMode");
+        return CUJAVA_INTERNAL_ERROR;
+    }
+
+    Logger::log(LOG_TRACE, "Executing cusparseSetPointerMode(handle=%p, mode=%d)\n", handle, mode);
+
+    cusparseHandle_t handle_native;
+    cusparsePointerMode_t mode_native;
+
+    handle_native = (cusparseHandle_t)getNativePointerValue(env, handle);
+    mode_native = (cusparsePointerMode_t)mode;
+
+    cusparseStatus_t jniResult_native = cusparseSetPointerMode(handle_native, mode_native);
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseXcsrgeam2NnzNative
+    (JNIEnv *env, jclass cls, jobject handle, jint m, jint n, jobject descrA, jint nnzA, jobject csrSortedRowPtrA, jobject csrSortedColIndA,
+     jobject descrB, jint nnzB, jobject csrSortedRowPtrB, jobject csrSortedColIndB, jobject descrC, jobject csrSortedRowPtrC, jobject nnzTotalDevHostPtr, jobject workspace) {
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, handle, "handle", "cusparseXcsrgeam2Nnz");
+    CUJAVA_REQUIRE_NONNULL(env, descrA, "descrA", "cusparseXcsrgeam2Nnz");
+    CUJAVA_REQUIRE_NONNULL(env, csrSortedRowPtrA, "csrSortedRowPtrA", "cusparseXcsrgeam2Nnz");
+    CUJAVA_REQUIRE_NONNULL(env, csrSortedColIndA, "csrSortedColIndA", "cusparseXcsrgeam2Nnz");
+    CUJAVA_REQUIRE_NONNULL(env, descrB, "descrB", "cusparseXcsrgeam2Nnz");
+    CUJAVA_REQUIRE_NONNULL(env, csrSortedRowPtrB, "csrSortedRowPtrB", "cusparseXcsrgeam2Nnz");
+    CUJAVA_REQUIRE_NONNULL(env, csrSortedColIndB, "csrSortedColIndB", "cusparseXcsrgeam2Nnz");
+    CUJAVA_REQUIRE_NONNULL(env, descrC, "descrC", "cusparseXcsrgeam2Nnz");
+    CUJAVA_REQUIRE_NONNULL(env, csrSortedRowPtrC, "csrSortedRowPtrC", "cusparseXcsrgeam2Nnz");
+    CUJAVA_REQUIRE_NONNULL(env, nnzTotalDevHostPtr, "nnzTotalDevHostPtr", "cusparseXcsrgeam2Nnz");
+    CUJAVA_REQUIRE_NONNULL(env, workspace, "workspace", "cusparseXcsrgeam2Nnz");
+
+    // Log message
+    Logger::log(LOG_TRACE, "Executing cusparseXcsrgeam2Nnz(handle=%p, m=%d, n=%d, descrA=%p, nnzA=%d, csrSortedRowPtrA=%p, csrSortedColIndA=%p, descrB=%p, nnzB=%d, csrSortedRowPtrB=%p, csrSortedColIndB=%p, descrC=%p, csrSortedRowPtrC=%p, nnzTotalDevHostPtr=%p, workspace=%p)\n",
+        handle, m, n, descrA, nnzA, csrSortedRowPtrA, csrSortedColIndA, descrB, nnzB, csrSortedRowPtrB, csrSortedColIndB, descrC, csrSortedRowPtrC, nnzTotalDevHostPtr, workspace);
+
+    // Declare native variables
+    cusparseHandle_t handle_native;
+    int m_native = 0;
+    int n_native = 0;
+    cusparseMatDescr_t descrA_native;
+    int nnzA_native = 0;
+    int * csrSortedRowPtrA_native = NULL;
+    int * csrSortedColIndA_native = NULL;
+    cusparseMatDescr_t descrB_native;
+    int nnzB_native = 0;
+    int * csrSortedRowPtrB_native = NULL;
+    int * csrSortedColIndB_native = NULL;
+    cusparseMatDescr_t descrC_native;
+    int * csrSortedRowPtrC_native = NULL;
+    int * nnzTotalDevHostPtr_native = NULL;
+    void * workspace_native = NULL;
+
+    // Copy Java inputs into native locals
+    handle_native = (cusparseHandle_t)getNativePointerValue(env, handle);
+    m_native = (int)m;
+    n_native = (int)n;
+    descrA_native = (cusparseMatDescr_t)getNativePointerValue(env, descrA);
+    nnzA_native = (int)nnzA;
+    csrSortedRowPtrA_native = (int *)getPointer(env, csrSortedRowPtrA);
+    csrSortedColIndA_native = (int *)getPointer(env, csrSortedColIndA);
+    descrB_native = (cusparseMatDescr_t)getNativePointerValue(env, descrB);
+    nnzB_native = (int)nnzB;
+    csrSortedRowPtrB_native = (int *)getPointer(env, csrSortedRowPtrB);
+    csrSortedColIndB_native = (int *)getPointer(env, csrSortedColIndB);
+    descrC_native = (cusparseMatDescr_t)getNativePointerValue(env, descrC);
+    csrSortedRowPtrC_native = (int *)getPointer(env, csrSortedRowPtrC);
+    PointerData *nnzTotalDevHostPtr_pointerData = initPointerData(env, nnzTotalDevHostPtr);
+
+    if (nnzTotalDevHostPtr_pointerData == nullptr) {
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    nnzTotalDevHostPtr_native = (int *)nnzTotalDevHostPtr_pointerData->getPointer(env);
+    workspace_native = (void *)getPointer(env, workspace);
+
+    cusparseStatus_t jniResult_native = cusparseXcsrgeam2Nnz(handle_native, m_native, n_native, descrA_native, nnzA_native,
+        csrSortedRowPtrA_native, csrSortedColIndA_native, descrB_native, nnzB_native, csrSortedRowPtrB_native, csrSortedColIndB_native,
+        descrC_native, csrSortedRowPtrC_native, nnzTotalDevHostPtr_native, workspace_native);
+
+    if (!isPointerBackedByNativeMemory(env, nnzTotalDevHostPtr)) {
+        cudaDeviceSynchronize();
+    }
+    if (!releasePointerData(env, nnzTotalDevHostPtr_pointerData, 0)) return CUJAVA_INTERNAL_ERROR;
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseSpGEMM_1workEstimationNative
+    (JNIEnv *env, jclass cls, jobject handle, jint opA, jint opB, jobject alpha, jobject matA, jobject matB, jobject beta,
+     jobject matC, jint computeType, jint alg, jobject spgemmDescr, jlongArray bufferSize1, jobject externalBuffer1) {
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, handle, "handle", "cusparseSpGEMM_workEstimation");
+    CUJAVA_REQUIRE_NONNULL(env, alpha, "alpha", "cusparseSpGEMM_workEstimation");
+    CUJAVA_REQUIRE_NONNULL(env, matA, "matA", "cusparseSpGEMM_workEstimation");
+    CUJAVA_REQUIRE_NONNULL(env, matB, "matB", "cusparseSpGEMM_workEstimation");
+    CUJAVA_REQUIRE_NONNULL(env, beta, "beta", "cusparseSpGEMM_workEstimation");
+    CUJAVA_REQUIRE_NONNULL(env, matC, "matC", "cusparseSpGEMM_workEstimation");
+    CUJAVA_REQUIRE_NONNULL(env, spgemmDescr, "spgemmDescr", "cusparseSpGEMM_workEstimation");
+    CUJAVA_REQUIRE_NONNULL(env, bufferSize1, "bufferSize1", "cusparseSpGEMM_workEstimation");
+
+    Logger::log(LOG_TRACE, "Executing cusparseSpGEMM_workEstimation(handle=%p, opA=%d, opB=%d, alpha=%p, matA=%p, matB=%p, beta=%p, matC=%p, computeType=%d, alg=%d, spgemmDescr=%p, bufferSize1=%p, externalBuffer1=%p)\n",
+        handle, opA, opB, alpha, matA, matB, beta, matC, computeType, alg, spgemmDescr, bufferSize1, externalBuffer1);
+
+    // Declare native variables
+    cusparseHandle_t handle_native;
+    cusparseOperation_t opA_native;
+    cusparseOperation_t opB_native;
+    void * alpha_native = NULL;
+    cusparseConstSpMatDescr_t matA_native;
+    cusparseConstSpMatDescr_t matB_native;
+    void * beta_native = NULL;
+    cusparseSpMatDescr_t matC_native;
+    cudaDataType computeType_native;
+    cusparseSpGEMMAlg_t alg_native;
+    cusparseSpGEMMDescr_t spgemmDescr_native;
+    size_t * bufferSize1_native = NULL;
+    void * externalBuffer1_native = NULL;
+
+    // Copy Java inputs into native locals
+    handle_native = (cusparseHandle_t)getNativePointerValue(env, handle);
+    opA_native = (cusparseOperation_t)opA;
+    opB_native = (cusparseOperation_t)opB;
+    PointerData *alpha_pointerData = initPointerData(env, alpha);
+    if (alpha_pointerData == nullptr) {
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    alpha_native = (void *)alpha_pointerData->getPointer(env);
+    matA_native = (cusparseConstSpMatDescr_t)getNativePointerValue(env, matA);
+    matB_native = (cusparseConstSpMatDescr_t)getNativePointerValue(env, matB);
+    PointerData *beta_pointerData = initPointerData(env, beta);
+    if (beta_pointerData == nullptr) {
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    beta_native = (void *)beta_pointerData->getPointer(env);
+    matC_native = (cusparseSpMatDescr_t)getNativePointerValue(env, matC);
+    computeType_native = (cudaDataType)computeType;
+    alg_native = (cusparseSpGEMMAlg_t)alg;
+    spgemmDescr_native = (cusparseSpGEMMDescr_t)getNativePointerValue(env, spgemmDescr);
+    if (!initNative(env, bufferSize1, bufferSize1_native, true)) return CUJAVA_INTERNAL_ERROR;
+    externalBuffer1_native = (void *)getPointer(env, externalBuffer1);
+
+    cusparseStatus_t jniResult_native = cusparseSpGEMM_workEstimation(handle_native, opA_native, opB_native, alpha_native,
+        matA_native, matB_native, beta_native, matC_native, computeType_native, alg_native, spgemmDescr_native, bufferSize1_native, externalBuffer1_native);
+
+    if (!releasePointerData(env, alpha_pointerData, JNI_ABORT)) return CUJAVA_INTERNAL_ERROR;
+    if (!releasePointerData(env, beta_pointerData, JNI_ABORT)) return CUJAVA_INTERNAL_ERROR;
+    if (!releaseNative(env, bufferSize1_native, bufferSize1, true)) return CUJAVA_INTERNAL_ERROR;
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseSpGEMM_1computeNative
+    (JNIEnv *env, jclass cls, jobject handle, jint opA, jint opB, jobject alpha, jobject matA, jobject matB, jobject beta,
+     jobject matC, jint computeType, jint alg, jobject spgemmDescr, jlongArray bufferSize2, jobject externalBuffer2) {
+
+     // Validate: all jobject parameters must be non-null
+     CUJAVA_REQUIRE_NONNULL(env, handle, "handle", "cusparseSpGEMM_compute");
+     CUJAVA_REQUIRE_NONNULL(env, alpha, "alpha", "cusparseSpGEMM_compute");
+     CUJAVA_REQUIRE_NONNULL(env, matA, "matA", "cusparseSpGEMM_compute");
+     CUJAVA_REQUIRE_NONNULL(env, matB, "matB", "cusparseSpGEMM_compute");
+     CUJAVA_REQUIRE_NONNULL(env, beta, "beta", "cusparseSpGEMM_compute");
+     CUJAVA_REQUIRE_NONNULL(env, matC, "matC", "cusparseSpGEMM_compute");
+     CUJAVA_REQUIRE_NONNULL(env, spgemmDescr, "spgemmDescr", "cusparseSpGEMM_compute");
+     CUJAVA_REQUIRE_NONNULL(env, bufferSize2, "bufferSize2", "cusparseSpGEMM_compute");
+
+    Logger::log(LOG_TRACE, "Executing cusparseSpGEMM_compute(handle=%p, opA=%d, opB=%d, alpha=%p, matA=%p, matB=%p, beta=%p, matC=%p, computeType=%d, alg=%d, spgemmDescr=%p, bufferSize2=%p, externalBuffer2=%p)\n",
+        handle, opA, opB, alpha, matA, matB, beta, matC, computeType, alg, spgemmDescr, bufferSize2, externalBuffer2);
+
+    // Declare native variables
+    cusparseHandle_t handle_native;
+    cusparseOperation_t opA_native;
+    cusparseOperation_t opB_native;
+    void * alpha_native = NULL;
+    cusparseConstSpMatDescr_t matA_native;
+    cusparseConstSpMatDescr_t matB_native;
+    void * beta_native = NULL;
+    cusparseSpMatDescr_t matC_native;
+    cudaDataType computeType_native;
+    cusparseSpGEMMAlg_t alg_native;
+    cusparseSpGEMMDescr_t spgemmDescr_native;
+    size_t * bufferSize2_native = NULL;
+    void * externalBuffer2_native = nullptr;
+
+    // Copy Java inputs into native locals
+    handle_native = (cusparseHandle_t)getNativePointerValue(env, handle);
+    opA_native = (cusparseOperation_t)opA;
+    opB_native = (cusparseOperation_t)opB;
+    PointerData *alpha_pointerData = initPointerData(env, alpha);
+    if (alpha_pointerData == nullptr) {
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    alpha_native = (void *)alpha_pointerData->getPointer(env);
+    matA_native = (cusparseConstSpMatDescr_t)getNativePointerValue(env, matA);
+    matB_native = (cusparseConstSpMatDescr_t)getNativePointerValue(env, matB);
+    PointerData *beta_pointerData = initPointerData(env, beta);
+    if (beta_pointerData == nullptr) {
+        return CUJAVA_INTERNAL_ERROR;
+    }
+    beta_native = (void *)beta_pointerData->getPointer(env);
+    matC_native = (cusparseSpMatDescr_t)getNativePointerValue(env, matC);
+    computeType_native = (cudaDataType)computeType;
+    alg_native = (cusparseSpGEMMAlg_t)alg;
+    spgemmDescr_native = (cusparseSpGEMMDescr_t)getNativePointerValue(env, spgemmDescr);
+    if (!initNative(env, bufferSize2, bufferSize2_native, true)) return CUJAVA_INTERNAL_ERROR;
+    externalBuffer2_native = (void *)getPointer(env, externalBuffer2);
+
+    cusparseStatus_t jniResult_native = cusparseSpGEMM_compute(handle_native, opA_native, opB_native, alpha_native, matA_native,
+        matB_native, beta_native, matC_native, computeType_native, alg_native, spgemmDescr_native, bufferSize2_native, externalBuffer2_native);
+
+    if (!releasePointerData(env, alpha_pointerData, JNI_ABORT)) return CUJAVA_INTERNAL_ERROR;
+    if (!releasePointerData(env, beta_pointerData, JNI_ABORT)) return CUJAVA_INTERNAL_ERROR;
+    if (!releaseNative(env, bufferSize2_native, bufferSize2, true)) return CUJAVA_INTERNAL_ERROR;
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseSpMatGetSizeNative
+    (JNIEnv *env, jclass cls, jobject spMatDescr, jlongArray rows, jlongArray cols, jlongArray nnz) {
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, spMatDescr, "spMatDescr", "cusparseSpMatGetSize");
+    CUJAVA_REQUIRE_NONNULL(env, rows, "rows", "cusparseSpMatGetSize");
+    CUJAVA_REQUIRE_NONNULL(env, cols, "cols", "cusparseSpMatGetSize");
+    CUJAVA_REQUIRE_NONNULL(env, nnz, "nnz", "cusparseSpMatGetSize");
+
+    Logger::log(LOG_TRACE, "Executing cusparseSpMatGetSize(spMatDescr=%p, rows=%p, cols=%p, nnz=%p)\n", spMatDescr, rows, cols, nnz);
+
+    // Declare native variables
+    cusparseConstSpMatDescr_t spMatDescr_native;
+    int64_t rows_native;
+    int64_t cols_native;
+    int64_t nnz_native;
+
+    // Copy Java inputs into native locals
+    spMatDescr_native = (cusparseConstSpMatDescr_t)getNativePointerValue(env, spMatDescr);
+
+    cusparseStatus_t jniResult_native = cusparseSpMatGetSize(spMatDescr_native, &rows_native, &cols_native, &nnz_native);
+
+    if (!set(env, rows, 0, (jlong)rows_native)) return CUJAVA_INTERNAL_ERROR;
+    if (!set(env, cols, 0, (jlong)cols_native)) return CUJAVA_INTERNAL_ERROR;
+    if (!set(env, nnz, 0, (jlong)nnz_native)) return CUJAVA_INTERNAL_ERROR;
+
+    // Return the result
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseXcsrsortNative
+(JNIEnv *env, jclass cls, jobject handle, jint m, jint n, jint nnz, jobject descrA, jobject csrRowPtrA, jobject csrColIndA, jobject P, jobject pBuffer) {
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, handle, "handle", "cusparseXcsrsort");
+    CUJAVA_REQUIRE_NONNULL(env, descrA, "descrA", "cusparseXcsrsort");
+    CUJAVA_REQUIRE_NONNULL(env, csrRowPtrA, "csrRowPtrA", "cusparseXcsrsort");
+    CUJAVA_REQUIRE_NONNULL(env, csrColIndA, "csrColIndA", "cusparseXcsrsort");
+    CUJAVA_REQUIRE_NONNULL(env, P, "P", "cusparseXcsrsort");
+    CUJAVA_REQUIRE_NONNULL(env, pBuffer, "pBuffer", "cusparseXcsrsort");
+
+    Logger::log(LOG_TRACE, "Executing cusparseXcsrsort(handle=%p, m=%d, n=%d, nnz=%d, descrA=%p, csrRowPtrA=%p, csrColIndA=%p, P=%p, pBuffer=%p)\n",
+        handle, m, n, nnz, descrA, csrRowPtrA, csrColIndA, P, pBuffer);
+
+    // Declare native variables
+    cusparseHandle_t handle_native;
+    int m_native = 0;
+    int n_native = 0;
+    int nnz_native = 0;
+    cusparseMatDescr_t descrA_native;
+    int * csrRowPtrA_native = nullptr;
+    int * csrColIndA_native = nullptr;
+    int * P_native = nullptr;
+    void * pBuffer_native = nullptr;
+
+    // Copy Java inputs into native locals
+    handle_native = (cusparseHandle_t)getNativePointerValue(env, handle);
+    m_native = (int)m;
+    n_native = (int)n;
+    nnz_native = (int)nnz;
+    descrA_native = (cusparseMatDescr_t)getNativePointerValue(env, descrA);
+    csrRowPtrA_native = (int *)getPointer(env, csrRowPtrA);
+    csrColIndA_native = (int *)getPointer(env, csrColIndA);
+    P_native = (int *)getPointer(env, P);
+    pBuffer_native = (void *)getPointer(env, pBuffer);
+
+    // Cusparse API call
+    cusparseStatus_t jniResult_native = cusparseXcsrsort(handle_native, m_native, n_native, nnz_native, descrA_native,
+        csrRowPtrA_native, csrColIndA_native, P_native, pBuffer_native);
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseXcsrsort_1bufferSizeExtNative
+(JNIEnv *env, jclass cls, jobject handle, jint m, jint n, jint nnz, jobject csrRowPtrA, jobject csrColIndA, jlongArray pBufferSizeInBytes) {
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, handle, "handle", "cusparseXcsrsort_bufferSizeExt");
+    CUJAVA_REQUIRE_NONNULL(env, csrRowPtrA, "csrRowPtrA", "cusparseXcsrsort_bufferSizeExt");
+    CUJAVA_REQUIRE_NONNULL(env, csrColIndA, "csrColIndA", "cusparseXcsrsort_bufferSizeExt");
+    CUJAVA_REQUIRE_NONNULL(env, pBufferSizeInBytes, "pBufferSizeInBytes", "cusparseXcsrsort_bufferSizeExt");
+
+    Logger::log(LOG_TRACE, "Executing cusparseXcsrsort_bufferSizeExt(handle=%p, m=%d, n=%d, nnz=%d, csrRowPtrA=%p, csrColIndA=%p, pBufferSizeInBytes=%p)\n",
+        handle, m, n, nnz, csrRowPtrA, csrColIndA, pBufferSizeInBytes);
+
+    // Declare native variables
+    cusparseHandle_t handle_native;
+    int m_native = 0;
+    int n_native = 0;
+    int nnz_native = 0;
+    int * csrRowPtrA_native = nullptr;
+    int * csrColIndA_native = nullptr;
+    size_t * pBufferSizeInBytes_native = nullptr;
+
+    // Copy Java inputs into native locals
+    handle_native = (cusparseHandle_t)getNativePointerValue(env, handle);
+    m_native = (int)m;
+    n_native = (int)n;
+    nnz_native = (int)nnz;
+    csrRowPtrA_native = (int *)getPointer(env, csrRowPtrA);
+    csrColIndA_native = (int *)getPointer(env, csrColIndA);
+    if (!initNative(env, pBufferSizeInBytes, pBufferSizeInBytes_native, true)) return CUJAVA_INTERNAL_ERROR;
+
+    // Cusparse API call
+    cusparseStatus_t jniResult_native = cusparseXcsrsort_bufferSizeExt(handle_native, m_native, n_native, nnz_native,
+        csrRowPtrA_native, csrColIndA_native, pBufferSizeInBytes_native);
+
+    if (!releaseNative(env, pBufferSizeInBytes_native, pBufferSizeInBytes, true)) return CUJAVA_INTERNAL_ERROR;
+
+    // Return the result
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseCreateNative(JNIEnv *env, jclass cls, jobject handle) {
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, handle, "handle", "cusparseCreate");
+
+    Logger::log(LOG_TRACE, "Executing cusparseCreate(handle=%p)\n", handle);
+
+    // Declare native variables
+    cusparseHandle_t handle_native;
+
+    // Cusparse API call
+    cusparseStatus_t jniResult_native = cusparseCreate(&handle_native);
+    setNativePointerValue(env, handle, (jlong)handle_native);
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseCreateIdentityPermutationNative
+    (JNIEnv *env, jclass cls, jobject handle, jint n, jobject p) {
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, handle, "handle", "cusparseCreateIdentityPermutation");
+    CUJAVA_REQUIRE_NONNULL(env, p, "p", "cusparseCreateIdentityPermutation");
+
+    Logger::log(LOG_TRACE, "Executing cusparseCreateIdentityPermutation(handle=%p, n=%d, p=%p)\n", handle, n, p);
+
+    // Declare native variables
+    cusparseHandle_t handle_native;
+    int n_native = 0;
+    int * p_native = nullptr;
+
+    // Copy Java inputs into native locals
+    handle_native = (cusparseHandle_t)getNativePointerValue(env, handle);
+    n_native = (int)n;
+    p_native = (int *)getPointer(env, p);
+
+    // Cusparse API call
+    cusparseStatus_t jniResult_native = cusparseCreateIdentityPermutation(handle_native, n_native, p_native);
 
     jint jniResult = (jint)jniResult_native;
     return jniResult;

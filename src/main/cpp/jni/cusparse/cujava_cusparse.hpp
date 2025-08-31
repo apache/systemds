@@ -53,6 +53,17 @@ extern "C" {
  *  - cusparseDenseToSparse_analysis
  *  - cusparseDenseToSparse_convert
  *  - cusparseDnnz
+ *  - cusparseSetMatType
+ *  - cusparseSetMatIndexBase
+ *  - cusparseSetPointerMode
+ *  - cusparseXcsrgeam2Nnz
+ *  - cusparseSpGEMM_workEstimation
+ *  - cusparseSpGEMM_compute
+ *  - cusparseSpMatGetSize
+ *  - cusparseXcsrsort
+ *  - cusparseXcsrsort_bufferSizeExt
+ *  - cusparseCreate
+ *  - cusparseCreateIdentityPermutation
  */
 
 
@@ -162,6 +173,52 @@ JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusp
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseDnnzNative
     (JNIEnv *env, jclass cls, jobject handle, jint dirA, jint m, jint n, jobject descrA, jobject A, jint lda, jobject nnzPerRowCol, jobject nnzTotalDevHostPtr);
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseSetMatTypeNative
+    (JNIEnv *env, jclass cls, jobject descrA, jint type);
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseSetMatIndexBaseNative
+    (JNIEnv *env, jclass cls, jobject descrA, jint base);
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseSetPointerModeNative
+    (JNIEnv *env, jclass cls, jobject handle, jint mode);
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseXcsrgeam2NnzNative
+    (JNIEnv *env, jclass cls, jobject handle, jint m, jint n, jobject descrA, jint nnzA, jobject csrSortedRowPtrA, jobject csrSortedColIndA,
+     jobject descrB, jint nnzB, jobject csrSortedRowPtrB, jobject csrSortedColIndB, jobject descrC, jobject csrSortedRowPtrC, jobject nnzTotalDevHostPtr, jobject workspace);
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseSpGEMM_1workEstimationNative
+    (JNIEnv *env, jclass cls, jobject handle, jint opA, jint opB, jobject alpha, jobject matA, jobject matB, jobject beta,
+     jobject matC, jint computeType, jint alg, jobject spgemmDescr, jlongArray bufferSize1, jobject externalBuffer1);
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseSpGEMM_1computeNative
+    (JNIEnv *env, jclass cls, jobject handle, jint opA, jint opB, jobject alpha, jobject matA, jobject matB, jobject beta,
+     jobject matC, jint computeType, jint alg, jobject spgemmDescr, jlongArray bufferSize2, jobject externalBuffer2);
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseSpMatGetSizeNative
+    (JNIEnv *env, jclass cls, jobject spMatDescr, jlongArray rows, jlongArray cols, jlongArray nnz);
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseXcsrsortNative
+(JNIEnv *env, jclass cls, jobject handle, jint m, jint n, jint nnz, jobject descrA, jobject csrRowPtrA, jobject csrColIndA, jobject P, jobject pBuffer);
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseXcsrsort_1bufferSizeExtNative
+(JNIEnv *env, jclass cls, jobject handle, jint m, jint n, jint nnz, jobject csrRowPtrA, jobject csrColIndA, jlongArray pBufferSizeInBytes);
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseCreateNative(JNIEnv *env, jclass cls, jobject handle);
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseCreateIdentityPermutationNative
+    (JNIEnv *env, jclass cls, jobject handle, jint n, jobject p);
 
 #ifdef __cplusplus
 }

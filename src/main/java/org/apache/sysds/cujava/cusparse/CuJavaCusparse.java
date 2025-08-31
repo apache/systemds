@@ -276,4 +276,98 @@ public class CuJavaCusparse {
 	private static native int cusparseDnnzNative(cusparseHandle handle, int dirA, int m, int n, cusparseMatDescr descrA,
 		Pointer A, int lda, Pointer nnzPerRowCol, Pointer nnzTotalDevHostPtr);
 
+	public static int cusparseSetMatType(cusparseMatDescr descrA, int type) {
+		return checkCusparseStatus(cusparseSetMatTypeNative(descrA, type));
+	}
+
+	private static native int cusparseSetMatTypeNative(cusparseMatDescr descrA, int type);
+
+	public static int cusparseSetMatIndexBase(cusparseMatDescr descrA, int base) {
+		return checkCusparseStatus(cusparseSetMatIndexBaseNative(descrA, base));
+	}
+
+	private static native int cusparseSetMatIndexBaseNative(cusparseMatDescr descrA, int base);
+
+	public static int cusparseSetPointerMode(cusparseHandle handle, int mode) {
+		return checkCusparseStatus(cusparseSetPointerModeNative(handle, mode));
+	}
+
+	private static native int cusparseSetPointerModeNative(cusparseHandle handle, int mode);
+
+	public static int cusparseXcsrgeam2Nnz(cusparseHandle handle, int m, int n, cusparseMatDescr descrA, int nnzA,
+		Pointer csrSortedRowPtrA, Pointer csrSortedColIndA, cusparseMatDescr descrB, int nnzB, Pointer csrSortedRowPtrB,
+		Pointer csrSortedColIndB, cusparseMatDescr descrC, Pointer csrSortedRowPtrC, Pointer nnzTotalDevHostPtr,
+		Pointer workspace) {
+		return checkCusparseStatus(
+			cusparseXcsrgeam2NnzNative(handle, m, n, descrA, nnzA, csrSortedRowPtrA, csrSortedColIndA, descrB, nnzB,
+				csrSortedRowPtrB, csrSortedColIndB, descrC, csrSortedRowPtrC, nnzTotalDevHostPtr, workspace));
+	}
+
+	private static native int cusparseXcsrgeam2NnzNative(cusparseHandle handle, int m, int n, cusparseMatDescr descrA,
+		int nnzA, Pointer csrSortedRowPtrA, Pointer csrSortedColIndA, cusparseMatDescr descrB, int nnzB,
+		Pointer csrSortedRowPtrB, Pointer csrSortedColIndB, cusparseMatDescr descrC, Pointer csrSortedRowPtrC,
+		Pointer nnzTotalDevHostPtr, Pointer workspace);
+
+	public static int cusparseSpGEMM_workEstimation(cusparseHandle handle, int opA, int opB, Pointer alpha,
+		cusparseConstSpMatDescr matA, cusparseConstSpMatDescr matB, Pointer beta, cusparseSpMatDescr matC,
+		int computeType, int alg, cusparseSpGEMMDescr spgemmDescr, long[] bufferSize1, Pointer externalBuffer1) {
+		return checkCusparseStatus(
+			cusparseSpGEMM_workEstimationNative(handle, opA, opB, alpha, matA, matB, beta, matC, computeType, alg,
+				spgemmDescr, bufferSize1, externalBuffer1));
+	}
+
+	private static native int cusparseSpGEMM_workEstimationNative(cusparseHandle handle, int opA, int opB,
+		Pointer alpha, cusparseConstSpMatDescr matA, cusparseConstSpMatDescr matB, Pointer beta,
+		cusparseSpMatDescr matC, int computeType, int alg, cusparseSpGEMMDescr spgemmDescr, long[] bufferSize1,
+		Pointer externalBuffer1);
+
+	public static int cusparseSpGEMM_compute(cusparseHandle handle, int opA, int opB, Pointer alpha,
+		cusparseConstSpMatDescr matA, cusparseConstSpMatDescr matB, Pointer beta, cusparseSpMatDescr matC,
+		int computeType, int alg, cusparseSpGEMMDescr spgemmDescr, long[] bufferSize2, Pointer externalBuffer2) {
+		return checkCusparseStatus(
+			cusparseSpGEMM_computeNative(handle, opA, opB, alpha, matA, matB, beta, matC, computeType, alg, spgemmDescr,
+				bufferSize2, externalBuffer2));
+	}
+
+	private static native int cusparseSpGEMM_computeNative(cusparseHandle handle, int opA, int opB, Pointer alpha,
+		cusparseConstSpMatDescr matA, cusparseConstSpMatDescr matB, Pointer beta, cusparseSpMatDescr matC,
+		int computeType, int alg, cusparseSpGEMMDescr spgemmDescr, long[] bufferSize2, Pointer externalBuffer2);
+
+	public static int cusparseSpMatGetSize(cusparseConstSpMatDescr spMatDescr, long[] rows, long[] cols, long[] nnz) {
+		return checkCusparseStatus(cusparseSpMatGetSizeNative(spMatDescr, rows, cols, nnz));
+	}
+
+	private static native int cusparseSpMatGetSizeNative(cusparseConstSpMatDescr spMatDescr, long[] rows, long[] cols,
+		long[] nnz);
+
+	public static int cusparseXcsrsort(cusparseHandle handle, int m, int n, int nnz, cusparseMatDescr descrA,
+		Pointer csrRowPtrA, Pointer csrColIndA, Pointer P, Pointer pBuffer) {
+		return checkCusparseStatus(
+			cusparseXcsrsortNative(handle, m, n, nnz, descrA, csrRowPtrA, csrColIndA, P, pBuffer));
+	}
+
+	private static native int cusparseXcsrsortNative(cusparseHandle handle, int m, int n, int nnz,
+		cusparseMatDescr descrA, Pointer csrRowPtrA, Pointer csrColIndA, Pointer P, Pointer pBuffer);
+
+	public static int cusparseXcsrsort_bufferSizeExt(cusparseHandle handle, int m, int n, int nnz, Pointer csrRowPtrA,
+		Pointer csrColIndA, long[] pBufferSizeInBytes) {
+		return checkCusparseStatus(
+			cusparseXcsrsort_bufferSizeExtNative(handle, m, n, nnz, csrRowPtrA, csrColIndA, pBufferSizeInBytes));
+	}
+
+	private static native int cusparseXcsrsort_bufferSizeExtNative(cusparseHandle handle, int m, int n, int nnz,
+		Pointer csrRowPtrA, Pointer csrColIndA, long[] pBufferSizeInBytes);
+
+	public static int cusparseCreate(cusparseHandle handle) {
+		return checkCusparseStatus(cusparseCreateNative(handle));
+	}
+
+	private static native int cusparseCreateNative(cusparseHandle handle);
+
+	public static int cusparseCreateIdentityPermutation(cusparseHandle handle, int n, Pointer p) {
+		return checkCusparseStatus(cusparseCreateIdentityPermutationNative(handle, n, p));
+	}
+
+	private static native int cusparseCreateIdentityPermutationNative(cusparseHandle handle, int n, Pointer p);
+
 }

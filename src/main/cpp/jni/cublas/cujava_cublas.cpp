@@ -16,3 +16,192 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
+
+#include "cujava_cublas.hpp"
+#include "cujava_cublas_common.hpp"
+
+#define CUJAVA_REQUIRE_NONNULL(env, obj, name, method)                           \
+    do {                                                                          \
+        if ((obj) == nullptr) {                                                   \
+            ThrowByName((env), "java/lang/NullPointerException",                  \
+                        "Parameter '" name "' is null for " method);              \
+            return CUJAVA_CUBLAS_INTERNAL_ERROR;                                  \
+        }                                                                         \
+    } while (0)
+
+
+
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
+    JNIEnv *env = nullptr;
+    if (jvm->GetEnv((void **)&env, JNI_VERSION_1_4)) {
+        return JNI_ERR;
+    }
+
+    // Only what we need so far
+    if (initJNIUtils(env) == JNI_ERR) return JNI_ERR;
+    if (initPointerUtils(env) == JNI_ERR) return JNI_ERR;
+
+    return JNI_VERSION_1_4;
+}
+
+
+
+JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cublas_CuJavaCublas_cublasCreateNative(JNIEnv *env, jclass cls, jobject handle) {
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, handle, "handle", "cublasCreate");
+
+    Logger::log(LOG_TRACE, "Executing cublasCreate(handle=%p)\n", handle);
+
+    // Declare native variables
+    cublasHandle_t handle_native;
+
+    // Cublas API call
+    cublasStatus_t jniResult_native = cublasCreate(&handle_native);
+    setNativePointerValue(env, handle, (jlong)handle_native);
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cublas_CuJavaCublas_cublasDestroyNative(JNIEnv *env, jclass cls, jobject handle) {
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, handle, "handle", "cublasDestroy");
+
+    Logger::log(LOG_TRACE, "Executing cublasDestroy(handle=%p)\n", handle);
+
+    // Declare native variables
+    cublasHandle_t handle_native;
+
+    // Copy Java inputs into native locals
+    handle_native = (cublasHandle_t)getNativePointerValue(env, handle);
+
+    // Cublas API call
+    cublasStatus_t jniResult_native = cublasDestroy(handle_native);
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cublas_CuJavaCublas_cublasDgeamNative
+    (JNIEnv *env, jclass cls, jobject handle, jint transa, jint transb, jint m, jint n, jobject alpha, jobject A,
+     jint lda, jobject beta, jobject B, jint ldb, jobject C, jint ldc) {
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, handle, "handle", "cublasDgeam");
+    CUJAVA_REQUIRE_NONNULL(env, alpha, "alpha", "cublasDgeam");
+    CUJAVA_REQUIRE_NONNULL(env, A, "A", "cublasDgeam");
+    CUJAVA_REQUIRE_NONNULL(env, beta, "beta", "cublasDgeam");
+    CUJAVA_REQUIRE_NONNULL(env, B, "B", "cublasDgeam");
+    CUJAVA_REQUIRE_NONNULL(env, C, "C", "cublasDgeam");
+
+    Logger::log(LOG_TRACE, "Executing cublasDgeam(handle=%p, transa=%d, transb=%d, m=%d, n=%d, alpha=%p, A=%p, lda=%d, beta=%p, B=%p, ldb=%d, C=%p, ldc=%d)\n",
+        handle, transa, transb, m, n, alpha, A, lda, beta, B, ldb, C, ldc);
+
+    // Declare native variables
+    cublasHandle_t handle_native;
+    cublasOperation_t transa_native;
+    cublasOperation_t transb_native;
+    int m_native = 0;
+    int n_native = 0;
+    double * alpha_native = nullptr;
+    double * A_native = nullptr;
+    int lda_native = 0;
+    double * beta_native = nullptr;
+    double * B_native = nullptr;
+    int ldb_native = 0;
+    double * C_native = nullptr;
+    int ldc_native = 0;
+
+    // Copy Java inputs into native locals
+    handle_native = (cublasHandle_t)getNativePointerValue(env, handle);
+    transa_native = (cublasOperation_t)transa;
+    transb_native = (cublasOperation_t)transb;
+    m_native = (int)m;
+    n_native = (int)n;
+    PointerData *alpha_pointerData = initPointerData(env, alpha);
+    if (alpha_pointerData == nullptr) {
+        return CUJAVA_CUBLAS_INTERNAL_ERROR;
+    }
+    alpha_native = (double *)alpha_pointerData->getPointer(env);
+    A_native = (double *)getPointer(env, A);
+    lda_native = (int)lda;
+    PointerData *beta_pointerData = initPointerData(env, beta);
+    if (beta_pointerData == nullptr) {
+        return CUJAVA_CUBLAS_INTERNAL_ERROR;
+    }
+    beta_native = (double *)beta_pointerData->getPointer(env);
+    B_native = (double *)getPointer(env, B);
+    ldb_native = (int)ldb;
+    C_native = (double *)getPointer(env, C);
+    ldc_native = (int)ldc;
+
+    // Cublas API call
+    cublasStatus_t jniResult_native = cublasDgeam(handle_native, transa_native, transb_native, m_native, n_native, alpha_native,
+        A_native, lda_native, beta_native, B_native, ldb_native, C_native, ldc_native);
+
+    if (!releasePointerData(env, alpha_pointerData, JNI_ABORT)) return CUJAVA_CUBLAS_INTERNAL_ERROR;
+    if (!releasePointerData(env, beta_pointerData, JNI_ABORT)) return CUJAVA_CUBLAS_INTERNAL_ERROR;
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}
+
+
+
+JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cublas_CuJavaCublas_cublasDdotNative
+    (JNIEnv *env, jclass cls, jobject handle, jint n, jobject x, jint incx, jobject y, jint incy, jobject result) {
+
+    // Validate: all jobject parameters must be non-null
+    CUJAVA_REQUIRE_NONNULL(env, handle, "handle", "cublasDdot");
+    CUJAVA_REQUIRE_NONNULL(env, x, "x", "cublasDdot");
+    CUJAVA_REQUIRE_NONNULL(env, y, "y", "cublasDdot");
+    CUJAVA_REQUIRE_NONNULL(env, result, "result", "cublasDdot");
+
+    Logger::log(LOG_TRACE, "Executing cublasDdot(handle=%p, n=%d, x=%p, incx=%d, y=%p, incy=%d, result=%p)\n",
+        handle, n, x, incx, y, incy, result);
+
+    // Declare native variables
+    cublasHandle_t handle_native;
+    int n_native = 0;
+    double * x_native = nullptr;
+    int incx_native = 0;
+    double * y_native = nullptr;
+    int incy_native = 0;
+    double * result_native = nullptr;
+
+    // Copy Java inputs into native locals
+    handle_native = (cublasHandle_t)getNativePointerValue(env, handle);
+    n_native = (int)n;
+    x_native = (double *)getPointer(env, x);
+    incx_native = (int)incx;
+    y_native = (double *)getPointer(env, y);
+    incy_native = (int)incy;
+    PointerData *result_pointerData = initPointerData(env, result);
+    if (result_pointerData == nullptr) {
+        return CUJAVA_CUBLAS_INTERNAL_ERROR;
+    }
+    result_native = (double *)result_pointerData->getPointer(env);
+
+    // Cublas API call
+    cublasStatus_t jniResult_native = cublasDdot(handle_native, n_native, x_native, incx_native, y_native, incy_native, result_native);
+
+    if (!isPointerBackedByNativeMemory(env, result)) {
+        cudaDeviceSynchronize();                        // add cudart to CMake to cover runtime call
+    }
+    if (!releasePointerData(env, result_pointerData, 0)) return CUJAVA_CUBLAS_INTERNAL_ERROR;
+
+    jint jniResult = (jint)jniResult_native;
+    return jniResult;
+}

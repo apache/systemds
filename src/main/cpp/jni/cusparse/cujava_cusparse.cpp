@@ -26,7 +26,7 @@
         if ((obj) == nullptr) {                                                   \
             ThrowByName((env), "java/lang/NullPointerException",                  \
                         "Parameter '" name "' is null for " method);              \
-            return CUJAVA_CUSPARSE_INTERNAL_ERROR;                                         \
+            return CUJAVA_CUSPARSE_INTERNAL_ERROR;                                \
         }                                                                         \
     } while (0)
 
@@ -52,7 +52,7 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
 
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseSpGEMM_1copyNative
-  (JNIEnv *env, jclass, jobject handle, jint opA, jint opB,jobject alpha, jobject matA, jobject matB, jobject beta, jobject matC,
+  (JNIEnv *env, jclass cls, jobject handle, jint opA, jint opB,jobject alpha, jobject matA, jobject matB, jobject beta, jobject matC,
    jint computeType, jint alg, jobject spgemmDescr) {
 
     // Validate: all jobject parameters must be non-null

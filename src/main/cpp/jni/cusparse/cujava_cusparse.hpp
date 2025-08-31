@@ -68,7 +68,7 @@ extern "C" {
 
 
 JNIEXPORT jint JNICALL Java_org_apache_sysds_cujava_cusparse_CuJavaCusparse_cusparseSpGEMM_1copyNative
-    (JNIEnv *env, jclass, jobject handle, jint opA, jint opB,
+    (JNIEnv *env, jclass cls, jobject handle, jint opA, jint opB,
      jobject alpha, jobject matA, jobject matB, jobject beta, jobject matC,
      jint computeType, jint alg, jobject spgemmDescr);
 

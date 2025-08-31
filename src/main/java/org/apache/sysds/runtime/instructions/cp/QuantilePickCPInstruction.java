@@ -90,12 +90,16 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction {
 
 					if ( input2.getDataType() == DataType.SCALAR ) {
 						ScalarObject quantile = ec.getScalarInput(input2);
-						double picked = matBlock.pickValue(quantile.getDoubleValue());
+						//pick value w/ explicit averaging for even-length arrays
+						double picked = matBlock.pickValue(
+							quantile.getDoubleValue(), matBlock.getLength()%2==0);
 						ec.setScalarOutput(output.getName(), new DoubleObject(picked));
 					} 
 					else {
 						MatrixBlock quantiles = ec.getMatrixInput(input2.getName());
-						MatrixBlock resultBlock = matBlock.pickValues(quantiles, new MatrixBlock());
+						//pick value w/ explicit averaging for even-length arrays
+						MatrixBlock resultBlock = matBlock.pickValues(
+							quantiles, new MatrixBlock(), matBlock.getLength()%2==0);
 						quantiles = null;
 						ec.releaseMatrixInput(input2.getName());
 						ec.setMatrixOutput(output.getName(), resultBlock);

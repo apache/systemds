@@ -22,7 +22,6 @@ package org.apache.sysds.test.functions.binary.matrix;
 import java.util.HashMap;
 
 import org.junit.Test;
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
@@ -30,15 +29,12 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
-/**
- * 
- */
 public class QuantileTest extends AutomatedTestBase 
 {
-	
 	private final static String TEST_NAME1 = "Quantile";
 	private final static String TEST_NAME2 = "Median";
 	private final static String TEST_NAME3 = "IQM";
+	private final static String TEST_NAME4 = "QuantileBug";
 	
 	private final static String TEST_DIR = "functions/binary/matrix/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + QuantileTest.class.getSimpleName() + "/";
@@ -59,6 +55,8 @@ public class QuantileTest extends AutomatedTestBase
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) ); 
 		addTestConfiguration(TEST_NAME3, 
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
+		addTestConfiguration(TEST_NAME4, 
+			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
 	}
 	
 	@Test
@@ -161,19 +159,21 @@ public class QuantileTest extends AutomatedTestBase
 		runQuantileTest(TEST_NAME3, -1, true, ExecType.SPARK);
 	}
 	
+	@Test
+	public void testQuantileBugCP() {
+		runQuantileTest(TEST_NAME4, 0.5, false, ExecType.CP);
+	}
+
+// TODO reimplement distributed value pick logic
+//	@Test
+//	public void testQuantileBugSP() {
+//		runQuantileTest(TEST_NAME4, 0.5, false, ExecType.SPARK);
+//	}
+	
 	private void runQuantileTest( String TEST_NAME, double p, boolean sparse, ExecType et)
 	{
-		//rtplatform for MR
-		ExecMode platformOld = rtplatform;
-		switch( et ){
-			case SPARK: rtplatform = ExecMode.SPARK; break;
-			default: rtplatform = ExecMode.HYBRID; break;
-		}
+		ExecMode platformOld = setExecMode(et);
 	
-		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		if( rtplatform == ExecMode.SPARK )
-			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
-		
 		try
 		{
 			getAndLoadTestConfiguration(TEST_NAME);
@@ -185,9 +185,11 @@ public class QuantileTest extends AutomatedTestBase
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + p + " "+ expectedDir();
 	
 			//generate actual dataset (always dense because values <=0 invalid)
-			double sparsitya = sparse ? sparsity2 : sparsity1;
-			double[][] A = getRandomMatrix(rows, 1, 1, maxVal, sparsitya, 1236); 
-			writeInputMatrixWithMTD("A", A, true);
+			if( !TEST_NAME.equals(TEST_NAME4) ) {
+				double sparsitya = sparse ? sparsity2 : sparsity1;
+				double[][] A = getRandomMatrix(rows, 1, 1, maxVal, sparsitya, 1236); 
+				writeInputMatrixWithMTD("A", A, true);
+			}
 			
 			runTest(true, false, null, -1); 
 			runRScript(true); 
@@ -198,9 +200,7 @@ public class QuantileTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, eps, "Stat-DML", "Stat-R");
 		}
 		finally {
-			rtplatform = platformOld;
-			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+			resetExecMode(platformOld);
 		}
 	}
-
 }

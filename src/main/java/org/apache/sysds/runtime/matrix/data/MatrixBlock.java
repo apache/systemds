@@ -4804,7 +4804,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		
 		if ( get(i,1) != 0 ) {
 			// i^th value is present in the data set, simply return it
-			if ( average ) {
+			if ( average && pos < getNumRows()-1 ) {
 				if(pos < t) {
 					return get(i,0);
 				}

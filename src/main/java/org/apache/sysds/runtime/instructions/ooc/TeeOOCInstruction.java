@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.ooc;
 
-import org.apache.spark.sql.sources.In;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
@@ -28,12 +26,9 @@ import org.apache.sysds.runtime.controlprogram.parfor.ResettableStream;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
-import org.apache.sysds.runtime.util.CommonThreadPool;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 
 public class TeeOOCInstruction extends ComputationOOCInstruction {
 
@@ -61,9 +56,6 @@ public class TeeOOCInstruction extends ComputationOOCInstruction {
 		MatrixObject min = ec.getMatrixObject(input1);
 		LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
 
-//		MatrixObject min = ec.getMatrixObject(input1);
-//		LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
-
 		// Create a single, shared, resettable stream (cached)
 		final ResettableStream sharedStream = new ResettableStream(qIn);
 
@@ -87,49 +79,14 @@ public class TeeOOCInstruction extends ComputationOOCInstruction {
 		};
 
 		CPOperand out1 = _outputs.get(0);
-//		MatrixObject mout1 = ec.getMatrixObject(min.getDataCharacteristics());
 		MatrixObject mout1 = ec.createMatrixObject(min.getDataCharacteristics());
 		mout1.setStreamHandle(sharedStream);
 		ec.setVariable(out1.getName(), mout1);
 
 		CPOperand out2 = _outputs.get(1);
-//		MatrixObject mout2 = ec.getMatrixObject(out2);
 		MatrixObject mout2 = ec.createMatrixObject(min.getDataCharacteristics());
 		mout2.setStreamHandle(stream2);
 		ec.setVariable(out2.getName(), mout2);
 
-//		List<LocalTaskQueue<IndexedMatrixValue>> qOuts = new ArrayList<>();
-//		for (CPOperand out : _outputs) {
-//			MatrixObject mout = ec.createMatrixObject(min.getDataCharacteristics());
-//			ec.setVariable(out.getName(), mout);
-//			LocalTaskQueue<IndexedMatrixValue> qOut = new LocalTaskQueue<>();
-//			mout.setStreamHandle(qOut);
-//			qOuts.add(qOut);
-//		}
-//
-//		ExecutorService pool = CommonThreadPool.get();
-//		try {
-//			pool.submit(() -> {
-//				IndexedMatrixValue tmp = null;
-//				try {
-//					while ((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
-//
-//						for (int i = 0; i < qOuts.size(); i++) {
-//							qOuts.get(i).enqueueTask(new  IndexedMatrixValue(tmp));
-//						}
-//					}
-//					for (LocalTaskQueue<IndexedMatrixValue> qOut : qOuts) {
-//						qOut.closeInput();
-//					}
-//				}
-//				catch(Exception ex) {
-//					throw new DMLRuntimeException(ex);
-//				}
-//			});
-//		} catch (Exception ex) {
-//			throw new DMLRuntimeException(ex);
-//		} finally {
-//			pool.shutdown();
-//		}
 	}
 }

@@ -311,8 +311,6 @@ public class DataOp extends Hop {
 			setLineNumbers(l);
 			setLops(l);
 		}
-//		setLineNumbers(l);
-//		setLops(l);
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();

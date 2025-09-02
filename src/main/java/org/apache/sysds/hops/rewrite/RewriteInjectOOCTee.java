@@ -178,7 +178,6 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
 		ArrayList<Hop> consumers = new ArrayList<>(sharedInput.getParent());
 
 		// Create the new TeeOp with the original hop as input
-//		TeeOp teeOp = new TeeOp(sharedInput);
 		DataOp teeOp	= new DataOp("tee_out_" + sharedInput.getName(),
 						sharedInput.getDataType(),
 						sharedInput.getValueType(),
@@ -243,14 +242,13 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
 		for (Hop parent: hop.getParent()) {
 			String opString = parent.getOpString();
 			if (parent instanceof ReorgOp) {
-				if (opString.contains("r'") || opString.contains("transpose")) {
+				if (HopRewriteUtils.isTransposeOperation(parent)) {
 					hasTransposeConsumer = true;
 				}
 			}
-			else if (parent instanceof AggBinaryOp)
-				if (opString.contains("*") || opString.contains("ba+*")) {
+			else if (HopRewriteUtils.isMatrixMultiply(parent)) {
 					hasMatrixMultiplyConsumer = true;
-				}
+			}
 		}
 		return hasTransposeConsumer &&  hasMatrixMultiplyConsumer;
 	}

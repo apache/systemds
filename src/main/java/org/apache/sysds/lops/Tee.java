@@ -50,7 +50,6 @@ public class Tee extends Lop {
 	public String getInstructions(String input1, String outputs) {
 
 		String[] out = outputs.split(Lop.OPERAND_DELIMITOR);
-		String output2 = outputs + "_copy";
 
 		// This method generates the instruction string: OOC°tee°input°output1°output2...
 		String ret = InstructionUtils.concatOperands(

@@ -95,9 +95,15 @@ class ModalityRandomDataGenerator:
 
     def create_audio_data(self, num_instances, max_audio_length):
         data = [
-            [random.random() for _ in range(random.randint(1, max_audio_length))]
+            [
+                random.random()
+                for _ in range(random.randint(max_audio_length * 0.9, max_audio_length))
+            ]
             for _ in range(num_instances)
         ]
+
+        for i in range(num_instances):
+            data[i] = np.array(data[i]).astype(self.data_type)
 
         metadata = {
             i: ModalityType.AUDIO.create_audio_metadata(16000, np.array(data[i]))

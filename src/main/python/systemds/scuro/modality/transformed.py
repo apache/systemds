@@ -32,7 +32,9 @@ import copy
 
 class TransformedModality(Modality):
 
-    def __init__(self, modality, transformation, new_modality_type=None):
+    def __init__(
+        self, modality, transformation, new_modality_type=None, self_contained=True
+    ):
         """
         Parent class of the different Modalities (unimodal & multimodal)
         :param modality_type: Type of the original modality(ies)
@@ -46,7 +48,17 @@ class TransformedModality(Modality):
             new_modality_type, modality.modality_id, metadata, modality.data_type
         )
         self.transformation = None
+        self.self_contained = (
+            self_contained and transformation.self_contained
+            if isinstance(transformation, TransformedModality)
+            else True
+        )
         self.add_transformation(transformation, modality)
+
+        if modality.__class__.__name__ == "UnimodalModality":
+            for k, v in self.metadata.items():
+                if "attention_masks" in v:
+                    del self.metadata[k]["attention_masks"]
 
     def add_transformation(self, transformation, modality):
         if (
@@ -89,14 +101,18 @@ class TransformedModality(Modality):
 
     def window_aggregation(self, windowSize, aggregation):
         w = WindowAggregation(windowSize, aggregation)
-        transformed_modality = TransformedModality(self, w)
+        transformed_modality = TransformedModality(
+            self, w, self_contained=self.self_contained
+        )
         start = time.time()
         transformed_modality.data = w.execute(self)
         transformed_modality.transform_time = time.time() - start
         return transformed_modality
 
     def context(self, context_operator):
-        transformed_modality = TransformedModality(self, context_operator)
+        transformed_modality = TransformedModality(
+            self, context_operator, self_contained=self.self_contained
+        )
         start = time.time()
         transformed_modality.data = context_operator.execute(self)
         transformed_modality.transform_time = time.time() - start
@@ -107,6 +123,7 @@ class TransformedModality(Modality):
         new_modality = representation.transform(self)
         new_modality.update_metadata()
         new_modality.transform_time = time.time() - start
+        new_modality.self_contained = representation.self_contained
         return new_modality
 
     def combine(self, other: Union[Modality, List[Modality]], fusion_method):

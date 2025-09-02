@@ -37,7 +37,7 @@ class MFCC(UnimodalRepresentation):
             "hop_length": [256, 512, 1024, 2048],
             "n_mels": [20, 32, 64, 128],
         }  # TODO
-        super().__init__("MFCC", ModalityType.TIMESERIES, parameters)
+        super().__init__("MFCC", ModalityType.TIMESERIES, parameters, False)
         self.n_mfcc = n_mfcc
         self.dct_type = dct_type
         self.n_mels = n_mels

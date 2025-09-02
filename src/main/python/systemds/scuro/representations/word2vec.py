@@ -41,7 +41,7 @@ def get_embedding(sentence, model):
 
 @register_representation(ModalityType.TEXT)
 class W2V(UnimodalRepresentation):
-    def __init__(self, vector_size=3, min_count=2, window=2, output_file=None):
+    def __init__(self, vector_size=150, min_count=2, window=5, output_file=None):
         parameters = {
             "vector_size": [vector_size],
             "min_count": [min_count],

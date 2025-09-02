@@ -32,7 +32,7 @@ from systemds.scuro.drsearch.operator_registry import register_representation
 class Spectrogram(UnimodalRepresentation):
     def __init__(self, hop_length=512, n_fft=2048):
         parameters = {"hop_length": [256, 512, 1024, 2048], "n_fft": [1024, 2048, 4096]}
-        super().__init__("Spectrogram", ModalityType.TIMESERIES, parameters)
+        super().__init__("Spectrogram", ModalityType.TIMESERIES, parameters, False)
         self.hop_length = hop_length
         self.n_fft = n_fft
 

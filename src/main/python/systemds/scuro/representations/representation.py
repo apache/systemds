@@ -25,6 +25,7 @@ class Representation:
     def __init__(self, name, parameters):
         self.name = name
         self._parameters = parameters
+        self.self_contained = True
 
     @property
     def parameters(self):

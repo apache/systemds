@@ -34,7 +34,7 @@ class Spectral(UnimodalRepresentation):
         parameters = {
             "hop_length": [256, 512, 1024, 2048],
         }  # TODO
-        super().__init__("Spectral", ModalityType.EMBEDDING, parameters)
+        super().__init__("Spectral", ModalityType.EMBEDDING, parameters, False)
         self.hop_length = hop_length
 
     def transform(self, modality):
@@ -80,7 +80,7 @@ class ZeroCrossing(UnimodalRepresentation):
         parameters = {
             "hop_length": [256, 512, 1024, 2048],
         }  # TODO
-        super().__init__("ZeroCrossing", ModalityType.EMBEDDING, parameters)
+        super().__init__("ZeroCrossing", ModalityType.EMBEDDING, parameters, False)
         self.hop_length = hop_length
 
     def transform(self, modality):
@@ -107,7 +107,7 @@ class RMSE(UnimodalRepresentation):
             "frame_length": [1024, 2048, 4096],
             "hop_length": [256, 512, 1024, 2048],
         }  # TODO
-        super().__init__("RMSE", ModalityType.EMBEDDING, parameters)
+        super().__init__("RMSE", ModalityType.EMBEDDING, parameters, False)
         self.hop_length = hop_length
         self.frame_length = frame_length
 
@@ -133,7 +133,7 @@ class Pitch(UnimodalRepresentation):
         parameters = {
             "hop_length": [256, 512, 1024, 2048],
         }  # TODO
-        super().__init__("Pitch", ModalityType.EMBEDDING, parameters)
+        super().__init__("Pitch", ModalityType.EMBEDDING, parameters, False)
         self.hop_length = hop_length
 
     def transform(self, modality):

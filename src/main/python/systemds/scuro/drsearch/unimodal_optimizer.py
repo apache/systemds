@@ -20,6 +20,7 @@
 # -------------------------------------------------------------
 import pickle
 import time
+import copy
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, field, asdict
 
@@ -28,13 +29,19 @@ from typing import Union
 
 import numpy as np
 from systemds.scuro.representations.window_aggregation import WindowAggregation
+from systemds.scuro.representations.concatenation import Concatenation
+from systemds.scuro.representations.hadamard import Hadamard
+from systemds.scuro.representations.sum import Sum
 
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
-from systemds.scuro import ModalityType, Aggregation
+from systemds.scuro import ModalityType, Aggregation, Modality, TransformedModality
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.utils.schema_helpers import get_shape
+
+from systemds.scuro.drsearch.fusion_tree import EnhancedFusionTreeOptimizer
+from systemds.scuro.drsearch.fusion_tree import SearchStrategy
 
 
 class UnimodalOptimizer:
@@ -94,42 +101,58 @@ class UnimodalOptimizer:
             local_results = self.operator_performance
 
         context_operators = self.operator_registry.get_context_operators()
-
-        for context_operator in context_operators:
-            context_representation = None
-            if (
-                modality.modality_type != ModalityType.TEXT
-                and modality.modality_type != ModalityType.VIDEO
-            ):
-                con_op = context_operator()
-                context_representation = modality.context(con_op)
-                self._evaluate_local(context_representation, [con_op], local_results)
-
-            modality_specific_operators = self.operator_registry.get_representations(
+        not_self_contained_reps = (
+            self.operator_registry.get_not_self_contained_representations(
                 modality.modality_type
             )
-            for modality_specific_operator in modality_specific_operators:
-                mod_context = None
-                mod_op = modality_specific_operator()
-                if context_representation is not None:
-                    mod_context = context_representation.apply_representation(mod_op)
-                    self._evaluate_local(mod_context, [con_op, mod_op], local_results)
+        )
+        modality_specific_operators = self.operator_registry.get_representations(
+            modality.modality_type
+        )
+        for modality_specific_operator in modality_specific_operators:
+            mod_op = modality_specific_operator()
 
-                mod = modality.apply_representation(mod_op)
-                self._evaluate_local(mod, [mod_op], local_results)
+            mod = modality.apply_representation(mod_op)
+            self._evaluate_local(mod, [mod_op], local_results)
 
-                for context_operator_after in context_operators:
-                    con_op_after = context_operator_after()
-                    if mod_context is not None:
-                        mod_context = mod_context.context(con_op_after)
-                        self._evaluate_local(
-                            mod_context, [con_op, mod_op, con_op_after], local_results
-                        )
+            if not mod_op.self_contained:
+                self._combine_non_self_contained_representations(
+                    modality, mod, not_self_contained_reps, local_results
+                )
 
-                    mod = mod.context(con_op_after)
-                    self._evaluate_local(mod, [mod_op, con_op_after], local_results)
+            for context_operator_after in context_operators:
+                con_op_after = context_operator_after()
+                mod = mod.context(con_op_after)
+                self._evaluate_local(mod, [mod_op, con_op_after], local_results)
 
             return local_results
+
+    def _combine_non_self_contained_representations(
+        self,
+        modality: Modality,
+        representation: TransformedModality,
+        other_representations,
+        local_results,
+    ):
+        combined = representation
+        context_operators = self.operator_registry.get_context_operators()
+        used_representations = representation.transformation
+        for other_representation in other_representations:
+            used_representations.append(other_representation())
+            for combination in [Concatenation(), Hadamard(), Sum()]:
+                combined = combined.combine(
+                    modality.apply_representation(other_representation()), combination
+                )
+                self._evaluate_local(
+                    combined, used_representations, local_results, combination
+                )
+
+                for context_op in context_operators:
+                    con_op = context_op()
+                    mod = combined.context(con_op)
+                    c_t = copy.deepcopy(used_representations)
+                    c_t.append(con_op)
+                    self._evaluate_local(mod, c_t, local_results, combination)
 
     def _merge_results(self, local_results):
         """Merge local results into the main results"""
@@ -144,7 +167,9 @@ class UnimodalOptimizer:
                 for key, value in local_results.cache[modality][task_name].items():
                     self.operator_performance.cache[modality][task_name][key] = value
 
-    def _evaluate_local(self, modality, representations, local_results):
+    def _evaluate_local(
+        self, modality, representations, local_results, combination=None
+    ):
         if self._tasks_require_same_dims:
             if self.expected_dimensions == 1 and get_shape(modality.metadata) > 1:
                 # for aggregation in Aggregation().get_aggregation_functions():
@@ -164,6 +189,7 @@ class UnimodalOptimizer:
                         modality,
                         task.model.name,
                         end - start,
+                        combination,
                     )
             else:
                 modality.pad()
@@ -177,6 +203,7 @@ class UnimodalOptimizer:
                         modality,
                         task.model.name,
                         end - start,
+                        combination,
                     )
         else:
             for task in self.tasks:
@@ -197,6 +224,7 @@ class UnimodalOptimizer:
                         modality,
                         task.model.name,
                         end - start,
+                        combination,
                     )
                 else:
                     # modality.pad()
@@ -209,6 +237,7 @@ class UnimodalOptimizer:
                         modality,
                         task.model.name,
                         end - start,
+                        combination,
                     )
 
 
@@ -227,7 +256,9 @@ class UnimodalResults:
                 self.cache[modality][task_name] = {}
                 self.results[modality][task_name] = []
 
-    def add_result(self, scores, representations, modality, task_name, task_time):
+    def add_result(
+        self, scores, representations, modality, task_name, task_time, combination
+    ):
         parameters = []
         representation_names = []
 
@@ -255,6 +286,7 @@ class UnimodalResults:
             val_score=scores[1],
             representation_time=modality.transform_time,
             task_time=task_time,
+            combination=combination.name if combination else "",
         )
         self.results[modality.modality_id][task_name].append(entry)
         self.cache[modality.modality_id][task_name][
@@ -301,3 +333,4 @@ class ResultEntry:
     train_score: float
     representation_time: float
     task_time: float
+    combination: str

@@ -34,7 +34,7 @@ from systemds.scuro.utils.torch_dataset import CustomDataset
 from systemds.scuro.utils.static_variables import get_device
 
 
-@register_representation([ModalityType.VIDEO])
+# @register_representation([ModalityType.VIDEO])
 class SwinVideoTransformer(UnimodalRepresentation):
     def __init__(self, layer_name="avgpool"):
         parameters = {

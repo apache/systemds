@@ -41,7 +41,7 @@ class Fusion(Representation):
         self.needs_training = False
         self.needs_instance_alignment = False
 
-    def transform(self, modalities: List[Modality], exec=True):
+    def transform(self, modalities: List[Modality]):
         """
         Implemented for every child class and creates a fused representation out of
         multiple modalities

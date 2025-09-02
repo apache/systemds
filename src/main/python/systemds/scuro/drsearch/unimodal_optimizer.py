@@ -36,12 +36,12 @@ from systemds.scuro.representations.sum import Sum
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
-from systemds.scuro import ModalityType, Aggregation, Modality, TransformedModality
+from systemds.scuro.modality.type import ModalityType
+from systemds.scuro.modality.modality import Modality
+from systemds.scuro.modality.transformed import TransformedModality
+from systemds.scuro.representations.aggregate import Aggregation
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.utils.schema_helpers import get_shape
-
-from systemds.scuro.drsearch.fusion_tree import EnhancedFusionTreeOptimizer
-from systemds.scuro.drsearch.fusion_tree import SearchStrategy
 
 
 class UnimodalOptimizer:

@@ -38,7 +38,7 @@ from systemds.scuro.representations.glove import GloVe
 from systemds.scuro.representations.lstm import LSTM
 from systemds.scuro.representations.max import RowMax
 from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
-from systemds.scuro.representations.multimodal_attention_fusion.py import (
+from systemds.scuro.representations.multimodal_attention_fusion import (
     AttentionFusion,
 )
 from systemds.scuro.representations.mfcc import MFCC

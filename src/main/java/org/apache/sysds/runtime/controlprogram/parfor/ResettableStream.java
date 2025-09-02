@@ -47,6 +47,7 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 				_cacheInProgress = false; // caching is complete
 				_source.closeInput(); // close source stream
 			}
+			notifyAll(); // Notify all the waiting consumers waiting for cache to fill with this stream
 			return task;
 		} else {
 			// Replay pass: read directly from in-memory cache
@@ -63,9 +64,11 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 	 * Resets the stream to beginning to read the stream from start.
 	 * This can only be called once the stream is fully consumed once.
 	 */
-	public void reset() {
+	public synchronized void reset() throws InterruptedException {
 		if (_cacheInProgress) {
-			throw new DMLRuntimeException("Attempted to reset a stream that's not been fully cached yet.");
+			System.out.println("Attempted to reset a stream that's not been fully cached yet.");
+			wait();
+//			throw new DMLRuntimeException("Attempted to reset a stream that's not been fully cached yet.");
 		}
 		_replayPosition = 0;
 	}

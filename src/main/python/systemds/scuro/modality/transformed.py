@@ -48,7 +48,11 @@ class TransformedModality(Modality):
             new_modality_type, modality.modality_id, metadata, modality.data_type
         )
         self.transformation = None
-        self.self_contained = self_contained and transformation.self_contained
+        self.self_contained = (
+            self_contained and transformation.self_contained
+            if isinstance(transformation, TransformedModality)
+            else True
+        )
         self.add_transformation(transformation, modality)
 
         if modality.__class__.__name__ == "UnimodalModality":

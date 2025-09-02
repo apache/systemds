@@ -46,6 +46,7 @@ from systemds.scuro.representations.spectrogram import Spectrogram
 from systemds.scuro.representations.hadamard import Hadamard
 from systemds.scuro.representations.resnet import ResNet
 from systemds.scuro.representations.sum import Sum
+from systemds.scuro.representations.multimodal_attention_fusion import AttentionFusion
 
 
 class TestOperatorRegistry(unittest.TestCase):
@@ -66,7 +67,7 @@ class TestOperatorRegistry(unittest.TestCase):
         registry = Registry()
         assert registry.get_representations(ModalityType.VIDEO) == [
             ResNet,
-            SwinVideoTransformer,
+            # SwinVideoTransformer,
         ]
 
     def test_timeseries_representations_in_registry(self):
@@ -93,6 +94,7 @@ class TestOperatorRegistry(unittest.TestCase):
             RowMax,
             Hadamard,
             Sum,
+            AttentionFusion,
         ]
 
 

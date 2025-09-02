@@ -168,6 +168,6 @@ class Modality:
                 != list(other_modality.metadata.values())[i]["data_layout"]["shape"]
             ):
                 aligned = False
-                continue
+                break
 
         return aligned

@@ -36,7 +36,7 @@ class MelSpectrogram(UnimodalRepresentation):
             "hop_length": [256, 512, 1024, 2048],
             "n_fft": [1024, 2048, 4096],
         }
-        super().__init__("MelSpectrogram", ModalityType.TIMESERIES, parameters)
+        super().__init__("MelSpectrogram", ModalityType.TIMESERIES, parameters, False)
         self.n_mels = n_mels
         self.hop_length = hop_length
         self.n_fft = n_fft
@@ -56,9 +56,8 @@ class MelSpectrogram(UnimodalRepresentation):
                 hop_length=self.hop_length,
                 n_fft=self.n_fft,
             ).astype(modality.data_type)
-            S_dB = librosa.power_to_db(S, ref=np.max)
 
-            result.append(S_dB.T)
+            result.append(S.T)
 
         transformed_modality.data = result
         return transformed_modality

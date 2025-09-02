@@ -26,8 +26,11 @@ class AggregatedRepresentation(Representation):
     def __init__(self, aggregation):
         super().__init__("AggregatedRepresentation", aggregation.parameters)
         self.aggregation = aggregation
+        self.self_contained = True
 
     def transform(self, modality):
-        aggregated_modality = TransformedModality(modality, self)
+        aggregated_modality = TransformedModality(
+            modality, self, self_contained=modality.self_contained
+        )
         aggregated_modality.data = self.aggregation.execute(modality)
         return aggregated_modality

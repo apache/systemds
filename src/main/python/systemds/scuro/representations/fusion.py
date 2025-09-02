@@ -38,6 +38,8 @@ class Fusion(Representation):
         self.associative = False
         self.commutative = False
         self.needs_alignment = False
+        self.needs_training = False
+        self.needs_instance_alignment = False
 
     def transform(self, modalities: List[Modality]):
         """
@@ -58,7 +60,26 @@ class Fusion(Representation):
             max_len = self.get_max_embedding_size(mods)
             for modality in mods:
                 modality.pad(max_len=max_len)
+
         return self.execute(mods)
+
+    def transform_with_training(
+        self, modalities: List[Modality], train_indices, labels
+    ):
+        # if self.needs_instance_alignment:
+        #     max_len = self.get_max_embedding_size(modalities)
+        #     for modality in modalities:
+        #         modality.pad(max_len=max_len)
+
+        self.execute(
+            [np.array(modality.data)[train_indices] for modality in modalities],
+            labels[train_indices],
+        )
+
+    def transform_data(self, modalities: List[Modality], val_indices):
+        return self.apply_representation(
+            [np.array(modality.data)[val_indices] for modality in modalities]
+        )
 
     def execute(self, modalities: List[Modality]):
         raise f"Not implemented for Fusion: {self.name}"

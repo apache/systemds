@@ -24,7 +24,9 @@ from systemds.scuro.representations.representation import Representation
 
 
 class UnimodalRepresentation(Representation):
-    def __init__(self, name: str, output_modality_type, parameters=None):
+    def __init__(
+        self, name: str, output_modality_type, parameters=None, self_contained=True
+    ):
         """
         Parent class for all unimodal representation types
         :param name: name of the representation
@@ -35,6 +37,7 @@ class UnimodalRepresentation(Representation):
         self.output_modality_type = output_modality_type
         if parameters is None:
             parameters = {}
+        self.self_contained = self_contained
 
     @abc.abstractmethod
     def transform(self, data):

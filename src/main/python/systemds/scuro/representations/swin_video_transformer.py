@@ -18,7 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
-# from torchvision.models.video.swin_transformer import swin3d_t
+from torchvision.models.video.swin_transformer import swin3d_t
 
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
@@ -31,13 +31,7 @@ from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.operator_registry import register_representation
 
 from systemds.scuro.utils.torch_dataset import CustomDataset
-
-if torch.backends.mps.is_available():
-    DEVICE = torch.device("mps")
-# elif torch.cuda.is_available():
-#     DEVICE = torch.device("cuda")
-else:
-    DEVICE = torch.device("cpu")
+from systemds.scuro.utils.static_variables import get_device
 
 
 # @register_representation([ModalityType.VIDEO])
@@ -55,16 +49,17 @@ class SwinVideoTransformer(UnimodalRepresentation):
                 "avgpool",
             ],
         }
+        self.data_type = torch.float
         super().__init__("SwinVideoTransformer", ModalityType.TIMESERIES, parameters)
         self.layer_name = layer_name
-        # self.model = swin3d_t(weights=models.video.Swin3D_T_Weights).to(DEVICE)
+        self.model = swin3d_t(weights=models.video.Swin3D_T_Weights.KINETICS400_V1).to(
+            get_device()
+        )
         self.model.eval()
         for param in self.model.parameters():
             param.requires_grad = False
 
     def transform(self, modality):
-        # model = swin3d_t(weights=models.video.Swin3D_T_Weights)
-
         embeddings = {}
         swin_output = None
 
@@ -82,11 +77,11 @@ class SwinVideoTransformer(UnimodalRepresentation):
                 if name == self.layer_name:
                     layer.register_forward_hook(get_features(name))
                     break
-        dataset = CustomDataset(modality.data)
+        dataset = CustomDataset(modality.data, self.data_type, get_device())
 
-        for instance in dataset:
-            video_id = instance["id"]
-            frames = instance["data"].to(DEVICE)
+        for instance in torch.utils.data.DataLoader(dataset):
+            video_id = instance["id"][0]
+            frames = instance["data"][0]
             embeddings[video_id] = []
 
             frames = frames.unsqueeze(0).permute(0, 2, 1, 3, 4)
@@ -95,15 +90,18 @@ class SwinVideoTransformer(UnimodalRepresentation):
             values = swin_output
             pooled = torch.nn.functional.adaptive_avg_pool2d(values, (1, 1))
 
-            embeddings[video_id].extend(torch.flatten(pooled, 1).detach().cpu().numpy())
+            embeddings[video_id].extend(
+                torch.flatten(pooled, 1)
+                .detach()
+                .cpu()
+                .numpy()
+                .astype(modality.data_type)
+            )
 
             embeddings[video_id] = np.array(embeddings[video_id])
 
         transformed_modality = TransformedModality(
-            self.output_modality_type,
-            "swinVideoTransformer",
-            modality.modality_id,
-            modality.metadata,
+            modality, self, self.output_modality_type
         )
 
         transformed_modality.data = list(embeddings.values())

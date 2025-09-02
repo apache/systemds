@@ -29,13 +29,7 @@ import torch
 import torchvision.models as models
 import numpy as np
 from systemds.scuro.modality.type import ModalityType
-
-if torch.backends.mps.is_available():
-    DEVICE = torch.device("mps")
-elif torch.cuda.is_available():
-    DEVICE = torch.device("cuda")
-else:
-    DEVICE = torch.device("cpu")
+from systemds.scuro.utils.static_variables import get_device
 
 
 @register_representation(
@@ -72,33 +66,33 @@ class ResNet(UnimodalRepresentation):
         if model_name == "ResNet18":
             self.model = (
                 models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
-                .to(DEVICE)
+                .to(get_device())
                 .to(self.data_type)
             )
 
         elif model_name == "ResNet34":
             self.model = models.resnet34(weights=models.ResNet34_Weights.DEFAULT).to(
-                DEVICE
+                get_device()
             )
             self.model = self.model.to(self.data_type)
         elif model_name == "ResNet50":
             self.model = (
                 models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
-                .to(DEVICE)
+                .to(get_device())
                 .to(self.data_type)
             )
 
         elif model_name == "ResNet101":
             self.model = (
                 models.resnet101(weights=models.ResNet101_Weights.DEFAULT)
-                .to(DEVICE)
+                .to(get_device())
                 .to(self.data_type)
             )
 
         elif model_name == "ResNet152":
             self.model = (
                 models.resnet152(weights=models.ResNet152_Weights.DEFAULT)
-                .to(DEVICE)
+                .to(get_device())
                 .to(self.data_type)
             )
 
@@ -129,7 +123,7 @@ class ResNet(UnimodalRepresentation):
         if next(self.model.parameters()).dtype != self.data_type:
             self.model = self.model.to(self.data_type)
 
-        dataset = CustomDataset(modality.data, self.data_type, DEVICE)
+        dataset = CustomDataset(modality.data, self.data_type, get_device())
         embeddings = {}
 
         res5c_output = None

@@ -38,6 +38,9 @@ from systemds.scuro.representations.glove import GloVe
 from systemds.scuro.representations.lstm import LSTM
 from systemds.scuro.representations.max import RowMax
 from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
+from systemds.scuro.representations.multimodal_attention_fusion import (
+    AttentionFusion,
+)
 from systemds.scuro.representations.mfcc import MFCC
 from systemds.scuro.representations.hadamard import Hadamard
 from systemds.scuro.representations.optical_flow import OpticalFlow
@@ -72,6 +75,12 @@ from systemds.scuro.drsearch.optimization_data import OptimizationData
 from systemds.scuro.drsearch.representation_cache import RepresentationCache
 from systemds.scuro.drsearch.unimodal_representation_optimizer import (
     UnimodalRepresentationOptimizer,
+)
+from systemds.scuro.representations.covarep_audio_features import (
+    RMSE,
+    Spectral,
+    ZeroCrossing,
+    Pitch,
 )
 from systemds.scuro.drsearch.multimodal_optimizer import MultimodalOptimizer
 from systemds.scuro.drsearch.unimodal_optimizer import UnimodalOptimizer
@@ -131,4 +140,9 @@ __all__ = [
     "UnimodalRepresentationOptimizer",
     "UnimodalOptimizer",
     "MultimodalOptimizer",
+    "ZeroCrossing",
+    "Pitch",
+    "RMSE",
+    "Spectral",
+    "AttentionFusion",
 ]

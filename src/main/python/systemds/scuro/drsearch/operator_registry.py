@@ -43,6 +43,12 @@ class Registry:
                 cls._representations[m_type] = []
         return cls._instance
 
+    def set_fusion_operators(self, fusion_operators):
+        if isinstance(fusion_operators, list):
+            self._context_operators = fusion_operators
+        else:
+            self._fusion_operators = [fusion_operators]
+
     def add_representation(
         self, representation: Representation, modality: ModalityType
     ):
@@ -56,6 +62,13 @@ class Registry:
 
     def get_representations(self, modality: ModalityType):
         return self._representations[modality]
+
+    def get_not_self_contained_representations(self, modality: ModalityType):
+        reps = []
+        for rep in self.get_representations(modality):
+            if not rep().self_contained:
+                reps.append(rep)
+        return reps
 
     def get_context_operators(self):
         # TODO: return modality specific context operations

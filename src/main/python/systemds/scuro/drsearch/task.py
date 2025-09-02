@@ -19,8 +19,10 @@
 #
 # -------------------------------------------------------------
 import time
-from typing import List
+from typing import List, Union
 
+from systemds.scuro.modality.modality import Modality
+from systemds.scuro.representations.representation import Representation
 from systemds.scuro.models.model import Model
 import numpy as np
 from sklearn.model_selection import KFold
@@ -57,6 +59,8 @@ class Task:
         self.inference_time = []
         self.training_time = []
         self.expected_dim = 1
+        self.train_scores = []
+        self.val_scores = []
 
     def get_train_test_split(self, data):
         X_train = [data[i] for i in self.train_indices]
@@ -73,28 +77,69 @@ class Task:
          :param data: The aligned data used in the prediction process
          :return: the validation accuracy
         """
-        self.inference_time = []
-        self.training_time = []
+        self._reset_params()
         skf = KFold(n_splits=self.kfold, shuffle=True, random_state=11)
-        train_scores = []
-        test_scores = []
+
         fold = 0
-        X, y, X_test, y_test = self.get_train_test_split(data)
+        X, y, _, _ = self.get_train_test_split(data)
 
         for train, test in skf.split(X, y):
             train_X = np.array(X)[train]
             train_y = np.array(y)[train]
-            train_start = time.time()
-            train_score = self.model.fit(train_X, train_y, X_test, y_test)
-            train_end = time.time()
-            self.training_time.append(train_end - train_start)
-            train_scores.append(train_score)
-            test_start = time.time()
-            test_score = self.model.test(np.array(X_test), y_test)
-            test_end = time.time()
-            self.inference_time.append(test_end - test_start)
-            test_scores.append(test_score)
+            test_X = np.array(X)[test]
+            test_y = np.array(y)[test]
+            self._run_fold(train_X, train_y, test_X, test_y)
+            fold += 1
 
+        if self.measure_performance:
+            self.inference_time = np.mean(self.inference_time)
+            self.training_time = np.mean(self.training_time)
+
+        return [np.mean(self.train_scores), np.mean(self.val_scores)]
+
+    def _reset_params(self):
+        self.inference_time = []
+        self.training_time = []
+        self.train_scores = []
+        self.val_scores = []
+
+    def _run_fold(self, train_X, train_y, test_X, test_y):
+        train_start = time.time()
+        train_score = self.model.fit(train_X, train_y, test_X, test_y)
+        train_end = time.time()
+        self.training_time.append(train_end - train_start)
+        self.train_scores.append(train_score)
+        test_start = time.time()
+        test_score = self.model.test(np.array(test_X), test_y)
+        test_end = time.time()
+        self.inference_time.append(test_end - test_start)
+        self.val_scores.append(test_score)
+
+    def create_representation_and_run(
+        self,
+        representation: Representation,
+        modalities: Union[List[Modality], Modality],
+    ):
+        self._reset_params()
+        skf = KFold(n_splits=self.kfold, shuffle=True, random_state=11)
+
+        fold = 0
+        X, y, _, _ = self.get_train_test_split(data)
+
+        for train, test in skf.split(X, y):
+            train_X = np.array(X)[train]
+            train_y = np.array(y)[train]
+            test_X = s.transform(np.array(X)[test])
+            test_y = np.array(y)[test]
+
+            if isinstance(modalities, Modality):
+                rep = modality.apply_representation(representation())
+            else:
+                representation().transform(
+                    train_X, train_y
+                )  # TODO: think about a way how to handle masks
+
+            self._run_fold(train_X, train_y, test_X, test_y)
             fold += 1
 
         if self.measure_performance:

@@ -30,11 +30,14 @@ from sklearn.model_selection import train_test_split
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.models.model import Model
 from systemds.scuro.drsearch.task import Task
-from systemds.scuro.drsearch.unimodal_optimizer import (
-    UnimodalOptimizer,
-)
+from systemds.scuro.drsearch.unimodal_optimizer import UnimodalOptimizer
 
 from systemds.scuro.representations.spectrogram import Spectrogram
+from systemds.scuro.representations.covarep_audio_features import (
+    ZeroCrossing,
+    Spectral,
+    Pitch,
+)
 from systemds.scuro.representations.word2vec import W2V
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.resnet import ResNet
@@ -176,7 +179,7 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
             "_representations",
             {
                 ModalityType.TEXT: [W2V],
-                ModalityType.AUDIO: [Spectrogram],
+                ModalityType.AUDIO: [Spectrogram, ZeroCrossing, Spectral, Pitch],
                 ModalityType.TIMESERIES: [ResNet],
                 ModalityType.VIDEO: [ResNet],
                 ModalityType.EMBEDDING: [],

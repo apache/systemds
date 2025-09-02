@@ -32,5 +32,6 @@ def get_device():
     return torch.device(
         "cuda:0"
         if torch.cuda.is_available()
-        else "mps" if torch.mps.is_available() else "cpu"
+        # else "mps" if torch.mps.is_available()
+        else "cpu"
     )

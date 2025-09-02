@@ -38,7 +38,9 @@ from systemds.scuro.representations.glove import GloVe
 from systemds.scuro.representations.lstm import LSTM
 from systemds.scuro.representations.max import RowMax
 from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
-from systemds.scuro.representations.multimodal_attention_fusion.py import AttentionFusion
+from systemds.scuro.representations.multimodal_attention_fusion.py import (
+    AttentionFusion,
+)
 from systemds.scuro.representations.mfcc import MFCC
 from systemds.scuro.representations.hadamard import Hadamard
 from systemds.scuro.representations.optical_flow import OpticalFlow
@@ -142,5 +144,5 @@ __all__ = [
     "Pitch",
     "RMSE",
     "Spectral",
-    "AttentionFusion"
+    "AttentionFusion",
 ]

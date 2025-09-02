@@ -25,10 +25,10 @@ import org.apache.sysds.common.InstructionType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.ooc.AggregateUnaryOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.BinaryOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.MatrixMultiplyOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.OOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.ReblockOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.UnaryOOCInstruction;
-import org.apache.sysds.runtime.instructions.ooc.MatrixVectorBinaryOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.TransposeOOCInstruction;
 
 public class OOCInstructionParser extends InstructionParser {
@@ -60,7 +60,7 @@ public class OOCInstructionParser extends InstructionParser {
 				return BinaryOOCInstruction.parseInstruction(str);
 			case AggregateBinary:
 			case MAPMM:
-				return MatrixVectorBinaryOOCInstruction.parseInstruction(str);
+				return MatrixMultiplyOOCInstruction.parseInstruction(str);
 			case Reorg:
 				return TransposeOOCInstruction.parseInstruction(str);
 			

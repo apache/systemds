@@ -24,8 +24,13 @@ import math
 
 import numpy as np
 
-from tests.scuro.data_generator import ModalityRandomDataGenerator
+from tests.scuro.data_generator import ModalityRandomDataGenerator, TestDataLoader
 from systemds.scuro.modality.type import ModalityType
+from systemds.scuro.modality.unimodal_modality import UnimodalModality
+from systemds.scuro.representations.window_aggregation import (
+    StaticWindow,
+    DynamicWindow,
+)
 
 
 class TestWindowOperations(unittest.TestCase):
@@ -35,20 +40,56 @@ class TestWindowOperations(unittest.TestCase):
         cls.data_generator = ModalityRandomDataGenerator()
         cls.aggregations = ["mean", "sum", "max", "min"]
 
-    def test_window_operations_on_audio_representations(self):
+    def test_static_window(self):
+        num_windows = 5
+        data, md = self.data_generator.create_visual_modality(self.num_instances, 50)
+        modality = UnimodalModality(
+            TestDataLoader(
+                [i for i in range(0, self.num_instances)],
+                None,
+                ModalityType.VIDEO,
+                data,
+                np.float32,
+                md,
+            )
+        )
+        aggregated_window = modality.context(StaticWindow(num_windows))
+
+        for i in range(0, self.num_instances):
+            assert len(aggregated_window.data[i]) == num_windows
+
+    def test_dynamic_window(self):
+        num_windows = 5
+        data, md = self.data_generator.create_visual_modality(self.num_instances, 50)
+        modality = UnimodalModality(
+            TestDataLoader(
+                [i for i in range(0, self.num_instances)],
+                None,
+                ModalityType.VIDEO,
+                data,
+                np.float32,
+                md,
+            )
+        )
+        aggregated_window = modality.context(DynamicWindow(num_windows))
+
+        for i in range(0, self.num_instances):
+            assert len(aggregated_window.data[i]) == num_windows
+
+    def test_window_aggregation_on_audio_representations(self):
         window_size = 10
-        self.run_window_operations_for_modality(ModalityType.AUDIO, window_size)
+        self.run_window_aggregation_for_modality(ModalityType.AUDIO, window_size)
 
     def test_window_operations_on_video_representations(self):
         window_size = 10
-        self.run_window_operations_for_modality(ModalityType.VIDEO, window_size)
+        self.run_window_aggregation_for_modality(ModalityType.VIDEO, window_size)
 
     def test_window_operations_on_text_representations(self):
         window_size = 10
 
-        self.run_window_operations_for_modality(ModalityType.TEXT, window_size)
+        self.run_window_aggregation_for_modality(ModalityType.TEXT, window_size)
 
-    def run_window_operations_for_modality(self, modality_type, window_size):
+    def run_window_aggregation_for_modality(self, modality_type, window_size):
         r = self.data_generator.create1DModality(40, 100, modality_type)
         for aggregation in self.aggregations:
             windowed_modality = r.window_aggregation(window_size, aggregation)

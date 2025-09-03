@@ -141,7 +141,7 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
 
     def test_unimodal_optimizer_for_audio_modality(self):
         audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
-            self.num_instances, 100
+            self.num_instances, 3000
         )
         audio = UnimodalModality(
             TestDataLoader(

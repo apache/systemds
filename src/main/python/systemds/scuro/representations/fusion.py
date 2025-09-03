@@ -105,6 +105,8 @@ class Fusion(Representation):
                 curr_shape = modalities[idx].data[0].shape
             if len(modalities[idx - 1].data) != len(modalities[idx].data):
                 raise f"Modality sizes don't match!"
+            elif len(curr_shape) == 1:
+                continue
             elif curr_shape[1] > max_size:
                 max_size = curr_shape[1]
 

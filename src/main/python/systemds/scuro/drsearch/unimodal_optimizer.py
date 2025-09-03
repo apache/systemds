@@ -122,8 +122,8 @@ class UnimodalOptimizer:
 
             for context_operator_after in context_operators:
                 con_op_after = context_operator_after()
-                mod = mod.context(con_op_after)
-                self._evaluate_local(mod, [mod_op, con_op_after], local_results)
+                mod_con = mod.context(con_op_after)
+                self._evaluate_local(mod_con, [mod_op, con_op_after], local_results)
 
             return local_results
 

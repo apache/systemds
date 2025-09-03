@@ -30,7 +30,11 @@ from systemds.scuro.representations.covarep_audio_features import (
 from systemds.scuro.representations.mfcc import MFCC
 from systemds.scuro.representations.swin_video_transformer import SwinVideoTransformer
 from systemds.scuro.representations.wav2vec import Wav2Vec
-from systemds.scuro.representations.window_aggregation import WindowAggregation
+from systemds.scuro.representations.window_aggregation import (
+    WindowAggregation,
+    StaticWindow,
+    DynamicWindow,
+)
 from systemds.scuro.representations.bow import BoW
 from systemds.scuro.representations.word2vec import W2V
 from systemds.scuro.representations.tfidf import TfIdf
@@ -83,7 +87,11 @@ class TestOperatorRegistry(unittest.TestCase):
 
     def test_context_operator_in_registry(self):
         registry = Registry()
-        assert registry.get_context_operators() == [WindowAggregation]
+        assert registry.get_context_operators() == [
+            WindowAggregation,
+            StaticWindow,
+            DynamicWindow,
+        ]
 
     # def test_fusion_operator_in_registry(self):
     #     registry = Registry()

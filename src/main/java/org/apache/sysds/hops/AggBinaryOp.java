@@ -240,14 +240,6 @@ public class AggBinaryOp extends MultiThreadedHop {
 					default:
 						throw new HopsException(this.printErrorLocation() + "Invalid Matrix Mult Method (" + _method + ") while constructing SPARK lops.");
 				}
-//			} else if (et == ExecType.OOC) {
-//				Lop in1 = getInput().get(0).constructLops();
-//				Lop in2 = getInput().get(1).constructLops();
-//				MatMultCP matmult = new MatMultCP(in1, in2, getDataType(), getValueType(),
-//					et, OptimizerUtils.getConstrainedNumThreads(_maxNumThreads));
-//				setOutputDimensions(matmult);
-//				setLineNumbers(matmult);
-//				setLops(matmult);
 			}
 		} else
 			throw new HopsException(this.printErrorLocation() + "Invalid operation in AggBinary Hop, aggBin(" + innerOp + "," + outerOp + ") while constructing lops.");

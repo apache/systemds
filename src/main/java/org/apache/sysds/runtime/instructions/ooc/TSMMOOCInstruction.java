@@ -54,14 +54,14 @@ public class TSMMOOCInstruction extends ComputationOOCInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields(parts, 3);
 		String opcode = parts[0];
-		CPOperand in1 = new CPOperand(parts[1]); // the larget matrix (streamed)
+		CPOperand in1 = new CPOperand(parts[1]); // the large matrix (streamed), columns <= blocksize
 		CPOperand out = new CPOperand(parts[2]);
 		MMTSJ.MMTSJType mmtsjType = MMTSJ.MMTSJType.valueOf(parts[3]);
 
 		AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 		AggregateBinaryOperator ba = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
 
-		return new TSMMOOCInstruction(OOCType.MAPMM, ba, in1, out, mmtsjType, opcode, str);
+		return new TSMMOOCInstruction(OOCType.MMTSJ, ba, in1, out, mmtsjType, opcode, str);
 	}
 
 	@Override
@@ -70,7 +70,6 @@ public class TSMMOOCInstruction extends ComputationOOCInstruction {
 		MatrixObject min = ec.getMatrixObject(input1); // big matrix
 
 		// number of colBlocks for early block output
-		long nBlocks = min.getDataCharacteristics().getNumColBlocks();
 		int nCols = (int) min.getDataCharacteristics().getCols();
 
 		LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();

@@ -34,9 +34,26 @@ def img_brightness(img_in: Matrix,
     """
      The img_brightness-function is an image data augmentation function. It changes the brightness of the image.
     
+     .. code-block:: python
+    
+       >>> import numpy as np
+       >>> from systemds.context import SystemDSContext
+       >>> from systemds.operator.algorithm import img_brightness
+       >>> 
+       >>> with SystemDSContext() as sds:
+       ...     img = sds.from_numpy(
+       ...         np.array([[ 50, 100,
+       ...                     150, 200 ]], dtype=np.float32)
+       ...     )
+       ...     result_img = img_brightness(img, 30.0, 150).compute()
+       ...     print(result_img.reshape(2, 2))
+       [[ 80. 130.]
+        [150. 150.]]
     
     
-    :param img_in: Input matrix/image
+    
+    
+    :param img_in: Input image as 2D matrix with top left corner at [1, 1]
     :param value: The amount of brightness to be changed for the image
     :param channel_max: Maximum value of the brightness of the image
     :return: Output matrix/image

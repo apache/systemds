@@ -32,12 +32,8 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
-import org.apache.sysds.lops.Data;
-import org.apache.sysds.lops.Federated;
-import org.apache.sysds.lops.Lop;
+import org.apache.sysds.lops.*;
 import org.apache.sysds.common.Types.ExecType;
-import org.apache.sysds.lops.LopsException;
-import org.apache.sysds.lops.Sql;
 import org.apache.sysds.parser.DataExpression;
 import static org.apache.sysds.parser.DataExpression.FED_RANGES;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
@@ -60,6 +56,8 @@ public class DataOp extends Hop {
 	
 	private boolean _recompileRead = true;
 
+	private boolean _isTeeOp = false;
+
 	/**
 	 * List of "named" input parameters. They are maintained as a hashmap:
 	 * parameter names (String) are mapped as indices (Integer) into getInput()
@@ -72,6 +70,10 @@ public class DataOp extends Hop {
 
 	private DataOp() {
 		//default constructor for clone
+	}
+
+	public void setIsTeeOp(boolean isTeeOp) {
+		this._isTeeOp = isTeeOp;
 	}
 	
 	/**
@@ -251,56 +253,66 @@ public class DataOp extends Hop {
 
 		ExecType et = optFindExecType();
 		Lop l = null;
-		
-		// construct lops for all input parameters
-		HashMap<String, Lop> inputLops = new HashMap<>();
-		for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
-			inputLops.put(cur.getKey(), getInput().get(cur.getValue()).constructLops());
-		}
 
-		// Create the lop
-		switch(_op) 
-		{
-			case TRANSIENTREAD:
-				l = new Data(_op, null, inputLops, getName(), null, 
-						getDataType(), getValueType(), getFileFormat());
-				setOutputDimensions(l);
-				break;
-				
-			case PERSISTENTREAD:
-				l = new Data(_op, null, inputLops, getName(), null, 
-						getDataType(), getValueType(), getFileFormat());
-				l.getOutputParameters().setDimensions(getDim1(), getDim2(), _inBlocksize, getNnz(), getUpdateType());
-				break;
-				
-			case PERSISTENTWRITE:
-			case FUNCTIONOUTPUT:
-				l = new Data(_op, getInput().get(0).constructLops(), inputLops, getName(), null, 
-					getDataType(), getValueType(), getFileFormat());
-				((Data)l).setExecType(et);
-				setOutputDimensions(l);
-				break;
-				
-			case TRANSIENTWRITE:
-				l = new Data(_op, getInput().get(0).constructLops(), inputLops, getName(), null,
-						getDataType(), getValueType(), getFileFormat());
-				setOutputDimensions(l);
-				break;
-				
-			case SQLREAD:
-				l = new Sql(inputLops, getDataType(), getValueType());
-				break;
-			
-			case FEDERATED:
-				l = new Federated(inputLops, getDataType(), getValueType());
-				break;
-			
-			default:
-				throw new LopsException("Invalid operation type for Data LOP: " + _op);
+		if (_isTeeOp) {
+			Tee teeLop = new Tee(getInput().get(0).constructLops(),
+							getDataType(), getValueType());
+			setLineNumbers(teeLop);
+			setLops(teeLop);
+			setOutputDimensions(teeLop);
 		}
-		
-		setLineNumbers(l);
-		setLops(l);
+		else {
+
+			// construct lops for all input parameters
+			HashMap<String, Lop> inputLops = new HashMap<>();
+			for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
+				inputLops.put(cur.getKey(), getInput().get(cur.getValue()).constructLops());
+			}
+
+			// Create the lop
+			switch (_op) {
+				case TRANSIENTREAD:
+					l = new Data(_op, null, inputLops, getName(), null,
+									getDataType(), getValueType(), getFileFormat());
+					setOutputDimensions(l);
+					break;
+
+				case PERSISTENTREAD:
+					l = new Data(_op, null, inputLops, getName(), null,
+									getDataType(), getValueType(), getFileFormat());
+					l.getOutputParameters().setDimensions(getDim1(), getDim2(), _inBlocksize, getNnz(), getUpdateType());
+					break;
+
+				case PERSISTENTWRITE:
+				case FUNCTIONOUTPUT:
+					l = new Data(_op, getInput().get(0).constructLops(), inputLops, getName(), null,
+									getDataType(), getValueType(), getFileFormat());
+					((Data) l).setExecType(et);
+					setOutputDimensions(l);
+					break;
+
+				case TRANSIENTWRITE:
+					l = new Data(_op, getInput().get(0).constructLops(), inputLops, getName(), null,
+									getDataType(), getValueType(), getFileFormat());
+					setOutputDimensions(l);
+					break;
+
+				case SQLREAD:
+					l = new Sql(inputLops, getDataType(), getValueType());
+					break;
+
+				case FEDERATED:
+					l = new Federated(inputLops, getDataType(), getValueType());
+					break;
+
+				default:
+					throw new LopsException("Invalid operation type for Data LOP: " + _op);
+			}
+			setLineNumbers(l);
+			setLops(l);
+		}
+//		setLineNumbers(l);
+//		setLops(l);
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
@@ -346,6 +358,9 @@ public class DataOp extends Hop {
 	public String getOpString() {
 		String s = new String("");
 		s += _op.toString();
+		if (_isTeeOp) {
+			s += " tee";
+		}
 		s += " "+getName();
 		return s;
 	}
@@ -536,6 +551,7 @@ public class DataOp extends Hop {
 		ret._inFormat = _inFormat;
 		ret._inBlocksize = _inBlocksize;
 		ret._recompileRead = _recompileRead;
+		ret._isTeeOp = _isTeeOp; // copy the Tee flag
 		ret._paramIndexMap = (HashMap<String, Integer>) _paramIndexMap.clone();
 		//note: no deep cp of params since read-only 
 		

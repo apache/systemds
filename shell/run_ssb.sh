@@ -4,9 +4,9 @@
 # ===========================================
 #
 # CORE SCRIPTS STATUS:
-# - Version: 3.0 (August 24, 2025)
-# - Status: Fully Enhanced with Advanced User Experience
-# - Last Updated: August 24, 2025
+# - Version: 1.0 (September 5, 2025)
+# - Status: Production-Ready with Advanced User Experience
+# - First Public Release: September 5, 2025
 #
 # FEATURES IMPLEMENTED:
 # ✓ Basic SSB query execution with SystemDS 3.4.0-SNAPSHOT
@@ -22,17 +22,27 @@
 # ✓ Error handling with timeout protection
 # ✓ Cross-platform compatibility (macOS/Linux)
 #
-# RECENT ENHANCEMENTS (v3.0):
-# - Replaced "see above" with "see below" in result summaries
-# - Added LONG_OUTPUTS array to capture table results
-# - Implemented post-summary detailed results display
-# - Enhanced user experience by eliminating need to scroll back
+# RECENT IMPORTANT ADDITIONS:
+# - Accepts --input-dir=PATH and forwards it into DML runs as a SystemDS named
+#   argument: -nvargs input_dir=/path/to/data (DML can use sys.vinput_dir or
+#   the named argument to locate data files instead of hardcoded `data/`).
+# - Fast-fail on missing input directory: the runner verifies the provided
+#   input path exists and exits with a clear error message if not.
+# - Runtime SystemDS error detection: test-run output is scanned for runtime
+#   error blocks (e.g., "An Error Occurred : ..."). Queries with runtime
+#   failures are reported as `status: "error"` and include `error_message`
+#   in generated JSON metadata for easier debugging and CI integration.
+#
+# MAJOR FEATURES IN v1.0 (First Public Release):
+# - Complete SSB query execution with SystemDS 3.4.0-SNAPSHOT
+# - Enhanced "see below" notation with result reprinting
+# - Long table outputs displayed after summary for better UX
+# - Eliminated need to scroll back through terminal output
 # - Maintained array alignment for consistent result tracking
-# - Metadata header removed from start, kept only in final summary
-# - JSON metadata now contains complete query results, not "see below"
+# - JSON metadata contains complete query results, not "see below"
 # - Added --out-dir option for custom output directory
 # - Multi-format output: TXT, CSV, JSON for each query result
-# - Structured output directory with run.json metadata file
+# - Structured output directory with comprehensive run.json metadata file
 #
 # DEPENDENCIES:
 # - SystemDS binary (3.4.0-SNAPSHOT or later)
@@ -101,37 +111,133 @@ if [[ ! -d "$QUERY_DIR" ]]; then
   exit 1
 fi
 
+# Help function
+show_help() {
+  cat << 'EOF'
+SystemDS Star Schema Benchmark (SSB) Runner v1.0
+
+USAGE:
+  ./run_ssb.sh [OPTIONS] [QUERIES...]
+
+OPTIONS:
+  --stats, -stats         Enable SystemDS internal statistics collection
+  --seed=N, -seed=N      Set random seed for reproducible results (default: auto-generated)
+  --output-dir=PATH, -output-dir=PATH  Specify custom output directory (default: $PROJECT_ROOT/shell/ssbOutputData/QueryData)
+  --input-dir=PATH, -input-dir=PATH  Specify custom data directory (default: $PROJECT_ROOT/data)
+  --help, -help, -h, --h Show this help message
+  --version, -version, -v, --v  Show version information
+
+QUERIES:
+  If no queries are specified, all available SSB queries (q*.dml) will be executed.
+  To run specific queries, provide their names (with or without .dml extension):
+    ./run_ssb.sh q1.1 q2.3 q4.1
+
+EXAMPLES:
+  ./run_ssb.sh                          # Run all SSB queries
+  ./run_ssb.sh --stats                  # Run all queries with statistics
+  ./run_ssb.sh -stats                   # Same as above (single dash)
+  ./run_ssb.sh q1.1 q2.3                # Run specific queries only
+  ./run_ssb.sh --seed=12345 --stats     # Reproducible run with statistics
+  ./run_ssb.sh -seed=12345 -stats       # Same as above (single dash)
+  ./run_ssb.sh --output-dir=/tmp/results   # Custom output directory
+  ./run_ssb.sh -output-dir=/tmp/results    # Same as above (single dash)
+  ./run_ssb.sh --input-dir=/path/to/data  # Custom data directory
+  ./run_ssb.sh -input-dir=/path/to/data   # Same as above (single dash)
+
+OUTPUT:
+  Results are saved in multiple formats:
+  - TXT: Human-readable format
+  - CSV: Machine-readable data format
+  - JSON: Structured format with metadata
+  - run.json: Complete run metadata and results
+
+For more information, see the documentation in scripts/ssb/README.md
+EOF
+}
+
 # Parse arguments
 RUN_STATS=false
 QUERIES=()
 SEED=""
 OUT_DIR=""
+INPUT_DIR=""
 for arg in "$@"; do
-  if [[ "$arg" == "--stats" ]]; then
+  if [[ "$arg" == "--help" || "$arg" == "-help" || "$arg" == "-h" || "$arg" == "--h" ]]; then
+    show_help
+    exit 0
+  elif [[ "$arg" == "--version" || "$arg" == "-version" || "$arg" == "-v" || "$arg" == "--v" ]]; then
+    echo "SystemDS Star Schema Benchmark (SSB) Runner v1.0"
+    echo "First Public Release: September 5, 2025"
+    exit 0
+  elif [[ "$arg" == "--stats" || "$arg" == "-stats" ]]; then
     RUN_STATS=true
-  elif [[ "$arg" == --seed=* ]]; then
-    SEED="${arg#--seed=}"
-  elif [[ "$arg" == "--seed" ]]; then
-    echo "Error: --seed requires a value (e.g., --seed=12345)" >&2
+  elif [[ "$arg" == --seed=* || "$arg" == -seed=* ]]; then
+    if [[ "$arg" == --seed=* ]]; then
+      SEED="${arg#--seed=}"
+    else
+      SEED="${arg#-seed=}"
+    fi
+  elif [[ "$arg" == "--seed" || "$arg" == "-seed" ]]; then
+    echo "Error: --seed/-seed requires a value (e.g., --seed=12345 or -seed=12345)" >&2
     exit 1
-  elif [[ "$arg" == --out-dir=* ]]; then
-    OUT_DIR="${arg#--out-dir=}"
-  elif [[ "$arg" == "--out-dir" ]]; then
-    echo "Error: --out-dir requires a value (e.g., --out-dir=/path/to/output)" >&2
+  elif [[ "$arg" == --output-dir=* || "$arg" == -output-dir=* ]]; then
+    if [[ "$arg" == --output-dir=* ]]; then
+      OUT_DIR="${arg#--output-dir=}"
+    else
+      OUT_DIR="${arg#-output-dir=}"
+    fi
+  elif [[ "$arg" == "--output-dir" || "$arg" == "-output-dir" ]]; then
+    echo "Error: --output-dir/-output-dir requires a value (e.g., --output-dir=/path/to/output or -output-dir=/path/to/output)" >&2
+    exit 1
+  elif [[ "$arg" == --input-dir=* || "$arg" == -input-dir=* ]]; then
+    if [[ "$arg" == --input-dir=* ]]; then
+      INPUT_DIR="${arg#--input-dir=}"
+    else
+      INPUT_DIR="${arg#-input-dir=}"
+    fi
+  elif [[ "$arg" == "--input-dir" || "$arg" == "-input-dir" ]]; then
+    echo "Error: --input-dir/-input-dir requires a value (e.g., --input-dir=/path/to/data or -input-dir=/path/to/data)" >&2
     exit 1
   else
-    name="$(echo "$arg" | tr '.' '_')"
-    QUERIES+=( "$name.dml" )
+    # Check if argument looks like an unrecognized option (starts with dash)
+    if [[ "$arg" == -* ]]; then
+      echo "Error: Unrecognized option '$arg'" >&2
+      echo "Use --help or -h to see available options." >&2
+      exit 1
+    else
+      # Treat as query name
+      name="$(echo "$arg" | tr '.' '_')"
+      QUERIES+=( "$name.dml" )
+    fi
   fi
 done
 
 # Set default output directory if not provided
 if [[ -z "$OUT_DIR" ]]; then
-  OUT_DIR="$SCRIPT_DIR/OutputDMLQueriesData"
+  OUT_DIR="$PROJECT_ROOT/shell/ssbOutputData/QueryData"
 fi
+
+# Set default input data directory if not provided
+if [[ -z "$INPUT_DIR" ]]; then
+  INPUT_DIR="$PROJECT_ROOT/data"
+fi
+
+# Normalize paths by removing trailing slashes
+INPUT_DIR="${INPUT_DIR%/}"
+OUT_DIR="${OUT_DIR%/}"
 
 # Ensure output directory exists
 mkdir -p "$OUT_DIR"
+
+# Pass input directory to DML scripts via SystemDS named arguments
+NVARGS=( -nvargs "input_dir=${INPUT_DIR}" )
+
+# Validate input data directory exists
+if [[ ! -d "$INPUT_DIR" ]]; then
+  echo "Error: Input data directory '$INPUT_DIR' does not exist." >&2
+  echo "Please create the directory or specify a valid path with --input-dir=PATH" >&2
+  exit 1
+fi
 
 # Generate seed if not provided
 if [[ -z "$SEED" ]]; then
@@ -143,7 +249,6 @@ shopt -s nullglob
 if [[ ${#QUERIES[@]} -eq 0 ]]; then
   for f in "$QUERY_DIR"/q*.dml; do
     if [[ -f "$f" ]]; then
-
       QUERIES+=("$(basename "$f")")
     fi
   done
@@ -219,7 +324,7 @@ collect_system_metadata() {
 
 collect_data_metadata() {
   # Check for SSB data directory and get basic stats
-  local ssb_data_dir="$PROJECT_ROOT/data"
+  local ssb_data_dir="$INPUT_DIR"
   local json_parts=()
   local display_parts=()
 
@@ -306,8 +411,8 @@ save_query_result_csv() {
   local result_data="$2"
   local output_file="$OUTPUT_CSV_DIR/${query_name}.csv"
 
-  # Check if result is a single scalar value
-  if [[ "$result_data" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+  # Check if result is a single scalar value (including negative numbers and scientific notation)
+  if [[ "$result_data" =~ ^-?[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?$ ]]; then
     # Scalar result
     {
       echo "query,result"
@@ -368,6 +473,9 @@ create_output_structure "$RUN_ID"
 count=0
 failed=0
 SUCCESSFUL_QUERIES=()  # Array to track successfully executed queries
+ALL_RUN_QUERIES=()     # Array to track all queries that were attempted (in order)
+QUERY_STATUS=()        # Array to track status: "success" or "error"
+QUERY_ERROR_MSG=()     # Array to store error messages for failed queries
 QUERY_RESULTS=()       # Array to track query results for display
 QUERY_FULL_RESULTS=()  # Array to track complete query results for JSON
 QUERY_STATS=()         # Array to track SystemDS statistics for JSON
@@ -399,12 +507,30 @@ for q in "${QUERIES[@]}"; do
   echo -ne "\r                                                                                   \r"
   echo "[$((count + failed + 1))/${#QUERIES[@]}] Running: $q"
 
+  # Record attempted query
+  ALL_RUN_QUERIES+=("$q")
+
   if $RUN_STATS; then
     # Capture output to extract result
     temp_output=$(mktemp)
-    if "$SYSTEMDS_CMD" "$dml" -stats "${SYS_EXTRA_ARGS[@]}" | tee "$temp_output"; then
-      count=$((count+1))
-      SUCCESSFUL_QUERIES+=("$q")  # Track successful query
+  if "$SYSTEMDS_CMD" "$dml" -stats "${SYS_EXTRA_ARGS[@]}" "${NVARGS[@]}" | tee "$temp_output"; then
+      # Even when SystemDS exits 0, the DML can emit runtime errors. Detect common error markers.
+      error_msg=$(sed -n '/An Error Occurred :/,$ p' "$temp_output" | sed -n '1,200p' | tr '\n' ' ' | sed 's/^ *//;s/ *$//')
+      if [[ -n "$error_msg" ]]; then
+        echo "Error: Query $q reported runtime error" >&2
+        echo "$error_msg" >&2
+        failed=$((failed+1))
+        QUERY_STATUS+=("error")
+        QUERY_ERROR_MSG+=("$error_msg")
+        # Maintain array alignment
+        QUERY_STATS+=("")
+        QUERY_RESULTS+=("N/A")
+        QUERY_FULL_RESULTS+=("N/A")
+        LONG_OUTPUTS+=("")
+      else
+        count=$((count+1))
+        SUCCESSFUL_QUERIES+=("$q")  # Track successful query
+        QUERY_STATUS+=("success")
       # Extract result - try multiple patterns with timeouts to prevent hanging:
       # 1. Simple scalar pattern like "REVENUE: 687752409"
       result=$(timeout 5s grep -E "^[A-Z_]+:\s*[0-9]+" "$temp_output" | tail -1 | awk '{print $2}' 2>/dev/null || true)
@@ -448,12 +574,15 @@ for q in "${QUERIES[@]}"; do
 
       # Extract and store statistics for JSON (preserving newlines)
       stats_output=$(sed -n '/^SystemDS Statistics:/,$ p' "$temp_output")
-      QUERY_STATS+=("$stats_output")  # Track statistics for JSON
+  QUERY_STATS+=("$stats_output")  # Track statistics for JSON
 
       save_all_formats "$query_name_clean" "$full_result"
+      fi
     else
       echo "Error: Query $q failed" >&2
       failed=$((failed+1))
+      QUERY_STATUS+=("error")
+      QUERY_ERROR_MSG+=("Query execution failed (non-zero exit)")
       # Add empty stats entry for failed queries to maintain array alignment
       QUERY_STATS+=("")
     fi
@@ -461,9 +590,23 @@ for q in "${QUERIES[@]}"; do
   else
     # Capture output to extract result
     temp_output=$(mktemp)
-    if "$SYSTEMDS_CMD" "$dml" "${SYS_EXTRA_ARGS[@]}" | tee "$temp_output"; then
-      count=$((count+1))
-      SUCCESSFUL_QUERIES+=("$q")  # Track successful query
+  if "$SYSTEMDS_CMD" "$dml" "${SYS_EXTRA_ARGS[@]}" "${NVARGS[@]}" | tee "$temp_output"; then
+      # Detect runtime errors in output even if command returned 0
+      error_msg=$(sed -n '/An Error Occurred :/,$ p' "$temp_output" | sed -n '1,200p' | tr '\n' ' ' | sed 's/^ *//;s/ *$//')
+      if [[ -n "$error_msg" ]]; then
+        echo "Error: Query $q reported runtime error" >&2
+        echo "$error_msg" >&2
+        failed=$((failed+1))
+        QUERY_STATUS+=("error")
+        QUERY_ERROR_MSG+=("$error_msg")
+        QUERY_STATS+=("")
+        QUERY_RESULTS+=("N/A")
+        QUERY_FULL_RESULTS+=("N/A")
+        LONG_OUTPUTS+=("")
+      else
+        count=$((count+1))
+        SUCCESSFUL_QUERIES+=("$q")  # Track successful query
+        QUERY_STATUS+=("success")
       # Extract result - try multiple patterns with timeouts to prevent hanging:
       # 1. Simple scalar pattern like "REVENUE: 687752409"
       result=$(timeout 5s grep -E "^[A-Z_]+:\s*[0-9]+" "$temp_output" | tail -1 | awk '{print $2}' 2>/dev/null || true)
@@ -502,15 +645,18 @@ for q in "${QUERIES[@]}"; do
       QUERY_RESULTS+=("$result")  # Track query result for display
       QUERY_FULL_RESULTS+=("$full_result")  # Track complete query result for JSON
 
-      # Add empty stats entry for non-stats runs to maintain array alignment
-      QUERY_STATS+=("")
+  # Add empty stats entry for non-stats runs to maintain array alignment
+  QUERY_STATS+=("")
 
       # Save result in all formats
       query_name_clean="${q%.dml}"
       save_all_formats "$query_name_clean" "$full_result"
+      fi
     else
       echo "Error: Query $q failed" >&2
       failed=$((failed+1))
+      QUERY_STATUS+=("error")
+      QUERY_ERROR_MSG+=("Query execution failed (non-zero exit)")
       # Add empty stats entry for failed queries to maintain array alignment
       QUERY_STATS+=("")
     fi
@@ -553,7 +699,7 @@ echo "Data Build Info:"
 echo "  SSB Data:      $RUN_DATA_DISPLAY"
 echo "========================================="
 
-# Generate metadata JSON file
+# Generate metadata JSON file (include all attempted queries with status and error messages)
 {
   echo "{"
   echo "  \"benchmark_type\": \"ssb_systemds\","
@@ -576,19 +722,34 @@ echo "========================================="
   echo "    \"queries_failed\": $failed"
   echo "  },"
   echo "  \"results\": ["
-  for i in "${!SUCCESSFUL_QUERIES[@]}"; do
-    query="${SUCCESSFUL_QUERIES[$i]}"
-    full_result="${QUERY_FULL_RESULTS[$i]}"
-    stats_result="${QUERY_STATS[$i]}"
+  for i in "${!ALL_RUN_QUERIES[@]}"; do
+    query="${ALL_RUN_QUERIES[$i]}"
+    status="${QUERY_STATUS[$i]:-error}"
+    error_msg="${QUERY_ERROR_MSG[$i]:-}"
+    # Find matching full_result and stats by searching SUCCESSFUL_QUERIES index
+    full_result=""
+    stats_result=""
+    if [[ "$status" == "success" ]]; then
+      # Find index in SUCCESSFUL_QUERIES
+      for j in "${!SUCCESSFUL_QUERIES[@]}"; do
+        if [[ "${SUCCESSFUL_QUERIES[$j]}" == "$query" ]]; then
+          full_result="${QUERY_FULL_RESULTS[$j]}"
+          stats_result="${QUERY_STATS[$j]}"
+          break
+        fi
+      done
+    fi
     # Escape quotes and newlines for JSON
     escaped_result=$(echo "$full_result" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | tr '\n' ' ')
+    escaped_error=$(echo "$error_msg" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | tr '\n' ' ')
 
     echo "    {"
     echo "      \"query\": \"${query%.dml}\","
-    echo "      \"result\": \"$escaped_result\","
+    echo "      \"status\": \"$status\","
+    echo "      \"error_message\": \"$escaped_error\","
+    echo "      \"result\": \"$escaped_result\""
     if [[ -n "$stats_result" ]]; then
-      echo "      \"stats\": ["
-      # Convert stats to JSON array with each line as a separate element
+      echo "      ,\"stats\": ["
       echo "$stats_result" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/\t/    /g' | awk '
         BEGIN { first = 1 }
         {
@@ -598,10 +759,9 @@ echo "========================================="
         }
         END { if (!first) printf "\n" }
       '
-      echo "      ],"
+      echo "      ]"
     fi
-    echo "      \"status\": \"success\""
-    if [[ $i -lt $((${#SUCCESSFUL_QUERIES[@]} - 1)) ]]; then
+    if [[ $i -lt $((${#ALL_RUN_QUERIES[@]} - 1)) ]]; then
       echo "    },"
     else
       echo "    }"
@@ -618,21 +778,34 @@ echo "  - TXT files: $OUTPUT_TXT_DIR"
 echo "  - CSV files: $OUTPUT_CSV_DIR"
 echo "  - JSON files: $OUTPUT_JSON_DIR"
 
-# Detailed summary of successful queries
-if [[ ${#SUCCESSFUL_QUERIES[@]} -gt 0 ]]; then
+# Detailed per-query summary (show status and error messages if any)
+if [[ ${#ALL_RUN_QUERIES[@]} -gt 0 ]]; then
   echo ""
-  echo "========================================="
-  echo "SUCCESSFUL QUERIES SUMMARY"
-  echo "========================================="
-  printf "%-4s %-15s %-20s %s\n" "No." "Query" "Result" "Status"
-  echo "----------------------------------------"
-  for i in "${!SUCCESSFUL_QUERIES[@]}"; do
-    query="${SUCCESSFUL_QUERIES[$i]}"
+  echo "==================================================="
+  echo "QUERIES SUMMARY"
+  echo "==================================================="
+  printf "%-4s %-15s %-30s %s\n" "No." "Query" "Result" "Status"
+  echo "---------------------------------------------------"
+  for i in "${!ALL_RUN_QUERIES[@]}"; do
+    query="${ALL_RUN_QUERIES[$i]}"
     query_display="${query%.dml}"  # Remove .dml extension for display
-    result="${QUERY_RESULTS[$i]}"
-    printf "%-4d %-15s %-20s %s\n" "$((i+1))" "$query_display" "$result" "✓ Success"
+    status="${QUERY_STATUS[$i]:-error}"
+    if [[ "$status" == "success" ]]; then
+      # Find index in SUCCESSFUL_QUERIES to fetch result
+      result=""
+      for j in "${!SUCCESSFUL_QUERIES[@]}"; do
+        if [[ "${SUCCESSFUL_QUERIES[$j]}" == "$query" ]]; then
+          result="${QUERY_RESULTS[$j]}"
+          break
+        fi
+      done
+      printf "%-4d %-15s %-30s %s\n" "$((i+1))" "$query_display" "$result" "✓ Success"
+    else
+      err="${QUERY_ERROR_MSG[$i]:-Unknown error}"
+      printf "%-4d %-15s %-30s %s\n" "$((i+1))" "$query_display" "N/A" "ERROR: ${err}"
+    fi
   done
-  echo "========================================="
+echo "==================================================="
 fi
 
 # Display long outputs for queries that had table results

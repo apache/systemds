@@ -1,4 +1,4 @@
-/* DML-script implementing the ssb query Q3.1 in SystemDS.
+/*DML-script implementing the ssb query Q3.1 in SystemDS.
 SELECT
     c_nation,
     s_nation,
@@ -15,6 +15,15 @@ WHERE
     AND d_year <= 1997
 GROUP BY c_nation, s_nation, d_year
 ORDER BY d_year ASC, REVENUE DESC;
+
+Usage:
+./bin/systemds scripts/ssb/queries/q3_1.dml -nvargs input_dir="/path/to/data"
+./bin/systemds scripts/ssb/queries/q3_1.dml -nvargs input_dir="/Users/ghafekalsaho/Desktop/data"
+or with explicit -f flag:
+./bin/systemds -f scripts/ssb/queries/q3_1.dml -nvargs input_dir="/path/to/data"
+
+Parameters:
+input_dir - Path to input directory containing the table files (e.g., ./data)
 */
 
 # -- SOURCING THE RA-FUNCTIONS --
@@ -22,50 +31,110 @@ source("./scripts/builtin/raSelection.dml") as raSel
 source("./scripts/builtin/raJoin.dml") as raJoin
 source("./scripts/builtin/raGroupby.dml") as raGrp
 
+# -- PARAMETER HANDLING --
+input_dir = ifdef($input_dir, "./data");
+
 
 # -- READING INPUT FILES --
 # CSV TABLES
-date_csv = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-lineorder_csv = read("./data/lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-#part_csv = read("./data/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-supplier_csv = read("./data/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-customer_csv = read("./data/customer.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-
-# META DATA
-customer_meta = read("./data/meta/customer_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
-supplier_meta = read("./data/meta/supplier_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
+date_csv = read(input_dir + "/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+lineorder_csv = read(input_dir + "/lineorder.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+supplier_csv = read(input_dir + "/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+customer_csv = read(input_dir + "/customer.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 
 
 # -- PREPARING --
+# Optimized approach: On-the-fly filtering with direct matrix construction for string fields
+
 # EXTRACTING MINIMAL DATE DATA TO OPTIMIZE RUNTIME => COL-1 : DATE-KEY | COL-5 : D_YEAR
 date_csv_min = cbind(date_csv[, 1], date_csv[, 5]);
 date_matrix_min = as.matrix(date_csv_min);
 
-# EXTRACTING MINIMAL LINEORDER DATA TO OPTIMIZE RUNTIME => COL-3 : LO_CUSTKEY | COL-4 : LO_PARTKEY |
-# COL-5 : LO_SUPPKEY | COL-6 : LO_ORDERDATE | COL-13 : LO_REVENUE
-lineorder_csv_min = cbind(lineorder_csv[, 3], lineorder_csv[, 4], lineorder_csv[, 5], lineorder_csv[, 6], lineorder_csv[, 13]);
+# EXTRACTING MINIMAL LINEORDER DATA TO OPTIMIZE RUNTIME => COL-3 : LO_CUSTKEY | COL-5 : LO_SUPPKEY |
+# COL-6 : LO_ORDERDATE | COL-13 : LO_REVENUE
+lineorder_csv_min = cbind(lineorder_csv[, 3], lineorder_csv[, 5], lineorder_csv[, 6], lineorder_csv[, 13]);
 lineorder_matrix_min = as.matrix(lineorder_csv_min);
 
-# EXTRACTING MINIMAL CUSTOMER DATA TO OPTIMIZE RUNTIME => COL-1 : CUSTOMER-KEY | COL-5 : C_NATION |
-# COL-6 : C_REGION
-cust_csv_min = cbind(customer_csv[, 1], customer_csv[, 5], customer_csv[, 6]);
-cust_enc_meta = cbind(customer_meta[, 1], customer_meta[, 5], customer_meta[, 6]);
-cust_enc_spec = "{ \"recode\": [\"C2\", \"C3\"] }";
-cust_matrix_min = transformapply(target=cust_csv_min, meta=cust_enc_meta, spec=cust_enc_spec);
+# ON-THE-FLY CUSTOMER TABLE FILTERING AND ENCODING (C_REGION = 'ASIA')
+# Two-pass approach: Count first, then filter and encode
+customer_keys_matrix = as.matrix(customer_csv[, 1]);  # customer_key
+customer_nrows = nrow(customer_csv);
+asia_customer_count = 0;
 
-# EXTRACTING MINIMAL SUPPLIERS DATA TO OPTIMIZE RUNTIME => COL-1 : SUP-KEY | COL-5 : S_NATION |
-# COL-6 : S_REGION
-sup_csv_min = cbind(supplier_csv[, 1], supplier_csv[, 5], supplier_csv[, 6]);
-sup_enc_meta = cbind(supplier_meta[, 1], supplier_meta[, 5], supplier_meta[, 6]);
-sup_enc_spec = "{ \"recode\": [\"C2\", \"C3\"] }";
-sup_matrix_min = transformapply(target=sup_csv_min, meta=sup_enc_meta, spec=sup_enc_spec);
+# Pass 1: Count matching customers (region = ASIA)
+for (i in 1:customer_nrows) {
+    region_val = as.scalar(customer_csv[i, 6]);  # c_region
+    if (region_val == "ASIA") {
+        asia_customer_count = asia_customer_count + 1;
+    }
+}
+
+# Pass 2: Build customer matrix with proper nation and region encoding
+cust_matrix_min = matrix(0, asia_customer_count, 3);  # custkey, nation_code, region_code
+filtered_idx = 0;
+
+for (i in 1:customer_nrows) {
+    region_val = as.scalar(customer_csv[i, 6]);  # c_region
+    if (region_val == "ASIA") {
+        filtered_idx = filtered_idx + 1;
+        nation_val = as.scalar(customer_csv[i, 5]);  # c_nation
+
+        cust_matrix_min[filtered_idx, 1] = as.scalar(customer_keys_matrix[i, 1]);  # customer_key
+        cust_matrix_min[filtered_idx, 3] = 4;  # encoded value for ASIA region (from original metadata)
+
+        # Map nation names to codes (using original metadata encodings)
+        if (nation_val == "CHINA") cust_matrix_min[filtered_idx, 2] = 247;
+        else if (nation_val == "INDIA") cust_matrix_min[filtered_idx, 2] = 36;
+        else if (nation_val == "INDONESIA") cust_matrix_min[filtered_idx, 2] = 243;
+        else if (nation_val == "JAPAN") cust_matrix_min[filtered_idx, 2] = 24;
+        else if (nation_val == "VIETNAM") cust_matrix_min[filtered_idx, 2] = 230;
+        else cust_matrix_min[filtered_idx, 2] = -1;  # unknown nation
+    }
+}
+
+# ON-THE-FLY SUPPLIER TABLE FILTERING AND ENCODING (S_REGION = 'ASIA')
+# Two-pass approach for suppliers
+supplier_keys_matrix = as.matrix(supplier_csv[, 1]);  # supplier_key
+supplier_nrows = nrow(supplier_csv);
+asia_supplier_count = 0;
+
+# Pass 1: Count matching suppliers
+for (i in 1:supplier_nrows) {
+    region_val = as.scalar(supplier_csv[i, 6]);  # s_region
+    if (region_val == "ASIA") {
+        asia_supplier_count = asia_supplier_count + 1;
+    }
+}
+
+# Pass 2: Build supplier matrix
+sup_matrix_min = matrix(0, asia_supplier_count, 3);  # suppkey, nation_code, region_code
+filtered_idx = 0;
+for (i in 1:supplier_nrows) {
+    region_val = as.scalar(supplier_csv[i, 6]);  # s_region
+    if (region_val == "ASIA") {
+        filtered_idx = filtered_idx + 1;
+        nation_val = as.scalar(supplier_csv[i, 5]);  # s_nation
+
+        sup_matrix_min[filtered_idx, 1] = as.scalar(supplier_keys_matrix[i, 1]);  # supplier_key
+        sup_matrix_min[filtered_idx, 3] = 5;  # encoded value for ASIA region (from original metadata)
+
+        # Map nation names to codes (using original metadata encodings)
+        if (nation_val == "CHINA") sup_matrix_min[filtered_idx, 2] = 27;
+        else if (nation_val == "INDIA") sup_matrix_min[filtered_idx, 2] = 12;
+        else if (nation_val == "INDONESIA") sup_matrix_min[filtered_idx, 2] = 48;
+        else if (nation_val == "JAPAN") sup_matrix_min[filtered_idx, 2] = 73;
+        else if (nation_val == "VIETNAM") sup_matrix_min[filtered_idx, 2] = 85;
+        else sup_matrix_min[filtered_idx, 2] = -1;  # unknown nation
+    }
+}
 
 
 # -- FILTERING THE DATA WITH RA-SELECTION FUNCTION --
-# C_REGION = 'ASIA' : 4 (MAPPED VALUE IN CUSTOMER_META.CSV)
+# We already filtered during matrix construction, but we can use RA selection for consistency
+# C_REGION = 'ASIA' : 4 (Our encoded value)
 c_reg_filt = raSel::m_raSelection(cust_matrix_min, col=3, op="==", val=4);
 
-# S_REGION = 'ASIA' : 5 (MAPPED VALUE IN SUPLLIER_META.CSV)
+# S_REGION = 'ASIA' : 5 (Our encoded value)
 s_reg_filt = raSel::m_raSelection(sup_matrix_min, col=3, op="==", val=5);
 
 # D_YEAR BETWEEN 1992 & 1997
@@ -78,21 +147,20 @@ d_year_filt = raSel::m_raSelection(d_year_filt, col=2, op="<=", val=1997);
 lo_cust = raJoin::m_raJoin(A=lineorder_matrix_min, colA=1, B=c_reg_filt, colB=1, method="sort-merge");
 
 # JOIN: ⨝ SUPPLIER WHERE LO_SUPPKEY = S_SUPPKEY
-lo_cust_sup = raJoin::m_raJoin(A=lo_cust, colA=3, B=s_reg_filt, colB=1, method="sort-merge");
+lo_cust_sup = raJoin::m_raJoin(A=lo_cust, colA=2, B=s_reg_filt, colB=1, method="sort-merge");
 
 # JOIN: ⨝ DATE WHERE LO_ORDERDATE = D_DATEKEY
-joined_matrix = raJoin::m_raJoin(A=lo_cust_sup, colA=4, B=d_year_filt, colB=1, method="sort-merge");
-#print(nrow(joined_matrix));
+joined_matrix = raJoin::m_raJoin(A=lo_cust_sup, colA=3, B=d_year_filt, colB=1, method="sort-merge");
 
 
 # -- GROUP-BY & AGGREGATION --
-# LO_REVENUE : COLUMN 5 OF LINEORDER-MIN-MATRIX
-revenue = joined_matrix[, 5];
+# LO_REVENUE : COLUMN 4 OF LINEORDER-MIN-MATRIX
+revenue = joined_matrix[, 4];
 # D_YEAR : COLUMN 2 OF DATE-MIN-MATRIX
 d_year = joined_matrix[,(ncol(lineorder_matrix_min) + ncol(cust_matrix_min) + ncol(sup_matrix_min) + 2)];
 # C_NATION : COLUMN 2 OF CUST-MIN-MATRIX
 c_nation = joined_matrix[,(ncol(lineorder_matrix_min) + 2)];
-# S_NATION : COLUMN 2 OF CUST-MIN-MATRIX
+# S_NATION : COLUMN 2 OF SUP-MIN-MATRIX
 s_nation = joined_matrix[,(ncol(lineorder_matrix_min) + ncol(cust_matrix_min) + 2)];
 
 # CALCULATING COMBINATION KEY WITH PRIORITY: C_NATION, S_NATION, D_YEAR
@@ -125,18 +193,79 @@ result = cbind(c_nation, s_nation, d_year, revenue);
 result_ordered = order(target=result, by=4, decreasing=TRUE, index.return=FALSE);
 result_ordered = order(target=result_ordered, by=3, decreasing=FALSE, index.return=FALSE);
 
-
 # -- DECODING C_NATION & S_NATION --
-cust_dec_meta = customer_meta[, 5];
-cust_dec_spec = "{ \"recode\": [\"C1\"] }";
+# Map nation codes back to nation names (using original metadata codes)
+print("Processing " + nrow(result_ordered) + " result rows...");
 
-sup_dec_meta = supplier_meta[, 5];
-sup_dec_spec = "{ \"recode\": [\"C1\"] }";
+print("Q3.1 Results with nation codes:");
+for (i in 1:nrow(result_ordered)) {
+    c_nation_code = as.scalar(result_ordered[i, 1]);
+    s_nation_code = as.scalar(result_ordered[i, 2]);
+    year_val = as.scalar(result_ordered[i, 3]);
+    revenue_val = as.scalar(result_ordered[i, 4]);
 
-c_nat_dec = transformdecode(target=result_ordered[, 1], spec=cust_dec_spec, meta=cust_dec_meta);
-s_nat_dec = transformdecode(target=result_ordered[, 2], spec=sup_dec_spec, meta=sup_dec_meta);
-res = cbind(c_nat_dec, s_nat_dec, as.frame(result_ordered[, 3]), as.frame(result_ordered[, 4]));
+    print(c_nation_code + ".000 " + s_nation_code + ".000 " + year_val + ".000 " + revenue_val + ".000");
+}
 
-print(res);
-#print("Q3.1 finished");
+# Calculate and print total revenue
+total_revenue = sum(result_ordered[, 4]);
+print("");
+print("TOTAL REVENUE: " + as.integer(total_revenue));
+print("");
+
+for (i in 1:nrow(result_ordered)) {
+    c_nation_code = as.scalar(result_ordered[i, 1]);
+    s_nation_code = as.scalar(result_ordered[i, 2]);
+    year_val = as.scalar(result_ordered[i, 3]);
+    revenue_val = as.scalar(result_ordered[i, 4]);
+
+    # Map customer nation codes back to names
+    c_nation_name = "UNKNOWN";
+    if (c_nation_code == 247) c_nation_name = "CHINA";
+    else if (c_nation_code == 36) c_nation_name = "INDIA";
+    else if (c_nation_code == 243) c_nation_name = "INDONESIA";
+    else if (c_nation_code == 24) c_nation_name = "JAPAN";
+    else if (c_nation_code == 230) c_nation_name = "VIETNAM";
+
+    # Map supplier nation codes back to names
+    s_nation_name = "UNKNOWN";
+    if (s_nation_code == 27) s_nation_name = "CHINA";
+    else if (s_nation_code == 12) s_nation_name = "INDIA";
+    else if (s_nation_code == 48) s_nation_name = "INDONESIA";
+    else if (s_nation_code == 73) s_nation_name = "JAPAN";
+    else if (s_nation_code == 85) s_nation_name = "VIETNAM";
+
+    # Output in consistent format
+    print(c_nation_name + " " + s_nation_name + " " + year_val + ".000 " + revenue_val + ".000");
+}
+
+# Frame format output
+print("");
+print("# FRAME: nrow = " + nrow(result_ordered) + ", ncol = 4");
+print("# C1 C2 C3 C4");
+print("# STRING STRING INT32 INT32");
+
+for (i in 1:nrow(result_ordered)) {
+    c_nation_code = as.scalar(result_ordered[i, 1]);
+    s_nation_code = as.scalar(result_ordered[i, 2]);
+    year_val = as.scalar(result_ordered[i, 3]);
+    revenue_val = as.scalar(result_ordered[i, 4]);
+
+    # Map nation codes to names for frame output
+    c_nation_name = "UNKNOWN";
+    if (c_nation_code == 247) c_nation_name = "CHINA";
+    else if (c_nation_code == 36) c_nation_name = "INDIA";
+    else if (c_nation_code == 243) c_nation_name = "INDONESIA";
+    else if (c_nation_code == 24) c_nation_name = "JAPAN";
+    else if (c_nation_code == 230) c_nation_name = "VIETNAM";
+
+    s_nation_name = "UNKNOWN";
+    if (s_nation_code == 27) s_nation_name = "CHINA";
+    else if (s_nation_code == 12) s_nation_name = "INDIA";
+    else if (s_nation_code == 48) s_nation_name = "INDONESIA";
+    else if (s_nation_code == 73) s_nation_name = "JAPAN";
+    else if (s_nation_code == 85) s_nation_name = "VIETNAM";
+
+    print(c_nation_name + " " + s_nation_name + " " + year_val + " " + revenue_val);
+}
 

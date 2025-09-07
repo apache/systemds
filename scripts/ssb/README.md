@@ -1,353 +1,505 @@
 # Star Schema Benchmark (SSB) for SystemDS
 
-This directory contains the complete implementation of the Star Schema Benchmark (SSB) for SystemDS, including DML query implementations, performance comparison scripts, and supporting SQL implementations for benchmarking against PostgreSQL and DuckDB.
+This README documents the SSB DML queries under `scripts/ssb/queries/` and the runner scripts in `shell/` that execute and benchmark them. It is focused on what is implemented today, how to run it, and how to interpret the outputs for performance analysis.
 
-## Overview
+---
 
-The Star Schema Benchmark (SSB) is a data warehousing benchmark derived from TPC-H, designed to evaluate the performance of analytical database systems using a star schema design. This implementation provides:
+## Table of Contents
 
-- **13 DML query implementations** for SystemDS
-- **Multi-engine performance comparison** (SystemDS vs PostgreSQL vs DuckDB)
-- **Statistical analysis** with warmup runs and multiple repetitions
-- **Comprehensive result output** in multiple formats (TXT, CSV, JSON)
+1. Project Layout
+2. Quick Start
+3. Data Location (`--input-dir` and DML `input_dir`)
+4. Single-Engine Runner (`shell/run_ssb.sh`)
+5. Multi-Engine Performance Runner (`shell/run_all_perf.sh`)
+6. Outputs and Examples
+7. Adding/Editing Queries
+8. Troubleshooting
 
-## Directory Structure
+---
 
-SystemDS DML queries live here:
+## 1) Project Layout
 
-```
-scripts/ssb/
-├── README.md
-└── queries/
-    ├── q1_1.dml
-    ├── q1_2.dml
-    ├── q1_3.dml
-    ├── q2_1.dml
-    ├── q2_2.dml
-    ├── q2_3.dml
-    ├── q3_1.dml
-    ├── q3_2.dml
-    ├── q3_3.dml
-    ├── q3_4.dml
-    ├── q4_1.dml
-    ├── q4_2.dml
-    └── q4_3.dml
-```
-
-Benchmarking scripts are kept under `shell/` at the repository root (wrappers also exist at the root for convenience):
+Paths are relative to the repo root:
 
 ```
-./
-├── run_ssb.sh                  # Wrapper that invokes shell/run_ssb.sh
-├── run_all_perf.sh             # Wrapper that invokes shell/run_all_perf.sh
+systemds/
+├── scripts/ssb/
+│   ├── README.md                    # This guide
+│   └── queries/                     # DML queries (q1_1.dml ... q4_3.dml)
+│       ├── q1_1.dml - q1_3.dml      # Flight 1
+│       ├── q2_1.dml - q2_3.dml      # Flight 2
+│       ├── q3_1.dml - q3_4.dml      # Flight 3
+│       └── q4_1.dml - q4_3.dml      # Flight 4
 ├── shell/
-│   ├── run_ssb.sh              # SystemDS-only SSB runner (results extraction)
-│   ├── run_all_perf.sh         # Multi-engine performance comparison (SystemDS/PostgreSQL/DuckDB)
-│   └── Output data/            # Default results output directory (space in name)
-└── sql/
-    ├── postgres/               # SQL counterparts (files named like q1.1.sql)
-    └── duckdb/                 # SQL counterparts + DuckDB DB (ssb.duckdb)
+│   ├── run_ssb.sh                   # Single-engine (SystemDS) runner
+│   ├── run_all_perf.sh              # Multi-engine performance benchmark
+│   └── ssbOutputData/               # Results (created on first run)
+├── run_ssb.sh                       # Wrapper → `shell/run_ssb.sh`
+├── run_all_perf.sh                  # Wrapper → `shell/run_all_perf.sh`
+└── sql/                             # SQL versions + `ssb.duckdb` for DuckDB
 ```
 
-## SSB Query Categories
+Note: The SSB raw data directory is not committed. You must point the runners to your generated data with `--input-dir`.
 
-### Flight 1 (Q1.*) - Basic Aggregation
-- **Focus**: Simple aggregations with selective predicates
-- **Tables**: `lineorder`, `date`
-- **Metrics**: Revenue calculations with various filters
+---
 
-### Flight 2 (Q2.*) - Product Analysis
-- **Focus**: Product dimension analysis
-- **Tables**: `lineorder`, `dates`, `part`, `supplier`
-- **Metrics**: Revenue by product categories and supplier regions
+## 2) Quick Start
 
-### Flight 3 (Q3.*) - Customer Analysis
-- **Focus**: Customer and supplier geographic analysis
-- **Tables**: `lineorder`, `dates`, `customer`, `supplier`
-- **Metrics**: Revenue by customer and supplier regions/cities
+Set up SystemDS and run the SSB queries.
 
-### Flight 4 (Q4.*) - Profitability Analysis
-- **Focus**: Advanced metrics with multiple dimensions
-- **Tables**: `lineorder`, `dates`, `customer`, `supplier`, `part`
-- **Metrics**: Revenue and profit analysis
+1) Build SystemDS (from repo root):
 
-## Prerequisites
-
-### Data Requirements
-The benchmark requires SSB data files in the `data/` directory:
-- `date.tbl` - Date dimension table
-- `lineorder3.tbl` - Fact table (lineorder)
-- `customer.tbl` - Customer dimension table
-- `supplier.tbl` - Supplier dimension table
-- `part.tbl` - Part dimension table
-
-Notes:
-- Files are `|`-delimited, without headers.
-- Queries in this repo expect the fact table as `lineorder3.tbl`. Some helper scripts may refer to `lineorder.tbl` for simple row-count summaries; using `lineorder3.tbl` for the DML queries is correct.
-
-Optional: Generate data with ssb-dbgen (example for SF=1):
-```
-dbgen -s 1
-# Copy the generated .tbl files into data/
-```
-
-### Software Requirements
-- **SystemDS**: 3.4.0-SNAPSHOT or later
-- **Java**: JDK 8 or later
-- **PostgreSQL**: (optional, for performance comparison)
-- **DuckDB**: (optional, for performance comparison)
-
-The shell runners create a single-thread SystemDS config at `conf/single_thread.xml` and pass it automatically. On macOS, ensure GNU coreutils `timeout` is available if running the SystemDS-only runner (`brew install coreutils`).
-
-## Usage
-
-### Quickstart
-1) Place SSB `.tbl` files into `data/` (see Data Requirements).
-2) Run one query directly:
-   ```bash
-   ./bin/systemds scripts/ssb/queries/q1_1.dml
-   ```
-3) Run all queries and export results (default output under `shell/Output data/`):
-   ```bash
-   ./run_ssb.sh --out-dir output/ssb
-   ```
-
-### Running Individual Queries
-
-Execute a single DML query:
 ```bash
-# From project root directory
-./bin/systemds scripts/ssb/queries/q1_1.dml
+mvn -DskipTests package
 ```
 
-### SystemDS Result Extraction
+2) Make sure the SystemDS binary exists (repo-local `bin/systemds` or on `PATH`).
 
-Run all queries and extract results in multiple formats (per-query files):
+3) Make shell scripts executable:
+
 ```bash
-# From repo root (wrapper)
-./run_ssb.sh
-
-# or run the script directly from the shell directory
-cd shell && ./run_ssb.sh
-
-# Default results directory: shell/Output data/ssb_run_YYYYMMDD_HHMMSS/
-#   - txt/<query>.txt   (human-readable)
-#   - csv/<query>.csv   (data analysis)
-#   - json/<query>.json (structured data)
-#   - run.json          (run metadata)
-
-# Custom output directory
-./run_ssb.sh --out-dir output/ssb
+chmod +x shell/run_ssb.sh shell/run_all_perf.sh
 ```
 
-#### run_ssb.sh Options
-- `--stats`: Enable SystemDS internal timing (adds `-stats` when invoking SystemDS)
-- `--seed=XXXX`: Set random seed recorded in outputs
-- `--out-dir=PATH`: Custom output directory (default: `shell/Output data`)
-- `query_names`: Specific queries to run (e.g., `q1_1 q2_1` or `q1.1 q2.1`)
+4) Provide SSB data (from dbgen) in a directory, e.g. `/path/to/ssb-data`.
 
-### Multi-Engine Performance Comparison
+5) Run a single SSB query on SystemDS:
 
-Compare performance across SystemDS, PostgreSQL, and DuckDB:
 ```bash
-# From repo root (wrapper)
-./run_all_perf.sh
-
-# With custom parameters
-./run_all_perf.sh --warmup 3 --repeats 10 --stats
-
-# Specific queries only
-./run_all_perf.sh q1_1 q2_1 q3_1
-
-# Or from shell directory
-cd shell && ./run_all_perf.sh --stats q1_1
+./shell/run_ssb.sh q1.1 --input-dir=/path/to/ssb-data --stats
 ```
 
-### Command Line Options
+6) Run the multi-engine performance benchmark across all queries:
 
-#### run_all_perf.sh Options
-- `--stats`: Enable SystemDS internal timing statistics
-- `--warmup N`: Number of warmup runs (default: 1)
-- `--repeats N`: Number of timed repetitions (default: 5)
-- `--seed=XXXX`: Set random seed for reproducibility
-- `query_names`: Specific queries to run (e.g., q1_1 q2_1)
-
-Internals and setup:
-- SystemDS: executes DML from `scripts/ssb/queries/`
-- PostgreSQL: looks for SQL in `sql/postgres/` (files named like `q1.1.sql`)
-- DuckDB: looks for SQL in `sql/duckdb/` and a database at `sql/duckdb/ssb.duckdb`
-- Single-threading is enforced for fairness:
-  - SystemDS: `conf/single_thread.xml` with `sysds.num.threads=1` (auto-generated)
-  - PostgreSQL: session `SET` commands disable parallel workers
-  - DuckDB: `PRAGMA threads=1`
-
-Outputs:
-- Console table shows mean (and stdev/p95 when `--repeats>1`).
-- CSV: `shell/Output data/results_YYYYMMDD_HHMMSS.csv`
-- JSON metadata: `shell/Output data/results_YYYYMMDD_HHMMSS_metadata.json`
-
-#### Statistical Output Format
-When using multiple repetitions, results show:
+```bash
+./shell/run_all_perf.sh --input-dir=/path/to/ssb-data --stats --repeats=5
 ```
-1824 (±10, p95:1840)
+
+If `--input-dir` is omitted, the scripts default to `./data/` under the repo root.
+
+---
+
+## 3) Data Location (`--input-dir` and DML `input_dir`)
+
+Both runners pass a named argument `input_dir` into DML as:
+
 ```
-- **1824**: Mean execution time (ms)
-- **±10**: Standard deviation (ms)
-- **p95:1840**: 95th percentile (ms)
-
-## Implementation Details
-
-### DML Query Structure
-Each DML query follows a consistent pattern:
-1. **Header Comment**: Original SQL query for reference
-2. **Source Imports**: Required built-in functions
-3. **Data Loading**: CSV table reads with frame data type
-4. **Query Logic**: Relational algebra operations
-5. **Output**: Results written to console and files
-
-### Performance Optimization
-- **Single-threaded execution**: Fair comparison across engines
-- **Warmup runs**: JVM stabilization
-- **Multiple repetitions**: Statistical reliability
-- **Memory management**: Optimized JVM settings
-
-### Built-in Functions Used
-- `raSelection.dml`: Selection operations with predicates
-- `raJoin.dml`: Join operations between tables
-- `raGroupBy.dml`: Aggregation with grouping
-- Various utility functions for data manipulation
-
-## Output Formats
-
-### SystemDS Runner (Per-Query Files)
-
-TXT example (`txt/q1_1.txt`):
+-nvargs input_dir=/absolute/path/to/ssb-data
 ```
+
+Your DML scripts should construct paths from `input_dir`. Example:
+
+```dml
+dates     = read(paste(input_dir, "/date.tbl", sep=""), data_type="frame", format="csv", sep="|", header=FALSE)
+lineorder = read(paste(input_dir, "/lineorder.tbl", sep=""), data_type="frame", format="csv", sep="|", header=FALSE)
+```
+
+Expected base files in `input_dir`: `customer.tbl`, `supplier.tbl`, `part.tbl`, `date.tbl` and `lineorder*.tbl` (fact table name can vary by scale). The runners validate that `--input-dir` exists before executing.
+
+---
+
+## 4) Single-Engine Runner (`shell/run_ssb.sh`)
+
+Runs SSB DML queries with SystemDS and saves results per query.
+
+- Usage:
+  - `./shell/run_ssb.sh` — run all SSB queries
+  - `./shell/run_ssb.sh q1.1 q2.3` — run specific queries
+  - `./shell/run_ssb.sh --stats` — include SystemDS internal statistics
+  - `./shell/run_ssb.sh --input-dir=/path/to/data` — set data dir
+  - `./shell/run_ssb.sh --output-dir=/tmp/out` — set output dir
+
+- Query names: You can use dotted form (`q1.1`); the runner maps to `q1_1.dml` internally.
+
+- Functionality:
+  - Single-threaded execution via auto-generated `conf/single_thread.xml`.
+  - DML `input_dir` forwarding with `-nvargs`.
+  - Pre-check for data directory; clear errors if missing.
+  - Runtime error detection by scanning for “An Error Occurred : …”.
+  - Optional `--stats` to capture SystemDS internal statistics in JSON.
+  - Per-query outputs in TXT, CSV, and JSON.
+  - `run.json` with run-level metadata and per-query status/results.
+  - Clear end-of-run summary and, for table results, a “DETAILED QUERY RESULTS” section.
+  - Exit code is non-zero if any query failed (handy for CI).
+
+- Output layout:
+  - Base directory: `--output-dir` (default: `shell/ssbOutputData/QueryData`)
+  - Each run: `ssb_run_<YYYYMMDD_HHMMSS>/`
+    - `txt/<query>.txt` — human-readable result
+    - `csv/<query>.csv` — scalar or table as CSV
+    - `json/<query>.json` — per-query JSON
+    - `run.json` — full metadata and results for the run
+
+- Example console output (abridged):
+
+```
+[1/13] Running: q1_1.dml
+...
 =========================================
-SSB Query: q1_1
+SSB benchmark completed!
+Total queries executed: 13
+Failed queries: 0
+Statistics: enabled
+
 =========================================
-Timestamp: 2025-08-27 20:30:45 UTC
-Seed: 12345
-
-Result:
----------
-REVENUE: 2324000000
+RUN METADATA SUMMARY
 =========================================
+Timestamp:       2025-09-05 12:34:56 UTC
+Hostname:        myhost
+Seed:            123456
+Software Versions:
+  SystemDS:      3.4.0-SNAPSHOT
+  JDK:           21.0.2
+System Resources:
+  CPU:           Apple M2
+  RAM:           16GB
+Data Build Info:
+  SSB Data:      customer:300000 part:200000 supplier:2000 lineorder:6001215
+=========================================
+
+===================================================
+QUERIES SUMMARY
+===================================================
+No.  Query           Result                         Status
+---------------------------------------------------
+1    q1.1            12 rows (see below)            ✓ Success
+2    q1.2            1                              ✓ Success
+...
+===================================================
+
+=========================================
+DETAILED QUERY RESULTS
+=========================================
+[1] Results for q1.1:
+----------------------------------------
+1992|ASIA|12345.67
+1993|ASIA|23456.78
+...
+----------------------------------------
 ```
 
-CSV example (`csv/q1_1.csv`):
-```csv
-query,result
-q1_1,2324000000
+---
+
+## 5) Multi-Engine Performance Runner (`shell/run_all_perf.sh`)
+
+Runs SSB queries across SystemDS, PostgreSQL, and DuckDB with repeated timings and statistical analysis.
+
+- Usage:
+  - `./shell/run_all_perf.sh` — run all queries on available engines
+  - `./shell/run_all_perf.sh q1.1 q2.3` — run specific queries
+  - `./shell/run_all_perf.sh --warmup=2 --repeats=10` — control sampling
+  - `./shell/run_all_perf.sh --stats` — include core/internal engine timings
+  - `./shell/run_all_perf.sh --layout=wide|stacked` — control terminal layout
+  - `./shell/run_all_perf.sh --input-dir=... --output-dir=...` — set paths
+
+- Query names: dotted form (`q1.1`) is accepted; mapped internally to `q1_1.dml`.
+
+- Engine prerequisites:
+  - PostgreSQL:
+    - Install `psql` CLI and ensure a PostgreSQL server is running.
+    - Default connection in the script: `POSTGRES_DB=ssb`, `POSTGRES_USER=$(whoami)`, `POSTGRES_HOST=localhost`.
+    - Create the `ssb` database and load the standard SSB tables and data (schema not included in this repo). The SQL queries under `sql/` expect the canonical SSB schema and data.
+    - The runner verifies connectivity; if it cannot connect or tables are missing, PostgreSQL results are skipped.
+  - DuckDB:
+    - Install the DuckDB CLI (`duckdb`).
+    - The runner looks for the database at `sql/ssb.duckdb`. This repository includes a file at that path; if you replace it, ensure it contains SSB tables and data.
+    - If the CLI is missing or the DB file cannot be opened, DuckDB results are skipped.
+  - SystemDS is required; the other engines are optional. Missing engines are reported and skipped gracefully.
+
+- Functionality:
+  - Single-threaded execution for fairness (SystemDS config; SQL engines via settings).
+  - Pre-flight data-dir check and SystemDS test-run with runtime-error detection.
+  - Warmups and repeated measurements using `/usr/bin/time -p` (ms resolution).
+  - Statistics per engine: mean, population stdev, p95, and CV%.
+  - “Shell” vs “Core” time: SystemDS core from `-stats`, PostgreSQL core via EXPLAIN ANALYZE, DuckDB core via JSON profiling.
+  - Environment verification: gracefully skips PostgreSQL or DuckDB if not available.
+  - Terminal-aware output: wide table with grid or stacked multi-line layout.
+  - Results to CSV and JSON with rich metadata (system info, versions, run config).
+
+- Layouts (display formats):
+  - Auto selection: `--layout=auto` (default). Chooses `wide` if terminal is wide enough, else `stacked`.
+  - Wide layout: `--layout=wide`. Prints a grid with columns for each engine and a `Fastest` column. Three header rows show labels for `mean`, `±/CV`, and `p95`.
+  - Stacked layout: `--layout=stacked` or `--stacked`. Prints a compact, multi-line block per query (best for narrow terminals).
+  - Dynamic scaling: The wide layout scales column widths to fit the terminal; if still too narrow, it falls back to stacked.
+  - Row semantics: Row 1 = mean (ms); Row 2 = `±stdev/CV%`; Row 3 = `p95 (ms)`.
+  - Fastest: The runner highlights the engine with the lowest mean per query.
+
+- Output layout:
+  - Base directory: `--output-dir` (default: `shell/ssbOutputData/PerformanceData`)
+  - Files per run (timestamped basename):
+    - `ssb_results_<UTC_ISO_TIMESTAMP>.csv`
+    - `ssb_results_<UTC_ISO_TIMESTAMP>.json`
+
+- Example console output (abridged, wide layout):
+
+```
+==================================================================================
+                      MULTI-ENGINE PERFORMANCE BENCHMARK METADATA
+==================================================================================
+Timestamp:       2025-09-05 12:34:56 UTC
+Hostname:        myhost
+Seed:            123456
+Software Versions:
+  SystemDS:      3.4.0-SNAPSHOT
+  JDK:           21.0.2
+  PostgreSQL:    psql (PostgreSQL) 14.11
+  DuckDB:        v0.10.3
+System Resources:
+  CPU:           Apple M2
+  RAM:           16GB
+Data Build Info:
+  SSB Data:      customer:300000 part:200000 supplier:2000 lineorder:6001215
+Run Configuration:
+  Statistics:    enabled
+  Queries:       13 selected
+  Warmup Runs:   1
+  Repeat Runs:   5
+
++--------+--------------+--------------+--------------+----------------+--------------+----------------+----------+
+| Query  | SysDS Shell  | SysDS Core   | PostgreSQL   | PostgreSQL Core| DuckDB       | DuckDB Core    | Fastest  |
+|        | mean         | mean         | mean         | mean           | mean         | mean           |          |
+|        | ±/CV         | ±/CV         | ±/CV         | ±/CV           | ±/CV         | ±/CV           |          |
+|        | p95          | p95          | p95          | p95            | p95          | p95            |          |
++--------+--------------+--------------+--------------+----------------+--------------+----------------+----------+
+| q1_1   | 1824.0       | 1210.0       | 2410.0       | 2250.0         | 980.0        | 910.0          | DuckDB   |
+|        | ±10.2/0.6%   | ±8.6/0.7%    | ±15.1/0.6%   | ±14.0/0.6%     | ±5.4/0.6%    | ±5.0/0.5%      |          |
+|        | p95:1840.0   | p95:1225.0   | p95:2435.0   | p95:2274.0     | p95:989.0    | p95:919.0      |          |
++--------+--------------+--------------+--------------+----------------+--------------+----------------+----------+
 ```
 
-JSON example (`json/q1_1.json`):
-```json
-{
-  "query": "q1_1",
-  "timestamp": "2025-08-27 20:30:45 UTC",
-  "seed": 12345,
-  "result": "REVENUE: 2324000000",
-  "metadata": {
-    "systemds_version": "3.4.0-SNAPSHOT",
-    "hostname": "host.local",
-    "git_commit": "abc1234"
-  }
-}
+- Example console output (abridged, stacked layout):
+
+```
+Query  : q1_1    Fastest: DuckDB
+  SystemDS Shell: 1824.0
+                   ±10.2ms/0.6%
+                   p95:1840.0ms
+  SystemDS Core:  1210.0
+                   ±8.6ms/0.7%
+                   p95:1225.0ms
+  PostgreSQL:     2410.0
+                   ±15.1ms/0.6%
+                   p95:2435.0ms
+  PostgreSQL Core:2250.0
+                   ±14.0ms/0.6%
+                   p95:2274.0ms
+  DuckDB:         980.0
+                   ±5.4ms/0.6%
+                   p95:989.0ms
+  DuckDB Core:    910.0
+                   ±5.0ms/0.5%
+                   p95:919.0ms
+--------------------------------------------------------------------------------
 ```
 
-Run metadata (`run.json`) example:
+---
+
+## 6) Outputs and Examples
+
+Where to find results and how to read them.
+
+- SystemDS-only runner (`shell/run_ssb.sh`):
+  - Directory: `shell/ssbOutputData/QueryData/ssb_run_<YYYYMMDD_HHMMSS>/`
+  - Files: `txt/<query>.txt`, `csv/<query>.csv`, `json/<query>.json`, and `run.json`
+  - `run.json` example (stats enabled, single query):
+
 ```json
 {
   "benchmark_type": "ssb_systemds",
-  "timestamp": "2025-08-27 20:30:45 UTC",
-  "hostname": "host.local",
-  "git_commit": "abc1234",
-  "seed": 12345,
-  "software_versions": { "systemds": "3.4.0-SNAPSHOT", "jdk": "17.0.8" },
-  "system_resources": { "cpu": "Apple M2", "ram": "16GB" },
-  "data_build_info": "customer:150000 supplier:10000 part:200000 date:2556 lineorder:6001215",
-  "run_configuration": { "statistics_enabled": true, "queries_selected": 13, "queries_executed": 13, "queries_failed": 0 },
+  "timestamp": "2025-09-07 19:45:11 UTC",
+  "hostname": "eduroam-141-23-175-117.wlan.tu-berlin.de",
+  "seed": 849958376,
+  "software_versions": {
+    "systemds": "3.4.0-SNAPSHOT",
+    "jdk": "17.0.15"
+  },
+  "system_resources": {
+    "cpu": "Apple M1 Pro",
+    "ram": "16GB"
+  },
+  "data_build_info": {
+    "customer": "30000",
+    "part": "200000",
+    "supplier": "2000",
+    "date": "2557",
+    "lineorder": "8217"
+  },
+  "run_configuration": {
+    "statistics_enabled": true,
+    "queries_selected": 1,
+    "queries_executed": 1,
+    "queries_failed": 0
+  },
   "results": [
-    { "query": "q1_1", "result": "REVENUE: 2324000000", "status": "success" }
+    {
+      "query": "q1_1",
+      "result": "687752409 ",
+      "stats": [
+        "SystemDS Statistics:",
+        "Total elapsed time:        1.557 sec.",
+        "Total compilation time:        0.410 sec.",
+        "Total execution time:        1.147 sec.",
+        "Cache hits (Mem/Li/WB/FS/HDFS):    11054/0/0/0/2.",
+        "Cache writes (Li/WB/FS/HDFS):    0/26/3/0.",
+        "Cache times (ACQr/m, RLS, EXP):    0.166/0.001/0.060/0.000 sec.",
+        "HOP DAGs recompiled (PRED, SB):    0/175.",
+        "HOP DAGs recompile time:    0.063 sec.",
+        "Functions recompiled:        2.",
+        "Functions recompile time:    0.016 sec.",
+        "Total JIT compile time:        1.385 sec.",
+        "Total JVM GC count:        1.",
+        "Total JVM GC time:        0.026 sec.",
+        "Heavy hitter instructions:",
+        "  #  Instruction           Time(s)  Count",
+        "  1  m_raJoin                0.940      1",
+        "  2  ucumk+                  0.363      3",
+        "  3  -                       0.219   1345",
+        "  4  nrow                    0.166      7",
+        "  5  ctable                  0.086      2",
+        "  6  *                       0.078      1",
+        "  7  parallelBinarySearch    0.069      1",
+        "  8  ba+*                    0.049      5",
+        "  9  rightIndex              0.016   8611",
+        " 10  leftIndex               0.015   1680"
+      ],
+      "status": "success"
+    }
   ]
 }
 ```
 
-## Performance Analysis
+  Notes:
+  - The `result` field contains the query’s output (scalar or tabular content collapsed). When `--stats` is used, `stats` contains the full SystemDS statistics block line-by-line.
+  - For failed queries, an `error_message` string is included and `status` is set to `"error"`.
 
-### Timing Measurements
-- **SystemDS Shell**: Total execution time including JVM startup and I/O
-- **SystemDS Core**: Pure computation time (visible when `--stats` is enabled)
-- **PostgreSQL**: Single-threaded SQL execution (parallel disabled per session)
-- **DuckDB**: Single-threaded analytical processing (`PRAGMA threads=1`)
+- Multi-engine runner (`shell/run_all_perf.sh`):
+  - Directory: `shell/ssbOutputData/PerformanceData/`
+  - Files per run: `ssb_results_<UTC_ISO_TIMESTAMP>.csv` and `.json`
+  - CSV contains display strings and raw numeric stats (mean/stdev/p95) for each engine; JSON contains the same plus metadata and fastest-engine per query.
+  - `ssb_results_*.json` example (stats enabled, single query):
 
-### Statistical Analysis
-Multiple repetitions provide:
-- **Mean**: Average performance
-- **Standard Deviation**: Consistency measure
-- **95th Percentile**: Worst-case bounds
+```json
+{
+  "benchmark_metadata": {
+    "benchmark_type": "multi_engine_performance",
+    "timestamp": "2025-09-07 20:11:16 UTC",
+    "hostname": "eduroam-141-23-175-117.wlan.tu-berlin.de",
+    "seed": 578860764,
+    "software_versions": {
+      "systemds": "3.4.0-SNAPSHOT",
+      "jdk": "17.0.15",
+      "postgresql": "psql (PostgreSQL) 17.5",
+      "duckdb": "v1.3.2 (Ossivalis) 0b83e5d2f6"
+    },
+    "system_resources": {
+      "cpu": "Apple M1 Pro",
+      "ram": "16GB"
+    },
+    "data_build_info": {
+      "customer": "30000",
+      "part": "200000",
+      "supplier": "2000",
+      "date": "2557",
+      "lineorder": "8217"
+    },
+    "run_configuration": {
+      "statistics_enabled": true,
+      "queries_selected": 1,
+      "warmup_runs": 1,
+      "repeat_runs": 5
+    }
+  },
+  "results": [
+    {
+      "query": "q1_1",
+      "systemds": {
+        "shell": {
+          "display": "2186.0 (±95.6ms/4.4%, p95:2250.0ms)",
+          "mean_ms": 2186.0,
+          "stdev_ms": 95.6,
+          "p95_ms": 2250.0
+        },
+        "core": {
+          "display": "1151.2 (±115.3ms/10.0%, p95:1334.0ms)",
+          "mean_ms": 1151.2,
+          "stdev_ms": 115.3,
+          "p95_ms": 1334.0
+        },
+        "status": "success",
+        "error_message": null
+      },
+      "postgresql": {
+        "display": "26.0 (±4.9ms/18.8%, p95:30.0ms)",
+        "mean_ms": 26.0,
+        "stdev_ms": 4.9,
+        "p95_ms": 30.0
+      },
+      "postgresql_core": {
+        "display": "3.8 (±1.4ms/36.8%, p95:5.7ms)",
+        "mean_ms": 3.8,
+        "stdev_ms": 1.4,
+        "p95_ms": 5.7
+      },
+      "duckdb": {
+        "display": "30.0 (±0.0ms/0.0%, p95:30.0ms)",
+        "mean_ms": 30.0,
+        "stdev_ms": 0.0,
+        "p95_ms": 30.0
+      },
+      "duckdb_core": {
+        "display": "1.1 (±0.1ms/9.1%, p95:1.3ms)",
+        "mean_ms": 1.1,
+        "stdev_ms": 0.1,
+        "p95_ms": 1.3
+      },
+      "fastest_engine": "PostgreSQL"
+    }
+  ]
+}
+```
 
-## Architecture Notes
+  Differences at a glance:
+  - Single-engine `run.json` focuses on query output (`result`) and, when enabled, the SystemDS `stats` array. Status and error handling are per-query.
+  - Multi-engine results JSON focuses on timing statistics for each engine (`shell` vs `core` for SystemDS; `postgresql`/`postgresql_core`; `duckdb`/`duckdb_core`) along with a `fastest_engine` field. It does not include the query’s actual result values.
 
-### Relational Algebra Approach
-The DML implementations use SystemDS's relational algebra built-in functions rather than direct matrix operations, providing:
-- **SQL-like semantics**: Familiar query patterns
-- **Optimization opportunities**: Built-in function optimizations
-- **Maintainability**: Clear query structure
+---
 
-### Data Flow Pattern
-1. **Load**: CSV files → SystemDS frames
-2. **Filter**: Selection operations on individual tables
-3. **Join**: Relational joins between dimensions and facts
-4. **Aggregate**: Group-by operations with sum/count
-5. **Output**: Results to multiple formats
+## 7) Adding/Editing Queries
 
-## Troubleshooting
+Guidelines for DML in `scripts/ssb/queries/`:
 
-### Common Issues
-1. **Data files missing**: Ensure SSB data files are in `data/` directory
-2. **Memory errors**: Increase JVM heap size in scripts
-3. **Permission errors**: Make scripts executable with `chmod +x`
-4. **Path issues**: Run scripts from correct directory (project root wrappers, or `cd shell` for direct scripts)
-5. **macOS timeout**: Install GNU coreutils to provide `timeout` (used by `shell/run_ssb.sh`)
+- Name files as `qX_Y.dml` (e.g., `q1_1.dml`). The runners accept `q1.1` on the CLI and map it for you.
+- Always derive paths from `input_dir` named argument (see Section 3).
+- Keep I/O separate from compute where possible (helps early error detection).
+- Add a short header comment with original SQL and intent.
 
-### Performance Issues
-1. **Slow execution**: Check data file sizes and system resources
-2. **Inconsistent timing**: Increase warmup runs
-3. **High standard deviation**: System load affecting measurements
+Example header:
 
-### Optional: Multi‑Engine Setup
-- **PostgreSQL**
-  - Create database (default expected name: `ssb`), create tables matching SSB schema, and `COPY` data from `data/*.tbl` with `DELIMITER '|'`.
-  - Place SQL queries under `sql/postgres/` named like `q1.1.sql`.
-  - The perf script disables parallel workers for fairness.
-- **DuckDB**
-  - Create or reuse `sql/duckdb/ssb.duckdb`, load data from `data/*.tbl` with `DELIM '|'`.
-  - Place SQL queries under `sql/duckdb/` named like `q1.1.sql`.
-  - The perf script enforces `PRAGMA threads=1`.
+```dml
+/*
+  SQL: SELECT ...
+  Description: Revenue per month by supplier region
+*/
+```
 
-## Contributing
+---
 
-### Adding New Queries
-1. Create new `.dml` file in `queries/` directory
-2. Follow existing naming convention (qX_Y.dml)
-3. Include original SQL as header comment
-4. Test with `run_ssb.sh` script
-5. Add corresponding SQL files for comparison engines
+## 8) Troubleshooting
 
-### Script Modifications
-1. Test changes with small query subset
-2. Verify output format compatibility
-3. Update documentation as needed
-4. Validate statistical calculations
+- Missing data directory: pass `--input-dir=/path/to/ssb-data` and ensure `*.tbl` files exist.
+- SystemDS not found: build (`mvn -DskipTests package`) and use `./bin/systemds` or ensure `systemds` is on PATH.
+- Query fails with runtime error: the runners mark `status: "error"` and include a short `error_message` in JSON outputs. See console snippet for context.
+- macOS cache dropping: OS caches cannot be dropped like Linux; the multi-engine runner mitigates with warmups + repeated averages and reports p95/CV.
 
-## References
+If something looks off, attach the relevant `run.json` or `ssb_results_*.json` when filing issues.
 
-- [Star Schema Benchmark Specification](http://www.cs.umb.edu/~poneil/StarSchemaB.PDF)
-- [SystemDS Documentation](https://systemds.apache.org/docs)
-- [SSB Query Definitions](https://github.com/electrum/ssb-dbgen)
+- To debug DML runtime errors, run the DML directly:
 
-## License
+```bash
+./bin/systemds -f scripts/ssb/queries/q1_1.dml -nvargs input_dir=/path/to/data
+```
 
-This implementation is part of the Apache SystemDS project and follows the same Apache 2.0 license.
+- When `--stats` is enabled, SystemDS internal "core" timing is extracted and reported separately (useful to separate JVM / startup overhead from core computation).
+
+All these metrics appear in the generated CSVs and JSON entries.
+- Permission errors: `chmod +x shell/*.sh`.

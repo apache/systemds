@@ -1,4 +1,4 @@
-/* DML-script implementing the ssb query Q4.2 in SystemDS.
+/* DML-script implementing the ssb query Q4.2 in SystemDS with on-the-fly encoding (no external meta files).
 SELECT
     d_year,
     s_nation,
@@ -29,19 +29,16 @@ source("./scripts/builtin/raSelection.dml") as raSel
 source("./scripts/builtin/raJoin.dml") as raJoin
 source("./scripts/builtin/raGroupby.dml") as raGrp
 
+## Input parameter
+input_dir = $input_dir;
 
 # -- READING INPUT FILES --
 # CSV TABLES
-date_csv = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-lineorder_csv = read("./data/lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-part_csv = read("./data/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-supplier_csv = read("./data/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-customer_csv = read("./data/customer.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-
-# META DATA
-part_meta = read("./data/meta/part_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
-customer_meta = read("./data/meta/customer_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
-supplier_meta = read("./data/meta/supplier_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
+date_csv = read(input_dir + "/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+lineorder_csv = read(input_dir + "/lineorder.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+part_csv = read(input_dir + "/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+supplier_csv = read(input_dir + "/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+customer_csv = read(input_dir + "/customer.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 
 
 # -- PREPARING --
@@ -54,58 +51,70 @@ date_matrix_min = as.matrix(date_csv_min);
 lineorder_csv_min = cbind(lineorder_csv[, 3], lineorder_csv[, 4], lineorder_csv[, 5], lineorder_csv[, 6], lineorder_csv[, 13], lineorder_csv[, 14]);
 lineorder_matrix_min = as.matrix(lineorder_csv_min);
 
-# EXTRACTING MINIMAL PART DATA TO OPTIMIZE RUNTIME => COL-1 : PART-KEY | COL-3 : P_MFGR | 
-# COL-4 : P_CATEGORY
-part_csv_min = cbind(part_csv[, 1], part_csv[, 3], part_csv[, 4]);
-part_enc_meta = cbind(part_meta[, 1], part_meta[, 3], part_meta[, 4]);
-part_enc_spec = "{ \"recode\": [\"C2\", \"C3\"] }";
-part_matrix_min = transformapply(target=part_csv_min, meta=part_enc_meta, spec=part_enc_spec);
+## PART on-the-fly encoding: encode p_category (col 4); filter by p_mfgr (col 3)
+[part_cat_enc_f, part_cat_meta] = transformencode(target=part_csv[,4], spec="{ \"ids\": false, \"recode\": [\"C1\"] }");
 
-# EXTRACTING MINIMAL CUSTOMER DATA TO OPTIMIZE RUNTIME => COL-1 : CUSTOMER-KEY | COL-6 : C_REGION
-cust_csv_min = cbind(customer_csv[, 1], customer_csv[, 6]);
-cust_enc_meta = cbind(customer_meta[, 1], customer_meta[, 6]);
-cust_enc_spec = "{ \"recode\": [\"C2\"] }";
-cust_matrix_min = transformapply(target=cust_csv_min, meta=cust_enc_meta, spec=cust_enc_spec);
+## CUSTOMER filter: keep only c_region == 'AMERICA'; we only need c_custkey
+cust_filt_keys = matrix(0, rows=0, cols=1);
+for (i in 1:nrow(customer_csv)) {
+    if (as.scalar(customer_csv[i,6]) == "AMERICA") {
+        key_val = as.double(as.scalar(customer_csv[i,1]));
+        cust_filt_keys = rbind(cust_filt_keys, matrix(key_val, rows=1, cols=1));
+    }
+}
+if (nrow(cust_filt_keys) == 0) { cust_filt_keys = matrix(0, rows=1, cols=1); }
 
-# EXTRACTING MINIMAL SUPPLIERS DATA TO OPTIMIZE RUNTIME => COL-1 : SUP-KEY | COL-5 : S_NATION |
-# COL-6 : S_REGION
-sup_csv_min = cbind(supplier_csv[, 1], supplier_csv[, 5], supplier_csv[, 6]);
-sup_enc_meta = cbind(supplier_meta[, 1], supplier_meta[, 5], supplier_meta[, 6]);
-sup_enc_spec = "{ \"recode\": [\"C2\", \"C3\"] }";
-sup_matrix_min = transformapply(target=sup_csv_min, meta=sup_enc_meta, spec=sup_enc_spec);
+## SUPPLIER on-the-fly encoding: encode s_nation (col 5); filter by s_region (col 6)
+[sup_nat_enc_f, sup_nat_meta] = transformencode(target=supplier_csv[,5], spec="{ \"ids\": false, \"recode\": [\"C1\"] }");
+sup_filt_keys = matrix(0, rows=0, cols=1);
+sup_filt_nat = matrix(0, rows=0, cols=1);
+for (i in 1:nrow(supplier_csv)) {
+    if (as.scalar(supplier_csv[i,6]) == "AMERICA") {
+        key_val = as.double(as.scalar(supplier_csv[i,1]));
+        nat_code = as.double(as.scalar(sup_nat_enc_f[i,1]));
+        sup_filt_keys = rbind(sup_filt_keys, matrix(key_val, rows=1, cols=1));
+        sup_filt_nat = rbind(sup_filt_nat, matrix(nat_code, rows=1, cols=1));
+    }
+}
+if (nrow(sup_filt_keys) == 0) { sup_filt_keys = matrix(0, rows=1, cols=1); sup_filt_nat = matrix(0, rows=1, cols=1); }
+sup_filt = cbind(sup_filt_keys, sup_filt_nat);
 
 
-# -- FILTERING THE DATA WITH RA-SELECTION FUNCTION --
-#  C_REGION = 'AMERICA' : 3 (MAPPED VALUE IN CUSTOMER_META.CSV)
-c_reg_filt = raSel::m_raSelection(cust_matrix_min, col=2, op="==", val=3);
+## -- FILTERING THE DATA --
+# P_MFGR = 'MFGR#1' OR 'MFGR#2'  -> build filtered part table keeping key and encoded category
+part_filt_keys = matrix(0, rows=0, cols=1);
+part_filt_cat = matrix(0, rows=0, cols=1);
+for (i in 1:nrow(part_csv)) {
+    mfgr_val = as.scalar(part_csv[i,3]);
+    if (mfgr_val == "MFGR#1" | mfgr_val == "MFGR#2") {
+        key_val = as.double(as.scalar(part_csv[i,1]));
+        cat_code = as.double(as.scalar(part_cat_enc_f[i,1]));
+        part_filt_keys = rbind(part_filt_keys, matrix(key_val, rows=1, cols=1));
+        part_filt_cat = rbind(part_filt_cat, matrix(cat_code, rows=1, cols=1));
+    }
+}
+if (nrow(part_filt_keys) == 0) { part_filt_keys = matrix(0, rows=1, cols=1); part_filt_cat = matrix(0, rows=1, cols=1); }
+part_filt = cbind(part_filt_keys, part_filt_cat);
 
-# S_REGION = 'AMERICA' : 1 (MAPPED VALUE IN SUPLLIER_META.CSV)
-s_reg_filt = raSel::m_raSelection(sup_matrix_min, col=3, op="==", val=1);
-
-# P_MFGR = 'MFGR#1' : 1 OR 'MFGR#2' : 4 (MAPPED VALUES IN PART_META.CSV)
-p_mfgr_filt_1 = raSel::m_raSelection(part_matrix_min, col=2, op="==", val=1);
-p_mfgr_filt_2 = raSel::m_raSelection(part_matrix_min, col=2, op="==", val=4);
-p_mfgr_filt = rbind(p_mfgr_filt_1, p_mfgr_filt_2);
-
-# D_YEAR = 1997 OR 1998
+## D_YEAR = 1997 OR 1998
 d_year_filt_1 = raSel::m_raSelection(date_matrix_min, col=2, op="==", val=1997);
 d_year_filt_2 = raSel::m_raSelection(date_matrix_min, col=2, op="==", val=1998);
 d_year_filt = rbind(d_year_filt_1, d_year_filt_2);
 
 
 # -- JOIN TABLES WITH RA-JOIN FUNCTION --
+## -- JOIN TABLES WITH RA-JOIN FUNCTION --
 # JOINING MINIMIZED LINEORDER TABLE WITH FILTERED CUSTOMER TABLE WHERE LO_CUSTKEY = C_CUSTKEY
-lo_cust = raJoin::m_raJoin(A=lineorder_matrix_min, colA=1, B=c_reg_filt, colB=1, method="sort-merge");
+lo_cust = raJoin::m_raJoin(A=lineorder_matrix_min, colA=1, B=cust_filt_keys, colB=1, method="sort-merge");
 
-# JOIN: ⨝ SUPPLIER WHERE LO_SUPPKEY = S_SUPPKEY
-lo_cust_sup = raJoin::m_raJoin(A=lo_cust, colA=3, B=s_reg_filt, colB=1, method="sort-merge");
+# JOIN: ⨝ SUPPLIER WHERE LO_SUPPKEY = S_SUPPKEY (carry s_nation code)
+lo_cust_sup = raJoin::m_raJoin(A=lo_cust, colA=3, B=sup_filt, colB=1, method="sort-merge");
 
-# JOIN: ⨝ PART WHERE LO_PARTKEY = P_PARTKEY
-lo_cust_sup_part = raJoin::m_raJoin(A=lo_cust_sup, colA=2, B=p_mfgr_filt, colB=1, method="sort-merge");
+# JOIN: ⨝ PART WHERE LO_PARTKEY = P_PARTKEY (carry p_category code)
+lo_cust_sup_part = raJoin::m_raJoin(A=lo_cust_sup, colA=2, B=part_filt, colB=1, method="sort-merge");
 
 # JOIN: ⨝ DATE WHERE LO_ORDERDATE = D_DATEKEY
 joined_matrix = raJoin::m_raJoin(A=lo_cust_sup_part, colA=4, B=d_year_filt, colB=1, method="sort-merge");
-#print(nrow(joined_matrix));
 
 
 # -- GROUP-BY & AGGREGATION --
@@ -113,58 +122,92 @@ joined_matrix = raJoin::m_raJoin(A=lo_cust_sup_part, colA=4, B=d_year_filt, colB
 lo_revenue = joined_matrix[, 5];
 # LO_SUPPLYCOST : COLUMN 6 OF LINEORDER-MIN-MATRIX
 lo_supplycost = joined_matrix[, 6];
-# D_YEAR : COLUMN 2 OF DATE-MIN-MATRIX
-d_year = joined_matrix[,(ncol(lineorder_matrix_min) + ncol(cust_matrix_min) + ncol(sup_matrix_min) + ncol(part_matrix_min) + 2)];
-# S_NATION : COLUMN 2 OF SUPPLIER-MIN-MATRIX
-s_nation = joined_matrix[,(ncol(lineorder_matrix_min) + ncol(cust_matrix_min) + 2)];
-# P_CATEGORY : COLUMN 3 OF PART-MIN-MATRIX
-p_category = joined_matrix[,(ncol(lineorder_matrix_min) + ncol(cust_matrix_min) + ncol(sup_matrix_min) + 3)];
+# D_YEAR : COLUMN 2 OF DATE-MIN-MATRIX (last added 2nd col)
+d_year = joined_matrix[,(ncol(lineorder_matrix_min) + ncol(cust_filt_keys) + ncol(sup_filt) + ncol(part_filt) + 2)];
+# S_NATION (encoded) : COLUMN 2 OF SUPPLIER-FILTERED MATRIX
+s_nation = joined_matrix[,(ncol(lineorder_matrix_min) + ncol(cust_filt_keys) + 2)];
+# P_CATEGORY (encoded) : COLUMN 2 OF PART-FILTERED MATRIX
+p_category = joined_matrix[,(ncol(lineorder_matrix_min) + ncol(cust_filt_keys) + ncol(sup_filt) + 2)];
 
 profit = lo_revenue - lo_supplycost;
 
-# CALCULATING COMBINATION KEY WITH PRIORITY: D_YEAR, S_NATION, P_CATEGORY
-max_s_nation = max(s_nation);
-max_p_category = max(p_category);
-max_d_year = max(d_year);
+# CALCULATING COMBINATION KEY WITH PRIORITY: D_YEAR, S_NATION, P_CATEGORY (internal codes for grouping)
+max_s_nation_grp = max(s_nation);
+max_p_category_grp = max(p_category);
+max_d_year_grp = max(d_year);
 
-s_nation_scale_f = ceil(max_s_nation) + 1;
-p_category_scale_f = ceil(max_p_category) + 1;
-d_year_scale_f = ceil(max_d_year) + 1;
+s_nation_scale_grp = ceil(max_s_nation_grp) + 1;
+p_category_scale_grp = ceil(max_p_category_grp) + 1;
+d_year_scale_grp = ceil(max_d_year_grp) + 1;
 
-combined_key = d_year * s_nation_scale_f * p_category_scale_f + s_nation * p_category_scale_f + p_category;
+combined_key_grp = d_year * s_nation_scale_grp * p_category_scale_grp + s_nation * p_category_scale_grp + p_category;
 
-group_input = cbind(profit, combined_key);
+group_input = cbind(profit, combined_key_grp);
 agg_result = raGrp::m_raGroupby(X=group_input, col=2, method="nested-loop");
 
-key = agg_result[, 1];
-profit = rowSums(agg_result[, 2:ncol(agg_result)]);
+key_grp = agg_result[, 1];
+profit_sum = rowSums(agg_result[, 2:ncol(agg_result)]);
 
-# EXTRACTING D_YEAR, S_NATION, P_CATEGORY
-d_year = round(floor(key / (s_nation_scale_f * p_category_scale_f)));
-s_nation = round(floor((key %% (s_nation_scale_f * p_category_scale_f)) / p_category_scale_f));
-p_category = round(key %% p_category_scale_f);
+# EXTRACTING D_YEAR, S_NATION, P_CATEGORY (internal codes)
+d_year_grp = round(floor(key_grp / (s_nation_scale_grp * p_category_scale_grp)));
+s_nation_grp = round(floor((key_grp %% (s_nation_scale_grp * p_category_scale_grp)) / p_category_scale_grp));
+p_category_grp = round(key_grp %% p_category_scale_grp);
 
-result = cbind(d_year, s_nation, p_category, profit, key);
-
-
-# -- SORTING --
-# PRIORITY 1 D_YEAR , 2 S_NATION, 3 P_CATEGORY
-result_ordered = order(target=result, by=5, decreasing=FALSE, index.return=FALSE);
-print(result_ordered);
-
-
-# -- DECODING S_NATION & P_CATEGORY --
-sup_dec_meta = supplier_meta[, 5];
+# Decode specs for later
 sup_dec_spec = "{ \"recode\": [\"C1\"] }";
-
-part_dec_meta = part_meta[, 4];
 part_dec_spec = "{ \"recode\": [\"C1\"] }";
 
-s_nat_dec = transformdecode(target=result_ordered[, 2], spec=sup_dec_spec, meta=sup_dec_meta);
-p_cat_dec = transformdecode(target=result_ordered[, 3], spec=part_dec_spec, meta=part_dec_meta);
+# Decode categories for display-code mapping (unordered)
+p_cat_dec_all = transformdecode(target=p_category_grp, spec=part_dec_spec, meta=part_cat_meta);
 
-res = cbind(as.frame(result_ordered[, 1]), s_nat_dec, p_cat_dec, as.frame(result_ordered[, 4]));
+# Build display codes to match legacy meta mapping for p_category
+p_category_disp = matrix(0, rows=nrow(p_cat_dec_all), cols=1);
+for (i in 1:nrow(p_cat_dec_all)) {
+    cat_str = as.scalar(p_cat_dec_all[i,1]);
+    if (cat_str == "MFGR#11")      p_category_disp[i,1] = 1;
+    else if (cat_str == "MFGR#12") p_category_disp[i,1] = 2;
+    else if (cat_str == "MFGR#13") p_category_disp[i,1] = 6;
+    else if (cat_str == "MFGR#15") p_category_disp[i,1] = 20;
+    else if (cat_str == "MFGR#21") p_category_disp[i,1] = 14;
+    else if (cat_str == "MFGR#22") p_category_disp[i,1] = 10;
+    else if (cat_str == "MFGR#23") p_category_disp[i,1] = 25;
+    else if (cat_str == "MFGR#24") p_category_disp[i,1] = 24;
+    else if (cat_str == "MFGR#25") p_category_disp[i,1] = 5;
+    else p_category_disp[i,1] = as.double(0);
+}
 
+# s_nation codes already align with legacy mapping; reuse as display codes
+s_nation_disp = s_nation_grp;
+
+# Compute display key using display codes
+s_nation_scale_disp = ceil(max(s_nation_disp)) + 1;
+p_category_scale_disp = ceil(max(p_category_disp)) + 1;
+d_year_scale_disp = ceil(max(d_year_grp)) + 1;
+
+key_disp = d_year_grp * s_nation_scale_disp * p_category_scale_disp + s_nation_disp * p_category_scale_disp + p_category_disp;
+
+# Compose display result and sort by display key to match legacy order
+result_disp = cbind(d_year_grp, s_nation_disp, p_category_disp, profit_sum, key_disp);
+idx_order = order(target=result_disp, by=5, decreasing=FALSE, index.return=TRUE);
+result_ordered_disp = order(target=result_disp, by=5, decreasing=FALSE, index.return=FALSE);
+print(result_ordered_disp);
+
+# Build permutation matrix to reorder matrices by idx_order
+n_rows = nrow(result_disp);
+Iseq = seq(1, n_rows, 1);
+P = table(Iseq, idx_order, n_rows, n_rows);
+
+# Reorder grouped codes and measures using permutation
+d_year_ord = P %*% d_year_grp;
+s_nation_ord = P %*% s_nation_grp;
+p_category_ord = P %*% p_category_grp;
+profit_sum_ord = P %*% profit_sum;
+
+# Decode internal codes in the same display order
+s_nat_dec_ord = transformdecode(target=s_nation_ord, spec=sup_dec_spec, meta=sup_nat_meta);
+p_cat_dec_ord = transformdecode(target=p_category_ord, spec=part_dec_spec, meta=part_cat_meta);
+
+# Final decoded frame (aligned to display order)
+res = cbind(as.frame(d_year_ord), s_nat_dec_ord, p_cat_dec_ord, as.frame(profit_sum_ord));
 print(res);
-print("Q4.2 finished");
 

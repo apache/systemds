@@ -6,16 +6,28 @@ WHERE
     AND d_year = 1993
     AND lo_discount BETWEEN 1 AND 3
     AND lo_quantity < 25;
+
+Usage:
+./bin/systemds scripts/ssb/queries/q1_1.dml -nvargs input_dir="/path/to/data"
+./bin/systemds scripts/ssb/queries/q1_1.dml -nvargs input_dir="/Users/ghafekalsaho/Desktop/data"
+or with explicit -f flag:
+./bin/systemds -f scripts/ssb/queries/q1_1.dml -nvargs input_dir="/path/to/data"
+
+Parameters:
+input_dir - Path to input directory containing the table files (e.g., ./data)
 */
 # -- SOURCING THE RA-FUNCTIONS --
 source("./scripts/builtin/raSelection.dml") as raSel
 source("./scripts/builtin/raJoin.dml") as raJoin
 
+# -- PARAMETER HANDLING --
+input_dir = ifdef($input_dir, "./data");
+print("Loading tables from directory: " + input_dir);
 
 # -- READING INPUT FILES --
 # CSV TABLES
-date_csv = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-lineorder_csv = read("./data/lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+date_csv = read(input_dir + "/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+lineorder_csv = read(input_dir + "/lineorder.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 
 
 # -- PREPARING --

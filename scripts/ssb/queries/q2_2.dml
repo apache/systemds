@@ -1,4 +1,4 @@
-/* DML-script implementing the ssb query Q2.2 in SystemDS.
+/*DML-script implementing the ssb query Q2.2 in SystemDS.
 SELECT SUM(lo_revenue), d_year, p_brand
 FROM lineorder, dates, part, supplier
 WHERE
@@ -9,6 +9,15 @@ WHERE
     AND s_region = 'ASIA'
 GROUP BY d_year, p_brand
 ORDER BY d_year, p_brand;
+
+Usage:
+./bin/systemds scripts/ssb/queries/q2_2.dml -nvargs input_dir="/path/to/data"
+./bin/systemds scripts/ssb/queries/q2_2.dml -nvargs input_dir="/Users/ghafekalsaho/Desktop/data"
+or with explicit -f flag:
+./bin/systemds -f scripts/ssb/queries/q2_2.dml -nvargs input_dir="/path/to/data"
+
+Parameters:
+input_dir - Path to input directory containing the table files (e.g., ./data)
 */
 
 # -- SOURCING THE RA-FUNCTIONS --
@@ -16,20 +25,19 @@ source("./scripts/builtin/raSelection.dml") as raSel
 source("./scripts/builtin/raJoin.dml") as raJoin
 source("./scripts/builtin/raGroupby.dml") as raGrp
 
+# -- PARAMETER HANDLING --
+input_dir = ifdef($input_dir, "./data");
 
 # -- READING INPUT FILES --
 # CSV TABLES
-date_csv = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-lineorder_csv = read("./data/lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-part_csv = read("./data/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-supplier_csv = read("./data/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-
-# META DATA
-part_meta = read("./data/meta/part_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
-supplier_meta = read("./data/meta/supplier_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
-
+date_csv = read(input_dir + "/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+lineorder_csv = read(input_dir + "/lineorder.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+part_csv = read(input_dir + "/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+supplier_csv = read(input_dir + "/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 
 # -- PREPARING --
+# Optimized approach: On-the-fly filtering with direct matrix construction for string fields
+
 # EXTRACTING MINIMAL DATE DATA TO OPTIMIZE RUNTIME => COL-1 : DATE-KEY | COL-5 : D_YEAR
 date_csv_min = cbind(date_csv[, 1], date_csv[, 5]);
 date_matrix_min = as.matrix(date_csv_min);
@@ -39,40 +47,79 @@ date_matrix_min = as.matrix(date_csv_min);
 lineorder_csv_min = cbind(lineorder_csv[, 4], lineorder_csv[, 5], lineorder_csv[, 6], lineorder_csv[, 13]);
 lineorder_matrix_min = as.matrix(lineorder_csv_min);
 
-# EXTRACTING MINIMAL PART DATA TO OPTIMIZE RUNTIME => COL-1 : PART-KEY | COL-5 : P_BRAND
-part_csv_min = cbind(part_csv[, 1], part_csv[, 5]);
-part_enc_meta = cbind(part_meta[, 1], part_meta[, 5]);
-part_enc_spec = "{ \"recode\": [\"C2\"] }";
-part_matrix_min = transformapply(target=part_csv_min, meta=part_enc_meta, spec=part_enc_spec);
-#print(part_matrix_min);
-#part_jspec = read("../part.tfspec_recode.json", data_type="scalar", value_type="string");
-#[part_matrix, part_meta] = transformencode(target=part_csv, spec=part_jspec);
-#write(part_meta, "./data/meta/part_meta.csv", format="csv", sep="|");
+# ON-THE-FLY PART TABLE FILTERING AND ENCODING (P_BRAND BETWEEN 'MFGR#2221' AND 'MFGR#2228')
+# Two-pass approach: Count first, then filter and encode
+part_keys_matrix = as.matrix(part_csv[, 1]);  # part_key
+part_nrows = nrow(part_csv);
+valid_brands_count = 0;
 
-# EXTRACTING MINIMAL SUPPLIERS DATA TO OPTIMIZE RUNTIME => COL-1 : SUP-KEY | COL-6 : S_REGION
-sup_csv_min = cbind(supplier_csv[, 1], supplier_csv[, 6]);
-sup_enc_meta = cbind(supplier_meta[, 1], supplier_meta[, 6]);
-sup_enc_spec = "{ \"recode\": [\"C2\"] }";
-sup_matrix_min = transformapply(target=sup_csv_min, meta=sup_enc_meta, spec=sup_enc_spec);
-#print(sup_matrix_min);
-#supplier_jspec = read("../supplier.tfspec_recode.json", data_type="scalar", value_type="string");
-#[supplier_matrix, supplier_meta] = transformencode(target=supplier_csv, spec=supplier_jspec);
-#write(supplier_meta, "./data/meta/supplier_meta.csv", format="csv", sep="|");
-
-
-# -- FILTERING THE DATA WITH RA-SELECTION FUNCTION --
-# P_BRAND BETWEEN 'MFGR#2221' AND 'MFGR#2228' (MAPPED VALUES IN PART_META.CSV)
-vals = matrix("453 597 907 282 850 525 538 608", rows=8, cols=1);
-p_brand_filt = matrix(0, rows=0, cols=ncol(part_matrix_min));
-
-for (i in 1:nrow(vals)) {
-    tmp_brand_filt = raSel::m_raSelection(part_matrix_min, col=2, op="==", val=as.scalar(vals[i, 1]));
-    p_brand_filt = rbind(p_brand_filt, tmp_brand_filt);
+# Pass 1: Count matching parts (brands between MFGR#2221 and MFGR#2228)
+for (i in 1:part_nrows) {
+    brand_val = as.scalar(part_csv[i, 5]);  # p_brand
+    if (brand_val >= "MFGR#2221" & brand_val <= "MFGR#2228") {
+        valid_brands_count = valid_brands_count + 1;
+    }
 }
 
-# S_REGION = 'ASIA' : 5 (MAPPED VALUE IN SUPPLIER_META.CSV))
-s_reg_filt = raSel::m_raSelection(sup_matrix_min, col=2, op="==", val=5);
+# Pass 2: Build part matrix with proper brand encoding
+part_matrix_min = matrix(0, valid_brands_count, 2);  # partkey, brand_code
+filtered_idx = 0;
 
+for (i in 1:part_nrows) {
+    brand_val = as.scalar(part_csv[i, 5]);  # p_brand
+    if (brand_val >= "MFGR#2221" & brand_val <= "MFGR#2228") {
+        filtered_idx = filtered_idx + 1;
+
+        # Encode brand names to numeric codes for efficient processing (using original metadata codes)
+        brand_code = 0;
+        if (brand_val == "MFGR#2221") brand_code = 453;
+        else if (brand_val == "MFGR#2222") brand_code = 597;
+        else if (brand_val == "MFGR#2223") brand_code = 907;
+        else if (brand_val == "MFGR#2224") brand_code = 282;
+        else if (brand_val == "MFGR#2225") brand_code = 850;
+        else if (brand_val == "MFGR#2226") brand_code = 525;
+        else if (brand_val == "MFGR#2227") brand_code = 538;
+        else if (brand_val == "MFGR#2228") brand_code = 608;
+        else brand_code = 9999;  # fallback for unknown brands in range
+
+        part_matrix_min[filtered_idx, 1] = as.scalar(part_keys_matrix[i, 1]);  # part_key
+        part_matrix_min[filtered_idx, 2] = brand_code;  # brand code
+    }
+}
+
+# ON-THE-FLY SUPPLIER TABLE FILTERING AND ENCODING (S_REGION = 'ASIA')
+# Two-pass approach for suppliers
+supplier_keys_matrix = as.matrix(supplier_csv[, 1]);  # supplier_key
+supplier_nrows = nrow(supplier_csv);
+asia_count = 0;
+
+# Pass 1: Count matching suppliers
+for (i in 1:supplier_nrows) {
+    region_val = as.scalar(supplier_csv[i, 6]);  # s_region
+    if (region_val == "ASIA") {
+        asia_count = asia_count + 1;
+    }
+}
+
+# Pass 2: Build supplier matrix
+sup_matrix_min = matrix(0, asia_count, 2);  # suppkey, region_encoded
+filtered_idx = 0;
+for (i in 1:supplier_nrows) {
+    region_val = as.scalar(supplier_csv[i, 6]);  # s_region
+    if (region_val == "ASIA") {
+        filtered_idx = filtered_idx + 1;
+        sup_matrix_min[filtered_idx, 1] = as.scalar(supplier_keys_matrix[i, 1]);  # supplier_key
+        sup_matrix_min[filtered_idx, 2] = 5;  # encoded value for ASIA
+    }
+}
+
+# -- FILTERING THE DATA WITH RA-SELECTION FUNCTION --
+# We already filtered during matrix construction, but we can use RA selection for consistency
+# All parts in part_matrix_min are already filtered for brands between MFGR#2221 and MFGR#2228
+p_brand_filt = part_matrix_min;  # Already filtered
+
+# S_REGION = 'ASIA' : 5 (Our encoded value)
+s_reg_filt = raSel::m_raSelection(sup_matrix_min, col=2, op="==", val=5);
 
 # -- JOIN TABLES WITH RA-JOIN FUNCTION --
 # JOINING MINIMIZED LINEORDER TABLE WITH FILTERED PART TABLE WHERE LO_PARTKEY = P_PARTKEY
@@ -83,8 +130,6 @@ lo_part_sup = raJoin::m_raJoin(A=lo_part, colA=2, B=s_reg_filt, colB=1, method="
 
 # JOIN: ⨝ DATE WHERE LO_ORDERDATE = D_DATEKEY
 joined_matrix = raJoin::m_raJoin(A=lo_part_sup, colA=3, B=date_matrix_min, colB=1, method="sort-merge");
-#print(nrow(joined_matrix));
-
 
 # -- GROUP-BY & AGGREGATION --
 # LO_REVENUE : COLUMN 4 OF LINEORDER-MIN-MATRIX
@@ -112,15 +157,68 @@ result = cbind(revenue, d_year, p_brand);
 
 result_ordered = order(target=result, by=3, decreasing=FALSE, index.return=FALSE); # 3 : P_BRAND
 result_ordered = order(target=result_ordered, by=2, decreasing=FALSE, index.return=FALSE); # D_YEAR
-print(result_ordered)
 
+print("Processing " + nrow(result_ordered) + " result rows...");
 
-# -- DECODING P_BRAND --
-part_dec_meta = part_meta[, 5];
-part_dec_spec = "{ \"recode\": [\"C1\"] }";
-p_brand_dec = transformdecode(target=result_ordered[, 3], spec=part_dec_spec, meta=part_dec_meta);
+# Output results with brand codes (matching original format)
+print("Q2.2 Results with brand codes:");
 
-result_decoded = cbind(as.frame(result_ordered[, 1]), as.frame(result_ordered[, 2]), p_brand_dec);
+for (i in 1:nrow(result_ordered)) {
+    revenue_val = as.scalar(result_ordered[i, 1]);
+    year_val = as.scalar(result_ordered[i, 2]);
+    brand_code = as.scalar(result_ordered[i, 3]);
 
-print(result_decoded);
-#print("Q2.2 finished");
+    # Output in original format with brand codes
+    print(revenue_val + ".000 " + year_val + ".000 " + brand_code + ".000");
+}
+
+# Calculate and print total revenue
+total_revenue = sum(result_ordered[, 1]);
+print("");
+print("REVENUE: " + as.integer(total_revenue));
+print("");
+
+for (i in 1:nrow(result_ordered)) {
+    revenue_val = as.scalar(result_ordered[i, 1]);
+    year_val = as.scalar(result_ordered[i, 2]);
+    brand_code = as.scalar(result_ordered[i, 3]);
+
+    # Map brand code back to brand name (using original metadata codes)
+    brand_name = "UNKNOWN";
+    if (brand_code == 453) brand_name = "MFGR#2221";
+    else if (brand_code == 597) brand_name = "MFGR#2222";
+    else if (brand_code == 907) brand_name = "MFGR#2223";
+    else if (brand_code == 282) brand_name = "MFGR#2224";
+    else if (brand_code == 850) brand_name = "MFGR#2225";
+    else if (brand_code == 525) brand_name = "MFGR#2226";
+    else if (brand_code == 538) brand_name = "MFGR#2227";
+    else if (brand_code == 608) brand_name = "MFGR#2228";
+
+    # Output in consistent format
+    print(revenue_val + ".000 " + year_val + ".000 " + brand_name);
+}
+
+# Frame format output
+print("");
+print("# FRAME: nrow = " + nrow(result_ordered) + ", ncol = 3");
+print("# C1 C2 C3");
+print("# INT32 INT32 STRING");
+
+for (i in 1:nrow(result_ordered)) {
+    revenue_val = as.scalar(result_ordered[i, 1]);
+    year_val = as.scalar(result_ordered[i, 2]);
+    brand_code = as.scalar(result_ordered[i, 3]);
+
+    # Same brand code mapping for frame output (using original metadata codes)
+    brand_name = "UNKNOWN";
+    if (brand_code == 453) brand_name = "MFGR#2221";
+    else if (brand_code == 597) brand_name = "MFGR#2222";
+    else if (brand_code == 907) brand_name = "MFGR#2223";
+    else if (brand_code == 282) brand_name = "MFGR#2224";
+    else if (brand_code == 850) brand_name = "MFGR#2225";
+    else if (brand_code == 525) brand_name = "MFGR#2226";
+    else if (brand_code == 538) brand_name = "MFGR#2227";
+    else if (brand_code == 608) brand_name = "MFGR#2228";
+
+    print(revenue_val + " " + year_val + " " + brand_name);
+}

@@ -159,3 +159,7 @@ SEAL-*/
 
 data/lineorder.tbl
 data/test/lineorder.tbl
+# SSB Data and subfolders
+/data/
+shell/ssbOutputData/
+/sql/ssb.duckdb

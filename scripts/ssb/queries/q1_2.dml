@@ -6,27 +6,56 @@ WHERE
     AND d_yearmonth = 'Jan1994'
     AND lo_discount BETWEEN 4 AND 6
     AND lo_quantity BETWEEN 26 AND 35;
+
+Usage:
+./bin/systemds scripts/ssb/queries/q1_2.dml -nvargs input_dir="/path/to/data"
+./bin/systemds scripts/ssb/queries/q1_2.dml -nvargs input_dir="/Users/ghafekalsaho/Desktop/data"
+or with explicit -f flag:
+./bin/systemds -f scripts/ssb/queries/q1_2.dml -nvargs input_dir="/path/to/data"
+
+Parameters:
+input_dir - Path to input directory containing the table files (e.g., ./data)
 */
 
 # -- SOURCING THE RA-FUNCTIONS --
 source("./scripts/builtin/raSelection.dml") as raSel
 source("./scripts/builtin/raJoin.dml") as raJoin
 
+# -- PARAMETER HANDLING --
+input_dir = ifdef($input_dir, "./data");
+print("Loading tables from directory: " + input_dir);
+
 # -- READING INPUT FILES --
 # CSV TABLES
-date_csv = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-lineorder_csv = read("./data/lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-
-# META DATA
-date_meta = read("./data/meta/date_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
-
+date_csv = read(input_dir + "/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+lineorder_csv = read(input_dir + "/lineorder.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 
 # -- PREPARING --
-# EXTRACTING MINIMAL DATE DATA TO OPTIMIZE RUNTIME => COL-1 : DATE-KEY | COL-7 : D_YEARMONTH
-date_csv_min = cbind(date_csv[, 1], date_csv[, 7]);
-date_enc_meta = cbind(date_meta[, 1], date_meta[, 7]);
-date_spec_min = "{ \"recode\": [\"C2\"] }";
-date_min_matrix = transformapply(target= date_csv_min, meta=date_enc_meta, spec=date_spec_min);
+# Optimized approach: Single-pass filtering with direct matrix construction
+# Convert date key column to numeric matrix for proper handling
+date_keys_matrix = as.matrix(date_csv[, 1]);
+
+# Count Jan1994 rows first to pre-allocate matrix efficiently
+date_nrows = nrow(date_csv);
+jan1994_count = 0;
+for (i in 1:date_nrows) {
+    yearmonth_val = as.scalar(date_csv[i, 7]);
+    if (yearmonth_val == "Jan1994") {
+        jan1994_count = jan1994_count + 1;
+    }
+}
+
+# Pre-allocate final matrix and fill in single pass
+date_filtered = matrix(0, jan1994_count, 2);
+filtered_idx = 0;
+for (i in 1:date_nrows) {
+    yearmonth_val = as.scalar(date_csv[i, 7]);
+    if (yearmonth_val == "Jan1994") {
+        filtered_idx = filtered_idx + 1;
+        date_filtered[filtered_idx, 1] = as.scalar(date_keys_matrix[i, 1]);  # date_key
+        date_filtered[filtered_idx, 2] = 1;  # encoded value for Jan1994
+    }
+}
 
 # EXTRACTING MINIMAL LINEORDER DATA TO OPTIMIZE RUNTIME => COL-6 : LO_ORDERDATE |
 # COL-9 : LO_QUANTITY | COL-10 : LO_EXTPRICE | COL-12 : LO_DISCOUNT
@@ -35,8 +64,8 @@ lineorder_min_matrix = as.matrix(lineorder_csv_min);
 
 
 # -- FILTERING THE DATA WITH RA-SELECTION FUNCTION --
-# D_YEARMONTH = 'Jan1994' : 25 (MAPPED VALUE)
-d_year_filt = raSel::m_raSelection(date_min_matrix, col=2, op="==", val=25); #COL 2 : D_YEARMONTH
+# We already filtered for D_YEARMONTH = 'Jan1994', so d_year_filt is our filtered date data
+d_year_filt = date_filtered;
 
 # LO_QUANTITY BETWEEN 26 AND 35
 lo_quan_filt = raSel::m_raSelection(lineorder_min_matrix, col=2, op=">=", val=26);
@@ -61,4 +90,3 @@ revenue = sum(lo_extprice * lo_disc);
 print("REVENUE: " + as.integer(revenue));
 
 #print("Q1.2 finished.\n");
-

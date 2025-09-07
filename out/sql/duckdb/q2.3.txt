@@ -1,3 +1,0 @@
-sum(lo_revenue)|d_year|p_brand
-2530779|1992|MFGR#2239
-7475857|1994|MFGR#2239

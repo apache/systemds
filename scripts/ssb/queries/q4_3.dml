@@ -1,4 +1,6 @@
-/* DML-script implementing the ssb query Q4.3 in SystemDS.
+# DML-script implementing the ssb query Q4.3 in SystemDS.
+
+/* DML-script implementing the ssb query Q4.3 in SystemDS with on-the-fly encoding (no external meta files).
 SELECT
     d_year,
     s_city,
@@ -25,19 +27,16 @@ source("./scripts/builtin/raSelection.dml") as raSel
 source("./scripts/builtin/raJoin.dml") as raJoin
 source("./scripts/builtin/raGroupby.dml") as raGrp
 
+## Input parameter
+input_dir = $input_dir;
 
 # -- READING INPUT FILES --
 # CSV TABLES
-date_csv = read("./data/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-lineorder_csv = read("./data/lineorder3.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-part_csv = read("./data/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-supplier_csv = read("./data/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-customer_csv = read("./data/customer.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
-
-# META DATA
-part_meta = read("./data/meta/part_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
-customer_meta = read("./data/meta/customer_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
-supplier_meta = read("./data/meta/supplier_meta.csv", data_type="frame", format="csv", header=FALSE, sep="|");
+date_csv = read(input_dir + "/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+lineorder_csv = read(input_dir + "/lineorder.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+part_csv = read(input_dir + "/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+supplier_csv = read(input_dir + "/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+customer_csv = read(input_dir + "/customer.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 
 
 # -- PREPARING --
@@ -50,51 +49,73 @@ date_matrix_min = as.matrix(date_csv_min);
 lineorder_csv_min = cbind(lineorder_csv[, 3], lineorder_csv[, 4], lineorder_csv[, 5], lineorder_csv[, 6], lineorder_csv[, 13], lineorder_csv[, 14]);
 lineorder_matrix_min = as.matrix(lineorder_csv_min);
 
-# EXTRACTING MINIMAL PART DATA TO OPTIMIZE RUNTIME => COL-1 : PART-KEY | COL-4 : P_CATEGORY | 
-# COL-5 : P_BRAND
-part_csv_min = cbind(part_csv[, 1], part_csv[, 4], part_csv[, 5]);
-part_enc_meta = cbind(part_meta[, 1], part_meta[, 4], part_meta[, 5]);
-part_enc_spec = "{ \"recode\": [\"C2\", \"C3\"] }";
-part_matrix_min = transformapply(target=part_csv_min, meta=part_enc_meta, spec=part_enc_spec);
+## Prepare PART on-the-fly encodings (only need p_brand encoding, filter by p_category string)
+# We'll encode column 5 (p_brand) on-the-fly and later filter by category string 'MFGR#14'.
+[part_brand_enc_f, part_brand_meta] = transformencode(target=part_csv[,5], spec="{ \"ids\": false, \"recode\": [\"C1\"] }");
 
 # EXTRACTING MINIMAL CUSTOMER DATA TO OPTIMIZE RUNTIME => COL-1 : CUSTOMER-KEY
 cust_csv_min = customer_csv[, 1];
 cust_matrix_min = as.matrix(cust_csv_min);
 
-# EXTRACTING MINIMAL SUPPLIERS DATA TO OPTIMIZE RUNTIME => COL-1 : SUP-KEY | COL-4 : S_CITY |
-# COL-5 : S_NATION
-sup_csv_min = cbind(supplier_csv[, 1], supplier_csv[, 4], supplier_csv[, 5]);
-sup_enc_meta = cbind(supplier_meta[, 1], supplier_meta[, 4], supplier_meta[, 5]);
-sup_enc_spec = "{ \"recode\": [\"C2\", \"C3\"] }";
-sup_matrix_min = transformapply(target=sup_csv_min, meta=sup_enc_meta, spec=sup_enc_spec);
+## Prepare SUPPLIER on-the-fly encodings (encode s_city, filter by s_nation string)
+[sup_city_enc_f, sup_city_meta] = transformencode(target=supplier_csv[,4], spec="{ \"ids\": false, \"recode\": [\"C1\"] }");
 
 
-# -- FILTERING THE DATA WITH RA-SELECTION FUNCTION --
-# S_NATION = 'UNITED STATES' : 9 (MAPPED VALUE IN SUPLLIER_META.CSV)
-s_nat_filt = raSel::m_raSelection(sup_matrix_min, col=3, op="==", val=9);
-
-# P_CATEGORY = 'MFGR#14' : 15 (MAPPED VALUE IN PART_META.CSV)
-p_cat_filt = raSel::m_raSelection(part_matrix_min, col=2, op="==", val=15);
-
+## -- FILTERING THE DATA WITH RA-SELECTION FUNCTION / LOOPS --
 # D_YEAR = 1997 OR 1998
 d_year_filt_1 = raSel::m_raSelection(date_matrix_min, col=2, op="==", val=1997);
 d_year_filt_2 = raSel::m_raSelection(date_matrix_min, col=2, op="==", val=1998);
 d_year_filt = rbind(d_year_filt_1, d_year_filt_2);
 
+# Build filtered SUPPLIER table (s_nation == 'UNITED STATES'), keeping key and encoded city
+sup_filt_keys = matrix(0, rows=0, cols=1);
+sup_filt_city = matrix(0, rows=0, cols=1);
+for (i in 1:nrow(supplier_csv)) {
+    if (as.scalar(supplier_csv[i,5]) == "UNITED STATES") {
+        key_val = as.double(as.scalar(supplier_csv[i,1]));
+        city_code = as.double(as.scalar(sup_city_enc_f[i,1]));
+        sup_filt_keys = rbind(sup_filt_keys, matrix(key_val, rows=1, cols=1));
+        sup_filt_city = rbind(sup_filt_city, matrix(city_code, rows=1, cols=1));
+    }
+}
+if (nrow(sup_filt_keys) == 0) {
+    # Fallback to avoid empty join
+    sup_filt_keys = matrix(0, rows=1, cols=1);
+    sup_filt_city = matrix(0, rows=1, cols=1);
+}
+sup_filt = cbind(sup_filt_keys, sup_filt_city);
+
+# Build filtered PART table (p_category == 'MFGR#14'), keeping key and encoded brand
+part_filt_keys = matrix(0, rows=0, cols=1);
+part_filt_brand = matrix(0, rows=0, cols=1);
+for (i in 1:nrow(part_csv)) {
+    if (as.scalar(part_csv[i,4]) == "MFGR#14") {
+        key_val = as.double(as.scalar(part_csv[i,1]));
+        brand_code = as.double(as.scalar(part_brand_enc_f[i,1]));
+        part_filt_keys = rbind(part_filt_keys, matrix(key_val, rows=1, cols=1));
+        part_filt_brand = rbind(part_filt_brand, matrix(brand_code, rows=1, cols=1));
+    }
+}
+if (nrow(part_filt_keys) == 0) {
+    part_filt_keys = matrix(0, rows=1, cols=1);
+    part_filt_brand = matrix(0, rows=1, cols=1);
+}
+part_filt = cbind(part_filt_keys, part_filt_brand);
+
 
 # -- JOIN TABLES WITH RA-JOIN FUNCTION --
 # JOINING MINIMIZED LINEORDER TABLE WITH FILTERED SUPPLIER TABLE WHERE LO_SUPPKEY = S_SUPPKEY
-lo_sup = raJoin::m_raJoin(A=lineorder_matrix_min, colA=3, B=s_nat_filt, colB=1, method="sort-merge");
+lo_sup = raJoin::m_raJoin(A=lineorder_matrix_min, colA=3, B=sup_filt, colB=1, method="sort-merge");
 
 # JOIN: ⨝ PART WHERE LO_PARTKEY = P_PARTKEY
-lo_sup_part = raJoin::m_raJoin(A=lo_sup, colA=2, B=p_cat_filt, colB=1, method="sort-merge");
+lo_sup_part = raJoin::m_raJoin(A=lo_sup, colA=2, B=part_filt, colB=1, method="sort-merge");
 
 # JOIN: ⨝ DATE WHERE LO_ORDERDATE = D_DATEKEY
 lo_sup_part_date = raJoin::m_raJoin(A=lo_sup_part, colA=4, B=d_year_filt, colB=1, method="sort-merge");
 
-# JOIN: ⨝ CUSTOMER WHERE LO_CUSTKEY = C_CUSTKEY
+# JOIN: ⨝ CUSTOMER WHERE LO_CUSTKEY = C_CUSTKEY (no filter used, but keep join for parity)
+cust_matrix_min = as.matrix(customer_csv[,1]);
 joined_matrix = raJoin::m_raJoin(A=lo_sup_part_date, colA=1, B=cust_matrix_min, colB=1, method="sort-merge");
-#print(nrow(joined_matrix));
 
 
 # -- GROUP-BY & AGGREGATION --
@@ -102,12 +123,12 @@ joined_matrix = raJoin::m_raJoin(A=lo_sup_part_date, colA=1, B=cust_matrix_min, 
 lo_revenue = joined_matrix[, 5];
 # LO_SUPPLYCOST : COLUMN 6 OF LINEORDER-MIN-MATRIX
 lo_supplycost = joined_matrix[, 6];
-# D_YEAR : COLUMN 2 OF DATE-MIN-MATRIX
-d_year = joined_matrix[,(ncol(lineorder_matrix_min) + ncol(sup_matrix_min) + ncol(part_matrix_min) + 2)];
-# S_CITY : COLUMN 2 OF SUPPLIER-MIN-MATRIX
+# D_YEAR : last column added in the previous join with date (2nd col of date_min)
+d_year = joined_matrix[,(ncol(lineorder_matrix_min) + ncol(sup_filt) + ncol(part_filt) + 2)];
+# S_CITY (encoded) : COLUMN 2 OF SUPPLIER-FILTERED MATRIX
 s_city = joined_matrix[,(ncol(lineorder_matrix_min) + 2)];
-# P_BRAND : COLUMN 3 OF PART-MIN-MATRIX
-p_brand = joined_matrix[,(ncol(lineorder_matrix_min) + ncol(sup_matrix_min) + 3)];
+# P_BRAND (encoded) : COLUMN 2 OF PART-FILTERED MATRIX
+p_brand = joined_matrix[,(ncol(lineorder_matrix_min) + ncol(sup_filt) + 2)];
 
 profit = lo_revenue - lo_supplycost;
 
@@ -140,18 +161,13 @@ result = cbind(d_year, s_city, p_brand, profit, key);
 result_ordered = order(target=result, by=5, decreasing=FALSE, index.return=FALSE);
 print(result_ordered);
 
-# -- DECODING S_CITY & P_BRAND --
-sup_dec_meta = supplier_meta[, 4];
+# -- DECODING S_CITY & P_BRAND (using on-the-fly meta from transformencode) --
 sup_dec_spec = "{ \"recode\": [\"C1\"] }";
-
-part_dec_meta = part_meta[, 5];
 part_dec_spec = "{ \"recode\": [\"C1\"] }";
 
-s_nat_dec = transformdecode(target=result_ordered[, 2], spec=sup_dec_spec, meta=sup_dec_meta);
-p_cat_dec = transformdecode(target=result_ordered[, 3], spec=part_dec_spec, meta=part_dec_meta);
+s_city_dec = transformdecode(target=result_ordered[, 2], spec=sup_dec_spec, meta=sup_city_meta);
+p_brand_dec = transformdecode(target=result_ordered[, 3], spec=part_dec_spec, meta=part_brand_meta);
 
-res = cbind(as.frame(result_ordered[, 1]), s_nat_dec, p_cat_dec, as.frame(result_ordered[, 4]));
+res = cbind(as.frame(result_ordered[, 1]), s_city_dec, p_brand_dec, as.frame(result_ordered[, 4]));
 
 print(res);
-#print("Q4.3 finished");
-

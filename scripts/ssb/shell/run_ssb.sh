@@ -18,7 +18,6 @@
 # ✓ Query summary table with execution status
 # ✓ "See below" notation with result reprinting (NEW)
 # ✓ Long table outputs displayed after summary (NEW)
-# ✓ Wrapper script support for root directory execution
 # ✓ Error handling with timeout protection
 # ✓ Cross-platform compatibility (macOS/Linux)
 #
@@ -50,18 +49,18 @@
 # - SSB query files in scripts/ssb/queries/
 # - Bash 4.0+ with timeout support
 #
-# USAGE:
-#   ./run_ssb.sh                    # run all SSB queries
-#   ./run_ssb.sh q1.1 q2.3          # run specific queries
-#   ./run_ssb.sh --stats            # enable internal statistics
-#   ./run_ssb.sh q3.1 --stats       # run specific query with stats
-#   ./run_ssb.sh --seed=12345       # run with specific seed for reproducibility
-#   ./run_ssb.sh --out-dir=/path    # specify output directory for results
+# USAGE (from repo root):
+#   scripts/ssb/shell/run_ssb.sh                    # run all SSB queries
+#   scripts/ssb/shell/run_ssb.sh q1.1 q2.3          # run specific queries
+#   scripts/ssb/shell/run_ssb.sh --stats            # enable internal statistics
+#   scripts/ssb/shell/run_ssb.sh q3.1 --stats       # run specific query with stats
+#   scripts/ssb/shell/run_ssb.sh --seed=12345       # run with specific seed for reproducibility
+#   scripts/ssb/shell/run_ssb.sh --out-dir=/path    # specify output directory for results
 #
 set -euo pipefail
 export LC_ALL=C
 
-# Determine script directory and project root
+# Determine script directory and project root (repo root)
 if command -v realpath >/dev/null 2>&1; then
   SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 else
@@ -71,7 +70,19 @@ print(os.path.dirname(os.path.abspath(sys.argv[1])))
 PY
 "$0")"
 fi
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+if command -v git >/dev/null 2>&1 && git -C "$SCRIPT_DIR" rev-parse --show-toplevel >/dev/null 2>&1; then
+  PROJECT_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
+else
+  __dir="$SCRIPT_DIR"
+  PROJECT_ROOT=""
+  while [[ "$__dir" != "/" ]]; do
+    if [[ -d "$__dir/.git" || -f "$__dir/pom.xml" ]]; then
+      PROJECT_ROOT="$__dir"; break
+    fi
+    __dir="$(dirname "$__dir")"
+  done
+  : "${PROJECT_ROOT:=$(cd "$SCRIPT_DIR/../../../" && pwd)}"
+fi
 
 # Locate SystemDS executable
 SYSTEMDS_CMD="$PROJECT_ROOT/bin/systemds"
@@ -116,13 +127,13 @@ show_help() {
   cat << 'EOF'
 SystemDS Star Schema Benchmark (SSB) Runner v1.0
 
-USAGE:
-  ./run_ssb.sh [OPTIONS] [QUERIES...]
+USAGE (from repo root):
+  scripts/ssb/shell/run_ssb.sh [OPTIONS] [QUERIES...]
 
 OPTIONS:
   --stats, -stats         Enable SystemDS internal statistics collection
   --seed=N, -seed=N      Set random seed for reproducible results (default: auto-generated)
-  --output-dir=PATH, -output-dir=PATH  Specify custom output directory (default: $PROJECT_ROOT/shell/ssbOutputData/QueryData)
+  --output-dir=PATH, -output-dir=PATH  Specify custom output directory (default: $PROJECT_ROOT/scripts/ssb/shell/ssbOutputData/QueryData)
   --input-dir=PATH, -input-dir=PATH  Specify custom data directory (default: $PROJECT_ROOT/data)
   --help, -help, -h, --h Show this help message
   --version, -version, -v, --v  Show version information
@@ -132,17 +143,17 @@ QUERIES:
   To run specific queries, provide their names (with or without .dml extension):
     ./run_ssb.sh q1.1 q2.3 q4.1
 
-EXAMPLES:
-  ./run_ssb.sh                          # Run all SSB queries
-  ./run_ssb.sh --stats                  # Run all queries with statistics
-  ./run_ssb.sh -stats                   # Same as above (single dash)
-  ./run_ssb.sh q1.1 q2.3                # Run specific queries only
-  ./run_ssb.sh --seed=12345 --stats     # Reproducible run with statistics
-  ./run_ssb.sh -seed=12345 -stats       # Same as above (single dash)
-  ./run_ssb.sh --output-dir=/tmp/results   # Custom output directory
-  ./run_ssb.sh -output-dir=/tmp/results    # Same as above (single dash)
-  ./run_ssb.sh --input-dir=/path/to/data  # Custom data directory
-  ./run_ssb.sh -input-dir=/path/to/data   # Same as above (single dash)
+EXAMPLES (from repo root):
+  scripts/ssb/shell/run_ssb.sh                          # Run all SSB queries
+  scripts/ssb/shell/run_ssb.sh --stats                  # Run all queries with statistics
+  scripts/ssb/shell/run_ssb.sh -stats                   # Same as above (single dash)
+  scripts/ssb/shell/run_ssb.sh q1.1 q2.3                # Run specific queries only
+  scripts/ssb/shell/run_ssb.sh --seed=12345 --stats     # Reproducible run with statistics
+  scripts/ssb/shell/run_ssb.sh -seed=12345 -stats       # Same as above (single dash)
+  scripts/ssb/shell/run_ssb.sh --output-dir=/tmp/results   # Custom output directory
+  scripts/ssb/shell/run_ssb.sh -output-dir=/tmp/results    # Same as above (single dash)
+  scripts/ssb/shell/run_ssb.sh --input-dir=/path/to/data  # Custom data directory
+  scripts/ssb/shell/run_ssb.sh -input-dir=/path/to/data   # Same as above (single dash)
 
 OUTPUT:
   Results are saved in multiple formats:
@@ -214,7 +225,7 @@ done
 
 # Set default output directory if not provided
 if [[ -z "$OUT_DIR" ]]; then
-  OUT_DIR="$PROJECT_ROOT/shell/ssbOutputData/QueryData"
+  OUT_DIR="$PROJECT_ROOT/scripts/ssb/shell/ssbOutputData/QueryData"
 fi
 
 # Set default input data directory if not provided

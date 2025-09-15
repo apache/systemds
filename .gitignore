@@ -151,7 +151,10 @@ venv/*
 scripts/resource/output
 *.pem
 
-# SSB Data and subfolders
+# SSB data, outputs, and local DB file
 /data/
-shell/ssbOutputData/
-/sql/ssb.duckdb
+/scripts/ssb/shell/ssbOutputData/
+/scripts/ssb/sql/ssb.duckdb
+
+# Auto-generated single-thread config for SSB runs
+/conf/single_thread.xml

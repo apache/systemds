@@ -1,6 +1,6 @@
 # Star Schema Benchmark (SSB) for SystemDS
 
-This README documents the SSB DML queries under `scripts/ssb/queries/` and the runner scripts in `shell/` that execute and benchmark them. It is focused on what is implemented today, how to run it, and how to interpret the outputs for performance analysis.
+This README documents the SSB DML queries under `scripts/ssb/queries/` and the runner scripts under `scripts/ssb/shell/` that execute and benchmark them. It is focused on what is implemented today, how to run it, and how to interpret the outputs for performance analysis.
 
 ---
 
@@ -9,8 +9,8 @@ This README documents the SSB DML queries under `scripts/ssb/queries/` and the r
 1. Project Layout
 2. Quick Start
 3. Data Location (`--input-dir` and DML `input_dir`)
-4. Single-Engine Runner (`shell/run_ssb.sh`)
-5. Multi-Engine Performance Runner (`shell/run_all_perf.sh`)
+4. Single-Engine Runner (`scripts/ssb/shell/run_ssb.sh`)
+5. Multi-Engine Performance Runner (`scripts/ssb/shell/run_all_perf.sh`)
 6. Outputs and Examples
 7. Adding/Editing Queries
 8. Troubleshooting
@@ -24,19 +24,19 @@ Paths are relative to the repo root:
 ```
 systemds/
 ├── scripts/ssb/
-│   ├── README.md                    # This guide
-│   └── queries/                     # DML queries (q1_1.dml ... q4_3.dml)
-│       ├── q1_1.dml - q1_3.dml      # Flight 1
-│       ├── q2_1.dml - q2_3.dml      # Flight 2
-│       ├── q3_1.dml - q3_4.dml      # Flight 3
-│       └── q4_1.dml - q4_3.dml      # Flight 4
-├── shell/
-│   ├── run_ssb.sh                   # Single-engine (SystemDS) runner
-│   ├── run_all_perf.sh              # Multi-engine performance benchmark
-│   └── ssbOutputData/               # Results (created on first run)
-├── run_ssb.sh                       # Wrapper → `shell/run_ssb.sh`
-├── run_all_perf.sh                  # Wrapper → `shell/run_all_perf.sh`
-└── sql/                             # SQL versions + `ssb.duckdb` for DuckDB
+│   ├── README.md                              # This guide
+│   ├── queries/                               # DML queries (q1_1.dml ... q4_3.dml)
+│   │   ├── q1_1.dml - q1_3.dml                # Flight 1
+│   │   ├── q2_1.dml - q2_3.dml                # Flight 2
+│   │   ├── q3_1.dml - q3_4.dml                # Flight 3
+│   │   └── q4_1.dml - q4_3.dml                # Flight 4
+│   ├── shell/
+│   │   ├── run_ssb.sh                         # Single-engine (SystemDS) runner
+│   │   ├── run_all_perf.sh                    # Multi-engine performance benchmark
+│   │   └── ssbOutputData/                     # Results (created on first run)
+│   │       ├── QueryData/                     # Per-query outputs from run_ssb.sh
+│   │       └── PerformanceData/               # Multi-engine outputs from run_all_perf.sh
+│   └── sql/                                   # SQL versions + `ssb.duckdb` for DuckDB
 ```
 
 Note: The SSB raw data directory is not committed. You must point the runners to your generated data with `--input-dir`.
@@ -55,24 +55,24 @@ mvn -DskipTests package
 
 2) Make sure the SystemDS binary exists (repo-local `bin/systemds` or on `PATH`).
 
-3) Make shell scripts executable:
+3) Make runner scripts executable:
 
 ```bash
-chmod +x shell/run_ssb.sh shell/run_all_perf.sh
+chmod +x scripts/ssb/shell/run_ssb.sh scripts/ssb/shell/run_all_perf.sh
 ```
 
 4) Provide SSB data (from dbgen) in a directory, e.g. `/path/to/ssb-data`.
 
-5) Run a single SSB query on SystemDS:
+5) Run a single SSB query on SystemDS (from repo root):
 
 ```bash
-./shell/run_ssb.sh q1.1 --input-dir=/path/to/ssb-data --stats
+scripts/ssb/shell/run_ssb.sh q1.1 --input-dir=/path/to/ssb-data --stats
 ```
 
-6) Run the multi-engine performance benchmark across all queries:
+6) Run the multi-engine performance benchmark across all queries (from repo root):
 
 ```bash
-./shell/run_all_perf.sh --input-dir=/path/to/ssb-data --stats --repeats=5
+scripts/ssb/shell/run_all_perf.sh --input-dir=/path/to/ssb-data --stats --repeats=5
 ```
 
 If `--input-dir` is omitted, the scripts default to `./data/` under the repo root.
@@ -98,16 +98,16 @@ Expected base files in `input_dir`: `customer.tbl`, `supplier.tbl`, `part.tbl`, 
 
 ---
 
-## 4) Single-Engine Runner (`shell/run_ssb.sh`)
+## 4) Single-Engine Runner (`scripts/ssb/shell/run_ssb.sh`)
 
 Runs SSB DML queries with SystemDS and saves results per query.
 
 - Usage:
-  - `./shell/run_ssb.sh` — run all SSB queries
-  - `./shell/run_ssb.sh q1.1 q2.3` — run specific queries
-  - `./shell/run_ssb.sh --stats` — include SystemDS internal statistics
-  - `./shell/run_ssb.sh --input-dir=/path/to/data` — set data dir
-  - `./shell/run_ssb.sh --output-dir=/tmp/out` — set output dir
+  - `scripts/ssb/shell/run_ssb.sh` — run all SSB queries
+  - `scripts/ssb/shell/run_ssb.sh q1.1 q2.3` — run specific queries
+  - `scripts/ssb/shell/run_ssb.sh --stats` — include SystemDS internal statistics
+  - `scripts/ssb/shell/run_ssb.sh --input-dir=/path/to/data` — set data dir
+  - `scripts/ssb/shell/run_ssb.sh --output-dir=/tmp/out` — set output dir
 
 - Query names: You can use dotted form (`q1.1`); the runner maps to `q1_1.dml` internally.
 
@@ -123,7 +123,7 @@ Runs SSB DML queries with SystemDS and saves results per query.
   - Exit code is non-zero if any query failed (handy for CI).
 
 - Output layout:
-  - Base directory: `--output-dir` (default: `shell/ssbOutputData/QueryData`)
+  - Base directory: `--output-dir` (default: `scripts/ssb/shell/ssbOutputData/QueryData`)
   - Each run: `ssb_run_<YYYYMMDD_HHMMSS>/`
     - `txt/<query>.txt` — human-readable result
     - `csv/<query>.csv` — scalar or table as CSV
@@ -180,17 +180,17 @@ DETAILED QUERY RESULTS
 
 ---
 
-## 5) Multi-Engine Performance Runner (`shell/run_all_perf.sh`)
+## 5) Multi-Engine Performance Runner (`scripts/ssb/shell/run_all_perf.sh`)
 
 Runs SSB queries across SystemDS, PostgreSQL, and DuckDB with repeated timings and statistical analysis.
 
 - Usage:
-  - `./shell/run_all_perf.sh` — run all queries on available engines
-  - `./shell/run_all_perf.sh q1.1 q2.3` — run specific queries
-  - `./shell/run_all_perf.sh --warmup=2 --repeats=10` — control sampling
-  - `./shell/run_all_perf.sh --stats` — include core/internal engine timings
-  - `./shell/run_all_perf.sh --layout=wide|stacked` — control terminal layout
-  - `./shell/run_all_perf.sh --input-dir=... --output-dir=...` — set paths
+  - `scripts/ssb/shell/run_all_perf.sh` — run all queries on available engines
+  - `scripts/ssb/shell/run_all_perf.sh q1.1 q2.3` — run specific queries
+  - `scripts/ssb/shell/run_all_perf.sh --warmup=2 --repeats=10` — control sampling
+  - `scripts/ssb/shell/run_all_perf.sh --stats` — include core/internal engine timings
+  - `scripts/ssb/shell/run_all_perf.sh --layout=wide|stacked` — control terminal layout
+  - `scripts/ssb/shell/run_all_perf.sh --input-dir=... --output-dir=...` — set paths
 
 - Query names: dotted form (`q1.1`) is accepted; mapped internally to `q1_1.dml`.
 
@@ -198,11 +198,11 @@ Runs SSB queries across SystemDS, PostgreSQL, and DuckDB with repeated timings a
   - PostgreSQL:
     - Install `psql` CLI and ensure a PostgreSQL server is running.
     - Default connection in the script: `POSTGRES_DB=ssb`, `POSTGRES_USER=$(whoami)`, `POSTGRES_HOST=localhost`.
-    - Create the `ssb` database and load the standard SSB tables and data (schema not included in this repo). The SQL queries under `sql/` expect the canonical SSB schema and data.
+    - Create the `ssb` database and load the standard SSB tables and data (schema not included in this repo). The SQL queries under `scripts/ssb/sql/` expect the canonical SSB schema and data.
     - The runner verifies connectivity; if it cannot connect or tables are missing, PostgreSQL results are skipped.
   - DuckDB:
     - Install the DuckDB CLI (`duckdb`).
-    - The runner looks for the database at `sql/ssb.duckdb`. This repository includes a file at that path; if you replace it, ensure it contains SSB tables and data.
+    - The runner looks for the database at `scripts/ssb/sql/ssb.duckdb`. Ensure it contains SSB tables and data.
     - If the CLI is missing or the DB file cannot be opened, DuckDB results are skipped.
   - SystemDS is required; the other engines are optional. Missing engines are reported and skipped gracefully.
 
@@ -225,7 +225,7 @@ Runs SSB queries across SystemDS, PostgreSQL, and DuckDB with repeated timings a
   - Fastest: The runner highlights the engine with the lowest mean per query.
 
 - Output layout:
-  - Base directory: `--output-dir` (default: `shell/ssbOutputData/PerformanceData`)
+  - Base directory: `--output-dir` (default: `scripts/ssb/shell/ssbOutputData/PerformanceData`)
   - Files per run (timestamped basename):
     - `ssb_results_<UTC_ISO_TIMESTAMP>.csv`
     - `ssb_results_<UTC_ISO_TIMESTAMP>.json`
@@ -298,8 +298,8 @@ Query  : q1_1    Fastest: DuckDB
 
 Where to find results and how to read them.
 
-- SystemDS-only runner (`shell/run_ssb.sh`):
-  - Directory: `shell/ssbOutputData/QueryData/ssb_run_<YYYYMMDD_HHMMSS>/`
+- SystemDS-only runner (`scripts/ssb/shell/run_ssb.sh`):
+  - Directory: `scripts/ssb/shell/ssbOutputData/QueryData/ssb_run_<YYYYMMDD_HHMMSS>/`
   - Files: `txt/<query>.txt`, `csv/<query>.csv`, `json/<query>.json`, and `run.json`
   - `run.json` example (stats enabled, single query):
 
@@ -372,8 +372,8 @@ Where to find results and how to read them.
   - The `result` field contains the query’s output (scalar or tabular content collapsed). When `--stats` is used, `stats` contains the full SystemDS statistics block line-by-line.
   - For failed queries, an `error_message` string is included and `status` is set to `"error"`.
 
-- Multi-engine runner (`shell/run_all_perf.sh`):
-  - Directory: `shell/ssbOutputData/PerformanceData/`
+- Multi-engine runner (`scripts/ssb/shell/run_all_perf.sh`):
+  - Directory: `scripts/ssb/shell/ssbOutputData/PerformanceData/`
   - Files per run: `ssb_results_<UTC_ISO_TIMESTAMP>.csv` and `.json`
   - CSV contains display strings and raw numeric stats (mean/stdev/p95) for each engine; JSON contains the same plus metadata and fastest-engine per query.
   - `ssb_results_*.json` example (stats enabled, single query):
@@ -502,4 +502,4 @@ If something looks off, attach the relevant `run.json` or `ssb_results_*.json` w
 - When `--stats` is enabled, SystemDS internal "core" timing is extracted and reported separately (useful to separate JVM / startup overhead from core computation).
 
 All these metrics appear in the generated CSVs and JSON entries.
-- Permission errors: `chmod +x shell/*.sh`.
+- Permission errors: `chmod +x scripts/ssb/shell/*.sh`.

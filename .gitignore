@@ -163,3 +163,10 @@ data/test/lineorder.tbl
 /data/
 shell/ssbOutputData/
 /sql/ssb.duckdb
+# SSB data, outputs, and local DB file
+/data/
+/scripts/ssb/shell/ssbOutputData/
+/scripts/ssb/sql/ssb.duckdb
+
+# Auto-generated single-thread config for SSB runs
+/conf/single_thread.xml

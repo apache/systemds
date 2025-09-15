@@ -46,13 +46,13 @@
 # - PostgreSQL: Industry-standard relational database (parallel workers disabled)
 # - DuckDB: High-performance analytical database (single-threaded via PRAGMA)
 #
-# USAGE:
-#   ./run_all_perf.sh                          # run full benchmark with all engines
-#   ./run_all_perf.sh --stats                  # enable internal engine timing statistics
-#   ./run_all_perf.sh --warmup=3 --repeats=10  # custom warmup and repetition settings
-#   ./run_all_perf.sh --layout=wide            # force wide table layout
-#   ./run_all_perf.sh --seed=12345             # reproducible benchmark with specific seed
-#   ./run_all_perf.sh q1.1 q2.3 q4.1           # benchmark specific queries only
+# USAGE (from repo root):
+#   scripts/ssb/shell/run_all_perf.sh                          # run full benchmark with all engines
+#   scripts/ssb/shell/run_all_perf.sh --stats                  # enable internal engine timing statistics
+#   scripts/ssb/shell/run_all_perf.sh --warmup=3 --repeats=10  # custom warmup and repetition settings
+#   scripts/ssb/shell/run_all_perf.sh --layout=wide            # force wide table layout
+#   scripts/ssb/shell/run_all_perf.sh --seed=12345             # reproducible benchmark with specific seed
+#   scripts/ssb/shell/run_all_perf.sh q1.1 q2.3 q4.1           # benchmark specific queries only
 #
 set -euo pipefail
 export LC_ALL=C
@@ -65,7 +65,7 @@ POSTGRES_HOST="localhost"
 
 export _JAVA_OPTIONS="${_JAVA_OPTIONS:-} -Xms2g -Xmx2g -XX:+UseParallelGC -XX:ParallelGCThreads=1"
 
-# Determine script directory and project root
+# Determine script directory and project root (repo root)
 if command -v realpath >/dev/null 2>&1; then
   SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 else
@@ -75,7 +75,21 @@ print(os.path.dirname(os.path.abspath(sys.argv[1])))
 PY
 "$0")"
 fi
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+# Resolve repository root robustly (script may be in scripts/ssb/shell)
+if command -v git >/dev/null 2>&1 && git -C "$SCRIPT_DIR" rev-parse --show-toplevel >/dev/null 2>&1; then
+  PROJECT_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
+else
+  # Fallback: ascend until we find markers (.git or pom.xml)
+  __dir="$SCRIPT_DIR"
+  PROJECT_ROOT=""
+  while [[ "$__dir" != "/" ]]; do
+    if [[ -d "$__dir/.git" || -f "$__dir/pom.xml" ]]; then
+      PROJECT_ROOT="$__dir"; break
+    fi
+    __dir="$(dirname "$__dir")"
+  done
+  : "${PROJECT_ROOT:=$(cd "$SCRIPT_DIR/../../../" && pwd)}"
+fi
 
 # Create single-thread configuration
 CONF_DIR="$PROJECT_ROOT/conf"
@@ -109,7 +123,8 @@ if [[ -z "$SYSTEMDS_CMD" || ! -x "$SYSTEMDS_CMD" ]]; then
 fi
 
 # Database directories and executables
-SQL_DIR="$PROJECT_ROOT/sql"
+# SQL files were moved under scripts/ssb/sql
+SQL_DIR="$PROJECT_ROOT/scripts/ssb/sql"
 
 # Try to find PostgreSQL psql executable
 PSQL_EXEC=""
@@ -632,8 +647,8 @@ show_help() {
   cat << 'EOF'
 Multi-Engine SSB Performance Benchmark Runner v1.0
 
-USAGE:
-  ./run_all_perf.sh [OPTIONS] [QUERIES...]
+USAGE (from repo root):
+  scripts/ssb/shell/run_all_perf.sh [OPTIONS] [QUERIES...]
 
 OPTIONS:
   -stats, --stats         Enable SystemDS internal statistics collection
@@ -645,28 +660,28 @@ OPTIONS:
                           Note: --layout=stacked is equivalent to --stacked
                                 --layout=wide forces wide table layout
   -input-dir=PATH, --input-dir=PATH Specify custom data directory (default: $PROJECT_ROOT/data)
-  -output-dir=PATH, --output-dir=PATH Specify custom output directory (default: $PROJECT_ROOT/shell/ssbOutputData/PerformanceData)
+  -output-dir=PATH, --output-dir=PATH Specify custom output directory (default: $PROJECT_ROOT/scripts/ssb/shell/ssbOutputData/PerformanceData)
   -h, -help, --help, --h  Show this help message
   -v, -version, --version, --v Show version information
 
 QUERIES:
   If no queries are specified, all available SSB queries (q*.dml) will be executed.
   To run specific queries, provide their names (with or without .dml extension):
-    ./run_all_perf.sh q1.1 q2.3 q4.1
+    scripts/ssb/shell/run_all_perf.sh q1.1 q2.3 q4.1
 
-EXAMPLES:
-  ./run_all_perf.sh                          # Run full benchmark with all engines
-  ./run_all_perf.sh --warmup=3 --repeats=10  # Custom warmup and repetition settings
-  ./run_all_perf.sh -warmup=3 -repeats=10    # Same with single dashes
-  ./run_all_perf.sh --stats                  # Enable SystemDS internal timing
-  ./run_all_perf.sh --layout=wide            # Force wide table layout
-  ./run_all_perf.sh --stacked                # Force stacked layout for narrow terminals
-  ./run_all_perf.sh q1.1 q2.3                # Benchmark specific queries only
-  ./run_all_perf.sh --seed=12345             # Reproducible benchmark run
-  ./run_all_perf.sh --input-dir=/path/to/data  # Custom data directory
-  ./run_all_perf.sh -input-dir=/path/to/data   # Same as above (single dash)
-  ./run_all_perf.sh --output-dir=/tmp/results  # Custom output directory
-  ./run_all_perf.sh -output-dir=/tmp/results   # Same as above (single dash)
+EXAMPLES (from repo root):
+  scripts/ssb/shell/run_all_perf.sh                          # Run full benchmark with all engines
+  scripts/ssb/shell/run_all_perf.sh --warmup=3 --repeats=10  # Custom warmup and repetition settings
+  scripts/ssb/shell/run_all_perf.sh -warmup=3 -repeats=10    # Same with single dashes
+  scripts/ssb/shell/run_all_perf.sh --stats                  # Enable SystemDS internal timing
+  scripts/ssb/shell/run_all_perf.sh --layout=wide            # Force wide table layout
+  scripts/ssb/shell/run_all_perf.sh --stacked                # Force stacked layout for narrow terminals
+  scripts/ssb/shell/run_all_perf.sh q1.1 q2.3                # Benchmark specific queries only
+  scripts/ssb/shell/run_all_perf.sh --seed=12345             # Reproducible benchmark run
+  scripts/ssb/shell/run_all_perf.sh --input-dir=/path/to/data  # Custom data directory
+  scripts/ssb/shell/run_all_perf.sh -input-dir=/path/to/data   # Same as above (single dash)
+  scripts/ssb/shell/run_all_perf.sh --output-dir=/tmp/results  # Custom output directory
+  scripts/ssb/shell/run_all_perf.sh -output-dir=/tmp/results   # Same as above (single dash)
 
 ENGINES:
   - SystemDS: Machine learning platform with DML queries
@@ -837,7 +852,7 @@ fi
 
 # Set output directory
 if [[ -z "$OUTPUT_DIR" ]]; then
-  OUTPUT_DIR="$PROJECT_ROOT/shell/ssbOutputData/PerformanceData"
+  OUTPUT_DIR="$PROJECT_ROOT/scripts/ssb/shell/ssbOutputData/PerformanceData"
 fi
 
 # Normalize paths by removing trailing slashes

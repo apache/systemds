@@ -18,20 +18,38 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from systemds.scuro.modality.transformed import TransformedModality
-from systemds.scuro.representations.representation import Representation
-from systemds.scuro.representations.aggregate import Aggregation
+
+from typing import Dict, Any
+from systemds.scuro.drsearch.unimodal_dag import UnimodalDAG
 
 
-class AggregatedRepresentation(Representation):
-    def __init__(self, aggregation="mean"):
-        super().__init__("AggregatedRepresentation", None)
-        self.aggregation = Aggregation(aggregation)
-        self.self_contained = True
+def visualize_dag(dag: UnimodalDAG) -> Dict[str, Any]:
+    nodes = []
+    edges = []
 
-    def transform(self, modality):
-        aggregated_modality = TransformedModality(
-            modality, self, self_contained=modality.self_contained
+    for i, node in enumerate(dag.nodes):
+        # Create node entry
+        node_type = "operation" if node.operation else "modality"
+        label = node.operation if node.operation else f"Modality: {node.modality_id}"
+
+        nodes.append(
+            {
+                "id": node.node_id,
+                "label": label,
+                "type": node_type,
+                "parameters": node.parameters,
+            }
         )
-        aggregated_modality.data = self.aggregation.execute(modality)
-        return aggregated_modality
+
+        print(nodes[i])
+
+        # Create edges
+        for input_id in node.inputs:
+            edges.append({"from": input_id, "to": node.node_id})
+
+    for edge in edges:
+        print(edge)
+
+    print(f"Root Node ID: {dag.root_node_id}")
+
+    return {"nodes": nodes, "edges": edges, "root": dag.root_node_id}

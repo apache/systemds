@@ -67,7 +67,7 @@ from systemds.scuro.models.discrete_model import DiscreteModel
 from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.joined_transformed import JoinedTransformedModality
 from systemds.scuro.modality.modality import Modality
-from systemds.scuro.modality.modality_identifier import ModalityIdentifier
+from systemds.scuro.utils.identifier import Identifier
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
@@ -131,7 +131,7 @@ __all__ = [
     "JoinedModality",
     "JoinedTransformedModality",
     "Modality",
-    "ModalityIdentifier",
+    "Identifier",
     "TransformedModality",
     "ModalityType",
     "UnimodalModality",

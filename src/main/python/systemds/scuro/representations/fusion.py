@@ -52,7 +52,7 @@ class Fusion(Representation):
         for modality in modalities:
             agg_modality = None
             if get_shape(modality.metadata) > 1:
-                agg_operator = AggregatedRepresentation(Aggregation())
+                agg_operator = AggregatedRepresentation()
                 agg_modality = agg_operator.transform(modality)
             mods.append(agg_modality if agg_modality else modality)
 

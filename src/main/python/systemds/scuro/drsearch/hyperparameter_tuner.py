@@ -29,10 +29,12 @@ from dataclasses import dataclass
 from pathlib import Path
 import time
 
+from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.drsearch.task import Task
 from systemds.scuro.representations.representation import Representation
 from systemds.scuro.representations.window_aggregation import Window
+from systemds.scuro.representations.fusion import Fusion
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -91,20 +93,31 @@ class HyperparameterTuner:
                 self.k_best_cache[task.model.name].extend(cached_data)
     
     def evaluate_single_config(self, reps: List[Representation],
-                               params: Dict[str, Any], modality_id: int, task: Task, param_idx: List[int]) -> Tuple[Dict[str, Any], float]:
+                               params: Dict[str, Any], modality_ids: List[int], task: Task, param_idx: List[int]) -> Tuple[Dict[str, Any], float]:
         """
         Evaluate a single hyperparameter configuration
         """
         # try:
         rep_name = ''
-        modality = self.get_modality_by_id(modality_id)
+        modality_counter = 0
+        modality = None
+        modality_is_initialized = False
         start = 0
+        # if isinstance(rep, Fusion):
+        #     modality = left.combine(right, fusion_method)
         for i, rep in enumerate(reps):
             rep_name += rep().name
-            len_params = len(rep().parameters)
+            len_params = len(rep().parameters) if rep().parameters is not None else 0
             if isinstance(rep(), Window):
                 modality = modality.context(rep(*np.array(list(params.values()))[param_idx[start:start+len_params]]))
+            elif isinstance(rep(), Fusion):
+                modality = modality.combine(rep(*np.array(list(params.values()))[param_idx[start:start+len_params]]))
+                modality_is_initialized = False
             else:
+                if not modality_is_initialized:
+                    modality = self.get_modality_by_id(modality_ids[modality_counter])
+                    modality_is_initialized = True
+                    modality_counter += 1
                 modality = modality.apply_representation(rep(*np.array(list(params.values()))[param_idx[start:start+len_params]]))
             start += len_params
     
@@ -114,9 +127,11 @@ class HyperparameterTuner:
         # except Exception as e:
         #         logger.error(f"Error evaluating {rep_name} with params {params}: {e}")
         #         return params, float('-inf') if self.maximize_metric else float('inf')
-        #
+    
+    
+    
     def tune_representation(self, reps: List,
-                            hyperparams: List[Dict[str, List]], modality_id: int, task: Task,
+                            hyperparams: List[Dict[str, List]], modality_id: List[int], task: Task,
                             max_evals: Optional[int] = None) -> HyperparamResult:
         """
         Tune hyperparameters for a single representation
@@ -224,6 +239,7 @@ class HyperparameterTuner:
             modality_ids = []
             hyperparams = []
             reps = []
+            
             for i, fusion_node in enumerate(result.architecture.fusion_nodes):
                 if len(fusion_node.parameters) > 0:
                     fusion_node_ids.append(i)
@@ -232,7 +248,7 @@ class HyperparameterTuner:
                 logger.warning("No fusion nodes with hyperparameters and unimodal optimization disabled. Skipping.")
                 continue
             
-            for modality in used_modalities:
+            for i, modality in enumerate(used_modalities):
                 mod_id = modality.modality_id
                 instance_id = modality.modality_instance_id
                 cached_representation = self.get_cached_representation(int(mod_id), int(instance_id), task)
@@ -246,7 +262,13 @@ class HyperparameterTuner:
                         rep = transformation.__class__
                         hyperparams.append(params)
                         reps.append(rep)
-                    
+                        
+                if len(used_modalities) > i + 1:
+                    reps.append(Registry().get_fusion_operator_by_name(result.architecture.fusion_nodes[i].operation))
+                    hyperparams.append(result.architecture.fusion_nodes[i].parameters)
+                        
+            self.tune_representation(reps, hyperparams, modality_ids, task, max_eval_per_rep)
+            
                 
                 
                 

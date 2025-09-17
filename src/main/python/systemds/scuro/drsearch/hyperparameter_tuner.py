@@ -28,10 +28,14 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 import time
+import copy
 
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.drsearch.task import Task
+from systemds.scuro.representations.aggregated_representation import (
+    AggregatedRepresentation,
+)
 from systemds.scuro.representations.representation import Representation
 from systemds.scuro.representations.window_aggregation import Window
 from systemds.scuro.representations.fusion import Fusion
@@ -68,7 +72,7 @@ class HyperparameterTuner:
         n_jobs: int = -1,
         scoring_metric: str = "accuracy",
         maximize_metric: bool = True,
-        save_results: bool = True,
+        save_results: bool = False,
     ):
         self.tasks = tasks
         self.optimization_results = optimization_results
@@ -80,7 +84,7 @@ class HyperparameterTuner:
         self.k = k
         self.modalities = modalities
         self.k_best_cache = None
-        self.k_best_modalities = None
+        self.k_best_representations = None
         self.extract_k_best_modalities_per_task()
 
     def get_modality_by_id(self, modality_id: int) -> Modality:
@@ -89,17 +93,17 @@ class HyperparameterTuner:
                 return mod
 
     def extract_k_best_modalities_per_task(self):
-        self.k_best_modalities = {}
+        self.k_best_representations = {}
         self.k_best_cache = {}
         for task in self.tasks:
-            self.k_best_modalities[task.model.name] = []
+            self.k_best_representations[task.model.name] = []
             self.k_best_cache[task.model.name] = []
             for modality in self.modalities:
                 k_best_results, cached_data = (
                     self.optimization_results.get_k_best_results(modality, self.k, task)
                 )
 
-                self.k_best_modalities[task.model.name].extend(k_best_results)
+                self.k_best_representations[task.model.name].extend(k_best_results)
                 self.k_best_cache[task.model.name].extend(cached_data)
 
     def evaluate_single_config(
@@ -259,18 +263,10 @@ class HyperparameterTuner:
         results = {}
         for task in self.tasks:
             results[task.model.name] = []
-            for representation in self.k_best_cache[task.model.name]:
-                hyperparams = []
-                reps = []
-                for transformation in representation.transformation:
-                    params = transformation.parameters
-                    rep = transformation.__class__
-                    hyperparams.append(params)
-                    reps.append(rep)
-                result = self.tune_representation(
-                    reps,
-                    hyperparams,
-                    [representation.modality_id],
+            for representation in self.k_best_representations[task.model.name]:
+                result = self.tune_dag_representation(
+                    representation.dag,
+                    representation.dag.root_node_id,
                     task,
                     max_eval_per_rep,
                 )
@@ -282,6 +278,101 @@ class HyperparameterTuner:
             self.save_tuning_results()
 
         return results
+
+    def tune_dag_representation(self, dag, root_node_id, task, max_evals=None):
+        """
+        Tune hyperparameters for a DAG-based representation
+        """
+        hyperparams = {}
+        reps = []
+        modality_ids = []
+        node_order = []
+
+        # Extract parameters and operations from DAG in topological order
+        visited = set()
+
+        def visit_node(node_id):
+            if node_id in visited:
+                return
+            node = dag.get_node_by_id(node_id)
+            for input_id in node.inputs:
+                visit_node(input_id)
+            visited.add(node_id)
+            if node.operation is not None:
+                if node.parameters:
+                    hyperparams.update(node.parameters)
+                reps.append(node.operation)
+                node_order.append(node_id)
+            if node.modality_id is not None:
+                modality_ids.append(node.modality_id)
+
+        visit_node(root_node_id)
+
+        if not hyperparams:
+            return None
+
+        # Tune the hyperparameters
+        start_time = time.time()
+        rep_name = "_".join([rep.__name__ for rep in reps])
+
+        # Generate parameter grid
+        param_grid = list(ParameterGrid(hyperparams))
+        if max_evals and len(param_grid) > max_evals:
+            np.random.shuffle(param_grid)
+            param_grid = param_grid[:max_evals]
+
+        # Evaluate parameter combinations
+        all_results = []
+        for params in param_grid:
+            result = self.evaluate_dag_config(
+                dag, params, node_order, modality_ids, task
+            )
+            all_results.append(result)
+
+        # Find best parameters
+        if self.maximize_metric:
+            best_params, best_score = max(all_results, key=lambda x: x[1])
+        else:
+            best_params, best_score = min(all_results, key=lambda x: x[1])
+
+        tuning_time = time.time() - start_time
+
+        return HyperparamResult(
+            representation_name=rep_name,
+            best_params=best_params,
+            best_score=best_score,
+            all_results=all_results,
+            tuning_time=tuning_time,
+            modality_id=modality_ids[0] if modality_ids else None,
+        )
+
+    def evaluate_dag_config(self, dag, params, node_order, modality_ids, task):
+        """
+        Evaluate a single parameter configuration for a DAG-based representation
+        """
+        try:
+            # Create a copy of the DAG to modify
+            dag_copy = copy.deepcopy(dag)
+
+            # Update parameters in the DAG
+            for node_id in node_order:
+                node = dag_copy.get_node_by_id(node_id)
+                if node.operation is not None and node.parameters:
+                    node_params = {
+                        k: v for k, v in params.items() if k in node.parameters
+                    }
+                    node.parameters = node_params
+
+            modality = self.get_modality_by_id(modality_ids[0])
+            modified_modality = dag_copy.execute(modality)
+            score = task.run(
+                modified_modality[list(modified_modality.keys())[-1]].data
+            )[1]
+
+            return params, score
+        except Exception as e:
+            logger.error(f"Error evaluating DAG with params {params}: {e}")
+            return params, float("-inf") if self.maximize_metric else float("inf")
 
     def tune_multimodal_representations(
         self,
@@ -385,27 +476,6 @@ class HyperparameterTuner:
             self.save_tuning_results()
 
         return results
-
-    def get_best_representations(
-        self, k: int = None
-    ) -> List[Tuple[str, HyperparamResult]]:
-        """
-        Get the k best representations based on their best scores
-        """
-        if not self.results:
-            logger.warning("No tuning results available")
-            return []
-
-        sorted_results = sorted(
-            self.results.items(),
-            key=lambda x: x[1].best_score,
-            reverse=self.maximize_metric,
-        )
-
-        if k is None:
-            return sorted_results
-
-        return sorted_results[:k]
 
     def save_tuning_results(self, filepath: str = None):
         """Save tuning results to JSON file"""

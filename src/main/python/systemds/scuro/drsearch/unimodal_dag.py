@@ -22,6 +22,16 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Any
 import copy
 from collections import deque
+from systemds.scuro.modality.modality import Modality
+from systemds.scuro.modality.transformed import TransformedModality
+from systemds.scuro.representations.representation import (
+    Representation as UnimodalRepresentation,
+)
+from systemds.scuro.representations.aggregated_representation import (
+    AggregatedRepresentation,
+)
+from systemds.scuro.representations.context import Context
+from systemds.scuro.representations.window_aggregation import WindowAggregation
 
 
 @dataclass
@@ -38,9 +48,9 @@ class UnimodalDAG:
 
     def __init__(self, nodes: List[UnimodalNode], root_node_id):
         self.root_node_id = root_node_id
-        self.nodes = self.filter_connected_nodes_bfs(nodes)
+        self.nodes = self.filter_connected_nodes(nodes)
 
-    def filter_connected_nodes_bfs(self, nodes):
+    def filter_connected_nodes(self, nodes):
         node_map = {node.node_id: node for node in nodes}
 
         if self.root_node_id not in node_map:
@@ -108,6 +118,44 @@ class UnimodalDAG:
             return False
 
         return not has_cycle(self.root_node_id, set())
+
+    def execute(self, modality: Modality) -> Dict[str, TransformedModality]:
+        cache = {}
+
+        def execute_node(node_id: str) -> TransformedModality:
+            if node_id in cache:
+                return cache[node_id]
+
+            node = self.get_node_by_id(node_id)
+
+            if not node.inputs:  # Leaf node
+                cache[node_id] = modality
+                return modality
+
+            input_mods = [execute_node(input_id) for input_id in node.inputs]
+
+            if len(input_mods) == 1:
+                if isinstance(node.operation(), Context):
+                    result = input_mods[0].context(node.operation())
+                elif isinstance(node.operation(), UnimodalRepresentation):
+                    if (
+                        isinstance(input_mods[0], TransformedModality)
+                        and input_mods[0].transformation[0].__class__ == node.operation
+                    ):
+                        result = input_mods[0]
+                    else:
+                        result = input_mods[0].apply_representation(node.operation())
+                elif isinstance(node.operation(), AggregatedRepresentation):
+                    result = node.operation().transform(input_mods[0])
+            else:
+                result = input_mods[0].combine(input_mods[1:], node.operation())
+
+            cache[node_id] = result
+            return result
+
+        execute_node(self.root_node_id)
+
+        return cache
 
 
 class UnimodalDAGBuilder:

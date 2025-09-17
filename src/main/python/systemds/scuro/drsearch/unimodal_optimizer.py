@@ -131,7 +131,7 @@ class UnimodalOptimizer:
 
             for dag in dags:
                 # Execute DAG and get all intermediate representations
-                representations = self._execute_dag(dag, modality)
+                representations = dag.execute(modality)
                 node_id = list(representations.keys())[-1]
                 node = dag.get_node_by_id(node_id)
                 if node.operation is None:
@@ -145,46 +145,6 @@ class UnimodalOptimizer:
                     visualize_dag(dag)
 
         return local_results
-
-    def _execute_dag(
-        self, dag: UnimodalDAG, modality: Modality
-    ) -> Dict[str, TransformedModality]:
-        cache = {}
-
-        def execute_node(node_id: str) -> TransformedModality:
-            if node_id in cache:
-                return cache[node_id]
-
-            node = dag.get_node_by_id(node_id)
-
-            if not node.inputs:  # Leaf node
-                cache[node_id] = modality
-                return modality
-
-            input_mods = [execute_node(input_id) for input_id in node.inputs]
-
-            if len(input_mods) == 1:
-                if isinstance(node.operation(), UnimodalRepresentation):
-                    if (
-                        isinstance(input_mods[0], TransformedModality)
-                        and input_mods[0].transformation[0].__class__ == node.operation
-                    ):
-                        result = input_mods[0]
-                    else:
-                        result = input_mods[0].apply_representation(node.operation())
-                elif isinstance(node.operation(), Context):
-                    result = input_mods[0].context(node.operation())
-                elif isinstance(node.operation(), AggregatedRepresentation):
-                    result = node.operation().transform(input_mods[0])
-            else:
-                result = input_mods[0].combine(input_mods[1:], node.operation())
-
-            cache[node_id] = result
-            return result
-
-        execute_node(dag.root_node_id)
-
-        return cache
 
     def _get_representation_chain(
         self, node: "UnimodalNode", dag: UnimodalDAG
@@ -221,7 +181,7 @@ class UnimodalOptimizer:
                     agg_operator.__class__, [dag.root_node_id], agg_operator.parameters
                 )
                 dag = builder.build(rep_node_id)
-                representations = self._execute_dag(dag, modality)
+                representations = dag.execute(modality)
                 node_id = list(representations.keys())[-1]
                 for task in self.tasks:
                     start = time.time()
@@ -249,7 +209,7 @@ class UnimodalOptimizer:
                         operator.__class__, [dag.root_node_id], agg_operator.parameters
                     )
                     dag = builder.build(rep_node_id)
-                    representations = self._execute_dag(dag, modality)
+                    representations = dag.execute(modality)
                     node_id = list(representations.keys())[-1]
 
                     start = time.time()
@@ -291,13 +251,15 @@ class UnimodalOptimizer:
                 current_node_id = rep_node_id
                 for other_rep in not_self_contained_reps:
                     # Create node for other representation
-                    other_rep_id = builder.create_operation_node(other_rep, [leaf_id],  other_rep().parameters)
+                    other_rep_id = builder.create_operation_node(
+                        other_rep, [leaf_id], other_rep().parameters
+                    )
 
                     # Create combination nodes
                     combine_id = builder.create_operation_node(
                         combination.__class__,
                         [current_node_id, other_rep_id],
-                        {"combination_type": combination.__class__.__name__},
+                        combination.parameters,
                     )
                     dags.append(builder.build(combine_id))
                     current_node_id = combine_id

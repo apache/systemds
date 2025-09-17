@@ -25,7 +25,10 @@ from systemds.scuro.representations.aggregate import Aggregation
 
 class AggregatedRepresentation(Representation):
     def __init__(self, aggregation="mean"):
-        super().__init__("AggregatedRepresentation", None)
+        parameters = {
+            "aggregation": list(Aggregation().get_aggregation_functions()),
+        }
+        super().__init__("AggregatedRepresentation", parameters)
         self.aggregation = Aggregation(aggregation)
         self.self_contained = True
 

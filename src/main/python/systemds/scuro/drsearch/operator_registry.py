@@ -76,7 +76,7 @@ class Registry:
 
     def get_fusion_operators(self):
         return self._fusion_operators
-    
+
     def get_fusion_operator_by_name(self, fusion_name):
         for fusion in self._fusion_operators:
             if fusion.__name__ == fusion_name:

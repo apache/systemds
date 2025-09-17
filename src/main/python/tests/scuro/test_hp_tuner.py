@@ -19,6 +19,27 @@
 #
 # -------------------------------------------------------------
 
+# -------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+# -------------------------------------------------------------
+
 
 import unittest
 
@@ -45,6 +66,7 @@ from systemds.scuro.representations.resnet import ResNet
 from tests.scuro.data_generator import ModalityRandomDataGenerator, TestDataLoader
 
 from systemds.scuro.modality.type import ModalityType
+from systemds.scuro.drsearch.hyperparameter_tuner import HyperparameterTuner
 
 
 class TestSVM(Model):
@@ -72,35 +94,10 @@ class TestSVM(Model):
         )["accuracy"]
 
 
-class TestCNN(Model):
-    def __init__(self):
-        super().__init__("TestCNN")
-
-    def fit(self, X, y, X_test, y_test):
-        if X.ndim > 2:
-            X = X.reshape(X.shape[0], -1)
-        self.clf = svm.SVC(C=1, gamma="scale", kernel="rbf", verbose=False)
-        self.clf = self.clf.fit(X, np.array(y))
-        y_pred = self.clf.predict(X)
-
-        return classification_report(
-            y, y_pred, output_dict=True, digits=3, zero_division=1
-        )["accuracy"]
-
-    def test(self, test_X: np.ndarray, test_y: np.ndarray):
-        if test_X.ndim > 2:
-            test_X = test_X.reshape(test_X.shape[0], -1)
-        y_pred = self.clf.predict(np.array(test_X))  # noqa
-
-        return classification_report(
-            np.array(test_y), y_pred, output_dict=True, digits=3, zero_division=1
-        )["accuracy"]
-
-
 from unittest.mock import patch
 
 
-class TestUnimodalRepresentationOptimizer(unittest.TestCase):
+class TestHPTuner(unittest.TestCase):
     data_generator = None
     num_instances = 0
 
@@ -130,17 +127,10 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
                 cls.labels,
                 cls.train_indizes,
                 cls.val_indizes,
-            ),
-            Task(
-                "UnimodalRepresentationTask2",
-                TestCNN(),
-                cls.labels,
-                cls.train_indizes,
-                cls.val_indizes,
-            ),
+            )
         ]
 
-    def test_unimodal_optimizer_for_audio_modality(self):
+    def test_hp_tuner_for_audio_modality(self):
         audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
             self.num_instances, 3000
         )
@@ -150,9 +140,9 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
             )
         )
 
-        self.optimize_unimodal_representation_for_modality(audio)
+        self.run_hp_for_modality(audio)
 
-    def test_unimodal_optimizer_for_text_modality(self):
+    def test_hp_tuner_for_text_modality(self):
         text_data, text_md = ModalityRandomDataGenerator().create_text_data(
             self.num_instances
         )
@@ -161,20 +151,9 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
                 self.indices, None, ModalityType.TEXT, text_data, str, text_md
             )
         )
-        self.optimize_unimodal_representation_for_modality(text)
+        self.run_hp_for_modality(text)
 
-    def test_unimodal_optimizer_for_video_modality(self):
-        video_data, video_md = ModalityRandomDataGenerator().create_visual_modality(
-            self.num_instances, 60
-        )
-        video = UnimodalModality(
-            TestDataLoader(
-                self.indices, None, ModalityType.VIDEO, video_data, np.float32, video_md
-            )
-        )
-        self.optimize_unimodal_representation_for_modality(video)
-
-    def optimize_unimodal_representation_for_modality(self, modality):
+    def run_hp_for_modality(self, modality):
         with patch.object(
             Registry,
             "_representations",
@@ -191,19 +170,10 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
             unimodal_optimizer = UnimodalOptimizer([modality], self.tasks, False)
             unimodal_optimizer.optimize()
 
-            assert (
-                unimodal_optimizer.operator_performance.modality_ids[0]
-                == modality.modality_id
+            hp = HyperparameterTuner(
+                [modality], self.tasks, unimodal_optimizer.operator_performance
             )
-            assert len(unimodal_optimizer.operator_performance.task_names) == 2
-            result, cached = unimodal_optimizer.operator_performance.get_k_best_results(
-                modality, 1, self.tasks[0]
-            )
-            assert len(result) == 1
-            assert len(cached) == 1
-
-    # Todo: Add a test with all representations at once
-    # Todo: Add test with only one model
+            hp.tune_unimodal_representations()
 
 
 if __name__ == "__main__":

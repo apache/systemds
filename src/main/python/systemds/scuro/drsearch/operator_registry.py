@@ -76,6 +76,12 @@ class Registry:
 
     def get_fusion_operators(self):
         return self._fusion_operators
+    
+    def get_fusion_operator_by_name(self, fusion_name):
+        for fusion in self._fusion_operators:
+            if fusion.__name__ == fusion_name:
+                return fusion
+        return None
 
     def get_representation_by_name(self, representation_name, modality_type):
         for representation in self._context_operators:

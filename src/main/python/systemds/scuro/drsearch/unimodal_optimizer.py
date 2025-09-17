@@ -28,7 +28,8 @@ import multiprocessing as mp
 from typing import Union
 
 import numpy as np
-from systemds.scuro.representations.window_aggregation import WindowAggregation
+import wandb
+from systemds.scuro.representations.window_aggregation import Window
 from systemds.scuro.representations.concatenation import Concatenation
 from systemds.scuro.representations.hadamard import Hadamard
 from systemds.scuro.representations.sum import Sum
@@ -48,9 +49,18 @@ class UnimodalOptimizer:
     def __init__(self, modalities, tasks, debug=True):
         self.modalities = modalities
         self.tasks = tasks
+        self.run = None
+        if debug:
+            wandb.login()
+            config = {
+                "representation_type": "unimodal",  # or "unimodal"
+            }
+            self.run = wandb.init(project="multimodal-search", config=config)
+            
+        self.debug = debug
 
         self.operator_registry = Registry()
-        self.operator_performance = UnimodalResults(modalities, tasks, debug)
+        self.operator_performance = UnimodalResults(modalities, tasks, debug, self.run)
 
         self._tasks_require_same_dims = True
         self.expected_dimensions = tasks[0].expected_dim
@@ -91,6 +101,9 @@ class UnimodalOptimizer:
     def optimize(self):
         for modality in self.modalities:
             local_result = self._process_modality(modality, False)
+        
+        if self.debug:
+            wandb.finish()
 
     def _process_modality(self, modality, parallel):
         if parallel:
@@ -134,6 +147,8 @@ class UnimodalOptimizer:
         other_representations,
         local_results,
     ):
+        other_representations = copy.deepcopy(other_representations)
+        other_representations.remove(representation.transformation[0].__class__)
         combined = representation
         context_operators = self.operator_registry.get_context_operators()
         used_representations = representation.transformation
@@ -242,12 +257,13 @@ class UnimodalOptimizer:
 
 
 class UnimodalResults:
-    def __init__(self, modalities, tasks, debug=False):
+    def __init__(self, modalities, tasks, debug=False, run=None):
         self.modality_ids = [modality.modality_id for modality in modalities]
         self.task_names = [task.model.name for task in tasks]
         self.results = {}
         self.debug = debug
         self.cache = {}
+        self.run = run
 
         for modality in self.modality_ids:
             self.results[modality] = {}
@@ -261,6 +277,7 @@ class UnimodalResults:
     ):
         parameters = []
         representation_names = []
+        
 
         for rep in representations:
             representation_names.append(type(rep).__name__)
@@ -272,7 +289,7 @@ class UnimodalResults:
             for param in list(rep.parameters.keys()):
                 params[param] = getattr(rep, param)
 
-            if isinstance(rep, WindowAggregation):
+            if isinstance(rep, Window):
                 params["aggregation_function"] = (
                     rep.aggregation_function.aggregation_function_name
                 )
@@ -288,6 +305,33 @@ class UnimodalResults:
             task_time=task_time,
             combination=combination.name if combination else "",
         )
+        
+        if self.debug:
+            # config = {
+            #     "representation_type": "unimodal",  # or "unimodal"
+            #     "used_modalities": [modality.modality_type.name],
+            #     "representations": representation_names,
+            #     "representation_time": modality.transform_time,
+            #     "fusion_method": combination.name if combination else "",
+            #     "hyperparameters": parameters,
+            #     "task_name": task_name,
+            # }
+            
+            metrics = asdict(entry)
+            table = wandb.Table(columns=["representations"])
+            for m in representation_names:
+                table.add_data(m)
+            metrics["representations"] = table
+            # table = wandb.Table(columns=["parameters"])
+            # for m in parameters:
+            #     table.add_data(m)
+            metrics.pop("params")
+            
+            metrics["used_modalities"] = modality.modality_id
+            metrics["task"] = self.task_names.index(task_name)
+            # Log metric for the multimodal combination
+            self.run.log(metrics)
+            
         self.results[modality.modality_id][task_name].append(entry)
         self.cache[modality.modality_id][task_name][
             (tuple(representation_names), scores[1], modality.transform_time)

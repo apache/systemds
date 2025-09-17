@@ -288,9 +288,10 @@ class UnimodalOptimizer:
             ]
 
             for combination in [Concatenation(), Hadamard(), Sum()]:
+                current_node_id = rep_node_id
                 for other_rep in not_self_contained_reps:
                     # Create node for other representation
-                    other_rep_id = builder.create_operation_node(other_rep, [leaf_id])
+                    other_rep_id = builder.create_operation_node(other_rep, [leaf_id],  other_rep().parameters)
 
                     # Create combination nodes
                     combine_id = builder.create_operation_node(

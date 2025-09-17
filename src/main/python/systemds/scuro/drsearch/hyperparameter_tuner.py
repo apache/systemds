@@ -36,16 +36,19 @@ from systemds.scuro.representations.representation import Representation
 from systemds.scuro.representations.window_aggregation import Window
 from systemds.scuro.representations.fusion import Fusion
 
-# Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 from systemds.scuro.drsearch.optimization_data import OptimizationResult
 from systemds.scuro.representations.context import Context
 
+
 @dataclass
 class HyperparamResult:
-    """Store hyperparameter tuning results"""
+
     representation_name: str
     best_params: Dict[str, Any]
     best_score: float
@@ -53,10 +56,20 @@ class HyperparamResult:
     tuning_time: float
     modality_id: int
 
+
 class HyperparameterTuner:
-    
-    def __init__(self, modalities, tasks, optimization_results, k: int = 2, n_jobs: int = -1, scoring_metric: str = 'accuracy',
-                 maximize_metric: bool = True, save_results: bool = True):
+
+    def __init__(
+        self,
+        modalities,
+        tasks,
+        optimization_results,
+        k: int = 2,
+        n_jobs: int = -1,
+        scoring_metric: str = "accuracy",
+        maximize_metric: bool = True,
+        save_results: bool = True,
+    ):
         self.tasks = tasks
         self.optimization_results = optimization_results
         self.n_jobs = n_jobs
@@ -69,13 +82,12 @@ class HyperparameterTuner:
         self.k_best_cache = None
         self.k_best_modalities = None
         self.extract_k_best_modalities_per_task()
-    
-    
+
     def get_modality_by_id(self, modality_id: int) -> Modality:
         for mod in self.modalities:
             if mod.modality_id == modality_id:
                 return mod
-        
+
     def extract_k_best_modalities_per_task(self):
         self.k_best_modalities = {}
         self.k_best_cache = {}
@@ -84,21 +96,25 @@ class HyperparameterTuner:
             self.k_best_cache[task.model.name] = []
             for modality in self.modalities:
                 k_best_results, cached_data = (
-                    self.optimization_results.get_k_best_results(
-                        modality, self.k, task
-                    )
+                    self.optimization_results.get_k_best_results(modality, self.k, task)
                 )
 
                 self.k_best_modalities[task.model.name].extend(k_best_results)
                 self.k_best_cache[task.model.name].extend(cached_data)
-    
-    def evaluate_single_config(self, reps: List[Representation],
-                               params: Dict[str, Any], modality_ids: List[int], task: Task, param_idx: List[int]) -> Tuple[Dict[str, Any], float]:
+
+    def evaluate_single_config(
+        self,
+        reps: List[Representation],
+        params: Dict[str, Any],
+        modality_ids: List[int],
+        task: Task,
+        param_idx: List[int],
+    ) -> Tuple[Dict[str, Any], float]:
         """
         Evaluate a single hyperparameter configuration
         """
         # try:
-        rep_name = ''
+        rep_name = ""
         modality_counter = 0
         modality = None
         modality_is_initialized = False
@@ -109,30 +125,51 @@ class HyperparameterTuner:
             rep_name += rep().name
             len_params = len(rep().parameters) if rep().parameters is not None else 0
             if isinstance(rep(), Window):
-                modality = modality.context(rep(*np.array(list(params.values()))[param_idx[start:start+len_params]]))
+                modality = modality.context(
+                    rep(
+                        *np.array(list(params.values()))[
+                            param_idx[start : start + len_params]
+                        ]
+                    )
+                )
             elif isinstance(rep(), Fusion):
-                modality = modality.combine(rep(*np.array(list(params.values()))[param_idx[start:start+len_params]]))
+                modality = modality.combine(
+                    rep(
+                        *np.array(list(params.values()))[
+                            param_idx[start : start + len_params]
+                        ]
+                    )
+                )
                 modality_is_initialized = False
             else:
                 if not modality_is_initialized:
                     modality = self.get_modality_by_id(modality_ids[modality_counter])
                     modality_is_initialized = True
                     modality_counter += 1
-                modality = modality.apply_representation(rep(*np.array(list(params.values()))[param_idx[start:start+len_params]]))
+                modality = modality.apply_representation(
+                    rep(
+                        *np.array(list(params.values()))[
+                            param_idx[start : start + len_params]
+                        ]
+                    )
+                )
             start += len_params
-    
+
         score = task.run(modality.data)[1]
         logger.debug(f"{rep_name} with params {params}: score = {score}")
         return params, score
         # except Exception as e:
         #         logger.error(f"Error evaluating {rep_name} with params {params}: {e}")
         #         return params, float('-inf') if self.maximize_metric else float('inf')
-    
-    
-    
-    def tune_representation(self, reps: List,
-                            hyperparams: List[Dict[str, List]], modality_id: List[int], task: Task,
-                            max_evals: Optional[int] = None) -> HyperparamResult:
+
+    def tune_representation(
+        self,
+        reps: List,
+        hyperparams: List[Dict[str, List]],
+        modality_id: List[int],
+        task: Task,
+        max_evals: Optional[int] = None,
+    ) -> HyperparamResult:
         """
         Tune hyperparameters for a single representation
 
@@ -144,9 +181,9 @@ class HyperparameterTuner:
             max_evals: Maximum number of evaluations (None for full grid search)
         """
         start_time = time.time()
-        rep_name = ''.join([rep().name for rep in reps])
+        rep_name = "".join([rep().name for rep in reps])
         logger.info(f"Starting hyperparameter tuning for")
-        
+
         # Generate parameter grid
         hp = merge_multiple_dicts_with_increments(list(hyperparams))
         param_grid = list(ParameterGrid(hp))
@@ -156,45 +193,59 @@ class HyperparameterTuner:
                 if h == p:
                     idx_params.append(i)
                     break
-        
-        
+
         # Limit evaluations if specified
         if max_evals and len(param_grid) > max_evals:
             # Random sampling if too many combinations
             np.random.shuffle(param_grid)
             param_grid = param_grid[:max_evals]
-        
+
         logger.info(f"Evaluating {len(param_grid)} parameter combinations for")
-        
+
         # Parallel evaluation
         all_results = []
         if self.n_jobs <= 1:
             # Sequential execution
             for params in param_grid:
-                result = self.evaluate_single_config(reps, params, modality_id, task, idx_params)
+                result = self.evaluate_single_config(
+                    reps, params, modality_id, task, idx_params
+                )
                 all_results.append(result)
         else:
             # Parallel execution
-            with concurrent.futures.ProcessPoolExecutor(max_workers=self.n_jobs) as executor:
-                futures = [executor.submit(self.evaluate_single_config, reps, params, modality_id, task, idx_params)
-                           for params in param_grid]
-                
+            with concurrent.futures.ProcessPoolExecutor(
+                max_workers=self.n_jobs
+            ) as executor:
+                futures = [
+                    executor.submit(
+                        self.evaluate_single_config,
+                        reps,
+                        params,
+                        modality_id,
+                        task,
+                        idx_params,
+                    )
+                    for params in param_grid
+                ]
+
                 for future in concurrent.futures.as_completed(futures):
                     try:
                         result = future.result()
                         all_results.append(result)
                     except Exception as e:
                         logger.error(f"Error in parallel execution: {e}")
-        
+
         # Find best parameters
         if self.maximize_metric:
             best_params, best_score = max(all_results, key=lambda x: x[1])
         else:
             best_params, best_score = min(all_results, key=lambda x: x[1])
-        
+
         tuning_time = time.time() - start_time
-        logger.info(f"Best params for {rep_name}: {best_params}, score: {best_score:.4f}, time: {tuning_time:.2f}s")
-        
+        logger.info(
+            f"Best params for {rep_name}: {best_params}, score: {best_score:.4f}, time: {tuning_time:.2f}s"
+        )
+
         return HyperparamResult(
             representation_name=rep_name,
             best_params=best_params,
@@ -203,7 +254,7 @@ class HyperparameterTuner:
             tuning_time=tuning_time,
             modality_id=modality_id,
         )
-    
+
     def tune_unimodal_representations(self, max_eval_per_rep: Optional[int] = None):
         results = {}
         for task in self.tasks:
@@ -217,21 +268,31 @@ class HyperparameterTuner:
                     hyperparams.append(params)
                     reps.append(rep)
                 result = self.tune_representation(
-                    reps, hyperparams, representation.modality_id, task, max_eval_per_rep
+                    reps,
+                    hyperparams,
+                    [representation.modality_id],
+                    task,
+                    max_eval_per_rep,
                 )
                 results[task.model.name].append(result)
-            
+
         self.results = results
-        
+
         if self.save_results:
             self.save_tuning_results()
-        
+
         return results
-    
-    
-    def tune_multimodal_representations(self, optimization_results, task: Task, k: int = 1, optimize_unimodal: bool = True, max_eval_per_rep: Optional[int] = None):
+
+    def tune_multimodal_representations(
+        self,
+        optimization_results,
+        task: Task,
+        k: int = 1,
+        optimize_unimodal: bool = True,
+        max_eval_per_rep: Optional[int] = None,
+    ):
         best_optimization_results = optimization_results[:k]
-        
+
         for result in best_optimization_results:
             fusion_node_ids = []
             used_modalities = result.architecture.encoder_choices
@@ -239,53 +300,60 @@ class HyperparameterTuner:
             modality_ids = []
             hyperparams = []
             reps = []
-            
+
             for i, fusion_node in enumerate(result.architecture.fusion_nodes):
                 if len(fusion_node.parameters) > 0:
                     fusion_node_ids.append(i)
-                
+
             if len(fusion_node_ids) == 0 and not optimize_unimodal:
-                logger.warning("No fusion nodes with hyperparameters and unimodal optimization disabled. Skipping.")
+                logger.warning(
+                    "No fusion nodes with hyperparameters and unimodal optimization disabled. Skipping."
+                )
                 continue
-            
+
             for i, modality in enumerate(used_modalities):
                 mod_id = modality.modality_id
                 instance_id = modality.modality_instance_id
-                cached_representation = self.get_cached_representation(int(mod_id), int(instance_id), task)
+                cached_representation = self.get_cached_representation(
+                    int(mod_id), int(instance_id), task
+                )
                 cached_representations.append(cached_representation)
-                
+
                 if optimize_unimodal:
                     modality_ids.append(int(mod_id))
-                    
+
                     for transformation in cached_representation.transformation:
                         params = transformation.parameters
                         rep = transformation.__class__
                         hyperparams.append(params)
                         reps.append(rep)
-                        
+
                 if len(used_modalities) > i + 1:
-                    reps.append(Registry().get_fusion_operator_by_name(result.architecture.fusion_nodes[i].operation))
+                    reps.append(
+                        Registry().get_fusion_operator_by_name(
+                            result.architecture.fusion_nodes[i].operation
+                        )
+                    )
                     hyperparams.append(result.architecture.fusion_nodes[i].parameters)
-                        
-            self.tune_representation(reps, hyperparams, modality_ids, task, max_eval_per_rep)
-            
-                
-                
-                
-            
-            
-                
+
+            self.tune_representation(
+                reps, hyperparams, modality_ids, task, max_eval_per_rep
+            )
+
     def get_cached_representation(self, modality_id: int, instance_id: int, task: Task):
         counter = -1
         for cached_representation in self.k_best_cache[task.model.name]:
             if cached_representation.modality_id == modality_id:
-                counter +=1
+                counter += 1
                 if counter == instance_id:
                     return cached_representation
-    
-    def tune_multiple_representations(self, representations: Dict[str, Dict],
-                                      task_data: Any, max_evals_per_rep: Optional[int] = None) -> Dict[
-        str, HyperparamResult]:
+
+    def tune_multiple_representations(
+        self,
+        representations: Dict[str, Dict],
+        task_data: Any,
+        max_evals_per_rep: Optional[int] = None,
+    ) -> Dict[str, HyperparamResult]:
         """
         Tune hyperparameters for multiple representations
 
@@ -301,64 +369,64 @@ class HyperparameterTuner:
             max_evals_per_rep: Maximum evaluations per representation
         """
         results = {}
-        
+
         for rep_name, rep_config in representations.items():
-            rep_func = rep_config['function']
-            hyperparams = rep_config['hyperparams']
-            
+            rep_func = rep_config["function"]
+            hyperparams = rep_config["hyperparams"]
+
             result = self.tune_representation(
                 rep_name, rep_func, hyperparams, task_data, max_evals_per_rep
             )
             results[rep_name] = result
-        
+
         self.results = results
-        
+
         if self.save_results:
             self.save_tuning_results()
-        
+
         return results
-    
-    def get_best_representations(self, k: int = None) -> List[Tuple[str, HyperparamResult]]:
+
+    def get_best_representations(
+        self, k: int = None
+    ) -> List[Tuple[str, HyperparamResult]]:
         """
         Get the k best representations based on their best scores
         """
         if not self.results:
             logger.warning("No tuning results available")
             return []
-        
+
         sorted_results = sorted(
             self.results.items(),
             key=lambda x: x[1].best_score,
-            reverse=self.maximize_metric
+            reverse=self.maximize_metric,
         )
-        
+
         if k is None:
             return sorted_results
-        
+
         return sorted_results[:k]
-    
+
     def save_tuning_results(self, filepath: str = None):
         """Save tuning results to JSON file"""
         if not filepath:
             filepath = f"hyperparameter_results_{int(time.time())}.json"
-        
+
         # Convert results to JSON-serializable format
         json_results = {}
         for task in self.results.keys():
             for result in self.results[task]:
                 json_results[result.representation_name] = {
-                    'best_params': result.best_params,
-                    'best_score': result.best_score,
-                    'tuning_time': result.tuning_time,
-                    'num_evaluations': len(result.all_results)
+                    "best_params": result.best_params,
+                    "best_score": result.best_score,
+                    "tuning_time": result.tuning_time,
+                    "num_evaluations": len(result.all_results),
                 }
-            
-        
-        with open(filepath, 'w') as f:
+
+        with open(filepath, "w") as f:
             json.dump(json_results, f, indent=2)
-        
+
         logger.info(f"Results saved to {filepath}")
-        
 
     def tune_operator_chain(self, modality, operator_chain):
         best_result = None
@@ -434,9 +502,15 @@ class HyperparameterTuner:
 
 
 def merge_multiple_dicts_with_increments(dicts):
-    result = dicts[0].copy() if dicts else {}
-    
+    if dicts is None:
+        return {}
+
+    result = dicts[0].copy() if dicts[0] is not None else {}
+
     for dict_to_merge in dicts[1:]:
+        if dict_to_merge is None:
+            continue
+
         for key, value in dict_to_merge.items():
             if key in result:
                 counter = 1
@@ -447,5 +521,5 @@ def merge_multiple_dicts_with_increments(dicts):
                 result[new_key] = value
             else:
                 result[key] = value
-    
+
     return result

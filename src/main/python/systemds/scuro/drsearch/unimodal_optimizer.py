@@ -10,7 +10,7 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing,
+# Unless required by applicable law or agreed in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 # KIND, either express or implied.  See the License for the
@@ -23,26 +23,27 @@ import time
 import copy
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, field, asdict
-
 import multiprocessing as mp
-from typing import Union
+from typing import Union, Dict, List, Any
 
 import numpy as np
 import wandb
+from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.window_aggregation import Window
+from systemds.scuro.representations.context import Context
+from systemds.scuro.representations.fusion import Fusion
 from systemds.scuro.representations.concatenation import Concatenation
 from systemds.scuro.representations.hadamard import Hadamard
 from systemds.scuro.representations.sum import Sum
-
-from systemds.scuro.representations.aggregated_representation import (
-    AggregatedRepresentation,
-)
+from systemds.scuro.representations.aggregated_representation import AggregatedRepresentation
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.aggregate import Aggregation
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.utils.schema_helpers import get_shape
+from systemds.scuro.drsearch.unimodal_dag import UnimodalDAGBuilder, UnimodalDAG
+from systemds.scuro.drsearch.unimodal_visualizer import visualize_dag
 
 
 class UnimodalOptimizer:
@@ -50,6 +51,9 @@ class UnimodalOptimizer:
         self.modalities = modalities
         self.tasks = tasks
         self.run = None
+        
+        self.builders = {modality.modality_id: UnimodalDAGBuilder() for modality in modalities}
+
         if debug:
             wandb.login()
             config = {
@@ -99,6 +103,7 @@ class UnimodalOptimizer:
                 #     print(f'Modality {modality.modality_id} generated an exception: {exc}')
 
     def optimize(self):
+        """Optimize representations for each modality"""
         for modality in self.modalities:
             local_result = self._process_modality(modality, False)
         
@@ -106,71 +111,82 @@ class UnimodalOptimizer:
             wandb.finish()
 
     def _process_modality(self, modality, parallel):
+        """Process a single modality using the DAG-based approach"""
         if parallel:
-            local_results = UnimodalResults(
-                modalities=[modality], tasks=self.tasks, debug=False
-            )
+            local_results = UnimodalResults([modality], self.tasks, debug=False)
         else:
             local_results = self.operator_performance
 
-        context_operators = self.operator_registry.get_context_operators()
-        not_self_contained_reps = (
-            self.operator_registry.get_not_self_contained_representations(
-                modality.modality_type
-            )
-        )
-        modality_specific_operators = self.operator_registry.get_representations(
-            modality.modality_type
-        )
-        for modality_specific_operator in modality_specific_operators:
-            mod_op = modality_specific_operator()
+        modality_specific_operators = self.operator_registry.get_representations(modality.modality_type)
+        
+        for operator in modality_specific_operators:
+            # Build DAG for this operator
+            dags = self._build_modality_dag(modality, operator())
+            
+            for dag in dags:
+                # Execute DAG and get all intermediate representations
+                representations = self._execute_dag(dag, modality)
+                node_id = list(representations.keys())[-1]
+                node = dag.get_node_by_id(node_id)
+                if node.operation is None:
+                    continue
+                reps = self._get_representation_chain(node, dag)
+                combination = next((op for op in reps if isinstance(op, Fusion)), None)
+                self._evaluate_local(representations[node_id], local_results, dag, combination)
+                if self.debug:
+                    visualize_dag(dag)
 
-            mod = modality.apply_representation(mod_op)
-            self._evaluate_local(mod, [mod_op], local_results)
+        return local_results
 
-            if not mod_op.self_contained:
-                self._combine_non_self_contained_representations(
-                    modality, mod, not_self_contained_reps, local_results
-                )
+    def _execute_dag(self, dag: UnimodalDAG, modality: Modality) -> Dict[str, TransformedModality]:
+        cache = {}
 
-            for context_operator_after in context_operators:
-                con_op_after = context_operator_after()
-                mod_con = mod.context(con_op_after)
-                self._evaluate_local(mod_con, [mod_op, con_op_after], local_results)
+        def execute_node(node_id: str) -> TransformedModality:
+            if node_id in cache:
+                return cache[node_id]
 
-            return local_results
+            node = dag.get_node_by_id(node_id)
+            
+            if not node.inputs:  # Leaf node
+                cache[node_id] = modality
+                return modality
+                
+            input_mods = [execute_node(input_id) for input_id in node.inputs]
+            
+            if len(input_mods) == 1:
+                if isinstance(node.operation(), UnimodalRepresentation):
+                    if isinstance(input_mods[0], TransformedModality) and input_mods[0].transformation[0].__class__ == node.operation:
+                        result = input_mods[0]
+                    else:
+                        result = input_mods[0].apply_representation(node.operation())
+                elif isinstance(node.operation(), Context):
+                    result = input_mods[0].context(node.operation())
+                elif isinstance(node.operation(), AggregatedRepresentation):
+                    result = node.operation().transform(input_mods[0])
+            else:
+                result = input_mods[0].combine(input_mods[1:], node.operation())
+                
+            cache[node_id] = result
+            return result
 
-    def _combine_non_self_contained_representations(
-        self,
-        modality: Modality,
-        representation: TransformedModality,
-        other_representations,
-        local_results,
-    ):
-        other_representations = copy.deepcopy(other_representations)
-        other_representations.remove(representation.transformation[0].__class__)
-        combined = representation
-        context_operators = self.operator_registry.get_context_operators()
-        used_representations = representation.transformation
-        for other_representation in other_representations:
-            used_representations.append(other_representation())
-            for combination in [Concatenation(), Hadamard(), Sum()]:
-                combined = combined.combine(
-                    modality.apply_representation(other_representation()), combination
-                )
-                self._evaluate_local(
-                    combined, used_representations, local_results, combination
-                )
 
-                for context_op in context_operators:
-                    con_op = context_op()
-                    mod = combined.context(con_op)
-                    c_t = copy.deepcopy(used_representations)
-                    c_t.append(con_op)
-                    self._evaluate_local(mod, c_t, local_results, combination)
+        execute_node(dag.root_node_id)
+        
+        return cache
+
+    def _get_representation_chain(self, node: 'UnimodalNode', dag: UnimodalDAG) -> List[Any]:
+        representations = []
+        if node.operation:
+            representations.append(node.operation)
+            
+        for input_id in node.inputs:
+            input_node = dag.get_node_by_id(input_id)
+            if input_node.operation:
+                representations.extend(self._get_representation_chain(input_node, dag))
+                
+        return representations
 
     def _merge_results(self, local_results):
-        """Merge local results into the main results"""
         for modality_id in local_results.results:
             for task_name in local_results.results[modality_id]:
                 self.operator_performance.results[modality_id][task_name].extend(
@@ -183,28 +199,28 @@ class UnimodalOptimizer:
                     self.operator_performance.cache[modality][task_name][key] = value
 
     def _evaluate_local(
-        self, modality, representations, local_results, combination=None
+        self, modality, local_results, dag, combination=None
     ):
         if self._tasks_require_same_dims:
             if self.expected_dimensions == 1 and get_shape(modality.metadata) > 1:
-                # for aggregation in Aggregation().get_aggregation_functions():
-                agg_operator = AggregatedRepresentation(Aggregation())
-                agg_modality = agg_operator.transform(modality)
-                reps = representations.copy()
-                reps.append(agg_operator)
-                # agg_modality.pad()
+                builder = self.builders[modality.modality_id]
+                agg_operator = AggregatedRepresentation()
+                rep_node_id = builder.create_operation_node(agg_operator.__class__, [dag.root_node_id], agg_operator.parameters)
+                dag = builder.build(rep_node_id)
+                representations = self._execute_dag(dag, modality)
+                node_id = list(representations.keys())[-1]
                 for task in self.tasks:
                     start = time.time()
-                    scores = task.run(agg_modality.data)
+                    scores = task.run(representations[node_id].data)
                     end = time.time()
 
                     local_results.add_result(
                         scores,
-                        reps,
                         modality,
                         task.model.name,
                         end - start,
                         combination,
+                        dag
                     )
             else:
                 modality.pad()
@@ -214,47 +230,86 @@ class UnimodalOptimizer:
                     end = time.time()
                     local_results.add_result(
                         scores,
-                        representations,
                         modality,
                         task.model.name,
                         end - start,
                         combination,
+                        dag
                     )
         else:
             for task in self.tasks:
                 if task.expected_dim == 1 and get_shape(modality.metadata) > 1:
-                    # for aggregation in Aggregation().get_aggregation_functions():
+                    builder = self.builders[modality.modality_id]
                     agg_operator = AggregatedRepresentation(Aggregation())
-                    agg_modality = agg_operator.transform(modality)
+                    rep_node_id = builder.create_operation_node(operator.__class__, [dag.root_node_id],
+                                                                agg_operator.parameters)
+                    dag = builder.build(rep_node_id)
+                    representations = self._execute_dag(dag, modality)
+                    node_id = list(representations.keys())[-1]
 
-                    reps = representations.copy()
-                    reps.append(agg_operator)
-                    # modality.pad()
                     start = time.time()
-                    scores = task.run(agg_modality.data)
+                    scores = task.run(representations[node_id].data)
                     end = time.time()
                     local_results.add_result(
                         scores,
-                        reps,
                         modality,
                         task.model.name,
                         end - start,
                         combination,
+                        dag
                     )
                 else:
-                    # modality.pad()
                     start = time.time()
                     scores = task.run(modality.data)
                     end = time.time()
                     local_results.add_result(
                         scores,
-                        representations,
                         modality,
                         task.model.name,
                         end - start,
                         combination,
+                        dag
                     )
 
+    def _build_modality_dag(self, modality: Modality, operator: Any) -> UnimodalDAG:
+        dags = []
+        builder = self.builders[modality.modality_id]
+        leaf_id = builder.create_leaf_node(None, modality.modality_id)
+        
+        rep_node_id = builder.create_operation_node(operator.__class__, [leaf_id], operator.parameters)
+        current_node_id = rep_node_id
+        dags.append(builder.build(current_node_id))
+        
+        if not operator.self_contained:
+            not_self_contained_reps = self.operator_registry.get_not_self_contained_representations(modality.modality_type)
+            not_self_contained_reps = [rep for rep in not_self_contained_reps if rep != operator.__class__]
+            
+            for combination in [Concatenation(), Hadamard(), Sum()]:
+                for other_rep in not_self_contained_reps:
+                    # Create node for other representation
+                    other_rep_id = builder.create_operation_node(other_rep, [leaf_id])
+                    
+                    # Create combination nodes
+                    combine_id = builder.create_operation_node(
+                        combination.__class__,
+                        [current_node_id, other_rep_id],
+                        {"combination_type": combination.__class__.__name__}
+                    )
+                    dags.append(builder.build(combine_id))
+                    current_node_id = combine_id
+                
+                    
+        context_operators = self.operator_registry.get_context_operators()
+       
+        for context_op in context_operators:
+            context_node_id = builder.create_operation_node(
+                context_op,
+                [current_node_id],
+                context_op().parameters,
+            )
+            dags.append(builder.build(context_node_id))
+            
+        return dags
 
 class UnimodalResults:
     def __init__(self, modalities, tasks, debug=False, run=None):
@@ -273,58 +328,23 @@ class UnimodalResults:
                 self.results[modality][task_name] = []
 
     def add_result(
-        self, scores, representations, modality, task_name, task_time, combination
+        self, scores, modality, task_name, task_time, combination, dag
     ):
-        parameters = []
-        representation_names = []
-        
-
-        for rep in representations:
-            representation_names.append(type(rep).__name__)
-            if isinstance(rep, AggregatedRepresentation):
-                parameters.append(rep.parameters)
-                continue
-
-            params = {}
-            for param in list(rep.parameters.keys()):
-                params[param] = getattr(rep, param)
-
-            if isinstance(rep, Window):
-                params["aggregation_function"] = (
-                    rep.aggregation_function.aggregation_function_name
-                )
-
-            parameters.append(params)
-
         entry = ResultEntry(
-            representations=representation_names,
-            params=parameters,
             train_score=scores[0],
             val_score=scores[1],
             representation_time=modality.transform_time,
             task_time=task_time,
             combination=combination.name if combination else "",
+            dag=dag
         )
         
         if self.debug:
-            # config = {
-            #     "representation_type": "unimodal",  # or "unimodal"
-            #     "used_modalities": [modality.modality_type.name],
-            #     "representations": representation_names,
-            #     "representation_time": modality.transform_time,
-            #     "fusion_method": combination.name if combination else "",
-            #     "hyperparameters": parameters,
-            #     "task_name": task_name,
-            # }
-            
             metrics = asdict(entry)
             table = wandb.Table(columns=["representations"])
             for m in representation_names:
                 table.add_data(m)
             metrics["representations"] = table
-            # table = wandb.Table(columns=["parameters"])
-            # for m in parameters:
-            #     table.add_data(m)
             metrics.pop("params")
             
             metrics["used_modalities"] = modality.modality_id
@@ -334,7 +354,7 @@ class UnimodalResults:
             
         self.results[modality.modality_id][task_name].append(entry)
         self.cache[modality.modality_id][task_name][
-            (tuple(representation_names), scores[1], modality.transform_time)
+            (tuple([rep.operation for rep in dag.nodes]), scores[1], modality.transform_time)
         ] = modality
 
         if self.debug:
@@ -372,9 +392,8 @@ class UnimodalResults:
 @dataclass(frozen=True)
 class ResultEntry:
     val_score: float
-    representations: list
-    params: list
     train_score: float
     representation_time: float
     task_time: float
     combination: str
+    dag: UnimodalDAG

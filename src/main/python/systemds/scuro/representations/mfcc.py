@@ -38,10 +38,10 @@ class MFCC(UnimodalRepresentation):
             "n_mels": [20, 32, 64, 128],
         }  # TODO
         super().__init__("MFCC", ModalityType.TIMESERIES, parameters, False)
-        self.n_mfcc = n_mfcc
-        self.dct_type = dct_type
-        self.n_mels = n_mels
-        self.hop_length = hop_length
+        self.n_mfcc = int(n_mfcc)
+        self.dct_type = int(dct_type)
+        self.n_mels = int(n_mels)
+        self.hop_length = int(hop_length)
 
     def transform(self, modality):
         transformed_modality = TransformedModality(

@@ -43,9 +43,9 @@ class LSTM(Fusion):
         Combines modalities using an LSTM
         """
         super().__init__("LSTM")
-        self.depth = depth
-        self.width = width
-        self.dropout_rate = dropout_rate
+        self.depth = int(depth)
+        self.width = int(width)
+        self.dropout_rate = float(dropout_rate)
         self.unimodal_embeddings = {}
         seed = 42
 

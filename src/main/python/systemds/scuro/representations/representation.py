@@ -18,7 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from abc import abstractmethod
+from systemds.scuro.utils.identifier import Identifier
 
 
 class Representation:
@@ -26,6 +26,7 @@ class Representation:
         self.name = name
         self._parameters = parameters
         self.self_contained = True
+        self.representation_id = Identifier().new_id()
 
     @property
     def parameters(self):

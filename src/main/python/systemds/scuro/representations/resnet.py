@@ -36,7 +36,7 @@ from systemds.scuro.utils.static_variables import get_device
     [ModalityType.IMAGE, ModalityType.VIDEO, ModalityType.TIMESERIES]
 )
 class ResNet(UnimodalRepresentation):
-    def __init__(self, layer="avgpool", model_name="ResNet18", output_file=None):
+    def __init__(self, model_name="ResNet18", layer="avgpool", output_file=None):
         self.data_type = torch.bfloat16
         self.model_name = model_name
         parameters = self._get_parameters()
@@ -95,7 +95,6 @@ class ResNet(UnimodalRepresentation):
                 .to(get_device())
                 .to(self.data_type)
             )
-
         else:
             raise NotImplementedError
 

@@ -18,10 +18,8 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List, Dict, Any
-import copy
-from collections import deque
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.representation import (
@@ -31,22 +29,12 @@ from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
 from systemds.scuro.representations.context import Context
-from systemds.scuro.representations.window_aggregation import WindowAggregation
 
 
 @dataclass
-class UnimodalNode:
-    node_id: str
-    operation: Any
-    inputs: List[str]
-    modality_id: str = None
-    parameters: Dict[str, Any] = field(default_factory=dict)
+class RepresentationDag:
 
-
-@dataclass
-class UnimodalDAG:
-
-    def __init__(self, nodes: List[UnimodalNode], root_node_id):
+    def __init__(self, nodes: List[Any], root_node_id):
         self.root_node_id = root_node_id
         self.nodes = self.filter_connected_nodes(nodes)
 
@@ -78,7 +66,7 @@ class UnimodalDAG:
                 leaf_nodes.append(node.node_id)
         return leaf_nodes
 
-    def get_node_by_id(self, node_id: str) -> UnimodalNode:
+    def get_node_by_id(self, node_id: str):
         for node in self.nodes:
             if node.node_id == node_id:
                 return node
@@ -119,7 +107,7 @@ class UnimodalDAG:
 
         return not has_cycle(self.root_node_id, set())
 
-    def execute(self, modality: Modality) -> Dict[str, TransformedModality]:
+    def execute(self, modalities: List[Modality]) -> Dict[str, TransformedModality]:
         cache = {}
 
         def execute_node(node_id: str) -> TransformedModality:
@@ -128,7 +116,13 @@ class UnimodalDAG:
 
             node = self.get_node_by_id(node_id)
 
-            if not node.inputs:  # Leaf node
+            if not node.inputs:
+                if hasattr(node, "representation_index"):
+                    modality = get_modality_by_id_and_instance_id(
+                        modalities, node.modality_id, node.representation_index
+                    )
+                else:
+                    modality = get_modality_by_id(modalities, node.modality_id)
                 cache[node_id] = modality
                 return modality
 
@@ -158,37 +152,21 @@ class UnimodalDAG:
         return cache
 
 
-class UnimodalDAGBuilder:
+def get_modality_by_id(modalities: List[Modality], modality_id: int) -> Modality:
+    for modality in modalities:
+        if modality.modality_id == modality_id:
+            return modality
+    return None
 
-    def __init__(self):
-        self.nodes = []
-        self.node_counter = 0
 
-    def create_leaf_node(self, operation: Any, modality_id: str) -> str:
-        node_id = f"leaf_{self.node_counter}"
-        self.node_counter += 1
-        node = UnimodalNode(
-            node_id=node_id, operation=operation, inputs=[], modality_id=modality_id
-        )
-        self.nodes.append(node)
-        return node_id
-
-    def create_operation_node(
-        self, operation: Any, inputs: List[str], parameters: Dict[str, Any] = None
-    ) -> str:
-        node_id = f"op_{self.node_counter}"
-        self.node_counter += 1
-        node = UnimodalNode(
-            node_id=node_id,
-            operation=operation,
-            inputs=inputs,
-            parameters=parameters or {},
-        )
-        self.nodes.append(node)
-        return node_id
-
-    def build(self, root_node_id: str) -> UnimodalDAG:
-        dag = UnimodalDAG(nodes=copy.deepcopy(self.nodes), root_node_id=root_node_id)
-        if not dag.validate():
-            raise ValueError("Invalid DAG construction")
-        return dag
+def get_modality_by_id_and_instance_id(
+    modalities: List[Modality], modality_id: int, instance_id: int
+):
+    counter = 0
+    for modality in modalities:
+        if modality.modality_id == modality_id:
+            if counter == instance_id:
+                return modality
+            else:
+                counter += 1
+    return None

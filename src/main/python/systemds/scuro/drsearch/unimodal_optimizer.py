@@ -28,9 +28,6 @@ from typing import Union, Dict, List, Any
 
 import numpy as np
 import wandb
-from systemds.scuro.representations.unimodal import UnimodalRepresentation
-from systemds.scuro.representations.window_aggregation import Window
-from systemds.scuro.representations.context import Context
 from systemds.scuro.representations.fusion import Fusion
 from systemds.scuro.representations.concatenation import Concatenation
 from systemds.scuro.representations.hadamard import Hadamard
@@ -38,13 +35,11 @@ from systemds.scuro.representations.sum import Sum
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
-from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.modality import Modality
-from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.aggregate import Aggregation
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.utils.schema_helpers import get_shape
-from systemds.scuro.drsearch.unimodal_dag import UnimodalDAGBuilder, UnimodalDAG
+from systemds.scuro.drsearch.representation_dag import RepresentationDag
 from systemds.scuro.drsearch.unimodal_visualizer import visualize_dag
 
 
@@ -126,12 +121,10 @@ class UnimodalOptimizer:
         )
 
         for operator in modality_specific_operators:
-            # Build DAG for this operator
             dags = self._build_modality_dag(modality, operator())
 
             for dag in dags:
-                # Execute DAG and get all intermediate representations
-                representations = dag.execute(modality)
+                representations = dag.execute([modality])
                 node_id = list(representations.keys())[-1]
                 node = dag.get_node_by_id(node_id)
                 if node.operation is None:
@@ -147,7 +140,7 @@ class UnimodalOptimizer:
         return local_results
 
     def _get_representation_chain(
-        self, node: "UnimodalNode", dag: UnimodalDAG
+        self, node: "UnimodalNode", dag: RepresentationDag
     ) -> List[Any]:
         representations = []
         if node.operation:
@@ -181,7 +174,7 @@ class UnimodalOptimizer:
                     agg_operator.__class__, [dag.root_node_id], agg_operator.parameters
                 )
                 dag = builder.build(rep_node_id)
-                representations = dag.execute(modality)
+                representations = dag.execute([modality])
                 node_id = list(representations.keys())[-1]
                 for task in self.tasks:
                     start = time.time()
@@ -206,10 +199,12 @@ class UnimodalOptimizer:
                     builder = self.builders[modality.modality_id]
                     agg_operator = AggregatedRepresentation(Aggregation())
                     rep_node_id = builder.create_operation_node(
-                        operator.__class__, [dag.root_node_id], agg_operator.parameters
+                        agg_operator.__class__,
+                        [dag.root_node_id],
+                        agg_operator.parameters,
                     )
                     dag = builder.build(rep_node_id)
-                    representations = dag.execute(modality)
+                    representations = dag.execute([modality])
                     node_id = list(representations.keys())[-1]
 
                     start = time.time()
@@ -226,7 +221,9 @@ class UnimodalOptimizer:
                         scores, modality, task.model.name, end - start, combination, dag
                     )
 
-    def _build_modality_dag(self, modality: Modality, operator: Any) -> UnimodalDAG:
+    def _build_modality_dag(
+        self, modality: Modality, operator: Any
+    ) -> RepresentationDag:
         dags = []
         builder = self.builders[modality.modality_id]
         leaf_id = builder.create_leaf_node(None, modality.modality_id)
@@ -305,11 +302,6 @@ class UnimodalResults:
 
         if self.debug:
             metrics = asdict(entry)
-            table = wandb.Table(columns=["representations"])
-            for m in representation_names:
-                table.add_data(m)
-            metrics["representations"] = table
-            metrics.pop("params")
 
             metrics["used_modalities"] = modality.modality_id
             metrics["task"] = self.task_names.index(task_name)
@@ -364,4 +356,51 @@ class ResultEntry:
     representation_time: float
     task_time: float
     combination: str
-    dag: UnimodalDAG
+    dag: RepresentationDag
+
+
+@dataclass
+class UnimodalNode:
+    node_id: str
+    operation: Any
+    inputs: List[str]
+    modality_id: str = None
+    parameters: Dict[str, Any] = field(default_factory=dict)
+
+
+class UnimodalDAGBuilder:
+
+    def __init__(self):
+        self.nodes = []
+        self.node_counter = 0
+
+    def create_leaf_node(self, operation: Any, modality_id: str) -> str:
+        node_id = f"leaf_{self.node_counter}"
+        self.node_counter += 1
+        node = UnimodalNode(
+            node_id=node_id, operation=operation, inputs=[], modality_id=modality_id
+        )
+        self.nodes.append(node)
+        return node_id
+
+    def create_operation_node(
+        self, operation: Any, inputs: List[str], parameters: Dict[str, Any] = None
+    ) -> str:
+        node_id = f"op_{self.node_counter}"
+        self.node_counter += 1
+        node = UnimodalNode(
+            node_id=node_id,
+            operation=operation,
+            inputs=inputs,
+            parameters=parameters or {},
+        )
+        self.nodes.append(node)
+        return node_id
+
+    def build(self, root_node_id: str) -> RepresentationDag:
+        dag = RepresentationDag(
+            nodes=copy.deepcopy(self.nodes), root_node_id=root_node_id
+        )
+        if not dag.validate():
+            raise ValueError("Invalid DAG construction")
+        return dag

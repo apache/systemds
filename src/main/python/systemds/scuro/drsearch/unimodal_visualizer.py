@@ -20,10 +20,10 @@
 # -------------------------------------------------------------
 
 from typing import Dict, Any
-from systemds.scuro.drsearch.unimodal_dag import UnimodalDAG
+from systemds.scuro.drsearch.representation_dag import RepresentationDag
 
 
-def visualize_dag(dag: UnimodalDAG) -> Dict[str, Any]:
+def visualize_dag(dag: RepresentationDag) -> Dict[str, Any]:
     nodes = []
     edges = []
 

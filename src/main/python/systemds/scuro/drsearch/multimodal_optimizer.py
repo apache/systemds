@@ -4,15 +4,15 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Any, Generator
 import copy
 import traceback
-
+from itertools import chain
 from systemds.scuro import Task
+from systemds.scuro.drsearch.representation_dag import RepresentationDag
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
 from systemds.scuro.representations.aggregate import Aggregation
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.utils.schema_helpers import get_shape
-from systemds.scuro.modality.transformed import TransformedModality
 
 
 @dataclass
@@ -23,105 +23,6 @@ class MultimodalNode:
     modality_id: str = None
     representation_index: int = None
     parameters: Dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass
-class MultimodalDAG:
-    def __init__(self, nodes: List[MultimodalNode], root_node_id: str):
-        self.root_node_id = root_node_id
-        self.nodes = self.filter_connected_nodes(nodes)
-
-    def filter_connected_nodes(self, nodes):
-        node_map = {node.node_id: node for node in nodes}
-
-        if self.root_node_id not in node_map:
-            return []
-
-        visited = set()
-        stack = [self.root_node_id]
-
-        while stack:
-            current_id = stack.pop()
-            if current_id not in visited:
-                visited.add(current_id)
-                current_node = node_map[current_id]
-                for input_id in current_node.inputs:
-                    if input_id in node_map and input_id not in visited:
-                        stack.append(input_id)
-
-        return [node for node in nodes if node.node_id in visited]
-
-    def get_node_by_id(self, node_id: str) -> MultimodalNode:
-        for node in self.nodes:
-            if node.node_id == node_id:
-                return node
-        return None
-
-    def validate(self) -> bool:
-        node_ids = {node.node_id for node in self.nodes}
-
-        if self.root_node_id not in node_ids:
-            return False
-
-        for node in self.nodes:
-            for input_id in node.inputs:
-                if input_id not in node_ids:
-                    return False
-
-        visited = set()
-
-        def has_cycle(node_id: str, path: set) -> bool:
-            if node_id in path:
-                return True
-            if node_id in visited:
-                return False
-            path.add(node_id)
-            visited.add(node_id)
-            node = self.get_node_by_id(node_id)
-            for input_id in node.inputs:
-                if has_cycle(input_id, path.copy()):
-                    return True
-            return False
-
-        return not has_cycle(self.root_node_id, set())
-
-    def execute(
-        self, k_best_representations: Dict[str, Dict[str, List[Any]]], task: Task
-    ) -> TransformedModality:
-        cache = {}
-
-        def execute_node(node_id: str) -> TransformedModality:
-            if node_id in cache:
-                return cache[node_id]
-
-            node = self.get_node_by_id(node_id)
-
-            if not node.inputs:
-                representation = k_best_representations[task.model.name][node.modality_id][
-                    "representations"
-                ][node.representation_index]
-                cache[node_id] = representation
-                return representation
-
-            input_representations = [execute_node(input_id) for input_id in node.inputs]
-
-            if len(input_representations) == 1:
-                result = input_representations[0]
-            else:
-                op = node.operation
-                try:
-                    op_instance = op() if callable(op) else op
-                except Exception:
-                    op_instance = op
-
-                result = input_representations[0].combine(
-                    input_representations[1:], op_instance
-                )
-
-            cache[node_id] = result
-            return result
-
-        return execute_node(self.root_node_id)
 
 
 class MultimodalDAGBuilder:
@@ -147,18 +48,16 @@ class MultimodalDAGBuilder:
         node = MultimodalNode(
             node_id=node_id,
             inputs=inputs,
-            operation=fusion_operation,
-            parameters=(
-                fusion_operation.parameters
-                if hasattr(fusion_operation, "parameters")
-                else {}
-            ),
+            operation=fusion_operation.__class__,
+            parameters=fusion_operation.parameters,
         )
         self.nodes.append(node)
         return node_id
 
-    def build(self, root_node_id: str) -> MultimodalDAG:
-        dag = MultimodalDAG(nodes=copy.deepcopy(self.nodes), root_node_id=root_node_id)
+    def build(self, root_node_id: str) -> RepresentationDag:
+        dag = RepresentationDag(
+            nodes=copy.deepcopy(self.nodes), root_node_id=root_node_id
+        )
         if not dag.validate():
             raise ValueError("Invalid DAG construction")
         return dag
@@ -176,7 +75,6 @@ class MultimodalOptimizer:
         max_modalities: int = None,
     ):
         self.modalities = modalities
-        self.unimodal_optimization_results = unimodal_optimization_results
         self.tasks = tasks
         self.k = k
         self.debug = debug
@@ -186,10 +84,14 @@ class MultimodalOptimizer:
         self.operator_registry = Registry()
         self.fusion_operators = self.operator_registry.get_fusion_operators()
 
-        self.k_best_representations = self._extract_k_best_representations()
+        self.k_best_representations = self._extract_k_best_representations(
+            unimodal_optimization_results
+        )
         self.optimization_results = []
 
-    def _extract_k_best_representations(self) -> Dict[str, Dict[str, List[Any]]]:
+    def _extract_k_best_representations(
+        self, unimodal_optimization_results: Any
+    ) -> Dict[str, Dict[str, List[Any]]]:
         k_best = {}
 
         for task in self.tasks:
@@ -197,15 +99,12 @@ class MultimodalOptimizer:
 
             for modality in self.modalities:
                 k_best_results, cached_data = (
-                    self.unimodal_optimization_results.get_k_best_results(
+                    unimodal_optimization_results.get_k_best_results(
                         modality, self.k, task
                     )
                 )
 
-                k_best[task.model.name][modality.modality_id] = {
-                    "results": k_best_results,
-                    "representations": cached_data,
-                }
+                k_best[task.model.name][modality.modality_id] = cached_data
 
         return k_best
 
@@ -225,7 +124,7 @@ class MultimodalOptimizer:
 
         for modality_id in modality_subset:
             num_representations = len(
-                self.k_best_representations[task_name][modality_id]["representations"]
+                self.k_best_representations[task_name][modality_id]
             )
             representation_options.append(list(range(num_representations)))
 
@@ -237,7 +136,7 @@ class MultimodalOptimizer:
 
     def _generate_fusion_dags(
         self, modality_subset: List[str], representation_combo: Dict[str, int]
-    ) -> Generator[MultimodalDAG, None, None]:
+    ) -> Generator[RepresentationDag, None, None]:
         leaf_infos = [(m, representation_combo[m]) for m in modality_subset]
 
         def gen_trees(indices: List[int]):
@@ -261,16 +160,22 @@ class MultimodalOptimizer:
 
             left_sub, right_sub = subtree
 
-            left_variants = build_variants(left_sub, copy.deepcopy(base_builder), leaf_id_map)
+            left_variants = build_variants(
+                left_sub, copy.deepcopy(base_builder), leaf_id_map
+            )
 
             for left_builder, left_root in left_variants:
-                right_variants = build_variants(right_sub, copy.deepcopy(left_builder), leaf_id_map)
+                right_variants = build_variants(
+                    right_sub, copy.deepcopy(left_builder), leaf_id_map
+                )
 
                 for right_builder, right_root in right_variants:
                     for fusion_op_class in self.fusion_operators:
                         new_builder = copy.deepcopy(right_builder)
                         fusion_op = fusion_op_class()
-                        fusion_id = new_builder.create_fusion_node([left_root, right_root], fusion_op)
+                        fusion_id = new_builder.create_fusion_node(
+                            [left_root, right_root], fusion_op
+                        )
                         variants.append((new_builder, fusion_id))
 
             return variants
@@ -296,19 +201,28 @@ class MultimodalOptimizer:
                             print(f"Skipping invalid DAG for root {root_id}")
                         continue
 
-    def _evaluate_dag(self, dag: MultimodalDAG, task: Task) -> "OptimizationResult":
+    def _evaluate_dag(self, dag: RepresentationDag, task: Task) -> "OptimizationResult":
         start_time = time.time()
-        
+
         try:
-            fused_representation = dag.execute(self.k_best_representations, task)
+
+            fused_representation = dag.execute(
+                list(
+                    chain.from_iterable(
+                        self.k_best_representations[task.model.name].values()
+                    )
+                )
+            )
 
             if fused_representation is None:
                 return None
 
-            final_representation = fused_representation
-            if task.expected_dim == 1 and get_shape(fused_representation.metadata) > 1:
+            final_representation = fused_representation[
+                list(fused_representation.keys())[-1]
+            ]
+            if task.expected_dim == 1 and get_shape(final_representation.metadata) > 1:
                 agg_operator = AggregatedRepresentation(Aggregation())
-                final_representation = agg_operator.transform(fused_representation)
+                final_representation = agg_operator.transform(final_representation)
 
             eval_start = time.time()
             scores = task.run(final_representation.data)
@@ -386,7 +300,7 @@ class MultimodalOptimizer:
 
 @dataclass
 class OptimizationResult:
-    dag: MultimodalDAG
+    dag: RepresentationDag
     train_score: float
     val_score: float
     runtime: float

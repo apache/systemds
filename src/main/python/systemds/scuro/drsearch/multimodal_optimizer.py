@@ -1,66 +1,21 @@
 import itertools
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List, Dict, Any, Generator
 import copy
 import traceback
 from itertools import chain
 from systemds.scuro import Task
-from systemds.scuro.drsearch.representation_dag import RepresentationDag
+from systemds.scuro.drsearch.representation_dag import (
+    RepresentationDag,
+    RepresentationDAGBuilder,
+)
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
 from systemds.scuro.representations.aggregate import Aggregation
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.utils.schema_helpers import get_shape
-
-
-@dataclass
-class MultimodalNode:
-    node_id: str
-    inputs: List[str]
-    operation: Any
-    modality_id: str = None
-    representation_index: int = None
-    parameters: Dict[str, Any] = field(default_factory=dict)
-
-
-class MultimodalDAGBuilder:
-    def __init__(self):
-        self.nodes = []
-        self.node_counter = 0
-
-    def create_leaf_node(self, modality_id: str, representation_index: int) -> str:
-        node_id = f"leaf_{modality_id}_{representation_index}"
-        node = MultimodalNode(
-            node_id=node_id,
-            inputs=[],
-            operation=None,
-            modality_id=modality_id,
-            representation_index=representation_index,
-        )
-        self.nodes.append(node)
-        return node_id
-
-    def create_fusion_node(self, inputs: List[str], fusion_operation: Any) -> str:
-        node_id = f"fusion_{self.node_counter}"
-        self.node_counter += 1
-        node = MultimodalNode(
-            node_id=node_id,
-            inputs=inputs,
-            operation=fusion_operation.__class__,
-            parameters=fusion_operation.parameters,
-        )
-        self.nodes.append(node)
-        return node_id
-
-    def build(self, root_node_id: str) -> RepresentationDag:
-        dag = RepresentationDag(
-            nodes=copy.deepcopy(self.nodes), root_node_id=root_node_id
-        )
-        if not dag.validate():
-            raise ValueError("Invalid DAG construction")
-        return dag
 
 
 class MultimodalOptimizer:
@@ -151,7 +106,9 @@ class MultimodalOptimizer:
                         for r_tree in gen_trees(right):
                             yield (l_tree, r_tree)
 
-        def build_variants(subtree, base_builder: MultimodalDAGBuilder, leaf_id_map):
+        def build_variants(
+            subtree, base_builder: RepresentationDAGBuilder, leaf_id_map
+        ):
             variants = []
 
             if isinstance(subtree, int):
@@ -173,8 +130,10 @@ class MultimodalOptimizer:
                     for fusion_op_class in self.fusion_operators:
                         new_builder = copy.deepcopy(right_builder)
                         fusion_op = fusion_op_class()
-                        fusion_id = new_builder.create_fusion_node(
-                            [left_root, right_root], fusion_op
+                        fusion_id = new_builder.create_operation_node(
+                            fusion_op.__class__,
+                            [left_root, right_root],
+                            fusion_op.parameters,
                         )
                         variants.append((new_builder, fusion_id))
 
@@ -183,7 +142,7 @@ class MultimodalOptimizer:
         n = len(leaf_infos)
 
         for permuted_leaf_infos in itertools.permutations(leaf_infos, n):
-            base_builder = MultimodalDAGBuilder()
+            base_builder = RepresentationDAGBuilder()
             leaf_id_map = {}
             for idx, (modality_id, repr_idx) in enumerate(permuted_leaf_infos):
                 nodeid = base_builder.create_leaf_node(modality_id, repr_idx)

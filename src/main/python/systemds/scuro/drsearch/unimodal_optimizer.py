@@ -20,14 +20,11 @@
 # -------------------------------------------------------------
 import pickle
 import time
-import copy
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, asdict
 import multiprocessing as mp
-from typing import Union, Dict, List, Any
+from typing import List, Any
 
-import numpy as np
-import wandb
 from systemds.scuro.representations.fusion import Fusion
 from systemds.scuro.representations.concatenation import Concatenation
 from systemds.scuro.representations.hadamard import Hadamard
@@ -39,7 +36,11 @@ from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.aggregate import Aggregation
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.utils.schema_helpers import get_shape
-from systemds.scuro.drsearch.representation_dag import RepresentationDag
+from systemds.scuro.drsearch.representation_dag import (
+    RepresentationDag,
+    RepresentationNode,
+    RepresentationDAGBuilder,
+)
 from systemds.scuro.drsearch.unimodal_visualizer import visualize_dag
 
 
@@ -50,15 +51,8 @@ class UnimodalOptimizer:
         self.run = None
 
         self.builders = {
-            modality.modality_id: UnimodalDAGBuilder() for modality in modalities
+            modality.modality_id: RepresentationDAGBuilder() for modality in modalities
         }
-
-        if debug:
-            wandb.login()
-            config = {
-                "representation_type": "unimodal",  # or "unimodal"
-            }
-            self.run = wandb.init(project="multimodal-search", config=config)
 
         self.debug = debug
 
@@ -106,11 +100,7 @@ class UnimodalOptimizer:
         for modality in self.modalities:
             local_result = self._process_modality(modality, False)
 
-        if self.debug:
-            wandb.finish()
-
     def _process_modality(self, modality, parallel):
-        """Process a single modality using the DAG-based approach"""
         if parallel:
             local_results = UnimodalResults([modality], self.tasks, debug=False)
         else:
@@ -140,7 +130,7 @@ class UnimodalOptimizer:
         return local_results
 
     def _get_representation_chain(
-        self, node: "UnimodalNode", dag: RepresentationDag
+        self, node: "RepresentationNode", dag: RepresentationDag
     ) -> List[Any]:
         representations = []
         if node.operation:
@@ -226,7 +216,7 @@ class UnimodalOptimizer:
     ) -> RepresentationDag:
         dags = []
         builder = self.builders[modality.modality_id]
-        leaf_id = builder.create_leaf_node(None, modality.modality_id)
+        leaf_id = builder.create_leaf_node(modality.modality_id)
 
         rep_node_id = builder.create_operation_node(
             operator.__class__, [leaf_id], operator.parameters
@@ -275,13 +265,12 @@ class UnimodalOptimizer:
 
 
 class UnimodalResults:
-    def __init__(self, modalities, tasks, debug=False, run=None):
+    def __init__(self, modalities, tasks, debug=False):
         self.modality_ids = [modality.modality_id for modality in modalities]
         self.task_names = [task.model.name for task in tasks]
         self.results = {}
         self.debug = debug
         self.cache = {}
-        self.run = run
 
         for modality in self.modality_ids:
             self.results[modality] = {}
@@ -299,14 +288,6 @@ class UnimodalResults:
             combination=combination.name if combination else "",
             dag=dag,
         )
-
-        if self.debug:
-            metrics = asdict(entry)
-
-            metrics["used_modalities"] = modality.modality_id
-            metrics["task"] = self.task_names.index(task_name)
-            # Log metric for the multimodal combination
-            self.run.log(metrics)
 
         self.results[modality.modality_id][task_name].append(entry)
         self.cache[modality.modality_id][task_name][
@@ -357,50 +338,3 @@ class ResultEntry:
     task_time: float
     combination: str
     dag: RepresentationDag
-
-
-@dataclass
-class UnimodalNode:
-    node_id: str
-    operation: Any
-    inputs: List[str]
-    modality_id: str = None
-    parameters: Dict[str, Any] = field(default_factory=dict)
-
-
-class UnimodalDAGBuilder:
-
-    def __init__(self):
-        self.nodes = []
-        self.node_counter = 0
-
-    def create_leaf_node(self, operation: Any, modality_id: str) -> str:
-        node_id = f"leaf_{self.node_counter}"
-        self.node_counter += 1
-        node = UnimodalNode(
-            node_id=node_id, operation=operation, inputs=[], modality_id=modality_id
-        )
-        self.nodes.append(node)
-        return node_id
-
-    def create_operation_node(
-        self, operation: Any, inputs: List[str], parameters: Dict[str, Any] = None
-    ) -> str:
-        node_id = f"op_{self.node_counter}"
-        self.node_counter += 1
-        node = UnimodalNode(
-            node_id=node_id,
-            operation=operation,
-            inputs=inputs,
-            parameters=parameters or {},
-        )
-        self.nodes.append(node)
-        return node_id
-
-    def build(self, root_node_id: str) -> RepresentationDag:
-        dag = RepresentationDag(
-            nodes=copy.deepcopy(self.nodes), root_node_id=root_node_id
-        )
-        if not dag.validate():
-            raise ValueError("Invalid DAG construction")
-        return dag

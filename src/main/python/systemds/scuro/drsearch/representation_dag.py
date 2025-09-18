@@ -18,7 +18,8 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from dataclasses import dataclass
+import copy
+from dataclasses import dataclass, field
 from typing import List, Dict, Any
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.modality.transformed import TransformedModality
@@ -29,6 +30,16 @@ from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
 from systemds.scuro.representations.context import Context
+
+
+@dataclass
+class RepresentationNode:
+    node_id: str
+    operation: Any
+    inputs: List[str]
+    modality_id: str = None
+    representation_index: int = None
+    parameters: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -117,12 +128,9 @@ class RepresentationDag:
             node = self.get_node_by_id(node_id)
 
             if not node.inputs:
-                if hasattr(node, "representation_index"):
-                    modality = get_modality_by_id_and_instance_id(
-                        modalities, node.modality_id, node.representation_index
-                    )
-                else:
-                    modality = get_modality_by_id(modalities, node.modality_id)
+                modality = get_modality_by_id_and_instance_id(
+                    modalities, node.modality_id, node.representation_index
+                )
                 cache[node_id] = modality
                 return modality
 
@@ -152,21 +160,59 @@ class RepresentationDag:
         return cache
 
 
-def get_modality_by_id(modalities: List[Modality], modality_id: int) -> Modality:
-    for modality in modalities:
-        if modality.modality_id == modality_id:
-            return modality
-    return None
-
-
 def get_modality_by_id_and_instance_id(
     modalities: List[Modality], modality_id: int, instance_id: int
 ):
     counter = 0
     for modality in modalities:
         if modality.modality_id == modality_id:
-            if counter == instance_id:
+            if counter == instance_id or instance_id == -1:
                 return modality
             else:
                 counter += 1
     return None
+
+
+class RepresentationDAGBuilder:
+    def __init__(self):
+        self.nodes = []
+        self.node_counter = 0
+
+    def create_leaf_node(
+        self, modality_id: str, representation_index: int = -1, operation=None
+    ) -> str:
+        if representation_index != -1:
+            node_id = f"leaf_{modality_id}_{representation_index}"
+        else:
+            node_id = f"leaf_{self.node_counter}"
+        node = RepresentationNode(
+            node_id=node_id,
+            inputs=[],
+            operation=operation,
+            modality_id=modality_id,
+            representation_index=representation_index,
+        )
+        self.nodes.append(node)
+        return node_id
+
+    def create_operation_node(
+        self, operation: Any, inputs: List[str], parameters: Dict[str, Any] = None
+    ) -> str:
+        node_id = f"op_{self.node_counter}"
+        self.node_counter += 1
+        node = RepresentationNode(
+            node_id=node_id,
+            inputs=inputs,
+            operation=operation,
+            parameters=parameters or {},
+        )
+        self.nodes.append(node)
+        return node_id
+
+    def build(self, root_node_id: str) -> RepresentationDag:
+        dag = RepresentationDag(
+            nodes=copy.deepcopy(self.nodes), root_node_id=root_node_id
+        )
+        if not dag.validate():
+            raise ValueError("Invalid DAG construction")
+        return dag

@@ -1,309 +1,531 @@
-# -------------------------------------------------------------
-#
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-#
-# -------------------------------------------------------------
 import itertools
+import time
+from dataclasses import dataclass, field
+from typing import List, Dict, Any, Optional, Tuple, Union, Generator
+from enum import Enum
+import random
+import copy
+import numpy as np
+from concurrent.futures import ProcessPoolExecutor, as_completed
+import math
+import heapq
+from collections import defaultdict
 
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
-
 from systemds.scuro.representations.aggregate import Aggregation
-
 from systemds.scuro.drsearch.operator_registry import Registry
-
 from systemds.scuro.utils.schema_helpers import get_shape
-import dataclasses
+from systemds.scuro.modality.transformed import TransformedModality
+from systemds.scuro.modality.type import ModalityType
+
+
+class SearchStrategy(Enum):
+    RANDOM = "random"
+    EXHAUSTIVE = "exhaustive"
+
+
+@dataclass
+class FusionNode:
+    node_id: str
+    inputs: List[str]
+    operation: str
+    parameters: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class EncoderChoice:
+    modality_id: str
+    modality_instance_id: str
+    encoder_names: str
+    encoder_params: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class FusionArchitecture:
+    encoder_choices: List[str]
+    fusion_nodes: List[FusionNode]
+    root_node_id: str
+    used_modalities: List[str] = field(default_factory=list)
+
+    def get_leaf_nodes(self) -> List[str]:
+        return [
+            f"leaf_{choice.modality_id}_{choice.modality_instance_id}"
+            for choice in self.encoder_choices
+        ]
+
+    def validate(self) -> bool:
+        node_ids = {node.node_id for node in self.fusion_nodes}
+        leaf_ids = set(self.get_leaf_nodes())
+        all_ids = node_ids | leaf_ids
+
+        if self.root_node_id not in all_ids:
+            return False
+
+        for node in self.fusion_nodes:
+            for input_id in node.inputs:
+                if input_id not in all_ids:
+                    return False
+        return True
+
+    def __eq__(self, other):
+        if not isinstance(other, FusionArchitecture):
+            return False
+        return (
+            self.encoder_choices == other.encoder_choices
+            and self.fusion_nodes == other.fusion_nodes
+            and self.root_node_id == other.root_node_id
+        )
+
+    def __hash__(self):
+        encoder_tuple = tuple(
+            (c.modality_id, c.modality_instance_id, c.encoder_name)
+            for c in self.encoder_choices
+        )
+        fusion_tuple = tuple(
+            (f.node_id, tuple(f.inputs), f.operation) for f in self.fusion_nodes
+        )
+        return hash((encoder_tuple, fusion_tuple, self.root_node_id))
+
+
+class DagBuilder:
+    def __init__(self, operator_registry: Registry):
+        self.operator_registry = operator_registry
+
+    def build_dag(
+        self, architecture: FusionArchitecture, unimodal_representations: Dict[str, Any]
+    ) -> Any:
+
+        node_outputs = {}
+
+        for choice in architecture.encoder_choices:
+            leaf_id = f"leaf_{choice.modality_id}_{choice.modality_instance_id}"
+            representation_key = f"{choice.modality_id}_{choice.modality_instance_id}"
+
+            if representation_key in unimodal_representations:
+                node_outputs[leaf_id] = unimodal_representations[representation_key]
+            else:
+                raise ValueError(
+                    f"Missing unimodal representation: {representation_key}"
+                )
+
+        executed_nodes = set(node_outputs.keys())
+        max_iterations = len(architecture.fusion_nodes) * 2
+        iteration = 0
+
+        while len(executed_nodes) < len(architecture.fusion_nodes) + len(
+            architecture.encoder_choices
+        ):
+            if iteration > max_iterations:
+                raise ValueError("Circular dependency detected in fusion architecture")
+
+            progress_made = False
+
+            for node in architecture.fusion_nodes:
+                if node.node_id in executed_nodes:
+                    continue
+
+                if all(input_id in executed_nodes for input_id in node.inputs):
+                    input_representations = [
+                        node_outputs[input_id] for input_id in node.inputs
+                    ]
+
+                    fusion_ops = self.operator_registry.get_fusion_operators()
+                    fusion_op = None
+
+                    for op_class in fusion_ops:
+                        if op_class.__name__ == node.operation:
+                            fusion_op = op_class()
+                            break
+
+                    if fusion_op is None:
+                        raise ValueError(f"Unknown fusion operation: {node.operation}")
+
+                    if len(input_representations) == 1:
+                        fused = input_representations[0]
+                    else:
+                        fused = input_representations[0].combine(
+                            input_representations[1:], fusion_op
+                        )
+
+                    node_outputs[node.node_id] = fused
+                    executed_nodes.add(node.node_id)
+                    progress_made = True
+
+            if not progress_made:
+                break
+
+            iteration += 1
+
+        return (
+            node_outputs[architecture.root_node_id]
+            if architecture.root_node_id in node_outputs.keys()
+            else None
+        )
+
+
+class SubsetModalityGenerator:
+    def __init__(
+        self,
+        modality_encoder_choices: List[str],
+        fusion_primitives: List[str],
+        min_modalities: int = 1,
+        max_modalities: int = None,
+        max_depth: int = 4,
+    ):
+        self.modality_encoder_choices = modality_encoder_choices
+        self.fusion_primitives = fusion_primitives
+        self.min_modalities = max(1, min_modalities)
+        self.max_modalities = max_modalities or len(self.modality_encoder_choices)
+        self.max_depth = max_depth
+
+    def generate_modality_subsets(self) -> Generator[List[str], None, None]:
+        for r in range(
+            self.min_modalities,
+            min(self.max_modalities + 1, len(self.modality_encoder_choices) + 1),
+        ):
+            for modality_subset in itertools.permutations(
+                self.modality_encoder_choices, r
+            ):
+                yield list(modality_subset)
+
+    def generate_encoder_combinations_for_subset(
+        self, modality_subset: List[str]
+    ) -> Generator[List[EncoderChoice], None, None]:
+        modality_encoder_combos = []
+
+        for modality_id in modality_subset:
+            encoder_options = self.modality_encoder_choices[modality_id]
+            modality_combos = []
+
+            if len(encoder_options) > 1:
+                for r in range(1, len(encoder_options) + 1):
+                    for encoder_subset in itertools.combinations(encoder_options, r):
+                        encoder_choices = []
+                        for i, encoder_name in enumerate(encoder_subset):
+                            encoder_choices.append(
+                                EncoderChoice(
+                                    modality_id=modality_id,
+                                    modality_instance_id=str(i),
+                                    encoder_names=encoder_name,
+                                )
+                            )
+                        modality_combos.append(encoder_choices)
+            else:
+                for encoder_name in encoder_options:
+                    encoder_choices = [
+                        EncoderChoice(
+                            modality_id=modality_id,
+                            modality_instance_id="0",
+                            encoder_names=encoder_name,
+                        )
+                    ]
+                    modality_combos.append(encoder_choices)
+
+            modality_encoder_combos.append(modality_combos)
+
+        for combo in itertools.product(*modality_encoder_combos):
+            all_encoder_choices = []
+            for modality_choices in combo:
+                all_encoder_choices.extend(modality_choices)
+            yield all_encoder_choices
+
+
+class ExhaustiveFusionArchitectureGenerator(SubsetModalityGenerator):
+
+    def generate_all_architectures(self) -> Generator[FusionArchitecture, None, None]:
+        architecture_count = 0
+
+        for modality_subset in self.generate_modality_subsets():
+
+            leaf_nodes = [
+                f"leaf_{choice.modality_id}_{choice.modality_instance_id}"
+                for choice in modality_subset
+            ]
+
+            for fusion_nodes, root_node_id in self._generate_all_dags(leaf_nodes):
+                architecture = FusionArchitecture(
+                    encoder_choices=modality_subset,
+                    fusion_nodes=fusion_nodes,
+                    root_node_id=root_node_id,
+                    used_modalities=modality_subset,
+                )
+
+                if architecture.validate():
+                    architecture_count += 1
+                    yield architecture
+
+                    if architecture_count > 50000:
+                        print(
+                            f"Exhaustive search hit limit of {architecture_count} architectures"
+                        )
+                        return
+
+    def _generate_all_dags(
+        self, leaf_nodes: List[str]
+    ) -> Generator[Tuple[List[FusionNode], str], None, None]:
+        if len(leaf_nodes) == 1:
+            yield [], leaf_nodes[0]
+            return
+
+        for fusion_nodes, root in self._generate_inter_modal_fusions(leaf_nodes):
+            yield fusion_nodes, root
+
+    def _generate_intra_modal_fusions(
+        self, leaf_nodes: List[str]
+    ) -> Generator[Dict, None, None]:
+        modality_groups = defaultdict(list)
+        for leaf in leaf_nodes:
+            parts = leaf.split("_")
+            modality_id = parts[1]
+            modality_groups[modality_id].append(leaf)
+
+        modality_fusion_options = []
+
+        for modality_id, nodes in modality_groups.items():
+            options = []
+
+            if len(nodes) == 1:
+                options.append({"remaining_nodes": nodes, "fusion_nodes": []})
+            else:
+                options.append({"remaining_nodes": nodes, "fusion_nodes": []})
+
+                node_counter = 0
+                for fusion_op in self.fusion_primitives:
+                    fused_node_id = f"intra_{modality_id}_{node_counter}"
+                    fusion_node = FusionNode(fused_node_id, nodes, fusion_op)
+                    options.append(
+                        {
+                            "remaining_nodes": [fused_node_id],
+                            "fusion_nodes": [fusion_node],
+                        }
+                    )
+                    node_counter += 1
+
+            modality_fusion_options.append(options)
+
+        for combo in itertools.product(*modality_fusion_options):
+            all_remaining_nodes = []
+            all_fusion_nodes = []
+            for option in combo:
+                all_remaining_nodes.extend(option["remaining_nodes"])
+                all_fusion_nodes.extend(option["fusion_nodes"])
+
+            yield {
+                "remaining_nodes": all_remaining_nodes,
+                "fusion_nodes": all_fusion_nodes,
+            }
+
+    def _generate_inter_modal_fusions(
+        self, nodes: List[str]
+    ) -> Generator[Tuple[List[FusionNode], str], None, None]:
+        if len(nodes) == 1:
+            yield [], nodes[0]
+            return
+
+        if len(nodes) == 2:
+            for fusion_op in self.fusion_primitives:
+                fusion_node = FusionNode("fusion_0", nodes, fusion_op)
+                yield [fusion_node], "fusion_0"
+            return
+
+        for combination_sequence in self._generate_combination_sequences(nodes):
+            for fusion_assignment in self._assign_fusion_operations(
+                combination_sequence
+            ):
+                yield fusion_assignment
+
+    def _generate_combination_sequences(
+        self, nodes: List[str]
+    ) -> Generator[List[Tuple], None, None]:
+        if len(nodes) <= 2:
+            if len(nodes) == 2:
+                yield [(nodes[0], nodes[1], "result_0")]
+            return
+
+        for i in range(len(nodes)):
+            for j in range(i + 1, len(nodes)):
+                first_pair = (nodes[i], nodes[j], "intermediate_0")
+                remaining = [n for k, n in enumerate(nodes) if k != i and k != j] + [
+                    "intermediate_0"
+                ]
+
+                for rest_sequence in self._generate_combination_sequences(remaining):
+                    yield [first_pair] + rest_sequence
+
+    def _assign_fusion_operations(
+        self, combination_sequence: List[Tuple]
+    ) -> Generator[Tuple[List[FusionNode], str], None, None]:
+        if not combination_sequence:
+            return
+
+        num_operations = len(combination_sequence)
+
+        for fusion_ops in itertools.product(
+            self.fusion_primitives, repeat=num_operations
+        ):
+            fusion_nodes = []
+
+            for i, ((input1, input2, output), fusion_op) in enumerate(
+                zip(combination_sequence, fusion_ops)
+            ):
+                fusion_node = FusionNode(output, [input1, input2], fusion_op)
+                fusion_nodes.append(fusion_node)
+
+            root_id = combination_sequence[-1][2]
+            yield fusion_nodes, root_id
+
+
+class RandomFusionArchitectureGenerator(SubsetModalityGenerator):
+
+    def generate_random_architecture(self, max_depth: int = 4) -> FusionArchitecture:
+        num_modalities = random.randint(
+            self.min_modalities,
+            min(self.max_modalities, len(self.modality_encoder_choices)),
+        )
+        modality_subset = random.sample(self.modality_encoder_choices, num_modalities)
+
+        encoder_choices = []
+
+        for modality_id in modality_subset:
+            encoder_options = self.modality_encoder_choices[modality_id]
+
+            if self.allow_intra_modal and len(encoder_options) > 1:
+                num_encoders = random.randint(
+                    1, min(self.max_intra_modal_per_modality, len(encoder_options))
+                )
+                chosen_encoders = random.sample(encoder_options, num_encoders)
+
+                for i, encoder_name in enumerate(chosen_encoders):
+                    encoder_choices.append(
+                        EncoderChoice(
+                            modality_id=modality_id,
+                            modality_instance_id=str(i),
+                            encoder_name=encoder_name,
+                        )
+                    )
+            else:
+                chosen_encoder = random.choice(encoder_options)
+                encoder_choices.append(
+                    EncoderChoice(
+                        modality_id=modality_id,
+                        modality_instance_id="0",
+                        encoder_names=chosen_encoder,
+                    )
+                )
+
+        fusion_nodes = []
+        available_nodes = [
+            f"leaf_{choice.modality_id}_{choice.modality_instance_id}"
+            for choice in encoder_choices
+        ]
+        node_counter = 0
+
+        if self.allow_intra_modal:
+            modality_groups = {}
+            for choice in encoder_choices:
+                if choice.modality_id not in modality_groups:
+                    modality_groups[choice.modality_id] = []
+                modality_groups[choice.modality_id].append(
+                    f"leaf_{choice.modality_id}_{choice.modality_instance_id}"
+                )
+
+            for modality_id, nodes in modality_groups.items():
+                if len(nodes) > 1:
+                    fusion_op = random.choice(self.fusion_primitives)
+                    intra_modal_node_id = f"intra_{modality_id}_{node_counter}"
+
+                    fusion_node = FusionNode(intra_modal_node_id, nodes, fusion_op)
+                    fusion_nodes.append(fusion_node)
+
+                    for node in nodes:
+                        available_nodes.remove(node)
+                    available_nodes.append(intra_modal_node_id)
+                    node_counter += 1
+
+        while len(available_nodes) > 1 and node_counter < max_depth:
+            num_inputs = min(
+                random.randint(2, min(4, len(available_nodes))), len(available_nodes)
+            )
+            selected_inputs = random.sample(available_nodes, num_inputs)
+
+            fusion_op = random.choice(self.fusion_primitives)
+
+            new_node_id = f"fusion_{node_counter}"
+            fusion_node = FusionNode(new_node_id, selected_inputs, fusion_op)
+            fusion_nodes.append(fusion_node)
+
+            for node in selected_inputs:
+                available_nodes.remove(node)
+            available_nodes.append(new_node_id)
+            node_counter += 1
+
+        root_node_id = (
+            available_nodes[0] if available_nodes else f"fusion_{node_counter-1}"
+        )
+
+        return FusionArchitecture(
+            encoder_choices=encoder_choices,
+            fusion_nodes=fusion_nodes,
+            root_node_id=root_node_id,
+            used_modalities=modality_subset,
+        )
 
 
 class MultimodalOptimizer:
     def __init__(
-        self, modalities, unimodal_optimization_results, tasks, k=2, debug=True
+        self,
+        modalities: List[Any],
+        unimodal_optimization_results: Any,
+        tasks: List[Any],
+        k: int = 2,
+        debug: bool = True,
+        min_modalities: int = 1,
+        max_modalities: int = None,
     ):
-        self.k_best_cache = None
-        self.k_best_modalities = None
+
         self.modalities = modalities
         self.unimodal_optimization_results = unimodal_optimization_results
         self.tasks = tasks
         self.k = k
-        self.extract_k_best_modalities_per_task()
         self.debug = debug
 
+        self.min_modalities = min_modalities
+        self.max_modalities = max_modalities or len(modalities)
+
         self.operator_registry = Registry()
-        self.optimization_results = MultimodalResults(
-            modalities, tasks, debug, self.k_best_modalities
+        self.fusion_primitives = [
+            op.__name__ for op in self.operator_registry.get_fusion_operators()
+        ]
+
+        self.k_best_representations = self._extract_k_best_representations()
+        self.modality_encoder_choices = self._create_encoder_choices()
+
+        self.architecture_generator = RandomFusionArchitectureGenerator(
+            self.modality_encoder_choices,
+            self.fusion_primitives,
+            min_modalities=min_modalities,
+            max_modalities=self.max_modalities,
         )
-        self.cache = {}
 
-    def optimize(self):
+        self.exhaustive_generator = ExhaustiveFusionArchitectureGenerator(
+            self.modality_encoder_choices,
+            self.fusion_primitives,
+            min_modalities=min_modalities,
+            max_modalities=self.max_modalities,
+            max_depth=3,
+        )
+
+        self.dag_builder = DagBuilder(self.operator_registry)
+        self.optimization_results = []
+
+    def _extract_k_best_representations(self) -> Dict[str, Dict[str, List[Any]]]:
+        k_best = {}
+
         for task in self.tasks:
-            self.optimize_intermodal_representations(task)
+            k_best[task.model.name] = {}
 
-    def optimize_intramodal_representations(self, task):
-        for modality in self.modalities:
-            representations = self.k_best_modalities[task.model.name][
-                modality.modality_id
-            ]
-            applied_representations = self.extract_representations(
-                representations, modality, task.model.name
-            )
-
-            for i in range(1, len(applied_representations)):
-                for fusion_method in self.operator_registry.get_fusion_operators():
-                    if fusion_method().needs_alignment and not applied_representations[
-                        i - 1
-                    ].is_aligned(applied_representations[i]):
-                        continue
-                    combined = applied_representations[i - 1].combine(
-                        applied_representations[i], fusion_method()
-                    )
-                    self.evaluate(
-                        task,
-                        combined,
-                        [i - 1, i],
-                        fusion_method,
-                        [
-                            applied_representations[i - 1].modality_id,
-                            applied_representations[i].modality_id,
-                        ],
-                    )
-                    if not fusion_method().commutative:
-                        combined_comm = applied_representations[i].combine(
-                            applied_representations[i - 1], fusion_method()
-                        )
-                        self.evaluate(
-                            task,
-                            combined_comm,
-                            [i, i - 1],
-                            fusion_method,
-                            [
-                                applied_representations[i - 1].modality_id,
-                                applied_representations[i].modality_id,
-                            ],
-                        )
-
-    # TODO: check if order matters for reused reps - only compute once - check in cache
-    # TODO: parallelize - whenever an item of len 0 comes along give it to a new thread - merge results
-    # TODO: change the algorithm so that one representation is used until there is no more representations to add - saves a lot of memory
-    def optimize_intermodal_representations(self, task):
-        modality_combos = []
-        n = len(self.k_best_cache[task.model.name])
-        reuse_cache = {}
-
-        def generate_extensions(current_combo, remaining_indices):
-            # Add current combination if it has at least 2 elements
-            if len(current_combo) >= 2:
-                combo_tuple = tuple(i for i in current_combo)
-                modality_combos.append(combo_tuple)
-
-            for i in remaining_indices:
-                new_combo = current_combo + [i]
-                new_remaining = [j for j in remaining_indices if j > i]
-                generate_extensions(new_combo, new_remaining)
-
-        for start_idx in range(n):
-            remaining = list(range(start_idx + 1, n))
-            generate_extensions([start_idx], remaining)
-        fusion_methods = self.operator_registry.get_fusion_operators()
-        fused_representations = []
-        reuse_fused_representations = False
-        for i, modality_combo in enumerate(modality_combos):
-            # clear reuse cache
-            reuse_cache = self.prune_cache(modality_combos[i:], reuse_cache)
-
-            if i != 0:
-                reuse_fused_representations = self.is_prefix_match(
-                    modality_combos[i - 1], modality_combo
-                )
-            if reuse_fused_representations:
-                mods = [
-                    self.k_best_cache[task.model.name][mod_idx]
-                    for mod_idx in modality_combo[len(modality_combos[i - 1]) :]
-                ]
-                fused_representations = reuse_cache[modality_combos[i - 1]]
-            else:
-                prefix_idx = self.compute_equal_prefix_index(
-                    modality_combos[i - 1], modality_combo
-                )
-                if prefix_idx > 1:
-                    fused_representations = reuse_cache[
-                        modality_combos[i - 1][:prefix_idx]
-                    ]
-                    reuse_fused_representations = True
-                    mods = [
-                        self.k_best_cache[task.model.name][mod_idx]
-                        for mod_idx in modality_combo[prefix_idx:]
-                    ]
-            if self.debug:
-                print(
-                    f"New modality combo: {modality_combo} - Reuse: {reuse_fused_representations} - # fused reps: {len(fused_representations)}"
-                )
-
-            all_mods = [
-                self.k_best_cache[task.model.name][mod_idx]
-                for mod_idx in modality_combo
-            ]
-            temp_fused_reps = []
-            for j, fusion_method in enumerate(fusion_methods):
-                # Evaluate all mods
-                fused_rep = all_mods[0].combine(all_mods[1:], fusion_method())
-                temp_fused_reps.append(fused_rep)
-                self.evaluate(
-                    task,
-                    fused_rep,
-                    [
-                        self.k_best_modalities[task.model.name][k].representations
-                        for k in modality_combo
-                    ],
-                    fusion_method,
-                    modality_combo,
-                )
-                if reuse_fused_representations:
-                    for fused_representation in fused_representations:
-                        fused_rep = fused_representation.combine(mods, fusion_method())
-                        temp_fused_reps.append(fused_rep)
-                        self.evaluate(
-                            task,
-                            fused_rep,
-                            [
-                                self.k_best_modalities[task.model.name][
-                                    k
-                                ].representations
-                                for k in modality_combo
-                            ],
-                            fusion_method,
-                            modality_combo,
-                        )
-
-            if (
-                len(modality_combo) < len(self.k_best_cache[task.model.name])
-                and i + 1 < len(modality_combos)
-                and self.is_prefix_match(modality_combos[i], modality_combos[i + 1])
-            ):
-                reuse_cache[modality_combo] = temp_fused_reps
-            reuse_fused_representations = False
-
-    def prune_cache(self, sequences, cache):
-        seqs_as_tuples = [tuple(seq) for seq in sequences]
-
-        def still_used(key):
-            return any(self.is_prefix_match(key, seq) for seq in seqs_as_tuples)
-
-        cache = {key: value for key, value in cache.items() if still_used(key)}
-        return cache
-
-    def is_prefix_match(self, seq1, seq2):
-        if len(seq1) > len(seq2):
-            return False
-
-        # Check if seq1 matches the beginning of seq2
-        return seq2[: len(seq1)] == seq1
-
-    def compute_equal_prefix_index(self, seq1, seq2):
-        max_len = min(len(seq1), len(seq2))
-        i = 0
-        while i < max_len and seq1[i] == seq2[i]:
-            i += 1
-
-        return i
-
-    def extract_representations(self, representations, modality, task_name):
-        applied_representations = []
-        for i in range(0, len(representations)):
-            cache_key = (
-                tuple(representations[i].representations),
-                representations[i].task_time,
-                representations[i].representation_time,
-            )
-            if (
-                cache_key
-                in self.unimodal_optimization_results.cache[modality.modality_id][
-                    task_name
-                ]
-            ):
-                applied_representations.append(
-                    self.unimodal_optimization_results.cache[modality.modality_id][
-                        task_name
-                    ][cache_key]
-                )
-            else:
-                applied_representation = modality
-                for j, rep in enumerate(representations[i].representations):
-                    representation, is_context = (
-                        self.operator_registry.get_representation_by_name(
-                            rep, modality.modality_type
-                        )
-                    )
-                    if representation is None:
-                        if rep == AggregatedRepresentation.__name__:
-                            representation = AggregatedRepresentation(Aggregation())
-                    else:
-                        representation = representation()
-                    representation.set_parameters(representations[i].params[j])
-                    if is_context:
-                        applied_representation = applied_representation.context(
-                            representation
-                        )
-                    else:
-                        applied_representation = (
-                            applied_representation.apply_representation(representation)
-                        )
-                self.k_best_cache[task_name].append(applied_representation)
-                applied_representations.append(applied_representation)
-        return applied_representations
-
-    def evaluate(self, task, modality, representations, fusion, modality_combo):
-        if task.expected_dim == 1 and get_shape(modality.metadata) > 1:
-            for aggregation in Aggregation().get_aggregation_functions():
-                agg_operator = AggregatedRepresentation(Aggregation(aggregation, False))
-                agg_modality = agg_operator.transform(modality)
-
-                scores = task.run(agg_modality.data)
-                reps = representations.copy()
-                reps.append(agg_operator)
-
-                self.optimization_results.add_result(
-                    scores,
-                    reps,
-                    modality.transformation,
-                    modality_combo,
-                    task.model.name,
-                )
-        else:
-            scores = task.run(modality.data)
-            self.optimization_results.add_result(
-                scores,
-                representations,
-                modality.transformation,
-                modality_combo,
-                task.model.name,
-            )
-
-    def add_to_cache(self, result_idx, combined_modality):
-        self.cache[result_idx] = combined_modality
-
-    def extract_k_best_modalities_per_task(self):
-        self.k_best_modalities = {}
-        self.k_best_cache = {}
-        for task in self.tasks:
-            self.k_best_modalities[task.model.name] = []
-            self.k_best_cache[task.model.name] = []
             for modality in self.modalities:
                 k_best_results, cached_data = (
                     self.unimodal_optimization_results.get_k_best_results(
@@ -311,90 +533,212 @@ class MultimodalOptimizer:
                     )
                 )
 
-                self.k_best_modalities[task.model.name].extend(k_best_results)
-                self.k_best_cache[task.model.name].extend(cached_data)
+                k_best[task.model.name][modality.modality_id] = {
+                    "results": k_best_results,
+                    "representations": cached_data,
+                }
 
+        return k_best
 
-class MultimodalResults:
-    def __init__(self, modalities, tasks, debug, k_best_modalities):
-        self.modality_ids = [modality.modality_id for modality in modalities]
-        self.task_names = [task.model.name for task in tasks]
-        self.results = {}
-        self.debug = debug
-        self.k_best_modalities = k_best_modalities
+    def _create_encoder_choices(self) -> List[EncoderChoice]:
+        choices = []
 
-        for task in tasks:
-            self.results[task.model.name] = {}
+        first_task = self.tasks[0]
+        task_name = first_task.model.name
 
-    def add_result(
-        self, scores, best_representation_idx, fusion_methods, modality_combo, task_name
-    ):
+        for modality in self.modalities:
+            modality_id = modality.modality_id
+            k_best_data = self.k_best_representations[task_name][modality_id]
+            for i, result in enumerate(k_best_data["results"]):
+                r = []
+                for n in result.dag.nodes:
+                    if n.operation is not None:
+                        r.append(n.operation.__name__)
+                choices.append(
+                    EncoderChoice(
+                        modality_id=modality_id,
+                        modality_instance_id=str(i),
+                        encoder_names="".join(r),
+                    )
+                )
 
-        entry = MultimodalResultEntry(
-            representations=best_representation_idx,
-            train_score=scores[0],
-            val_score=scores[1],
-            fusion_methods=[
-                fusion_method.__class__.__name__ for fusion_method in fusion_methods
-            ],
-            modality_combo=modality_combo,
-            task=task_name,
+        return choices
+
+    def _evaluate_architecture(
+        self, architecture: FusionArchitecture, task: Any
+    ) -> "OptimizationResult":
+
+        start_time = time.time()
+        task_name = task.model.name
+
+        unimodal_representations = {}
+
+        for choice in architecture.encoder_choices:
+            modality_id = choice.modality_id
+            encoder_names = choice.encoder_names
+
+            task_data = self.k_best_representations[task_name][modality_id]
+
+            selected_repr = None
+            for i, result in enumerate(task_data["results"]):
+                if hasattr(result, "representations"):
+                    if encoder_names == f"{result.representations}":
+                        selected_repr = task_data["representations"][i]
+                        break
+
+            representation_key = f"{modality_id}_{choice.modality_instance_id}"
+            unimodal_representations[representation_key] = selected_repr
+
+        fused_representation = self.dag_builder.build_dag(
+            architecture, unimodal_representations
         )
 
-        modality_id_strings = "_".join(list(map(str, modality_combo)))
-        if not modality_id_strings in self.results[task_name]:
-            self.results[task_name][modality_id_strings] = []
+        if fused_representation is None:
+            return None
 
-        self.results[task_name][modality_id_strings].append(entry)
+        final_representation = fused_representation
+        if task.expected_dim == 1 and get_shape(fused_representation.metadata) > 1:
+            agg_operator = AggregatedRepresentation(Aggregation())
+            final_representation = agg_operator.transform(fused_representation)
+
+        eval_start = time.time()
+        scores = task.run(final_representation.data)
+        eval_time = time.time() - eval_start
+
+        total_time = time.time() - start_time
+
+        return OptimizationResult(
+            architecture=architecture,
+            train_score=scores[0],
+            val_score=scores[1],
+            runtime=total_time,
+            task_name=task_name,
+            evaluation_time=eval_time,
+        )
+
+    def _optimize_task_exhaustive(
+        self, task: Any, max_architectures: int = None
+    ) -> List["OptimizationResult"]:
+
+        task_results = []
+        evaluated_count = 0
 
         if self.debug:
-            print(f"{modality_id_strings}_{task_name}: {entry}")
+            print(f"  Starting exhaustive search for task: {task.model.name}")
+            if max_architectures:
+                print(f"  Limiting to first {max_architectures} architectures")
 
-    def print_results(self):
-        for task_name in self.task_names:
-            for modality in self.results[task_name].keys():
-                for entry in self.results[task_name][modality]:
-                    reps = []
-                    for i, mod_idx in enumerate(entry.modality_combo):
-                        reps.append(self.k_best_modalities[task_name][mod_idx])
+        for architecture in self.exhaustive_generator.generate_all_architectures():
+            if max_architectures and evaluated_count >= max_architectures:
+                break
 
-                    print(
-                        f"{modality}_{task_name}: "
-                        f"Validation score: {entry.val_score} - Training score: {entry.train_score}"
+            if self.debug and evaluated_count % 50 == 0:
+                print(f"  Evaluated {evaluated_count} architectures...")
+
+            try:
+                result = self._evaluate_architecture(architecture, task)
+                if result is not None:
+                    task_results.append(result)
+            except Exception as e:
+                if self.debug:
+                    print(f"  Error evaluating architecture {evaluated_count}: {e}")
+                continue
+
+            evaluated_count += 1
+
+        if self.debug:
+            print(
+                f"  Exhaustive search completed: {evaluated_count} architectures evaluated"
+            )
+            modality_subset_counts = {}
+            for result in task_results:
+                num_modalities = len(result.architecture.used_modalities)
+                modality_subset_counts[num_modalities] = (
+                    modality_subset_counts.get(num_modalities, 0) + 1
+                )
+            print(f"  Modality subset distribution: {modality_subset_counts}")
+
+        return task_results
+
+    def optimize(
+        self,
+        search_strategy: SearchStrategy = SearchStrategy.RANDOM,
+        search_budget: int = 50,
+        **search_params,
+    ) -> List["OptimizationResult"]:
+        all_results = []
+
+        for task in self.tasks:
+            if self.debug:
+                print(f"Optimizing fusion architectures for task: {task.model.name}")
+                print(
+                    f"Exploring modality subsets: {self.min_modalities} to {self.max_modalities} modalities"
+                )
+
+            task_results = self._optimize_task(
+                task, search_strategy, search_budget, **search_params
+            )
+            all_results.extend(task_results)
+
+        self.optimization_results = all_results
+
+        if self.debug:
+            print(
+                f"\nOptimization completed: {len(all_results)} total architectures evaluated"
+            )
+            modality_usage = {}
+            for result in all_results:
+                for modality in result.architecture.used_modalities:
+                    modality_usage[modality.modality_id] = (
+                        modality_usage.get(modality.modality_id, 0) + 1
                     )
-                    for i, rep in enumerate(reps):
-                        print(
-                            f"    Representation: {entry.modality_combo[i]} - {rep.representations}"
-                        )
+            print(f"Modality usage frequency: {modality_usage}")
 
-                    print(f"    Fusion: {entry.fusion_methods[0]} ")
+        return all_results
 
-    def store_results(self, file_name=None):
-        for task_name in self.task_names:
-            for modality in self.results[task_name].keys():
-                for entry in self.results[task_name][modality]:
-                    reps = []
-                    for i, mod_idx in enumerate(entry.modality_combo):
-                        reps.append(self.k_best_modalities[task_name][mod_idx])
-                    entry.representations = reps
+    def _optimize_task(
+        self,
+        task: Any,
+        search_strategy: SearchStrategy,
+        search_budget: int,
+        **search_params,
+    ) -> List["OptimizationResult"]:
 
-        import pickle
+        if search_strategy == SearchStrategy.EXHAUSTIVE:
+            max_architectures = search_params.get("max_architectures", search_budget)
+            return self._optimize_task_exhaustive(task, max_architectures)
 
-        if file_name is None:
-            import time
+        elif search_strategy == SearchStrategy.RANDOM:
+            task_results = []
+            candidates = [
+                self.architecture_generator.generate_random_architecture()
+                for _ in range(search_budget)
+            ]
 
-            timestr = time.strftime("%Y%m%d-%H%M%S")
-            file_name = "multimodal_optimizer" + timestr + ".pkl"
+            for i, architecture in enumerate(candidates):
+                if self.debug and i % 10 == 0:
+                    print(f"  Evaluating architecture {i+1}/{len(candidates)}")
 
-        with open(file_name, "wb") as f:
-            pickle.dump(self.results, f)
+                try:
+                    result = self._evaluate_architecture(architecture, task)
+                    if result is not None:
+                        task_results.append(result)
+                except Exception as e:
+                    if self.debug:
+                        print(f"  Error evaluating architecture {i}: {e}")
+                    continue
+
+            return task_results
+
+        else:
+            raise ValueError(f"Unknown search strategy: {search_strategy}")
 
 
-@dataclasses.dataclass
-class MultimodalResultEntry:
-    val_score: float
-    modality_combo: list
-    representations: list
-    fusion_methods: list
+@dataclass
+class OptimizationResult:
+    architecture: FusionArchitecture
     train_score: float
-    task: str
+    val_score: float
+    runtime: float
+    task_name: str
+    evaluation_time: float = 0.0

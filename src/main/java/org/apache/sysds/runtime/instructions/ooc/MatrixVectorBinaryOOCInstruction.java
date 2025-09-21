@@ -82,7 +82,8 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
 		}
 
 		// number of colBlocks for early block output
-		long nBlocks = min.getDataCharacteristics().getNumColBlocks();
+		long emitThreshold = min.getDataCharacteristics().getNumColBlocks();
+		OOCMatrixBlockTracker aggTracker = new OOCMatrixBlockTracker(emitThreshold);
 
 		LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
 		LocalTaskQueue<IndexedMatrixValue> qOut = new LocalTaskQueue<>();
@@ -95,8 +96,6 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
 			pool.submit(() -> {
 				IndexedMatrixValue tmp = null;
 				try {
-					HashMap<Long, MatrixBlock> partialResults = new  HashMap<>();
-					HashMap<Long, Integer> cnt = new HashMap<>();
 					while((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
 						MatrixBlock matrixBlock = (MatrixBlock) tmp.getValue();
 						long rowIndex = tmp.getIndexes().getRowIndex();
@@ -108,31 +107,22 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
 							matrixBlock, vectorSlice, new MatrixBlock(), (AggregateBinaryOperator) _optr);
 
 						// for single column block, no aggregation neeeded
-						if( min.getNumColumns() <= min.getBlocksize() ) {
+						if(emitThreshold == 1) {
 							qOut.enqueueTask(new IndexedMatrixValue(tmp.getIndexes(), partialResult));
 						}
 						else {
 							// aggregation
-							MatrixBlock currAgg = partialResults.get(rowIndex);
+							MatrixBlock currAgg = aggTracker.get(rowIndex);
 							if (currAgg == null) {
-								partialResults.put(rowIndex, partialResult);
-								cnt.put(rowIndex, 1);
+								aggTracker.putAndIncrementCount(rowIndex, partialResult);
 							}
 							else {
-								currAgg.binaryOperationsInPlace(plus, partialResult);
-								int newCnt = cnt.get(rowIndex) + 1;
-								
-								if(newCnt == nBlocks){
+								currAgg = currAgg.binaryOperations(plus, partialResult);
+								if (aggTracker.putAndIncrementCount(rowIndex, currAgg)){
 									// early block output: emit aggregated block
 									MatrixIndexes idx = new MatrixIndexes(rowIndex, 1L);
-									MatrixBlock result = partialResults.get(rowIndex);
-									qOut.enqueueTask(new IndexedMatrixValue(idx, result));
-									partialResults.remove(rowIndex);
-									cnt.remove(rowIndex);
-								}
-								else {
-									// maintain aggregation counts if not output-ready yet
-									cnt.replace(rowIndex, newCnt);
+									qOut.enqueueTask(new IndexedMatrixValue(idx, currAgg));
+									aggTracker.remove(rowIndex);
 								}
 							}
 						}

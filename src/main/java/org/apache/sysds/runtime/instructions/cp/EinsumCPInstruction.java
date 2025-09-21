@@ -684,9 +684,9 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
         Supplier<String> getNewVarname = () -> "TMP" + _seqVar.getNextID();
 
         boolean writeToC = (isResultAB || isResultB) && As.isEmpty()  && Bs.isEmpty();
-
+        body.append("    ");
         if(ABs.size()>1){
-            body.append("// multiplying ABs: \n");
+            body.append("// multiplying ABs: \n    ");
             assignedArow=true;
             varnameArow = getNewVarname.get();
             for(int i=1;i<ABs.size();i++) { // multiply ABs
@@ -731,9 +731,9 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
                 if(writeToVarIdx != null) {
                     body.append(",");
                     body.append(writeToVarIdx);
-                    body.append(",len);\n");
+                    body.append(",len);\n    ");
                 }else{
-                    body.append(",len);\n");
+                    body.append(",len);\n    ");
                 }
 
             }
@@ -742,8 +742,8 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
         boolean assignedB = false;
         String varnameB = null;
 
-        if(Bs.size()>1){
-            body.append("// multiplying Bs: \n");
+        if(Bs.size()>1){ //todo use arow name if possible
+            body.append("// multiplying Bs: \n    ");
 
             assignedB=true;
             varnameB = getNewVarname.get();
@@ -759,14 +759,14 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
                     body.append("b[");
                     midx++;
                     body.append(midx);
-                    body.append("].values(0),0,0,len);\n");
+                    body.append("].values(0),0,0,len);\n    ");
                 }
                 else {
                     body.append(varnameB);
                     body.append(",b[");
                     midx++;
                     body.append(midx);
-                    body.append("].values(0),0,0,len);\n");
+                    body.append("].values(0),0,0,len);\n    ");
                 }
             }
         }
@@ -779,25 +779,63 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 
         String resultVarname = null;
         if(!Bs.isEmpty()){
-            body.append("// multiplying B with row: \n");
+            body.append("// multiplying B with row: \n    ");
 
+            if(sumB)
+                resultVarname = writeToC ? null : getNewVarname.get();
+            else
+                resultVarname = writeToC ? "c" : assignedB ? varnameB : assignedArow ? varnameArow : getNewVarname.get();
 
-            resultVarname = assignedArow ? varnameArow : getNewVarname.get();
-
-
-            if(sumB) body.append("double ");
-            else if(!assignedArow) body.append("double[] ");
-
-            body.append(resultVarname);
-            if(!assignedArow){
-                if(sumB) body.append(" = LibSpoofPrimitives.dotProduct(a,");
-                else body.append(" = LibSpoofPrimitives.vectMultWrite(a,");
+            if(sumB) {
+                if(writeToC && isResultA) {
+                    body.append("c[rix] = LibSpoofPrimitives.dotProduct(");
+                }else if(writeToC && isResult_) {
+                    body.append("c[0] += LibSpoofPrimitives.dotProduct(");
+                }else {
+                    body.append("double ");
+                    body.append(resultVarname);
+                    body.append(" = LibSpoofPrimitives.dotProduct(");
+                }
+                if(assignedArow) {
+                    body.append(varnameArow);
+                    body.append(",");
+                }
+                else {
+                    body.append("a,");
+                }
             }else{
-                if(sumB) body.append(" = LibSpoofPrimitives.dotProduct(");
-                else body.append(" = LibSpoofPrimitives.vectMultWrite(");
-                body.append(varnameArow);
-                body.append(",");
+                if(writeToC) {
+                    if(assignedArow || assignedB) {
+                        body.append("LibMatrixMult.vectMultiplyWrite(");
+                        body.append(resultVarname);
+                        body.append(",");
+                    }else{
+                        body.append("LibMatrixMult.vectMultiplyWrite(a,");
+                    }
+                }
+                else if(!assignedArow && !assignedB) {
+                    body.append("double[] ");
+                    body.append(resultVarname);
+                    body.append(" = LibSpoofPrimitives.vectMultWrite(a,");
+                }else{
+                    body.append("LibMatrixMult.vectMultiplyWrite(");
+                    body.append(resultVarname);
+                    body.append(",");
+                }
             }
+//            if(!assignedArow){
+//                if(sumB) body.append(" = LibSpoofPrimitives.dotProduct(a,");
+//                else {
+//                    body.append("double[] ");
+//                    body.append(resultVarname);
+//                    body.append(" = LibSpoofPrimitives.vectMultWrite(a,");
+//                }
+//            }else{
+//                if(sumB) body.append(" = LibSpoofPrimitives.dotProduct(");
+//                else body.append("LibMatrixMult.vectMultiplyWrite(");
+//                body.append(varnameArow);
+//                body.append(",");
+//            }
             if(!assignedB){
                 body.append("b[");
                 midx++;
@@ -807,16 +845,72 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
                 body.append(varnameB);
                 body.append(",");
             }
-            if(!assignedArow)
-                body.append("ai,0,len);\n");
-            else body.append("0,0,len);\n");
+            if(sumB){
+                if(!assignedArow)
+                    body.append("ai,0,len);\n    ");
+                else
+                    body.append("0,0,len);\n    ");
+            }else{
+                //where to write
+                if(writeToC) {
+                    body.append("c,");
+
+                }else if(assignedArow || assignedB) {
+                    body.append(resultVarname);
+                    body.append(",");
+                }// else its new []
+
+                //ai:
+                if(!assignedArow && !assignedB)
+                    body.append("ai,0");
+                else
+                    body.append("0,0");
+
+                //ci
+                if(writeToC) {
+                    if(isResultAB)
+                        body.append(",ai,len);\n    ");
+                    else//B
+                        body.append(",0,len);\n    ");
+                }else if(assignedArow || assignedB){
+                    body.append(",0,len);\n    ");
+                }else{
+                    body.append(",len);\n    ");
+                }
+
+//                else if(!assignedArow && !assignedB) {
+//                    body.append("double[] ");
+//                    body.append(resultVarname);
+//                    body.append(" = LibSpoofPrimitives.vectMultWrite(a,");
+//                }else{
+//                    body.append("LibMatrixMult.vectMultiplyWrite(");
+//                    body.append(resultVarname);
+//                    body.append(",");
+//                }
+//                if(!assignedArow/* && !assignedB*/){
+//                    body.append("ai,0,len);\n");
+//                }else{
+//                    body.append(resultVarname);
+//                }
+            }
+//            if(!assignedArow)
+//                body.append("ai,0,len);\n");
+//            else {
+//                if(sumB)
+//                    body.append("0,0,len);\n");
+//                else{
+//                    body.append(resultVarname);
+//                    body.append(",0,0,0,len);\n");
+//
+//                }
+//            }
 
         }
 
         writeToC |= !isResultZ;
 
         if(!As.isEmpty()){ // multiply with value of A
-            body.append("// multiplying current result with value of A: \n");
+            body.append("// multiplying current result with value of A: \n    ");
 
             if(sumB) {
                 if(resultVarname == null) {
@@ -829,9 +923,9 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 
                     if(assignedArow) {
                         body.append(varnameArow);
-                        body.append(", 0, len);\n");
+                        body.append(", 0, len);\n    ");
                     } else {
-                        body.append("a, ai, len);\n");
+                        body.append("a, ai, len);\n    ");
                     }
                 }
                 if(writeToC && isResult_){
@@ -848,12 +942,14 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
                 }
                 midx++;
                 body.append(midx);
-                body.append("].values(0)[rix];\n");
+                body.append("].values(0)[rix];\n    ");
             }
             else {
                 boolean resultVarnameNull = resultVarname == null;
-                if(writeToC) {
+                if(writeToC && isResultAB) {
                     body.append("LibMatrixMult.vectMultiplyWrite(b[");
+                }else if(writeToC && isResultB){
+                    body.append("LibMatrixMult.vectMultiplyAdd(b[");
                 }else{
                     if (resultVarnameNull) { // did vectmult previously
                         resultVarname = getNewVarname.get();
@@ -869,39 +965,39 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
                     if(assignedArow) {
                         body.append(varnameArow);
                         if (writeToC && isResultB)
-                            body.append(",c,0,0,len);\n");
+                            body.append(",c,0,0,len);\n    ");
                         else if (writeToC && isResultAB)
-                            body.append(",c,0,ci,len);\n");
+                            body.append(",c,0,ci,len);\n    ");
                         else
-                            body.append(",0,len);\n");
+                            body.append(",0,len);\n    ");
                     }else{
                         if (writeToC && isResultB)
-                            body.append("a,c,ai,0,len);\n");
+                            body.append("a,c,ai,0,len);\n    ");
                         else if (writeToC && isResultAB)
-                            body.append("a,c,ai,ci,len);\n");
+                            body.append("a,c,ai,ci,len);\n    ");
                         else
-                            body.append("a,ai,len);\n");
+                            body.append("a,ai,len);\n    ");
                     }
                 }else {
                     body.append(resultVarname);
                     if (writeToC && isResultB)
-                        body.append(",c,0,0,len);\n");
+                        body.append(",c,0,0,len);\n    ");
                    else  if (writeToC && isResultAB)
-                        body.append(",c,0,ci,len);\n");
+                        body.append(",c,0,ci,len);\n    ");
                     else
-                        body.append(",0,len);\n");
+                        body.append(",0,len);\n    ");
                 }
 
             }
         }
-        body.append("// write part: \n");
+        body.append("// write part: \n    ");
 
         if(!writeToC) {
             if (isResultZ) {
                 if (AZs.isEmpty()) throw new RuntimeException("Einsum runtime exception: Invalid rewrite type");
                 int zSize = einc.charToDimensionSize.get(eOpNodeEinsumFuse.c1);
 
-                body.append("// AZ part: \n");
+                body.append("// AZ part: \n    ");
 
                 boolean resultVarnameNull = resultVarname == null;
 
@@ -912,9 +1008,9 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
                     body.append(" = LibSpoofPrimitives.vectSum(");
                     if (assignedArow) {
                         body.append(varnameArow);
-                        body.append(", 0, len);\n");
+                        body.append(", 0, len);\n    ");
                     } else {
-                        body.append("a, ai, len);\n");
+                        body.append("a, ai, len);\n    ");
                     }
                 }
                 body.append("LibSpoofPrimitives.vectMultAdd(b[");
@@ -925,21 +1021,21 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
                 body.append("c,rix*");
                 body.append(zSize);
 
-                body.append(",0,len);\n");
+                body.append(",0,len);\n    ");
             } else if (isResultAB) {
                 //vectWrite(double[] a, double[] c, int ai, int ci, int len)
                 body.append("LibSpoofPrimitives.vectWrite(");
                 if (resultVarname == null) {
                     if (assignedArow) {
                         body.append(varnameArow);
-                        body.append(",c,0,ai,len);\n");
+                        body.append(",c,0,ai,len);\n    ");
                     } else {
                         //should never happen
                         throw new RuntimeException("Einsum runtime exception: Invalid rewrite type");
                     }
                 } else {
                     body.append(resultVarname);
-                    body.append(",c,0,ai,len);\n");
+                    body.append(",c,0,ai,len);\n    ");
                 }
             } else if (isResultA) {
                 if (resultVarname == null) {
@@ -948,21 +1044,21 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
                 }
                 body.append("c[rix] = ");
                 body.append(resultVarname);
-                body.append(";\n");
+                body.append(";\n    ");
 
             } else if (isResultB) {
                 body.append("LibMatrixMult.vectAdd(");//public static void vectAdd( double[] a, double[] c, int ai, int ci, final int len )
                 if (resultVarname == null) {
                     if (assignedArow) {
                         body.append(varnameArow);
-                        body.append(",c,0,0,len);\n");
+                        body.append(",c,0,0,len);\n    ");
                     } else {
                         //should never happen
                         throw new RuntimeException("Einsum runtime exception: Invalid rewrite type");
                     }
                 } else {
                     body.append(resultVarname);
-                    body.append(",c,0,0,len);\n");
+                    body.append(",c,0,0,len);\n    ");
                 }
 
             } else if (isResult_) {
@@ -972,7 +1068,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
                 }
                 body.append("c[0] += ");
                 body.append(resultVarname);
-                body.append(";\n");
+                body.append(";\n    ");
             }
         }
 
@@ -1003,7 +1099,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
         if( LOG.isTraceEnabled()) LOG.trace(CodegenUtils.printWithLineNumber(src));
         Class<?> cla = CodegenUtils.compileClass("codegen." + cnode.getClassname(), src);
         SpoofOperator op = CodegenUtils.createInstance(cla);
-//        SpoofOperator op = CodegenUtils.createInstance(AAA1.class);
+//        SpoofOperator op = CodegenUtils.createInstance(AAA2.class);
 //        MatrixBlock resBlock = new MatrixBlock();
 
 //        resBlock.reset(einc.charToDimensionSize.get(eOpNodeEinsumFuse.c1),

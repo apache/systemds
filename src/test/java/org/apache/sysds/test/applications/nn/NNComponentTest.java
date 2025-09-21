@@ -130,6 +130,11 @@ public class NNComponentTest extends TestFolder {
 	}
 
 	@Test
+	public void selu() {
+		run("selu.dml");
+	}
+
+	@Test
 	public void embedding() {
 		run("embedding.dml");
 	}

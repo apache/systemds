@@ -1,0 +1,68 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("nn/layers/selu.dml") as selu
+source("src/test/scripts/applications/nn/util.dml") as test_util
+
+selu_test1 = function() {
+    print("Testing SeLU, test 1")
+
+    X = matrix("1.  -0.5
+                0.   2.", rows=2, cols=2)
+    dout = matrix("1 1
+                   1 1", rows=2, cols=2)
+
+    # Reference from PyTorch nn.SELU
+    out_expected = matrix("1.050701   -0.69175816
+                           0.         2.101402", rows=2, cols=2)
+    gradient_expected = matrix("1.050701   1.0663412
+                                1.7580993  1.050701", rows=2, cols=2)
+
+    out = selu::forward(X)
+    test_util::check_all_close(out, out_expected, 0.00001)
+
+    gradient = selu::backward(dout, X)
+    test_util::check_all_close(gradient, gradient_expected, 0.00001)
+}
+
+selu_test2 = function() {
+    print("Testing SeLU, test 2")
+
+    X = matrix("0.5  -1.5
+                1.   -2.", rows=2, cols=2)
+    dout = matrix("1 1
+                   1 1", rows=2, cols=2)
+
+    # Precomputed reference from PyTorch nn.SELU
+    out_expected = matrix("0.5253505   -1.3658143
+                           1.050701    -1.5201665", rows=2, cols=2)
+    gradient_expected = matrix("1.050701   0.392285
+                                1.050701   0.23793286", rows=2, cols=2)
+
+    out = selu::forward(X)
+    test_util::check_all_close(out, out_expected, 0.00001)
+
+    gradient = selu::backward(dout, X)
+    test_util::check_all_close(gradient, gradient_expected, 0.00001)
+}
+
+selu_test1()
+selu_test2()

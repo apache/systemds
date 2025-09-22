@@ -831,7 +831,8 @@ public interface Types {
 		PERSISTENTREAD, PERSISTENTWRITE, 
 		TRANSIENTREAD, TRANSIENTWRITE,
 		FUNCTIONOUTPUT, 
-		SQLREAD, FEDERATED;
+		SQLREAD, FEDERATED,
+		TEE;
 		
 		public boolean isTransient() {
 			return this == TRANSIENTREAD || this == TRANSIENTWRITE;
@@ -856,6 +857,7 @@ public interface Types {
 				case FUNCTIONOUTPUT:  return "FunOut";
 				case SQLREAD:         return Opcodes.SQL.toString();
 				case FEDERATED:       return "Fed";
+				case TEE:             return "Tee";
 				default:              return "Invalid";
 			}
 		}

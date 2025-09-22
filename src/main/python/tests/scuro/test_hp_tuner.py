@@ -19,28 +19,6 @@
 #
 # -------------------------------------------------------------
 
-# -------------------------------------------------------------
-#
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-#
-# -------------------------------------------------------------
-
-
 import unittest
 
 import numpy as np
@@ -48,6 +26,9 @@ from sklearn import svm
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 
+from systemds.scuro.drsearch.multimodal_optimizer import MultimodalOptimizer
+from systemds.scuro.representations.average import Average
+from systemds.scuro.representations.concatenation import Concatenation
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.models.model import Model
 from systemds.scuro.drsearch.task import Task
@@ -140,7 +121,33 @@ class TestHPTuner(unittest.TestCase):
             )
         )
 
-        self.run_hp_for_modality(audio)
+        self.run_hp_for_modality([audio])
+
+    def test_multimodal_hp_tuning(self):
+        audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
+            self.num_instances, 3000
+        )
+        audio = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.AUDIO, audio_data, np.float32, audio_md
+            )
+        )
+
+        text_data, text_md = ModalityRandomDataGenerator().create_text_data(
+            self.num_instances
+        )
+        text = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.TEXT, text_data, str, text_md
+            )
+        )
+
+        self.run_hp_for_modality(
+            [audio, text], multimodal=True, tune_unimodal_representations=True
+        )
+        self.run_hp_for_modality(
+            [audio, text], multimodal=True, tune_unimodal_representations=False
+        )
 
     def test_hp_tuner_for_text_modality(self):
         text_data, text_md = ModalityRandomDataGenerator().create_text_data(
@@ -151,9 +158,11 @@ class TestHPTuner(unittest.TestCase):
                 self.indices, None, ModalityType.TEXT, text_data, str, text_md
             )
         )
-        self.run_hp_for_modality(text)
+        self.run_hp_for_modality([text])
 
-    def run_hp_for_modality(self, modality):
+    def run_hp_for_modality(
+        self, modalities, multimodal=False, tune_unimodal_representations=False
+    ):
         with patch.object(
             Registry,
             "_representations",
@@ -166,14 +175,40 @@ class TestHPTuner(unittest.TestCase):
             },
         ):
             registry = Registry()
-
-            unimodal_optimizer = UnimodalOptimizer([modality], self.tasks, False)
+            registry._fusion_operators = [Average, Concatenation]
+            unimodal_optimizer = UnimodalOptimizer(modalities, self.tasks, False)
             unimodal_optimizer.optimize()
 
             hp = HyperparameterTuner(
-                [modality], self.tasks, unimodal_optimizer.operator_performance
+                modalities, self.tasks, unimodal_optimizer.operator_performance
             )
-            hp.tune_unimodal_representations()
+
+            if multimodal:
+                m_o = MultimodalOptimizer(
+                    modalities,
+                    unimodal_optimizer.operator_performance,
+                    self.tasks,
+                    debug=False,
+                    min_modalities=2,
+                    max_modalities=3,
+                )
+                fusion_results = m_o.optimize()
+
+                best_results = sorted(
+                    fusion_results, key=lambda x: x.val_score, reverse=True
+                )
+
+                hp.tune_multimodal_representations(
+                    best_results,
+                    self.tasks[0],
+                    k=2,
+                    optimize_unimodal=tune_unimodal_representations,
+                )
+                assert len(hp.results) == 2
+            else:
+                hp.tune_unimodal_representations()
+                assert len(hp.results) == len(self.tasks)
+                assert len(hp.results[self.tasks[0].model.name]) == 2
 
 
 if __name__ == "__main__":

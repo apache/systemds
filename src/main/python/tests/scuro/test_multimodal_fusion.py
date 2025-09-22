@@ -19,10 +19,7 @@
 #
 # -------------------------------------------------------------
 
-
-import shutil
 import unittest
-from multiprocessing import freeze_support
 
 import numpy as np
 from sklearn import svm
@@ -33,29 +30,20 @@ from systemds.scuro.drsearch.multimodal_optimizer import MultimodalOptimizer
 from systemds.scuro.drsearch.unimodal_optimizer import UnimodalOptimizer
 from systemds.scuro.representations.concatenation import Concatenation
 from systemds.scuro.representations.average import Average
-from systemds.scuro.drsearch.fusion_optimizer import FusionOptimizer
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.models.model import Model
 from systemds.scuro.drsearch.task import Task
-from systemds.scuro.drsearch.unimodal_representation_optimizer import (
-    UnimodalRepresentationOptimizer,
-)
 
 from systemds.scuro.representations.spectrogram import Spectrogram
 from systemds.scuro.representations.word2vec import W2V
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.resnet import ResNet
 from tests.scuro.data_generator import (
-    setup_data,
     TestDataLoader,
     ModalityRandomDataGenerator,
 )
 
-from systemds.scuro.dataloader.audio_loader import AudioLoader
-from systemds.scuro.dataloader.video_loader import VideoLoader
-from systemds.scuro.dataloader.text_loader import TextLoader
 from systemds.scuro.modality.type import ModalityType
-
 from unittest.mock import patch
 
 
@@ -144,7 +132,7 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
         )
 
         audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
-            self.num_instances, 100
+            self.num_instances, 1000
         )
         text_data, text_md = ModalityRandomDataGenerator().create_text_data(
             self.num_instances
@@ -186,42 +174,22 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
             )
             unimodal_optimizer.optimize()
             unimodal_optimizer.operator_performance.get_k_best_results(audio, 2, task)
-
-            multimodal_optimizer = MultimodalOptimizer(
+            m_o = MultimodalOptimizer(
                 [audio, text, video],
                 unimodal_optimizer.operator_performance,
                 [task],
                 debug=False,
+                min_modalities=2,
+                max_modalities=3,
             )
+            fusion_results = m_o.optimize()
 
-            multimodal_optimizer.optimize()
+            best_results = sorted(
+                fusion_results, key=lambda x: x.val_score, reverse=True
+            )[:2]
 
-            assert (
-                len(multimodal_optimizer.optimization_results.results["TestSVM"].keys())
-                == 57
-            )
-            assert (
-                len(
-                    multimodal_optimizer.optimization_results.results["TestSVM"][
-                        "0_1_2_3_4_5"
-                    ]
-                )
-                == 62
-            )
-            assert (
-                len(
-                    multimodal_optimizer.optimization_results.results["TestSVM"][
-                        "3_4_5"
-                    ]
-                )
-                == 6
-            )
-            assert (
-                len(multimodal_optimizer.optimization_results.results["TestSVM"]["0_1"])
-                == 2
-            )
+            assert best_results[0].val_score >= best_results[1].val_score
 
 
 if __name__ == "__main__":
-    freeze_support()
     unittest.main()

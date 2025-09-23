@@ -18,10 +18,14 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import copy
 from typing import List
 
 import numpy as np
-from systemds.scuro import AggregatedRepresentation, Aggregation
+from systemds.scuro.representations.aggregated_representation import (
+    AggregatedRepresentation,
+)
+from systemds.scuro.modality.transformed import TransformedModality
 
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.representation import Representation
@@ -66,23 +70,40 @@ class Fusion(Representation):
     def transform_with_training(
         self, modalities: List[Modality], train_indices, labels
     ):
-        # if self.needs_instance_alignment:
-        #     max_len = self.get_max_embedding_size(modalities)
-        #     for modality in modalities:
-        #         modality.pad(max_len=max_len)
 
-        self.execute(
-            [np.array(modality.data)[train_indices] for modality in modalities],
-            labels[train_indices],
-        )
+        train_modalities = []
+        for modality in modalities:
+            train_data = [d for i, d in enumerate(modality.data) if i in train_indices]
+            train_modality = TransformedModality(modality, self)
+            train_modality.data = copy.deepcopy(train_data)
+            train_modalities.append(train_modality)
 
-    def transform_data(self, modalities: List[Modality], val_indices):
-        return self.apply_representation(
-            [np.array(modality.data)[val_indices] for modality in modalities]
-        )
+        self.execute(train_modalities, labels[train_indices])
 
-    def execute(self, modalities: List[Modality]):
-        raise f"Not implemented for Fusion: {self.name}"
+    def transform_data(self, modalities: List[Modality], indices=None):
+        val_modalities = []
+        for modality in modalities:
+            val_data = (
+                [d for i, d in enumerate(modality.data) if i in indices]
+                if indices
+                else modality.data
+            )
+            val_modality = type(modality)(modality, self)
+            val_modality.data = copy.deepcopy(val_data)
+            val_modalities.append(val_modality)
+
+        return self.apply_representation(val_modalities)
+
+    def execute(self, modalities: List[Modality], labels: np.ndarray = None):
+        raise NotImplementedError(f"Not implemented for Fusion: {self.name}")
+
+    def apply_representation(self, modalities: List[Modality]):
+        if self.needs_training:
+            raise NotImplementedError(
+                f"apply_representation not implemented for trainable fusion: {self.name}"
+            )
+        else:
+            return self.execute(modalities)
 
     def get_max_embedding_size(self, modalities: List[Modality]):
         """

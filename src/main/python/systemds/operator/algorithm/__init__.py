@@ -53,6 +53,7 @@ from .builtin.dbscan import dbscan
 from .builtin.dbscanApply import dbscanApply 
 from .builtin.decisionTree import decisionTree 
 from .builtin.decisionTreePredict import decisionTreePredict 
+from .builtin.dedup import dedup 
 from .builtin.deepWalk import deepWalk 
 from .builtin.denialConstraints import denialConstraints 
 from .builtin.differenceStatistics import differenceStatistics 
@@ -251,6 +252,7 @@ __all__ = ['WoE',
  'dbscanApply',
  'decisionTree',
  'decisionTreePredict',
+ 'dedup',
  'deepWalk',
  'denialConstraints',
  'differenceStatistics',

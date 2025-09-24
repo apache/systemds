@@ -51,6 +51,7 @@
 # S              Matrix holding the shapley values along the cols, one row per instance.
 # expected       Double holding the average prediction of all instances.
 # -----------------------------------------------------------------------------
+
 s_shapExplainer = function(String model_function, list[unknown] model_args, Matrix[Double] x_instances,
     Matrix[Double] X_bg, Integer n_permutations = 10, Integer n_samples = 100, Integer remove_non_var=0,
     Matrix[Double] partitions=as.matrix(-1), Integer seed = -1, Integer verbose = 0)

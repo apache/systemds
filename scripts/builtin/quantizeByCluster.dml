@@ -58,7 +58,7 @@
 #           the product quantization. Only relevant when space_decomp = TRUE.
 # ------------------------------------------------------------------------------------------
 
-m_quantizeByCluster = function(Matrix[Double]X, Integer M = 4, Integer k = 10, Integer runs = 10,
+m_quantizeByCluster = function(Matrix[Double] X, Integer M = 4, Integer k = 10, Integer runs = 10,
     Integer max_iter = 1000, Double eps = 1e-6, Integer avg_sample_size_per_centroid = 50, Boolean separate=TRUE, Boolean space_decomp=FALSE, Integer seed = -1)
   return(Matrix[Double] codebook, Matrix[Double] codes, Matrix[Double] R)
 {
@@ -119,4 +119,3 @@ m_quantizeByCluster = function(Matrix[Double]X, Integer M = 4, Integer k = 10, I
     }
   }
 }
-

@@ -28,11 +28,11 @@
 #
 # INPUT:
 # --------------------------------------------------------------------------------------
-# X                 Input Frame[String] with n rows and d columns (raw tuples)
-# gloveMatrix       Matrix[Double] of size |V| × e (pretrained GloVe embeddings) -> |V| number of words and e = embedding dimesnion
-# vocab             Frame[String] of size |V| × 1 (vocabulary aligned with gloveMatrix)
-# similarityMeasure (optional) String specifying similarity metric: "cosine", "euclidean"
-# threshold         (optional) Double: threshold value above which tuples are considered duplicates
+# X                  Input Frame[String] with n rows and d columns (raw tuples)
+# gloveMatrix        Matrix[Double] of size |V| × e (pretrained GloVe embeddings) -> |V| number of words and e = embedding dimesnion
+# vocab              Frame[String] of size |V| × 1 (vocabulary aligned with gloveMatrix)
+# similarityMeasure  (optional) String specifying similarity metric: "cosine", "euclidean"
+# threshold          (optional) Double: threshold value above which tuples are considered duplicates
 # --------------------------------------------------------------------------------------
 #
 # OUTPUT:

@@ -42,6 +42,7 @@ def glove(input: Frame,
           distanceWeighting: bool,
           symmetric: bool):
     """
+     Computes the vector embeddings for words in a large text corpus. 
     
     
     

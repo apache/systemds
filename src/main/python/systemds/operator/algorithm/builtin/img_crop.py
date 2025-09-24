@@ -36,9 +36,26 @@ def img_crop(img_in: Matrix,
     """
      The img_crop-function is an image data augmentation function. It cuts out a subregion of an image.
     
+     .. code-block:: python
+    
+       >>> import numpy as np
+       >>> from systemds.context import SystemDSContext
+       >>> from systemds.operator.algorithm import img_crop
+       >>> 
+       >>> with SystemDSContext() as sds:
+       ...     img = sds.from_numpy(
+       ...         np.array([[ 50., 100., 150.],
+       ...                   [150., 200., 250.],
+       ...                   [250., 200., 200.]], dtype=np.float32)
+       ...     )
+       ...     result_img = img_crop(img, 1, 1, 1, 1).compute()
+       ...     print(result_img)
+       [[200.]]
     
     
-    :param img_in: Input matrix/image
+    
+    
+    :param img_in: Input image as 2D matrix with top left corner at [1, 1]
     :param w: The width of the subregion required
     :param h: The height of the subregion required
     :param x_offset: The horizontal coordinate in the image to begin the crop operation

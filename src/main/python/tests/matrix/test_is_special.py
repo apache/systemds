@@ -53,7 +53,7 @@ m3 = m3.reshape((dim, dim))
 
 class TestIS_SPECIAL(unittest.TestCase):
     def setUp(self):
-        self.sds = SystemDSContext()
+        self.sds = SystemDSContext(capture_stdout=True, logging_level=50)
 
     def tearDown(self):
         self.sds.close()

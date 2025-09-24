@@ -46,7 +46,7 @@ class TestPandasFromToSystemds(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.sds = SystemDSContext()
+        cls.sds = SystemDSContext(capture_stdout=True, logging_level=50)
         if not os.path.exists(cls.temp_dir):
             os.makedirs(cls.temp_dir)
 

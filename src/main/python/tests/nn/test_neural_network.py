@@ -31,7 +31,7 @@ class TestNeuralNetwork(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.sds = SystemDSContext()
+        cls.sds = SystemDSContext(capture_stdout=True, logging_level=50)
         np.random.seed(42)
         cls.X = np.random.rand(6, 1)
         cls.exp_out = np.array(

@@ -71,11 +71,9 @@ from systemds.scuro.utils.identifier import Identifier
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
-from systemds.scuro.drsearch.dr_search import DRSearch
 from systemds.scuro.drsearch.task import Task
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.drsearch.optimization_data import OptimizationData
-from systemds.scuro.drsearch.representation_cache import RepresentationCache
 from systemds.scuro.representations.covarep_audio_features import (
     RMSE,
     Spectral,
@@ -131,11 +129,9 @@ __all__ = [
     "TransformedModality",
     "ModalityType",
     "UnimodalModality",
-    "DRSearch",
     "Task",
     "Registry",
     "OptimizationData",
-    "RepresentationCache",
     "UnimodalOptimizer",
     "MultimodalOptimizer",
     "ZeroCrossing",

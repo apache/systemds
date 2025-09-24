@@ -29,6 +29,7 @@ from sklearn.model_selection import train_test_split
 from systemds.scuro.drsearch.multimodal_optimizer import MultimodalOptimizer
 from systemds.scuro.drsearch.unimodal_optimizer import UnimodalOptimizer
 from systemds.scuro.representations.concatenation import Concatenation
+from systemds.scuro.representations.lstm import LSTM
 from systemds.scuro.representations.average import Average
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.models.model import Model
@@ -137,17 +138,10 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
         text_data, text_md = ModalityRandomDataGenerator().create_text_data(
             self.num_instances
         )
-        video_data, video_md = ModalityRandomDataGenerator().create_visual_modality(
-            self.num_instances, 60
-        )
+
         audio = UnimodalModality(
             TestDataLoader(
                 self.indices, None, ModalityType.AUDIO, audio_data, np.float32, audio_md
-            )
-        )
-        video = UnimodalModality(
-            TestDataLoader(
-                self.indices, None, ModalityType.VIDEO, video_data, np.float32, video_md
             )
         )
         text = UnimodalModality(
@@ -168,14 +162,12 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
             },
         ):
             registry = Registry()
-            registry._fusion_operators = [Average, Concatenation]
-            unimodal_optimizer = UnimodalOptimizer(
-                [audio, text, video], [task], debug=False
-            )
+            registry._fusion_operators = [Average, Concatenation, LSTM]
+            unimodal_optimizer = UnimodalOptimizer([audio, text], [task], debug=False)
             unimodal_optimizer.optimize()
             unimodal_optimizer.operator_performance.get_k_best_results(audio, 2, task)
             m_o = MultimodalOptimizer(
-                [audio, text, video],
+                [audio, text],
                 unimodal_optimizer.operator_performance,
                 [task],
                 debug=False,
@@ -185,7 +177,7 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
             fusion_results = m_o.optimize()
 
             best_results = sorted(
-                fusion_results, key=lambda x: x.val_score, reverse=True
+                fusion_results[task.model.name], key=lambda x: x.val_score, reverse=True
             )[:2]
 
             assert best_results[0].val_score >= best_results[1].val_score

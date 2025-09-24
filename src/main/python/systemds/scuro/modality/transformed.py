@@ -63,6 +63,7 @@ class TransformedModality(Modality):
     def add_transformation(self, transformation, modality):
         if (
             transformation.__class__.__bases__[0].__name__ == "Fusion"
+            and type(modality).__name__ == "TransformedModality"
             and modality.transformation[0].__class__.__bases__[0].__name__ != "Fusion"
         ):
             self.transformation = []

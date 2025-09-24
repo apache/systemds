@@ -283,7 +283,7 @@ class MultiModalAttentionFusion(nn.Module):
         num_heads: int,
         dropout: float,
         max_seq_len: int,
-        pooling_strategy: str,
+        pooling_strategy: str = "mean",
     ):
         super().__init__()
 

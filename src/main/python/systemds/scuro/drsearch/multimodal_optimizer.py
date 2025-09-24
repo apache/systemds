@@ -21,6 +21,7 @@
 
 
 import itertools
+import pickle
 import time
 from dataclasses import dataclass
 from typing import List, Dict, Any, Generator
@@ -294,14 +295,15 @@ class MultimodalOptimizer:
                     counter += 1
         return None
 
-    def optimize(self, max_combinations: int = None) -> List["OptimizationResult"]:
-        all_results = []
+    def optimize(
+        self, max_combinations: int = None
+    ) -> Dict[str, List["OptimizationResult"]]:
+        all_results = {}
 
         for task in self.tasks:
             if self.debug:
                 print(f"Optimizing multimodal fusion for task: {task.model.name}")
-
-            task_results = []
+            all_results[task.model.name] = []
             evaluated_count = 0
 
             for modality_subset in self._generate_modality_combinations():
@@ -318,7 +320,7 @@ class MultimodalOptimizer:
 
                         result = self._evaluate_dag(dag, task)
                         if result is not None:
-                            task_results.append(result)
+                            all_results[task.model.name].append(result)
 
                         evaluated_count += 1
 
@@ -331,21 +333,27 @@ class MultimodalOptimizer:
                 if max_combinations and evaluated_count >= max_combinations:
                     break
 
-            all_results.extend(task_results)
-
             if self.debug:
                 print(
-                    f"  Task completed: {len(task_results)} valid combinations evaluated"
+                    f"  Task completed: {len(all_results[task.model.name])} valid combinations evaluated"
                 )
 
         self.optimization_results = all_results
 
         if self.debug:
-            print(
-                f"\nOptimization completed: {len(all_results)} total combinations evaluated"
-            )
+            print(f"\nOptimization completed")
 
         return all_results
+
+    def store_results(self, file_name=None):
+        if file_name is None:
+            import time
+
+            timestr = time.strftime("%Y%m%d-%H%M%S")
+            file_name = "multimodal_optimizer" + timestr + ".pkl"
+
+        with open(file_name, "wb") as f:
+            pickle.dump(self.optimization_results, f)
 
 
 @dataclass

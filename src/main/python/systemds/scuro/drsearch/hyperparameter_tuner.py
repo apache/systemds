@@ -203,56 +203,69 @@ class HyperparameterTuner:
     def tune_multimodal_representations(
         self,
         optimization_results,
-        task: Task,
         k: int = 1,
         optimize_unimodal: bool = True,
         max_eval_per_rep: Optional[int] = None,
     ):
-        best_optimization_results = optimization_results[:k]
-        results = []
-        for representation in best_optimization_results:
-            if optimize_unimodal:
-                dag = copy.deepcopy(representation.dag)
-                index = 0
-                for i, node in enumerate(representation.dag.nodes):
-                    if not node.inputs:
-                        leaf_node_id = node.node_id
-                        leaf_nodes = self.representations[task.model.name][
-                            node.modality_id
-                        ][node.representation_index].dag.nodes
-                        for leaf_idx, node in enumerate(dag.nodes):
-                            if node.node_id == leaf_node_id:
-                                dag.nodes[leaf_idx : leaf_idx + 1] = leaf_nodes
-                                index = leaf_idx + len(leaf_nodes) - 1
-                                break
 
-                        for node in dag.nodes:
-                            try:
-                                idx = node.inputs.index(leaf_node_id)
-                                node.inputs[idx] = dag.nodes[index].node_id
-                                break
-                            except ValueError:
-                                continue
+        best_results = {}
+        for task in self.tasks:
+            best_results[task.model.name] = sorted(
+                optimization_results[task.model.name],
+                key=lambda x: x.val_score,
+                reverse=True,
+            )[:k]
 
-                if self._dag_has_trainable_fusion(dag):
-                    result = self.tune_trainable_fusion_dag(dag, task, max_eval_per_rep)
+        results = {}
+        for task in self.tasks:
+            results[task.model.name] = []
+            best_optimization_results = best_results[task.model.name]
+
+            for representation in best_optimization_results:
+                if optimize_unimodal:
+                    dag = copy.deepcopy(representation.dag)
+                    index = 0
+                    for i, node in enumerate(representation.dag.nodes):
+                        if not node.inputs:
+                            leaf_node_id = node.node_id
+                            leaf_nodes = self.representations[task.model.name][
+                                node.modality_id
+                            ][node.representation_index].dag.nodes
+                            for leaf_idx, node in enumerate(dag.nodes):
+                                if node.node_id == leaf_node_id:
+                                    dag.nodes[leaf_idx : leaf_idx + 1] = leaf_nodes
+                                    index = leaf_idx + len(leaf_nodes) - 1
+                                    break
+
+                            for node in dag.nodes:
+                                try:
+                                    idx = node.inputs.index(leaf_node_id)
+                                    node.inputs[idx] = dag.nodes[index].node_id
+                                    break
+                                except ValueError:
+                                    continue
+
+                    if self._dag_has_trainable_fusion(dag):
+                        result = self.tune_trainable_fusion_dag(
+                            dag, task, max_eval_per_rep
+                        )
+                    else:
+                        result = self.tune_dag_representation(
+                            dag, dag.root_node_id, task, max_eval_per_rep
+                        )
                 else:
-                    result = self.tune_dag_representation(
-                        dag, dag.root_node_id, task, max_eval_per_rep
-                    )
-            else:
-                if self._dag_has_trainable_fusion(representation.dag):
-                    result = self.tune_trainable_fusion_dag(
-                        representation.dag, task, max_eval_per_rep
-                    )
-                else:
-                    result = self.tune_dag_representation(
-                        representation.dag,
-                        representation.dag.root_node_id,
-                        task,
-                        max_eval_per_rep,
-                    )
-            results.append(result)
+                    if self._dag_has_trainable_fusion(representation.dag):
+                        result = self.tune_trainable_fusion_dag(
+                            representation.dag, task, max_eval_per_rep
+                        )
+                    else:
+                        result = self.tune_dag_representation(
+                            representation.dag,
+                            representation.dag.root_node_id,
+                            task,
+                            max_eval_per_rep,
+                        )
+                results[task.model.name].append(result)
 
         self.results = results
 

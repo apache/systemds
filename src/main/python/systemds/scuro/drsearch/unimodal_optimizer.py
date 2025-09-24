@@ -26,6 +26,7 @@ import multiprocessing as mp
 from typing import List, Any
 from functools import lru_cache
 
+from systemds.scuro import ModalityType
 from systemds.scuro.representations.fusion import Fusion
 from systemds.scuro.representations.concatenation import Concatenation
 from systemds.scuro.representations.hadamard import Hadamard
@@ -265,6 +266,14 @@ class UnimodalOptimizer:
         context_operators = self._get_context_operators()
 
         for context_op in context_operators:
+            if modality.modality_type != ModalityType.TEXT:
+                context_node_id = builder.create_operation_node(
+                    context_op,
+                    [leaf_id],
+                    context_op().parameters,
+                )
+                dags.append(builder.build(context_node_id))
+
             context_node_id = builder.create_operation_node(
                 context_op,
                 [current_node_id],

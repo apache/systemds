@@ -29,6 +29,7 @@ from sklearn.model_selection import train_test_split
 from systemds.scuro.drsearch.multimodal_optimizer import MultimodalOptimizer
 from systemds.scuro.representations.average import Average
 from systemds.scuro.representations.concatenation import Concatenation
+from systemds.scuro.representations.lstm import LSTM
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.models.model import Model
 from systemds.scuro.drsearch.task import Task
@@ -53,6 +54,31 @@ from systemds.scuro.drsearch.hyperparameter_tuner import HyperparameterTuner
 class TestSVM(Model):
     def __init__(self):
         super().__init__("TestSVM")
+
+    def fit(self, X, y, X_test, y_test):
+        if X.ndim > 2:
+            X = X.reshape(X.shape[0], -1)
+        self.clf = svm.SVC(C=1, gamma="scale", kernel="rbf", verbose=False)
+        self.clf = self.clf.fit(X, np.array(y))
+        y_pred = self.clf.predict(X)
+
+        return classification_report(
+            y, y_pred, output_dict=True, digits=3, zero_division=1
+        )["accuracy"]
+
+    def test(self, test_X: np.ndarray, test_y: np.ndarray):
+        if test_X.ndim > 2:
+            test_X = test_X.reshape(test_X.shape[0], -1)
+        y_pred = self.clf.predict(np.array(test_X))  # noqa
+
+        return classification_report(
+            np.array(test_y), y_pred, output_dict=True, digits=3, zero_division=1
+        )["accuracy"]
+
+
+class TestSVM2(Model):
+    def __init__(self):
+        super().__init__("TestSVM2")
 
     def fit(self, X, y, X_test, y_test):
         if X.ndim > 2:
@@ -108,7 +134,14 @@ class TestHPTuner(unittest.TestCase):
                 cls.labels,
                 cls.train_indizes,
                 cls.val_indizes,
-            )
+            ),
+            Task(
+                "UnimodalRepresentationTask2",
+                TestSVM2(),
+                cls.labels,
+                cls.train_indizes,
+                cls.val_indizes,
+            ),
         ]
 
     def test_hp_tuner_for_audio_modality(self):
@@ -175,7 +208,7 @@ class TestHPTuner(unittest.TestCase):
             },
         ):
             registry = Registry()
-            registry._fusion_operators = [Average, Concatenation]
+            registry._fusion_operators = [Average, Concatenation, LSTM]
             unimodal_optimizer = UnimodalOptimizer(modalities, self.tasks, False)
             unimodal_optimizer.optimize()
 
@@ -194,21 +227,17 @@ class TestHPTuner(unittest.TestCase):
                 )
                 fusion_results = m_o.optimize()
 
-                best_results = sorted(
-                    fusion_results, key=lambda x: x.val_score, reverse=True
-                )
-
                 hp.tune_multimodal_representations(
-                    best_results,
-                    self.tasks[0],
+                    fusion_results,
                     k=2,
                     optimize_unimodal=tune_unimodal_representations,
                 )
-                assert len(hp.results) == 2
+
             else:
                 hp.tune_unimodal_representations()
-                assert len(hp.results) == len(self.tasks)
-                assert len(hp.results[self.tasks[0].model.name]) == 2
+
+            assert len(hp.results) == len(self.tasks)
+            assert len(hp.results[self.tasks[0].model.name]) == 2
 
 
 if __name__ == "__main__":

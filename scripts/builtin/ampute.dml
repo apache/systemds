@@ -30,7 +30,6 @@
 # mech         a string [either "MAR", "MNAR", or "MCAR"] specifying the missingness mechanism. Chosen "MAR" and "MNAR" settings will be overridden if a non-default weight matrix is specified
 # weights      a weight matrix [shape: k-by-m], containing weights that will be used to calculate the weighted sum scores. Will be overridden if mech == "MCAR"
 # seed         a manually defined seed for reproducible RNG
-
 # -------------------------------------------------------------------------------------
 #
 # OUTPUT:

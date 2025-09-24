@@ -38,6 +38,7 @@ import org.apache.sysds.lops.Lop;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.LopsException;
 import org.apache.sysds.lops.Sql;
+import org.apache.sysds.lops.Tee;
 import org.apache.sysds.parser.DataExpression;
 import static org.apache.sysds.parser.DataExpression.FED_RANGES;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
@@ -73,7 +74,7 @@ public class DataOp extends Hop {
 	private DataOp() {
 		//default constructor for clone
 	}
-	
+
 	/**
 	 * READ operation for Matrix w/ dim1, dim2. 
 	 * This constructor does not support any expression in parameters
@@ -251,7 +252,7 @@ public class DataOp extends Hop {
 
 		ExecType et = optFindExecType();
 		Lop l = null;
-		
+
 		// construct lops for all input parameters
 		HashMap<String, Lop> inputLops = new HashMap<>();
 		for (Entry<String, Integer> cur : _paramIndexMap.entrySet()) {
@@ -259,46 +260,48 @@ public class DataOp extends Hop {
 		}
 
 		// Create the lop
-		switch(_op) 
-		{
+		switch (_op) {
 			case TRANSIENTREAD:
-				l = new Data(_op, null, inputLops, getName(), null, 
-						getDataType(), getValueType(), getFileFormat());
+				l = new Data(_op, null, inputLops, getName(), null,
+								getDataType(), getValueType(), getFileFormat());
 				setOutputDimensions(l);
 				break;
-				
+
 			case PERSISTENTREAD:
-				l = new Data(_op, null, inputLops, getName(), null, 
-						getDataType(), getValueType(), getFileFormat());
+				l = new Data(_op, null, inputLops, getName(), null,
+								getDataType(), getValueType(), getFileFormat());
 				l.getOutputParameters().setDimensions(getDim1(), getDim2(), _inBlocksize, getNnz(), getUpdateType());
 				break;
-				
+
 			case PERSISTENTWRITE:
 			case FUNCTIONOUTPUT:
-				l = new Data(_op, getInput().get(0).constructLops(), inputLops, getName(), null, 
-					getDataType(), getValueType(), getFileFormat());
-				((Data)l).setExecType(et);
+				l = new Data(_op, getInput().get(0).constructLops(), inputLops, getName(), null,
+								getDataType(), getValueType(), getFileFormat());
+				((Data) l).setExecType(et);
 				setOutputDimensions(l);
 				break;
-				
+
 			case TRANSIENTWRITE:
 				l = new Data(_op, getInput().get(0).constructLops(), inputLops, getName(), null,
-						getDataType(), getValueType(), getFileFormat());
+								getDataType(), getValueType(), getFileFormat());
 				setOutputDimensions(l);
 				break;
-				
+
 			case SQLREAD:
 				l = new Sql(inputLops, getDataType(), getValueType());
 				break;
-			
+
 			case FEDERATED:
 				l = new Federated(inputLops, getDataType(), getValueType());
 				break;
-			
+
+			case TEE:
+				l = new Tee(getInput(0).constructLops(), getDataType(), getValueType());
+				break;
+				
 			default:
 				throw new LopsException("Invalid operation type for Data LOP: " + _op);
 		}
-		
 		setLineNumbers(l);
 		setLops(l);
 		
@@ -306,7 +309,6 @@ public class DataOp extends Hop {
 		constructAndSetLopsDataFlowProperties();
 
 		return getLops();
-
 	}
 
 	public void setFileFormat(FileFormat ft) {

@@ -548,6 +548,10 @@ public class Dag<N extends Lop>
 						outputs[count++] = out.getOutputParameters().getLabel();
 					inst_string = node.getInstructions(inputs, outputs);
 				}
+				else if ( node.getType() == Type.Tee ) {
+					String input = node.getInputs().get(0).getOutputParameters().getLabel();
+					inst_string = node.getInstructions(input, node.getOutputParameters().getLabel());
+				}
 				else if (node.getType() == Lop.Type.Nary) {
 					String[] inputs = new String[node.getInputs().size()];
 					int count = 0;

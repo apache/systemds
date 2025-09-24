@@ -220,6 +220,7 @@ public enum Opcodes {
 	READ("read", InstructionType.Variable),
 	WRITE("write", InstructionType.Variable, InstructionType.Write),
 	CREATEVAR("createvar", InstructionType.Variable),
+	TEE("tee", InstructionType.Tee),
 
 	//Reorg instruction opcodes
 	TRANSPOSE("r'", InstructionType.Reorg),

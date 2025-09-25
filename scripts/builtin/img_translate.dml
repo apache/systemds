@@ -23,6 +23,25 @@
 # Optionally resizes the image (without scaling).
 # Uses nearest neighbor sampling.
 #
+# .. code-block:: python
+#
+#   >>> import numpy as np
+#   >>> from systemds.context import SystemDSContext
+#   >>> from systemds.operator.algorithm import img_translate
+#   >>> 
+#   >>> with SystemDSContext() as sds:
+#   ...     img = sds.from_numpy(
+#   ...         np.array([[ 10., 20., 30.],
+#   ...                   [ 40., 50., 60.],
+#   ...                   [ 70., 80., 90.]], dtype=np.float32)
+#   ...     )
+#   ...     result_img = img_translate(img, 1., 1., 3, 3, 255.).compute()
+#   ...     print(result_img)
+#   [[255. 255. 255.]
+#    [255.  10.  20.]
+#    [255.  40.  50.]]
+#
+#
 # INPUT:
 # ----------------------------------------------------------------------------------------------
 # img_in      Input image as 2D matrix with top left corner at [1, 1]

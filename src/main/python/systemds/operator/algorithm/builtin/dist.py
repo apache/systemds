@@ -32,6 +32,21 @@ def dist(X: Matrix):
     """
      Returns Euclidean distance matrix (distances between N n-dimensional points)
     
+     .. code-block:: python
+    
+       >>> import numpy as np
+       >>> from systemds.context import SystemDSContext
+       >>> from systemds.operator.algorithm import dist
+       >>> 
+       >>> with SystemDSContext() as sds:
+       ...     X = sds.from_numpy(np.array([[0], [3], [4]]))
+       ...     out = dist(X).compute()
+       ...     print(out)
+       [[0. 3. 4.]
+        [3. 0. 1.]
+        [4. 1. 0.]]
+    
+    
     
     
     :param X: Matrix to calculate the distance inside

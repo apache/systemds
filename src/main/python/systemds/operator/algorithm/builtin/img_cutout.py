@@ -38,6 +38,26 @@ def img_cutout(img_in: Matrix,
      Image Cutout function replaces a rectangular section of an image with a constant value.
     
     
+     .. code-block:: python
+    
+       >>> import numpy as np
+       >>> from systemds.context import SystemDSContext
+       >>> from systemds.operator.algorithm import img_cutout
+       >>> 
+       >>> with SystemDSContext() as sds:
+       ...     img = sds.from_numpy(
+       ...         np.array([[ 50., 100., 150.],
+       ...                   [150., 200., 250.],
+       ...                   [250., 200., 200.]], dtype=np.float32)
+       ...     )
+       ...     result_img = img_cutout(img, 2, 2, 1, 1, 49.).compute()
+       ...     print(result_img)
+       [[ 50. 100. 150.]
+        [150.  49. 250.]
+        [250. 200. 200.]]
+    
+    
+    
     
     :param img_in: Input image as 2D matrix with top left corner at [1, 1]
     :param x: Column index of the top left corner of the rectangle (starting at 1)

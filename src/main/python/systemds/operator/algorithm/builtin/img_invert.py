@@ -33,9 +33,28 @@ def img_invert(img_in: Matrix,
     """
      This is an image data augmentation function. It inverts an image.
     
+     .. code-block:: python
+    
+       >>> import numpy as np
+       >>> from systemds.context import SystemDSContext
+       >>> from systemds.operator.algorithm import img_invert
+       >>> 
+       >>> with SystemDSContext() as sds:
+       ...     img = sds.from_numpy(
+       ...         np.array([[ 10., 20., 30.],
+       ...                   [ 40., 50., 60.],
+       ...                   [ 70., 80., 90.]], dtype=np.float32)
+       ...     )
+       ...     result_img = img_invert(img, 210.).compute()
+       ...     print(result_img)
+       [[200. 190. 180.]
+        [170. 160. 150.]
+        [140. 130. 120.]]
     
     
-    :param img_in: Input image
+    
+    
+    :param img_in: Input image as 2D matrix with top left corner at [1, 1]
     :param max_value: The maximum value pixels can have
     :return: Output image
     """

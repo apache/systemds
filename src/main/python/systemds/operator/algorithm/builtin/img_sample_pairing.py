@@ -34,10 +34,34 @@ def img_sample_pairing(img_in1: Matrix,
     """
      The image sample pairing function blends two images together.
     
+     .. code-block:: python
+    
+       >>> import numpy as np
+       >>> from systemds.context import SystemDSContext
+       >>> from systemds.operator.algorithm import img_sample_pairing
+       >>> 
+       >>> with SystemDSContext() as sds:
+       ...     img_in1 = sds.from_numpy(
+       ...         np.array([[ 10., 20., 30.],
+       ...                   [ 40., 50., 60.],
+       ...                   [ 70., 80., 90.]], dtype=np.float32)
+       ...     )
+       ...     img_in2 = sds.from_numpy(
+       ...         np.array([[ 30., 40., 50.],
+       ...                   [ 60., 70., 80.],
+       ...                   [ 90., 100., 110.]], dtype=np.float32)
+       ...     )
+       ...     result_img = img_sample_pairing(img_in1, img_in2, 0.5).compute()
+       ...     print(result_img)
+       [[ 20.  30.  40.]
+        [ 50.  60.  70.]
+        [ 80.  90. 100.]]
     
     
-    :param img_in1: First input image
-    :param img_in2: Second input image
+    
+    
+    :param img_in1: First input image as 2D matrix with top left corner at [1, 1]
+    :param img_in2: Second input image as 2D matrix with top left corner at [1, 1]
     :param weight: The weight given to the second image.
         0 means only img_in1, 1 means only img_in2 will be visible
     :return: Output image

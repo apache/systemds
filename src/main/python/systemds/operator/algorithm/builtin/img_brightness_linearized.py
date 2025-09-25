@@ -34,9 +34,26 @@ def img_brightness_linearized(img_in: Matrix,
     """
      The img_brightness_linearized-function is an image data augmentation function. It changes the brightness of one or multiple images.
     
+     .. code-block:: python
+    
+       >>> import numpy as np
+       >>> from systemds.context import SystemDSContext
+       >>> from systemds.operator.algorithm import img_brightness_linearized
+       >>> 
+       >>> with SystemDSContext() as sds:
+       ...     img = sds.from_numpy(
+       ...         np.array([[ 50, 100,
+       ...                     150, 200 ]], dtype=np.float32)
+       ...     )
+       ...     result_img = img_brightness_linearized(img, 30.0, 255).compute()
+       ...     print(result_img.reshape(2, 2))
+       [[ 80. 130.]
+        [180. 230.]]
     
     
-    :param img_in: Input matrix/image (can represent multiple images every row of the matrix represents a linearized image)
+    
+    
+    :param img_in: Input images as linearized 2D matrix with top left corner at [1, 1] (every row represents a linearized matrix/image)
     :param value: The amount of brightness to be changed for the image
     :param channel_max: Maximum value of the brightness of the image
     :return: Output matrix/images  (every row of the matrix represents a linearized image)

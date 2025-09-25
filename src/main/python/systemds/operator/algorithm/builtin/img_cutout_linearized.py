@@ -39,9 +39,28 @@ def img_cutout_linearized(img_in: Matrix,
     """
      Image Cutout function replaces a rectangular section of an image with a constant value.
     
+     .. code-block:: python
+    
+       >>> import numpy as np
+       >>> from systemds.context import SystemDSContext
+       >>> from systemds.operator.algorithm import img_cutout_linearized
+       >>> 
+       >>> with SystemDSContext() as sds:
+       ...     img = sds.from_numpy(
+       ...         np.array([[ 50., 100., 150.,
+       ...                     150., 200., 250.,
+       ...                     250., 200., 200. ]], dtype=np.float32)
+       ...     )
+       ...     result_img = img_cutout_linearized(img, 2, 2, 1, 1, 25.0, 3, 3).compute()
+       ...     print(result_img.reshape(3, 3))
+       [[ 50. 100. 150.]
+        [150.  25. 250.]
+        [250. 200. 200.]]
     
     
-    :param img_in: Input images as linearized 2D matrix with top left corner at [1, 1]
+    
+    
+    :param img_in: Input images as linearized 2D matrix with top left corner at [1, 1] (every row represents a linearized matrix/image)
     :param x: Column index of the top left corner of the rectangle (starting at 1)
     :param y: Row index of the top left corner of the rectangle (starting at 1)
     :param width: Width of the rectangle (must be positive)

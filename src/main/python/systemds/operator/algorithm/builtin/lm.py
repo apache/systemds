@@ -36,6 +36,36 @@ def lm(X: Matrix,
      method or the conjugate gradient algorithm depending on the input size
      of the matrices (See lmDS-function and lmCG-function respectively).
     
+     .. code-block:: python
+    
+       >>> import numpy as np
+       >>> from systemds.context import SystemDSContext
+       >>> from systemds.operator.algorithm import lm
+       >>> 
+       >>> np.random.seed(0)
+       >>> features = np.random.rand(10, 15)
+       >>> y = np.random.rand(10, 1)
+       >>> 
+       >>> with SystemDSContext() as sds:
+       ...     weights = lm(sds.from_numpy(features), sds.from_numpy(y)).compute()
+       ...     print(weights)
+       [[-0.11538199]
+        [-0.20386541]
+        [-0.39956034]
+        [ 1.04078623]
+        [ 0.43270839]
+        [ 0.18954599]
+        [ 0.49858969]
+        [-0.26812763]
+        [ 0.09961844]
+        [-0.57000751]
+        [-0.43386048]
+        [ 0.55358873]
+        [-0.54638565]
+        [ 0.2205885 ]
+        [ 0.37957689]]
+    
+    
     
     
     :param X: Matrix of feature vectors.

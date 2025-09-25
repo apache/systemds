@@ -37,11 +37,32 @@ def img_rotate_linearized(img_in: Matrix,
      The Linearized Image Rotate function rotates the linearized input images counter-clockwise around the center.
      Uses nearest neighbor sampling.
     
+     .. code-block:: python
+    
+       >>> import numpy as np
+       >>> from systemds.context import SystemDSContext
+       >>> from systemds.operator.algorithm import img_rotate_linearized
+       >>> 
+       >>> with SystemDSContext() as sds:
+       ...     img = sds.from_numpy(
+       ...         np.array([[ 10., 20., 30.,
+       ...                     40., 50., 60.,
+       ...                     70., 80., 90. ]], dtype=np.float32)
+       ...     )
+       ...     result_img = img_rotate_linearized(img, 3.14159, 255., 3, 3).compute()
+       ...     print(result_img.reshape(3, 3))
+       [[90. 80. 70.]
+        [60. 50. 40.]
+        [30. 20. 10.]]
     
     
-    :param img_in: Linearized input images as 2D matrix with top left corner at [1, 1]
+    
+    
+    :param img_in: Input images as linearized 2D matrix with top left corner at [1, 1] (every row represents a linearized matrix/image)
     :param radians: The value by which to rotate in radian.
     :param fill_value: The background color revealed by the rotation
+    :param s_cols: Width of a single image
+    :param s_rows: Height of a single image
     :return: Output images in linearized form as 2D matrix with top left corner at [1, 1]
     """
 

@@ -45,13 +45,34 @@ def img_transform_linearized(img_in: Matrix,
      Optionally resizes the image (without scaling).
      Uses nearest neighbor sampling.
     
+     .. code-block:: python
+    
+       >>> import numpy as np
+       >>> from systemds.context import SystemDSContext
+       >>> from systemds.operator.algorithm import img_transform_linearized
+       >>> 
+       >>> with SystemDSContext() as sds:
+       ...     img = sds.from_numpy(
+       ...         np.array([[ 10., 20., 30.,
+       ...                     40., 50., 60.,
+       ...                     70., 80., 90. ]], dtype=np.float32)
+       ...     )
+       ...     result_img = img_transform_linearized(img, 3, 3, -1., 0., 2., 0., 1., 0., 255., 3, 3).compute()
+       ...     print(result_img.reshape(3, 3))
+       [[ 20.  10. 255.]
+        [ 50.  40. 255.]
+        [ 80.  70. 255.]]
     
     
-    :param img_in: Linearized input images as 2D matrix with top left corner at [1, 1]
+    
+    
+    :param img_in: Input images as linearized 2D matrix with top left corner at [1, 1] (every row represents a linearized matrix/image)
     :param out_w: Width of the output matrix
     :param out_h: Height of the output matrix
     :param a,b,c,d,e,f: The first two rows of the affine matrix in row-major order
     :param fill_value: The background of an image
+    :param s_cols: Width of a single image
+    :param s_rows: Height of a single image
     :return: Output images in linearized form as 2D matrix with top left corner at [1, 1]
     """
 

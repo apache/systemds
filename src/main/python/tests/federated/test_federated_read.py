@@ -70,7 +70,7 @@ class TestFederatedAggFn(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.sds = SystemDSContext()
+        cls.sds = SystemDSContext(capture_stdout=True, logging_level=50)
         cls.sds.federated([fed1], [([0, 0], [dim, dim])]).write(
             fed1_file, format="federated"
         ).compute()

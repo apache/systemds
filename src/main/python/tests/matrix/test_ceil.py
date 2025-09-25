@@ -26,7 +26,7 @@ from systemds.context import SystemDSContext
 
 class TestCEIL(unittest.TestCase):
     def setUp(self):
-        self.sds = SystemDSContext()
+        self.sds = SystemDSContext(capture_stdout=True, logging_level=50)
 
     def tearDown(self):
         self.sds.close()

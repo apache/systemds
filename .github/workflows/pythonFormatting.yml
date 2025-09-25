@@ -52,5 +52,5 @@ jobs:
 
       - name: Run Black Check
         run: |
-          black --check --exclude operator/algorithm \
+          black --check --exclude '(operator/algorithm/|auto_tests/)' \
           src/main/python/systemds src/main/python/tests

@@ -19,7 +19,7 @@
 .. 
 .. ------------------------------------------------------------
 
-WoEApply
-========
+dedup
+=====
 
-.. autofunction:: systemds.operator.algorithm.WoEApply
+.. autofunction:: systemds.operator.algorithm.dedup

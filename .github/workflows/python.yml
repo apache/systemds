@@ -53,7 +53,7 @@ jobs:
         os: [ubuntu-24.04]
         java: ['17']
         javadist: ['adopt']
-        test_mode: [env, noenv, federated]
+        test_mode: [env, noenv, federated, scuro]
 
     name: ${{ matrix.os }} Java ${{ matrix.java }} ${{ matrix.javadist }} Python ${{ matrix.python-version }}/ ${{ matrix.test_mode}}
     steps:
@@ -149,5 +149,11 @@ jobs:
         export PATH=$SYSTEMDS_ROOT/bin:$PATH
         cd src/main/python
         ./tests/federated/runFedTest.sh
+
+    - name: Run Scuro Python Tests 
+      if: ${{ matrix.test_mode == 'scuro' }}
+      run: |
+        cd src/main/python
+        python -m unittest discover -s tests/scuro -p 'test_*.py'
 
 

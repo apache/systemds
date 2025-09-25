@@ -100,7 +100,7 @@ class TestFederatedMnist(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.sds = SystemDSContext()
+        cls.sds = SystemDSContext(capture_stdout=True, logging_level=50)
         cls.d = DataManager()
 
     @classmethod

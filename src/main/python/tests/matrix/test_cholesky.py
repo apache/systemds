@@ -37,7 +37,7 @@ class TestCholesky(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.sds = SystemDSContext(11412)
+        cls.sds = SystemDSContext(11412, capture_stdout=True, logging_level=50)
 
     @classmethod
     def tearDownClass(cls):

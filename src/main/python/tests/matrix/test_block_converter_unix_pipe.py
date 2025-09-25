@@ -36,7 +36,7 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.sds = SystemDSContext(
-            data_transfer_mode=1, logging_level=10, capture_stdout=True
+            data_transfer_mode=1, logging_level=50, capture_stdout=True
         )
         if not os.path.exists(cls.temp_dir):
             os.makedirs(cls.temp_dir)
@@ -63,7 +63,7 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
             matrix_sds = self.sds.from_numpy(matrix)
             matrix_sds.write(
                 self.temp_dir + "into_systemds_matrix.csv", format="csv", header=False
-            ).compute(verbose=True)
+            ).compute()
 
             # Read the CSV file using pandas
             result_df = pd.read_csv(

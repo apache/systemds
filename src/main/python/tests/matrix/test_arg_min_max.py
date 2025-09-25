@@ -39,7 +39,7 @@ def weighted_quantiles(values, weights, quantiles=0.5):
 
 class TestARGMINMAX(unittest.TestCase):
     def setUp(self):
-        self.sds = SystemDSContext()
+        self.sds = SystemDSContext(capture_stdout=True, logging_level=50)
 
     def tearDown(self):
         self.sds.close()
@@ -58,7 +58,7 @@ class TestARGMINMAX(unittest.TestCase):
 
     def test_argmin_basic3(self):
         sds_input = self.sds.from_numpy(m)
-        sds_result = sds_input.argmin().compute(verbose=True)
+        sds_result = sds_input.argmin().compute()
         np_result = np.argmin(m)
         assert np.allclose(sds_result - 1, np_result, 1e-9)
 

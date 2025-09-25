@@ -36,12 +36,10 @@ class TestContextCreation(unittest.TestCase):
         stderr_buffer = io.StringIO()
 
         with redirect_stderr(stderr_buffer):
-            sds1 = SystemDSContext(logging_level=10)
+            sds1 = SystemDSContext(logging_level=10, capture_stdout=True)
             sds1.close()
 
         err = stderr_buffer.getvalue()
-        print("Captured STDERR:\n", err)
-        print("END OF STDERR\n")
 
         self.assertIn("DEBUG SystemDSContext: Logging setup done", err)
 
@@ -51,71 +49,65 @@ class TestContextCreation(unittest.TestCase):
         stderr_buffer = io.StringIO()
 
         with redirect_stderr(stderr_buffer):
-            sds1 = SystemDSContext()
+            sds1 = SystemDSContext(capture_stdout=True)
             sds1.close()
 
             err = stderr_buffer.getvalue()
-            print("\nCaptured STDERR (ctx1):\n", err)
-            print("END OF STDERR\n")
 
             # clear the buffer
             stderr_buffer.seek(0)
             stderr_buffer.truncate(0)
 
-            sds2 = SystemDSContext(logging_level=10)
+            sds2 = SystemDSContext(logging_level=10, capture_stdout=True)
             sds2.close()
 
         err = stderr_buffer.getvalue()
-        print("\nCaptured STDERR (ctx2):\n", err)
-        print("END OF STDERR\n")
 
         self.assertIn("DEBUG SystemDSContext: Logging setup done", err)
 
     def test_random_port_debug3(self):
         SystemDSContext._logging_initialized = False
 
-        sds1 = SystemDSContext()
+        sds1 = SystemDSContext(capture_stdout=True)
         sds1.close()
         stderr_buffer = io.StringIO()
 
         with redirect_stderr(stderr_buffer):
-            sds2 = SystemDSContext(logging_level=10)
+            sds2 = SystemDSContext(logging_level=10, capture_stdout=True)
             sds2.close()
 
         err = stderr_buffer.getvalue()
-        print("\nCaptured STDERR (ctx2):\n", err)
-        print("END OF STDERR\n")
 
         self.assertIn("DEBUG SystemDSContext: Logging setup done", err)
 
     def test_random_port(self):
-        sds1 = SystemDSContext()
+        sds1 = SystemDSContext(capture_stdout=True)
         sds1.close()
 
     def test_two_random_port(self):
-        sds1 = SystemDSContext(logging_level=20)
-        sds2 = SystemDSContext(logging_level=20)
+        sds1 = SystemDSContext(capture_stdout=True)
+        sds2 = SystemDSContext(capture_stdout=True)
         sds1.close()
         sds2.close()
 
     def test_same_port(self):
         # Same port should graciously change port
-        sds1 = SystemDSContext(port=9415)
-        sds2 = SystemDSContext(port=9415)
+        sds1 = SystemDSContext(port=9415, capture_stdout=True)
+        sds2 = SystemDSContext(port=9415, capture_stdout=True)
         sds1.close()
         sds2.close()
 
     def test_create_10_contexts(self):
         # Creating multiple contexts and closing them should be no problem.
         for _ in range(0, 10):
-            SystemDSContext().close()
+            SystemDSContext(capture_stdout=True).close()
 
     def test_create_multiple_context(self):
         # Creating multiple contexts in sequence but open at the same time is okay.
-        a = SystemDSContext()
-        b = SystemDSContext()
-        c = SystemDSContext()
-        d = SystemDSContext()
+        a = SystemDSContext(capture_stdout=True)
+        b = SystemDSContext(capture_stdout=True)
+        c = SystemDSContext(capture_stdout=True)
+        d = SystemDSContext(capture_stdout=True)
 
         a.close()
         b.close()

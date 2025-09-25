@@ -18,8 +18,3 @@
 .. under the License.
 .. 
 .. ------------------------------------------------------------
-
-WoEApply
-========
-
-.. autofunction:: systemds.operator.algorithm.WoEApply

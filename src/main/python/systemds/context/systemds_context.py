@@ -261,7 +261,9 @@ class SystemDSContext(object):
                 )
             )
         )
-        print("Encountered exception & shutting down: \n\n{}".format(tb_str.strip()))
+        self._log.error(
+            "Encountered exception & shutting down: \n\n{}".format(tb_str.strip())
+        )
 
         self.close()
         raise RuntimeError(message)

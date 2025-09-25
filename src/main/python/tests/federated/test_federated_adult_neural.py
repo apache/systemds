@@ -129,7 +129,7 @@ class TestFederatedAdultNeural(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.sds = SystemDSContext()
+        cls.sds = SystemDSContext(capture_stdout=True, logging_level=50)
         cls.d = DataManager()
         cls.data_path_train = create_row_federated_dataset(
             "train_data", cls.d.get_train_data_pandas()[0 : cls.train_count]

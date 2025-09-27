@@ -72,7 +72,7 @@ class JoinedTransformedModality(Modality):
         return self
 
     def window_aggregation(self, window_size, aggregation):
-        w = WindowAggregation(window_size, aggregation)
+        w = WindowAggregation(aggregation, window_size)
         self.left_modality.data = w.execute(self.left_modality)
         self.right_modality.data = w.execute(self.right_modality)
         return self

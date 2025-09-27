@@ -63,6 +63,7 @@ class TransformedModality(Modality):
     def add_transformation(self, transformation, modality):
         if (
             transformation.__class__.__bases__[0].__name__ == "Fusion"
+            and type(modality).__name__ == "TransformedModality"
             and modality.transformation[0].__class__.__bases__[0].__name__ != "Fusion"
         ):
             self.transformation = []
@@ -99,8 +100,8 @@ class TransformedModality(Modality):
 
         return joined_modality
 
-    def window_aggregation(self, windowSize, aggregation):
-        w = WindowAggregation(windowSize, aggregation)
+    def window_aggregation(self, window_size, aggregation):
+        w = WindowAggregation(aggregation, window_size)
         transformed_modality = TransformedModality(
             self, w, self_contained=self.self_contained
         )

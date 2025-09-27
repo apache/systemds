@@ -18,7 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
-class ModalityIdentifier:
+class Identifier:
     """ """
 
     _instance = None

@@ -37,9 +37,9 @@ class MelSpectrogram(UnimodalRepresentation):
             "n_fft": [1024, 2048, 4096],
         }
         super().__init__("MelSpectrogram", ModalityType.TIMESERIES, parameters, False)
-        self.n_mels = n_mels
-        self.hop_length = hop_length
-        self.n_fft = n_fft
+        self.n_mels = int(n_mels)
+        self.hop_length = int(hop_length)
+        self.n_fft = int(n_fft)
 
     def transform(self, modality):
         transformed_modality = TransformedModality(

@@ -3278,10 +3278,17 @@ public class LibMatrixBincell {
 				double[] avals = _a.values(_rl);
 				double[] cvals = _c.values(_rl);
 				int start = _a.pos(_rl), end = _a.pos(_ru);
-				for( int i=start; i<end; i++ ) {
-					cvals[i] = _op.fn.execute(avals[i]);
-					nnz += (cvals[i] != 0) ? 1 : 0;
-				}
+				
+				//TODO use of vector API inconclusive on different hardware
+				//if( _op.fn instanceof Builtin ) {
+				//	nnz += ((Builtin)_op.fn).execute(avals, cvals, start, end);
+				//}
+				//else {
+					for( int i=start; i<end; i++ ) {
+						cvals[i] = _op.fn.execute(avals[i]);
+						nnz += (cvals[i] != 0) ? 1 : 0;
+					}
+				//}
 			}
 			//generic dense-dense, including large blocks
 			else {

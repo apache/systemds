@@ -26,6 +26,9 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
 
+import jdk.incubator.vector.DoubleVector;
+import jdk.incubator.vector.VectorSpecies;
+
 
 /**
  *  Class with pre-defined set of objects. This class can not be instantiated elsewhere.
@@ -46,13 +49,16 @@ import org.apache.sysds.runtime.DMLScriptException;
 public class Builtin extends ValueFunction 
 {
 	private static final long serialVersionUID = 3836744687789840574L;
-	
+		
 	public enum BuiltinCode { AUTODIFF, SIN, COS, TAN, SINH, COSH, TANH, ASIN, ACOS, ATAN, LOG, LOG_NZ, MIN,
 		MAX, ABS, SIGN, SQRT, EXP, PLOGP, PRINT, PRINTF, NROW, NCOL, LENGTH, LINEAGE, ROUND, MAXINDEX, MININDEX,
 		STOP, CEIL, FLOOR, CUMSUM, ROWCUMSUM, CUMPROD, CUMMIN, CUMMAX, CUMSUMPROD, INVERSE, SPROP, SIGMOID, EVAL, LIST,
 		TYPEOF, APPLY_SCHEMA, DETECTSCHEMA, ISNA, ISNAN, ISINF, DROP_INVALID_TYPE, 
 		DROP_INVALID_LENGTH, VALUE_SWAP, FRAME_ROW_REPLICATE,
 		MAP, COUNT_DISTINCT, COUNT_DISTINCT_APPROX, UNIQUE}
+
+	private static final VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_PREFERRED;
+	private static final int vLen = SPECIES.length();
 
 
 	public BuiltinCode bFunc;
@@ -197,6 +203,38 @@ public class Builtin extends ValueFunction
 				throw new DMLRuntimeException("Builtin.execute(): Unknown operation: " + bFunc);
 		}
 	}
+	
+	public long execute (double[] a, double[] c, int start, int end) {
+		long nnz = 0;
+		
+		//process rest or unsupported builtin codes
+		final int end2 = (bFunc==BuiltinCode.ABS || bFunc==BuiltinCode.SQRT)?
+			start+((end-start)%vLen) : end;
+		for( int i = start; i < end2; i++) {
+			c[i] = execute(a[i]);
+			nnz += (c[i] != 0) ? 1 : 0;
+		}
+		
+		nnz += (end-end2);
+		if( bFunc == BuiltinCode.ABS) {
+			for( int i = end2; i < end; i+=vLen ){
+				DoubleVector aVec = DoubleVector.fromArray(SPECIES, a, i);
+				DoubleVector cVec = aVec.abs();
+				nnz -= cVec.eq(0).trueCount();
+				cVec.intoArray(c, i);
+			}
+		}
+		else if(bFunc == BuiltinCode.SQRT ) {
+			for( int i = end2; i < end; i+=vLen ){
+				DoubleVector aVec = DoubleVector.fromArray(SPECIES, a, i);
+				DoubleVector cVec = aVec.sqrt();
+				nnz -= cVec.eq(0).trueCount();
+				cVec.intoArray(c, i);
+			}
+		}
+		return nnz;
+	}
+
 
 	@Override
 	public double execute (long in) {

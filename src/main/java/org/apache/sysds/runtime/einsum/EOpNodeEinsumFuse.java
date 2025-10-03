@@ -1,24 +1,30 @@
 package org.apache.sysds.runtime.einsum;
 
+import org.apache.commons.logging.Log;
+import org.apache.sysds.runtime.codegen.SpoofRowwise;
+import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.functionobjects.ReduceCol;
+import org.apache.sysds.runtime.functionobjects.ReduceRow;
+import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.cp.EinsumCPInstruction;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.apache.sysds.runtime.instructions.cp.EinsumCPInstruction.ensureMatrixBlockColumnVector;
 
 public class EOpNodeEinsumFuse extends EOpNode {
-    public static final int AB_index=0;
-    public static final int BA_index=1;
-    public static final int B_index=2;
-    public static final int XB_index=3;
-    public static final int BX_index=4;
-    public static final int A_index=5;
-    public static final int XA_index=6;
-    public static final int AX_index=7;
-    public static final int AZ_index=8;
+
     public enum EinsumRewriteType{
         // B -> row*row, A -> row*scalar
         AB_BA_B_A__AB,
@@ -298,6 +304,124 @@ public class EOpNodeEinsumFuse extends EOpNode {
         );
         ret.add(e);
         return e;
+    }
+
+    @Override
+    public MatrixBlock computeEOpNode(ArrayList<MatrixBlock> inputs, int numThreads, Log LOG) {
+        List<List<MatrixBlock>> mbs = operands.stream().map(l -> l.stream().map(n -> n.computeEOpNode(inputs, numThreads, LOG)).collect(Collectors.toList())).toList();
+        var eOpNodeEinsumFuse = this;
+
+        if( LOG.isTraceEnabled()) {
+            String x = eOpNodeEinsumFuse.operands.stream()
+                    .flatMap(List::stream)
+                    .map(o -> o.c1.toString() + (o.c2 == null ? "" : o.c2))
+                    .collect(Collectors.joining(","));
+            String res = (eOpNodeEinsumFuse.c1 == null ? "" : eOpNodeEinsumFuse.c1.toString())+(eOpNodeEinsumFuse.c2 == null ? "" : eOpNodeEinsumFuse.c2.toString());
+            LOG.trace("ComputeEOpNodeFuse " + eOpNodeEinsumFuse.einsumRewriteType.toString() +" "+ x + " -> " + res);
+        }
+        boolean isResultAB = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A__AB;
+        boolean isResultA = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A__A;
+        boolean isResultB = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A__B;
+        boolean isResult_ = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A__;
+        boolean isResultZ = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A_AZ__Z;
+        boolean isResultBZ = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A_AZ__BZ;
+        boolean isResultZB = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A_AZ__ZB;
+//        boolean isResultBC = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A_AC__BC;
+//        boolean isResultCB = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A_AZ__ZB;
+        List<MatrixBlock> ABs = mbs.get(0), BAs = mbs.get(1), Bs =  mbs.get(2), XBs = mbs.get(3), BXs = mbs.get(4), As = mbs.get(5), XAs = mbs.get(6), AXs = mbs.get(7);
+        List<MatrixBlock> AZs = mbs.get(8);
+        List<MatrixBlock> Zs = mbs.get(9);
+//        List<MatrixBlock> ACs = isResultBC || isResultCB ? mbs.get(10) : null;
+        int bSize = ABs.get(0).getNumColumns();
+        int aSize = ABs.get(0).getNumRows();
+        ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), numThreads);
+        for(MatrixBlock mb: BAs){//BA->AB
+            ABs.add(mb.reorgOperations(transpose, null,0,0,0));
+        }
+        AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
+        AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), numThreads);
+        for(MatrixBlock mb: XBs){//XB->B
+            MatrixBlock res = new MatrixBlock(mb.getNumColumns(), 1, false);
+            Bs.add((MatrixBlock)mb.aggregateUnaryOperations(aggun, res, 0, null));
+        }
+        for(MatrixBlock mb: XAs){//XA->A
+            MatrixBlock res = new MatrixBlock(mb.getNumColumns(), 1, false);
+            As.add((MatrixBlock)mb.aggregateUnaryOperations(aggun, res, 0, null));
+        }
+        aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
+        for(MatrixBlock mb: BXs){//BX->B
+            MatrixBlock res = new MatrixBlock(mb.getNumRows(), 1, false);
+            As.add((MatrixBlock)mb.aggregateUnaryOperations(aggun, res, 0, null));
+        }
+        for(MatrixBlock mb: AXs){//AX->B // todo remove all X
+            MatrixBlock res = new MatrixBlock(mb.getNumRows(), 1, false);
+            As.add((MatrixBlock)mb.aggregateUnaryOperations(aggun, res, 0, null));
+        }
+        if(As.size()>1){
+            As = multiplyVectorsIntoOne(As, aSize);
+        }
+        if(Bs.size() > 1){
+            Bs = multiplyVectorsIntoOne(Bs, bSize);
+        }
+        if(Zs != null && Zs.size() > 1){
+            Zs = multiplyVectorsIntoOne(Zs, AZs.get(0).getNumColumns());
+        }
+        int constDim2 = -1;
+        int zSize = 0;
+        int azCount = 0;
+        int zCount = 0;
+        switch(eOpNodeEinsumFuse.einsumRewriteType){
+            case AB_BA_B_A_AZ__Z ->  {
+                constDim2 = AZs.get(0).getNumColumns();
+                zSize = AZs.get(0).getNumColumns();
+                azCount = AZs.size();
+                if (Zs != null) zCount = Zs.size();
+            }
+            case AB_BA_B_A_AZ__BZ, AB_BA_B_A_AZ__ZB -> {
+                constDim2 = AZs.get(0).getNumColumns();
+                zSize = AZs.get(0).getNumColumns();
+                azCount = AZs.size();
+            }
+        }
+
+        SpoofRowwise.RowType rowType = switch(eOpNodeEinsumFuse.einsumRewriteType){
+            case AB_BA_B_A__AB -> SpoofRowwise.RowType.NO_AGG;
+            case AB_BA_B_A__B -> SpoofRowwise.RowType.COL_AGG_T;
+            case AB_BA_B_A__A -> SpoofRowwise.RowType.ROW_AGG;
+            case AB_BA_B_A__ -> SpoofRowwise.RowType.FULL_AGG;
+            case AB_BA_B_A_AZ__Z -> SpoofRowwise.RowType.COL_AGG_CONST;
+            case AB_BA_B_A_AZ__BZ -> SpoofRowwise.RowType.COL_AGG_B1_T;
+            case AB_BA_B_A_AZ__ZB -> SpoofRowwise.RowType.COL_AGG_B1;
+        };
+        EinsumSpoofRowwise r = new EinsumSpoofRowwise(eOpNodeEinsumFuse.einsumRewriteType, rowType, constDim2, false, 0, ABs.size()-1,Bs.size(), As.size(), zCount, azCount, zSize);
+
+
+        ArrayList<MatrixBlock> fuseInputs = new ArrayList<>();
+//        inputs.add(resBlock);
+
+        fuseInputs.addAll(ABs);
+        fuseInputs.addAll(Bs);
+        fuseInputs.addAll(As);
+        if (isResultZ || isResultBZ || isResultZB)
+            fuseInputs.addAll(AZs);
+        MatrixBlock out = r.execute(fuseInputs, new ArrayList<>(), new MatrixBlock(), numThreads);
+        if( isResultA ||  isResultB || isResultZ)
+            ensureMatrixBlockColumnVector(out);
+        return out;
+
+    }
+
+    private static @NotNull List<MatrixBlock> multiplyVectorsIntoOne(List<MatrixBlock> mbs, int size) {
+        MatrixBlock mb = new MatrixBlock(mbs.get(0).getNumRows(), mbs.get(0).getNumColumns(), false);
+        mb.allocateDenseBlock();
+        for(int i = 1; i< mbs.size(); i++) { // multiply Bs
+            if(i==1){
+                LibMatrixMult.vectMultiplyWrite(mbs.get(0).getDenseBlock().values(0), mbs.get(1).getDenseBlock().values(0), mb.getDenseBlock().values(0),0,0,0, size);
+            }else{
+                LibMatrixMult.vectMultiply(mbs.get(i).getDenseBlock().values(0),mb.getDenseBlock().values(0),0,0, size);
+            }
+        }
+        return List.of(mb);
     }
 }
 

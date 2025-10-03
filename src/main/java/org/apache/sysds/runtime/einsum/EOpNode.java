@@ -1,5 +1,10 @@
 package org.apache.sysds.runtime.einsum;
 
+import org.apache.commons.logging.Log;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+
+import java.util.ArrayList;
+
 public abstract class EOpNode {
     public Character c1;
     public Character c2; // nullable
@@ -15,5 +20,7 @@ public abstract class EOpNode {
         if(c2 == null) return c1.toString();
         return c1.toString() + c2.toString();
     }
+
+    public abstract MatrixBlock computeEOpNode(ArrayList<MatrixBlock> inputs, int numOfThreads, Log LOG);
 }
 

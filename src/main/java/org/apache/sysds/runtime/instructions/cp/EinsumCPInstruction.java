@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
-import codegen.AAA1;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.commons.logging.Log;
@@ -30,9 +28,7 @@ import org.apache.log4j.Logger;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.hops.codegen.cplan.CNode;
-import org.apache.sysds.hops.codegen.cplan.CNodeBinary;
 import org.apache.sysds.hops.codegen.cplan.CNodeCell;
 import org.apache.sysds.hops.codegen.cplan.CNodeData;
 import org.apache.sysds.hops.codegen.cplan.CNodeRow;
@@ -51,6 +47,7 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -58,8 +55,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
-    public static boolean FORCE_CELL_TPL = false;
-    public static boolean FUSED = true;
+    public static final boolean FORCE_CELL_TPL = false;
+    public static final boolean FUSED = true;
+    public static final boolean FUSE_OUTER_MULTIPLY = true;
 	protected static final Log LOG = LogFactory.getLog(EinsumCPInstruction.class.getName());
 	public String eqStr;
 	private final int _numThreads;
@@ -68,11 +66,12 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 	public EinsumCPInstruction(Operator op, String opcode, String istr, CPOperand out, CPOperand... inputs)
 	{
 		super(op, opcode, istr, out, inputs);
-//        _numThreads = OptimizerUtils.getConstrainedNumThreads(-1);
-		_numThreads = 3;
+        _numThreads = OptimizerUtils.getConstrainedNumThreads(-1)/2;
+//		_numThreads = 6;
 		_in = inputs;
 		this.eqStr = inputs[0].getName();
-		Logger.getLogger(EinsumCPInstruction.class).setLevel(Level.TRACE);
+        Logger.getLogger(EinsumCPInstruction.class).setLevel(Level.TRACE);
+//        Logger.getLogger(EinsumCPInstruction.class).setLevel(Level.WARN);
 	}
 
 	@SuppressWarnings("unused")
@@ -88,6 +87,9 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 				if(mb instanceof CompressedMatrixBlock){
 					mb = ((CompressedMatrixBlock) mb).getUncompressed("Spoof instruction");
 				}
+                if(mb.getNumRows() == 1){
+                    EnsureMatrixBlockColumnVector(mb);
+                }
 				inputs.add(mb);
 			}
 		}
@@ -166,6 +168,8 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 					ec.setMatrixOutput(output.getName(), resMatrices.get(0));
 				}
 				else if(resNode.c1 == einc.outChar2 && resNode.c2 == einc.outChar1){
+                    if( LOG.isTraceEnabled()) LOG.trace("Transposing the final result");
+
 					ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
 					MatrixBlock resM = resMatrices.get(0).reorgOperations(transpose, new MatrixBlock(),0,0,0);
 					ec.setMatrixOutput(output.getName(), resM);
@@ -277,18 +281,18 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 
         if(fused){
             ArrayList<EOpNode> ret = new ArrayList<>();
-            EOpNodeEinsumFuse fuse = EOpNodeEinsumFuse.match(operands,outChar1,outChar2,ret, charToOccurences);
+            EOpNodeEinsumFuse fuse = EOpNodeEinsumFuse.match(operands,outChar1,outChar2,ret, charToOccurences, einc.charToDimensionSize);
             if(fuse != null){
                 minNodes = operands = ret;
             }
             while(ret.size() > 2 && fuse!=null){
                 ret = new ArrayList<>();
-                fuse = EOpNodeEinsumFuse.match(operands,outChar1,outChar2,ret, charToOccurences);
+                fuse = EOpNodeEinsumFuse.match(operands,outChar1,outChar2,ret, charToOccurences, einc.charToDimensionSize);
                 if(fuse != null){
-                    operands= ret;
-                    operands.add(fuse);
+                    minNodes = operands = ret;
                 }
             }
+            fused = false;
         }
 
 		for(int i = 0; i < operands.size()-1; i++){
@@ -601,15 +605,132 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		}
 		return res;
 	}
-
     private MatrixBlock ComputeEOpNodeFuse(EOpNodeEinsumFuse eOpNodeEinsumFuse, List<List<MatrixBlock>> mbs) {
+        if( LOG.isTraceEnabled()) {
+            String x = eOpNodeEinsumFuse.operands.stream()
+                    .flatMap(List::stream)
+                    .map(o -> o.c1.toString() + (o.c2 == null ? "" : o.c2))
+                    .collect(Collectors.joining(","));
+            String res = (eOpNodeEinsumFuse.c1 == null ? "" : eOpNodeEinsumFuse.c1.toString())+(eOpNodeEinsumFuse.c2 == null ? "" : eOpNodeEinsumFuse.c2.toString());
+            LOG.trace("ComputeEOpNodeFuse " + eOpNodeEinsumFuse.einsumRewriteType.toString() +" "+ x + " -> " + res);
+        }
+        boolean isResultAB = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A__AB;
+        boolean isResultA = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A__A;
+        boolean isResultB = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A__B;
+        boolean isResult_ = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A__;
+        boolean isResultZ = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A_AZ__Z;
+        boolean isResultBZ = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A_AZ__BZ;
+        boolean isResultZB = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A_AZ__ZB;
+//        boolean isResultBC = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A_AC__BC;
+//        boolean isResultCB = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A_AZ__ZB;
+        List<MatrixBlock> ABs = mbs.get(0), BAs = mbs.get(1), Bs =  mbs.get(2), XBs = mbs.get(3), BXs = mbs.get(4), As = mbs.get(5), XAs = mbs.get(6), AXs = mbs.get(7);
+        List<MatrixBlock> AZs = mbs.get(8);
+        List<MatrixBlock> Zs = mbs.get(9);
+//        List<MatrixBlock> ACs = isResultBC || isResultCB ? mbs.get(10) : null;
+        int bSize = einc.charToDimensionSize.get(eOpNodeEinsumFuse.operands.get(0).get(0).c2);
+        int aSize = einc.charToDimensionSize.get(eOpNodeEinsumFuse.operands.get(0).get(0).c1);
+        ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
+        for(MatrixBlock mb: BAs){//BA->AB
+            ABs.add(mb.reorgOperations(transpose, null,0,0,0));
+        }
+        AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
+        AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), _numThreads);
+        for(MatrixBlock mb: XBs){//XB->B
+            MatrixBlock res = new MatrixBlock(mb.getNumColumns(), 1, false);
+            Bs.add((MatrixBlock)mb.aggregateUnaryOperations(aggun, res, 0, null));
+        }
+        for(MatrixBlock mb: XAs){//XA->A
+            MatrixBlock res = new MatrixBlock(mb.getNumColumns(), 1, false);
+            As.add((MatrixBlock)mb.aggregateUnaryOperations(aggun, res, 0, null));
+        }
+        aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), _numThreads);
+        for(MatrixBlock mb: BXs){//BX->B
+            MatrixBlock res = new MatrixBlock(mb.getNumRows(), 1, false);
+            As.add((MatrixBlock)mb.aggregateUnaryOperations(aggun, res, 0, null));
+        }
+        for(MatrixBlock mb: AXs){//AX->B // todo remove all X
+            MatrixBlock res = new MatrixBlock(mb.getNumRows(), 1, false);
+            As.add((MatrixBlock)mb.aggregateUnaryOperations(aggun, res, 0, null));
+        }
+        if(As.size()>1){
+            As = MultiplyVectorsIntoOne(As, aSize);
+        }
+        if(Bs.size() > 1){
+            Bs = MultiplyVectorsIntoOne(Bs, bSize);
+        }
+        if(Zs != null && Zs.size() > 1){
+            Zs = MultiplyVectorsIntoOne(Zs, AZs.get(0).getNumColumns());
+        }
+        int constDim2 = -1;
+        int zSize = 0;
+        int azCount = 0;
+        int zCount = 0;
+        switch(eOpNodeEinsumFuse.einsumRewriteType){
+            case AB_BA_B_A_AZ__Z ->  {
+                constDim2 = AZs.get(0).getNumColumns();
+                zSize = AZs.get(0).getNumColumns();
+                azCount = AZs.size();
+                if (Zs != null) zCount = Zs.size();
+            }
+            case AB_BA_B_A_AZ__BZ, AB_BA_B_A_AZ__ZB -> {
+                constDim2 = AZs.get(0).getNumColumns();
+                zSize = AZs.get(0).getNumColumns();
+                azCount = AZs.size();
+            }
+        }
+
+        SpoofRowwise.RowType rowType = switch(eOpNodeEinsumFuse.einsumRewriteType){
+            case AB_BA_B_A__AB -> SpoofRowwise.RowType.NO_AGG;
+            case AB_BA_B_A__B -> SpoofRowwise.RowType.COL_AGG_T;
+            case AB_BA_B_A__A -> SpoofRowwise.RowType.ROW_AGG;
+            case AB_BA_B_A__ -> SpoofRowwise.RowType.FULL_AGG;
+            case AB_BA_B_A_AZ__Z -> SpoofRowwise.RowType.COL_AGG_CONST;
+            case AB_BA_B_A_AZ__BZ -> SpoofRowwise.RowType.COL_AGG_B1_T;
+            case AB_BA_B_A_AZ__ZB -> SpoofRowwise.RowType.COL_AGG_B1;
+        };
+        EinsumSpoofRowwise r = new EinsumSpoofRowwise(eOpNodeEinsumFuse.einsumRewriteType, rowType, constDim2, false, 0, ABs.size()-1,Bs.size(), As.size(), zCount, azCount, zSize);
+
+
+        ArrayList<MatrixBlock> inputs = new ArrayList<>();
+//        inputs.add(resBlock);
+
+        inputs.addAll(ABs);
+        inputs.addAll(Bs);
+        inputs.addAll(As);
+        if (isResultZ || isResultBZ || isResultZB)
+            inputs.addAll(AZs);
+        MatrixBlock out = r.execute(inputs, new ArrayList<>(), new MatrixBlock(), _numThreads);
+        if( isResultA ||  isResultB || isResultZ)
+            EnsureMatrixBlockColumnVector(out);
+        return out;
+
+
+    }
+
+    private static @NotNull List<MatrixBlock> MultiplyVectorsIntoOne(List<MatrixBlock> mbs, int size) {
+        MatrixBlock mb = new MatrixBlock(mbs.get(0).getNumRows(), mbs.get(0).getNumColumns(), false);
+        mb.allocateDenseBlock();
+        MatrixBlock l = mbs.get(0);
+        for(int i = 1; i< mbs.size(); i++) { // multiply Bs
+            if(i==1){
+                LibMatrixMult.vectMultiplyWrite(mbs.get(0).getDenseBlock().values(0), mbs.get(1).getDenseBlock().values(0), mb.getDenseBlock().values(0),0,0,0, size);
+            }else{
+                LibMatrixMult.vectMultiply(mbs.get(i).getDenseBlock().values(0),mb.getDenseBlock().values(0),0,0, size);
+            }
+        }
+        return List.of(mb);
+    }
+
+    private MatrixBlock ComputeEOpNodeFuseCodegen(EOpNodeEinsumFuse eOpNodeEinsumFuse, List<List<MatrixBlock>> mbs) {
+
         //prepare matrices
         //EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_XB_BX_A_XA_AX__AB;\
-        boolean isResultAB = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_XB_BX_A_XA_AX__AB;
-        boolean isResultA = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_XB_BX_A_XA_AX__A;
-        boolean isResultB = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_XB_BX_A_XA_AX__B;
-        boolean isResult_ = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_XB_BX_A_XA_AX__;
-        boolean isResultZ = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_XB_BX_A_XA_AX_AZ__Z;
+        //region Description
+        boolean isResultAB = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A__AB;
+        boolean isResultA = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A__A;
+        boolean isResultB = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A__B;
+        boolean isResult_ = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A__;
+        boolean isResultZ = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A_AZ__Z;
         List<MatrixBlock> ABs = mbs.get(0), BAs = mbs.get(1), Bs =  mbs.get(2), XBs = mbs.get(3), BXs = mbs.get(4), As = mbs.get(5), XAs = mbs.get(6), AXs = mbs.get(7);
         List<MatrixBlock> AZs = isResultZ ? mbs.get(8) : null;
         int bSize = einc.charToDimensionSize.get(eOpNodeEinsumFuse.operands.get(0).get(0).c2);
@@ -638,11 +759,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
             As.add((MatrixBlock)mb.aggregateUnaryOperations(aggun, res, 0, null));
         }
         if(As.size()>1){
-            MatrixBlock mb = As.get(0);
-            for(int i=1;i<As.size();i++) { // multiply As
-               LibMatrixMult.vectMultiply(As.get(i).getDenseBlock().values(0),mb.getDenseBlock().values(0),0,0,aSize);
-            }
-            As = List.of(mb);
+            As = MultiplyVectorsIntoOne(As, aSize);
         }
 
 
@@ -683,7 +800,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
         _seqVar.getNextID();
         Supplier<String> getNewVarname = () -> "TMP" + _seqVar.getNextID();
 
-        boolean writeToC = (isResultAB || isResultB) && As.isEmpty()  && Bs.isEmpty();
+        boolean writeToC = (!isResultZ) && As.isEmpty()  && Bs.isEmpty();
         body.append("    ");
         if(ABs.size()>1){
             body.append("// multiplying ABs: \n    ");
@@ -697,21 +814,62 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
                 String writeToVarname=null;/// = i == 1 ? null : writeToCInThisIteration ? "c" : varnameArow;
                 String writeToVarIdx=null;
                 if(writeToCInThisIteration){
-                    writeToVarname = "c";
-                    if(isResultAB)
+                    if(isResultAB) {
+                        writeToVarname = "c";
                         writeToVarIdx = "ai";
-                    else // B
+                    }else if (isResultB) {//
+//                        writeToVarname = varnameArow;
+                        writeToVarname = "c";
                         writeToVarIdx = "0";
+                    }else{ //A or _ = scalar
+                        //does not apply
+//                        writeToVarname  =varnameArow;
+                        }
                 }else if(i!=1){
                     writeToVarname  =varnameArow;
                     writeToVarIdx = "0";
                 }
-                if(writeToVarname != null) {
+                if(writeToCInThisIteration){
+                    if(isResultB) {
+                        if (i == 1){ // never
+                            body.append("LibMatrixMult.vectMultiplyAdd(a");//
+                        }else {
+                            body.append("LibMatrixMult.vectMultiplyAdd(");//
+                            body.append(varnameArow);
+                        }
+                    }
+                    else if(isResultAB || isResultB) {
+                        if (i == 1){
+                            body.append("LibMatrixMult.vectMultiplyWrite(a");
+                        }else {
+                            body.append("LibMatrixMult.vectMultiplyWrite(");
+                            body.append(varnameArow);
+                        }
+                    }
+                    else if(isResultA) {
+                        if (i == 1)
+                            body.append("c[rix] = LibSpoofPrimitives.dotProduct(a");
+                        else {
+                            body.append("c[rix] = LibSpoofPrimitives.dotProduct(");
+                            body.append(varnameArow);
+                        }
+                    }else{ // _
+                        if (i == 1)
+                            body.append("c[0] += LibSpoofPrimitives.dotProduct(a");
+                        else {
+                            body.append("c[0] += LibSpoofPrimitives.dotProduct(");
+                            body.append(varnameArow);
+                        }
+                    }
+                }
+                else if(writeToVarname != null) {
                     if (i == 1){
                         body.append("LibMatrixMult.vectMultiplyWrite(a");
                     }
-                    body.append("LibMatrixMult.vectMultiplyWrite(");
-                    body.append(varnameArow);
+                    else {
+                        body.append("LibMatrixMult.vectMultiplyWrite(");
+                        body.append(varnameArow);
+                    }
                 }else {
                     body.append("double[] ");
                     body.append(varnameArow);
@@ -721,7 +879,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
                 midx++;
                 body.append(midx);
                 body.append("].values(rix),");
-                if(writeToVarname != null){
+                if(writeToVarname != null && !(writeToCInThisIteration && (isResultA || isResult_))){
                     body.append(writeToVarname);
                     body.append(",");
                 }
@@ -735,7 +893,11 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
                 }else{
                     body.append(",len);\n    ");
                 }
-
+//if(writeToCInThisIteration&& isResultB){
+//    body.append("LibMatrixMult.vectAdd(");
+//    body.append(varnameArow);
+//    body.append(",c,0,0,len);\n    ");
+//}
             }
         }
 
@@ -805,12 +967,24 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
                 }
             }else{
                 if(writeToC) {
-                    if(assignedArow || assignedB) {
-                        body.append("LibMatrixMult.vectMultiplyWrite(");
-                        body.append(resultVarname);
+//                    if(assignedB){
+//                        body.append("LibMatrixMult.vectMultiplyWrite(");
+//                        body.append(varnameB);
+//                        body.append(",");
+//
+//                    }
+                    if(assignedArow) {
+                        if(isResultB)
+                            body.append("LibMatrixMult.vectMultiplyAdd(");
+                        else
+                            body.append("LibMatrixMult.vectMultiplyWrite(");
+                        body.append(varnameArow);
                         body.append(",");
                     }else{
-                        body.append("LibMatrixMult.vectMultiplyWrite(a,");
+                        if(isResultB)
+                            body.append("LibMatrixMult.vectMultiplyAdd(a,");
+                        else
+                            body.append("LibMatrixMult.vectMultiplyWrite(a,");
                     }
                 }
                 else if(!assignedArow && !assignedB) {
@@ -861,7 +1035,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
                 }// else its new []
 
                 //ai:
-                if(!assignedArow && !assignedB)
+                if(!assignedArow)
                     body.append("ai,0");
                 else
                     body.append("0,0");
@@ -929,7 +1103,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
                     }
                 }
                 if(writeToC && isResult_){
-                    body.append("c[0] = ");
+                    body.append("c[0] += ");
                     body.append(resultVarname);
                     body.append(" * b[");
                 }else if(writeToC && isResultA){
@@ -942,7 +1116,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
                 }
                 midx++;
                 body.append(midx);
-                body.append("].values(0)[rix];\n    ");
+                body.append("].values(rix)[rix];\n    ");
             }
             else {
                 boolean resultVarnameNull = resultVarname == null;
@@ -991,11 +1165,11 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
             }
         }
         body.append("// write part: \n    ");
-
+        int zSize = -1;
         if(!writeToC) {
             if (isResultZ) {
                 if (AZs.isEmpty()) throw new RuntimeException("Einsum runtime exception: Invalid rewrite type");
-                int zSize = einc.charToDimensionSize.get(eOpNodeEinsumFuse.c1);
+                zSize = einc.charToDimensionSize.get(eOpNodeEinsumFuse.c1);
 
                 body.append("// AZ part: \n    ");
 
@@ -1018,10 +1192,17 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
                 body.append(midx);
                 body.append("].values(rix),");
                 body.append(resultVarname);
-                body.append("c,rix*");
+                body.append(",c,rix*");
+//                body.append(",c,0,0,");
                 body.append(zSize);
+//                body.append(",c,ai,0,len);\n  ");
+//                body.append(",c,ai,0,len);\n  ");
 
-                body.append(",0,len);\n    ");
+//                body.append(");\n    ");
+//                body.append(",0,len);\n    ");
+                body.append(",0,");
+                body.append(zSize);
+                body.append(");\n    ");
             } else if (isResultAB) {
                 //vectWrite(double[] a, double[] c, int ai, int ci, int len)
                 body.append("LibSpoofPrimitives.vectWrite(");
@@ -1071,26 +1252,31 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
                 body.append(";\n    ");
             }
         }
+        //endregion
 
         src = src.replace("%TMP%", className);
         switch(eOpNodeEinsumFuse.einsumRewriteType){
-            case AB_BA_B_XB_BX_A_XA_AX__AB -> {
+            case AB_BA_B_A__AB -> {
                 src = src.replace("%TYPE%", "NO_AGG");
             }
-            case AB_BA_B_XB_BX_A_XA_AX__B -> {
+            case AB_BA_B_A__B -> {
                 src = src.replace("%TYPE%", "COL_AGG_T");
             }
-            case AB_BA_B_XB_BX_A_XA_AX__A -> {
+            case AB_BA_B_A__A -> {
                 src = src.replace("%TYPE%", "ROW_AGG");
             }
-            case AB_BA_B_XB_BX_A_XA_AX__ -> {
+            case AB_BA_B_A__ -> {
                 src = src.replace("%TYPE%", "FULL_AGG");
             }
-            case AB_BA_B_XB_BX_A_XA_AX_AZ__Z -> {
-                src = src.replace("%TYPE%", "COL_AGG_T");
+            case AB_BA_B_A_AZ__Z -> {
+//                src = src.replace("%TYPE%", "COL_AGG_T");
+                src = src.replace("%TYPE%", "COL_AGG_CONST");
             }
         }
-        src = src.replace("%CONST_DIM2%", "-1");
+        if(isResultZ)
+            src = src.replace("%CONST_DIM2%",""+zSize);
+        else
+            src = src.replace("%CONST_DIM2%", "-1");
         src = src.replace("%TB1%", "false");
         src = src.replace("%VECT_MEM%", "0");
         src = src.replace("%BODY_dense%", body);
@@ -1099,7 +1285,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
         if( LOG.isTraceEnabled()) LOG.trace(CodegenUtils.printWithLineNumber(src));
         Class<?> cla = CodegenUtils.compileClass("codegen." + cnode.getClassname(), src);
         SpoofOperator op = CodegenUtils.createInstance(cla);
-//        SpoofOperator op = CodegenUtils.createInstance(AAA2.class);
+//        SpoofOperator op = CodegenUtils.createInstance(AAA3.class);
 //        MatrixBlock resBlock = new MatrixBlock();
 
 //        resBlock.reset(einc.charToDimensionSize.get(eOpNodeEinsumFuse.c1),
@@ -1110,8 +1296,11 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
         inputs.addAll(ABs);
         inputs.addAll(Bs);
         inputs.addAll(As);
+        if (isResultZ)
+            inputs.addAll(AZs);
         MatrixBlock out = op.execute(inputs, new ArrayList<>(), new MatrixBlock(), _numThreads);
-
+        if( isResultA ||  isResultB ||isResultZ)
+            EnsureMatrixBlockColumnVector(out);
         return out;
     }
 
@@ -1370,6 +1559,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			indent--;
 			sb.append("}\n");
 		}
+        //endregion
 		String src = CNodeCell.JAVA_TEMPLATE;//
 		src = src.replace("%TMP%", cnode.createVarname());
 		src = src.replace("%TYPE%", "NO_AGG");

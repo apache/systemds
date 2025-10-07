@@ -19,18 +19,16 @@
 #
 #-------------------------------------------------------------
 
-FROM ubuntu:24.04@sha256:6015f66923d7afbc53558d7ccffd325d43b4e249f41a6e93eef074c9505d2233
+FROM alpine:3.20@sha256:de4fe7064d8f98419ea6b49190df1abbf43450c1702eeb864fe9ced453c1cc5f AS compile-image
 
 WORKDIR /usr/src/
 
 # Do basic updates on the image
-RUN apt-get update -qq \
-	&& apt-get upgrade -y \
-	&& apt-get install -y --no-install-recommends \
+RUN apk add --no-cache \
 		wget \
 		git \
 		ca-certificates \
-	&& apt-get clean
+		bash
 
 # Set environment variables
 # Maven
@@ -43,11 +41,11 @@ ENV SYSTEMDS_ROOT=/usr/src/systemds
 ENV PATH=$SYSTEMDS_ROOT/bin:$PATH
 ENV SYSDS_QUIET=1
 
-# Download Java and Mvn 
+# Download Mvn and JDK
 RUN mkdir -p /usr/lib/jvm \
 	&& wget -qO- \
-	https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.15%2B6/OpenJDK17U-jdk_x64_linux_hotspot_17.0.15_6.tar.gz | tar xzf - \
-	&& mv jdk-17.0.15+6 /usr/lib/jvm/jdk-17.0.15+6 \
+	https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.15%2B6/OpenJDK17U-jdk_x64_alpine-linux_hotspot_17.0.15_6.tar.gz  | tar xzf - \
+	&& mv jdk-17.0.15+6 $JAVA_HOME \
 	&& wget -qO- \
 	http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xzf - \ 
 	&& mv apache-maven-$MAVEN_VERSION /usr/lib/mvn
@@ -57,8 +55,11 @@ RUN git clone --depth 1 https://github.com/apache/systemds.git systemds && \
 	cd /usr/src/systemds/ && \
 	mvn --no-transfer-progress clean package -P distribution
 
+COPY docker/mountFolder/main.dml /input/main.dml
+
 # Remove all unnecessary files from the Image
-RUN	rm -rf .git && \
+RUN	cd /usr/src/systemds/ && \
+	rm -rf .git && \
 	rm -rf .github && \
 	rm -rf target/javadoc** && \
 	rm -rf target/apidocs** && \
@@ -71,9 +72,55 @@ RUN	rm -rf .git && \
 	rm -rf /usr/lib/mvn && \
 	rm -rf CONTRIBUTING.md && \
 	rm -rf pom.xml && \ 
-	rm -rf ~/.m2
+	rm -rf ~/.m2 && \
+	rm -rf docker && \
+	rm -rf .mvn
 
+FROM alpine:3.20@sha256:de4fe7064d8f98419ea6b49190df1abbf43450c1702eeb864fe9ced453c1cc5f
 
-COPY docker/mountFolder/main.dml /input/main.dml
+RUN apk add --no-cache bash \
+    snappy \
+    lz4 \
+    zlib
 
-CMD ["systemds", "/input/main.dml"]
+ENV JAVA_HOME=/usr/lib/jvm/jdk-17.0.15+6
+ENV PATH=$JAVA_HOME/bin:$PATH
+ENV SYSTEMDS_ROOT=/systemds
+ENV PATH=$SYSTEMDS_ROOT/bin:$PATH
+ENV SYSDS_QUIET=1
+
+ENV HADOOP_VERSION=3.3.6
+ENV HADOOP_HOME=/opt/hadoop
+ENV LD_LIBRARY_PATH=/opt/hadoop/lib/native
+ENV HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib/native"
+ENV GLIBC_VERSION=2.35-r1
+
+RUN wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub \
+	&& wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/glibc-${GLIBC_VERSION}.apk \
+	&& apk add glibc-${GLIBC_VERSION}.apk \
+	&& rm glibc-${GLIBC_VERSION}.apk
+
+RUN mkdir -p /usr/lib/jvm \
+	&& wget -qO- \
+	https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.15%2B6/OpenJDK17U-jre_x64_alpine-linux_hotspot_17.0.15_6.tar.gz  | tar xzf - \
+	&& mv jdk-17.0.15+6-jre $JAVA_HOME
+
+RUN mkdir -p $HADOOP_HOME/lib/native \
+	&& wget -q https://downloads.apache.org/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz && \
+    tar --strip-components=2 -xzf hadoop-${HADOOP_VERSION}.tar.gz \
+        hadoop-${HADOOP_VERSION}/lib/native && \
+    mv native/libhadoop.so.1.0.0 /opt/hadoop/lib/native && \
+	mv native/libhadoop.so /opt/hadoop/lib/native && \
+    rm hadoop-${HADOOP_VERSION}.tar.gz && \
+	rm -rf native
+
+COPY --from=compile-image /usr/src/systemds /systemds
+COPY --from=compile-image /input/main.dml /input/main.dml
+
+WORKDIR /input
+
+RUN addgroup -S default && adduser -S systemds -G default
+USER systemds
+
+ENTRYPOINT ["systemds"]
+CMD ["main.dml"]

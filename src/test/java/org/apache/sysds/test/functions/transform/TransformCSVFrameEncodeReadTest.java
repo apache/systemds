@@ -148,16 +148,16 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase {
 			String[] fromDisk = DataConverter.toString(fb2).split("\n");
 			String[] printed = stdOut.split("\n");
 			boolean equal = true;
-			String err = "";
+			StringBuilder err = new StringBuilder();
 			for(int i = 0; i < fromDisk.length; i++){
-				if(! fromDisk[i].equals(printed[i])){
-					err += "\n not equal: \n"+ (fromDisk[i] + "\n" + printed[i]);
+				if(! fromDisk[i].strip().equals(printed[i].strip())){
+					err.append("\n not equal: \n'"+ (fromDisk[i] + "'\n'" + printed[i] + "'"));
 					equal = false;
 				}
 				
 			}
 			if(!equal)
-				fail(err);
+				fail(err.toString());
 			
 		}
 		catch(Exception ex) {

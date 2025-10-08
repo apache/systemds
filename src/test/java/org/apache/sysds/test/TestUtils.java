@@ -1760,15 +1760,25 @@ public class TestUtils {
 	}
 
 	public static double[][] convertHashMapToDoubleArray(HashMap <CellIndex, Double> matrix) {
+		if(matrix.isEmpty()){
+			LOG.error("converting empty hashMap");
+			return new double[0][0];
+		}
 		int max_rows = -1, max_cols= -1;
+
 		for(CellIndex ix : matrix.keySet()) {
 			max_rows = Math.max(max_rows, ix.row);
 			max_cols = Math.max(max_cols, ix.column);
 		}
+		
 		return convertHashMapToDoubleArray(matrix, max_rows, max_cols);
 	}
 
 	public static double[][] convertHashMapToDoubleArray(HashMap<CellIndex, Double> matrix, int rows, int cols) {
+		if(rows <= -1 || cols <= -1){
+			LOG.error("converting negative size hashmap rows: " + rows + " cols: " + cols);
+			return new double[0][0];
+		}
 		double [][] ret_arr = new double[rows][cols];
 		for(Entry<CellIndex, Double> e : matrix.entrySet()) {
 			int i = e.getKey().row-1;

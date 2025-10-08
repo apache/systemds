@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 # Stage 1: Build SEAL
-FROM debian:bullseye-slim@sha256:b5f9bc44bdfbd9d551dfdd432607cbc6bb5d9d6dea726a1191797d7749166973 AS seal-build
+FROM ubuntu:noble@sha256:728785b59223d755e3e5c5af178fab1be7031f3522c5ccd7a0b32b80d8248123 AS seal-build
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -40,16 +40,24 @@ RUN wget -qO- https://github.com/microsoft/SEAL/archive/refs/tags/v3.7.0.tar.gz 
     && cmake --install build --prefix /seal-install
 
 # Stage 2: Final image with R, JDK, Maven, SEAL
-FROM debian:bullseye-slim@sha256:b5f9bc44bdfbd9d551dfdd432607cbc6bb5d9d6dea726a1191797d7749166973
+FROM ubuntu:noble@sha256:728785b59223d755e3e5c5af178fab1be7031f3522c5ccd7a0b32b80d8248123 
 
 WORKDIR /usr/src/
 ENV MAVEN_VERSION=3.9.9
 ENV MAVEN_HOME=/usr/lib/mvn
 
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+ENV LANG=en_US.UTF-8
 ENV JAVA_HOME=/usr/lib/jvm/jdk-17.0.15+6
 ENV PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y locales \
+    && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
+    && locale-gen \
+    && update-locale LANG=en_US.UTF-8
+
+RUN apt-get install -y --no-install-recommends \
     r-base \
 	wget \
     cmake \
@@ -78,8 +86,26 @@ COPY ./src/test/scripts/installDependencies.R installDependencies.R
 RUN Rscript installDependencies.R \
     && rm -f installDependencies.R
 
+ENV HADOOP_VERSION=3.3.6
+ENV HADOOP_HOME=/opt/hadoop
+ENV LD_LIBRARY_PATH=/opt/hadoop/lib/native
+ENV HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib/native"
+
+RUN mkdir -p $HADOOP_HOME/lib/native \
+	&& wget -q https://downloads.apache.org/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz && \
+    tar --strip-components=2 -xzf hadoop-${HADOOP_VERSION}.tar.gz \
+        hadoop-${HADOOP_VERSION}/lib/native && \
+    mv native/libhadoop.so.1.0.0 /opt/hadoop/lib/native && \
+	mv native/libhadoop.so /opt/hadoop/lib/native && \
+    rm hadoop-${HADOOP_VERSION}.tar.gz && \
+	rm -rf native
+
 # Copy SEAL
-COPY --from=seal-build /seal-install /usr/local
+COPY --from=seal-build /seal-install/lib/ /usr/local/lib/
+COPY --from=seal-build /seal-install/include/ /usr/local/include/
+
+ENV LD_LIBRARY_PATH=/opt/hadoop/lib/native;/usr/local/lib/
+
 
 # Finally copy the entrypoint script
 # This is last to enable quick updates to the script after initial local build.

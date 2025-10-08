@@ -154,3 +154,6 @@ scripts/resource/output
 # docker tests
 docker/mountFolder/*.bin
 docker/mountFolder/*.bin.mtd
+
+SEAL-*/
+

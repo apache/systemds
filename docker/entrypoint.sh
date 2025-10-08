@@ -29,21 +29,22 @@ cd /github/workspace
 export MAVEN_OPTS="-Xmx512m"
 
 log="/tmp/sysdstest.log"
-mvn -ntp -B test-compile 2>&1 | grep -E "BUILD|Total time:|---|Building SystemDS"
+mvn -ntp -B test-compile 2>&1 | stdbuf -oL grep -E "BUILD|Total time:|---|Building SystemDS"
 mvn -ntp -B test -D maven.test.skip=false -D automatedtestbase.outputbuffering=true -D test=$1 2>&1 \
-	| grep -v "already exists in destination." \
-	| grep -v 'WARNING: Using incubator modules' | tee $log
+	| stdbuf -oL grep -Ev "already exists in destination.|Using incubator" \
+	| tee $log
 
-# Merge Federated test runs.
-# if merged jacoco exist temporarily rename to not overwrite.
-[ -f target/jacoco.exec ] && mv target/jacoco.exec target/jacoco_main.exec
-# merge jacoco files.
-mvn -ntp -B jacoco:merge 2>&1 | grep -E "BUILD|Total time:|Building SystemDS|jacoco"
 
 grep_args="SUCCESS"
 grepvals="$( tail -n 100 $log | grep $grep_args)"
 
 if [[ $grepvals == *"SUCCESS"* ]]; then
+	# Merge Federated test runs.
+	# if merged jacoco exist temporarily rename to not overwrite.
+	[ -f target/jacoco.exec ] && mv target/jacoco.exec target/jacoco_main.exec
+	# merge jacoco files.
+	mvn -ntp -B jacoco:merge 2>&1 | stdbuf -oL grep -E "jacoco"
+
 	exit 0
 else
 	exit 1

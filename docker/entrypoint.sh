@@ -35,12 +35,10 @@ mvn -ntp -B test -D maven.test.skip=false -D automatedtestbase.outputbuffering=t
 	| grep -v 'WARNING: Using incubator modules' | tee $log
 
 # Merge Federated test runs.
+# if merged jacoco exist temporarily rename to not overwrite.
 [ -f target/jacoco.exec ] && mv target/jacoco.exec target/jacoco_main.exec
-mvn -ntp -B jacoco:merge
-
-# Merge Federated test runs.
-[ -f target/jacoco.exec ] && mv target/jacoco.exec target/jacoco_main.exec
-mvn -ntp -B jacoco:merge
+# merge jacoco files.
+mvn -ntp -B jacoco:merge 2>&1 | grep -E "BUILD|Total time:|Building SystemDS|jacoco"
 
 grep_args="SUCCESS"
 grepvals="$( tail -n 100 $log | grep $grep_args)"

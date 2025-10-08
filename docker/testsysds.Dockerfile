@@ -79,7 +79,10 @@ RUN Rscript installDependencies.R \
     && rm -f installDependencies.R
 
 # Copy SEAL
-COPY --from=seal-build /seal-install /usr/local
+COPY --from=seal-build /seal-install/lib/ /usr/local/lib/
+COPY --from=seal-build /seal-install/include/ /usr/local/include/
+
+ENV LD_LIBRARY_PATH=/usr/local/lib/
 
 # Finally copy the entrypoint script
 # This is last to enable quick updates to the script after initial local build.

@@ -20,7 +20,7 @@
 #
 #-------------------------------------------------------------
 
-echo "Build Homomorphic Encryption Liberary: "
+echo "Build Homomorphic Encryption Library: "
 
 # compile HE
 cmake he/ -B HE -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++
@@ -29,4 +29,4 @@ rm -R HE
 
 echo ""
 
-echo "Sucessfull install of Homomorphic Encryption Liberary SEAL"
+echo "Successful install of Homomorphic Encryption Library SEAL"

@@ -31,7 +31,7 @@ on:
       - 'src/assembly/**'
       - 'dev/**'
     branches:
-      - main
+      - pkg_dependencies
   pull_request:
     paths-ignore:
       - 'docs/**'
@@ -110,15 +110,6 @@ jobs:
           requests \
           pandas \
           unittest-parallel \
-          torchvision \
-          transformers \
-          opencv-python \
-          torch \
-          librosa \
-          h5py \
-          gensim \
-          opt-einsum \
-          nltk
 
     - name: Build Python Package
       run: |
@@ -153,6 +144,16 @@ jobs:
     - name: Run Scuro Python Tests 
       if: ${{ matrix.test_mode == 'scuro' }}
       run: |
+        pip install \
+          torchvision \
+          transformers \
+          opencv-python \
+          torch \
+          librosa \
+          h5py \
+          gensim \
+          opt-einsum \
+          nltk
         cd src/main/python
         python -m unittest discover -s tests/scuro -p 'test_*.py'
 

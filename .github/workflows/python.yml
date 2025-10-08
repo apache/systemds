@@ -31,7 +31,7 @@ on:
       - 'src/assembly/**'
       - 'dev/**'
     branches:
-      - pkg_dependencies
+      - main
   pull_request:
     paths-ignore:
       - 'docs/**'

@@ -85,7 +85,7 @@ class SystemDSContext(object):
         port: int = -1,
         capture_statistics: bool = False,
         capture_stdout: bool = False,
-        logging_level: int = 20,
+        logging_level: int = 30,
         py4j_logging_level: int = 50,
         data_transfer_mode: int = 1,
         multi_pipe_enabled: bool = False,
@@ -261,7 +261,9 @@ class SystemDSContext(object):
                 )
             )
         )
-        print("Encountered exception & shutting down: \n\n{}".format(tb_str.strip()))
+        self._log.error(
+            "Encountered exception & shutting down: \n\n{}".format(tb_str.strip())
+        )
 
         self.close()
         raise RuntimeError(message)

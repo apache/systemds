@@ -25,3 +25,4 @@ numpy
 py4j
 scipy
 requests
+pandas

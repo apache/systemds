@@ -150,3 +150,10 @@ venv/*
 # resource optimization
 scripts/resource/output
 *.pem
+
+# docker tests
+docker/mountFolder/*.bin
+docker/mountFolder/*.bin.mtd
+
+SEAL-*/
+

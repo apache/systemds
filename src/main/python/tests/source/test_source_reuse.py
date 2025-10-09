@@ -32,7 +32,7 @@ class TestSourceReuse(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.sds = SystemDSContext()
+        cls.sds = SystemDSContext(capture_stdout=True, logging_level=50)
         cls.source_reuse = cls.sds.source("./tests/source/source_01.dml", "test")
 
     @classmethod

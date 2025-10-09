@@ -46,6 +46,8 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
+    env: 
+      TORCH_HOME: ${{ github.workspace }}/.torch  # cache root for hub/checkpoints
     strategy:
       fail-fast: false
       matrix:
@@ -53,7 +55,7 @@ jobs:
         os: [ubuntu-24.04]
         java: ['17']
         javadist: ['adopt']
-        test_mode: [env, noenv, federated]
+        test_mode: [env, noenv, federated, scuro]
 
     name: ${{ matrix.os }} Java ${{ matrix.java }} ${{ matrix.javadist }} Python ${{ matrix.python-version }}/ ${{ matrix.test_mode}}
     steps:
@@ -110,15 +112,6 @@ jobs:
           requests \
           pandas \
           unittest-parallel \
-          torchvision \
-          transformers \
-          opencv-python \
-          torch \
-          librosa \
-          h5py \
-          gensim \
-          opt-einsum \
-          nltk
 
     - name: Build Python Package
       run: |
@@ -149,5 +142,31 @@ jobs:
         export PATH=$SYSTEMDS_ROOT/bin:$PATH
         cd src/main/python
         ./tests/federated/runFedTest.sh
+
+    - name: Cache Torch Hub
+      if: ${{ matrix.test_mode == 'scuro' }}
+      id: torch-cache
+      uses: actions/cache@v4
+      with:
+        path: .torch
+        key: ${{ runner.os }}-torch-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+            ${{ runner.os }}-torch-
+
+    - name: Run Scuro Python Tests 
+      if: ${{ matrix.test_mode == 'scuro' }}
+      run: |
+        pip install \
+          torchvision \
+          transformers \
+          opencv-python \
+          torch \
+          librosa \
+          h5py \
+          gensim \
+          opt-einsum \
+          nltk
+        cd src/main/python
+        python -m unittest discover -s tests/scuro -p 'test_*.py'
 
 

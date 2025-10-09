@@ -138,6 +138,7 @@ Test your testing image locally by running the following command:
 ```bash
 docker run \
   -v $(pwd):/github/workspace \
+  -v $HOME/.m2/repository:/root/.m2/repository \
   apache/systemds:testing-latest \
   org.apache.sysds.test.component.**
 ```

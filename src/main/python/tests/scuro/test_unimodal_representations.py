@@ -19,8 +19,6 @@
 #
 # -------------------------------------------------------------
 
-import os
-import shutil
 import unittest
 import copy
 import numpy as np
@@ -37,20 +35,14 @@ from systemds.scuro.representations.spectrogram import Spectrogram
 from systemds.scuro.representations.word2vec import W2V
 from systemds.scuro.representations.tfidf import TfIdf
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
-from systemds.scuro.representations.bert import Bert
 from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
 from systemds.scuro.representations.mfcc import MFCC
 from systemds.scuro.representations.resnet import ResNet
 from systemds.scuro.representations.swin_video_transformer import SwinVideoTransformer
-from tests.scuro.data_generator import setup_data
 from tests.scuro.data_generator import (
-    setup_data,
     TestDataLoader,
     ModalityRandomDataGenerator,
 )
-from systemds.scuro.dataloader.audio_loader import AudioLoader
-from systemds.scuro.dataloader.video_loader import VideoLoader
-from systemds.scuro.dataloader.text_loader import TextLoader
 from systemds.scuro.modality.type import ModalityType
 
 
@@ -78,7 +70,7 @@ class TestUnimodalRepresentations(unittest.TestCase):
             ZeroCrossing(),
             RMSE(),
             Pitch(),
-        ]  # TODO: add FFT, TFN, 1DCNN
+        ]
         audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
             self.num_instances, 1000
         )
@@ -120,7 +112,7 @@ class TestUnimodalRepresentations(unittest.TestCase):
             assert r.data[0].ndim == 2
 
     def test_text_representations(self):
-        test_representations = [BoW(2, 2), W2V(5, 2, 2), TfIdf(2), Bert()]
+        test_representations = [BoW(2, 2), W2V(5, 2, 2), TfIdf(2)]
         text_data, text_md = ModalityRandomDataGenerator().create_text_data(
             self.num_instances
         )

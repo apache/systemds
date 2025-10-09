@@ -53,7 +53,7 @@ class TestWindowOperations(unittest.TestCase):
                 md,
             )
         )
-        aggregated_window = modality.context(StaticWindow(num_windows))
+        aggregated_window = modality.context(StaticWindow(num_windows=num_windows))
 
         for i in range(0, self.num_instances):
             assert len(aggregated_window.data[i]) == num_windows
@@ -71,7 +71,7 @@ class TestWindowOperations(unittest.TestCase):
                 md,
             )
         )
-        aggregated_window = modality.context(DynamicWindow(num_windows))
+        aggregated_window = modality.context(DynamicWindow(num_windows=num_windows))
 
         for i in range(0, self.num_instances):
             assert len(aggregated_window.data[i]) == num_windows

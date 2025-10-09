@@ -34,7 +34,7 @@ class TfIdf(UnimodalRepresentation):
     def __init__(self, min_df=2, output_file=None):
         parameters = {"min_df": [min_df]}
         super().__init__("TF-IDF", ModalityType.EMBEDDING, parameters)
-        self.min_df = min_df
+        self.min_df = int(min_df)
         self.output_file = output_file
 
     def transform(self, modality):

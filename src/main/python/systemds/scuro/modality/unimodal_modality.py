@@ -27,7 +27,7 @@ from systemds.scuro.dataloader.base_loader import BaseLoader
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.transformed import TransformedModality
-from systemds.scuro.modality.modality_identifier import ModalityIdentifier
+from systemds.scuro.utils.identifier import Identifier
 
 
 class UnimodalModality(Modality):
@@ -40,7 +40,7 @@ class UnimodalModality(Modality):
         """
         super().__init__(
             data_loader.modality_type,
-            ModalityIdentifier().new_id(),
+            Identifier().new_id(),
             {},
             data_loader.data_type,
         )

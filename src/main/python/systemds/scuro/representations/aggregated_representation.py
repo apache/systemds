@@ -20,12 +20,16 @@
 # -------------------------------------------------------------
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.representation import Representation
+from systemds.scuro.representations.aggregate import Aggregation
 
 
 class AggregatedRepresentation(Representation):
-    def __init__(self, aggregation):
-        super().__init__("AggregatedRepresentation", aggregation.parameters)
-        self.aggregation = aggregation
+    def __init__(self, aggregation="mean"):
+        parameters = {
+            "aggregation": list(Aggregation().get_aggregation_functions()),
+        }
+        super().__init__("AggregatedRepresentation", parameters)
+        self.aggregation = Aggregation(aggregation)
         self.self_contained = True
 
     def transform(self, modality):

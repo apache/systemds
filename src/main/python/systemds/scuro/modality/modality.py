@@ -132,6 +132,8 @@ class Modality:
         try:
             if max_len is None:
                 result = np.array(self.data)
+            elif isinstance(self.data, np.ndarray) and self.data.shape[1] == max_len:
+                result = self.data
             else:
                 raise "Needs padding to max_len"
         except:
@@ -144,8 +146,16 @@ class Modality:
             for i, seq in enumerate(self.data):
                 data = seq[:maxlen]
                 result[i, : len(data)] = data
-                # TODO: add padding to metadata as attention_masks
 
+                if self.has_metadata():
+                    attention_mask = np.zeros(result.shape[1], dtype=np.int8)
+                    attention_mask[: len(seq[:maxlen])] = 1
+                    md_key = list(self.metadata.keys())[i]
+                    if "attention_mask" in self.metadata[md_key]:
+                        self.metadata[md_key]["attention_mask"] = attention_mask
+                    else:
+                        self.metadata[md_key].update({"attention_mask": attention_mask})
+        # TODO: this might need to be a new modality (otherwise we loose the original data)
         self.data = result
 
     def get_data_layout(self):

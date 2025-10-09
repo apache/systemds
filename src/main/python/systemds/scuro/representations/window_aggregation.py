@@ -49,10 +49,10 @@ class Window(Context):
 
 @register_context_operator()
 class WindowAggregation(Window):
-    def __init__(self, window_size=10, aggregation_function="mean", pad=False):
+    def __init__(self, aggregation_function="mean", window_size=10, pad=False):
         super().__init__("WindowAggregation", aggregation_function)
         self.parameters["window_size"] = [window_size]
-        self.window_size = window_size
+        self.window_size = int(window_size)
         self.pad = pad
 
     def execute(self, modality):
@@ -141,10 +141,10 @@ class WindowAggregation(Window):
 
 @register_context_operator()
 class StaticWindow(Window):
-    def __init__(self, num_windows=100, aggregation_function="mean"):
+    def __init__(self, aggregation_function="mean", num_windows=100):
         super().__init__("StaticWindow", aggregation_function)
         self.parameters["num_windows"] = [num_windows]
-        self.num_windows = num_windows
+        self.num_windows = int(num_windows)
 
     def execute(self, modality):
         windowed_data = []
@@ -172,10 +172,10 @@ class StaticWindow(Window):
 
 @register_context_operator()
 class DynamicWindow(Window):
-    def __init__(self, num_windows=100, aggregation_function="mean"):
+    def __init__(self, aggregation_function="mean", num_windows=100):
         super().__init__("DynamicWindow", aggregation_function)
         self.parameters["num_windows"] = [num_windows]
-        self.num_windows = num_windows
+        self.num_windows = int(num_windows)
 
     def execute(self, modality):
         windowed_data = []

@@ -198,6 +198,7 @@ class DynamicWindow(Window):
                 )
                 output.append(val)
                 start = end
+
             windowed_data.append(output)
 
         return np.array(windowed_data)

@@ -18,6 +18,9 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import threading
+
+
 class Identifier:
     """ """
 
@@ -32,3 +35,27 @@ class Identifier:
     def new_id(self):  # TODO: make threadsafe when parallelizing
         self.id += 1
         return self.id
+
+
+class IdGenerator:
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+                    cls._instance._ctr = 0
+                    cls._instance._ctr_lock = threading.Lock()
+        return cls._instance
+
+    def next(self) -> int:
+        with self._instance._ctr_lock:
+            self._instance._ctr += 1
+            n = self._instance._ctr
+        return n
+
+
+get_op_id = IdGenerator().next
+get_node_id = IdGenerator().next

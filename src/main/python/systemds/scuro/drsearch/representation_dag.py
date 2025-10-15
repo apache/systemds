@@ -30,6 +30,7 @@ from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
 from systemds.scuro.representations.context import Context
+from systemds.scuro.utils.identifier import get_op_id, get_node_id
 
 
 @dataclass
@@ -118,10 +119,12 @@ class RepresentationDag:
 
         return not has_cycle(self.root_node_id, set())
 
-    def execute(self, modalities: List[Modality]) -> Dict[str, TransformedModality]:
+    def execute(
+        self, modalities: List[Modality], task=None
+    ) -> Dict[str, TransformedModality]:
         cache = {}
 
-        def execute_node(node_id: str) -> TransformedModality:
+        def execute_node(node_id: str, task) -> TransformedModality:
             if node_id in cache:
                 return cache[node_id]
 
@@ -134,28 +137,39 @@ class RepresentationDag:
                 cache[node_id] = modality
                 return modality
 
-            input_mods = [execute_node(input_id) for input_id in node.inputs]
+            input_mods = [execute_node(input_id, task) for input_id in node.inputs]
 
+            node_operation = node.operation()
             if len(input_mods) == 1:
-                if isinstance(node.operation(), Context):
-                    result = input_mods[0].context(node.operation())
-                elif isinstance(node.operation(), UnimodalRepresentation):
+                # It's a unimodal operation
+                if isinstance(node_operation, Context):
+                    result = input_mods[0].context(node_operation)
+                elif isinstance(node_operation, AggregatedRepresentation):
+                    result = node_operation.transform(input_mods[0])
+                elif isinstance(node_operation, UnimodalRepresentation):
                     if (
                         isinstance(input_mods[0], TransformedModality)
                         and input_mods[0].transformation[0].__class__ == node.operation
                     ):
+                        # Avoid duplicate transformations
                         result = input_mods[0]
                     else:
-                        result = input_mods[0].apply_representation(node.operation())
-                elif isinstance(node.operation(), AggregatedRepresentation):
-                    result = node.operation().transform(input_mods[0])
+                        # Compute the representation
+                        result = input_mods[0].apply_representation(node_operation)
             else:
-                result = input_mods[0].combine(input_mods[1:], node.operation())
+                # It's a fusion operation
+                fusion_op = node_operation
+                if hasattr(fusion_op, "needs_training") and fusion_op.needs_training:
+                    result = input_mods[0].combine_with_training(
+                        input_mods[1:], fusion_op, task
+                    )
+                else:
+                    result = input_mods[0].combine(input_mods[1:], fusion_op)
 
             cache[node_id] = result
             return result
 
-        execute_node(self.root_node_id)
+        execute_node(self.root_node_id, task)
 
         return cache
 
@@ -184,7 +198,7 @@ class RepresentationDAGBuilder:
         if representation_index != -1:
             node_id = f"leaf_{modality_id}_{representation_index}"
         else:
-            node_id = f"leaf_{self.node_counter}"
+            node_id = f"leaf_{get_node_id()}"
         node = RepresentationNode(
             node_id=node_id,
             inputs=[],
@@ -198,7 +212,7 @@ class RepresentationDAGBuilder:
     def create_operation_node(
         self, operation: Any, inputs: List[str], parameters: Dict[str, Any] = None
     ) -> str:
-        node_id = f"op_{self.node_counter}"
+        node_id = f"op_{get_op_id()}"
         self.node_counter += 1
         node = RepresentationNode(
             node_id=node_id,

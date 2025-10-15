@@ -86,7 +86,18 @@ class LSTM(Fusion):
         processed_modalities = []
 
         for modality in modalities:
-            data = np.array(modality.data)
+            try:
+                data = np.array(modality.data)
+            except:
+                max_len = -1
+                for md in modality.metadata.values():
+                    if max_len < md["data_layout"]["shape"][0]:
+                        max_len = md["data_layout"]["shape"][0]
+                data = np.zeros((len(modality.data), max_len))
+                for i, d in enumerate(modality.data):
+                    data[i, : len(d)] = d
+
+                modality.data = data
 
             if data.ndim == 1:
                 data = data.reshape(-1, 1, 1)
@@ -195,6 +206,11 @@ class LSTM(Fusion):
             "depth": self.depth,
             "dropout_rate": self.dropout_rate,
         }
+
+        self.model.eval()
+        with torch.no_grad():
+            features, _ = self.model(X_tensor)
+        return features.cpu().numpy()
 
     def apply_representation(self, modalities: List[Modality]) -> np.ndarray:
         if not self.is_trained or self.model is None:

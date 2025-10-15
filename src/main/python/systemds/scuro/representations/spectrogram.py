@@ -44,8 +44,8 @@ class Spectrogram(UnimodalRepresentation):
 
         for i, sample in enumerate(modality.data):
             spectrogram = librosa.stft(
-                y=np.array(sample), hop_length=self.hop_length, n_fft=self.n_fft
-            ).astype(modality.data_type)
+                y=np.array(np.abs(sample)), hop_length=self.hop_length, n_fft=self.n_fft
+            )
             S_dB = librosa.amplitude_to_db(np.abs(spectrogram))
 
             result.append(S_dB.T)

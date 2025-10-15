@@ -37,7 +37,6 @@ from systemds.scuro.drsearch.representation_dag import (
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
-from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.aggregate import Aggregation
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.utils.schema_helpers import get_shape
@@ -189,18 +188,14 @@ class MultimodalOptimizer:
         start_time = time.time()
 
         try:
-            has_trainable_fusion = self._dag_has_trainable_fusion(dag)
-
-            if has_trainable_fusion:
-                fused_representation = self._execute_dag_with_training(dag, task)
-            else:
-                fused_representation = dag.execute(
-                    list(
-                        chain.from_iterable(
-                            self.k_best_representations[task.model.name].values()
-                        )
+            fused_representation = dag.execute(
+                list(
+                    chain.from_iterable(
+                        self.k_best_representations[task.model.name].values()
                     )
-                )
+                ),
+                task,
+            )
 
             if fused_representation is None:
                 return None
@@ -231,59 +226,6 @@ class MultimodalOptimizer:
             print(f"Error evaluating DAG: {e}")
             traceback.print_exc()
             return None
-
-    def _dag_has_trainable_fusion(self, dag: RepresentationDag) -> bool:
-        for node in dag.nodes:
-            if node.operation and hasattr(node.operation(), "needs_training"):
-                if node.operation().needs_training:
-                    return True
-        return False
-
-    def _execute_dag_with_training(self, dag: RepresentationDag, task: Task):
-        all_modalities = list(
-            chain.from_iterable(self.k_best_representations[task.model.name].values())
-        )
-
-        cache = {}
-
-        def execute_node_with_training(node_id: str):
-            if node_id in cache:
-                return cache[node_id]
-
-            node = dag.get_node_by_id(node_id)
-
-            if not node.inputs:
-                modality = self._get_modality_by_id_and_instance_id(
-                    all_modalities, node.modality_id, node.representation_index
-                )
-                cache[node_id] = modality
-                return modality
-
-            input_mods = [
-                execute_node_with_training(input_id) for input_id in node.inputs
-            ]
-
-            fusion_op = node.operation()
-
-            if hasattr(fusion_op, "needs_training") and fusion_op.needs_training:
-                fusion_op.transform_with_training(
-                    input_mods, task.train_indices, task.labels
-                )
-
-                result_data = fusion_op.transform_data(input_mods)
-                result = TransformedModality(
-                    input_mods[0], fusion_op, ModalityType.EMBEDDING
-                )
-                result.data = result_data
-
-            else:
-                result = input_mods[0].combine(input_mods[1:], fusion_op)
-
-            cache[node_id] = result
-            return result
-
-        execute_node_with_training(dag.root_node_id)
-        return cache
 
     def _get_modality_by_id_and_instance_id(self, modalities, modality_id, instance_id):
         counter = 0

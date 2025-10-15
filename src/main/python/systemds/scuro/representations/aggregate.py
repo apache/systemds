@@ -20,6 +20,7 @@
 # -------------------------------------------------------------
 import numpy as np
 
+from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations import utils
 
 
@@ -71,7 +72,13 @@ class Aggregation:
         for i, instance in enumerate(modality.data):
             data.append([])
             if isinstance(instance, np.ndarray):
-                aggregated_data = self._aggregation_func(instance)
+                if (
+                    modality.modality_type == ModalityType.IMAGE
+                    or modality.modality_type == ModalityType.VIDEO
+                ) and instance.ndim > 2:
+                    aggregated_data = instance.flatten()
+                else:
+                    aggregated_data = self._aggregation_func(instance)
             else:
                 aggregated_data = []
                 for entry in instance:
@@ -79,18 +86,17 @@ class Aggregation:
             max_len = max(max_len, len(aggregated_data))
             data[i] = aggregated_data
 
-        if self.pad_modality:
-            for i, instance in enumerate(data):
-                if isinstance(instance, np.ndarray):
-                    if len(instance) < max_len:
-                        padded_data = np.zeros(max_len, dtype=instance.dtype)
-                        padded_data[: len(instance)] = instance
-                        data[i] = padded_data
-                else:
-                    padded_data = []
-                    for entry in instance:
-                        padded_data.append(utils.pad_sequences(entry, max_len))
+        for i, instance in enumerate(data):
+            if isinstance(instance, np.ndarray):
+                if len(instance) < max_len:
+                    padded_data = np.zeros(max_len, dtype=instance.dtype)
+                    padded_data[: len(instance)] = instance
                     data[i] = padded_data
+            else:
+                padded_data = []
+                for entry in instance:
+                    padded_data.append(utils.pad_sequences(entry, max_len))
+                data[i] = padded_data
 
         return np.array(data)
 

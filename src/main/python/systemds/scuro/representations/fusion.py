@@ -67,18 +67,28 @@ class Fusion(Representation):
 
         return self.execute(mods)
 
-    def transform_with_training(
-        self, modalities: List[Modality], train_indices, labels
-    ):
-
+    def transform_with_training(self, modalities: List[Modality], task):
         train_modalities = []
         for modality in modalities:
-            train_data = [d for i, d in enumerate(modality.data) if i in train_indices]
+            train_data = [
+                d for i, d in enumerate(modality.data) if i in task.train_indices
+            ]
             train_modality = TransformedModality(modality, self)
             train_modality.data = copy.deepcopy(train_data)
             train_modalities.append(train_modality)
 
-        self.execute(train_modalities, labels[train_indices])
+        transformed_train = self.execute(
+            train_modalities, task.labels[task.train_indices]
+        )
+        transformed_val = self.transform_data(modalities, task.val_indices)
+
+        transformed_data = np.zeros(
+            (len(modalities[0].data), transformed_train.shape[1])
+        )
+        transformed_data[task.train_indices] = transformed_train
+        transformed_data[task.val_indices] = transformed_val
+
+        return transformed_data
 
     def transform_data(self, modalities: List[Modality], indices=None):
         val_modalities = []
@@ -111,6 +121,11 @@ class Fusion(Representation):
         :param modalities: List of modalities
         :return: maximum embedding size
         """
+        try:
+            modalities[0].data = np.array(modalities[0].data)
+        except:
+            pass
+
         if isinstance(modalities[0].data[0], list):
             max_size = modalities[0].data[0][0].shape[1]
         elif isinstance(modalities[0].data, np.ndarray):

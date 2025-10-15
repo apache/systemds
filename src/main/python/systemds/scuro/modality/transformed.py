@@ -136,11 +136,26 @@ class TransformedModality(Modality):
         fused_modality = TransformedModality(
             self, fusion_method, ModalityType.EMBEDDING
         )
+        fused_modality.data = fusion_method.transform(self.create_modality_list(other))
+
+        return fused_modality
+
+    def combine_with_training(
+        self, other: Union[Modality, List[Modality]], fusion_method, task
+    ):
+        fused_modality = TransformedModality(
+            self, fusion_method, ModalityType.EMBEDDING
+        )
+        modalities = self.create_modality_list(other)
+        fused_modality.data = fusion_method.transform_with_training(modalities, task)
+
+        return fused_modality
+
+    def create_modality_list(self, other: Union[Modality, List[Modality]]):
         modalities = [self]
         if isinstance(other, list):
             modalities.extend(other)
         else:
             modalities.append(other)
-        fused_modality.data = fusion_method.transform(modalities)
 
-        return fused_modality
+        return modalities

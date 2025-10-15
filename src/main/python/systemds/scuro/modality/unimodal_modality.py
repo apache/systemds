@@ -130,6 +130,11 @@ class UnimodalModality(Modality):
                 self.extract_raw_data()
             new_modality = representation.transform(self)
 
+            for i, d in enumerate(new_modality.data):
+                output = np.array(d)
+                if np.isnan(output).any():
+                    new_modality.data[i] = np.where(np.isnan(output), 0, output)
+
             if not all(
                 "attention_masks" in entry for entry in new_modality.metadata.values()
             ):

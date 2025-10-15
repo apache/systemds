@@ -54,7 +54,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Build the application, with Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           # Set always-auth in npmrc
           always-auth: false # optional, default is false

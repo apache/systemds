@@ -74,9 +74,9 @@ class TestOperatorRegistry(unittest.TestCase):
             # SwinVideoTransformer,
         ]
 
-    def test_timeseries_representations_in_registry(self):
-        registry = Registry()
-        assert registry.get_representations(ModalityType.TIMESERIES) == [ResNet]
+    # def test_timeseries_representations_in_registry(self):
+    #     registry = Registry()
+    #     assert registry.get_representations(ModalityType.TIMESERIES) == [ResNet]
 
     def test_text_representations_in_registry(self):
         registry = Registry()

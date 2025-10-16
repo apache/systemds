@@ -112,7 +112,7 @@ class TestUnimodalRepresentations(unittest.TestCase):
             assert r.data[0].ndim == 2
 
     def test_text_representations(self):
-        test_representations = [BoW(2, 2), W2V(5, 2, 2), TfIdf(2)]
+        test_representations = [BoW(2, 2), TfIdf(), W2V()]
         text_data, text_md = ModalityRandomDataGenerator().create_text_data(
             self.num_instances
         )

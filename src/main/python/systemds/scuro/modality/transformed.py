@@ -63,6 +63,7 @@ class TransformedModality(Modality):
     def add_transformation(self, transformation, modality):
         if (
             transformation.__class__.__bases__[0].__name__ == "Fusion"
+            and type(modality).__name__ == "TransformedModality"
             and modality.transformation[0].__class__.__bases__[0].__name__ != "Fusion"
         ):
             self.transformation = []
@@ -99,8 +100,8 @@ class TransformedModality(Modality):
 
         return joined_modality
 
-    def window_aggregation(self, windowSize, aggregation):
-        w = WindowAggregation(windowSize, aggregation)
+    def window_aggregation(self, window_size, aggregation):
+        w = WindowAggregation(aggregation, window_size)
         transformed_modality = TransformedModality(
             self, w, self_contained=self.self_contained
         )
@@ -135,11 +136,26 @@ class TransformedModality(Modality):
         fused_modality = TransformedModality(
             self, fusion_method, ModalityType.EMBEDDING
         )
+        fused_modality.data = fusion_method.transform(self.create_modality_list(other))
+
+        return fused_modality
+
+    def combine_with_training(
+        self, other: Union[Modality, List[Modality]], fusion_method, task
+    ):
+        fused_modality = TransformedModality(
+            self, fusion_method, ModalityType.EMBEDDING
+        )
+        modalities = self.create_modality_list(other)
+        fused_modality.data = fusion_method.transform_with_training(modalities, task)
+
+        return fused_modality
+
+    def create_modality_list(self, other: Union[Modality, List[Modality]]):
         modalities = [self]
         if isinstance(other, list):
             modalities.extend(other)
         else:
             modalities.append(other)
-        fused_modality.data = fusion_method.transform(modalities)
 
-        return fused_modality
+        return modalities

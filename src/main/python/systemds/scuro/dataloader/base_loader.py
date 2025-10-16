@@ -127,8 +127,8 @@ class BaseLoader(ABC):
         if isinstance(file_names, str):
             self.extract(file_names, indices)
         else:
-            for file_name in file_names:
-                self.extract(file_name)
+            for i, file_name in enumerate(file_names):
+                self.extract(file_name, indices[i])
 
         return self.data, self.metadata
 

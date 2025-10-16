@@ -66,7 +66,6 @@ class TestDataLoaders(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        print("Cleaning up test data")
         shutil.rmtree(cls.test_file_path)
 
     def test_load_audio_data_from_file(self):

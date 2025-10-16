@@ -18,10 +18,14 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import copy
 from typing import List
 
 import numpy as np
-from systemds.scuro import AggregatedRepresentation, Aggregation
+from systemds.scuro.representations.aggregated_representation import (
+    AggregatedRepresentation,
+)
+from systemds.scuro.modality.transformed import TransformedModality
 
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.representation import Representation
@@ -52,7 +56,7 @@ class Fusion(Representation):
         for modality in modalities:
             agg_modality = None
             if get_shape(modality.metadata) > 1:
-                agg_operator = AggregatedRepresentation(Aggregation())
+                agg_operator = AggregatedRepresentation()
                 agg_modality = agg_operator.transform(modality)
             mods.append(agg_modality if agg_modality else modality)
 
@@ -63,26 +67,53 @@ class Fusion(Representation):
 
         return self.execute(mods)
 
-    def transform_with_training(
-        self, modalities: List[Modality], train_indices, labels
-    ):
-        # if self.needs_instance_alignment:
-        #     max_len = self.get_max_embedding_size(modalities)
-        #     for modality in modalities:
-        #         modality.pad(max_len=max_len)
+    def transform_with_training(self, modalities: List[Modality], task):
+        train_modalities = []
+        for modality in modalities:
+            train_data = [
+                d for i, d in enumerate(modality.data) if i in task.train_indices
+            ]
+            train_modality = TransformedModality(modality, self)
+            train_modality.data = copy.deepcopy(train_data)
+            train_modalities.append(train_modality)
 
-        self.execute(
-            [np.array(modality.data)[train_indices] for modality in modalities],
-            labels[train_indices],
+        transformed_train = self.execute(
+            train_modalities, task.labels[task.train_indices]
         )
+        transformed_val = self.transform_data(modalities, task.val_indices)
 
-    def transform_data(self, modalities: List[Modality], val_indices):
-        return self.apply_representation(
-            [np.array(modality.data)[val_indices] for modality in modalities]
+        transformed_data = np.zeros(
+            (len(modalities[0].data), transformed_train.shape[1])
         )
+        transformed_data[task.train_indices] = transformed_train
+        transformed_data[task.val_indices] = transformed_val
 
-    def execute(self, modalities: List[Modality]):
-        raise f"Not implemented for Fusion: {self.name}"
+        return transformed_data
+
+    def transform_data(self, modalities: List[Modality], indices=None):
+        val_modalities = []
+        for modality in modalities:
+            val_data = (
+                [d for i, d in enumerate(modality.data) if i in indices]
+                if indices
+                else modality.data
+            )
+            val_modality = type(modality)(modality, self)
+            val_modality.data = copy.deepcopy(val_data)
+            val_modalities.append(val_modality)
+
+        return self.apply_representation(val_modalities)
+
+    def execute(self, modalities: List[Modality], labels: np.ndarray = None):
+        raise NotImplementedError(f"Not implemented for Fusion: {self.name}")
+
+    def apply_representation(self, modalities: List[Modality]):
+        if self.needs_training:
+            raise NotImplementedError(
+                f"apply_representation not implemented for trainable fusion: {self.name}"
+            )
+        else:
+            return self.execute(modalities)
 
     def get_max_embedding_size(self, modalities: List[Modality]):
         """
@@ -90,6 +121,11 @@ class Fusion(Representation):
         :param modalities: List of modalities
         :return: maximum embedding size
         """
+        try:
+            modalities[0].data = np.array(modalities[0].data)
+        except:
+            pass
+
         if isinstance(modalities[0].data[0], list):
             max_size = modalities[0].data[0][0].shape[1]
         elif isinstance(modalities[0].data, np.ndarray):

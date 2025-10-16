@@ -230,6 +230,17 @@ class ModalityType(Flag):
         md["length"] = length
         return md
 
+    def create_ts_metadata(
+        self, signal_names, data, sampling_rate=None, is_single_instance=True
+    ):
+        md = deepcopy(self.get_schema())
+        md = ModalitySchemas.update_base_metadata(md, data, is_single_instance)
+        md["frequency"] = sampling_rate if sampling_rate is not None else 1
+        md["length"] = data.shape[0]
+        md["signal_names"] = signal_names
+        md["timestamp"] = create_timestamps(md["frequency"], md["length"])
+        return md
+
     def create_video_metadata(self, frequency, length, width, height, num_channels):
         md = deepcopy(self.get_schema())
         md["frequency"] = frequency

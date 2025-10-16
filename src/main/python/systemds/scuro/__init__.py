@@ -67,19 +67,13 @@ from systemds.scuro.models.discrete_model import DiscreteModel
 from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.joined_transformed import JoinedTransformedModality
 from systemds.scuro.modality.modality import Modality
-from systemds.scuro.modality.modality_identifier import ModalityIdentifier
+from systemds.scuro.utils.identifier import Identifier
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
-from systemds.scuro.drsearch.dr_search import DRSearch
 from systemds.scuro.drsearch.task import Task
-from systemds.scuro.drsearch.fusion_optimizer import FusionOptimizer
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.drsearch.optimization_data import OptimizationData
-from systemds.scuro.drsearch.representation_cache import RepresentationCache
-from systemds.scuro.drsearch.unimodal_representation_optimizer import (
-    UnimodalRepresentationOptimizer,
-)
 from systemds.scuro.representations.covarep_audio_features import (
     RMSE,
     Spectral,
@@ -131,17 +125,13 @@ __all__ = [
     "JoinedModality",
     "JoinedTransformedModality",
     "Modality",
-    "ModalityIdentifier",
+    "Identifier",
     "TransformedModality",
     "ModalityType",
     "UnimodalModality",
-    "DRSearch",
     "Task",
-    "FusionOptimizer",
     "Registry",
     "OptimizationData",
-    "RepresentationCache",
-    "UnimodalRepresentationOptimizer",
     "UnimodalOptimizer",
     "MultimodalOptimizer",
     "ZeroCrossing",

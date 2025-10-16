@@ -39,6 +39,7 @@ from systemds.scuro.representations.covarep_audio_features import (
     Pitch,
 )
 from systemds.scuro.representations.word2vec import W2V
+from systemds.scuro.representations.bow import BoW
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.resnet import ResNet
 from tests.scuro.data_generator import ModalityRandomDataGenerator, TestDataLoader
@@ -164,7 +165,7 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
 
     def test_unimodal_optimizer_for_video_modality(self):
         video_data, video_md = ModalityRandomDataGenerator().create_visual_modality(
-            self.num_instances, 60
+            self.num_instances, 10, 10
         )
         video = UnimodalModality(
             TestDataLoader(
@@ -178,7 +179,7 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
             Registry,
             "_representations",
             {
-                ModalityType.TEXT: [W2V],
+                ModalityType.TEXT: [W2V, BoW],
                 ModalityType.AUDIO: [Spectrogram, ZeroCrossing, Spectral, Pitch],
                 ModalityType.TIMESERIES: [ResNet],
                 ModalityType.VIDEO: [ResNet],
@@ -200,6 +201,9 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
             )
             assert len(result) == 1
             assert len(cached) == 1
+
+    # Todo: Add a test with all representations at once
+    # Todo: Add test with only one model
 
 
 if __name__ == "__main__":

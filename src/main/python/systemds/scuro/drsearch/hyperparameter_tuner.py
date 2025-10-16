@@ -18,89 +18,276 @@
 # under the License.
 #
 # -------------------------------------------------------------
-import itertools
-import time
-
+from typing import Dict, List, Tuple, Any, Optional
 import numpy as np
+from sklearn.model_selection import ParameterGrid
+import json
+import logging
+from dataclasses import dataclass
+import time
+import copy
 
-from systemds.scuro.drsearch.optimization_data import OptimizationResult
-from systemds.scuro.representations.context import Context
+from systemds.scuro.modality.modality import Modality
+from systemds.scuro.drsearch.task import Task
+
+
+@dataclass
+class HyperparamResult:
+
+    representation_name: str
+    best_params: Dict[str, Any]
+    best_score: float
+    all_results: List[Tuple[Dict[str, Any], float]]
+    tuning_time: float
+    modality_id: int
 
 
 class HyperparameterTuner:
-    def __init__(self, task, n_trials=10, early_stopping_patience=5):
-        self.task = task
-        self.n_trials = n_trials
-        self.early_stopping_patience = early_stopping_patience
 
-    def tune_operator_chain(self, modality, operator_chain):
-        best_result = None
-        best_score = -np.inf
+    def __init__(
+        self,
+        modalities,
+        tasks,
+        optimization_results,
+        k: int = 2,
+        n_jobs: int = -1,
+        scoring_metric: str = "accuracy",
+        maximize_metric: bool = True,
+        save_results: bool = False,
+        debug: bool = False,
+    ):
+        self.tasks = tasks
+        self.optimization_results = optimization_results
+        self.n_jobs = n_jobs
+        self.scoring_metric = scoring_metric
+        self.maximize_metric = maximize_metric
+        self.save_results = save_results
+        self.results = {}
+        self.k = k
+        self.modalities = modalities
+        self.representations = None
+        self.k_best_cache = None
+        self.k_best_representations = None
+        self.extract_k_best_modalities_per_task()
+        self.debug = debug
+        self.logger = logging.getLogger(__name__)
+        if debug:
+            logging.basicConfig(
+                level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+            )
 
-        param_grids = {}
+    def get_modalities_by_id(self, modality_ids: List[int]) -> Modality:
+        modalities = []
+        for mod in self.modalities:
+            if mod.modality_id in modality_ids:
+                modalities.append(mod)
+        return modalities
 
-        for operator in operator_chain:
-            param_grids[operator.name] = operator.parameters
+    def get_modality_by_id_and_instance_id(self, modality_id, instance_id):
+        counter = 0
+        for modality in self.modalities:
+            if modality.modality_id == modality_id:
+                if counter == instance_id or instance_id == -1:
+                    return modality
+                else:
+                    counter += 1
+        return None
 
-        param_combinations = self._generate_search_space(param_grids)
+    def extract_k_best_modalities_per_task(self):
+        self.k_best_representations = {}
+        self.k_best_cache = {}
+        representations = {}
+        for task in self.tasks:
+            self.k_best_representations[task.model.name] = []
+            self.k_best_cache[task.model.name] = []
+            representations[task.model.name] = {}
+            for modality in self.modalities:
+                k_best_results, cached_data = (
+                    self.optimization_results.get_k_best_results(modality, self.k, task)
+                )
+                representations[task.model.name][modality.modality_id] = k_best_results
+                self.k_best_representations[task.model.name].extend(k_best_results)
+                self.k_best_cache[task.model.name].extend(cached_data)
+        self.representations = representations
 
-        for params in param_combinations:
-            modified_modality = modality
-            current_chain = []
+    def tune_unimodal_representations(self, max_eval_per_rep: Optional[int] = None):
+        results = {}
+        for task in self.tasks:
+            results[task.model.name] = []
+            for representation in self.k_best_representations[task.model.name]:
+                result = self.tune_dag_representation(
+                    representation.dag,
+                    representation.dag.root_node_id,
+                    task,
+                    max_eval_per_rep,
+                )
+                results[task.model.name].append(result)
 
-            representation_start = time.time()
-            try:
-                for operator in operator_chain:
+        self.results = results
 
-                    if operator.name in params:
-                        operator.set_parameters(params[operator.name])
+        if self.save_results:
+            self.save_tuning_results()
 
-                    if isinstance(operator, Context):
-                        modified_modality = modified_modality.context(operator)
-                    else:
-                        modified_modality = modified_modality.apply_representation(
-                            operator
-                        )
+        return results
 
-                    current_chain.append(operator)
+    def tune_dag_representation(self, dag, root_node_id, task, max_evals=None):
+        hyperparams = {}
+        reps = []
+        modality_ids = []
+        node_order = []
 
-                representation_end = time.time()
+        visited = set()
 
-                score = self.task.run(modified_modality.data)
+        def visit_node(node_id):
+            if node_id in visited:
+                return
+            node = dag.get_node_by_id(node_id)
+            for input_id in node.inputs:
+                visit_node(input_id)
+            visited.add(node_id)
+            if node.operation is not None:
+                if node.parameters:
+                    hyperparams.update(node.parameters)
+                reps.append(node.operation)
+                node_order.append(node_id)
+            if node.modality_id is not None:
+                modality_ids.append(node.modality_id)
 
-                if score[1] > best_score:
-                    best_score = score[1]
-                    best_params = params
-                    best_result = OptimizationResult(
-                        operator_chain=current_chain,
-                        parameters=params,
-                        train_accuracy=score[0],
-                        test_accuracy=score[1],
-                        training_runtime=self.task.training_time,
-                        inference_runtime=self.task.inference_time,
-                        representation_time=representation_end - representation_start,
-                        output_shape=(1, 1),
+        visit_node(root_node_id)
+
+        if not hyperparams:
+            return None
+
+        start_time = time.time()
+        rep_name = "_".join([rep.__name__ for rep in reps])
+
+        param_grid = list(ParameterGrid(hyperparams))
+        if max_evals and len(param_grid) > max_evals:
+            np.random.shuffle(param_grid)
+            param_grid = param_grid[:max_evals]
+
+        all_results = []
+        for params in param_grid:
+            result = self.evaluate_dag_config(
+                dag, params, node_order, modality_ids, task
+            )
+            all_results.append(result)
+
+        if self.maximize_metric:
+            best_params, best_score = max(all_results, key=lambda x: x[1])
+        else:
+            best_params, best_score = min(all_results, key=lambda x: x[1])
+
+        tuning_time = time.time() - start_time
+
+        return HyperparamResult(
+            representation_name=rep_name,
+            best_params=best_params,
+            best_score=best_score,
+            all_results=all_results,
+            tuning_time=tuning_time,
+            modality_id=modality_ids[0] if modality_ids else None,
+        )
+
+    def evaluate_dag_config(self, dag, params, node_order, modality_ids, task):
+        try:
+            dag_copy = copy.deepcopy(dag)
+
+            for node_id in node_order:
+                node = dag_copy.get_node_by_id(node_id)
+                if node.operation is not None and node.parameters:
+                    node_params = {
+                        k: v for k, v in params.items() if k in node.parameters
+                    }
+                    node.parameters = node_params
+
+            modalities = self.get_modalities_by_id(modality_ids)
+            modified_modality = dag_copy.execute(modalities, task)
+            score = task.run(
+                modified_modality[list(modified_modality.keys())[-1]].data
+            )[1]
+
+            return params, score
+        except Exception as e:
+            self.logger.error(f"Error evaluating DAG with params {params}: {e}")
+            return params, float("-inf") if self.maximize_metric else float("inf")
+
+    def tune_multimodal_representations(
+        self,
+        optimization_results,
+        k: int = 1,
+        optimize_unimodal: bool = True,
+        max_eval_per_rep: Optional[int] = None,
+    ):
+        results = {}
+        for task in self.tasks:
+            best_results = sorted(
+                optimization_results[task.model.name],
+                key=lambda x: x.val_score,
+                reverse=True,
+            )[:k]
+            results[task.model.name] = []
+            best_optimization_results = best_results
+
+            for representation in best_optimization_results:
+                if optimize_unimodal:
+                    dag = copy.deepcopy(representation.dag)
+                    index = 0
+                    for i, node in enumerate(representation.dag.nodes):
+                        if not node.inputs:
+                            leaf_node_id = node.node_id
+                            leaf_nodes = self.representations[task.model.name][
+                                node.modality_id
+                            ][node.representation_index].dag.nodes
+                            for leaf_idx, node in enumerate(dag.nodes):
+                                if node.node_id == leaf_node_id:
+                                    dag.nodes[leaf_idx : leaf_idx + 1] = leaf_nodes
+                                    index = leaf_idx + len(leaf_nodes) - 1
+                                    break
+
+                            for node in dag.nodes:
+                                try:
+                                    idx = node.inputs.index(leaf_node_id)
+                                    node.inputs[idx] = dag.nodes[index].node_id
+                                    break
+                                except ValueError:
+                                    continue
+
+                    result = self.tune_dag_representation(
+                        dag, dag.root_node_id, task, max_eval_per_rep
                     )
+                else:
+                    result = self.tune_dag_representation(
+                        representation.dag,
+                        representation.dag.root_node_id,
+                        task,
+                        max_eval_per_rep,
+                    )
+                results[task.model.name].append(result)
 
-            except Exception as e:
-                print(f"Failed parameter combination {params}: {str(e)}")
-                continue
+        self.results = results
 
-        return best_result
+        if self.save_results:
+            self.save_tuning_results()
 
-    def _generate_search_space(self, param_grids):
-        combinations = {}
-        for operator_name, params in param_grids.items():
-            operator_combinations = [
-                dict(zip(params.keys(), v)) for v in itertools.product(*params.values())
-            ]
-            combinations[operator_name] = operator_combinations
+        return results
 
-        keys = list(combinations.keys())
-        values = [combinations[key] for key in keys]
+    def save_tuning_results(self, filepath: str = None):
+        if not filepath:
+            filepath = f"hyperparameter_results_{int(time.time())}.json"
 
-        parameter_grid = [
-            dict(zip(keys, combo)) for combo in itertools.product(*values)
-        ]
+        json_results = {}
+        for task in self.results.keys():
+            for result in self.results[task]:
+                json_results[result.representation_name] = {
+                    "best_params": result.best_params,
+                    "best_score": result.best_score,
+                    "tuning_time": result.tuning_time,
+                    "num_evaluations": len(result.all_results),
+                }
 
-        return parameter_grid
+        with open(filepath, "w") as f:
+            json.dump(json_results, f, indent=2)
+
+        if self.debug:
+            self.logger.info(f"Results saved to {filepath}")

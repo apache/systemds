@@ -155,18 +155,23 @@ jobs:
 
     - name: Run Scuro Python Tests 
       if: ${{ matrix.test_mode == 'scuro' }}
+      env:
+        TORCH_HOME: ${{ github.workspace }}/.torch
       run: |
+        ( while true; do echo "."; sleep 25; done ) &
+        KA=$!
+        pip install --upgrade pip wheel setuptools
+        # Use CUDA 12.1 wheels to avoid slow/source builds
+        pip install --extra-index-url https://download.pytorch.org/whl/cu121 \
+          torch==2.4.1 torchvision==0.19.1
         pip install \
-          torchvision \
           transformers \
           opencv-python \
-          torch \
           librosa \
           h5py \
           gensim \
           opt-einsum \
           nltk
+        kill $KA 
         cd src/main/python
-        python -m unittest discover -s tests/scuro -p 'test_*.py'
-
-
+        python -m unittest discover -s tests/scuro -p 'test_*.py' -v

@@ -33,8 +33,8 @@ class Spectrogram(UnimodalRepresentation):
     def __init__(self, hop_length=512, n_fft=2048):
         parameters = {"hop_length": [256, 512, 1024, 2048], "n_fft": [1024, 2048, 4096]}
         super().__init__("Spectrogram", ModalityType.TIMESERIES, parameters, False)
-        self.hop_length = hop_length
-        self.n_fft = n_fft
+        self.hop_length = int(hop_length)
+        self.n_fft = int(n_fft)
 
     def transform(self, modality):
         transformed_modality = TransformedModality(
@@ -44,8 +44,8 @@ class Spectrogram(UnimodalRepresentation):
 
         for i, sample in enumerate(modality.data):
             spectrogram = librosa.stft(
-                y=np.array(sample), hop_length=self.hop_length, n_fft=self.n_fft
-            ).astype(modality.data_type)
+                y=np.array(np.abs(sample)), hop_length=self.hop_length, n_fft=self.n_fft
+            )
             S_dB = librosa.amplitude_to_db(np.abs(spectrogram))
 
             result.append(S_dB.T)

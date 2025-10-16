@@ -172,7 +172,6 @@ jobs:
           gensim \
           opt-einsum \
           nltk
-
+        kill $KA 
         cd src/main/python
         python -m unittest discover -s tests/scuro -p 'test_*.py' -v
-        kill $KA || true

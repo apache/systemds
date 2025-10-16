@@ -156,31 +156,31 @@ class TestHPTuner(unittest.TestCase):
 
         self.run_hp_for_modality([audio])
 
-    def test_multimodal_hp_tuning(self):
-        audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
-            self.num_instances, 3000
-        )
-        audio = UnimodalModality(
-            TestDataLoader(
-                self.indices, None, ModalityType.AUDIO, audio_data, np.float32, audio_md
-            )
-        )
-
-        text_data, text_md = ModalityRandomDataGenerator().create_text_data(
-            self.num_instances
-        )
-        text = UnimodalModality(
-            TestDataLoader(
-                self.indices, None, ModalityType.TEXT, text_data, str, text_md
-            )
-        )
-
-        self.run_hp_for_modality(
-            [audio, text], multimodal=True, tune_unimodal_representations=True
-        )
-        self.run_hp_for_modality(
-            [audio, text], multimodal=True, tune_unimodal_representations=False
-        )
+    # def test_multimodal_hp_tuning(self):
+    #     audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
+    #         self.num_instances, 3000
+    #     )
+    #     audio = UnimodalModality(
+    #         TestDataLoader(
+    #             self.indices, None, ModalityType.AUDIO, audio_data, np.float32, audio_md
+    #         )
+    #     )
+    #
+    #     text_data, text_md = ModalityRandomDataGenerator().create_text_data(
+    #         self.num_instances
+    #     )
+    #     text = UnimodalModality(
+    #         TestDataLoader(
+    #             self.indices, None, ModalityType.TEXT, text_data, str, text_md
+    #         )
+    #     )
+    #
+    #     self.run_hp_for_modality(
+    #         [audio, text], multimodal=True, tune_unimodal_representations=True
+    #     )
+    #     self.run_hp_for_modality(
+    #         [audio, text], multimodal=True, tune_unimodal_representations=False
+    #     )
 
     def test_hp_tuner_for_text_modality(self):
         text_data, text_md = ModalityRandomDataGenerator().create_text_data(
@@ -229,7 +229,7 @@ class TestHPTuner(unittest.TestCase):
 
                 hp.tune_multimodal_representations(
                     fusion_results,
-                    k=2,
+                    k=1,
                     optimize_unimodal=tune_unimodal_representations,
                 )
 

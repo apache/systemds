@@ -163,6 +163,17 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
         )
         self.optimize_unimodal_representation_for_modality(text)
 
+    def test_unimodal_optimizer_for_video_modality(self):
+        video_data, video_md = ModalityRandomDataGenerator().create_visual_modality(
+            self.num_instances, 10, 10
+        )
+        video = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.VIDEO, video_data, np.float32, video_md
+            )
+        )
+        self.optimize_unimodal_representation_for_modality(video)
+
     def optimize_unimodal_representation_for_modality(self, modality):
         with patch.object(
             Registry,

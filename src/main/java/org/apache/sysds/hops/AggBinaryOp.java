@@ -624,7 +624,8 @@ public class AggBinaryOp extends MultiThreadedHop {
 
 		//Handle Y or actualY for transpose
 		Lop yLop = isYTransposed ? actualY.constructLops() : Y.constructLops();
-		ExecType inputReorgExecType = (Y.hasFederatedOutput()) ? ExecType.FED : ExecType.CP;
+		ExecType inputReorgExecType = (Y.hasFederatedOutput()) ? ExecType.FED :
+			(et==ExecType.OOC) ? ExecType.OOC : ExecType.CP;
 
 		//right vector transpose
 		Lop tY = (yLop instanceof Transform && ((Transform)yLop).getOp() == ReOrgOp.TRANS) ?

@@ -452,8 +452,9 @@ public class LibMatrixMult
 		//		              "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
 	}
 
-	public static void matrixMultTransposeSelf( MatrixBlock m1, MatrixBlock ret, boolean leftTranspose ) {
+	public static MatrixBlock matrixMultTransposeSelf( MatrixBlock m1, MatrixBlock ret, boolean leftTranspose ) {
 		matrixMultTransposeSelf(m1, ret, leftTranspose, true);
+		return ret;
 	}
 
 	public static void matrixMultTransposeSelf(MatrixBlock m1, MatrixBlock ret, boolean leftTranspose, boolean copyToLowerTriangle){

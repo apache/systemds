@@ -266,7 +266,10 @@ class UnimodalOptimizer:
         context_operators = self._get_context_operators()
 
         for context_op in context_operators:
-            if modality.modality_type != ModalityType.TEXT:
+            if (
+                modality.modality_type != ModalityType.TEXT
+                and modality.modality_type != ModalityType.VIDEO
+            ):
                 context_node_id = builder.create_operation_node(
                     context_op,
                     [leaf_id],

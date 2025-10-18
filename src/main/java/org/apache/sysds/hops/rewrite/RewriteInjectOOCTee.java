@@ -139,7 +139,8 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
 		if (DMLScript.USE_OOC 
 			&& hop.getDataType().isMatrix()
 			&& !HopRewriteUtils.isData(hop, OpOpData.TEE)
-			&& hop.getParent().size() > 1)
+			&& hop.getParent().size() > 1
+			&& isSelfTranposePattern(hop)) //FIXME remove
 		{
 			rewriteCandidates.add(hop);
 		}

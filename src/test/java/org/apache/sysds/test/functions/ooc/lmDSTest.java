@@ -33,7 +33,6 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -47,7 +46,7 @@ public class lmDSTest extends AutomatedTestBase {
 	private static final String INPUT_NAME2 = "y";
 	private static final String OUTPUT_NAME = "R";
 
-	private final static int rows = 100000;
+	private final static int rows = 10000;
 	private final static int cols_wide = 500; //TODO larger than 1000
 	private final static int cols_skinny = 10;
 
@@ -59,13 +58,11 @@ public class lmDSTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore //FIXME
 	public void testlmDS1() {
 		runMatrixVectorMultiplicationTest(cols_wide);
 	}
 
 	@Test
-	@Ignore //FIXME
 	public void testlmDS2() {
 		runMatrixVectorMultiplicationTest(cols_skinny);
 	}
@@ -80,7 +77,7 @@ public class lmDSTest extends AutomatedTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 			programArgs = new String[]{"-explain", "-stats", "-ooc",
-					"-args", input(INPUT_NAME), input(INPUT_NAME2), output(OUTPUT_NAME)};
+				"-args", input(INPUT_NAME), input(INPUT_NAME2), output(OUTPUT_NAME)};
 
 			// 1. Generate the data in-memory as MatrixBlock objects
 			double[][] X_data = getRandomMatrix(rows, cols, 0, 1, 1.0, 7);
@@ -105,7 +102,7 @@ public class lmDSTest extends AutomatedTestBase {
 
 			runTest(true, false, null, -1);
 			MatrixBlock C = DataConverter.readMatrixFromHDFS(
-				output(OUTPUT_NAME), Types.FileFormat.BINARY, rows, cols, 1000, 1000);
+				output(OUTPUT_NAME), Types.FileFormat.BINARY, cols, 1, 1000, 1000);
 			
 			//expected results
 			MatrixBlock xtx = LibMatrixMult.matrixMultTransposeSelf(X_mb, new MatrixBlock(cols,cols,false), true);

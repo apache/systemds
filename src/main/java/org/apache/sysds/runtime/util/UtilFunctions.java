@@ -53,8 +53,10 @@ import org.apache.sysds.runtime.frame.data.columns.CharArray;
 import org.apache.sysds.runtime.frame.data.columns.HashIntegerArray;
 import org.apache.sysds.runtime.frame.data.columns.HashLongArray;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.Pair;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.TensorCharacteristics;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 
@@ -1470,5 +1472,27 @@ public class UtilFunctions {
 		String joined = sb.toString().trim().toLowerCase();  
 		
 		return joined.split("\\s+");
+	}
+	
+	public static IndexedMatrixValue createIndexedMatrixBlock(MatrixBlock mb, DataCharacteristics mc, long ix) {
+		try {
+			//compute block indexes
+			long blockRow = ix / mc.getNumColBlocks();
+			long blockCol = ix % mc.getNumColBlocks();
+			//compute block sizes
+			int maxRow = UtilFunctions.computeBlockSize(mc.getRows(), blockRow+1, mc.getBlocksize());
+			int maxCol = UtilFunctions.computeBlockSize(mc.getCols(), blockCol+1, mc.getBlocksize());
+			//copy sub-matrix to block
+			MatrixBlock block = new MatrixBlock(maxRow, maxCol, mb.isInSparseFormat());
+			int row_offset = (int)blockRow*mc.getBlocksize();
+			int col_offset = (int)blockCol*mc.getBlocksize();
+			block = mb.slice( row_offset, row_offset+maxRow-1,
+				col_offset, col_offset+maxCol-1, false, block );
+			//create key-value pair
+			return new IndexedMatrixValue(new MatrixIndexes(blockRow+1, blockCol+1), block);
+		}
+		catch(DMLRuntimeException ex) {
+			throw new RuntimeException(ex);
+		}
 	}
 }

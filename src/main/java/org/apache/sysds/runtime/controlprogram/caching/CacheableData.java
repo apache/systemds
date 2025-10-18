@@ -500,7 +500,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	}
 	
 	/**
-	 * Probes if stream handle is existing, because <code>getStreamHandle<code>
+	 * Probes if stream handle is existing, because <code>getStreamHandle</code>
 	 * creates a new stream if not existing.
 	 * 
 	 * @return true if existing, false otherwise

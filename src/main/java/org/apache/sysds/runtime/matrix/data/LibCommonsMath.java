@@ -201,7 +201,7 @@ public class LibCommonsMath
 	 * @param in2 matrix object 2
 	 * @return matrix block
 	 */
-	private static MatrixBlock computeSolve(MatrixBlock in1, MatrixBlock in2) {
+	public static MatrixBlock computeSolve(MatrixBlock in1, MatrixBlock in2) {
 		//convert to commons math BlockRealMatrix instead of Array2DRowRealMatrix
 		//to avoid unnecessary conversion as QR internally creates a BlockRealMatrix
 		BlockRealMatrix matrixInput = DataConverter.convertToBlockRealMatrix(in1);

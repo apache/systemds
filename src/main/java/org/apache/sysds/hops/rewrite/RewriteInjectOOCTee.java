@@ -24,6 +24,7 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.ReorgOp;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -138,7 +139,7 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
 		if (DMLScript.USE_OOC 
 			&& hop.getDataType().isMatrix()
 			&& !HopRewriteUtils.isData(hop, OpOpData.TEE)
-			&& hop.getParent().size() > 1) 
+			&& hop.getParent().size() > 1)
 		{
 			rewriteCandidates.add(hop);
 		}
@@ -173,5 +174,23 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
 		// Record that we've handled this hop
 		handledHop.put(sharedInput.getHopID(), teeOp);
 		rewrittenHops.add(sharedInput.getHopID());
+	}
+
+	@SuppressWarnings("unused")
+	private boolean isSelfTranposePattern (Hop hop) {
+		boolean hasTransposeConsumer = false; // t(X)
+		boolean hasMatrixMultiplyConsumer = false; // %*%
+
+		for (Hop parent: hop.getParent()) {
+			if (parent instanceof ReorgOp) {
+				if (HopRewriteUtils.isTransposeOperation(parent)) {
+					hasTransposeConsumer = true;
+				}
+			}
+			else if (HopRewriteUtils.isMatrixMultiply(parent)) {
+				hasMatrixMultiplyConsumer = true;
+			}
+		}
+		return hasTransposeConsumer &&  hasMatrixMultiplyConsumer;
 	}
 }

@@ -51,6 +51,8 @@ import java.util.Set;
  */
 public class RewriteInjectOOCTee extends HopRewriteRule {
 
+	public static boolean APPLY_ONLY_XtX_PATTERN = false;
+	
 	private static final Set<Long> rewrittenHops = new HashSet<>();
 	private static final Map<Long, Hop> handledHop = new HashMap<>();
 
@@ -140,7 +142,7 @@ public class RewriteInjectOOCTee extends HopRewriteRule {
 			&& hop.getDataType().isMatrix()
 			&& !HopRewriteUtils.isData(hop, OpOpData.TEE)
 			&& hop.getParent().size() > 1
-			&& isSelfTranposePattern(hop)) //FIXME remove
+			&& (!APPLY_ONLY_XtX_PATTERN || isSelfTranposePattern(hop))) //FIXME remove
 		{
 			rewriteCandidates.add(hop);
 		}

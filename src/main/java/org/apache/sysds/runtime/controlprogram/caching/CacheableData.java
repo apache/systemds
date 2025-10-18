@@ -25,6 +25,7 @@ import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.LongStream;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.logging.Log;
@@ -48,6 +49,7 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
+import org.apache.sysds.runtime.instructions.ooc.ResettableStream;
 import org.apache.sysds.runtime.instructions.spark.data.BroadcastObject;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
@@ -55,12 +57,14 @@ import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.io.ReaderWriterFederated;
 import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.LocalFileUtils;
+import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.Statistics;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
@@ -466,8 +470,44 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	}
 	
 	public LocalTaskQueue<IndexedMatrixValue> getStreamHandle() {
+		if( !hasStreamHandle() ) {
+			_streamHandle = new LocalTaskQueue<>();
+			DataCharacteristics dc = getDataCharacteristics();
+			MatrixBlock src = (MatrixBlock)acquireReadAndRelease();
+			LongStream.range(0, dc.getNumBlocks())
+				.mapToObj(i -> UtilFunctions.createIndexedMatrixBlock(src, dc, i))
+				.forEach( blk -> {
+					try{ 
+						_streamHandle.enqueueTask(blk); 
+					}
+					catch(Exception ex) {
+						throw new DMLRuntimeException(ex);
+				}});
+			_streamHandle.closeInput();
+		}
+		else if(_streamHandle != null && _streamHandle.isProcessed() 
+			&& _streamHandle instanceof ResettableStream) 
+		{
+			try {
+				((ResettableStream)_streamHandle).reset();
+			}
+			catch(Exception ex) {
+				throw new DMLRuntimeException(ex);
+			}
+		}
+		
 		return _streamHandle;
 	}
+	
+	/**
+	 * Probes if stream handle is existing, because <code>getStreamHandle<code>
+	 * creates a new stream if not existing.
+	 * 
+	 * @return true if existing, false otherwise
+	 */
+	public boolean hasStreamHandle() {
+		return _streamHandle != null && !_streamHandle.isProcessed();
+	} 
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void setBroadcastHandle( BroadcastObject bc ) {
@@ -592,7 +632,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 					//mark for initial local write despite read operation
 					_requiresLocalWrite = false;
 				}
-				else if( getStreamHandle() != null ) {
+				else if( hasStreamHandle() ) {
 					_data = readBlobFromStream( getStreamHandle() );
 				}
 				else if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() ) {
@@ -909,7 +949,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 			// a) get the matrix
 			boolean federatedWrite = (outputFormat != null ) &&  outputFormat.contains("federated");
 
-			if(getStreamHandle()!=null) {
+			if(hasStreamHandle()) {
 				try {
 					long totalNnz = writeStreamToHDFS(fName, outputFormat, replication, formatProperties);
 					updateDataCharacteristics(new MatrixCharacteristics(

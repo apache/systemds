@@ -83,7 +83,7 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 	 * This can only be called once the stream is fully consumed once.
 	 */
 	public synchronized void reset() throws InterruptedException {
-		if (_cacheInProgress) {
+		while (_cacheInProgress) {
 			// Attempted to reset a stream that's not been fully cached yet.
 			wait();
 		}
@@ -93,5 +93,10 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 	@Override
 	public synchronized void closeInput() {
 		_source.closeInput();
+	}
+	
+	@Override
+	public synchronized boolean isProcessed() {
+		return false;
 	}
 }

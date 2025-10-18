@@ -25,4 +25,5 @@ y = read($2)
 XtX = t(X) %*% X; # 500 x 500
 Xty = t(X) %*% y; # 500 x 1
 R = solve(XtX, Xty)
+print(sum(R!=0))
 write(R, $3, format="binary")

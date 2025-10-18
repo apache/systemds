@@ -106,6 +106,10 @@ public class LocalTaskQueue<T>
 		_closedInput = true;
 		notifyAll(); //notify all waiting readers
 	}
+	
+	public synchronized boolean isProcessed() {
+		return _closedInput && _data.isEmpty();
+	}
 
 	@Override
 	public synchronized String toString() 

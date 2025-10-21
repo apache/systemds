@@ -78,6 +78,15 @@ class Max(TimeSeriesRepresentation):
 
 
 @register_representation([ModalityType.TIMESERIES])
+class Sum(TimeSeriesRepresentation):
+    def __init__(self):
+        super().__init__("Sum")
+
+    def compute_feature(self, signal):
+        return np.array(np.sum(signal))
+
+
+@register_representation([ModalityType.TIMESERIES])
 class Std(TimeSeriesRepresentation):
     def __init__(self):
         super().__init__("Std")

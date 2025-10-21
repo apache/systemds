@@ -41,6 +41,21 @@ from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
 from systemds.scuro.representations.multimodal_attention_fusion import (
     AttentionFusion,
 )
+from systemds.scuro.representations.timeseries_representations import (
+    Mean,
+    Max,
+    Min,
+    Kurtosis,
+    Skew,
+    Std,
+    RMS,
+    ACF,
+    FrequencyMagnitude,
+    SpectralCentroid,
+    Quantile,
+    ZeroCrossingRate,
+    BandpowerFFT,
+)
 from systemds.scuro.representations.mfcc import MFCC
 from systemds.scuro.representations.hadamard import Hadamard
 from systemds.scuro.representations.optical_flow import OpticalFlow
@@ -141,4 +156,17 @@ __all__ = [
     "AttentionFusion",
     "DynamicWindow",
     "StaticWindow",
+    "Min",
+    "Max",
+    "Mean",
+    "Std",
+    "Kurtosis",
+    "Skew",
+    "RMS",
+    "ACF",
+    "FrequencyMagnitude",
+    "SpectralCentroid",
+    "Quantile",
+    "BandpowerFFT",
+    "ZeroCrossingRate",
 ]

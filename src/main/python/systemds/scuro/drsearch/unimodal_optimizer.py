@@ -95,6 +95,11 @@ class UnimodalOptimizer:
         with open(file_name, "wb") as f:
             pickle.dump(self.operator_performance.results, f)
 
+    def load_results(self, file_name):
+        with open(file_name, "rb") as f:
+            self.operator_performance.results = pickle.load(f)
+            self.operator_performance.cache = None
+
     def optimize_parallel(self, n_workers=None):
         if n_workers is None:
             n_workers = min(len(self.modalities), mp.cpu_count())
@@ -262,9 +267,27 @@ class UnimodalOptimizer:
                     )
                     dags.append(builder.build(combine_id))
                     current_node_id = combine_id
+            if modality.modality_type in [
+                ModalityType.EMBEDDING,
+                ModalityType.IMAGE,
+                ModalityType.AUDIO,
+            ]:
+                dags.extend(
+                    self.default_context_operators(
+                        modality, builder, leaf_id, current_node_id
+                    )
+                )
+            elif modality.modality_type == ModalityType.TIMESERIES:
+                dags.extend(
+                    self.temporal_context_operators(
+                        modality, builder, leaf_id, current_node_id
+                    )
+                )
+        return dags
 
+    def default_context_operators(self, modality, builder, leaf_id, current_node_id):
+        dags = []
         context_operators = self._get_context_operators()
-
         for context_op in context_operators:
             if (
                 modality.modality_type != ModalityType.TEXT
@@ -283,6 +306,22 @@ class UnimodalOptimizer:
                 context_op().parameters,
             )
             dags.append(builder.build(context_node_id))
+
+        return dags
+
+    def temporal_context_operators(self, modality, builder, leaf_id, current_node_id):
+        aggregators = self.operator_registry.get_representations(modality.modality_type)
+        context_operators = self._get_context_operators()
+
+        dags = []
+        for agg in aggregators:
+            for context_operator in context_operators:
+                context_node_id = builder.create_operation_node(
+                    context_operator,
+                    [leaf_id],
+                    context_operator(agg()).parameters,
+                )
+                dags.append(builder.build(context_node_id))
 
         return dags
 
@@ -342,13 +381,20 @@ class UnimodalResults:
             key=lambda x: task_results[x].val_score,
             reverse=True,
         )[:k]
+        if not self.cache:
+            cache = [
+                list(task_results[i].dag.execute([modality]).values())[-1]
+                for i in sorted_indices
+            ]
+        else:
+            cache_items = (
+                list(self.cache[modality.modality_id][task.model.name].items())
+                if self.cache[modality.modality_id][task.model.name]
+                else []
+            )
+            cache = [cache_items[i][1] for i in sorted_indices if i < len(cache_items)]
 
-        cache_items = list(self.cache[modality.modality_id][task.model.name].items())
-        reordered_cache = [
-            cache_items[i][1] for i in sorted_indices if i < len(cache_items)
-        ]
-
-        return results, reordered_cache
+        return results, cache
 
 
 @dataclass(frozen=True)

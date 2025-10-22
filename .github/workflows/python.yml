@@ -90,7 +90,7 @@ jobs:
         key: ${{ runner.os }}-${{ hashFiles('.github/workflows/python.yml') }}
 
     - name: Maven clean & package
-      run: mvn -ntp clean package -P distribution -B
+      run: mvn -ntp clean package -P distribution -B -Ddoc.skip=true
 
     - name: Setup Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6

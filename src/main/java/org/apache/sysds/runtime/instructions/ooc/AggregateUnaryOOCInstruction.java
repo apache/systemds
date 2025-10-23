@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
@@ -47,6 +48,12 @@ public class AggregateUnaryOOCInstruction extends ComputationOOCInstruction {
 			CPOperand in, CPOperand out, String opcode, String istr) {
 		super(type, auop, in, out, opcode, istr);
 		_aop = aop;
+	}
+
+	protected AggregateUnaryOOCInstruction(OOCType type, Operator op, CPOperand in1, CPOperand in2, CPOperand in3,
+		CPOperand out, String opcode, String istr) {
+		super(type, op, in1, in2, in3, out, opcode, istr);
+		_aop = null;
 	}
 
 	public static AggregateUnaryOOCInstruction parseInstruction(String str) {

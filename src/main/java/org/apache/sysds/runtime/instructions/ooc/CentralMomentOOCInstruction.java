@@ -29,6 +29,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 import java.util.*;
 
@@ -91,6 +92,13 @@ public class CentralMomentOOCInstruction extends AggregateUnaryOOCInstruction {
 			// Here we use a hash join approach
 			// Note that this may keep blocks in the cache for a while, depending on when a matching block arrives in the stream
 			MatrixObject wtObj = ec.getMatrixObject(input2.getName());
+
+			DataCharacteristics dc = ec.getDataCharacteristics(input1.getName());
+			DataCharacteristics dcW = ec.getDataCharacteristics(input2.getName());
+
+			if (dc.getBlocksize() != dcW.getBlocksize())
+				throw new DMLRuntimeException("Different block sizes are not yet supported");
+
 			LocalTaskQueue<IndexedMatrixValue> wIn = wtObj.getStreamHandle();
 
 			try {

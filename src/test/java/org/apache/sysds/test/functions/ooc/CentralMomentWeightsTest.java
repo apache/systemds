@@ -51,7 +51,6 @@ public class CentralMomentWeightsTest extends AutomatedTestBase {
 	private final static int maxVal = 7;
 	private final static double sparsity1 = 0.65;
 	private final static double sparsity2 = 0.05;
-	private final int k = 1;
 
 	@Override
 	public void setUp() {

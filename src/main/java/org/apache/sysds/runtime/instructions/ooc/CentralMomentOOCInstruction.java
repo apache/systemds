@@ -76,7 +76,7 @@ public class CentralMomentOOCInstruction extends AggregateUnaryOOCInstruction {
 
 		if(input3 == null) {
 			try {
-				IndexedMatrixValue tmp = null;
+				IndexedMatrixValue tmp;
 
 				while((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
 					// We only handle MatrixBlock, other types of MatrixValue will fail here

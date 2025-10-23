@@ -23,6 +23,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
@@ -119,6 +120,16 @@ public class DeltaDictionary extends ADictionary {
 
 	@Override
 	public IDictionary clone() {
+		throw new NotImplementedException();
+	}
+
+	@Override 
+	public int[] sort(){
+		throw new NotImplementedException();
+	}
+
+	@Override 
+	public IDictionary sliceColumns(IntArrayList selectedColumns, int nCol){
 		throw new NotImplementedException();
 	}
 }

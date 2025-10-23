@@ -31,6 +31,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
@@ -42,6 +43,10 @@ public final class CLALibTSMM {
 		// private constructor
 	}
 
+	public static MatrixBlock leftMultByTransposeSelf(CompressedMatrixBlock cmb, int k) {
+		return leftMultByTransposeSelf(cmb, new MatrixBlock(), k);
+	}
+
 	/**
 	 * Self left Matrix multiplication (tsmm)
 	 * 
@@ -51,24 +56,32 @@ public final class CLALibTSMM {
 	 * @param ret The output matrix to put the result into
 	 * @param k   The parallelization degree allowed
 	 */
-	public static void leftMultByTransposeSelf(CompressedMatrixBlock cmb, MatrixBlock ret, int k) {
-
-		final List<AColGroup> groups = cmb.getColGroups();
+	public static MatrixBlock leftMultByTransposeSelf(CompressedMatrixBlock cmb, MatrixBlock ret, int k) {
 
 		final int numColumns = cmb.getNumColumns();
-		if(groups.size() >= numColumns) {
+		final int numRows = cmb.getNumRows();
+		if(cmb.isEmpty())
+			return new MatrixBlock(numColumns, numColumns, true);
+		// create output matrix block
+		if(ret == null)
+			ret = new MatrixBlock(numColumns, numColumns, false);
+		else
+			ret.reset(numColumns, numColumns, false);
+		ret.allocateDenseBlock();
+		final List<AColGroup> groups = cmb.getColGroups();
+
+		if(groups.size() >= numColumns || containsUncompressedColGroup(groups)) {
 			MatrixBlock m = cmb.getUncompressed("TSMM to many columngroups", k);
 			LibMatrixMult.matrixMultTransposeSelf(m, ret, true, k);
-			return;
+			return ret;
 		}
-		final int numRows = cmb.getNumRows();
 		final boolean shouldFilter = CLALibUtils.shouldPreFilter(groups);
 		final boolean overlapping = cmb.isOverlapping();
 		if(shouldFilter) {
 			final double[] constV = new double[numColumns];
 			final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(groups, constV);
 			tsmmColGroups(filteredGroups, ret, numRows, overlapping, k);
-			addCorrectionLayer(filteredGroups, ret, numRows, numColumns, constV);
+			addCorrectionLayer(filteredGroups, ret, numRows, numColumns, constV, k);
 		}
 		else {
 
@@ -77,16 +90,22 @@ public final class CLALibTSMM {
 
 		ret.setNonZeros(LibMatrixMult.copyUpperToLowerTriangle(ret));
 		ret.examSparsity();
+		return ret;
+	}
+
+	private static boolean containsUncompressedColGroup(List<AColGroup> groups) {
+		for(AColGroup g : groups)
+			if(g instanceof ColGroupUncompressed)
+				return true;
+		return false;
 	}
 
 	private static void addCorrectionLayer(List<AColGroup> filteredGroups, MatrixBlock result, int nRows, int nCols,
-		double[] constV) {
+		double[] constV, int k) {
 		final double[] retV = result.getDenseBlockValues();
 		final double[] filteredColSum = CLALibUtils.getColSum(filteredGroups, nCols, nRows);
 		addCorrectionLayer(constV, filteredColSum, nRows, retV);
 	}
-
-
 
 	private static void tsmmColGroups(List<AColGroup> groups, MatrixBlock ret, int nRows, boolean overlapping, int k) {
 		if(k <= 1)
@@ -136,12 +155,12 @@ public final class CLALibTSMM {
 
 	public static void addCorrectionLayer(double[] constV, double[] filteredColSum, int nRow, double[] ret) {
 		final int nColRow = constV.length;
-		for(int row = 0; row < nColRow; row++){
+		for(int row = 0; row < nColRow; row++) {
 			int offOut = nColRow * row;
 			final double v1l = constV[row];
 			final double v2l = filteredColSum[row] + constV[row] * nRow;
-			for(int col = row; col < nColRow; col++){
-				ret[offOut + col] += v1l * filteredColSum[col]  + v2l * constV[col];
+			for(int col = row; col < nColRow; col++) {
+				ret[offOut + col] += v1l * filteredColSum[col] + v2l * constV[col];
 			}
 		}
 	}

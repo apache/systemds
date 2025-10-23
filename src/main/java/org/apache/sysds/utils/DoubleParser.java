@@ -184,7 +184,7 @@ public interface DoubleParser {
 		0x8e679c2f5e44ff8fL};
 
 	public static double parseFloatingPointLiteral(String str, int offset, int endIndex) {
-		if(endIndex > 100)
+		if(endIndex > 100)// long string
 			return Double.parseDouble(str);
 		// Skip leading whitespace
 		int index = skipWhitespace(str, offset, endIndex);
@@ -197,9 +197,10 @@ public interface DoubleParser {
 		}
 
 		// Parse NaN or Infinity (this occurs rarely)
-		if(ch >= 'I')
-			return Double.parseDouble(str);
-		else if(str.charAt(endIndex - 1) >= 'a')
+		// : is the first character after numbers.
+		// 0 is the first number.
+		// we use the last position, since this is not allowed to be other values than a number.
+		if(str.charAt(endIndex - 1) > '9' || str.charAt(endIndex - 1) < '0') 
 			return Double.parseDouble(str);
 
 		final double val = parseDecFloatLiteral(str, index, offset, endIndex);

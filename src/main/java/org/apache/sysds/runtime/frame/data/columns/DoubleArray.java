@@ -377,7 +377,7 @@ public class DoubleArray extends Array<Double> {
 				return Double.POSITIVE_INFINITY;
 			else if(len == 4 && value.compareToIgnoreCase("-Inf") == 0)
 				return Double.NEGATIVE_INFINITY;
-			throw new DMLRuntimeException(e);
+			throw e;
 		}
 	}
 

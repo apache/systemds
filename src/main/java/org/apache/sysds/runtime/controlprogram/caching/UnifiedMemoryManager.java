@@ -23,6 +23,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.prescientbuffer.IOTrace;
 import org.apache.sysds.runtime.controlprogram.caching.prescientbuffer.PrescientPolicy;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 
@@ -107,9 +108,10 @@ public class UnifiedMemoryManager
 	// Maintenance service for synchronous or asynchronous delete of evicted files
 	private static CacheMaintenanceService _fClean;
 
+	private static EvictionPolicy _evictionPolicy;
 	// Prescient policy
 	private static PrescientPolicy _prescientPolicy;
-//	private static IOTrace _ioTrace;
+	private static IOTrace _ioTrace;
 
 	// Pinned size of physical memory. Starts from 0 for each operation. Max is 70% of heap
 	// This increases only if the input is not present in the cache and read from FS/rdd/fed/gpu
@@ -191,6 +193,7 @@ public class UnifiedMemoryManager
 		_totCachedSize = 0;
 		_pinnedPhysicalMemSize = 0;
 		_pinnedVirtualMemSize = 0;
+		_evictionPolicy = new PrescientPolicy();
 	}
 
 	// Cleanup the unified memory manager

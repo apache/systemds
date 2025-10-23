@@ -32,19 +32,19 @@ from systemds.scuro.representations.context import Context
 
 class Window(Context):
     def __init__(self, name, aggregation_function):
-        self.is_ts_rep = False
+        is_ts_rep = False
         if isinstance(aggregation_function, str):
             parameters = {
                 "aggregation_function": list(Aggregation().get_aggregation_functions()),
             }
         else:
-            self.is_ts_rep = True
+            is_ts_rep = True
             parameters = {
                 "aggregation_function": aggregation_function.name,
                 "agg_params": aggregation_function.parameters,
             }
 
-        super().__init__(name, parameters)
+        super().__init__(name, parameters, is_ts_rep)
         self.aggregation_function = aggregation_function
 
     @property

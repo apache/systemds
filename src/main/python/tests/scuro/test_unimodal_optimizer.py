@@ -27,7 +27,12 @@ from sklearn import svm
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 
-from systemds.scuro.representations.timeseries_representations import Mean, Max, Min
+from systemds.scuro.representations.timeseries_representations import (
+    Mean,
+    Max,
+    Min,
+    ACF,
+)
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.models.model import Model
 from systemds.scuro.drsearch.task import Task
@@ -193,7 +198,7 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
             {
                 ModalityType.TEXT: [W2V, BoW],
                 ModalityType.AUDIO: [Spectrogram, ZeroCrossing, Spectral, Pitch],
-                ModalityType.TIMESERIES: [Mean, Max, Min],
+                ModalityType.TIMESERIES: [Mean, Max, Min, ACF],
                 ModalityType.VIDEO: [ResNet],
                 ModalityType.EMBEDDING: [],
             },

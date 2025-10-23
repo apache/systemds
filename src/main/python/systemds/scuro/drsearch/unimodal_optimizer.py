@@ -182,7 +182,9 @@ class UnimodalOptimizer:
                 builder = self.builders[modality.modality_id]
                 agg_operator = AggregatedRepresentation()
                 rep_node_id = builder.create_operation_node(
-                    agg_operator.__class__, [dag.root_node_id], agg_operator.parameters
+                    agg_operator.__class__,
+                    [dag.root_node_id],
+                    agg_operator.get_current_parameters(),
                 )
                 dag = builder.build(rep_node_id)
                 representations = dag.execute([modality])
@@ -212,7 +214,7 @@ class UnimodalOptimizer:
                     rep_node_id = builder.create_operation_node(
                         agg_operator.__class__,
                         [dag.root_node_id],
-                        agg_operator.parameters,
+                        agg_operator.get_current_parameters(),
                     )
                     dag = builder.build(rep_node_id)
                     representations = dag.execute([modality])
@@ -240,7 +242,7 @@ class UnimodalOptimizer:
         leaf_id = builder.create_leaf_node(modality.modality_id)
 
         rep_node_id = builder.create_operation_node(
-            operator.__class__, [leaf_id], operator.parameters
+            operator.__class__, [leaf_id], operator.get_current_parameters()
         )
         current_node_id = rep_node_id
         dags.append(builder.build(current_node_id))
@@ -263,7 +265,7 @@ class UnimodalOptimizer:
                     combine_id = builder.create_operation_node(
                         combination.__class__,
                         [current_node_id, other_rep_id],
-                        combination.parameters,
+                        combination.get_current_parameters(),
                     )
                     dags.append(builder.build(combine_id))
                     current_node_id = combine_id
@@ -296,14 +298,14 @@ class UnimodalOptimizer:
                 context_node_id = builder.create_operation_node(
                     context_op,
                     [leaf_id],
-                    context_op().parameters,
+                    context_op().get_current_parameters(),
                 )
                 dags.append(builder.build(context_node_id))
 
             context_node_id = builder.create_operation_node(
                 context_op,
                 [current_node_id],
-                context_op().parameters,
+                context_op().get_current_parameters(),
             )
             dags.append(builder.build(context_node_id))
 
@@ -319,7 +321,7 @@ class UnimodalOptimizer:
                 context_node_id = builder.create_operation_node(
                     context_operator,
                     [leaf_id],
-                    context_operator(agg()).parameters,
+                    context_operator(agg()).get_current_parameters(),
                 )
                 dags.append(builder.build(context_node_id))
 

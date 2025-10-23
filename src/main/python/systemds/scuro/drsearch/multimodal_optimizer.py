@@ -157,7 +157,7 @@ class MultimodalOptimizer:
                         fusion_id = new_builder.create_operation_node(
                             fusion_op.__class__,
                             [left_root, right_root],
-                            fusion_op.parameters,
+                            fusion_op.get_current_parameters(),
                         )
                         variants.append((new_builder, fusion_id))
 

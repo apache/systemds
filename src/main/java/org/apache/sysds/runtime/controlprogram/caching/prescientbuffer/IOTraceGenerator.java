@@ -145,7 +145,7 @@ public class IOTraceGenerator {
 				for (long j = 1; j <= numColBlocks; j++) {
 
 					String blockID = createBlockID(fname, i, j);
-					trace.recordAccess(blockID);
+					trace.recordAccess(blockID, logicalTime);
 				}
 			}
 		}

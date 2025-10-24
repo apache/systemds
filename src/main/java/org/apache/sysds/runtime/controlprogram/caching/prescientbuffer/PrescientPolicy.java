@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.controlprogram.caching.prescientbuffer;
 import org.apache.sysds.runtime.controlprogram.caching.EvictionPolicy;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,6 +33,7 @@ public class PrescientPolicy implements EvictionPolicy {
 
 	// Map of block ID, access times
 	private final Map<String, Long> accessTimeMap = new HashMap<>();
+	private IOTrace _trace;
 
 	// register blocks with access time
 	public void setAccessTime(String blockId, long accessTime) {
@@ -66,4 +68,41 @@ public class PrescientPolicy implements EvictionPolicy {
 		return selected;
 	}
 
+	/**
+	 * Called by UMM's makeSpace() to decide which block to evict.
+	 * * @param cache The set of all block IDs currently in the buffer
+	 * @param pinned The list of all block IDs that are pinned
+	 * @param currentTime The current logical time
+	 * @return The block ID to evict
+	 */
+	public String evict(Set<String> cache, List<String> pinned, long currentTime) {
+		// TODO: Implement "evict-furthest-in-future" logic here
+		// 1. Iterate through every 'blockID' in 'cache'
+		// 2. If 'blockID' is in 'pinned', ignore it.
+		// 3. Use '_trace.getAccessTime(blockID)' to find its next access time > currentTime
+		// 4. The block with the (largest next access time) or (no future access) is the winner.
+		// 5. Return the winner's blockID.
+
+		return null; // Placeholder
+	}
+
+	/**
+	 * Called by UMM's prefetch() to decide which blocks to load.
+	 * * @param currentTime The current logical time
+	 * @return A list of block IDs to prefetch
+	 */
+	public List<String> getBlocksToPrefetch(long currentTime) {
+		// TODO: Implement prefetch logic here
+		// 1. Define a "prefetch window" (e.g., time T+1 to T+5)
+		// 2. Iterate through all blocks in '_trace.getTrace()'
+		// 3. Check if a block has an access time within that window
+		// 4. If yes, add it to a list.
+		// 5. Return the list of blocks.
+
+		return java.util.Collections.emptyList(); // Placeholder
+	}
+
+	public void setTrace(IOTrace ioTrace) {
+		_trace = ioTrace;
+	}
 }

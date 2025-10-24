@@ -112,6 +112,7 @@ public class UnifiedMemoryManager
 	// Prescient policy
 	private static PrescientPolicy _prescientPolicy;
 	private static IOTrace _ioTrace;
+	private static long _currentTime = 0;
 
 	// Pinned size of physical memory. Starts from 0 for each operation. Max is 70% of heap
 	// This increases only if the input is not present in the cache and read from FS/rdd/fed/gpu
@@ -205,6 +206,66 @@ public class UnifiedMemoryManager
 		_totCachedSize = 0;
 		_pinnedPhysicalMemSize = 0;
 		_pinnedVirtualMemSize = 0;
+	}
+
+	/**
+	 * Sets the I/O trace for the prescient policy.
+	 * This should be called once by the ExecutionContext after trace generation.
+	 * @param trace The generated IOTrace
+	 */
+	public static void setTrace(IOTrace trace) {
+		_ioTrace = trace;
+		if (_evictionPolicy instanceof PrescientPolicy) {
+			_prescientPolicy = (PrescientPolicy) _evictionPolicy;
+			_prescientPolicy.setTrace(_ioTrace);
+		}
+		else {
+			// Optional: Log a warning if the trace is set but the policy isn't Prescient
+			// LOG.warn("IOTrace was provided, but eviction policy is not prescient!");
+		}
+	}
+
+	/**
+	 * Updates the UMM's logical time.
+	 * This should be called by the ExecutionContext *before* each instruction.
+	 * @param logicalTime The new logical time
+	 */
+	public static void updateTime(long logicalTime) {
+		_currentTime = logicalTime;
+		prefetch();
+	}
+
+	/**
+	 * Prefetches blocks that will be needed soon, based on the I/O trace.
+	 */
+	private static void prefetch() {
+		if (_ioTrace == null || _prescientPolicy == null) {
+			return; // No trace or policy, cannot prefetch
+		}
+
+		// Get the list of blocks to prefetch from our policy
+		List<String> blocksToPrefetch = _prescientPolicy.getBlocksToPrefetch(_currentTime);
+
+		// A real implementation MUST use an asynchronous thread pool
+		// (e.g., from _fClean) to load these blocks without blocking the main thread.
+
+		for (String blockID : blocksToPrefetch) {
+			synchronized (_mQueue) {
+				// Check again inside lock if block was already loaded or pinned
+				if (_mQueue.containsKey(blockID) || _pinnedEntries.contains(blockID)) {
+					continue; // Already in memory
+				}
+			}
+
+			// --- This is a simplified version for now ---
+			// TODO: Submit an async prefetch task to _fClean's thread pool
+			// The task should: 1. Get block size (from metadata)
+			//                 2. Call makeSpace(blockSize)
+			//                 3. Load block from disk
+			//                 4. Add block to _mQueue (synchronized)
+
+			System.out.println("UMM PREFETCH [T="+_currentTime+"]: Planning to prefetch " + blockID);
+		}
 	}
 
 	/**
@@ -312,10 +373,35 @@ public class UnifiedMemoryManager
 			synchronized(_mQueue) {
 				// Evict blobs to make room (by default FIFO)
 				while (getUMMFree() < reqSpace && !_mQueue.isEmpty()) {
-					//remove first unpinned entry from eviction queue
-					var entry = _mQueue.removeFirstUnpinned(_pinnedEntries);
-					String ftmp = entry.getKey();
-					ByteBuffer bb = entry.getValue();
+					// --- NEW PRESCIENT LOGIC ---
+					String ftmp; // Block ID / filename to evict
+
+					if (_prescientPolicy != null && _ioTrace != null) {
+						// Use prescient policy to find the best block to evict
+						ftmp = _prescientPolicy.evict(_mQueue.keySet(), _pinnedEntries, _currentTime);
+					} else {
+						// Fallback to default LRU if prescient policy isn't set or has no trace
+						var entry = _mQueue.removeFirstUnpinned(_pinnedEntries);
+						ftmp = (entry != null) ? entry.getKey() : null;
+					}
+
+					if (ftmp == null) {
+						// Policy couldn't find a block to evict (e.g., all are pinned)
+						if(!_pinnedEntries.containsAll(_mQueue.keySet())) {
+							// This case should ideally not be reached if unpinned blocks exist
+							throw new DMLRuntimeException("UMM: Eviction policy failed to find a candidate.");
+						}
+						// If we are here, all blocks are pinned, and we cannot make space.
+						// The original exception will be thrown later.
+						break; // Exit the while loop
+					}
+
+					// Remove the chosen block from the queue
+					ByteBuffer bb = _mQueue.remove(ftmp);
+//					//remove first unpinned entry from eviction queue
+//					var entry = _mQueue.removeFirstUnpinned(_pinnedEntries);
+//					String ftmp = entry.getKey();
+//					ByteBuffer bb = entry.getValue();
 
 					if(bb != null) {
 						// Wait for pending serialization

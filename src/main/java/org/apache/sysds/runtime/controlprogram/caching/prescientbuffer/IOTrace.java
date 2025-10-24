@@ -42,9 +42,8 @@ public class IOTrace {
 	/**
 	 * Access to the block at a current time
 	 */
-	public void recordAccess(String blockID) {
-		_trace.computeIfAbsent(blockID, k -> new ArrayList<>()).add(_currentTime);
-		_currentTime++;
+	public void recordAccess(String blockID, long logicalTime) {
+		_trace.computeIfAbsent(blockID, k -> new ArrayList<>()).add(logicalTime);
 	}
 
 	/**

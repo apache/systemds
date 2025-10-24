@@ -44,9 +44,9 @@ public class TransposeTest extends AutomatedTestBase {
 	private static final String INPUT_NAME = "X";
 	private static final String OUTPUT_NAME = "res";
 
-	private final static int rows = 1000;
-	private final static int cols_wide = 1000;
-	//private final static int cols_skinny = 500;
+	private final static int rows = 1500;
+	private final static int cols_wide = 2500;
+	private final static int cols_skinny = 500;
 
 	private final static double sparsity1 = 0.7;
 	private final static double sparsity2 = 0.1;
@@ -63,25 +63,32 @@ public class TransposeTest extends AutomatedTestBase {
 		runTransposeTest(cols_wide, false);
 	}
 
-//  @Test
-//  public void testTranspose2() {
-//    runTransposeTest(cols_skinny, false);
-//  }
+	@Test
+	public void testTranspose2() {
+		runTransposeTest(cols_skinny, false);
+	}
 
-	private void runTransposeTest(int cols, boolean sparse )
-	{
+	@Test
+	public void testTransposeSparse1() {
+		runTransposeTest(cols_wide, true);
+	}
+
+	@Test
+	public void testTransposeSparse2() {
+		runTransposeTest(cols_skinny, true);
+	}
+
+	private void runTransposeTest(int cols, boolean sparse) {
 		Types.ExecMode platformOld = setExecMode(Types.ExecMode.SINGLE_NODE);
 
-		try
-		{
+		try {
 			getAndLoadTestConfiguration(TEST_NAME1);
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-			programArgs = new String[]{"-explain", "-stats", "-ooc",
-							"-args", input(INPUT_NAME), output(OUTPUT_NAME)};
+			programArgs = new String[] {"-explain", "-stats", "-ooc", "-args", input(INPUT_NAME), output(OUTPUT_NAME)};
 
 			// 1. Generate the data as MatrixBlock object
-			double[][] A_data = getRandomMatrix(rows, cols, 0, 1, sparse?sparsity2:sparsity1, 10);
+			double[][] A_data = getRandomMatrix(rows, cols, 0, 1, sparse ? sparsity2 : sparsity1, 10);
 
 			// 2. Convert the double arrays to MatrixBlock object
 			MatrixBlock A_mb = DataConverter.convertToMatrixBlock(A_data);
@@ -92,12 +99,12 @@ public class TransposeTest extends AutomatedTestBase {
 			// 4. Write matrix A to a binary SequenceFile
 			writer.writeMatrixToHDFS(A_mb, input(INPUT_NAME), rows, cols, 1000, A_mb.getNonZeros());
 			HDFSTool.writeMetaDataFile(input(INPUT_NAME + ".mtd"), Types.ValueType.FP64,
-							new MatrixCharacteristics(rows, cols, 1000, A_mb.getNonZeros()), Types.FileFormat.BINARY);
+				new MatrixCharacteristics(rows, cols, 1000, A_mb.getNonZeros()), Types.FileFormat.BINARY);
 
 			boolean exceptionExpected = false;
 			runTest(true, exceptionExpected, null, -1);
 
-			double[][] C1 = readMatrix(output(OUTPUT_NAME), Types.FileFormat.BINARY, rows, cols, 1000, 1000);
+			double[][] C1 = readMatrix(output(OUTPUT_NAME), Types.FileFormat.BINARY, cols, rows, 1000);
 			double result = 0.0;
 			for(int i = 0; i < rows; i++) { // verify the results with Java
 				double expected = 0.0;
@@ -110,12 +117,10 @@ public class TransposeTest extends AutomatedTestBase {
 			}
 
 			String prefix = Instruction.OOC_INST_PREFIX;
-			Assert.assertTrue("OOC wasn't used for RBLK",
-							heavyHittersContainsString(prefix + Opcodes.RBLK));
-			Assert.assertTrue("OOC wasn't used for TRANSPOSE",
-							heavyHittersContainsString(prefix + Opcodes.TRANSPOSE));
+			Assert.assertTrue("OOC wasn't used for RBLK", heavyHittersContainsString(prefix + Opcodes.RBLK));
+			Assert.assertTrue("OOC wasn't used for TRANSPOSE", heavyHittersContainsString(prefix + Opcodes.TRANSPOSE));
 		}
-		catch (IOException e) {
+		catch(IOException e) {
 			throw new RuntimeException(e);
 		}
 		finally {
@@ -123,10 +128,9 @@ public class TransposeTest extends AutomatedTestBase {
 		}
 	}
 
-	private static double[][] readMatrix(String fname, Types.FileFormat fmt, long rows, long cols, int brows, int bcols )
-					throws IOException
-	{
-		MatrixBlock mb = DataConverter.readMatrixFromHDFS(fname, fmt, rows, cols, brows, bcols);
+	private static double[][] readMatrix(String fname, Types.FileFormat fmt, long rows, long cols, int blen)
+		throws IOException {
+		MatrixBlock mb = DataConverter.readMatrixFromHDFS(fname, fmt, rows, cols, blen);
 		double[][] C = DataConverter.convertToDoubleMatrix(mb);
 		return C;
 	}

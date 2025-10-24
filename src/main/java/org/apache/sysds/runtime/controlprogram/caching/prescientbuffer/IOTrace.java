@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.controlprogram.caching.prescientbuffer;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +32,31 @@ public class IOTrace {
 	// Block ID vs unique accesses
 	private final Map<String, List<Long>> _trace;
 
+	private long _currentTime;
+
 	public IOTrace() {
 		_trace = new HashMap<>();
+		_currentTime = 0;
+	}
+
+	/**
+	 * Access to the block at a current time
+	 */
+	public void recordAccess(String blockID) {
+		_trace.computeIfAbsent(blockID, k -> new ArrayList<>()).add(_currentTime);
+		_currentTime++;
+	}
+
+	/**
+	 * Get all access times for a given block
+	 * @param blockID Block ID
+	 * @return all the access times
+	 */
+	public List<Long> getAccessTime(String blockID) {
+		return _trace.getOrDefault(blockID, new ArrayList<>());
+	}
+
+	public Map<String, List<Long>> getTrace() {
+		return _trace;
 	}
 }

@@ -97,7 +97,7 @@ public class CentralMoment extends Lop
 				getInputs().get(2).prepScalarInputOperand(getExecType()),
 				prepOutputOperand(output));
 		}
-		if( getExecType() == ExecType.CP || getExecType() == ExecType.FED ) {
+		if(getExecType() == ExecType.CP || getExecType() == ExecType.FED || getExecType() == ExecType.OOC) {
 			sb.append(OPERAND_DELIMITOR);
 			sb.append(_numThreads);
 			if ( getExecType() == ExecType.FED ){

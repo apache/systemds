@@ -24,7 +24,7 @@ b = read($1);
 X = read($2);
 
 OOC = X %*% b;
-OOC = OOC %*% t(OOC)
+OOC = OOC %*% t(OOC);
 
 res = solve(OOC, b);
 

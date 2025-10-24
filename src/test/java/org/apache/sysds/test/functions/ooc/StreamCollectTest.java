@@ -117,6 +117,11 @@ public class StreamCollectTest extends AutomatedTestBase {
 		runAppTest("_2", List.of(List.of(500D, 1D), List.of(500D, 500D)));
 	}
 
+	@Test
+	public void runAppTest3() {
+		runAppTest("_3", List.of(List.of(1500D, 1D), List.of(1500D, 1500D)));
+	}
+
 	private void runAppTest(String scriptSuffix, List<List<Double>> matrixDims) {
 		Types.ExecMode platformOld = setExecMode(Types.ExecMode.SINGLE_NODE);
 
@@ -138,7 +143,7 @@ public class StreamCollectTest extends AutomatedTestBase {
 				int mcols = dims.get(1).intValue();
 
 				// 1. Generate the data as MatrixBlock object
-				double[][] A_data = getRandomMatrix(mrows, mcols, 0, 1, 1, 10);
+				double[][] A_data = getRandomMatrix(mrows, mcols, 0, 10, 1, 10);
 
 				// 2. Convert the double arrays to MatrixBlock object
 				MatrixBlock A_mb = DataConverter.convertToMatrixBlock(A_data);

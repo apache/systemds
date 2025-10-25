@@ -119,7 +119,6 @@ public class PrescientPolicyTest {
 		assertEquals("D", evictCandidate);
 	}
 
-	@Ignore
 	@Test
 	public void testEvictFindsFurthestInFuture() {
 		// Cache has A, B, C. D was already evicted. E is pinned.

@@ -122,9 +122,15 @@ public class PrescientPolicy implements EvictionPolicy {
 			// Find the next time this block will be used
 			long nextAccessTime = findNextAccess(blockID, currentTime);
 
-			// find the block that's never used again
+			// case 1: find the block that's never used again
 			if (nextAccessTime == Long.MAX_VALUE) {
 				return blockID;
+			}
+
+			// case 2: find the block that's the furthest
+			if (nextAccessTime > maxNextAccessTime) {
+				maxNextAccessTime = nextAccessTime;
+				evictCandidate = blockID;
 			}
 
 		}

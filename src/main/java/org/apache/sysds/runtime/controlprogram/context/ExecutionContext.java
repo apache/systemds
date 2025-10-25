@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.controlprogram.context;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.yarn.webapp.hamlet2.HamletSpec;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.FileFormat;
@@ -37,6 +38,7 @@ import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
+import org.apache.sysds.runtime.controlprogram.caching.prescientbuffer.IOTrace;
 import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.controlprogram.paramserv.homomorphicEncryption.SEALClient;
 import org.apache.sysds.runtime.data.TensorBlock;
@@ -92,6 +94,19 @@ public class ExecutionContext {
 
 	//parfor temporary functions (created by eval)
 	protected Set<String> _fnNames;
+
+	private IOTrace _ioTrace;
+
+	public IOTrace getIOTrace() {
+		if (_ioTrace == null) {
+			_ioTrace = new IOTrace();
+		}
+		return _ioTrace;
+	}
+
+	public void setIOTrace(IOTrace ioTrace) {
+		_ioTrace = ioTrace;
+	}
 
 	/**
 	 * List of {@link GPUContext}s owned by this {@link ExecutionContext}

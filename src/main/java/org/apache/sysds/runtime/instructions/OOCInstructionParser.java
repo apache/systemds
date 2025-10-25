@@ -26,6 +26,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.ooc.AggregateUnaryOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.BinaryOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.CentralMomentOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.CtableOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.OOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.ReblockOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.TSMMOOCInstruction;
@@ -72,7 +73,9 @@ public class OOCInstructionParser extends InstructionParser {
 				return TeeOOCInstruction.parseInstruction(str);
             case CentralMoment:
                 return  CentralMomentOOCInstruction.parseInstruction(str);
-			
+			case Ctable:
+				return CtableOOCInstruction.parseInstruction(str);
+
 			default:
 				throw new DMLRuntimeException("Invalid OOC Instruction Type: " + ooctype);
 		}

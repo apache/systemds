@@ -62,10 +62,10 @@ public class IOTraceGenerator {
 	}
 
 	/**
-	 * Recursively traverses a list of program blocks.
+	 * Recursively traverses a list of program blocks for generating the trace
 	 *
-	 * @param programBlocks The list of blocks to traverse
-	 * @param ec The ExecutionContext
+	 * @param programBlocks The list of <code>ProgramBlock</code>s to traverse
+	 * @param ec The <code>ExecutionContext</code>
 	 * @param trace The trace object to populate
 	 * @param logicalTime A pass-by-reference counter for logical time
 	 */
@@ -87,7 +87,8 @@ public class IOTraceGenerator {
 			}
 			else if (pb instanceof IfProgramBlock) {
 				// --- Recursive Step ---
-				// Traverse into the 'if' and 'else' bodies
+				// Traverse into the 'if' and 'else' bodies (it is the special case.)
+				// for, while, function we won't is body
 				IfProgramBlock ifpb = (IfProgramBlock) pb;
 				traverseProgramBlocks(ifpb.getChildBlocksIfBody(), ec, trace, logicalTime);
 				traverseProgramBlocks(ifpb.getChildBlocksElseBody(), ec, trace, logicalTime);
@@ -124,7 +125,6 @@ public class IOTraceGenerator {
 	 */
 	private static void processInstruction(Instruction inst, ExecutionContext ec, IOTrace trace, long logicalTime) {
 
-		// --- This is your specific logic for OOC instructions ---
 
 		if (inst instanceof ReblockOOCInstruction) {
 			ReblockOOCInstruction rblk = (ReblockOOCInstruction) inst;

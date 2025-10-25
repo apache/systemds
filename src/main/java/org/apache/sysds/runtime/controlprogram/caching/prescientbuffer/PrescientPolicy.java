@@ -21,7 +21,10 @@ package org.apache.sysds.runtime.controlprogram.caching.prescientbuffer;
 
 import org.apache.sysds.runtime.controlprogram.caching.EvictionPolicy;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,6 +37,8 @@ public class PrescientPolicy implements EvictionPolicy {
 	// Map of block ID, access times
 	private final Map<String, Long> accessTimeMap = new HashMap<>();
 	private IOTrace _trace;
+	// Defines how many logical time units to look ahead for prefetching
+	private static final int PREFETCH_WINDOW = 5;
 
 	// register blocks with access time
 	public void setAccessTime(String blockId, long accessTime) {
@@ -69,37 +74,93 @@ public class PrescientPolicy implements EvictionPolicy {
 	}
 
 	/**
-	 * Called by UMM's makeSpace() to decide which block to evict.
-	 * * @param cache The set of all block IDs currently in the buffer
-	 * @param pinned The list of all block IDs that are pinned
+	 * Finds the next time a block is accessed, <b>after</b> the current time.
+	 *
+	 * @param blockID The block to check
 	 * @param currentTime The current logical time
-	 * @return The block ID to evict
+	 * @return The logical time of the next access, or Long.MAX_VALUE if never used again.
 	 */
-	public String evict(Set<String> cache, List<String> pinned, long currentTime) {
-		// TODO: Implement "evict-furthest-in-future" logic here
-		// 1. Iterate through every 'blockID' in 'cache'
-		// 2. If 'blockID' is in 'pinned', ignore it.
-		// 3. Use '_trace.getAccessTime(blockID)' to find its next access time > currentTime
-		// 4. The block with the (largest next access time) or (no future access) is the winner.
-		// 5. Return the winner's blockID.
+	private long findNextAccess(String blockID, long currentTime) {
+		if (_trace == null) {
+			return Long.MAX_VALUE;
+		}
 
-		return null; // Placeholder
+		List<Long> accessTimes = _trace.getAccessTime(blockID);
+		// Find the first access time that is greater than the current time
+		for (long time : accessTimes) {
+			if (time > currentTime) {
+				return time;
+			}
+		}
+
+		// This block is never accessed again in the future
+		return Long.MAX_VALUE;
 	}
 
 	/**
-	 * Called by UMM's prefetch() to decide which blocks to load.
-	 * * @param currentTime The current logical time
-	 * @return A list of block IDs to prefetch
+	 * Finds the unpinned block that won't be used in near future (or never used).
+	 *
+	 * @param cache The set of all block IDs currently in the buffer
+	 * @param pinned The list of all block IDs that are pinned
+	 * @param currentTime The current logical time
+	 * @return The block ID used for eviction, or null if all blocks are pinned.
+	 */
+	public String evict(Set<String> cache, List<String> pinned, long currentTime) {
+		if (cache == null || cache.isEmpty()) {
+			return null;
+		}
+
+		String evictCandidate = null;
+		long maxNextAccessTime = -1; // We're looking for the largest access time
+
+		for (String blockID : cache) {
+			// Cannot evict a pinned block
+			if (pinned.contains(blockID)) {
+				continue;
+			}
+
+			// Find the next time this block will be used
+			long nextAccessTime = findNextAccess(blockID, currentTime);
+
+			// find the block that's never used again
+			if (nextAccessTime == Long.MAX_VALUE) {
+				return blockID;
+			}
+
+		}
+
+		return evictCandidate;
+	}
+
+	/**
+	 * Sliding Window implementation:
+	 * Looks ahead N time units and finds all unique blocks accessed in that window.
+	 *
+	 * @param currentTime The current logical time
+	 * @return A list of unique block IDs to prefetch
 	 */
 	public List<String> getBlocksToPrefetch(long currentTime) {
-		// TODO: Implement prefetch logic here
-		// 1. Define a "prefetch window" (e.g., time T+1 to T+5)
-		// 2. Iterate through all blocks in '_trace.getTrace()'
-		// 3. Check if a block has an access time within that window
-		// 4. If yes, add it to a list.
-		// 5. Return the list of blocks.
+		if (_trace == null) {
+			return Collections.emptyList();
+		}
 
-		return java.util.Collections.emptyList(); // Placeholder
+		// Use a Set to store unique block IDs
+		Set<String> blocksToPrefetch = new HashSet<>();
+		long lookaheadTime = currentTime + PREFETCH_WINDOW;
+
+		// Iterate over all blocks in the trace
+		for (String blockID : _trace.getTrace().keySet()) {
+			List<Long> accessTimes = _trace.getAccessTime(blockID);
+
+			// Check if this block is accessed within our prefetch window
+			for (long time : accessTimes) {
+				if (time > currentTime && time <= lookaheadTime) {
+					blocksToPrefetch.add(blockID);
+				}
+			}
+		}
+
+		return new ArrayList<>(blocksToPrefetch);
 	}
 
 	public void setTrace(IOTrace ioTrace) {

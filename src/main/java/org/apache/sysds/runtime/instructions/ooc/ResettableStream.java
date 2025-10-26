@@ -19,14 +19,19 @@
 
 package org.apache.sysds.runtime.instructions.ooc;
 
+import org.apache.sysds.runtime.controlprogram.caching.OOCEvictionManager;
 import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.UUID;
 
 /**
  * A wrapper around LocalTaskQueue to consume the source stream and reset to
  * consume again for other operators.
+ * <p>
+ * Uses OOCEvictionManager for out-of-core caching.
  *
  */
 public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
@@ -34,16 +39,28 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 	// original live stream
 	private final LocalTaskQueue<IndexedMatrixValue> _source;
 
-	// in-memory cache to store stream for re-play
-	private final ArrayList<IndexedMatrixValue> _cache;
+	// stream identifier
+	private final String _streamId;
+
+	// list of block keys (only the keys)
+	private final ArrayList<String> _blockKeys;
+
 
 	// state flags
 	private boolean _cacheInProgress = true; // caching in progress, in the first pass.
 	private int _replayPosition = 0; // slider position in the stream
 
+	private OOCEvictionManager _manager;
+
 	public ResettableStream(LocalTaskQueue<IndexedMatrixValue> source) {
+		this(source, UUID.randomUUID().toString());
+	}
+	public ResettableStream(LocalTaskQueue<IndexedMatrixValue> source, String streamId) {
 		_source = source;
-		_cache = new ArrayList<>();
+		_streamId = streamId;
+		_blockKeys = new  ArrayList<>();
+//		_cache = new ArrayList<>();
+		_manager = OOCEvictionManager.getInstance();
 	}
 
 	/**
@@ -60,18 +77,33 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 			// First pass: Read value from the source and cache it, and return.
 			IndexedMatrixValue task = _source.dequeueTask();
 			if (task != NO_MORE_TASKS) {
-				_cache.add(new IndexedMatrixValue(task));
+				String key = _streamId + "_" + _blockKeys.size();
+//				_cache.add(new IndexedMatrixValue(task));
+				_blockKeys.add(key);
+
+				try {
+					_manager.put(key, task); // Serialize
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+				return task;
 			} else {
 				_cacheInProgress = false; // caching is complete
 				_source.closeInput(); // close source stream
+
+				// Notify all the waiting consumers waiting for cache to fill with this stream
+				notifyAll();
+				return (IndexedMatrixValue) NO_MORE_TASKS;
 			}
-			notifyAll(); // Notify all the waiting consumers waiting for cache to fill with this stream
-			return task;
 		} else {
-			// Replay pass: read directly from in-memory cache
-			if (_replayPosition < _cache.size()) {
-				// Return a copy to ensure consumer won't modify the cache
-				return new IndexedMatrixValue(_cache.get(_replayPosition++));
+//			// Replay pass: read from the buffer
+			if (_replayPosition < _blockKeys.size()) {
+				String key = _blockKeys.get(_replayPosition++);
+				try {
+					return _manager.get(key); // Deserialize
+				} catch (IOException ex) {
+					throw new RuntimeException(ex);
+				}
 			} else {
 				return (IndexedMatrixValue) NO_MORE_TASKS;
 			}

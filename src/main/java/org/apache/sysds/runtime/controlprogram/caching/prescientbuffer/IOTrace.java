@@ -65,11 +65,16 @@ public class IOTrace {
 	 */
 	public long getNextAccessTime(String blockID, long currentTime) {
 		LinkedList<Long> accesses = getAccessTime(blockID);
-		if (accesses == null ||  accesses.isEmpty()) {
+		if (accesses == null) {
 			return Long.MAX_VALUE; // won't access again
 		}
 
-		return accesses.peekFirst();
+		// remove past accesses from the front of this list
+		while (!accesses.isEmpty() && accesses.peekFirst() <= currentTime) {
+			accesses.removeFirst();
+		}
+
+		return accesses.isEmpty() ? Long.MAX_VALUE : accesses.peekFirst();
 	}
 
 	/**

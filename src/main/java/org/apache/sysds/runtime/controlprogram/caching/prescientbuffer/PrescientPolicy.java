@@ -21,12 +21,8 @@ package org.apache.sysds.runtime.controlprogram.caching.prescientbuffer;
 
 import org.apache.sysds.runtime.controlprogram.caching.EvictionPolicy;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -34,68 +30,9 @@ import java.util.Set;
  */
 public class PrescientPolicy implements EvictionPolicy {
 
-	// Map of block ID, access times
-	private final Map<String, Long> accessTimeMap = new HashMap<>();
 	private IOTrace _trace;
 	// Defines how many logical time units to look ahead for prefetching
 	private static final int PREFETCH_WINDOW = 5;
-
-	// register blocks with access time
-	public void setAccessTime(String blockId, long accessTime) {
-		accessTimeMap.put(blockId, accessTime);
-	}
-
-	/**
-	 * Select a block to evict from the given list of candidates
-	 *
-	 * @param candidates A set of candidate block identifiers for currently in buffer
-	 * @return The identifier of the block chosen for eviction
-	 */
-	@Override
-	public String selectBlockForEviction(Set<String> candidates) {
-		// base case
-		if (candidates == null || candidates.isEmpty()) {
-			return null;
-		}
-
-		String selected = null;
-		long maxTime = -1;
-
-		for (String candidate : candidates) {
-			long time = accessTimeMap.getOrDefault(candidate, Long.MAX_VALUE);
-
-			if (time > maxTime) {
-				maxTime = time;
-				selected = candidate;
-			}
-		}
-
-		return selected;
-	}
-
-	/**
-	 * Finds the next time a block is accessed, <b>after</b> the current time.
-	 *
-	 * @param blockID The block to check
-	 * @param currentTime The current logical time
-	 * @return The logical time of the next access, or Long.MAX_VALUE if never used again.
-	 */
-	private long findNextAccess(String blockID, long currentTime) {
-		if (_trace == null) {
-			return Long.MAX_VALUE;
-		}
-
-		List<Long> accessTimes = _trace.getAccessTime(blockID);
-		// Find the first access time that is greater than the current time
-		for (long time : accessTimes) {
-			if (time > currentTime) {
-				return time;
-			}
-		}
-
-		// This block is never accessed again in the future
-		return Long.MAX_VALUE;
-	}
 
 	/**
 	 * Finds the unpinned block that won't be used in near future (or never used).
@@ -120,7 +57,7 @@ public class PrescientPolicy implements EvictionPolicy {
 			}
 
 			// Find the next time this block will be used
-			long nextAccessTime = findNextAccess(blockID, currentTime);
+			long nextAccessTime = _trace.getNextAccessTime(blockID, currentTime);
 
 			// case 1: find the block that's never used again
 			if (nextAccessTime == Long.MAX_VALUE) {
@@ -150,23 +87,7 @@ public class PrescientPolicy implements EvictionPolicy {
 			return Collections.emptyList();
 		}
 
-		// Use a Set to store unique block IDs
-		Set<String> blocksToPrefetch = new HashSet<>();
-		long lookaheadTime = currentTime + PREFETCH_WINDOW;
-
-		// Iterate over all blocks in the trace
-		for (String blockID : _trace.getTrace().keySet()) {
-			List<Long> accessTimes = _trace.getAccessTime(blockID);
-
-			// Check if this block is accessed within our prefetch window
-			for (long time : accessTimes) {
-				if (time > currentTime && time <= lookaheadTime) {
-					blocksToPrefetch.add(blockID);
-				}
-			}
-		}
-
-		return new ArrayList<>(blocksToPrefetch);
+		return _trace.getBlocksInWindow(currentTime, PREFETCH_WINDOW);
 	}
 
 	public void setTrace(IOTrace ioTrace) {

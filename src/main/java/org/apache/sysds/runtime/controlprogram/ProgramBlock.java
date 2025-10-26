@@ -229,6 +229,9 @@ public abstract class ProgramBlock implements ParseInfo {
 			if(!LineageCache.reuse(tmp, ec)) {
 				long et0 = (!ReuseCacheType.isNone() || DMLScript.LINEAGE_ESTIMATE) ? System.nanoTime() : 0;
 
+				// record IO Access
+				ec.recordIOAccess(tmp);
+
 				// process actual instruction
 				tmp.processInstruction(ec);
 

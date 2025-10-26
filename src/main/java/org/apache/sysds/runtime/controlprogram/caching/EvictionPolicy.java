@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.controlprogram.caching;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -27,11 +28,15 @@ import java.util.Set;
  */
 public interface EvictionPolicy {
 
-	/**
-	 * Select a block to evict from the given list of candidates
-	 *
-	 * @param candidates A set of candidate block identifiers for currently in buffer
-	 * @return The identifier of the block chosen for eviction
-	 */
-	String selectBlockForEviction(Set<String> candidates);
+//	/**
+//	 * Finds the unpinned block that won't be used in near future (or never used)
+//	 * to evict from the cache.
+//	 *
+//	 * @param cache The set of all block IDs currently in the buffer
+//	 * @param pinned The list of all block IDs that are pinned
+//	 * @param currentTime The current logical time
+//	 * @return The block ID used for eviction, or null if all blocks are pinned.
+//	 */
+//	public String evict(Set<String> cache, List<String> pinned, long currentTime);
+
 }

@@ -1236,7 +1236,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	
 	// ------------- IMPLEMENTED CACHE LOGIC METHODS --------------
 	
-	protected String getCacheFilePathAndName () {
+	public String getCacheFilePathAndName() {
 		if( _cacheFileName==null ) {
 			StringBuilder sb = new StringBuilder();
 			sb.append(CacheableData.cacheEvictionLocalFilePath);

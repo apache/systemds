@@ -85,6 +85,7 @@ import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 import org.apache.sysds.utils.NativeHelper;
 import org.apache.sysds.utils.SettingsChecker;
 import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.runtime.controlprogram.caching.prescientbuffer.IOTraceGenerator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -494,6 +495,13 @@ public class DMLScript
 		ExecutionContext ec = null;
 		try {
 			ec = ExecutionContextFactory.createContext(rtprog);
+
+			// Generate IO trace after ec in created but before execution
+			if (OptimizerUtils.isUMMEnabled()) {
+//				IOTraceGenerator.generateAndSetIOTrace(rtprog, ec);
+
+			}
+
 			ScriptExecutorUtils.executeRuntimeProgram(rtprog, ec, ConfigurationManager.getDMLConfig(), STATISTICS ? STATISTICS_COUNT : 0, null);
 		}
 		finally {

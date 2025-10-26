@@ -398,10 +398,6 @@ public class UnifiedMemoryManager
 
 					// Remove the chosen block from the queue
 					ByteBuffer bb = _mQueue.remove(ftmp);
-//					//remove first unpinned entry from eviction queue
-//					var entry = _mQueue.removeFirstUnpinned(_pinnedEntries);
-//					String ftmp = entry.getKey();
-//					ByteBuffer bb = entry.getValue();
 
 					if(bb != null) {
 						// Wait for pending serialization

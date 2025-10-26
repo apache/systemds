@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.controlprogram.caching.prescientbuffer;
 
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.apache.sysds.runtime.controlprogram.ForProgramBlock;
@@ -27,6 +28,7 @@ import org.apache.sysds.runtime.controlprogram.IfProgramBlock;
 import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
+import org.apache.sysds.runtime.controlprogram.caching.UnifiedMemoryManager;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -34,12 +36,16 @@ import org.apache.sysds.runtime.instructions.ooc.ReblockOOCInstruction;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 
 import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * IOTraceGenerator is responsible for analyzing the program plan (LOP DAG)
  * and generating the predictive I/O trace, before runtime.
  */
 public class IOTraceGenerator {
+
+	private long _logicalTime = 0;
 
 	/**
 	 * Generate the IOTrace for the execution plan.
@@ -160,4 +166,50 @@ public class IOTraceGenerator {
 		System.out.println(fname + "_" + rowIndex + "_" + colIndex);
 		return fname + "_" + rowIndex + "_" + colIndex;
 	}
+
+	/**
+	 * Extract all input blocks from an instruction at runtime.
+	 *
+	 * @param inst The instruction that's about to execute
+	 * @param ec ExecutionContext
+	 * @param logicalTime current logical time
+	 * @return List of block IDs that will be accessed
+	 */
+	public static List<String> extractBlockIDs(Instruction inst, ExecutionContext ec, long logicalTime) {
+		List<String> blockIDs = new ArrayList<>();
+
+		String instStr = inst.toString();
+		// Extract variable names from instruction operands
+		// Example: "rblk pREADX.MATRIX.FP64 _mVar0.MATRIX.FP64 1000 true"
+		String[] parts = instStr.split("\\s+");
+
+		for (String part : parts) {
+			if (part.contains(".MATRIX.") || part.contains(".FRAME.") || part.contains(".TENSOR.")) {
+				String varName = part.substring(0, part.indexOf('.'));
+
+				// Only add if variable exists in symbol table
+				if (ec.containsVariable(varName)) {
+					blockIDs.add(varName);
+				}
+			}
+		}
+		return blockIDs;
+	}
+
+	/**
+	 * Generates the I/O trace for the entire program and sets it in the UMM.
+	 * This should be called once after the program is compiled but before execution.
+	 */
+	public static void generateAndSetIOTrace(Program prog, ExecutionContext ec) {
+		if (prog == null || !OptimizerUtils.isUMMEnabled()) {
+			return;
+		}
+
+		// Generate the trace
+		IOTrace trace = generateTrace(prog, ec);
+
+		// Set it in the UMM
+		UnifiedMemoryManager.setTrace(trace);
+	}
+
 }

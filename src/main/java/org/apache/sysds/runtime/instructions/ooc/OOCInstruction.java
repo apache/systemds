@@ -114,6 +114,9 @@ public abstract class OOCInstruction extends Instruction {
 				for (LocalTaskQueue<?> q : queues) {
 					q.propagateFailure(re);
 				}
+
+				// Rethrow to ensure proper future handling
+				throw re;
 			}
 		};
 	}

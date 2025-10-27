@@ -26,15 +26,29 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
+import org.apache.sysds.runtime.util.OOCJoin;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public abstract class OOCInstruction extends Instruction {
 	protected static final Log LOG = LogFactory.getLog(OOCInstruction.class.getName());
+	private static final AtomicInteger nextStreamId = new AtomicInteger(0);
 
 	public enum OOCType {
 		Reblock, Tee, Binary, Unary, AggregateUnary, AggregateBinary, MAPMM, MMTSJ, Reorg, CM, Ctable
@@ -42,6 +56,7 @@ public abstract class OOCInstruction extends Instruction {
 
 	protected final OOCInstruction.OOCType _ooctype;
 	protected final boolean _requiresLabelUpdate;
+	protected Set<LocalTaskQueue<?>> _queues;
 
 	protected OOCInstruction(OOCInstruction.OOCType type, String opcode, String istr) {
 		this(type, null, opcode, istr);
@@ -90,10 +105,137 @@ public abstract class OOCInstruction extends Instruction {
 			ec.maintainLineageDebuggerInfo(this);
 	}
 
-	protected void submitOOCTask(Runnable r, LocalTaskQueue<?>... queues) {
+	protected void addInStream(LocalTaskQueue<?>... queue) {
+		if (_queues == null)
+			_queues = new HashSet<>();
+		_queues.addAll(List.of(queue));
+	}
+
+	protected void addOutStream(LocalTaskQueue<?>... queue) {
+		// Currently same behavior as addInQueue
+		addInStream(queue);
+	}
+
+	protected <T, R> void mapOOC(LocalTaskQueue<T> qIn, LocalTaskQueue<R> qOut, Function<T, R> mapper) {
+		addInStream(qIn);
+		addOutStream(qOut);
+
+		submitOOCTasks(qIn, tmp -> {
+			try {
+				R r = mapper.apply(tmp);
+				qOut.enqueueTask(r);
+			} catch (Exception e) {
+				throw new DMLRuntimeException(e);
+			}
+		}, qOut::closeInput);
+	}
+
+	protected <T, R, P> CompletableFuture<Void> joinOOC(LocalTaskQueue<T> qIn1, LocalTaskQueue<T> qIn2, LocalTaskQueue<R> qOut, BiFunction<T, T, R> mapper, Function<T, P> on) {
+		return joinOOC(qIn1, qIn2, qOut, mapper, on, on);
+	}
+
+	protected <T, R, P> CompletableFuture<Void> joinOOC(LocalTaskQueue<T> qIn1, LocalTaskQueue<T> qIn2, LocalTaskQueue<R> qOut, BiFunction<T, T, R> mapper, Function<T, P> onLeft, Function<T, P> onRight) {
+		addInStream(qIn1, qIn2);
+		addOutStream(qOut);
+
+		final CompletableFuture<Void> future = new CompletableFuture<>();
+
+		final OOCJoin<P, T> join = new OOCJoin<>((idx, left, right) -> {
+			try {
+				qOut.enqueueTask(mapper.apply(left, right));
+			}
+			catch(InterruptedException e) {
+				throw new DMLRuntimeException(e);
+			}
+		});
+
+		submitOOCTasks(List.of(qIn1, qIn2), (i, tmp) -> {
+			if (i == 0)
+				join.addLeft(onLeft.apply(tmp), tmp);
+			else
+				join.addRight(onRight.apply(tmp), tmp);
+		}, () -> {
+			join.close();
+			qOut.closeInput();
+			future.complete(null);
+		});
+
+		return future;
+	}
+
+	protected <T> CompletableFuture<Void> submitOOCTasks(final List<LocalTaskQueue<T>> queues, BiConsumer<Integer, T> consumer, Runnable finalizer) {
+		addInStream(queues.toArray(LocalTaskQueue[]::new));
 		ExecutorService pool = CommonThreadPool.get();
+		final AtomicInteger activeTaskCtr = new AtomicInteger(0);
+
+		final Object lock = new Object();
+
+		List<CompletableFuture<Void>> futures = new ArrayList<>(queues.size());
+		final List<AtomicBoolean> streamsClosed = new ArrayList<>(queues.size());
+		for (int i = 0; i < queues.size(); i++) {
+			streamsClosed.add(new AtomicBoolean(false));
+		}
+
+		int i = 0;
+		final int streamId = nextStreamId.getAndIncrement();
+		//System.out.println("New stream: (id " + streamId + ", size " + queues.size() + ", initiator '" + this.getClass().getSimpleName() + "')");
+
+		for (LocalTaskQueue<T> queue : queues) {
+			final int k = i;
+			final CompletableFuture<Void> localFuture = new CompletableFuture<>();
+			final AtomicBoolean localStreamClosed = streamsClosed.get(k);
+			futures.add(localFuture);
+			//System.out.println("Substream (k " + k + ", id " + streamId + ", type '" + queue.getClass().getSimpleName() + "', stream_id " + queue.hashCode() + ")");
+			queue.setSubscriber(() -> {
+				try {
+					activeTaskCtr.incrementAndGet();
+					pool.submit(oocTask(() -> {
+						try {
+							T item = queue.dequeueTask();
+							if(item != null) {
+								//System.out.println("Accept" + ((IndexedMatrixValue)item).getIndexes() + " (k " + k + ", id " + streamId + ")");
+								consumer.accept(k, item);
+							} else {
+								//System.out.println("Close substream (k " + k + ", id " + streamId + ")");
+								localStreamClosed.set(true);
+							}
+							activeTaskCtr.decrementAndGet();
+
+							boolean shutdown;
+							synchronized(lock) {
+								shutdown = activeTaskCtr.get() == 0 && streamsClosed.stream().allMatch(AtomicBoolean::get);
+							}
+
+							if(shutdown) {
+								//System.out.println("Shutdown (id " + streamId + ")");
+								finalizer.run();
+							}
+						}
+						catch(Exception e) {
+							throw (e instanceof DMLRuntimeException ? (DMLRuntimeException)e : new DMLRuntimeException(e));
+						}
+					}, localFuture, _queues.toArray(LocalTaskQueue[]::new)));
+				} catch (Exception e) {
+					throw new DMLRuntimeException(e);
+				}
+			});
+
+			i++;
+		}
+
+		pool.shutdown();
+		return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
+	}
+
+	protected <T> void submitOOCTasks(LocalTaskQueue<T> queue, Consumer<T> consumer, Runnable finalizer) {
+		submitOOCTasks(List.of(queue), (i, tmp) -> consumer.accept(tmp), finalizer);
+	}
+
+	protected CompletableFuture<Void> submitOOCTask(Runnable r, LocalTaskQueue<?>... queues) {
+		ExecutorService pool = CommonThreadPool.get();
+		final CompletableFuture<Void> future = new CompletableFuture<>();
 		try {
-			pool.submit(oocTask(r, queues));
+			pool.submit(oocTask(() -> {r.run();future.complete(null);}, future, queues));
 		}
 		catch (Exception ex) {
 			throw new DMLRuntimeException(ex);
@@ -101,9 +243,11 @@ public abstract class OOCInstruction extends Instruction {
 		finally {
 			pool.shutdown();
 		}
+
+		return future;
 	}
 
-	private Runnable oocTask(Runnable r, LocalTaskQueue<?>... queues) {
+	private Runnable oocTask(Runnable r, CompletableFuture<Void> future, LocalTaskQueue<?>... queues) {
 		return () -> {
 			try {
 				r.run();
@@ -114,6 +258,8 @@ public abstract class OOCInstruction extends Instruction {
 				for (LocalTaskQueue<?> q : queues) {
 					q.propagateFailure(re);
 				}
+
+				future.completeExceptionally(re);
 
 				// Rethrow to ensure proper future handling
 				throw re;

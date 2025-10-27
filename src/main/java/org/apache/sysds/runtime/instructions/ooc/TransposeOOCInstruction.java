@@ -60,22 +60,13 @@ public class TransposeOOCInstruction extends ComputationOOCInstruction {
 		LocalTaskQueue<IndexedMatrixValue> qOut = new LocalTaskQueue<>();
 		ec.getMatrixObject(output).setStreamHandle(qOut);
 
-		submitOOCTask(() -> {
-				IndexedMatrixValue tmp = null;
-				try {
-					while ((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
-						MatrixBlock inBlock = (MatrixBlock)tmp.getValue();
-						long oldRowIdx = tmp.getIndexes().getRowIndex();
-						long oldColIdx = tmp.getIndexes().getColumnIndex();
+		mapOOC(qIn, qOut, tmp -> {
+			MatrixBlock inBlock = (MatrixBlock) tmp.getValue();
+			long oldRowIdx = tmp.getIndexes().getRowIndex();
+			long oldColIdx = tmp.getIndexes().getColumnIndex();
 
-						MatrixBlock outBlock = inBlock.reorgOperations((ReorgOperator) _optr, new MatrixBlock(), -1, -1, -1);
-						qOut.enqueueTask(new IndexedMatrixValue(new MatrixIndexes(oldColIdx, oldRowIdx), outBlock));
-					}
-					qOut.closeInput();
-				}
-				catch(Exception ex) {
-					throw new DMLRuntimeException(ex);
-				}
-		}, qIn, qOut);
+			MatrixBlock outBlock = inBlock.reorgOperations((ReorgOperator) _optr, new MatrixBlock(), -1, -1, -1);
+			return new IndexedMatrixValue(new MatrixIndexes(oldColIdx, oldRowIdx), outBlock);
+		});
 	}
 }

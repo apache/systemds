@@ -49,7 +49,8 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
-import org.apache.sysds.runtime.instructions.ooc.ResettableStream;
+import org.apache.sysds.runtime.instructions.ooc.PlaybackStream;
+import org.apache.sysds.runtime.instructions.ooc.CachingStream;
 import org.apache.sysds.runtime.instructions.spark.data.BroadcastObject;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
@@ -485,15 +486,9 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 				}});
 			_streamHandle.closeInput();
 		}
-		else if(_streamHandle != null && _streamHandle.isProcessed() 
-			&& _streamHandle instanceof ResettableStream) 
+		else if(_streamHandle != null && _streamHandle instanceof CachingStream)
 		{
-			try {
-				((ResettableStream)_streamHandle).reset();
-			}
-			catch(Exception ex) {
-				throw new DMLRuntimeException(ex);
-			}
+			return new PlaybackStream((CachingStream)_streamHandle);
 		}
 		
 		return _streamHandle;

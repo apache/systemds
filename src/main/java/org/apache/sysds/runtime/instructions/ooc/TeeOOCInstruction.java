@@ -48,7 +48,7 @@ public class TeeOOCInstruction extends ComputationOOCInstruction {
 
 		//get output and create new resettable stream
 		MatrixObject mo = ec.getMatrixObject(output);
-		mo.setStreamHandle(new ResettableStream(qIn));
+		mo.setStreamHandle(new CachingStream(qIn));
 		mo.setMetaData(min.getMetaData());
 	}
 }

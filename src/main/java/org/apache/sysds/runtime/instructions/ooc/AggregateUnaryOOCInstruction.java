@@ -92,65 +92,65 @@ public class AggregateUnaryOOCInstruction extends ComputationOOCInstruction {
 			ec.getMatrixObject(output).setStreamHandle(qOut);
 
 			submitOOCTask(() -> {
-				IndexedMatrixValue tmp = null;
-				try {
-					while((tmp = q.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
-						long idx  = aggun.isRowAggregate() ?
-							tmp.getIndexes().getRowIndex() : tmp.getIndexes().getColumnIndex();
-						MatrixBlock ret = aggTracker.get(idx);
-						if(ret != null) {
-							MatrixBlock corr = corrs.get(idx);
+					IndexedMatrixValue tmp = null;
+					try {
+						while((tmp = q.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
+							long idx  = aggun.isRowAggregate() ?
+								tmp.getIndexes().getRowIndex() : tmp.getIndexes().getColumnIndex();
+							MatrixBlock ret = aggTracker.get(idx);
+							if(ret != null) {
+								MatrixBlock corr = corrs.get(idx);
 
-							// aggregation
-							MatrixBlock ltmp = (MatrixBlock) ((MatrixBlock) tmp.getValue())
-								.aggregateUnaryOperations(aggun, new MatrixBlock(), blen, tmp.getIndexes());
-							OperationsOnMatrixValues.incrementalAggregation(ret,
-								_aop.existsCorrection() ? corr : null, ltmp, _aop, true);
+								// aggregation
+								MatrixBlock ltmp = (MatrixBlock) ((MatrixBlock) tmp.getValue())
+									.aggregateUnaryOperations(aggun, new MatrixBlock(), blen, tmp.getIndexes());
+								OperationsOnMatrixValues.incrementalAggregation(ret,
+									_aop.existsCorrection() ? corr : null, ltmp, _aop, true);
 
-							if (!aggTracker.putAndIncrementCount(idx, ret)){
-								corrs.replace(idx, corr);
-								continue;
+								if (!aggTracker.putAndIncrementCount(idx, ret)){
+									corrs.replace(idx, corr);
+									continue;
+								}
 							}
-						}
-						else {
-							// first block for this idx - init aggregate and correction
-							// TODO avoid corr block for inplace incremental aggregation
-							int rows = tmp.getValue().getNumRows();
-							int cols = tmp.getValue().getNumColumns();
-							int extra = _aop.correction.getNumRemovedRowsColumns();
-							ret = aggun.isRowAggregate()? new MatrixBlock(rows, 1 + extra, false) : new MatrixBlock(1 + extra, cols, false);
-							MatrixBlock corr = aggun.isRowAggregate()? new MatrixBlock(rows, 1 + extra, false) : new MatrixBlock(1 + extra, cols, false);
+							else {
+								// first block for this idx - init aggregate and correction
+								// TODO avoid corr block for inplace incremental aggregation
+								int rows = tmp.getValue().getNumRows();
+								int cols = tmp.getValue().getNumColumns();
+								int extra = _aop.correction.getNumRemovedRowsColumns();
+								ret = aggun.isRowAggregate()? new MatrixBlock(rows, 1 + extra, false) : new MatrixBlock(1 + extra, cols, false);
+								MatrixBlock corr = aggun.isRowAggregate()? new MatrixBlock(rows, 1 + extra, false) : new MatrixBlock(1 + extra, cols, false);
 
-							// aggregation
-							MatrixBlock ltmp = (MatrixBlock) ((MatrixBlock) tmp.getValue()).aggregateUnaryOperations(
-								aggun, new MatrixBlock(), blen, tmp.getIndexes());
-							OperationsOnMatrixValues.incrementalAggregation(ret,
-								_aop.existsCorrection() ? corr : null, ltmp, _aop, true);
+								// aggregation
+								MatrixBlock ltmp = (MatrixBlock) ((MatrixBlock) tmp.getValue()).aggregateUnaryOperations(
+									aggun, new MatrixBlock(), blen, tmp.getIndexes());
+								OperationsOnMatrixValues.incrementalAggregation(ret,
+									_aop.existsCorrection() ? corr : null, ltmp, _aop, true);
 
-							if(emitThreshold > 1){
-								aggTracker.putAndIncrementCount(idx, ret);
-								corrs.put(idx, corr);
-								continue;
+								if(emitThreshold > 1){
+									aggTracker.putAndIncrementCount(idx, ret);
+									corrs.put(idx, corr);
+									continue;
+								}
 							}
+
+							// all input blocks for this idx processed - emit aggregated block
+							ret.dropLastRowsOrColumns(_aop.correction);
+							MatrixIndexes midx = aggun.isRowAggregate() ?
+								new MatrixIndexes(tmp.getIndexes().getRowIndex(), 1) :
+								new MatrixIndexes(1, tmp.getIndexes().getColumnIndex());
+							IndexedMatrixValue tmpOut = new IndexedMatrixValue(midx, ret);
+
+							qOut.enqueueTask(tmpOut);
+							// drop intermediate states
+							aggTracker.remove(idx);
+							corrs.remove(idx);
 						}
-
-						// all input blocks for this idx processed - emit aggregated block
-						ret.dropLastRowsOrColumns(_aop.correction);
-						MatrixIndexes midx = aggun.isRowAggregate() ?
-							new MatrixIndexes(tmp.getIndexes().getRowIndex(), 1) :
-							new MatrixIndexes(1, tmp.getIndexes().getColumnIndex());
-						IndexedMatrixValue tmpOut = new IndexedMatrixValue(midx, ret);
-
-						qOut.enqueueTask(tmpOut);
-						// drop intermediate states
-						aggTracker.remove(idx);
-						corrs.remove(idx);
+						qOut.closeInput();
 					}
-					qOut.closeInput();
-				}
-				catch(Exception ex) {
-					throw new DMLRuntimeException(ex);
-				}
+					catch(Exception ex) {
+						throw new DMLRuntimeException(ex);
+					}
 			}, q, qOut);
 		}
 		// full aggregation

@@ -71,19 +71,19 @@ public class BinaryOOCInstruction extends ComputationOOCInstruction {
 		ec.getMatrixObject(output).setStreamHandle(qOut);
 		
 		submitOOCTask(() -> {
-			IndexedMatrixValue tmp = null;
-			try {
-				while((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
-					IndexedMatrixValue tmpOut = new IndexedMatrixValue();
-					tmpOut.set(tmp.getIndexes(),
-						tmp.getValue().scalarOperations(sc_op, new MatrixBlock()));
-					qOut.enqueueTask(tmpOut);
+				IndexedMatrixValue tmp = null;
+				try {
+					while((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
+						IndexedMatrixValue tmpOut = new IndexedMatrixValue();
+						tmpOut.set(tmp.getIndexes(),
+							tmp.getValue().scalarOperations(sc_op, new MatrixBlock()));
+						qOut.enqueueTask(tmpOut);
+					}
+					qOut.closeInput();
 				}
-				qOut.closeInput();
-			}
-			catch(Exception ex) {
-				throw new DMLRuntimeException(ex);
-			}
+				catch(Exception ex) {
+					throw new DMLRuntimeException(ex);
+				}
 		}, qIn, qOut);
 	}
 }

@@ -91,46 +91,46 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
 		ec.getMatrixObject(output).setStreamHandle(qOut);
 
 		submitOOCTask(() -> {
-			IndexedMatrixValue tmp = null;
-			try {
-				while((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
-					MatrixBlock matrixBlock = (MatrixBlock) tmp.getValue();
-					long rowIndex = tmp.getIndexes().getRowIndex();
-					long colIndex = tmp.getIndexes().getColumnIndex();
-					MatrixBlock vectorSlice = partitionedVector.get(colIndex);
+				IndexedMatrixValue tmp = null;
+				try {
+					while((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
+						MatrixBlock matrixBlock = (MatrixBlock) tmp.getValue();
+						long rowIndex = tmp.getIndexes().getRowIndex();
+						long colIndex = tmp.getIndexes().getColumnIndex();
+						MatrixBlock vectorSlice = partitionedVector.get(colIndex);
 
-					// Now, call the operation with the correct, specific operator.
-					MatrixBlock partialResult = matrixBlock.aggregateBinaryOperations(
-						matrixBlock, vectorSlice, new MatrixBlock(), (AggregateBinaryOperator) _optr);
+						// Now, call the operation with the correct, specific operator.
+						MatrixBlock partialResult = matrixBlock.aggregateBinaryOperations(
+							matrixBlock, vectorSlice, new MatrixBlock(), (AggregateBinaryOperator) _optr);
 
-					// for single column block, no aggregation neeeded
-					if(emitThreshold == 1) {
-						qOut.enqueueTask(new IndexedMatrixValue(tmp.getIndexes(), partialResult));
-					}
-					else {
-						// aggregation
-						MatrixBlock currAgg = aggTracker.get(rowIndex);
-						if (currAgg == null) {
-							aggTracker.putAndIncrementCount(rowIndex, partialResult);
+						// for single column block, no aggregation neeeded
+						if(emitThreshold == 1) {
+							qOut.enqueueTask(new IndexedMatrixValue(tmp.getIndexes(), partialResult));
 						}
 						else {
-							currAgg = currAgg.binaryOperations(plus, partialResult);
-							if (aggTracker.putAndIncrementCount(rowIndex, currAgg)){
-								// early block output: emit aggregated block
-								MatrixIndexes idx = new MatrixIndexes(rowIndex, 1L);
-								qOut.enqueueTask(new IndexedMatrixValue(idx, currAgg));
-								aggTracker.remove(rowIndex);
+							// aggregation
+							MatrixBlock currAgg = aggTracker.get(rowIndex);
+							if (currAgg == null) {
+								aggTracker.putAndIncrementCount(rowIndex, partialResult);
+							}
+							else {
+								currAgg = currAgg.binaryOperations(plus, partialResult);
+								if (aggTracker.putAndIncrementCount(rowIndex, currAgg)){
+									// early block output: emit aggregated block
+									MatrixIndexes idx = new MatrixIndexes(rowIndex, 1L);
+									qOut.enqueueTask(new IndexedMatrixValue(idx, currAgg));
+									aggTracker.remove(rowIndex);
+								}
 							}
 						}
 					}
 				}
-			}
-			catch(Exception ex) {
-				throw new DMLRuntimeException(ex);
-			}
-			finally {
-				qOut.closeInput();
-			}
+				catch(Exception ex) {
+					throw new DMLRuntimeException(ex);
+				}
+				finally {
+					qOut.closeInput();
+				}
 		}, qIn, qOut);
 	}
 }

@@ -62,19 +62,19 @@ public class UnaryOOCInstruction extends ComputationOOCInstruction {
 
 
 		submitOOCTask(() -> {
-			IndexedMatrixValue tmp = null;
-			try {
-				while ((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
-					IndexedMatrixValue tmpOut = new IndexedMatrixValue();
-					tmpOut.set(tmp.getIndexes(),
-							tmp.getValue().unaryOperations(uop, new MatrixBlock()));
-					qOut.enqueueTask(tmpOut);
+				IndexedMatrixValue tmp = null;
+				try {
+					while ((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
+						IndexedMatrixValue tmpOut = new IndexedMatrixValue();
+						tmpOut.set(tmp.getIndexes(),
+								tmp.getValue().unaryOperations(uop, new MatrixBlock()));
+						qOut.enqueueTask(tmpOut);
+					}
+					qOut.closeInput();
 				}
-				qOut.closeInput();
-			}
-			catch(Exception ex) {
-				throw new DMLRuntimeException(ex);
-			}
+				catch(Exception ex) {
+					throw new DMLRuntimeException(ex);
+				}
 		}, qIn, qOut);
 	}
 }

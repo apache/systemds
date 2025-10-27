@@ -70,26 +70,20 @@ public class BinaryOOCInstruction extends ComputationOOCInstruction {
 		LocalTaskQueue<IndexedMatrixValue> qOut = new LocalTaskQueue<>();
 		ec.getMatrixObject(output).setStreamHandle(qOut);
 		
-		ExecutorService pool = CommonThreadPool.get();
-		try {
-			pool.submit(() -> {
-				IndexedMatrixValue tmp = null;
-				try {
-					while((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
-						IndexedMatrixValue tmpOut = new IndexedMatrixValue();
-						tmpOut.set(tmp.getIndexes(),
-							tmp.getValue().scalarOperations(sc_op, new MatrixBlock()));
-						qOut.enqueueTask(tmpOut);
-					}
-					qOut.closeInput();
+		submitOOCTask(() -> {
+			IndexedMatrixValue tmp = null;
+			try {
+				while((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
+					IndexedMatrixValue tmpOut = new IndexedMatrixValue();
+					tmpOut.set(tmp.getIndexes(),
+						tmp.getValue().scalarOperations(sc_op, new MatrixBlock()));
+					qOut.enqueueTask(tmpOut);
 				}
-				catch(Exception ex) {
-					throw new DMLRuntimeException(ex);
-				}
-			});
-		}
-		finally {
-			pool.shutdown();
-		}
+				qOut.closeInput();
+			}
+			catch(Exception ex) {
+				throw new DMLRuntimeException(ex);
+			}
+		}, qIn, qOut);
 	}
 }

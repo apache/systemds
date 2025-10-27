@@ -23,6 +23,7 @@ import java.util.LinkedList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLRuntimeException;
 
 /**
  * This class provides a way of dynamic task distribution to multiple workers
@@ -41,9 +42,10 @@ public class LocalTaskQueue<T>
 	
 	public static final int    MAX_SIZE      = 100000; //main memory constraint
 	public static final Object NO_MORE_TASKS = null; //object to signal NO_MORE_TASKS
+	private static volatile DMLRuntimeException FAILURE = null;
 	
 	private LinkedList<T>  _data        = null;
-	private boolean 	   _closedInput = false; 
+	private boolean 	   _closedInput = false;
 	private static final Log LOG = LogFactory.getLog(LocalTaskQueue.class.getName());
 	
 	public LocalTaskQueue()
@@ -61,11 +63,14 @@ public class LocalTaskQueue<T>
 	public synchronized void enqueueTask( T t ) 
 		throws InterruptedException
 	{
-		while( _data.size() + 1 > MAX_SIZE )
+		while( _data.size() + 1 > MAX_SIZE && FAILURE == null )
 		{
 			LOG.warn("MAX_SIZE of task queue reached.");
 			wait(); //max constraint reached, wait for read
 		}
+
+		if ( FAILURE != null )
+			throw FAILURE;
 		
 		_data.addLast( t );
 		
@@ -82,13 +87,16 @@ public class LocalTaskQueue<T>
 	public synchronized T dequeueTask() 
 		throws InterruptedException
 	{
-		while( _data.isEmpty() )
+		while( _data.isEmpty() && FAILURE == null )
 		{
 			if( !_closedInput )
 				wait(); // wait for writers
 			else
 				return (T)NO_MORE_TASKS; 
 		}
+
+		if ( FAILURE != null )
+			throw FAILURE;
 		
 		T t = _data.removeFirst();
 		
@@ -109,6 +117,10 @@ public class LocalTaskQueue<T>
 	
 	public synchronized boolean isProcessed() {
 		return _closedInput && _data.isEmpty();
+	}
+
+	public synchronized void notifyFailure() {
+		notifyAll();
 	}
 
 	@Override
@@ -134,5 +146,19 @@ public class LocalTaskQueue<T>
 		}
 		
 		return sb.toString();
+	}
+
+	public static boolean failGlobally(DMLRuntimeException ex) {
+		// Only register the first failure
+		if (FAILURE == null) {
+			FAILURE = ex;
+			return true;
+		}
+
+		return false;
+	}
+
+	public static void resetFailures() {
+		FAILURE = null;
 	}
 }

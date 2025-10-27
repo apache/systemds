@@ -83,15 +83,15 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
 		long emitThreshold = min.getDataCharacteristics().getNumColBlocks();
 		OOCMatrixBlockTracker aggTracker = new OOCMatrixBlockTracker(emitThreshold);
 
-		LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
-		LocalTaskQueue<IndexedMatrixValue> qOut = new LocalTaskQueue<>();
+		OOCStream<IndexedMatrixValue> qIn = min.getStreamHandle();
+		OOCStream<IndexedMatrixValue> qOut = createWritableStream();
 		BinaryOperator plus = InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString());
 		ec.getMatrixObject(output).setStreamHandle(qOut);
 
 		submitOOCTask(() -> {
 				IndexedMatrixValue tmp = null;
 				try {
-					while((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
+					while((tmp = qIn.dequeue()) != LocalTaskQueue.NO_MORE_TASKS) {
 						MatrixBlock matrixBlock = (MatrixBlock) tmp.getValue();
 						long rowIndex = tmp.getIndexes().getRowIndex();
 						long colIndex = tmp.getIndexes().getColumnIndex();
@@ -103,7 +103,7 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
 
 						// for single column block, no aggregation neeeded
 						if(emitThreshold == 1) {
-							qOut.enqueueTask(new IndexedMatrixValue(tmp.getIndexes(), partialResult));
+							qOut.enqueue(new IndexedMatrixValue(tmp.getIndexes(), partialResult));
 						}
 						else {
 							// aggregation
@@ -116,7 +116,7 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
 								if (aggTracker.putAndIncrementCount(rowIndex, currAgg)){
 									// early block output: emit aggregated block
 									MatrixIndexes idx = new MatrixIndexes(rowIndex, 1L);
-									qOut.enqueueTask(new IndexedMatrixValue(idx, currAgg));
+									qOut.enqueue(new IndexedMatrixValue(idx, currAgg));
 									aggTracker.remove(rowIndex);
 								}
 							}

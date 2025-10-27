@@ -49,7 +49,9 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
-import org.apache.sysds.runtime.instructions.ooc.ResettableStream;
+import org.apache.sysds.runtime.instructions.ooc.OOCStream;
+import org.apache.sysds.runtime.instructions.ooc.OOCStreamable;
+import org.apache.sysds.runtime.instructions.ooc.SubscribableTaskQueue;
 import org.apache.sysds.runtime.instructions.spark.data.BroadcastObject;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
@@ -223,7 +225,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	private BroadcastObject<T> _bcHandle = null; //Broadcast handle
 	protected HashMap<GPUContext, GPUObject> _gpuObjects = null; //Per GPUContext object allocated on GPU
 	//TODO generalize for frames
-	private LocalTaskQueue<IndexedMatrixValue> _streamHandle = null;
+	private OOCStreamable<IndexedMatrixValue> _streamHandle = null;
 	
 	private LineageItem _lineage = null;
 	
@@ -469,34 +471,25 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 		return  _bcHandle != null && _bcHandle.hasBackReference();
 	}
 	
-	public LocalTaskQueue<IndexedMatrixValue> getStreamHandle() {
+	public OOCStream<IndexedMatrixValue> getStreamHandle() {
 		if( !hasStreamHandle() ) {
-			_streamHandle = new LocalTaskQueue<>();
+			final SubscribableTaskQueue<IndexedMatrixValue> _mStream = new SubscribableTaskQueue<>();
+			_streamHandle = _mStream;
 			DataCharacteristics dc = getDataCharacteristics();
 			MatrixBlock src = (MatrixBlock)acquireReadAndRelease();
 			LongStream.range(0, dc.getNumBlocks())
 				.mapToObj(i -> UtilFunctions.createIndexedMatrixBlock(src, dc, i))
 				.forEach( blk -> {
 					try{ 
-						_streamHandle.enqueueTask(blk); 
+						_mStream.enqueue(blk);
 					}
 					catch(Exception ex) {
-						throw new DMLRuntimeException(ex);
+						throw ex instanceof DMLRuntimeException ? (DMLRuntimeException) ex : new DMLRuntimeException(ex);
 				}});
-			_streamHandle.closeInput();
-		}
-		else if(_streamHandle != null && _streamHandle.isProcessed() 
-			&& _streamHandle instanceof ResettableStream) 
-		{
-			try {
-				((ResettableStream)_streamHandle).reset();
-			}
-			catch(Exception ex) {
-				throw new DMLRuntimeException(ex);
-			}
+			_mStream.closeInput();
 		}
 		
-		return _streamHandle;
+		return _streamHandle.getReadStream();
 	}
 	
 	/**
@@ -539,7 +532,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 		_gpuObjects.remove(gCtx);
 	}
 
-	public synchronized void setStreamHandle(LocalTaskQueue<IndexedMatrixValue> q) {
+	public synchronized void setStreamHandle(OOCStreamable<IndexedMatrixValue> q) {
 		_streamHandle = q;
 	}
 	
@@ -633,7 +626,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 					_requiresLocalWrite = false;
 				}
 				else if( hasStreamHandle() ) {
-					_data = readBlobFromStream( getStreamHandle() );
+					_data = readBlobFromStream( getStreamHandle().toLocalTaskQueue() );
 				}
 				else if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() ) {
 					if( DMLScript.STATISTICS )

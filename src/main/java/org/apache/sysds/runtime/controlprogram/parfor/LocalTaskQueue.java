@@ -43,8 +43,8 @@ public class LocalTaskQueue<T>
 	public static final int    MAX_SIZE      = 100000; //main memory constraint
 	public static final Object NO_MORE_TASKS = null; //object to signal NO_MORE_TASKS
 	
-	private LinkedList<T>  _data        = null;
-	private boolean 	   _closedInput = false;
+	protected LinkedList<T>  _data        = null;
+	protected boolean 	   _closedInput = false;
 	private DMLRuntimeException _failure = null;
 	private static final Log LOG = LogFactory.getLog(LocalTaskQueue.class.getName());
 	
@@ -60,21 +60,19 @@ public class LocalTaskQueue<T>
 	 * @param t task
 	 * @throws InterruptedException if InterruptedException occurs
 	 */
-	public synchronized void enqueueTask( T t ) 
+	public synchronized void enqueueTask( T t )
 		throws InterruptedException
 	{
-		while( _data.size() + 1 > MAX_SIZE && _failure == null )
-		{
+		while(_data.size() + 1 > MAX_SIZE && _failure == null) {
 			LOG.warn("MAX_SIZE of task queue reached.");
 			wait(); //max constraint reached, wait for read
 		}
 
-		if ( _failure != null )
+		if(_failure != null)
 			throw _failure;
-		
-		_data.addLast( t );
-		
-		notify(); //notify waiting readers
+
+		_data.addLast(t);
+		notify();
 	}
 	
 	/**
@@ -97,14 +95,14 @@ public class LocalTaskQueue<T>
 
 		if ( _failure != null )
 			throw _failure;
-		
+
 		T t = _data.removeFirst();
 		
 		notify(); // notify waiting writers
 		
 		return t;
 	}
-	
+
 	/**
 	 * Synchronized (logical) insert of a NO_MORE_TASKS symbol at the end of the FIFO queue in order to
 	 * mark that no more tasks will be inserted into the queue.
@@ -112,7 +110,7 @@ public class LocalTaskQueue<T>
 	public synchronized void closeInput()
 	{
 		_closedInput = true;
-		notifyAll(); //notify all waiting readers
+		notifyAll();
 	}
 	
 	public synchronized boolean isProcessed() {

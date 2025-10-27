@@ -66,7 +66,7 @@ public class TSMMOOCInstruction extends ComputationOOCInstruction {
 		int nCols = (int) min.getDataCharacteristics().getCols();
 		int bLen = min.getDataCharacteristics().getBlocksize();
 		
-		LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
+		OOCStream<IndexedMatrixValue> qIn = min.getStreamHandle();
 		BinaryOperator plus = InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString());
 
 		//validation check TODO extend compiler to not create OOC otherwise
@@ -81,7 +81,7 @@ public class TSMMOOCInstruction extends ComputationOOCInstruction {
 		try {
 			IndexedMatrixValue tmp = null;
 			// aggregate partial tsmm outputs into result as inputs stream in
-			while((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
+			while((tmp = qIn.dequeue()) != LocalTaskQueue.NO_MORE_TASKS) {
 				MatrixBlock partialResult = ((MatrixBlock) tmp.getValue())
 					.transposeSelfMatrixMultOperations(new MatrixBlock(), _type);
 				resultBlock.binaryOperationsInPlace(plus, partialResult);

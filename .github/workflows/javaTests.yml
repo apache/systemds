@@ -137,7 +137,7 @@ jobs:
           ${{ runner.os }}-maven-test-
 
     - name: Download all Jacoco Artifacts
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@v6
       with:
         path: target
 

@@ -42,10 +42,10 @@ public class LocalTaskQueue<T>
 	
 	public static final int    MAX_SIZE      = 100000; //main memory constraint
 	public static final Object NO_MORE_TASKS = null; //object to signal NO_MORE_TASKS
-	private static volatile DMLRuntimeException FAILURE = null;
 	
 	private LinkedList<T>  _data        = null;
 	private boolean 	   _closedInput = false;
+	private DMLRuntimeException _failure = null;
 	private static final Log LOG = LogFactory.getLog(LocalTaskQueue.class.getName());
 	
 	public LocalTaskQueue()
@@ -63,14 +63,14 @@ public class LocalTaskQueue<T>
 	public synchronized void enqueueTask( T t ) 
 		throws InterruptedException
 	{
-		while( _data.size() + 1 > MAX_SIZE && FAILURE == null )
+		while( _data.size() + 1 > MAX_SIZE && _failure == null )
 		{
 			LOG.warn("MAX_SIZE of task queue reached.");
 			wait(); //max constraint reached, wait for read
 		}
 
-		if ( FAILURE != null )
-			throw FAILURE;
+		if ( _failure != null )
+			throw _failure;
 		
 		_data.addLast( t );
 		
@@ -87,7 +87,7 @@ public class LocalTaskQueue<T>
 	public synchronized T dequeueTask() 
 		throws InterruptedException
 	{
-		while( _data.isEmpty() && FAILURE == null )
+		while( _data.isEmpty() && _failure == null )
 		{
 			if( !_closedInput )
 				wait(); // wait for writers
@@ -95,8 +95,8 @@ public class LocalTaskQueue<T>
 				return (T)NO_MORE_TASKS; 
 		}
 
-		if ( FAILURE != null )
-			throw FAILURE;
+		if ( _failure != null )
+			throw _failure;
 		
 		T t = _data.removeFirst();
 		
@@ -119,8 +119,11 @@ public class LocalTaskQueue<T>
 		return _closedInput && _data.isEmpty();
 	}
 
-	public synchronized void notifyFailure() {
-		notifyAll();
+	public synchronized void propagateFailure(DMLRuntimeException failure) {
+		if (_failure == null) {
+			_failure = failure;
+			notifyAll();
+		}
 	}
 
 	@Override
@@ -146,19 +149,5 @@ public class LocalTaskQueue<T>
 		}
 		
 		return sb.toString();
-	}
-
-	public static boolean failGlobally(DMLRuntimeException ex) {
-		// Only register the first failure
-		if (FAILURE == null) {
-			FAILURE = ex;
-			return true;
-		}
-
-		return false;
-	}
-
-	public static void resetFailures() {
-		FAILURE = null;
 	}
 }

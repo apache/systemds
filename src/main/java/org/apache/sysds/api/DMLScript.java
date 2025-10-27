@@ -444,9 +444,6 @@ public class DMLScript
 
 		// optionally register for monitoring
 		registerForMonitoring();
-
-		// reset any errors from the LocalTaskQueue
-		LocalTaskQueue.resetFailures();
 		
 		//Step 1: parse configuration files & write any configuration specific global variables
 		loadConfiguration(fnameOptConfig);

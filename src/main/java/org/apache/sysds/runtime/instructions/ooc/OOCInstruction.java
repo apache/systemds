@@ -111,10 +111,8 @@ public abstract class OOCInstruction extends Instruction {
 			catch (Exception ex) {
 				DMLRuntimeException re = ex instanceof DMLRuntimeException ? (DMLRuntimeException) ex : new DMLRuntimeException(ex);
 
-				LocalTaskQueue.failGlobally(re);
-
 				for (LocalTaskQueue<?> q : queues) {
-					q.notifyFailure();
+					q.propagateFailure(re);
 				}
 			}
 		};

@@ -106,7 +106,7 @@ jobs:
         echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
 
     - name: Save Java Test Coverage as Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: ${{ env.ARTIFACT_NAME }}
         path: target/jacoco.exec
@@ -160,7 +160,7 @@ jobs:
 
     - name: Upload Jacoco Report Artifact PR
       if: (github.repository_owner == 'apache') && (github.ref_name != 'main')
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: Java Code Coverage (Jacoco)
         path: target/site/jacoco
@@ -168,7 +168,7 @@ jobs:
 
     - name: Upload Jacoco Report Artifact Main
       if: (github.repository_owner == 'apache') && (github.ref_name == 'main')
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: Java Code Coverage (Jacoco)
         path: target/site/jacoco
@@ -176,7 +176,7 @@ jobs:
 
     - name: Upload Jacoco Report Artifact Fork
       if: (github.repository_owner != 'apache')
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: Java Code Coverage (Jacoco)
         path: target/site/jacoco

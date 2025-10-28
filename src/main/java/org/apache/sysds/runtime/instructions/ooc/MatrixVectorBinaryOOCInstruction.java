@@ -90,10 +90,7 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
 		BinaryOperator plus = InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString());
 		ec.getMatrixObject(output).setStreamHandle(qOut);
 
-		ExecutorService pool = CommonThreadPool.get();
-		try {
-			// Core logic: background thread
-			pool.submit(() -> {
+		submitOOCTask(() -> {
 				IndexedMatrixValue tmp = null;
 				try {
 					while((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
@@ -134,12 +131,6 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
 				finally {
 					qOut.closeInput();
 				}
-			});
-		} catch (Exception e) {
-			throw new DMLRuntimeException(e);
-		}
-		finally {
-			pool.shutdown();
-		}
+		}, qIn, qOut);
 	}
 }

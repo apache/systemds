@@ -79,13 +79,7 @@ public class ReblockOOCInstruction extends ComputationOOCInstruction {
 		
 		//create queue, spawn thread for asynchronous reading, and return
 		LocalTaskQueue<IndexedMatrixValue> q = new LocalTaskQueue<IndexedMatrixValue>();
-		ExecutorService pool = CommonThreadPool.get();
-		try {
-			pool.submit(() -> readBinaryBlock(q, min.getFileName()));
-		}
-		finally {
-			pool.shutdown();
-		}
+		submitOOCTask(() -> readBinaryBlock(q, min.getFileName()), q);
 		
 		MatrixObject mout = ec.getMatrixObject(output);
 		mout.setStreamHandle(q);

@@ -90,9 +90,8 @@ public class AggregateUnaryOOCInstruction extends ComputationOOCInstruction {
 
 			LocalTaskQueue<IndexedMatrixValue> qOut = new LocalTaskQueue<>();
 			ec.getMatrixObject(output).setStreamHandle(qOut);
-			ExecutorService pool = CommonThreadPool.get();
-			try {
-				pool.submit(() -> {
+
+			submitOOCTask(() -> {
 					IndexedMatrixValue tmp = null;
 					try {
 						while((tmp = q.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
@@ -152,12 +151,7 @@ public class AggregateUnaryOOCInstruction extends ComputationOOCInstruction {
 					catch(Exception ex) {
 						throw new DMLRuntimeException(ex);
 					}
-				});
-			} catch (Exception ex) {
-				throw new DMLRuntimeException(ex);
-			} finally {
-				pool.shutdown();
-			}
+			}, q, qOut);
 		}
 		// full aggregation
 		else {

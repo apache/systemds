@@ -22,12 +22,16 @@ package org.apache.sysds.runtime.instructions.ooc;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 
 import java.util.HashMap;
+import java.util.concurrent.ExecutorService;
 
 public abstract class OOCInstruction extends Instruction {
 	protected static final Log LOG = LogFactory.getLog(OOCInstruction.class.getName());
@@ -84,6 +88,37 @@ public abstract class OOCInstruction extends Instruction {
 	public void postprocessInstruction(ExecutionContext ec) {
 		if(DMLScript.LINEAGE_DEBUGGER)
 			ec.maintainLineageDebuggerInfo(this);
+	}
+
+	protected void submitOOCTask(Runnable r, LocalTaskQueue<?>... queues) {
+		ExecutorService pool = CommonThreadPool.get();
+		try {
+			pool.submit(oocTask(r, queues));
+		}
+		catch (Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+		finally {
+			pool.shutdown();
+		}
+	}
+
+	private Runnable oocTask(Runnable r, LocalTaskQueue<?>... queues) {
+		return () -> {
+			try {
+				r.run();
+			}
+			catch (Exception ex) {
+				DMLRuntimeException re = ex instanceof DMLRuntimeException ? (DMLRuntimeException) ex : new DMLRuntimeException(ex);
+
+				for (LocalTaskQueue<?> q : queues) {
+					q.propagateFailure(re);
+				}
+
+				// Rethrow to ensure proper future handling
+				throw re;
+			}
+		};
 	}
 
 	/**

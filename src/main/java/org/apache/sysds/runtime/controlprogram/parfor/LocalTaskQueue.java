@@ -23,6 +23,7 @@ import java.util.LinkedList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLRuntimeException;
 
 /**
  * This class provides a way of dynamic task distribution to multiple workers
@@ -43,7 +44,8 @@ public class LocalTaskQueue<T>
 	public static final Object NO_MORE_TASKS = null; //object to signal NO_MORE_TASKS
 	
 	private LinkedList<T>  _data        = null;
-	private boolean 	   _closedInput = false; 
+	private boolean 	   _closedInput = false;
+	private DMLRuntimeException _failure = null;
 	private static final Log LOG = LogFactory.getLog(LocalTaskQueue.class.getName());
 	
 	public LocalTaskQueue()
@@ -61,11 +63,14 @@ public class LocalTaskQueue<T>
 	public synchronized void enqueueTask( T t ) 
 		throws InterruptedException
 	{
-		while( _data.size() + 1 > MAX_SIZE )
+		while( _data.size() + 1 > MAX_SIZE && _failure == null )
 		{
 			LOG.warn("MAX_SIZE of task queue reached.");
 			wait(); //max constraint reached, wait for read
 		}
+
+		if ( _failure != null )
+			throw _failure;
 		
 		_data.addLast( t );
 		
@@ -82,13 +87,16 @@ public class LocalTaskQueue<T>
 	public synchronized T dequeueTask() 
 		throws InterruptedException
 	{
-		while( _data.isEmpty() )
+		while( _data.isEmpty() && _failure == null )
 		{
 			if( !_closedInput )
 				wait(); // wait for writers
 			else
 				return (T)NO_MORE_TASKS; 
 		}
+
+		if ( _failure != null )
+			throw _failure;
 		
 		T t = _data.removeFirst();
 		
@@ -109,6 +117,13 @@ public class LocalTaskQueue<T>
 	
 	public synchronized boolean isProcessed() {
 		return _closedInput && _data.isEmpty();
+	}
+
+	public synchronized void propagateFailure(DMLRuntimeException failure) {
+		if (_failure == null) {
+			_failure = failure;
+			notifyAll();
+		}
 	}
 
 	@Override

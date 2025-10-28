@@ -61,9 +61,7 @@ public class UnaryOOCInstruction extends ComputationOOCInstruction {
 		ec.getMatrixObject(output).setStreamHandle(qOut);
 
 
-		ExecutorService pool = CommonThreadPool.get();
-		try {
-			pool.submit(() -> {
+		submitOOCTask(() -> {
 				IndexedMatrixValue tmp = null;
 				try {
 					while ((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
@@ -77,11 +75,6 @@ public class UnaryOOCInstruction extends ComputationOOCInstruction {
 				catch(Exception ex) {
 					throw new DMLRuntimeException(ex);
 				}
-			});
-		} catch (Exception ex) {
-			throw new DMLRuntimeException(ex);
-		} finally {
-			pool.shutdown();
-		}
+		}, qIn, qOut);
 	}
 }

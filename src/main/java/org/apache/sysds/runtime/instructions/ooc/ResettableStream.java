@@ -50,7 +50,7 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 	private boolean _cacheInProgress = true; // caching in progress, in the first pass.
 	private int _replayPosition = 0; // slider position in the stream
 
-	private OOCEvictionManager _manager;
+//	private OOCEvictionManager _manager;
 
 	public ResettableStream(LocalTaskQueue<IndexedMatrixValue> source) {
 		this(source, UUID.randomUUID().toString());
@@ -60,7 +60,7 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 		_streamId = streamId;
 		_blockKeys = new  ArrayList<>();
 //		_cache = new ArrayList<>();
-		_manager = OOCEvictionManager.getInstance();
+//		_manager = OOCEvictionManager.getInstance();
 	}
 
 	/**
@@ -82,7 +82,8 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 				_blockKeys.add(key);
 
 				try {
-					_manager.put(key, task); // Serialize
+					OOCEvictionManager.put(key, task);
+//					_manager.put(key, task); // Serialize
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}
@@ -100,7 +101,8 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 			if (_replayPosition < _blockKeys.size()) {
 				String key = _blockKeys.get(_replayPosition++);
 				try {
-					return _manager.get(key); // Deserialize
+					return OOCEvictionManager.get(key);
+//					return _manager.get(key); // Deserialize
 				} catch (IOException ex) {
 					throw new RuntimeException(ex);
 				}

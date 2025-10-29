@@ -44,7 +44,7 @@ import java.util.Map.Entry;
  *   there won't be OOM.
  */
 public class OOCEvictionManager {
-	private static OOCEvictionManager _instance;
+//	private static OOCEvictionManager _instance;
 
 	// Configuration: OOC buffer limit as percentage of heap
 	private static final double OOC_BUFFER_PERCENTAGE = 0.15; // 15% of heap
@@ -52,24 +52,26 @@ public class OOCEvictionManager {
 	private static final int MAX_PREFETCH_DEPTH = 5;
 
 	// Memory limit for ByteBuffers
-	private long _limit;
-	private long _size;
+	private static long _limit;
+	private static long _size;
 
 	// Cache of ByteBuffers (off-heap serialized blocks)
-	private CacheEvictionQueue _mQueue;
+	private static CacheEvictionQueue _mQueue;
 
 	// I/O service for async spill/load
-	private CacheMaintenanceService _fClean;
+	private static CacheMaintenanceService _fClean;
 
 	// Spill directory for evicted blocks
-	private String _spillDir;
+	private static String _spillDir;
 
 	public enum RPolicy {
 		FIFO, LRU
 	}
-	private RPolicy _policy = RPolicy.FIFO;
+	private static RPolicy _policy = RPolicy.FIFO;
 
-	private OOCEvictionManager() {
+	private OOCEvictionManager() {}
+
+	static {
 		_mQueue = new CacheEvictionQueue();
 		_fClean = new CacheMaintenanceService();
 		_limit = (long)(Runtime.getRuntime().maxMemory() * OOC_BUFFER_PERCENTAGE); // e.g., 20% of heap
@@ -78,16 +80,10 @@ public class OOCEvictionManager {
 		LocalFileUtils.createLocalFileIfNotExist(_spillDir);
 	}
 
-	public static synchronized OOCEvictionManager getInstance() {
-		if(_instance == null)
-			_instance = new OOCEvictionManager();
-		return _instance;
-	}
-
 	/**
 	 * Store a block in the OOC cache (serialize once)
 	 */
-	public void put(String key, IndexedMatrixValue value) throws IOException {
+	public static synchronized void put(String key, IndexedMatrixValue value) throws IOException {
 		MatrixBlock mb = (MatrixBlock) value.getValue();
 		// Serialize to ByteBuffer
 		long size = estimateSerializedSize(mb);
@@ -109,7 +105,7 @@ public class OOCEvictionManager {
 	/**
 	 * Get a block from the OOC cache (deserialize on read)
 	 */
-	public IndexedMatrixValue get(String key) throws IOException {
+	public static synchronized IndexedMatrixValue get(String key) throws IOException {
 		ByteBuffer bbuff = null;
 
 		synchronized(_mQueue) {
@@ -138,7 +134,7 @@ public class OOCEvictionManager {
 	/**
 	 * Evict ByteBuffers to disk
 	 */
-	private void evict(long requiredSize) throws IOException {
+	private static void evict(long requiredSize) throws IOException {
 		while(_size + requiredSize > _limit && !_mQueue.isEmpty()) {
 			Entry<String, ByteBuffer> entry = _mQueue.removeFirst();
 			String key = entry.getKey();
@@ -160,7 +156,7 @@ public class OOCEvictionManager {
 	/**
 	 * Load block from spill file
 	 */
-	private IndexedMatrixValue loadFromDisk(String key) throws IOException {
+	private static IndexedMatrixValue loadFromDisk(String key) throws IOException {
 		String filename = _spillDir + "/" + key;
 
 		// check if file exists
@@ -178,11 +174,11 @@ public class OOCEvictionManager {
 		return new IndexedMatrixValue(ix, mb);
 	}
 
-	private long estimateSerializedSize(MatrixBlock mb) {
+	private static long estimateSerializedSize(MatrixBlock mb) {
 		return mb.getExactSerializedSize();
 	}
 
-	private MatrixIndexes parseIndexesFromKey(String key) {
+	private static MatrixIndexes parseIndexesFromKey(String key) {
 		// Key format: "streamId_blockId"
 		// For now, use simple sequential block IDs
 		String[] parts = key.split("_");

@@ -43,7 +43,8 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 	private final long _streamId;
 
 	// list of block keys (only the keys)
-	private final ArrayList<String> _blockKeys;
+//	private final ArrayList<String> _blockKeys;
+	private int _numBlocks = 0;
 
 
 	// state flags
@@ -56,7 +57,7 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 	public ResettableStream(LocalTaskQueue<IndexedMatrixValue> source, long streamId) {
 		_source = source;
 		_streamId = streamId;
-		_blockKeys = new  ArrayList<>();
+//		_blockKeys = new  ArrayList<>();
 	}
 
 	/**
@@ -72,10 +73,9 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 			// First pass: Read value from the source and cache it, and return.
 			IndexedMatrixValue task = _source.dequeueTask();
 			if (task != NO_MORE_TASKS) {
-				String key = _streamId + "_" + _blockKeys.size();
-				_blockKeys.add(key);
 
-				OOCEvictionManager.put(key, task);
+				OOCEvictionManager.put(_streamId, _numBlocks, task);
+				_numBlocks++;
 
 				return task;
 			} else {
@@ -88,9 +88,8 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 			}
 		} else {
 			// Replay pass: read from the buffer
-			if (_replayPosition < _blockKeys.size()) {
-				String key = _blockKeys.get(_replayPosition++);
-				return OOCEvictionManager.get(key);
+			if (_replayPosition < _numBlocks) {
+				return OOCEvictionManager.get(_streamId, _replayPosition++);
 			} else {
 				return (IndexedMatrixValue) NO_MORE_TASKS;
 			}

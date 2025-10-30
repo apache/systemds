@@ -26,6 +26,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 /**
@@ -48,8 +50,6 @@ public class OOCEvictionManager {
 
 	// Configuration: OOC buffer limit as percentage of heap
 	private static final double OOC_BUFFER_PERCENTAGE = 0.15; // 15% of heap
-	private static final int MIN_PREFETCH_DEPTH = 1;
-	private static final int MAX_PREFETCH_DEPTH = 5;
 
 	// Memory limit for ByteBuffers
 	private static long _limit;
@@ -58,6 +58,7 @@ public class OOCEvictionManager {
 	// Cache of ByteBuffers (off-heap serialized blocks)
 	private static CacheEvictionQueue _mQueue;
 
+//	private static Map<Long, Map<Integer, ByteBuffer>> cache = new HashMap<>();
 	// I/O service for async spill/load
 	private static CacheMaintenanceService _fClean;
 
@@ -83,7 +84,7 @@ public class OOCEvictionManager {
 	/**
 	 * Store a block in the OOC cache (serialize once)
 	 */
-	public static synchronized void put(String key, IndexedMatrixValue value) {
+	public static synchronized void put(long streamId, int blockId, IndexedMatrixValue value) {
 		try {
 			MatrixBlock mb = (MatrixBlock) value.getValue();
 			// Serialize to ByteBuffer
@@ -95,7 +96,7 @@ public class OOCEvictionManager {
 				evict(size);
 
 				// Add to cache
-				_mQueue.addLast(key, bbuff);
+				_mQueue.addLast(streamId + "_" + blockId, bbuff);
 				_size += size;
 			}
 
@@ -110,8 +111,9 @@ public class OOCEvictionManager {
 	/**
 	 * Get a block from the OOC cache (deserialize on read)
 	 */
-	public static synchronized IndexedMatrixValue get(String key) {
+	public static synchronized IndexedMatrixValue get(long streamId, int blockId) {
 		ByteBuffer bbuff = null;
+		String key = streamId + "_" + blockId;
 
 		try {
 			synchronized (_mQueue) {
@@ -129,11 +131,11 @@ public class OOCEvictionManager {
 				bbuff.checkSerialized();
 				MatrixBlock mb = (MatrixBlock) bbuff.deserializeBlock();
 
-				MatrixIndexes ix = parseIndexesFromKey(key);
+				MatrixIndexes ix = new MatrixIndexes(blockId + 1, 1);
 				return new IndexedMatrixValue(ix, mb);
 			} else {
 				// Cache miss: load from disk
-				return loadFromDisk(key);
+				return loadFromDisk(streamId, blockId);
 			}
 		}
 		catch (IOException e) {
@@ -168,8 +170,8 @@ public class OOCEvictionManager {
 	/**
 	 * Load block from spill file
 	 */
-	private static IndexedMatrixValue loadFromDisk(String key) throws IOException {
-		String filename = _spillDir + "/" + key;
+	private static IndexedMatrixValue loadFromDisk(long streamId, int blockId) throws IOException {
+		String filename = _spillDir + "/" + streamId + "_" + blockId;
 
 		// check if file exists
 		if (!LocalFileUtils.isExisting(filename)) {
@@ -178,10 +180,12 @@ public class OOCEvictionManager {
 
 		// Read from disk
 		MatrixBlock mb = LocalFileUtils.readMatrixBlockFromLocal(filename);
-		MatrixIndexes ix = parseIndexesFromKey(key);
+
+		MatrixIndexes ix = new MatrixIndexes(blockId + 1, 1);
 
 		// Put back in cache (may trigger eviction)
-		put(key, new IndexedMatrixValue(ix, mb));
+		// get() operation should not modify cache
+		// put(streamId, blockId, new IndexedMatrixValue(ix, mb));
 
 		return new IndexedMatrixValue(ix, mb);
 	}
@@ -190,12 +194,4 @@ public class OOCEvictionManager {
 		return mb.getExactSerializedSize();
 	}
 
-	private static MatrixIndexes parseIndexesFromKey(String key) {
-		// Key format: "streamId_blockId"
-		// For now, use simple sequential block IDs
-		String[] parts = key.split("_");
-		long blockId = Long.parseLong(parts[parts.length - 1]);
-		// Assume row-major ordering with block size
-		return new MatrixIndexes(blockId + 1, 1);
-	}
 }

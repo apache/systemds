@@ -27,14 +27,28 @@ import org.apache.sysds.runtime.util.LocalFileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Eviction Manager for the Out-Of-Core stream cache
  * This is the base implementation for LRU, FIFO
+ *
+ * Design choice 1: Pure JVM-memory cache
+ * What: Store MatrixBlock objects in a synchronized in-memory cache
+ *   (Map + Deque for LRU/FIFO). Spill to disk by serializing MatrixBlock
+ *   only when evicting.
+ * Pros: Simple to implement; no off-heap management; easy to debug;
+ *   no serialization race since you serialize only when evicting;
+ *   fast cache hits (direct object access).
+ * Cons: Heap usage counted roughly via serialized-size estimate — actual
+ *   JVM object overhead not accounted; risk of GC pressure and OOM if
+ *   estimates are off or if many small objects cause fragmentation;
+ *   eviction may be more expensive (serialize on eviction).
+ * <p>
+ * Design choice 2:
  * <p>
  * This manager runtime memory management by caching serialized
  * ByteBuffers and spilling them to disk when needed.
@@ -47,6 +61,12 @@ import java.util.concurrent.atomic.AtomicLong;
  *   by falling back to the disk
  * * Memory: Since the datablocks are off-heap (in ByteBuffer) or disk,
  *   there won't be OOM.
+ *
+ * Pros: Avoids heap OOM by keeping large data off-heap; predictable
+ *   memory usage; good for very large blocks.
+ * Cons: More complex synchronization; need robust off-heap allocator/free;
+ *   must ensure serialization finishes before adding to queue or make evict
+ *   wait on serialization; careful with native memory leaks.
  */
 public class OOCEvictionManager {
 
@@ -55,14 +75,14 @@ public class OOCEvictionManager {
 
 	// Memory limit for ByteBuffers
 	private static long _limit;
-	private static AtomicLong _size;
+	private static long _size;
 
-	// Cache of ByteBuffers (off-heap serialized blocks)
-	private static CacheEvictionQueue _mQueue;
+	// Cache structures: map key -> MatrixBlock and eviction deque (head=oldest block)
+	private static final Map<String, MatrixBlock> _cache = new HashMap<>();
+	private static final Deque<String> _evictDeque = new ArrayDeque<>();
 
-//	private static Map<Long, Map<Integer, ByteBuffer>> cache = new HashMap<>();
-	// I/O service for async spill/load
-	private static CacheMaintenanceService _fClean;
+	// Single lock for synchronization
+	private static final Object lock = new Object();
 
 	// Spill directory for evicted blocks
 	private static String _spillDir;
@@ -75,8 +95,6 @@ public class OOCEvictionManager {
 	private OOCEvictionManager() {}
 
 	static {
-		_mQueue = new CacheEvictionQueue();
-		_fClean = new CacheMaintenanceService();
 		_limit = (long)(Runtime.getRuntime().maxMemory() * OOC_BUFFER_PERCENTAGE * 0.01); // e.g., 20% of heap
 		_size = 0;
 		_spillDir = LocalFileUtils.getUniqueWorkingDir("ooc_stream");
@@ -87,26 +105,26 @@ public class OOCEvictionManager {
 	 * Store a block in the OOC cache (serialize once)
 	 */
 	public static synchronized void put(long streamId, int blockId, IndexedMatrixValue value) {
-		try {
-			MatrixBlock mb = (MatrixBlock) value.getValue();
-			// Serialize to ByteBuffer
-			long size = estimateSerializedSize(mb);
-			ByteBuffer bbuff = new ByteBuffer(size);
+		MatrixBlock mb = (MatrixBlock) value.getValue();
+		long size = estimateSerializedSize(mb);
+		String key = streamId + "_" + blockId;
 
-			synchronized (_mQueue) {
-				// Make space
-				evict(size);
-
-				// Add to cache
-				_mQueue.addLast(streamId + "_" + blockId, bbuff);
-				_size += size;
+		synchronized (lock) {
+			MatrixBlock old = _cache.remove(key);
+			if (old != null) {
+				_evictDeque.remove(key);
+				_size -= estimateSerializedSize(old);
 			}
 
-			// Serialize outside lock
-			_fClean.serializeData(bbuff, mb);
-		}
-		catch(Exception e) {
-			throw new DMLRuntimeException(e);
+			try {
+				evict(size);
+			} catch (IOException e) {
+				throw new DMLRuntimeException(e);
+			}
+
+			_cache.put(key, mb);
+			_evictDeque.addLast(key); // add to end for FIFO/LRU
+			_size += size;
 		}
 	}
 
@@ -114,61 +132,52 @@ public class OOCEvictionManager {
 	 * Get a block from the OOC cache (deserialize on read)
 	 */
 	public static synchronized IndexedMatrixValue get(long streamId, int blockId) {
-		ByteBuffer bbuff = null;
 		String key = streamId + "_" + blockId;
+		MatrixBlock mb = (MatrixBlock) _cache.get(key);
 
-		try {
-			synchronized (_mQueue) {
-				bbuff = _mQueue.get(key);
-
-				// LRU: move to end
-				if (_policy == RPolicy.LRU && bbuff != null) {
-					_mQueue.remove(key);
-					_mQueue.addLast(key, bbuff);
-				}
+		synchronized (lock) {
+			if (mb != null && _policy == RPolicy.LRU) {
+				_evictDeque.remove(key);
+				_evictDeque.addLast(key);
 			}
+		}
 
-			if (bbuff != null) {
-				// Cache hit: deserialize from ByteBuffer
-				bbuff.checkSerialized();
-				MatrixBlock mb = (MatrixBlock) bbuff.deserializeBlock();
-
-				MatrixIndexes ix = new MatrixIndexes(blockId + 1, 1);
-				return new IndexedMatrixValue(ix, mb);
-			} else {
-				// Cache miss: load from disk
+		if (mb != null) {
+			MatrixIndexes ix = new MatrixIndexes(blockId + 1, 1);
+			return new IndexedMatrixValue(ix, mb);
+		} else {
+			try {
 				return loadFromDisk(streamId, blockId);
+			} catch (IOException e) {
+				throw new DMLRuntimeException(e);
 			}
 		}
-		catch (IOException e) {
-			throw new DMLRuntimeException(e);
-		}
+
 	}
 
 	/**
 	 * Evict ByteBuffers to disk
 	 */
 	private static void evict(long requiredSize) throws IOException {
-		while(_size + requiredSize > _limit && !_mQueue.isEmpty()) {
+		while(_size + requiredSize > _limit && !_evictDeque.isEmpty()) {
 			System.out.println("_size + requiredSize: " + _size +" + "+ requiredSize + "; _limit: " + _limit);
-			Entry<String, ByteBuffer> entry = _mQueue.removeFirst();
-			String key = entry.getKey();
-			ByteBuffer bbuff = entry.getValue();
+			String oldKey = _evictDeque.removeLast();
+			MatrixBlock mbToEvict = (MatrixBlock) _cache.remove(oldKey);
 
-			if(bbuff != null) {
-				// Wait for serialization
-				bbuff.checkSerialized();
+			if(mbToEvict != null) {
 
 				// Spill to disk
-				String filename = _spillDir + "/" + key;
+				String filename = _spillDir + "/" + oldKey;
 				File spillDirFile = new File(_spillDir);
 				if (!spillDirFile.exists()) {
 					spillDirFile.mkdirs();
 				}
+
+				LocalFileUtils.writeMatrixBlockToLocal(filename, mbToEvict);
 				System.out.println("Evicting directory: "+ filename);
-				bbuff.evictBuffer(filename);
-				bbuff.freeMemory();
-				_size -= bbuff.getSize();
+
+				long freedSize = estimateSerializedSize(mbToEvict);
+				_size -= freedSize;
 			}
 		}
 	}

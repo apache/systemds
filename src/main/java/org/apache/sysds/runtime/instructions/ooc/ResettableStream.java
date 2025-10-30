@@ -21,11 +21,12 @@ package org.apache.sysds.runtime.instructions.ooc;
 
 import org.apache.sysds.runtime.controlprogram.caching.OOCEvictionManager;
 import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.UUID;
+//import java.util.UUID;
 
 /**
  * A wrapper around LocalTaskQueue to consume the source stream and reset to
@@ -39,8 +40,9 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 	// original live stream
 	private final LocalTaskQueue<IndexedMatrixValue> _source;
 
+	private static final IDSequence _streamSeq = new  IDSequence();
 	// stream identifier
-	private final String _streamId;
+	private final long _streamId;
 
 	// list of block keys (only the keys)
 	private final ArrayList<String> _blockKeys;
@@ -53,9 +55,9 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 //	private OOCEvictionManager _manager;
 
 	public ResettableStream(LocalTaskQueue<IndexedMatrixValue> source) {
-		this(source, UUID.randomUUID().toString());
+		this(source, _streamSeq.getNextID());
 	}
-	public ResettableStream(LocalTaskQueue<IndexedMatrixValue> source, String streamId) {
+	public ResettableStream(LocalTaskQueue<IndexedMatrixValue> source, long streamId) {
 		_source = source;
 		_streamId = streamId;
 		_blockKeys = new  ArrayList<>();

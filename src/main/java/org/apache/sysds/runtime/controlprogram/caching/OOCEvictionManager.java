@@ -25,10 +25,12 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Eviction Manager for the Out-Of-Core stream cache
@@ -53,7 +55,7 @@ public class OOCEvictionManager {
 
 	// Memory limit for ByteBuffers
 	private static long _limit;
-	private static long _size;
+	private static AtomicLong _size;
 
 	// Cache of ByteBuffers (off-heap serialized blocks)
 	private static CacheEvictionQueue _mQueue;
@@ -159,6 +161,10 @@ public class OOCEvictionManager {
 
 				// Spill to disk
 				String filename = _spillDir + "/" + key;
+				File spillDirFile = new File(_spillDir);
+				if (!spillDirFile.exists()) {
+					spillDirFile.mkdirs();
+				}
 				System.out.println("Evicting directory: "+ filename);
 				bbuff.evictBuffer(filename);
 				bbuff.freeMemory();

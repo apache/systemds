@@ -24,7 +24,6 @@ import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 
-import java.util.ArrayList;
 
 /**
  * A wrapper around LocalTaskQueue to consume the source stream and reset to
@@ -42,8 +41,7 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 	// stream identifier
 	private final long _streamId;
 
-	// list of block keys (only the keys)
-//	private final ArrayList<String> _blockKeys;
+	// block counter
 	private int _numBlocks = 0;
 
 
@@ -57,7 +55,6 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 	public ResettableStream(LocalTaskQueue<IndexedMatrixValue> source, long streamId) {
 		_source = source;
 		_streamId = streamId;
-//		_blockKeys = new  ArrayList<>();
 	}
 
 	/**

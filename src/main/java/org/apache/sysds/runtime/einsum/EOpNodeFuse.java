@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 import static org.apache.sysds.runtime.instructions.cp.EinsumCPInstruction.ensureMatrixBlockColumnVector;
 
-public class EOpNodeEinsumFuse extends EOpNode {
+public class EOpNodeFuse extends EOpNode {
 
     public enum EinsumRewriteType{
         // B -> row*row, A -> row*scalar
@@ -47,13 +47,13 @@ public class EOpNodeEinsumFuse extends EOpNode {
     public final EinsumRewriteType einsumRewriteType;
     public final List<List<EOpNode>> operands;
 
-    private EOpNodeEinsumFuse(Character c1, Character c2, EinsumRewriteType einsumRewriteType, List<EOpNode>... operands) {
+    private EOpNodeFuse(Character c1, Character c2, EinsumRewriteType einsumRewriteType, List<EOpNode>... operands) {
         super(c1,c2);
         this.einsumRewriteType = einsumRewriteType;
         this.operands = Arrays.asList(operands);
     }
 
-    public static EOpNodeEinsumFuse match(ArrayList<EOpNode> operands, Character outChar1, Character outChar2,/*, Set<Character> simplySummableChars,*/ ArrayList<EOpNode> ret, HashMap<Character, Integer> charToOccurences, HashMap<Character, Integer> charToSize){
+    public static EOpNodeFuse match(ArrayList<EOpNode> operands, Character outChar1, Character outChar2,/*, Set<Character> simplySummableChars,*/ ArrayList<EOpNode> ret, HashMap<Character, Integer> charToOccurences, HashMap<Character, Integer> charToSize){
         //precompute
         HashSet<String> matricesChars = new HashSet<>();
         HashMap<String, ArrayList<EOpNode>> charsToMatrices = new HashMap<>();
@@ -131,27 +131,29 @@ public class EOpNodeEinsumFuse extends EOpNode {
                     }
                     else if(chars.charAt(0)==b){
                         // BZ, todo, maybe transpose ab into ba
-                        pass = false;
-                        break;
+//                        pass = false;
+//                        break;
                     }
                     else if(chars.charAt(1)==a){
                         //ZA, maybe its small enough that it can be tranposed? but then not impactful as the bigger A, the more sense to fuse AZ?
-                            pass = false;
-                            break;
+//                            pass = false;
+//                            break;
                     }
                     else if(chars.charAt(1)==b){
                         // ZB
-                        pass = false;
-                        break;
+//                        pass = false;
+//                        break;
                     }
                 }
             }
-            if(pass){
+
+            if(pass){ // final checks for current AB candidate
 
                 AB = ABcandidate;
                 String A = ""+a;
                 String B = ""+b;
-                int ABsCounter = charsToMatrices.get(ABcandidate).size()+(charsToMatrices.containsKey(BA) ?  charsToMatrices.get(BA).size() : 0);
+                int BAsCounter = (charsToMatrices.containsKey(BA) ?  charsToMatrices.get(BA).size() : 0);
+                int ABsCounter = charsToMatrices.get(ABcandidate).size()+BAsCounter;
 //                int AZsCounter = AZs.size();
                 int AsCounter = (charsToMatrices.containsKey(A) ?  charsToMatrices.get(A).size() : 0);
                 int BsCounter = (charsToMatrices.containsKey(B) ?  charsToMatrices.get(B).size() : 0);
@@ -162,18 +164,27 @@ public class EOpNodeEinsumFuse extends EOpNode {
                 int usedBsCount = BsCounter+ABsCounter;
                 doSumB = charToOccurences.get(b)==usedBsCount && (outChar1 == null || b!=outChar1) && (outChar2 == null || b!=outChar2);
 
+                boolean includeAz = true;
                 if(AZCandidates.size()==1){
 //                    if(!doSumB){
 //                        pass=false;
 //                        continue;
 //                    }
-                    int usedAsCount = AsCounter+ABsCounter+AZsCounter;
-                    doSumA = charToOccurences.get(a)==usedAsCount && (outChar1 == null || a!=outChar1) && (outChar2 == null || a!=outChar2);
-                    if(!doSumA){ // cant do AZ
-                        break;// just do AB,B,A ->AB / A
-                    }else {
-                        AZs = charsToMatrices.get(AZCandidates.iterator().next());
-                        break;//ok
+                    if(!doSumB) {
+                        // check if outer is possible AB,...,AZ->BZ
+                        if(!EinsumCPInstruction.FUSE_OUTER_MULTIPLY || !LibMatrixMult.isSkinnyRightHandSide(charToSize.get(AB.charAt(0)), charToSize.get(AB.charAt(1)),  charToSize.get(AB.charAt(0)),charToSize.get(AZCandidates.iterator().next().charAt(1)),false)) {
+                            includeAz=false;
+                        }
+                    }
+                    if(includeAz){
+                        int usedAsCount = AsCounter+ABsCounter+AZsCounter;
+                        doSumA = charToOccurences.get(a)==usedAsCount && (outChar1 == null || a!=outChar1) && (outChar2 == null || a!=outChar2);
+                        if(!doSumA){ // cant do AZ
+                            break;// just do AB,B,A ->AB / A
+                        }else {
+                            AZs = charsToMatrices.get(AZCandidates.iterator().next());
+                            break;//ok
+                        }
                     }
                 } else if (AZCandidates.size()>=2) {
                     doSumA = false;
@@ -195,6 +206,17 @@ public class EOpNodeEinsumFuse extends EOpNode {
         if(!pass){
             return null;
         }
+        ArrayList<EOpNode> ABs=charsToMatrices.containsKey(AB) ? charsToMatrices.get(AB) : new ArrayList<>();
+        ArrayList<EOpNode> BAs=charsToMatrices.containsKey(BA) ? charsToMatrices.get(BA) : new ArrayList<>();
+        if (ABs.size() < BAs.size() - 1) {
+            String tmp = AB;
+
+            AB=BA;
+            BA=tmp;
+            ArrayList<EOpNode> tmp2 = ABs;
+            BAs=ABs;
+            ABs=tmp2;
+        }
         String B = AB.substring(1,2);
         String A = AB.substring(0,1);
         char a = A.charAt(0);
@@ -213,8 +235,9 @@ public class EOpNodeEinsumFuse extends EOpNode {
 
             }
             else if (EinsumCPInstruction.FUSE_OUTER_MULTIPLY) {
-                if(LibMatrixMult.isSkinnyRightHandSide(charToSize.get(AB.charAt(0)), charToSize.get(AB.charAt(1)), charToSize.get(azC2), charToSize.get(AB.charAt(1)),false)||
-                        LibMatrixMult.isSkinnyRightHandSide(charToSize.get(AB.charAt(0)), azC2, charToSize.get(AB.charAt(1)), charToSize.get(azC2),false)) {
+//                if(LibMatrixMult.isSkinnyRightHandSide(charToSize.get(AB.charAt(0)), charToSize.get(AB.charAt(1)), charToSize.get(azC2), charToSize.get(AB.charAt(1)),false)||
+//                        LibMatrixMult.isSkinnyRightHandSide(charToSize.get(AB.charAt(0)), azC2, charToSize.get(AB.charAt(1)), charToSize.get(azC2),false)) {
+                if(LibMatrixMult.isSkinnyRightHandSide(charToSize.get(AB.charAt(0)), charToSize.get(AB.charAt(1)),  charToSize.get(AB.charAt(0)),charToSize.get(azC2),false)){
                     // ideally this can be changed later by parent,depending on need
                     if (outChar1 == azC2 && outChar2 == b) {
                         t = EinsumRewriteType.AB_BA_B_A_AZ__ZB;
@@ -230,7 +253,13 @@ public class EOpNodeEinsumFuse extends EOpNode {
                         c2 = b;
                     }
 
+                }else{
+                    t=null;
+                    AZs=new ArrayList<>();
                 }
+            }else{
+                t=null;
+                AZs=new ArrayList<>();
             }
 
             if(charsToMatrices.containsKey(azC2.toString())) {
@@ -262,8 +291,7 @@ public class EOpNodeEinsumFuse extends EOpNode {
         }
         HashSet<EOpNode> usedOperands = new HashSet<>();
 
-        ArrayList<EOpNode> ABs=charsToMatrices.containsKey(AB) ? charsToMatrices.get(AB) : new ArrayList<>();
-        ArrayList<EOpNode> BAs=charsToMatrices.containsKey(BA) ? charsToMatrices.get(BA) : new ArrayList<>();
+
         ArrayList<EOpNode> Bs=charsToMatrices.containsKey(B) ? charsToMatrices.get(B) : new ArrayList<>();
         ArrayList<EOpNode> As=charsToMatrices.containsKey(A) ? charsToMatrices.get(A) : new ArrayList<>();
 
@@ -290,7 +318,7 @@ public class EOpNodeEinsumFuse extends EOpNode {
             }
         }
 
-        var e = new EOpNodeEinsumFuse(c1, c2, t,
+        var e = new EOpNodeFuse(c1, c2, t,
                 ABs,
                 BAs,
                 Bs,
@@ -316,16 +344,16 @@ public class EOpNodeEinsumFuse extends EOpNode {
                     .flatMap(List::stream)
                     .map(o -> o.c1.toString() + (o.c2 == null ? "" : o.c2))
                     .collect(Collectors.joining(","));
-            String res = (eOpNodeEinsumFuse.c1 == null ? "" : eOpNodeEinsumFuse.c1.toString())+(eOpNodeEinsumFuse.c2 == null ? "" : eOpNodeEinsumFuse.c2.toString());
-            LOG.trace("ComputeEOpNodeFuse " + eOpNodeEinsumFuse.einsumRewriteType.toString() +" "+ x + " -> " + res);
+            String res = (eOpNodeEinsumFuse.c1 == null ? "AB=" : eOpNodeEinsumFuse.c1.toString())+(eOpNodeEinsumFuse.c2 == null ? "" : eOpNodeEinsumFuse.c2.toString());
+            LOG.trace("ComputeEOpNodeFuse " + operands.get(0).get(0).c1+operands.get(0).get(0).c2 +" "+eOpNodeEinsumFuse.einsumRewriteType.toString() +" "+ x + " -> " + res);
         }
-        boolean isResultAB = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A__AB;
-        boolean isResultA = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A__A;
-        boolean isResultB = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A__B;
-        boolean isResult_ = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A__;
-        boolean isResultZ = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A_AZ__Z;
-        boolean isResultBZ = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A_AZ__BZ;
-        boolean isResultZB = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A_AZ__ZB;
+        boolean isResultAB = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__AB;
+        boolean isResultA = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__A;
+        boolean isResultB = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__B;
+        boolean isResult_ = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__;
+        boolean isResultZ = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeFuse.EinsumRewriteType.AB_BA_B_A_AZ__Z;
+        boolean isResultBZ = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeFuse.EinsumRewriteType.AB_BA_B_A_AZ__BZ;
+        boolean isResultZB = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeFuse.EinsumRewriteType.AB_BA_B_A_AZ__ZB;
 //        boolean isResultBC = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A_AC__BC;
 //        boolean isResultCB = eOpNodeEinsumFuse.einsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A_AZ__ZB;
         List<MatrixBlock> ABs = mbs.get(0), BAs = mbs.get(1), Bs =  mbs.get(2), XBs = mbs.get(3), BXs = mbs.get(4), As = mbs.get(5), XAs = mbs.get(6), AXs = mbs.get(7);
@@ -393,7 +421,7 @@ public class EOpNodeEinsumFuse extends EOpNode {
             case AB_BA_B_A_AZ__BZ -> SpoofRowwise.RowType.COL_AGG_B1_T;
             case AB_BA_B_A_AZ__ZB -> SpoofRowwise.RowType.COL_AGG_B1;
         };
-        EinsumSpoofRowwise r = new EinsumSpoofRowwise(eOpNodeEinsumFuse.einsumRewriteType, rowType, constDim2, false, 0, ABs.size()-1,Bs.size(), As.size(), zCount, azCount, zSize);
+        EinsumSpoofRowwise r = new EinsumSpoofRowwise(eOpNodeEinsumFuse.einsumRewriteType, rowType, constDim2, false, 1, ABs.size()-1,Bs.size(), As.size(), zCount, azCount, zSize);
 
 
         ArrayList<MatrixBlock> fuseInputs = new ArrayList<>();
@@ -408,6 +436,11 @@ public class EOpNodeEinsumFuse extends EOpNode {
         if( isResultA ||  isResultB || isResultZ)
             ensureMatrixBlockColumnVector(out);
         return out;
+
+    }
+
+    @Override
+    public void reorderChildren(Character outChar1, Character outChar2) {
 
     }
 

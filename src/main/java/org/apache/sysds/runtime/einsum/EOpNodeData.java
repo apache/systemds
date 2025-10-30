@@ -16,4 +16,9 @@ public class EOpNodeData extends EOpNode {
     public MatrixBlock computeEOpNode(ArrayList<MatrixBlock> inputs, int numOfThreads, Log LOG) {
         return inputs.get(matrixIdx);
     }
+
+    @Override
+    public void reorderChildren(Character outChar1, Character outChar2) {
+
+    }
 }

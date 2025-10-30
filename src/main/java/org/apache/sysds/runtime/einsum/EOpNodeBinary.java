@@ -1,6 +1,7 @@
 package org.apache.sysds.runtime.einsum;
 
 import org.apache.commons.logging.Log;
+import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
@@ -74,7 +75,7 @@ public class EOpNodeBinary extends EOpNode {
 
         MatrixBlock res;
 
-        LOG.trace("computing binary "+bin._left +","+bin._right +"->"+bin);
+        if(LOG.isTraceEnabled()) LOG.trace("computing binary "+bin._left +","+bin._right +"->"+bin);
 
         switch (bin._operand){
             case AB_AB -> {
@@ -88,11 +89,10 @@ public class EOpNodeBinary extends EOpNode {
             case a_a -> {
                 ensureMatrixBlockColumnVector(left);
                 ensureMatrixBlockColumnVector(right);
-                res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
-                AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), numThreads);
-                res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
+				res = new MatrixBlock(0.0);
+				res.allocateDenseBlock();
+				res.getDenseBlockValues()[0] = LibMatrixMult.dotProduct(left.getDenseBlockValues(), right.getDenseBlockValues(), 0,0 , left.getNumRows());
             }
-            ////////////
             case Ba_Ba -> {
                 res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
                 AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
@@ -131,7 +131,6 @@ public class EOpNodeBinary extends EOpNode {
                 res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
             }
 
-            /////////
             case AB_BA -> {
                 ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), numThreads);
                 right = right.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
@@ -149,9 +148,22 @@ public class EOpNodeBinary extends EOpNode {
                 res = LibMatrixMult.matrixMult(left,right, new MatrixBlock(), numThreads);
             }
             case aB_aC -> {
-                ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), numThreads);
-                left = left.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-                res = LibMatrixMult.matrixMult(left,right, new MatrixBlock(), numThreads);
+                if(false && LibMatrixMult.isSkinnyRightHandSide(left.getNumRows(), left.getNumColumns(), right.getNumRows(), right.getNumColumns(), true)){
+                    res = new MatrixBlock(left.getNumColumns(), right.getNumColumns(),false);
+                    res.allocateDenseBlock();
+                    double[] m1 = left.getDenseBlock().values(0);
+                    double[] m2 = right.getDenseBlock().values(0);
+                    double[] c = res.getDenseBlock().values(0);
+                    int alen = left.getNumColumns();
+                    int blen = right.getNumColumns();
+                    for(int i =0;i<left.getNumRows();i++){
+                        LibSpoofPrimitives.vectOuterMultAdd(m1,m2,c,i*alen,i*blen, 0,alen,blen);
+                    }
+                }else {
+                    ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), numThreads);
+                    left = left.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
+                    res = LibMatrixMult.matrixMult(left, right, new MatrixBlock(), numThreads);
+                }
             }
             case A_scalar, AB_scalar -> {
                 res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left},new ScalarObject[]{new DoubleObject(right.get(0,0))}, new MatrixBlock());
@@ -193,6 +205,25 @@ public class EOpNodeBinary extends EOpNode {
 
         }
         return res;
+    }
+
+    @Override
+    public void reorderChildren(Character outChar1, Character outChar2) {
+        if (this._operand==EBinaryOperand.aB_aC){
+            if(this._right.c2 == outChar1) {
+                    var tmp = _left;
+                    _left = _right;
+                    _right = tmp;
+                    var tmp2 = c1;
+                    c1 = c2;
+                    c2 = tmp2;
+            }
+            _left.reorderChildren(_left.c2, _left.c1);
+            // check if change happened:
+            if(_left.c2 == _right.c1) {
+                this._operand = EBinaryOperand.Ba_aC;
+            }
+        }
     }
 
 }

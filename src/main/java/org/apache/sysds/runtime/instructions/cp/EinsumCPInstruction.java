@@ -132,10 +132,10 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		}
 
 		HashMap<Character, Integer> characterToOccurences = new HashMap<>();
-		for (Character key :einc.characterAppearanceIndexes.keySet()) {
+		for (Character key : einc.characterAppearanceIndexes.keySet()) {
 			characterToOccurences.put(key, einc.characterAppearanceIndexes.get(key).size());
 		}
-		for (Character key :einc.charToDimensionSize.keySet()) {
+		for (Character key : einc.charToDimensionSize.keySet()) {
 			if(!characterToOccurences.containsKey(key))
 				characterToOccurences.put(key, 1);
 		}
@@ -146,42 +146,67 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			EOpNodeData n = new EOpNodeData(inputsChars.get(i).length() > 0 ? inputsChars.get(i).charAt(0) : null, inputsChars.get(i).length() > 1 ? inputsChars.get(i).charAt(1) : null, i);
 			eOpNodes.add(n);
 		}
-		Pair<Integer, List<EOpNode> > plan = FORCE_CELL_TPL ? null : generatePlan(0, eOpNodes, einc.charToDimensionSize, characterToOccurences, einc.outChar1, einc.outChar2, FUSED);
+		Pair<Integer, List<EOpNode> > plan;
+		ArrayList<MatrixBlock> remainingMatrices;
+        if(!FORCE_CELL_TPL) {
+            if(FUSED) {
+                ArrayList<EOpNode> ret = new ArrayList<>();
+                EOpNodeFuse fuse = EOpNodeFuse.match(eOpNodes, einc.outChar1, einc.outChar2, ret, characterToOccurences, einc.charToDimensionSize);
+                if(fuse != null){
+                    eOpNodes = ret;
+                }
+                while(ret.size() > 2 && fuse != null){
+                    ret = new ArrayList<>();
+                    fuse = EOpNodeFuse.match(eOpNodes, einc.outChar1, einc.outChar2, ret, characterToOccurences, einc.charToDimensionSize);
+                    if(fuse != null){
+                        eOpNodes = ret;
+                    }
+                }
 
+            }
 
-		ArrayList<MatrixBlock> resMatrices = FORCE_CELL_TPL ? null : executePlan(plan.getRight(), inputs);
+            plan = generatePlan(0, eOpNodes, einc.charToDimensionSize, characterToOccurences, einc.outChar1, einc.outChar2);
 
-		if(!FORCE_CELL_TPL && resMatrices.size() == 1){
+			if(plan.getRight().size() == 1)
+				plan.getRight().get(0).reorderChildren(einc.outChar1, einc.outChar2);
+
+			remainingMatrices = executePlan(plan.getRight(), inputs);
+        }else{
+			plan = Pair.of(0, eOpNodes);
+			remainingMatrices = inputs;
+		}
+
+		if(!FORCE_CELL_TPL && remainingMatrices.size() == 1){
 			EOpNode resNode = plan.getRight().get(0);
 			if (einc.outChar1 != null && einc.outChar2 != null){
 				if(resNode.c1 == einc.outChar1 && resNode.c2 == einc.outChar2){
-					ec.setMatrixOutput(output.getName(), resMatrices.get(0));
+					ec.setMatrixOutput(output.getName(), remainingMatrices.get(0));
 				}
 				else if(resNode.c1 == einc.outChar2 && resNode.c2 == einc.outChar1){
                     if( LOG.isTraceEnabled()) LOG.trace("Transposing the final result");
 
 					ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _numThreads);
-					MatrixBlock resM = resMatrices.get(0).reorgOperations(transpose, new MatrixBlock(),0,0,0);
+					MatrixBlock resM = remainingMatrices.get(0).reorgOperations(transpose, new MatrixBlock(),0,0,0);
 					ec.setMatrixOutput(output.getName(), resM);
 				}else{
-					if(LOG.isTraceEnabled()) LOG.trace("Einsum expected: "+resultString + ", got: "+resNode.c1+resNode.c2);
-					throw new RuntimeException("Einsum plan produced different result");
+					if(LOG.isTraceEnabled()) LOG.trace("Einsum error, expected: "+resultString + ", got: "+resNode.c1+resNode.c2);
+					throw new RuntimeException("Einsum plan produced different result, expected: "+resultString + ", got: "+resNode.c1+resNode.c2);
 				}
 			}else if (einc.outChar1 != null){
 				if(resNode.c1 == einc.outChar1  && resNode.c2 == null){
-					ec.setMatrixOutput(output.getName(), resMatrices.get(0));
+					ec.setMatrixOutput(output.getName(), remainingMatrices.get(0));
 				}else{
 					if(LOG.isTraceEnabled()) LOG.trace("Einsum expected: "+resultString + ", got: "+resNode.c1+resNode.c2);
 					throw new RuntimeException("Einsum plan produced different result");
 				}
 			}else{
 				if(resNode.c1 == null && resNode.c2 == null){
-					ec.setScalarOutput(output.getName(), new DoubleObject(resMatrices.get(0).get(0, 0)));;
+					ec.setScalarOutput(output.getName(), new DoubleObject(remainingMatrices.get(0).get(0, 0)));;
 				}
 			}
 		}else{
 			// use cell template with loops for remaining
-			ArrayList<MatrixBlock> mbs = resMatrices;
+			ArrayList<MatrixBlock> mbs = remainingMatrices;
 			ArrayList<String> chars = new ArrayList<>();
 
 			for (int i = 0; i < plan.getRight().size(); i++) {
@@ -249,7 +274,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 	}
 
     // ideally the return list contains only one final element
-	private Pair<Integer, List<EOpNode>> generatePlan(int cost, ArrayList<EOpNode> operands, HashMap<Character, Integer> charToSizeMap, HashMap<Character, Integer> charToOccurences, Character outChar1, Character outChar2, boolean fused) {
+	private Pair<Integer, List<EOpNode>> generatePlan(int cost, ArrayList<EOpNode> operands, HashMap<Character, Integer> charToSizeMap, HashMap<Character, Integer> charToOccurences, Character outChar1, Character outChar2) {
 		Integer minCost = cost;
 		List<EOpNode> minNodes = operands;
 
@@ -270,21 +295,6 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			return Pair.of(cost, operands);
 		}
 
-        if(fused){
-            ArrayList<EOpNode> ret = new ArrayList<>();
-            EOpNodeEinsumFuse fuse = EOpNodeEinsumFuse.match(operands,outChar1,outChar2,ret, charToOccurences, einc.charToDimensionSize);
-            if(fuse != null){
-                minNodes = operands = ret;
-            }
-            while(ret.size() > 2 && fuse!=null){
-                ret = new ArrayList<>();
-                fuse = EOpNodeEinsumFuse.match(operands,outChar1,outChar2,ret, charToOccurences, einc.charToDimensionSize);
-                if(fuse != null){
-                    minNodes = operands = ret;
-                }
-            }
-            fused = false;
-        }
 
 		for(int i = 0; i < operands.size()-1; i++){
 			for (int j = i+1; j < operands.size(); j++){
@@ -312,7 +322,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 					}
 					newOperands.add(newNode);
 
-					Pair<Integer, List<EOpNode>> furtherPlan = generatePlan(thisCost, newOperands,charToSizeMap, charToOccurences, outChar1, outChar2, fused);
+					Pair<Integer, List<EOpNode>> furtherPlan = generatePlan(thisCost, newOperands,charToSizeMap, charToOccurences, outChar1, outChar2);
 					if(furtherPlan.getRight().size() < (minNodes.size()) || furtherPlan.getLeft() < minCost){
 						minCost = furtherPlan.getLeft();
 						minNodes = furtherPlan.getRight();
@@ -374,7 +384,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 					return null;// AB,AC
 				}
 				else {
-					return Triple.of((charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2))+(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*charToSizeMap.get(n2.c2)), EBinaryOperand.aB_aC, Pair.of(n1.c2, n2.c2)); // or n2.c2, n1.c2
+                    return Triple.of((charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2))+(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*charToSizeMap.get(n2.c2)), EBinaryOperand.aB_aC, Pair.of(n1.c2, n2.c2)); // or n2.c2, n1.c2
 				}
 			}else{ // n1.c2 = null -> c2.c2 = null
 				if(n1.c1 ==outChar1 || n1.c1==outChar2 || charToOccurences.get(n1.c1) > 2){
@@ -424,8 +434,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 				if(cannotBeSummed.test(n1.c1)){
 					return null; // AB_B
 				}
-				return null;//todo remove.
-//				return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*charToSizeMap.get(n2.c1), EBinaryOperand.aB_Ca, Pair.of(n2.c1, n1.c2)); // * its just reorder of mmult
+				return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*charToSizeMap.get(n2.c1), EBinaryOperand.aB_Ca, Pair.of(n2.c1, n1.c2)); // * its just reorder of mmult
 			}
 			else if (n1.c2 == n2.c2) {
 				if(n1.c2 ==outChar1 || n1.c2==outChar2|| charToOccurences.get(n1.c2) > 2){
@@ -477,9 +486,9 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 
 	private MatrixBlock computeCellSummation(ArrayList<MatrixBlock> inputs, List<String> inputsChars, String resultString,
 														   HashMap<Character, Integer> charToDimensionSizeInt, List<Character> summingChars, int outRows, int outCols){
-		ArrayList<CNode> cnodeIn = new ArrayList<>();
-		cnodeIn.add(new CNodeData(new LiteralOp(3), 0, 0, DataType.SCALAR));
-		CNodeCell cnode = new CNodeCell(cnodeIn, null);
+		ArrayList<CNode> dummyIn = new ArrayList<>();
+        dummyIn.add(new CNodeData(new LiteralOp(0), 0, 0, DataType.SCALAR));
+		CNodeCell cnode = new CNodeCell(dummyIn, null);
 		StringBuilder sb = new StringBuilder();
 
 		int indent = 2;
@@ -562,7 +571,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 				sb.append(itVar0);
 				sb.append(inputsChars.get(i).charAt(1));
 				sb.append(")");
-			} else if (resultString.length() >= 1 &&inputsChars.get(i).charAt(1) == resultString.charAt(0)) {
+			} else if (resultString.length() >= 1 && inputsChars.get(i).charAt(1) == resultString.charAt(0)) {
 				sb.append("rix)");
 			} else if (resultString.length() == 2  && inputsChars.get(i).charAt(1) == resultString.charAt(1)) {
 				sb.append("cix)");
@@ -584,8 +593,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			indent--;
 			sb.append("}\n");
 		}
-        //endregion
-		String src = CNodeCell.JAVA_TEMPLATE;//
+		String src = CNodeCell.JAVA_TEMPLATE;
 		src = src.replace("%TMP%", cnode.createVarname());
 		src = src.replace("%TYPE%", "NO_AGG");
 		src = src.replace("%SPARSE_SAFE%", "false");

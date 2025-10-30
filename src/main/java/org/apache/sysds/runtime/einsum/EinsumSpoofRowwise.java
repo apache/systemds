@@ -16,9 +16,9 @@ public final class EinsumSpoofRowwise extends SpoofRowwise {
     private final int _uptoBCumCount;
     private final int _uptoZCumCount;
 
-    private final EOpNodeEinsumFuse.EinsumRewriteType _EinsumRewriteType;
+    private final EOpNodeFuse.EinsumRewriteType _EinsumRewriteType;
 
-    public EinsumSpoofRowwise(EOpNodeEinsumFuse.EinsumRewriteType einsumRewriteType, RowType rowType, long constDim2, boolean tb1, int reqVectMem, int abCount, int bCount, int aCount, int zCount, int azCount, int zSize) {
+    public EinsumSpoofRowwise(EOpNodeFuse.EinsumRewriteType einsumRewriteType, RowType rowType, long constDim2, boolean tb1, int reqVectMem, int abCount, int bCount, int aCount, int zCount, int azCount, int zSize) {
         super(rowType, constDim2, tb1, reqVectMem);
         _ABCount = abCount;
         _BCount = bCount;
@@ -119,7 +119,7 @@ public final class EinsumSpoofRowwise extends SpoofRowwise {
     protected void genexec_A_or_(double[] a, int ai, SideInput[] b, double[] scalars, double[] c, int ci, int len, long grix, int rix) {
         int bi = 0;
         double[] TMP1 = null;
-        Double TMP2 = null;
+        double TMP2 = 0;
         if (_ABCount == 0 && _BCount == 0){
             TMP2 = LibSpoofPrimitives.dotProduct(a,b[bi++].values(rix),ai,ai,len);
         }
@@ -152,9 +152,11 @@ public final class EinsumSpoofRowwise extends SpoofRowwise {
         if(_ACount == 1) {
             TMP2 *= b[bi].values(0)[rix];
         }
-        if (_EinsumRewriteType == EOpNodeEinsumFuse.EinsumRewriteType.AB_BA_B_A__A) c[ci] = TMP2;
+        if (_EinsumRewriteType == EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__A) c[ci] = TMP2;
         else c[0] += TMP2;
     }
+
     protected void genexec(double[] avals, int[] aix, int ai, SideInput[] b, double[] scalars, double[] c, int ci, int alen, int len, long grix, int rix) {
-        throw new RuntimeException("Sparse einsum not implemented");  }
+		throw new RuntimeException("Sparse fused einsum not implemented");
+    }
 }

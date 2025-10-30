@@ -22,5 +22,7 @@ public abstract class EOpNode {
     }
 
     public abstract MatrixBlock computeEOpNode(ArrayList<MatrixBlock> inputs, int numOfThreads, Log LOG);
+
+    public abstract void reorderChildren(Character outChar1, Character outChar2);
 }
 

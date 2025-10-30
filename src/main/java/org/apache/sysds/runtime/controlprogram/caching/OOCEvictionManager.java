@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.controlprogram.caching;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
@@ -44,7 +45,6 @@ import java.util.Map.Entry;
  *   there won't be OOM.
  */
 public class OOCEvictionManager {
-//	private static OOCEvictionManager _instance;
 
 	// Configuration: OOC buffer limit as percentage of heap
 	private static final double OOC_BUFFER_PERCENTAGE = 0.15; // 15% of heap
@@ -74,7 +74,7 @@ public class OOCEvictionManager {
 	static {
 		_mQueue = new CacheEvictionQueue();
 		_fClean = new CacheMaintenanceService();
-		_limit = (long)(Runtime.getRuntime().maxMemory() * OOC_BUFFER_PERCENTAGE); // e.g., 20% of heap
+		_limit = (long)(Runtime.getRuntime().maxMemory() * OOC_BUFFER_PERCENTAGE * 0.01); // e.g., 20% of heap
 		_size = 0;
 		_spillDir = LocalFileUtils.getUniqueWorkingDir("ooc_stream");
 		LocalFileUtils.createLocalFileIfNotExist(_spillDir);
@@ -83,51 +83,61 @@ public class OOCEvictionManager {
 	/**
 	 * Store a block in the OOC cache (serialize once)
 	 */
-	public static synchronized void put(String key, IndexedMatrixValue value) throws IOException {
-		MatrixBlock mb = (MatrixBlock) value.getValue();
-		// Serialize to ByteBuffer
-		long size = estimateSerializedSize(mb);
-		ByteBuffer bbuff = new ByteBuffer(size);
+	public static synchronized void put(String key, IndexedMatrixValue value) {
+		try {
+			MatrixBlock mb = (MatrixBlock) value.getValue();
+			// Serialize to ByteBuffer
+			long size = estimateSerializedSize(mb);
+			ByteBuffer bbuff = new ByteBuffer(size);
 
-		synchronized(_mQueue) {
-			// Make space
-			evict(size);
+			synchronized (_mQueue) {
+				// Make space
+				evict(size);
 
-			// Add to cache
-			_mQueue.addLast(key, bbuff);
-			_size += size;
+				// Add to cache
+				_mQueue.addLast(key, bbuff);
+				_size += size;
+			}
+
+			// Serialize outside lock
+			_fClean.serializeData(bbuff, mb);
 		}
-
-		// Serialize outside lock
-		_fClean.serializeData(bbuff, mb);
+		catch(Exception e) {
+			throw new DMLRuntimeException(e);
+		}
 	}
 
 	/**
 	 * Get a block from the OOC cache (deserialize on read)
 	 */
-	public static synchronized IndexedMatrixValue get(String key) throws IOException {
+	public static synchronized IndexedMatrixValue get(String key) {
 		ByteBuffer bbuff = null;
 
-		synchronized(_mQueue) {
-			bbuff = _mQueue.get(key);
+		try {
+			synchronized (_mQueue) {
+				bbuff = _mQueue.get(key);
 
-			// LRU: move to end
-			if(_policy == RPolicy.LRU && bbuff != null) {
-				_mQueue.remove(key);
-				_mQueue.addLast(key, bbuff);
+				// LRU: move to end
+				if (_policy == RPolicy.LRU && bbuff != null) {
+					_mQueue.remove(key);
+					_mQueue.addLast(key, bbuff);
+				}
+			}
+
+			if (bbuff != null) {
+				// Cache hit: deserialize from ByteBuffer
+				bbuff.checkSerialized();
+				MatrixBlock mb = (MatrixBlock) bbuff.deserializeBlock();
+
+				MatrixIndexes ix = parseIndexesFromKey(key);
+				return new IndexedMatrixValue(ix, mb);
+			} else {
+				// Cache miss: load from disk
+				return loadFromDisk(key);
 			}
 		}
-
-		if(bbuff != null) {
-			// Cache hit: deserialize from ByteBuffer
-			bbuff.checkSerialized();
-			MatrixBlock mb = (MatrixBlock) bbuff.deserializeBlock();
-
-			MatrixIndexes ix = parseIndexesFromKey(key);
-			return new IndexedMatrixValue(ix, mb);
-		} else {
-			// Cache miss: load from disk
-			return loadFromDisk(key);
+		catch (IOException e) {
+			throw new DMLRuntimeException(e);
 		}
 	}
 
@@ -136,6 +146,7 @@ public class OOCEvictionManager {
 	 */
 	private static void evict(long requiredSize) throws IOException {
 		while(_size + requiredSize > _limit && !_mQueue.isEmpty()) {
+			System.out.println("_size + requiredSize: " + _size +" + "+ requiredSize + "; _limit: " + _limit);
 			Entry<String, ByteBuffer> entry = _mQueue.removeFirst();
 			String key = entry.getKey();
 			ByteBuffer bbuff = entry.getValue();
@@ -146,6 +157,7 @@ public class OOCEvictionManager {
 
 				// Spill to disk
 				String filename = _spillDir + "/" + key;
+				System.out.println("Evicting directory: "+ filename);
 				bbuff.evictBuffer(filename);
 				bbuff.freeMemory();
 				_size -= bbuff.getSize();

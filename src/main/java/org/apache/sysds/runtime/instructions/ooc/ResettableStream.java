@@ -24,9 +24,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 
-import java.io.IOException;
 import java.util.ArrayList;
-//import java.util.UUID;
 
 /**
  * A wrapper around LocalTaskQueue to consume the source stream and reset to
@@ -52,8 +50,6 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 	private boolean _cacheInProgress = true; // caching in progress, in the first pass.
 	private int _replayPosition = 0; // slider position in the stream
 
-//	private OOCEvictionManager _manager;
-
 	public ResettableStream(LocalTaskQueue<IndexedMatrixValue> source) {
 		this(source, _streamSeq.getNextID());
 	}
@@ -61,8 +57,6 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 		_source = source;
 		_streamId = streamId;
 		_blockKeys = new  ArrayList<>();
-//		_cache = new ArrayList<>();
-//		_manager = OOCEvictionManager.getInstance();
 	}
 
 	/**
@@ -70,7 +64,6 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 	 * For subsequent passes it reads from the memory.
 	 *
 	 * @return The next matrix value in the stream, or NO_MORE_TASKS
-	 * @throws InterruptedException
 	 */
 	@Override
 	public synchronized IndexedMatrixValue dequeueTask()
@@ -80,15 +73,10 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 			IndexedMatrixValue task = _source.dequeueTask();
 			if (task != NO_MORE_TASKS) {
 				String key = _streamId + "_" + _blockKeys.size();
-//				_cache.add(new IndexedMatrixValue(task));
 				_blockKeys.add(key);
 
-				try {
-					OOCEvictionManager.put(key, task);
-//					_manager.put(key, task); // Serialize
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
+				OOCEvictionManager.put(key, task);
+
 				return task;
 			} else {
 				_cacheInProgress = false; // caching is complete
@@ -99,15 +87,10 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 				return (IndexedMatrixValue) NO_MORE_TASKS;
 			}
 		} else {
-//			// Replay pass: read from the buffer
+			// Replay pass: read from the buffer
 			if (_replayPosition < _blockKeys.size()) {
 				String key = _blockKeys.get(_replayPosition++);
-				try {
-					return OOCEvictionManager.get(key);
-//					return _manager.get(key); // Deserialize
-				} catch (IOException ex) {
-					throw new RuntimeException(ex);
-				}
+				return OOCEvictionManager.get(key);
 			} else {
 				return (IndexedMatrixValue) NO_MORE_TASKS;
 			}

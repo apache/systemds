@@ -22,14 +22,12 @@ package org.apache.sysds.runtime.instructions.ooc;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -78,12 +76,8 @@ public class OOCEvictionManager {
 	private static long _size;
 
 	// Cache structures: map key -> MatrixBlock and eviction deque (head=oldest block)
-	private static final Map<String, IndexedMatrixValue> _cache = new HashMap<>();
-	private static final Deque<String> _evictDeque = new ArrayDeque<>();
-
-	// Single lock for synchronization
-	private static final Object lock = new Object();
-
+	private static LinkedHashMap<String, IndexedMatrixValue> _cache = new LinkedHashMap<>();
+	
 	// Spill directory for evicted blocks
 	private static String _spillDir;
 
@@ -92,10 +86,8 @@ public class OOCEvictionManager {
 	}
 	private static RPolicy _policy = RPolicy.FIFO;
 
-	private OOCEvictionManager() {}
-
 	static {
-		_limit = (long)(Runtime.getRuntime().maxMemory() * OOC_BUFFER_PERCENTAGE * 0.01); // e.g., 20% of heap
+		_limit = (long)(Runtime.getRuntime().maxMemory() * OOC_BUFFER_PERCENTAGE); // e.g., 20% of heap
 		_size = 0;
 		_spillDir = LocalFileUtils.getUniqueWorkingDir("ooc_stream");
 		LocalFileUtils.createLocalFileIfNotExist(_spillDir);
@@ -109,103 +101,106 @@ public class OOCEvictionManager {
 		long size = estimateSerializedSize(mb);
 		String key = streamId + "_" + blockId;
 
-		synchronized (lock) {
-			IndexedMatrixValue old = _cache.remove(key); // remove old value
-			if (old != null) {
-				_evictDeque.remove(key);
-				_size -= estimateSerializedSize((MatrixBlock) old.getValue());
-			}
-
-			try {
-				evict(size);
-			} catch (IOException e) {
-				throw new DMLRuntimeException(e);
-			}
-
-			_cache.put(key, value); // put new value
-			_evictDeque.addLast(key); // add to end for FIFO/LRU
-			_size += size;
+		IndexedMatrixValue old = _cache.remove(key); // remove old value
+		if (old != null) {
+			_size -= estimateSerializedSize((MatrixBlock) old.getValue());
 		}
+
+		//make room if needed
+		evict(size);
+		
+		_cache.put(key, value); // put new value last
+		_size += size;
 	}
 
 	/**
 	 * Get a block from the OOC cache (deserialize on read)
 	 */
 	public static synchronized IndexedMatrixValue get(long streamId, int blockId) {
-
 		String key = streamId + "_" + blockId;
 		IndexedMatrixValue imv = _cache.get(key);
 
-		synchronized (lock) {
-			if (imv != null && _policy == RPolicy.LRU) {
-				_evictDeque.remove(key);
-				_evictDeque.addLast(key);
-			}
+		if (imv != null && _policy == RPolicy.LRU) {
+			_cache.remove(key);
+			_cache.put(key, imv); //add last semantic
 		}
-
-		if (imv != null) {
-			return imv;
-		} else {
-			try {
-				return loadFromDisk(streamId, blockId);
-			} catch (IOException e) {
-				throw new DMLRuntimeException(e);
-			}
-		}
-
+		
+		//restore if needed
+		return (imv.getValue() != null) ? imv : 
+			loadFromDisk(streamId, blockId);
 	}
 
 	/**
 	 * Evict ByteBuffers to disk
 	 */
-	private static void evict(long requiredSize) throws IOException {
-		while(_size + requiredSize > _limit && !_evictDeque.isEmpty()) {
-			System.out.println("_size + requiredSize: " + _size +" + "+ requiredSize + "; _limit: " + _limit);
-			String oldKey = _evictDeque.removeLast();
-			IndexedMatrixValue toEvict = _cache.remove(oldKey);
-
-			if (toEvict == null) { continue;}
-			MatrixBlock mbToEvict = (MatrixBlock) toEvict.getValue();
-
-			// Spill to disk
-			String filename = _spillDir + "/" + oldKey;
-			File spillDirFile = new File(_spillDir);
-			if (!spillDirFile.exists()) {
-				spillDirFile.mkdirs();
+	private static void evict(long requiredSize) {
+		try {
+			int pos = 0;
+			while(_size + requiredSize > _limit && pos++ < _cache.size()) {
+				//System.out.println("BUFFER: "+_size+"/"+_limit+" size="+_cache.size());
+				Map.Entry<String,IndexedMatrixValue> tmp = removeFirstFromCache();
+				if( tmp == null || tmp.getValue().getValue() == null ) { 
+					if( tmp != null )
+						_cache.put(tmp.getKey(), tmp.getValue());
+					continue;
+				}
+	
+				// Spill to disk
+				String filename = _spillDir + "/" + tmp.getKey();
+				File spillDirFile = new File(_spillDir);
+				if (!spillDirFile.exists()) {
+					spillDirFile.mkdirs();
+				}
+				LocalFileUtils.writeMatrixBlockToLocal(filename, (MatrixBlock)tmp.getValue().getValue());
+	
+				// Evict from memory
+				long freedSize = estimateSerializedSize((MatrixBlock)tmp.getValue().getValue());
+				tmp.getValue().setValue(null);
+				_cache.put(tmp.getKey(), tmp.getValue()); // add last semantic
+				_size -= freedSize;
 			}
-
-			LocalFileUtils.writeMatrixBlockToLocal(filename, mbToEvict);
-
-			long freedSize = estimateSerializedSize(mbToEvict);
-			_size -= freedSize;
-
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
 		}
 	}
 
 	/**
 	 * Load block from spill file
 	 */
-	private static IndexedMatrixValue loadFromDisk(long streamId, int blockId) throws IOException {
-		String filename = _spillDir + "/" + streamId + "_" + blockId;
+	private static IndexedMatrixValue loadFromDisk(long streamId, int blockId) {
+		String key = streamId + "_" + blockId;
+		String filename = _spillDir + "/" + key;
 
-		// check if file exists
-		if (!LocalFileUtils.isExisting(filename)) {
-			throw new IOException("File " + filename + " does not exist");
+		try {
+			// check if file exists
+			if (!LocalFileUtils.isExisting(filename)) {
+				throw new IOException("File " + filename + " does not exist");
+			}
+	
+			// Read from disk and put into original indexed matrix value
+			MatrixBlock mb = LocalFileUtils.readMatrixBlockFromLocal(filename);
+			IndexedMatrixValue imv = _cache.get(key);
+			imv.setValue(mb);
+			return imv;
 		}
-
-		// Read from disk
-		MatrixBlock mb = LocalFileUtils.readMatrixBlockFromLocal(filename);
-
-		MatrixIndexes ix = new MatrixIndexes(blockId + 1, 1);
-
-		// Put back in cache (may trigger eviction)
-		// get() operation should not modify cache
-		// put(streamId, blockId, new IndexedMatrixValue(ix, mb));
-
-		return new IndexedMatrixValue(ix, mb);
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
 	}
 
 	private static long estimateSerializedSize(MatrixBlock mb) {
 		return mb.getExactSerializedSize();
+	}
+	
+	private static Map.Entry<String, IndexedMatrixValue> removeFirstFromCache() {
+		//move iterator to first entry
+		Iterator<Map.Entry<String, IndexedMatrixValue>> iter = _cache.entrySet().iterator();
+		Map.Entry<String, IndexedMatrixValue> entry = iter.next();
+
+		//remove current iterator entry
+		iter.remove();
+
+		return entry;
 	}
 }

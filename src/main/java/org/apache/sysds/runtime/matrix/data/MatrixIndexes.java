@@ -108,6 +108,11 @@ public class MatrixIndexes implements WritableComparable<MatrixIndexes>, RawComp
 	public String toString() {
 		return "("+_row+", "+_col+")";
 	}
+	
+	public MatrixIndexes fromString(String ix) {
+		String[] parts = ix.substring(1, ix.length()-1).split(",");
+		return new MatrixIndexes(Long.parseLong(parts[0]), Long.parseLong(parts[1].trim()));
+	}
 
 	////////////////////////////////////////////////////
 	// implementation of Writable read/write

@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.ooc;
 
-import java.util.concurrent.ExecutorService;
-
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -33,7 +31,6 @@ import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
-import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class BinaryOOCInstruction extends ComputationOOCInstruction {
 	

@@ -28,9 +28,6 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
-import org.apache.sysds.runtime.util.CommonThreadPool;
-
-import java.util.concurrent.ExecutorService;
 
 public class UnaryOOCInstruction extends ComputationOOCInstruction {
 	private UnaryOperator _uop = null;

@@ -101,11 +101,10 @@ public class CachingStream extends LocalTaskQueue<IndexedMatrixValue> {
 	@Override
 	public synchronized IndexedMatrixValue dequeueTask()
 					throws InterruptedException {
-		throw new DMLRuntimeException("ResettableStream should not be dequeued");
+		throw new DMLRuntimeException("CachingStream should not be dequeued");
 	}
 
 	public synchronized IndexedMatrixValue get(int idx) throws InterruptedException {
-		// TODO This may block is another thead is dequeueing and waiting
 		while (true) {
 			if (idx < _cache.size())
 				return _cache.get(idx);
@@ -118,7 +117,7 @@ public class CachingStream extends LocalTaskQueue<IndexedMatrixValue> {
 
 	@Override
 	public synchronized void closeInput() {
-		throw new DMLRuntimeException("ResettableStream cannot be closed");
+		throw new DMLRuntimeException("CachingStream should not be closed");
 	}
 	
 	@Override

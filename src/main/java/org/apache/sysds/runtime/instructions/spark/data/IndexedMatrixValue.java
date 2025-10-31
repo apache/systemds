@@ -66,6 +66,10 @@ public class IndexedMatrixValue implements Serializable
 	public MatrixValue getValue() {
 		return _value;
 	}
+
+	public void setValue(MatrixValue value) {
+		_value = value;
+	}
 	
 	public void set(MatrixIndexes indexes2, MatrixValue block2) {
 		_indexes.setIndexes(indexes2);

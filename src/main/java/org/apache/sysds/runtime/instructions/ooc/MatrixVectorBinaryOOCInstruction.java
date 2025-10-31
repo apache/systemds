@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.instructions.ooc;
 
 import java.util.HashMap;
-import java.util.concurrent.ExecutorService;
 
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -39,7 +38,6 @@ import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
-import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction {
 

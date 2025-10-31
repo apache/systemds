@@ -36,10 +36,8 @@ import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.util.CommonThreadPool;
 
 import java.util.HashMap;
-import java.util.concurrent.ExecutorService;
 
 public class AggregateUnaryOOCInstruction extends ComputationOOCInstruction {
 	private AggregateOperator _aop = null;

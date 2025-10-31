@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.ooc;
 
-import java.util.concurrent.ExecutorService;
-
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
@@ -40,7 +38,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class ReblockOOCInstruction extends ComputationOOCInstruction {
 	private int blen;

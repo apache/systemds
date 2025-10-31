@@ -46,6 +46,7 @@ public class LocalTaskQueue<T>
 	private LinkedList<T>  _data        = null;
 	private boolean 	   _closedInput = false;
 	private DMLRuntimeException _failure = null;
+	protected Runnable subscriber = null;
 	private static final Log LOG = LogFactory.getLog(LocalTaskQueue.class.getName());
 	
 	public LocalTaskQueue()
@@ -60,21 +61,27 @@ public class LocalTaskQueue<T>
 	 * @param t task
 	 * @throws InterruptedException if InterruptedException occurs
 	 */
-	public synchronized void enqueueTask( T t ) 
+	public void enqueueTask( T t )
 		throws InterruptedException
 	{
-		while( _data.size() + 1 > MAX_SIZE && _failure == null )
-		{
-			LOG.warn("MAX_SIZE of task queue reached.");
-			wait(); //max constraint reached, wait for read
+		Runnable s;
+
+		synchronized (this) {
+			while(_data.size() + 1 > MAX_SIZE && _failure == null) {
+				LOG.warn("MAX_SIZE of task queue reached.");
+				wait(); //max constraint reached, wait for read
+			}
+
+			if(_failure != null)
+				throw _failure;
+
+			_data.addLast(t);
+			s = subscriber;
+			notify();
 		}
 
-		if ( _failure != null )
-			throw _failure;
-		
-		_data.addLast( t );
-		
-		notify(); //notify waiting readers
+		if (s != null)
+			s.run();
 	}
 	
 	/**
@@ -97,22 +104,35 @@ public class LocalTaskQueue<T>
 
 		if ( _failure != null )
 			throw _failure;
-		
+
 		T t = _data.removeFirst();
 		
 		notify(); // notify waiting writers
 		
 		return t;
 	}
-	
+
 	/**
 	 * Synchronized (logical) insert of a NO_MORE_TASKS symbol at the end of the FIFO queue in order to
 	 * mark that no more tasks will be inserted into the queue.
 	 */
-	public synchronized void closeInput()
+	public void closeInput()
 	{
-		_closedInput = true;
-		notifyAll(); //notify all waiting readers
+		Runnable s;
+
+		synchronized (this) {
+			if(_closedInput)
+				return;
+
+			_closedInput = true;
+			s = subscriber;
+			notifyAll(); // Notify all the waiting readers
+		}
+
+		if (s != null)
+			s.run();
+
+		subscriber = null;
 	}
 	
 	public synchronized boolean isProcessed() {
@@ -124,6 +144,23 @@ public class LocalTaskQueue<T>
 			_failure = failure;
 			notifyAll();
 		}
+	}
+
+	public void setSubscriber(Runnable subscriber) {
+		int size;
+		boolean closed;
+		synchronized (this) {
+			if (this.subscriber != null)
+				throw new DMLRuntimeException("Cannot set multiple subscribers.");
+
+			this.subscriber = subscriber;
+			size = _data.size();
+			closed = _closedInput;
+		}
+		for (int i = 0; i < size; i++)
+			subscriber.run();
+		if (closed)
+			subscriber.run();
 	}
 
 	@Override

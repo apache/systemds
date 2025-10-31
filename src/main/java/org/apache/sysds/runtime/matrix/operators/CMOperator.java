@@ -55,6 +55,13 @@ public class CMOperator extends MultiThreadedOperator
 		_numThreads = numThreads;
 	}
 
+	public CMOperator(CMOperator that) {
+		// Deep copy the stateful ValueFunction
+		fn = that.fn instanceof CM ? CM.getCMFnObject((CM)that.fn) : that.fn;
+		aggOpType = that.aggOpType;
+		_numThreads = that._numThreads;
+	}
+
 	public AggregateOperationTypes getAggOpType() {
 		return aggOpType;
 	}

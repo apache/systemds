@@ -478,7 +478,7 @@ public class BinaryOp extends MultiThreadedHop {
 				setLineNumbers(softmax);
 				setLops(softmax);
 			}
-			else if ( et == ExecType.CP || et == ExecType.GPU || et == ExecType.FED )
+			else if ( et == ExecType.CP || et == ExecType.GPU || et == ExecType.FED || et == ExecType.OOC )
 			{
 				Lop binary = null;
 				

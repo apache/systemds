@@ -30,16 +30,8 @@ import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 public class CentralMomentOOCInstruction extends AggregateUnaryOOCInstruction {
 
@@ -81,20 +73,10 @@ public class CentralMomentOOCInstruction extends AggregateUnaryOOCInstruction {
 
 		CMOperator finalCm_op = cm_op;
 
-		List<CM_COV_Object> cmObjs = new ArrayList<>();
+		LocalTaskQueue<CM_COV_Object> cmObjs = new LocalTaskQueue<>();
 
 		if(input3 == null) {
-			try {
-				IndexedMatrixValue tmp;
-
-				while((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
-					// We only handle MatrixBlock, other types of MatrixValue will fail here
-					cmObjs.add(((MatrixBlock) tmp.getValue()).cmOperations(cm_op));
-				}
-			}
-			catch(Exception ex) {
-				throw new DMLRuntimeException(ex);
-			}
+			mapOOC(qIn, cmObjs, tmp -> ((MatrixBlock) tmp.getValue()).cmOperations(new CMOperator(finalCm_op))); // Need to copy CMOperator as its ValueFunction is stateful
 		}
 		else {
 			// Here we use a hash join approach
@@ -109,57 +91,21 @@ public class CentralMomentOOCInstruction extends AggregateUnaryOOCInstruction {
 
 			LocalTaskQueue<IndexedMatrixValue> wIn = wtObj.getStreamHandle();
 
-			try {
-				IndexedMatrixValue tmp = qIn.dequeueTask();
-				IndexedMatrixValue tmpW = wIn.dequeueTask();
-				Map<MatrixIndexes, MatrixValue> left = new HashMap<>();
-				Map<MatrixIndexes, MatrixValue> right = new HashMap<>();
-
-				boolean cont = tmp != LocalTaskQueue.NO_MORE_TASKS || tmpW != LocalTaskQueue.NO_MORE_TASKS;
-
-				while(cont) {
-					cont = false;
-
-					if(tmp != LocalTaskQueue.NO_MORE_TASKS) {
-						MatrixValue weights = right.remove(tmp.getIndexes());
-
-						if(weights != null)
-							cmObjs.add(((MatrixBlock) tmp.getValue()).cmOperations(cm_op, (MatrixBlock) weights));
-						else
-							left.put(tmp.getIndexes(), tmp.getValue());
-
-						tmp = qIn.dequeueTask();
-						cont = tmp != LocalTaskQueue.NO_MORE_TASKS;
-					}
-
-					if(tmpW != LocalTaskQueue.NO_MORE_TASKS) {
-						MatrixValue q = left.remove(tmpW.getIndexes());
-
-						if(q != null)
-							cmObjs.add(((MatrixBlock) q).cmOperations(cm_op, (MatrixBlock) tmpW.getValue()));
-						else
-							right.put(tmpW.getIndexes(), tmpW.getValue());
-
-						tmpW = wIn.dequeueTask();
-						cont |= tmpW != LocalTaskQueue.NO_MORE_TASKS;
-					}
-				}
-
-				if (!left.isEmpty() || !right.isEmpty())
-					throw new DMLRuntimeException("Unmatched blocks: values=" + left.size() + ", weights=" + right.size());
-			}
-			catch(Exception ex) {
-				throw new DMLRuntimeException(ex);
-			}
+			joinOOC(qIn, wIn, cmObjs,
+				(tmp, weights) ->
+					((MatrixBlock) tmp.getValue()).cmOperations(new CMOperator(finalCm_op), (MatrixBlock) weights.getValue()),
+				IndexedMatrixValue::getIndexes);
 		}
-
-		Optional<CM_COV_Object> res = cmObjs.stream()
-			.reduce((arg0, arg1) -> (CM_COV_Object) finalCm_op.fn.execute(arg0, arg1));
 
 		try {
-			ec.setScalarOutput(output_name, new DoubleObject(res.get().getRequiredResult(finalCm_op)));
-		}
-		catch(Exception ex) {
+			CM_COV_Object agg = cmObjs.dequeueTask();
+			CM_COV_Object next;
+
+			while ((next = cmObjs.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS)
+				agg = (CM_COV_Object) finalCm_op.fn.execute(agg, next);
+
+			ec.setScalarOutput(output_name, new DoubleObject(agg.getRequiredResult(finalCm_op)));
+		} catch (Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
 	}

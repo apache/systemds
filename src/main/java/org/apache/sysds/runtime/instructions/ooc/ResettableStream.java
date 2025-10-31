@@ -20,13 +20,15 @@
 package org.apache.sysds.runtime.instructions.ooc;
 
 import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 
-import java.util.ArrayList;
 
 /**
  * A wrapper around LocalTaskQueue to consume the source stream and reset to
  * consume again for other operators.
+ * <p>
+ * Uses OOCEvictionManager for out-of-core caching.
  *
  */
 public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
@@ -34,16 +36,24 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 	// original live stream
 	private final LocalTaskQueue<IndexedMatrixValue> _source;
 
-	// in-memory cache to store stream for re-play
-	private final ArrayList<IndexedMatrixValue> _cache;
+	private static final IDSequence _streamSeq = new  IDSequence();
+	// stream identifier
+	private final long _streamId;
+
+	// block counter
+	private int _numBlocks = 0;
+
 
 	// state flags
 	private boolean _cacheInProgress = true; // caching in progress, in the first pass.
 	private int _replayPosition = 0; // slider position in the stream
 
 	public ResettableStream(LocalTaskQueue<IndexedMatrixValue> source) {
+		this(source, _streamSeq.getNextID());
+	}
+	public ResettableStream(LocalTaskQueue<IndexedMatrixValue> source, long streamId) {
 		_source = source;
-		_cache = new ArrayList<>();
+		_streamId = streamId;
 	}
 
 	/**
@@ -51,7 +61,6 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 	 * For subsequent passes it reads from the memory.
 	 *
 	 * @return The next matrix value in the stream, or NO_MORE_TASKS
-	 * @throws InterruptedException
 	 */
 	@Override
 	public synchronized IndexedMatrixValue dequeueTask()
@@ -60,18 +69,23 @@ public class ResettableStream extends LocalTaskQueue<IndexedMatrixValue> {
 			// First pass: Read value from the source and cache it, and return.
 			IndexedMatrixValue task = _source.dequeueTask();
 			if (task != NO_MORE_TASKS) {
-				_cache.add(new IndexedMatrixValue(task));
+
+				OOCEvictionManager.put(_streamId, _numBlocks, task);
+				_numBlocks++;
+
+				return task;
 			} else {
 				_cacheInProgress = false; // caching is complete
 				_source.closeInput(); // close source stream
+
+				// Notify all the waiting consumers waiting for cache to fill with this stream
+				notifyAll();
+				return (IndexedMatrixValue) NO_MORE_TASKS;
 			}
-			notifyAll(); // Notify all the waiting consumers waiting for cache to fill with this stream
-			return task;
 		} else {
-			// Replay pass: read directly from in-memory cache
-			if (_replayPosition < _cache.size()) {
-				// Return a copy to ensure consumer won't modify the cache
-				return new IndexedMatrixValue(_cache.get(_replayPosition++));
+			// Replay pass: read from the buffer
+			if (_replayPosition < _numBlocks) {
+				return OOCEvictionManager.get(_streamId, _replayPosition++);
 			} else {
 				return (IndexedMatrixValue) NO_MORE_TASKS;
 			}

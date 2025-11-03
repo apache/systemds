@@ -262,7 +262,7 @@ public class OOCEvictionManager {
 	
 				// partition file
 				// 1. generate a new ID for the present "partition" (file)
-				int partitionId = _partitionCounter.incrementAndGet();
+				int partitionId = _partitionCounter.getAndIncrement();
 
 				// 2. create the partition file metadata
 				partitionFile partFile = new partitionFile(filename, entry.streamId);
@@ -301,7 +301,19 @@ public class OOCEvictionManager {
 	 */
 	private static IndexedMatrixValue loadFromDisk(long streamId, int blockId) {
 		String key = streamId + "_" + blockId;
-		String filename = _spillDir + "/" + key;
+
+		// 1. find the blocks address (spill location)
+		spillLocation sloc = _spillLocations.get(key);
+		if (sloc == null) {
+			throw new DMLRuntimeException("Failed to load spill location for: " + key);
+		}
+
+		partitionFile partFile = _partitions.get(sloc.partitionId);
+		if (partFile == null) {
+			throw new DMLRuntimeException("Failed to load partition for: " + sloc.partitionId);
+		}
+
+		String filename = partFile.filePath;
 
 		try {
 			// check if file exists
@@ -311,8 +323,20 @@ public class OOCEvictionManager {
 	
 			// Read from disk and put into original indexed matrix value
 			MatrixBlock mb = LocalFileUtils.readMatrixBlockFromLocal(filename);
-			BlockEntry imv = _cache.get(key);
-			imv.value.setValue(mb);
+			BlockEntry imv;
+			synchronized (_cacheLock) {
+				imv = _cache.get(key);
+			}
+
+			imv.lock.lock();
+			try {
+				if (imv.state == BlockState.COLD) {
+					imv.value.setValue(mb);
+					_size.addAndGet(imv.size);
+				}
+			} finally {
+				imv.lock.unlock();
+			}
 			return imv.value;
 		}
 		catch(Exception ex) {

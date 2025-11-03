@@ -225,8 +225,20 @@ public class OOCEvictionManager {
 	
 				// Evict from memory
 				long freedSize = estimateSerializedSize((MatrixBlock)tmp.getValue().value.getValue());
-				tmp.getValue().value.setValue(null);
-				_cache.put(tmp.getKey(), tmp.getValue()); // add last semantic
+
+				BlockEntry entry = tmp.getValue();
+
+				entry.lock.lock();
+				try {
+					entry.value.setValue(null);
+					entry.state = BlockState.COLD; // set state to cold, since writing to disk
+
+
+				} finally {
+					entry.lock.unlock();
+				}
+
+				_cache.put(tmp.getKey(), entry); // add last semantic
 				_size.addAndGet(-freedSize);
 			}
 		}

@@ -75,7 +75,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class OOCEvictionManager {
 
 	// Configuration: OOC buffer limit as percentage of heap
-	private static final double OOC_BUFFER_PERCENTAGE = 0.15; // 15% of heap
+	private static final double OOC_BUFFER_PERCENTAGE = 0.15 * 0.01; // 15% of heap
 
 	// Memory limit for ByteBuffers
 	private static long _limit;
@@ -86,7 +86,6 @@ public class OOCEvictionManager {
 
 	// Cache level lock
 	private static final Object _cacheLock = new Object();
-//	private static final AtomicLong _hotSize =  new AtomicLong(0);
 	
 	// Spill directory for evicted blocks
 	private static String _spillDir;
@@ -139,9 +138,10 @@ public class OOCEvictionManager {
 		BlockEntry newEntry = new BlockEntry(value, streamId, blockId, size);
 		BlockEntry old;
 		synchronized (_cacheLock) {
-			old = _cache.put(key, newEntry);
+			old = _cache.put(key, newEntry); // remove old value, put new value
 		}
-//		BlockEntry old = _cache.remove(key); // remove old value
+
+		// Handle replacement with a new lock
 		if (old != null) {
 			old.lock.lock();
 			try {
@@ -173,10 +173,31 @@ public class OOCEvictionManager {
 				_cache.put(key, imv); //add last semantic
 			}
 		}
-		
-		//restore if needed
-		return (imv.value.getValue() != null) ? imv.value :
-			loadFromDisk(streamId, blockId);
+
+		// use lock and check state
+		imv.lock.lock();
+		try {
+			// 1. wait for eviction to complete
+			while (imv.state == BlockState.EVICTING) {
+				try {
+					imv.stateUpdate.wait();
+				} catch (InterruptedException e) {
+
+					throw new DMLRuntimeException(e);
+				}
+			}
+
+			// 2. check if the block is in HOT
+			if (imv.state == BlockState.HOT) {
+				return imv.value;
+			}
+
+		} finally {
+			imv.lock.unlock();
+		}
+
+		// restore, since the block is COLD
+		return loadFromDisk(streamId, blockId);
 	}
 
 	/**
@@ -185,7 +206,7 @@ public class OOCEvictionManager {
 	private static void evict(long requiredSize) {
 		try {
 			int pos = 0;
-			while(_size.get() + requiredSize > _limit && pos++ < _cache.size()) {
+			while(_size.get() > _limit && pos++ < _cache.size()) {
 //				System.out.println("BUFFER: "+_size+"/"+_limit+" size="+_cache.size());
 				Map.Entry<String,BlockEntry> tmp = removeFirstFromCache();
 				if( tmp == null || tmp.getValue().value.getValue() == null ) {

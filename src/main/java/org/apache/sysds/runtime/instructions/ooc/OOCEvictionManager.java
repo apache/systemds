@@ -75,7 +75,9 @@ import java.util.concurrent.locks.ReentrantLock;
 public class OOCEvictionManager {
 
 	// Configuration: OOC buffer limit as percentage of heap
-	private static final double OOC_BUFFER_PERCENTAGE = 0.15 * 0.01; // 15% of heap
+	private static final double OOC_BUFFER_PERCENTAGE = 0.15 * 0.01 * 2; // 15% of heap
+
+	private static final double PARTITION_EVICTION_SIZE = 64 * 1024 * 1024; // 64 MB
 
 	// Memory limit for ByteBuffers
 	private static long _limit;
@@ -83,6 +85,10 @@ public class OOCEvictionManager {
 
 	// Cache structures: map key -> MatrixBlock and eviction deque (head=oldest block)
 	private static LinkedHashMap<String, BlockEntry> _cache = new LinkedHashMap<>();
+
+	// Spill related structures
+	private static ConcurrentHashMap<String, spillLocation> _spillLocations =  new ConcurrentHashMap<>();
+	// private static ConcurrentHashMap<String, partitionFile> _partitions = new ConcurrentHashMap<>();
 
 	// Cache level lock
 	private static final Object _cacheLock = new Object();
@@ -100,6 +106,20 @@ public class OOCEvictionManager {
 		EVICTING, // Being written to disk (transition state)
 		COLD // On disk
 	}
+
+	private static class spillLocation {
+		// structure of spillLocation: file, offset
+		final int partitionId;
+		final long offset;
+
+		spillLocation(int partitionId, long offset, int partitionId1, long offset1) {
+
+			this.partitionId = partitionId1;
+			this.offset = offset1;
+		}
+	}
+
+
 
 	// Per-block state container with own lock.
 	private static class BlockEntry {
@@ -207,7 +227,7 @@ public class OOCEvictionManager {
 		try {
 			int pos = 0;
 			while(_size.get() > _limit && pos++ < _cache.size()) {
-//				System.out.println("BUFFER: "+_size+"/"+_limit+" size="+_cache.size());
+				System.err.println("BUFFER: "+_size+"/"+_limit+" size="+_cache.size());
 				Map.Entry<String,BlockEntry> tmp = removeFirstFromCache();
 				if( tmp == null || tmp.getValue().value.getValue() == null ) {
 					if( tmp != null )
@@ -238,7 +258,9 @@ public class OOCEvictionManager {
 					entry.lock.unlock();
 				}
 
-				_cache.put(tmp.getKey(), entry); // add last semantic
+				synchronized (_cacheLock) {
+					_cache.put(tmp.getKey(), entry); // add last semantic
+				}
 				_size.addAndGet(-freedSize);
 			}
 		}
@@ -276,13 +298,15 @@ public class OOCEvictionManager {
 	}
 	
 	private static Map.Entry<String, BlockEntry> removeFirstFromCache() {
-		//move iterator to first entry
-		Iterator<Map.Entry<String, BlockEntry>> iter = _cache.entrySet().iterator();
-		Map.Entry<String, BlockEntry> entry = iter.next();
+		synchronized (_cacheLock) {
+			//move iterator to first entry
+			Iterator<Map.Entry<String, BlockEntry>> iter = _cache.entrySet().iterator();
+			Map.Entry<String, BlockEntry> entry = iter.next();
 
-		//remove current iterator entry
-		iter.remove();
+			//remove current iterator entry
+			iter.remove();
 
-		return entry;
+			return entry;
+		}
 	}
 }

@@ -270,7 +270,7 @@ public class OOCEvictionManager {
 
 				// 3. create the spillLocation
 				spillLocation sloc = new spillLocation(partitionId, entry.streamId, entry.blockId, entry.size);
-				_spillLocations.put(filename, sloc);
+				_spillLocations.put(tmp.getKey(), sloc);
 
 				// Evict from memory
 				long freedSize = estimateSerializedSize((MatrixBlock)tmp.getValue().value.getValue());

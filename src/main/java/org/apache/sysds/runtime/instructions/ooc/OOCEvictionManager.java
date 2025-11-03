@@ -30,6 +30,10 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -68,29 +72,21 @@ import java.util.concurrent.locks.ReentrantLock;
  *   must ensure serialization finishes before adding to queue or make evict
  *   wait on serialization; careful with native memory leaks.
  */
-public class OOCEvictionManager1 {
+public class OOCEvictionManager {
 
 	// Configuration: OOC buffer limit as percentage of heap
 	private static final double OOC_BUFFER_PERCENTAGE = 0.15; // 15% of heap
 
-	// HOT TIER: In-memory blocks
-	private static final ConcurrentHashMap<String, BlockEntry> _blocks = new ConcurrentHashMap<>();
-
-	// COLD-TIER: Evicted blocks on the disk
-	private static final ConcurrentHashMap<String, String> _spillLocations = new ConcurrentHashMap<>();
-
-	// Partition management: per-stream partitions
-	private static final ConcurrentHashMap<Integer, String> _partitions = new  ConcurrentHashMap<>();
-
-	// Partition <--> Stream mapping
-	private static final ConcurrentHashMap<Long, ConcurrentHashMap<Integer, String> > _streamPartitions = new  ConcurrentHashMap<>();
-
 	// Memory limit for ByteBuffers
 	private static long _limit;
-	private static long _size;
+	private static final AtomicLong _size = new AtomicLong(0);
 
 	// Cache structures: map key -> MatrixBlock and eviction deque (head=oldest block)
-	private static LinkedHashMap<String, IndexedMatrixValue> _cache = new LinkedHashMap<>();
+	private static LinkedHashMap<String, BlockEntry> _cache = new LinkedHashMap<>();
+
+	// Cache level lock
+	private static final Object _cacheLock = new Object();
+//	private static final AtomicLong _hotSize =  new AtomicLong(0);
 	
 	// Spill directory for evicted blocks
 	private static String _spillDir;
@@ -109,19 +105,25 @@ public class OOCEvictionManager1 {
 	// Per-block state container with own lock.
 	private static class BlockEntry {
 		private final ReentrantLock lock = new ReentrantLock();
+		private final Condition stateUpdate = lock.newCondition();
+
 		private BlockState state = BlockState.HOT;
 		private IndexedMatrixValue value;
-//		private final long streamId;
-//		private final int blockId;
+		private final long streamId;
+		private final int blockId;
+		private final long size;
 
-		BlockEntry(long streamId, int blockId, IndexedMatrixValue value) {
+		BlockEntry(IndexedMatrixValue value, long streamId, int blockId, long size) {
 			this.value = value;
+			this.streamId = streamId;
+			this.blockId = blockId;
+			this.size = size;
 		}
 	}
 
 	static {
 		_limit = (long)(Runtime.getRuntime().maxMemory() * OOC_BUFFER_PERCENTAGE); // e.g., 20% of heap
-		_size = 0;
+		_size.set(0);
 		_spillDir = LocalFileUtils.getUniqueWorkingDir("ooc_stream");
 		LocalFileUtils.createLocalFileIfNotExist(_spillDir);
 	}
@@ -129,37 +131,51 @@ public class OOCEvictionManager1 {
 	/**
 	 * Store a block in the OOC cache (serialize once)
 	 */
-	public static synchronized void put(long streamId, int blockId, IndexedMatrixValue value) {
+	public static void put(long streamId, int blockId, IndexedMatrixValue value) {
 		MatrixBlock mb = (MatrixBlock) value.getValue();
 		long size = estimateSerializedSize(mb);
 		String key = streamId + "_" + blockId;
 
-		IndexedMatrixValue old = _cache.remove(key); // remove old value
+		BlockEntry newEntry = new BlockEntry(value, streamId, blockId, size);
+		BlockEntry old;
+		synchronized (_cacheLock) {
+			old = _cache.put(key, newEntry);
+		}
+//		BlockEntry old = _cache.remove(key); // remove old value
 		if (old != null) {
-			_size -= estimateSerializedSize((MatrixBlock) old.getValue());
+			old.lock.lock();
+			try {
+				if (old.state == BlockState.HOT) {
+					_size.addAndGet(-old.size); // read and update size in atomic operation
+				}
+			} finally {
+				old.lock.unlock();
+			}
 		}
 
+		_size.addAndGet(size);
 		//make room if needed
 		evict(size);
-		
-		_cache.put(key, value); // put new value last
-		_size += size;
 	}
 
 	/**
 	 * Get a block from the OOC cache (deserialize on read)
 	 */
-	public static synchronized IndexedMatrixValue get(long streamId, int blockId) {
+	public static IndexedMatrixValue get(long streamId, int blockId) {
 		String key = streamId + "_" + blockId;
-		IndexedMatrixValue imv = _cache.get(key);
+		BlockEntry imv;
 
-		if (imv != null && _policy == RPolicy.LRU) {
-			_cache.remove(key);
-			_cache.put(key, imv); //add last semantic
+		synchronized (_cacheLock) {
+			imv = _cache.get(key);
+
+			if (imv != null && _policy == RPolicy.LRU) {
+				_cache.remove(key);
+				_cache.put(key, imv); //add last semantic
+			}
 		}
 		
 		//restore if needed
-		return (imv.getValue() != null) ? imv : 
+		return (imv.value.getValue() != null) ? imv.value :
 			loadFromDisk(streamId, blockId);
 	}
 
@@ -169,10 +185,10 @@ public class OOCEvictionManager1 {
 	private static void evict(long requiredSize) {
 		try {
 			int pos = 0;
-			while(_size + requiredSize > _limit && pos++ < _cache.size()) {
+			while(_size.get() + requiredSize > _limit && pos++ < _cache.size()) {
 //				System.out.println("BUFFER: "+_size+"/"+_limit+" size="+_cache.size());
-				Map.Entry<String,IndexedMatrixValue> tmp = removeFirstFromCache();
-				if( tmp == null || tmp.getValue().getValue() == null ) { 
+				Map.Entry<String,BlockEntry> tmp = removeFirstFromCache();
+				if( tmp == null || tmp.getValue().value.getValue() == null ) {
 					if( tmp != null )
 						_cache.put(tmp.getKey(), tmp.getValue());
 					continue;
@@ -184,13 +200,13 @@ public class OOCEvictionManager1 {
 				if (!spillDirFile.exists()) {
 					spillDirFile.mkdirs();
 				}
-				LocalFileUtils.writeMatrixBlockToLocal(filename, (MatrixBlock)tmp.getValue().getValue());
+				LocalFileUtils.writeMatrixBlockToLocal(filename, (MatrixBlock)tmp.getValue().value.getValue());
 	
 				// Evict from memory
-				long freedSize = estimateSerializedSize((MatrixBlock)tmp.getValue().getValue());
-				tmp.getValue().setValue(null);
+				long freedSize = estimateSerializedSize((MatrixBlock)tmp.getValue().value.getValue());
+				tmp.getValue().value.setValue(null);
 				_cache.put(tmp.getKey(), tmp.getValue()); // add last semantic
-				_size -= freedSize;
+				_size.addAndGet(-freedSize);
 			}
 		}
 		catch(Exception ex) {
@@ -213,9 +229,9 @@ public class OOCEvictionManager1 {
 	
 			// Read from disk and put into original indexed matrix value
 			MatrixBlock mb = LocalFileUtils.readMatrixBlockFromLocal(filename);
-			IndexedMatrixValue imv = _cache.get(key);
-			imv.setValue(mb);
-			return imv;
+			BlockEntry imv = _cache.get(key);
+			imv.value.setValue(mb);
+			return imv.value;
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
@@ -226,10 +242,10 @@ public class OOCEvictionManager1 {
 		return mb.getExactSerializedSize();
 	}
 	
-	private static Map.Entry<String, IndexedMatrixValue> removeFirstFromCache() {
+	private static Map.Entry<String, BlockEntry> removeFirstFromCache() {
 		//move iterator to first entry
-		Iterator<Map.Entry<String, IndexedMatrixValue>> iter = _cache.entrySet().iterator();
-		Map.Entry<String, IndexedMatrixValue> entry = iter.next();
+		Iterator<Map.Entry<String, BlockEntry>> iter = _cache.entrySet().iterator();
+		Map.Entry<String, BlockEntry> entry = iter.next();
 
 		//remove current iterator entry
 		iter.remove();

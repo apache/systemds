@@ -31,7 +31,5 @@ public interface OOCStream<T> extends OOCStreamable<T> {
 
 	LocalTaskQueue<T> toLocalTaskQueue();
 
-	void setSubscriber(Runnable subscriber);
-
 	void propagateFailure(DMLRuntimeException re);
 }

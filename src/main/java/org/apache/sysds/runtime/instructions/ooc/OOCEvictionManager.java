@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Eviction Manager for the Out-Of-Core stream cache
@@ -66,10 +68,22 @@ import java.util.Map;
  *   must ensure serialization finishes before adding to queue or make evict
  *   wait on serialization; careful with native memory leaks.
  */
-public class OOCEvictionManager {
+public class OOCEvictionManager1 {
 
 	// Configuration: OOC buffer limit as percentage of heap
 	private static final double OOC_BUFFER_PERCENTAGE = 0.15; // 15% of heap
+
+	// HOT TIER: In-memory blocks
+	private static final ConcurrentHashMap<String, BlockEntry> _blocks = new ConcurrentHashMap<>();
+
+	// COLD-TIER: Evicted blocks on the disk
+	private static final ConcurrentHashMap<String, String> _spillLocations = new ConcurrentHashMap<>();
+
+	// Partition management: per-stream partitions
+	private static final ConcurrentHashMap<Integer, String> _partitions = new  ConcurrentHashMap<>();
+
+	// Partition <--> Stream mapping
+	private static final ConcurrentHashMap<Long, ConcurrentHashMap<Integer, String> > _streamPartitions = new  ConcurrentHashMap<>();
 
 	// Memory limit for ByteBuffers
 	private static long _limit;
@@ -85,6 +99,25 @@ public class OOCEvictionManager {
 		FIFO, LRU
 	}
 	private static RPolicy _policy = RPolicy.FIFO;
+
+	private enum BlockState {
+		HOT, // In-memory
+		EVICTING, // Being written to disk (transition state)
+		COLD // On disk
+	}
+
+	// Per-block state container with own lock.
+	private static class BlockEntry {
+		private final ReentrantLock lock = new ReentrantLock();
+		private BlockState state = BlockState.HOT;
+		private IndexedMatrixValue value;
+//		private final long streamId;
+//		private final int blockId;
+
+		BlockEntry(long streamId, int blockId, IndexedMatrixValue value) {
+			this.value = value;
+		}
+	}
 
 	static {
 		_limit = (long)(Runtime.getRuntime().maxMemory() * OOC_BUFFER_PERCENTAGE); // e.g., 20% of heap
@@ -137,7 +170,7 @@ public class OOCEvictionManager {
 		try {
 			int pos = 0;
 			while(_size + requiredSize > _limit && pos++ < _cache.size()) {
-				//System.out.println("BUFFER: "+_size+"/"+_limit+" size="+_cache.size());
+//				System.out.println("BUFFER: "+_size+"/"+_limit+" size="+_cache.size());
 				Map.Entry<String,IndexedMatrixValue> tmp = removeFirstFromCache();
 				if( tmp == null || tmp.getValue().getValue() == null ) { 
 					if( tmp != null )

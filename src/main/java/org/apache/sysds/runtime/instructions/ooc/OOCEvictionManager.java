@@ -88,7 +88,9 @@ public class OOCEvictionManager {
 
 	// Spill related structures
 	private static ConcurrentHashMap<String, spillLocation> _spillLocations =  new ConcurrentHashMap<>();
-	// private static ConcurrentHashMap<String, partitionFile> _partitions = new ConcurrentHashMap<>();
+	private static ConcurrentHashMap<Integer, partitionFile> _partitions = new ConcurrentHashMap<>();
+	private static final AtomicInteger _partitionCounter = new AtomicInteger(0);
+
 
 	// Cache level lock
 	private static final Object _cacheLock = new Object();
@@ -119,7 +121,16 @@ public class OOCEvictionManager {
 		}
 	}
 
+	private static class partitionFile {
+		final String filePath;
+		final long streamId;
 
+
+		private partitionFile(String filePath, long streamId) {
+			this.filePath = filePath;
+			this.streamId = streamId;
+		}
+	}
 
 	// Per-block state container with own lock.
 	private static class BlockEntry {
@@ -229,9 +240,15 @@ public class OOCEvictionManager {
 			while(_size.get() > _limit && pos++ < _cache.size()) {
 				System.err.println("BUFFER: "+_size+"/"+_limit+" size="+_cache.size());
 				Map.Entry<String,BlockEntry> tmp = removeFirstFromCache();
-				if( tmp == null || tmp.getValue().value.getValue() == null ) {
-					if( tmp != null )
-						_cache.put(tmp.getKey(), tmp.getValue());
+
+				if (tmp == null) { continue; }
+
+				BlockEntry entry = tmp.getValue();
+
+				if( entry.value.getValue() == null ) {
+					synchronized (_cacheLock) {
+						_cache.put(tmp.getKey(), entry);
+					}
 					continue;
 				}
 	
@@ -243,10 +260,20 @@ public class OOCEvictionManager {
 				}
 				LocalFileUtils.writeMatrixBlockToLocal(filename, (MatrixBlock)tmp.getValue().value.getValue());
 	
+				// partition file
+				// 1. generate a new ID for the present "partition" (file)
+				int partitionId = _partitionCounter.incrementAndGet();
+
+				// 2. create the partition file metadata
+				partitionFile partFile = new partitionFile(filename, entry.streamId);
+				_partitions.put(partitionId, partFile);
+
+				// 3. create the spillLocation
+				spillLocation sloc = new spillLocation(partitionId, entry.streamId, entry.blockId, entry.size);
+				_spillLocations.put(filename, sloc);
+
 				// Evict from memory
 				long freedSize = estimateSerializedSize((MatrixBlock)tmp.getValue().value.getValue());
-
-				BlockEntry entry = tmp.getValue();
 
 				entry.lock.lock();
 				try {

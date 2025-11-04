@@ -19,13 +19,26 @@
 
 package org.apache.sysds.runtime.instructions.ooc;
 
+import org.apache.hadoop.io.Writable;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.util.FastBufferedDataInputStream;
+import org.apache.sysds.runtime.util.FastBufferedDataOutputStream;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.Channels;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -258,7 +271,37 @@ public class OOCEvictionManager {
 				if (!spillDirFile.exists()) {
 					spillDirFile.mkdirs();
 				}
-				LocalFileUtils.writeMatrixBlockToLocal(filename, (MatrixBlock)tmp.getValue().value.getValue());
+//				LocalFileUtils.writeMatrixBlockToLocal(filename, (MatrixBlock)tmp.getValue().value.getValue());
+
+//				try {
+//					LocalFileUtils.writeWritableToLocal(filename, entry.value.getValue(), false);
+//				}  catch (IOException e) {
+//					throw new DMLRuntimeException(e);
+//				}
+
+//				try (FileOutputStream fos = new FileOutputStream(filename);
+//							DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(fos))) {
+//					entry.value.getIndexes().write(dos); // write Indexes
+//					entry.value.getValue().write(dos); // write MatrixBlock
+//
+//					dos.flush();
+//				}
+
+				// use the same way we do in other places in systemds
+				FileOutputStream fos = null;
+				FastBufferedDataOutputStream dos = null;
+				try {
+					fos = new FileOutputStream(filename);
+//				dos = new DataOutputStream(new BufferedOutputStream(fos))
+					dos = new FastBufferedDataOutputStream(fos);
+					entry.value.getIndexes().write(dos); // write Indexes
+					entry.value.getValue().write(dos); // write MatrixBlock
+				} catch (IOException e) {
+					throw new DMLRuntimeException(e);
+				} finally {
+					IOUtilFunctions.closeSilently(dos);
+					IOUtilFunctions.closeSilently(fos);
+				}
 	
 				// partition file
 				// 1. generate a new ID for the present "partition" (file)
@@ -315,33 +358,66 @@ public class OOCEvictionManager {
 
 		String filename = partFile.filePath;
 
+		MatrixIndexes ix = new  MatrixIndexes();
+		MatrixBlock mb = new  MatrixBlock();
+
+		// Create an empty object to read data into.
+//		IndexedMatrixValue imvRead = new IndexedMatrixValue(new MatrixIndexes(), new MatrixBlock());
+//
+//		try {
+//			LocalFileUtils.readWritableFromLocal(filename, (Writable) imvRead);
+//		}  catch (IOException e) {
+//			throw new DMLRuntimeException(e);
+//		}
+
+
+//		try (RandomAccessFile raf = new RandomAccessFile(filename, "r")) {
+//			// seek to the block specfic offset
+//			raf.seek(sloc.offset);
+//
+//			try (DataInputStream dis = new DataInputStream(Channels.newInputStream(raf.getChannel()))) {
+//				ix.readFields(dis);
+//				mb.readFields(dis);
+//			}
+//		} catch (IOException e) {
+//			throw new DMLRuntimeException(e);
+//		}
+
+		// inspire from existing utilities in systemds
+		FileInputStream fis = null;
+		FastBufferedDataInputStream din = null;
 		try {
-			// check if file exists
-			if (!LocalFileUtils.isExisting(filename)) {
-				throw new IOException("File " + filename + " does not exist");
-			}
+			fis = new FileInputStream(filename);
+			din = new FastBufferedDataInputStream(fis, 65536); // 64K buffer
+			ix.readFields(din); // 1. Read Indexes
+			mb.readFields(din); // 2. Read Block
+		}
+		catch (IOException ex) {
+			throw new DMLRuntimeException("Failed to load block " + key + " from " + filename, ex);
+		}
+		finally {
+			// Use the SystemDS-native close
+			IOUtilFunctions.closeSilently(din);
+			IOUtilFunctions.closeSilently(fis);
+		}
 	
 			// Read from disk and put into original indexed matrix value
-			MatrixBlock mb = LocalFileUtils.readMatrixBlockFromLocal(filename);
-			BlockEntry imv;
-			synchronized (_cacheLock) {
-				imv = _cache.get(key);
-			}
+//			MatrixBlock mb = LocalFileUtils.readMatrixBlockFromLocal(filename);
+		BlockEntry imvCacheEntry;
+		synchronized (_cacheLock) {
+			imvCacheEntry = _cache.get(key);
+		}
 
-			imv.lock.lock();
-			try {
-				if (imv.state == BlockState.COLD) {
-					imv.value.setValue(mb);
-					_size.addAndGet(imv.size);
-				}
-			} finally {
-				imv.lock.unlock();
+		imvCacheEntry.lock.lock();
+		try {
+			if (imvCacheEntry.state == BlockState.COLD) {
+				imvCacheEntry.value = new IndexedMatrixValue(ix, mb);
+				_size.addAndGet(imvCacheEntry.size);
 			}
-			return imv.value;
+		} finally {
+			imvCacheEntry.lock.unlock();
 		}
-		catch(Exception ex) {
-			throw new DMLRuntimeException(ex);
-		}
+		return imvCacheEntry.value;
 	}
 
 	private static long estimateSerializedSize(MatrixBlock mb) {

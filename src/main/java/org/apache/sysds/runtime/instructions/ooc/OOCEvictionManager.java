@@ -28,16 +28,21 @@ import org.apache.sysds.runtime.util.FastBufferedDataInputStream;
 import org.apache.sysds.runtime.util.FastBufferedDataOutputStream;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.Channels;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -98,6 +103,9 @@ public class OOCEvictionManager {
 	private static ConcurrentHashMap<String, spillLocation> _spillLocations =  new ConcurrentHashMap<>();
 	private static ConcurrentHashMap<Integer, partitionFile> _partitions = new ConcurrentHashMap<>();
 	private static final AtomicInteger _partitionCounter = new AtomicInteger(0);
+
+	// Track which partitions belong to which stream (for cleanup)
+	private static final ConcurrentHashMap<Long, Set<String>> _streamPartitions = new ConcurrentHashMap<>();
 
 
 	// Cache level lock
@@ -248,6 +256,7 @@ public class OOCEvictionManager {
 			return;
 		}
 
+		long totalFreedSize = 0;
 		// write to partition file
 		// 1. generate a new ID for the present "partition" (file)
 		int partitionId = _partitionCounter.getAndIncrement();
@@ -274,7 +283,7 @@ public class OOCEvictionManager {
 				System.err.println("BUFFER: "+_size+"/"+_limit+" size="+_cache.size());
 				Map.Entry<String,BlockEntry> tmp = removeFirstFromCache();
 //				candidates.add(tmp);
-				if (tmp == null) { continue; } // cache is empty
+				if (tmp == null) { break; } // cache is empty
 
 				BlockEntry entry = tmp.getValue();
 
@@ -297,10 +306,14 @@ public class OOCEvictionManager {
 				spillLocation sloc = new spillLocation(partitionId, offset);
 				_spillLocations.put(tmp.getKey(), sloc);
 
+				// 4. track file for cleanup
+				_streamPartitions
+					.computeIfAbsent(entry.streamId, k -> ConcurrentHashMap.newKeySet())
+					.add(filename);
 
 				// Evict from memory
 				long freedSize = estimateSerializedSize((MatrixBlock)tmp.getValue().value.getValue());
-
+				totalFreedSize += freedSize;
 				entry.lock.lock();
 				try {
 					entry.value.setValue(null);
@@ -313,7 +326,6 @@ public class OOCEvictionManager {
 				synchronized (_cacheLock) {
 					_cache.put(tmp.getKey(), entry); // add last semantic
 				}
-				_size.addAndGet(-freedSize);
 			}
 		}
 		catch(IOException ex) {
@@ -321,6 +333,10 @@ public class OOCEvictionManager {
 		} finally {
 			IOUtilFunctions.closeSilently(dos);
 			IOUtilFunctions.closeSilently(fos);
+		}
+
+		if (totalFreedSize > 0) { // note the size, without evicted blocks
+			_size.addAndGet(-totalFreedSize);
 		}
 	}
 
@@ -348,23 +364,25 @@ public class OOCEvictionManager {
 		MatrixBlock mb = new  MatrixBlock();
 
 		// inspire from existing utilities in systemds
-		FileInputStream fis = null;
-		FastBufferedDataInputStream din = null;
-		try {
-			fis = new FileInputStream(filename);
-			din = new FastBufferedDataInputStream(fis, 65536); // 64K buffer
-			ix.readFields(din); // 1. Read Indexes
-			mb.readFields(din); // 2. Read Block
+//		FileInputStream fis = null;
+//		FastBufferedDataInputStream din = null;
+		try (RandomAccessFile raf = new RandomAccessFile(filename, "r")) {
+			raf.seek(sloc.offset);
+
+			try {
+				DataInputStream dis = new DataInputStream(Channels.newInputStream(raf.getChannel()));
+				ix.readFields(dis); // 1. Read Indexes
+				mb.readFields(dis); // 2. Read Block
+			} catch (IOException ex) {
+				throw new DMLRuntimeException("Failed to load block " + key + " from " + filename, ex);
+//			} finally {
+//				// Use the SystemDS-native close
+//				IOUtilFunctions.closeSilently(dis);
+//				IOUtilFunctions.closeSilently(fis);
+			}
+		} catch (IOException e) {
+			throw new RuntimeException(e);
 		}
-		catch (IOException ex) {
-			throw new DMLRuntimeException("Failed to load block " + key + " from " + filename, ex);
-		}
-		finally {
-			// Use the SystemDS-native close
-			IOUtilFunctions.closeSilently(din);
-			IOUtilFunctions.closeSilently(fis);
-		}
-	
 		// Read from disk and put into original indexed matrix value
 		BlockEntry imvCacheEntry;
 		synchronized (_cacheLock) {

@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.ooc;
 
-import org.apache.hadoop.io.Writable;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
@@ -29,21 +28,17 @@ import org.apache.sysds.runtime.util.FastBufferedDataInputStream;
 import org.apache.sysds.runtime.util.FastBufferedDataOutputStream;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 
-import java.io.BufferedOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.channels.Channels;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
@@ -127,10 +122,10 @@ public class OOCEvictionManager {
 		final int partitionId;
 		final long offset;
 
-		spillLocation(int partitionId, long offset, int partitionId1, long offset1) {
+		spillLocation(int partitionId, long offset) {
 
-			this.partitionId = partitionId1;
-			this.offset = offset1;
+			this.partitionId = partitionId;
+			this.offset = offset;
 		}
 	}
 
@@ -199,7 +194,7 @@ public class OOCEvictionManager {
 
 		_size.addAndGet(size);
 		//make room if needed
-		evict(size);
+		evict();
 	}
 
 	/**
@@ -247,73 +242,61 @@ public class OOCEvictionManager {
 	/**
 	 * Evict ByteBuffers to disk
 	 */
-	private static void evict(long requiredSize) {
+	private static void evict() {
+
+		if (_size.get() <= _limit) { // only trigger eviction, if filled.
+			return;
+		}
+
+		// write to partition file
+		// 1. generate a new ID for the present "partition" (file)
+		int partitionId = _partitionCounter.getAndIncrement();
+
+		// Spill to disk
+		String filename = _spillDir + "/stream_batch_part_" + partitionId;
+		File spillDirFile = new File(_spillDir);
+		if (!spillDirFile.exists()) {
+			spillDirFile.mkdirs();
+		}
+
+		// 2. create the partition file metadata
+		partitionFile partFile = new partitionFile(filename, 0);
+		_partitions.put(partitionId, partFile);
+
+		FileOutputStream fos = null;
+		FastBufferedDataOutputStream dos = null;
 		try {
+			fos = new FileOutputStream(filename);
+			dos = new FastBufferedDataOutputStream(fos);
+
 			int pos = 0;
 			while(_size.get() > _limit && pos++ < _cache.size()) {
 				System.err.println("BUFFER: "+_size+"/"+_limit+" size="+_cache.size());
 				Map.Entry<String,BlockEntry> tmp = removeFirstFromCache();
-
-				if (tmp == null) { continue; }
+//				candidates.add(tmp);
+				if (tmp == null) { continue; } // cache is empty
 
 				BlockEntry entry = tmp.getValue();
 
+				// Skip if block is null. i.e, COLD
 				if( entry.value.getValue() == null ) {
 					synchronized (_cacheLock) {
 						_cache.put(tmp.getKey(), entry);
 					}
 					continue;
 				}
-	
-				// Spill to disk
-				String filename = _spillDir + "/" + tmp.getKey();
-				File spillDirFile = new File(_spillDir);
-				if (!spillDirFile.exists()) {
-					spillDirFile.mkdirs();
-				}
-//				LocalFileUtils.writeMatrixBlockToLocal(filename, (MatrixBlock)tmp.getValue().value.getValue());
 
-//				try {
-//					LocalFileUtils.writeWritableToLocal(filename, entry.value.getValue(), false);
-//				}  catch (IOException e) {
-//					throw new DMLRuntimeException(e);
-//				}
+				// flush any buffered data to the file
+				dos.flush();
+				long offset = fos.getChannel().position();
 
-//				try (FileOutputStream fos = new FileOutputStream(filename);
-//							DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(fos))) {
-//					entry.value.getIndexes().write(dos); // write Indexes
-//					entry.value.getValue().write(dos); // write MatrixBlock
-//
-//					dos.flush();
-//				}
-
-				// use the same way we do in other places in systemds
-				FileOutputStream fos = null;
-				FastBufferedDataOutputStream dos = null;
-				try {
-					fos = new FileOutputStream(filename);
-//				dos = new DataOutputStream(new BufferedOutputStream(fos))
-					dos = new FastBufferedDataOutputStream(fos);
-					entry.value.getIndexes().write(dos); // write Indexes
-					entry.value.getValue().write(dos); // write MatrixBlock
-				} catch (IOException e) {
-					throw new DMLRuntimeException(e);
-				} finally {
-					IOUtilFunctions.closeSilently(dos);
-					IOUtilFunctions.closeSilently(fos);
-				}
-	
-				// partition file
-				// 1. generate a new ID for the present "partition" (file)
-				int partitionId = _partitionCounter.getAndIncrement();
-
-				// 2. create the partition file metadata
-				partitionFile partFile = new partitionFile(filename, entry.streamId);
-				_partitions.put(partitionId, partFile);
+				entry.value.getIndexes().write(dos); // write Indexes
+				entry.value.getValue().write(dos);
 
 				// 3. create the spillLocation
-				spillLocation sloc = new spillLocation(partitionId, entry.streamId, entry.blockId, entry.size);
+				spillLocation sloc = new spillLocation(partitionId, offset);
 				_spillLocations.put(tmp.getKey(), sloc);
+
 
 				// Evict from memory
 				long freedSize = estimateSerializedSize((MatrixBlock)tmp.getValue().value.getValue());
@@ -322,8 +305,7 @@ public class OOCEvictionManager {
 				try {
 					entry.value.setValue(null);
 					entry.state = BlockState.COLD; // set state to cold, since writing to disk
-
-
+					entry.stateUpdate.signalAll();
 				} finally {
 					entry.lock.unlock();
 				}
@@ -334,8 +316,11 @@ public class OOCEvictionManager {
 				_size.addAndGet(-freedSize);
 			}
 		}
-		catch(Exception ex) {
+		catch(IOException ex) {
 			throw new DMLRuntimeException(ex);
+		} finally {
+			IOUtilFunctions.closeSilently(dos);
+			IOUtilFunctions.closeSilently(fos);
 		}
 	}
 
@@ -358,30 +343,9 @@ public class OOCEvictionManager {
 
 		String filename = partFile.filePath;
 
+		// Create an empty object to read data into.
 		MatrixIndexes ix = new  MatrixIndexes();
 		MatrixBlock mb = new  MatrixBlock();
-
-		// Create an empty object to read data into.
-//		IndexedMatrixValue imvRead = new IndexedMatrixValue(new MatrixIndexes(), new MatrixBlock());
-//
-//		try {
-//			LocalFileUtils.readWritableFromLocal(filename, (Writable) imvRead);
-//		}  catch (IOException e) {
-//			throw new DMLRuntimeException(e);
-//		}
-
-
-//		try (RandomAccessFile raf = new RandomAccessFile(filename, "r")) {
-//			// seek to the block specfic offset
-//			raf.seek(sloc.offset);
-//
-//			try (DataInputStream dis = new DataInputStream(Channels.newInputStream(raf.getChannel()))) {
-//				ix.readFields(dis);
-//				mb.readFields(dis);
-//			}
-//		} catch (IOException e) {
-//			throw new DMLRuntimeException(e);
-//		}
 
 		// inspire from existing utilities in systemds
 		FileInputStream fis = null;
@@ -401,8 +365,7 @@ public class OOCEvictionManager {
 			IOUtilFunctions.closeSilently(fis);
 		}
 	
-			// Read from disk and put into original indexed matrix value
-//			MatrixBlock mb = LocalFileUtils.readMatrixBlockFromLocal(filename);
+		// Read from disk and put into original indexed matrix value
 		BlockEntry imvCacheEntry;
 		synchronized (_cacheLock) {
 			imvCacheEntry = _cache.get(key);
@@ -412,11 +375,14 @@ public class OOCEvictionManager {
 		try {
 			if (imvCacheEntry.state == BlockState.COLD) {
 				imvCacheEntry.value = new IndexedMatrixValue(ix, mb);
+				imvCacheEntry.state = BlockState.HOT;
 				_size.addAndGet(imvCacheEntry.size);
 			}
 		} finally {
 			imvCacheEntry.lock.unlock();
 		}
+
+		evict(); // when we add the block, we shall check for limit.
 		return imvCacheEntry.value;
 	}
 
@@ -426,6 +392,10 @@ public class OOCEvictionManager {
 	
 	private static Map.Entry<String, BlockEntry> removeFirstFromCache() {
 		synchronized (_cacheLock) {
+
+			if (_cache.isEmpty()) {
+				return null;
+			}
 			//move iterator to first entry
 			Iterator<Map.Entry<String, BlockEntry>> iter = _cache.entrySet().iterator();
 			Map.Entry<String, BlockEntry> entry = iter.next();

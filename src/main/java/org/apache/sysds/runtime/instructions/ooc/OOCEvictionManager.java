@@ -214,13 +214,16 @@ public class OOCEvictionManager {
 
 		synchronized (_cacheLock) {
 			imv = _cache.get(key);
-
+			System.err.println( "value of imv: " + imv);
 			if (imv != null && _policy == RPolicy.LRU) {
 				_cache.remove(key);
 				_cache.put(key, imv); //add last semantic
 			}
 		}
 
+		if (imv == null) {
+			throw new DMLRuntimeException("Block not found in cache: " + key);
+		}
 		// use lock and check state
 		imv.lock.lock();
 		try {
@@ -251,12 +254,47 @@ public class OOCEvictionManager {
 	 * Evict ByteBuffers to disk
 	 */
 	private static void evict() {
-
+		long currentSize = _size.get();
 		if (_size.get() <= _limit) { // only trigger eviction, if filled.
+			System.err.println("Evicting condition: " + _size.get() + "/" + _limit);
 			return;
 		}
 
+		// --- 1. COLLECTION PHASE ---
 		long totalFreedSize = 0;
+		// list of eviction candidates
+		List<Map.Entry<String,BlockEntry>> candidates = new  ArrayList<>();
+		long targetFreedSize = Math.max(currentSize - _limit, (long) PARTITION_EVICTION_SIZE);
+
+		synchronized (_cacheLock) {
+
+			//move iterator to first entry
+			Iterator<Map.Entry<String, BlockEntry>> iter = _cache.entrySet().iterator();
+
+			while (iter.hasNext() && totalFreedSize < targetFreedSize) {
+				Map.Entry<String, BlockEntry> e = iter.next();
+				BlockEntry entry = e.getValue();
+
+				entry.lock.lock();
+				try {
+					if (entry.state == BlockState.HOT) {
+						entry.state = BlockState.EVICTING;
+						candidates.add(e);
+						totalFreedSize += entry.size;
+
+						//remove current iterator entry
+						iter.remove();
+					}
+				} finally {
+					entry.lock.unlock();
+				}
+			}
+
+		}
+
+		if (candidates.isEmpty()) { return; } // no eviction candidates found
+
+		// --- 2. WRITE PHASE ---
 		// write to partition file
 		// 1. generate a new ID for the present "partition" (file)
 		int partitionId = _partitionCounter.getAndIncrement();
@@ -281,50 +319,54 @@ public class OOCEvictionManager {
 			int pos = 0;
 			while(_size.get() > _limit && pos++ < _cache.size()) {
 				System.err.println("BUFFER: "+_size+"/"+_limit+" size="+_cache.size());
-				Map.Entry<String,BlockEntry> tmp = removeFirstFromCache();
-//				candidates.add(tmp);
-				if (tmp == null) { break; } // cache is empty
 
-				BlockEntry entry = tmp.getValue();
+				// loop over the list of blocks we collected
+				for (Map.Entry<String,BlockEntry> tmp : candidates) {
+					BlockEntry entry = tmp.getValue();
 
-				// Skip if block is null. i.e, COLD
-				if( entry.value.getValue() == null ) {
-					synchronized (_cacheLock) {
-						_cache.put(tmp.getKey(), entry);
+					// Skip if block is null. i.e, COLD
+//					if (entry.value.getValue() == null) {
+//						synchronized (_cacheLock) {
+//							_cache.put(tmp.getKey(), entry);
+//						}
+//						continue;
+//					}
+
+					// 1. get the current file position. this is the offset.
+					// flush any buffered data to the file
+					dos.flush();
+					long offset = fos.getChannel().position();
+
+					// 2. write indexes and block
+					entry.value.getIndexes().write(dos); // write Indexes
+					entry.value.getValue().write(dos);
+
+					// 3. create the spillLocation
+					spillLocation sloc = new spillLocation(partitionId, offset);
+					_spillLocations.put(tmp.getKey(), sloc);
+
+					// 4. track file for cleanup
+					_streamPartitions
+									.computeIfAbsent(entry.streamId, k -> ConcurrentHashMap.newKeySet())
+									.add(filename);
+
+					// account for memory
+					long freedSize = estimateSerializedSize((MatrixBlock) tmp.getValue().value.getValue());
+					totalFreedSize += freedSize;
+
+					// 5. change state to COLD
+					entry.lock.lock();
+					try {
+						entry.value.setValue(null);
+						entry.state = BlockState.COLD; // set state to cold, since writing to disk
+						entry.stateUpdate.signalAll(); // wake up any "get()" threads
+					} finally {
+						entry.lock.unlock();
 					}
-					continue;
-				}
 
-				// flush any buffered data to the file
-				dos.flush();
-				long offset = fos.getChannel().position();
-
-				entry.value.getIndexes().write(dos); // write Indexes
-				entry.value.getValue().write(dos);
-
-				// 3. create the spillLocation
-				spillLocation sloc = new spillLocation(partitionId, offset);
-				_spillLocations.put(tmp.getKey(), sloc);
-
-				// 4. track file for cleanup
-				_streamPartitions
-					.computeIfAbsent(entry.streamId, k -> ConcurrentHashMap.newKeySet())
-					.add(filename);
-
-				// Evict from memory
-				long freedSize = estimateSerializedSize((MatrixBlock)tmp.getValue().value.getValue());
-				totalFreedSize += freedSize;
-				entry.lock.lock();
-				try {
-					entry.value.setValue(null);
-					entry.state = BlockState.COLD; // set state to cold, since writing to disk
-					entry.stateUpdate.signalAll();
-				} finally {
-					entry.lock.unlock();
-				}
-
-				synchronized (_cacheLock) {
-					_cache.put(tmp.getKey(), entry); // add last semantic
+					synchronized (_cacheLock) {
+						_cache.put(tmp.getKey(), entry); // add last semantic
+					}
 				}
 			}
 		}
@@ -335,6 +377,7 @@ public class OOCEvictionManager {
 			IOUtilFunctions.closeSilently(fos);
 		}
 
+		// --- 3. ACCOUNTING PHASE ---
 		if (totalFreedSize > 0) { // note the size, without evicted blocks
 			_size.addAndGet(-totalFreedSize);
 		}
@@ -363,9 +406,6 @@ public class OOCEvictionManager {
 		MatrixIndexes ix = new  MatrixIndexes();
 		MatrixBlock mb = new  MatrixBlock();
 
-		// inspire from existing utilities in systemds
-//		FileInputStream fis = null;
-//		FastBufferedDataInputStream din = null;
 		try (RandomAccessFile raf = new RandomAccessFile(filename, "r")) {
 			raf.seek(sloc.offset);
 
@@ -375,10 +415,6 @@ public class OOCEvictionManager {
 				mb.readFields(dis); // 2. Read Block
 			} catch (IOException ex) {
 				throw new DMLRuntimeException("Failed to load block " + key + " from " + filename, ex);
-//			} finally {
-//				// Use the SystemDS-native close
-//				IOUtilFunctions.closeSilently(dis);
-//				IOUtilFunctions.closeSilently(fis);
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);

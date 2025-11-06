@@ -32,4 +32,8 @@ public interface OOCStream<T> extends OOCStreamable<T> {
 	LocalTaskQueue<T> toLocalTaskQueue();
 
 	void propagateFailure(DMLRuntimeException re);
+
+	boolean hasStreamCache();
+
+	CachingStream getStreamCache();
 }

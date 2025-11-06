@@ -23,6 +23,10 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A wrapper around LocalTaskQueue to consume the source stream and reset to
@@ -31,7 +35,7 @@ import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
  */
 public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 
-	private static final IDSequence _streamSeq = new IDSequence();
+	public static final IDSequence _streamSeq = new IDSequence();
 
 	// original live stream
 	private final OOCStream<IndexedMatrixValue> _source;
@@ -46,6 +50,7 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 
 	// state flags
 	private boolean _cacheInProgress = true; // caching in progress, in the first pass.
+	private Map<MatrixIndexes, Integer> _index;
 
 	public CachingStream(OOCStream<IndexedMatrixValue> source) {
 		this(source, _streamSeq.getNextID());
@@ -86,6 +91,8 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 		synchronized (this) {
 			if(task != LocalTaskQueue.NO_MORE_TASKS) {
 				OOCEvictionManager.put(_streamId, _numBlocks, task);
+				if (_index != null)
+					_index.put(task.getIndexes(), _numBlocks);
 				_numBlocks++;
 				notifyAll();
 				return false;
@@ -107,6 +114,14 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 
 			wait();
 		}
+	}
+
+	public synchronized IndexedMatrixValue findCached(MatrixIndexes idx) {
+		return OOCEvictionManager.get(_streamId, _index.get(idx));
+	}
+
+	public synchronized void activateIndexing() {
+		_index = new HashMap<>();
 	}
 
 	@Override

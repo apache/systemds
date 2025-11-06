@@ -25,7 +25,9 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.OOCJoin;
@@ -142,13 +144,23 @@ public abstract class OOCInstruction extends Instruction {
 
 		final CompletableFuture<Void> future = new CompletableFuture<>();
 
-		final OOCJoin<P, T> join = new OOCJoin<>((idx, left, right) -> qOut.enqueue(mapper.apply(left, right)));
+		// We need to construct our own stream to properly manage the cached items in the hash join
+		CachingStream leftCache = qIn1.hasStreamCache() ? qIn1.getStreamCache() : new CachingStream((SubscribableTaskQueue<IndexedMatrixValue>)qIn1); // We have to assume this generic type for now
+		CachingStream rightCache = qIn2.hasStreamCache() ? qIn2.getStreamCache() : new CachingStream((SubscribableTaskQueue<IndexedMatrixValue>)qIn2); // We have to assume this generic type for now
+		leftCache.activateIndexing();
+		rightCache.activateIndexing();
 
-		submitOOCTasks(List.of(qIn1, qIn2), (i, tmp) -> {
+		final OOCJoin<P, MatrixIndexes> join = new OOCJoin<>((idx, left, right) -> {
+			T leftObj = (T) leftCache.findCached(left);
+			T rightObj = (T) rightCache.findCached(right);
+			qOut.enqueue(mapper.apply(leftObj, rightObj));
+		});
+
+		submitOOCTasks(List.of(leftCache.getReadStream(), rightCache.getReadStream()), (i, tmp) -> {
 			if (i == 0)
-				join.addLeft(onLeft.apply(tmp), tmp);
+				join.addLeft(onLeft.apply((T)tmp), ((IndexedMatrixValue) tmp).getIndexes());
 			else
-				join.addRight(onRight.apply(tmp), tmp);
+				join.addRight(onRight.apply((T)tmp), ((IndexedMatrixValue) tmp).getIndexes());
 		}, () -> {
 			join.close();
 			qOut.closeInput();

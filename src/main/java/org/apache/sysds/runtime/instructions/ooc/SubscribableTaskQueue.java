@@ -97,4 +97,14 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 		if(_subscriber != null)
 			_subscriber.run();
 	}
+
+	@Override
+	public boolean hasStreamCache() {
+		return false;
+	}
+
+	@Override
+	public CachingStream getStreamCache() {
+		return null;
+	}
 }

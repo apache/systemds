@@ -82,4 +82,14 @@ public class PlaybackStream implements OOCStream<IndexedMatrixValue>, OOCStreama
 	public void propagateFailure(DMLRuntimeException re) {
 		_streamCache.getWriteStream().propagateFailure(re);
 	}
+
+	@Override
+	public boolean hasStreamCache() {
+		return true;
+	}
+
+	@Override
+	public CachingStream getStreamCache() {
+		return _streamCache;
+	}
 }

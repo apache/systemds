@@ -24,14 +24,11 @@ import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysds.runtime.util.FastBufferedDataInputStream;
 import org.apache.sysds.runtime.util.FastBufferedDataOutputStream;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 
 import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -39,7 +36,6 @@ import java.nio.channels.Channels;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -230,7 +226,7 @@ public class OOCEvictionManager {
 			// 1. wait for eviction to complete
 			while (imv.state == BlockState.EVICTING) {
 				try {
-					imv.stateUpdate.wait();
+					imv.stateUpdate.await();
 				} catch (InterruptedException e) {
 
 					throw new DMLRuntimeException(e);
@@ -275,19 +271,20 @@ public class OOCEvictionManager {
 				Map.Entry<String, BlockEntry> e = iter.next();
 				BlockEntry entry = e.getValue();
 
-				entry.lock.lock();
-				try {
-					if (entry.state == BlockState.HOT) {
-						entry.state = BlockState.EVICTING;
-						candidates.add(e);
-						totalFreedSize += entry.size;
+				if (entry.lock.tryLock()) {
+					try {
+						if (entry.state == BlockState.HOT) {
+							entry.state = BlockState.EVICTING;
+							candidates.add(e);
+							totalFreedSize += entry.size;
 
-						//remove current iterator entry
-						iter.remove();
+							//remove current iterator entry
+//							iter.remove();
+						}
+					} finally {
+						entry.lock.unlock();
 					}
-				} finally {
-					entry.lock.unlock();
-				}
+				} // if tryLock() fails, it means a thread is loading/reading this block. we shall skip it.
 			}
 
 		}
@@ -316,57 +313,42 @@ public class OOCEvictionManager {
 			fos = new FileOutputStream(filename);
 			dos = new FastBufferedDataOutputStream(fos);
 
-			int pos = 0;
-			while(_size.get() > _limit && pos++ < _cache.size()) {
-				System.err.println("BUFFER: "+_size+"/"+_limit+" size="+_cache.size());
 
-				// loop over the list of blocks we collected
-				for (Map.Entry<String,BlockEntry> tmp : candidates) {
-					BlockEntry entry = tmp.getValue();
+			// loop over the list of blocks we collected
+			for (Map.Entry<String,BlockEntry> tmp : candidates) {
+				BlockEntry entry = tmp.getValue();
 
-					// Skip if block is null. i.e, COLD
-//					if (entry.value.getValue() == null) {
-//						synchronized (_cacheLock) {
-//							_cache.put(tmp.getKey(), entry);
-//						}
-//						continue;
-//					}
+				// 1. get the current file position. this is the offset.
+				// flush any buffered data to the file
+				dos.flush();
+				long offset = fos.getChannel().position();
 
-					// 1. get the current file position. this is the offset.
-					// flush any buffered data to the file
-					dos.flush();
-					long offset = fos.getChannel().position();
+				// 2. write indexes and block
+				entry.value.getIndexes().write(dos); // write Indexes
+				entry.value.getValue().write(dos);
+				System.out.println("written, partition id: " + _partitions.get(partitionId) + ", offset: " + offset);
 
-					// 2. write indexes and block
-					entry.value.getIndexes().write(dos); // write Indexes
-					entry.value.getValue().write(dos);
+				// 3. create the spillLocation
+				spillLocation sloc = new spillLocation(partitionId, offset);
+				_spillLocations.put(tmp.getKey(), sloc);
 
-					// 3. create the spillLocation
-					spillLocation sloc = new spillLocation(partitionId, offset);
-					_spillLocations.put(tmp.getKey(), sloc);
+				// 4. track file for cleanup
+				_streamPartitions
+								.computeIfAbsent(entry.streamId, k -> ConcurrentHashMap.newKeySet())
+								.add(filename);
 
-					// 4. track file for cleanup
-					_streamPartitions
-									.computeIfAbsent(entry.streamId, k -> ConcurrentHashMap.newKeySet())
-									.add(filename);
+				// 5. change state to COLD
+				entry.lock.lock();
+				try {
+					entry.value = null; // only release ref, don't mutate object
+					entry.state = BlockState.COLD; // set state to cold, since writing to disk
+					entry.stateUpdate.signalAll(); // wake up any "get()" threads
+				} finally {
+					entry.lock.unlock();
+				}
 
-					// account for memory
-					long freedSize = estimateSerializedSize((MatrixBlock) tmp.getValue().value.getValue());
-					totalFreedSize += freedSize;
-
-					// 5. change state to COLD
-					entry.lock.lock();
-					try {
-						entry.value.setValue(null);
-						entry.state = BlockState.COLD; // set state to cold, since writing to disk
-						entry.stateUpdate.signalAll(); // wake up any "get()" threads
-					} finally {
-						entry.lock.unlock();
-					}
-
-					synchronized (_cacheLock) {
-						_cache.put(tmp.getKey(), entry); // add last semantic
-					}
+				synchronized (_cacheLock) {
+					_cache.put(tmp.getKey(), entry); // add last semantic
 				}
 			}
 		}
@@ -425,18 +407,29 @@ public class OOCEvictionManager {
 			imvCacheEntry = _cache.get(key);
 		}
 
+		// 2. Check if it's null (the bug you helped fix before)
+		if(imvCacheEntry == null) {
+			throw new DMLRuntimeException("Block entry " + key + " was not in cache during load.");
+		}
+
 		imvCacheEntry.lock.lock();
 		try {
 			if (imvCacheEntry.state == BlockState.COLD) {
 				imvCacheEntry.value = new IndexedMatrixValue(ix, mb);
 				imvCacheEntry.state = BlockState.HOT;
 				_size.addAndGet(imvCacheEntry.size);
+
+				synchronized (_cacheLock) {
+					_cache.remove(key);
+					_cache.put(key, imvCacheEntry);
+				}
 			}
+
+//			evict(); // when we add the block, we shall check for limit.
 		} finally {
 			imvCacheEntry.lock.unlock();
 		}
 
-		evict(); // when we add the block, we shall check for limit.
 		return imvCacheEntry.value;
 	}
 

@@ -121,7 +121,8 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 	}
 
 	public synchronized void activateIndexing() {
-		_index = new HashMap<>();
+		if (_index == null)
+			_index = new HashMap<>();
 	}
 
 	@Override

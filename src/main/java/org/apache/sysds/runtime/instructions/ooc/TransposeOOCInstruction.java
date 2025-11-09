@@ -19,10 +19,8 @@
 
 package org.apache.sysds.runtime.instructions.ooc;
 
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -53,26 +51,17 @@ public class TransposeOOCInstruction extends ComputationOOCInstruction {
 
 		// Create thread and process the transpose operation
 		MatrixObject min = ec.getMatrixObject(input1);
-		LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
-		LocalTaskQueue<IndexedMatrixValue> qOut = new LocalTaskQueue<>();
+		OOCStream<IndexedMatrixValue> qIn = min.getStreamHandle();
+		OOCStream<IndexedMatrixValue> qOut = createWritableStream();
 		ec.getMatrixObject(output).setStreamHandle(qOut);
 
-		submitOOCTask(() -> {
-				IndexedMatrixValue tmp = null;
-				try {
-					while ((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
-						MatrixBlock inBlock = (MatrixBlock)tmp.getValue();
-						long oldRowIdx = tmp.getIndexes().getRowIndex();
-						long oldColIdx = tmp.getIndexes().getColumnIndex();
+		mapOOC(qIn, qOut, tmp -> {
+			MatrixBlock inBlock = (MatrixBlock) tmp.getValue();
+			long oldRowIdx = tmp.getIndexes().getRowIndex();
+			long oldColIdx = tmp.getIndexes().getColumnIndex();
 
-						MatrixBlock outBlock = inBlock.reorgOperations((ReorgOperator) _optr, new MatrixBlock(), -1, -1, -1);
-						qOut.enqueueTask(new IndexedMatrixValue(new MatrixIndexes(oldColIdx, oldRowIdx), outBlock));
-					}
-					qOut.closeInput();
-				}
-				catch(Exception ex) {
-					throw new DMLRuntimeException(ex);
-				}
-		}, qIn, qOut);
+			MatrixBlock outBlock = inBlock.reorgOperations((ReorgOperator) _optr, new MatrixBlock(), -1, -1, -1);
+			return new IndexedMatrixValue(new MatrixIndexes(oldColIdx, oldRowIdx), outBlock);
+		});
 	}
 }

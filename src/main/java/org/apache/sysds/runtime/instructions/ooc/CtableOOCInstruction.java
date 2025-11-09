@@ -79,7 +79,7 @@ public class CtableOOCInstruction extends ComputationOOCInstruction {
 	public void processInstruction( ExecutionContext ec ) {
 
 		MatrixObject in1 = ec.getMatrixObject(input1); // stream
-		LocalTaskQueue<IndexedMatrixValue> qIn1 = in1.getStreamHandle();
+		OOCStream<IndexedMatrixValue> qIn1 = in1.getStreamHandle();
 		IndexedMatrixValue tmp1 = null;
 
 		long outputDim1 = ec.getScalarInput(_outDim1).getLongValue();
@@ -90,7 +90,7 @@ public class CtableOOCInstruction extends ComputationOOCInstruction {
 
 		Ctable.OperationTypes ctableOp = findCtableOperation();
 		MatrixObject in2 = null, in3 = null;
-		LocalTaskQueue<IndexedMatrixValue> qIn2 = null, qIn3 = null;
+		OOCStream<IndexedMatrixValue> qIn2 = null, qIn3 = null;
 		double cst2 = 0, cst3 = 0;
 
 		// init vars based on ctableOp
@@ -121,7 +121,7 @@ public class CtableOOCInstruction extends ComputationOOCInstruction {
 		}
 
 		try {
-			while((tmp1 = qIn1.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
+			while((tmp1 = qIn1.dequeue()) != LocalTaskQueue.NO_MORE_TASKS) {
 
 				MatrixBlock block1 = (MatrixBlock) tmp1.getValue();
 				long r = tmp1.getIndexes().getRowIndex();
@@ -172,13 +172,13 @@ public class CtableOOCInstruction extends ComputationOOCInstruction {
 	}
 
 	private MatrixBlock getOrDequeueBlock(long key, long cols, HashMap<Long, MatrixBlock> blocks,
-		LocalTaskQueue<IndexedMatrixValue> queue) throws InterruptedException 
+		OOCStream<IndexedMatrixValue> queue) throws InterruptedException
 	{
 		MatrixBlock block = blocks.get(key);
 		if (block == null) {
 			IndexedMatrixValue tmp;
 			// corresponding block still in queue, dequeue until found
-			while ((tmp = queue.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
+			while ((tmp = queue.dequeue()) != LocalTaskQueue.NO_MORE_TASKS) {
 				block = (MatrixBlock) tmp.getValue();
 				long r = tmp.getIndexes().getRowIndex();
 				long c = tmp.getIndexes().getColumnIndex();

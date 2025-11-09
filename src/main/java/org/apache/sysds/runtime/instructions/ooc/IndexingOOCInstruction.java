@@ -28,6 +28,7 @@ import org.apache.sysds.runtime.instructions.cp.IndexingCPInstruction;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.util.IndexRange;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
 public abstract class IndexingOOCInstruction extends UnaryOOCInstruction {
@@ -82,15 +83,13 @@ public abstract class IndexingOOCInstruction extends UnaryOOCInstruction {
 	}
 
 	public static class BlockAligner<T> {
-		private static final boolean DEBUG = false;
-
 		private final int _blocksize;
 		private final IndexRange indexRange;
 		private final IndexRange blockRange;
 		private final int _outRows;
 		private final int _outCols;
 		private final Sector<T>[] _blocks;
-		private int _emitCtr;
+		private final AtomicInteger _emitCtr;
 
 		@SuppressWarnings("unchecked")
 		public BlockAligner(IndexRange range, int blocksize) {
@@ -109,13 +108,7 @@ public abstract class IndexingOOCInstruction extends UnaryOOCInstruction {
 			_outCols = (int) ((totalCols + blocksize - 1) / blocksize);
 
 			_blocks = (Sector<T>[]) new Sector[_outRows * _outCols];
-			_emitCtr = 0;
-
-			if(DEBUG) {
-				System.out.println("BlockAligner: range=" + range + ", blocksize=" + blocksize);
-				System.out.println("BlockRange: " + blockRange);
-				System.out.println("Output grid: " + _outRows + "x" + _outCols);
-			}
+			_emitCtr = new AtomicInteger(0);
 		}
 
 		public boolean isAligned() {
@@ -136,18 +129,15 @@ public abstract class IndexingOOCInstruction extends UnaryOOCInstruction {
 
 			long overlapRowStart = Math.max(indexRange.rowStart, blockRowStart);
 			long overlapRowEnd = Math.min(indexRange.rowEnd, blockRowEnd);
-			if(overlapRowStart > overlapRowEnd)
-				return false;
-
 			long overlapColStart = Math.max(indexRange.colStart, blockColStart);
 			long overlapColEnd = Math.min(indexRange.colEnd, blockColEnd);
-			if(overlapColStart > overlapColEnd)
-				return false;
 
 			int outRowStart = (int) ((overlapRowStart - indexRange.rowStart) / _blocksize);
 			int outRowEnd = (int) ((overlapRowEnd - indexRange.rowStart) / _blocksize);
 			int outColStart = (int) ((overlapColStart - indexRange.colStart) / _blocksize);
 			int outColEnd = (int) ((overlapColEnd - indexRange.colStart) / _blocksize);
+
+			int emitCtr = -1;
 
 			for(int outRow = outRowStart; outRow <= outRowEnd; outRow++) {
 				long targetRowStartGlobal = indexRange.rowStart + (long) outRow * _blocksize;
@@ -170,17 +160,17 @@ public abstract class IndexingOOCInstruction extends UnaryOOCInstruction {
 					if(sector == null)
 						continue;
 
-					boolean emit = sector.place(rowOffset, colOffset, blockRow, blockCol, data);
+					boolean emit = sector.place(rowOffset, colOffset, data);
 					if(emit) {
 						int idxPos = resolveIndex(outRow, outCol);
 						_blocks[idxPos] = null;
-						_emitCtr++;
+						emitCtr = _emitCtr.incrementAndGet();
 						emitter.accept(new MatrixIndexes(outRow + 1, outCol + 1), sector);
 					}
 				}
 			}
 
-			return _emitCtr >= _blocks.length;
+			return emitCtr >= _blocks.length;
 		}
 
 		private int resolveIndex(int row, int col) {
@@ -211,45 +201,33 @@ public abstract class IndexingOOCInstruction extends UnaryOOCInstruction {
 		}
 
 		public synchronized void close() {
-			if(_emitCtr != _blocks.length)
+			if(_emitCtr.get() != _blocks.length)
 				throw new DMLRuntimeException("BlockAligner still has some unfinished sectors");
 		}
 	}
 
-	public static final class BlockComponent<T> {
-		public final long blockRow;
-		public final long blockCol;
-		public final T data;
-
-		public BlockComponent(long blockRow, long blockCol, T data) {
-			this.blockRow = blockRow;
-			this.blockCol = blockCol;
-			this.data = data;
-		}
-	}
-
 	public static abstract class Sector<T> {
-		public abstract boolean place(int rowOffset, int colOffset, long blockRow, long blockCol, T data);
+		public abstract boolean place(int rowOffset, int colOffset, T data);
 
-		public abstract BlockComponent<T> get(int rowOffset, int colOffset);
+		public abstract T get(int rowOffset, int colOffset);
 
 		public abstract int count();
 	}
 
 	public static class Sector1<T> extends Sector<T> {
-		private BlockComponent<T> _data;
+		private T _data;
 
 		@Override
-		public synchronized boolean place(int rowOffset, int colOffset, long blockRow, long blockCol, T data) {
+		public synchronized boolean place(int rowOffset, int colOffset, T data) {
 			if(rowOffset != 0 || colOffset != 0)
 				return false;
 
-			_data = new BlockComponent<>(blockRow, blockCol, data);
+			_data = data;
 			return true;
 		}
 
 		@Override
-		public synchronized BlockComponent<T> get(int rowOffset, int colOffset) {
+		public synchronized T get(int rowOffset, int colOffset) {
 			return (rowOffset == 0 && colOffset == 0) ? _data : null;
 		}
 
@@ -261,26 +239,26 @@ public abstract class IndexingOOCInstruction extends UnaryOOCInstruction {
 
 	public static class Sector4<T> extends Sector<T> {
 		private int _count;
-		private final BlockComponent<T>[] _data;
+		private final T[] _data;
 
 		@SuppressWarnings("unchecked")
 		public Sector4() {
 			_count = 0;
-			_data = (BlockComponent<T>[]) new BlockComponent[4];
+			_data = (T[]) new Object[4];
 		}
 
 		@Override
-		public synchronized boolean place(int rowOffset, int colOffset, long blockRow, long blockCol, T data) {
+		public synchronized boolean place(int rowOffset, int colOffset, T data) {
 			int pos = rowOffset * 2 + colOffset;
 			if(_data[pos] == null) {
-				_data[pos] = new BlockComponent<>(blockRow, blockCol, data);
+				_data[pos] = data;
 				_count++;
 			}
 			return _count == 4;
 		}
 
 		@Override
-		public synchronized BlockComponent<T> get(int rowOffset, int colOffset) {
+		public synchronized T get(int rowOffset, int colOffset) {
 			return _data[rowOffset * 2 + colOffset];
 		}
 
@@ -292,21 +270,21 @@ public abstract class IndexingOOCInstruction extends UnaryOOCInstruction {
 
 	public static class Sector2Col<T> extends Sector<T> {
 		private int _count;
-		private final BlockComponent<T>[] _data;
+		private final T[] _data;
 
 		@SuppressWarnings("unchecked")
 		public Sector2Col() {
 			_count = 0;
-			_data = (BlockComponent<T>[]) new BlockComponent[2];
+			_data = (T[]) new Object[2];
 		}
 
 		@Override
-		public synchronized boolean place(int rowOffset, int colOffset, long blockRow, long blockCol, T data) {
+		public synchronized boolean place(int rowOffset, int colOffset, T data) {
 			if(rowOffset != 0 || colOffset < 0 || colOffset > 1)
 				return false;
 
 			if(_data[colOffset] == null) {
-				_data[colOffset] = new BlockComponent<>(blockRow, blockCol, data);
+				_data[colOffset] = data;
 				_count++;
 			}
 
@@ -314,7 +292,7 @@ public abstract class IndexingOOCInstruction extends UnaryOOCInstruction {
 		}
 
 		@Override
-		public synchronized BlockComponent<T> get(int rowOffset, int colOffset) {
+		public synchronized T get(int rowOffset, int colOffset) {
 			return (rowOffset == 0 && colOffset >= 0 && colOffset < 2) ? _data[colOffset] : null;
 		}
 
@@ -326,21 +304,21 @@ public abstract class IndexingOOCInstruction extends UnaryOOCInstruction {
 
 	public static class Sector2Row<T> extends Sector<T> {
 		private int _count;
-		private final BlockComponent<T>[] _data;
+		private final T[] _data;
 
 		@SuppressWarnings("unchecked")
 		public Sector2Row() {
 			_count = 0;
-			_data = (BlockComponent<T>[]) new BlockComponent[2];
+			_data = (T[]) new Object[2];
 		}
 
 		@Override
-		public synchronized boolean place(int rowOffset, int colOffset, long blockRow, long blockCol, T data) {
+		public synchronized boolean place(int rowOffset, int colOffset, T data) {
 			if(colOffset != 0 || rowOffset < 0 || rowOffset > 1)
 				return false;
 
 			if(_data[rowOffset] == null) {
-				_data[rowOffset] = new BlockComponent<>(blockRow, blockCol, data);
+				_data[rowOffset] = data;
 				_count++;
 			}
 
@@ -348,7 +326,7 @@ public abstract class IndexingOOCInstruction extends UnaryOOCInstruction {
 		}
 
 		@Override
-		public synchronized BlockComponent<T> get(int rowOffset, int colOffset) {
+		public synchronized T get(int rowOffset, int colOffset) {
 			return (colOffset == 0 && rowOffset >= 0 && rowOffset < 2) ? _data[rowOffset] : null;
 		}
 

@@ -76,7 +76,7 @@ public class AggregateUnaryOOCInstruction extends ComputationOOCInstruction {
 		//setup operators and input queue
 		AggregateUnaryOperator aggun = (AggregateUnaryOperator) getOperator(); 
 		MatrixObject min = ec.getMatrixObject(input1);
-		LocalTaskQueue<IndexedMatrixValue> q = min.getStreamHandle();
+		OOCStream<IndexedMatrixValue> q = min.getStreamHandle();
 		int blen = ConfigurationManager.getBlocksize();
 
 		if (aggun.isRowAggregate() || aggun.isColAggregate()) {
@@ -86,13 +86,13 @@ public class AggregateUnaryOOCInstruction extends ComputationOOCInstruction {
 			OOCMatrixBlockTracker aggTracker = new OOCMatrixBlockTracker(emitThreshold);
 			HashMap<Long, MatrixBlock> corrs = new HashMap<>(); // correction blocks
 
-			LocalTaskQueue<IndexedMatrixValue> qOut = new LocalTaskQueue<>();
+			OOCStream<IndexedMatrixValue> qOut = createWritableStream();
 			ec.getMatrixObject(output).setStreamHandle(qOut);
 
 			submitOOCTask(() -> {
 					IndexedMatrixValue tmp = null;
 					try {
-						while((tmp = q.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
+						while((tmp = q.dequeue()) != LocalTaskQueue.NO_MORE_TASKS) {
 							long idx  = aggun.isRowAggregate() ?
 								tmp.getIndexes().getRowIndex() : tmp.getIndexes().getColumnIndex();
 							MatrixBlock ret = aggTracker.get(idx);
@@ -139,7 +139,7 @@ public class AggregateUnaryOOCInstruction extends ComputationOOCInstruction {
 								new MatrixIndexes(1, tmp.getIndexes().getColumnIndex());
 							IndexedMatrixValue tmpOut = new IndexedMatrixValue(midx, ret);
 
-							qOut.enqueueTask(tmpOut);
+							qOut.enqueue(tmpOut);
 							// drop intermediate states
 							aggTracker.remove(idx);
 							corrs.remove(idx);
@@ -159,7 +159,7 @@ public class AggregateUnaryOOCInstruction extends ComputationOOCInstruction {
 			MatrixBlock ret = new MatrixBlock(1,1+extra,false);
 			MatrixBlock corr = new MatrixBlock(1,1+extra,false);
 			try {
-				while((tmp = q.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
+				while((tmp = q.dequeue()) != LocalTaskQueue.NO_MORE_TASKS) {
 					//block aggregation
 					MatrixBlock ltmp = (MatrixBlock) ((MatrixBlock) tmp.getValue())
 						.aggregateUnaryOperations(aggun, new MatrixBlock(), blen, tmp.getIndexes());

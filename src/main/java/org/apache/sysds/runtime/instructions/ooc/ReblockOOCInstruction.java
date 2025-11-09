@@ -28,7 +28,6 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
@@ -75,7 +74,7 @@ public class ReblockOOCInstruction extends ComputationOOCInstruction {
 		//TODO support other formats than binary 
 		
 		//create queue, spawn thread for asynchronous reading, and return
-		LocalTaskQueue<IndexedMatrixValue> q = new LocalTaskQueue<IndexedMatrixValue>();
+		OOCStream<IndexedMatrixValue> q = createWritableStream();
 		submitOOCTask(() -> readBinaryBlock(q, min.getFileName()), q);
 		
 		MatrixObject mout = ec.getMatrixObject(output);
@@ -83,7 +82,7 @@ public class ReblockOOCInstruction extends ComputationOOCInstruction {
 	}
 	
 	@SuppressWarnings("resource")
-	private void readBinaryBlock(LocalTaskQueue<IndexedMatrixValue> q, String fname) {
+	private void readBinaryBlock(OOCStream<IndexedMatrixValue> q, String fname) {
 		try {
 			//prepare file access
 			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
@@ -102,7 +101,7 @@ public class ReblockOOCInstruction extends ComputationOOCInstruction {
 					MatrixIndexes key = new MatrixIndexes();
 					MatrixBlock value = new MatrixBlock();
 					while( reader.next(key, value) )
-						q.enqueueTask(new IndexedMatrixValue(key, new MatrixBlock(value)));
+						q.enqueue(new IndexedMatrixValue(key, new MatrixBlock(value)));
 				}
 			}
 			q.closeInput();

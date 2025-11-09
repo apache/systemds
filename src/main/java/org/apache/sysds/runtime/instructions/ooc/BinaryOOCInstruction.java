@@ -19,16 +19,14 @@
 
 package org.apache.sysds.runtime.instructions.ooc;
 
-import org.apache.sysds.common.Types.DataType;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
@@ -54,33 +52,46 @@ public class BinaryOOCInstruction extends ComputationOOCInstruction {
 	
 	@Override
 	public void processInstruction( ExecutionContext ec ) {
-		//TODO support all types, currently only binary matrix-scalar
-		
+		if (input1.isMatrix() && input2.isMatrix())
+			processMatrixMatrixInstruction(ec);
+		else
+			processScalarMatrixInstruction(ec);
+	}
+
+	protected void processMatrixMatrixInstruction(ExecutionContext ec) {
+		MatrixObject m1 = ec.getMatrixObject(input1);
+		MatrixObject m2 = ec.getMatrixObject(input2);
+
+		OOCStream<IndexedMatrixValue> qIn1 = m1.getStreamHandle();
+		OOCStream<IndexedMatrixValue> qIn2 = m2.getStreamHandle();
+		OOCStream<IndexedMatrixValue> qOut = new SubscribableTaskQueue<>();
+		ec.getMatrixObject(output).setStreamHandle(qOut);
+
+		joinOOC(qIn1, qIn2, qOut, (tmp1, tmp2) -> {
+			IndexedMatrixValue tmpOut = new IndexedMatrixValue();
+			tmpOut.set(tmp1.getIndexes(),
+				tmp1.getValue().binaryOperations((BinaryOperator)_optr, tmp2.getValue(), tmpOut.getValue()));
+			return tmpOut;
+		}, IndexedMatrixValue::getIndexes);
+	}
+
+	protected void processScalarMatrixInstruction(ExecutionContext ec) {
 		//get operator and scalar
-		CPOperand scalar = ( input1.getDataType() == DataType.MATRIX ) ? input2 : input1;
+		CPOperand scalar = input1.isMatrix() ? input2 : input1;
 		ScalarObject constant = ec.getScalarInput(scalar);
 		ScalarOperator sc_op = ((ScalarOperator)_optr).setConstant(constant.getDoubleValue());
-		
+
 		//create thread and process binary operation
-		MatrixObject min = ec.getMatrixObject(input1);
-		LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
-		LocalTaskQueue<IndexedMatrixValue> qOut = new LocalTaskQueue<>();
+		MatrixObject min = ec.getMatrixObject(input1.isMatrix() ? input1 : input2);
+		OOCStream<IndexedMatrixValue> qIn = min.getStreamHandle();
+		OOCStream<IndexedMatrixValue> qOut = createWritableStream();
 		ec.getMatrixObject(output).setStreamHandle(qOut);
-		
-		submitOOCTask(() -> {
-				IndexedMatrixValue tmp = null;
-				try {
-					while((tmp = qIn.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
-						IndexedMatrixValue tmpOut = new IndexedMatrixValue();
-						tmpOut.set(tmp.getIndexes(),
-							tmp.getValue().scalarOperations(sc_op, new MatrixBlock()));
-						qOut.enqueueTask(tmpOut);
-					}
-					qOut.closeInput();
-				}
-				catch(Exception ex) {
-					throw new DMLRuntimeException(ex);
-				}
-		}, qIn, qOut);
+
+		mapOOC(qIn, qOut, tmp -> {
+			IndexedMatrixValue tmpOut = new IndexedMatrixValue();
+			tmpOut.set(tmp.getIndexes(),
+				tmp.getValue().scalarOperations(sc_op, new MatrixBlock()));
+			return tmpOut;
+		});
 	}
 }

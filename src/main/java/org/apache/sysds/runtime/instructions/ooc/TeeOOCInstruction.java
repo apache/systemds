@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.instructions.ooc;
 
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
@@ -44,11 +43,11 @@ public class TeeOOCInstruction extends ComputationOOCInstruction {
 	public void processInstruction( ExecutionContext ec ) {
 		//get input stream
 		MatrixObject min = ec.getMatrixObject(input1);
-		LocalTaskQueue<IndexedMatrixValue> qIn = min.getStreamHandle();
+		OOCStream<IndexedMatrixValue> qIn = min.getStreamHandle();
 
 		//get output and create new resettable stream
 		MatrixObject mo = ec.getMatrixObject(output);
-		mo.setStreamHandle(new ResettableStream(qIn));
+		mo.setStreamHandle(new CachingStream(qIn));
 		mo.setMetaData(min.getMetaData());
 	}
 }

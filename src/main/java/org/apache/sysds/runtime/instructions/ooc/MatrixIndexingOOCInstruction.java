@@ -102,10 +102,6 @@ public class MatrixIndexingOOCInstruction extends IndexingOOCInstruction {
 					long blockRow = inIdx.getRowIndex() - 1;
 					long blockCol = inIdx.getColumnIndex() - 1;
 
-					if(blockRow < firstBlockRow || blockRow > lastBlockRow || blockCol < firstBlockCol ||
-						blockCol > lastBlockCol)
-						return;
-
 					MatrixBlock block = (MatrixBlock) tmp.getValue();
 
 					int rowStartLocal = (blockRow == firstBlockRow) ? (int) (ix.rowStart % blocksize) : 0;

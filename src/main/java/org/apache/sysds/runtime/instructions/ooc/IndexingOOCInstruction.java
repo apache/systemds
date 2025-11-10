@@ -84,8 +84,8 @@ public abstract class IndexingOOCInstruction extends UnaryOOCInstruction {
 
 	public static class BlockAligner<T> {
 		private final int _blocksize;
-		private final IndexRange indexRange;
-		private final IndexRange blockRange;
+		private final IndexRange _indexRange;
+		private final IndexRange _blockRange;
 		private final int _outRows;
 		private final int _outCols;
 		private final Sector<T>[] _blocks;
@@ -93,14 +93,14 @@ public abstract class IndexingOOCInstruction extends UnaryOOCInstruction {
 
 		@SuppressWarnings("unchecked")
 		public BlockAligner(IndexRange range, int blocksize) {
-			indexRange = range;
+			_indexRange = range;
 			_blocksize = blocksize;
 
 			long firstBlockRow = range.rowStart / blocksize;
 			long lastBlockRow = range.rowEnd / blocksize;
 			long firstBlockCol = range.colStart / blocksize;
 			long lastBlockCol = range.colEnd / blocksize;
-			blockRange = new IndexRange(firstBlockRow, lastBlockRow + 1, firstBlockCol, lastBlockCol + 1);
+			_blockRange = new IndexRange(firstBlockRow, lastBlockRow + 1, firstBlockCol, lastBlockCol + 1);
 
 			long totalRows = range.rowSpan() + 1;
 			long totalCols = range.colSpan() + 1;
@@ -112,14 +112,14 @@ public abstract class IndexingOOCInstruction extends UnaryOOCInstruction {
 		}
 
 		public boolean isAligned() {
-			return (indexRange.rowStart % _blocksize) == 0 && (indexRange.colStart % _blocksize) == 0;
+			return (_indexRange.rowStart % _blocksize) == 0 && (_indexRange.colStart % _blocksize) == 0;
 		}
 
 		public boolean putNext(MatrixIndexes index, T data, BiConsumer<MatrixIndexes, Sector<T>> emitter) {
 			long blockRow = index.getRowIndex() - 1;
 			long blockCol = index.getColumnIndex() - 1;
 
-			if(!blockRange.isWithin(blockRow, blockCol))
+			if(!_blockRange.isWithin(blockRow, blockCol))
 				return false;
 
 			long blockRowStart = blockRow * _blocksize;
@@ -127,28 +127,28 @@ public abstract class IndexingOOCInstruction extends UnaryOOCInstruction {
 			long blockColStart = blockCol * _blocksize;
 			long blockColEnd = blockColStart + _blocksize - 1;
 
-			long overlapRowStart = Math.max(indexRange.rowStart, blockRowStart);
-			long overlapRowEnd = Math.min(indexRange.rowEnd, blockRowEnd);
-			long overlapColStart = Math.max(indexRange.colStart, blockColStart);
-			long overlapColEnd = Math.min(indexRange.colEnd, blockColEnd);
+			long overlapRowStart = Math.max(_indexRange.rowStart, blockRowStart);
+			long overlapRowEnd = Math.min(_indexRange.rowEnd, blockRowEnd);
+			long overlapColStart = Math.max(_indexRange.colStart, blockColStart);
+			long overlapColEnd = Math.min(_indexRange.colEnd, blockColEnd);
 
-			int outRowStart = (int) ((overlapRowStart - indexRange.rowStart) / _blocksize);
-			int outRowEnd = (int) ((overlapRowEnd - indexRange.rowStart) / _blocksize);
-			int outColStart = (int) ((overlapColStart - indexRange.colStart) / _blocksize);
-			int outColEnd = (int) ((overlapColEnd - indexRange.colStart) / _blocksize);
+			int outRowStart = (int) ((overlapRowStart - _indexRange.rowStart) / _blocksize);
+			int outRowEnd = (int) ((overlapRowEnd - _indexRange.rowStart) / _blocksize);
+			int outColStart = (int) ((overlapColStart - _indexRange.colStart) / _blocksize);
+			int outColEnd = (int) ((overlapColEnd - _indexRange.colStart) / _blocksize);
 
 			int emitCtr = -1;
 
 			for(int outRow = outRowStart; outRow <= outRowEnd; outRow++) {
-				long targetRowStartGlobal = indexRange.rowStart + (long) outRow * _blocksize;
-				long targetRowEndGlobal = Math.min(indexRange.rowEnd, targetRowStartGlobal + _blocksize - 1);
+				long targetRowStartGlobal = _indexRange.rowStart + (long) outRow * _blocksize;
+				long targetRowEndGlobal = Math.min(_indexRange.rowEnd, targetRowStartGlobal + _blocksize - 1);
 				long targetStartBlockRow = targetRowStartGlobal / _blocksize;
 				long targetEndBlockRow = targetRowEndGlobal / _blocksize;
 				int rowSegments = (int) (targetEndBlockRow - targetStartBlockRow + 1);
 
 				for(int outCol = outColStart; outCol <= outColEnd; outCol++) {
-					long targetColStartGlobal = indexRange.colStart + (long) outCol * _blocksize;
-					long targetColEndGlobal = Math.min(indexRange.colEnd, targetColStartGlobal + _blocksize - 1);
+					long targetColStartGlobal = _indexRange.colStart + (long) outCol * _blocksize;
+					long targetColEndGlobal = Math.min(_indexRange.colEnd, targetColStartGlobal + _blocksize - 1);
 					long targetStartBlockCol = targetColStartGlobal / _blocksize;
 					long targetEndBlockCol = targetColEndGlobal / _blocksize;
 					int colSegments = (int) (targetEndBlockCol - targetStartBlockCol + 1);

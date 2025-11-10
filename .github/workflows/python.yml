@@ -112,6 +112,7 @@ jobs:
           requests \
           pandas \
           unittest-parallel \
+          coverage
 
     - name: Build Python Package
       run: |
@@ -126,14 +127,16 @@ jobs:
         export SYSDS_QUIET=1
         export LOG4JPROP=$SYSTEMDS_ROOT/src/test/resources/log4j.properties
         cd src/main/python
-        unittest-parallel -t . -s tests -v
+        unittest-parallel -t . -s tests -v --coverage
+        mv .coverage .coverage.${{ matrix.test_mode }}
 
     - name: Run tests no env
       if: ${{ matrix.test_mode == 'noenv' }}
       run: |
         export LOG4JPROP=$(pwd)/src/test/resources/log4j.properties
         cd src/main/python
-        unittest-parallel -t . -s tests -v
+        unittest-parallel -t . -s tests -v --coverage
+        mv .coverage .coverage.${{ matrix.test_mode }}
 
     - name: Run Federated Python Tests
       if: ${{ matrix.test_mode == 'federated' }}
@@ -142,6 +145,7 @@ jobs:
         export PATH=$SYSTEMDS_ROOT/bin:$PATH
         cd src/main/python
         ./tests/federated/runFedTest.sh
+        mv .coverage .coverage.${{ matrix.test_mode }}
 
     - name: Cache Torch Hub
       if: ${{ matrix.test_mode == 'scuro' }}
@@ -175,4 +179,86 @@ jobs:
           fvcore
         kill $KA 
         cd src/main/python
-        python -m unittest discover -s tests/scuro -p 'test_*.py' -v
+        coverage run -m unittest discover -s tests/scuro -p 'test_*.py' -v
+        mv .coverage .coverage.${{ matrix.test_mode }}
+
+    - name: Save Python Test Coverage as Artifact
+      uses: actions/upload-artifact@v5
+      with:
+        name: .coverage.${{ matrix.test_mode }}
+        include-hidden-files: true
+        path: ${{ github.workspace }}/src/main/python/.coverage.${{ matrix.test_mode }}
+        retention-days: 1
+  
+  determine_test_coverage:
+    name: Determine Test Coverage
+    runs-on: ${{ matrix.os }}
+    needs: [
+      test
+      ]
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.8]
+        os: [ubuntu-24.04]
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v5
+    
+    - name: Setup Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ matrix.python-version }}
+        architecture: 'x64'
+
+    - name: Install coverage package
+      run: |
+        pip install --upgrade pip
+        pip install coverage
+
+    - name: Download all Python Coverage Artifacts
+      uses: actions/download-artifact@v6
+      with:
+        pattern: .coverage.*
+        path: ${{ github.workspace }}/src/main/python/
+    
+    - name: Merge Python Coverage Reports
+      run: |
+        cd src/main/python
+        coverage combine .coverage.*
+        coverage xml -o coverage.xml
+
+    - name: Upload merged coverage report to Codecov
+      uses: codecov/codecov-action@v5.5.1
+      if: github.repository_owner == 'apache'
+      with:
+        fail_ci_if_error: false
+        files: src/main/python/coverage.xml
+        flags: python
+        name: coverage.xml
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Upload Coverage Report Artifact PR
+      if: (github.repository_owner == 'apache') && (github.ref_name != 'main')
+      uses: actions/upload-artifact@v5
+      with:
+        name: coverage.xml
+        path: src/main/python/coverage.xml
+        retention-days: 7
+
+    - name: Upload Coverage Report Artifact Main
+      if: (github.repository_owner == 'apache') && (github.ref_name == 'main')
+      uses: actions/upload-artifact@v5
+      with:
+        name: coverage.xml
+        path: src/main/python/coverage.xml
+        retention-days: 30
+
+    - name: Upload Coverage Report Artifact Fork
+      if: (github.repository_owner != 'apache')
+      uses: actions/upload-artifact@v5
+      with:
+        name: coverage.xml
+        path: src/main/python/coverage.xml
+        retention-days: 3

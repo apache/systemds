@@ -43,7 +43,6 @@ import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.utils.Explain;
 
 import java.util.*;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.apache.sysds.api.DMLScript.EXPLAIN;
@@ -51,7 +50,7 @@ import static org.apache.sysds.hops.rewrite.RewriteMatrixMultChainOptimization.m
 
 public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
     public static final boolean FORCE_CELL_TPL = false;
-    public static final boolean FUSED = true;
+//    public static final boolean FUSED = true;
     public static final boolean FUSE_OUTER_MULTIPLY = true;
 
 
@@ -132,10 +131,10 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		ArrayList<MatrixBlock> remainingMatrices;
 
         if(!FORCE_CELL_TPL) {
-			if(true){
+			if(true){ // new way: search for fusions and matrix-multiplications chain in a loop
 				plan = generatePlanFusionAndMM(eOpNodes, eOpNodesScalars, einc.charToDimensionSize, characterToOccurences, einc.outChar1, einc.outChar2);
 			}else { // old way: try to do fusion first and then rest in binary fashion cost based
-				if(FUSED) {
+				if(true /*FUSED*/) {
 					ret = new ArrayList<>();
 					EOpNodeFuse fuse = EOpNodeFuse.match(eOpNodes, einc.outChar1, einc.outChar2,
 						einc.charToDimensionSize, characterToOccurences, ret);
@@ -152,10 +151,9 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 							eOpNodes = ret;
 						}
 					}
-
 				}
 
-				Pair<Integer, List<EOpNode>> costAndPlan = generatePlanBinaryCostBased(0, eOpNodes, einc.charToDimensionSize, characterToOccurences,
+				Pair<Integer, List<EOpNode>> costAndPlan = generateBinaryPlanCostBased(0, eOpNodes, einc.charToDimensionSize, characterToOccurences,
 					einc.outChar1, einc.outChar2);
 				plan = costAndPlan.getRight();
 			}
@@ -191,6 +189,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 					plan.set(0, new EOpNodeBinary(plan.get(0).c1, plan.get(1).c1, plan.get(0), plan.get(1), EBinaryOperand.A_B));
 				if (plan.get(0).c1 == einc.outChar2 && plan.get(1).c1 == einc.outChar1)
 					plan.set(0, new EOpNodeBinary(plan.get(1).c1, plan.get(0).c1, plan.get(1), plan.get(0), EBinaryOperand.A_B));
+				plan.remove(1);
 			}
 			if (EXPLAIN != Explain.ExplainType.NONE )
 				System.out.println("Einsum plan:");
@@ -224,6 +223,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 				}
 			}else if (einc.outChar1 != null){
 				if(resNode.c1 == einc.outChar1  && resNode.c2 == null){
+					ensureMatrixBlockColumnVector(remainingMatrices.get(0));
 					ec.setMatrixOutput(output.getName(), remainingMatrices.get(0));
 				}else{
 					if(LOG.isTraceEnabled()) LOG.trace("Einsum expected: "+resultString + ", got: "+resNode.c1+resNode.c2);
@@ -254,6 +254,9 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			if(LOG.isTraceEnabled()) LOG.trace("finishing with cell tpl: "+String.join(",", chars));
 
 			MatrixBlock res = computeCellSummation(mbs, chars, resultString, einc.charToDimensionSize, summingChars, einc.outRows, einc.outCols);
+
+			if (einc.outChar2 == null)
+				ensureMatrixBlockColumnVector(res);
 
 			if (einc.outRows == 1 && einc.outCols == 1)
 				ec.setScalarOutput(output.getName(), new DoubleObject(res.get(0, 0)));
@@ -422,7 +425,6 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			lastNumOfOperands = eOpNodes.size();
 
 			EOpNodeFuse fuse = null;
-
 			do {
 				ret = new ArrayList<>();
 				fuse = EOpNodeFuse.match(eOpNodes, outChar1, outChar2, charToSizeMap, charToOccurences, ret);
@@ -445,7 +447,6 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 				ret.add(bin);
 			}
 			eOpNodes = ret;
-
 		}
 
 		return eOpNodes;
@@ -596,7 +597,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 	}
 
 	// old way
-	private Pair<Integer, List<EOpNode>> generatePlanBinaryCostBased(int cost, ArrayList<EOpNode> operands, HashMap<Character, Integer> charToSizeMap, HashMap<Character, Integer> charToOccurences, Character outChar1, Character outChar2) {
+	private Pair<Integer, List<EOpNode>> generateBinaryPlanCostBased(int cost, ArrayList<EOpNode> operands, HashMap<Character, Integer> charToSizeMap, HashMap<Character, Integer> charToOccurences, Character outChar1, Character outChar2) {
 		Integer minCost = cost;
 		List<EOpNode> minNodes = operands;
 
@@ -604,7 +605,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			boolean swap = (operands.get(0).c2 == null && operands.get(1).c2 != null) || operands.get(0).c1 == null;
 			EOpNode n1 = operands.get(!swap ? 0 : 1);
 			EOpNode n2 = operands.get(!swap ? 1 : 0);
-			Triple<Integer, EBinaryOperand, Pair<Character, Character>> t = TryCombineAndCost(n1, n2, charToSizeMap, charToOccurences, outChar1, outChar2);
+			Triple<Integer, EBinaryOperand, Pair<Character, Character>> t = EOpNodeBinary.TryCombineAndCost(n1, n2, charToSizeMap, charToOccurences, outChar1, outChar2);
 			if (t != null) {
 				EOpNodeBinary newNode = new EOpNodeBinary(t.getRight().getLeft(), t.getRight().getRight(), n1, n2, t.getMiddle());
 				int thisCost = cost + t.getLeft();
@@ -625,7 +626,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 				EOpNode n2 = operands.get(!swap ? j : i);
 
 
-				Triple<Integer, EBinaryOperand, Pair<Character, Character>> t = TryCombineAndCost(n1, n2, charToSizeMap, charToOccurences, outChar1, outChar2);
+				Triple<Integer, EBinaryOperand, Pair<Character, Character>> t = EOpNodeBinary.TryCombineAndCost(n1, n2, charToSizeMap, charToOccurences, outChar1, outChar2);
 				if (t != null){
 					EOpNodeBinary newNode = new EOpNodeBinary(t.getRight().getLeft(), t.getRight().getRight(), n1, n2, t.getMiddle());
 					int thisCost = cost + t.getLeft();
@@ -644,7 +645,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 					}
 					newOperands.add(newNode);
 
-					Pair<Integer, List<EOpNode>> furtherPlan = generatePlanBinaryCostBased(thisCost, newOperands,charToSizeMap, charToOccurences, outChar1, outChar2);
+					Pair<Integer, List<EOpNode>> furtherPlan = generateBinaryPlanCostBased(thisCost, newOperands,charToSizeMap, charToOccurences, outChar1, outChar2);
 					if(furtherPlan.getRight().size() < (minNodes.size()) || furtherPlan.getLeft() < minCost){
 						minCost = furtherPlan.getLeft();
 						minNodes = furtherPlan.getRight();
@@ -661,114 +662,6 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		}
 
 		return Pair.of(minCost, minNodes);
-	}
-
-	private static Triple<Integer, EBinaryOperand, Pair<Character, Character>> TryCombineAndCost(EOpNode n1 , EOpNode n2, HashMap<Character, Integer> charToSizeMap, HashMap<Character, Integer> charToOccurences, Character outChar1, Character outChar2){
-		Predicate<Character> cannotBeSummed = (c) ->
-				c == outChar1 || c == outChar2 || charToOccurences.get(c) > 2;
-
-		if(n1.c1 == null) {
-			// n2.c1 also has to be null
-			return Triple.of(1, EBinaryOperand.scalar_scalar, Pair.of(null, null));
-		}
-
-		if(n2.c1 == null) {
-			if(n1.c2 == null)
-				return Triple.of(charToSizeMap.get(n1.c1), EBinaryOperand.A_scalar, Pair.of(n1.c1, null));
-			return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.AB_scalar, Pair.of(n1.c1, n1.c2));
-		}
-
-		if(n1.c1 == n2.c1){
-			if(n1.c2 != null){
-				if ( n1.c2 == n2.c2){
-					if( cannotBeSummed.test(n1.c1)){
-						if(cannotBeSummed.test(n1.c2)){
-							return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.AB_AB, Pair.of(n1.c1, n1.c2));
-						}
-						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.Ba_Ba, Pair.of(n1.c1, null));
-					}
-
-					if(cannotBeSummed.test(n1.c2)){
-						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.aB_aB, Pair.of(n1.c2, null));
-					}
-
-					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.ab_ab, Pair.of(null, null));
-
-				}
-
-				else if(n2.c2 == null){
-					if(cannotBeSummed.test(n1.c1)){
-						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*2, EBinaryOperand.AB_A, Pair.of(n1.c1, n1.c2));
-					}
-					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*2, EBinaryOperand.aB_a, Pair.of(n1.c2, null)); // in theory (null, n1.c2)
-				}
-				else if(n1.c1 ==outChar1 || n1.c1==outChar2|| charToOccurences.get(n1.c1) > 2){
-					return null;// AB,AC
-				}
-				else {
-                    return Triple.of((charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2))+(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*charToSizeMap.get(n2.c2)), EBinaryOperand.aB_aC, Pair.of(n1.c2, n2.c2)); // or n2.c2, n1.c2
-				}
-			}else{ // n1.c2 = null -> c2.c2 = null
-				if(n1.c1 ==outChar1 || n1.c1==outChar2 || charToOccurences.get(n1.c1) > 2){
-					return Triple.of(charToSizeMap.get(n1.c1), EBinaryOperand.A_A, Pair.of(n1.c1, null));
-				}
-				return Triple.of(charToSizeMap.get(n1.c1), EBinaryOperand.a_a, Pair.of(null, null));
-			}
-
-
-		}else{ // n1.c1 != n2.c1
-			if(n1.c2 == null) {
-				return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n2.c1), EBinaryOperand.A_B, Pair.of(n1.c1, n2.c1));
-			}
-			else if(n2.c2 == null) { // ab,c
-				if (n1.c2 == n2.c1) {
-					if(cannotBeSummed.test(n1.c2)){
-						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n2.c1), EBinaryOperand.BA_A, Pair.of(n1.c1, n1.c2));
-					}
-					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n2.c1), EBinaryOperand.Ba_a, Pair.of(n1.c1, null));
-				}
-				return null; // AB,C
-			}
-			else if (n1.c2 == n2.c1) {
-				if(n1.c1 == n2.c2){ // ab,ba
-					if(cannotBeSummed.test(n1.c1)){
-						if(cannotBeSummed.test(n1.c2)){
-							return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.AB_BA, Pair.of(n1.c1, n1.c2));
-						}
-						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.Ba_aB, Pair.of(n1.c1, null));
-					}
-                    if(cannotBeSummed.test(n1.c2)){
-                        return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.aB_Ba, Pair.of(n1.c2, null));
-                    }
-					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.ab_ba, Pair.of(null, null));
-				}
-				if(cannotBeSummed.test(n1.c2)){
-					return null; // AB_B
-				}else{
-					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*charToSizeMap.get(n2.c2), EBinaryOperand.Ba_aC, Pair.of(n1.c1, n2.c2));
-//					if(n1.c1 ==outChar1 || n1.c1==outChar2|| charToOccurences.get(n1.c1) > 2){
-//						return null; // AB_B
-//					}
-//					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.Ba_a, Pair.of(n1.c1, null));
-				}
-			}
-			if(n1.c1 == n2.c2) {
-				if(cannotBeSummed.test(n1.c1)){
-					return null; // AB_B
-				}
-				return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*charToSizeMap.get(n2.c1), EBinaryOperand.aB_Ca, Pair.of(n2.c1, n1.c2)); // * its just reorder of mmult
-			}
-			else if (n1.c2 == n2.c2) {
-				if(n1.c2 ==outChar1 || n1.c2==outChar2|| charToOccurences.get(n1.c2) > 2){
-					return null; // BA_CA
-				}else{
-					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2) +(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*charToSizeMap.get(n2.c1)), EBinaryOperand.Ba_Ca, Pair.of(n1.c1, n2.c1)); // or n2.c1, n1.c1
-				}
-			}
-			else { // we have something like ab,cd
-				return null;
-			}
-		}
 	}
 
 	private ArrayList<MatrixBlock> executePlan(List<EOpNode> plan, ArrayList<MatrixBlock> inputs) {

@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.einsum;
 
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.apache.commons.logging.Log;
 import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;
 import org.apache.sysds.runtime.functionobjects.Multiply;
@@ -38,6 +40,8 @@ import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.function.Predicate;
 
 import static org.apache.sysds.runtime.instructions.cp.EinsumCPInstruction.ensureMatrixBlockColumnVector;
 import static org.apache.sysds.runtime.instructions.cp.EinsumCPInstruction.ensureMatrixBlockRowVector;
@@ -281,4 +285,112 @@ public class EOpNodeBinary extends EOpNode {
         }
     }
 
+	// used in old method
+	public static Triple<Integer, EBinaryOperand, Pair<Character, Character>> TryCombineAndCost(EOpNode n1 , EOpNode n2, HashMap<Character, Integer> charToSizeMap, HashMap<Character, Integer> charToOccurences, Character outChar1, Character outChar2){
+		Predicate<Character> cannotBeSummed = (c) ->
+			c == outChar1 || c == outChar2 || charToOccurences.get(c) > 2;
+
+		if(n1.c1 == null) {
+			// n2.c1 also has to be null
+			return Triple.of(1, EBinaryOperand.scalar_scalar, Pair.of(null, null));
+		}
+
+		if(n2.c1 == null) {
+			if(n1.c2 == null)
+				return Triple.of(charToSizeMap.get(n1.c1), EBinaryOperand.A_scalar, Pair.of(n1.c1, null));
+			return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.AB_scalar, Pair.of(n1.c1, n1.c2));
+		}
+
+		if(n1.c1 == n2.c1){
+			if(n1.c2 != null){
+				if ( n1.c2 == n2.c2){
+					if( cannotBeSummed.test(n1.c1)){
+						if(cannotBeSummed.test(n1.c2)){
+							return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.AB_AB, Pair.of(n1.c1, n1.c2));
+						}
+						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.Ba_Ba, Pair.of(n1.c1, null));
+					}
+
+					if(cannotBeSummed.test(n1.c2)){
+						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.aB_aB, Pair.of(n1.c2, null));
+					}
+
+					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.ab_ab, Pair.of(null, null));
+
+				}
+
+				else if(n2.c2 == null){
+					if(cannotBeSummed.test(n1.c1)){
+						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*2, EBinaryOperand.AB_A, Pair.of(n1.c1, n1.c2));
+					}
+					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*2, EBinaryOperand.aB_a, Pair.of(n1.c2, null)); // in theory (null, n1.c2)
+				}
+				else if(n1.c1 ==outChar1 || n1.c1==outChar2|| charToOccurences.get(n1.c1) > 2){
+					return null;// AB,AC
+				}
+				else {
+					return Triple.of((charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2))+(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*charToSizeMap.get(n2.c2)), EBinaryOperand.aB_aC, Pair.of(n1.c2, n2.c2)); // or n2.c2, n1.c2
+				}
+			}else{ // n1.c2 = null -> c2.c2 = null
+				if(n1.c1 ==outChar1 || n1.c1==outChar2 || charToOccurences.get(n1.c1) > 2){
+					return Triple.of(charToSizeMap.get(n1.c1), EBinaryOperand.A_A, Pair.of(n1.c1, null));
+				}
+				return Triple.of(charToSizeMap.get(n1.c1), EBinaryOperand.a_a, Pair.of(null, null));
+			}
+
+
+		}else{ // n1.c1 != n2.c1
+			if(n1.c2 == null) {
+				return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n2.c1), EBinaryOperand.A_B, Pair.of(n1.c1, n2.c1));
+			}
+			else if(n2.c2 == null) { // ab,c
+				if (n1.c2 == n2.c1) {
+					if(cannotBeSummed.test(n1.c2)){
+						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n2.c1), EBinaryOperand.BA_A, Pair.of(n1.c1, n1.c2));
+					}
+					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n2.c1), EBinaryOperand.Ba_a, Pair.of(n1.c1, null));
+				}
+				return null; // AB,C
+			}
+			else if (n1.c2 == n2.c1) {
+				if(n1.c1 == n2.c2){ // ab,ba
+					if(cannotBeSummed.test(n1.c1)){
+						if(cannotBeSummed.test(n1.c2)){
+							return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.AB_BA, Pair.of(n1.c1, n1.c2));
+						}
+						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.Ba_aB, Pair.of(n1.c1, null));
+					}
+					if(cannotBeSummed.test(n1.c2)){
+						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.aB_Ba, Pair.of(n1.c2, null));
+					}
+					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.ab_ba, Pair.of(null, null));
+				}
+				if(cannotBeSummed.test(n1.c2)){
+					return null; // AB_B
+				}else{
+					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*charToSizeMap.get(n2.c2), EBinaryOperand.Ba_aC, Pair.of(n1.c1, n2.c2));
+					//					if(n1.c1 ==outChar1 || n1.c1==outChar2|| charToOccurences.get(n1.c1) > 2){
+					//						return null; // AB_B
+					//					}
+					//					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.Ba_a, Pair.of(n1.c1, null));
+				}
+			}
+			if(n1.c1 == n2.c2) {
+				if(cannotBeSummed.test(n1.c1)){
+					return null; // AB_B
+				}
+				return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*charToSizeMap.get(n2.c1), EBinaryOperand.aB_Ca, Pair.of(n2.c1, n1.c2)); // * its just reorder of mmult
+			}
+			else if (n1.c2 == n2.c2) {
+				if(n1.c2 ==outChar1 || n1.c2==outChar2|| charToOccurences.get(n1.c2) > 2){
+					return null; // BA_CA
+				}else{
+					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2) +(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*charToSizeMap.get(n2.c1)), EBinaryOperand.Ba_Ca, Pair.of(n1.c1, n2.c1)); // or n2.c1, n1.c1
+				}
+			}
+			else { // something like ab,cd
+				return null;
+			}
+		}
+	}
 }

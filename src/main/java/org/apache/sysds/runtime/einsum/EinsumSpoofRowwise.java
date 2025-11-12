@@ -108,6 +108,10 @@ public final class EinsumSpoofRowwise extends SpoofRowwise {
         int bi = 0;
         double[] TMP1 = null;
         if (_ABCount != 0){
+			if(_ABCount == 1 & _ACount == 0 && _BCount == 0){
+				LibMatrixMult.vectMultiplyWrite(a, b[0].values(rix), c, ai, ai, ci, len);
+				return;
+			}
             TMP1 = LibSpoofPrimitives.vectMultWrite(a,b[bi++].values(rix),ai,ai,len);
             while (bi < _ABCount) {
                 if(_ACount == 0 && _BCount == 0 && bi == _ABCount-1) {

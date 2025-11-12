@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.sysds.runtime.einsum;
 
 import org.apache.commons.logging.Log;
@@ -25,7 +44,8 @@ import static org.apache.sysds.runtime.instructions.cp.EinsumCPInstruction.ensur
 
 public class EOpNodeBinary extends EOpNode {
 
-    public enum EBinaryOperand { // upper case: char has to remain, lower case: to be summed
+
+	public enum EBinaryOperand { // upper case: char has to remain, lower case: to be summed
         ////// summations:   //////
         aB_a,// -> B
         Ba_a, // -> B
@@ -58,14 +78,45 @@ public class EOpNodeBinary extends EOpNode {
     public EOpNode _left;
     public EOpNode _right;
     public EBinaryOperand _operand;
+	private boolean transposeResult;
     public EOpNodeBinary(Character c1, Character c2, EOpNode left, EOpNode right, EBinaryOperand operand){
         super(c1,c2);
         this._left = left;
         this._right = right;
         this._operand = operand;
     }
+	public void setTransposeResult(boolean transposeResult){
+		this.transposeResult = transposeResult;
+	}
 
-    @Override
+	public static EOpNodeBinary combineMatrixMultiply(EOpNode left, EOpNode right) {
+		if (left.c2 == right.c1) { return new EOpNodeBinary(left.c1, right.c2, left, right, EBinaryOperand.Ba_aC); }
+		if (left.c2 == right.c2) { return new EOpNodeBinary(left.c1, right.c1, left, right, EBinaryOperand.Ba_Ca); }
+		if (left.c1 == right.c1) { return new EOpNodeBinary(left.c2, right.c2, left, right, EBinaryOperand.aB_aC); }
+		if (left.c1 == right.c2) {
+			var res = new EOpNodeBinary(left.c2, right.c1, left, right, EBinaryOperand.aB_Ca);
+			res.setTransposeResult(true);
+			return res;
+		}
+		throw new RuntimeException("EOpNodeBinary::combineMatrixMultiply: invalid matrix operation");
+	}
+
+	@Override
+	public String[] recursivePrintString() {
+		String[] left = _left.recursivePrintString();
+		String[] right = _right.recursivePrintString();
+		String[] res = new String[left.length + right.length+1];
+		res[0] = this.getClass().getSimpleName()+" ("+_operand.toString()+") "+this.toString();
+		for (int i=0; i<left.length; i++) {
+			res[i+1] = (i==0 ?  "┌─ " : "|  ") +left[i];
+		}
+		for (int i=0; i<right.length; i++) {
+			res[left.length+i+1] = (i==0 ?  "└─ " : "|  ") +right[i];
+		}
+		return res;
+	}
+
+	@Override
     public MatrixBlock computeEOpNode(ArrayList<MatrixBlock> inputs, int numThreads, Log LOG) {
         EOpNodeBinary bin = this;
         MatrixBlock left = _left.computeEOpNode(inputs, numThreads, LOG);
@@ -204,6 +255,10 @@ public class EOpNodeBinary extends EOpNode {
             }
 
         }
+		if(transposeResult){
+			ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), numThreads);
+			res = res.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
+		}
         return res;
     }
 

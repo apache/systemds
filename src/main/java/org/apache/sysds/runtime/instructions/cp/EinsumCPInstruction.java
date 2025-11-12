@@ -38,18 +38,25 @@ import org.apache.sysds.runtime.einsum.*;
 import org.apache.sysds.runtime.einsum.EOpNodeBinary.EBinaryOperand;
 import org.apache.sysds.runtime.functionobjects.*;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
-import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysds.utils.Explain;
 
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
+import static org.apache.sysds.api.DMLScript.EXPLAIN;
+import static org.apache.sysds.hops.rewrite.RewriteMatrixMultChainOptimization.mmChainDP;
 
 public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
     public static final boolean FORCE_CELL_TPL = false;
     public static final boolean FUSED = true;
     public static final boolean FUSE_OUTER_MULTIPLY = true;
+
+
+	public static final boolean PRINT_TRACE = true;
+
 	protected static final Log LOG = LogFactory.getLog(EinsumCPInstruction.class.getName());
 	public String eqStr;
 	private final int _numThreads;
@@ -61,8 +68,12 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
         _numThreads = OptimizerUtils.getConstrainedNumThreads(-1)/2;
 		_in = inputs;
 		this.eqStr = inputs[0].getName();
-        Logger.getLogger(EinsumCPInstruction.class).setLevel(Level.TRACE);
-//        Logger.getLogger(EinsumCPInstruction.class).setLevel(Level.WARN);
+		if (PRINT_TRACE) {
+//			System.out.println("fusing outer mult:"+FUSE_OUTER_MULTIPLY);
+			Logger.getLogger(EinsumCPInstruction.class).setLevel(Level.TRACE);
+		}
+		else
+        	Logger.getLogger(EinsumCPInstruction.class).setLevel(Level.WARN);
 	}
 
 	@SuppressWarnings("unused")
@@ -90,94 +101,113 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		this.einc = einc;
 		String resultString = einc.outChar2 != null ? String.valueOf(einc.outChar1) + einc.outChar2 : einc.outChar1 != null ? String.valueOf(einc.outChar1) : "";
 
-		if( LOG.isDebugEnabled() ) LOG.trace("outrows:"+einc.outRows+", outcols:"+einc.outCols);
+		if( LOG.isTraceEnabled() ) LOG.trace("output: "+resultString +" "+einc.outRows+"x"+einc.outCols);
 
 		ArrayList<String> inputsChars = einc.newEquationStringInputsSplit;
 
 		if(LOG.isTraceEnabled()) LOG.trace(String.join(",",einc.newEquationStringInputsSplit));
-
-		contractDimensionsAndComputeDiagonals(einc, inputs);
+		ArrayList<EOpNode> eOpNodes = new ArrayList<>(inputsChars.size());
+		ArrayList<EOpNode> eOpNodesScalars = new ArrayList<>(inputsChars.size()); // computed separately and not included into plan until it is already created
 
 		//make all vetors col vectors
 		for(int i = 0; i < inputs.size(); i++){
-			if(inputs.get(i) != null && inputsChars.get(i).length() == 1) ensureMatrixBlockColumnVector(inputs.get(i));
+			if(inputsChars.get(i).length() == 1) ensureMatrixBlockColumnVector(inputs.get(i));
 		}
 
-		if(LOG.isTraceEnabled()) for(Character c : einc.characterAppearanceIndexes.keySet()){
-			ArrayList<Integer> a = einc.characterAppearanceIndexes.get(c);
-			LOG.trace(c+" count= "+a.size());
-		}
-//        var simplySummableChars = einc.characterAppearanceIndexes.entrySet()
-//                .stream()
-//                .filter(e -> e.getValue().size() == 1)
-//                .map(Map.Entry::getKey)
-//                .collect(Collectors.toSet());
+		addSumDimensionsDiagonalsAndScalars(einc, inputsChars, eOpNodes, eOpNodesScalars);
 
-		// compute scalar by suming-all matrices:
-		Double scalar = null;
-		for(int i=0;i< inputs.size(); i++){
-			String s = inputsChars.get(i);
-			if(s.equals("")){
-				MatrixBlock mb = inputs.get(i);
-				if (scalar == null) scalar = mb.get(0,0);
-				else scalar*= mb.get(0,0);
-				inputs.set(i,null);
-				inputsChars.set(i,null);
-			}
-		}
+		HashMap<Character, Integer> characterToOccurences = einc.characterAppearanceCount;
 
-		if (scalar != null) {
-			inputsChars.add("");
-			inputs.add(new MatrixBlock(scalar));
-		}
-
-		HashMap<Character, Integer> characterToOccurences = new HashMap<>();
-		for (Character key : einc.characterAppearanceIndexes.keySet()) {
-			characterToOccurences.put(key, einc.characterAppearanceIndexes.get(key).size());
-		}
-		for (Character key : einc.charToDimensionSize.keySet()) {
-			if(!characterToOccurences.containsKey(key))
-				characterToOccurences.put(key, 1);
-		}
-
-		ArrayList<EOpNode> eOpNodes = new ArrayList<>(inputsChars.size());
 		for (int i = 0; i < inputsChars.size(); i++) {
 			if (inputsChars.get(i) == null) continue;
-			EOpNodeData n = new EOpNodeData(inputsChars.get(i).length() > 0 ? inputsChars.get(i).charAt(0) : null, inputsChars.get(i).length() > 1 ? inputsChars.get(i).charAt(1) : null, i);
+			EOpNodeData n = new EOpNodeData(!inputsChars.get(i).isEmpty() ? inputsChars.get(i).charAt(0) : null, inputsChars.get(i).length() > 1 ? inputsChars.get(i).charAt(1) : null, i);
 			eOpNodes.add(n);
 		}
-		Pair<Integer, List<EOpNode> > plan;
+
+		ArrayList<EOpNode> ret = new ArrayList<>();
+		addVectorMultiplies(eOpNodes, eOpNodesScalars,characterToOccurences, einc.outChar1, einc.outChar2, ret);
+		eOpNodes = ret;
+
+		List<EOpNode> plan;
 		ArrayList<MatrixBlock> remainingMatrices;
+
         if(!FORCE_CELL_TPL) {
-            if(FUSED) {
-                ArrayList<EOpNode> ret = new ArrayList<>();
-                EOpNodeFuse fuse = EOpNodeFuse.match(eOpNodes, einc.outChar1, einc.outChar2, ret, characterToOccurences, einc.charToDimensionSize);
-                if(fuse != null){
-                    eOpNodes = ret;
-                }
-                while(ret.size() > 2 && fuse != null){
-                    ret = new ArrayList<>();
-                    fuse = EOpNodeFuse.match(eOpNodes, einc.outChar1, einc.outChar2, ret, characterToOccurences, einc.charToDimensionSize);
-                    if(fuse != null){
-                        eOpNodes = ret;
-                    }
-                }
+			if(true){
+				plan = generatePlanFusionAndMM(eOpNodes, eOpNodesScalars, einc.charToDimensionSize, characterToOccurences, einc.outChar1, einc.outChar2);
+			}else { // old way: try to do fusion first and then rest in binary fashion cost based
+				if(FUSED) {
+					ret = new ArrayList<>();
+					EOpNodeFuse fuse = EOpNodeFuse.match(eOpNodes, einc.outChar1, einc.outChar2,
+						einc.charToDimensionSize, characterToOccurences, ret);
+					if(fuse != null) {
+						ret.add(fuse);
+						eOpNodes = ret;
+					}
+					while(ret.size() > 2 && fuse != null) {
+						ret = new ArrayList<>();
+						fuse = EOpNodeFuse.match(eOpNodes, einc.outChar1, einc.outChar2, einc.charToDimensionSize,
+							characterToOccurences, ret);
+						if(fuse != null) {
+							ret.add(fuse);
+							eOpNodes = ret;
+						}
+					}
 
-            }
+				}
 
-            plan = generatePlan(0, eOpNodes, einc.charToDimensionSize, characterToOccurences, einc.outChar1, einc.outChar2);
+				Pair<Integer, List<EOpNode>> costAndPlan = generatePlanBinaryCostBased(0, eOpNodes, einc.charToDimensionSize, characterToOccurences,
+					einc.outChar1, einc.outChar2);
+				plan = costAndPlan.getRight();
+			}
+			if(!eOpNodesScalars.isEmpty()){
+				EOpNode l = eOpNodesScalars.get(0);
+				for(int i = 1; i < eOpNodesScalars.size(); i++){
+					l = new EOpNodeBinary(null,null,l, eOpNodesScalars.get(i), EBinaryOperand.scalar_scalar);
+				}
 
-			if(plan.getRight().size() == 1)
-				plan.getRight().get(0).reorderChildren(einc.outChar1, einc.outChar2);
+				if(plan.isEmpty()) plan.add(l);
+				else {
+					int minCost = Integer.MAX_VALUE;
+					EOpNode addToNode = null;
+					int minIdx = -1;
+					for(int i = 0; i < plan.size(); i++) {
+						EOpNode n = plan.get(i);
+						Pair<Integer, EOpNode> costAndNode = addScalarToPlanFindMinCost(n, einc.charToDimensionSize);
+						if(costAndNode.getLeft() < minCost) {
+							minCost = costAndNode.getLeft();
+							addToNode = costAndNode.getRight();
+							minIdx = i;
+						}
+					}
+					plan.set(minIdx, mergeEOpNodeWithScalar(addToNode, l));
+				}
 
-			remainingMatrices = executePlan(plan.getRight(), inputs);
+			}
+			if(plan.size() == 1)
+				plan.get(0).reorderChildren(einc.outChar1, einc.outChar2);
+
+			if(plan.size() == 2 && plan.get(0).c2 == null && plan.get(1).c2 == null){
+				if (plan.get(0).c1 == einc.outChar1 && plan.get(1).c1 == einc.outChar2)
+					plan.set(0, new EOpNodeBinary(plan.get(0).c1, plan.get(1).c1, plan.get(0), plan.get(1), EBinaryOperand.A_B));
+				if (plan.get(0).c1 == einc.outChar2 && plan.get(1).c1 == einc.outChar1)
+					plan.set(0, new EOpNodeBinary(plan.get(1).c1, plan.get(0).c1, plan.get(1), plan.get(0), EBinaryOperand.A_B));
+			}
+			if (EXPLAIN != Explain.ExplainType.NONE )
+				System.out.println("Einsum plan:");
+				for(var pl : plan){
+					System.out.println("- "+String.join("\n- ", pl.recursivePrintString()));
+				}
+
+			remainingMatrices = executePlan(plan, inputs);
         }else{
-			plan = Pair.of(0, eOpNodes);
+			plan = eOpNodes;
 			remainingMatrices = inputs;
 		}
 
+
+
 		if(!FORCE_CELL_TPL && remainingMatrices.size() == 1){
-			EOpNode resNode = plan.getRight().get(0);
+			EOpNode resNode = plan.get(0);
 			if (einc.outChar1 != null && einc.outChar2 != null){
 				if(resNode.c1 == einc.outChar1 && resNode.c2 == einc.outChar2){
 					ec.setMatrixOutput(output.getName(), remainingMatrices.get(0));
@@ -209,16 +239,16 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			ArrayList<MatrixBlock> mbs = remainingMatrices;
 			ArrayList<String> chars = new ArrayList<>();
 
-			for (int i = 0; i < plan.getRight().size(); i++) {
+			for (int i = 0; i < plan.size(); i++) {
 				String s;
-				if(plan.getRight().get(i).c1 == null) s = "";
-				else if(plan.getRight().get(i).c2 == null) s = plan.getRight().get(i).c1.toString();
-				else s = plan.getRight().get(i).c1.toString() + plan.getRight().get(i).c2;
+				if(plan.get(i).c1 == null) s = "";
+				else if(plan.get(i).c2 == null) s = plan.get(i).c1.toString();
+				else s = plan.get(i).c1.toString() + plan.get(i).c2;
 				chars.add(s);
 			}
 
 			ArrayList<Character> summingChars = new ArrayList<>();
-			for (Character c : einc.characterAppearanceIndexes.keySet()) {
+			for (Character c : characterToOccurences.keySet()) {
 				if (c != einc.outChar1 && c != einc.outChar2) summingChars.add(c);
 			}
 			if(LOG.isTraceEnabled()) LOG.trace("finishing with cell tpl: "+String.join(",", chars));
@@ -235,46 +265,338 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 
 	}
 
-	private void contractDimensionsAndComputeDiagonals(EinsumContext einc, ArrayList<MatrixBlock> inputs) {
-		for(int i = 0; i< einc.contractDims.length; i++){
-			//AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(),Types.CorrectionLocationType.LASTCOLUMN);
-			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
+	private EOpNode mergeEOpNodeWithScalar(EOpNode addToNode, EOpNode scalar) {
+		if(addToNode instanceof EOpNodeFuse fuse) {
+			switch (fuse.einsumRewriteType) {
+				case AB_BA_B_A__A, AB_BA_B_A_AZ__Z -> {
+					fuse.addScalarAsIntermediate(scalar);
+					return fuse;
+				}
+			};
+			return new EOpNodeBinary(addToNode.c1,addToNode.c2,addToNode,scalar,EBinaryOperand.AB_scalar);
+		}
+		if(addToNode.c1 == null)
+			return new EOpNodeBinary(null,null,addToNode,scalar,EBinaryOperand.scalar_scalar);
+		if(addToNode.c2 == null)
+			return new EOpNodeBinary(addToNode.c1,null,addToNode,scalar,EBinaryOperand.A_scalar);
+		return new EOpNodeBinary(addToNode.c1,addToNode.c2,addToNode,scalar,EBinaryOperand.AB_scalar);
+	}
 
-			if(einc.diagonalInputs[i]){
-				ReorgOperator op = new ReorgOperator(DiagIndex.getDiagIndexFnObject());
-				inputs.set(i, inputs.get(i).reorgOperations(op, new MatrixBlock(),0,0,0));
+	private static Pair<Integer, EOpNode> addScalarToPlanFindMinCost(EOpNode plan, HashMap<Character, Integer> charToSizeMap) {
+		int thisSize = 0;
+		if(plan.c1 != null) thisSize += charToSizeMap.get(plan.c1);
+		if(plan.c2 != null) thisSize += charToSizeMap.get(plan.c2);
+		int cost = thisSize;
+
+		if (plan instanceof EOpNodeData || plan instanceof EOpNodeUnary) return Pair.of(thisSize, plan);
+
+		List<EOpNode> inputs = List.of();
+
+		if (plan instanceof EOpNodeBinary bin) inputs = List.of(bin._left, bin._right);
+		else if(plan instanceof EOpNodeFuse fuse){
+			cost = switch (fuse.einsumRewriteType) {
+				case AB_BA_B_A__ -> 1; // thisSize
+				case AB_BA_B_A__AB -> thisSize;
+				case AB_BA_B_A__B -> thisSize;
+				case AB_BA_B_A__A -> 2; // intermediate is scalar, 2 because if there is some real scalar
+				case AB_BA_B_A_AZ__Z -> 2; // intermediate is scalar
+				case AB_BA_B_A_AZ__BZ -> thisSize;
+				case AB_BA_B_A_AZ__ZB -> thisSize;
+			};
+			inputs = fuse.operands.stream().flatMap(List::stream).collect(Collectors.toList());
+		}
+
+		for(EOpNode inp : inputs){
+			Pair<Integer, EOpNode> min = addScalarToPlanFindMinCost(inp, charToSizeMap);
+			if(min.getLeft() < cost){
+				cost = min.getLeft();
+				plan = min.getRight();
 			}
-			if (einc.contractDims[i] == null) continue;
-			switch (einc.contractDims[i]){
-				case CONTRACT_BOTH: {
-					AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), _numThreads);
-					MatrixBlock res = new MatrixBlock(1, 1, false);
-					inputs.get(i).aggregateUnaryOperations(aggun, res, 0, null);
-					inputs.set(i, res);
-					break;
-				}
-				case CONTRACT_RIGHT: {
-					AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), _numThreads);
-					MatrixBlock res = new MatrixBlock(inputs.get(i).getNumRows(), 1, false);
-					inputs.get(i).aggregateUnaryOperations(aggun, res, 0, null);
-					inputs.set(i, res);
-					break;
-				}
-				case CONTRACT_LEFT: {
-					AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), _numThreads);
-					MatrixBlock res = new MatrixBlock(inputs.get(i).getNumColumns(), 1, false);
-					inputs.get(i).aggregateUnaryOperations(aggun, res, 0, null);
-					inputs.set(i, res);
-					break;
-				}
-				default:
-					break;
+		}
+		return Pair.of(cost, plan);
+	}
+
+	private static void addVectorMultiplies(ArrayList<EOpNode> eOpNodes, ArrayList<EOpNode> eOpNodesScalars,HashMap<Character, Integer> charToOccurences, Character outChar1, Character outChar2,ArrayList<EOpNode> ret) {
+		HashMap<Character, ArrayList<EOpNode>> vectorCharacterToIndices = new HashMap<>();
+		for (int i = 0; i < eOpNodes.size(); i++) {
+			if (eOpNodes.get(i).c2 == null) {
+				if (vectorCharacterToIndices.containsKey(eOpNodes.get(i).c1))
+					vectorCharacterToIndices.get(eOpNodes.get(i).c1).add(eOpNodes.get(i));
+				else
+					vectorCharacterToIndices.put(eOpNodes.get(i).c1, new ArrayList<>(Collections.singletonList(eOpNodes.get(i))));
 			}
+		}
+		HashSet<EOpNode> usedNodes = new HashSet<>();
+		for(Character c : vectorCharacterToIndices.keySet()){
+			ArrayList<EOpNode> nodes = vectorCharacterToIndices.get(c);
+
+			if(nodes.size()==1) continue;
+			EOpNode left = nodes.get(0);
+			usedNodes.add(left);
+			boolean canBeSummed = c != outChar1 && c != outChar2 && charToOccurences.get(c) == nodes.size();
+
+			for(int i = 1; i < nodes.size(); i++){
+				EOpNode right = nodes.get(i);
+
+				if(canBeSummed && i == nodes.size()-1){
+					left = new EOpNodeBinary(null, null, left, right, EBinaryOperand.a_a);
+				}else {
+					left = new EOpNodeBinary(c, null, left, right, EBinaryOperand.A_A);
+				}
+				usedNodes.add(right);
+			}
+			if(canBeSummed) {
+				eOpNodesScalars.add(left);
+				charToOccurences.put(c, 0);
+			}
+			else {
+				ret.add(left);
+				charToOccurences.put(c, charToOccurences.get(c) - nodes.size() + 1);
+			}
+		}
+		for(EOpNode inp : eOpNodes){
+			if(!usedNodes.contains(inp)) ret.add(inp);
 		}
 	}
 
-    // ideally the return list contains only one final element
-	private Pair<Integer, List<EOpNode>> generatePlan(int cost, ArrayList<EOpNode> operands, HashMap<Character, Integer> charToSizeMap, HashMap<Character, Integer> charToOccurences, Character outChar1, Character outChar2) {
+	private void addSumDimensionsDiagonalsAndScalars(EinsumContext einc, ArrayList<String> inputStrings,
+		ArrayList<EOpNode> eOpNodes, ArrayList<EOpNode> eOpNodesScalars) {
+		for(int i = 0; i< inputStrings.size(); i++){
+			String s = inputStrings.get(i);
+			if (s.length() == 0){
+				eOpNodesScalars.add(new EOpNodeData(null, null,i));
+				inputStrings.set(i, null);
+				continue;
+			}else if (s.length() == 1){
+				char c1 = s.charAt(0);
+				if((einc.outChar1 == null || c1 != einc.outChar1) && (einc.outChar2 == null || c1 != einc.outChar2) && einc.characterAppearanceCount.get(c1) == 1){
+					EOpNode e0 = new EOpNodeData(c1, null,i);
+					eOpNodesScalars.add(new EOpNodeUnary(null, null, e0, EOpNodeUnary.EUnaryOperand.SUM));
+					inputStrings.set(i, null);
+				}
+				continue;
+			}
+
+			char c1 = s.charAt(0);
+			char c2 = s.charAt(1);
+			Character newC1 = null;
+			EOpNodeUnary.EUnaryOperand op = null;
+
+			if(c1 == c2){
+				if((einc.outChar1 == null || c1 != einc.outChar1) && (einc.outChar2 == null || c1 != einc.outChar2) && einc.characterAppearanceCount.get(c1) == 2){
+					op = EOpNodeUnary.EUnaryOperand.SUM;
+				}else {
+					einc.characterAppearanceCount.put(c1, einc.characterAppearanceCount.get(c1) - 1);
+					op = EOpNodeUnary.EUnaryOperand.DIAG;
+					newC1 = c1;
+				}
+			}else if((einc.outChar1 == null || c1 != einc.outChar1) && (einc.outChar2 == null || c1 != einc.outChar2) && einc.characterAppearanceCount.get(c1) == 1){
+				if ((einc.outChar1 == null || c2 != einc.outChar1) && (einc.outChar2 == null || c2 != einc.outChar2) && einc.characterAppearanceCount.get(c2) == 1){
+					op = EOpNodeUnary.EUnaryOperand.SUM;
+				}else{
+					newC1 = c2;
+					op = EOpNodeUnary.EUnaryOperand.SUM_ROWS;
+				}
+			}else if((einc.outChar1 == null || c2 != einc.outChar1) && (einc.outChar2 == null || c2 != einc.outChar2) && einc.characterAppearanceCount.get(c2) == 1){
+				newC1 =  c1;
+				op = EOpNodeUnary.EUnaryOperand.SUM_COLS;
+			}
+
+			if(op == null) continue;
+
+			EOpNodeData e0 = new EOpNodeData(c1, c2, i);
+			EOpNodeUnary res = new EOpNodeUnary(newC1, null, e0, op);
+
+			if(op == EOpNodeUnary.EUnaryOperand.SUM) eOpNodesScalars.add(res);
+			else eOpNodes.add(res);
+
+			inputStrings.set(i, null);
+		}
+	}
+
+	private static List<EOpNode> generatePlanFusionAndMM(ArrayList<EOpNode> eOpNodes,
+		ArrayList<EOpNode> eOpNodesScalars, HashMap<Character, Integer> charToSizeMap, HashMap<Character, Integer> charToOccurences, Character outChar1, Character outChar2) {
+		ArrayList<EOpNode> ret;
+		int lastNumOfOperands = -1;
+		while(lastNumOfOperands != eOpNodes.size() && eOpNodes.size() > 1){
+			lastNumOfOperands = eOpNodes.size();
+
+			EOpNodeFuse fuse = null;
+
+			do {
+				ret = new ArrayList<>();
+				fuse = EOpNodeFuse.match(eOpNodes, outChar1, outChar2, charToSizeMap, charToOccurences, ret);
+				if(fuse != null) {
+					if(fuse.c1 == null) eOpNodesScalars.add(fuse);
+					else ret.add(fuse);
+					eOpNodes = ret;
+				}
+			} while(eOpNodes.size() > 1 && fuse != null);
+
+			ret = new ArrayList<>();
+			addVectorMultiplies(eOpNodes, eOpNodesScalars,charToOccurences, outChar1, outChar2, ret);
+			eOpNodes = ret;
+
+			ret = new ArrayList<>();
+			ArrayList<List<EOpNode>> matrixMultiplies = findMatrixMultiplicationChains(eOpNodes, outChar1, outChar2, charToOccurences, charToSizeMap, ret);
+
+			for(List<EOpNode> list : matrixMultiplies) {
+				EOpNodeBinary bin = optimizeMMChain(list, charToSizeMap);
+				ret.add(bin);
+			}
+			eOpNodes = ret;
+
+		}
+
+		return eOpNodes;
+	}
+
+	private static EOpNodeBinary optimizeMMChain(List<EOpNode> mmChain, HashMap<Character, Integer> charToSizeMap) {
+		ArrayList<Pair<Integer, Integer>> dimensions = new ArrayList<>();
+
+		for(int i = 0; i < mmChain.size()-1; i++){
+			EOpNode n1 = mmChain.get(i);
+			EOpNode n2 = mmChain.get(i+1);
+			if(n1.c2 == n2.c1 || n1.c2 == n2.c2) dimensions.add(Pair.of(charToSizeMap.get(n1.c1), charToSizeMap.get(n1.c2)));
+			else dimensions.add(Pair.of(charToSizeMap.get(n1.c2), charToSizeMap.get(n1.c1))); // transpose this one
+		}
+		EOpNode prelast = mmChain.get(mmChain.size()-2);
+		EOpNode last = mmChain.get(mmChain.size()-1);
+		if (last.c1 == prelast.c2 || last.c1 == prelast.c1) dimensions.add(Pair.of(charToSizeMap.get(last.c1), charToSizeMap.get(last.c2)));
+		else dimensions.add(Pair.of(charToSizeMap.get(last.c2), charToSizeMap.get(last.c1)));
+
+
+		double[] dimsArray = new double[mmChain.size() + 1];
+		getDimsArray( dimensions, dimsArray );
+
+		int size = mmChain.size();
+		int[][] splitMatrix = mmChainDP(dimsArray, mmChain.size());
+
+		EOpNodeBinary res = (EOpNodeBinary) getBinaryFromSplit(splitMatrix,0,size-1, mmChain);
+		return res;
+	}
+
+	private static EOpNode getBinaryFromSplit(int[][] splitMatrix, int i, int j, List<EOpNode> mmChain) {
+		if (i==j) return mmChain.get(i);
+		int split =  splitMatrix[i][j];
+
+		EOpNode left = getBinaryFromSplit(splitMatrix,i,split,mmChain);
+		EOpNode right = getBinaryFromSplit(splitMatrix,split+1,j,mmChain);
+		return EOpNodeBinary.combineMatrixMultiply(left, right);
+	}
+
+	private static void getDimsArray( ArrayList<Pair<Integer, Integer>> chain, double[] dimsArray )
+	{
+		for( int i = 0; i < chain.size(); i++ ) {
+			if (i == 0) {
+				dimsArray[i] = chain.get(i).getLeft();
+				if (dimsArray[i] <= 0) {
+					throw new RuntimeException(
+						"EinsumCPInstruction::optimizeMMChain() : Invalid Matrix Dimension: "+ dimsArray[i]);
+				}
+			}
+			else if (chain.get(i - 1).getRight() != chain.get(i).getLeft()) {
+				throw new RuntimeException(
+					"EinsumCPInstruction::optimizeMMChain() : Matrix Dimension Mismatch: " +
+					chain.get(i - 1).getRight()+" != "+chain.get(i).getLeft());
+			}
+
+			dimsArray[i + 1] = chain.get(i).getRight();
+			if( dimsArray[i + 1] <= 0 ) {
+				throw new RuntimeException(
+					"EinsumCPInstruction::optimizeMMChain() : Invalid Matrix Dimension: " + dimsArray[i + 1]);
+			}
+		}
+	}
+	private static ArrayList<List<EOpNode>> findMatrixMultiplicationChains(ArrayList<EOpNode> inpOperands, Character outChar1, Character outChar2, HashMap<Character, Integer> charToOccurences, HashMap<Character, Integer> charToSizeMap, ArrayList<EOpNode> ret) {
+		HashSet<Character> charactersThatCanBeContracted = new HashSet<>();
+		HashMap<Character, ArrayList<EOpNode>> characterToNodes = new HashMap<>();
+		ArrayList<EOpNode> operandsTodo =  new ArrayList<>();
+		for(EOpNode op : inpOperands) {
+			if(op.c2 == null || op.c1 == null) continue;
+
+			if (characterToNodes.containsKey(op.c1))  characterToNodes.get(op.c1).add(op);
+			else characterToNodes.put(op.c1, new ArrayList<>(Collections.singletonList(op)));
+			if (characterToNodes.containsKey(op.c2)) characterToNodes.get(op.c2).add(op);
+			else characterToNodes.put(op.c2, new ArrayList<>(Collections.singletonList(op)));
+
+			boolean todo = false;
+			if (charToOccurences.get(op.c1) == 2 && op.c1 != outChar1 && op.c1 != outChar2) {
+				charactersThatCanBeContracted.add(op.c1);
+				todo = true;
+			}
+			if (charToOccurences.get(op.c2) == 2 && op.c2 != outChar1 && op.c2 != outChar2) {
+				charactersThatCanBeContracted.add(op.c2);
+				todo = true;
+			}
+			if (todo)  operandsTodo.add(op);
+		}
+		ArrayList<List<EOpNode>> res = new ArrayList<>();
+
+		HashSet<EOpNode> doneNodes = new HashSet<>();
+
+		for(int i = 0; i < operandsTodo.size(); i++){
+			EOpNode iterateNode = operandsTodo.get(i);
+
+//			if (iterateNode == null) continue; // was added previously somewhere
+			if (doneNodes.contains(iterateNode)) continue;// was added previously somewhere
+			doneNodes.add(iterateNode);
+
+			LinkedList<EOpNode> multiplies = new LinkedList<>();
+			multiplies.add(iterateNode);
+
+			EOpNode nextNode = iterateNode;
+			Character nextC = iterateNode.c2;
+			// add to right using c2
+			while(charactersThatCanBeContracted.contains(nextC)) {
+				EOpNode one = characterToNodes.get(nextC).get(0);
+				EOpNode two = characterToNodes.get(nextC).get(1);
+				if (nextNode == one){
+					multiplies.addLast(two);
+					nextNode = two;
+				}else{
+					multiplies.addLast(one);
+					nextNode = one;
+				}
+				if(nextNode.c1 == nextC) nextC = nextNode.c2;
+				else nextC = nextNode.c1;
+				doneNodes.add(nextNode);
+			}
+
+			// add to left using c1
+			nextNode = iterateNode;
+			nextC = iterateNode.c1;
+			while(charactersThatCanBeContracted.contains(nextC)) {
+				EOpNode one = characterToNodes.get(nextC).get(0);
+				EOpNode two = characterToNodes.get(nextC).get(1);
+				if (nextNode == one){
+					multiplies.addFirst(two);
+					nextNode = two;
+				}else{
+					multiplies.addFirst(one);
+					nextNode = one;
+				}
+				if(nextNode.c1 == nextC) nextC = nextNode.c2;
+				else nextC = nextNode.c1;
+				doneNodes.add(nextNode);
+			}
+
+			res.add(multiplies);
+		}
+
+
+		for(EOpNode op : inpOperands) {
+			if (doneNodes.contains(op)) continue;
+			ret.add(op);
+		}
+
+
+
+		return res;
+	}
+
+	// old way
+	private Pair<Integer, List<EOpNode>> generatePlanBinaryCostBased(int cost, ArrayList<EOpNode> operands, HashMap<Character, Integer> charToSizeMap, HashMap<Character, Integer> charToOccurences, Character outChar1, Character outChar2) {
 		Integer minCost = cost;
 		List<EOpNode> minNodes = operands;
 
@@ -322,7 +644,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 					}
 					newOperands.add(newNode);
 
-					Pair<Integer, List<EOpNode>> furtherPlan = generatePlan(thisCost, newOperands,charToSizeMap, charToOccurences, outChar1, outChar2);
+					Pair<Integer, List<EOpNode>> furtherPlan = generatePlanBinaryCostBased(thisCost, newOperands,charToSizeMap, charToOccurences, outChar1, outChar2);
 					if(furtherPlan.getRight().size() < (minNodes.size()) || furtherPlan.getLeft() < minCost){
 						minCost = furtherPlan.getLeft();
 						minNodes = furtherPlan.getRight();

@@ -49,6 +49,12 @@ class Registry:
         else:
             self._fusion_operators = [fusion_operators]
 
+    def set_representations(self, modality_type, representations):
+        if isinstance(representations, list):
+            self._representations[modality_type] = representations
+        else:
+            self._representations[modality_type] = [representations]
+
     def add_representation(
         self, representation: Representation, modality: ModalityType
     ):

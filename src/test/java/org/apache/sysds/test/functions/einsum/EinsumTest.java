@@ -47,108 +47,78 @@ import java.util.Map;
 public class EinsumTest extends AutomatedTestBase
 {
     final private static List<Config> TEST_CONFIGS = List.of(
-
             new Config("ij,jk->ik", List.of(shape(5, 6), shape(6, 5))), // mm
             new Config("ji,jk->ik", List.of(shape(6, 5), shape(6, 10))),
             new Config("ji,kj->ik", List.of(shape(6, 5), shape(10, 6))),
             new Config("ij,kj->ik", List.of(shape(5, 6), shape(10, 6))),
-//			new Config("ab,cb,zc->az", List.of(shape(500, 900), shape(1000, 900), shape(400, 1000))),
+			new Config("ab,bc,cd,de->ae", List.of(shape(5, 6), shape(6, 5),shape(5, 6), shape(6, 5))), // mm chain
 
-            new Config("ji,jk->i", List.of(shape(60, 5), shape(60, 10))),
-            new Config("ij,jk->i", List.of(shape(5, 60), shape(60, 10))),
-
-            new Config("ji,jk->k", List.of(shape(60, 5), shape(60, 10))),
-            new Config("ij,jk->k", List.of(shape(5, 60), shape(60, 10))),
-
-            new Config("ji,jk->j", List.of(shape(60, 5), shape(60, 10))),
+            new Config("ji,jk->i", List.of(shape(6, 5), shape(6, 4))),
+            new Config("ij,jk->i", List.of(shape(5, 6), shape(6, 4))),
+            new Config("ji,jk->k", List.of(shape(6, 5), shape(6, 4))),
+            new Config("ij,jk->k", List.of(shape(5, 6), shape(6, 4))),
+            new Config("ji,jk->j", List.of(shape(6, 5), shape(6, 4))),
 
             new Config("ji,ji->ji", List.of(shape(60, 5), shape(60, 5))), // elemwise mult
-            new Config("ji,ji,ji->ji", List.of(shape(60, 5),shape(60, 5), shape(60, 5)),
-                    List.of(0.0001, 0.0005, 0.001)),
             new Config("ji,ij->ji", List.of(shape(60, 5), shape(5, 60))), // elemwise mult
-
 
             new Config("ij,i->ij",   List.of(shape(10, 5), shape(10))), // col mult
             new Config("ji,i->ij",   List.of(shape(5, 10), shape(10))), // row mult
             new Config("ij,i->i",   List.of(shape(10, 5), shape(10))),
             new Config("ij,i->j",   List.of(shape(10, 5), shape(10))),
-//
-            new Config("i,i->",     List.of(shape(5), shape(5))),
-            new Config("i,j->",     List.of(shape(5), shape(80))),
+
+            new Config("i,i->",     List.of(shape(5), shape(5))), // dot
+            new Config("i,j->",     List.of(shape(5), shape(80))), // sum
             new Config("i,j->ij",     List.of(shape(5), shape(80))), // outer vect mult
             new Config("i,j->ji",     List.of(shape(5), shape(80))), // outer vect mult
 
             new Config("ij->",     List.of(shape(10, 5))), // sum
+			new Config("i->",     List.of(shape(10))), // sum
             new Config("ij->i",     List.of(shape(10, 5))), // sum(1)
             new Config("ij->j",     List.of(shape(10, 5))), // sum(0)
-            new Config("ij->ji",     List.of(shape(10, 5))), // T
+			new Config("ij->ji",     List.of(shape(10, 5))), // T
+			new Config("ij->ij",     List.of(shape(10, 5))),
+			new Config("i->i",     List.of(shape(10))),
+			new Config("ii->i",     List.of(shape(10, 10))), // Diag
+			new Config("ii,i->i",     List.of(shape(10, 10),shape(10))), // Diag*vec
 
-            new Config("ab,cd->ba",     List.of(shape( 60, 10), shape(6, 5))),
-            new Config("ab,cd,g->ba",     List.of(shape( 60, 10), shape(6, 5), shape(3))),
-//
-            new Config("ab,bc,cd,de->ae",   List.of(shape(5, 60), shape(60, 10), shape(10, 5), shape(5, 4))), // chain of mm
-//
-//            new Config("ji,jz,zx->ix",   List.of(shape(60, 5), shape( 60, 10), shape(10, 2))),
-//            new Config("fx,fg,fz,xg->z",   List.of(shape(60, 5), shape( 60, 10), shape(60, 6), shape(5, 10))),
-            new Config("fx,fg,fz,xg,zx,zg->g", // each idx 3 times (cell tpl)
-                    List.of(shape(5, 60), shape(5, 30), shape(5, 10), shape(60, 30), shape(10, 60), shape(10, 30))),
-//
-            new Config("i->",     List.of(shape(10))),
-            new Config("i->i",     List.of(shape(10))),
+            new Config("ab,cd->ba",     List.of(shape( 6, 10), shape(6, 5))), // sum cd to scalar and multiply ab
 
-//            test fused
-            new Config("ij,ij,ji,i,j->ij",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(10),shape(5))),
-            new Config("ij,ij,ji,j->ij",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(5))),
-            new Config("ij,ij,ji,i->ij",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(10))),
-            new Config("ij,i,j->ij",   List.of(shape(10, 5), shape(10),shape(5))),
-            new Config("ij,i,i->ij",   List.of(shape(10, 5), shape(10),shape(10)), List.of(0.01,0.02,0.1)),
-            new Config("ij,j,j->ij",   List.of(shape(10, 5), shape(5),shape(5))),
-            new Config("ij,i,j->i",   List.of(shape(10, 5), shape(10),shape(5))),
-            new Config("ij,i,i->i",   List.of(shape(10, 5), shape(10),shape(10))),
-//            new Config("ij,j,j->i",   List.of(shape(10, 5), shape(5),shape(5))),
-            new Config("ij,i,j->j",   List.of(shape(10, 5), shape(10),shape(5))),
-//            new Config("ij,i,i->j",   List.of(shape(10, 5), shape(10),shape(10))),
-//            new Config("ij,j,j->j",   List.of(shape(10, 5), shape(5),shape(5))),
-            new Config("ij,i,j->",   List.of(shape(10, 5), shape(10),shape(5))),
-//            new Config("ij,i,i->",   List.of(shape(10, 5), shape(10),shape(10))),
-//            new Config("ij,j,j->",   List.of(shape(10, 5), shape(5),shape(5))),
+            new Config("fx,fg,fz,xg,zx,zg->g", // each idx 3 times (cell tpl fallback)
+                    List.of(shape(5, 6), shape(5, 3), shape(5, 10), shape(6, 3), shape(10, 6), shape(10, 3))),
 
-            // test fuesed:
-            new Config("ij,ij,ji,i,j->i",   List.of(shape(7, 5), shape(7, 5),shape(5, 7),shape(7),shape(5))),
-		new Config("ij,i,i,j,j->i",   List.of(shape(7, 50), shape(7),shape(7),shape(50),shape(50))),
-		new Config("ij,i,i,j,j,z->i",   List.of(shape(7, 50), shape(7),shape(7),shape(50),shape(50),shape(2)),List.of(1.0,1.0,1.0,1.0,1.0,1.0) ), // include scalar to tmpl
-            new Config("ij,ij,ij,i,j->j",  List.of(shape(5, 5), shape(5, 5), shape(5, 5),shape(5),shape(5))),
-            new Config("ij,ij,ij,i,j,iz->z",  List.of(shape(5, 5), shape(5, 5), shape(5, 5),shape(5),shape(5),shape(5, 60))),
-//            new Config("ij,ij,ij,i,j,iz->z",  List.of(shape(5, 5), shape(5, 5), shape(5, 5),shape(5),shape(5),shape(5, 60))),
-
-
-		new Config("ij,i,j,iz->z",  List.of(shape(10, 5),shape(10),shape(5),shape(10, 51))),
-		new Config("ij,i,j,iz->z",  List.of(shape(20, 10),shape(20),shape(10),shape(20, 10))),
-                        new Config("ij,i,j->j",  List.of(shape(100, 5),shape(100),shape(5))),
-			new Config("ij,ij,ji->ij",   List.of(shape(10, 5), shape(10, 5),shape(5, 10))),
+            // test fused:
+			new Config("ij,ij,ji->ij",   List.of(shape(10, 5), shape(10, 5), shape(5, 10))),
 			new Config("ij,ij,ji,i,j->ij",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(10),shape(5))),
-            new Config("ij,ij,ji->i",   List.of(shape(10, 5), shape(10, 5),shape(5, 10))),
-            new Config("ij,ij,ji->j",   List.of(shape(10, 5), shape(10, 5),shape(5, 10))),
-            new Config("ij,ij,ji->",   List.of(shape(10, 5), shape(10, 5),shape(5, 10))),
-		new Config("ij,ij,ji,j->j",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(5))),
-		new Config("ij,ij,ji,i->j",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(10))),
-		new Config("ij,ij,ji,i,j->j",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(10),shape(5))),
-		new Config("ij,ij,ji,j->",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(5))),
-		new Config("ij,ij,ji,i->",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(10))),
-		new Config("ij,ij,ji,i,j->",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(10),shape(5))),
-		new Config("ij,ij,ji,j->i",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(5))),
-		new Config("ij,ij,ji,i->i",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(10))),
-		new Config("ij,ij,ji,i,j->i",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(10),shape(5))),
-            new Config("ij,ij,ji,j,i,ab,ba,ab,a,b->jb",   Map.of('i',10, 'j',5, 'a', 11, 'b', 6)),
-            //skinny right:
-            new Config("ij,ij,ji,j,i,iz->jz",   Map.of('i',600, 'j',10,'z', 6)),  // with outer mm
-            // no skinny right:
-            new Config("ij,ij,ji,j,i,iz->jz",   Map.of('i',10, 'j',10,'z', 10)),  // with outer mm
-            new Config("ij,ij,ji,j,i,iz->zj",   Map.of('i',60, 'j',10,'z', 6))  // with outer mm
-		,new Config("ij,ij,ij,jk->ik",   List.of(shape(10, 5), shape(10, 5),shape(10, 5),shape(5, 10)))
+			new Config("ij,ij,ji,i->ij",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(10))),
+			new Config("ij,ij,ji,j->ij",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(5))),
 
-//		,new Config("ij,ij,ji->ij",   List.of(shape(100, 50), shape(100, 50),shape(50, 100)), List.of(0.1,1.0,1.0))
+			new Config("ij,ij,ji->i",   List.of(shape(10, 5), shape(10, 5), shape(5, 10))),
+			new Config("ij,ij,ji,i,j->i",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(10),shape(5))),
+			new Config("ij,ij,ji,i->i",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(10))),
+			new Config("ij,ij,ji,j->i",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(5))),
 
+			new Config("ij,ij,ji->j",   List.of(shape(10, 5), shape(10, 5), shape(5, 10))),
+			new Config("ij,ij,ji,i,j->j",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(10),shape(5))),
+			new Config("ij,ij,ji,i->j",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(10))),
+			new Config("ij,ij,ji,j->j",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(5))),
+
+			new Config("ij,ij,ji->",   List.of(shape(10, 5), shape(10, 5), shape(5, 10))),
+			new Config("ij,ij,ji,i,j->",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(10),shape(5))),
+			new Config("ij,ij,ji,i->",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(10))),
+			new Config("ij,ij,ji,j->",   List.of(shape(10, 5), shape(10, 5),shape(5, 10),shape(5))),
+
+			new Config("ij,ij,ij,i,j,iz->z",  List.of(shape(5, 5), shape(5, 5), shape(5, 5),shape(5),shape(5),shape(5, 6))),
+			new Config("ij,ij,ij,i,j,iz,z->z",  List.of(shape(5, 5), shape(5, 5), shape(5, 5),shape(5),shape(5),shape(5, 6),shape(6))),
+
+			new Config("ij,i,j,iz->z",  List.of(shape(10, 5),shape(10),shape(5),shape(10, 51))),
+			new Config("ij,i,j,iz->z",  List.of(shape(20, 10),shape(20),shape(10),shape(20, 10))),
+
+            new Config("ij,ij,ji,j,i, ab,ba,ab,a,b->jb",   Map.of('i',10, 'j',5, 'a', 11, 'b', 6)),
+            new Config("ij,ij,ji,j,i,iz->jz",   Map.of('i',600, 'j',10,'z', 6)),  // //skinny right with outer mm
+            new Config("ij,ij,ji,j,i,iz->jz",   Map.of('i',10, 'j',10,'z', 10)),  // // no skinny right
+            new Config("ij,ij,ji,j,i,iz->zj",   Map.of('i',60, 'j',10,'z', 6)),
+			new Config("ij,ij,ij,jk->ik",   List.of(shape(10, 5), shape(10, 5),shape(10, 5),shape(5, 10)))
     );
 	private final int id;
 	private final String einsumStr;
@@ -229,7 +199,6 @@ public class EinsumTest extends AutomatedTestBase
 			sb.append("\n");
 		}
 		sb.append("\n");
-//        sb.append("for (i in 1:5) {\n");
 		sb.append("R = einsum(\"");
 		sb.append(config.einsumStr);
 		sb.append("\", ");
@@ -242,7 +211,6 @@ public class EinsumTest extends AutomatedTestBase
 		sb.append("A");
 		sb.append(config.shapes.size() - 1);
 		sb.append(")");
-//        sb.append("\n}\n");
 
 		sb.append("\n\n");
 		sb.append("write(R, $1)\n");

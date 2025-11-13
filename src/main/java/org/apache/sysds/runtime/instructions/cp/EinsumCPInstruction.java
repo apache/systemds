@@ -75,9 +75,6 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
         	Logger.getLogger(EinsumCPInstruction.class).setLevel(Level.WARN);
 	}
 
-	@SuppressWarnings("unused")
-	private EinsumContext einc = null;
-
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		//get input matrices and scalars, incl pinning of matrices
@@ -97,7 +94,6 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 
 		EinsumContext einc = EinsumContext.getEinsumContext(eqStr, inputs);
 
-		this.einc = einc;
 		String resultString = einc.outChar2 != null ? String.valueOf(einc.outChar1) + einc.outChar2 : einc.outChar1 != null ? String.valueOf(einc.outChar1) : "";
 
 		if( LOG.isTraceEnabled() ) LOG.trace("output: "+resultString +" "+einc.outRows+"x"+einc.outCols);
@@ -193,8 +189,9 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			}
 			if (EXPLAIN != Explain.ExplainType.NONE )
 				System.out.println("Einsum plan:");
-				for(var pl : plan){
-					System.out.println("- "+String.join("\n- ", pl.recursivePrintString()));
+				for(int i = 0; i < plan.size(); i++) {
+					System.out.println((i+1)+".");
+					System.out.println("- "+String.join("\n- ", plan.get(i).recursivePrintString()));
 				}
 
 			remainingMatrices = executePlan(plan, inputs);

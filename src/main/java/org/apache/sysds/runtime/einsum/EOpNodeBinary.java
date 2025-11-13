@@ -112,10 +112,10 @@ public class EOpNodeBinary extends EOpNode {
 		String[] res = new String[left.length + right.length+1];
 		res[0] = this.getClass().getSimpleName()+" ("+_operand.toString()+") "+this.toString();
 		for (int i=0; i<left.length; i++) {
-			res[i+1] = (i==0 ?  "┌─ " : "|  ") +left[i];
+			res[i+1] = (i==0 ?  "┌─ " : "   ") +left[i];
 		}
 		for (int i=0; i<right.length; i++) {
-			res[left.length+i+1] = (i==0 ?  "└─ " : "|  ") +right[i];
+			res[left.length+i+1] = (i==0 ?  "└─ " : "   ") +right[i];
 		}
 		return res;
 	}

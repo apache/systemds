@@ -39,6 +39,7 @@ from systemds.scuro.representations.spectrogram import Spectrogram
 from systemds.scuro.representations.word2vec import W2V
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.resnet import ResNet
+from systemds.scuro.representations.timeseries_representations import Min, Max
 from tests.scuro.data_generator import (
     TestDataLoader,
     ModalityRandomDataGenerator,
@@ -181,6 +182,74 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
             )[:2]
 
             assert best_results[0].val_score >= best_results[1].val_score
+
+    def test_parallel_multimodal_fusion(self):
+        task = Task(
+            "MM_Fusion_Task1",
+            TestSVM(),
+            self.labels,
+            self.train_indizes,
+            self.val_indizes,
+        )
+
+        audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
+            self.num_instances, 1000
+        )
+        text_data, text_md = ModalityRandomDataGenerator().create_text_data(
+            self.num_instances
+        )
+
+        audio = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.AUDIO, audio_data, np.float32, audio_md
+            )
+        )
+        text = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.TEXT, text_data, str, text_md
+            )
+        )
+
+        with patch.object(
+            Registry,
+            "_representations",
+            {
+                ModalityType.TEXT: [W2V],
+                ModalityType.AUDIO: [Spectrogram],
+                ModalityType.TIMESERIES: [Max, Min],
+                ModalityType.VIDEO: [ResNet],
+                ModalityType.EMBEDDING: [],
+            },
+        ):
+            registry = Registry()
+            registry._fusion_operators = [Average, Concatenation, LSTM]
+            unimodal_optimizer = UnimodalOptimizer([audio, text], [task], debug=False)
+            unimodal_optimizer.optimize()
+            unimodal_optimizer.operator_performance.get_k_best_results(audio, 2, task)
+            m_o = MultimodalOptimizer(
+                [audio, text],
+                unimodal_optimizer.operator_performance,
+                [task],
+                debug=False,
+                min_modalities=2,
+                max_modalities=3,
+            )
+            fusion_results = m_o.optimize()
+            parallel_fusion_results = m_o.optimize_parallel(max_workers=4, batch_size=8)
+
+            best_results = sorted(
+                fusion_results[task.model.name], key=lambda x: x.val_score, reverse=True
+            )
+
+            best_results_parallel = sorted(
+                parallel_fusion_results[task.model.name],
+                key=lambda x: x.val_score,
+                reverse=True,
+            )
+
+            assert len(best_results) == len(best_results_parallel)
+            for i in range(len(best_results)):
+                assert best_results[i].val_score == best_results_parallel[i].val_score
 
 
 if __name__ == "__main__":

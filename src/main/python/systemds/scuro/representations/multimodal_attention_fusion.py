@@ -43,7 +43,7 @@ class AttentionFusion(Fusion):
         num_epochs=50,
         learning_rate=0.001,
     ):
-        params = {
+        parameters = {
             "hidden_dim": [32, 128, 256, 384, 512, 768],
             "num_heads": [2, 4, 8, 12],
             "dropout": [0.0, 0.1, 0.2, 0.3, 0.4],
@@ -51,7 +51,7 @@ class AttentionFusion(Fusion):
             "num_epochs": [50, 100, 150, 200],
             "learning_rate": [1e-5, 1e-4, 1e-3, 1e-2],
         }
-        super().__init__("AttentionFusion", params)
+        super().__init__("AttentionFusion", parameters)
 
         self.hidden_dim = int(hidden_dim)
         self.num_heads = int(num_heads)
@@ -64,7 +64,7 @@ class AttentionFusion(Fusion):
         self.needs_alignment = True
         self.encoder = None
         self.classification_head = None
-        self.input_dimensions = None
+        self.input_dim = None
         self.max_sequence_length = None
         self.num_classes = None
         self.is_trained = False
@@ -81,7 +81,7 @@ class AttentionFusion(Fusion):
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
-    def _prepare_data(self, modalities: List[Modality]) -> Dict[str, torch.Tensor]:
+    def _prepare_data(self, modalities: List[Modality]):
         inputs = {}
         input_dimensions = {}
         max_sequence_length = 0
@@ -122,12 +122,12 @@ class AttentionFusion(Fusion):
         inputs, input_dimensions, max_sequence_length = self._prepare_data(modalities)
         y = np.array(labels)
 
-        self.input_dimensions = input_dimensions
+        self.input_dim = input_dimensions
         self.max_sequence_length = max_sequence_length
         self.num_classes = len(np.unique(y))
 
         self.encoder = MultiModalAttentionFusion(
-            self.input_dimensions,
+            self.input_dim,
             self.hidden_dim,
             self.num_heads,
             self.dropout,
@@ -206,13 +206,18 @@ class AttentionFusion(Fusion):
         self.model_state = {
             "encoder_state_dict": self.encoder.state_dict(),
             "classification_head_state_dict": self.classification_head.state_dict(),
-            "input_dimensions": self.input_dimensions,
+            "input_dimensions": self.input_dim,
             "max_sequence_length": self.max_sequence_length,
             "num_classes": self.num_classes,
             "hidden_dim": self.hidden_dim,
             "num_heads": self.num_heads,
             "dropout": self.dropout,
         }
+
+        with torch.no_grad():
+            encoder_output = self.encoder(inputs)
+
+        return encoder_output["fused"].cpu().numpy()
 
     def apply_representation(self, modalities: List[Modality]) -> np.ndarray:
         if not self.is_trained or self.encoder is None:
@@ -237,12 +242,12 @@ class AttentionFusion(Fusion):
 
     def set_model_state(self, state: Dict[str, Any]):
         self.model_state = state
-        self.input_dimensions = state["input_dimensions"]
+        self.input_dim = state["input_dimensions"]
         self.max_sequence_length = state["max_sequence_length"]
         self.num_classes = state["num_classes"]
 
         self.encoder = MultiModalAttentionFusion(
-            self.input_dimensions,
+            self.input_dim,
             state["hidden_dim"],
             state["num_heads"],
             state["dropout"],

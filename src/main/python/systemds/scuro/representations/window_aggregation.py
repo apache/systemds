@@ -32,10 +32,19 @@ from systemds.scuro.representations.context import Context
 
 class Window(Context):
     def __init__(self, name, aggregation_function):
-        parameters = {
-            "aggregation_function": list(Aggregation().get_aggregation_functions()),
-        }
-        super().__init__(name, parameters)
+        is_ts_rep = False
+        if isinstance(aggregation_function, str):
+            parameters = {
+                "aggregation_function": list(Aggregation().get_aggregation_functions()),
+            }
+        else:
+            is_ts_rep = True
+            parameters = {
+                "aggregation_function": aggregation_function.name,
+                "agg_params": aggregation_function.parameters,
+            }
+
+        super().__init__(name, parameters, is_ts_rep)
         self.aggregation_function = aggregation_function
 
     @property
@@ -44,7 +53,10 @@ class Window(Context):
 
     @aggregation_function.setter
     def aggregation_function(self, value):
-        self._aggregation_function = Aggregation(value)
+        if self.is_ts_rep:
+            self._aggregation_function = value
+        else:
+            self._aggregation_function = Aggregation(value)
 
 
 @register_context_operator()
@@ -118,13 +130,24 @@ class WindowAggregation(Window):
 
         result = []
         for i in range(0, new_length):
-            result.append(
-                self.aggregation_function.aggregate_instance(
-                    instance[
-                        i * self.window_size : i * self.window_size + self.window_size
-                    ]
+            if self.is_ts_rep:
+                result.append(
+                    self.aggregation_function.compute_feature(
+                        instance[
+                            i * self.window_size : i * self.window_size
+                            + self.window_size
+                        ]
+                    )
                 )
-            )
+            else:
+                result.append(
+                    self.aggregation_function.aggregate_instance(
+                        instance[
+                            i * self.window_size : i * self.window_size
+                            + self.window_size
+                        ]
+                    )
+                )
 
         return np.array(result)
 
@@ -132,9 +155,14 @@ class WindowAggregation(Window):
         result = [[] for _ in range(0, new_length)]
         data = np.stack(copy.deepcopy(instance))
         for i in range(0, new_length):
-            result[i] = self.aggregation_function.aggregate_instance(
-                data[i * self.window_size : i * self.window_size + self.window_size]
-            )
+            if self.is_ts_rep:
+                result[i] = self.aggregation_function.compute_feature(
+                    data[i * self.window_size : i * self.window_size + self.window_size]
+                )
+            else:
+                result[i] = self.aggregation_function.aggregate_instance(
+                    data[i * self.window_size : i * self.window_size + self.window_size]
+                )
 
         return np.array(result)
 

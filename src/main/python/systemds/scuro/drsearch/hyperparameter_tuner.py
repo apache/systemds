@@ -146,8 +146,8 @@ class HyperparameterTuner:
                 visit_node(input_id)
             visited.add(node_id)
             if node.operation is not None:
-                if node.parameters:
-                    hyperparams.update(node.parameters)
+                if node.operation().parameters:
+                    hyperparams.update(node.operation().parameters)
                 reps.append(node.operation)
                 node_order.append(node_id)
             if node.modality_id is not None:

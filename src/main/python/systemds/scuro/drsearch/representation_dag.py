@@ -139,7 +139,7 @@ class RepresentationDag:
 
             input_mods = [execute_node(input_id, task) for input_id in node.inputs]
 
-            node_operation = node.operation()
+            node_operation = copy.deepcopy(node.operation())
             if len(input_mods) == 1:
                 # It's a unimodal operation
                 if isinstance(node_operation, Context):

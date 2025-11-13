@@ -18,9 +18,9 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import copy
 import time
 from typing import List, Union
-
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.representation import Representation
 from systemds.scuro.models.model import Model
@@ -62,6 +62,15 @@ class Task:
         self.train_scores = []
         self.val_scores = []
 
+    def create_model(self):
+        """
+        Return a fresh, unfitted model instance.
+        """
+        if self.model is None:
+            return None
+
+        return copy.deepcopy(self.model)
+
     def get_train_test_split(self, data):
         X_train = [data[i] for i in self.train_indices]
         y_train = [self.labels[i] for i in self.train_indices]
@@ -78,6 +87,7 @@ class Task:
          :return: the validation accuracy
         """
         self._reset_params()
+        model = self.create_model()
         skf = KFold(n_splits=self.kfold, shuffle=True, random_state=11)
 
         fold = 0
@@ -88,12 +98,8 @@ class Task:
             train_y = np.array(y)[train]
             test_X = np.array(X)[test]
             test_y = np.array(y)[test]
-            self._run_fold(train_X, train_y, test_X, test_y)
+            self._run_fold(model, train_X, train_y, test_X, test_y)
             fold += 1
-
-        if self.measure_performance:
-            self.inference_time = np.mean(self.inference_time)
-            self.training_time = np.mean(self.training_time)
 
         return [np.mean(self.train_scores), np.mean(self.val_scores)]
 
@@ -103,14 +109,14 @@ class Task:
         self.train_scores = []
         self.val_scores = []
 
-    def _run_fold(self, train_X, train_y, test_X, test_y):
+    def _run_fold(self, model, train_X, train_y, test_X, test_y):
         train_start = time.time()
-        train_score = self.model.fit(train_X, train_y, test_X, test_y)
+        train_score = model.fit(train_X, train_y, test_X, test_y)
         train_end = time.time()
         self.training_time.append(train_end - train_start)
         self.train_scores.append(train_score)
         test_start = time.time()
-        test_score = self.model.test(np.array(test_X), test_y)
+        test_score = model.test(np.array(test_X), test_y)
         test_end = time.time()
         self.inference_time.append(test_end - test_start)
         self.val_scores.append(test_score)

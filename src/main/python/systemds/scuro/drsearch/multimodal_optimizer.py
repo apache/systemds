@@ -18,18 +18,13 @@
 # under the License.
 #
 # -------------------------------------------------------------
-
-
+import os
+import multiprocessing as mp
 import itertools
-import pickle
-import time
+import threading
 from dataclasses import dataclass
 from typing import List, Dict, Any, Generator
-import copy
-import traceback
-from itertools import chain
 from systemds.scuro.drsearch.task import Task
-from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.representation_dag import (
     RepresentationDag,
     RepresentationDAGBuilder,
@@ -40,6 +35,64 @@ from systemds.scuro.representations.aggregated_representation import (
 from systemds.scuro.representations.aggregate import Aggregation
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.utils.schema_helpers import get_shape
+
+from concurrent.futures import ProcessPoolExecutor, wait, FIRST_COMPLETED
+import pickle
+import copy
+import time
+import traceback
+from itertools import chain
+
+
+def _evaluate_dag_worker(dag_pickle, task_pickle, modalities_pickle, debug=False):
+    try:
+        dag = pickle.loads(dag_pickle)
+        task = pickle.loads(task_pickle)
+        modalities_for_dag = pickle.loads(modalities_pickle)
+
+        start_time = time.time()
+        if debug:
+            print(
+                f"[DEBUG][worker] pid={os.getpid()} evaluating dag_root={getattr(dag, 'root_node_id', None)} task={getattr(task.model, 'name', None)}"
+            )
+
+        dag_copy = copy.deepcopy(dag)
+        task_copy = copy.deepcopy(task)
+
+        fused_representation = dag_copy.execute(modalities_for_dag, task_copy)
+        if fused_representation is None:
+            return None
+
+        final_representation = fused_representation[
+            list(fused_representation.keys())[-1]
+        ]
+        from systemds.scuro.utils.schema_helpers import get_shape
+        from systemds.scuro.representations.aggregated_representation import (
+            AggregatedRepresentation,
+        )
+        from systemds.scuro.representations.aggregate import Aggregation
+
+        if task_copy.expected_dim == 1 and get_shape(final_representation.metadata) > 1:
+            agg_operator = AggregatedRepresentation(Aggregation())
+            final_representation = agg_operator.transform(final_representation)
+
+        eval_start = time.time()
+        scores = task_copy.run(final_representation.data)
+        eval_time = time.time() - eval_start
+        total_time = time.time() - start_time
+
+        return OptimizationResult(
+            dag=dag_copy,
+            train_score=scores[0],
+            val_score=scores[1],
+            runtime=total_time,
+            task_name=task_copy.model.name,
+            evaluation_time=eval_time,
+        )
+    except Exception:
+        if debug:
+            traceback.print_exc()
+        return None
 
 
 class MultimodalOptimizer:
@@ -67,6 +120,115 @@ class MultimodalOptimizer:
             unimodal_optimization_results
         )
         self.optimization_results = []
+
+    def optimize_parallel(
+        self, max_combinations: int = None, max_workers: int = 2, batch_size: int = 4
+    ) -> Dict[str, List["OptimizationResult"]]:
+        all_results = {}
+
+        for task in self.tasks:
+            task_copy = copy.deepcopy(task)
+            if self.debug:
+                print(
+                    f"[DEBUG] Optimizing multimodal fusion for task: {task.model.name}"
+                )
+            all_results[task.model.name] = []
+            evaluated_count = 0
+            outstanding = set()
+            stop_generation = False
+
+            modalities_for_task = list(
+                chain.from_iterable(
+                    self.k_best_representations[task.model.name].values()
+                )
+            )
+            task_pickle = pickle.dumps(task_copy)
+            modalities_pickle = pickle.dumps(modalities_for_task)
+            ctx = mp.get_context("spawn")
+            start = time.time()
+            with ProcessPoolExecutor(max_workers=max_workers, mp_context=ctx) as ex:
+                for modality_subset in self._generate_modality_combinations():
+                    if stop_generation:
+                        break
+                    if self.debug:
+                        print(f"[DEBUG] Evaluating modality subset: {modality_subset}")
+
+                    for repr_combo in self._generate_representation_combinations(
+                        modality_subset, task.model.name
+                    ):
+                        if stop_generation:
+                            break
+
+                        for dag in self._generate_fusion_dags(
+                            modality_subset, repr_combo
+                        ):
+                            if max_combinations and evaluated_count >= max_combinations:
+                                stop_generation = True
+                                break
+
+                            dag_pickle = pickle.dumps(dag)
+                            fut = ex.submit(
+                                _evaluate_dag_worker,
+                                dag_pickle,
+                                task_pickle,
+                                modalities_pickle,
+                                self.debug,
+                            )
+                            outstanding.add(fut)
+
+                            if len(outstanding) >= batch_size:
+                                done, not_done = wait(
+                                    outstanding, return_when=FIRST_COMPLETED
+                                )
+                                for fut_done in done:
+                                    try:
+                                        result = fut_done.result()
+                                        if result is not None:
+                                            all_results[task.model.name].append(result)
+                                    except Exception:
+                                        if self.debug:
+                                            traceback.print_exc()
+                                    evaluated_count += 1
+                                    if self.debug and evaluated_count % 100 == 0:
+                                        print(
+                                            f"[DEBUG] Evaluated {evaluated_count} combinations..."
+                                        )
+                                    else:
+                                        print(".", end="")
+                                outstanding = set(not_done)
+
+                    break
+
+                if outstanding:
+                    done, not_done = wait(outstanding)
+                    for fut_done in done:
+                        try:
+                            result = fut_done.result()
+                            if result is not None:
+                                all_results[task.model.name].append(result)
+                        except Exception:
+                            if self.debug:
+                                traceback.print_exc()
+                        evaluated_count += 1
+                        if self.debug and evaluated_count % 100 == 0:
+                            print(
+                                f"[DEBUG] Evaluated {evaluated_count} combinations..."
+                            )
+                        else:
+                            print(".", end="")
+            end = time.time()
+            if self.debug:
+                print(f"\n[DEBUG] Total optimization time: {end-start}")
+                print(
+                    f"[DEBUG] Task completed: {len(all_results[task.model.name])} valid combinations evaluated"
+                )
+
+        self.optimization_results = all_results
+
+        if self.debug:
+            print(f"[DEBUG] Optimization completed")
+
+        return all_results
 
     def _extract_k_best_representations(
         self, unimodal_optimization_results: Any
@@ -181,20 +343,27 @@ class MultimodalOptimizer:
                         yield builder_variant.build(root_id)
                     except ValueError:
                         if self.debug:
-                            print(f"Skipping invalid DAG for root {root_id}")
+                            print(f"[DEBUG] Skipping invalid DAG for root {root_id}")
                         continue
 
     def _evaluate_dag(self, dag: RepresentationDag, task: Task) -> "OptimizationResult":
         start_time = time.time()
-
         try:
-            fused_representation = dag.execute(
+            tid = threading.get_ident()
+            tname = threading.current_thread().name
+
+            dag_copy = copy.deepcopy(dag)
+            modalities_for_dag = copy.deepcopy(
                 list(
                     chain.from_iterable(
                         self.k_best_representations[task.model.name].values()
                     )
-                ),
-                task,
+                )
+            )
+            task_copy = copy.deepcopy(task)
+            fused_representation = dag_copy.execute(
+                modalities_for_dag,
+                task_copy,
             )
 
             if fused_representation is None:
@@ -203,22 +372,25 @@ class MultimodalOptimizer:
             final_representation = fused_representation[
                 list(fused_representation.keys())[-1]
             ]
-            if task.expected_dim == 1 and get_shape(final_representation.metadata) > 1:
+            if (
+                task_copy.expected_dim == 1
+                and get_shape(final_representation.metadata) > 1
+            ):
                 agg_operator = AggregatedRepresentation(Aggregation())
                 final_representation = agg_operator.transform(final_representation)
 
             eval_start = time.time()
-            scores = task.run(final_representation.data)
+            scores = task_copy.run(final_representation.data)
             eval_time = time.time() - eval_start
 
             total_time = time.time() - start_time
 
             return OptimizationResult(
-                dag=dag,
+                dag=dag_copy,
                 train_score=scores[0],
                 val_score=scores[1],
                 runtime=total_time,
-                task_name=task.model.name,
+                task_name=task_copy.model.name,
                 evaluation_time=eval_time,
             )
 
@@ -244,13 +416,15 @@ class MultimodalOptimizer:
 
         for task in self.tasks:
             if self.debug:
-                print(f"Optimizing multimodal fusion for task: {task.model.name}")
+                print(
+                    f"[DEBUG] Optimizing multimodal fusion for task: {task.model.name}"
+                )
             all_results[task.model.name] = []
             evaluated_count = 0
 
             for modality_subset in self._generate_modality_combinations():
                 if self.debug:
-                    print(f"  Evaluating modality subset: {modality_subset}")
+                    print(f"[DEBUG] Evaluating modality subset: {modality_subset}")
 
                 for repr_combo in self._generate_representation_combinations(
                     modality_subset, task.model.name
@@ -277,13 +451,13 @@ class MultimodalOptimizer:
 
             if self.debug:
                 print(
-                    f"  Task completed: {len(all_results[task.model.name])} valid combinations evaluated"
+                    f"[DEBUG] Task completed: {len(all_results[task.model.name])} valid combinations evaluated"
                 )
 
         self.optimization_results = all_results
 
         if self.debug:
-            print(f"\nOptimization completed")
+            print(f"[DEBUG] Optimization completed")
 
         return all_results
 

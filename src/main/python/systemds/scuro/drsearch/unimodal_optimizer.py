@@ -98,7 +98,21 @@ class UnimodalOptimizer:
     def load_results(self, file_name):
         with open(file_name, "rb") as f:
             self.operator_performance.results = pickle.load(f)
-            self.operator_performance.cache = None
+
+    def load_cache(self):
+        for modality in self.modalities:
+            for task in self.tasks:
+                self.operator_performance.cache[modality.modality_id][
+                    task.model.name
+                ] = []
+                with open(
+                    f"{modality.modality_id}_{task.model.name}_cache.pkl", "rb"
+                ) as f:
+                    cache = pickle.load(f)
+                    for c in cache:
+                        self.operator_performance.cache[modality.modality_id][
+                            task.model.name
+                        ].append(c)
 
     def optimize_parallel(self, n_workers=None):
         if n_workers is None:
@@ -269,22 +283,22 @@ class UnimodalOptimizer:
                     )
                     dags.append(builder.build(combine_id))
                     current_node_id = combine_id
-            if modality.modality_type in [
-                ModalityType.EMBEDDING,
-                ModalityType.IMAGE,
-                ModalityType.AUDIO,
-            ]:
-                dags.extend(
-                    self.default_context_operators(
-                        modality, builder, leaf_id, current_node_id
+                if modality.modality_type in [
+                    ModalityType.EMBEDDING,
+                    ModalityType.IMAGE,
+                    ModalityType.AUDIO,
+                ]:
+                    dags.extend(
+                        self.default_context_operators(
+                            modality, builder, leaf_id, current_node_id
+                        )
                     )
-                )
-            elif modality.modality_type == ModalityType.TIMESERIES:
-                dags.extend(
-                    self.temporal_context_operators(
-                        modality, builder, leaf_id, current_node_id
+                elif modality.modality_type == ModalityType.TIMESERIES:
+                    dags.extend(
+                        self.temporal_context_operators(
+                            modality, builder, leaf_id, current_node_id
+                        )
                     )
-                )
         return dags
 
     def default_context_operators(self, modality, builder, leaf_id, current_node_id):
@@ -388,6 +402,10 @@ class UnimodalResults:
                 list(task_results[i].dag.execute([modality]).values())[-1]
                 for i in sorted_indices
             ]
+        elif isinstance(self.cache[modality.modality_id][task.model.name], list):
+            cache = self.cache[modality.modality_id][
+                task.model.name
+            ]  # used for precomputed cache
         else:
             cache_items = (
                 list(self.cache[modality.modality_id][task.model.name].items())

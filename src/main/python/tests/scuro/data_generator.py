@@ -195,26 +195,38 @@ class ModalityRandomDataGenerator:
     def create_visual_modality(
         self, num_instances, max_num_frames=1, height=28, width=28
     ):
-        data = [
-            np.random.randint(
-                0,
-                256,
-                (np.random.randint(5, max_num_frames + 1), height, width, 3),
-                dtype=np.uint8,
-            )
-            for _ in range(num_instances)
-        ]
-        if max_num_frames == 1:
-            print(f"TODO: create image metadata")
-        else:
+        if max_num_frames > 1:
+            data = [
+                np.random.randint(
+                    0,
+                    256,
+                    (np.random.randint(1, max_num_frames + 1), height, width, 3),
+                    dtype=np.uint8,
+                )
+                for _ in range(num_instances)
+            ]
             metadata = {
                 i: ModalityType.VIDEO.create_video_metadata(
                     30, data[i].shape[0], width, height, 3
                 )
                 for i in range(num_instances)
             }
+        else:
+            data = [
+                np.random.randint(
+                    0,
+                    256,
+                    (height, width, 3),
+                    dtype=np.uint8,
+                )
+                for _ in range(num_instances)
+            ]
+            metadata = {
+                i: ModalityType.IMAGE.create_image_metadata(width, height, 3)
+                for i in range(num_instances)
+            }
 
-        return (data, metadata)
+        return data, metadata
 
     def create_balanced_labels(self, num_instances, num_classes=2):
         if num_instances % num_classes != 0:

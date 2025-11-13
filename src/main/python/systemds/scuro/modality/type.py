@@ -193,6 +193,7 @@ class ModalityType(Flag):
     IMAGE = auto()
     TIMESERIES = auto()
     EMBEDDING = auto()
+    PHYSIOLOGICAL = auto()
 
     def get_schema(self):
         return ModalitySchemas.get(self.name)
@@ -239,6 +240,7 @@ class ModalityType(Flag):
         md["length"] = data.shape[0]
         md["signal_names"] = signal_names
         md["timestamp"] = create_timestamps(md["frequency"], md["length"])
+        md["is_multivariate"] = len(signal_names) > 1
         return md
 
     def create_video_metadata(self, frequency, length, width, height, num_channels):

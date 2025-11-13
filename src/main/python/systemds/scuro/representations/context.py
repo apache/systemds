@@ -25,12 +25,13 @@ from systemds.scuro.representations.representation import Representation
 
 
 class Context(Representation):
-    def __init__(self, name, parameters=None):
+    def __init__(self, name, parameters=None, is_ts_rep=False):
         """
         Parent class for different context operations
         :param name: Name of the context operator
         """
         super().__init__(name, parameters)
+        self.is_ts_rep = is_ts_rep
 
     @abc.abstractmethod
     def execute(self, modality: Modality):
@@ -40,3 +41,17 @@ class Context(Representation):
         :return: contextualized data
         """
         raise f"Not implemented for Context Operator: {self.name}"
+
+    def get_current_parameters(self):
+        current_params = {}
+        if not self.parameters:
+            return current_params
+        for parameter in list(self.parameters.keys()):
+            if self.is_ts_rep:
+                if parameter == "agg_params":
+                    current_params[parameter] = (
+                        self.aggregation_function.get_current_parameters()
+                    )
+                    continue
+            current_params[parameter] = getattr(self, parameter)
+        return current_params

@@ -27,6 +27,12 @@ from sklearn import svm
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 
+from systemds.scuro.representations.timeseries_representations import (
+    Mean,
+    Max,
+    Min,
+    ACF,
+)
 from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.models.model import Model
 from systemds.scuro.drsearch.task import Task
@@ -163,6 +169,17 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
         )
         self.optimize_unimodal_representation_for_modality(text)
 
+    def test_unimodal_optimizer_for_ts_modality(self):
+        ts_data, ts_md = ModalityRandomDataGenerator().create_timeseries_data(
+            self.num_instances, 1000
+        )
+        ts = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.TIMESERIES, ts_data, np.float32, ts_md
+            )
+        )
+        self.optimize_unimodal_representation_for_modality(ts)
+
     def test_unimodal_optimizer_for_video_modality(self):
         video_data, video_md = ModalityRandomDataGenerator().create_visual_modality(
             self.num_instances, 10, 10
@@ -181,7 +198,7 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
             {
                 ModalityType.TEXT: [W2V, BoW],
                 ModalityType.AUDIO: [Spectrogram, ZeroCrossing, Spectral, Pitch],
-                ModalityType.TIMESERIES: [ResNet],
+                ModalityType.TIMESERIES: [Mean, Max, Min, ACF],
                 ModalityType.VIDEO: [ResNet],
                 ModalityType.EMBEDDING: [],
             },

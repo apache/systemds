@@ -44,6 +44,21 @@ from tests.scuro.data_generator import (
     ModalityRandomDataGenerator,
 )
 from systemds.scuro.modality.type import ModalityType
+from systemds.scuro.representations.timeseries_representations import (
+    Mean,
+    Max,
+    Min,
+    Kurtosis,
+    Skew,
+    Std,
+    RMS,
+    ACF,
+    FrequencyMagnitude,
+    SpectralCentroid,
+    Quantile,
+    ZeroCrossingRate,
+    BandpowerFFT,
+)
 
 
 class TestUnimodalRepresentations(unittest.TestCase):
@@ -91,6 +106,42 @@ class TestUnimodalRepresentations(unittest.TestCase):
             for i in range(self.num_instances):
                 assert (audio.data[i] == original_data[i]).all()
             assert r.data[0].ndim == 2
+
+    def test_timeseries_representations(self):
+        ts_representations = [
+            Mean(),
+            Max(),
+            Min(),
+            Kurtosis(),
+            Skew(),
+            Std(),
+            RMS(),
+            ACF(),
+            FrequencyMagnitude(),
+            SpectralCentroid(),
+            Quantile(),
+            ZeroCrossingRate(),
+            BandpowerFFT(),
+        ]
+        ts_data, ts_md = ModalityRandomDataGenerator().create_timeseries_data(
+            self.num_instances, 1000
+        )
+
+        ts = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.AUDIO, ts_data, np.float32, ts_md
+            )
+        )
+
+        ts.extract_raw_data()
+        original_data = copy.deepcopy(ts.data)
+
+        for representation in ts_representations:
+            r = ts.apply_representation(representation)
+            assert r.data is not None
+            assert len(r.data) == self.num_instances
+            for i in range(self.num_instances):
+                assert (ts.data[i] == original_data[i]).all()
 
     def test_video_representations(self):
         video_representations = [

@@ -85,6 +85,8 @@ class ModalityRandomDataGenerator:
                 self.metadata[i] = modality_type.create_video_metadata(
                     num_features / 30, 10, 0, 0, 1
                 )
+            elif modality_type == ModalityType.TIMESERIES:
+                self.metadata[i] = modality_type.create_ts_metadata(["test"], data[i])
             else:
                 raise NotImplementedError
 
@@ -110,6 +112,21 @@ class ModalityRandomDataGenerator:
             for i in range(num_instances)
         }
 
+        return data, metadata
+
+    def create_timeseries_data(self, num_instances, sequence_length, num_features=1):
+        data = [
+            np.random.rand(sequence_length, num_features).astype(self.data_type)
+            for _ in range(num_instances)
+        ]
+        if num_features == 1:
+            data = [d.squeeze(-1) for d in data]
+        metadata = {
+            i: ModalityType.TIMESERIES.create_ts_metadata(
+                [f"feature_{j}" for j in range(num_features)], data[i]
+            )
+            for i in range(num_instances)
+        }
         return data, metadata
 
     def create_text_data(self, num_instances):

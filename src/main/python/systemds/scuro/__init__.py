@@ -77,6 +77,7 @@ from systemds.scuro.representations.window_aggregation import (
 )
 from systemds.scuro.representations.word2vec import W2V
 from systemds.scuro.representations.x3d import X3D
+from systemds.scuro.representations.color_histogram import ColorHistogram
 from systemds.scuro.models.model import Model
 from systemds.scuro.models.discrete_model import DiscreteModel
 from systemds.scuro.modality.joined import JoinedModality
@@ -97,7 +98,8 @@ from systemds.scuro.representations.covarep_audio_features import (
 )
 from systemds.scuro.drsearch.multimodal_optimizer import MultimodalOptimizer
 from systemds.scuro.drsearch.unimodal_optimizer import UnimodalOptimizer
-
+from systemds.scuro.representations.vgg import VGG19
+from systemds.scuro.representations.clip import CLIPText, CLIPVisual
 
 __all__ = [
     "BaseLoader",
@@ -120,6 +122,7 @@ __all__ = [
     "MFCC",
     "Hadamard",
     "OpticalFlow",
+    "ColorHistogram",
     "Representation",
     "NPY",
     "JSON",
@@ -169,4 +172,7 @@ __all__ = [
     "Quantile",
     "BandpowerFFT",
     "ZeroCrossingRate",
+    "VGG19",
+    "CLIPVisual",
+    "CLIPText",
 ]

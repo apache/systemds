@@ -254,7 +254,16 @@ class ModalityType(Flag):
         md["data_layout"]["representation"] = DataLayout.NESTED_LEVEL
         md["data_layout"]["type"] = float
         md["data_layout"]["shape"] = (width, height, num_channels)
+        return md
 
+    def create_image_metadata(self, width, height, num_channels):
+        md = deepcopy(self.get_schema())
+        md["width"] = width
+        md["height"] = height
+        md["num_channels"] = num_channels
+        md["data_layout"]["representation"] = DataLayout.SINGLE_LEVEL
+        md["data_layout"]["type"] = float
+        md["data_layout"]["shape"] = (width, height, num_channels)
         return md
 
 

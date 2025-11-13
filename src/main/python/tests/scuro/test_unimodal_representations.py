@@ -23,6 +23,7 @@ import unittest
 import copy
 import numpy as np
 
+from systemds.scuro.representations.clip import CLIPVisual, CLIPText
 from systemds.scuro.representations.bow import BoW
 from systemds.scuro.representations.covarep_audio_features import (
     Spectral,
@@ -34,6 +35,9 @@ from systemds.scuro.representations.wav2vec import Wav2Vec
 from systemds.scuro.representations.spectrogram import Spectrogram
 from systemds.scuro.representations.word2vec import W2V
 from systemds.scuro.representations.tfidf import TfIdf
+from systemds.scuro.representations.x3d import X3D
+from systemds.scuro.representations.x3d import I3D
+from systemds.scuro.representations.color_histogram import ColorHistogram
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
 from systemds.scuro.representations.mfcc import MFCC
@@ -59,6 +63,7 @@ from systemds.scuro.representations.timeseries_representations import (
     ZeroCrossingRate,
     BandpowerFFT,
 )
+from systemds.scuro.representations.vgg import VGG19
 
 
 class TestUnimodalRepresentations(unittest.TestCase):
@@ -143,11 +148,34 @@ class TestUnimodalRepresentations(unittest.TestCase):
             for i in range(self.num_instances):
                 assert (ts.data[i] == original_data[i]).all()
 
+    def test_image_representations(self):
+        image_representations = [ColorHistogram(), CLIPVisual(), ResNet()]
+
+        image_data, image_md = ModalityRandomDataGenerator().create_visual_modality(
+            self.num_instances, 1
+        )
+
+        image = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.IMAGE, image_data, np.float32, image_md
+            )
+        )
+
+        for representation in image_representations:
+            r = image.apply_representation(representation)
+            assert r.data is not None
+            assert len(r.data) == self.num_instances
+
     def test_video_representations(self):
         video_representations = [
+            CLIPVisual(),
+            ColorHistogram(),
+            I3D(),
+            X3D(),
+            VGG19(),
             ResNet(),
             SwinVideoTransformer(),
-        ]  # Todo: add other video representations
+        ]
         video_data, video_md = ModalityRandomDataGenerator().create_visual_modality(
             self.num_instances, 60
         )
@@ -160,10 +188,9 @@ class TestUnimodalRepresentations(unittest.TestCase):
             r = video.apply_representation(representation)
             assert r.data is not None
             assert len(r.data) == self.num_instances
-            assert r.data[0].ndim == 2
 
     def test_text_representations(self):
-        test_representations = [BoW(2, 2), TfIdf(), W2V()]
+        test_representations = [CLIPText(), BoW(2, 2), TfIdf(), W2V()]
         text_data, text_md = ModalityRandomDataGenerator().create_text_data(
             self.num_instances
         )

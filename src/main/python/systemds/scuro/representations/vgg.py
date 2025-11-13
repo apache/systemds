@@ -26,6 +26,7 @@ from typing import Tuple, Any
 from systemds.scuro.drsearch.operator_registry import register_representation
 import torch.utils.data
 import torch
+import re
 import torchvision.models as models
 import numpy as np
 from systemds.scuro.modality.type import ModalityType
@@ -33,13 +34,12 @@ from systemds.scuro.utils.static_variables import get_device
 
 
 @register_representation([ModalityType.IMAGE, ModalityType.VIDEO])
-class ResNet(UnimodalRepresentation):
-    def __init__(self, model_name="ResNet18", layer="avgpool", output_file=None):
+class VGG19(UnimodalRepresentation):
+    def __init__(self, layer="classifier.0", output_file=None):
         self.data_type = torch.bfloat16
-        self.model_name = model_name
+        self.model = models.vgg19(weights=models.VGG19_Weights.DEFAULT).to(get_device())
         parameters = self._get_parameters()
-        super().__init__("ResNet", ModalityType.EMBEDDING, parameters)
-
+        super().__init__("VGG19", ModalityType.EMBEDDING, parameters)
         self.output_file = output_file
         self.layer_name = layer
         self.model.eval()
@@ -52,65 +52,16 @@ class ResNet(UnimodalRepresentation):
 
         self.model.fc = Identity()
 
-    @property
-    def model_name(self):
-        return self._model_name
+    def _get_parameters(self):
+        parameters = {"layer_name": []}
 
-    @model_name.setter
-    def model_name(self, model_name):
-        self._model_name = model_name
-        if model_name == "ResNet18":
-            self.model = (
-                models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
-                .to(get_device())
-                .to(self.data_type)
-            )
+        parameters["layer_name"] = [
+            "features.35",
+            "classifier.0",
+            "classifier.3",
+            "classifier.6",
+        ]
 
-        elif model_name == "ResNet34":
-            self.model = models.resnet34(weights=models.ResNet34_Weights.DEFAULT).to(
-                get_device()
-            )
-            self.model = self.model.to(self.data_type)
-        elif model_name == "ResNet50":
-            self.model = (
-                models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
-                .to(get_device())
-                .to(self.data_type)
-            )
-
-        elif model_name == "ResNet101":
-            self.model = (
-                models.resnet101(weights=models.ResNet101_Weights.DEFAULT)
-                .to(get_device())
-                .to(self.data_type)
-            )
-
-        elif model_name == "ResNet152":
-            self.model = (
-                models.resnet152(weights=models.ResNet152_Weights.DEFAULT)
-                .to(get_device())
-                .to(self.data_type)
-            )
-        else:
-            raise NotImplementedError
-
-    def _get_parameters(self, high_level=True):
-        parameters = {"model_name": [], "layer_name": []}
-        for m in ["ResNet18", "ResNet34", "ResNet50", "ResNet101", "ResNet152"]:
-            parameters["model_name"].append(m)
-
-        if high_level:
-            parameters["layer_name"] = [
-                "conv1",
-                "layer1",
-                "layer2",
-                "layer3",
-                "layer4",
-                "avgpool",
-            ]
-        else:
-            for name, layer in self.model.named_modules():
-                parameters["layer_name"].append(name)
         return parameters
 
     def transform(self, modality):
@@ -121,31 +72,32 @@ class ResNet(UnimodalRepresentation):
         dataset = CustomDataset(modality.data, self.data_type, get_device())
         embeddings = {}
 
-        res5c_output = None
+        activations = {}
 
-        def get_features(name_):
+        def get_activation(name_):
             def hook(
                 _module: torch.nn.Module, input_: Tuple[torch.Tensor], output: Any
             ):
-                nonlocal res5c_output
-                res5c_output = output
+                activations[name_] = output
 
             return hook
 
-        if self.layer_name:
-            for name, layer in self.model.named_modules():
-                if name == self.layer_name:
-                    layer.register_forward_hook(get_features(name))
-                    break
+        digit = re.findall(r"\d+", self.layer_name)[0]
+        if "feature" in self.layer_name:
+            self.model.features[int(digit)].register_forward_hook(
+                get_activation(self.layer_name)
+            )
+        else:
+
+            self.model.classifier[int(digit)].register_forward_hook(
+                get_activation(self.layer_name)
+            )
 
         for instance in torch.utils.data.DataLoader(dataset):
             video_id = instance["id"][0]
             frames = instance["data"][0]
             embeddings[video_id] = []
-            batch_size = 64
-
-            if modality.modality_type == ModalityType.IMAGE:
-                frames = frames.unsqueeze(0)
+            batch_size = 32
 
             for start_index in range(0, len(frames), batch_size):
                 end_index = min(start_index + batch_size, len(frames))
@@ -153,10 +105,9 @@ class ResNet(UnimodalRepresentation):
                 frame_batch = frames[frame_ids_range]
 
                 _ = self.model(frame_batch)
-                output = res5c_output
-                if len(output.shape) > 2:
+                output = activations[self.layer_name]
+                if len(output.shape) == 4:
                     output = torch.nn.functional.adaptive_avg_pool2d(output, (1, 1))
-
                 embeddings[video_id].extend(
                     torch.flatten(output, 1)
                     .detach()

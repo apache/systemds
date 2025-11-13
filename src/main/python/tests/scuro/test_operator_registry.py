@@ -21,6 +21,7 @@
 
 import unittest
 
+from systemds.scuro import FrequencyMagnitude
 from systemds.scuro.representations.covarep_audio_features import (
     ZeroCrossing,
     Spectral,
@@ -29,6 +30,9 @@ from systemds.scuro.representations.covarep_audio_features import (
 )
 from systemds.scuro.representations.mfcc import MFCC
 from systemds.scuro.representations.swin_video_transformer import SwinVideoTransformer
+from systemds.scuro.representations.clip import CLIPText, CLIPVisual
+from systemds.scuro.representations.vgg import VGG19
+from systemds.scuro.representations.x3d import X3D, I3D
 from systemds.scuro.representations.wav2vec import Wav2Vec
 from systemds.scuro.representations.window_aggregation import (
     WindowAggregation,
@@ -39,6 +43,22 @@ from systemds.scuro.representations.bow import BoW
 from systemds.scuro.representations.word2vec import W2V
 from systemds.scuro.representations.tfidf import TfIdf
 from systemds.scuro.drsearch.operator_registry import Registry
+from systemds.scuro.representations.timeseries_representations import (
+    Max,
+    Mean,
+    Min,
+    RMS,
+    Sum,
+    Std,
+    Skew,
+    Kurtosis,
+    SpectralCentroid,
+    BandpowerFFT,
+    ACF,
+    Quantile,
+    ZeroCrossingRate,
+    FrequencyMagnitude,
+)
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations.average import Average
 from systemds.scuro.representations.bert import Bert
@@ -49,7 +69,6 @@ from systemds.scuro.representations.mel_spectrogram import MelSpectrogram
 from systemds.scuro.representations.spectrogram import Spectrogram
 from systemds.scuro.representations.hadamard import Hadamard
 from systemds.scuro.representations.resnet import ResNet
-from systemds.scuro.representations.sum import Sum
 from systemds.scuro.representations.multimodal_attention_fusion import AttentionFusion
 
 
@@ -71,16 +90,34 @@ class TestOperatorRegistry(unittest.TestCase):
         registry = Registry()
         assert registry.get_representations(ModalityType.VIDEO) == [
             ResNet,
-            # SwinVideoTransformer,
+            SwinVideoTransformer,
+            X3D,
+            VGG19,
+            CLIPVisual,
         ]
 
-    # def test_timeseries_representations_in_registry(self):
-    #     registry = Registry()
-    #     assert registry.get_representations(ModalityType.TIMESERIES) == [ResNet]
+    def test_timeseries_representations_in_registry(self):
+        registry = Registry()
+        assert registry.get_representations(ModalityType.TIMESERIES) == [
+            Mean,
+            Min,
+            Max,
+            Sum,
+            Std,
+            Skew,
+            Quantile,
+            Kurtosis,
+            RMS,
+            ZeroCrossingRate,
+            ACF,
+            FrequencyMagnitude,
+            SpectralCentroid,
+            BandpowerFFT,
+        ]
 
     def test_text_representations_in_registry(self):
         registry = Registry()
-        for representation in [BoW, TfIdf, W2V, Bert]:
+        for representation in [CLIPText, BoW, TfIdf, W2V, Bert]:
             assert representation in registry.get_representations(
                 ModalityType.TEXT
             ), f"{representation} not in registry"

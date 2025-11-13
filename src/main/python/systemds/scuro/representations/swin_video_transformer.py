@@ -34,7 +34,7 @@ from systemds.scuro.utils.torch_dataset import CustomDataset
 from systemds.scuro.utils.static_variables import get_device
 
 
-# @register_representation([ModalityType.VIDEO])
+@register_representation([ModalityType.VIDEO])
 class SwinVideoTransformer(UnimodalRepresentation):
     def __init__(self, layer_name="avgpool"):
         parameters = {
@@ -50,7 +50,7 @@ class SwinVideoTransformer(UnimodalRepresentation):
             ],
         }
         self.data_type = torch.float
-        super().__init__("SwinVideoTransformer", ModalityType.TIMESERIES, parameters)
+        super().__init__("SwinVideoTransformer", ModalityType.EMBEDDING, parameters)
         self.layer_name = layer_name
         self.model = swin3d_t(weights=models.video.Swin3D_T_Weights.KINETICS400_V1).to(
             get_device()
@@ -95,6 +95,7 @@ class SwinVideoTransformer(UnimodalRepresentation):
                 .detach()
                 .cpu()
                 .numpy()
+                .flatten()
                 .astype(modality.data_type)
             )
 

@@ -20,12 +20,13 @@
 # -------------------------------------------------------------
 from typing import Dict
 
+import numpy as np
 import torch
 import torchvision.transforms as transforms
 
 
 class CustomDataset(torch.utils.data.Dataset):
-    def __init__(self, data, data_type, device, size=None):
+    def __init__(self, data, data_type, device, size=None, tf=None):
         self.data = data
         self.data_type = data_type
         self.device = device
@@ -33,7 +34,7 @@ class CustomDataset(torch.utils.data.Dataset):
         if size is None:
             self.size = (256, 224)
 
-        self.tf = transforms.Compose(
+        tf_default = transforms.Compose(
             [
                 transforms.ToPILImage(),
                 transforms.Resize(self.size[0]),
@@ -46,6 +47,11 @@ class CustomDataset(torch.utils.data.Dataset):
             ]
         )
 
+        if tf is None:
+            self.tf = tf_default
+        else:
+            self.tf = tf
+
     def __getitem__(self, index) -> Dict[str, object]:
         data = self.data[index]
         output = torch.empty(
@@ -54,12 +60,20 @@ class CustomDataset(torch.utils.data.Dataset):
             device=self.device,
         )
 
-        for i, d in enumerate(data):
-            if data[0].ndim < 3:
-                d = torch.tensor(d)
-                d = d.repeat(3, 1, 1)
+        if isinstance(data, np.ndarray) and data.ndim == 3:
+            # image
+            data = torch.tensor(data).permute(2, 0, 1)
+            output = self.tf(data).to(self.device)
+        else:
+            for i, d in enumerate(data):
+                if data[0].ndim < 3:
+                    d = torch.tensor(d)
+                    d = d.repeat(3, 1, 1)
 
-            output[i] = self.tf(d)
+                tf = self.tf(d)
+                if tf.shape[0] != 3:
+                    tf = tf[:3, :, :]
+                output[i] = tf
 
         return {"id": index, "data": output}
 

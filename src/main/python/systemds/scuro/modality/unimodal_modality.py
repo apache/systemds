@@ -165,8 +165,9 @@ class UnimodalModality(Modality):
                         padded = np.pad(
                             embeddings,
                             pad_width=(
-                                (0, padding_needed),
-                                (0, 0),
+                                (0, padding_needed)
+                                if len(embeddings.shape) == 1
+                                else ((0, padding_needed), (0, 0))
                             ),
                             mode="constant",
                             constant_values=0,

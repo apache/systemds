@@ -151,9 +151,14 @@ class ACF(TimeSeriesRepresentation):
 
     def compute_feature(self, signal):
         x = np.asarray(signal) - np.mean(signal)
-        if self.k >= len(x):
-            return 0.0
-        return np.array(np.correlate(x[: -self.k], x[self.k :])[0] / np.dot(x, x))
+        k = int(self.k)
+        if k <= 0 or k >= len(x):
+            return np.array(0.0)
+        den = np.dot(x, x)
+        if not np.isfinite(den) or np.isclose(den, 0.0):
+            return np.array(0.0)
+        corr = np.correlate(x[:-k], x[k:])[0]
+        return np.array(corr / den)
 
     def get_k_values(self, max_length, percent=0.2, num=10, log=False):
         # TODO: Probably would be useful to invoke this function while tuning the hyperparameters depending on the max length of the singal

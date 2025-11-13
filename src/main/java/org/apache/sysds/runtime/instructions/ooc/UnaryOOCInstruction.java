@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.ooc;
 
+import org.apache.sysds.hops.UnaryOp;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -32,6 +33,12 @@ public class UnaryOOCInstruction extends ComputationOOCInstruction {
 
 	protected UnaryOOCInstruction(OOCType type, UnaryOperator op, CPOperand in1, CPOperand out, String opcode, String istr) {
 		super(type, op, in1, out, opcode, istr);
+
+		_uop = op;
+	}
+
+	protected UnaryOOCInstruction(OOCType type, UnaryOperator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
+		super(type, op, in1, in2, out, opcode, istr);
 
 		_uop = op;
 	}

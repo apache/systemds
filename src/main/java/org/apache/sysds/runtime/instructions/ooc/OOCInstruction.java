@@ -53,7 +53,7 @@ public abstract class OOCInstruction extends Instruction {
 	private static final AtomicInteger nextStreamId = new AtomicInteger(0);
 
 	public enum OOCType {
-		Reblock, Tee, Binary, Unary, AggregateUnary, AggregateBinary, MAPMM, MMTSJ, Reorg, CM, Ctable, MatrixIndexing
+		Reblock, Tee, Binary, Unary, AggregateUnary, AggregateBinary, MAPMM, MMTSJ, Reorg, CM, Ctable, MatrixIndexing, Rand
 	}
 
 	protected final OOCInstruction.OOCType _ooctype;

@@ -20,20 +20,30 @@
 package org.apache.sysds.runtime.instructions.ooc;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.sysds.common.Opcodes;
+import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.functionobjects.ParameterizedBuiltin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.BooleanObject;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.instructions.cp.ScalarObjectFactory;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 
 import java.util.LinkedHashMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ParameterizedBuiltinOOCInstruction extends ComputationOOCInstruction {
 
@@ -62,6 +72,9 @@ public class ParameterizedBuiltinOOCInstruction extends ComputationOOCInstructio
 			func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 			return new ParameterizedBuiltinOOCInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 		}
+		else if(opcode.equalsIgnoreCase(Opcodes.CONTAINS.toString())) {
+			return new ParameterizedBuiltinOOCInstruction(null, paramsMap, out, opcode, str);
+		}
 		else
 			throw new NotImplementedException(); // TODO
 	}
@@ -83,6 +96,44 @@ public class ParameterizedBuiltinOOCInstruction extends ComputationOOCInstructio
 
 				ec.getMatrixObject(output).setStreamHandle(qOut);
 			}
+		}
+		else if(instOpcode.equalsIgnoreCase(Opcodes.CONTAINS.toString())) {
+			MatrixObject targetObj = ec.getMatrixObject(params.get("target"));
+			OOCStream<IndexedMatrixValue> qIn = targetObj.getStreamHandle();
+			Data pattern = ec.getVariable(params.get("pattern"));
+
+			if( pattern == null ) //literal
+				pattern = ScalarObjectFactory.createScalarObject(Types.ValueType.FP64, params.get("pattern"));
+
+			if (!pattern.getDataType().isScalar())
+				throw new NotImplementedException();
+
+			Data finalPattern = pattern;
+
+			AtomicBoolean found = new AtomicBoolean(false);
+
+			MutableObject<CompletableFuture<Void>> futureRef = new MutableObject<>();
+			CompletableFuture<Void> future = submitOOCTasks(qIn, tmp -> {
+				boolean contains = ((MatrixBlock)tmp.getValue()).containsValue(((ScalarObject)finalPattern).getDoubleValue());
+
+				if (contains) {
+					found.set(true);
+
+					// Now we may complete the future
+					if (futureRef.getValue() != null)
+						futureRef.getValue().complete(null);
+				}
+			}, () -> {});
+			futureRef.setValue(future);
+
+			try {
+				futureRef.getValue().get();
+			} catch (InterruptedException | ExecutionException e) {
+				throw new DMLRuntimeException(e);
+			}
+
+			boolean ret = found.get();
+			ec.setScalarOutput(output.getName(), new BooleanObject(ret));
 		}
 	}
 }

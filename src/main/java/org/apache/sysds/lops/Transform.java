@@ -179,7 +179,7 @@ public class Transform extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( this.prepOutputOperand(output));
 		
-		if( (getExecType()==ExecType.CP || getExecType()==ExecType.FED)
+		if( (getExecType()==ExecType.CP || getExecType()==ExecType.FED || getExecType()==ExecType.OOC)
 			&& (_operation == ReOrgOp.TRANS || _operation == ReOrgOp.REV || _operation == ReOrgOp.SORT) ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _numThreads );

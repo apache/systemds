@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.instructions.ooc;
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.lops.MMTSJ;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
@@ -77,18 +76,20 @@ public class TSMMOOCInstruction extends ComputationOOCInstruction {
 		}
 		
 		int dim = _type.isLeft() ? nCols : nRows;
-		MatrixBlock resultBlock = new MatrixBlock(dim, dim, false);
-		try {
-			IndexedMatrixValue tmp = null;
-			// aggregate partial tsmm outputs into result as inputs stream in
-			while((tmp = qIn.dequeue()) != LocalTaskQueue.NO_MORE_TASKS) {
-				MatrixBlock partialResult = ((MatrixBlock) tmp.getValue())
-					.transposeSelfMatrixMultOperations(new MatrixBlock(), _type);
-				resultBlock.binaryOperationsInPlace(plus, partialResult);
-			}
-		}
-		catch(Exception ex) {
-			throw new DMLRuntimeException(ex);
+		MatrixBlock resultBlock = null;
+
+		OOCStream<MatrixBlock> tmpStream = createWritableStream();
+
+		mapOOC(qIn, tmpStream,
+			tmp -> ((MatrixBlock) tmp.getValue())
+				.transposeSelfMatrixMultOperations(new MatrixBlock(), _type));
+
+		MatrixBlock tmp;
+		while ((tmp = tmpStream.dequeue()) != LocalTaskQueue.NO_MORE_TASKS) {
+			if (resultBlock == null)
+				resultBlock = tmp;
+			else
+				resultBlock.binaryOperationsInPlace(plus, tmp);
 		}
 
 		ec.setMatrixOutput(output.getName(), resultBlock);

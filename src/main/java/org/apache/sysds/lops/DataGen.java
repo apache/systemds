@@ -199,7 +199,7 @@ public class DataGen extends Lop
 		sb.append(iLop == null ? "" : iLop.prepScalarLabel()); 
 		sb.append(OPERAND_DELIMITOR);
 		
-		if( getExecType() == ExecType.CP ) {
+		if( getExecType() == ExecType.CP || getExecType() == ExecType.OOC ) {
 			//append degree of parallelism
 			sb.append( _numThreads );
 			sb.append( OPERAND_DELIMITOR );

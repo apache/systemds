@@ -80,36 +80,37 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 		});
 	}
 
-	private boolean fetchFromStream() throws InterruptedException {
-		synchronized (this) {
-			if(!_cacheInProgress)
-				throw new DMLRuntimeException("Stream is closed");
-		}
+	private synchronized boolean fetchFromStream() throws InterruptedException {
+		if(!_cacheInProgress)
+			throw new DMLRuntimeException("Stream is closed");
 
 		IndexedMatrixValue task = _source.dequeue();
 
-		synchronized (this) {
-			if(task != LocalTaskQueue.NO_MORE_TASKS) {
-				OOCEvictionManager.put(_streamId, _numBlocks, task);
-				if (_index != null)
-					_index.put(task.getIndexes(), _numBlocks);
-				_numBlocks++;
-				notifyAll();
-				return false;
-			}
-			else {
-				_cacheInProgress = false; // caching is complete
-				notifyAll();
-				return true;
-			}
+		if(task != LocalTaskQueue.NO_MORE_TASKS) {
+			OOCEvictionManager.put(_streamId, _numBlocks, task);
+			if (_index != null)
+				_index.put(task.getIndexes(), _numBlocks);
+			_numBlocks++;
+			notifyAll();
+			return false;
+		}
+		else {
+			_cacheInProgress = false; // caching is complete
+			notifyAll();
+			return true;
 		}
 	}
 
 	public synchronized IndexedMatrixValue get(int idx) throws InterruptedException {
 		while (true) {
-			if (idx < _numBlocks)
-				return OOCEvictionManager.get(_streamId, idx);
-			else if (!_cacheInProgress)
+			if (idx < _numBlocks) {
+				IndexedMatrixValue out = OOCEvictionManager.get(_streamId, idx);
+
+				if (_index != null) // Ensure index is up to date
+					_index.putIfAbsent(out.getIndexes(), idx);
+
+				return out;
+			} else if (!_cacheInProgress)
 				return (IndexedMatrixValue)LocalTaskQueue.NO_MORE_TASKS;
 
 			wait();

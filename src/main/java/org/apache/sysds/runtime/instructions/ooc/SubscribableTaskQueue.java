@@ -26,7 +26,7 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 	private Runnable _subscriber;
 
 	@Override
-	public void enqueue(T t) {
+	public synchronized void enqueue(T t) {
 		try {
 			super.enqueueTask(t);
 		}

@@ -30,6 +30,10 @@ public class IndexRange implements Serializable
 	public long rowEnd = 0;
 	public long colStart = 0;
 	public long colEnd = 0;
+
+	public static IndexRange intersect(IndexRange a, IndexRange b) {
+		return new IndexRange(Math.max(a.rowStart, b.rowStart), Math.min(a.rowEnd, b.rowEnd), Math.max(a.colStart, b.colStart), Math.min(a.colEnd, b.colEnd));
+	}
 	
 	public IndexRange(long rs, long re, long cs, long ce) {
 		set(rs, re, cs, ce);
@@ -52,6 +56,10 @@ public class IndexRange implements Serializable
 			colStart + delta, colEnd + delta);
 	}
 
+	public IndexRange add(long rowDelta, long colDelta) {
+		return new IndexRange(rowStart + rowDelta, rowEnd + rowDelta, colStart + colDelta, colEnd + colDelta);
+	}
+
 	public boolean inColRange(long col) {
 		return col >= colStart && col < colEnd;
 	}
@@ -66,6 +74,10 @@ public class IndexRange implements Serializable
 
 	public long rowSpan() {
 		return rowEnd - rowStart;
+	}
+
+	public boolean isWithin(long row, long col) {
+		return inColRange(col) && inRowRange(row);
 	}
 
 	@Override

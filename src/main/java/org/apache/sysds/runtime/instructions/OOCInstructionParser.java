@@ -29,6 +29,7 @@ import org.apache.sysds.runtime.instructions.ooc.CSVReblockOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.CentralMomentOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.CtableOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.IndexingOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.DataGenOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.OOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.ParameterizedBuiltinOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.ReblockOOCInstruction;
@@ -84,6 +85,8 @@ public class OOCInstructionParser extends InstructionParser {
 				return ParameterizedBuiltinOOCInstruction.parseInstruction(str);
 			case MatrixIndexing:
 				return IndexingOOCInstruction.parseInstruction(str);
+			case Rand:
+				return DataGenOOCInstruction.parseInstruction(str);
 
 			default:
 				throw new DMLRuntimeException("Invalid OOC Instruction Type: " + ooctype);

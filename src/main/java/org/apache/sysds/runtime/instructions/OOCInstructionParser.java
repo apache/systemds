@@ -25,10 +25,12 @@ import org.apache.sysds.common.InstructionType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.ooc.AggregateUnaryOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.BinaryOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.CSVReblockOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.CentralMomentOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.CtableOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.DataGenOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.OOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.ParameterizedBuiltinOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.ReblockOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.TSMMOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.UnaryOOCInstruction;
@@ -57,6 +59,8 @@ public class OOCInstructionParser extends InstructionParser {
 		switch(ooctype) {
 			case Reblock:
 				return ReblockOOCInstruction.parseInstruction(str);
+			case CSVReblock:
+				return CSVReblockOOCInstruction.parseInstruction(str);
 			case AggregateUnary:
 				return AggregateUnaryOOCInstruction.parseInstruction(str);
 			case Unary:
@@ -78,6 +82,8 @@ public class OOCInstructionParser extends InstructionParser {
 				return CtableOOCInstruction.parseInstruction(str);
 			case Rand:
 				return DataGenOOCInstruction.parseInstruction(str);
+			case ParameterizedBuiltin:
+				return ParameterizedBuiltinOOCInstruction.parseInstruction(str);
 
 			default:
 				throw new DMLRuntimeException("Invalid OOC Instruction Type: " + ooctype);

@@ -44,8 +44,8 @@ public class CSVReBlock extends Lop
 		
 		_blocksize = blen;
 		
-		if(et == ExecType.SPARK) {
-			lps.setProperties( inputs, ExecType.SPARK);
+		if(et == ExecType.SPARK || et == ExecType.OOC) {
+			lps.setProperties( inputs, et );
 		}
 		else {
 			throw new LopsException("Incorrect execution type for CSVReblock:" + et);

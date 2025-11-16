@@ -135,12 +135,12 @@ public class OOCEvictionManager {
 
 	private static class partitionFile {
 		final String filePath;
-		final long streamId;
+		//final long streamId;
 
 
 		private partitionFile(String filePath, long streamId) {
 			this.filePath = filePath;
-			this.streamId = streamId;
+			//this.streamId = streamId;
 		}
 	}
 
@@ -152,13 +152,13 @@ public class OOCEvictionManager {
 		private BlockState state = BlockState.HOT;
 		private IndexedMatrixValue value;
 		private final long streamId;
-		private final int blockId;
+		//private final int blockId;
 		private final long size;
 
 		BlockEntry(IndexedMatrixValue value, long streamId, int blockId, long size) {
 			this.value = value;
 			this.streamId = streamId;
-			this.blockId = blockId;
+			//this.blockId = blockId;
 			this.size = size;
 		}
 	}
@@ -437,6 +437,7 @@ public class OOCEvictionManager {
 		return mb.getExactSerializedSize();
 	}
 	
+	@SuppressWarnings("unused")
 	private static Map.Entry<String, BlockEntry> removeFirstFromCache() {
 		synchronized (_cacheLock) {
 

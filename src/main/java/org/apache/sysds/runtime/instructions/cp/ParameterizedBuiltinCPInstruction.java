@@ -57,6 +57,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 import org.apache.sysds.runtime.transform.TfUtils;
+import org.apache.sysds.runtime.transform.decode.ColumnDecoder;
+import org.apache.sysds.runtime.transform.decode.ColumnDecoderFactory;
 import org.apache.sysds.runtime.transform.decode.Decoder;
 import org.apache.sysds.runtime.transform.decode.DecoderFactory;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
@@ -349,11 +351,18 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			FrameBlock meta = ec.getFrameInput(params.get("meta"));
 			String[] colnames = meta.getColumnNames();
 
-			// compute transformdecode
-			Decoder decoder = DecoderFactory
-				.createDecoder(getParameterMap().get("spec"), colnames, null, meta, data.getNumColumns());
-			FrameBlock fbout = decoder.decode(data, new FrameBlock(decoder.getSchema()));
+
+			ColumnDecoder decoder = ColumnDecoderFactory
+					.createDecoder(getParameterMap().get("spec"), colnames, null, meta, meta.getNumColumns());
+			FrameBlock out = new FrameBlock(decoder.getMultiSchema());
+			FrameBlock fbout = decoder.columnDecode(data, out);
 			fbout.setColumnNames(Arrays.copyOfRange(colnames, 0, fbout.getNumColumns()));
+
+
+			//Decoder decoder = DecoderFactory
+			//	.createDecoder(getParameterMap().get("spec"), colnames, null, meta, data.getNumColumns());
+			//FrameBlock fbout = decoder.decode(data, new FrameBlock(decoder.getSchema()));
+			//fbout.setColumnNames(Arrays.copyOfRange(colnames, 0, fbout.getNumColumns()));
 
 			// release locks
 			ec.setFrameOutput(output.getName(), fbout);

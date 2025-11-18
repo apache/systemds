@@ -9,21 +9,28 @@
    
 ## Setup
 
-- First, install [Docker](https://docs.docker.com/get-started/get-docker/) and its necessary libraries.
+1. First, install [Docker](https://docs.docker.com/get-started/get-docker/) and its necessary libraries.
   
   For Ubuntu, there is the [following tutorial using apt repository](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository). You can add [Docker Desktop](https://docs.docker.com/desktop/setup/install/linux/ubuntu/), too.
   
 
-- Now, follow the tutorials to install Docker versions of database systems [SystemDS](https://apache.github.io/systemds/site/docker), [PostgreSQL](https://hub.docker.com/_/postgres), ....
+2. Now, follow the tutorials to install Docker versions of database systems [SystemDS](https://apache.github.io/systemds/site/docker), [PostgreSQL](https://hub.docker.com/_/postgres), ....
   
 
 If the example in the SystemDS link does not work, use that code line instead. Create a DML file, open its directory and execute the code.
 ```
-docker run -it --rm -v $PWD:/scripts apache/systemds -f /scripts/[file_name].dml
+docker run -it --rm -v $PWD:/scripts apache/systemds:nightly -f /scripts/[file_name].dml
 # Example
-docker run -it --rm -v $PWD:/scripts apache/systemds -f /scripts/hello.dml
+docker run -it --rm -v $PWD:/scripts apache/systemds:nightly -f /scripts/hello.dml
 ```
---- SSB ... 
+3. Clone the git repository of [ssb-dbgen (SSB data set generator)](https://github.com/eyalroz/ssb-dbgen/tree/master) and generate data with it. 
+```
+# Build the generator
+cmake -B ./build && cmake --build ./build
+# Run the generator (with -s )
+build/dbgen -b dists.dss -v -s 1
+```
+For more options look into the original documentation. 
 
 ## General steps
 - Prepare the setup.

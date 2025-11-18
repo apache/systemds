@@ -1,0 +1,84 @@
+/*
+docker run -it --rm -v $PWD:/scripts/ apache/systemds -f /scripts/queries/hello6.dml -nvargs input_dir="/scripts/data"
+WARNING: Using incubator modules: jdk.incubator.vector
+Hello SystemDS!
+Hello, World!
+Loading tables from directory: /scripts/data
+SystemDS Statistics:
+Total execution time:           1.992 sec.
+
+
+An Error Occurred : 
+      DMLRuntimeException -- org.apache.sysds.runtime.DMLRuntimeException: ERROR: Runtime error in program block generated from statement block between lines 8 and 58 -- Error evaluating instruction: CP°FCall°./scripts/builtin/raJoin.dml°m_raJoin°true°5°1°A=_mVar88·MATRIX·FP64°colA=1·SCALAR·INT64·true°B=_mVar102·MATRIX·FP64°colB=1·SCALAR·INT64·true°method=hash·SCALAR·STRING·true°joined_matrix
+      DMLRuntimeException -- ERROR: Runtime error in program block generated from statement block between lines 8 and 58 -- Error evaluating instruction: CP°FCall°./scripts/builtin/raJoin.dml°m_raJoin°true°5°1°A=_mVar88·MATRIX·FP64°colA=1·SCALAR·INT64·true°B=_mVar102·MATRIX·FP64°colB=1·SCALAR·INT64·true°method=hash·SCALAR·STRING·true°joined_matrix
+      DMLRuntimeException -- error executing function ./scripts/builtin/raJoin.dml::m_raJoin
+      DMLRuntimeException -- ERROR: Runtime error in function program block generated from function statement block between lines 39 and 222 -- Error evaluating function program block
+      DMLRuntimeException -- ERROR: Runtime error in program block generated from statement block between lines 137 and 145 -- Error evaluating instruction: CP°ba+*°_mVar169·MATRIX·FP64°A·MATRIX·FP64°_mVar170·MATRIX·FP64°8
+         RuntimeException -- Dimensions do not match for matrix multiplication (2496!=2557).
+
+*/
+#Start in systemds/scripts/ssb
+#docker run -it -v $PWD:/scripts/ apache/systemds -f /scripts/queries/hello3.dml -nvargs input_dir="/scripts/data"
+
+#Run and delete the container immediately.
+#docker run -it --rm -v $PWD:/scripts/ apache/systemds -f /scripts/queries/hello3.dml -nvargs input_dir="/scripts/data"
+
+print("Hello SystemDS!")
+print("Hello, World!")
+
+/* DML-script implementing the ssb query Q1.1 in SystemDS.
+**input_dir="/scripts/ssb/data"
+SELECT COUNT(*)
+FROM lineorder, date
+WHERE
+    lo_orderdate = d_datekey
+    AND lo_quantity > 25;
+
+Usage: (We did not use here)
+./bin/systemds scripts/ssb/queries/q1_1.dml -nvargs input_dir="/path/to/data"
+./bin/systemds scripts/ssb/queries/q1_1.dml -nvargs input_dir="/Users/ghafekalsaho/Desktop/data"
+or with explicit -f flag:
+./bin/systemds -f scripts/ssb/queries/q1_1.dml -nvargs input_dir="/path/to/data"
+
+Parameters:
+input_dir - Path to input directory containing the table files (e.g., ./data)
+*/
+# -- SOURCING THE RA-FUNCTIONS --
+source("./scripts/builtin/raSelection.dml") as raSel
+source("./scripts/builtin/raJoin.dml") as raJoin
+
+# -- PARAMETER HANDLING --
+input_dir = ifdef($input_dir, "./data");
+print("Loading tables from directory: " + input_dir);
+#input_dir = ifdef($input_dir, "./data");
+#print("Loading tables from directory: " + input_dir);
+
+# -- READING INPUT FILES --
+# CSV TABLES
+date_csv = read(input_dir + "/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+lineorder_csv = read(input_dir + "/lineorder.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+
+# -- PREPARING --
+# EXTRACTING MINIMAL DATE DATA TO OPTIMIZE RUNTIME => COL-1 : DATE-KEY | COL-5 : YEAR
+date_csv_min = cbind(date_csv[, 1], date_csv[, 5]);
+date_matrix_min = as.matrix(date_csv_min);
+
+# EXTRACTING MINIMAL LINEORDER DATA TO OPTIMIZE RUNTIME => COL-6 : LO_ORDERDATE |
+# COL-9 : LO_QUANTITY
+lineorder_csv_min = cbind(lineorder_csv[, 16], lineorder_csv[, 6], lineorder_csv[, 9]);
+lineorder_matrix_min = as.matrix(lineorder_csv_min);
+
+# LO_QUANTITY < 25
+lo_quan_filt = raSel::m_raSelection(lineorder_matrix_min, col=3, op="<", val=25);
+
+# -- JOIN TABLES WITH RA-JOIN FUNCTION --
+# JOINING FILTERED LINEORDER TABLE WITH FILTERED DATE TABLE WHERE LO_ORDERDATE = D_DATEKEY
+joined_matrix = raJoin::m_raJoin(A=date_matrix_min, colA=1, B=lo_quan_filt, colB=1, method="hash");
+print("LO-DATE JOINED.");
+
+count = nrow(joined_matrix[,1])
+#print("COUNT: " + count)
+print("COUNT: " + as.integer(count))
+
+#print("Hello6 finished.\n");
+

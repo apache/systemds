@@ -74,6 +74,9 @@ docs/_site
 # TODO Make the API auto generate and relocate into this api folder for webpage
 # docs/api
 
+# Input dataset
+scripts/ssb/data
+
 # Test Artifacts
 src/test/scripts/**/*.dmlt
 src/test/scripts/functions/mlcontextin/

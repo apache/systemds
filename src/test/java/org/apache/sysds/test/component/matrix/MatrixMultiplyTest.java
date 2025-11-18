@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import java.io.File;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.functionobjects.Multiply;
@@ -34,14 +36,30 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(value = Parameterized.class)
-public class MatrixMultiplyTest {
+public class MatrixMultiplyTest extends AutomatedTestBase{
 	protected static final Log LOG = LogFactory.getLog(MatrixMultiplyTest.class.getName());
+
+	private final static String TEST_DIR = "component/matrix";
+
+	protected String getTestClassDir() {
+		return getTestDir() + this.getClass().getSimpleName() + "/";
+	}
+
+	protected String getTestName() {
+		return "matrixMultiply";
+	}
+
+	protected String getTestDir() {
+		return TEST_DIR;
+	}
 
 	// left side
 	private final MatrixBlock left;
@@ -281,6 +299,17 @@ public class MatrixMultiplyTest {
 		AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 		AggregateBinaryOperator mult = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg, k);
 		return a.aggregateBinaryOperations(a, b, mult);
+	}
+
+	@Override
+	public void setUp() {
+		TestUtils.clearAssertionInformation();
+		addTestConfiguration(getTestName(), new TestConfiguration(getTestClassDir(), getTestName()));
+	}
+
+	@Override
+	protected File getConfigTemplateFile() {
+		return new File("./src/test/scripts/SystemDS-config-native.xml");
 	}
 
 }

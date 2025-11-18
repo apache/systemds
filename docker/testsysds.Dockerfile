@@ -18,8 +18,8 @@
 # under the License.
 #
 #-------------------------------------------------------------
-# Stage 1: Build SEAL
-FROM ubuntu:noble@sha256:728785b59223d755e3e5c5af178fab1be7031f3522c5ccd7a0b32b80d8248123 AS seal-build
+# Stage 1: Build SEAL, OpenBLAS, MKL
+FROM ubuntu:noble@sha256:728785b59223d755e3e5c5af178fab1be7031f3522c5ccd7a0b32b80d8248123 AS build
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -28,18 +28,38 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tar \
     git \
     ca-certificates \
+    gnupg \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /seal
 
 # Install SEAL
-RUN wget -qO- https://github.com/microsoft/SEAL/archive/refs/tags/v3.7.0.tar.gz | tar xzf - \
-    && cd SEAL-3.7.0 \
+ARG SEAL_VERSION="3.7.0"
+RUN wget -qO- https://github.com/microsoft/SEAL/archive/refs/tags/v${SEAL_VERSION}.tar.gz | tar xzf - \
+    && cd SEAL-${SEAL_VERSION} \
     && cmake -S . -B build -DBUILD_SHARED_LIBS=ON \
     && cmake --build build \
     && cmake --install build --prefix /seal-install
 
-# Stage 2: Final image with R, JDK, Maven, SEAL
+WORKDIR /openBLAS
+
+# Install OpenBLAS
+ARG OPENBLAS_VERSION="0.3.26"
+RUN wget -qO- https://github.com/OpenMathLib/OpenBLAS/archive/refs/tags/v${OPENBLAS_VERSION}.tar.gz | tar xzf - \
+    && cd OpenBLAS-${OPENBLAS_VERSION} \
+    && make -j$(nproc) \
+    && make install PREFIX=/openBLAS-install
+
+WORKDIR /mkl
+
+# Install MKL
+RUN wget -qO- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
+    | gpg --dearmor | tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null \
+    && echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" \
+    | tee /etc/apt/sources.list.d/oneAPI.list \
+    && apt-get update && apt-get install -y --no-install-recommends intel-oneapi-mkl-devel
+
+# Stage 2: Final image with R, JDK, Maven, SEAL, OpenBLAS, MKL
 FROM ubuntu:noble@sha256:728785b59223d755e3e5c5af178fab1be7031f3522c5ccd7a0b32b80d8248123 
 
 WORKDIR /usr/src/
@@ -71,6 +91,7 @@ RUN apt-get install -y --no-install-recommends \
     libssl-dev \
 	r-base-dev \
 	r-base-core \
+    gfortran \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
 	&& mkdir -p /usr/lib/jvm \
 	&& wget -qO- \
@@ -101,8 +122,16 @@ RUN mkdir -p $HADOOP_HOME/lib/native \
 	rm -rf native
 
 # Copy SEAL
-COPY --from=seal-build /seal-install/lib/ /usr/local/lib/
-COPY --from=seal-build /seal-install/include/ /usr/local/include/
+COPY --from=build /seal-install/lib/ /usr/local/lib/
+COPY --from=build /seal-install/include/ /usr/local/include/
+
+# Copy OpenBLAS
+COPY --from=build /openBLAS-install/lib/ /usr/local/lib/
+COPY --from=build /openBLAS-install/include/ /usr/local/include/
+
+# Copy MKL
+COPY --from=build /opt/intel/oneapi/mkl/2025.3/lib /usr/local/lib/
+COPY --from=build /opt/intel/oneapi/mkl/2025.3/include /usr/local/include/
 
 ENV LD_LIBRARY_PATH=/opt/hadoop/lib/native;/usr/local/lib/
 

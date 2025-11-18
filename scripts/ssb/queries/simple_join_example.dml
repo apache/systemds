@@ -1,5 +1,5 @@
 /*
-docker run -it --rm -v $PWD:/scripts/ apache/systemds -f /scripts/queries/hello6.dml -nvargs input_dir="/scripts/data"
+docker run -it --rm -v $PWD:/scripts/ apache/systemds -f /scripts/queries/simple_join_example.dml -nvargs input_dir="/scripts/data"
 WARNING: Using incubator modules: jdk.incubator.vector
 Hello SystemDS!
 Hello, World!
@@ -18,10 +18,10 @@ An Error Occurred :
 
 */
 #Start in systemds/scripts/ssb
-#docker run -it -v $PWD:/scripts/ apache/systemds -f /scripts/queries/hello3.dml -nvargs input_dir="/scripts/data"
+#docker run -it -v $PWD:/scripts/ apache/systemds -f /scripts/queries/simple_join_example.dml -nvargs input_dir="/scripts/data"
 
 #Run and delete the container immediately.
-#docker run -it --rm -v $PWD:/scripts/ apache/systemds -f /scripts/queries/hello3.dml -nvargs input_dir="/scripts/data"
+#docker run -it --rm -v $PWD:/scripts/ apache/systemds -f /scripts/queries/simple_join_example.dml -nvargs input_dir="/scripts/data"
 
 print("Hello SystemDS!")
 print("Hello, World!")
@@ -80,5 +80,5 @@ count = nrow(joined_matrix[,1])
 #print("COUNT: " + count)
 print("COUNT: " + as.integer(count))
 
-#print("Hello6 finished.\n");
+#print("Helsimple_join_example finished.\n");
 

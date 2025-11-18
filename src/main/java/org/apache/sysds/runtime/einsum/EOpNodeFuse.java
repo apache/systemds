@@ -74,11 +74,11 @@ public class EOpNodeFuse extends EOpNode {
         AB_BA_B_A_AZ__ZB,
     }
 
-    public final EinsumRewriteType einsumRewriteType;
+    public EinsumRewriteType einsumRewriteType;
     public final List<List<EOpNode>> operands;
 
-    private EOpNodeFuse(Character c1, Character c2, EinsumRewriteType einsumRewriteType, List<EOpNode>... operands) {
-        super(c1,c2);
+    private EOpNodeFuse(Character c1, Character c2, Integer dim1, Integer dim2, EinsumRewriteType einsumRewriteType, List<EOpNode>... operands) {
+        super(c1,c2, dim1, dim2);
         this.einsumRewriteType = einsumRewriteType;
         this.operands = Arrays.asList(operands);
     }
@@ -202,7 +202,7 @@ public class EOpNodeFuse extends EOpNode {
                 if(AZCandidates.size()==1){
                     if(!doSumB) {
                         // check if outer is possible AB,...,AZ->BZ
-                        if(!EinsumCPInstruction.FUSE_OUTER_MULTIPLY || !LibMatrixMult.isSkinnyRightHandSide(charToSize.get(AB.charAt(0)), charToSize.get(AB.charAt(1)),  charToSize.get(AB.charAt(0)),charToSize.get(AZCandidates.iterator().next().charAt(1)),false)) {
+                        if(!EinsumCPInstruction.FUSE_OUTER_MULTIPLY || !LibMatrixMult.isSkinnyRightHandSide(charToSize.get(AB.charAt(0)), charToSize.get(AB.charAt(1)),  charToSize.get(AB.charAt(0)),charToSize.get(AZCandidates.iterator().next().charAt(1)),true)) {
                             includeAz=false;
                         }
                     }
@@ -253,8 +253,8 @@ public class EOpNodeFuse extends EOpNode {
         String A = AB.substring(0,1);
         char a = A.charAt(0);
         char b = B.charAt(0);
-        Character c1 = null;
-        Character c2 = null;
+        Character c1 = null, c2 = null;
+        Integer dim1 = null, dim2 = null;
         EinsumRewriteType t = null;
 
         if(!AZs.isEmpty()){
@@ -311,9 +311,11 @@ public class EOpNodeFuse extends EOpNode {
         }
         if(c1 != null){
             charToOccurences.put(c1, charToOccurences.get(c1)+1);
+			dim1 = charToSize.get(c1);
         }
         if(c2 != null){
             charToOccurences.put(c2, charToOccurences.get(c2)+1);
+			dim2 = charToSize.get(c2);
         }
         HashSet<EOpNode> usedOperands = new HashSet<>();
 
@@ -340,7 +342,7 @@ public class EOpNodeFuse extends EOpNode {
             }
         }
 
-        var e = new EOpNodeFuse(c1, c2, t,
+        var e = new EOpNodeFuse(c1, c2, dim1, dim2, t,
                 ABs,
                 BAs,
                 Bs,
@@ -445,8 +447,10 @@ public class EOpNodeFuse extends EOpNode {
     }
 
     @Override
-    public void reorderChildren(Character outChar1, Character outChar2) {
-
+	public EOpNode reorderChildrenAndOptimize(EOpNode parent, Character outChar1, Character outChar2) {
+		for(List<EOpNode> list : operands)
+			for(int i = 0; i < list.size(); i++) list.set(i,list.get(i).reorderChildrenAndOptimize(this, list.get(i).c1, list.get(i).c2));
+		return this;
     }
 
     private static @NotNull List<MatrixBlock> multiplyVectorsIntoOne(List<MatrixBlock> mbs, int size) {

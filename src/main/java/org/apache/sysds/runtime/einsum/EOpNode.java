@@ -21,15 +21,20 @@ package org.apache.sysds.runtime.einsum;
 
 import org.apache.commons.logging.Log;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import scala.Int;
 
 import java.util.ArrayList;
 
 public abstract class EOpNode {
     public Character c1;
-    public Character c2; // nullable
-    public EOpNode(Character c1, Character c2){
+    public Character c2;
+	public Integer dim1;
+	public Integer dim2;
+    public EOpNode(Character c1, Character c2, Integer dim1, Integer dim2) {
         this.c1 = c1;
         this.c2 = c2;
+		this.dim1 = dim1;
+		this.dim2 = dim2;
     }
 
     @Override
@@ -43,6 +48,6 @@ public abstract class EOpNode {
 
     public abstract MatrixBlock computeEOpNode(ArrayList<MatrixBlock> inputs, int numOfThreads, Log LOG);
 
-    public abstract void reorderChildren(Character outChar1, Character outChar2);
+    public abstract EOpNode reorderChildrenAndOptimize(EOpNode parent, Character outChar1, Character outChar2);
 }
 

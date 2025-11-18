@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.functionobjects.ReduceCol;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
+import org.apache.sysds.runtime.instructions.cp.EinsumCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -48,22 +49,22 @@ import static org.apache.sysds.runtime.instructions.cp.EinsumCPInstruction.ensur
 
 public class EOpNodeBinary extends EOpNode {
 
-
 	public enum EBinaryOperand { // upper case: char has to remain, lower case: to be summed
-        ////// summations:   //////
-        aB_a,// -> B
-        Ba_a, // -> B
-        Ba_aC, // mmult -> BC
-        aB_Ca,
+        ////// mm:   //////
+        Ba_aC, // -> BC
+        aB_Ca, // -> CB
         Ba_Ca, // -> BC
-        aB_aC, // outer mult, possibly with transposing first -> BC
-        a_a,// dot ->
+        aB_aC, // -> BC
 
-        ////// elementwisemult and sums, something like ij,ij->i   //////
+        ////// elementwisemult and sums //////
         aB_aB,// elemwise and colsum -> B
         Ba_Ba, // elemwise and rowsum ->B
         Ba_aB, // elemwise, either colsum or rowsum -> B
 		aB_Ba,
+		ab_ab,//M-M sum all
+		ab_ba, //M-M.T sum all
+		aB_a,// -> B
+		Ba_a, // -> B
 
         ////// elementwise, no summations:   //////
         A_A,// v-elemwise -> A
@@ -71,34 +72,99 @@ public class EOpNodeBinary extends EOpNode {
         AB_BA, // M-M.T elemwise -> AB
         AB_A, // M-v colwise -> BA!?
         BA_A, // M-v rowwise -> BA
-        ab_ab,//M-M sum all
-        ab_ba, //M-M.T sum all
+
         ////// other   //////
+		a_a,// dot ->
         A_B, // outer mult -> AB
         A_scalar, // v-scalar
         AB_scalar, // m-scalar
         scalar_scalar
     }
-    public EOpNode _left;
-    public EOpNode _right;
-    public EBinaryOperand _operand;
+    public EOpNode left;
+    public EOpNode right;
+    public EBinaryOperand operand;
 	private boolean transposeResult;
-    public EOpNodeBinary(Character c1, Character c2, EOpNode left, EOpNode right, EBinaryOperand operand){
-        super(c1,c2);
-        this._left = left;
-        this._right = right;
-        this._operand = operand;
-    }
+	public EOpNodeBinary(EOpNode left, EOpNode right, EBinaryOperand operand){
+		super(null,null,null, null);
+		Character c1, c2;
+		Integer dim1, dim2;
+		switch(operand){
+			case Ba_aC -> {
+				c1=left.c1;
+				c2=right.c2;
+				dim1=left.dim1;
+				dim2=right.dim2;
+			}
+			case aB_Ca -> {
+				c1=left.c2;
+				c2=right.c1;
+				dim1=left.dim2;
+				dim2=right.dim1;
+			}
+			case Ba_Ca -> {
+				c1=left.c1;
+				c2=right.c1;
+				dim1=left.dim1;
+				dim2=right.dim1;
+			}
+			case aB_aC -> {
+				c1=left.c2;
+				c2=right.c2;
+				dim1=left.dim2;
+				dim2=right.dim2;
+			}
+			case aB_aB, aB_Ba, aB_a -> {
+				c1=left.c2;
+				c2=null;
+				dim1=left.dim2;
+				dim2=null;
+			}
+			case Ba_Ba, Ba_aB, Ba_a, A_A, A_scalar -> {
+				c1=left.c1;
+				c2=null;
+				dim1=left.dim1;
+				dim2=null;
+			}
+			case ab_ab, ab_ba, a_a, scalar_scalar -> {
+				c1=null;
+				c2=null;
+				dim1=null;
+				dim2=null;
+			}
+			case AB_AB, AB_BA, AB_A, BA_A, AB_scalar ->{
+				c1=left.c1;
+				c2=left.c2;
+				dim1=left.dim1;
+				dim2=left.dim2;
+			}
+			case A_B -> {
+				c1=left.c1;
+				c2=right.c1;
+				dim1=left.dim1;
+				dim2=right.dim1;
+			}
+			default -> throw new IllegalStateException("EOpNodeBinary Unexpected type: " + operand);
+		}
+		//	super(c1, c2, dim1, dim2); // unavailable in JDK < 22
+		this.c1 = c1;
+		this.c2 = c2;
+		this.dim1 = dim1;
+		this.dim2 = dim2;
+		this.left = left;
+		this.right = right;
+		this.operand = operand;
+	}
+
 	public void setTransposeResult(boolean transposeResult){
 		this.transposeResult = transposeResult;
 	}
 
 	public static EOpNodeBinary combineMatrixMultiply(EOpNode left, EOpNode right) {
-		if (left.c2 == right.c1) { return new EOpNodeBinary(left.c1, right.c2, left, right, EBinaryOperand.Ba_aC); }
-		if (left.c2 == right.c2) { return new EOpNodeBinary(left.c1, right.c1, left, right, EBinaryOperand.Ba_Ca); }
-		if (left.c1 == right.c1) { return new EOpNodeBinary(left.c2, right.c2, left, right, EBinaryOperand.aB_aC); }
+		if (left.c2 == right.c1) { return new EOpNodeBinary(left, right, EBinaryOperand.Ba_aC); }
+		if (left.c2 == right.c2) { return new EOpNodeBinary(left, right, EBinaryOperand.Ba_Ca); }
+		if (left.c1 == right.c1) { return new EOpNodeBinary(left, right, EBinaryOperand.aB_aC); }
 		if (left.c1 == right.c2) {
-			var res = new EOpNodeBinary(left.c2, right.c1, left, right, EBinaryOperand.aB_Ca);
+			var res = new EOpNodeBinary(left, right, EBinaryOperand.aB_Ca);
 			res.setTransposeResult(true);
 			return res;
 		}
@@ -107,10 +173,10 @@ public class EOpNodeBinary extends EOpNode {
 
 	@Override
 	public String[] recursivePrintString() {
-		String[] left = _left.recursivePrintString();
-		String[] right = _right.recursivePrintString();
+		String[] left = this.left.recursivePrintString();
+		String[] right = this.right.recursivePrintString();
 		String[] res = new String[left.length + right.length+1];
-		res[0] = this.getClass().getSimpleName()+" ("+_operand.toString()+") "+this.toString();
+		res[0] = this.getClass().getSimpleName()+" ("+ operand.toString()+") "+this.toString();
 		for (int i=0; i<left.length; i++) {
 			res[i+1] = (i==0 ?  "┌─ " : "   ") +left[i];
 		}
@@ -123,16 +189,16 @@ public class EOpNodeBinary extends EOpNode {
 	@Override
     public MatrixBlock computeEOpNode(ArrayList<MatrixBlock> inputs, int numThreads, Log LOG) {
         EOpNodeBinary bin = this;
-        MatrixBlock left = _left.computeEOpNode(inputs, numThreads, LOG);
-        MatrixBlock right = _right.computeEOpNode(inputs, numThreads, LOG);
+        MatrixBlock left = this.left.computeEOpNode(inputs, numThreads, LOG);
+        MatrixBlock right = this.right.computeEOpNode(inputs, numThreads, LOG);
 
         AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 
         MatrixBlock res;
 
-        if(LOG.isTraceEnabled()) LOG.trace("computing binary "+bin._left +","+bin._right +"->"+bin);
+        if(LOG.isTraceEnabled()) LOG.trace("computing binary "+bin.left +","+bin.right +"->"+bin);
 
-        switch (bin._operand){
+        switch (bin.operand){
             case AB_AB -> {
                 res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
             }
@@ -255,7 +321,7 @@ public class EOpNodeBinary extends EOpNode {
                 return new MatrixBlock(left.get(0,0)*right.get(0,0));
             }
             default -> {
-                throw new IllegalArgumentException("Unexpected value: " + bin._operand.toString());
+                throw new IllegalArgumentException("Unexpected value: " + bin.operand.toString());
             }
 
         }
@@ -267,25 +333,47 @@ public class EOpNodeBinary extends EOpNode {
     }
 
     @Override
-    public void reorderChildren(Character outChar1, Character outChar2) {
-        if (this._operand==EBinaryOperand.aB_aC){
-            if(this._right.c2 == outChar1) {
-                    var tmp = _left;
-                    _left = _right;
-                    _right = tmp;
-                    var tmp2 = c1;
-                    c1 = c2;
-                    c2 = tmp2;
+    public EOpNode reorderChildrenAndOptimize(EOpNode parent, Character outChar1, Character outChar2) {
+        if (this.operand ==EBinaryOperand.aB_aC){
+            if(this.right.c2 == outChar1) { // result is CB so Swap aB and aC
+				var tmpLeft = left;  left = right;  right = tmpLeft;
+				var tmpC1 = c1;       c1 = c2;         c2 = tmpC1;
+				var tmpDim1 = dim1;   dim1 = dim2;     dim2 = tmpDim1;
             }
-            _left.reorderChildren(_left.c2, _left.c1);
-            // check if change happened:
-            if(_left.c2 == _right.c1) {
-                this._operand = EBinaryOperand.Ba_aC;
+			if(EinsumCPInstruction.FUSE_OUTER_MULTIPLY && left instanceof EOpNodeFuse fuse && fuse.einsumRewriteType == EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__AB &&
+				LibMatrixMult.isSkinnyRightHandSide(left.dim1, left.dim2,  right.dim1, right.dim2, true)) {
+				fuse.operands.get(4).add(right);
+				fuse.einsumRewriteType = EOpNodeFuse.EinsumRewriteType.AB_BA_B_A_AZ__BZ;
+				fuse.c1 = fuse.c2;
+				fuse.c2 = right.c2;
+				return fuse;
+			}
+
+            left = left.reorderChildrenAndOptimize(this, left.c2, left.c1); // maybe can be reordered
+            if(left.c2 == right.c1) { // check if change happened:
+                this.operand = EBinaryOperand.Ba_aC;
             }
-        }
+			right =  right.reorderChildrenAndOptimize(this, right.c1, right.c2);
+        }else if (this.operand ==EBinaryOperand.Ba_Ca){
+			if(this.right.c1 == outChar1) { // result is CB so Swap Ba and Ca
+				var tmpLeft = left;  left = right;  right = tmpLeft;
+				var tmpC1 = c1;       c1 = c2;         c2 = tmpC1;
+				var tmpDim1 = dim1;   dim1 = dim2;     dim2 = tmpDim1;
+			}
+
+			right = right.reorderChildrenAndOptimize(this, right.c2, right.c1); // maybe can be reordered
+			if(left.c2 == right.c1) { // check if change happened:
+				this.operand = EBinaryOperand.Ba_aC;
+			}
+			left = left.reorderChildrenAndOptimize(this, left.c1, left.c2);
+		}else {
+			left = left.reorderChildrenAndOptimize(this, left.c1, left.c2); // just recurse
+			right = right.reorderChildrenAndOptimize(this, right.c1, right.c2);
+		}
+		return this;
     }
 
-	// used in old method
+	// used in the old approach
 	public static Triple<Integer, EBinaryOperand, Pair<Character, Character>> TryCombineAndCost(EOpNode n1 , EOpNode n2, HashMap<Character, Integer> charToSizeMap, HashMap<Character, Integer> charToOccurences, Character outChar1, Character outChar2){
 		Predicate<Character> cannotBeSummed = (c) ->
 			c == outChar1 || c == outChar2 || charToOccurences.get(c) > 2;
@@ -388,7 +476,7 @@ public class EOpNodeBinary extends EOpNode {
 					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2) +(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*charToSizeMap.get(n2.c1)), EBinaryOperand.Ba_Ca, Pair.of(n1.c1, n2.c1)); // or n2.c1, n1.c1
 				}
 			}
-			else { // something like ab,cd
+			else { // something like AB,CD
 				return null;
 			}
 		}

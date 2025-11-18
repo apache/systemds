@@ -37,10 +37,10 @@ public class EOpNodeUnary extends EOpNode {
 	public EOpNode child;
 
 	public enum EUnaryOperand {
-		DIAG, SUM, SUM_ROWS, SUM_COLS
+		DIAG, SUM, SUM_COLS, SUM_ROWS
 	}
-	public EOpNodeUnary(Character c1, Character c2, EOpNode child, EUnaryOperand eUnaryOperand) {
-		super(c1, c2);
+	public EOpNodeUnary(Character c1, Character c2, Integer dim1, Integer dim2, EOpNode child, EUnaryOperand eUnaryOperand) {
+		super(c1, c2, dim1, dim2);
 		this.child = child;
 		this.eUnaryOperand = eUnaryOperand;
     }
@@ -71,14 +71,14 @@ public class EOpNodeUnary extends EOpNode {
 				mb.aggregateUnaryOperations(aggun, res, 0, null);
 				yield res;
 			}
-			case SUM_ROWS->{
+			case SUM_COLS ->{
 				AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), numOfThreads);
 				MatrixBlock res = new MatrixBlock(mb.getNumColumns(), 1, false);
 				mb.aggregateUnaryOperations(aggun, res, 0, null);
 				yield res;
 			}
-			case SUM_COLS->{
+			case SUM_ROWS ->{
 				AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numOfThreads);
 				MatrixBlock res = new MatrixBlock(mb.getNumRows(), 1, false);
@@ -89,7 +89,7 @@ public class EOpNodeUnary extends EOpNode {
 	}
 
     @Override
-    public void reorderChildren(Character outChar1, Character outChar2) {
-
-    }
+	public EOpNode reorderChildrenAndOptimize(EOpNode parent, Character outChar1, Character outChar2) {
+		return this;
+	}
 }

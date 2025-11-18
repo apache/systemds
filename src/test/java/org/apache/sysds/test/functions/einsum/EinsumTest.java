@@ -51,6 +51,11 @@ public class EinsumTest extends AutomatedTestBase
             new Config("ji,jk->ik", List.of(shape(6, 5), shape(6, 10))),
             new Config("ji,kj->ik", List.of(shape(6, 5), shape(10, 6))),
             new Config("ij,kj->ik", List.of(shape(5, 6), shape(10, 6))),
+			new Config("ij,jk->ki", List.of(shape(5, 6), shape(6, 5))), // mm t
+			new Config("ji,jk->ki", List.of(shape(6, 5), shape(6, 10))),
+			new Config("ji,kj->ki", List.of(shape(6, 5), shape(10, 6))),
+			new Config("ij,kj->ki", List.of(shape(5, 6), shape(10, 6))),
+			new Config("ij,kp,pj->ki", List.of(shape(5,6), shape(5,4), shape(4, 6))), // reordering
 			new Config("ab,bc,cd,de->ae", List.of(shape(5, 6), shape(6, 5),shape(5, 6), shape(6, 5))), // mm chain
 
             new Config("ji,jk->i", List.of(shape(6, 5), shape(6, 4))),
@@ -117,8 +122,9 @@ public class EinsumTest extends AutomatedTestBase
             new Config("ij,ij,ji,j,i, ab,ba,ab,a,b->jb",   Map.of('i',10, 'j',5, 'a', 11, 'b', 6)),
             new Config("ij,ij,ji,j,i,iz->jz",   Map.of('i',600, 'j',10,'z', 6)),  // //skinny right with outer mm
             new Config("ij,ij,ji,j,i,iz->jz",   Map.of('i',10, 'j',10,'z', 10)),  // // no skinny right
-            new Config("ij,ij,ji,j,i,iz->zj",   Map.of('i',60, 'j',10,'z', 6)),
-			new Config("ij,ij,ij,jk->ik",   List.of(shape(10, 5), shape(10, 5),shape(10, 5),shape(5, 10)))
+            new Config("ij,ij,ji,j,i,iz->zj",   Map.of('i',60, 'j',10,'z', 6)),  // //skinny right with outer mm
+			new Config("ij,ij,ij,jk->ik",   List.of(shape(10, 5), shape(10, 5),shape(10, 5),shape(5, 10))),
+			new Config("ab,ab,a,ag,gz->bz",   List.of(shape(10, 5), shape(10, 5),shape(10),shape(10,200),shape(200,7)))
     );
 	private final int id;
 	private final String einsumStr;

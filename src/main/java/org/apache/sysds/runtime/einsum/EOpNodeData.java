@@ -26,8 +26,8 @@ import java.util.ArrayList;
 
 public class EOpNodeData extends EOpNode {
     public int matrixIdx;
-    public EOpNodeData(Character c1, Character c2, int matrixIdx){
-        super(c1,c2);
+    public EOpNodeData(Character c1, Character c2, Integer dim1, Integer dim2, int matrixIdx){
+        super(c1,c2,dim1,dim2);
         this.matrixIdx = matrixIdx;
     }
 	@Override
@@ -42,7 +42,7 @@ public class EOpNodeData extends EOpNode {
     }
 
     @Override
-    public void reorderChildren(Character outChar1, Character outChar2) {
-
+	public EOpNode reorderChildrenAndOptimize(EOpNode parent, Character outChar1, Character outChar2) {
+		return this;
     }
 }

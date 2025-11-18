@@ -109,13 +109,17 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			if(inputsChars.get(i).length() == 1) ensureMatrixBlockColumnVector(inputs.get(i));
 		}
 
-		addSumDimensionsDiagonalsAndScalars(einc, inputsChars, eOpNodes, eOpNodesScalars);
+		addSumDimensionsDiagonalsAndScalars(einc, inputsChars, eOpNodes, eOpNodesScalars, einc.charToDimensionSize);
 
 		HashMap<Character, Integer> characterToOccurences = einc.characterAppearanceCount;
 
 		for (int i = 0; i < inputsChars.size(); i++) {
 			if (inputsChars.get(i) == null) continue;
-			EOpNodeData n = new EOpNodeData(!inputsChars.get(i).isEmpty() ? inputsChars.get(i).charAt(0) : null, inputsChars.get(i).length() > 1 ? inputsChars.get(i).charAt(1) : null, i);
+			Character c1 = inputsChars.get(i).isEmpty() ? null : inputsChars.get(i).charAt(0);
+			Character c2 = inputsChars.get(i).length() > 1 ? inputsChars.get(i).charAt(1) : null;
+			Integer dim1 = c1 == null ? null : einc.charToDimensionSize.get(c1);
+			Integer dim2 = c1 == null ? null : einc.charToDimensionSize.get(c2);
+			EOpNodeData n = new EOpNodeData(c1,c2,dim1,dim2, i);
 			eOpNodes.add(n);
 		}
 
@@ -156,7 +160,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			if(!eOpNodesScalars.isEmpty()){
 				EOpNode l = eOpNodesScalars.get(0);
 				for(int i = 1; i < eOpNodesScalars.size(); i++){
-					l = new EOpNodeBinary(null,null,l, eOpNodesScalars.get(i), EBinaryOperand.scalar_scalar);
+					l = new EOpNodeBinary(l, eOpNodesScalars.get(i), EBinaryOperand.scalar_scalar);
 				}
 
 				if(plan.isEmpty()) plan.add(l);
@@ -177,22 +181,25 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 				}
 
 			}
-			if(plan.size() == 1)
-				plan.get(0).reorderChildren(einc.outChar1, einc.outChar2);
 
 			if(plan.size() == 2 && plan.get(0).c2 == null && plan.get(1).c2 == null){
 				if (plan.get(0).c1 == einc.outChar1 && plan.get(1).c1 == einc.outChar2)
-					plan.set(0, new EOpNodeBinary(plan.get(0).c1, plan.get(1).c1, plan.get(0), plan.get(1), EBinaryOperand.A_B));
+					plan.set(0, new EOpNodeBinary(plan.get(0), plan.get(1), EBinaryOperand.A_B));
 				if (plan.get(0).c1 == einc.outChar2 && plan.get(1).c1 == einc.outChar1)
-					plan.set(0, new EOpNodeBinary(plan.get(1).c1, plan.get(0).c1, plan.get(1), plan.get(0), EBinaryOperand.A_B));
+					plan.set(0, new EOpNodeBinary(plan.get(1), plan.get(0), EBinaryOperand.A_B));
 				plan.remove(1);
 			}
-			if (EXPLAIN != Explain.ExplainType.NONE )
+
+			if(plan.size() == 1)
+				plan.set(0,plan.get(0).reorderChildrenAndOptimize(null, einc.outChar1, einc.outChar2));
+
+			if (EXPLAIN != Explain.ExplainType.NONE ) {
 				System.out.println("Einsum plan:");
 				for(int i = 0; i < plan.size(); i++) {
-					System.out.println((i+1)+".");
-					System.out.println("- "+String.join("\n- ", plan.get(i).recursivePrintString()));
+					System.out.println((i + 1) + ".");
+					System.out.println("- " + String.join("\n- ", plan.get(i).recursivePrintString()));
 				}
+			}
 
 			remainingMatrices = executePlan(plan, inputs);
         }else{
@@ -273,13 +280,13 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 					return fuse;
 				}
 			};
-			return new EOpNodeBinary(addToNode.c1,addToNode.c2,addToNode,scalar,EBinaryOperand.AB_scalar);
+			return new EOpNodeBinary(addToNode,scalar,EBinaryOperand.AB_scalar);
 		}
 		if(addToNode.c1 == null)
-			return new EOpNodeBinary(null,null,addToNode,scalar,EBinaryOperand.scalar_scalar);
+			return new EOpNodeBinary(addToNode,scalar,EBinaryOperand.scalar_scalar);
 		if(addToNode.c2 == null)
-			return new EOpNodeBinary(addToNode.c1,null,addToNode,scalar,EBinaryOperand.A_scalar);
-		return new EOpNodeBinary(addToNode.c1,addToNode.c2,addToNode,scalar,EBinaryOperand.AB_scalar);
+			return new EOpNodeBinary(addToNode,scalar,EBinaryOperand.A_scalar);
+		return new EOpNodeBinary(addToNode,scalar,EBinaryOperand.AB_scalar);
 	}
 
 	private static Pair<Integer, EOpNode> addScalarToPlanFindMinCost(EOpNode plan, HashMap<Character, Integer> charToSizeMap) {
@@ -292,7 +299,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 
 		List<EOpNode> inputs = List.of();
 
-		if (plan instanceof EOpNodeBinary bin) inputs = List.of(bin._left, bin._right);
+		if (plan instanceof EOpNodeBinary bin) inputs = List.of(bin.left, bin.right);
 		else if(plan instanceof EOpNodeFuse fuse){
 			cost = switch (fuse.einsumRewriteType) {
 				case AB_BA_B_A__ -> 1; // thisSize
@@ -339,9 +346,9 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 				EOpNode right = nodes.get(i);
 
 				if(canBeSummed && i == nodes.size()-1){
-					left = new EOpNodeBinary(null, null, left, right, EBinaryOperand.a_a);
+					left = new EOpNodeBinary(left,right, EBinaryOperand.a_a);
 				}else {
-					left = new EOpNodeBinary(c, null, left, right, EBinaryOperand.A_A);
+					left = new EOpNodeBinary(left,right, EBinaryOperand.A_A);
 				}
 				usedNodes.add(right);
 			}
@@ -360,18 +367,19 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 	}
 
 	private void addSumDimensionsDiagonalsAndScalars(EinsumContext einc, ArrayList<String> inputStrings,
-		ArrayList<EOpNode> eOpNodes, ArrayList<EOpNode> eOpNodesScalars) {
+		ArrayList<EOpNode> eOpNodes, ArrayList<EOpNode> eOpNodesScalars,
+		HashMap<Character, Integer> charToDimensionSize) {
 		for(int i = 0; i< inputStrings.size(); i++){
 			String s = inputStrings.get(i);
 			if (s.length() == 0){
-				eOpNodesScalars.add(new EOpNodeData(null, null,i));
+				eOpNodesScalars.add(new EOpNodeData(null, null, null, null,i));
 				inputStrings.set(i, null);
 				continue;
 			}else if (s.length() == 1){
 				char c1 = s.charAt(0);
 				if((einc.outChar1 == null || c1 != einc.outChar1) && (einc.outChar2 == null || c1 != einc.outChar2) && einc.characterAppearanceCount.get(c1) == 1){
-					EOpNode e0 = new EOpNodeData(c1, null,i);
-					eOpNodesScalars.add(new EOpNodeUnary(null, null, e0, EOpNodeUnary.EUnaryOperand.SUM));
+					EOpNode e0 = new EOpNodeData(c1, null, charToDimensionSize.get(c1), null, i);
+					eOpNodesScalars.add(new EOpNodeUnary(null, null, null, null, e0, EOpNodeUnary.EUnaryOperand.SUM));
 					inputStrings.set(i, null);
 				}
 				continue;
@@ -395,17 +403,17 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 					op = EOpNodeUnary.EUnaryOperand.SUM;
 				}else{
 					newC1 = c2;
-					op = EOpNodeUnary.EUnaryOperand.SUM_ROWS;
+					op = EOpNodeUnary.EUnaryOperand.SUM_COLS;
 				}
 			}else if((einc.outChar1 == null || c2 != einc.outChar1) && (einc.outChar2 == null || c2 != einc.outChar2) && einc.characterAppearanceCount.get(c2) == 1){
 				newC1 =  c1;
-				op = EOpNodeUnary.EUnaryOperand.SUM_COLS;
+				op = EOpNodeUnary.EUnaryOperand.SUM_ROWS;
 			}
 
 			if(op == null) continue;
-
-			EOpNodeData e0 = new EOpNodeData(c1, c2, i);
-			EOpNodeUnary res = new EOpNodeUnary(newC1, null, e0, op);
+			EOpNodeData e0 = new EOpNodeData(c1, c2, charToDimensionSize.get(c1), charToDimensionSize.get(c2),  i);
+			Integer dim1 = newC1 == null ? null : charToDimensionSize.get(newC1);
+			EOpNodeUnary res = new EOpNodeUnary(newC1, null, dim1, null, e0, op);
 
 			if(op == EOpNodeUnary.EUnaryOperand.SUM) eOpNodesScalars.add(res);
 			else eOpNodes.add(res);
@@ -437,7 +445,8 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			eOpNodes = ret;
 
 			ret = new ArrayList<>();
-			ArrayList<List<EOpNode>> matrixMultiplies = findMatrixMultiplicationChains(eOpNodes, outChar1, outChar2, charToOccurences, charToSizeMap, ret);
+			ArrayList<List<EOpNode>> matrixMultiplies = findMatrixMultiplicationChains(eOpNodes, outChar1, outChar2, charToOccurences,
+				ret);
 
 			for(List<EOpNode> list : matrixMultiplies) {
 				EOpNodeBinary bin = optimizeMMChain(list, charToSizeMap);
@@ -506,7 +515,8 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			}
 		}
 	}
-	private static ArrayList<List<EOpNode>> findMatrixMultiplicationChains(ArrayList<EOpNode> inpOperands, Character outChar1, Character outChar2, HashMap<Character, Integer> charToOccurences, HashMap<Character, Integer> charToSizeMap, ArrayList<EOpNode> ret) {
+	private static ArrayList<List<EOpNode>> findMatrixMultiplicationChains(ArrayList<EOpNode> inpOperands, Character outChar1, Character outChar2, HashMap<Character, Integer> charToOccurences,
+		ArrayList<EOpNode> ret) {
 		HashSet<Character> charactersThatCanBeContracted = new HashSet<>();
 		HashMap<Character, ArrayList<EOpNode>> characterToNodes = new HashMap<>();
 		ArrayList<EOpNode> operandsTodo =  new ArrayList<>();
@@ -536,7 +546,6 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		for(int i = 0; i < operandsTodo.size(); i++){
 			EOpNode iterateNode = operandsTodo.get(i);
 
-//			if (iterateNode == null) continue; // was added previously somewhere
 			if (doneNodes.contains(iterateNode)) continue;// was added previously somewhere
 			doneNodes.add(iterateNode);
 
@@ -582,13 +591,10 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			res.add(multiplies);
 		}
 
-
 		for(EOpNode op : inpOperands) {
 			if (doneNodes.contains(op)) continue;
 			ret.add(op);
 		}
-
-
 
 		return res;
 	}
@@ -604,7 +610,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			EOpNode n2 = operands.get(!swap ? 1 : 0);
 			Triple<Integer, EBinaryOperand, Pair<Character, Character>> t = EOpNodeBinary.TryCombineAndCost(n1, n2, charToSizeMap, charToOccurences, outChar1, outChar2);
 			if (t != null) {
-				EOpNodeBinary newNode = new EOpNodeBinary(t.getRight().getLeft(), t.getRight().getRight(), n1, n2, t.getMiddle());
+				EOpNodeBinary newNode = new EOpNodeBinary(n1, n2, t.getMiddle());
 				int thisCost = cost + t.getLeft();
 				return Pair.of(thisCost, Arrays.asList(newNode));
 			}
@@ -625,7 +631,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 
 				Triple<Integer, EBinaryOperand, Pair<Character, Character>> t = EOpNodeBinary.TryCombineAndCost(n1, n2, charToSizeMap, charToOccurences, outChar1, outChar2);
 				if (t != null){
-					EOpNodeBinary newNode = new EOpNodeBinary(t.getRight().getLeft(), t.getRight().getRight(), n1, n2, t.getMiddle());
+					EOpNodeBinary newNode = new EOpNodeBinary(n1, n2, t.getMiddle());
 					int thisCost = cost + t.getLeft();
 
 					if(n1.c1 != null) charToOccurences.put(n1.c1, charToOccurences.get(n1.c1)-1);

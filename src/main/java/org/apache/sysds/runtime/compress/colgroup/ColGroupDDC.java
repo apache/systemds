@@ -77,7 +77,12 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 
 	static final VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_PREFERRED;
 
-	private ColGroupDDC(IColIndex colIndexes, IDictionary dict, AMapToData data, int[] cachedCounts) {
+	protected ColGroupDDC() {
+		super();
+		_data = null;
+	}
+
+	protected ColGroupDDC(IColIndex colIndexes, IDictionary dict, AMapToData data, int[] cachedCounts) {
 		super(colIndexes, dict, cachedCounts);
 		_data = data;
 

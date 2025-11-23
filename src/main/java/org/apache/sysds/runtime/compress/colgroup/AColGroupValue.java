@@ -35,6 +35,10 @@ public abstract class AColGroupValue extends ADictBasedColGroup {
 	/** The count of each distinct value contained in the dictionary */
 	private SoftReference<int[]> counts = null;
 
+	protected AColGroupValue() {
+		super();
+	}
+
 	/**
 	 * A abstract class for column groups that contain IDictionary for values.
 	 * 

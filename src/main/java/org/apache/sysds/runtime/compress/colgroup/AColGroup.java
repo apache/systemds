@@ -93,6 +93,10 @@ public abstract class AColGroup implements Serializable {
 	/** The ColGroup indexes contained in the ColGroup */
 	protected final IColIndex _colIndexes;
 
+	protected AColGroup() {
+		_colIndexes = null;
+	}
+
 	/**
 	 * Main constructor.
 	 * 

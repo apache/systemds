@@ -202,7 +202,7 @@ public class EOpNodeFuse extends EOpNode {
                 if(AZCandidates.size()==1){
                     if(!doSumB) {
                         // check if outer is possible AB,...,AZ->BZ
-                        if(!EinsumCPInstruction.FUSE_OUTER_MULTIPLY || !LibMatrixMult.isSkinnyRightHandSide(charToSize.get(AB.charAt(0)), charToSize.get(AB.charAt(1)),  charToSize.get(AB.charAt(0)),charToSize.get(AZCandidates.iterator().next().charAt(1)),true)) {
+                        if(!EinsumCPInstruction.FUSE_OUTER_MULTIPLY || !LibMatrixMult.isSkinnyRightHandSide(charToSize.get(AB.charAt(0)), charToSize.get(AB.charAt(1)),  charToSize.get(AB.charAt(0)),charToSize.get(AZCandidates.iterator().next().charAt(1)),false)) {
                             includeAz=false;
                         }
                     }
@@ -264,7 +264,7 @@ public class EOpNodeFuse extends EOpNode {
                 c1 = azC2;
             }
             else if (EinsumCPInstruction.FUSE_OUTER_MULTIPLY) {
-                if(LibMatrixMult.isSkinnyRightHandSide(charToSize.get(AB.charAt(0)), charToSize.get(AB.charAt(1)),  charToSize.get(AB.charAt(0)),charToSize.get(azC2),false)){
+                if(charToSize.get(AB.charAt(0)) * charToSize.get(AB.charAt(1)) * 8 > LibMatrixMult.L3_CACHESIZE && LibMatrixMult.isSkinnyRightHandSide(charToSize.get(AB.charAt(0)), charToSize.get(AB.charAt(1)),  charToSize.get(AB.charAt(0)),charToSize.get(azC2),false)){
                     if (outChar1 == azC2 && outChar2 == b) {
                         t = EinsumRewriteType.AB_BA_B_A_AZ__ZB;
                         c1 = azC2;
@@ -280,10 +280,12 @@ public class EOpNodeFuse extends EOpNode {
                     }
 
                 }else{
+					doSumA=false;
                     t=null;
                     AZs=new ArrayList<>();
                 }
             }else{
+				doSumA=false;
                 t=null;
                 AZs=new ArrayList<>();
             }

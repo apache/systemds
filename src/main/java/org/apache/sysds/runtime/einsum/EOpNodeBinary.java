@@ -269,7 +269,7 @@ public class EOpNodeBinary extends EOpNode {
                 res = LibMatrixMult.matrixMult(left,right, new MatrixBlock(), numThreads);
             }
             case aB_aC -> {
-                if(false && LibMatrixMult.isSkinnyRightHandSide(left.getNumRows(), left.getNumColumns(), right.getNumRows(), right.getNumColumns(), true)){
+                if(false && LibMatrixMult.isSkinnyRightHandSide(left.getNumRows(), left.getNumColumns(), right.getNumRows(), right.getNumColumns(), false)){
                     res = new MatrixBlock(left.getNumColumns(), right.getNumColumns(),false);
                     res.allocateDenseBlock();
                     double[] m1 = left.getDenseBlock().values(0);
@@ -341,7 +341,7 @@ public class EOpNodeBinary extends EOpNode {
 				var tmpDim1 = dim1;   dim1 = dim2;     dim2 = tmpDim1;
             }
 			if(EinsumCPInstruction.FUSE_OUTER_MULTIPLY && left instanceof EOpNodeFuse fuse && fuse.einsumRewriteType == EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__AB &&
-				LibMatrixMult.isSkinnyRightHandSide(left.dim1, left.dim2,  right.dim1, right.dim2, true)) {
+				left.dim1 * left.dim2 * 8 > LibMatrixMult.L3_CACHESIZE && LibMatrixMult.isSkinnyRightHandSide(left.dim1, left.dim2,  right.dim1, right.dim2, false)) {
 				fuse.operands.get(4).add(right);
 				fuse.einsumRewriteType = EOpNodeFuse.EinsumRewriteType.AB_BA_B_A_AZ__BZ;
 				fuse.c1 = fuse.c2;

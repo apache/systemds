@@ -23,9 +23,44 @@
 import os
 import shutil
 import unittest
+import threading
+import functools
 import pandas as pd
 import numpy as np
 from systemds.context import SystemDSContext
+
+
+def timeout(seconds):
+    """Decorator to add timeout to test methods."""
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            result = [None]
+            exception = [None]
+
+            def target():
+                try:
+                    result[0] = func(*args, **kwargs)
+                except Exception as e:
+                    exception[0] = e
+
+            thread = threading.Thread(target=target)
+            thread.daemon = True
+            thread.start()
+            thread.join(seconds)
+
+            if thread.is_alive():
+                raise TimeoutError(
+                    f"Test {func.__name__} exceeded timeout of {seconds} seconds"
+                )
+
+            if exception[0]:
+                raise exception[0]
+
+            return result[0]
+
+        return wrapper
+    return decorator
 
 
 class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
@@ -46,6 +81,7 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
         cls.sds.close()
         shutil.rmtree(cls.temp_dir, ignore_errors=True)
 
+    @timeout(120)
     def test_python_to_java(self):
         combinations = [  # (n_rows, n_cols)
             (5, 0),
@@ -75,6 +111,7 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
             # Verify the data
             self.assertTrue(np.allclose(matrix_out, matrix))
 
+    @timeout(120)
     def test_java_to_python(self):
         """Test reading matrices from SystemDS back to Python with various dtypes."""
         test_cases = [
@@ -206,6 +243,7 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                         f"Matrix with dtype {test_case['dtype']} and shape {test_case['shape']} doesn't match within tolerance",
                     )
 
+    @timeout(120)
     def test_java_to_python_unsupported_dtypes(self):
         """Test that unsupported dtypes are handled gracefully or converted."""
         # Note: SystemDS will convert unsupported dtypes to FP64 when reading from CSV
@@ -275,6 +313,7 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                         f"Converted matrix with dtype {test_case['dtype']} doesn't match",
                     )
 
+    @timeout(120)
     def test_frame_python_to_java(self):
         """Test converting pandas DataFrame to SystemDS FrameBlock and writing to CSV."""
         combinations = [
@@ -357,6 +396,7 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                         f"Column {col_name} string values don't match",
                     )
 
+    @timeout(120)
     def test_frame_java_to_python_simple(self):
         """Test transferring pandas DataFrame to SystemDS FrameBlock and converting back to pandas DataFrame."""
         combinations = [
@@ -418,6 +458,7 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                         f"Column {col_name} string values don't match",
                     )
 
+    @timeout(120)
     def test_frame_java_to_python(self):
         """Test reading CSV into SystemDS FrameBlock and converting back to pandas DataFrame."""
         combinations = [

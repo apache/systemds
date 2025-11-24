@@ -202,7 +202,6 @@ def numpy_to_matrix_block(sds, np_arr: np.array):
     assert np_arr.ndim <= 2, "np_arr invalid, because it has more than 2 dimensions"
     rows = np_arr.shape[0]
     cols = np_arr.shape[1] if np_arr.ndim == 2 else 1
-    print("np to matrix", type(np_arr))
 
     if rows > 2147483647:
         raise Exception("")

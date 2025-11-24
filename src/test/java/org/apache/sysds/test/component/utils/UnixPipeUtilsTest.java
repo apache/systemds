@@ -83,6 +83,7 @@ public class UnixPipeUtilsTest {
 		@Test
 		public void testReadWriteNumpyArrayBatch() throws IOException {
 			File tempFile = folder.newFile("pipe_test_" + type.name());
+			matrixBlock.recomputeNonZeros();
 
 			try (BufferedOutputStream out = UnixPipeUtils.openOutput(tempFile.getAbsolutePath(), id)) {
 				UnixPipeUtils.writeNumpyArrayInBatches(out, id, batchSize, numElem, type, matrixBlock);

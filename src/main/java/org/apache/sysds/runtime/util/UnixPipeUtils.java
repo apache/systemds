@@ -157,7 +157,7 @@ public class UnixPipeUtils {
             };
             case UINT8 -> (dest, offset, bb) -> {
                 double[] out = (double[]) dest;
-                for (int i = 0; i < bb.capacity(); i++) out[offset++] = bb.get(i) & 0xFF;
+                for (int i = 0; i < bb.limit(); i++) out[offset++] = bb.get(i) & 0xFF;
                 return offset;
             };
             default -> throw new UnsupportedOperationException("Unsupported type: " + type);
@@ -267,7 +267,7 @@ public class UnixPipeUtils {
             };
             case UINT8 -> (src, offset, bb) -> {
                 MatrixBlock mb = (MatrixBlock) src;
-                int n = Math.min(bb.capacity(), mb.getNumRows() * mb.getNumColumns() - offset);
+                int n = Math.min(bb.limit(), mb.getNumRows() * mb.getNumColumns() - offset);
                 for (int i = 0; i < n; i++) {
                     int r = (offset + i) / mb.getNumColumns();
                     int c = (offset + i) % mb.getNumColumns();

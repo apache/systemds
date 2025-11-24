@@ -185,8 +185,9 @@ public class StartupTest {
 		MatrixBlock mb = new MatrixBlock(2, 3, data);
 		script.startWritingMbToPipe(0, mb);
 		double[] rcv_data = new double[data.length];
-		UnixPipeUtils.readNumpyArrayInBatches(java2py, 0, 32, data.length, Types.ValueType.FP64, rcv_data, 0);
+		long nonZeros = UnixPipeUtils.readNumpyArrayInBatches(java2py, 0, 32, data.length, Types.ValueType.FP64, rcv_data, 0);
 		assertArrayEquals(data, rcv_data, 1e-9);
+		Assert.assertEquals((long) data.length, nonZeros); // All values are non-zero
 
 		// Read Test
 		UnixPipeUtils.writeNumpyArrayInBatches(py2java, 0, 32, data.length, Types.ValueType.FP64, mb);

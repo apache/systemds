@@ -146,7 +146,7 @@ src/test/scripts/functions/pipelines/intermediates/classification/*
 
 venv
 venv/*
-
+.venv
 # resource optimization
 scripts/resource/output
 *.pem

@@ -468,7 +468,7 @@ def pandas_to_frame_block(sds, pd_df: pd.DataFrame):
 
 
 def pandas_to_frame_block_py4j(
-    col_names: list[str],
+    col_names: list,
     j_colNameArray,
     j_valueTypeArray,
     jc_FrameBlock,
@@ -535,7 +535,7 @@ def pandas_to_frame_block_py4j(
 
 
 def pandas_to_frame_block_pipe(
-    col_names: list[str],
+    col_names: list,
     j_colNameArray,
     j_valueTypeArray,
     jc_FrameBlock,

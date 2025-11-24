@@ -74,40 +74,42 @@ def pipe_receive_bytes(pipe, view, offset, end, batch_size_bytes, logger):
         offset += actual_size
 
 
-def pipe_receive_strings_fused(pipe, num_strings, batch_size=32 * 1024, pipe_id=0, logger=None):
+def pipe_receive_strings_fused(
+    pipe, num_strings, batch_size=32 * 1024, pipe_id=0, logger=None
+):
     """
     Reads UTF-8 encoded strings from the pipe in batches.
     Format: <I (little-endian int32) length prefix, followed by UTF-8 bytes.
-    
+
     Returns: tuple of (strings_list, total_time, decode_time, io_time, num_strings)
     """
     t_total_start = time()
     t_decode = 0.0
     t_io = 0.0
-    
+
     strings = []
     fd = pipe.fileno()  # Cache file descriptor
-    
+
     # Use a reusable buffer to avoid repeated allocations
     buf = bytearray(batch_size * 2)
     buf_pos = 0
     buf_remaining = 0  # Number of bytes already in buffer
-    
+
     i = 0
     while i < num_strings:
         # If we don't have enough bytes for the length prefix (4 bytes), read more
         if buf_remaining < 4:
             # Shift remaining bytes to start of buffer
             if buf_remaining > 0:
-                buf[:buf_remaining] = buf[buf_pos:buf_pos + buf_remaining]
-            
+                buf[:buf_remaining] = buf[buf_pos : buf_pos + buf_remaining]
+
             # Read more data
             t0 = time()
             chunk = os.read(fd, batch_size)
             t_io += time() - t0
             if not chunk:
                 raise IOError("Pipe read returned empty data unexpectedly")
-            
+
             # Append new data to buffer
             chunk_len = len(chunk)
             if buf_remaining + chunk_len > len(buf):
@@ -115,30 +117,30 @@ def pipe_receive_strings_fused(pipe, num_strings, batch_size=32 * 1024, pipe_id=
                 new_buf = bytearray(len(buf) * 2)
                 new_buf[:buf_remaining] = buf[:buf_remaining]
                 buf = new_buf
-            
-            buf[buf_remaining:buf_remaining + chunk_len] = chunk
+
+            buf[buf_remaining : buf_remaining + chunk_len] = chunk
             buf_remaining += chunk_len
             buf_pos = 0
-        
+
         # Read length prefix (little-endian int32)
         # Note: length can be -1 (0xFFFFFFFF) to indicate null value
-        length = struct.unpack("<i", buf[buf_pos:buf_pos + 4])[0]
+        length = struct.unpack("<i", buf[buf_pos : buf_pos + 4])[0]
         buf_pos += 4
         buf_remaining -= 4
-        
+
         # Handle null value (marked by -1)
         if length == -1:
             strings.append(None)
             i += 1
             continue
-        
+
         # If we don't have enough bytes for the string data, read more
         if buf_remaining < length:
             # Shift remaining bytes to start of buffer
             if buf_remaining > 0:
-                buf[:buf_remaining] = buf[buf_pos:buf_pos + buf_remaining]
+                buf[:buf_remaining] = buf[buf_pos : buf_pos + buf_remaining]
             buf_pos = 0
-            
+
             # Read more data until we have enough
             bytes_needed = length - buf_remaining
             while bytes_needed > 0:
@@ -147,26 +149,26 @@ def pipe_receive_strings_fused(pipe, num_strings, batch_size=32 * 1024, pipe_id=
                 t_io += time() - t0
                 if not chunk:
                     raise IOError("Pipe read returned empty data unexpectedly")
-                
+
                 chunk_len = len(chunk)
                 if buf_remaining + chunk_len > len(buf):
                     # Grow buffer if needed
                     new_buf = bytearray(len(buf) * 2)
                     new_buf[:buf_remaining] = buf[:buf_remaining]
                     buf = new_buf
-                
-                buf[buf_remaining:buf_remaining + chunk_len] = chunk
+
+                buf[buf_remaining : buf_remaining + chunk_len] = chunk
                 buf_remaining += chunk_len
                 bytes_needed -= chunk_len
-        
+
         # Decode the string
         t0 = time()
         if length == 0:
             decoded_str = ""
         else:
-            decoded_str = buf[buf_pos:buf_pos + length].decode("utf-8")
+            decoded_str = buf[buf_pos : buf_pos + length].decode("utf-8")
         t_decode += time() - t0
-        
+
         strings.append(decoded_str)
         buf_pos += length
         buf_remaining -= length
@@ -174,14 +176,19 @@ def pipe_receive_strings_fused(pipe, num_strings, batch_size=32 * 1024, pipe_id=
     header_received = False
     if buf_remaining == 4:
         # there is still data in the buffer, probabky the handshake header
-        received = struct.unpack("<i", buf[buf_pos:buf_pos + 4])[0]
+        received = struct.unpack("<i", buf[buf_pos : buf_pos + 4])[0]
         if received != pipe_id + 1000:
-            raise ValueError("Handshake mismatch: expected {}, got {}".format(pipe_id + 1000, received))
+            raise ValueError(
+                "Handshake mismatch: expected {}, got {}".format(
+                    pipe_id + 1000, received
+                )
+            )
         header_received = True
     elif buf_remaining > 4:
-        raise ValueError("Unexpected number of bytes in buffer: {}".format(buf_remaining))
+        raise ValueError(
+            "Unexpected number of bytes in buffer: {}".format(buf_remaining)
+        )
 
-    
     t_total = time() - t_total_start
     return (strings, t_total, t_decode, t_io, num_strings, header_received)
 
@@ -432,18 +439,49 @@ def pandas_to_frame_block(sds, pd_df: pd.DataFrame):
         jc_FrameBlock = jvm.org.apache.sysds.runtime.frame.data.FrameBlock
 
         if sds._data_transfer_mode == 1:
-            return pandas_to_frame_block_pipe(col_names, j_colNameArray, j_valueTypeArray, jc_FrameBlock, pd_df, rows,
-                                              schema, sds)
+            return pandas_to_frame_block_pipe(
+                col_names,
+                j_colNameArray,
+                j_valueTypeArray,
+                jc_FrameBlock,
+                pd_df,
+                rows,
+                schema,
+                sds,
+            )
         else:
-            return pandas_to_frame_block_py4j(col_names, j_colNameArray, j_valueTypeArray, jc_FrameBlock, jc_String, pd_df, rows, cols, schema, sds)
+            return pandas_to_frame_block_py4j(
+                col_names,
+                j_colNameArray,
+                j_valueTypeArray,
+                jc_FrameBlock,
+                jc_String,
+                pd_df,
+                rows,
+                cols,
+                schema,
+                sds,
+            )
 
     except Exception as e:
         sds.exception_and_close(e)
 
-def pandas_to_frame_block_py4j(col_names: list[str], j_colNameArray, j_valueTypeArray, jc_FrameBlock, jc_String, pd_df: pd.DataFrame, rows: int, cols: int, schema: list, sds):
+
+def pandas_to_frame_block_py4j(
+    col_names: list[str],
+    j_colNameArray,
+    j_valueTypeArray,
+    jc_FrameBlock,
+    jc_String,
+    pd_df: pd.DataFrame,
+    rows: int,
+    cols: int,
+    schema: list,
+    sds,
+):
     java_gate = sds.java_gateway
     jvm = java_gate.jvm
-    
+
     # execution speed increases with optimized code when the number of rows exceeds 4
     if rows > 4:
         # Row conversion if more columns than rows and all columns have the same type, otherwise column
@@ -496,8 +534,16 @@ def pandas_to_frame_block_py4j(col_names: list[str], j_colNameArray, j_valueType
         return fb
 
 
-def pandas_to_frame_block_pipe(col_names: list[str], j_colNameArray, j_valueTypeArray, jc_FrameBlock, pd_df: pd.DataFrame,
-                               rows: int, schema: list, sds):
+def pandas_to_frame_block_pipe(
+    col_names: list[str],
+    j_colNameArray,
+    j_valueTypeArray,
+    jc_FrameBlock,
+    pd_df: pd.DataFrame,
+    rows: int,
+    schema: list,
+    sds,
+):
     ep = sds.java_gateway.entry_point
     fb = jc_FrameBlock(
         j_valueTypeArray,
@@ -513,7 +559,7 @@ def pandas_to_frame_block_pipe(col_names: list[str], j_colNameArray, j_valueType
         pd_series = pd_df[col_name]
         if pd_series.dtype == "string" or pd_series.dtype == "object":
             t0 = time()
-            
+
             # Start Java reader in background
             fut = sds._executor_pool.submit(
                 ep.startReadingColFromPipe, pipe_id, fb, rows, -1, i, schema[i], True
@@ -522,16 +568,17 @@ def pandas_to_frame_block_pipe(col_names: list[str], j_colNameArray, j_valueType
             pipe_transfer_header(pipe, pipe_id)  # start
             py_timing = pipe_transfer_strings_fused(pipe, pd_series, batch_size_bytes)
             pipe_transfer_header(pipe, pipe_id)  # end
-            
+
             fut.result()
-            
+
             t1 = time()
-            
+
             # Print aggregated timing breakdown
             py_total, py_encoding, py_packing, py_io, num_strings = py_timing
             total_time = t1 - t0
-            
-            sds._log.debug(f"""
+
+            sds._log.debug(
+                f"""
             === TO FrameBlock - Timing Breakdown (Strings) ===
             Column: {col_name}
             Total time: {total_time:.3f}s
@@ -542,7 +589,8 @@ def pandas_to_frame_block_pipe(col_names: list[str], j_colNameArray, j_valueType
             I/O writes: {py_io:.3f}s ({100*py_io/py_total:.1f}%)
             Other: {py_total - py_encoding - py_packing - py_io:.3f}s
             Strings processed: {num_strings:,}
-            """)
+            """
+            )
             continue
 
         else:
@@ -557,7 +605,14 @@ def pandas_to_frame_block_pipe(col_names: list[str], j_colNameArray, j_valueType
         )
 
         fut = sds._executor_pool.submit(
-            ep.startReadingColFromPipe, pipe_id, fb, rows, total_bytes, i, schema[i], True
+            ep.startReadingColFromPipe,
+            pipe_id,
+            fb,
+            rows,
+            total_bytes,
+            i,
+            schema[i],
+            True,
         )
 
         pipe_transfer_header(pipe, pipe_id)  # start
@@ -566,13 +621,13 @@ def pandas_to_frame_block_pipe(col_names: list[str], j_colNameArray, j_valueType
 
         fut.result()
     return fb
-    
-    
+
+
 def pipe_transfer_strings_fused(pipe, pd_series, batch_size=32 * 1024):
     """
     Streams UTF-8 encoded strings to the pipe in batches without building the full bytearray first.
     Uses a 2×batch_size buffer to accommodate long strings without frequent flushes.
-    
+
     Returns: tuple of (total_time, encoding_time, packing_time, io_time, num_strings)
     """
     t_total_start = time()
@@ -580,23 +635,23 @@ def pipe_transfer_strings_fused(pipe, pd_series, batch_size=32 * 1024):
     t_packing = 0.0
     t_io = 0.0
     num_strings = 0
-    
+
     buf = bytearray(batch_size * 2)
     view = memoryview(buf)
     pos = 0
     fd = pipe.fileno()  # Cache file descriptor to avoid repeated lookups
-    
+
     # Convert pandas Series to list/array for faster iteration (avoids pandas overhead)
     # Use .values for numpy array or .tolist() for Python list - tolist() is often faster for strings
-    values = pd_series.tolist() if hasattr(pd_series, 'tolist') else list(pd_series)
-    
+    values = pd_series.tolist() if hasattr(pd_series, "tolist") else list(pd_series)
+
     for value in values:
         num_strings += 1
         # Encode and get length - len() on bytes is very fast (O(1) attribute access)
         t0 = time()
         encoded = value.encode("utf-8")
         t_encoding += time() - t0
-        
+
         length = len(encoded)  # Fast O(1) operation on bytes
         entry_size = 4 + length  # length prefix + data
 
@@ -616,7 +671,7 @@ def pipe_transfer_strings_fused(pipe, pd_series, batch_size=32 * 1024):
         t_packing += time() - t0
         pos += 4
         # write the bytes - slice assignment is already efficient
-        buf[pos:pos + length] = encoded
+        buf[pos : pos + length] = encoded
         pos += length
 
     # flush the tail
@@ -626,7 +681,7 @@ def pipe_transfer_strings_fused(pipe, pd_series, batch_size=32 * 1024):
         t_io += time() - t0
         if written != pos:
             raise IOError(f"Expected to write {pos} bytes, wrote {written}")
-    
+
     t_total = time() - t_total_start
     return (t_total, t_encoding, t_packing, t_io, num_strings)
 
@@ -656,17 +711,22 @@ def frame_block_to_pandas(sds, fb: JavaObject):
             pipe = sds._FIFO_JAVA2PY_PIPES[pipe_id]
 
             # Java starts writing to pipe in background
-            fut = sds._executor_pool.submit(ep.startWritingColToPipe, pipe_id, fb, c_index)
+            fut = sds._executor_pool.submit(
+                ep.startWritingColToPipe, pipe_id, fb, c_index
+            )
 
             pipe_receive_header(pipe, pipe_id, sds._log)
 
             if d_type == "STRING":
-                py_strings, py_total, py_decode, py_io, num_strings, header_received = pipe_receive_strings_fused(
-                    pipe, num_rows, batch_size_bytes,pipe_id, sds._log
+                py_strings, py_total, py_decode, py_io, num_strings, header_received = (
+                    pipe_receive_strings_fused(
+                        pipe, num_rows, batch_size_bytes, pipe_id, sds._log
+                    )
                 )
                 ret = py_strings
-                
-                sds._log.debug(f"""
+
+                sds._log.debug(
+                    f"""
                 === FROM FrameBlock - Timing Breakdown (Strings) ===
                 Column: {fb.getColumnName(c_index)}
                 Total time: {py_total:.3f}s
@@ -676,7 +736,8 @@ def frame_block_to_pandas(sds, fb: JavaObject):
                 I/O reads: {py_io:.3f}s ({100*py_io/py_total:.1f}%)
                 Other: {py_total - py_decode - py_io:.3f}s
                 Strings processed: {num_strings:,}
-                """)
+                """
+                )
                 if not header_received:
                     pipe_receive_header(pipe, pipe_id, sds._log)
             else:
@@ -708,7 +769,10 @@ def frame_block_to_pandas(sds, fb: JavaObject):
 
                 sds._log.debug(
                     "FROM FrameBlock - Using single FIFO pipe for transferring {} | {} bytes | Column: {} | Type: {}".format(
-                        format_bytes(total_bytes), total_bytes, fb.getColumnName(c_index), d_type
+                        format_bytes(total_bytes),
+                        total_bytes,
+                        fb.getColumnName(c_index),
+                        d_type,
                     )
                 )
 

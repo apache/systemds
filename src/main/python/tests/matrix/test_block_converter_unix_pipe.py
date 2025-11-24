@@ -161,7 +161,9 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
             {
                 "dtype": np.float64,
                 "shape": (10, 5),
-                "data": lambda s: np.random.uniform(-100.0, 100.0, s).astype(np.float64),
+                "data": lambda s: np.random.uniform(-100.0, 100.0, s).astype(
+                    np.float64
+                ),
                 "tolerance": 1e-9,
             },
             # Note: INT64 and other dtypes are not directly supported for MatrixBlock
@@ -189,10 +191,9 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                     # Exact match for integer types
                     self.assertTrue(
                         np.array_equal(
-                            matrix.astype(np.float64),
-                            matrix_out.astype(np.float64)
+                            matrix.astype(np.float64), matrix_out.astype(np.float64)
                         ),
-                        f"Matrix with dtype {test_case['dtype']} and shape {test_case['shape']} doesn't match exactly"
+                        f"Matrix with dtype {test_case['dtype']} and shape {test_case['shape']} doesn't match exactly",
                     )
                 else:
                     # Approximate match for float types
@@ -200,22 +201,24 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                         np.allclose(
                             matrix.astype(np.float64),
                             matrix_out.astype(np.float64),
-                            atol=test_case["tolerance"]
+                            atol=test_case["tolerance"],
                         ),
-                        f"Matrix with dtype {test_case['dtype']} and shape {test_case['shape']} doesn't match within tolerance"
+                        f"Matrix with dtype {test_case['dtype']} and shape {test_case['shape']} doesn't match within tolerance",
                     )
 
     def test_java_to_python_unsupported_dtypes(self):
         """Test that unsupported dtypes are handled gracefully or converted."""
         # Note: SystemDS will convert unsupported dtypes to FP64 when reading from CSV
         # So these should still work, just with type conversion
-        
+
         test_cases = [
             # INT64 - not directly supported for MatrixBlock, but CSV reads as FP64
             {
                 "dtype": np.int64,
                 "shape": (10, 5),
-                "data": lambda s: np.random.randint(-1000000, 1000000, s).astype(np.int64),
+                "data": lambda s: np.random.randint(-1000000, 1000000, s).astype(
+                    np.int64
+                ),
             },
             # Complex types - not supported, should fail or be converted
             {
@@ -232,7 +235,7 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                     # Test that unsupported types fail gracefully
                     matrix = test_case["data"](test_case["shape"])
                     csv_path = self.temp_dir + f"unsupported_matrix_{i}.csv"
-                    
+
                     # Writing complex numbers to CSV might fail or convert to real part
                     try:
                         pd.DataFrame(matrix).to_csv(csv_path, header=False, index=False)
@@ -251,25 +254,25 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                     # Type should be converted to FP64
                     matrix = test_case["data"](test_case["shape"])
                     csv_path = self.temp_dir + f"converted_matrix_{i}.csv"
-                    
+
                     # Write as the original dtype (pandas will handle conversion for CSV)
                     pd.DataFrame(matrix).to_csv(csv_path, header=False, index=False)
-                    
+
                     matrix_sds = self.sds.read(
                         csv_path,
                         data_type="matrix",
                         format="csv",
                     )
                     matrix_out = matrix_sds.compute()
-                    
+
                     # Should be converted to FP64 and match values
                     self.assertTrue(
                         np.allclose(
                             matrix.astype(np.float64),
                             matrix_out.astype(np.float64),
-                            atol=1e-9
+                            atol=1e-9,
                         ),
-                        f"Converted matrix with dtype {test_case['dtype']} doesn't match"
+                        f"Converted matrix with dtype {test_case['dtype']} doesn't match",
                     )
 
     def test_frame_python_to_java(self):
@@ -322,7 +325,7 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
             for col_idx, col_name in enumerate(frame.columns):
                 original_col = frame[col_name]
                 result_col = result_df.iloc[:, col_idx]
-                
+
                 if pd.api.types.is_numeric_dtype(original_col):
                     original_dtype = original_col.dtype
                     # For integer types (int32, int64, uint8), use exact equality
@@ -330,9 +333,9 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                         self.assertTrue(
                             np.array_equal(
                                 original_col.values.astype(original_dtype),
-                                result_col.values.astype(original_dtype)
+                                result_col.values.astype(original_dtype),
                             ),
-                            f"Column {col_name} (dtype: {original_dtype}) integer values don't match exactly"
+                            f"Column {col_name} (dtype: {original_dtype}) integer values don't match exactly",
                         )
                     else:
                         # For float types (float32, float64), use allclose
@@ -340,15 +343,18 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                             np.allclose(
                                 original_col.values.astype(float),
                                 result_col.values.astype(float),
-                                equal_nan=True
+                                equal_nan=True,
                             ),
-                            f"Column {col_name} (dtype: {original_dtype}) float values don't match"
+                            f"Column {col_name} (dtype: {original_dtype}) float values don't match",
                         )
                 else:
                     # For string columns, compare as strings
                     self.assertTrue(
-                        (original_col.astype(str).values == result_col.astype(str).values).all(),
-                        f"Column {col_name} string values don't match"
+                        (
+                            original_col.astype(str).values
+                            == result_col.astype(str).values
+                        ).all(),
+                        f"Column {col_name} string values don't match",
                     )
 
     def test_frame_java_to_python_simple(self):
@@ -387,9 +393,9 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                         self.assertTrue(
                             np.array_equal(
                                 original_col.values.astype(original_dtype),
-                                frame_out[col_name].values.astype(original_dtype)
+                                frame_out[col_name].values.astype(original_dtype),
                             ),
-                            f"Column {col_name} (dtype: {original_dtype}) integer values don't match exactly"
+                            f"Column {col_name} (dtype: {original_dtype}) integer values don't match exactly",
                         )
                     else:
                         # For float types (float32, float64), use allclose
@@ -397,9 +403,11 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                             original_col.values.astype(float),
                             frame_out[col_name].values.astype(float),
                             equal_nan=True,
-                            atol=1e-6
+                            atol=1e-6,
                         ):
-                            print(f"Column {col_name} (dtype: {original_dtype}) float values don't match: {np.abs(original_col.values.astype(float) - frame_out[col_name].values.astype(float))}")
+                            print(
+                                f"Column {col_name} (dtype: {original_dtype}) float values don't match: {np.abs(original_col.values.astype(float) - frame_out[col_name].values.astype(float))}"
+                            )
                             self
                 else:
                     # For string columns, compare as strings
@@ -407,9 +415,8 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                     result_str = frame_out[col_name].astype(str).values
                     self.assertTrue(
                         (original_str == result_str).all(),
-                        f"Column {col_name} string values don't match"
+                        f"Column {col_name} string values don't match",
                     )
-
 
     def test_frame_java_to_python(self):
         """Test reading CSV into SystemDS FrameBlock and converting back to pandas DataFrame."""
@@ -421,7 +428,6 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
             {"uint8_col": np.random.randint(0, 255, 50).astype(np.uint8)},
             # String column only
             {"text_col": [f"text_value_{i}" for i in range(30)]},
-
             # All numeric types together
             {
                 "float32_col": np.random.random(30).astype(np.float32),
@@ -430,7 +436,6 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                 "int64_col": np.random.randint(-1000000, 1000000, 30).astype(np.int64),
                 "uint8_col": np.random.randint(0, 255, 30).astype(np.uint8),
             },
-
             # Mixed numeric types with strings
             {
                 "float32_col": np.random.random(25).astype(np.float32),
@@ -440,7 +445,6 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                 "uint8_col": np.random.randint(0, 255, 25).astype(np.uint8),
                 "string_col": [f"string_{i}" for i in range(25)],
             },
-
         ]
         print("Running frame conversion test\n\n!!!!")
         for frame_dict in combinations:
@@ -472,9 +476,9 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                         self.assertTrue(
                             np.array_equal(
                                 original_col.values.astype(original_dtype),
-                                result_col.values.astype(original_dtype)
+                                result_col.values.astype(original_dtype),
                             ),
-                            f"Column {col_name} (dtype: {original_dtype}) integer values don't match exactly"
+                            f"Column {col_name} (dtype: {original_dtype}) integer values don't match exactly",
                         )
                     else:
                         # For float types (float32, float64), use allclose
@@ -483,18 +487,23 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                             original_col.values.astype(float),
                             result_col.values.astype(float),
                             equal_nan=True,
-                            atol=1e-6
+                            atol=1e-6,
                         ):
-                            print(f"Column {col_name} (dtype: {original_dtype}) float values don't match: {np.abs(original_col.values.astype(float) - result_col.values.astype(float))}")
-                            self.assertTrue(False, f"Column {col_name} (dtype: {original_dtype}) float values don't match")
-                        
+                            print(
+                                f"Column {col_name} (dtype: {original_dtype}) float values don't match: {np.abs(original_col.values.astype(float) - result_col.values.astype(float))}"
+                            )
+                            self.assertTrue(
+                                False,
+                                f"Column {col_name} (dtype: {original_dtype}) float values don't match",
+                            )
+
                 else:
                     # For string columns, compare as strings
                     original_str = original_col.astype(str).values
                     result_str = result_col.astype(str).values
                     self.assertTrue(
                         (original_str == result_str).all(),
-                        f"Column {col_name} string values don't match"
+                        f"Column {col_name} string values don't match",
                     )
 
 

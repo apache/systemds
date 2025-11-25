@@ -4,13 +4,15 @@
 * Run with docker:
 docker run -it --rm -v $PWD:/scripts/ apache/systemds:nightly -f /scripts/queries/q1_1.dml -nvargs input_dir="/scripts/data/"
 
-SELECT SUM(lo_extendedprice * lo_discount) AS REVENUE
+SELECT
+    SUM(lo_extendedprice * lo_discount) AS REVENUE
 FROM lineorder, date
 WHERE
     lo_orderdate = d_datekey
-    AND d_year = 1993
-    AND lo_discount BETWEEN 1 AND 3
-    AND lo_quantity < 25;
+    AND d_weeknuminyear = 6
+    AND d_year = 1994
+    AND lo_discount BETWEEN 5 AND 7
+    AND lo_quantity BETWEEN 26 AND 35;
 
 *Please run the original SQL query (eg. in Postgres) 
 to verify the correctness of DML version.
@@ -40,9 +42,9 @@ lineorder_csv = read(input_dir + "/lineorder.tbl", data_type="frame", format="cs
 # -- Data preparation --
 
 # Extract only the necessary columns from date and lineorder table.
-# Extracted: COL-1 | COL-5
-# => D_DATEKEY | D_YEAR
-date_csv_min = cbind(date_csv[, 1], date_csv[, 5]);
+# Extracted: COL-1 | COL-5 | COL-12
+# => D_DATEKEY | D_YEAR | D_WEEKNUMINYEAR
+date_csv_min = cbind(date_csv[, 1], date_csv[, 5], date_csv[, 12]);
 date_matrix_min = as.matrix(date_csv_min);
 
 # Extracted: COL-6 | COL-9 | COL-10 | COL-12
@@ -52,15 +54,18 @@ lineorder_matrix_min = as.matrix(lineorder_csv_min);
 
 # -- Filter the data with RA-SELECTION function.
 
-# D_YEAR = 1993
-d_year_filt = raSel::m_raSelection(date_matrix_min, col=2, op="==", val=1993);
+# D_YEAR = 1994
+d_filt = raSel::m_raSelection(date_matrix_min, col=2, op="==", val=1994);
+# D_WEEKNUMINYEAR = 6
+d_filt = raSel::m_raSelection(d_filt, col=3, op="==", val=6);
 
-# LO_QUANTITY < 25
-lo_filt = raSel::m_raSelection(lineorder_matrix_min, col=2, op="<", val=25);
+# LO_DISCOUNT BETWEEN 5 AND 7
+lo_filt = raSel::m_raSelection(lineorder_matrix_min, col=4, op=">=", val=5);
+lo_filt = raSel::m_raSelection(lo_filt, col=4, op="<=", val=7);
 
-# LO_DISCOUNT BETWEEN 1 AND 3
-lo_filt = raSel::m_raSelection(lo_filt, col=4, op=">=", val=1);
-lo_filt = raSel::m_raSelection(lo_filt, col=4, op="<=", val=3);
+# LO_QUANTITY BETWEEN 26 AND 35
+lo_filt = raSel::m_raSelection(lo_filt, col=2, op=">=", val=26);
+lo_filt = raSel::m_raSelection(lo_filt, col=2, op="<=", val=35);
 
 # Minimize LO TABLE
 # => LO_ORDERDATE | LO_EXTPRICE | LO_DISCOUNT
@@ -69,22 +74,22 @@ lo_filt = cbind(lo_filt[, 1], lo_filt[, 3], lo_filt[, 4]);
 # -- Join --
 # Join LINEORDER and DATE tables with RA-JOIN function
 # WHERE LO_ORDERDATE = D_DATEKEY
-
-# => (D-KEY | D-YEAR) | (LO_ORDERDATE | LO_EXTPRICE | LO_DISCOUNT)
-joined_matrix = raJoin::m_raJoin(A=d_year_filt, colA=1, B=lo_filt, colB=1, method="hash2");
-print("LO-DATE JOINED.");
-
 # Print the first row.
+#print(toString(lo_filt[1,]))
+
+# => (D-DATEKEY | D-YEAR | D_WEEKNUMINYEAR) | (LO_ORDERDATE | LO_EXTPRICE | LO_DISCOUNT)
+joined_matrix = raJoin::m_raJoin(A=d_filt, colA=1, B=lo_filt, colB=1, method="hash2");
+print("LO-DATE JOINED.");
 #print(toString(joined_matrix[1,]))
 
 # -- Aggregation (SUM)--
 
 # SUM(lo_extendedprice * lo_discount) AS REVENUE
-# Use the joined_matrix with LO_EXTPRICE (COL-4), LO_DISCOUNT (COL-5)
-lo_extprice = joined_matrix[, 4];		
-lo_disc = joined_matrix[, 5];			
+# Use the joined_matrix with LO_EXTPRICE (COL-5), LO_DISCOUNT (COL-6)
+lo_extprice = joined_matrix[, 5];		
+lo_disc = joined_matrix[, 6];			
 revenue = sum(lo_extprice * lo_disc);
 
 print("REVENUE: " + as.integer(revenue));
 
-#print("Q1.1 finished.\n");
+#print("Q1.3 finished.\n");

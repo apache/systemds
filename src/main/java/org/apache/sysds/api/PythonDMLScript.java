@@ -81,7 +81,7 @@ public class PythonDMLScript {
 			 * therefore use logging framework. and terminate program.
 			 */
 			LOG.info("failed startup", p4e);
-			System.exit(-1);
+			exitHandler.exit(-1);
 		}
 		catch(Exception e) {
 			throw new DMLException("Failed startup and maintaining Python gateway", e);
@@ -237,6 +237,20 @@ public class PythonDMLScript {
 		LOG.debug("Closed all pipes in Java");
 	}
 
+	@FunctionalInterface
+	public interface ExitHandler {
+		void exit(int status);
+	}
+
+	private static volatile ExitHandler exitHandler = System::exit;
+
+	public static void setExitHandler(ExitHandler handler) {
+		exitHandler = handler == null ? System::exit : handler;
+	}
+
+	public static void resetExitHandler() {
+		exitHandler = System::exit;
+	}
 	protected static class DMLGateWayListener extends DefaultGatewayServerListener {
 		private static final Log LOG = LogFactory.getLog(DMLGateWayListener.class.getName());
 

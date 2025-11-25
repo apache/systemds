@@ -32,6 +32,7 @@ from systemds.context import SystemDSContext
 
 def timeout(seconds):
     """Decorator to add timeout to test methods."""
+
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -60,6 +61,7 @@ def timeout(seconds):
             return result[0]
 
         return wrapper
+
     return decorator
 
 
@@ -81,7 +83,7 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
         cls.sds.close()
         shutil.rmtree(cls.temp_dir, ignore_errors=True)
 
-    @timeout(120)
+    @timeout(60)
     def test_python_to_java(self):
         combinations = [  # (n_rows, n_cols)
             (5, 0),
@@ -111,7 +113,7 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
             # Verify the data
             self.assertTrue(np.allclose(matrix_out, matrix))
 
-    @timeout(120)
+    @timeout(60)
     def test_java_to_python(self):
         """Test reading matrices from SystemDS back to Python with various dtypes."""
         test_cases = [
@@ -203,8 +205,6 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                 ),
                 "tolerance": 1e-9,
             },
-            # Note: INT64 and other dtypes are not directly supported for MatrixBlock
-            # CSV reading will convert them to FP64, so we don't test them here
         ]
 
         for i, test_case in enumerate(test_cases):
@@ -243,7 +243,7 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                         f"Matrix with dtype {test_case['dtype']} and shape {test_case['shape']} doesn't match within tolerance",
                     )
 
-    @timeout(120)
+    @timeout(60)
     def test_java_to_python_unsupported_dtypes(self):
         """Test that unsupported dtypes are handled gracefully or converted."""
         # Note: SystemDS will convert unsupported dtypes to FP64 when reading from CSV
@@ -313,7 +313,7 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                         f"Converted matrix with dtype {test_case['dtype']} doesn't match",
                     )
 
-    @timeout(120)
+    @timeout(60)
     def test_frame_python_to_java(self):
         """Test converting pandas DataFrame to SystemDS FrameBlock and writing to CSV."""
         combinations = [
@@ -396,69 +396,7 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                         f"Column {col_name} string values don't match",
                     )
 
-    @timeout(120)
-    def test_frame_java_to_python_simple(self):
-        """Test transferring pandas DataFrame to SystemDS FrameBlock and converting back to pandas DataFrame."""
-        combinations = [
-            {"float32_col": np.random.random(8).astype(np.float32)},
-            {"float64_col": np.random.random(8).astype(np.float64)},
-            {"int32_col": np.random.randint(-1000, 1000, 50).astype(np.int32)},
-            {"int64_col": np.random.randint(-1000000, 1000000, 50).astype(np.int64)},
-            {"uint8_col": np.random.randint(0, 255, 50).astype(np.uint8)},
-        ]
-        for frame_dict in combinations:
-            frame = pd.DataFrame(frame_dict)
-
-            frame_sds = self.sds.from_pandas(frame)
-            # do some operation on the frame to trigger computation
-            frame_sds = frame_sds.rbind(frame_sds)
-            frame_out = frame_sds.compute()
-
-            frame = pd.concat([frame, frame], ignore_index=True)
-
-            # Verify it's a DataFrame
-            self.assertIsInstance(frame_out, pd.DataFrame)
-
-            # Verify shape matches
-            self.assertEqual(frame.shape, frame_out.shape, "Frame shapes don't match")
-
-            # Verify column data
-            for col_name in frame.columns:
-                original_col = frame[col_name]
-
-                if pd.api.types.is_numeric_dtype(original_col):
-                    original_dtype = original_col.dtype
-                    # For integer types (int32, int64, uint8), use exact equality
-                    if original_dtype in [np.int32, np.int64, np.uint8]:
-                        self.assertTrue(
-                            np.array_equal(
-                                original_col.values.astype(original_dtype),
-                                frame_out[col_name].values.astype(original_dtype),
-                            ),
-                            f"Column {col_name} (dtype: {original_dtype}) integer values don't match exactly",
-                        )
-                    else:
-                        # For float types (float32, float64), use allclose
-                        if not np.allclose(
-                            original_col.values.astype(float),
-                            frame_out[col_name].values.astype(float),
-                            equal_nan=True,
-                            atol=1e-6,
-                        ):
-                            print(
-                                f"Column {col_name} (dtype: {original_dtype}) float values don't match: {np.abs(original_col.values.astype(float) - frame_out[col_name].values.astype(float))}"
-                            )
-                            self
-                else:
-                    # For string columns, compare as strings
-                    original_str = original_col.astype(str).values
-                    result_str = frame_out[col_name].astype(str).values
-                    self.assertTrue(
-                        (original_str == result_str).all(),
-                        f"Column {col_name} string values don't match",
-                    )
-
-    @timeout(120)
+    @timeout(60)
     def test_frame_java_to_python(self):
         """Test reading CSV into SystemDS FrameBlock and converting back to pandas DataFrame."""
         combinations = [

@@ -39,7 +39,7 @@ import java.nio.charset.StandardCharsets;
 public class UnixPipeUtils {
 	private static final Log LOG = LogFactory.getLog(UnixPipeUtils.class.getName());
 
-    private static int getElementSize(Types.ValueType type) {
+    public static int getElementSize(Types.ValueType type) {
         return switch (type) {
             case UINT8, BOOLEAN -> 1;
             case INT32, FP32 -> 4;
@@ -508,7 +508,9 @@ public class UnixPipeUtils {
             int len = bb.getInt();
 
             if (len < 0) {
-                throw new IllegalArgumentException("Negative element length: " + len);
+                // null string
+                array.set(offsetOut++, (String) null);
+                continue;
             }
             if (bb.remaining() < len) {
                 // Not enough bytes for full payload → rollback and stop

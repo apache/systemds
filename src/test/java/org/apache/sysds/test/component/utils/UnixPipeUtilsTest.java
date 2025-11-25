@@ -46,6 +46,8 @@ import java.util.Collection;
 
 import static org.junit.Assert.assertArrayEquals;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 @RunWith(Enclosed.class)
 public class UnixPipeUtilsTest {
@@ -61,6 +63,7 @@ public class UnixPipeUtilsTest {
 					{Types.ValueType.FP64, 6, 48, 99, new MatrixBlock(2, 3, new double[]{1.0, 2.0, 3.0, 4.0, 5.0, 6.0})},
 					{Types.ValueType.FP32, 6, 24, 88, new MatrixBlock(3, 2, new double[]{1.0, 2.0, 3.0, 4.0, 5.0, 6.0})},
 					{Types.ValueType.INT32, 4, 16, 77, new MatrixBlock(2, 2, new double[]{0, -1, 2, -3})},
+					{Types.ValueType.INT64, 4, 64, 55, new MatrixBlock(2, 2, new double[]{0, 1, 2, 3})},
 					{Types.ValueType.UINT8, 4, 4, 66, new MatrixBlock(2, 2, new double[]{0, 1, 2, 3})}
 			});
 		}
@@ -112,7 +115,7 @@ public class UnixPipeUtilsTest {
 				{Types.ValueType.FP32, new Object[]{1.0f, -2.25f, 3.5f, -4.125f}, 48, 202},
 				{Types.ValueType.INT32, new Object[]{0, -1, 5, 42}, 32, 203},
 				{Types.ValueType.UINT8, new Object[]{0, 1, 127, 255}, 16, 204},
-				{Types.ValueType.STRING, new Object[]{"alpha", "beta", "gamma", "delta"}, 64, 205}
+				{Types.ValueType.STRING, new Object[]{"alpha", "beta", "gamma",null, "delta"}, 64, 205}
 			});
 		}
 
@@ -265,5 +268,52 @@ public class UnixPipeUtilsTest {
 				UnixPipeUtils.readNumpyArrayInBatches(in, id, batchSize, numElem, type, outArr, 0);
 			}
 		}
+
+		@Test(expected = UnsupportedOperationException.class)
+		public void testGetElementSizeUnsupportedType() {
+			UnixPipeUtils.getElementSize(Types.ValueType.STRING);
+		}
+
+		@Test(expected = UnsupportedOperationException.class)
+		public void testReadNumpyArrayUnsupportedType() throws IOException {
+			File file = folder.newFile("unsupported_type.pipe");
+			int id = 7;
+			try (BufferedOutputStream out = UnixPipeUtils.openOutput(file.getAbsolutePath(), id)) {
+				UnixPipeUtils.writeHandshake(id, out); // start handshake
+				out.flush();
+				UnixPipeUtils.writeHandshake(id, out); // end handshake, no payload
+			}
+			double[] outArr = new double[0];
+			try (BufferedInputStream in = UnixPipeUtils.openInput(file.getAbsolutePath(), id)) {
+				UnixPipeUtils.readNumpyArrayInBatches(in, id, 32, 0, Types.ValueType.STRING, outArr, 0);
+			}
+		}
+
+		@Test
+		public void testGetBufferReaderUnsupportedType() throws Exception {
+			Method m = UnixPipeUtils.class.getDeclaredMethod("getBufferReader", Types.ValueType.class);
+			m.setAccessible(true);
+
+			try {
+				m.invoke(null, Types.ValueType.STRING);
+				org.junit.Assert.fail("Expected UnsupportedOperationException");
+			} catch (InvocationTargetException e) {
+				org.junit.Assert.assertTrue(e.getCause() instanceof UnsupportedOperationException);
+			}
+		}
+
+		@Test
+		public void testGetBufferWriterUnsupportedType() throws Exception {
+			Method m = UnixPipeUtils.class.getDeclaredMethod("getBufferWriter", Types.ValueType.class);
+			m.setAccessible(true);
+
+			try {
+				m.invoke(null, Types.ValueType.STRING);
+				org.junit.Assert.fail("Expected UnsupportedOperationException");
+			} catch (InvocationTargetException e) {
+				org.junit.Assert.assertTrue(e.getCause() instanceof UnsupportedOperationException);
+			}
+		}
+
 	}
 }

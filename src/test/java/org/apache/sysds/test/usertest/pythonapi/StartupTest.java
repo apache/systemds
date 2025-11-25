@@ -42,7 +42,6 @@ import py4j.GatewayServer;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.security.Permission;
 import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -51,29 +50,19 @@ import static org.junit.Assert.assertArrayEquals;
 /** Simple tests to verify startup of Python Gateway server happens without crashes */
 public class StartupTest {
 	private LoggingUtils.TestAppender appender;
-	@SuppressWarnings("removal")
-	private SecurityManager sm;
 
 	@Before
-	@SuppressWarnings("removal")
 	public void setUp() {
 		appender = LoggingUtils.overwrite();
-		sm = System.getSecurityManager();
-		System.setSecurityManager(new NoExitSecurityManager());
+		PythonDMLScript.setExitHandler(new ExitCalled());
 		PythonDMLScript.setDMLGateWayListenerLoggerLevel(Level.ALL);
 		Logger.getLogger(PythonDMLScript.class.getName()).setLevel(Level.ALL);
 	}
 
 	@After
-	@SuppressWarnings("removal")
 	public void tearDown() {
 		LoggingUtils.reinsert(appender);
-		System.setSecurityManager(sm);
-	}
-
-	@SuppressWarnings("unused")
-	private void assertLogMessages(String... expectedMessages) {
-		assertLogMessages(true, expectedMessages);
+		PythonDMLScript.resetExitHandler();
 	}
 
 	private void assertLogMessages(boolean strict, String... expectedMessages) {
@@ -140,7 +129,7 @@ public class StartupTest {
 			Thread.sleep(200);
 			PythonDMLScript.main(new String[]{"-python", "4001"});
 			Thread.sleep(200);
-		} catch (SecurityException e) {
+		} catch (ExitCalled e) {
 			assertLogMessages(false,
 					"GatewayServer started",
 					"failed startup"
@@ -299,14 +288,25 @@ public class StartupTest {
 		script.startReadingMbFromPipes(new int[]{3,3}, 2, 3, Types.ValueType.FP64);
 	}
 
-	@SuppressWarnings("removal")
-	class NoExitSecurityManager extends SecurityManager {
-		@Override
-		public void checkPermission(Permission perm) { }
+	@Test(expected = Exception.class)
+	public void testDataTransferNotInit4() throws Exception {
+		PythonDMLScript.main(new String[]{"-python", "4007"});
+		Thread.sleep(200);
+		PythonDMLScript script = (PythonDMLScript) PythonDMLScript.GwS.getGateway().getEntryPoint();
+		script.startReadingColFromPipe(0, null, 2, -1, 0, Types.ValueType.STRING, false);
+	}
 
+	@Test(expected = Exception.class)
+	public void testDataTransferNotInit5() throws Exception {
+		PythonDMLScript.main(new String[]{"-python", "4007"});
+		Thread.sleep(200);
+		PythonDMLScript script = (PythonDMLScript) PythonDMLScript.GwS.getGateway().getEntryPoint();
+		script.startWritingColToPipe(0, null, 0);
+	}
+	private static class ExitCalled extends RuntimeException implements PythonDMLScript.ExitHandler {
 		@Override
-		public void checkExit(int status) {
-			throw new SecurityException("Intercepted exit()");
+		public void exit(int status) {
+			throw this;
 		}
 	}
 

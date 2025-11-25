@@ -1,4 +1,5 @@
 -- Licensed to the Apache Software Foundation (ASF) under one
+-- Licensed to the Apache Software Foundation (ASF) under one
 -- or more contributor license agreements.  See the NOTICE file
 -- distributed with this work for additional information
 -- regarding copyright ownership.  The ASF licenses this file
@@ -15,7 +16,7 @@
 -- specific language governing permissions and limitations
 -- under the License.
 SELECT SUM(lo_extendedprice * lo_discount) AS REVENUE
-FROM lineorder, dates
+FROM lineorder, date --dates (Ssb-dbgen dataset uses "date" instead of "dates")
 WHERE
     lo_orderdate = d_datekey
     AND d_year = 1993

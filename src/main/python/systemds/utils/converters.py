@@ -592,6 +592,9 @@ def pandas_to_frame_block_pipe(
             )
             continue
 
+        elif pd_series.dtype == "bool":
+            # Convert boolean to uint8 (0/1) for proper byte representation
+            byte_data = pd_series.fillna(False).astype(np.uint8).to_numpy()
         else:
             byte_data = pd_series.fillna("").to_numpy()
 
@@ -646,13 +649,22 @@ def pipe_transfer_strings_fused(pipe, pd_series, batch_size=32 * 1024):
 
     for value in values:
         num_strings += 1
-        # Encode and get length - len() on bytes is very fast (O(1) attribute access)
-        t0 = time()
-        encoded = value.encode("utf-8")
-        t_encoding += time() - t0
+        
+        # Check for null values (None, pd.NA, np.nan)
+        is_null = value is None or pd.isna(value)
+        
+        if is_null:
+            # Use -1 as marker for null values (signed int32)
+            length = -1
+            entry_size = 4  # Only length prefix, no data bytes
+        else:
+            # Encode and get length - len() on bytes is very fast (O(1) attribute access)
+            t0 = time()
+            encoded = value.encode("utf-8")
+            t_encoding += time() - t0
 
-        length = len(encoded)  # Fast O(1) operation on bytes
-        entry_size = 4 + length  # length prefix + data
+            length = len(encoded)  # Fast O(1) operation on bytes
+            entry_size = 4 + length  # length prefix + data
 
         # if next string doesn't fit comfortably, flush first half
         if pos + entry_size > batch_size:
@@ -664,14 +676,16 @@ def pipe_transfer_strings_fused(pipe, pd_series, batch_size=32 * 1024):
                 raise IOError(f"Expected to write {pos} bytes, wrote {written}")
             pos = 0
 
-        # write length prefix (little-endian)
+        # write length prefix (little-endian, signed int32 for -1 null marker)
         t0 = time()
-        struct.pack_into("<I", buf, pos, length)
+        struct.pack_into("<i", buf, pos, length)
         t_packing += time() - t0
         pos += 4
-        # write the bytes - slice assignment is already efficient
-        buf[pos : pos + length] = encoded
-        pos += length
+        
+        # write the bytes - skip for null values
+        if not is_null:
+            buf[pos : pos + length] = encoded
+            pos += length
 
     # flush the tail
     if pos > 0:
@@ -763,9 +777,6 @@ def frame_block_to_pandas(sds, fb: JavaObject):
                 }
                 numpy_dtype = dtype_map.get(d_type, np.float64)
 
-                arr = np.empty(num_rows, dtype=numpy_dtype)
-                mv = memoryview(arr).cast("B")
-
                 sds._log.debug(
                     "FROM FrameBlock - Using single FIFO pipe for transferring {} | {} bytes | Column: {} | Type: {}".format(
                         format_bytes(total_bytes),
@@ -775,8 +786,19 @@ def frame_block_to_pandas(sds, fb: JavaObject):
                     )
                 )
 
-                pipe_receive_bytes(pipe, mv, 0, total_bytes, batch_size_bytes, sds._log)
-                ret = arr
+                if d_type == "BOOLEAN":
+                    # Read as uint8 first, then convert to boolean
+                    # This ensures proper interpretation of 0/1 bytes
+                    arr_uint8 = np.empty(num_rows, dtype=np.uint8)
+                    mv = memoryview(arr_uint8).cast("B")
+                    pipe_receive_bytes(pipe, mv, 0, total_bytes, batch_size_bytes, sds._log)
+                    ret = arr_uint8.astype(bool)
+                else:
+                    arr = np.empty(num_rows, dtype=numpy_dtype)
+                    mv = memoryview(arr).cast("B")
+                    pipe_receive_bytes(pipe, mv, 0, total_bytes, batch_size_bytes, sds._log)
+                    ret = arr
+
                 pipe_receive_header(pipe, pipe_id, sds._log)
 
             fut.result()

@@ -415,6 +415,10 @@ public class UnixPipeUtils {
                 for (int i = 0; i < currentBatchSize; i++)
                     array.set(offsetOut++, (int) (bb.get(i) & 0xFF));
             }
+            case BOOLEAN -> {
+                for (int i = 0; i < currentBatchSize; i++)
+                    array.set(offsetOut++, bb.get(i) != 0 ? 1.0 : 0.0);
+            }
             default -> throw new UnsupportedOperationException("Unsupported fixed type: " + type);
         }
         return offsetOut;
@@ -660,14 +664,19 @@ public class UnixPipeUtils {
                     }
                     bufferPos += elementsToWrite * 8;
                 }
-                case INT32 -> {
-                    IntBuffer ib = bb.asIntBuffer();
-                    for (int i = 0; i < elementsToWrite; i++) {
-                        ib.put((int) array.getAsDouble(arrayIndex++));
-                    }
-                    bufferPos += elementsToWrite * 4;
+            case INT32 -> {
+                IntBuffer ib = bb.asIntBuffer();
+                for (int i = 0; i < elementsToWrite; i++) {
+                    ib.put((int) array.getAsDouble(arrayIndex++));
                 }
-                default -> throw new UnsupportedOperationException("Unsupported type: " + type);
+                bufferPos += elementsToWrite * 4;
+            }
+            case BOOLEAN -> {
+                for (int i = 0; i < elementsToWrite; i++) {
+                    buffer[bufferPos++] = (byte) (array.getAsDouble(arrayIndex++) != 0.0 ? 1 : 0);
+                }
+            }
+            default -> throw new UnsupportedOperationException("Unsupported type: " + type);
             }
         }
 

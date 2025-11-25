@@ -115,6 +115,7 @@ public class UnixPipeUtilsTest {
 				{Types.ValueType.FP32, new Object[]{1.0f, -2.25f, 3.5f, -4.125f}, 48, 202},
 				{Types.ValueType.INT32, new Object[]{0, -1, 5, 42}, 32, 203},
 				{Types.ValueType.UINT8, new Object[]{0, 1, 127, 255}, 16, 204},
+				{Types.ValueType.BOOLEAN, new Object[]{true, false, true, false}, 8, 205},
 				{Types.ValueType.STRING, new Object[]{"alpha", "beta", "gamma",null, "delta"}, 64, 205}
 			});
 		}
@@ -153,6 +154,7 @@ public class UnixPipeUtilsTest {
 			for(int i = 0; i < values.length; i++) {
 				switch(type) {
 					case STRING -> array.set(i, (String) values[i]);
+					case BOOLEAN -> array.set(i, ((Boolean) values[i]) ? 1.0 : 0.0);
 					default -> array.set(i, ((Number) values[i]).doubleValue());
 				}
 			}

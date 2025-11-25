@@ -485,6 +485,49 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                         f"Column {col_name} string values don't match",
                     )
 
+    @timeout(60)
+    def test_frame_string_with_nulls(self):
+        """Test converting pandas DataFrame with null string values."""
+        # Create a simple DataFrame with 5 string values, 2 of them None
+        df = pd.DataFrame({
+            "string_col": ["hello", None, "world", None, "test"]
+        })
+
+        # Transfer into SystemDS and back
+        frame_sds = self.sds.from_pandas(df)
+        frame_sds = frame_sds.rbind(frame_sds)
+        frame_out = frame_sds.compute()
+        df = pd.concat([df, df], ignore_index=True)
+
+        # Verify it's a DataFrame
+        self.assertIsInstance(frame_out, pd.DataFrame)
+
+        # Verify shape matches
+        self.assertEqual(df.shape, frame_out.shape, "Frame shapes don't match")
+
+        # Verify column data - check that None values are preserved
+        original_col = df["string_col"]
+        result_col = frame_out.iloc[:, 0]
+
+        # Check each value
+        for i in range(len(original_col)):
+            original_val = original_col.iloc[i]
+            result_val = result_col.iloc[i]
+
+            if pd.isna(original_val):
+                # Original is null, result should also be null
+                self.assertTrue(
+                    pd.isna(result_val),
+                    f"Row {i}: Expected null but got '{result_val}'"
+                )
+            else:
+                # Original is not null, result should match
+                self.assertEqual(
+                    str(original_val),
+                    str(result_val),
+                    f"Row {i}: Expected '{original_val}' but got '{result_val}'"
+                )
+
 
 if __name__ == "__main__":
     unittest.main(exit=False)

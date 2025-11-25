@@ -489,9 +489,7 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
     def test_frame_string_with_nulls(self):
         """Test converting pandas DataFrame with null string values."""
         # Create a simple DataFrame with 5 string values, 2 of them None
-        df = pd.DataFrame({
-            "string_col": ["hello", None, "world", None, "test"]
-        })
+        df = pd.DataFrame({"string_col": ["hello", None, "world", None, "test"]})
 
         # Transfer into SystemDS and back
         frame_sds = self.sds.from_pandas(df)
@@ -518,14 +516,14 @@ class TestMatrixBlockConverterUnixPipe(unittest.TestCase):
                 # Original is null, result should also be null
                 self.assertTrue(
                     pd.isna(result_val),
-                    f"Row {i}: Expected null but got '{result_val}'"
+                    f"Row {i}: Expected null but got '{result_val}'",
                 )
             else:
                 # Original is not null, result should match
                 self.assertEqual(
                     str(original_val),
                     str(result_val),
-                    f"Row {i}: Expected '{original_val}' but got '{result_val}'"
+                    f"Row {i}: Expected '{original_val}' but got '{result_val}'",
                 )
 
 

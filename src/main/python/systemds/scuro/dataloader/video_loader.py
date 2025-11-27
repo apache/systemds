@@ -46,7 +46,7 @@ class VideoLoader(BaseLoader):
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
         # if not self.load_data_from_file:
-        #     self.metadata[file] = self.modality_type.create_video_metadata(
+        #     self.metadata[file] = self.modality_type.create_metadata(
         #         30, 10, 100, 100, 3
         #     )
         # else:
@@ -67,7 +67,7 @@ class VideoLoader(BaseLoader):
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         num_channels = 3
 
-        self.metadata[file] = self.modality_type.create_video_metadata(
+        self.metadata[file] = self.modality_type.create_metadata(
             self.fps, length, width, height, num_channels
         )
 

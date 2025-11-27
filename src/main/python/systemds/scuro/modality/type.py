@@ -195,6 +195,14 @@ class ModalityType(Flag):
     EMBEDDING = auto()
     PHYSIOLOGICAL = auto()
 
+    _metadata_factory_methods = {
+        "TEXT": "create_text_metadata",
+        "AUDIO": "create_audio_metadata",
+        "VIDEO": "create_video_metadata",
+        "IMAGE": "create_image_metadata",
+        "TIMESERIES": "create_ts_metadata",
+    }
+
     def get_schema(self):
         return ModalitySchemas.get(self.name)
 
@@ -214,6 +222,27 @@ class ModalityType(Flag):
             md[key].update({field: value})
 
         return md
+
+    def create_metadata(self, *args, **kwargs):
+        if self.name is None or "|" in self.name:
+            raise ValueError(
+                f"Composite modality types are not supported for metadata creation: {self}"
+            )
+
+        factory_methods = type(self)._metadata_factory_methods
+        method_name = factory_methods.value.get(self.name)
+        if method_name is None:
+            raise NotImplementedError(
+                f"Metadata creation not implemented for modality type: {self.name}"
+            )
+
+        method = getattr(type(self), method_name, None)
+        if method is None:
+            raise NotImplementedError(
+                f"Metadata creation method '{method_name}' not found for {self.name}"
+            )
+
+        return method(self, *args, **kwargs)
 
     def create_audio_metadata(self, sampling_rate, data, is_single_instance=True):
         md = deepcopy(self.get_schema())

@@ -18,42 +18,46 @@
 # under the License.
 #
 # -------------------------------------------------------------
-import json
+from typing import List, Optional, Union
 
 import numpy as np
 
-from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.dataloader.base_loader import BaseLoader
-from typing import Optional, List, Union
+import cv2
+from systemds.scuro.modality.type import ModalityType
 
 
-class JSONLoader(BaseLoader):
+class ImageLoader(BaseLoader):
     def __init__(
         self,
         source_path: str,
         indices: List[str],
-        field: str, # TODO: make this a list so it is easier to get multiple fields from a json file. (i.e. Mustard: context + sentence)
-        data_type: Union[np.dtype, str] = str,
+        data_type: Union[np.dtype, str] = np.float16,
         chunk_size: Optional[int] = None,
-        ext: str = ".json",
+        load=True,
+        ext=".jpg"
     ):
-        super().__init__(source_path, indices, data_type, chunk_size, ModalityType.TEXT, ext)
-        self.field = field
+        super().__init__(
+            source_path, indices, data_type, chunk_size, ModalityType.IMAGE, ext
+        )
+        self.load_data_from_file = load
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
-        with open(file) as f:
-            json_file = json.load(f)
 
-            if isinstance(index, str):
-                index = [index]
-            for idx in index:
-                try:
-                    text = json_file[idx][self.field]
-                except:
-                    text = json_file[self.field]
-                
-                self.data.append(text)
-                self.metadata[idx] = self.modality_type.create_metadata(
-                    len(text), text
-                )
+        image = cv2.imread(file, cv2.IMREAD_COLOR)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        if image.ndim == 2:
+            height, width = image.shape
+            channels = 1
+        else:
+            height, width, channels = image.shape
+
+        image = image.astype(np.float32) / 255.0
+
+        self.metadata[file] = self.modality_type.create_metadata(
+            width, height, channels
+        )
+
+        self.data.append(image)

@@ -34,6 +34,7 @@ class BaseLoader(ABC):
         data_type: Union[np.dtype, str],
         chunk_size: Optional[int] = None,
         modality_type=None,
+        ext=None
     ):
         """
         Base class to load raw data for a given list of indices and stores them in the data object
@@ -53,6 +54,7 @@ class BaseLoader(ABC):
         self._num_chunks = 1
         self._chunk_size = None
         self._data_type = data_type
+        self._ext = ext
 
         if chunk_size:
             self.chunk_size = chunk_size
@@ -136,9 +138,10 @@ class BaseLoader(ABC):
         is_dir = True if os.path.isdir(self.source_path) else False
         file_names = []
         if is_dir:
-            _, ext = os.path.splitext(os.listdir(self.source_path)[0])
+            if self._ext is None:
+                _, self._ext = os.path.splitext(os.listdir(self.source_path)[0])
             for index in self.indices if indices is None else indices:
-                file_names.append(self.source_path + index + ext)
+                file_names.append(self.source_path + index + self._ext)
             return file_names
         else:
             return self.source_path
@@ -155,10 +158,10 @@ class BaseLoader(ABC):
         try:
             file_size = os.path.getsize(file)
         except:
-            raise (f"Error: File {0} not found!".format(file))
+            raise ValueError(f"Error: File {0} not found!".format(file))
 
         if file_size == 0:
-            raise ("File {0} is empty".format(file))
+            raise ValueError("File {0} is empty".format(file))
 
     @staticmethod
     def resolve_data_type(data_type):

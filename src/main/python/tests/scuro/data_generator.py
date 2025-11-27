@@ -74,19 +74,19 @@ class ModalityRandomDataGenerator:
         self.modality_type = modality_type
         for i in range(num_instances):
             if modality_type == ModalityType.AUDIO:
-                self.metadata[i] = modality_type.create_audio_metadata(
+                self.metadata[i] = modality_type.create_metadata(
                     num_features / 10, data[i]
                 )
             elif modality_type == ModalityType.TEXT:
-                self.metadata[i] = modality_type.create_text_metadata(
+                self.metadata[i] = modality_type.create_metadata(
                     num_features / 10, data[i]
                 )
             elif modality_type == ModalityType.VIDEO:
-                self.metadata[i] = modality_type.create_video_metadata(
+                self.metadata[i] = modality_type.create_metadata(
                     num_features / 30, 10, 0, 0, 1
                 )
             elif modality_type == ModalityType.TIMESERIES:
-                self.metadata[i] = modality_type.create_ts_metadata(["test"], data[i])
+                self.metadata[i] = modality_type.create_metadata(["test"], data[i])
             else:
                 raise NotImplementedError
 
@@ -96,6 +96,7 @@ class ModalityRandomDataGenerator:
         return tf_modality
 
     def create_audio_data(self, num_instances, max_audio_length):
+        modality_type = ModalityType.AUDIO
         data = [
             [
                 random.random()
@@ -108,7 +109,7 @@ class ModalityRandomDataGenerator:
             data[i] = np.array(data[i]).astype(self.data_type)
 
         metadata = {
-            i: ModalityType.AUDIO.create_audio_metadata(16000, np.array(data[i]))
+            i: modality_type.create_metadata(16000, np.array(data[i]))
             for i in range(num_instances)
         }
 
@@ -122,7 +123,7 @@ class ModalityRandomDataGenerator:
         if num_features == 1:
             data = [d.squeeze(-1) for d in data]
         metadata = {
-            i: ModalityType.TIMESERIES.create_ts_metadata(
+            i: ModalityType.TIMESERIES.create_metadata(
                 [f"feature_{j}" for j in range(num_features)], data[i]
             )
             for i in range(num_instances)
@@ -186,7 +187,7 @@ class ModalityRandomDataGenerator:
             sentences.append(sentence)
 
         metadata = {
-            i: ModalityType.TEXT.create_text_metadata(len(sentences[i]), sentences[i])
+            i: ModalityType.TEXT.create_metadata(len(sentences[i]), sentences[i])
             for i in range(num_instances)
         }
 
@@ -206,7 +207,7 @@ class ModalityRandomDataGenerator:
                 for _ in range(num_instances)
             ]
             metadata = {
-                i: ModalityType.VIDEO.create_video_metadata(
+                i: ModalityType.VIDEO.create_metadata(
                     30, data[i].shape[0], width, height, 3
                 )
                 for i in range(num_instances)
@@ -222,7 +223,7 @@ class ModalityRandomDataGenerator:
                 for _ in range(num_instances)
             ]
             metadata = {
-                i: ModalityType.IMAGE.create_image_metadata(width, height, 3)
+                i: ModalityType.IMAGE.create_metadata(width, height, 3)
                 for i in range(num_instances)
             }
 

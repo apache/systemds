@@ -47,7 +47,7 @@ class AudioLoader(BaseLoader):
         if not self.load_data_from_file:
             import numpy as np
 
-            self.metadata[file] = self.modality_type.create_audio_metadata(
+            self.metadata[file] = self.modality_type.create_metadata(
                 1000, np.array([0])
             )
         else:
@@ -56,6 +56,6 @@ class AudioLoader(BaseLoader):
             if self.normalize:
                 audio = librosa.util.normalize(audio)
 
-            self.metadata[file] = self.modality_type.create_audio_metadata(sr, audio)
+            self.metadata[file] = self.modality_type.create_metadata(sr, audio)
 
             self.data.append(audio)

@@ -43,7 +43,7 @@ class TextLoader(BaseLoader):
                 if self.prefix:
                     line = re.sub(self.prefix, "", line)
                 line = line.replace("\n", "")
-                self.metadata[file] = self.modality_type.create_text_metadata(
+                self.metadata[file] = self.modality_type.create_metadata(
                     len(line.split()), line
                 )
                 self.data.append(line)

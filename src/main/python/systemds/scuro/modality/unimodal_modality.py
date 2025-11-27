@@ -72,7 +72,8 @@ class UnimodalModality(Modality):
             self.data_loader.update_chunk_sizes(other.data_loader)
 
         joined_modality = JoinedModality(
-            reduce(or_, [other.modality_type], self.modality_type),
+            self.modality_type,
+            # reduce(or_, [other.modality_type], self.modality_type), # TODO
             self,
             other,
             join_condition,
@@ -162,16 +163,21 @@ class UnimodalModality(Modality):
                             np.concatenate((embeddings, padding), axis=1)
                         )
                     else:
-                        padded = np.pad(
-                            embeddings,
-                            pad_width=(
-                                (0, padding_needed)
-                                if len(embeddings.shape) == 1
-                                else ((0, padding_needed), (0, 0))
-                            ),
-                            mode="constant",
-                            constant_values=0,
-                        )
+                        if len(embeddings.shape) == 1:
+                            padded = np.zeros(
+                                embeddings.shape[0] + padding_needed,
+                                dtype=embeddings.dtype,
+                            )
+                            padded[: embeddings.shape[0]] = embeddings
+                        else:
+                            padded = np.zeros(
+                                (
+                                    embeddings.shape[0] + padding_needed,
+                                    embeddings.shape[1],
+                                ),
+                                dtype=embeddings.dtype,
+                            )
+                            padded[: embeddings.shape[0], :] = embeddings
                         padded_embeddings.append(padded)
                 else:
                     padded_embeddings.append(embeddings)

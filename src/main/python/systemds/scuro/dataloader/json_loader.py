@@ -32,20 +32,28 @@ class JSONLoader(BaseLoader):
         self,
         source_path: str,
         indices: List[str],
-        field: str,
+        field: str,  # TODO: make this a list so it is easier to get multiple fields from a json file. (i.e. Mustard: context + sentence)
         data_type: Union[np.dtype, str] = str,
         chunk_size: Optional[int] = None,
+        ext: str = ".json",
     ):
-        super().__init__(source_path, indices, data_type, chunk_size, ModalityType.TEXT)
+        super().__init__(
+            source_path, indices, data_type, chunk_size, ModalityType.TEXT, ext
+        )
         self.field = field
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
         with open(file) as f:
             json_file = json.load(f)
+
+            if isinstance(index, str):
+                index = [index]
             for idx in index:
-                sentence = json_file[idx][self.field]
-                self.data.append(sentence)
-                self.metadata[idx] = self.modality_type.create_text_metadata(
-                    len(sentence), sentence
-                )
+                try:
+                    text = json_file[idx][self.field]
+                except:
+                    text = json_file[self.field]
+
+                self.data.append(text)
+                self.metadata[idx] = self.modality_type.create_metadata(len(text), text)

@@ -20,6 +20,7 @@
 # -------------------------------------------------------------
 from systemds.scuro.dataloader.base_loader import BaseLoader
 from systemds.scuro.dataloader.audio_loader import AudioLoader
+from systemds.scuro.dataloader.image_loader import ImageLoader
 from systemds.scuro.dataloader.video_loader import VideoLoader
 from systemds.scuro.dataloader.text_loader import TextLoader
 from systemds.scuro.dataloader.json_loader import JSONLoader
@@ -103,6 +104,7 @@ from systemds.scuro.representations.clip import CLIPText, CLIPVisual
 
 __all__ = [
     "BaseLoader",
+    "ImageLoader",
     "AudioLoader",
     "VideoLoader",
     "TextLoader",

@@ -87,7 +87,8 @@ class TransformedModality(Modality):
                 right.extract_raw_data()
 
         joined_modality = JoinedModality(
-            reduce(or_, [right.modality_type], self.modality_type),
+            self.modality_type,
+            # reduce(or_, [right.modality_type], self.modality_type), #TODO
             self,
             right,
             join_condition,
@@ -136,8 +137,10 @@ class TransformedModality(Modality):
         fused_modality = TransformedModality(
             self, fusion_method, ModalityType.EMBEDDING
         )
+        start_time = time.time()
         fused_modality.data = fusion_method.transform(self.create_modality_list(other))
-
+        end_time = time.time()
+        fused_modality.transform_time = end_time - start_time
         return fused_modality
 
     def combine_with_training(
@@ -147,7 +150,12 @@ class TransformedModality(Modality):
             self, fusion_method, ModalityType.EMBEDDING
         )
         modalities = self.create_modality_list(other)
+        start_time = time.time()
         fused_modality.data = fusion_method.transform_with_training(modalities, task)
+        end_time = time.time()
+        fused_modality.transform_time = (
+            end_time - start_time
+        )  # Note: this incldues the training time
 
         return fused_modality
 

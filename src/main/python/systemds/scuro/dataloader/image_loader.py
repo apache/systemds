@@ -27,7 +27,7 @@ import cv2
 from systemds.scuro.modality.type import ModalityType
 
 
-class VideoLoader(BaseLoader):
+class ImageLoader(BaseLoader):
     def __init__(
         self,
         source_path: str,
@@ -35,53 +35,29 @@ class VideoLoader(BaseLoader):
         data_type: Union[np.dtype, str] = np.float16,
         chunk_size: Optional[int] = None,
         load=True,
-        fps=None,
+        ext=".jpg",
     ):
         super().__init__(
-            source_path, indices, data_type, chunk_size, ModalityType.VIDEO
+            source_path, indices, data_type, chunk_size, ModalityType.IMAGE, ext
         )
         self.load_data_from_file = load
-        self.fps = fps
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
-        # if not self.load_data_from_file:
-        #     self.metadata[file] = self.modality_type.create_metadata(
-        #         30, 10, 100, 100, 3
-        #     )
-        # else:
-        cap = cv2.VideoCapture(file)
 
-        if not cap.isOpened():
-            raise f"Could not read video at path: {file}"
+        image = cv2.imread(file, cv2.IMREAD_COLOR)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-        orig_fps = cap.get(cv2.CAP_PROP_FPS)
-        frame_interval = 1
-        if self.fps is not None and self.fps < orig_fps:
-            frame_interval = int(round(orig_fps / self.fps))
+        if image.ndim == 2:
+            height, width = image.shape
+            channels = 1
         else:
-            self.fps = orig_fps
+            height, width, channels = image.shape
 
-        length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        num_channels = 3
+        image = image.astype(np.float32) / 255.0
 
         self.metadata[file] = self.modality_type.create_metadata(
-            self.fps, length, width, height, num_channels
+            width, height, channels
         )
 
-        frames = []
-        idx = 0
-        while cap.isOpened():
-            ret, frame = cap.read()
-
-            if not ret:
-                break
-            if idx % frame_interval == 0:
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                frame = frame.astype(self._data_type) / 255.0
-                frames.append(frame)
-            idx += 1
-
-        self.data.append(np.stack(frames))
+        self.data.append(image)

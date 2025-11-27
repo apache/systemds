@@ -28,37 +28,6 @@ import numpy as np
 from sklearn.model_selection import KFold
 
 
-class PerformanceMeasure:
-    def __init__(self, name, metrics, higher_is_better=True):
-        self.average_scores = None
-        self.name = name
-        self.metrics = metrics
-        self.higher_is_better = higher_is_better
-        self.scores = {}
-
-        if isinstance(metrics, list):
-            for metric in metrics:
-                self.scores[metric] = []
-        else:
-            self.scores[metrics] = []
-
-    def add_scores(self, scores):
-        if isinstance(self.metrics, list):
-            for metric in self.metrics:
-                self.scores[metric].append(scores[metric])
-        else:
-            self.scores[self.metrics].append(scores[self.metrics])
-
-    def compute_averages(self):
-        self.average_scores = {}
-        if isinstance(self.metrics, list):
-            for metric in self.metrics:
-                self.average_scores[metric] = np.mean(self.scores[metric])
-        else:
-            self.average_scores[self.metrics] = np.mean(self.scores[self.metrics])
-        return self
-
-
 class Task:
     def __init__(
         self,
@@ -69,7 +38,6 @@ class Task:
         val_indices: List,
         kfold=5,
         measure_performance=True,
-        performance_measures="accuracy",
     ):
         """
         Parent class for the prediction task that is performed on top of the aligned representation
@@ -91,9 +59,8 @@ class Task:
         self.inference_time = []
         self.training_time = []
         self.expected_dim = 1
-        self.performance_measures = performance_measures
-        self.train_scores = PerformanceMeasure("train", performance_measures)
-        self.val_scores = PerformanceMeasure("val", performance_measures)
+        self.train_scores = []
+        self.val_scores = []
 
     def create_model(self):
         """
@@ -107,12 +74,8 @@ class Task:
     def get_train_test_split(self, data):
         X_train = [data[i] for i in self.train_indices]
         y_train = [self.labels[i] for i in self.train_indices]
-        if self.val_indices is None:
-            X_test = None
-            y_test = None
-        else:
-            X_test = [data[i] for i in self.val_indices]
-            y_test = [self.labels[i] for i in self.val_indices]
+        X_test = [data[i] for i in self.val_indices]
+        y_test = [self.labels[i] for i in self.val_indices]
 
         return X_train, y_train, X_test, y_test
 
@@ -138,28 +101,25 @@ class Task:
             self._run_fold(model, train_X, train_y, test_X, test_y)
             fold += 1
 
-        return [
-            self.train_scores.compute_averages(),
-            self.val_scores.compute_averages(),
-        ]
+        return [np.mean(self.train_scores), np.mean(self.val_scores)]
 
     def _reset_params(self):
         self.inference_time = []
         self.training_time = []
-        self.train_scores = PerformanceMeasure("train", self.performance_measures)
-        self.val_scores = PerformanceMeasure("val", self.performance_measures)
+        self.train_scores = []
+        self.val_scores = []
 
     def _run_fold(self, model, train_X, train_y, test_X, test_y):
         train_start = time.time()
         train_score = model.fit(train_X, train_y, test_X, test_y)
         train_end = time.time()
         self.training_time.append(train_end - train_start)
-        self.train_scores.add_scores(train_score[0])
+        self.train_scores.append(train_score)
         test_start = time.time()
         test_score = model.test(np.array(test_X), test_y)
         test_end = time.time()
         self.inference_time.append(test_end - test_start)
-        self.val_scores.add_scores(test_score[0])
+        self.val_scores.append(test_score)
 
     def create_representation_and_run(
         self,

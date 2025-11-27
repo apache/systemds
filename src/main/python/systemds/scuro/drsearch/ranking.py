@@ -26,7 +26,7 @@ from typing import Callable, Iterable, List, Optional
 def rank_by_tradeoff(
     entries: Iterable,
     *,
-    weights = (0.7, 0.3),
+    weights=(0.7, 0.3),
     performance_metric_name: str = "accuracy",
     runtime_accessor: Optional[Callable[[object], float]] = None,
     cache_scores: bool = True,

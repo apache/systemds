@@ -201,7 +201,7 @@ class ModalityRandomDataGenerator:
                 np.random.randint(
                     0,
                     256,
-                    (np.random.randint(1, max_num_frames + 1), height, width, 3),
+                    (np.random.randint(10, max_num_frames + 1), height, width, 3),
                     dtype=np.uint8,
                 )
                 for _ in range(num_instances)

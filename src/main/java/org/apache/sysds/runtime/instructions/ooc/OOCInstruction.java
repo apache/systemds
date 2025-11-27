@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.OOCJoin;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -53,7 +54,8 @@ public abstract class OOCInstruction extends Instruction {
 	private static final AtomicInteger nextStreamId = new AtomicInteger(0);
 
 	public enum OOCType {
-		Reblock, Tee, Binary, Unary, AggregateUnary, AggregateBinary, MAPMM, MMTSJ, Reorg, CM, Ctable, MatrixIndexing
+		Reblock, Tee, Binary, Unary, AggregateUnary, AggregateBinary, MAPMM, MMTSJ,
+		Reorg, CM, Ctable, MatrixIndexing, ParameterizedBuiltin, Rand
 	}
 
 	protected final OOCInstruction.OOCType _ooctype;
@@ -208,6 +210,8 @@ public abstract class OOCInstruction extends Instruction {
 
 		final AtomicInteger globalTaskCtr = new AtomicInteger(0);
 		final CompletableFuture<Void> globalFuture = CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
+		if (_outQueues == null)
+			_outQueues = Collections.emptySet();
 		final Runnable oocFinalizer = oocTask(finalizer, null, Stream.concat(_outQueues.stream(), _inQueues.stream()).toArray(OOCStream[]::new));
 		final Object globalLock = new Object();
 
@@ -278,7 +282,14 @@ public abstract class OOCInstruction extends Instruction {
 
 		globalFuture.whenComplete((res, e) -> {
 			if (globalFuture.isCancelled() || globalFuture.isCompletedExceptionally())
-				futures.forEach(f -> f.cancel(true));
+				futures.forEach(f -> {
+					if (!f.isDone()) {
+						if (globalFuture.isCancelled() || globalFuture.isCompletedExceptionally())
+							f.cancel(true);
+						else
+							f.complete(null);
+					}
+				});
 
 			boolean runFinalizer;
 

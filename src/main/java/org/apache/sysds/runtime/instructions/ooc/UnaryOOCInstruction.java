@@ -36,6 +36,12 @@ public class UnaryOOCInstruction extends ComputationOOCInstruction {
 		_uop = op;
 	}
 
+	protected UnaryOOCInstruction(OOCType type, UnaryOperator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
+		super(type, op, in1, in2, out, opcode, istr);
+
+		_uop = op;
+	}
+
 	public static UnaryOOCInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		InstructionUtils.checkNumFields(parts, 2);

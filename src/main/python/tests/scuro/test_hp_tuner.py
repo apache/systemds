@@ -62,18 +62,22 @@ class TestSVM(Model):
         self.clf = self.clf.fit(X, np.array(y))
         y_pred = self.clf.predict(X)
 
-        return classification_report(
-            y, y_pred, output_dict=True, digits=3, zero_division=1
-        )["accuracy"]
+        return {
+            "accuracy": classification_report(
+                y, y_pred, output_dict=True, digits=3, zero_division=1
+            )["accuracy"]
+        }, 0
 
     def test(self, test_X: np.ndarray, test_y: np.ndarray):
         if test_X.ndim > 2:
             test_X = test_X.reshape(test_X.shape[0], -1)
-        y_pred = self.clf.predict(np.array(test_X))  # noqa
+        y_pred = self.clf.predict(np.array(test_X))  # noqa]
 
-        return classification_report(
-            np.array(test_y), y_pred, output_dict=True, digits=3, zero_division=1
-        )["accuracy"]
+        return {
+            "accuracy": classification_report(
+                np.array(test_y), y_pred, output_dict=True, digits=3, zero_division=1
+            )["accuracy"]
+        }, 0
 
 
 class TestSVM2(Model):
@@ -87,18 +91,22 @@ class TestSVM2(Model):
         self.clf = self.clf.fit(X, np.array(y))
         y_pred = self.clf.predict(X)
 
-        return classification_report(
-            y, y_pred, output_dict=True, digits=3, zero_division=1
-        )["accuracy"]
+        return {
+            "accuracy": classification_report(
+                y, y_pred, output_dict=True, digits=3, zero_division=1
+            )["accuracy"]
+        }, 0
 
     def test(self, test_X: np.ndarray, test_y: np.ndarray):
         if test_X.ndim > 2:
             test_X = test_X.reshape(test_X.shape[0], -1)
         y_pred = self.clf.predict(np.array(test_X))  # noqa
 
-        return classification_report(
-            np.array(test_y), y_pred, output_dict=True, digits=3, zero_division=1
-        )["accuracy"]
+        return {
+            "accuracy": classification_report(
+                np.array(test_y), y_pred, output_dict=True, digits=3, zero_division=1
+            )["accuracy"]
+        }, 0
 
 
 from unittest.mock import patch

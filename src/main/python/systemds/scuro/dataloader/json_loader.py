@@ -55,5 +55,6 @@ class JSONLoader(BaseLoader):
                 except:
                     text = json_file[self.field]
 
+                text = " ".join(text)
                 self.data.append(text)
                 self.metadata[idx] = self.modality_type.create_metadata(len(text), text)

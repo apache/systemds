@@ -34,7 +34,7 @@ class BaseLoader(ABC):
         data_type: Union[np.dtype, str],
         chunk_size: Optional[int] = None,
         modality_type=None,
-        ext=None
+        ext=None,
     ):
         """
         Base class to load raw data for a given list of indices and stores them in the data object

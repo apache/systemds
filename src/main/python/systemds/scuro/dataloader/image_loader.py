@@ -35,7 +35,7 @@ class ImageLoader(BaseLoader):
         data_type: Union[np.dtype, str] = np.float16,
         chunk_size: Optional[int] = None,
         load=True,
-        ext=".jpg"
+        ext=".jpg",
     ):
         super().__init__(
             source_path, indices, data_type, chunk_size, ModalityType.IMAGE, ext

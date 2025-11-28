@@ -297,6 +297,7 @@ public class DataOp extends Hop {
 
 			case TEE:
 				l = new Tee(getInput(0).constructLops(), getDataType(), getValueType());
+				setOutputDimensions(l);
 				break;
 				
 			default:
@@ -488,10 +489,11 @@ public class DataOp extends Hop {
 
 	@Override
 	public void refreshSizeInformation() {
-		if( _op == OpOpData.PERSISTENTWRITE || _op == OpOpData.TRANSIENTWRITE ) {
+		if( _op == OpOpData.PERSISTENTWRITE || _op == OpOpData.TRANSIENTWRITE || _op == OpOpData.TEE ) {
 			Hop input1 = getInput().get(0);
 			setDim1(input1.getDim1());
 			setDim2(input1.getDim2());
+			setBlocksize(input1.getBlocksize());
 			setNnz(input1.getNnz());
 		}
 		else if( _op == OpOpData.FEDERATED ) {

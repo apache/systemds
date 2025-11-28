@@ -38,8 +38,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -149,6 +151,100 @@ public abstract class OOCInstruction extends Instruction {
 			}
 		}, qOut::closeInput);
 	}
+
+	protected <R, P> CompletableFuture<Void> broadcastJoinOOC(OOCStream<IndexedMatrixValue> qIn, OOCStream<IndexedMatrixValue> broadcast, OOCStream<R> qOut, BiFunction<IndexedMatrixValue, BroadcastedElement, R> mapper, Function<IndexedMatrixValue, P> on) {
+		addInStream(qIn, broadcast);
+		addOutStream(qOut);
+
+		boolean explicitLeftCaching = !qIn.hasStreamCache();
+		boolean explicitRightCaching = !broadcast.hasStreamCache();
+		CachingStream leftCache = explicitLeftCaching ? new CachingStream(new SubscribableTaskQueue<>()) : qIn.getStreamCache();
+		CachingStream rightCache = explicitRightCaching ? new CachingStream(new SubscribableTaskQueue<>()) : broadcast.getStreamCache();
+		leftCache.activateIndexing();
+		rightCache.activateIndexing();
+
+		Map<P, List<MatrixIndexes>> availableLeftInput = new ConcurrentHashMap<>();
+		Map<P, BroadcastedElement> availableBroadcastInput = new ConcurrentHashMap<>();
+
+		return submitOOCTasks(List.of(qIn, broadcast), (i, tmp) -> {
+			P key = on.apply(tmp);
+
+			if (i == 0) { // qIn stream
+				BroadcastedElement b = availableBroadcastInput.get(key);
+
+				if (b == null) {
+					// Matching broadcast element is not available -> cache element
+					if (explicitLeftCaching)
+						leftCache.getWriteStream().enqueue(tmp);
+
+					availableLeftInput.compute(key, (k, v) -> {
+						if (v == null)
+							v = new ArrayList<>();
+						v.add(tmp.getIndexes());
+						return v;
+					});
+				} else {
+					// Directly emit
+					qOut.enqueue(mapper.apply(tmp, b));
+
+					if (b.canRelease())
+						availableBroadcastInput.remove(key);
+				}
+			} else { // broadcast stream
+				if (explicitRightCaching)
+					rightCache.getWriteStream().enqueue(tmp);
+
+				BroadcastedElement b = new BroadcastedElement(tmp.getIndexes());
+				availableBroadcastInput.put(key, b);
+
+				List<MatrixIndexes> queued = availableLeftInput.remove(key);
+
+				if (queued != null) {
+					for(MatrixIndexes idx : queued) {
+						b.value = rightCache.findCached(b.idx);
+						qOut.enqueue(mapper.apply(leftCache.findCached(idx), b));
+						b.value = null;
+					}
+				}
+
+				if (b.canRelease())
+					availableBroadcastInput.remove(key);
+			}
+		}, qOut::closeInput);
+	}
+
+	protected static class BroadcastedElement {
+		private final MatrixIndexes idx;
+		private IndexedMatrixValue value;
+		private boolean release;
+		private int processCtr;
+
+		public BroadcastedElement(MatrixIndexes idx) {
+			this.idx = idx;
+			this.release = false;
+		}
+
+		public synchronized void release() {
+			release = true;
+		}
+
+		public synchronized boolean canRelease() {
+			return release;
+		}
+
+		public synchronized int incrProcessCtrAndGet() {
+			processCtr++;
+			return processCtr;
+		}
+
+		public MatrixIndexes getIndex() {
+			return idx;
+		}
+
+		public IndexedMatrixValue getValue() {
+			return value;
+		}
+	};
 
 	protected <T, R, P> CompletableFuture<Void> joinOOC(OOCStream<T> qIn1, OOCStream<T> qIn2, OOCStream<R> qOut, BiFunction<T, T, R> mapper, Function<T, P> on) {
 		return joinOOC(qIn1, qIn2, qOut, mapper, on, on);

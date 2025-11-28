@@ -25,9 +25,6 @@ import org.apache.commons.logging.Log;
 import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
-import org.apache.sysds.runtime.functionobjects.ReduceAll;
-import org.apache.sysds.runtime.functionobjects.ReduceCol;
-import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.EinsumCPInstruction;
@@ -35,13 +32,13 @@ import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
-import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.function.Predicate;
 
 import static org.apache.sysds.runtime.instructions.cp.EinsumCPInstruction.ensureMatrixBlockColumnVector;
@@ -58,20 +55,20 @@ public class EOpNodeBinary extends EOpNode {
 
         ////// elementwisemult and sums //////
         aB_aB,// elemwise and colsum -> B
-        Ba_Ba, // elemwise and rowsum ->B
-        Ba_aB, // elemwise, either colsum or rowsum -> B
+		Ab_Ab, // elemwise and rowsum ->A
+		Ab_bA, // elemwise, either colsum or rowsum -> A
 		aB_Ba,
 		ab_ab,//M-M sum all
 		ab_ba, //M-M.T sum all
 		aB_a,// -> B
-		Ba_a, // -> B
+		Ab_b, // -> A
 
         ////// elementwise, no summations:   //////
         A_A,// v-elemwise -> A
         AB_AB,// M-M elemwise -> AB
         AB_BA, // M-M.T elemwise -> AB
         AB_A, // M-v colwise -> BA!?
-        BA_A, // M-v rowwise -> BA
+		AB_B, // M-v rowwise -> AB
 
         ////// other   //////
 		a_a,// dot ->
@@ -119,7 +116,7 @@ public class EOpNodeBinary extends EOpNode {
 				dim1=left.dim2;
 				dim2=null;
 			}
-			case Ba_Ba, Ba_aB, Ba_a, A_A, A_scalar -> {
+			case Ab_Ab, Ab_bA, Ab_b, A_A, A_scalar -> {
 				c1=left.c1;
 				c2=null;
 				dim1=left.dim1;
@@ -131,7 +128,7 @@ public class EOpNodeBinary extends EOpNode {
 				dim1=null;
 				dim2=null;
 			}
-			case AB_AB, AB_BA, AB_A, BA_A, AB_scalar ->{
+			case AB_AB, AB_BA, AB_A, AB_B, AB_scalar ->{
 				c1=left.c1;
 				c2=left.c2;
 				dim1=left.dim1;
@@ -214,44 +211,24 @@ public class EOpNodeBinary extends EOpNode {
 				res.allocateDenseBlock();
 				res.getDenseBlockValues()[0] = LibMatrixMult.dotProduct(left.getDenseBlockValues(), right.getDenseBlockValues(), 0,0 , left.getNumRows());
             }
-            case Ba_Ba -> {
-                res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
-                AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
-                res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
-            }
+            case Ab_Ab -> {
+				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__A, List.of(left, right), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),null,numThreads);
+			}
             case aB_aB -> {
-                res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
-                AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), numThreads);
-                res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
-                ensureMatrixBlockColumnVector(res);
+				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_A__B, List.of(left, right), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),null,numThreads);
             }
             case ab_ab -> {
-                res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
-                AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), numThreads);
-                res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
-            }
+				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__, List.of(left, right), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),null,numThreads);
+			}
             case ab_ba -> {
-                ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), numThreads);
-                right = right.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-                res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
-                AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceAll.getReduceAllFnObject(), numThreads);
-                res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
-            }
-            case Ba_aB -> {
-                ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), numThreads);
-                right = right.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-                res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
-                AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
-                res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
-            }
+				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__, List.of(left), List.of(right), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),null,numThreads);
+			}
+            case Ab_bA -> {
+				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__A, List.of(left), List.of(right), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),null,numThreads);
+			}
             case aB_Ba -> {
-                ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), numThreads);
-                left = left.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
-                res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left, right},new ScalarObject[]{}, new MatrixBlock());
-                AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
-                res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
-            }
-
+				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_A__B, List.of(left), List.of(right), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),null,numThreads);
+			}
             case AB_BA -> {
                 ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), numThreads);
                 right = right.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
@@ -289,29 +266,20 @@ public class EOpNodeBinary extends EOpNode {
             case A_scalar, AB_scalar -> {
                 res = MatrixBlock.naryOperations(new SimpleOperator(Multiply.getMultiplyFnObject()), new MatrixBlock[]{left},new ScalarObject[]{new DoubleObject(right.get(0,0))}, new MatrixBlock());
             }
-            case BA_A -> {
+            case AB_B -> {
                 ensureMatrixBlockRowVector(right);
                 res = left.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), right);
             }
-            case Ba_a -> {
-                ensureMatrixBlockRowVector(right);
-                res = left.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), right);
-                AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceCol.getReduceColFnObject(), numThreads);
-                res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
-            }
-
+            case Ab_b -> {
+				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__A, List.of(left), new ArrayList<>(), List.of(right), new ArrayList<>(), new ArrayList<>(),null,numThreads);
+			}
             case AB_A -> {
                 ensureMatrixBlockColumnVector(right);
                 res = left.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), right);
             }
             case aB_a -> {
-                ensureMatrixBlockColumnVector(right);
-                res = left.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), right);
-                AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceRow.getReduceRowFnObject(), numThreads);
-                res = (MatrixBlock) res.aggregateUnaryOperations(aggun, new MatrixBlock(), 0, null);
-                ensureMatrixBlockColumnVector(res);
-            }
-
+				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_A__B, List.of(left), new ArrayList<>(), new ArrayList<>(), List.of(right), new ArrayList<>(),null,numThreads);
+			}
             case A_B -> {
                 ensureMatrixBlockColumnVector(left);
                 ensureMatrixBlockRowVector(right);
@@ -329,6 +297,7 @@ public class EOpNodeBinary extends EOpNode {
 			ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), numThreads);
 			res = res.reorgOperations(transpose, new MatrixBlock(), 0, 0, 0);
 		}
+		if(c2 == null) ensureMatrixBlockColumnVector(res);
         return res;
     }
 
@@ -340,10 +309,11 @@ public class EOpNodeBinary extends EOpNode {
 				var tmpC1 = c1;       c1 = c2;         c2 = tmpC1;
 				var tmpDim1 = dim1;   dim1 = dim2;     dim2 = tmpDim1;
             }
-			if(EinsumCPInstruction.FUSE_OUTER_MULTIPLY && left instanceof EOpNodeFuse fuse && fuse.einsumRewriteType == EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__AB &&
-				left.dim1 * left.dim2 * 8 > LibMatrixMult.L3_CACHESIZE && LibMatrixMult.isSkinnyRightHandSide(left.dim1, left.dim2,  right.dim1, right.dim2, false)) {
-				fuse.operands.get(4).add(right);
-				fuse.einsumRewriteType = EOpNodeFuse.EinsumRewriteType.AB_BA_B_A_AZ__BZ;
+			if(EinsumCPInstruction.FUSE_OUTER_MULTIPLY && left instanceof EOpNodeFuse fuse && fuse.einsumRewriteType == EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__AB
+				&& (!EinsumCPInstruction.FUSE_OUTER_MULTIPLY_EXCEEDS_L2_CACHE_CHECK || ((fuse.dim1 * fuse.dim2 *(fuse.ABs.size()+fuse.BAs.size())) + (right.dim1*right.dim2)) * 8 > 6 * 1024 * 1024)
+				&& LibMatrixMult.isSkinnyRightHandSide(left.dim1, left.dim2,  right.dim1, right.dim2, false)) {
+				fuse.AZs.add(right);
+				fuse.einsumRewriteType = EOpNodeFuse.EinsumRewriteType.AB_BA_A_AZ__BZ;
 				fuse.c1 = fuse.c2;
 				fuse.c2 = right.c2;
 				return fuse;
@@ -396,7 +366,7 @@ public class EOpNodeBinary extends EOpNode {
 						if(cannotBeSummed.test(n1.c2)){
 							return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.AB_AB, Pair.of(n1.c1, n1.c2));
 						}
-						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.Ba_Ba, Pair.of(n1.c1, null));
+						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.Ab_Ab, Pair.of(n1.c1, null));
 					}
 
 					if(cannotBeSummed.test(n1.c2)){
@@ -434,9 +404,9 @@ public class EOpNodeBinary extends EOpNode {
 			else if(n2.c2 == null) { // ab,c
 				if (n1.c2 == n2.c1) {
 					if(cannotBeSummed.test(n1.c2)){
-						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n2.c1), EBinaryOperand.BA_A, Pair.of(n1.c1, n1.c2));
+						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n2.c1), EBinaryOperand.AB_B, Pair.of(n1.c1, n1.c2));
 					}
-					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n2.c1), EBinaryOperand.Ba_a, Pair.of(n1.c1, null));
+					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n2.c1), EBinaryOperand.Ab_b, Pair.of(n1.c1, null));
 				}
 				return null; // AB,C
 			}
@@ -446,7 +416,7 @@ public class EOpNodeBinary extends EOpNode {
 						if(cannotBeSummed.test(n1.c2)){
 							return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.AB_BA, Pair.of(n1.c1, n1.c2));
 						}
-						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.Ba_aB, Pair.of(n1.c1, null));
+						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.Ab_bA, Pair.of(n1.c1, null));
 					}
 					if(cannotBeSummed.test(n1.c2)){
 						return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.aB_Ba, Pair.of(n1.c2, null));

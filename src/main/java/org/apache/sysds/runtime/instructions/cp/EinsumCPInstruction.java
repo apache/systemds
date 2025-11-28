@@ -43,18 +43,18 @@ import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.utils.Explain;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.apache.sysds.api.DMLScript.EXPLAIN;
 import static org.apache.sysds.hops.rewrite.RewriteMatrixMultChainOptimization.mmChainDP;
 
 public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
     public static final boolean FORCE_CELL_TPL = false;
-//    public static final boolean FUSED = true;
-    public static final boolean FUSE_OUTER_MULTIPLY = true;
+
+	public static final boolean FUSE_OUTER_MULTIPLY = true;
+	public static final boolean FUSE_OUTER_MULTIPLY_EXCEEDS_L2_CACHE_CHECK = true;
 
 
-	public static final boolean PRINT_TRACE = true;
+	public static final boolean PRINT_TRACE = false;
 
 	protected static final Log LOG = LogFactory.getLog(EinsumCPInstruction.class.getName());
 	public String eqStr;
@@ -134,24 +134,26 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			if(true){ // new way: search for fusions and matrix-multiplications chain in a loop
 				plan = generatePlanFusionAndMM(eOpNodes, eOpNodesScalars, einc.charToDimensionSize, characterToOccurences, einc.outChar1, einc.outChar2);
 			}else { // old way: try to do fusion first and then rest in binary fashion cost based
-				if(true /*FUSED*/) {
+				List<EOpNodeFuse> fuseOps;
+				do {
 					ret = new ArrayList<>();
-					EOpNodeFuse fuse = EOpNodeFuse.match(eOpNodes, einc.outChar1, einc.outChar2,
-						einc.charToDimensionSize, characterToOccurences, ret);
-					if(fuse != null) {
-						ret.add(fuse);
+					fuseOps = EOpNodeFuse.findFuseOps(eOpNodes, einc.outChar1, einc.outChar2, einc.charToDimensionSize, characterToOccurences, ret);
+
+					if(!fuseOps.isEmpty()) {
+						for (EOpNodeFuse fuseOp : fuseOps) {
+							if (fuseOp.c1 == null) {
+								eOpNodesScalars.add(fuseOp);
+								continue;
+							}
+							ret.add(fuseOp);
+//							if (fuseOp.c2 != null) {
+//								characterToOccurences.put(fuseOp.c2, characterToOccurences.get(fuseOp.c2)+1);
+//							}
+//							characterToOccurences.put(fuseOp.c1, characterToOccurences.get(fuseOp.c1)+1);
+						}
 						eOpNodes = ret;
 					}
-					while(ret.size() > 2 && fuse != null) {
-						ret = new ArrayList<>();
-						fuse = EOpNodeFuse.match(eOpNodes, einc.outChar1, einc.outChar2, einc.charToDimensionSize,
-							characterToOccurences, ret);
-						if(fuse != null) {
-							ret.add(fuse);
-							eOpNodes = ret;
-						}
-					}
-				}
+				} while(eOpNodes.size() > 1 && !fuseOps.isEmpty());
 
 				Pair<Integer, List<EOpNode>> costAndPlan = generateBinaryPlanCostBased(0, eOpNodes, einc.charToDimensionSize, characterToOccurences,
 					einc.outChar1, einc.outChar2);
@@ -304,13 +306,13 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			cost = switch (fuse.einsumRewriteType) {
 				case AB_BA_B_A__ -> 1; // thisSize
 				case AB_BA_B_A__AB -> thisSize;
-				case AB_BA_B_A__B -> thisSize;
+				case AB_BA_A__B -> thisSize;
 				case AB_BA_B_A__A -> 2; // intermediate is scalar, 2 because if there is some real scalar
 				case AB_BA_B_A_AZ__Z -> 2; // intermediate is scalar
-				case AB_BA_B_A_AZ__BZ -> thisSize;
-				case AB_BA_B_A_AZ__ZB -> thisSize;
+				case AB_BA_A_AZ__BZ -> thisSize;
+				case AB_BA_A_AZ__ZB -> thisSize;
 			};
-			inputs = fuse.operands.stream().flatMap(List::stream).collect(Collectors.toList());
+			inputs = fuse.getAllOps();
 		}
 
 		for(EOpNode inp : inputs){
@@ -429,16 +431,26 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		while(lastNumOfOperands != eOpNodes.size() && eOpNodes.size() > 1){
 			lastNumOfOperands = eOpNodes.size();
 
-			EOpNodeFuse fuse = null;
+			List<EOpNodeFuse> fuseOps;
 			do {
 				ret = new ArrayList<>();
-				fuse = EOpNodeFuse.match(eOpNodes, outChar1, outChar2, charToSizeMap, charToOccurences, ret);
-				if(fuse != null) {
-					if(fuse.c1 == null) eOpNodesScalars.add(fuse);
-					else ret.add(fuse);
+				fuseOps = EOpNodeFuse.findFuseOps(eOpNodes, outChar1, outChar2, charToSizeMap, charToOccurences, ret);
+
+				if(!fuseOps.isEmpty()) {
+					for (EOpNodeFuse fuseOp : fuseOps) {
+						if (fuseOp.c1 == null) {
+							eOpNodesScalars.add(fuseOp);
+							continue;
+						}
+						ret.add(fuseOp);
+//						if (fuseOp.c2 != null) {
+//							charToOccurences.put(fuseOp.c2, charToOccurences.get(fuseOp.c2)+1);
+//						}
+//						charToOccurences.put(fuseOp.c1, charToOccurences.get(fuseOp.c1)+1);
+					}
 					eOpNodes = ret;
 				}
-			} while(eOpNodes.size() > 1 && fuse != null);
+			} while(eOpNodes.size() > 1 && !fuseOps.isEmpty());
 
 			ret = new ArrayList<>();
 			addVectorMultiplies(eOpNodes, eOpNodesScalars,charToOccurences, outChar1, outChar2, ret);

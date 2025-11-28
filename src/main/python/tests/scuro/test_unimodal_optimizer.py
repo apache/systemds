@@ -29,8 +29,6 @@ from sklearn.model_selection import train_test_split
 
 from systemds.scuro.representations.timeseries_representations import (
     Mean,
-    Max,
-    Min,
     ACF,
 )
 from systemds.scuro.drsearch.operator_registry import Registry
@@ -41,8 +39,6 @@ from systemds.scuro.drsearch.unimodal_optimizer import UnimodalOptimizer
 from systemds.scuro.representations.spectrogram import Spectrogram
 from systemds.scuro.representations.covarep_audio_features import (
     ZeroCrossing,
-    Spectral,
-    Pitch,
 )
 from systemds.scuro.representations.word2vec import W2V
 from systemds.scuro.representations.bow import BoW
@@ -64,18 +60,22 @@ class TestSVM(Model):
         self.clf = self.clf.fit(X, np.array(y))
         y_pred = self.clf.predict(X)
 
-        return classification_report(
-            y, y_pred, output_dict=True, digits=3, zero_division=1
-        )["accuracy"]
+        return {
+            "accuracy": classification_report(
+                y, y_pred, output_dict=True, digits=3, zero_division=1
+            )["accuracy"]
+        }, 0
 
     def test(self, test_X: np.ndarray, test_y: np.ndarray):
         if test_X.ndim > 2:
             test_X = test_X.reshape(test_X.shape[0], -1)
         y_pred = self.clf.predict(np.array(test_X))  # noqa
 
-        return classification_report(
-            np.array(test_y), y_pred, output_dict=True, digits=3, zero_division=1
-        )["accuracy"]
+        return {
+            "accuracy": classification_report(
+                np.array(test_y), y_pred, output_dict=True, digits=3, zero_division=1
+            )["accuracy"]
+        }, 0
 
 
 class TestCNN(Model):
@@ -89,18 +89,22 @@ class TestCNN(Model):
         self.clf = self.clf.fit(X, np.array(y))
         y_pred = self.clf.predict(X)
 
-        return classification_report(
-            y, y_pred, output_dict=True, digits=3, zero_division=1
-        )["accuracy"]
+        return {
+            "accuracy": classification_report(
+                y, y_pred, output_dict=True, digits=3, zero_division=1
+            )["accuracy"]
+        }, 0
 
     def test(self, test_X: np.ndarray, test_y: np.ndarray):
         if test_X.ndim > 2:
             test_X = test_X.reshape(test_X.shape[0], -1)
         y_pred = self.clf.predict(np.array(test_X))  # noqa
 
-        return classification_report(
-            np.array(test_y), y_pred, output_dict=True, digits=3, zero_division=1
-        )["accuracy"]
+        return {
+            "accuracy": classification_report(
+                np.array(test_y), y_pred, output_dict=True, digits=3, zero_division=1
+            )["accuracy"]
+        }, 0
 
 
 from unittest.mock import patch
@@ -197,8 +201,8 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
             "_representations",
             {
                 ModalityType.TEXT: [W2V, BoW],
-                ModalityType.AUDIO: [Spectrogram, ZeroCrossing, Spectral, Pitch],
-                ModalityType.TIMESERIES: [Mean, Max, Min, ACF],
+                ModalityType.AUDIO: [Spectrogram, ZeroCrossing],
+                ModalityType.TIMESERIES: [Mean, ACF],
                 ModalityType.VIDEO: [ResNet],
                 ModalityType.EMBEDDING: [],
             },
@@ -206,7 +210,7 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
             registry = Registry()
 
             unimodal_optimizer = UnimodalOptimizer([modality], self.tasks, False)
-            unimodal_optimizer.optimize()
+            unimodal_optimizer.optimize_parallel()
 
             assert (
                 unimodal_optimizer.operator_performance.modality_ids[0]

@@ -24,7 +24,7 @@ import itertools
 import threading
 from dataclasses import dataclass
 from typing import List, Dict, Any, Generator
-from systemds.scuro.drsearch.task import Task
+from systemds.scuro.drsearch.task import Task, PerformanceMeasure
 from systemds.scuro.drsearch.representation_dag import (
     RepresentationDag,
     RepresentationDAGBuilder,
@@ -87,7 +87,8 @@ def _evaluate_dag_worker(dag_pickle, task_pickle, modalities_pickle, debug=False
             val_score=scores[1],
             runtime=total_time,
             task_name=task_copy.model.name,
-            evaluation_time=eval_time,
+            task_time=eval_time,
+            representation_time=total_time - eval_time,
         )
     except Exception:
         if debug:
@@ -390,8 +391,9 @@ class MultimodalOptimizer:
                 train_score=scores[0],
                 val_score=scores[1],
                 runtime=total_time,
+                representation_time=total_time - eval_time,
                 task_name=task_copy.model.name,
-                evaluation_time=eval_time,
+                task_time=eval_time,
             )
 
         except Exception as e:
@@ -475,8 +477,10 @@ class MultimodalOptimizer:
 @dataclass
 class OptimizationResult:
     dag: RepresentationDag
-    train_score: float
-    val_score: float
-    runtime: float
-    task_name: str
-    evaluation_time: float = 0.0
+    train_score: PerformanceMeasure = None
+    val_score: PerformanceMeasure = None
+    runtime: float = 0.0
+    task_time: float = 0.0
+    representation_time: float = 0.0
+    task_name: str = ""
+    tradeoff_score: float = 0.0

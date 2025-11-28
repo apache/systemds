@@ -60,18 +60,22 @@ class TestSVM(Model):
         self.clf = self.clf.fit(X, np.array(y))
         y_pred = self.clf.predict(X)
 
-        return classification_report(
-            y, y_pred, output_dict=True, digits=3, zero_division=1
-        )["accuracy"]
+        return {
+            "accuracy": classification_report(
+                y, y_pred, output_dict=True, digits=3, zero_division=1
+            )["accuracy"]
+        }, 0
 
     def test(self, test_X: np.ndarray, test_y: np.ndarray):
         if test_X.ndim > 2:
             test_X = test_X.reshape(test_X.shape[0], -1)
         y_pred = self.clf.predict(np.array(test_X))  # noqa
 
-        return classification_report(
-            np.array(test_y), y_pred, output_dict=True, digits=3, zero_division=1
-        )["accuracy"]
+        return {
+            "accuracy": classification_report(
+                np.array(test_y), y_pred, output_dict=True, digits=3, zero_division=1
+            )["accuracy"]
+        }, 0
 
 
 class TestCNN(Model):
@@ -85,18 +89,22 @@ class TestCNN(Model):
         self.clf = self.clf.fit(X, np.array(y))
         y_pred = self.clf.predict(X)
 
-        return classification_report(
-            y, y_pred, output_dict=True, digits=3, zero_division=1
-        )["accuracy"]
+        return {
+            "accuracy": classification_report(
+                y, y_pred, output_dict=True, digits=3, zero_division=1
+            )["accuracy"]
+        }, 0
 
     def test(self, test_X: np.ndarray, test_y: np.ndarray):
         if test_X.ndim > 2:
             test_X = test_X.reshape(test_X.shape[0], -1)
         y_pred = self.clf.predict(np.array(test_X))  # noqa
 
-        return classification_report(
-            np.array(test_y), y_pred, output_dict=True, digits=3, zero_division=1
-        )["accuracy"]
+        return {
+            "accuracy": classification_report(
+                np.array(test_y), y_pred, output_dict=True, digits=3, zero_division=1
+            )["accuracy"]
+        }, 0
 
 
 class TestMultimodalRepresentationOptimizer(unittest.TestCase):
@@ -178,10 +186,15 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
             fusion_results = m_o.optimize()
 
             best_results = sorted(
-                fusion_results[task.model.name], key=lambda x: x.val_score, reverse=True
+                fusion_results[task.model.name],
+                key=lambda x: getattr(x, "val_score").average_scores["accuracy"],
+                reverse=True,
             )[:2]
 
-            assert best_results[0].val_score >= best_results[1].val_score
+            assert (
+                best_results[0].val_score.average_scores["accuracy"]
+                >= best_results[1].val_score.average_scores["accuracy"]
+            )
 
     def test_parallel_multimodal_fusion(self):
         task = Task(
@@ -238,18 +251,23 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
             parallel_fusion_results = m_o.optimize_parallel(max_workers=4, batch_size=8)
 
             best_results = sorted(
-                fusion_results[task.model.name], key=lambda x: x.val_score, reverse=True
+                fusion_results[task.model.name],
+                key=lambda x: getattr(x, "val_score").average_scores["accuracy"],
+                reverse=True,
             )
 
             best_results_parallel = sorted(
                 parallel_fusion_results[task.model.name],
-                key=lambda x: x.val_score,
+                key=lambda x: getattr(x, "val_score").average_scores["accuracy"],
                 reverse=True,
             )
 
             assert len(best_results) == len(best_results_parallel)
             for i in range(len(best_results)):
-                assert best_results[i].val_score == best_results_parallel[i].val_score
+                assert (
+                    best_results[i].val_score.average_scores["accuracy"]
+                    == best_results_parallel[i].val_score.average_scores["accuracy"]
+                )
 
 
 if __name__ == "__main__":

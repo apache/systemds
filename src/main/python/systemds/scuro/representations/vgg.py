@@ -71,7 +71,6 @@ class VGG19(UnimodalRepresentation):
 
         dataset = CustomDataset(modality.data, self.data_type, get_device())
         embeddings = {}
-
         activations = {}
 
         def get_activation(name_):
@@ -88,7 +87,6 @@ class VGG19(UnimodalRepresentation):
                 get_activation(self.layer_name)
             )
         else:
-
             self.model.classifier[int(digit)].register_forward_hook(
                 get_activation(self.layer_name)
             )
@@ -97,17 +95,25 @@ class VGG19(UnimodalRepresentation):
             video_id = instance["id"][0]
             frames = instance["data"][0]
             embeddings[video_id] = []
-            batch_size = 32
 
-            for start_index in range(0, len(frames), batch_size):
-                end_index = min(start_index + batch_size, len(frames))
-                frame_ids_range = range(start_index, end_index)
-                frame_batch = frames[frame_ids_range]
+            if frames.dim() == 3:
+                # Single image: (3, 224, 224) -> (1, 3, 224, 224)
+                frames = frames.unsqueeze(0)
+                batch_size = 1
+            else:
+                # Video: (T, 3, 224, 224) - process in batches
+                batch_size = 32
+
+            for start_index in range(0, frames.shape[0], batch_size):
+                end_index = min(start_index + batch_size, frames.shape[0])
+                frame_batch = frames[start_index:end_index]
 
                 _ = self.model(frame_batch)
                 output = activations[self.layer_name]
+
                 if len(output.shape) == 4:
                     output = torch.nn.functional.adaptive_avg_pool2d(output, (1, 1))
+
                 embeddings[video_id].extend(
                     torch.flatten(output, 1)
                     .detach()
@@ -122,7 +128,6 @@ class VGG19(UnimodalRepresentation):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )
-
         transformed_modality.data = list(embeddings.values())
 
         return transformed_modality

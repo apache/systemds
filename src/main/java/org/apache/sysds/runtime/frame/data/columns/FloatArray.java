@@ -174,7 +174,7 @@ public class FloatArray extends Array<Float> {
 
 	@Override
 	public byte[] getAsByteArray() {
-		ByteBuffer floatBuffer = ByteBuffer.allocate(8 * _size);
+		ByteBuffer floatBuffer = ByteBuffer.allocate(4 * _size);
 		floatBuffer.order(ByteOrder.nativeOrder());
 		for(int i = 0; i < _size; i++)
 			floatBuffer.putFloat(_data[i]);

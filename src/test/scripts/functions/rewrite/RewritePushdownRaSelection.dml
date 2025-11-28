@@ -23,12 +23,18 @@ A= read($1)
 colA = as.integer($2)
 B = read($3)
 colB = as.integer($4)
-col = as.integer($5)
 op = $6
-val = as.double($7)
 
 C = raJoin(A, colA, B, colB, $8);
-result = raSelection(C, col, op, val);
+result = raSelection(C, $5, op, $7);
+
+# the above will be rewritten into:
+#
+# C = raSelection(A, col, op, val);
+# result = raJoin(C, colA, B, colB, method);
+# or (depending on col):
+# C = raSelection(B, (col - A.cols), op, val);
+# result = raJoin(A, colA, C, colB, method);
 
 write(result, $9);
 print(toString(result))

@@ -28,12 +28,11 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 public class RewritePushdownRaSelectionTest extends AutomatedTestBase
 {
-	private static final String TEST_NAME1 = "RewritePushdownRaSelection";
+	private static final String TEST_NAME = "RewritePushdownRaSelection";
 	private static final String TEST_DIR = "functions/rewrite/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RewritePushdownRaSelectionTest.class.getSimpleName() + "/";
 
@@ -42,20 +41,61 @@ public class RewritePushdownRaSelectionTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"result"}));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"result"}));
 	}
 
 	@Test
 	public void testRewritePushdownRaSelectionNoRewrite() {
-        testRewritePushdownRaSelection("nested-loop", TEST_NAME1, false);
+        int col = 1;
+        String op = Opcodes.EQUAL.toString();
+        double val = 4.0;
+
+        // Expected output matrix
+        double[][] Y = {
+                {4,7,8,4,7,8},
+                {4,7,8,4,5,10},
+                {4,3,5,4,7,8},
+                {4,3,5,4,5,10},
+        };
+
+        testRewritePushdownRaSelection(col, op, val, Y, "nested-loop", false);
 	}
 
 	@Test
 	public void testRewritePushdownRaSelection1() {
-        testRewritePushdownRaSelection("sort-merge", TEST_NAME1, true);
+        int col = 1;
+        String op = Opcodes.EQUAL.toString();
+        double val = 4.0;
+
+        // Expected output matrix
+        double[][] Y = {
+                {4,7,8,4,7,8},
+                {4,7,8,4,5,10},
+                {4,3,5,4,7,8},
+                {4,3,5,4,5,10},
+        };
+
+        testRewritePushdownRaSelection(col, op, val, Y, "sort-merge", true);
 	}
 
-    private void testRewritePushdownRaSelection(String method, String testname, boolean rewrites) {
+    @Test
+    public void testRewritePushdownRaSelection2() {
+        int col = 5;
+        String op = Opcodes.EQUAL.toString();
+        double val = 7.0;
+
+        // Expected output matrix
+        double[][] Y = {
+                {4,7,8,4,7,8},
+                {4,3,5,4,7,8},
+        };
+
+        testRewritePushdownRaSelection(col, op, val, Y, "sort-merge", true);
+    }
+
+    private void testRewritePushdownRaSelection(int col, String op, double val, double[][] Y,
+                                                String method, boolean rewrites) {
+
         //generate actual dataset and variables
         double[][] A = {
                 {1, 2, 3},
@@ -74,37 +114,25 @@ public class RewritePushdownRaSelectionTest extends AutomatedTestBase
         int colA = 1;
         int colB = 1;
 
-        int select_col = 1;
-        String op = Opcodes.EQUAL.toString();
-        double val = 4.0;
-
-        // Expected output matrix
-        double[][] Y = {
-                {4,7,8,4,7,8},
-                {4,7,8,4,5,10},
-                {4,3,5,4,7,8},
-                {4,3,5,4,5,10},
-        };
-
-        runRewritePushdownRaSelectionTest(A, colA, B, colB, Y, select_col, op, val, method, testname, rewrites);
+        runRewritePushdownRaSelectionTest(A, colA, B, colB, Y, col, op, val, method, rewrites);
     }
 
 
     private void runRewritePushdownRaSelectionTest(double [][] A, int colA, double [][] B, int colB, double [][] Y,
-                                                   int select_col, String op, double val, String method, String testname, boolean rewrites)
+                                                   int col, String op, double val, String method, boolean rewrites)
     {
         Types.ExecMode platformOld = setExecMode(Types.ExecMode.SINGLE_NODE);
         boolean oldFlag = OptimizerUtils.ALLOW_RA_REWRITES;
 
         try
         {
-            loadTestConfiguration(getTestConfiguration(testname));
+            loadTestConfiguration(getTestConfiguration(TEST_NAME));
             String HOME = SCRIPT_DIR + TEST_DIR;
 
-            fullDMLScriptName = HOME + testname + ".dml";
-            programArgs = new String[]{"-stats", "-args",
+            fullDMLScriptName = HOME + TEST_NAME + ".dml";
+            programArgs = new String[]{"-explain", "hops", "-args",
                     input("A"), String.valueOf(colA), input("B"),
-                    String.valueOf(colB), String.valueOf(select_col), op, String.valueOf(val), method, output("result") };
+                    String.valueOf(colB), String.valueOf(col), op, String.valueOf(val), method, output("result") };
             writeInputMatrixWithMTD("A", A, true);
             writeInputMatrixWithMTD("B", B, true);
 

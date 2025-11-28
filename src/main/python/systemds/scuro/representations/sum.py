@@ -21,7 +21,7 @@
 
 from typing import List
 
-
+import numpy as np
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.representations.utils import pad_sequences
 
@@ -40,9 +40,18 @@ class Sum(Fusion):
         self.needs_alignment = True
 
     def execute(self, modalities: List[Modality]):
-        data = modalities[0].data
+        data = np.asarray(
+            modalities[0].data,
+            dtype=modalities[0].metadata[list(modalities[0].metadata.keys())[0]][
+                "data_layout"
+            ]["type"],
+        )
 
         for m in range(1, len(modalities)):
-            data += modalities[m].data
-
+            data += np.asarray(
+                modalities[m].data,
+                dtype=modalities[m].metadata[list(modalities[m].metadata.keys())[0]][
+                    "data_layout"
+                ]["type"],
+            )
         return data

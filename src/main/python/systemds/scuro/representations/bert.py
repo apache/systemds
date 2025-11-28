@@ -26,10 +26,32 @@ from transformers import BertTokenizerFast, BertModel
 from systemds.scuro.representations.utils import save_embeddings
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.operator_registry import register_representation
-
+from systemds.scuro.utils.static_variables import get_device
 import os
+from torch.utils.data import Dataset, DataLoader
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+
+class TextDataset(Dataset):
+    def __init__(self, texts):
+
+        self.texts = []
+        for text in texts:
+            if text is None:
+                self.texts.append("")
+            elif isinstance(text, np.ndarray):
+                self.texts.append(str(text.item()) if text.size == 1 else str(text))
+            elif not isinstance(text, str):
+                self.texts.append(str(text))
+            else:
+                self.texts.append(text)
+
+    def __len__(self):
+        return len(self.texts)
+
+    def __getitem__(self, idx):
+        return self.texts[idx]
 
 
 @register_representation(ModalityType.TEXT)
@@ -49,7 +71,7 @@ class Bert(UnimodalRepresentation):
             model_name, clean_up_tokenization_spaces=True
         )
 
-        model = BertModel.from_pretrained(model_name)
+        model = BertModel.from_pretrained(model_name).to(get_device())
 
         embeddings = self.create_embeddings(modality, model, tokenizer)
 
@@ -57,32 +79,42 @@ class Bert(UnimodalRepresentation):
             save_embeddings(embeddings, self.output_file)
 
         transformed_modality.data_type = np.float32
-        transformed_modality.data = embeddings
+        transformed_modality.data = np.array(embeddings)
         return transformed_modality
 
     def create_embeddings(self, modality, model, tokenizer):
-        inputs = tokenizer(
-            modality.data,
-            return_offsets_mapping=True,
-            return_tensors="pt",
-            padding="longest",
-            return_attention_mask=True,
-            truncation=True,
-        )
-        ModalityType.TEXT.add_field_for_instances(
-            modality.metadata,
-            "token_to_character_mapping",
-            inputs.data["offset_mapping"].tolist(),
-        )
+        dataset = TextDataset(modality.data)
+        dataloader = DataLoader(dataset, batch_size=32, shuffle=False, collate_fn=None)
+        cls_embeddings = []
+        for batch in dataloader:
+            inputs = tokenizer(
+                batch,
+                return_offsets_mapping=True,
+                return_tensors="pt",
+                padding="max_length",
+                return_attention_mask=True,
+                truncation=True,
+                max_length=512,  # TODO: make this dynamic
+            )
 
-        ModalityType.TEXT.add_field_for_instances(
-            modality.metadata, "attention_masks", inputs.data["attention_mask"].tolist()
-        )
-        del inputs.data["offset_mapping"]
+            inputs.to(get_device())
+            ModalityType.TEXT.add_field_for_instances(
+                modality.metadata,
+                "token_to_character_mapping",
+                inputs.data["offset_mapping"].tolist(),
+            )
 
-        with torch.no_grad():
-            outputs = model(**inputs)
+            ModalityType.TEXT.add_field_for_instances(
+                modality.metadata,
+                "attention_masks",
+                inputs.data["attention_mask"].tolist(),
+            )
+            del inputs.data["offset_mapping"]
 
-            cls_embedding = outputs.last_hidden_state.detach().numpy()
+            with torch.no_grad():
+                outputs = model(**inputs)
 
-        return cls_embedding
+                cls_embedding = outputs.last_hidden_state.detach().cpu().numpy()
+                cls_embeddings.extend(cls_embedding)
+
+        return np.array(cls_embeddings)

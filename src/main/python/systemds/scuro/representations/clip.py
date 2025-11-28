@@ -81,6 +81,7 @@ class CLIPVisual(UnimodalRepresentation):
                 frame_batch = frames[frame_ids_range]
 
                 inputs = self.processor(images=frame_batch, return_tensors="pt")
+                inputs.to(get_device())
                 with torch.no_grad():
                     output = self.model.get_image_features(**inputs)
 
@@ -125,9 +126,18 @@ class CLIPText(UnimodalRepresentation):
     def create_text_embeddings(self, data, model):
         embeddings = []
         for d in data:
-            inputs = self.processor(text=d, return_tensors="pt", padding=True)
+            inputs = self.processor(
+                text=d,
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+                max_length=77,
+            )
+            inputs.to(get_device())
             with torch.no_grad():
                 text_embedding = model.get_text_features(**inputs)
-                embeddings.append(text_embedding.squeeze().numpy().reshape(1, -1))
+                embeddings.append(
+                    text_embedding.squeeze().detach().cpu().numpy().reshape(1, -1)
+                )
 
         return embeddings

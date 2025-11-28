@@ -46,6 +46,10 @@ public abstract class AColGroupCompressed extends AColGroup {
 
 	private static final long serialVersionUID = 6219835795420081223L;
 
+	protected AColGroupCompressed() {
+		super();
+	}
+
 	protected AColGroupCompressed(IColIndex colIndices) {
 		super(colIndices);
 	}

@@ -19,62 +19,107 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DeltaDictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
+import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+
 /**
  * Class to encapsulate information about a column group that is first delta encoded then encoded with dense dictionary
  * encoding (DeltaDDC).
  */
-public class ColGroupDeltaDDC  { // extends ColGroupDDC
+public class ColGroupDeltaDDC extends ColGroupDDC {
+	private static final long serialVersionUID = -1045556313148564147L;
 
-// 	private static final long serialVersionUID = -1045556313148564147L;
+	/** Constructor for serialization */
+	protected ColGroupDeltaDDC() {
+		super();
+	}
 
-// 	/** Constructor for serialization */
-// 	protected ColGroupDeltaDDC() {
-// 	}
+	private ColGroupDeltaDDC(IColIndex colIndexes, IDictionary dict, AMapToData data, int[] cachedCounts) {
+		super(colIndexes, dict, data, cachedCounts);
+		if(CompressedMatrixBlock.debug) {
+			if(!(dict instanceof DeltaDictionary))
+				throw new DMLCompressionException("DeltaDDC must use DeltaDictionary");
+		}
+	}
 
-// 	private ColGroupDeltaDDC(int[] colIndexes, ADictionary dict, AMapToData data, int[] cachedCounts) {
-// 		super();
-// 		LOG.info("Carefully use of DeltaDDC since implementation is not finished.");
-// 		_colIndexes = colIndexes;
-// 		_dict = dict;
-// 		_data = data;
-// 	}
+	public static AColGroup create(IColIndex colIndexes, IDictionary dict, AMapToData data, int[] cachedCounts) {
+		if(data.getUnique() == 1)
+			return ColGroupConst.create(colIndexes, dict);
+		else if(dict == null)
+			return new ColGroupEmpty(colIndexes);
+		else
+			return new ColGroupDeltaDDC(colIndexes, dict, data, cachedCounts);
+	}
 
-// 	public static AColGroup create(int[] colIndices, ADictionary dict, AMapToData data, int[] cachedCounts) {
-// 		if(dict == null)
-// 			throw new NotImplementedException("Not implemented constant delta group");
-// 		else
-// 			return new ColGroupDeltaDDC(colIndices, dict, data, cachedCounts);
-// 	}
+	@Override
+	public CompressionType getCompType() {
+		return CompressionType.DeltaDDC;
+	}
 
-// 	public CompressionType getCompType() {
-// 		return CompressionType.DeltaDDC;
-// 	}
+	@Override
+	protected void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
+		double[] values) {
+		final int nCol = _colIndexes.size();
+		final double[] prevRow = new double[nCol];
+		
+		if(rl > 0) {
+			final double[] prevRowData = db.values(rl - 1 + offR);
+			final int prevOff = db.pos(rl - 1 + offR) + offC;
+			for(int j = 0; j < nCol; j++) {
+				prevRow[j] = prevRowData[prevOff + _colIndexes.get(j)];
+			}
+		}
 
-// 	@Override
-// 	protected void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
-// 		double[] values) {
-// 		final int nCol = _colIndexes.length;
-// 		for(int i = rl, offT = rl + offR; i < ru; i++, offT++) {
-// 			final double[] c = db.values(offT);
-// 			final int off = db.pos(offT) + offC;
-// 			final int rowIndex = _data.getIndex(i) * nCol;
-// 			final int prevOff = (off == 0) ? off : off - nCol;
-// 			for(int j = 0; j < nCol; j++) {
-// 				// Here we use the values in the previous row to compute current values along with the delta
-// 				double newValue = c[prevOff + j] + values[rowIndex + j];
-// 				c[off + _colIndexes[j]] += newValue;
-// 			}
-// 		}
-// 	}
+		for(int i = rl, offT = rl + offR; i < ru; i++, offT++) {
+			final double[] c = db.values(offT);
+			final int off = db.pos(offT) + offC;
+			final int dictIdx = _data.getIndex(i);
+			final int rowIndex = dictIdx * nCol;
+			
+			if(i == 0 && rl == 0) {
+				for(int j = 0; j < nCol; j++) {
+					final double value = values[rowIndex + j];
+					final int colIdx = _colIndexes.get(j);
+					c[off + colIdx] = value;
+					prevRow[j] = value;
+				}
+			}
+			else {
+				for(int j = 0; j < nCol; j++) {
+					final double delta = values[rowIndex + j];
+					final double newValue = prevRow[j] + delta;
+					final int colIdx = _colIndexes.get(j);
+					c[off + colIdx] = newValue;
+					prevRow[j] = newValue;
+				}
+			}
+		}
+	}
 
-// 	@Override
-// 	protected void decompressToSparseBlockDenseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
-// 		double[] values) {
-// 		throw new NotImplementedException();
-// 	}
+	@Override
+	protected void decompressToSparseBlockDenseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
+		double[] values) {
+		throw new NotImplementedException("Sparse block decompression for DeltaDDC not yet implemented");
+	}
 
-// 	@Override
-// 	public AColGroup scalarOperation(ScalarOperator op) {
-// 		return new ColGroupDeltaDDC(_colIndexes, _dict.applyScalarOp(op), _data, getCachedCounts());
-// 	}
+	@Override
+	public AColGroup scalarOperation(ScalarOperator op) {
+		if(_dict instanceof DeltaDictionary) {
+			DeltaDictionary deltaDict = (DeltaDictionary) _dict;
+			IDictionary newDict = deltaDict.applyScalarOp(op);
+			return new ColGroupDeltaDDC(_colIndexes, newDict, _data, getCachedCounts());
+		}
+		else {
+			throw new DMLRuntimeException("DeltaDDC must use DeltaDictionary");
+		}
+	}
 }

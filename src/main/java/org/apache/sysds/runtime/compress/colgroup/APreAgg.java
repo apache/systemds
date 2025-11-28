@@ -41,6 +41,10 @@ public abstract class APreAgg extends AColGroupValue {
 
 	private static boolean loggedWarningForDirect = false;
 
+	protected APreAgg() {
+		super();
+	}
+
 	/**
 	 * A Abstract class for column groups that contain IDictionary for values.
 	 * 

@@ -38,6 +38,7 @@ import org.apache.sysds.test.component.compress.TestConstants.OverLapping;
 import org.apache.sysds.test.component.compress.TestConstants.SparsityType;
 import org.apache.sysds.test.component.compress.TestConstants.ValueRange;
 import org.apache.sysds.test.component.compress.TestConstants.ValueType;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -117,7 +118,7 @@ public class CompressedVectorTest extends CompressedTestBase {
 			double ret2 = cmb.sortOperations().pickValue(0.95);
 
 			if(_cs.lossy)
-				TestUtils.compareCellValue(ret1, ret2, lossyTolerance, false);
+				Assert.assertEquals(ret1, ret2, lossyTolerance);
 			else
 				assertTrue(bufferedToString, TestUtils.compareScalarBits(ret1, ret2, 0));
 

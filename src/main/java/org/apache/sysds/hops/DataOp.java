@@ -493,7 +493,6 @@ public class DataOp extends Hop {
 			Hop input1 = getInput().get(0);
 			setDim1(input1.getDim1());
 			setDim2(input1.getDim2());
-			setBlocksize(input1.getBlocksize());
 			setNnz(input1.getNnz());
 		}
 		else if( _op == OpOpData.FEDERATED ) {

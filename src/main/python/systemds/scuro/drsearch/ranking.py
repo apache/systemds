@@ -19,8 +19,7 @@
 #
 # -------------------------------------------------------------
 
-from dataclasses import replace
-from typing import Callable, Iterable, List, Optional
+from typing import Callable, Iterable, Optional, Union, Any
 
 
 def rank_by_tradeoff(
@@ -31,7 +30,7 @@ def rank_by_tradeoff(
     runtime_accessor: Optional[Callable[[object], float]] = None,
     cache_scores: bool = True,
     score_attr: str = "tradeoff_score",
-) -> List:
+) -> Union[list[Any], tuple[list[Any], list[int]]]:
     entries = list(entries)
     if not entries:
         return []
@@ -77,14 +76,17 @@ def rank_by_tradeoff(
     if cache_scores:
         for entry, score in zip(entries, scores):
             if hasattr(entry, score_attr):
-                try:
-                    new_entry = replace(entry, **{score_attr: score})
-                    entries[entries.index(entry)] = new_entry
-                except TypeError:
-                    setattr(entry, score_attr, score)
+                setattr(entry, score_attr, score)
             else:
                 setattr(entry, score_attr, score)
 
-    return sorted(
-        entries, key=lambda entry: getattr(entry, score_attr, 0.0), reverse=True
-    )
+    sorted_entries = sorted(entries, key=lambda e: e.tradeoff_score, reverse=True)
+
+    sorted_indices = [
+        i
+        for i, _ in sorted(
+            enumerate(entries), key=lambda pair: pair[1].tradeoff_score, reverse=True
+        )
+    ]
+
+    return sorted_entries, sorted_indices

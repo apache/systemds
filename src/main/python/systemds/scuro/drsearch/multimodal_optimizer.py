@@ -106,6 +106,7 @@ class MultimodalOptimizer:
         debug: bool = True,
         min_modalities: int = 2,
         max_modalities: int = None,
+        metric: str = "accuracy",
     ):
         self.modalities = modalities
         self.tasks = tasks
@@ -121,6 +122,7 @@ class MultimodalOptimizer:
             unimodal_optimization_results
         )
         self.optimization_results = []
+        self.metric_name = metric
 
     def optimize_parallel(
         self, max_combinations: int = None, max_workers: int = 2, batch_size: int = 4
@@ -242,7 +244,7 @@ class MultimodalOptimizer:
             for modality in self.modalities:
                 k_best_results, cached_data = (
                     unimodal_optimization_results.get_k_best_results(
-                        modality, self.k, task
+                        modality, self.k, task, self.metric_name
                     )
                 )
 

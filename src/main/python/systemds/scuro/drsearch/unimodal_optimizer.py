@@ -102,6 +102,17 @@ class UnimodalOptimizer:
         with open(file_name, "wb") as f:
             pickle.dump(self.operator_performance.results, f)
 
+    def store_cache(self, file_name=None):
+        if file_name is None:
+            import time
+
+            timestr = time.strftime("%Y%m%d-%H%M%S")
+            file_name = "unimodal_optimizer_cache" + timestr + ".pkl"
+
+        file_name = f"{self.result_path}/{file_name}"
+        with open(file_name, "wb") as f:
+            pickle.dump(self.operator_performance.cache, f)
+
     def load_results(self, file_name):
         with open(file_name, "rb") as f:
             self.operator_performance.results = pickle.load(f)
@@ -414,22 +425,23 @@ class UnimodalResults:
                 for entry in self.results[modality][task_name]:
                     print(f"{modality}_{task_name}: {entry}")
 
-    def get_k_best_results(self, modality, k, task):
+    def get_k_best_results(self, modality, k, task, performance_metric_name):
         """
         Get the k best results for the given modality
         :param modality: modality to get the best results for
         :param k: number of best results
+        :param task: task to get the best results for
+        :param performance_metric_name: name of the performance metric to use for ranking
         """
 
         task_results = self.results[modality.modality_id][task.model.name]
 
-        results = rank_by_tradeoff(task_results)[:k]
+        results, sorted_indices = rank_by_tradeoff(
+            task_results, performance_metric_name=performance_metric_name
+        )
 
-        sorted_indices = sorted(
-            range(len(task_results)),
-            key=lambda x: task_results[x].tradeoff_score,
-            reverse=True,
-        )[:k]
+        results = results[:k]
+        sorted_indices = sorted_indices[:k]
 
         task_cache = self.cache.get(modality.modality_id, {}).get(task.model.name, None)
         if not task_cache:
@@ -446,7 +458,7 @@ class UnimodalResults:
         return results, cache
 
 
-@dataclass(frozen=True)
+@dataclass
 class ResultEntry:
     val_score: PerformanceMeasure = None
     train_score: PerformanceMeasure = None

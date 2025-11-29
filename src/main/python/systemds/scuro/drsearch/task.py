@@ -69,7 +69,7 @@ class Task:
         val_indices: List,
         kfold=5,
         measure_performance=True,
-        performance_measures="accuracy",
+        performance_measures=["accuracy"],
     ):
         """
         Parent class for the prediction task that is performed on top of the aligned representation

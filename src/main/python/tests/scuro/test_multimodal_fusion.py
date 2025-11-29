@@ -174,7 +174,9 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
             registry._fusion_operators = [Average, Concatenation, LSTM]
             unimodal_optimizer = UnimodalOptimizer([audio, text], [task], debug=False)
             unimodal_optimizer.optimize()
-            unimodal_optimizer.operator_performance.get_k_best_results(audio, 2, task)
+            unimodal_optimizer.operator_performance.get_k_best_results(
+                audio, 2, task, "accuracy"
+            )
             m_o = MultimodalOptimizer(
                 [audio, text],
                 unimodal_optimizer.operator_performance,
@@ -238,7 +240,9 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
             registry._fusion_operators = [Average, Concatenation, LSTM]
             unimodal_optimizer = UnimodalOptimizer([audio, text], [task], debug=False)
             unimodal_optimizer.optimize()
-            unimodal_optimizer.operator_performance.get_k_best_results(audio, 2, task)
+            unimodal_optimizer.operator_performance.get_k_best_results(
+                audio, 2, task, "accuracy"
+            )
             m_o = MultimodalOptimizer(
                 [audio, text],
                 unimodal_optimizer.operator_performance,

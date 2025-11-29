@@ -117,12 +117,12 @@ class MultimodalOptimizer:
 
         self.operator_registry = Registry()
         self.fusion_operators = self.operator_registry.get_fusion_operators()
+        self.metric_name = metric
 
         self.k_best_representations = self._extract_k_best_representations(
             unimodal_optimization_results
         )
         self.optimization_results = []
-        self.metric_name = metric
 
     def optimize_parallel(
         self, max_combinations: int = None, max_workers: int = 2, batch_size: int = 4

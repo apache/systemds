@@ -218,7 +218,7 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
             )
             assert len(unimodal_optimizer.operator_performance.task_names) == 2
             result, cached = unimodal_optimizer.operator_performance.get_k_best_results(
-                modality, 1, self.tasks[0]
+                modality, 1, self.tasks[0], "accuracy"
             )
             assert len(result) == 1
             assert len(cached) == 1

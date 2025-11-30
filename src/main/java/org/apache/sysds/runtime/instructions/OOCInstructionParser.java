@@ -36,7 +36,7 @@ import org.apache.sysds.runtime.instructions.ooc.ReblockOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.TSMMOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.UnaryOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.MatrixVectorBinaryOOCInstruction;
-import org.apache.sysds.runtime.instructions.ooc.TransposeOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.ReorgOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.TeeOOCInstruction;
 
 public class OOCInstructionParser extends InstructionParser {
@@ -74,7 +74,7 @@ public class OOCInstructionParser extends InstructionParser {
 			case MMTSJ:
 				return TSMMOOCInstruction.parseInstruction(str);
 			case Reorg:
-				return TransposeOOCInstruction.parseInstruction(str);
+				return ReorgOOCInstruction.parseInstruction(str);
 			case Tee:
 				return TeeOOCInstruction.parseInstruction(str);
 			case CentralMoment:

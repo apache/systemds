@@ -52,6 +52,8 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 	private boolean _cacheInProgress = true; // caching in progress, in the first pass.
 	private Map<MatrixIndexes, Integer> _index;
 
+	private DMLRuntimeException _failure;
+
 	public CachingStream(OOCStream<IndexedMatrixValue> source) {
 		this(source, _streamSeq.getNextID());
 	}
@@ -76,6 +78,22 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 				}
 			} catch (InterruptedException e) {
 				throw new DMLRuntimeException(e);
+			} catch (DMLRuntimeException e) {
+				// Propagate failure to subscribers
+				_failure = e;
+				synchronized (this) {
+					notifyAll();
+				}
+
+				Runnable[] mSubscribers = _subscribers;
+				if(mSubscribers != null) {
+					for(Runnable mSubscriber : mSubscribers) {
+						try {
+							mSubscriber.run();
+						} catch (Exception ignored) {
+						}
+					}
+				}
 			}
 		});
 	}
@@ -103,7 +121,9 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 
 	public synchronized IndexedMatrixValue get(int idx) throws InterruptedException {
 		while (true) {
-			if (idx < _numBlocks) {
+			if (_failure != null)
+				throw _failure;
+			else if (idx < _numBlocks) {
 				IndexedMatrixValue out = OOCEvictionManager.get(_streamId, idx);
 
 				if (_index != null) // Ensure index is up to date

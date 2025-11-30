@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.controlprogram.caching;
 
 import java.io.IOException;
 import java.lang.ref.SoftReference;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 
@@ -528,7 +529,12 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 
 	@Override
 	protected MatrixBlock readBlobFromStream(LocalTaskQueue<IndexedMatrixValue> stream) throws IOException {
-		MatrixBlock ret = new MatrixBlock((int)getNumRows(), (int)getNumColumns(), false);
+		boolean dimsUnknown = getNumRows() < 0 || getNumColumns() < 0;
+		int nrows = (int)getNumRows();
+		int ncols = (int)getNumColumns();
+		MatrixBlock ret = dimsUnknown ? null : new MatrixBlock((int)getNumRows(), (int)getNumColumns(), false);
+		// TODO if stream is CachingStream, block parts might be evicted resulting in null pointer exceptions
+		List<IndexedMatrixValue> blockCache = dimsUnknown ? new ArrayList<>() : null;
 		IndexedMatrixValue tmp = null;
 		try {
 			int blen = getBlocksize(), lnnz = 0;
@@ -537,12 +543,31 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 				final int row_offset = (int) (tmp.getIndexes().getRowIndex() - 1) * blen;
 				final int col_offset = (int) (tmp.getIndexes().getColumnIndex() - 1) * blen;
 
-				// Add the values of this block into the output block.
-				((MatrixBlock)tmp.getValue()).putInto(ret, row_offset, col_offset, true);
+				if (dimsUnknown) {
+					nrows = Math.max(nrows, row_offset + tmp.getValue().getNumRows());
+					ncols = Math.max(ncols, col_offset + tmp.getValue().getNumColumns());
+					blockCache.add(tmp);
+				} else {
+					// Add the values of this block into the output block.
+					((MatrixBlock) tmp.getValue()).putInto(ret, row_offset, col_offset, true);
+				}
 				
 				// incremental maintenance nnz
 				lnnz += tmp.getValue().getNonZeros();
 			}
+
+			if (dimsUnknown) {
+				ret = new MatrixBlock(nrows, ncols, false);
+
+				for (IndexedMatrixValue _tmp : blockCache) {
+					// compute row/column block offsets
+					final int row_offset = (int) (_tmp.getIndexes().getRowIndex() - 1) * blen;
+					final int col_offset = (int) (_tmp.getIndexes().getColumnIndex() - 1) * blen;
+
+					((MatrixBlock) _tmp.getValue()).putInto(ret, row_offset, col_offset, true);
+				}
+			}
+
 			ret.setNonZeros(lnnz);
 		}
 		catch(Exception ex) {

@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.instructions.ooc;
 
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -67,12 +69,55 @@ public class BinaryOOCInstruction extends ComputationOOCInstruction {
 		OOCStream<IndexedMatrixValue> qOut = new SubscribableTaskQueue<>();
 		ec.getMatrixObject(output).setStreamHandle(qOut);
 
-		joinOOC(qIn1, qIn2, qOut, (tmp1, tmp2) -> {
-			IndexedMatrixValue tmpOut = new IndexedMatrixValue();
-			tmpOut.set(tmp1.getIndexes(),
-				tmp1.getValue().binaryOperations((BinaryOperator)_optr, tmp2.getValue(), tmpOut.getValue()));
-			return tmpOut;
-		}, IndexedMatrixValue::getIndexes);
+		if (m1.getNumRows() < 0 || m1.getNumColumns() < 0 || m2.getNumRows() < 0 || m2.getNumColumns() < 0)
+			throw new DMLRuntimeException("Cannot process (matrix, matrix) BinaryOOCInstruction with unknown dimensions.");
+
+		boolean isColBroadcast = m1.getNumColumns() > 1 && m2.getNumColumns() == 1;
+		boolean isRowBroadcast = m1.getNumRows() > 1 && m2.getNumRows() == 1;
+
+		if (isColBroadcast && !isRowBroadcast) {
+			final long maxProcessesPerBroadcast = m1.getNumColumns() / m1.getBlocksize();
+
+			broadcastJoinOOC(qIn1, qIn2, qOut, (tmp1, b) -> {
+				IndexedMatrixValue tmpOut = new IndexedMatrixValue();
+				tmpOut.set(tmp1.getIndexes(),
+					tmp1.getValue().binaryOperations((BinaryOperator)_optr, b.getValue().getValue(), tmpOut.getValue()));
+
+				if (b.incrProcessCtrAndGet() >= maxProcessesPerBroadcast)
+					b.release();
+
+				return tmpOut;
+			}, tmp -> tmp.getIndexes().getRowIndex());
+		}
+		else if (isRowBroadcast && !isColBroadcast) {
+			final long maxProcessesPerBroadcast = m1.getNumRows() / m1.getBlocksize();
+
+			broadcastJoinOOC(qIn1, qIn2, qOut, (tmp1, b) -> {
+				IndexedMatrixValue tmpOut = new IndexedMatrixValue();
+				tmpOut.set(tmp1.getIndexes(),
+					tmp1.getValue().binaryOperations((BinaryOperator)_optr, b.getValue().getValue(), tmpOut.getValue()));
+
+				if (b.incrProcessCtrAndGet() >= maxProcessesPerBroadcast)
+					b.release();
+
+				return tmpOut;
+			}, tmp -> tmp.getIndexes().getColumnIndex());
+		}
+		else {
+			if (m1.getNumColumns() != m2.getNumColumns() || m1.getNumRows() != m2.getNumRows())
+				throw new NotImplementedException("Invalid dimensions for matrix-matrix binary op: "
+					+ m1.getNumRows() + "x" + m1.getNumColumns() + " <=> "
+					+ m2.getNumRows() + "x" + m2.getNumColumns());
+
+			joinOOC(qIn1, qIn2, qOut, (tmp1, tmp2) -> {
+				IndexedMatrixValue tmpOut = new IndexedMatrixValue();
+				tmpOut.set(tmp1.getIndexes(),
+					tmp1.getValue().binaryOperations((BinaryOperator)_optr, tmp2.getValue(), tmpOut.getValue()));
+				return tmpOut;
+			}, IndexedMatrixValue::getIndexes);
+		}
+
+
 	}
 
 	protected void processScalarMatrixInstruction(ExecutionContext ec) {

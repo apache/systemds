@@ -1,0 +1,122 @@
+/* DML-script implementing the ssb query Q1.1 in SystemDS.
+**input_dir="/scripts/ssb/data"
+
+* Run with docker:
+docker run -it --rm -v $PWD:/scripts/ apache/systemds:nightly -f /scripts/queries/q2_1_groupby.dml -nvargs input_dir="/scripts/data/"
+
+SELECT SUM(lo_revenue), p_brand
+FROM part, lineorder
+WHERE
+    lo_partkey = p_partkey
+    AND p_category = 'MFGR#12'
+    GROUP BY p_brand
+    ORDER BY p_brand;
+
+*Please run the original SQL query (eg. in Postgres) 
+to verify the correctness of DML version.
+-> First tests: Works on the dataset with scale factor 0.1.
+
+*Based on the older implementations.
+https://github.com/ghafek/systemds/blob/feature/ssb-benchmark/scripts/ssb/queries/q1_1.dml
+https://github.com/ghafek/systemds/blob/feature/ssb-benchmark/scripts/ssb/queries/q4_3.dml
+In comparison to older version the join method was changed
+from sort-merge to hash2 to improve the performance.
+
+Input parameters:
+input_dir - Path to input directory containing the table files (e.g., ./data)
+*/
+
+# Call ra-modules with ra-functions.
+source("./scripts/builtin/raSelection.dml") as raSel
+source("./scripts/builtin/raJoin.dml") as raJoin
+source("./scripts/builtin/raGroupby.dml") as raGrp
+
+# Set input parameters.
+input_dir = ifdef($input_dir, "./data");
+print("Loading tables from directory: " + input_dir);
+
+# Read and load input CSV files from date and lineorder.  
+#date_csv = read(input_dir + "/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+lineorder_csv = read(input_dir + "/lineorder.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+part_csv = read(input_dir + "/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+
+general_spec = "{ \"ids\": false, \"recode\": [\"C1\"] }";
+
+# -- Data preparation --
+
+# Extract only the necessary columns from part table.
+# Extracted: COL-4 | COL-13
+# => LO_PARTKEY | LO_REVENUE
+
+lineorder_csv_min = cbind(lineorder_csv[, 4], lineorder_csv[, 13]);
+lineorder_matrix_min = as.matrix(lineorder_csv_min);
+
+# -- Filter the data with RA-SELECTION function.
+
+## Prepare PART on-the-fly encodings (only need p_brand encoding, filter by p_category string)
+# We'll encode column 5 (p_brand) on-the-fly and later filter by category string 'MFGR#12'.
+[part_brand_enc_f, part_brand_meta] = transformencode(target=part_csv[,5], spec=general_spec);
+#print(toString(part_brand_enc_f));
+
+# Build filtered PART table (p_category == 'MFGR#12'), keeping key and encoded brand
+part_filt_keys = matrix(0, rows=0, cols=1);
+part_filt_brand = matrix(0, rows=0, cols=1);
+for (i in 1:nrow(part_csv)) {
+    if (as.scalar(part_csv[i,4]) == "MFGR#12") {
+        key_val = as.double(as.scalar(part_csv[i,1]));
+        brand_code = as.double(as.scalar(part_brand_enc_f[i,1]));
+        part_filt_keys = rbind(part_filt_keys, matrix(key_val, rows=1, cols=1));
+        part_filt_brand = rbind(part_filt_brand, matrix(brand_code, rows=1, cols=1));
+    }
+}
+if (nrow(part_filt_keys) == 0) {
+    part_filt_keys = matrix(0, rows=1, cols=1);
+    part_filt_brand = matrix(0, rows=1, cols=1);
+}
+part_filt = cbind(part_filt_keys, part_filt_brand);
+
+# -- Join --
+# Join LINEORDER and DATE tables WHERE LO_PARTKEY = P_PARTKEY 
+# P_PARTKEY | P_BRAND | LO_PARTKEY | LO_REVENUE
+lo_part = raJoin::m_raJoin(A=part_filt, colA=1, B=lineorder_matrix_min, colB=1, method="hash2");
+#print(toString(lo_part[1,]))
+
+#print(lo_part[1,])
+# -- GROUP-BY & AGGREGATION --
+#print(toString(p_brand_dec))
+#print("LO-PART JOINED.");
+
+# -- Group-By and Aggregation (SUM)--
+
+# Group-By 
+p_brand = lo_part[,2]
+lo_revenue = lo_part[,4]
+
+# CALCULATING COMBINATION KEY WITH PRIORITY:P_BRAND
+max_p_brand = max(p_brand);
+p_brand_scale_f = ceil(max_p_brand) + 1;
+
+combined_key = p_brand;
+
+group_input = cbind(lo_revenue, combined_key)
+
+agg_result = raGrp::m_raGroupby(X=group_input, col=2, method="nested-loop");
+
+# Aggregation (SUM)
+key = agg_result[, 1];
+revenue = rowSums(agg_result[, 2:ncol(agg_result)]);
+p_brand = round(key %% p_brand_scale_f);
+result = cbind(p_brand, revenue);
+
+# -- Sorting -- -- Sorting not working!!!
+# ORDER BY P_BRAND ASC
+result_ordered = order(target=result, by=1, decreasing=FALSE, index.return=FALSE);
+
+p_brand_dec = transformdecode(target=result_ordered[,1], spec=general_spec, meta=part_brand_meta);
+result = cbind(p_brand_dec, as.frame(result_ordered[,2]));
+
+# Print result
+print("p_brand | SUM(lo_revenue)")
+print(result)
+
+#print("Q4.2 finished.\n");

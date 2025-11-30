@@ -26,7 +26,7 @@ import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.ReorgCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.ooc.ReblockOOCInstruction;
-import org.apache.sysds.runtime.instructions.ooc.TransposeOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.ReorgOOCInstruction;
 import org.apache.sysds.runtime.io.MatrixWriter;
 import org.apache.sysds.runtime.io.MatrixWriterFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -86,7 +86,7 @@ public class StreamCollectTest extends AutomatedTestBase {
 			VariableCPInstruction createOut = VariableCPInstruction.parseInstruction(
 				"CP°createvar°_mVar1°" + input("tmp1") + "°true°MATRIX°binary°" + rows + "°" + cols +
 					"°1000°700147°copy");
-			TransposeOOCInstruction oocTranspose = TransposeOOCInstruction.parseInstruction(
+			ReorgOOCInstruction oocTranspose = ReorgOOCInstruction.parseInstruction(
 				"OOC°r'°_mVar0·MATRIX·FP64°_mVar1·MATRIX·FP64");
 			VariableCPInstruction createOut2 = VariableCPInstruction.parseInstruction(
 				"CP°createvar°_mVar2°" + input("tmp2") + "°true°MATRIX°binary°" + rows + "°" + cols +

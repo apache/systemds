@@ -854,6 +854,9 @@ public class BinaryOp extends MultiThreadedHop {
 			_etype = ExecType.CP;
 		}
 		
+		if( _etype == ExecType.OOC ) //TODO
+			setExecType(ExecType.CP);
+		
 		//mark for recompile (forever)
 		setRequiresRecompileIfNecessary();
 		

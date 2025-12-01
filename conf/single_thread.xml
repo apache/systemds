@@ -1,0 +1,8 @@
+<configuration>
+  <property>
+    <name>sysds.cp.parallel.ops</name><value>false</value>
+  </property>
+  <property>
+    <name>sysds.num.threads</name><value>1</value>
+  </property>
+</configuration>

@@ -51,7 +51,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.8]
+        python-version: [3.8, "3.10", 3.12, 3.14]
         os: [ubuntu-24.04]
         java: ['17']
         javadist: ['adopt']
@@ -100,10 +100,7 @@ jobs:
 
     - name: Install pip Dependencies
       run: |
-        # Install pip twice to update past the versions.
-        pip install --upgrade pip
-        pip install --upgrade pip
-        pip install wheel
+        pip install --upgrade pip setuptools wheel build
         pip install \
           numpy \
           py4j \

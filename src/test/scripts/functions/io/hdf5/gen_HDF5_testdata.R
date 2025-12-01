@@ -29,26 +29,25 @@ if (!require("rhdf5", quietly = TRUE)) {
 }
 
 SMALL_MATRIX_2D <- c(200, 40)
-LARGE_MATRIX_2D <- c(800, 30)
 SMALL_MATRIX_3D <- c(15, 15, 5)
+SMALL_TENSOR_4D_A <- c(120, 16, 16, 4)
+SMALL_TENSOR_4D_B <- c(120, 16, 16, 5)
+SMALL_LABEL_MATRIX <- c(120, 12)
 
 VECTOR_LENGTH <- 200
 STRING_ARRAY_LENGTH <- 30
 
 CHUNK_SHAPE <- c(100, 20)
-LARGE_CHUNK_SHAPE <- c(200, 30)
-
-TENSOR_DIMS <- list(
-  samples = 120,
-  height = 16,
-  width = 16,
-  channels_a = 4,
-  channels_b = 5,
-  label_features = 12
-)
 
 write_matrix <- function(file_path, dataset_name, shape, generator = function(n) rnorm(n)) {
   values <- generator(prod(shape))
+  # Create dataset without compression, filters, or chunking to avoid message type 11 (Filter Pipeline)
+  # filter = "NONE": explicitly disable compression filters
+  # level = 0: no compression
+  # shuffle = FALSE: no shuffle filter
+  # chunk = dims: single chunk matching dataset size (effectively contiguous for small datasets)
+  h5createDataset(file_path, dataset_name, dims = shape, 
+                  filter = "NONE", level = 0, shuffle = FALSE, chunk = shape)
   h5write(array(values, dim = shape), file_path, dataset_name)
 }
 
@@ -63,6 +62,9 @@ generate_test_file_multiple_datasets <- function(dir) {
   file_path <- file.path(dir, "test_multiple_datasets.h5")
   h5createFile(file_path)
   write_matrix(file_path, "matrix_2d", SMALL_MATRIX_2D)
+  # Create 1D vector without compression/filters
+  h5createDataset(file_path, "vector_1d", dims = VECTOR_LENGTH, 
+                  filter = "NONE", level = 0, shuffle = FALSE, chunk = VECTOR_LENGTH)
   h5write(rnorm(VECTOR_LENGTH), file_path, "vector_1d")
   write_matrix(file_path, "matrix_3d", SMALL_MATRIX_3D)
   cat("Created test_multiple_datasets.h5 (1D/2D/3D datasets)\n")
@@ -94,7 +96,9 @@ generate_test_file_chunked <- function(dir) {
   h5createFile(file_path)
 
   data <- array(rnorm(prod(SMALL_MATRIX_2D)), dim = SMALL_MATRIX_2D)
-  h5createDataset(file_path, "chunked_data", dims = SMALL_MATRIX_2D, chunk = CHUNK_SHAPE)
+  # Chunked dataset without compression/filters (chunking is intentional for this test)
+  h5createDataset(file_path, "chunked_data", dims = SMALL_MATRIX_2D, chunk = CHUNK_SHAPE,
+                  filter = "NONE", level = 0, shuffle = FALSE)
   h5write(data, file_path, "chunked_data")
 
   write_matrix(file_path, "non_chunked_data", SMALL_MATRIX_2D)
@@ -120,17 +124,17 @@ generate_test_file_multi_tensor_samples <- function(dir) {
   write_matrix(
     file_path,
     "sen1",
-    c(TENSOR_DIMS$samples, TENSOR_DIMS$height, TENSOR_DIMS$width, TENSOR_DIMS$channels_a)
+    SMALL_TENSOR_4D_A
   )
   write_matrix(
     file_path,
     "sen2",
-    c(TENSOR_DIMS$samples, TENSOR_DIMS$height, TENSOR_DIMS$width, TENSOR_DIMS$channels_b)
+    SMALL_TENSOR_4D_B
   )
   write_matrix(
     file_path,
     "label",
-    c(TENSOR_DIMS$samples, TENSOR_DIMS$label_features),
+    SMALL_LABEL_MATRIX,
     generator = function(n) as.integer(sample(0:1, n, replace = TRUE))
   )
   cat("Created test_multi_tensor_samples.h5 (multi-input tensors)\n")
@@ -168,9 +172,15 @@ generate_test_file_with_attributes <- function(dir) {
 generate_test_file_empty_datasets <- function(dir) {
   file_path <- file.path(dir, "test_empty_datasets.h5")
   h5createFile(file_path)
-  h5createDataset(file_path, "empty", dims = c(0, SMALL_MATRIX_2D[2]))
+  h5createDataset(file_path, "empty", dims = c(0, SMALL_MATRIX_2D[2]), 
+                  filter = "NONE", level = 0, shuffle = FALSE)
 
+  # Create scalar and vector without compression/filters
+  h5createDataset(file_path, "scalar", dims = 1, 
+                  filter = "NONE", level = 0, shuffle = FALSE, chunk = 1)
   h5write(1.0, file_path, "scalar")
+  h5createDataset(file_path, "vector", dims = VECTOR_LENGTH, 
+                  filter = "NONE", level = 0, shuffle = FALSE, chunk = VECTOR_LENGTH)
   h5write(rnorm(VECTOR_LENGTH), file_path, "vector")
   cat("Created test_empty_datasets.h5 (empty/scalar/vector)\n")
 }
@@ -179,6 +189,10 @@ generate_test_file_string_datasets <- function(dir) {
   file_path <- file.path(dir, "test_string_datasets.h5")
   h5createFile(file_path)
   strings <- paste0("string_", 0:(STRING_ARRAY_LENGTH - 1))
+  # Create string dataset without compression/filters
+  h5createDataset(file_path, "string_array", dims = STRING_ARRAY_LENGTH, 
+                  storage.mode = "character", filter = "NONE", level = 0, 
+                  shuffle = FALSE, chunk = STRING_ARRAY_LENGTH)
   h5write(strings, file_path, "string_array")
   cat("Created test_string_datasets.h5 (string datasets)\n")
 }

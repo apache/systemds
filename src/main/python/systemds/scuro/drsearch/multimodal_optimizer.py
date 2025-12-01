@@ -83,8 +83,8 @@ def _evaluate_dag_worker(dag_pickle, task_pickle, modalities_pickle, debug=False
 
         return OptimizationResult(
             dag=dag_copy,
-            train_score=scores[0],
-            val_score=scores[1],
+            train_score=scores[0].average_scores,
+            val_score=scores[1].average_scores,
             runtime=total_time,
             task_name=task_copy.model.name,
             task_time=eval_time,
@@ -390,8 +390,8 @@ class MultimodalOptimizer:
 
             return OptimizationResult(
                 dag=dag_copy,
-                train_score=scores[0],
-                val_score=scores[1],
+                train_score=scores[0].average_scores,
+                val_score=scores[1].average_scores,
                 runtime=total_time,
                 representation_time=total_time - eval_time,
                 task_name=task_copy.model.name,

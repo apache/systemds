@@ -54,7 +54,6 @@ class UnimodalOptimizer:
     ):
         self.modalities = modalities
         self.tasks = tasks
-        self.run = None
         self.save_all_results = save_all_results
         self.result_path = result_path
 
@@ -65,7 +64,7 @@ class UnimodalOptimizer:
         self.debug = debug
 
         self.operator_registry = Registry()
-        self.operator_performance = UnimodalResults(modalities, tasks, debug, self.run)
+        self.operator_performance = UnimodalResults(modalities, tasks, debug, True)
 
         self._tasks_require_same_dims = True
         self.expected_dimensions = tasks[0].expected_dim

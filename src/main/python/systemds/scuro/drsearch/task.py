@@ -193,3 +193,9 @@ class Task:
             self.training_time = np.mean(self.training_time)
 
         return [np.mean(train_scores), np.mean(test_scores)]
+
+    def evaluate_on_test_data(self, data):
+        X_train, y_train, X_test, y_test = self.get_train_test_split(data)
+        self.model.fit(X_train, y_train, X_val=None, y_val=None)
+        score = self.model.test(X_test, y_test)
+        return score

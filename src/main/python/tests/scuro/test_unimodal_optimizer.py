@@ -210,7 +210,7 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
             registry = Registry()
 
             unimodal_optimizer = UnimodalOptimizer([modality], self.tasks, False)
-            unimodal_optimizer.optimize_parallel()
+            unimodal_optimizer.optimize()
 
             assert (
                 unimodal_optimizer.operator_performance.modality_ids[0]

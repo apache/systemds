@@ -19,7 +19,7 @@
 #
 # -------------------------------------------------------------
 
-from typing import Callable, Iterable, Optional, Union, Any
+from typing import Callable, Iterable, Optional
 
 
 def rank_by_tradeoff(
@@ -30,7 +30,7 @@ def rank_by_tradeoff(
     runtime_accessor: Optional[Callable[[object], float]] = None,
     cache_scores: bool = True,
     score_attr: str = "tradeoff_score",
-) -> Union[list[Any], tuple[list[Any], list[int]]]:
+):
     entries = list(entries)
     if not entries:
         return []
@@ -38,6 +38,7 @@ def rank_by_tradeoff(
     performance_score_accessor = lambda entry: getattr(entry, "val_score")[
         performance_metric_name
     ]
+
     if runtime_accessor is None:
 
         def runtime_accessor(entry):

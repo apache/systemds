@@ -23,10 +23,8 @@ import java.util.HashMap;
 
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.conf.ConfigurationManager;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -87,8 +85,46 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
 		OOCStream<IndexedMatrixValue> qOut = createWritableStream();
 		BinaryOperator plus = InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString());
 		ec.getMatrixObject(output).setStreamHandle(qOut);
+		final Object lock = new Object();
 
-		submitOOCTask(() -> {
+		submitOOCTasks(qIn, cb -> {
+			try(cb) {
+				IndexedMatrixValue tmp = cb.get();
+				MatrixBlock matrixBlock = (MatrixBlock) tmp.getValue();
+				long rowIndex = tmp.getIndexes().getRowIndex();
+				long colIndex = tmp.getIndexes().getColumnIndex();
+				MatrixBlock vectorSlice = partitionedVector.get(colIndex);
+
+				// Now, call the operation with the correct, specific operator.
+				MatrixBlock partialResult = matrixBlock.aggregateBinaryOperations(matrixBlock, vectorSlice,
+					new MatrixBlock(), (AggregateBinaryOperator) _optr);
+
+				// for single column block, no aggregation neeeded
+				if(emitThreshold == 1) {
+					qOut.enqueue(new IndexedMatrixValue(tmp.getIndexes(), partialResult));
+				}
+				else {
+					// aggregation
+					synchronized(lock) {
+						MatrixBlock currAgg = aggTracker.get(rowIndex);
+						if(currAgg == null) {
+							aggTracker.putAndIncrementCount(rowIndex, partialResult);
+						}
+						else {
+							currAgg = currAgg.binaryOperations(plus, partialResult);
+							if(aggTracker.putAndIncrementCount(rowIndex, currAgg)) {
+								// early block output: emit aggregated block
+								MatrixIndexes idx = new MatrixIndexes(rowIndex, 1L);
+								qOut.enqueue(new IndexedMatrixValue(idx, currAgg));
+								aggTracker.remove(rowIndex);
+							}
+						}
+					}
+				}
+			}
+		}, qOut::closeInput);
+
+		/*submitOOCTask(() -> {
 				IndexedMatrixValue tmp = null;
 				try {
 					while((tmp = qIn.dequeue()) != LocalTaskQueue.NO_MORE_TASKS) {
@@ -129,6 +165,6 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
 				finally {
 					qOut.closeInput();
 				}
-		}, qIn, qOut);
+		}, qIn, qOut);*/
 	}
 }

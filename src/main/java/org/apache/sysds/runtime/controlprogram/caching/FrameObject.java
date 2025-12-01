@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
@@ -316,7 +317,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 	}
 
 	@Override
-	protected FrameBlock readBlobFromStream(LocalTaskQueue<IndexedMatrixValue> stream) throws IOException {
+	protected FrameBlock readBlobFromStream(OOCStream<IndexedMatrixValue> stream) throws IOException {
 		// TODO Auto-generated method stub
 		return null;
 	}

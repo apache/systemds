@@ -496,7 +496,6 @@ public class LocalFileUtils
 			createWorkingDirectory();
 		StringBuilder sb = new StringBuilder();
 		sb.append( _workingDir );
-		sb.append( Lop.FILE_SEPARATOR );
 		sb.append( category );
 		sb.append( Lop.FILE_SEPARATOR );
 		sb.append( "tmp" );

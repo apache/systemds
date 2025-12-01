@@ -763,8 +763,8 @@ public class BinaryOp extends MultiThreadedHop {
 		
 		checkAndSetForcedPlatform();
 		
-		DataType dt1 = getInput().get(0).getDataType();
-		DataType dt2 = getInput().get(1).getDataType();
+		final DataType dt1 = getInput(0).getDataType();
+		final DataType dt2 = getInput(1).getDataType();
 		
 		if( _etypeForced != null ) {
 			setExecType(_etypeForced);
@@ -812,18 +812,28 @@ public class BinaryOp extends MultiThreadedHop {
 			checkAndSetInvalidCPDimsAndSize();
 		}
 
-		//spark-specific decision refinement (execute unary scalar w/ spark input and
+		// spark-specific decision refinement (execute unary scalar w/ spark input and
 		// single parent also in spark because it's likely cheap and reduces intermediates)
-		if(transitive && _etype == ExecType.CP && _etypeForced != ExecType.CP && _etypeForced != ExecType.FED &&
-			getDataType().isMatrix() // output should be a matrix
-			&& (dt1.isScalar() || dt2.isScalar()) // one side should be scalar
-			&& supportsMatrixScalarOperations() // scalar operations
-			&& !(getInput().get(dt1.isScalar() ? 1 : 0) instanceof DataOp) // input is not checkpoint
-			&& getInput().get(dt1.isScalar() ? 1 : 0).getParent().size() == 1 // unary scalar is only parent
-			&& !HopRewriteUtils.isSingleBlock(getInput().get(dt1.isScalar() ? 1 : 0)) // single block triggered exec
-			&& getInput().get(dt1.isScalar() ? 1 : 0).optFindExecType() == ExecType.SPARK) {
-			// pull unary scalar operation into spark
-			_etype = ExecType.SPARK;
+		if(transitive // we allow transitive Spark operations. continue sequences of spark operations
+			&& _etype == ExecType.CP // The instruction is currently in CP
+			&& _etypeForced != ExecType.CP // not forced CP
+			&& _etypeForced != ExecType.FED // not federated
+			&& (getDataType().isMatrix() || getDataType().isFrame()) // output should be a matrix or frame
+		) {
+			final boolean v1 = getInput(0).isScalarOrVectorBellowBlockSize();
+			final boolean v2 = getInput(1).isScalarOrVectorBellowBlockSize();
+			final boolean left = v1 == true; // left side is the vector or scalar
+			final Hop sparkIn = getInput(left ? 1 : 0);
+			if((v1 ^ v2) // XOR only one side is allowed to be a vector or a scalar.
+				&& (supportsMatrixScalarOperations() || op == OpOp2.APPLY_SCHEMA)  // supported operation
+				&& sparkIn.getParent().size() == 1 // only one parent
+				&& !HopRewriteUtils.isSingleBlock(sparkIn) // single block triggered exec
+				&& sparkIn.optFindExecType() == ExecType.SPARK // input was spark op.
+				&& !(sparkIn instanceof DataOp) // input is not checkpoint
+			) {
+				// pull operation into spark
+				_etype = ExecType.SPARK;
+			}
 		}
 
 		if( OptimizerUtils.ALLOW_BINARY_UPDATE_IN_PLACE &&
@@ -853,7 +863,10 @@ public class BinaryOp extends MultiThreadedHop {
 				|| (op == OpOp2.RBIND && getDataType().isList())) {
 			_etype = ExecType.CP;
 		}
-		
+
+		if( op == OpOp2.GET_CATEGORICAL_MASK)
+			_etype = ExecType.CP;
+
 		//mark for recompile (forever)
 		setRequiresRecompileIfNecessary();
 		

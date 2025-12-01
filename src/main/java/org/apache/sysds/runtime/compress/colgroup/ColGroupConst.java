@@ -46,6 +46,7 @@ import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
@@ -527,7 +528,7 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	@Override
 	public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
 		IDictionary d = _dict.rexpandCols(max, ignore, cast, _colIndexes.size());
-		if(d == null){
+		if(d == null) {
 			if(max <= 0)
 				return null;
 			return ColGroupEmpty.create(max);
@@ -757,5 +758,20 @@ public class ColGroupConst extends ADictBasedColGroup implements IContainDefault
 	@Override
 	protected boolean allowShallowIdentityRightMult() {
 		return true;
+	}
+
+	@Override
+	public AColGroup sort() {
+		return this;
+	}
+
+	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+		return this;
+	}
+
+	@Override
+	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns) {
+		return ColGroupConst.create(newColumnIDs, _dict.sliceColumns(selectedColumns, getNumCols()));
 	}
 }

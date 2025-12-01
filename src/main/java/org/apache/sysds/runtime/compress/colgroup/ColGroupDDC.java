@@ -26,8 +26,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
-import jdk.incubator.vector.DoubleVector;
-import jdk.incubator.vector.VectorSpecies;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -52,6 +50,7 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
@@ -66,6 +65,9 @@ import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.jboss.netty.handler.codec.compression.CompressionException;
+
+import jdk.incubator.vector.DoubleVector;
+import jdk.incubator.vector.VectorSpecies;
 
 /**
  * Class to encapsulate information about a column group that is encoded with dense dictionary encoding (DDC).
@@ -668,7 +670,8 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 		}
 	}
 
-	final void vectMM(double aa, double[] b, double[] c, int endT, int jd, int crl, int cru, int offOut, int k, int vLen, DoubleVector vVec) {
+	final void vectMM(double aa, double[] b, double[] c, int endT, int jd, int crl, int cru, int offOut, int k, int vLen,
+		DoubleVector vVec) {
 		vVec = vVec.broadcast(aa);
 		final int offj = k * jd;
 		final int end = endT + offj;
@@ -1092,17 +1095,47 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	}
 
 	@Override
+	public AColGroup sort() {
+		// TODO restore support for run length encoding to exploit the runs
+
+		int[] counts = getCounts();
+		// get the sort index
+		int[] r = _dict.sort();
+
+		AMapToData m = MapToFactory.create(_data.size(), counts.length);
+		int off = 0;
+		for(int i = 0; i < counts.length; i++) {
+			for(int j = 0; j < counts[r[i]]; j++) {
+				m.set(off++, r[i]);
+			}
+		}
+
+		return ColGroupDDC.create(_colIndexes, _dict, m, counts);
+
+	}
+
+	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+		return ColGroupDDC.create(_colIndexes, _dict, _data.removeEmpty(selectV, rOut), null);
+	}
+
+	@Override
+	protected boolean allowShallowIdentityRightMult() {
+		return true;
+	}
+
+	@Override
+	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns) {
+		return ColGroupDDC.create(newColumnIDs, _dict.sliceColumns(selectedColumns, getNumCols()), _data, null);
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
 		sb.append(String.format("\n%15s", "Data: "));
 		sb.append(_data);
 		return sb.toString();
-	}
-
-	@Override
-	protected boolean allowShallowIdentityRightMult() {
-		return true;
 	}
 
 }

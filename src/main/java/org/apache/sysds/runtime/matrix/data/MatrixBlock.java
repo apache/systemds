@@ -1315,7 +1315,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		else if( !sparse && sparseDst )
 			denseToSparse(allowCSR, k);
 	}
-	
+
 	public static boolean evalSparseFormatInMemory(DataCharacteristics dc) {
 		return evalSparseFormatInMemory(dc.getRows(), dc.getCols(), dc.getNonZeros());
 	}
@@ -1387,12 +1387,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		LibMatrixDenseToSparse.denseToSparse(this, allowCSR, k);
 	}
 
-	public final void sparseToDense() {
-		sparseToDense(1);
+	public final MatrixBlock sparseToDense() {
+		return sparseToDense(1);
 	}
 
-	public void sparseToDense(int k) {
+	public MatrixBlock sparseToDense(int k) {
 		LibMatrixSparseToDense.sparseToDense(this, k);
+		return this;
 	}
 
 	/**
@@ -2954,13 +2955,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		boolean sparseDst = evalSparseFormatOnDisk();
 		return !sparse || !sparseDst
 			|| (sparse && sparseBlock instanceof SparseBlockCSR)
-			|| (sparse && sparseBlock instanceof SparseBlockMCSR
-				&& getInMemorySize() / MAX_SHALLOW_SERIALIZE_OVERHEAD 
-				<= getExactSerializedSize())
-			|| (sparse && sparseBlock instanceof SparseBlockMCSR
-				&& nonZeros < Integer.MAX_VALUE //CSR constraint
-				&& inclConvert && CONVERT_MCSR_TO_CSR_ON_DEEP_SERIALIZE
-				&& !isUltraSparseSerialize(sparseDst));
+			|| (sparse && sparseBlock instanceof SparseBlockMCSR);
+			// || (sparse && sparseBlock instanceof SparseBlockMCSR
+			// 	&& getInMemorySize() / MAX_SHALLOW_SERIALIZE_OVERHEAD 
+			// 	<= getExactSerializedSize())
+			// || (sparse && sparseBlock instanceof SparseBlockMCSR
+			// 	&& nonZeros < Integer.MAX_VALUE //CSR constraint
+			// 	&& inclConvert && CONVERT_MCSR_TO_CSR_ON_DEEP_SERIALIZE
+			// 	&& !isUltraSparseSerialize(sparseDst));
 	}
 	
 	@Override 
@@ -4650,7 +4652,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return sortOperations(weights, null);
 	}
 
-	public MatrixBlock sortOperations(MatrixValue weights, MatrixBlock result) {
+	public final MatrixBlock sortOperations(MatrixValue weights, MatrixBlock result) {
 		return sortOperations(weights, result, 1);
 	}
 
@@ -4754,7 +4756,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return (sum + q25Part*q25Val - q75Part*q75Val) / (sum_wt*0.5); 
 	}
 	
-	public MatrixBlock pickValues(MatrixValue quantiles, MatrixValue ret) {
+	/**
+	 * Pick the quantiles out of this matrix. If this matrix contains two columns it is weighted quantile picking.
+	 * If a single column it is unweighted.
+	 * 
+	 * Note the values are assumed to be sorted
+	 * 
+	 * @param quantiles The quantiles to pick
+	 * @param ret The result matrix
+	 * @return The result matrix
+	 */
+	public final MatrixBlock pickValues(MatrixValue quantiles, MatrixValue ret) {
 		return pickValues(quantiles, ret, false);
 	}
 	
@@ -4778,17 +4790,56 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		
 		return output;
 	}
-	
+		
+	/**
+	 * Pick the median quantile from this matrix. if this matrix is two columns, it is weighted picking else it is unweighted.
+	 * 
+	 * Note the values are assumed to be sorted
+	 * 
+	 * @param quantile The quantile to pick
+	 * @return The quantile
+	 */
 	public double median() {
 		double sum_wt = sumWeightForQuantile();
 		return pickValue(0.5, sum_wt%2==0);
 	}
-	
+
+	/**
+	 * Pick a specific quantile from this matrix. if this matrix is two columns, it is weighted picking else it is unweighted.
+	 * 
+	 * Note the values are assumed to be sorted
+	 * 
+	 * @param quantile The quantile to pick
+	 * @return The quantile
+	 */
 	public final double pickValue(double quantile){
 		return pickValue(quantile, false);
 	}
 	
-	public double pickValue(double quantile, boolean average) {
+	/**
+	 * Pick a specific quantile from this matrix. if this matrix is two columns, it is weighted picking else it is unweighted.
+	 * 
+	 * Note the values are assumed to be sorted
+	 * 
+	 * @param quantile The quantile to pick
+	 * @param average If the quantile is averaged.
+	 * @return The quantile
+	 */
+	public final double pickValue(double quantile, boolean average) {
+		if(this.getNumColumns() == 1)
+			return pickUnweightedValue(quantile, average);
+		return pickWeightedValue(quantile, average);
+	}
+
+	private double pickUnweightedValue(double quantile, boolean average) {
+		double pos = quantile * rlen;
+		if(average && (int) pos != pos)
+			return (get((int) Math.floor(pos), 0) + get(Math.min(rlen - 1, (int) Math.ceil(pos)), 0)) / 2;
+		else
+			return get(Math.min(rlen - 1, (int) Math.round(pos)), 0);
+	}
+
+	private double pickWeightedValue(double quantile, boolean average) {
 		double sum_wt = sumWeightForQuantile();
 		
 		// do averaging only if it is asked for; and sum_wt is even
@@ -5342,8 +5393,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 	 * (i1,j1,v2) from input2 (that)
 	 * (w)  from scalar_input3 (scalarThat2)
 	 *
-	 * @param thatMatrix matrix value
-	 * @param thatScalar scalar double
+	 * @param thatMatrix matrix value, the vector to encode via table
+	 * @param thatScalar scalar double, w, that is the weight to multiply on the encoded values
 	 * @param resultBlock result matrix block
 	 * @return resultBlock
 	 */

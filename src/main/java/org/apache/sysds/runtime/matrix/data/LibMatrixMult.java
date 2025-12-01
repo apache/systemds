@@ -3235,6 +3235,11 @@ public class LibMatrixMult
 		DenseBlock x = (mX==null) ? null : mX.getDenseBlock();
 		DenseBlock c = ret.getDenseBlock();
 		
+		if(c == null){
+			ret.allocateDenseBlock();
+			c = ret.getDenseBlock();
+		}
+
 		//approach: iterate over non-zeros of w, selective mm computation
 		//cache-conscious blocking: due to blocksize constraint (default 1000),
 		//a blocksize of 16 allows to fit blocks of UV into L2 cache (256KB) 
@@ -3381,6 +3386,11 @@ public class LibMatrixMult
 
 		//output always in dense representation
 		DenseBlock c = ret.getDenseBlock();
+
+		if(c == null){
+			ret.allocateDenseBlock();
+			c = ret.getDenseBlock();
+		}
 		
 		//approach: iterate over non-zeros of w, selective mm computation
 		if( mW.sparse ) //SPARSE

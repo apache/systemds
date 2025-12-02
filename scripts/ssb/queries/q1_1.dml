@@ -72,7 +72,7 @@ lo_filt = cbind(lo_filt[, 1], lo_filt[, 3], lo_filt[, 4]);
 
 # => (D-KEY | D-YEAR) | (LO_ORDERDATE | LO_EXTPRICE | LO_DISCOUNT)
 joined_matrix = raJoin::m_raJoin(A=d_year_filt, colA=1, B=lo_filt, colB=1, method="hash2");
-print("LO-DATE JOINED.");
+print("LO-DATE JOINED.\n");
 
 # Print the first row.
 #print(toString(joined_matrix[1,]))
@@ -85,6 +85,7 @@ lo_extprice = joined_matrix[, 4];
 lo_disc = joined_matrix[, 5];			
 revenue = sum(lo_extprice * lo_disc);
 
-print("REVENUE: " + as.integer(revenue));
+print("REVENUE")
+print(as.integer(revenue));
 
-#print("Q1.1 finished.\n");
+print("\nQ1.1 finished.\n");

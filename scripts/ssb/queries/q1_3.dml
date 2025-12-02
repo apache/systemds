@@ -1,4 +1,4 @@
-/* DML-script implementing the ssb query Q1.1 in SystemDS.
+/* DML-script implementing the ssb query Q1.3 in SystemDS.
 **input_dir="/scripts/ssb/data"
 
 * Run with docker:
@@ -77,9 +77,9 @@ lo_filt = cbind(lo_filt[, 1], lo_filt[, 3], lo_filt[, 4]);
 # Print the first row.
 #print(toString(lo_filt[1,]))
 
-# => (D-DATEKEY | D-YEAR | D_WEEKNUMINYEAR) | (LO_ORDERDATE | LO_EXTPRICE | LO_DISCOUNT)
+# => (D_DATEKEY | D_YEAR | D_WEEKNUMINYEAR) | (LO_ORDERDATE | LO_EXTPRICE | LO_DISCOUNT)
 joined_matrix = raJoin::m_raJoin(A=d_filt, colA=1, B=lo_filt, colB=1, method="hash2");
-print("LO-DATE JOINED.");
+print("LO-DATE JOINED.\n");
 #print(toString(joined_matrix[1,]))
 
 # -- Aggregation (SUM)--
@@ -90,6 +90,7 @@ lo_extprice = joined_matrix[, 5];
 lo_disc = joined_matrix[, 6];			
 revenue = sum(lo_extprice * lo_disc);
 
-print("REVENUE: " + as.integer(revenue));
+print("REVENUE")
+print(as.integer(revenue));
 
-#print("Q1.3 finished.\n");
+print("\nQ1.3 finished.\n");

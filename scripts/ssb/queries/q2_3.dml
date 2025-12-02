@@ -1,0 +1,168 @@
+/* DML-script implementing the ssb query Q2.3 in SystemDS.
+**input_dir="/scripts/ssb/data"
+
+* Run with docker:
+docker run -it --rm -v $PWD:/scripts/ apache/systemds:nightly -f /scripts/queries/q2_3.dml -nvargs input_dir="/scripts/data/"
+
+SELECT SUM(lo_revenue), d_year, p_brand
+FROM lineorder, date, part, supplier --dates
+WHERE
+    lo_orderdate = d_datekey
+    AND lo_partkey = p_partkey
+    AND lo_suppkey = s_suppkey
+    AND p_brand = 'MFGR#2239'
+    AND s_region = 'EUROPE'
+GROUP BY d_year, p_brand
+ORDER BY d_year, p_brand;
+
+*Please run the original SQL query (eg. in Postgres) 
+to verify the correctness of DML version.
+-> First tests: Works on the dataset with scale factor 0.1.
+-> Sorting does not work.
+
+*Based on older implementations.
+https://github.com/ghafek/systemds/blob/feature/ssb-benchmark/scripts/ssb/queries/q1_1.dml
+*Especially:
+https://github.com/ghafek/systemds/blob/feature/ssb-benchmark/scripts/ssb/queries/q4_3.dml
+In comparison to older version the join method was changed
+from sort-merge to hash2 to improve the performance.
+
+Input parameters:
+input_dir - Path to input directory containing the table files (e.g., ./data)
+*/
+
+# Call ra-modules with ra-functions.
+source("./scripts/builtin/raSelection.dml") as raSel
+source("./scripts/builtin/raJoin.dml") as raJoin
+source("./scripts/builtin/raGroupby.dml") as raGrp
+
+# Set input parameters.
+input_dir = ifdef($input_dir, "./data");
+print("Loading tables from directory: " + input_dir);
+
+# Read and load input CSV files from date and lineorder.  
+#date_csv = read(input_dir + "/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+lineorder_csv = read(input_dir + "/lineorder.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+date_csv = read(input_dir + "/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+part_csv = read(input_dir + "/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+supp_csv = read(input_dir + "/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+
+general_spec = "{ \"ids\": false, \"recode\": [\"C1\"] }";
+
+# -- Data preparation --
+
+# Extract only the necessary columns from tables.
+# Extracted: COL-4 | COL-5 | COL-6 | COL_COL-13
+# => LO_PARTKEY | LO_SUPPKEY | LO_DATEKEY | LO_REVENUE
+lineorder_csv_min = cbind(lineorder_csv[, 4], lineorder_csv[, 5], lineorder_csv[, 6], lineorder_csv[, 13]);
+lineorder_matrix_min = as.matrix(lineorder_csv_min);
+
+# Extracted: COL-1 | COL-5
+# => D_DATEKEY | D_YEAR
+date_csv_min = cbind(date_csv[, 1], date_csv[, 5]);
+date_matrix_min = as.matrix(date_csv_min);
+
+# -- Filter tables over string values.
+
+# Prepare PART table on-the-fly encodings 
+# (only need p_brand encoding, filter by p_category string)
+[part_brand_enc_f, part_brand_meta] = transformencode(target=part_csv[,5], spec=general_spec);
+#print(toString(part_brand_enc_f));
+
+# Build filtered PART table (p_brand == 'MFGR#2239'), keeping key and encoded brand
+part_filt_keys = matrix(0, rows=0, cols=1);
+part_filt_brand = matrix(0, rows=0, cols=1);
+for (i in 1:nrow(part_csv)) {
+    if (as.scalar(part_csv[i,5]) == "MFGR#2239") {
+        key_val = as.double(as.scalar(part_csv[i,1]));
+        brand_code = as.double(as.scalar(part_brand_enc_f[i,1]));
+        part_filt_keys = rbind(part_filt_keys, matrix(key_val, rows=1, cols=1));
+        part_filt_brand = rbind(part_filt_brand, matrix(brand_code, rows=1, cols=1));
+    }
+}
+if (nrow(part_filt_keys) == 0) {
+    part_filt_keys = matrix(0, rows=1, cols=1);
+    part_filt_brand = matrix(0, rows=1, cols=1);
+}
+part_filt = cbind(part_filt_keys, part_filt_brand);
+print(part_filt[1,])
+
+# Build filtered SUPPLIER table (s_region == 'EUROPE')
+supp_filt = matrix(0, rows=0, cols=1);
+for (i in 1:nrow(supp_csv)) {
+    if (as.scalar(supp_csv[i,6]) == "EUROPE") {
+        key_val = as.double(as.scalar(supp_csv[i,1]));
+        supp_filt = rbind(supp_filt, matrix(key_val, rows=1, cols=1));
+    }
+}
+if (nrow(supp_filt) == 0) {
+    supp_filt = matrix(0, rows=1, cols=1);
+}
+#print("LO,DATE,PART,SUPP")
+#print(toString(lineorder_matrix_min[1,]))
+#print(toString(date_matrix_min[1,]))
+#print(toString(part_filt[1,]))
+#print(toString(supp_filt[1,]))
+
+# -- JOIN TABLES WITH RA-JOIN FUNCTION --
+
+# Join LINEORDER table with PART, SUPPLIER, DATE tables (star schema)
+# Join order does matter! 
+# LINEORDER table with DATE, PART, SUPPLIER is much slower!
+# WHERE LO_ORDERDATE = P_PARTKEY
+# (P_PARTKEY | P_BRAND) | (LO_PARTKEY | LO_SUPPKEY | LO_DATEKEY | LO_REVENUE)
+lo_part = raJoin::m_raJoin(A=part_filt, colA=1, B=lineorder_matrix_min, colB=1, method="hash2");
+# WHERE LO_SUPPKEY = S_SUPPKEY
+# (S_SUPPKEY) | (P_PARTKEY | P_BRAND | LO_PARTKEY | LO_SUPPKEY | LO_DATEKEY | LO_REVENUE)
+lo_part_supp = raJoin::m_raJoin(A=supp_filt, colA=1, B=lo_part, colB=4, method="hash2");
+# WHERE LO_PARTKEY = D_DATEKEY
+# (D_DATEKEY | D_YEAR) | (S_SUPPKEY | P_PARTKEY | P_BRAND | LO_PARTKEY | LO_SUPPKEY | LO_DATEKEY | LO_REVENUE)
+# Example:
+# 19920325.000 1992.000 17.000 608.000 381.000 608.000 17.000 19920325.000 5702508.000
+lo_part_supp_date = raJoin::m_raJoin(A=date_matrix_min, colA=1, B=lo_part_supp, colB=6, method="hash2");
+#print(toString(lo_part_supp_date[1,]))
+
+# -- GROUP-BY & AGGREGATION --
+
+# -- Group-By and Aggregation (SUM)--
+
+# Group-By
+d_year = lo_part_supp_date[,2]
+p_brand = lo_part_supp_date[,5]
+lo_revenue = lo_part_supp_date[,9]
+
+# CALCULATING COMBINATION KEY WITH PRIORITY:1 D_YEAR, 2 P_BRAND
+
+max_p_brand = max(p_brand);
+max_d_year = max(d_year);
+
+p_brand_scale_f = ceil(max_p_brand) + 1;
+d_year_scale_f = ceil(max_d_year) + 1;
+
+combined_key = d_year * p_brand_scale_f + p_brand;
+
+group_input = cbind(lo_revenue, combined_key)
+
+agg_result = raGrp::m_raGroupby(X=group_input, col=2, method="nested-loop");
+
+# Aggregation (SUM)
+key = agg_result[, 1];
+revenue = rowSums(agg_result[, 2:ncol(agg_result)]);
+
+# EXTRACTING D_YEAR, P_BRAND
+d_year = round(floor(key / (p_brand_scale_f)));
+p_brand = round(key %% p_brand_scale_f);
+result = cbind(revenue, d_year, p_brand, key);
+
+# -- Sorting -- -- Sorting int columns works, but string does not.
+# ORDER BY P_BRAND ASC
+result_ordered = order(target=result, by=4, decreasing=FALSE, index.return=FALSE);
+
+p_brand_dec = transformdecode(target=result_ordered[,3], spec=general_spec, meta=part_brand_meta);
+res = cbind(as.frame(result_ordered[,1]), as.frame(result_ordered[,2]), p_brand_dec) ;
+
+# Print result
+print("SUM(lo_revenue) | d_year | p_brand")
+print(res)
+
+print("\nQ2.3 finished.\n");

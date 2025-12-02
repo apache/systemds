@@ -1,4 +1,4 @@
-/* DML-script implementing the ssb query Q1.1 in SystemDS.
+/* DML-script implementing the ssb query Q1.2 in SystemDS.
 **input_dir="/scripts/ssb/data"
 
 * Run with docker:
@@ -17,6 +17,8 @@ to verify the correctness of DML version.
 
 *Based on the older implementation.
 https://github.com/ghafek/systemds/blob/feature/ssb-benchmark/scripts/ssb/queries/q1_2.dml
+*Especially:
+https://github.com/ghafek/systemds/blob/feature/ssb-benchmark/scripts/ssb/queries/q4_3.dml
 In comparison to older version the join method was changed
 from sort-merge to hash2 to improve the performance.
 A binary column of d_filt (date_filtered) was removed.
@@ -40,34 +42,6 @@ lineorder_csv = read(input_dir + "/lineorder.tbl", data_type="frame", format="cs
 # -- Data preparation --
 
 # Extract only the necessary columns from date and lineorder table.
-# Extracted: COL-1 | COL-7
-# => D_DATEKEY | D_YEARMONTH
-
-date_keys_matrix = as.matrix(date_csv[, 1]);
-d_yearmonth_col = date_csv[, 7]
-
-# Count "Jan1994" rows first to pre-allocate matrix efficiently.
-date_nrows = nrow(date_keys_matrix);
-
-sel_ym_count = 0;
-for (i in 1:date_nrows) {
-    yearmonth_val = as.scalar(d_yearmonth_col[i]);
-    if (yearmonth_val == "Jan1994") {
-        sel_ym_count = sel_ym_count + 1;
-    }
-}
-#print("jan1994_count: " + as.integer(sel_ym_count));
-
-# Allocate final matrix.
-d_filt = matrix(0, sel_ym_count, 1);
-filtered_idx = 1;
-for (i in 1:date_nrows) {
-    yearmonth_val = as.scalar(d_yearmonth_col[i]);
-    if (yearmonth_val == "Jan1994") {
-        d_filt[filtered_idx] = as.scalar(date_keys_matrix[i]);  # date_key
-        filtered_idx = filtered_idx + 1;
-    }
-}
 
 # Extracted: COL-6 | COL-9 | COL-10 | COL-12
 # => LO_ORDERDATE | LO_QUANTITY | LO_EXTPRICE | LO_DISCOUNT
@@ -75,7 +49,6 @@ lineorder_csv_min = cbind(lineorder_csv[, 6], lineorder_csv[, 9], lineorder_csv[
 lineorder_matrix_min = as.matrix(lineorder_csv_min);
 
 # -- Filter the data with RA-SELECTION function.
-
 # LO_DISCOUNT BETWEEN 4 AND 6
 lo_filt = raSel::m_raSelection(lineorder_matrix_min, col=4, op=">=", val=4);
 lo_filt = raSel::m_raSelection(lo_filt, col=4, op="<=", val=6);
@@ -88,13 +61,26 @@ lo_filt = raSel::m_raSelection(lo_filt, col=2, op="<=", val=35);
 # => LO_ORDERDATE | LO_EXTPRICE | LO_DISCOUNT
 lo_filt = cbind(lo_filt[, 1], lo_filt[, 3], lo_filt[, 4]);
 
+# -- Filter tables over string values.
+# Build filtered SUPPLIER table (s_region == 'AMERICA')
+date_filt = matrix(0, rows=0, cols=1);
+for (i in 1:nrow(date_csv)) {
+    if (as.scalar(date_csv[i,7]) == "Jan1994") {
+        key_val = as.double(as.scalar(date_csv[i,1]));
+        date_filt = rbind(date_filt, matrix(key_val, rows=1, cols=1));
+    }
+}
+if (nrow(date_filt) == 0) {
+    date_filt = matrix(0, rows=1, cols=1);
+}
+
 # -- Join --
 # Join LINEORDER and DATE tables with RA-JOIN function
 # WHERE LO_ORDERDATE = D_DATEKEY
 
-# => (D-DATEKEY) | (LO_ORDERDATE | LO_EXTPRICE | LO_DISCOUNT)
-joined_matrix = raJoin::m_raJoin(A=d_filt, colA=1, B=lo_filt, colB=1, method="hash2");
-print("LO-DATE JOINED.");
+# => (D_DATEKEY) | (LO_ORDERDATE | LO_EXTPRICE | LO_DISCOUNT)
+joined_matrix = raJoin::m_raJoin(A=date_filt, colA=1, B=lo_filt, colB=1, method="hash2");
+print("LO-DATE JOINED.\n");
 
 # Print the first row.
 #print(toString(joined_matrix[1,]))
@@ -107,6 +93,7 @@ lo_extprice = joined_matrix[, 3];
 lo_disc = joined_matrix[, 4];			
 revenue = sum(lo_extprice * lo_disc);
 
-print("REVENUE: " + as.integer(revenue));
+print("REVENUE")
+print(as.integer(revenue));
 
-#print("Q1.3 finished.\n");
+print("\nQ1.2 finished.\n");

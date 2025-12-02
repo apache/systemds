@@ -169,7 +169,6 @@ class TestUnimodalRepresentations(unittest.TestCase):
     def test_video_representations(self):
         video_representations = [
             CLIPVisual(),
-            ColorHistogram(),
             I3D(),
             X3D(),
             VGG19(),

@@ -126,6 +126,7 @@ class SystemDSContext(object):
             self._FIFO_PY2JAVA_PIPES = out_pipes
             self._FIFO_JAVA2PY_PIPES = in_pipes
         else:
+            self._log.info("Using py4j for data transfer")
             self._data_transfer_mode = 0
 
     def __init_pipes(self, num_pipes):

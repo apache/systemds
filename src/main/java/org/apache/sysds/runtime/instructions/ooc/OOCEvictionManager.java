@@ -49,17 +49,17 @@ import java.util.concurrent.locks.ReentrantLock;
  * Eviction Manager for the Out-Of-Core (OOC) stream cache.
  * <p>
  * This manager implements a high-performance, thread-safe buffer pool designed
- * to handle intermediate results that exceed available heap memory. It builds on
+ * to handle intermediate results that exceed available heap memory. It employs
  * a <b>partitioned eviction</b> strategy to maximize disk throughput and a
  * <b>lock-striped</b> concurrency model to minimize thread contention.
  *
- * <h3>1. Purpose</h3>
+ * <h2>1. Purpose</h2>
  * Provides a bounded cache for {@code MatrixBlock}s produced and consumed by OOC
  * streaming operators (e.g., {@code tsmm}, {@code ba+*}). When memory pressure
  * exceeds a configured limit, blocks are transparently evicted to disk and restored
- * on demand.
+ * on demand, allowing execution of operations larger than RAM.
  *
- * <h3>2. Lifecycle Management</h3>
+ * <h2>2. Lifecycle Management</h2>
  * Blocks transition atomically through three states to ensure data consistency:
  * <ul>
  * <li><b>HOT:</b> The block is pinned in the JVM heap ({@code value != null}).</li>
@@ -69,7 +69,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * to free memory, but the container (metadata) remains in the cache map.</li>
  * </ul>
  *
- * <h3>3. Eviction Strategy (Partitioned I/O)</h3>
+ * <h2>3. Eviction Strategy (Partitioned I/O)</h2>
  * To mitigate I/O thrashing caused by writing thousands of small blocks:
  * <ul>
  * <li>Eviction is <b>partition-based</b>: Groups of "HOT" blocks are gathered into
@@ -79,13 +79,13 @@ import java.util.concurrent.locks.ReentrantLock;
  * evicted block, allowing random-access reloading.</li>
  * </ul>
  *
- * <h3>4. Data Integrity (Re-hydration)</h3>
+ * <h2>4. Data Integrity (Re-hydration)</h2>
  * To prevent index corruption during serialization/deserialization cycles, this manager
  * uses a "re-hydration" model. The {@code IndexedMatrixValue} container is <b>never</b>
  * removed from the cache structure. Eviction only nulls the data payload. Loading
  * restores the data into the existing container, preserving the original {@code MatrixIndexes}.
  *
- * <h3>5. Concurrency Model (Fine-Grained Locking)</h3>
+ * <h2>5. Concurrency Model (Fine-Grained Locking)</h2>
  * <ul>
  * <li><b>Global Structure Lock:</b> A coarse-grained lock ({@code _cacheLock}) guards
  * the {@code LinkedHashMap} structure against concurrent insertions, deletions,
@@ -93,7 +93,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * <li><b>Per-Block Locks:</b> Each {@code BlockEntry} owns an independent
  * {@code ReentrantLock}. This decouples I/O operations, allowing a reader to load
- * "Block A" from disk while the evictor simultaneously writes "Block B" to disk,
+ * "Block A" from disk while the evictor writes "Block B" to disk simultaneously,
  * maximizing throughput.</li>
  *
  * <li><b>Condition Queues:</b> To handle read-write races, the system uses atomic

@@ -20,6 +20,7 @@
 package org.apache.sysds.test.component.compress.estim.encoding;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -44,12 +45,12 @@ public class EncodeNegativeTest {
 		EncodingFactory.createFromMatrixBlock(mock, true, 3);
 	}
 
-	@Test(expected = NotImplementedException.class)
+	@Test(expected = NullPointerException.class)
 	public void testInvalidToCallWithNullDeltaTransposed() {
 		EncodingFactory.createFromMatrixBlockDelta(null, true, null);
 	}
 
-	@Test(expected = NotImplementedException.class)
+	@Test(expected = NullPointerException.class)
 	public void testInvalidToCallWithNullDelta() {
 		EncodingFactory.createFromMatrixBlockDelta(null, false, null);
 	}
@@ -61,20 +62,30 @@ public class EncodeNegativeTest {
 
 	@Test(expected = NotImplementedException.class)
 	public void testDeltaTransposed() {
-		EncodingFactory.createFromMatrixBlockDelta(new MatrixBlock(10, 10, false), true, null);
+		MatrixBlock mb = new MatrixBlock(10, 10, false);
+		mb.allocateDenseBlock();
+		mb.set(0, 0, 1);
+		mb.set(0, 1, 2);
+		mb.setNonZeros(2);
+		EncodingFactory.createFromMatrixBlockDelta(mb, true, ColIndexFactory.create(2));
 	}
 
-	@Test(expected = NotImplementedException.class)
+	@Test(expected = NullPointerException.class)
 	public void testDelta() {
 		EncodingFactory.createFromMatrixBlockDelta(new MatrixBlock(10, 10, false), false, null);
 	}
 
 	@Test(expected = NotImplementedException.class)
 	public void testDeltaTransposedNVals() {
-		EncodingFactory.createFromMatrixBlockDelta(new MatrixBlock(10, 10, false), true, null, 2);
+		MatrixBlock mb = new MatrixBlock(10, 10, false);
+		mb.allocateDenseBlock();
+		mb.set(0, 0, 1);
+		mb.set(0, 1, 2);
+		mb.setNonZeros(2);
+		EncodingFactory.createFromMatrixBlockDelta(mb, true, ColIndexFactory.create(2), 2);
 	}
 
-	@Test(expected = NotImplementedException.class)
+	@Test(expected = NullPointerException.class)
 	public void testDeltaNVals() {
 		EncodingFactory.createFromMatrixBlockDelta(new MatrixBlock(10, 10, false), false, null, 1);
 	}

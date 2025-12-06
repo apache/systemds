@@ -46,57 +46,58 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Eviction Manager for the Out-Of-Core stream cache
- * This is the base implementation for LRU, FIFO
+ * Eviction Manager for the Out-Of-Core (OOC) stream cache.
+ * <p>
+ * This manager implements a high-performance, thread-safe buffer pool designed
+ * to handle intermediate results that exceed available heap memory. It builds on
+ * a <b>partitioned eviction</b> strategy to maximize disk throughput and a
+ * <b>lock-striped</b> concurrency model to minimize thread contention.
  *
- * Purpose
- * -------
- * Provides a bounded cache for matrix blocks produced and consumed by OOC
- * streaming operators. When memory pressure exceeds a configured limit,
- * blocks are evicted from memory and spilled to disk, and transparently
- * restored on demand.
- * </b>
- * 
- * Design scope
- * ------------
- * - Manages block lifecycle across the states:
- *     HOT : block in memory
- *     EVICTING: block spilled to disk
- *     COLD: block persisted on disk and to be reload when needed
- * </b>
- * - Guarantees correctness under concurrent get/put operations with:
- *     * per-block locks
- *     * explicit eviction state transitions
- * </b>
- * - Integration with Resettable to support:
- *     * multiple consumers
- *     * deterministic replay
- *     * eviction-safe reuse of shared inputs for tee operator
- * </b>
- * 
- * Eviction Strategy
- * -----------------
- * - Uses FIFO or LRU ordering at block granularity.
- * - Eviction is partition-based:
- *     * blocks are spilled in batches to a single partition file
- *     * enables high-throughput sequential disk I/O
- * - Each evicted block records a (partitionId, offset) for direct reload.
- * </b>
+ * <h3>1. Purpose</h3>
+ * Provides a bounded cache for {@code MatrixBlock}s produced and consumed by OOC
+ * streaming operators (e.g., {@code tsmm}, {@code ba+*}). When memory pressure
+ * exceeds a configured limit, blocks are transparently evicted to disk and restored
+ * on demand.
  *
- * Disk Layout
- * -----------
- * - Spill files are append-only partition files
- * - Each partition may contain multiple serialized blocks
- * - Metadata remains in-memory while block data can be on disk
- * </b>
- * 
- * Concurrency Model
- * -----------------
- * - Global cache structure guarded by a cache-level lock.
- * - Each block has an independent lock and condition variable.
- * - Readers wait when a block is in EVICTING state.
- * - Disk I/O is performed outside global locks to avoid blocking producers.
- * /
+ * <h3>2. Lifecycle Management</h3>
+ * Blocks transition atomically through three states to ensure data consistency:
+ * <ul>
+ * <li><b>HOT:</b> The block is pinned in the JVM heap ({@code value != null}).</li>
+ * <li><b>EVICTING:</b> A transition state. The block is currently being written to disk.
+ * Concurrent readers must wait on the entry's condition variable.</li>
+ * <li><b>COLD:</b> The block is persisted on disk. The heap reference is nulled out
+ * to free memory, but the container (metadata) remains in the cache map.</li>
+ * </ul>
+ *
+ * <h3>3. Eviction Strategy (Partitioned I/O)</h3>
+ * To mitigate I/O thrashing caused by writing thousands of small blocks:
+ * <ul>
+ * <li>Eviction is <b>partition-based</b>: Groups of "HOT" blocks are gathered into
+ * batches (e.g., 64MB) and written sequentially to a single partition file.</li>
+ * <li>This converts random I/O into high-throughput sequential I/O.</li>
+ * <li>A separate metadata map tracks the {@code (partitionId, offset)} for every
+ * evicted block, allowing random-access reloading.</li>
+ * </ul>
+ *
+ * <h3>4. Data Integrity (Re-hydration)</h3>
+ * To prevent index corruption during serialization/deserialization cycles, this manager
+ * uses a "re-hydration" model. The {@code IndexedMatrixValue} container is <b>never</b>
+ * removed from the cache structure. Eviction only nulls the data payload. Loading
+ * restores the data into the existing container, preserving the original {@code MatrixIndexes}.
+ *
+ * <h3>5. Concurrency Model (Lock-Striping)</h3>
+ * <ul>
+ * <li><b>Global Lock:</b> A coarse-grained lock guards the cache structure
+ * (LinkedHashMap) for insertions and deletions.</li>
+ * <li><b>Per-Block Locks:</b> Each cache entry has an independent {@code ReentrantLock}.
+ * This allows a reader to load Block A from disk while the evictor writes
+ * Block B to disk simultaneously.</li>
+ * <li><b>Wait/Notify:</b> Readers attempting to access a block in the {@code EVICTING}
+ * state will automatically block until the state transitions to {@code COLD},
+ * preventing race conditions.</li>
+ * </ul>
+ */
+
 public class OOCEvictionManager {
 
 	// Configuration: OOC buffer limit as percentage of heap

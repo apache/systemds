@@ -180,7 +180,7 @@ public class Transform extends Lop
 		sb.append( this.prepOutputOperand(output));
 		
 		if( (getExecType()==ExecType.CP || getExecType()==ExecType.FED)
-			&& (_operation == ReOrgOp.TRANS || _operation == ReOrgOp.REV || _operation == ReOrgOp.SORT) ) {
+				&& (_operation == ReOrgOp.TRANS || _operation == ReOrgOp.REV || _operation == ReOrgOp.SORT || _operation == ReOrgOp.ROLL) ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _numThreads );
 			if ( getExecType()==ExecType.FED ) {

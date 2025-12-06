@@ -40,8 +40,7 @@ source("./scripts/builtin/raGroupby.dml") as raGrp
 input_dir = ifdef($input_dir, "./data");
 print("Loading tables from directory: " + input_dir);
 
-# Read and load input CSV files from date and lineorder.  
-#date_csv = read(input_dir + "/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+# Read and load input CSV files from lineorder, date, part, supplier.  
 lineorder_csv = read(input_dir + "/lineorder.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 date_csv = read(input_dir + "/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 part_csv = read(input_dir + "/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
@@ -53,7 +52,7 @@ general_spec = "{ \"ids\": false, \"recode\": [\"C1\"] }";
 
 # Extract only the necessary columns from tables.
 # Extracted: COL-4 | COL-5 | COL-6 | COL_COL-13
-# => LO_PARTKEY | LO_SUPPKEY | LO_DATEKEY | LO_REVENUE
+# => LO_PARTKEY | LO_SUPPKEY | LO_ORDERDATE | LO_REVENUE
 lineorder_csv_min = cbind(lineorder_csv[, 4], lineorder_csv[, 5], lineorder_csv[, 6], lineorder_csv[, 13]);
 lineorder_matrix_min = as.matrix(lineorder_csv_min);
 
@@ -64,12 +63,14 @@ date_matrix_min = as.matrix(date_csv_min);
 
 # -- Filter tables over string values.
 
-# Prepare PART table on-the-fly encodings 
-# (only need p_brand encoding, filter by p_category string)
+# Prepare PART table on-the-fly encodings
+# Extracted: COL-1 | COL-4 | COL-5
+# P_PARTKEY | P_CATEGORY | P_BRAND
+# (only need P_BRAND encoding, filter by P_CATEGORY string)
 [part_brand_enc_f, part_brand_meta] = transformencode(target=part_csv[,5], spec=general_spec);
 #print(toString(part_brand_enc_f));
 
-# Build filtered PART table (p_category == 'MFGR#12'), keeping key and encoded brand
+# Build filtered PART table (P_CATEGORY = 'MFGR#12'), keeping key and encoded brand
 part_filt_keys = matrix(0, rows=0, cols=1);
 part_filt_brand = matrix(0, rows=0, cols=1);
 for (i in 1:nrow(part_csv)) {
@@ -86,7 +87,9 @@ if (nrow(part_filt_keys) == 0) {
 }
 part_filt = cbind(part_filt_keys, part_filt_brand);
 
-# Build filtered SUPPLIER table (s_region == 'AMERICA')
+# Extracted: COL-1 | COL-6
+# S_SUPPKEY | S_REGION
+# Build filtered SUPPLIER table (S_REGION = 'AMERICA')
 supp_filt = matrix(0, rows=0, cols=1);
 for (i in 1:nrow(supp_csv)) {
     if (as.scalar(supp_csv[i,6]) == "AMERICA") {
@@ -104,20 +107,16 @@ if (nrow(supp_filt) == 0) {
 # Join LINEORDER table with PART, SUPPLIER, DATE tables (star schema)
 # Join order does matter! 
 # LINEORDER table with DATE, PART, SUPPLIER is much slower!
-# WHERE LO_ORDERDATE = P_PARTKEY
-# (P_PARTKEY | P_BRAND) | (LO_PARTKEY | LO_SUPPKEY | LO_DATEKEY | LO_REVENUE)
+# WHERE LO_PARTKEY = P_PARTKEY
 lo_part = raJoin::m_raJoin(A=part_filt, colA=1, B=lineorder_matrix_min, colB=1, method="hash2");
 # WHERE LO_SUPPKEY = S_SUPPKEY
-# (S_SUPPKEY) | (P_PARTKEY | P_BRAND | LO_PARTKEY | LO_SUPPKEY | LO_DATEKEY | LO_REVENUE)
 lo_part_supp = raJoin::m_raJoin(A=supp_filt, colA=1, B=lo_part, colB=4, method="hash2");
-# WHERE LO_PARTKEY = D_DATEKEY
-# (D_DATEKEY | D_YEAR) | (S_SUPPKEY | P_PARTKEY | P_BRAND | LO_PARTKEY | LO_SUPPKEY | LO_DATEKEY | LO_REVENUE)
+# WHERE LO_ORDERDATE = D_DATEKEY
+# (D_DATEKEY | D_YEAR) | (S_SUPPKEY | P_PARTKEY | P_BRAND | LO_PARTKEY | LO_SUPPKEY | LO_ORDERDATE | LO_REVENUE)
 # Example:
 # 19920325.000 1992.000 17.000 608.000 381.000 608.000 17.000 19920325.000 5702508.000
 lo_part_supp_date = raJoin::m_raJoin(A=date_matrix_min, colA=1, B=lo_part_supp, colB=6, method="hash2");
 #print(toString(lo_part_supp_date[1,]))
-
-# -- GROUP-BY & AGGREGATION --
 
 # -- Group-By and Aggregation (SUM)--
 
@@ -126,7 +125,7 @@ d_year = lo_part_supp_date[,2]
 p_brand = lo_part_supp_date[,5]
 lo_revenue = lo_part_supp_date[,9]
 
-# CALCULATING COMBINATION KEY WITH PRIORITY:P_BRAND
+# CALCULATING COMBINATION KEY D_YEAR, P_BRAND
 
 max_p_brand = max(p_brand);
 max_d_year = max(d_year);

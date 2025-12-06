@@ -62,7 +62,9 @@ lo_filt = raSel::m_raSelection(lo_filt, col=2, op="<=", val=35);
 lo_filt = cbind(lo_filt[, 1], lo_filt[, 3], lo_filt[, 4]);
 
 # -- Filter tables over string values.
-# Build filtered SUPPLIER table (s_region == 'AMERICA')
+# Extracted: COL-1 | COL-7
+# D_DATEKEY | D_YEARMONTH
+# Build filtered DATE table (D_YEARMONTH = 'Jan1994')
 date_filt = matrix(0, rows=0, cols=1);
 for (i in 1:nrow(date_csv)) {
     if (as.scalar(date_csv[i,7]) == "Jan1994") {

@@ -54,16 +54,16 @@ lineorder_matrix_min = as.matrix(lineorder_csv_min);
 
 # -- Filter the data with RA-SELECTION function.
 
-# D_YEAR = 1994
+# WHERE D_YEAR = 1994
 d_filt = raSel::m_raSelection(date_matrix_min, col=2, op="==", val=1994);
-# D_WEEKNUMINYEAR = 6
+# WHERE D_WEEKNUMINYEAR = 6
 d_filt = raSel::m_raSelection(d_filt, col=3, op="==", val=6);
 
-# LO_DISCOUNT BETWEEN 5 AND 7
+# WHERE LO_DISCOUNT BETWEEN 5 AND 7
 lo_filt = raSel::m_raSelection(lineorder_matrix_min, col=4, op=">=", val=5);
 lo_filt = raSel::m_raSelection(lo_filt, col=4, op="<=", val=7);
 
-# LO_QUANTITY BETWEEN 26 AND 35
+# WHERE LO_QUANTITY BETWEEN 26 AND 35
 lo_filt = raSel::m_raSelection(lo_filt, col=2, op=">=", val=26);
 lo_filt = raSel::m_raSelection(lo_filt, col=2, op="<=", val=35);
 

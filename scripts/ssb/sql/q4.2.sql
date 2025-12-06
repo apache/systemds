@@ -19,7 +19,7 @@ SELECT
     s_nation,
     p_category,
     SUM(lo_revenue - lo_supplycost) AS PROFIT
-FROM dates, customer, supplier, part, lineorder
+FROM date, customer, supplier, part, lineorder --dates
 WHERE
     lo_custkey = c_custkey
     AND lo_suppkey = s_suppkey

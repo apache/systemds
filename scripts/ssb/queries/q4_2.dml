@@ -1,0 +1,220 @@
+/* DML-script implementing the ssb query Q4.2 in SystemDS.
+**input_dir="/scripts/ssb/data"
+
+* Run with docker:
+docker run -it --rm -v $PWD:/scripts/ apache/systemds:nightly -f /scripts/queries/q4_2.dml -nvargs input_dir="/scripts/data/"
+
+SELECT
+    d_year,
+    s_nation,
+    p_category,
+    SUM(lo_revenue - lo_supplycost) AS PROFIT
+FROM date, customer, supplier, part, lineorder --dates
+WHERE
+    lo_custkey = c_custkey
+    AND lo_suppkey = s_suppkey
+    AND lo_partkey = p_partkey
+    AND lo_orderdate = d_datekey
+    AND c_region = 'AMERICA'
+    AND s_region = 'AMERICA'
+    AND (
+        d_year = 1997
+        OR d_year = 1998
+    )
+    AND (
+        p_mfgr = 'MFGR#1'
+        OR p_mfgr = 'MFGR#2'
+    )
+GROUP BY d_year, s_nation, p_category
+ORDER BY d_year, s_nation, p_category;
+
+*Please run the original SQL query (eg. in Postgres) 
+to verify the correctness of DML version.
+-> First tests: Works on the dataset with scale factor 0.1.
+-> Sorting does not work.
+
+*Based on older implementations.
+https://github.com/ghafek/systemds/blob/feature/ssb-benchmark/scripts/ssb/queries/q1_1.dml
+*Especially:
+https://github.com/ghafek/systemds/blob/feature/ssb-benchmark/scripts/ssb/queries/q4_3.dml
+In comparison to older version the join method was changed
+from sort-merge to hash2 to improve the performance.
+
+Input parameters:
+input_dir - Path to input directory containing the table files (e.g., ./data)
+*/
+
+# Call ra-modules with ra-functions.
+source("./scripts/builtin/raSelection.dml") as raSel
+source("./scripts/builtin/raJoin.dml") as raJoin
+source("./scripts/builtin/raGroupby.dml") as raGrp
+
+# Set input parameters.
+input_dir = ifdef($input_dir, "./data");
+print("Loading tables from directory: " + input_dir);
+
+# Read and load input CSV files. 
+lineorder_csv = read(input_dir + "/lineorder.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+cust_csv = read(input_dir + "/customer.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+date_csv = read(input_dir + "/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+part_csv = read(input_dir + "/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+supp_csv = read(input_dir + "/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+
+general_spec = "{ \"ids\": false, \"recode\": [\"C1\"] }";
+
+# -- Data preparation --
+
+# Extract only the necessary columns from tables.
+# Extracted: COL-3 | COL-4 | COL-5 | COL-6 | COL-13 | COL-14
+# => LO_CUSTKEY | LO_PARTKEY | LO_SUPPKEY | LO_ORDERDATE | 
+# LO_REVENUE | LO_SUPPLYCOST
+lineorder_csv_min = cbind(lineorder_csv[, 3], lineorder_csv[, 4], lineorder_csv[, 5], lineorder_csv[, 6], lineorder_csv[, 13], lineorder_csv[, 14]);
+lineorder_matrix_min = as.matrix(lineorder_csv_min);
+
+# Extracted: COL-1 | COL-5
+# => D_DATEKEY | D_YEAR
+date_csv_min = cbind(date_csv[, 1], date_csv[, 5]);
+date_matrix_min = as.matrix(date_csv_min);
+
+# -- Filter tables over string values.
+
+# WHERE D_YEAR = 1997 OR D_YEAR = 1998
+d_filtA = raSel::m_raSelection(date_matrix_min, col=2, op="==", val=1997);
+d_filtB = raSel::m_raSelection(date_matrix_min, col=2, op="==", val=1998);
+
+d_filt = rbind(d_filtA,d_filtB)
+
+# Prepare PART table on-the-fly encodings
+# Extracted: COL-1 | COL-3 | COL-4
+# P_PARTKEY | P_MFGR | P_CATEGORY
+# (only need P_CATEGORY encoding, filter by P_MFGR string)
+[part_cat_enc_f, part_cat_meta] = transformencode(target=part_csv[,4], spec=general_spec);
+
+# Build filtered PART table (p_category == 'MFGR#1' OR p_category == 'MFGR#2'), keeping key and encoded category
+part_filt_keys = matrix(0, rows=0, cols=1);
+part_filt_cat = matrix(0, rows=0, cols=1);
+for (i in 1:nrow(part_csv)) {
+    p_elem = as.scalar(part_csv[i,3])
+    if ( p_elem == "MFGR#1" | p_elem == "MFGR#2" ) {
+        key_val = as.double(as.scalar(part_csv[i,1]));
+        cat_code = as.double(as.scalar(part_cat_enc_f[i,1]));
+        part_filt_keys = rbind(part_filt_keys, matrix(key_val, rows=1, cols=1));
+        part_filt_cat = rbind(part_filt_cat, matrix(cat_code, rows=1, cols=1));
+    }
+}
+if (nrow(part_filt_keys) == 0) {
+    part_filt_keys = matrix(0, rows=1, cols=1);
+    part_filt_cat = matrix(0, rows=1, cols=1);
+}
+part_filt = cbind(part_filt_keys, part_filt_cat);
+
+# Prepare SUPPLIER table on-the-fly encodings
+# Extracted: COL-1 | COL-5 | COL-6
+# S_SUPPKEY | S_NATION | S_REGION
+# (only need S_NATION encoding, filter by S_REGION string)
+[supp_nat_enc_f, supp_nat_meta] = transformencode(target=supp_csv[,5], spec=general_spec);
+
+# Build filtered SUPPLIER table (s_nation == 'AMERICA')
+supp_filt_keys = matrix(0, rows=0, cols=1);
+supp_filt_nat = matrix(0, rows=0, cols=1);
+for (i in 1:nrow(supp_csv)) {
+    if (as.scalar(supp_csv[i,6]) == "AMERICA") {
+        key_val = as.double(as.scalar(supp_csv[i,1]));
+        nat_code = as.double(as.scalar(supp_nat_enc_f[i,1]));
+        supp_filt_keys = rbind(supp_filt_keys, matrix(key_val, rows=1, cols=1));
+        supp_filt_nat = rbind(supp_filt_nat, matrix(nat_code, rows=1, cols=1));
+    }
+}
+if (nrow(supp_filt_keys) == 0) {
+    supp_filt_keys = matrix(0, rows=1, cols=1);
+    supp_filt_nat = matrix(0, rows=1, cols=1);
+}
+supp_filt = cbind(supp_filt_keys, supp_filt_nat);
+
+# Extracted: COL-1 | COL-6
+# C_CUSTKEY | C_REGION
+# Build filtered CUSTOMER table (c_nation == 'AMERICA')
+cust_filt = matrix(0, rows=0, cols=1);
+for (i in 1:nrow(cust_csv)) {
+    if (as.scalar(cust_csv[i,6]) == "AMERICA") {
+        key_val = as.double(as.scalar(cust_csv[i,1]));
+        cust_filt = rbind(cust_filt, matrix(key_val, rows=1, cols=1));
+    }
+}
+if (nrow(cust_filt) == 0) {
+    cust_filt = matrix(0, rows=1, cols=1);
+}
+
+#print("LO,DATE,CUST,PART,SUPP")
+#print(toString(lineorder_matrix_min[1,]))
+#print(toString(date_matrix_min[1,]))
+#print(toString(cust_filt[1,]))
+#print(toString(part_filt[1,]))
+#print(toString(supp_filt[1,]))
+
+# -- JOIN TABLES WITH RA-JOIN FUNCTION --
+
+# Join LINEORDER table with CUST, SUPPLIER, PART, DATE tables (star schema)
+# Join order does matter! 
+# WHERE LO_CUSTKEY = C_CUSTKEY
+lo_cust = raJoin::m_raJoin(A=cust_filt, colA=1, B=lineorder_matrix_min, colB=1, method="hash2");
+# WHERE LO_SUPPKEY = S_SUPPKEY
+lo_cust_supp = raJoin::m_raJoin(A=supp_filt, colA=1, B=lo_cust, colB=4, method="hash2");
+# WHERE LO_PARTKEY = P_PARTKEY
+lo_cust_supp_part = raJoin::m_raJoin(A=part_filt, colA=1, B=lo_cust_supp, colB=5, method="hash2");
+# WHERE LO_ORDERDATE = D_DATEKEY
+# (D_DATEKEY | D_YEAR) | (P_PARTKEY | P_CATEGORY | (S_SUPPKEY | S_NATION | C_CUSTKEY |
+# LO_CUSTKEY | LO_PARTKEY | LO_SUPPKEY | LO_ORDERDATE | LO_REVENUE | LO_SUPPLYCOST)
+joined_matrix = raJoin::m_raJoin(A=d_filt, colA=1, B=lo_cust_supp_part, colB=9, method="hash2");
+
+# -- Group-By and Aggregation (SUM)--
+
+# Group-By
+d_year = joined_matrix[,2]
+p_cat = joined_matrix[,4]
+s_nat = joined_matrix[,6]
+lo_revenue = joined_matrix[,12]
+lo_supplycost = joined_matrix[,13]
+profit = lo_revenue - lo_supplycost;
+
+# CALCULATING COMBINATION KEY WITH PRIORITY:1 D_YEAR, 2 S_NATION, 3 P_CATEGORY
+max_d_year = max(d_year);
+max_s_nat= max(s_nat);
+max_p_cat = max(p_cat);
+
+d_year_scale_f = ceil(max_d_year) + 1;
+s_nat_scale_f = ceil(max_s_nat) + 1;
+p_cat_scale_f = ceil(max_p_cat) + 1;
+
+combined_key = d_year * s_nat_scale_f * p_cat_scale_f + s_nat * p_cat_scale_f + p_cat;
+
+group_input = cbind(profit, combined_key)
+
+agg_result = raGrp::m_raGroupby(X=group_input, col=2, method="nested-loop");
+#print(toString(agg_result[1,]));
+
+# Aggregation (SUM)
+key = agg_result[, 1];
+profit = rowSums(agg_result[, 2:ncol(agg_result)]);
+
+# EXTRACTING D_YEAR, S_NATION, P_CATEGORY
+d_year = round(floor(key / (s_nat_scale_f * p_cat_scale_f)));
+s_nat = round(floor((key %% (s_nat_scale_f * p_cat_scale_f)) / p_cat_scale_f));
+p_cat = round(key %% p_cat_scale_f);
+
+result = cbind(d_year, s_nat, p_cat, profit, key);
+
+# -- Sorting -- -- Sorting int columns works, but strings do not.
+# ORDER BY D_YEAR, S_NATION, P_CATEGORY ASC
+result_ordered = order(target=result, by=5, decreasing=FALSE, index.return=FALSE);
+
+s_nat_dec = transformdecode(target=result_ordered[,2], spec=general_spec, meta=supp_nat_meta);
+p_cat_dec = transformdecode(target=result_ordered[,3], spec=general_spec, meta=part_cat_meta);
+
+res = cbind(as.frame(result_ordered[,1]), s_nat_dec, p_cat_dec, as.frame(result_ordered[,4])) ;
+
+# Print result
+print("d_year | s_nation | p_category | PROFIT")
+print(res)
+
+print("\nQ4.2 finished.\n");

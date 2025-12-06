@@ -1,0 +1,208 @@
+/* DML-script implementing the ssb query Q4.3 in SystemDS.
+**input_dir="/scripts/ssb/data"
+
+* Run with docker:
+docker run -it --rm -v $PWD:/scripts/ apache/systemds:nightly -f /scripts/queries/q4_3.dml -nvargs input_dir="/scripts/data/"
+
+SELECT
+    d_year,
+    s_city,
+    p_brand,
+    SUM(lo_revenue - lo_supplycost) AS PROFIT
+FROM date, customer, supplier, part, lineorder -- dates
+WHERE
+    lo_custkey = c_custkey
+    AND lo_suppkey = s_suppkey
+    AND lo_partkey = p_partkey
+    AND lo_orderdate = d_datekey
+    AND s_nation = 'UNITED STATES'
+    AND (
+        d_year = 1997
+        OR d_year = 1998
+    )
+    AND p_category = 'MFGR#14'
+GROUP BY d_year, s_city, p_brand
+ORDER BY d_year, s_city, p_brand;
+
+*Please run the original SQL query (eg. in Postgres) 
+to verify the correctness of DML version.
+-> First tests: Works on the dataset with scale factor 0.1.
+-> Sorting does not work.
+
+*Based on older implementations.
+https://github.com/ghafek/systemds/blob/feature/ssb-benchmark/scripts/ssb/queries/q1_1.dml
+*Especially:
+https://github.com/ghafek/systemds/blob/feature/ssb-benchmark/scripts/ssb/queries/q4_3.dml
+In comparison to older version the join method was changed
+from sort-merge to hash2 to improve the performance.
+
+Input parameters:
+input_dir - Path to input directory containing the table files (e.g., ./data)
+*/
+
+# Call ra-modules with ra-functions.
+source("./scripts/builtin/raSelection.dml") as raSel
+source("./scripts/builtin/raJoin.dml") as raJoin
+source("./scripts/builtin/raGroupby.dml") as raGrp
+
+# Set input parameters.
+input_dir = ifdef($input_dir, "./data");
+print("Loading tables from directory: " + input_dir);
+
+# Read and load input CSV files from date and lineorder.  
+lineorder_csv = read(input_dir + "/lineorder.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+cust_csv = read(input_dir + "/customer.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+date_csv = read(input_dir + "/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+part_csv = read(input_dir + "/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+supp_csv = read(input_dir + "/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+
+general_spec = "{ \"ids\": false, \"recode\": [\"C1\"] }";
+
+# -- Data preparation --
+
+# Extract only the necessary columns from tables.
+# Extracted: COL-3 | COL-4 | COL-5 | COL-6 | COL-13 | COL-14
+# => LO_CUSTKEY | LO_PARTKEY | LO_SUPPKEY | LO_ORDERDATE | 
+# LO_REVENUE | LO_SUPPLYCOST
+lineorder_csv_min = cbind(lineorder_csv[, 3], lineorder_csv[, 4], lineorder_csv[, 5], lineorder_csv[, 6], lineorder_csv[, 13], lineorder_csv[, 14]);
+lineorder_matrix_min = as.matrix(lineorder_csv_min);
+
+# Extracted: COL-1 | COL-5
+# => D_DATEKEY | D_YEAR
+date_csv_min = cbind(date_csv[, 1], date_csv[, 5]);
+date_matrix_min = as.matrix(date_csv_min);
+
+# Extracted: COL-1
+# => C_CUSTKEY
+cust_matrix_min = as.matrix(cust_csv[, 1]);
+
+# -- Filter tables over string values.
+
+# WHERE D_YEAR = 1997 OR D_YEAR = 1998
+d_filtA = raSel::m_raSelection(date_matrix_min, col=2, op="==", val=1997);
+d_filtB = raSel::m_raSelection(date_matrix_min, col=2, op="==", val=1998);
+
+d_filt = rbind(d_filtA,d_filtB)
+
+# Prepare PART table on-the-fly encodings
+# Extracted: COL-1 | COL-5
+# P_PARTKEY | P_BRAND
+# (only need p_brand encoding, filter by p_category string)
+[part_brand_enc_f, part_brand_meta] = transformencode(target=part_csv[,5], spec=general_spec);
+#print(toString(part_brand_enc_f));
+
+# Build filtered PART table (p_brand == 'MFGR#14'), keeping key and encoded brand
+part_filt_keys = matrix(0, rows=0, cols=1);
+part_filt_brand = matrix(0, rows=0, cols=1);
+for (i in 1:nrow(part_csv)) {
+    p_elem = as.scalar(part_csv[i,4])
+    if ( p_elem == "MFGR#14" ) {
+        key_val = as.double(as.scalar(part_csv[i,1]));
+        brand_code = as.double(as.scalar(part_brand_enc_f[i,1]));
+        part_filt_keys = rbind(part_filt_keys, matrix(key_val, rows=1, cols=1));
+        part_filt_brand = rbind(part_filt_brand, matrix(brand_code, rows=1, cols=1));
+    }
+}
+if (nrow(part_filt_keys) == 0) {
+    part_filt_keys = matrix(0, rows=1, cols=1);
+    part_filt_brand = matrix(0, rows=1, cols=1);
+}
+part_filt = cbind(part_filt_keys, part_filt_brand);
+#print(part_filt[1,])
+
+# Prepare SUPPLIER table on-the-fly encodings
+# Extracted: COL-1 | COL-4 | COL-5
+# S_SUPPKEY | S_CITY | S_NATION
+# (only need S_CITY encoding, filter by S_NATION string)
+[supp_city_enc_f, supp_city_meta] = transformencode(target=supp_csv[,4], spec=general_spec);
+
+# Build filtered SUPPLIER table (S_NATION == 'UNITED STATES')
+supp_filt_keys = matrix(0, rows=0, cols=1);
+supp_filt_city = matrix(0, rows=0, cols=1);
+for (i in 1:nrow(supp_csv)) {
+    if (as.scalar(supp_csv[i,5]) == "UNITED STATES") {
+        key_val = as.double(as.scalar(supp_csv[i,1]));
+        city_code = as.double(as.scalar(supp_city_enc_f[i,1]));
+        supp_filt_keys = rbind(supp_filt_keys, matrix(key_val, rows=1, cols=1));
+        supp_filt_city = rbind(supp_filt_city, matrix(city_code, rows=1, cols=1));
+    }
+}
+if (nrow(supp_filt_keys) == 0) {
+    supp_filt_keys = matrix(0, rows=1, cols=1);
+    supp_filt_city = matrix(0, rows=1, cols=1);
+}
+supp_filt = cbind(supp_filt_keys, supp_filt_city);
+
+#print("LO,DATE,CUST,PART,SUPP")
+#print(toString(lineorder_matrix_min[1,]))
+#print(toString(date_matrix_min[1,]))
+#print(toString(cust_matrix_min[1,]))
+#print(toString(part_filt[1,]))
+#print(toString(supp_filt[1,]))
+
+# -- JOIN TABLES WITH RA-JOIN FUNCTION --
+
+# Join LINEORDER table with PART, SUPPLIER, DATE, CUST tables (star schema)
+# Join order does matter! 
+# WHERE LO_PARTKEY = P_PARTKEY
+lo_part = raJoin::m_raJoin(A=part_filt, colA=1, B=lineorder_matrix_min, colB=2, method="hash2");
+# WHERE LO_SUPPKEY = S_SUPPKEY
+lo_part_supp = raJoin::m_raJoin(A=supp_filt, colA=1, B=lo_part, colB=5, method="hash2");
+# WHERE LO_ORDERDATE = D_DATEKEY
+lo_part_supp_date = raJoin::m_raJoin(A=d_filt, colA=1, B=lo_part_supp, colB=8, method="hash2");
+# WHERE LO_CUSTKEY = C_CUSTKEY
+# (C_CUSTKEY) | (D_DATEKEY | D_YEAR | S_SUPPKEY | S_CITY | P_PARTKEY | P_BRAND | 
+# LO_CUSTKEY | LO_PARTKEY | LO_SUPPKEY | LO_ORDERDATE | LO_REVENUE | LO_SUPPLYCOST)
+joined_matrix = raJoin::m_raJoin(A=cust_matrix_min, colA=1, B=lo_part_supp_date, colB=7, method="hash2");
+#print(toString(joined_matrix[1,]))
+
+# -- Group-By and Aggregation (SUM)--
+
+# Group-By
+d_year = joined_matrix[,3]
+s_city = joined_matrix[,5]
+p_brand = joined_matrix[,7]
+lo_revenue = joined_matrix[,12]
+lo_supplycost = joined_matrix[,13]
+profit = lo_revenue - lo_supplycost;
+
+# CALCULATING COMBINATION KEY WITH PRIORITY:1 D_YEAR, 2 S_CITY, 3 P_BRAND
+
+max_p_brand = max(p_brand);
+max_s_city= max(s_city);
+max_d_year = max(d_year);
+
+p_brand_scale_f = ceil(max_p_brand) + 1;
+s_city_scale_f = ceil(max_s_city) + 1;
+d_year_scale_f = ceil(max_d_year) + 1;
+
+combined_key = d_year * s_city_scale_f * p_brand_scale_f + s_city * p_brand_scale_f + p_brand;
+
+group_input = cbind(profit, combined_key)
+agg_result = raGrp::m_raGroupby(X=group_input, col=2, method="nested-loop");
+
+# Aggregation (SUM)
+key = agg_result[, 1];
+profit = rowSums(agg_result[, 2:ncol(agg_result)]);
+
+# EXTRACTING D_YEAR, S_CITY, P_BRAND
+d_year = round(floor(key / (s_city_scale_f * p_brand_scale_f)));
+s_city = round(floor((key %% (s_city_scale_f * p_brand_scale_f)) / p_brand_scale_f));
+p_brand = round(key %% p_brand_scale_f);
+
+result = cbind(d_year, s_city, p_brand, profit, key);
+
+# -- Sorting -- -- Sorting int columns works, but strings do not.
+# ORDER BY D_YEAR, S_CITY, P_BRAND ASC
+result_ordered = order(target=result, by=5, decreasing=FALSE, index.return=FALSE);
+
+s_city_dec = transformdecode(target=result_ordered[,2], spec=general_spec, meta=supp_city_meta);
+p_brand_dec = transformdecode(target=result_ordered[,3], spec=general_spec, meta=part_brand_meta);
+
+res = cbind(as.frame(result_ordered[,1]), s_city_dec, p_brand_dec, as.frame(result_ordered[,4])) ;
+
+# Print result
+print("d_year | s_city | p_brand | PROFIT");
+print(res);
+
+print("\nQ4.3 finished.\n");

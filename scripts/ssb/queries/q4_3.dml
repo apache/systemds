@@ -167,14 +167,13 @@ lo_supplycost = joined_matrix[,13]
 profit = lo_revenue - lo_supplycost;
 
 # CALCULATING COMBINATION KEY WITH PRIORITY:1 D_YEAR, 2 S_CITY, 3 P_BRAND
-
-max_p_brand = max(p_brand);
-max_s_city= max(s_city);
 max_d_year = max(d_year);
+max_s_city= max(s_city);
+max_p_brand = max(p_brand);
 
-p_brand_scale_f = ceil(max_p_brand) + 1;
-s_city_scale_f = ceil(max_s_city) + 1;
 d_year_scale_f = ceil(max_d_year) + 1;
+s_city_scale_f = ceil(max_s_city) + 1;
+p_brand_scale_f = ceil(max_p_brand) + 1;
 
 combined_key = d_year * s_city_scale_f * p_brand_scale_f + s_city * p_brand_scale_f + p_brand;
 

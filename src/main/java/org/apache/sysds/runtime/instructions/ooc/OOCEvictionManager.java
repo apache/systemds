@@ -49,38 +49,54 @@ import java.util.concurrent.locks.ReentrantLock;
  * Eviction Manager for the Out-Of-Core stream cache
  * This is the base implementation for LRU, FIFO
  *
- * Design choice 1: Pure JVM-memory cache
- * What: Store MatrixBlock objects in a synchronized in-memory cache
- *   (Map + Deque for LRU/FIFO). Spill to disk by serializing MatrixBlock
- *   only when evicting.
- * Pros: Simple to implement; no off-heap management; easy to debug;
- *   no serialization race since you serialize only when evicting;
- *   fast cache hits (direct object access).
- * Cons: Heap usage counted roughly via serialized-size estimate — actual
- *   JVM object overhead not accounted; risk of GC pressure and OOM if
- *   estimates are off or if many small objects cause fragmentation;
- *   eviction may be more expensive (serialize on eviction).
- * <p>
- * Design choice 2:
- * <p>
- * This manager runtime memory management by caching serialized
- * ByteBuffers and spilling them to disk when needed.
- * <p>
- * * core function: Caches ByteBuffers (off-heap/direct) and
- * spills them to disk
- * * Eviction: Evicts a ByteBuffer by writing its contents to a file
- * * Granularity: Evicts one IndexedMatrixValue block at a time
- * * Data replay: get() will always return the data either from memory or
- *   by falling back to the disk
- * * Memory: Since the datablocks are off-heap (in ByteBuffer) or disk,
- *   there won't be OOM.
+ * Purpose
+ * -------
+ * Provides a bounded cache for matrix blocks produced and consumed by OOC
+ * streaming operators. When memory pressure exceeds a configured limit,
+ * blocks are evicted from memory and spilled to disk, and transparently
+ * restored on demand.
+ * </b>
+ * 
+ * Design scope
+ * ------------
+ * - Manages block lifecycle across the states:
+ *     HOT : block in memory
+ *     EVICTING: block spilled to disk
+ *     COLD: block persisted on disk and to be reload when needed
+ * </b>
+ * - Guarantees correctness under concurrent get/put operations with:
+ *     * per-block locks
+ *     * explicit eviction state transitions
+ * </b>
+ * - Integration with Resettable to support:
+ *     * multiple consumers
+ *     * deterministic replay
+ *     * eviction-safe reuse of shared inputs for tee operator
+ * </b>
+ * 
+ * Eviction Strategy
+ * -----------------
+ * - Uses FIFO or LRU ordering at block granularity.
+ * - Eviction is partition-based:
+ *     * blocks are spilled in batches to a single partition file
+ *     * enables high-throughput sequential disk I/O
+ * - Each evicted block records a (partitionId, offset) for direct reload.
+ * </b>
  *
- * Pros: Avoids heap OOM by keeping large data off-heap; predictable
- *   memory usage; good for very large blocks.
- * Cons: More complex synchronization; need robust off-heap allocator/free;
- *   must ensure serialization finishes before adding to queue or make evict
- *   wait on serialization; careful with native memory leaks.
- */
+ * Disk Layout
+ * -----------
+ * - Spill files are append-only partition files
+ * - Each partition may contain multiple serialized blocks
+ * - Metadata remains in-memory while block data can be on disk
+ * </b>
+ * 
+ * Concurrency Model
+ * -----------------
+ * - Global cache structure guarded by a cache-level lock.
+ * - Each block has an independent lock and condition variable.
+ * - Readers wait when a block is in EVICTING state.
+ * - Disk I/O is performed outside global locks to avoid blocking producers.
+ * /
 public class OOCEvictionManager {
 
 	// Configuration: OOC buffer limit as percentage of heap

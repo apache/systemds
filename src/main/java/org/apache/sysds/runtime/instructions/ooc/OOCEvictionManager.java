@@ -85,16 +85,21 @@ import java.util.concurrent.locks.ReentrantLock;
  * removed from the cache structure. Eviction only nulls the data payload. Loading
  * restores the data into the existing container, preserving the original {@code MatrixIndexes}.
  *
- * <h3>5. Concurrency Model (Lock-Striping)</h3>
+ * <h3>5. Concurrency Model (Fine-Grained Locking)</h3>
  * <ul>
- * <li><b>Global Lock:</b> A coarse-grained lock guards the cache structure
- * (LinkedHashMap) for insertions and deletions.</li>
- * <li><b>Per-Block Locks:</b> Each cache entry has an independent {@code ReentrantLock}.
- * This allows a reader to load Block A from disk while the evictor writes
- * Block B to disk simultaneously.</li>
- * <li><b>Wait/Notify:</b> Readers attempting to access a block in the {@code EVICTING}
- * state will automatically block until the state transitions to {@code COLD},
- * preventing race conditions.</li>
+ * <li><b>Global Structure Lock:</b> A coarse-grained lock ({@code _cacheLock}) guards
+ * the {@code LinkedHashMap} structure against concurrent insertions, deletions,
+ * and iteration during eviction selection.</li>
+ *
+ * <li><b>Per-Block Locks:</b> Each {@code BlockEntry} owns an independent
+ * {@code ReentrantLock}. This decouples I/O operations, allowing a reader to load
+ * "Block A" from disk while the evictor simultaneously writes "Block B" to disk,
+ * maximizing throughput.</li>
+ *
+ * <li><b>Condition Queues:</b> To handle read-write races, the system uses atomic
+ * state transitions. If a reader attempts to access a block in the {@code EVICTING}
+ * state, it waits on the entry's {@code Condition} variable until the writer
+ * signals that the block is safely {@code COLD} (persisted).</li>
  * </ul>
  */
 

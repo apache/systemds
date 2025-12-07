@@ -46,7 +46,9 @@ date_csv = read(input_dir + "/date.tbl", data_type="frame", format="csv", header
 part_csv = read(input_dir + "/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 supp_csv = read(input_dir + "/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 
+# General variables.
 general_spec = "{ \"ids\": false, \"recode\": [\"C1\"] }";
+hasRows = 1; # If hasRows = 0, the result table is empty.
 
 # -- Data preparation --
 
@@ -70,9 +72,11 @@ date_matrix_min = as.matrix(date_csv_min);
 [part_brand_enc_f, part_brand_meta] = transformencode(target=part_csv[,5], spec=general_spec);
 #print(toString(part_brand_enc_f));
 
-# Build filtered PART table (P_CATEGORY = 'MFGR#12'), keeping key and encoded brand
 part_filt_keys = matrix(0, rows=0, cols=1);
 part_filt_brand = matrix(0, rows=0, cols=1);
+part_filt = matrix(0, rows=0, cols=1);
+
+# Build filtered PART table (P_CATEGORY = 'MFGR#12'), keeping key and encoded brand
 for (i in 1:nrow(part_csv)) {
     if (as.scalar(part_csv[i,4]) == "MFGR#12") {
         key_val = as.double(as.scalar(part_csv[i,1]));
@@ -82,23 +86,27 @@ for (i in 1:nrow(part_csv)) {
     }
 }
 if (nrow(part_filt_keys) == 0) {
-    part_filt_keys = matrix(0, rows=1, cols=1);
-    part_filt_brand = matrix(0, rows=1, cols=1);
+    hasRows = 0;
 }
-part_filt = cbind(part_filt_keys, part_filt_brand);
+else{
+    part_filt = cbind(part_filt_keys, part_filt_brand);
+}
 
 # Extracted: COL-1 | COL-6
 # S_SUPPKEY | S_REGION
-# Build filtered SUPPLIER table (S_REGION = 'AMERICA')
 supp_filt = matrix(0, rows=0, cols=1);
-for (i in 1:nrow(supp_csv)) {
-    if (as.scalar(supp_csv[i,6]) == "AMERICA") {
-        key_val = as.double(as.scalar(supp_csv[i,1]));
-        supp_filt = rbind(supp_filt, matrix(key_val, rows=1, cols=1));
+
+if(hasRows){
+    # Build filtered SUPPLIER table (S_REGION = 'AMERICA')    
+    for (i in 1:nrow(supp_csv)) {
+        if (as.scalar(supp_csv[i,6]) == "AMERICA") {
+            key_val = as.double(as.scalar(supp_csv[i,1]));
+            supp_filt = rbind(supp_filt, matrix(key_val, rows=1, cols=1));
+        }
     }
-}
-if (nrow(supp_filt) == 0) {
-    supp_filt = matrix(0, rows=1, cols=1);
+    if (nrow(supp_filt) == 0) {
+        hasRows = 0;
+    }
 }
 #print(toString(supp_filt[1,]))
 
@@ -106,57 +114,85 @@ if (nrow(supp_filt) == 0) {
 
 # Join LINEORDER table with PART, SUPPLIER, DATE tables (star schema)
 # Join order does matter! 
+lo_part = matrix(0, rows=0, cols=1);
+lo_part_supp = matrix(0, rows=0, cols=1);
+joined_matrix = matrix(0, rows=0, cols=1);
 # LINEORDER table with DATE, PART, SUPPLIER is much slower!
 # WHERE LO_PARTKEY = P_PARTKEY
-lo_part = raJoin::m_raJoin(A=part_filt, colA=1, B=lineorder_matrix_min, colB=1, method="hash2");
+if(hasRows){
+    lo_part = raJoin::m_raJoin(A=part_filt, colA=1, B=lineorder_matrix_min, colB=1, method="hash2");
+    if(nrow(lo_part[,1]) == 0){
+        hasRows = 0;
+    }
+}
 # WHERE LO_SUPPKEY = S_SUPPKEY
-lo_part_supp = raJoin::m_raJoin(A=supp_filt, colA=1, B=lo_part, colB=4, method="hash2");
+if(hasRows){
+    lo_part_supp = raJoin::m_raJoin(A=supp_filt, colA=1, B=lo_part, colB=4, method="hash2");
+    if(nrow(lo_part_supp[,1]) == 0){
+        hasRows = 0;
+    }
+}
 # WHERE LO_ORDERDATE = D_DATEKEY
 # (D_DATEKEY | D_YEAR) | (S_SUPPKEY | P_PARTKEY | P_BRAND | LO_PARTKEY | LO_SUPPKEY | LO_ORDERDATE | LO_REVENUE)
 # Example:
 # 19920325.000 1992.000 17.000 608.000 381.000 608.000 17.000 19920325.000 5702508.000
-lo_part_supp_date = raJoin::m_raJoin(A=date_matrix_min, colA=1, B=lo_part_supp, colB=6, method="hash2");
-#print(toString(lo_part_supp_date[1,]))
+if(hasRows){
+    joined_matrix = raJoin::m_raJoin(A=date_matrix_min, colA=1, B=lo_part_supp, colB=6, method="hash2");
+    if(nrow(joined_matrix[,1]) == 0){
+        hasRows = 0;
+    }
+}
+#print(toString(joined_matrix[1,]))
 
 # -- Group-By and Aggregation (SUM)--
 
-# Group-By
-d_year = lo_part_supp_date[,2]
-p_brand = lo_part_supp_date[,5]
-lo_revenue = lo_part_supp_date[,9]
+if(hasRows){
+    # Group-By
+    d_year = joined_matrix[,2]
+    p_brand = joined_matrix[,5]
+    lo_revenue = joined_matrix[,9]
 
-# CALCULATING COMBINATION KEY D_YEAR, P_BRAND
+    # CALCULATING COMBINATION KEY D_YEAR, P_BRAND
 
-max_p_brand = max(p_brand);
-max_d_year = max(d_year);
+    max_p_brand = max(p_brand);
+    max_d_year = max(d_year);
 
-p_brand_scale_f = ceil(max_p_brand) + 1;
-d_year_scale_f = ceil(max_d_year) + 1;
+    p_brand_scale_f = ceil(max_p_brand) + 1;
+    d_year_scale_f = ceil(max_d_year) + 1;
 
-combined_key = d_year * p_brand_scale_f + p_brand;
+    combined_key = d_year * p_brand_scale_f + p_brand;
 
-group_input = cbind(lo_revenue, combined_key)
+    group_input = cbind(lo_revenue, combined_key)
 
-agg_result = raGrp::m_raGroupby(X=group_input, col=2, method="nested-loop");
+    agg_result = raGrp::m_raGroupby(X=group_input, col=2, method="nested-loop");
 
-# Aggregation (SUM)
-key = agg_result[, 1];
-revenue = rowSums(agg_result[, 2:ncol(agg_result)]);
+    # Aggregation (SUM)
+    key = agg_result[, 1];
+    revenue = rowSums(agg_result[, 2:ncol(agg_result)]);
 
-# EXTRACTING D_YEAR, P_BRAND
-d_year = round(floor(key / (p_brand_scale_f)));
-p_brand = round(key %% p_brand_scale_f);
-result = cbind(revenue, d_year, p_brand, key);
+    # EXTRACTING D_YEAR, P_BRAND
+    d_year = round(floor(key / (p_brand_scale_f)));
+    p_brand = round(key %% p_brand_scale_f);
+    result = cbind(revenue, d_year, p_brand, key);
 
-# -- Sorting -- -- Sorting int columns works, but string does not.
-# ORDER BY P_BRAND ASC
-result_ordered = order(target=result, by=3, decreasing=FALSE, index.return=FALSE);
+    # -- Sorting -- -- Sorting int columns works, but string does not.
+    # ORDER BY P_BRAND ASC
+    result_ordered = order(target=result, by=3, decreasing=FALSE, index.return=FALSE);
 
-p_brand_dec = transformdecode(target=result_ordered[,3], spec=general_spec, meta=part_brand_meta);
-res = cbind(as.frame(result_ordered[,1]), as.frame(result_ordered[,2]), p_brand_dec) ;
+    p_brand_dec = transformdecode(target=result_ordered[,3], spec=general_spec, meta=part_brand_meta);
+    res = cbind(as.frame(result_ordered[,1]), as.frame(result_ordered[,2]), p_brand_dec) ;
 
-# Print result
-print("SUM(lo_revenue) | d_year | p_brand")
-print(res)
+    # Print result
+    print("SUM(lo_revenue) | d_year | p_brand")
+    print(res)
 
-print("\nQ2.1 finished.\n");
+    print("\nQ2.1 finished.\n");
+}
+else{
+    # If the result table has 0 rows, skip group-by and aggregation.
+    # Print result
+    print("SUM(lo_revenue) | d_year | p_brand")
+    print("The result table has 0 rows.")
+
+    print("\nQ2.1 finished.\n");
+}

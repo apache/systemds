@@ -37,6 +37,9 @@ print("Loading tables from directory: " + input_dir);
 date_csv = read(input_dir + "/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 lineorder_csv = read(input_dir + "/lineorder.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 
+# General variables.
+hasRows = 1; # If hasRows = 0, the result table is empty.
+
 # -- Data preparation --
 
 # Extract only the necessary columns from date and lineorder table.
@@ -54,38 +57,61 @@ lineorder_matrix_min = as.matrix(lineorder_csv_min);
 
 # D_YEAR = 1993
 d_year_filt = raSel::m_raSelection(date_matrix_min, col=2, op="==", val=1993);
-
+if( as.scalar(d_year_filt[1,1]) == 0){
+    hasRows = 0;
+}
 # LO_QUANTITY < 25
-lo_filt = raSel::m_raSelection(lineorder_matrix_min, col=2, op="<", val=25);
-
+if(hasRows){
+    lo_filt = raSel::m_raSelection(lineorder_matrix_min, col=2, op="<", val=25);
+    if( as.scalar(lo_filt[1,1]) == 0){
+        hasRows = 0;
+    }
+}
 # LO_DISCOUNT BETWEEN 1 AND 3
-lo_filt = raSel::m_raSelection(lo_filt, col=4, op=">=", val=1);
-lo_filt = raSel::m_raSelection(lo_filt, col=4, op="<=", val=3);
-
-# Minimize LO TABLE
-# => LO_ORDERDATE | LO_EXTPRICE | LO_DISCOUNT
-lo_filt = cbind(lo_filt[, 1], lo_filt[, 3], lo_filt[, 4]);
+if(hasRows){
+    lo_filt = raSel::m_raSelection(lo_filt, col=4, op=">=", val=1);
+    lo_filt = raSel::m_raSelection(lo_filt, col=4, op="<=", val=3);
+    if( as.scalar(lo_filt[1,1]) == 0){
+        hasRows = 0;
+    }
+    else{
+        # Minimize LO TABLE
+        # => LO_ORDERDATE | LO_EXTPRICE | LO_DISCOUNT
+        lo_filt = cbind(lo_filt[, 1], lo_filt[, 3], lo_filt[, 4]);
+    }
+}
 
 # -- Join --
 # Join LINEORDER and DATE tables with RA-JOIN function
+joined_matrix = matrix(0, rows=0, cols=1);
 # WHERE LO_ORDERDATE = D_DATEKEY
-
 # => (D-KEY | D-YEAR) | (LO_ORDERDATE | LO_EXTPRICE | LO_DISCOUNT)
-joined_matrix = raJoin::m_raJoin(A=d_year_filt, colA=1, B=lo_filt, colB=1, method="hash2");
-print("LO-DATE JOINED.\n");
-
+if(hasRows){
+    joined_matrix = raJoin::m_raJoin(A=d_year_filt, colA=1, B=lo_filt, colB=1, method="hash2");
+    if(nrow(joined_matrix[,1]) == 0){
+            hasRows = 0;
+        }
+}
 # Print the first row.
 #print(toString(joined_matrix[1,]))
 
 # -- Aggregation (SUM)--
 
-# SUM(lo_extendedprice * lo_discount) AS REVENUE
-# Use the joined_matrix with LO_EXTPRICE (COL-4), LO_DISCOUNT (COL-5)
-lo_extprice = joined_matrix[, 4];		
-lo_disc = joined_matrix[, 5];			
-revenue = sum(lo_extprice * lo_disc);
+if(hasRows){
+    # SUM(lo_extendedprice * lo_discount) AS REVENUE
+    # Use the joined_matrix with LO_EXTPRICE (COL-4), LO_DISCOUNT (COL-5)
+    lo_extprice = joined_matrix[, 4];		
+    lo_disc = joined_matrix[, 5];			
+    revenue = sum(lo_extprice * lo_disc);
 
-print("REVENUE")
-print(as.integer(revenue));
+    print("REVENUE")
+    print(as.integer(revenue));
 
-print("\nQ1.1 finished.\n");
+    print("\nQ1.1 finished.\n");
+}
+else{
+    print("REVENUE")
+    print("The result table has 0 rows.")
+    print("\nQ1.1 finished.\n");
+}
+

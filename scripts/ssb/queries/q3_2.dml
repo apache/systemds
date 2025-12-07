@@ -52,7 +52,9 @@ cust_csv = read(input_dir + "/customer.tbl", data_type="frame", format="csv", he
 date_csv = read(input_dir + "/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 supp_csv = read(input_dir + "/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 
+# General variables.
 general_spec = "{ \"ids\": false, \"recode\": [\"C1\"] }";
+hasRows = 1; # If hasRows = 0, the result table is empty.
 
 # -- Data preparation --
 
@@ -72,6 +74,9 @@ date_matrix_min = as.matrix(date_csv_min);
 # WHERE D_YEAR >= 1992 AND D_YEAR <= 1997
 d_filt = raSel::m_raSelection(date_matrix_min, col=2, op=">=", val=1992);
 d_filt = raSel::m_raSelection(d_filt, col=2, op="<=", val=1997);
+if( as.scalar(d_filt[1,1]) == 0){
+    hasRows = 0;
+}
 
 # Prepare SUPPLIER table on-the-fly encodings
 # Extracted: COL-1 | COL-4 | COL-5
@@ -79,22 +84,27 @@ d_filt = raSel::m_raSelection(d_filt, col=2, op="<=", val=1997);
 # (only need S_CITY encoding, filter by S_NATION string)
 [supp_city_enc_f, supp_city_meta] = transformencode(target=supp_csv[,4], spec=general_spec);
 
-# Build filtered SUPPLIER table (C_NATION = 'UNITED STATES')
 supp_filt_keys = matrix(0, rows=0, cols=1);
 supp_filt_city = matrix(0, rows=0, cols=1);
-for (i in 1:nrow(supp_csv)) {
-    if (as.scalar(supp_csv[i,5]) == "UNITED STATES") {
-        key_val = as.double(as.scalar(supp_csv[i,1]));
-        city_code = as.double(as.scalar(supp_city_enc_f[i,1]));
-        supp_filt_keys = rbind(supp_filt_keys, matrix(key_val, rows=1, cols=1));
-        supp_filt_city = rbind(supp_filt_city, matrix(city_code, rows=1, cols=1));
+supp_filt = matrix(0, rows=0, cols=1);
+
+if(hasRows){
+    # Build filtered SUPPLIER table (C_NATION = 'UNITED STATES')
+    for (i in 1:nrow(supp_csv)) {
+        if (as.scalar(supp_csv[i,5]) == "UNITED STATES") {
+            key_val = as.double(as.scalar(supp_csv[i,1]));
+            city_code = as.double(as.scalar(supp_city_enc_f[i,1]));
+            supp_filt_keys = rbind(supp_filt_keys, matrix(key_val, rows=1, cols=1));
+            supp_filt_city = rbind(supp_filt_city, matrix(city_code, rows=1, cols=1));
+        }
     }
-}
-if (nrow(supp_filt_keys) == 0) {
-    supp_filt_keys = matrix(0, rows=1, cols=1);
-    supp_filt_city = matrix(0, rows=1, cols=1);
-}
-supp_filt = cbind(supp_filt_keys, supp_filt_city);
+    if (nrow(supp_filt_keys) == 0) {
+        hasRows = 0;
+    }
+    else{
+        supp_filt = cbind(supp_filt_keys, supp_filt_city);
+    }
+}    
 
 # Prepare CUSTOMER table on-the-fly encodings
 # Extracted: COL-1 | COL-5 | COL-6
@@ -102,90 +112,123 @@ supp_filt = cbind(supp_filt_keys, supp_filt_city);
 # (only need C_CITY encoding, filter by C_NATION string)
 [cust_city_enc_f, cust_city_meta] = transformencode(target=cust_csv[,4], spec=general_spec);
 
-# Build filtered CUSTOMER table (C_NATION = 'UNITED STATES')
 cust_filt_keys = matrix(0, rows=0, cols=1);
 cust_filt_city = matrix(0, rows=0, cols=1);
-for (i in 1:nrow(cust_csv)) {
-    if (as.scalar(cust_csv[i,5]) == "UNITED STATES") {
-        key_val = as.double(as.scalar(cust_csv[i,1]));
-        city_code = as.double(as.scalar(cust_city_enc_f[i,1]));
-        cust_filt_keys = rbind(cust_filt_keys, matrix(key_val, rows=1, cols=1));
-        cust_filt_city = rbind(cust_filt_city, matrix(city_code, rows=1, cols=1));
+cust_filt = matrix(0, rows=0, cols=1);
+
+if(hasRows){
+    # Build filtered CUSTOMER table (C_NATION = 'UNITED STATES')
+    for (i in 1:nrow(cust_csv)) {
+        if (as.scalar(cust_csv[i,5]) == "UNITED STATES") {
+            key_val = as.double(as.scalar(cust_csv[i,1]));
+            city_code = as.double(as.scalar(cust_city_enc_f[i,1]));
+            cust_filt_keys = rbind(cust_filt_keys, matrix(key_val, rows=1, cols=1));
+            cust_filt_city = rbind(cust_filt_city, matrix(city_code, rows=1, cols=1));
+        }
+    }
+    if (nrow(cust_filt_keys) == 0) {
+        hasRows = 0;
+    }
+    else{
+        cust_filt = cbind(cust_filt_keys,cust_filt_city);
     }
 }
-if (nrow(cust_filt_keys) == 0) {
-    cust_filt_keys = matrix(0, rows=1, cols=1);
-    cust_filt_city = matrix(0, rows=1, cols=1);
-}
-cust_filt = cbind(cust_filt_keys,cust_filt_city);
 
 #print("LO,DATE,CUST,SUPP")
 #print(toString(lineorder_matrix_min[1,]))
-#print(toString(date_matrix_min[1,]))
+#print(toString(d_filt[1,]))
 #print(toString(cust_filt[1,]))
 #print(toString(supp_filt[1,]))
 
 # -- JOIN TABLES WITH RA-JOIN FUNCTION --
 
 # Join LINEORDER table with CUST, SUPPLIER, DATE tables (star schema)
-# Join order does matter! 
+# Join order does matter!
+lo_cust = matrix(0, rows=0, cols=1);
+lo_cust_supp = matrix(0, rows=0, cols=1);
+joined_matrix = matrix(0, rows=0, cols=1);
 # WHERE LO_CUSTKEY = C_CUSTKEY
-lo_cust = raJoin::m_raJoin(A=cust_filt, colA=1, B=lineorder_matrix_min, colB=1, method="hash2");
+if(hasRows){
+    lo_cust = raJoin::m_raJoin(A=cust_filt, colA=1, B=lineorder_matrix_min, colB=1, method="hash2");
+    if(nrow(lo_cust[,1]) == 0){
+        hasRows = 0;
+    }
+}
 # WHERE LO_SUPPKEY = S_SUPPKEY
-lo_cust_supp = raJoin::m_raJoin(A=supp_filt, colA=1, B=lo_cust, colB=4, method="hash2");
+if(hasRows){
+    lo_cust_supp = raJoin::m_raJoin(A=supp_filt, colA=1, B=lo_cust, colB=4, method="hash2");
+    if(nrow(lo_cust_supp[,1]) == 0){
+        hasRows = 0;
+    }
+}
 # WHERE LO_ORDERDATE = D_DATEKEY
 # (D_DATEKEY | D_YEAR) | (S_SUPPKEY | S_CITY | C_CUSTKEY | C_CITY |
 # LO_CUSTKEY | LO_SUPPKEY | LO_ORDERDATE | LO_REVENUE)
-joined_matrix = raJoin::m_raJoin(A=d_filt, colA=1, B=lo_cust_supp, colB=7, method="hash2");
-print(toString(joined_matrix[1,]))
+if(hasRows){
+    joined_matrix = raJoin::m_raJoin(A=d_filt, colA=1, B=lo_cust_supp, colB=7, method="hash2");
+    #print(toString(joined_matrix[1,]))
+    if(nrow(joined_matrix[,1]) == 0){
+        hasRows = 0;
+    }
+}
+#print(toString(joined_matrix[1,]))
 
 # -- Group-By and Aggregation (SUM)--
 
-# Group-By
-d_year = joined_matrix[,2];
-s_city = joined_matrix[,4];
-c_city = joined_matrix[,6];
-revenue = joined_matrix[,10];
+if(hasRows){
+    # Group-By
+    d_year = joined_matrix[,2];
+    s_city = joined_matrix[,4];
+    c_city = joined_matrix[,6];
+    revenue = joined_matrix[,10];
 
-# CALCULATING COMBINATION KEY WITH PRIORITY:1 C_CITY, 2 S_CITY, D_YEAR
-max_c_city= max(c_city);
-max_s_city= max(s_city);
-max_d_year = max(d_year);
+    # CALCULATING COMBINATION KEY WITH PRIORITY:1 C_CITY, 2 S_CITY, D_YEAR
+    max_c_city= max(c_city);
+    max_s_city= max(s_city);
+    max_d_year = max(d_year);
 
-c_city_scale_f = ceil(max_c_city) + 1;
-s_city_scale_f = ceil(max_s_city) + 1;
-d_year_scale_f = ceil(max_d_year) + 1;
+    c_city_scale_f = ceil(max_c_city) + 1;
+    s_city_scale_f = ceil(max_s_city) + 1;
+    d_year_scale_f = ceil(max_d_year) + 1;
 
-combined_key = c_city * s_city_scale_f * d_year_scale_f + s_city * d_year_scale_f + d_year;
+    combined_key = c_city * s_city_scale_f * d_year_scale_f + s_city * d_year_scale_f + d_year;
 
-group_input = cbind(revenue, combined_key)
+    group_input = cbind(revenue, combined_key)
 
-agg_result = raGrp::m_raGroupby(X=group_input, col=2, method="nested-loop");
-#print(toString(agg_result[1,]));
+    agg_result = raGrp::m_raGroupby(X=group_input, col=2, method="nested-loop");
+    #print(toString(agg_result[1,]));
 
-# Aggregation (SUM)
-key = agg_result[, 1];
-revenue = rowSums(agg_result[, 2:ncol(agg_result)]);
+    # Aggregation (SUM)
+    key = agg_result[, 1];
+    revenue = rowSums(agg_result[, 2:ncol(agg_result)]);
 
-# EXTRACTING C_CITY, S_CITY, D_YEAR
-c_city = round(floor(key / (s_city_scale_f * d_year_scale_f)));
-s_city = round(floor((key %% (s_city_scale_f * d_year_scale_f)) / d_year_scale_f));
-d_year = round(key %% d_year_scale_f);
+    # EXTRACTING C_CITY, S_CITY, D_YEAR
+    c_city = round(floor(key / (s_city_scale_f * d_year_scale_f)));
+    s_city = round(floor((key %% (s_city_scale_f * d_year_scale_f)) / d_year_scale_f));
+    d_year = round(key %% d_year_scale_f);
 
-result = cbind(c_city, s_city, d_year, revenue, key)
+    result = cbind(c_city, s_city, d_year, revenue, key)
 
-# -- Sorting -- -- Sorting int columns works, but strings do not.
-# ORDER BY D_YEAR ASC, REVENUE DESC
-result_ordered = order(target=result, by=4, decreasing=TRUE, index.return=FALSE);
-result_ordered = order(target=result_ordered, by=3, decreasing=FALSE, index.return=FALSE);
+    # -- Sorting -- -- Sorting int columns works, but strings do not.
+    # ORDER BY D_YEAR ASC, REVENUE DESC
+    result_ordered = order(target=result, by=4, decreasing=TRUE, index.return=FALSE);
+    result_ordered = order(target=result_ordered, by=3, decreasing=FALSE, index.return=FALSE);
 
-c_city_dec = transformdecode(target=result_ordered[,1], spec=general_spec, meta=cust_city_meta);
-s_city_dec = transformdecode(target=result_ordered[,2], spec=general_spec, meta=supp_city_meta);
+    c_city_dec = transformdecode(target=result_ordered[,1], spec=general_spec, meta=cust_city_meta);
+    s_city_dec = transformdecode(target=result_ordered[,2], spec=general_spec, meta=supp_city_meta);
 
-res = cbind(c_city_dec, s_city_dec, as.frame(result_ordered[,3]), as.frame(result_ordered[,4])) ;
+    res = cbind(c_city_dec, s_city_dec, as.frame(result_ordered[,3]), as.frame(result_ordered[,4])) ;
 
-# Print result
-print("c_city | s_city | d_year | REVENUE")
-print(res)
+    # Print result
+    print("c_city | s_city | d_year | REVENUE")
+    print(res)
 
-print("\nQ3.2 finished.\n");
+    print("\nQ3.2 finished.\n");
+}
+else{
+    # If the result table has 0 rows, skip group-by and aggregation.
+    # Print result
+    print("c_city | s_city | d_year | REVENUE")
+    print("The result table has 0 rows.")
+    print("\nQ3.2 finished.\n");
+}

@@ -39,6 +39,9 @@ print("Loading tables from directory: " + input_dir);
 date_csv = read(input_dir + "/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 lineorder_csv = read(input_dir + "/lineorder.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 
+# General variables.
+hasRows = 1; # If hasRows = 0, the result table is empty.
+
 # -- Data preparation --
 
 # Extract only the necessary columns from date and lineorder table.
@@ -49,53 +52,75 @@ lineorder_csv_min = cbind(lineorder_csv[, 6], lineorder_csv[, 9], lineorder_csv[
 lineorder_matrix_min = as.matrix(lineorder_csv_min);
 
 # -- Filter the data with RA-SELECTION function.
+
 # LO_DISCOUNT BETWEEN 4 AND 6
 lo_filt = raSel::m_raSelection(lineorder_matrix_min, col=4, op=">=", val=4);
 lo_filt = raSel::m_raSelection(lo_filt, col=4, op="<=", val=6);
-
+if( as.scalar(lo_filt[1,1]) == 0){
+    hasRows = 0;
+}
 # LO_QUANTITY BETWEEN 26 AND 35
-lo_filt = raSel::m_raSelection(lo_filt, col=2, op=">=", val=26);
-lo_filt = raSel::m_raSelection(lo_filt, col=2, op="<=", val=35);
-
-# Minimize LO TABLE
-# => LO_ORDERDATE | LO_EXTPRICE | LO_DISCOUNT
-lo_filt = cbind(lo_filt[, 1], lo_filt[, 3], lo_filt[, 4]);
-
-# -- Filter tables over string values.
-# Extracted: COL-1 | COL-7
-# D_DATEKEY | D_YEARMONTH
-# Build filtered DATE table (D_YEARMONTH = 'Jan1994')
-date_filt = matrix(0, rows=0, cols=1);
-for (i in 1:nrow(date_csv)) {
-    if (as.scalar(date_csv[i,7]) == "Jan1994") {
-        key_val = as.double(as.scalar(date_csv[i,1]));
-        date_filt = rbind(date_filt, matrix(key_val, rows=1, cols=1));
+if(hasRows){
+    lo_filt = raSel::m_raSelection(lo_filt, col=2, op=">=", val=26);
+    lo_filt = raSel::m_raSelection(lo_filt, col=2, op="<=", val=35);
+    if( as.scalar(lo_filt[1,1]) == 0){
+        hasRows = 0;
+    }
+    else{
+        # Minimize LO TABLE
+        # => LO_ORDERDATE | LO_EXTPRICE | LO_DISCOUNT
+        lo_filt = cbind(lo_filt[, 1], lo_filt[, 3], lo_filt[, 4]);
     }
 }
-if (nrow(date_filt) == 0) {
-    date_filt = matrix(0, rows=1, cols=1);
+
+# -- Filter table over string values.
+# Extracted: COL-1 | COL-7
+# D_DATEKEY | D_YEARMONTH
+d_filt = matrix(0, rows=0, cols=1);
+if(hasRows){
+    # Build filtered DATE table (D_YEARMONTH = 'Jan1994')
+    for (i in 1:nrow(date_csv)) {
+        if (as.scalar(date_csv[i,7]) == "Jan1994") {
+            key_val = as.double(as.scalar(date_csv[i,1]));
+            d_filt = rbind(d_filt, matrix(key_val, rows=1, cols=1));
+        }
+    }
+    if (nrow(d_filt) == 0) {
+        hasRows = 0;
+    }
 }
+
 
 # -- Join --
 # Join LINEORDER and DATE tables with RA-JOIN function
+joined_matrix = matrix(0, rows=0, cols=1);
 # WHERE LO_ORDERDATE = D_DATEKEY
-
 # => (D_DATEKEY) | (LO_ORDERDATE | LO_EXTPRICE | LO_DISCOUNT)
-joined_matrix = raJoin::m_raJoin(A=date_filt, colA=1, B=lo_filt, colB=1, method="hash2");
-print("LO-DATE JOINED.\n");
+if(hasRows){
+    joined_matrix = raJoin::m_raJoin(A=d_filt, colA=1, B=lo_filt, colB=1, method="hash2");
+    if(nrow(joined_matrix[,1]) == 0){
+        hasRows = 0;
+        }
+}
 
 # Print the first row.
 #print(toString(joined_matrix[1,]))
 
 # -- Aggregation (SUM)--
+if(hasRows){
+    # SUM(lo_extendedprice * lo_discount) AS REVENUE
+    # Use the joined_matrix with LO_EXTPRICE (COL-4), LO_DISCOUNT (COL-5)
+    lo_extprice = joined_matrix[, 3];		
+    lo_disc = joined_matrix[, 4];			
+    revenue = sum(lo_extprice * lo_disc);
 
-# SUM(lo_extendedprice * lo_discount) AS REVENUE
-# Use the joined_matrix with LO_EXTPRICE (COL-4), LO_DISCOUNT (COL-5)
-lo_extprice = joined_matrix[, 3];		
-lo_disc = joined_matrix[, 4];			
-revenue = sum(lo_extprice * lo_disc);
+    print("REVENUE")
+    print(as.integer(revenue));
 
-print("REVENUE")
-print(as.integer(revenue));
-
-print("\nQ1.2 finished.\n");
+    print("\nQ1.2 finished.\n");
+}
+else{
+    print("REVENUE")
+    print("The result table has 0 rows.")
+    print("\nQ1.2 finished.\n");
+}

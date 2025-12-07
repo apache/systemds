@@ -43,11 +43,6 @@ public abstract class ADictBasedColGroup extends AColGroupCompressed implements 
 	/** Distinct value tuples associated with individual bitmaps. */
 	protected final IDictionary _dict;
 
-	protected ADictBasedColGroup() {
-		super();
-		_dict = null;
-	}
-
 	/**
 	 * A Abstract class for column groups that contain IDictionary for values.
 	 * 

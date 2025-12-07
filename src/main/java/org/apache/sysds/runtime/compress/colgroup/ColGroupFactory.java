@@ -292,6 +292,9 @@ public class ColGroupFactory {
 		else if(ct == CompressionType.DeltaDDC) {
 			return directCompressDeltaDDC(colIndexes, cg);
 		}
+		else if(ct == CompressionType.CONST && cs.preferDeltaEncoding) {
+			return directCompressDeltaDDC(colIndexes, cg);
+		}
 		else if(ct == CompressionType.LinearFunctional) {
 			if(cs.scaleFactors != null) {
 				throw new NotImplementedException(); // quantization-fused compression NOT allowed
@@ -315,7 +318,7 @@ public class ColGroupFactory {
 			return new ColGroupEmpty(colIndexes);
 		}
 		final IntArrayList[] of = ubm.getOffsetList();
-		if(of.length == 1 && of[0].size() == nRow) { // If this always constant
+		if(of.length == 1 && of[0].size() == nRow && ct != CompressionType.DeltaDDC) { // If this always constant
 			return ColGroupConst.create(colIndexes, DictionaryFactory.create(ubm));
 		}
 
@@ -756,7 +759,8 @@ public class ColGroupFactory {
 
 		final ACount<DblArray>[] vals = map.extractValues();
 		final int nVals = vals.length;
-		final double[] dictValues = new double[nVals * colIndexes.size()];
+		final int nTuplesOut = nVals + (extra ? 1 : 0);
+		final double[] dictValues = new double[nTuplesOut * colIndexes.size()];
 		final int[] oldIdToNewId = new int[map.size()];
 		int idx = 0;
 		for(int i = 0; i < nVals; i++) {

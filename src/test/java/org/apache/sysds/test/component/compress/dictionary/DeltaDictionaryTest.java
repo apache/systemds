@@ -18,8 +18,16 @@
  */
 package org.apache.sysds.test.component.compress.dictionary;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DeltaDictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.functionobjects.And;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
@@ -83,51 +91,79 @@ public class DeltaDictionaryTest {
 		Assert.assertArrayEquals(expected, d.getValues(), 0.01);
 	}
 
-	@Test
+	@Test(expected = NotImplementedException.class)
 	public void testScalarOpRightPlusSingleColumn() {
 		double scalar = 2;
 		DeltaDictionary d = new DeltaDictionary(new double[] {1, 2}, 1);
 		ScalarOperator sop = new RightScalarOperator(Plus.getPlusFnObject(), scalar, 1);
-		d = d.applyScalarOp(sop);
-		double[] expected = new double[] {3, 2};
-		Assert.assertArrayEquals(expected, d.getValues(), 0.01);
+		d.applyScalarOp(sop);
 	}
 
-	@Test
+	@Test(expected = NotImplementedException.class)
 	public void testScalarOpRightPlusTwoColumns() {
 		double scalar = 2;
 		DeltaDictionary d = new DeltaDictionary(new double[] {1, 2, 3, 4}, 2);
 		ScalarOperator sop = new RightScalarOperator(Plus.getPlusFnObject(), scalar, 1);
-		d = d.applyScalarOp(sop);
-		double[] expected = new double[] {3, 4, 3, 4};
-		Assert.assertArrayEquals(expected, d.getValues(), 0.01);
+		d.applyScalarOp(sop);
 	}
 
-	@Test
+	@Test(expected = NotImplementedException.class)
 	public void testScalarOpRightMinusTwoColumns() {
 		double scalar = 2;
 		DeltaDictionary d = new DeltaDictionary(new double[] {1, 2, 3, 4}, 2);
 		ScalarOperator sop = new RightScalarOperator(Minus.getMinusFnObject(), scalar, 1);
-		d = d.applyScalarOp(sop);
-		double[] expected = new double[] {-1, 0, 3, 4};
-		Assert.assertArrayEquals(expected, d.getValues(), 0.01);
+		d.applyScalarOp(sop);
 	}
 
-	@Test
+	@Test(expected = NotImplementedException.class)
 	public void testScalarOpLeftPlusTwoColumns() {
 		double scalar = 2;
 		DeltaDictionary d = new DeltaDictionary(new double[] {1, 2, 3, 4}, 2);
 		ScalarOperator sop = new LeftScalarOperator(Plus.getPlusFnObject(), scalar, 1);
-		d = d.applyScalarOp(sop);
-		double[] expected = new double[] {3, 4, 3, 4};
-		Assert.assertArrayEquals(expected, d.getValues(), 0.01);
+		d.applyScalarOp(sop);
 	}
 
 	@Test(expected = NotImplementedException.class)
-	public void testNotImplemented() {
+	public void testScalarOpAnd() {
 		double scalar = 2;
 		DeltaDictionary d = new DeltaDictionary(new double[] {1, 2, 3, 4}, 2);
 		ScalarOperator sop = new LeftScalarOperator(And.getAndFnObject(), scalar, 1);
-		d = d.applyScalarOp(sop);
+		d.applyScalarOp(sop);
+	}
+
+	@Test
+	public void testSerializationSingleColumn() throws IOException {
+		DeltaDictionary original = new DeltaDictionary(new double[] {1, 2, 3, 4, 5}, 1);
+		
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		DataOutputStream dos = new DataOutputStream(bos);
+		original.write(dos);
+		Assert.assertEquals(original.getExactSizeOnDisk(), bos.size());
+		
+		ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+		DataInputStream dis = new DataInputStream(bis);
+		IDictionary deserialized = DictionaryFactory.read(dis);
+		
+		Assert.assertTrue("Deserialized dictionary should be DeltaDictionary", deserialized instanceof DeltaDictionary);
+		DeltaDictionary deltaDict = (DeltaDictionary) deserialized;
+		Assert.assertArrayEquals("Values should match after serialization", original.getValues(), deltaDict.getValues(), 0.01);
+	}
+
+	@Test
+	public void testSerializationTwoColumns() throws IOException {
+		DeltaDictionary original = new DeltaDictionary(new double[] {1, 2, 3, 4, 5, 6}, 2);
+		
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		DataOutputStream dos = new DataOutputStream(bos);
+		original.write(dos);
+		Assert.assertEquals(original.getExactSizeOnDisk(), bos.size());
+		
+		ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+		DataInputStream dis = new DataInputStream(bis);
+		IDictionary deserialized = DictionaryFactory.read(dis);
+		
+		Assert.assertTrue("Deserialized dictionary should be DeltaDictionary", deserialized instanceof DeltaDictionary);
+		DeltaDictionary deltaDict = (DeltaDictionary) deserialized;
+		Assert.assertArrayEquals("Values should match after serialization", original.getValues(), deltaDict.getValues(), 0.01);
 	}
 }

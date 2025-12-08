@@ -177,11 +177,11 @@ class HyperparameterTuner:
 
         if self.maximize_metric:
             best_params, best_score = max(
-                all_results, key=lambda x: x[1].scores[self.scoring_metric]
+                all_results, key=lambda x: x[1].average_scores[self.scoring_metric]
             )
         else:
             best_params, best_score = min(
-                all_results, key=lambda x: x[1].scores[self.scoring_metric]
+                all_results, key=lambda x: x[1].average_scores[self.scoring_metric]
             )
 
         tuning_time = time.time() - start_time

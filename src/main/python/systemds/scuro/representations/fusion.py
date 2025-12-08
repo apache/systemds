@@ -68,19 +68,25 @@ class Fusion(Representation):
         return self.execute(mods)
 
     def transform_with_training(self, modalities: List[Modality], task):
+        fusion_train_indices = task.fusion_train_indices
+
         train_modalities = []
         for modality in modalities:
             train_data = [
-                d for i, d in enumerate(modality.data) if i in task.train_indices
+                d for i, d in enumerate(modality.data) if i in fusion_train_indices
             ]
             train_modality = TransformedModality(modality, self)
             train_modality.data = copy.deepcopy(train_data)
             train_modalities.append(train_modality)
 
         transformed_train = self.execute(
-            train_modalities, task.labels[task.train_indices]
+            train_modalities, task.labels[fusion_train_indices]
         )
-        transformed_val = self.transform_data(modalities, task.val_indices)
+
+        all_other_indices = [
+            i for i in range(len(modalities[0].data)) if i not in fusion_train_indices
+        ]
+        transformed_other = self.transform_data(modalities, all_other_indices)
 
         transformed_data = np.zeros(
             (len(modalities[0].data), transformed_train.shape[1])

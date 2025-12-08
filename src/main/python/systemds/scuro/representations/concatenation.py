@@ -51,7 +51,7 @@ class Concatenation(Fusion):
         max_emb_size = self.get_max_embedding_size(modalities)
         size = len(modalities[0].data)
 
-        if modalities[0].data.ndim > 2:
+        if np.array(modalities[0].data).ndim > 2:
             data = np.zeros((size, max_emb_size, 0))
         else:
             data = np.zeros((size, 0))

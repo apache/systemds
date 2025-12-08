@@ -103,7 +103,9 @@ class HyperparameterTuner:
             representations[task.model.name] = {}
             for modality in self.modalities:
                 k_best_results, cached_data = (
-                    self.optimization_results.get_k_best_results(modality, self.k, task)
+                    self.optimization_results.get_k_best_results(
+                        modality, self.k, task, self.scoring_metric
+                    )
                 )
                 representations[task.model.name][modality.modality_id] = k_best_results
                 self.k_best_representations[task.model.name].extend(k_best_results)

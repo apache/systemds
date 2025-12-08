@@ -19,6 +19,7 @@
 #
 # -------------------------------------------------------------
 import os
+import torch
 import multiprocessing as mp
 import itertools
 import threading
@@ -83,8 +84,9 @@ def _evaluate_dag_worker(dag_pickle, task_pickle, modalities_pickle, debug=False
 
         return OptimizationResult(
             dag=dag_copy,
-            train_score=scores[0],
-            val_score=scores[1],
+            train_score=scores[0].average_scores,
+            val_score=scores[1].average_scores,
+            test_score=scores[2].average_scores,
             runtime=total_time,
             task_name=task_copy.model.name,
             task_time=eval_time,
@@ -106,6 +108,7 @@ class MultimodalOptimizer:
         debug: bool = True,
         min_modalities: int = 2,
         max_modalities: int = None,
+        metric: str = "accuracy",
     ):
         self.modalities = modalities
         self.tasks = tasks
@@ -116,6 +119,7 @@ class MultimodalOptimizer:
 
         self.operator_registry = Registry()
         self.fusion_operators = self.operator_registry.get_fusion_operators()
+        self.metric_name = metric
 
         self.k_best_representations = self._extract_k_best_representations(
             unimodal_optimization_results
@@ -242,7 +246,7 @@ class MultimodalOptimizer:
             for modality in self.modalities:
                 k_best_results, cached_data = (
                     unimodal_optimization_results.get_k_best_results(
-                        modality, self.k, task
+                        modality, self.k, task, self.metric_name
                     )
                 )
 
@@ -367,6 +371,8 @@ class MultimodalOptimizer:
                 task_copy,
             )
 
+            torch.cuda.empty_cache()
+
             if fused_representation is None:
                 return None
 
@@ -388,8 +394,9 @@ class MultimodalOptimizer:
 
             return OptimizationResult(
                 dag=dag_copy,
-                train_score=scores[0],
-                val_score=scores[1],
+                train_score=scores[0].average_scores,
+                val_score=scores[1].average_scores,
+                test_score=scores[2].average_scores,
                 runtime=total_time,
                 representation_time=total_time - eval_time,
                 task_name=task_copy.model.name,
@@ -479,6 +486,7 @@ class OptimizationResult:
     dag: RepresentationDag
     train_score: PerformanceMeasure = None
     val_score: PerformanceMeasure = None
+    test_score: PerformanceMeasure = None
     runtime: float = 0.0
     task_time: float = 0.0
     representation_time: float = 0.0

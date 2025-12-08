@@ -174,7 +174,9 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
             registry._fusion_operators = [Average, Concatenation, LSTM]
             unimodal_optimizer = UnimodalOptimizer([audio, text], [task], debug=False)
             unimodal_optimizer.optimize()
-            unimodal_optimizer.operator_performance.get_k_best_results(audio, 2, task)
+            unimodal_optimizer.operator_performance.get_k_best_results(
+                audio, 2, task, "accuracy"
+            )
             m_o = MultimodalOptimizer(
                 [audio, text],
                 unimodal_optimizer.operator_performance,
@@ -187,13 +189,13 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
 
             best_results = sorted(
                 fusion_results[task.model.name],
-                key=lambda x: getattr(x, "val_score").average_scores["accuracy"],
+                key=lambda x: getattr(x, "val_score")["accuracy"],
                 reverse=True,
             )[:2]
 
             assert (
-                best_results[0].val_score.average_scores["accuracy"]
-                >= best_results[1].val_score.average_scores["accuracy"]
+                best_results[0].val_score["accuracy"]
+                >= best_results[1].val_score["accuracy"]
             )
 
     def test_parallel_multimodal_fusion(self):
@@ -238,7 +240,9 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
             registry._fusion_operators = [Average, Concatenation, LSTM]
             unimodal_optimizer = UnimodalOptimizer([audio, text], [task], debug=False)
             unimodal_optimizer.optimize()
-            unimodal_optimizer.operator_performance.get_k_best_results(audio, 2, task)
+            unimodal_optimizer.operator_performance.get_k_best_results(
+                audio, 2, task, "accuracy"
+            )
             m_o = MultimodalOptimizer(
                 [audio, text],
                 unimodal_optimizer.operator_performance,
@@ -252,21 +256,21 @@ class TestMultimodalRepresentationOptimizer(unittest.TestCase):
 
             best_results = sorted(
                 fusion_results[task.model.name],
-                key=lambda x: getattr(x, "val_score").average_scores["accuracy"],
+                key=lambda x: getattr(x, "val_score")["accuracy"],
                 reverse=True,
             )
 
             best_results_parallel = sorted(
                 parallel_fusion_results[task.model.name],
-                key=lambda x: getattr(x, "val_score").average_scores["accuracy"],
+                key=lambda x: getattr(x, "val_score")["accuracy"],
                 reverse=True,
             )
 
             assert len(best_results) == len(best_results_parallel)
             for i in range(len(best_results)):
                 assert (
-                    best_results[i].val_score.average_scores["accuracy"]
-                    == best_results_parallel[i].val_score.average_scores["accuracy"]
+                    best_results[i].val_score["accuracy"]
+                    == best_results_parallel[i].val_score["accuracy"]
                 )
 
 

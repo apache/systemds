@@ -198,14 +198,14 @@ class ModalityRandomDataGenerator:
     ):
         if max_num_frames > 1:
             data = [
-                np.random.randint(
-                    0,
-                    256,
+                np.random.uniform(
+                    0.0,
+                    1.0,
                     (np.random.randint(10, max_num_frames + 1), height, width, 3),
-                    dtype=np.uint8,
                 )
                 for _ in range(num_instances)
             ]
+
             metadata = {
                 i: ModalityType.VIDEO.create_metadata(
                     30, data[i].shape[0], width, height, 3

@@ -121,29 +121,16 @@ class Fusion(Representation):
         :param modalities: List of modalities
         :return: maximum embedding size
         """
-        try:
-            modalities[0].data = np.array(modalities[0].data)
-        except:
-            pass
 
-        if isinstance(modalities[0].data[0], list):
-            max_size = modalities[0].data[0][0].shape[1]
-        elif isinstance(modalities[0].data, np.ndarray):
-            max_size = modalities[0].data.shape[1]
-        else:
-            max_size = modalities[0].data[0].shape[1]
-        for idx in range(1, len(modalities)):
-            if isinstance(modalities[idx].data[0], list):
-                curr_shape = modalities[idx].data[0][0].shape
-            elif isinstance(modalities[idx].data, np.ndarray):
-                curr_shape = modalities[idx].data.shape
-            else:
-                curr_shape = modalities[idx].data[0].shape
-            if len(modalities[idx - 1].data) != len(modalities[idx].data):
-                raise f"Modality sizes don't match!"
-            elif len(curr_shape) == 1:
+        max_size = 0
+        for m in modalities:
+            data = m.data
+            if isinstance(data, memoryview):
+                data = np.array(data)
+            arr = np.asarray(data)
+            if arr.ndim < 2:
                 continue
-            elif curr_shape[1] > max_size:
-                max_size = curr_shape[1]
-
+            emb_size = arr.shape[1]
+            if emb_size > max_size:
+                max_size = emb_size
         return max_size

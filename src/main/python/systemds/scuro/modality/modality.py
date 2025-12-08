@@ -93,6 +93,8 @@ class Modality:
         for i, (md_k, md_v) in enumerate(md_copy.items()):
             updated_md = self.modality_type.update_metadata(md_v, self.data[i])
             self.metadata[md_k] = updated_md
+            if i == 0:
+                self.data_type = updated_md["data_layout"]["type"]
 
     def flatten(self, padding=False):
         """

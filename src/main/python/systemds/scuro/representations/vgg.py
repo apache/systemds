@@ -65,7 +65,7 @@ class VGG19(UnimodalRepresentation):
         return parameters
 
     def transform(self, modality):
-        self.data_type = numpy_dtype_to_torch_dtype(modality.data_type)
+        self.data_type = torch.float32
         if next(self.model.parameters()).dtype != self.data_type:
             self.model = self.model.to(self.data_type)
 

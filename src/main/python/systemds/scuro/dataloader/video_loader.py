@@ -71,7 +71,13 @@ class VideoLoader(BaseLoader):
             self.fps, length, width, height, num_channels
         )
 
-        frames = []
+        num_frames = (length + frame_interval - 1) // frame_interval
+
+        stacked_frames = np.zeros(
+            (num_frames, height, width, num_channels), dtype=self._data_type
+        )
+
+        frame_idx = 0
         idx = 0
         while cap.isOpened():
             ret, frame = cap.read()
@@ -81,7 +87,11 @@ class VideoLoader(BaseLoader):
             if idx % frame_interval == 0:
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 frame = frame.astype(self._data_type) / 255.0
-                frames.append(frame)
+                stacked_frames[frame_idx] = frame
+                frame_idx += 1
             idx += 1
 
-        self.data.append(np.stack(frames))
+        if frame_idx < num_frames:
+            stacked_frames = stacked_frames[:frame_idx]
+
+        self.data.append(stacked_frames)

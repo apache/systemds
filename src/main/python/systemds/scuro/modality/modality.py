@@ -88,9 +88,8 @@ class Modality:
         ):
             return
 
-        md_copy = deepcopy(self.metadata)
-        self.metadata = {}
-        for i, (md_k, md_v) in enumerate(md_copy.items()):
+        for i, (md_k, md_v) in enumerate(self.metadata.items()):
+            md_v = selective_copy_metadata(md_v)
             updated_md = self.modality_type.update_metadata(md_v, self.data[i])
             self.metadata[md_k] = updated_md
             if i == 0:
@@ -183,3 +182,20 @@ class Modality:
                 break
 
         return aligned
+
+
+def selective_copy_metadata(metadata):
+    if isinstance(metadata, dict):
+        new_md = {}
+        for k, v in metadata.items():
+            if k == "data_layout":
+                new_md[k] = v.copy() if isinstance(v, dict) else v
+            elif isinstance(v, np.ndarray):
+                new_md[k] = v
+            else:
+                new_md[k] = selective_copy_metadata(v)
+        return new_md
+    elif isinstance(metadata, (list, tuple)):
+        return type(metadata)(selective_copy_metadata(item) for item in metadata)
+    else:
+        return metadata

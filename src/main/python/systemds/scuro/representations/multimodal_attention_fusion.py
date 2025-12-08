@@ -40,7 +40,7 @@ class AttentionFusion(Fusion):
         num_heads=8,
         dropout=0.1,
         batch_size=32,
-        num_epochs=50,
+        num_epochs=20,
         learning_rate=0.001,
     ):
         parameters = {
@@ -48,7 +48,7 @@ class AttentionFusion(Fusion):
             "num_heads": [2, 4, 8, 12],
             "dropout": [0.0, 0.1, 0.2, 0.3, 0.4],
             "batch_size": [8, 16, 32, 64, 128],
-            "num_epochs": [50, 100, 150, 200],
+            "num_epochs": [10, 20, 50, 100, 150, 200],
             "learning_rate": [1e-5, 1e-4, 1e-3, 1e-2],
         }
         super().__init__("AttentionFusion", parameters)
@@ -69,6 +69,7 @@ class AttentionFusion(Fusion):
         self.num_classes = None
         self.is_trained = False
         self.model_state = None
+        self.is_multilabel = False
 
         self._set_random_seeds()
 
@@ -122,9 +123,17 @@ class AttentionFusion(Fusion):
         inputs, input_dimensions, max_sequence_length = self._prepare_data(modalities)
         y = np.array(labels)
 
+        if y.ndim == 2 and y.shape[1] > 1:
+            self.is_multilabel = True
+            self.num_classes = y.shape[1]
+        else:
+            self.is_multilabel = False
+            if y.ndim == 2:
+                y = y.ravel()
+            self.num_classes = len(np.unique(y))
+
         self.input_dim = input_dimensions
         self.max_sequence_length = max_sequence_length
-        self.num_classes = len(np.unique(y))
 
         self.encoder = MultiModalAttentionFusion(
             self.input_dim,
@@ -142,7 +151,10 @@ class AttentionFusion(Fusion):
         self.encoder.to(device)
         self.classification_head.to(device)
 
-        criterion = nn.CrossEntropyLoss()
+        if self.is_multilabel:
+            criterion = nn.BCEWithLogitsLoss()
+        else:
+            criterion = nn.CrossEntropyLoss()
         optimizer = torch.optim.Adam(
             list(self.encoder.parameters())
             + list(self.classification_head.parameters()),
@@ -151,7 +163,11 @@ class AttentionFusion(Fusion):
 
         for modality_name in inputs:
             inputs[modality_name] = inputs[modality_name].to(device)
-        labels_tensor = torch.from_numpy(y).long().to(device)
+
+        if self.is_multilabel:
+            labels_tensor = torch.from_numpy(y).float().to(device)
+        else:
+            labels_tensor = torch.from_numpy(y).long().to(device)
 
         dataset_inputs = []
         for i in range(len(y)):
@@ -197,9 +213,17 @@ class AttentionFusion(Fusion):
                 optimizer.step()
 
                 total_loss += loss.item()
-                _, predicted = torch.max(logits.data, 1)
-                total_correct += (predicted == batch_labels).sum().item()
-                total_samples += batch_labels.size(0)
+
+                if self.is_multilabel:
+                    predicted = (torch.sigmoid(logits) > 0.5).float()
+                    correct = (predicted == batch_labels).float()
+                    hamming_acc = correct.mean()
+                    total_correct += hamming_acc.item() * batch_labels.size(0)
+                    total_samples += batch_labels.size(0)
+                else:
+                    _, predicted = torch.max(logits.data, 1)
+                    total_correct += (predicted == batch_labels).sum().item()
+                    total_samples += batch_labels.size(0)
 
         self.is_trained = True
 
@@ -214,10 +238,24 @@ class AttentionFusion(Fusion):
             "dropout": self.dropout,
         }
 
-        with torch.no_grad():
-            encoder_output = self.encoder(inputs)
+        all_features = []
 
-        return encoder_output["fused"].cpu().numpy()
+        with torch.no_grad():
+            for batch_start in range(
+                0, len(inputs[list(inputs.keys())[0]]), self.batch_size
+            ):
+                batch_end = min(
+                    batch_start + self.batch_size, len(inputs[list(inputs.keys())[0]])
+                )
+
+                batch_inputs = {}
+                for modality_name, tensor in inputs.items():
+                    batch_inputs[modality_name] = tensor[batch_start:batch_end]
+
+                encoder_output = self.encoder(batch_inputs)
+                all_features.append(encoder_output["fused"].cpu())
+
+        return torch.cat(all_features, dim=0).numpy()
 
     def apply_representation(self, modalities: List[Modality]) -> np.ndarray:
         if not self.is_trained or self.encoder is None:
@@ -232,10 +270,23 @@ class AttentionFusion(Fusion):
             inputs[modality_name] = inputs[modality_name].to(device)
 
         self.encoder.eval()
-        with torch.no_grad():
-            encoder_output = self.encoder(inputs)
+        all_features = []
 
-        return encoder_output["fused"].cpu().numpy()
+        with torch.no_grad():
+            batch_size = self.batch_size
+            n_samples = len(inputs[list(inputs.keys())[0]])
+
+            for batch_start in range(0, n_samples, batch_size):
+                batch_end = min(batch_start + batch_size, n_samples)
+
+                batch_inputs = {}
+                for modality_name, tensor in inputs.items():
+                    batch_inputs[modality_name] = tensor[batch_start:batch_end]
+
+                encoder_output = self.encoder(batch_inputs)
+                all_features.append(encoder_output["fused"].cpu())
+
+        return torch.cat(all_features, dim=0).numpy()
 
     def get_model_state(self) -> Dict[str, Any]:
         return self.model_state
@@ -245,6 +296,7 @@ class AttentionFusion(Fusion):
         self.input_dim = state["input_dimensions"]
         self.max_sequence_length = state["max_sequence_length"]
         self.num_classes = state["num_classes"]
+        self.is_multilabel = state.get("is_multilabel", False)
 
         self.encoder = MultiModalAttentionFusion(
             self.input_dim,

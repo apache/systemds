@@ -146,8 +146,6 @@ class UnimodalModality(Modality):
                     else:
                         original_lengths.append(d.shape[0])
 
-        new_modality.data = self.l2_normalize_features(new_modality.data)
-
         if len(original_lengths) > 0 and min(original_lengths) < max(original_lengths):
             target_length = max(original_lengths)
             padded_embeddings = []
@@ -194,20 +192,3 @@ class UnimodalModality(Modality):
         new_modality.transform_time = time.time() - start
         new_modality.self_contained = representation.self_contained
         return new_modality
-
-    def l2_normalize_features(self, feature_list):
-        normalized_features = []
-        for feature in feature_list:
-            original_shape = feature.shape
-            flattened = feature.flatten()
-
-            norm = np.linalg.norm(flattened)
-            if norm > 0:
-                normalized_flat = flattened / norm
-                normalized_feature = normalized_flat.reshape(original_shape)
-            else:
-                normalized_feature = feature
-
-            normalized_features.append(normalized_feature)
-
-        return normalized_features

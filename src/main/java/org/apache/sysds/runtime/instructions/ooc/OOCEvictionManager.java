@@ -46,41 +46,63 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Eviction Manager for the Out-Of-Core stream cache
- * This is the base implementation for LRU, FIFO
+ * Eviction Manager for the Out-Of-Core (OOC) stream cache.
+ * <p>
+ * This manager implements a high-performance, thread-safe buffer pool designed
+ * to handle intermediate results that exceed available heap memory. It employs
+ * a <b>partitioned eviction</b> strategy to maximize disk throughput and a
+ * <b>lock-striped</b> concurrency model to minimize thread contention.
  *
- * Design choice 1: Pure JVM-memory cache
- * What: Store MatrixBlock objects in a synchronized in-memory cache
- *   (Map + Deque for LRU/FIFO). Spill to disk by serializing MatrixBlock
- *   only when evicting.
- * Pros: Simple to implement; no off-heap management; easy to debug;
- *   no serialization race since you serialize only when evicting;
- *   fast cache hits (direct object access).
- * Cons: Heap usage counted roughly via serialized-size estimate — actual
- *   JVM object overhead not accounted; risk of GC pressure and OOM if
- *   estimates are off or if many small objects cause fragmentation;
- *   eviction may be more expensive (serialize on eviction).
- * <p>
- * Design choice 2:
- * <p>
- * This manager runtime memory management by caching serialized
- * ByteBuffers and spilling them to disk when needed.
- * <p>
- * * core function: Caches ByteBuffers (off-heap/direct) and
- * spills them to disk
- * * Eviction: Evicts a ByteBuffer by writing its contents to a file
- * * Granularity: Evicts one IndexedMatrixValue block at a time
- * * Data replay: get() will always return the data either from memory or
- *   by falling back to the disk
- * * Memory: Since the datablocks are off-heap (in ByteBuffer) or disk,
- *   there won't be OOM.
+ * <h2>1. Purpose</h2>
+ * Provides a bounded cache for {@code MatrixBlock}s produced and consumed by OOC
+ * streaming operators (e.g., {@code tsmm}, {@code ba+*}). When memory pressure
+ * exceeds a configured limit, blocks are transparently evicted to disk and restored
+ * on demand, allowing execution of operations larger than RAM.
  *
- * Pros: Avoids heap OOM by keeping large data off-heap; predictable
- *   memory usage; good for very large blocks.
- * Cons: More complex synchronization; need robust off-heap allocator/free;
- *   must ensure serialization finishes before adding to queue or make evict
- *   wait on serialization; careful with native memory leaks.
+ * <h2>2. Lifecycle Management</h2>
+ * Blocks transition atomically through three states to ensure data consistency:
+ * <ul>
+ * <li><b>HOT:</b> The block is pinned in the JVM heap ({@code value != null}).</li>
+ * <li><b>EVICTING:</b> A transition state. The block is currently being written to disk.
+ * Concurrent readers must wait on the entry's condition variable.</li>
+ * <li><b>COLD:</b> The block is persisted on disk. The heap reference is nulled out
+ * to free memory, but the container (metadata) remains in the cache map.</li>
+ * </ul>
+ *
+ * <h2>3. Eviction Strategy (Partitioned I/O)</h2>
+ * To mitigate I/O thrashing caused by writing thousands of small blocks:
+ * <ul>
+ * <li>Eviction is <b>partition-based</b>: Groups of "HOT" blocks are gathered into
+ * batches (e.g., 64MB) and written sequentially to a single partition file.</li>
+ * <li>This converts random I/O into high-throughput sequential I/O.</li>
+ * <li>A separate metadata map tracks the {@code (partitionId, offset)} for every
+ * evicted block, allowing random-access reloading.</li>
+ * </ul>
+ *
+ * <h2>4. Data Integrity (Re-hydration)</h2>
+ * To prevent index corruption during serialization/deserialization cycles, this manager
+ * uses a "re-hydration" model. The {@code IndexedMatrixValue} container is <b>never</b>
+ * removed from the cache structure. Eviction only nulls the data payload. Loading
+ * restores the data into the existing container, preserving the original {@code MatrixIndexes}.
+ *
+ * <h2>5. Concurrency Model (Fine-Grained Locking)</h2>
+ * <ul>
+ * <li><b>Global Structure Lock:</b> A coarse-grained lock ({@code _cacheLock}) guards
+ * the {@code LinkedHashMap} structure against concurrent insertions, deletions,
+ * and iteration during eviction selection.</li>
+ *
+ * <li><b>Per-Block Locks:</b> Each {@code BlockEntry} owns an independent
+ * {@code ReentrantLock}. This decouples I/O operations, allowing a reader to load
+ * "Block A" from disk while the evictor writes "Block B" to disk simultaneously,
+ * maximizing throughput.</li>
+ *
+ * <li><b>Condition Queues:</b> To handle read-write races, the system uses atomic
+ * state transitions. If a reader attempts to access a block in the {@code EVICTING}
+ * state, it waits on the entry's {@code Condition} variable until the writer
+ * signals that the block is safely {@code COLD} (persisted).</li>
+ * </ul>
  */
+
 public class OOCEvictionManager {
 
 	// Configuration: OOC buffer limit as percentage of heap

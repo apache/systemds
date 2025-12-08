@@ -281,7 +281,7 @@ class ModalityType(Flag):
         md["num_channels"] = num_channels
         md["timestamp"] = create_timestamps(frequency, length)
         md["data_layout"]["representation"] = DataLayout.NESTED_LEVEL
-        md["data_layout"]["type"] = float
+        md["data_layout"]["type"] = np.float32
         md["data_layout"]["shape"] = (width, height, num_channels)
         return md
 
@@ -291,7 +291,7 @@ class ModalityType(Flag):
         md["height"] = height
         md["num_channels"] = num_channels
         md["data_layout"]["representation"] = DataLayout.SINGLE_LEVEL
-        md["data_layout"]["type"] = float
+        md["data_layout"]["type"] = np.float32
         md["data_layout"]["shape"] = (width, height, num_channels)
         return md
 

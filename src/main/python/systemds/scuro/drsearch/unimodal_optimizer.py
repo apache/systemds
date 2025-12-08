@@ -400,6 +400,7 @@ class UnimodalResults:
         entry = ResultEntry(
             train_score=scores[0].average_scores,
             val_score=scores[1].average_scores,
+            test_score=scores[2].average_scores,
             representation_time=modality.transform_time,
             task_time=task_time,
             combination=combination.name if combination else "",
@@ -461,6 +462,7 @@ class UnimodalResults:
 class ResultEntry:
     val_score: PerformanceMeasure = None
     train_score: PerformanceMeasure = None
+    test_score: PerformanceMeasure = None
     representation_time: float = 0.0
     task_time: float = 0.0
     combination: str = ""

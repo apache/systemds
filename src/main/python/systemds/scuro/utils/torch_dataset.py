@@ -62,7 +62,6 @@ class CustomDataset(torch.utils.data.Dataset):
 
         if isinstance(data, np.ndarray) and data.ndim == 3:
             # image
-            data = torch.tensor(data).permute(2, 0, 1)
             output = self.tf(data).to(self.device)
         else:
             for i, d in enumerate(data):

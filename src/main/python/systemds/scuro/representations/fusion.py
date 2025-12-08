@@ -86,7 +86,7 @@ class Fusion(Representation):
             (len(modalities[0].data), transformed_train.shape[1])
         )
         transformed_data[task.train_indices] = transformed_train
-        transformed_data[task.val_indices] = transformed_val
+        transformed_data[task.test_indices] = transformed_other
 
         return transformed_data
 

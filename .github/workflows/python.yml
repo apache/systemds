@@ -172,7 +172,8 @@ jobs:
           gensim \
           opt-einsum \
           nltk \
-          fvcore
+          fvcore \
+          scikit-optimize 
         kill $KA 
         cd src/main/python
         python -m unittest discover -s tests/scuro -p 'test_*.py' -v

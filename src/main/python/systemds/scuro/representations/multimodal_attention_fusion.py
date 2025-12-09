@@ -162,12 +162,12 @@ class AttentionFusion(Fusion):
         )
 
         for modality_name in inputs:
-            inputs[modality_name] = inputs[modality_name].to(device)
+            inputs[modality_name] = inputs[modality_name]
 
         if self.is_multilabel:
-            labels_tensor = torch.from_numpy(y).float().to(device)
+            labels_tensor = torch.from_numpy(y).float()
         else:
-            labels_tensor = torch.from_numpy(y).long().to(device)
+            labels_tensor = torch.from_numpy(y).long()
 
         dataset_inputs = []
         for i in range(len(y)):
@@ -199,9 +199,9 @@ class AttentionFusion(Fusion):
                 for modality_name in batch_inputs:
                     batch_inputs[modality_name] = torch.stack(
                         batch_inputs[modality_name]
-                    )
+                    ).to(device)
 
-                batch_labels = torch.stack(batch_labels)
+                batch_labels = torch.stack(batch_labels).to(device)
 
                 optimizer.zero_grad()
 
@@ -250,7 +250,9 @@ class AttentionFusion(Fusion):
 
                 batch_inputs = {}
                 for modality_name, tensor in inputs.items():
-                    batch_inputs[modality_name] = tensor[batch_start:batch_end]
+                    batch_inputs[modality_name] = tensor[batch_start:batch_end].to(
+                        device
+                    )
 
                 encoder_output = self.encoder(batch_inputs)
                 all_features.append(encoder_output["fused"].cpu())
@@ -266,9 +268,6 @@ class AttentionFusion(Fusion):
         device = get_device()
         self.encoder.to(device)
 
-        for modality_name in inputs:
-            inputs[modality_name] = inputs[modality_name].to(device)
-
         self.encoder.eval()
         all_features = []
 
@@ -281,7 +280,9 @@ class AttentionFusion(Fusion):
 
                 batch_inputs = {}
                 for modality_name, tensor in inputs.items():
-                    batch_inputs[modality_name] = tensor[batch_start:batch_end]
+                    batch_inputs[modality_name] = tensor[batch_start:batch_end].to(
+                        device
+                    )
 
                 encoder_output = self.encoder(batch_inputs)
                 all_features.append(encoder_output["fused"].cpu())

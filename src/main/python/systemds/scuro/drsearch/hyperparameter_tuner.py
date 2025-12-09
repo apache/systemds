@@ -19,8 +19,9 @@
 #
 # -------------------------------------------------------------
 from typing import Dict, List, Tuple, Any, Optional
-import numpy as np
-from sklearn.model_selection import ParameterGrid
+from skopt import gp_minimize
+from skopt.space import Real, Integer, Categorical
+from skopt.utils import use_named_args
 import json
 import logging
 from dataclasses import dataclass
@@ -28,7 +29,6 @@ import time
 import copy
 
 from systemds.scuro.modality.modality import Modality
-from systemds.scuro.drsearch.task import Task
 
 
 @dataclass
@@ -163,17 +163,63 @@ class HyperparameterTuner:
         start_time = time.time()
         rep_name = "_".join([rep.__name__ for rep in reps])
 
-        param_grid = list(ParameterGrid(hyperparams))
-        if max_evals and len(param_grid) > max_evals:
-            np.random.shuffle(param_grid)
-            param_grid = param_grid[:max_evals]
+        search_space = []
+        param_names = []
+        for param_name, param_values in hyperparams.items():
+            param_names.append(param_name)
+            if isinstance(param_values, list):
+                if all(isinstance(v, (int, float)) for v in param_values):
+                    if all(isinstance(v, int) for v in param_values):
+                        search_space.append(
+                            Integer(
+                                min(param_values), max(param_values), name=param_name
+                            )
+                        )
+                    else:
+                        search_space.append(
+                            Real(min(param_values), max(param_values), name=param_name)
+                        )
+                else:
+                    search_space.append(Categorical(param_values, name=param_name))
+            elif isinstance(param_values, tuple) and len(param_values) == 2:
+                if isinstance(param_values[0], int) and isinstance(
+                    param_values[1], int
+                ):
+                    search_space.append(
+                        Integer(param_values[0], param_values[1], name=param_name)
+                    )
+                else:
+                    search_space.append(
+                        Real(param_values[0], param_values[1], name=param_name)
+                    )
+            else:
+                search_space.append(Categorical([param_values], name=param_name))
+
+        n_calls = max_evals if max_evals else 50
 
         all_results = []
-        for params in param_grid:
+
+        @use_named_args(search_space)
+        def objective(**params):
             result = self.evaluate_dag_config(
                 dag, params, node_order, modality_ids, task
             )
             all_results.append(result)
+
+            score = result[1].average_scores[self.scoring_metric]
+            if self.maximize_metric:
+                return -score
+            else:
+                return score
+
+        result = gp_minimize(
+            objective,
+            search_space,
+            n_calls=n_calls,
+            random_state=42,
+            verbose=self.debug,
+            n_initial_points=min(10, n_calls // 2),
+        )
 
         if self.maximize_metric:
             best_params, best_score = max(

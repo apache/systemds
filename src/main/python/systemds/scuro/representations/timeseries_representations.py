@@ -184,7 +184,7 @@ class FrequencyMagnitude(TimeSeriesRepresentation):
 @register_representation([ModalityType.TIMESERIES])
 class SpectralCentroid(TimeSeriesRepresentation):
     def __init__(self, fs=1.0):
-        super().__init__("SpectralCentroid", parameters={"fs": [1.0]})
+        super().__init__("SpectralCentroid", parameters={"fs": [0.5, 1.0, 2.0]})
         self.fs = fs
 
     def compute_feature(self, signal):
@@ -199,7 +199,8 @@ class SpectralCentroid(TimeSeriesRepresentation):
 class BandpowerFFT(TimeSeriesRepresentation):
     def __init__(self, fs=1.0, f1=0.0, f2=0.5):
         super().__init__(
-            "BandpowerFFT", parameters={"fs": [1.0], "f1": [0.0], "f2": [0.5]}
+            "BandpowerFFT",
+            parameters={"fs": [0.5, 1.0], "f1": [0.0, 1.0], "f2": [0.5, 1.0]},
         )
         self.fs = fs
         self.f1 = f1

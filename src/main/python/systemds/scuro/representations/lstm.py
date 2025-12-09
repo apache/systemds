@@ -188,11 +188,11 @@ class LSTM(Fusion):
             criterion = nn.CrossEntropyLoss()
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
-        X_tensor = torch.FloatTensor(X).to(device)
+        X_tensor = torch.FloatTensor(X)
         if self.is_multilabel:
-            y_tensor = torch.FloatTensor(y).to(device)
+            y_tensor = torch.FloatTensor(y)
         else:
-            y_tensor = torch.LongTensor(y).to(device)
+            y_tensor = torch.LongTensor(y)
 
         dataset = TensorDataset(X_tensor, y_tensor)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
@@ -201,6 +201,8 @@ class LSTM(Fusion):
         for epoch in range(self.epochs):
             total_loss = 0
             for batch_X, batch_y in dataloader:
+                batch_X = batch_X.to(device)
+                batch_y = batch_y.to(device)
                 optimizer.zero_grad()
 
                 features, predictions = self.model(batch_X)
@@ -230,6 +232,7 @@ class LSTM(Fusion):
                 TensorDataset(X_tensor), batch_size=self.batch_size, shuffle=False
             )
             for (batch_X,) in inference_dataloader:
+                batch_X = batch_X.to(device)
                 features, _ = self.model(batch_X)
                 all_features.append(features.cpu())
 
@@ -244,7 +247,7 @@ class LSTM(Fusion):
         device = get_device()
         self.model.to(device)
 
-        X_tensor = torch.FloatTensor(X).to(device)
+        X_tensor = torch.FloatTensor(X)
         all_features = []
         self.model.eval()
         with torch.no_grad():
@@ -252,6 +255,7 @@ class LSTM(Fusion):
                 TensorDataset(X_tensor), batch_size=self.batch_size, shuffle=False
             )
             for (batch_X,) in inference_dataloader:
+                batch_X = batch_X.to(device)
                 features, _ = self.model(batch_X)
                 all_features.append(features.cpu())
 

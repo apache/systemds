@@ -91,8 +91,8 @@ class Fusion(Representation):
         transformed_data = np.zeros(
             (len(modalities[0].data), transformed_train.shape[1])
         )
-        transformed_data[task.train_indices] = transformed_train
-        transformed_data[task.test_indices] = transformed_other
+        transformed_data[fusion_train_indices] = transformed_train
+        transformed_data[all_other_indices] = transformed_other
 
         return transformed_data
 

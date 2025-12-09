@@ -32,7 +32,7 @@ from systemds.scuro.drsearch.operator_registry import register_representation
 @register_representation(ModalityType.TEXT)
 class TfIdf(UnimodalRepresentation):
     def __init__(self, min_df=2, output_file=None):
-        parameters = {"min_df": [min_df]}
+        parameters = {"min_df": [min_df, 4, 8]}
         super().__init__("TF-IDF", ModalityType.EMBEDDING, parameters)
         self.min_df = int(min_df)
         self.output_file = output_file

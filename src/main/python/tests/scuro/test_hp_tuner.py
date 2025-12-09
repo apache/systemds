@@ -239,10 +239,11 @@ class TestHPTuner(unittest.TestCase):
                     fusion_results,
                     k=1,
                     optimize_unimodal=tune_unimodal_representations,
+                    max_eval_per_rep=20,
                 )
 
             else:
-                hp.tune_unimodal_representations()
+                hp.tune_unimodal_representations(max_eval_per_rep=10)
 
             assert len(hp.results) == len(self.tasks)
             assert len(hp.results[self.tasks[0].model.name]) == 2

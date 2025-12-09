@@ -156,26 +156,28 @@ class UnimodalModality(Modality):
                 if current_length < target_length:
                     padding_needed = target_length - current_length
                     if pad_dim_one:
-                        padding = np.zeros((embeddings.shape[0], padding_needed))
-                        padded_embeddings.append(
-                            np.concatenate((embeddings, padding), axis=1)
+                        padded = np.pad(
+                            embeddings,
+                            ((0, 0), (0, padding_needed)),
+                            mode="constant",
+                            constant_values=0,
                         )
+                        padded_embeddings.append(padded)
                     else:
                         if len(embeddings.shape) == 1:
-                            padded = np.zeros(
-                                embeddings.shape[0] + padding_needed,
-                                dtype=embeddings.dtype,
+                            padded = np.pad(
+                                embeddings,
+                                (0, padding_needed),
+                                mode="constant",
+                                constant_values=0,
                             )
-                            padded[: embeddings.shape[0]] = embeddings
                         else:
-                            padded = np.zeros(
-                                (
-                                    embeddings.shape[0] + padding_needed,
-                                    embeddings.shape[1],
-                                ),
-                                dtype=embeddings.dtype,
+                            padded = np.pad(
+                                embeddings,
+                                ((0, padding_needed), (0, 0)),
+                                mode="constant",
+                                constant_values=0,
                             )
-                            padded[: embeddings.shape[0], :] = embeddings
                         padded_embeddings.append(padded)
                 else:
                     padded_embeddings.append(embeddings)

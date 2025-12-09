@@ -171,7 +171,7 @@ class WindowAggregation(Window):
 class StaticWindow(Window):
     def __init__(self, aggregation_function="mean", num_windows=100):
         super().__init__("StaticWindow", aggregation_function)
-        self.parameters["num_windows"] = [num_windows]
+        self.parameters["num_windows"] = [10, num_windows]
         self.num_windows = int(num_windows)
 
     def execute(self, modality):
@@ -202,7 +202,7 @@ class StaticWindow(Window):
 class DynamicWindow(Window):
     def __init__(self, aggregation_function="mean", num_windows=100):
         super().__init__("DynamicWindow", aggregation_function)
-        self.parameters["num_windows"] = [num_windows]
+        self.parameters["num_windows"] = [10, num_windows]
         self.num_windows = int(num_windows)
 
     def execute(self, modality):

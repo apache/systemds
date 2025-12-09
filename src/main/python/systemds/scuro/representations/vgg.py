@@ -53,14 +53,14 @@ class VGG19(UnimodalRepresentation):
         self.model.fc = Identity()
 
     def _get_parameters(self):
-        parameters = {"layer_name": []}
-
-        parameters["layer_name"] = [
-            "features.35",
-            "classifier.0",
-            "classifier.3",
-            "classifier.6",
-        ]
+        parameters = {
+            "layer_name": [
+                "features.35",
+                "classifier.0",
+                "classifier.3",
+                "classifier.6",
+            ]
+        }
 
         return parameters
 

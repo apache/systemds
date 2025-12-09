@@ -120,7 +120,7 @@ class VGG19(UnimodalRepresentation):
                     .cpu()
                     .float()
                     .numpy()
-                    .astype(modality.data_type)
+                    .astype(np.float32)
                 )
 
             embeddings[video_id] = np.array(embeddings[video_id])

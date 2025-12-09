@@ -45,11 +45,6 @@ class VideoLoader(BaseLoader):
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
-        # if not self.load_data_from_file:
-        #     self.metadata[file] = self.modality_type.create_metadata(
-        #         30, 10, 100, 100, 3
-        #     )
-        # else:
         cap = cv2.VideoCapture(file)
 
         if not cap.isOpened():
@@ -71,13 +66,7 @@ class VideoLoader(BaseLoader):
             self.fps, length, width, height, num_channels
         )
 
-        num_frames = (length + frame_interval - 1) // frame_interval
-
-        stacked_frames = np.zeros(
-            (num_frames, height, width, num_channels), dtype=self._data_type
-        )
-
-        frame_idx = 0
+        frames = []
         idx = 0
         while cap.isOpened():
             ret, frame = cap.read()
@@ -87,11 +76,7 @@ class VideoLoader(BaseLoader):
             if idx % frame_interval == 0:
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 frame = frame.astype(self._data_type) / 255.0
-                stacked_frames[frame_idx] = frame
-                frame_idx += 1
+                frames.append(frame)
             idx += 1
 
-        if frame_idx < num_frames:
-            stacked_frames = stacked_frames[:frame_idx]
-
-        self.data.append(stacked_frames)
+        self.data.append(np.stack(frames))

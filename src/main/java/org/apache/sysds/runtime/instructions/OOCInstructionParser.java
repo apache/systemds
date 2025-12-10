@@ -38,6 +38,8 @@ import org.apache.sysds.runtime.instructions.ooc.UnaryOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.MatrixVectorBinaryOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.ReorgOOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.TeeOOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.OOCInstruction;
+import org.apache.sysds.runtime.instructions.ooc.ReblockOOCInstruction;
 
 public class OOCInstructionParser extends InstructionParser {
 	protected static final Log LOG = LogFactory.getLog(OOCInstructionParser.class.getName());
@@ -78,7 +80,7 @@ public class OOCInstructionParser extends InstructionParser {
 			case Tee:
 				return TeeOOCInstruction.parseInstruction(str);
 			case CentralMoment:
-				return  CentralMomentOOCInstruction.parseInstruction(str);
+				return CentralMomentOOCInstruction.parseInstruction(str);
 			case Ctable:
 				return CtableOOCInstruction.parseInstruction(str);
 			case ParameterizedBuiltin:

@@ -151,7 +151,7 @@ jobs:
       run: mvn jacoco:report
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v5.5.1
+      uses: codecov/codecov-action@v5.5.2
       if: github.repository_owner == 'apache'
       with:
         fail_ci_if_error: false

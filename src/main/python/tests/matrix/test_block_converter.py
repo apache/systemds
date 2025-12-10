@@ -26,6 +26,7 @@ import numpy as np
 from py4j.java_gateway import JVMView
 from systemds.context import SystemDSContext
 from systemds.utils.converters import matrix_block_to_numpy, numpy_to_matrix_block
+import scipy.sparse as sp
 
 
 class Test_MatrixBlockConverter(unittest.TestCase):
@@ -35,7 +36,9 @@ class Test_MatrixBlockConverter(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.sds = SystemDSContext(capture_stdout=True, logging_level=50)
+        cls.sds = SystemDSContext(
+            capture_stdout=True, logging_level=50, data_transfer_mode=0
+        )
 
     @classmethod
     def tearDownClass(cls):
@@ -70,10 +73,36 @@ class Test_MatrixBlockConverter(unittest.TestCase):
         array = np.array([rng.standard_normal(n) for x in range(k)])
         self.convert_back_and_forth(array)
 
+    def test_random_sparse_csr_nxn(self):
+        n = 10
+        array = sp.rand(n, n, density=0.1, format="csr")
+        self.convert_back_and_forth(array)
+
+    def test_sparse_csr_rectangular(self):
+        """Test CSR conversion with rectangular matrices"""
+        array = sp.rand(5, 10, density=0.2, format="csr")
+        self.convert_back_and_forth(array)
+
+    def test_sparse_csr_known_values(self):
+        """Test CSR conversion with a known sparse matrix"""
+        # Create a known CSR matrix
+        data = np.array([1.0, 2.0, 3.0, 4.0])
+        row = np.array([0, 0, 1, 2])
+        col = np.array([0, 2, 1, 2])
+        array = sp.csr_matrix((data, (row, col)), shape=(3, 3))
+        self.convert_back_and_forth(array)
+
+    def test_random_sparse_coo_nxn(self):
+        n = 10
+        array = sp.rand(n, n, density=0.1, format="coo")
+        self.convert_back_and_forth(array)
+
     def convert_back_and_forth(self, array):
         matrix_block = numpy_to_matrix_block(self.sds, array)
         # use the ability to call functions on matrix_block.
         returned = matrix_block_to_numpy(self.sds, matrix_block)
+        if isinstance(array, sp.spmatrix):
+            array = array.toarray()
         self.assertTrue(np.allclose(array, returned))
 
 

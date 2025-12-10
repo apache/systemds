@@ -29,6 +29,7 @@ import socket
 import sys
 import struct
 import traceback
+import warnings
 from contextlib import contextmanager
 from glob import glob
 from queue import Queue
@@ -103,9 +104,18 @@ class SystemDSContext(object):
             The logging levels are as follows: 10 DEBUG, 20 INFO, 30 WARNING, 40 ERROR, 50 CRITICAL.
         :param py4j_logging_level: The logging level for Py4j to use, since all communication to the JVM is done through this,
             it can be verbose if not set high.
-        :param data_transfer_mode: default 0,
+        :param data_transfer_mode: default 0, 0 for py4j, 1 for using pipes (on unix systems)
+        :param multi_pipe_enabled: default False, if True, use multiple pipes for data transfer
+            only used if data_transfer_mode is 1.
+            .. experimental:: This parameter is experimental and may be removed in a future version.
         """
 
+        if multi_pipe_enabled:
+            warnings.warn(
+                "The 'multi_pipe_enabled' parameter is experimental and may be removed in a future version.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         self.__setup_logging(logging_level, py4j_logging_level)
         self.__start(port, capture_stdout)
         self.capture_stats(capture_statistics)

@@ -118,11 +118,13 @@ public class ReorgCPInstruction extends UnaryCPInstruction {
 			return new ReorgCPInstruction(new ReorgOperator(RevIndex.getRevIndexFnObject(), k), in, out, opcode, str);
 		}
 		else if (opcode.equalsIgnoreCase(Opcodes.ROLL.toString())) {
-			InstructionUtils.checkNumFields(str, 3);
+			InstructionUtils.checkNumFields(str, 3, 4);
 			in.split(parts[1]);
 			out.split(parts[3]);
 			CPOperand shift = new CPOperand(parts[2]);
-			return new ReorgCPInstruction(new ReorgOperator(new RollIndex(0)), in, out, shift, opcode, str);
+			int k = (parts.length > 4) ? Integer.parseInt(parts[4]) : 1;
+
+			return new ReorgCPInstruction(new ReorgOperator(new RollIndex(0), k), in, out, shift, opcode, str);
 		}
 		else if ( opcode.equalsIgnoreCase(Opcodes.DIAG.toString()) ) {
 			parseUnaryInstruction(str, in, out); //max 2 operands

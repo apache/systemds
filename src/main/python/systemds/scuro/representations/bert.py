@@ -63,6 +63,8 @@ class Bert(UnimodalRepresentation):
 
         self.output_file = output_file
         self.max_seq_length = max_seq_length
+        self.needs_context = True
+        self.initial_context_length = 350
 
     def transform(self, modality):
         transformed_modality = TransformedModality(modality, self)
@@ -94,7 +96,7 @@ class Bert(UnimodalRepresentation):
                 padding="max_length",
                 return_attention_mask=True,
                 truncation=True,
-                max_length=512,  # TODO: make this dynamic
+                max_length=512,  # TODO: make this dynamic with parameter to tune
             )
 
             inputs.to(get_device())

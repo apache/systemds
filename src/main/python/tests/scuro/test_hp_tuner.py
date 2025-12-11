@@ -22,17 +22,12 @@
 import unittest
 
 import numpy as np
-from sklearn import svm
-from sklearn.metrics import classification_report
-from sklearn.model_selection import train_test_split
 
 from systemds.scuro.drsearch.multimodal_optimizer import MultimodalOptimizer
 from systemds.scuro.representations.average import Average
 from systemds.scuro.representations.concatenation import Concatenation
 from systemds.scuro.representations.lstm import LSTM
 from systemds.scuro.drsearch.operator_registry import Registry
-from systemds.scuro.models.model import Model
-from systemds.scuro.drsearch.task import Task
 from systemds.scuro.drsearch.unimodal_optimizer import UnimodalOptimizer
 
 from systemds.scuro.representations.spectrogram import Spectrogram
@@ -45,69 +40,14 @@ from systemds.scuro.representations.word2vec import W2V
 from systemds.scuro.representations.bow import BoW
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.resnet import ResNet
-from tests.scuro.data_generator import ModalityRandomDataGenerator, TestDataLoader
+from tests.scuro.data_generator import (
+    ModalityRandomDataGenerator,
+    TestDataLoader,
+    TestTask,
+)
 
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.hyperparameter_tuner import HyperparameterTuner
-
-
-class TestSVM(Model):
-    def __init__(self):
-        super().__init__("TestSVM")
-
-    def fit(self, X, y, X_test, y_test):
-        if X.ndim > 2:
-            X = X.reshape(X.shape[0], -1)
-        self.clf = svm.SVC(C=1, gamma="scale", kernel="rbf", verbose=False)
-        self.clf = self.clf.fit(X, np.array(y))
-        y_pred = self.clf.predict(X)
-
-        return {
-            "accuracy": classification_report(
-                y, y_pred, output_dict=True, digits=3, zero_division=1
-            )["accuracy"]
-        }, 0
-
-    def test(self, test_X: np.ndarray, test_y: np.ndarray):
-        if test_X.ndim > 2:
-            test_X = test_X.reshape(test_X.shape[0], -1)
-        y_pred = self.clf.predict(np.array(test_X))  # noqa]
-
-        return {
-            "accuracy": classification_report(
-                np.array(test_y), y_pred, output_dict=True, digits=3, zero_division=1
-            )["accuracy"]
-        }, 0
-
-
-class TestSVM2(Model):
-    def __init__(self):
-        super().__init__("TestSVM2")
-
-    def fit(self, X, y, X_test, y_test):
-        if X.ndim > 2:
-            X = X.reshape(X.shape[0], -1)
-        self.clf = svm.SVC(C=1, gamma="scale", kernel="rbf", verbose=False)
-        self.clf = self.clf.fit(X, np.array(y))
-        y_pred = self.clf.predict(X)
-
-        return {
-            "accuracy": classification_report(
-                y, y_pred, output_dict=True, digits=3, zero_division=1
-            )["accuracy"]
-        }, 0
-
-    def test(self, test_X: np.ndarray, test_y: np.ndarray):
-        if test_X.ndim > 2:
-            test_X = test_X.reshape(test_X.shape[0], -1)
-        y_pred = self.clf.predict(np.array(test_X))  # noqa
-
-        return {
-            "accuracy": classification_report(
-                np.array(test_y), y_pred, output_dict=True, digits=3, zero_division=1
-            )["accuracy"]
-        }, 0
-
 
 from unittest.mock import patch
 
@@ -120,36 +60,10 @@ class TestHPTuner(unittest.TestCase):
     def setUpClass(cls):
         cls.num_instances = 10
         cls.mods = [ModalityType.VIDEO, ModalityType.AUDIO, ModalityType.TEXT]
-        cls.labels = ModalityRandomDataGenerator().create_balanced_labels(
-            num_instances=cls.num_instances
-        )
         cls.indices = np.array(range(cls.num_instances))
-
-        split = train_test_split(
-            cls.indices,
-            cls.labels,
-            test_size=0.2,
-            random_state=42,
-        )
-        cls.train_indizes, cls.val_indizes = [int(i) for i in split[0]], [
-            int(i) for i in split[1]
-        ]
-
         cls.tasks = [
-            Task(
-                "UnimodalRepresentationTask1",
-                TestSVM(),
-                cls.labels,
-                cls.train_indizes,
-                cls.val_indizes,
-            ),
-            Task(
-                "UnimodalRepresentationTask2",
-                TestSVM2(),
-                cls.labels,
-                cls.train_indizes,
-                cls.val_indizes,
-            ),
+            TestTask("UnimodalRepresentationTask1", "TestSVM1", cls.num_instances),
+            TestTask("UnimodalRepresentationTask2", "TestSVM2", cls.num_instances),
         ]
 
     def test_hp_tuner_for_audio_modality(self):

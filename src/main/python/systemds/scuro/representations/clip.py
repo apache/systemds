@@ -119,6 +119,8 @@ class CLIPText(UnimodalRepresentation):
         )
         self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
         self.output_file = output_file
+        self.needs_context = True
+        self.initial_context_length = 55
 
     def transform(self, modality):
         transformed_modality = TransformedModality(

@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup;
 import java.io.DataInput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Comparator;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -34,6 +35,10 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
+import org.apache.sysds.runtime.compress.utils.ACount;
+import org.apache.sysds.runtime.compress.utils.DblArray;
+import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
+import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -267,7 +272,8 @@ public class ColGroupDeltaDDC extends ColGroupDDC {
 			return scalarOperationShift(op);
 		}
 		else {
-			throw new NotImplementedException("Scalar op " + op.fn.getClass().getSimpleName() + " not supported for DeltaDDC");
+			AColGroup ddc = convertToDDC();
+			return ddc.scalarOperation(op);
 		}
 	}
 
@@ -327,7 +333,8 @@ public class ColGroupDeltaDDC extends ColGroupDDC {
 
 	@Override
 	public AColGroup unaryOperation(UnaryOperator op) {
-		throw new NotImplementedException("Unary operation not supported for DeltaDDC");
+		AColGroup ddc = convertToDDC();
+		return ddc.unaryOperation(op);
 	}
 
 	@Override
@@ -488,5 +495,72 @@ public class ColGroupDeltaDDC extends ColGroupDDC {
 		
 		slicedData.set(0, newId);
 		return ColGroupDeltaDDC.create(_colIndexes, newDict, slicedData, null);
+	}
+
+	private AColGroup convertToDDC() {
+		final int nCol = _colIndexes.size();
+		final int nRow = _data.size();
+		double[] values = new double[nRow * nCol];
+
+		double[] prevRow = new double[nCol];
+		for(int i = 0; i < nRow; i++) {
+			final int dictIdx = _data.getIndex(i);
+			final double[] dictVals = _dict.getValues();
+			final int rowIndex = dictIdx * nCol;
+
+			for(int j = 0; j < nCol; j++) {
+				if(i == 0) {
+					prevRow[j] = dictVals[rowIndex + j];
+				}
+				else {
+					prevRow[j] = prevRow[j] + dictVals[rowIndex + j];
+				}
+				values[i * nCol + j] = prevRow[j];
+			}
+		}
+
+		return compress(values, _colIndexes);
+	}
+
+	private static AColGroup compress(double[] values, IColIndex colIndexes) {
+		int nRow = values.length / colIndexes.size();
+		int nCol = colIndexes.size();
+
+		if(nCol == 1) {
+			DoubleCountHashMap map = new DoubleCountHashMap(16);
+			AMapToData mapData = MapToFactory.create(nRow, 256);
+			for(int i = 0; i < nRow; i++) {
+				mapData.set(i, map.increment(values[i]));
+			}
+			if(map.size() == 1)
+				return ColGroupConst.create(colIndexes, Dictionary.create(new double[] {map.getMostFrequent()}));
+
+			IDictionary dict = Dictionary.create(map.getDictionary());
+			return ColGroupDDC.create(colIndexes, dict, mapData.resize(map.size()), null);
+		}
+		else {
+			DblArrayCountHashMap map = new DblArrayCountHashMap(16);
+			AMapToData mapData = MapToFactory.create(nRow, 256);
+			DblArray dblArray = new DblArray(new double[nCol]);
+			for(int i = 0; i < nRow; i++) {
+				System.arraycopy(values, i * nCol, dblArray.getData(), 0, nCol);
+				mapData.set(i, map.increment(dblArray));
+			}
+			if(map.size() == 1) {
+				ACount<DblArray>[] counts = map.extractValues();
+				return ColGroupConst.create(colIndexes, Dictionary.create(counts[0].key().getData()));
+			}
+
+			ACount<DblArray>[] counts = map.extractValues();
+			Arrays.sort(counts, Comparator.comparingInt(x -> x.id));
+			
+			double[] dictValues = new double[counts.length * nCol];
+			for(int i = 0; i < counts.length; i++) {
+				System.arraycopy(counts[i].key().getData(), 0, dictValues, i * nCol, nCol);
+			}
+
+			IDictionary dict = Dictionary.create(dictValues);
+			return ColGroupDDC.create(colIndexes, dict, mapData.resize(map.size()), null);
+		}
 	}
 }

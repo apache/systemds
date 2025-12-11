@@ -46,7 +46,13 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.estim.ComEstExact;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Equals;
+import org.apache.sysds.runtime.functionobjects.GreaterThan;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.junit.Test;
 
@@ -269,6 +275,104 @@ public class ColGroupDeltaDDCTest {
 				assertArrayEquals(new double[] {originalDecompressed.get(i, j)}, new double[] {deserializedDecompressed.get(i, j)}, 0.01);
 			}
 		}
+	}
+
+	@Test
+	public void testScalarEquals() {
+		double[][] data = {{0}, {1}, {2}, {3}, {0}};
+		AColGroup cg = compressForTest(data);
+		assertTrue(cg instanceof ColGroupDeltaDDC);
+		
+		ScalarOperator op = new RightScalarOperator(Equals.getEqualsFnObject(), 0.0);
+		AColGroup res = cg.scalarOperation(op);
+		
+		MatrixBlock ret = new MatrixBlock(5, 1, false);
+		ret.allocateDenseBlock();
+		res.decompressToDenseBlock(ret.getDenseBlock(), 0, 5);
+		
+		assertEquals(1.0, ret.get(0, 0), 0.0);
+		assertEquals(0.0, ret.get(1, 0), 0.0);
+		assertEquals(0.0, ret.get(2, 0), 0.0);
+		assertEquals(0.0, ret.get(3, 0), 0.0);
+		assertEquals(1.0, ret.get(4, 0), 0.0);
+	}
+	
+	@Test
+	public void testScalarGreaterThan() {
+		double[][] data = {{0}, {1}, {2}, {3}, {0}};
+		AColGroup cg = compressForTest(data);
+		assertTrue(cg instanceof ColGroupDeltaDDC);
+		
+		ScalarOperator op = new RightScalarOperator(GreaterThan.getGreaterThanFnObject(), 1.5);
+		AColGroup res = cg.scalarOperation(op);
+		
+		MatrixBlock ret = new MatrixBlock(5, 1, false);
+		ret.allocateDenseBlock();
+		res.decompressToDenseBlock(ret.getDenseBlock(), 0, 5);
+		
+		assertEquals(0.0, ret.get(0, 0), 0.0);
+		assertEquals(0.0, ret.get(1, 0), 0.0);
+		assertEquals(1.0, ret.get(2, 0), 0.0);
+		assertEquals(1.0, ret.get(3, 0), 0.0);
+		assertEquals(0.0, ret.get(4, 0), 0.0);
+	}
+
+	@Test
+	public void testUnaryOperationSqrt() {
+		double[][] data = {{1}, {4}, {9}, {16}, {25}};
+		AColGroup cg = compressForTest(data);
+		assertTrue(cg instanceof ColGroupDeltaDDC);
+		
+		UnaryOperator op = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinCode.SQRT));
+		AColGroup res = cg.unaryOperation(op);
+		
+		MatrixBlock ret = new MatrixBlock(5, 1, false);
+		ret.allocateDenseBlock();
+		res.decompressToDenseBlock(ret.getDenseBlock(), 0, 5);
+		
+		assertEquals(1.0, ret.get(0, 0), 0.01);
+		assertEquals(2.0, ret.get(1, 0), 0.01);
+		assertEquals(3.0, ret.get(2, 0), 0.01);
+		assertEquals(4.0, ret.get(3, 0), 0.01);
+		assertEquals(5.0, ret.get(4, 0), 0.01);
+	}
+
+	@Test
+	public void testScalarEqualsMultiColumn() {
+		double[][] data = {{0, 1}, {1, 2}, {2, 3}, {3, 4}, {0, 1}};
+		AColGroup cg = compressForTest(data);
+		assertTrue(cg instanceof ColGroupDeltaDDC);
+		
+		ScalarOperator op = new RightScalarOperator(Equals.getEqualsFnObject(), 0.0);
+		AColGroup res = cg.scalarOperation(op);
+		
+		MatrixBlock ret = new MatrixBlock(5, 2, false);
+		ret.allocateDenseBlock();
+		res.decompressToDenseBlock(ret.getDenseBlock(), 0, 5);
+		
+		assertEquals(1.0, ret.get(0, 0), 0.0);
+		assertEquals(0.0, ret.get(0, 1), 0.0);
+		assertEquals(0.0, ret.get(1, 0), 0.0);
+		assertEquals(0.0, ret.get(1, 1), 0.0);
+		assertEquals(0.0, ret.get(2, 0), 0.0);
+		assertEquals(0.0, ret.get(2, 1), 0.0);
+		assertEquals(0.0, ret.get(3, 0), 0.0);
+		assertEquals(0.0, ret.get(3, 1), 0.0);
+		assertEquals(1.0, ret.get(4, 0), 0.0);
+		assertEquals(0.0, ret.get(4, 1), 0.0);
+	}
+
+	private AColGroup compressForTest(double[][] data) {
+		MatrixBlock mb = DataConverter.convertToMatrixBlock(data);
+		IColIndex colIndexes = ColIndexFactory.create(data[0].length);
+		CompressionSettings cs = new CompressionSettingsBuilder()
+			.setValidCompressions(EnumSet.of(AColGroup.CompressionType.DeltaDDC))
+			.setPreferDeltaEncoding(true)
+			.create();
+		
+		final CompressedSizeInfoColGroup cgi = new ComEstExact(mb, cs).getDeltaColGroupInfo(colIndexes);
+		CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
+		return ColGroupFactory.compressColGroups(mb, csi, cs, 1).get(0);
 	}
 
 }

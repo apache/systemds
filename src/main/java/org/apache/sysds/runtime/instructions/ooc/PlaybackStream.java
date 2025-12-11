@@ -23,13 +23,22 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+
 public class PlaybackStream implements OOCStream<IndexedMatrixValue>, OOCStreamable<IndexedMatrixValue> {
 	private final CachingStream _streamCache;
-	private int _streamIdx;
+	private final AtomicInteger _streamIdx;
+	private final AtomicInteger _taskCtr;
+	private final AtomicBoolean _subscriberSet;
 
 	public PlaybackStream(CachingStream streamCache) {
 		this._streamCache = streamCache;
-		this._streamIdx = 0;
+		this._streamIdx = new AtomicInteger(0);
+		this._taskCtr = new AtomicInteger(1);
+		this._subscriberSet = new AtomicBoolean(false);
+		streamCache.incrSubscriberCount(1);
 	}
 
 	@Override
@@ -44,15 +53,29 @@ public class PlaybackStream implements OOCStream<IndexedMatrixValue>, OOCStreama
 
 	@Override
 	public LocalTaskQueue<IndexedMatrixValue> toLocalTaskQueue() {
-		final SubscribableTaskQueue<IndexedMatrixValue> q = new SubscribableTaskQueue<>();
-		setSubscriber(() -> q.enqueue(dequeue()));
+		final LocalTaskQueue<IndexedMatrixValue> q = new LocalTaskQueue<>();
+		setSubscriber(val -> {
+			if (val.get() == null) {
+				q.closeInput();
+				return;
+			}
+			try {
+				q.enqueueTask(val.get());
+			}
+			catch(InterruptedException e) {
+				throw new RuntimeException(e);
+			}
+		});
 		return q;
 	}
 
 	@Override
-	public synchronized IndexedMatrixValue dequeue() {
+	public IndexedMatrixValue dequeue() {
+		if (_subscriberSet.get())
+			throw new IllegalStateException("Cannot dequeue from a playback stream if a subscriber has been set");
+
 		try {
-			return _streamCache.get(_streamIdx++);
+			return _streamCache.get(_streamIdx.getAndIncrement());
 		} catch (InterruptedException e) {
 			throw new DMLRuntimeException(e);
 		}
@@ -74,8 +97,35 @@ public class PlaybackStream implements OOCStream<IndexedMatrixValue>, OOCStreama
 	}
 
 	@Override
-	public void setSubscriber(Runnable subscriber) {
-		_streamCache.setSubscriber(subscriber);
+	public void setSubscriber(Consumer<QueueCallback<IndexedMatrixValue>> subscriber) {
+		if (!_subscriberSet.compareAndSet(false, true))
+			throw new IllegalArgumentException("Subscriber cannot be set multiple times");
+
+		/**
+		 * To guarantee that NO_MORE_TASKS is invoked after all subscriber calls
+		 * finished, we keep track of running tasks using a task counter.
+		 */
+		_streamCache.setSubscriber(() -> {
+			try {
+				_taskCtr.incrementAndGet();
+
+				IndexedMatrixValue val;
+
+				try {
+					val = _streamCache.get(_streamIdx.getAndIncrement());
+				} catch (InterruptedException e) {
+					throw new DMLRuntimeException(e);
+				}
+
+				if (val != null)
+					subscriber.accept(new QueueCallback<>(val, null));
+
+				if (_taskCtr.addAndGet(val == null ? -2 : -1) == 0)
+					subscriber.accept(new QueueCallback<>(null, null));
+			} catch (DMLRuntimeException e) {
+				subscriber.accept(new QueueCallback<>(null, e));
+			}
+		}, false);
 	}
 
 	@Override

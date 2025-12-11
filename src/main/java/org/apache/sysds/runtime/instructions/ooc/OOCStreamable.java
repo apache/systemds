@@ -25,6 +25,4 @@ public interface OOCStreamable<T> {
 	OOCStream<T> getWriteStream();
 
 	boolean isProcessed();
-
-	void setSubscriber(Runnable subscriber);
 }

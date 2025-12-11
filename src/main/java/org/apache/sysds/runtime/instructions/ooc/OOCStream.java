@@ -22,6 +22,8 @@ package org.apache.sysds.runtime.instructions.ooc;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 
+import java.util.function.Consumer;
+
 public interface OOCStream<T> extends OOCStreamable<T> {
 	void enqueue(T t);
 
@@ -36,4 +38,28 @@ public interface OOCStream<T> extends OOCStreamable<T> {
 	boolean hasStreamCache();
 
 	CachingStream getStreamCache();
+
+	/**
+	 * Registers a new subscriber that consumes the stream.
+	 * While there is no guarantee for any specific order, the closing item LocalTaskQueue.NO_MORE_TASKS
+	 * is guaranteed to be invoked after every other item has finished processing. Thus, the NO_MORE_TASKS
+	 * callback can be used to free dependent resources and close output streams.
+	 */
+	void setSubscriber(Consumer<QueueCallback<T>> subscriber);
+
+	class QueueCallback<T> {
+		private final T _result;
+		private final DMLRuntimeException _failure;
+
+		public QueueCallback(T result, DMLRuntimeException failure) {
+			_result = result;
+			_failure = failure;
+		}
+
+		public T get() {
+			if (_failure != null)
+				throw _failure;
+			return _result;
+		}
+	}
 }

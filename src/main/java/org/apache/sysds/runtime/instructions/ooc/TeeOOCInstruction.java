@@ -25,7 +25,36 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 public class TeeOOCInstruction extends ComputationOOCInstruction {
+
+	private static final ConcurrentHashMap<CachingStream, Integer> refCtr = new ConcurrentHashMap<>();
+
+	public static void reset() {
+		if (!refCtr.isEmpty()) {
+			System.err.println("There are some dangling streams still in the cache: " + refCtr);
+			refCtr.clear();
+		}
+	}
+
+	/**
+	 * Increments the reference counter of a stream by the set amount.
+	 */
+	public static void incrRef(OOCStreamable<IndexedMatrixValue> stream, int incr) {
+		if (!(stream instanceof CachingStream))
+			return;
+
+		Integer ref = refCtr.compute((CachingStream)stream, (k, v) -> {
+			if (v == null)
+				v = 0;
+			v += incr;
+			return v <= 0 ? null : v;
+		});
+
+		if (ref == null)
+			((CachingStream)stream).scheduleDeletion();
+	}
 
 	protected TeeOOCInstruction(OOCType type, CPOperand in1, CPOperand out, String opcode, String istr) {
 		super(type, null, in1, out, opcode, istr);
@@ -45,9 +74,20 @@ public class TeeOOCInstruction extends ComputationOOCInstruction {
 		MatrixObject min = ec.getMatrixObject(input1);
 		OOCStream<IndexedMatrixValue> qIn = min.getStreamHandle();
 
+		CachingStream handle = qIn.hasStreamCache() ? qIn.getStreamCache() : new CachingStream(qIn);
+
+		if (!qIn.hasStreamCache()) {
+			// We also set the input stream handle
+			min.setStreamHandle(handle);
+			incrRef(handle, 2);
+		}
+		else {
+			incrRef(handle, 1);
+		}
+
 		//get output and create new resettable stream
 		MatrixObject mo = ec.getMatrixObject(output);
-		mo.setStreamHandle(new CachingStream(qIn));
+		mo.setStreamHandle(handle);
 		mo.setMetaData(min.getMetaData());
 	}
 }

@@ -19,14 +19,13 @@
 
 package org.apache.sysds.runtime.compress.colgroup.dictionary;
 
+import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.functionobjects.Divide;
-import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
-import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 /**
@@ -51,25 +50,21 @@ public class DeltaDictionary extends ADictionary {
 	}
 
 	@Override
+	public double getValue(int i, int col, int nCol) {
+		return _values[i * nCol + col];
+	}
+
+	@Override
 	public DeltaDictionary applyScalarOp(ScalarOperator op) {
-		final double[] retV = new double[_values.length];
 		if(op.fn instanceof Multiply || op.fn instanceof Divide) {
+			final double[] retV = new double[_values.length];
 			for(int i = 0; i < _values.length; i++)
 				retV[i] = op.executeScalar(_values[i]);
+			return new DeltaDictionary(retV, _numCols);
 		}
-		else if(op.fn instanceof Plus || op.fn instanceof Minus) {
-			// With Plus and Minus only the first row needs to be updated when delta encoded
-			for(int i = 0; i < _values.length; i++) {
-				if(i < _numCols)
-					retV[i] = op.executeScalar(_values[i]);
-				else
-					retV[i] = _values[i];
-			}
+		else {
+			throw new NotImplementedException("Scalar op " + op.fn.getClass().getSimpleName() + " not supported in DeltaDictionary");
 		}
-		else
-			throw new NotImplementedException();
-
-		return new DeltaDictionary(retV, _numCols);
 	}
 
 	@Override
@@ -79,17 +74,30 @@ public class DeltaDictionary extends ADictionary {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		throw new NotImplementedException();
+		out.writeByte(DictionaryFactory.Type.DELTA_DICT.ordinal());
+		out.writeInt(_numCols);
+		out.writeInt(_values.length);
+		for(int i = 0; i < _values.length; i++)
+			out.writeDouble(_values[i]);
+	}
+
+	public static DeltaDictionary read(DataInput in) throws IOException {
+		int numCols = in.readInt();
+		int numValues = in.readInt();
+		double[] values = new double[numValues];
+		for(int i = 0; i < numValues; i++)
+			values[i] = in.readDouble();
+		return new DeltaDictionary(values, numCols);
 	}
 
 	@Override
 	public long getExactSizeOnDisk() {
-		throw new NotImplementedException();
+		return 1 + 4 + 4 + 8L * _values.length;
 	}
 
 	@Override
 	public DictType getDictType() {
-		throw new NotImplementedException();
+		return DictType.Delta;
 	}
 
 	@Override
@@ -104,12 +112,19 @@ public class DeltaDictionary extends ADictionary {
 
 	@Override
 	public String getString(int colIndexes) {
-		throw new NotImplementedException();
+		StringBuilder sb = new StringBuilder();
+		for(int i = 0; i < _values.length; i++) {
+			sb.append(_values[i]);
+			if(i != _values.length - 1) {
+				sb.append((i + 1) % colIndexes == 0 ? "\n" : ", ");
+			}
+		}
+		return sb.toString();
 	}
 
 	@Override
 	public long getNumberNonZeros(int[] counts, int nCol) {
-		throw new NotImplementedException();
+		throw new NotImplementedException("Cannot calculate non-zeros from DeltaDictionary alone");
 	}
 
 	@Override

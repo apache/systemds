@@ -40,7 +40,7 @@ public final class DblArrayCountHashMap extends ACountHashMap<DblArray> {
 	}
 
 	protected final DArrCounts create(DblArray key, int id) {
-		return new DArrCounts(key, id);
+		return new DArrCounts(new DblArray(key), id);
 	}
 
 	@Override

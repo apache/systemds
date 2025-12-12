@@ -83,31 +83,33 @@ public class QuantilePickCPInstruction extends BinaryCPInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		switch( _type ) 
 		{
-			case VALUEPICK: 
-				if( _inmem ) //INMEM VALUEPICK
-				{
-					MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
+			case VALUEPICK:
+// Handle both in-memory and non-in-memory VALUEPICK by materializing
+// the input matrix and invoking the pick routines. Previously only
+// the in-memory branch was executed which left the output unset
+// when _inmem==false (see SYSTEMDS-3898).
+{
+MatrixBlock matBlock = ec.getMatrixInput(input1.getName());
 
-					if ( input2.getDataType() == DataType.SCALAR ) {
-						ScalarObject quantile = ec.getScalarInput(input2);
-						//pick value w/ explicit averaging for even-length arrays
-						double picked = matBlock.pickValue(
-							quantile.getDoubleValue(), matBlock.getLength()%2==0);
-						ec.setScalarOutput(output.getName(), new DoubleObject(picked));
-					} 
-					else {
-						MatrixBlock quantiles = ec.getMatrixInput(input2.getName());
-						//pick value w/ explicit averaging for even-length arrays
-						MatrixBlock resultBlock = matBlock.pickValues(
-							quantiles, new MatrixBlock(), matBlock.getLength()%2==0);
-						quantiles = null;
-						ec.releaseMatrixInput(input2.getName());
-						ec.setMatrixOutput(output.getName(), resultBlock);
-					}
-					ec.releaseMatrixInput(input1.getName());
-				}
-				break;
-
+if ( input2.getDataType() == DataType.SCALAR ) {
+ScalarObject quantile = ec.getScalarInput(input2);
+// pick value w/ explicit averaging for even-length arrays
+double picked = matBlock.pickValue(
+quantile.getDoubleValue(), matBlock.getLength()%2==0);
+ec.setScalarOutput(output.getName(), new DoubleObject(picked));
+} 
+else {
+MatrixBlock quantiles = ec.getMatrixInput(input2.getName());
+// pick values w/ explicit averaging for even-length arrays
+MatrixBlock resultBlock = matBlock.pickValues(
+quantiles, new MatrixBlock(), matBlock.getLength()%2==0);
+quantiles = null;
+ec.releaseMatrixInput(input2.getName());
+ec.setMatrixOutput(output.getName(), resultBlock);
+}
+ec.releaseMatrixInput(input1.getName());
+}
+break;
 			case MEDIAN:
 				if( _inmem ) //INMEM MEDIAN
 				{

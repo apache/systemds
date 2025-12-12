@@ -1,0 +1,132 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# The hdbscan function is used to perform the hdbscan clustering
+# algorithm using knn-based mutual reachability distance and minimum spanning tree.
+#
+# INPUT:
+# ------------------------------------------------------------
+# X             The input Matrix to do hdbscan on.
+# minPts        Minimum number of points for core distance computation. (Defaults to 5)
+# minClSize     Minimum cluster size (Defaults to minPts)              
+# ------------------------------------------------------------
+#
+# OUTPUT:
+# ------------------------------------------------------------
+# clusterMems   Cluster labels for each point
+# clusterModel  The cluster centroids for prediction
+# ------------------------------------------------------------
+
+# TODO: m,s , f?
+m_hdbscan = function(Matrix[Double] X, Integer minPts = 5, Integer minClSize = -1)
+    return (Matrix[Double] clusterMems, Matrix[Double] clusterModel)
+{
+    if(minPts < 2) {
+        stop("HDBSCAN: minPts should be at least 2")
+    }
+
+    if(minClSize < 0) {
+        minClSize = minPts
+    }
+
+    n = nrow(X)
+    d = ncol(X)
+
+    if(n < minPts) {
+        stop("HDBSCAN: Number of data points should be at least minPts")
+    }
+
+    distances = dist(X)
+
+    coreDistances = matrix(0, rows=n, cols=1)
+    for(i in 1:n) {
+        kthDist = computeKthSmallest(distances[i,], minPts)
+        coreDistances[i] = kthDist
+    }
+   
+    mutualReachDist = computeMutualReachability(distances, coreDistances)
+
+    [mstEdges, mstWeights] = buildMST(mutualReachDist, n)
+
+    # TODO: build cluster hierarchy
+    # TODO: get stable cluster with stability score
+    # TODO: build cluster model
+    
+    # temp  dummy values
+    clusterMems = matrix(1, rows=n, cols=1)
+    clusterModel = X
+}
+
+
+computeKthSmallest = function(Matrix[Double] array, Integer k)
+    return (Double res)
+{
+  sorted = order(target=array, by=1, decreasing=FALSE)
+  res = as.scalar(sorted[k+1, 1])
+}
+
+
+computeMutualReachability = function(Matrix[Double] distances, Matrix[Double] coreDistances)
+    return (Matrix[Double] mutualReach)
+{
+    # mutualReach(i,j) = max(dist(i,j), coreDist(i), coreDist(j))
+    # Diagonal is set to zero.
+
+    n = nrow(distances)
+  
+    coreDistRow = t(coreDistances)
+    coreDistCol = coreDistances
+  
+    maxCoreRow = (distances > coreDistRow) * distances + (distances <= coreDistRow) * coreDistRow
+    mutualReach = (maxCoreRow > coreDistCol) * maxCoreRow + (maxCoreRow <= coreDistCol) * coreDistCol
+  
+    mutualReach = mutualReach * (1 - diag(matrix(1, rows=n, cols=1)))
+}
+
+
+buildMST = function(Matrix[Double] distances, Integer n)
+    return (Matrix[Double] edges, Matrix[Double] weights)
+{
+  edges = matrix(0, rows=n-1, cols=2)
+  weights = matrix(0, rows=n-1, cols=1)
+  
+  inMST = matrix(0, rows=n, cols=1)
+  inMST[1] = 1
+  
+  minDist = distances[1,]
+  minDist = t(minDist)
+  
+  for(i in 1:(n-1)) {
+    candidates = minDist + inMST * 1e15 
+    minIdx = as.scalar(rowIndexMin(t(candidates)))
+    minWeight = as.scalar(minDist[minIdx])
+    
+    # Find which node in MST connects to minIdx
+    connectIdx = as.scalar(rowIndexMin(distances[minIdx,] + t(1-inMST) * 1e15))
+    edges[i,1] = minIdx
+    edges[i,2] = connectIdx
+    weights[i] = minWeight
+    
+    inMST[minIdx] = 1
+    newDists = distances[minIdx,]
+    minDist = (minDist < t(newDists)) * minDist + (minDist >= t(newDists)) * t(newDists)
+  }
+}

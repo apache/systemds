@@ -28,7 +28,6 @@ import org.apache.sysds.runtime.functionobjects.RollIndex;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.test.TestUtils;
-import org.apache.sysds.utils.stats.Timing;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -89,17 +88,9 @@ public class RollOperationThreadSafetyTest {
 	public void denseRollOperationSingleAndMultiThreadedShouldReturnSameResult() {
 		int numThreads = getNumThreads();
 
-		// Single-threaded timing
-		Timing tSingle = new Timing(true);
 		MatrixBlock outSingle = rollOperation(inputDense, 1);
-		double timeSingle = tSingle.stop();
 
-		// Multithreaded timing
-		Timing tMulti = new Timing(true);
 		MatrixBlock outMulti = rollOperation(inputDense, numThreads);
-		double timeMulti = tMulti.stop();
-
-		logTiming("Dense", numThreads, timeSingle, timeMulti);
 
 		TestUtils.compareMatrices(outSingle, outMulti, 1e-12,
 			"Dense Mismatch (numThreads=1 vs numThreads>1) for Size=" + rows + "x" + cols + " Shift=" + shift);
@@ -109,17 +100,9 @@ public class RollOperationThreadSafetyTest {
 	public void sparseRollOperationSingleAndMultiThreadedShouldReturnSameResult() {
 		int numThreads = getNumThreads();
 
-		// Single-threaded timing
-		Timing tSingle = new Timing(true);
 		MatrixBlock outSingle = rollOperation(inputSparse, 1);
-		double timeSingle = tSingle.stop();
 
-		// Multithreaded timing
-		Timing tMulti = new Timing(true);
 		MatrixBlock outMulti = rollOperation(inputSparse, numThreads);
-		double timeMulti = tMulti.stop();
-
-		logTiming("Sparse", numThreads, timeSingle, timeMulti);
 
 		TestUtils.compareMatrices(outSingle, outMulti, 1e-12,
 			"Sparse Mismatch (numThreads=1 vs numThreads>1) for Size=" + rows + "x" + cols + " Shift=" + shift);
@@ -138,15 +121,5 @@ public class RollOperationThreadSafetyTest {
 		// number of threads should be at least two to invoke multithreaded operation
 		int cores = Runtime.getRuntime().availableProcessors();
 		return Math.max(2, cores);
-	}
-
-	private void logTiming(String type, int numThreads, double timeSingle, double timeMulti) {
-		double speedup = timeSingle / timeMulti;
-
-		System.out.println("\n--- " + type + " Roll Operation Timing for " + rows + "x" + cols + ", Shift=" + shift + " ---");
-		System.out.printf("Single-threaded (1 core) took: %.3f ms\n", timeSingle);
-		System.out.printf("Multithreaded (%d cores) took: %.3f ms\n", numThreads, timeMulti);
-		System.out.printf("Speedup: %.2f\n", speedup);
-		System.out.println("--------------------------------------------------------------------------------");
 	}
 }

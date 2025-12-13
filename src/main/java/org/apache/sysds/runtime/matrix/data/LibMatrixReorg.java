@@ -532,7 +532,7 @@ public class LibMatrixReorg {
 			return output;
 		}
 
-		if(numThreads <= 1 || input.isEmptyBlock(false) || input.getLength() < PAR_NUMCELL_THRESHOLD) {
+		if(numThreads <= 1 || input.getLength() < PAR_NUMCELL_THRESHOLD) {
 			return roll(input, output, shift); // fallback to single-threaded
 		}
 

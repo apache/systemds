@@ -47,7 +47,9 @@ import org.apache.sysds.runtime.compress.estim.ComEstExact;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Equals;
+import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.GreaterThan;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Plus;
@@ -404,6 +406,66 @@ public class ColGroupDeltaDDCTest {
 		assertEquals(0.0, ret.get(3, 1), 0.0);
 		assertEquals(1.0, ret.get(4, 0), 0.0);
 		assertEquals(0.0, ret.get(4, 1), 0.0);
+	}
+
+	@Test
+	public void testScalarMultiply() {
+		double[][] data = {{1}, {2}, {3}, {4}, {5}};
+		AColGroup cg = compressForTest(data);
+		assertTrue(cg instanceof ColGroupDeltaDDC);
+		
+		ScalarOperator op = new RightScalarOperator(Multiply.getMultiplyFnObject(), 2.0);
+		AColGroup res = cg.scalarOperation(op);
+		
+		MatrixBlock ret = new MatrixBlock(5, 1, false);
+		ret.allocateDenseBlock();
+		res.decompressToDenseBlock(ret.getDenseBlock(), 0, 5);
+		
+		assertEquals(2.0, ret.get(0, 0), 0.0);
+		assertEquals(4.0, ret.get(1, 0), 0.0);
+		assertEquals(6.0, ret.get(2, 0), 0.0);
+		assertEquals(8.0, ret.get(3, 0), 0.0);
+		assertEquals(10.0, ret.get(4, 0), 0.0);
+	}
+
+	@Test
+	public void testScalarDivide() {
+		double[][] data = {{2}, {4}, {6}, {8}, {10}};
+		AColGroup cg = compressForTest(data);
+		assertTrue(cg instanceof ColGroupDeltaDDC);
+		
+		ScalarOperator op = new RightScalarOperator(Divide.getDivideFnObject(), 2.0);
+		AColGroup res = cg.scalarOperation(op);
+		
+		MatrixBlock ret = new MatrixBlock(5, 1, false);
+		ret.allocateDenseBlock();
+		res.decompressToDenseBlock(ret.getDenseBlock(), 0, 5);
+		
+		assertEquals(1.0, ret.get(0, 0), 0.0);
+		assertEquals(2.0, ret.get(1, 0), 0.0);
+		assertEquals(3.0, ret.get(2, 0), 0.0);
+		assertEquals(4.0, ret.get(3, 0), 0.0);
+		assertEquals(5.0, ret.get(4, 0), 0.0);
+	}
+
+	@Test
+	public void testSliceRows() {
+		double[][] data = {{1, 2}, {3, 4}, {5, 6}, {7, 8}, {9, 10}};
+		AColGroup cg = compressForTest(data);
+		
+		AColGroup sliced = cg.sliceRows(1, 4);
+		assertTrue(sliced instanceof ColGroupDeltaDDC);
+		
+		MatrixBlock ret = new MatrixBlock(3, 2, false);
+		ret.allocateDenseBlock();
+		sliced.decompressToDenseBlock(ret.getDenseBlock(), 0, 3);
+		
+		assertEquals(3.0, ret.get(0, 0), 0.0);
+		assertEquals(4.0, ret.get(0, 1), 0.0);
+		assertEquals(5.0, ret.get(1, 0), 0.0);
+		assertEquals(6.0, ret.get(1, 1), 0.0);
+		assertEquals(7.0, ret.get(2, 0), 0.0);
+		assertEquals(8.0, ret.get(2, 1), 0.0);
 	}
 
 	private AColGroup compressForTest(double[][] data) {

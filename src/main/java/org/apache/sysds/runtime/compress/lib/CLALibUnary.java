@@ -49,6 +49,10 @@ public final class CLALibUnary {
 		final int r = m.getNumRows();
 		final int c = m.getNumColumns();
 		
+		// early aborts:
+		if(m.isEmpty())
+			return new MatrixBlock(r, c, 0).unaryOperations(op, result);
+		
 		if(Builtin.isBuiltinCode(op.fn, BuiltinCode.CUMSUM)) {
 			MatrixBlock uncompressed = m.getUncompressed("CUMSUM requires uncompression", op.getNumThreads());
 			MatrixBlock opResult = uncompressed.unaryOperations(op, null);
@@ -76,11 +80,8 @@ public final class CLALibUnary {
 			
 			return finalResult;
 		}
-		
-		// early aborts:
-		if(m.isEmpty())
-			return new MatrixBlock(r, c, 0).unaryOperations(op, result);
-		else if(overlapping) {
+
+		if(overlapping) {
 			// when in overlapping state it is guaranteed that there is no infinites, NA, or NANs.
 			if(Builtin.isBuiltinCode(op.fn, BuiltinCode.ISINF, BuiltinCode.ISNA, BuiltinCode.ISNAN))
 				return new MatrixBlock(r, c, 0);

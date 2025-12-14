@@ -266,7 +266,11 @@ public class ColGroupDeltaDDC extends ColGroupDDC {
 	@Override
 	public AColGroup scalarOperation(ScalarOperator op) {
 		if(op.fn instanceof Multiply || op.fn instanceof Divide) {
-			return super.scalarOperation(op);
+			double[] val = _dict.getValues();
+			double[] newVal = new double[val.length];
+			for(int i = 0; i < val.length; i++)
+				newVal[i] = op.executeScalar(val[i]);
+			return create(_colIndexes, new DeltaDictionary(newVal, _colIndexes.size()), _data, getCounts());
 		}
 		else if(op.fn instanceof Plus || op.fn instanceof Minus) {
 			return scalarOperationShift(op);

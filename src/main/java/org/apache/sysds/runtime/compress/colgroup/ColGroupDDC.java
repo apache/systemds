@@ -1119,36 +1119,19 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 		DblArray dblArray = new DblArray(rowDelta);
 		int[] rowToDictId = new int[numRows];
 		
-		double[] dictVals = null;
-		try {
-			dictVals = _dict.getValues();
-		} catch (Exception e) {
-		}
+		double[] dictVals = _dict.getValues();
 
 		for(int i = 0; i < numRows; i++) {
 			int dictIdx = _data.getIndex(i);
-			if(dictVals != null) {
-				int off = dictIdx * numCols;
-				for(int j = 0; j < numCols; j++) {
-					double val = dictVals[off + j];
-					if(i == 0) {
-						rowDelta[j] = val;
-						prevRow[j] = val;
-					} else {
-						rowDelta[j] = val - prevRow[j];
-						prevRow[j] = val;
-					}
-				}
-			} else {
-				for(int j = 0; j < numCols; j++) {
-					double val = _dict.getValue(dictIdx, j, numCols);
-					if(i == 0) {
-						rowDelta[j] = val;
-						prevRow[j] = val;
-					} else {
-						rowDelta[j] = val - prevRow[j];
-						prevRow[j] = val;
-					}
+			int off = dictIdx * numCols;
+			for(int j = 0; j < numCols; j++) {
+				double val = dictVals[off + j];
+				if(i == 0) {
+					rowDelta[j] = val;
+					prevRow[j] = val;
+				} else {
+					rowDelta[j] = val - prevRow[j];
+					prevRow[j] = val;
 				}
 			}
 			

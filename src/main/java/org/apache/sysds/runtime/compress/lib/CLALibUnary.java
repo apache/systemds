@@ -30,7 +30,6 @@ import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.CompressionStatistics;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
@@ -50,43 +49,8 @@ public final class CLALibUnary {
 		final int r = m.getNumRows();
 		final int c = m.getNumColumns();
 		
-		if(Builtin.isBuiltinCode(op.fn, BuiltinCode.CUMSUM, BuiltinCode.ROWCUMSUM)) {
-			List<AColGroup> groups = m.getColGroups();
-			boolean allDDC = true;
-			for(AColGroup g : groups) {
-				if(g.getCompType() != CompressionType.DDC) {
-					allDDC = false;
-					break;
-				}
-			}
-			
-			if(allDDC && !groups.isEmpty()) {
-				MatrixBlock uncompressed = m.getUncompressed("CUMSUM/ROWCUMSUM requires uncompression", op.getNumThreads());
-				MatrixBlock opResult = uncompressed.unaryOperations(op, null);
-				
-				List<AColGroup> convertedGroups = new ArrayList<>(groups.size());
-				for(AColGroup g : groups) {
-					AColGroup converted = ((ColGroupDDC) g).convertToDeltaDDC();
-					if(converted == null) {
-						allDDC = false;
-						break;
-					}
-					convertedGroups.add(converted);
-				}
-				
-				if(allDDC) {
-					CompressedMatrixBlock ret = new CompressedMatrixBlock(m.getNumRows(), m.getNumColumns());
-					ret.allocateColGroupList(convertedGroups);
-					ret.recomputeNonZeros();
-					
-					MatrixBlock verifyDecompressed = ret.getUncompressed("Verification", op.getNumThreads());
-					if(verifyDecompressed.equals(opResult)) {
-						return ret;
-					}
-				}
-			}
-			
-			MatrixBlock uncompressed = m.getUncompressed("CUMSUM/ROWCUMSUM requires uncompression", op.getNumThreads());
+		if(Builtin.isBuiltinCode(op.fn, BuiltinCode.CUMSUM)) {
+			MatrixBlock uncompressed = m.getUncompressed("CUMSUM requires uncompression", op.getNumThreads());
 			MatrixBlock opResult = uncompressed.unaryOperations(op, null);
 			
 			CompressionSettingsBuilder csb = new CompressionSettingsBuilder();

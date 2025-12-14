@@ -321,10 +321,9 @@ public class ColGroupDeltaDDC extends ColGroupDDC {
 				idNew = nEntries;
 			}
 
-			AMapToData newData = _data.slice(0, _data.size());
-			if(idNew >= newData.getUpperBoundValue()) {
-				newData = newData.resize(idNew + 1);
-			}
+			AMapToData newData = MapToFactory.create(_data.size(), Math.max(_data.getUpperBoundValue(), idNew) + 1);
+			for(int i = 0; i < _data.size(); i++)
+				newData.set(i, _data.getIndex(i));
 			newData.set(0, idNew);
 			
 			return create(_colIndexes, newDict, newData, null);
@@ -450,7 +449,6 @@ public class ColGroupDeltaDDC extends ColGroupDDC {
 
 	@Override
 	public AColGroup sliceRows(int rl, int ru) {
-		AMapToData slicedData = _data.slice(rl, ru);
 		final int nCol = _colIndexes.size();
 		double[] firstRowValues = new double[nCol];
 		double[] dictVals = ((DeltaDictionary)_dict).getValues();
@@ -487,11 +485,12 @@ public class ColGroupDeltaDDC extends ColGroupDDC {
 			System.arraycopy(firstRowValues, 0, newDictVals, dictVals.length, nCol);
 			newDict = new DeltaDictionary(newDictVals, nCol);
 			newId = nEntries;
-			
-			if(newId >= slicedData.getUpperBoundValue()) {
-				slicedData = slicedData.resize(newId + 1);
-			}
 		}
+		
+		int numRows = ru - rl;
+		AMapToData slicedData = MapToFactory.create(numRows, Math.max(_data.getUpperBoundValue(), newId) + 1);
+		for(int i = 0; i < numRows; i++)
+			slicedData.set(i, _data.getIndex(rl + i));
 		
 		slicedData.set(0, newId);
 		return ColGroupDeltaDDC.create(_colIndexes, newDict, slicedData, null);
@@ -530,7 +529,11 @@ public class ColGroupDeltaDDC extends ColGroupDDC {
 			DoubleCountHashMap map = new DoubleCountHashMap(16);
 			AMapToData mapData = MapToFactory.create(nRow, 256);
 			for(int i = 0; i < nRow; i++) {
-				mapData.set(i, map.increment(values[i]));
+				int id = map.increment(values[i]);
+				if(id >= mapData.getUpperBoundValue()) {
+					mapData = mapData.resize(Math.max(mapData.getUpperBoundValue() * 2, id + 1));
+				}
+				mapData.set(i, id);
 			}
 			if(map.size() == 1)
 				return ColGroupConst.create(colIndexes, Dictionary.create(new double[] {map.getMostFrequent()}));
@@ -544,7 +547,11 @@ public class ColGroupDeltaDDC extends ColGroupDDC {
 			DblArray dblArray = new DblArray(new double[nCol]);
 			for(int i = 0; i < nRow; i++) {
 				System.arraycopy(values, i * nCol, dblArray.getData(), 0, nCol);
-				mapData.set(i, map.increment(dblArray));
+				int id = map.increment(dblArray);
+				if(id >= mapData.getUpperBoundValue()) {
+					mapData = mapData.resize(Math.max(mapData.getUpperBoundValue() * 2, id + 1));
+				}
+				mapData.set(i, id);
 			}
 			if(map.size() == 1) {
 				ACount<DblArray>[] counts = map.extractValues();

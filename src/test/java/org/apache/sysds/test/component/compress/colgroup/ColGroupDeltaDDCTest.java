@@ -49,6 +49,8 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Equals;
 import org.apache.sysds.runtime.functionobjects.GreaterThan;
+import org.apache.sysds.runtime.functionobjects.Minus;
+import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
@@ -315,6 +317,48 @@ public class ColGroupDeltaDDCTest {
 		assertEquals(1.0, ret.get(2, 0), 0.0);
 		assertEquals(1.0, ret.get(3, 0), 0.0);
 		assertEquals(0.0, ret.get(4, 0), 0.0);
+	}
+
+	@Test
+	public void testScalarPlus() {
+		double[][] data = {{1}, {2}, {3}, {4}, {5}};
+		AColGroup cg = compressForTest(data);
+		assertTrue(cg instanceof ColGroupDeltaDDC);
+		
+		ScalarOperator op = new RightScalarOperator(Plus.getPlusFnObject(), 10.0);
+		AColGroup res = cg.scalarOperation(op);
+		assertTrue("Should remain DeltaDDC after shift", res instanceof ColGroupDeltaDDC);
+		
+		MatrixBlock ret = new MatrixBlock(5, 1, false);
+		ret.allocateDenseBlock();
+		res.decompressToDenseBlock(ret.getDenseBlock(), 0, 5);
+		
+		assertEquals(11.0, ret.get(0, 0), 0.0);
+		assertEquals(12.0, ret.get(1, 0), 0.0);
+		assertEquals(13.0, ret.get(2, 0), 0.0);
+		assertEquals(14.0, ret.get(3, 0), 0.0);
+		assertEquals(15.0, ret.get(4, 0), 0.0);
+	}
+
+	@Test
+	public void testScalarMinus() {
+		double[][] data = {{11}, {12}, {13}, {14}, {15}};
+		AColGroup cg = compressForTest(data);
+		assertTrue(cg instanceof ColGroupDeltaDDC);
+		
+		ScalarOperator op = new RightScalarOperator(Minus.getMinusFnObject(), 10.0);
+		AColGroup res = cg.scalarOperation(op);
+		assertTrue("Should remain DeltaDDC after shift", res instanceof ColGroupDeltaDDC);
+		
+		MatrixBlock ret = new MatrixBlock(5, 1, false);
+		ret.allocateDenseBlock();
+		res.decompressToDenseBlock(ret.getDenseBlock(), 0, 5);
+		
+		assertEquals(1.0, ret.get(0, 0), 0.0);
+		assertEquals(2.0, ret.get(1, 0), 0.0);
+		assertEquals(3.0, ret.get(2, 0), 0.0);
+		assertEquals(4.0, ret.get(3, 0), 0.0);
+		assertEquals(5.0, ret.get(4, 0), 0.0);
 	}
 
 	@Test

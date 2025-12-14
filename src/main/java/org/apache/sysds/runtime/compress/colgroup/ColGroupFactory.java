@@ -318,7 +318,7 @@ public class ColGroupFactory {
 			return new ColGroupEmpty(colIndexes);
 		}
 		final IntArrayList[] of = ubm.getOffsetList();
-		if(of.length == 1 && of[0].size() == nRow && ct != CompressionType.DeltaDDC) { // If this always constant
+		if(of.length == 1 && of[0].size() == nRow) { // If this always constant
 			return ColGroupConst.create(colIndexes, DictionaryFactory.create(ubm));
 		}
 

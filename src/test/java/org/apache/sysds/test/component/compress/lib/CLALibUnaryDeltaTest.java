@@ -76,46 +76,6 @@ public class CLALibUnaryDeltaTest {
 	}
 
 	@Test
-	public void testRowcumsumResultsInDeltaEncoding() {
-		MatrixBlock mb = new MatrixBlock(3, 4, false);
-		mb.allocateDenseBlock();
-		// Row 1: 1, 2, 3, 4 -> cumsum: 1, 3, 6, 10
-		mb.set(0, 0, 1.0);
-		mb.set(0, 1, 2.0);
-		mb.set(0, 2, 3.0);
-		mb.set(0, 3, 4.0);
-		// Row 2: 1, 1, 1, 1 -> cumsum: 1, 2, 3, 4
-		mb.set(1, 0, 1.0);
-		mb.set(1, 1, 1.0);
-		mb.set(1, 2, 1.0);
-		mb.set(1, 3, 1.0);
-		// Row 3: 5, 5, 5, 5 -> cumsum: 5, 10, 15, 20
-		mb.set(2, 0, 5.0);
-		mb.set(2, 1, 5.0);
-		mb.set(2, 2, 5.0);
-		mb.set(2, 3, 5.0);
-		mb.setNonZeros(12);
-
-		CompressionSettingsBuilder csb = new CompressionSettingsBuilder().setMinimumCompressionRatio(0.0);
-		csb.addValidCompression(CompressionType.DDC);
-		CompressedMatrixBlock cmb = compress(mb, csb);
-
-		UnaryOperator rowCumsumOp = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinCode.ROWCUMSUM));
-		MatrixBlock result = CLALibUnary.unaryOperations(cmb, rowCumsumOp, null);
-
-		assertNotNull("Result should not be null", result);
-		assertTrue("Result should be compressed", result instanceof CompressedMatrixBlock);
-
-		CompressedMatrixBlock compressedResult = (CompressedMatrixBlock) result;
-		// Delta encoding is row-wise, so row cumsum might not always benefit from delta DDC as much as col cumsum
-		// but we enforce it preference so it should be there if applicable.
-		// Actually for row cumsum, the result across columns changes.
-		// Let's check correctness mainly.
-		MatrixBlock expected = mb.unaryOperations(rowCumsumOp, new MatrixBlock());
-		TestUtils.compareMatrices(expected, result, 0.0, "RowCumsum result should match expected");
-	}
-
-	@Test
 	public void testCumsumCorrectness() {
 		MatrixBlock mb = TestUtils.generateTestMatrixBlock(10, 3, 0, 10, 1.0, 7);
 		CompressionSettingsBuilder csb = new CompressionSettingsBuilder().setMinimumCompressionRatio(0.0);

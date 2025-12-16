@@ -59,6 +59,15 @@ RUN wget -qO- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PR
     | tee /etc/apt/sources.list.d/oneAPI.list \
     && apt-get update && apt-get install -y --no-install-recommends intel-oneapi-mkl-devel
 
+# Delete unused libraries, since MKL libraries take up a lot of disk space
+RUN find /opt/intel/oneapi/mkl/2025.3/lib \( \ 
+    -name '*ilp64*' -o \
+    -name 'libmkl_gnu_thread*' -o \
+    -name 'libmkl_tbb_thread*' -o \
+    -name 'libmkl_sycl*' -o \
+    -name '*_openmpi_*' \
+    \) -delete
+
 # Stage 2: Final image with R, JDK, Maven, SEAL, OpenBLAS, MKL
 FROM ubuntu:noble@sha256:728785b59223d755e3e5c5af178fab1be7031f3522c5ccd7a0b32b80d8248123 
 

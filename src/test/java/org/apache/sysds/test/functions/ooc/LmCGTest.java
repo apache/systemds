@@ -20,7 +20,6 @@
 package org.apache.sysds.test.functions.ooc;
 
 import org.apache.sysds.common.Types;
-import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.io.MatrixWriter;
 import org.apache.sysds.runtime.io.MatrixWriterFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;

@@ -169,22 +169,36 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 
 	@Override
 	public void put(BlockKey key, Object data, long size) {
-		put(key, data, size, false);
+		put(key, data, size, false, null);
 	}
 
 	@Override
 	public BlockEntry putAndPin(BlockKey key, Object data, long size) {
-		return put(key, data, size, true);
+		return put(key, data, size, true, null);
 	}
 
-	private BlockEntry put(BlockKey key, Object data, long size, boolean pin) {
+	@Override
+	public void putSourceBacked(BlockKey key, Object data, long size, OOCIOHandler.SourceBlockDescriptor descriptor) {
+		put(key, data, size, false, descriptor);
+	}
+
+	@Override
+	public BlockEntry putAndPinSourceBacked(BlockKey key, Object data, long size, OOCIOHandler.SourceBlockDescriptor descriptor) {
+		return put(key, data, size, true, descriptor);
+	}
+
+	private BlockEntry put(BlockKey key, Object data, long size, boolean pin, OOCIOHandler.SourceBlockDescriptor descriptor) {
 		if (!this._running)
 			throw new IllegalStateException();
 		if (data == null)
 			throw new IllegalArgumentException();
+		if (descriptor != null)
+			_ioHandler.registerSourceLocation(key, descriptor);
 
 		Statistics.incrementOOCEvictionPut();
 		BlockEntry entry = new BlockEntry(key, size, data);
+		if (descriptor != null)
+			entry.setState(BlockState.WARM);
 		if (pin)
 			entry.pin();
 		synchronized(this) {
@@ -301,15 +315,15 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 	}
 
 	private synchronized void sanityCheck() {
-		if (_cacheSize > _hardLimit) {
+		if (_cacheSize > _hardLimit * 1.1) {
 			if (!_warnThrottling) {
 				_warnThrottling = true;
-				System.out.println("[INFO] Throttling: " + _cacheSize/1000 + "KB - " + _bytesUpForEviction/1000 + "KB > " + _hardLimit/1000 + "KB");
+				System.out.println("[WARN] Cache hard limit exceeded by over 10%: " + String.format("%.2f", _cacheSize/1000000.0) + "MB (-" + String.format("%.2f", _bytesUpForEviction/1000000.0) + "MB) > " + String.format("%.2f", _hardLimit/1000000.0) + "MB");
 			}
 		}
-		else if (_warnThrottling) {
+		else if (_warnThrottling && _cacheSize < _hardLimit) {
 			_warnThrottling = false;
-			System.out.println("[INFO] No more throttling: " + _cacheSize/1000 + "KB - " + _bytesUpForEviction/1000 + "KB <= " + _hardLimit/1000 + "KB");
+			System.out.println("[INFO] Cache within limit: " + String.format("%.2f", _cacheSize/1000000.0) + "MB (-" + String.format("%.2f", _bytesUpForEviction/1000000.0) + "MB) <= " + String.format("%.2f", _hardLimit/1000000.0) + "MB");
 		}
 
 		if (!SANITY_CHECKS)

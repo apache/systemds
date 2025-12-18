@@ -84,6 +84,7 @@ public class MatrixVectorBinaryOOCInstruction extends ComputationOOCInstruction 
 		OOCStream<IndexedMatrixValue> qIn = min.getStreamHandle();
 		OOCStream<IndexedMatrixValue> qOut = createWritableStream();
 		BinaryOperator plus = InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString());
+		addOutStream(qOut);
 		ec.getMatrixObject(output).setStreamHandle(qOut);
 		final Object lock = new Object();
 

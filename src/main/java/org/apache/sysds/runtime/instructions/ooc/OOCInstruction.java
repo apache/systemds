@@ -138,8 +138,12 @@ public abstract class OOCInstruction extends Instruction {
 	}
 
 	protected void addOutStream(OOCStream<?>... queue) {
-		// Currently same behavior as addInQueue
-		if (_outQueues == null)
+		if (queue.length == 0 && _outQueues == null) {
+			_outQueues = Collections.emptySet();
+			return;
+		}
+
+		if (_outQueues == null || _outQueues.isEmpty())
 			_outQueues = new HashSet<>();
 		_outQueues.addAll(List.of(queue));
 	}
@@ -471,6 +475,8 @@ public abstract class OOCInstruction extends Instruction {
 
 	protected <T> CompletableFuture<Void> submitOOCTasks(final List<OOCStream<T>> queues, BiConsumer<Integer, OOCStream.QueueCallback<T>> consumer, Runnable finalizer, List<CompletableFuture<Void>> futures, BiFunction<Integer, OOCStream.QueueCallback<T>, Boolean> predicate, BiConsumer<Integer, OOCStream.QueueCallback<T>> onNotProcessed) {
 		addInStream(queues.toArray(OOCStream[]::new));
+		if (_outQueues == null)
+			throw new IllegalArgumentException("Explicit specification of all output streams is required before submitting tasks. If no output streams are present use addOutStream().");
 		ExecutorService pool = CommonThreadPool.get();
 
 		final List<AtomicInteger> activeTaskCtrs = new ArrayList<>(queues.size());
@@ -622,13 +628,20 @@ public abstract class OOCInstruction extends Instruction {
 			catch (Exception ex) {
 				DMLRuntimeException re = ex instanceof DMLRuntimeException ? (DMLRuntimeException) ex : new DMLRuntimeException(ex);
 
-				if (_failed) // Do avoid infinite cycles
-					throw re;
+				synchronized(this) {
+					if(_failed) // Do avoid infinite cycles
+						throw re;
 
-				_failed = true;
+					_failed = true;
+				}
 
-				for (OOCStream<?> q : queues)
-					q.propagateFailure(re);
+				for(OOCStream<?> q : queues) {
+					try {
+						q.propagateFailure(re);
+					} catch(Throwable ignore) {
+						// Should not happen, but catch just in case
+					}
+				}
 
 				if (future != null)
 					future.completeExceptionally(re);
@@ -650,13 +663,20 @@ public abstract class OOCInstruction extends Instruction {
 			catch (Exception ex) {
 				DMLRuntimeException re = ex instanceof DMLRuntimeException ? (DMLRuntimeException) ex : new DMLRuntimeException(ex);
 
-				if (_failed) // Do avoid infinite cycles
-					throw re;
+				synchronized(this) {
+					if (_failed) // Do avoid infinite cycles
+						throw re;
 
-				_failed = true;
+					_failed = true;
+				}
 
-				for (OOCStream<?> q : queues)
-					q.propagateFailure(re);
+				for(OOCStream<?> q : queues) {
+					try {
+						q.propagateFailure(re);
+					} catch(Throwable ignored) {
+						// Should not happen, but catch just in case
+					}
+				}
 
 				if (future != null)
 					future.completeExceptionally(re);

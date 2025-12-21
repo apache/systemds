@@ -46,14 +46,14 @@ import static org.apache.sysds.runtime.instructions.cp.EinsumCPInstruction.ensur
 
 public class EOpNodeBinary extends EOpNode {
 
-	public enum EBinaryOperand { // upper case: char has to remain, lower case: to be summed
+	public enum EBinaryOperand { // upper case: char remains, lower case: summed (reduced) dimension
         ////// mm:   //////
         Ba_aC, // -> BC
         aB_Ca, // -> CB
         Ba_Ca, // -> BC
         aB_aC, // -> BC
 
-        ////// elementwisemult and sums //////
+        ////// element-wise multiplications and sums //////
         aB_aB,// elemwise and colsum -> B
 		Ab_Ab, // elemwise and rowsum ->A
 		Ab_bA, // elemwise, either colsum or rowsum -> A
@@ -169,18 +169,12 @@ public class EOpNodeBinary extends EOpNode {
 	}
 
 	@Override
-	public String[] recursivePrintString() {
-		String[] left = this.left.recursivePrintString();
-		String[] right = this.right.recursivePrintString();
-		String[] res = new String[left.length + right.length+1];
-		res[0] = this.getClass().getSimpleName()+" ("+ operand.toString()+") "+this.toString();
-		for (int i=0; i<left.length; i++) {
-			res[i+1] = (i==0 ?  "┌─ " : "   ") +left[i];
-		}
-		for (int i=0; i<right.length; i++) {
-			res[left.length+i+1] = (i==0 ?  "└─ " : "   ") +right[i];
-		}
-		return res;
+	public List<EOpNode> getChildren() {
+		return List.of(this.left, this.right);
+	}
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName()+" ("+ operand.toString()+") "+getOutputString();
 	}
 
 	@Override
@@ -192,8 +186,6 @@ public class EOpNodeBinary extends EOpNode {
         AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
 
         MatrixBlock res;
-
-        if(LOG.isTraceEnabled()) LOG.trace("computing binary "+bin.left +","+bin.right +"->"+bin);
 
         switch (bin.operand){
             case AB_AB -> {
@@ -212,22 +204,28 @@ public class EOpNodeBinary extends EOpNode {
 				res.getDenseBlockValues()[0] = LibMatrixMult.dotProduct(left.getDenseBlockValues(), right.getDenseBlockValues(), 0,0 , left.getNumRows());
             }
             case Ab_Ab -> {
-				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__A, List.of(left, right), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),null,numThreads);
+				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__A, List.of(left, right), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
+					null, numThreads);
 			}
             case aB_aB -> {
-				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_A__B, List.of(left, right), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),null,numThreads);
+				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_A__B, List.of(left, right), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
+					null, numThreads);
             }
             case ab_ab -> {
-				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__, List.of(left, right), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),null,numThreads);
+				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__, List.of(left, right), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
+					null, numThreads);
 			}
             case ab_ba -> {
-				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__, List.of(left), List.of(right), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),null,numThreads);
+				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__, List.of(left), List.of(right), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
+					null, numThreads);
 			}
             case Ab_bA -> {
-				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__A, List.of(left), List.of(right), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),null,numThreads);
+				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__A, List.of(left), List.of(right), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
+					null, numThreads);
 			}
             case aB_Ba -> {
-				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_A__B, List.of(left), List.of(right), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),null,numThreads);
+				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_A__B, List.of(left), List.of(right), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
+					null, numThreads);
 			}
             case AB_BA -> {
                 ReorgOperator transpose = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), numThreads);
@@ -271,14 +269,16 @@ public class EOpNodeBinary extends EOpNode {
                 res = left.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), right);
             }
             case Ab_b -> {
-				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__A, List.of(left), new ArrayList<>(), List.of(right), new ArrayList<>(), new ArrayList<>(),null,numThreads);
+				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__A, List.of(left), new ArrayList<>(), List.of(right), new ArrayList<>(), new ArrayList<>(),
+					null, numThreads);
 			}
             case AB_A -> {
                 ensureMatrixBlockColumnVector(right);
                 res = left.binaryOperations(new BinaryOperator(Multiply.getMultiplyFnObject()), right);
             }
             case aB_a -> {
-				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_A__B, List.of(left), new ArrayList<>(), new ArrayList<>(), List.of(right), new ArrayList<>(),null,numThreads);
+				res = EOpNodeFuse.compute(EOpNodeFuse.EinsumRewriteType.AB_BA_A__B, List.of(left), new ArrayList<>(), new ArrayList<>(), List.of(right), new ArrayList<>(),
+					null, numThreads);
 			}
             case A_B -> {
                 ensureMatrixBlockColumnVector(left);
@@ -427,10 +427,6 @@ public class EOpNodeBinary extends EOpNode {
 					return null; // AB_B
 				}else{
 					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2)*charToSizeMap.get(n2.c2), EBinaryOperand.Ba_aC, Pair.of(n1.c1, n2.c2));
-					//					if(n1.c1 ==outChar1 || n1.c1==outChar2|| charToOccurences.get(n1.c1) > 2){
-					//						return null; // AB_B
-					//					}
-					//					return Triple.of(charToSizeMap.get(n1.c1)*charToSizeMap.get(n1.c2), EBinaryOperand.Ba_a, Pair.of(n1.c1, null));
 				}
 			}
 			if(n1.c1 == n2.c2) {

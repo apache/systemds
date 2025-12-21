@@ -24,6 +24,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import scala.Int;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public abstract class EOpNode {
     public Character c1;
@@ -37,14 +39,28 @@ public abstract class EOpNode {
 		this.dim2 = dim2;
     }
 
-    @Override
-    public String toString() {
+    public String getOutputString() {
         if(c1 == null) return "''";
         if(c2 == null) return c1.toString();
         return c1.toString() + c2.toString();
     }
+	public abstract List<EOpNode> getChildren();
 
-	public abstract String[] recursivePrintString();
+	public String[] recursivePrintString(){
+		ArrayList<String[]> inpStrings = new ArrayList<>();
+		for (EOpNode node : getChildren()) {
+			inpStrings.add(node.recursivePrintString());
+		}
+		String[] inpRes = inpStrings.stream().flatMap(Arrays::stream).toArray(String[]::new);
+		String[] res = new String[1 + inpRes.length];
+
+		res[0] = this.toString();
+
+		for  (int i=0; i<inpRes.length; i++) {
+			res[i+1] = (i==0 ?  "┌  " : (i==inpRes.length-1 ?  "└  " : "|  "))+inpRes[i];
+		}
+		return res;
+	};
 
     public abstract MatrixBlock computeEOpNode(ArrayList<MatrixBlock> inputs, int numOfThreads, Log LOG);
 

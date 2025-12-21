@@ -23,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class EOpNodeData extends EOpNode {
     public int matrixIdx;
@@ -30,11 +31,14 @@ public class EOpNodeData extends EOpNode {
         super(c1,c2,dim1,dim2);
         this.matrixIdx = matrixIdx;
     }
+
 	@Override
-	public String[] recursivePrintString() {
-		String[] res = new String[1];
-		res[0] = this.getClass().getSimpleName()+" ("+matrixIdx+") "+this.toString();
-		return res;
+	public List<EOpNode> getChildren() {
+		return List.of();
+	}
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName()+" ("+matrixIdx+") "+getOutputString();
 	}
     @Override
     public MatrixBlock computeEOpNode(ArrayList<MatrixBlock> inputs, int numOfThreads, Log LOG) {

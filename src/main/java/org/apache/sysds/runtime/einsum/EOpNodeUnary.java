@@ -20,10 +20,16 @@
 package org.apache.sysds.runtime.einsum;
 
 import org.apache.commons.logging.Log;
+import org.apache.sysds.common.Opcodes;
+import org.apache.sysds.common.Types;
+import org.apache.sysds.hops.AggUnaryOp;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.runtime.functionobjects.DiagIndex;
+import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.functionobjects.ReduceCol;
+import org.apache.sysds.runtime.functionobjects.ReduceDiag;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
@@ -31,13 +37,14 @@ import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class EOpNodeUnary extends EOpNode {
 	private final EUnaryOperand eUnaryOperand;
 	public EOpNode child;
 
 	public enum EUnaryOperand {
-		DIAG, SUM, SUM_COLS, SUM_ROWS
+		DIAG, TRACE, SUM, SUM_COLS, SUM_ROWS
 	}
 	public EOpNodeUnary(Character c1, Character c2, Integer dim1, Integer dim2, EOpNode child, EUnaryOperand eUnaryOperand) {
 		super(c1, c2, dim1, dim2);
@@ -46,14 +53,12 @@ public class EOpNodeUnary extends EOpNode {
     }
 
 	@Override
-	public String[] recursivePrintString() {
-		String[] childResult = child.recursivePrintString();
-		String[] res = new String[1+childResult.length];
-		res[0] = this.getClass().getSimpleName()+" ("+eUnaryOperand.toString()+") "+this.toString();
-		for (int i=0; i<childResult.length; i++) {
-			res[i+1] = "   " +childResult[i];
-		}
-		return res;
+	public List<EOpNode> getChildren() {
+		return List.of(child);
+	}
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName()+" ("+eUnaryOperand.toString()+") "+this.getOutputString();
 	}
 
     @Override
@@ -63,6 +68,13 @@ public class EOpNodeUnary extends EOpNode {
 			case DIAG->{
 				ReorgOperator op = new ReorgOperator(DiagIndex.getDiagIndexFnObject());
 				yield mb.reorgOperations(op, new MatrixBlock(),0,0,0);
+			}
+			case TRACE -> {
+				AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), Types.CorrectionLocationType.LASTCOLUMN);
+				AggregateUnaryOperator aggun = new AggregateUnaryOperator(agg, ReduceDiag.getReduceDiagFnObject(), numOfThreads);
+				MatrixBlock res = new MatrixBlock(10, 10, false);
+				mb.aggregateUnaryOperations(aggun, res,0,null);
+				yield res;
 			}
 			case SUM->{
 				AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());

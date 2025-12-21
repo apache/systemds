@@ -48,13 +48,12 @@ import static org.apache.sysds.api.DMLScript.EXPLAIN;
 import static org.apache.sysds.hops.rewrite.RewriteMatrixMultChainOptimization.mmChainDP;
 
 public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
-    public static final boolean FORCE_CELL_TPL = false;
+    public static final boolean FORCE_CELL_TPL = false; // naive looped solution
 
 	public static final boolean FUSE_OUTER_MULTIPLY = true;
 	public static final boolean FUSE_OUTER_MULTIPLY_EXCEEDS_L2_CACHE_CHECK = true;
 
-
-	public static final boolean PRINT_TRACE = false;
+	public static final boolean PRINT_TRACE = true;
 
 	protected static final Log LOG = LogFactory.getLog(EinsumCPInstruction.class.getName());
 	public String eqStr;
@@ -67,12 +66,8 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
         _numThreads = OptimizerUtils.getConstrainedNumThreads(-1)/2;
 		_in = inputs;
 		this.eqStr = inputs[0].getName();
-		if (PRINT_TRACE) {
-//			System.out.println("fusing outer mult:"+FUSE_OUTER_MULTIPLY);
+		if (PRINT_TRACE)
 			Logger.getLogger(EinsumCPInstruction.class).setLevel(Level.TRACE);
-		}
-		else
-        	Logger.getLogger(EinsumCPInstruction.class).setLevel(Level.WARN);
 	}
 
 	@Override
@@ -131,8 +126,8 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		ArrayList<MatrixBlock> remainingMatrices;
 
         if(!FORCE_CELL_TPL) {
-			if(true){ // new way: search for fusions and matrix-multiplications chain in a loop
-				plan = generatePlanFusionAndMM(eOpNodes, eOpNodesScalars, einc.charToDimensionSize, characterToOccurences, einc.outChar1, einc.outChar2);
+			if(true){
+				plan = generateGreedyPlan(eOpNodes, eOpNodesScalars, einc.charToDimensionSize, characterToOccurences, einc.outChar1, einc.outChar2);
 			}else { // old way: try to do fusion first and then rest in binary fashion cost based
 				List<EOpNodeFuse> fuseOps;
 				do {
@@ -146,15 +141,10 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 								continue;
 							}
 							ret.add(fuseOp);
-//							if (fuseOp.c2 != null) {
-//								characterToOccurences.put(fuseOp.c2, characterToOccurences.get(fuseOp.c2)+1);
-//							}
-//							characterToOccurences.put(fuseOp.c1, characterToOccurences.get(fuseOp.c1)+1);
 						}
 						eOpNodes = ret;
 					}
 				} while(eOpNodes.size() > 1 && !fuseOps.isEmpty());
-
 				Pair<Integer, List<EOpNode>> costAndPlan = generateBinaryPlanCostBased(0, eOpNodes, einc.charToDimensionSize, characterToOccurences,
 					einc.outChar1, einc.outChar2);
 				plan = costAndPlan.getRight();
@@ -304,7 +294,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		if (plan instanceof EOpNodeBinary bin) inputs = List.of(bin.left, bin.right);
 		else if(plan instanceof EOpNodeFuse fuse){
 			cost = switch (fuse.einsumRewriteType) {
-				case AB_BA_B_A__ -> 1; // thisSize
+				case AB_BA_B_A__ -> 1;
 				case AB_BA_B_A__AB -> thisSize;
 				case AB_BA_A__B -> thisSize;
 				case AB_BA_B_A__A -> 2; // intermediate is scalar, 2 because if there is some real scalar
@@ -312,7 +302,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 				case AB_BA_A_AZ__BZ -> thisSize;
 				case AB_BA_A_AZ__ZB -> thisSize;
 			};
-			inputs = fuse.getAllOps();
+			inputs = fuse.getChildren();
 		}
 
 		for(EOpNode inp : inputs){
@@ -373,7 +363,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		HashMap<Character, Integer> charToDimensionSize) {
 		for(int i = 0; i< inputStrings.size(); i++){
 			String s = inputStrings.get(i);
-			if (s.length() == 0){
+			if (s.isEmpty()){
 				eOpNodesScalars.add(new EOpNodeData(null, null, null, null,i));
 				inputStrings.set(i, null);
 				continue;
@@ -394,7 +384,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 
 			if(c1 == c2){
 				if((einc.outChar1 == null || c1 != einc.outChar1) && (einc.outChar2 == null || c1 != einc.outChar2) && einc.characterAppearanceCount.get(c1) == 2){
-					op = EOpNodeUnary.EUnaryOperand.SUM;
+					op = EOpNodeUnary.EUnaryOperand.TRACE;
 				}else {
 					einc.characterAppearanceCount.put(c1, einc.characterAppearanceCount.get(c1) - 1);
 					op = EOpNodeUnary.EUnaryOperand.DIAG;
@@ -424,7 +414,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		}
 	}
 
-	private static List<EOpNode> generatePlanFusionAndMM(ArrayList<EOpNode> eOpNodes,
+	private static List<EOpNode> generateGreedyPlan(ArrayList<EOpNode> eOpNodes,
 		ArrayList<EOpNode> eOpNodesScalars, HashMap<Character, Integer> charToSizeMap, HashMap<Character, Integer> charToOccurences, Character outChar1, Character outChar2) {
 		ArrayList<EOpNode> ret;
 		int lastNumOfOperands = -1;
@@ -443,10 +433,6 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 							continue;
 						}
 						ret.add(fuseOp);
-//						if (fuseOp.c2 != null) {
-//							charToOccurences.put(fuseOp.c2, charToOccurences.get(fuseOp.c2)+1);
-//						}
-//						charToOccurences.put(fuseOp.c1, charToOccurences.get(fuseOp.c1)+1);
 					}
 					eOpNodes = ret;
 				}
@@ -470,7 +456,34 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		return eOpNodes;
 	}
 
-	private static EOpNodeBinary optimizeMMChain(List<EOpNode> mmChain, HashMap<Character, Integer> charToSizeMap) {
+	private static void reverseMMChainIfBeneficial(ArrayList<EOpNode> mmChain){ // possibly check the cost instead of number of transposes
+		char c1 = mmChain.get(0).c1;
+		char c2 = mmChain.get(0).c2;
+		int noTransposes = 0;
+		for (int i=1; i<mmChain.size(); i++){
+			if(c2 == mmChain.get(i).c1){
+				continue;
+			}
+			noTransposes++;
+			if(c2 == mmChain.get(i).c2){
+				c1 = c1;
+				c2 = mmChain.get(i).c1;
+			}
+			else if(c1 == mmChain.get(i).c1) {
+				c1 = c2;
+				c2 = mmChain.get(i).c2;
+			}else if(c1 == mmChain.get(i).c2) {
+				c1 = c2;
+				c2 = mmChain.get(i).c1;
+			}
+		}
+		if (noTransposes > (mmChain.size() / 2 )+1) {
+			Collections.reverse(mmChain);
+		}
+	}
+	private static EOpNodeBinary optimizeMMChain(List<EOpNode> mmChainL, HashMap<Character, Integer> charToSizeMap) {
+		ArrayList<EOpNode> mmChain = new ArrayList<>(mmChainL);
+		reverseMMChainIfBeneficial(mmChain);
 		ArrayList<Pair<Integer, Integer>> dimensions = new ArrayList<>();
 
 		for(int i = 0; i < mmChain.size()-1; i++){
@@ -491,8 +504,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		int size = mmChain.size();
 		int[][] splitMatrix = mmChainDP(dimsArray, mmChain.size());
 
-		EOpNodeBinary res = (EOpNodeBinary) getBinaryFromSplit(splitMatrix,0,size-1, mmChain);
-		return res;
+		return (EOpNodeBinary) getBinaryFromSplit(splitMatrix,0,size-1, mmChain);
 	}
 
 	private static EOpNode getBinaryFromSplit(int[][] splitMatrix, int i, int j, List<EOpNode> mmChain) {
@@ -558,7 +570,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		for(int i = 0; i < operandsTodo.size(); i++){
 			EOpNode iterateNode = operandsTodo.get(i);
 
-			if (doneNodes.contains(iterateNode)) continue;// was added previously somewhere
+			if (doneNodes.contains(iterateNode)) continue; // was added previously
 			doneNodes.add(iterateNode);
 
 			LinkedList<EOpNode> multiplies = new LinkedList<>();
@@ -611,7 +623,7 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 		return res;
 	}
 
-	// old way
+	// old way, DFS finds all paths
 	private Pair<Integer, List<EOpNode>> generateBinaryPlanCostBased(int cost, ArrayList<EOpNode> operands, HashMap<Character, Integer> charToSizeMap, HashMap<Character, Integer> charToOccurences, Character outChar1, Character outChar2) {
 		Integer minCost = cost;
 		List<EOpNode> minNodes = operands;
@@ -629,17 +641,14 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 			return Pair.of(cost, operands);
 		}
 		else if (operands.size() == 1){
-			// check for transpose
 			return Pair.of(cost, operands);
 		}
-
 
 		for(int i = 0; i < operands.size()-1; i++){
 			for (int j = i+1; j < operands.size(); j++){
 				boolean swap = (operands.get(i).c2 == null && operands.get(j).c2 != null) || operands.get(i).c1 == null;
 				EOpNode n1 = operands.get(!swap ? i : j);
 				EOpNode n2 = operands.get(!swap ? j : i);
-
 
 				Triple<Integer, EBinaryOperand, Pair<Character, Character>> t = EOpNodeBinary.TryCombineAndCost(n1, n2, charToSizeMap, charToOccurences, outChar1, outChar2);
 				if (t != null){
@@ -650,7 +659,6 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 					if(n1.c2 != null) charToOccurences.put(n1.c2, charToOccurences.get(n1.c2)-1);
 					if(n2.c1 != null) charToOccurences.put(n2.c1, charToOccurences.get(n2.c1)-1);
 					if(n2.c2 != null) charToOccurences.put(n2.c2, charToOccurences.get(n2.c2)-1);
-
 					if(newNode.c1 != null) charToOccurences.put(newNode.c1, charToOccurences.get(newNode.c1)+1);
 					if(newNode.c2 != null) charToOccurences.put(newNode.c2, charToOccurences.get(newNode.c2)+1);
 
@@ -660,8 +668,8 @@ public class EinsumCPInstruction extends BuiltinNaryCPInstruction {
 					}
 					newOperands.add(newNode);
 
-					Pair<Integer, List<EOpNode>> furtherPlan = generateBinaryPlanCostBased(thisCost, newOperands,charToSizeMap, charToOccurences, outChar1, outChar2);
-					if(furtherPlan.getRight().size() < (minNodes.size()) || furtherPlan.getLeft() < minCost){
+					Pair<Integer, List<EOpNode>> furtherPlan = generateBinaryPlanCostBased(thisCost, newOperands, charToSizeMap, charToOccurences, outChar1, outChar2);
+					if(furtherPlan.getRight().size() < minNodes.size() || furtherPlan.getLeft() < minCost){
 						minCost = furtherPlan.getLeft();
 						minNodes = furtherPlan.getRight();
 					}

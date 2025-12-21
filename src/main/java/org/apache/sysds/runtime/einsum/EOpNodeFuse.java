@@ -39,6 +39,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.function.Function;
 
 import static org.apache.sysds.runtime.instructions.cp.EinsumCPInstruction.ensureMatrixBlockColumnVector;
 import static org.apache.sysds.runtime.instructions.cp.EinsumCPInstruction.ensureMatrixBlockRowVector;
@@ -67,15 +68,15 @@ public class EOpNodeFuse extends EOpNode {
 	public List<EOpNode> Bs;
 	public List<EOpNode> As;
 	public List<EOpNode> AZs;
-//	public List<EOpNode> Zs;
-//    public final List<List<EOpNode>> operands;
-	public List<EOpNode> getAllOps(){
+	@Override
+	public List<EOpNode> getChildren(){
 		List<EOpNode> all = new ArrayList<>();
 		all.addAll(ABs);
 		all.addAll(BAs);
 		all.addAll(Bs);
 		all.addAll(As);
 		all.addAll(AZs);
+		if (scalar != null) all.add(scalar);
 		return all;
 	};
     private EOpNodeFuse(Character c1, Character c2, Integer dim1, Integer dim2, EinsumRewriteType einsumRewriteType, List<EOpNode> ABs, List<EOpNode> BAs, List<EOpNode> Bs, List<EOpNode> As, List<EOpNode> AZs) {
@@ -86,9 +87,8 @@ public class EOpNodeFuse extends EOpNode {
 		this.Bs = Bs;
 		this.As = As;
 		this.AZs = AZs;
-//		this.Zs = Zs;
     }
-	public EOpNodeFuse(EinsumRewriteType einsumRewriteType, List<EOpNode> ABs, List<EOpNode> BAs, List<EOpNode> Bs, List<EOpNode> As, List<EOpNode> AZs) {
+	public EOpNodeFuse(EinsumRewriteType einsumRewriteType, List<EOpNode> ABs, List<EOpNode> BAs, List<EOpNode> Bs, List<EOpNode> As, List<EOpNode> AZs, List<Pair<List<EOpNode>, List<EOpNode>>> AXsAndXs) {
 		super(null,null,null, null);
 		switch(einsumRewriteType) {
 			case AB_BA_B_A__A->{
@@ -124,29 +124,13 @@ public class EOpNodeFuse extends EOpNode {
 		this.Bs = Bs;
 		this.As = As;
 		this.AZs = AZs;
-//		this.Zs = Zs;
-//		this.operands = Arrays.asList(operands);
 	}
+
 	@Override
-	public String[] recursivePrintString() {
-		ArrayList<String[]> inpStrings = new ArrayList<>();
-		for (EOpNode node : getAllOps()) {
-			inpStrings.add(node.recursivePrintString());
-		}
-		String[] inpRes = inpStrings.stream().flatMap(Arrays::stream).toArray(String[]::new);
-		String[] scalarRes = this.scalar==null ? new String[]{} : this.scalar.recursivePrintString();
-		String[] res = new String[1 + inpRes.length + scalarRes.length];
-
-		res[0] = this.getClass().getSimpleName()+" ("+einsumRewriteType.toString()+") "+this.toString();
-
-		for  (int i=0; i<inpRes.length; i++) {
-			res[i+1] = (i==0 ?  "┌  " : (i==inpRes.length-1 ?  "└  " : "|  "))+inpRes[i];
-		}
-		for  (int i=0; i<scalarRes.length; i++) {
-			res[i+inpRes.length+1] = (i==0 ?  "┌  " : (i==scalarRes.length-1 ?  "└  " : "|  "))+scalarRes[i];
-		}
-		return res;
+	public String toString() {
+		return this.getClass().getSimpleName()+" ("+einsumRewriteType.toString()+") "+this.getOutputString();
 	}
+
 	public void addScalarAsIntermediate(EOpNode scalar) {
 		if(einsumRewriteType == EinsumRewriteType.AB_BA_B_A__A || einsumRewriteType == EinsumRewriteType.AB_BA_B_A_AZ__Z)
 			this.scalar = scalar;
@@ -154,7 +138,7 @@ public class EOpNodeFuse extends EOpNode {
 			throw new RuntimeException("EOpNodeFuse.addScalarAsIntermediate: scalar is undefined for type "+einsumRewriteType.toString());
 	}
 
-    public static List<EOpNodeFuse> findFuseOps(ArrayList<EOpNode> operands, Character outChar1, Character outChar2,/*, Set<Character> simplySummableChars,*/
+    public static List<EOpNodeFuse> findFuseOps(ArrayList<EOpNode> operands, Character outChar1, Character outChar2,
 		HashMap<Character, Integer> charToSize, HashMap<Character, Integer> charToOccurences, ArrayList<EOpNode> ret) {
 		ArrayList<EOpNodeFuse> result = new ArrayList<>();
 		HashSet<String> matricesChars = new HashSet<>();
@@ -193,7 +177,6 @@ public class EOpNodeFuse extends EOpNode {
 			.map(x -> Pair.of(charsToMatrices.get(x).get(0).dim1 * charsToMatrices.get(x).get(0).dim2, x)).toList());
 		matricesCharsSorted.sort(Comparator.comparing(Pair::getLeft));
 		ArrayList<EOpNode> AZs = new ArrayList<>();
-		ArrayList<EOpNode> Zs = new ArrayList<>();
 
 		HashSet<String> usedMatricesChars = new HashSet<>();
 		HashSet<EOpNode> usedOperands = new HashSet<>();
@@ -206,73 +189,84 @@ public class EOpNodeFuse extends EOpNode {
 			String AB = ABCandidate;
 			String BA = "" + b + a;
 
-			int BAsCounter = (charsToMatrices.containsKey(BA) ? charsToMatrices.get(BA).size() : 0);
-			int ABsCounter = charsToMatrices.get(AB).size();
+			int BAsCount = (charsToMatrices.containsKey(BA) ? charsToMatrices.get(BA).size() : 0);
+			int ABsCount = charsToMatrices.get(AB).size();
 
-			if(BAsCounter > ABsCounter + 1) {
+			if(BAsCount > ABsCount + 1) {
 				BA = "" + a + b;
 				AB = "" + b + a;
 				char tmp = a;
 				a = b;
 				b = tmp;
-				int tmp2 = ABsCounter;
-				ABsCounter = BAsCounter;
-				BAsCounter = tmp2;
+				int tmp2 = ABsCount;
+				ABsCount = BAsCount;
+				BAsCount = tmp2;
 			}
 			String A = "" + a;
 			String B = "" + b;
-			ArrayList<EOpNode> Bs = !charsToMatrices.containsKey(B) || usedMatricesChars.contains(B) ? new ArrayList<>() : charsToMatrices.get(B);
-			ArrayList<EOpNode> As = !charsToMatrices.containsKey(A) || usedMatricesChars.contains(A) ? new ArrayList<>() : charsToMatrices.get(A);
-			int AsCounter = As.size();
-			int BsCounter = Bs.size();
+			int AsCount = (charsToMatrices.containsKey(A) && !usedMatricesChars.contains(A) ? charsToMatrices.get(A).size() : 0);
+			int BsCount = (charsToMatrices.containsKey(B) && !usedMatricesChars.contains(B) ? charsToMatrices.get(B).size() : 0);
 
-			if(AsCounter == 0 && BsCounter == 0 && (ABsCounter + BAsCounter) < 2) { // no elementwise multiplication possible
+			if(AsCount == 0 && BsCount == 0 && (ABsCount + BAsCount) < 2) { // no elementwise multiplication possible
 				continue;
 			}
 
-			int usedBsCount = BsCounter + ABsCounter + BAsCounter;
+			int usedBsCount = BsCount + ABsCount + BAsCount;
 
 			boolean doSumA = false;
 			boolean doSumB = charToOccurences.get(b) == usedBsCount && (outChar1 == null || b != outChar1) && (outChar2 == null || b != outChar2);
-//			boolean doSumZ = false; // there could be multiple AZ-s if Z is summed but for now it is limited to one
 			HashSet<String> AZCandidates = matricesCharsStartingWithChar.get(a);
-			boolean includeAZ = AZCandidates.size() == 2; // 2 because it also contains AB
 
 			String AZ = null;
 			Character z = null;
+			boolean includeAZ = AZCandidates.size() == 2;
+
 			if(includeAZ) {
-				var it = AZCandidates.iterator(); AZ = it.next();
-				if(AZ.charAt(1) == b) AZ = it.next(); // AB was chosen instead of AZ
-				AZs = charsToMatrices.get(AZ);
-				z = AZ.charAt(1);
-//				String Z = "" + z;
-//				Zs = charsToMatrices.get(Z);
-				if(usedMatricesChars.contains(AZ)) { includeAZ = false; }
-				int AZsCounter = AZs.size();
-				doSumA = charToOccurences.get(a) == AsCounter + ABsCounter + BAsCounter + AZsCounter && (outChar1 == null || a != outChar1) && (outChar2 == null || a != outChar2);
-//				doSumZ = charToOccurences.get(z) == AZsCounter + Zs.size();
-				if(!doSumA) {
-					includeAZ = false;
-				}
-				else if(!doSumB) { // check if outer is possible AB,...,AZ->BZ
-					if(!EinsumCPInstruction.FUSE_OUTER_MULTIPLY
-						|| (EinsumCPInstruction.FUSE_OUTER_MULTIPLY_EXCEEDS_L2_CACHE_CHECK && ((charToSize.get(a) * charToSize.get(b) *(ABsCounter + BAsCounter)) + (charToSize.get(a)*charToSize.get(z)*(AZsCounter))) * 8 < 6 * 1024 * 1024)
-						|| !LibMatrixMult.isSkinnyRightHandSide(charToSize.get(AB.charAt(0)), charToSize.get(AB.charAt(1)),
-							charToSize.get(AB.charAt(0)), charToSize.get(AZCandidates.iterator().next().charAt(1)),
-							false)) {
+				for(var AZCandidate : AZCandidates) {
+					if(AB.equals(AZCandidate)) {continue;}
+					AZs = charsToMatrices.get(AZCandidate);
+					z = AZCandidate.charAt(1);
+					String Z = "" + z;
+					AZ = "" + a + z;
+					int AZsCount= AZs.size();
+					int ZsCount= charsToMatrices.containsKey(Z) ? charsToMatrices.get(Z).size() : 0;
+					doSumA = AZsCount + ABsCount + BAsCount + AsCount == charToOccurences.get(a) && (outChar1 == null || a != outChar1) && (outChar2 == null || a != outChar2);
+					boolean doSumZ = AZsCount + ZsCount  == charToOccurences.get(z) && (outChar1 == null || z != outChar1) && (outChar2 == null || z != outChar2);
+					if(!doSumA){
 						includeAZ = false;
+					} else if(!doSumB && doSumZ){ // swap the order, to have only one fusion AB,...,AZ->Z
+						b = z;
+						z = AB.charAt(1);
+						AB = "" + a + b;
+						BA = "" + b + a;
+						A = "" + a;
+						B = "" + b;
+						AZ = "" + a + z;
+						AZs = charsToMatrices.get(AZ);
+						doSumB = true;
+					} else if(!doSumB && !doSumZ){ // outer between B and Z
+						if(!EinsumCPInstruction.FUSE_OUTER_MULTIPLY
+							|| (EinsumCPInstruction.FUSE_OUTER_MULTIPLY_EXCEEDS_L2_CACHE_CHECK && ((charToSize.get(a) * charToSize.get(b) *(ABsCount + BAsCount)) + (charToSize.get(a)*charToSize.get(z)*(AZsCount))) * 8 < 6 * 1024 * 1024)
+							|| !LibMatrixMult.isSkinnyRightHandSide(charToSize.get(AB.charAt(0)), charToSize.get(AB.charAt(1)), charToSize.get(AB.charAt(0)), charToSize.get(AZCandidates.iterator().next().charAt(1)),false)) {
+							includeAZ = false;
+						}
+					} else if(doSumB && doSumZ){
+						// it will be two separate templates and then mutliply a vectors
+					} else if (doSumB && !doSumZ) {
+						// ->Z template OK
 					}
+					break;
 				}
-				// else AB,...,AZ-> Z possible
 			}
 
 			if(!includeAZ) {
-				doSumA = charToOccurences.get(a) == AsCounter + ABsCounter + BAsCounter && (outChar1 == null || a != outChar1) && (outChar2 == null || a != outChar2);
+				doSumA = charToOccurences.get(a) == AsCount + ABsCount + BAsCount && (outChar1 == null || a != outChar1) && (outChar2 == null || a != outChar2);
 			}
 
 			ArrayList<EOpNode> ABs = charsToMatrices.containsKey(AB) ? charsToMatrices.get(AB) : new ArrayList<>();
 			ArrayList<EOpNode> BAs = charsToMatrices.containsKey(BA) ? charsToMatrices.get(BA) : new ArrayList<>();
-
+			ArrayList<EOpNode> As = charsToMatrices.containsKey(A) && !usedMatricesChars.contains(A) ? charsToMatrices.get(A) : new ArrayList<>();
+			ArrayList<EOpNode> Bs = charsToMatrices.containsKey(B) && !usedMatricesChars.contains(B) ? charsToMatrices.get(B) : new ArrayList<>();
 			Character c1 = null, c2 = null;
 			Integer dim1 = null, dim2 = null;
 			EinsumRewriteType type = null;
@@ -332,12 +326,6 @@ public class EOpNodeFuse extends EOpNode {
 			if (includeB) usedOperands.addAll(Bs);
 			if (includeAZ) usedOperands.addAll(AZs);
 
-//			if(type == EinsumRewriteType.AB_BA_B_A_AZ__Z && AZs.size() > 1){ // multiply all AZs if multiple
-//				EOpNodeFuse fuseAZs = new EOpNodeFuse(EinsumRewriteType.AB_BA_B_A__AB, new ArrayList<>(AZs), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
-//				AZs = new ArrayList<>();
-//				AZs.add(fuseAZs);
-//			}
-
 			usedMatricesChars.add(AB);
 			usedMatricesChars.add(BA);
 			usedMatricesChars.add(A);
@@ -352,7 +340,7 @@ public class EOpNodeFuse extends EOpNode {
         for(EOpNode n : operands) {
             if(!usedOperands.contains(n)){
                 ret.add(n);
-            }else{
+            } else {
 				charToOccurences.put(n.c1, charToOccurences.get(n.c1) - 1);
 				if(charToOccurences.get(n.c2)!= null)
 					charToOccurences.put(n.c2, charToOccurences.get(n.c2)-1);
@@ -361,7 +349,8 @@ public class EOpNodeFuse extends EOpNode {
 
         return result;
     }
-	public static MatrixBlock compute(EinsumRewriteType rewriteType, List<MatrixBlock> ABsInput, List<MatrixBlock> mbBAs, List<MatrixBlock> mbBs, List<MatrixBlock> mbAs, List<MatrixBlock> mbAZs, Double scalar, int numThreads){
+	public static MatrixBlock compute(EinsumRewriteType rewriteType, List<MatrixBlock> ABsInput, List<MatrixBlock> mbBAs, List<MatrixBlock> mbBs, List<MatrixBlock> mbAs, List<MatrixBlock> mbAZs,
+		Double scalar, int numThreads){
 		boolean isResultAB =rewriteType  == EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__AB;
 		boolean isResultA = rewriteType == EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__A;
 		boolean isResultB = rewriteType == EOpNodeFuse.EinsumRewriteType.AB_BA_A__B;
@@ -385,15 +374,8 @@ public class EOpNodeFuse extends EOpNode {
 		int constDim2 = -1;
 		int zSize = 0;
 		int azCount = 0;
-		//        int zCount = 0;
 		switch(rewriteType){
-			case AB_BA_B_A_AZ__Z ->  {
-				constDim2 = mbAZs.get(0).getNumColumns();
-				zSize = mbAZs.get(0).getNumColumns();
-				azCount = mbAZs.size();
-				//                if (mbZs != null) zCount = mbZs.size();
-			}
-			case AB_BA_A_AZ__BZ, AB_BA_A_AZ__ZB -> {
+			case AB_BA_B_A_AZ__Z, AB_BA_A_AZ__BZ, AB_BA_A_AZ__ZB ->  {
 				constDim2 = mbAZs.get(0).getNumColumns();
 				zSize = mbAZs.get(0).getNumColumns();
 				azCount = mbAZs.size();
@@ -445,22 +427,23 @@ public class EOpNodeFuse extends EOpNode {
 	}
     @Override
     public MatrixBlock computeEOpNode(ArrayList<MatrixBlock> inputs, int numThreads, Log LOG) {
-        ArrayList<MatrixBlock> mbABs = new ArrayList<>(ABs.stream().map(n -> n.computeEOpNode(inputs, numThreads, LOG)).toList());
-		List<MatrixBlock> mbBAs = BAs.stream().map(n -> n.computeEOpNode(inputs, numThreads, LOG)).toList();
-		List<MatrixBlock> mbBs =  Bs.stream().map(n -> n.computeEOpNode(inputs, numThreads, LOG)).toList();
-		List<MatrixBlock> mbAs = As.stream().map(n -> n.computeEOpNode(inputs, numThreads, LOG)).toList();
-        List<MatrixBlock> mbAZs = AZs.stream().map(n -> n.computeEOpNode(inputs, numThreads, LOG)).toList();
+		final Function<EOpNode, MatrixBlock> eOpNodeToMatrixBlock =  n -> n.computeEOpNode(inputs, numThreads, LOG);
+        ArrayList<MatrixBlock> mbABs = new ArrayList<>(ABs.stream().map(eOpNodeToMatrixBlock).toList());
+		List<MatrixBlock> mbBAs = BAs.stream().map(eOpNodeToMatrixBlock).toList();
+		List<MatrixBlock> mbBs =  Bs.stream().map(eOpNodeToMatrixBlock).toList();
+		List<MatrixBlock> mbAs = As.stream().map(eOpNodeToMatrixBlock).toList();
+		List<MatrixBlock> mbAZs = AZs.stream().map(eOpNodeToMatrixBlock).toList();
 		Double scalar = this.scalar == null ? null : this.scalar.computeEOpNode(inputs, numThreads, LOG).get(0,0);
-		return EOpNodeFuse.compute(this.einsumRewriteType, mbABs, mbBAs, mbBs, mbAs, mbAZs, scalar, numThreads);
+		return EOpNodeFuse.compute(this.einsumRewriteType, mbABs, mbBAs, mbBs, mbAs, mbAZs , scalar, numThreads);
     }
 
     @Override
 	public EOpNode reorderChildrenAndOptimize(EOpNode parent, Character outChar1, Character outChar2) {
-		for(int i = 0; i < ABs.size(); i++) ABs.set(i,ABs.get(i).reorderChildrenAndOptimize(this, ABs.get(i).c1, ABs.get(i).c2));
-		for(int i = 0; i < BAs.size(); i++) BAs.set(i,BAs.get(i).reorderChildrenAndOptimize(this, BAs.get(i).c1, BAs.get(i).c2));
-		for(int i = 0; i < As.size(); i++) As.set(i,As.get(i).reorderChildrenAndOptimize(this, As.get(i).c1, As.get(i).c2));
-		for(int i = 0; i < Bs.size(); i++) Bs.set(i,Bs.get(i).reorderChildrenAndOptimize(this, Bs.get(i).c1, Bs.get(i).c2));
-		for(int i = 0; i < AZs.size(); i++) AZs.set(i,AZs.get(i).reorderChildrenAndOptimize(this, AZs.get(i).c1, AZs.get(i).c2));
+		ABs.replaceAll(n -> n.reorderChildrenAndOptimize(this, n.c1, n.c2));
+		BAs.replaceAll(n -> n.reorderChildrenAndOptimize(this, n.c1, n.c2));
+		As.replaceAll(n -> n.reorderChildrenAndOptimize(this, n.c1, n.c2));
+		Bs.replaceAll(n -> n.reorderChildrenAndOptimize(this, n.c1, n.c2));
+		AZs.replaceAll(n -> n.reorderChildrenAndOptimize(this, n.c1, n.c2));
 		return this;
     }
 
@@ -468,11 +451,10 @@ public class EOpNodeFuse extends EOpNode {
         MatrixBlock mb = new MatrixBlock(mbs.get(0).getNumRows(), mbs.get(0).getNumColumns(), false);
         mb.allocateDenseBlock();
         for(int i = 1; i< mbs.size(); i++) { // multiply Bs
-            if(i==1){
+            if(i==1)
                 LibMatrixMult.vectMultiplyWrite(mbs.get(0).getDenseBlock().values(0), mbs.get(1).getDenseBlock().values(0), mb.getDenseBlock().values(0),0,0,0, size);
-            }else{
+            else
                 LibMatrixMult.vectMultiply(mbs.get(i).getDenseBlock().values(0),mb.getDenseBlock().values(0),0,0, size);
-            }
         }
         return List.of(mb);
     }

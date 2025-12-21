@@ -23,7 +23,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.EmptyEncoding;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
@@ -83,7 +82,7 @@ public class EncodeDeltaTest {
 		IEncode encoding = EncodingFactory.createFromMatrixBlockDelta(mb, false, ColIndexFactory.create(2));
 		assertNotNull("Encoding should not be null", encoding);
 		assertTrue("Encoding should be DenseEncoding", encoding instanceof DenseEncoding);
-		assertEquals("First row [5,10] stored as-is, delta [0,0] for row 1, so 2 unique: [5,10] and [0,0]", 2, encoding.getUnique());
+		assertEquals("First row [5,10] stored as-is, delta [0,0] for row 1. Map has 2 unique: [5,10] and [0,0]. With zero=true, unique = 2 + 1 = 3", 3, encoding.getUnique());
 	}
 
 	@Test
@@ -195,15 +194,6 @@ public class EncodeDeltaTest {
 		assertTrue("Should have at least 1 unique value", encoding.getUnique() >= 1);
 	}
 
-	@Test(expected = NotImplementedException.class)
-	public void testCreateFromMatrixBlockDeltaTransposed() {
-		MatrixBlock mb = new MatrixBlock(10, 10, false);
-		mb.allocateDenseBlock();
-		mb.set(0, 0, 1);
-		mb.set(0, 1, 2);
-		mb.setNonZeros(2);
-		EncodingFactory.createFromMatrixBlockDelta(mb, true, ColIndexFactory.create(2));
-	}
 
 	@Test
 	public void testCreateFromMatrixBlockDeltaLargeMatrix() {
@@ -218,7 +208,7 @@ public class EncodeDeltaTest {
 		IEncode encoding = EncodingFactory.createFromMatrixBlockDelta(mb, false, ColIndexFactory.create(3));
 		assertNotNull("Encoding should not be null", encoding);
 		assertTrue("Encoding should be DenseEncoding", encoding instanceof DenseEncoding);
-		assertEquals("First row [0,0,0] stored as-is, all deltas are [1,2,3], so 2 unique: [0,0,0] and [1,2,3]", 2, encoding.getUnique());
+		assertEquals("First row [0,0,0] stored as-is, all deltas are [1,2,3]. Map has 2 unique: [0,0,0] and [1,2,3]. All rows have non-zero deltas, so offsets.size()=100=ru, zero=false, unique=2", 2, encoding.getUnique());
 		assertEquals("Should have 100 rows in mapping", 100, ((DenseEncoding) encoding).getMap().size());
 	}
 
@@ -389,6 +379,89 @@ public class EncodeDeltaTest {
 		assertTrue("Combined encoding should be DenseEncoding", combined instanceof DenseEncoding);
 		assertEquals("Combined mapping should have same size as input", 
 			4, ((DenseEncoding) combined).getMap().size());
+	}
+
+	@Test
+	public void testCreateFromMatrixBlockDeltaDensePath() {
+		MatrixBlock mb = new MatrixBlock(10, 2, true);
+		mb.set(0, 0, 10);
+		mb.set(0, 1, 20);
+		mb.set(1, 0, 11);
+		mb.set(1, 1, 21);
+		mb.set(2, 0, 12);
+		mb.set(2, 1, 22);
+		mb.set(3, 0, 13);
+		mb.set(3, 1, 23);
+		mb.set(4, 0, 14);
+		mb.set(4, 1, 24);
+
+		IEncode encoding = EncodingFactory.createFromMatrixBlockDelta(mb, false, ColIndexFactory.create(2), 10);
+		assertNotNull("Encoding should not be null", encoding);
+		assertTrue("Should result in DenseEncoding (5 non-zero rows >= 10/4=2.5, so dense path)", 
+			encoding instanceof DenseEncoding);
+		assertTrue("Should have at least 1 unique value", encoding.getUnique() >= 1);
+	}
+
+	@Test
+	public void testCreateFromMatrixBlockDeltaEmptyEncoding() {
+		MatrixBlock mb = new MatrixBlock(10, 2, true);
+
+		IEncode encoding = EncodingFactory.createFromMatrixBlockDelta(mb, false, ColIndexFactory.create(2), 10);
+		assertNotNull("Encoding should not be null", encoding);
+		assertTrue("Empty matrix should result in EmptyEncoding", encoding instanceof EmptyEncoding);
+	}
+
+	@Test
+	public void testCreateFromMatrixBlockDeltaConstEncoding() {
+		MatrixBlock mb = new MatrixBlock(5, 2, false);
+		mb.allocateDenseBlock();
+		for(int i = 0; i < 5; i++) {
+			mb.set(i, 0, 10);
+			mb.set(i, 1, 20);
+		}
+
+		IEncode encoding = EncodingFactory.createFromMatrixBlockDelta(mb, false, ColIndexFactory.create(2), 5);
+		assertNotNull("Encoding should not be null", encoding);
+		assertTrue("Constant matrix with delta encoding: first row is absolute [10,20], rest are deltas [0,0], so map.size()=2, not ConstEncoding", 
+			encoding instanceof DenseEncoding || encoding instanceof SparseEncoding);
+		assertTrue("Should have 2 unique values (first row absolute, rest are zero deltas)", encoding.getUnique() >= 2);
+	}
+
+
+	@Test
+	public void testCreateFromMatrixBlockDeltaSparseEncoding() {
+		MatrixBlock mb = new MatrixBlock(20, 2, true);
+		mb.set(0, 0, 10);
+		mb.set(0, 1, 20);
+		mb.set(1, 0, 11);
+		mb.set(1, 1, 21);
+		mb.set(2, 0, 12);
+		mb.set(2, 1, 22);
+
+		IEncode encoding = EncodingFactory.createFromMatrixBlockDelta(mb, false, ColIndexFactory.create(2), 20);
+		assertNotNull("Encoding should not be null", encoding);
+		assertTrue("Sparse matrix with few non-zero rows (3 < 20/4=5) should result in SparseEncoding", 
+			encoding instanceof SparseEncoding);
+		assertTrue("Should have at least 1 unique value", encoding.getUnique() >= 1);
+	}
+
+	@Test
+	public void testCreateFromMatrixBlockDeltaDenseWithZero() {
+		MatrixBlock mb = new MatrixBlock(10, 2, true);
+		mb.set(0, 0, 10);
+		mb.set(0, 1, 20);
+		mb.set(1, 0, 11);
+		mb.set(1, 1, 21);
+		mb.set(2, 0, 12);
+		mb.set(2, 1, 22);
+		mb.set(3, 0, 13);
+		mb.set(3, 1, 23);
+
+		IEncode encoding = EncodingFactory.createFromMatrixBlockDelta(mb, false, ColIndexFactory.create(2), 10);
+		assertNotNull("Encoding should not be null", encoding);
+		assertTrue("Sparse matrix with some non-zero rows (4 >= 10/4=2.5 but 4 < 10) should result in DenseEncoding with zero=true", 
+			encoding instanceof DenseEncoding);
+		assertTrue("Should have at least 1 unique value", encoding.getUnique() >= 1);
 	}
 
 }

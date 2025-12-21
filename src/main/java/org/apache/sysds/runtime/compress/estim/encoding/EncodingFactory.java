@@ -699,10 +699,13 @@ public interface EncodingFactory {
 		final DblArrayCountHashMap map = new DblArrayCountHashMap();
 		final IntArrayList offsets = new IntArrayList();
 		DblArray cellVals = reader1.nextRow();
+		boolean isFirstRow = true;
 
 		while(cellVals != null) {
 			map.increment(cellVals);
-			offsets.appendValue(reader1.getCurrentRowIndex());
+			if(isFirstRow || !cellVals.isEmpty())
+				offsets.appendValue(reader1.getCurrentRowIndex());
+			isFirstRow = false;
 			cellVals = reader1.nextRow();
 		}
 
@@ -740,8 +743,12 @@ public interface EncodingFactory {
 		final AMapToData d = MapToFactory.create(offsets.size(), map.size());
 
 		int i = 0;
+		boolean isFirstRow = true;
 		while(cellVals != null) {
-			d.set(i++, map.getId(cellVals));
+			if(isFirstRow || !cellVals.isEmpty()) {
+				d.set(i++, map.getId(cellVals));
+			}
+			isFirstRow = false;
 			cellVals = reader2.nextRow();
 		}
 

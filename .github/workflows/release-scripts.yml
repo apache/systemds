@@ -54,7 +54,7 @@ jobs:
     - run: printf "JAVA_HOME = $JAVA_HOME \n"
     
     - name: Cache local Maven repository
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/.m2/repository
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}

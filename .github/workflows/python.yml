@@ -70,13 +70,13 @@ jobs:
         cache: 'maven'
 
     - name: Cache Pip Dependencies
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('src/main/python/setup.py') }}
 
     - name: Cache Datasets
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           src/main/python/systemds/examples/tutorials/mnist
@@ -84,7 +84,7 @@ jobs:
         key: ${{ runner.os }}-mnist-${{ hashFiles('src/main/python/systemds/examples/tutorials/mnist.py') }}-${{ hashFiles('src/main/python/systemds/examples/tutorials/adult.py') }}
 
     - name: Cache Deb Dependencies
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: /var/cache/apt/archives
         key: ${{ runner.os }}-${{ hashFiles('.github/workflows/python.yml') }}
@@ -146,7 +146,7 @@ jobs:
     - name: Cache Torch Hub
       if: ${{ matrix.test_mode == 'scuro' }}
       id: torch-cache
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: .torch
         key: ${{ runner.os }}-torch-${{ hashFiles('requirements.txt') }}

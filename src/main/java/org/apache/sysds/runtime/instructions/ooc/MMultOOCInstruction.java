@@ -1,0 +1,92 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.apache.sysds.runtime.instructions.ooc;
+
+import org.apache.sysds.common.Opcodes;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.Operator;
+
+public class MMultOOCInstruction extends ComputationOOCInstruction {
+
+
+	protected MMultOOCInstruction(OOCType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
+		super(type, op, in1, in2, out, opcode, istr);
+	}
+
+	public static MMultOOCInstruction parseInstruction(String str) {
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		InstructionUtils.checkNumFields(parts, 4);
+		String opcode = parts[0];
+		CPOperand in1 = new CPOperand(parts[1]); // the larget matrix (streamed)
+		CPOperand in2 = new CPOperand(parts[2]); // the small vector (in-memory)
+		CPOperand out = new CPOperand(parts[3]);
+
+		AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
+		AggregateBinaryOperator ba = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg);
+
+		return new MMultOOCInstruction(OOCType.MAPMM, ba, in1, in2, out, opcode, str);
+	}
+
+	@Override
+	public void processInstruction( ExecutionContext ec ) {
+		// 1. Identify the inputs
+		MatrixObject min = ec.getMatrixObject(input1); // big matrix
+		MatrixObject vin = ec.getMatrixObject(input2); // streamed vector
+
+		int emitLeftThreshold = (int)vin.getDataCharacteristics().getNumColBlocks();
+		int emitRightThreshold = (int)min.getDataCharacteristics().getNumRowBlocks();
+
+		OOCStream<IndexedMatrixValue> intermediateStream = createWritableStream();
+		OOCStream<IndexedMatrixValue> outStream = createWritableStream();
+		ec.getMatrixObject(output).setStreamHandle(outStream);
+
+		joinManyOOC(min.getStreamHandle(), vin.getStreamHandle(), intermediateStream,
+			(left, right) -> {
+				MatrixBlock leftBlock = (MatrixBlock) left.getValue();
+				MatrixBlock rightBlock = (MatrixBlock) right.getValue();
+				MatrixBlock partialResult = leftBlock.aggregateBinaryOperations(leftBlock, rightBlock,
+					new MatrixBlock(), (AggregateBinaryOperator) _optr);
+				return new IndexedMatrixValue(new MatrixIndexes(left.getIndexes().getRowIndex(), right.getIndexes().getColumnIndex()), partialResult);
+			},
+			tmp -> tmp.getIndexes().getColumnIndex(),
+			tmp -> tmp.getIndexes().getRowIndex(),
+			emitLeftThreshold, emitRightThreshold);
+
+		BinaryOperator plus = InstructionUtils.parseBinaryOperator(Opcodes.PLUS.toString());
+		int emitAggThreshold = (int)min.getDataCharacteristics().getNumColBlocks();
+
+		groupedReduceOOC(intermediateStream, outStream, (left, right) -> {
+			MatrixBlock mb = ((MatrixBlock)left.getValue()).binaryOperationsInPlace(plus, right.getValue());
+			left.setValue(mb);
+			return left;
+		}, emitAggThreshold);
+	}
+}

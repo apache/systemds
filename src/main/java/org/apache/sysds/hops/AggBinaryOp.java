@@ -50,7 +50,6 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
-
 /* Aggregate binary (cell operations): Sum (aij + bij)
  * 		Properties: 
  * 			Inner Symbol: *, -, +, ...
@@ -515,14 +514,14 @@ public class AggBinaryOp extends MultiThreadedHop {
 		if (chain == ChainType.XtXv) {
 			Hop hX = getInput().get(0).getInput().get(0);
 			Hop hv = getInput().get(1).getInput().get(1);
-			mapmmchain = new MapMultChain(hX.constructLops(), hv.constructLops(), getDataType(), getValueType(), ExecType.CP);
+			mapmmchain = new MapMultChain(hX.constructLops(), hv.constructLops(), getDataType(), getValueType(), DMLScript.USE_OOC ? ExecType.OOC : ExecType.CP);
 		} else { //ChainType.XtwXv / ChainType.XtwXvy
 			int wix = (chain == ChainType.XtwXv) ? 0 : 1;
 			int vix = (chain == ChainType.XtwXv) ? 1 : 0;
 			Hop hX = getInput().get(0).getInput().get(0);
 			Hop hw = getInput().get(1).getInput().get(wix);
 			Hop hv = getInput().get(1).getInput().get(vix).getInput().get(1);
-			mapmmchain = new MapMultChain(hX.constructLops(), hv.constructLops(), hw.constructLops(), chain, getDataType(), getValueType(), ExecType.CP);
+			mapmmchain = new MapMultChain(hX.constructLops(), hv.constructLops(), hw.constructLops(), chain, getDataType(), getValueType(), DMLScript.USE_OOC ? ExecType.OOC : ExecType.CP);
 		}
 
 		//set degree of parallelism

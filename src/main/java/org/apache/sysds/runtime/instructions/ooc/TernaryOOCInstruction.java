@@ -33,7 +33,6 @@ import org.apache.sysds.runtime.instructions.cp.ScalarObjectFactory;
 import org.apache.sysds.runtime.instructions.cp.StringObject;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 
@@ -110,6 +109,8 @@ public class TernaryOOCInstruction extends ComputationOOCInstruction {
 		OOCStream<IndexedMatrixValue> qIn = mo.getStreamHandle();
 		OOCStream<IndexedMatrixValue> qOut = createWritableStream();
 		ec.getMatrixObject(output).setStreamHandle(qOut);
+		qIn.setDownstreamMessageRelay(qOut::messageDownstream);
+		qOut.setUpstreamMessageRelay(qIn::messageUpstream);
 
 		mapOOC(qIn, qOut, tmp -> {
 			IndexedMatrixValue outVal = new IndexedMatrixValue();
@@ -125,6 +126,8 @@ public class TernaryOOCInstruction extends ComputationOOCInstruction {
 	private void processTwoMatrixInstruction(ExecutionContext ec, int leftPos, int rightPos) {
 		MatrixObject left = getMatrixObject(ec, leftPos);
 		MatrixObject right = getMatrixObject(ec, rightPos);
+		OOCStream<IndexedMatrixValue> leftStream = left.getStreamHandle();
+		OOCStream<IndexedMatrixValue> rightStream = right.getStreamHandle();
 
 		MatrixBlock s1 = input1.isMatrix() ? null : getScalarInputBlock(ec, input1);
 		MatrixBlock s2 = input2.isMatrix() ? null : getScalarInputBlock(ec, input2);
@@ -132,8 +135,14 @@ public class TernaryOOCInstruction extends ComputationOOCInstruction {
 
 		OOCStream<IndexedMatrixValue> qOut = createWritableStream();
 		ec.getMatrixObject(output).setStreamHandle(qOut);
+		qOut.setUpstreamMessageRelay(msg -> {
+			leftStream.messageUpstream(msg.split());
+			rightStream.messageUpstream(msg.split());
+		});
+		leftStream.setDownstreamMessageRelay(qOut::messageDownstream);
+		rightStream.setDownstreamMessageRelay(qOut::messageDownstream);
 
-		joinOOC(left.getStreamHandle(), right.getStreamHandle(), qOut, (l, r) -> {
+		joinOOC(leftStream, rightStream, qOut, (l, r) -> {
 			IndexedMatrixValue outVal = new IndexedMatrixValue();
 			MatrixBlock op1 = resolveOperandBlock(1, l, r, leftPos, rightPos, s1, s2, s3);
 			MatrixBlock op2 = resolveOperandBlock(2, l, r, leftPos, rightPos, s1, s2, s3);
@@ -155,8 +164,8 @@ public class TernaryOOCInstruction extends ComputationOOCInstruction {
 		List<OOCStream<IndexedMatrixValue>> streams = List.of(
 			m1.getStreamHandle(), m2.getStreamHandle(), m3.getStreamHandle());
 
-		List<java.util.function.Function<IndexedMatrixValue, MatrixIndexes>> keyFns =
-			List.of(IndexedMatrixValue::getIndexes, IndexedMatrixValue::getIndexes, IndexedMatrixValue::getIndexes);
+		streams.forEach(s -> s.setDownstreamMessageRelay(qOut::messageDownstream));
+		qOut.setUpstreamMessageRelay(msg -> streams.forEach(s -> s.messageUpstream(msg)));
 
 		joinOOC(streams, qOut, blocks -> {
 			IndexedMatrixValue b1 = blocks.get(0);
@@ -166,7 +175,7 @@ public class TernaryOOCInstruction extends ComputationOOCInstruction {
 			outVal.set(b1.getIndexes(),
 				((MatrixBlock)b1.getValue()).ternaryOperations((TernaryOperator)_optr, (MatrixBlock)b2.getValue(), (MatrixBlock)b3.getValue(), new MatrixBlock()));
 			return outVal;
-		}, keyFns);
+		}, IndexedMatrixValue::getIndexes);
 	}
 
 	private MatrixObject getMatrixObject(ExecutionContext ec, int pos) {

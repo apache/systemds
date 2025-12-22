@@ -19,13 +19,15 @@
 
 package org.apache.sysds.runtime.ooc.cache;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.ooc.stats.OOCEventLog;
 import org.apache.sysds.utils.Statistics;
 import scala.Tuple2;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
@@ -33,18 +35,18 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 	private static final boolean SANITY_CHECKS = false;
-
+	private static final Log LOG = LogFactory.getLog(OOCLRUCacheScheduler.class.getName());
 	private final OOCIOHandler _ioHandler;
 	private final LinkedHashMap<BlockKey, BlockEntry> _cache;
 	private final HashMap<BlockKey, BlockEntry> _evictionCache;
-	private final Deque<DeferredReadRequest> _deferredReadRequests;
+	private final DeferredReadQueue _deferredReadRequests;
 	private final Deque<DeferredReadRequest> _processingReadRequests;
-	private final long _hardLimit;
-	private final long _evictionLimit;
+	private final HashMap<BlockKey, BlockReadState> _blockReads;
+	private long _hardLimit;
+	private long _evictionLimit;
 	private final int _callerId;
 	private long _cacheSize;
 	private long _bytesUpForEviction;
@@ -55,8 +57,9 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 		this._ioHandler = ioHandler;
 		this._cache = new LinkedHashMap<>(1024, 0.75f, true);
 		this._evictionCache = new  HashMap<>();
-		this._deferredReadRequests = new ArrayDeque<>();
+		this._deferredReadRequests = new DeferredReadQueue();
 		this._processingReadRequests = new ArrayDeque<>();
+		this._blockReads = new HashMap<>();
 		this._hardLimit = hardLimit;
 		this._evictionLimit = evictionLimit;
 		this._cacheSize = 0;
@@ -101,24 +104,58 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 			return CompletableFuture.completedFuture(entry);
 		}
 
-		//System.out.println("Requesting deferred: " + key);
 		// Schedule deferred read otherwise
-		final CompletableFuture<BlockEntry> future = new CompletableFuture<>();
 		final CompletableFuture<List<BlockEntry>> requestFuture = new CompletableFuture<>();
-		requestFuture.whenComplete((r, t) -> future.complete(r.get(0)));
+		CompletableFuture<BlockEntry> future = requestFuture.thenApply(l -> l.get(0));
 		scheduleDeferredRead(new DeferredReadRequest(requestFuture, Collections.singletonList(entry)));
 		return future;
 	}
 
 	@Override
+	public List<BlockEntry> tryRequest(List<BlockKey> keys) {
+		CompletableFuture<List<BlockEntry>> f = request(keys, true);
+		if(f == null)
+			return null;
+		return f.getNow(null);
+	}
+
+	@Override
+	public CompletableFuture<List<BlockEntry>> requestAnyOf(List<BlockKey> keys, int n, List<BlockKey> selectionOut) {
+		List<BlockEntry> l = tryRequestAnyOf(keys, n, selectionOut);
+		if(l != null)
+			return CompletableFuture.completedFuture(l);
+		return request(keys.subList(0, n));
+	}
+
+	@Override
+	public List<BlockEntry> tryRequestAnyOf(List<BlockKey> keys, int n, List<BlockKey> selectionOut) {
+		List<BlockEntry> present = new ArrayList<>(n);
+		for(BlockKey key : keys) {
+			List<BlockEntry> l = tryRequest(List.of(key));
+			if(l != null) {
+				present.add(l.get(0));
+				selectionOut.add(l.get(0).getKey());
+				if(l.size() == n)
+					return l;
+			}
+		}
+		present.forEach(this::unpin);
+		return null;
+	}
+
+	@Override
 	public CompletableFuture<List<BlockEntry>> request(List<BlockKey> keys) {
+		return request(keys, false);
+	}
+
+	public CompletableFuture<List<BlockEntry>> request(List<BlockKey> keys, boolean onlyIfAvailable) {
 		if (!this._running)
 			throw new IllegalStateException("Cache scheduler has been shut down.");
 
 		Statistics.incrementOOCEvictionGet(keys.size());
 
 		List<BlockEntry> entries = new ArrayList<>(keys.size());
-		boolean couldPinAll = true;
+		boolean allAvailable = true;
 
 		synchronized(this) {
 			for (BlockKey key : keys) {
@@ -128,48 +165,91 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 				if (entry == null)
 					throw new IllegalArgumentException("Could not find requested block with key " + key);
 
-				if (couldPinAll) {
-					synchronized(entry) {
-						if(entry.getState().isAvailable()) {
-							if(entry.pin() == 0)
-								throw new IllegalStateException();
-						}
-						else {
-							couldPinAll = false;
-						}
-					}
-
-					if (!couldPinAll) {
-						// Undo pin for all previous entries
-						for (BlockEntry e : entries)
-							e.unpin(); // Do not unpin using unpin(...) method to avoid explicit eviction on memory pressure
-					}
+				synchronized(entry) {
+					if(!entry.getState().isAvailable())
+						allAvailable = false;
 				}
 				entries.add(entry);
 			}
+
+			if(allAvailable) {
+				for(BlockEntry entry : entries) {
+					synchronized(entry) {
+						if(entry.pin() == 0)
+							throw new IllegalStateException();
+					}
+				}
+			}
 		}
 
-		if (couldPinAll) {
+		if (allAvailable) {
 			// Then we could pin all entries
 			return CompletableFuture.completedFuture(entries);
 		}
 
+		if(onlyIfAvailable)
+			return null;
+
 		// Schedule deferred read otherwise
 		final  CompletableFuture<List<BlockEntry>> future = new CompletableFuture<>();
-		scheduleDeferredRead(new DeferredReadRequest(future, entries));
+		DeferredReadRequest request = new DeferredReadRequest(future, entries);
+		for (int i = 0; i < entries.size(); i++) {
+			BlockEntry entry = entries.get(i);
+			synchronized(entry) {
+				if (entry.getState().isAvailable()) {
+					entry.addRetainHint();
+					request.markRetainHinted(i);
+				}
+			}
+		}
+		scheduleDeferredRead(request);
 		return future;
+	}
+
+	@Override
+	public void prioritize(BlockKey key, double priority) {
+		if (!this._running)
+			return;
+		if (priority == 0)
+			return;
+
+		synchronized(this) {
+			boolean matched = _deferredReadRequests.boost(key, priority);
+			if(matched) {
+				BlockReadState state = _blockReads.computeIfAbsent(key, k -> new BlockReadState());
+				state.priority += priority;
+			}
+		}
+		_ioHandler.prioritizeRead(key, priority);
 	}
 
 	private void scheduleDeferredRead(DeferredReadRequest deferredReadRequest) {
 		synchronized(this) {
+			double score = 0;
+			int readyCount = 0;
+			for (BlockEntry entry : deferredReadRequest.getEntries()) {
+				synchronized(entry) {
+					if (entry.getState().isAvailable())
+						readyCount++;
+				}
+				BlockReadState state = _blockReads.get(entry.getKey());
+				if (state != null)
+					score += state.priority;
+			}
+			if (!deferredReadRequest.getEntries().isEmpty())
+				score /= deferredReadRequest.getEntries().size();
+			if (!deferredReadRequest.getEntries().isEmpty())
+				score += ((double) readyCount) / deferredReadRequest.getEntries().size();
+			deferredReadRequest.setPriorityScore(score);
+
 			_deferredReadRequests.add(deferredReadRequest);
 		}
 		onCacheSizeChanged(false); // To schedule deferred reads if possible
 	}
 
 	@Override
-	public void put(BlockKey key, Object data, long size) {
-		put(key, data, size, false, null);
+	public BlockKey put(BlockKey key, Object data, long size) {
+		return put(key, data, size, false, null).getKey();
 	}
 
 	@Override
@@ -229,6 +309,7 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 					shouldScheduleDeletion = entry.getState().isBackedByDisk()
 						|| entry.getState() == BlockState.EVICTING;
 					cacheSizeDelta = transitionMemState(entry, BlockState.REMOVED);
+					entry.setDataUnsafe(null);
 				}
 
 			}
@@ -259,6 +340,7 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 
 		if (couldFree) {
 			long cacheSizeDelta = 0;
+			boolean shouldCheckEviction = false;
 			synchronized(this) {
 				if (_cacheSize <= _evictionLimit)
 					return; // Nothing to do
@@ -268,20 +350,47 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 						return; // Pin state changed so we cannot evict
 
 					if (entry.getState().isAvailable() && entry.getState().isBackedByDisk()) {
-						cacheSizeDelta =  transitionMemState(entry, BlockState.COLD);
-						long cleared = entry.clear();
-						if (cleared != entry.getSize())
-							throw new IllegalStateException();
-						_cache.remove(entry.getKey());
-						_evictionCache.put(entry.getKey(), entry);
+						if (entry.getRetainHintCount() > 0) {
+							shouldCheckEviction = true;
+						}
+						else {
+							cacheSizeDelta =  transitionMemState(entry, BlockState.COLD);
+							long cleared = entry.clear();
+							if (cleared != entry.getSize())
+								throw new IllegalStateException();
+							_cache.remove(entry.getKey());
+							_evictionCache.put(entry.getKey(), entry);
+						}
 					} else if (entry.getState() == BlockState.HOT) {
-						cacheSizeDelta = onUnpinnedHotBlockUnderMemoryPressure(entry);
+						if (entry.getRetainHintCount() > 0) {
+							shouldCheckEviction = true;
+						}
+						else {
+							cacheSizeDelta = onUnpinnedHotBlockUnderMemoryPressure(entry);
+						}
 					}
 				}
 			}
 			if (cacheSizeDelta != 0)
 				onCacheSizeChanged(cacheSizeDelta > 0);
+			else if (shouldCheckEviction)
+				onCacheSizeChanged(true);
 		}
+	}
+
+	@Override
+	public synchronized long getCacheSize() {
+		return _cacheSize;
+	}
+
+	@Override
+	public boolean isWithinLimits() {
+		return _cacheSize < _hardLimit;
+	}
+
+	@Override
+	public boolean isWithinSoftLimits() {
+		return _cacheSize < _evictionLimit;
 	}
 
 	@Override
@@ -291,8 +400,15 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 		_evictionCache.clear();
 		_processingReadRequests.clear();
 		_deferredReadRequests.clear();
+		_blockReads.clear();
 		_cacheSize = 0;
 		_bytesUpForEviction = 0;
+	}
+
+	@Override
+	public synchronized void updateLimits(long evictionLimit, long hardLimit) {
+		_evictionLimit = evictionLimit;
+		_hardLimit = hardLimit;
 	}
 
 	/**
@@ -379,21 +495,35 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 			List<BlockEntry> toRemove = new ArrayList<>();
 			upForEviction = new ArrayList<>();
 
-			for(BlockEntry entry : entries) {
-				if(_cacheSize - _bytesUpForEviction <= _evictionLimit)
-					break;
+			for(int pass = 0; pass < 2; pass++) {
+				boolean allowRetainHint = pass == 1;
+				for(BlockEntry entry : entries) {
+					if(_cacheSize - _bytesUpForEviction <= _evictionLimit)
+						break;
 
-				synchronized(entry) {
-					if(!entry.isPinned() && entry.getState().isBackedByDisk()) {
-						cacheSizeDelta += transitionMemState(entry, BlockState.COLD);
-						entry.clear();
-						toRemove.add(entry);
-					}
-					else if(entry.getState() != BlockState.EVICTING && !entry.getState().isBackedByDisk()) {
-						cacheSizeDelta += transitionMemState(entry, BlockState.EVICTING);
-						upForEviction.add(entry);
+					synchronized(entry) {
+						if(entry.isPinned())
+							continue;
+						if(!allowRetainHint && entry.getRetainHintCount() > 0)
+							continue;
+						if(entry.getState() == BlockState.COLD || entry.getState() == BlockState.EVICTING)
+							continue;
+
+						if(entry.getState().isBackedByDisk()) {
+							//if(entry.getRetainHintCount() > 0)
+							//	System.out.println("[WARN] Evicted: " + entry.getRetainHintCount() + " --> " + entry.getKey());
+							cacheSizeDelta += transitionMemState(entry, BlockState.COLD);
+							entry.clear();
+							toRemove.add(entry);
+						}
+						else {
+							cacheSizeDelta += transitionMemState(entry, BlockState.EVICTING);
+							upForEviction.add(entry);
+						}
 					}
 				}
+				if(_cacheSize - _bytesUpForEviction <= _evictionLimit)
+					break;
 			}
 
 			for(BlockEntry entry : toRemove) {
@@ -414,6 +544,7 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 
 	private boolean onCacheSizeDecremented() {
 		boolean allReserved = true;
+		boolean reading = false;
 		List<Tuple2<Integer, BlockEntry>> toRead;
 		DeferredReadRequest req;
 		synchronized(this) {
@@ -435,11 +566,18 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 							throw new IllegalStateException();
 						req.setPinned(idx);
 					}
+					else if (entry.getState() == BlockState.READING) {
+						req.schedule(idx);
+						registerWaiter(entry.getKey(), req, idx);
+						reading = true;
+					}
 					else {
 						if(_cacheSize + entry.getSize() <= _hardLimit) {
 							transitionMemState(entry, BlockState.READING);
 							toRead.add(new Tuple2<>(idx, entry));
 							req.schedule(idx);
+							registerWaiter(entry.getKey(), req, idx);
+							reading = true;
 						}
 						else {
 							allReserved = false;
@@ -448,7 +586,7 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 				}
 			}
 
-			if (allReserved) {
+			if(allReserved) {
 				_deferredReadRequests.poll();
 				if (!toRead.isEmpty())
 					_processingReadRequests.add(req);
@@ -457,36 +595,71 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 			sanityCheck();
 		}
 
-		if (allReserved && toRead.isEmpty()) {
+		if(allReserved && !reading) {
+			clearRetainHints(req);
+			req.getFuture().complete(req.getEntries());
+			return true;
+		}
+		else if(allReserved && reading && req.isComplete()) {
+			clearRetainHints(req);
+			synchronized(this) {
+				_processingReadRequests.remove(req);
+				_deferredReadRequests.remove(req);
+			}
 			req.getFuture().complete(req.getEntries());
 			return true;
 		}
 
-		for (Tuple2<Integer, BlockEntry> tpl : toRead) {
-			final int idx = tpl._1;
+		for(Tuple2<Integer, BlockEntry> tpl : toRead) {
 			final BlockEntry entry = tpl._2;
 			CompletableFuture<BlockEntry> future = _ioHandler.scheduleRead(entry);
 			future.whenComplete((r, t) -> {
-				boolean allAvailable;
+				if(t != null) {
+					BlockReadState state;
+					synchronized(OOCLRUCacheScheduler.this) {
+						state = _blockReads.remove(entry.getKey());
+
+					}
+					if(state != null) {
+						for(DeferredReadWaiter waiter : state.waiters)
+							waiter.request.getFuture().completeExceptionally(t);
+					}
+					else {
+						LOG.error("Uncaught CacheError", t);
+						t.printStackTrace();
+					}
+					return;
+				}
+				java.util.Set<DeferredReadRequest> completedRequests = new java.util.HashSet<>();
 				synchronized(this) {
 					synchronized(r) {
 						transitionMemState(r, BlockState.WARM);
-						if (r.pin() == 0)
-							throw new IllegalStateException();
 						_evictionCache.remove(r.getKey());
 						_cache.put(r.getKey(), r);
-						allAvailable = req.setPinned(idx);
 					}
 
-					if (allAvailable) {
-						_processingReadRequests.remove(req);
+					BlockReadState state = _blockReads.remove(r.getKey());
+					if(state != null) {
+						for(DeferredReadWaiter waiter : state.waiters) {
+							synchronized(r) {
+								if(r.pin() == 0)
+									throw new IllegalStateException();
+								if(waiter.request.setPinned(waiter.index) || waiter.request.isComplete())
+									completedRequests.add(waiter.request);
+							}
+						}
+					}
+
+					for(DeferredReadRequest done : completedRequests) {
+						clearRetainHints(done);
+						_processingReadRequests.remove(done);
+						_deferredReadRequests.remove(done);
 					}
 
 					sanityCheck();
 				}
-				if (allAvailable) {
-					req.getFuture().complete(req.getEntries());
-				}
+				for(DeferredReadRequest done : completedRequests)
+					done.getFuture().complete(done.getEntries());
 			});
 		}
 
@@ -502,6 +675,8 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 		long cacheSizeDelta;
 		synchronized(this) {
 			synchronized(entry) {
+				if(entry.getState() == BlockState.REMOVED)
+					return;
 				if(entry.isPinned()) {
 					transitionMemState(entry, BlockState.WARM);
 					return; // Then we cannot clear the data
@@ -519,6 +694,17 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 		}
 		if (cacheSizeDelta != 0)
 			onCacheSizeChanged(cacheSizeDelta > 0);
+	}
+
+	private void clearRetainHints(DeferredReadRequest request) {
+		for (int i = 0; i < request.getEntries().size(); i++) {
+			if (!request.isRetainHinted(i))
+				continue;
+			BlockEntry entry = request.getEntries().get(i);
+			synchronized(entry) {
+				entry.removeRetainHint();
+			}
+		}
 	}
 
 	/**
@@ -574,46 +760,28 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 		return _cacheSize - oldCacheSize;
 	}
 
+	private void registerWaiter(BlockKey key, DeferredReadRequest request, int index) {
+		BlockReadState state = _blockReads.computeIfAbsent(key, k -> new BlockReadState());
+		state.waiters.add(new DeferredReadWaiter(request, index));
+	}
 
+	private static class BlockReadState {
+		private double priority;
+		private final List<DeferredReadWaiter> waiters;
 
-	private static class DeferredReadRequest {
-		private static final short NOT_SCHEDULED = 0;
-		private static final short SCHEDULED = 1;
-		private static final short PINNED = 2;
-
-		private final CompletableFuture<List<BlockEntry>> _future;
-		private final List<BlockEntry> _entries;
-		private final short[] _pinned;
-		private final AtomicInteger _availableCount;
-
-		DeferredReadRequest(CompletableFuture<List<BlockEntry>> future, List<BlockEntry> entries) {
-			this._future = future;
-			this._entries = entries;
-			this._pinned = new short[entries.size()];
-			this._availableCount = new AtomicInteger(0);
+		private BlockReadState() {
+			this.priority = 0;
+			this.waiters = new ArrayList<>();
 		}
+	}
 
-		CompletableFuture<List<BlockEntry>> getFuture() {
-			return _future;
-		}
+	private static class DeferredReadWaiter {
+		private final DeferredReadRequest request;
+		private final int index;
 
-		List<BlockEntry> getEntries() {
-			return _entries;
-		}
-
-		public synchronized boolean actionRequired(int idx) {
-			return _pinned[idx] == NOT_SCHEDULED;
-		}
-
-		public synchronized boolean setPinned(int idx) {
-			if (_pinned[idx] == PINNED)
-				return false; // already pinned
-			_pinned[idx] = PINNED;
-			return _availableCount.incrementAndGet() == _entries.size();
-		}
-
-		public synchronized void schedule(int idx) {
-			_pinned[idx] = SCHEDULED;
+		private DeferredReadWaiter(DeferredReadRequest request, int index) {
+			this.request = request;
+			this.index = index;
 		}
 	}
 }

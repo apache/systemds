@@ -56,6 +56,8 @@ public class OOCEventLog {
 
 	public static void onComputeEvent(int callerId, long startTimestamp, long endTimestamp) {
 		int idx = _logCtr.getAndIncrement();
+		if(idx >= _eventTypes.length)
+			return;
 		_eventTypes[idx] = EventType.COMPUTE;
 		_startTimestamps[idx] = startTimestamp;
 		_endTimestamps[idx] = endTimestamp;
@@ -65,6 +67,8 @@ public class OOCEventLog {
 
 	public static void onDiskWriteEvent(int callerId, long startTimestamp, long endTimestamp, long size) {
 		int idx = _logCtr.getAndIncrement();
+		if(idx >= _eventTypes.length)
+			return;
 		_eventTypes[idx] = EventType.DISK_WRITE;
 		_startTimestamps[idx] = startTimestamp;
 		_endTimestamps[idx] = endTimestamp;
@@ -75,6 +79,8 @@ public class OOCEventLog {
 
 	public static void onDiskReadEvent(int callerId, long startTimestamp, long endTimestamp, long size) {
 		int idx = _logCtr.getAndIncrement();
+		if(idx >= _eventTypes.length)
+			return;
 		_eventTypes[idx] = EventType.DISK_READ;
 		_startTimestamps[idx] = startTimestamp;
 		_endTimestamps[idx] = endTimestamp;
@@ -85,6 +91,8 @@ public class OOCEventLog {
 
 	public static void onCacheSizeChangedEvent(int callerId, long timestamp, long cacheSize, long bytesToEvict) {
 		int idx = _logCtr.getAndIncrement();
+		if(idx >= _eventTypes.length)
+			return;
 		_eventTypes[idx] = EventType.CACHESIZE_CHANGE;
 		_startTimestamps[idx] = timestamp;
 		_endTimestamps[idx] = bytesToEvict;
@@ -117,7 +125,7 @@ public class OOCEventLog {
 		StringBuilder sb = new StringBuilder();
 		sb.append(header);
 
-		int maxIdx = _logCtr.get();
+		int maxIdx = Math.min(_logCtr.get(), _eventTypes.length);
 		for (int i = 0; i < maxIdx; i++) {
 			if (_eventTypes[i] != filter)
 				continue;

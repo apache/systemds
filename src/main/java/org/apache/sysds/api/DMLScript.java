@@ -327,7 +327,7 @@ public class DMLScript
 			Map<String, String> argVals = dmlOptions.argVals;
 
 			DML_FILE_PATH_ANTLR_PARSER = dmlOptions.filePath;
-			
+
 			//Step 3: invoke dml script
 			printInvocationInfo(fileOrScript, fnameOptConfig, argVals);
 			execute(dmlScriptStr, fnameOptConfig, argVals, args);

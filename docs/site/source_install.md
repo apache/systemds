@@ -26,6 +26,13 @@ Setup your environment variables with JAVA_HOME and MAVEN_HOME. Using these vari
 
 To run the system we also have to setup some Hadoop and spark specific libraries. These can be found in the SystemDS repository. To add this, simply take out the files, or add 'src/test/config/hadoop_bin_windows/bin' to PATH. Just like for JAVA_HOME set a HADOOP_HOME to the environment variable without the bin part, and add the `%HADOOP_HOME%\bin` to path.
 
+On windows, cloning large repositories via GitHub Desktop may stall in some environments. If this happens, cloning via the Git command line is a reliable alternative.
+Example:
+```bash
+git clone https://github.com/apache/systemds.git 
+cd systemds
+```
+
 Finally if you want to run systemds from command line, add a SYSTEMDS_ROOT that points to the repository root, and add the bin folder to the path.
 
 To make the build go faster set the IDE or environment variables for java: '-Xmx16g -Xms16g -Xmn1600m'. Here set the memory to something close to max memory of the device you are using.
@@ -44,14 +51,12 @@ sudo apt install maven
 ```
 
 Verify the install with:
-
 ```bash
 java -version
 mvn -version
 ```
 
 This should return something like:
-
 ```bash
 openjdk 17.0.11 2024-04-16
 OpenJDK Runtime Environment Temurin-17.0.11+9 (build 17.0.11+9)
@@ -124,8 +129,7 @@ Rscript ./src/test/scripts/installDependencies.R
 
 # 4. Build the project
 
-To compile the project use:
-
+To compile the project use in the directory of the source code:
 ```bash
 mvn package -P distribution
 ```
@@ -140,8 +144,18 @@ Example output:
 [INFO] ------------------------------------------------------------------------
 ```
 
-The first time you package the system it will take longer since maven will download the dependencies.
-But successive compiles should become faster. The runnable JAR files will appear in `target/`
+The first time you package the system it will take longer since maven will download the dependencies. But successive compiles should become faster. The runnable JAR files will appear in `target/`.
+
+### (Optional) Add SystemDS CLI to PATH
+
+After building SystemDS from source, you can add the `bin` directory to your
+`PATH` in order to run `systemds` directly from the command line:
+
+```bash
+export SYSTEMDS_ROOT=$(pwd)
+export PATH="$SYSTEMDS_ROOT/bin:$PATH"
+```
+This allows you to run `systemds` from the repository root. For running the freshly built executable JAR (e.g., `target/SystemDS.jar`) on Spark, see the Spark section in [Execute SystemDS](run_extended.md).
 
 # 5. Run A Component Test
 
@@ -151,8 +165,7 @@ As an example here is how to run the component matrix tests from command line vi
 mvn test -Dtest="**.component.matrix.**"
 ```
 
-To run other tests simply specify other packages by modifying the
-test argument part of the command.
+To run other tests simply specify other packages by modifying the test argument part of the command.
 
 # 6. Next Steps
 

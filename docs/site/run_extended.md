@@ -14,25 +14,15 @@ This guide explains how to run SystemDS regardless of whether you installed it f
 
 # 1. Prerequisites
 
-### Java Requirement ###
-For compatability with Spark execution and parser components, **Java 17** is strongly recommended for SystemDS.
+This guide assumes that SystemDS has already been installed successfully.
 
-Verify Java version:
+Please make sure you have followed one of the installation guides:
+- [Install SystemDS from a Release](release_install.html)
+- [Install SystemDS from Source](source_install.html)
 
-```bash
-java -version
-```
-
-### Spark (required only for Spark execution) ###
-
-- Use Spark 3.x.
-- Spark 4.x is not supported due to ANTLR runtime incompatibilities.
-
-Verify Spark version:
-
-```bash
-spark-submit --version
-```
+In particular, ensure that:
+- Java 17 is installed
+- Spark 3.x is available if you plan to run SystemDS on Spark
 
 ---
 
@@ -45,15 +35,15 @@ export SYSTEMDS_ROOT=$(pwd)
 export PATH="$SYSTEMDS_ROOT/bin:$PATH"
 ```
 
-It can be beneficial to enter these into your `~/.profile` or `~/.bashrc` for linux,
-(but remember to change `$(pwd` to the full folder path)
-or your environment variables in windows to enable reuse between terminals and restarts.
+It can be beneficial to persist these variables in your `~/.profile` or `~/.bashrc`(Linux/macOS) or as environment variables on Windows, so that SystemDS is available across terminal sessions. Make sure to replace the path below with the absolute path to your SystemDS installation.
 
 ```bash
-echo 'export SYSTEMDS_ROOT='$(pwd) >> ~/.bashrc
-echo 'export PATH=$SYSTEMDS_ROOT/bin:$PATH' >> ~/.bashrc
+echo 'export SYSTEMDS_ROOT=/absolute/path/to/systemds-<VERSION>' >> ~/.bashrc
+echo 'export PATH="$SYSTEMDS_ROOT/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
 ```
 ---
+
 # 3. Run a Simple Script Locally
 
 This mode does not require Spark. It only needs Java 17.
@@ -77,9 +67,17 @@ Hello, World!
 ```
 
 ### (Optional) MacOS Note: `realpath: illegal option -- -` Error
-If you are running MacOS and encounter an error message similar to `realpath: illegal option -- -` when executing `systemds hello.dml`. You may try to replace the system-wide command `realpath` with the homebrew version `grealpath` that comes with the `coreutils`. Alternatively, you may change all occurrences within the script accordingly, i.e., by prepending a `g` to avoid any side effects.
+If you are running MacOS and encounter an error message similar to `realpath: illegal option -- -` when executing `systemds -f hello.dml`. You may try to replace the system-wide command `realpath` with the homebrew version `grealpath` that comes with the `coreutils`. Alternatively, you may change all occurrences within the script accordingly, i.e., by prepending a `g` to avoid any side effects.
 
-### 3.2 Run a Real Example
+### (Optional) Ubuntu Note: `Invalid or corrupt jarfile hello.dml`
+On some Ubuntu setups (especially clean environments such as Docker images), running `systemds -f hello.dml` may result in an error like `Invalid or corrupt jarfile hello.dml`. If this happens, the SystemDS launcher may not automatically locate the correct JAR. Please refer to the Ubuntu troubleshooting section in the installation guide for a detailed workaround: [Release Installation – Ubuntu Note](release_install.md#optional-ubuntu-note-invalid-or-corrupt-jarfile-hellodml-error)
+
+### (Optional) Windows Note: `systemds` Command Not Found
+On Windows (e.g., PowerShell), running `systemds -f hello.dml` may fail with an error indicating that `systemds` is not recognized as a command. This is expected, since the `systemds` launcher in `bin/` is implemented as a shell script,
+which cannot be executed natively on Windows. In this case, SystemDS should be invoked directly via the runnable JAR using `java -jar`. For a detailed Windows-specific walkthrough, please refer to the installation guide: [Release Installation – Windows Notes](release_install.md#2-install-on-windows)
+
+
+### 3.2 Create a Real Example
 
 This example demonstrates local execution of a real script `Univar-stats.dml`. The relevant commands to run this example with SystemDS is described in the DML Language reference guide at [DML Language Reference](dml-language-reference.html).
 
@@ -107,7 +105,6 @@ systemds -f scripts/algorithms/Univar-Stats.dml -nvargs \
 
 ### (Optional) MacOS Note: `SparkException` Error
 If SystemDS tries to initialize Spark and you see `SparkException: A master URL must be set in your configuration`, you can force single-node execution without Spark/Hadoop initialization via:
-
 ```bash
 systemds -exec singlenode -f scripts/algorithms/Univar-Stats.dml -nvargs \
   X=data/haberman.data \
@@ -115,6 +112,23 @@ systemds -exec singlenode -f scripts/algorithms/Univar-Stats.dml -nvargs \
   STATS=data/univarOut.mtx \
   CONSOLE_OUTPUT=TRUE
 ```
+
+### (Optional) Ubuntu Note: `NoClassDefFoundError` Error / JAR Resolution Issues
+On some Ubuntu setups, executing the example may fail with a class loading error such as `NoClassDefFoundError: org/apache/commons/cli/AlreadySelectedException`. This happens when the SystemDS launcher script does not automatically resolve the correct executable JAR. In this case, explicitly pass the SystemDS JAR located in the release root directory:
+```bash
+SYSTEMDS_JAR=$(find "$SYSTEMDS_ROOT" -maxdepth 1 -type f -name "systemds-*.jar" | head -n 1)
+echo "Using SystemDS JAR: $SYSTEMDS_JAR"
+```
+Then run the example again:
+```bash
+systemds "$SYSTEMDS_JAR" -f scripts/algorithms/Univar-Stats.dml -nvargs \
+  X=data/haberman.data \
+  TYPES=data/types.csv \
+  STATS=data/univarOut.mtx \
+  CONSOLE_OUTPUT=TRUE
+```
+
+### 3.3 Run the Real Example
 
 The script computes basic statistics (min, max, variance, skewness, etc) for each column of a dataset. Expected output (example):
 ```bash
@@ -179,6 +193,7 @@ To check the location of output file created:
 ```bash
 ls -l data/univarOut.mtx
 ```
+
 ---
 # 4. Run a Script on Spark
 
@@ -189,16 +204,16 @@ SystemDS can be executed on Spark using the main executable JAR. The location of
 
 ### 4.1 Running with a Release installation
 
-If you installed SystemDS from a release archive, the main JAR is located at:
+If you installed SystemDS from a release archive, locate the runnable JAR in the release root directory. It is typically named like `systemds-<version>.jar`.
 
+Example:
 ```bash
-SystemDS.jar
+ls -1 "$SYSTEMDS_ROOT"/*.jar
 ```
 
 Run:
-
 ```bash
-spark-submit SystemDS.jar -f hello.dml
+spark-submit "$SYSTEMDS_ROOT/systemds-<version>.jar" -f hello.dml
 ```
 
 ### 4.2 Running with a Source-build installation
@@ -227,6 +242,7 @@ Run:
 ```bash
 spark-submit target/SystemDS.jar -f hello.dml
 ```
+
 ---
 # 5. Run a Script in Federated Mode
 
@@ -249,5 +265,5 @@ This starts a worker on port `8001`.
 
 ### 5.2 Next steps and full examples
 
-For complete, runnable examples of federated execution (including data files, metadata, and Python code), see the official [Federated Environment guide](https://systemds.apache.org/docs/2.1.0/api/python/guide/federated.html)
+For complete, runnable examples of federated execution (including data files, metadata, and Python code), see the official [Federated Environment guide](https://systemds.apache.org/docs/3.3.0/api/python/guide/federated.html)
 

@@ -7,6 +7,8 @@ SystemDS can be installed and used in two different ways:
 1. Using a **downloaded release**  
 2. Using a **source build**
 
+If you are primarily a user of SystemDS, start with the Release installation. If you plan to contribute or modify internals, follow the Source installation.
+
 Each method is demonstrated in:
 - Local mode  
 - Spark mode  

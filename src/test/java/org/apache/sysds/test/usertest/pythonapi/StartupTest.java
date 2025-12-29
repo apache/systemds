@@ -304,6 +304,8 @@ public class StartupTest {
 		script.startWritingColToPipe(0, null, 0);
 	}
 	private static class ExitCalled extends RuntimeException implements PythonDMLScript.ExitHandler {
+		private static final long serialVersionUID = -4247240099965056602L;
+
 		@Override
 		public void exit(int status) {
 			throw this;

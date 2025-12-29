@@ -71,6 +71,7 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.FederatedMon
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
+import org.apache.sysds.runtime.instructions.ooc.OOCEvictionManager;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCachePolicy;
@@ -497,6 +498,8 @@ public class DMLScript
 			ScriptExecutorUtils.executeRuntimeProgram(rtprog, ec, ConfigurationManager.getDMLConfig(), STATISTICS ? STATISTICS_COUNT : 0, null);
 		}
 		finally {
+			//cleanup OOC streams and cache
+			OOCEvictionManager.reset();
 			//cleanup scratch_space and all working dirs
 			cleanupHadoopExecution(ConfigurationManager.getDMLConfig());
 			FederatedData.clearWorkGroup();

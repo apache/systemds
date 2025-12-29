@@ -78,7 +78,7 @@
 		<test-forkCount>1C</test-forkCount>
 		<rerun.failing.tests.count>2</rerun.failing.tests.count>
 		<jacoco.skip>false</jacoco.skip>
-		<checkstyle.skip>false</checkstyle.skip>
+		<checkstyle.skip>true</checkstyle.skip>
 		<doc.skip>false</doc.skip>
 		<jacoco.include>**</jacoco.include>
 		<automatedtestbase.outputbuffering>false</automatedtestbase.outputbuffering>

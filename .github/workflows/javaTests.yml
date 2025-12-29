@@ -96,7 +96,7 @@ jobs:
       uses: ./.github/action/
       id: test
       with:
-        test-to-run: ${{ matrix.tests }} -Dcheckstyle.skip=true
+        test-to-run: ${{ matrix.tests }}
 
     - name: Clean Github Artifact Name of Asterisks
       run: |

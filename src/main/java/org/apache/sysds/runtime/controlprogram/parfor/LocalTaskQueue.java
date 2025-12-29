@@ -103,6 +103,10 @@ public class LocalTaskQueue<T>
 		return t;
 	}
 
+	public synchronized boolean hasNext() {
+		return !_data.isEmpty() || _closedInput;
+	}
+
 	/**
 	 * Synchronized (logical) insert of a NO_MORE_TASKS symbol at the end of the FIFO queue in order to
 	 * mark that no more tasks will be inserted into the queue.

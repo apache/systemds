@@ -45,6 +45,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
+import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
@@ -528,17 +529,16 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 	
 
 	@Override
-	protected MatrixBlock readBlobFromStream(LocalTaskQueue<IndexedMatrixValue> stream) throws IOException {
+	protected MatrixBlock readBlobFromStream(OOCStream<IndexedMatrixValue> stream) throws IOException {
 		boolean dimsUnknown = getNumRows() < 0 || getNumColumns() < 0;
 		int nrows = (int)getNumRows();
 		int ncols = (int)getNumColumns();
 		MatrixBlock ret = dimsUnknown ? null : new MatrixBlock((int)getNumRows(), (int)getNumColumns(), false);
-		// TODO if stream is CachingStream, block parts might be evicted resulting in null pointer exceptions
 		List<IndexedMatrixValue> blockCache = dimsUnknown ? new ArrayList<>() : null;
 		IndexedMatrixValue tmp = null;
 		try {
 			int blen = getBlocksize(), lnnz = 0;
-			while( (tmp = stream.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS ) {
+			while( (tmp = stream.dequeue()) != LocalTaskQueue.NO_MORE_TASKS ) {
 				// compute row/column block offsets
 				final int row_offset = (int) (tmp.getIndexes().getRowIndex() - 1) * blen;
 				final int col_offset = (int) (tmp.getIndexes().getColumnIndex() - 1) * blen;
@@ -636,7 +636,7 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		FileFormat fmt = (ofmt != null ? FileFormat.safeValueOf(ofmt) : iimd.getFileFormat());
 		MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(fmt, rep, fprop);
-		return writer.writeMatrixFromStream(fname, getStreamHandle().toLocalTaskQueue(),
+		return writer.writeMatrixFromStream(fname, getStreamHandle(),
 			getNumRows(), getNumColumns(), ConfigurationManager.getBlocksize());
 	}
 

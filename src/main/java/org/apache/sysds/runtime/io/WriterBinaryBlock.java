@@ -32,6 +32,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
+import org.apache.sysds.runtime.instructions.ooc.OOCStream;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
@@ -234,7 +235,7 @@ public class WriterBinaryBlock extends MatrixWriter {
 	}
 
 	@Override
-	public long writeMatrixFromStream(String fname, LocalTaskQueue<IndexedMatrixValue> stream, long rlen, long clen, int blen) throws IOException {
+	public long writeMatrixFromStream(String fname, OOCStream<IndexedMatrixValue> stream, long rlen, long clen, int blen) throws IOException {
 		Path path = new Path(fname);
 		SequenceFile.Writer writer = null;
 
@@ -245,7 +246,7 @@ public class WriterBinaryBlock extends MatrixWriter {
 
 			// 2. Loop through OOC stream
 			IndexedMatrixValue i_val =  null;
-			while((i_val = stream.dequeueTask()) != LocalTaskQueue.NO_MORE_TASKS) {
+			while((i_val = stream.dequeue()) != LocalTaskQueue.NO_MORE_TASKS) {
 				MatrixBlock mb = (MatrixBlock) i_val.getValue();
 				MatrixIndexes ix = i_val.getIndexes();
 

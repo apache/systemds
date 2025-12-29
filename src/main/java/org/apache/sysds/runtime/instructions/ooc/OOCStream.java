@@ -25,13 +25,15 @@ import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import java.util.function.Consumer;
 
 public interface OOCStream<T> extends OOCStreamable<T> {
+	static <T> QueueCallback<T> eos(DMLRuntimeException e) {
+		return new SimpleQueueCallback<>(null, e);
+	}
+
 	void enqueue(T t);
 
 	T dequeue();
 
 	void closeInput();
-
-	LocalTaskQueue<T> toLocalTaskQueue();
 
 	void propagateFailure(DMLRuntimeException re);
 
@@ -47,19 +49,53 @@ public interface OOCStream<T> extends OOCStreamable<T> {
 	 */
 	void setSubscriber(Consumer<QueueCallback<T>> subscriber);
 
-	class QueueCallback<T> {
-		private final T _result;
-		private final DMLRuntimeException _failure;
+	interface QueueCallback<T> extends AutoCloseable {
+		T get();
 
-		public QueueCallback(T result, DMLRuntimeException failure) {
-			_result = result;
-			_failure = failure;
+		/**
+		 * Keeps the callback item pinned in memory until the returned callback is also closed.
+		 */
+		QueueCallback<T> keepOpen();
+
+		void close();
+
+		void fail(DMLRuntimeException failure);
+
+		boolean isEos();
+	}
+
+	class SimpleQueueCallback<T> implements QueueCallback<T> {
+		private final T _result;
+		private DMLRuntimeException _failure;
+
+		public SimpleQueueCallback(T result, DMLRuntimeException failure) {
+			this._result = result;
+			this._failure = failure;
 		}
 
+		@Override
 		public T get() {
 			if (_failure != null)
 				throw _failure;
 			return _result;
+		}
+
+		@Override
+		public QueueCallback<T> keepOpen() {
+			return this;
+		}
+
+		@Override
+		public void fail(DMLRuntimeException failure) {
+			this._failure = failure;
+		}
+
+		@Override
+		public void close() {}
+
+		@Override
+		public boolean isEos() {
+			return get() == null;
 		}
 	}
 }

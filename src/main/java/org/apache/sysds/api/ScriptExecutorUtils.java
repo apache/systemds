@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.lineage.LineageEstimatorStatistics;
 import org.apache.sysds.runtime.lineage.LineageGPUCacheEviction;
+import org.apache.sysds.runtime.ooc.cache.OOCCacheManager;
 import org.apache.sysds.utils.Statistics;
 
 public class ScriptExecutorUtils {
@@ -127,6 +128,9 @@ public class ScriptExecutorUtils {
 			
 			if (DMLScript.LINEAGE_ESTIMATE)
 				System.out.println(LineageEstimatorStatistics.displayLineageEstimates());
+
+			if (DMLScript.USE_OOC)
+				OOCCacheManager.reset();
 		}
 	}
 

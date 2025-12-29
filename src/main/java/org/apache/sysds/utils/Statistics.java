@@ -65,6 +65,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.DoubleAdder;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Consumer;
 
@@ -222,6 +223,16 @@ public class Statistics
 
 	public static boolean allowWorkerStatistics = true;
 
+	// Out-of-core eviction metrics
+	private static final ConcurrentHashMap<String, LongAdder> oocHeavyHitters = new  ConcurrentHashMap<>();
+	private static final LongAdder oocGetCalls = new LongAdder();
+	private static final LongAdder oocPutCalls = new LongAdder();
+	private static final LongAdder oocLoadFromDiskCalls = new LongAdder();
+	private static final LongAdder oocLoadFromDiskTimeNanos = new LongAdder();
+	private static final LongAdder oocEvictionWriteCalls = new LongAdder();
+	private static final LongAdder oocEvictionWriteTimeNanos = new LongAdder();
+	private static final AtomicLong oocStatsStartTime = new AtomicLong(System.nanoTime());
+
 	public static long getNoOfExecutedSPInst() {
 		return numExecutedSPInst.longValue();
 	}
@@ -338,6 +349,146 @@ public class Statistics
 	public static long getRunTime() {
 		return execEndTime - execStartTime;
 	}
+
+	public static void resetOOCEvictionStats() {
+		oocHeavyHitters.clear();
+		oocGetCalls.reset();
+		oocPutCalls.reset();
+		oocLoadFromDiskCalls.reset();
+		oocLoadFromDiskTimeNanos.reset();
+		oocEvictionWriteCalls.reset();
+		oocEvictionWriteTimeNanos.reset();
+		oocStatsStartTime.set(System.nanoTime());
+	}
+
+	public static String getOOCHeavyHitters(int num) {
+		if (num <= 0 || oocHeavyHitters == null || oocHeavyHitters.isEmpty())
+			return "-";
+
+		@SuppressWarnings("unchecked")
+		Map.Entry<String, LongAdder>[] tmp =
+			oocHeavyHitters.entrySet().toArray(new Map.Entry[0]);
+
+		Arrays.sort(tmp, (e1, e2) ->
+			Long.compare(e1.getValue().longValue(), e2.getValue().longValue())
+		);
+
+		final String numCol   = "#";
+		final String instCol  = "Instruction";
+		final String timeCol  = "Time(s)";
+
+		DecimalFormat sFormat = new DecimalFormat("#,##0.000");
+
+		StringBuilder sb = new StringBuilder();
+		int len = tmp.length;
+		int numHittersToDisplay = Math.min(num, len);
+
+		int maxNumLen  = String.valueOf(numHittersToDisplay).length();
+		int maxInstLen = instCol.length();
+		int maxTimeLen = timeCol.length();
+
+		// first pass: compute column widths
+		for (int i = 0; i < numHittersToDisplay; i++) {
+			Map.Entry<String, LongAdder> hh = tmp[len - 1 - i];
+
+			String instruction = hh.getKey();
+			double timeS = hh.getValue().longValue() / 1_000_000_000d;
+			String timeStr = sFormat.format(timeS);
+
+			maxInstLen = Math.max(maxInstLen, instruction.length());
+			maxTimeLen = Math.max(maxTimeLen, timeStr.length());
+		}
+
+		maxInstLen = Math.min(maxInstLen, DMLScript.STATISTICS_MAX_WRAP_LEN);
+
+		// header
+		sb.append(String.format(
+			" %" + maxNumLen + "s  %-" + maxInstLen + "s  %" + maxTimeLen + "s",
+			numCol, instCol, timeCol));
+		sb.append("\n");
+
+		// rows
+		for (int i = 0; i < numHittersToDisplay; i++) {
+			Map.Entry<String, LongAdder> hh = tmp[len - 1 - i];
+
+			String instruction = hh.getKey();
+			double timeS = hh.getValue().longValue() / 1_000_000_000d;
+			String timeStr = sFormat.format(timeS);
+
+			String[] wrappedInstruction = wrap(instruction, maxInstLen);
+
+			for (int w = 0; w < wrappedInstruction.length; w++) {
+				if (w == 0) {
+					sb.append(String.format(
+						" %" + maxNumLen + "d  %-" + maxInstLen + "s  %"
+							+ maxTimeLen + "s",
+						(i + 1), wrappedInstruction[w], timeStr));
+				} else {
+					sb.append(String.format(
+						" %" + maxNumLen + "s  %-" + maxInstLen + "s  %"
+							+ maxTimeLen + "s",
+						"", wrappedInstruction[w], ""));
+				}
+				sb.append("\n");
+			}
+		}
+
+		return sb.toString();
+	}
+
+	public static void maintainOOCHeavyHitter(String op, long timeNanos) {
+		LongAdder adder = oocHeavyHitters.computeIfAbsent(op, k -> new LongAdder());
+		adder.add(timeNanos);
+	}
+
+	public static void incrementOOCEvictionGet() {
+		oocGetCalls.increment();
+	}
+
+	public static void incrementOOCEvictionGet(int incr) {
+		oocGetCalls.add(incr);
+	}
+
+	public static void incrementOOCEvictionPut() {
+		oocPutCalls.increment();
+	}
+
+	public static void incrementOOCLoadFromDisk() {
+		oocLoadFromDiskCalls.increment();
+	}
+
+	public static void incrementOOCEvictionWrite() {
+		oocEvictionWriteCalls.increment();
+	}
+
+	public static void accumulateOOCLoadFromDiskTime(long nanos) {
+		oocLoadFromDiskTimeNanos.add(nanos);
+	}
+
+	public static void accumulateOOCEvictionWriteTime(long nanos) {
+		oocEvictionWriteTimeNanos.add(nanos);
+	}
+
+	public static String displayOOCEvictionStats() {
+		long elapsedNanos = Math.max(1, System.nanoTime() - oocStatsStartTime.get());
+		double elapsedSeconds = elapsedNanos / 1e9;
+		double getThroughput = oocGetCalls.longValue() / elapsedSeconds;
+		double putThroughput = oocPutCalls.longValue() / elapsedSeconds;
+
+		StringBuilder sb = new StringBuilder();
+		sb.append("OOC heavy hitters:\n");
+		sb.append(getOOCHeavyHitters(DMLScript.OOC_STATISTICS_COUNT));
+		sb.append('\n');
+		sb.append(String.format(Locale.US, "  get calls:\t\t%d (%.2f/sec)\n",
+			oocGetCalls.longValue(), getThroughput));
+		sb.append(String.format(Locale.US, "  put calls:\t\t%d (%.2f/sec)\n",
+			oocPutCalls.longValue(), putThroughput));
+		sb.append(String.format(Locale.US, "  loadFromDisk:\t\t%d (time %.3f sec)\n",
+			oocLoadFromDiskCalls.longValue(), oocLoadFromDiskTimeNanos.longValue() / 1e9));
+		sb.append(String.format(Locale.US, "  evict writes:\t\t%d (time %.3f sec)\n",
+			oocEvictionWriteCalls.longValue(), oocEvictionWriteTimeNanos.longValue() / 1e9));
+		return sb.toString();
+	}
 	
 	public static void reset()
 	{
@@ -358,6 +509,7 @@ public class Statistics
 		
 		CacheStatistics.reset();
 		LineageCacheStatistics.reset();
+		resetOOCEvictionStats();
 		
 		resetJITCompileTime();
 		resetJVMgcTime();
@@ -1124,6 +1276,11 @@ public class Statistics
 			sb.append(FederatedStatistics.displayStatistics(DMLScript.FED_STATISTICS_COUNT));
 			sb.append("\n");
 			sb.append(ParamServStatistics.displayFloStatistics());
+		}
+
+		if (DMLScript.OOC_STATISTICS) {
+			sb.append('\n');
+			sb.append(displayOOCEvictionStats());
 		}
 
 		return sb.toString();

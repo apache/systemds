@@ -71,11 +71,11 @@ import org.apache.sysds.runtime.controlprogram.federated.monitoring.FederatedMon
 import org.apache.sysds.runtime.controlprogram.federated.monitoring.models.CoordinatorModel;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
-import org.apache.sysds.runtime.instructions.ooc.OOCEvictionManager;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCachePolicy;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
+import org.apache.sysds.runtime.ooc.stats.OOCEventLog;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.LocalFileUtils;
@@ -150,6 +150,12 @@ public class DMLScript
 	public static boolean           SYNCHRONIZE_GPU      = true;
 	// Set OOC backend
 	public static boolean           USE_OOC              = DMLOptions.defaultOptions.ooc;
+	// Record and print OOC statistics
+	public static boolean           OOC_STATISTICS       = DMLOptions.defaultOptions.oocStats;
+	public static int               OOC_STATISTICS_COUNT = DMLOptions.defaultOptions.oocStatsCount;
+	// Record and save fine grained OOC event logs as csv to the specified dir
+	public static boolean           OOC_LOG_EVENTS       = DMLOptions.defaultOptions.oocLogEvents;
+	public static String            OOC_LOG_PATH         = DMLOptions.defaultOptions.oocLogPath;
 	// Enable eager CUDA free on rmvar
 	public static boolean           EAGER_CUDA_FREE      = false;
 
@@ -273,6 +279,10 @@ public class DMLScript
 			USE_ACCELERATOR       = dmlOptions.gpu;
 			FORCE_ACCELERATOR     = dmlOptions.forceGPU;
 			USE_OOC	              = dmlOptions.ooc;
+			OOC_STATISTICS        = dmlOptions.oocStats;
+			OOC_STATISTICS_COUNT  = dmlOptions.oocStatsCount;
+			OOC_LOG_EVENTS        = dmlOptions.oocLogEvents;
+			OOC_LOG_PATH          = dmlOptions.oocLogPath;
 			EXPLAIN               = dmlOptions.explainType;
 			EXEC_MODE             = dmlOptions.execMode;
 			LINEAGE               = dmlOptions.lineage;
@@ -323,6 +333,9 @@ public class DMLScript
 			LineageCacheConfig.setConfig(LINEAGE_REUSE);
 			LineageCacheConfig.setCachePolicy(LINEAGE_POLICY);
 			LineageCacheConfig.setEstimator(LINEAGE_ESTIMATE);
+
+			if (dmlOptions.oocLogEvents)
+				OOCEventLog.setup(100000);
 
 			String dmlScriptStr = readDMLScript(isFile, fileOrScript);
 			Map<String, String> argVals = dmlOptions.argVals;
@@ -498,8 +511,6 @@ public class DMLScript
 			ScriptExecutorUtils.executeRuntimeProgram(rtprog, ec, ConfigurationManager.getDMLConfig(), STATISTICS ? STATISTICS_COUNT : 0, null);
 		}
 		finally {
-			//cleanup OOC streams and cache
-			OOCEvictionManager.reset();
 			//cleanup scratch_space and all working dirs
 			cleanupHadoopExecution(ConfigurationManager.getDMLConfig());
 			FederatedData.clearWorkGroup();

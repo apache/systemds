@@ -1,0 +1,77 @@
+source("scripts/builtin/hdbscan.dml") as hdb
+
+#        4
+#      / | \
+#     /  |  \
+#    /  (2)  (5)
+#    |   |    \
+#    |   |     \
+#   (2)  1-(3)--3
+#    |   |    /
+#    \   |   (4)
+#     \  (1) /
+#      \ | /
+#       \|/
+#        2
+
+distances = matrix(0, rows=4, cols=4)
+distances[1,2] = 1 
+distances[2,1] = 1
+
+distances[1,3] = 3 
+distances[3,1] = 3
+
+distances[1,4] = 2  
+distances[4,1] = 2
+
+distances[2,3] = 4 
+distances[3,2] = 4
+
+distances[2,4] = 2
+distances[4,2] = 2
+
+distances[3,4] = 5 
+distances[4,3] = 5
+
+[edges, weights] = hdb::buildMST(distances, 4)
+
+[hierarchy, sizes] = hdb::buildHierarchy(edges, weights, 4)
+
+print("Hierarchy (format: [cluster1, cluster2, merge_distance]):")
+print(toString(hierarchy))
+
+# Should have n-1 merge operations for n nodes
+num_merges = nrow(hierarchy)
+print("Number of merges: " + num_merges + " (should be 3)")
+test1 = (num_merges == 3)
+
+# Merge distances should be in ascending order (or equal)
+# Because we process edges from low weight to high weight
+dist1 = as.scalar(hierarchy[1,3])
+dist2 = as.scalar(hierarchy[2,3])
+dist3 = as.scalar(hierarchy[3,3])
+print("\nMerge distances: [" + dist1 + ", " + dist2 + ", " + dist3 + "]" + " (Should be in ascending order)")
+test2 = (dist1 <= dist2) & (dist2 <= dist3)
+
+# Cluster sizes should increase
+size1 = as.scalar(sizes[1])
+size2 = as.scalar(sizes[2])
+size3 = as.scalar(sizes[3])
+print("\nCluster sizes: [" + size1 + ", " + size2 + ", " + size3 + "]" + " (Should be increasing)")
+test3 = (size1 <= size2) & (size2 <= size3)
+
+# Final size should equal total number of nodes
+print("Final cluster size: " + size3 + " (should be 4)")
+test4 = (size3 == 4)
+
+# First merge should be size 2
+print("First merge size: " + size1 + " (should be 2)")
+test5 = (size1 == 2)
+
+test_pass = test1 & test2 & test3 & test4 & test5
+
+if(test_pass) {
+    print("Passed")
+} else {
+    print("Failed")
+}

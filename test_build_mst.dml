@@ -42,5 +42,5 @@ test_pass = (nrow(edges) == 3) & (totalWeight == 6)
 if(test_pass) {
     print("Passed")
 } else {
-    print("Failes")
+    print("Failed")
 }

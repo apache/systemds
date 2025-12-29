@@ -47,8 +47,6 @@ jobs:
   java_tests:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    env:
-      MAVEN_OPTS: -Dcheckstyle.skip=true
     strategy:
       fail-fast: false
       matrix:
@@ -98,7 +96,7 @@ jobs:
       uses: ./.github/action/
       id: test
       with:
-        test-to-run: ${{ matrix.tests }}
+        test-to-run: ${{ matrix.tests }} -Dcheckstyle.skip=true
 
     - name: Clean Github Artifact Name of Asterisks
       run: |

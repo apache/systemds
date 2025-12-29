@@ -20,10 +20,7 @@
 package org.apache.sysds.runtime.einsum;
 
 import org.apache.commons.logging.Log;
-import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.hops.AggUnaryOp;
-import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.runtime.functionobjects.DiagIndex;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.Plus;

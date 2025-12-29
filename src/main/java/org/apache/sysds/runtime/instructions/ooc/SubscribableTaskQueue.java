@@ -71,7 +71,7 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 		Consumer<QueueCallback<T>> s = _subscriber;
 
 		if (s != null) {
-			s.accept(new QueueCallback<>(t, _failure));
+			s.accept(new SimpleQueueCallback<>(t, _failure));
 			onDeliveryFinished();
 			return;
 		}
@@ -92,7 +92,7 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 		}
 
 		// Last case if due to race a subscriber has been set
-		s.accept(new QueueCallback<>(t, _failure));
+		s.accept(new SimpleQueueCallback<>(t, _failure));
 		onDeliveryFinished();
 	}
 
@@ -149,7 +149,7 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 		}
 
 		for (T t : data) {
-			subscriber.accept(new QueueCallback<>(t, _failure));
+			subscriber.accept(new SimpleQueueCallback<>(t, _failure));
 			onDeliveryFinished();
 		}
 	}
@@ -161,7 +161,7 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 		if (ctr == 0) {
 			Consumer<QueueCallback<T>> s = _subscriber;
 			if (s != null)
-				s.accept(new QueueCallback<>((T) LocalTaskQueue.NO_MORE_TASKS, _failure));
+				s.accept(new SimpleQueueCallback<>((T) LocalTaskQueue.NO_MORE_TASKS, _failure));
 
 			if (OOCWatchdog.WATCH)
 				OOCWatchdog.registerClose(_watchdogId);
@@ -173,12 +173,7 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 		super.propagateFailure(re);
 		Consumer<QueueCallback<T>> s = _subscriber;
 		if(s != null)
-			s.accept(new QueueCallback<>(null, re));
-	}
-
-	@Override
-	public LocalTaskQueue<T> toLocalTaskQueue() {
-		return this;
+			s.accept(new SimpleQueueCallback<>(null, re));
 	}
 
 	@Override

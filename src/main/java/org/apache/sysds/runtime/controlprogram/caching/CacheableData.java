@@ -633,7 +633,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 					_requiresLocalWrite = false;
 				}
 				else if( hasStreamHandle() ) {
-					_data = readBlobFromStream( getStreamHandle().toLocalTaskQueue() );
+					_data = readBlobFromStream( getStreamHandle() );
 				}
 				else if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() ) {
 					if( DMLScript.STATISTICS )
@@ -1168,7 +1168,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	protected abstract T readBlobFromRDD(RDDObject rdd, MutableBoolean status)
 		throws IOException;
 
-	protected abstract T readBlobFromStream(LocalTaskQueue<IndexedMatrixValue> stream)
+	protected abstract T readBlobFromStream(OOCStream<IndexedMatrixValue> stream)
 		throws IOException;
 
 	// Federated read

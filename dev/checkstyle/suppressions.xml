@@ -130,6 +130,14 @@
     <suppress checks="RegexpMultilineCheck" files="src/test/java/org/apache/sysds/test/functions/transform/TransformFrameEncodeBagOfWords\.java$"/>
     <suppress checks="RegexpMultilineCheck" files="src/test/java/org/apache/sysds/test/gpu/cudaSupportFunctions/CudaCublasGeamTest\.java$"/>
     <suppress checks="RegexpMultilineCheck" files="src/test/java/org/apache/sysds/test/gpu/cudaSupportFunctions/CudaCusparseCsrGemmTest\.java$"/>
+    <suppress checks="RegexpMultilineCheck" files="src/main/java/org/apache/sysds/runtime/einsum/EOpNodeBinary\.java$"/>
+    <suppress checks="RegexpMultilineCheck" files="src/main/java/org/apache/sysds/runtime/einsum/EOpNodeData\.java$"/>
+    <suppress checks="RegexpMultilineCheck" files="src/main/java/org/apache/sysds/runtime/einsum/EOpNodeFuse\.java$"/>
+    <suppress checks="RegexpMultilineCheck" files="src/main/java/org/apache/sysds/runtime/einsum/EOpNodeUnary\.java$"/>
+    <suppress checks="RegexpMultilineCheck" files="src/main/java/org/apache/sysds/runtime/einsum/EOpNode\.java$"/>
+    <suppress checks="RegexpMultilineCheck" files="src/main/java/org/apache/sysds/runtime/instructions/cp/EinsumCPInstruction\.java$"/>
+    <suppress checks="RegexpMultilineCheck" files="src/main/java/org/apache/sysds/runtime/matrix/data/LibMatrixMult\.java$"/>
+    <suppress checks="RegexpMultilineCheck" files="src/test/java/org/apache/sysds/test/functions/einsum/EinsumTest\.java$"/>
 
     <!-- LocalVariableNameCheck -->
     <suppress checks="LocalVariableNameCheck" files="src/main/java/org/apache/sysds/api/PythonDMLScript\.java$"/>
@@ -350,6 +358,8 @@
     <suppress checks="MethodNameCheck" files="src/test/java/org/apache/sysds/test/gpu/nn/DNNOperationsGPUTest\.java$"/>
     <suppress checks="MethodNameCheck" files="src/test/java/org/apache/sysds/test/usertest/UserInterfaceTest\.java$"/>
     <suppress checks="MethodNameCheck" files="src/test/java/org/apache/sysds/test/usertest/pythonapi/StartupTest\.java$"/>
+    <suppress checks="MethodNameCheck" files="src/main/java/org/apache/sysds/runtime/einsum/EOpNodeBinary\.java$"/>
+    <suppress checks="MethodNameCheck" files="src/main/java/org/apache/sysds/runtime/einsum/EinsumSpoofRowwise\.java$"/>
 
     <!-- MemberNameCheck -->
     <!--<suppress checks="MemberNameCheck" files="src/main/java/org/apache/sysds/api/mlcontext/FrameMetadata\.java$"/>

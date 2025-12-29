@@ -375,7 +375,7 @@
                     <execution>
                         <id>checkstyle</id>
                         <!-- runs on mvn test -->
-                        <phase>validate</phase>
+                        <phase>test</phase>
                         <goals>
                             <goal>check</goal>
                         </goals>

@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.instructions.ooc;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 
 import java.util.function.Consumer;
 

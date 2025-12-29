@@ -181,4 +181,3 @@ jobs:
         name: Java Code Coverage (Jacoco)
         path: target/site/jacoco
         retention-days: 3
-

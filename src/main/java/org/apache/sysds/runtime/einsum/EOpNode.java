@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.einsum;
 
 import org.apache.commons.logging.Log;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import scala.Int;
 
 import java.util.ArrayList;
 import java.util.Arrays;

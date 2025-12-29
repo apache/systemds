@@ -165,7 +165,7 @@ public class NaryOp extends Hop {
 		setRequiresRecompileIfNecessary();
 		
 		//ensure cp exec type for single-node operations
-		if ( _op == OpOpN.PRINTF  || _op == OpOpN.EVAL || _op == OpOpN.LIST
+		if ( _op == OpOpN.PRINTF  || _op == OpOpN.EVAL || _op == OpOpN.LIST || _op == OpOpN.EINSUM
 			//TODO: cbind/rbind of lists only support in CP right now
 			|| (_op == OpOpN.CBIND && getInput().get(0).getDataType().isList())
 			|| (_op == OpOpN.RBIND && getInput().get(0).getDataType().isList())

@@ -79,9 +79,13 @@ public class EinsumEquationValidator {
             if (c == ' ') continue;
             if (numberOfOutDimensions == 0) {
                 dim1Char = c;
+                if(!charToDimensionSize.containsKey(c))
+                    throw new LanguageException("Einsum: Output dimension '"+c+"' not present in input operands");
                 dim1 = charToDimensionSize.get(c);
             } else {
                 if(c==dim1Char) throw new LanguageException("Einsum: output character "+c+" provided multiple times");
+                if(!charToDimensionSize.containsKey(c))
+                    throw new LanguageException("Einsum: Output dimension '"+c+"' not present in input operands");
                 dim2 = charToDimensionSize.get(c);
             }
             numberOfOutDimensions++;

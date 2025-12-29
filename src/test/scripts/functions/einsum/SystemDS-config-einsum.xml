@@ -23,9 +23,6 @@
    <sysds.optlevel>2</sysds.optlevel>
    <sysds.codegen.plancache>true</sysds.codegen.plancache>
    <sysds.codegen.literals>1</sysds.codegen.literals>
-
-   <!-- The number of threads for the spark instance artificially selected-->
-   <sysds.local.spark.number.threads>16</sysds.local.spark.number.threads>
-
-   <sysds.codegen.api>auto</sysds.codegen.api>
+    <sysds.local.spark.number.threads>16</sysds.local.spark.number.threads>
+    <sysds.native.blas>auto</sysds.native.blas>
 </root>

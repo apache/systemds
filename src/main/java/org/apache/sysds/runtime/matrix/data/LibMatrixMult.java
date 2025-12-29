@@ -3982,6 +3982,25 @@ public class LibMatrixMult
 			aVec.mul(bVec).intoArray(c, ci);
 		}
 	}
+
+    //note: public for use by codegen for consistency
+    public static void vectMultiplyAdd( double[] a, double[] b, double[] c, int ai, int bi, int ci, final int len ){
+        final int bn = len%vLen;
+
+        //rest, not aligned to vLen-blocks
+        for( int j = 0; j < bn; j++, ai++, bi++, ci++)
+            c[ ci ] += a[ ai ] * b[ bi ];
+
+        //unrolled vLen-block  (for better instruction-level parallelism)
+        for( int j = bn; j < len; j+=vLen, ai+=vLen, bi+=vLen, ci+=vLen)
+        {
+            DoubleVector aVec = DoubleVector.fromArray(SPECIES, a, ai);
+            DoubleVector bVec = DoubleVector.fromArray(SPECIES, b, bi);
+            DoubleVector cVec = DoubleVector.fromArray(SPECIES, c, ci);
+            cVec = aVec.fma(bVec, cVec);
+            cVec.intoArray(c, ci);
+        }
+    }
 	
 	public static void vectMultiplyWrite( final double[] a, double[] b, double[] c, int[] bix, final int ai, final int bi, final int ci, final int len ) {
 		final int bn = len%8;

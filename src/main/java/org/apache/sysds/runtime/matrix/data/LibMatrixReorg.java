@@ -134,6 +134,8 @@ public class LibMatrixReorg {
 					return rev(in, out);
 			case ROLL:
 				RollIndex rix = (RollIndex) op.fn;
+				if(op.getNumThreads() > 1)
+					return roll(in, out, rix.getShift(), op.getNumThreads());
 				return roll(in, out, rix.getShift());
 			case DIAG:
 				return diag(in, out);
@@ -512,6 +514,124 @@ public class LibMatrixReorg {
 			rollDense(in, out, shift);
 
 		return out;
+	}
+
+	public static MatrixBlock roll(MatrixBlock input, MatrixBlock output, int shift, int numThreads) {
+
+		final int numRows = input.rlen;
+		final int numCols = input.clen;
+		final boolean isSparse = input.sparse;
+
+		// sparse-safe operation
+		if(input.isEmptyBlock(false))
+			return output;
+
+		// special case: row vector
+		if(numRows == 1) {
+			output.copy(input);
+			return output;
+		}
+
+		if(numThreads <= 1 || input.getLength() < PAR_NUMCELL_THRESHOLD) {
+			return roll(input, output, shift); // fallback to single-threaded
+		}
+
+		final int normalizedShift = getNormalizedShiftForRoll(shift, numRows);
+
+		output.reset(numRows, numCols, isSparse);
+		output.nonZeros = input.nonZeros;
+
+		if(isSparse) {
+			output.allocateSparseRowsBlock(false);
+		}
+		else {
+			output.allocateDenseBlock(false);
+		}
+
+		//TODO experiment with more tasks per thread for better load balance
+		//TODO call common kernel from both single- and multi-threaded execution
+		
+		ExecutorService threadPool = CommonThreadPool.get(numThreads);
+		try {
+			final int rowsPerThread = (int) Math.ceil((double) numRows / numThreads);
+			List<Future<?>> tasks = new ArrayList<>();
+
+			for(int threadIndex = 0; threadIndex < numThreads; threadIndex++) {
+
+				final int startRow = threadIndex * rowsPerThread;
+				final int endRow = Math.min((threadIndex + 1) * rowsPerThread, numRows);
+
+				tasks.add(threadPool.submit(() -> {
+					if(isSparse)
+						rollSparseBlock(input, output, normalizedShift, startRow, endRow);
+					else
+						rollDenseBlock(input, output, normalizedShift, startRow, endRow);
+				}));
+			}
+
+			for(Future<?> task : tasks)
+				task.get();
+
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+		finally {
+			threadPool.shutdown();
+		}
+
+		return output;
+	}
+
+	private static int getNormalizedShiftForRoll(int shift, int numRows) {
+		shift = shift % numRows;
+		if(shift < 0)
+			shift += numRows;
+
+		return shift;
+	}
+
+	private static void rollDenseBlock(MatrixBlock input, MatrixBlock output, 
+			int shift, int startRow, int endRow) 
+	{
+		DenseBlock inputBlock = input.getDenseBlock();
+		DenseBlock outputBlock = output.getDenseBlock();
+		final int numRows = input.rlen;
+		final int numCols = input.clen;
+
+		for(int targetRow = startRow; targetRow < endRow; targetRow++) {
+			int sourceRow = targetRow - shift;
+			if(sourceRow < 0)
+				sourceRow += numRows;
+
+			System.arraycopy(inputBlock.values(sourceRow), inputBlock.pos(sourceRow), outputBlock.values(targetRow),
+				outputBlock.pos(targetRow), numCols);
+		}
+	}
+
+	private static void rollSparseBlock(MatrixBlock input, MatrixBlock output, 
+		int shift, int startRow, int endRow) 
+	{
+		SparseBlock inputBlock = input.getSparseBlock();
+		SparseBlock outputBlock = output.getSparseBlock();
+		final int numRows = input.rlen;
+
+		for(int targetRow = startRow; targetRow < endRow; targetRow++) {
+			int sourceRow = targetRow - shift;
+			if(sourceRow < 0)
+				sourceRow += numRows;
+
+			if(!inputBlock.isEmpty(sourceRow)) {
+				int rowStart = inputBlock.pos(sourceRow);
+				int rowEnd = rowStart + inputBlock.size(sourceRow);
+				int[] colIndexes = inputBlock.indexes(sourceRow);
+				double[] values = inputBlock.values(sourceRow);
+
+				for(int k = rowStart; k < rowEnd; k++) {
+					outputBlock.set(targetRow, colIndexes[k], values[k]);
+				}
+			}
+		}
 	}
 
 	public static void roll(IndexedMatrixValue in, long rlen, int blen, int shift, ArrayList<IndexedMatrixValue> out) {
@@ -2554,7 +2674,7 @@ public class LibMatrixReorg {
 
 	private static void rollDense(MatrixBlock in, MatrixBlock out, int shift) {
 		final int m = in.rlen;
-		shift %= (m != 0 ? m : 1); // roll matrix with axis=none
+		shift = getNormalizedShiftForRoll(shift, m); // roll matrix with axis=none
 
 		copyDenseMtx(in, out, 0, shift, m - shift, false, true);
 		copyDenseMtx(in, out, m - shift, 0, shift, true, true);
@@ -2562,7 +2682,7 @@ public class LibMatrixReorg {
 
 	private static void rollSparse(MatrixBlock in, MatrixBlock out, int shift) {
 		final int m = in.rlen;
-		shift %= (m != 0 ? m : 1); // roll matrix with axis=0
+		shift = getNormalizedShiftForRoll(shift, m); // roll matrix with axis=0
 
 		copySparseMtx(in, out, 0, shift, m - shift, false, true);
 		copySparseMtx(in, out, m-shift, 0, shift, false, true);

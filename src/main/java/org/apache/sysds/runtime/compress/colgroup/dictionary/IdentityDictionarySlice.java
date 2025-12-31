@@ -27,6 +27,7 @@ import java.util.Arrays;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -308,6 +309,11 @@ public class IdentityDictionarySlice extends AIdentityDictionary {
 	@Override
 	public String getString(int colIndexes) {
 		return toString();
+	}
+
+	@Override 
+	public IDictionary sliceColumns(IntArrayList selectedColumns, int nCol){
+		return getMBDict().sliceColumns(selectedColumns, nCol);
 	}
 
 	@Override

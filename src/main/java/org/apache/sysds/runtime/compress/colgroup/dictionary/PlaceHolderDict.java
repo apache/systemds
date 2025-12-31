@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 
 public class PlaceHolderDict extends ADictionary {
@@ -99,6 +100,16 @@ public class PlaceHolderDict extends ADictionary {
 	@Override
 	public DictType getDictType() {
 		throw new RuntimeException("invalid to get dictionary type for PlaceHolderDict");
+	}
+
+	@Override
+	public int[] sort() {
+		throw new RuntimeException("Invalid call");
+	}
+
+	@Override
+	public IDictionary sliceColumns(IntArrayList selectedColumns, int nCol) {
+		throw new RuntimeException("Invalid call");
 	}
 
 }

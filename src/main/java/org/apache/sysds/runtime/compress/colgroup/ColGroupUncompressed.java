@@ -43,6 +43,7 @@ import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -82,7 +83,8 @@ public class ColGroupUncompressed extends AColGroup {
 
 	/**
 	 * Do not use this constructor of column group uncompressed, instead use the create constructor.
-	 * @param mb The contained data.
+	 * 
+	 * @param mb         The contained data.
 	 * @param colIndexes Column indexes for this Columngroup
 	 */
 	protected ColGroupUncompressed(MatrixBlock mb, IColIndex colIndexes) {
@@ -92,14 +94,15 @@ public class ColGroupUncompressed extends AColGroup {
 
 	/**
 	 * Do not use this constructor of column group quantization-fused uncompressed, instead use the create constructor.
-	 * @param mb The contained data.
-	 * @param scaleFactors  For quantization-fused compression, scale factors per row, or a single value for entire matrix
-	 * @param colIndexes Column indexes for this Columngroup
+	 * 
+	 * @param mb           The contained data.
+	 * @param scaleFactors For quantization-fused compression, scale factors per row, or a single value for entire matrix
+	 * @param colIndexes   Column indexes for this Columngroup
 	 */
 	protected ColGroupUncompressed(MatrixBlock mb, IColIndex colIndexes, double[] scaleFactors) {
 		super(colIndexes);
-		// Apply scaling and flooring 
-		// TODO: Use internal matrix prod 
+		// Apply scaling and flooring
+		// TODO: Use internal matrix prod
 		for(int r = 0; r < mb.getNumRows(); r++) {
 			double scaleFactor = scaleFactors.length == 1 ? scaleFactors[0] : scaleFactors[r];
 			for(int c = 0; c < mb.getNumColumns(); c++) {
@@ -108,7 +111,8 @@ public class ColGroupUncompressed extends AColGroup {
 			}
 		}
 		_data = mb;
-	}	
+	}
+
 	/**
 	 * Create an Uncompressed Matrix Block, where the columns are offset by col indexes.
 	 * 
@@ -130,9 +134,9 @@ public class ColGroupUncompressed extends AColGroup {
 	 * 
 	 * It is assumed that the size of the colIndexes and number of columns in mb is matching.
 	 * 
-	 * @param mb         The MB / data to contain in the uncompressed column
-	 * @param colIndexes The column indexes for the group
-	 * @param scaleFactors  For quantization-fused compression, scale factors per row, or a single value for entire matrix
+	 * @param mb           The MB / data to contain in the uncompressed column
+	 * @param colIndexes   The column indexes for the group
+	 * @param scaleFactors For quantization-fused compression, scale factors per row, or a single value for entire matrix
 	 * @return An Uncompressed Column group
 	 */
 	public static AColGroup createQuantized(MatrixBlock mb, IColIndex colIndexes, double[] scaleFactors) {
@@ -147,14 +151,15 @@ public class ColGroupUncompressed extends AColGroup {
 	/**
 	 * Main constructor for a quantization-fused uncompressed ColGroup.
 	 * 
-	 * @param colIndexes 	Indices (relative to the current block) of the columns that this column group represents.
-	 * @param rawBlock   	The uncompressed block; uncompressed data must be present at the time that the constructor is
-	 *                   	called
-	 * @param transposed 	Says if the input matrix raw block have been transposed.
-	 * @param scaleFactors  For quantization-fused compression, scale factors per row, or a single value for entire matrix
+	 * @param colIndexes   Indices (relative to the current block) of the columns that this column group represents.
+	 * @param rawBlock     The uncompressed block; uncompressed data must be present at the time that the constructor is
+	 *                     called
+	 * @param transposed   Says if the input matrix raw block have been transposed.
+	 * @param scaleFactors For quantization-fused compression, scale factors per row, or a single value for entire matrix
 	 * @return AColGroup.
 	 */
-	public static AColGroup createQuantized(IColIndex colIndexes, MatrixBlock rawBlock, boolean transposed, double[] scaleFactors) {
+	public static AColGroup createQuantized(IColIndex colIndexes, MatrixBlock rawBlock, boolean transposed,
+		double[] scaleFactors) {
 
 		// special cases
 		if(rawBlock.isEmptyBlock(false)) // empty input
@@ -187,22 +192,24 @@ public class ColGroupUncompressed extends AColGroup {
 		final int n = colIndexes.size();
 
 		if(transposed) {
-			if (scaleFactors.length == 1) {
+			if(scaleFactors.length == 1) {
 				for(int i = 0; i < m; i++)
 					for(int j = 0; j < n; j++)
 						mb.appendValue(i, j, Math.floor(rawBlock.get(i, colIndexes.get(j)) * scaleFactors[0]));
-			} else {
+			}
+			else {
 				for(int i = 0; i < m; i++)
 					for(int j = 0; j < n; j++)
 						mb.appendValue(i, j, Math.floor(rawBlock.get(i, colIndexes.get(j)) * scaleFactors[j]));
 			}
 		}
 		else {
-			if (scaleFactors.length == 1) {
+			if(scaleFactors.length == 1) {
 				for(int i = 0; i < m; i++)
 					for(int j = 0; j < n; j++)
 						mb.appendValue(i, j, Math.floor(rawBlock.get(i, colIndexes.get(j)) * scaleFactors[0]));
-			} else {
+			}
+			else {
 				for(int i = 0; i < m; i++)
 					for(int j = 0; j < n; j++)
 						mb.appendValue(i, j, Math.floor(rawBlock.get(i, colIndexes.get(j)) * scaleFactors[i]));
@@ -1075,7 +1082,6 @@ public class ColGroupUncompressed extends AColGroup {
 		return comp.get(0).copyAndSet(_colIndexes);
 	}
 
-
 	@Override
 	public void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
 		if(_data.isInSparseFormat())
@@ -1091,7 +1097,6 @@ public class ColGroupUncompressed extends AColGroup {
 		else
 			denseSelectionDenseColumnGroup(selection, ret, rl, ru);
 	}
-
 
 	private void sparseSelectionSparseColumnGroup(MatrixBlock selection, MatrixBlock ret, int rl, int ru) {
 
@@ -1192,7 +1197,7 @@ public class ColGroupUncompressed extends AColGroup {
 		else
 			return new ColGroupUncompressed(mb, ColIndexFactory.createI(0));
 	}
-	
+
 	@Override
 	public void decompressToDenseBlockTransposed(DenseBlock db, int rl, int ru) {
 		if(_data.isInSparseFormat())
@@ -1289,9 +1294,28 @@ public class ColGroupUncompressed extends AColGroup {
 		for(int i = 0; i < multiplier; i++)
 			for(int j = 0; j < s; j++)
 				newColumns[i * s + j] = _colIndexes.get(j) + nColOrg * i;
-		MatrixBlock newData = _data.reshape(nRow/ multiplier, s * multiplier, true);
-		return new AColGroup[]{create(newData,ColIndexFactory.create(newColumns))};
+		MatrixBlock newData = _data.reshape(nRow / multiplier, s * multiplier, true);
+		return new AColGroup[] {create(newData, ColIndexFactory.create(newColumns))};
 		// throw new NotImplementedException("Unimplemented method 'splitReshape'");
+	}
+
+	@Override
+	public AColGroup sort() {
+		return new ColGroupUncompressed(_data.sortOperations(), _colIndexes);
+	}
+
+	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+		MatrixBlock tmp = new MatrixBlock();
+		tmp = LibMatrixReorg.removeEmptyRows(_data, tmp, false, false, selectV, rOut);
+		return ColGroupUncompressed.create(_colIndexes, tmp, false);
+	}
+
+	@Override
+	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns) {
+		double[] vals = MatrixBlockDictionary.sliceColumns(_data, selectedColumns);
+		MatrixBlock ret = new MatrixBlock(_data.getNumRows(), selectedColumns.size(), vals);
+		return ColGroupUncompressed.create(newColumnIDs, ret, false);
 	}
 
 	@Override

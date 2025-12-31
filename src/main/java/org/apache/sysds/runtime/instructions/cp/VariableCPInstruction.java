@@ -44,6 +44,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.lib.MatrixBlockFromFrame;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.ooc.TeeOOCInstruction;
@@ -919,7 +920,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		switch( getInput1().getDataType() ) {
 			case FRAME: {
 				FrameBlock fin = ec.getFrameInput(getInput1().getName());
-				MatrixBlock out = DataConverter.convertToMatrixBlock(fin);
+				MatrixBlock out = MatrixBlockFromFrame.convertToMatrixBlock(fin, k);
 				ec.releaseFrameInput(getInput1().getName());
 				ec.setMatrixOutput(output.getName(), out);
 				break;

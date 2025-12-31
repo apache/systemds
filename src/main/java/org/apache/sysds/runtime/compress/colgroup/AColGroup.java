@@ -29,9 +29,9 @@ import java.util.concurrent.ExecutorService;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex.SliceResult;
@@ -41,6 +41,7 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.compress.lib.CLALibCombineGroups;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
@@ -401,8 +402,9 @@ public abstract class AColGroup implements Serializable {
 	 * @param cru   The right hand side column upper
 	 * @param nRows The number of rows in this column group
 	 */
-	public void rightDecompressingMult(MatrixBlock right, MatrixBlock ret, int rl, int ru, int nRows, int crl, int cru){
-		throw new NotImplementedException("not supporting right Decompressing Multiply on class: " + this.getClass().getSimpleName());
+	public void rightDecompressingMult(MatrixBlock right, MatrixBlock ret, int rl, int ru, int nRows, int crl, int cru) {
+		throw new NotImplementedException(
+			"not supporting right Decompressing Multiply on class: " + this.getClass().getSimpleName());
 	}
 
 	/**
@@ -806,7 +808,7 @@ public abstract class AColGroup implements Serializable {
 		else
 			denseSelection(selection, points, ret, rl, ru);
 	}
-	
+
 	/**
 	 * Get an approximate sparsity of this column group
 	 * 
@@ -972,6 +974,15 @@ public abstract class AColGroup implements Serializable {
 		return splitReshape(multiplier, nRow, nColOrg);
 	}
 
+	/**
+	 * Sort the values of the column group according to double < > operations and return as another compressed group.
+	 * 
+	 * This sorting assumes that the column group is sorted independently of everything else.
+	 * 
+	 * @return The sorted group
+	 */
+	public abstract AColGroup sort();
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -980,5 +991,71 @@ public abstract class AColGroup implements Serializable {
 		sb.append(String.format("\n%15s", "Columns: "));
 		sb.append(_colIndexes);
 		return sb.toString();
+	}
+
+	/**
+	 * Return a new column group containing only the selected rows in the given boolean vector.
+	 * 
+	 * Whenever possible only modify the index structure, not the dictionary of the column groups.
+	 * 
+	 * @param selectV The selection vector
+	 * @param rOut    The number of rows in the output
+	 * @return The new column group
+	 */
+	public abstract AColGroup removeEmptyRows(boolean[] selectV, int rOut);
+
+	/**
+	 * Return a new column group containing only the selected columns in the given boolean vector.
+	 * 
+	 * Whenever possible only modify the column index, and reduce the dictionaries of the column groups.
+	 * 
+	 * @param selectV The selection vector
+	 * @return The new column group
+	 */
+	public AColGroup removeEmptyCols(boolean[] selectV) {
+		if(!inSelection(selectV))
+			return null;
+
+		final IntArrayList selectedColumns = new IntArrayList();
+		final IntArrayList newIDs = new IntArrayList();
+		int idx = 0;
+		int idxOwn = 0;
+		final int end = Math.min(selectV.length, _colIndexes.get(_colIndexes.size() - 1) + 1);
+		for(int i = 0; i < end; i++) {
+
+			if(i == _colIndexes.get(idxOwn)) {
+				if(selectV[i]) {
+					selectedColumns.appendValue(idxOwn);
+					newIDs.appendValue(idx);
+				}
+				idxOwn++;
+			}
+			if(selectV[i])
+				idx++;
+		}
+
+		final IColIndex newColumnIDs = ColIndexFactory.create(newIDs);
+		if(newColumnIDs.size() == _colIndexes.size())
+			return copyAndSet(newColumnIDs);
+		else
+			return removeEmptyColsSubset(newColumnIDs, selectedColumns);
+	}
+
+	/**
+	 * Using the selection of columns, slice out those and return in a new column group with the given column indexes.
+	 * Ideally this method should only modify the dictionaries.
+	 * 
+	 * @param newColumnIDs    the new column indexes
+	 * @param selectedColumns The selected columns of this column group (guaranteed < current number of columns)
+	 * @return A new Column group
+	 */
+	protected abstract AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns);
+
+	private boolean inSelection(boolean[] selection) {
+		for(int i = 0; i < _colIndexes.size(); i++) {
+			if(selection[_colIndexes.get(i)])
+				return true;
+		}
+		return false;
 	}
 }

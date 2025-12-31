@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -2930,6 +2931,25 @@ public class TestUtils {
 	 * @param value Value to write
 	 */
 	public static void writeTestScalar(String file, double value) {
+		try {
+			DataOutputStream out = new DataOutputStream(new FileOutputStream(file));
+			try(PrintWriter pw = new PrintWriter(out)) {
+				pw.println(value);
+			}
+		}
+		catch(IOException e) {
+			fail("unable to write test scalar (" + file + "): " + e.getMessage());
+		}
+	}
+
+
+	/**
+	 * Write scalar to file
+	 * 
+	 * @param file  File to write to
+	 * @param value Value to write
+	 */
+	public static void writeTestScalar(String file, String value) {
 		try {
 			DataOutputStream out = new DataOutputStream(new FileOutputStream(file));
 			try(PrintWriter pw = new PrintWriter(out)) {

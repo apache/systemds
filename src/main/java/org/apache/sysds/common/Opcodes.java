@@ -197,6 +197,8 @@ public enum Opcodes {
 	TRANSFORMMETA("transformmeta", InstructionType.ParameterizedBuiltin),
 	TRANSFORMENCODE("transformencode", InstructionType.MultiReturnParameterizedBuiltin,  InstructionType.MultiReturnBuiltin),
 
+	GET_CATEGORICAL_MASK("get_categorical_mask", InstructionType.Binary),
+
 	//Ternary instruction opcodes
 	PM("+*", InstructionType.Ternary),
 	MINUSMULT("-*", InstructionType.Ternary),

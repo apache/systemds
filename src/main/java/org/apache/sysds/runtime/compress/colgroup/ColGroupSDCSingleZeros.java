@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.MapToZero;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.OffsetSliceInfo;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset.RemoveEmptyOffsetsTmp;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetEmpty;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
@@ -109,10 +110,8 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 			return;
 		else if(it.value() >= ru)
 			return;
-		// _indexes.cacheIterator(it, ru);
 		else {
 			decompressToDenseBlockDenseDictionaryWithProvidedIterator(db, rl, ru, offR, offC, values, it);
-			// _indexes.cacheIterator(it, ru);
 		}
 	}
 
@@ -238,7 +237,8 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 		if(it == null)
 			return;
 		else if(it.value() >= ru)
-			_indexes.cacheIterator(it, ru);
+			return;
+		// _indexes.cacheIterator(it, ru);
 		else if(ru > last) {
 			final int apos = sb.pos(0);
 			final int alen = sb.size(0) + apos;
@@ -277,8 +277,15 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 		if(it == null)
 			return;
 		else if(it.value() >= ru)
-			_indexes.cacheIterator(it, ru);
-		else if(ru > _indexes.getOffsetToLast()) {
+			return;
+		else
+			decompressToSparseBlockDenseDictionaryWithProvidedIterator(ret, rl, ru, offR, offC, values, it);
+	}
+
+	@Override
+	public void decompressToSparseBlockDenseDictionaryWithProvidedIterator(SparseBlock ret, int rl, int ru, int offR,
+		int offC, double[] values, final AIterator it) {
+		if(ru > _indexes.getOffsetToLast()) {
 			final int nCol = _colIndexes.size();
 			final int lastOff = _indexes.getOffsetToLast();
 			int row = offR + it.value();
@@ -963,7 +970,7 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 	protected void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
 		throw new NotImplementedException();
 	}
-	
+
 	protected void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru, SparseBlock sb) {
 		throw new NotImplementedException();
 	}
@@ -1041,6 +1048,62 @@ public class ColGroupSDCSingleZeros extends ASDCZero {
 			res[i] = create(ci, _numRows / multiplier, _dict, offs[i], null);
 		}
 		return res;
+	}
+
+	@Override
+	public AColGroup sort() {
+		if(getNumCols() > 1)
+			throw new NotImplementedException();
+		// TODO restore support for run length encoding.
+
+		final int[] counts = getCounts();
+		// get the sort index
+		final int[] r = _dict.sort();
+
+		// find default value position.
+		// todo use binary search for minor improvements.
+		int defIdx = counts.length;
+		int nondefault = 0;
+		for(int i = 0; i < r.length; i++) {
+			if(defIdx == counts.length && _dict.getValue(r[i], 0, 1) >= 0) {
+				defIdx = i;
+			}
+			nondefault += counts[i];
+		}
+
+		int defaultLength = _numRows - nondefault;
+		int[] offsets = new int[nondefault];
+
+		int off = 0;
+		for(int i = 0; i < counts.length; i++) {
+			if(i < defIdx) {
+				for(int j = 0; j < counts[r[i]]; j++) {
+					offsets[off] = off;
+				}
+			}
+			else {// if( i >= defIdx){
+				for(int j = 0; j < counts[r[i]]; j++) {
+					offsets[off] = off + defaultLength;
+				}
+			}
+		}
+
+		AOffset o = OffsetFactory.createOffset(offsets);
+		return ColGroupSDCSingleZeros.create(_colIndexes, _numRows, _dict, o, counts);
+	}
+
+	@Override
+	public AColGroup removeEmptyRows(boolean[] selectV, int rOut) {
+		// TODO optimize by not constructing boolean array.
+		final RemoveEmptyOffsetsTmp offsetTmp = _indexes.removeEmptyRows(selectV, rOut);
+		return ColGroupSDCSingleZeros.create(_colIndexes, rOut, _dict, offsetTmp.retOffset, null);
+	}
+
+	@Override
+	protected AColGroup removeEmptyColsSubset(IColIndex newColumnIDs, IntArrayList selectedColumns) {
+
+		return ColGroupSDCSingleZeros.create(newColumnIDs, _numRows, _dict.sliceColumns(selectedColumns, getNumCols()),
+			_indexes, null);
 	}
 
 	@Override

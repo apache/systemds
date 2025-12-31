@@ -27,8 +27,6 @@ import java.math.MathContext;
 import java.util.Arrays;
 import java.util.Set;
 
-import jdk.incubator.vector.DoubleVector;
-import jdk.incubator.vector.VectorSpecies;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ArrayIndex;
@@ -36,6 +34,7 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.RangeIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.SingleIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.TwoIndex;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
@@ -60,6 +59,9 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
+
+import jdk.incubator.vector.DoubleVector;
+import jdk.incubator.vector.VectorSpecies;
 
 public class MatrixBlockDictionary extends ADictionary {
 
@@ -2799,6 +2801,43 @@ public class MatrixBlockDictionary extends ADictionary {
 				ret[offOut + sIdx[k]] += v * sVals[k];
 			}
 		}
+	}
+
+	@Override
+	public int[] sort() {
+		if(_data.getNumColumns() > 1)
+			throw new RuntimeException("Not supported sort on multicolumn dictionaries");
+		_data.sparseToDense();
+
+		return Dictionary.sort(_data.getDenseBlockValues());
+	}
+
+	@Override
+	public IDictionary sliceColumns(IntArrayList selectedColumns, int nCol) {
+
+		final double[] ret = sliceColumns(_data, selectedColumns);
+
+		return new Dictionary(ret);
+	}
+
+	public static double[] sliceColumns(MatrixBlock mb, IntArrayList selectedColumns) {
+		//TODO: Optimize to allow sparse outputs. and change output type to MatrixBlock.
+		final int outC = selectedColumns.size();
+		if((long) mb.getNumRows() * outC > (long) Integer.MAX_VALUE)
+			throw new NotImplementedException("Not supported large output blocks for slicing dictionary columns");
+		mb.sparseToDense();
+		final DenseBlock db = mb.getDenseBlock();
+		final double[] ret = new double[mb.getNumRows() * outC];
+
+		for(int i = 0; i < mb.getNumRows(); i++) {
+			double[] vals = db.values(i);
+			int offIn = db.pos(i);
+			int offOut = i * outC;
+			for(int j = 0; j < outC; j++) {
+				ret[offOut + j] = vals[offIn + selectedColumns.get(j)];
+			}
+		}
+		return ret;
 	}
 
 }

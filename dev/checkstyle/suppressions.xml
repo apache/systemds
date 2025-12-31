@@ -40,7 +40,6 @@
     <suppress checks="AvoidStarImportCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]resource[\\/]enumeration[\\/]GridBasedEnumerator\.java$"/>
     <suppress checks="AvoidStarImportCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]resource[\\/]enumeration[\\/]InterestBasedEnumerator\.java$"/>
     <suppress checks="AvoidStarImportCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]resource[\\/]enumeration[\\/]PruneBasedEnumerator\.java$"/>
-    <suppress checks="AvoidStarImportCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]instructions[\\/]cp[\\/]EinsumCPInstruction\.java$"/>
     <suppress checks="AvoidStarImportCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]instructions[\\/]gpu[\\/]context[\\/]CSRPointer\.java$"/>
     <suppress checks="AvoidStarImportCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]io[\\/]ReaderCOGParallel\.java$"/>
     <suppress checks="AvoidStarImportCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]io[\\/]ReaderCOG\.java$"/>
@@ -103,8 +102,6 @@
     <suppress checks="RegexpMultilineCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]hops[\\/]fedplanner[\\/]FederatedPlannerLogger\.java$"/>
     <suppress checks="RegexpMultilineCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]protobuf[\\/]SysdsProtos\.java$"/>
     <suppress checks="RegexpMultilineCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]compress[\\/]lib[\\/]CLALibBinaryCellOp\.java$"/>
-    <suppress checks="RegexpMultilineCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]einsum[\\/]EinsumContext\.java$"/>
-    <suppress checks="RegexpMultilineCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]einsum[\\/]EinsumEquationValidator\.java$"/>
     <suppress checks="RegexpMultilineCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]instructions[\\/]gpu[\\/]DnnGPUInstruction\.java$"/>
     <suppress checks="RegexpMultilineCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]instructions[\\/]gpu[\\/]context[\\/]CudaMemoryAllocator\.java$"/>
     <suppress checks="RegexpMultilineCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]instructions[\\/]gpu[\\/]context[\\/]GPUContextPool\.java$"/>
@@ -130,14 +127,7 @@
     <suppress checks="RegexpMultilineCheck" files=".*src[\\/]test[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]test[\\/]functions[\\/]transform[\\/]TransformFrameEncodeBagOfWords\.java$"/>
     <suppress checks="RegexpMultilineCheck" files=".*src[\\/]test[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]test[\\/]gpu[\\/]cudaSupportFunctions[\\/]CudaCublasGeamTest\.java$"/>
     <suppress checks="RegexpMultilineCheck" files=".*src[\\/]test[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]test[\\/]gpu[\\/]cudaSupportFunctions[\\/]CudaCusparseCsrGemmTest\.java$"/>
-    <suppress checks="RegexpMultilineCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]einsum[\\/]EOpNodeBinary\.java$"/>
-    <suppress checks="RegexpMultilineCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]einsum[\\/]EOpNodeData\.java$"/>
-    <suppress checks="RegexpMultilineCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]einsum[\\/]EOpNodeFuse\.java$"/>
-    <suppress checks="RegexpMultilineCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]einsum[\\/]EOpNodeUnary\.java$"/>
-    <suppress checks="RegexpMultilineCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]einsum[\\/]EOpNode\.java$"/>
-    <suppress checks="RegexpMultilineCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]instructions[\\/]cp[\\/]EinsumCPInstruction\.java$"/>
     <suppress checks="RegexpMultilineCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]matrix[\\/]data[\\/]LibMatrixMult\.java$"/>
-    <suppress checks="RegexpMultilineCheck" files=".*src[\\/]test[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]test[\\/]functions[\\/]einsum[\\/]EinsumTest\.java$"/>
 
     <!-- LocalVariableNameCheck -->
     <suppress checks="LocalVariableNameCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]api[\\/]PythonDMLScript\.java$"/>
@@ -193,7 +183,6 @@
     <suppress checks="MethodNameCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]compress[\\/]lib[\\/]CLALibRightMultBy\.java$"/>
     <suppress checks="MethodNameCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]controlprogram[\\/]federated[\\/]FederatedSSLUtil\.java$"/>
     <suppress checks="MethodNameCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]controlprogram[\\/]paramserv[\\/]ParamServer\.java$"/>
-    <suppress checks="MethodNameCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]instructions[\\/]cp[\\/]EinsumCPInstruction\.java$"/>
     <suppress checks="MethodNameCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]instructions[\\/]spark[\\/]UnaryMatrixSPInstruction\.java$"/>
     <suppress checks="MethodNameCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]io[\\/]hdf5[\\/]H5\.java$"/>
     <suppress checks="MethodNameCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]iogen[\\/]ReaderMappingIndex\.java$"/>
@@ -358,6 +347,4 @@
     <suppress checks="MethodNameCheck" files=".*src[\\/]test[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]test[\\/]gpu[\\/]nn[\\/]DNNOperationsGPUTest\.java$"/>
     <suppress checks="MethodNameCheck" files=".*src[\\/]test[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]test[\\/]usertest[\\/]UserInterfaceTest\.java$"/>
     <suppress checks="MethodNameCheck" files=".*src[\\/]test[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]test[\\/]usertest[\\/]pythonapi[\\/]StartupTest\.java$"/>
-    <suppress checks="MethodNameCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]einsum[\\/]EOpNodeBinary\.java$"/>
-    <suppress checks="MethodNameCheck" files=".*src[\\/]main[\\/]java[\\/]org[\\/]apache[\\/]sysds[\\/]runtime[\\/]einsum[\\/]EinsumSpoofRowwise\.java$"/>
 </suppressions>

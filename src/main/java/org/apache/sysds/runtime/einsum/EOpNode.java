@@ -27,26 +27,26 @@ import java.util.Arrays;
 import java.util.List;
 
 public abstract class EOpNode {
-    public Character c1;
-    public Character c2;
+	public Character c1;
+	public Character c2;
 	public Integer dim1;
 	public Integer dim2;
-    public EOpNode(Character c1, Character c2, Integer dim1, Integer dim2) {
-        this.c1 = c1;
-        this.c2 = c2;
+	public EOpNode(Character c1, Character c2, Integer dim1, Integer dim2) {
+		this.c1 = c1;
+		this.c2 = c2;
 		this.dim1 = dim1;
 		this.dim2 = dim2;
-    }
+	}
 
-    public String getOutputString() {
-        if(c1 == null) return "''";
-        if(c2 == null) return c1.toString();
-        return c1.toString() + c2.toString();
-    }
+	public String getOutputString() {
+		if(c1 == null) return "''";
+		if(c2 == null) return c1.toString();
+		return c1.toString() + c2.toString();
+	}
 	public abstract List<EOpNode> getChildren();
 
 	public String[] recursivePrintString(){
-		ArrayList<String[]> inpStrings = new ArrayList<>();
+		List<String[]> inpStrings = new ArrayList<>();
 		for (EOpNode node : getChildren()) {
 			inpStrings.add(node.recursivePrintString());
 		}
@@ -61,8 +61,8 @@ public abstract class EOpNode {
 		return res;
 	};
 
-    public abstract MatrixBlock computeEOpNode(ArrayList<MatrixBlock> inputs, int numOfThreads, Log LOG);
+	public abstract MatrixBlock computeEOpNode(List<MatrixBlock> inputs, int numOfThreads, Log LOG);
 
-    public abstract EOpNode reorderChildrenAndOptimize(EOpNode parent, Character outChar1, Character outChar2);
+	public abstract EOpNode reorderChildrenAndOptimize(EOpNode parent, Character outChar1, Character outChar2);
 }
 

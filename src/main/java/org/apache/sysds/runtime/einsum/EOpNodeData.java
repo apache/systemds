@@ -22,15 +22,14 @@ package org.apache.sysds.runtime.einsum;
 import org.apache.commons.logging.Log;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class EOpNodeData extends EOpNode {
-    public int matrixIdx;
-    public EOpNodeData(Character c1, Character c2, Integer dim1, Integer dim2, int matrixIdx){
-        super(c1,c2,dim1,dim2);
-        this.matrixIdx = matrixIdx;
-    }
+	public int matrixIdx;
+	public EOpNodeData(Character c1, Character c2, Integer dim1, Integer dim2, int matrixIdx){
+		super(c1,c2,dim1,dim2);
+		this.matrixIdx = matrixIdx;
+	}
 
 	@Override
 	public List<EOpNode> getChildren() {
@@ -40,13 +39,13 @@ public class EOpNodeData extends EOpNode {
 	public String toString() {
 		return this.getClass().getSimpleName()+" ("+matrixIdx+") "+getOutputString();
 	}
-    @Override
-    public MatrixBlock computeEOpNode(ArrayList<MatrixBlock> inputs, int numOfThreads, Log LOG) {
-        return inputs.get(matrixIdx);
-    }
+	@Override
+	public MatrixBlock computeEOpNode(List<MatrixBlock> inputs, int numOfThreads, Log LOG) {
+		return inputs.get(matrixIdx);
+	}
 
-    @Override
+	@Override
 	public EOpNode reorderChildrenAndOptimize(EOpNode parent, Character outChar1, Character outChar2) {
 		return this;
-    }
+	}
 }

@@ -27,6 +27,8 @@ import org.apache.sysds.runtime.codegen.SpoofRowwise;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 
 public final class EinsumSpoofRowwise extends SpoofRowwise {
+	private static final long serialVersionUID = -5957679254041639561L;
+	
 	private final int _ABCount;
 	private final boolean _Bsupplied;
 	private final int _ACount;
@@ -51,24 +53,23 @@ public final class EinsumSpoofRowwise extends SpoofRowwise {
 		int rix) {
 		switch(_EinsumRewriteType) {
 			case AB_BA_B_A__AB -> {
-				genexec_AB(a, ai, b, null, c, ci, len, grix, rix);
+				genexecAB(a, ai, b, null, c, ci, len, grix, rix);
 				if(scalars.length != 0) { LibMatrixMult.vectMultiplyWrite(scalars[0], c, c, ci, ci, len); }
 			}
 			case AB_BA_A__B -> {
-				genexec_B(a, ai, b, null, c, ci, len, grix, rix);
+				genexecB(a, ai, b, null, c, ci, len, grix, rix);
 			}
 			case AB_BA_B_A__A -> {
-				//				HARDCODEDgenexec_A_or_(a,ai,b,scalars,c,ci,len,grix,rix);
-				genexec_A_or_(a, ai, b, null, c, ci, len, grix, rix);
+				genexecAor(a, ai, b, null, c, ci, len, grix, rix);
 				if(scalars.length != 0) { c[rix] *= scalars[0]; }
 			}
 			case AB_BA_B_A__ -> {
-				genexec_A_or_(a, ai, b, null, c, ci, len, grix, rix);
+				genexecAor(a, ai, b, null, c, ci, len, grix, rix);
 				if(scalars.length != 0) { c[0] *= scalars[0]; }
 			}
 			case AB_BA_B_A_AZ__Z -> {
 				double[] temp = {0};
-				genexec_A_or_(a, ai, b, null, temp, 0, len, grix, rix);
+				genexecAor(a, ai, b, null, temp, 0, len, grix, rix);
 				if(scalars.length != 0) { temp[0] *= scalars[0]; }
 				if(_AZCount > 1) {
 					double[] temp2 = new double[_ZSize];
@@ -85,7 +86,7 @@ public final class EinsumSpoofRowwise extends SpoofRowwise {
 			}
 			case AB_BA_A_AZ__BZ -> {
 				double[] temp = new double[len];
-				genexec_B(a, ai, b, null, temp, 0, len, grix, rix);
+				genexecB(a, ai, b, null, temp, 0, len, grix, rix);
 				if(scalars.length != 0) {
 					LibMatrixMult.vectMultiplyWrite(scalars[0], temp, temp, 0, 0, len);
 				}
@@ -104,7 +105,7 @@ public final class EinsumSpoofRowwise extends SpoofRowwise {
 			}
 			case AB_BA_A_AZ__ZB -> {
 				double[] temp = new double[len];
-				genexec_B(a, ai, b, null, temp, 0, len, grix, rix);
+				genexecB(a, ai, b, null, temp, 0, len, grix, rix);
 				if(scalars.length != 0) {
 					LibMatrixMult.vectMultiplyWrite(scalars[0], temp, temp, 0, 0, len);
 				}
@@ -125,7 +126,7 @@ public final class EinsumSpoofRowwise extends SpoofRowwise {
 		}
 	}
 
-	private void genexec_AB(double[] a, int ai, SideInput[] b, double[] scalars, double[] c, int ci, int len, long grix,
+	private void genexecAB(double[] a, int ai, SideInput[] b, double[] scalars, double[] c, int ci, int len, long grix,
 		int rix) {
 		int bi = 0;
 		double[] TMP1 = null;
@@ -164,7 +165,7 @@ public final class EinsumSpoofRowwise extends SpoofRowwise {
 		}
 	}
 
-	private void genexec_B(double[] a, int ai, SideInput[] b, double[] scalars, double[] c, int ci, int len, long grix,
+	private void genexecB(double[] a, int ai, SideInput[] b, double[] scalars, double[] c, int ci, int len, long grix,
 		int rix) {
 		int bi = 0;
 		double[] TMP1 = null;
@@ -190,7 +191,7 @@ public final class EinsumSpoofRowwise extends SpoofRowwise {
 		}
 	}
 
-	private void genexec_A_or_(double[] a, int ai, SideInput[] b, double[] scalars, double[] c, int ci, int len, long grix, int rix) {
+	private void genexecAor(double[] a, int ai, SideInput[] b, double[] scalars, double[] c, int ci, int len, long grix, int rix) {
 		int bi = 0;
 		double[] TMP1 = null;
 		double TMP2 = 0;
@@ -215,14 +216,6 @@ public final class EinsumSpoofRowwise extends SpoofRowwise {
 
 		if(_EinsumRewriteType == EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__A) c[ci] = TMP2;
 		else c[0] += TMP2;
-	}
-
-	private void HARDCODEDgenexec_A_or_(double[] a, int ai, SideInput[] b, double[] scalars, double[] c, int ci,
-		int len, long grix, int rix) {
-		double[] TMP1 = LibSpoofPrimitives.vectMultWrite(a, b[0].values(rix), ai, ai, len);
-		double TMP2 = LibSpoofPrimitives.dotProduct(TMP1, b[1].values(0), 0, ai, len);
-		TMP2 *= b[2].values(0)[rix];
-		c[rix] = TMP2;
 	}
 
 	protected void genexec(double[] avals, int[] aix, int ai, SideInput[] b, double[] scalars, double[] c, int ci,

@@ -46,7 +46,7 @@ import java.util.Map;
 @RunWith(Parameterized.class)
 public class EinsumTest extends AutomatedTestBase
 {
-    final private static List<Config> TEST_CONFIGS = List.of(
+	final private static List<Config> TEST_CONFIGS = List.of(
 		new Config("ij,jk->ik", List.of(shape(5, 6), shape(6, 5))), // mm
 		new Config("ji,jk->ik", List.of(shape(6, 5), shape(6, 10))),
 		new Config("ji,kj->ik", List.of(shape(6, 5), shape(10, 6))),
@@ -78,23 +78,23 @@ public class EinsumTest extends AutomatedTestBase
 		new Config("ij,i->i",   List.of(shape(10, 5), shape(10))),
 		new Config("ij,i->j",   List.of(shape(10, 5), shape(10))),
 
-		new Config("i,i->",     List.of(shape(5), shape(5))), // dot
-		new Config("i,j->",     List.of(shape(5), shape(80))), // sum
-		new Config("i,j->ij",     List.of(shape(5), shape(80))), // outer vect mult
-		new Config("i,j->ji",     List.of(shape(5), shape(80))), // outer vect mult
+		new Config("i,i->",	 List.of(shape(5), shape(5))), // dot
+		new Config("i,j->",	 List.of(shape(5), shape(80))), // sum
+		new Config("i,j->ij",	 List.of(shape(5), shape(80))), // outer vect mult
+		new Config("i,j->ji",	 List.of(shape(5), shape(80))), // outer vect mult
 
-		new Config("ij->",     List.of(shape(10, 5))), // sum
-		new Config("i->",     List.of(shape(10))), // sum
-		new Config("ij->i",     List.of(shape(10, 5))), // sum(1)
-		new Config("ij->j",     List.of(shape(10, 5))), // sum(0)
-		new Config("ij->ji",     List.of(shape(10, 5))), // T
-		new Config("ij->ij",     List.of(shape(10, 5))),
-		new Config("i->i",     List.of(shape(10))),
-		new Config("ii->i",     List.of(shape(10, 10))), // Diag
-		new Config("ii->",     List.of(shape(10, 10))), // Trace
-		new Config("ii,i->i",     List.of(shape(10, 10),shape(10))), // Diag*vec
+		new Config("ij->",	 List.of(shape(10, 5))), // sum
+		new Config("i->",	 List.of(shape(10))), // sum
+		new Config("ij->i",	 List.of(shape(10, 5))), // sum(1)
+		new Config("ij->j",	 List.of(shape(10, 5))), // sum(0)
+		new Config("ij->ji",	 List.of(shape(10, 5))), // T
+		new Config("ij->ij",	 List.of(shape(10, 5))),
+		new Config("i->i",	 List.of(shape(10))),
+		new Config("ii->i",	 List.of(shape(10, 10))), // Diag
+		new Config("ii->",	 List.of(shape(10, 10))), // Trace
+		new Config("ii,i->i",	 List.of(shape(10, 10),shape(10))), // Diag*vec
 
-		new Config("ab,cd->ba",     List.of(shape( 6, 10), shape(6, 5))), // sum cd to scalar and multiply ab
+		new Config("ab,cd->ba",	 List.of(shape( 6, 10), shape(6, 5))), // sum cd to scalar and multiply ab
 
 		new Config("fx,fg,fz,xg,zx,zg->g", // each idx 3 times (the cell tpl fallback)
 				List.of(shape(5, 6), shape(5, 3), shape(5, 10), shape(6, 3), shape(10, 6), shape(10, 3))),
@@ -137,7 +137,7 @@ public class EinsumTest extends AutomatedTestBase
 		new Config("ab,ab,a,ag,gz->bz",   List.of(shape(10, 5), shape(10, 5),shape(10),shape(10,200),shape(200,7)))
 		,new Config("ab,ab,a,ag,gz->bz",   List.of(shape(10, 5), shape(10, 5),shape(10),shape(10,20),shape(20,7)))
 		,new Config("ab,ab,bc,bc->bc",   List.of(shape(10, 5), shape(10, 5),shape(5,20),shape(5,20)))
-    );
+	);
 	private final int id;
 	private final String einsumStr;
 	private final File dmlFile;
@@ -312,36 +312,36 @@ public class EinsumTest extends AutomatedTestBase
 	}
 
 	private static class Config {
-        public List<Double> factors;
+		public List<Double> factors;
 		String einsumStr;
 		List<int[]> shapes;
 
-        Config(String einsum, List<int[]> shapes) {
-            this(einsum,shapes,null);
-        }
-        Config(String einsum, Map<Character, Integer> charToSize){
-            this(einsum, charToSize, null);
-        }
+		Config(String einsum, List<int[]> shapes) {
+			this(einsum,shapes,null);
+		}
+		Config(String einsum, Map<Character, Integer> charToSize){
+			this(einsum, charToSize, null);
+		}
 
-        Config(String einsum, Map<Character, Integer> charToSize, List<Double> factors) {
-            this.einsumStr = einsum;
-            String leftPart = einsum.split("->")[0];
-            List<int[]> shapes = new ArrayList<>();
-            for(String op : Arrays.stream(leftPart.split(",")).map(x->x.trim()).toList()){
-                if (op.length() == 1) {
-                    shapes.add(new int[]{charToSize.get(op.charAt(0))});
-                }else{
-                    shapes.add(new int[]{charToSize.get(op.charAt(0)),charToSize.get(op.charAt(1))});
-                }
+		Config(String einsum, Map<Character, Integer> charToSize, List<Double> factors) {
+			this.einsumStr = einsum;
+			String leftPart = einsum.split("->")[0];
+			List<int[]> shapes = new ArrayList<>();
+			for(String op : Arrays.stream(leftPart.split(",")).map(x->x.trim()).toList()){
+				if (op.length() == 1) {
+					shapes.add(new int[]{charToSize.get(op.charAt(0))});
+				}else{
+					shapes.add(new int[]{charToSize.get(op.charAt(0)),charToSize.get(op.charAt(1))});
+				}
 
-            }
-            this.shapes = shapes;
-            this.factors = factors;
-        }
+			}
+			this.shapes = shapes;
+			this.factors = factors;
+		}
 		Config(String einsum, List<int[]> shapes, List<Double> factors) {
 			this.einsumStr = einsum;
 			this.shapes = shapes;
-            this.factors = factors;
+			this.factors = factors;
 		}
 	}
 

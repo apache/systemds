@@ -33,7 +33,6 @@ import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class EOpNodeUnary extends EOpNode {
@@ -47,7 +46,7 @@ public class EOpNodeUnary extends EOpNode {
 		super(c1, c2, dim1, dim2);
 		this.child = child;
 		this.eUnaryOperand = eUnaryOperand;
-    }
+	}
 
 	@Override
 	public List<EOpNode> getChildren() {
@@ -58,8 +57,8 @@ public class EOpNodeUnary extends EOpNode {
 		return this.getClass().getSimpleName()+" ("+eUnaryOperand.toString()+") "+this.getOutputString();
 	}
 
-    @Override
-    public MatrixBlock computeEOpNode(ArrayList<MatrixBlock> inputs, int numOfThreads, Log LOG) {
+	@Override
+	public MatrixBlock computeEOpNode(List<MatrixBlock> inputs, int numOfThreads, Log LOG) {
 		MatrixBlock mb = child.computeEOpNode(inputs, numOfThreads, LOG);
 		return switch(eUnaryOperand) {
 			case DIAG->{
@@ -97,7 +96,7 @@ public class EOpNodeUnary extends EOpNode {
 		};
 	}
 
-    @Override
+	@Override
 	public EOpNode reorderChildrenAndOptimize(EOpNode parent, Character outChar1, Character outChar2) {
 		return this;
 	}

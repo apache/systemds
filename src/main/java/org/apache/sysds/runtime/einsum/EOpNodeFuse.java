@@ -38,6 +38,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 import static org.apache.sysds.runtime.instructions.cp.EinsumCPInstruction.ensureMatrixBlockColumnVector;
@@ -48,20 +50,20 @@ public class EOpNodeFuse extends EOpNode {
 	private EOpNode scalar = null;
 
 	public enum EinsumRewriteType{
-        // B -> row*vec, A -> row*scalar
-        AB_BA_B_A__AB,
+		// B -> row*vec, A -> row*scalar
+		AB_BA_B_A__AB,
 		AB_BA_A__B,
-        AB_BA_B_A__A,
-        AB_BA_B_A__,
+		AB_BA_B_A__A,
+		AB_BA_B_A__,
 
-        // scalar from row(AB).dot(B) multiplied by row(AZ)
-        AB_BA_B_A_AZ__Z,
+		// scalar from row(AB).dot(B) multiplied by row(AZ)
+		AB_BA_B_A_AZ__Z,
 
-        // AZ: last step is outer matrix multiplication using vector Z
-        AB_BA_A_AZ__BZ, AB_BA_A_AZ__ZB,
-    }
+		// AZ: last step is outer matrix multiplication using vector Z
+		AB_BA_A_AZ__BZ, AB_BA_A_AZ__ZB,
+	}
 
-    public EinsumRewriteType einsumRewriteType;
+	public EinsumRewriteType einsumRewriteType;
 	public List<EOpNode> ABs;
 	public List<EOpNode> BAs;
 	public List<EOpNode> Bs;
@@ -78,15 +80,15 @@ public class EOpNodeFuse extends EOpNode {
 		if (scalar != null) all.add(scalar);
 		return all;
 	};
-    private EOpNodeFuse(Character c1, Character c2, Integer dim1, Integer dim2, EinsumRewriteType einsumRewriteType, List<EOpNode> ABs, List<EOpNode> BAs, List<EOpNode> Bs, List<EOpNode> As, List<EOpNode> AZs) {
-        super(c1,c2, dim1, dim2);
-        this.einsumRewriteType = einsumRewriteType;
+	private EOpNodeFuse(Character c1, Character c2, Integer dim1, Integer dim2, EinsumRewriteType einsumRewriteType, List<EOpNode> ABs, List<EOpNode> BAs, List<EOpNode> Bs, List<EOpNode> As, List<EOpNode> AZs) {
+		super(c1,c2, dim1, dim2);
+		this.einsumRewriteType = einsumRewriteType;
 		this.ABs = ABs;
 		this.BAs = BAs;
 		this.Bs = Bs;
 		this.As = As;
 		this.AZs = AZs;
-    }
+	}
 	public EOpNodeFuse(EinsumRewriteType einsumRewriteType, List<EOpNode> ABs, List<EOpNode> BAs, List<EOpNode> Bs, List<EOpNode> As, List<EOpNode> AZs, List<Pair<List<EOpNode>, List<EOpNode>>> AXsAndXs) {
 		super(null,null,null, null);
 		switch(einsumRewriteType) {
@@ -137,12 +139,13 @@ public class EOpNodeFuse extends EOpNode {
 			throw new RuntimeException("EOpNodeFuse.addScalarAsIntermediate: scalar is undefined for type "+einsumRewriteType.toString());
 	}
 
-    public static List<EOpNodeFuse> findFuseOps(ArrayList<EOpNode> operands, Character outChar1, Character outChar2,
-		HashMap<Character, Integer> charToSize, HashMap<Character, Integer> charToOccurences, ArrayList<EOpNode> ret) {
-		ArrayList<EOpNodeFuse> result = new ArrayList<>();
-		HashSet<String> matricesChars = new HashSet<>();
-		HashMap<Character, HashSet<String>> matricesCharsStartingWithChar = new HashMap<>();
-		HashMap<String, ArrayList<EOpNode>> charsToMatrices = new HashMap<>();
+	public static List<EOpNodeFuse> findFuseOps(List<EOpNode> operands, Character outChar1, Character outChar2,
+		Map<Character, Integer> charToSize, Map<Character, Integer> charToOccurences, List<EOpNode> ret)
+	{
+		List<EOpNodeFuse> result = new ArrayList<>();
+		Set<String> matricesChars = new HashSet<>();
+		Map<Character, HashSet<String>> matricesCharsStartingWithChar = new HashMap<>();
+		Map<String, ArrayList<EOpNode>> charsToMatrices = new HashMap<>();
 
 		for(EOpNode operand1 : operands) {
 			String k;
@@ -336,18 +339,19 @@ public class EOpNodeFuse extends EOpNode {
 			result.add(e);
 		}
 
-        for(EOpNode n : operands) {
-            if(!usedOperands.contains(n)){
-                ret.add(n);
-            } else {
+		for(EOpNode n : operands) {
+			if(!usedOperands.contains(n)){
+				ret.add(n);
+			} else {
 				charToOccurences.put(n.c1, charToOccurences.get(n.c1) - 1);
 				if(charToOccurences.get(n.c2)!= null)
 					charToOccurences.put(n.c2, charToOccurences.get(n.c2)-1);
 			}
-        }
+		}
 
-        return result;
-    }
+		return result;
+	}
+	@SuppressWarnings("unused")
 	public static MatrixBlock compute(EinsumRewriteType rewriteType, List<MatrixBlock> ABsInput, List<MatrixBlock> mbBAs, List<MatrixBlock> mbBs, List<MatrixBlock> mbAs, List<MatrixBlock> mbAZs,
 		Double scalar, int numThreads){
 		boolean isResultAB =rewriteType  == EOpNodeFuse.EinsumRewriteType.AB_BA_B_A__AB;
@@ -358,7 +362,7 @@ public class EOpNodeFuse extends EOpNode {
 		boolean isResultBZ =rewriteType  == EOpNodeFuse.EinsumRewriteType.AB_BA_A_AZ__BZ;
 		boolean isResultZB =rewriteType  == EOpNodeFuse.EinsumRewriteType.AB_BA_A_AZ__ZB;
 
-		ArrayList<MatrixBlock> mbABs = new ArrayList<>(ABsInput);
+		List<MatrixBlock> mbABs = new ArrayList<>(ABsInput);
 		int bSize = mbABs.get(0).getNumColumns();
 		int aSize = mbABs.get(0).getNumRows();
 		if (!mbBAs.isEmpty()) {
@@ -424,19 +428,19 @@ public class EOpNodeFuse extends EOpNode {
 
 		return out;
 	}
-    @Override
-    public MatrixBlock computeEOpNode(ArrayList<MatrixBlock> inputs, int numThreads, Log LOG) {
+	@Override
+	public MatrixBlock computeEOpNode(List<MatrixBlock> inputs, int numThreads, Log LOG) {
 		final Function<EOpNode, MatrixBlock> eOpNodeToMatrixBlock =  n -> n.computeEOpNode(inputs, numThreads, LOG);
-        ArrayList<MatrixBlock> mbABs = new ArrayList<>(ABs.stream().map(eOpNodeToMatrixBlock).toList());
+		List<MatrixBlock> mbABs = new ArrayList<>(ABs.stream().map(eOpNodeToMatrixBlock).toList());
 		List<MatrixBlock> mbBAs = BAs.stream().map(eOpNodeToMatrixBlock).toList();
 		List<MatrixBlock> mbBs =  Bs.stream().map(eOpNodeToMatrixBlock).toList();
 		List<MatrixBlock> mbAs = As.stream().map(eOpNodeToMatrixBlock).toList();
 		List<MatrixBlock> mbAZs = AZs.stream().map(eOpNodeToMatrixBlock).toList();
 		Double scalar = this.scalar == null ? null : this.scalar.computeEOpNode(inputs, numThreads, LOG).get(0,0);
 		return EOpNodeFuse.compute(this.einsumRewriteType, mbABs, mbBAs, mbBs, mbAs, mbAZs , scalar, numThreads);
-    }
+	}
 
-    @Override
+	@Override
 	public EOpNode reorderChildrenAndOptimize(EOpNode parent, Character outChar1, Character outChar2) {
 		ABs.replaceAll(n -> n.reorderChildrenAndOptimize(this, n.c1, n.c2));
 		BAs.replaceAll(n -> n.reorderChildrenAndOptimize(this, n.c1, n.c2));
@@ -444,18 +448,18 @@ public class EOpNodeFuse extends EOpNode {
 		Bs.replaceAll(n -> n.reorderChildrenAndOptimize(this, n.c1, n.c2));
 		AZs.replaceAll(n -> n.reorderChildrenAndOptimize(this, n.c1, n.c2));
 		return this;
-    }
+	}
 
-    private static @NotNull List<MatrixBlock> multiplyVectorsIntoOne(List<MatrixBlock> mbs, int size) {
-        MatrixBlock mb = new MatrixBlock(mbs.get(0).getNumRows(), mbs.get(0).getNumColumns(), false);
-        mb.allocateDenseBlock();
-        for(int i = 1; i< mbs.size(); i++) { // multiply Bs
-            if(i==1)
-                LibMatrixMult.vectMultiplyWrite(mbs.get(0).getDenseBlock().values(0), mbs.get(1).getDenseBlock().values(0), mb.getDenseBlock().values(0),0,0,0, size);
-            else
-                LibMatrixMult.vectMultiply(mbs.get(i).getDenseBlock().values(0),mb.getDenseBlock().values(0),0,0, size);
-        }
-        return List.of(mb);
-    }
+	private static @NotNull List<MatrixBlock> multiplyVectorsIntoOne(List<MatrixBlock> mbs, int size) {
+		MatrixBlock mb = new MatrixBlock(mbs.get(0).getNumRows(), mbs.get(0).getNumColumns(), false);
+		mb.allocateDenseBlock();
+		for(int i = 1; i< mbs.size(); i++) { // multiply Bs
+			if(i==1)
+				LibMatrixMult.vectMultiplyWrite(mbs.get(0).getDenseBlock().values(0), mbs.get(1).getDenseBlock().values(0), mb.getDenseBlock().values(0),0,0,0, size);
+			else
+				LibMatrixMult.vectMultiply(mbs.get(i).getDenseBlock().values(0),mb.getDenseBlock().values(0),0,0, size);
+		}
+		return List.of(mb);
+	}
 }
 

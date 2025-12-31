@@ -24,31 +24,33 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 public class EinsumContext {
-    public Integer outRows;
-    public Integer outCols;
-    public Character outChar1;
-    public Character outChar2;
-    public HashMap<Character, Integer> charToDimensionSize;
-    public String equationString;
-    public ArrayList<String> newEquationStringInputsSplit;
-	public HashMap<Character, Integer> characterAppearanceCount;
+	public Integer outRows;
+	public Integer outCols;
+	public Character outChar1;
+	public Character outChar2;
+	public Map<Character, Integer> charToDimensionSize;
+	public String equationString;
+	public List<String> newEquationStringInputsSplit;
+	public Map<Character, Integer> characterAppearanceCount;
 
-    private EinsumContext(){};
-    public static EinsumContext getEinsumContext(String eqStr, ArrayList<MatrixBlock> inputs){
-        EinsumContext res = new EinsumContext();
+	private EinsumContext(){};
+	public static EinsumContext getEinsumContext(String eqStr, List<MatrixBlock> inputs){
+		EinsumContext res = new EinsumContext();
 
-        res.equationString = eqStr;
-		HashMap<Character, Integer> charToDimensionSize = new HashMap<>();
-        HashMap<Character, Integer> characterAppearanceCount = new HashMap<>();
-		ArrayList<String> newEquationStringSplit = new ArrayList<>();
+		res.equationString = eqStr;
+		Map<Character, Integer> charToDimensionSize = new HashMap<>();
+		Map<Character, Integer> characterAppearanceCount = new HashMap<>();
+		List<String> newEquationStringSplit = new ArrayList<>();
 		Character outChar1 = null;
 		Character outChar2 = null;
 
-        Iterator<MatrixBlock> it = inputs.iterator();
-        MatrixBlock curArr = it.next();
-        int i = 0;
+		Iterator<MatrixBlock> it = inputs.iterator();
+		MatrixBlock curArr = it.next();
+		int i = 0;
 
 		char c = eqStr.charAt(i);
 		for(i = 0; i < eqStr.length(); i++) {
@@ -110,11 +112,11 @@ public class EinsumContext {
 		res.outRows=(outChar1 == null ? 1 : charToDimensionSize.get(outChar1));
 		res.outCols=(outChar2 == null ? 1 : charToDimensionSize.get(outChar2));
 
-        res.outChar1 = outChar1;
-        res.outChar2 = outChar2;
-        res.newEquationStringInputsSplit = newEquationStringSplit;
+		res.outChar1 = outChar1;
+		res.outChar2 = outChar2;
+		res.newEquationStringInputsSplit = newEquationStringSplit;
 		res.characterAppearanceCount = characterAppearanceCount;
 		res.charToDimensionSize = charToDimensionSize;
-        return res;
-    }
+		return res;
+	}
 }

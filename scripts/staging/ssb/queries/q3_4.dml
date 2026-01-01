@@ -1,0 +1,262 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+/* DML-script implementing the ssb query Q3.4 in SystemDS.
+SELECT
+    c_city,
+    s_city,
+    d_year,
+    SUM(lo_revenue) AS REVENUE
+FROM customer, lineorder, supplier, dates
+WHERE
+    lo_custkey = c_custkey
+    AND lo_suppkey = s_suppkey
+    AND lo_orderdate = d_datekey
+    AND (
+        c_city = 'UNITED KI1'
+        OR c_city = 'UNITED KI5'
+    )
+    AND (
+        s_city = 'UNITED KI1'
+        OR s_city = 'UNITED KI5'
+    )
+    AND d_yearmonth = 'Dec1997'
+GROUP BY c_city, s_city, d_year
+ORDER BY d_year ASC, REVENUE DESC;
+*/
+
+# -- PARAMETER HANDLING --
+input_dir = ifdef($input_dir, "./data");
+
+# -- SOURCING THE RA-FUNCTIONS --
+source("./scripts/builtin/raSelection.dml") as raSel
+source("./scripts/builtin/raJoin.dml") as raJoin
+source("./scripts/builtin/raGroupby.dml") as raGrp
+
+
+# -- READING INPUT FILES --
+# CSV TABLES
+date_csv = read(input_dir + "/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+lineorder_csv = read(input_dir + "/lineorder.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+#part_csv = read(input_dir + "/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+supplier_csv = read(input_dir + "/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+customer_csv = read(input_dir + "/customer.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+
+
+# -- PREPARING --
+# EXTRACTING MINIMAL DATE DATA TO OPTIMIZE RUNTIME => COL-1 : DATE-KEY | COL-5 : D_YEAR
+date_csv_min = cbind(date_csv[, 1], date_csv[, 5]);
+date_matrix_min = as.matrix(date_csv_min);
+
+# EXTRACTING MINIMAL LINEORDER DATA TO OPTIMIZE RUNTIME => COL-3 : LO_CUSTKEY | COL-4 : LO_PARTKEY |
+# COL-5 : LO_SUPPKEY | COL-6 : LO_ORDERDATE | COL-13 : LO_REVENUE
+lineorder_csv_min = cbind(lineorder_csv[, 3], lineorder_csv[, 4], lineorder_csv[, 5], lineorder_csv[, 6], lineorder_csv[, 13]);
+lineorder_matrix_min = as.matrix(lineorder_csv_min);
+
+# ON-THE-FLY CUSTOMER TABLE FILTERING AND ENCODING (C_CITY = 'UNITED KI1' OR 'UNITED KI5')
+customer_keys_matrix = as.matrix(customer_csv[, 1]);  # customer_key
+customer_nrows = nrow(customer_csv);
+matching_customer_count = 0;
+
+# Pass 1: Count matching customers
+for (i in 1:customer_nrows) {
+    city_val = as.scalar(customer_csv[i, 4]);  # c_city
+    if (city_val == "UNITED KI1" | city_val == "UNITED KI5") {
+        matching_customer_count = matching_customer_count + 1;
+    }
+}
+
+# Pass 2: Build customer matrix with dynamic city encoding
+cust_matrix_min = matrix(0, matching_customer_count, 2);  # custkey, city_code
+filtered_idx = 0;
+
+for (i in 1:customer_nrows) {
+    city_val = as.scalar(customer_csv[i, 4]);  # c_city
+    if (city_val == "UNITED KI1" | city_val == "UNITED KI5") {
+        filtered_idx = filtered_idx + 1;
+        cust_matrix_min[filtered_idx, 1] = as.scalar(customer_keys_matrix[i, 1]);  # customer_key
+
+        # Use consistent encoding: 1 for UNITED KI1, 2 for UNITED KI5
+        if (city_val == "UNITED KI1") {
+            cust_matrix_min[filtered_idx, 2] = 1;
+        } else {
+            cust_matrix_min[filtered_idx, 2] = 2;
+        }
+    }
+}
+
+# ON-THE-FLY SUPPLIER TABLE FILTERING AND ENCODING (S_CITY = 'UNITED KI1' OR 'UNITED KI5')
+supplier_keys_matrix = as.matrix(supplier_csv[, 1]);  # supplier_key
+supplier_nrows = nrow(supplier_csv);
+matching_supplier_count = 0;
+
+# Pass 1: Count matching suppliers
+for (i in 1:supplier_nrows) {
+    city_val = as.scalar(supplier_csv[i, 4]);  # s_city
+    if (city_val == "UNITED KI1" | city_val == "UNITED KI5") {
+        matching_supplier_count = matching_supplier_count + 1;
+    }
+}
+
+# Pass 2: Build supplier matrix with dynamic city encoding
+sup_matrix_min = matrix(0, matching_supplier_count, 2);  # suppkey, city_code
+filtered_idx = 0;
+
+for (i in 1:supplier_nrows) {
+    city_val = as.scalar(supplier_csv[i, 4]);  # s_city
+    if (city_val == "UNITED KI1" | city_val == "UNITED KI5") {
+        filtered_idx = filtered_idx + 1;
+        sup_matrix_min[filtered_idx, 1] = as.scalar(supplier_keys_matrix[i, 1]);  # supplier_key
+
+        # Use consistent encoding: 1 for UNITED KI1, 2 for UNITED KI5
+        if (city_val == "UNITED KI1") {
+            sup_matrix_min[filtered_idx, 2] = 1;
+        } else {
+            sup_matrix_min[filtered_idx, 2] = 2;
+        }
+    }
+}
+
+
+# -- FILTERING THE DATA WITH RA-SELECTION FUNCTION --
+# Since we already filtered during matrix construction, we can use the full matrices
+c_city_filt = cust_matrix_min;  # Already filtered for target cities
+s_city_filt = sup_matrix_min;   # Already filtered for target cities
+
+# D_YEARMONTH = 'Dec1997' - Need precise filtering for Dec1997 only
+# Build filtered date matrix manually since we need string matching on d_yearmonth
+date_full_frame = cbind(date_csv[, 1], date_csv[, 5], date_csv[, 7]);  # datekey, year, yearmonth
+date_nrows = nrow(date_full_frame);
+matching_dates = matrix(0, 31, 2);  # We know 31 entries exist, store datekey and year
+filtered_idx = 0;
+
+for (i in 1:date_nrows) {
+    yearmonth_val = as.scalar(date_full_frame[i, 3]);  # d_yearmonth
+    if (yearmonth_val == "Dec1997") {
+        filtered_idx = filtered_idx + 1;
+        matching_dates[filtered_idx, 1] = as.scalar(date_matrix_min[i, 1]);  # datekey
+        matching_dates[filtered_idx, 2] = as.scalar(date_matrix_min[i, 2]);  # d_year
+    }
+}
+
+d_year_filt = matching_dates;
+
+
+# -- JOIN TABLES WITH RA-JOIN FUNCTION --
+# JOINING MINIMIZED LINEORDER TABLE WITH FILTERED CUSTOMER TABLE WHERE LO_CUSTKEY = C_CUSTKEY
+lo_cust = raJoin::m_raJoin(A=lineorder_matrix_min, colA=1, B=c_city_filt, colB=1, method="sort-merge");
+
+# JOIN: ⨝ SUPPLIER WHERE LO_SUPPKEY = S_SUPPKEY
+lo_cust_sup = raJoin::m_raJoin(A=lo_cust, colA=3, B=s_city_filt, colB=1, method="sort-merge");
+
+# JOIN: ⨝ DATE WHERE LO_ORDERDATE = D_DATEKEY
+joined_matrix = raJoin::m_raJoin(A=lo_cust_sup, colA=4, B=d_year_filt, colB=1, method="sort-merge");
+
+# Check if we have any results
+if (nrow(joined_matrix) == 0) {
+    print("Q3.4 Results:");
+    print("# FRAME: nrow = 0, ncol = 4");
+    print("# C1 C2 C3 C4");
+    print("# STRING STRING INT32 INT32");
+    print("");
+    print("Total number of result rows: 0");
+    print("Total revenue: 0");
+    print("Q3.4 finished - no matching data for Dec1997");
+} else {
+
+
+# -- GROUP-BY & AGGREGATION --
+# LO_REVENUE : COLUMN 5 OF LINEORDER-MIN-MATRIX
+revenue = joined_matrix[, 5];
+# D_YEAR : COLUMN 2 OF DATE-MIN-MATRIX
+d_year = joined_matrix[,(ncol(lineorder_matrix_min) + ncol(cust_matrix_min) + ncol(sup_matrix_min) + 2)];
+# C_CITY : COLUMN 2 OF CUST-MIN-MATRIX
+c_city = joined_matrix[,(ncol(lineorder_matrix_min) + 2)];
+# S_CITY : COLUMN 2 OF CUST-MIN-MATRIX
+s_city = joined_matrix[,(ncol(lineorder_matrix_min) + ncol(cust_matrix_min) + 2)];
+
+# CALCULATING COMBINATION KEY WITH PRIORITY: C_CITY, S_CITY & D_YEAR
+max_c_city = max(c_city);
+max_s_city = max(s_city);
+max_d_year = max(d_year);
+
+c_city_scale_f = ceil(max_c_city) + 1;
+s_city_scale_f = ceil(max_s_city) + 1;
+d_year_scale_f = ceil(max_d_year) + 1;
+
+combined_key = c_city * s_city_scale_f * d_year_scale_f + s_city * d_year_scale_f + d_year;
+
+group_input = cbind(revenue, combined_key);
+agg_result = raGrp::m_raGroupby(X=group_input, col=2, method="nested-loop");
+
+key = agg_result[, 1];
+revenue = rowSums(agg_result[, 2:ncol(agg_result)]);
+
+# EXTRACTING C_CITY, S_CITY & D_YEAR
+d_year = round(key %% d_year_scale_f);
+c_city = round(floor(key / (s_city_scale_f * d_year_scale_f)));
+s_city = round((floor(key / d_year_scale_f)) %% s_city_scale_f);
+
+result = cbind(c_city, s_city, d_year, revenue);
+
+
+# -- SORTING --
+# PRIORITY 1 D_YEAR (ASC), 2 REVENUE (DESC)
+result_ordered = order(target=result, by=4, decreasing=TRUE, index.return=FALSE);
+result_ordered = order(target=result_ordered, by=3, decreasing=FALSE, index.return=FALSE);
+
+
+# -- OUTPUT RESULTS --
+print("Q3.4 Results:");
+print("# FRAME: nrow = " + nrow(result_ordered) + ", ncol = 4");
+print("# C1 C2 C3 C4");
+print("# STRING STRING INT32 INT32");
+
+for (i in 1:nrow(result_ordered)) {
+    c_city_code = as.scalar(result_ordered[i, 1]);
+    s_city_code = as.scalar(result_ordered[i, 2]);
+    year_val = as.scalar(result_ordered[i, 3]);
+    revenue_val = as.scalar(result_ordered[i, 4]);
+
+    # Map back to original city names based on the encoding used
+    if (c_city_code == 1) {
+        c_city_name = "UNITED KI1";
+    } else {
+        c_city_name = "UNITED KI5";
+    }
+
+    if (s_city_code == 1) {
+        s_city_name = "UNITED KI1";
+    } else {
+        s_city_name = "UNITED KI5";
+    }
+
+    print(c_city_name + " " + s_city_name + " " + as.integer(year_val) + " " + as.integer(revenue_val));
+}
+
+# Calculate total revenue for validation
+total_revenue = sum(result_ordered[, 4]);
+print("");
+print("Total number of result rows: " + nrow(result_ordered));
+print("Total revenue: " + as.integer(total_revenue));
+print("Q3.4 finished");
+}

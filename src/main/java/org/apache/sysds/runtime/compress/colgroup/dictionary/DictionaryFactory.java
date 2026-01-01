@@ -52,7 +52,7 @@ public interface DictionaryFactory {
 	static final Log LOG = LogFactory.getLog(DictionaryFactory.class.getName());
 
 	public enum Type {
-		FP64_DICT, MATRIX_BLOCK_DICT, INT8_DICT, IDENTITY, IDENTITY_SLICE, PLACE_HOLDER
+		FP64_DICT, MATRIX_BLOCK_DICT, INT8_DICT, IDENTITY, IDENTITY_SLICE, PLACE_HOLDER, DELTA_DICT
 	}
 
 	public static IDictionary read(DataInput in) throws IOException {
@@ -68,6 +68,8 @@ public interface DictionaryFactory {
 				return IdentityDictionary.read(in);
 			case IDENTITY_SLICE:
 				return IdentityDictionarySlice.read(in);
+			case DELTA_DICT:
+				return DeltaDictionary.read(in);
 			case MATRIX_BLOCK_DICT:
 			default:
 				return MatrixBlockDictionary.read(in);

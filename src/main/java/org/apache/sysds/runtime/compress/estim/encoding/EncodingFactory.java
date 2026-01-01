@@ -88,9 +88,8 @@ public interface EncodingFactory {
 	 * @return A delta encoded encoding.
 	 */
 	public static IEncode createFromMatrixBlockDelta(MatrixBlock m, boolean transposed, IColIndex rowCols) {
-		throw new NotImplementedException();
-		// final int sampleSize = transposed ? m.getNumColumns() : m.getNumRows();
-		// return createFromMatrixBlockDelta(m, transposed, rowCols, sampleSize);
+		final int sampleSize = transposed ? m.getNumColumns() : m.getNumRows();
+		return createFromMatrixBlockDelta(m, transposed, rowCols, sampleSize);
 	}
 
 	/**
@@ -107,7 +106,7 @@ public interface EncodingFactory {
 	 */
 	public static IEncode createFromMatrixBlockDelta(MatrixBlock m, boolean transposed, IColIndex rowCols,
 		int sampleSize) {
-		throw new NotImplementedException();
+		return createWithDeltaReader(m, rowCols, transposed, sampleSize);
 	}
 
 	/**
@@ -690,5 +689,69 @@ public interface EncodingFactory {
 
 	public static SparseEncoding createSparse(AMapToData map, AOffset off, int nRows) {
 		return new SparseEncoding(map, off, nRows);
+	}
+
+	private static IEncode createWithDeltaReader(MatrixBlock m, IColIndex rowCols, boolean transposed, int sampleSize) {
+		final int rl = 0;
+		final int ru = Math.min(sampleSize, transposed ? m.getNumColumns() : m.getNumRows());
+		final ReaderColumnSelection reader1 = ReaderColumnSelection.createDeltaReader(m, rowCols, transposed, rl, ru);
+		final DblArrayCountHashMap map = new DblArrayCountHashMap();
+		final IntArrayList offsets = new IntArrayList();
+		DblArray cellVals = reader1.nextRow();
+		boolean isFirstRow = true;
+
+		while(cellVals != null) {
+			map.increment(cellVals);
+			if(isFirstRow || !cellVals.isEmpty())
+				offsets.appendValue(reader1.getCurrentRowIndex());
+			isFirstRow = false;
+			cellVals = reader1.nextRow();
+		}
+
+		if(offsets.size() == 0)
+			return new EmptyEncoding();
+		else if(map.size() == 1 && offsets.size() == ru)
+			return new ConstEncoding(ru);
+
+		final ReaderColumnSelection reader2 = ReaderColumnSelection.createDeltaReader(m, rowCols, transposed, rl, ru);
+		if(offsets.size() < ru / 4)
+			return createWithDeltaReaderSparse(m, map, rowCols, offsets, ru, reader2);
+		else
+			return createWithDeltaReaderDense(m, map, rowCols, ru, offsets.size() < ru, reader2);
+	}
+
+	private static IEncode createWithDeltaReaderDense(MatrixBlock m, DblArrayCountHashMap map, IColIndex rowCols,
+		int nRows, boolean zero, ReaderColumnSelection reader2) {
+		final int unique = map.size() + (zero ? 1 : 0);
+		final AMapToData d = MapToFactory.create(nRows, unique);
+
+		DblArray cellVals;
+		if(zero)
+			while((cellVals = reader2.nextRow()) != null)
+				d.set(reader2.getCurrentRowIndex(), map.getId(cellVals) + 1);
+		else
+			while((cellVals = reader2.nextRow()) != null)
+				d.set(reader2.getCurrentRowIndex(), map.getId(cellVals));
+
+		return new DenseEncoding(d);
+	}
+
+	private static IEncode createWithDeltaReaderSparse(MatrixBlock m, DblArrayCountHashMap map, IColIndex rowCols,
+		IntArrayList offsets, int nRows, ReaderColumnSelection reader2) {
+		DblArray cellVals = reader2.nextRow();
+		final AMapToData d = MapToFactory.create(offsets.size(), map.size());
+
+		int i = 0;
+		boolean isFirstRow = true;
+		while(cellVals != null) {
+			if(isFirstRow || !cellVals.isEmpty()) {
+				d.set(i++, map.getId(cellVals));
+			}
+			isFirstRow = false;
+			cellVals = reader2.nextRow();
+		}
+
+		final AOffset o = OffsetFactory.createOffset(offsets);
+		return new SparseEncoding(d, o, nRows);
 	}
 }

@@ -38,6 +38,7 @@ import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.bitmap.BitmapEncoder;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DeltaDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
@@ -287,6 +288,12 @@ public class ColGroupFactory {
 		}
 		else if(ct == CompressionType.DDC) {
 			return directCompressDDC(colIndexes, cg);
+		}
+		else if(ct == CompressionType.DeltaDDC) {
+			return directCompressDeltaDDC(colIndexes, cg);
+		}
+		else if(ct == CompressionType.CONST && cs.preferDeltaEncoding) {
+			return directCompressDeltaDDC(colIndexes, cg);
 		}
 		else if(ct == CompressionType.LinearFunctional) {
 			if(cs.scaleFactors != null) {
@@ -682,6 +689,129 @@ public class ColGroupFactory {
 		final int nUnique = map.size() + (extra ? 1 : 0);
 		final AMapToData resData = d.resize(nUnique);
 		return ColGroupDDC.create(colIndexes, dict, resData, null);
+	}
+
+	private AColGroup directCompressDeltaDDC(IColIndex colIndexes, CompressedSizeInfoColGroup cg) throws Exception {
+		if(cs.transposed) {
+			throw new NotImplementedException("Delta encoding for transposed matrices not yet implemented");
+		}
+		if(cs.scaleFactors != null) {
+			throw new NotImplementedException("Delta encoding with quantization not yet implemented");
+		}
+		
+		if(colIndexes.size() > 1) {
+			return directCompressDeltaDDCMultiCol(colIndexes, cg);
+		}
+		else {
+			return directCompressDeltaDDCSingleCol(colIndexes, cg);
+		}
+	}
+
+	private AColGroup directCompressDeltaDDCSingleCol(IColIndex colIndexes, CompressedSizeInfoColGroup cg) {
+		final AMapToData d = MapToFactory.create(nRow, Math.max(Math.min(cg.getNumOffs() + 1, nRow), 126));
+		final DoubleCountHashMap map = new DoubleCountHashMap(cg.getNumVals());
+
+		ReaderColumnSelection reader = ReaderColumnSelection.createDeltaReader(in, colIndexes, cs.transposed, 0, nRow);
+		DblArray cellVals = reader.nextRow();
+		int r = 0;
+		while(r < nRow && cellVals != null) {
+			final int row = reader.getCurrentRowIndex();
+			if(row == r) {
+				final double val = cellVals.getData()[0];
+				final int id = map.increment(val);
+				d.set(row, id);
+				cellVals = reader.nextRow();
+				r++;
+			}
+			else {
+				r = row;
+			}
+		}
+
+		if(map.size() == 0)
+			return new ColGroupEmpty(colIndexes);
+		
+		final double[] dictValues = map.getDictionary();
+		IDictionary dict = new DeltaDictionary(dictValues, 1);
+
+		final int nUnique = map.size();
+		final AMapToData resData = d.resize(nUnique);
+		return ColGroupDeltaDDC.create(colIndexes, dict, resData, null);
+	}
+
+	private AColGroup directCompressDeltaDDCMultiCol(IColIndex colIndexes, CompressedSizeInfoColGroup cg) throws Exception {
+		final AMapToData d = MapToFactory.create(nRow, Math.max(Math.min(cg.getNumOffs() + 1, nRow), 126));
+		final int fill = d.getUpperBoundValue();
+		d.fill(fill);
+
+		final DblArrayCountHashMap map = new DblArrayCountHashMap(Math.max(cg.getNumVals(), 64));
+		boolean extra;
+		if(nRow < CompressionSettings.PAR_DDC_THRESHOLD || k < csi.getNumberColGroups() || pool == null) {
+			extra = readToMapDeltaDDC(colIndexes, map, d, 0, nRow, fill);
+		}
+		else {
+			throw new NotImplementedException("Parallel delta DDC compression not yet implemented");
+		}
+
+		if(map.size() == 0)
+			return new ColGroupEmpty(colIndexes);
+
+		final ACount<DblArray>[] vals = map.extractValues();
+		final int nVals = vals.length;
+		final int nTuplesOut = nVals + (extra ? 1 : 0);
+		final double[] dictValues = new double[nTuplesOut * colIndexes.size()];
+		final int[] oldIdToNewId = new int[map.size()];
+		int idx = 0;
+		for(int i = 0; i < nVals; i++) {
+			final ACount<DblArray> dac = vals[i];
+			final double[] arrData = dac.key().getData();
+			System.arraycopy(arrData, 0, dictValues, idx, colIndexes.size());
+			oldIdToNewId[dac.id] = i;
+			idx += colIndexes.size();
+		}
+		IDictionary dict = new DeltaDictionary(dictValues, colIndexes.size());
+
+		if(extra)
+			d.replace(fill, map.size());
+		final int nUnique = map.size() + (extra ? 1 : 0);
+		final AMapToData resData = d.resize(nUnique);
+		for(int i = 0; i < nRow; i++) {
+			final int oldId = resData.getIndex(i);
+			if(extra && oldId == map.size()) {
+				resData.set(i, nVals);
+			}
+			else if(oldId < oldIdToNewId.length) {
+				resData.set(i, oldIdToNewId[oldId]);
+			}
+		}
+		return ColGroupDeltaDDC.create(colIndexes, dict, resData, null);
+	}
+
+	private boolean readToMapDeltaDDC(IColIndex colIndexes, DblArrayCountHashMap map, AMapToData data, int rl, int ru,
+		int fill) {
+		ReaderColumnSelection reader = ReaderColumnSelection.createDeltaReader(in, colIndexes, cs.transposed, rl, ru);
+
+		DblArray cellVals = reader.nextRow();
+		boolean extra = false;
+		int r = rl;
+		while(r < ru && cellVals != null) {
+			final int row = reader.getCurrentRowIndex();
+			if(row == r) {
+				final int id = map.increment(cellVals);
+				data.set(row, id);
+				cellVals = reader.nextRow();
+				r++;
+			}
+			else {
+				r = row;
+				extra = true;
+			}
+		}
+
+		if(r < ru)
+			extra = true;
+
+		return extra;
 	}
 
 	private boolean readToMapDDC(IColIndex colIndexes, DblArrayCountHashMap map, AMapToData data, int rl, int ru,

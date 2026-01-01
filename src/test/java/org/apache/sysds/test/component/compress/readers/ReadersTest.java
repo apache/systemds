@@ -23,6 +23,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
@@ -39,10 +40,11 @@ public class ReadersTest {
 
 	protected static final Log LOG = LogFactory.getLog(ReadersTest.class.getName());
 
-	@Test(expected = DMLCompressionException.class)
+	@Test
 	public void testDenseSingleCol() {
 		MatrixBlock mb = TestUtils.generateTestMatrixBlock(10, 1, 1, 1, 0.5, 21342);
-		ReaderColumnSelection.createReader(mb, ColIndexFactory.create(1), false);
+		ReaderColumnSelection reader = ReaderColumnSelection.createReader(mb, ColIndexFactory.create(1), false);
+		assertNotNull(reader);
 	}
 
 	@Test
@@ -125,6 +127,49 @@ public class ReadersTest {
 			}
 		}
 	}
-	
+
+	@Test
+	public void testDeltaReaderBasic() {
+		MatrixBlock mb = new MatrixBlock(3, 2, false);
+		mb.allocateDenseBlock();
+		mb.set(0, 0, 10);
+		mb.set(0, 1, 20);
+		mb.set(1, 0, 11);
+		mb.set(1, 1, 21);
+		mb.set(2, 0, 12);
+		mb.set(2, 1, 22);
+
+		ReaderColumnSelection reader = ReaderColumnSelection.createDeltaReader(mb, ColIndexFactory.create(2), false);
+		DblArray row0 = reader.nextRow();
+		assertNotNull(row0);
+		assertArrayEquals(new double[] {10, 20}, row0.getData(), 0.0);
+
+		DblArray row1 = reader.nextRow();
+		assertNotNull(row1);
+		assertArrayEquals(new double[] {1, 1}, row1.getData(), 0.0);
+
+		DblArray row2 = reader.nextRow();
+		assertNotNull(row2);
+		assertArrayEquals(new double[] {1, 1}, row2.getData(), 0.0);
+
+		assertEquals(null, reader.nextRow());
+	}
+
+	@Test
+	public void testDeltaReaderSingleCol() {
+		MatrixBlock mb = TestUtils.generateTestMatrixBlock(10, 1, 1, 1, 0.5, 21342);
+		ReaderColumnSelection reader = ReaderColumnSelection.createDeltaReader(mb, ColIndexFactory.create(1), false);
+		assertNotNull(reader);
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void testDeltaReaderTransposed() {
+		MatrixBlock mb = new MatrixBlock(10, 10, false);
+		mb.allocateDenseBlock();
+		mb.set(0, 0, 1);
+		mb.set(0, 1, 2);
+		mb.setNonZeros(2);
+		ReaderColumnSelection.createDeltaReader(mb, ColIndexFactory.create(2), true);
+	}
 
 }

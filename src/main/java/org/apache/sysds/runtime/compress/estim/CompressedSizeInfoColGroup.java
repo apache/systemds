@@ -255,7 +255,11 @@ public class CompressedSizeInfoColGroup {
 			case LinearFunctional:
 				return ColGroupSizes.estimateInMemorySizeLinearFunctional(numCols, contiguousColumns);
 			case DeltaDDC:
-				throw new NotImplementedException();
+				// DeltaDDC has the same size estimation as DDC since it uses the same structure
+				// The delta encoding is just a different way of interpreting the data
+				nv = fact.numVals + (fact.numOffs < fact.numRows ? 1 : 0);
+				return ColGroupSizes.estimateInMemorySizeDDC(numCols, contiguousColumns, nv, fact.numRows,
+					fact.tupleSparsity, fact.lossy);
 			case DDC:
 				nv = fact.numVals + (fact.numOffs < fact.numRows ? 1 : 0);
 				return ColGroupSizes.estimateInMemorySizeDDC(numCols, contiguousColumns, nv, fact.numRows,

@@ -1,0 +1,264 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+/* DML-script implementing the ssb query Q4.1 in SystemDS with Dynamic Encoding.
+SELECT
+    d_year,
+    c_nation,
+    SUM(lo_revenue - lo_supplycost) AS PROFIT
+FROM dates, customer, supplier, part, lineorder
+WHERE
+    lo_custkey = c_custkey
+    AND lo_suppkey = s_suppkey
+    AND lo_partkey = p_partkey
+    AND lo_orderdate = d_datekey
+    AND c_region = 'AMERICA'
+    AND s_region = 'AMERICA'
+    AND (
+        p_mfgr = 'MFGR#1'
+        OR p_mfgr = 'MFGR#2'
+    )
+GROUP BY d_year, c_nation
+ORDER BY d_year, c_nation;
+*/
+
+# Input parameter
+input_dir = $input_dir;
+
+# -- SOURCING THE RA-FUNCTIONS --
+source("./scripts/builtin/raSelection.dml") as raSel
+source("./scripts/builtin/raJoin.dml") as raJoin
+source("./scripts/builtin/raGroupby.dml") as raGrp
+
+
+# -- READING INPUT FILES --
+# CSV TABLES
+date_csv = read(input_dir + "/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+lineorder_csv = read(input_dir + "/lineorder.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+part_csv = read(input_dir + "/part.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+supplier_csv = read(input_dir + "/supplier.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+customer_csv = read(input_dir + "/customer.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
+
+
+# -- MANUAL FILTERING AND DATA PREPARATION --
+# Extract minimal data needed for the query
+date_matrix_min = as.matrix(cbind(date_csv[, 1], date_csv[, 5]));
+lineorder_matrix_min = as.matrix(cbind(lineorder_csv[, 3], lineorder_csv[, 4], lineorder_csv[, 5],
+                                      lineorder_csv[, 6], lineorder_csv[, 13], lineorder_csv[, 14]));
+
+# Build filtered parts list (MFGR#1 and MFGR#2)
+part_filtered_keys = matrix(0, rows=0, cols=1);
+
+for(i in 1:nrow(part_csv)) {
+    mfgr_val = as.scalar(part_csv[i, 3]);
+    if(mfgr_val == "MFGR#1" | mfgr_val == "MFGR#2") {
+        # Extract key and create single-element matrix
+        key_val = as.double(as.scalar(part_csv[i, 1]));
+        key_matrix = matrix(key_val, rows=1, cols=1);
+
+        # Append to filtered results
+        part_filtered_keys = rbind(part_filtered_keys, key_matrix);
+    }
+}
+part_count = nrow(part_filtered_keys);
+if(part_count == 0) {
+    part_filtered_keys = matrix(0, rows=1, cols=1);  # Fallback for empty case
+}
+
+# Build filtered customers list (AMERICA region) with dynamic encoding
+cust_filtered_keys = matrix(0, rows=0, cols=1);
+cust_filtered_nations = matrix(0, rows=0, cols=1);
+
+for(i in 1:nrow(customer_csv)) {
+    region_val = as.scalar(customer_csv[i, 6]);
+    if(region_val == "AMERICA") {
+        # Extract key and create single-element matrix
+        key_val = as.double(as.scalar(customer_csv[i, 1]));
+        key_matrix = matrix(key_val, rows=1, cols=1);
+
+        # Extract nation and encode
+        nation_str = as.scalar(customer_csv[i, 5]);
+        if(nation_str == "ARGENTINA") {
+            nation_val = 3;
+        } else if(nation_str == "CANADA") {
+            nation_val = 5;
+        } else if(nation_str == "PERU") {
+            nation_val = 8;
+        } else if(nation_str == "BRAZIL") {
+            nation_val = 13;
+        } else if(nation_str == "UNITED STATES") {
+            nation_val = 25;
+        } else {
+            nation_val = 0;  # Unknown nation
+        }
+        nation_matrix = matrix(nation_val, rows=1, cols=1);
+
+        # Append to filtered results
+        cust_filtered_keys = rbind(cust_filtered_keys, key_matrix);
+        cust_filtered_nations = rbind(cust_filtered_nations, nation_matrix);
+    }
+}
+
+cust_count = nrow(cust_filtered_keys);
+if(cust_count > 0) {
+    # Create customer matrix from filtered data
+    cust_filtered_data = cbind(cust_filtered_keys, cust_filtered_nations);
+} else {
+    cust_filtered_data = matrix(0, rows=1, cols=2);  # Fallback for empty case
+}
+
+# Build filtered suppliers list (AMERICA region)
+supp_filtered_keys = matrix(0, rows=0, cols=1);
+
+for(i in 1:nrow(supplier_csv)) {
+    region_val = as.scalar(supplier_csv[i, 6]);
+    if(region_val == "AMERICA") {
+        # Extract key and create single-element matrix
+        key_val = as.double(as.scalar(supplier_csv[i, 1]));
+        key_matrix = matrix(key_val, rows=1, cols=1);
+
+        # Append to filtered results
+        supp_filtered_keys = rbind(supp_filtered_keys, key_matrix);
+    }
+}
+supp_count = nrow(supp_filtered_keys);
+if(supp_count == 0) {
+    supp_filtered_keys = matrix(0, rows=1, cols=1);  # Fallback for empty case
+}
+
+# Ensure filtered matrices are properly formatted
+if(cust_count > 0) {
+    cust_matrix_formatted = cust_filtered_data;  # Use the already created matrix
+} else {
+    cust_matrix_formatted = matrix(0, rows=1, cols=2);
+}
+
+if(supp_count > 0) {
+    supp_matrix_formatted = supp_filtered_keys;  # Use the already created matrix
+} else {
+    supp_matrix_formatted = matrix(0, rows=1, cols=1);
+}
+
+if(part_count > 0) {
+    part_matrix_formatted = part_filtered_keys;  # Use the already created matrix
+} else {
+    part_matrix_formatted = matrix(0, rows=1, cols=1);
+}
+
+# -- JOIN TABLES WITH RA-JOIN FUNCTION (SORT-MERGE METHOD) --
+# Remove any potential zero values from customer matrix
+valid_cust_mask = (cust_matrix_formatted[, 1] > 0);
+if(sum(valid_cust_mask) > 0) {
+    cust_clean = removeEmpty(target=cust_matrix_formatted, margin="rows", select=valid_cust_mask);
+} else {
+    stop("No valid customer data");
+}
+
+# Join lineorder with filtered customer table (lo_custkey = c_custkey)
+lo_cust = raJoin::m_raJoin(A=lineorder_matrix_min, colA=1, B=cust_clean, colB=1, method="sort-merge");
+
+# Join with filtered supplier table (lo_suppkey = s_suppkey)
+lo_cust_sup = raJoin::m_raJoin(A=lo_cust, colA=3, B=supp_matrix_formatted, colB=1, method="sort-merge");
+
+# Join with filtered part table (lo_partkey = p_partkey)
+lo_cust_sup_part = raJoin::m_raJoin(A=lo_cust_sup, colA=2, B=part_matrix_formatted, colB=1, method="sort-merge");
+
+# Join with date table (lo_orderdate = d_datekey)
+joined_matrix = raJoin::m_raJoin(A=lo_cust_sup_part, colA=4, B=date_matrix_min, colB=1, method="sort-merge");
+# -- GROUP-BY & AGGREGATION --
+lo_revenue = joined_matrix[, 5];
+lo_supplycost = joined_matrix[, 6];
+d_year = joined_matrix[, ncol(joined_matrix)];   # last column (d_year)
+c_nation = joined_matrix[, 8];   # customer nation column
+
+profit = lo_revenue - lo_supplycost;
+
+# Create nation mapping for grouping
+unique_nations = unique(c_nation);
+nation_encoding = matrix(0, rows=nrow(unique_nations), cols=1);
+for(i in 1:nrow(unique_nations)) {
+    nation_encoding[i, 1] = i;
+}
+
+# Encode nations to numbers for grouping
+c_nation_encoded = matrix(0, rows=nrow(c_nation), cols=1);
+for(i in 1:nrow(c_nation)) {
+    for(j in 1:nrow(unique_nations)) {
+        if(as.scalar(c_nation[i, 1]) == as.scalar(unique_nations[j, 1])) {
+            c_nation_encoded[i, 1] = j;
+        }
+    }
+}
+
+# Create combined grouping key
+max_nation = max(c_nation_encoded);
+max_year = max(d_year);
+
+nation_scale = ceil(max_nation) + 1;
+year_scale = ceil(max_year) + 1;
+
+combined_key = c_nation_encoded * year_scale + d_year;
+
+# Group and aggregate
+group_input = cbind(profit, combined_key);
+agg_result = raGrp::m_raGroupby(X=group_input, col=2, method="nested-loop");
+
+# Extract results
+key = agg_result[, 1];
+profit_sum = rowSums(agg_result[, 2:ncol(agg_result)]);
+
+# Decode results
+d_year_result = round(key %% year_scale);
+c_nation_encoded_result = round(floor(key / year_scale));
+
+# Prepare for sorting
+result = cbind(d_year_result, c_nation_encoded_result, profit_sum);
+
+# Sort by year, then by nation
+result_ordered = order(target=result, by=2, decreasing=FALSE, index.return=FALSE);
+result_ordered = order(target=result_ordered, by=1, decreasing=FALSE, index.return=FALSE);
+
+# Create nation name lookup based on encoding
+nation_lookup = matrix(0, rows=nrow(result_ordered), cols=1);
+for(i in 1:nrow(result_ordered)) {
+    nation_idx = as.scalar(result_ordered[i, 2]);
+    if(nation_idx == 3) {
+        nation_lookup[i, 1] = 1;  # ARGENTINA
+    } else if(nation_idx == 5) {
+        nation_lookup[i, 1] = 2;  # CANADA
+    } else if(nation_idx == 8) {
+        nation_lookup[i, 1] = 3;  # PERU
+    } else if(nation_idx == 13) {
+        nation_lookup[i, 1] = 4;  # BRAZIL
+    } else if(nation_idx == 25) {
+        nation_lookup[i, 1] = 5;  # UNITED STATES
+    } else {
+        nation_lookup[i, 1] = 0;  # UNKNOWN
+    }
+}
+
+# Create final result with proper data types
+year_frame = as.frame(result_ordered[, 1]);
+profit_frame = as.frame(result_ordered[, 3]);
+
+# Output final results (Year, Nation_Code, Profit)
+print(result_ordered);

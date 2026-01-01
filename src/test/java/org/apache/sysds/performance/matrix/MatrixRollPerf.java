@@ -98,8 +98,8 @@ public class MatrixRollPerf extends APerfTest<Object, MatrixBlock> {
 		int reps = 2000;
 		int warmup = 200;
 
-		int minRows = 2017;
-		int minCols = 1001;
+		//int minRows = 2017;
+		//int minCols = 1001;
 		double spSparse = 0.01;
 		int minShift = -50;
 		int maxShift = 1022;

@@ -63,6 +63,44 @@ public class Py4jConverterUtils {
 		return mb;
 	}
 
+	public static MatrixBlock convertSciPyCSRToMB(byte[] data, byte[] indices, byte[] indptr, int rlen, int clen, int nnz) {
+		MatrixBlock mb = new MatrixBlock(rlen, clen, true);
+		mb.allocateSparseRowsBlock(false);
+		ByteBuffer dataBuf = ByteBuffer.wrap(data);
+		dataBuf.order(ByteOrder.nativeOrder());
+		ByteBuffer indicesBuf = ByteBuffer.wrap(indices);
+		indicesBuf.order(ByteOrder.nativeOrder());
+		ByteBuffer indptrBuf = ByteBuffer.wrap(indptr);
+		indptrBuf.order(ByteOrder.nativeOrder());
+		
+		// Read indptr array to get row boundaries
+		int[] rowPtrs = new int[rlen + 1];
+		for(int i = 0; i <= rlen; i++) {
+			rowPtrs[i] = indptrBuf.getInt();
+		}
+		
+		// Iterate through each row
+		for(int row = 0; row < rlen; row++) {
+			int startIdx = rowPtrs[row];
+			int endIdx = rowPtrs[row + 1];
+			
+			// Set buffer positions to the start of this row
+			dataBuf.position(startIdx * Double.BYTES);
+			indicesBuf.position(startIdx * Integer.BYTES);
+			
+			// Process all non-zeros in this row sequentially
+			for(int idx = startIdx; idx < endIdx; idx++) {
+				double val = dataBuf.getDouble();
+				int colIndex = indicesBuf.getInt();
+				mb.set(row, colIndex, val);
+			}
+		}
+		
+		mb.recomputeNonZeros();
+		mb.examSparsity();
+		return mb;
+	}
+
 	public static MatrixBlock allocateDenseOrSparse(int rlen, int clen, boolean isSparse) {
 		MatrixBlock ret = new MatrixBlock(rlen, clen, isSparse);
 		ret.allocateBlock();

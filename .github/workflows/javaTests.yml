@@ -156,6 +156,7 @@ jobs:
       with:
         fail_ci_if_error: false
         files: target/site/jacoco/jacoco.xml
+        flags: java
         token: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Upload Jacoco Report Artifact PR

@@ -118,8 +118,8 @@ public class OOCEvictionManager {
 	private static LinkedHashMap<String, BlockEntry> _cache = new LinkedHashMap<>();
 
 	// Spill related structures
-	private static ConcurrentHashMap<String, spillLocation> _spillLocations =  new ConcurrentHashMap<>();
-	private static ConcurrentHashMap<Integer, partitionFile> _partitions = new ConcurrentHashMap<>();
+	private static ConcurrentHashMap<String, SpillLocation> _spillLocations =  new ConcurrentHashMap<>();
+	private static ConcurrentHashMap<Integer, PartitionFile> _partitions = new ConcurrentHashMap<>();
 	private static final AtomicInteger _partitionCounter = new AtomicInteger(0);
 
 	// Track which partitions belong to which stream (for cleanup)
@@ -143,24 +143,24 @@ public class OOCEvictionManager {
 		COLD // On disk
 	}
 
-	private static class spillLocation {
+	private static class SpillLocation {
 		// structure of spillLocation: file, offset
 		final int partitionId;
 		final long offset;
 
-		spillLocation(int partitionId, long offset) {
+		SpillLocation(int partitionId, long offset) {
 
 			this.partitionId = partitionId;
 			this.offset = offset;
 		}
 	}
 
-	private static class partitionFile {
+	private static class PartitionFile {
 		final String filePath;
 		//final long streamId;
 
 
-		private partitionFile(String filePath, long streamId) {
+		private PartitionFile(String filePath, long streamId) {
 			this.filePath = filePath;
 			//this.streamId = streamId;
 		}
@@ -360,7 +360,7 @@ public class OOCEvictionManager {
 		}
 
 		// 2. create the partition file metadata
-		partitionFile partFile = new partitionFile(filename, 0);
+		PartitionFile partFile = new PartitionFile(filename, 0);
 		_partitions.put(partitionId, partFile);
 
 		FileOutputStream fos = null;
@@ -385,7 +385,7 @@ public class OOCEvictionManager {
 				System.out.println("written, partition id: " + _partitions.get(partitionId) + ", offset: " + offset);
 
 				// 3. create the spillLocation
-				spillLocation sloc = new spillLocation(partitionId, offset);
+				SpillLocation sloc = new SpillLocation(partitionId, offset);
 				_spillLocations.put(tmp.getKey(), sloc);
 
 				// 4. track file for cleanup
@@ -428,12 +428,12 @@ public class OOCEvictionManager {
 		String key = streamId + "_" + blockId;
 
 		// 1. find the blocks address (spill location)
-		spillLocation sloc = _spillLocations.get(key);
+		SpillLocation sloc = _spillLocations.get(key);
 		if (sloc == null) {
 			throw new DMLRuntimeException("Failed to load spill location for: " + key);
 		}
 
-		partitionFile partFile = _partitions.get(sloc.partitionId);
+		PartitionFile partFile = _partitions.get(sloc.partitionId);
 		if (partFile == null) {
 			throw new DMLRuntimeException("Failed to load partition for: " + sloc.partitionId);
 		}

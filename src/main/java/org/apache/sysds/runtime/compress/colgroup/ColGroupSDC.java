@@ -50,7 +50,7 @@ import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
@@ -493,7 +493,7 @@ public class ColGroupSDC extends ASDC implements IMapToDataGroup {
 	}
 
 	@Override
-	public CM_COV_Object centralMoment(CMOperator op, int nRows) {
+	public CmCovObject centralMoment(CMOperator op, int nRows) {
 		return _dict.centralMomentWithDefault(op.fn, getCounts(), _defaultTuple[0], nRows);
 	}
 

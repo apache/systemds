@@ -51,7 +51,7 @@ import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
@@ -431,7 +431,7 @@ public class ColGroupSDCFOR extends ASDC implements IMapToDataGroup, IFrameOfRef
 	}
 
 	@Override
-	public CM_COV_Object centralMoment(CMOperator op, int nRows) {
+	public CmCovObject centralMoment(CMOperator op, int nRows) {
 		// should be guaranteed to be one column therefore only one reference value.
 		return _dict.centralMomentWithReference(op.fn, getCounts(), _reference[0], nRows);
 	}

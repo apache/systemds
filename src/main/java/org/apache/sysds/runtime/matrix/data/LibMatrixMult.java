@@ -384,7 +384,7 @@ public class LibMatrixMult
 		ret.examSparsity();
 		
 		//System.out.println("MMChain "+ct.toString()+" ("+mX.isInSparseFormat()+","+mX.getNumRows()+","+mX.getNumColumns()+","+mX.getNonZeros()+")x" +
-		//		             "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
+		//					 "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
 	}
 
 	/**
@@ -449,7 +449,7 @@ public class LibMatrixMult
 		ret.examSparsity();
 		
 		//System.out.println("MMChain "+ct.toString()+" k="+k+" ("+mX.isInSparseFormat()+","+mX.getNumRows()+","+mX.getNumColumns()+","+mX.getNonZeros()+")x" +
-		//		              "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
+		//					  "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
 	}
 
 	public static MatrixBlock matrixMultTransposeSelf( MatrixBlock m1, MatrixBlock ret, boolean leftTranspose ) {
@@ -491,10 +491,10 @@ public class LibMatrixMult
 	/**
 	 * TSMM with optional transposed left side or not (Transposed self matrix multiplication)
 	 * 
-	 * @param m1            The matrix to do tsmm
-	 * @param ret           The output matrix to allocate the result to
+	 * @param m1			The matrix to do tsmm
+	 * @param ret		   The output matrix to allocate the result to
 	 * @param leftTranspose If the left side should be considered transposed
-	 * @param k             the number of threads to use
+	 * @param k			 the number of threads to use
 	 */
 	public static void matrixMultTransposeSelf(MatrixBlock m1, MatrixBlock ret, boolean leftTranspose, int k) {
 		//check inputs / outputs
@@ -574,7 +574,7 @@ public class LibMatrixMult
 		}
 
 		//System.out.println("PMM Seq ("+pm1.isInSparseFormat()+","+pm1.getNumRows()+","+pm1.getNumColumns()+","+pm1.getNonZeros()+")x" +
-		//                  "("+m2.isInSparseFormat()+","+m2.getNumRows()+","+m2.getNumColumns()+","+m2.getNonZeros()+") in "+time.stop());
+		//				  "("+m2.isInSparseFormat()+","+m2.getNumRows()+","+m2.getNumColumns()+","+m2.getNonZeros()+") in "+time.stop());
 	}	
 
 	public static void matrixMultPermute( MatrixBlock pm1, MatrixBlock m2, MatrixBlock ret1, MatrixBlock ret2, int k) {
@@ -619,7 +619,7 @@ public class LibMatrixMult
 		}
 		
 		// System.out.println("PMM Par ("+pm1.isInSparseFormat()+","+pm1.getNumRows()+","+pm1.getNumColumns()+","+pm1.getNonZeros()+")x" +
-		//                   "("+m2.isInSparseFormat()+","+m2.getNumRows()+","+m2.getNumColumns()+","+m2.getNonZeros()+") in "+time.stop());
+		//				   "("+m2.isInSparseFormat()+","+m2.getNumRows()+","+m2.getNumColumns()+","+m2.getNonZeros()+") in "+time.stop());
 	}	
 
 	public static void matrixMultWSLoss(MatrixBlock mX, MatrixBlock mU, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, WeightsType wt) {
@@ -647,7 +647,7 @@ public class LibMatrixMult
 			addMatrixMultWSLossNoWeightCorrection(mU, mV, ret, 1);
 		
 		//System.out.println("MMWSLoss " +wt.toString()+ " ("+mX.isInSparseFormat()+","+mX.getNumRows()+","+mX.getNumColumns()+","+mX.getNonZeros()+")x" +
-		//                  "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
+		//				  "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
 	}
 
 	public static void matrixMultWSLoss(MatrixBlock mX, MatrixBlock mU, MatrixBlock mV, MatrixBlock mW, MatrixBlock ret, WeightsType wt, int k) {
@@ -688,7 +688,7 @@ public class LibMatrixMult
 			addMatrixMultWSLossNoWeightCorrection(mU, mV, ret, k);
 		
 		//System.out.println("MMWSLoss "+wt.toString()+" k="+k+" ("+mX.isInSparseFormat()+","+mX.getNumRows()+","+mX.getNumColumns()+","+mX.getNonZeros()+")x" +
-		//                   "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
+		//				   "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
 	}
 
 	public static void matrixMultWSigmoid(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WSigmoidType wt) {
@@ -723,7 +723,7 @@ public class LibMatrixMult
 		ret.examSparsity();
 		
 		//System.out.println("MMWSig "+wt.toString()+" ("+mW.isInSparseFormat()+","+mW.getNumRows()+","+mW.getNumColumns()+","+mW.getNonZeros()+")x" +
-		//                 "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
+		//				 "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
 	}
 
 	public static void matrixMultWSigmoid(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WSigmoidType wt, int k) {
@@ -768,7 +768,7 @@ public class LibMatrixMult
 		ret.examSparsity();
 
 		//System.out.println("MMWSig "+wt.toString()+" k="+k+" ("+mW.isInSparseFormat()+","+mW.getNumRows()+","+mW.getNumColumns()+","+mW.getNonZeros()+")x" +
-		//                   "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop() + ".");
+		//				   "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop() + ".");
 	}
 	
 	/**
@@ -815,7 +815,7 @@ public class LibMatrixMult
 		ret.examSparsity();
 		
 		//System.out.println("MMWDiv "+wt.toString()+" ("+mW.isInSparseFormat()+","+mW.getNumRows()+","+mW.getNumColumns()+","+mW.getNonZeros()+")x" +
-		//                 "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
+		//				 "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
 	}
 	
 	/**
@@ -886,7 +886,7 @@ public class LibMatrixMult
 		ret.examSparsity();
 		
 		//System.out.println("MMWDiv "+wt.toString()+" k="+k+" ("+mW.isInSparseFormat()+","+mW.getNumRows()+","+mW.getNumColumns()+","+mW.getNonZeros()+")x" +
-		//                "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
+		//				"("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
 	}	
 
 	public static void matrixMultWCeMM(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, double eps, MatrixBlock ret, WCeMMType wt) {
@@ -911,7 +911,7 @@ public class LibMatrixMult
 			matrixMultWCeMMGeneric(mW, mU, mV, eps, ret, wt, 0, mW.rlen);
 		
 		//System.out.println("MMWCe "+wt.toString()+" ("+mW.isInSparseFormat()+","+mW.getNumRows()+","+mW.getNumColumns()+","+mW.getNonZeros()+")x" +
-		//                 "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
+		//				 "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
 	}
 
 	public static void matrixMultWCeMM(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, double eps, MatrixBlock ret, WCeMMType wt, int k) {
@@ -945,7 +945,7 @@ public class LibMatrixMult
 		}
 		
 		//System.out.println("MMWCe "+wt.toString()+" k="+k+" ("+mW.isInSparseFormat()+","+mW.getNumRows()+","+mW.getNumColumns()+","+mW.getNonZeros()+")x" +
-		//                 "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
+		//				 "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
 	}
 
 	public static void matrixMultWuMM(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WUMMType wt, ValueFunction fn) {
@@ -974,7 +974,7 @@ public class LibMatrixMult
 		ret.examSparsity();
 		
 		//System.out.println("MMWu "+wt.toString()+" ("+mW.isInSparseFormat()+","+mW.getNumRows()+","+mW.getNumColumns()+","+mW.getNonZeros()+")x" +
-		//                 "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
+		//				 "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop());
 	}
 
 	public static void matrixMultWuMM(MatrixBlock mW, MatrixBlock mU, MatrixBlock mV, MatrixBlock ret, WUMMType wt, ValueFunction fn, int k) {
@@ -1019,7 +1019,7 @@ public class LibMatrixMult
 		ret.examSparsity();
 
 		//System.out.println("MMWu "+wt.toString()+" k="+k+" ("+mW.isInSparseFormat()+","+mW.getNumRows()+","+mW.getNumColumns()+","+mW.getNonZeros()+")x" +
-		//                   "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop() + ".");
+		//				   "("+mV.isInSparseFormat()+","+mV.getNumRows()+","+mV.getNumColumns()+","+mV.getNonZeros()+") in "+time.stop() + ".");
 	}
 	
 	//////////////////////////////////////////
@@ -1034,7 +1034,7 @@ public class LibMatrixMult
 		final int n = m2.clen;
 		final int cd = m1.clen;
 		
-		if( m==1 && n==1 ) {            //DOT PRODUCT
+		if( m==1 && n==1 ) {			//DOT PRODUCT
 			double[] avals = a.valuesAt(0);
 			double[] bvals = b.valuesAt(0);
 			if( ru > m ) //pm2r - parallelize over common dim
@@ -1042,7 +1042,7 @@ public class LibMatrixMult
 			else
 				c.set(0, 0, dotProduct(avals, bvals, cd));
 		}
-		else if( n>1 && cd == 1 ) {     //OUTER PRODUCT
+		else if( n>1 && cd == 1 ) {	 //OUTER PRODUCT
 			double[] avals = a.valuesAt(0);
 			double[] bvals = b.valuesAt(0);
 			for( int i=rl; i < ru; i++) {
@@ -1056,7 +1056,7 @@ public class LibMatrixMult
 					Arrays.fill(cvals, cix, cix+n, 0);
 			}
 		}
-		else if( n==1 && cd == 1 ) {    //VECTOR-SCALAR
+		else if( n==1 && cd == 1 ) {	//VECTOR-SCALAR
 			double[] avals = a.valuesAt(0);
 			double[] cvals = c.valuesAt(0);
 			vectMultiplyWrite(b.get(0,0), avals, cvals, rl, rl, ru-rl);
@@ -1064,19 +1064,19 @@ public class LibMatrixMult
 		else if( n==1 && cd<=2*1024 ) { //MATRIX-VECTOR (short rhs)
 			matrixMultDenseDenseMVShortRHS(a, b, c, cd, rl, ru);
 		}
-		else if( n==1 ) {               //MATRIX-VECTOR (tall rhs)
+		else if( n==1 ) {			   //MATRIX-VECTOR (tall rhs)
 			matrixMultDenseDenseMVTallRHS(a, b, c, pm2, cd, rl, ru);
 		}
-		else if( pm2 && m==1 ) {        //VECTOR-MATRIX
+		else if( pm2 && m==1 ) {		//VECTOR-MATRIX
 			matrixMultDenseDenseVM(a, b, c, n, cd, rl, ru);
 		}
-		else if( pm2 && m<=16 ) {       //MATRIX-MATRIX (short lhs) 
+		else if( pm2 && m<=16 ) {	   //MATRIX-MATRIX (short lhs) 
 			matrixMultDenseDenseMMShortLHS(a, b, c, m, n, cd, rl, ru);
 		}
-		else if( tm2 ) {                //MATRIX-MATRIX (skinny rhs)
+		else if( tm2 ) {				//MATRIX-MATRIX (skinny rhs)
 			matrixMultDenseDenseMMSkinnyRHS(a, b, c, m2.rlen, cd, rl, ru);
 		}
-		else {                          //MATRIX-MATRIX
+		else {						  //MATRIX-MATRIX
 			matrixMultDenseDenseMM(a, b, c, n, cd, rl, ru, cl, cu);
 		}
 	}
@@ -1372,7 +1372,7 @@ public class LibMatrixMult
 		// MATRIX-MATRIX (VV, MV not applicable here because V always dense)
 		SparseBlock b = m2.sparseBlock;
 			
-		if( pm2 && m==1 ) {        //VECTOR-MATRIX
+		if( pm2 && m==1 ) {		//VECTOR-MATRIX
 			//parallelization over rows in rhs matrix
 			double[] avals = a.valuesAt(0); //vector
 			double[] cvals = c.valuesAt(0); //vector
@@ -1382,7 +1382,7 @@ public class LibMatrixMult
 						b.indexes(k), b.pos(k), 0, b.size(k));
 				}
 		}
-		else {                     //MATRIX-MATRIX
+		else {					 //MATRIX-MATRIX
 			//best effort blocking, without blocking over J because it is 
 			//counter-productive, even with front of current indexes
 			final int blocksizeK = 32;
@@ -1422,26 +1422,26 @@ public class LibMatrixMult
 		final int cd = m2.rlen;
 		final long xsp = (long)m*cd/m1.nonZeros;
 
-		if( m==1 && n==1 ) {            //DOT PRODUCT
+		if( m==1 && n==1 ) {			//DOT PRODUCT
 			if( !a.isEmpty(0) )
 				c.set(0, 0, dotProduct(a.values(0), b.values(0), a.indexes(0), a.pos(0), 0, a.size(0)));
 		}
 		else if( n==1 && cd<=2*1024 ) { //MATRIX-VECTOR (short rhs)
 			matrixMultSparseDenseMVShortRHS(a, b, c, cd, rl, ru);
 		}
-		else if( n==1 ) {               //MATRIX-VECTOR (tall rhs)
+		else if( n==1 ) {			   //MATRIX-VECTOR (tall rhs)
 			matrixMultSparseDenseMVTallRHS(a, b, c, cd, xsp, rl, ru);
 		}
-		else if( pm2 && m==1 ) {        //VECTOR-MATRIX
+		else if( pm2 && m==1 ) {		//VECTOR-MATRIX
 			matrixMultSparseDenseVM(a, b, c, n, rl, ru);
 		}
-		else if( pm2 && m<=16 ) {       //MATRIX-MATRIX (short lhs) 
+		else if( pm2 && m<=16 ) {	   //MATRIX-MATRIX (short lhs) 
 			matrixMultSparseDenseMMShortLHS(a, b, c, n, cd, rl, ru);
 		}
-		else if( n<=64 ) {              //MATRIX-MATRIX (skinny rhs)
+		else if( n<=64 ) {			  //MATRIX-MATRIX (skinny rhs)
 			matrixMultSparseDenseMMSkinnyRHS(a, b, c, n, rl, ru);
 		}
-		else {                          //MATRIX-MATRIX
+		else {						  //MATRIX-MATRIX
 			matrixMultSparseDenseMM(a, b, c, n, cd, xsp, rl, ru);
 		}
 	}
@@ -1637,13 +1637,13 @@ public class LibMatrixMult
 		int n = m2.clen;
 		
 		// MATRIX-MATRIX (VV, MV not applicable here because V always dense)
-		if( pm2 && m==1 )               //VECTOR-MATRIX
+		if( pm2 && m==1 )			   //VECTOR-MATRIX
 			matrixMultSparseSparseVM(a, b, ret.getDenseBlock(), rl, ru);
-		else if( sparse )               //SPARSE OUPUT
+		else if( sparse )			   //SPARSE OUPUT
 			ret.setNonZeros(matrixMultSparseSparseSparseMM(a, b, ret.getSparseBlock(), n, rl, ru));
 		else if( m2.nonZeros < 2048 )   //MATRIX-SMALL MATRIX
 			matrixMultSparseSparseMMSmallRHS(a, b, ret.getDenseBlock(), rl, ru);
-		else                            //MATRIX-MATRIX
+		else							//MATRIX-MATRIX
 			matrixMultSparseSparseMM(a, b, ret.getDenseBlock(), m, cd, m1.nonZeros, rl, ru);
 	}
 	
@@ -3983,24 +3983,24 @@ public class LibMatrixMult
 		}
 	}
 
-    //note: public for use by codegen for consistency
-    public static void vectMultiplyAdd( double[] a, double[] b, double[] c, int ai, int bi, int ci, final int len ){
-        final int bn = len%vLen;
+	//note: public for use by codegen for consistency
+	public static void vectMultiplyAdd( double[] a, double[] b, double[] c, int ai, int bi, int ci, final int len ){
+		final int bn = len%vLen;
 
-        //rest, not aligned to vLen-blocks
-        for( int j = 0; j < bn; j++, ai++, bi++, ci++)
-            c[ ci ] += a[ ai ] * b[ bi ];
+		//rest, not aligned to vLen-blocks
+		for( int j = 0; j < bn; j++, ai++, bi++, ci++)
+			c[ ci ] += a[ ai ] * b[ bi ];
 
-        //unrolled vLen-block  (for better instruction-level parallelism)
-        for( int j = bn; j < len; j+=vLen, ai+=vLen, bi+=vLen, ci+=vLen)
-        {
-            DoubleVector aVec = DoubleVector.fromArray(SPECIES, a, ai);
-            DoubleVector bVec = DoubleVector.fromArray(SPECIES, b, bi);
-            DoubleVector cVec = DoubleVector.fromArray(SPECIES, c, ci);
-            cVec = aVec.fma(bVec, cVec);
-            cVec.intoArray(c, ci);
-        }
-    }
+		//unrolled vLen-block  (for better instruction-level parallelism)
+		for( int j = bn; j < len; j+=vLen, ai+=vLen, bi+=vLen, ci+=vLen)
+		{
+			DoubleVector aVec = DoubleVector.fromArray(SPECIES, a, ai);
+			DoubleVector bVec = DoubleVector.fromArray(SPECIES, b, bi);
+			DoubleVector cVec = DoubleVector.fromArray(SPECIES, c, ci);
+			cVec = aVec.fma(bVec, cVec);
+			cVec.intoArray(c, ci);
+		}
+	}
 	
 	public static void vectMultiplyWrite( final double[] a, double[] b, double[] c, int[] bix, final int ai, final int bi, final int ci, final int len ) {
 		final int bn = len%8;
@@ -4843,8 +4843,8 @@ public class LibMatrixMult
 				&& (_mW==null || !_mW.isEmptyBlock()))
 				matrixMultWSLossDense(_mX, _mU, _mV, _mW, _ret, _wt, _rl, _ru);
 			else if( _mX.sparse && !_mU.sparse && !_mV.sparse && (_mW==null || _mW.sparse)
-				    && !_mX.isEmptyBlock() && !_mU.isEmptyBlock() && !_mV.isEmptyBlock() 
-				    && (_mW==null || !_mW.isEmptyBlock()))
+					&& !_mX.isEmptyBlock() && !_mU.isEmptyBlock() && !_mV.isEmptyBlock() 
+					&& (_mW==null || !_mW.isEmptyBlock()))
 				matrixMultWSLossSparseDense(_mX, _mU, _mV, _mW, _ret, _wt, _rl, _ru);
 			else
 				matrixMultWSLossGeneric(_mX, _mU, _mV, _mW, _ret, _wt, _rl, _ru);

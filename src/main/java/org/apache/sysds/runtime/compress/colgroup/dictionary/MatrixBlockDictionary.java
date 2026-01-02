@@ -51,7 +51,7 @@ import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
@@ -2425,7 +2425,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public CM_COV_Object centralMoment(CM_COV_Object ret, ValueFunction fn, int[] counts, int nRows) {
+	public CmCovObject centralMoment(CmCovObject ret, ValueFunction fn, int[] counts, int nRows) {
 		// should be guaranteed to only contain one value per tuple in dictionary.
 		if(_data.isInSparseFormat())
 			throw new DMLCompressionException("The dictionary should not be sparse with one column");
@@ -2438,7 +2438,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public CM_COV_Object centralMomentWithDefault(CM_COV_Object ret, ValueFunction fn, int[] counts, double def,
+	public CmCovObject centralMomentWithDefault(CmCovObject ret, ValueFunction fn, int[] counts, double def,
 		int nRows) {
 		// should be guaranteed to only contain one value per tuple in dictionary.
 		if(_data.isInSparseFormat())
@@ -2453,7 +2453,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public CM_COV_Object centralMomentWithReference(CM_COV_Object ret, ValueFunction fn, int[] counts, double reference,
+	public CmCovObject centralMomentWithReference(CmCovObject ret, ValueFunction fn, int[] counts, double reference,
 		int nRows) {
 		// should be guaranteed to only contain one value per tuple in dictionary.
 		if(_data.isInSparseFormat())

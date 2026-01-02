@@ -57,11 +57,11 @@ public class MLContextFrameTest extends MLContextTestBase {
 
 	protected static final Log LOG = LogFactory.getLog(MLContextFrameTest.class.getName());
 
-	public static enum SCRIPT_TYPE {
+	public static enum ScriptType {
 		DML
 	}
 
-	public static enum IO_TYPE {
+	public static enum IoType {
 		ANY, FILE, JAVA_RDD_STR_CSV, JAVA_RDD_STR_IJV, RDD_STR_CSV, RDD_STR_IJV, DATAFRAME
 	}
 
@@ -75,50 +75,50 @@ public class MLContextFrameTest extends MLContextTestBase {
 
 	@Test
 	public void testFrameJavaRDD_CSV_DML() {
-		testFrame(FrameFormat.CSV, SCRIPT_TYPE.DML, IO_TYPE.JAVA_RDD_STR_CSV, IO_TYPE.ANY);
+		testFrame(FrameFormat.CSV, ScriptType.DML, IoType.JAVA_RDD_STR_CSV, IoType.ANY);
 	}
 
 	@Test
 	public void testFrameJavaRDD_CSV_DML_OutJavaRddCSV() {
-		testFrame(FrameFormat.CSV, SCRIPT_TYPE.DML, IO_TYPE.JAVA_RDD_STR_CSV, IO_TYPE.JAVA_RDD_STR_CSV);
+		testFrame(FrameFormat.CSV, ScriptType.DML, IoType.JAVA_RDD_STR_CSV, IoType.JAVA_RDD_STR_CSV);
 	}
 
 	@Test
 	public void testFrameJavaRDD_IJV_DML() {
-		testFrame(FrameFormat.IJV, SCRIPT_TYPE.DML, IO_TYPE.JAVA_RDD_STR_IJV, IO_TYPE.ANY);
+		testFrame(FrameFormat.IJV, ScriptType.DML, IoType.JAVA_RDD_STR_IJV, IoType.ANY);
 	}
 
 	@Test
 	public void testFrameRDD_IJV_DML() {
-		testFrame(FrameFormat.IJV, SCRIPT_TYPE.DML, IO_TYPE.RDD_STR_IJV, IO_TYPE.ANY);
+		testFrame(FrameFormat.IJV, ScriptType.DML, IoType.RDD_STR_IJV, IoType.ANY);
 	}
 
 	@Test
 	public void testFrameJavaRDD_IJV_DML_OutRddCSV() {
-		testFrame(FrameFormat.IJV, SCRIPT_TYPE.DML, IO_TYPE.JAVA_RDD_STR_IJV, IO_TYPE.RDD_STR_CSV);
+		testFrame(FrameFormat.IJV, ScriptType.DML, IoType.JAVA_RDD_STR_IJV, IoType.RDD_STR_CSV);
 	}
 
 	@Test
 	public void testFrameFile_CSV_DML() {
-		testFrame(FrameFormat.CSV, SCRIPT_TYPE.DML, IO_TYPE.FILE, IO_TYPE.ANY);
+		testFrame(FrameFormat.CSV, ScriptType.DML, IoType.FILE, IoType.ANY);
 	}
 
 	@Test
 	public void testFrameFile_IJV_DML() {
-		testFrame(FrameFormat.IJV, SCRIPT_TYPE.DML, IO_TYPE.FILE, IO_TYPE.ANY);
+		testFrame(FrameFormat.IJV, ScriptType.DML, IoType.FILE, IoType.ANY);
 	}
 
 	@Test
 	public void testFrameDataFrame_CSV_DML() {
-		testFrame(FrameFormat.CSV, SCRIPT_TYPE.DML, IO_TYPE.DATAFRAME, IO_TYPE.ANY);
+		testFrame(FrameFormat.CSV, ScriptType.DML, IoType.DATAFRAME, IoType.ANY);
 	}
 
 	@Test
 	public void testFrameDataFrameOutDataFrame_CSV_DML() {
-		testFrame(FrameFormat.CSV, SCRIPT_TYPE.DML, IO_TYPE.DATAFRAME, IO_TYPE.DATAFRAME);
+		testFrame(FrameFormat.CSV, ScriptType.DML, IoType.DATAFRAME, IoType.DATAFRAME);
 	}
 
-	public void testFrame(FrameFormat format, SCRIPT_TYPE script_type, IO_TYPE inputType, IO_TYPE outputType) {
+	public void testFrame(FrameFormat format, ScriptType script_type, IoType inputType, IoType outputType) {
 
 		// System.out.println("MLContextTest - Frame JavaRDD<String> for format: " + format + " Script: " + script_type);
 
@@ -133,7 +133,7 @@ public class MLContextFrameTest extends MLContextTestBase {
 		List<ValueType> lschemaB = Arrays.asList(schemaB);
 		FrameSchema fschemaB = new FrameSchema(lschemaB);
 
-		if (inputType != IO_TYPE.FILE) {
+		if (inputType != IoType.FILE) {
 			if (format == FrameFormat.CSV) {
 				listA.add("1,Str2,3.0,true");
 				listA.add("4,Str5,6.0,false");
@@ -171,7 +171,7 @@ public class MLContextFrameTest extends MLContextTestBase {
 			JavaRDD<String> javaRDDA = sc.parallelize(listA);
 			JavaRDD<String> javaRDDB = sc.parallelize(listB);
 
-			if (inputType == IO_TYPE.DATAFRAME) {
+			if (inputType == IoType.DATAFRAME) {
 				JavaRDD<Row> javaRddRowA = FrameRDDConverterUtils.csvToRowRDD(sc, javaRDDA, CSV_DELIM, schemaA);
 				JavaRDD<Row> javaRddRowB = FrameRDDConverterUtils.csvToRowRDD(sc, javaRDDB, CSV_DELIM, schemaB);
 
@@ -180,19 +180,19 @@ public class MLContextFrameTest extends MLContextTestBase {
 				Dataset<Row> dataFrameA = spark.createDataFrame(javaRddRowA, dfSchemaA);
 				StructType dfSchemaB = FrameRDDConverterUtils.convertFrameSchemaToDFSchema(schemaB, false);
 				Dataset<Row> dataFrameB = spark.createDataFrame(javaRddRowB, dfSchemaB);
-				if (script_type == SCRIPT_TYPE.DML)
+				if (script_type == ScriptType.DML)
 					script = dml("A[2:3,2:4]=B;C=A[2:3,2:3]").in("A", dataFrameA, fmA).in("B", dataFrameB, fmB).out("A")
 							.out("C");
 			} else {
-				if (inputType == IO_TYPE.JAVA_RDD_STR_CSV || inputType == IO_TYPE.JAVA_RDD_STR_IJV) {
-					if (script_type == SCRIPT_TYPE.DML)
+				if (inputType == IoType.JAVA_RDD_STR_CSV || inputType == IoType.JAVA_RDD_STR_IJV) {
+					if (script_type == ScriptType.DML)
 						script = dml("A[2:3,2:4]=B;C=A[2:3,2:3]").in("A", javaRDDA, fmA).in("B", javaRDDB, fmB).out("A")
 								.out("C");
-				} else if (inputType == IO_TYPE.RDD_STR_CSV || inputType == IO_TYPE.RDD_STR_IJV) {
+				} else if (inputType == IoType.RDD_STR_CSV || inputType == IoType.RDD_STR_IJV) {
 					RDD<String> rddA = JavaRDD.toRDD(javaRDDA);
 					RDD<String> rddB = JavaRDD.toRDD(javaRDDB);
 
-					if (script_type == SCRIPT_TYPE.DML)
+					if (script_type == ScriptType.DML)
 						script = dml("A[2:3,2:4]=B;C=A[2:3,2:3]").in("A", rddA, fmA).in("B", rddB, fmB).out("A")
 								.out("C");
 				}
@@ -209,7 +209,7 @@ public class MLContextFrameTest extends MLContextTestBase {
 				fileB = baseDirectory + File.separator + "FrameB.ijv";
 			}
 
-			if (script_type == SCRIPT_TYPE.DML)
+			if (script_type == ScriptType.DML)
 				script = dml("A=read($A); B=read($B);A[2:3,2:4]=B;C=A[2:3,2:3];A[1,1]=234").in("$A", fileA, fmA)
 						.in("$B", fileB, fmB).out("A").out("C");
 		}
@@ -220,7 +220,7 @@ public class MLContextFrameTest extends MLContextTestBase {
 		List<ValueType> lschemaOutA = Arrays.asList(mlResults.getFrameObject("A").getSchema());
 		List<ValueType> lschemaOutC = Arrays.asList(mlResults.getFrameObject("C").getSchema());
 
-		if(inputType != IO_TYPE.RDD_STR_IJV && inputType != IO_TYPE.JAVA_RDD_STR_IJV){
+		if(inputType != IoType.RDD_STR_IJV && inputType != IoType.JAVA_RDD_STR_IJV){
 
 			Assert.assertEquals(ValueType.INT64, lschemaOutA.get(0));
 			Assert.assertEquals(ValueType.STRING, lschemaOutA.get(1));
@@ -231,7 +231,7 @@ public class MLContextFrameTest extends MLContextTestBase {
 			Assert.assertEquals(ValueType.FP64, lschemaOutC.get(1));
 		}
 
-		if (outputType == IO_TYPE.JAVA_RDD_STR_CSV) {
+		if (outputType == IoType.JAVA_RDD_STR_CSV) {
 
 			JavaRDD<String> javaRDDStringCSVA = mlResults.getJavaRDDStringCSV("A");
 			List<String> linesA = javaRDDStringCSVA.collect();
@@ -243,7 +243,7 @@ public class MLContextFrameTest extends MLContextTestBase {
 			List<String> linesC = javaRDDStringCSVC.collect();
 			Assert.assertEquals("Str12,13.0", linesC.get(0));
 			Assert.assertEquals("Str25,26.0", linesC.get(1));
-		} else if (outputType == IO_TYPE.JAVA_RDD_STR_IJV) {
+		} else if (outputType == IoType.JAVA_RDD_STR_IJV) {
 			JavaRDD<String> javaRDDStringIJVA = mlResults.getJavaRDDStringIJV("A");
 			List<String> linesA = javaRDDStringIJVA.collect();
 			Assert.assertEquals("1 1 1", linesA.get(0));
@@ -261,7 +261,7 @@ public class MLContextFrameTest extends MLContextTestBase {
 			Assert.assertEquals("1 2 13.0", linesC.get(1));
 			Assert.assertEquals("2 1 Str25", linesC.get(2));
 			Assert.assertEquals("2 2 26.0", linesC.get(3));
-		} else if (outputType == IO_TYPE.RDD_STR_CSV) {
+		} else if (outputType == IoType.RDD_STR_CSV) {
 			RDD<String> rddStringCSVA = mlResults.getRDDStringCSV("A");
 			Iterator<String> iteratorA = rddStringCSVA.toLocalIterator();
 			Assert.assertEquals("1,Str2,3.0,true", iteratorA.next());
@@ -272,7 +272,7 @@ public class MLContextFrameTest extends MLContextTestBase {
 			Iterator<String> iteratorC = rddStringCSVC.toLocalIterator();
 			Assert.assertEquals("Str12,13.0", iteratorC.next());
 			Assert.assertEquals("Str25,26.0", iteratorC.next());
-		} else if (outputType == IO_TYPE.RDD_STR_IJV) {
+		} else if (outputType == IoType.RDD_STR_IJV) {
 			RDD<String> rddStringIJVA = mlResults.getRDDStringIJV("A");
 			Iterator<String> iteratorA = rddStringIJVA.toLocalIterator();
 			Assert.assertEquals("1 1 1", iteratorA.next());
@@ -295,7 +295,7 @@ public class MLContextFrameTest extends MLContextTestBase {
 			Assert.assertEquals("2 1 Str25", iteratorC.next());
 			Assert.assertEquals("2 2 26.0", iteratorC.next());
 
-		} else if (outputType == IO_TYPE.DATAFRAME) {
+		} else if (outputType == IoType.DATAFRAME) {
 
 			Dataset<Row> dataFrameA = mlResults.getDataFrame("A").drop(RDDConverterUtils.DF_ID_COLUMN);
 			StructType dfschemaA = dataFrameA.schema(); 

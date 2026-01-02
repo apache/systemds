@@ -2102,7 +2102,7 @@ public class LibMatrixReorg {
 				if(m > 10 && n > 100) {
 					int blkz = Math.max((n - c) / k, 1);
 					for(int j = c; j * blkz < n; j++) {
-						tasks.add(new rTask(A, j * blkz, Math.min((j + 1) * blkz, n), b, n, m));
+						tasks.add(new RTask(A, j * blkz, Math.min((j + 1) * blkz, n), b, n, m));
 					}
 					for(Future<Object> rt : pool.invokeAll(tasks))
 						rt.get();
@@ -2120,7 +2120,7 @@ public class LibMatrixReorg {
 			if(m > 10 && n > 100) {
 				int blkz = Math.max(m / k, 1);
 				for(int i = 0; i * blkz < m; i++) {
-					tasks.add(new dTask(A, i * blkz, Math.min((i + 1) * blkz, m), b, n, m));
+					tasks.add(new DTask(A, i * blkz, Math.min((i + 1) * blkz, m), b, n, m));
 				}
 				for(Future<Object> rt : pool.invokeAll(tasks))
 					rt.get();
@@ -2137,7 +2137,7 @@ public class LibMatrixReorg {
 			if(m > 10 && n > 100) {
 				int blkz = Math.max(n / k, 1);
 				for(int j = 0; j * blkz < n; j++) {
-					tasks.add(new sTask(A, j * blkz, Math.min((j + 1) * blkz, n), a, n, m));
+					tasks.add(new STask(A, j * blkz, Math.min((j + 1) * blkz, n), a, n, m));
 				}
 				for(Future<Object> rt : pool.invokeAll(tasks))
 					rt.get();
@@ -2171,7 +2171,7 @@ public class LibMatrixReorg {
 		}
 	}
 
-	private static class rTask implements Callable<Object> {
+	private static class RTask implements Callable<Object> {
 		final double[] _A;
 
 		final int _jStart;
@@ -2180,7 +2180,7 @@ public class LibMatrixReorg {
 		final int _n;
 		final int _m;
 
-		rTask(double[] A, int jStart, int jEnd, int b, int n, int m){
+		RTask(double[] A, int jStart, int jEnd, int b, int n, int m){
 			_A = A;
 			_jStart = jStart;
 			_jEnd = jEnd;
@@ -2215,7 +2215,7 @@ public class LibMatrixReorg {
 
 	}
 
-	private static class dTask implements Callable<Object>{
+	private static class DTask implements Callable<Object>{
 		final double[] _A;
 
 		final int _iStart;
@@ -2224,7 +2224,7 @@ public class LibMatrixReorg {
 		final int _n;
 		final int _m;
 
-		dTask(double[] A, int iStart, int iEnd, int b, int n, int m){
+		DTask(double[] A, int iStart, int iEnd, int b, int n, int m){
 			_A = A;
 			_iStart = iStart;
 			_iEnd = iEnd;
@@ -2262,7 +2262,7 @@ public class LibMatrixReorg {
 		}
 	}
 
-	private static class sTask implements Callable<Object>{
+	private static class STask implements Callable<Object>{
 		final double[] _A;
 
 		// final int _j;
@@ -2272,7 +2272,7 @@ public class LibMatrixReorg {
 		final int _n;
 		final int _m;
 
-		sTask(double[] A, int jStart, int jEnd, int a, int n, int m){
+		STask(double[] A, int jStart, int jEnd, int a, int n, int m){
 			_A = A;
 			_jStart = jStart;
 			_jEnd = jEnd;
@@ -2318,7 +2318,7 @@ public class LibMatrixReorg {
 			if(m > 10 && n > 100) {
 				int blkz = Math.max(n / k, 1);
 				for(int j = 0; j * blkz < n; j++) {
-					tasks.add(new s_invTask(A, j * blkz, Math.min((j + 1) * blkz, n), a, n, m));
+					tasks.add(new SinvTask(A, j * blkz, Math.min((j + 1) * blkz, n), a, n, m));
 				}
 				for(Future<Object> rt : pool.invokeAll(tasks))
 					rt.get();
@@ -2334,7 +2334,7 @@ public class LibMatrixReorg {
 			if(m > 10 && n > 100) {
 				int blkz = Math.max(m / k, 1);
 				for(int i = 0; i * blkz < m; i++) {
-					tasks.add(new d_invTask(A, i * blkz, Math.min((i + 1) * blkz, m), a_inv, b, c, n, m));
+					tasks.add(new DinvTask(A, i * blkz, Math.min((i + 1) * blkz, m), a_inv, b, c, n, m));
 				}
 				for(Future<Object> rt : pool.invokeAll(tasks))
 					rt.get();
@@ -2358,7 +2358,7 @@ public class LibMatrixReorg {
 				if(m > 10 && n > 100) {
 					int blkz = Math.max((n - c) / k, 1);
 					for(int j = c; j * blkz < n; j++) {
-						tasks.add(new r_invTask(A, j * blkz, Math.min((j + 1) * blkz, n), b, n, m));
+						tasks.add(new RinvTask(A, j * blkz, Math.min((j + 1) * blkz, n), b, n, m));
 					}
 					for(Future<Object> rt : pool.invokeAll(tasks))
 						rt.get();
@@ -2396,7 +2396,7 @@ public class LibMatrixReorg {
 			}
 	}
 
-	private static class s_invTask implements Callable<Object>{
+	private static class SinvTask implements Callable<Object>{
 		final double[] _A;
 
 		// final int _j;
@@ -2406,7 +2406,7 @@ public class LibMatrixReorg {
 		final int _n;
 		final int _m;
 
-		s_invTask(double[] A, int jStart, int jEnd, int a, int n, int m){
+		SinvTask(double[] A, int jStart, int jEnd, int a, int n, int m){
 			_A = A;
 			_jStart = jStart;
 			_jEnd = jEnd;
@@ -2458,7 +2458,7 @@ public class LibMatrixReorg {
 		System.arraycopy(tmp, 0, A, i*n, n);
 	}
 
-	private static class d_invTask implements Callable<Object>{
+	private static class DinvTask implements Callable<Object>{
 		final double[] _A;
 
 		final int _iStart;
@@ -2469,7 +2469,7 @@ public class LibMatrixReorg {
 		final int _n;
 		final int _m;
 
-		d_invTask(double[] A, int iStart, int iEnd, int a_inv, int b, int c, int n, int m){
+		DinvTask(double[] A, int iStart, int iEnd, int a_inv, int b, int c, int n, int m){
 			_A = A;
 			_iStart = iStart;
 			_iEnd = iEnd;
@@ -2512,7 +2512,7 @@ public class LibMatrixReorg {
 		}
 	}
 
-	private static class r_invTask implements Callable<Object>{
+	private static class RinvTask implements Callable<Object>{
 		final double[] _A;
 
 		// final int _j;
@@ -2522,7 +2522,7 @@ public class LibMatrixReorg {
 		final int _n;
 		final int _m;
 
-		r_invTask(double[] A, int jStart, int jEnd, int b, int n, int m){
+		RinvTask(double[] A, int jStart, int jEnd, int b, int n, int m){
 			_A = A;
 			_jStart = jStart;
 			_jEnd = jEnd;

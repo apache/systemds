@@ -62,7 +62,7 @@ public class CovarianceCPInstruction extends BinaryCPInstruction {
 		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
 		String output_name = output.getName(); 
 		COVOperator cov_op = (COVOperator)_optr;
-		CM_COV_Object covobj = null;
+		CmCovObject covobj = null;
 		
 		if ( input3 == null ) {
 			// Unweighted: cov.mvar0.mvar1.out

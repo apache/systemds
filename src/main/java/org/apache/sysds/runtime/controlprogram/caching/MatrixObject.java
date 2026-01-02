@@ -559,12 +559,12 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 			if (dimsUnknown) {
 				ret = new MatrixBlock(nrows, ncols, false);
 
-				for (IndexedMatrixValue _tmp : blockCache) {
+				for (IndexedMatrixValue tmp2 : blockCache) {
 					// compute row/column block offsets
-					final int row_offset = (int) (_tmp.getIndexes().getRowIndex() - 1) * blen;
-					final int col_offset = (int) (_tmp.getIndexes().getColumnIndex() - 1) * blen;
+					final int row_offset = (int) (tmp2.getIndexes().getRowIndex() - 1) * blen;
+					final int col_offset = (int) (tmp2.getIndexes().getColumnIndex() - 1) * blen;
 
-					((MatrixBlock) _tmp.getValue()).putInto(ret, row_offset, col_offset, true);
+					((MatrixBlock) tmp2.getValue()).putInto(ret, row_offset, col_offset, true);
 				}
 			}
 

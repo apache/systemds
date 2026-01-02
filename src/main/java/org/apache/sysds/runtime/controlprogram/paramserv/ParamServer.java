@@ -448,10 +448,10 @@ public abstract class ParamServer
 	}
 
 	protected ListObject weightModels(ListObject params, int numWorkers) {
-		double _averagingFactor = 1d / numWorkers;
+		double averagingFactor = 1d / numWorkers;
 
-		if( _averagingFactor != 1) {
-			double final_averagingFactor = _averagingFactor;
+		if( averagingFactor != 1) {
+			double final_averagingFactor = averagingFactor;
 			params.getData().parallelStream().forEach((matrix) -> {
 				MatrixObject matrixObject = (MatrixObject) matrix;
 				MatrixBlock input = matrixObject.acquireReadAndRelease().scalarOperations(

@@ -90,7 +90,7 @@ public class CentralMomentCPInstruction extends AggregateUnaryCPInstruction {
 		if ( cm_op.getAggOpType() == AggregateOperationTypes.INVALID )
 			cm_op = cm_op.setCMAggOp((int)order.getLongValue());
 		
-		CM_COV_Object cmobj = null; 
+		CmCovObject cmobj = null; 
 		if (input3 == null ) {
 			cmobj = matBlock.cmOperations(cm_op);
 		}

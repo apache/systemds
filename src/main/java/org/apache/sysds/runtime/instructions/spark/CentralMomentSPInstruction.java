@@ -30,7 +30,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.functionobjects.CM;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
@@ -110,18 +110,18 @@ public class CentralMomentSPInstruction extends UnarySPInstruction {
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
 				
 		//process central moment instruction
-		CM_COV_Object cmobj = null; 
+		CmCovObject cmobj = null; 
 		if( input3 == null ) //w/o weights
 		{
 			cmobj = in1.values().map(new RDDCMFunction(cop))
-			           .fold(new CM_COV_Object(), new RDDCMReduceFunction(cop));
+			           .fold(new CmCovObject(), new RDDCMReduceFunction(cop));
 		}
 		else //with weights
 		{
 			JavaPairRDD<MatrixIndexes,MatrixBlock> in2 = sec.getBinaryMatrixBlockRDDHandleForVariable( input2.getName() );
 			cmobj = in1.join( in2 )
 					   .values().map(new RDDCMWeightsFunction(cop))
-			           .fold(new CM_COV_Object(), new RDDCMReduceFunction(cop));
+			           .fold(new CmCovObject(), new RDDCMReduceFunction(cop));
 		}
 
 		//create scalar output (no lineage information required)
@@ -129,7 +129,7 @@ public class CentralMomentSPInstruction extends UnarySPInstruction {
 		ec.setScalarOutput(output.getName(), new DoubleObject(val));
 	}
 
-	private static class RDDCMFunction implements Function<MatrixBlock, CM_COV_Object> 
+	private static class RDDCMFunction implements Function<MatrixBlock, CmCovObject> 
 	{
 		private static final long serialVersionUID = 2293839116041610644L;
 		
@@ -140,7 +140,7 @@ public class CentralMomentSPInstruction extends UnarySPInstruction {
 		}
 
 		@Override
-		public CM_COV_Object call(MatrixBlock arg0) 
+		public CmCovObject call(MatrixBlock arg0) 
 			throws Exception 
 		{
 			//execute cm operations
@@ -148,7 +148,7 @@ public class CentralMomentSPInstruction extends UnarySPInstruction {
 		}
 	}
 
-	private static class RDDCMWeightsFunction implements Function<Tuple2<MatrixBlock,MatrixBlock>, CM_COV_Object> 
+	private static class RDDCMWeightsFunction implements Function<Tuple2<MatrixBlock,MatrixBlock>, CmCovObject> 
 	{
 		private static final long serialVersionUID = -8949715516574052497L;
 		
@@ -159,7 +159,7 @@ public class CentralMomentSPInstruction extends UnarySPInstruction {
 		}
 
 		@Override
-		public CM_COV_Object call(Tuple2<MatrixBlock,MatrixBlock> arg0) 
+		public CmCovObject call(Tuple2<MatrixBlock,MatrixBlock> arg0) 
 			throws Exception 
 		{
 			MatrixBlock input = arg0._1();
@@ -170,7 +170,7 @@ public class CentralMomentSPInstruction extends UnarySPInstruction {
 		}
 	}
 	
-	private static class RDDCMReduceFunction implements Function2<CM_COV_Object, CM_COV_Object, CM_COV_Object>
+	private static class RDDCMReduceFunction implements Function2<CmCovObject, CmCovObject, CmCovObject>
 	{
 
 		private static final long serialVersionUID = 3272260751983866544L;
@@ -182,7 +182,7 @@ public class CentralMomentSPInstruction extends UnarySPInstruction {
 		}
 
 		@Override
-		public CM_COV_Object call(CM_COV_Object arg0, CM_COV_Object arg1) 
+		public CmCovObject call(CmCovObject arg0, CmCovObject arg1) 
 			throws Exception 
 		{
 			//execute cm combine operations

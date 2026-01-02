@@ -40,7 +40,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.CovarianceCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
@@ -173,7 +173,7 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 		}
 
 		FederationMap fedMapping = mo.getFedMapping();
-		List<CM_COV_Object> globalCmobj = new ArrayList<>();
+		List<CmCovObject> globalCmobj = new ArrayList<>();
 		long varID = FederationUtils.getNextFedDataID();
 		fedMapping.mapParallel(varID, (range, data) -> {
 
@@ -203,7 +203,7 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 				if(!response.isSuccessful())
 					response.throwExceptionFromResponse();
 				synchronized(globalCmobj) {
-					globalCmobj.add((CM_COV_Object) response.getData()[0]);
+					globalCmobj.add((CmCovObject) response.getData()[0]);
 				}
 			}
 			catch(Exception e) {
@@ -212,7 +212,7 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 			return null;
 		});
 
-		Optional<CM_COV_Object> res = globalCmobj.stream().reduce((arg0, arg1) -> (CM_COV_Object) cop.fn.execute(arg0, arg1));
+		Optional<CmCovObject> res = globalCmobj.stream().reduce((arg0, arg1) -> (CmCovObject) cop.fn.execute(arg0, arg1));
 		try {
 			ec.setScalarOutput(output.getName(), new DoubleObject(res.get().getRequiredResult(cop)));
 		}

@@ -23,7 +23,7 @@ import java.util.List;
 
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
@@ -34,7 +34,7 @@ public final class CLALibCMOps {
 		// private constructor
 	}
 
-	public static CM_COV_Object centralMoment(CompressedMatrixBlock cmb, CMOperator op) {
+	public static CmCovObject centralMoment(CompressedMatrixBlock cmb, CMOperator op) {
 		MatrixBlock.checkCMOperations(cmb, op);
 		if(cmb.isEmpty())
 			return LibMatrixAgg.aggregateCmCov(cmb, null, null, op.fn);

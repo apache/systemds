@@ -23,7 +23,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.CentralMomentCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
@@ -73,7 +73,7 @@ public class CentralMomentOOCInstruction extends AggregateUnaryOOCInstruction {
 
 		CMOperator finalCm_op = cm_op;
 
-		OOCStream<CM_COV_Object> cmObjs = createWritableStream();
+		OOCStream<CmCovObject> cmObjs = createWritableStream();
 
 		if(input3 == null) {
 			mapOOC(qIn, cmObjs, tmp -> ((MatrixBlock) tmp.getValue()).cmOperations(new CMOperator(finalCm_op))); // Need to copy CMOperator as its ValueFunction is stateful
@@ -98,11 +98,11 @@ public class CentralMomentOOCInstruction extends AggregateUnaryOOCInstruction {
 		}
 
 		try {
-			CM_COV_Object agg = cmObjs.dequeue();
-			CM_COV_Object next;
+			CmCovObject agg = cmObjs.dequeue();
+			CmCovObject next;
 
 			while ((next = cmObjs.dequeue()) != LocalTaskQueue.NO_MORE_TASKS)
-				agg = (CM_COV_Object) finalCm_op.fn.execute(agg, next);
+				agg = (CmCovObject) finalCm_op.fn.execute(agg, next);
 
 			ec.setScalarOutput(output_name, new DoubleObject(agg.getRequiredResult(finalCm_op)));
 		} catch (Exception ex) {

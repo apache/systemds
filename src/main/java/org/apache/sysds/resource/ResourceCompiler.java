@@ -27,8 +27,31 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
-import org.apache.sysds.parser.*;
-import org.apache.sysds.runtime.controlprogram.*;
+import org.apache.sysds.parser.AssignmentStatement;
+import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.DMLTranslator;
+import org.apache.sysds.parser.DataExpression;
+import org.apache.sysds.parser.Expression;
+import org.apache.sysds.parser.ForStatementBlock;
+import org.apache.sysds.parser.FunctionDictionary;
+import org.apache.sysds.parser.FunctionStatement;
+import org.apache.sysds.parser.FunctionStatementBlock;
+import org.apache.sysds.parser.IfStatementBlock;
+import org.apache.sysds.parser.OutputStatement;
+import org.apache.sysds.parser.ParserFactory;
+import org.apache.sysds.parser.ParserWrapper;
+import org.apache.sysds.parser.Statement;
+import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.parser.StringIdentifier;
+import org.apache.sysds.parser.WhileStatementBlock;
+import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
+import org.apache.sysds.runtime.controlprogram.ForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysds.runtime.controlprogram.IfProgramBlock;
+import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
+import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -42,9 +65,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.apache.sysds.api.DMLScript.*;
 import static org.apache.sysds.parser.DataExpression.IO_FILENAME;
-import static org.apache.sysds.resource.CloudUtils.*;
 
 /**
  * This class does full or partial program recompilation
@@ -69,7 +90,7 @@ public class ResourceCompiler {
 		DMLOptions dmlOptions =DMLOptions.defaultOptions;
 		dmlOptions.argVals = args;
 
-		String dmlScriptStr = readDMLScript(true, filePath);
+		String dmlScriptStr = DMLScript.readDMLScript(true, filePath);
 		Map<String, String> argVals = dmlOptions.argVals;
 
 		ParserWrapper parser = ParserFactory.createParser();
@@ -235,7 +256,7 @@ public class ResourceCompiler {
 	public static void setSingleNodeResourceConfigs(long nodeMemory, int nodeCores) {
 		DMLScript.setGlobalExecMode(Types.ExecMode.SINGLE_NODE);
 		// use 90% of the node's memory for the JVM heap -> rest needed for the OS
-		long effectiveSingleNodeMemory = (long) (nodeMemory * JVM_MEMORY_FACTOR);
+		long effectiveSingleNodeMemory = (long) (nodeMemory * CloudUtils.JVM_MEMORY_FACTOR);
 		// CPU core would be shared with OS -> no further limitation
 		InfrastructureAnalyzer.setLocalMaxMemory(effectiveSingleNodeMemory);
 		InfrastructureAnalyzer.setLocalPar(nodeCores);
@@ -259,9 +280,9 @@ public class ResourceCompiler {
 		// ------------------- CP (driver) configurations -------------------
 		// use at most 90% of the node's memory for the JVM heap -> rest needed for the OS and resource management
 		// adapt the minimum based on the need for YAN RM
-		long effectiveDriverMemory = calculateEffectiveDriverMemoryBudget(driverMemory, numExecutors*executorCores);
+		long effectiveDriverMemory = CloudUtils.calculateEffectiveDriverMemoryBudget(driverMemory, numExecutors*executorCores);
 		// require that always at least half of the memory budget is left for driver memory or 1GB
-		if (effectiveDriverMemory <= GBtoBytes(1)  || driverMemory > 2*effectiveDriverMemory) {
+		if (effectiveDriverMemory <= CloudUtils.GBtoBytes(1)  || driverMemory > 2*effectiveDriverMemory) {
 			throw new IllegalArgumentException("Driver resources are not sufficient to handle the cluster");
 		}
 		// CPU core would be shared -> no further limitation
@@ -279,7 +300,7 @@ public class ResourceCompiler {
 
 		// ------------------ Dynamic Spark Configurations -------------------
 		// calculate the effective resource that would be available for the executor containers in YARN
-		int[] effectiveValues = getEffectiveExecutorResources(executorMemory, executorCores, numExecutors);
+		int[] effectiveValues = CloudUtils.getEffectiveExecutorResources(executorMemory, executorCores, numExecutors);
 		int effectiveExecutorMemory = effectiveValues[0];
 		int effectiveExecutorCores = effectiveValues[1];
 		int effectiveNumExecutor = effectiveValues[2];

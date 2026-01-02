@@ -1,0 +1,108 @@
+source("scripts/builtin/hdbscan.dml") as hdb
+
+#   1 -> 1
+#   2 -> 1
+#   3 -> 2 -> 1
+#   4 -> 4
+
+n = 4
+parent = matrix(0, rows=n, cols=1)
+parent[1] = 1
+parent[2] = 1
+parent[3] = 2
+parent[4] = 4
+
+root1 = hdb::find(parent, 1)
+root2 = hdb::find(parent, 2)
+root3 = hdb::find(parent, 3)
+root4 = hdb::find(parent, 4)
+
+test_find = (root1 == 1) & (root2 == 1) & (root3 == 1) & (root4 == 4)
+
+if(test_find) {
+    print("Passed")
+} else {
+    print("Failed")
+}
+
+# ensure union() attaches lower-rank root under higher-rank root
+# rank[1] < rank[2]  => parent[1] becomes 2
+
+parentA = matrix(0, rows=n, cols=1)
+parentA[1] = 1
+parentA[2] = 2
+parentA[3] = 3
+parentA[4] = 4
+
+rankA = matrix(0, rows=n, cols=1)
+rankA[1] = 0
+rankA[2] = 1
+rankA[3] = 0
+rankA[4] = 0
+
+sizeA = matrix(1, rows=n, cols=1)
+
+[newParentA, newRankA, newSizeA] = hdb::union(parentA, rankA, 1, 2, sizeA)
+test_unionA = (as.scalar(newParentA[1]) == 2) & (as.scalar(newParentA[2]) == 2)
+
+if(test_unionA) {
+    print("Passed")
+} else {
+    print("Failed")
+}
+
+# ensure union() attaches lower-rank root under higher-rank root
+# rank[1] > rank[2]  => parent[2] becomes 1
+
+parentB = matrix(0, rows=n, cols=1)
+parentB[1] = 1
+parentB[2] = 2
+parentB[3] = 3
+parentB[4] = 4
+
+rankB = matrix(0, rows=n, cols=1)
+rankB[1] = 2
+rankB[2] = 1
+rankB[3] = 0
+rankB[4] = 0
+
+sizeB = matrix(1, rows=n, cols=1)
+
+[newParentB, newRankB, newSizeB] = hdb::union(parentB, rankB, 1, 2, sizeB)
+test_unionB = (as.scalar(newParentB[2]) == 1) & (as.scalar(newParentB[1]) == 1)
+
+if(test_unionB) {
+    print("Passed")
+} else {
+    print("Failed")
+}
+
+# ensure union() increments if height is same
+
+parentC = matrix(0, rows=n, cols=1)
+parentC[1] = 1
+parentC[2] = 2
+parentC[3] = 3
+parentC[4] = 4
+
+rankC = matrix(0, rows=n, cols=1)
+rankC[1] = 0
+rankC[2] = 0
+rankC[3] = 0
+rankC[4] = 0
+
+sizeC = matrix(1, rows=n, cols=1)
+
+[newParentC, newRankC, newSizeC] = hdb::union(parentC, rankC, 1, 2, sizeC)
+
+test_unionC_parent = (as.scalar(newParentC[2]) == 1)
+test_unionC_rank = (as.scalar(newRankC[1]) == 1)
+
+test_unionC = test_unionC_parent & test_unionC_rank
+
+if(test_unionC) {
+    print("Passed")
+} else {
+    print("Failed")
+    print(rankC[1])
+}

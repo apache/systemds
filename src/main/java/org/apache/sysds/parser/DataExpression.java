@@ -1019,6 +1019,18 @@ public class DataExpression extends DataIdentifier
 					inferredFormatType = true;
 				}
 			}
+
+			// check if file is HDF5 format (by file extension)
+			if (formatTypeString == null && shouldReadMTD) {
+				formatTypeString = MetaDataAll.checkHasHDF5Format(inputFileName);
+				if (formatTypeString != null) {
+					addVarParam(FORMAT_TYPE, new StringIdentifier(formatTypeString, this));
+					configObj.setFormatTypeString(formatTypeString);
+					inferredFormatType = true;
+					// HDF5 doesn't require metadata file for dimension validation
+					shouldReadMTD = false;
+				}
+			}
 			
 			if (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.MM.toString())){
 				/*

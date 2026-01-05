@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-#
+# 
 #   http://www.apache.org/licenses/LICENSE-2.0
-#
+# 
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -41,14 +41,17 @@ CHUNK_SHAPE <- c(100, 20)
 
 write_matrix <- function(file_path, dataset_name, shape, generator = function(n) rnorm(n)) {
   values <- generator(prod(shape))
-  # Create dataset without compression, filters, or chunking to avoid message type 11 (Filter Pipeline)
-  # filter = "NONE": explicitly disable compression filters
-  # level = 0: no compression
-  # shuffle = FALSE: no shuffle filter
-  # chunk = dims: single chunk matching dataset size (effectively contiguous for small datasets)
-  h5createDataset(file_path, dataset_name, dims = shape, 
-                  filter = "NONE", level = 0, shuffle = FALSE, chunk = shape)
-  h5write(array(values, dim = shape), file_path, dataset_name)
+  h5createDataset(
+    file_path,
+    dataset_name,
+    dims = rev(shape),
+    chunk = NULL,
+    filter = "NONE", # contiguous, uncompressed layout
+    level = 0,
+    shuffle = FALSE,
+    native = TRUE # use R column-major order, same in h5read(..., native=TRUE) in tests.
+  )
+  h5write(array(values, dim = shape), file_path, dataset_name, native = TRUE)
 }
 
 generate_test_file_single_dataset <- function(dir) {
@@ -63,9 +66,8 @@ generate_test_file_multiple_datasets <- function(dir) {
   h5createFile(file_path)
   write_matrix(file_path, "matrix_2d", SMALL_MATRIX_2D)
   # Create 1D vector without compression/filters
-  h5createDataset(file_path, "vector_1d", dims = VECTOR_LENGTH, 
-                  filter = "NONE", level = 0, shuffle = FALSE, chunk = VECTOR_LENGTH)
-  h5write(rnorm(VECTOR_LENGTH), file_path, "vector_1d")
+  h5createDataset(file_path, "vector_1d", dims = VECTOR_LENGTH, chunk = NULL, filter = "NONE", level = 0, shuffle = FALSE)
+  h5write(rnorm(VECTOR_LENGTH), file_path, "vector_1d", native = TRUE)
   write_matrix(file_path, "matrix_3d", SMALL_MATRIX_3D)
   cat("Created test_multiple_datasets.h5 (1D/2D/3D datasets)\n")
 }
@@ -96,10 +98,10 @@ generate_test_file_chunked <- function(dir) {
   h5createFile(file_path)
 
   data <- array(rnorm(prod(SMALL_MATRIX_2D)), dim = SMALL_MATRIX_2D)
-  # Chunked dataset without compression/filters (chunking is intentional for this test)
+  
   h5createDataset(file_path, "chunked_data", dims = SMALL_MATRIX_2D, chunk = CHUNK_SHAPE,
                   filter = "NONE", level = 0, shuffle = FALSE)
-  h5write(data, file_path, "chunked_data")
+  h5write(data, file_path, "chunked_data", native = TRUE)
 
   write_matrix(file_path, "non_chunked_data", SMALL_MATRIX_2D)
   cat("Created test_chunked.h5 (chunked dataset)\n")
@@ -111,10 +113,10 @@ generate_test_file_compressed <- function(dir) {
   data <- array(rnorm(prod(SMALL_MATRIX_2D)), dim = SMALL_MATRIX_2D)
   h5createDataset(file_path, "gzip_compressed_9", dims = SMALL_MATRIX_2D, 
                   chunk = SMALL_MATRIX_2D, level = 9)
-  h5write(data, file_path, "gzip_compressed_9")
+  h5write(data, file_path, "gzip_compressed_9", native = TRUE)
   h5createDataset(file_path, "gzip_compressed_1", dims = SMALL_MATRIX_2D, 
                   chunk = SMALL_MATRIX_2D, level = 1)
-  h5write(data, file_path, "gzip_compressed_1")
+  h5write(data, file_path, "gzip_compressed_1", native = TRUE)
   cat("Created test_compressed.h5 (gzip compression)\n")
 }
 
@@ -175,13 +177,12 @@ generate_test_file_empty_datasets <- function(dir) {
   h5createDataset(file_path, "empty", dims = c(0, SMALL_MATRIX_2D[2]), 
                   filter = "NONE", level = 0, shuffle = FALSE)
 
-  # Create scalar and vector without compression/filters
   h5createDataset(file_path, "scalar", dims = 1, 
                   filter = "NONE", level = 0, shuffle = FALSE, chunk = 1)
-  h5write(1.0, file_path, "scalar")
+  h5write(1.0, file_path, "scalar", native = TRUE)
   h5createDataset(file_path, "vector", dims = VECTOR_LENGTH, 
                   filter = "NONE", level = 0, shuffle = FALSE, chunk = VECTOR_LENGTH)
-  h5write(rnorm(VECTOR_LENGTH), file_path, "vector")
+  h5write(rnorm(VECTOR_LENGTH), file_path, "vector", native = TRUE)
   cat("Created test_empty_datasets.h5 (empty/scalar/vector)\n")
 }
 
@@ -193,14 +194,13 @@ generate_test_file_string_datasets <- function(dir) {
   h5createDataset(file_path, "string_array", dims = STRING_ARRAY_LENGTH, 
                   storage.mode = "character", filter = "NONE", level = 0, 
                   shuffle = FALSE, chunk = STRING_ARRAY_LENGTH)
-  h5write(strings, file_path, "string_array")
+  h5write(strings, file_path, "string_array", native = TRUE)
   cat("Created test_string_datasets.h5 (string datasets)\n")
 }
 
 main <- function() {
-  # Check if working directory is "hdf5". Quit if not.
   if (basename(getwd()) != "hdf5") {
-    cat("You must execute this script from the 'hdf5' directory!\n")
+    cat("You must execute this script from the 'hdf5' directory\n")
     quit(status = 1)
   }
   

@@ -25,7 +25,9 @@ import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.ooc.cache.BlockKey;
+import org.apache.sysds.runtime.ooc.cache.OOCIOHandler;
 import org.apache.sysds.runtime.ooc.cache.OOCCacheManager;
+import org.apache.sysds.runtime.ooc.stream.OOCSourceStream;
 import shaded.parquet.it.unimi.dsi.fastutil.ints.IntArrayList;
 
 import java.util.HashMap;
@@ -89,10 +91,22 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 					if(task != LocalTaskQueue.NO_MORE_TASKS) {
 						if (!_cacheInProgress)
 							throw new DMLRuntimeException("Stream is closed");
-						if (mSubscribers == null || mSubscribers.length == 0)
-							OOCCacheManager.put(_streamId, _numBlocks, task);
-						else
-							mCallback = OOCCacheManager.putAndPin(_streamId, _numBlocks, task);
+						OOCIOHandler.SourceBlockDescriptor descriptor = null;
+						if (_source instanceof OOCSourceStream src) {
+							descriptor = src.getDescriptor(task.getIndexes());
+						}
+						if (descriptor == null) {
+							if (mSubscribers == null || mSubscribers.length == 0)
+								OOCCacheManager.put(_streamId, _numBlocks, task);
+							else
+								mCallback = OOCCacheManager.putAndPin(_streamId, _numBlocks, task);
+						}
+						else {
+							if (mSubscribers == null || mSubscribers.length == 0)
+								OOCCacheManager.putSourceBacked(_streamId, _numBlocks, task, descriptor);
+							else
+								mCallback = OOCCacheManager.putAndPinSourceBacked(_streamId, _numBlocks, task, descriptor);
+						}
 						if (_index != null)
 							_index.put(task.getIndexes(), _numBlocks);
 						blk = _numBlocks;

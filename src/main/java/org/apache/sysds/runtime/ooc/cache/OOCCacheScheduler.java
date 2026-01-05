@@ -57,6 +57,28 @@ public interface OOCCacheScheduler {
 	BlockEntry putAndPin(BlockKey key, Object data, long size);
 
 	/**
+	 * Places a new source-backed block in the cache and registers the location with the IO handler. The entry is
+	 * treated as backed by disk, so eviction does not schedule spill writes.
+	 *
+	 * @param key        the associated key of the block
+	 * @param data       the block data
+	 * @param size       the size of the data
+	 * @param descriptor the source location descriptor
+	 */
+	void putSourceBacked(BlockKey key, Object data, long size, OOCIOHandler.SourceBlockDescriptor descriptor);
+
+	/**
+	 * Places a new source-backed block in the cache and returns a pinned handle.
+	 *
+	 * @param key        the associated key of the block
+	 * @param data       the block data
+	 * @param size       the size of the data
+	 * @param descriptor the source location descriptor
+	 */
+	BlockEntry putAndPinSourceBacked(BlockKey key, Object data, long size,
+		OOCIOHandler.SourceBlockDescriptor descriptor);
+
+	/**
 	 * Forgets a block from the cache.
 	 * @param key the associated key of the block
 	 */

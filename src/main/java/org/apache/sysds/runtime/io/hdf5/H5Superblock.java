@@ -20,8 +20,6 @@
 package org.apache.sysds.runtime.io.hdf5;
 
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -48,47 +46,30 @@ public class H5Superblock {
 	public H5Superblock() {
 	}
 
-	static boolean verifySignature(BufferedInputStream bis, long offset) {
-		// Format Signature
-		byte[] signature = new byte[HDF5_FILE_SIGNATURE_LENGTH];
-
+	static boolean verifySignature(H5ByteReader reader, long offset) {
 		try {
-			bis.reset();
-			bis.skip(offset);
-			bis.read(signature);
+			ByteBuffer signature = reader.read(offset, HDF5_FILE_SIGNATURE_LENGTH);
+			byte[] sigBytes = new byte[HDF5_FILE_SIGNATURE_LENGTH];
+			signature.get(sigBytes);
+			return Arrays.equals(HDF5_FILE_SIGNATURE, sigBytes);
 		}
-		catch(IOException e) {
+		catch(Exception e) {
 			throw new H5RuntimeException("Failed to read from address: " + offset, e);
 		}
-		// Verify signature
-		return Arrays.equals(HDF5_FILE_SIGNATURE, signature);
 	}
 
-	public H5Superblock(BufferedInputStream bis, long address) {
+	public H5Superblock(H5ByteReader reader, long address) {
 
 		// Calculated bytes for the super block header is = 56
 		int superBlockHeaderSize = 12;
 
-		long fileLocation = address + HDF5_FILE_SIGNATURE_LENGTH;
-		address += 12 + HDF5_FILE_SIGNATURE_LENGTH;
-
-		ByteBuffer header = ByteBuffer.allocate(superBlockHeaderSize);
+		long cursor = address + HDF5_FILE_SIGNATURE_LENGTH;
 
 		try {
-			byte[] b = new byte[superBlockHeaderSize];
-			bis.reset();
-			bis.skip((int) fileLocation);
-			bis.read(b);
-			header.put(b);
-		}
-		catch(IOException e) {
-			throw new H5RuntimeException(e);
-		}
-
-		header.order(LITTLE_ENDIAN);
-		header.rewind();
-
-		try {
+			ByteBuffer header = reader.read(cursor, superBlockHeaderSize);
+			header.order(LITTLE_ENDIAN);
+			header.rewind();
+			cursor += superBlockHeaderSize;
 
 			// Version # of Superblock
 			versionOfSuperblock = header.get();
@@ -125,19 +106,13 @@ public class H5Superblock {
 			groupInternalNodeK = Short.toUnsignedInt(header.getShort());
 
 			// File Consistency Flags (skip)
-			address += 4;
+			cursor += 4;
 
 			int nextSectionSize = 4 * sizeOfOffsets;
-			header = ByteBuffer.allocate(nextSectionSize);
-
-			byte[] hb = new byte[nextSectionSize];
-			bis.reset();
-			bis.skip(address);
-			bis.read(hb);
-			header.put(hb);
-			address += nextSectionSize;
+			header = reader.read(cursor, nextSectionSize);
 			header.order(LITTLE_ENDIAN);
 			header.rewind();
+			cursor += nextSectionSize;
 
 			// Base Address
 			baseAddressByte = Utils.readBytesAsUnsignedLong(header, sizeOfOffsets);
@@ -152,7 +127,7 @@ public class H5Superblock {
 			driverInformationBlockAddress = Utils.readBytesAsUnsignedLong(header, sizeOfOffsets);
 
 			// Root Group Symbol Table Entry Address
-			rootGroupSymbolTableAddress = address;
+			rootGroupSymbolTableAddress = cursor;
 		}
 		catch(Exception e) {
 			throw new H5RuntimeException("Failed to read superblock from address " + address, e);

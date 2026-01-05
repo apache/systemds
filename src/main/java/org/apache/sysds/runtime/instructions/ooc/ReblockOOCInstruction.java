@@ -19,24 +19,19 @@
 
 package org.apache.sysds.runtime.instructions.ooc;
 
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.common.Opcodes;
-import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
-import org.apache.sysds.runtime.io.IOUtilFunctions;
-import org.apache.sysds.runtime.io.MatrixReader;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.ooc.cache.OOCCacheManager;
+import org.apache.sysds.runtime.ooc.cache.OOCIOHandler;
+import org.apache.sysds.runtime.ooc.stream.OOCSourceStream;
 
 public class ReblockOOCInstruction extends ComputationOOCInstruction {
 	private int blen;
@@ -74,40 +69,19 @@ public class ReblockOOCInstruction extends ComputationOOCInstruction {
 		//TODO support other formats than binary 
 		
 		//create queue, spawn thread for asynchronous reading, and return
-		OOCStream<IndexedMatrixValue> q = createWritableStream();
-		submitOOCTask(() -> readBinaryBlock(q, min.getFileName()), q);
+		OOCStream<IndexedMatrixValue> q = new OOCSourceStream();
+		OOCIOHandler io = OOCCacheManager.getIOHandler();
+		OOCIOHandler.SourceReadRequest req = new OOCIOHandler.SourceReadRequest(
+			min.getFileName(), Types.FileFormat.BINARY, mc.getRows(), mc.getCols(), blen, mc.getNonZeros(),
+			Long.MAX_VALUE, true, q);
+		io.scheduleSourceRead(req).whenComplete((res, err) -> {
+			if (err != null) {
+				Exception ex = err instanceof Exception ? (Exception) err : new Exception(err);
+				q.propagateFailure(new DMLRuntimeException(ex));
+			}
+		});
 		
 		MatrixObject mout = ec.getMatrixObject(output);
 		mout.setStreamHandle(q);
-	}
-	
-	@SuppressWarnings("resource")
-	private void readBinaryBlock(OOCStream<IndexedMatrixValue> q, String fname) {
-		try {
-			//prepare file access
-			JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());	
-			Path path = new Path( fname ); 
-			FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-			
-			//check existence and non-empty file
-			MatrixReader.checkValidInputFile(fs, path); 
-			
-			//core reading
-			for( Path lpath : IOUtilFunctions.getSequenceFilePaths(fs, path) ) { //1..N files 
-				//directly read from sequence files (individual partfiles)
-				try( SequenceFile.Reader reader = new SequenceFile
-					.Reader(job, SequenceFile.Reader.file(lpath)) )
-				{
-					MatrixIndexes key = new MatrixIndexes();
-					MatrixBlock value = new MatrixBlock();
-					while( reader.next(key, value) )
-						q.enqueue(new IndexedMatrixValue(key, new MatrixBlock(value)));
-				}
-			}
-			q.closeInput();
-		}
-		catch(Exception ex) {
-			throw new DMLRuntimeException(ex);
-		}
 	}
 }

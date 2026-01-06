@@ -238,13 +238,20 @@ public class SparseBlockMCSR extends SparseBlock
 			int alen = size(i);
 			int[] aix = indexes(i);
 			double[] avals = values(i);
-			for (int k = apos + 1; k < apos + alen; k++) {
-				if (aix[k-1] >= aix[k] | aix[k-1] < 0 )
-					throw new RuntimeException("Wrong sparse row ordering, at row="+i+", pos="+k
-						+ " with column indexes " + aix[k-1] + ">=" + aix[k]);
-				if (avals[k] == 0)
-					throw new RuntimeException("The values are expected to be non zeros "
-						+ "but zero at row: "+ i + ", col pos: " + k);
+
+			int prevCol = -1;
+			for (int k = apos; k < apos + alen; k++) {
+				if(aix[k] < 0)
+					throw new RuntimeException(
+						"Invalid index, at column=" + i + ", pos=" + k);
+				if(aix[k] <= prevCol)
+					throw new RuntimeException(
+						"Wrong sparse row ordering, at row=" + i + ", pos=" + k + " with column indexes " +
+							prevCol + ">=" + aix[k]);
+				if(avals[k] == 0)
+					throw new RuntimeException(
+						"The values are expected to be non zeros " + "but zero at column: " + i + ", row pos: " + k);
+				prevCol = aix[k];
 			}
 		}
 

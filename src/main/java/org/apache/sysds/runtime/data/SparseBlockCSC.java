@@ -71,8 +71,8 @@ public class SparseBlockCSC extends SparseBlock {
 		_size = size;
 	}
 
-	public SparseBlockCSC(int[] rowPtr, int[] rowInd, double[] values, int nnz) {
-		_ptr = rowPtr;
+	public SparseBlockCSC(int[] colPtr, int[] rowInd, double[] values, int nnz) {
+		_ptr = colPtr;
 		_indexes = rowInd;
 		_values = values;
 		_size = nnz;
@@ -382,7 +382,7 @@ public class SparseBlockCSC extends SparseBlock {
 		if(_rlen > -1)
 			return _rlen;
 		else {
-			int rlen = Arrays.stream(_indexes).max().getAsInt();
+			int rlen = Arrays.stream(_indexes).max().getAsInt()+1;
 			_rlen = rlen;
 			return rlen;
 		}
@@ -554,8 +554,8 @@ public class SparseBlockCSC extends SparseBlock {
 			throw new RuntimeException("Incorrect array lengths.");
 		}
 
-		//3. non-decreasing row pointers
-		for(int i = 1; i < clen; i++) {
+		//3. non-decreasing col pointers
+		for(int i = 1; i <= clen; i++) {
 			if(_ptr[i - 1] > _ptr[i] && strict)
 				throw new RuntimeException(
 					"Column pointers are decreasing at column: " + i + ", with pointers " + _ptr[i - 1] + " > " +
@@ -569,10 +569,9 @@ public class SparseBlockCSC extends SparseBlock {
 			for(int k = apos + 1; k < apos + alen; k++)
 				if(_indexes[k - 1] >= _indexes[k])
 					throw new RuntimeException(
-						"Wrong sparse column ordering: " + k + " " + _indexes[k - 1] + " " + _indexes[k]);
-			for(int k = apos; k < apos + alen; k++)
-				if(_values[k] == 0)
-					throw new RuntimeException("Wrong sparse column: zero at " + k + " at row index " + _indexes[k]);
+						"Wrong sparse column ordering, at column=" + i + ", pos=" + k + " with row indexes " +
+							_indexes[k - 1] + ">=" + _indexes[k]
+					);
 		}
 
 		//5. non-existing zero values
@@ -585,7 +584,7 @@ public class SparseBlockCSC extends SparseBlock {
 
 		//6. a capacity that is no larger than nnz times resize factor.
 		int capacity = _values.length;
-		if(capacity > nnz * RESIZE_FACTOR1) {
+		if(capacity > INIT_CAPACITY && capacity > nnz * RESIZE_FACTOR1) {
 			throw new RuntimeException(
 				"Capacity is larger than the nnz times a resize factor." + " Current size: " + capacity +
 					", while Expected size:" + nnz * RESIZE_FACTOR1);
@@ -1059,7 +1058,7 @@ public class SparseBlockCSC extends SparseBlock {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("SparseBlockCSR: clen=");
+		sb.append("SparseBlockCSC: clen=");
 		sb.append(numCols());
 		sb.append(", nnz=");
 		sb.append(size());

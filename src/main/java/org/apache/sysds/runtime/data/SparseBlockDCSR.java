@@ -670,7 +670,7 @@ public class SparseBlockDCSR extends SparseBlock
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("SparseBlockCSR: rlen=");
+		sb.append("SparseBlockDCSR: rlen=");
 		sb.append(numRows());
 		sb.append(", nnz=");
 		sb.append(size());
@@ -724,19 +724,14 @@ public class SparseBlockDCSR extends SparseBlock
 		}
 
 		//4. sorted column indexes per row
-		for ( int rowIdx = 0; rowIdx < _rowidx.length; rowIdx++ ) {
-			int apos = _rowidx[rowIdx];
-			int alen = _rowidx[rowIdx+1] - apos;
+		for (int i = 0; i < _rowptr.length-1; i++) {
+			int apos = _rowptr[i];
+			int alen = _rowptr[i+1] - apos;
 
 			for( int k = apos + 1; k < apos + alen; k++)
 				if( _colidx[k-1] >= _colidx[k] )
 					throw new RuntimeException("Wrong sparse row ordering: "
 							+ k + " " + _colidx[k-1] + " " + _colidx[k]);
-
-			for( int k=apos; k<apos+alen; k++ )
-				if( _values[k] == 0 )
-					throw new RuntimeException("Wrong sparse row: zero at "
-							+ k + " at col index " + _colidx[k]);
 		}
 
 		//5. non-existing zero values
@@ -749,7 +744,7 @@ public class SparseBlockDCSR extends SparseBlock
 
 		//6. a capacity that is no larger than nnz times resize factor.
 		int capacity = _values.length;
-		if(capacity > nnz*RESIZE_FACTOR1 ) {
+		if(capacity > INIT_CAPACITY && capacity > nnz*RESIZE_FACTOR1 ) {
 			throw new RuntimeException("Capacity is larger than the nnz times a resize factor."
 					+ " Current size: "+capacity+ ", while Expected size:"+nnz*RESIZE_FACTOR1);
 		}

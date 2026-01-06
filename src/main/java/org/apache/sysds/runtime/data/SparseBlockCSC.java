@@ -64,11 +64,12 @@ public class SparseBlockCSC extends SparseBlock {
 		_size = 0;
 	}
 
-	public SparseBlockCSC(int clen, int capacity, int size) {
+	public SparseBlockCSC(int rlen, int clen, int capacity) {
+		_rlen = rlen;
 		_ptr = new int[clen + 1]; //ix0=0
 		_indexes = new int[capacity];
 		_values = new double[capacity];
-		_size = size;
+		_size = 0;
 	}
 
 	public SparseBlockCSC(int[] colPtr, int[] rowInd, double[] values, int nnz) {
@@ -94,8 +95,9 @@ public class SparseBlockCSC extends SparseBlock {
 
 	private void initialize(SparseBlock sblock) {
 
-		if(_size > Integer.MAX_VALUE)
-			throw new RuntimeException("SparseBlockCSC supports nnz<=Integer.MAX_VALUE but got " + _size);
+		long size = sblock.size();
+		if(size > Integer.MAX_VALUE)
+			throw new RuntimeException("SparseBlockCSC supports nnz<=Integer.MAX_VALUE but got " + size);
 
 		//special case SparseBlockCSC
 		if(sblock instanceof SparseBlockCSC) {
@@ -223,27 +225,6 @@ public class SparseBlockCSC extends SparseBlock {
 
 	}
 
-	public SparseBlockCSC(int cols, int nnz, int[] rowInd) {
-
-		_clenInferred = cols;
-		_ptr = new int[cols + 1];
-		_indexes = Arrays.copyOf(rowInd, nnz);
-		_values = new double[nnz];
-		Arrays.fill(_values, 1);
-		_size = nnz;
-
-		//single-pass construction of col pointers
-		//and copy of row indexes if necessary
-		for(int i = 0, pos = 0; i < cols; i++) {
-			if(rowInd[i] >= 0) {
-				if(cols > nnz)
-					_indexes[pos] = rowInd[i];
-				pos++;
-			}
-			_ptr[i + 1] = pos;
-		}
-	}
-
 	/**
 	 * Initializes the CSC sparse block from an ordered input stream of ultra-sparse ijv triples.
 	 *
@@ -288,7 +269,6 @@ public class SparseBlockCSC extends SparseBlock {
 		// Allocate space if necessary
 		if(_values.length < nnz) {
 			resize(newCapacity(nnz));
-			System.out.println("hallo");
 		}
 		// Read sparse columns, append and update pointers
 		_ptr[0] = 0;

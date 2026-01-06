@@ -69,15 +69,15 @@ public class SparseBlockMCSC extends SparseBlock {
 		else if(sblock instanceof SparseBlockMCSR) {
 			SparseRow[] originalRows = ((SparseBlockMCSR) sblock).getRows();
 			Map<Integer, Integer> columnSizes = new HashMap<>();
-			if(_clenInferred == -1) {
-				for(SparseRow row : originalRows) {
-					if(row != null && !row.isEmpty()) {
-						for(int i = 0; i < row.size(); i++) {
-							int rowIndex = row.indexes()[i];
-							columnSizes.put(rowIndex, columnSizes.getOrDefault(rowIndex, 0) + 1);
-						}
+			for(SparseRow row : originalRows) {
+				if(row != null && !row.isEmpty()) {
+					for(int i = 0; i < row.size(); i++) {
+						int rowIndex = row.indexes()[i];
+						columnSizes.put(rowIndex, columnSizes.getOrDefault(rowIndex, 0) + 1);
 					}
 				}
+			}
+			if(_clenInferred == -1) {
 				clen = columnSizes.keySet().stream().max(Integer::compare).orElseThrow(NoSuchElementException::new);
 				_columns = new SparseRow[clen + 1];
 			}

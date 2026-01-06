@@ -63,17 +63,6 @@ public class SparseBlockDCSR extends SparseBlock
 		_nnzr = 0;
 	}
 
-	public SparseBlockDCSR(int rlen, int capacity, int size, int nnzr){
-		LOG.warn("Allocating a DCSR-block using row-length. This will lead to significant overhead!");
-		_rowidx = new int[rlen];
-		_rowptr = new int[rlen + 1];
-		_colidx = new int[capacity];
-		_values = new double[capacity];
-		_rlen = rlen;
-		_size = size;
-		_nnzr = nnzr;
-	}
-
 	public SparseBlockDCSR(int[] rowIdx, int[] rowPtr, int[] colIdx, double[] values, int rlen, int nnz, int nnzr){
 		LOG.warn("Allocating a DCSR-block using row-length. This will lead to significant overhead!");
 		_rowidx = rowIdx;

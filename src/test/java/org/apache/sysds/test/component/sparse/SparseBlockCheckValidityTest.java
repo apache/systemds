@@ -126,7 +126,7 @@ public class SparseBlockCheckValidityTest extends AutomatedTestBase
 
 	@Test
 	public void testSparseBlockCSCIncorrectArrayLengths() {
-		SparseBlockCSC sblock = new SparseBlockCSC(2, 2, 1);
+		SparseBlockCSC sblock = new SparseBlockCSC(2, 2, 2);
 		// nnz > capacity
 		RuntimeException ex = assertThrows(RuntimeException.class,
 			() -> sblock.checkValidity(2, 3, 6, false));
@@ -532,7 +532,7 @@ public class SparseBlockCheckValidityTest extends AutomatedTestBase
 
 	@Test
 	public void testSparseBlockCSCCapacityExceedsAllowedLimit() {
-		SparseBlockCSC block = new SparseBlockCSC(3, 50, 0);
+		SparseBlockCSC block = new SparseBlockCSC(3, 3, 50);
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
 			() -> block.checkValidity(3, 3, 0, false));

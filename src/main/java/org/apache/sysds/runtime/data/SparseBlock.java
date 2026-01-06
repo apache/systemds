@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.sysds.runtime.matrix.data.IJV;
+import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
  * This SparseBlock is an abstraction for different sparse matrix formats.
@@ -501,16 +502,20 @@ public abstract class SparseBlock implements Serializable, Block
 	}
 	
 	public List<Integer> contains(double[] pattern, boolean earlyAbort) {
+		int nnz = UtilFunctions.computeNnz(pattern, 0, pattern.length);
 		List<Integer> ret = new ArrayList<>();
 		int rlen = numRows();
+
 		for( int i=0; i<rlen; i++ ) {
 			int apos = pos(i);
 			int alen = size(i);
+			if(nnz != alen) continue;
+
 			int[] aix = indexes(i);
 			double[] avals = values(i);
 			boolean lret = true;
 			//safe comparison on long representations, incl NaN
-			for(int k=apos; k<apos+alen & !lret; k++)
+			for(int k=apos; k<apos+alen && lret; k++)
 				lret &= Double.compare(avals[k], pattern[aix[k]]) == 0;
 			if( lret )
 				ret.add(i);
@@ -764,17 +769,31 @@ public abstract class SparseBlock implements Serializable, Block
 		 * values are available.
 		 */
 		private void findNextNonZeroRow(int cl) {
-			while( _curRow<_rlen && (isEmpty(_curRow) 
-				|| (cl>0 && posFIndexGTE(_curRow, cl) < 0)) )
+			while(_curRow < _rlen){
+				if(isEmpty(_curRow)){
+					_curRow++;
+					continue;
+				}
+
+				int pos = (cl == 0)? 0 : posFIndexGTE(_curRow, cl);
+				if(pos < 0){
+					_curRow++;
+					continue;
+				}
+
+				int sizeRow = size(_curRow);
+				int endPos = (_cu == Integer.MAX_VALUE)? sizeRow : posFIndexGTE(_curRow, _cu);
+				if(endPos < 0) endPos = sizeRow;
+
+				if(pos < endPos){
+					_curColIx = pos(_curRow)+pos;
+					_curIndexes = indexes(_curRow);
+					_curValues = values(_curRow);
+					return;
+				}
 				_curRow++;
-			if(_curRow >= _rlen)
-				_noNext = true;
-			else {
-				_curColIx = (cl==0) ? 
-					pos(_curRow) : posFIndexGTE(_curRow, cl);
-				_curIndexes = indexes(_curRow); 
-				_curValues = values(_curRow);
 			}
+			_noNext = true;
 		}
 	}
 	

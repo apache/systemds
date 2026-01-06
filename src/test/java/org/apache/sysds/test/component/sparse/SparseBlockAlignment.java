@@ -276,4 +276,17 @@ public class SparseBlockAlignment extends AutomatedTestBase
 			throw new RuntimeException(ex);
 		}
 	}
+
+	@Test
+	public void testSparseBlockDifferentNumRows()  {
+		double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity3, 1234);
+		MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
+		SparseBlock sblock = mbtmp.getSparseBlock();
+
+		double[][] B = getRandomMatrix(2*rows, cols, -10, 10, sparsity3, 1234);
+		MatrixBlock mbtmp2 = DataConverter.convertToMatrixBlock(B);
+		SparseBlock sblock2 = mbtmp2.getSparseBlock();
+
+		Assert.assertFalse(sblock.isAligned(sblock2));
+	}
 }

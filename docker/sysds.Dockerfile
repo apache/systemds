@@ -51,9 +51,16 @@ RUN mkdir -p /usr/lib/jvm \
 	&& mv apache-maven-$MAVEN_VERSION /usr/lib/mvn
 
 # Build the system
-RUN git clone --depth 1 https://github.com/apache/systemds.git systemds && \
-	cd /usr/src/systemds/ && \
-	mvn --no-transfer-progress clean package -P distribution
+# RUN git clone --depth 1 https://github.com/apache/systemds.git systemds && \
+# 	cd /usr/src/systemds/ && \
+# 	mvn --no-transfer-progress clean package -P distribution
+
+
+# Copy the local SystemDS source into the image
+COPY . /usr/src/systemds
+# Build SystemDS
+RUN cd /usr/src/systemds && \
+    mvn --no-transfer-progress clean package -P distribution
 
 COPY docker/mountFolder/main.dml /input/main.dml
 

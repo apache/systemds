@@ -57,6 +57,14 @@ This commit fixes the following vulnerability identified by docker scout cves: <
 
 ## Docker scout cves
 
+### Usage 
+
+``` sh
+docker scout cves --details --format markdown -o docker/scout_results/sysds_outputX.md --epss apache/systemds
+```
+
+To identify tricky packages, using the json output with `--format sarif` helps by showing the path to the vulnerable package.
+
 <https://docs.docker.com/reference/cli/docker/scout/cves/>
 
 1. build systemds project \
@@ -89,7 +97,20 @@ This commit fixes the following vulnerability identified by docker scout cves: <
 
 </details>
 
+### Solve vulnerabilities
 
+By using the CVE code and reading the description, most vulnerabilities have solutions or workarounds.
+
+#### Upgrading the related package
+
+One way to solve a vulerability is simply to upgrade the package it happens in.
+
+> Sometimes, the package that raised the CVE is not included in the `pom.xml`. This can happen if the package is a dependency of another imported package. \
+> `mvn dependency:tree` (output can be found [here](systemds-3878_summary-of-changes.md#output-of-mvn-dependencytree)) shows all imported packages.
+
+### Inspection commands to find packages
+
+[summary-of-changes.md](systemds-3878_summary-of-changes.md#toolbox)
 
 ### helloworld example
 

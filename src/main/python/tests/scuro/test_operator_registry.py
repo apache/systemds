@@ -21,7 +21,10 @@
 
 import unittest
 
-from systemds.scuro import FrequencyMagnitude
+from systemds.scuro.representations.text_context import (
+    SentenceBoundarySplit,
+    OverlappingSplit,
+)
 from systemds.scuro.representations.covarep_audio_features import (
     ZeroCrossing,
     Spectral,
@@ -124,10 +127,14 @@ class TestOperatorRegistry(unittest.TestCase):
 
     def test_context_operator_in_registry(self):
         registry = Registry()
-        assert registry.get_context_operators() == [
+        assert registry.get_context_operators(ModalityType.TIMESERIES) == [
             WindowAggregation,
             StaticWindow,
             DynamicWindow,
+        ]
+        assert registry.get_context_operators(ModalityType.TEXT) == [
+            SentenceBoundarySplit,
+            OverlappingSplit,
         ]
 
     # def test_fusion_operator_in_registry(self):

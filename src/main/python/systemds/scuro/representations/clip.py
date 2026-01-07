@@ -127,7 +127,12 @@ class CLIPText(UnimodalRepresentation):
             modality, self, self.output_modality_type
         )
 
-        embeddings = self.create_text_embeddings(modality.data, self.model)
+        if isinstance(modality.data[0], list):
+            embeddings = []
+            for d in modality.data:
+                embeddings.append(self.create_text_embeddings(d, self.model))
+        else:
+            embeddings = self.create_text_embeddings(modality.data, self.model)
 
         if self.output_file is not None:
             save_embeddings(embeddings, self.output_file)

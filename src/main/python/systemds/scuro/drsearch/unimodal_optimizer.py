@@ -302,6 +302,39 @@ class UnimodalOptimizer:
         current_node_id = rep_node_id
         dags.append(builder.build(current_node_id))
 
+        if operator.needs_context:
+            context_operators = self._get_context_operators(modality.modality_type)
+            for context_op in context_operators:
+                if operator.initial_context_length is not None:
+                    context_length = operator.initial_context_length
+
+                    context_node_id = builder.create_operation_node(
+                        context_op,
+                        [leaf_id],
+                        context_op(context_length).get_current_parameters(),
+                    )
+                else:
+                    context_node_id = builder.create_operation_node(
+                        context_op,
+                        [leaf_id],
+                        context_op().get_current_parameters(),
+                    )
+
+                context_rep_node_id = builder.create_operation_node(
+                    operator.__class__,
+                    [context_node_id],
+                    operator.get_current_parameters(),
+                )
+
+                agg_operator = AggregatedRepresentation()
+                context_agg_node_id = builder.create_operation_node(
+                    agg_operator.__class__,
+                    [context_rep_node_id],
+                    agg_operator.get_current_parameters(),
+                )
+
+                dags.append(builder.build(context_agg_node_id))
+
         if not operator.self_contained:
             not_self_contained_reps = self._get_not_self_contained_reps(
                 modality.modality_type

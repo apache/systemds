@@ -21,14 +21,13 @@
 
 
 import unittest
-from unittest.mock import patch
-
-from systemds.scuro.drsearch.unimodal_optimizer import UnimodalOptimizer
-from systemds.scuro.drsearch.operator_registry import Registry
 from systemds.scuro.representations.text_context import (
-    WordCountSplit,
     SentenceBoundarySplit,
     OverlappingSplit,
+)
+from systemds.scuro.representations.text_context_with_indices import (
+    SentenceBoundarySplitIndices,
+    OverlappingSplitIndices,
 )
 from tests.scuro.data_generator import (
     ModalityRandomDataGenerator,
@@ -37,9 +36,6 @@ from tests.scuro.data_generator import (
 )
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.modality.type import ModalityType
-from systemds.scuro.representations.word2vec import W2V
-from systemds.scuro.representations.clip import CLIPText
-from systemds.scuro.representations.bert import Bert
 
 
 class TestTextContextOperator(unittest.TestCase):
@@ -60,13 +56,6 @@ class TestTextContextOperator(unittest.TestCase):
         cls.text_modality.extract_raw_data()
         cls.task = TestTask("TextContextTask", "Test1", 10)
 
-    def test_word_count_split(self):
-        word_count_split = WordCountSplit(10)
-        chunks = word_count_split.execute(self.text_modality)
-        for i in range(len(chunks)):
-            for chunk in chunks[i]:
-                assert len(chunk.split(" ")) <= 10
-
     def test_sentence_boundary_split(self):
         sentence_boundary_split = SentenceBoundarySplit(10, min_words=4)
         chunks = sentence_boundary_split.execute(self.text_modality)
@@ -77,7 +66,7 @@ class TestTextContextOperator(unittest.TestCase):
                 )
 
     def test_overlapping_split(self):
-        overlapping_split = OverlappingSplit(40, 2)
+        overlapping_split = OverlappingSplit(40, 0.05)
         chunks = overlapping_split.execute(self.text_modality)
         for i in range(len(chunks)):
             prev_chunk = ""
@@ -89,34 +78,35 @@ class TestTextContextOperator(unittest.TestCase):
                 prev_chunk = chunk
                 assert len(chunk.split(" ")) <= 40
 
-    def test_context_operations_in_optimizer(self):
-        with patch.object(
-            Registry,
-            "_representations",
-            {
-                ModalityType.TEXT: [W2V, Bert, CLIPText],
-            },
-        ):
-            registry = Registry()
-
-            unimodal_optimizer = UnimodalOptimizer(
-                [self.text_modality], [self.task], False
-            )
-            unimodal_optimizer.optimize()
-
-            assert (
-                unimodal_optimizer.operator_performance.modality_ids[0]
-                == self.text_modality.modality_id
-            )
-            assert len(unimodal_optimizer.operator_performance.task_names) == 1
-            assert (
-                len(
-                    unimodal_optimizer.operator_performance.results[0][
-                        self.task.model.name
-                    ]
+    def test_sentence_boundary_split_indices(self):
+        sentence_boundary_split = SentenceBoundarySplitIndices(10, min_words=4)
+        chunks = sentence_boundary_split.execute(self.text_modality)
+        for i in range(0, len(chunks)):
+            for chunk in chunks[i]:
+                text = self.text_modality.data[i][chunk[0] : chunk[1]].split(" ")
+                assert len(text) <= 10 and (
+                    text[-1][-1] == "." or text[-1][-1] == "!" or text[-1][-1] == "?"
                 )
-                == 7
-            )
+
+    def test_overlapping_split_indices(self):
+        overlapping_split = OverlappingSplitIndices(40, 0.1)
+        chunks = overlapping_split.execute(self.text_modality)
+        for i in range(len(chunks)):
+            prev_chunk = (0, 0)
+            for j, chunk in enumerate(chunks[i]):
+                if j > 0:
+                    prev_words = self.text_modality.data[i][
+                        prev_chunk[0] : prev_chunk[1]
+                    ].split(" ")
+                    curr_words = self.text_modality.data[i][chunk[0] : chunk[1]].split(
+                        " "
+                    )
+                    assert prev_words[-4:] == curr_words[:4]
+                prev_chunk = chunk
+                assert (
+                    len(self.text_modality.data[i][chunk[0] : chunk[1]].split(" "))
+                    <= 40
+                )
 
 
 if __name__ == "__main__":

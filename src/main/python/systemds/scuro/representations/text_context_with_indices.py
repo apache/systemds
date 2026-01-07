@@ -25,6 +25,9 @@ from systemds.scuro.drsearch.operator_registry import register_context_operator
 from systemds.scuro.representations.context import Context
 from systemds.scuro.modality.type import ModalityType
 
+# TODO: Use this to get indices for text chunks based on different splitting strategies
+# To use this approach a differnt extration of text chunks is needed in either the TextModality or the Representations
+
 
 def _split_into_words(text: str) -> List[str]:
     """Split text into words, preserving whitespace structure."""
@@ -73,6 +76,65 @@ def _extract_text(instance: Any) -> str:
 
 
 @register_context_operator(ModalityType.TEXT)
+class WordCountSplit(Context):
+    """
+    Splits text after a fixed number of words.
+
+    Parameters:
+        max_words (int): Maximum number of words per chunk (default: 55)
+        overlap (int): Number of overlapping words between chunks (default: 0)
+    """
+
+    def __init__(self, max_words=55, overlap=0):
+        parameters = {
+            "max_words": [40, 50, 55, 60, 70, 250, 300, 350, 400, 450],
+            "overlap": [0, 10, 20, 30],
+        }
+        super().__init__("WordCountSplit", parameters)
+        self.max_words = int(max_words)
+        self.overlap = max(0, int(overlap))
+
+    def execute(self, modality):
+        """
+        Split each text instance into chunks of max_words words.
+
+        Returns:
+            List of tuples, where each tuple contains the start and end index of text chunks
+        """
+        chunked_data = []
+
+        for instance in modality.data:
+            text = _extract_text(instance)
+
+            if not text:
+                chunked_data.append((0, 0))
+                continue
+
+            words = _split_into_words(text)
+
+            if len(words) <= self.max_words:
+                chunked_data.append([(0, len(text))])
+                continue
+
+            chunks = []
+            stride = self.max_words - self.overlap
+
+            start = 0
+            for i in range(0, len(words), stride):
+                chunk_words = words[i : i + self.max_words]
+                chunk_text = " ".join(chunk_words)
+                chunks.append((start, start + len(chunk_text)))
+                start += len(chunk_text) + 1
+
+                if i + self.max_words >= len(words):
+                    break
+
+            chunked_data.append(chunks)
+
+        return chunked_data
+
+
+@register_context_operator(ModalityType.TEXT)
 class SentenceBoundarySplit(Context):
     """
     Splits text at sentence boundaries while respecting maximum word count.
@@ -82,7 +144,7 @@ class SentenceBoundarySplit(Context):
         min_words (int): Minimum number of words per chunk before splitting (default: 10)
     """
 
-    def __init__(self, max_words=55, min_words=10):
+    def __init__(self, max_words=55, min_words=10, overlap=0.1):
         parameters = {
             "max_words": [40, 50, 55, 60, 70, 250, 300, 350, 400, 450],
             "min_words": [10, 20, 30],
@@ -90,6 +152,8 @@ class SentenceBoundarySplit(Context):
         super().__init__("SentenceBoundarySplit", parameters)
         self.max_words = int(max_words)
         self.min_words = max(1, int(min_words))
+        self.overlap = overlap
+        self.stride = max(1, int(max_words * (1 - overlap)))
 
     def execute(self, modality):
         """
@@ -103,51 +167,63 @@ class SentenceBoundarySplit(Context):
         for instance in modality.data:
             text = _extract_text(instance)
             if not text:
-                chunked_data.append([""])
+                chunked_data.append((0, 0))
                 continue
 
             sentences = _split_into_sentences(text)
 
             if not sentences:
-                chunked_data.append([text])
+                chunked_data.append((0, len(text)))
                 continue
 
             chunks = []
-            current_chunk = []
+            current_chunk = None
             current_word_count = 0
-
+            start = 0
             for sentence in sentences:
                 sentence_word_count = _count_words(sentence)
 
                 if sentence_word_count > self.max_words:
                     if current_chunk and current_word_count >= self.min_words:
-                        chunks.append("".join(current_chunk))
+                        chunks.append(current_chunk)
                         current_chunk = []
                         current_word_count = 0
 
                     words = _split_into_words(sentence)
                     for i in range(0, len(words), self.max_words):
                         chunk_words = words[i : i + self.max_words]
-                        chunks.append(" ".join(chunk_words))
+                        current_chunk = (
+                            (start, start + len(" ".join(chunk_words)))
+                            if not current_chunk
+                            else (current_chunk[0], start + len(" ".join(chunk_words)))
+                        )
+                        start += len(" ".join(chunk_words)) + 1
 
                 elif current_word_count + sentence_word_count > self.max_words:
                     if current_chunk and current_word_count >= self.min_words:
-                        chunks.append(" ".join(current_chunk))
-                        current_chunk = [sentence]
+                        chunks.append(current_chunk)
+                        current_chunk = (start, start + len(sentence))
+                        start += len(sentence) + 1
                         current_word_count = sentence_word_count
                     else:
-                        current_chunk.append(sentence)
+                        current_chunk = (current_chunk[0], start + len(sentence))
+                        start += len(sentence) + 1
                         current_word_count += sentence_word_count
                 else:
-                    current_chunk.append(sentence)
+                    current_chunk = (
+                        (start, start + len(sentence))
+                        if not current_chunk
+                        else (current_chunk[0], start + len(sentence))
+                    )
+                    start += len(sentence) + 1
                     current_word_count += sentence_word_count
 
             # Add remaining chunk
             if current_chunk:
-                chunks.append(" ".join(current_chunk))
+                chunks.append(current_chunk)
 
             if not chunks:
-                chunks = [text]
+                chunks = [(0, len(text))]
 
             chunked_data.append(chunks)
 
@@ -161,7 +237,7 @@ class OverlappingSplit(Context):
 
     Parameters:
         max_words (int): Maximum number of words per chunk (default: 55)
-        overlap (float): percentage of overlapping words between chunks (default: 50%)
+        overlap (int): percentage of overlapping words between chunks (default: 50%)
         stride (int, optional): Step size in words. If None, stride = max_words - overlap_words
     """
 
@@ -185,36 +261,39 @@ class OverlappingSplit(Context):
         Split each text instance with overlapping chunks.
 
         Returns:
-            List of lists, where each inner list contains text chunks (strings)
+            List of tuples, where each tuple contains start and end index to the text chunks
         """
         chunked_data = []
 
         for instance in modality.data:
             text = _extract_text(instance)
             if not text:
-                chunked_data.append("")
+                chunked_data.append((0, 0))
                 continue
 
             words = _split_into_words(text)
 
             if len(words) <= self.max_words:
-                chunked_data.append([text])
+                chunked_data.append((0, len(text)))
                 continue
 
             chunks = []
 
             # Create overlapping chunks with specified stride
+            start = 0
             for i in range(0, len(words), self.stride):
                 chunk_words = words[i : i + self.max_words]
                 if chunk_words:
                     chunk_text = " ".join(chunk_words)
-                    chunks.append(chunk_text)
-
+                    chunks.append((start, start + len(chunk_text)))
+                    start += len(chunk_text) - len(
+                        " ".join(chunk_words[self.stride - len(chunk_words) :])
+                    )
                 if i + self.max_words >= len(words):
                     break
 
             if not chunks:
-                chunks = [text]
+                chunks = [(0, len(text))]
 
             chunked_data.append(chunks)
 

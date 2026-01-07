@@ -111,7 +111,12 @@ from systemds.scuro.representations.text_context import (
     SentenceBoundarySplit,
     OverlappingSplit,
 )
+from systemds.scuro.representations.text_context_with_indices import (
+    SentenceBoundarySplitIndices,
+    OverlappingSplitIndices,
+)
 from systemds.scuro.representations.elmo import ELMoRepresentation
+from systemds.scuro.representations.mlp_sampling import MLPSampling
 
 __all__ = [
     "BaseLoader",
@@ -195,4 +200,5 @@ __all__ = [
     "SentenceBoundarySplit",
     "OverlappingSplit",
     "ELMoRepresentation",
+    "MLPSampling",
 ]

@@ -25,6 +25,10 @@ from systemds.scuro.representations.text_context import (
     SentenceBoundarySplit,
     OverlappingSplit,
 )
+from systemds.scuro.representations.text_context_with_indices import (
+    SentenceBoundarySplitIndices,
+    OverlappingSplitIndices,
+)
 from systemds.scuro.representations.covarep_audio_features import (
     ZeroCrossing,
     Spectral,
@@ -135,6 +139,8 @@ class TestOperatorRegistry(unittest.TestCase):
         assert registry.get_context_operators(ModalityType.TEXT) == [
             SentenceBoundarySplit,
             OverlappingSplit,
+            SentenceBoundarySplitIndices,
+            OverlappingSplitIndices,
         ]
 
     # def test_fusion_operator_in_registry(self):

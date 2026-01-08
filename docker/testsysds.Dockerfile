@@ -65,7 +65,10 @@ RUN find /opt/intel/oneapi/mkl/2025.3/lib \( \
     -name 'libmkl_gnu_thread*' -o \
     -name 'libmkl_tbb_thread*' -o \
     -name 'libmkl_sycl*' -o \
-    -name '*_openmpi_*' \
+    -name '*_openmpi_*' -o \
+    -name '*_intelmpi_*' -o \
+    -name 'libmkl_vml*' -o \
+    -name 'libmkl_scalapack*' \
     \) -delete
 
 # Stage 2: Final image with R, JDK, Maven, SEAL, OpenBLAS, MKL
@@ -141,6 +144,7 @@ COPY --from=build /openBLAS-install/include/ /usr/local/include/
 # Copy MKL
 COPY --from=build /opt/intel/oneapi/mkl/2025.3/lib /usr/local/lib/
 COPY --from=build /opt/intel/oneapi/mkl/2025.3/include /usr/local/include/
+COPY --from=build /opt/intel/oneapi/compiler/2025.3/lib/libiomp5.so /usr/local/lib/
 
 ENV LD_LIBRARY_PATH=/opt/hadoop/lib/native;/usr/local/lib/
 

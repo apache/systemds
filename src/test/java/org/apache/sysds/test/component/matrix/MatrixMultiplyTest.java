@@ -27,14 +27,21 @@ import java.util.Collection;
 import java.util.List;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.lang.Math;
+import java.lang.String;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.LibMatrixNative;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysds.utils.NativeHelper;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -266,6 +273,13 @@ public class MatrixMultiplyTest extends AutomatedTestBase{
 
 	private void test(MatrixBlock a, MatrixBlock b) {
 		try {
+			String testname = getTestName() + String.valueOf(Math.random()*5);
+			addTestConfiguration(testname, new TestConfiguration(getTestClassDir(), testname));
+			loadTestConfiguration(getTestConfiguration(testname));
+			DMLConfig conf = new DMLConfig(getCurConfigFile().getPath());
+			ConfigurationManager.setLocalConfig(conf);
+			assertEquals(true, NativeHelper.isNativeLibraryLoaded());
+
 			MatrixBlock ret = multiply(a, b, k);
 
 			boolean sparseLeft = a.isInSparseFormat();
@@ -296,15 +310,15 @@ public class MatrixMultiplyTest extends AutomatedTestBase{
 	}
 
 	private static MatrixBlock multiply(MatrixBlock a, MatrixBlock b, int k) {
-		AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-		AggregateBinaryOperator mult = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg, k);
-		return a.aggregateBinaryOperations(a, b, mult);
-	}
-
-	@Override
-	public void setUp() {
-		TestUtils.clearAssertionInformation();
-		addTestConfiguration(getTestName(), new TestConfiguration(getTestClassDir(), getTestName()));
+		if (NativeHelper.isNativeLibraryLoaded()){
+			MatrixBlock ret = new MatrixBlock();
+			LibMatrixNative.matrixMult(a,b,ret,k);
+			return ret;
+		} else {
+			AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
+			AggregateBinaryOperator mult = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg, k);
+			return a.aggregateBinaryOperations(a, b, mult);
+		}
 	}
 
 	@Override
@@ -312,4 +326,6 @@ public class MatrixMultiplyTest extends AutomatedTestBase{
 		return new File("./src/test/scripts/SystemDS-config-native.xml");
 	}
 
+	@Override
+	public void setUp() {}
 }

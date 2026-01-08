@@ -87,8 +87,9 @@ class UnimodalOptimizer:
         )
 
     @lru_cache(maxsize=32)
-    def _get_context_operators(self):
-        return self.operator_registry.get_context_operators()
+    def _get_context_operators(self, modality_type):
+        return self.operator_registry.get_context_operators(modality_type)
+
 
     def store_results(self, file_name=None):
         if file_name is None:

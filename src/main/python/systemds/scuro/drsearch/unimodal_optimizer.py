@@ -378,7 +378,7 @@ class UnimodalOptimizer:
 
     def default_context_operators(self, modality, builder, leaf_id, current_node_id):
         dags = []
-        context_operators = self._get_context_operators()
+        context_operators = self._get_context_operators(modality.modality_type)
         for context_op in context_operators:
             if (
                 modality.modality_type != ModalityType.TEXT
@@ -402,7 +402,7 @@ class UnimodalOptimizer:
 
     def temporal_context_operators(self, modality, builder, leaf_id, current_node_id):
         aggregators = self.operator_registry.get_representations(modality.modality_type)
-        context_operators = self._get_context_operators()
+        context_operators = self._get_context_operators(modality.modality_type)
 
         dags = []
         for agg in aggregators:

@@ -63,7 +63,7 @@ class Window(Context):
 class WindowAggregation(Window):
     def __init__(self, aggregation_function="mean", window_size=10, pad=False):
         super().__init__("WindowAggregation", aggregation_function)
-        self.parameters["window_size"] = [window_size]
+        self.parameters["window_size"] = [5, 10, 15, 25, 50, 100]
         self.window_size = int(window_size)
         self.pad = pad
 

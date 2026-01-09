@@ -57,10 +57,7 @@ def _evaluate_dag_worker(dag_pickle, task_pickle, modalities_pickle, debug=False
                 f"[DEBUG][worker] pid={os.getpid()} evaluating dag_root={getattr(dag, 'root_node_id', None)} task={getattr(task.model, 'name', None)}"
             )
 
-        dag_copy = copy.deepcopy(dag)
-        task_copy = copy.deepcopy(task)
-
-        fused_representation = dag_copy.execute(modalities_for_dag, task_copy)
+        fused_representation = dag.execute(modalities_for_dag, task)
         if fused_representation is None:
             return None
 
@@ -73,22 +70,22 @@ def _evaluate_dag_worker(dag_pickle, task_pickle, modalities_pickle, debug=False
         )
         from systemds.scuro.representations.aggregate import Aggregation
 
-        if task_copy.expected_dim == 1 and get_shape(final_representation.metadata) > 1:
+        if task.expected_dim == 1 and get_shape(final_representation.metadata) > 1:
             agg_operator = AggregatedRepresentation(Aggregation())
             final_representation = agg_operator.transform(final_representation)
 
         eval_start = time.time()
-        scores = task_copy.run(final_representation.data)
+        scores = task.run(final_representation.data)
         eval_time = time.time() - eval_start
         total_time = time.time() - start_time
 
         return OptimizationResult(
-            dag=dag_copy,
+            dag=dag,
             train_score=scores[0].average_scores,
             val_score=scores[1].average_scores,
             test_score=scores[2].average_scores,
             runtime=total_time,
-            task_name=task_copy.model.name,
+            task_name=task.model.name,
             task_time=eval_time,
             representation_time=total_time - eval_time,
         )
@@ -354,21 +351,14 @@ class MultimodalOptimizer:
     def _evaluate_dag(self, dag: RepresentationDag, task: Task) -> "OptimizationResult":
         start_time = time.time()
         try:
-            tid = threading.get_ident()
-            tname = threading.current_thread().name
 
-            dag_copy = copy.deepcopy(dag)
-            modalities_for_dag = copy.deepcopy(
+            fused_representation = dag.execute(
                 list(
                     chain.from_iterable(
                         self.k_best_representations[task.model.name].values()
                     )
-                )
-            )
-            task_copy = copy.deepcopy(task)
-            fused_representation = dag_copy.execute(
-                modalities_for_dag,
-                task_copy,
+                ),
+                task,
             )
 
             torch.cuda.empty_cache()
@@ -379,27 +369,24 @@ class MultimodalOptimizer:
             final_representation = fused_representation[
                 list(fused_representation.keys())[-1]
             ]
-            if (
-                task_copy.expected_dim == 1
-                and get_shape(final_representation.metadata) > 1
-            ):
+            if task.expected_dim == 1 and get_shape(final_representation.metadata) > 1:
                 agg_operator = AggregatedRepresentation(Aggregation())
                 final_representation = agg_operator.transform(final_representation)
 
             eval_start = time.time()
-            scores = task_copy.run(final_representation.data)
+            scores = task.run(final_representation.data)
             eval_time = time.time() - eval_start
 
             total_time = time.time() - start_time
 
             return OptimizationResult(
-                dag=dag_copy,
+                dag=dag,
                 train_score=scores[0].average_scores,
                 val_score=scores[1].average_scores,
                 test_score=scores[2].average_scores,
                 runtime=total_time,
                 representation_time=total_time - eval_time,
-                task_name=task_copy.model.name,
+                task_name=task.model.name,
                 task_time=eval_time,
             )
 

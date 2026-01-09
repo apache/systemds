@@ -66,6 +66,7 @@ class ModalityRandomDataGenerator:
         self.modality_type = None
         self.metadata = {}
         self.data_type = np.float32
+        self.transform_time = None
 
     def create1DModality(
         self,

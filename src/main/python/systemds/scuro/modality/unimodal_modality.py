@@ -95,7 +95,7 @@ class UnimodalModality(Modality):
         transformed_modality = TransformedModality(self, context_operator)
 
         transformed_modality.data = context_operator.execute(self)
-        transformed_modality.transform_time = time.time() - start
+        transformed_modality.transform_time += time.time() - start
         return transformed_modality
 
     def aggregate(self, aggregation_function):
@@ -191,6 +191,6 @@ class UnimodalModality(Modality):
             )
             new_modality.data = padded_embeddings
         new_modality.update_metadata()
-        new_modality.transform_time = time.time() - start
+        new_modality.transform_time += time.time() - start
         new_modality.self_contained = representation.self_contained
         return new_modality

@@ -22,6 +22,8 @@ import copy
 from typing import List
 
 import numpy as np
+
+from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
@@ -44,6 +46,7 @@ class Fusion(Representation):
         self.needs_alignment = False
         self.needs_training = False
         self.needs_instance_alignment = False
+        self.output_modality_type = ModalityType.EMBEDDING
 
     def transform(self, modalities: List[Modality]):
         """

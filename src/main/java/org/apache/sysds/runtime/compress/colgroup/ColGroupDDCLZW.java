@@ -114,8 +114,10 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
             dataIntVals[i] = data.getIndex(i);
         }
 
+        // TODO: Dictionary befüllen mit uniquen values.
+
         // LZW dictionary. Maps (prefixCode, nextSymbol) to a new code.
-        // Using fastutil keeps lookups fast.
+        // Using fastutil keeps lookups fast. (TODO Dictionary)
         final Long2IntLinkedOpenHashMap dict = new Long2IntLinkedOpenHashMap(1 << 16);
         dict.defaultReturnValue(-1);
 

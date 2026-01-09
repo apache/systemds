@@ -71,7 +71,7 @@ class Aggregation:
         max_len = 0
         for i, instance in enumerate(modality.data):
             data.append([])
-            if isinstance(instance, np.ndarray):
+            if isinstance(instance, np.ndarray) or isinstance(instance, list):
                 if (
                     modality.modality_type == ModalityType.IMAGE
                     or modality.modality_type == ModalityType.VIDEO

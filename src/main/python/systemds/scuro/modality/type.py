@@ -108,8 +108,12 @@ class ModalitySchemas:
                 shape = data.shape
         elif data_layout is DataLayout.NESTED_LEVEL:
             if data_is_single_instance:
-                dtype = data.dtype
-                shape = data.shape
+                if isinstance(data, list):
+                    dtype = type(data[0])
+                    shape = (len(data), len(data[0]))
+                else:
+                    dtype = data.dtype
+                    shape = data.shape
             else:
                 shape = data[0].shape
                 dtype = data[0].dtype
@@ -306,13 +310,15 @@ class DataLayout(Enum):
             return None
 
         if data_is_single_instance:
-            if (
-                isinstance(data, list)
-                or isinstance(data, np.ndarray)
-                and data.ndim == 1
+            if (isinstance(data, list) and not isinstance(data[0], str)) or (
+                isinstance(data, np.ndarray) and data.ndim == 1
             ):
                 return DataLayout.SINGLE_LEVEL
-            elif isinstance(data, np.ndarray) or isinstance(data, torch.Tensor):
+            elif (
+                isinstance(data, list)
+                or isinstance(data, np.ndarray)
+                or isinstance(data, torch.Tensor)
+            ):
                 return DataLayout.NESTED_LEVEL
 
         if isinstance(data[0], list):

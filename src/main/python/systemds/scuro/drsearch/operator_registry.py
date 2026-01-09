@@ -33,8 +33,10 @@ class Registry:
 
     _instance = None
     _representations = {}
-    _context_operators = []
+    _context_operators = {}
     _fusion_operators = []
+    _text_context_operators = []
+    _video_context_operators = []
 
     def __new__(cls):
         if not cls._instance:
@@ -60,8 +62,13 @@ class Registry:
     ):
         self._representations[modality].append(representation)
 
-    def add_context_operator(self, context_operator):
-        self._context_operators.append(context_operator)
+    def add_context_operator(self, context_operator, modality_type):
+        if not isinstance(modality_type, list):
+            modality_type = [modality_type]
+        for m_type in modality_type:
+            if not m_type in self._context_operators.keys():
+                self._context_operators[m_type] = []
+            self._context_operators[m_type].append(context_operator)
 
     def add_fusion_operator(self, fusion_operator):
         self._fusion_operators.append(fusion_operator)
@@ -76,9 +83,8 @@ class Registry:
                 reps.append(rep)
         return reps
 
-    def get_context_operators(self):
-        # TODO: return modality specific context operations
-        return self._context_operators
+    def get_context_operators(self, modality_type):
+        return self._context_operators[modality_type]
 
     def get_fusion_operators(self):
         return self._fusion_operators
@@ -121,13 +127,15 @@ def register_representation(modalities: Union[ModalityType, List[ModalityType]])
     return decorator
 
 
-def register_context_operator():
+def register_context_operator(modality_type):
     """
     Decorator to register a context operator.
+
+    @param modality_type: The modality type for which the context operator is to be registered
     """
 
     def decorator(cls):
-        Registry().add_context_operator(cls)
+        Registry().add_context_operator(cls, modality_type)
         return cls
 
     return decorator

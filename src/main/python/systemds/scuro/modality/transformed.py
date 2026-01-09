@@ -18,8 +18,6 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from functools import reduce
-from operator import or_
 from typing import Union, List
 
 from systemds.scuro.modality.type import ModalityType

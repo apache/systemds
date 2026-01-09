@@ -18,8 +18,10 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import zipfile
 import numpy as np
 from gensim.utils import tokenize
+from huggingface_hub import hf_hub_download
 
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
@@ -39,11 +41,17 @@ def load_glove_embeddings(file_path):
     return embeddings
 
 
-# @register_representation(ModalityType.TEXT)
+@register_representation(ModalityType.TEXT)
 class GloVe(UnimodalRepresentation):
-    def __init__(self, glove_path, output_file=None):
+    def __init__(self, output_file=None):
         super().__init__("GloVe", ModalityType.TEXT)
-        self.glove_path = glove_path
+        file_path = hf_hub_download(
+            repo_id="stanfordnlp/glove", filename="glove.6B.zip"
+        )
+        with zipfile.ZipFile(file_path, "r") as zip_ref:
+            zip_ref.extractall("./glove_extracted")
+
+        self.glove_path = "./glove_extracted/glove.6B.100d.txt"
         self.output_file = output_file
 
     def transform(self, modality):
@@ -67,6 +75,5 @@ class GloVe(UnimodalRepresentation):
         if self.output_file is not None:
             save_embeddings(np.array(embeddings), self.output_file)
 
-        transformed_modality.data_type = np.float32
         transformed_modality.data = np.array(embeddings)
         return transformed_modality

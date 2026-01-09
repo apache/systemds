@@ -43,7 +43,11 @@ class TransformedModality(Modality):
 
         metadata = modality.metadata.copy() if modality.metadata is not None else None
         super().__init__(
-            new_modality_type, modality.modality_id, metadata, modality.data_type
+            new_modality_type,
+            modality.modality_id,
+            metadata,
+            modality.data_type,
+            modality.transform_time,
         )
         self.transformation = None
         self.self_contained = (
@@ -106,7 +110,7 @@ class TransformedModality(Modality):
         )
         start = time.time()
         transformed_modality.data = w.execute(self)
-        transformed_modality.transform_time = time.time() - start
+        transformed_modality.transform_time += time.time() - start
         return transformed_modality
 
     def context(self, context_operator):
@@ -115,14 +119,14 @@ class TransformedModality(Modality):
         )
         start = time.time()
         transformed_modality.data = context_operator.execute(self)
-        transformed_modality.transform_time = time.time() - start
+        transformed_modality.transform_time += time.time() - start
         return transformed_modality
 
     def apply_representation(self, representation):
         start = time.time()
         new_modality = representation.transform(self)
         new_modality.update_metadata()
-        new_modality.transform_time = time.time() - start
+        new_modality.transform_time += time.time() - start
         new_modality.self_contained = representation.self_contained
         return new_modality
 

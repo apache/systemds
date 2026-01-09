@@ -18,11 +18,9 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from copy import deepcopy
 from typing import List
 
 import numpy as np
-from numpy.f2py.auxfuncs import throw_error
 
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations import utils
@@ -31,7 +29,12 @@ from systemds.scuro.representations import utils
 class Modality:
 
     def __init__(
-        self, modalityType: ModalityType, modality_id=-1, metadata={}, data_type=None
+        self,
+        modalityType: ModalityType,
+        modality_id=-1,
+        metadata={},
+        data_type=None,
+        transform_time=0,
     ):
         """
         Parent class of the different Modalities (unimodal & multimodal)
@@ -45,7 +48,7 @@ class Modality:
         self.cost = None
         self.shape = None
         self.modality_id = modality_id
-        self.transform_time = None
+        self.transform_time = transform_time
 
     @property
     def data(self):

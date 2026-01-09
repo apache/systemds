@@ -25,7 +25,7 @@ from dataclasses import dataclass
 import multiprocessing as mp
 from typing import List, Any
 from functools import lru_cache
-
+from systemds.scuro.drsearch.task import Task
 from systemds.scuro import ModalityType
 from systemds.scuro.drsearch.ranking import rank_by_tradeoff
 from systemds.scuro.drsearch.task import PerformanceMeasure
@@ -46,6 +46,7 @@ from systemds.scuro.drsearch.representation_dag import (
     RepresentationDAGBuilder,
 )
 from systemds.scuro.drsearch.representation_dag_visualizer import visualize_dag
+from systemds.scuro.drsearch.representation_dag import LRUCache
 
 
 class UnimodalOptimizer:
@@ -54,6 +55,7 @@ class UnimodalOptimizer:
     ):
         self.modalities = modalities
         self.tasks = tasks
+        self.modality_ids = [modality.modality_id for modality in modalities]
         self.save_all_results = save_all_results
         self.result_path = result_path
 
@@ -177,24 +179,27 @@ class UnimodalOptimizer:
         modality_specific_operators = self._get_modality_operators(
             modality.modality_type
         )
-
+        dags = []
         for operator in modality_specific_operators:
-            dags = self._build_modality_dag(modality, operator())
+            dags.extend(self._build_modality_dag(modality, operator()))
 
-            for dag in dags:
-                representations = dag.execute([modality])
-                node_id = list(representations.keys())[-1]
-                node = dag.get_node_by_id(node_id)
-                if node.operation is None:
-                    continue
+        external_cache = LRUCache(max_size=32)
+        for dag in dags:
+            representations = dag.execute(
+                [modality], task=self.tasks[0], external_cache=external_cache
+            )  # TODO: dynamic task selection
+            node_id = list(representations.keys())[-1]
+            node = dag.get_node_by_id(node_id)
+            if node.operation is None:
+                continue
 
-                reps = self._get_representation_chain(node, dag)
-                combination = next((op for op in reps if isinstance(op, Fusion)), None)
-                self._evaluate_local(
-                    representations[node_id], local_results, dag, combination
-                )
-                if self.debug:
-                    visualize_dag(dag)
+            reps = self._get_representation_chain(node, dag)
+            combination = next((op for op in reps if isinstance(op, Fusion)), None)
+            self._evaluate_local(
+                representations[node_id], local_results, dag, combination
+            )
+            if self.debug:
+                visualize_dag(dag)
 
         if self.save_all_results:
             timestr = time.strftime("%Y%m%d-%H%M%S")
@@ -242,15 +247,21 @@ class UnimodalOptimizer:
                     agg_operator.get_current_parameters(),
                 )
                 dag = builder.build(rep_node_id)
-                representations = dag.execute([modality])
-                node_id = list(representations.keys())[-1]
+
+                aggregated_modality = agg_operator.transform(modality)
+
                 for task in self.tasks:
                     start = time.perf_counter()
-                    scores = task.run(representations[node_id].data)
+                    scores = task.run(aggregated_modality.data)
                     end = time.perf_counter()
 
                     local_results.add_result(
-                        scores, modality, task.model.name, end - start, combination, dag
+                        scores,
+                        aggregated_modality,
+                        task.model.name,
+                        end - start,
+                        combination,
+                        dag,
                     )
             else:
                 modality.pad()
@@ -272,7 +283,10 @@ class UnimodalOptimizer:
                         agg_operator.get_current_parameters(),
                     )
                     dag = builder.build(rep_node_id)
+                    start_rep = time.perf_counter()
                     representations = dag.execute([modality])
+                    end_rep = time.perf_counter()
+                    modality.transform_time += end_rep - start_rep
                     node_id = list(representations.keys())[-1]
 
                     start = time.perf_counter()
@@ -458,7 +472,9 @@ class UnimodalResults:
                 for entry in self.results[modality][task_name]:
                     print(f"{modality}_{task_name}: {entry}")
 
-    def get_k_best_results(self, modality, k, task, performance_metric_name):
+    def get_k_best_results(
+        self, modality, k, task, performance_metric_name, prune_cache=False
+    ):
         """
         Get the k best results for the given modality
         :param modality: modality to get the best results for
@@ -487,6 +503,21 @@ class UnimodalResults:
         else:
             cache_items = list(task_cache.items()) if task_cache else []
             cache = [cache_items[i][1] for i in sorted_indices if i < len(cache_items)]
+
+        if prune_cache:
+            # Note: in case the unimodal results are loaded from a file, we need to initialize the cache for the modality and task
+            if modality.modality_id not in self.operator_performance.cache:
+                self.operator_performance.cache[modality.modality_id] = {}
+            if (
+                task.model.name
+                not in self.operator_performance.cache[modality.modality_id]
+            ):
+                self.operator_performance.cache[modality.modality_id][
+                    task.model.name
+                ] = {}
+            self.operator_performance.cache[modality.modality_id][
+                task.model.name
+            ] = cache
 
         return results, cache
 

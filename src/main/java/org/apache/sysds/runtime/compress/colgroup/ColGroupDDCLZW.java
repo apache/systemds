@@ -70,6 +70,9 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.jboss.netty.handler.codec.compression.CompressionException;
 import shaded.parquet.it.unimi.dsi.fastutil.ints.IntArrayList;
 import shaded.parquet.it.unimi.dsi.fastutil.longs.Long2IntLinkedOpenHashMap;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Stack;
 
 /**
  * Class to encapsulate information about a column group that is encoded with dense dictionary encoding (DDC) whose
@@ -114,6 +117,10 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
             dataIntVals[i] = data.getIndex(i);
         }
 
+        // Output buffer.
+        IntArrayList out = new IntArrayList();
+        out.add(nUnique);
+
         // TODO: Dictionary befüllen mit uniquen values.
 
         // LZW dictionary. Maps (prefixCode, nextSymbol) to a new code.
@@ -121,11 +128,25 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
         final Long2IntLinkedOpenHashMap dict = new Long2IntLinkedOpenHashMap(1 << 16);
         dict.defaultReturnValue(-1);
 
+        // Befüllen des Dictionary
+        // Abspeichern der Symbole im Output stream
+        int index = 0;
+        for (int i = 0; i < nRows; i++) {
+            if (index == nUnique){
+                break;
+            }
+            int ct = dict.get(dataIntVals[i]);
+            if  (ct == -1) {
+                dict.put(dataIntVals[i], index++);
+                out.add(dataIntVals[i]);
+            }
+        }
+        if (index != nUnique) {
+            throw new IllegalArgumentException("Not enough symbols found for number of unique values");
+        }
+
         // Codes {0,...,nUnique - 1} are reserved for the original symbols.
         int nextCode = nUnique;
-
-        // Output buffer.
-        IntArrayList out = new IntArrayList();
 
         // Initialize w with the first input symbol.
         int w = data.getIndex(0);
@@ -150,10 +171,108 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
         return out.toIntArray();
     }
 
+    private static int unpackfirst(long key){
+        return (int)(key >>> 32);
+    }
+
+    private static int unpacksecond(long key){
+        return (int)(key);
+    }
+
     // Decompresses an LZW-compressed vector into its pre-compressed AMapToData form. (TODO)
-    private AMapToData decompress(int[] _dataLZW) {
-        AMapToData d = null;
-        return null;
+    private static int[] packint(int[] arr, int last){
+        int[] result = Arrays.copyOf(arr, arr.length+1);
+        result[arr.length] = last;
+        return result;
+    }
+
+    private static int[] unpack(int code, int alphabetSize, Map<Integer, Long> dict) {
+
+        Stack<Integer> stack = new Stack<>();
+
+        int c = code;
+
+        while (c >= alphabetSize) {
+            long key = dict.get(c);
+            int symbol = unpacksecond(key);
+            stack.push(symbol);
+            c = unpackfirst(key);
+        }
+
+        // Basissymbol
+        stack.push(c);
+        int [] outarray = new int[stack.size()];
+        int i = 0;
+        // korrekt ins Output schreiben
+        while (!stack.isEmpty()) {
+            outarray[i++] = stack.pop();
+        }
+        return outarray;
+    }
+
+    private static void addtoOutput(IntArrayList outarray, int[] code) {
+        for (int i = 0; i < code.length; i++) {
+            outarray.add(code[i]);
+        }
+    }
+
+    private static IntArrayList decompress(int[] code) { //TODO: return AMapToData
+
+        Map<Integer, Long> dict = new HashMap<>();
+
+        //HashMap<Integer, int[]> dict = new HashMap<>();
+        int alphabetSize = code[0];
+        //int nextCode = 0;
+
+
+        // Fill dictionary with values 0-255
+        for (int i = 0; i < alphabetSize; i++) {
+            //dict.put(i, new int[]{code[1+i]}); // TODO: Automatisch Zahl nehmen, wenn < AlphabetSize?
+            //_dict.put(List.of(i), nextCode++);
+            dict.put(i, packKey(-1, code[i]));
+        }
+
+        // Result der Decompression
+        IntArrayList o = new IntArrayList();
+        //List<Integer> o = new ArrayList<>();
+
+        int old = code[1+alphabetSize];
+        //long next = dict.get(old);
+        int[] next = unpack(old, alphabetSize, dict);
+        addtoOutput(o, next);
+        int c = next[0];
+
+
+        for (int i = alphabetSize+2; i < code.length; i++) {
+            int key = code[i];
+            if (! dict.containsKey(key)) {
+                int[] oldnext = unpack(old, alphabetSize, dict);
+                int first = oldnext[0];
+                next = packint(oldnext, first);
+            } else {
+                next = unpack(key, alphabetSize, dict);
+            }
+            for (int inh : next){ // TODO: extra Methode
+                o.add(inh);
+            }
+            int first = next[0];
+            long s = packKey(old, first);
+            dict.put(alphabetSize+i, s); // count statt alphabet
+            //count++;
+            old = key;
+        }
+        return o;
+   /*AMapToData d = _data;
+   if (d == null) {
+       synchronized (this) {
+           d = _data;
+           if (d == null) {
+               d = decode(_dataLZW, _nRows, _nUnique);
+               _data = d;
+           }
+       }
+   }*/
+        //return null;
     }
 
 
@@ -225,3 +344,4 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
      *  suitable for sequential and which arent. those who arent then we shall materialize and fall back to ddc
      * */
 }
+

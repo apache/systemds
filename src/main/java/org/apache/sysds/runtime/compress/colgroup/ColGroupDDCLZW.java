@@ -121,7 +121,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
         IntArrayList out = new IntArrayList();
         out.add(nUnique);
 
-        // TODO: Dictionary befüllen mit uniquen values.
 
         // LZW dictionary. Maps (prefixCode, nextSymbol) to a new code.
         // Using fastutil keeps lookups fast. (TODO Dictionary)
@@ -217,27 +216,23 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
     }
 
     private static IntArrayList decompress(int[] code) { //TODO: return AMapToData
-
+        // Dictionary
         Map<Integer, Long> dict = new HashMap<>();
 
-        //HashMap<Integer, int[]> dict = new HashMap<>();
+        // Extract alphabet size
         int alphabetSize = code[0];
-        //int nextCode = 0;
 
 
-        // Fill dictionary with values 0-255
+        // Dictionary Initalisierung
         for (int i = 0; i < alphabetSize; i++) {
-            //dict.put(i, new int[]{code[1+i]}); // TODO: Automatisch Zahl nehmen, wenn < AlphabetSize?
-            //_dict.put(List.of(i), nextCode++);
             dict.put(i, packKey(-1, code[i]));
         }
 
         // Result der Decompression
         IntArrayList o = new IntArrayList();
-        //List<Integer> o = new ArrayList<>();
 
+        // Decompression
         int old = code[1+alphabetSize];
-        //long next = dict.get(old);
         int[] next = unpack(old, alphabetSize, dict);
         addtoOutput(o, next);
         int c = next[0];
@@ -252,27 +247,15 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
             } else {
                 next = unpack(key, alphabetSize, dict);
             }
-            for (int inh : next){ // TODO: extra Methode
+            for (int inh : next){ // TODO: effizienz
                 o.add(inh);
             }
             int first = next[0];
             long s = packKey(old, first);
-            dict.put(alphabetSize+i, s); // count statt alphabet
-            //count++;
+            dict.put(alphabetSize+i, s);
             old = key;
         }
         return o;
-   /*AMapToData d = _data;
-   if (d == null) {
-       synchronized (this) {
-           d = _data;
-           if (d == null) {
-               d = decode(_dataLZW, _nRows, _nUnique);
-               _data = d;
-           }
-       }
-   }*/
-        //return null;
     }
 
 

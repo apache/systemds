@@ -111,38 +111,18 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
             throw new IllegalArgumentException("Invalid input: data has no unique values");
         }
 
-        // Extract _data values as int array.
-        final int[] dataIntVals = new int[nRows];
-        for (int i = 0; i < nRows; i++) {
-            dataIntVals[i] = data.getIndex(i);
-        }
-
-        // Output buffer.
-        IntArrayList out = new IntArrayList();
-        out.add(nUnique);
+        // Fast-path: single symbol
+        if (nRows == 1)
+            return new int[]{data.getIndex(0)};
 
 
-        // LZW dictionary. Maps (prefixCode, nextSymbol) to a new code.
+        // LZW dictionary. Maps (prefixCode, nextSymbol) -> newCode (to a new code).
         // Using fastutil keeps lookups fast. (TODO Dictionary)
         final Long2IntLinkedOpenHashMap dict = new Long2IntLinkedOpenHashMap(1 << 16);
         dict.defaultReturnValue(-1);
 
-        // Befüllen des Dictionary
-        // Abspeichern der Symbole im Output stream
-        int index = 0;
-        for (int i = 0; i < nRows; i++) {
-            if (index == nUnique){
-                break;
-            }
-            int ct = dict.get(dataIntVals[i]);
-            if  (ct == -1) {
-                dict.put(dataIntVals[i], index++);
-                out.add(dataIntVals[i]);
-            }
-        }
-        if (index != nUnique) {
-            throw new IllegalArgumentException("Not enough symbols found for number of unique values");
-        }
+        // Output buffer (heuristic capacity; avoids frequent reallocs)
+        final IntArrayList out = new IntArrayList(Math.max(16, nRows / 2));
 
         // Codes {0,...,nUnique - 1} are reserved for the original symbols.
         int nextCode = nUnique;
@@ -151,15 +131,16 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
         int w = data.getIndex(0);
 
         // Process the remaining input symbols.
+        // Example: _data = [2,0,2,3,0,2,1,0,2].
         for (int i = 1; i < nRows; i++) {
-            int k = data.getIndex(i); // next input symbol
-            long key = packKey(w, k); // encode (w,k) into long key
+            final int k = data.getIndex(i); // next input symbol
+            final long key = packKey(w, k); // encode (w,k) into long key
 
             int wk = dict.get(key); // look if wk exists in dict
             if (wk != -1) {
                 w = wk; // wk exists in dict so replace w by wk and continue.
             } else {
-                // wk does not exist in dict.
+                // wk does not exist in dict. output current phrase, add new phrase, restart at k
                 out.add(w);
                 dict.put(key, nextCode++);
                 w = k; // Start new phrase with k
@@ -169,6 +150,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
         out.add(w);
         return out.toIntArray();
     }
+
 
     private static int unpackfirst(long key){
         return (int)(key >>> 32);

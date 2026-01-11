@@ -54,6 +54,8 @@
 		<log4j.version>2.22.1</log4j.version>
 		<!-- Security fix: CVE-2024-47561 - pin avro to 1.11.4 -->
 		<avro.version>1.11.4</avro.version>
+		<!-- Security fix: CVE-2023-25613 - pin kerby to 2.0.3 -->
+		<kerby.version>2.0.3</kerby.version>
 		<maven-clean-plugin.version>3.2.0</maven-clean-plugin.version>
 		<maven-surefire-plugin.version>3.0.0</maven-surefire-plugin.version>
 		<maven-remote-resources-plugin.version>3.0.0</maven-remote-resources-plugin.version>
@@ -936,6 +938,18 @@
 				<groupId>org.apache.avro</groupId>
 				<artifactId>avro</artifactId>
 				<version>${avro.version}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<!-- Dependency management to override transitive dependency versions for security fixes -->
+	<dependencyManagement>
+		<dependencies>
+			<!-- CVE-2023-25613: LDAP Injection vulnerability in Apache Kerby -->
+			<dependency>
+				<groupId>org.apache.kerby</groupId>
+				<artifactId>kerb-admin</artifactId>
+				<version>${kerby.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

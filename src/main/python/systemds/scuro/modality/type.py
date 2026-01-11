@@ -108,8 +108,12 @@ class ModalitySchemas:
                 shape = data.shape
         elif data_layout is DataLayout.NESTED_LEVEL:
             if data_is_single_instance:
-                dtype = data.dtype
-                shape = data.shape
+                if isinstance(data, list):
+                    dtype = type(data[0])
+                    shape = (len(data), len(data[0]))
+                else:
+                    dtype = data.dtype
+                    shape = data.shape
             else:
                 shape = data[0].shape
                 dtype = data[0].dtype
@@ -195,6 +199,14 @@ class ModalityType(Flag):
     EMBEDDING = auto()
     PHYSIOLOGICAL = auto()
 
+    _metadata_factory_methods = {
+        "TEXT": "create_text_metadata",
+        "AUDIO": "create_audio_metadata",
+        "VIDEO": "create_video_metadata",
+        "IMAGE": "create_image_metadata",
+        "TIMESERIES": "create_ts_metadata",
+    }
+
     def get_schema(self):
         return ModalitySchemas.get(self.name)
 
@@ -214,6 +226,27 @@ class ModalityType(Flag):
             md[key].update({field: value})
 
         return md
+
+    def create_metadata(self, *args, **kwargs):
+        if self.name is None or "|" in self.name:
+            raise ValueError(
+                f"Composite modality types are not supported for metadata creation: {self}"
+            )
+
+        factory_methods = type(self)._metadata_factory_methods
+        method_name = factory_methods.value.get(self.name)
+        if method_name is None:
+            raise NotImplementedError(
+                f"Metadata creation not implemented for modality type: {self.name}"
+            )
+
+        method = getattr(type(self), method_name, None)
+        if method is None:
+            raise NotImplementedError(
+                f"Metadata creation method '{method_name}' not found for {self.name}"
+            )
+
+        return method(self, *args, **kwargs)
 
     def create_audio_metadata(self, sampling_rate, data, is_single_instance=True):
         md = deepcopy(self.get_schema())
@@ -252,7 +285,7 @@ class ModalityType(Flag):
         md["num_channels"] = num_channels
         md["timestamp"] = create_timestamps(frequency, length)
         md["data_layout"]["representation"] = DataLayout.NESTED_LEVEL
-        md["data_layout"]["type"] = float
+        md["data_layout"]["type"] = np.float32
         md["data_layout"]["shape"] = (width, height, num_channels)
         return md
 
@@ -262,7 +295,7 @@ class ModalityType(Flag):
         md["height"] = height
         md["num_channels"] = num_channels
         md["data_layout"]["representation"] = DataLayout.SINGLE_LEVEL
-        md["data_layout"]["type"] = float
+        md["data_layout"]["type"] = np.float32
         md["data_layout"]["shape"] = (width, height, num_channels)
         return md
 
@@ -277,13 +310,15 @@ class DataLayout(Enum):
             return None
 
         if data_is_single_instance:
-            if (
-                isinstance(data, list)
-                or isinstance(data, np.ndarray)
-                and data.ndim == 1
+            if (isinstance(data, list) and not isinstance(data[0], str)) or (
+                isinstance(data, np.ndarray) and data.ndim == 1
             ):
                 return DataLayout.SINGLE_LEVEL
-            elif isinstance(data, np.ndarray) or isinstance(data, torch.Tensor):
+            elif (
+                isinstance(data, list)
+                or isinstance(data, np.ndarray)
+                or isinstance(data, torch.Tensor)
+            ):
                 return DataLayout.NESTED_LEVEL
 
         if isinstance(data[0], list):

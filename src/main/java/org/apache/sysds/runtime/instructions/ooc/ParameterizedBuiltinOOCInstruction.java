@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.instructions.ooc;
 
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -43,7 +42,6 @@ import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 import java.util.LinkedHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ParameterizedBuiltinOOCInstruction extends ComputationOOCInstruction {
 
@@ -110,29 +108,26 @@ public class ParameterizedBuiltinOOCInstruction extends ComputationOOCInstructio
 
 			Data finalPattern = pattern;
 
-			AtomicBoolean found = new AtomicBoolean(false);
+			addInStream(qIn);
+			addOutStream(); // This instruction has no output stream
 
-			MutableObject<CompletableFuture<Void>> futureRef = new MutableObject<>();
-			CompletableFuture<Void> future = submitOOCTasks(qIn, tmp -> {
+			CompletableFuture<Boolean> future = new CompletableFuture<>();
+
+			filterOOC(qIn, tmp -> {
 				boolean contains = ((MatrixBlock)tmp.getValue()).containsValue(((ScalarObject)finalPattern).getDoubleValue());
 
-				if (contains) {
-					found.set(true);
+				if (contains)
+					future.complete(true);
+			}, tmp -> !future.isDone(), // Don't start a separate worker if result already known
+				() -> future.complete(false));     // Then the pattern was not found
 
-					// Now we may complete the future
-					if (futureRef.getValue() != null)
-						futureRef.getValue().complete(null);
-				}
-			}, () -> {});
-			futureRef.setValue(future);
-
+			boolean ret;
 			try {
-				futureRef.getValue().get();
+				ret = future.get();
 			} catch (InterruptedException | ExecutionException e) {
 				throw new DMLRuntimeException(e);
 			}
 
-			boolean ret = found.get();
 			ec.setScalarOutput(output.getName(), new BooleanObject(ret));
 		}
 	}

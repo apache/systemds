@@ -69,15 +69,14 @@ public class ProgramRewriter{
 		
 		//initialize StatementBlock rewrite ruleSet (with fixed rewrite order)
 		_sbRuleSet = new ArrayList<>();
-		
-		
+
+
 		//STATIC REWRITES (which do not rely on size information)
 		if( staticRewrites )
 		{
 			//add static HOP DAG rewrite rules
 			_dagRuleSet.add(     new RewriteRemoveReadAfterWrite()               ); //dependency: before blocksize
 			_dagRuleSet.add(     new RewriteBlockSizeAndReblock()                );
-			_dagRuleSet.add(     new RewriteInjectOOCTee()                       );
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION )
 				_dagRuleSet.add( new RewriteRemoveUnnecessaryCasts()             );
 			if( OptimizerUtils.ALLOW_COMMON_SUBEXPRESSION_ELIMINATION )
@@ -93,6 +92,7 @@ public class ProgramRewriter{
 			_dagRuleSet.add( new RewriteInjectSparkPReadCheckpointing()          ); //dependency: reblock
 			if( OptimizerUtils.ALLOW_QUANTIZE_COMPRESS_REWRITE )
 				_dagRuleSet.add( new RewriteQuantizationFusedCompression()  	 );
+
 
 			//add statement block rewrite rules
 			if( OptimizerUtils.ALLOW_BRANCH_REMOVAL )
@@ -152,6 +152,7 @@ public class ProgramRewriter{
 			_dagRuleSet.add( new RewriteConstantFolding()                    ); //dependency: cse
 		_sbRuleSet.add(  new RewriteRemoveEmptyBasicBlocks()                 );
 		_sbRuleSet.add(  new RewriteRemoveEmptyForLoops()                    );
+		_sbRuleSet.add(      new RewriteInjectOOCTee()                       );
 	}
 	
 	/**

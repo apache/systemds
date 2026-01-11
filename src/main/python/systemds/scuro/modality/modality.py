@@ -18,11 +18,9 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from copy import deepcopy
 from typing import List
 
 import numpy as np
-from numpy.f2py.auxfuncs import throw_error
 
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations import utils
@@ -31,7 +29,12 @@ from systemds.scuro.representations import utils
 class Modality:
 
     def __init__(
-        self, modalityType: ModalityType, modality_id=-1, metadata={}, data_type=None
+        self,
+        modalityType: ModalityType,
+        modality_id=-1,
+        metadata={},
+        data_type=None,
+        transform_time=0,
     ):
         """
         Parent class of the different Modalities (unimodal & multimodal)
@@ -45,7 +48,7 @@ class Modality:
         self.cost = None
         self.shape = None
         self.modality_id = modality_id
-        self.transform_time = None
+        self.transform_time = transform_time if transform_time else 0
 
     @property
     def data(self):
@@ -88,11 +91,12 @@ class Modality:
         ):
             return
 
-        md_copy = deepcopy(self.metadata)
-        self.metadata = {}
-        for i, (md_k, md_v) in enumerate(md_copy.items()):
+        for i, (md_k, md_v) in enumerate(self.metadata.items()):
+            md_v = selective_copy_metadata(md_v)
             updated_md = self.modality_type.update_metadata(md_v, self.data[i])
             self.metadata[md_k] = updated_md
+            if i == 0:
+                self.data_type = updated_md["data_layout"]["type"]
 
     def flatten(self, padding=False):
         """
@@ -181,3 +185,20 @@ class Modality:
                 break
 
         return aligned
+
+
+def selective_copy_metadata(metadata):
+    if isinstance(metadata, dict):
+        new_md = {}
+        for k, v in metadata.items():
+            if k == "data_layout":
+                new_md[k] = v.copy() if isinstance(v, dict) else v
+            elif isinstance(v, np.ndarray):
+                new_md[k] = v
+            else:
+                new_md[k] = selective_copy_metadata(v)
+        return new_md
+    elif isinstance(metadata, (list, tuple)):
+        return type(metadata)(selective_copy_metadata(item) for item in metadata)
+    else:
+        return metadata

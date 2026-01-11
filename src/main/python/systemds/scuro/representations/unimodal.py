@@ -38,6 +38,8 @@ class UnimodalRepresentation(Representation):
         if parameters is None:
             parameters = {}
         self.self_contained = self_contained
+        self.needs_context = False
+        self.initial_context_length = None
 
     @abc.abstractmethod
     def transform(self, data):

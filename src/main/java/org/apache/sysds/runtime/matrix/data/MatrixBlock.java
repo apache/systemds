@@ -94,7 +94,7 @@ import org.apache.sysds.runtime.functionobjects.RollIndex;
 import org.apache.sysds.runtime.functionobjects.SortIndex;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
@@ -3307,8 +3307,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 				&& aggOp.increOp.fn instanceof CM
 				&& ((CM) aggOp.increOp.fn).getAggOpType() == AggregateOperationTypes.VARIANCE) {
 			// create buffers to store results
-			CM_COV_Object cbuff_curr = new CM_COV_Object();
-			CM_COV_Object cbuff_part = new CM_COV_Object();
+			CmCovObject cbuff_curr = new CmCovObject();
+			CmCovObject cbuff_part = new CmCovObject();
 
 			// perform incremental aggregation
 			for (int r=0; r<rlen; r++)
@@ -3330,7 +3330,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 					cbuff_part.mean._correction = newWithCor.get(r+4, c);
 
 					// calculate incremental aggregated variance
-					cbuff_curr = (CM_COV_Object) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
+					cbuff_curr = (CmCovObject) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
 
 					// store updated values: { var | mean, count, m2 correction, mean correction }
 					double var = cbuff_curr.getRequiredResult(AggregateOperationTypes.VARIANCE);
@@ -3345,8 +3345,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 				&& aggOp.increOp.fn instanceof CM
 				&& ((CM) aggOp.increOp.fn).getAggOpType() == AggregateOperationTypes.VARIANCE) {
 			// create buffers to store results
-			CM_COV_Object cbuff_curr = new CM_COV_Object();
-			CM_COV_Object cbuff_part = new CM_COV_Object();
+			CmCovObject cbuff_curr = new CmCovObject();
+			CmCovObject cbuff_part = new CmCovObject();
 
 			// perform incremental aggregation
 			for (int r=0; r<rlen; r++)
@@ -3368,7 +3368,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 					cbuff_part.mean._correction = newWithCor.get(r, c+4);
 
 					// calculate incremental aggregated variance
-					cbuff_curr = (CM_COV_Object) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
+					cbuff_curr = (CmCovObject) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
 
 					// store updated values: { var | mean, count, m2 correction, mean correction }
 					double var = cbuff_curr.getRequiredResult(AggregateOperationTypes.VARIANCE);
@@ -3508,8 +3508,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 				&& aggOp.increOp.fn instanceof CM
 				&& ((CM) aggOp.increOp.fn).getAggOpType() == AggregateOperationTypes.VARIANCE) {
 			// create buffers to store results
-			CM_COV_Object cbuff_curr = new CM_COV_Object();
-			CM_COV_Object cbuff_part = new CM_COV_Object();
+			CmCovObject cbuff_curr = new CmCovObject();
+			CmCovObject cbuff_part = new CmCovObject();
 
 			// perform incremental aggregation
 			for (int r=0; r<rlen-4; r++)
@@ -3531,7 +3531,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 					cbuff_part.mean._correction = newWithCor.get(r+4, c);
 
 					// calculate incremental aggregated variance
-					cbuff_curr = (CM_COV_Object) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
+					cbuff_curr = (CmCovObject) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
 
 					// store updated values: { var | mean, count, m2 correction, mean correction }
 					double var = cbuff_curr.getRequiredResult(AggregateOperationTypes.VARIANCE);
@@ -3546,8 +3546,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 				&& aggOp.increOp.fn instanceof CM
 				&& ((CM) aggOp.increOp.fn).getAggOpType() == AggregateOperationTypes.VARIANCE) {
 			// create buffers to store results
-			CM_COV_Object cbuff_curr = new CM_COV_Object();
-			CM_COV_Object cbuff_part = new CM_COV_Object();
+			CmCovObject cbuff_curr = new CmCovObject();
+			CmCovObject cbuff_part = new CmCovObject();
 
 			// perform incremental aggregation
 			for (int r=0; r<rlen; r++)
@@ -3569,7 +3569,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 					cbuff_part.mean._correction = newWithCor.get(r, c+4);
 
 					// calculate incremental aggregated variance
-					cbuff_curr = (CM_COV_Object) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
+					cbuff_curr = (CmCovObject) aggOp.increOp.fn.execute(cbuff_curr, cbuff_part);
 
 					// store updated values: { var | mean, count, m2 correction, mean correction }
 					double var = cbuff_curr.getRequiredResult(AggregateOperationTypes.VARIANCE);
@@ -4581,7 +4581,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		}
 	}
 
-	public CM_COV_Object cmOperations(CMOperator op) {
+	public CmCovObject cmOperations(CMOperator op) {
 		checkCMOperations(this, op);
 		return LibMatrixAgg.aggregateCmCov(this, null, null, op.fn, op.getNumThreads());
 	}
@@ -4594,7 +4594,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		}
 	}
 		
-	public CM_COV_Object cmOperations(CMOperator op, MatrixBlock weights) {
+	public CmCovObject cmOperations(CMOperator op, MatrixBlock weights) {
 		/* this._data must be a 1 dimensional vector */
 		if ( this.getNumColumns() != 1 || weights.getNumColumns() != 1) {
 			throw new DMLRuntimeException("Central Moment can be computed only on 1-dimensional column matrices.");
@@ -4608,7 +4608,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return LibMatrixAgg.aggregateCmCov(this, weights, null, op.fn, op.getNumThreads());
 	}
 	
-	public CM_COV_Object covOperations(COVOperator op, MatrixBlock that) {
+	public CmCovObject covOperations(COVOperator op, MatrixBlock that) {
 		/* this._data must be a 1 dimensional vector */
 		if ( this.getNumColumns() != 1 || that.getNumColumns() != 1 ) {
 			throw new DMLRuntimeException("Covariance can be computed only on 1-dimensional column matrices."); 
@@ -4622,7 +4622,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		return LibMatrixAgg.aggregateCmCov(this, that, null, op.fn, op.getNumThreads());
 	}
 	
-	public CM_COV_Object covOperations(COVOperator op, MatrixBlock that, MatrixBlock weights) {
+	public CmCovObject covOperations(COVOperator op, MatrixBlock that, MatrixBlock weights) {
 		/* this._data must be a 1 dimensional vector */
 		if ( this.getNumColumns() != 1 || that.getNumColumns() != 1 || weights.getNumColumns() != 1) {
 			throw new DMLRuntimeException("Covariance can be computed only on 1-dimensional column matrices."); 

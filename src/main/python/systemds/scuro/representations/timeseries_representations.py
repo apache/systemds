@@ -46,7 +46,9 @@ class TimeSeriesRepresentation(UnimodalRepresentation):
             feature = self.compute_feature(signal)
             result.append(feature)
 
-        transformed_modality.data = np.vstack(result)
+        transformed_modality.data = np.vstack(np.array(result)).astype(
+            modality.metadata[list(modality.metadata.keys())[0]]["data_layout"]["type"]
+        )
         return transformed_modality
 
 
@@ -182,7 +184,7 @@ class FrequencyMagnitude(TimeSeriesRepresentation):
 @register_representation([ModalityType.TIMESERIES])
 class SpectralCentroid(TimeSeriesRepresentation):
     def __init__(self, fs=1.0):
-        super().__init__("SpectralCentroid", parameters={"fs": [1.0]})
+        super().__init__("SpectralCentroid", parameters={"fs": [0.5, 1.0, 2.0]})
         self.fs = fs
 
     def compute_feature(self, signal):
@@ -197,7 +199,8 @@ class SpectralCentroid(TimeSeriesRepresentation):
 class BandpowerFFT(TimeSeriesRepresentation):
     def __init__(self, fs=1.0, f1=0.0, f2=0.5):
         super().__init__(
-            "BandpowerFFT", parameters={"fs": [1.0], "f1": [0.0], "f2": [0.5]}
+            "BandpowerFFT",
+            parameters={"fs": [0.5, 1.0], "f1": [0.0, 1.0], "f2": [0.5, 1.0]},
         )
         self.fs = fs
         self.f1 = f1

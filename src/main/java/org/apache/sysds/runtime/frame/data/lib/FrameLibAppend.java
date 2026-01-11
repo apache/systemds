@@ -65,16 +65,16 @@ public class FrameLibAppend {
 		else if(b.getNumColumns() == 0)
 			return a;
 
-		final ValueType[] _schema = addAll(a.getSchema(), b.getSchema());
-		final ColumnMetadata[] _colmeta = addAll(a.getColumnMetadata(), b.getColumnMetadata());
-		final Array<?>[] _coldata = addAll(a.getColumns(), b.getColumns());
-		String[] _colnames = addAll(a.getColumnNames(), b.getColumnNames());
+		final ValueType[] schema = addAll(a.getSchema(), b.getSchema());
+		final ColumnMetadata[] colmeta = addAll(a.getColumnMetadata(), b.getColumnMetadata());
+		final Array<?>[] coldata = addAll(a.getColumns(), b.getColumns());
+		String[] colnames = addAll(a.getColumnNames(), b.getColumnNames());
 
 		// check and enforce unique columns names
-		if(!Arrays.stream(_colnames).allMatch(new HashSet<>()::add))
-			_colnames = null; // set to default of null to allocate on demand
+		if(!Arrays.stream(colnames).allMatch(new HashSet<>()::add))
+			colnames = null; // set to default of null to allocate on demand
 
-		return new FrameBlock(_schema, _colnames, _colmeta, _coldata);
+		return new FrameBlock(schema, colnames, colmeta, coldata);
 	}
 
 	private static FrameBlock appendRbind(FrameBlock a, FrameBlock b) {

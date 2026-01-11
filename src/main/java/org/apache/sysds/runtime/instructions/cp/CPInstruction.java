@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.instructions.CPInstructionParser;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstructionUtils;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.ooc.stats.OOCEventLog;
 
 public abstract class CPInstruction extends Instruction {
 	protected static final Log LOG = LogFactory.getLog(CPInstruction.class.getName());
@@ -52,6 +53,7 @@ public abstract class CPInstruction extends Instruction {
 
 	protected final CPType _cptype;
 	protected final boolean _requiresLabelUpdate;
+	private long nanoTime;
 
 	protected CPInstruction(CPType type, String opcode, String istr) {
 		this(type, null, opcode, istr);
@@ -88,6 +90,8 @@ public abstract class CPInstruction extends Instruction {
 
 	@Override
 	public Instruction preprocessInstruction(ExecutionContext ec) {
+		if (DMLScript.OOC_LOG_EVENTS)
+			nanoTime = System.nanoTime();
 		//default preprocess behavior (e.g., debug state, lineage)
 		Instruction tmp = super.preprocessInstruction(ec);
 
@@ -118,6 +122,10 @@ public abstract class CPInstruction extends Instruction {
 	public void postprocessInstruction(ExecutionContext ec) {
 		if (DMLScript.LINEAGE_DEBUGGER)
 			ec.maintainLineageDebuggerInfo(this);
+		if (DMLScript.OOC_LOG_EVENTS) {
+			int callerId = OOCEventLog.registerCaller(getExtendedOpcode() + "_" + hashCode());
+			OOCEventLog.onComputeEvent(callerId, nanoTime, System.nanoTime());
+		}
 	}
 	
 	/**

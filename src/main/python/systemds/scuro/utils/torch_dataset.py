@@ -32,12 +32,12 @@ class CustomDataset(torch.utils.data.Dataset):
         self.device = device
         self.size = size
         if size is None:
-            self.size = (256, 224)
+            self.size = (224, 224)
 
         tf_default = transforms.Compose(
             [
                 transforms.ToPILImage(),
-                transforms.Resize(self.size[0]),
+                transforms.Resize(256),
                 transforms.CenterCrop(self.size[1]),
                 transforms.ToTensor(),
                 transforms.ConvertImageDtype(dtype=self.data_type),
@@ -55,14 +55,13 @@ class CustomDataset(torch.utils.data.Dataset):
     def __getitem__(self, index) -> Dict[str, object]:
         data = self.data[index]
         output = torch.empty(
-            (len(data), 3, self.size[1], self.size[1]),
+            (len(data), 3, self.size[1], self.size[0]),
             dtype=self.data_type,
             device=self.device,
         )
 
         if isinstance(data, np.ndarray) and data.ndim == 3:
             # image
-            data = torch.tensor(data).permute(2, 0, 1)
             output = self.tf(data).to(self.device)
         else:
             for i, d in enumerate(data):

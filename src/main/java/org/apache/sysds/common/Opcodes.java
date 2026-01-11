@@ -19,7 +19,25 @@
 
 package org.apache.sysds.common;
 
-import org.apache.sysds.lops.*;
+import org.apache.sysds.lops.Append;
+import org.apache.sysds.lops.DataGen;
+import org.apache.sysds.lops.LeftIndex;
+import org.apache.sysds.lops.RightIndex;
+import org.apache.sysds.lops.Compression;
+import org.apache.sysds.lops.DeCompression;
+import org.apache.sysds.lops.Local;
+import org.apache.sysds.lops.Checkpoint;
+import org.apache.sysds.lops.WeightedCrossEntropy;
+import org.apache.sysds.lops.WeightedCrossEntropyR;
+import org.apache.sysds.lops.WeightedDivMM;
+import org.apache.sysds.lops.WeightedDivMMR;
+import org.apache.sysds.lops.WeightedSigmoid;
+import org.apache.sysds.lops.WeightedSigmoidR;
+import org.apache.sysds.lops.WeightedSquaredLoss;
+import org.apache.sysds.lops.WeightedSquaredLossR;
+import org.apache.sysds.lops.WeightedUnaryMM;
+import org.apache.sysds.lops.WeightedUnaryMMR;
+
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.hops.FunctionOp;
 

@@ -25,8 +25,10 @@ from dataclasses import dataclass
 import multiprocessing as mp
 from typing import List, Any
 from functools import lru_cache
-
+from systemds.scuro.drsearch.task import Task
 from systemds.scuro import ModalityType
+from systemds.scuro.drsearch.ranking import rank_by_tradeoff
+from systemds.scuro.drsearch.task import PerformanceMeasure
 from systemds.scuro.representations.fusion import Fusion
 from systemds.scuro.representations.concatenation import Concatenation
 from systemds.scuro.representations.hadamard import Hadamard
@@ -44,13 +46,18 @@ from systemds.scuro.drsearch.representation_dag import (
     RepresentationDAGBuilder,
 )
 from systemds.scuro.drsearch.representation_dag_visualizer import visualize_dag
+from systemds.scuro.drsearch.representation_dag import LRUCache
 
 
 class UnimodalOptimizer:
-    def __init__(self, modalities, tasks, debug=True):
+    def __init__(
+        self, modalities, tasks, debug=True, save_all_results=False, result_path=None
+    ):
         self.modalities = modalities
         self.tasks = tasks
-        self.run = None
+        self.modality_ids = [modality.modality_id for modality in modalities]
+        self.save_all_results = save_all_results
+        self.result_path = result_path
 
         self.builders = {
             modality.modality_id: RepresentationDAGBuilder() for modality in modalities
@@ -59,7 +66,7 @@ class UnimodalOptimizer:
         self.debug = debug
 
         self.operator_registry = Registry()
-        self.operator_performance = UnimodalResults(modalities, tasks, debug, self.run)
+        self.operator_performance = UnimodalResults(modalities, tasks, debug, True)
 
         self._tasks_require_same_dims = True
         self.expected_dimensions = tasks[0].expected_dim
@@ -82,8 +89,8 @@ class UnimodalOptimizer:
         )
 
     @lru_cache(maxsize=32)
-    def _get_context_operators(self):
-        return self.operator_registry.get_context_operators()
+    def _get_context_operators(self, modality_type):
+        return self.operator_registry.get_context_operators(modality_type)
 
     def store_results(self, file_name=None):
         if file_name is None:
@@ -92,8 +99,20 @@ class UnimodalOptimizer:
             timestr = time.strftime("%Y%m%d-%H%M%S")
             file_name = "unimodal_optimizer" + timestr + ".pkl"
 
+        file_name = f"{self.result_path}/{file_name}"
         with open(file_name, "wb") as f:
             pickle.dump(self.operator_performance.results, f)
+
+    def store_cache(self, file_name=None):
+        if file_name is None:
+            import time
+
+            timestr = time.strftime("%Y%m%d-%H%M%S")
+            file_name = "unimodal_optimizer_cache" + timestr + ".pkl"
+
+        file_name = f"{self.result_path}/{file_name}"
+        with open(file_name, "wb") as f:
+            pickle.dump(self.operator_performance.cache, f)
 
     def load_results(self, file_name):
         with open(file_name, "rb") as f:
@@ -117,8 +136,8 @@ class UnimodalOptimizer:
     def optimize_parallel(self, n_workers=None):
         if n_workers is None:
             n_workers = min(len(self.modalities), mp.cpu_count())
-
-        with ProcessPoolExecutor(max_workers=n_workers) as executor:
+        ctx = mp.get_context("spawn")
+        with ProcessPoolExecutor(max_workers=n_workers, mp_context=ctx) as executor:
             future_to_modality = {
                 executor.submit(self._process_modality, modality, True): modality
                 for modality in self.modalities
@@ -126,41 +145,68 @@ class UnimodalOptimizer:
 
             for future in as_completed(future_to_modality):
                 modality = future_to_modality[future]
-                results = future.result()
-                self._merge_results(results)
+                try:
+                    results = future.result()
+                    self._merge_results(results)
+                except Exception as e:
+                    print(f"Error processing modality {modality.modality_id}: {e}")
+                    import traceback
+
+                    traceback.print_exc()
+                    continue
 
     def optimize(self):
         """Optimize representations for each modality"""
         for modality in self.modalities:
+            # try:
             local_result = self._process_modality(modality, False)
+            if self.save_all_results:
+                self.store_results(f"{modality.modality_id}_unimodal_results.pkl")
+            # except Exception as e:
+            #     print(f"Error processing modality {modality.modality_id}: {e}")
+            #     if self.save_all_results:
+            #         self.store_results(f"{modality.modality_id}_unimodal_results.pkl")
+            #     continue
 
     def _process_modality(self, modality, parallel):
         if parallel:
-            local_results = UnimodalResults([modality], self.tasks, debug=False)
+            local_results = UnimodalResults(
+                [modality], self.tasks, debug=False, store_cache=False
+            )
         else:
             local_results = self.operator_performance
 
         modality_specific_operators = self._get_modality_operators(
             modality.modality_type
         )
-
+        dags = []
         for operator in modality_specific_operators:
-            dags = self._build_modality_dag(modality, operator())
+            dags.extend(self._build_modality_dag(modality, operator()))
 
-            for dag in dags:
-                representations = dag.execute([modality])
-                node_id = list(representations.keys())[-1]
-                node = dag.get_node_by_id(node_id)
-                if node.operation is None:
-                    continue
+        external_cache = LRUCache(max_size=32)
+        for dag in dags:
+            representations = dag.execute(
+                [modality], task=self.tasks[0], external_cache=external_cache
+            )  # TODO: dynamic task selection
+            node_id = list(representations.keys())[-1]
+            node = dag.get_node_by_id(node_id)
+            if node.operation is None:
+                continue
 
-                reps = self._get_representation_chain(node, dag)
-                combination = next((op for op in reps if isinstance(op, Fusion)), None)
-                self._evaluate_local(
-                    representations[node_id], local_results, dag, combination
-                )
-                if self.debug:
-                    visualize_dag(dag)
+            reps = self._get_representation_chain(node, dag)
+            combination = next((op for op in reps if isinstance(op, Fusion)), None)
+            self._evaluate_local(
+                representations[node_id], local_results, dag, combination
+            )
+            if self.debug:
+                visualize_dag(dag)
+
+        if self.save_all_results:
+            timestr = time.strftime("%Y%m%d-%H%M%S")
+            file_name = f"{modality.modality_id}_unimodal_results_{timestr}.pkl"
+
+            with open(file_name, "wb") as f:
+                pickle.dump(local_results.results, f)
 
         return local_results
 
@@ -185,10 +231,10 @@ class UnimodalOptimizer:
                     local_results.results[modality_id][task_name]
                 )
 
-        for modality in self.modalities:
-            for task_name in local_results.cache[modality]:
-                for key, value in local_results.cache[modality][task_name].items():
-                    self.operator_performance.cache[modality][task_name][key] = value
+        # for modality in self.modalities:
+        #     for task_name in local_results.cache[modality]:
+        #         for key, value in local_results.cache[modality][task_name].items():
+        #             self.operator_performance.cache[modality][task_name][key] = value
 
     def _evaluate_local(self, modality, local_results, dag, combination=None):
         if self._tasks_require_same_dims:
@@ -201,15 +247,21 @@ class UnimodalOptimizer:
                     agg_operator.get_current_parameters(),
                 )
                 dag = builder.build(rep_node_id)
-                representations = dag.execute([modality])
-                node_id = list(representations.keys())[-1]
+
+                aggregated_modality = agg_operator.transform(modality)
+
                 for task in self.tasks:
                     start = time.perf_counter()
-                    scores = task.run(representations[node_id].data)
+                    scores = task.run(aggregated_modality.data)
                     end = time.perf_counter()
 
                     local_results.add_result(
-                        scores, modality, task.model.name, end - start, combination, dag
+                        scores,
+                        aggregated_modality,
+                        task.model.name,
+                        end - start,
+                        combination,
+                        dag,
                     )
             else:
                 modality.pad()
@@ -231,7 +283,10 @@ class UnimodalOptimizer:
                         agg_operator.get_current_parameters(),
                     )
                     dag = builder.build(rep_node_id)
+                    start_rep = time.perf_counter()
                     representations = dag.execute([modality])
+                    end_rep = time.perf_counter()
+                    modality.transform_time += end_rep - start_rep
                     node_id = list(representations.keys())[-1]
 
                     start = time.perf_counter()
@@ -260,6 +315,39 @@ class UnimodalOptimizer:
         )
         current_node_id = rep_node_id
         dags.append(builder.build(current_node_id))
+
+        if operator.needs_context:
+            context_operators = self._get_context_operators(modality.modality_type)
+            for context_op in context_operators:
+                if operator.initial_context_length is not None:
+                    context_length = operator.initial_context_length
+
+                    context_node_id = builder.create_operation_node(
+                        context_op,
+                        [leaf_id],
+                        context_op(context_length).get_current_parameters(),
+                    )
+                else:
+                    context_node_id = builder.create_operation_node(
+                        context_op,
+                        [leaf_id],
+                        context_op().get_current_parameters(),
+                    )
+
+                context_rep_node_id = builder.create_operation_node(
+                    operator.__class__,
+                    [context_node_id],
+                    operator.get_current_parameters(),
+                )
+
+                agg_operator = AggregatedRepresentation()
+                context_agg_node_id = builder.create_operation_node(
+                    agg_operator.__class__,
+                    [context_rep_node_id],
+                    agg_operator.get_current_parameters(),
+                )
+
+                dags.append(builder.build(context_agg_node_id))
 
         if not operator.self_contained:
             not_self_contained_reps = self._get_not_self_contained_reps(
@@ -303,7 +391,7 @@ class UnimodalOptimizer:
 
     def default_context_operators(self, modality, builder, leaf_id, current_node_id):
         dags = []
-        context_operators = self._get_context_operators()
+        context_operators = self._get_context_operators(modality.modality_type)
         for context_op in context_operators:
             if (
                 modality.modality_type != ModalityType.TEXT
@@ -327,7 +415,7 @@ class UnimodalOptimizer:
 
     def temporal_context_operators(self, modality, builder, leaf_id, current_node_id):
         aggregators = self.operator_registry.get_representations(modality.modality_type)
-        context_operators = self._get_context_operators()
+        context_operators = self._get_context_operators(modality.modality_type)
 
         dags = []
         for agg in aggregators:
@@ -343,12 +431,13 @@ class UnimodalOptimizer:
 
 
 class UnimodalResults:
-    def __init__(self, modalities, tasks, debug=False, run=None):
+    def __init__(self, modalities, tasks, debug=False, store_cache=True):
         self.modality_ids = [modality.modality_id for modality in modalities]
         self.task_names = [task.model.name for task in tasks]
         self.results = {}
         self.debug = debug
         self.cache = {}
+        self.store_cache = store_cache
 
         for modality in self.modality_ids:
             self.results[modality] = {task_name: [] for task_name in self.task_names}
@@ -356,8 +445,9 @@ class UnimodalResults:
 
     def add_result(self, scores, modality, task_name, task_time, combination, dag):
         entry = ResultEntry(
-            train_score=scores[0],
-            val_score=scores[1],
+            train_score=scores[0].average_scores,
+            val_score=scores[1].average_scores,
+            test_score=scores[2].average_scores,
             representation_time=modality.transform_time,
             task_time=task_time,
             combination=combination.name if combination else "",
@@ -365,13 +455,13 @@ class UnimodalResults:
         )
 
         self.results[modality.modality_id][task_name].append(entry)
-
-        cache_key = (
-            id(dag),
-            scores[1],
-            modality.transform_time,
-        )
-        self.cache[modality.modality_id][task_name][cache_key] = modality
+        if self.store_cache:
+            cache_key = (
+                id(dag),
+                scores[1],
+                modality.transform_time,
+            )
+            self.cache[modality.modality_id][task_name][cache_key] = modality
 
         if self.debug:
             print(f"{modality.modality_id}_{task_name}: {entry}")
@@ -382,46 +472,63 @@ class UnimodalResults:
                 for entry in self.results[modality][task_name]:
                     print(f"{modality}_{task_name}: {entry}")
 
-    def get_k_best_results(self, modality, k, task):
+    def get_k_best_results(
+        self, modality, k, task, performance_metric_name, prune_cache=False
+    ):
         """
         Get the k best results for the given modality
         :param modality: modality to get the best results for
         :param k: number of best results
+        :param task: task to get the best results for
+        :param performance_metric_name: name of the performance metric to use for ranking
         """
+
         task_results = self.results[modality.modality_id][task.model.name]
 
-        results = sorted(task_results, key=lambda x: x.val_score, reverse=True)[:k]
+        results, sorted_indices = rank_by_tradeoff(
+            task_results, performance_metric_name=performance_metric_name
+        )
 
-        sorted_indices = sorted(
-            range(len(task_results)),
-            key=lambda x: task_results[x].val_score,
-            reverse=True,
-        )[:k]
-        if not self.cache:
+        results = results[:k]
+        sorted_indices = sorted_indices[:k]
+
+        task_cache = self.cache.get(modality.modality_id, {}).get(task.model.name, None)
+        if not task_cache:
             cache = [
                 list(task_results[i].dag.execute([modality]).values())[-1]
                 for i in sorted_indices
             ]
-        elif isinstance(self.cache[modality.modality_id][task.model.name], list):
-            cache = self.cache[modality.modality_id][
-                task.model.name
-            ]  # used for precomputed cache
+        elif isinstance(task_cache, list):
+            cache = task_cache
         else:
-            cache_items = (
-                list(self.cache[modality.modality_id][task.model.name].items())
-                if self.cache[modality.modality_id][task.model.name]
-                else []
-            )
+            cache_items = list(task_cache.items()) if task_cache else []
             cache = [cache_items[i][1] for i in sorted_indices if i < len(cache_items)]
+
+        if prune_cache:
+            # Note: in case the unimodal results are loaded from a file, we need to initialize the cache for the modality and task
+            if modality.modality_id not in self.operator_performance.cache:
+                self.operator_performance.cache[modality.modality_id] = {}
+            if (
+                task.model.name
+                not in self.operator_performance.cache[modality.modality_id]
+            ):
+                self.operator_performance.cache[modality.modality_id][
+                    task.model.name
+                ] = {}
+            self.operator_performance.cache[modality.modality_id][
+                task.model.name
+            ] = cache
 
         return results, cache
 
 
-@dataclass(frozen=True)
+@dataclass
 class ResultEntry:
-    val_score: float
-    train_score: float
-    representation_time: float
-    task_time: float
-    combination: str
-    dag: RepresentationDag
+    val_score: PerformanceMeasure = None
+    train_score: PerformanceMeasure = None
+    test_score: PerformanceMeasure = None
+    representation_time: float = 0.0
+    task_time: float = 0.0
+    combination: str = ""
+    dag: RepresentationDag = None
+    tradeoff_score: float = 0.0

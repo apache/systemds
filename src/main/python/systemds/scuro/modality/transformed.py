@@ -18,8 +18,6 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from functools import reduce
-from operator import or_
 from typing import Union, List
 
 from systemds.scuro.modality.type import ModalityType
@@ -45,7 +43,11 @@ class TransformedModality(Modality):
 
         metadata = modality.metadata.copy() if modality.metadata is not None else None
         super().__init__(
-            new_modality_type, modality.modality_id, metadata, modality.data_type
+            new_modality_type,
+            modality.modality_id,
+            metadata,
+            modality.data_type,
+            modality.transform_time,
         )
         self.transformation = None
         self.self_contained = (
@@ -87,7 +89,8 @@ class TransformedModality(Modality):
                 right.extract_raw_data()
 
         joined_modality = JoinedModality(
-            reduce(or_, [right.modality_type], self.modality_type),
+            self.modality_type,
+            # reduce(or_, [right.modality_type], self.modality_type), #TODO
             self,
             right,
             join_condition,
@@ -107,7 +110,7 @@ class TransformedModality(Modality):
         )
         start = time.time()
         transformed_modality.data = w.execute(self)
-        transformed_modality.transform_time = time.time() - start
+        transformed_modality.transform_time += time.time() - start
         return transformed_modality
 
     def context(self, context_operator):
@@ -116,14 +119,14 @@ class TransformedModality(Modality):
         )
         start = time.time()
         transformed_modality.data = context_operator.execute(self)
-        transformed_modality.transform_time = time.time() - start
+        transformed_modality.transform_time += time.time() - start
         return transformed_modality
 
     def apply_representation(self, representation):
         start = time.time()
         new_modality = representation.transform(self)
         new_modality.update_metadata()
-        new_modality.transform_time = time.time() - start
+        new_modality.transform_time += time.time() - start
         new_modality.self_contained = representation.self_contained
         return new_modality
 
@@ -136,8 +139,10 @@ class TransformedModality(Modality):
         fused_modality = TransformedModality(
             self, fusion_method, ModalityType.EMBEDDING
         )
+        start_time = time.time()
         fused_modality.data = fusion_method.transform(self.create_modality_list(other))
-
+        end_time = time.time()
+        fused_modality.transform_time = end_time - start_time
         return fused_modality
 
     def combine_with_training(
@@ -147,7 +152,12 @@ class TransformedModality(Modality):
             self, fusion_method, ModalityType.EMBEDDING
         )
         modalities = self.create_modality_list(other)
+        start_time = time.time()
         fused_modality.data = fusion_method.transform_with_training(modalities, task)
+        end_time = time.time()
+        fused_modality.transform_time = (
+            end_time - start_time
+        )  # Note: this incldues the training time
 
         return fused_modality
 

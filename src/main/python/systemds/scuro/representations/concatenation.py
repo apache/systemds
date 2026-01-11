@@ -41,17 +41,34 @@ class Concatenation(Fusion):
 
     def execute(self, modalities: List[Modality]):
         if len(modalities) == 1:
-            return np.array(modalities[0].data)
+            return np.asarray(
+                modalities[0].data,
+                dtype=modalities[0].metadata[list(modalities[0].metadata.keys())[0]][
+                    "data_layout"
+                ]["type"],
+            )
 
         max_emb_size = self.get_max_embedding_size(modalities)
         size = len(modalities[0].data)
 
-        if modalities[0].data.ndim > 2:
+        if np.array(modalities[0].data).ndim > 2:
             data = np.zeros((size, max_emb_size, 0))
         else:
             data = np.zeros((size, 0))
 
         for modality in modalities:
-            data = np.concatenate([data, copy.deepcopy(modality.data)], axis=-1)
+            other_modality = copy.deepcopy(modality.data)
+            data = np.concatenate(
+                [
+                    data,
+                    np.asarray(
+                        other_modality,
+                        dtype=modality.metadata[list(modality.metadata.keys())[0]][
+                            "data_layout"
+                        ]["type"],
+                    ),
+                ],
+                axis=-1,
+            )
 
         return np.array(data)

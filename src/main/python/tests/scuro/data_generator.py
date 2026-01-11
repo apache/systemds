@@ -26,6 +26,11 @@ from scipy.io.wavfile import write
 import random
 import os
 
+from sklearn import svm
+from sklearn.metrics import classification_report
+from sklearn.model_selection import train_test_split
+
+from systemds.scuro.models.model import Model
 from systemds.scuro.dataloader.base_loader import BaseLoader
 from systemds.scuro.dataloader.video_loader import VideoLoader
 from systemds.scuro.dataloader.audio_loader import AudioLoader
@@ -33,6 +38,7 @@ from systemds.scuro.dataloader.text_loader import TextLoader
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.modality.type import ModalityType
+from systemds.scuro.drsearch.task import Task
 
 
 class TestDataLoader(BaseLoader):
@@ -60,6 +66,7 @@ class ModalityRandomDataGenerator:
         self.modality_type = None
         self.metadata = {}
         self.data_type = np.float32
+        self.transform_time = None
 
     def create1DModality(
         self,
@@ -74,19 +81,19 @@ class ModalityRandomDataGenerator:
         self.modality_type = modality_type
         for i in range(num_instances):
             if modality_type == ModalityType.AUDIO:
-                self.metadata[i] = modality_type.create_audio_metadata(
+                self.metadata[i] = modality_type.create_metadata(
                     num_features / 10, data[i]
                 )
             elif modality_type == ModalityType.TEXT:
-                self.metadata[i] = modality_type.create_text_metadata(
+                self.metadata[i] = modality_type.create_metadata(
                     num_features / 10, data[i]
                 )
             elif modality_type == ModalityType.VIDEO:
-                self.metadata[i] = modality_type.create_video_metadata(
+                self.metadata[i] = modality_type.create_metadata(
                     num_features / 30, 10, 0, 0, 1
                 )
             elif modality_type == ModalityType.TIMESERIES:
-                self.metadata[i] = modality_type.create_ts_metadata(["test"], data[i])
+                self.metadata[i] = modality_type.create_metadata(["test"], data[i])
             else:
                 raise NotImplementedError
 
@@ -96,6 +103,7 @@ class ModalityRandomDataGenerator:
         return tf_modality
 
     def create_audio_data(self, num_instances, max_audio_length):
+        modality_type = ModalityType.AUDIO
         data = [
             [
                 random.random()
@@ -108,7 +116,7 @@ class ModalityRandomDataGenerator:
             data[i] = np.array(data[i]).astype(self.data_type)
 
         metadata = {
-            i: ModalityType.AUDIO.create_audio_metadata(16000, np.array(data[i]))
+            i: modality_type.create_metadata(16000, np.array(data[i]))
             for i in range(num_instances)
         }
 
@@ -122,14 +130,14 @@ class ModalityRandomDataGenerator:
         if num_features == 1:
             data = [d.squeeze(-1) for d in data]
         metadata = {
-            i: ModalityType.TIMESERIES.create_ts_metadata(
+            i: ModalityType.TIMESERIES.create_metadata(
                 [f"feature_{j}" for j in range(num_features)], data[i]
             )
             for i in range(num_instances)
         }
         return data, metadata
 
-    def create_text_data(self, num_instances):
+    def create_text_data(self, num_instances, num_sentences_per_instance=1):
         subjects = [
             "The cat",
             "A dog",
@@ -171,22 +179,28 @@ class ModalityRandomDataGenerator:
             "precisely",
             "methodically",
         ]
+        punctuation = [".", "?", "!"]
 
         sentences = []
         for _ in range(num_instances):
-            include_adverb = np.random.random() < 0.7
+            sentence = ""
+            for i in range(num_sentences_per_instance):
+                include_adverb = np.random.random() < 0.7
 
-            subject = np.random.choice(subjects)
-            verb = np.random.choice(verbs)
-            obj = np.random.choice(objects)
-            adverb = np.random.choice(adverbs) if include_adverb else ""
+                subject = np.random.choice(subjects)
+                verb = np.random.choice(verbs)
+                obj = np.random.choice(objects)
+                adverb = np.random.choice(adverbs) if include_adverb else ""
+                punct = np.random.choice(punctuation)
 
-            sentence = f"{subject} {adverb} {verb} {obj}"
-
+                sentence += " " if i > 0 else ""
+                sentence += f"{subject}"
+                sentence += f" {adverb}" if include_adverb else ""
+                sentence += f" {verb} {obj}{punct}"
             sentences.append(sentence)
 
         metadata = {
-            i: ModalityType.TEXT.create_text_metadata(len(sentences[i]), sentences[i])
+            i: ModalityType.TEXT.create_metadata(len(sentences[i]), sentences[i])
             for i in range(num_instances)
         }
 
@@ -197,16 +211,16 @@ class ModalityRandomDataGenerator:
     ):
         if max_num_frames > 1:
             data = [
-                np.random.randint(
-                    0,
-                    256,
-                    (np.random.randint(1, max_num_frames + 1), height, width, 3),
-                    dtype=np.uint8,
+                np.random.uniform(
+                    0.0,
+                    1.0,
+                    (np.random.randint(10, max_num_frames + 1), height, width, 3),
                 )
                 for _ in range(num_instances)
             ]
+
             metadata = {
-                i: ModalityType.VIDEO.create_video_metadata(
+                i: ModalityType.VIDEO.create_metadata(
                     30, data[i].shape[0], width, height, 3
                 )
                 for i in range(num_instances)
@@ -222,7 +236,7 @@ class ModalityRandomDataGenerator:
                 for _ in range(num_instances)
             ]
             metadata = {
-                i: ModalityType.IMAGE.create_image_metadata(width, height, 3)
+                i: ModalityType.IMAGE.create_metadata(width, height, 3)
                 for i in range(num_instances)
             }
 
@@ -381,3 +395,57 @@ class TestDataGenerator:
         audio_data = 0.5 * np.sin(2 * np.pi * frequency * t)
 
         write(path, sample_rate, audio_data)
+
+
+class TestSVM(Model):
+    def __init__(self, name):
+        super().__init__(name)
+
+    def fit(self, X, y, X_test, y_test):
+        if X.ndim > 2:
+            X = X.reshape(X.shape[0], -1)
+        self.clf = svm.SVC(C=1, gamma="scale", kernel="rbf", verbose=False)
+        self.clf = self.clf.fit(X, np.array(y))
+        y_pred = self.clf.predict(X)
+
+        return {
+            "accuracy": classification_report(
+                y, y_pred, output_dict=True, digits=3, zero_division=1
+            )["accuracy"]
+        }, 0
+
+    def test(self, test_X: np.ndarray, test_y: np.ndarray):
+        if test_X.ndim > 2:
+            test_X = test_X.reshape(test_X.shape[0], -1)
+        y_pred = self.clf.predict(np.array(test_X))  # noqa]
+
+        return {
+            "accuracy": classification_report(
+                np.array(test_y), y_pred, output_dict=True, digits=3, zero_division=1
+            )["accuracy"]
+        }, 0
+
+
+class TestTask(Task):
+    def __init__(self, name, model_name, num_instances):
+        self.labels = ModalityRandomDataGenerator().create_balanced_labels(
+            num_instances=10
+        )
+        split = train_test_split(
+            np.array(range(num_instances)),
+            self.labels,
+            test_size=0.2,
+            random_state=42,
+            stratify=self.labels,
+        )
+        self.train_indizes, self.val_indizes = [int(i) for i in split[0]], [
+            int(i) for i in split[1]
+        ]
+
+        super().__init__(
+            name,
+            TestSVM(model_name),
+            self.labels,
+            self.train_indizes,
+            self.val_indizes,
+        )

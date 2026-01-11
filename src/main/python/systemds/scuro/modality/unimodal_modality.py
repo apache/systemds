@@ -72,7 +72,8 @@ class UnimodalModality(Modality):
             self.data_loader.update_chunk_sizes(other.data_loader)
 
         joined_modality = JoinedModality(
-            reduce(or_, [other.modality_type], self.modality_type),
+            self.modality_type,
+            # reduce(or_, [other.modality_type], self.modality_type), # TODO
             self,
             other,
             join_condition,
@@ -94,7 +95,7 @@ class UnimodalModality(Modality):
         transformed_modality = TransformedModality(self, context_operator)
 
         transformed_modality.data = context_operator.execute(self)
-        transformed_modality.transform_time = time.time() - start
+        transformed_modality.transform_time += time.time() - start
         return transformed_modality
 
     def aggregate(self, aggregation_function):
@@ -145,8 +146,6 @@ class UnimodalModality(Modality):
                     else:
                         original_lengths.append(d.shape[0])
 
-        new_modality.data = self.l2_normalize_features(new_modality.data)
-
         if len(original_lengths) > 0 and min(original_lengths) < max(original_lengths):
             target_length = max(original_lengths)
             padded_embeddings = []
@@ -157,21 +156,28 @@ class UnimodalModality(Modality):
                 if current_length < target_length:
                     padding_needed = target_length - current_length
                     if pad_dim_one:
-                        padding = np.zeros((embeddings.shape[0], padding_needed))
-                        padded_embeddings.append(
-                            np.concatenate((embeddings, padding), axis=1)
-                        )
-                    else:
                         padded = np.pad(
                             embeddings,
-                            pad_width=(
-                                (0, padding_needed)
-                                if len(embeddings.shape) == 1
-                                else ((0, padding_needed), (0, 0))
-                            ),
+                            ((0, 0), (0, padding_needed)),
                             mode="constant",
                             constant_values=0,
                         )
+                        padded_embeddings.append(padded)
+                    else:
+                        if len(embeddings.shape) == 1:
+                            padded = np.pad(
+                                embeddings,
+                                (0, padding_needed),
+                                mode="constant",
+                                constant_values=0,
+                            )
+                        else:
+                            padded = np.pad(
+                                embeddings,
+                                ((0, padding_needed), (0, 0)),
+                                mode="constant",
+                                constant_values=0,
+                            )
                         padded_embeddings.append(padded)
                 else:
                     padded_embeddings.append(embeddings)
@@ -185,23 +191,6 @@ class UnimodalModality(Modality):
             )
             new_modality.data = padded_embeddings
         new_modality.update_metadata()
-        new_modality.transform_time = time.time() - start
+        new_modality.transform_time += time.time() - start
         new_modality.self_contained = representation.self_contained
         return new_modality
-
-    def l2_normalize_features(self, feature_list):
-        normalized_features = []
-        for feature in feature_list:
-            original_shape = feature.shape
-            flattened = feature.flatten()
-
-            norm = np.linalg.norm(flattened)
-            if norm > 0:
-                normalized_flat = flattened / norm
-                normalized_feature = normalized_flat.reshape(original_shape)
-            else:
-                normalized_feature = feature
-
-            normalized_features.append(normalized_feature)
-
-        return normalized_features

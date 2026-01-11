@@ -128,12 +128,18 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
         int nextCode = nUnique;
 
         // Initialize w with the first input symbol.
+        // AMapToData stores dictionary indices, not actual data values.
+        // Since indices reference positions in an IDictionary, they are always in the valid index range 0 … nUnique−1;
         int w = data.getIndex(0);
 
         // Process the remaining input symbols.
         // Example: _data = [2,0,2,3,0,2,1,0,2].
         for (int i = 1; i < nRows; i++) {
             final int k = data.getIndex(i); // next input symbol
+            
+            if(k < 0 || k >= nUnique)
+                throw new IllegalArgumentException("Symbol out of range: " + k + " (nUnique=" + nUnique + ")");
+
             final long key = packKey(w, k); // encode (w,k) into long key
 
             int wk = dict.get(key); // look if wk exists in dict
@@ -151,21 +157,24 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
         return out.toIntArray();
     }
 
+    // Unpack upper 32 bits (w) of (w,k) key pair.
     private static int unpackfirst(long key){
         return (int)(key >>> 32);
     }
 
+    // Unpack lower 32 bits (k) of (w,k) key pair.
     private static int unpacksecond(long key){
         return (int)(key);
     }
 
-    // Decompresses an LZW-compressed vector into its pre-compressed AMapToData form. (TODO)
+    // Append symbol to end of int-array.
     private static int[] packint(int[] arr, int last){
         int[] result = Arrays.copyOf(arr, arr.length+1);
         result[arr.length] = last;
         return result;
     }
 
+    // Reconstruct phrase to lzw-code.
     private static int[] unpack(int code, int alphabetSize, Map<Integer, Long> dict) {
 
         Stack<Integer> stack = new Stack<>();
@@ -190,12 +199,15 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
         return outarray;
     }
 
+    // Append phrase to output.
     private static void addtoOutput(IntArrayList outarray, int[] code) {
         for (int i = 0; i < code.length; i++) {
             outarray.add(code[i]);
         }
     }
 
+    // Decompresses an LZW-compressed vector into its pre-compressed AMapToData form.
+    // TODO: Compatibility with compress() and used data structures. Improve time/space complexity.
     private static IntArrayList decompress(int[] code) { //TODO: return AMapToData
         // Dictionary
         Map<Integer, Long> dict = new HashMap<>();

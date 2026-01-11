@@ -117,7 +117,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
 
         // LZW dictionary. Maps (prefixCode, nextSymbol) -> newCode (to a new code).
-        // Using fastutil keeps lookups fast. (TODO Dictionary)
+        // Using fastutil keeps lookups fast. (TODO improve time/space complexity)
         final Long2IntLinkedOpenHashMap dict = new Long2IntLinkedOpenHashMap(1 << 16);
         dict.defaultReturnValue(-1);
 
@@ -150,7 +150,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
         out.add(w);
         return out.toIntArray();
     }
-
 
     private static int unpackfirst(long key){
         return (int)(key >>> 32);
@@ -308,5 +307,38 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
      *  ... return ColGroupDDC.create(...,decompress(_dataLZW),...). We need to decide which methods are
      *  suitable for sequential and which arent. those who arent then we shall materialize and fall back to ddc
      * */
+
+    // Deserialize ColGroupDDCLZW object in binary stream.
+    public static ColGroupDDCLZW read(DataInput in) throws IOException {
+        final IColIndex colIndexes = ColIndexFactory.read(in);
+        final IDictionary dict = DictionaryFactory.read(in);
+
+        // Metadata for lzw mapping.
+        final int nRows = in.readInt();
+        final int nUnique = in.readInt();
+
+        // Read compressed mapping array.
+        final int len = in.readInt();
+        if (len < 0)
+            throw new IOException("Invalid LZW data length: " + len);
+
+        final int[] dataLZW = new int[len];
+        for (int i = 0; i < len; i++)
+            dataLZW[i] = in.readInt();
+
+        // cachedCounts currently not serialized (mirror ColGroupDDC.read which passes null)
+        return new ColGroupDDCLZW(colIndexes, dict, dataLZW, nRows, nUnique, null);
+    }
+
+    // Serialize a ColGroupDDC-object into binary stream.
+    @Override
+    public void write(DataOutput out) throws IOException {
+        _colIndexes.write(out);
+        _dict.write(out);
+        out.writeInt(_nRows);
+        out.writeInt(_nUnique);
+        out.writeInt(_dataLZW.length);
+        for (int i : _dataLZW) out.writeInt(i);
+    }
 }
 

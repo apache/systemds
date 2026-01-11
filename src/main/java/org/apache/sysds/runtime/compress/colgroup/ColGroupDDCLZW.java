@@ -70,6 +70,8 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.jboss.netty.handler.codec.compression.CompressionException;
 import shaded.parquet.it.unimi.dsi.fastutil.ints.IntArrayList;
 import shaded.parquet.it.unimi.dsi.fastutil.longs.Long2IntLinkedOpenHashMap;
+
+
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Stack;
@@ -136,8 +138,8 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
         // Example: _data = [2,0,2,3,0,2,1,0,2].
         for (int i = 1; i < nRows; i++) {
             final int k = data.getIndex(i); // next input symbol
-            
-            if(k < 0 || k >= nUnique)
+
+            if (k < 0 || k >= nUnique)
                 throw new IllegalArgumentException("Symbol out of range: " + k + " (nUnique=" + nUnique + ")");
 
             final long key = packKey(w, k); // encode (w,k) into long key
@@ -158,31 +160,36 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
     }
 
     // Unpack upper 32 bits (w) of (w,k) key pair.
-    private static int unpackfirst(long key){
-        return (int)(key >>> 32);
+    private static int unpackfirst(long key) {
+        return (int) (key >>> 32);
     }
 
     // Unpack lower 32 bits (k) of (w,k) key pair.
-    private static int unpacksecond(long key){
-        return (int)(key);
+    private static int unpacksecond(long key) {
+        return (int) (key);
     }
 
     // Append symbol to end of int-array.
-    private static int[] packint(int[] arr, int last){
-        int[] result = Arrays.copyOf(arr, arr.length+1);
+    private static int[] packint(int[] arr, int last) {
+        int[] result = Arrays.copyOf(arr, arr.length + 1);
         result[arr.length] = last;
         return result;
     }
 
     // Reconstruct phrase to lzw-code.
-    private static int[] unpack(int code, int alphabetSize, Map<Integer, Long> dict) {
+    private static int[] unpack(int code, int nUnique, Map<Integer, Long> dict) {
+        // Base symbol (implicit alphabet)
+        if (code < nUnique)
+            return new int[]{code};
 
         Stack<Integer> stack = new Stack<>();
-
         int c = code;
 
-        while (c >= alphabetSize) {
-            long key = dict.get(c);
+        while (c >= nUnique) {
+            Long key = dict.get(c);
+            if (key == null)
+                throw new IllegalStateException("Missing dictionary entry for code: " + c);
+
             int symbol = unpacksecond(key);
             stack.push(symbol);
             c = unpackfirst(key);
@@ -190,7 +197,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
         // Basissymbol
         stack.push(c);
-        int [] outarray = new int[stack.size()];
+        int[] outarray = new int[stack.size()];
         int i = 0;
         // korrekt ins Output schreiben
         while (!stack.isEmpty()) {
@@ -199,56 +206,71 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
         return outarray;
     }
 
-    // Append phrase to output.
-    private static void addtoOutput(IntArrayList outarray, int[] code) {
-        for (int i = 0; i < code.length; i++) {
-            outarray.add(code[i]);
-        }
-    }
-
     // Decompresses an LZW-compressed vector into its pre-compressed AMapToData form.
     // TODO: Compatibility with compress() and used data structures. Improve time/space complexity.
-    private static IntArrayList decompress(int[] code) { //TODO: return AMapToData
-        // Dictionary
-        Map<Integer, Long> dict = new HashMap<>();
-
-        // Extract alphabet size
-        int alphabetSize = code[0];
-
-
-        // Dictionary Initalisierung
-        for (int i = 0; i < alphabetSize; i++) {
-            dict.put(i, packKey(-1, code[i]));
+    private static AMapToData decompress(int[] codes, int nUnique, int nRows) {
+        // Validate input arguments.
+        if (codes == null)
+            throw new IllegalArgumentException("codes is null");
+        if (codes.length == 0)
+            throw new IllegalArgumentException("codes is empty");
+        if (nUnique <= 0)
+            throw new IllegalArgumentException("Invalid alphabet size: " + nUnique);
+        if (nRows <= 0) {
+            throw new IllegalArgumentException("Invalid nRows: " + nRows);
         }
 
-        // Result der Decompression
-        IntArrayList o = new IntArrayList();
+        // Maps: code -> packKey(prefixCode, lastSymbolOfPhrase).
+        // Base symbols (0..nUnique-1) are implicit and not stored here.
+        final Map<Integer, Long> dict = new HashMap<>();
 
-        // Decompression
-        int old = code[1+alphabetSize];
-        int[] next = unpack(old, alphabetSize, dict);
-        addtoOutput(o, next);
-        int c = next[0];
+        // Output mapping that will be reconstructed.
+        AMapToData out = MapToFactory.create(nRows, nUnique);
+        int outPos = 0; // Current write position in the output mapping.
 
+        // Decode the first code. The first code always expands to a valid phrase without needing
+        // any dictionary entries.
+        int old = codes[0];
+        int[] oldPhrase = unpack(old, nUnique, dict);
+        for (int v : oldPhrase)
+            out.set(outPos++, v);
 
-        for (int i = alphabetSize+2; i < code.length; i++) {
-            int key = code[i];
-            if (! dict.containsKey(key)) {
-                int[] oldnext = unpack(old, alphabetSize, dict);
-                int first = oldnext[0];
-                next = packint(oldnext, first);
+        // Next free dictionary code. Codes 0..nUnique-1 are reserved for base symbols.
+        int nextCode = nUnique;
+
+        // Process remaining codes.
+        for (int i = 1; i < codes.length; i++) {
+            int key = codes[i];
+
+            int[] next;
+            if (key < nUnique || dict.containsKey(key)) {
+                // Normal case: The code is either a base symbol or already present in the dictionary.
+                next = unpack(key, nUnique, dict);
             } else {
-                next = unpack(key, alphabetSize, dict);
+                // KwKwK special case: The current code refers to a phrase that is being defined right now.
+                // next = oldPhrase + first(oldPhrase).
+                int first = oldPhrase[0];
+                next = packint(oldPhrase, first);
             }
-            for (int inh : next){ // TODO: effizienz
-                o.add(inh);
-            }
+
+            // Append the reconstructed phrase to the output mapping.
+            for (int v : next) out.set(outPos++, v);
+
+            // Add new phrase to dictionary: nextCode -> (old, firstSymbol(next)).
             int first = next[0];
-            long s = packKey(old, first);
-            dict.put(alphabetSize+i, s);
+            dict.put(nextCode++, packKey(old, first));
+
+            // Advance.
             old = key;
+            oldPhrase = next;
         }
-        return o;
+
+        // Safety check: decoder must produce exactly nRows symbols.
+        if (outPos != nRows)
+            throw new IllegalStateException("Decompression length mismatch: got " + outPos + " expected " + nRows);
+
+        // Return the reconstructed mapping.
+        return out;
     }
 
 

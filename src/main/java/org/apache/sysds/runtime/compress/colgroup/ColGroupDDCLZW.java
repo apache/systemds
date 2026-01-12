@@ -88,10 +88,8 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
     private static final long serialVersionUID = -5769772089913918987L;
 
     private final int[] _dataLZW; // LZW compressed representation of the mapping
-
     private final int _nRows; // Number of rows in the mapping vector
     private final int _nUnique; // Number of unique values in the mapping vector
-
 
     // Builds a packed 64-bit key for (prefixCode(w), nextSymbol(k)) pairs used in the LZW dictionary. (TODO)
     private static long packKey(int prefixCode, int nextSymbol) {
@@ -273,7 +271,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
         return out;
     }
 
-
     // Build Constructor: Used when creating a new DDCLZW instance during compression/build time. (TODO)
     private ColGroupDDCLZW(IColIndex colIndexes, IDictionary dict, AMapToData data, int[] cachedCounts) {
         super(colIndexes, dict, cachedCounts);
@@ -342,6 +339,28 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
      *  suitable for sequential and which arent. those who arent then we shall materialize and fall back to ddc
      * */
 
+    public AColGroup convertToDDC() {
+        final AMapToData map = decompress(_dataLZW, _nUnique, _nRows);
+        final int[] counts = getCounts(); // may be null depending on your group
+        return ColGroupDDC.create(_colIndexes, _dict, map, counts);
+    }
+
+
+    // Temporary getters for testing ! Remove before PR!
+    /*public int[] get_dataLZW() {
+        return _dataLZW;
+    }
+
+    public int get_nRows() {
+        return _nRows;
+    }
+
+    public int get_nUnique() {
+        return _nUnique;
+    }*/
+    // Temporary getters for testing ! Remove before PR!
+
+
     // Deserialize ColGroupDDCLZW object in binary stream.
     public static ColGroupDDCLZW read(DataInput in) throws IOException {
         final IColIndex colIndexes = ColIndexFactory.read(in);
@@ -364,6 +383,46 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
         return new ColGroupDDCLZW(colIndexes, dict, dataLZW, nRows, nUnique, null);
     }
 
+    @Override
+    protected void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru, SparseBlock dict) {
+
+    }
+
+    @Override
+    protected void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru, double[] dict) {
+
+    }
+
+    @Override
+    protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock dict, int nColOut) {
+
+    }
+
+    @Override
+    protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict, int nColOut) {
+
+    }
+
+    @Override
+    protected void decompressToDenseBlockSparseDictionary(DenseBlock db, int rl, int ru, int offR, int offC, SparseBlock sb) {
+
+    }
+
+    @Override
+    protected void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC, double[] values) {
+
+    }
+
+    @Override
+    protected void decompressToSparseBlockSparseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC, SparseBlock sb) {
+
+    }
+
+    @Override
+    protected void decompressToSparseBlockDenseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC, double[] values) {
+
+    }
+
     // Serialize a ColGroupDDC-object into binary stream.
     @Override
     public void write(DataOutput out) throws IOException {
@@ -373,6 +432,201 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
         out.writeInt(_nUnique);
         out.writeInt(_dataLZW.length);
         for (int i : _dataLZW) out.writeInt(i);
+    }
+
+    @Override
+    public double getIdx(int r, int colIdx) {
+        return 0;
+    }
+
+    @Override
+    public CompressionType getCompType() {
+        return null;
+    }
+
+    @Override
+    protected ColGroupType getColGroupType() {
+        return null;
+    }
+
+    @Override
+    public void leftMultByMatrixNoPreAgg(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl, int cu) {
+
+    }
+
+    @Override
+    public AColGroup scalarOperation(ScalarOperator op) {
+        return null;
+    }
+
+    @Override
+    public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
+        return null;
+    }
+
+    @Override
+    public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
+        return null;
+    }
+
+    @Override
+    public AColGroup sliceRows(int rl, int ru) {
+        return null;
+    }
+
+    @Override
+    public boolean containsValue(double pattern) {
+        return false;
+    }
+
+    @Override
+    public double getCost(ComputationCostEstimator e, int nRows) {
+        return 0;
+    }
+
+    @Override
+    public AColGroup unaryOperation(UnaryOperator op) {
+        return null;
+    }
+
+    @Override
+    public AColGroup append(AColGroup g) {
+        return null;
+    }
+
+    @Override
+    protected AColGroup appendNInternal(AColGroup[] groups, int blen, int rlen) {
+        return null;
+    }
+
+    @Override
+    public ICLAScheme getCompressionScheme() {
+        return null;
+    }
+
+    @Override
+    public AColGroup recompress() {
+        return null;
+    }
+
+    @Override
+    public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
+        return null;
+    }
+
+    @Override
+    protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
+        return null;
+    }
+
+    @Override
+    protected void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+
+    }
+
+    @Override
+    protected void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+
+    }
+
+    @Override
+    public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
+        return new AColGroup[0];
+    }
+
+    @Override
+    protected boolean allowShallowIdentityRightMult() {
+        return false;
+    }
+
+    @Override
+    protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, IDictionary preAgg) {
+        return null;
+    }
+
+    @Override
+    protected AColGroup copyAndSet(IColIndex colIndexes, IDictionary newDictionary) {
+        return null;
+    }
+
+    @Override
+    public void preAggregateDense(MatrixBlock m, double[] preAgg, int rl, int ru, int cl, int cu) {
+
+    }
+
+    @Override
+    public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru, int cl, int cu) {
+
+    }
+
+    @Override
+    protected void preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
+
+    }
+
+    @Override
+    protected void preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
+
+    }
+
+    @Override
+    protected void preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
+
+    }
+
+    @Override
+    protected void preAggregateThatRLEStructure(ColGroupRLE that, Dictionary ret) {
+
+    }
+
+    @Override
+    protected int numRowsToMultiply() {
+        return 0;
+    }
+
+    @Override
+    public void leftMMIdentityPreAggregateDense(MatrixBlock that, MatrixBlock ret, int rl, int ru, int cl, int cu) {
+
+    }
+
+    @Override
+    protected int[] getCounts(int[] out) {
+        return new int[0];
+    }
+
+    @Override
+    protected double computeMxx(double c, Builtin builtin) {
+        return 0;
+    }
+
+    @Override
+    protected void computeColMxx(double[] c, Builtin builtin) {
+
+    }
+
+    @Override
+    protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
+
+    }
+
+    @Override
+    protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
+
+    }
+
+    @Override
+    protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
+
+    }
+
+    @Override
+    public boolean sameIndexStructure(AColGroupCompressed that) {
+        return false;
+    }
+
+    @Override
+    public AMapToData getMapToData() {
+        return null;
     }
 }
 

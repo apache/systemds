@@ -42,17 +42,70 @@ public class ColGroupDDCTest {
     protected static final Log LOG = LogFactory.getLog(ColGroupDDCTest.class.getName());
 
     @Test
-    public void testLZWRoundTripMapping() throws Exception {
-        // Build a mapping with repetition to actually exercise LZW
-        // Example: [2,0,2,3,0,2,1,0,2]
-        final int nRows = 9;
-        final int nUnique = 4;
+    public void testConvertToDDCLZWBasic() {
+        IColIndex colIndexes = ColIndexFactory.create(2);
+        double[] dictValues = new double[]{10.0, 20.0, 11.0, 21.0, 12.0, 22.0};
+        Dictionary dict = Dictionary.create(dictValues);
+
+        int[] src = new int[]{
+                // repeating base pattern
+                2, 0, 2, 1, 0, 2, 1, 0, 2,
+                2, 0, 2, 1, 0, 2, 1, 0, 2,
+
+                // variation / shifted pattern
+                1, 0, 1, 2, 0, 1, 2, 0, 1,
+                1, 0, 1, 2, 0, 1, 2, 0, 1,
+
+                // longer runs (good for phrase growth)
+                2, 2, 2, 2, 2,
+                0, 0, 0, 0, 0,
+                1, 1, 1, 1, 1,
+
+                // mixed noise
+                2, 1, 0, 2, 1, 0, 2, 1, 0,
+                0, 2, 1, 0, 2, 1, 0, 2, 1,1,1,1,1,1,1,
+
+                // repeating tail (tests dictionary reuse)
+                2, 0, 2, 1, 0, 2, 1, 0, 2,
+                2, 0, 2, 1, 0, 2, 1, 0, 2,0,0,0,0,0,1
+        };
+
+        final int nRows = src.length;
+        final int nUnique = 3;
         AMapToData data = MapToFactory.create(nRows, nUnique);
-        int[] src = new int[]{2, 0, 2, 3, 0, 2, 1, 0, 2};
         for (int i = 0; i < nRows; i++)
             data.set(i, src[i]);
 
-        // TODO: Write tests for ColGroupDDCLZW.
+        ColGroupDDC ddc = (ColGroupDDC) ColGroupDDC.create(colIndexes, dict, data, null);
+        AColGroup result = ddc.convertToDDCLZW();
+
+        assertNotNull(result);
+        assertTrue(result instanceof ColGroupDDCLZW);
+
+        ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) result;
+        AColGroup ddclzwDecompressed = ddclzw.convertToDDC();
+
+        assertNotNull(ddclzwDecompressed);
+        assertTrue(ddclzwDecompressed instanceof ColGroupDDC);
+
+        ColGroupDDC ddc2 = (ColGroupDDC) ddclzwDecompressed;
+
+        AMapToData d1 = ddc.getMapToData();
+        AMapToData d2 = ddc2.getMapToData();
+
+        assertEquals(d1.size(), d2.size());
+        assertEquals(d1.getUnique(), d2.getUnique());
+        for (int i = 0; i < d1.size(); i++)
+            assertEquals("mapping mismatch at row " + i, d1.getIndex(i), d2.getIndex(i));
+
+        assertEquals(d1.size(), d2.size());
+        assertEquals(d1.getUnique(), d2.getUnique());
+
+        for (int i = 0; i < d1.size(); i++) {
+            assertEquals(d1.getIndex(i), d2.getIndex(i));
+        }
+
+        assertEquals(ddc.getColIndices(), ddc2.getColIndices());
     }
 
     @Test

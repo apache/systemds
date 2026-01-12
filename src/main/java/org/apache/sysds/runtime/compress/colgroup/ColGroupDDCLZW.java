@@ -345,22 +345,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
         return ColGroupDDC.create(_colIndexes, _dict, map, counts);
     }
 
-
-    // Temporary getters for testing ! Remove before PR!
-    /*public int[] get_dataLZW() {
-        return _dataLZW;
-    }
-
-    public int get_nRows() {
-        return _nRows;
-    }
-
-    public int get_nUnique() {
-        return _nUnique;
-    }*/
-    // Temporary getters for testing ! Remove before PR!
-
-
     // Deserialize ColGroupDDCLZW object in binary stream.
     public static ColGroupDDCLZW read(DataInput in) throws IOException {
         final IColIndex colIndexes = ColIndexFactory.read(in);
@@ -381,6 +365,79 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
         // cachedCounts currently not serialized (mirror ColGroupDDC.read which passes null)
         return new ColGroupDDCLZW(colIndexes, dict, dataLZW, nRows, nUnique, null);
+    }
+
+    // Serialize a ColGroupDDC-object into binary stream.
+    @Override
+    public void write(DataOutput out) throws IOException {
+        _colIndexes.write(out);
+        _dict.write(out);
+        out.writeInt(_nRows);
+        out.writeInt(_nUnique);
+        out.writeInt(_dataLZW.length);
+        for (int i : _dataLZW) out.writeInt(i);
+    }
+
+    @Override
+    public double getIdx(int r, int colIdx) {
+        return 0;
+    }
+
+    @Override
+    public CompressionType getCompType() {
+        return null;
+    }
+
+    @Override
+    protected ColGroupType getColGroupType() {
+        return null;
+    }
+
+    @Override
+    public boolean containsValue(double pattern) {
+        return _dict.containsValue(pattern);
+    }
+
+    @Override
+    public double getCost(ComputationCostEstimator e, int nRows) {
+        final int nVals = getNumValues();
+        final int nCols = getNumCols();
+        return e.getCost(nRows, nRows, nCols, nVals, _dict.getSparsity());
+    }
+
+    @Override
+    public ICLAScheme getCompressionScheme() {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    protected int numRowsToMultiply() {
+        return _nRows;
+    }
+
+    @Override
+    protected AColGroup copyAndSet(IColIndex colIndexes, IDictionary newDictionary) {
+        return new ColGroupDDCLZW(colIndexes, newDictionary, _dataLZW, _nRows, _nUnique, getCachedCounts());
+    }
+
+    @Override
+    public AMapToData getMapToData() {
+        throw new NotImplementedException(); // or decompress and return data...
+    }
+
+    @Override
+    public boolean sameIndexStructure(AColGroupCompressed that) {
+        return that instanceof ColGroupDDCLZW && ((ColGroupDDCLZW) that)._dataLZW == _dataLZW;
+    }
+
+    @Override
+    protected double computeMxx(double c, Builtin builtin) {
+        return _dict.aggregate(c, builtin);
+    }
+
+    @Override
+    protected void computeColMxx(double[] c, Builtin builtin) {
+        _dict.aggregateCols(c, builtin, _colIndexes);
     }
 
     @Override
@@ -423,32 +480,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
     }
 
-    // Serialize a ColGroupDDC-object into binary stream.
-    @Override
-    public void write(DataOutput out) throws IOException {
-        _colIndexes.write(out);
-        _dict.write(out);
-        out.writeInt(_nRows);
-        out.writeInt(_nUnique);
-        out.writeInt(_dataLZW.length);
-        for (int i : _dataLZW) out.writeInt(i);
-    }
-
-    @Override
-    public double getIdx(int r, int colIdx) {
-        return 0;
-    }
-
-    @Override
-    public CompressionType getCompType() {
-        return null;
-    }
-
-    @Override
-    protected ColGroupType getColGroupType() {
-        return null;
-    }
-
     @Override
     public void leftMultByMatrixNoPreAgg(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl, int cu) {
 
@@ -475,16 +506,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
     }
 
     @Override
-    public boolean containsValue(double pattern) {
-        return false;
-    }
-
-    @Override
-    public double getCost(ComputationCostEstimator e, int nRows) {
-        return 0;
-    }
-
-    @Override
     public AColGroup unaryOperation(UnaryOperator op) {
         return null;
     }
@@ -496,11 +517,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
     @Override
     protected AColGroup appendNInternal(AColGroup[] groups, int blen, int rlen) {
-        return null;
-    }
-
-    @Override
-    public ICLAScheme getCompressionScheme() {
         return null;
     }
 
@@ -545,11 +561,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
     }
 
     @Override
-    protected AColGroup copyAndSet(IColIndex colIndexes, IDictionary newDictionary) {
-        return null;
-    }
-
-    @Override
     public void preAggregateDense(MatrixBlock m, double[] preAgg, int rl, int ru, int cl, int cu) {
 
     }
@@ -580,11 +591,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
     }
 
     @Override
-    protected int numRowsToMultiply() {
-        return 0;
-    }
-
-    @Override
     public void leftMMIdentityPreAggregateDense(MatrixBlock that, MatrixBlock ret, int rl, int ru, int cl, int cu) {
 
     }
@@ -592,16 +598,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
     @Override
     protected int[] getCounts(int[] out) {
         return new int[0];
-    }
-
-    @Override
-    protected double computeMxx(double c, Builtin builtin) {
-        return 0;
-    }
-
-    @Override
-    protected void computeColMxx(double[] c, Builtin builtin) {
-
     }
 
     @Override
@@ -617,16 +613,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
     @Override
     protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
 
-    }
-
-    @Override
-    public boolean sameIndexStructure(AColGroupCompressed that) {
-        return false;
-    }
-
-    @Override
-    public AMapToData getMapToData() {
-        return null;
     }
 }
 

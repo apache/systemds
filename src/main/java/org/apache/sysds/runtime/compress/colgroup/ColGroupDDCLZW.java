@@ -445,6 +445,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
         return null;
     }
 
+
     @Override
     protected void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru, SparseBlock dict) {
 

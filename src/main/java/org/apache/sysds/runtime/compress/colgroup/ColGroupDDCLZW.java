@@ -385,12 +385,12 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
     @Override
     public CompressionType getCompType() {
-        return null;
+        return CompressionType.DDCLZW;
     }
 
     @Override
     protected ColGroupType getColGroupType() {
-        return null;
+        return ColGroupType.DDCLZW;
     }
 
     @Override
@@ -438,6 +438,11 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
     @Override
     protected void computeColMxx(double[] c, Builtin builtin) {
         _dict.aggregateCols(c, builtin, _colIndexes);
+    }
+
+    @Override
+    public AColGroup sliceRows(int rl, int ru) {
+        return null;
     }
 
     @Override
@@ -497,11 +502,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
     @Override
     public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
-        return null;
-    }
-
-    @Override
-    public AColGroup sliceRows(int rl, int ru) {
         return null;
     }
 

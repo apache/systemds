@@ -4,6 +4,9 @@
 * Run with docker:
 docker run -it --rm -v $PWD:/scripts/ apache/systemds:nightly -f /scripts/queries/q1_1.dml -nvargs input_dir="/scripts/data/"
 
+# Open in scripts/ssb/
+../../bin/systemds queries/q1_1.dml -nvargs input_dir="data/"
+
 SELECT SUM(lo_extendedprice * lo_discount) AS REVENUE
 FROM lineorder, date --dates
 WHERE
@@ -34,7 +37,6 @@ source("./scripts/builtin/raJoin.dml") as raJoin
 # Set input parameters.
 input_dir = ifdef($input_dir, "./data");
 print("Loading tables from directory: " + input_dir);
-
 # Read and load input CSV files from date and lineorder.  
 date_csv = read(input_dir + "/date.tbl", data_type="frame", format="csv", header=FALSE, sep="|");
 lineorder_csv = read(input_dir + "/lineorder.tbl", data_type="frame", format="csv", header=FALSE, sep="|");

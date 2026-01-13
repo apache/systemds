@@ -39,3 +39,25 @@ For more options look into the original documentation.
 - Use [SSB generator](https://github.com/eyalroz/ssb-dbgen) to generate data.
 - Run ssh scripts for experiments in the selected database systems. Use also scale factors.
 - Compare the runtime of each query in each system. 
+
+Run with:
+```
+docker run -it --rm -v $PWD:/scripts/ apache/systemds:nightly -f /scripts/queries/q4_3.dml -nvargs input_dir="/scripts/data/very_small_s0_01_dataset"
+```
+
+```
+docker exec -i postgres-ssb psql -U postgres -d ssb_s0_01  < ../sql/q1.2.sql
+```
+
+Troubleshooting:
+Do not forget the correct paths. $(pwd) is where your main systemds directory is.
+```
+export SYSTEMDS_ROOT=$(pwd)
+export PATH=$SYSTEMDS_ROOT/bin:$PATH
+```
+[Link](https://apache.github.io/systemds/site/run)
+
+
+```
+mvn package #Use as compile. Why so long execution time?
+```

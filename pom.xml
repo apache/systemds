@@ -939,12 +939,6 @@
 				<artifactId>avro</artifactId>
 				<version>${avro.version}</version>
 			</dependency>
-		</dependencies>
-	</dependencyManagement>
-
-	<!-- Dependency management to override transitive dependency versions for security fixes -->
-	<dependencyManagement>
-		<dependencies>
 			<!-- CVE-2023-25613: LDAP Injection vulnerability in Apache Kerby -->
 			<dependency>
 				<groupId>org.apache.kerby</groupId>

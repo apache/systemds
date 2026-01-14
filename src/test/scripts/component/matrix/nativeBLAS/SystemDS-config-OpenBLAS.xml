@@ -19,6 +19,5 @@
 
 <root>
 	<sysds.native.blas>openblas</sysds.native.blas>
-	<!-- <sysds.native.blas>mkl</sysds.native.blas> -->
 	<sysds.native.blas.directory>/usr/local/lib</sysds.native.blas.directory>
 </root>

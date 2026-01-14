@@ -27,7 +27,6 @@ import java.util.Collection;
 import java.util.List;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.lang.Math;
 import java.lang.String;
 
@@ -35,12 +34,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.conf.ConfigurationManager;
-import org.apache.sysds.runtime.functionobjects.Multiply;
-import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.LibMatrixNative;
-import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.utils.NativeHelper;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.TestConfiguration;
@@ -49,13 +44,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import org.junit.After;
 
 @RunWith(value = Parameterized.class)
 public class MatrixMultiplyTest extends AutomatedTestBase{
 	protected static final Log LOG = LogFactory.getLog(MatrixMultiplyTest.class.getName());
 
-	private final static String TEST_DIR = "component/matrix";
+	private final static String TEST_DIR = "component/matrix/";
 
 	protected String getTestClassDir() {
 		return getTestDir() + this.getClass().getSimpleName() + "/";
@@ -166,14 +160,13 @@ public class MatrixMultiplyTest extends AutomatedTestBase{
 		}
 	}
 
-	// TODO: test not working with native BLAS
-	//@Test
-	//public void testLeftNonContiguous() {
-	//	MatrixBlock lhs = new MatrixBlock();
-	//	lhs.copy(left, false);
-	//	MatrixBlock nc = TestUtils.mockNonContiguousMatrix(lhs);
-	//	test(nc, right);
-	//}
+	@Test
+	public void testLeftNonContiguous() {
+		MatrixBlock lhs = new MatrixBlock();
+		lhs.copy(left, false);
+		MatrixBlock nc = TestUtils.mockNonContiguousMatrix(lhs);
+		test(nc, right);
+	}
 
 	@Test
 	public void testRightForceDense() {
@@ -273,16 +266,8 @@ public class MatrixMultiplyTest extends AutomatedTestBase{
 		}
 	}
 
-	private void test(MatrixBlock a, MatrixBlock b) {
+	public void test(MatrixBlock a, MatrixBlock b) {
 		try {
-			String testname = getTestName() + String.valueOf(Math.random()*5);
-			addTestConfiguration(testname, new TestConfiguration(getTestClassDir(), testname));
-			loadTestConfiguration(getTestConfiguration(testname));
-
-			DMLConfig conf = new DMLConfig(getCurConfigFile().getPath());
-			ConfigurationManager.setLocalConfig(conf);
-			assertEquals(true, NativeHelper.isNativeLibraryLoaded());
-
 			MatrixBlock ret = multiply(a, b, k);
 
 			boolean sparseLeft = a.isInSparseFormat();
@@ -329,9 +314,21 @@ public class MatrixMultiplyTest extends AutomatedTestBase{
 
 	@Override
 	protected File getConfigTemplateFile() {
-		return new File("./src/test/scripts/SystemDS-config-native.xml");
+		return new File("./src/test/scripts/component/matrix/SystemDS-config.xml");
 	}
 
 	@Override
-	public void setUp() {}
+	public void setUp() {
+		try {
+			String testname = getTestName() + String.valueOf(Math.random()*5);
+			addTestConfiguration(testname, new TestConfiguration(getTestClassDir(), testname));
+			loadTestConfiguration(getTestConfiguration(testname));
+
+			DMLConfig conf = new DMLConfig(getCurConfigFile().getPath());
+			ConfigurationManager.setLocalConfig(conf);
+		} catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
 }

@@ -1302,22 +1302,59 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		ensureAllocateMeta();
 		if(_coldata == null) // allocate column data.
 			_coldata = new Array[_schema.length];
-		synchronized(this) { // make sync locks
-			// TODO remove sync locks on array types where they are not needed.
-			if(_columnLocks == null) {
-				Object[] locks = new Object[_schema.length];
-				for(int i = 0; i < locks.length; i++)
-					locks[i] = new Object();
-				_columnLocks = new SoftReference<>(locks);
-			}
-		}
-		Object[] locks = _columnLocks.get();
-		for(int j = cl; j <= cu; j++) { // for each column
-			synchronized(locks[j]) { // synchronize on the column.
+
+		for(int j = cl; j <= cu; j++) {
+			if(_schema[j] == ValueType.BOOLEAN) {
+				// option 1: Boolean columns and needs lock
+				// double check logging. logging implementation made using chatgpt
+				Object[] locks = (_columnLocks != null) ? _columnLocks.get() : null;
+				if(locks == null) {
+					synchronized(this) {
+						locks = (_columnLocks != null) ? _columnLocks.get() : null;
+						if(locks == null) {
+							locks = new Object[_schema.length];
+							for(int i = 0; i < locks.length; i++)
+								locks[i] = new Object();
+							_columnLocks = new java.lang.ref.SoftReference<>(locks);
+						}
+					}
+				}
+				// read/write inside lock, for safest write and most accurate read
+				synchronized(locks[j]) {
+					_coldata[j] = ArrayFactory.set(_coldata[j], src._coldata[j - cl], rl, ru, _nRow);
+				}
+			} else {
+				// option 2: not boolean so no locking
 				_coldata[j] = ArrayFactory.set(_coldata[j], src._coldata[j - cl], rl, ru, _nRow);
 			}
 		}
 	}
+
+//	public void copy(int rl, int ru, int cl, int cu, FrameBlock src) {
+//		// If full copy, fall back to default copy
+//		if(rl == 0 && cl == 0 && ru + 1 == this.getNumRows() && cu + 1 == this.getNumColumns()) {
+//			copy(src);
+//			return;
+//		}
+//		ensureAllocateMeta();
+//		if(_coldata == null) // allocate column data.
+//			_coldata = new Array[_schema.length];
+//		synchronized(this) { // make sync locks
+//			// TODO remove sync locks on array types where they are not needed.
+//			if(_columnLocks == null) {
+//				Object[] locks = new Object[_schema.length];
+//				for(int i = 0; i < locks.length; i++)
+//					locks[i] = new Object();
+//				_columnLocks = new SoftReference<>(locks);
+//			}
+//		}
+//		Object[] locks = _columnLocks.get();
+//		for(int j = cl; j <= cu; j++) { // for each column
+//			synchronized(locks[j]) { // synchronize on the column.
+//				_coldata[j] = ArrayFactory.set(_coldata[j], src._coldata[j - cl], rl, ru, _nRow);
+//			}
+//		}
+//	}
 
 	/**
 	 * This function will split every Recode map in the column using delimiter Lop.DATATYPE_PREFIX, as Recode map

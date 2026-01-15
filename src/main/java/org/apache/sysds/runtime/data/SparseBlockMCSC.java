@@ -113,7 +113,14 @@ public class SparseBlockMCSC extends SparseBlock {
 				}
 				rowPosition++;
 			}
-
+		}
+		else if(sblock instanceof SparseBlockCSC) {
+			clen = ((SparseBlockCSC) sblock).numCols();
+			_columns = new SparseRow[clen];
+			for(int i = 0; i < clen; i++) {
+				if(!((SparseBlockCSC) sblock).isEmptyCol(i))
+					_columns[i] = ((SparseBlockCSC) sblock).getCol(i);
+			}
 		}
 		// general case SparseBlock
 		else {

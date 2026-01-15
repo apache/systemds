@@ -405,6 +405,16 @@ public class SparseBlockInitializationTest extends AutomatedTestBase
 	}
 
 	@Test
+	public void testSparseBlockMCSCInitCSC()  {
+		double[][] A = getRandomMatrix(_rows, _cols, -10, 10, _sparsity, 1234);
+		MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
+		SparseBlock sblock = new SparseBlockCSC(mbtmp.getSparseBlock());
+
+		SparseBlock sblock2 = new SparseBlockMCSC(sblock);
+		assertEquals(sblock, sblock2);
+	}
+
+	@Test
 	public void testSparseBlockMCSCInitColsDeep()  {
 		double[][] A = getRandomMatrix(_rows, _cols, -10, 10, _sparsity, 1234);
 		MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
@@ -448,5 +458,17 @@ public class SparseBlockInitializationTest extends AutomatedTestBase
 		SparseBlockMCSR sblock2 = new SparseBlockMCSR(rows, true);
 		assertEquals(sblock, sblock2);
 		assertNotSame(sblock.getRows(), sblock2.getRows());
+	}
+
+	@Test
+	public void testSparseBlockCSRInitSize()  {
+		int rlen = 3;
+		int capacity = 7;
+		int size = 2;
+		SparseBlockCSR sblock = new SparseBlockCSR(rlen, capacity, size);
+		sblock.append(0, 1, 1.0);
+		sblock.append(0, 3, 3.0);
+		sblock.compact();
+		assertEquals("size should be 2", 2, sblock.size());
 	}
 }

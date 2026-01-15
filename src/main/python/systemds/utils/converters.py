@@ -21,6 +21,7 @@
 
 import struct
 from time import time
+from typing import Union
 import numpy as np
 import pandas as pd
 import concurrent.futures
@@ -158,7 +159,7 @@ def _transfer_matrix_block_multi_pipe(
     return fut_java.result()  # Java returns MatrixBlock
 
 
-def numpy_to_matrix_block(sds, arr: np.ndarray | sp.spmatrix):
+def numpy_to_matrix_block(sds, arr: Union[np.ndarray, sp.spmatrix]):
     """Converts a given numpy array, to internal matrix block representation.
 
     :param sds: The current systemds context.

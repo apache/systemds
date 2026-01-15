@@ -142,12 +142,6 @@ jobs:
         export PATH=$SYSTEMDS_ROOT/bin:$PATH
         cd src/main/python
         ./tests/federated/runFedTest.sh
-    - name: Free Disk Space
-        if: runner.os == 'Linux'
-         run: |
-        # Check space before cleanup
-        df -h /
-    
     
     - name: Cache Torch Hub
       if: ${{ matrix.test_mode == 'scuro' }}
@@ -164,6 +158,8 @@ jobs:
       env:
         TORCH_HOME: ${{ github.workspace }}/.torch
       run: |
+        df -h
+        exit
         ( while true; do echo "."; sleep 25; done ) &
         KA=$!
         pip install --upgrade pip wheel setuptools

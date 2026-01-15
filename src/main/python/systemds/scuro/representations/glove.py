@@ -59,18 +59,20 @@ class GloVe(UnimodalRepresentation):
         glove_embeddings = load_glove_embeddings(self.glove_path)
 
         embeddings = []
+        embedding_dim = (
+            len(next(iter(glove_embeddings.values()))) if glove_embeddings else 100
+        )
+
         for sentences in modality.data:
             tokens = list(tokenize(sentences.lower()))
-            embeddings.append(
-                np.mean(
-                    [
-                        glove_embeddings[token]
-                        for token in tokens
-                        if token in glove_embeddings
-                    ],
-                    axis=0,
-                )
-            )
+            token_embeddings = [
+                glove_embeddings[token] for token in tokens if token in glove_embeddings
+            ]
+
+            if len(token_embeddings) > 0:
+                embeddings.append(np.mean(token_embeddings, axis=0))
+            else:
+                embeddings.append(np.zeros(embedding_dim, dtype=np.float32))
 
         if self.output_file is not None:
             save_embeddings(np.array(embeddings), self.output_file)

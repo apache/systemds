@@ -13,7 +13,7 @@
   - Identify the correct package
 
     Scout recommends upgrading the package to `3.7.2`, `3.8.3`, or `3.9.1`. \
-    [Releases](https://zookeeper.apache.org/releases.html): `3.7.2` already reached its EoL. `3.9` is not yet in its stable version. 
+    [Releases](https://zookeeper.apache.org/releases.html): `3.7.2` already reached its EoL.
 
     Apache zookeeper is not directly imported in the project. The vulnerability is raised transitively by another dependecy. \
     `mvn dependency:tree` shows all implicit dependencies (see the [appendix](#output-of-mvn-dependencytree) for the output). \
@@ -41,26 +41,34 @@
         scala `2.13` is not backwards compatible with `2.12`.
       - No direct backwards compatibility between `4.0` and `3.5` \
         [core migration guide](https://spark.apache.org/docs/latest/core-migration-guide.html#upgrading-from-core-35-to-40)
-    - Make `spark-core` use zookeeper `3.8.3`
+    - Make `spark-core` use zookeeper `3.8.3+`
       - as `spark-core` is a package  using `zookeeper`, explicitely declaring another version of the zookeeper dependency will override spark's dependecy. As zookeeper is backwards compatible, this should not cause problems for the app
       - `hadoop-common 3.3.6` also uses `zookeeper 3.6.3`.
 
 #### Solution
 
+Zookeeper `3.9.4` will be used to solve all zookeeper-related vulnerabilities. `netty-handler` is also explicitly imported to solve a vulnerability related to the implicit version.
+
 **Changes** 
 - `pom.xml`
   - explicit dependency \
-    `zookeeper 3.8.3` \
+    `zookeeper 3.9.4` \
     The vulnerability is solved by upgrading the version of `zookeeper`
     ```xml
     <!-- 
-    Explicit declaration to use 3.8.3 instead of implicit use of 3.6.3 by spark-core
+    Explicit declaration to use 3.9.4 instead of implicit use of 3.6.3 by spark-core
     Solves critical vulnerability CVE-2023-44981 in the docker image.
     -->
     <dependency>
       <groupId>org.apache.zookeeper</groupId>
       <artifactId>zookeeper</artifactId>
-      <version>3.8.3</version>
+      <version>3.9.4</version>
+      <exclusions>
+				<exclusion>
+					<groupId>io.netty</groupId>
+					<artifactId>netty-handler</artifactId>
+				</exclusion>
+			</exclusions>
     </dependency>
     ```
   - exclude `zookeeper` from
@@ -95,6 +103,8 @@
   The critical vulnerability in `zookeeper` is not shown anymore
 - `mvn dependency:tree` \
   shows a more recent version of zookeeper
+
+  No packet imported by zookeeper generates CVES.
 - building the project works \
   `mvn clean package -P distribution`
 
@@ -110,7 +120,7 @@
     `du -h /home/schnee/DIA-sysds-scout-tmp/` to see directory usage. \
     `docker scout cache df` and `docker scout cache prune` to view and clear scout cache.
     
-    Change default tmp partition to a bigger filesystem
+    Change default tmp partition to a bigger filesystem \
     `export TMPDIR=/home/schnee/DIA-sysds-scout-tmp` \
     `export DOCKER_SCOUT_CACHE_DIR=/home/schnee/DIA-sysds-scout-tmp`
 - copy container filesystem to analyze jars: 

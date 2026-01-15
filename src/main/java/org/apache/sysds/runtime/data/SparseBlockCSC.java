@@ -917,7 +917,7 @@ public class SparseBlockCSC extends SparseBlock {
 		int len = sizeCol(c);
 		int end = internPosFIndexGTECol(ru, c);
 		if(end < 0) //delete all remaining
-			end = start + len;
+			end = posCol(c) + len;
 
 		//overlapping array copy (shift rhs values left)
 		System.arraycopy(_indexes, end, _indexes, start, _size - end);

@@ -19,6 +19,9 @@
 #
 #-------------------------------------------------------------
 
+# =============================================================================
+# Autoencoder (2-layer + generalized) with optional Parameter Server training
+# =============================================================================
 # Trains a 2-layer autoencoder with minibatch SGD and step-size decay.
 # If invoked with H1 > H2 then it becomes a 'bowtie' structured autoencoder
 # Weights are initialized using Glorot & Bengio (2010) AISTATS initialization.
@@ -40,6 +43,14 @@
 # step          Initial step size (training parameter)
 # decay         Decays step size after each epoch (training parameter)
 # mu            Momentum parameter (training parameter)
+# method        Training method: DEFAULTSERVER or PARAMSERVER
+# mode          Paramserv mode: LOCAL or DISTRIBUTED (REMOTE_SPARK)
+# utype         Paramserv update type (e.g., BSP, ASP, SSP)
+# freq          Paramserv update frequency (e.g., BATCH, EPOCH)
+# k             Number of workers
+# scheme        Data partitioning scheme for paramserv
+# nbatches      Optional number of batches per epoch for paramserv
+# modelAvg      Optional boolean parameter to select between updating or averaging the model in paramserver side
 # W1_rand       Weights might be initialized via input matrices
 # W2_rand       --- 
 # W3_rand       ---
@@ -59,8 +70,65 @@
 # HIDDEN   Matrix storing the hidden (2nd) layer representation if needed
 # ----------------------------------------------------------------------------------------------------
 
+# -----------------------------------------------------------------------------
+# Generalized autoencoder entry point (arbitrary encoder depth)
+# -----------------------------------------------------------------------------
+m_autoencoder = function(Matrix[Double] X, list[unknown] hidden_layers, Integer max_epochs,
+  Boolean full_obj = FALSE, Integer batch_size = 256, Double step = 1e-5, Double decay = 0.95, Double mu = 0.9,
+  String method = "DEFAULTSERVER", String mode = "LOCAL", String utype = "BSP", String freq = "BATCH",
+  Integer k = 1, String scheme = "DISJOINT_RANDOM", Integer nbatches = 0, Boolean modelAvg = FALSE,
+  Matrix[Double] order_rand = matrix(0, rows=0, cols=0))
+  return(list[unknown] model, Matrix[Double] reordered_H)
+{
+  # hidden_layers defines encoder sizes (e.g., list(128, 64)).
+  # Decoder mirrors encoder automatically.
+  n = nrow(X)
+  m = ncol(X)
+  #randomly reordering rows
+  if(nrow(order_rand) == 0 & ncol(order_rand) == 0) 
+    permut = table(seq(1,n,1), order(target=Rand(rows=n, cols=1, min=0, max=1, pdf="uniform"), by=1, index.return=TRUE), n, n)
+  else 
+    permut = table(seq(1,n,1), order(target=order_rand, by=1, index.return=TRUE), n, n)
+  X = permut %*% X
+
+  #z-transform, whitening operator is better
+  means = colSums(X)/n
+  stds = sqrt((colSums(X^2)/n - means*means)*n/(n-1)) + 1e-17
+  X = (X - means)/stds
+
+  # Build full layer sizes including mirrored decoder and output layer.
+  layer_sizes = build_layer_sizes(m, hidden_layers)
+  layer_count = length(layer_sizes) - 1
+  # Initialize weights, biases, and momentum buffers.
+  [W_list, b_list, upd_W_list, upd_b_list] = init_layers(layer_sizes)
+
+  if(method == "DEFAULTSERVER") {
+    # Single-process training loop with full control over epochs/batches.
+    [W_list, b_list, upd_W_list, upd_b_list, reordered_H] = train_default_layers(
+      X, permut, W_list, b_list, upd_W_list, upd_b_list,
+      hidden_layers, max_epochs, full_obj, batch_size, step, decay, mu)
+  }
+  else if(method == "PARAMSERVER") {
+    # Parameter server training via paramserv builtin.
+    [W_list, b_list, upd_W_list, upd_b_list, reordered_H] = train_paramserv_layers(
+      X, permut, W_list, b_list, upd_W_list, upd_b_list, hidden_layers, layer_count,
+      max_epochs, batch_size, step, mu, mode, utype, freq, k, scheme, nbatches, modelAvg)
+  }
+  else {
+    stop("Unsupported method: " + method + ". Use DEFAULTSERVER or PARAMSERVER.")
+  }
+
+  # Return flattened model list for compatibility with paramserv conventions.
+  model = flatten_model(W_list, b_list, upd_W_list, upd_b_list)
+}
+
+# -----------------------------------------------------------------------------
+# Legacy 2-layer autoencoder entry point (kept for compatibility)
+# -----------------------------------------------------------------------------
 m_autoencoder_2layer = function(Matrix[Double] X, Integer num_hidden1, Integer num_hidden2, Integer max_epochs,
   Boolean full_obj = FALSE, Integer batch_size = 256, Double step = 1e-5, Double decay = 0.95, Double mu = 0.9,
+  String method = "DEFAULTSERVER", String mode = "LOCAL", String utype = "BSP", String freq = "BATCH",
+  Integer k = 1, String scheme = "DISJOINT_RANDOM", Integer nbatches = 0, Boolean modelAvg = FALSE,
   Matrix[Double] W1_rand = matrix(0, rows=0, cols=0), Matrix[Double] W2_rand = matrix(0, rows=0, cols=0), 
   Matrix[Double] W3_rand = matrix(0, rows=0, cols=0), Matrix[Double] W4_rand = matrix(0, rows=0, cols=0), 
   Matrix[Double] order_rand = matrix(0, rows=0, cols=0))
@@ -99,88 +167,35 @@ m_autoencoder_2layer = function(Matrix[Double] X, Integer num_hidden1, Integer n
   W4 = sqrt(6)/sqrt(num_hidden2 + m) * W4_rand 
   b4 = matrix(0, rows=m, cols=1)
 
-  upd_W1 = matrix(0, rows=nrow(W1), cols=ncol(W1))
-  upd_b1 = matrix(0, rows=nrow(b1), cols=ncol(b1))
-  upd_W2 = matrix(0, rows=nrow(W2), cols=ncol(W2))
-  upd_b2 = matrix(0, rows=nrow(b2), cols=ncol(b2))
-  upd_W3 = matrix(0, rows=nrow(W3), cols=ncol(W3))
-  upd_b3 = matrix(0, rows=nrow(b3), cols=ncol(b3))
-  upd_W4 = matrix(0, rows=nrow(W4), cols=ncol(W4))
-  upd_b4 = matrix(0, rows=nrow(b4), cols=ncol(b4))
-
-  if( full_obj ){
-    [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat, 
-     full_Yhat_prime, full_E] = feedForward(X, W1, b1, W2, b2, W3, b3, W4, b4, X)
-    full_o = obj(full_E)
-    print("EPOCHS=" + 0 + " OBJ (FULL DATA): " + full_o)
+  if(method == "DEFAULTSERVER") {
+    [W1, b1, W2, b2, W3, b3, W4, b4, reordered_H] = train_default(
+      X, permut, W1, b1, W2, b2, W3, b3, W4, b4,
+      max_epochs, full_obj, batch_size, step, decay, mu)
   }
-
-  iter = 0
-  num_iters_per_epoch = ceil(n / batch_size)
-  max_iterations = max_epochs * num_iters_per_epoch
-  #print("num_iters_per_epoch=" + num_iters_per_epoch + " max_iterations=" + max_iterations)
-  beg = 1
-  while( iter < max_iterations ){
-    end = beg + batch_size - 1
-    if(end > n) end = n
-    X_batch = X[beg:end,]
-
-    [H1, H1_prime, H2, H2_prime, H3, H3_prime, Yhat, Yhat_prime, E] 
-      = feedForward(X_batch, W1, b1, W2, b2, W3, b3, W4, b4, X_batch)
-    [W1_grad, b1_grad, W2_grad, b2_grad, W3_grad, b3_grad, W4_grad, b4_grad] 
-      = grad(X_batch, H1, H1_prime, H2, H2_prime, H3, H3_prime, Yhat_prime, E, W1, W2, W3, W4)
-
-    o = obj(E)
-    print("epochs=%5.4f BATCH beg=%d end=%d obj=%f", (iter / num_iters_per_epoch), beg, end, o)
-
-    #update
-    local_step = step / nrow(X_batch)
-    upd_W1 = mu * upd_W1 - local_step * W1_grad
-    upd_b1 = mu * upd_b1 - local_step * b1
-    upd_W2 = mu * upd_W2 - local_step * W2_grad
-    upd_b2 = mu * upd_b2 - local_step * b2
-    upd_W3 = mu * upd_W3 - local_step * W3_grad
-    upd_b3 = mu * upd_b3 - local_step * b3
-    upd_W4 = mu * upd_W4 - local_step * W4_grad
-    upd_b4 = mu * upd_b4 - local_step * b4
-    W1 = W1 + upd_W1
-    b1 = b1 + upd_b1
-    W2 = W2 + upd_W2
-    b2 = b2 + upd_b2
-    W3 = W3 + upd_W3
-    b3 = b3 + upd_b3
-    W4 = W4 + upd_W4
-    b4 = b4 + upd_b4
-
-    iter = iter + 1
-    if(end == n) beg = 1
-    else beg = end + 1
-
-    if( iter %% num_iters_per_epoch == 0 ) step = step * decay
-
-    if( full_obj & iter %% num_iters_per_epoch == 0 ){
-      [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat, 
-       full_Yhat_prime, full_E] = feedForward(X, W1, b1, W2, b2, W3, b3, W4, b4, X)
-      full_o = obj(full_E)
-      epochs = iter %/% num_iters_per_epoch
-      print("EPOCHS=" + epochs + " iter=" + iter + " OBJ (FULL DATA)=" + full_o)
-    }
+  else if(method == "PARAMSERVER") {
+    [W1, b1, W2, b2, W3, b3, W4, b4, reordered_H] = train_paramserv(
+      X, permut, W1, b1, W2, b2, W3, b3, W4, b4,
+      max_epochs, batch_size, step, mu, mode, utype, freq, k, scheme, nbatches, modelAvg)
   }
-
-  [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat, 
-   full_Yhat_prime, full_E] = feedForward(X, W1, b1, W2, b2, W3, b3, W4, b4, X)
-  reordered_H = t(permut) %*% full_H2
+  else {
+    stop("Unsupported method: " + method + ". Use DEFAULTSERVER or PARAMSERVER.")
+  }
 }
 
-#implements tanh
-#to use another activation fn, implement a DML-bodied function with 
-#function name 'func' and comment out this one
+# -----------------------------------------------------------------------------
+# Activation function (default: tanh)
+# -----------------------------------------------------------------------------
+# To use another activation, implement a DML-bodied function named 'func'
+# and comment out this one.
 func = function(Matrix[Double] X) return(Matrix[Double] Y, Matrix[Double] Y_prime){
   Y = (exp(2*X) - 1)/(exp(2*X) + 1)
   Y_prime = 1 - Y^2
 }
 
-feedForward = function(Matrix[Double] X, Matrix[Double] W1, Matrix[Double] b1, Matrix[Double] W2, Matrix[Double] b2, 
+# -----------------------------------------------------------------------------
+# Fixed 2-layer helpers (original path)
+# -----------------------------------------------------------------------------
+forward_pass = function(Matrix[Double] X, Matrix[Double] W1, Matrix[Double] b1, Matrix[Double] W2, Matrix[Double] b2, 
   Matrix[Double] W3, Matrix[Double] b3, Matrix[Double] W4, Matrix[Double] b4, Matrix[Double] Y)
   return(Matrix[Double] H1, Matrix[Double] H1_prime,Matrix[Double] H2, Matrix[Double] H2_prime,
     Matrix[Double] H3, Matrix[Double] H3_prime, Matrix[Double] Yhat, Matrix[Double] Yhat_prime, Matrix[Double] E)
@@ -199,7 +214,7 @@ feedForward = function(Matrix[Double] X, Matrix[Double] W1, Matrix[Double] b1, M
   E = Yhat - Y
 }
 
-grad = function(Matrix[Double] X, Matrix[Double] H1, Matrix[Double] H1_prime, Matrix[Double] H2, Matrix[Double] H2_prime,
+backward_pass = function(Matrix[Double] X, Matrix[Double] H1, Matrix[Double] H1_prime, Matrix[Double] H2, Matrix[Double] H2_prime,
   Matrix[Double] H3, Matrix[Double] H3_prime, Matrix[Double] Yhat_prime, Matrix[Double] E,
   Matrix[Double] W1, Matrix[Double] W2, Matrix[Double] W3, Matrix[Double] W4)
   return(Matrix[Double] W1_grad, Matrix[Double] b1_grad,Matrix[Double] W2_grad, Matrix[Double] b2_grad, 
@@ -225,4 +240,562 @@ grad = function(Matrix[Double] X, Matrix[Double] H1, Matrix[Double] H1_prime, Ma
 
 obj = function(Matrix[Double] E) return(Double val){
   val = 0.5 * sum(E^2)
+}
+
+# -----------------------------------------------------------------------------
+# Fixed 2-layer training (DEFAULTSERVER + PARAMSERVER)
+# -----------------------------------------------------------------------------
+apply_update = function(Matrix[Double] W1, Matrix[Double] b1, Matrix[Double] W2, Matrix[Double] b2,
+  Matrix[Double] W3, Matrix[Double] b3, Matrix[Double] W4, Matrix[Double] b4,
+  Matrix[Double] upd_W1, Matrix[Double] upd_b1, Matrix[Double] upd_W2, Matrix[Double] upd_b2,
+  Matrix[Double] upd_W3, Matrix[Double] upd_b3, Matrix[Double] upd_W4, Matrix[Double] upd_b4,
+  Matrix[Double] W1_grad, Matrix[Double] b1_grad, Matrix[Double] W2_grad, Matrix[Double] b2_grad,
+  Matrix[Double] W3_grad, Matrix[Double] b3_grad, Matrix[Double] W4_grad, Matrix[Double] b4_grad,
+  Double step, Double mu, Double batch_rows)
+  return(Matrix[Double] W1_out, Matrix[Double] b1_out, Matrix[Double] W2_out, Matrix[Double] b2_out,
+    Matrix[Double] W3_out, Matrix[Double] b3_out, Matrix[Double] W4_out, Matrix[Double] b4_out,
+    Matrix[Double] upd_W1_out, Matrix[Double] upd_b1_out, Matrix[Double] upd_W2_out, Matrix[Double] upd_b2_out,
+    Matrix[Double] upd_W3_out, Matrix[Double] upd_b3_out, Matrix[Double] upd_W4_out, Matrix[Double] upd_b4_out)
+{
+  local_step = step / batch_rows
+  upd_W1_out = mu * upd_W1 - local_step * W1_grad
+  upd_b1_out = mu * upd_b1 - local_step * b1
+  upd_W2_out = mu * upd_W2 - local_step * W2_grad
+  upd_b2_out = mu * upd_b2 - local_step * b2
+  upd_W3_out = mu * upd_W3 - local_step * W3_grad
+  upd_b3_out = mu * upd_b3 - local_step * b3
+  upd_W4_out = mu * upd_W4 - local_step * W4_grad
+  upd_b4_out = mu * upd_b4 - local_step * b4
+
+  W1_out = W1 + upd_W1_out
+  b1_out = b1 + upd_b1_out
+  W2_out = W2 + upd_W2_out
+  b2_out = b2 + upd_b2_out
+  W3_out = W3 + upd_W3_out
+  b3_out = b3 + upd_b3_out
+  W4_out = W4 + upd_W4_out
+  b4_out = b4 + upd_b4_out
+}
+
+train_default = function(Matrix[Double] X, Matrix[Double] permut,
+  Matrix[Double] W1, Matrix[Double] b1, Matrix[Double] W2, Matrix[Double] b2,
+  Matrix[Double] W3, Matrix[Double] b3, Matrix[Double] W4, Matrix[Double] b4,
+  Integer max_epochs, Boolean full_obj, Integer batch_size, Double step, Double decay, Double mu)
+  return(Matrix[Double] W1_out, Matrix[Double] b1_out, Matrix[Double] W2_out, Matrix[Double] b2_out,
+    Matrix[Double] W3_out, Matrix[Double] b3_out, Matrix[Double] W4_out, Matrix[Double] b4_out,
+    Matrix[Double] reordered_H)
+{
+  n = nrow(X)
+  upd_W1 = matrix(0, rows=nrow(W1), cols=ncol(W1))
+  upd_b1 = matrix(0, rows=nrow(b1), cols=ncol(b1))
+  upd_W2 = matrix(0, rows=nrow(W2), cols=ncol(W2))
+  upd_b2 = matrix(0, rows=nrow(b2), cols=ncol(b2))
+  upd_W3 = matrix(0, rows=nrow(W3), cols=ncol(W3))
+  upd_b3 = matrix(0, rows=nrow(b3), cols=ncol(b3))
+  upd_W4 = matrix(0, rows=nrow(W4), cols=ncol(W4))
+  upd_b4 = matrix(0, rows=nrow(b4), cols=ncol(b4))
+
+  if( full_obj ){
+    [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat, 
+     full_Yhat_prime, full_E] = forward_pass(X, W1, b1, W2, b2, W3, b3, W4, b4, X)
+    full_o = obj(full_E)
+    print("EPOCHS=" + 0 + " OBJ (FULL DATA): " + full_o)
+  }
+
+  iter = 0
+  num_iters_per_epoch = ceil(n / batch_size)
+  max_iterations = max_epochs * num_iters_per_epoch
+  #print("num_iters_per_epoch=" + num_iters_per_epoch + " max_iterations=" + max_iterations)
+  beg = 1
+  while( iter < max_iterations ){
+    end = beg + batch_size - 1
+    if(end > n) end = n
+    X_batch = X[beg:end,]
+
+    [H1, H1_prime, H2, H2_prime, H3, H3_prime, Yhat, Yhat_prime, E] 
+      = forward_pass(X_batch, W1, b1, W2, b2, W3, b3, W4, b4, X_batch)
+    [W1_grad, b1_grad, W2_grad, b2_grad, W3_grad, b3_grad, W4_grad, b4_grad] 
+      = backward_pass(X_batch, H1, H1_prime, H2, H2_prime, H3, H3_prime, Yhat_prime, E, W1, W2, W3, W4)
+
+    o = obj(E)
+    print("epochs=%5.4f BATCH beg=%d end=%d obj=%f", (iter / num_iters_per_epoch), beg, end, o)
+
+    [W1, b1, W2, b2, W3, b3, W4, b4,
+     upd_W1, upd_b1, upd_W2, upd_b2, upd_W3, upd_b3, upd_W4, upd_b4] = apply_update(
+       W1, b1, W2, b2, W3, b3, W4, b4,
+       upd_W1, upd_b1, upd_W2, upd_b2, upd_W3, upd_b3, upd_W4, upd_b4,
+       W1_grad, b1_grad, W2_grad, b2_grad, W3_grad, b3_grad, W4_grad, b4_grad,
+       step, mu, nrow(X_batch))
+
+    iter = iter + 1
+    if(end == n) beg = 1
+    else beg = end + 1
+
+    if( iter %% num_iters_per_epoch == 0 ) step = step * decay
+
+    if( full_obj & iter %% num_iters_per_epoch == 0 ){
+      [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat, 
+       full_Yhat_prime, full_E] = forward_pass(X, W1, b1, W2, b2, W3, b3, W4, b4, X)
+      full_o = obj(full_E)
+      epochs = iter %/% num_iters_per_epoch
+      print("EPOCHS=" + epochs + " iter=" + iter + " OBJ (FULL DATA)=" + full_o)
+    }
+  }
+
+  [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat, 
+   full_Yhat_prime, full_E] = forward_pass(X, W1, b1, W2, b2, W3, b3, W4, b4, X)
+  reordered_H = t(permut) %*% full_H2
+
+  W1_out = W1
+  b1_out = b1
+  W2_out = W2
+  b2_out = b2
+  W3_out = W3
+  b3_out = b3
+  W4_out = W4
+  b4_out = b4
+}
+
+train_paramserv = function(Matrix[Double] X, Matrix[Double] permut,
+  Matrix[Double] W1, Matrix[Double] b1, Matrix[Double] W2, Matrix[Double] b2,
+  Matrix[Double] W3, Matrix[Double] b3, Matrix[Double] W4, Matrix[Double] b4,
+  Integer max_epochs, Integer batch_size, Double step, Double mu, String mode,
+  String utype, String freq, Integer k, String scheme, Integer nbatches, Boolean modelAvg)
+  return(Matrix[Double] W1_out, Matrix[Double] b1_out, Matrix[Double] W2_out, Matrix[Double] b2_out,
+    Matrix[Double] W3_out, Matrix[Double] b3_out, Matrix[Double] W4_out, Matrix[Double] b4_out,
+    Matrix[Double] reordered_H)
+{
+  upd_W1 = matrix(0, rows=nrow(W1), cols=ncol(W1))
+  upd_b1 = matrix(0, rows=nrow(b1), cols=ncol(b1))
+  upd_W2 = matrix(0, rows=nrow(W2), cols=ncol(W2))
+  upd_b2 = matrix(0, rows=nrow(b2), cols=ncol(b2))
+  upd_W3 = matrix(0, rows=nrow(W3), cols=ncol(W3))
+  upd_b3 = matrix(0, rows=nrow(b3), cols=ncol(b3))
+  upd_W4 = matrix(0, rows=nrow(W4), cols=ncol(W4))
+  upd_b4 = matrix(0, rows=nrow(b4), cols=ncol(b4))
+
+  modelList = list(W1, b1, W2, b2, W3, b3, W4, b4,
+    upd_W1, upd_b1, upd_W2, upd_b2, upd_W3, upd_b3, upd_W4, upd_b4)
+  params = list(step=step, mu=mu)
+
+  ps_mode = mode
+  if(mode == "DISTRIBUTED")
+    ps_mode = "REMOTE_SPARK"
+
+  if(nbatches > 0) {
+    modelList2 = paramserv(model=modelList, features=X, labels=X,
+      upd="./scripts/builtin/autoencoder_2layer.dml::gradients",
+      agg="./scripts/builtin/autoencoder_2layer.dml::aggregation",
+      mode=ps_mode, utype=utype, freq=freq, epochs=max_epochs, batchsize=batch_size,
+      k=k, scheme=scheme, hyperparams=params, checkpointing="NONE",
+      nbatches=nbatches, modelAvg=modelAvg)
+  }
+  else {
+    modelList2 = paramserv(model=modelList, features=X, labels=X,
+      upd="./scripts/builtin/autoencoder_2layer.dml::gradients",
+      agg="./scripts/builtin/autoencoder_2layer.dml::aggregation",
+      mode=ps_mode, utype=utype, freq=freq, epochs=max_epochs, batchsize=batch_size,
+      k=k, scheme=scheme, hyperparams=params, checkpointing="NONE", modelAvg=modelAvg)
+  }
+
+  W1 = as.matrix(modelList2[1])
+  b1 = as.matrix(modelList2[2])
+  W2 = as.matrix(modelList2[3])
+  b2 = as.matrix(modelList2[4])
+  W3 = as.matrix(modelList2[5])
+  b3 = as.matrix(modelList2[6])
+  W4 = as.matrix(modelList2[7])
+  b4 = as.matrix(modelList2[8])
+
+  [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat, 
+   full_Yhat_prime, full_E] = forward_pass(X, W1, b1, W2, b2, W3, b3, W4, b4, X)
+  reordered_H = t(permut) %*% full_H2
+
+  W1_out = W1
+  b1_out = b1
+  W2_out = W2
+  b2_out = b2
+  W3_out = W3
+  b3_out = b3
+  W4_out = W4
+  b4_out = b4
+}
+
+gradients = function(list[unknown] model,
+  list[unknown] hyperparams,
+  matrix[double] features,
+  matrix[double] labels)
+  return(list[unknown] gradients)
+{
+  W1 = as.matrix(model[1])
+  b1 = as.matrix(model[2])
+  W2 = as.matrix(model[3])
+  b2 = as.matrix(model[4])
+  W3 = as.matrix(model[5])
+  b3 = as.matrix(model[6])
+  W4 = as.matrix(model[7])
+  b4 = as.matrix(model[8])
+
+  [H1, H1_prime, H2, H2_prime, H3, H3_prime, Yhat, Yhat_prime, E] 
+    = forward_pass(features, W1, b1, W2, b2, W3, b3, W4, b4, labels)
+  [W1_grad, b1_grad, W2_grad, b2_grad, W3_grad, b3_grad, W4_grad, b4_grad] 
+    = backward_pass(features, H1, H1_prime, H2, H2_prime, H3, H3_prime, Yhat_prime, E, W1, W2, W3, W4)
+
+  gradients = list(W1_grad, b1_grad, W2_grad, b2_grad, W3_grad, b3_grad, W4_grad, b4_grad, nrow(features))
+}
+
+aggregation = function(list[unknown] model,
+  list[unknown] hyperparams,
+  list[unknown] gradients)
+  return(list[unknown] modelResult)
+{
+  W1 = as.matrix(model[1])
+  b1 = as.matrix(model[2])
+  W2 = as.matrix(model[3])
+  b2 = as.matrix(model[4])
+  W3 = as.matrix(model[5])
+  b3 = as.matrix(model[6])
+  W4 = as.matrix(model[7])
+  b4 = as.matrix(model[8])
+  upd_W1 = as.matrix(model[9])
+  upd_b1 = as.matrix(model[10])
+  upd_W2 = as.matrix(model[11])
+  upd_b2 = as.matrix(model[12])
+  upd_W3 = as.matrix(model[13])
+  upd_b3 = as.matrix(model[14])
+  upd_W4 = as.matrix(model[15])
+  upd_b4 = as.matrix(model[16])
+
+  W1_grad = as.matrix(gradients[1])
+  b1_grad = as.matrix(gradients[2])
+  W2_grad = as.matrix(gradients[3])
+  b2_grad = as.matrix(gradients[4])
+  W3_grad = as.matrix(gradients[5])
+  b3_grad = as.matrix(gradients[6])
+  W4_grad = as.matrix(gradients[7])
+  b4_grad = as.matrix(gradients[8])
+  batch_rows = as.double(as.scalar(gradients[9]))
+  step = as.double(as.scalar(hyperparams["step"]))
+  mu = as.double(as.scalar(hyperparams["mu"]))
+
+  [W1, b1, W2, b2, W3, b3, W4, b4,
+   upd_W1, upd_b1, upd_W2, upd_b2, upd_W3, upd_b3, upd_W4, upd_b4] = apply_update(
+     W1, b1, W2, b2, W3, b3, W4, b4,
+     upd_W1, upd_b1, upd_W2, upd_b2, upd_W3, upd_b3, upd_W4, upd_b4,
+     W1_grad, b1_grad, W2_grad, b2_grad, W3_grad, b3_grad, W4_grad, b4_grad,
+     step, mu, batch_rows)
+
+  modelResult = list(W1, b1, W2, b2, W3, b3, W4, b4,
+    upd_W1, upd_b1, upd_W2, upd_b2, upd_W3, upd_b3, upd_W4, upd_b4)
+}
+
+# -----------------------------------------------------------------------------
+# Generalized autoencoder helpers (variable depth)
+# -----------------------------------------------------------------------------
+build_layer_sizes = function(Integer input_dim, list[unknown] hidden_layers)
+  return(list[unknown] sizes)
+{
+  # Build encoder/decoder layer sizes as:
+  # [input] + hidden_layers + reverse(hidden_layers) + [input]
+  sizes = list(input_dim)
+  for(i in 1:length(hidden_layers)) {
+    sizes = append(sizes, list(as.integer(as.scalar(hidden_layers[i]))))
+  }
+  if(length(hidden_layers) > 1) {
+    for(i in (length(hidden_layers)-1):1) {
+      sizes = append(sizes, list(as.integer(as.scalar(hidden_layers[i]))))
+    }
+  }
+  sizes = append(sizes, list(input_dim))
+}
+
+init_layers = function(list[unknown] sizes)
+  return(list[unknown] W_list, list[unknown] b_list, list[unknown] upd_W_list, list[unknown] upd_b_list)
+{
+  # Initialize weights with Glorot scaling and zero biases/momentum buffers.
+  W_list = list()
+  b_list = list()
+  upd_W_list = list()
+  upd_b_list = list()
+  for(i in 1:(length(sizes)-1)) {
+    in_dim = as.integer(as.scalar(sizes[i]))
+    out_dim = as.integer(as.scalar(sizes[i+1]))
+    W = Rand(rows=out_dim, cols=in_dim, min=-1, max=1, pdf="uniform")
+    W = sqrt(6)/sqrt(in_dim + out_dim) * W
+    b = matrix(0, rows=out_dim, cols=1)
+    W_list = append(W_list, list(W))
+    b_list = append(b_list, list(b))
+    upd_W_list = append(upd_W_list, list(matrix(0, rows=out_dim, cols=in_dim)))
+    upd_b_list = append(upd_b_list, list(matrix(0, rows=out_dim, cols=1)))
+  }
+}
+
+forward_pass_layers = function(Matrix[Double] X, list[unknown] W_list, list[unknown] b_list, Matrix[Double] Y)
+  return(list[unknown] activations, list[unknown] primes, Matrix[Double] Yhat, Matrix[Double] E)
+{
+  # Forward pass through variable number of layers.
+  # activations/primes store per-layer output and derivative of activation.
+  activations = list()
+  primes = list()
+  A_prev = X
+  for(i in 1:length(W_list)) {
+    W = as.matrix(W_list[i])
+    b = as.matrix(b_list[i])
+    Z = t(W %*% t(A_prev) + b)
+    [A, A_prime] = func(Z)
+    activations = append(activations, list(A))
+    primes = append(primes, list(A_prime))
+    A_prev = A
+  }
+  Yhat = A_prev
+  E = Yhat - Y
+}
+
+backward_pass_layers = function(Matrix[Double] X, list[unknown] activations, list[unknown] primes,
+  list[unknown] W_list, Matrix[Double] E)
+  return(list[unknown] grads_W, list[unknown] grads_b)
+{
+  # Backpropagation through all layers, returning gradients per layer.
+  L = length(W_list)
+  grads_W = list()
+  grads_b = list()
+  for(i in 1:L) {
+    grads_W = append(grads_W, list(matrix(0, rows=0, cols=0)))
+    grads_b = append(grads_b, list(matrix(0, rows=0, cols=0)))
+  }
+
+  delta = E * as.matrix(primes[L])
+  for(i in L:1) {
+    A_prev = X
+    if(i > 1)
+      A_prev = as.matrix(activations[i-1])
+    grads_W[i] = t(delta) %*% A_prev
+    grads_b[i] = t(colSums(delta))
+    if(i > 1) {
+      W_prev = as.matrix(W_list[i])
+      delta = as.matrix(primes[i-1]) * (delta %*% W_prev)
+    }
+  }
+}
+
+apply_update_layers = function(list[unknown] W_list, list[unknown] b_list,
+  list[unknown] upd_W_list, list[unknown] upd_b_list,
+  list[unknown] grads_W, list[unknown] grads_b,
+  Double step, Double mu, Double batch_rows)
+  return(list[unknown] W_out, list[unknown] b_out, list[unknown] upd_W_out, list[unknown] upd_b_out)
+{
+  # Apply SGD with momentum updates across all layers.
+  W_out = list()
+  b_out = list()
+  upd_W_out = list()
+  upd_b_out = list()
+  local_step = step / batch_rows
+  for(i in 1:length(W_list)) {
+    W = as.matrix(W_list[i])
+    b = as.matrix(b_list[i])
+    upd_W = as.matrix(upd_W_list[i])
+    upd_b = as.matrix(upd_b_list[i])
+    dW = as.matrix(grads_W[i])
+    db = as.matrix(grads_b[i])
+
+    upd_W = mu * upd_W - local_step * dW
+    upd_b = mu * upd_b - local_step * db
+    W = W + upd_W
+    b = b + upd_b
+
+    W_out = append(W_out, list(W))
+    b_out = append(b_out, list(b))
+    upd_W_out = append(upd_W_out, list(upd_W))
+    upd_b_out = append(upd_b_out, list(upd_b))
+  }
+}
+
+train_default_layers = function(Matrix[Double] X, Matrix[Double] permut,
+  list[unknown] W_list, list[unknown] b_list,
+  list[unknown] upd_W_list, list[unknown] upd_b_list,
+  list[unknown] hidden_layers, Integer max_epochs, Boolean full_obj,
+  Integer batch_size, Double step, Double decay, Double mu)
+  return(list[unknown] W_out, list[unknown] b_out,
+    list[unknown] upd_W_out, list[unknown] upd_b_out,
+    Matrix[Double] reordered_H)
+{
+  # Default single-process training loop for variable-depth autoencoder.
+  n = nrow(X)
+  encoder_layers = length(hidden_layers)
+  if( full_obj ){
+    [full_act, full_primes, full_Yhat, full_E] = forward_pass_layers(X, W_list, b_list, X)
+    full_o = obj(full_E)
+    print("EPOCHS=" + 0 + " OBJ (FULL DATA): " + full_o)
+  }
+
+  iter = 0
+  num_iters_per_epoch = ceil(n / batch_size)
+  max_iterations = max_epochs * num_iters_per_epoch
+  beg = 1
+  while( iter < max_iterations ){
+    end = beg + batch_size - 1
+    if(end > n) end = n
+    X_batch = X[beg:end,]
+
+    [activations, primes, Yhat, E] = forward_pass_layers(X_batch, W_list, b_list, X_batch)
+    [grads_W, grads_b] = backward_pass_layers(X_batch, activations, primes, W_list, E)
+
+    o = obj(E)
+    print("epochs=%5.4f BATCH beg=%d end=%d obj=%f", (iter / num_iters_per_epoch), beg, end, o)
+
+    [W_list, b_list, upd_W_list, upd_b_list] = apply_update_layers(
+      W_list, b_list, upd_W_list, upd_b_list, grads_W, grads_b, step, mu, nrow(X_batch))
+
+    iter = iter + 1
+    if(end == n) beg = 1
+    else beg = end + 1
+
+    if( iter %% num_iters_per_epoch == 0 ) step = step * decay
+
+    if( full_obj & iter %% num_iters_per_epoch == 0 ){
+      [full_act, full_primes, full_Yhat, full_E] = forward_pass_layers(X, W_list, b_list, X)
+      full_o = obj(full_E)
+      epochs = iter %/% num_iters_per_epoch
+      print("EPOCHS=" + epochs + " iter=" + iter + " OBJ (FULL DATA)=" + full_o)
+    }
+  }
+
+  [full_act, full_primes, full_Yhat, full_E] = forward_pass_layers(X, W_list, b_list, X)
+  # Return the encoder bottleneck representation.
+  hidden = as.matrix(full_act[encoder_layers])
+  reordered_H = t(permut) %*% hidden
+
+  W_out = W_list
+  b_out = b_list
+  upd_W_out = upd_W_list
+  upd_b_out = upd_b_list
+}
+
+flatten_model = function(list[unknown] W_list, list[unknown] b_list,
+  list[unknown] upd_W_list, list[unknown] upd_b_list)
+  return(list[unknown] model)
+{
+  # Flatten model as [W...][b...][upd_W...][upd_b...] for paramserv.
+  model = list()
+  for(i in 1:length(W_list))
+    model = append(model, list(as.matrix(W_list[i])))
+  for(i in 1:length(b_list))
+    model = append(model, list(as.matrix(b_list[i])))
+  for(i in 1:length(upd_W_list))
+    model = append(model, list(as.matrix(upd_W_list[i])))
+  for(i in 1:length(upd_b_list))
+    model = append(model, list(as.matrix(upd_b_list[i])))
+}
+
+unflatten_model = function(list[unknown] model, Integer layer_count)
+  return(list[unknown] W_list, list[unknown] b_list,
+    list[unknown] upd_W_list, list[unknown] upd_b_list)
+{
+  # Inverse of flatten_model for variable depth models.
+  W_list = list()
+  b_list = list()
+  upd_W_list = list()
+  upd_b_list = list()
+  offset = 0
+  for(i in 1:layer_count)
+    W_list = append(W_list, list(as.matrix(model[offset + i])))
+  offset = offset + layer_count
+  for(i in 1:layer_count)
+    b_list = append(b_list, list(as.matrix(model[offset + i])))
+  offset = offset + layer_count
+  for(i in 1:layer_count)
+    upd_W_list = append(upd_W_list, list(as.matrix(model[offset + i])))
+  offset = offset + layer_count
+  for(i in 1:layer_count)
+    upd_b_list = append(upd_b_list, list(as.matrix(model[offset + i])))
+}
+
+train_paramserv_layers = function(Matrix[Double] X, Matrix[Double] permut,
+  list[unknown] W_list, list[unknown] b_list,
+  list[unknown] upd_W_list, list[unknown] upd_b_list,
+  list[unknown] hidden_layers, Integer layer_count, Integer max_epochs,
+  Integer batch_size, Double step, Double mu, String mode,
+  String utype, String freq, Integer k, String scheme, Integer nbatches, Boolean modelAvg)
+  return(list[unknown] W_out, list[unknown] b_out,
+    list[unknown] upd_W_out, list[unknown] upd_b_out,
+    Matrix[Double] reordered_H)
+{
+  # Parameter server training path for variable-depth autoencoder.
+  modelList = flatten_model(W_list, b_list, upd_W_list, upd_b_list)
+  params = list(step=step, mu=mu, layer_count=layer_count)
+  encoder_layers = length(hidden_layers)
+
+  ps_mode = mode
+  if(mode == "DISTRIBUTED")
+    ps_mode = "REMOTE_SPARK"
+
+  if(nbatches > 0) {
+    modelList2 = paramserv(model=modelList, features=X, labels=X,
+      upd="./scripts/builtin/autoencoder_2layer.dml::gradients_layers",
+      agg="./scripts/builtin/autoencoder_2layer.dml::aggregation_layers",
+      mode=ps_mode, utype=utype, freq=freq, epochs=max_epochs, batchsize=batch_size,
+      k=k, scheme=scheme, hyperparams=params, checkpointing="NONE",
+      nbatches=nbatches, modelAvg=modelAvg)
+  }
+  else {
+    modelList2 = paramserv(model=modelList, features=X, labels=X,
+      upd="./scripts/builtin/autoencoder_2layer.dml::gradients_layers",
+      agg="./scripts/builtin/autoencoder_2layer.dml::aggregation_layers",
+      mode=ps_mode, utype=utype, freq=freq, epochs=max_epochs, batchsize=batch_size,
+      k=k, scheme=scheme, hyperparams=params, checkpointing="NONE", modelAvg=modelAvg)
+  }
+
+  [W_list, b_list, upd_W_list, upd_b_list] = unflatten_model(modelList2, layer_count)
+  [full_act, full_primes, full_Yhat, full_E] = forward_pass_layers(X, W_list, b_list, X)
+  hidden = as.matrix(full_act[encoder_layers])
+  reordered_H = t(permut) %*% hidden
+
+  W_out = W_list
+  b_out = b_list
+  upd_W_out = upd_W_list
+  upd_b_out = upd_b_list
+}
+
+gradients_layers = function(list[unknown] model,
+  list[unknown] hyperparams,
+  matrix[double] features,
+  matrix[double] labels)
+  return(list[unknown] gradients)
+{
+  # Compute gradients for paramserv using variable-depth forward/backward passes.
+  layer_count = as.integer(as.scalar(hyperparams["layer_count"]))
+  [W_list, b_list, upd_W_list, upd_b_list] = unflatten_model(model, layer_count)
+  [activations, primes, Yhat, E] = forward_pass_layers(features, W_list, b_list, labels)
+  [grads_W, grads_b] = backward_pass_layers(features, activations, primes, W_list, E)
+
+  gradients = list()
+  for(i in 1:layer_count)
+    gradients = append(gradients, list(as.matrix(grads_W[i])))
+  for(i in 1:layer_count)
+    gradients = append(gradients, list(as.matrix(grads_b[i])))
+  gradients = append(gradients, list(nrow(features)))
+}
+
+aggregation_layers = function(list[unknown] model,
+  list[unknown] hyperparams,
+  list[unknown] gradients)
+  return(list[unknown] modelResult)
+{
+  # Apply paramserv updates and return updated flattened model.
+  layer_count = as.integer(as.scalar(hyperparams["layer_count"]))
+  [W_list, b_list, upd_W_list, upd_b_list] = unflatten_model(model, layer_count)
+  grads_W = list()
+  grads_b = list()
+  for(i in 1:layer_count)
+    grads_W = append(grads_W, list(as.matrix(gradients[i])))
+  for(i in 1:layer_count)
+    grads_b = append(grads_b, list(as.matrix(gradients[layer_count + i])))
+  batch_rows = as.double(as.scalar(gradients[2*layer_count + 1]))
+  step = as.double(as.scalar(hyperparams["step"]))
+  mu = as.double(as.scalar(hyperparams["mu"]))
+
+  [W_list, b_list, upd_W_list, upd_b_list] = apply_update_layers(
+    W_list, b_list, upd_W_list, upd_b_list, grads_W, grads_b, step, mu, batch_rows)
+
+  modelResult = flatten_model(W_list, b_list, upd_W_list, upd_b_list)
 }

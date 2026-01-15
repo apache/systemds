@@ -30,6 +30,9 @@ from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
 from systemds.scuro.representations.context import Context
+from systemds.scuro.representations.dimensionality_reduction import (
+    DimensionalityReduction,
+)
 from systemds.scuro.utils.identifier import get_op_id, get_node_id
 
 from collections import OrderedDict
@@ -195,6 +198,8 @@ class RepresentationDag:
                     # It's a unimodal operation
                     if isinstance(node_operation, Context):
                         result = input_mods[0].context(node_operation)
+                    elif isinstance(node_operation, DimensionalityReduction):
+                        result = input_mods[0].dimensionality_reduction(node_operation)
                     elif isinstance(node_operation, AggregatedRepresentation):
                         result = node_operation.transform(input_mods[0])
                     elif isinstance(node_operation, UnimodalRepresentation):

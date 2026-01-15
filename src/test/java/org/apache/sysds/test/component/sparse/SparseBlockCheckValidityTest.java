@@ -415,80 +415,22 @@ public class SparseBlockCheckValidityTest extends AutomatedTestBase
 
 	@Test
 	public void testSparseBlockCOOInvalidValue() {
-		SparseBlockCOO block = new SparseBlockCOO(3, 3);
-
-		int[] r = new int[]{0, 1, 2};
-		int[] c = new int[]{0, 1, 2};
-		double[] v = new double[]{1, 2, 0}; // contains 0
-
-		setField(block, "_rindexes", r);
-		setField(block, "_cindexes", c);
-		setField(block, "_values", v);
-		setField(block, "_size", 3);
-
-		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(3, 3, 3, false));
-
-		assertTrue(ex.getMessage().startsWith("The values array should not contain zeros"));
+		runSparseBlockInvalidValueTest(SparseBlock.Type.COO);
 	}
 
 	@Test
 	public void testSparseBlockCSCInvalidValue() {
-		SparseBlockCSC block = new SparseBlockCSC(3, 3);
-
-		int[] ptr = new int[]{0, 3, 3, 3};
-		int[] idxs = new int[]{0, 1, 2};
-		double[] v = new double[]{1, 1, 0};
-
-		setField(block, "_ptr", ptr);
-		setField(block, "_indexes", idxs);
-		setField(block, "_values", v);
-		setField(block, "_size", 3);
-
-		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(3, 3, 3, false));
-
-		assertTrue(ex.getMessage().startsWith("The values array should not contain zeros"));
+		runSparseBlockInvalidValueTest(SparseBlock.Type.CSC);
 	}
 
 	@Test
 	public void testSparseBlockCSRInvalidValue() {
-		SparseBlockCSR block = new SparseBlockCSR(3, 3);
-
-		int[] ptr = new int[]{0, 3, 3, 3};
-		int[] idxs = new int[]{0, 1, 2};
-		double[] v = new double[]{1, 1, 0};
-
-		setField(block, "_ptr", ptr);
-		setField(block, "_indexes", idxs);
-		setField(block, "_values", v);
-		setField(block, "_size", 3);
-
-		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(3, 3, 3, false));
-
-		assertTrue(ex.getMessage().startsWith("The values array should not contain zeros"));
+		runSparseBlockInvalidValueTest(SparseBlock.Type.CSR);
 	}
 
 	@Test
 	public void testSparseBlockDCSRInvalidValue() {
-		SparseBlockDCSR block = new SparseBlockDCSR(3, 3);
-
-		int[] rowIdxs = new int[]{0, 1, 2};
-		int[] rowPtr = new int[]{0, 1, 2, 3};
-		int[] colIdxs = new int[]{0, 1, 2};
-		double[] v = new double[]{1, 1, 0};
-
-		setField(block, "_rowidx", rowIdxs);
-		setField(block, "_rowptr", rowPtr);
-		setField(block, "_colidx", colIdxs);
-		setField(block, "_values", v);
-		setField(block, "_size", 3);
-
-		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(1, 3, 3, false));
-
-		assertTrue(ex.getMessage().startsWith("The values array should not contain zeros"));
+		runSparseBlockInvalidValueTest(SparseBlock.Type.DCSR);
 	}
 
 	@Test
@@ -517,6 +459,32 @@ public class SparseBlockCheckValidityTest extends AutomatedTestBase
 			() -> block.checkValidity(3, 10, 3, true));
 
 		assertTrue(ex.getMessage().startsWith("The values are expected to be non zeros"));
+	}
+
+	@Test
+	public void testSparseBlockCOOInvalidRIndex() {
+		runSparseBlockInvalidIndexTest(SparseBlock.Type.COO, "_rindexes");
+	}
+
+	@Test
+	public void testSparseBlockCOOInvalidCIndex() {
+		runSparseBlockInvalidIndexTest(SparseBlock.Type.COO, "_cindexes");
+	}
+
+
+	@Test
+	public void testSparseBlockCSCInvalidIndex() {
+		runSparseBlockInvalidIndexTest(SparseBlock.Type.CSC, "_indexes");
+	}
+
+	@Test
+	public void testSparseBlockCSRInvalidIndex() {
+		runSparseBlockInvalidIndexTest(SparseBlock.Type.CSR, "_indexes");
+	}
+
+	@Test
+	public void testSparseBlockDCSRInvalidIndex() {
+		runSparseBlockInvalidIndexTest(SparseBlock.Type.DCSR, "_colidx");
 	}
 
 	@Test
@@ -609,6 +577,39 @@ public class SparseBlockCheckValidityTest extends AutomatedTestBase
 		RuntimeException ex2 = assertThrows(RuntimeException.class,
 			() -> block.checkValidity(1, -1, 0, false));
 		assertTrue(ex2.getMessage().startsWith("Invalid block dimensions"));
+	}
+
+	private void runSparseBlockInvalidValueTest(SparseBlock.Type btype)  {
+		double[][] A = getRandomMatrix(_rows, _cols, -10, 10, _sparsity, 13);
+
+		MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
+		SparseBlock srtmp = mbtmp.getSparseBlock();
+		SparseBlock sblock = SparseBlockFactory.copySparseBlock(btype, srtmp, true);
+
+		double[] values = (double[]) getField(sblock, "_values");
+		values[values.length-1] = 0.;
+		setField(sblock, "_values", Arrays.copyOfRange(values, 0, values.length));
+
+		RuntimeException ex = assertThrows(RuntimeException.class,
+			() -> sblock.checkValidity(_rows, _cols, sblock.size(), true));
+		assertTrue(ex.getMessage().startsWith("The values array should not contain zeros"));
+	}
+
+
+	private void runSparseBlockInvalidIndexTest(SparseBlock.Type btype, String indexName)  {
+		double[][] A = getRandomMatrix(_rows, _cols, -10, 10, _sparsity, 13);
+
+		MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
+		SparseBlock srtmp = mbtmp.getSparseBlock();
+		SparseBlock sblock = SparseBlockFactory.copySparseBlock(btype, srtmp, true);
+
+		int[] indexes = (int[]) getField(sblock, indexName);
+		indexes[0] = -1;
+		setField(sblock, indexName, Arrays.copyOfRange(indexes, 0, indexes.length));
+
+		RuntimeException ex = assertThrows(RuntimeException.class,
+			() -> sblock.checkValidity(_rows, _cols, sblock.size(), true));
+		assertTrue(ex.getMessage().startsWith("Invalid index at pos"));
 	}
 
 	private static void setField(Object obj, String name, Object value) {

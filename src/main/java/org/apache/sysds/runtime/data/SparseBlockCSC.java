@@ -560,6 +560,8 @@ public class SparseBlockCSC extends SparseBlock {
 				throw new RuntimeException(
 					"The values array should not contain zeros." + " The " + i + "th value is " + _values[i]);
 			}
+			if(_indexes[i] < 0)
+				throw new RuntimeException("Invalid index at pos=" + i);
 		}
 
 		//6. a capacity that is no larger than nnz times resize factor.

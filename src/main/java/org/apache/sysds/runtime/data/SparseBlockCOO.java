@@ -236,7 +236,7 @@ public class SparseBlockCOO extends SparseBlock
 			int apos = pos(i);
 			int alen = size(i);
 			for(int k=apos+1; k<apos+alen; k++)
-				if( _cindexes[k-1] > _cindexes[k] )
+				if(_cindexes[k-1] > _cindexes[k])
 					throw new RuntimeException("Wrong sparse row ordering: "
 							+ k + " "+_cindexes[k-1]+" "+_cindexes[k]);
 		}
@@ -246,6 +246,8 @@ public class SparseBlockCOO extends SparseBlock
 			if( _values[i] == 0)
 				throw new RuntimeException("The values array should not contain zeros."
 						+ " The " + i + "th value is "+_values[i]);
+			if(_cindexes[i] < 0 || _rindexes[i] < 0)
+				throw new RuntimeException("Invalid index at pos=" + i);
 		}
 
 		//5. a capacity that is no larger than nnz times the resize factor

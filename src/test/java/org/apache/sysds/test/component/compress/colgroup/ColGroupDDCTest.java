@@ -98,14 +98,20 @@ public class ColGroupDDCTest {
         for (int i = 0; i < d1.size(); i++)
             assertEquals("mapping mismatch at row " + i, d1.getIndex(i), d2.getIndex(i));
 
-        assertEquals(d1.size(), d2.size());
-        assertEquals(d1.getUnique(), d2.getUnique());
-
-        for (int i = 0; i < d1.size(); i++) {
-            assertEquals(d1.getIndex(i), d2.getIndex(i));
-        }
-
         assertEquals(ddc.getColIndices(), ddc2.getColIndices());
+
+        // Testen der Teildekompression:
+        // Index entspricht der Anzahl der Zeichen, die dekodiert werden sollen (0 bis Index-1)
+        int index = 10;
+        ColGroupDDC ddcIndex = (ColGroupDDC) ddclzw.convertToDDC(index);
+
+        AMapToData d3 = ddcIndex.getMapToData();
+        assertEquals(index, d3.size());
+        assertEquals(ddc.getColIndices(), ddcIndex.getColIndices());
+
+        for(int i = 0; i < index; i++){
+            assertEquals(d1.getIndex(i), d3.getIndex(i));
+        }
     }
 
     @Test

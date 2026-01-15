@@ -206,7 +206,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
     // Decompresses an LZW-compressed vector into its pre-compressed AMapToData form.
     // TODO: Compatibility with compress() and used data structures. Improve time/space complexity.
-    private static AMapToData decompress(int[] codes, int nUnique, int nRows) {
+    private static AMapToData decompress(int[] codes, int nUnique, int nRows, int index) {
         // Validate input arguments.
         if (codes == null)
             throw new IllegalArgumentException("codes is null");
@@ -217,21 +217,26 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
         if (nRows <= 0) {
             throw new IllegalArgumentException("Invalid nRows: " + nRows);
         }
+        if (index > nRows){
+            throw new IllegalArgumentException("Index is larger than Data Length: " + index);
+        }
 
         // Maps: code -> packKey(prefixCode, lastSymbolOfPhrase).
         // Base symbols (0..nUnique-1) are implicit and not stored here.
         final Map<Integer, Long> dict = new HashMap<>();
 
         // Output mapping that will be reconstructed.
-        AMapToData out = MapToFactory.create(nRows, nUnique);
+        AMapToData out = MapToFactory.create(index, nUnique);
         int outPos = 0; // Current write position in the output mapping.
 
         // Decode the first code. The first code always expands to a valid phrase without needing
         // any dictionary entries.
         int old = codes[0];
         int[] oldPhrase = unpack(old, nUnique, dict);
-        for (int v : oldPhrase)
+        for (int v : oldPhrase){
+            if (outPos == index) break;
             out.set(outPos++, v);
+        }
 
         // Next free dictionary code. Codes 0..nUnique-1 are reserved for base symbols.
         int nextCode = nUnique;
@@ -252,7 +257,10 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
             }
 
             // Append the reconstructed phrase to the output mapping.
-            for (int v : next) out.set(outPos++, v);
+            for (int v : next) {
+                if (outPos == index) break;
+                out.set(outPos++, v);
+            }
 
             // Add new phrase to dictionary: nextCode -> (old, firstSymbol(next)).
             int first = next[0];
@@ -264,8 +272,8 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
         }
 
         // Safety check: decoder must produce exactly nRows symbols.
-        if (outPos != nRows)
-            throw new IllegalStateException("Decompression length mismatch: got " + outPos + " expected " + nRows);
+        if (outPos != index)
+            throw new IllegalStateException("Decompression length mismatch: got " + outPos + " expected " + index);
 
         // Return the reconstructed mapping.
         return out;
@@ -340,7 +348,13 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
      * */
 
     public AColGroup convertToDDC() {
-        final AMapToData map = decompress(_dataLZW, _nUnique, _nRows);
+        final AMapToData map = decompress(_dataLZW, _nUnique, _nRows, _nRows);
+        final int[] counts = getCounts(); // may be null depending on your group
+        return ColGroupDDC.create(_colIndexes, _dict, map, counts);
+    }
+
+    public AColGroup convertToDDC(int index) {
+        final AMapToData map = decompress(_dataLZW, _nUnique, _nRows, index);
         final int[] counts = getCounts(); // may be null depending on your group
         return ColGroupDDC.create(_colIndexes, _dict, map, counts);
     }

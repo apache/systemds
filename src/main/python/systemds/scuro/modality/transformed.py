@@ -122,6 +122,15 @@ class TransformedModality(Modality):
         transformed_modality.transform_time += time.time() - start
         return transformed_modality
 
+    def dimensionality_reduction(self, dimensionality_reduction_operator):
+        transformed_modality = TransformedModality(
+            self, dimensionality_reduction_operator, self_contained=self.self_contained
+        )
+        start = time.time()
+        transformed_modality.data = dimensionality_reduction_operator.execute(self.data)
+        transformed_modality.transform_time += time.time() - start
+        return transformed_modality
+
     def apply_representation(self, representation):
         start = time.time()
         new_modality = representation.transform(self)

@@ -147,13 +147,13 @@ class TestHPTuner(unittest.TestCase):
                     min_modalities=2,
                     max_modalities=3,
                 )
-                fusion_results = m_o.optimize()
+                fusion_results = m_o.optimize(20)
 
                 hp.tune_multimodal_representations(
                     fusion_results,
                     k=1,
                     optimize_unimodal=tune_unimodal_representations,
-                    max_eval_per_rep=20,
+                    max_eval_per_rep=10,
                 )
 
             else:

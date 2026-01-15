@@ -25,7 +25,6 @@ from dataclasses import dataclass
 import multiprocessing as mp
 from typing import List, Any
 from functools import lru_cache
-from systemds.scuro.drsearch.task import Task
 from systemds.scuro import ModalityType
 from systemds.scuro.drsearch.ranking import rank_by_tradeoff
 from systemds.scuro.drsearch.task import PerformanceMeasure
@@ -91,6 +90,12 @@ class UnimodalOptimizer:
     @lru_cache(maxsize=32)
     def _get_context_operators(self, modality_type):
         return self.operator_registry.get_context_operators(modality_type)
+
+    @lru_cache(maxsize=32)
+    def _get_dimensionality_reduction_operators(self, modality_type):
+        return self.operator_registry.get_dimensionality_reduction_operators(
+            modality_type
+        )
 
     def store_results(self, file_name=None):
         if file_name is None:
@@ -185,9 +190,7 @@ class UnimodalOptimizer:
 
         external_cache = LRUCache(max_size=32)
         for dag in dags:
-            representations = dag.execute(
-                [modality], task=self.tasks[0], external_cache=external_cache
-            )  # TODO: dynamic task selection
+            representations = dag.execute([modality], external_cache=external_cache)
             node_id = list(representations.keys())[-1]
             node = dag.get_node_by_id(node_id)
             if node.operation is None:
@@ -303,6 +306,27 @@ class UnimodalOptimizer:
                         scores, modality, task.model.name, end - start, combination, dag
                     )
 
+    def add_dimensionality_reduction_operators(self, builder, current_node_id):
+        dags = []
+        modality_type = (
+            builder.get_node(current_node_id).operation().output_modality_type
+        )
+
+        if modality_type is not ModalityType.EMBEDDING:
+            return None
+
+        dimensionality_reduction_operators = (
+            self._get_dimensionality_reduction_operators(modality_type)
+        )
+        for dimensionality_reduction_op in dimensionality_reduction_operators:
+            dimensionality_reduction_node_id = builder.create_operation_node(
+                dimensionality_reduction_op,
+                [current_node_id],
+                dimensionality_reduction_op().get_current_parameters(),
+            )
+            dags.append(builder.build(dimensionality_reduction_node_id))
+        return dags
+
     def _build_modality_dag(
         self, modality: Modality, operator: Any
     ) -> List[RepresentationDag]:
@@ -315,6 +339,12 @@ class UnimodalOptimizer:
         )
         current_node_id = rep_node_id
         dags.append(builder.build(current_node_id))
+
+        dimensionality_reduction_dags = self.add_dimensionality_reduction_operators(
+            builder, current_node_id
+        )
+        if dimensionality_reduction_dags is not None:
+            dags.extend(dimensionality_reduction_dags)
 
         if operator.needs_context:
             context_operators = self._get_context_operators(modality.modality_type)
@@ -339,6 +369,11 @@ class UnimodalOptimizer:
                     [context_node_id],
                     operator.get_current_parameters(),
                 )
+                dimensionality_reduction_dags = self.add_dimensionality_reduction_operators(
+                    builder, context_rep_node_id
+                )  # TODO: check if this is correctly using the 3d approach of the dimensionality reduction operator
+                if dimensionality_reduction_dags is not None:
+                    dags.extend(dimensionality_reduction_dags)
 
                 agg_operator = AggregatedRepresentation()
                 context_agg_node_id = builder.create_operation_node(

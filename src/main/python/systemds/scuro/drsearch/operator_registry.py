@@ -37,6 +37,7 @@ class Registry:
     _fusion_operators = []
     _text_context_operators = []
     _video_context_operators = []
+    _dimensionality_reduction_operators = {}
 
     def __new__(cls):
         if not cls._instance:
@@ -73,6 +74,18 @@ class Registry:
     def add_fusion_operator(self, fusion_operator):
         self._fusion_operators.append(fusion_operator)
 
+    def add_dimensionality_reduction_operator(
+        self, dimensionality_reduction_operator, modality_type
+    ):
+        if not isinstance(modality_type, list):
+            modality_type = [modality_type]
+        for m_type in modality_type:
+            if not m_type in self._dimensionality_reduction_operators.keys():
+                self._dimensionality_reduction_operators[m_type] = []
+            self._dimensionality_reduction_operators[m_type].append(
+                dimensionality_reduction_operator
+            )
+
     def get_representations(self, modality: ModalityType):
         return self._representations[modality]
 
@@ -85,6 +98,9 @@ class Registry:
 
     def get_context_operators(self, modality_type):
         return self._context_operators[modality_type]
+
+    def get_dimensionality_reduction_operators(self, modality_type):
+        return self._dimensionality_reduction_operators[modality_type]
 
     def get_fusion_operators(self):
         return self._fusion_operators
@@ -122,6 +138,18 @@ def register_representation(modalities: Union[ModalityType, List[ModalityType]])
                 raise f"Modality {modality} not in ModalityTypes please add it to constants.py ModalityTypes first!"
 
             Registry().add_representation(cls, modality)
+        return cls
+
+    return decorator
+
+
+def register_dimensionality_reduction_operator(modality_type):
+    """
+    Decorator to register a dimensionality reduction operator.
+    """
+
+    def decorator(cls):
+        Registry().add_dimensionality_reduction_operator(cls, modality_type)
         return cls
 
     return decorator

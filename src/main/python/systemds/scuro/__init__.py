@@ -116,7 +116,13 @@ from systemds.scuro.representations.text_context_with_indices import (
     OverlappingSplitIndices,
 )
 from systemds.scuro.representations.elmo import ELMoRepresentation
-
+from systemds.scuro.representations.dimensionality_reduction import (
+    DimensionalityReduction,
+)
+from systemds.scuro.representations.mlp_averaging import MLPAveraging
+from systemds.scuro.representations.mlp_learned_dim_reduction import (
+    MLPLearnedDimReduction,
+)
 
 __all__ = [
     "BaseLoader",
@@ -202,4 +208,7 @@ __all__ = [
     "ELMoRepresentation",
     "SentenceBoundarySplitIndices",
     "OverlappingSplitIndices",
+    "MLPAveraging",
+    "MLPLearnedDimReduction",
+    "DimensionalityReduction",
 ]

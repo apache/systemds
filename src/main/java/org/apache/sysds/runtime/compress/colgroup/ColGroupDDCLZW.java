@@ -71,7 +71,6 @@ import org.jboss.netty.handler.codec.compression.CompressionException;
 import shaded.parquet.it.unimi.dsi.fastutil.ints.IntArrayList;
 import shaded.parquet.it.unimi.dsi.fastutil.longs.Long2IntLinkedOpenHashMap;
 
-
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Stack;
@@ -204,7 +203,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
         return outarray;
     }
 
-    // Decompresses an LZW-compressed vector into its pre-compressed AMapToData form.
+    // Decompresses an LZW-compressed vector into its pre-compressed AMapToData form until index.
     // TODO: Compatibility with compress() and used data structures. Improve time/space complexity.
     private static AMapToData decompress(int[] codes, int nUnique, int nRows, int index) {
         // Validate input arguments.
@@ -217,9 +216,13 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
         if (nRows <= 0) {
             throw new IllegalArgumentException("Invalid nRows: " + nRows);
         }
-        if (index > nRows){
+        if (index > nRows) {
             throw new IllegalArgumentException("Index is larger than Data Length: " + index);
         }
+
+        // Return empty Map if index is zero.
+        if (index == 0)
+            return MapToFactory.create(0, nUnique);
 
         // Maps: code -> packKey(prefixCode, lastSymbolOfPhrase).
         // Base symbols (0..nUnique-1) are implicit and not stored here.
@@ -233,7 +236,8 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
         // any dictionary entries.
         int old = codes[0];
         int[] oldPhrase = unpack(old, nUnique, dict);
-        for (int v : oldPhrase){
+
+        for (int v : oldPhrase) {
             if (outPos == index) break;
             out.set(outPos++, v);
         }
@@ -258,12 +262,14 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
             // Append the reconstructed phrase to the output mapping.
             for (int v : next) {
-                if (outPos == index) break;
                 out.set(outPos++, v);
+                if (outPos == index)
+                    // Stop immediately once done.
+                    return out;
             }
 
             // Add new phrase to dictionary: nextCode -> (old, firstSymbol(next)).
-            int first = next[0];
+            final int first = next[0];
             dict.put(nextCode++, packKey(old, first));
 
             // Advance.
@@ -318,7 +324,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
                 throw new DMLCompressionException("Invalid construction with empty dictionary");
             if (_nRows <= 0)
                 throw new DMLCompressionException("Invalid length of the data. is zero");
-            if (_nUnique <= dict.getNumberOfValues(colIndexes.size()))
+            if (_nUnique != dict.getNumberOfValues(colIndexes.size()))
                 throw new DMLCompressionException("Invalid map to dict Map has:" + _nUnique + " while dict has "
                         + dict.getNumberOfValues(colIndexes.size()));
             int[] c = getCounts();
@@ -460,10 +466,10 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
     @Override
     public AColGroup sliceRows(int rl, int ru) {
-        try{
+        try {
             AMapToData map = decompress(_dataLZW, _nUnique, _nRows, ru);
             return ColGroupDDCLZW.create(_colIndexes, _dict, map.slice(rl, ru), null);
-        } catch(Exception e){
+        } catch (Exception e) {
             throw new DMLRuntimeException("Failed to slice out sub part DDCLZW: " + rl + ", " + ru, e);
         }
     }

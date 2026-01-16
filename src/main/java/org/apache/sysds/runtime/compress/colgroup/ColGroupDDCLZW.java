@@ -394,7 +394,10 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
     @Override
     public double getIdx(int r, int colIdx) {
-        return 0;
+        // TODO: soll schnell sein
+        final AMapToData map = decompress(_dataLZW, _nUnique, _nRows, r);
+        // TODO: ColumnIndex
+        return map.getIndex(r);
     }
 
     @Override
@@ -421,6 +424,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
     @Override
     public ICLAScheme getCompressionScheme() {
+        //TODO: in ColGroupDDCFor nicht implementiert - sollen wir das erstellen? Inhalt: ncols wie DDC
         throw new NotImplementedException();
     }
 
@@ -436,7 +440,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
     @Override
     public AMapToData getMapToData() {
-        throw new NotImplementedException(); // or decompress and return data...
+        throw new NotImplementedException(); // or decompress and return data... decompress(_dataLZW, _nUnique, _nRows, _nRows)
     }
 
     @Override
@@ -456,7 +460,12 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
     @Override
     public AColGroup sliceRows(int rl, int ru) {
-        return null;
+        try{
+            AMapToData map = decompress(_dataLZW, _nUnique, _nRows, ru);
+            return ColGroupDDCLZW.create(_colIndexes, _dict, map.slice(rl, ru), null);
+        } catch(Exception e){
+            throw new DMLRuntimeException("Failed to slice out sub part DDCLZW: " + rl + ", " + ru, e);
+        }
     }
 
 

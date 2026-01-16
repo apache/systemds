@@ -25,10 +25,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.colgroup.AColGroup;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupDDCLZW;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupDeltaDDC;
+import org.apache.sysds.runtime.compress.colgroup.*;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
@@ -43,6 +40,7 @@ public class ColGroupDDCTest {
 
     @Test
     public void testConvertToDDCLZWBasic() {
+        // TODO: neue Methode zum Vergleich
         IColIndex colIndexes = ColIndexFactory.create(2);
         double[] dictValues = new double[]{10.0, 20.0, 11.0, 21.0, 12.0, 22.0};
         Dictionary dict = Dictionary.create(dictValues);
@@ -112,6 +110,25 @@ public class ColGroupDDCTest {
         for(int i = 0; i < index; i++){
             assertEquals(d1.getIndex(i), d3.getIndex(i));
         }
+
+        // Testen von SliceRows
+        int low = 3;
+        int high = 10;
+        AColGroup slice = ddclzw.sliceRows(low, high);
+        if(slice instanceof ColGroupDDCLZW ddclzwslice){
+            ColGroupDDC ddcSlice = (ColGroupDDC) ddclzwslice.convertToDDC();
+            ColGroupDDC ddcSlice2 = (ColGroupDDC) ddc.sliceRows(low, high);
+
+            AMapToData d4 = ddcSlice.getMapToData();
+            AMapToData d5 = ddcSlice2.getMapToData();
+
+            assertEquals(d5.size(), d4.size());
+            assertEquals(d5.getUnique(), d4.getUnique());
+
+            for (int i = 0; i < d4.size(); i++)
+                assertEquals("mapping mismatch at row " + i, d4.getIndex(i), d5.getIndex(i));
+        }
+
     }
 
     @Test

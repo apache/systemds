@@ -251,6 +251,7 @@ public class SparseBlockCheckValidityTest extends AutomatedTestBase
 		setField(block, "_colidx", colIdxs);
 		setField(block, "_values", v);
 		setField(block, "_size", 3);
+		setField(block, "_nnzr", 3);
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
 			() -> block.checkValidity(3, 10, 3, true));
@@ -272,6 +273,7 @@ public class SparseBlockCheckValidityTest extends AutomatedTestBase
 		setField(block, "_colidx", colIdxs);
 		setField(block, "_values", v);
 		setField(block, "_size", 3);
+		setField(block, "_nnzr", 3);
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
 			() -> block.checkValidity(3, 10, 3, true));
@@ -350,6 +352,7 @@ public class SparseBlockCheckValidityTest extends AutomatedTestBase
 		setField(block, "_colidx", colIdxs);
 		setField(block, "_values", v);
 		setField(block, "_size", 3);
+		setField(block, "_nnzr", 2);
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
 			() -> block.checkValidity(1, 3, 3, false));

@@ -95,6 +95,12 @@ public abstract class SparseBlock implements Serializable, Block
 	 * @param r row index
 	 */
 	public abstract void compact(int r);
+
+	/**
+	 * In-place compaction of non-zero-entries; removes zero entries
+	 * and shifts non-zero entries to the left if necessary.
+	 */
+	public abstract void compact();
 	
 	////////////////////////
 	//obtain basic meta data

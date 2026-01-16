@@ -199,6 +199,22 @@ public class SparseBlockMCSR extends SparseBlock
 			}
 		}
 	}
+
+	@Override
+	public void compact() {
+		for(int i = 0; i < numRows(); i++) {
+			if(isAllocated(i)) {
+				if(_rows[i] instanceof SparseRowVector) {
+					_rows[i].compact();
+					if(_rows[i].isEmpty()) _rows[i] = null;
+				}
+				else if(_rows[i] instanceof SparseRowScalar) {
+					SparseRowScalar s = (SparseRowScalar) _rows[i];
+					if(s.getValue() == 0) _rows[i] = null;
+				}
+			}
+		}
+	}
 	
 	@Override
 	public int numRows() {

@@ -358,6 +358,25 @@ public class SparseBlockCSC extends SparseBlock {
 	}
 
 	@Override
+	public void compact() {
+		int pos = 0;
+		for(int i=0; i<numCols(); i++) {
+			int apos = posCol(i);
+			int alen = sizeCol(i);
+			_ptr[i] = pos;
+			for(int j=apos; j<apos+alen; j++) {
+				if(_values[j] != 0){
+					_values[pos] = _values[j];
+					_indexes[pos] = _indexes[j];
+					pos++;
+				}
+			}
+		}
+		_ptr[numCols()] = pos;
+		_size = pos;
+	}
+
+	@Override
 	public int numRows() {
 		if(_rlen > -1)
 			return _rlen;

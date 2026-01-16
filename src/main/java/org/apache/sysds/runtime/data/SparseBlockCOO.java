@@ -194,6 +194,20 @@ public class SparseBlockCOO extends SparseBlock
 	}
 
 	@Override
+	public void compact() {
+		int pos = 0;
+		for(int i=0; i< _values.length; i++) {
+			if(_values[i] != 0){
+				_values[pos] = _values[i];
+				_rindexes[pos] = _rindexes[i];
+				_cindexes[pos] = _cindexes[i];
+				pos++;
+			}
+		}
+		_size = pos;
+	}
+
+	@Override
 	public int numRows() {
 		return _rlen;
 	}

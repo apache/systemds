@@ -304,6 +304,24 @@ public class SparseBlockMCSC extends SparseBlock {
 	}
 
 	@Override
+	public void compact() {
+		for(int i = 0; i < numCols(); i++) {
+			if(isAllocatedCol(i)) {
+				if(_columns[i] instanceof SparseRowVector) {
+					_columns[i].compact();
+					if(_columns[i].isEmpty())
+						_columns[i] = null;
+				}
+				else if(_columns[i] instanceof SparseRowScalar) {
+					SparseRowScalar s = (SparseRowScalar) _columns[i];
+					if(s.getValue() == 0)
+						_columns[i] = null;
+				}
+			}
+		}
+	}
+
+	@Override
 	public int numRows() {
 		return _rlen;
 	}

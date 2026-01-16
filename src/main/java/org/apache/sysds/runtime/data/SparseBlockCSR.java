@@ -350,7 +350,8 @@ public class SparseBlockCSR extends SparseBlock
 	public void compact(int r) {
 		//do nothing everything preallocated
 	}
-	
+
+	@Override
 	public void compact() {
 		int pos = 0;
 		for(int i=0; i<numRows(); i++) {

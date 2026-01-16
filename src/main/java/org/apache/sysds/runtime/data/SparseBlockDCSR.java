@@ -200,6 +200,31 @@ public class SparseBlockDCSR extends SparseBlock
 	}
 
 	@Override
+	public void compact() {
+		int idx = 0;
+		int pos = 0;
+		for(int i=0; i<_nnzr; i++) {
+			int apos = pos(_rowidx[i]);
+			int alen = size(_rowidx[i]);
+			_rowptr[idx] = pos;
+			for(int j=apos; j<apos+alen; j++) {
+				if(_values[j] != 0){
+					_values[pos] = _values[j];
+					_colidx[pos] = _colidx[j];
+					pos++;
+				}
+			}
+			if(_rowptr[idx]<pos){
+				_rowidx[idx] = _rowidx[i];
+				idx++;
+			}
+		}
+		_size = pos;
+		_nnzr = idx;
+		_rowptr[_nnzr] = pos;
+	}
+
+	@Override
 	public int numRows() {
 		return _rlen;
 	}
@@ -699,13 +724,13 @@ public class SparseBlockDCSR extends SparseBlock
 		}
 
 		//3. non-decreasing row pointers
-		for ( int i=1; i <_rowidx.length; i++ ) {
+		for ( int i=1; i < _nnzr; i++ ) {
 			if (_rowidx[i-1] > _rowidx[i])
 				throw new RuntimeException("Row indices are decreasing at row: " + i
 						+ ", with indices " + _rowidx[i-1] + " > " +_rowidx[i]);
 		}
 
-		for (int i = 1; i < _rowptr.length; i++ ) {
+		for (int i = 1; i < _nnzr+1; i++ ) {
 			if (_rowptr[i - 1] > _rowptr[i]) {
 				throw new RuntimeException("Row pointers are decreasing at row: " + i
 						+ ", with pointers " + _rowptr[i-1] + " > " +_rowptr[i]);
@@ -713,7 +738,7 @@ public class SparseBlockDCSR extends SparseBlock
 		}
 
 		//4. sorted column indexes per row
-		for (int i = 0; i < _rowptr.length-1; i++) {
+		for (int i = 0; i < _nnzr; i++) {
 			int apos = _rowptr[i];
 			int alen = _rowptr[i+1] - apos;
 

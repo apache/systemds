@@ -9,12 +9,12 @@
    
 ## Setup
 
-1. First, install [Docker](https://docs.docker.com/get-started/get-docker/) and its necessary libraries.
+1. First, install [Docker](https://docs.docker.com/get-started/get-docker/), [Docker Compose](https://docs.docker.com/compose/install/) and its necessary libraries.
   
-  For Ubuntu, there is the [following tutorial using apt repository](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository). You can add [Docker Desktop](https://docs.docker.com/desktop/setup/install/linux/ubuntu/), too.
+  For Ubuntu, there is the following tutorials [for Docker](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository) and [Docker Compose](https://docs.docker.com/compose/install/linux/#install-using-the-repository) using apt repository. You can add [Docker Desktop](https://docs.docker.com/desktop/setup/install/linux/ubuntu/), too.
   
 
-2. Now, follow the tutorials to install Docker versions of database systems [SystemDS](https://apache.github.io/systemds/site/docker), [PostgreSQL](https://hub.docker.com/_/postgres), ....
+1. Now, follow the tutorials to install Docker versions of database systems [SystemDS](https://apache.github.io/systemds/site/docker), [PostgreSQL](https://hub.docker.com/_/postgres), ....
   
 
 If the example in the SystemDS link does not work, use that code line instead. Create a DML file, open its directory and execute the code.
@@ -42,7 +42,7 @@ For more options look into the original documentation.
 
 Run with:
 ```
-docker run -it --rm -v $PWD:/scripts/ apache/systemds:nightly -f /scripts/queries/q4_3.dml -nvargs input_dir="/scripts/data/very_small_s0_01_dataset"
+docker run -it --rm -v $PWD:/scripts/ apache/systemds:nightly -f /scripts/queries/q4_3.dml -nvargs input_dir="/scripts/data/..."
 ```
 
 ```

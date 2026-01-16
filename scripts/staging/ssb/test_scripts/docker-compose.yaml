@@ -1,0 +1,20 @@
+# Use
+#https://stackoverflow.com/questions/35231362/dockerfile-and-docker-compose-not-updating-with-new-instructions
+#scale=[YOUR_SCALE] docker-compose build --no-cache
+#scale=[YOUR_SCALE] docker-compose up -d
+
+# Example
+#scale=0.01 docker-compose build --no-cache
+#scale=0.01 docker-compose up -d
+services:
+  datagen:
+    build:
+      context: .
+      args:
+        - scale
+
+  systemds:
+    image: apache/systemds:latest
+    #command: echo "I'm running ${COMPOSE_PROJECT_NAME}"
+    #command: docker run -it --rm -v $PWD:/scripts/ apache/systemds:latest -f /scripts/queries/q1_3.dml -nvargs input_dir="/scripts/data/very_small_s0_01_dataset"
+

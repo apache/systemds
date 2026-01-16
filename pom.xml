@@ -108,6 +108,11 @@
 		<json-smart.version>2.4.9</json-smart.version>           <!-- CVE-2023-1370 -->
 		<nimbus-jose-jwt.version>9.37.4</nimbus-jose-jwt.version><!-- CVE-2023-52428, CVE-2025-53864 -->
 		<aircompressor.version>0.27</aircompressor.version>      <!-- CVE-2024-36114 -->
+		<netty.version>4.1.124.Final</netty.version>             <!-- CVE-2025-55163, CVE-2023-44487 -->
+		<jetty.version>9.4.57.v20241219</jetty.version>          <!-- CVE-2024-6763 -->
+		<xnio.version>3.8.14.Final</xnio.version>                <!-- CVE-2023-5685 -->
+		<commons-beanutils.version>1.11.0</commons-beanutils.version>  <!-- CVE-2025-48734 -->
+		<dnsjava.version>3.6.0</dnsjava.version>                 <!-- CVE-2024-25638 -->
 	</properties>
 
 	<repositories>
@@ -192,6 +197,87 @@
 				<groupId>org.apache.kerby</groupId>
 				<artifactId>kerb-admin</artifactId>
 				<version>${kerby.version}</version>
+			</dependency>
+			<!-- CVE-2025-55163, CVE-2023-44487: HTTP/2 vulnerabilities in Netty -->
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-codec-http2</artifactId>
+				<version>${netty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-codec-http</artifactId>
+				<version>${netty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-codec-smtp</artifactId>
+				<version>${netty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-codec</artifactId>
+				<version>${netty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-common</artifactId>
+				<version>${netty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-handler</artifactId>
+				<version>${netty.version}</version>
+			</dependency>
+			<!-- CVE-2024-6763: HTTP request smuggling in Jetty -->
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-server</artifactId>
+				<version>${jetty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-http</artifactId>
+				<version>${jetty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-webapp</artifactId>
+				<version>${jetty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-xml</artifactId>
+				<version>${jetty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-servlets</artifactId>
+				<version>${jetty.version}</version>
+			</dependency>
+			<!-- CVE-2023-5685: Resource consumption in XNIO -->
+			<dependency>
+				<groupId>org.jboss.xnio</groupId>
+				<artifactId>xnio-api</artifactId>
+				<version>${xnio.version}</version>
+			</dependency>
+			<!-- CVE-2025-48734: Access control in Commons BeanUtils -->
+			<dependency>
+				<groupId>commons-beanutils</groupId>
+				<artifactId>commons-beanutils</artifactId>
+				<version>${commons-beanutils.version}</version>
+			</dependency>
+			<!-- CVE-2024-25638: DNS response validation in dnsjava -->
+			<dependency>
+				<groupId>dnsjava</groupId>
+				<artifactId>dnsjava</artifactId>
+				<version>${dnsjava.version}</version>
+			</dependency>
+			<!-- CVE-2024-7254: Stack overflow in protobuf-java (transitive override) -->
+			<dependency>
+				<groupId>com.google.protobuf</groupId>
+				<artifactId>protobuf-java</artifactId>
+				<version>${protobuf.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
@@ -1171,7 +1257,7 @@
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-handler</artifactId>
-			<version>4.1.118.Final</version>
+			<version>${netty.version}</version>
 		</dependency>
 
 		<dependency>

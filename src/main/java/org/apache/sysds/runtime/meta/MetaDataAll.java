@@ -30,6 +30,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.parser.BooleanIdentifier;
 import org.apache.sysds.parser.ConstIdentifier;
 import org.apache.sysds.parser.DataExpression;
@@ -418,6 +419,13 @@ public class MetaDataAll extends DataIdentifier {
 			}
 		}
 		return false;
+	}
+
+	public static String checkHasHDF5Format(String filename) {
+		if(filename != null && filename.toLowerCase().endsWith(".h5")) {
+			return FileFormat.HDF5.toString();
+		}
+		return null;
 	}
 
 	@Override

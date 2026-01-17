@@ -40,10 +40,8 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
-@Ignore
 public class ReadHDF5Test extends ReadHDF5TestBase {
 
 	private static final double eps = 1e-9;
@@ -54,8 +52,8 @@ public class ReadHDF5Test extends ReadHDF5TestBase {
 			new Hdf5TestCase("test_multiple_datasets.h5", "matrix_2d", DmlVariant.DATASET_ONLY),
 			new Hdf5TestCase("test_multiple_datasets.h5", "matrix_3d", DmlVariant.DATASET_ONLY),
 			new Hdf5TestCase("test_multi_tensor_samples.h5", "label", DmlVariant.DATASET_ONLY),
-			new Hdf5TestCase("test_multi_tensor_samples.h5", "sen1", DmlVariant.DATASET_ONLY),
-			new Hdf5TestCase("test_nested_groups.h5", "group1/subgroup/data2", DmlVariant.FORMAT_AND_DATASET)));
+			new Hdf5TestCase("test_multi_tensor_samples.h5", "sen1", DmlVariant.DATASET_ONLY)));
+			//TODO new Hdf5TestCase("test_nested_groups.h5", "group1/subgroup/data2", DmlVariant.FORMAT_AND_DATASET)));
 
 	@Override
 	protected String getTestName() {

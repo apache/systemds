@@ -1,4 +1,4 @@
-<!--
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,28 +6,17 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
--->
+ */
 
-<<<<<<<< HEAD:src/test/scripts/functions/einsum/SystemDS-config-einsum.xml
-<root>
-   <sysds.localtmpdir>/tmp/systemds</sysds.localtmpdir>
-   <sysds.scratch>scratch_space</sysds.scratch>
-   <sysds.optlevel>2</sysds.optlevel>
-   <sysds.codegen.plancache>true</sysds.codegen.plancache>
-   <sysds.codegen.literals>1</sysds.codegen.literals>
-    <sysds.local.spark.number.threads>16</sysds.local.spark.number.threads>
-    <sysds.native.blas>auto</sysds.native.blas>
-</root>
-========
 package org.apache.sysds.runtime.io.hdf5;
 
 import java.io.Closeable;
@@ -45,4 +34,3 @@ public interface H5ByteReader extends Closeable {
 	@Override
 	void close() throws IOException;
 }
->>>>>>>> 6b1708bd1e (dd):src/main/java/org/apache/sysds/runtime/io/hdf5/H5ByteReader.java

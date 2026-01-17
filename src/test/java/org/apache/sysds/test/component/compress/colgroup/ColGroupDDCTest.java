@@ -122,6 +122,10 @@ public class ColGroupDDCTest {
 				assertEquals("mapping mismatch at row " + i, d4.getIndex(i), d5.getIndex(i));
 		}
 
+        // Testen von compute RowSums
+        double [] sumsddc = new double[high-low];
+        //ddc.computeColSums(sumsddc, low, high, );
+
 	}
 
 	@Test

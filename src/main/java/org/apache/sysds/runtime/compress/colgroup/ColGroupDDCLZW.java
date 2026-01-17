@@ -45,6 +45,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
+import org.apache.sysds.runtime.compress.colgroup.scheme.DDCLZWScheme;
 import org.apache.sysds.runtime.compress.colgroup.scheme.DDCScheme;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
@@ -467,7 +468,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		// TODO: soll schnell sein
 		final AMapToData map = decompress(_dataLZW, _nUnique, _nRows, r);
 		// TODO: ColumnIndex
-		return map.getIndex(r);
+        return _dict.getValue(map.getIndex(r), colIdx, _colIndexes.size());
 	}
 
 	@Override
@@ -495,7 +496,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 	@Override
 	public ICLAScheme getCompressionScheme() {
 		//TODO: in ColGroupDDCFor nicht implementiert - sollen wir das erstellen? Inhalt: ncols wie DDC
-		throw new NotImplementedException();
+		return DDCLZWScheme.create(this);
 	}
 
 	@Override
@@ -709,19 +710,24 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		return new int[0]; // If returns exeption test wont work.
 	}
 
-	@Override
-	protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
+    protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
+        AMapToData data = decompress(_dataLZW, _nUnique, _nRows, ru);
+        for (int rix = rl; rix < ru; rix++)
+            c[rix] += preAgg[data.getIndex(rix)];
+    }
 
-	}
+    @Override
+    protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
 
-	@Override
-	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
+    }
 
-	}
+    @Override
+    protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
+        AMapToData data = decompress(_dataLZW, _nUnique, _nRows, ru);
+        for (int rix = rl; rix < ru; rix++)
+            c[rix] *= preAgg[data.getIndex(rix)];
 
-	@Override
-	protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
 
-	}
+    }
 }
 

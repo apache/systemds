@@ -17,7 +17,6 @@
  * under the License.
 -->
 
-<<<<<<<< HEAD:src/test/scripts/functions/einsum/SystemDS-config-einsum.xml
 <root>
    <sysds.localtmpdir>/tmp/systemds</sysds.localtmpdir>
    <sysds.scratch>scratch_space</sysds.scratch>
@@ -27,22 +26,3 @@
     <sysds.local.spark.number.threads>16</sysds.local.spark.number.threads>
     <sysds.native.blas>auto</sysds.native.blas>
 </root>
-========
-package org.apache.sysds.runtime.io.hdf5;
-
-import java.io.Closeable;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
-public interface H5ByteReader extends Closeable {
-
-	ByteBuffer read(long offset, int length) throws IOException;
-
-	default ByteBuffer read(long offset, int length, ByteBuffer reuse) throws IOException {
-		return read(offset, length);
-	}
-
-	@Override
-	void close() throws IOException;
-}
->>>>>>>> 6b1708bd1e (dd):src/main/java/org/apache/sysds/runtime/io/hdf5/H5ByteReader.java

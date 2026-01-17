@@ -30,4 +30,6 @@ public final class H5Constants {
 	public static final int DATA_LAYOUT_MESSAGE = 8;
 	public static final int SYMBOL_TABLE_MESSAGE = 17;
 	public static final int OBJECT_MODIFICATION_TIME_MESSAGE = 18;
+	public static final int FILTER_PIPELINE_MESSAGE = 11;
+	public static final int ATTRIBUTE_MESSAGE = 12;
 }

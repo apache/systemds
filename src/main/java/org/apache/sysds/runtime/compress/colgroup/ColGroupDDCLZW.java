@@ -262,7 +262,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 			// Start returning symbols from the newly decoded phrase.
 			currentPhrase = next;
 			currentPhraseIndex = 0;
-			
+
 			mapIndex++;
 			return currentPhrase[currentPhraseIndex++];
 		}
@@ -465,10 +465,18 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
 	@Override
 	public double getIdx(int r, int colIdx) {
-		// TODO: soll schnell sein
-		final AMapToData map = decompress(_dataLZW, _nUnique, _nRows, r);
-		// TODO: ColumnIndex
-        return _dict.getValue(map.getIndex(r), colIdx, _colIndexes.size());
+		if(r < 0 || r >= _nRows)
+			throw new DMLRuntimeException("Row index out of bounds");
+
+		if(colIdx < 0 || colIdx >= _colIndexes.size())
+			throw new DMLRuntimeException("Column index out of bounds");
+
+		final LZWMappingIterator it = new LZWMappingIterator();
+		int dictIdx = -1;
+		for(int i = 0; i <= r; i++) {
+			dictIdx = it.next();
+		}
+		return _dict.getValue(dictIdx, colIdx, _colIndexes.size());
 	}
 
 	@Override
@@ -710,24 +718,23 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		return new int[0]; // If returns exeption test wont work.
 	}
 
-    protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
-        AMapToData data = decompress(_dataLZW, _nUnique, _nRows, ru);
-        for (int rix = rl; rix < ru; rix++)
-            c[rix] += preAgg[data.getIndex(rix)];
-    }
+	protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
+		AMapToData data = decompress(_dataLZW, _nUnique, _nRows, ru);
+		for(int rix = rl; rix < ru; rix++)
+			c[rix] += preAgg[data.getIndex(rix)];
+	}
 
-    @Override
-    protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
+	@Override
+	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
 
-    }
+	}
 
-    @Override
-    protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
-        AMapToData data = decompress(_dataLZW, _nUnique, _nRows, ru);
-        for (int rix = rl; rix < ru; rix++)
-            c[rix] *= preAgg[data.getIndex(rix)];
+	@Override
+	protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
+		AMapToData data = decompress(_dataLZW, _nUnique, _nRows, ru);
+		for(int rix = rl; rix < ru; rix++)
+			c[rix] *= preAgg[data.getIndex(rix)];
 
-
-    }
+	}
 }
 

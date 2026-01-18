@@ -328,10 +328,10 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
 			// Append the reconstructed phrase to the output mapping.
 			for(int v : next) {
-				out.set(outPos++, v);
 				if(outPos == index)
 					// Stop immediately once done.
 					return out;
+				out.set(outPos++, v);
 			}
 
 			// Add new phrase to dictionary: nextCode -> (old, firstSymbol(next)).

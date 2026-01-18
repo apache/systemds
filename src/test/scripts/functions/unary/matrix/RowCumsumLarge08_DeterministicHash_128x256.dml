@@ -1,0 +1,46 @@
+# Test-specific focus:
+#   Pseudo-random but deterministic data pattern.
+#
+# Why this matters:
+#   Captures realistic, irregular data distributions while remaining
+#   fully reproducible.
+#
+# This test ensures:
+#   - No assumptions are made about monotonicity or smoothness
+#   - Carry propagation works for arbitrary values
+#
+# Expected result:
+#   Computed via trusted sequential loop.
+#
+# Output:
+#   Writes TRUE/FALSE to $1
+#
+# NOTE:
+# - Do NOT call setExecMode() here. That helper exists only in the JUnit harness.
+# - Exec mode is controlled by CLI: -exec spark
+
+n = 128;  m = 256;
+
+ri = matrix(seq(1, n), n, 1);
+cj = matrix(seq(1, m), 1, m);
+
+# deterministic pseudo-random-ish:
+# X[i,j] = ((i*1103515245 + j*12345) %% 97) - 48
+A = (ri %*% matrix(1, 1, m)) * 1103515245;
+B = (matrix(1, n, 1) %*% cj) * 12345;
+X = ((A + B) %% 97) - 48;
+
+# row-wise cumsum (builtin name is lower-case in DML)
+Y = rowcumsum(X);
+
+# Expected result via sequential loop
+E = matrix(0, n, m);
+E[, 1] = X[, 1];
+for (j in 2:m) {
+  E[, j] = E[, j-1] + X[, j];
+}
+
+err  = max(abs(Y - E));
+pass = (err < 1e-9);
+
+write(pass, $1);

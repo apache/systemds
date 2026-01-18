@@ -38,55 +38,57 @@ public class UnaryMatrixSPInstruction extends UnarySPInstruction {
 	protected UnaryMatrixSPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
 		super(SPType.Unary, op, in, out, opcode, instr);
 	}
-	
+
 	public static UnarySPInstruction parseInstruction ( String str ) {
 		CPOperand in = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		String opcode = parseUnaryInstruction(str, in, out);
 		return new UnaryMatrixSPInstruction(
-			InstructionUtils.parseUnaryOperator(opcode), in, out, opcode, str);
+				InstructionUtils.parseUnaryOperator(opcode), in, out, opcode, str);
 	}
 
-	@Override 
+	@Override
 	public void processInstruction(ExecutionContext ec) {
 		SparkExecutionContext sec = (SparkExecutionContext)ec;
-		
-		//get input
-		JavaPairRDD<MatrixIndexes,MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
-		
-		//execute unary builtin operation
-		UnaryOperator uop = (UnaryOperator) _optr;
-		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in.mapValues(new RDDMatrixBuiltinUnaryOp(uop));
-		
-		//set output RDD
-		updateUnaryOutputDataCharacteristics(sec);
-		sec.setRDDHandleForVariable(output.getName(), out);	
-		sec.addLineageRDD(output.getName(), input1.getName());
 
-		//FIXME: implement similar to cumsum through
-		//  CumulativeAggregateSPInstruction (Spark)
-		//  UnaryMatrixCPInstruction (local cumsum on aggregates)
-		//  CumulativeOffsetSPInstruction (Spark)
+		// get input
+		JavaPairRDD<MatrixIndexes, MatrixBlock> in =
+				sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
 
-		// rowcumsum processing
-		JavaPairRDD<MatrixIndexes,MatrixBlock> localRowcumsum = sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
+		// Only do distributed rowcumsum logic for the rowcumsum opcode.
+		// Otherwise do the default unary builtin blockwise operation.
+		if ("urowcumk+".equals(getOpcode())) {
 
-		Tuple2<JavaPairRDD<MatrixIndexes, MatrixBlock>, JavaPairRDD<MatrixIndexes, MatrixBlock>> results =
-				CumulativeAggregateSPInstruction.processRowCumsumWithEndValues(localRowcumsum);
+			// rowcumsum processing (distributed: aggregate + offsets)
+			Tuple2<JavaPairRDD<MatrixIndexes, MatrixBlock>, JavaPairRDD<MatrixIndexes, MatrixBlock>> results =
+					CumulativeAggregateSPInstruction.processRowCumsumWithEndValues(in);
 
-		JavaPairRDD<MatrixIndexes, MatrixBlock> rowEndValues = CumulativeOffsetSPInstruction.processRowCumsumOffsetsDirectly(results._1, results._2);
+			JavaPairRDD<MatrixIndexes, MatrixBlock> rowEndValues =
+					CumulativeOffsetSPInstruction.processRowCumsumOffsetsDirectly(results._1, results._2);
 
-		sec.setRDDHandleForVariable(output.getName(), rowEndValues);
-		sec.addLineageRDD(output.getName(), input1.getName());
-		updateUnaryOutputDataCharacteristics(sec);
+			updateUnaryOutputDataCharacteristics(sec);
+			sec.setRDDHandleForVariable(output.getName(), rowEndValues);
+			sec.addLineageRDD(output.getName(), input1.getName());
+		}
+		else {
+			// execute unary builtin operation (blockwise)
+			UnaryOperator uop = (UnaryOperator) _optr;
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out =
+					in.mapValues(new RDDMatrixBuiltinUnaryOp(uop));
+
+			// set output RDD
+			updateUnaryOutputDataCharacteristics(sec);
+			sec.setRDDHandleForVariable(output.getName(), out);
+			sec.addLineageRDD(output.getName(), input1.getName());
+		}
 	}
 
-	private static class RDDMatrixBuiltinUnaryOp implements Function<MatrixBlock,MatrixBlock> 
+	private static class RDDMatrixBuiltinUnaryOp implements Function<MatrixBlock,MatrixBlock>
 	{
 		private static final long serialVersionUID = -3128192099832877491L;
-		
+
 		private UnaryOperator _op = null;
-		
+
 		public RDDMatrixBuiltinUnaryOp(UnaryOperator u_op) {
 			_op = u_op;
 		}
@@ -97,4 +99,3 @@ public class UnaryMatrixSPInstruction extends UnarySPInstruction {
 		}
 	}
 }
-

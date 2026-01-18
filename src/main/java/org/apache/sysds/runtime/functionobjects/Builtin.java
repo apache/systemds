@@ -96,6 +96,7 @@ public class Builtin extends ValueFunction
 		String2BuiltinCode.put( "floor"  , BuiltinCode.FLOOR);
 		String2BuiltinCode.put( "ucumk+" , BuiltinCode.CUMSUM);
 		String2BuiltinCode.put( "urowcumk+" , BuiltinCode.ROWCUMSUM);
+		String2BuiltinCode.put("rowCumsum", BuiltinCode.ROWCUMSUM);
 		String2BuiltinCode.put( "ucum*"  , BuiltinCode.CUMPROD);
 		String2BuiltinCode.put( "ucumk+*", BuiltinCode.CUMSUMPROD);
 		String2BuiltinCode.put( "ucummin", BuiltinCode.CUMMIN);

@@ -19,7 +19,13 @@
 
 package org.apache.sysds.runtime.instructions.spark;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.api.java.Optional;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
@@ -40,10 +46,8 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import scala.Serializable;
-import scala.Tuple2;
 
-import java.util.*;
+import scala.Tuple2;
 
 public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 	private UnaryOperator _uop = null;
@@ -51,7 +55,8 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 	private final double _initValue ;
 	private final boolean _broadcast;
 
-	private CumulativeOffsetSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, double init, boolean broadcast, String opcode, String istr) {
+	private CumulativeOffsetSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+										  double init, boolean broadcast, String opcode, String istr) {
 		super(SPType.CumsumOffset, op, in1, in2, out, opcode, istr);
 
 		if (Opcodes.BCUMOFFKP.toString().equals(opcode))
@@ -73,15 +78,18 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 		_broadcast = broadcast;
 	}
 
-	public static CumulativeOffsetSPInstruction parseInstruction ( String str ) {
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType( str );
-		InstructionUtils.checkNumFields(parts, 5);
+	public static CumulativeOffsetSPInstruction parseInstruction(String str) {
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
+		// parts: opcode, in1, in2, out, init, broadcast  => 6 fields
+		InstructionUtils.checkNumFields(parts, 6);
+
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
 		CPOperand out = new CPOperand(parts[3]);
 		double init = Double.parseDouble(parts[4]);
 		boolean broadcast = Boolean.parseBoolean(parts[5]);
+
 		return new CumulativeOffsetSPInstruction(null, in1, in2, out, init, broadcast, opcode, str);
 	}
 
@@ -130,78 +138,101 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 		sec.addLineage(output.getName(), input2.getName(), broadcast);
 	}
 
+	/**
+	 * Distributed rowcumsum offset application:
+	 * - endValues: for each (rowBlock, colBlock), a (rowsInBlock x 1) column vector with the last value of each row
+	 * - compute per-(rowBlock,colBlock) offsets via prefix-scan across colBlocks (within each rowBlock)
+	 * - join offsets with localRowCumsum blocks and add offsets row-wise
+	 *
+	 * This matches the paper’s two-phase scan: local scan + carry propagation.
+	 */
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> processRowCumsumOffsetsDirectly(
 			JavaPairRDD<MatrixIndexes, MatrixBlock> localRowCumsum,
 			JavaPairRDD<MatrixIndexes, MatrixBlock> endValues) {
 
-		// Collect end-values of every block of every row for offset calc by grouping by global row index
-		JavaPairRDD<Long, Iterable<Tuple3<Long, Long, double[]>>> rowEndValues = endValues
-				.mapToPair(t -> {
-					// get index of block
-					MatrixIndexes idx = t._1;
-					// get cum matrix block
-					MatrixBlock endValuesBlock = t._2;
+		// Group end-values by row-block, then sort by col-block and compute prefix offsets
+		JavaPairRDD<Long, Iterable<Tuple2<Long, MatrixBlock>>> groupedByRowBlock = endValues
+				.mapToPair(new PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, Long, Tuple2<Long, MatrixBlock>>() {
+					private static final long serialVersionUID = 1L;
 
-					// get row and column block index
-					long rowBlockIdx = idx.getRowIndex();
-					long colBlockIdx = idx.getColumnIndex();
-
-					// Save end value of every row of every block (if block is empty save 0)
-					double[] lastValues = new double[endValuesBlock.getNumRows()];
-					for (int i = 0; i < endValuesBlock.getNumRows(); i++) {
-						lastValues[i] = endValuesBlock.get(i, 0);
+					@Override
+					public Tuple2<Long, Tuple2<Long, MatrixBlock>> call(Tuple2<MatrixIndexes, MatrixBlock> t) {
+						long rowBlock = t._1.getRowIndex();
+						long colBlock = t._1.getColumnIndex();
+						return new Tuple2<>(rowBlock, new Tuple2<>(colBlock, t._2));
 					}
-
-					return new Tuple2<>(rowBlockIdx, new Tuple3<>(rowBlockIdx, colBlockIdx, lastValues));
 				})
 				.groupByKey();
 
-		// compute offset for every block
-		List<Tuple2<Tuple2<Long, Long>, double[]>> offsetList = rowEndValues
-				.flatMapToPair(t -> {
-					Long rowBlockIdx = t._1;
-					List<Tuple3<Long, Long, double[]>> colValues = new ArrayList<>();
-					for (Tuple3<Long, Long, double[]> cv : t._2) {
-						colValues.add(cv);
-					}
+		// Produce offsets per (rowBlock, colBlock) as a MatrixBlock (rowsInBlock x 1)
+		JavaPairRDD<MatrixIndexes, MatrixBlock> offsetsByBlock = groupedByRowBlock
+				.flatMapToPair(new PairFlatMapFunction<Tuple2<Long, Iterable<Tuple2<Long, MatrixBlock>>>, MatrixIndexes, MatrixBlock>() {
+					private static final long serialVersionUID = 1L;
 
-					// sort blocks from one row by column index
-					colValues.sort(Comparator.comparing(Tuple3::_2));
+					@Override
+					public Iterator<Tuple2<MatrixIndexes, MatrixBlock>> call(Tuple2<Long, Iterable<Tuple2<Long, MatrixBlock>>> t) {
+						long rowBlock = t._1;
 
-					// get number of rows of a block by counting amount of end (row) values of said block
-					int numRows = 0;
-					if (!colValues.isEmpty()) {
-						double[] lastValuesArray = colValues.get(0)._3();
-						numRows = lastValuesArray.length;
-					}
+						List<Tuple2<Long, MatrixBlock>> cols = new ArrayList<>();
+						for (Tuple2<Long, MatrixBlock> x : t._2)
+							cols.add(x);
 
-					List<Tuple2<Tuple2<Long, Long>, double[]>> blockOffsets = new ArrayList<>();
-					double[] cumulativeOffsets = new double[numRows];
+						cols.sort(Comparator.comparingLong(Tuple2::_1));
 
-					for (Tuple3<Long, Long, double[]> colValue : colValues) {
-						Long colBlockIdx = colValue._2();
-						double[] rowendValues = colValue._3();
+						int numRows = 0;
+						if (!cols.isEmpty())
+							numRows = cols.get(0)._2.getNumRows();
 
-						// copy current offsets
-						double[] currentOffsets = cumulativeOffsets.clone();
+						double[] cumulative = new double[numRows];
+						List<Tuple2<MatrixIndexes, MatrixBlock>> out = new ArrayList<>(cols.size());
 
-						// and save block indexes with its offsets
-						blockOffsets.add(new Tuple2<>(new Tuple2<>(rowBlockIdx, colBlockIdx), currentOffsets));
+						for (Tuple2<Long, MatrixBlock> cb : cols) {
+							long colBlock = cb._1;
+							MatrixBlock endBlock = cb._2; // (numRows x 1)
 
-						for (int i = 0; i < numRows && i < rowendValues.length; i++) {
-							cumulativeOffsets[i] += rowendValues[i];
+							// offsets for THIS block = cumulative sum of all previous blocks
+							MatrixBlock offsetBlock = new MatrixBlock(numRows, 1, false);
+							for (int i = 0; i < numRows; i++)
+								offsetBlock.set(i, 0, cumulative[i]);
+
+							out.add(new Tuple2<>(new MatrixIndexes(rowBlock, colBlock), offsetBlock));
+
+							// update cumulative by adding this block’s end-values
+							for (int i = 0; i < numRows; i++)
+								cumulative[i] += endBlock.get(i, 0);
 						}
-					}
-					return blockOffsets.iterator();
-				})
-				.collect();
 
-		// convert list to map for easier access to offsets
-		Map<Tuple2<Long, Long>, double[]> offsetMap = new HashMap<>();
-		for (Tuple2<Tuple2<Long, Long>, double[]> entry : offsetList) {
-			offsetMap.put(entry._1, entry._2);
-		}
-		return localRowCumsum.mapToPair(new FinalRowCumsumFunction(offsetMap));
+						return out.iterator();
+					}
+				});
+
+		// Join local rowcumsum with offsets and add offsets row-wise
+		return localRowCumsum
+				.leftOuterJoin(offsetsByBlock)
+				.mapToPair(new PairFunction<Tuple2<MatrixIndexes, Tuple2<MatrixBlock, Optional<MatrixBlock>>>, MatrixIndexes, MatrixBlock>() {
+					private static final long serialVersionUID = 1L;
+
+					@Override
+					public Tuple2<MatrixIndexes, MatrixBlock> call(
+							Tuple2<MatrixIndexes, Tuple2<MatrixBlock, Optional<MatrixBlock>>> t) {
+
+						MatrixIndexes ix = t._1;
+						MatrixBlock local = t._2._1;
+						MatrixBlock off = t._2._2.isPresent() ? t._2._2.get() : null;
+
+						int r = local.getNumRows();
+						int c = local.getNumColumns();
+						MatrixBlock out = new MatrixBlock(r, c, false);
+
+						for (int i = 0; i < r; i++) {
+							double rowOffset = (off != null) ? off.get(i, 0) : 0.0;
+							for (int j = 0; j < c; j++)
+								out.set(i, j, local.get(i, j) + rowOffset);
+						}
+
+						return new Tuple2<>(ix, out);
+					}
+				});
 	}
 
 	private void processRowCumsumOffsets(SparkExecutionContext sec, DataCharacteristics mc1, DataCharacteristics mc2) {
@@ -226,55 +257,7 @@ public class CumulativeOffsetSPInstruction extends BinarySPInstruction {
 		return _broadcast;
 	}
 
-	private static class FinalRowCumsumFunction implements PairFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock> {
-		private static final long serialVersionUID = 1L;
-		// map block indexes to the row offsets
-		private final Map<Tuple2<Long, Long>, double[]> offsetMap;
-
-		public FinalRowCumsumFunction(Map<Tuple2<Long, Long>, double[]> offsetMap) {
-			this.offsetMap = offsetMap;
-		}
-
-		@Override
-		public Tuple2<MatrixIndexes, MatrixBlock> call(Tuple2<MatrixIndexes, MatrixBlock> tuple) throws Exception {
-			MatrixIndexes idx = tuple._1;
-			MatrixBlock localRowCumsumBlock = tuple._2;
-
-			// key to get the row offset for this block
-			Tuple2<Long, Long> blockKey = new Tuple2<>(idx.getRowIndex(), idx.getColumnIndex());
-			double[] offsets = offsetMap.get(blockKey);
-
-			MatrixBlock outBlock = new MatrixBlock(localRowCumsumBlock.getNumRows(), localRowCumsumBlock.getNumColumns(), false);
-
-			for (int i = 0; i < localRowCumsumBlock.getNumRows(); i++) {
-				double rowOffset = (offsets != null && i < offsets.length) ? offsets[i] : 0.0;
-				for (int j = 0; j < localRowCumsumBlock.getNumColumns(); j++) {
-					double cumsumValue = localRowCumsumBlock.get(i, j);
-					outBlock.set(i, j, cumsumValue + rowOffset);
-				}
-			}
-			// block index and final cumsum block
-			return new Tuple2<>(idx, outBlock);
-		}
-	}
-
-	// helper class
-	private static class Tuple3<T1, T2, T3> implements Serializable {
-		private static final long serialVersionUID = 1L;
-		private final T1 _1;
-		private final T2 _2;
-		private final T3 _3;
-
-		public Tuple3(T1 _1, T2 _2, T3 _3) {
-			this._1 = _1;
-			this._2 = _2;
-			this._3 = _3;
-		}
-
-		public T1 _1() { return _1; }
-		public T2 _2() { return _2; }
-		public T3 _3() { return _3; }
-	}
+	// --- existing generic cumsum offset machinery below (unchanged) ---
 
 	private static class RDDCumSplitFunction implements PairFlatMapFunction<Tuple2<MatrixIndexes, MatrixBlock>, MatrixIndexes, MatrixBlock>
 	{

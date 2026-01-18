@@ -1,0 +1,41 @@
+# Test-specific focus:
+#   Wide matrix with alternating positive and negative values.
+#
+# Why this matters:
+#   Carry propagation errors often surface when signs alternate, because
+#   missing or duplicated carries cannot cancel out silently.
+#
+# Matrix construction:
+#   X[i,j] alternates sign by column and increases in magnitude with (i + j).
+#
+# Expected result:
+#   Computed via an explicit sequential loop over columns, serving as a
+#   trusted reference implementation.
+#
+# Output:
+#   Writes TRUE/FALSE to $1
+#
+# NOTE:
+# - Do NOT call setExecMode() here. Exec mode is controlled by CLI: -exec spark
+
+n = 50; m = 500;
+ri = matrix(seq(1, n), n, 1);
+cj = matrix(seq(1, m), 1, m);
+
+# X[i,j] = (j%2==0 ? -1 : 1) * (i + j)
+S = ((cj %% 2) * (-2) + 1);   # j odd => +1, j even => -1
+X = (ri %*% matrix(1, 1, m) + matrix(1, n, 1) %*% cj) * (matrix(1, n, 1) %*% S);
+
+Y = rowcumsum(X);
+
+# Expected via explicit sequential loop over columns
+E = matrix(0, n, m);
+E[,1] = X[,1];
+for (j in 2:m) {
+  E[,j] = E[,j-1] + X[,j];
+}
+
+err  = max(abs(Y - E));
+pass = (err < 1e-9);
+
+write(pass, $1);

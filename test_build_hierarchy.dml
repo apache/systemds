@@ -68,7 +68,51 @@ test4 = (size3 == 4)
 print("First merge size: " + size1 + " (should be 2)")
 test5 = (size1 == 2)
 
-test_pass = test1 & test2 & test3 & test4 & test5
+# New classic-linkage checks
+n = 4
+hasInternal = (sum(hierarchy[,1] > n) + sum(hierarchy[,2] > n)) > 0
+print("Has internal node ids (>n): " + hasInternal + " (should be true)")
+test6 = hasInternal
+
+# Check that child ids are within valid range
+maxChild1 = max(hierarchy[,1])
+maxChild2 = max(hierarchy[,2])
+maxChild = maxChild1
+if(maxChild2 > maxChild) { maxChild = maxChild2 }
+
+print("Max child id: " + maxChild + " (should be <= " + (2*n-2) + ")")
+test7 = (maxChild <= (2*n-2))
+
+# Check that internal ids are “created in order”
+test8 = TRUE
+for(r in 1:(n-1)) {
+    child1 = as.scalar(hierarchy[r,1])
+    child2 = as.scalar(hierarchy[r,2])
+    newId = n + r
+    ok = (child1 < newId) & (child2 < newId)
+    test8 = test8 & ok
+}
+print("Children reference only existing nodes: " + test8 + " (should be true)")
+
+# Recompute node sizes from hierarchy and verify
+nodeSize = matrix(0, rows=2*n-1, cols=1)
+for(j in 1:n) { nodeSize[j,1] = 1 }
+
+test9 = TRUE
+for(r in 1:(n-1)) {
+    left = as.integer(as.scalar(hierarchy[r,1]))
+    right = as.integer(as.scalar(hierarchy[r,2]))
+    newId = n + r
+
+    expected = as.scalar(nodeSize[left,1]) + as.scalar(nodeSize[right,1])
+    nodeSize[newId,1] = expected
+
+    ok = (as.scalar(sizes[r,1]) == expected)
+    test9 = test9 & ok
+}
+print("sizes[r] equals sum of child sizes: " + test9 + " (should be true)")
+
+test_pass = test1 & test2 & test3 & test4 & test5 & test6 & test7 & test8 & test9
 
 if(test_pass) {
     print("Passed")

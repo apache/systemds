@@ -28,6 +28,8 @@ if(test_find) {
 # ensure union() attaches lower-rank root under higher-rank root
 # rank[1] < rank[2]  => parent[1] becomes 2
 
+newId = 5  # arbitrary "new linkage node id" for this unit test
+
 parentA = matrix(0, rows=n, cols=1)
 parentA[1] = 1
 parentA[2] = 2
@@ -42,7 +44,13 @@ rankA[4] = 0
 
 sizeA = matrix(1, rows=n, cols=1)
 
-[newParentA, newRankA, newSizeA] = hdb::union(parentA, rankA, 1, 2, sizeA)
+compToNodeA = matrix(0, rows=n, cols=1)
+compToNodeA[1] = 1
+compToNodeA[2] = 2
+compToNodeA[3] = 3
+compToNodeA[4] = 4
+
+[newParentA, newRankA, newSizeA, newCompToNodeA, newRootA] = hdb::union(parentA, rankA, 1, 2, sizeA, compToNodeA, newId)
 test_unionA = (as.scalar(newParentA[1]) == 2) & (as.scalar(newParentA[2]) == 2)
 
 if(test_unionA) {
@@ -68,7 +76,13 @@ rankB[4] = 0
 
 sizeB = matrix(1, rows=n, cols=1)
 
-[newParentB, newRankB, newSizeB] = hdb::union(parentB, rankB, 1, 2, sizeB)
+compToNodeB = matrix(0, rows=n, cols=1)
+compToNodeB[1] = 1
+compToNodeB[2] = 2
+compToNodeB[3] = 3
+compToNodeB[4] = 4
+
+[newParentB, newRankB, newSizeB, newCompToNodeB, newRootB] = hdb::union(parentB, rankB, 1, 2, sizeB, compToNodeB, newId)
 test_unionB = (as.scalar(newParentB[2]) == 1) & (as.scalar(newParentB[1]) == 1)
 
 if(test_unionB) {
@@ -76,6 +90,16 @@ if(test_unionB) {
 } else {
     print("Failed")
 }
+
+# check linkage
+test_unionB = test_unionB & (newRootB == 1) & (as.scalar(newCompToNodeB[1]) == newId)
+
+if(test_unionB) {
+    print("Passed")
+} else {
+    print("Failed")
+}
+
 
 # ensure union() increments if height is same
 
@@ -93,16 +117,23 @@ rankC[4] = 0
 
 sizeC = matrix(1, rows=n, cols=1)
 
-[newParentC, newRankC, newSizeC] = hdb::union(parentC, rankC, 1, 2, sizeC)
+compToNodeC = matrix(0, rows=n, cols=1)
+compToNodeC[1] = 1
+compToNodeC[2] = 2
+compToNodeC[3] = 3
+compToNodeC[4] = 4
+
+[newParentC, newRankC, newSizeC, newCompToNodeC, newRootC] = hdb::union(parentC, rankC, 1, 2, sizeC, compToNodeC, newId)
 
 test_unionC_parent = (as.scalar(newParentC[2]) == 1)
 test_unionC_rank = (as.scalar(newRankC[1]) == 1)
 
 test_unionC = test_unionC_parent & test_unionC_rank
 
+test_unionC = test_unionC & (newRootC == 1) & (as.scalar(newCompToNodeC[1]) == newId)
+
 if(test_unionC) {
     print("Passed")
 } else {
     print("Failed")
-    print(rankC[1])
 }

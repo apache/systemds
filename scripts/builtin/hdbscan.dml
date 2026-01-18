@@ -143,34 +143,43 @@ find = function(Matrix[Double] parent, Integer x)
     }
 }
 
-union = function(Matrix[Double] parent, Matrix[Double] rank, 
-                Integer x, Integer y, Matrix[Double] size)
-    return (Matrix[Double] newParent, Matrix[Double] newRank, Matrix[Double] newSize)
+union = function(Matrix[Double] parent, Matrix[Double] rank,
+                Integer x, Integer y, Matrix[Double] size,
+                Matrix[Double] compToNode, Integer newId)
+    return (Matrix[Double] newParent, Matrix[Double] newRank,
+            Matrix[Double] newSize, Matrix[Double] newCompToNode, Integer newRoot)
 {
-  newParent = parent
-  newRank = rank
-  newSize = size
-  
-  rankX = as.scalar(rank[x])
-  rankY = as.scalar(rank[y])
-  
-  # Calculate combined size
-  combinedSize = as.scalar(size[x]) + as.scalar(size[y])
-  
-  if(rankX < rankY) {
-    newParent[x] = y
-    newSize[y] = combinedSize  # Update size at new root
-  }
-  else if(rankX > rankY) {
-    newParent[y] = x
-    newSize[x] = combinedSize  # Update size at new root
-  }
-  else {
-    newParent[y] = x
-    newRank[x] = rankX + 1
-    newSize[x] = combinedSize  # Update size at new root
-  }
+    newParent = parent
+    newRank = rank
+    newSize = size
+    newCompToNode = compToNode
+
+    rankX = as.scalar(rank[x,1])
+    rankY = as.scalar(rank[y,1])
+
+    combinedSize = as.scalar(size[x,1]) + as.scalar(size[y,1])
+
+    if(rankX < rankY) {
+        newParent[x] = y
+        newSize[y,1] = combinedSize
+        newCompToNode[y,1] = newId
+        newRoot = y
+    }
+    else if(rankX > rankY) {
+        newParent[y] = x
+        newSize[x,1] = combinedSize
+        newCompToNode[x,1] = newId
+        newRoot = x
+    }
+    else {
+        newParent[y] = x
+        newRank[x,1] = rankX + 1
+        newSize[x,1] = combinedSize
+        newCompToNode[x,1] = newId
+        newRoot = x
+    }
 }
+
 
 buildHierarchy = function(Matrix[Double] edges, Matrix[Double] weights, Integer n)
     return (Matrix[Double] hierarchy, Matrix[Double] sizes)
@@ -180,11 +189,21 @@ buildHierarchy = function(Matrix[Double] edges, Matrix[Double] weights, Integer 
     sorted = order(target=weights, by=1, decreasing=FALSE)
 
     # parent[i] = i, meaning each point is its own parent in the beginning
-    parent = seq(1, n) 
+    parent = seq(1, n)
     # tree depth when unioning (icnreases only when merged trees are of same height)
     rank = matrix(0, rows=n, cols=1)
-    # each cluster is 1 in the beginning
-    clusterSize = matrix(1, rows=2*n-1, cols=1)  # Space for all possible cluster IDs
+
+    # initially, each component is a single point, so root i maps to leaf node i.
+    # Later, when two components merge, the new component root will map to a new
+    # internal linkage node id (n+1, n+2, ..., 2n-1)
+    compToNode = seq(1, n)
+
+    # size (number of original points) for each linkage-tree node id,
+    # leaves 1..n have size 1.
+    nodeSize = matrix(0, rows=2*n-1, cols=1)
+    for(j in 1:n) {
+        nodeSize[j,1] = 1
+    }
 
     # hierarcy[i, :] = [cluster1_id, cluster2_id, merge_distance]
     hierarchy = matrix(0, rows=n-1, cols=3)
@@ -192,27 +211,33 @@ buildHierarchy = function(Matrix[Double] edges, Matrix[Double] weights, Integer 
     # sizes[i] = size of the cluster created by merge i
     sizes = matrix(0, rows=n-1, cols=1)
 
-    nextCluster = n + 1
-
+    row = 1
     for(i in 1:(n-1)) {
-        idx = as.scalar(sorted[i])
-        u = as.scalar(edges[idx, 1])
-        v = as.scalar(edges[idx, 2])
-        w = as.scalar(weights[idx])
+        idx = as.integer(as.scalar(sorted[i,1]))
+        u = as.integer(as.scalar(edges[idx,1]))
+        v = as.integer(as.scalar(edges[idx,2]))
+        w = as.scalar(weights[idx,1])
 
         root_u = find(parent, u)
         root_v = find(parent, v)
 
         if(root_u != root_v) {
-            hierarchy[i,1] = root_u
-            hierarchy[i,2] = root_v
-            hierarchy[i,3] = w
-            sizes[i] = as.scalar(clusterSize[root_u]) + as.scalar(clusterSize[root_v])
-            
-            [parent, rank, clusterSize] = union(parent, rank, root_u, root_v, clusterSize)
+            left  = as.integer(as.scalar(compToNode[root_u]))
+            right = as.integer(as.scalar(compToNode[root_v]))
 
-            nextCluster = nextCluster + 1
+            newId = n + row
+
+            hierarchy[row,1] = left
+            hierarchy[row,2] = right
+            hierarchy[row,3] = w
+
+            nodeSize[newId,1] = as.scalar(nodeSize[left,1]) + as.scalar(nodeSize[right,1])
+            sizes[row,1] = as.scalar(nodeSize[newId,1])
+
+            [parent, rank, ufSize, compToNode, newRoot] =
+                union(parent, rank, root_u, root_v, nodeSize, compToNode, newId)
+
+            row = row + 1
         }
     }
-
 }

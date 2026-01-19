@@ -27,7 +27,7 @@
 # Weights are initialized using Glorot & Bengio (2010) AISTATS initialization.
 # The script standardizes the input before training (can be turned off).
 # Also, it randomly reshuffles rows before training.
-# Currently, tanh is set to be the activation function. 
+# Currently, tanh is set to be the activation function.
 # By re-implementing 'func' DML-bodied function, one can change the activation.
 #
 # INPUT:
@@ -37,8 +37,8 @@
 # num_hidden2   Number of neurons in the 2nd hidden layer
 # max_epochs    Number of epochs to train for
 # full_obj      If TRUE, Computes objective function value (squared-loss)
-#               at the end of each epoch. Note that, computing the full 
-#               objective can take a lot of time. 
+#               at the end of each epoch. Note that, computing the full
+#               objective can take a lot of time.
 # batch_size    Mini-batch size (training parameter)
 # step          Initial step size (training parameter)
 # decay         Decays step size after each epoch (training parameter)
@@ -52,7 +52,7 @@
 # nbatches      Optional number of batches per epoch for paramserv
 # modelAvg      Optional boolean parameter to select between updating or averaging the model in paramserver side
 # W1_rand       Weights might be initialized via input matrices
-# W2_rand       --- 
+# W2_rand       ---
 # W3_rand       ---
 # W4_rand       ---
 # ---------------------------------------------------------------------------------------------
@@ -85,9 +85,9 @@ m_autoencoder = function(Matrix[Double] X, list[unknown] hidden_layers, Integer 
   n = nrow(X)
   m = ncol(X)
   #randomly reordering rows
-  if(nrow(order_rand) == 0 & ncol(order_rand) == 0) 
+  if(nrow(order_rand) == 0 & ncol(order_rand) == 0)
     permut = table(seq(1,n,1), order(target=Rand(rows=n, cols=1, min=0, max=1, pdf="uniform"), by=1, index.return=TRUE), n, n)
-  else 
+  else
     permut = table(seq(1,n,1), order(target=order_rand, by=1, index.return=TRUE), n, n)
   X = permut %*% X
 
@@ -129,8 +129,8 @@ m_autoencoder_2layer = function(Matrix[Double] X, Integer num_hidden1, Integer n
   Boolean full_obj = FALSE, Integer batch_size = 256, Double step = 1e-5, Double decay = 0.95, Double mu = 0.9,
   String method = "DEFAULTSERVER", String mode = "LOCAL", String utype = "BSP", String freq = "BATCH",
   Integer k = 1, String scheme = "DISJOINT_RANDOM", Integer nbatches = 0, Boolean modelAvg = FALSE,
-  Matrix[Double] W1_rand = matrix(0, rows=0, cols=0), Matrix[Double] W2_rand = matrix(0, rows=0, cols=0), 
-  Matrix[Double] W3_rand = matrix(0, rows=0, cols=0), Matrix[Double] W4_rand = matrix(0, rows=0, cols=0), 
+  Matrix[Double] W1_rand = matrix(0, rows=0, cols=0), Matrix[Double] W2_rand = matrix(0, rows=0, cols=0),
+  Matrix[Double] W3_rand = matrix(0, rows=0, cols=0), Matrix[Double] W4_rand = matrix(0, rows=0, cols=0),
   Matrix[Double] order_rand = matrix(0, rows=0, cols=0))
   return(Matrix[Double] W1, Matrix[Double] b1, Matrix[Double] W2, Matrix[Double] b2,
     Matrix[Double] W3, Matrix[Double] b3, Matrix[Double] W4, Matrix[Double] b4, Matrix[Double] reordered_H)
@@ -138,9 +138,9 @@ m_autoencoder_2layer = function(Matrix[Double] X, Integer num_hidden1, Integer n
   n = nrow(X)
   m = ncol(X)
   #randomly reordering rows
-  if(nrow(order_rand) == 0 & ncol(order_rand) == 0) 
+  if(nrow(order_rand) == 0 & ncol(order_rand) == 0)
     permut = table(seq(1,n,1), order(target=Rand(rows=n, cols=1, min=0, max=1, pdf="uniform"), by=1, index.return=TRUE), n, n)
-  else 
+  else
     permut = table(seq(1,n,1), order(target=order_rand, by=1, index.return=TRUE), n, n)
   X = permut %*% X
 
@@ -148,23 +148,23 @@ m_autoencoder_2layer = function(Matrix[Double] X, Integer num_hidden1, Integer n
   means = colSums(X)/n
   stds = sqrt((colSums(X^2)/n - means*means)*n/(n-1)) + 1e-17
   X = (X - means)/stds
-  
-  if(nrow(W1_rand) == 0 & ncol(W1_rand) == 0) 
+
+  if(nrow(W1_rand) == 0 & ncol(W1_rand) == 0)
     W1_rand = Rand(rows=num_hidden1, cols=m, min=-1, max=1, pdf="uniform")
-  if(nrow(W2_rand) == 0 & ncol(W2_rand) == 0) 
+  if(nrow(W2_rand) == 0 & ncol(W2_rand) == 0)
     W2_rand = Rand(rows=num_hidden2, cols=num_hidden1, min=-1, max=1, pdf="uniform")
-  if(nrow(W3_rand) == 0 & ncol(W3_rand) == 0) 
+  if(nrow(W3_rand) == 0 & ncol(W3_rand) == 0)
     W3_rand = Rand(rows=num_hidden1, cols=num_hidden2, min=-1, max=1, pdf="uniform")
-  if(nrow(W4_rand) == 0 & ncol(W4_rand) == 0) 
+  if(nrow(W4_rand) == 0 & ncol(W4_rand) == 0)
     W4_rand = Rand(rows=m, cols=num_hidden1, min=-1, max=1, pdf="uniform")
 
-  W1 = sqrt(6)/sqrt(m + num_hidden1) * W1_rand 
+  W1 = sqrt(6)/sqrt(m + num_hidden1) * W1_rand
   b1 = matrix(0, rows=num_hidden1, cols=1)
-  W2 = sqrt(6)/sqrt(num_hidden1 + num_hidden2) * W2_rand 
+  W2 = sqrt(6)/sqrt(num_hidden1 + num_hidden2) * W2_rand
   b2 = matrix(0, rows=num_hidden2, cols=1)
-  W3 = sqrt(6)/sqrt(num_hidden2 + num_hidden1) * W3_rand 
+  W3 = sqrt(6)/sqrt(num_hidden2 + num_hidden1) * W3_rand
   b3 = matrix(0, rows=num_hidden1, cols=1)
-  W4 = sqrt(6)/sqrt(num_hidden2 + m) * W4_rand 
+  W4 = sqrt(6)/sqrt(num_hidden1 + m) * W4_rand
   b4 = matrix(0, rows=m, cols=1)
 
   if(method == "DEFAULTSERVER") {
@@ -195,7 +195,7 @@ func = function(Matrix[Double] X) return(Matrix[Double] Y, Matrix[Double] Y_prim
 # -----------------------------------------------------------------------------
 # Fixed 2-layer helpers (original path)
 # -----------------------------------------------------------------------------
-forward_pass = function(Matrix[Double] X, Matrix[Double] W1, Matrix[Double] b1, Matrix[Double] W2, Matrix[Double] b2, 
+forward_pass = function(Matrix[Double] X, Matrix[Double] W1, Matrix[Double] b1, Matrix[Double] W2, Matrix[Double] b2,
   Matrix[Double] W3, Matrix[Double] b3, Matrix[Double] W4, Matrix[Double] b4, Matrix[Double] Y)
   return(Matrix[Double] H1, Matrix[Double] H1_prime,Matrix[Double] H2, Matrix[Double] H2_prime,
     Matrix[Double] H3, Matrix[Double] H3_prime, Matrix[Double] Yhat, Matrix[Double] Yhat_prime, Matrix[Double] E)
@@ -217,7 +217,7 @@ forward_pass = function(Matrix[Double] X, Matrix[Double] W1, Matrix[Double] b1, 
 backward_pass = function(Matrix[Double] X, Matrix[Double] H1, Matrix[Double] H1_prime, Matrix[Double] H2, Matrix[Double] H2_prime,
   Matrix[Double] H3, Matrix[Double] H3_prime, Matrix[Double] Yhat_prime, Matrix[Double] E,
   Matrix[Double] W1, Matrix[Double] W2, Matrix[Double] W3, Matrix[Double] W4)
-  return(Matrix[Double] W1_grad, Matrix[Double] b1_grad,Matrix[Double] W2_grad, Matrix[Double] b2_grad, 
+  return(Matrix[Double] W1_grad, Matrix[Double] b1_grad,Matrix[Double] W2_grad, Matrix[Double] b2_grad,
     Matrix[Double] W3_grad, Matrix[Double] b3_grad, Matrix[Double] W4_grad, Matrix[Double] b4_grad)
 {
   #backprop
@@ -259,13 +259,13 @@ apply_update = function(Matrix[Double] W1, Matrix[Double] b1, Matrix[Double] W2,
 {
   local_step = step / batch_rows
   upd_W1_out = mu * upd_W1 - local_step * W1_grad
-  upd_b1_out = mu * upd_b1 - local_step * b1
+  upd_b1_out = mu * upd_b1 - local_step * b1_grad
   upd_W2_out = mu * upd_W2 - local_step * W2_grad
-  upd_b2_out = mu * upd_b2 - local_step * b2
+  upd_b2_out = mu * upd_b2 - local_step * b2_grad
   upd_W3_out = mu * upd_W3 - local_step * W3_grad
-  upd_b3_out = mu * upd_b3 - local_step * b3
+  upd_b3_out = mu * upd_b3 - local_step * b3_grad
   upd_W4_out = mu * upd_W4 - local_step * W4_grad
-  upd_b4_out = mu * upd_b4 - local_step * b4
+  upd_b4_out = mu * upd_b4 - local_step * b4_grad
 
   W1_out = W1 + upd_W1_out
   b1_out = b1 + upd_b1_out
@@ -296,7 +296,7 @@ train_default = function(Matrix[Double] X, Matrix[Double] permut,
   upd_b4 = matrix(0, rows=nrow(b4), cols=ncol(b4))
 
   if( full_obj ){
-    [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat, 
+    [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat,
      full_Yhat_prime, full_E] = forward_pass(X, W1, b1, W2, b2, W3, b3, W4, b4, X)
     full_o = obj(full_E)
     print("EPOCHS=" + 0 + " OBJ (FULL DATA): " + full_o)
@@ -312,13 +312,13 @@ train_default = function(Matrix[Double] X, Matrix[Double] permut,
     if(end > n) end = n
     X_batch = X[beg:end,]
 
-    [H1, H1_prime, H2, H2_prime, H3, H3_prime, Yhat, Yhat_prime, E] 
+    [H1, H1_prime, H2, H2_prime, H3, H3_prime, Yhat, Yhat_prime, E]
       = forward_pass(X_batch, W1, b1, W2, b2, W3, b3, W4, b4, X_batch)
-    [W1_grad, b1_grad, W2_grad, b2_grad, W3_grad, b3_grad, W4_grad, b4_grad] 
+    [W1_grad, b1_grad, W2_grad, b2_grad, W3_grad, b3_grad, W4_grad, b4_grad]
       = backward_pass(X_batch, H1, H1_prime, H2, H2_prime, H3, H3_prime, Yhat_prime, E, W1, W2, W3, W4)
 
     o = obj(E)
-    print("epochs=%5.4f BATCH beg=%d end=%d obj=%f", (iter / num_iters_per_epoch), beg, end, o)
+    print("epochs=" + (iter / num_iters_per_epoch) + " BATCH beg=" + beg + " end=" + end + " obj=" + o)
 
     [W1, b1, W2, b2, W3, b3, W4, b4,
      upd_W1, upd_b1, upd_W2, upd_b2, upd_W3, upd_b3, upd_W4, upd_b4] = apply_update(
@@ -334,7 +334,7 @@ train_default = function(Matrix[Double] X, Matrix[Double] permut,
     if( iter %% num_iters_per_epoch == 0 ) step = step * decay
 
     if( full_obj & iter %% num_iters_per_epoch == 0 ){
-      [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat, 
+      [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat,
        full_Yhat_prime, full_E] = forward_pass(X, W1, b1, W2, b2, W3, b3, W4, b4, X)
       full_o = obj(full_E)
       epochs = iter %/% num_iters_per_epoch
@@ -342,7 +342,7 @@ train_default = function(Matrix[Double] X, Matrix[Double] permut,
     }
   }
 
-  [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat, 
+  [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat,
    full_Yhat_prime, full_E] = forward_pass(X, W1, b1, W2, b2, W3, b3, W4, b4, X)
   reordered_H = t(permut) %*% full_H2
 
@@ -407,7 +407,7 @@ train_paramserv = function(Matrix[Double] X, Matrix[Double] permut,
   W4 = as.matrix(modelList2[7])
   b4 = as.matrix(modelList2[8])
 
-  [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat, 
+  [full_H1, full_H1_prime, full_H2, full_H2_prime, full_H3, full_H3_prime, full_Yhat,
    full_Yhat_prime, full_E] = forward_pass(X, W1, b1, W2, b2, W3, b3, W4, b4, X)
   reordered_H = t(permut) %*% full_H2
 
@@ -436,9 +436,9 @@ gradients = function(list[unknown] model,
   W4 = as.matrix(model[7])
   b4 = as.matrix(model[8])
 
-  [H1, H1_prime, H2, H2_prime, H3, H3_prime, Yhat, Yhat_prime, E] 
+  [H1, H1_prime, H2, H2_prime, H3, H3_prime, Yhat, Yhat_prime, E]
     = forward_pass(features, W1, b1, W2, b2, W3, b3, W4, b4, labels)
-  [W1_grad, b1_grad, W2_grad, b2_grad, W3_grad, b3_grad, W4_grad, b4_grad] 
+  [W1_grad, b1_grad, W2_grad, b2_grad, W3_grad, b3_grad, W4_grad, b4_grad]
     = backward_pass(features, H1, H1_prime, H2, H2_prime, H3, H3_prime, Yhat_prime, E, W1, W2, W3, W4)
 
   gradients = list(W1_grad, b1_grad, W2_grad, b2_grad, W3_grad, b3_grad, W4_grad, b4_grad, nrow(features))
@@ -555,25 +555,30 @@ backward_pass_layers = function(Matrix[Double] X, list[unknown] activations, lis
   list[unknown] W_list, Matrix[Double] E)
   return(list[unknown] grads_W, list[unknown] grads_b)
 {
-  # Backpropagation through all layers, returning gradients per layer.
   L = length(W_list)
   grads_W = list()
   grads_b = list()
+
   delta = E * as.matrix(primes[L])
+
   for(i in L:1) {
     A_prev = X
     if(i > 1)
       A_prev = as.matrix(activations[i-1])
+
     grad_W = t(delta) %*% A_prev
     grad_b = t(colSums(delta))
-    grads_W = append(list(grad_W), grads_W)
-    grads_b = append(list(grad_b), grads_b)
+
+    grads_W = append(grads_W, list(grad_W))
+    grads_b = append(grads_b, list(grad_b))
+
     if(i > 1) {
-      W_prev = as.matrix(W_list[i])
-      delta = as.matrix(primes[i-1]) * (delta %*% W_prev)
+      W_curr = as.matrix(W_list[i])
+      delta = as.matrix(primes[i-1]) * (delta %*% W_curr)
     }
   }
 }
+
 
 apply_update_layers = function(list[unknown] W_list, list[unknown] b_list,
   list[unknown] upd_W_list, list[unknown] upd_b_list,
@@ -592,8 +597,9 @@ apply_update_layers = function(list[unknown] W_list, list[unknown] b_list,
     b = as.matrix(b_list[i])
     upd_W = as.matrix(upd_W_list[i])
     upd_b = as.matrix(upd_b_list[i])
-    dW = as.matrix(grads_W[i])
-    db = as.matrix(grads_b[i])
+    idx = length(W_list) - i + 1
+    dW = as.matrix(grads_W[idx])
+    db = as.matrix(grads_b[idx])
 
     upd_W = mu * upd_W - local_step * dW
     upd_b = mu * upd_b - local_step * db
@@ -638,7 +644,7 @@ train_default_layers = function(Matrix[Double] X, Matrix[Double] permut,
     [grads_W, grads_b] = backward_pass_layers(X_batch, activations, primes, W_list, E)
 
     o = obj(E)
-    print("epochs=%5.4f BATCH beg=%d end=%d obj=%f", (iter / num_iters_per_epoch), beg, end, o)
+    print("epochs=" + (iter / num_iters_per_epoch) + " BATCH beg=" + beg + " end=" + end + " obj=" + o)
 
     [W_list, b_list, upd_W_list, upd_b_list] = apply_update_layers(
       W_list, b_list, upd_W_list, upd_b_list, grads_W, grads_b, step, mu, nrow(X_batch))
@@ -670,41 +676,43 @@ train_default_layers = function(Matrix[Double] X, Matrix[Double] permut,
 
 flatten_model = function(list[unknown] W_list, list[unknown] b_list,
   list[unknown] upd_W_list, list[unknown] upd_b_list)
-  return(list[unknown] model)
+  return(list[unknown] modelList)
 {
-  # Flatten model as [W...][b...][upd_W...][upd_b...] for paramserv.
-  model = list()
+  modelList = list()
+
   for(i in 1:length(W_list))
-    model = append(model, list(as.matrix(W_list[i])))
+    modelList = append(modelList, list(as.matrix(W_list[i])))
+
   for(i in 1:length(b_list))
-    model = append(model, list(as.matrix(b_list[i])))
+    modelList = append(modelList, list(as.matrix(b_list[i])))
+
   for(i in 1:length(upd_W_list))
-    model = append(model, list(as.matrix(upd_W_list[i])))
+    modelList = append(modelList, list(as.matrix(upd_W_list[i])))
+
   for(i in 1:length(upd_b_list))
-    model = append(model, list(as.matrix(upd_b_list[i])))
+    modelList = append(modelList, list(as.matrix(upd_b_list[i])))
 }
 
-unflatten_model = function(list[unknown] model, Integer layer_count)
+unflatten_model = function(list[unknown] modelList, Integer layer_count)
   return(list[unknown] W_list, list[unknown] b_list,
     list[unknown] upd_W_list, list[unknown] upd_b_list)
 {
-  # Inverse of flatten_model for variable depth models.
   W_list = list()
   b_list = list()
   upd_W_list = list()
   upd_b_list = list()
-  offset = 0
+
   for(i in 1:layer_count)
-    W_list = append(W_list, list(as.matrix(model[offset + i])))
-  offset = offset + layer_count
+    W_list = append(W_list, list(as.matrix(modelList[i])))
+
   for(i in 1:layer_count)
-    b_list = append(b_list, list(as.matrix(model[offset + i])))
-  offset = offset + layer_count
+    b_list = append(b_list, list(as.matrix(modelList[layer_count + i])))
+
   for(i in 1:layer_count)
-    upd_W_list = append(upd_W_list, list(as.matrix(model[offset + i])))
-  offset = offset + layer_count
+    upd_W_list = append(upd_W_list, list(as.matrix(modelList[2*layer_count + i])))
+
   for(i in 1:layer_count)
-    upd_b_list = append(upd_b_list, list(as.matrix(model[offset + i])))
+    upd_b_list = append(upd_b_list, list(as.matrix(modelList[3*layer_count + i])))
 }
 
 train_paramserv_layers = function(Matrix[Double] X, Matrix[Double] permut,
@@ -717,9 +725,32 @@ train_paramserv_layers = function(Matrix[Double] X, Matrix[Double] permut,
     list[unknown] upd_W_out, list[unknown] upd_b_out,
     Matrix[Double] reordered_H)
 {
-  # Parameter server training path for variable-depth autoencoder.
-  modelList = flatten_model(W_list, b_list, upd_W_list, upd_b_list)
-  params = list(step=step, mu=mu, layer_count=layer_count)
+  modelList = list()
+
+  for(i in 1:layer_count)
+    modelList = append(modelList, list(as.matrix(W_list[i])))
+
+  for(i in 1:layer_count)
+    modelList = append(modelList, list(as.matrix(b_list[i])))
+
+  if(length(upd_W_list) == 0) {
+    for(i in 1:layer_count)
+      upd_W_list = append(upd_W_list,
+        list(matrix(0, rows=nrow(as.matrix(W_list[i])), cols=ncol(as.matrix(W_list[i])))))
+  }
+  if(length(upd_b_list) == 0) {
+    for(i in 1:layer_count)
+      upd_b_list = append(upd_b_list,
+        list(matrix(0, rows=nrow(as.matrix(b_list[i])), cols=ncol(as.matrix(b_list[i])))))
+  }
+
+  for(i in 1:layer_count)
+    modelList = append(modelList, list(as.matrix(upd_W_list[i])))
+
+  for(i in 1:layer_count)
+    modelList = append(modelList, list(as.matrix(upd_b_list[i])))
+
+  params = list(step=step, mu=mu, layer_count=layer_count, batch_size=batch_size)
   encoder_layers = length(hidden_layers)
 
   ps_mode = mode
@@ -753,15 +784,16 @@ train_paramserv_layers = function(Matrix[Double] X, Matrix[Double] permut,
   upd_b_out = upd_b_list
 }
 
+
 gradients_layers = function(list[unknown] model,
   list[unknown] hyperparams,
   matrix[double] features,
   matrix[double] labels)
   return(list[unknown] gradients)
 {
-  # Compute gradients for paramserv using variable-depth forward/backward passes.
   layer_count = as.integer(as.scalar(hyperparams["layer_count"]))
   [W_list, b_list, upd_W_list, upd_b_list] = unflatten_model(model, layer_count)
+
   [activations, primes, Yhat, E] = forward_pass_layers(features, W_list, b_list, labels)
   [grads_W, grads_b] = backward_pass_layers(features, activations, primes, W_list, E)
 
@@ -770,6 +802,7 @@ gradients_layers = function(list[unknown] model,
     gradients = append(gradients, list(as.matrix(grads_W[i])))
   for(i in 1:layer_count)
     gradients = append(gradients, list(as.matrix(grads_b[i])))
+
   gradients = append(gradients, list(nrow(features)))
 }
 
@@ -778,15 +811,18 @@ aggregation_layers = function(list[unknown] model,
   list[unknown] gradients)
   return(list[unknown] modelResult)
 {
-  # Apply paramserv updates and return updated flattened model.
   layer_count = as.integer(as.scalar(hyperparams["layer_count"]))
   [W_list, b_list, upd_W_list, upd_b_list] = unflatten_model(model, layer_count)
+
   grads_W = list()
   grads_b = list()
+
   for(i in 1:layer_count)
     grads_W = append(grads_W, list(as.matrix(gradients[i])))
+
   for(i in 1:layer_count)
     grads_b = append(grads_b, list(as.matrix(gradients[layer_count + i])))
+
   batch_rows = as.double(as.scalar(gradients[2*layer_count + 1]))
   step = as.double(as.scalar(hyperparams["step"]))
   mu = as.double(as.scalar(hyperparams["mu"]))

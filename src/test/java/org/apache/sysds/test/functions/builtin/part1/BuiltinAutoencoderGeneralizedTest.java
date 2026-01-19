@@ -42,7 +42,7 @@ public class BuiltinAutoencoderGeneralizedTest extends AutomatedTestBase {
 
     @Test
     public void testAutoencoderThreeLayerOutputs() {
-        runAutoencoderTest("DEFAULTSERVER", 16, 8, 4, 0, DENSE);
+        runAutoencoderTest("DEFAULTSERVER", 16, 8, 4, 2, DENSE);
     }
 
     @Test
@@ -52,12 +52,12 @@ public class BuiltinAutoencoderGeneralizedTest extends AutomatedTestBase {
 
     @Test
     public void testAutoencoderSingleLayerOutputs() {
-        runAutoencoderTest("DEFAULTSERVER", 16, 0, 0, 0, DENSE);
+        runAutoencoderTest("DEFAULTSERVER", 16, 0, 0, 1, DENSE);
     }
 
     @Test
     public void testAutoencoderSparseInputOutputs() {
-        runAutoencoderTest("DEFAULTSERVER", 32, 16, 8, 0, 0.2);
+        runAutoencoderTest("DEFAULTSERVER", 32, 16, 8, 2, 0.2);
     }
 
     @Test

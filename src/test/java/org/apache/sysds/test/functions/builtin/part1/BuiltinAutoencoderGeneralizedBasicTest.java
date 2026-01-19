@@ -42,7 +42,7 @@ public class BuiltinAutoencoderGeneralizedBasicTest extends AutomatedTestBase {
 
     @Test
     public void testAutoencoderThreeLayerOutputs() {
-        runAutoencoderTest(16, 8, 4, 0, DENSE);
+        runAutoencoderTest(16, 8, 4, 2, DENSE);
     }
 
     private void runAutoencoderTest(int h1, int h2, int h3, int maxEpochs, double sparsity) {

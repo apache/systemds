@@ -1026,6 +1026,146 @@ public class LibMatrixMult
 	// optimized matrix mult implementation //
 	//////////////////////////////////////////
 
+	public static void matrixMultDenseDenseMM(DenseBlock a, DenseBlock b, DenseBlock c, boolean transA, boolean transB, int n, int cd, int rl, int ru, int cl, int cu) {
+		// C = A %*% B
+		if (!transA && !transB) {
+			matrixMultDenseDenseMM(a, b, c, n, cd, rl, ru, cl, cu);
+			return;
+		}
+		// C = t(A) %*% B
+		if (transA && !transB) {
+			multDenseDenseTransA(a, b, c, n, cd, rl, ru, cl, cu);
+			return;
+		}
+		// C = A %*% t(B)
+		if (!transA && transB) {
+			multDenseDenseTransB(a, b, c, n, cd, rl, ru, cl, cu);
+			return;
+		}
+		// C = t(A) %*% t(B)
+		if (transA && transB) {
+			multDenseDenseTransATransB(a, b, c, n, cd, rl, ru, cl, cu);
+			return;
+		}
+	}
+
+	private static void multDenseDenseTransA(DenseBlock a, DenseBlock b, DenseBlock c, int n, int cd, int rl, int ru, int cl, int cu) {
+		final int blocksizeI = 32;
+		final int blocksizeK = 24;
+
+		for (int bi = rl; bi < ru; bi += blocksizeI) {
+			int bimin = Math.min(ru, bi + blocksizeI);
+			for (int bk = 0; bk < cd; bk += blocksizeK) {
+				int bkmin = Math.min(cd, bk + blocksizeK);
+
+				int k = bk;
+				for (; k < bkmin - 3; k += 4) {
+					if (b.isContiguous()) {
+						double[] bvals = b.values(0);
+						int bix0 = b.pos(k, cl), bix1 = b.pos(k+1, cl);
+						int bix2 = b.pos(k+2, cl), bix3 = b.pos(k+3, cl);
+
+						for (int i = bi; i < bimin; i++) {
+							double[] cvals = c.values(i);
+							int cix = c.pos(i, cl);
+							double val0 = a.values(k)[a.pos(k) + i];
+							double val1 = a.values(k+1)[a.pos(k+1) + i];
+							double val2 = a.values(k+2)[a.pos(k+2) + i];
+							double val3 = a.values(k+3)[a.pos(k+3) + i];
+
+							vectMultiplyAdd4(val0, val1, val2, val3,
+								bvals, cvals,
+								bix0, bix1, bix2, bix3, cix, cu - cl);
+						}
+					} else {
+						for (int i = bi; i < bimin; i++) {
+							double[] cvals = c.values(i);
+							int cix = c.pos(i, cl);
+							double val0 = a.values(k)[a.pos(k) + i];
+							if(val0!=0) vectMultiplyAdd(val0, b.values(k), cvals, b.pos(k, cl), cix, cu - cl);
+							double val1 = a.values(k+1)[a.pos(k+1) + i];
+							if(val1!=0) vectMultiplyAdd(val1, b.values(k+1), cvals, b.pos(k+1, cl), cix, cu - cl);
+							double val2 = a.values(k+2)[a.pos(k+2) + i];
+							if(val2!=0) vectMultiplyAdd(val2, b.values(k+2), cvals, b.pos(k+2, cl), cix, cu - cl);
+							double val3 = a.values(k+3)[a.pos(k+3) + i];
+							if(val3!=0) vectMultiplyAdd(val3, b.values(k+3), cvals, b.pos(k+3, cl), cix, cu - cl);
+						}
+					}
+				}
+				for (; k < bkmin; k++) {
+					double[] bvals = b.values(k);
+					int bix = b.pos(k, cl);
+					double[] avals = a.values(k);
+					int apos = a.pos(k);
+					for (int i = bi; i < bimin; i++) {
+						double val = avals[apos + i];
+						if (val != 0) {
+							vectMultiplyAdd(val, bvals, c.values(i), bix, c.pos(i, cl), cu - cl);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private static void multDenseDenseTransB(DenseBlock a, DenseBlock b, DenseBlock c, int n, int cd, int rl, int ru, int cl, int cu) {
+		final int blocksizeK = 24;
+		double[] bufB = new double[blocksizeK * (cu - cl)];
+
+		for (int bk = 0; bk < cd; bk += blocksizeK) {
+			int bkmin = Math.min(cd, bk + blocksizeK);
+			int bklen = bkmin - bk;
+
+
+			for (int j = cl; j < cu; j++) {
+				double[] bvals = b.values(j);
+				int bpos = b.pos(j);
+
+				for (int k = 0; k < bklen; k++) {
+					bufB[k * (cu-cl) + (j-cl)] = bvals[bpos + bk + k];
+				}
+			}
+
+			for (int i = rl; i < ru; i++) {
+				double[] avals = a.values(i);
+				int apos = a.pos(i);
+				double[] cvals = c.values(i);
+				int cix = c.pos(i, cl);
+
+				for (int k = 0; k < bklen; k++) {
+					double val = avals[apos + bk + k];
+					if (val != 0) {
+						int bufIx = k * (cu-cl);
+						vectMultiplyAdd(val, bufB, cvals, bufIx, cix, cu - cl);
+					}
+				}
+			}
+		}
+	}
+
+	private static void multDenseDenseTransATransB(DenseBlock a, DenseBlock b, DenseBlock c, int n, int cd, int rl, int ru, int cl, int cu) {
+		double[] d_row = new double[ru];
+
+		for (int j = cl; j < cu; j++) {
+			java.util.Arrays.fill(d_row, rl, ru, 0);
+
+			for (int k = 0; k < cd; k++) {
+				double valB = b.get(j, k);
+				if (valB != 0) {
+					double[] avals = a.values(k);
+					int apos = a.pos(k);
+					vectMultiplyAdd(valB, avals, d_row, apos + rl, rl, ru - rl);
+				}
+			}
+
+			for (int i = rl; i < ru; i++) {
+				double[] cvals = c.values(i);
+				int cix = c.pos(i);
+				cvals[cix + j] += d_row[i];
+			}
+		}
+	}
+
 	private static void matrixMultDenseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean tm2, boolean pm2, int rl, int ru, int cl, int cu) {
 		DenseBlock a = m1.getDenseBlock();
 		DenseBlock b = m2.getDenseBlock();

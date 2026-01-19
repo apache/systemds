@@ -792,7 +792,15 @@ gradients_layers = function(list[unknown] model,
   return(list[unknown] gradients)
 {
   layer_count = as.integer(as.scalar(hyperparams["layer_count"]))
-  [W_list, b_list, upd_W_list, upd_b_list] = unflatten_model(model, layer_count)
+
+  W_list = list()
+  b_list = list()
+
+  for(i in 1:layer_count)
+    W_list = append(W_list, list(as.matrix(model[i])))
+
+  for(i in 1:layer_count)
+    b_list = append(b_list, list(as.matrix(model[layer_count + i])))
 
   [activations, primes, Yhat, E] = forward_pass_layers(features, W_list, b_list, labels)
   [grads_W, grads_b] = backward_pass_layers(features, activations, primes, W_list, E)
@@ -802,9 +810,8 @@ gradients_layers = function(list[unknown] model,
     gradients = append(gradients, list(as.matrix(grads_W[i])))
   for(i in 1:layer_count)
     gradients = append(gradients, list(as.matrix(grads_b[i])))
-
-  gradients = append(gradients, list(nrow(features)))
 }
+
 
 aggregation_layers = function(list[unknown] model,
   list[unknown] hyperparams,
@@ -812,23 +819,45 @@ aggregation_layers = function(list[unknown] model,
   return(list[unknown] modelResult)
 {
   layer_count = as.integer(as.scalar(hyperparams["layer_count"]))
-  [W_list, b_list, upd_W_list, upd_b_list] = unflatten_model(model, layer_count)
-
-  grads_W = list()
-  grads_b = list()
-
-  for(i in 1:layer_count)
-    grads_W = append(grads_W, list(as.matrix(gradients[i])))
-
-  for(i in 1:layer_count)
-    grads_b = append(grads_b, list(as.matrix(gradients[layer_count + i])))
-
-  batch_rows = as.double(as.scalar(gradients[2*layer_count + 1]))
   step = as.double(as.scalar(hyperparams["step"]))
   mu = as.double(as.scalar(hyperparams["mu"]))
+  batch_rows = as.double(as.scalar(hyperparams["batch_size"]))
+  local_step = step / batch_rows
 
-  [W_list, b_list, upd_W_list, upd_b_list] = apply_update_layers(
-    W_list, b_list, upd_W_list, upd_b_list, grads_W, grads_b, step, mu, batch_rows)
+  W_out = list()
+  b_out = list()
+  upd_W_out = list()
+  upd_b_out = list()
 
-  modelResult = flatten_model(W_list, b_list, upd_W_list, upd_b_list)
+  for(i in 1:layer_count) {
+    W = as.matrix(model[i])
+    b = as.matrix(model[layer_count + i])
+    upd_W = as.matrix(model[2*layer_count + i])
+    upd_b = as.matrix(model[3*layer_count + i])
+
+    W_grad = as.matrix(gradients[i])
+    b_grad = as.matrix(gradients[layer_count + i])
+
+    upd_W = mu * upd_W - local_step * W_grad
+    upd_b = mu * upd_b - local_step * b_grad
+
+    W = W + upd_W
+    b = b + upd_b
+
+    W_out = append(W_out, list(W))
+    b_out = append(b_out, list(b))
+    upd_W_out = append(upd_W_out, list(upd_W))
+    upd_b_out = append(upd_b_out, list(upd_b))
+  }
+
+  modelResult = list()
+  for(i in 1:layer_count)
+    modelResult = append(modelResult, list(as.matrix(W_out[i])))
+  for(i in 1:layer_count)
+    modelResult = append(modelResult, list(as.matrix(b_out[i])))
+  for(i in 1:layer_count)
+    modelResult = append(modelResult, list(as.matrix(upd_W_out[i])))
+  for(i in 1:layer_count)
+    modelResult = append(modelResult, list(as.matrix(upd_b_out[i])))
 }
+

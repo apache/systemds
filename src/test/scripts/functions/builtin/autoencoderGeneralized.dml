@@ -45,7 +45,8 @@ if(as.integer($H3) > 0)
   modelAvg=as.boolean($MODELAVG)
 )
 
-layer_count = as.integer(length(model) / 4)
+encoder_layers = length(hidden_layers)
+layer_count = 2 * encoder_layers
 
 W1_out = as.matrix(model[1])
 Wlast_out = as.matrix(model[layer_count])

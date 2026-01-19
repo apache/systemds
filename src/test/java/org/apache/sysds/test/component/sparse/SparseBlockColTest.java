@@ -91,8 +91,7 @@ public class SparseBlockColTest extends AutomatedTestBase
 
 	@Test
 	public void testSparseBlockMCSCSetDelIdxRange()  {
-		double ultraSparsity = 0.001;
-		double[][] A = getRandomMatrix(_rows, _cols, -10, 10, ultraSparsity, 1234);
+		double[][] A = getRandomMatrix(_rows, _cols, -10, 10, _sparsity, 1234);
 		MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
 		SparseBlockColWrapper b = wrap(new SparseBlockMCSC(mbtmp.getSparseBlock()));
 		SparseRow[] cols = (new SparseBlockMCSC(mbtmp.getSparseBlock())).getCols();
@@ -161,30 +160,25 @@ public class SparseBlockColTest extends AutomatedTestBase
 
 	private void runSparseBlockSetDelIdxRangeTest(SparseBlockColWrapper sblock, SparseRow[] cols)  {
 		int c = _cols/3;
-		double[] v = getRandomMatrix(1, _rows, -10, 10, _sparsity, 1234)[0];
-		// TODO: SHORTER RANGE THAN COL LENGTH
-		sblock.setIndexRangeCol(c, 0, _rows, v, 0, _rows);
-		cols[c] = new SparseRowVector(v);
-		SparseBlock sblock2 = new SparseBlockMCSC(cols, false, _rows);
-		Assert.assertEquals(sblock2, sblock.getObject());
-
 		int rl = _rows/4;
 		int ru = _rows/2;
+
+		SparseRow[] cols2 = Arrays.copyOf(cols, cols.length);
+		double[] v = getRandomMatrix(1, _rows, -10, 10, 1, 1234)[0];
+		for(int i=0; i<rl; i++) v[i] = cols[c].get(i);
+		cols2[c] = new SparseRowVector(v);
+		SparseBlock sblock2 = new SparseBlockMCSC(cols2, false, _rows);
+
+		sblock.setIndexRangeCol(c, rl, _rows, v, rl, _rows-rl);
+		Assert.assertEquals(sblock2, sblock.getObject());
+
 		sblock.deleteIndexRangeCol(c, rl, ru);
-		for(int i=rl; i<ru; i++) v[i] = 0.0;
-		cols[c] = new SparseRowVector(v);
-		SparseBlock sblock3 = new SparseBlockMCSC(cols, false, _rows);
-		Assert.assertEquals(sblock3, sblock.getObject());
+		for(int i=rl; i<ru; i++) cols2[c].set(i, 0);
+		Assert.assertEquals(sblock2, sblock.getObject());
 
 		sblock.deleteIndexRangeCol(c, rl, _rows+1);
-		for(int i=ru; i<_rows; i++) v[i] = 0.0;
-		cols[c] = new SparseRowVector(v);
-		SparseBlock sblock4 = new SparseBlockMCSC(cols, false, _rows);
-		Assert.assertEquals(sblock4, sblock.getObject());
-
-		// findGTE >= 0 always true?!
-		// sblock.deleteIndexRangeCol(c, -2, ru);
-		// Assert.assertEquals(sblock4, sblock.getObject());
+		for(int i=ru; i<_rows; i++) cols2[c].set(i, 0);
+		Assert.assertEquals(sblock2, sblock.getObject());
 	}
 
 	private interface SparseBlockColWrapper {
@@ -264,7 +258,7 @@ public class SparseBlockColTest extends AutomatedTestBase
 			public void resetCol(int c) { b.resetCol(c, 0, 0); }
 
 			@Override
-			public SparseBlockColWrapper copy() { return wrap(new SparseBlockCSC(b)); }
+			public SparseBlockColWrapper copy() { return wrap(new SparseBlockMCSC(b)); }
 
 			@Override
 			public Object getObject() { return b; }

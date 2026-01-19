@@ -205,11 +205,12 @@ public class SparseRowTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testSparseRowVectorSetIndexRangeWithRecap()  {
+	public void testSparseRowVectorSetIndexRangeWithoutRecap()  {
 		SparseRowVector srv = new SparseRowVector();
-		srv.add(1, 1.0);
-		srv.add(4, 4.0);
-		srv.add(5, 5.0);
-		srv.setIndexRange(2, 3, new double[]{2.0, 3.0}, 0, 2);
+		int capacity = srv.capacity();
+
+		double[] v = getRandomMatrix(1, capacity, minVal, maxVal, sparsity, 7)[0];
+		srv.setIndexRange(0, capacity, v, 0, capacity);
+		assertEquals(capacity, srv.capacity());
 	}
 }

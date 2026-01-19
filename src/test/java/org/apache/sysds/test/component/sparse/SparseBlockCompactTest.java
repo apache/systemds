@@ -20,7 +20,6 @@
 package org.apache.sysds.test.component.sparse;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
 
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockFactory;
@@ -87,7 +86,6 @@ public class SparseBlockCompactTest extends AutomatedTestBase
 		double[] values = (double[]) getField(sblock, "_values");
 		values[0] = 0.0;
 		values[values.length-1] = 0.0;
-		setField(sblock, "_values", Arrays.copyOfRange(values, 0, values.length));
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
 			() -> sblock.checkValidity(_rows, _cols, sblock.size(), true));
@@ -112,7 +110,6 @@ public class SparseBlockCompactTest extends AutomatedTestBase
 		double[] values = sr[0].values();
 		values[0] = 0.0;
 		values[values.length-1] = 0.0;
-		setField(sr[0], "values", Arrays.copyOfRange(values, 0, values.length));
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
 			() -> sblock.checkValidity(_rows, _cols, sblock.size(), true));
@@ -123,16 +120,6 @@ public class SparseBlockCompactTest extends AutomatedTestBase
 
 		assertTrue("should pass checkValidity", sblock.checkValidity(_rows, _cols, sblock.size(), true));
 		assertEquals(size-2, sblock.size());
-	}
-
-	private static void setField(Object obj, String name, Object value) {
-		try {
-			Field f = obj.getClass().getDeclaredField(name);
-			f.setAccessible(true);
-			f.set(obj, value);
-		} catch (Exception ex) {
-			throw new RuntimeException("Reflection failed: " + ex.getMessage());
-		}
 	}
 
 	private static Object getField(Object obj, String name) {

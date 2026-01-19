@@ -270,23 +270,16 @@ public class SparseBlockAlignment extends AutomatedTestBase
 				Assert.fail("Wrong row alignment indicated: "+rowsAligned37+", expected: "+positive);
 			if( !rowsAlignedRest )
 				Assert.fail("Wrong row alignment rest indicated: false.");
+
+			//init third sparse block with different number of rows
+			SparseBlock sblock3 =SparseBlockFactory.createSparseBlock(btype, rows+1);
+			if (sblock.isAligned(sblock3)) {
+				Assert.fail("Wrong alignment different rows indicated: true.");
+			}
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();
 			throw new RuntimeException(ex);
 		}
-	}
-
-	@Test
-	public void testSparseBlockDifferentNumRows()  {
-		double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity3, 1234);
-		MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
-		SparseBlock sblock = mbtmp.getSparseBlock();
-
-		double[][] B = getRandomMatrix(2*rows, cols, -10, 10, sparsity3, 1234);
-		MatrixBlock mbtmp2 = DataConverter.convertToMatrixBlock(B);
-		SparseBlock sblock2 = mbtmp2.getSparseBlock();
-
-		Assert.assertFalse(sblock.isAligned(sblock2));
 	}
 }

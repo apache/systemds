@@ -197,7 +197,7 @@ public class SparseBlockEqualsTest {
 	}
 
 	private static void runSparseBlockNotEqualsDenseValuesNonZeroTest(SparseBlock.Type type) {
-		double[][] A = new double[][]{{1., 0., 3.}, {0., 0., 0.}, {0., 0., 0.},{0., 0., 1.}, {4., 0., 6.}};
+		double[][] A = new double[][]{{1., 0., 3.}, {0., 0., 0.}, {0., 0., 0.}, {0., 0., 1.}, {4., 0., 6.}};
 
 		MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
 		SparseBlock srtmp = mbtmp.getSparseBlock();

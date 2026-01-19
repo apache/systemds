@@ -222,6 +222,11 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 			return mapIndex < _nRows;
 		}
 
+		/*void skip(int k) {
+			for(int i = 0; i < k; i++)
+				next();
+		}*/
+
 		int next() {
 			if(!hasNext())
 				throw new NoSuchElementException();
@@ -684,29 +689,131 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		throw new NotImplementedException();
 	}
 
-	@Override
-	public AColGroup append(AColGroup g) {
-		throw new NotImplementedException();
+	public int[] appendDataLZWMap(int[] dataLZW) {
+		int[] newDataLZW = new int[_dataLZW.length + dataLZW.length];
+		System.arraycopy(_dataLZW, 0, newDataLZW, 0, _dataLZW.length);
+		System.arraycopy(dataLZW, 0, newDataLZW, _dataLZW.length, dataLZW.length);
+		return newDataLZW;
 	}
 
 	@Override
-	protected AColGroup appendNInternal(AColGroup[] groups, int blen, int rlen) {
-		throw new NotImplementedException();
+	public AColGroup append(AColGroup g) {
+		if(g instanceof ColGroupDDCLZW) {
+			if(g.getColIndices().equals(_colIndexes)) {
+				ColGroupDDCLZW gDDCLZW = (ColGroupDDCLZW) g;
+				if(gDDCLZW._dict.equals(_dict)) {
+					if(_nUnique == gDDCLZW._nUnique) {
+						int[] mergedMap = new int[this._nRows + gDDCLZW._nRows];
+
+						LZWMappingIterator it = new LZWMappingIterator();
+						for(int i = 0; i < this._nRows; i++) {
+							mergedMap[i] = it.next();
+						}
+
+						LZWMappingIterator gLZWit = gDDCLZW.new LZWMappingIterator();
+						for(int i = this._nRows; i < mergedMap.length; i++) {
+							mergedMap[i] = gLZWit.next();
+						}
+
+						AMapToData mergedDataAMap = MapToFactory.create(mergedMap.length, _nUnique);
+						int mergedDataAMapPos = 0;
+
+						for(int j : mergedMap) {
+							mergedDataAMap.set(mergedDataAMapPos++, j);
+						}
+
+						int[] mergedDataAMapCompressed = compress(mergedDataAMap);
+
+						return new ColGroupDDCLZW(_colIndexes, _dict, mergedDataAMapCompressed, mergedMap.length,
+							_nUnique, null);
+					}
+					else
+						LOG.warn("Not same unique values therefore not appending DDCLZW\n" + _nUnique + "\n\n" +
+							gDDCLZW._nUnique);
+				}
+				else
+					LOG.warn("Not same Dictionaries therefore not appending DDCLZW\n" + _dict + "\n\n" + gDDCLZW._dict);
+			}
+			else
+				LOG.warn(
+					"Not same columns therefore not appending DDCLZW\n" + _colIndexes + "\n\n" + g.getColIndices());
+		}
+		else
+			LOG.warn("Not DDCLZW but " + g.getClass().getSimpleName() + ", therefore not appending DDCLZW");
+		return null;
+	}
+
+	// TODO: adjust according to contract, "this shall only be appended once".
+	@Override
+	protected AColGroup appendNInternal(AColGroup[] g, int blen, int rlen) {
+		/*throw new NotImplementedException();*/
+		int[] mergedMap = new int[rlen];
+		int mergedMapPos = 0;
+
+		for(int i = 1; i < g.length; i++) {
+			if(!_colIndexes.equals(g[i]._colIndexes)) {
+				LOG.warn("Not same columns therefore not appending DDCLZW\n" + _colIndexes + "\n\n" + g[i]._colIndexes);
+				return null;
+			}
+
+			if(!(g[i] instanceof ColGroupDDCLZW)) {
+				LOG.warn("Not DDCLZW but " + g[i].getClass().getSimpleName() + ", therefore not appending DDCLZW");
+				return null;
+			}
+
+			final ColGroupDDCLZW gDDCLZW = (ColGroupDDCLZW) g[i];
+			if(!gDDCLZW._dict.equals(_dict)) {
+				LOG.warn("Not same Dictionaries therefore not appending DDCLZW\n" + _dict + "\n\n" + gDDCLZW._dict);
+				return null;
+			}
+			if(!(_nUnique == gDDCLZW._nUnique)) {
+				LOG.warn(
+					"Not same unique values therefore not appending DDCLZW\n" + _nUnique + "\n\n" + gDDCLZW._nUnique);
+				return null;
+			}
+		}
+
+		for(AColGroup group : g) {
+			ColGroupDDCLZW gDDCLZW = (ColGroupDDCLZW) group;
+
+			LZWMappingIterator gLZWit = gDDCLZW.new LZWMappingIterator();
+			for(int j = 0; j < gDDCLZW._nRows; j++)
+				mergedMap[mergedMapPos++] = gLZWit.next();
+		}
+
+		AMapToData mergedDataAMap = MapToFactory.create(rlen, _nUnique);
+		int mergedDataAMapPos = 0;
+
+		for(int k = 0; k < rlen; k++) {
+			mergedDataAMap.set(k, mergedMap[k]);
+		}
+
+		int[] mergedDataAMapCompressed = compress(mergedDataAMap);
+
+		return new ColGroupDDCLZW(_colIndexes, _dict, mergedDataAMapCompressed, rlen, _nUnique, null);
 	}
 
 	@Override
 	public AColGroup recompress() {
-		throw new NotImplementedException();
+		return this; // A new or the same column group depending on optimization goal. (Description DDC)
 	}
 
 	@Override
 	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
-		throw new NotImplementedException();
+		try {
+			IEncode enc = getEncoding();
+			EstimationFactors ef = new EstimationFactors(_nUnique, _nRows, _nRows, _dict.getSparsity());
+			return new CompressedSizeInfoColGroup(_colIndexes, ef, estimateInMemorySize(), getCompType(), enc);
+		}
+		catch(Exception e) {
+			throw new DMLCompressionException(this.toString(), e);
+		}
 	}
 
 	@Override
 	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
-		throw new NotImplementedException();
+		return new ColGroupDDCLZW(newColIndex, _dict.reorder(reordering), _dataLZW, _nRows, _nUnique,
+			getCachedCounts());
 	}
 
 	@Override
@@ -716,14 +823,16 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
 	@Override
 	protected void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
-		throw new NotImplementedException();
+		throw new NotImplementedException(); // We need to implement decompToDenseBlock first!
 	}
 
 	@Override
 	public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
-		throw new NotImplementedException();
+		ColGroupDDC g = (ColGroupDDC) convertToDDC();
+		return g.splitReshape(multiplier, nRow, nColOrg); // Fallback to ddc. No splitReshapeDDCLZW implemented.
 	}
 
+	// Not sure here.
 	@Override
 	protected boolean allowShallowIdentityRightMult() {
 		throw new NotImplementedException();
@@ -731,42 +840,54 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
 	@Override
 	protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, IDictionary preAgg) {
-		throw new NotImplementedException();
+		if(preAgg == null)
+			return null;
+		else
+			return new ColGroupDDCLZW(colIndexes, preAgg, _dataLZW, _nRows, _nUnique, getCachedCounts());
 	}
 
 	@Override
 	public void preAggregateDense(MatrixBlock m, double[] preAgg, int rl, int ru, int cl, int cu) {
-		throw new NotImplementedException("Preaggregation not supported for DDCLZW.");
+		ColGroupDDC g = (ColGroupDDC) convertToDDC();
+		g.preAggregateDense(m, preAgg, rl, ru, cl, cu); // Fallback to ddc.
 	}
 
 	@Override
 	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru, int cl, int cu) {
-		throw new NotImplementedException();
+		ColGroupDDC g = (ColGroupDDC) convertToDDC();
+		g.preAggregateSparse(sb, preAgg, rl, ru, cl, cu); // Fallback to ddc.
 	}
 
 	@Override
 	protected void preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
-		throw new NotImplementedException();
+		ColGroupDDC g = (ColGroupDDC) convertToDDC();
+		g.preAggregateThatDDCStructure(that, ret); // Fallback to ddc.
 	}
 
 	@Override
 	protected void preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
-		throw new NotImplementedException();
+		ColGroupDDC g = (ColGroupDDC) convertToDDC();
+		g.preAggregateThatSDCZerosStructure(that, ret); // Fallback to ddc.
 	}
 
 	@Override
 	protected void preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
-		throw new NotImplementedException();
+		ColGroupDDC g = (ColGroupDDC) convertToDDC();
+		g.preAggregateThatSDCSingleZerosStructure(that, ret); // Fallback to ddc.
+
 	}
 
 	@Override
 	protected void preAggregateThatRLEStructure(ColGroupRLE that, Dictionary ret) {
-		throw new NotImplementedException();
+		ColGroupDDC g = (ColGroupDDC) convertToDDC();
+		g.preAggregateThatRLEStructure(that, ret); // Fallback to ddc.
+
 	}
 
 	@Override
 	public void leftMMIdentityPreAggregateDense(MatrixBlock that, MatrixBlock ret, int rl, int ru, int cl, int cu) {
-		throw new NotImplementedException();
+		ColGroupDDC g = (ColGroupDDC) convertToDDC();
+		g.leftMMIdentityPreAggregateDense(that, ret, rl, ru, cl, cu); // Fallback to ddc.
 	}
 
 	@Override
@@ -775,23 +896,48 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		return data.getCounts();
 	}
 
+	@Override
 	protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
+		final LZWMappingIterator it = new LZWMappingIterator();
+		for(int i = 0; i < rl; i++)
+			it.next();
+
+		for(int rix = rl; rix < ru; rix++)
+			c[rix] += preAgg[it.next()];
+	}
+
+	/*protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
 		AMapToData data = decompress(_dataLZW, _nUnique, _nRows, ru);
 		for(int rix = rl; rix < ru; rix++)
 			c[rix] += preAgg[data.getIndex(rix)];
-	}
+	}*/
 
 	@Override
 	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
-		throw new NotImplementedException();
+		final LZWMappingIterator it = new LZWMappingIterator();
+		for(int i = 0; i < rl; i++)
+			it.next();
+
+		for(int i = rl; i < ru; i++)
+			c[i] = builtin.execute(c[i], preAgg[it.next()]);
 	}
 
-	@Override
+	/*@Override
 	protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
 		AMapToData data = decompress(_dataLZW, _nUnique, _nRows, ru);
 		for(int rix = rl; rix < ru; rix++)
 			c[rix] *= preAgg[data.getIndex(rix)];
 
+	}*/
+
+	@Override
+	protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
+		final LZWMappingIterator it = new LZWMappingIterator();
+		for(int i = 0; i < rl; i++)
+			it.next();
+
+		for(int rix = rl; rix < ru; rix++)
+			c[rix] *= preAgg[it.next()];
 	}
 }
 

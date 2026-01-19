@@ -559,18 +559,15 @@ backward_pass_layers = function(Matrix[Double] X, list[unknown] activations, lis
   L = length(W_list)
   grads_W = list()
   grads_b = list()
-  for(i in 1:L) {
-    grads_W = append(grads_W, list(matrix(0, rows=0, cols=0)))
-    grads_b = append(grads_b, list(matrix(0, rows=0, cols=0)))
-  }
-
   delta = E * as.matrix(primes[L])
   for(i in L:1) {
     A_prev = X
     if(i > 1)
       A_prev = as.matrix(activations[i-1])
-    grads_W[i] = t(delta) %*% A_prev
-    grads_b[i] = t(colSums(delta))
+    grad_W = t(delta) %*% A_prev
+    grad_b = t(colSums(delta))
+    grads_W = append(list(grad_W), grads_W)
+    grads_b = append(list(grad_b), grads_b)
     if(i > 1) {
       W_prev = as.matrix(W_list[i])
       delta = as.matrix(primes[i-1]) * (delta %*% W_prev)

@@ -33,11 +33,8 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.*;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.IdentityDictionary;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.RangeIndex;
@@ -57,9 +54,7 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.data.SparseRow;
-import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.functionobjects.Minus;
-import org.apache.sysds.runtime.functionobjects.Plus;
+import org.apache.sysds.runtime.functionobjects.*;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -411,12 +406,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 			return new ColGroupDDCLZW(colIndexes, dict, data, cachedCounts);
 	}
 
-	/*
-	 * TODO: Operations with complex access patterns shall be uncompressed to ddc format.
-	 *  ... return ColGroupDDC.create(...,decompress(_dataLZW),...). We need to decide which methods are
-	 *  suitable for sequential and which arent. those who arent then we shall materialize and fall back to ddc
-	 * */
-
 	public AColGroup convertToDDC() {
 		final AMapToData map = decompress(_dataLZW, _nUnique, _nRows, _nRows);
 		final int[] counts = getCounts(); // may be null depending on your group
@@ -529,12 +518,12 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
 	@Override
 	public AMapToData getMapToData() {
-		throw new NotImplementedException(); // or decompress and return data... decompress(_dataLZW, _nUnique, _nRows, _nRows)
+		return decompressFull(_dataLZW, _nUnique, _nRows);
 	}
 
 	@Override
 	public boolean sameIndexStructure(AColGroupCompressed that) {
-		return that instanceof ColGroupDDCLZW && ((ColGroupDDCLZW) that)._dataLZW == _dataLZW;
+		return that instanceof ColGroupDDCLZW && ((ColGroupDDCLZW) that)._dataLZW == this._dataLZW;
 	}
 
 	@Override
@@ -550,172 +539,240 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 	@Override
 	public AColGroup sliceRows(int rl, int ru) {
 		try {
+			if(rl < 0 || ru > _nRows)
+				throw new DMLRuntimeException("Invalid slice range: " + rl + " - " + ru);
+
+			final int len = ru - rl;
+			if(len == 0)
+				return new ColGroupEmpty(_colIndexes);
+
+			final int[] slicedMapping = new int[len];
+
+			final LZWMappingIterator it = new LZWMappingIterator();
+
+			for(int i = 0; i < rl; i++)
+				it.next();
+
+			for(int i = rl; i < ru; i++)
+				slicedMapping[i - rl] = it.next();
+
+			AMapToData slicedMappingAMapToData = MapToFactory.create(len, _nUnique);
+			for(int i = 0; i < len; i++) {
+				slicedMappingAMapToData.set(i, slicedMapping[i]);
+			}
+
+			return new ColGroupDDCLZW(_colIndexes, _dict, slicedMappingAMapToData, null);
+		}
+		catch(Exception e) {
+			throw new DMLRuntimeException("Failed to slice out sub part DDCLZW: " + rl + ", " + ru, e);
+		}
+
+		/*try {
 			AMapToData map = decompress(_dataLZW, _nUnique, _nRows, ru);
 			return ColGroupDDCLZW.create(_colIndexes, _dict, map.slice(rl, ru), null);
 		}
 		catch(Exception e) {
 			throw new DMLRuntimeException("Failed to slice out sub part DDCLZW: " + rl + ", " + ru, e);
-		}
+		}*/
 	}
 
 	@Override
 	protected void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru, SparseBlock dict) {
-
+		throw new NotImplementedException();
 	}
 
 	@Override
 	protected void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru, double[] dict) {
-
+		throw new NotImplementedException();
 	}
 
 	@Override
 	protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock dict,
 		int nColOut) {
-
+		throw new NotImplementedException();
 	}
 
 	@Override
 	protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict, int nColOut) {
-
+		throw new NotImplementedException();
 	}
 
 	@Override
 	protected void decompressToDenseBlockSparseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
 		SparseBlock sb) {
-
+		throw new NotImplementedException();
 	}
 
 	@Override
 	protected void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] values) {
+		final int nCol = _colIndexes.size();
+		final LZWMappingIterator it = new LZWMappingIterator();
 
+		for(int i = 0; i < rl; i++) {
+			it.next();
+		}
+
+		if(db.isContiguous() && nCol == db.getDim(1) && offC == 0) {
+			final int nColOut = db.getDim(1);
+			final double[] c = db.values(0);
+
+			for(int i = rl; i < ru; i++) {
+				final int dictIdx = it.next();
+				final int rowIndex = dictIdx * nCol;
+				final int rowBaseOff = (i + offR) * nColOut;
+
+				for(int j = 0; j < nCol; j++)
+					c[rowBaseOff + j] = values[rowIndex + j];
+			}
+		}
+		else {
+			for(int i = rl, offT = rl + offR; i < ru; i++, offT++) {
+				final double[] c = db.values(offT);
+				final int off = db.pos(offT) + offC;
+				final int dictIdx = it.next();
+				final int rowIndex = dictIdx * nCol;
+
+				for(int j = 0; j < nCol; j++) {
+					final int colIdx = _colIndexes.get(j);
+					c[off + colIdx] = values[rowIndex + j];
+				}
+			}
+		}
 	}
 
 	@Override
 	protected void decompressToSparseBlockSparseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
 		SparseBlock sb) {
-
+		throw new NotImplementedException();
 	}
 
 	@Override
 	protected void decompressToSparseBlockDenseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
 		double[] values) {
-
+		throw new NotImplementedException();
 	}
 
 	@Override
 	public void leftMultByMatrixNoPreAgg(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl, int cu) {
-
+		convertToDDC().leftMultByMatrixNoPreAgg(matrix, result, rl, ru, cl, cu); // Fallback to DDC.
 	}
 
 	@Override
 	public AColGroup scalarOperation(ScalarOperator op) {
-		return null;
-	}
+		if((op.fn instanceof Plus || op.fn instanceof Minus)) {
+			final double v0 = op.executeScalar(0);
+			if(v0 == 0)
+				return this;
+		}
 
-	@Override
-	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
-		return null;
-	}
-
-	@Override
-	public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
-		return null;
+		return new ColGroupDDCLZW(_colIndexes, _dict.applyScalarOp(op), _dataLZW, _nRows, _nUnique, getCachedCounts());
 	}
 
 	@Override
 	public AColGroup unaryOperation(UnaryOperator op) {
-		return null;
+		return new ColGroupDDCLZW(_colIndexes, _dict.applyUnaryOp(op), _dataLZW, _nRows, _nUnique, getCachedCounts());
+	}
+
+	@Override
+	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
+		throw new NotImplementedException();
 	}
 
 	@Override
 	public AColGroup append(AColGroup g) {
-		return null;
+		throw new NotImplementedException();
 	}
 
 	@Override
 	protected AColGroup appendNInternal(AColGroup[] groups, int blen, int rlen) {
-		return null;
+		throw new NotImplementedException();
 	}
 
 	@Override
 	public AColGroup recompress() {
-		return null;
+		throw new NotImplementedException();
 	}
 
 	@Override
 	public CompressedSizeInfoColGroup getCompressionInfo(int nRow) {
-		return null;
+		throw new NotImplementedException();
 	}
 
 	@Override
 	protected AColGroup fixColIndexes(IColIndex newColIndex, int[] reordering) {
-		return null;
+		throw new NotImplementedException();
 	}
 
 	@Override
 	protected void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
-
+		throw new NotImplementedException();
 	}
 
 	@Override
 	protected void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
-
+		throw new NotImplementedException();
 	}
 
 	@Override
 	public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
-		return new AColGroup[0];
+		throw new NotImplementedException();
 	}
 
 	@Override
 	protected boolean allowShallowIdentityRightMult() {
-		return false;
+		throw new NotImplementedException();
 	}
 
 	@Override
 	protected AColGroup allocateRightMultiplication(MatrixBlock right, IColIndex colIndexes, IDictionary preAgg) {
-		return null;
+		throw new NotImplementedException();
 	}
 
 	@Override
 	public void preAggregateDense(MatrixBlock m, double[] preAgg, int rl, int ru, int cl, int cu) {
-
+		throw new NotImplementedException("Preaggregation not supported for DDCLZW.");
 	}
 
 	@Override
 	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru, int cl, int cu) {
-
+		throw new NotImplementedException();
 	}
 
 	@Override
 	protected void preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
-
+		throw new NotImplementedException();
 	}
 
 	@Override
 	protected void preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
-
+		throw new NotImplementedException();
 	}
 
 	@Override
 	protected void preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
-
+		throw new NotImplementedException();
 	}
 
 	@Override
 	protected void preAggregateThatRLEStructure(ColGroupRLE that, Dictionary ret) {
-
+		throw new NotImplementedException();
 	}
 
 	@Override
 	public void leftMMIdentityPreAggregateDense(MatrixBlock that, MatrixBlock ret, int rl, int ru, int cl, int cu) {
-
+		throw new NotImplementedException();
 	}
 
 	@Override
 	protected int[] getCounts(int[] out) {
-		return new int[0]; // If returns exeption test wont work.
+		AMapToData data = decompressFull(_dataLZW, _nUnique, _nRows);
+		return data.getCounts();
 	}
 
 	protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
@@ -726,7 +783,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
 	@Override
 	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
-
+		throw new NotImplementedException();
 	}
 
 	@Override

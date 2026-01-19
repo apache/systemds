@@ -20,15 +20,25 @@
 package org.apache.sysds.test.component.compress.colgroup;
 
 import java.util.Arrays;
+import java.util.EnumSet;
+
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.colgroup.*;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
+import org.apache.sysds.runtime.compress.estim.ComEstExact;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DataConverter;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -44,15 +54,15 @@ public class ColGroupDDCLZWTest {
 		IColIndex colIndexes = ColIndexFactory.create(nCols);
 
 		double[] dictValues = new double[nUnique * nCols];
-		for (int i = 0; i < nUnique; i++) {
-			for (int c = 0; c < nCols; c++) {
+		for(int i = 0; i < nUnique; i++) {
+			for(int c = 0; c < nCols; c++) {
 				dictValues[i * nCols + c] = (i + 1) * 10.0 + c;
 			}
 		}
 		Dictionary dict = Dictionary.create(dictValues);
 
 		AMapToData data = MapToFactory.create(mapping.length, nUnique);
-		for (int i = 0; i < mapping.length; i++) {
+		for(int i = 0; i < mapping.length; i++) {
 			data.set(i, mapping[i]);
 		}
 
@@ -68,7 +78,7 @@ public class ColGroupDDCLZWTest {
 		assertEquals("Size mismatch", expected.size(), actual.size());
 		assertEquals("Unique count mismatch", expected.getUnique(), actual.getUnique());
 
-		for (int i = 0; i < expected.size(); i++) {
+		for(int i = 0; i < expected.size(); i++) {
 			assertEquals("Mapping mismatch at row " + i, expected.getIndex(i), actual.getIndex(i));
 		}
 	}
@@ -100,7 +110,7 @@ public class ColGroupDDCLZWTest {
 		assertEquals("Size mismatch", d1.size(), d2.size());
 		assertEquals("Unique count mismatch", d1.getUnique(), d2.getUnique());
 
-		for (int i = 0; i < d1.size(); i++) {
+		for(int i = 0; i < d1.size(); i++) {
 			assertEquals("Mapping mismatch at row " + i, d1.getIndex(i), d2.getIndex(i));
 		}
 	}
@@ -114,7 +124,7 @@ public class ColGroupDDCLZWTest {
 
 		assertEquals("Partial size incorrect", index, partialMap.size());
 
-		for (int i = 0; i < index; i++) {
+		for(int i = 0; i < index; i++) {
 			assertEquals("Partial map mismatch at " + i, original.getIndex(i), partialMap.getIndex(i));
 		}
 	}
@@ -135,13 +145,9 @@ public class ColGroupDDCLZWTest {
 
 	@Test
 	public void testConvertToDDCLZWBasicNew() {
-		int[] src = new int[] {
-				0, 0, 2, 0, 2, 1, 0, 2, 1, 0, 2, 2, 0, 2, 1, 0, 2, 1, 0, 2,
-				1, 0, 1, 2, 0, 1, 2, 0, 1, 1, 0, 1, 2, 0, 1, 2, 0, 1,
-				2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1,
-				2, 1, 0, 2, 1, 0, 2, 1, 0, 0, 2, 1, 0, 2, 1, 0, 2, 1, 1, 1, 1, 1, 1, 1,
-				2, 0, 2, 1, 0, 2, 1, 0, 2, 2, 0, 2, 1, 0, 2, 1, 0, 2, 0, 0, 0, 0, 0, 1
-		};
+		int[] src = new int[] {0, 0, 2, 0, 2, 1, 0, 2, 1, 0, 2, 2, 0, 2, 1, 0, 2, 1, 0, 2, 1, 0, 1, 2, 0, 1, 2, 0, 1, 1,
+			0, 1, 2, 0, 1, 2, 0, 1, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 1, 0, 2, 1, 0, 2, 1, 0, 0, 2, 1, 0,
+			2, 1, 0, 2, 1, 1, 1, 1, 1, 1, 1, 2, 0, 2, 1, 0, 2, 1, 0, 2, 2, 0, 2, 1, 0, 2, 1, 0, 2, 0, 0, 0, 0, 0, 1};
 
 		// Create DDC with 2 columns, 3 unique values
 		ColGroupDDC ddc = createTestDDC(src, 2, 3);
@@ -155,10 +161,8 @@ public class ColGroupDDCLZWTest {
 
 	@Test(expected = IllegalArgumentException.class)
 	public void testPartialDecompressionOutOfBounds() {
-		int[] src = new int[] {
-				1, 3, 4, 4, 3, 2, 3, 4, 1, 4, 4, 4, 4, 1, 4, 1, 4, 1, 4, 0,
-				1, 3, 4, 4, 3, 2, 3, 4, 1, 4, 4, 4, 4, 1, 4, 1, 4, 1, 4, 0,
-		};
+		int[] src = new int[] {1, 3, 4, 4, 3, 2, 3, 4, 1, 4, 4, 4, 4, 1, 4, 1, 4, 1, 4, 0, 1, 3, 4, 4, 3, 2, 3, 4, 1, 4,
+			4, 4, 4, 1, 4, 1, 4, 1, 4, 0,};
 
 		ColGroupDDC ddc = createTestDDC(src, 3, 5);
 
@@ -171,7 +175,7 @@ public class ColGroupDDCLZWTest {
 
 	@Test
 	public void testLengthTwo() {
-		int[] src = new int[] { 0, 1 };
+		int[] src = new int[] {0, 1};
 
 		ColGroupDDC ddc = createTestDDC(src, 1, 2);
 
@@ -190,16 +194,16 @@ public class ColGroupDDCLZWTest {
 		Dictionary dict = Dictionary.create(dictValues);
 
 		int[] src = new int[] {
-				// repeating base pattern
-				0, 0, 2, 0, 2, 1, 0, 2, 1, 0, 2, 2, 0, 2, 1, 0, 2, 1, 0, 2,
-				// variation / shifted pattern
-				1, 0, 1, 2, 0, 1, 2, 0, 1, 1, 0, 1, 2, 0, 1, 2, 0, 1,
-				// longer runs (good for phrase growth)
-				2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1,
-				// mixed noise
-				2, 1, 0, 2, 1, 0, 2, 1, 0, 0, 2, 1, 0, 2, 1, 0, 2, 1, 1, 1, 1, 1, 1, 1,
-				// repeating tail (tests dictionary reuse)
-				2, 0, 2, 1, 0, 2, 1, 0, 2, 2, 0, 2, 1, 0, 2, 1, 0, 2, 0, 0, 0, 0, 0, 1};
+			// repeating base pattern
+			0, 0, 2, 0, 2, 1, 0, 2, 1, 0, 2, 2, 0, 2, 1, 0, 2, 1, 0, 2,
+			// variation / shifted pattern
+			1, 0, 1, 2, 0, 1, 2, 0, 1, 1, 0, 1, 2, 0, 1, 2, 0, 1,
+			// longer runs (good for phrase growth)
+			2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1,
+			// mixed noise
+			2, 1, 0, 2, 1, 0, 2, 1, 0, 0, 2, 1, 0, 2, 1, 0, 2, 1, 1, 1, 1, 1, 1, 1,
+			// repeating tail (tests dictionary reuse)
+			2, 0, 2, 1, 0, 2, 1, 0, 2, 2, 0, 2, 1, 0, 2, 1, 0, 2, 0, 0, 0, 0, 0, 1};
 
 		final int nRows = src.length;
 		final int nUnique = 3;
@@ -267,7 +271,6 @@ public class ColGroupDDCLZWTest {
 		//ddc.computeColSums(sumsddc, low, high, );
 	}
 
-
 	@Test
 	public void testGetIdxFirstElement() {
 		int[] src = new int[] {0, 1, 2, 1, 0};
@@ -295,8 +298,8 @@ public class ColGroupDDCLZWTest {
 		ColGroupDDC ddc = createTestDDC(src, 3, 3);
 		ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) ddc.convertToDDCLZW();
 
-		for (int row = 0; row < src.length; row++) {
-			for (int col = 0; col < 2; col++) {
+		for(int row = 0; row < src.length; row++) {
+			for(int col = 0; col < 2; col++) {
 				double expected = ddc.getIdx(row, col);
 				double actual = ddclzw.getIdx(row, col);
 				assertEquals("Mismatch at [" + row + "," + col + "]", expected, actual, 0.0001);
@@ -413,7 +416,7 @@ public class ColGroupDDCLZWTest {
 		IColIndex colIndexes = ColIndexFactory.create(1);
 		int[] src = new int[] {0, 1, 2};
 		AMapToData data = MapToFactory.create(3, 3);
-		for (int i = 0; i < 3; i++) {
+		for(int i = 0; i < 3; i++) {
 			data.set(i, src[i]);
 		}
 
@@ -429,7 +432,7 @@ public class ColGroupDDCLZWTest {
 
 		int[] src = new int[] {0, 0, 0, 0};
 		AMapToData data = MapToFactory.create(4, 1);
-		for (int i = 0; i < 4; i++) {
+		for(int i = 0; i < 4; i++) {
 			data.set(i, 0);
 		}
 
@@ -467,7 +470,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testAlternatingNumbers() {
 		int[] src = new int[30];
-		for (int i = 0; i < src.length; i++) {
+		for(int i = 0; i < src.length; i++) {
 			src[i] = i % 2;
 		}
 
@@ -493,8 +496,7 @@ public class ColGroupDDCLZWTest {
 		ColGroupDDC ddc = createTestDDC(src, 1, 2);
 		ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) ddc.convertToDDCLZW();
 
-		assertTrue("Same object should have same structure",
-				ddclzw.sameIndexStructure(ddclzw));
+		assertTrue("Same object should have same structure", ddclzw.sameIndexStructure(ddclzw));
 	}
 
 	@Test
@@ -508,8 +510,7 @@ public class ColGroupDDCLZWTest {
 		ColGroupDDCLZW ddclzw2 = (ColGroupDDCLZW) ddc2.convertToDDCLZW();
 
 		// Different objects have different _dataLZW arrays
-		assertFalse("Different objects should have different structure",
-				ddclzw1.sameIndexStructure(ddclzw2));
+		assertFalse("Different objects should have different structure", ddclzw1.sameIndexStructure(ddclzw2));
 	}
 
 	@Test
@@ -518,17 +519,13 @@ public class ColGroupDDCLZWTest {
 		ColGroupDDC ddc = createTestDDC(src, 1, 3);
 		ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) ddc.convertToDDCLZW();
 
-		assertFalse("Different types should not have same structure",
-				ddclzw.sameIndexStructure(ddc));
+		assertFalse("Different types should not have same structure", ddclzw.sameIndexStructure(ddc));
 	}
 
 	@Test
 	public void testRepetitiveData() {
-		int[] src = new int[] {
-				0, 0, 0, 0, 0, 1, 1, 1, 1, 1,
-				0, 0, 0, 0, 0, 1, 1, 1, 1, 1,
-				0, 0, 0, 0, 0, 1, 1, 1, 1, 1
-		};
+		int[] src = new int[] {0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1,
+			1};
 
 		ColGroupDDC ddc = createTestDDC(src, 1, 2);
 		assertLosslessCompression(ddc);
@@ -537,7 +534,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testNoRepetition() {
 		int[] src = new int[20];
-		for (int i = 0; i < src.length; i++) {
+		for(int i = 0; i < src.length; i++) {
 			src[i] = i;
 		}
 
@@ -545,4 +542,60 @@ public class ColGroupDDCLZWTest {
 		assertLosslessCompression(ddc);
 	}
 
+	public void testDecompressToDenseBlock(double[][] data, boolean isTransposed) {
+		if(isTransposed) {
+			throw new NotImplementedException("Delta encoding for transposed matrices not yet implemented");
+		}
+
+		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
+
+		final int numCols = mbt.getNumColumns();
+		final int numRows = mbt.getNumRows();
+		IColIndex colIndexes = ColIndexFactory.create(numCols);
+
+		try {
+			CompressionSettingsBuilder csb = new CompressionSettingsBuilder().setSamplingRatio(1.0)
+				.setValidCompressions(EnumSet.of(AColGroup.CompressionType.DDCLZW)).setTransposeInput("false");
+			CompressionSettings cs = csb.create();
+
+			final CompressedSizeInfoColGroup cgi = new ComEstExact(mbt, cs).getColGroupInfo(colIndexes);
+			CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
+			AColGroup cg = ColGroupFactory.compressColGroups(mbt, csi, cs, 1).get(0);
+
+			MatrixBlock ret = new MatrixBlock(numRows, numCols, false);
+			ret.allocateDenseBlock();
+			cg.decompressToDenseBlock(ret.getDenseBlock(), 0, numRows);
+
+			MatrixBlock expected = DataConverter.convertToMatrixBlock(data);
+			assertArrayEquals(expected.getDenseBlockValues(), ret.getDenseBlockValues(), 0.01);
+
+		}
+		catch(NotImplementedException e) {
+			throw e;
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new DMLRuntimeException("Failed construction : " + this.getClass().getSimpleName(), e);
+		}
+	}
+
+	@Test
+	public void testDecompressToDenseBlockSingleColumn() {
+		testDecompressToDenseBlock(new double[][] {{1, 2, 3, 4, 5}}, false);
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void testDecompressToDenseBlockSingleColumnTransposed() {
+		testDecompressToDenseBlock(new double[][] {{1}, {2}, {3}, {4}, {5}}, true);
+	}
+
+	@Test
+	public void testDecompressToDenseBlockTwoColumns() {
+		testDecompressToDenseBlock(new double[][] {{1, 2}, {2, 3}, {3, 4}, {4, 5}, {5, 6}}, false);
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void testDecompressToDenseBlockTwoColumnsTransposed() {
+		testDecompressToDenseBlock(new double[][] {{1, 2, 3, 4, 5}, {1, 1, 1, 1, 1}}, true);
+	}
 }

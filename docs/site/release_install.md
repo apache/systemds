@@ -39,21 +39,7 @@ If missing, install a JDK 17 distribution.
 
 Use Windows built-in extractor.
 
-### 2.2 Set Evironment Variables
-
-To run SystemDS from the command line, configure:
-- `SYSTEMDS_ROOT`-> the extracted folder
-- Add `%SYSTEMDS_ROOT%\bin` to your `PATH`
-
-Example (PowerShell):
-```bash
-setx SYSTEMDS_ROOT "C:\path\to\systemds-<VERSION>"
-setx PATH "$env:SYSTEMDS_ROOT\bin;$env:PATH"
-```
-
-Restart the terminal afterward.
-
-### 2.3 Verify the Installation by Checking the CLI
+### 2.2 Verify the Installation by Checking the CLI
 
 On Windows, the `systemds`CLI wrapper may not be executable. This is expected because the `bin/systemds`launcher is implemented as a shell script, which Windows cannot execute natively. To verify the installation on Windows, navigate to the bin directory and run the JAR directly. Note that running `systemds -help` without JAR may result in a CommandNotFoundExeption:
 
@@ -63,7 +49,7 @@ java -jar systemds-3.3.0.jar -help
 
 You should see usage information as an output printed to the console.
 
-### 2.4 Create a Simple Script
+### 2.3 Create a Simple Script
 
 On Windows, especially when using PowerShell, creating text files via shell redirection (e.g., echo...) may result in unexpected encoding or invisible characters. This can lead to parsing errors when executing the script, even though the file appears correct in an editor. Therefore, you may try creating the file explicitly using PowerShell:
 ```bash
@@ -83,7 +69,7 @@ Expected output:
 print("Hello World!")
 ```
 
-### 2.5 Run the Script
+### 2.4 Run the Script
 
 Now run the script:
 ```bash
@@ -97,7 +83,7 @@ SystemDS Statistics:
 Total execution time: 0.012 sec.
 ```
 
-# 3. Install on Ubuntu 22.04
+# 3. Install on Ubuntu
 
 ### 3.1 Extract the Release
 
@@ -107,17 +93,26 @@ tar -xvf systemds-<VERSION>-bin.tgz
 cd systemds-<VERSION>-bin
 ```
 
-### 3.2 Add SystemDS to PATH
+### 3.2 Configure Environment Variables
+
+The SystemDS CLI requires an environment variable pointing to the SystemDS JAR. Make sure to export both `SYSTEMDS_ROOT` and `SYSTEMDS_JAR_FILE`.
 
 ```bash
 export SYSTEMDS_ROOT=$(pwd)
+export SYSTEMDS_JAR_FILE=$(find "$SYSTEMDS_ROOT" -maxdepth 1 -type f -name "systemds-*.jar" | head -n 1)
 export PATH="$SYSTEMDS_ROOT/bin:$PATH"
+```
+
+Verify that the JAR was found correctly:
+```bash
+echo "Using SystemDS JAR: $SYSTEMDS_JAR_FILE"
 ```
 
 (Optional but recommended) To make SystemDS available in new terminals, add the following lines to your shell configuration (e.g., ~/.bashrc or ~/.profile):
 ```bash
 export SYSTEMDS_ROOT=/absolute/path/to/systemds-<VERSION>
-export PATH=$SYSTEMDS_ROOT/bin:$PATH
+export SYSTEMDS_JAR_FILE=$(find "$SYSTEMDS_ROOT" -maxdepth 1 -type f -name "systemds-*.jar" | head -n 1)
+export PATH="$SYSTEMDS_ROOT/bin:$PATH"
 ```
 
 ### 3.3 Verify the Installation by Checking the CLI
@@ -136,23 +131,17 @@ echo 'print("Hello World!")' > hello.dml
 
 ### 3.5 Run the Script
 
-On some Ubuntu setups (including clean Docker images), running SystemDS directly may fail with `Invalid or corrupt jarfile hello.dml` Error. In this case, explicitly pass the SystemDS JAR shipped with the release.
-
-Locate the JAR in the release root:
+With `SYSTEMDS_JAR_FILE` properly set, the script can be executed directly via the CLI:
 ```bash
-SYSTEMDS_JAR=$(find "$SYSTEMDS_ROOT" -maxdepth 1 -type f -name "systemds-*.jar" | head -n 1)
-echo "Using SystemDS JAR: $SYSTEMDS_JAR"
-```
-
-Then run:
-```bash
-systemds "$SYSTEMDS_JAR" -f hello.dml
+systemds -f hello.dml
 ```
 
 Expected output:
 ```bash
 Hello World!
 ```
+
+On some Ubuntu setups (including clean Docker images), running SystemDS directly may fail with `Invalid or corrupt jarfile hello.dml` Error. Ensuring that `SYSTEMDS_JAR_FILE`points to the SystemDS JAR shipped with the release resolves this issue.
 
 # 4. Install on macOS
 

@@ -266,7 +266,7 @@ public class MatrixMultiplyTest extends AutomatedTestBase{
 		}
 	}
 
-	public void test(MatrixBlock a, MatrixBlock b) {
+	private void test(MatrixBlock a, MatrixBlock b) {
 		try {
 			MatrixBlock ret = multiply(a, b, k);
 
@@ -291,10 +291,6 @@ public class MatrixMultiplyTest extends AutomatedTestBase{
 			e.printStackTrace();
 			fail(e.getMessage());
 		} 
-		finally {
-			TestUtils.clearDirectory(getCurLocalTempDir().getPath());
-			TestUtils.removeDirectories(new String[]{getCurLocalTempDir().getPath()});
-		}
 	}
 
 	private static String size(MatrixBlock a) {
@@ -313,22 +309,8 @@ public class MatrixMultiplyTest extends AutomatedTestBase{
 	}
 
 	@Override
-	protected File getConfigTemplateFile() {
-		return new File("./src/test/scripts/component/matrix/SystemDS-config.xml");
-	}
+	public void setUp(){}
 
 	@Override
-	public void setUp() {
-		try {
-			String testname = getTestName() + String.valueOf(Math.random()*5);
-			addTestConfiguration(testname, new TestConfiguration(getTestClassDir(), testname));
-			loadTestConfiguration(getTestConfiguration(testname));
-
-			DMLConfig conf = new DMLConfig(getCurConfigFile().getPath());
-			ConfigurationManager.setLocalConfig(conf);
-		} catch(Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
-	}
+	public void tearDown(){}
 }

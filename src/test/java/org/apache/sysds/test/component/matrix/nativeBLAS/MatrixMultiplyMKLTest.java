@@ -31,13 +31,13 @@ import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.utils.NativeHelper;
 import org.apache.sysds.test.TestConfiguration;
-
+import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.component.matrix.MatrixMultiplyTest;
 
 public class MatrixMultiplyMKLTest extends MatrixMultiplyTest{
 	protected static final Log LOG = LogFactory.getLog(MatrixMultiplyTest.class.getName());
 
-	private final static String TEST_DIR = "component/matrix/native/";
+	private final static String TEST_DIR = "component/matrix/nativeBLAS/";
 
 	protected String getTestClassDir() {
 		return getTestDir() + this.getClass().getSimpleName() + "/";
@@ -61,7 +61,7 @@ public class MatrixMultiplyMKLTest extends MatrixMultiplyTest{
 
 	@Override
 	protected File getConfigTemplateFile() {
-		return new File("./src/test/scripts/component/matrix/nativeBLAS/SystemDS-config-MKL.xml");
+		return new File("./src/test/config/component/matrix/nativeBLAS/SystemDS-config-MKL.xml");
 	}
 
 	@Override
@@ -81,4 +81,9 @@ public class MatrixMultiplyMKLTest extends MatrixMultiplyTest{
 		}
 	}
 
+	@Override
+	public void tearDown() {
+		TestUtils.clearDirectory(getCurLocalTempDir().getPath());
+		TestUtils.removeDirectories(new String[]{getCurLocalTempDir().getPath()});
+	}
 }

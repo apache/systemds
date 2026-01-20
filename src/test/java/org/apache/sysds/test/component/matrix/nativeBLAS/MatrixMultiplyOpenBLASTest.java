@@ -61,7 +61,7 @@ public class MatrixMultiplyOpenBLASTest extends MatrixMultiplyTest{
 
 	@Override
 	protected File getConfigTemplateFile() {
-		return new File("./src/test/config/component/matrix/nativeBLAS/SystemDS-config-OpenBLAS.xml");
+		return new File("./src/test/config/SystemDS-config-OpenBLAS.xml");
 	}
 
 	@Override

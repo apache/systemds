@@ -61,7 +61,7 @@ public class MatrixMultiplyMKLTest extends MatrixMultiplyTest{
 
 	@Override
 	protected File getConfigTemplateFile() {
-		return new File("./src/test/config/component/matrix/nativeBLAS/SystemDS-config-MKL.xml");
+		return new File("./src/test/config/SystemDS-config-MKL.xml");
 	}
 
 	@Override

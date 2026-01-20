@@ -27,8 +27,6 @@ import org.apache.sysds.runtime.data.SparseBlockDCSR;
 import org.apache.sysds.runtime.data.SparseBlockFactory;
 import org.apache.sysds.runtime.data.SparseBlockMCSC;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
-import org.apache.sysds.runtime.data.SparseRow;
-import org.apache.sysds.runtime.data.SparseRowVector;
 
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -117,30 +115,27 @@ public class SparseBlockCheckValidityTest extends AutomatedTestBase
 	@Test
 	public void testSparseBlockCOOIncorrectArrayLengths() {
 		SparseBlockCOO sblock = new SparseBlockCOO(2, 2);
-		// nnz > capacity
+
 		RuntimeException ex = assertThrows(RuntimeException.class,
 			() -> sblock.checkValidity(2, 2, 4, false));
-
 		assertEquals("Incorrect array lengths.", ex.getMessage());
 	}
 
 	@Test
 	public void testSparseBlockCSCIncorrectArrayLengths() {
 		SparseBlockCSC sblock = new SparseBlockCSC(2, 2, 2);
-		// nnz > capacity
+
 		RuntimeException ex = assertThrows(RuntimeException.class,
 			() -> sblock.checkValidity(2, 3, 6, false));
-
 		assertEquals("Incorrect array lengths.", ex.getMessage());
 	}
 
 	@Test
 	public void testSparseBlockCSRIncorrectArrayLengths() {
 		SparseBlockCSR sblock = new SparseBlockCSR(2, 2, 1);
-		// nnz > capacity
+
 		RuntimeException ex = assertThrows(RuntimeException.class,
 			() -> sblock.checkValidity(3, 2, 6, false));
-
 		assertEquals("Incorrect array lengths.", ex.getMessage());
 	}
 
@@ -151,10 +146,9 @@ public class SparseBlockCheckValidityTest extends AutomatedTestBase
 		// cut off last value
 		int[] rowptr = (int[]) getField(sblock,"_rowptr");
 		setField(sblock, "_rowptr", Arrays.copyOfRange(rowptr, 0, rowptr.length-1));
-		// nnz > capacity
+
 		RuntimeException ex = assertThrows(RuntimeException.class,
 			() -> sblock.checkValidity(3, 2, 6, false));
-
 		assertEquals("Incorrect array lengths.", ex.getMessage());
 	}
 
@@ -162,10 +156,8 @@ public class SparseBlockCheckValidityTest extends AutomatedTestBase
 	public void testSparseBlockMCSCIncorrectArrayLengths() {
 		SparseBlockMCSC sblock = new SparseBlockMCSC(2, 2);
 
-		// nnz > capacity
 		RuntimeException ex = assertThrows(RuntimeException.class,
 			() -> sblock.checkValidity(3, 2, 1, false));
-
 		assertTrue(ex.getMessage().startsWith("Incorrect size"));
 	}
 
@@ -173,246 +165,151 @@ public class SparseBlockCheckValidityTest extends AutomatedTestBase
 	public void testSparseBlockMCSRIncorrectArrayLengths() {
 		SparseBlockMCSR sblock = new SparseBlockMCSR(2, 2);
 
-		// nnz > capacity
 		RuntimeException ex = assertThrows(RuntimeException.class,
 			() -> sblock.checkValidity(3, 2, 1, false));
-
 		assertTrue(ex.getMessage().startsWith("Incorrect size"));
 	}
 
 	@Test
 	public void testSparseBlockCOOUnsortedRowIndices() {
-		SparseBlockCOO block = new SparseBlockCOO(10, 3);
-
-		int[] r = new int[]{0, 5, 2}; // unsorted
-		int[] c = new int[]{0, 1, 2};
-		double[] v = new double[]{1, 1, 1};
-
-		setField(block, "_rindexes", r);
-		setField(block, "_cindexes", c);
-		setField(block, "_values", v);
-		setField(block, "_size", 3);
+		SparseBlockCOO sblock = new SparseBlockCOO(getFixedSparseBlock());
+		int[] r = new int[]{0, 2, 1, 3}; // unsorted
+		setField(sblock, "_rindexes", r);
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(10, 10, 3, false));
-
+			() -> sblock.checkValidity(4, 4, 6, false));
 		assertEquals("Wrong sorted order of row indices", ex.getMessage());
 	}
 
 	@Test
 	public void testSparseBlockCSCDecreasingColPointers() {
-		SparseBlockCSC block = new SparseBlockCSC(10, 3);
-
-		int[] ptr = new int[]{0, 2, 1, 3}; // unsorted col pointer
-		int[] idxs = new int[]{0, 1, 2};
-		double[] v = new double[]{1, 1, 1};
-
-		setField(block, "_ptr", ptr);
-		setField(block, "_indexes", idxs);
-		setField(block, "_values", v);
-		setField(block, "_size", 3);
+		SparseBlockCSC sblock = new SparseBlockCSC(getFixedSparseBlock());
+		int[] ptr = new int[]{0, 2, 1, 4, 6}; // unsorted
+		setField(sblock, "_ptr", ptr);
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(10, 3, 3, true));
-
+			() -> sblock.checkValidity(4, 4, 6, true));
 		assertTrue(ex.getMessage().startsWith("Column pointers are decreasing at column"));
 	}
 
 	@Test
 	public void testSparseBlockCSRDecreasingRowPointers() {
-		SparseBlockCSR block = new SparseBlockCSR(3, 3);
-
-		int[] ptr = new int[]{0, 2, 1, 3}; // unsorted row pointer
-		int[] idxs = new int[]{0, 1, 2};
-		double[] v = new double[]{1, 1, 1};
-
-		setField(block, "_ptr", ptr);
-		setField(block, "_indexes", idxs);
-		setField(block, "_values", v);
-		setField(block, "_size", 3);
+		SparseBlockCSR sblock = new SparseBlockCSR(getFixedSparseBlock());
+		int[] ptr = new int[]{0, 2, 1, 4, 6}; // unsorted
+		setField(sblock, "_ptr", ptr);
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(3, 10, 3, true));
-
+			() -> sblock.checkValidity(4, 4, 6, true));
 		assertTrue(ex.getMessage().startsWith("Row pointers are decreasing at row"));
 	}
 
 	@Test
 	public void testSparseBlockDCSRDecreasingRowIndices() {
-		SparseBlockDCSR block = new SparseBlockDCSR(3, 3);
-
-		int[] rowIdxs = new int[]{0, 2, 1}; // unsorted
-		int[] rowPtr = new int[]{0, 1, 2, 3};
-		int[] colIdxs = new int[]{0, 1, 2};
-		double[] v = new double[]{1, 1, 1};
-
-		setField(block, "_rowidx", rowIdxs);
-		setField(block, "_rowptr", rowPtr);
-		setField(block, "_colidx", colIdxs);
-		setField(block, "_values", v);
-		setField(block, "_size", 3);
-		setField(block, "_nnzr", 3);
+		SparseBlockDCSR sblock = new SparseBlockDCSR(getFixedSparseBlock());
+		int[] rowIdxs = new int[]{0, 2, 1, 3}; // unsorted
+		setField(sblock, "_rowidx", rowIdxs);
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(3, 10, 3, true));
-
+			() -> sblock.checkValidity(4, 4, 6, false));
 		assertTrue(ex.getMessage().startsWith("Row indices are decreasing at row"));
 	}
 
 	@Test
 	public void testSparseBlockDCSRDecreasingRowPointers() {
-		SparseBlockDCSR block = new SparseBlockDCSR(3, 3);
-
-		int[] rowIdxs = new int[]{0, 1, 2};
-		int[] rowPtr = new int[]{0, 1, 3, 2}; // unsorted
-		int[] colIdxs = new int[]{0, 1, 2};
-		double[] v = new double[]{1, 1, 1};
-
-		setField(block, "_rowidx", rowIdxs);
-		setField(block, "_rowptr", rowPtr);
-		setField(block, "_colidx", colIdxs);
-		setField(block, "_values", v);
-		setField(block, "_size", 3);
-		setField(block, "_nnzr", 3);
+		SparseBlockDCSR sblock = new SparseBlockDCSR(getFixedSparseBlock());
+		int[] rowPtr = new int[]{0, 1, 2, 6, 4}; // unsorted
+		setField(sblock, "_rowptr", rowPtr);
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(3, 10, 3, true));
-
+			() -> sblock.checkValidity(4, 4, 6, false));
 		assertTrue(ex.getMessage().startsWith("Row pointers are decreasing at row"));
 	}
 
 	@Test
 	public void testSparseBlockCOOUnsortedColumnIndicesWithinRow() {
-		SparseBlockCOO block = new SparseBlockCOO(1, 3);
-
-		int[] r = new int[]{0, 0, 0};
-		int[] c = new int[]{0, 2, 1}; // unsorted for row 0
-		double[] v = new double[]{1, 1, 1};
-
-		setField(block, "_rindexes", r);
-		setField(block, "_cindexes", c);
-		setField(block, "_values", v);
-		setField(block, "_size", 3);
+		SparseBlockCOO sblock = new SparseBlockCOO(getFixedSparseBlock());
+		int[] c = new int[]{0, 1, 3, 4, 4, 3}; // unsorted for last row
+		setField(sblock, "_cindexes", c);
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(1, 3, 3, false));
-
+			() -> sblock.checkValidity(4, 4, 6, false));
 		assertTrue(ex.getMessage().startsWith("Wrong sparse row ordering"));
 	}
 
 	@Test
 	public void testSparseBlockCSCUnsortedRowIndicesWithinColumn() {
-		SparseBlockCSC block = new SparseBlockCSC(10, 3);
-
-		int[] ptr = new int[]{0, 3, 3, 3};
-		int[] idxs = new int[]{0, 2, 1}; // unsorted
-		double[] v = new double[]{1, 1, 1};
-
-		setField(block, "_ptr", ptr);
-		setField(block, "_indexes", idxs);
-		setField(block, "_values", v);
-		setField(block, "_size", 3);
+		SparseBlockCSC sblock = new SparseBlockCSC(getFixedSparseBlock());
+		int[] idxs = new int[]{0, 1, 2, 3, 3, 2}; // unsorted for last col
+		setField(sblock, "_indexes", idxs);
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(10, 3, 3, true));
-
+			() -> sblock.checkValidity(4, 4, 6, false));
 		assertTrue(ex.getMessage().startsWith("Wrong sparse column ordering"));
 	}
 
 	@Test
 	public void testSparseBlockCSRUnsortedColumnIndicesWithinRow() {
-		SparseBlockCSR block = new SparseBlockCSR(3, 3);
-
-		int[] ptr = new int[]{0, 3, 3, 3};
-		int[] idxs = new int[]{0, 2, 1}; // unsorted
-		double[] v = new double[]{1, 1, 1};
-
-		setField(block, "_ptr", ptr);
-		setField(block, "_indexes", idxs);
-		setField(block, "_values", v);
-		setField(block, "_size", 3);
+		SparseBlockCSR sblock = new SparseBlockCSR(getFixedSparseBlock());
+		int[] idxs = new int[]{0, 1, 2, 3, 3, 2}; // unsorted for last row
+		setField(sblock, "_indexes", idxs);
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(1, 3, 3, false));
-
+			() -> sblock.checkValidity(4, 4, 6, false));
 		assertTrue(ex.getMessage().startsWith("Wrong sparse row ordering"));
 	}
 
 	@Test
 	public void testSparseBlockDCSRUnsortedColumnIndicesWithinRow() {
-		SparseBlockDCSR block = new SparseBlockDCSR(3, 3);
-
-		int[] rowIdxs = new int[]{0, 2};
-		int[] rowPtr = new int[]{0, 1, 3};
-		int[] colIdxs = new int[]{0, 2, 1}; // for row 2 unsorted
-		double[] v = new double[]{1, 1, 1};
-
-		setField(block, "_rowidx", rowIdxs);
-		setField(block, "_rowptr", rowPtr);
-		setField(block, "_colidx", colIdxs);
-		setField(block, "_values", v);
-		setField(block, "_size", 3);
-		setField(block, "_nnzr", 2);
+		SparseBlockDCSR sblock = new SparseBlockDCSR(getFixedSparseBlock());
+		int[] colIdxs = new int[]{0, 1, 2, 3, 3, 2}; // unsorted for last row
+		setField(sblock, "_colidx", colIdxs);
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(1, 3, 3, false));
-
+			() -> sblock.checkValidity(4, 4, 6, false));
 		assertTrue(ex.getMessage().startsWith("Wrong sparse row ordering"));
 	}
 
 	@Test
 	public void testSparseBlockMCSCUnsortedRowIndicesWithinColumn() {
-		SparseBlockMCSC block = new SparseBlockMCSC(10, 3);
-
-		SparseRow col = new SparseRowVector(new double[]{1., 1., 1.}, new int[]{0, 2, 1}); // unsorted
-		SparseRow[] cols = new SparseRow[]{null, null, col};
-		setField(block, "_columns", cols);
+		SparseBlockMCSC sblock = new SparseBlockMCSC(getFixedSparseBlock());
+		int[] indexes = new int[]{3, 2}; // unsorted
+		setField(sblock.getCols()[3], "indexes", indexes);
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(10, 3, 3, true));
-
+			() -> sblock.checkValidity(4, 4, 6, false));
 		assertTrue(ex.getMessage().startsWith("Wrong sparse column ordering"));
 	}
 
 	@Test
 	public void testSparseBlockMCSRUnsortedColumnIndicesWithinRow() {
-		SparseBlockMCSR block = new SparseBlockMCSR(3, 10);
-
-		SparseRow row = new SparseRowVector(new double[]{1., 1., 1.}, new int[]{0, 2, 1}); // unsorted
-		SparseRow[] rows = new SparseRow[]{null, null, row};
-		setField(block, "_rows", rows);
+		SparseBlockMCSR sblock = new SparseBlockMCSR(getFixedSparseBlock());
+		int[] indexes = new int[]{3, 2}; // unsorted
+		setField(sblock.getRows()[3], "indexes", indexes);
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(3, 10, 3, true));
-
+			() -> sblock.checkValidity(4, 4, 6, false));
 		assertTrue(ex.getMessage().startsWith("Wrong sparse row ordering"));
 	}
 
 	@Test
 	public void testSparseBlockMCSCInvalidIndices() {
-		SparseBlockMCSC block = new SparseBlockMCSC(10, 3);
-
-		SparseRow col = new SparseRowVector(new double[]{1., 1., 1.}, new int[]{-1, 0, 2});
-		SparseRow[] cols = new SparseRow[]{null, null, col};
-		setField(block, "_columns", cols);
+		SparseBlockMCSC sblock = new SparseBlockMCSC(getFixedSparseBlock());
+		int[] indexes = sblock.getCols()[3].indexes();
+		indexes[0] = -1;
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(10, 3, 3, true));
-
+			() -> sblock.checkValidity(4, 4, 6, false));
 		assertTrue(ex.getMessage().startsWith("Invalid index"));
 	}
 
 	@Test
 	public void testSparseBlockMCSRInvalidIndices() {
-		SparseBlockMCSR block = new SparseBlockMCSR(3, 10);
-
-		SparseRow row = new SparseRowVector(new double[]{1., 1., 1.}, new int[]{-1, 0, 1});
-		SparseRow[] rows = new SparseRow[]{null, null, row};
-		setField(block, "_rows", rows);
+		SparseBlockMCSR sblock = new SparseBlockMCSR(getFixedSparseBlock());
+		int[] indexes = sblock.getRows()[3].indexes();
+		indexes[0] = -1;
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(3, 10, 3, true));
-
+			() -> sblock.checkValidity(4, 4, 6, false));
 		assertTrue(ex.getMessage().startsWith("Invalid index"));
 	}
 
@@ -438,29 +335,23 @@ public class SparseBlockCheckValidityTest extends AutomatedTestBase
 
 	@Test
 	public void testSparseBlockMCSCInvalidValue() {
-		SparseBlockMCSC block = new SparseBlockMCSC(10, 3);
-
-		SparseRow col = new SparseRowVector(new double[]{1., 1., 0.}, new int[]{0, 1, 2});
-		SparseRow[] cols = new SparseRow[]{null, null, col};
-		setField(block, "_columns", cols);
+		SparseBlockMCSC sblock = new SparseBlockMCSC(getFixedSparseBlock());
+		double[] values = sblock.valuesCol(3);
+		values[0] = 0;
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(10, 3, 3, true));
-
+			() -> sblock.checkValidity(4, 4, 6, true));
 		assertTrue(ex.getMessage().startsWith("The values are expected to be non zeros"));
 	}
 
 	@Test
 	public void testSparseBlockMCSRInvalidValue() {
-		SparseBlockMCSR block = new SparseBlockMCSR(3, 10);
-
-		SparseRow row = new SparseRowVector(new double[]{1., 1., 0.}, new int[]{0, 1, 2});
-		SparseRow[] rows = new SparseRow[]{null, null, row};
-		setField(block, "_rows", rows);
+		SparseBlockMCSR sblock = new SparseBlockMCSR(getFixedSparseBlock());
+		double[] values = sblock.values(3);
+		values[0] = 0;
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(3, 10, 3, true));
-
+			() -> sblock.checkValidity(4, 4, 6, true));
 		assertTrue(ex.getMessage().startsWith("The values are expected to be non zeros"));
 	}
 
@@ -492,73 +383,63 @@ public class SparseBlockCheckValidityTest extends AutomatedTestBase
 
 	@Test
 	public void testSparseBlockCOOCapacityExceedsAllowedLimit() {
-		SparseBlockCOO block = new SparseBlockCOO(3, 50);
+		SparseBlockCOO sblock = new SparseBlockCOO(3, 50);
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(3, 3, 0, false));
-
-		// RESIZE_FACTOR1 is 2
+			() -> sblock.checkValidity(3, 3, 0, false));
 		assertTrue(ex.getMessage().startsWith("Capacity is larger than the nnz times a resize factor"));
 	}
 
 	@Test
 	public void testSparseBlockCSCCapacityExceedsAllowedLimit() {
-		SparseBlockCSC block = new SparseBlockCSC(3, 3, 50);
+		SparseBlockCSC sblock = new SparseBlockCSC(3, 3, 50);
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(3, 3, 0, false));
-
-		// RESIZE_FACTOR1 is 2
+			() -> sblock.checkValidity(3, 3, 0, false));
 		assertTrue(ex.getMessage().startsWith("Capacity is larger than the nnz times a resize factor"));
 	}
 
 	@Test
 	public void testSparseBlockCSRCapacityExceedsAllowedLimit() {
-		SparseBlockCSR block = new SparseBlockCSR(3, 50, 0);
+		SparseBlockCSR sblock = new SparseBlockCSR(3, 50, 0);
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(3, 3, 0, false));
-
-		// RESIZE_FACTOR1 is 2
+			() -> sblock.checkValidity(3, 3, 0, false));
 		assertTrue(ex.getMessage().startsWith("Capacity is larger than the nnz times a resize factor"));
 	}
 
 	@Test
 	public void testSparseBlockDCSRCapacityExceedsAllowedLimit() {
-		SparseBlockDCSR block = new SparseBlockDCSR(3, 50);
+		SparseBlockDCSR sblock = new SparseBlockDCSR(3, 50);
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(3, 3, 0, false));
-
-		// RESIZE_FACTOR1 is 2
+			() -> sblock.checkValidity(3, 3, 0, false));
 		assertTrue(ex.getMessage().startsWith("Capacity is larger than the nnz times a resize factor"));
 	}
 
 	@Test
 	public void testSparseBlockMCSCCapacityExceedsAllowedLimit() {
-		SparseBlockMCSC block = new SparseBlockMCSC(10, 3);
+		double[][] A = getRandomMatrix(_rows, _cols, -10, 10, _sparsity, 13);
 
-		SparseRow col = new SparseRowVector(new double[]{1., 1., 1., 1., 1.}, new int[]{0, 1, 2, 3, 4});
-		SparseRow[] cols = new SparseRow[]{null, null, col};
-		setField(block, "_columns", cols);
+		MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
+		SparseBlock srtmp = mbtmp.getSparseBlock();
+		SparseBlockMCSC sblock = new SparseBlockMCSC(srtmp);
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(10, 3, 2, true));
-
+			() -> sblock.checkValidity(_rows, _cols, 2, true));
 		assertTrue(ex.getMessage().startsWith("The capacity is larger than nnz times a resize factor"));
 	}
 
 	@Test
 	public void testSparseBlockMCSRCapacityExceedsAllowedLimit() {
-		SparseBlockMCSR block = new SparseBlockMCSR(3, 10);
+		double[][] A = getRandomMatrix(_rows, _cols, -10, 10, _sparsity, 13);
 
-		SparseRow row = new SparseRowVector(new double[]{1., 1., 1., 1., 1.}, new int[]{0, 1, 2, 3, 4});
-		SparseRow[] rows = new SparseRow[]{null, null, row};
-		setField(block, "_rows", rows);
+		MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
+		SparseBlock srtmp = mbtmp.getSparseBlock();
+		SparseBlockMCSR sblock = new SparseBlockMCSR(srtmp);
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(3, 10, 2, true));
-
+			() -> sblock.checkValidity(_rows, _cols, 2, true));
 		assertTrue(ex.getMessage().startsWith("The capacity is larger than nnz times a resize factor"));
 	}
 
@@ -572,47 +453,44 @@ public class SparseBlockCheckValidityTest extends AutomatedTestBase
 		assertTrue("should pass checkValidity", sblock.checkValidity(_rows, _cols, sblock.size(), true));
 	}
 
-	private void runSparseBlockInvalidDimensionsTest(SparseBlock block) {
+	private void runSparseBlockInvalidDimensionsTest(SparseBlock sblock) {
 		RuntimeException ex1 = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(-1, 1, 0, false));
+			() -> sblock.checkValidity(-1, 1, 0, false));
 		assertTrue(ex1.getMessage().startsWith("Invalid block dimensions"));
 
 		RuntimeException ex2 = assertThrows(RuntimeException.class,
-			() -> block.checkValidity(1, -1, 0, false));
+			() -> sblock.checkValidity(1, -1, 0, false));
 		assertTrue(ex2.getMessage().startsWith("Invalid block dimensions"));
 	}
 
-	private void runSparseBlockInvalidValueTest(SparseBlock.Type btype)  {
-		double[][] A = getRandomMatrix(_rows, _cols, -10, 10, _sparsity, 13);
-
-		MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
-		SparseBlock srtmp = mbtmp.getSparseBlock();
-		SparseBlock sblock = SparseBlockFactory.copySparseBlock(btype, srtmp, true);
-
-		double[] values = (double[]) getField(sblock, "_values");
-		values[values.length-1] = 0.;
-		setField(sblock, "_values", Arrays.copyOfRange(values, 0, values.length));
-
-		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> sblock.checkValidity(_rows, _cols, sblock.size(), true));
-		assertTrue(ex.getMessage().startsWith("The values array should not contain zeros"));
-	}
-
-
 	private void runSparseBlockInvalidIndexTest(SparseBlock.Type btype, String indexName)  {
-		double[][] A = getRandomMatrix(_rows, _cols, -10, 10, _sparsity, 13);
-
-		MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
-		SparseBlock srtmp = mbtmp.getSparseBlock();
+		SparseBlock srtmp = getFixedSparseBlock();
 		SparseBlock sblock = SparseBlockFactory.copySparseBlock(btype, srtmp, true);
 
 		int[] indexes = (int[]) getField(sblock, indexName);
 		indexes[0] = -1;
-		setField(sblock, indexName, Arrays.copyOfRange(indexes, 0, indexes.length));
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> sblock.checkValidity(_rows, _cols, sblock.size(), true));
+			() -> sblock.checkValidity(4, 4, 6, true));
 		assertTrue(ex.getMessage().startsWith("Invalid index at pos"));
+	}
+
+	private void runSparseBlockInvalidValueTest(SparseBlock.Type btype)  {
+		SparseBlock srtmp = getFixedSparseBlock();
+		SparseBlock sblock = SparseBlockFactory.copySparseBlock(btype, srtmp, true);
+
+		double[] values = (double[]) getField(sblock, "_values");
+		values[0] = 0;
+
+		RuntimeException ex = assertThrows(RuntimeException.class,
+			() -> sblock.checkValidity(4, 4, 6, true));
+		assertTrue(ex.getMessage().startsWith("The values array should not contain zeros"));
+	}
+
+	private SparseBlock getFixedSparseBlock(){
+		double[][] A = new double[][] {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 1}, {0, 0, 1, 1}};
+		MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
+		return mbtmp.getSparseBlock();
 	}
 
 	private static void setField(Object obj, String name, Object value) {

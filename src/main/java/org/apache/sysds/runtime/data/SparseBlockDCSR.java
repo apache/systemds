@@ -719,7 +719,7 @@ public class SparseBlockDCSR extends SparseBlock
 		}
 
 		//2. correct array lengths
-		if (_size != nnz && _rowptr.length != _rowidx.length + 1 && _values.length < nnz && _colidx.length < nnz ) {
+		if ( _size != nnz || _rowptr.length != _rowidx.length + 1 || _values.length < nnz || _colidx.length < nnz ) {
 			throw new RuntimeException("Incorrect array lengths.");
 		}
 

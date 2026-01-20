@@ -35,7 +35,6 @@ import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
@@ -114,66 +113,87 @@ public class SparseBlockCheckValidityTest extends AutomatedTestBase
 
 	@Test
 	public void testSparseBlockCOOIncorrectArrayLengths() {
-		SparseBlockCOO sblock = new SparseBlockCOO(2, 2);
+		SparseBlockCOO sblock = new SparseBlockCOO(getFixedSparseBlock());
 
+		int size = (int) sblock.size();
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> sblock.checkValidity(2, 2, 4, false));
+			() -> sblock.checkValidity(4, 4, size+2, false));
 		assertEquals("Incorrect array lengths.", ex.getMessage());
+
+		checkValidityFailsWhenArrayLengthIsTemporarilyModified(sblock, "_cindexes",  new int[size-1]);
+		checkValidityFailsWhenArrayLengthIsTemporarilyModified(sblock, "_rindexes",  new int[size-1]);
+		checkValidityFailsWhenArrayLengthIsTemporarilyModified(sblock, "_values", new double[size-1]);
 	}
 
 	@Test
 	public void testSparseBlockCSCIncorrectArrayLengths() {
-		SparseBlockCSC sblock = new SparseBlockCSC(2, 2, 2);
+		SparseBlockCSC sblock = new SparseBlockCSC(getFixedSparseBlock());
 
+		int size = (int) sblock.size();
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> sblock.checkValidity(2, 3, 6, false));
+			() -> sblock.checkValidity(4, 4, size+2, false));
 		assertEquals("Incorrect array lengths.", ex.getMessage());
+
+		int clen = 4;
+		checkValidityFailsWhenArrayLengthIsTemporarilyModified(sblock, "_ptr",  new int[clen]); // should be clen+1
+		checkValidityFailsWhenArrayLengthIsTemporarilyModified(sblock, "_values", new double[size-1]);
+		checkValidityFailsWhenArrayLengthIsTemporarilyModified(sblock, "_indexes",  new int[size-1]);
 	}
 
 	@Test
 	public void testSparseBlockCSRIncorrectArrayLengths() {
-		SparseBlockCSR sblock = new SparseBlockCSR(2, 2, 1);
+		SparseBlockCSR sblock = new SparseBlockCSR(getFixedSparseBlock());
 
+		int size = (int) sblock.size();
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> sblock.checkValidity(3, 2, 6, false));
+			() -> sblock.checkValidity(4, 4, size+2, false));
 		assertEquals("Incorrect array lengths.", ex.getMessage());
+
+		int rlen = sblock.numRows();
+		checkValidityFailsWhenArrayLengthIsTemporarilyModified(sblock, "_ptr",  new int[rlen]); // should be rlen+1
+		checkValidityFailsWhenArrayLengthIsTemporarilyModified(sblock, "_values", new double[size-1]);
+		checkValidityFailsWhenArrayLengthIsTemporarilyModified(sblock, "_indexes",  new int[size-1]);
 	}
 
 	@Test
 	public void testSparseBlockDCSRIncorrectArrayLengths() {
-		SparseBlockDCSR sblock = new SparseBlockDCSR(2, 1);
+		SparseBlockDCSR sblock = new SparseBlockDCSR(getFixedSparseBlock());
 
-		// cut off last value
-		int[] rowptr = (int[]) getField(sblock,"_rowptr");
-		setField(sblock, "_rowptr", Arrays.copyOfRange(rowptr, 0, rowptr.length-1));
-
+		int size = (int) sblock.size();
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> sblock.checkValidity(3, 2, 6, false));
+			() -> sblock.checkValidity(4, 4, size+2, false));
 		assertEquals("Incorrect array lengths.", ex.getMessage());
+
+		int rows = sblock.numRows();
+		checkValidityFailsWhenArrayLengthIsTemporarilyModified(sblock, "_rowptr",  new int[rows]); // should be rows+1
+		checkValidityFailsWhenArrayLengthIsTemporarilyModified(sblock, "_colidx",  new int[size-1]);
+		checkValidityFailsWhenArrayLengthIsTemporarilyModified(sblock, "_values", new double[size-1]);
 	}
 
 	@Test
 	public void testSparseBlockMCSCIncorrectArrayLengths() {
-		SparseBlockMCSC sblock = new SparseBlockMCSC(2, 2);
+		SparseBlockMCSC sblock =  new SparseBlockMCSC(getFixedSparseBlock());
 
+		int size = (int) sblock.size();
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> sblock.checkValidity(3, 2, 1, false));
+			() -> sblock.checkValidity(4, 4, size+2, false));
 		assertTrue(ex.getMessage().startsWith("Incorrect size"));
 	}
 
 	@Test
 	public void testSparseBlockMCSRIncorrectArrayLengths() {
-		SparseBlockMCSR sblock = new SparseBlockMCSR(2, 2);
+		SparseBlockMCSR sblock = new SparseBlockMCSR(getFixedSparseBlock());
 
+		int size = (int) sblock.size();
 		RuntimeException ex = assertThrows(RuntimeException.class,
-			() -> sblock.checkValidity(3, 2, 1, false));
+			() -> sblock.checkValidity(4, 4, size+2, false));
 		assertTrue(ex.getMessage().startsWith("Incorrect size"));
 	}
 
 	@Test
 	public void testSparseBlockCOOUnsortedRowIndices() {
 		SparseBlockCOO sblock = new SparseBlockCOO(getFixedSparseBlock());
-		int[] r = new int[]{0, 2, 1, 3}; // unsorted
+		int[] r = new int[]{0, 2, 1, 2, 3, 3}; // unsorted
 		setField(sblock, "_rindexes", r);
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
@@ -485,6 +505,15 @@ public class SparseBlockCheckValidityTest extends AutomatedTestBase
 		RuntimeException ex = assertThrows(RuntimeException.class,
 			() -> sblock.checkValidity(4, 4, 6, true));
 		assertTrue(ex.getMessage().startsWith("The values array should not contain zeros"));
+	}
+
+	private void checkValidityFailsWhenArrayLengthIsTemporarilyModified(SparseBlock sblock, String name, Object value){
+		Object old = getField(sblock, name);
+		setField(sblock, name, value);
+		RuntimeException ex = assertThrows(RuntimeException.class,
+			() -> sblock.checkValidity(4, 4, 6, false));
+		assertEquals("Incorrect array lengths.", ex.getMessage());
+		setField(sblock, name, old);
 	}
 
 	private SparseBlock getFixedSparseBlock(){

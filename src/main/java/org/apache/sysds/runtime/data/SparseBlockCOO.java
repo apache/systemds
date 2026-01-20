@@ -235,7 +235,7 @@ public class SparseBlockCOO extends SparseBlock
 		}
 
 		//2. correct array lengths
-		if(_size != nnz && _cindexes.length < nnz && _rindexes.length < nnz && _values.length < nnz) {
+		if(_size != nnz || _cindexes.length < nnz || _rindexes.length < nnz || _values.length < nnz) {
 			throw new RuntimeException("Incorrect array lengths.");
 		}
 

@@ -1,10 +1,10 @@
 # Use
 #https://stackoverflow.com/questions/35231362/dockerfile-and-docker-compose-not-updating-with-new-instructions
-#docker-compose --build --no-cache
+#docker-compose --build
 #docker-compose up
 
 # Example
-#docker-compose up --build --no-cache
+#docker-compose up --build
 #docker-compose up
 
 # Create .env file and modify before each docker compose up.
@@ -14,7 +14,7 @@
 #SCALE=0.01
 #QUERY=q1_1
 
-#This docker-compose file is linked to Dockerfile.
+#This docker-compose file is linked to the Dockerfile.
 
 services:
   datagen:
@@ -22,14 +22,8 @@ services:
       context: .
     environment:
       SCALE: ${SCALE}
-    #volumes:
-    #  - dgvolume:/home/ssb-dbgen/ssb-dbgen
   systemds: 
     build:
         context: .
     environment:
       QUERY: ${QUERY}
-
-#volumes:
-  #dgvolume:
-  #  external: true

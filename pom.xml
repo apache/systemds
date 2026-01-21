@@ -41,7 +41,7 @@
 	<properties>
 		<hadoop.version>3.3.6</hadoop.version>
 		<antlr.version>4.8</antlr.version>
-		<protobuf.version>3.23.4</protobuf.version>
+		<protobuf.version>3.25.5</protobuf.version>  <!-- CVE-2024-7254 -->
 		<spark.version>3.5.0</spark.version>
 		<scala.version>2.12.18</scala.version>
 		<scala.binary.version>2.12</scala.binary.version>
@@ -98,6 +98,21 @@
 			--add-opens=java.base/sun.nio.ch=ALL-UNNAMED
 			--add-modules=jdk.incubator.vector
 		</jvm.addopens>
+
+		<!-- Security fixes for high-severity CVEs (transitive dependencies) -->
+		<commons-io.version>2.14.0</commons-io.version>          <!-- CVE-2024-47554 -->
+		<jettison.version>1.5.4</jettison.version>               <!-- CVE-2023-1436 -->
+		<snappy-java.version>1.1.10.4</snappy-java.version>      <!-- CVE-2023-43642, CVE-2023-34453/4/5 -->
+		<logback.version>1.2.13</logback.version>                <!-- CVE-2023-6378 -->
+		<jackson.version>2.15.0</jackson.version>                <!-- CVE-2025-52999 -->
+		<json-smart.version>2.4.9</json-smart.version>           <!-- CVE-2023-1370 -->
+		<nimbus-jose-jwt.version>9.37.4</nimbus-jose-jwt.version><!-- CVE-2023-52428, CVE-2025-53864 -->
+		<aircompressor.version>0.27</aircompressor.version>      <!-- CVE-2024-36114 -->
+		<netty.version>4.1.124.Final</netty.version>             <!-- CVE-2025-55163, CVE-2023-44487 -->
+		<jetty.version>9.4.57.v20241219</jetty.version>          <!-- CVE-2024-6763 -->
+		<xnio.version>3.8.14.Final</xnio.version>                <!-- CVE-2023-5685 -->
+		<commons-beanutils.version>1.11.0</commons-beanutils.version>  <!-- CVE-2025-48734 -->
+		<dnsjava.version>3.6.0</dnsjava.version>                 <!-- CVE-2024-25638 -->
 	</properties>
 
 	<repositories>
@@ -109,6 +124,163 @@
 			</releases>
 		</repository>
 	</repositories>
+
+	<!-- Dependency management to pin transitive dependencies for security fixes -->
+	<dependencyManagement>
+		<dependencies>
+			<!-- CVE-2024-47554: Denial of service in Commons IO -->
+			<dependency>
+				<groupId>commons-io</groupId>
+				<artifactId>commons-io</artifactId>
+				<version>${commons-io.version}</version>
+			</dependency>
+			<!-- CVE-2023-1436: Stack overflow in Jettison -->
+			<dependency>
+				<groupId>org.codehaus.jettison</groupId>
+				<artifactId>jettison</artifactId>
+				<version>${jettison.version}</version>
+			</dependency>
+			<!-- CVE-2023-43642, CVE-2023-34453/4/5: Multiple vulnerabilities in snappy-java -->
+			<dependency>
+				<groupId>org.xerial.snappy</groupId>
+				<artifactId>snappy-java</artifactId>
+				<version>${snappy-java.version}</version>
+			</dependency>
+			<!-- CVE-2023-6378: Deserialization vulnerability in Logback -->
+			<dependency>
+				<groupId>ch.qos.logback</groupId>
+				<artifactId>logback-core</artifactId>
+				<version>${logback.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>ch.qos.logback</groupId>
+				<artifactId>logback-classic</artifactId>
+				<version>${logback.version}</version>
+			</dependency>
+			<!-- CVE-2025-52999: Stack overflow in Jackson -->
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-core</artifactId>
+				<version>${jackson.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-databind</artifactId>
+				<version>${jackson.version}</version>
+			</dependency>
+			<!-- CVE-2023-1370: Stack overflow in json-smart -->
+			<dependency>
+				<groupId>net.minidev</groupId>
+				<artifactId>json-smart</artifactId>
+				<version>${json-smart.version}</version>
+			</dependency>
+			<!-- CVE-2023-52428: Resource consumption in nimbus-jose-jwt -->
+			<dependency>
+				<groupId>com.nimbusds</groupId>
+				<artifactId>nimbus-jose-jwt</artifactId>
+				<version>${nimbus-jose-jwt.version}</version>
+			</dependency>
+			<!-- CVE-2024-36114: Out-of-bounds read in aircompressor -->
+			<dependency>
+				<groupId>io.airlift</groupId>
+				<artifactId>aircompressor</artifactId>
+				<version>${aircompressor.version}</version>
+			</dependency>
+			<!-- CVE-2024-47561: Deserialization vulnerability in Apache Avro -->
+			<dependency>
+				<groupId>org.apache.avro</groupId>
+				<artifactId>avro</artifactId>
+				<version>${avro.version}</version>
+			</dependency>
+			<!-- CVE-2023-25613: LDAP Injection vulnerability in Apache Kerby -->
+			<dependency>
+				<groupId>org.apache.kerby</groupId>
+				<artifactId>kerb-admin</artifactId>
+				<version>${kerby.version}</version>
+			</dependency>
+			<!-- CVE-2025-55163, CVE-2023-44487: HTTP/2 vulnerabilities in Netty -->
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-codec-http2</artifactId>
+				<version>${netty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-codec-http</artifactId>
+				<version>${netty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-codec-smtp</artifactId>
+				<version>${netty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-codec</artifactId>
+				<version>${netty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-common</artifactId>
+				<version>${netty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-handler</artifactId>
+				<version>${netty.version}</version>
+			</dependency>
+			<!-- CVE-2024-6763: HTTP request smuggling in Jetty -->
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-server</artifactId>
+				<version>${jetty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-http</artifactId>
+				<version>${jetty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-webapp</artifactId>
+				<version>${jetty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-xml</artifactId>
+				<version>${jetty.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.eclipse.jetty</groupId>
+				<artifactId>jetty-servlets</artifactId>
+				<version>${jetty.version}</version>
+			</dependency>
+			<!-- CVE-2023-5685: Resource consumption in XNIO -->
+			<dependency>
+				<groupId>org.jboss.xnio</groupId>
+				<artifactId>xnio-api</artifactId>
+				<version>${xnio.version}</version>
+			</dependency>
+			<!-- CVE-2025-48734: Access control in Commons BeanUtils -->
+			<dependency>
+				<groupId>commons-beanutils</groupId>
+				<artifactId>commons-beanutils</artifactId>
+				<version>${commons-beanutils.version}</version>
+			</dependency>
+			<!-- CVE-2024-25638: DNS response validation in dnsjava -->
+			<dependency>
+				<groupId>dnsjava</groupId>
+				<artifactId>dnsjava</artifactId>
+				<version>${dnsjava.version}</version>
+			</dependency>
+			<!-- CVE-2024-7254: Stack overflow in protobuf-java (transitive override) -->
+			<dependency>
+				<groupId>com.google.protobuf</groupId>
+				<artifactId>protobuf-java</artifactId>
+				<version>${protobuf.version}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
 	<scm>
 		<developerConnection>scm:git:https://github.com/apache/systemds.git</developerConnection>
@@ -930,24 +1102,6 @@
 		</profile>
 	</profiles>
 
-	<!-- Dependency management to override transitive dependency versions for security fixes -->
-	<dependencyManagement>
-		<dependencies>
-			<!-- CVE-2024-47561: Deserialization vulnerability in Apache Avro -->
-			<dependency>
-				<groupId>org.apache.avro</groupId>
-				<artifactId>avro</artifactId>
-				<version>${avro.version}</version>
-			</dependency>
-			<!-- CVE-2023-25613: LDAP Injection vulnerability in Apache Kerby -->
-			<dependency>
-				<groupId>org.apache.kerby</groupId>
-				<artifactId>kerb-admin</artifactId>
-				<version>${kerby.version}</version>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
-
 	<dependencies>
 		<dependency>
 			<groupId>org.jcuda</groupId>
@@ -1103,7 +1257,7 @@
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-handler</artifactId>
-			<version>4.1.118.Final</version>
+			<version>${netty.version}</version>
 		</dependency>
 
 		<dependency>

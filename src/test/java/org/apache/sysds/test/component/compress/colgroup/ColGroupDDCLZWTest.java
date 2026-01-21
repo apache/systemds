@@ -19,7 +19,9 @@
 
 package org.apache.sysds.test.component.compress.colgroup;
 
+import java.io.*;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 
 import org.apache.commons.lang3.NotImplementedException;
@@ -37,7 +39,11 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.estim.ComEstExact;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.functionobjects.*;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.junit.Test;
 
@@ -46,6 +52,75 @@ import static org.junit.Assert.assertNotNull;
 
 public class ColGroupDDCLZWTest {
 	protected static final Log LOG = LogFactory.getLog(ColGroupDDCLZWTest.class.getName());
+
+	@Test
+	public void testConvertToDDCLZWTemporary() {
+		// TODO: neue Methode zum Vergleich
+		IColIndex colIndexes = ColIndexFactory.create(2);
+		double[] dictValues = new double[] {10.0, 20.0, 11.0, 21.0, 12.0, 22.0};
+		Dictionary dict = Dictionary.create(dictValues);
+		int[] src = new int[] {
+			// repeating base pattern
+			0, 0, 2, 0, 2, 1, 0, 2, 1, 0, 2, 2, 0, 2, 1, 0, 2, 1, 0, 2,
+			// variation / shifted pattern
+			1, 0, 1, 2, 0, 1, 2, 0, 1, 1, 0, 1, 2, 0, 1, 2, 0, 1,
+			// longer runs (good for phrase growth)
+			2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1,
+			// mixed noise
+			2, 1, 0, 2, 1, 0, 2, 1, 0, 0, 2, 1, 0, 2, 1, 0, 2, 1, 1, 1, 1, 1, 1, 1,
+			// repeating tail (tests dictionary reuse)
+			2, 0, 2, 1, 0, 2, 1, 0, 2, 2, 0, 2, 1, 0, 2, 1, 0, 2, 0, 0, 0, 0, 0, 1};
+		final int nRows = src.length;
+		final int nUnique = 3;
+		AMapToData data = MapToFactory.create(nRows, nUnique);
+		for(int i = 0; i < nRows; i++)
+			data.set(i, src[i]);
+		ColGroupDDC ddc = (ColGroupDDC) ColGroupDDC.create(colIndexes, dict, data, null);
+		AColGroup result = ddc.convertToDDCLZW();
+		assertNotNull(result);
+		assertTrue(result instanceof ColGroupDDCLZW);
+		ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) result;
+		AColGroup ddclzwDecompressed = ddclzw.convertToDDC();
+		assertNotNull(ddclzwDecompressed);
+		assertTrue(ddclzwDecompressed instanceof ColGroupDDC);
+		ColGroupDDC ddc2 = (ColGroupDDC) ddclzwDecompressed;
+		AMapToData d1 = ddc.getMapToData();
+		AMapToData d2 = ddc2.getMapToData();
+		assertEquals(d1.size(), d2.size());
+		assertEquals(d1.getUnique(), d2.getUnique());
+		for(int i = 0; i < d1.size(); i++)
+			assertEquals("mapping mismatch at row " + i, d1.getIndex(i), d2.getIndex(i));
+		assertEquals(ddc.getColIndices(), ddc2.getColIndices());
+		// Testen der Teildekompression:
+		// Index entspricht der Anzahl der Zeichen, die dekodiert werden sollen (0 bis Index-1)
+		int index = 10;
+		ColGroupDDC ddcIndex = (ColGroupDDC) ddclzw.convertToDDC(index);
+		AMapToData d3 = ddcIndex.getMapToData();
+		assertEquals(index, d3.size());
+		assertEquals(ddc.getColIndices(), ddcIndex.getColIndices());
+		for(int i = 0; i < index; i++) {
+			assertEquals(d1.getIndex(i), d3.getIndex(i));
+		}
+		// Testen von SliceRows
+		int low = 3;
+		int high = 10;
+		AColGroup slice = ddclzw.sliceRows(low, high);
+		if(slice instanceof ColGroupDDCLZW ddclzwslice) {
+			ColGroupDDC ddcSlice = (ColGroupDDC) ddclzwslice.convertToDDC();
+			ColGroupDDC ddcSlice2 = (ColGroupDDC) ddc.sliceRows(low, high);
+			AMapToData d4 = ddcSlice.getMapToData();
+			AMapToData d5 = ddcSlice2.getMapToData();
+			assertEquals(d5.size(), d4.size());
+			assertEquals(d5.getUnique(), d4.getUnique());
+			for(int i = 0; i < d4.size(); i++)
+				assertEquals("mapping mismatch at row " + i, d4.getIndex(i), d5.getIndex(i));
+		}
+
+		// Testen von compute RowSums
+		double[] sumsddc = new double[high - low];
+		//ddc.computeColSums(sumsddc, low, high, );
+
+	}
 
 	/**
 	 * Creates a sample DDC group for unit tests
@@ -597,5 +672,340 @@ public class ColGroupDDCLZWTest {
 	@Test(expected = NotImplementedException.class)
 	public void testDecompressToDenseBlockTwoColumnsTransposed() {
 		testDecompressToDenseBlock(new double[][] {{1, 2, 3, 4, 5}, {1, 1, 1, 1, 1}}, true);
+	}
+
+	public void testDecompressToDenseBlockPartialRange(double[][] data, boolean isTransposed, int rl, int ru) {
+		if(isTransposed) {
+			throw new NotImplementedException("Delta encoding for transposed matrices not yet implemented");
+		}
+
+		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
+
+		final int numCols = mbt.getNumColumns();
+		final int numRows = mbt.getNumRows();
+		IColIndex colIndexes = ColIndexFactory.create(numCols);
+
+		try {
+			CompressionSettingsBuilder csb = new CompressionSettingsBuilder().setSamplingRatio(1.0)
+				.setValidCompressions(EnumSet.of(AColGroup.CompressionType.DDCLZW)).setTransposeInput("false");
+			CompressionSettings cs = csb.create();
+
+			final CompressedSizeInfoColGroup cgi = new ComEstExact(mbt, cs).getColGroupInfo(colIndexes);
+			CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
+			AColGroup cg = ColGroupFactory.compressColGroups(mbt, csi, cs, 1).get(0);
+
+			assertTrue("Column group should be DDCLZW, not Const", cg instanceof ColGroupDDCLZW);
+
+			MatrixBlock ret = new MatrixBlock(numRows, numCols, false);
+			ret.allocateDenseBlock();
+			cg.decompressToDenseBlock(ret.getDenseBlock(), rl, ru);
+
+			MatrixBlock expected = DataConverter.convertToMatrixBlock(data);
+			for(int i = rl; i < ru; i++) {
+				for(int j = 0; j < numCols; j++) {
+					double expectedValue = expected.get(i, j);
+					double actualValue = ret.get(i, j);
+					assertArrayEquals(new double[] {expectedValue}, new double[] {actualValue}, 0.01);
+				}
+			}
+
+		}
+		catch(NotImplementedException e) {
+			throw e;
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new DMLRuntimeException("Failed partial range decompression : " + this.getClass().getSimpleName(), e);
+		}
+	}
+
+	@Test
+	public void testDecompressToDenseBlockPartialRangeSingleColumn() {
+		testDecompressToDenseBlockPartialRange(new double[][] {{1}, {2}, {3}, {4}, {5}}, false, 2, 5);
+	}
+
+	@Test
+	public void testDecompressToDenseBlockPartialRangeTwoColumns() {
+		testDecompressToDenseBlockPartialRange(new double[][] {{1, 2}, {2, 3}, {3, 4}, {4, 5}, {5, 6}}, false, 1, 4);
+	}
+
+	@Test
+	public void testDecompressToDenseBlockPartialRangeFromMiddle() {
+		testDecompressToDenseBlockPartialRange(new double[][] {{1, 2}, {2, 3}, {3, 4}, {4, 5}, {5, 6}, {6, 7}}, false,
+			3, 6);
+	}
+
+	@Test
+	public void testSerializationSingleColumn() throws IOException {
+		double[][] data = {{1}, {2}, {3}, {4}, {5}};
+		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
+		final int numCols = mbt.getNumColumns();
+		final int numRows = mbt.getNumRows();
+		IColIndex colIndexes = ColIndexFactory.create(numCols);
+
+		CompressionSettingsBuilder csb = new CompressionSettingsBuilder().setSamplingRatio(1.0)
+			.setValidCompressions(EnumSet.of(AColGroup.CompressionType.DDCLZW)).setTransposeInput("false");
+		CompressionSettings cs = csb.create();
+
+		final CompressedSizeInfoColGroup cgi = new ComEstExact(mbt, cs).getColGroupInfo(colIndexes);
+		CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
+		AColGroup cg = ColGroupFactory.compressColGroups(mbt, csi, cs, 1).get(0);
+
+		assertTrue("Original should be ColGroupDDCLZW", cg instanceof ColGroupDDCLZW);
+
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		DataOutputStream dos = new DataOutputStream(bos);
+		ColGroupIO.writeGroups(dos, Collections.singletonList(cg));
+		assertEquals(cg.getExactSizeOnDisk() + 4, bos.size());
+
+		ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+		DataInputStream dis = new DataInputStream(bis);
+		AColGroup deserialized = ColGroupIO.readGroups(dis, numRows).get(0);
+
+		assertTrue("Deserialized should be ColGroupDDCLZW", deserialized instanceof ColGroupDDCLZW);
+		assertEquals("Compression type should match", cg.getCompType(), deserialized.getCompType());
+		assertEquals("Exact size on disk should match", cg.getExactSizeOnDisk(), deserialized.getExactSizeOnDisk());
+
+		MatrixBlock originalDecompressed = new MatrixBlock(numRows, numCols, false);
+		originalDecompressed.allocateDenseBlock();
+		cg.decompressToDenseBlock(originalDecompressed.getDenseBlock(), 0, numRows);
+
+		MatrixBlock deserializedDecompressed = new MatrixBlock(numRows, numCols, false);
+		deserializedDecompressed.allocateDenseBlock();
+		deserialized.decompressToDenseBlock(deserializedDecompressed.getDenseBlock(), 0, numRows);
+
+		for(int i = 0; i < numRows; i++) {
+			for(int j = 0; j < numCols; j++) {
+				assertArrayEquals(new double[] {originalDecompressed.get(i, j)},
+					new double[] {deserializedDecompressed.get(i, j)}, 0.01);
+			}
+		}
+	}
+
+	@Test
+	public void testSerializationTwoColumns() throws IOException {
+		double[][] data = {{1, 2}, {2, 3}, {3, 4}, {4, 5}, {5, 6}};
+		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
+		final int numCols = mbt.getNumColumns();
+		final int numRows = mbt.getNumRows();
+		IColIndex colIndexes = ColIndexFactory.create(numCols);
+
+		CompressionSettingsBuilder csb = new CompressionSettingsBuilder().setSamplingRatio(1.0)
+			.setValidCompressions(EnumSet.of(AColGroup.CompressionType.DeltaDDC)).setPreferDeltaEncoding(true)
+			.setTransposeInput("false");
+		CompressionSettings cs = csb.create();
+
+		final CompressedSizeInfoColGroup cgi = new ComEstExact(mbt, cs).getDeltaColGroupInfo(colIndexes);
+		CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
+		AColGroup original = ColGroupFactory.compressColGroups(mbt, csi, cs, 1).get(0);
+
+		assertTrue("Original should be ColGroupDeltaDDC", original instanceof ColGroupDeltaDDC);
+
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		DataOutputStream dos = new DataOutputStream(bos);
+		ColGroupIO.writeGroups(dos, Collections.singletonList(original));
+		assertEquals(original.getExactSizeOnDisk() + 4, bos.size());
+
+		ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+		DataInputStream dis = new DataInputStream(bis);
+		AColGroup deserialized = ColGroupIO.readGroups(dis, numRows).get(0);
+
+		assertTrue("Deserialized should be ColGroupDeltaDDC", deserialized instanceof ColGroupDeltaDDC);
+		assertEquals("Compression type should match", original.getCompType(), deserialized.getCompType());
+		assertEquals("Exact size on disk should match", original.getExactSizeOnDisk(),
+			deserialized.getExactSizeOnDisk());
+
+		MatrixBlock originalDecompressed = new MatrixBlock(numRows, numCols, false);
+		originalDecompressed.allocateDenseBlock();
+		original.decompressToDenseBlock(originalDecompressed.getDenseBlock(), 0, numRows);
+
+		MatrixBlock deserializedDecompressed = new MatrixBlock(numRows, numCols, false);
+		deserializedDecompressed.allocateDenseBlock();
+		deserialized.decompressToDenseBlock(deserializedDecompressed.getDenseBlock(), 0, numRows);
+
+		for(int i = 0; i < numRows; i++) {
+			for(int j = 0; j < numCols; j++) {
+				assertArrayEquals(new double[] {originalDecompressed.get(i, j)},
+					new double[] {deserializedDecompressed.get(i, j)}, 0.01);
+			}
+		}
+	}
+
+	private AColGroup compressForTest(double[][] data) {
+		MatrixBlock mb = DataConverter.convertToMatrixBlock(data);
+		IColIndex colIndexes = ColIndexFactory.create(data[0].length);
+		CompressionSettings cs = new CompressionSettingsBuilder().setValidCompressions(
+			EnumSet.of(AColGroup.CompressionType.DDCLZW)).create();
+
+		final CompressedSizeInfoColGroup cgi = new ComEstExact(mb, cs).getDeltaColGroupInfo(colIndexes);
+		CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
+		return ColGroupFactory.compressColGroups(mb, csi, cs, 1).get(0);
+	}
+
+	@Test
+	public void testScalarEquals() {
+		double[][] data = {{0}, {1}, {2}, {3}, {0}};
+		AColGroup cg = compressForTest(data);
+		assertTrue(cg instanceof ColGroupDeltaDDC);
+
+		ScalarOperator op = new RightScalarOperator(Equals.getEqualsFnObject(), 0.0);
+		AColGroup res = cg.scalarOperation(op);
+
+		MatrixBlock ret = new MatrixBlock(5, 1, false);
+		ret.allocateDenseBlock();
+		res.decompressToDenseBlock(ret.getDenseBlock(), 0, 5);
+
+		assertEquals(1.0, ret.get(0, 0), 0.0);
+		assertEquals(0.0, ret.get(1, 0), 0.0);
+		assertEquals(0.0, ret.get(2, 0), 0.0);
+		assertEquals(0.0, ret.get(3, 0), 0.0);
+		assertEquals(1.0, ret.get(4, 0), 0.0);
+	}
+
+	@Test
+	public void testScalarGreaterThan() {
+		double[][] data = {{0}, {1}, {2}, {3}, {0}};
+		AColGroup cg = compressForTest(data);
+		assertTrue(cg instanceof ColGroupDeltaDDC);
+
+		ScalarOperator op = new RightScalarOperator(GreaterThan.getGreaterThanFnObject(), 1.5);
+		AColGroup res = cg.scalarOperation(op);
+
+		MatrixBlock ret = new MatrixBlock(5, 1, false);
+		ret.allocateDenseBlock();
+		res.decompressToDenseBlock(ret.getDenseBlock(), 0, 5);
+
+		assertEquals(0.0, ret.get(0, 0), 0.0);
+		assertEquals(0.0, ret.get(1, 0), 0.0);
+		assertEquals(1.0, ret.get(2, 0), 0.0);
+		assertEquals(1.0, ret.get(3, 0), 0.0);
+		assertEquals(0.0, ret.get(4, 0), 0.0);
+	}
+
+	@Test
+	public void testScalarPlus() {
+		double[][] data = {{1}, {2}, {3}, {4}, {5}};
+		AColGroup cg = compressForTest(data);
+		assertTrue(cg instanceof ColGroupDeltaDDC);
+
+		ScalarOperator op = new RightScalarOperator(Plus.getPlusFnObject(), 10.0);
+		AColGroup res = cg.scalarOperation(op);
+		assertTrue("Should remain DeltaDDC after shift", res instanceof ColGroupDeltaDDC);
+
+		MatrixBlock ret = new MatrixBlock(5, 1, false);
+		ret.allocateDenseBlock();
+		res.decompressToDenseBlock(ret.getDenseBlock(), 0, 5);
+
+		assertEquals(11.0, ret.get(0, 0), 0.0);
+		assertEquals(12.0, ret.get(1, 0), 0.0);
+		assertEquals(13.0, ret.get(2, 0), 0.0);
+		assertEquals(14.0, ret.get(3, 0), 0.0);
+		assertEquals(15.0, ret.get(4, 0), 0.0);
+	}
+
+	@Test
+	public void testScalarMinus() {
+		double[][] data = {{11}, {12}, {13}, {14}, {15}};
+		AColGroup cg = compressForTest(data);
+		assertTrue(cg instanceof ColGroupDeltaDDC);
+
+		ScalarOperator op = new RightScalarOperator(Minus.getMinusFnObject(), 10.0);
+		AColGroup res = cg.scalarOperation(op);
+		assertTrue("Should remain DeltaDDC after shift", res instanceof ColGroupDeltaDDC);
+
+		MatrixBlock ret = new MatrixBlock(5, 1, false);
+		ret.allocateDenseBlock();
+		res.decompressToDenseBlock(ret.getDenseBlock(), 0, 5);
+
+		assertEquals(1.0, ret.get(0, 0), 0.0);
+		assertEquals(2.0, ret.get(1, 0), 0.0);
+		assertEquals(3.0, ret.get(2, 0), 0.0);
+		assertEquals(4.0, ret.get(3, 0), 0.0);
+		assertEquals(5.0, ret.get(4, 0), 0.0);
+	}
+
+	@Test
+	public void testUnaryOperationSqrt() {
+		double[][] data = {{1}, {4}, {9}, {16}, {25}};
+		AColGroup cg = compressForTest(data);
+		assertTrue(cg instanceof ColGroupDeltaDDC);
+
+		UnaryOperator op = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinCode.SQRT));
+		AColGroup res = cg.unaryOperation(op);
+
+		MatrixBlock ret = new MatrixBlock(5, 1, false);
+		ret.allocateDenseBlock();
+		res.decompressToDenseBlock(ret.getDenseBlock(), 0, 5);
+
+		assertEquals(1.0, ret.get(0, 0), 0.01);
+		assertEquals(2.0, ret.get(1, 0), 0.01);
+		assertEquals(3.0, ret.get(2, 0), 0.01);
+		assertEquals(4.0, ret.get(3, 0), 0.01);
+		assertEquals(5.0, ret.get(4, 0), 0.01);
+	}
+
+	@Test
+	public void testScalarEqualsMultiColumn() {
+		double[][] data = {{0, 1}, {1, 2}, {2, 3}, {3, 4}, {0, 1}};
+		AColGroup cg = compressForTest(data);
+		assertTrue(cg instanceof ColGroupDeltaDDC);
+
+		ScalarOperator op = new RightScalarOperator(Equals.getEqualsFnObject(), 0.0);
+		AColGroup res = cg.scalarOperation(op);
+
+		MatrixBlock ret = new MatrixBlock(5, 2, false);
+		ret.allocateDenseBlock();
+		res.decompressToDenseBlock(ret.getDenseBlock(), 0, 5);
+
+		assertEquals(1.0, ret.get(0, 0), 0.0);
+		assertEquals(0.0, ret.get(0, 1), 0.0);
+		assertEquals(0.0, ret.get(1, 0), 0.0);
+		assertEquals(0.0, ret.get(1, 1), 0.0);
+		assertEquals(0.0, ret.get(2, 0), 0.0);
+		assertEquals(0.0, ret.get(2, 1), 0.0);
+		assertEquals(0.0, ret.get(3, 0), 0.0);
+		assertEquals(0.0, ret.get(3, 1), 0.0);
+		assertEquals(1.0, ret.get(4, 0), 0.0);
+		assertEquals(0.0, ret.get(4, 1), 0.0);
+	}
+
+	@Test
+	public void testScalarMultiply() {
+		double[][] data = {{1}, {2}, {3}, {4}, {5}};
+		AColGroup cg = compressForTest(data);
+		assertTrue(cg instanceof ColGroupDeltaDDC);
+
+		ScalarOperator op = new RightScalarOperator(Multiply.getMultiplyFnObject(), 2.0);
+		AColGroup res = cg.scalarOperation(op);
+
+		MatrixBlock ret = new MatrixBlock(5, 1, false);
+		ret.allocateDenseBlock();
+		res.decompressToDenseBlock(ret.getDenseBlock(), 0, 5);
+
+		assertEquals(2.0, ret.get(0, 0), 0.0);
+		assertEquals(4.0, ret.get(1, 0), 0.0);
+		assertEquals(6.0, ret.get(2, 0), 0.0);
+		assertEquals(8.0, ret.get(3, 0), 0.0);
+		assertEquals(10.0, ret.get(4, 0), 0.0);
+	}
+
+	@Test
+	public void testScalarDivide() {
+		double[][] data = {{2}, {4}, {6}, {8}, {10}};
+		AColGroup cg = compressForTest(data);
+		assertTrue(cg instanceof ColGroupDeltaDDC);
+
+		ScalarOperator op = new RightScalarOperator(Divide.getDivideFnObject(), 2.0);
+		AColGroup res = cg.scalarOperation(op);
+
+		MatrixBlock ret = new MatrixBlock(5, 1, false);
+		ret.allocateDenseBlock();
+		res.decompressToDenseBlock(ret.getDenseBlock(), 0, 5);
+
+		assertEquals(1.0, ret.get(0, 0), 0.0);
+		assertEquals(2.0, ret.get(1, 0), 0.0);
+		assertEquals(3.0, ret.get(2, 0), 0.0);
+		assertEquals(4.0, ret.get(3, 0), 0.0);
+		assertEquals(5.0, ret.get(4, 0), 0.0);
 	}
 }

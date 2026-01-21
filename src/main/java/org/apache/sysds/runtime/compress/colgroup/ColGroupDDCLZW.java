@@ -37,31 +37,22 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.*;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
-import org.apache.sysds.runtime.compress.colgroup.indexes.RangeIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
-import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
-import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.colgroup.scheme.DDCLZWScheme;
-import org.apache.sysds.runtime.compress.colgroup.scheme.DDCScheme;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ICLAScheme;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
-import org.apache.sysds.runtime.compress.estim.encoding.EncodingFactory;
 import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
-import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.functionobjects.*;
-import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
-import org.jboss.netty.handler.codec.compression.CompressionException;
 import shaded.parquet.it.unimi.dsi.fastutil.ints.IntArrayList;
 import shaded.parquet.it.unimi.dsi.fastutil.longs.Long2IntLinkedOpenHashMap;
 
@@ -571,41 +562,86 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		catch(Exception e) {
 			throw new DMLRuntimeException("Failed to slice out sub part DDCLZW: " + rl + ", " + ru, e);
 		}
-
-		/*try {
-			AMapToData map = decompress(_dataLZW, _nUnique, _nRows, ru);
-			return ColGroupDDCLZW.create(_colIndexes, _dict, map.slice(rl, ru), null);
-		}
-		catch(Exception e) {
-			throw new DMLRuntimeException("Failed to slice out sub part DDCLZW: " + rl + ", " + ru, e);
-		}*/
 	}
 
 	@Override
-	protected void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru, SparseBlock dict) {
-		throw new NotImplementedException();
+	protected void decompressToDenseBlockTransposedSparseDictionary(DenseBlock db, int rl, int ru, SparseBlock sb) {
+		LZWMappingIterator it = new LZWMappingIterator();
+		for(int i = 0; i < rl; i++) {
+			it.next();
+		}
+
+		for(int i = rl; i < ru; i++) {
+			final int vr = it.next();
+			if(sb.isEmpty(vr))
+				continue;
+			final int apos = sb.pos(vr);
+			final int alen = sb.size(vr) + apos;
+			final int[] aix = sb.indexes(vr);
+			final double[] aval = sb.values(vr);
+			for(int j = apos; j < alen; j++) {
+				final int rowOut = _colIndexes.get(aix[j]);
+				final double[] c = db.values(rowOut);
+				final int off = db.pos(rowOut);
+				c[off + i] += aval[j];
+			}
+		}
 	}
 
 	@Override
 	protected void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru, double[] dict) {
-		throw new NotImplementedException();
+		ColGroupDDC g = (ColGroupDDC) convertToDDC();
+		g.decompressToDenseBlockTransposedDenseDictionary(db, rl, ru, dict); // Possible implementation with iterator.
+
 	}
 
 	@Override
-	protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR db, SparseBlock dict,
-		int nColOut) {
-		throw new NotImplementedException();
+	protected void decompressToSparseBlockTransposedSparseDictionary(SparseBlockMCSR sbr, SparseBlock sb, int nColOut) {
+
+		int[] colCounts = _dict.countNNZZeroColumns(getCounts());
+		for(int j = 0; j < _colIndexes.size(); j++)
+			sbr.allocate(_colIndexes.get(j), colCounts[j]);
+
+		LZWMappingIterator it = new LZWMappingIterator(); // Replace data.getIndex withiterator.
+
+		for(int i = 0; i < _nRows; i++) {
+			int di = it.next();
+			if(sb.isEmpty(di))
+				continue;
+
+			final int apos = sb.pos(di);
+			final int alen = sb.size(di) + apos;
+			final int[] aix = sb.indexes(di);
+			final double[] aval = sb.values(di);
+
+			for(int j = apos; j < alen; j++) {
+				sbr.append(_colIndexes.get(aix[j]), i, aval[apos]);
+			}
+		}
 	}
 
 	@Override
 	protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict, int nColOut) {
-		throw new NotImplementedException();
+		ColGroupDDC g = (ColGroupDDC) convertToDDC();
+		g.decompressToSparseBlockTransposedDenseDictionary(db, dict, nColOut); // Possible implementation with iterator.
 	}
 
 	@Override
 	protected void decompressToDenseBlockSparseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
 		SparseBlock sb) {
-		throw new NotImplementedException();
+		LZWMappingIterator it = new LZWMappingIterator();
+		for(int i = 0; i < rl; i++) {
+			it.next(); // Skip to rl.
+		}
+
+		for(int r = rl, offT = rl + offR; r < ru; r++, offT++) {
+			final int vr = it.next();
+			if(sb.isEmpty(vr))
+				continue;
+			final double[] c = db.values(offT);
+			final int off = db.pos(offT) + offC;
+			_colIndexes.decompressToDenseFromSparse(sb, vr, off, c);
+		}
 	}
 
 	@Override
@@ -649,16 +685,45 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 	@Override
 	protected void decompressToSparseBlockSparseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
 		SparseBlock sb) {
-		throw new NotImplementedException();
+		LZWMappingIterator it = new LZWMappingIterator();
+		for(int i = 0; i < rl; i++) {
+			it.next();
+		}
+
+		for(int r = rl, offT = rl + offR; r < ru; r++, offT++) {
+			final int vr = it.next();
+			if(sb.isEmpty(vr))
+				continue;
+			final int apos = sb.pos(vr);
+			final int alen = sb.size(vr) + apos;
+			final int[] aix = sb.indexes(vr);
+			final double[] aval = sb.values(vr);
+			for(int j = apos; j < alen; j++)
+				ret.append(offT, offC + _colIndexes.get(aix[j]), aval[j]);
+		}
 	}
 
 	@Override
 	protected void decompressToSparseBlockDenseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
 		double[] values) {
-		throw new NotImplementedException();
+		decompressToSparseBlockDenseDictionary(ret, rl, ru, offR, offC, values, _colIndexes.size());
 	}
 
-	@Override
+	protected void decompressToSparseBlockDenseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
+		double[] values, int nCol) {
+		LZWMappingIterator it = new LZWMappingIterator();
+		for(int i = 0; i < rl; i++) {
+			it.next();
+		}
+
+		for(int i = rl, offT = rl + offR; i < ru; i++, offT++) {
+			final int rowIndex = it.next() * nCol;
+			for(int j = 0; j < nCol; j++)
+				ret.append(offT, _colIndexes.get(j) + offC, values[rowIndex + j]);
+		}
+	}
+
+	@Override // TODO: Implement! Pays of with LZW!
 	public void leftMultByMatrixNoPreAgg(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl, int cu) {
 		convertToDDC().leftMultByMatrixNoPreAgg(matrix, result, rl, ru, cl, cu); // Fallback to DDC.
 	}
@@ -681,12 +746,16 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
 	@Override
 	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
-		throw new NotImplementedException();
+		IDictionary ret = _dict.binOpLeft(op, v, _colIndexes);
+
+		AMapToData data = decompressFull(_dataLZW, _nUnique, _nRows);
+		return create(getColIndices(), ret, data, getCachedCounts());
 	}
 
 	@Override
 	public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
-		throw new NotImplementedException();
+		ColGroupDDC g = (ColGroupDDC) convertToDDC();
+		return g.binaryRowOpRight(op, v, isRowSafe);
 	}
 
 	public int[] appendDataLZWMap(int[] dataLZW) {
@@ -816,14 +885,31 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 			getCachedCounts());
 	}
 
-	@Override
-	protected void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
-		throw new NotImplementedException();
+	@Override // Correct ?
+	public void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
+		final SparseBlock sb = selection.getSparseBlock();
+		final SparseBlock retB = ret.getSparseBlock();
+		for(int r = rl; r < ru; r++) {
+			if(sb.isEmpty(r))
+				continue;
+			final int sPos = sb.pos(r);
+			final int rowCompressed = sb.indexes(r)[sPos]; // column index with 1
+			decompressToSparseBlock(retB, rowCompressed, rowCompressed + 1, r - rowCompressed, 0);
+		}
 	}
 
-	@Override
+	@Override // Correct ?
 	protected void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
-		throw new NotImplementedException(); // We need to implement decompToDenseBlock first!
+		// morph(CompressionType.UNCOMPRESSED, _data.size()).sparseSelection(selection, ret, rl, ru);;
+		final SparseBlock sb = selection.getSparseBlock();
+		final DenseBlock retB = ret.getDenseBlock();
+		for(int r = rl; r < ru; r++) {
+			if(sb.isEmpty(r))
+				continue;
+			final int sPos = sb.pos(r);
+			final int rowCompressed = sb.indexes(r)[sPos]; // column index with 1
+			decompressToDenseBlock(retB, rowCompressed, rowCompressed + 1, r - rowCompressed, 0);
+		}
 	}
 
 	@Override
@@ -906,12 +992,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 			c[rix] += preAgg[it.next()];
 	}
 
-	/*protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
-		AMapToData data = decompress(_dataLZW, _nUnique, _nRows, ru);
-		for(int rix = rl; rix < ru; rix++)
-			c[rix] += preAgg[data.getIndex(rix)];
-	}*/
-
 	@Override
 	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
 		final LZWMappingIterator it = new LZWMappingIterator();
@@ -921,14 +1001,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		for(int i = rl; i < ru; i++)
 			c[i] = builtin.execute(c[i], preAgg[it.next()]);
 	}
-
-	/*@Override
-	protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
-		AMapToData data = decompress(_dataLZW, _nUnique, _nRows, ru);
-		for(int rix = rl; rix < ru; rix++)
-			c[rix] *= preAgg[data.getIndex(rix)];
-
-	}*/
 
 	@Override
 	protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
@@ -940,4 +1012,3 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 			c[rix] *= preAgg[it.next()];
 	}
 }
-

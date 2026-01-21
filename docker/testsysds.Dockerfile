@@ -29,6 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     ca-certificates \
     gnupg \
+    doxygen \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /seal
@@ -70,6 +71,16 @@ RUN find /opt/intel/oneapi/mkl/2025.3/lib \( \
     -name 'libmkl_vml*' -o \
     -name 'libmkl_scalapack*' \
     \) -delete
+
+# Install MKL-DNN
+ARG MKL_DNN_VERSION="0.21.5"
+RUN wget -qO- https://github.com/uxlfoundation/oneDNN/archive/refs/tags/v${MKL_DNN_VERSION}.tar.gz | tar xzf - \
+    && cd oneDNN-${MKL_DNN_VERSION} \
+    && mkdir -p build \
+    && cd build \
+    && cmake -DWITH_EXAMPLE=OFF -DWITH_TEST=OFF -DCMAKE_INSTALL_PREFIX=/mkldnn-install .. \
+    && make \
+    && make install 
 
 # Stage 2: Final image with R, JDK, Maven, SEAL, OpenBLAS, MKL
 FROM ubuntu:noble@sha256:728785b59223d755e3e5c5af178fab1be7031f3522c5ccd7a0b32b80d8248123 
@@ -145,6 +156,8 @@ COPY --from=build /openBLAS-install/include/ /usr/local/include/
 COPY --from=build /opt/intel/oneapi/mkl/2025.3/lib /usr/local/lib/
 COPY --from=build /opt/intel/oneapi/mkl/2025.3/include /usr/local/include/
 COPY --from=build /opt/intel/oneapi/compiler/2025.3/lib/libiomp5.so /usr/local/lib/
+COPY --from=build /mkldnn-install/lib /usr/local/lib/
+COPY --from=build /mkldnn-install/include /usr/local/include/
 
 ENV LD_LIBRARY_PATH=/opt/hadoop/lib/native;/usr/local/lib/
 

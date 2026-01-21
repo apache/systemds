@@ -110,6 +110,7 @@
 		<aircompressor.version>0.27</aircompressor.version>      <!-- CVE-2024-36114 -->
 		<netty.version>4.1.124.Final</netty.version>             <!-- CVE-2025-55163, CVE-2023-44487 -->
 		<jetty.version>9.4.57.v20241219</jetty.version>          <!-- CVE-2024-6763 -->
+		<jetty-http.version>12.0.12</jetty-http.version>         <!-- CVE-2024-6763 -->
 		<xnio.version>3.8.14.Final</xnio.version>                <!-- CVE-2023-5685 -->
 		<commons-beanutils.version>1.11.0</commons-beanutils.version>  <!-- CVE-2025-48734 -->
 		<dnsjava.version>3.6.0</dnsjava.version>                 <!-- CVE-2024-25638 -->
@@ -238,7 +239,7 @@
 			<dependency>
 				<groupId>org.eclipse.jetty</groupId>
 				<artifactId>jetty-http</artifactId>
-				<version>${jetty.version}</version>
+				<version>${jetty-http.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.eclipse.jetty</groupId>
@@ -278,6 +279,18 @@
 				<groupId>com.google.protobuf</groupId>
 				<artifactId>protobuf-java</artifactId>
 				<version>${protobuf.version}</version>
+			</dependency>
+			<!-- CVE-2024-26308, CVE-2024-25710, CVE-2023-42503 -->
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-compress</artifactId>
+				<version>1.26.0</version>
+			</dependency>
+			<!-- CVE-2024-29133, CVE-2024-29131 -->
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-configuration2</artifactId>
+				<version>2.10.1</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

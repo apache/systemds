@@ -20,7 +20,7 @@
 # -------------------------------------------------------------
 import copy
 from dataclasses import dataclass, field
-from typing import List, Dict, Any
+from typing import List, Dict, Union, Any, Hashable, Optional
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.representation import (
@@ -34,9 +34,7 @@ from systemds.scuro.representations.dimensionality_reduction import (
     DimensionalityReduction,
 )
 from systemds.scuro.utils.identifier import get_op_id, get_node_id
-
 from collections import OrderedDict
-from typing import Any, Hashable, Optional
 
 
 class LRUCache:
@@ -161,7 +159,9 @@ class RepresentationDag:
         modalities: List[Modality],
         task=None,
         external_cache: Optional[LRUCache] = None,
-    ) -> Dict[str, TransformedModality]:
+        enable_cache=True,
+        rep_cache: Dict[Any, TransformedModality] = None,
+    ) -> Union[Dict[str, TransformedModality], TransformedModality]:
         cache: Dict[str, TransformedModality] = {}
         node_signatures: Dict[str, Hashable] = {}
 
@@ -175,7 +175,8 @@ class RepresentationDag:
                 modality = get_modality_by_id_and_instance_id(
                     modalities, node.modality_id, node.representation_index
                 )
-                cache[node_id] = modality
+                if enable_cache:
+                    cache[node_id] = modality
                 node_signatures[node_id] = self._compute_leaf_signature(node)
                 return modality
 
@@ -203,7 +204,9 @@ class RepresentationDag:
                     elif isinstance(node_operation, AggregatedRepresentation):
                         result = node_operation.transform(input_mods[0])
                     elif isinstance(node_operation, UnimodalRepresentation):
-                        if (
+                        if rep_cache is not None:
+                            result = rep_cache[node_operation.name]
+                        elif (
                             isinstance(input_mods[0], TransformedModality)
                             and input_mods[0].transformation[0].__class__
                             == node.operation
@@ -228,13 +231,14 @@ class RepresentationDag:
                 if external_cache and is_unimodal:
                     external_cache.put(node_signature, result)
 
-            cache[node_id] = result
+            if enable_cache:
+                cache[node_id] = result
             node_signatures[node_id] = node_signature
             return result
 
-        execute_node(self.root_node_id, task)
+        result = execute_node(self.root_node_id, task)
 
-        return cache
+        return cache if enable_cache else result
 
 
 def get_modality_by_id_and_instance_id(

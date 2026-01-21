@@ -141,24 +141,86 @@ class Modality:
             else:
                 raise "Needs padding to max_len"
         except:
-            maxlen = (
-                max([len(seq) for seq in self.data]) if max_len is None else max_len
-            )
-
-            result = np.full((len(self.data), maxlen), value, dtype=self.data_type)
-
-            for i, seq in enumerate(self.data):
-                data = seq[:maxlen]
-                result[i, : len(data)] = data
-
-                if self.has_metadata():
-                    attention_mask = np.zeros(result.shape[1], dtype=np.int8)
-                    attention_mask[: len(seq[:maxlen])] = 1
-                    md_key = list(self.metadata.keys())[i]
-                    if "attention_mask" in self.metadata[md_key]:
-                        self.metadata[md_key]["attention_mask"] = attention_mask
-                    else:
-                        self.metadata[md_key].update({"attention_mask": attention_mask})
+            first = self.data[0]
+            if isinstance(first, np.ndarray) and first.ndim == 3:
+                maxlen = (
+                    max([seq.shape[0] for seq in self.data])
+                    if max_len is None
+                    else max_len
+                )
+                tail_shape = first.shape[1:]
+                result = np.full(
+                    (len(self.data), maxlen, *tail_shape),
+                    value,
+                    dtype=self.data_type or first.dtype,
+                )
+                for i, seq in enumerate(self.data):
+                    data = seq[:maxlen]
+                    result[i, : len(data), ...] = data
+                    if self.has_metadata():
+                        attention_mask = np.zeros(maxlen, dtype=np.int8)
+                        attention_mask[: len(data)] = 1
+                        md_key = list(self.metadata.keys())[i]
+                        if "attention_mask" in self.metadata[md_key]:
+                            self.metadata[md_key]["attention_mask"] = attention_mask
+                        else:
+                            self.metadata[md_key].update(
+                                {"attention_mask": attention_mask}
+                            )
+            elif (
+                isinstance(first, list)
+                and len(first) > 0
+                and isinstance(first[0], np.ndarray)
+                and first[0].ndim == 2
+            ):
+                maxlen = (
+                    max([len(seq) for seq in self.data]) if max_len is None else max_len
+                )
+                row_dim, col_dim = first[0].shape
+                result = np.full(
+                    (len(self.data), maxlen, row_dim, col_dim),
+                    value,
+                    dtype=self.data_type or first[0].dtype,
+                )
+                for i, seq in enumerate(self.data):
+                    data = seq[:maxlen]
+                    # stack list of 2D arrays into 3D then assign
+                    if len(data) > 0:
+                        result[i, : len(data), :, :] = np.stack(data, axis=0)
+                    if self.has_metadata():
+                        attention_mask = np.zeros(maxlen, dtype=np.int8)
+                        attention_mask[: len(data)] = 1
+                        md_key = list(self.metadata.keys())[i]
+                        if "attention_mask" in self.metadata[md_key]:
+                            self.metadata[md_key]["attention_mask"] = attention_mask
+                        else:
+                            self.metadata[md_key].update(
+                                {"attention_mask": attention_mask}
+                            )
+            else:
+                maxlen = (
+                    max([len(seq) for seq in self.data]) if max_len is None else max_len
+                )
+                result = np.full((len(self.data), maxlen), value, dtype=self.data_type)
+                for i, seq in enumerate(self.data):
+                    data = seq[:maxlen]
+                    try:
+                        result[i, : len(data)] = data
+                    except:
+                        print(f"Error padding data for modality {self.modality_id}")
+                        print(f"Data shape: {data.shape}")
+                        print(f"Result shape: {result.shape}")
+                        raise Exception("Error padding data")
+                    if self.has_metadata():
+                        attention_mask = np.zeros(result.shape[1], dtype=np.int8)
+                        attention_mask[: len(data)] = 1
+                        md_key = list(self.metadata.keys())[i]
+                        if "attention_mask" in self.metadata[md_key]:
+                            self.metadata[md_key]["attention_mask"] = attention_mask
+                        else:
+                            self.metadata[md_key].update(
+                                {"attention_mask": attention_mask}
+                            )
         # TODO: this might need to be a new modality (otherwise we loose the original data)
         self.data = result
 

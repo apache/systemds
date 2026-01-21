@@ -43,6 +43,7 @@ class UnimodalRepresentation(Representation):
 
     @abc.abstractmethod
     def transform(self, data):
+        # TODO: check if there is a way to time the transformation in here (needed for chunked execution)
         raise f"Not implemented for {self.name}"
 
 

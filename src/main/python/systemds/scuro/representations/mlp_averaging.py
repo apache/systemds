@@ -53,17 +53,6 @@ class MLPAveraging(DimensionalityReduction):
         self.batch_size = batch_size
 
     def execute(self, data):
-        # Make sure the data is a numpy array
-        try:
-            data = np.array(data)
-        except Exception as e:
-            raise ValueError(f"Data must be a numpy array: {e}")
-
-        # Note: if the data is a 3D array this indicates that we are dealing with a context operation
-        # and we need to conacatenate the dimensions along the first axis
-        if len(data.shape) == 3:
-            data = data.reshape(data.shape[0], -1)
-
         set_random_seeds(42)
 
         input_dim = data.shape[1]

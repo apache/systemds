@@ -18,8 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
-from functools import reduce
-from operator import or_
+import gc
 import time
 import numpy as np
 from systemds.scuro import ModalityType
@@ -103,29 +102,45 @@ class UnimodalModality(Modality):
             raise Exception("Data is None")
 
     def apply_representations(self, representations):
-        # TODO
-        pass
+        """
+        Applies a list of representations to the modality. Specifically, it applies the representations to the modality in a chunked manner.
+        :param representations: List of representations to apply
+        :return: List of transformed modalities
+        """
+        transformed_modalities_per_representation = {}
+        padding_per_representation = {}
+        original_lengths_per_representation = {}
 
-    def apply_representation(self, representation):
-        new_modality = TransformedModality(
-            self,
-            representation,
-        )
+        # Initialize dictionaries for each representation
+        for representation in representations:
+            transformed_modality = TransformedModality(self, representation.name)
+            transformed_modality.data = []
+            transformed_modalities_per_representation[representation.name] = (
+                transformed_modality
+            )
+            padding_per_representation[representation.name] = False
+            original_lengths_per_representation[representation.name] = []
 
-        pad_dim_one = False
-
-        new_modality.data = []
-        start = time.time()
-        original_lengths = []
+        start = (
+            time.time()
+        )  # TODO: should be repalced in unimodal_representation.transform
         if self.data_loader.chunk_size:
             self.data_loader.reset()
             while self.data_loader.next_chunk < self.data_loader.num_chunks:
                 self.extract_raw_data()
-                transformed_chunk = representation.transform(self)
-                new_modality.data.extend(transformed_chunk.data)
-                for d in transformed_chunk.data:
-                    original_lengths.append(d.shape[0])
-                new_modality.metadata.update(transformed_chunk.metadata)
+                for representation in representations:
+                    transformed_chunk = representation.transform(self)
+                    transformed_modalities_per_representation[
+                        representation.name
+                    ].data.extend(transformed_chunk.data)
+                    transformed_modalities_per_representation[
+                        representation.name
+                    ].metadata.update(transformed_chunk.metadata)
+                    for d in transformed_chunk.data:
+                        original_lengths_per_representation[representation.name].append(
+                            d.shape[0]
+                        )
+
         else:
             if not self.has_data():
                 self.extract_raw_data()
@@ -141,15 +156,41 @@ class UnimodalModality(Modality):
             ):
                 for d in new_modality.data:
                     if d.shape[0] == 1 and d.ndim == 2:
-                        pad_dim_one = True
-                        original_lengths.append(d.shape[1])
+                        padding_per_representation[representation.name] = True
+                        original_lengths_per_representation[representation.name].append(
+                            d.shape[1]
+                        )
                     else:
-                        original_lengths.append(d.shape[0])
+                        original_lengths_per_representation[representation.name].append(
+                            d.shape[0]
+                        )
+            transformed_modalities_per_representation[representation.name] = (
+                new_modality
+            )
 
+        for representation in representations:
+            self._apply_padding(
+                transformed_modalities_per_representation[representation.name],
+                original_lengths_per_representation[representation.name],
+                padding_per_representation[representation.name],
+            )
+            transformed_modalities_per_representation[
+                representation.name
+            ].transform_time += (time.time() - start)
+            transformed_modalities_per_representation[
+                representation.name
+            ].self_contained = representation.self_contained
+        gc.collect()
+        return transformed_modalities_per_representation
+
+    def apply_representation(self, representation):
+        return self.apply_representations([representation])[representation.name]
+
+    def _apply_padding(self, modality, original_lengths, pad_dim_one):
         if len(original_lengths) > 0 and min(original_lengths) < max(original_lengths):
             target_length = max(original_lengths)
             padded_embeddings = []
-            for embeddings in new_modality.data:
+            for embeddings in modality.data:
                 current_length = (
                     embeddings.shape[0] if not pad_dim_one else embeddings.shape[1]
                 )
@@ -182,15 +223,12 @@ class UnimodalModality(Modality):
                 else:
                     padded_embeddings.append(embeddings)
 
-            attention_masks = np.zeros((len(new_modality.data), target_length))
+            attention_masks = np.zeros((len(modality.data), target_length))
             for i, length in enumerate(original_lengths):
                 attention_masks[i, :length] = 1
 
             ModalityType(self.modality_type).add_field_for_instances(
-                new_modality.metadata, "attention_masks", attention_masks
+                modality.metadata, "attention_masks", attention_masks
             )
-            new_modality.data = padded_embeddings
-        new_modality.update_metadata()
-        new_modality.transform_time += time.time() - start
-        new_modality.self_contained = representation.self_contained
-        return new_modality
+            modality.data = padded_embeddings
+        modality.update_metadata()

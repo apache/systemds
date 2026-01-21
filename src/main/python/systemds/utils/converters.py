@@ -600,8 +600,7 @@ def _transfer_string_column_to_pipe(
     py_total, py_encoding, py_packing, py_io, num_strings = py_timing
     total_time = t1 - t0
 
-    sds._log.debug(
-        f"""
+    sds._log.debug(f"""
         === TO FrameBlock - Timing Breakdown (Strings) ===
         Column: {col_name}
         Total time: {total_time:.3f}s
@@ -612,8 +611,7 @@ def _transfer_string_column_to_pipe(
         I/O writes: {py_io:.3f}s ({100*py_io/py_total:.1f}%)
         Other: {py_total - py_encoding - py_packing - py_io:.3f}s
         Strings processed: {num_strings:,}
-        """
-    )
+        """)
 
 
 def _transfer_numeric_column_to_pipe(
@@ -798,8 +796,7 @@ def _receive_string_column_from_pipe(
         _pipe_receive_strings(pipe, num_rows, batch_size_bytes, pipe_id, sds._log)
     )
 
-    sds._log.debug(
-        f"""
+    sds._log.debug(f"""
         === FROM FrameBlock - Timing Breakdown (Strings) ===
         Column: {col_name}
         Total time: {py_total:.3f}s
@@ -809,8 +806,7 @@ def _receive_string_column_from_pipe(
         I/O reads: {py_io:.3f}s ({100*py_io/py_total:.1f}%)
         Other: {py_total - py_decode - py_io:.3f}s
         Strings processed: {num_strings:,}
-        """
-    )
+        """)
 
     if not header_received:
         _pipe_receive_header(pipe, pipe_id, sds._log)

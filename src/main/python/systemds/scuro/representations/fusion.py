@@ -79,7 +79,7 @@ class Fusion(Representation):
                 d for i, d in enumerate(modality.data) if i in fusion_train_indices
             ]
             train_modality = TransformedModality(modality, self)
-            train_modality.data = copy.deepcopy(train_data)
+            train_modality.data = list(train_data)
             train_modalities.append(train_modality)
 
         transformed_train = self.execute(

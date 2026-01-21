@@ -243,7 +243,7 @@ class MultimodalOptimizer:
             for modality in self.modalities:
                 k_best_results, cached_data = (
                     unimodal_optimization_results.get_k_best_results(
-                        modality, self.k, task, self.metric_name
+                        modality, task, self.metric_name
                     )
                 )
 
@@ -359,6 +359,7 @@ class MultimodalOptimizer:
                     )
                 ),
                 task,
+                enable_cache=False,
             )
 
             torch.cuda.empty_cache()
@@ -366,19 +367,16 @@ class MultimodalOptimizer:
             if fused_representation is None:
                 return None
 
-            final_representation = fused_representation[
-                list(fused_representation.keys())[-1]
-            ]
-            if task.expected_dim == 1 and get_shape(final_representation.metadata) > 1:
+            if task.expected_dim == 1 and get_shape(fused_representation.metadata) > 1:
                 agg_operator = AggregatedRepresentation(Aggregation())
-                final_representation = agg_operator.transform(final_representation)
+                fused_representation = agg_operator.transform(fused_representation)
 
             eval_start = time.time()
-            scores = task.run(final_representation.data)
+            scores = task.run(fused_representation.data)
             eval_time = time.time() - eval_start
 
             total_time = time.time() - start_time
-
+            del fused_representation
             return OptimizationResult(
                 dag=dag,
                 train_score=scores[0].average_scores,

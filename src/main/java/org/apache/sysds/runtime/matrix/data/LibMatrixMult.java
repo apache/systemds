@@ -44,17 +44,8 @@ import org.apache.sysds.lops.WeightedSigmoid.WSigmoidType;
 import org.apache.sysds.lops.WeightedSquaredLoss.WeightsType;
 import org.apache.sysds.lops.WeightedUnaryMM.WUMMType;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.data.DenseBlockFP64DEDUP;
-import org.apache.sysds.runtime.data.DenseBlockFactory;
-import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.*;
 import org.apache.sysds.runtime.data.SparseBlock.Type;
-import org.apache.sysds.runtime.data.SparseBlockCSR;
-import org.apache.sysds.runtime.data.SparseBlockFactory;
-import org.apache.sysds.runtime.data.SparseBlockMCSR;
-import org.apache.sysds.runtime.data.SparseRow;
-import org.apache.sysds.runtime.data.SparseRowScalar;
-import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
@@ -1050,57 +1041,70 @@ public class LibMatrixMult
 	}
 
 	private static void multDenseDenseTransA(DenseBlock a, DenseBlock b, DenseBlock c, int n, int cd, int rl, int ru, int cl, int cu) {
+		// process matrices in small blocks for caching
 		final int blocksizeI = 32;
 		final int blocksizeK = 24;
+		final int blocksizeJ = 1024;
 
+		// iterate over block of C rows
 		for (int bi = rl; bi < ru; bi += blocksizeI) {
 			int bimin = Math.min(ru, bi + blocksizeI);
+
+			// iterate over blocks of common dimension k
 			for (int bk = 0; bk < cd; bk += blocksizeK) {
 				int bkmin = Math.min(cd, bk + blocksizeK);
 
-				int k = bk;
-				for (; k < bkmin - 3; k += 4) {
+				// iterate over blocks of C columns
+				for (int bj = cl; bj < cu; bj += blocksizeJ) {
+					int bjmin = Math.min(cu, bj + blocksizeJ);
+					int lenJ = bjmin - bj;
+
+					// if B is a single contiguous array, we skip checks inside the loop
 					if (b.isContiguous()) {
 						double[] bvals = b.values(0);
-						int bix0 = b.pos(k, cl), bix1 = b.pos(k+1, cl);
-						int bix2 = b.pos(k+2, cl), bix3 = b.pos(k+3, cl);
 
-						for (int i = bi; i < bimin; i++) {
-							double[] cvals = c.values(i);
-							int cix = c.pos(i, cl);
-							double val0 = a.values(k)[a.pos(k) + i];
-							double val1 = a.values(k+1)[a.pos(k+1) + i];
-							double val2 = a.values(k+2)[a.pos(k+2) + i];
-							double val3 = a.values(k+3)[a.pos(k+3) + i];
+						int k = bk;
+						// process 4 rows of A at the same time
+						for (; k < bkmin - 3; k += 4) {
+							int bix0 = b.pos(k, bj);
+							int bix1 = b.pos(k+1, bj);
+							int bix2 = b.pos(k+2, bj);
+							int bix3 = b.pos(k+3, bj);
 
-							vectMultiplyAdd4(val0, val1, val2, val3,
-								bvals, cvals,
-								bix0, bix1, bix2, bix3, cix, cu - cl);
+							for (int i = bi; i < bimin; i++) {
+								// grab 4 values from A
+								double val0 = a.values(k)[a.pos(k) + i];
+								double val1 = a.values(k+1)[a.pos(k+1) + i];
+								double val2 = a.values(k+2)[a.pos(k+2) + i];
+								double val3 = a.values(k+3)[a.pos(k+3) + i];
+
+								double[] cvals = c.values(i);
+								int cix = c.pos(i, bj);
+
+								vectMultiplyAdd4(val0, val1, val2, val3,
+									bvals, cvals,
+									bix0, bix1, bix2, bix3, cix, lenJ);
+							}
+						}
+						// for the remaining rows
+						for (; k < bkmin; k++) {
+							int bix = b.pos(k, bj);
+							for (int i = bi; i < bimin; i++) {
+								double val = a.values(k)[a.pos(k) + i];
+								if (val != 0) {
+									vectMultiplyAdd(val, bvals, c.values(i), bix, c.pos(i, bj), lenJ);
+								}
+							}
 						}
 					} else {
-						for (int i = bi; i < bimin; i++) {
-							double[] cvals = c.values(i);
-							int cix = c.pos(i, cl);
-							double val0 = a.values(k)[a.pos(k) + i];
-							if(val0!=0) vectMultiplyAdd(val0, b.values(k), cvals, b.pos(k, cl), cix, cu - cl);
-							double val1 = a.values(k+1)[a.pos(k+1) + i];
-							if(val1!=0) vectMultiplyAdd(val1, b.values(k+1), cvals, b.pos(k+1, cl), cix, cu - cl);
-							double val2 = a.values(k+2)[a.pos(k+2) + i];
-							if(val2!=0) vectMultiplyAdd(val2, b.values(k+2), cvals, b.pos(k+2, cl), cix, cu - cl);
-							double val3 = a.values(k+3)[a.pos(k+3) + i];
-							if(val3!=0) vectMultiplyAdd(val3, b.values(k+3), cvals, b.pos(k+3, cl), cix, cu - cl);
-						}
-					}
-				}
-				for (; k < bkmin; k++) {
-					double[] bvals = b.values(k);
-					int bix = b.pos(k, cl);
-					double[] avals = a.values(k);
-					int apos = a.pos(k);
-					for (int i = bi; i < bimin; i++) {
-						double val = avals[apos + i];
-						if (val != 0) {
-							vectMultiplyAdd(val, bvals, c.values(i), bix, c.pos(i, cl), cu - cl);
+						for (int k = bk; k < bkmin; k++) {
+							for (int i = bi; i < bimin; i++) {
+								double val = a.values(k)[a.pos(k) + i];
+								if (val != 0) {
+									vectMultiplyAdd(val, b.values(k), c.values(i),
+										b.pos(k, bj), c.pos(i, bj), lenJ);
+								}
+							}
 						}
 					}
 				}
@@ -1109,6 +1113,7 @@ public class LibMatrixMult
 	}
 
 	private static void multDenseDenseTransB(DenseBlock a, DenseBlock b, DenseBlock c, int n, int cd, int rl, int ru, int cl, int cu) {
+		// copy small blocks of B into buffer bufB
 		final int blocksizeK = 24;
 		double[] bufB = new double[blocksizeK * (cu - cl)];
 
@@ -1116,7 +1121,7 @@ public class LibMatrixMult
 			int bkmin = Math.min(cd, bk + blocksizeK);
 			int bklen = bkmin - bk;
 
-
+			// put B into buffer while transposing
 			for (int j = cl; j < cu; j++) {
 				double[] bvals = b.values(j);
 				int bpos = b.pos(j);
@@ -1126,6 +1131,7 @@ public class LibMatrixMult
 				}
 			}
 
+			// perform matrix multiplication with buffer
 			for (int i = rl; i < ru; i++) {
 				double[] avals = a.values(i);
 				int apos = a.pos(i);
@@ -1144,27 +1150,39 @@ public class LibMatrixMult
 	}
 
 	private static void multDenseDenseTransATransB(DenseBlock a, DenseBlock b, DenseBlock c, int n, int cd, int rl, int ru, int cl, int cu) {
-		double[] d_row = new double[ru];
+		// transpose B into temp Block B
+		// use C = t(A) * B from above as helper method
 
-		for (int j = cl; j < cu; j++) {
-			java.util.Arrays.fill(d_row, rl, ru, 0);
+		// allocate Block for transposing B
+		int tB_rows = cd;
+		int tB_cols = cu - cl;
 
-			for (int k = 0; k < cd; k++) {
-				double valB = b.get(j, k);
-				if (valB != 0) {
-					double[] avals = a.values(k);
-					int apos = a.pos(k);
-					vectMultiplyAdd(valB, avals, d_row, apos + rl, rl, ru - rl);
+		DenseBlock tB_block = new DenseBlockFP64(new int[] {tB_rows, tB_cols});
+		double[] tB = tB_block.values(0);
+
+		// perform transpose from B to tB_block
+		final int BLOCK = 128;
+		for (int bi = cl; bi < cu; bi += BLOCK) {
+			int bimin = Math.min(cu, bi + BLOCK);
+			for (int bk = 0; bk < cd; bk += BLOCK) {
+				int bkmin = Math.min(cd, bk + BLOCK);
+
+				for (int j = bi; j < bimin; j++) {
+					double[] b_vals = b.values(j);
+					int b_pos = b.pos(j);
+
+					int tB_col_idx = (j - cl);
+
+					for (int k = bk; k < bkmin; k++) {
+						tB[k * tB_cols + tB_col_idx] = b_vals[b_pos + k];
+					}
 				}
 			}
-
-			for (int i = rl; i < ru; i++) {
-				double[] cvals = c.values(i);
-				int cix = c.pos(i);
-				cvals[cix + j] += d_row[i];
-			}
 		}
+		// reuse our existing method
+		multDenseDenseTransA(a, tB_block, c, n, cd, rl, ru, 0, tB_cols);
 	}
+
 
 	private static void matrixMultDenseDense(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, boolean tm2, boolean pm2, int rl, int ru, int cl, int cu) {
 		DenseBlock a = m1.getDenseBlock();

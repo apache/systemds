@@ -7,9 +7,9 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class MatrixMultTransposedPerformanceTest {
-	private final int m = 500;
-	private final int n = 500;
-	private final int k = 500;
+	private final int m = 100;
+	private final int n = 100;
+	private final int k = 100;
 
 
 	@Test
@@ -33,7 +33,7 @@ public class MatrixMultTransposedPerformanceTest {
 	}
 
 	private void runTest(boolean tA, boolean tB) {
-		int REP = 50;
+		int REP = 5000;
 
 		// setup Dimensions
 		int rowsA = tA ? k : m;

@@ -8,9 +8,8 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.mockito.Mockito;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import java.util.concurrent.Future;
-import java.util.List;
 import java.util.ArrayList;
 
 
@@ -322,7 +321,7 @@ public class PermuteTest {
         private static long[] getStrides(int[] dims) {
             long[] strides = new long[dims.length];
             long stride = 1;
-            for (int i = dims.length - 1; i >= 0; i--) {
+            for( int i = dims.length - 1; i >= 0; i-- ) {
                 strides[i] = stride;
                 stride *= dims[i];
             }
@@ -336,24 +335,25 @@ public class PermuteTest {
         public static MatrixBlock permute(MatrixBlock in, int[] inDims, int[] perm, int k) {
             int rank = inDims.length;
             
-            //Early opt out 
+            // Early opt out 
             boolean isIdentity = true;
-            for (int i = 0; i < rank; i++) {
-                if (perm[i] != i) {
+            for( int i = 0; i < rank; i++ ) {
+                if( perm[i] != i ) {
                     isIdentity = false;
                     break;
                 }
             }
-            if (isIdentity) {
+            
+            if( isIdentity ) {
                 return new MatrixBlock(in);
             }
 
             int[] outDims = new int[rank];
-            for (int i = 0; i < rank; i++) 
+            for( int i = 0; i < rank; i++ ) 
                 outDims[i] = inDims[perm[i]];
 
             long length = 1;
-            for (int d : outDims) length *= d;
+            for( int d : outDims ) length *= d;
 
             MatrixBlock out = new MatrixBlock(1, (int)length, false);
             out.allocateDenseBlock();
@@ -365,27 +365,26 @@ public class PermuteTest {
             long[] outStrides = getStrides(outDims);
             
             long[] permutedStrides = new long[rank];
-            for (int i = 0; i < rank; i++) {
+            for( int i = 0; i < rank; i++ ) {
                 permutedStrides[i] = outStrides[perm[i]];
             }
 
             boolean useParallel = (k > 1 || k == -1) && length >= PAR_NUMCELL_THRESHOLD;
             int numThreads = k == -1 ? Runtime.getRuntime().availableProcessors() : k;
 
-            if (inDB.numBlocks() == 1 && outDB.numBlocks() == 1) {
+            if( inDB.numBlocks() == 1 && outDB.numBlocks() == 1 ) {
                 double[] inData = inDB.valuesAt(0);
                 double[] outData = outDB.valuesAt(0);
                 
-                if (useParallel && rank > 0) {
+                if( useParallel && rank > 0 ) {
                     parallelPermuteSingleBlock(inData, outData, inDims, inStrides, 
                         permutedStrides, numThreads);
                 } else {
                     recursivePermuteSingleBlock(inData, outData, inDims, inStrides, 
                         permutedStrides, 0, 0, 0);
                 }
-            } 
-            else {
-                if (useParallel && rank > 0) {
+            } else {
+                if( useParallel && rank > 0 ) {
                     parallelPermuteMultiBlock(inDB, outDB, inDims, inStrides, 
                         permutedStrides, numThreads);
                 } else {
@@ -401,14 +400,15 @@ public class PermuteTest {
                 int[] inDims, long[] inStrides, long[] permutedStrides,
                 int dim, int inOffset, int outOffset) {
 
-            if (dim == inDims.length - 1) {
+            if( dim == inDims.length - 1 ) {
                 int len = inDims[dim];
                 int outStride = (int) permutedStrides[dim];
 
-                if (outStride == 1) 
+                if( outStride == 1 ) {
                     System.arraycopy(inData, inOffset, outData, outOffset, len);
-                else 
+                } else {
                     transposeRow(inData, outData, inOffset, outOffset, outStride, len);
+                }
                 return;
             }
 
@@ -416,9 +416,10 @@ public class PermuteTest {
             long inStep = inStrides[dim];
             long outStep = permutedStrides[dim];
 
-            for (int bi = 0; bi < dimSize; bi += BLOCK_SIZE) {
+            //blocked execution
+            for( int bi = 0; bi < dimSize; bi += BLOCK_SIZE ) {
                 int bimin = Math.min(bi + BLOCK_SIZE, dimSize);
-                for (int i = bi; i < bimin; i++) {
+                for( int i = bi; i < bimin; i++ ) {
                     recursivePermuteSingleBlock(
                             inData, outData, inDims, inStrides, permutedStrides,
                             dim + 1,
@@ -432,40 +433,43 @@ public class PermuteTest {
         private static void parallelPermuteSingleBlock(
                 double[] inData, double[] outData,
                 int[] inDims, long[] inStrides, long[] permutedStrides,
-                int numThreads) {
+                int k) {
             
-            int dimSize = inDims[0];
-            int tasksPerThread = Math.max(1, dimSize / numThreads);
+            final int dimSize = inDims[0];
+            final int tasksPerThread = Math.max(1, dimSize / k);
             
-            ExecutorService pool = Executors.newFixedThreadPool(numThreads);
-            List<Future<?>> futures = new ArrayList<>();
-            
-            for (int t = 0; t < numThreads; t++) {
-                final int start = t * tasksPerThread;
-                final int end = (t == numThreads - 1) ? dimSize : (t + 1) * tasksPerThread;
-                
-                if (start >= dimSize) break;
-                
-                futures.add(pool.submit(() -> {
-                    for (int i = start; i < end; i++) {
-                        recursivePermuteSingleBlock(
-                            inData, outData, inDims, inStrides, permutedStrides,
-                            1,
-                            (int)(i * inStrides[0]),
-                            (int)(i * permutedStrides[0])
-                        );
-                    }
-                }));
-            }
-            
-            for (Future<?> f : futures) {
-                try {
-                    f.get();
-                } catch (Exception e) {
-                    throw new RuntimeException("Parallel permute failed", e);
+            // Set up thread pool
+            final ExecutorService pool = CommonThreadPool.get(k);
+            try {
+                final ArrayList<Future<?>> tasks = new ArrayList<>();
+
+                for( int t = 0; t < k; t++ ) {
+                    final int start = t * tasksPerThread;
+                    final int end = (t == k - 1) ? dimSize : (t + 1) * tasksPerThread;
+                    
+                    if( start >= dimSize ) break;
+                    
+                    tasks.add(pool.submit(() -> {
+                        for( int i = start; i < end; i++ ) {
+                            recursivePermuteSingleBlock(
+                                inData, outData, inDims, inStrides, permutedStrides,
+                                1,
+                                (int)(i * inStrides[0]),
+                                (int)(i * permutedStrides[0])
+                            );
+                        }
+                    }));
                 }
+
+                // Wait for all threads
+                for (Future<?> task : tasks){       //pool.invokeAll(tasks)) {
+                    task.get();
+                }
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            } finally {
+                pool.shutdown();
             }
-            pool.shutdown();
         }
 
         private static void recursivePermuteMultiBlock(
@@ -473,14 +477,14 @@ public class PermuteTest {
             int[] inDims, long[] inStrides, long[] permutedStrides,
             int dim, long inOffset, long outOffset) {
 
-            if (dim == inDims.length - 1) {
+            if (dim == inDims.length - 1 ) {
                 int len = inDims[dim];
                 long outStride = permutedStrides[dim];
-
+                
                 int inBlockSize = inDB.blockSize();
                 int outBlockSize = outDB.blockSize();
 
-                for (int i = 0; i < len; i++) {
+                for( int i = 0; i < len; i++ ) {
                     long currentInAbs = inOffset + i * inStrides[dim];
                     long currentOutAbs = outOffset + i * outStride;
                     
@@ -493,8 +497,8 @@ public class PermuteTest {
                     double[] inArr = inDB.valuesAt(inBlockIdx);
                     double[] outArr = outDB.valuesAt(outBlockIdx);
                     
-                    if (inArr != null && outArr != null && 
-                        inRelIdx < inArr.length && outRelIdx < outArr.length) {
+                    if( inArr != null && outArr != null && 
+                        inRelIdx < inArr.length && outRelIdx < outArr.length ) {
                         outArr[outRelIdx] = inArr[inRelIdx];
                     }
                 }
@@ -505,14 +509,15 @@ public class PermuteTest {
             long inStep = inStrides[dim];
             long outStep = permutedStrides[dim];
 
-            for (int bi = 0; bi < dimSize; bi += BLOCK_SIZE) {
+            //blocked execution
+            for( int bi = 0; bi < dimSize; bi += BLOCK_SIZE ) {
                 int bimin = Math.min(bi + BLOCK_SIZE, dimSize);
-                for (int i = bi; i < bimin; i++) {
+                for( int i = bi; i < bimin; i++ ) {
                     recursivePermuteMultiBlock(
-                            inDB, outDB, inDims, inStrides, permutedStrides,
-                            dim + 1,
-                            inOffset + i * inStep,
-                            outOffset + i * outStep
+                        inDB, outDB, inDims, inStrides, permutedStrides,
+                        dim + 1,
+                        inOffset + i * inStep,
+                        outOffset + i * outStep
                     );
                 }
             }
@@ -521,40 +526,52 @@ public class PermuteTest {
         private static void parallelPermuteMultiBlock(
                 DenseBlock inDB, DenseBlock outDB,
                 int[] inDims, long[] inStrides, long[] permutedStrides,
-                int numThreads) {
+                int k) {
             
-            int dimSize = inDims[0];
-            int tasksPerThread = Math.max(1, dimSize / numThreads);
+            final int dimSize = inDims[0];
+            final int tasksPerThread = Math.max(1, dimSize / k);
             
-            ExecutorService pool = Executors.newFixedThreadPool(numThreads);
-            List<Future<?>> futures = new ArrayList<>();
-            
-            for (int t = 0; t < numThreads; t++) {
-                final int start = t * tasksPerThread;
-                final int end = (t == numThreads - 1) ? dimSize : (t + 1) * tasksPerThread;
+            // Set up thread pool
+            final ExecutorService pool = CommonThreadPool.get(k);
+            try {
+                final ArrayList<Future<?>> tasks = new ArrayList<>();
                 
-                if (start >= dimSize) break;
-                
-                futures.add(pool.submit(() -> {
-                    for (int i = start; i < end; i++) {
-                        recursivePermuteMultiBlock(
-                            inDB, outDB, inDims, inStrides, permutedStrides,
-                            1,
-                            i * inStrides[0],
-                            i * permutedStrides[0]
-                        );
-                    }
-                }));
-            }
-            
-            for (Future<?> f : futures) {
-                try {
-                    f.get();
-                } catch (Exception e) {
-                    throw new RuntimeException("Parallel permute failed", e);
+                for (int t = 0; t < k; t++) {
+                    final int start = t * tasksPerThread;
+                    final int end = (t == k - 1) ? dimSize : (t + 1) * tasksPerThread;
+                    
+                    if (start >= dimSize) break;
+                    
+                    tasks.add(pool.submit(() -> {
+                        for (int i = start; i < end; i++) {
+                            recursivePermuteMultiBlock(
+                                inDB, outDB, inDims, inStrides, permutedStrides,
+                                1,
+                                i * inStrides[0],
+                                i * permutedStrides[0]
+                            );
+                        }
+                    }));
                 }
-            }
+
+                // Wait for all threads
+                for (Future<?> task : tasks) {
+                    task.get();
+                }
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            } finally {
             pool.shutdown();
+            }
         }
-    }
+    }   
 }
+
+
+//callable 
+//naming 
+//class vs func 
+//Wo reinfügen
+//Genauer wie abgeben 
+//Bezüglich phd 
+

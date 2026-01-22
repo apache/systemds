@@ -109,6 +109,7 @@
 		<nimbus-jose-jwt.version>9.37.4</nimbus-jose-jwt.version><!-- CVE-2023-52428, CVE-2025-53864 -->
 		<aircompressor.version>0.27</aircompressor.version>      <!-- CVE-2024-36114 -->
 		<netty.version>4.1.124.Final</netty.version>             <!-- CVE-2025-55163, CVE-2023-44487 -->
+		<netty-codec.version>4.1.129.Final</netty-codec.version> <!-- CVE-2025-67735, CVE-2025-58056, CVE-2025-58057, CVE-2025-59419 -->
 		<jetty.version>9.4.57.v20241219</jetty.version>          <!-- CVE-2024-6763 -->
 		<jetty-http.version>12.0.12</jetty-http.version>         <!-- CVE-2024-6763 -->
 		<xnio.version>3.8.14.Final</xnio.version>                <!-- CVE-2023-5685 -->
@@ -208,17 +209,17 @@
 			<dependency>
 				<groupId>io.netty</groupId>
 				<artifactId>netty-codec-http</artifactId>
-				<version>${netty.version}</version>
+				<version>${netty-codec.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>io.netty</groupId>
 				<artifactId>netty-codec-smtp</artifactId>
-				<version>${netty.version}</version>
+				<version>${netty-codec.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>io.netty</groupId>
 				<artifactId>netty-codec</artifactId>
-				<version>${netty.version}</version>
+				<version>${netty-codec.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>io.netty</groupId>

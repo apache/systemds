@@ -19,22 +19,14 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-
-import jdk.incubator.vector.DoubleVector;
-import jdk.incubator.vector.VectorSpecies;
-import org.apache.arrow.vector.complex.writer.BitWriter;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.*;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -48,7 +40,9 @@ import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
-import org.apache.sysds.runtime.functionobjects.*;
+import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Minus;
+import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
@@ -56,7 +50,14 @@ import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import shaded.parquet.it.unimi.dsi.fastutil.ints.IntArrayList;
 import shaded.parquet.it.unimi.dsi.fastutil.longs.Long2IntLinkedOpenHashMap;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Stack;
 import java.util.HashMap;
+import java.util.NoSuchElementException;
 
 /**
  * Class to encapsulate information about a column group that is encoded with dense dictionary encoding (DDC) whose

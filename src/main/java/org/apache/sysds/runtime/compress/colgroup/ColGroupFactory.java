@@ -50,6 +50,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
+import org.apache.sysds.runtime.compress.colgroup.scheme.ColGroupPiecewiseLinearCompressed;
 import org.apache.sysds.runtime.compress.cost.ACostEstimate;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
@@ -935,6 +936,187 @@ public class ColGroupFactory {
 		int numRows = cs.transposed ? in.getNumColumns() : in.getNumRows();
 		return ColGroupLinearFunctional.create(colIndexes, coefficients, numRows);
 	}
+
+    public static AColGroup compressPiecewiseLinearFunctional(IColIndex colIndexes, MatrixBlock in, CompressionSettings cs) {
+
+
+        //Erstmal den Inhalt einer Spalte speichern
+
+        int numRows =  in.getNumRows();
+        int colIdx = colIndexes.get(0); //Die erste Spalte
+        double[] column = getColumn(in,colIdx);
+
+        //Sette den Targetloss
+
+        // Breakpoints bestimmen: Einteilung der Segmente
+
+        List<Integer> breakpointsList = computeBreakpoints(cs, column);
+        int[] breakpoints = breakpointsList.stream().mapToInt(Integer::intValue).toArray();
+        //Für jedes Segment lineare Regression als kompressionsverfahren
+
+        // 3) Pro Segment Regression -> a,b
+        int numSeg = breakpoints.length - 1;
+        double[] slopes     = new double[numSeg];
+        double[] intercepts = new double[numSeg];
+
+        for (int s = 0; s < numSeg; s++) {
+            int start = breakpoints[s];
+            int end   = breakpoints[s + 1];
+
+            double[] ab = regressSegment(column, start, end); // nutzt gleiche Stats wie computeSegmentCost
+            slopes[s]     = ab[0];
+            intercepts[s] = ab[1];
+        }
+        //Erstelle die Datenstruktur: PiecewiseLinearColGroupCompressed
+
+        return ColGroupPiecewiseLinearCompressed.create(
+                colIndexes,
+                breakpoints,
+                slopes,
+                intercepts,
+                numRows);
+    }
+
+
+    public static double[] getColumn(MatrixBlock in, int colIndex) {
+        int numRows = in.getNumRows();          // Anzahl der Zeilen [web:16]
+        double[] column = new double[numRows];  // Variable für die Spalte
+
+        for (int r = 0; r < numRows; r++) {
+            column[r] = in.get(r, colIndex);  // Wert (r, colIndex) lesen [web:16][web:25]
+        }
+        return column;
+    }
+    public static List<Integer> computeBreakpoints(CompressionSettings cs, double[] column){
+        int n = column.length;
+        double targetMSE = cs.getPiecewiseTargetLoss(); // nur lesen, NICHT setzen!
+
+        // Fall A: kein TargetLoss angegeben -> einfache Variante mit fixem λ
+        if (Double.isNaN(targetMSE) || targetMSE <= 0) {
+            double lambda = 5.0;
+            return computeBreakpointsLambda(column, lambda);
+        }
+
+        // Fall B: TargetLoss gesetzt -> globales Fehlerbudget berücksichtigen
+        double sseMax = n * targetMSE; // MSE -> SSE-Budget
+
+        double lambdaMin = 0.0;   // viele Segmente, minimaler Fehler
+        double lambdaMax = 1e6;   // wenige Segmente, mehr Fehler
+
+        List<Integer> bestBreaks = null;
+
+        for (int it = 0; it < 20; it++) { // Binärsuche auf λ
+            double lambda = 0.5 * (lambdaMin + lambdaMax);
+
+            List<Integer> breaks = computeBreakpointsLambda(column, lambda);
+            double totalSSE = computeTotalSSE(column, breaks);
+
+            if (totalSSE <= sseMax) {
+                // Budget eingehalten: wir können versuchen, mit größerem λ noch weniger Segmente zu nehmen
+                bestBreaks = breaks;
+                lambdaMin = lambda;
+            } else {
+                // Fehler zu groß: λ verkleinern, mehr Segmente zulassen
+                lambdaMax = lambda;
+            }
+        }
+
+        if (bestBreaks == null)
+            bestBreaks = computeBreakpointsLambda(column, lambdaMin);
+
+        return bestBreaks;
+    }
+    public static List<Integer> computeBreakpointsLambda(double[] column, double lambda) {
+        int sizeColumn = column.length;
+        double[] dp = new double[sizeColumn + 1];
+        int[] prev = new int[sizeColumn + 1];
+
+        dp[0] = 0.0;
+
+        for (int index = 1; index <= sizeColumn; index++) {
+            dp[index] = Double.POSITIVE_INFINITY;
+            for (int i = 0; i < index; i++) { // Segment [i, index)
+                double costCurrentSegment = computeSegmentCost(column, i, index); // SSE
+                double candidateCost = dp[i] + costCurrentSegment + lambda;
+                if (candidateCost < dp[index]) {
+                    dp[index] = candidateCost;
+                    prev[index] = i;
+                }
+            }
+        }
+
+        List<Integer> segmentLimits = new ArrayList<>();
+        int breakpointIndex = sizeColumn;
+        while (breakpointIndex > 0) {
+            segmentLimits.add(breakpointIndex);
+            breakpointIndex = prev[breakpointIndex];
+        }
+        segmentLimits.add(0);
+        Collections.sort(segmentLimits);
+        return segmentLimits;
+    }
+
+    public static double computeSegmentCost(double[] column, int start, int end) {
+        int n = end - start;
+        if (n <= 1)
+            return 0.0;
+
+        double[] ab = regressSegment(column, start, end);
+        double slope     = ab[0];
+        double intercept = ab[1];
+
+        double sse = 0.0;
+        for (int i = start; i < end; i++) {
+            double x = i;
+            double y = column[i];
+            double yhat = slope * x + intercept;
+            double diff = y - yhat;
+            sse += diff * diff;
+        }
+        return sse; // oder sse / n als MSE
+    }
+    public static double computeTotalSSE(double[] column, List<Integer> breaks) {
+        double total = 0.0;
+        for (int s = 0; s < breaks.size() - 1; s++) {
+            int start = breaks.get(s);
+            int end   = breaks.get(s + 1);
+            total += computeSegmentCost(column, start, end); // SSE des Segments
+        }
+        return total;
+    }
+
+
+    public static double[] regressSegment(double[] column, int start, int end) {
+        int n = end - start;
+        if (n <= 0)
+            return new double[] {0.0, 0.0};
+
+        double sumX = 0, sumY = 0, sumXX = 0, sumXY = 0;
+        for (int i = start; i < end; i++) {
+            double x = i;
+            double y = column[i];
+            sumX  += x;
+            sumY  += y;
+            sumXX += x * x;
+            sumXY += x * y;
+        }
+
+        double nD = n;
+        double denom = nD * sumXX - sumX * sumX;
+        double slope, intercept;
+        if (denom == 0) {
+            slope     = 0.0;
+            intercept = sumY / nD;
+        }
+        else {
+            slope     = (nD * sumXY - sumX * sumY) / denom;
+            intercept = (sumY - slope * sumX) / nD;
+        }
+        return new double[] {slope, intercept};
+    }
+
+
+
 
 	private AColGroup compressSDCFromSparseTransposedBlock(IColIndex cols, int nrUniqueEstimate, double tupleSparsity) {
 		if(cols.size() > 1)

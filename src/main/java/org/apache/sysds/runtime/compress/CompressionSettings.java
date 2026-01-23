@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress;
 
 import java.util.EnumSet;
 
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.cocode.CoCoderFactory.PartitionerType;
@@ -38,6 +39,22 @@ public class CompressionSettings {
 
 	/** Parallelization threshold for DDC compression */
 	public static int PAR_DDC_THRESHOLD = 10000;
+
+    /**
+     * Ziel-Gesamtverlust für piecewise lineare Kompression.
+     * Interpretation: maximal erlaubter globaler MSE pro Wert in der Spalte.
+     * 0.0  ~ quasi verlustfrei, viele Segmente
+     * >0   ~ mehr Approximation erlaubt, weniger Segmente
+     */
+
+    private double piecewiseTargetLoss = Double.NaN;
+
+    public void setPiecewiseTargetLoss(double piecewiseTargetLoss) {
+        this.piecewiseTargetLoss = piecewiseTargetLoss;
+    }
+    public double getPiecewiseTargetLoss() {
+        return piecewiseTargetLoss;
+    }
 
 	/**
 	 * Size of the blocks used in a blocked bitmap representation. Note it is exactly Character.MAX_VALUE. This is not
@@ -133,11 +150,11 @@ public class CompressionSettings {
 
 	public final double[] scaleFactors;
 
-	protected CompressionSettings(double samplingRatio, double samplePower, boolean allowSharedDictionary,
-		String transposeInput, int seed, boolean lossy, EnumSet<CompressionType> validCompressions,
-		boolean sortValuesByLength, PartitionerType columnPartitioner, int maxColGroupCoCode, double coCodePercentage,
-		int minimumSampleSize, int maxSampleSize, EstimationType estimationType, CostType costComputationType,
-		double minimumCompressionRatio, boolean isInSparkInstruction, SORT_TYPE sdcSortType, double[] scaleFactors) {
+	public CompressionSettings(double samplingRatio, double samplePower, boolean allowSharedDictionary,
+                               String transposeInput, int seed, boolean lossy, EnumSet<CompressionType> validCompressions,
+                               boolean sortValuesByLength, PartitionerType columnPartitioner, int maxColGroupCoCode, double coCodePercentage,
+                               int minimumSampleSize, int maxSampleSize, EstimationType estimationType, CostType costComputationType,
+                               double minimumCompressionRatio, boolean isInSparkInstruction, SORT_TYPE sdcSortType, double[] scaleFactors) {
 		this.samplingRatio = samplingRatio;
 		this.samplePower = samplePower;
 		this.allowSharedDictionary = allowSharedDictionary;
@@ -181,4 +198,6 @@ public class CompressionSettings {
 			sb.append("\t Estimation Type: " + estimationType);
 		return sb.toString();
 	}
+
+
 }

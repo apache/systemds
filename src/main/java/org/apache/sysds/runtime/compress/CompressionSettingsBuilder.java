@@ -54,7 +54,7 @@ public class CompressionSettingsBuilder {
 	private SORT_TYPE sdcSortType = SORT_TYPE.MATERIALIZE;
 	private double[] scaleFactors = null;
 
-	public CompressionSettingsBuilder() {
+    public CompressionSettingsBuilder() {
 
 		DMLConfig conf = ConfigurationManager.getDMLConfig();
 		this.lossy = conf.getBooleanValue(DMLConfig.COMPRESSED_LOSSY);
@@ -209,6 +209,17 @@ public class CompressionSettingsBuilder {
 		this.validCompressions.add(cp);
 		return this;
 	}
+
+    /**
+     * Ziel-Gesamtverlust für piecewise lineare Kompression.
+     * Interpretation: maximal erlaubter globaler MSE pro Wert in der Spalte.
+     * 0.0  ~ quasi verlustfrei, viele Segmente
+     * >0   ~ mehr Approximation erlaubt, weniger Segmente
+
+
+    public void setPiecewiseTargetLoss(double piecewiseTargetLoss) {
+        this.piecewiseTargetLoss = piecewiseTargetLoss;
+    }*/
 
 	/**
 	 * Clear all the compression types allowed in the compression. This will only allow the Uncompressed ColGroup type.

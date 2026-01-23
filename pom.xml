@@ -40,6 +40,8 @@
 
 	<properties>
 		<hadoop.version>3.3.6</hadoop.version>
+		<!-- low 2.0: CVE-2024-23454 Improper Privilege Management -->
+		<hadoop-common.version>3.4.2</hadoop-common.version>
 		<antlr.version>4.8</antlr.version>
 		<protobuf.version>3.25.5</protobuf.version>  <!-- CVE-2024-7254 -->
 		<spark.version>3.5.0</spark.version>
@@ -1474,7 +1476,7 @@
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-common</artifactId>
-			<version>${hadoop.version}</version>
+			<version>${hadoop-common.version}</version>
 			<exclusions>
 				<exclusion>
 					<groupId>javax.servlet</groupId>

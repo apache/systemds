@@ -306,6 +306,18 @@
 				<artifactId>guava</artifactId>
 				<version>33.5.0-jre</version>
 			</dependency>
+			<!-- CVE-2025-48924: Uncontrolled Recursion -->
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-lang3</artifactId>
+				<version>3.18.0</version>
+			</dependency>
+			<!-- CVE-2025-55039: Inadequate Encryption Strength -->
+			<dependency>
+				<groupId>org.apache.spark</groupId>
+				<artifactId>spark-network-common_2.12</artifactId>
+				<version>3.5.2</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 

@@ -29,7 +29,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     ca-certificates \
     gnupg \
-    doxygen \
+    python3 \
+    python3-pip \
+    python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /seal
@@ -53,34 +55,23 @@ RUN wget -qO- https://github.com/OpenMathLib/OpenBLAS/archive/refs/tags/v${OPENB
 
 WORKDIR /mkl
 
-# Install MKL
-RUN wget -qO- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
-    | gpg --dearmor | tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null \
-    && echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" \
-    | tee /etc/apt/sources.list.d/oneAPI.list \
-    && apt-get update && apt-get install -y --no-install-recommends intel-oneapi-mkl-devel
+# Install old MKL, since SystemDS depends on intel MKL <= 2019.x
+# Only package distro which has such old version available is PyPi
+ENV PATH="/mkl-install/bin:$PATH"
+RUN python3 -m venv /mkl-install && \
+    pip install mkl-devel==2018.0.0
 
 # Delete unused libraries, since MKL libraries take up a lot of disk space
-RUN find /opt/intel/oneapi/mkl/2025.3/lib \( \ 
+RUN find /mkl-install/lib \( \ 
     -name '*ilp64*' -o \
     -name 'libmkl_gnu_thread*' -o \
     -name 'libmkl_tbb_thread*' -o \
-    -name 'libmkl_sycl*' -o \
     -name '*_openmpi_*' -o \
     -name '*_intelmpi_*' -o \
     -name 'libmkl_vml*' -o \
     -name 'libmkl_scalapack*' \
     \) -delete
 
-# Install MKL-DNN
-ARG MKL_DNN_VERSION="0.21.5"
-RUN wget -qO- https://github.com/uxlfoundation/oneDNN/archive/refs/tags/v${MKL_DNN_VERSION}.tar.gz | tar xzf - \
-    && cd oneDNN-${MKL_DNN_VERSION} \
-    && mkdir -p build \
-    && cd build \
-    && cmake -DWITH_EXAMPLE=OFF -DWITH_TEST=OFF -DCMAKE_INSTALL_PREFIX=/mkldnn-install .. \
-    && make \
-    && make install 
 
 # Stage 2: Final image with R, JDK, Maven, SEAL, OpenBLAS, MKL
 FROM ubuntu:noble@sha256:728785b59223d755e3e5c5af178fab1be7031f3522c5ccd7a0b32b80d8248123 
@@ -153,11 +144,8 @@ COPY --from=build /openBLAS-install/lib/ /usr/local/lib/
 COPY --from=build /openBLAS-install/include/ /usr/local/include/
 
 # Copy MKL
-COPY --from=build /opt/intel/oneapi/mkl/2025.3/lib /usr/local/lib/
-COPY --from=build /opt/intel/oneapi/mkl/2025.3/include /usr/local/include/
-COPY --from=build /opt/intel/oneapi/compiler/2025.3/lib/libiomp5.so /usr/local/lib/
-COPY --from=build /mkldnn-install/lib /usr/local/lib/
-COPY --from=build /mkldnn-install/include /usr/local/include/
+COPY --from=build /mkl-install/include /usr/local/include/
+COPY --from=build /mkl-install/lib /usr/local/lib/
 
 ENV LD_LIBRARY_PATH=/opt/hadoop/lib/native;/usr/local/lib/
 

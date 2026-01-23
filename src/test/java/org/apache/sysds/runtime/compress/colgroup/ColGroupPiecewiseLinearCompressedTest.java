@@ -21,6 +21,7 @@ import static org.junit.Assert.*;
  * - Konstruktor / create(...)
  * - decompressToDenseBlock(...)
  */
+//TODO Fix
 public class ColGroupPiecewiseLinearCompressedTest {
 
     private CompressionSettings cs;
@@ -48,6 +49,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
         double[] column = {0.0, 1.0, 2.0, 3.0, 4.0}; // ← andere column
         List<Integer> breaks = computeBreakpoints(cs, column);
         assertEquals(Arrays.asList(0, 2), breaks); // Erwartet
+
     }
 
     @Test

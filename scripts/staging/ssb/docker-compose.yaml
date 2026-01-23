@@ -1,5 +1,4 @@
-# Use
-#https://stackoverflow.com/questions/35231362/dockerfile-and-docker-compose-not-updating-with-new-instructions
+# The docker compose file to create a postgres instance.
 #docker-compose --build
 #docker-compose up
 
@@ -8,22 +7,22 @@
 #docker-compose up
 
 # Create .env file and modify before each docker compose up.
-#SCALE=[OUR_VALUE]
-#QUERY=[OUR_QUERY_NUMBER]
-#Example:
-#SCALE=0.01
-#QUERY=q1_1
+# in .env file
+#POSTGRES_USER=[YOUR_USERNAME]
+#POSTGRES_PASSWORD=[YOUR_USERNAME]
+#POSTGRES_DB=[YOUR_DB_NAME]
+#PORT_NUMBER=[YOUR_PORT_NUMBER]
 
 #This docker-compose file is linked to the Dockerfile.
 
 services:
-  datagen:
+  postgres:
     build:
       context: .
+    restart: always
     environment:
-      SCALE: ${SCALE}
-  systemds: 
-    build:
-        context: .
-    environment:
-      QUERY: ${QUERY}
+        POSTGRES_USER: ${POSTGRES_USER}
+        POSTGRES_PASSWORD: $(POSTGRES_PASSWORD)
+        POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${PORT_NUMBER}:5432"

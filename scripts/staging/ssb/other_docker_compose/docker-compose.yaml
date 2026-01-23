@@ -1,0 +1,46 @@
+# Use
+#https://stackoverflow.com/questions/35231362/dockerfile-and-docker-compose-not-updating-with-new-instructions
+#docker-compose --build
+#docker-compose up
+
+# Example
+#docker-compose up --build
+#docker-compose up
+
+# Create .env file and modify before each docker compose up.
+#SCALE=[OUR_VALUE]
+#QUERY=[OUR_QUERY_NUMBER]
+#Example:
+#SCALE=0.01
+#QUERY=q1_1
+
+#This docker-compose file is linked to the Dockerfile.
+
+services:
+  datagen:
+    build:
+      context: .
+      args:
+        - SCALE=${SCALE}
+    env_file: .env
+    #environment:
+    #  SCALE: ${SCALE}
+  systemds: 
+    build:
+      context: .
+      args:
+        - SCALE=${SCALE}
+    environment:
+      QUERY: ${QUERY}
+  postgres:
+    build:
+      context: .
+      args:
+        - SCALE=${SCALE}
+    restart: always
+    environment:
+        POSTGRES_USER: ${POSTGRES_USER}
+        POSTGRES_PASSWORD: $(POSTGRES_PASSWORD)
+        POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${PORT_NUMBER}:5432"

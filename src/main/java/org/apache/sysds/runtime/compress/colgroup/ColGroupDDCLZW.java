@@ -27,6 +27,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -45,6 +46,7 @@ import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import shaded.parquet.it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -260,9 +262,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		}
 	}
 
-	// Decompresses an LZW-compressed vector into its pre-compressed AMapToData form until index.
 	private static AMapToData decompress(int[] codes, int nUnique, int nRows, int index) {
-		// Validate input arguments.
 		if(codes == null)
 			throw new IllegalArgumentException("codes is null");
 		if(codes.length == 0)
@@ -276,20 +276,14 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 			throw new IllegalArgumentException("Index is larger than Data Length: " + index);
 		}
 
-		// Return empty Map if index is zero.
 		if(index == 0)
 			return MapToFactory.create(0, nUnique);
 
-		// Maps: code -> packKey(prefixCode, lastSymbolOfPhrase).
-		// Base symbols (0..nUnique-1) are implicit and not stored here.
 		final Map<Integer, Long> dict = new HashMap<>();
 
-		// Output mapping that will be reconstructed.
 		AMapToData out = MapToFactory.create(index, nUnique);
-		int outPos = 0; // Current write position in the output mapping.
+		int outPos = 0;
 
-		// Decode the first code. The first code always expands to a valid phrase without needing
-		// any dictionary entries.
 		int old = codes[0];
 		int[] oldPhrase = unpack(old, nUnique, dict);
 
@@ -299,59 +293,45 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 			out.set(outPos++, v);
 		}
 
-		// Next free dictionary code. Codes 0..nUnique-1 are reserved for base symbols.
 		int nextCode = nUnique;
 
-		// Process remaining codes.
 		for(int i = 1; i < codes.length; i++) {
 			int key = codes[i];
 
 			int[] next;
 			if(key < nUnique || dict.containsKey(key)) {
-				// Normal case: The code is either a base symbol or already present in the dictionary.
 				next = unpack(key, nUnique, dict);
 			}
 			else {
-				// KwKwK special case: The current code refers to a phrase that is being defined right now.
-				// next = oldPhrase + first(oldPhrase).
 				int first = oldPhrase[0];
 				next = packint(oldPhrase, first);
 			}
 
-			// Append the reconstructed phrase to the output mapping.
 			for(int v : next) {
 				if(outPos == index)
-					// Stop immediately once done.
 					return out;
 				out.set(outPos++, v);
 			}
 
-			// Add new phrase to dictionary: nextCode -> (old, firstSymbol(next)).
 			final int first = next[0];
 			dict.put(nextCode++, packKey(old, first));
 
-			// Advance.
 			old = key;
 			oldPhrase = next;
 		}
 
-		// Safety check: decoder must produce exactly nRows symbols.
 		if(outPos != index)
 			throw new IllegalStateException("Decompression length mismatch: got " + outPos + " expected " + index);
 
-		// Return the reconstructed mapping.
 		return out;
 	}
 
-	// Build Constructor: Used when creating a new DDCLZW instance during compression/build time. (TODO)
 	private ColGroupDDCLZW(IColIndex colIndexes, IDictionary dict, AMapToData data, int[] cachedCounts) {
 		super(colIndexes, dict, cachedCounts);
 
-		// Derive metadadata
 		_nRows = data.size();
 		_nUnique = dict.getNumberOfValues(colIndexes.size());
 
-		// Compress mapping to LZW
 		_dataLZW = compress(data);
 
 		if(CompressedMatrixBlock.debug) {
@@ -370,7 +350,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		}
 	}
 
-	// Read Constructor: Used when creating this group from a serialized form (e.g., reading a compressed matrix from disk/memory stream). (TODO)
 	private ColGroupDDCLZW(IColIndex colIndexes, IDictionary dict, int[] dataLZW, int nRows, int nUnique,
 		int[] cachedCounts) {
 		super(colIndexes, dict, cachedCounts);
@@ -393,7 +372,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		}
 	}
 
-	// Factory method for creating a column group. (AColGroup g = ColGroupDDCLZW.create(...);)
 	public static AColGroup create(IColIndex colIndexes, IDictionary dict, AMapToData data, int[] cachedCounts) {
 		if(dict == null)
 			return new ColGroupEmpty(colIndexes);
@@ -409,22 +387,13 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		return ColGroupDDC.create(_colIndexes, _dict, map, counts);
 	}
 
-	public AColGroup convertToDDC(int index) {
-		final AMapToData map = decompress(_dataLZW, _nUnique, _nRows, index);
-		final int[] counts = getCounts(); // may be null depending on your group
-		return ColGroupDDC.create(_colIndexes, _dict, map, counts);
-	}
-
-	// Deserialize ColGroupDDCLZW object in binary stream.
 	public static ColGroupDDCLZW read(DataInput in) throws IOException {
 		final IColIndex colIndexes = ColIndexFactory.read(in);
 		final IDictionary dict = DictionaryFactory.read(in);
 
-		// Metadata for lzw mapping.
 		final int nRows = in.readInt();
 		final int nUnique = in.readInt();
 
-		// Read compressed mapping array.
 		final int len = in.readInt();
 		if(len < 0)
 			throw new IOException("Invalid LZW data length: " + len);
@@ -433,18 +402,15 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		for(int i = 0; i < len; i++)
 			dataLZW[i] = in.readInt();
 
-		// cachedCounts currently not serialized (mirror ColGroupDDC.read which passes null)
 		return new ColGroupDDCLZW(colIndexes, dict, dataLZW, nRows, nUnique, null);
 	}
 
-	// Serialize a ColGroupDDC-object into binary stream.
 	@Override
 	public void write(DataOutput out) throws IOException {
-		_colIndexes.write(out);
-		_dict.write(out);
+		super.write(out);
 		out.writeInt(_nRows);
 		out.writeInt(_nUnique);
-		out.writeInt(_dataLZW.length); // TODO: correct ?
+		out.writeInt(_dataLZW.length);
 		for(int i : _dataLZW)
 			out.writeInt(i);
 	}
@@ -489,7 +455,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
 	@Override
 	public ICLAScheme getCompressionScheme() {
-		//TODO: in ColGroupDDCFor nicht implementiert - sollen wir das erstellen? Inhalt: ncols wie DDC
 		return DDCLZWScheme.create(this);
 	}
 
@@ -592,7 +557,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 	@Override
 	protected void decompressToDenseBlockTransposedDenseDictionary(DenseBlock db, int rl, int ru, double[] dict) {
 		ColGroupDDC g = (ColGroupDDC) convertToDDC();
-		g.decompressToDenseBlockTransposedDenseDictionary(db, rl, ru, dict); // Possible implementation with iterator.
+		g.decompressToDenseBlockTransposedDenseDictionary(db, rl, ru, dict);
 
 	}
 
@@ -603,7 +568,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		for(int j = 0; j < _colIndexes.size(); j++)
 			sbr.allocate(_colIndexes.get(j), colCounts[j]);
 
-		LZWMappingIterator it = new LZWMappingIterator(); // Replace data.getIndex withiterator.
+		LZWMappingIterator it = new LZWMappingIterator();
 
 		for(int i = 0; i < _nRows; i++) {
 			int di = it.next();
@@ -736,7 +701,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 			if(v0 == 0)
 				return this;
 		}
-
 		return new ColGroupDDCLZW(_colIndexes, _dict.applyScalarOp(op), _dataLZW, _nRows, _nUnique, getCachedCounts());
 	}
 
@@ -748,15 +712,21 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 	@Override
 	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
 		IDictionary ret = _dict.binOpLeft(op, v, _colIndexes);
-
-		AMapToData data = decompressFull(_dataLZW, _nUnique, _nRows);
-		return create(getColIndices(), ret, data, getCachedCounts());
+		return new ColGroupDDCLZW(_colIndexes, ret, _dataLZW, _nRows, _nUnique, getCachedCounts());
 	}
 
 	@Override
 	public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
-		ColGroupDDC g = (ColGroupDDC) convertToDDC();
-		return g.binaryRowOpRight(op, v, isRowSafe);
+		if((op.fn instanceof Plus || op.fn instanceof Minus) && _dict instanceof MatrixBlockDictionary &&
+			((MatrixBlockDictionary) _dict).getMatrixBlock().isInSparseFormat()) {
+			return convertToDDC().binaryRowOpRight(op, v, isRowSafe);
+		}
+		final IDictionary ret;
+		if(_colIndexes.size() == 1)
+			ret = _dict.applyScalarOp(new RightScalarOperator(op.fn, v[_colIndexes.get(0)]));
+		else
+			ret = _dict.binOpRight(op, v, _colIndexes);
+		return new ColGroupDDCLZW(_colIndexes, ret, _dataLZW, _nRows, _nUnique, getCachedCounts());
 	}
 
 	public int[] appendDataLZWMap(int[] dataLZW) {

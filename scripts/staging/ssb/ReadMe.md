@@ -33,14 +33,15 @@ After that, it is copied into the database containers (SystemDS, PostgreSQL and 
 To run our queries, we can execute the following shell script `run_script.sh`  (in ssb directory). It has the three following parameters.
 1. `QUERY_NAME`: Name of the query to be executed.
     - **all**: executes all queries
-    - **[QUERY_NAME]** like q1_1: Executes the selected query like q1_1.dml.
+    - **[QUERY_NAME]** like q1_1 or q1.1: Executes the selected query like q1_1. dml. Both formats q1_1 or q1.1 are allowed. It will be automatically translated.
+    - Currently the following queries are avalaible {"q1_1", "q1_2", "q1_3", "q2_1", "q2_2", "q2_3", "q3_1", "q3_2","q3_3", "q3_4", "q4_1", "q4_2", "q4_3"}
 2. `SCALE`: The numerical scale factor like 0.01 or 1 etc.
     - Be careful: Please do not experiment with large scale factor over 0.2 in SystemDS. Its join operation is currently very slow.
 3. `DB_SYSTEM`: Name of the database system used.
     - **all**: executes all queries
-    - **systemds**: SystemDS
-    - **postgres**: PostgreSQL
-    - ( **duckdb**: DuckDB)
+    - **systemds**: SystemDS executes DML scripts.
+    - **postgres**: PostgreSQL executes SQL queries.
+    - ( **duckdb**: DuckDB executes SQL queries.) 
   
 The order should be as follows:
 ```

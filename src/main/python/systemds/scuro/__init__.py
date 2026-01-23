@@ -30,7 +30,13 @@ from systemds.scuro.representations.aggregated_representation import (
     AggregatedRepresentation,
 )
 from systemds.scuro.representations.average import Average
-from systemds.scuro.representations.bert import Bert
+from systemds.scuro.representations.bert import (
+    Bert,
+    RoBERTa,
+    DistillBERT,
+    ALBERT,
+    ELECTRA,
+)
 from systemds.scuro.representations.bow import BoW
 from systemds.scuro.representations.concatenation import Concatenation
 from systemds.scuro.representations.context import Context
@@ -101,6 +107,22 @@ from systemds.scuro.drsearch.multimodal_optimizer import MultimodalOptimizer
 from systemds.scuro.drsearch.unimodal_optimizer import UnimodalOptimizer
 from systemds.scuro.representations.vgg import VGG19
 from systemds.scuro.representations.clip import CLIPText, CLIPVisual
+from systemds.scuro.representations.text_context import (
+    SentenceBoundarySplit,
+    OverlappingSplit,
+)
+from systemds.scuro.representations.text_context_with_indices import (
+    SentenceBoundarySplitIndices,
+    OverlappingSplitIndices,
+)
+from systemds.scuro.representations.elmo import ELMoRepresentation
+from systemds.scuro.representations.dimensionality_reduction import (
+    DimensionalityReduction,
+)
+from systemds.scuro.representations.mlp_averaging import MLPAveraging
+from systemds.scuro.representations.mlp_learned_dim_reduction import (
+    MLPLearnedDimReduction,
+)
 
 __all__ = [
     "BaseLoader",
@@ -113,6 +135,10 @@ __all__ = [
     "AggregatedRepresentation",
     "Average",
     "Bert",
+    "RoBERTa",
+    "DistillBERT",
+    "ALBERT",
+    "ELECTRA",
     "BoW",
     "Concatenation",
     "Context",
@@ -177,4 +203,12 @@ __all__ = [
     "VGG19",
     "CLIPVisual",
     "CLIPText",
+    "SentenceBoundarySplit",
+    "OverlappingSplit",
+    "ELMoRepresentation",
+    "SentenceBoundarySplitIndices",
+    "OverlappingSplitIndices",
+    "MLPAveraging",
+    "MLPLearnedDimReduction",
+    "DimensionalityReduction",
 ]

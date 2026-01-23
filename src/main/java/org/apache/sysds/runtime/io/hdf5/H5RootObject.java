@@ -19,22 +19,24 @@
 
 package org.apache.sysds.runtime.io.hdf5;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
 public class H5RootObject {
 
-	protected BufferedInputStream bufferedInputStream;
+	protected H5ByteReader byteReader;
 	protected BufferedOutputStream bufferedOutputStream;
 	protected H5Superblock superblock;
 	protected int rank;
 	protected long row;
 	protected long col;
-	protected int[] dimensions;
+	protected int[] logicalDimensions;
+	protected int[] rawDimensions;
+	protected int[] axisPermutation;
 	protected long maxRow;
 	protected long maxCol;
 	protected int[] maxSizes;
@@ -50,46 +52,47 @@ public class H5RootObject {
 	protected byte groupSymbolTableNodeVersion = 1;
 
 	protected byte dataLayoutClass = 1;
+	public static final boolean HDF5_DEBUG = Boolean.getBoolean("sysds.hdf5.debug");
 
 	public ByteBuffer readBufferFromAddress(long address, int length) {
-		ByteBuffer bb = ByteBuffer.allocate(length);
 		try {
-			byte[] b = new byte[length];
-			bufferedInputStream.reset();
-			bufferedInputStream.skip(address);
-			bufferedInputStream.read(b);
-			bb.put(b);
+			ByteBuffer bb = byteReader.read(address, length);
+			bb.order(LITTLE_ENDIAN);
+			bb.rewind();
+			return bb;
 		}
 		catch(IOException e) {
 			throw new H5RuntimeException(e);
 		}
-		bb.order(LITTLE_ENDIAN);
-		bb.rewind();
-		return bb;
 	}
 
 	public ByteBuffer readBufferFromAddressNoOrder(long address, int length) {
-		ByteBuffer bb = ByteBuffer.allocate(length);
 		try {
-			byte[] b = new byte[length];
-			bufferedInputStream.reset();
-			bufferedInputStream.skip(address);
-			bufferedInputStream.read(b);
-			bb.put(b);
+			ByteBuffer bb = byteReader.read(address, length);
+			bb.rewind();
+			return bb;
 		}
 		catch(IOException e) {
 			throw new H5RuntimeException(e);
 		}
-		bb.rewind();
-		return bb;
 	}
 
-	public BufferedInputStream getBufferedInputStream() {
-		return bufferedInputStream;
+	public void setByteReader(H5ByteReader byteReader) {
+		this.byteReader = byteReader;
 	}
 
-	public void setBufferedInputStream(BufferedInputStream bufferedInputStream) {
-		this.bufferedInputStream = bufferedInputStream;
+	public H5ByteReader getByteReader() {
+		return byteReader;
+	}
+
+	public void close() {
+		try {
+			if(byteReader != null)
+				byteReader.close();
+		}
+		catch(IOException e) {
+			throw new H5RuntimeException(e);
+		}
 	}
 
 	public BufferedOutputStream getBufferedOutputStream() {
@@ -114,7 +117,8 @@ public class H5RootObject {
 
 	public void setRow(long row) {
 		this.row = row;
-		this.dimensions[0] = (int) row;
+		if(this.logicalDimensions != null && this.logicalDimensions.length > 0)
+			this.logicalDimensions[0] = (int) row;
 	}
 
 	public long getCol() {
@@ -123,7 +127,8 @@ public class H5RootObject {
 
 	public void setCol(long col) {
 		this.col = col;
-		this.dimensions[1] = (int) col;
+		if(this.logicalDimensions != null && this.logicalDimensions.length > 1)
+			this.logicalDimensions[1] = (int) col;
 	}
 
 	public int getRank() {
@@ -132,7 +137,7 @@ public class H5RootObject {
 
 	public void setRank(int rank) {
 		this.rank = rank;
-		this.dimensions = new int[rank];
+		this.logicalDimensions = new int[rank];
 		this.maxSizes = new int[rank];
 	}
 
@@ -142,7 +147,8 @@ public class H5RootObject {
 
 	public void setMaxRow(long maxRow) {
 		this.maxRow = maxRow;
-		this.maxSizes[0] = (int) maxRow;
+		if(this.maxSizes != null && this.maxSizes.length > 0)
+			this.maxSizes[0] = (int) maxRow;
 	}
 
 	public long getMaxCol() {
@@ -151,7 +157,8 @@ public class H5RootObject {
 
 	public void setMaxCol(long maxCol) {
 		this.maxCol = maxCol;
-		this.maxSizes[1] = (int) maxCol;
+		if(this.maxSizes != null && this.maxSizes.length > 1)
+			this.maxSizes[1] = (int) maxCol;
 	}
 
 	public String getDatasetName() {
@@ -163,11 +170,23 @@ public class H5RootObject {
 	}
 
 	public int[] getDimensions() {
-		return dimensions;
+		return logicalDimensions;
+	}
+
+	public int[] getLogicalDimensions() {
+		return logicalDimensions;
 	}
 
 	public int[] getMaxSizes() {
 		return maxSizes;
+	}
+
+	public int[] getRawDimensions() {
+		return rawDimensions;
+	}
+
+	public int[] getAxisPermutation() {
+		return axisPermutation;
 	}
 
 	public byte getDataSpaceVersion() {
@@ -179,15 +198,45 @@ public class H5RootObject {
 	}
 
 	public void setDimensions(int[] dimensions) {
-		this.dimensions = dimensions;
-		this.row = dimensions[0];
-		this.col = dimensions[1];
+		this.rawDimensions = dimensions;
+		if(dimensions == null || dimensions.length == 0) {
+			this.logicalDimensions = dimensions;
+			this.axisPermutation = new int[0];
+			this.row = 0;
+			this.col = 0;
+			return;
+		}
+		int[] logical = Arrays.copyOf(dimensions, dimensions.length);
+		int[] permutation = identityPermutation(dimensions.length);
+		this.logicalDimensions = logical;
+		this.axisPermutation = permutation;
+		this.row = logicalDimensions[0];
+		this.col = flattenColumns(logicalDimensions);
+		if(HDF5_DEBUG) {
+			System.out.println("[HDF5] setDimensions rank=" + dimensions.length + " rawDims="
+				+ java.util.Arrays.toString(dimensions) + " logicalDims=" + java.util.Arrays.toString(logicalDimensions)
+				+ " axisPerm=" + java.util.Arrays.toString(axisPermutation) + " => rows=" + row + " cols(flat)=" + col);
+		}
+		if(HDF5_DEBUG) {
+			System.out.println("[HDF5] setDimensions debug raw=" + java.util.Arrays.toString(dimensions)
+				+ " logical=" + java.util.Arrays.toString(logicalDimensions) + " perm="
+				+ java.util.Arrays.toString(axisPermutation));
+		}
 	}
 
 	public void setMaxSizes(int[] maxSizes) {
 		this.maxSizes = maxSizes;
+		if(maxSizes == null || maxSizes.length == 0) {
+			this.maxRow = 0;
+			this.maxCol = 0;
+			return;
+		}
 		this.maxRow = maxSizes[0];
-		this.maxCol = maxSizes[1];
+		this.maxCol = flattenColumns(maxSizes);
+		if(HDF5_DEBUG) {
+			System.out.println("[HDF5] setMaxSizes rank=" + maxSizes.length + " max=" + java.util.Arrays.toString(maxSizes)
+				+ " => maxRows=" + maxRow + " maxCols(flat)=" + maxCol);
+		}
 	}
 
 	public byte getObjectHeaderVersion() {
@@ -245,4 +294,23 @@ public class H5RootObject {
 	public void setGroupSymbolTableNodeVersion(byte groupSymbolTableNodeVersion) {
 		this.groupSymbolTableNodeVersion = groupSymbolTableNodeVersion;
 	}
+
+	private long flattenColumns(int[] dims) {
+		if(dims.length == 1) {
+			return 1;
+		}
+		long product = 1;
+		for(int i = 1; i < dims.length; i++) {
+			product = Math.multiplyExact(product, dims[i]);
+		}
+		return product;
+	}
+
+	private static int[] identityPermutation(int rank) {
+		int[] perm = new int[rank];
+		for(int i = 0; i < rank; i++)
+			perm[i] = i;
+		return perm;
+	}
+
 }

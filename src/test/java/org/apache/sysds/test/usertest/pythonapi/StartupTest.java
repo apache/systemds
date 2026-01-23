@@ -1,18 +1,18 @@
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
+ * or more contributor license agreements.	See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *	 http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
+ * KIND, either express or implied.	 See the License for the
  * specific language governing permissions and limitations
  * under the License.
  */
@@ -24,7 +24,10 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
 import org.apache.sysds.api.PythonDMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.frame.data.FrameBlock;
+import org.apache.sysds.runtime.frame.data.columns.Array;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.UnixPipeUtils;
 import org.apache.sysds.test.LoggingUtils;
@@ -39,7 +42,6 @@ import py4j.GatewayServer;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.security.Permission;
 import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -48,29 +50,19 @@ import static org.junit.Assert.assertArrayEquals;
 /** Simple tests to verify startup of Python Gateway server happens without crashes */
 public class StartupTest {
 	private LoggingUtils.TestAppender appender;
-	@SuppressWarnings("removal")
-	private SecurityManager sm;
 
 	@Before
-	@SuppressWarnings("removal")
 	public void setUp() {
 		appender = LoggingUtils.overwrite();
-		sm = System.getSecurityManager();
-		System.setSecurityManager(new NoExitSecurityManager());
+		PythonDMLScript.setExitHandler(new ExitCalled());
 		PythonDMLScript.setDMLGateWayListenerLoggerLevel(Level.ALL);
 		Logger.getLogger(PythonDMLScript.class.getName()).setLevel(Level.ALL);
 	}
 
 	@After
-	@SuppressWarnings("removal")
 	public void tearDown() {
 		LoggingUtils.reinsert(appender);
-		System.setSecurityManager(sm);
-	}
-
-	@SuppressWarnings("unused")
-	private void assertLogMessages(String... expectedMessages) {
-		assertLogMessages(true, expectedMessages);
+		PythonDMLScript.resetExitHandler();
 	}
 
 	private void assertLogMessages(boolean strict, String... expectedMessages) {
@@ -92,9 +84,9 @@ public class StartupTest {
 				// order does not matter
 				boolean found = false;
 
-                for (LoggingEvent loggingEvent : log) {
-                    found |= loggingEvent.getMessage().toString().startsWith(message);
-                }
+				for (LoggingEvent loggingEvent : log) {
+					found |= loggingEvent.getMessage().toString().startsWith(message);
+				}
 				Assert.assertTrue("Expected log message not found: " + message,found);
 			}
 		}
@@ -137,7 +129,7 @@ public class StartupTest {
 			Thread.sleep(200);
 			PythonDMLScript.main(new String[]{"-python", "4001"});
 			Thread.sleep(200);
-		} catch (SecurityException e) {
+		} catch (ExitCalled e) {
 			assertLogMessages(false,
 					"GatewayServer started",
 					"failed startup"
@@ -185,8 +177,9 @@ public class StartupTest {
 		MatrixBlock mb = new MatrixBlock(2, 3, data);
 		script.startWritingMbToPipe(0, mb);
 		double[] rcv_data = new double[data.length];
-		UnixPipeUtils.readNumpyArrayInBatches(java2py, 0, 32, data.length, Types.ValueType.FP64, rcv_data, 0);
+		long nonZeros = UnixPipeUtils.readNumpyArrayInBatches(java2py, 0, 32, data.length, Types.ValueType.FP64, rcv_data, 0);
 		assertArrayEquals(data, rcv_data, 1e-9);
+		Assert.assertEquals((long) data.length, nonZeros); // All values are non-zero
 
 		// Read Test
 		UnixPipeUtils.writeNumpyArrayInBatches(py2java, 0, 32, data.length, Types.ValueType.FP64, mb);
@@ -230,6 +223,46 @@ public class StartupTest {
 		PythonDMLScript.GwS.shutdown();
 		Thread.sleep(200);
 	}
+	
+
+	@Test
+	public void testDataFrameTransfer() throws Exception {
+		PythonDMLScript.main(new String[]{"-python", "4003"});
+		Thread.sleep(200);
+		PythonDMLScript script = (PythonDMLScript) PythonDMLScript.GwS.getGateway().getEntryPoint();
+
+		File in = folder.newFile("py2java-0");
+		File out = folder.newFile("java2py-0");
+
+		// Init Test
+		BufferedOutputStream py2java = UnixPipeUtils.openOutput(in.getAbsolutePath(), 0);
+		script.openPipes(folder.getRoot().getPath(), 1);
+		BufferedInputStream java2py = UnixPipeUtils.openInput(out.getAbsolutePath(), 0);
+
+		// Write Test
+		String[][] data = new String[][]{{"1", "2", "3"}, {"4", "5", "6"}};
+		ValueType[] schema = new ValueType[]{Types.ValueType.STRING, Types.ValueType.STRING, Types.ValueType.STRING};
+		FrameBlock fb = new FrameBlock(schema, data);
+		
+		FrameBlock rcv_fb = new FrameBlock(schema, 2);
+		
+		for (int i = 0; i < 3; i++) {
+			script.startWritingColToPipe(0, fb, i);
+			Array<?> rcv_arr = UnixPipeUtils.readFrameColumnFromPipe(java2py, 0, 2, -1, 32 * 1024, Types.ValueType.STRING);
+			rcv_fb.setColumn(i, rcv_arr);
+		}
+
+		for (int i = 0; i < 3; i++) {
+			UnixPipeUtils.writeFrameColumnToPipe(py2java, 0, 32, fb.getColumn(i), Types.ValueType.STRING);
+			script.startReadingColFromPipe(0, rcv_fb, 2, -1, i, Types.ValueType.STRING, false);
+		}
+
+		script.closePipes();
+
+		PythonDMLScript.GwS.shutdown();
+		Thread.sleep(200);
+	}
+
 
 	@Test(expected = DMLRuntimeException.class)
 	public void testDataTransferNotInit1() throws Exception {
@@ -255,14 +288,27 @@ public class StartupTest {
 		script.startReadingMbFromPipes(new int[]{3,3}, 2, 3, Types.ValueType.FP64);
 	}
 
-	@SuppressWarnings("removal")
-	class NoExitSecurityManager extends SecurityManager {
-		@Override
-		public void checkPermission(Permission perm) { }
+	@Test(expected = Exception.class)
+	public void testDataTransferNotInit4() throws Exception {
+		PythonDMLScript.main(new String[]{"-python", "4007"});
+		Thread.sleep(200);
+		PythonDMLScript script = (PythonDMLScript) PythonDMLScript.GwS.getGateway().getEntryPoint();
+		script.startReadingColFromPipe(0, null, 2, -1, 0, Types.ValueType.STRING, false);
+	}
+
+	@Test(expected = Exception.class)
+	public void testDataTransferNotInit5() throws Exception {
+		PythonDMLScript.main(new String[]{"-python", "4007"});
+		Thread.sleep(200);
+		PythonDMLScript script = (PythonDMLScript) PythonDMLScript.GwS.getGateway().getEntryPoint();
+		script.startWritingColToPipe(0, null, 0);
+	}
+	private static class ExitCalled extends RuntimeException implements PythonDMLScript.ExitHandler {
+		private static final long serialVersionUID = -4247240099965056602L;
 
 		@Override
-		public void checkExit(int status) {
-			throw new SecurityException("Intercepted exit()");
+		public void exit(int status) {
+			throw this;
 		}
 	}
 

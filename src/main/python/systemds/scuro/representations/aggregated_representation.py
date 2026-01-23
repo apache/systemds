@@ -21,6 +21,7 @@
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.representation import Representation
 from systemds.scuro.representations.aggregate import Aggregation
+import time
 
 
 class AggregatedRepresentation(Representation):
@@ -33,8 +34,11 @@ class AggregatedRepresentation(Representation):
         self.self_contained = True
 
     def transform(self, modality):
+        start = time.perf_counter()
         aggregated_modality = TransformedModality(
             modality, self, self_contained=modality.self_contained
         )
+        end = time.perf_counter()
+        aggregated_modality.transform_time += end - start
         aggregated_modality.data = self.aggregation.execute(modality)
         return aggregated_modality

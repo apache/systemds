@@ -1,4 +1,4 @@
-<!--
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,26 +6,44 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
--->
+ */
 
-<root>
-   <sysds.localtmpdir>/tmp/systemds</sysds.localtmpdir>
-   <sysds.scratch>scratch_space</sysds.scratch>
-   <sysds.optlevel>2</sysds.optlevel>
-   <sysds.codegen.plancache>true</sysds.codegen.plancache>
-   <sysds.codegen.literals>1</sysds.codegen.literals>
+package org.apache.sysds.runtime.ooc.cache;
 
-   <!-- The number of threads for the spark instance artificially selected-->
-   <sysds.local.spark.number.threads>16</sysds.local.spark.number.threads>
+public enum BlockState {
+	HOT,
+	WARM,
+	EVICTING,
+	READING,
+	//DEFERRED_READ, // Deferred read
+	COLD,
+	REMOVED; // Removed state means that it is not owned by the cache anymore. It doesn't mean the object is dereferenced
 
-   <sysds.codegen.api>auto</sysds.codegen.api>
-</root>
+	public boolean isAvailable() {
+		return this == HOT || this == WARM || this == EVICTING || this == REMOVED;
+	}
+
+	public boolean isUnavailable() {
+		return this == COLD || this == READING;
+	}
+
+	public boolean readScheduled() {
+		return this == READING;
+	}
+
+	public boolean isBackedByDisk() {
+		return switch(this) {
+			case WARM, COLD, READING -> true;
+			default -> false;
+		};
+	}
+}

@@ -22,17 +22,19 @@
 import numpy as np
 import cv2
 
+from systemds.scuro.drsearch.operator_registry import register_representation
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.modality.transformed import TransformedModality
 
 
+@register_representation(ModalityType.IMAGE)
 class ColorHistogram(UnimodalRepresentation):
     def __init__(
         self,
         color_space="RGB",
-        bins=32,
-        normalize=True,
+        bins=64,
+        normalize=False,
         aggregation="mean",
         output_file=None,
     ):
@@ -48,7 +50,7 @@ class ColorHistogram(UnimodalRepresentation):
     def _get_parameters(self):
         return {
             "color_space": ["RGB", "HSV", "GRAY"],
-            "bins": [8, 16, 32, 64, 128, 256, (8, 8, 8), (16, 16, 16)],
+            "bins": [8, 16, 32, 64, 128, 256],
             "normalize": [True, False],
             "aggregation": ["mean", "max", "concat"],
         }

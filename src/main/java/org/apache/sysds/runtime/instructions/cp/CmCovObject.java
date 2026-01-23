@@ -27,7 +27,7 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 
 
-public class CM_COV_Object extends Data 
+public class CmCovObject extends Data 
 {
 	private static final long serialVersionUID = -5814207545197934085L;
 
@@ -48,7 +48,7 @@ public class CM_COV_Object extends Data
 		return "weight: "+w+", mean: "+mean+", m2: "+m2+", m3: "+m3+", m4: "+m4+", min: "+min+", max: "+max+", mean2: "+mean_v+", c2: "+c2;
 	}
 	
-	public CM_COV_Object()
+	public CmCovObject()
 	{
 		super(DataType.UNKNOWN, ValueType.UNKNOWN);
 		w=0;
@@ -75,7 +75,7 @@ public class CM_COV_Object extends Data
 		max=0;
 	}
 	
-	public int compareTo(CM_COV_Object that)
+	public int compareTo(CmCovObject that)
 	{
 		if(w!=that.w)
 			return Double.compare(w, that.w);
@@ -100,10 +100,10 @@ public class CM_COV_Object extends Data
 	@Override
 	public boolean equals(Object o)
 	{
-		if( o == null || !(o instanceof CM_COV_Object) )
+		if( o == null || !(o instanceof CmCovObject) )
 			return false;
 		
-		CM_COV_Object that = (CM_COV_Object)o;
+		CmCovObject that = (CmCovObject)o;
 		return (w==that.w && mean.equals(that.mean) && m2.equals(that.m2))
 				&& m3.equals(that.m3) && m4.equals(that.m4) 
 				&& mean_v.equals(that.mean_v) && c2.equals(that.c2)
@@ -115,7 +115,7 @@ public class CM_COV_Object extends Data
 		throw new RuntimeException("hashCode() should never be called on instances of this class.");
 	}
 	
-	public void set(CM_COV_Object that)
+	public void set(CmCovObject that)
 	{
 		this.w=that.w;
 		this.mean.set(that.mean);

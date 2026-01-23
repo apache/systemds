@@ -53,6 +53,7 @@ public class CompressionSettingsBuilder {
 	private boolean isInSparkInstruction = false;
 	private SORT_TYPE sdcSortType = SORT_TYPE.MATERIALIZE;
 	private double[] scaleFactors = null;
+	private boolean preferDeltaEncoding = false;
 
     public CompressionSettingsBuilder() {
 
@@ -101,6 +102,7 @@ public class CompressionSettingsBuilder {
 		this.maxColGroupCoCode = that.maxColGroupCoCode;
 		this.coCodePercentage = that.coCodePercentage;
 		this.minimumSampleSize = that.minimumSampleSize;
+		this.preferDeltaEncoding = that.preferDeltaEncoding;
 		return this;
 	}
 
@@ -348,6 +350,19 @@ public class CompressionSettingsBuilder {
 	}
 
 	/**
+	 * Set whether to prefer delta encoding during compression estimation.
+	 * When enabled, the compression estimator will use delta encoding statistics
+	 * instead of regular encoding statistics.
+	 * 
+	 * @param preferDeltaEncoding Whether to prefer delta encoding
+	 * @return The CompressionSettingsBuilder
+	 */
+	public CompressionSettingsBuilder setPreferDeltaEncoding(boolean preferDeltaEncoding) {
+		this.preferDeltaEncoding = preferDeltaEncoding;
+		return this;
+	}
+
+	/**
 	 * Create the CompressionSettings object to use in the compression.
 	 * 
 	 * @return The CompressionSettings
@@ -356,6 +371,6 @@ public class CompressionSettingsBuilder {
 		return new CompressionSettings(samplingRatio, samplePower, allowSharedDictionary, transposeInput, seed, lossy,
 			validCompressions, sortValuesByLength, columnPartitioner, maxColGroupCoCode, coCodePercentage,
 			minimumSampleSize, maxSampleSize, estimationType, costType, minimumCompressionRatio, isInSparkInstruction,
-			sdcSortType, scaleFactors);
+			sdcSortType, scaleFactors, preferDeltaEncoding);
 	}
 }

@@ -59,7 +59,7 @@ import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
@@ -634,7 +634,7 @@ public class ColGroupNegativeTests {
 		}
 
 		@Override
-		public CM_COV_Object centralMoment(CMOperator op, int nRows) {
+		public CmCovObject centralMoment(CMOperator op, int nRows) {
 			return null;
 		}
 

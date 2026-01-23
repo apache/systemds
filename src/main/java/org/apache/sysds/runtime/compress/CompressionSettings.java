@@ -150,11 +150,22 @@ public class CompressionSettings {
 
 	public final double[] scaleFactors;
 
+<<<<<<< HEAD
 	public CompressionSettings(double samplingRatio, double samplePower, boolean allowSharedDictionary,
                                String transposeInput, int seed, boolean lossy, EnumSet<CompressionType> validCompressions,
                                boolean sortValuesByLength, PartitionerType columnPartitioner, int maxColGroupCoCode, double coCodePercentage,
                                int minimumSampleSize, int maxSampleSize, EstimationType estimationType, CostType costComputationType,
                                double minimumCompressionRatio, boolean isInSparkInstruction, SORT_TYPE sdcSortType, double[] scaleFactors) {
+=======
+	public final boolean preferDeltaEncoding;
+
+	protected CompressionSettings(double samplingRatio, double samplePower, boolean allowSharedDictionary,
+		String transposeInput, int seed, boolean lossy, EnumSet<CompressionType> validCompressions,
+		boolean sortValuesByLength, PartitionerType columnPartitioner, int maxColGroupCoCode, double coCodePercentage,
+		int minimumSampleSize, int maxSampleSize, EstimationType estimationType, CostType costComputationType,
+		double minimumCompressionRatio, boolean isInSparkInstruction, SORT_TYPE sdcSortType, double[] scaleFactors,
+		boolean preferDeltaEncoding) {
+>>>>>>> upstream/main
 		this.samplingRatio = samplingRatio;
 		this.samplePower = samplePower;
 		this.allowSharedDictionary = allowSharedDictionary;
@@ -174,6 +185,7 @@ public class CompressionSettings {
 		this.isInSparkInstruction = isInSparkInstruction;
 		this.sdcSortType = sdcSortType;
 		this.scaleFactors = scaleFactors;
+		this.preferDeltaEncoding = preferDeltaEncoding;
 		
 		if(!printedStatus && LOG.isDebugEnabled()) {
 			printedStatus = true;

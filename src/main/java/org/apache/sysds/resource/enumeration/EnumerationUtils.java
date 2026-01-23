@@ -19,9 +19,12 @@
 
 package org.apache.sysds.resource.enumeration;
 
-import org.apache.sysds.resource.CloudInstance;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.TreeMap;
 
-import java.util.*;
+import org.apache.sysds.resource.CloudInstance;
 
 public class EnumerationUtils {
 	/**

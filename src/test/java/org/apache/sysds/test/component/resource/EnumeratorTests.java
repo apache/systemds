@@ -43,8 +43,8 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static org.apache.sysds.resource.CloudUtils.GBtoBytes;
-import static org.apache.sysds.test.component.resource.ResourceTestUtils.*;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
@@ -60,7 +60,7 @@ public class EnumeratorTests extends AutomatedTestBase {
 	@Test
 	public void builderWithInstanceRangeTest() {
 		// test the parsing of mechanism for instance family and instance size ranges
-		HashMap<String, CloudInstance> availableInstances = getSimpleCloudInstanceMap();
+		HashMap<String, CloudInstance> availableInstances = ResourceTestUtils.getSimpleCloudInstanceMap();
 
 		Enumerator defaultEnumerator = getGridBasedEnumeratorPrebuild().build();
 		Assert.assertEquals(availableInstances.size(), defaultEnumerator.getInstances().size());
@@ -535,11 +535,11 @@ public class EnumeratorTests extends AutomatedTestBase {
 		// and the cheapest instance for the driver
 		// Grid-Based
 		Assert.assertEquals(0, actualSolutionGB.numberExecutors);
-		assertEqualsCloudInstances(instances.get("c5.xlarge"), actualSolutionGB.driverInstance);
+		ResourceTestUtils.assertEqualsCloudInstances(instances.get("c5.xlarge"), actualSolutionGB.driverInstance);
 		Assert.assertNull(actualSolutionIB.executorInstance);
 		// Interest-Based
 		Assert.assertEquals(0, actualSolutionIB.numberExecutors);
-		assertEqualsCloudInstances(instances.get("c5.xlarge"), actualSolutionIB.driverInstance);
+		ResourceTestUtils.assertEqualsCloudInstances(instances.get("c5.xlarge"), actualSolutionIB.driverInstance);
 		Assert.assertNull(actualSolutionIB.executorInstance);
 	}
 

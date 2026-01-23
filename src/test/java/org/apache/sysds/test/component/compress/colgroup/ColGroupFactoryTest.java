@@ -326,11 +326,11 @@ public class ColGroupFactoryTest {
 			return false;
 		}
 
-		@Override
-		public int numBlocks() {
-			return 2;
-		}
+	@Override
+	public int numBlocks() {
+		return 2;
 	}
 
 
+}
 }

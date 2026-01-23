@@ -17,22 +17,20 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.io.hdf5;
+package org.apache.sysds.runtime.io.hdf5;
 
-public class ReadHDF5Test3 extends ReadHDF5Test {
+import java.io.Closeable;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
-	private final static String TEST_NAME = "ReadHDF5Test";
-	private final static String TEST_CLASS_DIR = TEST_DIR + ReadHDF5Test3.class.getSimpleName() + "/";
+public interface H5ByteReader extends Closeable {
 
-	protected String getTestName() {
-		return TEST_NAME;
+	ByteBuffer read(long offset, int length) throws IOException;
+
+	default ByteBuffer read(long offset, int length, ByteBuffer reuse) throws IOException {
+		return read(offset, length);
 	}
 
-	protected String getTestClassDir() {
-		return TEST_CLASS_DIR;
-	}
-
-	protected int getId() {
-		return 3;
-	}
+	@Override
+	void close() throws IOException;
 }

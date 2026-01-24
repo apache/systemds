@@ -232,7 +232,7 @@ jobs:
       run: |
         cd src/main/python
         coverage combine .coverage.*
-        coverage xml -o coverage.xml
+        coverage xml -i -o coverage.xml
 
     - name: Upload merged coverage report to Codecov
       uses: codecov/codecov-action@v5.5.1

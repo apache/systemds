@@ -134,7 +134,7 @@ class WordCountSplitIndices(Context):
         return chunked_data
 
 
-@register_context_operator(ModalityType.TEXT)
+# @register_context_operator(ModalityType.TEXT)
 class SentenceBoundarySplitIndices(Context):
     """
     Splits text at sentence boundaries while respecting maximum word count.
@@ -230,7 +230,7 @@ class SentenceBoundarySplitIndices(Context):
         return chunked_data
 
 
-@register_context_operator(ModalityType.TEXT)
+# @register_context_operator(ModalityType.TEXT)
 class OverlappingSplitIndices(Context):
     """
     Splits text with overlapping chunks using a sliding window approach.

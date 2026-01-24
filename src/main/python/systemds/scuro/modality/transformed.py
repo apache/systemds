@@ -19,7 +19,7 @@
 #
 # -------------------------------------------------------------
 from typing import Union, List
-
+import numpy as np
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.modality import Modality
@@ -122,6 +122,29 @@ class TransformedModality(Modality):
         transformed_modality.transform_time += time.time() - start
         return transformed_modality
 
+    def dimensionality_reduction(self, dimensionality_reduction_operator):
+        transformed_modality = TransformedModality(
+            self, dimensionality_reduction_operator, self_contained=self.self_contained
+        )
+        start = time.time()
+        if len(self.data[0].shape) >= 3:
+            return self
+        else:
+            try:
+                data = np.array(self.data)
+                if len(data.shape) >= 3:
+                    data = data.reshape(data.shape[0], -1)
+                transformed_modality.data = dimensionality_reduction_operator.execute(
+                    data
+                )
+            except:
+                transformed_modality.data = self._padded_dimensionality_reduction(
+                    dimensionality_reduction_operator
+                )
+
+        transformed_modality.transform_time += time.time() - start
+        return transformed_modality
+
     def apply_representation(self, representation):
         start = time.time()
         new_modality = representation.transform(self)
@@ -169,3 +192,29 @@ class TransformedModality(Modality):
             modalities.append(other)
 
         return modalities
+
+    def _padded_dimensionality_reduction(self, dimensionality_reduction_operator):
+        all_outputs = []
+        batch_size = 1024 if len(self.data[0].shape) >= 3 else len(self.data)
+        ndim = self.data[0].ndim
+        start = 0
+        while start < len(self.data):
+            end = min(start + batch_size, len(self.data))
+            max_shape = tuple(
+                max(a.shape[i] for a in self.data[start:end]) for i in range(ndim)
+            )
+
+            padded = []
+            for a in self.data[start:end]:
+                pad_width = tuple((0, max_shape[i] - a.shape[i]) for i in range(ndim))
+                padded.append(np.pad(a, pad_width=pad_width, mode="constant"))
+            padded = np.array(padded)
+            end = min(start + batch_size, len(self.data))
+
+            if len(padded.shape) >= 3:
+                padded = padded.reshape(padded.shape[0], -1)
+
+            out = dimensionality_reduction_operator.execute(padded)
+            all_outputs.append(out)
+            start = end
+        return np.concatenate(all_outputs, axis=0)

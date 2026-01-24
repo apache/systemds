@@ -18,36 +18,17 @@
 # under the License.
 #
 # -------------------------------------------------------------
-
-import unittest
-
+import os
+import torch
+import random
 import numpy as np
 
-from systemds.context import SystemDSContext
-from systemds.operator.algorithm import solve
 
-np.random.seed(7)
-A = np.random.random((10, 10))
-B = np.random.random(10)
-
-
-class TestSOLVE(unittest.TestCase):
-
-    sds: SystemDSContext = None
-
-    @classmethod
-    def setUpClass(cls):
-        cls.sds = SystemDSContext(capture_stdout=True, logging_level=50)
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.sds.close()
-
-    def test_solve(self):
-        sds_result = solve(self.sds.from_numpy(A), self.sds.from_numpy(B)).compute()
-        np_result = np.linalg.solve(A, B).reshape((-1, 1))
-        self.assertTrue(np.allclose(sds_result, np_result, 1e-9))
-
-
-if __name__ == "__main__":
-    unittest.main(exit=False)
+def set_random_seeds(seed=42):
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False

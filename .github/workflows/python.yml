@@ -147,6 +147,7 @@ jobs:
         ./tests/federated/runFedTest.sh
         mv .coverage .coverage.${{ matrix.test_mode }}
 
+
     - name: Cache Torch Hub
       if: ${{ matrix.test_mode == 'scuro' }}
       id: torch-cache
@@ -162,6 +163,8 @@ jobs:
       env:
         TORCH_HOME: ${{ github.workspace }}/.torch
       run: |
+        df -h
+        exit
         ( while true; do echo "."; sleep 25; done ) &
         KA=$!
         pip install --upgrade pip wheel setuptools

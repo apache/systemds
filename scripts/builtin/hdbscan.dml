@@ -58,7 +58,7 @@ m_hdbscan = function(Matrix[Double] X, Integer minPts = 5, Integer minClSize = -
 
     coreDistances = matrix(0, rows=n, cols=1)
     for(i in 1:n) {
-        kthDist = computeKthSmallest(distances[i,], minPts)
+        kthDist = computeKthSmallest(t(distances[i,]), minPts)  # Add t() here!
         coreDistances[i] = kthDist
     }
    
@@ -68,7 +68,8 @@ m_hdbscan = function(Matrix[Double] X, Integer minPts = 5, Integer minClSize = -
 
     [hierarchy, clusterSizes] = buildHierarchy(mstEdges, mstWeights, n)
 
-    # TODO: get stable cluster with stability score
+    [clusterMems, stabilities] = extractStableClusters(hierarchy, mstWeights, n, minClSize)
+    
     # TODO: build cluster model
     
     # temp  dummy values
@@ -184,9 +185,9 @@ union = function(Matrix[Double] parent, Matrix[Double] rank,
 buildHierarchy = function(Matrix[Double] edges, Matrix[Double] weights, Integer n)
     return (Matrix[Double] hierarchy, Matrix[Double] sizes)
 {
-    # sort edges by weight in ascending order
-    # to build the hierarchy from dense cores outward
-    sorted = order(target=weights, by=1, decreasing=FALSE)
+    # create indexed weights to preserve original positions after sorting
+    indexedWeights = cbind(seq(1, nrow(weights)), weights)
+    sorted = order(target=indexedWeights, by=2, decreasing=FALSE)
 
     # parent[i] = i, meaning each point is its own parent in the beginning
     parent = seq(1, n)
@@ -240,4 +241,158 @@ buildHierarchy = function(Matrix[Double] edges, Matrix[Double] weights, Integer 
             row = row + 1
         }
     }
+}
+
+getLeafDescendants = function(Matrix[Double] hierarchy, Integer n, Integer nodeId)
+    return (Matrix[Double] leaves)
+{
+    if(nodeId <= n) {
+        leaves = matrix(nodeId, rows=1, cols=1)
+    } else {
+        mergeIdx = nodeId - n
+        left = as.integer(as.scalar(hierarchy[mergeIdx,1]))
+        right = as.integer(as.scalar(hierarchy[mergeIdx,2]))
+        
+        leftLeaves = getLeafDescendants(hierarchy, n, left)
+        rightLeaves = getLeafDescendants(hierarchy, n, right)
+        
+        leaves = rbind(leftLeaves, rightLeaves)
+    }
+}
+
+extractStableClusters = function(Matrix[Double] hierarchy, Matrix[Double] weights, 
+                                  Integer n, Integer minClSize)
+    return (Matrix[Double] labels, Matrix[Double] stabilities)
+{
+    numMerges = n - 1 # hierarchical tree over n points has exactly n-1 merge events
+    numNodes = 2*n - 1 # total nodes in the dendogram
+    
+    # convert distances to lambda (density)
+    lambda = matrix(0, rows=numMerges, cols=1)
+    for(i in 1:numMerges) {
+        dist = as.scalar(hierarchy[i,3])
+        if(dist > 0) {
+            lambda[i,1] = 1.0 / dist
+        } else {
+            lambda[i,1] = 1e15
+        }
+    }
+    
+    lambda_birth = matrix(1e15, rows=numNodes, cols=1)
+    lambda_death = matrix(0, rows=numNodes, cols=1)
+    cluster_size = matrix(0, rows=numNodes, cols=1)
+
+    # initialize the leaf nodes to have cluster size 1
+    for(i in 1:n) {
+        cluster_size[i,1] = 1
+    }
+    
+    for(i in 1:numMerges) {
+        left = as.integer(as.scalar(hierarchy[i,1]))
+        right = as.integer(as.scalar(hierarchy[i,2]))
+        newId = n + i
+        merge_lambda = as.scalar(lambda[i,1])
+        
+        # cluster newId starts existing as its own cluster at this density level
+        # and that's why the children get their det set at the same density
+        lambda_birth[newId,1] = merge_lambda
+        lambda_death[left,1] = merge_lambda
+        lambda_death[right,1] = merge_lambda
+        cluster_size[newId,1] = as.scalar(cluster_size[left,1]) + as.scalar(cluster_size[right,1])
+    }
+    
+    # root cluster exists all the way
+    rootId = 2*n - 1
+    lambda_death[rootId,1] = 0
+    
+    # compute own stability for each internal node
+    # NOTE: If the cluster is big enough, we assign stability.
+    # The more long-lived it is (birth - death) and 
+    # the larger it is, the more stable it is.
+    stability = matrix(0, rows=numNodes, cols=1)
+    for(nodeId in (n+1):numNodes) {
+        size = as.scalar(cluster_size[nodeId,1])
+        birth = as.scalar(lambda_birth[nodeId,1])
+        death = as.scalar(lambda_death[nodeId,1])
+        if(size >= minClSize) {
+            stability[nodeId,1] = size * (birth - death)
+        }
+    }
+    
+    # compute subtree stability (best achievable from each subtree)
+    subtree_stability = matrix(0, rows=numNodes, cols=1)
+    
+    # leaf nodes have 0 subtree stability
+    for(i in 1:n) {
+        subtree_stability[i,1] = 0
+    }
+    
+    # process merges in order (bottom-up)
+    for(i in 1:numMerges) {
+        nodeId = n + i
+        left = as.integer(as.scalar(hierarchy[i,1]))
+        right = as.integer(as.scalar(hierarchy[i,2]))
+        
+        children_subtree = as.scalar(subtree_stability[left,1]) + as.scalar(subtree_stability[right,1])
+        own_stab = as.scalar(stability[nodeId,1])
+        
+        # Subtree stability is the best we can achieve from this subtree
+        if(children_subtree > own_stab) {
+            subtree_stability[nodeId,1] = children_subtree
+        } else {
+            subtree_stability[nodeId,1] = own_stab
+        }
+    }
+    
+    # select clusters
+    selected = matrix(0, rows=numNodes, cols=1)
+    selected[rootId,1] = 1
+    
+    i = numMerges
+    while(i >= 1) {
+        nodeId = n + i
+        
+        if(as.scalar(selected[nodeId,1]) == 1) {
+            left = as.integer(as.scalar(hierarchy[i,1]))
+            right = as.integer(as.scalar(hierarchy[i,2]))
+            
+            children_subtree = as.scalar(subtree_stability[left,1]) + as.scalar(subtree_stability[right,1])
+            own_stab = as.scalar(stability[nodeId,1])
+            parent_size = as.scalar(cluster_size[nodeId,1])
+            
+            # select children if they have higher subtree stability
+            if(parent_size < minClSize | children_subtree > own_stab) {
+                selected[nodeId,1] = 0
+                selected[left,1] = 1
+                selected[right,1] = 1
+            }
+        }
+        
+        i = i - 1
+    }
+    
+    # assign labels
+    labels = matrix(-1, rows=n, cols=1)
+    cluster_id = 1
+    
+    for(nodeId in 1:numNodes) {
+        if(as.scalar(selected[nodeId,1]) == 1) {
+            size = as.scalar(cluster_size[nodeId,1])
+            
+            if(size >= minClSize) {
+                leaves = getLeafDescendants(hierarchy, n, nodeId)
+                
+                for(j in 1:nrow(leaves)) {
+                    leafId = as.integer(as.scalar(leaves[j,1]))
+                    if(leafId >= 1 & leafId <= n) {
+                        labels[leafId,1] = cluster_id
+                    }
+                }
+                
+                cluster_id = cluster_id + 1
+            }
+        }
+    }
+    
+    stabilities = stability
 }

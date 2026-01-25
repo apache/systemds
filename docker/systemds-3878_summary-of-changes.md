@@ -108,6 +108,20 @@ Zookeeper `3.9.4` will be used to solve all zookeeper-related vulnerabilities. `
 - building the project works \
   `mvn clean package -P distribution`
 
+### `io.netty/netty@3.10.6.Final`
+
+This is a transitive dependency from `hadoop-hdfs 3.3.6`. Version `3.4.2` does not use the `netty` dependency anymore.
+
+The only change necessary in the code is in the import of the netty package. What was
+```java
+import org.jboss.netty.handler.codec.compression.CompressionException;
+```
+became
+```java
+import io.netty.handler.codec.compression.CompressionException;
+```
+
+
 ### toolbox
 
 - Docker scout: 

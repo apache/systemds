@@ -40,6 +40,8 @@
 
 	<properties>
 		<hadoop.version>3.3.6</hadoop.version>
+		<!-- Securitiy fix: io.netty/netty@3.10.6.Final -->
+		<hadoop-hdfs.version>3.4.2</hadoop-hdfs.version>
 		<!-- low 2.0: CVE-2024-23454 Improper Privilege Management -->
 		<hadoop-common.version>3.4.2</hadoop-common.version>
 		<antlr.version>4.8</antlr.version>
@@ -1516,7 +1518,7 @@
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-hdfs</artifactId>
-			<version>${hadoop.version}</version>
+			<version>${hadoop-hdfs.version}</version>
 			<exclusions>
 				<exclusion>
 					<groupId>javax.servlet</groupId>

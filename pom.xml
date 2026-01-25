@@ -42,6 +42,8 @@
 		<hadoop.version>3.3.6</hadoop.version>
 		<!-- Securitiy fix: io.netty/netty@3.10.6.Final -->
 		<hadoop-hdfs.version>3.4.2</hadoop-hdfs.version>
+		<!-- low 2.0: CVE-2024-23454 Improper Privilege Management -->
+		<hadoop-common.version>3.4.2</hadoop-common.version>
 		<antlr.version>4.8</antlr.version>
 		<protobuf.version>3.25.5</protobuf.version>  <!-- CVE-2024-7254 -->
 		<spark.version>3.5.0</spark.version>
@@ -54,6 +56,8 @@
 		<jcuda.version>12.6.0</jcuda.version>
 		<slf4j.version>2.0.11</slf4j.version>
 		<log4j.version>2.22.1</log4j.version>
+		<!-- Security fix: CVE-2025-68161 - pin log4j-core to 2.25.3 -->
+		<log4j-core.version>2.25.3</log4j-core.version>
 		<!-- Security fix: CVE-2024-47561 - pin avro to 1.11.4 -->
 		<avro.version>1.11.4</avro.version>
 		<!-- Security fix: CVE-2023-25613 - pin kerby to 2.0.3 -->
@@ -111,7 +115,9 @@
 		<nimbus-jose-jwt.version>9.37.4</nimbus-jose-jwt.version><!-- CVE-2023-52428, CVE-2025-53864 -->
 		<aircompressor.version>0.27</aircompressor.version>      <!-- CVE-2024-36114 -->
 		<netty.version>4.1.124.Final</netty.version>             <!-- CVE-2025-55163, CVE-2023-44487 -->
+		<netty-codec.version>4.1.129.Final</netty-codec.version> <!-- CVE-2025-67735, CVE-2025-58056, CVE-2025-58057, CVE-2025-59419 -->
 		<jetty.version>9.4.57.v20241219</jetty.version>          <!-- CVE-2024-6763 -->
+		<jetty-http.version>12.0.12</jetty-http.version>         <!-- CVE-2024-6763 -->
 		<xnio.version>3.8.14.Final</xnio.version>                <!-- CVE-2023-5685 -->
 		<commons-beanutils.version>1.11.0</commons-beanutils.version>  <!-- CVE-2025-48734 -->
 		<dnsjava.version>3.6.0</dnsjava.version>                 <!-- CVE-2024-25638 -->
@@ -209,17 +215,17 @@
 			<dependency>
 				<groupId>io.netty</groupId>
 				<artifactId>netty-codec-http</artifactId>
-				<version>${netty.version}</version>
+				<version>${netty-codec.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>io.netty</groupId>
 				<artifactId>netty-codec-smtp</artifactId>
-				<version>${netty.version}</version>
+				<version>${netty-codec.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>io.netty</groupId>
 				<artifactId>netty-codec</artifactId>
-				<version>${netty.version}</version>
+				<version>${netty-codec.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>io.netty</groupId>
@@ -240,7 +246,7 @@
 			<dependency>
 				<groupId>org.eclipse.jetty</groupId>
 				<artifactId>jetty-http</artifactId>
-				<version>${jetty.version}</version>
+				<version>${jetty-http.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.eclipse.jetty</groupId>
@@ -280,6 +286,41 @@
 				<groupId>com.google.protobuf</groupId>
 				<artifactId>protobuf-java</artifactId>
 				<version>${protobuf.version}</version>
+			</dependency>
+			<!-- CVE-2024-26308, CVE-2024-25710, CVE-2023-42503 -->
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-compress</artifactId>
+				<version>1.26.0</version>
+			</dependency>
+			<!-- CVE-2024-29133, CVE-2024-29131 -->
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-configuration2</artifactId>
+				<version>2.10.1</version>
+			</dependency>
+			<!-- CVE-2023-2976, CVE-2020-8908 -->
+			<dependency>
+				<groupId>org.apache.hadoop.thirdparty</groupId>
+				<artifactId>hadoop-shaded-guava</artifactId>
+				<version>1.5.0</version>
+			</dependency>
+			<dependency>
+				<groupId>com.google.guava</groupId>
+				<artifactId>guava</artifactId>
+				<version>33.5.0-jre</version>
+			</dependency>
+			<!-- CVE-2025-48924: Uncontrolled Recursion -->
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-lang3</artifactId>
+				<version>3.18.0</version>
+			</dependency>
+			<!-- CVE-2025-55039: Inadequate Encryption Strength -->
+			<dependency>
+				<groupId>org.apache.spark</groupId>
+				<artifactId>spark-network-common_2.12</artifactId>
+				<version>3.5.2</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
@@ -1437,7 +1478,7 @@
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-common</artifactId>
-			<version>${hadoop.version}</version>
+			<version>${hadoop-common.version}</version>
 			<exclusions>
 				<exclusion>
 					<groupId>javax.servlet</groupId>
@@ -1745,7 +1786,7 @@
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-core</artifactId>
-			<version>${log4j.version}</version>
+			<version>${log4j-core.version}</version>
 		</dependency>
 
 		<dependency>

@@ -302,6 +302,7 @@ public class OptimizerUtils
 	 */
 	public static boolean ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = true;
 
+	public static boolean ALLOW_JOIN_REORDERING_REWRITE = true;
 	/**
 	 * Enable prefetch and broadcast. Prefetch asynchronously calls acquireReadAndRelease() to trigger remote
 	 * operations, which would otherwise make the next instruction wait till completion. Broadcast allows

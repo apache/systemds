@@ -1,0 +1,33 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# A = matrix(2, rows=2,cols=2)
+# B = matrix(3, rows=3,cols=3)
+# C = matrix(4, rows=4,cols=4)
+A = read($1)
+B = read($2)
+C = read($3)
+# A = matrix("1 1 1 1", rows=2, cols=2)
+# B = matrix("3 2 1 1 2 3 3 1 2", rows=3, cols=3)
+# C = matrix("1 1 1 1 2 2 2 2 3 3 3 3 4 4 4 4", rows=4, cols=4)
+ans = raJoin(A, 1, raJoin(B, 2, C, 3, "nested-loop"), 3, "nested-loop")
+# ans = raJoin(raJoin(A,1,B,3, "nested-loop"),4,C,3, "nested-loop")
+write(ans, $4)

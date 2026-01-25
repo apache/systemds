@@ -1,0 +1,51 @@
+source("scripts/builtin/hdbscan.dml") as hdb
+
+# A: 5 points tightly grouped around (0, 0)
+# B: 5 points tightly grouped around (10, 0)
+# Outliers: 2 points far from any cluster
+
+n = 12
+d = 2
+X = matrix(0, rows=n, cols=d)
+
+# A
+X[1,] = matrix("0.0 0.0", rows=1, cols=2)
+X[2,] = matrix("0.3 0.2", rows=1, cols=2)
+X[3,] = matrix("-0.2 0.3", rows=1, cols=2)
+X[4,] = matrix("0.1 -0.2", rows=1, cols=2)
+X[5,] = matrix("-0.1 -0.1", rows=1, cols=2)
+
+# B
+X[6,] = matrix("10.0 0.0", rows=1, cols=2)
+X[7,] = matrix("10.3 0.2", rows=1, cols=2)
+X[8,] = matrix("9.8 0.3", rows=1, cols=2)
+X[9,] = matrix("10.1 -0.2", rows=1, cols=2)
+X[10,] = matrix("9.9 -0.1", rows=1, cols=2)
+
+# Outliers
+X[11,] = matrix("5.0 5.0", rows=1, cols=2)
+X[12,] = matrix("-5.0 -5.0", rows=1, cols=2)
+
+print(toString(X))
+
+minPts = 3
+minClSize = 4  
+
+
+# run hdbscan
+[labels, centroids] = hdb::m_hdbscan(X, minPts, minClSize)
+expected_labels = matrix("1 1 1 1 1 2 2 2 2 2 -1 -1", rows=12, cols=1)
+labels_match = (min(labels == expected_labels) == 1)
+if (labels_match) {
+    print("Pass: labels match.")
+} else {
+    print("Fail: labels don't match.")
+}
+test_A = min(sqrt(rowSums((centroids - matrix("0.020 0.040", 1, 2))^2))) < 0.001
+test_B = min(sqrt(rowSums((centroids - matrix("10.020 0.040", 1, 2))^2))) < 0.001
+all_found = test_A & test_B
+print("Expected centroids near expected positions: " + all_found)
+print("Cluster labels:")
+print(toString(labels))
+print("\nCluster centroids:")
+print(toString(centroids))

@@ -74,12 +74,26 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 	private final int _nRows; // Number of rows in the mapping vector
 	private final int _nUnique; // Number of unique values in the mapping vector
 
-	// Builds a packed 64-bit key for (prefixCode(w), nextSymbol(k)) pairs used in the LZW dictionary. (TODO)
+	/**
+	 * Builds a packed 64-bit key from a prefix code and a next symbol, typically used in an LZW dictionary.
+	 *
+	 * @return a 64-bit packed key representing the (prefixCode, nextSymbol) pair
+	 */
 	private static long packKey(int prefixCode, int nextSymbol) {
 		return (((long) prefixCode) << 32) | (nextSymbol & 0xffffffffL);
 	}
 
-	// Compresses a mapping (AMapToData) into an LZW-compressed byte/integer/? array.
+	/**
+	 * Compresses the given data using a the Lempel-Ziv-Welch (LZW) compression algorithm. The compression is performed
+	 * on integer dictionary indices stored in the provided AMapToData object.
+	 *
+	 * @param data The input data to be compressed, represented as an AMapToData object. The data must not be null, must
+	 *             have at least one row, and contain valid dictionary indices.
+	 * @return An array of integers representing the compressed data, with each integer corresponding to a dictionary
+	 * code.
+	 * @throws IllegalArgumentException If the input data is null, has no rows, contains no unique values, or has
+	 *                                  symbols that exceed the valid dictionary index range.
+	 */
 	private static int[] compress(AMapToData data) {
 		if(data == null)
 			throw new IllegalArgumentException("Invalid input: data is null");
@@ -94,45 +108,34 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 			throw new IllegalArgumentException("Invalid input: data has no unique values");
 		}
 
-		// Fast-path: single symbol
 		if(nRows == 1)
 			return new int[] {data.getIndex(0)};
 
-		// LZW dictionary. Maps (prefixCode, nextSymbol) -> newCode (to a new code).
-		// Using fastutil keeps lookups fast. (TODO improve time/space complexity)
 		final Long2IntLinkedOpenHashMap dict = new Long2IntLinkedOpenHashMap(1 << 16);
 		dict.defaultReturnValue(-1);
 
-		// Output buffer (heuristic capacity; avoids frequent reallocs)
 		final IntArrayList out = new IntArrayList(Math.max(16, nRows / 2));
 
-		// Codes {0,...,nUnique - 1} are reserved for the original symbols.
 		int nextCode = nUnique;
 
-		// Initialize w with the first input symbol.
-		// AMapToData stores dictionary indices, not actual data values.
-		// Since indices reference positions in an IDictionary, they are always in the valid index range 0 … nUnique−1;
 		int w = data.getIndex(0);
 
-		// Process the remaining input symbols.
-		// Example: _data = [2,0,2,3,0,2,1,0,2].
 		for(int i = 1; i < nRows; i++) {
-			final int k = data.getIndex(i); // next input symbol
+			final int k = data.getIndex(i);
 
 			if(k < 0 || k >= nUnique)
 				throw new IllegalArgumentException("Symbol out of range: " + k + " (nUnique=" + nUnique + ")");
 
-			final long key = packKey(w, k); // encode (w,k) into long key
+			final long key = packKey(w, k);
 
-			int wk = dict.get(key); // look if wk exists in dict
+			int wk = dict.get(key);
 			if(wk != -1) {
-				w = wk; // wk exists in dict so replace w by wk and continue.
+				w = wk;
 			}
 			else {
-				// wk does not exist in dict. output current phrase, add new phrase, restart at k
 				out.add(w);
 				dict.put(key, nextCode++);
-				w = k; // Start new phrase with k
+				w = k;
 			}
 		}
 
@@ -140,26 +143,21 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		return out.toIntArray();
 	}
 
-	// Unpack upper 32 bits (w) of (w,k) key pair.
 	private static int unpackfirst(long key) {
 		return (int) (key >>> 32);
 	}
 
-	// Unpack lower 32 bits (k) of (w,k) key pair.
 	private static int unpacksecond(long key) {
 		return (int) (key);
 	}
 
-	// Append symbol to end of int-array.
 	private static int[] packint(int[] arr, int last) {
 		int[] result = Arrays.copyOf(arr, arr.length + 1);
 		result[arr.length] = last;
 		return result;
 	}
 
-	// Reconstruct phrase to lzw-code.
 	private static int[] unpack(int code, int nUnique, Map<Integer, Long> dict) {
-		// Base symbol (implicit alphabet)
 		if(code < nUnique)
 			return new int[] {code};
 
@@ -192,6 +190,14 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		return decompress(codes, nUnique, nRows, nRows);
 	}
 
+	/**
+	 * The LZWMappingIterator class is responsible for decoding and iterating through an LZW (Lempel-Ziv-Welch)
+	 * compressed mapping. This iterator is primarily used for reconstructing symbols and phrases from the compressed
+	 * mapping data, maintaining the internal state of the LZW decompression process.
+	 *
+	 * The decoding process maintains an LZW dictionary, tracks the current and previous phrases, handles new LZW codes,
+	 * and provides methods to retrieve or skip mapping symbols.
+	 */
 	private final class LZWMappingIterator {
 		private final Map<Integer, Long> dict = new HashMap<>(); // LZW-dictionary. Maps code -> (prefixCode, nextSymbol).
 		private int lzwIndex = 0; // Current position in the LZW-compressed mapping (_dataLZW).
@@ -216,10 +222,10 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 			return mapIndex < _nRows;
 		}
 
-		/*void skip(int k) {
+		void skip(int k) {
 			for(int i = 0; i < k; i++)
 				next();
-		}*/
+		}
 
 		int next() {
 			if(!hasNext())
@@ -262,6 +268,18 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		}
 	}
 
+	/**
+	 * Decompresses a sequence of LZW-compressed integer codes into an {@code AMapToData} structure representing the
+	 * decompressed data.
+	 *
+	 * @param codes   an array of integer LZW-codes to be decompressed
+	 * @param nUnique the number of unique values in the encoding alphabet
+	 * @param nRows   the total number of rows in the data to be decompressed
+	 * @param index   the length of the decompressed output
+	 * @return an {@code AMapToData} instance containing the decompressed data
+	 * @throws IllegalArgumentException if {@code codes} is null, empty, or any input parameter is invalid
+	 * @throws IllegalStateException    if the decompression process does not produce the expected length of data
+	 */
 	private static AMapToData decompress(int[] codes, int nUnique, int nRows, int index) {
 		if(codes == null)
 			throw new IllegalArgumentException("codes is null");
@@ -350,6 +368,18 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		}
 	}
 
+	/**
+	 * Constructs a ColGroupDDCLZW object, which represents a compressed column group in a matrix using the LZW
+	 * compression format. The constructor initializes the internal state, validates the input parameters, and ensures
+	 * the compressed data conforms to the expected format and dictionary mapping.
+	 *
+	 * @param colIndexes   the column indices associated with this column group
+	 * @param dict         the dictionary containing unique values associated with the column group
+	 * @param dataLZW      the compressed data of the column group using LZW encoding
+	 * @param nRows        the number of rows represented by this column group
+	 * @param nUnique      the number of unique elements in the data, matching the dictionary size
+	 * @param cachedCounts a precomputed array for the count of each value in the data
+	 */
 	private ColGroupDDCLZW(IColIndex colIndexes, IDictionary dict, int[] dataLZW, int nRows, int nUnique,
 		int[] cachedCounts) {
 		super(colIndexes, dict, cachedCounts);
@@ -381,12 +411,26 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 			return new ColGroupDDCLZW(colIndexes, dict, data, cachedCounts);
 	}
 
+	/**
+	 * Converts the current ColGroupDDCLZW instance to a ColGroupDDC instance. The method decompresses the
+	 * LZW-compressed data of this instance, reconstructs the mapping to the decompressed data, and creates a new
+	 * ColGroupDDC instance with the decompressed mapping, dictionary, and column indexes of this instance.
+	 *
+	 * @return an AColGroup instance representing the decoded ColGroup in DDC format
+	 */
 	public AColGroup convertToDDC() {
 		final AMapToData map = decompress(_dataLZW, _nUnique, _nRows, _nRows);
 		final int[] counts = getCounts(); // may be null depending on your group
 		return ColGroupDDC.create(_colIndexes, _dict, map, counts);
 	}
 
+	/**
+	 * Reads and constructs a ColGroupDDCLZW object from the given DataInput.
+	 *
+	 * @param in the DataInput to read the group data from
+	 * @return a new ColGroupDDCLZW object with the data read from the input
+	 * @throws IOException if an I/O error occurs during reading, or if the input data is invalid
+	 */
 	public static ColGroupDDCLZW read(DataInput in) throws IOException {
 		final IColIndex colIndexes = ColIndexFactory.read(in);
 		final IDictionary dict = DictionaryFactory.read(in);
@@ -727,13 +771,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		else
 			ret = _dict.binOpRight(op, v, _colIndexes);
 		return new ColGroupDDCLZW(_colIndexes, ret, _dataLZW, _nRows, _nUnique, getCachedCounts());
-	}
-
-	public int[] appendDataLZWMap(int[] dataLZW) {
-		int[] newDataLZW = new int[_dataLZW.length + dataLZW.length];
-		System.arraycopy(_dataLZW, 0, newDataLZW, 0, _dataLZW.length);
-		System.arraycopy(dataLZW, 0, newDataLZW, _dataLZW.length, dataLZW.length);
-		return newDataLZW;
 	}
 
 	@Override

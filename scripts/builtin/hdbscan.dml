@@ -68,13 +68,11 @@ m_hdbscan = function(Matrix[Double] X, Integer minPts = 5, Integer minClSize = -
 
     [hierarchy, clusterSizes] = buildHierarchy(mstEdges, mstWeights, n)
 
-    [clusterMems, stabilities] = extractStableClusters(hierarchy, mstWeights, n, minClSize)
-    
-    # TODO: build cluster model
-    
-    # temp  dummy values
-    clusterMems = matrix(1, rows=n, cols=1)
-    clusterModel = X
+    [clusterMems, stabilities, clusterToNode] = extractStableClusters(hierarchy, mstWeights, n, minClSize)
+
+    [centroids, clusterInfo] = buildClusterModel(X, clusterMems, stabilities, clusterToNode)
+
+    clusterModel = centroids
 }
 
 
@@ -133,8 +131,8 @@ buildMST = function(Matrix[Double] distances, Integer n)
   }
 }
 
-# Union-find utils
 
+# Union-find utils
 find = function(Matrix[Double] parent, Integer x)
     return (Integer root)
 {
@@ -143,6 +141,7 @@ find = function(Matrix[Double] parent, Integer x)
         root = as.integer(as.scalar(parent[root]))
     }
 }
+
 
 union = function(Matrix[Double] parent, Matrix[Double] rank,
                 Integer x, Integer y, Matrix[Double] size,
@@ -243,6 +242,8 @@ buildHierarchy = function(Matrix[Double] edges, Matrix[Double] weights, Integer 
     }
 }
 
+
+# Leaf descendants util
 getLeafDescendants = function(Matrix[Double] hierarchy, Integer n, Integer nodeId)
     return (Matrix[Double] leaves)
 {
@@ -260,9 +261,10 @@ getLeafDescendants = function(Matrix[Double] hierarchy, Integer n, Integer nodeI
     }
 }
 
+
 extractStableClusters = function(Matrix[Double] hierarchy, Matrix[Double] weights, 
                                   Integer n, Integer minClSize)
-    return (Matrix[Double] labels, Matrix[Double] stabilities)
+    return (Matrix[Double] labels, Matrix[Double] stabilities, Matrix[Double] clusterToNode)
 {
     numMerges = n - 1 # hierarchical tree over n points has exactly n-1 merge events
     numNodes = 2*n - 1 # total nodes in the dendogram
@@ -374,12 +376,18 @@ extractStableClusters = function(Matrix[Double] hierarchy, Matrix[Double] weight
     # assign labels
     labels = matrix(-1, rows=n, cols=1)
     cluster_id = 1
-    
+
+    # while tracking which node each cluster comes from
+    maxClusters = sum(selected)  # upper bound on number of clusters
+    clusterToNode = matrix(0, rows=maxClusters, cols=1)
+   
     for(nodeId in 1:numNodes) {
         if(as.scalar(selected[nodeId,1]) == 1) {
             size = as.scalar(cluster_size[nodeId,1])
             
             if(size >= minClSize) {
+                clusterToNode[cluster_id,1] = nodeId  # ADD THIS LINE
+                
                 leaves = getLeafDescendants(hierarchy, n, nodeId)
                 
                 for(j in 1:nrow(leaves)) {
@@ -394,5 +402,55 @@ extractStableClusters = function(Matrix[Double] hierarchy, Matrix[Double] weight
         }
     }
     
+    # trim clusterToNode to actual number of clusters
+    numActualClusters = cluster_id - 1
+    if(numActualClusters > 0) {
+        clusterToNode = clusterToNode[1:numActualClusters,]
+    } else {
+        clusterToNode = matrix(0, rows=0, cols=1)
+    }
+
     stabilities = stability
+
+}
+
+
+buildClusterModel = function(Matrix[Double] X, Matrix[Double] labels, 
+                             Matrix[Double] stabilities, Matrix[Double] clusterToNode)
+    return (Matrix[Double] centroids, Matrix[Double] clusterInfo)
+{
+    n = nrow(X)
+    d = ncol(X)
+
+    numClusters = as.integer(max(labels))
+
+    if(numClusters <= 0) {
+        # No clusters found, return empty model
+        centroids = matrix(0, rows=0, cols=d)
+        clusterInfo = matrix(0, rows=0, cols=2)
+    } else {
+        centroids = matrix(0, rows=numClusters, cols=d)
+        clusterInfo = matrix(0, rows=numClusters, cols=2)
+
+        for(c in 1:numClusters) {
+            # find all points in cluster c
+            mask = (labels == c)
+            clusterSize = sum(mask)
+
+            if(clusterSize > 0) {
+                # get centroid as mean of all points in cluster
+                clusterSum = t(mask) %*% X
+                centroids[c,] = clusterSum / clusterSize
+
+                # store cluster metadata: [size, stability]
+                clusterInfo[c,1] = clusterSize
+
+                # get stability for this cluster from the mapping
+                if(nrow(clusterToNode) >= c & as.scalar(clusterToNode[c,1]) > 0) {
+                    nodeId = as.integer(as.scalar(clusterToNode[c,1]))
+                    clusterInfo[c,2] = as.scalar(stabilities[nodeId,1])
+                }
+            }
+        }
+    }
 }

@@ -10,7 +10,7 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
@@ -293,12 +293,12 @@ public class ColGroupPiecewiseLinearCompressed extends AColGroupCompressed {
 
     }
 
-    @Override
-    public CM_COV_Object centralMoment(CMOperator op, int nRows) {
-        return null;
-    }
+	@Override
+	public CmCovObject centralMoment(CMOperator op, int nRows) {
+		return null;
+	}
 
-    @Override
+	@Override
     public AColGroup rexpandCols(int max, boolean ignore, boolean cast, int nRows) {
         return null;
     }

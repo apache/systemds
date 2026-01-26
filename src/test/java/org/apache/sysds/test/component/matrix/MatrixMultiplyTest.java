@@ -25,7 +25,6 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.lang.String;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

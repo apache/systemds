@@ -1080,7 +1080,8 @@ public class ColGroupFactory {
 
         // Breakpoints bestimmen: Einteilung der Segmente
 
-        List<Integer> breakpointsList = computeBreakpoints(cs, column);
+        double targetLoss = 1e-3;
+        List<Integer> breakpointsList = computeBreakpoints(cs, column,targetLoss);
         int[] breakpoints = breakpointsList.stream().mapToInt(Integer::intValue).toArray();
         //Für jedes Segment lineare Regression als kompressionsverfahren
 
@@ -1117,10 +1118,9 @@ public class ColGroupFactory {
         }
         return column;
     }
-    public static List<Integer> computeBreakpoints(CompressionSettings cs, double[] column){
+    public static List<Integer> computeBreakpoints(CompressionSettings cs, double[] column, double targetloss){
         int n = column.length;
-        double targetMSE = cs.getPiecewiseTargetLoss(); // nur lesen, NICHT setzen!
-
+        double targetMSE = targetloss;
         // Fall A: kein TargetLoss angegeben -> einfache Variante mit fixem λ
         if (Double.isNaN(targetMSE) || targetMSE <= 0) {
             double lambda = 5.0;

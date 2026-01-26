@@ -264,14 +264,14 @@ public class SparseBlockMCSR extends SparseBlock
 			for (int k = apos; k < apos + alen; k++) {
 				if(aix[k] < 0)
 					throw new RuntimeException(
-						"Invalid index, at column=" + i + ", pos=" + k);
+						"Invalid index, at row=" + i + ", pos=" + k);
 				if(aix[k] <= prevCol)
 					throw new RuntimeException(
 						"Wrong sparse row ordering, at row=" + i + ", pos=" + k + " with column indexes " +
 							prevCol + ">=" + aix[k]);
 				if(avals[k] == 0)
 					throw new RuntimeException(
-						"The values array should not contain zeros " + "but zero at column: " + i + ", row pos: " + k);
+						"The values array should not contain zeros " + "but zero at row: " + i + ", column pos: " + k);
 				prevCol = aix[k];
 			}
 		}

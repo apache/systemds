@@ -322,6 +322,11 @@ public class SparseBlockMCSC extends SparseBlock {
 	}
 
 	@Override
+	public SparseBlock.Type getSparseBlockType() {
+		return Type.MCSC;
+	}
+
+	@Override
 	public int numRows() {
 		return _rlen;
 	}

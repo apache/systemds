@@ -377,6 +377,11 @@ public class SparseBlockCSC extends SparseBlock {
 	}
 
 	@Override
+	public SparseBlock.Type getSparseBlockType() {
+		return Type.CSC;
+	}
+
+	@Override
 	public int numRows() {
 		if(_rlen > -1)
 			return _rlen;

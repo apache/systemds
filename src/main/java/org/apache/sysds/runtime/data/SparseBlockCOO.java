@@ -208,6 +208,11 @@ public class SparseBlockCOO extends SparseBlock
 	}
 
 	@Override
+	public SparseBlock.Type getSparseBlockType() {
+		return Type.COO;
+	}
+
+	@Override
 	public int numRows() {
 		return _rlen;
 	}

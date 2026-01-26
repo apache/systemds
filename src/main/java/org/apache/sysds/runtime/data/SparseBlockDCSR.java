@@ -225,6 +225,11 @@ public class SparseBlockDCSR extends SparseBlock
 	}
 
 	@Override
+	public SparseBlock.Type getSparseBlockType() {
+		return Type.DCSR;
+	}
+
+	@Override
 	public int numRows() {
 		return _rlen;
 	}

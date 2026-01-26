@@ -215,6 +215,11 @@ public class SparseBlockMCSR extends SparseBlock
 			}
 		}
 	}
+
+	@Override
+	public SparseBlock.Type getSparseBlockType() {
+		return Type.MCSR;
+	}
 	
 	@Override
 	public int numRows() {

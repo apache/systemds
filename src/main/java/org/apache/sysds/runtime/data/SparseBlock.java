@@ -104,7 +104,14 @@ public abstract class SparseBlock implements Serializable, Block
 	
 	////////////////////////
 	//obtain basic meta data
-	
+
+	/**
+	 * Get the type of the sparse block.
+	 *
+	 * @return sparse block type
+	 */
+	public abstract SparseBlock.Type getSparseBlockType();
+
 	/**
 	 * Get the number of rows in the sparse block.
 	 * 

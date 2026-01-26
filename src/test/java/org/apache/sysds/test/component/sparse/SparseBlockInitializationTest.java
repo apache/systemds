@@ -61,6 +61,16 @@ public class SparseBlockInitializationTest extends AutomatedTestBase
 	}
 
 	@Test
+	public void testSparseBlockCreationCSC() {
+		runSparseBlockCreationTest(SparseBlock.Type.CSC);
+	}
+
+	@Test
+	public void testSparseBlockCreationCSR() {
+		runSparseBlockCreationTest(SparseBlock.Type.CSR);
+	}
+
+	@Test
 	public void testSparseBlockCreationDCSR() {
 		runSparseBlockCreationTest(SparseBlock.Type.DCSR);
 	}
@@ -71,13 +81,13 @@ public class SparseBlockInitializationTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void testSparseBlockCreationCSC() {
-		runSparseBlockCreationTest(SparseBlock.Type.CSC);
+	public void testSparseBlockCreationMCSR() {
+		runSparseBlockCreationTest(SparseBlock.Type.MCSR);
 	}
 
 	private void runSparseBlockCreationTest(SparseBlock.Type type) {
 		SparseBlock sblock = SparseBlockFactory.createSparseBlock(type, _cols);
-		assertEquals(SparseBlockFactory.getSparseBlockType(sblock), type);
+		assertEquals(sblock.getSparseBlockType(), type);
 	}
 
 	@Test

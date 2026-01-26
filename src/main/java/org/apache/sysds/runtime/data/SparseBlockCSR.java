@@ -371,6 +371,11 @@ public class SparseBlockCSR extends SparseBlock
 	}
 
 	@Override
+	public SparseBlock.Type getSparseBlockType() {
+		return Type.CSR;
+	}
+
+	@Override
 	public int numRows() {
 		return _ptr.length-1;
 	}

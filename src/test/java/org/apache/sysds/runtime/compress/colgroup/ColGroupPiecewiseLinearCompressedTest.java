@@ -23,20 +23,9 @@ import static org.junit.Assert.*;
  */
 //TODO Fix
 public class ColGroupPiecewiseLinearCompressedTest {
-
-    private CompressionSettings cs;
-    // -------------------------------------------------------------
-    // 1. create(...) und Konstruktor
-    // -------------------------------------------------------------
-
-    @BeforeEach
-    void setUp() {
-        CompressionSettings cs = new CompressionSettingsBuilder().create();
-
-    }
-
     @Test
     public void testComputeBreakpoints_uniformColumn() {
+		CompressionSettings cs = new CompressionSettingsBuilder().create();
         cs.setPiecewiseTargetLoss(1e-3);
         double[] column = {1.0, 1.0, 1.0, 1.0, 1.0}; // ← Test-spezifisch
         List<Integer> breaks = computeBreakpoints(cs, column);
@@ -45,6 +34,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 
     @Test
     public void testComputeBreakpoints_linearIncreasing() {
+		CompressionSettings cs = new CompressionSettingsBuilder().create();
         cs.setPiecewiseTargetLoss(1e-3);
         double[] column = {0.0, 1.0, 2.0, 3.0, 4.0}; // ← andere column
         List<Integer> breaks = computeBreakpoints(cs, column);
@@ -54,6 +44,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 
     @Test
     public void testComputeBreakpoints_highLoss_uniform() {
+		CompressionSettings cs = new CompressionSettingsBuilder().create();
         cs.setPiecewiseTargetLoss(1.0); // ← andere Loss
         double[] column = {1.0, 1.0, 1.0, 1.0, 1.0};
         List<Integer> breaks = computeBreakpoints(cs, column);
@@ -62,6 +53,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 
     @Test
     public void testComputeBreakpoints_noLoss_linear() {
+		CompressionSettings cs = new CompressionSettingsBuilder().create();
         cs.setPiecewiseTargetLoss(0.0);
         double[] column = {0.0, 1.0, 2.0, 3.0, 4.0};
         List<Integer> breaks = computeBreakpoints(cs, column);

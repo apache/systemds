@@ -25,20 +25,13 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-import java.io.File;
-import java.lang.Math;
 import java.lang.String;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.conf.DMLConfig;
-import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.LibMatrixNative;
-import org.apache.sysds.utils.NativeHelper;
 import org.apache.sysds.test.TestUtils;
-import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,20 +41,6 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(value = Parameterized.class)
 public class MatrixMultiplyTest extends AutomatedTestBase{
 	protected static final Log LOG = LogFactory.getLog(MatrixMultiplyTest.class.getName());
-
-	private final static String TEST_DIR = "component/matrix/";
-
-	protected String getTestClassDir() {
-		return getTestDir() + this.getClass().getSimpleName() + "/";
-	}
-
-	protected String getTestName() {
-		return "matrixMultiply";
-	}
-
-	protected String getTestDir() {
-		return TEST_DIR;
-	}
 
 	// left side
 	private final MatrixBlock left;
@@ -290,7 +269,7 @@ public class MatrixMultiplyTest extends AutomatedTestBase{
 		catch(Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
-		} 
+		}
 	}
 
 	private static String size(MatrixBlock a) {
@@ -310,7 +289,4 @@ public class MatrixMultiplyTest extends AutomatedTestBase{
 
 	@Override
 	public void setUp(){}
-
-	@Override
-	public void tearDown(){}
 }

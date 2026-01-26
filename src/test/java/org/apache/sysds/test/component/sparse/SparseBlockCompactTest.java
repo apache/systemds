@@ -113,7 +113,7 @@ public class SparseBlockCompactTest extends AutomatedTestBase
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
 			() -> sblock.checkValidity(_rows, _cols, sblock.size(), true));
-		assertTrue(ex.getMessage().startsWith("The values are expected to be non zeros"));
+		assertTrue(ex.getMessage().startsWith("The values array should not contain zeros"));
 		long size = sblock.size();
 
 		sblock.compact();

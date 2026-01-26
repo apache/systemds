@@ -495,7 +495,7 @@ public class SparseBlockMCSC extends SparseBlock {
 							prevRow + ">=" + aix[k]);
 				if(avals[k] == 0)
 					throw new RuntimeException(
-						"The values are expected to be non zeros " + "but zero at column: " + i + ", row pos: " + k);
+						"The values array should not contain zeros " + "but zero at column: " + i + ", row pos: " + k);
 				prevRow = aix[k];
 			}
 		}

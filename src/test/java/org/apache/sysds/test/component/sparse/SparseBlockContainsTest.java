@@ -21,6 +21,10 @@ package org.apache.sysds.test.component.sparse;
 
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockFactory;
+import org.apache.sysds.runtime.data.SparseBlockMCSC;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.data.SparseRow;
+import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -30,6 +34,8 @@ import org.junit.Test;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 public class SparseBlockContainsTest extends AutomatedTestBase
 {
@@ -189,6 +195,48 @@ public class SparseBlockContainsTest extends AutomatedTestBase
 		runSparseBlockContainsPatternContainsZeroTest(SparseBlock.Type.MCSR);
 	}
 
+	@Test
+	public void testSparseBlockNonCompactContainsPatternCOO()  {
+		runSparseBlockNonCompactContainsPatternTest(SparseBlock.Type.COO);
+	}
+
+	@Test
+	public void testSparseBlockNonCompactContainsPatternCSC()  {
+		runSparseBlockNonCompactContainsPatternTest(SparseBlock.Type.CSC);
+	}
+
+	@Test
+	public void testSparseBlockNonCompactContainsPatternCSR()  {
+		runSparseBlockNonCompactContainsPatternTest(SparseBlock.Type.CSR);
+	}
+
+	@Test
+	public void testSparseBlockNonCompactContainsPatternDCSR()  {
+		runSparseBlockNonCompactContainsPatternTest(SparseBlock.Type.DCSR);
+	}
+
+	@Test
+	public void testSparseBlockNonCompactContainsPatternMCSC()  {
+		double[] pattern = new double[]{0., 1., 2.};
+		SparseRowVector c1 = new SparseRowVector(new double[]{0., 1., 1., 0., 0., 0.}, new int[]{0, 1, 2, 3, 4, 5});
+		SparseRowVector c2 = new SparseRowVector(new double[]{1., 2., 2., 0., 1., 0.}, new int[]{0, 1, 2, 3, 4, 5});
+		SparseRowVector c3 = new SparseRowVector(new double[]{2., 0., 0., 0., 2., 0.}, new int[]{0, 1, 2, 3, 4, 5});
+
+		SparseBlock sblock = new SparseBlockMCSC(new SparseRow[] {c1, c2, c3}, true, 6);
+
+		RuntimeException ex = assertThrows(RuntimeException.class,
+			() -> sblock.checkValidity(6, 3, sblock.size(), true));
+		assertTrue(ex.getMessage().startsWith("The values array should not contain zeros"));
+
+		List<Integer> result = sblock.contains(pattern, false);
+		assertEquals(List.of(0, 4), result);
+	}
+
+	@Test
+	public void testSparseBlockNonCompactContainsPatternMCSR()  {
+		runSparseBlockNonCompactContainsPatternTest(SparseBlock.Type.MCSR);
+	}
+
 	private void runSparseBlockContainsNoMatchTest(SparseBlock.Type btype) {
 		double[] pattern = new double[]{1., 2., 3.};
 		double[][] A = new double[][]{{4., 5., 6.}, {7., 8., 9.}, {0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}};
@@ -244,6 +292,23 @@ public class SparseBlockContainsTest extends AutomatedTestBase
 		MatrixBlock mbtmp = DataConverter.convertToMatrixBlock(A);
 		SparseBlock srtmp = mbtmp.getSparseBlock();
 		SparseBlock sblock = SparseBlockFactory.copySparseBlock(btype, srtmp, true);
+
+		List<Integer> result = sblock.contains(pattern, false);
+		assertEquals(List.of(0, 4), result);
+	}
+
+	private void runSparseBlockNonCompactContainsPatternTest(SparseBlock.Type btype) {
+		double[] pattern = new double[]{0., 1., 2.};
+		SparseRowVector match = new SparseRowVector(new double[]{0., 1., 2.}, new int[]{0, 1, 2});
+		SparseRowVector nonMatch = new SparseRowVector(new double[]{1., 2., 0.}, new int[]{0, 1, 2});
+		SparseRowVector nonMatch2 = new SparseRowVector(new double[]{0., 0., 0.}, new int[]{0, 1, 2});
+
+		SparseBlock mcsr = new SparseBlockMCSR(new SparseRow[] {match, nonMatch, nonMatch, nonMatch2, match, nonMatch2}, true);
+		SparseBlock sblock = SparseBlockFactory.copySparseBlock(btype, mcsr, true);
+
+		RuntimeException ex = assertThrows(RuntimeException.class,
+			() -> sblock.checkValidity(6, 3, sblock.size(), true));
+		assertTrue(ex.getMessage().startsWith("The values array should not contain zeros"));
 
 		List<Integer> result = sblock.contains(pattern, false);
 		assertEquals(List.of(0, 4), result);

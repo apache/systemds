@@ -515,22 +515,26 @@ public abstract class SparseBlock implements Serializable, Block
 	}
 	
 	public List<Integer> contains(double[] pattern, boolean earlyAbort) {
-		int nnz = UtilFunctions.computeNnz(pattern, 0, pattern.length);
+		int pNnz = UtilFunctions.computeNnz(pattern, 0, pattern.length);
 		List<Integer> ret = new ArrayList<>();
 		int rlen = numRows();
 
 		for( int i=0; i<rlen; i++ ) {
 			int apos = pos(i);
 			int alen = size(i);
-			if(nnz != alen) continue;
+			if(pNnz > alen) continue;
 
 			int[] aix = indexes(i);
 			double[] avals = values(i);
 			boolean lret = true;
+			int rNnz = 0;
+
 			//safe comparison on long representations, incl NaN
-			for(int k=apos; k<apos+alen && lret; k++)
+			for(int k=apos; k<apos+alen && lret; k++) {
 				lret &= Double.compare(avals[k], pattern[aix[k]]) == 0;
-			if( lret )
+				if(avals[k] != 0) rNnz++;
+			}
+			if(lret && rNnz == pNnz)
 				ret.add(i);
 			if(earlyAbort && ret.size()>0)
 				return ret;

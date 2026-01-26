@@ -361,7 +361,7 @@ public class SparseBlockCheckValidityTest extends AutomatedTestBase
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
 			() -> sblock.checkValidity(4, 4, 6, true));
-		assertTrue(ex.getMessage().startsWith("The values are expected to be non zeros"));
+		assertTrue(ex.getMessage().startsWith("The values array should not contain zeros"));
 	}
 
 	@Test
@@ -372,7 +372,7 @@ public class SparseBlockCheckValidityTest extends AutomatedTestBase
 
 		RuntimeException ex = assertThrows(RuntimeException.class,
 			() -> sblock.checkValidity(4, 4, 6, true));
-		assertTrue(ex.getMessage().startsWith("The values are expected to be non zeros"));
+		assertTrue(ex.getMessage().startsWith("The values array should not contain zeros"));
 	}
 
 	@Test

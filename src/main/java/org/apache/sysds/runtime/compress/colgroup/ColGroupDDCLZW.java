@@ -143,10 +143,23 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		return out.toIntArray();
 	}
 
+	/**
+	 * Extracts and returns the higher 32 bits of the given long key as an integer.
+	 *
+	 * @param key the long value from which the higher 32 bits will be unpacked
+	 * @return the higher 32 bits of the given key as an integer
+	 */
 	private static int unpackfirst(long key) {
 		return (int) (key >>> 32);
 	}
 
+	/**
+	 * Extracts and returns the second component from the given long value key. This method assumes the key encodes the
+	 * second component in its least significant bits.
+	 *
+	 * @param key the long value containing the encoded second component
+	 * @return the extracted second component as an integer
+	 */
 	private static int unpacksecond(long key) {
 		return (int) (key);
 	}
@@ -157,6 +170,17 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		return result;
 	}
 
+	/**
+	 * Decodes a given code into an array of integers based on a dictionary mapping. If the code is less than the number
+	 * of unique symbols, it directly returns the code as a single-element array. Otherwise, it iteratively unpacks the
+	 * code using a dictionary until the base symbols are resolved.
+	 *
+	 * @param code    the encoded integer value to be unpacked
+	 * @param nUnique the number of unique symbols; codes less than this are directly returned
+	 * @param dict    a mapping of integer codes to packed values represented as {@code Long}, used for unpacking
+	 * @return an array of integers representing the unpacked sequence for the input code
+	 * @throws IllegalStateException if the provided code does not have a corresponding entry in the dictionary
+	 */
 	private static int[] unpack(int code, int nUnique, Map<Integer, Long> dict) {
 		if(code < nUnique)
 			return new int[] {code};
@@ -174,18 +198,23 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 			c = unpackfirst(key);
 		}
 
-		// Basissymbol
 		stack.push(c);
 		int[] outarray = new int[stack.size()];
 		int i = 0;
-		// korrekt ins Output schreiben
 		while(!stack.isEmpty()) {
 			outarray[i++] = stack.pop();
 		}
 		return outarray;
 	}
 
-	// Decompresses an LZW-compressed vector into its pre-compressed AMapToData form until index.
+	/**
+	 * Decompresses the given encoded data into a full representation based on the provided parameters.
+	 *
+	 * @param codes   an array of integers representing the compressed data
+	 * @param nUnique the number of unique values in the compressed data
+	 * @param nRows   the total number of rows in the data
+	 * @return a fully decompressed AMapToData object representing the complete data
+	 */
 	private static AMapToData decompressFull(int[] codes, int nUnique, int nRows) {
 		return decompress(codes, nUnique, nRows, nRows);
 	}
@@ -217,7 +246,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 			mapIndex = 0; // No mapping symbols have been returned yet.
 		}
 
-		// True if there are more mapping symbols to decode.
 		boolean hasNext() {
 			return mapIndex < _nRows;
 		}
@@ -231,13 +259,11 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 			if(!hasNext())
 				throw new NoSuchElementException();
 
-			// If the current phrase still has symbols, return the next symbol from it.
 			if(currentPhraseIndex < currentPhrase.length) {
 				mapIndex++;
 				return currentPhrase[currentPhraseIndex++];
 			}
 
-			// Otherwises decode the next code into a new phrase.
 			if(lzwIndex >= _dataLZW.length)
 				throw new IllegalStateException("Invalid LZW index: " + lzwIndex);
 
@@ -245,21 +271,17 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
 			final int[] next;
 			if(key < _nUnique || dict.containsKey(key)) {
-				next = unpack(key, _nUnique,
-					dict); // Normal case: The code is either a base symbol or already present in the dictionary.
+				next = unpack(key, _nUnique, dict);
 			}
 			else {
-				next = packint(oldPhrase, oldPhrase[0]); // Special case.
+				next = packint(oldPhrase, oldPhrase[0]);
 			}
 
-			// Add new phrase to dictionary: nextCode -> (oldCode, firstSymbol(next)).
 			dict.put(nextCode++, packKey(oldCode, next[0]));
 
-			// Advance decoder state.
 			oldCode = key;
 			oldPhrase = next;
 
-			// Start returning symbols from the newly decoded phrase.
 			currentPhrase = next;
 			currentPhraseIndex = 0;
 
@@ -420,17 +442,10 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 	 */
 	public AColGroup convertToDDC() {
 		final AMapToData map = decompress(_dataLZW, _nUnique, _nRows, _nRows);
-		final int[] counts = getCounts(); // may be null depending on your group
+		final int[] counts = getCounts();
 		return ColGroupDDC.create(_colIndexes, _dict, map, counts);
 	}
 
-	/**
-	 * Reads and constructs a ColGroupDDCLZW object from the given DataInput.
-	 *
-	 * @param in the DataInput to read the group data from
-	 * @return a new ColGroupDDCLZW object with the data read from the input
-	 * @throws IOException if an I/O error occurs during reading, or if the input data is invalid
-	 */
 	public static ColGroupDDCLZW read(DataInput in) throws IOException {
 		final IColIndex colIndexes = ColIndexFactory.read(in);
 		final IDictionary dict = DictionaryFactory.read(in);
@@ -515,10 +530,10 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 	@Override
 	public long getExactSizeOnDisk() {
 		long ret = super.getExactSizeOnDisk();
-		ret += 4; // _nRows size
-		ret += 4; // _nUnique size
-		ret += 4; // dataLZW.length
-		ret += (long) _dataLZW.length * 4; //lzw codes
+		ret += 4;
+		ret += 4;
+		ret += 4;
+		ret += (long) _dataLZW.length * 4;
 		return ret;
 	}
 
@@ -633,7 +648,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 	@Override
 	protected void decompressToSparseBlockTransposedDenseDictionary(SparseBlockMCSR db, double[] dict, int nColOut) {
 		ColGroupDDC g = (ColGroupDDC) convertToDDC();
-		g.decompressToSparseBlockTransposedDenseDictionary(db, dict, nColOut); // Possible implementation with iterator.
+		g.decompressToSparseBlockTransposedDenseDictionary(db, dict, nColOut);
 	}
 
 	@Override
@@ -641,7 +656,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		SparseBlock sb) {
 		LZWMappingIterator it = new LZWMappingIterator();
 		for(int i = 0; i < rl; i++) {
-			it.next(); // Skip to rl.
+			it.next();
 		}
 
 		for(int r = rl, offT = rl + offR; r < ru; r++, offT++) {
@@ -733,7 +748,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		}
 	}
 
-	@Override // TODO: Implement! Pays of with LZW!
+	@Override
 	public void leftMultByMatrixNoPreAgg(MatrixBlock matrix, MatrixBlock result, int rl, int ru, int cl, int cu) {
 		convertToDDC().leftMultByMatrixNoPreAgg(matrix, result, rl, ru, cl, cu); // Fallback to DDC.
 	}
@@ -823,7 +838,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 	// TODO: adjust according to contract, "this shall only be appended once".
 	@Override
 	protected AColGroup appendNInternal(AColGroup[] g, int blen, int rlen) {
-		/*throw new NotImplementedException();*/
 		int[] mergedMap = new int[rlen];
 		int mergedMapPos = 0;
 
@@ -859,7 +873,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		}
 
 		AMapToData mergedDataAMap = MapToFactory.create(rlen, _nUnique);
-		int mergedDataAMapPos = 0;
 
 		for(int k = 0; k < rlen; k++) {
 			mergedDataAMap.set(k, mergedMap[k]);
@@ -872,7 +885,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
 	@Override
 	public AColGroup recompress() {
-		return this; // A new or the same column group depending on optimization goal. (Description DDC)
+		return this;
 	}
 
 	@Override
@@ -893,7 +906,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 			getCachedCounts());
 	}
 
-	@Override // Correct ?
+	@Override
 	public void sparseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
 		final SparseBlock sb = selection.getSparseBlock();
 		final SparseBlock retB = ret.getSparseBlock();
@@ -908,7 +921,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 
 	@Override // Correct ?
 	protected void denseSelection(MatrixBlock selection, P[] points, MatrixBlock ret, int rl, int ru) {
-		// morph(CompressionType.UNCOMPRESSED, _data.size()).sparseSelection(selection, ret, rl, ru);;
 		final SparseBlock sb = selection.getSparseBlock();
 		final DenseBlock retB = ret.getDenseBlock();
 		for(int r = rl; r < ru; r++) {
@@ -923,10 +935,9 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 	@Override
 	public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
 		ColGroupDDC g = (ColGroupDDC) convertToDDC();
-		return g.splitReshape(multiplier, nRow, nColOrg); // Fallback to ddc. No splitReshapeDDCLZW implemented.
+		return g.splitReshape(multiplier, nRow, nColOrg);
 	}
 
-	// Not sure here.
 	@Override
 	protected boolean allowShallowIdentityRightMult() {
 		throw new NotImplementedException();
@@ -943,45 +954,45 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 	@Override
 	public void preAggregateDense(MatrixBlock m, double[] preAgg, int rl, int ru, int cl, int cu) {
 		ColGroupDDC g = (ColGroupDDC) convertToDDC();
-		g.preAggregateDense(m, preAgg, rl, ru, cl, cu); // Fallback to ddc.
+		g.preAggregateDense(m, preAgg, rl, ru, cl, cu);
 	}
 
 	@Override
 	public void preAggregateSparse(SparseBlock sb, double[] preAgg, int rl, int ru, int cl, int cu) {
 		ColGroupDDC g = (ColGroupDDC) convertToDDC();
-		g.preAggregateSparse(sb, preAgg, rl, ru, cl, cu); // Fallback to ddc.
+		g.preAggregateSparse(sb, preAgg, rl, ru, cl, cu);
 	}
 
 	@Override
 	protected void preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
 		ColGroupDDC g = (ColGroupDDC) convertToDDC();
-		g.preAggregateThatDDCStructure(that, ret); // Fallback to ddc.
+		g.preAggregateThatDDCStructure(that, ret);
 	}
 
 	@Override
 	protected void preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
 		ColGroupDDC g = (ColGroupDDC) convertToDDC();
-		g.preAggregateThatSDCZerosStructure(that, ret); // Fallback to ddc.
+		g.preAggregateThatSDCZerosStructure(that, ret);
 	}
 
 	@Override
 	protected void preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
 		ColGroupDDC g = (ColGroupDDC) convertToDDC();
-		g.preAggregateThatSDCSingleZerosStructure(that, ret); // Fallback to ddc.
+		g.preAggregateThatSDCSingleZerosStructure(that, ret);
 
 	}
 
 	@Override
 	protected void preAggregateThatRLEStructure(ColGroupRLE that, Dictionary ret) {
 		ColGroupDDC g = (ColGroupDDC) convertToDDC();
-		g.preAggregateThatRLEStructure(that, ret); // Fallback to ddc.
+		g.preAggregateThatRLEStructure(that, ret);
 
 	}
 
 	@Override
 	public void leftMMIdentityPreAggregateDense(MatrixBlock that, MatrixBlock ret, int rl, int ru, int cl, int cu) {
 		ColGroupDDC g = (ColGroupDDC) convertToDDC();
-		g.leftMMIdentityPreAggregateDense(that, ret, rl, ru, cl, cu); // Fallback to ddc.
+		g.leftMMIdentityPreAggregateDense(that, ret, rl, ru, cl, cu);
 	}
 
 	@Override

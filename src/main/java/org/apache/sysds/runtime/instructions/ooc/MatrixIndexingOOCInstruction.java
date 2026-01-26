@@ -118,7 +118,7 @@ public class MatrixIndexingOOCInstruction extends IndexingOOCInstruction {
 				CompletableFuture<Void> future = new  CompletableFuture<>();
 
 				mapOptionalOOC(qIn, qOut, tmp -> {
-					if (future.isDone()) // Then we may skip blocks and avoid submitting tasks
+					if (future.isDone())
 						return Optional.empty();
 
 					long blockRow = tmp.getIndexes().getRowIndex() - 1;

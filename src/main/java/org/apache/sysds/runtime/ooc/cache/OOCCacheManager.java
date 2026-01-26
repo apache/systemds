@@ -239,11 +239,6 @@ public class OOCCacheManager {
 		}
 
 		@Override
-		public boolean isManagedByCache() {
-			return true;
-		}
-
-		@Override
 		public void close() {
 			if(_pinned.compareAndSet(true, false)) {
 				_data = null;

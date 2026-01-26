@@ -52,7 +52,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -66,10 +65,7 @@ import java.util.function.Function;
 public abstract class OOCInstruction extends Instruction {
 	public static final ExecutorService COMPUTE_EXECUTOR = CommonThreadPool.get();
 	private static final AtomicInteger COMPUTE_IN_FLIGHT = new AtomicInteger(0);
-	private static final int COMPUTE_BACKPRESSURE_THRESHOLD =
-		Integer.getInteger("sysds.ooc.computeBackpressure", 100);
-	private static final boolean USE_INMEM_GROUPED_REDUCE =
-		!Boolean.getBoolean("sysds.ooc.groupedReduce.useCache");
+	private static final int COMPUTE_BACKPRESSURE_THRESHOLD = 100;
 	protected static final Log LOG = LogFactory.getLog(OOCInstruction.class.getName());
 	private static final AtomicInteger nextStreamId = new AtomicInteger(0);
 	private long nanoTime;
@@ -369,7 +365,10 @@ public abstract class OOCInstruction extends Instruction {
 		return fut;
 	}
 
-	protected <R, P> CompletableFuture<Void> joinManyOOC(OOCStream<IndexedMatrixValue> left, OOCStream<IndexedMatrixValue> right, OOCStream<R> out, BiFunction<IndexedMatrixValue, IndexedMatrixValue, R> mapper, Function<IndexedMatrixValue, P> leftOn, Function<IndexedMatrixValue, P> rightOn, int releaseLeftCount, int releaseRightCount) {
+	protected <R, P> CompletableFuture<Void> joinManyOOC(OOCStream<IndexedMatrixValue> left,
+		OOCStream<IndexedMatrixValue> right, OOCStream<R> out,
+		BiFunction<IndexedMatrixValue, IndexedMatrixValue, R> mapper, Function<IndexedMatrixValue, P> leftOn,
+		Function<IndexedMatrixValue, P> rightOn, int releaseLeftCount, int releaseRightCount) {
 		addInStream(left, right);
 		addOutStream(out);
 
@@ -386,42 +385,45 @@ public abstract class OOCInstruction extends Instruction {
 		OOCStream<Tuple5<P, OOCStream.QueueCallback<IndexedMatrixValue>, OOCStream.QueueCallback<IndexedMatrixValue>, BroadcastedElement, BroadcastedElement>> joinQueue = createWritableStream();
 		AtomicInteger waitCtr = new AtomicInteger(1);
 
-		CompletableFuture<Void> fut1 = submitOOCTasks(List.of(leftCache.getReadStream(), rightCache.getReadStream()), (i, tmp) -> {
-			try(tmp) {
-				boolean leftItem = i == 0;
-				P key = (leftItem ? leftOn : rightOn).apply(tmp.get());
-				Tuple2<List<BroadcastedElement>, List<BroadcastedElement>> tuple = joinMap.computeIfAbsent(key, k -> new Tuple2<>(new ArrayList<>(releaseRightCount), new ArrayList<>(releaseLeftCount)));
-				BroadcastedElement b = new BroadcastedElement(tmp.get().getIndexes());
-				List<BroadcastedElement> matches = leftItem ? tuple._2 : tuple._1;
-				List<BroadcastedElement> toInsert = leftItem ? tuple._1 : tuple._2;
-				boolean remove;
-				synchronized(tuple) {
-					toInsert.add(b);
+		CompletableFuture<Void> fut1 = submitOOCTasks(List.of(leftCache.getReadStream(), rightCache.getReadStream()),
+			(i, tmp) -> {
+				try(tmp) {
+					boolean leftItem = i == 0;
+					P key = (leftItem ? leftOn : rightOn).apply(tmp.get());
+					Tuple2<List<BroadcastedElement>, List<BroadcastedElement>> tuple = joinMap.computeIfAbsent(key,
+						k -> new Tuple2<>(new ArrayList<>(releaseRightCount), new ArrayList<>(releaseLeftCount)));
+					BroadcastedElement b = new BroadcastedElement(tmp.get().getIndexes());
+					List<BroadcastedElement> matches = leftItem ? tuple._2 : tuple._1;
+					List<BroadcastedElement> toInsert = leftItem ? tuple._1 : tuple._2;
+					boolean remove;
+					synchronized(tuple) {
+						toInsert.add(b);
 
-					for(BroadcastedElement e : matches) {
-						waitCtr.incrementAndGet();
-						OOCCacheManager.requestManyBlocks(
-							List.of(leftCache.peekCachedBlockKey(leftItem ? b.idx : e.idx), rightCache.peekCachedBlockKey(leftItem ? e.idx : b.idx)))
-							.thenApply(joined -> {
+						for(BroadcastedElement e : matches) {
+							waitCtr.incrementAndGet();
+							OOCCacheManager.requestManyBlocks(
+								List.of(leftCache.peekCachedBlockKey(leftItem ? b.idx : e.idx),
+									rightCache.peekCachedBlockKey(leftItem ? e.idx : b.idx))).thenApply(joined -> {
 								try {
-									joinQueue.enqueue(new Tuple5<>(key, joined.get(0).keepOpen(), joined.get(1).keepOpen(), leftItem ? b : e, leftItem ? e : b));
+									joinQueue.enqueue(
+										new Tuple5<>(key, joined.get(0).keepOpen(), joined.get(1).keepOpen(),
+											leftItem ? b : e, leftItem ? e : b));
 								}
 								finally {
 									joined.forEach(OOCStream.QueueCallback::close);
 								}
 								return null;
-							})
-							.exceptionally(t -> {
+							}).exceptionally(t -> {
 								joinQueue.propagateFailure(DMLRuntimeException.of(t));
 								return null;
 							});
+						}
+						remove = tuple._1.size() == releaseRightCount && tuple._2.size() == releaseLeftCount;
 					}
-					remove = tuple._1.size() == releaseRightCount && tuple._2.size() == releaseLeftCount;
+					if(remove)
+						joinMap.remove(key);
 				}
-				if(remove)
-					joinMap.remove(key);
-			}
-		});
+			});
 		fut1 = fut1.thenApply(v -> {
 			if(waitCtr.decrementAndGet() == 0)
 				joinQueue.closeInput();
@@ -441,7 +443,8 @@ public abstract class OOCInstruction extends Instruction {
 				int rightCtr = bRight.incrProcessCtrAndGet();
 
 				if(leftCtr == releaseLeftCount)
-					leftCache.incrProcessingCount(leftCache.findCachedIndex(bLeft.idx), 1); // Correct for incremented subscriber count to allow block deletion
+					leftCache.incrProcessingCount(leftCache.findCachedIndex(bLeft.idx),
+						1); // Correct for incremented subscriber count to allow block deletion
 				if(rightCtr == releaseRightCount)
 					rightCache.incrProcessingCount(rightCache.findCachedIndex(bRight.idx), 1);
 			}
@@ -456,8 +459,7 @@ public abstract class OOCInstruction extends Instruction {
 		if(!right.hasStreamCache())
 			rightCache.scheduleDeletion();
 
-		CompletableFuture<Void> fut = CompletableFuture.allOf(fut1, fut2);
-		return fut;
+		return CompletableFuture.allOf(fut1, fut2);
 	}
 
 	protected static class BroadcastedElement {
@@ -634,17 +636,15 @@ public abstract class OOCInstruction extends Instruction {
 
 		if(qIn.hasStreamCache())
 			throw new UnsupportedOperationException();
-		Map<MatrixIndexes, GroupedAggregator> aggregators = new ConcurrentHashMap<>();
+		Map<MatrixIndexes, Aggregator> aggregators = new ConcurrentHashMap<>();
 		AtomicInteger busyCtr = new AtomicInteger(1);
 		CompletableFuture<Void> outFuture = new CompletableFuture<>();
 
 		CompletableFuture<Void> pipeFuture = pipeOOC(qIn, cb -> {
 			try(cb) {
-				GroupedAggregator agg = aggregators.compute(cb.get().getIndexes(), (k, v) -> {
+				Aggregator agg = aggregators.compute(cb.get().getIndexes(), (k, v) -> {
 					if(v == null) {
-						v = USE_INMEM_GROUPED_REDUCE ?
-							new InMemoryAggregator(reduce, emitCount) :
-							new Aggregator(reduce, emitCount);
+						v = new Aggregator(reduce, emitCount);
 						busyCtr.incrementAndGet();
 						v.getFuture().thenApply(imv -> {
 							qOut.enqueue(imv);
@@ -668,80 +668,7 @@ public abstract class OOCInstruction extends Instruction {
 		return outFuture.thenRun(qOut::closeInput);
 	}
 
-	private interface GroupedAggregator {
-		CompletableFuture<IndexedMatrixValue> getFuture();
-		void insert(IndexedMatrixValue imv);
-	}
-
-	private static class InMemoryAggregator implements GroupedAggregator {
-		private final BiFunction<IndexedMatrixValue, IndexedMatrixValue, IndexedMatrixValue> _aggFn;
-		private final int _numTiles;
-		private final CompletableFuture<IndexedMatrixValue> _future;
-		private final ConcurrentLinkedQueue<IndexedMatrixValue> _pending = new ConcurrentLinkedQueue<>();
-		private final AtomicBoolean _draining = new AtomicBoolean(false);
-		private IndexedMatrixValue _acc;
-		private int _processed;
-
-		public InMemoryAggregator(BiFunction<IndexedMatrixValue, IndexedMatrixValue, IndexedMatrixValue> aggFn, int numTiles) {
-			_aggFn = aggFn;
-			_numTiles = numTiles;
-			_future = new CompletableFuture<>();
-		}
-
-		@Override
-		public CompletableFuture<IndexedMatrixValue> getFuture() {
-			return _future;
-		}
-
-		@Override
-		public void insert(IndexedMatrixValue imv) {
-			if(_future.isDone())
-				return;
-
-			_pending.add(imv);
-			scheduleDrain();
-		}
-
-		private void scheduleDrain() {
-			if(_draining.compareAndSet(false, true))
-				COMPUTE_EXECUTOR.execute(this::drainQueue);
-		}
-
-		private void drainQueue() {
-			try {
-				while(true) {
-					IndexedMatrixValue imv;
-					while((imv = _pending.poll()) != null) {
-						if(_future.isDone())
-							return;
-
-						if(_acc == null)
-							_acc = imv;
-						else
-							_acc = _aggFn.apply(_acc, imv);
-
-						_processed++;
-						if(_processed == _numTiles) {
-							IndexedMatrixValue out = _acc;
-							_acc = null;
-							_pending.clear();
-							_future.complete(out);
-							return;
-						}
-					}
-
-					_draining.set(false);
-					if(_pending.isEmpty() || _future.isDone() || !_draining.compareAndSet(false, true))
-						return;
-				}
-			}
-			catch(Throwable t) {
-				_future.completeExceptionally(DMLRuntimeException.of(t));
-			}
-		}
-	}
-
-	private static class Aggregator implements GroupedAggregator {
+	private static class Aggregator {
 		private final long _streamId;
 		private final BiFunction<IndexedMatrixValue, IndexedMatrixValue, IndexedMatrixValue> _aggFn;
 		private final int _numTiles;
@@ -761,12 +688,10 @@ public abstract class OOCInstruction extends Instruction {
 			_processed = 0;
 		}
 
-		@Override
 		public CompletableFuture<IndexedMatrixValue> getFuture() {
 			return _future;
 		}
 
-		@Override
 		public void insert(IndexedMatrixValue imv) {
 			IndexedMatrixValue v = null;
 			CompletableFuture<List<BlockEntry>> future = null;

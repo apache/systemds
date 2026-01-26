@@ -510,8 +510,6 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 							continue;
 
 						if(entry.getState().isBackedByDisk()) {
-							//if(entry.getRetainHintCount() > 0)
-							//	System.out.println("[WARN] Evicted: " + entry.getRetainHintCount() + " --> " + entry.getKey());
 							cacheSizeDelta += transitionMemState(entry, BlockState.COLD);
 							entry.clear();
 							toRemove.add(entry);

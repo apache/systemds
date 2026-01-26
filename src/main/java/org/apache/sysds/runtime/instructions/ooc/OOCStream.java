@@ -63,8 +63,6 @@ public interface OOCStream<T> extends OOCStreamable<T> {
 		boolean isEos();
 
 		boolean isFailure();
-
-		boolean isManagedByCache();
 	}
 
 	class SimpleQueueCallback<T> implements QueueCallback<T> {
@@ -104,11 +102,6 @@ public interface OOCStream<T> extends OOCStreamable<T> {
 		@Override
 		public boolean isFailure() {
 			return _failure != null;
-		}
-
-		@Override
-		public boolean isManagedByCache() {
-			return false;
 		}
 	}
 }

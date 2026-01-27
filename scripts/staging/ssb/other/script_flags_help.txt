@@ -1,17 +1,22 @@
 From ReadMe.md:
-To run our queries, we can execute the following shell script `run_script.sh`  (in ssb directory). It has the three following parameter flags.
-1. `q`: (QUERY_NAME) Name of the query to be executed.
-    - **all**: executes all queries
+To run the queries, we can execute the following shell script `run_script.sh`  (in ssb directory). It has the three following parameter flags.
+1. `-q`: (QUERY_NAME) Name of the query to be executed.
+    - `all`: executes all queries
     - **[QUERY_NAME]** like q1_1 or q1.1: Executes the selected query like q1_1. dml. Both formats q1_1 or q1.1 are allowed. It will be automatically translated.
-    - Currently the following queries are avalaible {"q1_1", "q1_2", "q1_3", "q2_1", "q2_2", "q2_3", "q3_1", "q3_2","q3_3", "q3_4", "q4_1", "q4_2", "q4_3"}
-2. `s`: (SCALE) The numerical scale factor like 0.01 or 1 etc.
+    - Currently, the following queries are available (q1_1, q1_2, q1_3, q2_1, q2_2, q2_3, q3_1, "q3_2,q3_3, q3_4, q4_1, q4_2, q4_3)
+    - Default: `q2_1`
+2. `-s`: (SCALE) The numerical scale factor like 0.01 or 1 etc.
     - Be careful: Please do not experiment with large scale factor over 0.2 in SystemDS. Its join operation is currently very slow.
-3. `d`: (DB_SYSTEM) Name of the database system used.
-    - **all**: executes all queries
-    - **systemds**: SystemDS executes DML scripts.
-    - **postgres**: PostgreSQL executes SQL queries.
-    - ( **duckdb**: DuckDB executes SQL queries.) 
-  
+    - Default: `0.1`
+3. `-d`: (DB_SYSTEM) Name of the database system used.
+    - `all`: executes queries in all three databases.
+    - `systemds`: SystemDS executes DML scripts with basic output.
+    - `systemds_stats`: SystemDS executes DML scripts with extended output (--stats).
+    - `postgres`: PostgreSQL executes SQL queries.
+    - `duckdb`: DuckDB executes SQL queries.
+    - Default: `systemds`
+4. `-g`: (GUI_DOCKER): Use GUI docker desktop. No arguments to pass. Set only the flag "-g".
+5. `-h`: (HELP) Display the script explanation from ReadMe.md. No arguments to pass. Set only the flag "-h".
 The command line could look like this:
 ```
 $ ./run_script.sh -q [YOUR_QUERY_NAME] -s [YOUR_SCALE] -d [YOUR_DB_SYSTEM]
@@ -20,12 +25,8 @@ Examples
 ```
 $ ./run_script.sh -q all -s 0.1 -d all
 $ ./run_script.sh -q q4_3 -s 0.1 -d systemds
-$ ./run_script.sh -q all -s 0.1 -d postgres
+$ ./run_script.sh -q all -s 1 -d duckdb
+$ ./run_script.sh -q q1.1 -s 1 -d postgres -g
 ```
-If an option not specified by user, the default values are as follows:
-```
-QUERY_NAME="q2_1"
-SCALE=0.1
-DB_SYSTEM="systemds"
-```
+
 For more details give a closer look to ReadMe.md. 

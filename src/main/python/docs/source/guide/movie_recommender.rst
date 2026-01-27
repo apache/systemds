@@ -61,13 +61,12 @@ Dataset <https://grouplens.org/datasets/movielens/100k/>`__. It consists
 of 100.000 movie ratings from 943 different users on 1682 movies from
 the late 1990s. In the following, we will often refer to movies as
 items. The data is stored in different files: 
-- u.data (contains
-user_id, item_id (movie), rating and timestamp), 
-- u.user (contains
-user_id, age, gender, occupation and zip code), 
-- u.item (contains
-item_id, movie name, release date, ImDb link, genre in a hot-one
-format).
+
+-  **u.data** (contains user_id, item_id (movie), rating and timestamp), 
+
+-  **u.user** (contains user_id, age, gender, occupation and zip code), 
+
+-  **u.item** (contains item_id, movie name, release date, ImDb link, genre in a hot-one format).
 
 Preprocessing for Cosine Similarity and Matrix Factorization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

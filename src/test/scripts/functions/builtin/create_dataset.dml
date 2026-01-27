@@ -1,0 +1,94 @@
+
+apply_mcar = function(Matrix[Double] col_in, Double p_missing, Integer seed) return (Matrix[Double] col_out) {
+    n = nrow(col_in);
+    is_missing = (rand(rows=n, cols=1, min=0, max=1, seed=seed) < p_missing);
+
+    # create mask for columns
+    nan_mask = replace(target=is_missing * 1.0, pattern=1, replacement=NaN);
+    nan_mask = replace(target=nan_mask, pattern=0, replacement=1);
+
+    # apply mask
+    col_out = col_in * nan_mask;
+}
+
+apply_mar = function(Matrix[Double] col_in, Matrix[Double] ref1, Matrix[Double] ref2, Integer seed, Double base_prob, Double strength) return (Matrix[Double] col_out) {
+    
+    ref1_std = scale(ref1, TRUE, TRUE);
+    ref2_std = scale(ref2, TRUE, TRUE);
+    
+    # gen prob
+    logit_base = log(base_prob / (1.0 - base_prob));
+    logit = logit_base + strength * (1.2 * ref1_std - 0.8 * ref2_std);
+    p_missing = 1 / (1 + exp(-logit));
+    p_missing = max(min(p_missing, 0.85), 0.10); 
+    
+    # gen mask
+    is_missing = (rand(rows=nrow(col_in), cols=1, seed=seed) < p_missing);
+    nan_mask = replace(target=is_missing * 1.0, pattern=1, replacement=NaN);
+    nan_mask = replace(target=nan_mask, pattern=0, replacement=1);
+    
+    # apply mask
+    col_out = col_in * nan_mask;
+}
+
+apply_mnar = function(Matrix[Double] col_in, Double p_missing, Integer seed) return (Matrix[Double] col_out) {
+
+    y_norm = (col_in - min(col_in)) / (max(col_in) - min(col_in));
+    
+    # gen missing
+    is_missing = (rand(rows=nrow(col_in), cols=1, seed=seed) < (y_norm * p_missing));
+    
+    # apply Nan
+    col_out = col_in + (ifelse(is_missing, NaN, 0));
+}
+
+get_dataset = function(Integer n, Matrix[Double] GroundTruth = matrix(0,0,0)) return (Matrix[Double] X, Matrix[Double] GT_out) {
+    
+    # create groundTruth
+    if (nrow(GroundTruth) == 0) {
+        # default groundTruth
+        GT_out = matrix("0 0 0 1 1 2 2 3 3", rows=9, cols=1);
+    } else {
+        GT_out = GroundTruth;
+    }
+
+    num_cols = nrow(GT_out);
+    X = matrix(0, rows=n, cols=0);
+    
+    # gen anchor columns
+    anchor1 = rand(rows=n, cols=1, pdf="normal", seed=42);
+    anchor2 = rand(rows=n, cols=1, pdf="normal", seed=43);
+
+    # gen columns
+    for (i in 1:num_cols) {
+        code = as.scalar(GT_out[i, 1]);
+        col_base = matrix(0, rows=n, cols=1);
+
+        if (i <= 2) {
+            if (i == 1) {
+                col_base = anchor1;
+            } else {
+                col_base = anchor2;
+            }
+        } else {
+            # gen noise & correlation
+            noise = rand(rows=n, cols=1, seed=i*123);
+            col_base = 0.5 * anchor1 + 0.3 * anchor2 + noise * 0.2;
+        }
+
+        # apply missing type
+        if (code == 0) { 
+            X = cbind(X, col_base); 
+        }
+        else if (code == 1) { 
+            X = cbind(X, apply_mcar(col_base, 0.20, i)); 
+        }
+        else if (code == 2) { 
+            X = cbind(X, apply_mar(col_base, anchor1, anchor2, i, 0.15, 3.0)); 
+        }
+        else if (code == 3) { 
+            X = cbind(X, apply_mnar(col_base, 0.25, i)); 
+        }
+    }
+    print("Generation dataset completed");
+}

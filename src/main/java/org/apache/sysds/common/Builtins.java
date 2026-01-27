@@ -393,6 +393,8 @@ public enum Builtins {
 	RMEMPTY("removeEmpty", false, true),
 	SCALE("scale", true, false),
 	SCALEAPPLY("scaleApply", true, false),
+	SCALEROBUST("scaleRobust", true, false),
+	SCALEROBUSTAPPLY("scaleRobustApply", true, false),
 	SCALE_MINMAX("scaleMinMax", true, false),
 	TIME("time", false),
 	TOKENIZE("tokenize", false, true),

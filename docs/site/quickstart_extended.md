@@ -1,3 +1,9 @@
+---
+layout: site
+title: SystemDS Quickstart
+description: Quickstart guide for installing and running SystemDS on Windows, Linux, and macOS
+---
+
 # Extended Quickstart Guide
 
 Welcome to the extended quickstart guide for Apache SystemDS. This quickstart page provides a high-level overview of both installation and points you to the detailed documentation for each path.

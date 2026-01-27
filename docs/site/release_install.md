@@ -1,3 +1,8 @@
+---
+layout: site
+title: Install SystemDS from a Release
+description: Installation guide for SystemDS using release archives
+---
 
 # Install SystemDS from a Release
 
@@ -44,7 +49,7 @@ Use Windows built-in extractor.
 On Windows, the `systemds`CLI wrapper may not be executable. This is expected because the `bin/systemds`launcher is implemented as a shell script, which Windows cannot execute natively. To verify the installation on Windows, navigate to the bin directory and run the JAR directly. Note that running `systemds -help` without JAR may result in a CommandNotFoundExeption:
 
 ```bash
-java -jar systemds-3.3.0.jar -help
+java -jar systemds-<VERSION>.jar -help
 ```
 
 You should see usage information as an output printed to the console.
@@ -195,5 +200,4 @@ Hello World!
 
 # Next Steps
 
-For running scripts in Spark mode or experimenting with federated workers, see the Execution Guide: [Execute SystemDS](run_extended.md)
-
+For running scripts in Spark mode or experimenting with federated workers, see the Execution Guide: [Execute SystemDS](run.html)

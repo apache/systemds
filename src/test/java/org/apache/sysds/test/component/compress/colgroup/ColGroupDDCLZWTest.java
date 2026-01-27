@@ -168,20 +168,6 @@ public class ColGroupDDCLZWTest {
 	}
 
 	/**
-	 * Asserts "partial decompression" up to the `index`
-	 */
-	private void assertPartialDecompression(ColGroupDDCLZW ddclzw, AMapToData original, int index) {
-		ColGroupDDC partial = (ColGroupDDC) ddclzw.convertToDDC();
-		AMapToData partialMap = partial.getMapToData();
-
-		assertEquals("Partial size incorrect", index, partialMap.size());
-
-		for(int i = 0; i < index; i++) {
-			assertEquals("Partial map mismatch at " + i, original.getIndex(i), partialMap.getIndex(i));
-		}
-	}
-
-	/**
 	 * Asserts if the slice operation matches DDC's slice
 	 */
 	private void assertSlice(ColGroupDDCLZW ddclzw, ColGroupDDC originalDDC, int low, int high) {
@@ -214,25 +200,9 @@ public class ColGroupDDCLZWTest {
 		assertLosslessCompression(ddc);
 
 		ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) ddc.convertToDDCLZW();
-		assertPartialDecompression(ddclzw, ddc.getMapToData(), 101);
 		assertSlice(ddclzw, ddc, 3, 10);
 	}
 
-	@Test
-	public void testPartialDecompressionOutOfBounds() {
-        double[][] data = new double[][] {{20,21},{40,41},{50,51},{50,51},{40,41},{30,31},{40,41},{50,51},{20,21},{50,51},
-                {50,51},{50,51},{50,51},{20,21},{50,51},{20,21},{50,51},{20,21},{50,51},{10,11},
-                {20,21},{40,41},{50,51},{50,51},{40,41},{30,31},{40,41},{50,51},{20,21},{50,51},
-                {50,51},{50,51},{50,51},{20,21},{50,51},{20,21},{50,51},{20,21},{50,51},{10,11}};
-
-		ColGroupDDC ddc = (ColGroupDDC) compressForTest(data, AColGroup.CompressionType.DDC);
-
-		assertLosslessCompression(ddc);
-
-		ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) ddc.convertToDDCLZW();
-		assertPartialDecompression(ddclzw, ddc.getMapToData(), 40);
-		/*assertPartialDecompression(ddclzw, ddc.getMapToData(), 41); // Should throw out of bounds*/
-	}
 
 	/*@Test
 	public void testLengthTwo() {

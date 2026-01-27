@@ -207,17 +207,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		return outarray;
 	}
 
-	/**
-	 * Decompresses the given encoded data into a full representation based on the provided parameters.
-	 *
-	 * @param codes   an array of integers representing the compressed data
-	 * @param nUnique the number of unique values in the compressed data
-	 * @param nRows   the total number of rows in the data
-	 * @return a fully decompressed AMapToData object representing the complete data
-	 */
-	private static AMapToData decompressFull(int[] codes, int nUnique, int nRows) {
-		return decompress(codes, nUnique, nRows, nRows);
-	}
 
 	/**
 	 * The LZWMappingIterator class is responsible for decoding and iterating through an LZW (Lempel-Ziv-Welch)
@@ -290,19 +279,15 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		}
 	}
 
-	/**
-	 * Decompresses a sequence of LZW-compressed integer codes into an {@code AMapToData} structure representing the
-	 * decompressed data.
-	 *
-	 * @param codes   an array of integer LZW-codes to be decompressed
-	 * @param nUnique the number of unique values in the encoding alphabet
-	 * @param nRows   the total number of rows in the data to be decompressed
-	 * @param index   the length of the decompressed output
-	 * @return an {@code AMapToData} instance containing the decompressed data
-	 * @throws IllegalArgumentException if {@code codes} is null, empty, or any input parameter is invalid
-	 * @throws IllegalStateException    if the decompression process does not produce the expected length of data
-	 */
-	private static AMapToData decompress(int[] codes, int nUnique, int nRows, int index) {
+    /**
+     * Decompresses the given encoded data into a full representation based on the provided parameters.
+     *
+     * @param codes   an array of integers representing the compressed data
+     * @param nUnique the number of unique values in the compressed data
+     * @param nRows   the total number of rows in the data
+     * @return a fully decompressed AMapToData object representing the complete data
+     */
+    private static AMapToData decompressFull(int[] codes, int nUnique, int nRows) {
 		if(codes == null)
 			throw new IllegalArgumentException("codes is null");
 		if(codes.length == 0)
@@ -312,24 +297,16 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		if(nRows <= 0) {
 			throw new IllegalArgumentException("Invalid nRows: " + nRows);
 		}
-		if(index > nRows) {
-			throw new IllegalArgumentException("Index is larger than Data Length: " + index);
-		}
-
-		if(index == 0)
-			return MapToFactory.create(0, nUnique);
 
 		final Map<Integer, Long> dict = new HashMap<>();
 
-		AMapToData out = MapToFactory.create(index, nUnique);
+		AMapToData out = MapToFactory.create(nRows, nUnique);
 		int outPos = 0;
 
 		int old = codes[0];
 		int[] oldPhrase = unpack(old, nUnique, dict);
 
 		for(int v : oldPhrase) {
-			if(outPos == index)
-				break;
 			out.set(outPos++, v);
 		}
 
@@ -348,8 +325,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 			}
 
 			for(int v : next) {
-				if(outPos == index)
-					return out;
 				out.set(outPos++, v);
 			}
 
@@ -360,8 +335,8 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 			oldPhrase = next;
 		}
 
-		if(outPos != index)
-			throw new IllegalStateException("Decompression length mismatch: got " + outPos + " expected " + index);
+		if(outPos != nRows)
+			throw new IllegalStateException("Decompression length mismatch: got " + outPos + " expected " + nRows);
 
 		return out;
 	}

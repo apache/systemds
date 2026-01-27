@@ -441,7 +441,7 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 	 * @return an AColGroup instance representing the decoded ColGroup in DDC format
 	 */
 	public AColGroup convertToDDC() {
-		final AMapToData map = decompress(_dataLZW, _nUnique, _nRows, _nRows);
+		final AMapToData map = decompressFull(_dataLZW, _nUnique, _nRows);
 		final int[] counts = getCounts();
 		return ColGroupDDC.create(_colIndexes, _dict, map, counts);
 	}

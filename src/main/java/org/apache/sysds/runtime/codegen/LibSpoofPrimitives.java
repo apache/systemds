@@ -28,10 +28,15 @@ import org.apache.sysds.runtime.functionobjects.BitwAnd;
 import org.apache.sysds.runtime.functionobjects.IntegerDivide;
 import org.apache.sysds.runtime.functionobjects.Modulus;
 import org.apache.sysds.runtime.matrix.data.LibMatrixDNN;
+import org.apache.sysds.runtime.matrix.data.LibMatrixDNN.PoolingType;
 import org.apache.sysds.runtime.matrix.data.LibMatrixDNNIm2Col;
 import org.apache.sysds.runtime.matrix.data.LibMatrixDNNPooling;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
-import org.apache.sysds.runtime.matrix.data.LibMatrixDNN.PoolingType;
+
+import jdk.incubator.vector.DoubleVector;
+import jdk.incubator.vector.FloatVector;
+import jdk.incubator.vector.VectorOperators;
+import jdk.incubator.vector.VectorSpecies;
 
 /**
  * This library contains all vector primitives that are used in 
@@ -45,6 +50,12 @@ public class LibSpoofPrimitives
 	private static IntegerDivide intDiv = IntegerDivide.getFnObject();
 	private static Modulus mod = Modulus.getFnObject();
 	private static BitwAnd bwAnd = BitwAnd.getBitwAndFnObject();
+
+	// Vector API initializations
+	private static final VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_PREFERRED;
+	private static final VectorSpecies<Float> FSPECIES = FloatVector.SPECIES_PREFERRED;
+	private static final int vLen = SPECIES.length();
+
 	
 	//global pool of reusable vectors, individual operations set up their own thread-local
 	//ring buffers of reusable vectors with specific number of vectors and vector sizes 
@@ -56,13 +67,85 @@ public class LibSpoofPrimitives
 		@Override protected SparseVectorBuffer initialValue() { return new SparseVectorBuffer(0,0,0); }
 	};
 
-	public static double rowMaxsVectMult(double[] a, double[] b, int ai, int bi, int len) {
+	public static double scalarrowMaxsVectMult(double[] a, double[] b, int ai, int bi, int len) {
 		double val = Double.NEGATIVE_INFINITY;
 		int j=0;
 		for( int i = ai; i < ai+len; i++ )
 			val = Math.max(a[i]*b[j++], val);
 		return val;
 	}
+
+	public static double scalarrowMaxsVectMultFloat(float[] a, float[] b, int ai, int bi, int len) {
+		float val = Float.NEGATIVE_INFINITY;
+		int j=0;
+		for( int i = ai; i < ai+len; i++ )
+			val = Math.max(a[i]*b[j++], val);
+		return val;
+	}
+
+	public static double rowMaxsVectMult(double[] a, double[] b, int ai, int bi, int len) {
+		double maxVal = Double.NEGATIVE_INFINITY;
+	
+		int i = 0;
+		int upper = SPECIES.loopBound(len);
+	
+		// vector accumulator for max
+		DoubleVector vmax = DoubleVector.broadcast(SPECIES, Double.NEGATIVE_INFINITY);
+	
+		// IMPORTANT:
+		// Your original code uses b[j++] starting at 0 (ignores bi).
+		// I assume that is a bug/oversight, so I use b[bi + i].
+		// If you *must* keep exact old semantics, replace (bi + i) with just i.
+		for (; i < upper; i += vLen) {
+			DoubleVector va = DoubleVector.fromArray(SPECIES, a, ai + i);
+			DoubleVector vb = DoubleVector.fromArray(SPECIES, b, bi + i);
+			DoubleVector prod = va.mul(vb);
+			vmax = vmax.max(prod);
+		}
+	
+		// Reduce vector lanes to a scalar max
+		maxVal = vmax.reduceLanes(VectorOperators.MAX);
+	
+		// Tail
+		for (; i < len; i++) {
+			maxVal = Math.max(maxVal, a[ai + i] * b[bi + i]);
+		}
+	
+		return maxVal;
+	}
+
+	public static double rowMaxsVectMultFloat(float[] a, float[] b, int ai, int bi, int len) {
+		float maxVal = Float.NEGATIVE_INFINITY;
+	
+		int i = 0;
+		int upper = FSPECIES.loopBound(len);
+	
+		// vector accumulator for max
+		FloatVector vmax = FloatVector.broadcast(FSPECIES, Float.NEGATIVE_INFINITY);
+	
+		// IMPORTANT:
+		// Your original code uses b[j++] starting at 0 (ignores bi).
+		// I assume that is a bug/oversight, so I use b[bi + i].
+		// If you *must* keep exact old semantics, replace (bi + i) with just i.
+		for (; i < upper; i += FSPECIES.length()) {
+			FloatVector va = FloatVector.fromArray(FSPECIES, a, ai + i);
+			FloatVector vb = FloatVector.fromArray(FSPECIES, b, bi + i);
+			FloatVector prod = va.mul(vb);
+			vmax = vmax.max(prod);
+		}
+	
+		// Reduce vector lanes to a scalar max
+		maxVal = vmax.reduceLanes(VectorOperators.MAX);
+	
+		// Tail
+		for (; i < len; i++) {
+			maxVal = Math.max(maxVal, a[ai + i] * b[bi + i]);
+		}
+	
+		return maxVal;
+	}
+	
+
 
 	public static double rowMaxsVectMult(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
 		double val = Double.NEGATIVE_INFINITY;
@@ -295,7 +378,9 @@ public class LibSpoofPrimitives
 	 * @param len number of processed elements
 	 * @return sum value
 	 */
-	public static double vectSum(double[] a, int ai, int len) { 
+
+	// scalar function 
+	public static double scalarvectSum(double[] a, int ai, int len) { 
 		double val = 0;
 		final int bn = len%8;
 		
@@ -313,6 +398,113 @@ public class LibSpoofPrimitives
 		//scalar result
 		return val; 
 	} 
+
+	public static double scalarvectSumFloat(float[] a, int ai, int len) { 
+		float val = 0;
+		final int bn = len%8;
+		
+		//compute rest
+		for( int i = ai; i < ai+bn; i++ )
+			val += a[ i ];
+		
+		//unrolled 8-block (for better instruction-level parallelism)
+		for( int i = ai+bn; i < ai+len; i+=8 ) {
+			//read 64B cacheline of a, compute cval' = sum(a) + cval
+			val += a[ i+0 ] + a[ i+1 ] + a[ i+2 ] + a[ i+3 ]
+			     + a[ i+4 ] + a[ i+5 ] + a[ i+6 ] + a[ i+7 ];
+		}
+		
+		//scalar result
+		return val; 
+	}
+	public static double vectSum(double[] a, int ai, int len) {
+        double sum = 0d;
+        int i = 0;
+
+        DoubleVector acc = DoubleVector.zero(SPECIES);
+
+		// largest multiple of vLen <= len
+        int upperBound = SPECIES.loopBound(len);
+
+        for (; i < upperBound; i += SPECIES.length()) {
+            DoubleVector v = DoubleVector.fromArray(SPECIES, a, ai + i);
+            acc = acc.add(v);
+        }
+
+        // reduce vector lanes into scalar
+        sum += acc.reduceLanes(VectorOperators.ADD);
+
+        // tail (remaining elements)
+        for (; i < len; i++) {
+            sum += a[ai + i];
+        }
+
+        return sum;
+    }
+
+	public static double rowMaxsVectMultVec2Acc(double[] a, double[] b, int ai, int bi, int len) {
+		int i = 0;
+		int upper = SPECIES.loopBound(len);
+	
+		DoubleVector vmax1 = DoubleVector.broadcast(SPECIES, Double.NEGATIVE_INFINITY);
+		DoubleVector vmax2 = DoubleVector.broadcast(SPECIES, Double.NEGATIVE_INFINITY);
+	
+		// step = 2 vectors per iteration
+		int step = vLen * 2;
+	
+		for (; i + step <= upper; i += step) {
+			DoubleVector va1 = DoubleVector.fromArray(SPECIES, a, ai + i);
+			DoubleVector vb1 = DoubleVector.fromArray(SPECIES, b, bi + i);
+			vmax1 = vmax1.max(va1.mul(vb1));
+	
+			DoubleVector va2 = DoubleVector.fromArray(SPECIES, a, ai + i + vLen);
+			DoubleVector vb2 = DoubleVector.fromArray(SPECIES, b, bi + i + vLen);
+			vmax2 = vmax2.max(va2.mul(vb2));
+		}
+	
+		// finish remaining vector loop
+		for (; i < upper; i += vLen) {
+			DoubleVector va = DoubleVector.fromArray(SPECIES, a, ai + i);
+			DoubleVector vb = DoubleVector.fromArray(SPECIES, b, bi + i);
+			vmax1 = vmax1.max(va.mul(vb));
+		}
+	
+		// combine both accumulators
+		DoubleVector vmax = vmax1.max(vmax2);
+		double maxVal = vmax.reduceLanes(VectorOperators.MAX);
+	
+		// tail
+		for (; i < len; i++) {
+			maxVal = Math.max(maxVal, a[ai + i] * b[bi + i]);
+		}
+	
+		return maxVal;
+	}
+	
+	public static double vectSumFloat(float[] a, int ai, int len) {
+        float sum = 0;
+        int i = 0;
+
+        FloatVector acc = FloatVector.zero(FSPECIES);
+
+		// largest multiple of vLen <= len
+        int upperBound = FSPECIES.loopBound(len);
+
+        for (; i < upperBound; i += FSPECIES.length()) {
+            FloatVector v = FloatVector.fromArray(FSPECIES, a, ai + i);
+            acc = acc.add(v);
+        }
+
+        // reduce vector lanes into scalar
+        sum += acc.reduceLanes(VectorOperators.ADD);
+
+        // tail (remaining elements)
+        for (; i < len; i++) {
+            sum += a[ai + i];
+        }
+
+        return sum;
+    }
 	
 	public static double vectSum(double[] avals, int[] aix, int ai, int alen, int len) {
 		//forward to dense as column indexes not required here
@@ -373,10 +565,68 @@ public class LibSpoofPrimitives
 	
 	//custom vector div
 	
-	public static void vectDivAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
+	public static void scalarvectDivAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
 		for( int j = ai; j < ai+len; j++, ci++)
 			c[ci] +=  a[j] / bval;
 	}
+
+	public static void vectDivAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
+		// Handle trivial case
+		if (len <= 0) return;
+
+		// Preferred SIMD width for the current CPU (AVX2/AVX-512/etc.)
+		final VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_PREFERRED;
+
+		// Hoist reciprocal (1 division instead of len divisions)
+		final double inv = 1.0 / bval;
+		final DoubleVector vinv = DoubleVector.broadcast(SPECIES, inv);
+
+		int i = 0;
+		final int upperBound = SPECIES.loopBound(len);
+
+		// Vector loop
+		for (; i < upperBound; i += SPECIES.length()) {
+			// load a and c
+			DoubleVector va = DoubleVector.fromArray(SPECIES, a, ai + i);
+			DoubleVector vc = DoubleVector.fromArray(SPECIES, c, ci + i);
+
+			// vc += va * inv
+			vc = vc.add(va.mul(vinv));
+
+			// store result back to c
+			vc.intoArray(c, ci + i);
+		}
+
+		// Tail loop
+		for (; i < len; i++) {
+			c[ci + i] += a[ai + i] * inv;
+		}
+	}
+
+	public static void pureDivvectDivAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
+		if (len <= 0) return;
+	
+		final VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_PREFERRED;
+		final DoubleVector vb = DoubleVector.broadcast(SPECIES, bval);
+	
+		int i = 0;
+		final int upperBound = SPECIES.loopBound(len);
+	
+		for (; i < upperBound; i += SPECIES.length()) {
+			DoubleVector va = DoubleVector.fromArray(SPECIES, a, ai + i);
+			DoubleVector vc = DoubleVector.fromArray(SPECIES, c, ci + i);
+	
+			vc = vc.add(va.div(vb));
+	
+			vc.intoArray(c, ci + i);
+		}
+	
+		for (; i < len; i++) {
+			c[ci + i] += a[ai + i] / bval;
+		}
+	}
+	
+
 	
 	public static void vectDivAdd(double bval, double[] a, double[] c, int ai, int ci, int len) {
 		for( int j = ai; j < ai+len; j++, ci++)
@@ -1607,12 +1857,39 @@ public class LibSpoofPrimitives
 		vectEqualAdd(a, bval, c, aix, ai, ci, alen, len);
 	}
 	
-	public static double[] vectEqualWrite(double[] a, double bval, int ai, int len) {
+	public static double[] scalarvectEqualWrite(double[] a, double bval, int ai, int len) {
 		double[] c = allocVector(len, false);
 		for( int j = 0; j < len; j++, ai++)
 			c[j] = (a[ai] == bval) ? 1 : 0;
 		return c;
 	}
+	public static double[] vectEqualWrite(double[] a, double bval, int ai, int len) {
+		double[] c = allocVector(len, false);
+	
+		int i = 0;
+		int upper = SPECIES.loopBound(len);
+	
+		DoubleVector vb = DoubleVector.broadcast(SPECIES, bval);
+		DoubleVector zeros = DoubleVector.zero(SPECIES);
+		DoubleVector ones = DoubleVector.broadcast(SPECIES, 1.0);
+	
+		for (; i < upper; i += vLen) {
+			DoubleVector va = DoubleVector.fromArray(SPECIES, a, ai + i);
+			var mask = va.compare(VectorOperators.EQ, vb);
+	
+			// out = (va == vb) ? 1.0 : 0.0
+			DoubleVector out = zeros.blend(ones, mask);
+			out.intoArray(c, i);
+		}
+	
+		// tail
+		for (; i < len; i++) {
+			c[i] = (a[ai + i] == bval) ? 1 : 0;
+		}
+	
+		return c;
+	}
+	
 	
 	public static double[] vectEqualWrite(double bval, double[] a, int ai, int len) {
 		return vectEqualWrite(a, bval, ai, len);

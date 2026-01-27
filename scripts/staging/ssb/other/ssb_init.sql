@@ -115,10 +115,3 @@ ADD PRIMARY KEY (p_partkey);
 
 --ALTER TABLE lineorder
 --ADD FOREIGN KEY (lo_partkey) REFERENCES part (p_partkey);
-
--- Copying data inside.
-COPY customer FROM '/tmp/customer.tbl' DELIMITER '|';
-COPY part FROM '/tmp/part.tbl' DELIMITER '|';
-COPY supplier FROM '/tmp/supplier.tbl' DELIMITER '|';
-COPY date FROM '/tmp/date.tbl' DELIMITER '|';
-COPY lineorder FROM '/tmp/lineorder.tbl' DELIMITER '|';

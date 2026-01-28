@@ -1112,13 +1112,13 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	public AColGroup convertToDeltaDDC() {
 		int numCols = _colIndexes.size();
 		int numRows = _data.size();
-		
+
 		DblArrayCountHashMap map = new DblArrayCountHashMap(Math.max(numRows, 64));
 		double[] rowDelta = new double[numCols];
 		double[] prevRow = new double[numCols];
 		DblArray dblArray = new DblArray(rowDelta);
 		int[] rowToDictId = new int[numRows];
-		
+
 		double[] dictVals = _dict.getValues();
 
 		for(int i = 0; i < numRows; i++) {
@@ -1134,13 +1134,13 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 					prevRow[j] = val;
 				}
 			}
-			
+
 			rowToDictId[i] = map.increment(dblArray);
 		}
-		
+
 		if(map.size() == 0)
 			return new ColGroupEmpty(_colIndexes);
-		
+
 		ACount<DblArray>[] vals = map.extractValues();
 		final int nVals = vals.length;
 		final double[] dictValues = new double[nVals * numCols];
@@ -1153,7 +1153,7 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 			oldIdToNewId[dac.id] = i;
 			idx += numCols;
 		}
-		
+
 		DeltaDictionary deltaDict = new DeltaDictionary(dictValues, numCols);
 		AMapToData newData = MapToFactory.create(numRows, nVals);
 		for(int i = 0; i < numRows; i++) {
@@ -1162,4 +1162,7 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 		return ColGroupDeltaDDC.create(_colIndexes, deltaDict, newData, null);
 	}
 
+	public AColGroup convertToDDCLZW() {
+		return ColGroupDDCLZW.create(_colIndexes, _dict, _data, null);
+	}
 }

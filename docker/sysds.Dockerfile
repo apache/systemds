@@ -88,7 +88,9 @@ FROM alpine:3.20@sha256:de4fe7064d8f98419ea6b49190df1abbf43450c1702eeb864fe9ced4
 RUN apk add --no-cache bash \
     snappy \
     lz4 \
-    zlib
+    zlib \
+    && apk update \
+    && apk upgrade openssl busybox busybox-binsh ssl_client libcrypto3 libssl3
 
 ENV JAVA_HOME=/usr/lib/jvm/jdk-17.0.15+6
 ENV PATH=$JAVA_HOME/bin:$PATH

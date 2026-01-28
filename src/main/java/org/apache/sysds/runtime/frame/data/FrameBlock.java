@@ -52,9 +52,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
-import org.apache.sysds.runtime.frame.data.columns.Array;
-import org.apache.sysds.runtime.frame.data.columns.ArrayFactory;
-import org.apache.sysds.runtime.frame.data.columns.ColumnMetadata;
+import org.apache.sysds.runtime.frame.data.columns.*;
 import org.apache.sysds.runtime.frame.data.iterators.IteratorFactory;
 import org.apache.sysds.runtime.frame.data.lib.FrameFromMatrixBlock;
 import org.apache.sysds.runtime.frame.data.lib.FrameLibAppend;
@@ -1302,18 +1300,33 @@ public class FrameBlock implements CacheBlock<FrameBlock>, Externalizable {
 		ensureAllocateMeta();
 		if(_coldata == null) // allocate column data.
 			_coldata = new Array[_schema.length];
-		synchronized(this) { // make sync locks
-			// TODO remove sync locks on array types where they are not needed.
-			if(_columnLocks == null) {
-				Object[] locks = new Object[_schema.length];
-				for(int i = 0; i < locks.length; i++)
-					locks[i] = new Object();
-				_columnLocks = new SoftReference<>(locks);
+
+		for(int j = cl; j <= cu; j++) {
+			Array<?> col = _coldata[j];
+			boolean isUnsafe = (col == null) ||
+				(col instanceof OptionalArray) ||
+				(col instanceof BitSetArray) ||
+				(col instanceof RaggedArray) ||
+				(col instanceof ACompressedArray);
+
+			if(isUnsafe) {
+				if(_columnLocks == null || _columnLocks.get() == null) {
+					synchronized(this) {
+						if(_columnLocks == null || _columnLocks.get() == null) {
+							Object[] locks = new Object[_schema.length];
+							for(int i = 0; i < locks.length; i++)
+								locks[i] = new Object();
+							_columnLocks = new SoftReference<>(locks);
+						}
+					}
+				}
+				Object[] locks = _columnLocks.get();
+				// read/write inside lock, for safest write and most accurate read
+				synchronized(locks[j]) {
+					_coldata[j] = ArrayFactory.set(_coldata[j], src._coldata[j - cl], rl, ru, _nRow);
+				}
 			}
-		}
-		Object[] locks = _columnLocks.get();
-		for(int j = cl; j <= cu; j++) { // for each column
-			synchronized(locks[j]) { // synchronize on the column.
+			else {
 				_coldata[j] = ArrayFactory.set(_coldata[j], src._coldata[j - cl], rl, ru, _nRow);
 			}
 		}

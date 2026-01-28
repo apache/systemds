@@ -65,7 +65,7 @@ public class ColGroupPiecewiseLinearCompressed extends AColGroupCompressed {
 
     @Override
     public void decompressToDenseBlock(DenseBlock db, int rl, int ru, int offR, int offC) {
-        // ✅ Vollständige Null-Safety
+
         if (db == null || _colIndexes == null || _colIndexes.size() == 0 ||
                 breakpoints == null || slopes == null || intercepts == null) {
             return;
@@ -95,7 +95,7 @@ public class ColGroupPiecewiseLinearCompressed extends AColGroupCompressed {
                 int gr = offR + r;
                 int gc = offC + col;
 
-                // ✅ Bounds-Check vor set()
+
                 if (gr >= 0 && gr < db.numRows() && gc >= 0 && gc < db.numCols()) {
                     db.set(gr, gc, yhat);
                 }

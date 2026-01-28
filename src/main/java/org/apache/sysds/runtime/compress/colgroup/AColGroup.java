@@ -65,7 +65,7 @@ public abstract class AColGroup implements Serializable {
 
 	/** Public super types of compression ColGroups supported */
 	public static enum CompressionType {
-		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, SDCFOR, DDCFOR, DeltaDDC, LinearFunctional;
+		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, SDCFOR, DDCFOR, DeltaDDC, LinearFunctional, PiecewiseLinear;
 
 		public boolean isDense() {
 			return this == DDC || this == CONST || this == DDCFOR || this == DDCFOR;

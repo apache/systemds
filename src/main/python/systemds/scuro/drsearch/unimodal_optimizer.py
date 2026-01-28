@@ -356,7 +356,8 @@ class UnimodalOptimizer:
             operator.__class__, [leaf_id], operator.get_current_parameters()
         )
         current_node_id = rep_node_id
-        dags.append(builder.build(current_node_id))
+        rep_dag = builder.build(current_node_id)
+        dags.append(rep_dag)
 
         dimensionality_reduction_dags = self.add_dimensionality_reduction_operators(
             builder, current_node_id
@@ -387,11 +388,6 @@ class UnimodalOptimizer:
                     [context_node_id],
                     operator.get_current_parameters(),
                 )
-                dimensionality_reduction_dags = self.add_dimensionality_reduction_operators(
-                    builder, context_rep_node_id
-                )  # TODO: check if this is correctly using the 3d approach of the dimensionality reduction operator
-                if dimensionality_reduction_dags is not None:
-                    dags.extend(dimensionality_reduction_dags)
 
                 agg_operator = AggregatedRepresentation()
                 context_agg_node_id = builder.create_operation_node(
@@ -409,64 +405,88 @@ class UnimodalOptimizer:
             not_self_contained_reps = [
                 rep for rep in not_self_contained_reps if rep != operator.__class__
             ]
+            rep_id = current_node_id
 
-            for combination in self._combination_operators:
-                current_node_id = rep_node_id
-                for other_rep in not_self_contained_reps:
-                    other_rep_id = builder.create_operation_node(
-                        other_rep, [leaf_id], other_rep().parameters
-                    )
-
+            for rep in not_self_contained_reps:
+                other_rep_id = builder.create_operation_node(
+                    rep, [leaf_id], rep().parameters
+                )
+                for combination in self._combination_operators:
                     combine_id = builder.create_operation_node(
                         combination.__class__,
-                        [current_node_id, other_rep_id],
+                        [rep_id, other_rep_id],
                         combination.get_current_parameters(),
                     )
-                    dags.append(builder.build(combine_id))
-                    current_node_id = combine_id
-                if modality.modality_type in [
-                    ModalityType.EMBEDDING,
-                    ModalityType.IMAGE,
-                    ModalityType.AUDIO,
-                ]:
-                    dags.extend(
-                        self.default_context_operators(
-                            modality, builder, leaf_id, current_node_id
+                    rep_dag = builder.build(combine_id)
+                    dags.append(rep_dag)
+                    if modality.modality_type in [
+                        ModalityType.EMBEDDING,
+                        ModalityType.IMAGE,
+                        ModalityType.AUDIO,
+                    ]:
+                        dags.extend(
+                            self.default_context_operators(
+                                modality, builder, leaf_id, rep_dag, False
+                            )
                         )
-                    )
-                elif modality.modality_type == ModalityType.TIMESERIES:
-                    dags.extend(
-                        self.temporal_context_operators(
-                            modality, builder, leaf_id, current_node_id
+                    elif modality.modality_type == ModalityType.TIMESERIES:
+                        dags.extend(
+                            self.temporal_context_operators(
+                                modality,
+                                builder,
+                                leaf_id,
+                            )
                         )
-                    )
+                rep_id = combine_id
+
+        if rep_dag.nodes[-1].operation().output_modality_type in [
+            ModalityType.EMBEDDING
+        ]:
+            dags.extend(
+                self.default_context_operators(
+                    modality, builder, leaf_id, rep_dag, True
+                )
+            )
+
+        if (
+            modality.modality_type == ModalityType.TIMESERIES
+            or modality.modality_type == ModalityType.AUDIO
+        ):
+            dags.extend(self.temporal_context_operators(modality, builder, leaf_id))
         return dags
 
-    def default_context_operators(self, modality, builder, leaf_id, current_node_id):
+    def default_context_operators(
+        self, modality, builder, leaf_id, rep_dag, apply_context_to_leaf=False
+    ):
         dags = []
-        context_operators = self._get_context_operators(modality.modality_type)
-        for context_op in context_operators:
+        if apply_context_to_leaf:
             if (
                 modality.modality_type != ModalityType.TEXT
                 and modality.modality_type != ModalityType.VIDEO
             ):
-                context_node_id = builder.create_operation_node(
-                    context_op,
-                    [leaf_id],
-                    context_op().get_current_parameters(),
-                )
-                dags.append(builder.build(context_node_id))
+                context_operators = self._get_context_operators(modality.modality_type)
+                for context_op in context_operators:
+                    context_node_id = builder.create_operation_node(
+                        context_op,
+                        [leaf_id],
+                        context_op().get_current_parameters(),
+                    )
+                    dags.append(builder.build(context_node_id))
 
+        context_operators = self._get_context_operators(
+            rep_dag.nodes[-1].operation().output_modality_type
+        )
+        for context_op in context_operators:
             context_node_id = builder.create_operation_node(
                 context_op,
-                [current_node_id],
+                [rep_dag.nodes[-1].node_id],
                 context_op().get_current_parameters(),
             )
             dags.append(builder.build(context_node_id))
 
         return dags
 
-    def temporal_context_operators(self, modality, builder, leaf_id, current_node_id):
+    def temporal_context_operators(self, modality, builder, leaf_id):
         aggregators = self.operator_registry.get_representations(modality.modality_type)
         context_operators = self._get_context_operators(modality.modality_type)
 
@@ -561,12 +581,11 @@ class UnimodalResults:
 
         results = results[: self.k]
         sorted_indices = sorted_indices[: self.k]
-
         task_cache = self.cache.get(modality.modality_id, {}).get(task.model.name, None)
         if not task_cache:
             cache = [
-                list(task_results[i].dag.execute([modality]).values())[-1]
-                for i in sorted_indices
+                list(results[i].dag.execute([modality]).values())[-1]
+                for i in range(len(results))
             ]
         elif isinstance(task_cache, list):
             cache = task_cache

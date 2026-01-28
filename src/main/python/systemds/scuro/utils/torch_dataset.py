@@ -24,6 +24,8 @@ import numpy as np
 import torch
 import torchvision.transforms as transforms
 
+from systemds.scuro.modality.type import ModalityType
+
 
 class CustomDataset(torch.utils.data.Dataset):
     def __init__(self, data, data_type, device, size=None, tf=None):
@@ -78,3 +80,43 @@ class CustomDataset(torch.utils.data.Dataset):
 
     def __len__(self) -> int:
         return len(self.data)
+
+
+class TextDataset(torch.utils.data.Dataset):
+    def __init__(self, texts):
+
+        self.texts = []
+        if isinstance(texts, list):
+            self.texts = texts
+        else:
+            for text in texts:
+                if text is None:
+                    self.texts.append("")
+                elif isinstance(text, np.ndarray):
+                    self.texts.append(str(text.item()) if text.size == 1 else str(text))
+                elif not isinstance(text, str):
+                    self.texts.append(str(text))
+                else:
+                    self.texts.append(text)
+
+    def __len__(self):
+        return len(self.texts)
+
+    def __getitem__(self, idx):
+        return self.texts[idx]
+
+
+class TextSpanDataset(torch.utils.data.Dataset):
+    def __init__(self, full_texts, metadata):
+        self.full_texts = full_texts
+        self.spans_per_text = ModalityType.TEXT.get_field_for_instances(
+            metadata, "text_spans"
+        )
+
+    def __len__(self):
+        return len(self.full_texts)
+
+    def __getitem__(self, idx):
+        text = self.full_texts[idx]
+        spans = self.spans_per_text[idx]
+        return [text[s:e] for (s, e) in spans]

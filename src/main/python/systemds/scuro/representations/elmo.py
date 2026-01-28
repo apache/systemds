@@ -29,32 +29,8 @@ from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.utils.static_variables import get_device
 from flair.embeddings import ELMoEmbeddings
 from flair.data import Sentence
-from torch.utils.data import Dataset
+from systemds.scuro.utils.torch_dataset import TextDataset
 from torch.utils.data import DataLoader
-
-
-class TextDataset(Dataset):
-    def __init__(self, texts):
-
-        self.texts = []
-        if isinstance(texts, list):
-            self.texts = texts
-        else:
-            for text in texts:
-                if text is None:
-                    self.texts.append("")
-                elif isinstance(text, np.ndarray):
-                    self.texts.append(str(text.item()) if text.size == 1 else str(text))
-                elif not isinstance(text, str):
-                    self.texts.append(str(text))
-                else:
-                    self.texts.append(text)
-
-    def __len__(self):
-        return len(self.texts)
-
-    def __getitem__(self, idx):
-        return self.texts[idx]
 
 
 # @register_representation([ModalityType.TEXT])

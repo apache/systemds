@@ -210,6 +210,25 @@ class ModalityType(Flag):
     def get_schema(self):
         return ModalitySchemas.get(self.name)
 
+    def has_field(self, md, field):
+        for value in md.values():
+            if field in value:
+                return True
+            else:
+                return False
+        return False
+
+    def get_field_for_instances(self, md, field):
+        data = []
+        for items in md.values():
+            data.append(self.get_field(items, field))
+        return data
+
+    def get_field(self, md, field):
+        if field in md:
+            return md[field]
+        return None
+
     def update_metadata(self, md, data):
         return ModalitySchemas.update_metadata(self.name, md, data)
 

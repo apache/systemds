@@ -72,7 +72,7 @@ def _extract_text(instance: Any) -> str:
     return text
 
 
-@register_context_operator(ModalityType.TEXT)
+# @register_context_operator(ModalityType.TEXT)
 class SentenceBoundarySplit(Context):
     """
     Splits text at sentence boundaries while respecting maximum word count.
@@ -154,7 +154,7 @@ class SentenceBoundarySplit(Context):
         return chunked_data
 
 
-@register_context_operator(ModalityType.TEXT)
+# @register_context_operator(ModalityType.TEXT)
 class OverlappingSplit(Context):
     """
     Splits text with overlapping chunks using a sliding window approach.

@@ -134,7 +134,7 @@ class WordCountSplitIndices(Context):
         return chunked_data
 
 
-# @register_context_operator(ModalityType.TEXT)
+@register_context_operator(ModalityType.TEXT)
 class SentenceBoundarySplitIndices(Context):
     """
     Splits text at sentence boundaries while respecting maximum word count.
@@ -162,18 +162,17 @@ class SentenceBoundarySplitIndices(Context):
         Returns:
             List of lists, where each inner list contains text chunks (strings)
         """
-        chunked_data = []
 
-        for instance in modality.data:
+        for instance, metadata in zip(modality.data, modality.metadata.values()):
             text = _extract_text(instance)
             if not text:
-                chunked_data.append((0, 0))
+                ModalityType.TEXT.add_field(metadata, "text_spans", [(0, 0)])
                 continue
 
             sentences = _split_into_sentences(text)
 
             if not sentences:
-                chunked_data.append((0, len(text)))
+                ModalityType.TEXT.add_field(metadata, "text_spans", [(0, len(text))])
                 continue
 
             chunks = []
@@ -225,12 +224,12 @@ class SentenceBoundarySplitIndices(Context):
             if not chunks:
                 chunks = [(0, len(text))]
 
-            chunked_data.append(chunks)
+            ModalityType.TEXT.add_field(metadata, "text_spans", chunks)
 
-        return chunked_data
+        return None
 
 
-# @register_context_operator(ModalityType.TEXT)
+@register_context_operator(ModalityType.TEXT)
 class OverlappingSplitIndices(Context):
     """
     Splits text with overlapping chunks using a sliding window approach.
@@ -263,18 +262,17 @@ class OverlappingSplitIndices(Context):
         Returns:
             List of tuples, where each tuple contains start and end index to the text chunks
         """
-        chunked_data = []
 
-        for instance in modality.data:
+        for instance, metadata in zip(modality.data, modality.metadata.values()):
             text = _extract_text(instance)
             if not text:
-                chunked_data.append((0, 0))
+                ModalityType.TEXT.add_field(metadata, "text_spans", [(0, 0)])
                 continue
 
             words = _split_into_words(text)
 
             if len(words) <= self.max_words:
-                chunked_data.append((0, len(text)))
+                ModalityType.TEXT.add_field(metadata, "text_spans", [(0, len(text))])
                 continue
 
             chunks = []
@@ -295,6 +293,6 @@ class OverlappingSplitIndices(Context):
             if not chunks:
                 chunks = [(0, len(text))]
 
-            chunked_data.append(chunks)
+            ModalityType.TEXT.add_field(metadata, "text_spans", chunks)
 
-        return chunked_data
+        return None

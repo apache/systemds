@@ -41,9 +41,6 @@ public class ColGroupPiecewiseLinearCompressed extends AColGroupCompressed {
     }
 
 
-
-
-
     public static AColGroup create(IColIndex colIndexes, int[] breakpoints, double[] slopes, double[] intercepts, int numRows) {
         if (breakpoints == null || breakpoints.length < 2)
             throw new IllegalArgumentException("Need at least one segment");
@@ -68,39 +65,44 @@ public class ColGroupPiecewiseLinearCompressed extends AColGroupCompressed {
 
     @Override
     public void decompressToDenseBlock(DenseBlock db, int rl, int ru, int offR, int offC) {
-        final int col = colIndexes.get(0); // bei mehreren Spalten: Schleife
+        // ✅ Vollständige Null-Safety
+        if (db == null || _colIndexes == null || _colIndexes.size() == 0 ||
+                breakpoints == null || slopes == null || intercepts == null) {
+            return;
+        }
 
-        // Hole das interne double[] für die Zielspalte(n)
-        // DenseBlock ist meist row-major, Zugriff per db.values(…)
-        // Einfachste Variante: Zeilenweise über db.getBlockValues(...) arbeiten.
+        int numSeg = breakpoints.length - 1;
+        if (numSeg <= 0 || rl >= ru) {
+            return;
+        }
 
-        final int numSeg = breakpoints.length - 1;
+        final int col = _colIndexes.get(0);
 
         for (int s = 0; s < numSeg; s++) {
-            final int segStart = breakpoints[s];
-            final int segEnd   = breakpoints[s + 1];
-            final double a     = slopes[s];
-            final double b     = intercepts[s];
+            int segStart = breakpoints[s];
+            int segEnd = breakpoints[s + 1];
+            if (segStart >= segEnd) continue;  // Invalid Segment
 
-            // Segment auf angefragten Bereich einschränken
-            final int rs = Math.max(segStart, rl);
-            final int re = Math.min(segEnd,   ru);
-            if (rs >= re)
-                continue;
+            double a = slopes[s];
+            double b = intercepts[s];
+
+            int rs = Math.max(segStart, rl);
+            int re = Math.min(segEnd, ru);
+            if (rs >= re) continue;
 
             for (int r = rs; r < re; r++) {
-                double x    = r;              // selbes x wie beim Fit
-                double yhat = a * x + b;
+                double yhat = a * r + b;
+                int gr = offR + r;
+                int gc = offC + col;
 
-                // globale Position im DenseBlock
-                int gr = r + offR;
-                int gc = col + offC;
-
-                // db.set(row, col, value)
-                db.set(gr, gc, yhat);
+                // ✅ Bounds-Check vor set()
+                if (gr >= 0 && gr < db.numRows() && gc >= 0 && gc < db.numCols()) {
+                    db.set(gr, gc, yhat);
+                }
             }
         }
     }
+
     @Override
     protected double computeMxx(double c, Builtin builtin) {
         return 0;
@@ -198,12 +200,26 @@ public class ColGroupPiecewiseLinearCompressed extends AColGroupCompressed {
 
     @Override
     public double getIdx(int r, int colIdx) {
-        return 0;
+        // ✅ CRUCIAL: Bounds-Check für colIdx!
+        if (r < 0 || r >= numRows || colIdx < 0 || colIdx >= _colIndexes.size()) {
+            return 0.0;
+        }
+
+        // Segment-Suche (sicher jetzt)
+        int seg = 0;
+        for (int i = 1; i < breakpoints.length; i++) {
+            if (r < breakpoints[i]) {
+                break;
+            }
+            seg = i - 1;  // seg < numSeg immer!
+        }
+
+        return slopes[seg] * (double) r + intercepts[seg];
     }
 
     @Override
     public int getNumValues() {
-        return 0;
+        return breakpoints.length + slopes.length + intercepts.length;
     }
 
     @Override
@@ -367,6 +383,19 @@ public class ColGroupPiecewiseLinearCompressed extends AColGroupCompressed {
     @Override
     public AColGroup[] splitReshape(int multiplier, int nRow, int nColOrg) {
         return new AColGroup[0];
+    }
+
+    public int[] getBreakpoints() {
+        return breakpoints;
+    }
+
+    public double[] getSlopes() {
+        return slopes;
+    }
+
+
+    public double[] getIntercepts() {
+        return intercepts;
     }
 }
 

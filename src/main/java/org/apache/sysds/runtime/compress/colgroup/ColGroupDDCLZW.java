@@ -70,22 +70,68 @@ import java.util.NoSuchElementException;
 public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 	private static final long serialVersionUID = -5769772089913918987L;
 
-	private final int[] _dataLZW; // LZW compressed representation of the mapping
-	private final int _nRows; // Number of rows in the mapping vector
-	private final int _nUnique; // Number of unique values in the mapping vector
-
 	/**
-	 * Builds a packed 64-bit key from a prefix code and a next symbol, typically used in an LZW dictionary.
-	 *
-	 * @return a 64-bit packed key representing the (prefixCode, nextSymbol) pair
+	 * Stores the LZW-compressed representation of data mapping.
 	 */
-	private static long packKey(int prefixCode, int nextSymbol) {
-		return (((long) prefixCode) << 32) | (nextSymbol & 0xffffffffL);
+	private final int[] _dataLZW;
+	private final int _nRows;
+	private final int _nUnique;
+
+	private ColGroupDDCLZW(IColIndex colIndexes, IDictionary dict, AMapToData data, int[] cachedCounts) {
+		super(colIndexes, dict, cachedCounts);
+		_nRows = data.size();
+		_nUnique = dict.getNumberOfValues(colIndexes.size());
+		_dataLZW = compress(data);
+
+		if(CompressedMatrixBlock.debug) {
+			if(getNumValues() == 0)
+				throw new DMLCompressionException("Invalid construction with empty dictionary");
+			if(_nRows == 0)
+				throw new DMLCompressionException("Invalid length of the data. is zero");
+			if(data.getUnique() != dict.getNumberOfValues(colIndexes.size()))
+				throw new DMLCompressionException(
+					"Invalid map to dict Map has:" + data.getUnique() + " while dict has " +
+						dict.getNumberOfValues(colIndexes.size()));
+			int[] c = getCounts();
+			if(c.length != dict.getNumberOfValues(colIndexes.size()))
+				throw new DMLCompressionException("Invalid DDC Construction");
+			data.verify();
+		}
+	}
+
+	private ColGroupDDCLZW(IColIndex colIndexes, IDictionary dict, int[] dataLZW, int nRows, int nUnique,
+		int[] cachedCounts) {
+		super(colIndexes, dict, cachedCounts);
+		_dataLZW = dataLZW;
+		_nRows = nRows;
+		_nUnique = nUnique;
+
+		if(CompressedMatrixBlock.debug) {
+			if(getNumValues() == 0)
+				throw new DMLCompressionException("Invalid construction with empty dictionary");
+			if(_nRows <= 0)
+				throw new DMLCompressionException("Invalid length of the data. is zero");
+			if(_nUnique != dict.getNumberOfValues(colIndexes.size()))
+				throw new DMLCompressionException("Invalid map to dict Map has:" + _nUnique + " while dict has " +
+					dict.getNumberOfValues(colIndexes.size()));
+			int[] c = getCounts();
+			if(c.length != dict.getNumberOfValues(colIndexes.size()))
+				throw new DMLCompressionException("Invalid DDC Construction");
+		}
+	}
+
+	public static AColGroup create(IColIndex colIndexes, IDictionary dict, AMapToData data, int[] cachedCounts) {
+		if(dict == null)
+			return new ColGroupEmpty(colIndexes);
+		else if(data.getUnique() == 1)
+			return ColGroupConst.create(colIndexes, dict);
+		else
+			return new ColGroupDDCLZW(colIndexes, dict, data, cachedCounts);
 	}
 
 	/**
-	 * Compresses the given data using a the Lempel-Ziv-Welch (LZW) compression algorithm. The compression is performed
-	 * on integer dictionary indices stored in the provided AMapToData object.
+	 * Compresses the given data using the Lempel-Ziv-Welch (LZW) compression algorithm. The compression is performed on
+	 * integer dictionary indices stored in the provided AMapToData object.
 	 *
 	 * @param data The input data to be compressed, represented as an AMapToData object. The data must not be null, must
 	 *             have at least one row, and contain valid dictionary indices.
@@ -144,150 +190,14 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 	}
 
 	/**
-	 * Extracts and returns the higher 32 bits of the given long key as an integer.
+	 * Decompresses the given lzw-encoded data into a full representation based on the provided parameters.
 	 *
-	 * @param key the long value from which the higher 32 bits will be unpacked
-	 * @return the higher 32 bits of the given key as an integer
+	 * @param codes   an array of integers representing the lzw-compressed data
+	 * @param nUnique the number of unique values in dictionary _dict
+	 * @param nRows   the total number of rows in the original data
+	 * @return a fully decompressed AMapToData object representing the complete decompressed data
 	 */
-	private static int unpackfirst(long key) {
-		return (int) (key >>> 32);
-	}
-
-	/**
-	 * Extracts and returns the second component from the given long value key. This method assumes the key encodes the
-	 * second component in its least significant bits.
-	 *
-	 * @param key the long value containing the encoded second component
-	 * @return the extracted second component as an integer
-	 */
-	private static int unpacksecond(long key) {
-		return (int) (key);
-	}
-
-	private static int[] packint(int[] arr, int last) {
-		int[] result = Arrays.copyOf(arr, arr.length + 1);
-		result[arr.length] = last;
-		return result;
-	}
-
-	/**
-	 * Decodes a given code into an array of integers based on a dictionary mapping. If the code is less than the number
-	 * of unique symbols, it directly returns the code as a single-element array. Otherwise, it iteratively unpacks the
-	 * code using a dictionary until the base symbols are resolved.
-	 *
-	 * @param code    the encoded integer value to be unpacked
-	 * @param nUnique the number of unique symbols; codes less than this are directly returned
-	 * @param dict    a mapping of integer codes to packed values represented as {@code Long}, used for unpacking
-	 * @return an array of integers representing the unpacked sequence for the input code
-	 * @throws IllegalStateException if the provided code does not have a corresponding entry in the dictionary
-	 */
-	private static int[] unpack(int code, int nUnique, Map<Integer, Long> dict) {
-		if(code < nUnique)
-			return new int[] {code};
-
-		Stack<Integer> stack = new Stack<>();
-		int c = code;
-
-		while(c >= nUnique) {
-			Long key = dict.get(c);
-			if(key == null)
-				throw new IllegalStateException("Missing dictionary entry for code: " + c);
-
-			int symbol = unpacksecond(key);
-			stack.push(symbol);
-			c = unpackfirst(key);
-		}
-
-		stack.push(c);
-		int[] outarray = new int[stack.size()];
-		int i = 0;
-		while(!stack.isEmpty()) {
-			outarray[i++] = stack.pop();
-		}
-		return outarray;
-	}
-
-
-	/**
-	 * The LZWMappingIterator class is responsible for decoding and iterating through an LZW (Lempel-Ziv-Welch)
-	 * compressed mapping. This iterator is primarily used for reconstructing symbols and phrases from the compressed
-	 * mapping data, maintaining the internal state of the LZW decompression process.
-	 *
-	 * The decoding process maintains an LZW dictionary, tracks the current and previous phrases, handles new LZW codes,
-	 * and provides methods to retrieve or skip mapping symbols.
-	 */
-	private final class LZWMappingIterator {
-		private final Map<Integer, Long> dict = new HashMap<>(); // LZW-dictionary. Maps code -> (prefixCode, nextSymbol).
-		private int lzwIndex = 0; // Current position in the LZW-compressed mapping (_dataLZW).
-		private int mapIndex = 0; // Number of mapping symbols returned so far.
-		private int nextCode = _nUnique; // Next free LZW code.
-		private int[] currentPhrase = null; // Current phrase being decoded from the LZW-compressed mapping.
-		private int currentPhraseIndex = 0; // Next position in the current phrase to return.
-		private int[] oldPhrase = null; // Previous phrase.
-		private int oldCode = -1; // Previous code.
-
-		LZWMappingIterator() {
-			lzwIndex = 1; // First code consumed during initialization.
-			oldCode = _dataLZW[0]; // Decode the first code into initial phrase.
-			oldPhrase = unpack(oldCode, _nUnique, dict);
-			currentPhrase = oldPhrase;
-			currentPhraseIndex = 0;
-			mapIndex = 0; // No mapping symbols have been returned yet.
-		}
-
-		boolean hasNext() {
-			return mapIndex < _nRows;
-		}
-
-		void skip(int k) {
-			for(int i = 0; i < k; i++)
-				next();
-		}
-
-		int next() {
-			if(!hasNext())
-				throw new NoSuchElementException();
-
-			if(currentPhraseIndex < currentPhrase.length) {
-				mapIndex++;
-				return currentPhrase[currentPhraseIndex++];
-			}
-
-			if(lzwIndex >= _dataLZW.length)
-				throw new IllegalStateException("Invalid LZW index: " + lzwIndex);
-
-			final int key = _dataLZW[lzwIndex++];
-
-			final int[] next;
-			if(key < _nUnique || dict.containsKey(key)) {
-				next = unpack(key, _nUnique, dict);
-			}
-			else {
-				next = packint(oldPhrase, oldPhrase[0]);
-			}
-
-			dict.put(nextCode++, packKey(oldCode, next[0]));
-
-			oldCode = key;
-			oldPhrase = next;
-
-			currentPhrase = next;
-			currentPhraseIndex = 0;
-
-			mapIndex++;
-			return currentPhrase[currentPhraseIndex++];
-		}
-	}
-
-    /**
-     * Decompresses the given encoded data into a full representation based on the provided parameters.
-     *
-     * @param codes   an array of integers representing the compressed data
-     * @param nUnique the number of unique values in the compressed data
-     * @param nRows   the total number of rows in the data
-     * @return a fully decompressed AMapToData object representing the complete data
-     */
-    private static AMapToData decompressFull(int[] codes, int nUnique, int nRows) {
+	private static AMapToData decompressFull(int[] codes, int nUnique, int nRows) {
 		if(codes == null)
 			throw new IllegalArgumentException("codes is null");
 		if(codes.length == 0)
@@ -341,71 +251,156 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		return out;
 	}
 
-	private ColGroupDDCLZW(IColIndex colIndexes, IDictionary dict, AMapToData data, int[] cachedCounts) {
-		super(colIndexes, dict, cachedCounts);
+	/**
+	 * The LZWMappingIterator class is responsible for decoding and iterating through an LZW (Lempel-Ziv-Welch)
+	 * compressed mapping. This iterator is primarily used for reconstructing symbols and phrases from the compressed
+	 * mapping data, maintaining the internal state of the LZW decompression process.
+	 *
+	 * The decoding process maintains an LZW dictionary, tracks the current and previous phrases, handles new LZW codes,
+	 * and provides methods to retrieve or skip mapping symbols.
+	 */
+	private final class LZWMappingIterator {
+		private final Map<Integer, Long> dict = new HashMap<>();
+		private int lzwIndex = 0;
+		private int mapIndex = 0;
+		private int nextCode = _nUnique;
+		private int[] currentPhrase = null;
+		private int currentPhraseIndex = 0;
+		private int[] oldPhrase = null;
+		private int oldCode = -1;
 
-		_nRows = data.size();
-		_nUnique = dict.getNumberOfValues(colIndexes.size());
-
-		_dataLZW = compress(data);
-
-		if(CompressedMatrixBlock.debug) {
-			if(getNumValues() == 0)
-				throw new DMLCompressionException("Invalid construction with empty dictionary");
-			if(_nRows == 0)
-				throw new DMLCompressionException("Invalid length of the data. is zero");
-			if(data.getUnique() != dict.getNumberOfValues(colIndexes.size()))
-				throw new DMLCompressionException(
-					"Invalid map to dict Map has:" + data.getUnique() + " while dict has " +
-						dict.getNumberOfValues(colIndexes.size()));
-			int[] c = getCounts();
-			if(c.length != dict.getNumberOfValues(colIndexes.size()))
-				throw new DMLCompressionException("Invalid DDC Construction");
-			data.verify();
+		LZWMappingIterator() {
+			lzwIndex = 1;
+			oldCode = _dataLZW[0];
+			oldPhrase = unpack(oldCode, _nUnique, dict);
+			currentPhrase = oldPhrase;
+			currentPhraseIndex = 0;
+			mapIndex = 0;
 		}
+
+		boolean hasNext() {
+			return mapIndex < _nRows;
+		}
+
+		void skip(int k) {
+			for(int i = 0; i < k; i++)
+				next();
+		}
+
+		int next() {
+			if(!hasNext())
+				throw new NoSuchElementException();
+
+			if(currentPhraseIndex < currentPhrase.length) {
+				mapIndex++;
+				return currentPhrase[currentPhraseIndex++];
+			}
+
+			if(lzwIndex >= _dataLZW.length)
+				throw new IllegalStateException("Invalid LZW index: " + lzwIndex);
+
+			final int key = _dataLZW[lzwIndex++];
+
+			final int[] next;
+			if(key < _nUnique || dict.containsKey(key)) {
+				next = unpack(key, _nUnique, dict);
+			}
+			else {
+				next = packint(oldPhrase, oldPhrase[0]);
+			}
+
+			dict.put(nextCode++, packKey(oldCode, next[0]));
+
+			oldCode = key;
+			oldPhrase = next;
+
+			currentPhrase = next;
+			currentPhraseIndex = 0;
+
+			mapIndex++;
+			return currentPhrase[currentPhraseIndex++];
+		}
+	}
+
+
+	/**
+	 * Builds a packed 64-bit key from a prefix code and a next symbol, typically used in an LZW dictionary.
+	 *
+	 * @return a 64-bit packed key representing the (prefixCode, nextSymbol) pair
+	 */
+	private static long packKey(int prefixCode, int nextSymbol) {
+		return (((long) prefixCode) << 32) | (nextSymbol & 0xffffffffL);
 	}
 
 	/**
-	 * Constructs a ColGroupDDCLZW object, which represents a compressed column group in a matrix using the LZW
-	 * compression format. The constructor initializes the internal state, validates the input parameters, and ensures
-	 * the compressed data conforms to the expected format and dictionary mapping.
+	 * Extracts and returns the higher 32 bits of the given long key as an integer.
 	 *
-	 * @param colIndexes   the column indices associated with this column group
-	 * @param dict         the dictionary containing unique values associated with the column group
-	 * @param dataLZW      the compressed data of the column group using LZW encoding
-	 * @param nRows        the number of rows represented by this column group
-	 * @param nUnique      the number of unique elements in the data, matching the dictionary size
-	 * @param cachedCounts a precomputed array for the count of each value in the data
+	 * @param key the long value from which the higher 32 bits will be unpacked
+	 * @return the higher 32 bits of the given key as an integer
 	 */
-	private ColGroupDDCLZW(IColIndex colIndexes, IDictionary dict, int[] dataLZW, int nRows, int nUnique,
-		int[] cachedCounts) {
-		super(colIndexes, dict, cachedCounts);
-
-		_dataLZW = dataLZW;
-		_nRows = nRows;
-		_nUnique = nUnique;
-
-		if(CompressedMatrixBlock.debug) {
-			if(getNumValues() == 0)
-				throw new DMLCompressionException("Invalid construction with empty dictionary");
-			if(_nRows <= 0)
-				throw new DMLCompressionException("Invalid length of the data. is zero");
-			if(_nUnique != dict.getNumberOfValues(colIndexes.size()))
-				throw new DMLCompressionException("Invalid map to dict Map has:" + _nUnique + " while dict has " +
-					dict.getNumberOfValues(colIndexes.size()));
-			int[] c = getCounts();
-			if(c.length != dict.getNumberOfValues(colIndexes.size()))
-				throw new DMLCompressionException("Invalid DDC Construction");
-		}
+	private static int unpackfirst(long key) {
+		return (int) (key >>> 32);
 	}
 
-	public static AColGroup create(IColIndex colIndexes, IDictionary dict, AMapToData data, int[] cachedCounts) {
-		if(dict == null)
-			return new ColGroupEmpty(colIndexes);
-		else if(data.getUnique() == 1)
-			return ColGroupConst.create(colIndexes, dict);
-		else
-			return new ColGroupDDCLZW(colIndexes, dict, data, cachedCounts);
+	/**
+	 * Extracts and returns the second component from the given long value key. This method assumes the key encodes the
+	 * second component in its least significant bits.
+	 *
+	 * @param key the long value containing the encoded second component
+	 * @return the extracted second component as an integer
+	 */
+	private static int unpacksecond(long key) {
+		return (int) (key);
+	}
+
+	/**
+	 * Creates a new array by appending the specified integer to the end of the given array.
+	 *
+	 * @param arr  the original array to which the integer will be added
+	 * @param last the integer value to be appended to the end of the array
+	 * @return a new array containing all elements of the original array followed by the specified integer
+	 */
+	private static int[] packint(int[] arr, int last) {
+		int[] result = Arrays.copyOf(arr, arr.length + 1);
+		result[arr.length] = last;
+		return result;
+	}
+
+	/**
+	 * Decodes a given code into an array of integers based on a dictionary mapping. If the code is less than the number
+	 * of unique symbols, it directly returns the code as a single-element array. Otherwise, it iteratively unpacks the
+	 * code using a dictionary until the base symbols are resolved.
+	 *
+	 * @param code    the encoded integer value to be unpacked
+	 * @param nUnique the number of unique symbols; codes less than this are directly returned
+	 * @param dict    a mapping of integer codes to packed values represented as {@code Long}, used for unpacking
+	 * @return an array of integers representing the unpacked sequence for the input code
+	 * @throws IllegalStateException if the provided code does not have a corresponding entry in the dictionary
+	 */
+	private static int[] unpack(int code, int nUnique, Map<Integer, Long> dict) {
+		if(code < nUnique)
+			return new int[] {code};
+
+		Stack<Integer> stack = new Stack<>();
+		int c = code;
+
+		while(c >= nUnique) {
+			Long key = dict.get(c);
+			if(key == null)
+				throw new IllegalStateException("Missing dictionary entry for code: " + c);
+
+			int symbol = unpacksecond(key);
+			stack.push(symbol);
+			c = unpackfirst(key);
+		}
+
+		stack.push(c);
+		int[] outarray = new int[stack.size()];
+		int i = 0;
+		while(!stack.isEmpty()) {
+			outarray[i++] = stack.pop();
+		}
+		return outarray;
 	}
 
 	/**
@@ -810,7 +805,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		return null;
 	}
 
-	// TODO: adjust according to contract, "this shall only be appended once".
 	@Override
 	protected AColGroup appendNInternal(AColGroup[] g, int blen, int rlen) {
 		int[] mergedMap = new int[rlen];

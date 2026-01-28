@@ -125,6 +125,7 @@ class HyperparameterTuner:
         self.modalities = modalities
         self.representations = None
         self.k_best_cache = None
+        self.k_best_cache_by_modality = None
         self.k_best_representations = None
         self.extract_k_best_modalities_per_task()
         self.debug = debug
@@ -154,10 +155,12 @@ class HyperparameterTuner:
     def extract_k_best_modalities_per_task(self):
         self.k_best_representations = {}
         self.k_best_cache = {}
+        self.k_best_cache_by_modality = {}
         representations = {}
         for task in self.tasks:
             self.k_best_representations[task.model.name] = []
             self.k_best_cache[task.model.name] = []
+            self.k_best_cache_by_modality[task.model.name] = {}
             representations[task.model.name] = {}
             for modality in self.modalities:
                 k_best_results, cached_data = (
@@ -166,6 +169,9 @@ class HyperparameterTuner:
                     )
                 )
                 representations[task.model.name][modality.modality_id] = k_best_results
+                self.k_best_cache_by_modality[task.model.name][
+                    modality.modality_id
+                ] = cached_data
                 self.k_best_representations[task.model.name].extend(k_best_results)
                 self.k_best_cache[task.model.name].extend(cached_data)
         self.representations = representations
@@ -224,27 +230,9 @@ class HyperparameterTuner:
             for param_name, param_values in op_params.items():
                 param_names.append(op_id + "-" + param_name)
                 if isinstance(param_values, list):
-                    if all(isinstance(v, (int, float)) for v in param_values):
-                        if all(isinstance(v, int) for v in param_values):
-                            search_space.append(
-                                Integer(
-                                    min(param_values),
-                                    max(param_values),
-                                    name=op_id + "-" + param_name,
-                                )
-                            )
-                        else:
-                            search_space.append(
-                                Real(
-                                    min(param_values),
-                                    max(param_values),
-                                    name=op_id + "-" + param_name,
-                                )
-                            )
-                    else:
-                        search_space.append(
-                            Categorical(param_values, name=op_id + "-" + param_name)
-                        )
+                    search_space.append(
+                        Categorical(param_values, name=op_id + "-" + param_name)
+                    )
                 elif isinstance(param_values, tuple) and len(param_values) == 2:
                     if isinstance(param_values[0], int) and isinstance(
                         param_values[1], int
@@ -276,7 +264,16 @@ class HyperparameterTuner:
         def evaluate_point(point):
             params = dict(zip(param_names, point))
             result = self.evaluate_dag_config(
-                dag, params, node_order, modality_ids, task
+                dag,
+                params,
+                node_order,
+                modality_ids,
+                task,
+                modalities_override=(
+                    self._get_cached_modalities_for_task(task, modality_ids)
+                    if mm_opt
+                    else None
+                ),
             )
             score = result[1]
             if isinstance(score, PerformanceMeasure):
@@ -328,7 +325,20 @@ class HyperparameterTuner:
 
         return best_result
 
-    def evaluate_dag_config(self, dag, params, node_order, modality_ids, task):
+    def _get_cached_modalities_for_task(self, task, modality_ids):
+        if not self.k_best_cache_by_modality:
+            return self.get_modalities_by_id(modality_ids)
+        unique_modality_ids = list(dict.fromkeys(modality_ids))
+        cached_modalities = []
+        for modality_id in unique_modality_ids:
+            cached_modalities.extend(
+                self.k_best_cache_by_modality[task.model.name].get(modality_id, [])
+            )
+        return cached_modalities
+
+    def evaluate_dag_config(
+        self, dag, params, node_order, modality_ids, task, modalities_override=None
+    ):
         try:
             dag_copy = copy.deepcopy(dag)
 
@@ -337,7 +347,11 @@ class HyperparameterTuner:
                 if node.operation is not None and node.parameters:
                     node.parameters = get_params_for_node(node_id, params)
 
-            modalities = self.get_modalities_by_id(modality_ids)
+            modalities = (
+                modalities_override
+                if modalities_override is not None
+                else self.get_modalities_by_id(modality_ids)
+            )
             modified_modality = dag_copy.execute(modalities, task)
             score = task.run(
                 modified_modality[list(modified_modality.keys())[-1]].data
@@ -357,7 +371,6 @@ class HyperparameterTuner:
     ):
         self.optimization_results.setup_mm(optimize_unimodal)
         for task in self.tasks:
-            k_effective = max(self.k, k or 0)
 
             def _get_metric_value(result):
                 score = result.val_score
@@ -374,7 +387,7 @@ class HyperparameterTuner:
                 optimization_results[task.model.name],
                 key=_get_metric_value,
                 reverse=self.maximize_metric,
-            )[:k_effective]
+            )[:k]
             best_optimization_results = best_results
 
             for representation in best_optimization_results:

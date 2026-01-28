@@ -72,12 +72,9 @@ import static org.junit.Assert.assertTrue;
 public class ColGroupDDCLZWTest {
 	protected static final Log LOG = LogFactory.getLog(ColGroupDDCLZWTest.class.getName());
 
-	public void testConvertToDDCLZW() {
-	}
-
 	@Test
 	public void testConvertToDDCLZWBasic() {
-        double[][] data = new double[][] {{10, 20}, {11, 21}, {12, 22}};
+		double[][] data = new double[][] {{10, 20}, {11, 21}, {12, 22}};
 
 		ColGroupDDC ddc = (ColGroupDDC) compressForTest(data, AColGroup.CompressionType.DDC);
 		AColGroup result = ddc.convertToDDCLZW();
@@ -101,7 +98,6 @@ public class ColGroupDDCLZWTest {
 	/**
 	 * Creates a sample DDC group for unit tests
 	 */
-
 	private ColGroupDDC createTestDDC(int[] mapping, int nCols, int nUnique) {
 		IColIndex colIndexes = ColIndexFactory.create(nCols);
 
@@ -182,18 +178,18 @@ public class ColGroupDDCLZWTest {
 	}
 
 	@Test
-	public void testConvertToDDCLZWBasicNew() {
-        double[][] data = new double[][] {{10,11},{10,11},{30,31},{10,11},{30,31},{20,21},{10,11},{30,31},{20,21},{10,11},
-                {30,31},{30,31},{10,11},{30,31},{20,21},{10,11},{30,31},{20,21},{10,11},{30,31},
-                {20,21},{10,11},{20,21},{30,31},{10,11},{20,21},{30,31},{10,11},{20,21},{20,21},
-                {10,11},{20,21},{30,31},{10,11},{20,21},{30,31},{10,11},{20,21},{30,31},{30,31},
-                {30,31},{30,31},{30,31},{10,11},{10,11},{10,11},{10,11},{10,11},{20,21},{20,21},
-                {20,21},{20,21},{20,21},{30,31},{20,21},{10,11},{30,31},{20,21},{10,11},{30,31},
-                {20,21},{10,11},{10,11},{30,31},{20,21},{10,11},{30,31},{20,21},{10,11},{30,31},
-                {20,21},{20,21},{20,21},{20,21},{20,21},{20,21},{20,21},{30,31},{10,11},{30,31},
-                {20,21},{10,11},{30,31},{20,21},{10,11},{30,31},{30,31},{10,11},{30,31},{20,21},
-                {10,11},{30,31},{20,21},{10,11},{30,31},{10,11},{10,11},{10,11},{10,11},{10,11},
-                {20,21}};
+	public void testConvertToDDCLZWBasicExtended() {
+		double[][] data = new double[][] {{10, 11}, {10, 11}, {30, 31}, {10, 11}, {30, 31}, {20, 21}, {10, 11},
+			{30, 31}, {20, 21}, {10, 11}, {30, 31}, {30, 31}, {10, 11}, {30, 31}, {20, 21}, {10, 11}, {30, 31},
+			{20, 21}, {10, 11}, {30, 31}, {20, 21}, {10, 11}, {20, 21}, {30, 31}, {10, 11}, {20, 21}, {30, 31},
+			{10, 11}, {20, 21}, {20, 21}, {10, 11}, {20, 21}, {30, 31}, {10, 11}, {20, 21}, {30, 31}, {10, 11},
+			{20, 21}, {30, 31}, {30, 31}, {30, 31}, {30, 31}, {30, 31}, {10, 11}, {10, 11}, {10, 11}, {10, 11},
+			{10, 11}, {20, 21}, {20, 21}, {20, 21}, {20, 21}, {20, 21}, {30, 31}, {20, 21}, {10, 11}, {30, 31},
+			{20, 21}, {10, 11}, {30, 31}, {20, 21}, {10, 11}, {10, 11}, {30, 31}, {20, 21}, {10, 11}, {30, 31},
+			{20, 21}, {10, 11}, {30, 31}, {20, 21}, {20, 21}, {20, 21}, {20, 21}, {20, 21}, {20, 21}, {20, 21},
+			{30, 31}, {10, 11}, {30, 31}, {20, 21}, {10, 11}, {30, 31}, {20, 21}, {10, 11}, {30, 31}, {30, 31},
+			{10, 11}, {30, 31}, {20, 21}, {10, 11}, {30, 31}, {20, 21}, {10, 11}, {30, 31}, {10, 11}, {10, 11},
+			{10, 11}, {10, 11}, {10, 11}, {20, 21}};
 		// Create DDC with 2 columns, 3 unique values
 		ColGroupDDC ddc = (ColGroupDDC) compressForTest(data, AColGroup.CompressionType.DDC);
 
@@ -203,23 +199,9 @@ public class ColGroupDDCLZWTest {
 		assertSlice(ddclzw, ddc, 3, 10);
 	}
 
-
-	/*@Test
-	public void testLengthTwo() {
-		int[] src = new int[] {0, 1};
-
-		ColGroupDDC ddc = createTestDDC(src, 1, 2);
-
-		assertLosslessCompression(ddc);
-
-		ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) ddc.convertToDDCLZW();
-		assertPartialDecompression(ddclzw, ddc.getMapToData(), 0);
-		assertPartialDecompression(ddclzw, ddc.getMapToData(), 2);
-	}*/
-
 	@Test
 	public void testGetIdxFirstElement() {
-		double[][] src = new double[][] {{10,11}, {20,21}, {30,31}, {20,21}, {10,11}};
+		double[][] src = new double[][] {{10, 11}, {20, 21}, {30, 31}, {20, 21}, {10, 11}};
 		ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
 		ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) ddc.convertToDDCLZW();
 
@@ -229,8 +211,8 @@ public class ColGroupDDCLZWTest {
 
 	@Test
 	public void testGetIdxLastElement() {
-        double[][] src = new double[][] {{10,11}, {20,21}, {30,31}, {20,21}, {10,11}};
-        ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
+		double[][] src = new double[][] {{10, 11}, {20, 21}, {30, 31}, {20, 21}, {10, 11}};
+		ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
 		ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) ddc.convertToDDCLZW();
 
 		int lastRow = src.length - 1;
@@ -240,9 +222,9 @@ public class ColGroupDDCLZWTest {
 
 	@Test
 	public void testGetIdxAllElements() {
-        double[][] src = new double[][] { {10,11,12}, {20,21,22}, {30,31,32}, {20,21,22},
-                {10,11,12}, {30,31,32}, {20,21,22}};
-        ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
+		double[][] src = new double[][] {{10, 11, 12}, {20, 21, 22}, {30, 31, 32}, {20, 21, 22}, {10, 11, 12},
+			{30, 31, 32}, {20, 21, 22}};
+		ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
 		ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) ddc.convertToDDCLZW();
 
 		for(int row = 0; row < src.length; row++) {
@@ -256,8 +238,8 @@ public class ColGroupDDCLZWTest {
 
 	@Test
 	public void testGetIdxWithRepeatingPattern() {
-        double[][] src= new double[][] {{10}, {20}, {10}, {20}, {10}, {20}, {10}, {20}};
-        ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
+		double[][] src = new double[][] {{10}, {20}, {10}, {20}, {10}, {20}, {10}, {20}};
+		ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
 		ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) ddc.convertToDDCLZW();
 
 		double expected = ddc.getIdx(3, 0);
@@ -266,7 +248,7 @@ public class ColGroupDDCLZWTest {
 
 	@Test(expected = DMLRuntimeException.class)
 	public void testGetIdxRowOutOfBoundsNegative() {
-        double[][] src= new double[][] {{10}, {20}, {30}};
+		double[][] src = new double[][] {{10}, {20}, {30}};
 		ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
 		ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) ddc.convertToDDCLZW();
 
@@ -275,8 +257,8 @@ public class ColGroupDDCLZWTest {
 
 	@Test(expected = DMLRuntimeException.class)
 	public void testGetIdxRowOutOfBounds() {
-        double[][] src= new double[][] {{10}, {20}, {30}};
-        ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
+		double[][] src = new double[][] {{10}, {20}, {30}};
+		ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
 		ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) ddc.convertToDDCLZW();
 
 		ddclzw.getIdx(10, 0);
@@ -284,8 +266,8 @@ public class ColGroupDDCLZWTest {
 
 	@Test(expected = DMLRuntimeException.class)
 	public void testGetIdxColOutOfBoundsNegative() {
-        double[][] src= new double[][] {{10,11,12}, {20,21,22},{30,31,32}};
-        ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
+		double[][] src = new double[][] {{10, 11, 12}, {20, 21, 22}, {30, 31, 32}};
+		ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
 		ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) ddc.convertToDDCLZW();
 
 		ddclzw.getIdx(0, -1);
@@ -293,8 +275,8 @@ public class ColGroupDDCLZWTest {
 
 	@Test(expected = DMLRuntimeException.class)
 	public void testGetIdxColOutOfBounds() {
-        double[][] src= new double[][] {{10,11,12}, {20,21,22},{30,31,32}};
-        ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
+		double[][] src = new double[][] {{10, 11, 12}, {20, 21, 22}, {30, 31, 32}};
+		ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
 		ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) ddc.convertToDDCLZW();
 
 		ddclzw.getIdx(0, 10);
@@ -331,8 +313,8 @@ public class ColGroupDDCLZWTest {
 
 	@Test
 	public void testCreateValidDDCLZW() {
-        double[][] src= new double[][] {{10}, {20}, {10}, {20}, {30}};
-        ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
+		double[][] src = new double[][] {{10}, {20}, {10}, {20}, {30}};
+		ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
 
 		AColGroup result = ddc.convertToDDCLZW();
 		assertTrue("Should create ColGroupDDCLZW", result instanceof ColGroupDDCLZW);
@@ -340,8 +322,8 @@ public class ColGroupDDCLZWTest {
 
 	@Test
 	public void testCreateWithMultipleColumns() {
-        double[][] src = new double[][] {{10,11,12},{20,21,22},{30,31,32},{20,21,22},{10,11,12}};
-        ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
+		double[][] src = new double[][] {{10, 11, 12}, {20, 21, 22}, {30, 31, 32}, {20, 21, 22}, {10, 11, 12}};
+		ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
 
 		AColGroup result = ddc.convertToDDCLZW();
 		assertTrue("Should create ColGroupDDCLZW", result instanceof ColGroupDDCLZW);
@@ -351,7 +333,6 @@ public class ColGroupDDCLZWTest {
 	public void testSameNumber() {
 		int[] src = new int[20];
 		Arrays.fill(src, 2);
-        // TODO: compress for test gibt ColGroupConst zurück
 
 		ColGroupDDC ddc = createTestDDC(src, 1, 3);
 		assertLosslessCompression(ddc);
@@ -359,39 +340,39 @@ public class ColGroupDDCLZWTest {
 
 	@Test
 	public void testAlternatingNumbers() {
-        double[][] src = new double[30][3];
-        for(int i = 0; i < 30; i++) {
-            int v = i % 2;
-            src[i][0] = (v + 1) * 10;
-            src[i][1] = (v + 1) * 10 + 1;
-            src[i][2] = (v + 1) * 10 + 2;
-        }
+		double[][] src = new double[30][3];
+		for(int i = 0; i < 30; i++) {
+			int v = i % 2;
+			src[i][0] = (v + 1) * 10;
+			src[i][1] = (v + 1) * 10 + 1;
+			src[i][2] = (v + 1) * 10 + 2;
+		}
 
-        ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
+		ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
 		assertLosslessCompression(ddc);
 	}
 
 	@Test
 	public void testLongPatterns() {
-        double[][] src = new double[50][1];
-        for(int i = 0; i < 15; i++) {
-            src[i][0] = 10;
-        }
-        for(int i = 15; i < 20; i++) {
-            src[i][0] = 20;
-        }
-        for(int i = 20; i < 50; i++) {
-            src[i][0] = 30;
-        }
+		double[][] src = new double[50][1];
+		for(int i = 0; i < 15; i++) {
+			src[i][0] = 10;
+		}
+		for(int i = 15; i < 20; i++) {
+			src[i][0] = 20;
+		}
+		for(int i = 20; i < 50; i++) {
+			src[i][0] = 30;
+		}
 
-        ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
+		ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
 		assertLosslessCompression(ddc);
 	}
 
 	@Test
 	public void testSameIndexStructure() {
-        double[][] src = new double [][] {{10}, {20}, {10}, {20}};
-        ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
+		double[][] src = new double[][] {{10}, {20}, {10}, {20}};
+		ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
 		ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) ddc.convertToDDCLZW();
 
 		assertTrue("Same object should have same structure", ddclzw.sameIndexStructure(ddclzw));
@@ -399,7 +380,7 @@ public class ColGroupDDCLZWTest {
 
 	@Test
 	public void testSameIndexStructureDifferent() {
-        double[][] src = new double [][] {{10}, {20}, {10}, {20}};
+		double[][] src = new double[][] {{10}, {20}, {10}, {20}};
 
 		ColGroupDDC ddc1 = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
 		ColGroupDDC ddc2 = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
@@ -413,7 +394,7 @@ public class ColGroupDDCLZWTest {
 
 	@Test
 	public void testSameIndexStructureDdcLzw() {
-        double[][] src = new double [][] {{10}, {20}, {30},{10}, {20}};
+		double[][] src = new double[][] {{10}, {20}, {30}, {10}, {20}};
 		ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
 		ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) ddc.convertToDDCLZW();
 
@@ -422,9 +403,8 @@ public class ColGroupDDCLZWTest {
 
 	@Test
 	public void testRepetitiveData() {
-        double[][] src = new double[][] {{10},{10},{10},{10},{10},{20},{20},{20},{20},{20},
-                {10},{10},{10},{10},{10},{20},{20},{20},{20},{20},
-                {10},{10},{10},{10},{10},{20},{20},{20},{20},{20}};
+		double[][] src = new double[][] {{10}, {10}, {10}, {10}, {10}, {20}, {20}, {20}, {20}, {20}, {10}, {10}, {10},
+			{10}, {10}, {20}, {20}, {20}, {20}, {20}, {10}, {10}, {10}, {10}, {10}, {20}, {20}, {20}, {20}, {20}};
 
 		ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
 		assertLosslessCompression(ddc);
@@ -455,7 +435,7 @@ public class ColGroupDDCLZWTest {
 			data[i][0] = i;
 		}
 
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		assertNotNull(cg);
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
@@ -464,7 +444,7 @@ public class ColGroupDDCLZWTest {
 
 	public void testDecompressToDenseBlock(double[][] data, boolean isTransposed) {
 		if(isTransposed) {
-			throw new NotImplementedException("ColGroup enLZWcoding for transposed matrices not yet implemented");
+			throw new NotImplementedException("ColGroup LZW coding for transposed matrices not yet implemented");
 		}
 
 		MatrixBlock mbt = DataConverter.convertToMatrixBlock(data);
@@ -692,7 +672,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testScalarEquals() {
 		double[][] data = {{0}, {1}, {2}, {3}, {0}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
 		ScalarOperator op = new RightScalarOperator(Equals.getEqualsFnObject(), 0.0);
@@ -712,7 +692,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testScalarGreaterThan() {
 		double[][] data = {{0}, {1}, {2}, {3}, {0}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
 		ScalarOperator op = new RightScalarOperator(GreaterThan.getGreaterThanFnObject(), 1.5);
@@ -732,7 +712,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testScalarPlus() {
 		double[][] data = {{1}, {2}, {3}, {4}, {5}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
 		ScalarOperator op = new RightScalarOperator(Plus.getPlusFnObject(), 10.0);
@@ -753,7 +733,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testScalarMinus() {
 		double[][] data = {{11}, {12}, {13}, {14}, {15}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
 		ScalarOperator op = new RightScalarOperator(Minus.getMinusFnObject(), 10.0);
@@ -774,7 +754,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testUnaryOperationSqrt() {
 		double[][] data = {{1}, {4}, {9}, {16}, {25}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
 		UnaryOperator op = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinCode.SQRT));
@@ -794,7 +774,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testScalarEqualsMultiColumn() {
 		double[][] data = {{0, 1}, {1, 2}, {2, 3}, {3, 4}, {0, 1}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
 		ScalarOperator op = new RightScalarOperator(Equals.getEqualsFnObject(), 0.0);
@@ -819,7 +799,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testScalarMultiply() {
 		double[][] data = {{1}, {2}, {3}, {4}, {5}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
 		ScalarOperator op = new RightScalarOperator(Multiply.getMultiplyFnObject(), 2.0);
@@ -840,7 +820,7 @@ public class ColGroupDDCLZWTest {
 	public void testScalarDivide() {
 		double[][] data = {{2}, {4}, {6}, {8}, {10}};
 
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
@@ -861,7 +841,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testSliceRowsSingleRow() {
 		double[][] data = {{0}, {1}, {2}, {1}, {0}, {2}, {1}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
 		AColGroup sliced = cg.sliceRows(3, 4);
@@ -877,7 +857,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testSliceRowsMiddleRange() {
 		double[][] data = {{0}, {1}, {2}, {0}, {1}, {2}, {0}, {1}, {2}, {0}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
 		AColGroup sliced = cg.sliceRows(2, 7);
@@ -896,7 +876,7 @@ public class ColGroupDDCLZWTest {
 	public void testSliceRowsEntireRange() {
 		double[][] data = {{0}, {1}, {0}, {1}, {2}};
 
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
 		AColGroup sliced = cg.sliceRows(0, data.length);
@@ -915,7 +895,7 @@ public class ColGroupDDCLZWTest {
 	public void testSliceRowsBeginning() {
 		double[][] data = {{0}, {1}, {2}, {1}, {0}, {2}};
 
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
 		AColGroup sliced = cg.sliceRows(0, 3);
@@ -934,7 +914,7 @@ public class ColGroupDDCLZWTest {
 	public void testSliceRowsEnd() {
 		double[][] data = {{0}, {1}, {2}, {1}, {0}, {2}};
 
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
 		AColGroup sliced = cg.sliceRows(3, 6);
@@ -956,7 +936,7 @@ public class ColGroupDDCLZWTest {
 		Arrays.fill(data, 10, 20, new double[] {1});
 		Arrays.fill(data, 20, 30, new double[] {2});
 
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
 		AColGroup sliced = cg.sliceRows(5, 25);
@@ -975,7 +955,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testSliceRows() {
 		double[][] data = {{1, 2}, {3, 4}, {5, 6}, {7, 8}, {9, 10}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 
 		AColGroup sliced = cg.sliceRows(1, 4);
 		assertTrue(sliced instanceof ColGroupDDCLZW);
@@ -995,7 +975,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testSliceRowsWithMatchingDictionaryEntry() {
 		double[][] data = {{1, 2}, {3, 4}, {1, 2}, {5, 6}, {7, 8}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 
 		AColGroup sliced = cg.sliceRows(2, 5);
 		assertTrue(sliced instanceof ColGroupDDCLZW);
@@ -1015,7 +995,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testSliceRowsWithNoMatchingDictionaryEntry() {
 		double[][] data = {{1, 2}, {3, 4}, {5, 6}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 
 		AColGroup sliced = cg.sliceRows(1, 3);
 		assertTrue(sliced instanceof ColGroupDDCLZW);
@@ -1033,7 +1013,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testSliceRowsFromMiddleRow() {
 		double[][] data = {{1, 2}, {3, 4}, {5, 6}, {7, 8}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 
 		AColGroup sliced = cg.sliceRows(2, 4);
 		assertTrue(sliced instanceof ColGroupDDCLZW);
@@ -1051,7 +1031,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testDecompressToSparseBlock() {
 		double[][] data = {{1, 2}, {3, 4}, {5, 6}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 
 		MatrixBlock ret = new MatrixBlock(3, 2, true);
 		ret.allocateSparseRowsBlock();
@@ -1068,7 +1048,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testDecompressToSparseBlockWithRlGreaterThanZero() {
 		double[][] data = {{1, 2}, {3, 4}, {5, 6}, {7, 8}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 
 		MatrixBlock ret = new MatrixBlock(4, 2, true);
 		ret.allocateSparseRowsBlock();
@@ -1083,7 +1063,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testDecompressToSparseBlockWithOffset() {
 		double[][] data = {{1, 2}, {3, 4}, {5, 6}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 
 		MatrixBlock ret = new MatrixBlock(5, 4, true);
 		ret.allocateSparseRowsBlock();
@@ -1100,7 +1080,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testGetNumberNonZeros() {
 		double[][] data = {{1, 0}, {2, 3}, {0, 4}, {5, 0}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 
 		long nnz = cg.getNumberNonZeros(4);
 		assertEquals(5L, nnz);
@@ -1109,7 +1089,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testGetNumberNonZerosAllZeros() {
 		double[][] data = {{0, 0}, {0, 0}, {0, 0}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 
 		long nnz = cg.getNumberNonZeros(3);
 		assertEquals(0L, nnz);
@@ -1118,7 +1098,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testGetNumberNonZerosAllNonZeros() {
 		double[][] data = {{1, 2}, {3, 4}, {5, 6}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 
 		long nnz = cg.getNumberNonZeros(3);
 		assertEquals(6L, nnz);
@@ -1127,7 +1107,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testDecompressToDenseBlockNonContiguousPath() {
 		double[][] data = {{1, 2}, {3, 4}, {5, 6}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 
 		MatrixBlock ret = new MatrixBlock(3, 5, false);
 		ret.allocateDenseBlock();
@@ -1144,7 +1124,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testDecompressToDenseBlockFirstRowPath() {
 		double[][] data = {{10, 20}, {11, 21}, {12, 22}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 
 		MatrixBlock ret = new MatrixBlock(3, 2, false);
 		ret.allocateDenseBlock();
@@ -1157,7 +1137,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testScalarOperationShiftWithExistingMatch() {
 		double[][] data = {{1}, {2}, {3}, {1}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
 		ScalarOperator op = new RightScalarOperator(Plus.getPlusFnObject(), 1.0);
@@ -1177,7 +1157,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testScalarOperationShiftWithCountsId0EqualsOne() {
 		double[][] data = {{1}, {2}, {3}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
 		ScalarOperator op = new RightScalarOperator(Plus.getPlusFnObject(), 5.0);
@@ -1196,7 +1176,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testScalarOperationShiftWithNoMatch() {
 		double[][] data = {{1}, {2}, {3}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
 		ScalarOperator op = new RightScalarOperator(Plus.getPlusFnObject(), 10.0);
@@ -1215,7 +1195,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testUnaryOperationTriggersConvertToDDC() {
 		double[][] data = {{1, 2}, {3, 4}, {5, 6}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
 		UnaryOperator op = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinCode.ABS));
@@ -1236,7 +1216,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testUnaryOperationWithConstantResultSingleColumn() {
 		double[][] data = {{5}, {5}, {5}, {5}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		/*assertTrue(cg instanceof ColGroupDDCLZW);*/ // Type CONST.
 
 		UnaryOperator op = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinCode.ABS));
@@ -1255,7 +1235,7 @@ public class ColGroupDDCLZWTest {
 	@Test
 	public void testUnaryOperationWithConstantResultMultiColumn() {
 		double[][] data = {{10, 20}, {10, 20}, {10, 20}};
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		/*assertTrue(cg instanceof ColGroupDDCLZW);*/
 
 		UnaryOperator op = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinCode.ABS));
@@ -1296,7 +1276,7 @@ public class ColGroupDDCLZWTest {
 		double[][] data = new double[][] {{1, 2}, {3, 4}, {1, 2}, {5, 6}, {1, 2}, {3, 4}, {7, 8}, {1, 2}, {5, 6},
 			{1, 2},};
 
-		AColGroup cg = compressForTest(data,AColGroup.CompressionType.DDCLZW);
+		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		assertTrue("Expected DDCLZW from compression framework but was " + cg.getClass().getSimpleName(),
 			cg instanceof ColGroupDDCLZW);
 

@@ -91,9 +91,14 @@ class UnimodalModality(Modality):
         if not self.has_data():
             self.extract_raw_data()
 
-        transformed_modality = TransformedModality(self, context_operator)
-
-        transformed_modality.data = context_operator.execute(self)
+        transformed_modality = TransformedModality(
+            self, context_operator, set_data=True
+        )
+        d = context_operator.execute(transformed_modality)
+        if d is not None:
+            transformed_modality.data = d
+        else:
+            transformed_modality.data = self.data
         transformed_modality.transform_time += time.time() - start
         return transformed_modality
 
@@ -212,14 +217,23 @@ class UnimodalModality(Modality):
                                 mode="constant",
                                 constant_values=0,
                             )
-                        else:
+                        elif len(embeddings.shape) == 2:
                             padded = np.pad(
                                 embeddings,
                                 ((0, padding_needed), (0, 0)),
                                 mode="constant",
                                 constant_values=0,
                             )
-                        padded_embeddings.append(padded)
+                        elif len(embeddings.shape) == 3:
+                            padded = np.pad(
+                                embeddings,
+                                ((0, padding_needed), (0, 0), (0, 0)),
+                                mode="constant",
+                                constant_values=0,
+                            )
+                            padded_embeddings.append(padded)
+                        else:
+                            raise ValueError(f"Unsupported shape: {embeddings.shape}")
                 else:
                     padded_embeddings.append(embeddings)
 

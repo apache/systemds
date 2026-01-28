@@ -31,7 +31,12 @@ import copy
 class TransformedModality(Modality):
 
     def __init__(
-        self, modality, transformation, new_modality_type=None, self_contained=True
+        self,
+        modality,
+        transformation,
+        new_modality_type=None,
+        self_contained=True,
+        set_data=False,
     ):
         """
         Parent class of the different Modalities (unimodal & multimodal)
@@ -49,6 +54,8 @@ class TransformedModality(Modality):
             modality.data_type,
             modality.transform_time,
         )
+        if set_data:
+            self.data = modality.data
         self.transformation = None
         self.self_contained = (
             self_contained and transformation.self_contained

@@ -304,6 +304,11 @@ public class ColGroupFactory {
 				return compressLinearFunctional(colIndexes, in, cs);
 			}
 		}
+        else if(ct == CompressionType.PiecewiseLinear) {
+
+            return compressPiecewiseLinearFunctional(colIndexes, in, cs);
+
+        }
 		else if(ct == CompressionType.DDCFOR) {
 			AColGroup g = directCompressDDC(colIndexes, cg);
 			if(g instanceof ColGroupDDC)
@@ -1080,7 +1085,6 @@ public class ColGroupFactory {
 
         // Breakpoints bestimmen: Einteilung der Segmente
 
-        double targetLoss = cs.getPiecewiseTargetLoss();
         List<Integer> breakpointsList = computeBreakpoints(cs, column);
         int[] breakpoints = breakpointsList.stream().mapToInt(Integer::intValue).toArray();
         //Für jedes Segment lineare Regression als kompressionsverfahren

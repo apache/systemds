@@ -34,17 +34,16 @@ ssb/
 └── sql/                             # SQL versions & `test_ssb.duckdb` for DuckDB
 ```
 ## Setup
-- First, install [Docker](https://docs.docker.com/get-started/get-docker/), [Docker Compose](https://docs.docker.com/compose/install/) and its necessary libraries.
+- First, install [Docker](https://docs.docker.com/get-started/get-docker/), [Docker Compose](https://docs.docker.com/compose/install/) and its necessary libraries. The script does not cover Docker installation.
   
   For Ubuntu, there is the following tutorials [for Docker](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository) and [Docker Compose](https://docs.docker.com/compose/install/linux/#install-using-the-repository) using apt repository. You can add [Docker Desktop](https://docs.docker.com/desktop/setup/install/linux/ubuntu/), too.
   
 The shell script covers the installation of the following points. We use Ubuntu and Debian. For other OS, please look closer at the documentations.
-
+- Docker compose installation for Ubuntu/Debian (For other OS look [here](https://docs.docker.com/compose/install/))
 - Docker version of the database system [SystemDS](https://apache.github.io/systemds/site/docker)
 - Docker compose version of [PostgreSQL](docker-compose.yaml) based on its [documentation]((https://hub.docker.com/_/postgres)).
 - [ssb-dbgen](https://github.com/eyalroz/ssb-dbgen/tree/master) (SSB data set generator `datagen`)
-
-For more options look into the original documentation. 
+- 
 
 ## Structure of the test system
 ![diagram](other/dia_ssb_script_structure1.jpg)
@@ -98,3 +97,124 @@ $ ./run_script.sh -q q4_3 -s 0.1 -d systemds
 $ ./run_script.sh -q all -s 1 -d duckdb
 $ ./run_script.sh -q q1.1 -s 1 -d postgres -g
 ```
+
+# Example output
+Here is how the (abridged) script output could like.
+The script does the following steps:
+- Loading arguments and environment variables
+- Installing packages (and asking permissions for it)
+- Generating data with datagen (SSB data generator)
+- Loading Docker images for SystemDS or PostgreSQL
+- Initializing Docker database containers and duckDB database
+- Loading the SQL scheme and data into databases
+- Running the selected queries
+```
+user@user1:~/systemds/scripts/staging/ssb$ ./shell/run_script.sh -q q2_3 -s 0.1 -d all -g
+=== Test environment for SSB Data ===
+
+g-flag is set. That means, the docker desktop GUI is used.
+Arg 0 (SHELL_SCRIPT): ./shell/run_script.sh
+Arg 1 (QUERY_NAME): q2_3
+Arg 2 (SCALE): 0.1
+Arg 3 (DB_SYSTEM): all
+==========
+Install required packages
+Check whether the following packages exist:
+If only SystemDS: docker 'docker compose' git gcc cmake make
+For PostgreSQL: 'docker compose'
+For DuckDB: duckdb
+If using g-flag [GUI]: docker desktop
+==========
+Check for existing data directory and prepare the ssb-dbgen
+Can we look for new updates of the datagen repository?. If there are, do you want to pull it? (yes/no)
+yes
+Your answer is 'no'
+==========
+Build ssb-dbgen and generate data with a given scale factor
+[...]
+SSB (Star Schema Benchmark) Population Generator (Version 1.0.0)
+Copyright Transaction Processing Performance Council 1994 - 2000
+Generating data for part table [pid: 1]: done.
+Generating data for suppliers table [pid: 1]: done.
+[...]
+Number of rows of created tables.
+Table customer has 3000 rows.
+Table part has 20000 rows.
+Table supplier has 200 rows.
+Table date has 255 rows.
+Table lineorder has 600597 rows.
+==========
+Start the SystemDS docker container.
+Docker Desktop is already running
+==========
+Execute DML queries in SystemDS
+
+Execute query q2_3.dml
+WARNING: Using incubator modules: jdk.incubator.vector
+Loading tables from directory: /scripts/data_dir
+SUM(lo_revenue) | d_year | p_brand
+# FRAME: nrow = 1, ncol = 3
+# C1 C2 C3
+# INT32 INT32 STRING
+72081993 1992 MFGR#2239
+
+
+Q2.3 finished.
+
+SystemDS Statistics:
+Total execution time:           9.924 sec.
+
+==========
+Start the PostgreSQL Docker containter and load data.
+Docker Desktop is already running
+
+Successfully copied 282kB to ssb-postgres-1:/tmp
+Load customer table with number_of_rows:
+TRUNCATE TABLE
+COPY 3000
+Successfully copied 1.7MB to ssb-postgres-1:/tmp
+Load part table with number_of_rows:
+TRUNCATE TABLE
+COPY 20000
+[...]
+==========
+Execute SQL queries in PostgresSQL
+Execute query q2.3.sql
+docker exec -i ssb-postgres-1 psql -U userA -d db1  < sql/q2.3.sql
+   sum    | d_year |  p_brand  
+----------+--------+-----------
+ 72081993 |   1992 | MFGR#2239
+(1 row)
+
+==========
+Start a DuckDB persistent database and load data.
+Load customer table
+┌────────────────┐
+│ number_of_rows │
+│     int64      │
+├────────────────┤
+│      3000      │
+└────────────────┘
+Load part table
+┌────────────────┐
+│ number_of_rows │
+│     int64      │
+├────────────────┤
+│     20000      │
+└────────────────┘
+[...]
+==========
+Execute SQL queries in DuckDB
+Execute query q2.3.sql
+┌─────────────────┬────────┬───────────┐
+│ sum(lo_revenue) │ d_year │  p_brand  │
+│     int128      │ int32  │  varchar  │
+├─────────────────┼────────┼───────────┤
+│    72081993     │  1992  │ MFGR#2239 │
+└─────────────────┴────────┴───────────┘
+==========
+Test bench finished successfully.
+```
+
+## Troubleshooting
+- If you encounter docker problems like "Permission denied" or data not loaded successfully into the tables, try to restart docker or remove the container. You can also switch between the standard Docker Engine (with GUI) or Docker Desktop (with GUI) with flag `-g`.

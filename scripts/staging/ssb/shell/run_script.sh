@@ -104,7 +104,12 @@ echo -e "${GREEN}Check whether the following packages exist:${NC}"
 echo "If only SystemDS: docker 'docker compose' git gcc cmake make"
 echo "For PostgreSQL: 'docker compose'"
 echo "For DuckDB: duckdb"
+echo "If using g-flag [GUI]: docker desktop"
 
+if [ ! "$(docker --version)" ]; then
+        echo "Docker is required for this test bench. Please install it manually using the official documentation."
+        exit
+    fi
 for package in docker git gcc cmake make; do
     if [ ! "$(${package} --version)" ]; then
         echo "${package} package is required for this test bench. Do you want to allow the installation? (yes/no)"
@@ -127,7 +132,7 @@ for package in docker git gcc cmake make; do
 done
 isAllowed="no"
 if [ "${DB_SYSTEM}" != "systemds" ] && [ ! "$(docker compose version)" ]; then
-    echo "docker compose is required for this test bench. Do you want to allow the installation? (yes/no)"
+    echo "Docker compose is required for this test bench. Do you want to allow the installation? (yes/no)"
     read -r isAllowed
     while [ "${isAllowed}" != "yes" ] || [ "${isAllowed}" != "y" ]; do
         
@@ -145,7 +150,7 @@ if [ "${DB_SYSTEM}" != "systemds" ] && [ ! "$(docker compose version)" ]; then
 fi
 isAllowed="no"
 if ([ "${DB_SYSTEM}" == "duckdb" ] || [ "${DB_SYSTEM}" == "all" ] ) && [ ! "$(duckdb --version)" ]; then
-    echo "duckdb is required for this test bench. Do you want to allow the installation? (yes/no)"
+    echo "Duckdb is required for this test bench. Do you want to allow the installation? (yes/no)"
     read -r isAllowed
     while [ "${isAllowed}" != "yes" ] || [ "${isAllowed}" != "y" ]; do
         if [ ${isAllowed} == "yes" ]; then
@@ -165,39 +170,9 @@ fi
 isAllowed="no"
 # Use docker desktop GUI
 if [ ${isGflag} == 1 ]; then
-    if [ ! "$(gnome-terminal --version)" ]; then
-        echo "gnome-terminal package is required for this test bench. Do you want to allow the installation? (yes/no)"
-        read -r isAllowed
-        while [ "${isAllowed}" != "yes" ] || [ "${isAllowed}" != "y" ]; do
-            if [ "${isAllowed}" == "yes" ] || [ "${isAllowed}" == "y" ]; then
-                echo "Your anwser is ${isAllowed}."
-                echo "sudo apt-get install gnome-terminal"
-                sudo apt-get install gnome-terminal
-            elif [ "${isAllowed}" == "no" ] || [ "${isAllowed}" == "n" ]; then
-                echo -e "${RED}Sorry, we cannot continue with that test bench without the required packages. The test bench is stopped.${NC}"
-                exit
-            else
-                echo "Your answer '${isAllowed}' is neither 'yes' or 'no'. Please try again."
-                read -r isAllowed
-            fi
-        done
-    fi
     if [ ! "$(docker desktop version)" ]; then
-        echo "docker desktop is required for this test bench. Do you want to allow the installation? (yes/no)"
-        read -r isAllowed
-        while [ "${isAllowed}" != "yes" ] || [ "${isAllowed}" != "y" ]; do
-            if [ ${isAllowed} == "yes" ]; then
-                echo "Your anwser is ${isAllowed}."
-                echo "curl https://install.duckdb.org | sh"
-                curl https://install.duckdb.org | sh
-            elif [ "${isAllowed}" == "no" ] || [ "${isAllowed}" == "n" ]; then
-                echo -e "${RED}Sorry, we cannot continue with that test bench without the required packages. The test bench is stopped.${NC}"
-                exit
-            else
-                echo "Your answer '${isAllowed}' is neither 'yes' or 'no'. Please try again."
-            fi
-            read -r isAllowed
-        done
+        echo "Docker desktop is required for this test bench. Please install it manually using the official documentation."
+        exit
     fi
 fi
 
@@ -216,6 +191,7 @@ else
                 echo "Your answer is '${isAllowed}'"
                 echo "git pull"
                 git pull
+                break
             elif [ "${isAllowed}" == "no" ] || [ "${isAllowed}" == "n" ]; then
                 echo "Your answer is '${isAllowed}'. No pulls. Use the currently existing version locally."
                 break
@@ -247,7 +223,7 @@ done
 if [ "${DB_SYSTEM}" == "systemds" ] || [ "${DB_SYSTEM}" == "systemds_stats" ] || [ "${DB_SYSTEM}" == "all" ] ; then
     echo "=========="
 
-    echo -e "${GREEN}Start the SystemDS docker container."
+    echo -e "${GREEN}Start the SystemDS docker container.${NC}"
     if [ ${isGflag} == 1 ]; then
         docker desktop start
     else
@@ -263,7 +239,6 @@ if [ "${DB_SYSTEM}" == "systemds" ] || [ "${DB_SYSTEM}" == "systemds_stats" ] ||
     echo -e "${GREEN}Execute DML queries in SystemDS${NC}"
     QUERY_NAME=$(echo "${QUERY_NAME}" | sed 's/\./_/')
 
-    docker desktop
     #Enable extended outputs with stats in SystemDs
     useStats=""
     if [ "${DB_SYSTEM}" == "systemds_stats" ]; then
@@ -300,8 +275,7 @@ if [ "${DB_SYSTEM}" == "postgres" ] || [ "${DB_SYSTEM}" == "all" ] ; then
     
     #Look more in the documentation.
     #https://docs.docker.com/reference/cli/docker/container/ls/
-    echo "AM HERE"
-    #TO DO solve here.
+
     if [ "$(docker ps -aq --filter name=${PG_CONTAINER})" ]; then
         if [ ! "$(docker ps -q --filter name=${PG_CONTAINER})" ]; then
             echo "Starting existing container..."
@@ -313,7 +287,6 @@ if [ "${DB_SYSTEM}" == "postgres" ] || [ "${DB_SYSTEM}" == "all" ] ; then
         docker compose -f "$PWD/docker-compose.yaml" up -d --build 
         sleep 3
     fi
-    echo "AM HERE2"
     # Load data and copy into the database
     
     for table in customer part supplier date lineorder; do
@@ -350,10 +323,11 @@ if [ "${DB_SYSTEM}" == "duckdb" ] || [ "${DB_SYSTEM}" == "all" ]; then
     #https://duckdbsnippets.com/snippets/198/run-sql-file-in-duckdb-cli
     # Create a duckdb persistent database file.
     duckdb shell/test_ssb.duckdb < other/ssb_init.sql
-
+    
     # Load data and copy into the database.
     for table in customer part supplier date lineorder; do
         echo "Load ${table} table"
+        duckdb shell/test_ssb.duckdb -c "TRUNCATE TABLE ${table} CASCADE;"
         duckdb shell/test_ssb.duckdb -c "COPY ${table} FROM 'data_dir/${table}.tbl'; SELECT COUNT(*) AS number_of_rows FROM ${table};" 
     done
 

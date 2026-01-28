@@ -68,7 +68,7 @@ public abstract class AColGroup implements Serializable {
 		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, SDCFOR, DDCFOR, DeltaDDC, DDCLZW, LinearFunctional;
 
 		public boolean isDense() {
-			return this == DDC || this == CONST || this == DDCFOR || this == DDCFOR;
+			return this == DDC || this == CONST || this == DDCFOR || this == DDCFOR || this == DDCLZW;
 		}
 
 		public boolean isConst() {

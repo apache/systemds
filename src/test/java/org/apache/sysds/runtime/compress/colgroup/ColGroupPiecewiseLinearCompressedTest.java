@@ -2,20 +2,17 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
-import org.apache.sysds.runtime.compress.colgroup.indexes.ArrayIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.scheme.ColGroupPiecewiseLinearCompressed;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
-
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
-import org.junit.jupiter.api.BeforeEach;
-
 import java.util.Arrays;
 import java.util.List;
-
 import static org.apache.sysds.runtime.compress.colgroup.ColGroupFactory.*;
 import static org.junit.Assert.*;
 
@@ -671,7 +668,39 @@ public class ColGroupPiecewiseLinearCompressedTest {
             assertEquals(0.0, db.get(r, 0), 1e-9);
         }
     }
+    private CompressedSizeInfo createTestCompressedSizeInfo() {
+        IColIndex cols = ColIndexFactory.create(new int[]{0});
+        EstimationFactors facts = new EstimationFactors(2, 10);
 
+        CompressedSizeInfoColGroup info = new CompressedSizeInfoColGroup(
+                cols, facts, AColGroup.CompressionType.PiecewiseLinear);
 
+        List<CompressedSizeInfoColGroup> infos = Arrays.asList(info);
+        CompressedSizeInfo csi = new CompressedSizeInfo(infos);
+
+        return csi;
+    }
+
+    @Test
+    public void testCompressPiecewiseLinear_viaRealAPI() {
+
+        MatrixBlock in = new MatrixBlock(10, 1, false);
+        in.allocateDenseBlock();
+        for (int r = 0; r < 10; r++) {
+            in.set(r, 0, r * 0.5);
+        }
+
+        CompressionSettings cs = new CompressionSettingsBuilder()
+                .addValidCompression(AColGroup.CompressionType.PiecewiseLinear)
+                .create();
+
+        CompressedSizeInfo csi = createTestCompressedSizeInfo();
+
+        List<AColGroup> colGroups = ColGroupFactory.compressColGroups(in, csi, cs);
+
+        boolean hasPiecewise = colGroups.stream()
+                .anyMatch(cg -> cg instanceof ColGroupPiecewiseLinearCompressed);
+        assertTrue(hasPiecewise);
+    }
 
 }

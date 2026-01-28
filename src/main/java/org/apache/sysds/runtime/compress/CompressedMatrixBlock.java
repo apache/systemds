@@ -75,7 +75,7 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.CTableMap;
@@ -816,12 +816,12 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public CM_COV_Object cmOperations(CMOperator op) {
+	public CmCovObject cmOperations(CMOperator op) {
 		return CLALibCMOps.centralMoment(this, op);
 	}
 
 	@Override
-	public CM_COV_Object cmOperations(CMOperator op, MatrixBlock weights) {
+	public CmCovObject cmOperations(CMOperator op, MatrixBlock weights) {
 		printDecompressWarning("cmOperations");
 		MatrixBlock right = getUncompressed(weights);
 		if(isEmpty())
@@ -833,13 +833,13 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public CM_COV_Object covOperations(COVOperator op, MatrixBlock that) {
+	public CmCovObject covOperations(COVOperator op, MatrixBlock that) {
 		MatrixBlock right = getUncompressed(that);
 		return getUncompressed("covOperations", op.getNumThreads()).covOperations(op, right);
 	}
 
 	@Override
-	public CM_COV_Object covOperations(COVOperator op, MatrixBlock that, MatrixBlock weights) {
+	public CmCovObject covOperations(COVOperator op, MatrixBlock that, MatrixBlock weights) {
 		MatrixBlock right1 = getUncompressed(that);
 		MatrixBlock right2 = getUncompressed(weights);
 		return getUncompressed("covOperations", op.getNumThreads()).covOperations(op, right1, right2);

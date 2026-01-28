@@ -53,19 +53,19 @@ class VGG19(UnimodalRepresentation):
         self.model.fc = Identity()
 
     def _get_parameters(self):
-        parameters = {"layer_name": []}
-
-        parameters["layer_name"] = [
-            "features.35",
-            "classifier.0",
-            "classifier.3",
-            "classifier.6",
-        ]
+        parameters = {
+            "layer_name": [
+                "features.35",
+                "classifier.0",
+                "classifier.3",
+                "classifier.6",
+            ]
+        }
 
         return parameters
 
     def transform(self, modality):
-        self.data_type = numpy_dtype_to_torch_dtype(modality.data_type)
+        self.data_type = torch.float32
         if next(self.model.parameters()).dtype != self.data_type:
             self.model = self.model.to(self.data_type)
 
@@ -120,7 +120,7 @@ class VGG19(UnimodalRepresentation):
                     .cpu()
                     .float()
                     .numpy()
-                    .astype(modality.data_type)
+                    .astype(np.float32)
                 )
 
             embeddings[video_id] = np.array(embeddings[video_id])

@@ -54,7 +54,7 @@ class ImageLoader(BaseLoader):
         else:
             height, width, channels = image.shape
 
-        image = image.astype(np.float32) / 255.0
+        image = image.astype(np.uint8, copy=False)
 
         self.metadata[file] = self.modality_type.create_metadata(
             width, height, channels

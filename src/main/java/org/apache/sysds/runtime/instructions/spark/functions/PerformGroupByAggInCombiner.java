@@ -23,7 +23,7 @@ import org.apache.spark.api.java.function.Function2;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.functionobjects.CM;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 import org.apache.sysds.runtime.matrix.data.WeightedCell;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
@@ -45,7 +45,7 @@ public class PerformGroupByAggInCombiner implements Function2<WeightedCell, Weig
 		throws Exception 
 	{
 		WeightedCell outCell = new WeightedCell();
-		CM_COV_Object cmObj = new CM_COV_Object(); 
+		CmCovObject cmObj = new CmCovObject(); 
 		if(_op instanceof CMOperator) //everything except sum
 		{
 			if( ((CMOperator) _op).isPartialAggregateOperator() ) {

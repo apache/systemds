@@ -34,7 +34,7 @@ from systemds.scuro.utils.static_variables import get_device
 from systemds.scuro.utils.torch_dataset import CustomDataset
 
 
-@register_representation(ModalityType.VIDEO)
+@register_representation([ModalityType.VIDEO, ModalityType.IMAGE])
 class CLIPVisual(UnimodalRepresentation):
     def __init__(self, output_file=None):
         parameters = {}
@@ -46,8 +46,10 @@ class CLIPVisual(UnimodalRepresentation):
         self.output_file = output_file
 
     def transform(self, modality):
-        transformed_modality = TransformedModality(modality, self)
-        self.data_type = numpy_dtype_to_torch_dtype(modality.data_type)
+        transformed_modality = TransformedModality(
+            modality, self, self.output_modality_type
+        )
+        self.data_type = torch.float32
         if next(self.model.parameters()).dtype != self.data_type:
             self.model = self.model.to(self.data_type)
 
@@ -60,14 +62,20 @@ class CLIPVisual(UnimodalRepresentation):
         return transformed_modality
 
     def create_visual_embeddings(self, modality):
-        tf = transforms.Compose([transforms.ToPILImage(), transforms.ToTensor()])
-        dataset = CustomDataset(
-            modality.data,
-            self.data_type,
-            get_device(),
-            (modality.metadata[0]["width"], modality.metadata[0]["height"]),
-            tf=tf,
+
+        clip_transform = transforms.Compose(
+            [
+                transforms.ToPILImage(),
+                transforms.Resize(256),
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+                transforms.ConvertImageDtype(dtype=self.data_type),
+            ]
         )
+        dataset = CustomDataset(
+            modality.data, self.data_type, get_device(), tf=clip_transform
+        )
+
         embeddings = {}
         for instance in torch.utils.data.DataLoader(dataset):
             id = int(instance["id"][0])
@@ -94,7 +102,7 @@ class CLIPVisual(UnimodalRepresentation):
                     .cpu()
                     .float()
                     .numpy()
-                    .astype(modality.data_type)
+                    .astype(np.float32)
                 )
 
             embeddings[id] = np.array(embeddings[id])
@@ -111,11 +119,20 @@ class CLIPText(UnimodalRepresentation):
         )
         self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
         self.output_file = output_file
+        self.needs_context = True
+        self.initial_context_length = 55
 
     def transform(self, modality):
-        transformed_modality = TransformedModality(modality, self)
+        transformed_modality = TransformedModality(
+            modality, self, self.output_modality_type
+        )
 
-        embeddings = self.create_text_embeddings(modality.data, self.model)
+        if isinstance(modality.data[0], list):
+            embeddings = []
+            for d in modality.data:
+                embeddings.append(self.create_text_embeddings(d, self.model))
+        else:
+            embeddings = self.create_text_embeddings(modality.data, self.model)
 
         if self.output_file is not None:
             save_embeddings(embeddings, self.output_file)

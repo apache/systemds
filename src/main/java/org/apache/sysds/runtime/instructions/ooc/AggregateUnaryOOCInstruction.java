@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.instructions.ooc;
 
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.conf.ConfigurationManager;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
@@ -76,7 +75,7 @@ public class AggregateUnaryOOCInstruction extends ComputationOOCInstruction {
 		//setup operators and input queue
 		AggregateUnaryOperator aggun = (AggregateUnaryOperator) getOperator(); 
 		MatrixObject min = ec.getMatrixObject(input1);
-		OOCStream<IndexedMatrixValue> q = min.getStreamHandle();
+		OOCStream<IndexedMatrixValue> qIn = min.getStreamHandle();
 		int blen = ConfigurationManager.getBlocksize();
 
 		if (aggun.isRowAggregate() || aggun.isColAggregate()) {
@@ -87,89 +86,70 @@ public class AggregateUnaryOOCInstruction extends ComputationOOCInstruction {
 			HashMap<Long, MatrixBlock> corrs = new HashMap<>(); // correction blocks
 
 			OOCStream<IndexedMatrixValue> qOut = createWritableStream();
+			OOCStream<IndexedMatrixValue> qLocal = createWritableStream();
+
 			ec.getMatrixObject(output).setStreamHandle(qOut);
 
+			// per-block aggregation (parallel map)
+			mapOOC(qIn, qLocal, tmp -> {
+				MatrixIndexes midx = aggun.isRowAggregate() ?
+					new MatrixIndexes(tmp.getIndexes().getRowIndex(), 1) :
+					new MatrixIndexes(1, tmp.getIndexes().getColumnIndex());
+
+				MatrixBlock ltmp = (MatrixBlock) ((MatrixBlock) tmp.getValue())
+					.aggregateUnaryOperations(aggun, new MatrixBlock(), blen, tmp.getIndexes());
+				return new IndexedMatrixValue(midx, ltmp);
+			});
+
+			// global reduce
 			submitOOCTask(() -> {
-					IndexedMatrixValue tmp = null;
-					try {
-						while((tmp = q.dequeue()) != LocalTaskQueue.NO_MORE_TASKS) {
-							long idx  = aggun.isRowAggregate() ?
-								tmp.getIndexes().getRowIndex() : tmp.getIndexes().getColumnIndex();
-							MatrixBlock ret = aggTracker.get(idx);
-							if(ret != null) {
-								MatrixBlock corr = corrs.get(idx);
+				IndexedMatrixValue partial;
+				while ((partial = qLocal.dequeue()) != LocalTaskQueue.NO_MORE_TASKS) {
+					long idx = aggun.isRowAggregate() ? partial.getIndexes().getRowIndex() : partial.getIndexes()
+						.getColumnIndex();
 
-								// aggregation
-								MatrixBlock ltmp = (MatrixBlock) ((MatrixBlock) tmp.getValue())
-									.aggregateUnaryOperations(aggun, new MatrixBlock(), blen, tmp.getIndexes());
-								OperationsOnMatrixValues.incrementalAggregation(ret,
-									_aop.existsCorrection() ? corr : null, ltmp, _aop, true);
-
-								if (!aggTracker.putAndIncrementCount(idx, ret)){
-									corrs.replace(idx, corr);
-									continue;
-								}
-							}
-							else {
-								// first block for this idx - init aggregate and correction
-								// TODO avoid corr block for inplace incremental aggregation
-								int rows = tmp.getValue().getNumRows();
-								int cols = tmp.getValue().getNumColumns();
-								int extra = _aop.correction.getNumRemovedRowsColumns();
-								ret = aggun.isRowAggregate()? new MatrixBlock(rows, 1 + extra, false) : new MatrixBlock(1 + extra, cols, false);
-								MatrixBlock corr = aggun.isRowAggregate()? new MatrixBlock(rows, 1 + extra, false) : new MatrixBlock(1 + extra, cols, false);
-
-								// aggregation
-								MatrixBlock ltmp = (MatrixBlock) ((MatrixBlock) tmp.getValue()).aggregateUnaryOperations(
-									aggun, new MatrixBlock(), blen, tmp.getIndexes());
-								OperationsOnMatrixValues.incrementalAggregation(ret,
-									_aop.existsCorrection() ? corr : null, ltmp, _aop, true);
-
-								if(emitThreshold > 1){
-									aggTracker.putAndIncrementCount(idx, ret);
-									corrs.put(idx, corr);
-									continue;
-								}
-							}
-
-							// all input blocks for this idx processed - emit aggregated block
-							ret.dropLastRowsOrColumns(_aop.correction);
-							MatrixIndexes midx = aggun.isRowAggregate() ?
-								new MatrixIndexes(tmp.getIndexes().getRowIndex(), 1) :
-								new MatrixIndexes(1, tmp.getIndexes().getColumnIndex());
-							IndexedMatrixValue tmpOut = new IndexedMatrixValue(midx, ret);
-
-							qOut.enqueue(tmpOut);
-							// drop intermediate states
-							aggTracker.remove(idx);
-							corrs.remove(idx);
-						}
-						qOut.closeInput();
+					MatrixBlock ret = aggTracker.get(idx);
+					boolean ready;
+					if(ret != null) {
+						MatrixBlock corr = corrs.get(idx);
+						OperationsOnMatrixValues.incrementalAggregation(ret,
+							_aop.existsCorrection() ? corr : null, (MatrixBlock) partial.getValue(), _aop,
+							true);
+						ready = aggTracker.incrementCount(idx);
 					}
-					catch(Exception ex) {
-						throw new DMLRuntimeException(ex);
+					else {
+						ret = (MatrixBlock) partial.getValue();
+						MatrixBlock corr = _aop.existsCorrection() ? new MatrixBlock(ret.getNumRows(),
+							ret.getNumColumns(), false) : null;
+						ready = aggTracker.putAndIncrementCount(idx, ret);
+						if(!ready && _aop.existsCorrection())
+							corrs.put(idx, corr);
 					}
-			}, q, qOut);
+
+					if(ready) {
+						ret.dropLastRowsOrColumns(_aop.correction);
+						qOut.enqueue(new IndexedMatrixValue(partial.getIndexes(), ret));
+						aggTracker.remove(idx);
+						corrs.remove(idx);
+					}
+				}
+				qOut.closeInput();
+			});
 		}
 		// full aggregation
 		else {
-			IndexedMatrixValue tmp = null;
-			//read blocks and aggregate immediately into result
+			OOCStream<MatrixBlock> qLocal = createWritableStream();
+
+			mapOOC(qIn, qLocal, tmp -> (MatrixBlock) ((MatrixBlock) tmp.getValue())
+				.aggregateUnaryOperations(aggun, new MatrixBlock(), blen, tmp.getIndexes()));
+
+			MatrixBlock ltmp;
 			int extra = _aop.correction.getNumRemovedRowsColumns();
 			MatrixBlock ret = new MatrixBlock(1,1+extra,false);
 			MatrixBlock corr = new MatrixBlock(1,1+extra,false);
-			try {
-				while((tmp = q.dequeue()) != LocalTaskQueue.NO_MORE_TASKS) {
-					//block aggregation
-					MatrixBlock ltmp = (MatrixBlock) ((MatrixBlock) tmp.getValue())
-						.aggregateUnaryOperations(aggun, new MatrixBlock(), blen, tmp.getIndexes());
-					//accumulation into final result
-					OperationsOnMatrixValues.incrementalAggregation(
-						ret, _aop.existsCorrection() ? corr : null, ltmp, _aop, true);
-				}
-			}
-			catch(Exception ex) {
-				throw new DMLRuntimeException(ex);
+			while((ltmp = qLocal.dequeue()) != LocalTaskQueue.NO_MORE_TASKS) {
+				OperationsOnMatrixValues.incrementalAggregation(
+					ret, _aop.existsCorrection() ? corr : null, ltmp, _aop, true);
 			}
 
 			//create scalar output

@@ -45,11 +45,6 @@ class VideoLoader(BaseLoader):
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
-        # if not self.load_data_from_file:
-        #     self.metadata[file] = self.modality_type.create_metadata(
-        #         30, 10, 100, 100, 3
-        #     )
-        # else:
         cap = cv2.VideoCapture(file)
 
         if not cap.isOpened():

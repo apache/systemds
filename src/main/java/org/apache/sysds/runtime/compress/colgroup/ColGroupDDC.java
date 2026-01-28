@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUtils.P;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DeltaDictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.IDictionary;
@@ -43,6 +44,9 @@ import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.indexes.RangeIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
+import org.apache.sysds.runtime.compress.utils.ACount;
+import org.apache.sysds.runtime.compress.utils.DblArray;
+import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffsetIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.compress.colgroup.scheme.DDCScheme;
@@ -79,7 +83,7 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 
 	static final VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_PREFERRED;
 
-	private ColGroupDDC(IColIndex colIndexes, IDictionary dict, AMapToData data, int[] cachedCounts) {
+	protected ColGroupDDC(IColIndex colIndexes, IDictionary dict, AMapToData data, int[] cachedCounts) {
 		super(colIndexes, dict, cachedCounts);
 		_data = data;
 
@@ -1105,6 +1109,59 @@ public class ColGroupDDC extends APreAgg implements IMapToDataGroup {
 	@Override
 	protected boolean allowShallowIdentityRightMult() {
 		return true;
+	}
+
+	public AColGroup convertToDeltaDDC() {
+		int numCols = _colIndexes.size();
+		int numRows = _data.size();
+		
+		DblArrayCountHashMap map = new DblArrayCountHashMap(Math.max(numRows, 64));
+		double[] rowDelta = new double[numCols];
+		double[] prevRow = new double[numCols];
+		DblArray dblArray = new DblArray(rowDelta);
+		int[] rowToDictId = new int[numRows];
+		
+		double[] dictVals = _dict.getValues();
+
+		for(int i = 0; i < numRows; i++) {
+			int dictIdx = _data.getIndex(i);
+			int off = dictIdx * numCols;
+			for(int j = 0; j < numCols; j++) {
+				double val = dictVals[off + j];
+				if(i == 0) {
+					rowDelta[j] = val;
+					prevRow[j] = val;
+				} else {
+					rowDelta[j] = val - prevRow[j];
+					prevRow[j] = val;
+				}
+			}
+			
+			rowToDictId[i] = map.increment(dblArray);
+		}
+		
+		if(map.size() == 0)
+			return new ColGroupEmpty(_colIndexes);
+		
+		ACount<DblArray>[] vals = map.extractValues();
+		final int nVals = vals.length;
+		final double[] dictValues = new double[nVals * numCols];
+		final int[] oldIdToNewId = new int[map.size()];
+		int idx = 0;
+		for(int i = 0; i < nVals; i++) {
+			final ACount<DblArray> dac = vals[i];
+			final double[] arrData = dac.key().getData();
+			System.arraycopy(arrData, 0, dictValues, idx, numCols);
+			oldIdToNewId[dac.id] = i;
+			idx += numCols;
+		}
+		
+		DeltaDictionary deltaDict = new DeltaDictionary(dictValues, numCols);
+		AMapToData newData = MapToFactory.create(numRows, nVals);
+		for(int i = 0; i < numRows; i++) {
+			newData.set(i, oldIdToNewId[rowToDictId[i]]);
+		}
+		return ColGroupDeltaDDC.create(_colIndexes, deltaDict, newData, null);
 	}
 
 }

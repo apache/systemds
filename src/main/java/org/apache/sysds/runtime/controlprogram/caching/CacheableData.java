@@ -43,7 +43,6 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
-import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
@@ -471,12 +470,12 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 		return  _bcHandle != null && _bcHandle.hasBackReference();
 	}
 	
-	public OOCStream<IndexedMatrixValue> getStreamHandle() {
+	public synchronized OOCStream<IndexedMatrixValue> getStreamHandle() {
 		if( !hasStreamHandle() ) {
 			final SubscribableTaskQueue<IndexedMatrixValue> _mStream = new SubscribableTaskQueue<>();
-			_streamHandle = _mStream;
 			DataCharacteristics dc = getDataCharacteristics();
 			MatrixBlock src = (MatrixBlock)acquireReadAndRelease();
+			_streamHandle = _mStream;
 			LongStream.range(0, dc.getNumBlocks())
 				.mapToObj(i -> UtilFunctions.createIndexedMatrixBlock(src, dc, i))
 				.forEach( blk -> {
@@ -489,7 +488,14 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 			_mStream.closeInput();
 		}
 		
-		return _streamHandle.getReadStream();
+		OOCStream<IndexedMatrixValue> stream = _streamHandle.getReadStream();
+		if (!stream.hasStreamCache())
+			_streamHandle = null; // To ensure read once
+		return stream;
+	}
+
+	public OOCStreamable<IndexedMatrixValue> getStreamable() {
+		return _streamHandle;
 	}
 	
 	/**
@@ -499,7 +505,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	 * @return true if existing, false otherwise
 	 */
 	public boolean hasStreamHandle() {
-		return _streamHandle != null && !_streamHandle.isProcessed();
+		return _streamHandle != null;
 	} 
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -626,7 +632,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 					_requiresLocalWrite = false;
 				}
 				else if( hasStreamHandle() ) {
-					_data = readBlobFromStream( getStreamHandle().toLocalTaskQueue() );
+					_data = readBlobFromStream( getStreamHandle() );
 				}
 				else if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() ) {
 					if( DMLScript.STATISTICS )
@@ -1161,7 +1167,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	protected abstract T readBlobFromRDD(RDDObject rdd, MutableBoolean status)
 		throws IOException;
 
-	protected abstract T readBlobFromStream(LocalTaskQueue<IndexedMatrixValue> stream)
+	protected abstract T readBlobFromStream(OOCStream<IndexedMatrixValue> stream)
 		throws IOException;
 
 	// Federated read

@@ -64,8 +64,9 @@ public abstract class AColGroup implements Serializable {
 	private static final long serialVersionUID = -1318908671481L;
 
 	/** Public super types of compression ColGroups supported */
-	public static enum CompressionType {
-		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, SDCFOR, DDCFOR, DeltaDDC, LinearFunctional;
+    // Enum hinzugefügt -> Brauche ich aber auch das im ColGroupType Enum ergänzen?
+    public static enum CompressionType {
+		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, SDCFOR, DDCFOR, DeltaDDC, LinearFunctional, PiecewiseLinear;
 
 		public boolean isDense() {
 			return this == DDC || this == CONST || this == DDCFOR || this == DDCFOR;

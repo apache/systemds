@@ -59,7 +59,9 @@ class Window(Context):
             self._aggregation_function = Aggregation(value)
 
 
-@register_context_operator([ModalityType.TIMESERIES, ModalityType.AUDIO])
+@register_context_operator(
+    [ModalityType.TIMESERIES, ModalityType.AUDIO, ModalityType.EMBEDDING]
+)
 class WindowAggregation(Window):
     def __init__(self, aggregation_function="mean", window_size=10, pad=False):
         super().__init__("WindowAggregation", aggregation_function)
@@ -167,7 +169,9 @@ class WindowAggregation(Window):
         return np.array(result)
 
 
-@register_context_operator([ModalityType.TIMESERIES, ModalityType.AUDIO])
+@register_context_operator(
+    [ModalityType.TIMESERIES, ModalityType.AUDIO, ModalityType.EMBEDDING]
+)
 class StaticWindow(Window):
     def __init__(self, aggregation_function="mean", num_windows=100):
         super().__init__("StaticWindow", aggregation_function)
@@ -198,7 +202,9 @@ class StaticWindow(Window):
         return np.array(windowed_data)
 
 
-@register_context_operator([ModalityType.TIMESERIES, ModalityType.AUDIO])
+@register_context_operator(
+    [ModalityType.TIMESERIES, ModalityType.AUDIO, ModalityType.EMBEDDING]
+)
 class DynamicWindow(Window):
     def __init__(self, aggregation_function="mean", num_windows=100):
         super().__init__("DynamicWindow", aggregation_function)

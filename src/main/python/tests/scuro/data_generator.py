@@ -62,6 +62,7 @@ class TestDataLoader(BaseLoader):
 class ModalityRandomDataGenerator:
 
     def __init__(self):
+        np.random.seed(4)
         self.modality_id = 0
         self.modality_type = None
         self.metadata = {}

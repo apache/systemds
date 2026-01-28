@@ -34,10 +34,10 @@ import java.util.stream.IntStream;
 public class ColGroupDDCLZWBenchmark {
 	private static final int BENCHMARK_ITERATIONS = 10;
 
-	private static final int[] DATA_SIZES = {1, 10, 100, 1000, 10000, 100_000};
-
 	private static class BenchmarkResult {
 		int dataSize;
+		int nUnique;
+		double entropy;
 
 		long ddcMemoryBytes;
 		long ddcCompressionTimeNs;
@@ -58,19 +58,55 @@ public class ColGroupDDCLZWBenchmark {
 			decompressionSpeedup = (double) ddcDecompressionTimeNs / ddclzwDecompressionTimeNs;
 		}
 
-		/// Pretty-print a colorful percent text
+		/// Format a percent for pretty-printing
 		String formatPercent(double ratio) {
 			double percent = (100.0 * (1.0 - ratio));
 			String ansiColor = percent > 0 ? "\u001B[32m" : "\u001B[31m";
-			return ansiColor + String.format("%6.2f%%", percent) + "\u001B[0m";
+			return ansiColor + String.format("%7.2f%%", percent) + "\u001B[0m";
+		}
+
+		/// Calculate entropy, and format a percent for pretty-printing
+		String formatEntropyPercent(double entropy, int nUnique) {
+			double maxEntropy = Math.log(nUnique) / Math.log(2); // log_2{nUnique}
+			double percent = (entropy / maxEntropy) * 100;
+
+			String ansiColor;
+			if(percent < 33)
+				ansiColor = "\u001B[32m";
+			else if(percent < 66)
+				ansiColor = "\u001B[33m";
+			else
+				ansiColor = "\u001B[31m";
+
+			return String.format("%s%6.2f%%%s", ansiColor, percent, "\u001B[0m");
 		}
 
 		@Override
 		public String toString() {
-			return String.format("Size: %7d | DDC: %8d bytes | DDCLZW: %8d bytes | " +
-					"Memory reduction: %s | De-/Compression speedup: %.2f/%.2f times", dataSize, ddcMemoryBytes,
-				ddclzwMemoryBytes, formatPercent(memoryReduction), decompressionSpeedup, compressionSpeedup);
+			return String.format("Size: %7d | nUnique: %4d | Entropy: %s | DDC: %7d bytes | DDCLZW: %7d bytes | " +
+					"Memory reduction: %s | De-/Compression speedup: %.2f/%.2f times", dataSize, nUnique,
+				formatEntropyPercent(entropy, nUnique), ddcMemoryBytes, ddclzwMemoryBytes,
+				formatPercent(memoryReduction), decompressionSpeedup, compressionSpeedup);
 		}
+	}
+
+	/// Calculates the entropy of the given array. Returns value between 0 (predictable) and log_2{nUnique}
+	private double calculateEntropy(int[] arr, int nUnique) {
+		int[] freq = new int[nUnique];
+		for(int val : arr) {
+			if(val >= 0 && val < nUnique) {
+				freq[val]++;
+			}
+		}
+		double entropy = 0.0;
+		int total = arr.length;
+		for(int f : freq) {
+			if(f > 0) {
+				double p = (double) f / total;
+				entropy -= p * (Math.log(p) / Math.log(2));
+			}
+		}
+		return entropy;
 	}
 
 	// Pattern generators (array)
@@ -82,9 +118,7 @@ public class ColGroupDDCLZWBenchmark {
 		return result;
 	}
 
-	/**
-	 * Args (10, 5) Generates a pattern like: [0, 0, 1, 1, 2, 2, 3, 3, 4, 4]
-	 */
+	/// Args (10, 5) Generates a pattern like: [0, 0, 1, 1, 2, 2, 3, 3, 4, 4]
 	private int[] genPatternDistributed(int size, int nUnique) {
 		int[] result = new int[size];
 		int runLength = size / nUnique;
@@ -102,6 +136,24 @@ public class ColGroupDDCLZWBenchmark {
 		java.util.Random rand = new java.util.Random(seed);
 		for(int i = 0; i < size; i++) {
 			result[i] = rand.nextInt(nUnique);
+		}
+		return result;
+	}
+
+	private int[] genPatternLZWOptimal(int size, int nUnique) {
+		int[] result = new int[size];
+		int pos = 0;
+		int patternLen = 10; // TODO: calculate based on nUnique?
+
+		while(pos < size) {
+			// Repeat the same pattern twice
+			for(int i = 0; i < patternLen && pos < size; i++) {
+				result[pos++] = i % nUnique;
+			}
+			for(int i = 0; i < patternLen && pos < size; i++) {
+				result[pos++] = i % nUnique;
+			}
+			patternLen++;
 		}
 		return result;
 	}
@@ -139,6 +191,8 @@ public class ColGroupDDCLZWBenchmark {
 	private BenchmarkResult runBenchmark(int[] mapping, int nUnique, int nCols) {
 		BenchmarkResult result = new BenchmarkResult();
 		result.dataSize = mapping.length;
+		result.nUnique = nUnique;
+		result.entropy = calculateEntropy(mapping, nUnique);
 
 		ColGroupDDC ddc = createBenchmarkDDC(mapping, nUnique, nCols);
 
@@ -181,63 +235,76 @@ public class ColGroupDDCLZWBenchmark {
 	}
 
 	@Test
-	public void benchmarkRepeatingPatterns() {
+	public void benchmarkLZWOptimalScaling() {
 		printBenchmarkTitle();
-		for(int size : DATA_SIZES) {
-			int[] mapping = genPatternRepeating(size, 0, 1, 2);
-			BenchmarkResult result = runBenchmark(mapping, 3, 1);
-			System.out.println(result);
+
+		for(int size : new int[] {100, 1000, 10_000, 40_000}) {
+			System.out.println(".".repeat(35) + " Size: " + size + " " + ".".repeat(35));
+			for(int nUnique : new int[] {2, 3, 5, 10, 20, 50, 100, 200, 500, 1000, 10_000, 20_000}) {
+				if(nUnique > size)
+					continue;
+				int[] mapping = genPatternLZWOptimal(size, nUnique);
+				BenchmarkResult result = runBenchmark(mapping, nUnique, 1);
+				System.out.println(result);
+			}
 		}
+
+		System.out.println("\nExpected memory growths for size n: DDC: O(n), DDCLZW: O(sqrt(n))");
 	}
 
 	@Test
 	public void benchmarkDistributed() {
 		printBenchmarkTitle();
-		for(int size : DATA_SIZES) {
-			int[] mapping = genPatternDistributed(size, 3);
-			BenchmarkResult result = runBenchmark(mapping, 3, 1);
-			System.out.println(result);
+
+		for(int size : new int[] {100, 1000, 10_000, 40_000}) {
+			System.out.println(".".repeat(35) + " Size: " + size + " " + ".".repeat(35));
+			for(int nUnique : new int[] {2, 3, 5, 10, 20, 50, 100, 200, 500, 1000}) {
+				if(nUnique > size)
+					continue;
+				int[] mapping = genPatternDistributed(size, nUnique);
+				BenchmarkResult result = runBenchmark(mapping, nUnique, 1);
+				System.out.println(result);
+			}
 		}
 	}
 
 	@Test
-	public void benchmarkRandomData() {
+	public void benchmarkUniquesRepeating() {
 		printBenchmarkTitle();
-		for(int size : DATA_SIZES) {
-			int[] mapping = genPatternRandom(size, 5, 42);
-			BenchmarkResult result = runBenchmark(mapping, 5, 1);
-			System.out.println(result);
+		for(int size : new int[] {100, 1000, 10_000, 40_000}) {
+			System.out.println(".".repeat(35) + " Size: " + size + " " + ".".repeat(35));
+			for(int nUnique : new int[] {2, 3, 5, 10, 20, 50, 100, 200, 500, 1000}) {
+				if(nUnique > size)
+					continue;
+				int[] mapping = genPatternRepeating(size, IntStream.range(0, nUnique).toArray());
+				BenchmarkResult result = runBenchmark(mapping, nUnique, 1);
+				System.out.println(result);
+			}
 		}
 	}
 
 	@Test
-	public void benchmarkMultiColumn() {
+	public void benchmarkUniquesLZWOptimal() {
 		printBenchmarkTitle();
-		for(int size : DATA_SIZES) {
-			int[] mapping = genPatternRepeating(size, 0, 1, 2, 1, 0);
-			BenchmarkResult result = runBenchmark(mapping, 3, 3);
-			System.out.println(result);
+		for(int size : new int[] {100, 1000, 10_000, 40_000}) {
+			System.out.println(".".repeat(35) + " Size: " + size + " " + ".".repeat(35));
+			for(int nUnique : new int[] {2, 3, 5, 10, 20, 50, 100, 200, 500, 1000}) {
+				if(nUnique > size)
+					continue;
+				int[] mapping = genPatternLZWOptimal(size, nUnique);
+				BenchmarkResult result = runBenchmark(mapping, nUnique, 1);
+				System.out.println(result);
+			}
 		}
 	}
 
 	@Test
-	public void benchmarkUniques() {
-		printBenchmarkTitle();
-		int size = 10000;
-		for(int nUnique : new int[] {2, 5, 10, 20, 50}) {
-			int[] mapping = genPatternRepeating(size, IntStream.range(0, nUnique).toArray());
-			BenchmarkResult result = runBenchmark(mapping, nUnique, 1);
-			System.out.println(result);
-		}
-	}
-
-	@Test
-	public void benchmarkGetIdx() { // TODO: is this benchmark useful when the time complexity is completely different?
+	public void benchmarkGetIdx() { // TODO: benchmark a different, efficient method instead
 		printBenchmarkTitle();
 
 		final int[] DATA_SIZES_GET_IDX = {10, 50, 100};
 		for(int size : DATA_SIZES_GET_IDX) {
-			int[] mapping = genPatternRepeating(size, 0, 1, 2);
+			int[] mapping = genPatternRepeating(size, 0, 1, 2, 2, 2, 1, 0, 0, 1);
 			ColGroupDDC ddc = createBenchmarkDDC(mapping, 3, 2);
 			ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) ddc.convertToDDCLZW();
 
@@ -260,34 +327,34 @@ public class ColGroupDDCLZWBenchmark {
 		}
 	}
 
-	@Test
-	public void benchmarkSlice() {
-		printBenchmarkTitle();
-
-		for(int size : DATA_SIZES) {
-			int[] mapping = genPatternRepeating(size, 0, 1, 2);
-			ColGroupDDC ddc = createBenchmarkDDC(mapping, 3, 1);
-			ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) ddc.convertToDDCLZW();
-
-			int sliceStart = size / 4;
-			int sliceEnd = 3 * size / 4;
-
-			// Benchmark DDC
-			long startTime = System.nanoTime();
-			for(int iter = 0; iter < BENCHMARK_ITERATIONS; iter++) {
-				ddc.sliceRows(sliceStart, sliceEnd);
-			}
-			long ddcTime = System.nanoTime() - startTime;
-
-			// Benchmark DDCLZW
-			startTime = System.nanoTime();
-			for(int iter = 0; iter < BENCHMARK_ITERATIONS; iter++) {
-				ddclzw.sliceRows(sliceStart, sliceEnd);
-			}
-			long ddclzwTime = System.nanoTime() - startTime;
-
-			System.out.printf("Size: %7d | Slice[%5d:%5d] | DDC: %6d ms | DDCLZW: %6d ms | Slowdown: %.2f times\n",
-				size, sliceStart, sliceEnd, ddcTime / 1_000_000, ddclzwTime / 1_000_000, (double) ddclzwTime / ddcTime);
-		}
-	}
+	//	@Test
+	//	public void benchmarkSlice() {
+	//		printBenchmarkTitle();
+	//
+	//		for(int size : DATA_SIZES) {
+	//			int[] mapping = genPatternRepeating(size, 0, 1, 2);
+	//			ColGroupDDC ddc = createBenchmarkDDC(mapping, 3, 1);
+	//			ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) ddc.convertToDDCLZW();
+	//
+	//			int sliceStart = size / 4;
+	//			int sliceEnd = 3 * size / 4;
+	//
+	//			// Benchmark DDC
+	//			long startTime = System.nanoTime();
+	//			for(int iter = 0; iter < BENCHMARK_ITERATIONS; iter++) {
+	//				ddc.sliceRows(sliceStart, sliceEnd);
+	//			}
+	//			long ddcTime = System.nanoTime() - startTime;
+	//
+	//			// Benchmark DDCLZW
+	//			startTime = System.nanoTime();
+	//			for(int iter = 0; iter < BENCHMARK_ITERATIONS; iter++) {
+	//				ddclzw.sliceRows(sliceStart, sliceEnd);
+	//			}
+	//			long ddclzwTime = System.nanoTime() - startTime;
+	//
+	//			System.out.printf("Size: %7d | Slice[%5d:%5d] | DDC: %6d ms | DDCLZW: %6d ms | Slowdown: %.2f times\n",
+	//				size, sliceStart, sliceEnd, ddcTime / 1_000_000, ddclzwTime / 1_000_000, (double) ddclzwTime / ddcTime);
+	//		}
+	//	}
 }

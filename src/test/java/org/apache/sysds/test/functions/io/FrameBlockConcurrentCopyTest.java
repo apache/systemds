@@ -19,8 +19,6 @@
 
 package org.apache.sysds.test.functions.io;
 
-import javassist.bytecode.ByteArray;
-import org.apache.hadoop.security.SaslOutputStream;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.frame.data.FrameBlock;
 import org.apache.sysds.runtime.frame.data.columns.*;
@@ -32,7 +30,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import scala.Enumeration;
 
 import java.util.Arrays;
 import java.util.Collection;

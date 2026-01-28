@@ -38,7 +38,7 @@ class AggregatedRepresentation(Representation):
         aggregated_modality = TransformedModality(
             modality, self, self_contained=modality.self_contained
         )
+        aggregated_modality.data = self.aggregation.execute(modality)
         end = time.perf_counter()
         aggregated_modality.transform_time += end - start
-        aggregated_modality.data = self.aggregation.execute(modality)
         return aggregated_modality

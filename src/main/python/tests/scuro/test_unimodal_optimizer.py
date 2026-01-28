@@ -36,6 +36,7 @@ from systemds.scuro.representations.covarep_audio_features import (
 )
 from systemds.scuro.representations.word2vec import W2V
 from systemds.scuro.representations.bow import BoW
+from systemds.scuro.representations.bert import Bert
 from systemds.scuro.modality.unimodal_modality import UnimodalModality
 from systemds.scuro.representations.resnet import ResNet
 from tests.scuro.data_generator import (
@@ -124,7 +125,7 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
         ):
             registry = Registry()
 
-            unimodal_optimizer = UnimodalOptimizer([modality], self.tasks, False)
+            unimodal_optimizer = UnimodalOptimizer([modality], self.tasks, False, k=1)
             unimodal_optimizer.optimize()
 
             assert (
@@ -133,7 +134,7 @@ class TestUnimodalRepresentationOptimizer(unittest.TestCase):
             )
             assert len(unimodal_optimizer.operator_performance.task_names) == 2
             result, cached = unimodal_optimizer.operator_performance.get_k_best_results(
-                modality, 1, self.tasks[0], "accuracy"
+                modality, self.tasks[0], "accuracy"
             )
             assert len(result) == 1
             assert len(cached) == 1

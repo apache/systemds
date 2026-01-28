@@ -97,6 +97,8 @@ class Registry:
         return reps
 
     def get_context_operators(self, modality_type):
+        if modality_type not in self._context_operators.keys():
+            return []
         return self._context_operators[modality_type]
 
     def get_dimensionality_reduction_operators(self, modality_type):

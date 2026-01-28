@@ -117,6 +117,8 @@ public class ProgramRewriter{
  				_sbRuleSet.add(  new RewriteMarkLoopVariablesUpdateInPlace()     );
  			if( LineageCacheConfig.getCompAssRW() )
  				_sbRuleSet.add(  new MarkForLineageReuse()                       );
+            if( OptimizerUtils.ALLOW_RA_REWRITES )
+                _sbRuleSet.add(  new RewriteRaPushdown()                         );
  			_sbRuleSet.add(      new RewriteRemoveTransformEncodeMeta()          );
  			_dagRuleSet.add( new RewriteNonScalarPrint()                         );
  		}

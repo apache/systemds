@@ -506,25 +506,13 @@ This change was reset before merging.
 
 ---
 
-# Git Commit History
-
-## December 2025
+# Changelog
 
 ### Dec 4, 2025
 - **`[MINOR][DOCS][SYSTEMDS-3878]`** Write two markdown files to log work and document changes
   - Added `project_systemds-3878.md` to log work progress
   - Added `systemds-3878_summary-of-changes.md` to document Dockerfile modifications
   - Author: @qschnee
-
-### Dec 5, 2025
-- **`[MINOR][SYSTEMDS-3878]`** Add Docker Scout vulnerability scan for sysds.Dockerfile
-  - Added initial security scan results for `apache/systemds:latest`
-  - Docker Scout identified 79 vulnerabilities (4 Critical, 29 High, 36 Medium, 9 Low)
-  - Author: @a-kasprick
-
----
-
-## January 2026
 
 ### Jan 6, 2026
 - **`[MINOR][SYSTEMDS-3878]`** Fix CVE-2023-44981 org.apache.zookeeper critical vulnerability
@@ -534,13 +522,8 @@ This change was reset before merging.
   - Author: @qschnee
 
 ### Jan 11, 2026
-- **`[MINOR][SYSTEMDS-3878]`** Fix pom.xml vulnerability (CVE-2024-47561)
-  - Added avro.version property (1.11.4) for Apache Avro deserialization vulnerability
-  - Author: @anabel-ksp
-
-- **`[MINOR][SYSTEMDS-3878]`** Fix pom.xml vulnerability (CVE-2023-25613)
-  - Added kerby.version property (2.0.3) for Apache Kerby LDAP Injection vulnerability
-  - Author: @anabel-ksp
+- kerby → 2.0.3 (CVE-2023-25613)
+- avro → 1.11.4 (CVE-2024-47561)
 
 ### Jan 14, 2026
 - **`[MINOR][SYSTEMDS-3878]`** Fix pom.xml dependencyManagement merge error
@@ -553,26 +536,22 @@ This change was reset before merging.
   - Author: @qschnee
 
 ### Jan 15, 2026
-- **`[MINOR][SYSTEMDS-3878]`** Fix multiple high-severity CVEs in transitive dependencies
-  - CVE-2024-7254: protobuf-java 3.23.4 → 3.25.5 (CVSS 8.7)
-  - CVE-2024-47554: commons-io → 2.14.0
-  - CVE-2023-1436: jettison → 1.5.4
-  - CVE-2023-43642: snappy-java → 1.1.10.4
-  - CVE-2023-6378: logback → 1.2.13
-  - CVE-2025-52999: jackson-core → 2.15.0
-  - CVE-2023-1370: json-smart → 2.4.9
-  - CVE-2023-52428: nimbus-jose-jwt → 9.37.4
-  - CVE-2024-36114: aircompressor → 0.27
-  - Author: @anabel-ksp
+- json-smart → 2.4.9 (CVE-2023-1370)
+- jettison → 1.5.4 (CVE-2023-1436)
+- snappy-java → 1.1.10.4 (CVE-2023-43642)
+- nimbus-jose-jwt → 9.37.4 (CVE-2023-52428)
+- logback → 1.2.13 (CVE-2023-6378)
+- aircompressor → 0.27 (CVE-2024-36114)
+- commons-io → 2.14.0 (CVE-2024-47554)
+- protobuf-java → 3.25.5 (CVE-2024-7254)
+- jackson-core → 2.15.0 (CVE-2025-52999)
 
 ### Jan 16, 2026
-- **`[MINOR][SYSTEMDS-3878]`** Fix additional high-severity CVEs in transitive dependencies
-  - Netty 4.x components → 4.1.124.Final (CVE-2025-55163, CVE-2023-44487)
-  - Jetty components → 9.4.57.v20241219 (CVE-2024-6763)
-  - xnio-api → 3.8.14.Final (CVE-2023-5685)
-  - commons-beanutils → 1.11.0 (CVE-2025-48734)
-  - dnsjava → 3.6.0 (CVE-2024-25638)
-  - Author: @anabel-ksp
+- netty → 4.1.124.Final (CVE-2023-44487, CVE-2025-55163)
+- xnio-api → 3.8.14.Final (CVE-2023-5685)
+- dnsjava → 3.6.0 (CVE-2024-25638)
+- jetty → 9.4.57.v20241219 (CVE-2024-6763)
+- commons-beanutils → 1.11.0 (CVE-2025-48734)
 
 ### Jan 21, 2026
 - **`[MINOR][SYSTEMDS-3878]`** Fix additional medium-severity CVEs (jetty-http, commons-compress, commons-configuration2)
@@ -613,36 +592,16 @@ This change was reset before merging.
   - Author: @qschnee
 
 ### Jan 25, 2026
-- **`[MINOR][SYSTEMDS-3878]`** Fix Alpine APK CVEs in Docker image
-  - Fixed openssl CVEs (CVE-2025-9230, CVE-2025-9231, CVE-2025-9232) → 3.3.5-r0
-  - Fixed busybox CVEs (CVE-2025-46394, CVE-2024-58251) → 1.36.1-r31
-  - Added exclusions in pom.xml for guava, jackson, and jetty transitive dependencies
-  - Author: @anabel-ksp
+- busybox → 1.36.1-r31 (CVE-2024-58251, CVE-2025-46394)
+- openssl → 3.3.5-r0 (CVE-2025-9230, CVE-2025-9231, CVE-2025-9232)
 
 ### Jan 28, 2026
 - **Merge PR #7**: Fix Alpine APK CVEs in Docker image
   - Author: @qschnee
 
 ### Jan 29, 2026
-- **`[DOC][SYSTEMDS-3878]`** Document unfixed CVEs in Docker image
-  - Added `UNFIXED_VULNERABILITIES.md` explaining remaining security vulnerabilities
-  - Author: @anabel-ksp
+- Created `UNFIXED_VULNERABILITIES.md` documenting 16 remaining CVEs
 
 - **`[MINOR][SYSTEMDS-3878]`** pom.xml cleanup
   - Removed empty lines, fixed formatting and indenting
   - Author: @qschnee
-
-- **Merge PR #8**: Rebase apache/systemds:latest into fork
-  - Author: @anabel-ksp
-
-- **Merge PR #9**: Document unfixed CVEs in Docker image
-  - Author: @anabel-ksp
-
----
-
-## Contributors
-
-- **@anabel-ksp** (Anabel Kasprick)
-- **@qschnee** (Quentin Schneebeli)
-- **@a-kasprick**
-

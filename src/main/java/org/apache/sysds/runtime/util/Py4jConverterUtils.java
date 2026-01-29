@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
+import org.apache.log4j.Logger;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.frame.data.columns.Array;
@@ -35,6 +36,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  * Utils for converting python data to java.
  */
 public class Py4jConverterUtils {
+	private static final Logger LOG = Logger.getLogger(Py4jConverterUtils.class);
 	public static MatrixBlock convertPy4JArrayToMB(byte[] data, int rlen, int clen) {
 		return convertPy4JArrayToMB(data, rlen, clen, false, Types.ValueType.FP64);
 	}
@@ -58,6 +60,45 @@ public class Py4jConverterUtils {
 			int colIndex = buf3.getInt();
 			mb.set(rowIndex, colIndex, val);
 		}
+		mb.recomputeNonZeros();
+		mb.examSparsity();
+		return mb;
+	}
+
+	public static MatrixBlock convertSciPyCSRToMB(byte[] data, byte[] indices, byte[] indptr, int rlen, int clen, int nnz) {
+		LOG.debug("Converting compressed sparse row matrix to MatrixBlock");
+		MatrixBlock mb = new MatrixBlock(rlen, clen, true);
+		mb.allocateSparseRowsBlock(false);
+		ByteBuffer dataBuf = ByteBuffer.wrap(data);
+		dataBuf.order(ByteOrder.nativeOrder());
+		ByteBuffer indicesBuf = ByteBuffer.wrap(indices);
+		indicesBuf.order(ByteOrder.nativeOrder());
+		ByteBuffer indptrBuf = ByteBuffer.wrap(indptr);
+		indptrBuf.order(ByteOrder.nativeOrder());
+		
+		// Read indptr array to get row boundaries
+		int[] rowPtrs = new int[rlen + 1];
+		for(int i = 0; i <= rlen; i++) {
+			rowPtrs[i] = indptrBuf.getInt();
+		}
+		
+		// Iterate through each row
+		for(int row = 0; row < rlen; row++) {
+			int startIdx = rowPtrs[row];
+			int endIdx = rowPtrs[row + 1];
+			
+			// Set buffer positions to the start of this row
+			dataBuf.position(startIdx * Double.BYTES);
+			indicesBuf.position(startIdx * Integer.BYTES);
+			
+			// Process all non-zeros in this row sequentially
+			for(int idx = startIdx; idx < endIdx; idx++) {
+				double val = dataBuf.getDouble();
+				int colIndex = indicesBuf.getInt();
+				mb.set(row, colIndex, val);
+			}
+		}
+		
 		mb.recomputeNonZeros();
 		mb.examSparsity();
 		return mb;
@@ -208,6 +249,7 @@ public class Py4jConverterUtils {
 	public static byte[] convertMBtoPy4JDenseArr(MatrixBlock mb) {
 		byte[] ret = null;
 		if(mb.isInSparseFormat()) {
+			LOG.debug("Converting sparse matrix to dense");
 			mb.sparseToDense();
 		}
 

@@ -21,11 +21,13 @@
 
 import struct
 from time import time
+from typing import Union
 import numpy as np
 import pandas as pd
 import concurrent.futures
 from py4j.java_gateway import JavaClass, JavaGateway, JavaObject, JVMView
 import os
+import scipy.sparse as sp
 
 # Constants
 _HANDSHAKE_OFFSET = 1000
@@ -84,129 +86,6 @@ def _pipe_receive_bytes(pipe, view, offset, end, batch_size_bytes, logger):
         actual_size = len(chunk)
         view[offset : offset + actual_size] = chunk
         offset += actual_size
-
-
-def _pipe_receive_strings(
-    pipe, num_strings, batch_size=_DEFAULT_BATCH_SIZE_BYTES, pipe_id=0, logger=None
-):
-    """
-    Reads UTF-8 encoded strings from the pipe in batches.
-    Format: <I (little-endian int32) length prefix, followed by UTF-8 bytes.
-
-    Returns: tuple of (strings_list, total_time, decode_time, io_time, num_strings)
-    """
-    t_total_start = time()
-    t_decode = 0.0
-    t_io = 0.0
-
-    strings = []
-    fd = pipe.fileno()  # Cache file descriptor
-
-    # Use a reusable buffer to avoid repeated allocations
-    buf = bytearray(batch_size * 2)
-    buf_pos = 0
-    buf_remaining = 0  # Number of bytes already in buffer
-
-    i = 0
-    while i < num_strings:
-        # If we don't have enough bytes for the length prefix, read more
-        if buf_remaining < _STRING_LENGTH_PREFIX_SIZE:
-            # Shift remaining bytes to start of buffer
-            if buf_remaining > 0:
-                buf[:buf_remaining] = buf[buf_pos : buf_pos + buf_remaining]
-
-            # Read more data
-            t0 = time()
-            chunk = os.read(fd, batch_size)
-            t_io += time() - t0
-            if not chunk:
-                raise IOError("Pipe read returned empty data unexpectedly")
-
-            # Append new data to buffer
-            chunk_len = len(chunk)
-            if buf_remaining + chunk_len > len(buf):
-                # Grow buffer if needed
-                new_buf = bytearray(len(buf) * 2)
-                new_buf[:buf_remaining] = buf[:buf_remaining]
-                buf = new_buf
-
-            buf[buf_remaining : buf_remaining + chunk_len] = chunk
-            buf_remaining += chunk_len
-            buf_pos = 0
-
-        # Read length prefix (little-endian int32)
-        # Note: length can be -1 (0xFFFFFFFF) to indicate null value
-        length = struct.unpack(
-            "<i", buf[buf_pos : buf_pos + _STRING_LENGTH_PREFIX_SIZE]
-        )[0]
-        buf_pos += _STRING_LENGTH_PREFIX_SIZE
-        buf_remaining -= _STRING_LENGTH_PREFIX_SIZE
-
-        # Handle null value (marked by -1)
-        if length == -1:
-            strings.append(None)
-            i += 1
-            continue
-
-        # If we don't have enough bytes for the string data, read more
-        if buf_remaining < length:
-            # Shift remaining bytes to start of buffer
-            if buf_remaining > 0:
-                buf[:buf_remaining] = buf[buf_pos : buf_pos + buf_remaining]
-            buf_pos = 0
-
-            # Read more data until we have enough
-            bytes_needed = length - buf_remaining
-            while bytes_needed > 0:
-                t0 = time()
-                chunk = os.read(fd, min(batch_size, bytes_needed))
-                t_io += time() - t0
-                if not chunk:
-                    raise IOError("Pipe read returned empty data unexpectedly")
-
-                chunk_len = len(chunk)
-                if buf_remaining + chunk_len > len(buf):
-                    # Grow buffer if needed
-                    new_buf = bytearray(len(buf) * 2)
-                    new_buf[:buf_remaining] = buf[:buf_remaining]
-                    buf = new_buf
-
-                buf[buf_remaining : buf_remaining + chunk_len] = chunk
-                buf_remaining += chunk_len
-                bytes_needed -= chunk_len
-
-        # Decode the string
-        t0 = time()
-        if length == 0:
-            decoded_str = ""
-        else:
-            decoded_str = buf[buf_pos : buf_pos + length].decode("utf-8")
-        t_decode += time() - t0
-
-        strings.append(decoded_str)
-        buf_pos += length
-        buf_remaining -= length
-        i += 1
-    header_received = False
-    if buf_remaining == _STRING_LENGTH_PREFIX_SIZE:
-        # There is still data in the buffer, probably the handshake header
-        received = struct.unpack(
-            "<i", buf[buf_pos : buf_pos + _STRING_LENGTH_PREFIX_SIZE]
-        )[0]
-        if received != pipe_id + _HANDSHAKE_OFFSET:
-            raise ValueError(
-                "Handshake mismatch: expected {}, got {}".format(
-                    pipe_id + _HANDSHAKE_OFFSET, received
-                )
-            )
-        header_received = True
-    elif buf_remaining > _STRING_LENGTH_PREFIX_SIZE:
-        raise ValueError(
-            "Unexpected number of bytes in buffer: {}".format(buf_remaining)
-        )
-
-    t_total = time() - t_total_start
-    return (strings, t_total, t_decode, t_io, num_strings, header_received)
 
 
 def _get_numpy_value_type(jvm, dtype):
@@ -280,37 +159,43 @@ def _transfer_matrix_block_multi_pipe(
     return fut_java.result()  # Java returns MatrixBlock
 
 
-def numpy_to_matrix_block(sds, np_arr: np.array):
-    """Converts a given numpy array, to internal matrix block representation.
+def numpy_to_matrix_block(sds, arr: Union[np.ndarray, sp.spmatrix]):
+    """Converts a given numpy array or scipy sparse matrix to internal matrix block representation.
 
     :param sds: The current systemds context.
-    :param np_arr: the numpy array to convert to matrixblock.
+    :param arr: the numpy array or scipy sparse matrix to convert to matrixblock.
     """
-    assert np_arr.ndim <= 2, "np_arr invalid, because it has more than 2 dimensions"
-    rows = np_arr.shape[0]
-    cols = np_arr.shape[1] if np_arr.ndim == 2 else 1
+    assert arr.ndim <= 2, "np_arr invalid, because it has more than 2 dimensions"
+    rows = arr.shape[0]
+    cols = arr.shape[1] if arr.ndim == 2 else 1
 
     if rows > 2147483647:
         raise ValueError("Matrix rows exceed maximum value (2147483647)")
 
     # If not numpy array then convert to numpy array
-    if not isinstance(np_arr, np.ndarray):
-        np_arr = np.asarray(np_arr, dtype=np.float64)
+    if isinstance(arr, sp.spmatrix):
+        if sds._sparse_data_transfer:
+            return scipy_sparse_matrix_to_matrix_block(sds, arr)
+        else:
+            # Convert sparse matrix to dense array
+            arr = arr.toarray()
+    if not isinstance(arr, np.ndarray):
+        arr = np.asarray(arr, dtype=np.float64)
 
     jvm: JVMView = sds.java_gateway.jvm
     ep = sds.java_gateway.entry_point
 
     # Flatten and set value type
-    if np_arr.dtype is np.dtype(np.uint8):
-        arr = np_arr.ravel()
-    elif np_arr.dtype is np.dtype(np.int32):
-        arr = np_arr.ravel()
-    elif np_arr.dtype is np.dtype(np.float32):
-        arr = np_arr.ravel()
+    if arr.dtype is np.dtype(np.uint8):
+        arr = arr.ravel()
+    elif arr.dtype is np.dtype(np.int32):
+        arr = arr.ravel()
+    elif arr.dtype is np.dtype(np.float32):
+        arr = arr.ravel()
     else:
-        arr = np_arr.ravel().astype(np.float64)
+        arr = arr.ravel().astype(np.float64)
 
-    value_type = _get_numpy_value_type(jvm, np_arr.dtype)
+    value_type = _get_numpy_value_type(jvm, arr.dtype)
 
     if sds._data_transfer_mode == 1:
         mv = memoryview(arr).cast("B")
@@ -334,13 +219,52 @@ def numpy_to_matrix_block(sds, np_arr: np.array):
             )
         else:
             return _transfer_matrix_block_multi_pipe(
-                sds, mv, arr, np_arr, total_bytes, rows, cols, value_type, ep, jvm
+                sds, mv, arr, arr, total_bytes, rows, cols, value_type, ep, jvm
             )
     else:
         # Prepare byte buffer and send data to java via Py4J
         buf = arr.tobytes()
         j_class: JavaClass = jvm.org.apache.sysds.runtime.util.Py4jConverterUtils
         return j_class.convertPy4JArrayToMB(buf, rows, cols, value_type)
+
+
+def scipy_sparse_matrix_to_matrix_block(sds, arr: sp.spmatrix):
+    """Converts a given scipy sparse matrix to an internal matrix block representation.
+
+    :param sds: The current systemds context.
+    :param arr: The scipy sparse matrix to convert to matrixblock.
+    """
+    jvm: JVMView = sds.java_gateway.jvm
+
+    if sds._data_transfer_mode == 1:
+        # single pipe implementation
+        pass
+    else:
+        # py4j implementation
+        j_class: JavaClass = jvm.org.apache.sysds.runtime.util.Py4jConverterUtils
+        if isinstance(arr, sp.csr_matrix):
+            data = arr.data.tobytes()
+            indices = arr.indices.tobytes()
+            indptr = arr.indptr.tobytes()
+            nnz = arr.nnz
+            rows = arr.shape[0]
+            cols = arr.shape[1]
+            # convertSciPyCSRToMB(byte[] data, byte[] indices, byte[] indptr, int rlen, int clen, int nnz)
+            return j_class.convertSciPyCSRToMB(data, indices, indptr, rows, cols, nnz)
+        elif isinstance(arr, sp.coo_matrix):
+            data = arr.data.tobytes()
+            row = arr.row.tobytes()
+            col = arr.col.tobytes()
+            nnz = arr.nnz
+            rows = arr.shape[0]
+            cols = arr.shape[1]
+            # convertSciPyCOOToMB(byte[] data, byte[] row, byte[] col, int rlen, int clen, int nnz)
+            return j_class.convertSciPyCOOToMB(data, row, col, rows, cols, nnz)
+        else:
+            sds.logger.warning(
+                f"Unsupported sparse matrix type: {type(arr)}. Converting to dense numpy array."
+            )
+            return numpy_to_matrix_block(sds, arr.toarray())
 
 
 def matrix_block_to_numpy(sds, mb: JavaObject):
@@ -759,6 +683,129 @@ def _pipe_transfer_strings(pipe, pd_series, batch_size=_DEFAULT_BATCH_SIZE_BYTES
 
     t_total = time() - t_total_start
     return (t_total, t_encoding, t_packing, t_io, num_strings)
+
+
+def _pipe_receive_strings(
+    pipe, num_strings, batch_size=_DEFAULT_BATCH_SIZE_BYTES, pipe_id=0, logger=None
+):
+    """
+    Reads UTF-8 encoded strings from the pipe in batches.
+    Format: <I (little-endian int32) length prefix, followed by UTF-8 bytes.
+
+    Returns: tuple of (strings_list, total_time, decode_time, io_time, num_strings)
+    """
+    t_total_start = time()
+    t_decode = 0.0
+    t_io = 0.0
+
+    strings = []
+    fd = pipe.fileno()  # Cache file descriptor
+
+    # Use a reusable buffer to avoid repeated allocations
+    buf = bytearray(batch_size * 2)
+    buf_pos = 0
+    buf_remaining = 0  # Number of bytes already in buffer
+
+    i = 0
+    while i < num_strings:
+        # If we don't have enough bytes for the length prefix, read more
+        if buf_remaining < _STRING_LENGTH_PREFIX_SIZE:
+            # Shift remaining bytes to start of buffer
+            if buf_remaining > 0:
+                buf[:buf_remaining] = buf[buf_pos : buf_pos + buf_remaining]
+
+            # Read more data
+            t0 = time()
+            chunk = os.read(fd, batch_size)
+            t_io += time() - t0
+            if not chunk:
+                raise IOError("Pipe read returned empty data unexpectedly")
+
+            # Append new data to buffer
+            chunk_len = len(chunk)
+            if buf_remaining + chunk_len > len(buf):
+                # Grow buffer if needed
+                new_buf = bytearray(len(buf) * 2)
+                new_buf[:buf_remaining] = buf[:buf_remaining]
+                buf = new_buf
+
+            buf[buf_remaining : buf_remaining + chunk_len] = chunk
+            buf_remaining += chunk_len
+            buf_pos = 0
+
+        # Read length prefix (little-endian int32)
+        # Note: length can be -1 (0xFFFFFFFF) to indicate null value
+        length = struct.unpack(
+            "<i", buf[buf_pos : buf_pos + _STRING_LENGTH_PREFIX_SIZE]
+        )[0]
+        buf_pos += _STRING_LENGTH_PREFIX_SIZE
+        buf_remaining -= _STRING_LENGTH_PREFIX_SIZE
+
+        # Handle null value (marked by -1)
+        if length == -1:
+            strings.append(None)
+            i += 1
+            continue
+
+        # If we don't have enough bytes for the string data, read more
+        if buf_remaining < length:
+            # Shift remaining bytes to start of buffer
+            if buf_remaining > 0:
+                buf[:buf_remaining] = buf[buf_pos : buf_pos + buf_remaining]
+            buf_pos = 0
+
+            # Read more data until we have enough
+            bytes_needed = length - buf_remaining
+            while bytes_needed > 0:
+                t0 = time()
+                chunk = os.read(fd, min(batch_size, bytes_needed))
+                t_io += time() - t0
+                if not chunk:
+                    raise IOError("Pipe read returned empty data unexpectedly")
+
+                chunk_len = len(chunk)
+                if buf_remaining + chunk_len > len(buf):
+                    # Grow buffer if needed
+                    new_buf = bytearray(len(buf) * 2)
+                    new_buf[:buf_remaining] = buf[:buf_remaining]
+                    buf = new_buf
+
+                buf[buf_remaining : buf_remaining + chunk_len] = chunk
+                buf_remaining += chunk_len
+                bytes_needed -= chunk_len
+
+        # Decode the string
+        t0 = time()
+        if length == 0:
+            decoded_str = ""
+        else:
+            decoded_str = buf[buf_pos : buf_pos + length].decode("utf-8")
+        t_decode += time() - t0
+
+        strings.append(decoded_str)
+        buf_pos += length
+        buf_remaining -= length
+        i += 1
+    header_received = False
+    if buf_remaining == _STRING_LENGTH_PREFIX_SIZE:
+        # There is still data in the buffer, probably the handshake header
+        received = struct.unpack(
+            "<i", buf[buf_pos : buf_pos + _STRING_LENGTH_PREFIX_SIZE]
+        )[0]
+        if received != pipe_id + _HANDSHAKE_OFFSET:
+            raise ValueError(
+                "Handshake mismatch: expected {}, got {}".format(
+                    pipe_id + _HANDSHAKE_OFFSET, received
+                )
+            )
+        header_received = True
+    elif buf_remaining > _STRING_LENGTH_PREFIX_SIZE:
+        raise ValueError(
+            "Unexpected number of bytes in buffer: {}".format(buf_remaining)
+        )
+
+    t_total = time() - t_total_start
+    return (strings, t_total, t_decode, t_io, num_strings, header_received)
 
 
 def _get_elem_size_for_type(d_type):

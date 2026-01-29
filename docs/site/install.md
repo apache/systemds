@@ -21,99 +21,126 @@ limitations under the License.
 {% endcomment %}
 -->
 
+# Install SystemDS from Source
+
 This guide helps in the install and setup of SystemDS from source code.
 
-- [Install](#install)
-  - [Windows](#windows)
-  - [Ubuntu 22.04](#ubuntu-2204)
-    - [Testing](#testing)
-  - [MAC](#mac)
-- [2. Build the project](#2-build-the-project)
-- [3. Run A Component Test](#3-run-a-component-test)
+---
 
-Once the individual versions is set up skip to the common part of building the system.
+- [1. Install on Windows](#1-install-on-windows)
+- [2. Install on Ubuntu](#2-install-on-ubuntu-2204--2404)
+- [3. Install on macOS](#3-install-on-macos)
+- [4. Build the Project](#4-build-the-project)
+- [5. Run a Component Test](#5-run-a-component-test)
+- [6. Next Steps](#6-next-steps)
+
+Once the individual environment is set up, you can continue with the common build steps below.
 
 ---
 
-## Install
+# 1. Install on Windows
 
----
-
-### Windows
-
-First setup java and maven to compile the system note the java version is 17, we suggest using Java OpenJDK 17.
+First setup Java and maven to compile the system note the Java version is 17, we suggest using Java OpenJDK 17.
 
 - <https://openjdk.org/>
 - <https://maven.apache.org/download.cgi?.>
 
-Setup your environment variables with JAVA_HOME and MAVEN_HOME. Using these variables add the JAVA_HOME/bin and MAVEN_HOME/bin to the path environment variable. An example of setting it for java can be found here: <https://www.thewindowsclub.com/set-java_home-in-windows-10>
+Setup your environment variables with JAVA_HOME and MAVEN_HOME. Using these variables add the JAVA_HOME/bin and MAVEN_HOME/bin to the path environment variable. An example of setting it for Java can be found here: <https://www.thewindowsclub.com/set-java_home-in-windows-10>
 
-To run the system we also have to setup some Hadoop and spark specific libraries. These can be found in the SystemDS repository. To add this, simply take out the files, or add 'src/test/config/hadoop_bin_windows/bin' to PATH. Just like for JAVA_HOME set a HADOOP_HOME to the environment variable without the bin part, and add the %HADOOP_HOME%/bin to path.
+To run the system we also have to setup some Hadoop and Spark specific libraries. These can be found in the SystemDS repository. To add this, simply take out the files, or add 'src/test/config/hadoop_bin_windows/bin' to PATH. Just like for JAVA_HOME set a HADOOP_HOME to the environment variable without the bin part, and add the `%HADOOP_HOME%\bin` to path.
 
-Finally if you want to run systemds from command line, add a SYSTEMDS_ROOT that points to the repository root, and add the bin folder to the path.
+On Windows, cloning large repositories via GitHub Desktop may stall in some environments. If this happens, cloning via the Git command line is a reliable alternative.
+Example:
+```bash
+git clone https://github.com/apache/systemds.git 
+```
 
-To make the build go faster set the IDE or environment variables for java: '-Xmx16g -Xms16g -Xmn1600m'. Here set the memory to something close to max memory of the device you are using.
+To make the build go faster set the IDE or environment variables for Java: '-Xmx16g -Xms16g -Xmn1600m'. Here set the memory to something close to max memory of the device you are using.
 
 To start editing the files remember to import the code style formatting into the IDE, to keep the changes of the files consistent.
 
 A suggested starting point would be to run some of the component tests from your IDE.
 
----
+# 2. Install on Ubuntu (22.04 / 24.04)
 
-### Ubuntu 22.04
+### 2.1 Install Java 17 and Maven
 
-First setup java and maven to compile the system note that the java version is 17.
+First setup Java, maven and git to compile the system note that the Java version is 17.
 
 ```bash
-sudo apt install openjdk-17-jdk
-sudo apt install maven
+sudo apt update
+sudo apt install openjdk-17-jdk maven
+sudo apt install -y git
 ```
 
 Verify the install with:
-
 ```bash
 java -version
 mvn -version
+git --version
 ```
 
 This should return something like:
-
 ```bash
-openjdk 17.0.11 2024-04-16
-OpenJDK Runtime Environment Temurin-17.0.11+9 (build 17.0.11+9)
-OpenJDK 64-Bit Server VM Temurin-17.0.11+9 (build 17.0.11+9, mixed mode, sharing)
-
-Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937)
-Maven home: /home/usr/Programs/maven
-Java version: 17.0.11, vendor: Eclipse Adoptium, runtime: /home/usr/Programs/jdk-17.0.11+9
-Default locale: en_US, platform encoding: UTF-8
-OS name: "linux", version: "6.8.0-59-generic", arch: "amd64", family: "unix"
+openjdk 17.x.x
+Apache Maven 3.x.x
+git version 2.x.x
 ```
 
-#### Testing
+### 2.2 Set JAVA_HOME for Javadocs
 
-R is required to be install to run the test suite, since many tests are constructed to compare output with common R packages.
-One option to install this is to follow the guide on the following link: <https://linuxize.com/post/how-to-install-r-on-ubuntu-20-04/>
+Set `JAVA_HOME` (required for generating Javadocs during the Maven build):
+```bash
+export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))
+export PATH="$JAVA_HOME/bin:$PATH"
+```
 
-At the time of writing the commands to install R 4.0.2 are:
+### 2.3 Clone Source Code
+
+Clone the source code:
+```bash
+cd /opt
+git clone https://github.com/apache/systemds.git
+cd systemds
+```
+
+### 2.4 Testing
+
+R should be installed to run the test suite, since many tests are constructed to compare output with common R packages. One option to install this is to follow the guide on the following link: <https://linuxize.com/post/how-to-install-r-on-ubuntu-20-04/>
+
+R can be installed using the CRAN repository.
+
+**Ubuntu 22.04** 
 
 ```bash
 sudo apt install dirmngr gnupg apt-transport-https ca-certificates software-properties-common
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
 sudo add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu focal-cran40/'
+sudo apt update
 sudo apt install r-base
 ```
 
-Optionally, you need to install the R dependencies for integration tests, like this:
-(use `sudo` mode if the script couldn't write to local R library)
+**Ubuntu 22.04**
 
+```bash
+sudo apt install dirmngr gnupg apt-transport-https ca-certificates software-properties-common
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
+sudo add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu noble-cran40/'
+sudo apt update
+sudo apt install r-base
+```
+
+Verify the installation:
+```bash
+R --version
+```
+
+**Install R Dependencies for Integration Tests (Optional)** If you want to run integration tests that depend on additional R packages, install them via:
 ```bash
 Rscript ./src/test/scripts/installDependencies.R
 ```
 
----
-
-### MAC
+# 3. Install on MacOS
 
 Prerequisite install homebrew on the device.
 
@@ -133,7 +160,7 @@ java --version
 mvn --version
 ```
 
-This should print java version.
+This should print Java version.
 
 Note that if you have multiple __java__ versions installed then you have to change the used version to 17, on __both java and javadoc__. This is done by setting the environment variable JAVA_HOME to the install path of open JDK 17 :
 
@@ -150,16 +177,14 @@ Optionally, you need to install the R dependencies for integration tests, like t
 Rscript ./src/test/scripts/installDependencies.R
 ```
 
----
+# 4. Build the project
 
-## 2. Build the project
-
-To compile the project use:
-
+To compile the project use in the directory of the source code:
 ```bash
 mvn package -P distribution
 ```
 
+Example output:
 ```bash
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
@@ -169,10 +194,20 @@ mvn package -P distribution
 [INFO] ------------------------------------------------------------------------
 ```
 
-The first time you package the system it will take longer since maven will download the dependencies.
-But successive compiles should become faster.
+The first time you package the system it will take longer since maven will download the dependencies. But successive compiles should become faster. The runnable JAR files will appear in `target/`.
 
-## 3. Run A Component Test
+### (Optional) Add SystemDS CLI to PATH
+
+After building SystemDS from source, you can add the `bin` directory to your
+`PATH` in order to run `systemds` directly from the command line:
+
+```bash
+export SYSTEMDS_ROOT=$(pwd)
+export PATH="$SYSTEMDS_ROOT/bin:$PATH"
+```
+This allows you to run `systemds` from the repository root. For running the freshly built executable JAR (e.g., `target/SystemDS.jar`) on Spark, see the Spark section in [Execute SystemDS](run.html).
+
+# 5. Run A Component Test
 
 As an example here is how to run the component matrix tests from command line via maven.
 
@@ -180,9 +215,8 @@ As an example here is how to run the component matrix tests from command line vi
 mvn test -Dtest="**.component.matrix.**"
 ```
 
-To run other tests simply specify other packages by modifying the
-test argument part of the command.
+To run other tests simply specify other packages by modifying the test argument part of the command.
 
-Now everything is setup and ready to go!
+# 6. Next Steps
 
-To execute dml scripts look at [Execute SystemDS](run), this step is not needed to develop in systemds, but it helps setting up the command-line execution of systemds.
+Now everything is setup and ready to go! For running scripts in Spark mode or experimenting with federated workers, see the Execution Guide: [Execute SystemDS](run.html)

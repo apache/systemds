@@ -55,16 +55,16 @@ public class CompressionSettings {
 	/**
 	 * The sampling ratio used when choosing ColGroups. Note that, default behavior is to use exact estimator if the
 	 * number of elements is below 1000.
-	 * 
+	 *
 	 * DEPRECATED
 	 */
 	public final double samplingRatio;
 
 	/**
 	 * The sampling ratio power to use when choosing sample size. This is used in accordance to the function:
-	 * 
+	 *
 	 * sampleSize += nRows^samplePower;
-	 * 
+	 *
 	 * The value is bounded to be in the range of 0 to 1, 1 giving a sample size of everything, and 0 adding 1.
 	 */
 	public final double samplePower;
@@ -114,8 +114,9 @@ public class CompressionSettings {
 	/**
 	 * Transpose input matrix, to optimize access when extracting bitmaps. This setting is changed inside the script
 	 * based on the transposeInput setting.
-	 * 
-	 * This is intentionally left as a mutable value, since the transposition of the input matrix is decided in phase 3.
+	 *
+	 * This is intentionally left as a mutable value, since the transposition of the input matrix is decided in phase
+	 * 3.
 	 */
 	public boolean transposed = false;
 
@@ -134,6 +135,21 @@ public class CompressionSettings {
 	public final double[] scaleFactors;
 
 	public final boolean preferDeltaEncoding;
+
+	/**
+	 * Ziel-Gesantverlust für piecewise Lineace Komocession• Interpretation: maximal entaubter Alobaler MSE pro Went in
+	 * der Sealte. O.O ~ quasi verlustfrei, viele Segmente >0 ~ mehr Approximation entaubt, weniger Segmente
+	 */
+	private double piecewiseTargetLoss = Double.NaN;
+
+	public void setPiecewiseTargetLoss(double piecewiseTargetLoss) {
+		this.piecewiseTargetLoss = piecewiseTargetLoss;
+
+	}
+
+	public double getPiecewiseTargetLoss() {
+		return piecewiseTargetLoss;
+	}
 
 	protected CompressionSettings(double samplingRatio, double samplePower, boolean allowSharedDictionary,
 		String transposeInput, int seed, boolean lossy, EnumSet<CompressionType> validCompressions,
@@ -161,7 +177,7 @@ public class CompressionSettings {
 		this.sdcSortType = sdcSortType;
 		this.scaleFactors = scaleFactors;
 		this.preferDeltaEncoding = preferDeltaEncoding;
-		
+
 		if(!printedStatus && LOG.isDebugEnabled()) {
 			printedStatus = true;
 			LOG.debug(this.toString());

@@ -42,7 +42,10 @@ import org.apache.sysds.test.TestUtils;
 public class SparseBlockIterator extends AutomatedTestBase {
 	private final static int rows = 324;
 	private final static int cols = 100;
-	private final static int rlPartial = 134;
+	private final static int rlVal = 134;
+	private final static int ruVal = 253;
+	private final static int clVal = 34;
+	private final static int cuVal = 53;
 	private final static double sparsity1 = 0.1;
 	private final static double sparsity2 = 0.2;
 	private final static double sparsity3 = 0.3;
@@ -54,187 +57,367 @@ public class SparseBlockIterator extends AutomatedTestBase {
 
 	@Test
 	public void testSparseBlockMCSR1Full() {
-		runSparseBlockIteratorTest(SparseBlock.Type.MCSR, sparsity1, false);
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSR, sparsity1, false, false);
 	}
 
 	@Test
 	public void testSparseBlockMCSR2Full() {
-		runSparseBlockIteratorTest(SparseBlock.Type.MCSR, sparsity2, false);
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSR, sparsity2, false, false);
 	}
 
 	@Test
 	public void testSparseBlockMCSR3Full() {
-		runSparseBlockIteratorTest(SparseBlock.Type.MCSR, sparsity3, false);
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSR, sparsity3, false, false);
+	}
+
+	@Test
+	public void testSparseBlockMCSR1RlPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSR, sparsity1, true, false);
+	}
+
+	@Test
+	public void testSparseBlockMCSR2RlPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSR, sparsity2, true, false);
+	}
+
+	@Test
+	public void testSparseBlockMCSR3RlPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSR, sparsity3, true, false);
+	}
+
+	@Test
+	public void testSparseBlockMCSR1RuPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSR, sparsity1, false, true);
+	}
+
+	@Test
+	public void testSparseBlockMCSR2RuPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSR, sparsity2, false, true);
+	}
+
+	@Test
+	public void testSparseBlockMCSR3RuPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSR, sparsity3, false, true);
 	}
 
 	@Test
 	public void testSparseBlockMCSR1Partial() {
-		runSparseBlockIteratorTest(SparseBlock.Type.MCSR, sparsity1, true);
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSR, sparsity1, true, true);
 	}
 
 	@Test
 	public void testSparseBlockMCSR2Partial() {
-		runSparseBlockIteratorTest(SparseBlock.Type.MCSR, sparsity2, true);
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSR, sparsity2, true, true);
 	}
 
 	@Test
 	public void testSparseBlockMCSR3Partial() {
-		runSparseBlockIteratorTest(SparseBlock.Type.MCSR, sparsity3, true);
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSR, sparsity3, true, true);
 	}
 
 	@Test
 	public void testSparseBlockCSR1Full() {
-		runSparseBlockIteratorTest(SparseBlock.Type.CSR, sparsity1, false);
+		runSparseBlockIteratorTest(SparseBlock.Type.CSR, sparsity1, false, false);
 	}
 
 	@Test
 	public void testSparseBlockCSR2Full() {
-		runSparseBlockIteratorTest(SparseBlock.Type.CSR, sparsity2, false);
+		runSparseBlockIteratorTest(SparseBlock.Type.CSR, sparsity2, false, false);
 	}
 
 	@Test
 	public void testSparseBlockCSR3Full() {
-		runSparseBlockIteratorTest(SparseBlock.Type.CSR, sparsity3, false);
+		runSparseBlockIteratorTest(SparseBlock.Type.CSR, sparsity3, false, false);
+	}
+
+	@Test
+	public void testSparseBlockCSR1RlPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.CSR, sparsity1, true, false);
+	}
+
+	@Test
+	public void testSparseBlockCSR2RlPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.CSR, sparsity2, true, false);
+	}
+
+	@Test
+	public void testSparseBlockCSR3RlPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.CSR, sparsity3, true, false);
+	}
+
+	@Test
+	public void testSparseBlockCSR1RuPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.CSR, sparsity1, false, true);
+	}
+
+	@Test
+	public void testSparseBlockCSR2RuPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.CSR, sparsity2, false, true);
+	}
+
+	@Test
+	public void testSparseBlockCSR3RuPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.CSR, sparsity3, false, true);
 	}
 
 	@Test
 	public void testSparseBlockCSR1Partial() {
-		runSparseBlockIteratorTest(SparseBlock.Type.CSR, sparsity1, true);
+		runSparseBlockIteratorTest(SparseBlock.Type.CSR, sparsity1, true, true);
 	}
 
 	@Test
 	public void testSparseBlockCSR2Partial() {
-		runSparseBlockIteratorTest(SparseBlock.Type.CSR, sparsity2, true);
+		runSparseBlockIteratorTest(SparseBlock.Type.CSR, sparsity2, true, true);
 	}
 
 	@Test
 	public void testSparseBlockCSR3Partial() {
-		runSparseBlockIteratorTest(SparseBlock.Type.CSR, sparsity3, true);
+		runSparseBlockIteratorTest(SparseBlock.Type.CSR, sparsity3, true, true);
 	}
 
 	@Test
 	public void testSparseBlockCOO1Full() {
-		runSparseBlockIteratorTest(SparseBlock.Type.COO, sparsity1, false);
+		runSparseBlockIteratorTest(SparseBlock.Type.COO, sparsity1, false, false);
 	}
 
 	@Test
 	public void testSparseBlockCOO2Full() {
-		runSparseBlockIteratorTest(SparseBlock.Type.COO, sparsity2, false);
+		runSparseBlockIteratorTest(SparseBlock.Type.COO, sparsity2, false, false);
 	}
 
 	@Test
 	public void testSparseBlockCOO3Full() {
-		runSparseBlockIteratorTest(SparseBlock.Type.COO, sparsity3, false);
+		runSparseBlockIteratorTest(SparseBlock.Type.COO, sparsity3, false, false);
+	}
+
+	@Test
+	public void testSparseBlockCOO1RlPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.COO, sparsity1, true, false);
+	}
+
+	@Test
+	public void testSparseBlockCOO2RlPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.COO, sparsity2, true, false);
+	}
+
+	@Test
+	public void testSparseBlockCOO3RlPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.COO, sparsity3, true, false);
+	}
+
+	@Test
+	public void testSparseBlockCOO1RuPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.COO, sparsity1, false, true);
+	}
+
+	@Test
+	public void testSparseBlockCOO2RuPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.COO, sparsity2, false, true);
+	}
+
+	@Test
+	public void testSparseBlockCOO3RuPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.COO, sparsity3, false, true);
 	}
 
 	@Test
 	public void testSparseBlockCOO1Partial() {
-		runSparseBlockIteratorTest(SparseBlock.Type.COO, sparsity1, true);
+		runSparseBlockIteratorTest(SparseBlock.Type.COO, sparsity1, true, true);
 	}
 
 	@Test
 	public void testSparseBlockCOO2Partial() {
-		runSparseBlockIteratorTest(SparseBlock.Type.COO, sparsity2, true);
+		runSparseBlockIteratorTest(SparseBlock.Type.COO, sparsity2, true, true);
 	}
 
 	@Test
 	public void testSparseBlockCOO3Partial() {
-		runSparseBlockIteratorTest(SparseBlock.Type.COO, sparsity3, true);
+		runSparseBlockIteratorTest(SparseBlock.Type.COO, sparsity3, true, true);
 	}
 
 	@Test
 	public void testSparseBlockDCSR1Full() {
-		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity1, false);
+		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity1, false, false);
 	}
 
 	@Test
 	public void testSparseBlockDCSR2Full() {
-		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity2, false);
+		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity2, false, false);
 	}
 
 	@Test
 	public void testSparseBlockDCSR3Full() {
-		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity3, false);
+		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity3, false, false);
+	}
+
+	@Test
+	public void testSparseBlockDCSR1RlPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity1, true, false);
+	}
+
+	@Test
+	public void testSparseBlockDCSR2RlPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity2, true, false);
+	}
+
+	@Test
+	public void testSparseBlockDCSR3RlPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity3, true, false);
+	}
+
+	@Test
+	public void testSparseBlockDCSR1RuPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity1, false, true);
+	}
+
+	@Test
+	public void testSparseBlockDCSR2RuPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity2, false, true);
+	}
+
+	@Test
+	public void testSparseBlockDCSR3RuPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity3, false, true);
 	}
 
 	@Test
 	public void testSparseBlockDCSR1Partial() {
-		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity1, true);
+		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity1, true, true);
 	}
 
 	@Test
 	public void testSparseBlockDCSR2Partial() {
-		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity2, true);
+		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity2, true, true);
 	}
 
 	@Test
 	public void testSparseBlockDCSR3Partial() {
-		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity3, true);
+		runSparseBlockIteratorTest(SparseBlock.Type.DCSR, sparsity3, true, true);
 	}
 
 	@Test
 	public void testSparseBlockMCSC1Full() {
-		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity1, false);
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity1, false, false);
 	}
 
 	@Test
 	public void testSparseBlockMCSC2Full() {
-		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity2, false);
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity2, false, false);
 	}
 
 	@Test
 	public void testSparseBlockMCSC3Full() {
-		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity3, false);
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity3, false, false);
+	}
+
+	@Test
+	public void testSparseBlockMCSC1RlPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity1, true, false);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2RlPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity2, true, false);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3RlPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity3, true, false);
+	}
+
+	@Test
+	public void testSparseBlockMCSC1RuPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity1, false, true);
+	}
+
+	@Test
+	public void testSparseBlockMCSC2RuPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity2, false, true);
+	}
+
+	@Test
+	public void testSparseBlockMCSC3RuPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity3, false, true);
 	}
 
 	@Test
 	public void testSparseBlockMCSC1Partial() {
-		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity1, true);
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity1, true, true);
 	}
 
 	@Test
 	public void testSparseBlockMCSC2Partial() {
-		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity2, true);
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity2, true, true);
 	}
 
 	@Test
 	public void testSparseBlockMCSC3Partial() {
-		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity3, true);
+		runSparseBlockIteratorTest(SparseBlock.Type.MCSC, sparsity3, true, true);
 	}
 
 	@Test
 	public void testSparseBlockCSC1Full() {
-		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity1, false);
+		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity1, false, false);
 	}
 
 	@Test
 	public void testSparseBlockCSC2Full() {
-		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity2, false);
+		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity2, false, false);
 	}
 
 	@Test
 	public void testSparseBlockCSC3Full() {
-		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity3, false);
+		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity3, false, false);
+	}
+
+	@Test
+	public void testSparseBlockCSC1RlPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity1, true, false);
+	}
+
+	@Test
+	public void testSparseBlockCSC2RlPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity2, true, false);
+	}
+
+	@Test
+	public void testSparseBlockCSC3RlPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity3, true, false);
+	}
+
+	@Test
+	public void testSparseBlockCSC1RuPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity1, false, true);
+	}
+
+	@Test
+	public void testSparseBlockCSC2RuPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity2, false, true);
+	}
+
+	@Test
+	public void testSparseBlockCSC3RuPartial() {
+		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity3, false, true);
 	}
 
 	@Test
 	public void testSparseBlockCSC1Partial() {
-		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity1, true);
+		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity1, true, true);
 	}
 
 	@Test
 	public void testSparseBlockCSC2Partial() {
-		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity2, true);
+		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity2, true, true);
 	}
 
 	@Test
 	public void testSparseBlockCSC3Partial() {
-		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity3, true);
+		runSparseBlockIteratorTest(SparseBlock.Type.CSC, sparsity3, true, true);
 	}
 
 
 
-	private void runSparseBlockIteratorTest(SparseBlock.Type btype, double sparsity, boolean partial) {
+	private void runSparseBlockIteratorTest(SparseBlock.Type btype, double sparsity, boolean rlPartial, boolean ruPartial) {
 		try {
 			//data generation
 			double[][] A = getRandomMatrix(rows, cols, -10, 10, sparsity, 8765432);
@@ -247,25 +430,34 @@ public class SparseBlockIterator extends AutomatedTestBase {
 			//check for correct number of non-zeros
 			int[] rnnz = new int[rows];
 			int nnz = 0;
-			int rl = partial ? rlPartial : 0;
-			for(int i = rl; i < rows; i++) {
-				for(int j = 0; j < cols; j++)
+			int rl = rlPartial ? rlVal : 0;
+			int ru = ruPartial ? ruVal : rows;
+			int cl = rlPartial && ruPartial ? clVal : 0;
+			int cu = rlPartial && ruPartial ? cuVal : cols;
+			for(int i = rl; i < ru; i++) {
+				for(int j = cl; j < cu; j++)
 					rnnz[i] += (A[i][j] != 0) ? 1 : 0;
 				nnz += rnnz[i];
 			}
-			if(!partial && nnz != sblock.size())
+			if(!rlPartial && !ruPartial && nnz != sblock.size()) // no restriction
 				Assert.fail("Wrong number of non-zeros: " + sblock.size() + ", expected: " + nnz);
 
 			//check correct isEmpty return
-			for(int i = rl; i < rows; i++)
-				if(sblock.isEmpty(i) != (rnnz[i] == 0))
-					Assert.fail("Wrong isEmpty(row) result for row nnz: " + rnnz[i]);
+			if(!(rlPartial && ruPartial)) { // cols not restricted
+				for(int i = rl; i < ru; i++)
+					if(sblock.isEmpty(i) != (rnnz[i] == 0))
+						Assert.fail("Wrong isEmpty(row) result for row nnz: " + rnnz[i]);
+			}
 
 			//check correct values	
-			Iterator<IJV> iter = !partial ? sblock.getIterator() : sblock.getIterator(rl, rows);
+			Iterator<IJV> iter = rlPartial && ruPartial ? sblock.getIterator(rl, ru, cl, cu): rlPartial? sblock.getIterator(rl, rows) : ruPartial? sblock.getIterator(ru) : sblock.getIterator();
 			int count = 0;
 			while(iter.hasNext()) {
 				IJV cell = iter.next();
+				if(cell.getI() < rl || cell.getI() >= ru)
+					Assert.fail("iterator row outside of range");
+				if(cell.getJ() < cl || cell.getJ() >= cu)
+					Assert.fail("iterator column outside of range");
 				if(cell.getV() != A[cell.getI()][cell.getJ()])
 					Assert.fail("Wrong value returned by iterator: " + cell.getV() + ", expected: " +
 						A[cell.getI()][cell.getJ()]);
@@ -277,11 +469,9 @@ public class SparseBlockIterator extends AutomatedTestBase {
 			// check iterator over non-zero rows
 			List<Integer> manualNonZeroRows = new ArrayList<>();
 			List<Integer> iteratorNonZeroRows = new ArrayList<>();
-			Iterator<Integer> iterRows = !partial
-				? sblock.getNonEmptyRowsIterator(0, rows)
-				: sblock.getNonEmptyRowsIterator(rl, rows);
+			Iterator<Integer> iterRows = sblock.getNonEmptyRowsIterator(rl, ru);
 
-			for(int i = rl; i < rows; i++)
+			for(int i = rl; i < ru; i++)
 				if(!sblock.isEmpty(i))
 					manualNonZeroRows.add(i);
 			while(iterRows.hasNext()) {
@@ -293,6 +483,16 @@ public class SparseBlockIterator extends AutomatedTestBase {
 				Assert.fail("Verification of iterator over non-zero rows failed.");
 			}
 
+			// check second iterator over non-zero rows
+			Iterator<Integer> iterRows2 = !rlPartial && !ruPartial? sblock.getNonEmptyRows().iterator() : sblock.getNonEmptyRows(rl, ru).iterator();
+			List<Integer> iter2NonZeroRows = new ArrayList<>();
+
+			while(iterRows2.hasNext()) {
+				iter2NonZeroRows.add(iterRows2.next());
+			}
+			if(!manualNonZeroRows.equals(iter2NonZeroRows)) {
+				Assert.fail("Verification of second iterator over non-zero rows failed.");
+			}
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

@@ -56,12 +56,10 @@ public class FrameBlockConcurrentCopyTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));
 	}
 
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
-                {20}, {50}
-        });
-    }
+	@Parameters
+	public static Collection<Object[]> data() {
+		return Arrays.asList(new Object[][] {{20}, {50}});
+	}
 
 	/**
 	 * Boolean Array Consistency: Verifies that concurrent writes of "All True" or "All False" rows do not result in
@@ -149,18 +147,8 @@ public class FrameBlockConcurrentCopyTest extends AutomatedTestBase {
 	public void testSafeTypesNoSync() {
 		final int ITERATIONS = 20;
 		final int COLS = 5;
-		ValueType[] types = {
-			ValueType.BOOLEAN,
-			ValueType.INT64,
-			ValueType.FP64,
-			ValueType.STRING,
-			ValueType.INT32,
-			ValueType.FP32,
-			ValueType.UINT4,
-			ValueType.CHARACTER,
-			ValueType.HASH32,
-			ValueType.HASH64
-		};
+		ValueType[] types = {ValueType.BOOLEAN, ValueType.INT64, ValueType.FP64, ValueType.STRING, ValueType.INT32,
+			ValueType.FP32, ValueType.UINT4, ValueType.CHARACTER, ValueType.HASH32, ValueType.HASH64};
 
 		for(ValueType type : types) {
 			for(int iter = 0; iter < ITERATIONS; iter++) {
@@ -291,7 +279,7 @@ public class FrameBlockConcurrentCopyTest extends AutomatedTestBase {
 	@Test
 	public void testOptionalArray() {
 		for(int i = 0; i < 10; i++) {
-			System.out.println("--- RUN " + (i+1) + " ---");
+			System.out.println("--- RUN " + (i + 1) + " ---");
 			runOptional();
 		}
 	}
@@ -300,24 +288,24 @@ public class FrameBlockConcurrentCopyTest extends AutomatedTestBase {
 	private void runOptional() {
 		int rows = 50000;
 		ValueType type = ValueType.FP64;
-		FrameBlock target = new FrameBlock(new ValueType[]{type}, rows);
+		FrameBlock target = new FrameBlock(new ValueType[] {type}, rows);
 		target.ensureAllocatedColumns(rows);
 
 		// target (optional array)
 		target.setColumn(0, ArrayFactory.allocateOptional(type, rows));
 
 		// source 1 (non-null)
-		FrameBlock sourceValid = new FrameBlock(new ValueType[]{type}, rows);
+		FrameBlock sourceValid = new FrameBlock(new ValueType[] {type}, rows);
 		sourceValid.ensureAllocatedColumns(rows);
 		Array<?> sCol1 = ArrayFactory.allocateOptional(type, rows);
-		((OptionalArray<Double>)sCol1).fill(1.0d);
+		((OptionalArray<Double>) sCol1).fill(1.0d);
 		sourceValid.setColumn(0, sCol1);
 
 		// source 2 (all null)
-		FrameBlock sourceNull = new FrameBlock(new ValueType[]{type}, rows);
+		FrameBlock sourceNull = new FrameBlock(new ValueType[] {type}, rows);
 		sourceNull.ensureAllocatedColumns(rows);
 		Array<?> sCol2 = ArrayFactory.allocateOptional(type, rows);
-		((OptionalArray<Double>)sCol2).fill((Double) null);
+		((OptionalArray<Double>) sCol2).fill((Double) null);
 		sourceNull.setColumn(0, sCol2);
 
 		CyclicBarrier barrier = new CyclicBarrier(2);
@@ -326,34 +314,50 @@ public class FrameBlockConcurrentCopyTest extends AutomatedTestBase {
 		Thread t1 = new Thread(() -> {
 			try {
 				barrier.await();
-				target.copy(1, rows-1, 0, 0, sourceValid);
-			} catch (Exception e) { e.printStackTrace(); errors.incrementAndGet(); }
+				target.copy(1, rows - 1, 0, 0, sourceValid);
+			}
+			catch(Exception e) {
+				e.printStackTrace();
+				errors.incrementAndGet();
+			}
 		});
 
 		Thread t2 = new Thread(() -> {
 			try {
 				barrier.await();
-				target.copy(1, rows-1, 0, 0, sourceNull);
-			} catch (Exception e) { e.printStackTrace(); errors.incrementAndGet(); }
+				target.copy(1, rows - 1, 0, 0, sourceNull);
+			}
+			catch(Exception e) {
+				e.printStackTrace();
+				errors.incrementAndGet();
+			}
 		});
 
-		t1.start(); t2.start();
-		try { t1.join(); t2.join(); } catch (InterruptedException e) {}
+		t1.start();
+		t2.start();
+		try {
+			t1.join();
+			t2.join();
+		}
+		catch(InterruptedException e) {
+		}
 
 		int validCount = 0;
 		int nullCount = 0;
 
 		for(int r = 1; r < rows; r++) {
-			if(target.get(r, 0) == null) nullCount++;
-			else validCount++;
+			if(target.get(r, 0) == null)
+				nullCount++;
+			else
+				validCount++;
 		}
 
 		System.out.println("Valid: " + validCount + ", Null: " + nullCount);
 
-		if (validCount > 0 && nullCount > 0) {
-			Assert.fail("Race condition OptionalArray:\n" +
-				"Thread 1 (non-null) and Thread 2 (null) mixed instructions!\n" +
-				"Result: " + validCount + " valid, " + nullCount + " null.");
+		if(validCount > 0 && nullCount > 0) {
+			Assert.fail(
+				"Race condition OptionalArray:\n" + "Thread 1 (non-null) and Thread 2 (null) mixed instructions!\n" +
+					"Result: " + validCount + " valid, " + nullCount + " null.");
 		}
 	}
 
@@ -363,7 +367,7 @@ public class FrameBlockConcurrentCopyTest extends AutomatedTestBase {
 	@Test
 	public void testBitSetArray() {
 		for(int i = 0; i < 20; i++) {
-			System.out.println("--- BitSet RUN " + (i+1) + " ---");
+			System.out.println("--- BitSet RUN " + (i + 1) + " ---");
 			runBitSet();
 		}
 	}
@@ -371,25 +375,27 @@ public class FrameBlockConcurrentCopyTest extends AutomatedTestBase {
 	private void runBitSet() {
 		int rows = 50000;
 		ValueType type = ValueType.BOOLEAN;
-		FrameBlock target = new FrameBlock(new ValueType[]{type}, rows);
+		FrameBlock target = new FrameBlock(new ValueType[] {type}, rows);
 		target.ensureAllocatedColumns(rows);
 		// initialize false
 		target.setColumn(0, ArrayFactory.allocate(type, rows));
 
 		// Source 1 (all true)
-		FrameBlock sourceTrue = new FrameBlock(new ValueType[]{type}, rows);
+		FrameBlock sourceTrue = new FrameBlock(new ValueType[] {type}, rows);
 		sourceTrue.ensureAllocatedColumns(rows);
 		Array<?> sCol1 = ArrayFactory.allocate(type, rows);
 		// Fill with TRUE
-		for(int k=0; k<rows; k++) sCol1.set(k, String.valueOf(true));
+		for(int k = 0; k < rows; k++)
+			sCol1.set(k, String.valueOf(true));
 		sourceTrue.setColumn(0, sCol1);
 
 		// Source 2 (all false)
-		FrameBlock sourceFalse = new FrameBlock(new ValueType[]{type}, rows);
+		FrameBlock sourceFalse = new FrameBlock(new ValueType[] {type}, rows);
 		sourceFalse.ensureAllocatedColumns(rows);
 		Array<?> sCol2 = ArrayFactory.allocate(type, rows);
 		// fill with false
-		for(int k=0; k<rows; k++) sCol2.set(k, String.valueOf(false));
+		for(int k = 0; k < rows; k++)
+			sCol2.set(k, String.valueOf(false));
 		sourceFalse.setColumn(0, sCol2);
 
 		CyclicBarrier barrier = new CyclicBarrier(2);
@@ -398,19 +404,33 @@ public class FrameBlockConcurrentCopyTest extends AutomatedTestBase {
 		Thread t1 = new Thread(() -> {
 			try {
 				barrier.await();
-				target.copy(1, rows-1, 0, 0, sourceTrue);
-			} catch (Exception e) { e.printStackTrace(); errors.incrementAndGet(); }
+				target.copy(1, rows - 1, 0, 0, sourceTrue);
+			}
+			catch(Exception e) {
+				e.printStackTrace();
+				errors.incrementAndGet();
+			}
 		});
 
 		Thread t2 = new Thread(() -> {
 			try {
 				barrier.await();
-				target.copy(1, rows-1, 0, 0, sourceFalse);
-			} catch (Exception e) { e.printStackTrace(); errors.incrementAndGet(); }
+				target.copy(1, rows - 1, 0, 0, sourceFalse);
+			}
+			catch(Exception e) {
+				e.printStackTrace();
+				errors.incrementAndGet();
+			}
 		});
 
-		t1.start(); t2.start();
-		try { t1.join(); t2.join(); } catch (InterruptedException e) {}
+		t1.start();
+		t2.start();
+		try {
+			t1.join();
+			t2.join();
+		}
+		catch(InterruptedException e) {
+		}
 
 		// Verification
 		int trueCount = 0;
@@ -418,32 +438,56 @@ public class FrameBlockConcurrentCopyTest extends AutomatedTestBase {
 
 		for(int r = 3; r < rows; r++) {
 			Boolean val = (Boolean) target.get(r, 0);
-			if(val != null && val) trueCount++;
-			else falseCount++;
+			if(val != null && val)
+				trueCount++;
+			else
+				falseCount++;
 		}
 
 		System.out.println("True: " + trueCount + ", False: " + falseCount);
 
-		if (trueCount > 0 && falseCount > 0) {
-			Assert.fail("Race condition in BitSetArray:\n" +
-				"Thread True and Thread False mixed instructions!\n" +
-				"Result: " + trueCount + " True, " + falseCount + " False.");
+		if(trueCount > 0 && falseCount > 0) {
+			Assert.fail(
+				"Race condition in BitSetArray:\n" + "Thread True and Thread False mixed instructions!\n" + "Result: " +
+					trueCount + " True, " + falseCount + " False.");
 		}
 	}
 
 	private void initializeCell(FrameBlock fb, int row, int col, ValueType type, int seed) {
 		switch(type) {
-			case BOOLEAN: fb.set(row, col, (seed % 2 == 0)); break;
-			case INT32:   fb.set(row, col, seed); break;
-			case INT64:   fb.set(row, col, (long) seed); break;
-			case FP32:    fb.set(row, col, (float) seed); break;
-			case FP64:    fb.set(row, col, (double) seed); break;
-			case UINT8:   fb.set(row, col, (int) (seed % 127)); break;
-			case UINT4:   fb.set(row, col, (int) (seed % 15)); break;
-			case CHARACTER: fb.set(row, col, (char) ('a' + (seed % 26))); break;
-			case STRING:  fb.set(row, col, "v" + seed); break;
-			case HASH32:  fb.set(row, col, seed); break;
-			case HASH64:  fb.set(row, col, (long) seed); break;
+			case BOOLEAN:
+				fb.set(row, col, (seed % 2 == 0));
+				break;
+			case INT32:
+				fb.set(row, col, seed);
+				break;
+			case INT64:
+				fb.set(row, col, (long) seed);
+				break;
+			case FP32:
+				fb.set(row, col, (float) seed);
+				break;
+			case FP64:
+				fb.set(row, col, (double) seed);
+				break;
+			case UINT8:
+				fb.set(row, col, (int) (seed % 127));
+				break;
+			case UINT4:
+				fb.set(row, col, (int) (seed % 15));
+				break;
+			case CHARACTER:
+				fb.set(row, col, (char) ('a' + (seed % 26)));
+				break;
+			case STRING:
+				fb.set(row, col, "v" + seed);
+				break;
+			case HASH32:
+				fb.set(row, col, seed);
+				break;
+			case HASH64:
+				fb.set(row, col, (long) seed);
+				break;
 			default:
 				fb.set(row, col, String.valueOf(seed));
 		}
@@ -452,15 +496,32 @@ public class FrameBlockConcurrentCopyTest extends AutomatedTestBase {
 	private void verifyCell(Object val, ValueType type, int expectedSeed) {
 		Assert.assertNotNull("Value should not be null", val);
 		switch(type) {
-			case INT32:   Assert.assertEquals((int)expectedSeed, ((Integer)val).intValue()); break;
-			case INT64:   Assert.assertEquals((long)expectedSeed, ((Long)val).longValue()); break;
-			case FP32:    Assert.assertEquals((float)expectedSeed, ((Float)val).floatValue(), 0.0001); break;
-			case FP64:    Assert.assertEquals((double)expectedSeed, ((Double)val).doubleValue(), 0.0001); break;
-			case UINT8:   Assert.assertEquals((int)(expectedSeed % 127), ((Integer)val).intValue()); break;
-			case CHARACTER: Assert.assertEquals((char)('a' + (expectedSeed%26)), ((Character)val).charValue()); break;
-			case STRING:  Assert.assertEquals("v" + expectedSeed, val); break;
-			case BOOLEAN: Assert.assertEquals((expectedSeed % 2 == 0), val); break;
-			default: break;
+			case INT32:
+				Assert.assertEquals((int) expectedSeed, ((Integer) val).intValue());
+				break;
+			case INT64:
+				Assert.assertEquals((long) expectedSeed, ((Long) val).longValue());
+				break;
+			case FP32:
+				Assert.assertEquals((float) expectedSeed, ((Float) val).floatValue(), 0.0001);
+				break;
+			case FP64:
+				Assert.assertEquals((double) expectedSeed, ((Double) val).doubleValue(), 0.0001);
+				break;
+			case UINT8:
+				Assert.assertEquals((int) (expectedSeed % 127), ((Integer) val).intValue());
+				break;
+			case CHARACTER:
+				Assert.assertEquals((char) ('a' + (expectedSeed % 26)), ((Character) val).charValue());
+				break;
+			case STRING:
+				Assert.assertEquals("v" + expectedSeed, val);
+				break;
+			case BOOLEAN:
+				Assert.assertEquals((expectedSeed % 2 == 0), val);
+				break;
+			default:
+				break;
 		}
 	}
 }

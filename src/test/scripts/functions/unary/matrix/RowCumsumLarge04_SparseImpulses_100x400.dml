@@ -1,0 +1,53 @@
+# Test-specific focus:
+#   Sparse-like structure with isolated non-zero impulses.
+#
+# Why this matters:
+#   In sparse or near-sparse matrices, incorrect carry handling often
+#   manifests as:
+#     - Sudden jumps
+#     - Missing propagation after zero blocks
+#
+# Matrix construction:
+#   - Mostly zeros
+#   - Deterministic impulses at known columns and rows
+#
+# Expected behavior:
+#   Cumulative sum should only change at impulse locations and remain
+#   constant elsewhere.
+#
+# Output:
+#   Writes TRUE/FALSE to $1
+#
+# NOTE:
+# - Do NOT call setExecMode() here. Exec mode is controlled by CLI: -exec spark
+
+n = 100; m = 400;
+X = matrix(0, n, m);
+
+# Put impulses in a deterministic way
+# Row 1: spikes of +10 every 50 columns
+for (j in 1:m) {
+  if (j %% 50 == 0) {
+    X[1, j] = 10;
+  }
+}
+
+# Row 50: ramp in first 100 columns (1..100)
+for (j in 1:100) {
+  X[50, j] = j;
+}
+
+# Row-wise cumulative sum (must be supported by your implementation)
+Y = rowcumsum(X);
+
+# Expected via explicit sequential loop over columns
+E = matrix(0, n, m);
+E[, 1] = X[, 1];
+for (j in 2:m) {
+  E[, j] = E[, j-1] + X[, j];
+}
+
+err  = max(abs(Y - E));
+pass = (err < 1e-9);
+
+write(pass, $1);

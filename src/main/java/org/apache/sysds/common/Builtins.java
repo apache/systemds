@@ -265,6 +265,8 @@ public enum Builtins {
 	OUTLIER_ARIMA("outlierByArima",true),
 	OUTLIER_IQR("outlierByIQR", true),
 	OUTLIER_IQR_APPLY("outlierByIQRApply", true),
+	OUTLIER_ISOLATION_FOREST("outlierByIsolationForest", true),
+	OUTLIER_ISOLATION_FOREST_APPLY("outlierByIsolationForestApply", true),
 	OUTLIER_SD("outlierBySd", true),
 	OUTLIER_SD_APPLY("outlierBySdApply", true),
 	PAGERANK("pageRank", true),

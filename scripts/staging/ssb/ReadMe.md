@@ -23,16 +23,16 @@
 ssb/
 ├── docker-compose.yaml             # Compose file for Docker containers (here for PostgreSQL)
 ├── Dockerfile
-├── README.md                        # This explanation
-├── queries/                         # DML queries (q1_1.dml ... q4_3.dml)
+├── other                           # Some other files (necessary)
+├── README.md                       # This explanation
+├── queries/                        # DML queries (q1_1.dml ... q4_3.dml)
 │   ├── q1_1.dml - q1_3.dml          
 │   ├── q2_1.dml - q2_3.dml          
 │   ├── q3_1.dml - q3_4.dml          
 │   └── q4_1.dml - q4_3.dml          
 ├── shell/
-│   ├── run_script.sh                # Main script
-└── sql/                             # SQL versions & `test_ssb.duckdb` for DuckDB
-```
+│   ├── run_script.sh               # Main script
+└── (sql/                           # SQL versions)
 ## Setup
 - First, install [Docker](https://docs.docker.com/get-started/get-docker/), [Docker Compose](https://docs.docker.com/compose/install/) and its necessary libraries. The script does not cover Docker installation.
   

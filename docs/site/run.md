@@ -21,58 +21,70 @@ limitations under the License.
 {% endcomment %}
 -->
 
-If you want to execute from source code follow the [Install from source](install) guide first.
+# Running SystemDS
 
-## Setting SYSTEMDS_ROOT environment variable
+This guide explains how to run SystemDS regardless of whether you installed it from a Release or built it from Source. All execution modes -local, Spark, and federated- are covered in this document.
 
-In order to run SystemDS it is highly recommended to setup SystemDS root on path.
-This works both from your development directory containing source code and if
-you download a release of SystemDS.
+---
 
-The following example works if you open an terminal at the root of the downloaded release,
-or a cloned repository. (You can also change the `$(pwd)` with the full path to the folder.)
+- [1. Prerequisites](#1-prerequisites)
+- [2. Run a Simple Script Locally](#2-run-a-simple-script-locally)
+- [3. Run a Script on Spark](#3-run-a-script-on-spark)
+- [4. Run a Script in Federated Mode](#4-run-a-script-in-federated-mode)
+
+---
+
+# 1. Prerequisites
+
+This guide assumes that SystemDS has already been installed successfully.
+
+Please make sure you have followed one of the installation guides:
+- [Install SystemDS from a Release](release_install.html)
+- [Install SystemDS from Source](source_install.html)
+
+In particular, ensure that:
+- Java 17 is installed
+- Spark 3.x is available if you plan to run SystemDS on Spark
+- SystemDS is installed following the Release or Source installation guide
+- Required environment variables (`SYSTEMDS_ROOT`, `PATH`, and if applicable `SYSTEMDS_JAR_FILE`) are set
+---
+
+# 2. Run a Simple Script Locally
+
+This mode does not require Spark. It only needs Java 17.
+
+### 2.1 Create and Run a Hello World
 
 ```bash
-export SYSTEMDS_ROOT=$(pwd)
-export PATH=$SYSTEMDS_ROOT/bin:$PATH
-```
-
-It can be beneficial to enter these into your `~/.profile` or `~/.bashrc` for linux,
-(but remember to change `$(pwd` to the full folder path)
-or your environment variables in windows to enable reuse between terminals and restarts.
-
-```bash
-echo 'export SYSTEMDS_ROOT='$(pwd) >> ~/.bashrc
-echo 'export PATH=$SYSTEMDS_ROOT/bin:$PATH' >> ~/.bashrc
-```
-
-## Hello, World! example
-
-To quickly verify that the system is setup correctly.
-You can run a simple hello world, using the launch script.
-
-Open an terminal and go to an empty folder, then execute the following.
-
-```bash
-# Create a hello World script
 echo 'print("Hello, World!")' > hello.dml
-# Execute hello world Script
-systemds hello.dml
-# Remove the hello.dml
-rm hello.dml
 ```
 
+Run:
+```bash
+systemds hello.dml
+```
+
+Expected output:
+```bash
+Hello, World!
+```
+
+### (Optional) MacOS Note: `realpath: illegal option -- -` Error
 If you are running MacOS and encounter an error message similar to `realpath: illegal option -- -` when executing `systemds hello.dml`. You may try to replace the system-wide command `realpath` with the homebrew version `grealpath` that comes with the `coreutils`. Alternatively, you may change all occurrences within the script accordingly, i.e., by prepending a `g` to avoid any side effects.
 
-## Running a real first example
+### (Optional) Ubuntu Note: `Invalid or corrupt jarfile hello.dml`
+On some Ubuntu setups (especially clean environments such as Docker images), running `systemds -f hello.dml` may result in an error like `Invalid or corrupt jarfile hello.dml`. If this happens, the SystemDS launcher may not automatically locate the correct JAR. To fix this, export `SYSTEMDS_JAR_FILE` to point to the JAR shipped with the release. Please refer to the Ubuntu troubleshooting section in the installation guide for a detailed workaround: [Release Installation – Ubuntu Note](release_install.html#35-run-the-script)
 
-To see SystemDS in action a simple example using the `Univar-stats.dml`
-script can be executed.
-The relevant commands to run this example with SystemDS is described in the DML Language reference guide at [link](dml-language-reference.html).
-See their documentation for further details.  
+### (Optional) Windows Note: `systemds` Command Not Found
+On Windows (e.g., PowerShell), running `systemds -f hello.dml` may fail with an error indicating that `systemds` is not recognized as a command. This is expected, since the `systemds` launcher in `bin/` is implemented as a shell script,
+which cannot be executed natively on Windows. In this case, SystemDS should be invoked directly via the runnable JAR using `java -jar`. For a detailed Windows-specific walkthrough, please refer to the installation guide: [Release Installation – Windows Notes](release_install.html#2-install-on-windows)
 
-### Example preparations
 
+### 2.2 Create a Real Example
+
+This example demonstrates local execution of a real script `Univar-stats.dml`. The relevant commands to run this example with SystemDS is described in the DML Language reference guide at [DML Language Reference](dml-language-reference.html).
+
+Prepare the data (macOS: use `curl`instead of `wget`):
 ```bash
 # download test data
 wget -P data/ http://archive.ics.uci.edu/ml/machine-learning-databases/haberman/haberman.data
@@ -85,16 +97,168 @@ echo '1,1,1,2' > data/types.csv
 echo '{"rows": 1, "cols": 4, "format": "csv"}' > data/types.csv.mtd
 ```
 
-### Executing the DML script
-
-```shell script
-bin/systemds Univar-Stats.dml -nvargs X=data/haberman.data TYPES=data/types.csv STATS=data/univarOut.mtx CONSOLE_OUTPUT=TRUE
+Execute the DML Script:
+```bash
+systemds "$SYSTEMDS_ROOT/scripts/algorithms/Univar-Stats.dml" -nvargs \
+  X=data/haberman.data \
+  TYPES=data/types.csv \
+  STATS=data/univarOut.mtx \
+  CONSOLE_OUTPUT=TRUE
 ```
 
-## Using Intel MKL native instructions
+### (Optional) MacOS Note: `SparkException` Error
+If SystemDS tries to initialize Spark and you see `SparkException: A master URL must be set in your configuration`, you can force single-node execution without Spark/Hadoop initialization via:
+```bash
+systemds -exec singlenode scripts/algorithms/Univar-Stats.dml -nvargs \
+  X=data/haberman.data \
+  TYPES=data/types.csv \
+  STATS=data/univarOut.mtx \
+  CONSOLE_OUTPUT=TRUE
+```
+
+### 2.3 Run the Real Example
+
+The script computes basic statistics (min, max, variance, skewness, etc) for each column of a dataset. Expected output (example):
+```bash
+-------------------------------------------------
+Feature [1]: Scale
+ (01) Minimum             | 30.0
+ (02) Maximum             | 83.0
+ (03) Range               | 53.0
+ (04) Mean                | 52.45751633986928
+ (05) Variance            | 116.71458266366658
+ (06) Std deviation       | 10.803452349303281
+ (07) Std err of mean     | 0.6175922641866753
+ (08) Coeff of variation  | 0.20594669940735139
+ (09) Skewness            | 0.1450718616532357
+ (10) Kurtosis            | -0.6150152487211726
+ (11) Std err of skewness | 0.13934809593495995
+ (12) Std err of kurtosis | 0.277810485320835
+ (13) Median              | 52.0
+ (14) Interquartile mean  | 52.16013071895425
+-------------------------------------------------
+Feature [2]: Scale
+ (01) Minimum             | 58.0
+ (02) Maximum             | 69.0
+ (03) Range               | 11.0
+ (04) Mean                | 62.85294117647059
+ (05) Variance            | 10.558630665380907
+ (06) Std deviation       | 3.2494046632238507
+ (07) Std err of mean     | 0.18575610076612029
+ (08) Coeff of variation  | 0.051698529971741194
+ (09) Skewness            | 0.07798443581479181
+ (10) Kurtosis            | -1.1324380182967442
+ (11) Std err of skewness | 0.13934809593495995
+ (12) Std err of kurtosis | 0.277810485320835
+ (13) Median              | 63.0
+ (14) Interquartile mean  | 62.80392156862745
+-------------------------------------------------
+Feature [3]: Scale
+ (01) Minimum             | 0.0
+ (02) Maximum             | 52.0
+ (03) Range               | 52.0
+ (04) Mean                | 4.026143790849673
+ (05) Variance            | 51.691117539912135
+ (06) Std deviation       | 7.189653506248555
+ (07) Std err of mean     | 0.41100513466216837
+ (08) Coeff of variation  | 1.7857418611299172
+ (09) Skewness            | 2.954633471088322
+ (10) Kurtosis            | 11.425776549251449
+ (11) Std err of skewness | 0.13934809593495995
+ (12) Std err of kurtosis | 0.277810485320835
+ (13) Median              | 1.0
+ (14) Interquartile mean  | 1.2483660130718954
+-------------------------------------------------
+Feature [4]: Categorical (Nominal)
+ (15) Num of categories   | 2
+ (16) Mode                | 1
+ (17) Num of modes        | 1
+SystemDS Statistics:
+Total execution time:   0,470 sec.
+```
+
+To check the location of output file created:
+```bash
+ls -l data/univarOut.mtx
+```
+
+---
+# 3. Run a Script on Spark
+
+SystemDS can be executed on Spark using the main executable JAR. The location of this JAR differs depending on whether you installed SystemDS from:
+
+- a **Release archive**, or
+- a **Source-build installation** (built with Maven)
+
+### 3.1 Running with a Release installation
+
+If you installed SystemDS from a release archive, locate the runnable JAR in the release root directory. It is typically named like `systemds-<version>.jar`.
+
+Example:
+```bash
+ls -1 "$SYSTEMDS_ROOT"/*.jar
+```
+
+Run:
+```bash
+spark-submit "$SYSTEMDS_ROOT/systemds-<version>.jar" -f hello.dml
+```
+
+### 3.2 Running with a Source-build installation
+
+If you cloned the SystemDS repository and built it yourself, you must first run Maven to generate the executable JAR.
+
+```bash
+mvn -P distribution package
+```
+This creates several JAR files in `target/`:
+
+Example output:
+
+```bash
+target/systemds-3.3.0-shaded.jar
+target/systemds-3.3.0.jar
+target/systemds-3.3.0-unshaded.jar
+target/systemds-3.3.0-extra.jar
+target/SystemDS.jar            <-- main runnable JAR
+target/systemds-3.3.0-ropt.jar
+target/systemds-3.3.0-javadoc.jar
+```
+
+Run:
+```bash
+spark-submit target/SystemDS.jar -f hello.dml
+```
+
+---
+# 4. Run a Script in Federated Mode
+
+Federated mode allows SystemDS to execute operations on data located on remote or distributed workers. Federated execution requires:
+
+1. One or more **federated workers**
+2. A **driver program** (DML or Python) that sends operations to those workers.
+
+Note: The SystemDS documentation provides federated execution examples primarily via the Python API. This Quickstart demonstrates only how to start a federated worker, and refers users to the official Federated Environment guide for complete end-to-end examples.
+
+### 4.1 Start a federated worker
+
+Run in a separate terminal:
+
+```bash
+systemds WORKER 8001
+```
+
+This starts a worker on port `8001`.
+
+### 4.2 Next steps and full examples
+
+For complete, runnable examples of federated execution (including data files, metadata, and Python code), see the official [Federated Environment guide](https://systemds.apache.org/docs/3.3.0/api/python/guide/federated.html)
+
+### Using Intel MKL native instructions
 
 To use the MKL acceleration download and install the latest supported MKL library (<=2019.5) from [1],
 set the environment variables with the MKL-provided script `. /opt/intel/bin/compilervars.sh intel64` (note the dot and
 the default install location) and set the option `sysds.native.blas` in `SystemDS-config.xml` to mkl.
 
 [1]: https://software.intel.com/mkl "Intel Math Kernel Library"
+

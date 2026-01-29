@@ -28,19 +28,17 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.functionobjects.Multiply;
-import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysds.runtime.matrix.data.LibMatrixNative;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(value = Parameterized.class)
-public class MatrixMultiplyTest {
+public class MatrixMultiplyTest extends AutomatedTestBase{
 	protected static final Log LOG = LogFactory.getLog(MatrixMultiplyTest.class.getName());
 
 	// left side
@@ -278,9 +276,16 @@ public class MatrixMultiplyTest {
 	}
 
 	private static MatrixBlock multiply(MatrixBlock a, MatrixBlock b, int k) {
-		AggregateOperator agg = new AggregateOperator(0, Plus.getPlusFnObject());
-		AggregateBinaryOperator mult = new AggregateBinaryOperator(Multiply.getMultiplyFnObject(), agg, k);
-		return a.aggregateBinaryOperations(a, b, mult);
+		MatrixBlock ret = new MatrixBlock();
+		try {
+			LibMatrixNative.matrixMult(a,b,ret,k);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
+		return ret;
 	}
 
+	@Override
+	public void setUp(){}
 }

@@ -159,6 +159,8 @@ from .builtin.outlier import outlier
 from .builtin.outlierByArima import outlierByArima 
 from .builtin.outlierByIQR import outlierByIQR 
 from .builtin.outlierByIQRApply import outlierByIQRApply 
+from .builtin.outlierByIsolationForest import outlierByIsolationForest 
+from .builtin.outlierByIsolationForestApply import outlierByIsolationForestApply 
 from .builtin.outlierBySd import outlierBySd 
 from .builtin.outlierBySdApply import outlierBySdApply 
 from .builtin.pageRank import pageRank 
@@ -358,6 +360,8 @@ __all__ = ['WoE',
  'outlierByArima',
  'outlierByIQR',
  'outlierByIQRApply',
+ 'outlierByIsolationForest',
+ 'outlierByIsolationForestApply',
  'outlierBySd',
  'outlierBySdApply',
  'pageRank',

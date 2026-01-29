@@ -42,7 +42,7 @@ class LSTM(Fusion):
         depth=1,
         dropout_rate=0.1,
         learning_rate=0.001,
-        epochs=50,
+        epochs=20,
         batch_size=32,
     ):
         parameters = {
@@ -50,7 +50,7 @@ class LSTM(Fusion):
             "depth": [1, 2, 3],
             "dropout_rate": [0.1, 0.2, 0.3, 0.4, 0.5],
             "learning_rate": [0.001, 0.0001, 0.01, 0.1],
-            "epochs": [50, 100, 200],
+            "epochs": [10, 2050, 100, 200],
             "batch_size": [8, 16, 32, 64, 128],
         }
 
@@ -70,6 +70,7 @@ class LSTM(Fusion):
         self.num_classes = None
         self.is_trained = False
         self.model_state = None
+        self.is_multilabel = False
 
         self._set_random_seeds()
 
@@ -166,18 +167,32 @@ class LSTM(Fusion):
         X = self._prepare_data(modalities)
         y = np.array(labels)
 
+        if y.ndim == 2 and y.shape[1] > 1:
+            self.is_multilabel = True
+            self.num_classes = y.shape[1]
+        else:
+            self.is_multilabel = False
+            if y.ndim == 2:
+                y = y.ravel()
+            self.num_classes = len(np.unique(y))
+
         self.input_dim = X.shape[2]
-        self.num_classes = len(np.unique(y))
 
         self.model = self._build_model(self.input_dim, self.num_classes)
         device = get_device()
         self.model.to(device)
 
-        criterion = nn.CrossEntropyLoss()
+        if self.is_multilabel:
+            criterion = nn.BCEWithLogitsLoss()
+        else:
+            criterion = nn.CrossEntropyLoss()
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
-        X_tensor = torch.FloatTensor(X).to(device)
-        y_tensor = torch.LongTensor(y).to(device)
+        X_tensor = torch.FloatTensor(X)
+        if self.is_multilabel:
+            y_tensor = torch.FloatTensor(y)
+        else:
+            y_tensor = torch.LongTensor(y)
 
         dataset = TensorDataset(X_tensor, y_tensor)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
@@ -186,6 +201,8 @@ class LSTM(Fusion):
         for epoch in range(self.epochs):
             total_loss = 0
             for batch_X, batch_y in dataloader:
+                batch_X = batch_X.to(device)
+                batch_y = batch_y.to(device)
                 optimizer.zero_grad()
 
                 features, predictions = self.model(batch_X)
@@ -202,15 +219,24 @@ class LSTM(Fusion):
             "state_dict": self.model.state_dict(),
             "input_dim": self.input_dim,
             "num_classes": self.num_classes,
+            "is_multilabel": self.is_multilabel,
             "width": self.width,
             "depth": self.depth,
             "dropout_rate": self.dropout_rate,
         }
 
         self.model.eval()
+        all_features = []
         with torch.no_grad():
-            features, _ = self.model(X_tensor)
-        return features.cpu().numpy()
+            inference_dataloader = DataLoader(
+                TensorDataset(X_tensor), batch_size=self.batch_size, shuffle=False
+            )
+            for (batch_X,) in inference_dataloader:
+                batch_X = batch_X.to(device)
+                features, _ = self.model(batch_X)
+                all_features.append(features.cpu())
+
+        return torch.cat(all_features, dim=0).numpy()
 
     def apply_representation(self, modalities: List[Modality]) -> np.ndarray:
         if not self.is_trained or self.model is None:
@@ -221,13 +247,19 @@ class LSTM(Fusion):
         device = get_device()
         self.model.to(device)
 
-        X_tensor = torch.FloatTensor(X).to(device)
-
+        X_tensor = torch.FloatTensor(X)
+        all_features = []
         self.model.eval()
         with torch.no_grad():
-            features, _ = self.model(X_tensor)
+            inference_dataloader = DataLoader(
+                TensorDataset(X_tensor), batch_size=self.batch_size, shuffle=False
+            )
+            for (batch_X,) in inference_dataloader:
+                batch_X = batch_X.to(device)
+                features, _ = self.model(batch_X)
+                all_features.append(features.cpu())
 
-        return features.cpu().numpy()
+        return torch.cat(all_features, dim=0).numpy()
 
     def get_model_state(self) -> Dict[str, Any]:
         return self.model_state
@@ -236,6 +268,7 @@ class LSTM(Fusion):
         self.model_state = state
         self.input_dim = state["input_dim"]
         self.num_classes = state["num_classes"]
+        self.is_multilabel = state.get("is_multilabel", False)
 
         self.model = self._build_model(self.input_dim, self.num_classes)
         self.model.load_state_dict(state["state_dict"])

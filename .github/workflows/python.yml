@@ -60,7 +60,7 @@ jobs:
     name: ${{ matrix.os }} Java ${{ matrix.java }} ${{ matrix.javadist }} Python ${{ matrix.python-version }}/ ${{ matrix.test_mode}}
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Setup Java ${{ matrix.java }} ${{ matrix.javadist }}
       uses: actions/setup-java@v5
@@ -70,13 +70,13 @@ jobs:
         cache: 'maven'
 
     - name: Cache Pip Dependencies
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('src/main/python/setup.py') }}
 
     - name: Cache Datasets
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           src/main/python/systemds/examples/tutorials/mnist
@@ -84,7 +84,7 @@ jobs:
         key: ${{ runner.os }}-mnist-${{ hashFiles('src/main/python/systemds/examples/tutorials/mnist.py') }}-${{ hashFiles('src/main/python/systemds/examples/tutorials/adult.py') }}
 
     - name: Cache Deb Dependencies
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: /var/cache/apt/archives
         key: ${{ runner.os }}-${{ hashFiles('.github/workflows/python.yml') }}
@@ -142,11 +142,11 @@ jobs:
         export PATH=$SYSTEMDS_ROOT/bin:$PATH
         cd src/main/python
         ./tests/federated/runFedTest.sh
-
+    
     - name: Cache Torch Hub
       if: ${{ matrix.test_mode == 'scuro' }}
       id: torch-cache
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: .torch
         key: ${{ runner.os }}-torch-${{ hashFiles('requirements.txt') }}
@@ -158,6 +158,8 @@ jobs:
       env:
         TORCH_HOME: ${{ github.workspace }}/.torch
       run: |
+        df -h
+        exit
         ( while true; do echo "."; sleep 25; done ) &
         KA=$!
         pip install --upgrade pip wheel setuptools
@@ -172,7 +174,9 @@ jobs:
           gensim \
           opt-einsum \
           nltk \
-          fvcore
+          fvcore \
+          scikit-optimize \
+          flair 
         kill $KA 
         cd src/main/python
         python -m unittest discover -s tests/scuro -p 'test_*.py' -v

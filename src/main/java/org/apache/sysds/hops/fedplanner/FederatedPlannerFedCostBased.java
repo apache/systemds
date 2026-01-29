@@ -64,23 +64,23 @@ public class FederatedPlannerFedCostBased extends AFederatedPlanner {
 	private void rewriteHop(FedPlan optimalPlan, FederatedMemoTable memoTable, Set<Long> visited) {
 		long hopID = optimalPlan.getHopRef().getHopID();
 
-        if (visited.contains(hopID)) {
-            return;
-        } else {
-            visited.add(hopID);
-        }
+		if (visited.contains(hopID)) {
+			return;
+		} else {
+			visited.add(hopID);
+		}
 
-        for (Pair<Long, FEDInstruction.FederatedOutput> childFedPlanPair : optimalPlan.getChildFedPlans()) {
-            FedPlan childPlan = memoTable.getFedPlanAfterPrune(childFedPlanPair);
-            
-            // DEBUG: Check if getFedPlanAfterPrune returns null
-            if (childPlan == null) {
+		for (Pair<Long, FEDInstruction.FederatedOutput> childFedPlanPair : optimalPlan.getChildFedPlans()) {
+			FedPlan childPlan = memoTable.getFedPlanAfterPrune(childFedPlanPair);
+			
+			// DEBUG: Check if getFedPlanAfterPrune returns null
+			if (childPlan == null) {
 				FederatedPlannerLogger.logNullChildPlanDebug(childFedPlanPair, optimalPlan, memoTable);
-                continue;
-            }
-            
+				continue;
+			}
+			
 			rewriteHop(childPlan, memoTable, visited);
-        }
+		}
 
 		if (optimalPlan.getFedOutType() == FEDInstruction.FederatedOutput.LOUT) {
 			optimalPlan.setFederatedOutput(FEDInstruction.FederatedOutput.LOUT);

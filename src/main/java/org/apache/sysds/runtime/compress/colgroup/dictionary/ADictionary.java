@@ -26,7 +26,7 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
-import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
+import org.apache.sysds.runtime.instructions.cp.CmCovObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
@@ -40,16 +40,16 @@ public abstract class ADictionary implements IDictionary, Serializable {
 
 	public abstract IDictionary clone();
 
-	public final CM_COV_Object centralMoment(ValueFunction fn, int[] counts, int nRows) {
-		return centralMoment(new CM_COV_Object(), fn, counts, nRows);
+	public final CmCovObject centralMoment(ValueFunction fn, int[] counts, int nRows) {
+		return centralMoment(new CmCovObject(), fn, counts, nRows);
 	}
 
-	public final CM_COV_Object centralMomentWithDefault(ValueFunction fn, int[] counts, double def, int nRows) {
-		return centralMomentWithDefault(new CM_COV_Object(), fn, counts, def, nRows);
+	public final CmCovObject centralMomentWithDefault(ValueFunction fn, int[] counts, double def, int nRows) {
+		return centralMomentWithDefault(new CmCovObject(), fn, counts, def, nRows);
 	}
 
-	public final CM_COV_Object centralMomentWithReference(ValueFunction fn, int[] counts, double reference, int nRows) {
-		return centralMomentWithReference(new CM_COV_Object(), fn, counts, reference, nRows);
+	public final CmCovObject centralMomentWithReference(ValueFunction fn, int[] counts, double reference, int nRows) {
+		return centralMomentWithReference(new CmCovObject(), fn, counts, reference, nRows);
 	}
 
 	@Override
@@ -144,7 +144,7 @@ public abstract class ADictionary implements IDictionary, Serializable {
 	}
 
 	@Override
-	public CM_COV_Object centralMoment(CM_COV_Object ret, ValueFunction fn, int[] counts, int nRows) {
+	public CmCovObject centralMoment(CmCovObject ret, ValueFunction fn, int[] counts, int nRows) {
 		return getMBDict().centralMoment(ret, fn, counts, nRows);
 	}
 
@@ -154,13 +154,13 @@ public abstract class ADictionary implements IDictionary, Serializable {
 	}
 
 	@Override
-	public CM_COV_Object centralMomentWithDefault(CM_COV_Object ret, ValueFunction fn, int[] counts, double def,
+	public CmCovObject centralMomentWithDefault(CmCovObject ret, ValueFunction fn, int[] counts, double def,
 		int nRows) {
 		return getMBDict().centralMomentWithDefault(ret, fn, counts, def, nRows);
 	}
 
 	@Override
-	public CM_COV_Object centralMomentWithReference(CM_COV_Object ret, ValueFunction fn, int[] counts, double reference,
+	public CmCovObject centralMomentWithReference(CmCovObject ret, ValueFunction fn, int[] counts, double reference,
 		int nRows) {
 		return getMBDict().centralMomentWithReference(ret, fn, counts, reference, nRows);
 	}

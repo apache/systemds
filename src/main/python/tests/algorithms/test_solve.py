@@ -26,7 +26,6 @@ import numpy as np
 from systemds.context import SystemDSContext
 from systemds.operator.algorithm import solve
 
-
 np.random.seed(7)
 A = np.random.random((10, 10))
 B = np.random.random(10)

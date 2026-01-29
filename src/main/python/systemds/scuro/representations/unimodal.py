@@ -38,9 +38,12 @@ class UnimodalRepresentation(Representation):
         if parameters is None:
             parameters = {}
         self.self_contained = self_contained
+        self.needs_context = False
+        self.initial_context_length = None
 
     @abc.abstractmethod
     def transform(self, data):
+        # TODO: check if there is a way to time the transformation in here (needed for chunked execution)
         raise f"Not implemented for {self.name}"
 
 

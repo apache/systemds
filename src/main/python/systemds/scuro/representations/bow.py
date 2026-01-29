@@ -32,7 +32,7 @@ from systemds.scuro.drsearch.operator_registry import register_representation
 @register_representation(ModalityType.TEXT)
 class BoW(UnimodalRepresentation):
     def __init__(self, ngram_range=2, min_df=2, output_file=None):
-        parameters = {"ngram_range": [ngram_range], "min_df": [min_df]}
+        parameters = {"ngram_range": [2, 3, 5, 10], "min_df": [1, 2, 4, 8]}
         super().__init__("BoW", ModalityType.EMBEDDING, parameters)
         self.ngram_range = int(ngram_range)
         self.min_df = int(min_df)

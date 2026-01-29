@@ -23,7 +23,6 @@ import unittest
 import numpy as np
 from systemds.context import SystemDSContext
 
-
 np.random.seed(7)
 
 

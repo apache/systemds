@@ -90,7 +90,7 @@ jobs:
     name: ${{ matrix.tests }}
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: ${{ matrix.tests }}
       uses: ./.github/action/
@@ -106,7 +106,7 @@ jobs:
         echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
 
     - name: Save Java Test Coverage as Artifact
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: ${{ env.ARTIFACT_NAME }}
         path: target/jacoco.exec
@@ -126,10 +126,10 @@ jobs:
         javadist: ['adopt']
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Cache Maven Dependencies
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/.m2/repository
         key: ${{ runner.os }}-maven-test-${{ hashFiles('**/pom.xml') }}
@@ -137,7 +137,7 @@ jobs:
           ${{ runner.os }}-maven-test-
 
     - name: Download all Jacoco Artifacts
-      uses: actions/download-artifact@v6
+      uses: actions/download-artifact@v7
       with:
         path: target
 
@@ -151,7 +151,7 @@ jobs:
       run: mvn jacoco:report
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v5.5.1
+      uses: codecov/codecov-action@v5.5.2
       if: github.repository_owner == 'apache'
       with:
         fail_ci_if_error: false
@@ -160,7 +160,7 @@ jobs:
 
     - name: Upload Jacoco Report Artifact PR
       if: (github.repository_owner == 'apache') && (github.ref_name != 'main')
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: Java Code Coverage (Jacoco)
         path: target/site/jacoco
@@ -168,7 +168,7 @@ jobs:
 
     - name: Upload Jacoco Report Artifact Main
       if: (github.repository_owner == 'apache') && (github.ref_name == 'main')
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: Java Code Coverage (Jacoco)
         path: target/site/jacoco
@@ -176,9 +176,8 @@ jobs:
 
     - name: Upload Jacoco Report Artifact Fork
       if: (github.repository_owner != 'apache')
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       with:
         name: Java Code Coverage (Jacoco)
         path: target/site/jacoco
         retention-days: 3
-

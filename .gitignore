@@ -143,6 +143,7 @@ scripts/perftest/fed/temp
 src/test/scripts/functions/iogen/*.raw
 src/test/scripts/functions/pipelines/intermediates/regression/*
 src/test/scripts/functions/pipelines/intermediates/classification/*
+src/test/scripts/functions/dnn/nativeBLAS/*
 
 venv
 venv/*
@@ -156,4 +157,4 @@ docker/mountFolder/*.bin
 docker/mountFolder/*.bin.mtd
 
 SEAL-*/
-
+OpenBLAS-*/

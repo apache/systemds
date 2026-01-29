@@ -794,6 +794,10 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			// cleanup matrix/frame/list data if necessary
 			if( srcData.getDataType().isMatrix() || srcData.getDataType().isFrame() ) {
 				Data tgtData = ec.removeVariable(getInput2().getName());
+
+				if (DMLScript.USE_OOC && tgtData instanceof MatrixObject)
+					TeeOOCInstruction.incrRef(((MatrixObject) tgtData).getStreamable(), -1);
+
 				if( tgtData != null && srcData != tgtData )
 					ec.cleanupDataObject(tgtData);
 			}

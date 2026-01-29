@@ -61,6 +61,8 @@ public interface OOCStream<T> extends OOCStreamable<T> {
 		void fail(DMLRuntimeException failure);
 
 		boolean isEos();
+
+		boolean isFailure();
 	}
 
 	class SimpleQueueCallback<T> implements QueueCallback<T> {
@@ -94,7 +96,12 @@ public interface OOCStream<T> extends OOCStreamable<T> {
 
 		@Override
 		public boolean isEos() {
-			return get() == null;
+			return _result == null && _failure == null;
+		}
+
+		@Override
+		public boolean isFailure() {
+			return _failure != null;
 		}
 	}
 }

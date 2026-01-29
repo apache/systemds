@@ -60,6 +60,8 @@ public class UnaryOOCInstruction extends ComputationOOCInstruction {
 		OOCStream<IndexedMatrixValue> qIn = min.getStreamHandle();
 		OOCStream<IndexedMatrixValue> qOut = createWritableStream();
 		ec.getMatrixObject(output).setStreamHandle(qOut);
+		qIn.setDownstreamMessageRelay(qOut::messageDownstream);
+		qOut.setUpstreamMessageRelay(qIn::messageUpstream);
 
 		mapOOC(qIn, qOut, tmp -> {
 			IndexedMatrixValue tmpOut = new IndexedMatrixValue();

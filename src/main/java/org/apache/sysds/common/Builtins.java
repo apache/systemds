@@ -118,6 +118,7 @@ public enum Builtins {
 	DEDUP("dedup", true),
 	DEEPWALK("deepWalk", true),
 	DET("det", false),
+	DETECTMISSINGTYPE("detectMissingType", true),
 	DETECTSCHEMA("detectSchema", false),
 	DENIALCONSTRAINTS("denialConstraints", true),
 	DIFFERENCESTATISTICS("differenceStatistics", true),

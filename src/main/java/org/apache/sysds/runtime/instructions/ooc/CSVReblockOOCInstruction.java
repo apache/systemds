@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.ReaderTextCSVParallel;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.ooc.stream.StreamContext;
 
 public class CSVReblockOOCInstruction extends ComputationOOCInstruction {
 	private final int blen;
@@ -80,7 +81,7 @@ public class CSVReblockOOCInstruction extends ComputationOOCInstruction {
 			catch(Exception ex) {
 				throw (ex instanceof DMLRuntimeException) ? (DMLRuntimeException) ex : new DMLRuntimeException(ex);
 			}
-		}, qOut);
+		}, new StreamContext().addOutStream(qOut));
 
 		MatrixObject mout = ec.getMatrixObject(output);
 		mout.setStreamHandle(qOut);

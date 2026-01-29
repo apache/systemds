@@ -1,7 +1,17 @@
 # Data Integration and Large-Scale Analysis
-## Student Project SYSTEMDS-3878
+## Overview
 
-## Start
+This README presents the project 3878 and serves as index for the documentation.
+
+The goal of SYSTEMDS-3878 as presented in [jira](https://issues.apache.org/jira/browse/SYSTEMDS-3878) is to "Improve Docker Security":
+>This task is to improve the security of the Docker images we provide. Currently we get an 'F' evaluation on DockerHub, and we would like instead to provide secure images.
+https://hub.docker.com/repository/docker/apache/systemds/general
+
+<!-- TODO Table of contents -->
+
+## Working on apache/systemds
+
+### Create a fork
 
 1. Fork systemds github on own account
 2. Invite project member
@@ -10,7 +20,9 @@
 1. Clone project on computer (git clone git@\<link>.git)
 1. Get a local version of the systemds project on the computer
 
-### CONTRIBUTING.md
+### Commiting
+
+Extract from [CONTRIBUTING.md](https://github.com/qschnee/systemds/blob/main/CONTRIBUTING.md).
 
 A commit or PR description is a public record of **what** change is being made and **why**.
 
@@ -44,7 +56,7 @@ Additional info
    - future readers to understand the Changes.
 6. Add PR number, like `Closes #1000`.
 
-#### Example for us:
+#### Example for this project:
 
 ```text
 [MINOR][SYSTEMDS-3878] Fix <file>.Dockerfile vulnerability (<bug>)
@@ -52,33 +64,74 @@ Additional info
 This commit fixes the following vulnerability identified by docker scout cves: <...>. The following changes have been made on the Dockerfile: <...>.
 <Sources/justifications>
 <Shortcomings>
-<new epss score if not fully resolved>
+<new CVE if not fully resolved>
 ```
 
 ## Docker scout cves
 
-### Usage 
+We used the tool docker scout cves to identify and solve vulenrabilities in the systemds image build from the Dockerfile.
+
+From the man page:
+>The docker scout cves command analyzes a software artifact for vulnerabilities. \
+If no image is specified, the most recently built image is used. \
+[...] \
+The tool analyzes the provided software artifact, and generates a vulnerability report.
+
+### Usage
 
 ``` sh
+cd path/to/systemds
+./docker/build.sh
 docker scout cves --details --format markdown -o docker/scout_results/sysds_outputX.md --epss apache/systemds
 ```
 
-To identify tricky packages, using the json output with `--format sarif` helps by showing the path to the vulnerable package.
+To identify the location of tricky packages, using the json output with `--format sarif` helps by showing the path to the vulnerable package (which is not shown in the "human-readable" markdown output).
+
+### Command details
+
+#### Local analysis
+
+To use docker scout and see if local changes succesfully solved a vulnerability, it is necessary to modify `sysds.Dockerfile`. \
+`systemds` is cloned from github instead of using the local systemds project. This change should be reverted and rever merged to the master branch.
+```Dockerfile
+# Build the system
+# RUN git clone --depth 1 https://github.com/apache/systemds.git systemds && \
+# 	cd /usr/src/systemds/ && \
+# 	mvn --no-transfer-progress clean package -P distribution
+
+# Copy the local SystemDS source into the image
+COPY . /usr/src/systemds
+# Build SystemDS
+RUN cd /usr/src/systemds && \
+   mvn --no-transfer-progress clean package -P distribution
+```
+
+#### Options
 
 <https://docs.docker.com/reference/cli/docker/scout/cves/>
 
 1. build systemds project \
    `./docker/build.sh`
-   - builds the image: `apache/systemds:latest`
+   - builds the image with the tag: `apache/systemds:latest`
    - default runs: `docker image build -f docker/sysds.Dockerfile -t apache/systemds:latest .`
-   - comment out build.sh to change selected `Dockerfile`
+   - modify `docker/build.sh` to change the selected `Dockerfile` for the build
 2. scout \
-   `docker scout cves --details --format markdown -o <docker_subdirecory>/scout_results/<file>_output0.md --epss apache/systemds` (from root dir)
+   `docker scout cves --details --format markdown -o <docker_subdirecory>/scout_results/<file>_output0.md --epss apache/systemds` (from systemds directory)
    - `--details`: verbose
    - `--format markdown`: output in markdown format
    - `-o <path_to_file>`: write output to file
    - `-epss`: show epss score
       - `--epss --epss-score 0.1`: filter for vulnerabilities that have more than 10% probability to be exploited.
+
+#### Troubleshoot
+Docker scout does not run because `/tmp` is full:
+- `df -h`: to see usage of partitions.
+- `du -h /home/schnee/DIA-sysds-scout-tmp/` to see directory usage.
+- `docker scout cache df` and `docker scout cache prune` to view and clear scout cache.
+
+Change default tmp partition to a bigger filesystem
+- `export TMPDIR=/absolute/path/to/sysds-scout-tmp`
+- `export DOCKER_SCOUT_CACHE_DIR=/absolute/path/to/sysds-scout-tmp`
 
 <details>
 
@@ -86,33 +139,64 @@ To identify tricky packages, using the json output with `--format sarif` helps b
 
    > Does Not Work
 
-   > No vulnerability found
+   No vulnerability found
 
    ```bash
    cd project_root_directory
    docker scout cves --format markdown -o scout_results/output0.md --epss fs://docker_subdirecory/file.Dockerfile
    ```
 
-   Add `--epss --epss-score 0.1` to filter for vulnerabilities that have more than 10% probability to be exploited.
-
 </details>
 
 ### Solve vulnerabilities
 
-By using the CVE code and reading the description, most vulnerabilities have solutions or workarounds.
+By using the CVE code and reading its description, most vulnerabilities have solutions or workarounds.
 
 #### Upgrading the related package
 
-One way to solve a vulerability is simply to upgrade the package it happens in.
+One way to solve a vulerability is simply to upgrade the package the CVE happens in.
 
 > Sometimes, the package that raised the CVE is not included in the `pom.xml`. This can happen if the package is a dependency of another imported package. \
-> `mvn dependency:tree` (output can be found [here](systemds-3878_summary-of-changes.md#output-of-mvn-dependencytree)) shows all imported packages.
+> `mvn dependency:tree` (example output can be found [here](systemds-3878_summary-of-changes.md#output-of-mvn-dependencytree)) shows all imported packages and implicit dependencies imported by other packets.
 
-### Inspection commands to find packages
+#### Remove or switch the packet
 
-[summary-of-changes.md](systemds-3878_summary-of-changes.md#toolbox)
+If the vulnerability comes from a transitive dependency:
+1. update the parent dependency to a newer version which doesn't use the vulnerable packet. \
+This can be verified in Maven Repository <https://mvnrepository.com/> by searching the parent packet.
+1. exclude the vulnerable package from the parent and explicitly import a newer version of the vulnerable package. \
+By doing this, the parent dependency will use the explicit version instead of the vulnerable one.
 
-### helloworld example
+### Inspection commands to find tricky packages
+
+As mentioned before, using the `sarif` format in scout could help identify where the vulnerale package comes from.
+
+If this does not help, it is possible to inspect the image directly to find the related jar. Here, `apache/zookeeper` is used as reference`:
+- copy container filesystem to analyze jars: 
+
+  ```sh
+  docker create --name temp apache/systemds
+  docker export temp > img.tar
+  mkdir filesystem_img
+  tar -xf img.tar -C filesystem_img
+  #Analysis
+  rm -rf img.tar temp filesystem_img
+  docker rm temp
+  ```
+  - Find all references to zookeeper
+
+    `find filesystem_img -name '*zookeeper*'`
+  - List all libs 
+    
+    `ls -la ./filesystem_img/systemds/target/lib/`
+  - Inspect the jars in the image for references to zookeeper
+
+    `find ./filesystem_img -name '*.jar' -exec sh -c 'jar tf {} | grep -i zookeeper && echo "--- Found in {}"' \;`
+- Inspect the given jar for references to zookeeper 
+
+  `jar tf ~/.m2/repository/org/apache/hadoop/hadoop-common/3.3.6/hadoop-common-3.3.6.jar | grep -i zookeeper`
+
+### `docker scout` helloworld example
 
 To test if docker scout works correctly on your machine, you can create a simple "Hello World" Dockerfile.
 
@@ -131,6 +215,35 @@ docker scout cves scout_hello_world_img
    With name scout_hello_wolrd (`-t`)
 1. Scout the image with the name
 
+The output can be viewed in the [appendix](#docker-scout-helloworld-output)
+
+
+## Student Project SYSTEMDS-3878
+
+### Results
+
+We managed to solve a lot of CVEs: 
+
+| FROM: | <img alt="critical: 4" src="https://img.shields.io/badge/critical-4-8b1924"/> | <img alt="high: 29" src="https://img.shields.io/badge/high-29-e25d68"/> | <img alt="medium: 36" src="https://img.shields.io/badge/medium-36-fbb552"/> | <img alt="low: 9" src="https://img.shields.io/badge/low-9-fce1a9"/> | <img alt="unspecified: 1" src="https://img.shields.io/badge/unspecified-1-lightgrey"/>|
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| TO: | <img alt="critical: 0" src="https://img.shields.io/badge/critical-0-lightgrey"/> | <img alt="high: 6" src="https://img.shields.io/badge/high-6-e25d68"/> | <img alt="medium: 8" src="https://img.shields.io/badge/medium-9-fbb552"/> | <img alt="low: 1" src="https://img.shields.io/badge/low-1-fce1a9"/> | <img alt="unspecified: 1" src="https://img.shields.io/badge/unspecified-1-lightgrey"/> |
+
+The `scout` reports can be viewed in details: [scan-before-fixes](./scan-before-fixes/README.md), [scan-after-fixes](./scan-after-fixes/README.md).
+
+[unfixed-vulnerabilities/README.md](./unfixed-vulnerabilities/README.md) has been written to explain the last vulnerabilities that hove not been fixed and why.
+
+### Testing
+Running `mvn clean verify` after our changes returns the same output.
+
+### Summary of Changes
+
+The changes made during the project have been documented: [summary-of-changes/README.md](./summary-of-changes/README.md).
+
+## Apendix
+
+### `docker scout` helloworld output
+
+[Return](#docker-scout-helloworld-example) to `docker scout` helloworld
 
 <details>
    
@@ -145,9 +258,9 @@ docker scout cves scout_hello_world_img
 
    ## Overview
 
-                     │         Analyzed Image          
-   ────────────────────┼─────────────────────────────────
-   Target            │  scout_hello_world_img:latest   
+                      │         Analyzed Image          
+   ───────────────────┼─────────────────────────────────
+    Target            │  scout_hello_world_img:latest   
       digest          │  65884f6905ea                   
       platform        │ linux/amd64                     
       vulnerabilities │    0C     0H     2M     8L      
@@ -258,9 +371,3 @@ docker scout cves scout_hello_world_img
    ```
 
 </details>
-
-## Trivy
-
-## Summary of Changes
-
-Refer to the [documentation](systemds-3878_summary-of-changes.md).

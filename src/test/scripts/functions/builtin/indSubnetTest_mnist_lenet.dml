@@ -9,6 +9,10 @@ source("scripts/nn/layers/relu.dml") as relu
 source("scripts/nn/layers/softmax.dml") as softmax
 source("scripts/nn/optim/sgd_nesterov.dml") as sgd_nesterov
 
+#-------------------------------------------------------------
+# TRAINING
+#-------------------------------------------------------------
+
 train = function(matrix[double] X, matrix[double] Y,
                  matrix[double] X_val, matrix[double] Y_val,
                  int C, int Hin, int Win, int epochs, int workers,
@@ -92,7 +96,9 @@ train = function(matrix[double] X, matrix[double] Y,
   ist_round = 10 # TODO whats a good value?
 
   # Use independent subnet training function
-  modelList2 = independentSubnetTrain(features=X, labels=Y, val_features=X_val, val_labels=Y_val, model=modelList, upd="./src/test/scripts/functions/builtin/indSubnetTest_mnist_lenet.dml::ist_upd_lenet", agg="./src/test/scripts/functions/builtin/indSubnetTest_mnist_lenet.dml::ist_agg_shared_avg", mode=mode, utype=utype, epochs=epochs, batchsize=batchsize, j=ist_round, k=workers, scheme=scheme, hyperparams=params, verbose=FALSE, paramsPerLayer=paramsPerLayer, fullyConnectedLayers=fullyConnectedLayers)
+  s1 = "./src/test/scripts/functions/builtin/indSubnetTest_mnist_lenet.dml::computeGradients"
+  s2 = "./src/test/scripts/functions/builtin/indSubnetTest_mnist_lenet.dml::ist_agg_shared_avg"
+  modelList2 = independentSubnetTrain(features=X, labels=Y, val_features=X_val, val_labels=Y_val, model=modelList, upd="computeGradients", agg="aggregateSharedParameters", mode=mode, utype=utype, epochs=epochs, batchsize=batchsize, j=ist_round, numSubnets=workers, scheme=scheme, hyperparams=params, verbose=FALSE, paramsPerLayer=paramsPerLayer, fullyConnectedLayers=fullyConnectedLayers)
   M_old = matrix(1, rows=3, cols=3)
   #M_new = independentSubnetTrain(M_old)
   #modelList2 = independentSubnetTrain(M_old)
@@ -108,6 +114,203 @@ train = function(matrix[double] X, matrix[double] Y,
   b4 = as.matrix(modelList2[8])
   print(toString(modelList2))
   print("Training finished.")
+}
+
+#-------------------------------------------------------------
+# GRADIENTS
+#-------------------------------------------------------------
+computeGradients = function(
+    list[unknown] model,
+    list[unknown] mask,
+    matrix[double] features,
+    matrix[double] labels,
+    list[unknown] hyperparams
+
+) return (list[unknown] subnet_model) {
+# TODO) return (Matrix[Double] MR1, Matrix[Double] MR2) {
+
+    # 1) full gradients
+    grads = gradients(model=model, hyperparams=hyperparams, features=features, labels=labels)
+    #print("GRADS:")
+    #print(toString(grads))
+
+    # 2) mask gradients
+    grads_masked = list()
+    #print("Length of gradients: " + length(grads))
+    for (p in 1:length(grads)) {  # TODO use parfor?
+        grads_masked = append(grads_masked, as.matrix(grads[p]) * as.matrix(mask[p]))
+
+        if (FALSE) {
+            print("GRADS: p=" + p)
+            print(toString(grads[p]))
+
+            print("MASKED GRADS: p=" + p)
+            print(toString(grads_masked[p]))
+
+        }
+    }
+
+    # 3) apply optimizer step locally
+    subnet_model = aggregation(model=model, hyperparams=hyperparams, gradients=grads_masked)
+
+    # 4) mask velocities
+    for (p in 9:length(model)) {  # TODO use parfor?
+        #model_out[p] = as.matrix(model_out[p]) * as.matrix(mask[p]) TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
+    }
+}
+
+# Should always use 'features' (batch features), 'labels' (batch labels),
+# 'hyperparams', 'model' as the arguments
+# and return the gradients of type list
+gradients = function(list[unknown] model,
+                     list[unknown] hyperparams,
+                     matrix[double] features,
+                     matrix[double] labels)
+          return (list[unknown] gradients) {
+
+  C = as.integer(as.scalar(hyperparams["C"]))
+  Hin = as.integer(as.scalar(hyperparams["Hin"]))
+  Win = as.integer(as.scalar(hyperparams["Win"]))
+  Hf = as.integer(as.scalar(hyperparams["Hf"]))
+  Wf = as.integer(as.scalar(hyperparams["Wf"]))
+  stride = as.integer(as.scalar(hyperparams["stride"]))
+  pad = as.integer(as.scalar(hyperparams["pad"]))
+  lambda = as.double(as.scalar(hyperparams["lambda"]))
+  F1 = as.integer(as.scalar(hyperparams["F1"]))
+  F2 = as.integer(as.scalar(hyperparams["F2"]))
+  N3 = as.integer(as.scalar(hyperparams["N3"]))
+  W1 = as.matrix(model[1])
+  W2 = as.matrix(model[2])
+  W3 = as.matrix(model[3])
+  W4 = as.matrix(model[4])
+  b1 = as.matrix(model[5])
+  b2 = as.matrix(model[6])
+  b3 = as.matrix(model[7])
+  b4 = as.matrix(model[8])
+
+  # Compute forward pass
+  ## layer 1: conv1 -> relu1 -> pool1
+  [outc1, Houtc1, Woutc1] = conv2d::forward(features, W1, b1, C, Hin, Win, Hf, Wf,
+                                              stride, stride, pad, pad)
+  outr1 = relu::forward(outc1)
+  [outp1, Houtp1, Woutp1] = max_pool2d::forward(outr1, F1, Houtc1, Woutc1, 2, 2, 2, 2, 0, 0)
+  ## layer 2: conv2 -> relu2 -> pool2
+  [outc2, Houtc2, Woutc2] = conv2d::forward(outp1, W2, b2, F1, Houtp1, Woutp1, Hf, Wf,
+                                            stride, stride, pad, pad)
+  outr2 = relu::forward(outc2)
+  [outp2, Houtp2, Woutp2] = max_pool2d::forward(outr2, F2, Houtc2, Woutc2, 2, 2, 2, 2, 0, 0)
+  ## layer 3:  affine3 -> relu3 -> dropout
+  outa3 = affine::forward(outp2, W3, b3)
+  outr3 = relu::forward(outa3)
+  [outd3, maskd3] = dropout::forward(outr3, 0.5, -1)
+  ## layer 4:  affine4 -> softmax
+  outa4 = affine::forward(outd3, W4, b4)
+  probs = softmax::forward(outa4)
+
+  # Compute data backward pass
+  ## loss:
+  dprobs = cross_entropy_loss::backward(probs, labels)
+  ## layer 4:  affine4 -> softmax
+  douta4 = softmax::backward(dprobs, outa4)
+  [doutd3, dW4, db4] = affine::backward(douta4, outr3, W4, b4)
+  ## layer 3:  affine3 -> relu3 -> dropout
+  doutr3 = dropout::backward(doutd3, outr3, 0.5, maskd3)
+  douta3 = relu::backward(doutr3, outa3)
+  [doutp2, dW3, db3] = affine::backward(douta3, outp2, W3, b3)
+  ## layer 2: conv2 -> relu2 -> pool2
+  doutr2 = max_pool2d::backward(doutp2, Houtp2, Woutp2, outr2, F2, Houtc2, Woutc2, 2, 2, 2, 2, 0, 0)
+  doutc2 = relu::backward(doutr2, outc2)
+  [doutp1, dW2, db2] = conv2d::backward(doutc2, Houtc2, Woutc2, outp1, W2, b2, F1,
+                                        Houtp1, Woutp1, Hf, Wf, stride, stride, pad, pad)
+  ## layer 1: conv1 -> relu1 -> pool1
+  doutr1 = max_pool2d::backward(doutp1, Houtp1, Woutp1, outr1, F1, Houtc1, Woutc1, 2, 2, 2, 2, 0, 0)
+  doutc1 = relu::backward(doutr1, outc1)
+  [dX_batch, dW1, db1] = conv2d::backward(doutc1, Houtc1, Woutc1, features, W1, b1, C, Hin, Win,
+                                          Hf, Wf, stride, stride, pad, pad)
+
+  # Compute regularization backward pass
+  dW1_reg = l2_reg::backward(W1, lambda)
+  dW2_reg = l2_reg::backward(W2, lambda)
+  dW3_reg = l2_reg::backward(W3, lambda)
+  dW4_reg = l2_reg::backward(W4, lambda)
+  dW1 = dW1 + dW1_reg
+  dW2 = dW2 + dW2_reg
+  dW3 = dW3 + dW3_reg
+  dW4 = dW4 + dW4_reg
+
+  gradients = list(dW1, dW2, dW3, dW4, db1, db2, db3, db4)
+}
+
+# Should use the arguments named 'model', 'gradients', 'hyperparams'
+# and return always a model of type list
+aggregation = function(list[unknown] model,
+                       list[unknown] hyperparams,
+                       list[unknown] gradients)
+   return (list[unknown] modelResult) {
+     W1 = as.matrix(model[1])
+     W2 = as.matrix(model[2])
+     W3 = as.matrix(model[3])
+     W4 = as.matrix(model[4])
+     b1 = as.matrix(model[5])
+     b2 = as.matrix(model[6])
+     b3 = as.matrix(model[7])
+     b4 = as.matrix(model[8])
+     dW1 = as.matrix(gradients[1])
+     dW2 = as.matrix(gradients[2])
+     dW3 = as.matrix(gradients[3])
+     dW4 = as.matrix(gradients[4])
+     db1 = as.matrix(gradients[5])
+     db2 = as.matrix(gradients[6])
+     db3 = as.matrix(gradients[7])
+     db4 = as.matrix(gradients[8])
+     vW1 = as.matrix(model[9])
+     vW2 = as.matrix(model[10])
+     vW3 = as.matrix(model[11])
+     vW4 = as.matrix(model[12])
+     vb1 = as.matrix(model[13])
+     vb2 = as.matrix(model[14])
+     vb3 = as.matrix(model[15])
+     vb4 = as.matrix(model[16])
+     lr = as.double(as.scalar(hyperparams["lr"]))
+     mu = as.double(as.scalar(hyperparams["mu"]))
+
+     # Optimize with SGD w/ Nesterov momentum
+     [W1, vW1] = sgd_nesterov::update(W1, dW1, lr, mu, vW1)
+     [b1, vb1] = sgd_nesterov::update(b1, db1, lr, mu, vb1)
+     [W2, vW2] = sgd_nesterov::update(W2, dW2, lr, mu, vW2)
+     [b2, vb2] = sgd_nesterov::update(b2, db2, lr, mu, vb2)
+     [W3, vW3] = sgd_nesterov::update(W3, dW3, lr, mu, vW3)
+     [b3, vb3] = sgd_nesterov::update(b3, db3, lr, mu, vb3)
+     [W4, vW4] = sgd_nesterov::update(W4, dW4, lr, mu, vW4)
+     [b4, vb4] = sgd_nesterov::update(b4, db4, lr, mu, vb4)
+
+     modelResult = list(W1, W2, W3, W4, b1, b2, b3, b4, vW1, vW2, vW3, vW4, vb1, vb2, vb3, vb4)
+   }
+
+
+#-------------------------------------------------------------
+# AGGREGATION
+#-------------------------------------------------------------
+aggregateSharedParameters = function(
+    Matrix[Double] initialParam,
+    list[unknown] allSubnetsParam,   # list of all subnets updes for a certain shared parameter
+    list[unknown] allSubnetsMasks
+) return (Matrix[Double] averagedUpdatedParam) {
+
+    num = matrix(0, nrow(initialParam), ncol(initialParam))
+    den = matrix(0, nrow(initialParam), ncol(initialParam))
+
+    for (s in 1:length(allSubnetsParam)) {  # TODO make parfor?
+        num = num + (as.matrix(allSubnetsParam[s]) * as.matrix(allSubnetsMasks[s]))
+        den = den + as.matrix(allSubnetsMasks[s])
+    }
+
+    # avoid divide by zero: where den==0, keep base
+    denNZ = (den > 0)
+
+    averagedUpdatedParam = initialParam * (1 - denNZ) + (num / pmax(1, den)) * denNZ
+    #print("averagedUpdatedParam:")
+    #print(averagedUpdatedParam)
 }
 
 #-------------------------------------------------------------

@@ -502,3 +502,147 @@ This change was reset before merging.
 [INFO] Finished at: 2025-12-08T10:24:00+01:00
 [INFO] ------------------------------------------------------------------------
 ```
+
+
+---
+
+# Git Commit History
+
+## December 2025
+
+### Dec 4, 2025
+- **`[MINOR][DOCS][SYSTEMDS-3878]`** Write two markdown files to log work and document changes
+  - Added `project_systemds-3878.md` to log work progress
+  - Added `systemds-3878_summary-of-changes.md` to document Dockerfile modifications
+  - Author: @qschnee
+
+### Dec 5, 2025
+- **`[MINOR][SYSTEMDS-3878]`** Add Docker Scout vulnerability scan for sysds.Dockerfile
+  - Added initial security scan results for `apache/systemds:latest`
+  - Docker Scout identified 79 vulnerabilities (4 Critical, 29 High, 36 Medium, 9 Low)
+  - Author: @a-kasprick
+
+---
+
+## January 2026
+
+### Jan 6, 2026
+- **`[MINOR][SYSTEMDS-3878]`** Fix CVE-2023-44981 org.apache.zookeeper critical vulnerability
+  - Updated zookeeper from 3.6.3 → 3.8.3
+  - Added explicit dependency and exclusions from spark-core and hadoop-common
+  - Modified sysds.Dockerfile to build from filesystem
+  - Author: @qschnee
+
+### Jan 11, 2026
+- **`[MINOR][SYSTEMDS-3878]`** Fix pom.xml vulnerability (CVE-2024-47561)
+  - Added avro.version property (1.11.4) for Apache Avro deserialization vulnerability
+  - Author: @anabel-ksp
+
+- **`[MINOR][SYSTEMDS-3878]`** Fix pom.xml vulnerability (CVE-2023-25613)
+  - Added kerby.version property (2.0.3) for Apache Kerby LDAP Injection vulnerability
+  - Author: @anabel-ksp
+
+### Jan 14, 2026
+- **`[MINOR][SYSTEMDS-3878]`** Fix pom.xml dependencyManagement merge error
+  - Merged duplicate dependencyManagement tags into one
+  - Author: @qschnee
+
+- **`[MINOR][SYSTEMDS-3878]`** Fix zookeeper transitive vulnerabilities
+  - Updated zookeeper to 3.9.4
+  - Added explicit dependency for netty-handler (ch.qos.logback/logback-core fix)
+  - Author: @qschnee
+
+### Jan 15, 2026
+- **`[MINOR][SYSTEMDS-3878]`** Fix multiple high-severity CVEs in transitive dependencies
+  - CVE-2024-7254: protobuf-java 3.23.4 → 3.25.5 (CVSS 8.7)
+  - CVE-2024-47554: commons-io → 2.14.0
+  - CVE-2023-1436: jettison → 1.5.4
+  - CVE-2023-43642: snappy-java → 1.1.10.4
+  - CVE-2023-6378: logback → 1.2.13
+  - CVE-2025-52999: jackson-core → 2.15.0
+  - CVE-2023-1370: json-smart → 2.4.9
+  - CVE-2023-52428: nimbus-jose-jwt → 9.37.4
+  - CVE-2024-36114: aircompressor → 0.27
+  - Author: @anabel-ksp
+
+### Jan 16, 2026
+- **`[MINOR][SYSTEMDS-3878]`** Fix additional high-severity CVEs in transitive dependencies
+  - Netty 4.x components → 4.1.124.Final (CVE-2025-55163, CVE-2023-44487)
+  - Jetty components → 9.4.57.v20241219 (CVE-2024-6763)
+  - xnio-api → 3.8.14.Final (CVE-2023-5685)
+  - commons-beanutils → 1.11.0 (CVE-2025-48734)
+  - dnsjava → 3.6.0 (CVE-2024-25638)
+  - Author: @anabel-ksp
+
+### Jan 21, 2026
+- **`[MINOR][SYSTEMDS-3878]`** Fix additional medium-severity CVEs (jetty-http, commons-compress, commons-configuration2)
+  - jetty-http → 12.0.12 (CVE-2024-6763)
+  - commons-compress → 1.26.0 (CVE-2024-26308, CVE-2024-25710, CVE-2023-42503)
+  - commons-configuration2 → 2.10.1 (CVE-2024-29133, CVE-2024-29131)
+  - Author: @qschnee
+
+- **`[MINOR][SYSTEMDS-3878]`** Fix Guava CVEs
+  - hadoop-shaded-guava → 1.5.0
+  - guava → 33.5.0-jre (CVE-2023-2976, CVE-2020-8908)
+  - Author: @qschnee
+
+### Jan 22, 2026
+- **`[MINOR][SYSTEMDS-3878]`** Fix Netty codec CVEs
+  - netty-codec-http, netty-codec-smtp, netty-codec → 4.1.129.Final
+  - CVE-2025-67735, CVE-2025-58056, CVE-2025-58057, CVE-2025-59419
+  - Author: @qschnee
+
+- **`[MINOR][SYSTEMDS-3878]`** Fix log4j-core CVE
+  - log4j-core → 2.25.3 (CVE-2025-68161)
+  - Author: @qschnee
+
+### Jan 23, 2026
+- **`[MINOR][SYSTEMDS-3878]`** Fix commons-lang3 and spark-network-common CVEs
+  - commons-lang3 → 3.18.0 (CVE-2025-48924)
+  - spark-network-common_2.12 → 3.5.2 (CVE-2025-55039)
+  - Author: @qschnee
+
+- **`[MINOR][SYSTEMDS-3878]`** Fix hadoop-common CVE
+  - hadoop-common → 3.4.2 (CVE-2024-23454: Improper Privilege Management)
+  - Author: @qschnee
+
+- **`[MINOR][SYSTEMDS-3878]`** Fix critical io.netty/netty CVE
+  - hadoop-hdfs → 3.4.2 (removes io.netty/netty@3.10.6.Final)
+  - CVE-2019-20444 (Critical 9.1): HTTP Request Smuggling
+  - Import changes: `org.jboss.netty.*` → `io.netty.*`
+  - Author: @qschnee
+
+### Jan 25, 2026
+- **`[MINOR][SYSTEMDS-3878]`** Fix Alpine APK CVEs in Docker image
+  - Fixed openssl CVEs (CVE-2025-9230, CVE-2025-9231, CVE-2025-9232) → 3.3.5-r0
+  - Fixed busybox CVEs (CVE-2025-46394, CVE-2024-58251) → 1.36.1-r31
+  - Added exclusions in pom.xml for guava, jackson, and jetty transitive dependencies
+  - Author: @anabel-ksp
+
+### Jan 28, 2026
+- **Merge PR #7**: Fix Alpine APK CVEs in Docker image
+  - Author: @qschnee
+
+### Jan 29, 2026
+- **`[DOC][SYSTEMDS-3878]`** Document unfixed CVEs in Docker image
+  - Added `UNFIXED_VULNERABILITIES.md` explaining remaining security vulnerabilities
+  - Author: @anabel-ksp
+
+- **`[MINOR][SYSTEMDS-3878]`** pom.xml cleanup
+  - Removed empty lines, fixed formatting and indenting
+  - Author: @qschnee
+
+- **Merge PR #8**: Rebase apache/systemds:latest into fork
+  - Author: @anabel-ksp
+
+- **Merge PR #9**: Document unfixed CVEs in Docker image
+  - Author: @anabel-ksp
+
+---
+
+## Contributors
+
+- **@anabel-ksp** (Anabel Kasprick)
+- **@qschnee** (Quentin Schneebeli)
+- **@a-kasprick**
+

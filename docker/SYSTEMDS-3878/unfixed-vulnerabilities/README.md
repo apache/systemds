@@ -188,4 +188,4 @@ These vulnerabilities are in Alpine Linux system packages. Patched versions must
 ---
 
 *Last updated: January 28, 2026*  
-*Source: Docker Scout vulnerability scan (`sysds_output18.md`)*
+*Source: Docker Scout vulnerability scan (`scan-after-fixes/README.md`)*

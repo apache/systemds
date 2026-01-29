@@ -127,35 +127,22 @@ computeGradients = function(
     list[unknown] hyperparams
 
 ) return (list[unknown] subnet_model) {
-# TODO) return (Matrix[Double] MR1, Matrix[Double] MR2) {
 
     # 1) full gradients
     grads = gradients(model=model, hyperparams=hyperparams, features=features, labels=labels)
-    #print("GRADS:")
-    #print(toString(grads))
 
     # 2) mask gradients
     grads_masked = list()
-    #print("Length of gradients: " + length(grads))
-    for (p in 1:length(grads)) {  # TODO use parfor?
+    for (p in 1:length(grads)) {
         grads_masked = append(grads_masked, as.matrix(grads[p]) * as.matrix(mask[p]))
-
-        if (FALSE) {
-            print("GRADS: p=" + p)
-            print(toString(grads[p]))
-
-            print("MASKED GRADS: p=" + p)
-            print(toString(grads_masked[p]))
-
-        }
     }
 
     # 3) apply optimizer step locally
     subnet_model = aggregation(model=model, hyperparams=hyperparams, gradients=grads_masked)
 
     # 4) mask velocities
-    for (p in 9:length(model)) {  # TODO use parfor?
-        #model_out[p] = as.matrix(model_out[p]) * as.matrix(mask[p]) TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
+    for (p in (length(grads)+1):length(model)) {
+        subnet_model[p] = list(as.matrix(subnet_model[p]) * as.matrix(mask[p]))
     }
 }
 
@@ -293,7 +280,7 @@ aggregation = function(list[unknown] model,
 #-------------------------------------------------------------
 aggregateSharedParameters = function(
     Matrix[Double] initialParam,
-    list[unknown] allSubnetsParam,   # list of all subnets updes for a certain shared parameter
+    list[unknown] allSubnetsParam,   # list of all subnets updates for a certain shared parameter
     list[unknown] allSubnetsMasks
 ) return (Matrix[Double] averagedUpdatedParam) {
 

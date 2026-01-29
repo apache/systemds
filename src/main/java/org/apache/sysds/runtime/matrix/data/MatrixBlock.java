@@ -2935,7 +2935,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock<MatrixBlock>,
 		//in-memory size of dense/sparse representation
 		return !sparse ? estimateSizeDenseInMemory(rlen, clen) :
 			estimateSizeSparseInMemory(rlen, clen, getSparsity(),
-			SparseBlockFactory.getSparseBlockType(sparseBlock));
+			sparseBlock.getSparseBlockType());
 	}
 	
 	@Override

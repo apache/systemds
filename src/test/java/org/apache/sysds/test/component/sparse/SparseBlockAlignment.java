@@ -270,6 +270,12 @@ public class SparseBlockAlignment extends AutomatedTestBase
 				Assert.fail("Wrong row alignment indicated: "+rowsAligned37+", expected: "+positive);
 			if( !rowsAlignedRest )
 				Assert.fail("Wrong row alignment rest indicated: false.");
+
+			//init third sparse block with different number of rows
+			SparseBlock sblock3 =SparseBlockFactory.createSparseBlock(btype, rows+1);
+			if (sblock.isAligned(sblock3)) {
+				Assert.fail("Wrong alignment different rows indicated: true.");
+			}
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

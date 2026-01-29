@@ -63,17 +63,6 @@ public class SparseBlockDCSR extends SparseBlock
 		_nnzr = 0;
 	}
 
-	public SparseBlockDCSR(int rlen, int capacity, int size, int nnzr){
-		LOG.warn("Allocating a DCSR-block using row-length. This will lead to significant overhead!");
-		_rowidx = new int[rlen];
-		_rowptr = new int[rlen + 1];
-		_colidx = new int[capacity];
-		_values = new double[capacity];
-		_rlen = rlen;
-		_size = size;
-		_nnzr = nnzr;
-	}
-
 	public SparseBlockDCSR(int[] rowIdx, int[] rowPtr, int[] colIdx, double[] values, int rlen, int nnz, int nnzr){
 		LOG.warn("Allocating a DCSR-block using row-length. This will lead to significant overhead!");
 		_rowidx = rowIdx;
@@ -208,6 +197,36 @@ public class SparseBlockDCSR extends SparseBlock
 	@Override
 	public void compact(int r) {
 		//do nothing everything preallocated
+	}
+
+	@Override
+	public void compact() {
+		int idx = 0;
+		int pos = 0;
+		for(int i=0; i<_nnzr; i++) {
+			int apos = pos(_rowidx[i]);
+			int alen = size(_rowidx[i]);
+			_rowptr[idx] = pos;
+			for(int j=apos; j<apos+alen; j++) {
+				if(_values[j] != 0){
+					_values[pos] = _values[j];
+					_colidx[pos] = _colidx[j];
+					pos++;
+				}
+			}
+			if(_rowptr[idx]<pos){
+				_rowidx[idx] = _rowidx[i];
+				idx++;
+			}
+		}
+		_size = pos;
+		_nnzr = idx;
+		_rowptr[_nnzr] = pos;
+	}
+
+	@Override
+	public SparseBlock.Type getSparseBlockType() {
+		return Type.DCSR;
 	}
 
 	@Override
@@ -670,7 +689,7 @@ public class SparseBlockDCSR extends SparseBlock
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("SparseBlockCSR: rlen=");
+		sb.append("SparseBlockDCSR: rlen=");
 		sb.append(numRows());
 		sb.append(", nnz=");
 		sb.append(size());
@@ -705,18 +724,18 @@ public class SparseBlockDCSR extends SparseBlock
 		}
 
 		//2. correct array lengths
-		if (_size != nnz && _rowptr.length != _rowidx.length + 1 && _values.length < nnz && _colidx.length < nnz ) {
+		if ( _size != nnz || _rowptr.length != _rowidx.length + 1 || _values.length < nnz || _colidx.length < nnz ) {
 			throw new RuntimeException("Incorrect array lengths.");
 		}
 
 		//3. non-decreasing row pointers
-		for ( int i=1; i <_rowidx.length; i++ ) {
+		for ( int i=1; i < _nnzr; i++ ) {
 			if (_rowidx[i-1] > _rowidx[i])
 				throw new RuntimeException("Row indices are decreasing at row: " + i
 						+ ", with indices " + _rowidx[i-1] + " > " +_rowidx[i]);
 		}
 
-		for (int i = 1; i < _rowptr.length; i++ ) {
+		for (int i = 1; i < _nnzr+1; i++ ) {
 			if (_rowptr[i - 1] > _rowptr[i]) {
 				throw new RuntimeException("Row pointers are decreasing at row: " + i
 						+ ", with pointers " + _rowptr[i-1] + " > " +_rowptr[i]);
@@ -724,19 +743,14 @@ public class SparseBlockDCSR extends SparseBlock
 		}
 
 		//4. sorted column indexes per row
-		for ( int rowIdx = 0; rowIdx < _rowidx.length; rowIdx++ ) {
-			int apos = _rowidx[rowIdx];
-			int alen = _rowidx[rowIdx+1] - apos;
+		for (int i = 0; i < _nnzr; i++) {
+			int apos = _rowptr[i];
+			int alen = _rowptr[i+1] - apos;
 
 			for( int k = apos + 1; k < apos + alen; k++)
 				if( _colidx[k-1] >= _colidx[k] )
 					throw new RuntimeException("Wrong sparse row ordering: "
 							+ k + " " + _colidx[k-1] + " " + _colidx[k]);
-
-			for( int k=apos; k<apos+alen; k++ )
-				if( _values[k] == 0 )
-					throw new RuntimeException("Wrong sparse row: zero at "
-							+ k + " at col index " + _colidx[k]);
 		}
 
 		//5. non-existing zero values
@@ -745,11 +759,13 @@ public class SparseBlockDCSR extends SparseBlock
 				throw new RuntimeException("The values array should not contain zeros."
 						+ " The " + i + "th value is "+_values[i]);
 			}
+			if(_colidx[i] < 0)
+				throw new RuntimeException("Invalid index at pos=" + i);
 		}
 
 		//6. a capacity that is no larger than nnz times resize factor.
 		int capacity = _values.length;
-		if(capacity > nnz*RESIZE_FACTOR1 ) {
+		if(capacity > INIT_CAPACITY && capacity > nnz*RESIZE_FACTOR1 ) {
 			throw new RuntimeException("Capacity is larger than the nnz times a resize factor."
 					+ " Current size: "+capacity+ ", while Expected size:"+nnz*RESIZE_FACTOR1);
 		}

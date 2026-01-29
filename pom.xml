@@ -613,7 +613,6 @@
                 </configuration>
             </plugin>
 
-            <plugin>
 			<plugin>
 				<!-- unit tests -->
 				<groupId>org.apache.maven.plugins</groupId>

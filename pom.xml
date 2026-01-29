@@ -79,7 +79,7 @@
 		<!-- aws-java-sdk-bundle.version>1.12.367</aws-java-sdk-bundle.version -->
 		<!-- Set java compile level via argument, ex: 1.8 1.9 10 11-->
 		<java.level>17</java.level>
-		<java.version>{java.level}</java.version>
+		<java.version>${java.level}</java.version>
 		<!-->Testing settings<!-->
 		<maven.test.skip>false</maven.test.skip>
 		<test>org.apache.sysds.test.usertest.**</test>
@@ -97,10 +97,10 @@
 
 		<!-- Dependent on Spark open to access deprecated api components from <= Java 11. Should be removed once Spark updates fully to Java 17 -->
 		<jvm.addopens>
-			--add-opens=java.base/java.nio=ALL-UNNAMED 
-			--add-opens=java.base/java.io=ALL-UNNAMED 
-			--add-opens=java.base/java.util=ALL-UNNAMED 
-			--add-opens=java.base/java.lang=ALL-UNNAMED 
+			--add-opens=java.base/java.nio=ALL-UNNAMED
+			--add-opens=java.base/java.io=ALL-UNNAMED
+			--add-opens=java.base/java.util=ALL-UNNAMED
+			--add-opens=java.base/java.lang=ALL-UNNAMED
 			--add-opens=java.base/java.lang.ref=ALL-UNNAMED
 			--add-opens=java.base/java.util.concurrent=ALL-UNNAMED
 			--add-opens=java.base/sun.nio.ch=ALL-UNNAMED
@@ -614,6 +614,7 @@
             </plugin>
 
             <plugin>
+			<plugin>
 				<!-- unit tests -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
@@ -766,7 +767,6 @@
 				</executions>
 			</plugin>
 		</plugins>
-
 	</build>
 
 	<profiles>
@@ -1046,7 +1046,6 @@
 					</plugin>
 				</plugins>
 			</build>
-
 		</profile>
 
 		<profile>
@@ -1188,7 +1187,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcublas</artifactId>
@@ -1202,7 +1200,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusparse</artifactId>
@@ -1216,7 +1213,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusolver</artifactId>
@@ -1230,7 +1226,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcudnn</artifactId>
@@ -1244,7 +1239,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<!-- for all platforms, to be included in the extra jar -->
 		<dependency>
 			<groupId>org.jcuda</groupId>
@@ -1253,7 +1247,6 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcublas-natives</artifactId>
@@ -1261,7 +1254,6 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusparse-natives</artifactId>
@@ -1269,7 +1261,6 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusolver-natives</artifactId>
@@ -1277,7 +1268,6 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcudnn-natives</artifactId>
@@ -1285,7 +1275,6 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcuda-natives</artifactId>
@@ -1293,7 +1282,6 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcublas-natives</artifactId>
@@ -1301,7 +1289,6 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusparse-natives</artifactId>
@@ -1309,7 +1296,6 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcusolver-natives</artifactId>
@@ -1317,7 +1303,6 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.jcuda</groupId>
 			<artifactId>jcudnn-natives</artifactId>
@@ -1325,13 +1310,11 @@
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-handler</artifactId>
 			<version>${netty.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.zookeeper</groupId>
 			<artifactId>zookeeper</artifactId>
@@ -1343,7 +1326,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-core_${scala.binary.version}</artifactId>
@@ -1442,7 +1424,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-sql_${scala.binary.version}</artifactId>
@@ -1513,7 +1494,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-mllib_${scala.binary.version}</artifactId>
@@ -1584,7 +1564,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-common</artifactId>
@@ -1651,7 +1630,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-hdfs</artifactId>
@@ -1714,7 +1692,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-client</artifactId>
@@ -1777,7 +1754,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<!--dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-aws</artifactId>
@@ -1789,7 +1765,6 @@
 			<artifactId>aws-java-sdk-bundle</artifactId>
 			<version>${aws-java-sdk-bundle.version}</version>
 		</dependency-->
-
 		<dependency>
 			<groupId>commons-logging</groupId>
 			<artifactId>commons-logging</artifactId>
@@ -1817,46 +1792,39 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-math3</artifactId>
 			<version>3.4.1</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.wink</groupId>
 			<artifactId>wink-json4j</artifactId>
 			<version>1.4</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 			<version>2.15.2</version>
 		</dependency>
-
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.13.1</version>
 			<scope>provided</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.openjdk.jol</groupId>
 			<artifactId>jol-core</artifactId>
 			<version>0.10</version>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
 			<version>5.1.0</version>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
 			<!--Used for annotations in tests to execute tests in thread safe manner-->
 			<groupId>com.github.stephenc.jcip</groupId>
@@ -1864,7 +1832,6 @@
 			<version>1.0-1</version>
 			<scope>test</scope>
 		</dependency>
-
 		<!-- fast java compiler for codegen, consistent version w/ spark -->
 		<dependency>
 			<groupId>org.codehaus.janino</groupId>
@@ -1872,7 +1839,6 @@
 			<version>3.1.9</version>
 			<scope>provided</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.antlr</groupId>
 			<artifactId>antlr4</artifactId>
@@ -1885,20 +1851,17 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.antlr</groupId>
 			<artifactId>antlr4-runtime</artifactId>
 			<version>${antlr.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.derby</groupId>
 			<artifactId>derby</artifactId>
 			<version>10.14.2.0</version>
 			<scope>provided</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>
@@ -1915,49 +1878,41 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>net.sf.py4j</groupId>
 			<artifactId>py4j</artifactId>
 			<version>0.10.9</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.google.protobuf</groupId>
 			<artifactId>protobuf-java</artifactId>
 			<version>${protobuf.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.google.protobuf</groupId>
 			<artifactId>protobuf-java-util</artifactId>
 			<version>${protobuf.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 			<version>${slf4j.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-reload4j</artifactId>
 			<version>${slf4j.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>jul-to-slf4j</artifactId>
 			<version>${slf4j.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>jcl-over-slf4j</artifactId>
 			<version>${slf4j.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-api</artifactId>
@@ -1973,13 +1928,11 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-core</artifactId>
 			<version>${log4j-core.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>ch.randelshofer</groupId>
 			<artifactId>fastdoubleparser</artifactId>

@@ -162,9 +162,45 @@ import io.netty.handler.codec.compression.CompressionException;
   `jar tf ~/.m2/repository/org/apache/hadoop/hadoop-common/3.3.6/hadoop-common-3.3.6.jar | grep -i zookeeper`
 
 
-### Appendix
+## Results
 
-#### Output of `mvn dependency:tree`
+We managed to solve a lot of CVEs: \
+FROM: <img alt="critical: 4" src="https://img.shields.io/badge/critical-4-8b1924"/> <img alt="high: 29" src="https://img.shields.io/badge/high-29-e25d68"/> <img alt="medium: 36" src="https://img.shields.io/badge/medium-36-fbb552"/> <img alt="low: 9" src="https://img.shields.io/badge/low-9-fce1a9"/> <img alt="unspecified: 1" src="https://img.shields.io/badge/unspecified-1-lightgrey"/> \
+TO: <img alt="critical: 0" src="https://img.shields.io/badge/critical-0-lightgrey"/> <img alt="high: 6" src="https://img.shields.io/badge/high-6-e25d68"/> <img alt="medium: 8" src="https://img.shields.io/badge/medium-9-fbb552"/> <img alt="low: 1" src="https://img.shields.io/badge/low-1-fce1a9"/> <img alt="unspecified: 1" src="https://img.shields.io/badge/unspecified-1-lightgrey"/>
+
+Running `mvn clean verify` after our changes returns the same output.
+
+## Changes
+
+### `pom.xml`
+
+### `sysds.Dockerfile`
+
+#### Local build
+In order to run the alanysis tool locally, we changed the Dockerfile to build not from the git apache/systemds:latest, but to build from a copy of the local filesystem:
+
+```Dockerfile
+# Build the system
+# RUN git clone --depth 1 https://github.com/apache/systemds.git systemds && \
+# 	cd /usr/src/systemds/ && \
+# 	mvn --no-transfer-progress clean package -P distribution
+#
+# Copy the local SystemDS source into the image
+COPY . /usr/src/systemds
+# Build SystemDS
+RUN cd /usr/src/systemds && \
+    mvn --no-transfer-progress clean package -P distribution
+```
+
+This change was reset before merging.
+
+#### `apk` vulnerabilities
+
+
+
+## Appendix
+
+### Output of `mvn dependency:tree` before any change
 
 ```bash
 [INFO] org.apache.systemds:systemds:jar:3.4.0-SNAPSHOT

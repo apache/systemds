@@ -1,0 +1,14 @@
+source("scripts/builtin/hdbscan.dml") as hdb
+
+array = matrix("0 1 4 2", rows=4, cols=1)
+
+res1 = hdb::computeKthSmallest(array, 1)
+res2 = hdb::computeKthSmallest(array, 2)
+
+test_pass = (res1 == 1) & (res2 == 2)
+
+if(test_pass) {
+    print("Passed")
+} else {
+    print("Failed")
+}

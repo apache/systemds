@@ -1,0 +1,121 @@
+source("scripts/builtin/hdbscan.dml") as hdb
+
+#        4
+#      / | \
+#     /  |  \
+#    /  (2)  (5)
+#    |   |    \
+#    |   |     \
+#   (2)  1-(3)--3
+#    |   |    /
+#    \   |   (4)
+#     \  (1) /
+#      \ | /
+#       \|/
+#        2
+
+distances = matrix(0, rows=4, cols=4)
+distances[1,2] = 1 
+distances[2,1] = 1
+
+distances[1,3] = 3 
+distances[3,1] = 3
+
+distances[1,4] = 2  
+distances[4,1] = 2
+
+distances[2,3] = 4 
+distances[3,2] = 4
+
+distances[2,4] = 2
+distances[4,2] = 2
+
+distances[3,4] = 5 
+distances[4,3] = 5
+
+[edges, weights] = hdb::buildMST(distances, 4)
+
+[hierarchy, sizes] = hdb::buildHierarchy(edges, weights, 4)
+
+print("Hierarchy (format: [cluster1, cluster2, merge_distance]):")
+print(toString(hierarchy))
+
+# Should have n-1 merge operations for n nodes
+num_merges = nrow(hierarchy)
+print("Number of merges: " + num_merges + " (should be 3)")
+test1 = (num_merges == 3)
+
+# Merge distances should be in ascending order (or equal)
+# Because we process edges from low weight to high weight
+dist1 = as.scalar(hierarchy[1,3])
+dist2 = as.scalar(hierarchy[2,3])
+dist3 = as.scalar(hierarchy[3,3])
+print("\nMerge distances: [" + dist1 + ", " + dist2 + ", " + dist3 + "]" + " (Should be in ascending order)")
+test2 = (dist1 <= dist2) & (dist2 <= dist3)
+
+# Cluster sizes should increase
+size1 = as.scalar(sizes[1])
+size2 = as.scalar(sizes[2])
+size3 = as.scalar(sizes[3])
+print("\nCluster sizes: [" + size1 + ", " + size2 + ", " + size3 + "]" + " (Should be increasing)")
+test3 = (size1 <= size2) & (size2 <= size3)
+
+# Final size should equal total number of nodes
+print("Final cluster size: " + size3 + " (should be 4)")
+test4 = (size3 == 4)
+
+# First merge should be size 2
+print("First merge size: " + size1 + " (should be 2)")
+test5 = (size1 == 2)
+
+# New classic-linkage checks
+n = 4
+hasInternal = (sum(hierarchy[,1] > n) + sum(hierarchy[,2] > n)) > 0
+print("Has internal node ids (>n): " + hasInternal + " (should be true)")
+test6 = hasInternal
+
+# Check that child ids are within valid range
+maxChild1 = max(hierarchy[,1])
+maxChild2 = max(hierarchy[,2])
+maxChild = maxChild1
+if(maxChild2 > maxChild) { maxChild = maxChild2 }
+
+print("Max child id: " + maxChild + " (should be <= " + (2*n-2) + ")")
+test7 = (maxChild <= (2*n-2))
+
+# Check that internal ids are “created in order”
+test8 = TRUE
+for(r in 1:(n-1)) {
+    child1 = as.scalar(hierarchy[r,1])
+    child2 = as.scalar(hierarchy[r,2])
+    newId = n + r
+    ok = (child1 < newId) & (child2 < newId)
+    test8 = test8 & ok
+}
+print("Children reference only existing nodes: " + test8 + " (should be true)")
+
+# Recompute node sizes from hierarchy and verify
+nodeSize = matrix(0, rows=2*n-1, cols=1)
+for(j in 1:n) { nodeSize[j,1] = 1 }
+
+test9 = TRUE
+for(r in 1:(n-1)) {
+    left = as.integer(as.scalar(hierarchy[r,1]))
+    right = as.integer(as.scalar(hierarchy[r,2]))
+    newId = n + r
+
+    expected = as.scalar(nodeSize[left,1]) + as.scalar(nodeSize[right,1])
+    nodeSize[newId,1] = expected
+
+    ok = (as.scalar(sizes[r,1]) == expected)
+    test9 = test9 & ok
+}
+print("sizes[r] equals sum of child sizes: " + test9 + " (should be true)")
+
+test_pass = test1 & test2 & test3 & test4 & test5 & test6 & test7 & test8 & test9
+
+if(test_pass) {
+    print("Passed")
+} else {
+    print("Failed")
+}

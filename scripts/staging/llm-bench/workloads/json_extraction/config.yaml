@@ -1,0 +1,25 @@
+name: json_extraction
+
+# available sources:
+#   - toy: Built-in 10 samples (people/places/products) - clean ground truth
+#   - json_struct: HuggingFace MasterControlAIML/JSON-Unstructured-Structured
+#   - ner: CoNLL-2003 NER dataset (named entity extraction)
+#
+# note: The toy dataset uses STRICT accuracy checking (90% exact match required)
+# to better differentiate model quality. OpenAI typically scores 90%, local
+# models 60-80%. For harder evaluation, use "ner" or "json_struct".
+dataset:
+  source: toy  # using toy for reliable accuracy; change to json_struct for HuggingFace
+  n_samples: 10
+
+generation:
+  max_tokens: 256
+  temperature: 0.0
+
+openai:
+  model: gpt-4.1-mini
+  max_output_tokens: 256
+  temperature: 0.0
+  streaming: true
+  max_retries: 5
+  base_sleep_s: 0.5

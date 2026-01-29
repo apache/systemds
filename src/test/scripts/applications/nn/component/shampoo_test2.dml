@@ -1,0 +1,34 @@
+source("scripts/nn/optim/shampoo.dml") as shampoo
+
+X_main = matrix("0.12 -0.45  0.33  0.08 -0.19 -0.27  0.41 -0.05  0.22  0.14  0.09 -0.31  0.26 -0.48  0.37 0.44  0.06 -0.29  0.15 -0.11 -0.38  0.24  0.17 -0.07  0.52",
+  rows=5, cols=5
+)
+
+dX_main = matrix("0.015 -0.022  0.008  0.031 -0.012 -0.009  0.027 -0.014  0.005  0.019 0.021 -0.006  0.011 -0.025  0.004 -0.018  0.013 -0.029  0.007 -0.016 0.010 -0.017  0.024 -0.003  0.028",
+  rows=5, cols=5
+)
+
+epsilon = 1e-4
+lr = 0.005
+diagThreshold = 10
+rootEvery = 10
+preconEvery = 10
+
+for (diagThreshold in seq(1, 10, 9)){
+  X = X_main
+  dX = dX_main
+  #[preconL, preconR, useDiag] = shampoo::init(X, epsilon, diagThreshold)
+  #[X, preconL, preconR] = shampoo::update(X, dX, lr, preconL, preconR, useDiag)
+
+  #[preconL, preconR, momentum, useDiag] = shampoo::init_momentum(X, epsilon, diagThreshold)
+  #[X, preconL, preconR, momentum] = shampoo::update_momentum(X, dX, lr, preconL, preconR, momentum, useDiag)
+
+  [preconL, preconR, stepCounter, bufferL, bufferR, momentum, preconLInvPowerRoot, preconRInvPowerRoot, useDiag] = shampoo::init_heuristic(X, epsilon, diagThreshold)
+  [X, preconL, preconR, momentum, stepCounter, bufferL, bufferR, preconLInvPowerRoot, preconRInvPowerRoot] = shampoo::update_heuristic(X, dX, lr, preconL, preconR, momentum, stepCounter, rootEvery, preconEvery, bufferL, bufferR, preconLInvPowerRoot, preconRInvPowerRoot, useDiag)
+  
+  print("diagThreshold: " + diagThreshold)
+  print(X)
+}
+
+
+

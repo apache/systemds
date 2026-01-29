@@ -1,0 +1,499 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * Shampoo optimizer.
+ *
+ * Implementation of the Shampoo optimizer as described in:
+ *
+ *  Gupta et al., "Shampoo: Preconditioned Stochastic Tensor Optimization"
+ *  https://arxiv.org/abs/1802.09568
+ *
+ * Shampoo is a second-order optimization method that preconditions
+ * gradients using estimates of the row- and column-wise covariance
+ * of the gradients. Compared to first-order optimizers (SGD, Adam),
+ * Shampoo can converge faster but is significantly more memory-intensive.
+ *
+ * This implementation supports:
+ *  - Full-matrix Shampoo (exact preconditioning)
+ *  - Diagonal Shampoo (memory-efficient approximation)
+ *
+ * The choice between the two modes is determined by the shape of X
+ * and the preconditioner initialization.
+ */
+
+update = function(matrix[double] X, matrix[double] dX, double lr,
+                  matrix[double] preconL, matrix[double] preconR, boolean useDiag)
+    return(matrix[double] X, matrix[double] preconL, matrix[double] preconR){
+  /*
+   * Performs one optimization step using the Shampoo update rule.
+   *
+   *
+   * Inputs:
+   *  - X: Parameter matrix to be updated (n × m)
+   *  - dX: Gradient of the loss w.r.t. X (n × m)
+   *  - lr: Learning rate.
+   *  - preconL: Left (row) preconditioner
+   *      - Full: (n × n)
+   *      - Diagonal: (n × 1)
+   *  - preconR: Right (column) preconditioner
+   *      - Full: (m × m)
+   *      - Diagonal: (1 × m)
+   *  - useDiag: Boolean flag indicating whether diagonal Shampoo is used
+   *
+   * Outputs:
+   *  - X: Updated parameter matrix (n × m)
+   *  - preconL: Updated left preconditioner
+   *      - Full: (n × n)
+   *      - Diagonal: (n × 1)
+   *  - preconR: Updated right preconditioner
+   *      - Full: (m × m)
+   *      - Diagonal: (1 × m)
+   */    
+
+  # Full-matrix Shampoo:
+  # Only used if both dimensions are small enough
+  if(useDiag==FALSE){
+
+    preconL = preconL + dX %*% t(dX)
+    preconR = preconR + t(dX) %*% dX
+
+    [LEigenvalue, LEigenvector] = eigen(preconL)
+    preconLInvPowerRoot = LEigenvector %*% diag(LEigenvalue^(-0.25)) %*% t(LEigenvector)
+
+    [REigenvalue, REigenvector] = eigen(preconR)
+    preconRInvPowerRoot = REigenvector %*% diag(REigenvalue^(-0.25)) %*% t(REigenvector)
+
+    X = X - lr * preconLInvPowerRoot %*% dX %*% preconRInvPowerRoot
+  
+  # Diagonal Shampoo:
+  # Memory-efficient approximation for large parameter matrices
+  } else{
+    n = nrow(dX)
+    m = ncol(dX)
+
+    preconL = preconL + rowSums(dX^2)          
+    preconR = preconR + colSums(dX^2)  
+
+    preconLScale = preconL^(-0.25)        
+    preconRScale = preconR^(-0.25)
+
+    preconLMatrix = preconLScale %*% matrix(1, rows=1, cols=m)
+    preconRMatrix = matrix(1, rows=n, cols=1) %*% preconRScale
+
+    scaledGrad = dX * preconLMatrix;
+    scaledGrad = scaledGrad * preconRMatrix;
+
+    X = X - lr * scaledGrad;
+
+  }
+}
+
+init = function(matrix[double] X, double epsilon, int useDiagThreshold)
+    return (matrix[double] preconL, matrix[double] preconR, boolean useDiag) {
+  /*
+   * Initializes the Shampoo preconditioners for a given parameter matrix.
+   *
+   * Depending on the size of X, this function initializes either:
+   *  - Full identity matrices (exact Shampoo), or
+   *  - Diagonal vectors (approximate Shampoo)
+   *
+   * This threshold is crucial to avoid excessive memory usage,
+   * as full Shampoo requires O(n^2 + m^2) memory per parameter matrix.
+   *
+   * Inputs:
+   *  - X: Parameter matrix to be optimized (n, m)
+   *  - epsilon: Numerical stability constant
+   *  - useDiagThreshold: Dimension threshold above which diagonal
+   *                      preconditioning is used
+   *
+   * Outputs:
+   *  - preconL: Initial left preconditioner
+   *      - Full: (n × n) identity scaled by epsilon
+   *      - Diagonal: (n × 1) filled with epsilon
+   *  - preconR: Initial right preconditioner
+   *      - Full: (m × m) identity scaled by epsilon
+   *      - Diagonal: (1 × m) filled with epsilon
+   *  - useDiag: Boolean flag indicating whether diagonal Shampoo is used
+   */
+
+  # Use diagonal Shampoo if parameter matrix is too large
+  if((nrow(X) > useDiagThreshold) | (ncol(X) > useDiagThreshold)){
+    preconL = matrix(epsilon, rows=nrow(X), cols=1);
+    preconR = matrix(epsilon, rows=1, cols=ncol(X));
+    useDiag = TRUE
+
+  # Use full Shampoo if parameter matrix is small enough
+  } else {
+    preconL = matrix(0, rows=nrow(X), cols=nrow(X));
+    index = 1;
+      while (index <= nrow(X)){
+          preconL[index, index] = epsilon * 1
+          index = index + 1
+      }
+    preconR = matrix(0, rows=ncol(X), cols=ncol(X));
+    index = 1;
+      while (index <= ncol(X)){
+          preconR[index, index] = epsilon * 1
+          index = index + 1
+      }
+    useDiag = FALSE
+  }
+}
+
+update_momentum = function(matrix[double] X, matrix[double] dX, double lr,
+                  matrix[double] preconL, matrix[double] preconR, 
+                  matrix[double] momentum, boolean useDiag)
+    return(matrix[double] X, matrix[double] preconL, matrix[double] preconR, 
+           matrix[double] momentum){
+  /*
+   * Performs one optimization step using the Shampoo update rule, while using momentum.
+   *
+   *
+   * Inputs:
+   *  - X: Parameter matrix to be updated (n × m)
+   *  - dX: Gradient of the loss w.r.t. X (n × m)
+   *  - lr: Learning rate.
+   *  - preconL: Left (row) preconditioner
+   *               - Full: (n × n)
+   *               - Diagonal: (n × 1)
+   *  - preconR: Right (column) preconditioner
+   *               - Full: (m × m)
+   *               - Diagonal: (1 × m)
+   *  - momentum: momentum (n × m)
+   *  - useDiag: Boolean flag indicating whether diagonal Shampoo is used
+   *
+   * Outputs:
+   *  - X: Updated parameter matrix (n × m)
+   *  - preconL: Updated left preconditioner
+   *      - Full: (n × n)
+   *      - Diagonal: (n × 1)
+   *  - preconR: Updated right preconditioner
+   *      - Full: (m × m)
+   *      - Diagonal: (1 × m)
+   *  - momentum: Updated momentum (n × m)
+   */    
+
+  # calculating the updated momentum
+  momentum = 0.9 * momentum + (0.1)*dX
+
+  # Full-matrix Shampoo:
+  # Only used if both dimensions are small enough
+  if(useDiag==FALSE){
+
+    preconL = preconL + dX %*% t(dX)
+    preconR = preconR + t(dX) %*% dX
+
+    [LEigenvalue, LEigenvector] = eigen(preconL)
+    preconLInvPowerRoot = LEigenvector %*% diag(LEigenvalue^(-0.25)) %*% t(LEigenvector)
+
+    [REigenvalue, REigenvector] = eigen(preconR)
+    preconRInvPowerRoot = REigenvector %*% diag(REigenvalue^(-0.25)) %*% t(REigenvector)
+
+    X = X - lr * preconLInvPowerRoot %*% momentum %*% preconRInvPowerRoot
+  
+  # Diagonal Shampoo:
+  # Memory-efficient approximation for large parameter matrices
+  } else{
+      n = nrow(dX)
+      m = ncol(dX)
+
+      preconL = preconL + rowSums(dX ^ 2)
+      preconR = preconR + colSums(dX ^ 2)
+
+      preconLScale = preconL^(-0.25)        
+      preconRScale = preconR^(-0.25)
+
+      preconLMatrix = preconLScale %*% matrix(1, rows=1, cols=m)
+      preconRMatrix = matrix(1, rows=n, cols=1) %*% preconRScale
+
+      scaledGrad = momentum * preconLMatrix
+      scaledGrad = scaledGrad * preconRMatrix
+
+      X = X - lr * scaledGrad         
+    }
+}
+
+init_momentum = function(matrix[double] X, double epsilon, int useDiagThreshold)
+    return (matrix[double] preconL, matrix[double] preconR, 
+            matrix[double] momentum, boolean useDiag) {
+  /*
+   * Initializes the Shampoo preconditioners and momentum for a given parameter matrix.
+   *
+   * Depending on the size of X, this function initializes either:
+   *  - Full identity matrices (exact Shampoo), or
+   *  - Diagonal vectors (approximate Shampoo)
+   *
+   * This threshold is crucial to avoid excessive memory usage,
+   * as full Shampoo requires O(n² + m²) memory per parameter matrix.
+   *
+   * Inputs:
+   *  - X: Parameter matrix to be optimized (n, m)
+   *  - epsilon: Numerical stability constant
+   *  - useDiagThreshold: Dimension threshold above which diagonal
+   *                      preconditioning is used
+   *
+   * Outputs:
+   *  - preconL: Initial left preconditioner
+   *      - Full: (n × n) identity scaled by epsilon
+   *      - Diagonal: (n × 1) filled with epsilon
+   *  - preconR: Initial right preconditioner
+   *      - Full: (m × m) identity scaled by epsilon
+   *      - Diagonal: (1 × m) filled with epsilon
+   *  - momentum: Initial momentum (n × m), initialized to zeros
+   *  - useDiag: Boolean flag indicating whether diagonal Shampoo is used
+   */
+
+  # Use diagonal Shampoo if parameter matrix is too large
+  if((nrow(X) > useDiagThreshold) | (ncol(X) > useDiagThreshold)){
+    preconL = matrix(epsilon, rows=nrow(X), cols=1);
+    preconR = matrix(epsilon, rows=1, cols=ncol(X));
+    useDiag = TRUE
+
+  # Use full Shampoo if parameter matrix is small enough
+  } else {
+    preconL = matrix(0, rows=nrow(X), cols=nrow(X));
+    index = 1;
+      while (index <= nrow(X)){
+          preconL[index, index] = epsilon * 1
+          index = index + 1
+      }
+    preconR = matrix(0, rows=ncol(X), cols=ncol(X));
+    index = 1;
+      while (index <= ncol(X)){
+          preconR[index, index] = epsilon * 1
+          index = index + 1
+      }
+    useDiag = FALSE
+  }
+  momentum = X * 0
+}
+
+update_heuristic = function(matrix[double] X, matrix[double] dX, double lr,
+                  matrix[double] preconL, matrix[double] preconR, matrix[double] momentum, 
+                  int stepCounter, int rootEvery, int preconEvery, matrix[double] bufferL, 
+                  matrix[double] bufferR, matrix[double] preconLInvPowerRoot, 
+                  matrix[double] preconRInvPowerRoot, boolean useDiag)
+    return (matrix[double] X, matrix[double] preconL, matrix[double] preconR, 
+            matrix[double] momentum, int stepCounter, matrix[double] bufferL, 
+            matrix[double] bufferR, matrix[double] preconLInvPowerRoot, 
+            matrix[double] preconRInvPowerRoot){
+  /*
+   * Performs one optimization step using the Shampoo update rule, while using momentum 
+   * and a heuristic for runtime improvements.
+   *
+   *
+   * Inputs:
+   *  - X: Parameter matrix to be updated (n × m)
+   *  - dX: Gradient of the loss w.r.t. X (n × m)
+   *  - lr: Learning rate.
+   *  - preconL: Left (row) preconditioner
+   *      - Full: (n × n)
+   *      - Diagonal: (n × 1)
+   *  - preconR: Right (column) preconditioner
+   *      - Full: (m × m)
+   *      - Diagonal: (1 × m)
+   *  - momentum: momentum (n × m)
+   *  - stepCounter: Step counter (int), incremented each call
+   *  - rootEvery: Frequency for recomputing inverse roots (int)
+   *  - preconEvery: Frequency for applying buffered updates to preconditioners (int)
+   *  - bufferL: Buffer accumulating left curvature updates
+   *      - Full: (n × n)
+   *      - Diagonal: (n × 1)
+   *  - bufferR: Buffer accumulating right curvature updates
+   *      - Full: (m × m)
+   *      - Diagonal: (1 × m)
+   *  - preconLInvPowerRoot: Cached preconL^{-1/4}
+   *      - Full: (n × n)
+   *      - Diagonal: (n × 1)
+   *  - preconRInvPowerRoot: Cached preconR^{-1/4}
+   *      - Full: (m × m)
+   *      - Diagonal: (1 × m)
+   *  - useDiag: Boolean flag indicating whether diagonal Shampoo is used
+   *
+   * Outputs:
+   *  - X: Updated parameter matrix (n × m)
+   *  - preconL: Updated left preconditioner 
+   *      - Full: (n × n)
+   *      - Diagonal: (n × 1)
+   *  - preconR: Updated right preconditioner
+   *      - Full: (m × m)
+   *      - Diagonal: (1 × m)
+   *  - momentum: momentum (n × m)
+   *  - stepCounter: Updated step counter (int)
+   *  - bufferL: Updated bufferL (reset to 0 when applied)
+   *      - Full: (n × n)
+   *      - Diagonal: (n × 1)
+   *  - bufferR: Updated bufferR (reset to 0 when applied)
+   *      - Full: (m × m)
+   *      - Diagonal: (1 × m)
+   *  - preconLInvPowerRoot: Updated cached inverse root (when recomputed)
+   *      - Full: (n × n)
+   *      - Diagonal: (n × 1)
+   *  - preconRInvPowerRoot: Updated cached inverse root (when recomputed)
+   *      - Full: (m × m)
+   *      - Diagonal: (1 × m)
+   */    
+
+  # calculating the updated momentum
+  momentum = 0.9 * momentum + (0.1)*dX
+
+  # Full-matrix Shampoo:
+  # Only used if both dimensions are small enough
+  if(useDiag==FALSE){
+    bufferL = bufferL + (dX %*% t(dX))
+    bufferR = bufferR + (t(dX) %*% dX)
+
+    if ((stepCounter > 0) & (stepCounter %% preconEvery == 0)){
+      preconL = preconL + bufferL
+      preconR = preconR + bufferR
+      bufferL = bufferL * 0
+      bufferR = bufferR * 0
+    }
+
+
+    if ((stepCounter > 0) & (stepCounter %% rootEvery == 0)){
+      [LEigenvalue, LEigenvector] = eigen(preconL)
+      preconLInvPowerRoot = LEigenvector %*% diag(LEigenvalue^(-0.25)) %*% t(LEigenvector)
+
+      [REigenvalue, REigenvector] = eigen(preconR)
+      preconRInvPowerRoot = REigenvector %*% diag(REigenvalue^(-0.25)) %*% t(REigenvector)
+    }
+
+    X = X - lr * preconLInvPowerRoot %*% momentum %*% preconRInvPowerRoot
+
+    stepCounter = stepCounter + 1
+  
+  # Diagonal Shampoo:
+  # Memory-efficient approximation for large parameter matrices
+  } else{
+    n = nrow(dX)
+    m = ncol(dX)
+
+    bufferL = bufferL + rowSums(dX ^ 2)
+    bufferR = bufferR + colSums(dX ^ 2)
+
+    if ((stepCounter > 0) & (stepCounter %% preconEvery == 0)){
+      preconL = preconL + bufferL
+      preconR = preconR + bufferR
+      bufferL = bufferL * 0
+      bufferR = bufferR * 0
+    }
+
+    if ((stepCounter > 0) & (stepCounter %% rootEvery == 0)){
+      preconLInvPowerRoot = (preconL^(-0.25))
+      preconRInvPowerRoot = (preconR^(-0.25))
+    }
+    preconLMatrix = preconLInvPowerRoot %*% matrix(1, rows=1, cols=m)
+    preconRMatrix = matrix(1, rows=n, cols=1) %*% preconRInvPowerRoot
+
+    scaledGrad = momentum * preconLMatrix
+    scaledGrad = scaledGrad * preconRMatrix
+
+    X = X - lr * scaledGrad
+    stepCounter = stepCounter + 1
+  }
+}
+
+
+
+init_heuristic = function(matrix[double] X, double epsilon, int useDiagThreshold)
+    return (matrix[double] preconL, matrix[double] preconR, int stepCounter, 
+            matrix[double] bufferL, matrix[double] bufferR, matrix[double] momentum, 
+            matrix[double] preconLInvPowerRoot, matrix[double] preconRInvPowerRoot, 
+            boolean useDiag) {
+  /*
+   * Initializes Shampoo preconditioners, buffers, cached inverse roots, 
+   * and momentum for the heuristic variant.
+   *
+   * Depending on the size of X, this function initializes either:
+   *  - Full identity matrices (exact Shampoo), or
+   *  - Diagonal vectors (approximate Shampoo)
+   *
+   * This threshold is crucial to avoid excessive memory usage,
+   * as full Shampoo requires O(n^2 + m^2) memory per parameter matrix.
+   *
+   * Inputs:
+   *  - X: Parameter matrix to be optimized (n, m)
+   *  - epsilon: Numerical stability constant
+   *  - useDiagThreshold: Dimension threshold above which diagonal
+   *                      preconditioning is used
+   *
+   * Outputs:
+   *  - preconL: Initial left preconditioner (n × n) or (n × 1)
+   *  - preconR: Initial right preconditioner (m × m) or (1 × m)
+   *  - stepCounter: Initialized to 0
+   *  - bufferL: Initialized to zeros, same shape as preconL
+   *  - bufferR: Initialized to zeros, same shape as preconR
+   *  - momentum: Initialized to zeros, same shape as X (n × m)
+   *  - preconLInvPowerRoot: Cached inverse fourth root of preconL
+   *      - Full: initialized to epsilon^{-1/4} * I (n × n)
+   *      - Diagonal: initialized to preconL^{-1/4} (n × 1)
+   *  - preconRInvPowerRoot: Cached inverse fourth root of preconR
+   *      - Full: initialized to epsilon^{-1/4} * I (m × m)
+   *      - Diagonal: initialized to preconR^{-1/4} (1 × m)
+   *  - useDiag: Boolean flag indicating whether diagonal Shampoo is used
+   */
+
+  # Use diagonal Shampoo if parameter matrix is too large
+  if((nrow(X) > useDiagThreshold) | (ncol(X) > useDiagThreshold)){
+    preconL = matrix(epsilon, rows=nrow(X), cols=1);
+    preconR = matrix(epsilon, rows=1, cols=ncol(X));
+    preconLInvPowerRoot = preconL^(-0.25)
+    preconRInvPowerRoot = preconR^(-0.25)
+    useDiag = TRUE
+
+  # Use full Shampoo if parameter matrix is small enough
+  } else {
+    preconL = matrix(0, rows=nrow(X), cols=nrow(X));
+    index = 1;
+      while (index <= nrow(X)){
+          preconL[index, index] = epsilon * 1
+          index = index + 1
+      }
+    preconR = matrix(0, rows=ncol(X), cols=ncol(X));
+    index = 1;
+      while (index <= ncol(X)){
+          preconR[index, index] = epsilon * 1
+          index = index + 1
+      }
+
+    preconLInvPowerRoot = preconL
+    i = 1
+    while(i <= nrow(preconLInvPowerRoot)) {
+      preconLInvPowerRoot[i,i] = epsilon^(-0.25)
+      i = i + 1
+    }
+
+    preconRInvPowerRoot = preconR
+    j = 1
+    while(j <= nrow(preconRInvPowerRoot)) {
+      preconRInvPowerRoot[j,j] = epsilon^(-0.25)
+      j = j + 1
+    }  
+
+    useDiag = FALSE
+  }
+  bufferR = preconR * 0
+  bufferL = preconL * 0
+  stepCounter = 0
+  momentum = X * 0
+}

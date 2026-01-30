@@ -93,7 +93,7 @@ train = function(matrix[double] X, matrix[double] Y,
   params = list(lr=lr, mu=mu, decay=decay, C=C, Hin=Hin, Win=Win, Hf=Hf, Wf=Wf, stride=stride, pad=pad, lambda=lambda, F1=F1, F2=F2, N3=N3, fullyConnectedLayers=list(3,4))
 
   # Length of an IST round
-  ist_round = 10 # TODO whats a good value?
+  ist_round = 50 # TODO whats a good value?
 
   # Use independent subnet training function
   s1 = "./src/test/scripts/functions/builtin/indSubnetTest_mnist_lenet.dml::computeGradients"
@@ -362,7 +362,7 @@ return (matrix[double] X, matrix[double] Y,
 
 # Training parameters
 epochs = 10  # TODO reinstate 90
-batch_size = 512
+batch_size = 128 #512 TODO reiinstate?
 workers = 8
 utype = "BSP"      # or whatever you use
 freq  = "BATCH"    # kept for signature compatibility (IST can ignore)

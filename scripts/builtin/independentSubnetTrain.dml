@@ -18,7 +18,7 @@ m_independentSubnetTrain = function(
    int                  paramsPerLayer,
    list[int]          fullyConnectedLayers
 )
-return (list[unknown] model_out_2)
+return (list[unknown] trained_model)
 {
     # ------------------------------------------------------------
     # Setup
@@ -131,10 +131,12 @@ return (list[unknown] model_out_2)
             if (verbose) print(step)
 
             # 1.) create masks for all subnets
+            print("Masking started!")
             [masks, masks_meta_info] = ist_create_disjoint_masks(round_model, numSubnets, L, fcLayers, paramsPerLayer, isFC, verbose)
+            print("Masking ended!")
             if (verbose) print(toString(masks))
 
-            # 2.) preallocate list for all subnets TODO move outside epoch loop to prevent constantly allocating? could lead to unwanted side effects if reused in next IST round
+            # 2.) preallocate list to store all subnets TODO move outside epoch loop to prevent constantly allocating? could lead to unwanted side effects if reused in next IST round
             updatedSubnets = list()
             updatedSubnetsMasks = list()
             for (s in 1:numSubnets) {
@@ -142,86 +144,79 @@ return (list[unknown] model_out_2)
                 updatedSubnetsMasks = append(updatedSubnetsMasks, list())
             }
 
-            # 3.) perform 'j' local gradient steps for each subnet
-            for (subnet in 1:numSubnets) { # TODO make parfor
-                if (verbose) print("Current model:")
-                if (verbose) print(round_model)
+            # 3) create a template for each subnet based on input model (allows indexing in subsequent parfor-loop) TODO mve outside loop
+            subnetModelTemplate = list()
+            subnetModelMaskTemplate = list()
+            for (pIdx in 1:P) {
+                subnetModelTemplate      = append(subnetModelTemplate, as.matrix(model[pIdx]))
+                subnetModelMaskTemplate  = append(subnetModelMaskTemplate, as.matrix(model[pIdx]))
+            }
+
+            # TODO make it PARALLEL --- START --------------------------------------------------------------------------
+            print("Trying to run in parallel.")
+
+            # local optimization steps / IST round
+            localSteps = min(j, (stepsPerEpoch-step+1))
+
+            # 4.) obtain all minibatches for this IST round (doing it once prevents TODO)
+            shuffled_features = list()
+            shuffled_labels = list()
+            for (localStep in 1:localSteps) {
+                mb = (step-1) + localStep
+                mb_local = mb-1
+                start = mb_local*batchsize + 1
+                end   = min(mb*batchsize, N)
+
+                Xb = features_shuffled[start:end, 1:ncol(features_shuffled)]
+                yb = labels_shuffled[start:end, 1:ncol(labels_shuffled)]
+                shuffled_features = append(shuffled_features, Xb)
+                shuffled_labels = append(shuffled_labels, yb)
+            }
+
+            # 5.) perform 'j' local gradient steps for each subnet
+            print("Started J local gradient steps FOR ALL SUBNETS SIMULTANEOUSLY...")
+            parfor (subnet in 1:numSubnets) {
 
                 # a.) obtain masked subnet
-                subnet_model = list()
-                subnet_model_mask = list()
-                for (p in 1:length(round_model)) {
-                    param_start_idx = as.integer(as.scalar(masks_meta_info[p,1]))
-                    param_end_idx   = as.integer(as.scalar(masks_meta_info[p,2]))
-                    param_rows     = as.integer(as.scalar(masks_meta_info[p,3]))
-                    param_cols     = as.integer(as.scalar(masks_meta_info[p,4]))
-                    if (verbose) print("Following info was obtained.")
-                    if (verbose) print(param_start_idx)
-                    if (verbose) print(param_end_idx)
-                    if (verbose) print(param_rows)
-                    if (verbose) print(param_cols)
+                subnet_model = subnetModelTemplate
+                subnet_model_mask = subnetModelMaskTemplate
+                for (subnet_p in 1:length(round_model)) {
+                    param_start_idx = as.integer(as.scalar(masks_meta_info[subnet_p,1]))
+                    param_end_idx   = as.integer(as.scalar(masks_meta_info[subnet_p,2]))
+                    param_rows     = as.integer(as.scalar(masks_meta_info[subnet_p,3]))
+                    param_cols     = as.integer(as.scalar(masks_meta_info[subnet_p,4]))
 
                     vec = masks[subnet, param_start_idx:param_end_idx]
                     param_mask = matrix(vec, rows=param_rows, cols=param_cols, byrow=TRUE)
-                    param = as.matrix(round_model[p])
-                    subnet_model = append(subnet_model, param * param_mask)  # elementwise mask
-                    subnet_model_mask = append(subnet_model_mask, param_mask)
-                }
-                if (verbose) print("SUBNET model #" + subnet)
-                if (verbose) print(subnet_model)
+                    param = as.matrix(round_model[subnet_p])
 
-                if (verbose) print("SUBNET model MASK:")
-                if (verbose) print(subnet_model_mask)
+                    subnet_model[subnet_p]      = list(param * param_mask)
+                    subnet_model_mask[subnet_p] = list(param_mask)
+                }
 
                 # b.) local optimization steps / IST round
-                localSteps = min(j, (stepsPerEpoch-step+1))
                 for (localStep in 1:localSteps) {
-                    if (verbose) print("Local Step:")
-                    mb = (step-1) + localStep
-                    if (verbose) print(mb)
-
-                    mb = (step-1) + localStep  # mini batch idx
-                    start = (mb-1)*batchsize + 1
-                    end   = min(mb*batchsize, N)
-
-                    Xb = features_shuffled[start:end, 1:ncol(features_shuffled)]
-                    yb = labels_shuffled[start:end, 1:ncol(labels_shuffled)]
-
-                    if (verbose) print("Xb:")
-                    if (verbose) print(Xb)
-
-                    if (verbose) print("yb:")
-                    if (verbose) print(yb)
+                    feat = as.matrix(shuffled_features[localStep])
+                    lab = as.matrix(shuffled_labels[localStep])
 
                     # compute gradients for subnet s + apply update (SGD/Adam/etc.) on owned params (only)
-                    subnet_model = as.list(evalList(upd, list(model=subnet_model, mask=subnet_model_mask, features=Xb, labels=yb, hyperparams=hyperparams)))
-
+                    #subnet_model = as.list(evalList(upd, list(model=subnet_model, mask=subnet_model_mask, features=feat, labels=lab, hyperparams=hyperparams)))
                 }
-                if (verbose) print("Subnet model mask:")
-                if (verbose) print(subnet_model_mask)
-                if (verbose) print("owned rows = " + nrow(subnet_model_mask))
-                if (verbose) print("owned cols = " + ncol(subnet_model_mask))
-                #stop("EXEC finished!")
-
-                if (verbose) print("Trained subnet model:")
-                if (verbose) print(subnet_model)
-                if (verbose) print("owned rows = " + nrow(subnet_model))
-                if (verbose) print("owned cols = " + ncol(subnet_model))
 
                 # c.) save updated subnet and mask
                 updatedSubnets[subnet] = list(subnet_model)
                 updatedSubnetsMasks[subnet] = list(subnet_model_mask)
             }
+            print(updatedSubnets)
+            #stop("Ran in parallel! --- :: SUCCESS :: ---")
+
+            print("All subnets have run successfully.")
 
             if (verbose) print("ALL SUBNET UPDATES COMBINED:")
             if (verbose) print(toString(updatedSubnets))
             if (verbose) stop("Performed updates on all subnets!")
 
-            #print("ALL SUBNET MASKS COMBINED:")
-            #print(toString(updatedSubnetsMasks))
-            #stop("Performed updates on all subnets!")
-
-            # 4.) aggregate updates into global model (i.e. model_out)
+            # 6.) aggregate updates into global model (i.e. model_out)
             for (p in 1:P) {  # TODO parfor ?
                 if (as.scalar(isSharedParam[1, p])==1) {
                     # construct full model update by aggregating shared parameter updates from all subnets
@@ -295,8 +290,9 @@ return (list[unknown] model_out_2)
                     if (verbose) print(toString(round_model[p]))
                }
             }
+            print("Aggregation of subnets completed.")
 
-            # end of the IST round
+            # 7.) update global model (end of the IST round)
             model_out = round_model
 
             print("An IST round has been successfully executed! The updated model is:.")
@@ -304,10 +300,9 @@ return (list[unknown] model_out_2)
             #stop("An IST round has been successfully executed!")
             # TODO tested until here! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         }
+        # TODO (potentially): add validation
     }
-
-    # TODO leave as return statement - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    model_out_2 = model_out
+    trained_model = model_out
 }
 
 

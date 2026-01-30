@@ -552,7 +552,7 @@ public class ListObject extends Data implements Externalizable {
 	public void enableCleanup(Queue<Boolean> flags) {
 		for (Data dat : this.getData()) {
 			if (dat instanceof CacheableData<?>)
-				((CacheableData<?>)dat).enableCleanup(flags.poll());
+				((CacheableData<?>)dat).enableCleanup(Boolean.TRUE.equals(flags.poll()));
 			else if (dat instanceof ListObject)
 				((ListObject)dat).enableCleanup(flags);
 		}

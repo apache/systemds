@@ -26,15 +26,123 @@
 
 >This task is to improve the security of the Docker images we provide. Currently we get an 'F' evaluation on DockerHub, and we would like instead to provide secure images.
 
-## `docker scout cves` identified vulnerabilities
+In the [appendix](#detailed-example-orgapachezookeeperzookeeper), you can see a full example on how we analysed the identified vulnerabilities.
 
-### org.apache.zookeeper/zookeeper
+- [Data Integration and Large-Scale Analysis](#data-integration-and-large-scale-analysis)
+  - [Changes outside `pom.xml`](#changes-outside-pomxml)
+    - [Critical CVEs `io.netty/netty@3.10.6.Final`](#critical-cves-ionettynetty3106final)
+    - [`sysds.Dockerfile`](#sysdsdockerfile)
+  - [Changelog](#changelog)
+  - [Appendix](#appendix)
+    - [Detailed example: `org.apache.zookeeper/zookeeper`](#detailed-example-orgapachezookeeperzookeeper)
 
-- CVE-2023-44981 Authorization Bypass Through User-Controlled Key
-  - Identify the correct package
+## Changes outside `pom.xml`
 
-    Scout recommends upgrading the package to `3.7.2`, `3.8.3`, or `3.9.1`. \
-    [Releases](https://zookeeper.apache.org/releases.html): `3.7.2` already reached its EoL.
+### Critical CVEs `io.netty/netty@3.10.6.Final`
+
+This is a transitive dependency from `hadoop-hdfs 3.3.6`. Version `3.4.2` does not use the `netty` dependency anymore. The update has been made in the `pom.xml` property: \
+`<hadoop-hdfs.version>3.4.2</hadoop-hdfs.version>`
+
+The only change necessary in the code is in the import of the netty package. What was
+```java
+import org.jboss.netty.handler.codec.compression.CompressionException;
+```
+became
+```java
+import io.netty.handler.codec.compression.CompressionException;
+```
+
+#### Usage
+
+At the time of writing, the only usage of this import is in [systemds/src/main/java/org/apache/sysds/runtime/compress/colgroup/ColGroupDDC.java](systemds/src/main/java/org/apache/sysds/runtime/compress/colgroup/ColGroupDDC.java):
+```java
+// import org.jboss.netty.handler.codec.compression.CompressionException;
+import io.netty.handler.codec.compression.CompressionException;
+// CVE-2019-20444: org.jboss.netty replaced by io.netty in hadoop-hdfs 3.4.2
+```
+
+### `sysds.Dockerfile`
+<!-- TODO -->
+
+## Changelog
+
+#### Dec 4, 2025
+- Create documentation to log work and document changes
+
+#### Jan 6, 2026
+- `org.apache.zookeeper/zookeeper@3.6.3` -> 3.8.3 (CVE-2023-44981)
+- Modified `sysds.Dockerfile` to build locally from filesystem instead of pulling latest (which doesn't contain the changes yet)
+
+#### Jan 11, 2026
+- kerby → 2.0.3 (CVE-2023-25613)
+- avro → 1.11.4 (CVE-2024-47561)
+
+#### Jan 14, 2026
+- `org.apache.zookeeper/zookeeper@3.8.3` -> 3.9.4 (CVE-2024-23944)
+- explicit `io.nety/netty-handler@4.1.118.Final` (CVE-2023-3678, CVE-2025-11226, CVE-2024-12798, CVE-2024-12801)
+
+#### Jan 15, 2026
+- json-smart → 2.4.9 (CVE-2023-1370)
+- jettison → 1.5.4 (CVE-2023-1436)
+- snappy-java → 1.1.10.4 (CVE-2023-43642)
+- nimbus-jose-jwt → 9.37.4 (CVE-2023-52428)
+- logback → 1.2.13 (CVE-2023-6378)
+- aircompressor → 0.27 (CVE-2024-36114)
+- commons-io → 2.14.0 (CVE-2024-47554)
+- protobuf-java → 3.25.5 (CVE-2024-7254)
+- jackson-core → 2.15.0 (CVE-2025-52999)
+
+#### Jan 16, 2026
+- netty → 4.1.124.Final (CVE-2023-44487, CVE-2025-55163)
+- xnio-api → 3.8.14.Final (CVE-2023-5685)
+- dnsjava → 3.6.0 (CVE-2024-25638)
+- jetty → 9.4.57.v20241219 (CVE-2024-6763)
+- commons-beanutils → 1.11.0 (CVE-2025-48734)
+
+#### Jan 21, 2026
+- `org.eclipse.jetty/jetty-http@9.4.57.v20241219` -> 12.0.12 (CVE-2024-6763)
+- explicit `org.apache.commons/commons-compress@1.26.0` (CVE-2024-26308, CVE-2024-25710, CVE-2023-42503)
+- explicit `org.apache.commons/commons-configuration2@2.10.1` (CVE-2024-29133, CVE-2024-29131)
+- explicit `org.apache.hadoop.thirdparty/hadoop-shaded-guava@1.5.0`
+- explicit `com.google.guava/guava@33.5.0-jre`
+
+  --> (CVE-2023-2976, CVE-2020-8908)
+
+#### Jan 22, 2026
+- `io.netty/netty-codec-http@4.1.124.Final` -> 4.1.129.Final
+- `io.netty/netty-codec-smtp@4.1.124.Final` -> 4.1.129.Final
+- `io.netty/netty-codec@4.1.124.Final` -> 4.1.129.Final
+
+--> (CVE-2025-67735, CVE-2025-58056, CVE-2025-58057, CVE-2025-59419)
+- `org.apache.logging.log4j/log4j-core@2.22.1` -> 2.25.3 (CVE-2025-68161)
+
+#### Jan 23, 2026
+- explicit `org.apache.commons/commons-lang3@3.18.0` (CVE-2025-48924)
+- explicit `org.apache.spark/spark-network-common_2.12@3.5.2` (CVE-2025-55039)
+- `org.apache.hadoop/hadoop-common@3.3.6` -> 3.4.2 (CVE-2024-23454) \
+  Version 3.4.0 is enough for CVE-2024-23454, but generates two other CVEs which are solved with upgraded version 3.4.2
+- `org.apache.hadoop/hadoop-hdfs@3.3.6` -> 3.4.2 (CVE-2019-20444) \
+  Import changes: `org.jboss.netty.*` → `io.netty.*`
+
+#### Jan 25, 2026
+- busybox → 1.36.1-r31 (CVE-2024-58251, CVE-2025-46394)
+- openssl → 3.3.5-r0 (CVE-2025-9230, CVE-2025-9231, CVE-2025-9232)
+
+
+#### Jan 29, 2026
+- Created `UNFIXED_VULNERABILITIES.md` documenting 16 remaining CVEs
+
+## Appendix
+
+### Detailed example: `org.apache.zookeeper/zookeeper`
+
+Here is the detail of how to detect and solve vulnerabilities once identified by zookeeper.
+
+CVE-2023-44981 Authorization Bypass Through User-Controlled Key
+- Analyse the vulnerable package
+
+  The current version is `3.6.3`. Scout recommends upgrading the package to `3.7.2`, `3.8.3`, or `3.9.1`. \
+  [Releases](https://zookeeper.apache.org/releases.html): `3.7.2` already reached its EoL.
 
   Apache zookeeper is not directly imported in the project. The vulnerability is raised transitively by another dependecy. \
   `mvn dependency:tree` shows all implicit dependencies (see the [appendix](../README.md#output-of-mvn-dependencytree-before-any-change) for the output). \

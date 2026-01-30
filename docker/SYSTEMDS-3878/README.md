@@ -28,7 +28,27 @@ The goal of SYSTEMDS-3878 as presented in [jira](https://issues.apache.org/jira/
 >This task is to improve the security of the Docker images we provide. Currently we get an 'F' evaluation on DockerHub, and we would like instead to provide secure images.
 https://hub.docker.com/repository/docker/apache/systemds/general
 
-<!-- TODO Table of contents -->
+**Table of contents**
+
+- [Data Integration and Large-Scale Analysis](#data-integration-and-large-scale-analysis)
+  - [Overview](#overview)
+  - [Working on apache/systemds](#working-on-apachesystemds)
+    - [Create a fork](#create-a-fork)
+    - [Commiting](#commiting)
+  - [Docker scout cves](#docker-scout-cves)
+    - [Usage](#usage)
+    - [Command details](#command-details)
+    - [Solve vulnerabilities](#solve-vulnerabilities)
+    - [Inspection commands to find tricky packages](#inspection-commands-to-find-tricky-packages)
+    - [`docker scout` helloworld example](#docker-scout-helloworld-example)
+  - [Student Project SYSTEMDS-3878](#student-project-systemds-3878)
+    - [Results](#results)
+    - [Summary of Changes](#summary-of-changes)
+    - [Testing](#testing)
+  - [Appendix](#appendix)
+    - [`docker scout` helloworld output](#docker-scout-helloworld-output)
+    - [Output of `mvn dependency:tree` before any change](#output-of-mvn-dependencytree-before-any-change)
+
 
 ## Working on apache/systemds
 
@@ -397,7 +417,8 @@ Running `mvn clean verify` after our changes returns the same output.
 
 ### Output of `mvn dependency:tree` before any change
 
-[Return](#upgrading-the-related-package) to solving vulnerabilities
+[Return](#upgrading-the-related-package) to solving vulnerabilities. \
+[Return](./summary-of-changes/README.md#detailed-example-orgapachezookeeperzookeeper) to zookeeper example.
 
 <details>
 

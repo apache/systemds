@@ -62,6 +62,7 @@ public class DecoderComposite extends Decoder
 
 	@Override
 	public FrameBlock decode(final MatrixBlock in, final FrameBlock out, final int k) {
+		long t3 = System.nanoTime();
 		final ExecutorService pool = CommonThreadPool.get(k);
 		out.ensureAllocatedColumns(in.getNumRows());
 		try {
@@ -76,6 +77,8 @@ public class DecoderComposite extends Decoder
 			}
 			for(Future<?> f : tasks)
 				f.get();
+			long t4 = System.nanoTime();
+			System.out.println("Decoder time: " + (t4 - t3) / 1e6 + " ms");
 			return out;
 		}
 		catch(Exception e) {

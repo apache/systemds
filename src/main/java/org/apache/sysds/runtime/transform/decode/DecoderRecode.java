@@ -71,12 +71,13 @@ public class DecoderRecode extends Decoder
 
 	@Override
 	public void decode(MatrixBlock in, FrameBlock out, int rl, int ru) {
-		if( _onOut ) { //recode on output (after dummy)
+ 		if( _onOut ) { //recode on output (after dummy)
 			for( int i=rl; i<ru; i++ ) {
 				for( int j=0; j<_colList.length; j++ ) {
 					int colID = _colList[j];
 					double val = UtilFunctions.objectToDouble(
 							out.getSchema()[colID-1], out.get(i, colID-1));
+
 					long key = UtilFunctions.toLong(val);
 					out.set(i, colID-1, getRcMapValue(j, key));
 				}

@@ -69,6 +69,8 @@ public class DecoderDummycode extends Decoder
 						out.set(i, col, UtilFunctions.doubleToObject(
 							out.getSchema()[col], k-_clPos[j]+1));
 					}
+		System.out.println("dummy"+out);
+
 	}
 	
 	@Override

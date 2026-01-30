@@ -1,142 +1,150 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+# Independent Subnet Training (IST)
+#
+# This builtin implements independent subnet training as a
+# second-order function. It orchestrates distributed / parallel
+# training over disjoint subnets using parfor, while delegating
+# architecture-specific logic to user-provided functions.
+# ------------------------------------------------------------
+# INPUT:
+#   model                : initial model parameters. A list of matrices for NN.
+#   features             : X
+#   labels               : Y
+#   val_features         : validation X
+#   val_labels           : validation Y
+#   upd                  : computes gradients and performs optimizer step
+#   agg                  : aggregation logic to combine updates of shared parameters (across subnets)
+#   epochs               : number of epochs
+#   batchsize            : batchsize for training
+#   j                    : number of gradient steps until aggregation -> determines length of the IST round (aggregation frequency)
+#   numSubnets           : number of independent subnets/workers
+#   hyperparams          : list of hyperparameters (e.g. lr, reg, mask params, etc.)
+#   verbose              : print progress (boolean)
+#   paramsPerLayer       : amount of parameters each layer consists of
+#   fullyConnectedLayers : list of all FC layer indices (starting at idx=1)
+#
+# OUTPUT:
+#   model_out     : trained model parameters (IST: W)
+#
+# ASSUMPTION:
+#   - the last layer is the output layer
+# ------------------------------------------------------------
+
 m_independentSubnetTrain = function(
-   list[unknown] model,
+   list[unknown]        model,
    matrix[double]       features,
    matrix[double]       labels,
    matrix[double]       val_features,
    matrix[double]       val_labels,
    string               upd,
    string               agg,
-   string               mode,
-   string               utype,
    int                  epochs,
    int                  batchsize,
    int                  j,
    int                  numSubnets,
-   string               scheme,
    list[unknown]        hyperparams,
    boolean              verbose,
    int                  paramsPerLayer,
-   list[int]          fullyConnectedLayers
+   list[int]            fullyConnectedLayers
 )
 return (list[unknown] trained_model)
 {
     # ------------------------------------------------------------
     # Setup
-    # TODO assumption that the last layer is the output layer
     # ------------------------------------------------------------
-    if (verbose) print("Entered IST function.")
     model_out = model
 
     P = length(model)
-    if (verbose) print("Parameters in model:")
-    if (verbose) print(P)
-
     N = nrow(features)
-    if (verbose) print("Samples:")
-    if (verbose) print(N)
-
-    if (verbose) print("Is model length NOT divisible by paramsPerLayer? :")
-    if (verbose) print(P %% paramsPerLayer != 0)
-    if (P %% paramsPerLayer != 0) {
-       stop("Model length not divisible by paramsPerLayer")
-    }
-
-    if (verbose) print("We made it")
+    if (P %% paramsPerLayer != 0) stop("Model length not divisible by paramsPerLayer")
     L = as.integer(P / paramsPerLayer)  # total layers
-    if (verbose) print("Layers:")
-    if (verbose) print(L)
-
-    # obtain indices of FC layers
-    fcLayers = fullyConnectedLayers
-    if (verbose) print("FC layers:")
-    if (verbose) print(toString(fcLayers))
 
     # I. determine shared parameters
     isSharedParam = matrix(0, 1, P)
 
-    # create mask for all parameters of FC layers
+    # - create mask for all FC layers
+    fcLayers = fullyConnectedLayers
     isFC = matrix(0, rows=1, cols=L)
     for (i in 1:length(fcLayers)) {
        idx = as.integer(as.scalar(fcLayers[i]))
        isFC[1, idx] = 1  # TODO vectorize
     }
-    if (verbose) print(toString(isFC))
 
+    # - expand layer mask across all parameters
     isFC_rep = isFC
     for (r in 2:paramsPerLayer) {
         isFC_rep = cbind(isFC_rep, isFC)
     }
-    if (verbose) print(toString(isFC_rep))
     if (ncol(isFC_rep)!=P) stop("Dimension mismatch for FC layer mask.")
 
-
-    # 1. all non-FC layers are shared
+    # - all non-FC layers are shared
     isSharedParam = 1 - isFC_rep
-    if (verbose) print(toString(isSharedParam))
 
-
-    # 2. FC bias parameters are shared in: output layer or at the end of a FC block
+    # - edge case: FC bias parameters are shared in: output layer or at the end of a FC block
     for (paramId in seq(2, paramsPerLayer, 2)) {   # iterate bias blocks only
         for (l in 1:L) {
             if (as.scalar(isFC[1,l])==1 & l==L) {
                 p_out_bias = (paramId - 1) * L + L  # output bias is shared across subnets
-                isSharedParam[1, p_out_bias] = 1
+                isSharedParam[1, p_out_bias] = 1  # TODO vectorize
             }
             else if (as.scalar(isFC[1,l])==1 & l<L & as.scalar(isFC[1,l+1])==0) {
                 p_out_bias = (paramId - 1) * L + l  # end of FC block's bias is shared across subnets
-                isSharedParam[1, p_out_bias] = 1
+                isSharedParam[1, p_out_bias] = 1  # TODO vectorize
             }
         }
     }
-    if (verbose) print(toString(isSharedParam))
     if (ncol(isSharedParam) != P) stop("isSharedParam dimension mismatch!")
 
     # II. calculate update-steps per epoch
     if (batchsize<=0 | batchsize>N) {
-        stop("Batch size is out of bounds!") # TODO mention concrete values
+        stop("Batch size is out of bounds!")
     } else {
         stepsPerEpoch = ceil(N / batchsize)
     }
-    if (verbose) print("Steps per epoch:")
-    if (verbose) print(stepsPerEpoch)
-
 
     # III. training loop
     for (epoch in 1:epochs) {
-        print("Entered epoch: " + epoch)
-        # TODO NEW start - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        if (verbose) print("Entered epoch: " + epoch)
 
         # A.) reshuffle indices each epoch
-        randyOrton = rand(rows=N, cols=1)
-        allSampleIndicesRandom = order(target=randyOrton, by=1, decreasing=FALSE, index.return=TRUE)
-
+        allSampleIndicesRandom = order(target=rand(rows=N, cols=1), by=1, decreasing=FALSE, index.return=TRUE)
         batchIndices = allSampleIndicesRandom[, 1]
-
         b = nrow(batchIndices)
         I = seq(1, b, 1)
         V = matrix(1, rows=b, cols=1)
-
         S = table(I, batchIndices, V, b, N)
+
         features_shuffled = S %*% features
         labels_shuffled = S %*% labels
-        # TODO NEW end - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        if (verbose) print("Length of random sample indices:")
-        if (verbose) print(length(allSampleIndicesRandom))
 
         # B.) iterate IST rounds
         for (step in seq(1, stepsPerEpoch, j)) {
-            print("Starting new IST round at step: " + step)
+            if (verbose) print("Starting new IST round at step: " + step)
             round_model = model_out  # prevent accidental mutation of model_out
-            if (verbose) print("Iterating IST round:")
-            if (verbose) print(step)
 
             # 1.) create masks for all subnets
-            print("Masking started!")
             [masks, masks_meta_info] = ist_create_disjoint_masks(round_model, numSubnets, L, fcLayers, paramsPerLayer, isFC, verbose)
-            print("Masking ended!")
-            if (verbose) print(toString(masks))
 
-            # 2.) preallocate list to store all subnets TODO move outside epoch loop to prevent constantly allocating? could lead to unwanted side effects if reused in next IST round
+            # 2.) preallocate list to store all subnets TODO move outside epoch loop?  to prevent constantly allocating...
             updatedSubnets = list()
             updatedSubnetsMasks = list()
             for (s in 1:numSubnets) {
@@ -144,7 +152,7 @@ return (list[unknown] trained_model)
                 updatedSubnetsMasks = append(updatedSubnetsMasks, list())
             }
 
-            # 3) create a template for each subnet based on input model (allows indexing in subsequent parfor-loop) TODO mve outside loop
+            # 3) create a template for each subnet based on input model (allows indexing in subsequent parfor-loop) TODO move outside epoch loop?  to prevent constantly allocating...
             subnetModelTemplate = list()
             subnetModelMaskTemplate = list()
             for (pIdx in 1:P) {
@@ -152,13 +160,10 @@ return (list[unknown] trained_model)
                 subnetModelMaskTemplate  = append(subnetModelMaskTemplate, as.matrix(model[pIdx]))
             }
 
-            # TODO make it PARALLEL --- START --------------------------------------------------------------------------
-            print("Trying to run in parallel.")
-
             # local optimization steps / IST round
             localSteps = min(j, (stepsPerEpoch-step+1))
 
-            # 4.) obtain all minibatches for this IST round (doing it once prevents TODO)
+            # 4.) obtain all minibatches for this IST round (doing it once prevents parfor confusion)
             shuffled_features = list()
             shuffled_labels = list()
             for (localStep in 1:localSteps) {
@@ -174,7 +179,6 @@ return (list[unknown] trained_model)
             }
 
             # 5.) perform 'j' local gradient steps for each subnet
-            print("Started J local gradient steps FOR ALL SUBNETS SIMULTANEOUSLY...")
             parfor (subnet in 1:numSubnets) {
 
                 # a.) obtain masked subnet
@@ -190,7 +194,7 @@ return (list[unknown] trained_model)
                     param_mask = matrix(vec, rows=param_rows, cols=param_cols, byrow=TRUE)
                     param = as.matrix(round_model[subnet_p])
 
-                    subnet_model[subnet_p]      = list(param * param_mask)
+                    subnet_model[subnet_p]      = list(param * param_mask)  # TODO sparse masking! dense masking will probably increase computational efficiency
                     subnet_model_mask[subnet_p] = list(param_mask)
                 }
 
@@ -199,25 +203,18 @@ return (list[unknown] trained_model)
                     feat = as.matrix(shuffled_features[localStep])
                     lab = as.matrix(shuffled_labels[localStep])
 
-                    # compute gradients for subnet s + apply update (SGD/Adam/etc.) on owned params (only)
-                    #subnet_model = as.list(evalList(upd, list(model=subnet_model, mask=subnet_model_mask, features=feat, labels=lab, hyperparams=hyperparams)))
+                    # compute gradients for subnet s + apply update step on owned params (only)
+                    subnet_model = as.list(evalList(upd, list(model=subnet_model, mask=subnet_model_mask, features=feat, labels=lab, hyperparams=hyperparams)))
                 }
 
                 # c.) save updated subnet and mask
                 updatedSubnets[subnet] = list(subnet_model)
                 updatedSubnetsMasks[subnet] = list(subnet_model_mask)
             }
-            print(updatedSubnets)
-            #stop("Ran in parallel! --- :: SUCCESS :: ---")
-
-            print("All subnets have run successfully.")
-
-            if (verbose) print("ALL SUBNET UPDATES COMBINED:")
-            if (verbose) print(toString(updatedSubnets))
-            if (verbose) stop("Performed updates on all subnets!")
+            if (verbose) print("All subnets have run successfully.")
 
             # 6.) aggregate updates into global model (i.e. model_out)
-            for (p in 1:P) {  # TODO parfor ?
+            for (p in 1:P) {
                 if (as.scalar(isSharedParam[1, p])==1) {
                     # construct full model update by aggregating shared parameter updates from all subnets
                     subnetParams = list()
@@ -229,21 +226,10 @@ return (list[unknown] trained_model)
                         subnetParams = append(subnetParams, as.matrix(subnet[p]))
                         subnetMasks = append(subnetMasks, as.matrix(subnetMask[p]))
                     }
-                    if (verbose) print("1st param (W) from all subnets:")
-                    if (verbose) print(toString(subnetParams))
-
-                    if (verbose) print("Masks of 1st param (W) from all subnets:")
-                    if (verbose) print(toString(subnetMasks))
-
 
                     # aggregate shared parameters based on provided function
                     averagedUpdatedParam = eval(agg, list(initialParam=as.matrix(round_model[p]), allSubnetsParam=subnetParams, allSubnetsMasks=subnetMasks))
-                    if (verbose) print("Successfully retrieved averaged updates for shared param.")
-                    if (verbose) print(averagedUpdatedParam)
-
                     round_model[p] = averagedUpdatedParam
-                    if (verbose) print("Averaging shared params has been successful.")
-                    if (verbose) print(toString(round_model[p]))
                }
                else {
                     # construct full model update by filling with disjointly partitioned parameter updates from all subnets
@@ -251,56 +237,27 @@ return (list[unknown] trained_model)
                     updatedParam = matrix(0, nrow(initialParam), ncol(initialParam))
                     owned = matrix(0, nrow(initialParam), ncol(initialParam))
 
-                    if (verbose) print("INITAL PARAM")
-                    if (verbose) print(toString(initialParam))
-
-                    if (verbose) print("owned rows = " + nrow(owned))
-                    if (verbose) print("owned cols = " + ncol(owned));
-
                     for (s in 1:numSubnets) {
-                        if (verbose) print("Subnet number: " + s)
-                        if (verbose) print("Param number: " + p)
                         subnet = as.list(updatedSubnets[s])
                         subnetMask = as.list(updatedSubnetsMasks[s])
 
                         owned = owned + as.matrix(subnetMask[p])
-                        updatedParam = updatedParam + as.matrix(subnet[p]) #* as.matrix(subnetMask[p])
-
-                        if (verbose) print("Subnets mask (acc):")
-                        if (verbose) print(owned)
-                        if (verbose) print("Subnets update:")
-                        if (verbose) print(as.matrix(subnet[p]))
+                        updatedParam = updatedParam + as.matrix(subnet[p])
                     }
 
                     # SANITY CHECK:
-                    if (verbose) print("owned rows = " + nrow(owned))
-                    if (verbose) print("owned cols = " + ncol(owned))
+                    max_freq = max(owned)
+                    if (max_freq > 1) stop("Overlap detected")
 
-                    if (verbose) print("OWNED")
-                    if (verbose) print(owned)
-
-                    overlap = max(owned)
-                    if (verbose) print("MAXIMUM")
-                    if (verbose) print(overlap)
-
-                    if (overlap > 1) stop("Overlap detected")
                     round_model[p] = updatedParam
-
-                    if (verbose) print("Reconstructing disjoint params has been successful.")
-                    if (verbose) print(toString(round_model[p]))
                }
             }
-            print("Aggregation of subnets completed.")
+            if (verbose) print("Aggregation of subnets finished. IST round has been successfully executed!")
 
             # 7.) update global model (end of the IST round)
             model_out = round_model
-
-            print("An IST round has been successfully executed! The updated model is:.")
-            print(toString(model_out))
-            #stop("An IST round has been successfully executed!")
-            # TODO tested until here! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         }
-        # TODO (potentially): add validation
+        # TODO (potentially): add validation for early stopping etc.
     }
     trained_model = model_out
 }
@@ -309,30 +266,46 @@ return (list[unknown] trained_model)
 # ----------------------------------------------------------------------------------------------------------------------
 # Independent Subnet Masking
 #
-# This helper function creates a list of masks, one per subnet.
-# Each mask is a binary vector/matrix indicating which parameters belong to that subnet.
+# This helper function creates two matrices: one contains all flattened masks, the other contains the info on
+# how to reconstruct the mask matrices. Each mask is a binary vector indicating which parameters belong to that subnet.
 # ----------------------------------------------------------------------------------------------------------------------
+# INPUT:
+#   model                : list of parameter tensors grouped by parameter type i.e. blocks
+#   numSubnets           : number of independent subnets/workers (K)
+#   L                    : total number of layers INCLUDING the output layer (layer indices are assumed to be 1..L)
+#   fullyConnectedLayers : list of all FC layer indices (starting at idx=1)
+#   paramsPerFCLayer     : number of parameters / neurons to be partitioned per FC layer
+#   isFC                 : indicator matrix encoding which layers are FC => isFC[l] ∈ {0,1}
+#   verbose              : print progress (boolean)
+#
+# OUTPUT:
+#   masks_new            : mask matrix defining disjoint neuron ownership across subnets
+#   masks_new_meta       : metadata matrix describing the mask layout and ownership mapping
+#
 # ASSUMPTIONS:
-#  - neuron ownership is defined via bias vectors
-#  - model is a list of parameter tensors
-#  - trainable parameters are grouped by parameter type i.e. param blocks like (W_l1, W_l2, ..., b_l1, b_l2, ...)
-#  - assumes W and b are always the first two param blocks
-#  - the pattern of optional optimizer state tensors (e.g., vW_l, vb_l) follow the same grouping and always W followed by b
-#  - (output layer & end of FC block) biases are shared -> gradients collide; must be handled by aggregation logic
+#   - neuron ownership is defined via bias vectors
+#   - model is a list of parameter tensors
+#   - trainable parameters are grouped by parameter type i.e. param blocks like (W_l1, W_l2, ..., b_l1, b_l2, ...)
+#   - assumes W and b are always the first two param blocks
+#   - the pattern of optional optimizer state tensors (e.g., vW_l, vb_l) follow the same grouping and always W followed by b
+#   - (output layer & end of FC block) biases are shared -> gradients collide; must be handled by aggregation logic
 # ----------------------------------------------------------------------------------------------------------------------
 
 ist_create_disjoint_masks = function(
-    list[unknown] model,
-    int numSubnets,
-    int L,  # total layers including output layer
-    list[int] fullyConnectedLayers,  # the indices of FC-layers starting from 1
-    int paramsPerFCLayer,
-    Matrix[Double] isFC,
-    boolean verbose)
-  return (Matrix[Double] masks_new, Matrix[Double] masks_new_meta)
+    list[unknown]   model,
+    int             numSubnets,
+    int             L,
+    list[int]       fullyConnectedLayers,
+    int             paramsPerFCLayer,
+    Matrix[Double]  isFC,
+    boolean         verbose
+)
+  return (
+    Matrix[Double]  masks_new,
+    Matrix[Double]  masks_new_meta
+  )
 {
     P = length(model)
-    modus = 0  # masks stored in {0: matrix / 1: list}
 
     # SANITY CHECKS: ensure provided model can be masked correctly
     if (as.integer(P / paramsPerFCLayer) != L) {
@@ -343,22 +316,6 @@ ist_create_disjoint_masks = function(
     }
 
     # I.) initialize and preallocate masks
-    masks = list()
-    for (s in 1:numSubnets) {
-        masks = append(masks, model);
-        #for (k in 1:P) { TODO might be a problem?
-        #    masks[s][k] = matrix(0, rows=nrow(model[p]), cols=ncol(model[p]))
-        #}
-    }
-    if (verbose) print("Masks now has following length:")
-    if (verbose) print(length(masks))
-
-
-    # II.) determine FC layers
-    if (verbose) print("Forwarded fully connected layer information:")
-    if (verbose) print(toString(isFC))
-
-    # TODO NEW START - - - - - - -  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  - - - - - - -
     masks_new_meta = matrix(0, rows=length(model), cols=4)  # columns=[start,end,rows,cols]
     current_position = 1
     for (p in 1:length(model)) {
@@ -373,33 +330,18 @@ ist_create_disjoint_masks = function(
         current_position = current_position + param_length
     }
     mask_size = current_position-1
+    masks_new = matrix(0, rows=numSubnets, cols=mask_size)  # all subnets in one matrix
 
-    # All subnets in one matrix
-    masks_new = matrix(0, rows=numSubnets, cols=mask_size)
-    if (verbose) print(masks_new_meta)
-    # TODO NEW END - - - - - - -  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  - - - - - - -
-
-
-    # III.) iterate all layers
+    # II.) iterate all layers
     for (l in 1:L) {
+
+        # FC layer: create #{numSubnets} disjoint partitions for this layer across all parameters
         if (as.scalar(isFC[1,l]) == 1) {
-            if (verbose) print("Entered fully connected layer. The layer is:")
-            if (verbose) print(l)
-
             W = as.matrix(model[l])
-            if (verbose) print("W (rows/cols):")
-            if (verbose) print(nrow(W))
-            if (verbose) print(ncol(W))
-
             b = as.matrix(model[l+L])
-            if (verbose) print("b:")
-            if (verbose) print(ncol(b))
-
             H = ncol(W);  # bias neurons in layer l
-            if (verbose) print("H:")
-            if (verbose) print(H)
 
-            # SANITY CHECK
+            # SANITY CHECKS:
             if (nrow(b) != 1 | ncol(b) != H) {
                 if (verbose) print("Bias shape mismatch!")
                 if (verbose) print("b:", nrow(b), "x", ncol(b))
@@ -412,47 +354,32 @@ ist_create_disjoint_masks = function(
                 stop("Please use a wider model or decrease the amount of subnets.")
             }
 
-            randyOrton2 = rand(rows=H, cols=1)  # shuffle all indices
-            allNeuronIndicesRandom = order(target=randyOrton2, by=1, decreasing=FALSE, index.return=TRUE)  # shuffle all indices
-            if (verbose) print("Length of random sample indices:")
-            if (verbose) print(length(allNeuronIndicesRandom))
+            # A.) shuffle all neuron indices
+            allNeuronIndicesRandom = order(target=rand(rows=H, cols=1), by=1, decreasing=FALSE, index.return=TRUE)
 
-            # TODO FROM HERE ...
-            chunk_size = floor(H/numSubnets)  # amount of neurons each subnet will consist at least TODO for l=L they are shared s this value will be quite low or even below 1
+            # B.) determine neuron ownership
+            chunk_size = floor(H/numSubnets)
             remaining_neurons = H - chunk_size * numSubnets
-            if (verbose) print("Dividing all hidden layer neurons by the number of subnets, each subnet will own at least:")
-            if (verbose) print(chunk_size)
-            if (verbose) print("Following amount of neurons remains and will be randomly assigned to the subnets (at most one to a subnet):")
-            if (verbose) print(remaining_neurons)
-
             amount_active_neurons = matrix(chunk_size, rows=numSubnets, cols=1)
             if (remaining_neurons > 0) {
                 randomSubnetIndices = order(target=rand(rows=numSubnets, cols=1, seed=-1), by=1, decreasing=FALSE, index.return=TRUE)  # TODO replace seed for experiments
                 for (i in 1:remaining_neurons) {
                   sid = as.integer(as.scalar(randomSubnetIndices[i,1]))
-                  amount_active_neurons[sid,1] = as.scalar(amount_active_neurons[sid,1]) + 1  # TODO VECTORIZE use pmin()
+                  amount_active_neurons[sid,1] = as.scalar(amount_active_neurons[sid,1]) + 1  # TODO VECTORIZE
                 }
             }
-            if (verbose) print("Amount of active neurons per subnet:")
-            if (verbose) print(amount_active_neurons)
-
             neuron_end_indices = cumsum(amount_active_neurons)
             neuron_start_indices = neuron_end_indices - amount_active_neurons + 1
-            if (verbose) print("Start indices of each subnet:")
-            if (verbose) print(neuron_start_indices)
 
+            # C.) obtain masks for all subnets
             for(s in 1:numSubnets) {
-                if (verbose) print("Entered subnet:")
-                if (verbose) print(s)
 
-                # A. obtain owned neurons for this layer
+                # 1. obtain owned neurons for this layer
                 start = as.integer(as.scalar(neuron_start_indices[s,1]))
                 end = as.integer(as.scalar(neuron_end_indices[s,1]))
                 current_b_indices = allNeuronIndicesRandom[start:end, 1]
-                if (verbose) print(length(current_b_indices))
-                # TODO ... UNTIL HERE: only required for else case (in bias case)
 
-                # B. create masked bias
+                # 2. create masked bias
                 if(l==L) {  # output layer
                     masked_b = matrix(1, rows=1, cols=ncol(b))
                 }
@@ -466,9 +393,8 @@ ist_create_disjoint_masks = function(
                        masked_b[1, idx] = 1
                     }
                 }
-                if (verbose) print(masked_b)
 
-                # 2b. create masked weight
+                # 3. create masked weight
                 masked_W = matrix(0, rows=nrow(W), cols=ncol(W))
                 if(l==1) {
                     for (i in 1:nrow(current_b_indices)) {  # TODO VECTORIZE
@@ -485,27 +411,12 @@ ist_create_disjoint_masks = function(
                 else {
                     # obtain active neurons of previous layer
                     p = L + (l-1)
-
-                    if (modus==1) {
-                        previous_masked_b_list = as.list(masks[s])
-                        previous_masked_b = as.matrix(previous_masked_b_list[p])
-                        if (verbose) print(toString(previous_masked_b))
-                    } else {
-                        start = as.integer(as.scalar(masks_new_meta[p,1]))
-                        end   = as.integer(as.scalar(masks_new_meta[p,2]))
-                        r     = as.integer(as.scalar(masks_new_meta[p,3]))
-                        c     = as.integer(as.scalar(masks_new_meta[p,4]))
-                        if (verbose) print("Following info was obtained.")
-                        if (verbose) print(start)
-                        if (verbose) print(end)
-                        if (verbose) print(r)
-                        if (verbose) print(c)
-
-                        vec = masks_new[s, start:end]
-                        previous_masked_b = matrix(vec, rows=r, cols=c, byrow=TRUE)  # TODO might be unnecessary
-                        if (verbose) print("Previous bias:")
-                        if (verbose) print(previous_masked_b)
-                    }
+                    start = as.integer(as.scalar(masks_new_meta[p,1]))
+                    end   = as.integer(as.scalar(masks_new_meta[p,2]))
+                    r     = as.integer(as.scalar(masks_new_meta[p,3]))
+                    c     = as.integer(as.scalar(masks_new_meta[p,4]))
+                    vec = masks_new[s, start:end]
+                    previous_masked_b = matrix(vec, rows=r, cols=c, byrow=TRUE)
 
                     # SANITY CHECK: dimensions with layers of previous layer match
                     if (l > 1 & ncol(previous_masked_b) != nrow(W)) {
@@ -526,44 +437,21 @@ ist_create_disjoint_masks = function(
                     } else {
                         masked_W = previous_masked_b %*% masked_b
                     }
-                    if (verbose) print("Previous b:")
-                    if (verbose) print(previous_masked_b)
                 }
-                if (verbose) print("Current b:")
-                if (verbose) print(masked_b)
-                if (verbose) print("Current W:")
-                if (verbose) print(masked_W)
 
-                # 3. forward these masks to all parameters in this layer
-                if (modus==1) {
-                    # TODO this branch is faulty ATM
-                    for (param in 1:paramsPerFCLayer) {
-                        k = (param-1)*L + l
+                # 4. forward these masks to all parameters in this layer
+                for (param in 1:paramsPerFCLayer) {
+                    k = (param-1)*L + l
+                    start = as.integer(as.scalar(masks_new_meta[k,1]))
+                    end   = as.integer(as.scalar(masks_new_meta[k,2]))
+                    len   = end - start + 1
 
-                        if (param %% 2 == 0) {
-                            # masks[s][k] = masked_b FIXME
-                        } else {
-                            # masks[s][k] = masked_W FIXME
-                        }
+                    if (param %% 2 == 0) {
+                        flat = matrix(masked_b, rows=1, cols=len, byrow=TRUE)
+                    } else {
+                        flat = matrix(masked_W, rows=1, cols=len, byrow=TRUE)
                     }
-                    # TODO this branch is faulty ATM
-                } else {
-                    for (param in 1:paramsPerFCLayer) {
-                        k = (param-1)*L + l
-                        start = as.integer(as.scalar(masks_new_meta[k,1]))
-                        end   = as.integer(as.scalar(masks_new_meta[k,2]))
-                        len   = end - start + 1
-
-                        if (param %% 2 == 0) {
-                            #masks_new[s,start:end] = masked_b
-                            flat = matrix(masked_b, rows=1, cols=len, byrow=TRUE)
-                        } else {
-                            flat = matrix(masked_W, rows=1, cols=len, byrow=TRUE)
-                        }
-                        masks_new[s, start:end] = flat
-                    }
-                    if (verbose) print("Saved masks for this layer:")
-                    if (verbose) print(masks_new[s])
+                    masks_new[s, start:end] = flat
                 }
             }
 
@@ -593,7 +481,7 @@ ist_create_disjoint_masks = function(
             }
         }
         else {
-            # independent subnet training cannot be used on this layer // Non-FC layer: shared across all subnets -> masks are all-ones
+            # Non-FC layer: independent subnet training will not create disjoint partitions for this layer //  shared across all subnets -> masks are all-ones
             for (param in 1:paramsPerFCLayer) {
                 k = (param-1)*L + l
                 start = as.integer(as.scalar(masks_new_meta[k,1]))
@@ -613,25 +501,4 @@ ist_create_disjoint_masks = function(
             }
         }
     }
-
-    # DEBUG: visualize the layer masks for -> the 1st subnet and the 1st parameter only i.e W1..W4
-    if (verbose) print("This is the final mask for the 1st subnet:")
-    if (verbose) print(masks_new[1])
-    s = 1  # 1st subnet
-    for (layer in 1:L) {
-        start = as.integer(as.scalar(masks_new_meta[layer,1]))
-        end   = as.integer(as.scalar(masks_new_meta[layer,2]))
-        r     = as.integer(as.scalar(masks_new_meta[layer,3]))
-        c     = as.integer(as.scalar(masks_new_meta[layer,4]))
-        if (verbose) print("Following info was obtained.")
-        if (verbose) print(start)
-        if (verbose) print(end)
-        if (verbose) print(r)
-        if (verbose) print(c)
-
-        vec = masks_new[s, start:end]
-        previous_masked_b = matrix(vec, rows=r, cols=c, byrow=TRUE)
-        if (verbose) print(previous_masked_b)
-    }
-    # TODO tested until here! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 }

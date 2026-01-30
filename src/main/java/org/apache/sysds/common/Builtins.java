@@ -207,6 +207,7 @@ public enum Builtins {
 	ISNA("is.na", "isNA", false),
 	ISNAN("is.nan", "isNaN", false),
 	ISINF("is.infinite", "isInf", false),
+    ISN_TRAIN("independentSubnetTrain", true),
 	KM("km", true),
 	KMEANS("kmeans", true),
 	KMEANSPREDICT("kmeansPredict", true),

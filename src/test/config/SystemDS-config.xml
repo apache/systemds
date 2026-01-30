@@ -18,7 +18,7 @@
 -->
 
 <root>
-   <!-- The number of theads for the spark instance artificially selected-->
+   <!-- The number of threads for the spark instance artificially selected-->
    <sysds.local.spark.number.threads>2</sysds.local.spark.number.threads>
    <!-- The timeout of the federated tests to initialize the federated matrixes -->
    <sysds.federated.initialization.timeout>2</sysds.federated.initialization.timeout>

@@ -28,33 +28,10 @@ from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.operator_registry import register_representation
 from systemds.scuro.utils.static_variables import get_device
 import os
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
+from systemds.scuro.utils.torch_dataset import TextDataset, TextSpanDataset
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
-
-class TextDataset(Dataset):
-    def __init__(self, texts):
-
-        self.texts = []
-        if isinstance(texts, list):
-            self.texts = texts
-        else:
-            for text in texts:
-                if text is None:
-                    self.texts.append("")
-                elif isinstance(text, np.ndarray):
-                    self.texts.append(str(text.item()) if text.size == 1 else str(text))
-                elif not isinstance(text, str):
-                    self.texts.append(str(text))
-                else:
-                    self.texts.append(text)
-
-    def __len__(self):
-        return len(self.texts)
-
-    def __getitem__(self, idx):
-        return self.texts[idx]
 
 
 class BertFamily(UnimodalRepresentation):
@@ -96,10 +73,12 @@ class BertFamily(UnimodalRepresentation):
                     layer.register_forward_hook(get_activation(name))
                     break
 
-        if isinstance(modality.data[0], list):
+        if ModalityType.TEXT.has_field(modality.metadata, "text_spans"):
+            dataset = TextSpanDataset(modality.data, modality.metadata)
             embeddings = []
-            for d in modality.data:
-                embeddings.append(self.create_embeddings(d, self.model, tokenizer))
+            for text in dataset:
+                embedding = self.create_embeddings(text, self.model, tokenizer)
+                embeddings.append(embedding)
         else:
             embeddings = self.create_embeddings(modality.data, self.model, tokenizer)
 

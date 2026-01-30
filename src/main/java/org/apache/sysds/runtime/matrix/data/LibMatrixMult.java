@@ -4019,6 +4019,45 @@ public class LibMatrixMult
 			c[ ci+bix[j+7] ] = a[ ai+bix[j+7] ] * b[ j+7 ];
 		}
 	}
+	// test
+	public static double[] vectMult2Write(double[] a,double[] c, int ai, int len) {
+	
+		int i = 0;
+		int upper = SPECIES.loopBound(len);
+	
+		for (; i < upper; i += vLen) {
+			DoubleVector va = DoubleVector.fromArray(SPECIES, a, ai + i);
+			va.add(va).intoArray(c, i);
+		}
+	
+		for (; i < len; i++) {
+			double x = a[ai + i];
+			c[i] = x + x;
+		}
+	
+		return c;
+	}
+	public static double[] vectMult2Write_dedicated_2(double[] a, double[] c, int ai, int len) {
+		
+		final int bn = len % vLen;
+	
+		// scalar prefix so the vector loop is an exact multiple of vLen
+		for (int j = 0; j < bn; j++) {
+			double x = a[ai + j];
+			c[j] = x + x;
+		}
+	
+		// vector loop: j runs over multiples of vLen, no tail afterwards
+		for (int j = bn; j < len; j += vLen) {
+			DoubleVector va = DoubleVector.fromArray(SPECIES, a, ai + j);
+			va.add(va).intoArray(c, j);
+			// or: va.mul(2.0) via broadcast if you prefer
+		}
+	
+		return c;
+	}
+	
+	
 
 	public static void vectMultiply(double[] a, double[] c, int ai, int ci, final int len){
 

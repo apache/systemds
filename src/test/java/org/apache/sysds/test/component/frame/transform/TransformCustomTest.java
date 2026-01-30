@@ -97,9 +97,10 @@ public class TransformCustomTest {
 		try {
 
 			FrameBlock meta = null;
-			MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(),
-				meta);
+			MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, data.getColumnNames(), data.getNumColumns(), meta);
 			MatrixBlock out = encoder.encode(data);
+			meta = encoder.getMetaData(meta); //I added this just to have the frame stored somewhere 
+			System.out.println(meta);
 			MatrixBlock out2 = encoder.apply(data);
 
 			TestUtils.compareMatrices(out, out2, 0, "Not Equal after apply");

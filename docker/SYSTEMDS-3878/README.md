@@ -267,7 +267,7 @@ We managed to solve a lot of CVEs:
 
 | FROM: | <img alt="critical: 4" src="https://img.shields.io/badge/critical-4-8b1924"/>    | <img alt="high: 29" src="https://img.shields.io/badge/high-29-e25d68"/> | <img alt="medium: 36" src="https://img.shields.io/badge/medium-36-fbb552"/> | <img alt="low: 9" src="https://img.shields.io/badge/low-9-fce1a9"/> | <img alt="unspecified: 1" src="https://img.shields.io/badge/unspecified-1-lightgrey"/> |
 | :---- | :------------------------------------------------------------------------------- | :---------------------------------------------------------------------- | :-------------------------------------------------------------------------- | :------------------------------------------------------------------ | :------------------------------------------------------------------------------------- |
-| TO:   | <img alt="critical: 0" src="https://img.shields.io/badge/critical-0-lightgrey"/> | <img alt="high: 6" src="https://img.shields.io/badge/high-6-e25d68"/>   | <img alt="medium: 8" src="https://img.shields.io/badge/medium-9-fbb552"/>   | <img alt="low: 1" src="https://img.shields.io/badge/low-1-fce1a9"/> | <img alt="unspecified: 1" src="https://img.shields.io/badge/unspecified-1-lightgrey"/> |
+| TO:   | <img alt="critical: 0" src="https://img.shields.io/badge/critical-0-lightgrey"/> | <img alt="high: 6" src="https://img.shields.io/badge/high-6-e25d68"/>   | <img alt="medium: 8" src="https://img.shields.io/badge/medium-8-fbb552"/>   | <img alt="low: 1" src="https://img.shields.io/badge/low-1-fce1a9"/> | <img alt="unspecified: 1" src="https://img.shields.io/badge/unspecified-1-lightgrey"/> |
 
 The `scout` reports can be viewed in details: 
 - [scan-before-fixes](scan-before-fixes.md)

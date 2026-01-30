@@ -1,11 +1,12 @@
 package org.apache.sysds.performance.primitives_vector_api;
 
+
 public class PrimitivePerfSuite {
   public static void main(String[] args) {
     //int len = BenchUtil.argInt(args, "--len", 262_144);
     int len = BenchUtil.argInt(args, "--len", 1_000_000);
     int warmup = BenchUtil.argInt(args, "--warmup", 10_000);
-    int iters = BenchUtil.argInt(args, "--iters", 2000);
+    int iters = BenchUtil.argInt(args, "--iters", 100);
     String filter = BenchUtil.argStr(args, "--filter", "");
 
     for (BenchCase bc : BenchCase.values()) {

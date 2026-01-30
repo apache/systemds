@@ -29,14 +29,21 @@
 In the [appendix](#detailed-example-orgapachezookeeperzookeeper), you can see a full example on how we analysed the identified vulnerabilities.
 
 - [Data Integration and Large-Scale Analysis](#data-integration-and-large-scale-analysis)
-  - [Changes outside `pom.xml`](#changes-outside-pomxml)
+  - [Changes](#changes)
+    - [`pom.xml`](#pomxml)
     - [Critical CVEs `io.netty/netty@3.10.6.Final`](#critical-cves-ionettynetty3106final)
     - [`sysds.Dockerfile`](#sysdsdockerfile)
   - [Changelog](#changelog)
   - [Appendix](#appendix)
     - [Detailed example: `org.apache.zookeeper/zookeeper`](#detailed-example-orgapachezookeeperzookeeper)
 
-## Changes outside `pom.xml`
+## Changes
+
+### `pom.xml`
+
+By calling this url, you can view the changes on the pom.xml between the start and the end of the SYSDS-3878 student project: \
+[https://github.com/qschnee/systemds/compare/05b2298..3d563ff#diff-pom.xml](https://github.com/qschnee/systemds/compare/05b2298..3d563ff#diff-9c5fb3d1b7e3b0f54bc5c4182965c4fe1f9023d449017cece3005d3f90e8e4d8) \
+This url compares the two commits and scrolls the webpage directly to the `pom.xml` changes. Note that the real link does not use the filename, but a hash.
 
 ### Critical CVEs `io.netty/netty@3.10.6.Final`
 

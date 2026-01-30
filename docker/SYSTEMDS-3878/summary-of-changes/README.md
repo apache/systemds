@@ -62,7 +62,16 @@ import io.netty.handler.codec.compression.CompressionException;
 ```
 
 ### `sysds.Dockerfile`
-<!-- TODO -->
+
+```Dockerfile
+RUN apk add --no-cache bash \
+    snappy \
+    lz4 \
+    zlib \
+    # added apks update to solve openssl and busybox CVEs
+    && apk update \
+    && apk upgrade openssl busybox busybox-binsh ssl_client libcrypto3 libssl3
+```
 
 ## Changelog
 

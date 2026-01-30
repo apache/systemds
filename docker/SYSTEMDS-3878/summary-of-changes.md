@@ -21,7 +21,7 @@
 
 # Data Integration and Large-Scale Analysis
 
-***Student Project SYSTEMDS-3878*** \
+[Return](README.md#student-project-systemds-3878) to SYSTEMDS-3878. \
 ***Improve Docker Security***
 
 >This task is to improve the security of the Docker images we provide. Currently we get an 'F' evaluation on DockerHub, and we would like instead to provide secure images.
@@ -161,7 +161,7 @@ CVE-2023-44981 Authorization Bypass Through User-Controlled Key
   [Releases](https://zookeeper.apache.org/releases.html): `3.7.2` already reached its EoL.
 
   Apache zookeeper is not directly imported in the project. The vulnerability is raised transitively by another dependecy. \
-  `mvn dependency:tree` shows all implicit dependencies (see the [appendix](../README.md#output-of-mvn-dependencytree-before-any-change) for the output). \
+  `mvn dependency:tree` shows all implicit dependencies (see the [appendix](README.md#output-of-mvn-dependencytree-before-any-change) for the output). \
   The responsible dependency seems to be the apache spark-core package.
 
   ```bash

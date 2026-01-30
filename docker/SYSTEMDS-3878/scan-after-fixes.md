@@ -19,6 +19,8 @@
 # 
 -->
 
+[Return](README.md#student-project-systemds-3878) to SYSTEMDS-3878.
+
     i New version 1.19.0 available (installed version is 1.18.3) at https://github.com/docker/scout-cli
     ✓ Image stored for indexing
     ✓ Indexed 343 packages

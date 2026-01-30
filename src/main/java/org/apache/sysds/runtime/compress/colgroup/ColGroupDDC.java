@@ -69,7 +69,9 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
-import org.jboss.netty.handler.codec.compression.CompressionException;
+// import org.jboss.netty.handler.codec.compression.CompressionException;
+import io.netty.handler.codec.compression.CompressionException;
+// CVE-2019-20444: org.jboss.netty replaced by io.netty in hadoop-hdfs 3.4.2
 
 /**
  * Class to encapsulate information about a column group that is encoded with dense dictionary encoding (DDC).

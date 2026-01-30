@@ -2,6 +2,7 @@ package org.apache.sysds.performance.primitives_vector_api;
 import org.apache.sysds.performance.primitives_vector_api.BenchCase.OutKind;
 import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;
 
+
 public enum BenchCase {
 
     // Aggregations
@@ -10,10 +11,10 @@ public enum BenchCase {
       "vectSum dense",
       OutKind.SCALAR_DOUBLE,
       ctx -> ctx.initDenseA(),
-      ctx -> {ctx.scalarRes = LibSpoofPrimitives.scalarvectSum(ctx.a, 0, ctx.len);
+      ctx -> {ctx.scalarRes = backup_primitives_for_benchmark.scalarvectSum(ctx.a, 0, ctx.len);
               BenchUtil.blackhole = ctx.scalarRes;
              },
-      ctx -> {ctx.vectorRes = LibSpoofPrimitives.vectSum(ctx.a, 0, ctx.len);
+      ctx -> {ctx.vectorRes = backup_primitives_for_benchmark.vectSum(ctx.a, 0, ctx.len);
               BenchUtil.blackhole = ctx.vectorRes;},
       ctx -> {ctx.ok = Math.abs(ctx.scalarRes - ctx.vectorRes) <= 1e-9;}
     ),
@@ -23,8 +24,8 @@ public enum BenchCase {
       "rowMaxsVectMult dense",
       OutKind.SCALAR_DOUBLE,
       ctx -> {ctx.initDenseA(); ctx.initDenseB();},
-      ctx -> ctx.scalarRes = LibSpoofPrimitives.scalarrowMaxsVectMult(ctx.a, ctx.b, 0, 0, ctx.len),
-      ctx -> ctx.vectorRes = LibSpoofPrimitives.rowMaxsVectMult(ctx.a, ctx.b, 0, 0, ctx.len),
+      ctx -> ctx.scalarRes = backup_primitives_for_benchmark.scalarrowMaxsVectMult(ctx.a, ctx.b, 0, 0, ctx.len),
+      ctx -> ctx.vectorRes = backup_primitives_for_benchmark.rowMaxsVectMult(ctx.a, ctx.b, 0, 0, ctx.len),
       ctx -> {
         ctx.ok = Math.abs(ctx.scalarRes - ctx.vectorRes) <= 1e-9;
       }
@@ -34,37 +35,26 @@ public enum BenchCase {
       "rowMaxsVectMult_aix dense",
       OutKind.SCALAR_DOUBLE,
       ctx -> {ctx.initDenseA();ctx.initDenseB();ctx.initDenseAInt();},
-      ctx -> {ctx.scalarRes = LibSpoofPrimitives.scalarrowMaxsVectMult(ctx.a, ctx.b, ctx.a_int,0,0,ctx.len);
+      ctx -> {ctx.scalarRes = backup_primitives_for_benchmark.scalarrowMaxsVectMult(ctx.a, ctx.b, ctx.a_int,0,0,ctx.len);
         BenchUtil.blackhole = ctx.scalarRes;
             },
       ctx -> {
-        ctx.vectorRes = LibSpoofPrimitives.rowMaxsVectMult(ctx.a, ctx.b, ctx.a_int,0,0,ctx.len);
+        ctx.vectorRes = backup_primitives_for_benchmark.rowMaxsVectMult(ctx.a, ctx.b, ctx.a_int,0,0,ctx.len);
         BenchUtil.blackhole = ctx.vectorRes;
             },
       ctx -> {
         ctx.ok = Math.abs(ctx.scalarRes - ctx.vectorRes) <= 1e-9;
       }
     ),
-    VECT_MIN(
-      "vectMin dense",
-      OutKind.SCALAR_DOUBLE,
-      ctx -> ctx.initDenseA(),
-      ctx -> {ctx.scalarRes = LibSpoofPrimitives.scalarvectMin(ctx.a, 0, ctx.len);
-              BenchUtil.blackhole = ctx.scalarRes;
-             },
-      ctx -> {ctx.vectorRes = LibSpoofPrimitives.vectMin(ctx.a, 0, ctx.len);
-              BenchUtil.blackhole = ctx.vectorRes;},
-      ctx -> {ctx.ok = Math.abs(ctx.scalarRes - ctx.vectorRes) <= 1e-9;}
-    ),
 
     VECT_MAX(
       "vectMax dense",
       OutKind.SCALAR_DOUBLE,
       ctx -> ctx.initDenseA(),
-      ctx -> {ctx.scalarRes = LibSpoofPrimitives.scalarvectMax(ctx.a, 0, ctx.len);
+      ctx -> {ctx.scalarRes = backup_primitives_for_benchmark.scalarvectMax(ctx.a, 0, ctx.len);
               BenchUtil.blackhole = ctx.scalarRes;
              },
-      ctx -> {ctx.vectorRes = LibSpoofPrimitives.vectMax(ctx.a, 0, ctx.len);
+      ctx -> {ctx.vectorRes = backup_primitives_for_benchmark.vectMax(ctx.a, 0, ctx.len);
               BenchUtil.blackhole = ctx.vectorRes;},
       ctx -> {ctx.ok = Math.abs(ctx.scalarRes - ctx.vectorRes) <= 1e-9;}
     ),
@@ -72,10 +62,10 @@ public enum BenchCase {
       "vectCountnnz dense",
       OutKind.SCALAR_DOUBLE,
       ctx -> ctx.initDenseA(),
-      ctx -> {ctx.scalarRes = LibSpoofPrimitives.scalarvectCountnnz(ctx.a, 0, ctx.len);
+      ctx -> {ctx.scalarRes = backup_primitives_for_benchmark.scalarvectCountnnz(ctx.a, 0, ctx.len);
               BenchUtil.blackhole = ctx.scalarRes;
              },
-      ctx -> {ctx.vectorRes = LibSpoofPrimitives.vectCountnnz(ctx.a, 0, ctx.len);
+      ctx -> {ctx.vectorRes = backup_primitives_for_benchmark.vectCountnnz(ctx.a, 0, ctx.len);
               BenchUtil.blackhole = ctx.vectorRes;},
       ctx -> {ctx.ok = Math.abs(ctx.scalarRes - ctx.vectorRes) <= 1e-9;}
     ),
@@ -86,8 +76,8 @@ public enum BenchCase {
       "vectDivAdd dense",
       OutKind.ARRAY_DOUBLE,
       ctx -> {ctx.initDenseAandC_mutable(); ctx.initbval(); ctx.initDenseADiv();},
-      ctx -> LibSpoofPrimitives.scalarvectDivAdd(ctx.a, ctx.bval, ctx.cScalar, 0, 0, ctx.len),
-      ctx -> LibSpoofPrimitives.vectDivAdd(ctx.a, ctx.bval, ctx.cVector, 0, 0, ctx.len),
+      ctx -> backup_primitives_for_benchmark.scalarvectDivAdd(ctx.a, ctx.bval, ctx.cScalar, 0, 0, ctx.len),
+      ctx -> backup_primitives_for_benchmark.vectDivAdd(ctx.a, ctx.bval, ctx.cVector, 0, 0, ctx.len),
       ctx -> {
         ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
         ctx.ok = ctx.maxDiff <= 1e-9;
@@ -98,7 +88,7 @@ public enum BenchCase {
       "vectDivAdd2 dense",
       OutKind.ARRAY_DOUBLE,
       ctx -> {ctx.initDenseAandC_mutable(); ctx.initbval();},
-      ctx -> LibSpoofPrimitives.scalarvectDivAdd(ctx.bval, ctx.a, ctx.cScalar, 0, 0, ctx.len),
+      ctx -> backup_primitives_for_benchmark.scalarvectDivAdd(ctx.bval, ctx.a, ctx.cScalar, 0, 0, ctx.len),
       ctx -> LibSpoofPrimitives.vectDivAdd(ctx.bval, ctx.a, ctx.cVector, 0, 0, ctx.len),
       ctx -> {
         ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
@@ -110,7 +100,7 @@ public enum BenchCase {
       "vectDivAdd sparse",
       OutKind.ARRAY_DOUBLE,
       ctx -> {ctx.initDenseAandC_mutable(); ctx.initDenseAInt(); ctx.initbval();},
-      ctx -> LibSpoofPrimitives.scalarvectDivAdd(ctx.a, ctx.bval, ctx.cScalar, ctx.a_int, 0, 0,ctx.len, ctx.len),
+      ctx -> backup_primitives_for_benchmark.scalarvectDivAdd(ctx.a, ctx.bval, ctx.cScalar, ctx.a_int, 0, 0,ctx.len, ctx.len),
       ctx -> LibSpoofPrimitives.vectDivAdd(ctx.a, ctx.bval, ctx.cVector, ctx.a_int, 0, 0,ctx.len, ctx.len),
       ctx -> {
         ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
@@ -123,7 +113,7 @@ public enum BenchCase {
       "vectDivAdd2 sparse",
       OutKind.ARRAY_DOUBLE,
       ctx -> {ctx.initDenseAandC_mutable(); ctx.initDenseAInt(); ctx.initbval();},
-      ctx -> LibSpoofPrimitives.scalarvectDivAdd(ctx.bval, ctx.a, ctx.cScalar, ctx.a_int, 0, 0,ctx.len, ctx.len),
+      ctx -> backup_primitives_for_benchmark.scalarvectDivAdd(ctx.bval, ctx.a, ctx.cScalar, ctx.a_int, 0, 0,ctx.len, ctx.len),
       ctx -> LibSpoofPrimitives.vectDivAdd(ctx.bval, ctx.a, ctx.cVector, ctx.a_int, 0, 0,ctx.len, ctx.len),
       ctx -> {
         ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
@@ -135,7 +125,7 @@ public enum BenchCase {
       "vectDivWrite dense",
       OutKind.ARRAY_DOUBLE,
       ctx -> {ctx.initDenseAandC_mutable(); ctx.initbval();},
-      ctx -> ctx.cScalar = LibSpoofPrimitives.scalarvectDivWrite(ctx.a, ctx.bval, 0,ctx.len),
+      ctx -> ctx.cScalar = backup_primitives_for_benchmark.scalarvectDivWrite(ctx.a, ctx.bval, 0,ctx.len),
       ctx -> ctx.cVector = LibSpoofPrimitives.vectDivWrite(ctx.a, ctx.bval, 0,ctx.len),
       ctx -> {
         ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
@@ -146,7 +136,7 @@ public enum BenchCase {
       "vectDivWrite2 dense",
       OutKind.ARRAY_DOUBLE,
       ctx -> {ctx.initDenseAandC_mutable(); ctx.initbval();},
-      ctx -> ctx.cScalar = LibSpoofPrimitives.scalarvectDivWrite(ctx.bval, ctx.a, 0,ctx.len),
+      ctx -> ctx.cScalar = backup_primitives_for_benchmark.scalarvectDivWrite(ctx.bval, ctx.a, 0,ctx.len),
       ctx -> ctx.cVector = LibSpoofPrimitives.vectDivWrite(ctx.bval, ctx.a, 0,ctx.len),
       ctx -> {
         ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
@@ -157,7 +147,7 @@ public enum BenchCase {
       "vectDivWrite3 dense",
       OutKind.ARRAY_DOUBLE,
       ctx -> {ctx.initDenseAandC_mutable(); ctx.initbval(); ctx.initDenseBDiv();},
-      ctx -> ctx.cScalar = LibSpoofPrimitives.scalarvectDivWrite(ctx.a, ctx.b, 0, 0,ctx.len),
+      ctx -> ctx.cScalar = backup_primitives_for_benchmark.scalarvectDivWrite(ctx.a, ctx.b, 0, 0,ctx.len),
       ctx -> ctx.cVector = LibSpoofPrimitives.vectDivWrite(ctx.a, ctx.b, 0, 0,ctx.len),
       ctx -> {
         ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
@@ -171,7 +161,7 @@ public enum BenchCase {
       "vectEqualWrite dense",
       OutKind.ARRAY_DOUBLE,
       ctx -> {ctx.initDenseAandC_mutable(); ctx.initbval();},
-      ctx -> ctx.cScalar = LibSpoofPrimitives.scalarvectEqualWrite(ctx.a, ctx.bval, 0,ctx.len),
+      ctx -> ctx.cScalar = backup_primitives_for_benchmark.scalarvectEqualWrite(ctx.a, ctx.bval, 0,ctx.len),
       ctx -> ctx.cVector = LibSpoofPrimitives.vectEqualWrite(ctx.a, ctx.bval, 0,ctx.len),
       ctx -> {
         ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
@@ -182,7 +172,7 @@ public enum BenchCase {
       "vectEqualAdd dense",
       OutKind.ARRAY_DOUBLE,
       ctx -> {ctx.initDenseAandC_mutable(); ctx.initbval();},
-      ctx -> LibSpoofPrimitives.scalarvectEqualAdd(ctx.a, ctx.bval, ctx.cScalar,0, 0,ctx.len),
+      ctx -> backup_primitives_for_benchmark.scalarvectEqualAdd(ctx.a, ctx.bval, ctx.cScalar,0, 0,ctx.len),
       ctx -> LibSpoofPrimitives.vectEqualAdd(ctx.a, ctx.bval,ctx.cVector, 0, 0,ctx.len),
       ctx -> {
         ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
@@ -193,41 +183,8 @@ public enum BenchCase {
       "vectEqualWrite2 dense",
       OutKind.ARRAY_DOUBLE,
       ctx -> {ctx.initDenseA(); ctx.initbval();},
-      ctx -> ctx.cScalar = LibSpoofPrimitives.scalarvectEqualWrite(ctx.a, ctx.bval, 0,ctx.len),
+      ctx -> ctx.cScalar = backup_primitives_for_benchmark.scalarvectEqualWrite(ctx.a, ctx.bval, 0,ctx.len),
       ctx -> ctx.cVector = LibSpoofPrimitives.vectEqualWrite(ctx.a, ctx.bval, 0,ctx.len),
-      ctx -> {
-        ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
-        ctx.ok = ctx.maxDiff <= 1e-9;
-      }
-    ),
-    VECT_NOTEQUAL_ADD(
-      "vectNotequalAdd dense",
-      OutKind.ARRAY_DOUBLE,
-      ctx -> {ctx.initDenseAandC_mutable(); ctx.initbval();},
-      ctx -> LibSpoofPrimitives.scalarvectNotequalAdd(ctx.a, ctx.bval, ctx.cScalar,0, 0,ctx.len),
-      ctx -> LibSpoofPrimitives.vectNotequalAdd(ctx.a, ctx.bval,ctx.cVector, 0, 0,ctx.len),
-      ctx -> {
-        ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
-        ctx.ok = ctx.maxDiff <= 1e-9;
-      }
-    ),
-    VECT_NOTEQUAL_WRITE(
-      "vectNotequalWrite dense",
-      OutKind.ARRAY_DOUBLE,
-      ctx -> {ctx.initDenseA(); ctx.initbval();},
-      ctx -> ctx.cScalar = LibSpoofPrimitives.scalarvectNotequalWrite(ctx.a, ctx.bval, 0,ctx.len),
-      ctx -> ctx.cVector = LibSpoofPrimitives.vectNotequalWrite(ctx.a, ctx.bval, 0,ctx.len),
-      ctx -> {
-        ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
-        ctx.ok = ctx.maxDiff <= 1e-9;
-      }
-    ),
-    VECT_NOTEQUAL_WRITE2(
-      "vectNotequalWrite2 dense",
-      OutKind.ARRAY_DOUBLE,
-      ctx -> {ctx.initDenseA();  ctx.initDenseB(); ctx.initbval();},
-      ctx -> ctx.cScalar = LibSpoofPrimitives.scalarvectNotequalWrite(ctx.a, ctx.b, 0 ,0 ,ctx.len),
-      ctx -> ctx.cVector = LibSpoofPrimitives.vectNotequalWrite(ctx.a, ctx.b, 0, 0, ctx.len),
       ctx -> {
         ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
         ctx.ok = ctx.maxDiff <= 1e-9;
@@ -237,7 +194,7 @@ public enum BenchCase {
       "vectLessAdd dense",
       OutKind.ARRAY_DOUBLE,
       ctx -> {ctx.initDenseAandC_mutable(); ctx.initbval();},
-      ctx -> LibSpoofPrimitives.scalarvectLessAdd(ctx.a, ctx.bval, ctx.cScalar,0, 0,ctx.len),
+      ctx -> backup_primitives_for_benchmark.scalarvectLessAdd(ctx.a, ctx.bval, ctx.cScalar,0, 0,ctx.len),
       ctx -> LibSpoofPrimitives.vectLessAdd(ctx.a, ctx.bval,ctx.cVector, 0, 0,ctx.len),
       ctx -> {
         ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
@@ -248,7 +205,7 @@ public enum BenchCase {
       "vectLessWrite dense",
       OutKind.ARRAY_DOUBLE,
       ctx -> {ctx.initDenseA();  ctx.initbval();},
-      ctx -> ctx.cScalar = LibSpoofPrimitives.scalarvectLessWrite(ctx.a, ctx.bval, 0 ,ctx.len),
+      ctx -> ctx.cScalar = backup_primitives_for_benchmark.scalarvectLessWrite(ctx.a, ctx.bval, 0 ,ctx.len),
       ctx -> ctx.cVector = LibSpoofPrimitives.vectLessWrite(ctx.a, ctx.bval, 0, ctx.len),
       ctx -> {
         ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
@@ -259,7 +216,7 @@ public enum BenchCase {
       "vectLessWrite2 dense",
       OutKind.ARRAY_DOUBLE,
       ctx -> {ctx.initDenseA(); ctx.initDenseB(); ctx.initbval();},
-      ctx -> ctx.cScalar = LibSpoofPrimitives.scalarvectLessWrite(ctx.a, ctx.b, 0, 0 ,ctx.len),
+      ctx -> ctx.cScalar = backup_primitives_for_benchmark.scalarvectLessWrite(ctx.a, ctx.b, 0, 0 ,ctx.len),
       ctx -> ctx.cVector = LibSpoofPrimitives.vectLessWrite(ctx.a, ctx.b, 0, 0, ctx.len),
       ctx -> {
         ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
@@ -270,7 +227,7 @@ public enum BenchCase {
       "vectLessequalAdd dense",
       OutKind.ARRAY_DOUBLE,
       ctx -> {ctx.initDenseAandC_mutable(); ctx.initbval();},
-      ctx -> LibSpoofPrimitives.scalarvectLessequalAdd(ctx.a, ctx.bval, ctx.cScalar,0, 0,ctx.len),
+      ctx -> backup_primitives_for_benchmark.scalarvectLessequalAdd(ctx.a, ctx.bval, ctx.cScalar,0, 0,ctx.len),
       ctx -> LibSpoofPrimitives.vectLessequalAdd(ctx.a, ctx.bval,ctx.cVector, 0, 0,ctx.len),
       ctx -> {
         ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
@@ -281,7 +238,7 @@ public enum BenchCase {
       "vectLessequalWrite dense",
       OutKind.ARRAY_DOUBLE,
       ctx -> {ctx.initDenseA();  ctx.initbval();},
-      ctx -> ctx.cScalar = LibSpoofPrimitives.scalarvectLessequalWrite(ctx.a, ctx.bval, 0 ,ctx.len),
+      ctx -> ctx.cScalar = backup_primitives_for_benchmark.scalarvectLessequalWrite(ctx.a, ctx.bval, 0 ,ctx.len),
       ctx -> ctx.cVector = LibSpoofPrimitives.vectLessequalWrite(ctx.a, ctx.bval, 0, ctx.len),
       ctx -> {
         ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
@@ -292,7 +249,7 @@ public enum BenchCase {
       "vectLessequalWrite2 dense",
       OutKind.ARRAY_DOUBLE,
       ctx -> {ctx.initDenseA(); ctx.initDenseB();},
-      ctx -> ctx.cScalar = LibSpoofPrimitives.scalarvectLessequalWrite(ctx.a, ctx.b, 0, 0 ,ctx.len),
+      ctx -> ctx.cScalar = backup_primitives_for_benchmark.scalarvectLessequalWrite(ctx.a, ctx.b, 0, 0 ,ctx.len),
       ctx -> ctx.cVector = LibSpoofPrimitives.vectLessequalWrite(ctx.a, ctx.b, 0, 0, ctx.len),
       ctx -> {
         ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
@@ -304,7 +261,7 @@ public enum BenchCase {
       "vectGreaterAdd dense",
       OutKind.ARRAY_DOUBLE,
       ctx -> {ctx.initDenseAandC_mutable(); ctx.initbval();},
-      ctx -> LibSpoofPrimitives.scalarvectGreaterAdd(ctx.a, ctx.bval, ctx.cScalar,0, 0,ctx.len),
+      ctx -> backup_primitives_for_benchmark.scalarvectGreaterAdd(ctx.a, ctx.bval, ctx.cScalar,0, 0,ctx.len),
       ctx -> LibSpoofPrimitives.vectGreaterAdd(ctx.a, ctx.bval,ctx.cVector, 0, 0,ctx.len),
       ctx -> {
         ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
@@ -315,7 +272,7 @@ public enum BenchCase {
       "vectGreaterWrite dense",
       OutKind.ARRAY_DOUBLE,
       ctx -> {ctx.initDenseA();  ctx.initbval();},
-      ctx -> ctx.cScalar = LibSpoofPrimitives.scalarvectGreaterWrite(ctx.a, ctx.bval, 0 ,ctx.len),
+      ctx -> ctx.cScalar = backup_primitives_for_benchmark.scalarvectGreaterWrite(ctx.a, ctx.bval, 0 ,ctx.len),
       ctx -> ctx.cVector = LibSpoofPrimitives.vectGreaterWrite(ctx.a, ctx.bval, 0, ctx.len),
       ctx -> {
         ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
@@ -326,19 +283,8 @@ public enum BenchCase {
       "vectGreaterWrite2 dense",
       OutKind.ARRAY_DOUBLE,
       ctx -> {ctx.initDenseA(); ctx.initDenseB();},
-      ctx -> ctx.cScalar = LibSpoofPrimitives.scalarvectGreaterWrite(ctx.a, ctx.b, 0, 0 ,ctx.len),
+      ctx -> ctx.cScalar = backup_primitives_for_benchmark.scalarvectGreaterWrite(ctx.a, ctx.b, 0, 0 ,ctx.len),
       ctx -> ctx.cVector = LibSpoofPrimitives.vectGreaterWrite(ctx.a, ctx.b, 0, 0, ctx.len),
-      ctx -> {
-        ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
-        ctx.ok = ctx.maxDiff <= 1e-9;
-      }
-    ),
-    VECT_DIV_ADD_pure(
-      "vectDivAddpure dense",
-      OutKind.ARRAY_DOUBLE,
-      ctx -> {ctx.initDenseAandC_mutable(); ctx.initbval(); ctx.initDenseADiv();},
-      ctx -> LibSpoofPrimitives.scalarvectDivAdd(ctx.a, ctx.bval, ctx.cScalar, 0, 0, ctx.len),
-      ctx -> LibSpoofPrimitives.pureDivvectDivAdd(ctx.a, ctx.bval, ctx.cVector, 0, 0, ctx.len),
       ctx -> {
         ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
         ctx.ok = ctx.maxDiff <= 1e-9;
@@ -351,41 +297,8 @@ public enum BenchCase {
       "vectMult2Add dense",
       OutKind.ARRAY_DOUBLE,
       ctx -> {ctx.initDenseAandC_mutable(); },
-      ctx -> LibSpoofPrimitives.scalarvectMult2Add(ctx.a, ctx.cScalar,0, 0,ctx.len),
+      ctx -> backup_primitives_for_benchmark.scalarvectMult2Add(ctx.a, ctx.cScalar,0, 0,ctx.len),
       ctx -> LibSpoofPrimitives.vectMult2Add(ctx.a, ctx.cVector, 0, 0,ctx.len),
-      ctx -> {
-        ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
-        ctx.ok = ctx.maxDiff <= 1e-9;
-      }
-    ),
-    VECT_Mult2_WRITE(
-      "vectMult2Write dense",
-      OutKind.ARRAY_DOUBLE,
-      ctx -> {ctx.initDenseAandC_mutable(); },
-      ctx -> ctx.cScalar = LibSpoofPrimitives.scalarvectMult2Write(ctx.a, 0,ctx.len),
-      ctx -> ctx.cVector = LibSpoofPrimitives.vectMult2Write(ctx.a, 0,ctx.len),
-      ctx -> {
-        ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
-        ctx.ok = ctx.maxDiff <= 1e-9;
-      }
-    ),
-    VECT_Mult2_WRITE_DEDICATED(
-      "vectMult2Write_dedicated dense",
-      OutKind.ARRAY_DOUBLE,
-      ctx -> {ctx.initDenseAandC_mutable(); },
-      ctx -> ctx.cScalar = LibSpoofPrimitives.scalarvectMult2Write(ctx.a, 0,ctx.len),
-      ctx -> ctx.cVector = LibSpoofPrimitives.vectMult2Write_dedicated(ctx.a, 0,ctx.len),
-      ctx -> {
-        ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
-        ctx.ok = ctx.maxDiff <= 1e-9;
-      }
-    ),
-    VECT_Mult2_WRITE_DEDICATED2(
-      "vectMult2Write_dedicated2 dense",
-      OutKind.ARRAY_DOUBLE,
-      ctx -> {ctx.initDenseAandC_mutable(); },
-      ctx -> ctx.cScalar = LibSpoofPrimitives.scalarvectMult2Write(ctx.a, 0,ctx.len),
-      ctx -> ctx.cVector = LibSpoofPrimitives.vectMult2Write_dedicated_2(ctx.a, 0,ctx.len),
       ctx -> {
         ctx.maxDiff = BenchUtil.maxAbsDiff(ctx.cScalar, ctx.cVector);
         ctx.ok = ctx.maxDiff <= 1e-9;

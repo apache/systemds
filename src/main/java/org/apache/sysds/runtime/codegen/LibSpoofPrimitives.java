@@ -68,14 +68,6 @@ public class LibSpoofPrimitives
 		@Override protected SparseVectorBuffer initialValue() { return new SparseVectorBuffer(0,0,0); }
 	};
 
-	public static double scalarrowMaxsVectMult(double[] a, double[] b, int ai, int bi, int len) {
-		double val = Double.NEGATIVE_INFINITY;
-		int j=0;
-		for( int i = ai; i < ai+len; i++ )
-			val = Math.max(a[i]*b[j++], val);
-		return val;
-	}
-
 	public static double rowMaxsVectMult(double[] a, double[] b, int ai, int bi, int len) {
 		double maxVal = Double.NEGATIVE_INFINITY;
 	
@@ -103,14 +95,15 @@ public class LibSpoofPrimitives
 	}
 
 	// note: parameter bi unused
-	public static double scalarrowMaxsVectMult(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
+	public static double rowMaxsVectMult(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
 		double val = Double.NEGATIVE_INFINITY;
 		for( int i = ai; i < ai+len; i++ )
 			val = Math.max(a[i]*b[aix[i]], val);
 		return val;
 	}
 
-	public static double rowMaxsVectMult(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
+	// not in use: vector api implementation slower than scalar loop version
+	public static double rowMaxsVectMult_vector_api(double[] a, double[] b, int[] aix, int ai, int bi, int len) {
 		double scalarMax = Double.NEGATIVE_INFINITY;
 
 		int i = 0;
@@ -360,8 +353,7 @@ public class LibSpoofPrimitives
 	 * @return sum value
 	 */
 
-	// scalar function 
-	public static double scalarvectSum(double[] a, int ai, int len) { 
+	public static double vectSum(double[] a, int ai, int len) { 
 		double val = 0;
 		final int bn = len%8;
 		
@@ -379,8 +371,8 @@ public class LibSpoofPrimitives
 		//scalar result
 		return val; 
 	} 
-
-	public static double vectSum(double[] a, int ai, int len) {
+	// not in use: vector api implementation slower than scalar loop version
+	public static double vectSum_vector_api(double[] a, int ai, int len) {
         double sum = 0d;
         int i = 0;
 
@@ -445,12 +437,6 @@ public class LibSpoofPrimitives
 		return (alen<len) ? Math.min(val, 0) : val;
 	}
 	
-	public static double scalarvectMax(double[] a, int ai, int len) { 
-		double val = Double.NEGATIVE_INFINITY;
-		for( int i = ai; i < ai+len; i++ )
-			val = Math.max(a[i], val);
-		return val; 
-	} 
 
 	public static double vectMax(double[] a, int ai, int len) {
 		int i = 0;
@@ -476,12 +462,7 @@ public class LibSpoofPrimitives
 		return (alen<len) ? Math.max(val, 0) : val;
 	}
 	
-	public static double scalarvectCountnnz(double[] a, int ai, int len) { 
-		int count = 0;
-		for( int i = ai; i < ai+len; i++ )
-			count += (a[i] != 0) ? 1 : 0;
-		return count;
-	} 
+
 	public static double vectCountnnz(double[] a, int ai, int len) {	
 		int count = 0;
 		int i = 0;
@@ -516,11 +497,6 @@ public class LibSpoofPrimitives
 	}
 	
 	//custom vector div
-	
-	public static void scalarvectDivAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
-		for( int j = ai; j < ai+len; j++, ci++)
-			c[ci] +=  a[j] / bval;
-	}
 
 	public static void vectDivAdd(double[] a, double bval, double[] c, int ai, int ci, int len) { 
 		final double inv = 1.0 / bval; 
@@ -539,39 +515,7 @@ public class LibSpoofPrimitives
 			c[ci + i] += a[ai + i] * inv;
 		} 
 	}
-
-
-
-	// for comparison
-	public static void pureDivvectDivAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
-		if (len <= 0) return;
 	
-		final VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_PREFERRED;
-		final DoubleVector vb = DoubleVector.broadcast(SPECIES, bval);
-	
-		int i = 0;
-		final int upperBound = SPECIES.loopBound(len);
-	
-		for (; i < upperBound; i += SPECIES.length()) {
-			DoubleVector va = DoubleVector.fromArray(SPECIES, a, ai + i);
-			DoubleVector vc = DoubleVector.fromArray(SPECIES, c, ci + i);
-	
-			vc = vc.add(va.div(vb));
-	
-			vc.intoArray(c, ci + i);
-		}
-	
-		for (; i < len; i++) {
-			c[ci + i] += a[ai + i] / bval;
-		}
-	}
-	
-
-	
-	public static void scalarvectDivAdd(double bval, double[] a, double[] c, int ai, int ci, int len) {
-		for( int j = ai; j < ai+len; j++, ci++)
-			c[ci] +=  bval / a[j];
-	}
 
 	public static void vectDivAdd(double bval, double[] a, double[] c, int ai, int ci, int len) {
 		int i = 0;
@@ -593,13 +537,13 @@ public class LibSpoofPrimitives
 	}
 
 
-	public static void scalarvectDivAdd(double[] a, double bval, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+	public static void vectDivAdd(double[] a, double bval, double[] c, int[] aix, int ai, int ci, int alen, int len) {
 		for( int j = ai; j < ai+alen; j++ )
 			c[ci + aix[j]] += a[j] / bval;
 	}
 
-	// sparse
-	public static void vectDivAdd(double[] a, double bval, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+	// not in use: vector api implementation slower than scalar loop version
+	public static void vectDivAdd_vector_api(double[] a, double bval, double[] c, int[] aix, int ai, int ci, int alen, int len) {
 
 		final double inv = 1.0 / bval;
 		int i = 0;
@@ -625,13 +569,13 @@ public class LibSpoofPrimitives
 	}
 
 	
-	public static void scalarvectDivAdd(double bval, double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+	public static void vectDivAdd(double bval, double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
 		for( int j = ai; j < ai+alen; j++ )
 			c[ci + aix[j]] += bval / a[j];
 	}
 
-	//sparse
-	public static void vectDivAdd(double bval, double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
+	// not in use: vector api implementation slower than scalar loop version
+	public static void vectDivAdd_vector_api(double bval, double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
 		int i = 0;
 		int upperBound = SPECIES.loopBound(alen);
 		DoubleVector vb = DoubleVector.broadcast(SPECIES, bval);
@@ -654,14 +598,15 @@ public class LibSpoofPrimitives
 	}
 
 	
-	public static double[] scalarvectDivWrite(double[] a, double bval, int ai, int len) {
+	public static double[] vectDivWrite(double[] a, double bval, int ai, int len) {
 		double[] c = allocVector(len, false);
 		for( int j = 0; j < len; j++)
 			c[j] = a[ai+j] / bval;
 		return c;
 	}
 
-	public static double[] vectDivWrite(double[] a, double bval, int ai, int len) {
+	// not in use: vector api implementation slower than scalar loop version
+	public static double[] vectDivWrite_vector_api(double[] a, double bval, int ai, int len) {
 		double[] c = allocVector(len, false);
 		final double inv = 1.0 / bval;
 		final DoubleVector vinv = DoubleVector.broadcast(SPECIES, inv);
@@ -682,14 +627,15 @@ public class LibSpoofPrimitives
 	}
 
 	
-	public static double[] scalarvectDivWrite(double bval, double[] a, int ai, int len) {
+	public static double[] vectDivWrite(double bval, double[] a, int ai, int len) {
 		double[] c = allocVector(len, false);
 		for( int j = 0; j < len; j++)
 			c[j] = bval / a[ai + j];
 		return c;
 	}
 
-	public static double[] vectDivWrite(double bval, double[] a, int ai, int len) {
+	// not in use: vector api implementation slower than scalar loop version
+	public static double[] vectDivWrite_vector_api(double bval, double[] a, int ai, int len) {
 		double[] c = allocVector(len, false);
 		final DoubleVector vb = DoubleVector.broadcast(SPECIES, bval);
 		int i = 0;
@@ -708,14 +654,15 @@ public class LibSpoofPrimitives
 		return c;
 	}
 	
-	public static double[] scalarvectDivWrite(double[] a, double[] b, int ai, int bi, int len) {
+	public static double[] vectDivWrite(double[] a, double[] b, int ai, int bi, int len) {
 		double[] c = allocVector(len, false);
 		for( int j = 0; j < len; j++)
 			c[j] = a[ai + j] / b[bi + j];
 		return c;
 	}
 
-	public static double[] vectDivWrite(double[] a, double[] b, int ai, int bi, int len) {
+	// not in use: vector api implementation slower than scalar loop version
+	public static double[] vectDivWrite_vector_api(double[] a, double[] b, int ai, int bi, int len) {
 		double[] c = allocVector(len, false);
 		int i = 0;
 		int upper = SPECIES.loopBound(len);
@@ -1800,11 +1747,6 @@ public class LibSpoofPrimitives
 	}
 	
 	//custom mult2
-	
-	public static void scalarvectMult2Add(double[] a, double[] c, int ai, int ci, int len) {
-		for( int j = ai; j < ai+len; j++, ci++)
-			c[ci] +=  a[j] + a[j];
-	}
 
 	public static void vectMult2Add(double[] a, double[] c, int ai, int ci, int len) {
 		LibMatrixMult.vectMultiplyAdd(2.0,a,c,ai,ci,len);
@@ -1815,28 +1757,12 @@ public class LibSpoofPrimitives
 			c[ci + aix[j]] += a[j] + a[j];
 	}
 	
-	public static double[] scalarvectMult2Write(double[] a, int ai, int len) {
-		double[] c = allocVector(len, false);
-		for( int j = 0; j < len; j++, ai++)
-			c[j] = a[ai] + a[ai];
-		return c;
-	}
 	public static double[] vectMult2Write(double[] a, int ai, int len) {
 		double[] c = allocVector(len, false);
 		LibMatrixMult.vectMultiplyWrite(2.0,a,c,ai,0,len);
 		return c;
 	}
-	public static double[] vectMult2Write_dedicated(double[] a, int ai, int len) {
-		double[] c = allocVector(len, false);
-		return LibMatrixMult.vectMult2Write(a,c,ai,len);
-	}
-	public static double[] vectMult2Write_dedicated_2(double[] a, int ai, int len) {
-		double[] c = allocVector(len, false);
-		return LibMatrixMult.vectMult2Write_dedicated_2(a,c,ai,len);
-	}
 
-	
-	
 	
 	public static double[] vectMult2Write(double[] a, int[] aix, int ai, int alen, int len) {
 		double[] c = allocVector(len, true);
@@ -1925,10 +1851,6 @@ public class LibSpoofPrimitives
 	
 	//custom vector equal
 	
-	public static void scalarvectEqualAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
-		for( int j = ai; j < ai+len; j++, ci++)
-			c[ci] += (a[j] == bval) ? 1 : 0;
-	}
 	public static void vectEqualAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
 		int i = 0;
 		int upper = SPECIES.loopBound(len);
@@ -1972,12 +1894,6 @@ public class LibSpoofPrimitives
 		vectEqualAdd(a, bval, c, aix, ai, ci, alen, len);
 	}
 	
-	public static double[] scalarvectEqualWrite(double[] a, double bval, int ai, int len) {
-		double[] c = allocVector(len, false);
-		for( int j = 0; j < len; j++, ai++)
-			c[j] = (a[ai] == bval) ? 1 : 0;
-		return c;
-	}
 	public static double[] vectEqualWrite(double[] a, double bval, int ai, int len) {
 		double[] c = allocVector(len, false);
 		int i = 0;
@@ -2006,12 +1922,6 @@ public class LibSpoofPrimitives
 		return vectEqualWrite(a, bval, ai, len);
 	}
 	
-	public static double[] scalarvectEqualWrite(double[] a, double[] b, int ai, int bi, int len) {
-		double[] c = allocVector(len, false);
-		for( int j = 0; j < len; j++, ai++, bi++)
-			c[j] = (a[ai] == b[bi]) ? 1 : 0;
-		return c;
-	}
 
 	public static double[] vectEqualWrite(double[] a, double[] b, int ai, int bi, int len) {
         double[] c = allocVector(len, false);
@@ -2066,10 +1976,6 @@ public class LibSpoofPrimitives
 	
 	//custom vector not equal
 	
-	public static void scalarvectNotequalAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
-		for( int j = ai; j < ai+len; j++, ci++)
-			c[ci] += (a[j] != bval) ? 1 : 0;
-	}
 	public static void vectNotequalAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
 		final DoubleVector bVec  = DoubleVector.broadcast(SPECIES, bval);
 		final DoubleVector ones  = DoubleVector.broadcast(SPECIES, 1.0);
@@ -2110,13 +2016,6 @@ public class LibSpoofPrimitives
 	public static void vectNotequalAdd(double bval, double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
 		vectNotequalAdd(a, bval, c, aix, ai, ci, alen, len);
 	}
-	
-	public static double[] scalarvectNotequalWrite(double[] a, double bval, int ai, int len) {
-		double[] c = allocVector(len, false);
-		for( int j = 0; j < len; j++, ai++)
-			c[j] = (a[ai] != bval) ? 1 : 0;
-		return c;
-	}
 
 	public static double[] vectNotequalWrite(double[] a, double bval, int ai, int len) {
         double[] c = allocVector(len, false);
@@ -2147,14 +2046,15 @@ public class LibSpoofPrimitives
 		return vectNotequalWrite(a, bval, ai, len);
 	}
 	
-	public static double[] scalarvectNotequalWrite(double[] a, double[] b, int ai, int bi, int len) {
+	public static double[] vectNotequalWrite(double[] a, double[] b, int ai, int bi, int len) {
 		double[] c = allocVector(len, false);
 		for( int j = 0; j < len; j++, ai++, bi++)
 			c[j] = (a[ai] != b[bi]) ? 1 : 0;
 		return c;
 	}
 
-	public static double[] vectNotequalWrite(double[] a, double[] b, int ai, int bi, int len) {
+	// not in use: vector api implementation slower than scalar loop version
+	public static double[] vectNotequalWrite_vector_api(double[] a, double[] b, int ai, int bi, int len) {
 		double[] c = allocVector(len, false);
 		final DoubleVector ones  = DoubleVector.broadcast(SPECIES, 1.0);
 		final DoubleVector zeros = DoubleVector.zero(SPECIES);
@@ -2207,10 +2107,6 @@ public class LibSpoofPrimitives
 	
 	//custom vector less
 	
-	public static void scalarvectLessAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
-		for( int j = ai; j < ai+len; j++, ci++)
-			c[ci] += (a[j] < bval) ? 1 : 0;
-	}
 	public static void vectLessAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
 		final DoubleVector bVec  = DoubleVector.broadcast(SPECIES, bval);
 		final DoubleVector ones  = DoubleVector.broadcast(SPECIES, 1.0);
@@ -2252,14 +2148,6 @@ public class LibSpoofPrimitives
 	public static void vectLessAdd(double bval, double[] a, double[] c, int[] aix, int ai, int ci, int alen, int len) {
 		vectGreaterequalAdd(a, bval, c, aix, ai, ci, alen, len);
 	}
-	
-	public static double[] scalarvectLessWrite(double[] a, double bval, int ai, int len) {
-		double[] c = allocVector(len, false);
-		for( int j = 0; j < len; j++, ai++)
-			c[j] = (a[ai] < bval) ? 1 : 0;
-		return c;
-	}
-
 
 	public static double[] vectLessWrite(double[] a, double bval, int ai, int len) {
         double[] c = allocVector(len, false);
@@ -2291,13 +2179,6 @@ public class LibSpoofPrimitives
 	
 	public static double[] vectLessWrite(double bval, double[] a, int ai, int len) {
 		return vectGreaterequalWrite(a, bval, ai, len);
-	}
-	
-	public static double[] scalarvectLessWrite(double[] a, double[] b, int ai, int bi, int len) {
-		double[] c = allocVector(len, false);
-		for( int j = 0; j < len; j++, ai++, bi++)
-			c[j] = (a[ai] < b[bi]) ? 1 : 0;
-		return c;
 	}
 
 	public static double[] vectLessWrite(double[] a, double[] b, int ai, int bi, int len) {
@@ -2355,11 +2236,6 @@ public class LibSpoofPrimitives
 	}
 	
 	//custom vector less equal
-	
-	public static void scalarvectLessequalAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
-		for( int j = ai; j < ai+len; j++, ci++)
-			c[ci] += (a[j] <= bval) ? 1 : 0;
-	}
 
 	public static void vectLessequalAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
 		final DoubleVector bVec  = DoubleVector.broadcast(SPECIES, bval);
@@ -2403,12 +2279,6 @@ public class LibSpoofPrimitives
 		vectGreaterAdd(a, bval, c, aix, ai, ci, alen, len);
 	}
 	
-	public static double[] scalarvectLessequalWrite(double[] a, double bval, int ai, int len) {
-		double[] c = allocVector(len, false);
-		for( int j = 0; j < len; j++, ai++)
-			c[j] = (a[ai] <= bval) ? 1 : 0;
-		return c;
-	}
 	public static double[] vectLessequalWrite(double[] a, double bval, int ai, int len) {
         double[] c = allocVector(len, false);
         final DoubleVector bVec  = DoubleVector.broadcast(SPECIES, bval);
@@ -2438,13 +2308,6 @@ public class LibSpoofPrimitives
 	
 	public static double[] vectLessequalWrite(double bval, double[] a, int ai, int len) {
 		return vectGreaterWrite(a, bval, ai, len);
-	}
-	
-	public static double[] scalarvectLessequalWrite(double[] a, double[] b, int ai, int bi, int len) {
-		double[] c = allocVector(len, false);
-		for( int j = 0; j < len; j++, ai++, bi++)
-			c[j] = (a[ai] <= b[bi]) ? 1 : 0;
-		return c;
 	}
 
 	public static double[] vectLessequalWrite(double[] a, double[] b, int ai, int bi, int len) {
@@ -2503,11 +2366,6 @@ public class LibSpoofPrimitives
 
 	//custom vector greater
 	
-	public static void scalarvectGreaterAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
-		for( int j = ai; j < ai+len; j++, ci++)
-			c[ci] += (a[j] > bval) ? 1 : 0;
-	}
-
 	public static void vectGreaterAdd(double[] a, double bval, double[] c, int ai, int ci, int len) {
 		final DoubleVector bVec  = DoubleVector.broadcast(SPECIES, bval);
 		final DoubleVector ones  = DoubleVector.broadcast(SPECIES, 1.0);
@@ -2550,12 +2408,6 @@ public class LibSpoofPrimitives
 		vectLessequalAdd(a, bval, c, aix, ai, ci, alen, len);
 	}
 	
-	public static double[] scalarvectGreaterWrite(double[] a, double bval, int ai, int len) {
-		double[] c = allocVector(len, false);
-		for( int j = 0; j < len; j++, ai++)
-			c[j] = (a[ai] > bval) ? 1 : 0;
-		return c;
-	}
 	public static double[] vectGreaterWrite(double[] a, double bval, int ai, int len) {
         double[] c = allocVector(len, false);
         final DoubleVector bVec  = DoubleVector.broadcast(SPECIES, bval);
@@ -2586,14 +2438,15 @@ public class LibSpoofPrimitives
 		return vectLessWrite(a, bval, ai, len);
 	}
 	
-	public static double[] scalarvectGreaterWrite(double[] a, double[] b, int ai, int bi, int len) {
+	public static double[] vectGreaterWrite(double[] a, double[] b, int ai, int bi, int len) {
 		double[] c = allocVector(len, false);
 		for( int j = 0; j < len; j++, ai++, bi++)
 			c[j] = (a[ai] > b[bi]) ? 1 : 0;
 		return c;
 	}
 
-	public static double[] vectGreaterWrite(double[] a, double[] b, int ai, int bi, int len) {
+	// not in use: vector api implementation slower than scalar loop version
+	public static double[] vectGreaterWrite_vector_api(double[] a, double[] b, int ai, int bi, int len) {
 		double[] c = allocVector(len, false);
 		final DoubleVector ones  = DoubleVector.broadcast(SPECIES, 1.0);
 		final DoubleVector zeros = DoubleVector.zero(SPECIES);

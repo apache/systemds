@@ -322,7 +322,6 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 		}
 	}
 
-
 	/**
 	 * Builds a packed 64-bit key from a prefix code and a next symbol, typically used in an LZW dictionary.
 	 *

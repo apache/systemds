@@ -410,7 +410,7 @@ public class ColGroupDDCLZWTest {
 		assertLosslessCompression(ddc);
 	}
 
-	public void assertLosslessCompression_NoRepetition(ColGroupDDCLZW original, int nRows) {
+	public void assertLosslessCompressionNoRepetition(ColGroupDDCLZW original, int nRows) {
 		AColGroup decompressed = original.convertToDDC();
 		assertNotNull(decompressed);
 		assertTrue(decompressed instanceof ColGroupDDC);
@@ -439,7 +439,7 @@ public class ColGroupDDCLZWTest {
 		assertNotNull(cg);
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
-		assertLosslessCompression_NoRepetition((ColGroupDDCLZW) cg, 20);
+		assertLosslessCompressionNoRepetition((ColGroupDDCLZW) cg, 20);
 	}
 
 	public void testDecompressToDenseBlock(double[][] data, boolean isTransposed) {

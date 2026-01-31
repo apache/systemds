@@ -292,6 +292,9 @@ public class ColGroupFactory {
 		else if(ct == CompressionType.DeltaDDC) {
 			return directCompressDeltaDDC(colIndexes, cg);
 		}
+		else if(ct == CompressionType.DDCLZW) {
+			return directCompressDDCLZW(colIndexes, cg);
+		}
 		else if(ct == CompressionType.CONST && cs.preferDeltaEncoding) {
 			return directCompressDeltaDDC(colIndexes, cg);
 		}
@@ -660,6 +663,15 @@ public class ColGroupFactory {
 		final int nUnique = map.size();
 		final AMapToData resData = d.resize(nUnique);
 		return ColGroupDDC.create(colIndexes, dict, resData, null);
+	}
+
+	private AColGroup directCompressDDCLZW(IColIndex colIndexes, CompressedSizeInfoColGroup cg) throws Exception {
+		final AColGroup g = directCompressDDC(colIndexes, cg);
+
+		if(g instanceof ColGroupDDC)
+			return ((ColGroupDDC) g).convertToDDCLZW();
+
+		return g;
 	}
 
 	private AColGroup directCompressDDCMultiCol(IColIndex colIndexes, CompressedSizeInfoColGroup cg) throws Exception {

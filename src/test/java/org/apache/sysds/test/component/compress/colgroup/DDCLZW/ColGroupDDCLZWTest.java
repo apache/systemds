@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.component.compress.colgroup;
+package org.apache.sysds.test.component.compress.colgroup.DDCLZW;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
@@ -72,53 +72,6 @@ import static org.junit.Assert.assertTrue;
 public class ColGroupDDCLZWTest {
 	protected static final Log LOG = LogFactory.getLog(ColGroupDDCLZWTest.class.getName());
 
-	@Test
-	public void testConvertToDDCLZWBasic() {
-		double[][] data = new double[][] {{10, 20}, {11, 21}, {12, 22}};
-
-		ColGroupDDC ddc = (ColGroupDDC) compressForTest(data, AColGroup.CompressionType.DDC);
-		AColGroup result = ddc.convertToDDCLZW();
-
-		assertNotNull(result);
-		assertTrue(result instanceof ColGroupDDCLZW);
-		ColGroupDDCLZW DDCLZW = (ColGroupDDCLZW) result;
-
-		MatrixBlock mb = new MatrixBlock(3, 2, false);
-		mb.allocateDenseBlock();
-		DDCLZW.decompressToDenseBlock(mb.getDenseBlock(), 0, 3);
-
-		assertEquals(10.0, mb.get(0, 0), 0.0);
-		assertEquals(20.0, mb.get(0, 1), 0.0);
-		assertEquals(11.0, mb.get(1, 0), 0.0);
-		assertEquals(21.0, mb.get(1, 1), 0.0);
-		assertEquals(12.0, mb.get(2, 0), 0.0);
-		assertEquals(22.0, mb.get(2, 1), 0.0);
-	}
-
-	/**
-	 * Creates a sample DDC group for unit tests
-	 */
-	private ColGroupDDC createTestDDC(int[] mapping, int nCols, int nUnique) {
-		IColIndex colIndexes = ColIndexFactory.create(nCols);
-
-		double[] dictValues = new double[nUnique * nCols];
-		for(int i = 0; i < nUnique; i++) {
-			for(int c = 0; c < nCols; c++) {
-				dictValues[i * nCols + c] = (i + 1) * 10.0 + c;
-			}
-		}
-		Dictionary dict = Dictionary.create(dictValues);
-
-		AMapToData data = MapToFactory.create(mapping.length, nUnique);
-		for(int i = 0; i < mapping.length; i++) {
-			data.set(i, mapping[i]);
-		}
-
-		AColGroup result = ColGroupDDC.create(colIndexes, dict, data, null);
-		assertTrue("The result is of class '" + result.getClass() + "'", result instanceof ColGroupDDC);
-		return (ColGroupDDC) result;
-	}
-
 	/**
 	 * Asserts that two maps are identical
 	 */
@@ -163,6 +116,25 @@ public class ColGroupDDCLZWTest {
 		}
 	}
 
+	// TODO: used for only one test. Refactor?
+	public void assertLosslessCompressionNoRepetition(ColGroupDDCLZW original, int nRows) {
+		AColGroup decompressed = original.convertToDDC();
+		assertNotNull(decompressed);
+		assertTrue(decompressed instanceof ColGroupDDC);
+
+		ColGroupDDC result = (ColGroupDDC) decompressed;
+
+		AMapToData map = result.getMapToData();
+		assertNotNull(map);
+
+		assertEquals(nRows, map.size());
+		assertEquals(nRows, map.getUnique());
+
+		for(int i = 0; i < nRows; i++) {
+			assertEquals("Mapping mismatch at row " + i, i, map.getIndex(i));
+		}
+	}
+
 	/**
 	 * Asserts if the slice operation matches DDC's slice
 	 */
@@ -175,6 +147,29 @@ public class ColGroupDDCLZWTest {
 		ColGroupDDC expectedSlice = (ColGroupDDC) originalDDC.sliceRows(low, high);
 
 		assertMapsEqual(expectedSlice.getMapToData(), ddcSlice.getMapToData());
+	}
+
+	@Test
+	public void testConvertToDDCLZWBasic() {
+		double[][] data = new double[][] {{10, 20}, {11, 21}, {12, 22}};
+
+		ColGroupDDC ddc = (ColGroupDDC) compressForTest(data, AColGroup.CompressionType.DDC);
+		AColGroup result = ddc.convertToDDCLZW();
+
+		assertNotNull(result);
+		assertTrue(result instanceof ColGroupDDCLZW);
+		ColGroupDDCLZW DDCLZW = (ColGroupDDCLZW) result;
+
+		MatrixBlock mb = new MatrixBlock(3, 2, false);
+		mb.allocateDenseBlock();
+		DDCLZW.decompressToDenseBlock(mb.getDenseBlock(), 0, 3);
+
+		assertEquals(10.0, mb.get(0, 0), 0.0);
+		assertEquals(20.0, mb.get(0, 1), 0.0);
+		assertEquals(11.0, mb.get(1, 0), 0.0);
+		assertEquals(21.0, mb.get(1, 1), 0.0);
+		assertEquals(12.0, mb.get(2, 0), 0.0);
+		assertEquals(22.0, mb.get(2, 1), 0.0);
 	}
 
 	@Test
@@ -330,15 +325,6 @@ public class ColGroupDDCLZWTest {
 	}
 
 	@Test
-	public void testSameNumber() {
-		int[] src = new int[20];
-		Arrays.fill(src, 2);
-
-		ColGroupDDC ddc = createTestDDC(src, 1, 3);
-		assertLosslessCompression(ddc);
-	}
-
-	@Test
 	public void testAlternatingNumbers() {
 		double[][] src = new double[30][3];
 		for(int i = 0; i < 30; i++) {
@@ -353,20 +339,9 @@ public class ColGroupDDCLZWTest {
 	}
 
 	@Test
-	public void testLongPatterns() {
-		double[][] src = new double[50][1];
-		for(int i = 0; i < 15; i++) {
-			src[i][0] = 10;
-		}
-		for(int i = 15; i < 20; i++) {
-			src[i][0] = 20;
-		}
-		for(int i = 20; i < 50; i++) {
-			src[i][0] = 30;
-		}
-
-		ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
-		assertLosslessCompression(ddc);
+	public void testDistributedPattern() {
+		assertLosslessCompression(
+			ColGroupDDCLZWTestUtils.createDDC(ColGroupDDCLZWTestUtils.genPatternDistributed(1000, 100), 100, 3));
 	}
 
 	@Test
@@ -402,30 +377,10 @@ public class ColGroupDDCLZWTest {
 	}
 
 	@Test
-	public void testRepetitiveData() {
-		double[][] src = new double[][] {{10}, {10}, {10}, {10}, {10}, {20}, {20}, {20}, {20}, {20}, {10}, {10}, {10},
-			{10}, {10}, {20}, {20}, {20}, {20}, {20}, {10}, {10}, {10}, {10}, {10}, {20}, {20}, {20}, {20}, {20}};
-
-		ColGroupDDC ddc = (ColGroupDDC) compressForTest(src, AColGroup.CompressionType.DDC);
-		assertLosslessCompression(ddc);
-	}
-
-	public void assertLosslessCompressionNoRepetition(ColGroupDDCLZW original, int nRows) {
-		AColGroup decompressed = original.convertToDDC();
-		assertNotNull(decompressed);
-		assertTrue(decompressed instanceof ColGroupDDC);
-
-		ColGroupDDC result = (ColGroupDDC) decompressed;
-
-		AMapToData map = result.getMapToData();
-		assertNotNull(map);
-
-		assertEquals(nRows, map.size());
-		assertEquals(nRows, map.getUnique());
-
-		for(int i = 0; i < nRows; i++) {
-			assertEquals("Mapping mismatch at row " + i, i, map.getIndex(i));
-		}
+	public void testAscending() {
+		assertLosslessCompression(
+			ColGroupDDCLZWTestUtils.createDDC(ColGroupDDCLZWTestUtils.genPatternDistributed( // [0, 1, 2, ..., 1000]
+				1000, 1000), 1000, 10));
 	}
 
 	@Test
@@ -1217,7 +1172,7 @@ public class ColGroupDDCLZWTest {
 	public void testUnaryOperationWithConstantResultSingleColumn() {
 		double[][] data = {{5}, {5}, {5}, {5}};
 		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
-		/*assertTrue(cg instanceof ColGroupDDCLZW);*/ // Type CONST.
+		// assertTrue(cg instanceof ColGroupDDCLZW); // Type CONST.
 
 		UnaryOperator op = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinCode.ABS));
 		AColGroup res = cg.unaryOperation(op);
@@ -1236,7 +1191,6 @@ public class ColGroupDDCLZWTest {
 	public void testUnaryOperationWithConstantResultMultiColumn() {
 		double[][] data = {{10, 20}, {10, 20}, {10, 20}};
 		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
-		/*assertTrue(cg instanceof ColGroupDDCLZW);*/
 
 		UnaryOperator op = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinCode.ABS));
 		AColGroup res = cg.unaryOperation(op);

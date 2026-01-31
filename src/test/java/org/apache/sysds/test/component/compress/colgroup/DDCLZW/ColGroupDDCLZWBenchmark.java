@@ -17,19 +17,16 @@
  * under the License.
  */
 
-package org.apache.sysds.test.component.compress.colgroup;
+package org.apache.sysds.test.component.compress.colgroup.DDCLZW;
 
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDCLZW;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
-import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
-import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
-import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.stream.IntStream;
+
+import org.apache.sysds.test.component.compress.colgroup.DDCLZW.ColGroupDDCLZWTestUtils;
 
 public class ColGroupDDCLZWBenchmark {
 	private static final int BENCHMARK_ITERATIONS = 10;
@@ -83,7 +80,7 @@ public class ColGroupDDCLZWBenchmark {
 
 		@Override
 		public String toString() {
-			return String.format("Size: %7d | nUnique: %4d | Entropy: %s | DDC: %7d bytes | DDCLZW: %7d bytes | " +
+			return String.format("Size: %7d | nUnique: %5d | Entropy: %s | DDC: %7d bytes | DDCLZW: %7d bytes | " +
 					"Memory reduction: %s | De-/Compression speedup: %.2f/%.2f times", dataSize, nUnique,
 				formatEntropyPercent(entropy, nUnique), ddcMemoryBytes, ddclzwMemoryBytes,
 				formatPercent(memoryReduction), decompressionSpeedup, compressionSpeedup);
@@ -109,55 +106,6 @@ public class ColGroupDDCLZWBenchmark {
 		return entropy;
 	}
 
-	// Pattern generators (array)
-	private int[] genPatternRepeating(int size, int... pattern) {
-		int[] result = new int[size];
-		for(int i = 0; i < size; i++) {
-			result[i] = pattern[i % pattern.length];
-		}
-		return result;
-	}
-
-	/// Args (10, 5) Generates a pattern like: [0, 0, 1, 1, 2, 2, 3, 3, 4, 4]
-	private int[] genPatternDistributed(int size, int nUnique) {
-		int[] result = new int[size];
-		int runLength = size / nUnique;
-		int pos = 0;
-		for(int i = 0; i < nUnique && pos < size; i++) {
-			int endPos = Math.min(pos + runLength, size);
-			Arrays.fill(result, pos, endPos, i);
-			pos = endPos;
-		}
-		return result;
-	}
-
-	private int[] genPatternRandom(int size, int nUnique, long seed) {
-		int[] result = new int[size];
-		java.util.Random rand = new java.util.Random(seed);
-		for(int i = 0; i < size; i++) {
-			result[i] = rand.nextInt(nUnique);
-		}
-		return result;
-	}
-
-	private int[] genPatternLZWOptimal(int size, int nUnique) {
-		int[] result = new int[size];
-		int pos = 0;
-		int patternLen = 10; // TODO: calculate based on nUnique?
-
-		while(pos < size) {
-			// Repeat the same pattern twice
-			for(int i = 0; i < patternLen && pos < size; i++) {
-				result[pos++] = i % nUnique;
-			}
-			for(int i = 0; i < patternLen && pos < size; i++) {
-				result[pos++] = i % nUnique;
-			}
-			patternLen++;
-		}
-		return result;
-	}
-
 	private void printBenchmarkTitle() {
 		String callerMethodName = StackWalker.getInstance().walk(stream -> stream.skip(1).findFirst().get())
 			.getMethodName();
@@ -169,32 +117,13 @@ public class ColGroupDDCLZWBenchmark {
 		System.out.println();
 	}
 
-	private ColGroupDDC createBenchmarkDDC(int[] mapping, int nUnique, int nCols) {
-		IColIndex colIndexes = ColIndexFactory.create(nCols);
-
-		double[] dictValues = new double[nUnique * nCols];
-		for(int i = 0; i < nUnique; i++) {
-			for(int c = 0; c < nCols; c++) {
-				dictValues[i * nCols + c] = (i + 1) * 10.0 + c;
-			}
-		}
-		Dictionary dict = Dictionary.create(dictValues);
-
-		AMapToData data = MapToFactory.create(mapping.length, nUnique);
-		for(int i = 0; i < mapping.length; i++) {
-			data.set(i, mapping[i]);
-		}
-
-		return (ColGroupDDC) ColGroupDDC.create(colIndexes, dict, data, null);
-	}
-
 	private BenchmarkResult runBenchmark(int[] mapping, int nUnique, int nCols) {
 		BenchmarkResult result = new BenchmarkResult();
 		result.dataSize = mapping.length;
 		result.nUnique = nUnique;
 		result.entropy = calculateEntropy(mapping, nUnique);
 
-		ColGroupDDC ddc = createBenchmarkDDC(mapping, nUnique, nCols);
+		ColGroupDDC ddc = ColGroupDDCLZWTestUtils.createDDC(mapping, nUnique, nCols);
 
 		// Measure DDC memory (though the method calculates how much storage it would take if the data structure were written to disk)
 		result.ddcMemoryBytes = ddc.getExactSizeOnDisk();
@@ -243,7 +172,7 @@ public class ColGroupDDCLZWBenchmark {
 			for(int nUnique : new int[] {2, 3, 5, 10, 20, 50, 100, 200, 500, 1000, 10_000, 20_000}) {
 				if(nUnique > size)
 					continue;
-				int[] mapping = genPatternLZWOptimal(size, nUnique);
+				int[] mapping = ColGroupDDCLZWTestUtils.genPatternLZWOptimal(size, nUnique);
 				BenchmarkResult result = runBenchmark(mapping, nUnique, 1);
 				System.out.println(result);
 			}
@@ -256,12 +185,13 @@ public class ColGroupDDCLZWBenchmark {
 	public void benchmarkDistributed() {
 		printBenchmarkTitle();
 
-		for(int size : new int[] {100, 1000, 10_000, 40_000}) {
+		for(int size : new int[] {100, 1000, 10_000, 70_000, 100_000}) {
 			System.out.println(".".repeat(35) + " Size: " + size + " " + ".".repeat(35));
-			for(int nUnique : new int[] {2, 3, 5, 10, 20, 50, 100, 200, 500, 1000}) {
+			for(int nUnique : new int[] {2, 3, 5, 10, 20, 50, 100, 200, 256, 257, 500, 1000, 10_000, 65_536, 65_537,
+				80_000}) {
 				if(nUnique > size)
 					continue;
-				int[] mapping = genPatternDistributed(size, nUnique);
+				int[] mapping = ColGroupDDCLZWTestUtils.genPatternDistributed(size, nUnique);
 				BenchmarkResult result = runBenchmark(mapping, nUnique, 1);
 				System.out.println(result);
 			}
@@ -276,7 +206,8 @@ public class ColGroupDDCLZWBenchmark {
 			for(int nUnique : new int[] {2, 3, 5, 10, 20, 50, 100, 200, 500, 1000}) {
 				if(nUnique > size)
 					continue;
-				int[] mapping = genPatternRepeating(size, IntStream.range(0, nUnique).toArray());
+				int[] mapping = ColGroupDDCLZWTestUtils.genPatternRepeating(size,
+					IntStream.range(0, nUnique).toArray());
 				BenchmarkResult result = runBenchmark(mapping, nUnique, 1);
 				System.out.println(result);
 			}
@@ -291,7 +222,7 @@ public class ColGroupDDCLZWBenchmark {
 			for(int nUnique : new int[] {2, 3, 5, 10, 20, 50, 100, 200, 500, 1000}) {
 				if(nUnique > size)
 					continue;
-				int[] mapping = genPatternLZWOptimal(size, nUnique);
+				int[] mapping = ColGroupDDCLZWTestUtils.genPatternLZWOptimal(size, nUnique);
 				BenchmarkResult result = runBenchmark(mapping, nUnique, 1);
 				System.out.println(result);
 			}
@@ -304,8 +235,8 @@ public class ColGroupDDCLZWBenchmark {
 
 		final int[] DATA_SIZES_GET_IDX = {10, 50, 100};
 		for(int size : DATA_SIZES_GET_IDX) {
-			int[] mapping = genPatternRepeating(size, 0, 1, 2, 2, 2, 1, 0, 0, 1);
-			ColGroupDDC ddc = createBenchmarkDDC(mapping, 3, 2);
+			int[] mapping = ColGroupDDCLZWTestUtils.genPatternRepeating(size, 0, 1, 2, 2, 2, 1, 0, 0, 1);
+			ColGroupDDC ddc = ColGroupDDCLZWTestUtils.createDDC(mapping, 3, 2);
 			ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) ddc.convertToDDCLZW();
 
 			// Benchmark DDC
@@ -332,8 +263,8 @@ public class ColGroupDDCLZWBenchmark {
 	//		printBenchmarkTitle();
 	//
 	//		for(int size : DATA_SIZES) {
-	//			int[] mapping = genPatternRepeating(size, 0, 1, 2);
-	//			ColGroupDDC ddc = createBenchmarkDDC(mapping, 3, 1);
+	//			int[] mapping = ColGroupDDCLZWTestUtils.genPatternRepeating(size, 0, 1, 2);
+	//			ColGroupDDC ddc = ColGroupDDCLZWTestUtils.createBenchmarkDDC(mapping, 3, 1);
 	//			ColGroupDDCLZW ddclzw = (ColGroupDDCLZW) ddc.convertToDDCLZW();
 	//
 	//			int sliceStart = size / 4;

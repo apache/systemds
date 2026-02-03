@@ -116,4 +116,17 @@ public interface OOCIOHandler {
 			this.serializedSize = serializedSize;
 		}
 	}
+
+	class GroupSourceBlockDescriptor extends SourceBlockDescriptor {
+		public final List<SourceBlockDescriptor> blocks;
+		public final int count;
+
+		public GroupSourceBlockDescriptor(String path, org.apache.sysds.common.Types.FileFormat format,
+			org.apache.sysds.runtime.matrix.data.MatrixIndexes indexes, long offset, int recordLength,
+			long serializedSize, List<SourceBlockDescriptor> blocks) {
+			super(path, format, indexes, offset, recordLength, serializedSize);
+			this.blocks = blocks;
+			this.count = blocks.size();
+		}
+	}
 }

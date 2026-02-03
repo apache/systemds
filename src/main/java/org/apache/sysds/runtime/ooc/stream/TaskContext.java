@@ -49,8 +49,8 @@ public class TaskContext {
 		if(ctx._deferred == null)
 			ctx._deferred = new ArrayDeque<>();
 		ctx._deferred.add(deferred);
-		if(ctx._deferred.size() > 3)
-			System.out.println("[WARN] Defer size bigger than 3");
+		//if(ctx._deferred.size() == 4 || ctx._deferred.size() % 100 == 0)
+		//	System.out.println("[WARN] Defer size bigger than 3 (" + ctx._deferred.size() + ")");
 	}
 
 	public static boolean runDeferred() {
@@ -61,5 +61,10 @@ public class TaskContext {
 		while((deferred = ctx._deferred.poll()) != null)
 			deferred.run();
 		return true;
+	}
+
+	public static boolean canPipe() {
+		TaskContext ctx = CTX.get();
+		return ctx._deferred != null && ctx._deferred.size() < 3;
 	}
 }

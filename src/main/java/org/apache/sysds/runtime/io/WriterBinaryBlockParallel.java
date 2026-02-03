@@ -23,14 +23,22 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.parfor.LocalTaskQueue;
+import org.apache.sysds.runtime.instructions.ooc.OOCStream;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.ooc.stream.SplittingOOCStream;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
@@ -83,6 +91,62 @@ public class WriterBinaryBlockParallel extends WriterBinaryBlock
 		}
 	}
 
+	@Override
+	public long writeMatrixFromStream(String fname, OOCStream<IndexedMatrixValue> stream, long rlen, long clen, int blen)
+		throws IOException {
+		Path path = new Path(fname);
+		long nnz = -1;
+		DataCharacteristics dc = stream.getDataCharacteristics();
+		if(dc != null)
+			nnz = dc.getNonZeros();
+		if(nnz < 0 && rlen > 0 && clen > 0) {
+			if(rlen > Long.MAX_VALUE / clen)
+				nnz = Long.MAX_VALUE - 1;
+			else
+				nnz = rlen * clen;
+		}
+		else if(nnz < 0)
+			nnz = 0;
+
+		int numPartFiles = numPartsFiles(path.getFileSystem(job), rlen, clen, blen, nnz);
+		int numThreads = OptimizerUtils.getParallelBinaryWriteParallelism();
+		numThreads = Math.min(numThreads, numPartFiles);
+
+		// fall back to sequential write if dop is 1 in order to create a single file
+		if(numThreads <= 1)
+			return super.writeMatrixFromStream(fname, stream, rlen, clen, blen);
+
+		// Match CP parallel writer partitioning by contiguous row ranges.
+		final int parallelism = numThreads;
+		final int blklen = (int) Math.ceil((double) rlen / blen / parallelism) * blen;
+		SplittingOOCStream<IndexedMatrixValue> split = new SplittingOOCStream<>(stream, iVal -> {
+			int partition = (int) (((iVal.getIndexes().getRowIndex() - 1) * blen) / (long) blklen);
+			return Math.max(0, Math.min(partition, parallelism - 1));
+		}, parallelism);
+
+		final ExecutorService pool = Executors.newFixedThreadPool(parallelism);
+		try {
+			ArrayList<WriteStreamTask> tasks = new ArrayList<>();
+			for(int i = 0; i < parallelism && i * (long) blklen < rlen; i++) {
+				Path newPath = new Path(path, IOUtilFunctions.getPartFileName(i));
+				tasks.add(new WriteStreamTask(newPath, job, split.getSubStream(i)));
+			}
+
+			long totalNnz = 0;
+			for(Future<Long> task : pool.invokeAll(tasks))
+				totalNnz += task.get();
+			return totalNnz;
+		}
+		catch(Exception e) {
+			DMLRuntimeException ex = DMLRuntimeException.of(e);
+			split.propagateFailure(ex);
+			throw ex;
+		}
+		finally {
+			pool.shutdown();
+		}
+	}
+
 	public static int numPartsFiles(FileSystem fs, long rlen, long clen, long blen, long nZeros) {
 		int numPartFiles = (int) (OptimizerUtils.estimatePartitionedSizeExactSparsity(rlen, clen, blen, nZeros) /
 			InfrastructureAnalyzer.getBlockSize(fs));
@@ -115,6 +179,39 @@ public class WriterBinaryBlockParallel extends WriterBinaryBlock
 			writeBinaryBlockMatrixToSequenceFile(_path, _job,  _src, _blen, (int) _rl, (int) _ru);
 			IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(_job, _path);
 			return null;
+		}
+	}
+
+	private class WriteStreamTask implements Callable<Long> {
+		private final Path _path;
+		private final JobConf _job;
+		private final OOCStream<IndexedMatrixValue> _stream;
+
+		public WriteStreamTask(Path path, JobConf job, OOCStream<IndexedMatrixValue> stream) {
+			_path = path;
+			_job = job;
+			_stream = stream;
+		}
+
+		@Override
+		public Long call() throws Exception {
+			SequenceFile.Writer writer = null;
+			long totalNnz = 0;
+			try {
+				writer = IOUtilFunctions.getSeqWriter(_path, _job, _replication);
+				IndexedMatrixValue i_val;
+				while((i_val = _stream.dequeue()) != LocalTaskQueue.NO_MORE_TASKS) {
+					MatrixBlock mb = (MatrixBlock) i_val.getValue();
+					MatrixIndexes ix = i_val.getIndexes();
+					writer.append(ix, mb);
+					totalNnz += mb.getNonZeros();
+				}
+			}
+			finally {
+				IOUtilFunctions.closeSilently(writer);
+			}
+			IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(_job, _path);
+			return totalNnz;
 		}
 	}
 }

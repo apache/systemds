@@ -23,47 +23,52 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.instructions.ooc.CachingStream;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
+import org.apache.sysds.runtime.instructions.ooc.SubscribableTaskQueue;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.ooc.stream.message.OOCStreamMessage;
 import org.apache.sysds.runtime.util.IndexRange;
 
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
-public class FilteredOOCStream<T> implements OOCStream<T> {
-	private final OOCStream<T> _sourceStream;
-	private final Function<T, Boolean> _predicate;
-	private CacheableData<?> _data;
+public class SubOOCStream<T> implements OOCStream<T> {
+	private OOCStream<T> _sourceStream;
+	private SubscribableTaskQueue<QueueCallback<T>> _taskQueue;
+	private QueueCallback<T> _last;
 
-	public FilteredOOCStream(OOCStream<T> sourceStream, Function<T, Boolean> predicate) {
+	public SubOOCStream(OOCStream<T> sourceStream) {
 		_sourceStream = sourceStream;
-		_predicate = predicate;
+		_taskQueue = new SubscribableTaskQueue<>();
+		_taskQueue.setUpstreamMessageRelay(_sourceStream::messageUpstream);
+	}
+
+	public void enqueue(QueueCallback<T> callback) {
+		_taskQueue.enqueue(callback);
 	}
 
 	@Override
 	public void enqueue(T t) {
-		_sourceStream.enqueue(t);
+		_taskQueue.enqueue(new SimpleQueueCallback<>(t, null));
 	}
 
 	@Override
 	public synchronized T dequeue() {
-		T next;
-		while((next = _sourceStream.dequeue()) != null) {
-			if(_predicate.apply(next))
-				return next;
-		}
+		if(_last != null)
+			_last.close();
+		_last = _taskQueue.dequeue();
+		if(_last != null)
+			return _last.get();
 		return null;
 	}
 
 	@Override
 	public void closeInput() {
-		_sourceStream.closeInput();
+		_taskQueue.closeInput();
 	}
 
 	@Override
 	public void propagateFailure(DMLRuntimeException re) {
-		_sourceStream.propagateFailure(re);
+		_taskQueue.propagateFailure(re);
 	}
 
 	@Override
@@ -78,30 +83,22 @@ public class FilteredOOCStream<T> implements OOCStream<T> {
 
 	@Override
 	public void setSubscriber(Consumer<QueueCallback<T>> subscriber) {
-		_sourceStream.setSubscriber(cb -> {
-			if(cb.isFailure() || cb.isEos()) {
-				subscriber.accept(cb);
+		_taskQueue.setSubscriber(cb -> {
+			if(cb.isEos()) {
+				subscriber.accept(OOCStream.eos(null));
 				return;
 			}
-
-			if(cb instanceof OOCStream.GroupQueueCallback<?>) {
-				@SuppressWarnings("unchecked")
-				OOCStream.GroupQueueCallback<T> group = (OOCStream.GroupQueueCallback<T>) cb;
-				for(int i = 0; i < group.size(); i++) {
-					QueueCallback<T> sub = group.getCallback(i);
-					boolean pass = sub.isFailure() || sub.isEos();
-					if(!pass)
-						pass = _predicate.apply(sub.get());
-					if(pass)
-						subscriber.accept(sub);
-					else
-						sub.close();
+			if(cb.isFailure()) {
+				try {
+					cb.get();
+					subscriber.accept(OOCStream.eos(new DMLRuntimeException("Stream callback indicated failure without cause")));
 				}
-				return;
+				catch(DMLRuntimeException re) {
+					subscriber.accept(OOCStream.eos(re));
+				}
 			}
-
-			if(_predicate.apply(cb.get()))
-				subscriber.accept(cb);
+			else
+				subscriber.accept(cb.get());
 		});
 	}
 
@@ -122,61 +119,62 @@ public class FilteredOOCStream<T> implements OOCStream<T> {
 
 	@Override
 	public DataCharacteristics getDataCharacteristics() {
-		return _data == null ? null : _data.getDataCharacteristics();
+		return _taskQueue.getDataCharacteristics();
 	}
 
 	@Override
 	public CacheableData<?> getData() {
-		return _data;
+		return _taskQueue.getData();
 	}
 
 	@Override
 	public void setData(CacheableData<?> data) {
-		_data = data;
+		_taskQueue.setData(data);
 	}
 
 	@Override
 	public void messageUpstream(OOCStreamMessage msg) {
-		_sourceStream.messageUpstream(msg);
+		_taskQueue.messageUpstream(msg);
 	}
 
 	@Override
 	public void messageDownstream(OOCStreamMessage msg) {
-		_sourceStream.messageDownstream(msg);
+		_taskQueue.messageDownstream(msg);
 	}
 
 	@Override
 	public void setUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		_sourceStream.setUpstreamMessageRelay(relay);
+		// Upstream is handled by source stream
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public void setDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		_sourceStream.setDownstreamMessageRelay(relay);
+		_taskQueue.setDownstreamMessageRelay(relay);
 	}
 
 	@Override
 	public void addUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		_sourceStream.addUpstreamMessageRelay(relay);
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public void addDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		_sourceStream.addDownstreamMessageRelay(relay);
+		_taskQueue.addDownstreamMessageRelay(relay);
 	}
 
 	@Override
 	public void clearUpstreamMessageRelays() {
-		_sourceStream.clearUpstreamMessageRelays();
+		_taskQueue.clearUpstreamMessageRelays();
 	}
 
 	@Override
 	public void clearDownstreamMessageRelays() {
-		_sourceStream.clearDownstreamMessageRelays();
+		_taskQueue.clearDownstreamMessageRelays();
 	}
 
 	@Override
 	public void setIXTransform(BiFunction<Boolean, IndexRange, IndexRange> transform) {
-		_sourceStream.setIXTransform(transform);
+		_taskQueue.setIXTransform(transform);
 	}
 }

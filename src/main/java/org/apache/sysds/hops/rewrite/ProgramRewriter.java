@@ -152,7 +152,6 @@ public class ProgramRewriter{
 			_dagRuleSet.add( new RewriteConstantFolding()                    ); //dependency: cse
 		_sbRuleSet.add(  new RewriteRemoveEmptyBasicBlocks()                 );
 		_sbRuleSet.add(  new RewriteRemoveEmptyForLoops()                    );
-		_sbRuleSet.add(      new RewriteInjectOOCTee()                       );
 	}
 	
 	/**

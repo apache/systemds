@@ -49,6 +49,7 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysds.utils.MemoryEstimates;
 import shaded.parquet.it.unimi.dsi.fastutil.ints.IntArrayList;
 import shaded.parquet.it.unimi.dsi.fastutil.longs.Long2IntLinkedOpenHashMap;
 
@@ -497,11 +498,20 @@ public class ColGroupDDCLZW extends APreAgg implements IMapToDataGroup {
 	}
 
 	@Override
+	public long estimateInMemorySize() {
+		long size = super.estimateInMemorySize();
+
+		if(_dataLZW != null)
+			size += (long) MemoryEstimates.intArrayCost(_dataLZW.length);
+
+		size += 2L * Long.BYTES; // _nRows, _nUnique, _dataLZW.length
+		return size;
+	}
+
+	@Override
 	public long getExactSizeOnDisk() {
 		long ret = super.getExactSizeOnDisk();
-		ret += 4;
-		ret += 4;
-		ret += 4;
+		ret += 12;
 		ret += (long) _dataLZW.length * 4;
 		return ret;
 	}

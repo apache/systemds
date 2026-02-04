@@ -26,8 +26,6 @@ import org.junit.Test;
 
 import java.util.stream.IntStream;
 
-import org.apache.sysds.test.component.compress.colgroup.DDCLZW.ColGroupDDCLZWTestUtils;
-
 public class ColGroupDDCLZWBenchmark {
 	private static final int BENCHMARK_ITERATIONS = 10;
 
@@ -126,7 +124,7 @@ public class ColGroupDDCLZWBenchmark {
 		ColGroupDDC ddc = ColGroupDDCLZWTestUtils.createDDC(mapping, nUnique, nCols);
 
 		// Measure DDC memory (though the method calculates how much storage it would take if the data structure were written to disk)
-		result.ddcMemoryBytes = ddc.getExactSizeOnDisk();
+		result.ddcMemoryBytes = ddc.estimateInMemorySize();
 
 		// Measure DDC decompression time (it's already decompressed, so measure access time)
 		long startTime = System.nanoTime();
@@ -147,7 +145,7 @@ public class ColGroupDDCLZWBenchmark {
 		result.ddclzwCompressionTimeNs = (endTime - startTime) / BENCHMARK_ITERATIONS;
 
 		// Measure DDCLZW memory
-		result.ddclzwMemoryBytes = ddclzw.getExactSizeOnDisk();
+		result.ddclzwMemoryBytes = ddclzw.estimateInMemorySize();
 
 		// Measure DDCLZW decompression time
 		startTime = System.nanoTime();

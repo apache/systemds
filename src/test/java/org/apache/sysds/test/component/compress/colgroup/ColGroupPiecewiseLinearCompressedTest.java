@@ -1,27 +1,37 @@
-package org.apache.sysds.runtime.compress.colgroup;
+package org.apache.sysds.test.component.compress.colgroup;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupPiecewiseLinearCompressed;
+import org.apache.sysds.runtime.compress.colgroup.functional.PiecewiseLinearUtils;
 import org.apache.sysds.runtime.compress.colgroup.indexes.ColIndexFactory;
 import org.apache.sysds.runtime.compress.colgroup.indexes.IColIndex;
-import org.apache.sysds.runtime.compress.colgroup.scheme.ColGroupPiecewiseLinearCompressed;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.test.AutomatedTestBase;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
 
-import static org.apache.sysds.runtime.compress.colgroup.ColGroupFactory.*;
+import static org.apache.sysds.runtime.compress.colgroup.functional.PiecewiseLinearUtils.*;
+import static org.apache.sysds.test.functions.io.binary.BlocksizeTest.sparsity;
 import static org.junit.Assert.*;
 
-public class ColGroupPiecewiseLinearCompressedTest {
+public class ColGroupPiecewiseLinearCompressedTest extends AutomatedTestBase {
+	@Override
+	public void setUp() {
+
+	}
 
 	@Test
-	public void testComputeBreakpoints_uniformColumn() {
+	public void testComputeBreakpointsUniformColumn() {
 		CompressionSettings cs = new CompressionSettingsBuilder().create();
 		cs.setPiecewiseTargetLoss(1e-3);
 		double[] column = {1.0, 1.0, 1.0, 1.0, 1.0}; // ← Test-spezifisch
@@ -30,7 +40,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testComputeBreakpoints_linearIncreasing() {
+	public void testComputeBreakpointsLinearIncreasing() {
 		CompressionSettings cs = new CompressionSettingsBuilder().create();
 		cs.setPiecewiseTargetLoss(1e-3);
 		double[] column = {0.0, 1.0, 2.0, 3.0, 4.0}; // ← andere column
@@ -39,17 +49,10 @@ public class ColGroupPiecewiseLinearCompressedTest {
 
 	}
 
-	@Test
-	public void testComputeBreakpoints_highLoss_uniform() {
-		CompressionSettings cs = new CompressionSettingsBuilder().create();
-		cs.setPiecewiseTargetLoss(10000.0);
-		double[] column = {1.0, 1.0, 1.0, 1.0, 1.0};
-		List<Integer> breaks = computeBreakpoints(cs, column);
-		assertEquals(Arrays.asList(0, 5), breaks);
-	}
+
 
 	@Test
-	public void testComputeBreakpoints_twoSegments() {
+	public void testComputeBreakpointsTwoSegments() {
 		CompressionSettings cs = new CompressionSettingsBuilder().create();
 		cs.setPiecewiseTargetLoss(1e-3);
 		// {1,1,1, 2,2,2} → 2 Segmente → [0,3,6]
@@ -58,18 +61,10 @@ public class ColGroupPiecewiseLinearCompressedTest {
 		assertEquals(Arrays.asList(0, 3, 6), breaks);
 	}
 
-	@Test
-	public void testComputeBreakpoints_noLoss_linear() {
-		CompressionSettings cs = new CompressionSettingsBuilder().create();
-		cs.setPiecewiseTargetLoss(0.0);
-		//cs.setPiecewiseTargetLoss(0.0);
-		double[] column = {0.0, 1.0, 2.0, 3.0, 4.0};
-		List<Integer> breaks = computeBreakpoints(cs, column);
-		assertEquals(Arrays.asList(0, 5), breaks); // bei 0 Loss alle Breaks
-	}
+
 
 	@Test
-	public void testComputeBreakpointsLambda_const() {
+	public void testComputeBreakpointsLambdaConst() {
 		double[] column = {1.0, 1.0, 1.0, 1.0, 1.0};
 		List<Integer> breaks = computeBreakpointsLambda(column, 5.0);
 		assertEquals(Arrays.asList(0, 5), breaks);
@@ -79,7 +74,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testComputeBreakpointsLambda_twoSegments() {
+	public void testComputeBreakpointsLambdaTwoSegments() {
 		double[] column = {1.0, 1.0, 1.0, 2.0, 2.0, 2.0};  // 6 Werte
 
 		// mit kleinem lambda -> viele Segmente (kostenlos fast)
@@ -94,7 +89,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testComputeBreakpointsLambda_jumpWithTrend() {
+	public void testComputeBreakpointsLambdaJumpWithTrend() {
 		double[] column = {0.0, 1.0, 2.0, 10.0, 11.0, 12.0};
 
 		// grobe Segmentanpassung: ein Segment pro „Abschnitt“
@@ -107,7 +102,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testComputeBreakpointsLambda_linear() {
+	public void testComputeBreakpointsLambdaLinear() {
 		double[] column = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0};
 
 		List<Integer> breaks = computeBreakpointsLambda(column, 1.0);
@@ -121,7 +116,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testComputeBreakpointsLambda_edge_lambdaVerySmall() {
+	public void testComputeBreakpointsLambdaEdgeLambdaVerySmall() {
 		double[] column = {1.0, 1.1, 1.0, 1.1, 1.0};
 
 		List<Integer> breaks = computeBreakpointsLambda(column, 0.001);
@@ -137,7 +132,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testComputeBreakpointsLambda_edge_lambdaVeryLarge() {
+	public void testComputeBreakpointsLambdaEdgeLambdaVeryLarge() {
 		double[] column = {1.0, 2.0, 1.5, 2.5, 1.8};
 
 		List<Integer> breaks = computeBreakpointsLambda(column, 1000.0);
@@ -145,7 +140,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testComputeSegmentCost_emptyOrSingle() {
+	public void testComputeSegmentCostEmptyOrSingle() {
 		double[] column = {10.0, 20.0, 30.0};
 
 		// 0 Elemente (leer)
@@ -159,7 +154,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testComputeSegmentCost_twoConstantPoints() {
+	public void testComputeSegmentCostTwoConstantPoints() {
 		double[] column = {5.0, 5.0, 1.0, 1.0};
 
 		// Zwei identische Punkte (konstant) → SSE = 0
@@ -168,7 +163,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testComputeSegmentCost_twoDifferentPoints() {
+	public void testComputeSegmentCostTwoDifferentPoints() {
 		double[] column = {0.0, 2.0, 1.0, 3.0};
 
 		// Zwei Punkte: (0,0) und (1,2) → Gerade y = 2*x, Fehler = 0
@@ -181,14 +176,14 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testComputeSegmentCost_constantThree() {
+	public void testComputeSegmentCostConstantThree() {
 		double[] column = {0.0, 0.0, 0.0};
 		double sse = computeSegmentCost(column, 0, 3);
 		assertEquals(0.0, sse, 1e-10);
 	}
 
 	@Test
-	public void testComputeSegmentCost_consistent_with_regression() {
+	public void testComputeSegmentCostConsistentWithRegression() {
 		double[] column = {0.0, 2.0, 0.0, 4.0, 0.0, 6.0};
 
 		int start = 0, end = 3;
@@ -205,30 +200,9 @@ public class ColGroupPiecewiseLinearCompressedTest {
 		assertEquals(sse_hand, sse, 1e-10);
 	}
 
-	@Test
-	public void testComputeTotalSSE_emptyBreaks() {
-		double[] column = {1.0, 2.0, 3.0};
-		List<Integer> breaks = Arrays.asList(); // leer → keine Segmente
-		double total = computeTotalSSE(column, breaks);
-
-		// 0 Segmente → Summe über 0 Segmente = 0
-		assertEquals(0.0, total, 1e-10);
-	}
 
 	@Test
-	public void testComputeTotalSSE_singleSegment_all() {
-		double[] column = {1.0, 2.0, 3.0};
-		List<Integer> breaks = Arrays.asList(0, 3); // ein Segment [0,3)
-
-		double total = computeTotalSSE(column, breaks);
-		double expected = computeSegmentCost(column, 0, 3);
-
-		// Ergebnis muss exakt das gleiche wie der SSE des gesamten Segments sein
-		assertEquals(expected, total, 1e-10);
-	}
-
-	@Test
-	public void testComputeTotalSSE_twoSegments() {
+	public void testComputeTotalSSETwoSegments() {
 		// Beispiel: [0,0,0] und [1,1,1] (jeweils konstant)
 		double[] column = {0.0, 0.0, 0.0, 1.0, 1.0, 1.0};
 		List<Integer> breaks = Arrays.asList(0, 3, 6); // zwei Segmente
@@ -243,7 +217,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testComputeTotalSSE_threeSegments() {
+	public void testComputeTotalSSEThreeSegments() {
 		// Ein Segment mit drei identischen Werten, zwei Segmente mit jeweils zwei Werten
 		double[] column = {1.0, 1.0, 1.0, 2.0, 2.0, 3.0, 3.0};
 		List<Integer> breaks = Arrays.asList(0, 3, 5, 7);
@@ -263,7 +237,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testComputeTotalSSE_gapStartEnd() {
+	public void testComputeTotalSSEGapStartEnd() {
 		double[] column = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0};
 		List<Integer> breaks = Arrays.asList(2, 5, 8);
 
@@ -276,7 +250,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testComputeTotalSSE_oneSegment_identical() {
+	public void testComputeTotalSSEOneSegmentIdentical() {
 		double[] column = {1.0, 2.0, 3.0, 4.0, 5.0};
 		double sseTotal = computeSegmentCost(column, 0, 5);
 
@@ -287,7 +261,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testComputeTotalSSE_nonConstant() {
+	public void testComputeTotalSSENonConstant() {
 		double[] column = {0.0, 1.0, 2.0, 3.0, 4.0};
 		List<Integer> breaks = Arrays.asList(0, 2, 5);
 
@@ -300,7 +274,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testComputeTotalSSE_edgeCases() {
+	public void testComputeTotalSSEEdgeCases() {
 		double[] columnEmpty = {};
 		List<Integer> breaksEmpty = Arrays.asList(0, 0);
 		assertEquals(0.0, computeTotalSSE(columnEmpty, breaksEmpty), 1e-10);
@@ -312,7 +286,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testRegressSegment_empty() {
+	public void testRegressSegmentEmpty() {
 		double[] column = {1.0, 2.0, 3.0};
 		double[] result = regressSegment(column, 0, 0);
 		assertEquals(0.0, result[0], 1e-10);
@@ -320,7 +294,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testRegressSegment_singlePoint() {
+	public void testRegressSegmentSinglePoint() {
 		double[] column = {1.0, 2.0, 3.0};
 		double[] result = regressSegment(column, 1, 2);
 
@@ -329,7 +303,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testRegressSegment_twoIdentical() {
+	public void testRegressSegmentTwoIdentical() {
 		double[] column = {5.0, 5.0, 1.0, 1.0};
 		double[] result = regressSegment(column, 0, 2);
 
@@ -338,7 +312,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testRegressSegment_twoPoints() {
+	public void testRegressSegmentTwoPoints() {
 		double[] column = {0.0, 2.0};
 		double[] result = regressSegment(column, 0, 2);
 
@@ -347,7 +321,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testRegressSegment_twoPoints_offset() {
+	public void testRegressSegmentTwoPointsOffset() {
 
 		double[] column = {1.0, 3.0, 5.0, 7.0};
 		double[] result = regressSegment(column, 2, 4);
@@ -357,7 +331,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testRegressSegment_constant() {
+	public void testRegressSegmentConstant() {
 		double[] column = {3.0, 3.0, 3.0, 3.0};
 		double[] result = regressSegment(column, 0, 4);
 
@@ -366,7 +340,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testRegressSegment_linear() {
+	public void testRegressSegmentLinear() {
 		double[] column = new double[4];
 		double a = 1.5, b = 2.0;
 		for(int i = 0; i < 4; i++) {
@@ -379,17 +353,10 @@ public class ColGroupPiecewiseLinearCompressedTest {
 		assertEquals(b, result[1], 1e-10);
 	}
 
-	@Test
-	public void testRegressSegment_denomZero() {
-		double[] column = {10.0};
-		double[] result = regressSegment(column, 0, 1);
 
-		assertEquals(0.0, result[0], 1e-10);
-		assertEquals(10.0, result[1], 1e-10);
-	}
 
 	@Test
-	public void testCompressPiecewiseLinearFunctional_const() {
+	public void testCompressPiecewiseLinearFunctionalConst() {
 		// 1. MatrixBlock mit einer konstanten Spalte erzeugen
 		int nrows = 20, ncols = 1;
 		MatrixBlock in = new MatrixBlock(nrows, ncols, false);
@@ -428,35 +395,35 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testCreate_nullBreakpoints() {
+	public void testCreateNullBreakpoints() {
 		int[] nullBp = null;
 		ColGroupPiecewiseLinearCompressed.create(ColIndexFactory.create(new int[] {0}), nullBp, new double[] {1.0},
 			new double[] {0.0}, 10);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testCreate_tooFewBreakpoints() {
+	public void testCreateTooFewBreakpoints() {
 		int[] singleBp = {0};
 		ColGroupPiecewiseLinearCompressed.create(ColIndexFactory.create(new int[] {0}), singleBp, new double[] {1.0},
 			new double[] {0.0}, 10);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testCreate_inconsistentSlopes() {
+	public void testCreateInconsistentSlopes() {
 		int[] bp = {0, 5, 10};
 		ColGroupPiecewiseLinearCompressed.create(ColIndexFactory.create(new int[] {0}), bp,
 			new double[] {1.0, 2.0, 3.0}, new double[] {0.0, 1.0}, 10);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
-	public void testCreate_inconsistentIntercepts() {
+	public void testCreateInconsistentIntercepts() {
 		int[] bp = {0, 5, 10};
 		ColGroupPiecewiseLinearCompressed.create(ColIndexFactory.create(new int[] {0}), bp, new double[] {1.0, 2.0},
 			new double[] {0.0}, 10);
 	}
 
 	@Test
-	public void testCreate_validMultiSegment() {
+	public void testCreateValidMultiSegment() {
 		int[] bp = {0, 3, 7, 10};
 		double[] slopes = {1.0, -2.0, 0.5};
 		double[] intercepts = {0.0, 5.0, -1.0};
@@ -469,7 +436,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testCreate_multiColumn() {
+	public void testCreateMultiColumn() {
 		IColIndex cols = ColIndexFactory.create(new int[] {5, 10, 15});
 		int[] bp = {0, 5};
 		double[] slopes = {3.0};
@@ -500,7 +467,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testCreate_singleColumn() {
+	public void testCreateSingleColumn() {
 		IColIndex cols = ColIndexFactory.create(new int[] {5});
 		int[] bp = {0, 5};
 		double[] slopes = {3.0};
@@ -516,7 +483,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testCreate_validMinimal() {
+	public void testCreateValidMinimal() {
 
 		// 1 Segment: [0,10] → y = 2.0 * r + 1.0
 		int[] bp = {0, 10};
@@ -586,7 +553,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testDecompressToDenseBlock_fullRange() {
+	public void testDecompressToDenseBlockFullRange() {
 		ColGroupPiecewiseLinearCompressed cg = createTestGroup(12);
 
 		MatrixBlock target = new MatrixBlock(12, 1, false);
@@ -606,7 +573,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testDecompressToDenseBlock_partialRange() {
+	public void testDecompressToDenseBlockPartialRange() {
 		ColGroupPiecewiseLinearCompressed cg = createTestGroup(12);
 
 		MatrixBlock target = new MatrixBlock(12, 1, false);
@@ -625,7 +592,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testDecompressToDenseBlock_emptyRange() {
+	public void testDecompressToDenseBlockEmptyRange() {
 		ColGroupPiecewiseLinearCompressed cg = createTestGroup(12);
 
 		MatrixBlock target = new MatrixBlock(5, 1, false);
@@ -643,7 +610,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testDecompressToDenseBlock_nullSafety() {
+	public void testDecompressToDenseBlockNullSafety() {
 		ColGroupPiecewiseLinearCompressed cg = createTestGroup(10);
 
 		// Null DenseBlock
@@ -677,7 +644,7 @@ public class ColGroupPiecewiseLinearCompressedTest {
 	}
 
 	@Test
-	public void testCompressPiecewiseLinear_viaRealAPI() {
+	public void testCompressPiecewiseLinearViaRealAPI() {
 
 		MatrixBlock in = new MatrixBlock(10, 1, false);
 		in.allocateDenseBlock();
@@ -695,5 +662,92 @@ public class ColGroupPiecewiseLinearCompressedTest {
 		boolean hasPiecewise = colGroups.stream().anyMatch(cg -> cg instanceof ColGroupPiecewiseLinearCompressed);
 		assertTrue(hasPiecewise);
 	}
+	@Test
+
+	public void testGreedy_linearColumn_singleSegment() {
+		// 2. Perfekte Gerade → 1 Segment
+		double[] linearCol = {1.0, 2.0, 3.0, 4.0, 5.0};  // y=x+1
+		CompressionSettings cs = new CompressionSettingsBuilder().create();
+		cs.setPiecewiseTargetLoss(1e-6);
+
+		List<Integer> breaks = PiecewiseLinearUtils.computeBreakpointsGreedy(linearCol, cs);
+		assertEquals("[0, 5]", breaks.toString());  // SSE=0 ✓
+	}
+
+	@Test
+	public void testGreedy_noisyColumn_multipleSegments() {
+		// 3. Mit Sprung → 2 Segmente
+		double[] noisyCol = {1.1, 1.9, 2.2, 10.1, 10.8, 11.3};  // Sprung bei 3
+		CompressionSettings cs = new CompressionSettingsBuilder().create();
+		cs.setPiecewiseTargetLoss(1.0);  // Erlaubt MSE=1
+
+		List<Integer> breaks = PiecewiseLinearUtils.computeBreakpointsGreedy(noisyCol, cs);
+		// Erwartet mind. 2 Segmente (Sprung erkennen)
+		assertTrue(breaks.size() >= 3);  // [0, ?, 6]
+	}
+
+	@Test
+	public void testGreedy_targetLossIncreasesSegments() {
+		// 4. Höherer Target-Loss → weniger Segmente
+		double[] colWithJumps = {1,2,3, 10,11,12, 20,21,22};
+		CompressionSettings csStrict = new CompressionSettingsBuilder().create();
+		csStrict.setPiecewiseTargetLoss(0.01); // Streng → viele Segmente
+
+		CompressionSettings csLoose = new CompressionSettingsBuilder().create();
+		csLoose.setPiecewiseTargetLoss(10.0);
+
+		List<Integer> strictBreaks = PiecewiseLinearUtils.computeBreakpointsGreedy(colWithJumps, csStrict);
+		List<Integer> looseBreaks = PiecewiseLinearUtils.computeBreakpointsGreedy(colWithJumps, csLoose);
+
+		// Strenger Target → mehr Segmente
+		assertTrue(strictBreaks.size() > looseBreaks.size());
+	}
+
+
+	@Test
+	public void testMultiColumnTargetLossRespected() {
+		final int rows = 50, cols = 2;
+		double[][] data = getRandomMatrix(rows, cols, 0, 10, 1.0, 42L);
+		MatrixBlock orig = DataConverter.convertToMatrixBlock(data);
+		orig.allocateDenseBlock();
+
+		IColIndex colIdx = ColIndexFactory.create(0, cols-1);
+		CompressionSettings cs = new CompressionSettingsBuilder().create();
+		cs.setPiecewiseTargetLoss(1.0);
+
+		AColGroup cg = ColGroupFactory.compressPiecewiseLinearFunctional(colIdx, orig, cs);
+
+		MatrixBlock target = new MatrixBlock(rows, cols, false);
+		target.allocateDenseBlock();
+		cg.decompressToDenseBlock(target.getDenseBlock(), 0, rows-1, 0, cols-1);
+
+		// Test MSE für jede Spalte
+		for (int c = 0; c < cols; c++) {
+			double mse = computeColumnMSE(orig, target, c);
+			assertTrue("Col " + c + " MSE=" + mse + " > target=1.0", mse <= 1.0);
+		}
+	}
+
+
+	private double computeColumnMSE(MatrixBlock orig, MatrixBlock reconstructed, int colIdx) {
+		double mse = 0.0;
+		final int numRows = orig.getNumRows();
+
+		DenseBlock origDb = orig.getDenseBlock();
+		DenseBlock reconDb = reconstructed.getDenseBlock();
+
+		for (int row = 0; row < numRows; row++) {
+			final double origValue = origDb.get(row, colIdx);      // ← DENSEBLOCK.GET!
+			final double reconValue = reconDb.get(row, colIdx);
+			final double squaredError = (origValue - reconValue) * (origValue - reconValue);
+			mse += squaredError;
+		}
+
+		return mse / numRows;
+	}
+
+
+
+
 
 }

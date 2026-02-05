@@ -136,10 +136,8 @@ public class CompressionSettings {
 
 	public final boolean preferDeltaEncoding;
 
-	/**
-	 * Ziel-Gesantverlust für piecewise Lineace Komocession• Interpretation: maximal entaubter Alobaler MSE pro Went in
-	 * der Sealte. O.O ~ quasi verlustfrei, viele Segmente >0 ~ mehr Approximation entaubt, weniger Segmente
-	 */
+	// Handling Targetloss for piecewise linear Kompression
+
 	private double piecewiseTargetLoss = Double.NaN;
 
 	public void setPiecewiseTargetLoss(double piecewiseTargetLoss) {

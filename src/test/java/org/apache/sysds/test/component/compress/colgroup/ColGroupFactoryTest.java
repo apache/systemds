@@ -19,10 +19,8 @@
 
 package org.apache.sysds.test.component.compress.colgroup;
 
-import static org.apache.sysds.runtime.compress.colgroup.ColGroupFactory.computeSegmentCost;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,7 +50,6 @@ import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(value = Parameterized.class)
 public class ColGroupFactoryTest {
-
 
 	private final MatrixBlock mb;
 	private final MatrixBlock mbt;
@@ -330,7 +327,5 @@ public class ColGroupFactoryTest {
 	public int numBlocks() {
 		return 2;
 	}
-
-
 }
 }

@@ -151,24 +151,24 @@ class UnimodalModality(Modality):
                 self.extract_raw_data()
             new_modality = representation.transform(self)
 
-            for i, d in enumerate(new_modality.data):
-                output = np.array(d)
-                if np.isnan(output).any():
-                    new_modality.data[i] = np.where(np.isnan(output), 0, output)
+            # for i, d in enumerate(new_modality.data):
+            #     output = np.array(d)
+            #     if np.isnan(output).any():
+            #         new_modality.data[i] = np.where(np.isnan(output), 0, output)
 
-            if not all(
-                "attention_masks" in entry for entry in new_modality.metadata.values()
-            ):
-                for d in new_modality.data:
-                    if d.shape[0] == 1 and d.ndim == 2:
-                        padding_per_representation[representation.name] = True
-                        original_lengths_per_representation[representation.name].append(
-                            d.shape[1]
-                        )
-                    else:
-                        original_lengths_per_representation[representation.name].append(
-                            d.shape[0]
-                        )
+            # if not all(
+            #     "attention_masks" in entry for entry in new_modality.metadata.values()
+            # ):
+            #     for d in new_modality.data:
+            #         if d.shape[0] == 1 and d.ndim == 2:
+            #             padding_per_representation[representation.name] = True
+            #             original_lengths_per_representation[representation.name].append(
+            #                 d.shape[1]
+            #             )
+            #         else:
+            #             original_lengths_per_representation[representation.name].append(
+            #                 d.shape[0]
+            #             )
             transformed_modalities_per_representation[representation.name] = (
                 new_modality
             )
@@ -217,6 +217,7 @@ class UnimodalModality(Modality):
                                 mode="constant",
                                 constant_values=0,
                             )
+                            padded_embeddings.append(padded)
                         elif len(embeddings.shape) == 2:
                             padded = np.pad(
                                 embeddings,
@@ -224,6 +225,7 @@ class UnimodalModality(Modality):
                                 mode="constant",
                                 constant_values=0,
                             )
+                            padded_embeddings.append(padded)
                         elif len(embeddings.shape) == 3:
                             padded = np.pad(
                                 embeddings,

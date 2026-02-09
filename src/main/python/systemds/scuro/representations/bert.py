@@ -126,7 +126,7 @@ class BertFamily(UnimodalRepresentation):
                     cls_embedding = self.bert_output
                 cls_embeddings.extend(cls_embedding)
 
-        return np.array(cls_embeddings)
+        return cls_embeddings
 
 
 @register_representation(ModalityType.TEXT)

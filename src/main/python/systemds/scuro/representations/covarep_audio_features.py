@@ -25,9 +25,13 @@ from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.transformed import TransformedModality
 
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
-from systemds.scuro.drsearch.operator_registry import register_representation
+from systemds.scuro.drsearch.operator_registry import (
+    register_representation,
+    register_context_representation_operator,
+)
 
 
+@register_context_representation_operator(ModalityType.AUDIO)
 @register_representation(ModalityType.AUDIO)
 class Spectral(UnimodalRepresentation):
     def __init__(self, hop_length=512):

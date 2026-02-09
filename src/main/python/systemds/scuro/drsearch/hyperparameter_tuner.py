@@ -19,6 +19,7 @@
 #
 # -------------------------------------------------------------
 from typing import Dict, List, Tuple, Any, Optional
+import os
 from skopt.space import Real, Integer, Categorical
 import numpy as np
 import logging
@@ -33,6 +34,7 @@ from systemds.scuro.drsearch.representation_dag import (
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.drsearch.task import PerformanceMeasure
 import pickle
+from systemds.scuro.utils.checkpointing import CheckpointManager
 
 
 def get_params_for_node(node_id, params):
@@ -113,6 +115,8 @@ class HyperparameterTuner:
         maximize_metric: bool = True,
         save_results: bool = False,
         debug: bool = False,
+        checkpoint_every: Optional[int] = None,
+        resume: bool = True,
     ):
         self.tasks = tasks
         self.unimodal_optimization_results = optimization_results
@@ -130,6 +134,14 @@ class HyperparameterTuner:
         self.extract_k_best_modalities_per_task()
         self.debug = debug
         self.logger = logging.getLogger(__name__)
+        self.checkpoint_every = checkpoint_every
+        self.resume = resume
+        self._checkpoint_manager = CheckpointManager(
+            os.getcwd(),
+            "hyperparam_checkpoint_",
+            checkpoint_every=self.checkpoint_every,
+            resume=self.resume,
+        )
         if debug:
             logging.basicConfig(
                 level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -176,17 +188,54 @@ class HyperparameterTuner:
                 self.k_best_cache[task.model.name].extend(cached_data)
         self.representations = representations
 
+    def _count_results_by_task(self, results: Dict[str, Any]) -> Dict[str, int]:
+        counts = {}
+        for task_name, task_results in results.items():
+            task_count = 0
+            for _, result_list in task_results.items():
+                task_count += len(result_list)
+            counts[task_name] = task_count
+        return counts
+
+    def resume_from_checkpoint(self):
+        loaded = self._checkpoint_manager.resume_from_checkpoint(
+            "eval_count_by_task", self._count_results_by_task
+        )
+        if loaded:
+            results, _, _ = loaded
+            self.optimization_results.results = results
+
     def tune_unimodal_representations(self, max_eval_per_rep: Optional[int] = None):
+        self.resume_from_checkpoint()
         for task in self.tasks:
             reps = self.k_best_representations[task.model.name]
-            self.optimization_results.add_result(
-                Parallel(n_jobs=self.n_jobs)(
-                    delayed(self.tune_dag_representation)(
-                        rep.dag, rep.dag.root_node_id, task, max_eval_per_rep
-                    )
-                    for rep in reps
-                )
+            skip_remaining = self._checkpoint_manager.skip_remaining_by_key.get(
+                task.model.name, 0
             )
+            if skip_remaining >= len(reps):
+                continue
+
+            chunk_size = self.checkpoint_every or len(reps)
+            for start_idx in range(skip_remaining, len(reps), chunk_size):
+                rep_chunk = reps[start_idx : start_idx + chunk_size]
+                try:
+                    results = []
+                    for rep in rep_chunk:
+                        results.append(
+                            self.tune_dag_representation(
+                                rep.dag, rep.dag.root_node_id, task, max_eval_per_rep
+                            )
+                        )
+                    self.optimization_results.add_result(results)
+                    self._checkpoint_manager.increment(task.model.name, len(results))
+                    self._checkpoint_manager.checkpoint_if_due(
+                        self.optimization_results.results, "eval_count_by_task"
+                    )
+                except Exception:
+                    self._checkpoint_manager.save_checkpoint(
+                        self.optimization_results.results, "eval_count_by_task", {}
+                    )
+                    raise
 
         if self.save_results:
             self.save_tuning_results()
@@ -287,13 +336,13 @@ class HyperparameterTuner:
         opt = Optimizer(
             search_space, random_state=42, n_initial_points=min(10, n_calls // 2)
         )
-
+        self.n_jobs = 2
         n_batch = min(abs(self.n_jobs), n_calls) if self.n_jobs != 0 else 1
         for _ in range(0, n_calls, n_batch):
             points = opt.ask(n_points=n_batch)
-            results = Parallel(n_jobs=self.n_jobs)(
-                delayed(evaluate_point)(p) for p in points
-            )
+            results = Parallel(
+                n_jobs=self.n_jobs, max_nbytes=None, mmap_mode=None, backend="threading"
+            )(delayed(evaluate_point)(p) for p in points)
             objective_values = [result[0] for result in results]
             all_results.extend(result[1] for result in results)
             opt.tell(points, objective_values)
@@ -369,6 +418,7 @@ class HyperparameterTuner:
         optimize_unimodal: bool = True,
         max_eval_per_rep: Optional[int] = None,
     ):
+        self.resume_from_checkpoint()
         self.optimization_results.setup_mm(optimize_unimodal)
         for task in self.tasks:
 
@@ -389,43 +439,59 @@ class HyperparameterTuner:
                 reverse=self.maximize_metric,
             )[:k]
             best_optimization_results = best_results
+            skip_remaining = self._checkpoint_manager.skip_remaining_by_key.get(
+                task.model.name, 0
+            )
 
             for representation in best_optimization_results:
-                if optimize_unimodal:
-                    dag = copy.deepcopy(representation.dag)
-                    index = 0
-                    for i, node in enumerate(representation.dag.nodes):
-                        if not node.inputs:
-                            leaf_node_id = node.node_id
-                            leaf_nodes = self.representations[task.model.name][
-                                node.modality_id
-                            ][node.representation_index].dag.nodes
-                            for leaf_idx, node in enumerate(dag.nodes):
-                                if node.node_id == leaf_node_id:
-                                    dag.nodes[leaf_idx : leaf_idx + 1] = leaf_nodes
-                                    index = leaf_idx + len(leaf_nodes) - 1
-                                    break
+                if skip_remaining > 0:
+                    skip_remaining -= 1
+                    continue
+                try:
+                    if optimize_unimodal:
+                        dag = copy.deepcopy(representation.dag)
+                        index = 0
+                        for i, node in enumerate(representation.dag.nodes):
+                            if not node.inputs:
+                                leaf_node_id = node.node_id
+                                leaf_nodes = self.representations[task.model.name][
+                                    node.modality_id
+                                ][node.representation_index].dag.nodes
+                                for leaf_idx, node in enumerate(dag.nodes):
+                                    if node.node_id == leaf_node_id:
+                                        dag.nodes[leaf_idx : leaf_idx + 1] = leaf_nodes
+                                        index = leaf_idx + len(leaf_nodes) - 1
+                                        break
 
-                            for node in dag.nodes:
-                                try:
-                                    idx = node.inputs.index(leaf_node_id)
-                                    node.inputs[idx] = dag.nodes[index].node_id
-                                    break
-                                except ValueError:
-                                    continue
+                                for node in dag.nodes:
+                                    try:
+                                        idx = node.inputs.index(leaf_node_id)
+                                        node.inputs[idx] = dag.nodes[index].node_id
+                                        break
+                                    except ValueError:
+                                        continue
 
-                    result = self.tune_dag_representation(
-                        dag, dag.root_node_id, task, max_eval_per_rep
+                        result = self.tune_dag_representation(
+                            dag, dag.root_node_id, task, max_eval_per_rep
+                        )
+                    else:
+                        result = self.tune_dag_representation(
+                            representation.dag,
+                            representation.dag.root_node_id,
+                            task,
+                            max_eval_per_rep,
+                            mm_opt=True,
+                        )
+                    self.optimization_results.add_result([result])
+                    self._checkpoint_manager.increment(task.model.name, 1)
+                    self._checkpoint_manager.checkpoint_if_due(
+                        self.optimization_results.results, "eval_count_by_task"
                     )
-                else:
-                    result = self.tune_dag_representation(
-                        representation.dag,
-                        representation.dag.root_node_id,
-                        task,
-                        max_eval_per_rep,
-                        mm_opt=True,
+                except Exception:
+                    self._checkpoint_manager.save_checkpoint(
+                        self.optimization_results.results, "eval_count_by_task", {}
                     )
-                self.optimization_results.add_result([result])
+                    raise
         if self.save_results:
             self.save_tuning_results()
 

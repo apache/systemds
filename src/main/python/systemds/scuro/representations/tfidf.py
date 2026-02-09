@@ -43,10 +43,9 @@ class TfIdf(UnimodalRepresentation):
         vectorizer = TfidfVectorizer(min_df=self.min_df)
 
         X = vectorizer.fit_transform(modality.data)
-        X = [np.array(x).astype(np.float32).reshape(1, -1) for x in X.toarray()]
         if self.output_file is not None:
             save_embeddings(X, self.output_file)
 
         transformed_modality.data_type = np.float32
-        transformed_modality.data = X
+        transformed_modality.data = X.toarray()
         return transformed_modality

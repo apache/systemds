@@ -158,8 +158,6 @@ jobs:
       env:
         TORCH_HOME: ${{ github.workspace }}/.torch
       run: |
-        df -h
-        exit
         ( while true; do echo "."; sleep 25; done ) &
         KA=$!
         pip install --upgrade pip wheel setuptools

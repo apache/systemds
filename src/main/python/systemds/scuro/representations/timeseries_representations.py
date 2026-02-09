@@ -24,7 +24,10 @@ from scipy import stats
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
-from systemds.scuro.drsearch.operator_registry import register_representation
+from systemds.scuro.drsearch.operator_registry import (
+    register_representation,
+    register_context_representation_operator,
+)
 
 
 class TimeSeriesRepresentation(UnimodalRepresentation):
@@ -53,6 +56,7 @@ class TimeSeriesRepresentation(UnimodalRepresentation):
 
 
 @register_representation([ModalityType.TIMESERIES])
+@register_context_representation_operator(ModalityType.TIMESERIES)
 class Mean(TimeSeriesRepresentation):
     def __init__(self):
         super().__init__("Mean")
@@ -62,6 +66,7 @@ class Mean(TimeSeriesRepresentation):
 
 
 @register_representation([ModalityType.TIMESERIES])
+@register_context_representation_operator(ModalityType.TIMESERIES)
 class Min(TimeSeriesRepresentation):
     def __init__(self):
         super().__init__("Min")
@@ -71,6 +76,7 @@ class Min(TimeSeriesRepresentation):
 
 
 @register_representation([ModalityType.TIMESERIES])
+@register_context_representation_operator(ModalityType.TIMESERIES)
 class Max(TimeSeriesRepresentation):
     def __init__(self):
         super().__init__("Max")
@@ -80,6 +86,7 @@ class Max(TimeSeriesRepresentation):
 
 
 @register_representation([ModalityType.TIMESERIES])
+@register_context_representation_operator(ModalityType.TIMESERIES)
 class Sum(TimeSeriesRepresentation):
     def __init__(self):
         super().__init__("Sum")
@@ -89,6 +96,7 @@ class Sum(TimeSeriesRepresentation):
 
 
 @register_representation([ModalityType.TIMESERIES])
+@register_context_representation_operator(ModalityType.TIMESERIES)
 class Std(TimeSeriesRepresentation):
     def __init__(self):
         super().__init__("Std")
@@ -98,6 +106,7 @@ class Std(TimeSeriesRepresentation):
 
 
 @register_representation([ModalityType.TIMESERIES])
+@register_context_representation_operator(ModalityType.TIMESERIES)
 class Skew(TimeSeriesRepresentation):
     def __init__(self):
         super().__init__("Skew")
@@ -107,6 +116,7 @@ class Skew(TimeSeriesRepresentation):
 
 
 @register_representation([ModalityType.TIMESERIES])
+@register_context_representation_operator(ModalityType.TIMESERIES)
 class Quantile(TimeSeriesRepresentation):
     def __init__(self, quantile=0.9):
         super().__init__(
@@ -119,6 +129,7 @@ class Quantile(TimeSeriesRepresentation):
 
 
 @register_representation([ModalityType.TIMESERIES])
+@register_context_representation_operator(ModalityType.TIMESERIES)
 class Kurtosis(TimeSeriesRepresentation):
     def __init__(self):
         super().__init__("Kurtosis")
@@ -128,6 +139,7 @@ class Kurtosis(TimeSeriesRepresentation):
 
 
 @register_representation([ModalityType.TIMESERIES])
+@register_context_representation_operator(ModalityType.TIMESERIES)
 class RMS(TimeSeriesRepresentation):
     def __init__(self):
         super().__init__("RMS")
@@ -137,6 +149,7 @@ class RMS(TimeSeriesRepresentation):
 
 
 @register_representation([ModalityType.TIMESERIES])
+@register_context_representation_operator(ModalityType.TIMESERIES)
 class ZeroCrossingRate(TimeSeriesRepresentation):
     def __init__(self):
         super().__init__("ZeroCrossingRate")
@@ -146,6 +159,7 @@ class ZeroCrossingRate(TimeSeriesRepresentation):
 
 
 @register_representation([ModalityType.TIMESERIES])
+@register_context_representation_operator(ModalityType.TIMESERIES)
 class ACF(TimeSeriesRepresentation):
     def __init__(self, k=1):
         super().__init__("ACF", {"k": [1, 2, 5, 10, 20, 25, 50, 100, 200, 500]})
@@ -173,6 +187,7 @@ class ACF(TimeSeriesRepresentation):
 
 
 @register_representation([ModalityType.TIMESERIES])
+@register_context_representation_operator(ModalityType.TIMESERIES)
 class FrequencyMagnitude(TimeSeriesRepresentation):
     def __init__(self):
         super().__init__("FrequencyMagnitude")
@@ -182,6 +197,7 @@ class FrequencyMagnitude(TimeSeriesRepresentation):
 
 
 @register_representation([ModalityType.TIMESERIES])
+@register_context_representation_operator(ModalityType.TIMESERIES)
 class SpectralCentroid(TimeSeriesRepresentation):
     def __init__(self, fs=1.0):
         super().__init__("SpectralCentroid", parameters={"fs": [0.5, 1.0, 2.0]})
@@ -196,6 +212,7 @@ class SpectralCentroid(TimeSeriesRepresentation):
 
 
 @register_representation([ModalityType.TIMESERIES])
+@register_context_representation_operator(ModalityType.TIMESERIES)
 class BandpowerFFT(TimeSeriesRepresentation):
     def __init__(self, fs=1.0, f1=0.0, f2=0.5):
         super().__init__(

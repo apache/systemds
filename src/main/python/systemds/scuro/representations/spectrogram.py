@@ -25,10 +25,14 @@ from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.modality.transformed import TransformedModality
 
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
-from systemds.scuro.drsearch.operator_registry import register_representation
+from systemds.scuro.drsearch.operator_registry import (
+    register_representation,
+    register_context_representation_operator,
+)
 
 
 @register_representation(ModalityType.AUDIO)
+@register_context_representation_operator(ModalityType.AUDIO)
 class Spectrogram(UnimodalRepresentation):
     def __init__(self, hop_length=512, n_fft=2048):
         parameters = {"hop_length": [256, 512, 1024, 2048], "n_fft": [1024, 2048, 4096]}

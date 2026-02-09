@@ -20,7 +20,7 @@
 # -------------------------------------------------------------
 import copy
 from dataclasses import dataclass, field
-from typing import List, Dict, Union, Any, Hashable, Optional
+from typing import List, Dict, Tuple, Union, Any, Hashable, Optional
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.representation import (
@@ -118,6 +118,22 @@ class RepresentationDag:
                 children.append(node.node_id)
         return children
 
+    def get_first_level_nodes(self) -> List[str]:
+        leaf_nodes = set(self.get_leaf_nodes())
+        first_level_nodes = []
+
+        for node in self.nodes:
+            if node.node_id in leaf_nodes:
+                continue
+
+            if node.inputs and all(input_id in leaf_nodes for input_id in node.inputs):
+                first_level_nodes.append(node.node_id)
+
+        return first_level_nodes
+
+    def get_first_level_node_set(self) -> set:
+        return set(self.get_first_level_nodes())
+
     def validate(self) -> bool:
         node_ids = {node.node_id for node in self.nodes}
 
@@ -188,13 +204,13 @@ class RepresentationDag:
             is_unimodal = len(input_mods) == 1
 
             cached_result = None
-            if external_cache and is_unimodal:
+            if external_cache is not None and is_unimodal:
                 cached_result = external_cache.get(node_signature)
             if cached_result is not None:
                 result = cached_result
 
             else:
-                node_operation = copy.deepcopy(node.operation())
+                node_operation = node.operation()
                 if len(input_mods) == 1:
                     # It's a unimodal operation
                     if isinstance(node_operation, Context):
@@ -228,7 +244,7 @@ class RepresentationDag:
                         )
                     else:
                         result = input_mods[0].combine(input_mods[1:], fusion_op)
-                if external_cache and is_unimodal:
+                if external_cache is not None and is_unimodal:
                     external_cache.put(node_signature, result)
 
             if enable_cache:
@@ -239,6 +255,40 @@ class RepresentationDag:
         result = execute_node(self.root_node_id, task)
 
         return cache if enable_cache else result
+
+    def compute_full_node_signature(
+        self, node_id: str, node_signatures: Dict[str, Hashable] = None
+    ) -> Hashable:
+        if node_signatures is None:
+            node_signatures = {}
+
+        if node_id in node_signatures:
+            return node_signatures[node_id]
+
+        node = self.get_node_by_id(node_id)
+        if not node:
+            return None
+
+        if not node.inputs:
+            sig = self._compute_leaf_signature(node)
+            node_signatures[node_id] = sig
+            return sig
+
+        input_sigs = []
+        for input_id in sorted(node.inputs):
+            input_sig = self.compute_full_node_signature(input_id, node_signatures)
+            input_sigs.append(input_sig)
+
+        sig = self._compute_node_signature(node, tuple(input_sigs))
+        node_signatures[node_id] = sig
+        return sig
+
+    def find_nodes_with_same_predecessors(
+        self, target_node_id: str, other_dag: "RepresentationDag", other_node_id: str
+    ) -> bool:
+        target_sig = self.compute_full_node_signature(target_node_id)
+        other_sig = other_dag.compute_full_node_signature(other_node_id)
+        return target_sig == other_sig
 
 
 def get_modality_by_id_and_instance_id(
@@ -303,3 +353,139 @@ class RepresentationDAGBuilder:
             if node.node_id == node_id:
                 return node
         return None
+
+
+class CSEAwareDAGBuilder:
+    def __init__(self):
+        self.global_nodes: List[RepresentationNode] = []
+        self.signature_to_node: Dict[Hashable, str] = {}
+        self.node_to_signature: Dict[str, Hashable] = {}
+        self.node_counter = 0
+
+    def _compute_node_signature(
+        self, operation: Any, inputs: List[str], parameters: Dict[str, Any] = None
+    ) -> Hashable:
+        ip = [self.node_to_signature[inp] for inp in inputs]
+        input_sigs = tuple(sorted(ip)) if inputs else ()
+        op_cls = operation().name
+        params_items = tuple(sorted((parameters or {}).items()))
+        return ("op", op_cls, params_items, input_sigs)
+
+    def _compute_leaf_signature(
+        self, modality_id: str, representation_index: int = -1
+    ) -> Hashable:
+        return ("leaf", modality_id, representation_index)
+
+    def _get_or_create_node(
+        self,
+        operation: Any,
+        inputs: List[str],
+        modality_id: str = None,
+        representation_index: int = None,
+        parameters: Dict[str, Any] = None,
+        is_leaf: bool = False,
+    ) -> str:
+        if is_leaf:
+            signature = self._compute_leaf_signature(modality_id, representation_index)
+        else:
+            signature = self._compute_node_signature(operation, inputs, parameters)
+
+        try:
+            if signature in self.signature_to_node:
+                return self.signature_to_node[signature]
+        except:
+            pass
+
+        if is_leaf:
+            if representation_index != -1:
+                node_id = f"leaf_{modality_id}_{representation_index}"
+            else:
+                node_id = f"leaf_{get_node_id()}"
+        else:
+            node_id = f"op_{get_op_id()}"
+            self.node_counter += 1
+
+        node = RepresentationNode(
+            node_id=node_id,
+            inputs=inputs,
+            operation=operation,
+            modality_id=modality_id,
+            representation_index=representation_index,
+            parameters=parameters or {},
+        )
+
+        self.global_nodes.append(node)
+        self.signature_to_node[signature] = node_id
+        self.node_to_signature[node_id] = signature
+
+        return node_id
+
+    def create_leaf_node(
+        self, modality_id: str, representation_index: int = -1, operation=None
+    ) -> str:
+        return self._get_or_create_node(
+            operation=operation,
+            inputs=[],
+            modality_id=modality_id,
+            representation_index=representation_index,
+            is_leaf=True,
+        )
+
+    def create_operation_node(
+        self, operation: Any, inputs: List[str], parameters: Dict[str, Any] = None
+    ):
+        return self._get_or_create_node(
+            operation=operation, inputs=inputs, parameters=parameters, is_leaf=False
+        )
+
+    def build(self, root_node_id: str) -> RepresentationDag:
+        dag = RepresentationDag(nodes=self.global_nodes, root_node_id=root_node_id)
+        if not dag.validate():
+            raise ValueError("Invalid DAG construction")
+        return dag
+
+    def get_node(self, node_id: str) -> Optional[RepresentationNode]:
+        for node in self.global_nodes:
+            if node.node_id == node_id:
+                return node
+        return None
+
+
+def group_dags_by_dependencies(
+    dags: List[RepresentationDag],
+) -> List[List[RepresentationDag]]:
+    if not dags:
+        return []
+
+    dag_first_level_sets = []
+    for dag in dags:
+        first_level_nodes = dag.get_first_level_node_set()
+        dag_first_level_sets.append(first_level_nodes)
+
+    n = len(dags)
+    parent = list(range(n))
+
+    def find(x):
+        if parent[x] != x:
+            parent[x] = find(parent[x])
+        return parent[x]
+
+    def union(x, y):
+        root_x = find(x)
+        root_y = find(y)
+        if root_x != root_y:
+            parent[root_y] = root_x
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            if dag_first_level_sets[i] & dag_first_level_sets[j]:
+                union(i, j)
+
+    groups: Dict[int, List[RepresentationDag]] = {}
+    for i in range(n):
+        root = find(i)
+        if root not in groups:
+            groups[root] = []
+        groups[root].append(dags[i])
+
+    return list(groups.values())

@@ -62,8 +62,14 @@ class Aggregation:
         self.aggregation_function_name = aggregation_function
 
         self.parameters = {
-            "aggregation_function": aggregation_function,
-            "pad_modality": pad_modality,
+            "aggregation_function": self._aggregation_function.keys(),
+            "pad_modality": [True, False],
+        }
+
+    def get_current_parameters(self):
+        return {
+            "aggregation_function": self.aggregation_function_name,
+            "pad_modality": self.pad_modality,
         }
 
     def execute(self, modality):

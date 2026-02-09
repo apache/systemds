@@ -28,24 +28,46 @@ from systemds.scuro.modality.type import DataLayout, ModalityType
 from systemds.scuro.drsearch.operator_registry import register_context_operator
 from systemds.scuro.representations.aggregate import Aggregation
 from systemds.scuro.representations.context import Context
+from systemds.scuro.representations.representation import Representation
 
 
 class Window(Context):
     def __init__(self, name, aggregation_function):
-        is_ts_rep = False
-        if isinstance(aggregation_function, str):
-            parameters = {
-                "aggregation_function": list(Aggregation().get_aggregation_functions()),
-            }
-        else:
-            is_ts_rep = True
-            parameters = {
-                "aggregation_function": aggregation_function.name,
-                "agg_params": aggregation_function.parameters,
-            }
-
-        super().__init__(name, parameters, is_ts_rep)
         self.aggregation_function = aggregation_function
+        parameters = {}
+        if isinstance(self.aggregation_function, Aggregation) or isinstance(
+            self.aggregation_function, Representation
+        ):
+            parameters["aggregation_function"] = self.aggregation_function.__class__
+        else:
+            raise ValueError(
+                f"Invalid aggregation function type: {type(self.aggregation_function)}"
+            )
+
+        super().__init__(name, parameters)
+
+    def get_current_parameters(self):
+        current_params = {}
+        if not self.parameters:
+            return current_params
+
+        for parameter in list(self.parameters.keys()):
+            if parameter == "aggregation_function":
+                if "aggregation_function" in self.parameters:
+                    current_params["aggregation_function"] = self.parameters[
+                        "aggregation_function"
+                    ]
+                    if isinstance(self.aggregation_function, Aggregation) or isinstance(
+                        self.aggregation_function, Representation
+                    ):
+                        for (
+                            key,
+                            value,
+                        ) in self.aggregation_function.get_current_parameters().items():
+                            current_params[f"aggregation_function_{key}"] = value
+            else:
+                current_params[parameter] = getattr(self, parameter)
+        return current_params
 
     @property
     def aggregation_function(self):
@@ -53,7 +75,9 @@ class Window(Context):
 
     @aggregation_function.setter
     def aggregation_function(self, value):
-        if self.is_ts_rep:
+        if isinstance(value, Representation):
+            self._aggregation_function = value
+        elif isinstance(value, Aggregation):
             self._aggregation_function = value
         else:
             self._aggregation_function = Aggregation(value)
@@ -63,7 +87,7 @@ class Window(Context):
     [ModalityType.TIMESERIES, ModalityType.AUDIO, ModalityType.EMBEDDING]
 )
 class WindowAggregation(Window):
-    def __init__(self, aggregation_function="mean", window_size=10, pad=False):
+    def __init__(self, aggregation_function="mean", window_size=10, pad=True):
         super().__init__("WindowAggregation", aggregation_function)
         self.parameters["window_size"] = [5, 10, 15, 25, 50, 100]
         self.window_size = int(window_size)
@@ -173,6 +197,7 @@ class WindowAggregation(Window):
     [ModalityType.TIMESERIES, ModalityType.AUDIO, ModalityType.EMBEDDING]
 )
 class StaticWindow(Window):
+    # TODO
     def __init__(self, aggregation_function="mean", num_windows=100):
         super().__init__("StaticWindow", aggregation_function)
         self.parameters["num_windows"] = [10, num_windows]

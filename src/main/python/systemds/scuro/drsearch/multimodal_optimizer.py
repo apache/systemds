@@ -43,6 +43,7 @@ import copy
 import time
 import traceback
 from itertools import chain
+from systemds.scuro.utils.checkpointing import CheckpointManager
 
 
 def _evaluate_dag_worker(dag_pickle, task_pickle, modalities_pickle, debug=False):
@@ -106,6 +107,8 @@ class MultimodalOptimizer:
         min_modalities: int = 2,
         max_modalities: int = None,
         metric: str = "accuracy",
+        checkpoint_every: int = None,
+        resume: bool = True,
     ):
         self.modalities = modalities
         self.tasks = tasks
@@ -122,11 +125,40 @@ class MultimodalOptimizer:
             unimodal_optimization_results
         )
         self.optimization_results = []
+        self.checkpoint_every = checkpoint_every
+        self.resume = resume
+        self._checkpoint_manager = CheckpointManager(
+            os.getcwd(),
+            "multimodal_checkpoint_",
+            checkpoint_every=self.checkpoint_every,
+            resume=self.resume,
+        )
+
+    def _count_results_by_task(self, results: Dict[str, List["OptimizationResult"]]):
+        return {
+            task_name: len(task_results) for task_name, task_results in results.items()
+        }
+
+    def resume_from_checkpoint(self):
+        loaded = self._checkpoint_manager.resume_from_checkpoint(
+            "eval_count_by_task", self._count_results_by_task
+        )
+        if loaded:
+            results, _, _ = loaded
+            self.optimization_results = results
+
+    def _ensure_results_initialized(self) -> Dict[str, List["OptimizationResult"]]:
+        if not isinstance(self.optimization_results, dict):
+            self.optimization_results = {}
+        for task in self.tasks:
+            self.optimization_results.setdefault(task.model.name, [])
+        return self.optimization_results
 
     def optimize_parallel(
         self, max_combinations: int = None, max_workers: int = 2, batch_size: int = 4
     ) -> Dict[str, List["OptimizationResult"]]:
-        all_results = {}
+        self.resume_from_checkpoint()
+        all_results = self._ensure_results_initialized()
 
         for task in self.tasks:
             task_copy = copy.deepcopy(task)
@@ -134,8 +166,12 @@ class MultimodalOptimizer:
                 print(
                     f"[DEBUG] Optimizing multimodal fusion for task: {task.model.name}"
                 )
-            all_results[task.model.name] = []
-            evaluated_count = 0
+            evaluated_count = self._checkpoint_manager.counts_by_key.get(
+                task.model.name, 0
+            )
+            skip_remaining = self._checkpoint_manager.skip_remaining_by_key.get(
+                task.model.name, 0
+            )
             outstanding = set()
             stop_generation = False
 
@@ -167,6 +203,10 @@ class MultimodalOptimizer:
                             if max_combinations and evaluated_count >= max_combinations:
                                 stop_generation = True
                                 break
+                            if skip_remaining > 0:
+                                skip_remaining -= 1
+                                evaluated_count += 1
+                                continue
 
                             dag_pickle = pickle.dumps(dag)
                             fut = ex.submit(
@@ -190,7 +230,18 @@ class MultimodalOptimizer:
                                     except Exception:
                                         if self.debug:
                                             traceback.print_exc()
+                                        self._checkpoint_manager.save_checkpoint(
+                                            self.optimization_results,
+                                            "eval_count_by_task",
+                                            {},
+                                        )
                                     evaluated_count += 1
+                                    self._checkpoint_manager.increment(
+                                        task.model.name, 1
+                                    )
+                                    self._checkpoint_manager.checkpoint_if_due(
+                                        self.optimization_results, "eval_count_by_task"
+                                    )
                                     if self.debug and evaluated_count % 100 == 0:
                                         print(
                                             f"[DEBUG] Evaluated {evaluated_count} combinations..."
@@ -211,7 +262,14 @@ class MultimodalOptimizer:
                         except Exception:
                             if self.debug:
                                 traceback.print_exc()
+                            self._checkpoint_manager.save_checkpoint(
+                                self.optimization_results, "eval_count_by_task", {}
+                            )
                         evaluated_count += 1
+                        self._checkpoint_manager.increment(task.model.name, 1)
+                        self._checkpoint_manager.checkpoint_if_due(
+                            self.optimization_results, "eval_count_by_task"
+                        )
                         if self.debug and evaluated_count % 100 == 0:
                             print(
                                 f"[DEBUG] Evaluated {evaluated_count} combinations..."
@@ -224,8 +282,6 @@ class MultimodalOptimizer:
                 print(
                     f"[DEBUG] Task completed: {len(all_results[task.model.name])} valid combinations evaluated"
                 )
-
-        self.optimization_results = all_results
 
         if self.debug:
             print(f"[DEBUG] Optimization completed")
@@ -406,15 +462,20 @@ class MultimodalOptimizer:
     def optimize(
         self, max_combinations: int = None
     ) -> Dict[str, List["OptimizationResult"]]:
-        all_results = {}
+        self.resume_from_checkpoint()
+        all_results = self._ensure_results_initialized()
 
         for task in self.tasks:
             if self.debug:
                 print(
                     f"[DEBUG] Optimizing multimodal fusion for task: {task.model.name}"
                 )
-            all_results[task.model.name] = []
-            evaluated_count = 0
+            evaluated_count = self._checkpoint_manager.counts_by_key.get(
+                task.model.name, 0
+            )
+            skip_remaining = self._checkpoint_manager.skip_remaining_by_key.get(
+                task.model.name, 0
+            )
 
             for modality_subset in self._generate_modality_combinations():
                 if self.debug:
@@ -427,12 +488,20 @@ class MultimodalOptimizer:
                     for dag in self._generate_fusion_dags(modality_subset, repr_combo):
                         if max_combinations and evaluated_count >= max_combinations:
                             break
+                        if skip_remaining > 0:
+                            skip_remaining -= 1
+                            evaluated_count += 1
+                            continue
 
                         result = self._evaluate_dag(dag, task)
                         if result is not None:
                             all_results[task.model.name].append(result)
 
                         evaluated_count += 1
+                        self._checkpoint_manager.increment(task.model.name, 1)
+                        self._checkpoint_manager.checkpoint_if_due(
+                            self.optimization_results, "eval_count_by_task"
+                        )
 
                         if self.debug and evaluated_count % 100 == 0:
                             print(f"    Evaluated {evaluated_count} combinations...")
@@ -447,8 +516,6 @@ class MultimodalOptimizer:
                 print(
                     f"[DEBUG] Task completed: {len(all_results[task.model.name])} valid combinations evaluated"
                 )
-
-        self.optimization_results = all_results
 
         if self.debug:
             print(f"[DEBUG] Optimization completed")

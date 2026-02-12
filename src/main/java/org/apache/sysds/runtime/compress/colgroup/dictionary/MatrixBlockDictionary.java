@@ -67,8 +67,6 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	final private MatrixBlock _data;
 
-	static final VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_PREFERRED;
-
 	/**
 	 * Unsafe private constructor that does not check the data validity. USE WITH CAUTION.
 	 * 
@@ -2127,9 +2125,6 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	private static void preaggValuesFromDenseDictBlockedIKJ(double[] a, double[] b, double[] ret, int bi, int bk, int bj,
 		int bie, int bke, int cz, int az, int ls, int cut, int sOffT, int eOffT) {
-		final int vLen = SPECIES.length();
-		final DoubleVector vVec = DoubleVector.zero(SPECIES);
-		final int leftover = (eOffT - sOffT) % vLen; // leftover not vectorized
 		for(int i = bi; i < bie; i++) {
 			final int offI = i * cz;
 			final int offOutT = i * az + bj;
@@ -2138,25 +2133,12 @@ public class MatrixBlockDictionary extends ADictionary {
 				final int sOff = sOffT + idb;
 				final int eOff = eOffT + idb;
 				final double v = a[offI + k];
-				vecInnerLoop(v, b, ret, offOutT, eOff, sOff, leftover, vLen, vVec);
+				int offOut = offOutT;
+				for(int j = sOff; j < eOff; j++, offOut++) {
+					ret[offOut] += v * b[j];
+				}
 			}
 		}
-	}
-
-	private static void vecInnerLoop(final double v, final double[] b, final double[] ret, final int offOutT,
-		final int eOff, final int sOff, final int leftover, final int vLen, DoubleVector vVec) {
-		int offOut = offOutT;
-		vVec = vVec.broadcast(v);
-		final int end = eOff - leftover;
-		for(int j = sOff; j < end; j += vLen, offOut += vLen) {
-			DoubleVector res = DoubleVector.fromArray(SPECIES, ret, offOut);
-			DoubleVector bVec = DoubleVector.fromArray(SPECIES, b, j);
-			vVec.fma(bVec, res).intoArray(ret, offOut);
-		}
-		for(int j = end; j < eOff; j++, offOut++) {
-			ret[offOut] += v * b[j];
-		}
-
 	}
 
 	private void preaggValuesFromDenseDictDenseAggRangeGeneric(final int numVals, final IColIndex colIndexes,

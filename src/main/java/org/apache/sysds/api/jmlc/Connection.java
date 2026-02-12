@@ -301,58 +301,39 @@ public class Connection implements Closeable
 
 	/**
 	 * Loads a HuggingFace model via Python worker for LLM inference.
-	 * Uses auto-detected available ports for Py4J communication.
-	 * 
-	 * @param modelName HuggingFace model name 
-	 * @param workerScriptPath path to the Python worker script 
-	 * @return LLMCallback interface to the Python worker
-	 */
-	public LLMCallback loadModel(String modelName, String workerScriptPath) {
-		//auto-find available ports
-		int javaPort = findAvailablePort();
-		int pythonPort = findAvailablePort();
-		return loadModel(modelName, workerScriptPath, javaPort, pythonPort);
-	}
-	
-	/**
-	 * Loads a HuggingFace model via Python worker for LLM inference.
 	 * Starts a Python subprocess and connects via Py4J.
 	 * 
-	 * @param modelName HuggingFace model name
-	 * @param workerScriptPath path to the Python worker script 
-	 * @param javaPort port for Java gateway server
-	 * @param pythonPort port for Python callback server
+	 * @param modelName HuggingFace model name (e.g., "distilgpt2")
 	 * @return LLMCallback interface to the Python worker
 	 */
-	public LLMCallback loadModel(String modelName, String workerScriptPath, int javaPort, int pythonPort) {
+	public LLMCallback loadModel(String modelName) {
 		if (_llmWorker != null)
 			return _llmWorker;
 		try {
-			//initialize latch for worker registration
+			// Initialize latch for worker registration
 			_workerLatch = new CountDownLatch(1);
 			
-			//start Py4J gateway server with callback support
+			// Start Py4J gateway server with callback support
 			_gatewayServer = new GatewayServer.GatewayServerBuilder()
 				.entryPoint(this)
-				.javaPort(javaPort)
-				.callbackClient(pythonPort, java.net.InetAddress.getLoopbackAddress())
+				.javaPort(25333)
+				.callbackClient(25334, java.net.InetAddress.getLoopbackAddress())
 				.build();
 			_gatewayServer.start();
 			
-			//give gateway time to start
+			// Give gateway time to fully start accepting connections
 			Thread.sleep(500);
 			
-			//start python worker process with both ports
-			String pythonCmd = findPythonCommand();
-			LOG.info("Starting LLM worker with script: " + workerScriptPath + 
-				" (python=" + pythonCmd + ", javaPort=" + javaPort + ", pythonPort=" + pythonPort + ")");
+			// Find the Python script - try multiple locations
+			String pythonScript = findPythonScript();
+			LOG.info("Starting LLM worker with script: " + pythonScript);
+			
 			_pythonProcess = new ProcessBuilder(
-				pythonCmd, workerScriptPath, modelName, 
-				String.valueOf(javaPort), String.valueOf(pythonPort)
+				"python", pythonScript, modelName, "25333"
 			).redirectErrorStream(true).start();
 			
-			//read python output in background thread
-			Thread outputReader = new Thread(() -> {
+			// Read Python process output in background thread
+			new Thread(() -> {
 				try (BufferedReader reader = new BufferedReader(
 						new InputStreamReader(_pythonProcess.getInputStream()))) {
 					String line;
@@ -362,22 +343,11 @@ public class Connection implements Closeable
 				} catch (IOException e) {
 					LOG.error("Error reading LLM worker output", e);
 				}
-			});
-			outputReader.setName("llm-worker-output");
-			outputReader.setDaemon(true);
-			outputReader.start();
+			}).start();
 			
-			//wait for worker to register, checking process liveness periodically
-			//larger models (7B+) need more time to load weights into GPU memory
-			long deadlineNs = System.nanoTime() + TimeUnit.SECONDS.toNanos(300);
-			while (!_workerLatch.await(2, TimeUnit.SECONDS)) {
-				if (!_pythonProcess.isAlive()) {
-					int exitCode = _pythonProcess.exitValue();
-					throw new DMLException("LLM worker process died during startup (exit code " + exitCode + ")");
-				}
-				if (System.nanoTime() > deadlineNs) {
-					throw new DMLException("Timeout waiting for LLM worker to register (300s)");
-				}
+			// Wait for worker to register with timeout
+			if (!_workerLatch.await(60, TimeUnit.SECONDS)) {
+				throw new DMLException("Timeout waiting for LLM worker to register");
 			}
 			
 		} catch (DMLException e) {
@@ -386,38 +356,6 @@ public class Connection implements Closeable
 			throw new DMLException("Failed to start LLM worker: " + e.getMessage());
 		}
 		return _llmWorker;
-	}
-	
-	/**
-	 * Finds the available Python command, trying python3 first then python.
-	 * @return python command name
-	 */
-	private static String findPythonCommand() {
-		for (String cmd : new String[]{"python3", "python"}) {
-			try {
-				Process p = new ProcessBuilder(cmd, "--version")
-					.redirectErrorStream(true).start();
-				int exitCode = p.waitFor();
-				if (exitCode == 0)
-					return cmd;
-			} catch (Exception e) {
-				//command not found, try next
-			}
-		}
-		throw new DMLException("No Python installation found (tried python3, python)");
-	}
-	
-	/**
-	 * Finds an available port on the local machine.
-	 * @return available port number
-	 */
-	private int findAvailablePort() {
-		try (java.net.ServerSocket socket = new java.net.ServerSocket(0)) {
-			socket.setReuseAddress(true);
-			return socket.getLocalPort();
-		} catch (IOException e) {
-			throw new DMLException("Failed to find available port: " + e.getMessage());
-		}
 	}
 	
 	/**
@@ -432,6 +370,33 @@ public class Connection implements Closeable
 	}
 	
 	/**
+	 * Finds the Python LLM worker script by checking multiple possible locations.
+	 * @return absolute path to the Python script
+	 * @throws IOException if script cannot be found
+	 */
+	private String findPythonScript() throws IOException {
+		String[] possiblePaths = {
+			// Relative to project root (when running from IDE or mvn)
+			"src/main/python/systemds/llm_worker.py",
+			// Relative to target directory (when running tests)
+			"../src/main/python/systemds/llm_worker.py",
+			// Absolute path using system property
+			System.getProperty("user.dir") + "/src/main/python/systemds/llm_worker.py"
+		};
+		
+		for (String path : possiblePaths) {
+			java.io.File f = new java.io.File(path);
+			if (f.exists()) {
+				return f.getAbsolutePath();
+			}
+		}
+		
+		// If not found, return the default and let it fail with a clear error
+		throw new IOException("Cannot find llm_worker.py. Searched: " + 
+			String.join(", ", possiblePaths) + ". Current dir: " + System.getProperty("user.dir"));
+	}
+	
+	/**
 	 * Close connection to SystemDS, which clears the
 	 * thread-local DML and compiler configurations.
 	 */
@@ -440,19 +405,13 @@ public class Connection implements Closeable
 
 		//shutdown LLM worker if running
 		if (_pythonProcess != null) {
-			_pythonProcess.destroyForcibly();
-			try {
-				_pythonProcess.waitFor(5, TimeUnit.SECONDS);
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-			}
+			_pythonProcess.destroy();
 			_pythonProcess = null;
 		}
 		if (_gatewayServer != null) {
 			_gatewayServer.shutdown();
 			_gatewayServer = null;
 		}
-		_llmWorker = null;
 		
 		//clear thread-local configurations
 		ConfigurationManager.clearLocalConfigs();

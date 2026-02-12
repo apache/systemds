@@ -28,7 +28,11 @@ import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -66,6 +70,7 @@ import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysds.runtime.util.CollectionUtils;
 import org.apache.sysds.runtime.util.DataConverter;
+import py4j.GatewayServer;
 
 /**
  * Interaction with SystemDS using the JMLC (Java Machine Learning Connector) API is initiated with
@@ -91,6 +96,12 @@ public class Connection implements Closeable
 	private final DMLConfig _dmlconf;
 	private final CompilerConfig _cconf;
 	private static FileSystem fs = null;
+	private Process _pythonProcess = null;
+	private py4j.GatewayServer _gatewayServer = null;
+	private LLMCallback _llmWorker = null;
+	private CountDownLatch _workerLatch = null;
+
+	private static final Log LOG = LogFactory.getLog(Connection.class.getName());
 	
 	/**
 	 * Connection constructor, the starting point for any other JMLC API calls.
@@ -287,6 +298,103 @@ public class Connection implements Closeable
 		//return newly create precompiled script 
 		return new PreparedScript(rtprog, inputs, outputs, _dmlconf, _cconf);
 	}
+
+	/**
+	 * Loads a HuggingFace model via Python worker for LLM inference.
+	 * Starts a Python subprocess and connects via Py4J.
+	 * 
+	 * @param modelName HuggingFace model name (e.g., "distilgpt2")
+	 * @return LLMCallback interface to the Python worker
+	 */
+	public LLMCallback loadModel(String modelName) {
+		if (_llmWorker != null)
+			return _llmWorker;
+		try {
+			// Initialize latch for worker registration
+			_workerLatch = new CountDownLatch(1);
+			
+			// Start Py4J gateway server with callback support
+			_gatewayServer = new GatewayServer.GatewayServerBuilder()
+				.entryPoint(this)
+				.javaPort(25333)
+				.callbackClient(25334, java.net.InetAddress.getLoopbackAddress())
+				.build();
+			_gatewayServer.start();
+			
+			// Give gateway time to fully start accepting connections
+			Thread.sleep(500);
+			
+			// Find the Python script - try multiple locations
+			String pythonScript = findPythonScript();
+			LOG.info("Starting LLM worker with script: " + pythonScript);
+			
+			_pythonProcess = new ProcessBuilder(
+				"python", pythonScript, modelName, "25333"
+			).redirectErrorStream(true).start();
+			
+			// Read Python process output in background thread
+			new Thread(() -> {
+				try (BufferedReader reader = new BufferedReader(
+						new InputStreamReader(_pythonProcess.getInputStream()))) {
+					String line;
+					while ((line = reader.readLine()) != null) {
+						LOG.info("[LLM Worker] " + line);
+					}
+				} catch (IOException e) {
+					LOG.error("Error reading LLM worker output", e);
+				}
+			}).start();
+			
+			// Wait for worker to register with timeout
+			if (!_workerLatch.await(60, TimeUnit.SECONDS)) {
+				throw new DMLException("Timeout waiting for LLM worker to register");
+			}
+			
+		} catch (DMLException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new DMLException("Failed to start LLM worker: " + e.getMessage());
+		}
+		return _llmWorker;
+	}
+	
+	/**
+	 * Called by Python worker to register itself via Py4J.
+	 */
+	public void registerWorker(LLMCallback worker) {
+		_llmWorker = worker;
+		if (_workerLatch != null) {
+			_workerLatch.countDown();
+		}
+		LOG.info("LLM worker registered successfully");
+	}
+	
+	/**
+	 * Finds the Python LLM worker script by checking multiple possible locations.
+	 * @return absolute path to the Python script
+	 * @throws IOException if script cannot be found
+	 */
+	private String findPythonScript() throws IOException {
+		String[] possiblePaths = {
+			// Relative to project root (when running from IDE or mvn)
+			"src/main/python/systemds/llm_worker.py",
+			// Relative to target directory (when running tests)
+			"../src/main/python/systemds/llm_worker.py",
+			// Absolute path using system property
+			System.getProperty("user.dir") + "/src/main/python/systemds/llm_worker.py"
+		};
+		
+		for (String path : possiblePaths) {
+			java.io.File f = new java.io.File(path);
+			if (f.exists()) {
+				return f.getAbsolutePath();
+			}
+		}
+		
+		// If not found, return the default and let it fail with a clear error
+		throw new IOException("Cannot find llm_worker.py. Searched: " + 
+			String.join(", ", possiblePaths) + ". Current dir: " + System.getProperty("user.dir"));
+	}
 	
 	/**
 	 * Close connection to SystemDS, which clears the
@@ -294,6 +402,17 @@ public class Connection implements Closeable
 	 */
 	@Override
 	public void close() {
+
+		//shutdown LLM worker if running
+		if (_pythonProcess != null) {
+			_pythonProcess.destroy();
+			_pythonProcess = null;
+		}
+		if (_gatewayServer != null) {
+			_gatewayServer.shutdown();
+			_gatewayServer = null;
+		}
+		
 		//clear thread-local configurations
 		ConfigurationManager.clearLocalConfigs();
 		if( ConfigurationManager.isCodegenEnabled() )

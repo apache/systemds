@@ -80,6 +80,9 @@ public class PreparedScript implements ConfigurableAPI
 	private final CompilerConfig _cconf;
 	private HashMap<String, String> _outVarLineage;
 	
+	//LLM inference support
+	private LLMCallback _llmWorker = null;
+	
 	private PreparedScript(PreparedScript that) {
 		//shallow copy, except for a separate symbol table
 		//and related meta data of reused inputs
@@ -158,6 +161,41 @@ public class PreparedScript implements ConfigurableAPI
 	 */
 	public CompilerConfig getCompilerConfig() {
 		return _cconf;
+	}
+	
+	/**
+	 * Sets the LLM worker callback for text generation.
+	 * 
+	 * @param worker the LLM callback interface
+	 */
+	public void setLLMWorker(LLMCallback worker) {
+		_llmWorker = worker;
+	}
+	
+	/**
+	 * Gets the LLM worker callback.
+	 * 
+	 * @return the LLM callback interface, or null if not set
+	 */
+	public LLMCallback getLLMWorker() {
+		return _llmWorker;
+	}
+	
+	/**
+	 * Generates text using the LLM worker.
+	 * 
+	 * @param prompt the input prompt text
+	 * @param maxNewTokens maximum number of new tokens to generate
+	 * @param temperature sampling temperature (0.0 = deterministic, higher = more random)
+	 * @param topP nucleus sampling probability threshold
+	 * @return generated text
+	 * @throws DMLException if no LLM worker is set
+	 */
+	public String generate(String prompt, int maxNewTokens, double temperature, double topP) {
+		if (_llmWorker == null) {
+			throw new DMLException("No LLM worker set. Call setLLMWorker() first.");
+		}
+		return _llmWorker.generate(prompt, maxNewTokens, temperature, topP);
 	}
 	
 	/**

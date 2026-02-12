@@ -78,31 +78,31 @@ class TestHPTuner(unittest.TestCase):
 
         self.run_hp_for_modality([audio])
 
-    # def test_multimodal_hp_tuning(self):
-    #     audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
-    #         self.num_instances, 3000
-    #     )
-    #     audio = UnimodalModality(
-    #         TestDataLoader(
-    #             self.indices, None, ModalityType.AUDIO, audio_data, np.float32, audio_md
-    #         )
-    #     )
-    #
-    #     text_data, text_md = ModalityRandomDataGenerator().create_text_data(
-    #         self.num_instances
-    #     )
-    #     text = UnimodalModality(
-    #         TestDataLoader(
-    #             self.indices, None, ModalityType.TEXT, text_data, str, text_md
-    #         )
-    #     )
-    #
-    #     self.run_hp_for_modality(
-    #         [audio, text], multimodal=True, tune_unimodal_representations=True
-    #     )
-    #     self.run_hp_for_modality(
-    #         [audio, text], multimodal=True, tune_unimodal_representations=False
-    #     )
+    def test_multimodal_hp_tuning(self):
+        audio_data, audio_md = ModalityRandomDataGenerator().create_audio_data(
+            self.num_instances, 3000
+        )
+        audio = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.AUDIO, audio_data, np.float32, audio_md
+            )
+        )
+
+        text_data, text_md = ModalityRandomDataGenerator().create_text_data(
+            self.num_instances
+        )
+        text = UnimodalModality(
+            TestDataLoader(
+                self.indices, None, ModalityType.TEXT, text_data, str, text_md
+            )
+        )
+
+        # self.run_hp_for_modality(
+        #     [audio, text], multimodal=True, tune_unimodal_representations=True
+        # )
+        self.run_hp_for_modality(
+            [audio, text], multimodal=True, tune_unimodal_representations=False
+        )
 
     def test_hp_tuner_for_text_modality(self):
         text_data, text_md = ModalityRandomDataGenerator().create_text_data(
@@ -130,7 +130,7 @@ class TestHPTuner(unittest.TestCase):
             },
         ):
             registry = Registry()
-            registry._fusion_operators = [Average, Concatenation, LSTM]
+            registry._fusion_operators = [LSTM]
             unimodal_optimizer = UnimodalOptimizer(modalities, self.tasks, False)
             unimodal_optimizer.optimize()
 
@@ -159,8 +159,32 @@ class TestHPTuner(unittest.TestCase):
             else:
                 hp.tune_unimodal_representations(max_eval_per_rep=10)
 
-            assert len(hp.results) == len(self.tasks)
-            assert len(hp.results[self.tasks[0].model.name]) == 2
+            assert len(hp.optimization_results.results) == len(self.tasks)
+            if multimodal:
+                if tune_unimodal_representations:
+                    assert (
+                        len(
+                            hp.optimization_results.results[self.tasks[0].model.name][0]
+                        )
+                        == 1
+                    )
+                else:
+                    assert (
+                        len(
+                            hp.optimization_results.results[self.tasks[0].model.name][
+                                "mm_results"
+                            ]
+                        )
+                        == 1
+                    )
+            else:
+                assert (
+                    len(hp.optimization_results.results[self.tasks[0].model.name]) == 1
+                )
+                assert (
+                    len(hp.optimization_results.results[self.tasks[0].model.name][0])
+                    == 2
+                )
 
 
 if __name__ == "__main__":

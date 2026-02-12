@@ -26,7 +26,6 @@ import numpy as np
 from systemds.context import SystemDSContext
 from systemds.operator.algorithm import cov
 
-
 A = np.array([2, 4, 4, 2])
 B = np.array([2, 4, 2, 4])
 W = np.array([7, 1, 1, 1])

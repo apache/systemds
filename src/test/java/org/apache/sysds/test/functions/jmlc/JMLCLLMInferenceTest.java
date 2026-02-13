@@ -44,25 +44,21 @@ public class JMLCLLMInferenceTest extends AutomatedTestBase {
 	public void testLLMInference() {
 		Connection conn = null;
 		try {
-			// Create a connection
+			//create connection and load model
 			conn = new Connection();
-			
-			// Load the LLM model via Python worker
-			LLMCallback llmWorker = conn.loadModel("distilgpt2");
+			LLMCallback llmWorker = conn.loadModel("distilgpt2", "src/main/python/systemds/llm_worker.py");
 			Assert.assertNotNull("LLM worker should not be null", llmWorker);
 			
-			// Create a PreparedScript with a dummy script
-			String dummyScript = "x = 1;\nwrite(x, './tmp/x');";
-			PreparedScript ps = conn.prepareScript(dummyScript, new String[]{}, new String[]{"x"});
-			
-			// Set the LLM worker on the PreparedScript
+			//create prepared script and set llm worker
+			String script = "x = 1;\nwrite(x, './tmp/x');";
+			PreparedScript ps = conn.prepareScript(script, new String[]{}, new String[]{"x"});
 			ps.setLLMWorker(llmWorker);
 			
-			// Generate text using the LLM
+			//generate text using llm
 			String prompt = "The meaning of life is";
 			String result = ps.generate(prompt, 20, 0.7, 0.9);
 			
-			// Assert the result is not null and not empty
+			//verify result
 			Assert.assertNotNull("Generated text should not be null", result);
 			Assert.assertFalse("Generated text should not be empty", result.isEmpty());
 			
@@ -70,7 +66,7 @@ public class JMLCLLMInferenceTest extends AutomatedTestBase {
 			System.out.println("Generated: " + result);
 			
 		} catch (Exception e) {
-			// Skip test if Python/transformers not available
+			//skip test if dependencies not available
 			System.out.println("Skipping LLM test:");
 			e.printStackTrace();
 			org.junit.Assume.assumeNoException("LLM dependencies not available", e);

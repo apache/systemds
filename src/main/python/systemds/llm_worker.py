@@ -1,5 +1,5 @@
 """
-SystemDS LLM Worker — Python side of the Py4J bridge.
+SystemDS LLM Worker - Python side of the Py4J bridge.
 Java starts this script, then calls generate() via Py4J.
 """
 import sys

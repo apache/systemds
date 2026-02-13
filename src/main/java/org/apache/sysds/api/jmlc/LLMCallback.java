@@ -5,5 +5,15 @@ package org.apache.sysds.api.jmlc;
  * The Python side implements this via Py4J callback.
  */
 public interface LLMCallback {
-    String generate(String prompt, int maxNewTokens, double temperature, double topP);
+	
+	/**
+	 * Generates text using the LLM model.
+	 * 
+	 * @param prompt the input prompt text
+	 * @param maxNewTokens maximum number of new tokens to generate
+	 * @param temperature sampling temperature (0.0 = deterministic, higher = more random)
+	 * @param topP nucleus sampling probability threshold
+	 * @return generated text continuation
+	 */
+	String generate(String prompt, int maxNewTokens, double temperature, double topP);
 }

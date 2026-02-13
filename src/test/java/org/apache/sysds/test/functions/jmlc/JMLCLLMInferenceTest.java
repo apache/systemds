@@ -46,7 +46,7 @@ public class JMLCLLMInferenceTest extends AutomatedTestBase {
 		try {
 			//create connection and load model
 			conn = new Connection();
-			LLMCallback llmWorker = conn.loadModel("distilgpt2", "src/main/python/systemds/llm_worker.py");
+			LLMCallback llmWorker = conn.loadModel("distilgpt2", "src/main/python/llm_worker.py");
 			Assert.assertNotNull("LLM worker should not be null", llmWorker);
 			
 			//create prepared script and set llm worker

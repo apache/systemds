@@ -346,7 +346,7 @@ public class Connection implements Closeable
 			LOG.info("Starting LLM worker with script: " + workerScriptPath + 
 				" (javaPort=" + javaPort + ", pythonPort=" + pythonPort + ")");
 			_pythonProcess = new ProcessBuilder(
-				"python", workerScriptPath, modelName, 
+				"python3", workerScriptPath, modelName, 
 				String.valueOf(javaPort), String.valueOf(pythonPort)
 			).redirectErrorStream(true).start();
 			

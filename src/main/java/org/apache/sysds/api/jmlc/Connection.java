@@ -301,13 +301,30 @@ public class Connection implements Closeable
 
 	/**
 	 * Loads a HuggingFace model via Python worker for LLM inference.
-	 * Starts a Python subprocess and connects via Py4J.
+	 * Uses auto-detected available ports for Py4J communication.
 	 * 
-	 * @param modelName HuggingFace model name (e.g., "distilgpt2")
-	 * @param workerScriptPath path to the Python worker script (llm_worker.py)
+	 * @param modelName HuggingFace model name 
+	 * @param workerScriptPath path to the Python worker script 
 	 * @return LLMCallback interface to the Python worker
 	 */
 	public LLMCallback loadModel(String modelName, String workerScriptPath) {
+		//auto-find available ports
+		int javaPort = findAvailablePort();
+		int pythonPort = findAvailablePort();
+		return loadModel(modelName, workerScriptPath, javaPort, pythonPort);
+	}
+	
+	/**
+	 * Loads a HuggingFace model via Python worker for LLM inference.
+	 * Starts a Python subprocess and connects via Py4J.
+	 * 
+	 * @param modelName HuggingFace model name
+	 * @param workerScriptPath path to the Python worker script 
+	 * @param javaPort port for Java gateway server
+	 * @param pythonPort port for Python callback server
+	 * @return LLMCallback interface to the Python worker
+	 */
+	public LLMCallback loadModel(String modelName, String workerScriptPath, int javaPort, int pythonPort) {
 		if (_llmWorker != null)
 			return _llmWorker;
 		try {
@@ -317,18 +334,20 @@ public class Connection implements Closeable
 			//start Py4J gateway server with callback support
 			_gatewayServer = new GatewayServer.GatewayServerBuilder()
 				.entryPoint(this)
-				.javaPort(25333)
-				.callbackClient(25334, java.net.InetAddress.getLoopbackAddress())
+				.javaPort(javaPort)
+				.callbackClient(pythonPort, java.net.InetAddress.getLoopbackAddress())
 				.build();
 			_gatewayServer.start();
 			
 			//give gateway time to start
 			Thread.sleep(500);
 			
-			//start python worker process
-			LOG.info("Starting LLM worker with script: " + workerScriptPath);
+			//start python worker process with both ports
+			LOG.info("Starting LLM worker with script: " + workerScriptPath + 
+				" (javaPort=" + javaPort + ", pythonPort=" + pythonPort + ")");
 			_pythonProcess = new ProcessBuilder(
-				"python", workerScriptPath, modelName, "25333"
+				"python", workerScriptPath, modelName, 
+				String.valueOf(javaPort), String.valueOf(pythonPort)
 			).redirectErrorStream(true).start();
 			
 			//read python output in background thread
@@ -358,6 +377,19 @@ public class Connection implements Closeable
 	}
 	
 	/**
+	 * Finds an available port on the local machine.
+	 * @return available port number
+	 */
+	private int findAvailablePort() {
+		try (java.net.ServerSocket socket = new java.net.ServerSocket(0)) {
+			socket.setReuseAddress(true);
+			return socket.getLocalPort();
+		} catch (IOException e) {
+			throw new DMLException("Failed to find available port: " + e.getMessage());
+		}
+	}
+	
+	/**
 	 * Called by Python worker to register itself via Py4J.
 	 */
 	public void registerWorker(LLMCallback worker) {
@@ -377,13 +409,19 @@ public class Connection implements Closeable
 
 		//shutdown LLM worker if running
 		if (_pythonProcess != null) {
-			_pythonProcess.destroy();
+			_pythonProcess.destroyForcibly();
+			try {
+				_pythonProcess.waitFor(5, TimeUnit.SECONDS);
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
 			_pythonProcess = null;
 		}
 		if (_gatewayServer != null) {
 			_gatewayServer.shutdown();
 			_gatewayServer = null;
 		}
+		_llmWorker = null;
 		
 		//clear thread-local configurations
 		ConfigurationManager.clearLocalConfigs();

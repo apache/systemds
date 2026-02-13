@@ -34,20 +34,19 @@ class LLMWorker:
 if __name__ == "__main__":
     model_name = sys.argv[1] if len(sys.argv) > 1 else "distilgpt2"
     java_port = int(sys.argv[2]) if len(sys.argv) > 2 else 25333
+    python_port = int(sys.argv[3]) if len(sys.argv) > 3 else 25334
 
-    print(f"Starting LLM worker, connecting to Java on port {java_port}", flush=True)
+    print(f"Starting LLM worker (javaPort={java_port}, pythonPort={python_port})", flush=True)
     
     worker = LLMWorker(model_name)
 
-    # Connect to Java's GatewayServer and register this worker
-    # The callback_server starts a server on Python's side for Java to call back
-    # Use port 25334 which Java's CallbackClient expects
+    #connect to Java's GatewayServer and register this worker
     gateway = JavaGateway(
         gateway_parameters=GatewayParameters(port=java_port),
-        callback_server_parameters=CallbackServerParameters(port=25334)
+        callback_server_parameters=CallbackServerParameters(port=python_port)
     )
     
-    print(f"Python callback server started on port 25334", flush=True)
+    print(f"Python callback server started on port {python_port}", flush=True)
     
     gateway.entry_point.registerWorker(worker)
     print("Worker registered with Java, waiting for requests...", flush=True)

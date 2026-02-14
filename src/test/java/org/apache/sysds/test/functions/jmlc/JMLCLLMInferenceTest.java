@@ -136,22 +136,27 @@ public class JMLCLLMInferenceTest extends AutomatedTestBase {
 			String[] prompts = {"The meaning of life is", "Data science is"};
 			FrameBlock result = ps.generateBatchWithMetrics(prompts, 20, 0.7, 0.9);
 			
-			//verify FrameBlock structure with metrics
+			//verify FrameBlock structure with metrics and token counts
 			Assert.assertNotNull("Metrics result should not be null", result);
 			Assert.assertEquals("Should have 2 rows", 2, result.getNumRows());
-			Assert.assertEquals("Should have 3 columns", 3, result.getNumColumns());
+			Assert.assertEquals("Should have 5 columns", 5, result.getNumColumns());
 			
-			//verify metrics column contains timing data
+			//verify metrics columns contain timing and token data
 			for (int i = 0; i < prompts.length; i++) {
 				String prompt = (String) result.get(i, 0);
 				String generated = (String) result.get(i, 1);
 				long timeMs = Long.parseLong(result.get(i, 2).toString());
+				long inputTokens = Long.parseLong(result.get(i, 3).toString());
+				long outputTokens = Long.parseLong(result.get(i, 4).toString());
 				Assert.assertEquals("Prompt should match", prompts[i], prompt);
 				Assert.assertFalse("Generated text should not be empty", generated.isEmpty());
 				Assert.assertTrue("Time should be positive", timeMs > 0);
+				Assert.assertTrue("Input tokens should be positive", inputTokens > 0);
+				Assert.assertTrue("Output tokens should be positive", outputTokens > 0);
 				System.out.println("Prompt: " + prompt);
 				System.out.println("Generated: " + generated);
 				System.out.println("Time: " + timeMs + "ms");
+				System.out.println("Tokens: " + inputTokens + " in, " + outputTokens + " out");
 			}
 			
 		} catch (Exception e) {

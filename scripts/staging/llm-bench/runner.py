@@ -169,7 +169,11 @@ def main():
     monitor.start()
 
     t0 = time.perf_counter()
-    outputs = backend.generate(prompts, backend_cfg)
+    try:
+        outputs = backend.generate(prompts, backend_cfg)
+    except Exception as e:
+        print(f"Error during generation: {e}", file=sys.stderr)
+        outputs = [{"text": "", "latency_ms": 0.0, "extra": {"error": repr(e)}} for _ in prompts]
     t1 = time.perf_counter()
 
     # stop monitoring and get resource stats
@@ -179,7 +183,7 @@ def main():
     accuracy_check_fn = getattr(loader_module, "accuracy_check", None)
     
     latencies = []
-    predictions_for_accuracy = []  # store (prediction, reference) pairs for accuracy calc
+    predictions_for_accuracy = []  # store accuracy check results (booleans)
     
     with (out_dir / "samples.jsonl").open("w", encoding="utf-8") as f:
         for s, o in zip(samples, outputs):
@@ -193,7 +197,7 @@ def main():
             is_correct = None
             if accuracy_check_fn is not None and reference_text:
                 is_correct = accuracy_check_fn(prediction_text, reference_text)
-                predictions_for_accuracy.append((prediction_text, reference_text))
+                predictions_for_accuracy.append(is_correct)
             
             # extract TTFT metrics (can be at top level or in extra dict)
             extra_data = o.get("extra", {})
@@ -222,9 +226,9 @@ def main():
 
     metrics = perf_metrics(latencies, total_wall_s=(t1 - t0))
     
-    # calculate accuracy if accuracy_check function is available
+    # calculate accuracy from stored results (avoid calling accuracy_check_fn twice)
     if accuracy_check_fn is not None and predictions_for_accuracy:
-        correct = sum(1 for pred, ref in predictions_for_accuracy if accuracy_check_fn(pred, ref))
+        correct = sum(1 for is_correct in predictions_for_accuracy if is_correct)
         total = len(predictions_for_accuracy)
         metrics["accuracy_mean"] = correct / total if total > 0 else 0.0
         metrics["accuracy_count"] = f"{correct}/{total}"

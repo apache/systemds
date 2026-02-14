@@ -45,8 +45,10 @@ SYSTEMDS-BENCH-GPT is a systems-oriented evaluation harness for comparing local 
 
 ```bash
 # Clone the repository
-git clone https://github.com/kubraaksux/systemds-bench-gpt.git
-cd systemds-bench-gpt
+git clone https://github.com/kubraaksux/systemds.git
+cd systemds
+git checkout llm-benchmark
+cd scripts/staging/llm-bench
 
 # Create virtual environment
 python -m venv .venv
@@ -132,7 +134,9 @@ systemds-bench-gpt/
 │   └── json_extraction/    # Curated toy dataset (reliable ground truth)
 ├── scripts/
 │   ├── aggregate.py        # CSV aggregation
-│   └── report.py           # HTML report generation
+│   ├── report.py           # HTML report generation
+│   ├── utils.py            # Shared helpers (read_json, iter_run_dirs, etc.)
+│   └── run_all_benchmarks.sh  # Run all workloads for a backend
 ├── notebooks/
 │   └── vllm_colab.ipynb    # Google Colab for vLLM (GPU)
 ├── results/                # Benchmark outputs (gitignored)

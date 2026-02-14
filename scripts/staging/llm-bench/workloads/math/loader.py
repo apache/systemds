@@ -66,8 +66,13 @@ def _load_gsm8k_samples(n: int) -> List[Sample]:
     
     GSM8K contains grade school math problems with step-by-step solutions.
     Each problem has a question and a final numerical answer.
+    Falls back to toy problems if HuggingFace download fails.
     """
-    dataset = load_dataset("openai/gsm8k", "main", split="test", trust_remote_code=True)
+    try:
+        dataset = load_dataset("openai/gsm8k", "main", split="test", trust_remote_code=True)
+    except Exception as e:
+        print(f"Warning: failed to load GSM8K from HuggingFace ({e}), falling back to toy problems")
+        return _load_toy_samples(n)
     
     samples: List[Sample] = []
     for i, item in enumerate(dataset):

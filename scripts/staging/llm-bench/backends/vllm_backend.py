@@ -19,6 +19,7 @@ Running vLLM server:
         --model meta-llama/Llama-2-7b-chat-hf
 """
 
+import json
 import os
 import time
 from typing import Any, Dict, List
@@ -77,7 +78,7 @@ class VLLMBackend:
         Returns:
             List of result dicts with text, latency_ms, ttft_ms, etc.
         """
-        max_tokens = int(config.get("max_tokens", 512))
+        max_tokens = int(config.get("max_tokens", config.get("max_output_tokens", 512)))
         temperature = float(config.get("temperature", 0.0))
         
         results = []
@@ -136,7 +137,6 @@ class VLLMBackend:
                 if data_str == "[DONE]":
                     break
                 
-                import json
                 try:
                     chunk = json.loads(data_str)
                 except json.JSONDecodeError:
@@ -198,55 +198,3 @@ class VLLMBackend:
             }
         }
     
-    def _generate_single_non_streaming(
-        self, 
-        prompt: str, 
-        max_tokens: int, 
-        temperature: float
-    ) -> Dict[str, Any]:
-        """Generate completion without streaming."""
-        
-        url = f"{self.base_url}/v1/completions"
-        headers = {"Content-Type": "application/json"}
-        payload = {
-            "model": self.model,
-            "prompt": prompt,
-            "max_tokens": max_tokens,
-            "temperature": temperature,
-            "stream": False,
-        }
-        
-        t0 = time.perf_counter()
-        resp = requests.post(url, json=payload, headers=headers, timeout=300)
-        resp.raise_for_status()
-        t1 = time.perf_counter()
-        
-        data = resp.json()
-        
-        choices = data.get("choices", [])
-        text = choices[0].get("text", "") if choices else ""
-        
-        usage = data.get("usage", {})
-        in_tokens = usage.get("prompt_tokens", len(prompt) // 4)
-        out_tokens = usage.get("completion_tokens", len(text) // 4)
-        
-        total_latency_ms = (t1 - t0) * 1000.0
-        
-        # estimate compute cost based on T4 GPU (~$0.35/hr)
-        compute_hours = total_latency_ms / 1000.0 / 3600.0
-        
-        return {
-            "text": text,
-            "latency_ms": total_latency_ms,
-            "ttft_ms": total_latency_ms * 0.1,
-            "generation_ms": total_latency_ms * 0.9,
-            "extra": {
-                "usage": {
-                    "input_tokens": in_tokens,
-                    "output_tokens": out_tokens,
-                    "total_tokens": in_tokens + out_tokens,
-                },
-                "cost_usd": compute_hours * 0.35,
-                "cost_note": "estimated_compute"
-            }
-        }

@@ -59,7 +59,7 @@ class OpenAIBackend:
 
     def generate(self, prompts: List[str], config: Dict[str, Any]) -> List[Dict[str, Any]]:
         model = config.get("model", "gpt-4.1-mini")  # safe default
-        max_output_tokens = int(config.get("max_output_tokens", 256))
+        max_output_tokens = int(config.get("max_output_tokens", config.get("max_tokens", 256)))
         # for benchmarking, temperature kept deterministic.
         temperature = config.get("temperature", 0.0)
         

@@ -7,6 +7,8 @@ Installation:
 
 """
 
+import json
+import os
 import time
 from typing import Any, Dict, List
 
@@ -16,16 +18,16 @@ import requests
 class OllamaBackend:
     """Backend for Ollama local LLM inference."""
     
-    def __init__(self, model: str, base_url: str = "http://localhost:11434"):
+    def __init__(self, model: str, base_url: str = None):
         """
-        Initialize Ollama back.
+        Initialize Ollama backend.
         
         Args:
             model: Model name (e.g., "llama3.2", "mistral", "phi3")
-            base_url: Ollama server URL (default: http://localhost:11434)
+            base_url: Ollama server URL (default: http://localhost:11434 or OLLAMA_BASE_URL env)
         """
         self.model = model
-        self.base_url = base_url.rstrip("/")
+        self.base_url = (base_url or os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")).rstrip("/")
         
         # Verify connection
         try:
@@ -57,7 +59,7 @@ class OllamaBackend:
         Returns:
             List of result dicts with text, latency_ms, ttft_ms, etc.
         """
-        max_tokens = int(config.get("max_tokens", 512))
+        max_tokens = int(config.get("max_tokens", config.get("max_output_tokens", 512)))
         temperature = float(config.get("temperature", 0.0))
         
         results = []
@@ -107,7 +109,6 @@ class OllamaBackend:
                 if not line:
                     continue
                 
-                import json
                 chunk = json.loads(line)
                 
                 # capture time to first token
@@ -152,54 +153,3 @@ class OllamaBackend:
             }
         }
     
-    def _generate_single_non_streaming(
-        self, 
-        prompt: str, 
-        max_tokens: int, 
-        temperature: float
-    ) -> Dict[str, Any]:
-        """Generate completion without streaming (simpler but no TTFT)."""
-        
-        url = f"{self.base_url}/api/generate"
-        payload = {
-            "model": self.model,
-            "prompt": prompt,
-            "stream": False,
-            "options": {
-                "num_predict": max_tokens,
-                "temperature": temperature,
-            }
-        }
-        
-        t0 = time.perf_counter()
-        resp = requests.post(url, json=payload, timeout=300)
-        resp.raise_for_status()
-        t1 = time.perf_counter()
-        
-        data = resp.json()
-        text = data.get("response", "")
-        
-        total_latency_ms = (t1 - t0) * 1000.0
-        
-        # get token counts if available
-        in_tokens = data.get("prompt_eval_count", len(prompt) // 4)
-        out_tokens = data.get("eval_count", len(text) // 4)
-        
-        # estimate compute cost based on typical consumer GPU (~$0.30/hr equivalent)
-        compute_hours = total_latency_ms / 1000.0 / 3600.0
-        
-        return {
-            "text": text,
-            "latency_ms": total_latency_ms,
-            "ttft_ms": total_latency_ms * 0.1,  # Estimate
-            "generation_ms": total_latency_ms * 0.9,
-            "extra": {
-                "usage": {
-                    "input_tokens": in_tokens,
-                    "output_tokens": out_tokens,
-                    "total_tokens": in_tokens + out_tokens,
-                },
-                "cost_usd": compute_hours * 0.30,
-                "cost_note": "estimated_compute"
-            }
-        }

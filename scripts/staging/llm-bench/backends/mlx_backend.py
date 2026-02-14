@@ -13,7 +13,7 @@ class MLXBackend:
             raise RuntimeError(f"Failed to load MLX model '{model}': {e!r}") from e
 
     def generate(self, prompts: List[str], config: Dict[str, Any]):
-        max_tokens = int(config.get("max_tokens", 128))
+        max_tokens = int(config.get("max_tokens", config.get("max_output_tokens", 128)))
         temperature = float(config.get("temperature", 0.0))
         
         results = []

@@ -139,8 +139,13 @@ def _load_logiqa_samples(n: int) -> List[Sample]:
     
     LogiQA is a logical reasoning dataset with multiple choice questions
     derived from the Chinese Civil Service Examination.
+    Falls back to toy dataset if HuggingFace download fails.
     """
-    dataset = load_dataset("lucasmccabe/logiqa", split="test", trust_remote_code=True)
+    try:
+        dataset = load_dataset("lucasmccabe/logiqa", split="test", trust_remote_code=True)
+    except Exception as e:
+        print(f"Warning: failed to load LogiQA from HuggingFace ({e}), falling back to toy dataset")
+        return _load_toy_samples(n)
     
     samples: List[Sample] = []
     for i, item in enumerate(dataset):
@@ -175,8 +180,13 @@ def _load_boolq_samples(n: int) -> List[Sample]:
     
     BoolQ is a yes/no question answering dataset from Google.
     Questions require reading comprehension and reasoning.
+    Falls back to toy dataset if HuggingFace download fails.
     """
-    dataset = load_dataset("google/boolq", split="validation", trust_remote_code=True)
+    try:
+        dataset = load_dataset("google/boolq", split="validation", trust_remote_code=True)
+    except Exception as e:
+        print(f"Warning: failed to load BoolQ from HuggingFace ({e}), falling back to toy dataset")
+        return _load_toy_samples(n)
     
     samples: List[Sample] = []
     for i, item in enumerate(dataset):
@@ -300,8 +310,10 @@ def accuracy_check(prediction: str, reference: str) -> bool:
     pred_answer = extract_answer_from_prediction(prediction)
     
     if pred_answer is None:
-        # fallback: check if reference appears in prediction
-        return normalize_answer(reference) in normalize_answer(prediction)
+        # fallback: check if reference appears as a whole word in prediction
+        ref_norm = normalize_answer(reference)
+        pred_norm = normalize_answer(prediction)
+        return bool(re.search(r'\b' + re.escape(ref_norm) + r'\b', pred_norm))
     
     # normalize both for comparison
     pred_normalized = normalize_answer(pred_answer)
@@ -311,8 +323,14 @@ def accuracy_check(prediction: str, reference: str) -> bool:
     if pred_normalized == ref_normalized:
         return True
     
-    # check if one contains the other (for answers like "5 cents" vs "5")
-    if ref_normalized in pred_normalized or pred_normalized in ref_normalized:
+    # word-boundary containment check to avoid false positives
+    # (e.g., "yes" should not match "yesterday")
+    ref_pattern = r'\b' + re.escape(ref_normalized) + r'\b'
+    if re.search(ref_pattern, pred_normalized):
+        return True
+    
+    pred_pattern = r'\b' + re.escape(pred_normalized) + r'\b'
+    if re.search(pred_pattern, ref_normalized):
         return True
     
     # try numeric comparison for number answers

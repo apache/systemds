@@ -8,94 +8,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+# allow running from project root (python scripts/report.py)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-def read_json(path: Path) -> Dict[str, Any]:
-    with path.open("r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def is_run_dir(p: Path) -> bool:
-    return p.is_dir() and (p / "metrics.json").exists() and (p / "run_config.json").exists()
-
-
-def iter_run_dirs(results_dir: Path) -> List[Path]:
-    if not results_dir.exists():
-        return []
-    seen = set()
-    runs: List[Path] = []
-    for p in results_dir.iterdir():
-        if is_run_dir(p):
-            rp = p.resolve()
-            if rp not in seen:
-                seen.add(rp)
-                runs.append(p)
-    for group in results_dir.iterdir():
-        if not group.is_dir():
-            continue
-        for p in group.iterdir():
-            if is_run_dir(p):
-                rp = p.resolve()
-                if rp not in seen:
-                    seen.add(rp)
-                    runs.append(p)
-    return runs
-
-
-def manifest_timestamp(run_dir: Path) -> str:
-    mpath = run_dir / "manifest.json"
-    if not mpath.exists():
-        return ""
-    try:
-        m = read_json(mpath)
-        ts = m.get("timestamp_utc")
-        return "" if ts is None else str(ts)
-    except Exception:
-        return ""
-
-
-def token_stats(samples_path: Path) -> Tuple[Optional[int], Optional[float], Optional[int], Optional[int]]:
-    if not samples_path.exists():
-        return (None, None, None, None)
-    total_tokens = 0
-    total_in = 0
-    total_out = 0
-    count = 0
-    saw_any = False
-    try:
-        with samples_path.open("r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    obj = json.loads(line)
-                except Exception:
-                    continue
-                usage = (obj.get("extra") or {}).get("usage") or {}
-                tt = usage.get("total_tokens")
-                it = usage.get("input_tokens")
-                ot = usage.get("output_tokens")
-                if tt is None and it is None and ot is None:
-                    continue
-                saw_any = True
-                if tt is not None:
-                    total_tokens += int(tt)
-                if it is not None:
-                    total_in += int(it)
-                if ot is not None:
-                    total_out += int(ot)
-                count += 1
-    except Exception:
-        return (None, None, None, None)
-    if not saw_any or count == 0:
-        return (None, None, None, None)
-    avg = (total_tokens / count) if total_tokens > 0 else None
-    return (
-        total_tokens if total_tokens > 0 else None,
-        avg,
-        total_in if total_in > 0 else None,
-        total_out if total_out > 0 else None,
-    )
+from utils import read_json, iter_run_dirs, manifest_timestamp, token_stats, ttft_stats
 
 
 def cost_stats(samples_path: Path) -> Optional[float]:
@@ -123,36 +39,6 @@ def cost_stats(samples_path: Path) -> Optional[float]:
         return None
     # return 0.0 for local backends (they report cost_usd: 0.0)
     return total_cost if found_any else None
-
-
-def timing_stats(samples_path: Path) -> Tuple[Optional[float], Optional[float]]:
-    """Calculate TTFT and generation time means from samples."""
-    if not samples_path.exists():
-        return (None, None)
-    ttft_vals = []
-    gen_vals = []
-    try:
-        with samples_path.open("r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    obj = json.loads(line)
-                    ttft = obj.get("ttft_ms")
-                    gen = obj.get("generation_ms")
-                    if ttft is not None:
-                        ttft_vals.append(float(ttft))
-                    if gen is not None:
-                        gen_vals.append(float(gen))
-                except Exception:
-                    continue
-    except Exception:
-        return (None, None)
-    
-    ttft_mean = sum(ttft_vals) / len(ttft_vals) if ttft_vals else None
-    gen_mean = sum(gen_vals) / len(gen_vals) if gen_vals else None
-    return (ttft_mean, gen_mean)
 
 
 def safe_float(x: Any) -> Optional[float]:
@@ -1175,7 +1061,7 @@ def main() -> int:
             ts = manifest_timestamp(run_dir)
             total, avg, total_in, total_out = token_stats(run_dir / "samples.jsonl")
             cost = cost_stats(run_dir / "samples.jsonl")
-            ttft_mean, gen_mean = timing_stats(run_dir / "samples.jsonl")
+            ttft_mean, gen_mean = ttft_stats(run_dir / "samples.jsonl")
             
             
             lat_mean = safe_float(metrics.get("latency_ms_mean"))

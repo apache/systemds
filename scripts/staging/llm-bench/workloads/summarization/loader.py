@@ -50,11 +50,14 @@ def load_samples(cfg: Dict[str, Any]) -> List[Sample]:
 
 
 def _load_toy_samples(n: int) -> List[Sample]:
-    """Load from built-in toy dataset."""
+    """Load from built-in toy dataset.
+    
+    Uses original text as reference since toy texts are already short.
+    The accuracy_check evaluates whether the summary preserves key terms.
+    """
     texts = TOY_TEXTS[: max(1, min(n, len(TOY_TEXTS)))]
     samples: List[Sample] = []
     for i, t in enumerate(texts):
-        # use original text as reference for quality comparison
         samples.append(Sample(sid=f"toy-{i}", text=t, reference=t))
     return samples
 
@@ -65,8 +68,13 @@ def _load_cnn_samples(n: int) -> List[Sample]:
     
     This is a standard summarization benchmark with news articles
     and multi-sentence highlights as summaries.
+    Falls back to toy dataset if HuggingFace download fails.
     """
-    dataset = load_dataset("abisee/cnn_dailymail", "3.0.0", split="test", trust_remote_code=True)
+    try:
+        dataset = load_dataset("abisee/cnn_dailymail", "3.0.0", split="test", trust_remote_code=True)
+    except Exception as e:
+        print(f"Warning: failed to load CNN/DailyMail from HuggingFace ({e}), falling back to toy dataset")
+        return _load_toy_samples(n)
     
     samples: List[Sample] = []
     for i, item in enumerate(dataset):
@@ -95,8 +103,13 @@ def _load_xsum_samples(n: int) -> List[Sample]:
     
     XSum contains BBC articles with one-sentence summaries.
     Good for testing concise summarization.
+    Falls back to toy dataset if HuggingFace download fails.
     """
-    dataset = load_dataset("EdinburghNLP/xsum", split="test", trust_remote_code=True)
+    try:
+        dataset = load_dataset("EdinburghNLP/xsum", split="test", trust_remote_code=True)
+    except Exception as e:
+        print(f"Warning: failed to load XSum from HuggingFace ({e}), falling back to toy dataset")
+        return _load_toy_samples(n)
     
     samples: List[Sample] = []
     for i, item in enumerate(dataset):

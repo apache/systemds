@@ -343,10 +343,11 @@ public class Connection implements Closeable
 			Thread.sleep(500);
 			
 			//start python worker process with both ports
+			String pythonCmd = findPythonCommand();
 			LOG.info("Starting LLM worker with script: " + workerScriptPath + 
-				" (javaPort=" + javaPort + ", pythonPort=" + pythonPort + ")");
+				" (python=" + pythonCmd + ", javaPort=" + javaPort + ", pythonPort=" + pythonPort + ")");
 			_pythonProcess = new ProcessBuilder(
-				"python3", workerScriptPath, modelName, 
+				pythonCmd, workerScriptPath, modelName, 
 				String.valueOf(javaPort), String.valueOf(pythonPort)
 			).redirectErrorStream(true).start();
 			
@@ -374,6 +375,25 @@ public class Connection implements Closeable
 			throw new DMLException("Failed to start LLM worker: " + e.getMessage());
 		}
 		return _llmWorker;
+	}
+	
+	/**
+	 * Finds the available Python command, trying python3 first then python.
+	 * @return python command name
+	 */
+	private static String findPythonCommand() {
+		for (String cmd : new String[]{"python3", "python"}) {
+			try {
+				Process p = new ProcessBuilder(cmd, "--version")
+					.redirectErrorStream(true).start();
+				int exitCode = p.waitFor();
+				if (exitCode == 0)
+					return cmd;
+			} catch (Exception e) {
+				//command not found, try next
+			}
+		}
+		throw new DMLException("No Python installation found (tried python3, python)");
 	}
 	
 	/**

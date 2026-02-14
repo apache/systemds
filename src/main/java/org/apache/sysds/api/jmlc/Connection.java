@@ -352,7 +352,7 @@ public class Connection implements Closeable
 			).redirectErrorStream(true).start();
 			
 			//read python output in background thread
-			new Thread(() -> {
+			Thread outputReader = new Thread(() -> {
 				try (BufferedReader reader = new BufferedReader(
 						new InputStreamReader(_pythonProcess.getInputStream()))) {
 					String line;
@@ -362,11 +362,21 @@ public class Connection implements Closeable
 				} catch (IOException e) {
 					LOG.error("Error reading LLM worker output", e);
 				}
-			}).start();
+			});
+			outputReader.setName("llm-worker-output");
+			outputReader.setDaemon(true);
+			outputReader.start();
 			
-			//wait for worker to register
-			if (!_workerLatch.await(60, TimeUnit.SECONDS)) {
-				throw new DMLException("Timeout waiting for LLM worker to register");
+			//wait for worker to register, checking process liveness periodically
+			long deadlineNs = System.nanoTime() + TimeUnit.SECONDS.toNanos(60);
+			while (!_workerLatch.await(2, TimeUnit.SECONDS)) {
+				if (!_pythonProcess.isAlive()) {
+					int exitCode = _pythonProcess.exitValue();
+					throw new DMLException("LLM worker process died during startup (exit code " + exitCode + ")");
+				}
+				if (System.nanoTime() > deadlineNs) {
+					throw new DMLException("Timeout waiting for LLM worker to register (60s)");
+				}
 			}
 			
 		} catch (DMLException e) {

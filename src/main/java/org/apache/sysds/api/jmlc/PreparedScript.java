@@ -229,31 +229,40 @@ public class PreparedScript implements ConfigurableAPI
 	
 	/**
 	 * Generates text for multiple prompts and returns results with timing metrics.
-	 * The FrameBlock has three columns: [prompt, generated_text, time_ms].
+	 * The FrameBlock has five columns: [prompt, generated_text, time_ms, input_tokens, output_tokens].
 	 * 
 	 * @param prompts array of input prompt texts
 	 * @param maxNewTokens maximum number of new tokens to generate
 	 * @param temperature sampling temperature
 	 * @param topP nucleus sampling probability threshold
-	 * @return FrameBlock with columns [prompt, generated_text, time_ms]
+	 * @return FrameBlock with columns [prompt, generated_text, time_ms, input_tokens, output_tokens]
 	 */
 	public FrameBlock generateBatchWithMetrics(String[] prompts, int maxNewTokens, double temperature, double topP) {
 		if (_llmWorker == null) {
 			throw new DMLException("No LLM worker set. Call setLLMWorker() first.");
 		}
-		//generate text for each prompt with timing
-		String[][] data = new String[prompts.length][3];
+		//generate text for each prompt with timing and token counts
+		String[][] data = new String[prompts.length][5];
 		for (int i = 0; i < prompts.length; i++) {
 			long start = System.nanoTime();
-			String result = _llmWorker.generate(prompts[i], maxNewTokens, temperature, topP);
+			String json = _llmWorker.generateWithTokenCount(prompts[i], maxNewTokens, temperature, topP);
 			long elapsed = (System.nanoTime() - start) / 1_000_000;
-			data[i][0] = prompts[i];
-			data[i][1] = result;
-			data[i][2] = String.valueOf(elapsed);
+			//parse JSON response: {"text": "...", "input_tokens": N, "output_tokens": M}
+			try {
+				org.apache.wink.json4j.JSONObject obj = new org.apache.wink.json4j.JSONObject(json);
+				data[i][0] = prompts[i];
+				data[i][1] = obj.getString("text");
+				data[i][2] = String.valueOf(elapsed);
+				data[i][3] = String.valueOf(obj.getInt("input_tokens"));
+				data[i][4] = String.valueOf(obj.getInt("output_tokens"));
+			} catch (Exception e) {
+				throw new DMLException("Failed to parse LLM worker response: " + e.getMessage());
+			}
 		}
 		//create FrameBlock with schema
-		ValueType[] schema = new ValueType[]{ValueType.STRING, ValueType.STRING, ValueType.INT64};
-		String[] colNames = new String[]{"prompt", "generated_text", "time_ms"};
+		ValueType[] schema = new ValueType[]{
+			ValueType.STRING, ValueType.STRING, ValueType.INT64, ValueType.INT64, ValueType.INT64};
+		String[] colNames = new String[]{"prompt", "generated_text", "time_ms", "input_tokens", "output_tokens"};
 		FrameBlock fb = new FrameBlock(schema, colNames);
 		for (String[] row : data)
 			fb.appendRow(row);

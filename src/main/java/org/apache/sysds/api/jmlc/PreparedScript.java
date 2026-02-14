@@ -199,6 +199,68 @@ public class PreparedScript implements ConfigurableAPI
 	}
 	
 	/**
+	 * Generates text for multiple prompts and returns results as a FrameBlock.
+	 * The FrameBlock has two columns: [prompt, generated_text].
+	 * 
+	 * @param prompts array of input prompt texts
+	 * @param maxNewTokens maximum number of new tokens to generate
+	 * @param temperature sampling temperature
+	 * @param topP nucleus sampling probability threshold
+	 * @return FrameBlock with columns [prompt, generated_text]
+	 */
+	public FrameBlock generateBatch(String[] prompts, int maxNewTokens, double temperature, double topP) {
+		if (_llmWorker == null) {
+			throw new DMLException("No LLM worker set. Call setLLMWorker() first.");
+		}
+		//generate text for each prompt
+		String[][] data = new String[prompts.length][2];
+		for (int i = 0; i < prompts.length; i++) {
+			data[i][0] = prompts[i];
+			data[i][1] = _llmWorker.generate(prompts[i], maxNewTokens, temperature, topP);
+		}
+		//create FrameBlock with string schema
+		ValueType[] schema = new ValueType[]{ValueType.STRING, ValueType.STRING};
+		String[] colNames = new String[]{"prompt", "generated_text"};
+		FrameBlock fb = new FrameBlock(schema, colNames);
+		for (String[] row : data)
+			fb.appendRow(row);
+		return fb;
+	}
+	
+	/**
+	 * Generates text for multiple prompts and returns results with timing metrics.
+	 * The FrameBlock has three columns: [prompt, generated_text, time_ms].
+	 * 
+	 * @param prompts array of input prompt texts
+	 * @param maxNewTokens maximum number of new tokens to generate
+	 * @param temperature sampling temperature
+	 * @param topP nucleus sampling probability threshold
+	 * @return FrameBlock with columns [prompt, generated_text, time_ms]
+	 */
+	public FrameBlock generateBatchWithMetrics(String[] prompts, int maxNewTokens, double temperature, double topP) {
+		if (_llmWorker == null) {
+			throw new DMLException("No LLM worker set. Call setLLMWorker() first.");
+		}
+		//generate text for each prompt with timing
+		String[][] data = new String[prompts.length][3];
+		for (int i = 0; i < prompts.length; i++) {
+			long start = System.nanoTime();
+			String result = _llmWorker.generate(prompts[i], maxNewTokens, temperature, topP);
+			long elapsed = (System.nanoTime() - start) / 1_000_000;
+			data[i][0] = prompts[i];
+			data[i][1] = result;
+			data[i][2] = String.valueOf(elapsed);
+		}
+		//create FrameBlock with schema
+		ValueType[] schema = new ValueType[]{ValueType.STRING, ValueType.STRING, ValueType.INT64};
+		String[] colNames = new String[]{"prompt", "generated_text", "time_ms"};
+		FrameBlock fb = new FrameBlock(schema, colNames);
+		for (String[] row : data)
+			fb.appendRow(row);
+		return fb;
+	}
+	
+	/**
 	 * Binds a scalar boolean to a registered input variable.
 	 * 
 	 * @param varname input variable name

@@ -34,6 +34,9 @@ import org.junit.Test;
 public class JMLCLLMInferenceTest extends AutomatedTestBase {
 	private final static String TEST_NAME = "JMLCLLMInferenceTest";
 	private final static String TEST_DIR = "functions/jmlc/";
+	private final static String MODEL_NAME = "distilgpt2";
+	private final static String WORKER_SCRIPT = "src/main/python/llm_worker.py";
+	private final static String DML_SCRIPT = "x = 1;\nwrite(x, './tmp/x');";
 
 	@Override
 	public void setUp() {
@@ -41,19 +44,24 @@ public class JMLCLLMInferenceTest extends AutomatedTestBase {
 		getAndLoadTestConfiguration(TEST_NAME);
 	}
 
+	/**
+	 * Creates a connection, loads the LLM model, and returns a PreparedScript
+	 * with the LLM worker attached.
+	 */
+	private PreparedScript createLLMScript(Connection conn) throws Exception {
+		LLMCallback llmWorker = conn.loadModel(MODEL_NAME, WORKER_SCRIPT);
+		Assert.assertNotNull("LLM worker should not be null", llmWorker);
+		PreparedScript ps = conn.prepareScript(DML_SCRIPT, new String[]{}, new String[]{"x"});
+		ps.setLLMWorker(llmWorker);
+		return ps;
+	}
+
 	@Test
 	public void testLLMInference() {
 		Connection conn = null;
 		try {
-			//create connection and load model
 			conn = new Connection();
-			LLMCallback llmWorker = conn.loadModel("distilgpt2", "src/main/python/llm_worker.py");
-			Assert.assertNotNull("LLM worker should not be null", llmWorker);
-			
-			//create prepared script and set llm worker
-			String script = "x = 1;\nwrite(x, './tmp/x');";
-			PreparedScript ps = conn.prepareScript(script, new String[]{}, new String[]{"x"});
-			ps.setLLMWorker(llmWorker);
+			PreparedScript ps = createLLMScript(conn);
 			
 			//generate text using llm
 			String prompt = "The meaning of life is";
@@ -67,14 +75,12 @@ public class JMLCLLMInferenceTest extends AutomatedTestBase {
 			System.out.println("Generated: " + result);
 			
 		} catch (Exception e) {
-			//skip test if dependencies not available
 			System.out.println("Skipping LLM test:");
 			e.printStackTrace();
 			org.junit.Assume.assumeNoException("LLM dependencies not available", e);
 		} finally {
-			if (conn != null) {
+			if (conn != null)
 				conn.close();
-			}
 		}
 	}
 	
@@ -82,14 +88,8 @@ public class JMLCLLMInferenceTest extends AutomatedTestBase {
 	public void testBatchInference() {
 		Connection conn = null;
 		try {
-			//create connection and load model
 			conn = new Connection();
-			LLMCallback llmWorker = conn.loadModel("distilgpt2", "src/main/python/llm_worker.py");
-			
-			//create prepared script and set llm worker
-			String script = "x = 1;\nwrite(x, './tmp/x');";
-			PreparedScript ps = conn.prepareScript(script, new String[]{}, new String[]{"x"});
-			ps.setLLMWorker(llmWorker);
+			PreparedScript ps = createLLMScript(conn);
 			
 			//batch generate with multiple prompts
 			String[] prompts = {
@@ -120,9 +120,8 @@ public class JMLCLLMInferenceTest extends AutomatedTestBase {
 			e.printStackTrace();
 			org.junit.Assume.assumeNoException("LLM dependencies not available", e);
 		} finally {
-			if (conn != null) {
+			if (conn != null)
 				conn.close();
-			}
 		}
 	}
 	
@@ -130,14 +129,8 @@ public class JMLCLLMInferenceTest extends AutomatedTestBase {
 	public void testBatchWithMetrics() {
 		Connection conn = null;
 		try {
-			//create connection and load model
 			conn = new Connection();
-			LLMCallback llmWorker = conn.loadModel("distilgpt2", "src/main/python/llm_worker.py");
-			
-			//create prepared script and set llm worker
-			String script = "x = 1;\nwrite(x, './tmp/x');";
-			PreparedScript ps = conn.prepareScript(script, new String[]{}, new String[]{"x"});
-			ps.setLLMWorker(llmWorker);
+			PreparedScript ps = createLLMScript(conn);
 			
 			//batch generate with metrics
 			String[] prompts = {"The meaning of life is", "Data science is"};
@@ -166,9 +159,8 @@ public class JMLCLLMInferenceTest extends AutomatedTestBase {
 			e.printStackTrace();
 			org.junit.Assume.assumeNoException("LLM dependencies not available", e);
 		} finally {
-			if (conn != null) {
+			if (conn != null)
 				conn.close();
-			}
 		}
 	}
 }

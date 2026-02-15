@@ -1,0 +1,6 @@
+{
+  "backend": "ollama",
+  "backend_model": "llama3.2",
+  "workload": "reasoning",
+  "concurrency": 1
+}

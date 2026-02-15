@@ -1,0 +1,6 @@
+{
+  "backend": "openai",
+  "backend_model": "gpt-4.1-mini",
+  "workload": "json_extraction",
+  "concurrency": 1
+}

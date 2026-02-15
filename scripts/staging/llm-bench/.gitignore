@@ -1,5 +1,5 @@
-# Benchmark outputs
-results/
+# Benchmark outputs (committed for project submission)
+# results/
 
 # Python
 __pycache__/
@@ -26,8 +26,8 @@ env/
 .DS_Store
 Thumbs.db
 
-# Reports
-*.html
+# Reports (committed for project submission)
+# *.html
 !templates/*.html
 
 # Dataset cache

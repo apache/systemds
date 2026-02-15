@@ -1,9 +1,12 @@
+import logging
 import os
 import time
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
 from openai import OpenAI
+
+logger = logging.getLogger(__name__)
 
 
 # pricing per million tokens (USD)

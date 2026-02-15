@@ -61,6 +61,10 @@ def main() -> int:
         "total_output_tokens",
         "ttft_ms_mean",
         "generation_ms_mean",
+        "concurrency",
+        "rouge1_f",
+        "rouge2_f",
+        "rougeL_f",
     ]
 
     if args.out == "-":
@@ -127,6 +131,10 @@ def main() -> int:
                     "" if total_out is None else total_out,
                     "" if ttft_mean is None else f"{ttft_mean:.2f}",
                     "" if gen_mean is None else f"{gen_mean:.2f}",
+                    metrics.get("concurrency", ""),
+                    "" if metrics.get("avg_rouge1_f") is None else f"{metrics['avg_rouge1_f']:.4f}",
+                    "" if metrics.get("avg_rouge2_f") is None else f"{metrics['avg_rouge2_f']:.4f}",
+                    "" if metrics.get("avg_rougeL_f") is None else f"{metrics['avg_rougeL_f']:.4f}",
                 ]
                 writer.writerow(row)
             except Exception as e:

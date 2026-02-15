@@ -18,7 +18,7 @@ def is_run_dir(p: Path) -> bool:
 
 def iter_run_dirs(results_dir: Path) -> list:
     """
-    Yields run directories that contain metrics.json and run_config.json.
+    Returns run directories that contain metrics.json and run_config.json.
 
     Supports:
       results/run_xxx/

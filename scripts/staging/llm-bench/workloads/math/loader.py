@@ -1,8 +1,11 @@
+import logging
 import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from datasets import load_dataset
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -31,11 +34,15 @@ def load_samples(cfg: Dict[str, Any]) -> List[Sample]:
     n = int(dataset_cfg.get("n_samples", 10))
 
     if source == "toy":
-        return _load_toy_samples(n)
+        samples = _load_toy_samples(n)
     elif source == "gsm8k":
-        return _load_gsm8k_samples(n)
+        samples = _load_gsm8k_samples(n)
     else:
         raise ValueError(f"math supports source: toy, gsm8k. Got: {source}")
+
+    if len(samples) < n:
+        logger.warning("Requested %d samples but only %d available (source=%s)", n, len(samples), source)
+    return samples
 
 
 def _load_toy_samples(n: int) -> List[Sample]:

@@ -10,7 +10,7 @@ name: json_extraction
 # models 60-80%. For harder evaluation, use "ner" or "json_struct".
 dataset:
   source: toy  # using toy for reliable accuracy; change to json_struct for HuggingFace
-  n_samples: 10
+  n_samples: 50
 
 generation:
   max_tokens: 256

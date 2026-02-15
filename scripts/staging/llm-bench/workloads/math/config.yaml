@@ -3,7 +3,7 @@ name: math
 # available sources: toy (built-in), gsm8k (GSM8K dataset)
 dataset:
   source: gsm8k
-  n_samples: 10
+  n_samples: 50
 
 generation:
   max_tokens: 512

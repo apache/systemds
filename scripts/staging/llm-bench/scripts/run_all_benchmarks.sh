@@ -2,7 +2,7 @@
 # =============================================================================
 # SYSTEMDS-BENCH-GPT: Run All Benchmarks
 # =============================================================================
-# Usage: ./scripts/run_all_benchmarks.sh [backend] [model]
+# Usage: ./scripts/run_all_benchmarks.sh [backend] [model] [--concurrency N]
 #   backend: openai, ollama, mlx, vllm, all, or local (default: local)
 #   model:   model name (required for ollama, mlx, vllm)
 #
@@ -12,6 +12,7 @@
 #   ./scripts/run_all_benchmarks.sh mlx mlx-community/Phi-3-mini-4k-instruct-4bit
 #   ./scripts/run_all_benchmarks.sh vllm microsoft/phi-2            # vLLM with phi-2
 #   ./scripts/run_all_benchmarks.sh                                 # Local backends (ollama, mlx)
+#   ./scripts/run_all_benchmarks.sh openai "" --concurrency 4       # Concurrent requests
 # =============================================================================
 
 set -e  # Exit on error
@@ -27,12 +28,68 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# ---------------------------------------------------------------------------
+# Pre-flight checks
+# ---------------------------------------------------------------------------
+
+check_python() {
+    if ! command -v python &> /dev/null && ! command -v python3 &> /dev/null; then
+        echo -e "${RED}Error: Python is not installed or not in PATH.${NC}"
+        echo "Install Python 3.8+ from https://www.python.org/"
+        exit 1
+    fi
+    # Prefer python3 if available
+    if command -v python3 &> /dev/null; then
+        PYTHON=python3
+    else
+        PYTHON=python
+    fi
+    echo -e "${GREEN}Using: $($PYTHON --version)${NC}"
+}
+
+check_dependencies() {
+    echo -n "Checking dependencies... "
+    if ! $PYTHON -c "import yaml, numpy, psutil, datasets" 2>/dev/null; then
+        echo -e "${RED}MISSING${NC}"
+        echo -e "${YELLOW}Install dependencies: pip install -r requirements.txt${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}OK${NC}"
+}
+
+check_runner() {
+    if [ ! -f "runner.py" ]; then
+        echo -e "${RED}Error: runner.py not found in $PROJECT_DIR${NC}"
+        echo "Make sure you are running this script from the llm-bench directory."
+        exit 1
+    fi
+}
+
+check_python
+check_dependencies
+check_runner
+
 # Workloads
 WORKLOADS=("math" "reasoning" "summarization" "json_extraction")
 
 # Parse arguments
 BACKEND_ARG="${1:-local}"
 MODEL_ARG="${2:-}"
+CONCURRENCY_FLAG=""
+
+# Parse --concurrency flag
+shift 2 2>/dev/null || true
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --concurrency)
+            CONCURRENCY_FLAG="--concurrency $2"
+            shift 2
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
 
 # Default models per backend (used when no model is specified)
 declare -A DEFAULT_MODELS
@@ -42,7 +99,9 @@ DEFAULT_MODELS[vllm]="microsoft/phi-2"
 
 FAILED_RUNS=0
 TOTAL_RUNS=0
+FAILED_LIST=""
 
+echo ""
 echo -e "${BLUE}=============================================${NC}"
 echo -e "${BLUE}SYSTEMDS-BENCH-GPT Benchmark Runner${NC}"
 echo -e "${BLUE}=============================================${NC}"
@@ -53,26 +112,28 @@ run_benchmark() {
     local workload=$2
     local model=$3
     local output_dir="results/${backend}_${workload}_$(date +%Y%m%d_%H%M%S)"
-    
+
     TOTAL_RUNS=$((TOTAL_RUNS + 1))
-    
+
     echo -e "${YELLOW}Running: ${backend} / ${workload} (model: ${model:-default})${NC}"
-    
+
     local model_flag=""
     if [ -n "$model" ]; then
         model_flag="--model $model"
     fi
-    
-    if python runner.py \
+
+    if $PYTHON runner.py \
         --backend "$backend" \
         --workload "workloads/${workload}/config.yaml" \
         $model_flag \
+        $CONCURRENCY_FLAG \
         --out "$output_dir"; then
         echo -e "${GREEN}  Complete: ${output_dir}${NC}"
         return 0
     else
         echo -e "${RED}  Failed: ${backend} / ${workload}${NC}"
         FAILED_RUNS=$((FAILED_RUNS + 1))
+        FAILED_LIST="${FAILED_LIST}\n  - ${backend}/${workload}"
         return 1
     fi
 }
@@ -82,7 +143,7 @@ run_backend() {
     local model=$2
     echo ""
     echo -e "${BLUE}=== Running ${backend} benchmarks (model: ${model:-default}) ===${NC}"
-    
+
     for workload in "${WORKLOADS[@]}"; do
         run_benchmark "$backend" "$workload" "$model" || true
     done
@@ -91,7 +152,7 @@ run_backend() {
 resolve_model() {
     local backend=$1
     local model=$2
-    
+
     if [ -n "$model" ]; then
         echo "$model"
     elif [ -n "${DEFAULT_MODELS[$backend]:-}" ]; then
@@ -136,6 +197,7 @@ if [ "$FAILED_RUNS" -eq 0 ]; then
     echo -e "${GREEN}ALL $TOTAL_RUNS BENCHMARKS COMPLETE!${NC}"
 else
     echo -e "${RED}$FAILED_RUNS/$TOTAL_RUNS BENCHMARKS FAILED${NC}"
+    echo -e "${RED}Failed runs:${FAILED_LIST}${NC}"
 fi
 echo -e "${BLUE}=============================================${NC}"
 echo ""

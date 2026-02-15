@@ -3,7 +3,7 @@ name: summarization
 # available sources: toy (built-in), cnn (CNN/DailyMail), xsum (BBC XSum)
 dataset:
   source: xsum
-  n_samples: 10
+  n_samples: 50
 
 generation:
   max_tokens: 128

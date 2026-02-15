@@ -11,9 +11,13 @@ SYSTEMDS-BENCH-GPT is a systems-oriented evaluation harness for comparing local 
 - **Multiple Backends**: OpenAI API, Ollama (local), vLLM (GPU server), MLX (Apple Silicon)
 - **Real Datasets**: GSM8K (math), XSum (summarization), BoolQ (reasoning), CoNLL-2003 NER (JSON extraction)
 - **Comprehensive Metrics**: Latency (mean, p50, p95), throughput, accuracy, cost, tokens, TTFT
+- **ROUGE Scoring**: Real ROUGE-1/2/L evaluation for summarization (not just quality gates)
+- **Concurrent Testing**: Configurable request concurrency via `--concurrency N`
+- **GPU Profiling**: Automatic GPU memory/utilization tracking via pynvml (when available)
 - **HTML Reports**: Auto-generated reports with charts and visualizations
 - **Extensible**: Easy to add new backends and workloads
 - **Reproducible**: Shell scripts for easy benchmarking
+- **Tested**: Unit tests for all accuracy checkers, loaders, and metrics
 
 ---
 
@@ -107,6 +111,21 @@ python runner.py \
   --model microsoft/phi-2 \
   --workload workloads/reasoning/config.yaml \
   --out results/vllm_reasoning
+
+# Concurrent requests (test throughput under load)
+python runner.py \
+  --backend openai \
+  --workload workloads/math/config.yaml \
+  --concurrency 4 \
+  --out results/openai_math_concurrent
+
+# With GPU cost estimation
+python runner.py \
+  --backend vllm \
+  --model meta-llama/Llama-3.1-8B \
+  --workload workloads/math/config.yaml \
+  --gpu-hour-cost 2.50 --gpu-count 1 \
+  --out results/vllm_math
 ```
 
 ### 3. Generate Report
@@ -140,9 +159,17 @@ systemds-bench-gpt/
 ├── evaluation/
 │   └── perf.py             # Latency/throughput metric computation
 ├── results/                # Benchmark outputs (gitignored)
+├── tests/                 # Unit tests
+│   ├── test_math_accuracy.py
+│   ├── test_reasoning_accuracy.py
+│   ├── test_json_extraction_accuracy.py
+│   ├── test_summarization_accuracy.py
+│   ├── test_perf_metrics.py
+│   └── test_runner.py
 ├── runner.py               # Main benchmark runner
+├── __main__.py             # Entry point for python -m
 ├── requirements.txt        # Python dependencies
-├── meeting_notes.md        # Project requirements from Matthias
+├── .gitignore              # Ignore results, cache, etc.
 └── README.md
 ```
 
@@ -180,6 +207,7 @@ systemds-bench-gpt/
 |--------|-------------|
 | **Accuracy mean** | Proportion correct (e.g., 0.80 = 80%) |
 | **Accuracy count** | e.g., "8/10" correct |
+| **ROUGE-1/2/L** | Summarization quality via ROUGE F1 scores (uses `rouge-score` package) |
 
 ### Cost Analysis
 | Metric | Description |
@@ -415,19 +443,14 @@ This design ensures the benchmark is ready for SystemDS evaluation while providi
 
 | Feature | Description | Priority |
 |---------|-------------|----------|
-| **Concurrent Testing** | Test throughput under load with multiple simultaneous requests | High |
 | **SystemDS Backend** | Integrate when SystemDS LLM inference is available | High |
-| **Real TTFT for All Backends** | Implement streaming mode for MLX/vLLM to measure actual TTFT | High |
-| **GPU Profiling** | GPU memory and utilization via `nvidia-smi` or `pynvml` | High |
 | **Larger Models for vLLM** | Test Llama-2-7B or Llama-3-8B for better accuracy (phi-2 is 2.7B) | High |
 | **Embeddings Workload** | Add similarity/clustering tasks using embedding APIs | Medium |
-| **Hardware Cost Analysis** | Estimate $/query for local backends (electricity, GPU rental) | Medium |
 | **Larger Sample Sizes** | Run benchmarks with n=100+ for statistical significance | Medium |
 | **HuggingFace JSON Datasets** | Switch JSON extraction from toy to CoNLL-2003 NER or larger datasets | Medium |
 | **More Backends** | Hugging Face TGI, llama.cpp, Anthropic Claude | Medium |
 | **Code Generation** | Add programming task benchmark (HumanEval, MBPP) | Medium |
 | **Model Quantization** | Compare 4-bit vs 8-bit vs full precision performance/accuracy | Medium |
-| **Accurate Token Counting** | Use actual tokenizer for Ollama/MLX instead of ~4 chars/token | Medium |
 | **Batch Processing** | Compare batch vs. single request performance | Low |
 | **Prompt Optimization** | Test different prompt strategies for each workload | Low |
 
@@ -438,29 +461,21 @@ Some metrics are estimated rather than precisely measured:
 | Metric | OpenAI | Ollama | MLX | vLLM |
 |--------|--------|--------|-----|------|
 | Latency | ✅ Real | ✅ Real | ✅ Real | ✅ Real |
-| TTFT | ✅ Streaming | ✅ Streaming | ⚠️ ~10% est. | ✅ Streaming |
-| Token counts | ✅ API | ⚠️ ~4 chars/tok | ✅ Tokenizer | ✅ API |
+| TTFT | ✅ Streaming | ✅ Streaming | ✅ Streaming | ✅ Streaming |
+| Token counts | ✅ API | ✅ API (eval_count) | ✅ Tokenizer | ✅ API |
 | Cost | ✅ API pricing | N/A (local) | N/A (local) | N/A (local) |
 | Memory/CPU | ✅ Local | ✅ Local | ✅ Local | ✅ Local |
-| GPU metrics | ❌ N/A | ❌ None | ❌ None | ❌ None |
+| GPU metrics | ❌ N/A | ✅ pynvml (optional) | ❌ N/A (Apple) | ✅ pynvml (optional) |
 
 ### Known Limitations
 
-1. **Sequential Requests Only**: Current implementation processes one request at a time. Real production systems handle concurrent requests.
+1. **Small Sample Sizes**: Default n=10 for quick testing. Production benchmarks should use n=100+ for reliable statistics.
 
-2. **Small Sample Sizes**: Default n=10 for quick testing. Production benchmarks should use n=100+ for reliable statistics.
+2. **Limited Model Variety**: Each backend tested with one model. More comprehensive would test multiple model sizes.
 
-3. **Limited Model Variety**: Each backend tested with one model. More comprehensive would test multiple model sizes.
+3. **No Quantization Comparison**: Could compare 4-bit vs 8-bit vs full precision models.
 
-4. **No Quantization Comparison**: Could compare 4-bit vs 8-bit vs full precision models.
-
-5. **No Hardware Cost Estimation**: Local backends show $0 or estimated cost. Real hardware has costs (electricity, depreciation, GPU rental).
-
-6. **No GPU Profiling**: GPU memory and utilization not tracked for any backend. Would require `nvidia-smi` or `pynvml` integration.
-
-7. **TTFT Estimation for MLX**: MLX estimates TTFT as ~10% of total latency rather than measuring actual first-token time.
-
-8. **Token Estimation for Local Backends**: Ollama and MLX estimate token counts (~4 characters per token) rather than using actual tokenizer.
+4. **No Hardware Cost Estimation**: Local backends show $0 or estimated cost (use `--gpu-hour-cost` for GPU rental estimation).
 
 ---
 

@@ -1,11 +1,14 @@
 """vLLM backend -- connects to a running vLLM OpenAI-compatible server."""
 
 import json
+import logging
 import os
 import time
 from typing import Any, Dict, List
 
 import requests
+
+logger = logging.getLogger(__name__)
 
 
 class VLLMBackend:
@@ -19,11 +22,12 @@ class VLLMBackend:
             resp.raise_for_status()
             available = [m["id"] for m in resp.json().get("data", [])]
             if model not in available:
-                print(f"Warning: '{model}' not on server. Available: {available}")
+                logger.warning("'%s' not on server. Available: %s", model, available)
         except requests.exceptions.ConnectionError:
             raise RuntimeError(f"Cannot connect to vLLM at {self.base_url}")
         except Exception as e:
-            print(f"Warning: could not verify vLLM server: {e}")
+            logger.warning("Could not verify vLLM server: %s", e)
+        logger.info("vLLM backend initialized with model '%s'", model)
 
     def generate(self, prompts: List[str], config: Dict[str, Any]) -> List[Dict[str, Any]]:
         max_tokens = int(config.get("max_tokens", config.get("max_output_tokens", 512)))
@@ -33,6 +37,7 @@ class VLLMBackend:
             try:
                 results.append(self._generate_single(prompt, max_tokens, temperature))
             except Exception as e:
+                logger.error("vLLM generation failed: %s", e)
                 results.append({"text": "", "latency_ms": 0.0, "extra": {"error": repr(e)}})
         return results
 

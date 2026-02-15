@@ -1,11 +1,14 @@
 """Ollama backend -- connects to a running Ollama server."""
 
 import json
+import logging
 import os
 import time
 from typing import Any, Dict, List
 
 import requests
+
+logger = logging.getLogger(__name__)
 
 
 class OllamaBackend:
@@ -19,12 +22,13 @@ class OllamaBackend:
             resp.raise_for_status()
             available = [m["name"] for m in resp.json().get("models", [])]
             if not any(model.split(":")[0] in m for m in available):
-                print(f"Warning: '{model}' not found. Available: {available}")
-                print(f"Run: ollama pull {model}")
+                logger.warning("'%s' not found. Available: %s. Run: ollama pull %s",
+                               model, available, model)
         except requests.exceptions.ConnectionError:
             raise RuntimeError(f"Cannot connect to Ollama at {self.base_url}")
         except Exception as e:
             raise RuntimeError(f"Ollama init failed: {e}")
+        logger.info("Ollama backend initialized with model '%s'", model)
 
     def generate(self, prompts: List[str], config: Dict[str, Any]) -> List[Dict[str, Any]]:
         max_tokens = int(config.get("max_tokens", config.get("max_output_tokens", 512)))
@@ -34,6 +38,7 @@ class OllamaBackend:
             try:
                 results.append(self._generate_single(prompt, max_tokens, temperature))
             except Exception as e:
+                logger.error("Ollama generation failed: %s", e)
                 results.append({"text": "", "latency_ms": 0.0, "extra": {"error": repr(e)}})
         return results
 

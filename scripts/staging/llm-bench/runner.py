@@ -274,6 +274,14 @@ def main():
                         help="$/GPU-hour for compute cost estimation (e.g. 2.50 for H100)")
     parser.add_argument("--gpu-count", type=int, default=1,
                         help="Number of GPUs used (for compute cost calculation)")
+    parser.add_argument("--power-draw-w", type=float, default=0.0,
+                        help="Device power draw in watts for electricity cost (e.g. 50 for MacBook, 350 for H100)")
+    parser.add_argument("--electricity-rate", type=float, default=0.30,
+                        help="Electricity cost per kWh in USD (default: 0.30, ~EU average)")
+    parser.add_argument("--hardware-cost", type=float, default=0.0,
+                        help="Hardware purchase price in USD for amortization (e.g. 2500 for MacBook, 30000 for H100)")
+    parser.add_argument("--hardware-lifetime-hours", type=float, default=15000.0,
+                        help="Expected hardware useful lifetime in hours (default: 15000, ~5yr at 8hr/day)")
     parser.add_argument("--concurrency", type=int, default=1,
                         help="Number of concurrent requests (default: 1 = sequential)")
     parser.add_argument("--log-level", default="INFO",
@@ -410,6 +418,29 @@ def main():
         gpu_hours = (wall_s / 3600.0) * args.gpu_count
         metrics["gpu_hours"] = gpu_hours
         metrics["compute_cost_usd"] = gpu_hours * args.gpu_hour_cost
+
+    # electricity cost (based on power draw and wall time)
+    if args.power_draw_w > 0:
+        kwh_used = (args.power_draw_w / 1000.0) * (wall_s / 3600.0)
+        electricity_cost = kwh_used * args.electricity_rate
+        metrics["electricity_kwh"] = kwh_used
+        metrics["electricity_cost_usd"] = electricity_cost
+
+    # hardware amortization cost (depreciation per hour of use)
+    if args.hardware_cost > 0 and args.hardware_lifetime_hours > 0:
+        hourly_depreciation = args.hardware_cost / args.hardware_lifetime_hours
+        hw_cost = hourly_depreciation * (wall_s / 3600.0)
+        metrics["hardware_amortization_usd"] = hw_cost
+
+    # total compute cost = electricity + hardware amortization + GPU-hour cost
+    compute_parts = [
+        metrics.get("electricity_cost_usd", 0.0),
+        metrics.get("hardware_amortization_usd", 0.0),
+        metrics.get("compute_cost_usd", 0.0),
+    ]
+    total_compute = sum(compute_parts)
+    if total_compute > 0:
+        metrics["total_compute_cost_usd"] = total_compute
 
     # concurrency info
     if args.concurrency > 1:

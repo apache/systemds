@@ -40,6 +40,7 @@ SYSTEMDS-BENCH-GPT is a systems-oriented evaluation harness for comparing local 
 | `summarization` | XSum, CNN/DM | Text summarization |
 | `reasoning` | BoolQ, LogiQA | Logical reasoning / QA |
 | `json_extraction` | Curated toy | Structured JSON extraction |
+| `embeddings` | STS-B | Semantic similarity scoring (0-5 scale) |
 
 ---
 
@@ -150,7 +151,8 @@ systemds-bench-gpt/
 │   ├── math/               # GSM8K dataset (HuggingFace)
 │   ├── summarization/      # XSum dataset (HuggingFace)
 │   ├── reasoning/          # BoolQ dataset (HuggingFace)
-│   └── json_extraction/    # Curated toy dataset (reliable ground truth)
+│   ├── json_extraction/    # Curated toy dataset (reliable ground truth)
+│   └── embeddings/         # STS-B semantic similarity (HuggingFace)
 ├── scripts/
 │   ├── aggregate.py        # CSV aggregation
 │   ├── report.py           # HTML report generation
@@ -164,6 +166,7 @@ systemds-bench-gpt/
 │   ├── test_reasoning_accuracy.py
 │   ├── test_json_extraction_accuracy.py
 │   ├── test_summarization_accuracy.py
+│   ├── test_embeddings_accuracy.py
 │   ├── test_perf_metrics.py
 │   └── test_runner.py
 ├── runner.py               # Main benchmark runner
@@ -212,11 +215,47 @@ systemds-bench-gpt/
 ### Cost Analysis
 | Metric | Description |
 |--------|-------------|
-| **Total cost (USD)** | For API-based backends |
+| **API cost (USD)** | Per-token billing for cloud backends (OpenAI) |
+| **Electricity cost** | Based on device power draw and wall time |
+| **Hardware amortization** | Device cost depreciated over useful lifetime |
+| **Total compute cost** | Electricity + hardware amortization + GPU-hour cost |
 | **Cost per query** | Average cost per inference request |
 | **Cost per 1M tokens** | Normalized cost comparison |
 | **Cost per correct answer** | Cost efficiency metric |
-| **Local backends** | API cost = $0 (hardware costs not estimated) |
+
+#### Cost Model for Local Inference
+
+Local backends (Ollama, MLX) have no API billing, but real costs exist:
+
+```
+Total Compute Cost = Electricity Cost + Hardware Amortization
+
+Electricity Cost  = (power_draw_W / 1000) × (wall_time_h) × (electricity_rate_per_kWh)
+HW Amortization   = (hardware_price / lifetime_hours) × wall_time_h
+```
+
+**Example** (Ollama on MacBook, 5-minute math benchmark):
+- Electricity: 50W × 0.083h × $0.30/kWh = **$0.0012**
+- HW amortization: $2500 / 15000h × 0.083h = **$0.0136**
+- **Total: ~$0.015** (vs OpenAI API: ~$0.022)
+
+Use the `--power-draw-w` and `--hardware-cost` flags to enable:
+
+```bash
+python runner.py --backend ollama --model llama3.2 \
+  --workload workloads/math/config.yaml \
+  --power-draw-w 50 --electricity-rate 0.30 \
+  --hardware-cost 2500 --hardware-lifetime-hours 15000 \
+  --out results/ollama_math
+```
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--power-draw-w` | 0 | Device power in watts (MacBook: ~50W, H100: ~350W) |
+| `--electricity-rate` | 0.30 | $/kWh (EU avg ~0.30, US avg ~0.16) |
+| `--hardware-cost` | 0 | Purchase price in USD (MacBook: ~2500, H100: ~30000) |
+| `--hardware-lifetime-hours` | 15000 | Useful lifetime (~5 years at 8h/day) |
+| `--gpu-hour-cost` | 0 | Cloud GPU rental rate (H100: ~$2.50/h) |
 
 ### Resource Utilization
 | Metric | Description |
@@ -237,10 +276,11 @@ systemds-bench-gpt/
 
 | Workload | Dataset | Source | Samples |
 |----------|---------|--------|---------|
-| **Math** | GSM8K | HuggingFace `openai/gsm8k` | 10 (configurable) |
-| **Reasoning** | BoolQ | HuggingFace `google/boolq` | 10 (configurable) |
-| **Summarization** | XSum | HuggingFace `EdinburghNLP/xsum` | 10 (configurable) |
-| **JSON Extraction** | Curated toy | Built-in | 10 |
+| **Math** | GSM8K | HuggingFace `openai/gsm8k` | 50 (configurable) |
+| **Reasoning** | BoolQ | HuggingFace `google/boolq` | 50 (configurable) |
+| **Summarization** | XSum | HuggingFace `EdinburghNLP/xsum` | 50 (configurable) |
+| **JSON Extraction** | Curated toy | Built-in | 50 |
+| **Embeddings** | STS-B | HuggingFace `mteb/stsbenchmark-sts` | 50 (configurable) |
 
 **Why JSON extraction uses a toy dataset:**
 - Real JSON datasets (CoNLL-2003 NER, etc.) have inconsistent ground truth
@@ -445,7 +485,7 @@ This design ensures the benchmark is ready for SystemDS evaluation while providi
 |---------|-------------|----------|
 | **SystemDS Backend** | Integrate when SystemDS LLM inference is available | High |
 | **Larger Models for vLLM** | Test Llama-2-7B or Llama-3-8B for better accuracy (phi-2 is 2.7B) | High |
-| **Embeddings Workload** | Add similarity/clustering tasks using embedding APIs | Medium |
+| ~~**Embeddings Workload**~~ | ~~Add similarity/clustering tasks~~ (Done: STS-B) | ~~Medium~~ |
 | **Larger Sample Sizes** | Run benchmarks with n=100+ for statistical significance | Medium |
 | **HuggingFace JSON Datasets** | Switch JSON extraction from toy to CoNLL-2003 NER or larger datasets | Medium |
 | **More Backends** | Hugging Face TGI, llama.cpp, Anthropic Claude | Medium |
@@ -463,7 +503,8 @@ Some metrics are estimated rather than precisely measured:
 | Latency | ✅ Real | ✅ Real | ✅ Real | ✅ Real |
 | TTFT | ✅ Streaming | ✅ Streaming | ✅ Streaming | ✅ Streaming |
 | Token counts | ✅ API | ✅ API (eval_count) | ✅ Tokenizer | ✅ API |
-| Cost | ✅ API pricing | N/A (local) | N/A (local) | N/A (local) |
+| API Cost | ✅ API pricing | $0 | $0 | $0 |
+| Compute Cost | N/A | ✅ Electricity + HW | ✅ Electricity + HW | ✅ GPU-hour + Electricity |
 | Memory/CPU | ✅ Local | ✅ Local | ✅ Local | ✅ Local |
 | GPU metrics | ❌ N/A | ✅ pynvml (optional) | ❌ N/A (Apple) | ✅ pynvml (optional) |
 
@@ -475,7 +516,7 @@ Some metrics are estimated rather than precisely measured:
 
 3. **No Quantization Comparison**: Could compare 4-bit vs 8-bit vs full precision models.
 
-4. **No Hardware Cost Estimation**: Local backends show $0 or estimated cost (use `--gpu-hour-cost` for GPU rental estimation).
+4. **Compute Cost Estimation**: Local backend costs are estimated from electricity and hardware amortization (use `--power-draw-w` and `--hardware-cost` flags). Actual power draw varies by workload.
 
 ---
 

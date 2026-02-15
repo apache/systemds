@@ -512,6 +512,9 @@ def generate_cost_analysis_section(rows: List[Dict[str, Any]]) -> str:
                 "accuracy": acc,
                 "n": n,
                 "latency": lat,
+                "electricity_cost_usd": r.get("electricity_cost_usd"),
+                "hardware_amortization_usd": r.get("hardware_amortization_usd"),
+                "total_compute_cost_usd": r.get("total_compute_cost_usd"),
             })
     
     if not openai_costs:
@@ -561,15 +564,29 @@ def generate_cost_analysis_section(rows: List[Dict[str, Any]]) -> str:
         <div class="cost-stats">
     ''')
     out.append(f'<div class="stat"><span class="label">API Cost:</span> <span class="value highlight">$0</span></div>')
+    # compute total electricity and hardware costs from local runs' metrics
+    local_electricity = 0.0
+    local_hw_cost = 0.0
+    local_compute_total = 0.0
+    for r in local_runs:
+        local_electricity += safe_float(r.get("electricity_cost_usd")) or 0.0
+        local_hw_cost += safe_float(r.get("hardware_amortization_usd")) or 0.0
+        local_compute_total += safe_float(r.get("total_compute_cost_usd")) or 0.0
+    if local_compute_total > 0:
+        out.append(f'<div class="stat"><span class="label">Electricity:</span> <span class="value">${local_electricity:.4f}</span></div>')
+        out.append(f'<div class="stat"><span class="label">HW Amortization:</span> <span class="value">${local_hw_cost:.4f}</span></div>')
+        out.append(f'<div class="stat"><span class="label">Total Compute:</span> <span class="value">${local_compute_total:.4f}</span></div>')
+    else:
+        out.append(f'<div class="stat"><span class="label">Compute Cost:</span> <span class="value">Use --power-draw-w and --hardware-cost flags</span></div>')
     out.append(f'<div class="stat"><span class="label">Local Runs:</span> <span class="value">{len(local_runs)}</span></div>')
     out.append(f'<div class="stat"><span class="label">Backends:</span> <span class="value">{len(set(r["backend"] for r in local_runs))}</span></div>')
     out.append('''
         </div>
         <div class="pros-cons">
-            <div class="pros">✅ Zero API cost</div>
-            <div class="pros">✅ Privacy (data stays local)</div>
-            <div class="cons">❌ Hardware required</div>
-            <div class="cons">❌ Lower accuracy on complex tasks</div>
+            <div class="pros">+  Zero API cost</div>
+            <div class="pros">+  Privacy (data stays local)</div>
+            <div class="cons">-  Hardware + electricity costs</div>
+            <div class="cons">-  Lower accuracy on complex tasks</div>
         </div>
     </div>
     ''')
@@ -587,13 +604,14 @@ def generate_cost_analysis_section(rows: List[Dict[str, Any]]) -> str:
     out.append(f'<tr><td>OpenAI (gpt-4.1-mini)</td><td style="color: #e74c3c; font-weight: bold;">${projected_1k:.2f}</td><td>Based on current usage</td></tr>')
     
 
-    out.append('<tr><td>Ollama (local)</td><td style="color: #2ecc71; font-weight: bold;">$0</td><td>Requires Mac/Linux, ~4GB RAM</td></tr>')
-    out.append('<tr><td>MLX (Apple Silicon)</td><td style="color: #2ecc71; font-weight: bold;">$0</td><td>Requires M1/M2/M3 Mac</td></tr>')
-    out.append('<tr><td>vLLM (GPU server)</td><td style="color: #f39c12; font-weight: bold;">~$5-20</td><td>Cloud GPU: ~$0.20-0.50/hour</td></tr>')
-    
+    out.append('<tr><td>Ollama (local)</td><td style="color: #2ecc71; font-weight: bold;">~$0.01-0.05</td><td>Electricity (~50W) + HW amortization</td></tr>')
+    out.append('<tr><td>MLX (Apple Silicon)</td><td style="color: #2ecc71; font-weight: bold;">~$0.01-0.05</td><td>Electricity (~30W) + HW amortization</td></tr>')
+    out.append('<tr><td>vLLM (GPU server)</td><td style="color: #f39c12; font-weight: bold;">~$5-20</td><td>Cloud GPU: ~$2-3/hour (H100)</td></tr>')
+
     out.append('</tbody></table>')
-    
-    out.append('<p class="muted"><small>Note: Local backend costs exclude hardware purchase/depreciation and electricity. vLLM cost estimate based on cloud GPU rental.</small></p>')
+
+    out.append('<p class="muted"><small>Note: Local costs estimated using --power-draw-w and --hardware-cost flags. '
+               'Default estimates: MacBook ~50W, electricity ~$0.30/kWh (EU avg), HW amortized over 15000 hours.</small></p>')
     
     return '\n'.join(out)
 
@@ -875,13 +893,19 @@ def fmt_cost_if_real(r: Dict[str, Any]) -> str:
     backend = r.get("backend", "")
     if backend == "openai" and cost is not None:
         return fmt_cost(cost)
-    return "-"
+    return "$0"
 
 def fmt_cost_per_1m_if_real(r: Dict[str, Any]) -> str:
     cost = r.get("cost_per_1m_tokens")
     backend = r.get("backend", "")
     if backend == "openai" and cost is not None:
         return fmt_cost(cost)
+    return "-"
+
+def fmt_compute_cost(r: Dict[str, Any]) -> str:
+    tc = safe_float(r.get("total_compute_cost_usd"))
+    if tc and tc > 0:
+        return f"${tc:.4f}"
     return "-"
 
 
@@ -896,7 +920,8 @@ FULL_TABLE_COLUMNS = [
     ("rouge1_f", "ROUGE-1 F1", lambda r: f'{r.get("rouge1_f")*100:.1f}%' if r.get("rouge1_f") is not None else ""),
     ("rouge2_f", "ROUGE-2 F1", lambda r: f'{r.get("rouge2_f")*100:.1f}%' if r.get("rouge2_f") is not None else ""),
     ("rougeL_f", "ROUGE-L F1", lambda r: f'{r.get("rougeL_f")*100:.1f}%' if r.get("rougeL_f") is not None else ""),
-    ("cost", "Cost ($)", fmt_cost_if_real),
+    ("cost", "API Cost ($)", fmt_cost_if_real),
+    ("compute_cost", "Compute Cost ($)", fmt_compute_cost),
     ("cost_per_1m", "$/1M tok", fmt_cost_per_1m_if_real),
     ("mem_peak", "Mem Peak (MB)", lambda r: fmt_num(r.get("mem_peak"), 1)),
     ("cpu_avg", "CPU Avg (%)", lambda r: fmt_num(r.get("cpu_avg"), 1)),
@@ -1122,6 +1147,9 @@ def main() -> int:
                 "total_output_tokens": total_out,
                 "cost": cost,
                 "cost_per_1m_tokens": cost_per_1m,
+                "electricity_cost_usd": metrics.get("electricity_cost_usd"),
+                "hardware_amortization_usd": metrics.get("hardware_amortization_usd"),
+                "total_compute_cost_usd": metrics.get("total_compute_cost_usd"),
                 "mem_peak": metrics.get("memory_mb_peak"),
                 "cpu_avg": metrics.get("cpu_percent_avg"),
                 "ttft_mean": ttft_mean or metrics.get("ttft_ms_mean"),

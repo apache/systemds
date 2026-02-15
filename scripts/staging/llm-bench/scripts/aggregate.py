@@ -43,8 +43,11 @@ def main() -> int:
         "n",
         "accuracy_mean",
         "accuracy_count",
-        "cost_total_usd",
+        "api_cost_usd",
         "cost_per_1m_tokens",
+        "electricity_cost_usd",
+        "hardware_amortization_usd",
+        "total_compute_cost_usd",
         "memory_mb_peak",
         "cpu_percent_avg",
         "latency_ms_mean",
@@ -90,9 +93,13 @@ def main() -> int:
                 accuracy_mean = metrics.get("accuracy_mean")
                 accuracy_count = metrics.get("accuracy_count", "")
                 
-                # get cost from metrics.json
-                cost_total = metrics.get("cost_total_usd")
-                cost_per_1m = metrics.get("cost_per_1m_tokens")
+                # get cost from metrics.json (runner stores as api_cost_usd)
+                api_cost = metrics.get("api_cost_usd", 0.0)
+                total_tok = metrics.get("total_tokens", 0)
+                cost_per_1m = (api_cost / total_tok * 1_000_000) if api_cost and total_tok else 0.0
+                electricity_cost = metrics.get("electricity_cost_usd", 0.0)
+                hw_cost = metrics.get("hardware_amortization_usd", 0.0)
+                total_compute_cost = metrics.get("total_compute_cost_usd", 0.0)
                 
                 # get resource usage metrics
                 memory_mb_peak = metrics.get("memory_mb_peak")
@@ -113,8 +120,11 @@ def main() -> int:
                     metrics.get("n", ""),
                     "" if accuracy_mean is None else f"{accuracy_mean:.4f}",
                     accuracy_count,
-                    "" if cost_total is None else f"{cost_total:.6f}",
-                    "" if cost_per_1m is None else f"{cost_per_1m:.4f}",
+                    f"{api_cost:.6f}",
+                    f"{cost_per_1m:.4f}",
+                    f"{electricity_cost:.6f}",
+                    f"{hw_cost:.6f}",
+                    f"{total_compute_cost:.6f}",
                     "" if memory_mb_peak is None else f"{memory_mb_peak:.1f}",
                     "" if cpu_percent_avg is None else f"{cpu_percent_avg:.1f}",
                     metrics.get("latency_ms_mean", ""),

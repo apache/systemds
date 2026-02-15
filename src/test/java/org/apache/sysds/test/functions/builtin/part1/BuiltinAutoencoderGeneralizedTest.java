@@ -62,7 +62,7 @@ public class BuiltinAutoencoderGeneralizedTest extends AutomatedTestBase {
 
     @Test
     public void testAutoencoderParamservOutputs() {
-        runAutoencoderTest("PARAMSERVER", 16, 8, 4, 1, DENSE);
+        runAutoencoderTest("PARAMSERVER", 16, 8, 4, 2, DENSE);
     }
     private void runAutoencoderTest(String method, int h1, int h2, int h3, int maxEpochs, double sparsity) {
         int expectedHidden = h3 > 0 ? h3 : (h2 > 0 ? h2 : h1);

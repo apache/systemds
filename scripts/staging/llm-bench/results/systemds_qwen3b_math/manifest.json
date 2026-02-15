@@ -1,15 +1,15 @@
 {
   "git_commit_hash": "581669f4cd2304d8865a0416d3d2d9ded3bb94e2",
-  "timestamp_utc": "2026-02-15T22:11:07.247229+00:00",
+  "timestamp_utc": "2026-02-15T22:34:59.520003+00:00",
   "python_version": "3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]",
   "platform": {
     "os": "Linux",
     "architecture": "x86_64"
   },
   "backend": "systemds",
-  "model": "distilgpt2",
-  "workload_config_path": "/home/kubraaksu/systemds/scripts/staging/llm-bench/workloads/reasoning/config.yaml",
-  "workload_config_sha256": "6f7968788522f75682115e9ece83b44338e5fb59155d9f4a42adc4b043ee5c10",
+  "model": "Qwen/Qwen2.5-3B-Instruct",
+  "workload_config_path": "/home/kubraaksu/systemds/scripts/staging/llm-bench/workloads/math/config.yaml",
+  "workload_config_sha256": "e8b1fe2caac04ac57fccfbdc770153ca7bbaf98908765870a39991830abcaac4",
   "gpu": {
     "gpu_count": 3,
     "gpus": [
@@ -17,26 +17,26 @@
         "index": 0,
         "name": "NVIDIA H100 PCIe",
         "memory_total_mb": 81559.0,
-        "memory_used_mb": 26787.75,
-        "memory_free_mb": 54771.25,
-        "gpu_utilization_pct": 100,
-        "memory_utilization_pct": 31
+        "memory_used_mb": 29500.1875,
+        "memory_free_mb": 52058.8125,
+        "gpu_utilization_pct": 0,
+        "memory_utilization_pct": 0
       },
       {
         "index": 1,
         "name": "NVIDIA H100 PCIe",
         "memory_total_mb": 81559.0,
-        "memory_used_mb": 80597.375,
-        "memory_free_mb": 961.625,
-        "gpu_utilization_pct": 36,
-        "memory_utilization_pct": 6
+        "memory_used_mb": 74898.625,
+        "memory_free_mb": 6660.375,
+        "gpu_utilization_pct": 53,
+        "memory_utilization_pct": 12
       },
       {
         "index": 2,
         "name": "NVIDIA H100 PCIe",
         "memory_total_mb": 81559.0,
-        "memory_used_mb": 2508.1875,
-        "memory_free_mb": 79050.8125,
+        "memory_used_mb": 4106.625,
+        "memory_free_mb": 77452.375,
         "gpu_utilization_pct": 0,
         "memory_utilization_pct": 0
       }

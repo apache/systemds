@@ -1,6 +1,6 @@
 {
   "backend": "systemds",
-  "backend_model": "distilgpt2",
+  "backend_model": "Qwen/Qwen2.5-3B-Instruct",
   "workload": "summarization",
   "concurrency": 1
 }

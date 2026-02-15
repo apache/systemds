@@ -1,19 +1,10 @@
-"""SystemDS JMLC backend -- routes inference through the full Java JMLC path.
+"""SystemDS JMLC backend for the LLM benchmark runner.
 
 Data flow:
-  Python (benchmark runner)
-    -> Py4J -> Java JMLC Connection
-    -> PreparedScript.generateBatchWithMetrics()
-    -> LLMCallback (Py4J callback) -> Python llm_worker.py (HuggingFace)
-    -> results collected in a SystemDS FrameBlock
-    -> back to Python
-
-All prompts are submitted as a Java String[] and processed through
-PreparedScript.generateBatchWithMetrics(), which returns a typed
-FrameBlock with columns [prompt, generated_text, time_ms, input_tokens,
-output_tokens].  This is the SystemDS-native path: a unified Java API
-for managing LLM inference with structured, columnar results and
-built-in per-prompt metrics.
+  Python benchmark -> Py4J -> Java JMLC Connection
+  -> PreparedScript.generateBatchWithMetrics()
+  -> LLMCallback -> Python llm_worker.py (HuggingFace)
+  -> FrameBlock [prompt, generated_text, time_ms, input_tokens, output_tokens]
 """
 
 import logging

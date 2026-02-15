@@ -1,0 +1,45 @@
+{
+  "git_commit_hash": "7239460377c2304af9834ee6261dfba096b33621",
+  "timestamp_utc": "2026-02-15T19:47:13.257075+00:00",
+  "python_version": "3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]",
+  "platform": {
+    "os": "Linux",
+    "architecture": "x86_64"
+  },
+  "backend": "vllm",
+  "model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "workload_config_path": "/home/kubraaksu/systemds/scripts/staging/llm-bench/workloads/summarization/config.yaml",
+  "workload_config_sha256": "5644241eec3223c090610f33c5d29e7f9cb66da4a18a291b1cfc3ed5424b3ecb",
+  "gpu": {
+    "gpu_count": 3,
+    "gpus": [
+      {
+        "index": 0,
+        "name": "NVIDIA H100 PCIe",
+        "memory_total_mb": 81559.0,
+        "memory_used_mb": 25868.625,
+        "memory_free_mb": 55690.375,
+        "gpu_utilization_pct": 0,
+        "memory_utilization_pct": 0
+      },
+      {
+        "index": 1,
+        "name": "NVIDIA H100 PCIe",
+        "memory_total_mb": 81559.0,
+        "memory_used_mb": 79050.1875,
+        "memory_free_mb": 2508.8125,
+        "gpu_utilization_pct": 62,
+        "memory_utilization_pct": 12
+      },
+      {
+        "index": 2,
+        "name": "NVIDIA H100 PCIe",
+        "memory_total_mb": 81559.0,
+        "memory_used_mb": 483.0625,
+        "memory_free_mb": 81075.9375,
+        "gpu_utilization_pct": 0,
+        "memory_utilization_pct": 0
+      }
+    ]
+  }
+}

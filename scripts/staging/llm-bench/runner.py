@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 REQUIRED_CONFIG_KEYS = {"name"}
 VALID_WORKLOADS = {"math", "summarization", "reasoning", "json_extraction", "embeddings"}
-VALID_BACKENDS = {"openai", "ollama", "vllm", "mlx"}
+VALID_BACKENDS = {"openai", "ollama", "vllm", "mlx", "systemds"}
 
 
 def validate_config(cfg: Dict[str, Any]) -> None:
@@ -74,6 +74,9 @@ def create_backend(backend_name: str, model: str, cfg: Dict[str, Any]):
     elif backend_name == "vllm":
         from backends.vllm_backend import VLLMBackend
         backend = VLLMBackend(model)
+    elif backend_name == "systemds":
+        from backends.systemds_backend import SystemDSBackend
+        backend = SystemDSBackend(model)
     else:
         raise ValueError(f"Unknown backend: {backend_name}")
 

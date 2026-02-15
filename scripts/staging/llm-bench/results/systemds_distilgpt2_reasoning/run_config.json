@@ -1,0 +1,6 @@
+{
+  "backend": "systemds",
+  "backend_model": "distilgpt2",
+  "workload": "reasoning",
+  "concurrency": 1
+}

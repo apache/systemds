@@ -6,7 +6,7 @@ dataset:
   n_samples: 10
 
 generation:
-  max_tokens: 80
+  max_tokens: 128
   temperature: 0.0
 
 openai:

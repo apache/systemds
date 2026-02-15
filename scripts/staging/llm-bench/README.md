@@ -73,8 +73,8 @@ export OPENAI_API_KEY="your-key-here"
 ./scripts/run_all_benchmarks.sh all      # All backends
 ./scripts/run_all_benchmarks.sh          # Local only (ollama + mlx)
 
-# For vLLM (requires GPU): Use Google Colab notebook
-# Open notebooks/vllm_colab.ipynb in Google Colab
+# For vLLM (requires GPU server running):
+./scripts/run_all_benchmarks.sh vllm meta-llama/Llama-3.1-8B
 ```
 
 **Using Python directly:**
@@ -137,8 +137,8 @@ systemds-bench-gpt/
 │   ├── report.py           # HTML report generation
 │   ├── utils.py            # Shared helpers (read_json, iter_run_dirs, etc.)
 │   └── run_all_benchmarks.sh  # Run all workloads for a backend
-├── notebooks/
-│   └── vllm_colab.ipynb    # Google Colab for vLLM (GPU)
+├── evaluation/
+│   └── perf.py             # Latency/throughput metric computation
 ├── results/                # Benchmark outputs (gitignored)
 ├── runner.py               # Main benchmark runner
 ├── requirements.txt        # Python dependencies
@@ -254,60 +254,24 @@ python runner.py --backend ollama --model llama3.2 --workload workloads/math/con
 
 ### vLLM (requires GPU)
 
-vLLM is the industry-standard for LLM inference serving. Since it requires an NVIDIA GPU, here are your options:
-
-#### Option 1: Google Colab (FREE - Recommended)
-The easiest option for students. We provide a ready-to-use notebook:
+vLLM is the industry-standard for LLM inference serving. It requires an NVIDIA GPU.
 
 ```bash
-# Open in Google Colab:
-# notebooks/vllm_colab.ipynb
-
-# Steps:
-# 1. Open notebook in Colab
-# 2. Runtime → Change runtime type → T4 GPU
-# 3. Run all cells
-# 4. Download results.zip
-# 5. Extract to results/ folder locally
-```
-
-#### Option 2: RunPod (~$0.20/hour)
-Cheap GPU cloud with easy vLLM setup:
-
-```bash
-# 1. Create account at https://runpod.io
-# 2. Deploy a GPU pod (RTX 3090 is cheap and good)
-# 3. SSH into pod and run:
+# 1. Install vLLM on the GPU server
 pip install vllm
-python -m vllm.entrypoints.openai.api_server --model microsoft/phi-2 --host 0.0.0.0 --port 8000
 
-# 4. Use ngrok or pod's public URL to connect:
-export VLLM_BASE_URL="https://your-pod-url:8000"
-python runner.py --backend vllm --model microsoft/phi-2 --workload workloads/math/config.yaml
+# 2. Start the vLLM server (in one terminal)
+python -m vllm.entrypoints.openai.api_server \
+  --model meta-llama/Llama-3.1-8B \
+  --host 0.0.0.0 --port 8000
+
+# 3. Run benchmarks (in another terminal)
+python runner.py --backend vllm --model meta-llama/Llama-3.1-8B \
+  --workload workloads/math/config.yaml --out results/test
+
+# For a remote server, set VLLM_BASE_URL:
+export VLLM_BASE_URL="http://your-server:8000"
 ```
-
-#### Option 3: Lambda Labs (~$0.50/hour)
-Professional GPU cloud with better GPUs:
-
-```bash
-# 1. Create account at https://lambdalabs.com/cloud
-# 2. Launch an A10 or A100 instance
-# 3. SSH and run same vLLM commands as above
-```
-
-#### Option 4: Local GPU
-If you have access to an NVIDIA GPU:
-
-```bash
-pip install vllm
-python -m vllm.entrypoints.openai.api_server --model microsoft/phi-2 --port 8000
-
-# In another terminal:
-python runner.py --backend vllm --model microsoft/phi-2 --workload workloads/math/config.yaml --out results/test
-```
-
-#### Option 5: University Server
-Ask your supervisor for access to university GPU resources.
 
 ### MLX (Apple Silicon only)
 ```bash
@@ -368,8 +332,7 @@ class MyBackend:
                 "latency_ms": 100.0,
                 "ttft_ms": 10.0,
                 "extra": {
-                    "usage": {"input_tokens": 50, "output_tokens": 100, "total_tokens": 150},
-                    "cost_usd": 0.0
+                    "usage": {"input_tokens": 50, "output_tokens": 100, "total_tokens": 150}
                 }
             })
         return results
@@ -475,10 +438,10 @@ Some metrics are estimated rather than precisely measured:
 | Metric | OpenAI | Ollama | MLX | vLLM |
 |--------|--------|--------|-----|------|
 | Latency | ✅ Real | ✅ Real | ✅ Real | ✅ Real |
-| TTFT | ✅ Streaming | ✅ Streaming | ⚠️ ~10% est. | ⚠️ ~10% est. |
-| Token counts | ✅ API | ⚠️ ~4 chars/tok | ⚠️ ~4 chars/tok | ✅ Real |
-| Cost | ✅ API pricing | ⚠️ $0.30/hr est. | ❌ None | ❌ None |
-| Memory/CPU | ✅ Local | ✅ Local | ✅ Local | ⚠️ Remote |
+| TTFT | ✅ Streaming | ✅ Streaming | ⚠️ ~10% est. | ✅ Streaming |
+| Token counts | ✅ API | ⚠️ ~4 chars/tok | ✅ Tokenizer | ✅ API |
+| Cost | ✅ API pricing | N/A (local) | N/A (local) | N/A (local) |
+| Memory/CPU | ✅ Local | ✅ Local | ✅ Local | ✅ Local |
 | GPU metrics | ❌ N/A | ❌ None | ❌ None | ❌ None |
 
 ### Known Limitations
@@ -495,7 +458,7 @@ Some metrics are estimated rather than precisely measured:
 
 6. **No GPU Profiling**: GPU memory and utilization not tracked for any backend. Would require `nvidia-smi` or `pynvml` integration.
 
-7. **TTFT Estimation for Non-Streaming**: MLX and vLLM (non-streaming) estimate TTFT as ~10% of total latency rather than measuring actual first-token time.
+7. **TTFT Estimation for MLX**: MLX estimates TTFT as ~10% of total latency rather than measuring actual first-token time.
 
 8. **Token Estimation for Local Backends**: Ollama and MLX estimate token counts (~4 characters per token) rather than using actual tokenizer.
 

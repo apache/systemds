@@ -1,11 +1,4 @@
-"""
-
-Installation:
-    1. Download Ollama from https://ollama.ai
-    2. Run: ollama pull llama3.2  (or any other model)
-    3. Ollama runs as a local server on http://localhost:11434
-
-"""
+"""Ollama backend -- connects to a running Ollama server."""
 
 import json
 import os
@@ -16,140 +9,86 @@ import requests
 
 
 class OllamaBackend:
-    """Backend for Ollama local LLM inference."""
-    
+
     def __init__(self, model: str, base_url: str = None):
-        """
-        Initialize Ollama backend.
-        
-        Args:
-            model: Model name (e.g., "llama3.2", "mistral", "phi3")
-            base_url: Ollama server URL (default: http://localhost:11434 or OLLAMA_BASE_URL env)
-        """
         self.model = model
         self.base_url = (base_url or os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")).rstrip("/")
-        
-        # Verify connection
+
         try:
             resp = requests.get(f"{self.base_url}/api/tags", timeout=5)
             resp.raise_for_status()
-            available_models = [m["name"] for m in resp.json().get("models", [])]
-            
-            model_base = model.split(":")[0]
-            if not any(model_base in m for m in available_models):
-                print(f"Warning: Model '{model}' not found. Available: {available_models}")
+            available = [m["name"] for m in resp.json().get("models", [])]
+            if not any(model.split(":")[0] in m for m in available):
+                print(f"Warning: '{model}' not found. Available: {available}")
                 print(f"Run: ollama pull {model}")
-                
         except requests.exceptions.ConnectionError:
-            raise RuntimeError(
-                f"Cannot connect to Ollama at {self.base_url}. "
-                "Make sure Ollama is running (https://ollama.ai)"
-            )
+            raise RuntimeError(f"Cannot connect to Ollama at {self.base_url}")
         except Exception as e:
-            raise RuntimeError(f"Failed to initialize Ollama backend: {e}")
-    
+            raise RuntimeError(f"Ollama init failed: {e}")
+
     def generate(self, prompts: List[str], config: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """
-        Generate completions for a list of prompts.
-        
-        Args:
-            prompts: List of prompt strings
-            config: Generation config (max_tokens, temperature, etc.)
-        
-        Returns:
-            List of result dicts with text, latency_ms, ttft_ms, etc.
-        """
         max_tokens = int(config.get("max_tokens", config.get("max_output_tokens", 512)))
         temperature = float(config.get("temperature", 0.0))
-        
         results = []
-        
         for prompt in prompts:
             try:
-                result = self._generate_single(prompt, max_tokens, temperature)
-                results.append(result)
+                results.append(self._generate_single(prompt, max_tokens, temperature))
             except Exception as e:
-                results.append({
-                    "text": "",
-                    "latency_ms": 0.0,
-                    "ttft_ms": 0.0,
-                    "generation_ms": 0.0,
-                    "extra": {"error": repr(e)}
-                })
-        
+                results.append({"text": "", "latency_ms": 0.0, "extra": {"error": repr(e)}})
         return results
-    
-    def _generate_single(
-        self, 
-        prompt: str, 
-        max_tokens: int, 
-        temperature: float
-    ) -> Dict[str, Any]:
-        """Generate completion for a single prompt with streaming."""
-        
-        url = f"{self.base_url}/api/generate"
+
+    def _generate_single(self, prompt: str, max_tokens: int, temperature: float) -> Dict[str, Any]:
         payload = {
             "model": self.model,
             "prompt": prompt,
             "stream": True,
-            "options": {
-                "num_predict": max_tokens,
-                "temperature": temperature,
-            }
+            "options": {"num_predict": max_tokens, "temperature": temperature},
         }
-        
+
         t0 = time.perf_counter()
         t_first = None
         chunks = []
-        
-        with requests.post(url, json=payload, stream=True, timeout=300) as resp:
+        done_chunk = None
+
+        with requests.post(f"{self.base_url}/api/generate", json=payload, stream=True, timeout=300) as resp:
             resp.raise_for_status()
-            
             for line in resp.iter_lines():
                 if not line:
                     continue
-                
                 chunk = json.loads(line)
-                
-                # capture time to first token
                 if t_first is None and chunk.get("response"):
                     t_first = time.perf_counter()
-                
                 if chunk.get("response"):
                     chunks.append(chunk["response"])
-                
                 if chunk.get("done"):
+                    done_chunk = chunk
                     break
-        
+
         t1 = time.perf_counter()
-        
         text = "".join(chunks)
-        
-        total_latency_ms = (t1 - t0) * 1000.0
-        ttft_ms = (t_first - t0) * 1000.0 if t_first else total_latency_ms
-        generation_ms = (t1 - t_first) * 1000.0 if t_first else 0.0
-        
-        # estimate token counts (Ollama doesn't always return this)
-        # rough estimate: ~4 chars per token
-        in_tokens = len(prompt) // 4
-        out_tokens = len(text) // 4
-        
-        # estimate compute cost based on typical consumer GPU (~$0.30/hr equivalent)
-        compute_hours = total_latency_ms / 1000.0 / 3600.0
-        
+        total_ms = (t1 - t0) * 1000.0
+        ttft_ms = (t_first - t0) * 1000.0 if t_first else total_ms
+        gen_ms = (t1 - t_first) * 1000.0 if t_first else 0.0
+
+        # Ollama returns real token counts in the done chunk
+        extra: Dict[str, Any] = {}
+        if done_chunk:
+            in_tok = done_chunk.get("prompt_eval_count")
+            out_tok = done_chunk.get("eval_count")
+            if in_tok is not None or out_tok is not None:
+                usage: Dict[str, Any] = {}
+                if in_tok is not None:
+                    usage["input_tokens"] = in_tok
+                if out_tok is not None:
+                    usage["output_tokens"] = out_tok
+                if in_tok is not None and out_tok is not None:
+                    usage["total_tokens"] = in_tok + out_tok
+                extra["usage"] = usage
+
         return {
             "text": text,
-            "latency_ms": total_latency_ms,
+            "latency_ms": total_ms,
             "ttft_ms": ttft_ms,
-            "generation_ms": generation_ms,
-            "extra": {
-                "usage": {
-                    "input_tokens": in_tokens,
-                    "output_tokens": out_tokens,
-                    "total_tokens": in_tokens + out_tokens,
-                },
-                "cost_usd": compute_hours * 0.30,
-                "cost_note": "estimated_compute"
-            }
+            "generation_ms": gen_ms,
+            "extra": extra,
         }
-    

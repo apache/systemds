@@ -9,8 +9,7 @@ from datasets import load_dataset
 class Sample:
     sid: str
     text: str
-    reference: str  # the reference summary (or original text for toy)
-
+    reference: str
 
 TOY_TEXTS = [
     "Large language models (LLMs) are widely used in modern applications. They can generate text, summarize documents, and answer questions.",
@@ -27,14 +26,6 @@ TOY_TEXTS = [
 
 
 def load_samples(cfg: Dict[str, Any]) -> List[Sample]:
-    """
-    Load summarization samples.
-    
-    Supports multiple sources:
-    - "toy": Use built-in toy dataset (10 short texts)
-    - "cnn": Use CNN/DailyMail dataset (news articles with summaries)
-    - "xsum": Use XSum dataset (BBC articles with one-sentence summaries)
-    """
     dataset_cfg = cfg.get("dataset", {})
     source = dataset_cfg.get("source", "toy")
     n = int(dataset_cfg.get("n_samples", 10))
@@ -50,156 +41,85 @@ def load_samples(cfg: Dict[str, Any]) -> List[Sample]:
 
 
 def _load_toy_samples(n: int) -> List[Sample]:
-    """Load from built-in toy dataset.
-    
-    Uses original text as reference since toy texts are already short.
-    The accuracy_check evaluates whether the summary preserves key terms.
-    """
     texts = TOY_TEXTS[: max(1, min(n, len(TOY_TEXTS)))]
-    samples: List[Sample] = []
-    for i, t in enumerate(texts):
-        samples.append(Sample(sid=f"toy-{i}", text=t, reference=t))
-    return samples
+    return [Sample(sid=f"toy-{i}", text=t, reference=t) for i, t in enumerate(texts)]
 
 
 def _load_cnn_samples(n: int) -> List[Sample]:
-    """
-    Load from CNN/DailyMail dataset.
-    
-    This is a standard summarization benchmark with news articles
-    and multi-sentence highlights as summaries.
-    Falls back to toy dataset if HuggingFace download fails.
-    """
     try:
         dataset = load_dataset("abisee/cnn_dailymail", "3.0.0", split="test", trust_remote_code=True)
     except Exception as e:
-        print(f"Warning: failed to load CNN/DailyMail from HuggingFace ({e}), falling back to toy dataset")
+        print(f"Warning: CNN/DailyMail download failed ({e}), using toy dataset")
         return _load_toy_samples(n)
-    
+
     samples: List[Sample] = []
     for i, item in enumerate(dataset):
         if len(samples) >= n:
             break
-        
         article = item["article"]
-        highlights = item["highlights"]
-        
-        # skip very long articles (>2000 chars) for practical inference
         if len(article) > 2000:
             continue
-        
-        samples.append(Sample(
-            sid=f"cnn-{i}",
-            text=article,
-            reference=highlights,
-        ))
-    
+        samples.append(Sample(sid=f"cnn-{i}", text=article, reference=item["highlights"]))
     return samples
 
 
 def _load_xsum_samples(n: int) -> List[Sample]:
-    """
-    Load from XSum dataset.
-    
-    XSum contains BBC articles with one-sentence summaries.
-    Good for testing concise summarization.
-    Falls back to toy dataset if HuggingFace download fails.
-    """
     try:
         dataset = load_dataset("EdinburghNLP/xsum", split="test", trust_remote_code=True)
     except Exception as e:
-        print(f"Warning: failed to load XSum from HuggingFace ({e}), falling back to toy dataset")
+        print(f"Warning: XSum download failed ({e}), using toy dataset")
         return _load_toy_samples(n)
-    
+
     samples: List[Sample] = []
     for i, item in enumerate(dataset):
         if len(samples) >= n:
             break
-        
         document = item["document"]
-        summary = item["summary"]
-        
-        # skip very long documents (>2000 chars)
         if len(document) > 2000:
             continue
-        
-        samples.append(Sample(
-            sid=f"xsum-{i}",
-            text=document,
-            reference=summary,
-        ))
-    
+        samples.append(Sample(sid=f"xsum-{i}", text=document, reference=item["summary"]))
     return samples
 
 
-def tokenize(text: str) -> Set[str]:
-    """Simple word tokenization for overlap calculation."""
-    # lowercase, remove punctuation, split into words
+def _tokenize(text: str) -> Set[str]:
     text = text.lower()
     words = re.findall(r'\b[a-z]+\b', text)
-    # remove common stop words
-    stop_words = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 
+    stop_words = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been',
                   'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with',
                   'it', 'this', 'that', 'they', 'can', 'may', 'by', 'as'}
     return set(w for w in words if w not in stop_words and len(w) > 2)
 
 
 def accuracy_check(prediction: str, reference: str) -> bool:
-    """
-    Check if the summary is a valid, quality output.
-    
-    For summarization, we primarily check:
-    1. The output is a reasonable length (not empty, not too long)
-    2. The output is coherent (proper sentence structure)
-    3. Some key content is preserved (flexible - allows paraphrasing)
-    
-    Note: Perfect word overlap is NOT required since good summaries
-    often paraphrase content using different vocabulary.
-    
-    Args:
-        prediction: The model's summary/response
-        reference: The reference summary (or original text for toy)
-    
-    Returns:
-        True if the output meets quality criteria, False otherwise
+    """Quality gate, not a true accuracy metric.
+
+    Checks whether the output looks like a plausible summary:
+    non-empty, reasonable length, contains at least one reference term,
+    and has sentence structure.  Does NOT measure factual correctness
+    or semantic similarity (use ROUGE/BERTScore for that).
     """
     if not prediction or not reference:
         return False
-    
+
     prediction = prediction.strip()
     reference = reference.strip()
-    
-    pred_len = len(prediction)
-    ref_len = len(reference)
-    
-    # check 1: Output shouldn't be empty or too short
-    if pred_len < 20:
+
+    if len(prediction) < 20:
         return False
-    
-    # check 2: Output shouldn't be excessively long
-    # for summarization, allow generous length variation
-    # just ensure the output isn't absurdly long (>5x reference)
-    if pred_len > max(ref_len * 5, 500):
+
+    if len(prediction) > max(len(reference) * 5, 500):
         return False
-    
-    # check 3: Key term overlap - very lenient for real datasets
-    # models often use synonyms/paraphrases which is perfectly valid
-    ref_terms = tokenize(reference)
-    pred_terms = tokenize(prediction)
-    
-    if ref_terms and len(ref_terms) >= 5:
-        overlap = ref_terms.intersection(pred_terms)
-        # only require ~10% overlap since paraphrasing is common
-        # if overlap is 0, that's suspicious
-        if len(overlap) == 0:
-            return False
-    
-    # check 4: Basic coherence - should have proper sentence structure
-    if pred_len > 50 and not re.search(r'[.!?]', prediction):
+
+    ref_terms = _tokenize(reference)
+    pred_terms = _tokenize(prediction)
+
+    if ref_terms and len(ref_terms) >= 5 and len(ref_terms & pred_terms) == 0:
         return False
-    
-    # check 5: Prediction should have meaningful content
+
+    if len(prediction) > 50 and not re.search(r'[.!?]', prediction):
+        return False
+
     if len(pred_terms) < 3:
         return False
-    
+
     return True

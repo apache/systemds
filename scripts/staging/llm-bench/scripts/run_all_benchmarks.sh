@@ -92,10 +92,14 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Default models per backend (used when no model is specified)
-declare -A DEFAULT_MODELS
-DEFAULT_MODELS[ollama]="llama3.2"
-DEFAULT_MODELS[mlx]="mlx-community/Phi-3-mini-4k-instruct-4bit"
-DEFAULT_MODELS[vllm]="microsoft/phi-2"
+default_model_for() {
+    case "$1" in
+        ollama) echo "llama3.2" ;;
+        mlx)    echo "mlx-community/Phi-3-mini-4k-instruct-4bit" ;;
+        vllm)   echo "microsoft/phi-2" ;;
+        *)      echo "" ;;
+    esac
+}
 
 FAILED_RUNS=0
 TOTAL_RUNS=0
@@ -155,10 +159,8 @@ resolve_model() {
 
     if [ -n "$model" ]; then
         echo "$model"
-    elif [ -n "${DEFAULT_MODELS[$backend]:-}" ]; then
-        echo "${DEFAULT_MODELS[$backend]}"
     else
-        echo ""
+        default_model_for "$backend"
     fi
 }
 

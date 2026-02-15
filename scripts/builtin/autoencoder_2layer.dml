@@ -807,9 +807,9 @@ gradients_layers = function(list[unknown] model,
 
   gradients = list()
   for(i in 1:layer_count)
-    gradients = append(gradients, list(as.matrix(grads_W[i])))
+    gradients = append(gradients, list(as.matrix(grads_W[layer_count - i + 1])))
   for(i in 1:layer_count)
-    gradients = append(gradients, list(as.matrix(grads_b[i])))
+    gradients = append(gradients, list(as.matrix(grads_b[layer_count - i + 1])))
 }
 
 

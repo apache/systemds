@@ -618,7 +618,7 @@ public class ColGroupDDCLZWTest {
 	public void testScalarGreaterThan() {
 		double[][] data = {{0}, {1}, {2}, {3}, {0}};
 		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
-		assertLosslessCompression((ColGroupDDC) cg);
+		assertTrue(cg instanceof ColGroupDDCLZW);
 
 		ScalarOperator op = new RightScalarOperator(GreaterThan.getGreaterThanFnObject(), 1.5);
 		AColGroup res = cg.scalarOperation(op);
@@ -626,45 +626,60 @@ public class ColGroupDDCLZWTest {
 		MatrixBlock ret = new MatrixBlock(5, 1, false);
 		ret.allocateDenseBlock();
 		res.decompressToDenseBlock(ret.getDenseBlock(), 0, 5);
+
+		assertEquals(0.0, ret.get(0, 0), 0.0);
+		assertEquals(0.0, ret.get(1, 0), 0.0);
+		assertEquals(1.0, ret.get(2, 0), 0.0);
+		assertEquals(1.0, ret.get(3, 0), 0.0);
+		assertEquals(0.0, ret.get(4, 0), 0.0);
 	}
 
 	@Test
 	public void testScalarPlus() {
 		double[][] data = {{1}, {2}, {3}, {4}, {5}};
 		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
-		assertLosslessCompression((ColGroupDDC) cg);
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
 		ScalarOperator op = new RightScalarOperator(Plus.getPlusFnObject(), 10.0);
 		AColGroup res = cg.scalarOperation(op);
-		assertTrue("Should remain ColGroupDDCLZW after shift", res instanceof ColGroupDDCLZW);
+		assertTrue("Should remain LZW after shift", res instanceof ColGroupDDCLZW);
 
 		MatrixBlock ret = new MatrixBlock(5, 1, false);
 		ret.allocateDenseBlock();
 		res.decompressToDenseBlock(ret.getDenseBlock(), 0, 5);
+
+		assertEquals(11.0, ret.get(0, 0), 0.0);
+		assertEquals(12.0, ret.get(1, 0), 0.0);
+		assertEquals(13.0, ret.get(2, 0), 0.0);
+		assertEquals(14.0, ret.get(3, 0), 0.0);
+		assertEquals(15.0, ret.get(4, 0), 0.0);
 	}
 
 	@Test
 	public void testScalarMinus() {
 		double[][] data = {{11}, {12}, {13}, {14}, {15}};
 		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
-		assertLosslessCompression((ColGroupDDC) cg);
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
 		ScalarOperator op = new RightScalarOperator(Minus.getMinusFnObject(), 10.0);
 		AColGroup res = cg.scalarOperation(op);
-		assertTrue("Should remain ColGroupDDCLZW after shift", res instanceof ColGroupDDCLZW);
+		assertTrue("Should remain LZW after shift", res instanceof ColGroupDDCLZW);
 
 		MatrixBlock ret = new MatrixBlock(5, 1, false);
 		ret.allocateDenseBlock();
 		res.decompressToDenseBlock(ret.getDenseBlock(), 0, 5);
+
+		assertEquals(1.0, ret.get(0, 0), 0.0);
+		assertEquals(2.0, ret.get(1, 0), 0.0);
+		assertEquals(3.0, ret.get(2, 0), 0.0);
+		assertEquals(4.0, ret.get(3, 0), 0.0);
+		assertEquals(5.0, ret.get(4, 0), 0.0);
 	}
 
 	@Test
 	public void testUnaryOperationSqrt() {
 		double[][] data = {{1}, {4}, {9}, {16}, {25}};
 		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
-		assertLosslessCompression((ColGroupDDC) cg);
 		assertTrue(cg instanceof ColGroupDDCLZW);
 
 		UnaryOperator op = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinCode.SQRT));
@@ -673,6 +688,12 @@ public class ColGroupDDCLZWTest {
 		MatrixBlock ret = new MatrixBlock(5, 1, false);
 		ret.allocateDenseBlock();
 		res.decompressToDenseBlock(ret.getDenseBlock(), 0, 5);
+
+		assertEquals(1.0, ret.get(0, 0), 0.01);
+		assertEquals(2.0, ret.get(1, 0), 0.01);
+		assertEquals(3.0, ret.get(2, 0), 0.01);
+		assertEquals(4.0, ret.get(3, 0), 0.01);
+		assertEquals(5.0, ret.get(4, 0), 0.01);
 	}
 
 	@Test
@@ -694,7 +715,6 @@ public class ColGroupDDCLZWTest {
 		double[][] data = {{1}, {2}, {3}, {4}, {5}};
 		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		assertTrue(cg instanceof ColGroupDDCLZW);
-		assertLosslessCompression((ColGroupDDC) cg);
 
 		ScalarOperator op = new RightScalarOperator(Multiply.getMultiplyFnObject(), 2.0);
 		AColGroup res = cg.scalarOperation(op);
@@ -702,6 +722,12 @@ public class ColGroupDDCLZWTest {
 		MatrixBlock ret = new MatrixBlock(5, 1, false);
 		ret.allocateDenseBlock();
 		res.decompressToDenseBlock(ret.getDenseBlock(), 0, 5);
+
+		assertEquals(2.0, ret.get(0, 0), 0.0);
+		assertEquals(4.0, ret.get(1, 0), 0.0);
+		assertEquals(6.0, ret.get(2, 0), 0.0);
+		assertEquals(8.0, ret.get(3, 0), 0.0);
+		assertEquals(10.0, ret.get(4, 0), 0.0);
 	}
 
 	@Test
@@ -709,7 +735,6 @@ public class ColGroupDDCLZWTest {
 		double[][] data = {{2}, {4}, {6}, {8}, {10}};
 		AColGroup cg = compressForTest(data, AColGroup.CompressionType.DDCLZW);
 		assertTrue(cg instanceof ColGroupDDCLZW);
-		assertLosslessCompression((ColGroupDDC) cg);
 
 		ScalarOperator op = new RightScalarOperator(Divide.getDivideFnObject(), 2.0);
 		AColGroup res = cg.scalarOperation(op);
@@ -717,6 +742,12 @@ public class ColGroupDDCLZWTest {
 		MatrixBlock ret = new MatrixBlock(5, 1, false);
 		ret.allocateDenseBlock();
 		res.decompressToDenseBlock(ret.getDenseBlock(), 0, 5);
+
+		assertEquals(1.0, ret.get(0, 0), 0.0);
+		assertEquals(2.0, ret.get(1, 0), 0.0);
+		assertEquals(3.0, ret.get(2, 0), 0.0);
+		assertEquals(4.0, ret.get(3, 0), 0.0);
+		assertEquals(5.0, ret.get(4, 0), 0.0);
 	}
 
 	@Test

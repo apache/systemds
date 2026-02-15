@@ -19,9 +19,11 @@
 
 package org.apache.sysds.test.component.compress.colgroup.DDCLZW;
 
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDCLZW;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Test;
 
 import java.util.stream.IntStream;
@@ -115,6 +117,27 @@ public class ColGroupDDCLZWBenchmark {
 		System.out.println();
 	}
 
+	private static void assertSameDecompression(AColGroup a, AColGroup b, int nRows, int nCols) {
+		MatrixBlock mba = new MatrixBlock(nRows, nCols, false);
+		mba.allocateDenseBlock();
+		a.decompressToDenseBlock(mba.getDenseBlock(), 0, nRows);
+
+		MatrixBlock mbb = new MatrixBlock(nRows, nCols, false);
+		mbb.allocateDenseBlock();
+		b.decompressToDenseBlock(mbb.getDenseBlock(), 0, nRows);
+
+		double[] da = mba.getDenseBlockValues();
+		double[] db = mbb.getDenseBlockValues();
+
+		if(da.length != db.length)
+			throw new AssertionError("Length mismatch: " + da.length + " vs " + db.length);
+
+		for(int i = 0; i < da.length; i++) {
+			if(da[i] != db[i])
+				throw new AssertionError("Decompression mismatch at flat index " + i + " : " + da[i] + " != " + db[i]);
+		}
+	}
+
 	private BenchmarkResult runBenchmark(int[] mapping, int nUnique, int nCols) {
 		BenchmarkResult result = new BenchmarkResult();
 		result.dataSize = mapping.length;
@@ -122,6 +145,11 @@ public class ColGroupDDCLZWBenchmark {
 		result.entropy = calculateEntropy(mapping, nUnique);
 
 		ColGroupDDC ddc = ColGroupDDCLZWTestUtils.createDDC(mapping, nUnique, nCols);
+		ColGroupDDCLZW ddclzwTest = (ColGroupDDCLZW) ddc.convertToDDCLZW();
+		ColGroupDDC ddclzwTestAsDDC = (ColGroupDDC) ddclzwTest.convertToDDC();
+
+		assertSameDecompression(ddc, ddclzwTest, mapping.length, nCols);
+		assertSameDecompression(ddc, ddclzwTestAsDDC, mapping.length, nCols);
 
 		// Measure DDC memory (though the method calculates how much storage it would take if the data structure were written to disk)
 		result.ddcMemoryBytes = ddc.estimateInMemorySize();

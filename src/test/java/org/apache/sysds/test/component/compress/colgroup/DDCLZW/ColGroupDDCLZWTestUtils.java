@@ -1,4 +1,4 @@
-package org.apache.sysds.test.component.compress.colgroup.DDCLZW;/*
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,6 +16,8 @@ package org.apache.sysds.test.component.compress.colgroup.DDCLZW;/*
  * specific language governing permissions and limitations
  * under the License.
  */
+
+package org.apache.sysds.test.component.compress.colgroup.DDCLZW;
 
 import org.apache.sysds.runtime.compress.colgroup.ColGroupDDC;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;

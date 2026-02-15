@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 REQUIRED_CONFIG_KEYS = {"name"}
-VALID_WORKLOADS = {"math", "summarization", "reasoning", "json_extraction"}
+VALID_WORKLOADS = {"math", "summarization", "reasoning", "json_extraction", "embeddings"}
 VALID_BACKENDS = {"openai", "ollama", "vllm", "mlx"}
 
 

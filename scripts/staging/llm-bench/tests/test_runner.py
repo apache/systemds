@@ -35,7 +35,7 @@ class TestValidateConfig:
             validate_config({"name": "math", "dataset": {"n_samples": 0}})
 
     def test_all_valid_workloads(self):
-        for name in ["math", "summarization", "reasoning", "json_extraction"]:
+        for name in ["math", "summarization", "reasoning", "json_extraction", "embeddings"]:
             validate_config({"name": name})  # should not raise
 
 

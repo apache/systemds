@@ -70,7 +70,7 @@ check_dependencies
 check_runner
 
 # Workloads
-WORKLOADS=("math" "reasoning" "summarization" "json_extraction")
+WORKLOADS=("math" "reasoning" "summarization" "json_extraction" "embeddings")
 
 # Parse arguments
 BACKEND_ARG="${1:-local}"

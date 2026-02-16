@@ -16,8 +16,8 @@
 #   ./scripts/run_all_benchmarks.sh openai
 #   ./scripts/run_all_benchmarks.sh ollama llama3.2
 #   ./scripts/run_all_benchmarks.sh vllm Qwen/Qwen2.5-3B-Instruct
-#   ./scripts/run_all_benchmarks.sh systemds mistralai/Mistral-7B-Instruct-v0.3
-#   ./scripts/run_all_benchmarks.sh gpu                    # vllm + systemds
+#   ./scripts/run_all_benchmarks.sh systemds Qwen/Qwen2.5-3B-Instruct  # runs c=1 + c=4
+#   ./scripts/run_all_benchmarks.sh gpu                    # vllm + systemds (c=1 + c=4)
 #   ./scripts/run_all_benchmarks.sh all                    # every backend
 #   ./scripts/run_all_benchmarks.sh local                  # ollama only
 # =============================================================================
@@ -131,16 +131,18 @@ run_benchmark() {
     local backend=$1
     local workload=$2
     local model=$3
+    local suffix="${4:-}"        # optional dir suffix (e.g. "_c4")
+    local extra_run_flags="${5:-}" # optional extra flags for this run
 
-    # Build output directory name: backend_model_workload or backend_workload
+    # Build output directory name: backend_model_workload[_suffix] or backend_workload[_suffix]
     local model_short=""
     if [ -n "$model" ] && [ "$backend" != "openai" ] && [ "$backend" != "ollama" ]; then
         model_short="_$(short_model_name "$model")"
     fi
-    local output_dir="results/${backend}${model_short}_${workload}"
+    local output_dir="results/${backend}${model_short}_${workload}${suffix}"
 
     TOTAL_RUNS=$((TOTAL_RUNS + 1))
-    echo -e "${YELLOW}  ${backend} / ${workload}${model:+ ($model)}${NC}"
+    echo -e "${YELLOW}  ${backend} / ${workload}${suffix}${model:+ ($model)}${NC}"
 
     local model_flag=""
     if [ -n "$model" ]; then
@@ -151,14 +153,14 @@ run_benchmark() {
         --backend "$backend" \
         --workload "workloads/${workload}/config.yaml" \
         $model_flag \
-        $EXTRA_FLAGS \
+        $EXTRA_FLAGS $extra_run_flags \
         --out "$output_dir" 2>&1; then
         echo -e "${GREEN}    -> ${output_dir}${NC}"
         return 0
     else
         echo -e "${RED}    FAILED${NC}"
         FAILED_RUNS=$((FAILED_RUNS + 1))
-        FAILED_LIST="${FAILED_LIST}\n  - ${backend}/${workload}"
+        FAILED_LIST="${FAILED_LIST}\n  - ${backend}/${workload}${suffix}"
         return 1
     fi
 }
@@ -166,10 +168,12 @@ run_benchmark() {
 run_backend() {
     local backend=$1
     local model=$2
+    local suffix="${3:-}"
+    local extra_run_flags="${4:-}"
     echo ""
-    echo -e "${BLUE}--- ${backend} (${model:-default model}) ---${NC}"
+    echo -e "${BLUE}--- ${backend}${suffix} (${model:-default model}) ---${NC}"
     for workload in "${WORKLOADS[@]}"; do
-        run_benchmark "$backend" "$workload" "$model" || true
+        run_benchmark "$backend" "$workload" "$model" "$suffix" "$extra_run_flags" || true
     done
 }
 
@@ -202,20 +206,27 @@ case "$BACKEND_ARG" in
         run_backend "vllm" "$(resolve_model vllm "$MODEL_ARG")"
         ;;
     systemds)
-        run_backend "systemds" "$(resolve_model systemds "$MODEL_ARG")"
+        # Run SystemDS with both c=1 (sequential) and c=4 (concurrent)
+        local_model="$(resolve_model systemds "$MODEL_ARG")"
+        echo -e "${YELLOW}SystemDS mode: running c=1 and c=4 for ${local_model}${NC}"
+        run_backend "systemds" "$local_model" "" "--concurrency 1"
+        run_backend "systemds" "$local_model" "_c4" "--concurrency 4"
         ;;
     gpu)
         # GPU backends: vLLM + SystemDS with same model for comparison
         local_model="$(resolve_model vllm "$MODEL_ARG")"
         echo -e "${YELLOW}GPU comparison mode: vLLM + SystemDS with ${local_model}${NC}"
         run_backend "vllm" "$local_model"
-        run_backend "systemds" "$local_model"
+        run_backend "systemds" "$local_model" "" "--concurrency 1"
+        run_backend "systemds" "$local_model" "_c4" "--concurrency 4"
         ;;
     all)
         run_backend "openai" "$MODEL_ARG"
         run_backend "ollama" "$(resolve_model ollama "$MODEL_ARG")"
         run_backend "vllm" "$(resolve_model vllm "$MODEL_ARG")"
-        run_backend "systemds" "$(resolve_model systemds "$MODEL_ARG")"
+        local_model="$(resolve_model systemds "$MODEL_ARG")"
+        run_backend "systemds" "$local_model" "" "--concurrency 1"
+        run_backend "systemds" "$local_model" "_c4" "--concurrency 4"
         ;;
     local|*)
         run_backend "ollama" "$(resolve_model ollama "$MODEL_ARG")"

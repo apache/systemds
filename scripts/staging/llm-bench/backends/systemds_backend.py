@@ -17,7 +17,8 @@ _DEFAULT_LIB_DIR = _PROJECT_ROOT / "target" / "lib"
 # DML script that uses the native llmPredict built-in
 _DML_SCRIPT = (
     'X = read("prompts", data_type="frame")\n'
-    'R = llmPredict(target=X, url=$url, max_tokens=$mt, temperature=$temp, top_p=$tp)\n'
+    'R = llmPredict(target=X, url=$url, max_tokens=$mt,'
+    ' temperature=$temp, top_p=$tp, concurrency=$conc)\n'
     'write(R, "results")'
 )
 
@@ -74,15 +75,16 @@ class SystemDSBackend:
         max_tokens = int(config.get("max_tokens", config.get("max_output_tokens", 512)))
         temperature = float(config.get("temperature", 0.0))
         top_p = float(config.get("top_p", 0.9))
+        concurrency = int(os.environ.get("SYSTEMDS_CONCURRENCY", "1"))
 
         jvm = self._jvm
 
-        # Build script arguments
         args = self._gateway.jvm.java.util.HashMap()
         args.put("$url", self.inference_url)
         args.put("$mt", str(max_tokens))
         args.put("$temp", str(temperature))
         args.put("$tp", str(top_p))
+        args.put("$conc", str(concurrency))
 
         # Prepare DML script with llmPredict built-in
         inputs = self._gateway.new_array(jvm.java.lang.String, 1)

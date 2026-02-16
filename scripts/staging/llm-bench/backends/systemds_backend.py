@@ -1,19 +1,17 @@
-"""SystemDS JMLC backend -- routes inference through the full Java JMLC path.
+"""SystemDS JMLC backend -- routes inference through the full DML pipeline.
 
 Data flow:
   Python (benchmark runner)
     -> Py4J -> Java JMLC Connection
-    -> PreparedScript.generateBatchWithMetrics()
-    -> LLMCallback (Py4J callback) -> Python llm_worker.py (HuggingFace)
+    -> prepareScript() with real DML: llmPredict(target=X, url=..., ...)
+    -> SystemDS compiler pipeline: parser -> hops -> lops -> instructions
+    -> ParameterizedBuiltinCPInstruction executes HTTP POST to inference server
     -> results collected in a SystemDS FrameBlock
     -> back to Python
 
-All prompts are submitted as a Java String[] and processed through
-PreparedScript.generateBatchWithMetrics(), which returns a typed
-FrameBlock with columns [prompt, generated_text, time_ms, input_tokens,
-output_tokens].  This is the SystemDS-native path: a unified Java API
-for managing LLM inference with structured, columnar results and
-built-in per-prompt metrics.
+The DML script uses the native llmPredict() parameterized built-in, which
+goes through the full SystemDS compilation pipeline.  The inference server
+can be any OpenAI-compatible endpoint (llm_server.py, vLLM, Ollama, etc.).
 """
 
 import logging
@@ -29,7 +27,13 @@ logger = logging.getLogger(__name__)
 _PROJECT_ROOT = Path(__file__).resolve().parents[4]  # llm-bench -> staging -> scripts -> systemds
 _DEFAULT_SYSTEMDS_JAR = _PROJECT_ROOT / "target" / "SystemDS.jar"
 _DEFAULT_LIB_DIR = _PROJECT_ROOT / "target" / "lib"
-_DEFAULT_WORKER_SCRIPT = _PROJECT_ROOT / "src" / "main" / "python" / "llm_worker.py"
+
+# DML script that uses the native llmPredict built-in
+_DML_SCRIPT = (
+    'X = read("prompts", data_type="frame")\n'
+    'R = llmPredict(target=X, url=$url, max_tokens=$mt, temperature=$temp, top_p=$tp)\n'
+    'write(R, "results")'
+)
 
 
 def _build_classpath(systemds_jar: str, lib_dir: str) -> str:
@@ -48,7 +52,8 @@ class SystemDSBackend:
 
         self.systemds_jar = os.environ.get("SYSTEMDS_JAR", str(_DEFAULT_SYSTEMDS_JAR))
         self.lib_dir = os.environ.get("SYSTEMDS_LIB", str(_DEFAULT_LIB_DIR))
-        self.worker_script = os.environ.get("LLM_WORKER_SCRIPT", str(_DEFAULT_WORKER_SCRIPT))
+        self.inference_url = os.environ.get(
+            "LLM_INFERENCE_URL", "http://localhost:8080/v1/completions")
 
         if not Path(self.systemds_jar).exists():
             raise RuntimeError(
@@ -56,24 +61,10 @@ class SystemDSBackend:
                 "Build with: mvn package -DskipTests  "
                 "Or set SYSTEMDS_JAR env var."
             )
-        if not Path(self.worker_script).exists():
-            raise RuntimeError(
-                f"LLM worker script not found at {self.worker_script}. "
-                "Or set LLM_WORKER_SCRIPT env var."
-            )
 
         classpath = _build_classpath(self.systemds_jar, self.lib_dir)
         logger.info("Starting JVM with classpath: %s ... (%d JARs)",
                      self.systemds_jar, classpath.count(os.pathsep) + 1)
-
-        # Ensure the current virtualenv (if any) is on PATH so that
-        # Connection.findPythonCommand() finds the correct python3 with
-        # torch/transformers installed.
-        import sys
-        venv_bin = Path(sys.executable).parent
-        current_path = os.environ.get("PATH", "")
-        if str(venv_bin) not in current_path:
-            os.environ["PATH"] = str(venv_bin) + os.pathsep + current_path
 
         from py4j.java_gateway import JavaGateway, GatewayParameters, launch_gateway
 
@@ -87,53 +78,59 @@ class SystemDSBackend:
             gateway_parameters=GatewayParameters(port=self._gw_port)
         )
 
-        logger.info("Creating JMLC Connection and loading model '%s' ...", model)
-        jvm = self._gateway.jvm
-        self._jvm = jvm
+        self._jvm = self._gateway.jvm
+        self._connection = self._jvm.org.apache.sysds.api.jmlc.Connection()
 
-        self._connection = jvm.org.apache.sysds.api.jmlc.Connection()
-        self._llm_callback = self._connection.loadModel(model, self.worker_script)
-
-        # Set up a PreparedScript with the LLM worker attached so we can
-        # call generateBatchWithMetrics() -- the FrameBlock-based API.
-        dummy_script = "x = 1;"
-        self._ps = self._connection.prepareScript(
-            dummy_script,
-            self._gateway.new_array(jvm.java.lang.String, 0),
-            self._gateway.new_array(jvm.java.lang.String, 0),
-        )
-        self._ps.setLLMWorker(self._llm_callback)
-
-        logger.info("SystemDS JMLC backend initialized (model=%s)", model)
+        logger.info("SystemDS JMLC backend initialized (model=%s, url=%s)",
+                     model, self.inference_url)
 
     def generate(self, prompts: List[str], config: Dict[str, Any]) -> List[Dict[str, Any]]:
         max_tokens = int(config.get("max_tokens", config.get("max_output_tokens", 512)))
         temperature = float(config.get("temperature", 0.0))
         top_p = float(config.get("top_p", 0.9))
-        batched = config.get("batched", True)
 
+        jvm = self._jvm
+
+        # Build script arguments
+        args = self._gateway.jvm.java.util.HashMap()
+        args.put("$url", self.inference_url)
+        args.put("$mt", str(max_tokens))
+        args.put("$temp", str(temperature))
+        args.put("$tp", str(top_p))
+
+        # Prepare DML script with llmPredict built-in
+        inputs = self._gateway.new_array(jvm.java.lang.String, 1)
+        inputs[0] = "prompts"
+        outputs = self._gateway.new_array(jvm.java.lang.String, 1)
+        outputs[0] = "results"
+
+        ps = self._connection.prepareScript(_DML_SCRIPT, args, inputs, outputs)
+
+        # Build prompt frame (n x 1 String[][])
         n = len(prompts)
-        java_prompts = self._gateway.new_array(self._jvm.java.lang.String, n)
+        prompt_data = self._gateway.new_array(jvm.java.lang.String, n, 1)
         for i, p in enumerate(prompts):
-            java_prompts[i] = p
+            prompt_data[i][0] = p
+        ps.setFrame("prompts", prompt_data)
 
+        # Execute through full SystemDS pipeline
         t0 = time.perf_counter()
-        frame_block = self._ps.generateBatchWithMetrics(
-            java_prompts, max_tokens, temperature, top_p, batched
-        )
+        rv = ps.executeScript()
         t1 = time.perf_counter()
         batch_wall_ms = (t1 - t0) * 1000.0
+
+        frame_block = rv.getFrameBlock("results")
 
         results = []
         for i in range(n):
             text = str(frame_block.get(i, 1))
-            java_time_ms = int(str(frame_block.get(i, 2)))
+            per_prompt_ms = int(str(frame_block.get(i, 2)))
             input_tokens = int(str(frame_block.get(i, 3)))
             output_tokens = int(str(frame_block.get(i, 4)))
 
             results.append({
                 "text": text,
-                "latency_ms": float(java_time_ms),
+                "latency_ms": float(per_prompt_ms),
                 "extra": {
                     "usage": {
                         "input_tokens": input_tokens,
@@ -143,10 +140,9 @@ class SystemDSBackend:
                 },
             })
 
-        mode = "batched" if batched else "sequential"
         logger.info(
-            "FrameBlock %s: %d prompts in %.1fms (%.1fms/prompt)",
-            mode, n, batch_wall_ms, batch_wall_ms / n,
+            "llmPredict: %d prompts in %.1fms (%.1fms/prompt)",
+            n, batch_wall_ms, batch_wall_ms / n,
         )
         return results
 

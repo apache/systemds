@@ -21,35 +21,43 @@
 
 source("scripts/nn/optim/shampoo.dml") as shampoo
 
-X_main = matrix("0.12 -0.45  0.33  0.08 -0.19 -0.27  0.41 -0.05  0.22  0.14  0.09 -0.31  0.26 -0.48  0.37 0.44  0.06 -0.29  0.15 -0.11 -0.38  0.24  0.17 -0.07  0.52",
-  rows=5, cols=5
-)
-
-dX_main = matrix("0.015 -0.022  0.008  0.031 -0.012 -0.009  0.027 -0.014  0.005  0.019 0.021 -0.006  0.011 -0.025  0.004 -0.018  0.013 -0.029  0.007 -0.016 0.010 -0.017  0.024 -0.003  0.028",
-  rows=5, cols=5
-)
-
-epsilon = 1e-4
-lr = 0.005
-diagThreshold = 10
-rootEvery = 10
-preconEvery = 10
-
-for (diagThreshold in seq(1, 10, 9)){
-  X = X_main
-  dX = dX_main
-  #[preconL, preconR, useDiag] = shampoo::init(X, epsilon, diagThreshold)
-  #[X, preconL, preconR] = shampoo::update(X, dX, lr, preconL, preconR, useDiag)
-
-  #[preconL, preconR, momentum, useDiag] = shampoo::init_momentum(X, epsilon, diagThreshold)
-  #[X, preconL, preconR, momentum] = shampoo::update_momentum(X, dX, lr, preconL, preconR, momentum, useDiag)
-
-  [preconL, preconR, stepCounter, bufferL, bufferR, momentum, preconLInvPowerRoot, preconRInvPowerRoot, useDiag] = shampoo::init_heuristic(X, epsilon, diagThreshold)
-  [X, preconL, preconR, momentum, stepCounter, bufferL, bufferR, preconLInvPowerRoot, preconRInvPowerRoot] = shampoo::update_heuristic(X, dX, lr, preconL, preconR, momentum, stepCounter, rootEvery, preconEvery, bufferL, bufferR, preconLInvPowerRoot, preconRInvPowerRoot, useDiag)
-  
-  print("diagThreshold: " + diagThreshold)
-  print(X)
-}
-
-
-
+test_update = function(matrix[double] X, matrix[double] dX, string type, double epsilon, double lr, int diagThreshold, int rootEvery, int preconEvery)
+  /*
+  * Applies a single optimization update step to X using a selected Shampoo variant.
+  *
+  * This helper initializes the required optimizer state for the given `type`
+  * (preconditioners, momentum, buffers, cached inverse roots, etc.) and then
+  * performs exactly one update with gradient `dX`.
+  *
+  * Note:
+  *  - This function re-initializes the optimizer state on every call, so it is
+  *    intended for isolated single-step tests/benchmarks, not for training loops
+  *    where state must persist across steps.
+  *
+  * Inputs:
+  *  - X: Current parameter matrix
+  *  - dX: Gradient matrix (same shape as X)
+  *  - type: Optimizer variant ("shampoo", "shampoo_momentum", "shampoo_heuristic")
+  *  - epsilon: Numerical stability constant
+  *  - lr: Learning rate
+  *  - diagThreshold: Threshold controlling diagonal vs full preconditioning
+  *  - rootEvery: (heuristic only) Recompute inverse-root frequency
+  *  - preconEvery: (heuristic only) Preconditioner update frequency
+  *
+  * Output:
+  *  - XUpdated: Updated parameter matrix after one optimizer step
+  */
+    return(matrix[double] XUpdated){
+      if (type=="shampoo"){
+        [preconL, preconR, useDiag] = shampoo::init(X, epsilon, diagThreshold)
+        [XUpdated, preconL, preconR] = shampoo::update(X, dX, lr, preconL, preconR, useDiag)
+      }
+      else if (type=="shampoo_momentum"){
+        [preconL, preconR, momentum, useDiag] = shampoo::init_momentum(X, epsilon, diagThreshold)
+        [XUpdated, preconL, preconR, momentum] = shampoo::update_momentum(X, dX, lr, preconL, preconR, momentum, useDiag)
+      }
+      else if (type=="shampoo_heuristic"){
+        [preconL, preconR, stepCounter, bufferL, bufferR, momentum, preconLInvPowerRoot, preconRInvPowerRoot, useDiag] = shampoo::init_heuristic(X, epsilon, diagThreshold)
+        [XUpdated, preconL, preconR, momentum, stepCounter, bufferL, bufferR, preconLInvPowerRoot, preconRInvPowerRoot] = shampoo::update_heuristic(X, dX, lr, preconL, preconR, momentum, stepCounter, rootEvery, preconEvery, bufferL, bufferR, preconLInvPowerRoot, preconRInvPowerRoot, useDiag)
+      }
+    }

@@ -230,7 +230,7 @@ with SystemDSContext() as sds:
     rootEvery=10
     preconEvery=10
     
-    shampooUtils = sds.source("src/test/scripts/applications/nn/component/shampoo_test2.dml", "shampooUtils")
+    shampooUtils = sds.source("src/test/scripts/applications/nn/component/shampoo_test_utils.dml", "shampooUtils")
 
     for shampoo_type in ["shampoo", "shampoo_momentum", "shampoo_heuristic"]:
         for diagThreshold in (1, 10):

@@ -43,6 +43,9 @@ maven-eclipse.xml
 # vscode
 .vscode
 
+# Metals (Scala LSP)
+.metals/
+
 # checksum files
 *.crc
 

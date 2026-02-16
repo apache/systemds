@@ -241,23 +241,23 @@ public class PreparedScript implements ConfigurableAPI
 		if (_llmWorker == null) {
 			throw new DMLException("No LLM worker set. Call setLLMWorker() first.");
 		}
-		//generate text for each prompt with timing and token counts
+		//batch all prompts in a single GPU call via the Python worker
 		String[][] data = new String[prompts.length][5];
-		for (int i = 0; i < prompts.length; i++) {
+		try {
 			long start = System.nanoTime();
-			String json = _llmWorker.generateWithTokenCount(prompts[i], maxNewTokens, temperature, topP);
-			long elapsed = (System.nanoTime() - start) / 1_000_000;
-			//parse JSON response: {"text": "...", "input_tokens": N, "output_tokens": M}
-			try {
-				org.apache.wink.json4j.JSONObject obj = new org.apache.wink.json4j.JSONObject(json);
+			String jsonArray = _llmWorker.generateBatch(prompts, maxNewTokens, temperature, topP);
+			long totalElapsed = (System.nanoTime() - start) / 1_000_000;
+			org.apache.wink.json4j.JSONArray results = new org.apache.wink.json4j.JSONArray(jsonArray);
+			for (int i = 0; i < prompts.length; i++) {
+				org.apache.wink.json4j.JSONObject obj = results.getJSONObject(i);
 				data[i][0] = prompts[i];
 				data[i][1] = obj.getString("text");
-				data[i][2] = String.valueOf(elapsed);
+				data[i][2] = String.valueOf(obj.getInt("time_ms"));
 				data[i][3] = String.valueOf(obj.getInt("input_tokens"));
 				data[i][4] = String.valueOf(obj.getInt("output_tokens"));
-			} catch (Exception e) {
-				throw new DMLException("Failed to parse LLM worker response: " + e.getMessage());
 			}
+		} catch (Exception e) {
+			throw new DMLException("Failed to parse batched LLM response: " + e.getMessage());
 		}
 		//create FrameBlock with schema
 		ValueType[] schema = new ValueType[]{

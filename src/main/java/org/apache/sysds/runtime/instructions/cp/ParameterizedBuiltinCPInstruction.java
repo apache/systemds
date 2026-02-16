@@ -29,6 +29,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -341,58 +345,37 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 				Double.parseDouble(params.get("temperature")) : 0.0;
 			double topP = params.containsKey("top_p") ?
 				Double.parseDouble(params.get("top_p")) : 0.9;
+			int concurrency = params.containsKey("concurrency") ?
+				Integer.parseInt(params.get("concurrency")) : 1;
 
 			int n = prompts.getNumRows();
 			String[][] data = new String[n][];
+
+			// build one callable per prompt
+			List<Callable<String[]>> tasks = new ArrayList<>(n);
 			for(int i = 0; i < n; i++) {
 				String prompt = prompts.get(i, 0).toString();
-				long t0 = System.nanoTime();
-				try {
-					JSONObject req = new JSONObject();
-					req.put("prompt", prompt);
-					req.put("max_tokens", maxTokens);
-					req.put("temperature", temperature);
-					req.put("top_p", topP);
+				tasks.add(() -> callLlmEndpoint(prompt, url, maxTokens, temperature, topP));
+			}
 
-					HttpURLConnection conn = (HttpURLConnection)
-						new URI(url).toURL().openConnection();
-					conn.setRequestMethod("POST");
-					conn.setRequestProperty("Content-Type", "application/json");
-					conn.setConnectTimeout(10_000);
-					conn.setReadTimeout(120_000);
-					conn.setDoOutput(true);
-
-					try(OutputStream os = conn.getOutputStream()) {
-						os.write(req.toString().getBytes(StandardCharsets.UTF_8));
-					}
-
-					if(conn.getResponseCode() != 200)
-						throw new DMLRuntimeException(
-							"LLM endpoint returned HTTP " + conn.getResponseCode());
-
-					String body;
-					try(InputStream is = conn.getInputStream()) {
-						body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-					}
-					conn.disconnect();
-
-					JSONObject resp = new JSONObject(body);
-					String text = resp.getJSONArray("choices")
-						.getJSONObject(0).getString("text");
-					long elapsed = (System.nanoTime() - t0) / 1_000_000;
-					int inTok = 0, outTok = 0;
-					if(resp.has("usage")) {
-						JSONObject usage = resp.getJSONObject("usage");
-						inTok = usage.has("prompt_tokens") ? usage.getInt("prompt_tokens") : 0;
-						outTok = usage.has("completion_tokens") ? usage.getInt("completion_tokens") : 0;
-					}
-					data[i] = new String[]{prompt, text,
-						String.valueOf(elapsed), String.valueOf(inTok), String.valueOf(outTok)};
+			try {
+				if(concurrency <= 1) {
+					// sequential
+					for(int i = 0; i < n; i++)
+						data[i] = tasks.get(i).call();
 				}
-				catch(DMLRuntimeException e) { throw e; }
-				catch(Exception e) {
-					throw new DMLRuntimeException("llmPredict HTTP call failed: " + e.getMessage(), e);
+				else {
+					// parallel
+					ExecutorService pool = Executors.newFixedThreadPool(
+						Math.min(concurrency, n));
+					List<Future<String[]>> futures = pool.invokeAll(tasks);
+					pool.shutdown();
+					for(int i = 0; i < n; i++)
+						data[i] = futures.get(i).get();
 				}
+			}
+			catch(Exception e) {
+				throw new DMLRuntimeException("llmPredict failed: " + e.getMessage(), e);
 			}
 
 			ValueType[] schema = {ValueType.STRING, ValueType.STRING,
@@ -568,6 +551,50 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			LOG.warn("Truncating " + data.getClass().getSimpleName() + " of size " + sb.toString() + " to " + rows + "x"
 				+ cols + ". " + "Use toString(X, rows=..., cols=...) if necessary.");
 		}
+	}
+
+	private static String[] callLlmEndpoint(String prompt, String url,
+			int maxTokens, double temperature, double topP) throws Exception {
+		long t0 = System.nanoTime();
+		JSONObject req = new JSONObject();
+		req.put("prompt", prompt);
+		req.put("max_tokens", maxTokens);
+		req.put("temperature", temperature);
+		req.put("top_p", topP);
+
+		HttpURLConnection conn = (HttpURLConnection)
+			new URI(url).toURL().openConnection();
+		conn.setRequestMethod("POST");
+		conn.setRequestProperty("Content-Type", "application/json");
+		conn.setConnectTimeout(10_000);
+		conn.setReadTimeout(120_000);
+		conn.setDoOutput(true);
+
+		try(OutputStream os = conn.getOutputStream()) {
+			os.write(req.toString().getBytes(StandardCharsets.UTF_8));
+		}
+		if(conn.getResponseCode() != 200)
+			throw new DMLRuntimeException(
+				"LLM endpoint returned HTTP " + conn.getResponseCode());
+
+		String body;
+		try(InputStream is = conn.getInputStream()) {
+			body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+		}
+		conn.disconnect();
+
+		JSONObject resp = new JSONObject(body);
+		String text = resp.getJSONArray("choices")
+			.getJSONObject(0).getString("text");
+		long elapsed = (System.nanoTime() - t0) / 1_000_000;
+		int inTok = 0, outTok = 0;
+		if(resp.has("usage")) {
+			JSONObject usage = resp.getJSONObject("usage");
+			inTok = usage.has("prompt_tokens") ? usage.getInt("prompt_tokens") : 0;
+			outTok = usage.has("completion_tokens") ? usage.getInt("completion_tokens") : 0;
+		}
+		return new String[]{prompt, text,
+			String.valueOf(elapsed), String.valueOf(inTok), String.valueOf(outTok)};
 	}
 
 	@Override

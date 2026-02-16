@@ -233,27 +233,53 @@ public class ParamservUtils {
 		return seq.ctableSeqOperations(sample, 1.0, new MatrixBlock(nsamples, nrows, true), false);
 	}
 
+//	public static ExecutionContext createExecutionContext(ExecutionContext ec,
+//		LocalVariableMap varsMap, String updFunc, String aggFunc, int k)
+//	{
+//		return createExecutionContext(ec, varsMap, updFunc, aggFunc, k, false);
+//	}
+//
+//	public static ExecutionContext createExecutionContext(ExecutionContext ec,
+//		LocalVariableMap varsMap, String updFunc, String aggFunc, int k, boolean forceExecTypeCP)
+//	{
+//		Program prog = ec.getProgram();
+//
+//		// 1. Recompile the internal program blocks
+//		recompileProgramBlocks(k, prog.getProgramBlocks(), forceExecTypeCP);
+//		// 2. Recompile the imported function blocks
+//		boolean opt = prog.getFunctionProgramBlocks(false).isEmpty();
+//		prog.getFunctionProgramBlocks(opt)
+//			.forEach((fname, fvalue) -> recompileProgramBlocks(k, fvalue.getChildBlocks(), forceExecTypeCP));
+//
+//		// 3. Copy all functions
+//		return ExecutionContextFactory.createContext(
+//			new LocalVariableMap(varsMap), copyProgramFunctions(prog));
+//	}
 	public static ExecutionContext createExecutionContext(ExecutionContext ec,
-		LocalVariableMap varsMap, String updFunc, String aggFunc, int k)
+														  LocalVariableMap varsMap, String updFunc, String aggFunc, int k)
 	{
 		return createExecutionContext(ec, varsMap, updFunc, aggFunc, k, false);
 	}
 
 	public static ExecutionContext createExecutionContext(ExecutionContext ec,
-		LocalVariableMap varsMap, String updFunc, String aggFunc, int k, boolean forceExecTypeCP)
+														  LocalVariableMap varsMap, String updFunc, String aggFunc, int k, boolean forceExecTypeCP)
 	{
 		Program prog = ec.getProgram();
 
-		// 1. Recompile the internal program blocks 
+		// 1) Recompile internal program blocks
 		recompileProgramBlocks(k, prog.getProgramBlocks(), forceExecTypeCP);
-		// 2. Recompile the imported function blocks
-		boolean opt = prog.getFunctionProgramBlocks(false).isEmpty();
-		prog.getFunctionProgramBlocks(opt)
-			.forEach((fname, fvalue) -> recompileProgramBlocks(k, fvalue.getChildBlocks(), forceExecTypeCP));
 
-		// 3. Copy all functions 
+		// 2) Recompile imported function blocks for BOTH opt=false and opt=true maps
+		for (boolean opt : new boolean[] { false, true }) {
+			prog.getFunctionProgramBlocks(opt)
+					.forEach((fname, fvalue) -> recompileProgramBlocks(k, fvalue.getChildBlocks(), forceExecTypeCP));
+		}
+
+		// 3) Copy ALL functions (both maps) into the new Program used by workers
 		return ExecutionContextFactory.createContext(
-			new LocalVariableMap(varsMap), copyProgramFunctions(prog));
+				new LocalVariableMap(varsMap),
+				copyProgramFunctions(prog)
+		);
 	}
 
 	public static List<ExecutionContext> copyExecutionContext(ExecutionContext ec, int num) {
@@ -265,17 +291,61 @@ public class ParamservUtils {
 	}
 	
 	private static Program copyProgramFunctions(Program prog) {
+//		Program newProg = new Program(prog.getDMLProg());
+//		boolean opt = prog.getFunctionProgramBlocks(false).isEmpty();
+//		for( Entry<String, FunctionProgramBlock> e : prog.getFunctionProgramBlocks(opt).entrySet() ) {
+//			String[] parts = DMLProgram.splitFunctionKey(e.getKey());
+//			FunctionProgramBlock fpb = ProgramConverter
+//				.createDeepCopyFunctionProgramBlock(e.getValue(), new HashSet<>(), new HashSet<>());
+//			fpb._namespace = parts[0];
+//			fpb._functionName = parts[1];
+//			newProg.addFunctionProgramBlock(parts[0], parts[1], fpb, opt);
+//			newProg.addProgramBlock(fpb);
+//		}
+//		return newProg;
+		LOG.warn("Entered the program");
 		Program newProg = new Program(prog.getDMLProg());
-		boolean opt = prog.getFunctionProgramBlocks(false).isEmpty();
-		for( Entry<String, FunctionProgramBlock> e : prog.getFunctionProgramBlocks(opt).entrySet() ) {
-			String[] parts = DMLProgram.splitFunctionKey(e.getKey());
-			FunctionProgramBlock fpb = ProgramConverter
-				.createDeepCopyFunctionProgramBlock(e.getValue(), new HashSet<>(), new HashSet<>());
-			fpb._namespace = parts[0];
-			fpb._functionName = parts[1];
-			newProg.addFunctionProgramBlock(parts[0], parts[1], fpb, opt);
-			newProg.addProgramBlock(fpb);
+
+		// Copy BOTH opt=false and opt=true maps
+		for (boolean opt : new boolean[] { false, true }) {
+			for (Entry<String, FunctionProgramBlock> e : prog.getFunctionProgramBlocks(opt).entrySet()) {
+				String[] parts = DMLProgram.splitFunctionKey(e.getKey());
+
+				FunctionProgramBlock fpb = ProgramConverter
+						.createDeepCopyFunctionProgramBlock(e.getValue(), new HashSet<>(), new HashSet<>());
+
+				fpb._namespace = parts[0];
+				fpb._functionName = parts[1];
+
+				newProg.addFunctionProgramBlock(parts[0], parts[1], fpb, opt);
+				newProg.addProgramBlock(fpb);
+			}
 		}
+
+		LOG.warn("=== copyProgramFunctions: function keys (opt=false) ===");
+		for (String k : newProg.getFunctionProgramBlocks(false).keySet())
+			LOG.warn("FKEY(opt=false): " + k);
+
+		LOG.warn("=== copyProgramFunctions: function keys (opt=true) ===");
+		for (String k : newProg.getFunctionProgramBlocks(true).keySet())
+			LOG.warn("FKEY(opt=true): " + k);
+
+// Quick namespace sanity check: "./scripts/..." vs "scripts/..."
+		String nsDot = "./scripts/builtin/autoencoder_2layer.dml";
+		String nsNo  = "scripts/builtin/autoencoder_2layer.dml";
+		String fn    = "train_default_layers";
+
+		try {
+			boolean hasDot = (newProg.getFunctionProgramBlock(nsDot, fn) != null);
+			boolean hasNo  = (newProg.getFunctionProgramBlock(nsNo, fn) != null);
+
+			LOG.warn("Lookup " + nsDot + "::" + fn + " => " + hasDot);
+			LOG.warn("Lookup " + nsNo  + "::" + fn + " => " + hasNo);
+		}
+		catch (Exception ex) {
+			LOG.warn("Function lookup threw: " + ex.getMessage(), ex);
+		}
+
 		return newProg;
 	}
 

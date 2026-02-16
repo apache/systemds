@@ -61,6 +61,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		pbHopMap.put(Builtins.GROUPEDAGG, ParamBuiltinOp.GROUPEDAGG);
 		pbHopMap.put(Builtins.RMEMPTY, ParamBuiltinOp.RMEMPTY);
 		pbHopMap.put(Builtins.REPLACE, ParamBuiltinOp.REPLACE);
+		pbHopMap.put(Builtins.LLMPREDICT, ParamBuiltinOp.LLMPREDICT);
 		pbHopMap.put(Builtins.LOWER_TRI, ParamBuiltinOp.LOWER_TRI);
 		pbHopMap.put(Builtins.UPPER_TRI, ParamBuiltinOp.UPPER_TRI);
 		
@@ -210,6 +211,10 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		case ORDER:
 			validateOrder(output, conditional);
 			break;
+
+		case LLMPREDICT:
+			validateLlmPredict(output, conditional);
+			break;	
 
 		case TOKENIZE:
 			validateTokenize(output, conditional);
@@ -609,6 +614,15 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		validateTransformSpec(TF_FN_PARAM_SPEC, conditional);
 
 		//set output dimensions
+		output.setDataType(DataType.FRAME);
+		output.setValueType(ValueType.STRING);
+		output.setDimensions(-1, -1);
+	}
+
+	private void validateLlmPredict(DataIdentifier output, boolean conditional) 
+	{
+		checkDataType(false, "llmPredict", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
+		checkStringParam(false, "llmPredict", "url", conditional);
 		output.setDataType(DataType.FRAME);
 		output.setValueType(ValueType.STRING);
 		output.setDimensions(-1, -1);

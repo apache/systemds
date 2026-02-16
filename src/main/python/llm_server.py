@@ -1,4 +1,5 @@
-"""Simple /v1/completions server for local HuggingFace models.
+"""Local inference server for llmPredict. Loads a HuggingFace model
+and serves it at http://localhost:PORT/v1/completions.
 
 Usage: python llm_server.py distilgpt2 --port 8080
 """

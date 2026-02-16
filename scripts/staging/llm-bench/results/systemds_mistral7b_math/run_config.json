@@ -1,0 +1,6 @@
+{
+  "backend": "systemds",
+  "backend_model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "workload": "math",
+  "concurrency": 1
+}

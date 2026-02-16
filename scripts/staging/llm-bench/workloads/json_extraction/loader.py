@@ -707,7 +707,7 @@ def accuracy_check(prediction: str, reference: str) -> bool:
     # extract JSON from prediction
     pred_dict = extract_json_from_prediction(prediction)
     
-    if pred_dict is None:
+    if pred_dict is None or not isinstance(pred_dict, dict):
         return False
     
     # check if all required fields are present

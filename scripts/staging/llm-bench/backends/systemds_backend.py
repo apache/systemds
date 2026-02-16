@@ -58,6 +58,7 @@ class SystemDSBackend:
         self._gw_port = launch_gateway(
             classpath=classpath,
             die_on_exit=True,
+            javaopts=["--add-modules=jdk.incubator.vector"],
             redirect_stdout=subprocess.sys.stdout,
             redirect_stderr=subprocess.sys.stderr,
         )

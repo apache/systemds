@@ -16,10 +16,10 @@ _DEFAULT_LIB_DIR = _PROJECT_ROOT / "target" / "lib"
 
 # DML script that uses the native llmPredict built-in
 _DML_SCRIPT = (
-    'X = read("prompts", data_type="frame")\n'
-    'R = llmPredict(target=X, url=$url, max_tokens=$mt,'
+    'prompts = read("prompts", data_type="frame")\n'
+    'results = llmPredict(target=prompts, url=$url, max_tokens=$mt,'
     ' temperature=$temp, top_p=$tp, concurrency=$conc)\n'
-    'write(R, "results")'
+    'write(results, "results")'
 )
 
 

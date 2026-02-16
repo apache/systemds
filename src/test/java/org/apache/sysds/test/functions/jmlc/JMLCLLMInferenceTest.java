@@ -21,9 +21,9 @@ public class JMLCLLMInferenceTest extends AutomatedTestBase {
 	private final static String LLM_URL = "http://localhost:8080/v1/completions";
 
 	private final static String DML_SCRIPT =
-		"X = read(\"prompts\", data_type=\"frame\")\n" +
-		"R = llmPredict(target=X, url=$url, max_tokens=$mt, temperature=$temp, top_p=$tp)\n" +
-		"write(R, \"results\")";
+		"prompts = read(\"prompts\", data_type=\"frame\")\n" +
+		"results = llmPredict(target=prompts, url=$url, max_tokens=$mt, temperature=$temp, top_p=$tp)\n" +
+		"write(results, \"results\")";
 
 	@Override
 	public void setUp() {

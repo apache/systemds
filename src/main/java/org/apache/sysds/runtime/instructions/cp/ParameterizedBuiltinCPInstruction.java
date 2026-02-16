@@ -19,6 +19,11 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -26,6 +31,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import org.apache.wink.json4j.JSONObject;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
@@ -336,43 +343,46 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 				Double.parseDouble(params.get("top_p")) : 0.9;
 
 			int n = prompts.getNumRows();
-			String[][] data = new String[n][5];
+			String[][] data = new String[n][];
 			for(int i = 0; i < n; i++) {
 				String prompt = prompts.get(i, 0).toString();
 				long t0 = System.nanoTime();
 				try {
-					org.apache.wink.json4j.JSONObject req = new org.apache.wink.json4j.JSONObject();
+					JSONObject req = new JSONObject();
 					req.put("prompt", prompt);
 					req.put("max_tokens", maxTokens);
 					req.put("temperature", temperature);
 					req.put("top_p", topP);
 
-					java.net.URL endpoint = new java.net.URI(url).toURL();
-					java.net.HttpURLConnection conn =
-						(java.net.HttpURLConnection) endpoint.openConnection();
+					HttpURLConnection conn = (HttpURLConnection)
+						new URI(url).toURL().openConnection();
 					conn.setRequestMethod("POST");
 					conn.setRequestProperty("Content-Type", "application/json");
+					conn.setConnectTimeout(10_000);
+					conn.setReadTimeout(120_000);
 					conn.setDoOutput(true);
-					conn.getOutputStream().write(
-						req.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
-					conn.getOutputStream().close();
+
+					try(OutputStream os = conn.getOutputStream()) {
+						os.write(req.toString().getBytes(StandardCharsets.UTF_8));
+					}
 
 					if(conn.getResponseCode() != 200)
 						throw new DMLRuntimeException(
 							"LLM endpoint returned HTTP " + conn.getResponseCode());
 
-					String body = new String(conn.getInputStream().readAllBytes(),
-						java.nio.charset.StandardCharsets.UTF_8);
+					String body;
+					try(InputStream is = conn.getInputStream()) {
+						body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+					}
 					conn.disconnect();
 
-					org.apache.wink.json4j.JSONObject resp =
-						new org.apache.wink.json4j.JSONObject(body);
+					JSONObject resp = new JSONObject(body);
 					String text = resp.getJSONArray("choices")
 						.getJSONObject(0).getString("text");
 					long elapsed = (System.nanoTime() - t0) / 1_000_000;
 					int inTok = 0, outTok = 0;
 					if(resp.has("usage")) {
-						org.apache.wink.json4j.JSONObject usage = resp.getJSONObject("usage");
+						JSONObject usage = resp.getJSONObject("usage");
 						inTok = usage.has("prompt_tokens") ? usage.getInt("prompt_tokens") : 0;
 						outTok = usage.has("completion_tokens") ? usage.getInt("completion_tokens") : 0;
 					}
@@ -395,7 +405,6 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			ec.setFrameOutput(output.getName(), fbout);
 			ec.releaseFrameInput(params.get("target"));
 		}
-
 
 		else if(opcode.equalsIgnoreCase(Opcodes.TRANSFORMAPPLY.toString())) {
 			// acquire locks
@@ -621,6 +630,12 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			CPOperand spec = new CPOperand(params.get("spec"), ValueType.STRING, DataType.SCALAR);
 			return Pair.of(output.getName(),
 				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, meta, spec)));
+		}
+		else if(opcode.equalsIgnoreCase(Opcodes.LLMPREDICT.toString())) {
+			CPOperand target = new CPOperand(params.get("target"), ValueType.STRING, DataType.FRAME);
+			CPOperand urlOp = getStringLiteral("url");
+			return Pair.of(output.getName(),
+				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, urlOp)));
 		}
 		else if (opcode.equalsIgnoreCase(Opcodes.NVLIST.toString()) || opcode.equalsIgnoreCase(Opcodes.AUTODIFF.toString())) {
 			List<String> names = new ArrayList<>(params.keySet());

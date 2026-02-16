@@ -57,7 +57,7 @@ def _load_toy_samples(n: int) -> List[Sample]:
 def _load_stsb_samples(n: int) -> List[Sample]:
     """Load STS-Benchmark from HuggingFace. Falls back to toy if download fails."""
     try:
-        dataset = load_dataset("mteb/stsbenchmark-sts", split="test", trust_remote_code=True)
+        dataset = load_dataset("mteb/stsbenchmark-sts", split="test")
     except Exception as e:
         logger.warning("STS-B download failed (%s), using toy dataset", e)
         return _load_toy_samples(n)

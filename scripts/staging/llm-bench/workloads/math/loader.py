@@ -54,7 +54,7 @@ def _load_toy_samples(n: int) -> List[Sample]:
 def _load_gsm8k_samples(n: int) -> List[Sample]:
     """Load GSM8K grade-school math problems. Falls back to toy if download fails."""
     try:
-        dataset = load_dataset("openai/gsm8k", "main", split="test", trust_remote_code=True)
+        dataset = load_dataset("openai/gsm8k", "main", split="test")
     except Exception as e:
         print(f"Warning: GSM8K download failed ({e}), using toy dataset")
         return _load_toy_samples(n)

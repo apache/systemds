@@ -84,7 +84,7 @@ def _load_toy_samples(n: int) -> List[Sample]:
 
 def _load_cnn_samples(n: int) -> List[Sample]:
     try:
-        dataset = load_dataset("abisee/cnn_dailymail", "3.0.0", split="test", trust_remote_code=True)
+        dataset = load_dataset("abisee/cnn_dailymail", "3.0.0", split="test")
     except Exception as e:
         logger.warning("CNN/DailyMail download failed (%s), using toy dataset", e)
         return _load_toy_samples(n)
@@ -102,7 +102,7 @@ def _load_cnn_samples(n: int) -> List[Sample]:
 
 def _load_xsum_samples(n: int) -> List[Sample]:
     try:
-        dataset = load_dataset("EdinburghNLP/xsum", split="test", trust_remote_code=True)
+        dataset = load_dataset("EdinburghNLP/xsum", split="test")
     except Exception as e:
         logger.warning("XSum download failed (%s), using toy dataset", e)
         return _load_toy_samples(n)

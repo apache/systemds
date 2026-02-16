@@ -463,8 +463,7 @@ def _load_json_struct_samples(n: int) -> List[Sample]:
     try:
         dataset = load_dataset(
             "MasterControlAIML/JSON-Unstructured-Structured", 
-            split="train",
-            trust_remote_code=True
+            split="train"
         )
     except Exception as e:
         print(f"Warning: Could not load JSON-Unstructured-Structured dataset: {e}")

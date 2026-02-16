@@ -69,7 +69,7 @@ def _load_toy_samples(n: int) -> List[Sample]:
 def _load_logiqa_samples(n: int) -> List[Sample]:
     """LogiQA multiple-choice logical reasoning. Falls back to toy if download fails."""
     try:
-        dataset = load_dataset("lucasmccabe/logiqa", split="test", trust_remote_code=True)
+        dataset = load_dataset("lucasmccabe/logiqa", split="test")
     except Exception as e:
         print(f"Warning: LogiQA download failed ({e}), using toy dataset")
         return _load_toy_samples(n)
@@ -90,7 +90,7 @@ def _load_logiqa_samples(n: int) -> List[Sample]:
 def _load_boolq_samples(n: int) -> List[Sample]:
     """BoolQ yes/no reading comprehension. Falls back to toy if download fails."""
     try:
-        dataset = load_dataset("google/boolq", split="validation", trust_remote_code=True)
+        dataset = load_dataset("google/boolq", split="validation")
     except Exception as e:
         print(f"Warning: BoolQ download failed ({e}), using toy dataset")
         return _load_toy_samples(n)

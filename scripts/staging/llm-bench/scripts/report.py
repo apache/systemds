@@ -75,24 +75,33 @@ def fmt_cost(x: Any) -> str:
     if v is None:
         return "N/A"
     if v == 0:
-        return "$0.00"
-    return f"${v:.4f}"
+        return "$0"
+    if v < 0.0001:
+        return f"${v:.6f}"
+    if v < 0.01:
+        return f"${v:.4f}"
+    return f"${v:.2f}"
 
 
-# colors for backends
+# Academic palette (Tableau 10) -- distinct, colorblind-safe, paper-ready
 BACKEND_COLORS = {
-    "openai": "#10a37f",
-    "mlx": "#ff6b6b",
-    "ollama": "#4ecdc4",
-    "vllm": "#9b59b6",
+    "openai": "#4E79A7",
+    "mlx": "#9C755F",
+    "ollama": "#59A14F",
+    "vllm": "#B07AA1",
+    "systemds": "#E15759",
+    "vllm (Mistral-7B)": "#B07AA1",
+    "vllm (Qwen2.5-3B)": "#956B8E",
+    "systemds (Mistral-7B)": "#E15759",
+    "systemds (Qwen2.5-3B)": "#C94D4F",
 }
 
-# colors for workloads
 WORKLOAD_COLORS = {
-    "math": "#3498db",
-    "reasoning": "#e74c3c",
-    "summarization": "#2ecc71",
-    "json_extraction": "#f39c12",
+    "math": "#4E79A7",
+    "reasoning": "#E15759",
+    "summarization": "#59A14F",
+    "json_extraction": "#F28E2B",
+    "embeddings": "#76B7B2",
 }
 
 
@@ -203,25 +212,33 @@ def generate_grouped_bar_chart_svg(data: Dict[str, Dict[str, float]], title: str
     return '\n'.join(svg) + '\n' + '\n'.join(legend)
 
 
+def _backend_model_key(r: Dict[str, Any]) -> str:
+    """Create a display key like 'vllm (Qwen 3B)' or 'openai' for grouping."""
+    backend = r.get("backend", "")
+    model = r.get("backend_model", "")
+    if not model or backend in ("openai", "ollama"):
+        return backend
+    short = model.split("/")[-1]
+    for suffix in ["-Instruct-v0.3", "-Instruct", "-Inst"]:
+        short = short.replace(suffix, "")
+    return f"{backend} ({short})"
+
+
 def generate_accuracy_comparison_table(rows: List[Dict[str, Any]]) -> str:
-    """Generate accuracy comparison table by workload and backend."""
-    # group by base workload and backend, take latest run only
-    # this avoids duplicates like "reasoning" and "reasoning (toy)"
+    """Generate accuracy comparison table by workload and backend+model."""
     data: Dict[str, Dict[str, Dict[str, Any]]] = {} 
     
     for r in rows:
-
         workload = r.get("workload", "")
-        backend = r.get("backend", "")
-        if not workload or not backend:
+        bm_key = _backend_model_key(r)
+        if not workload or not bm_key:
             continue
         
         if workload not in data:
             data[workload] = {}
         
-        # keep latest
-        if backend not in data[workload]:
-            data[workload][backend] = r
+        if bm_key not in data[workload]:
+            data[workload][bm_key] = r
     
     if not data:
         return ""
@@ -230,6 +247,7 @@ def generate_accuracy_comparison_table(rows: List[Dict[str, Any]]) -> str:
     backends = sorted(set(b for w in data.values() for b in w.keys()))
     
     out = ['<h2>Accuracy Comparison by Workload</h2>']
+    out.append('<p style="color:#888; font-size:13px; margin-top:-8px;">Percentage of correct answers per workload. Bold = 80%+. Hover a cell to see correct/total count.</p>')
     out.append('<table class="comparison-table">')
     out.append('<thead><tr><th>Workload</th>')
     for b in backends:
@@ -241,15 +259,17 @@ def generate_accuracy_comparison_table(rows: List[Dict[str, Any]]) -> str:
         for b in backends:
             if b in data[wl]:
                 acc = data[wl][b].get("accuracy_mean")
-                acc_count = data[wl][b].get("accuracy_count", "")
+                n = int(safe_float(data[wl][b].get("n")) or 0)
                 if acc is not None:
                     pct = acc * 100
-                    color = "#2ecc71" if pct >= 80 else "#f39c12" if pct >= 50 else "#e74c3c"
-                    out.append(f'<td style="background: {color}22; color: {color}; font-weight: bold;">{pct:.0f}%<br><small>{acc_count}</small></td>')
+                    correct = int(n * acc) if n else ""
+                    tip = f"{correct}/{n} correct" if n else ""
+                    weight = "600" if pct >= 80 else "400"
+                    out.append(f'<td style="font-weight: {weight};" title="{tip}">{pct:.0f}%</td>')
                 else:
-                    out.append('<td>-</td>')
+                    out.append('<td style="color:#bbb;">-</td>')
             else:
-                out.append('<td>-</td>')
+                out.append('<td style="color:#bbb;">-</td>')
         out.append('</tr>')
     
     out.append('</tbody></table>')
@@ -262,16 +282,14 @@ def generate_latency_comparison_table(rows: List[Dict[str, Any]]) -> str:
     data: Dict[str, Dict[str, Dict[str, Any]]] = {}
     
     for r in rows:
-
         workload = r.get("workload", "")
-        backend = r.get("backend", "")
-        if not workload or not backend:
+        bm_key = _backend_model_key(r)
+        if not workload or not bm_key:
             continue
         if workload not in data:
             data[workload] = {}
-
-        if backend not in data[workload]:
-            data[workload][backend] = r
+        if bm_key not in data[workload]:
+            data[workload][bm_key] = r
     
     if not data:
         return ""
@@ -279,7 +297,8 @@ def generate_latency_comparison_table(rows: List[Dict[str, Any]]) -> str:
     workloads = sorted(data.keys())
     backends = sorted(set(b for w in data.values() for b in w.keys()))
     
-    out = ['<h2>Latency Comparison (p50 ms)</h2>']
+    out = ['<h2>Latency Comparison (p50)</h2>']
+    out.append('<p style="color:#888; font-size:13px; margin-top:-8px;">Median response time per query. Lower is better. p50 = half of all requests completed within this time.</p>')
     out.append('<table class="comparison-table">')
     out.append('<thead><tr><th>Workload</th>')
     for b in backends:
@@ -292,11 +311,12 @@ def generate_latency_comparison_table(rows: List[Dict[str, Any]]) -> str:
             if b in data[wl]:
                 lat = safe_float(data[wl][b].get("lat_p50"))
                 if lat is not None:
-                    out.append(f'<td>{lat:.0f}ms</td>')
+                    display = f"{lat/1000:.1f}s" if lat >= 1000 else f"{lat:.0f}ms"
+                    out.append(f'<td>{display}</td>')
                 else:
-                    out.append('<td>-</td>')
+                    out.append('<td style="color:#bbb;">-</td>')
             else:
-                out.append('<td>-</td>')
+                out.append('<td style="color:#bbb;">-</td>')
         out.append('</tr>')
     
     out.append('</tbody></table>')
@@ -310,19 +330,19 @@ def generate_latency_breakdown_table(rows: List[Dict[str, Any]]) -> str:
     
     for r in rows:
         workload = r.get("workload", "")
-        backend = r.get("backend", "")
+        bm_key = _backend_model_key(r)
         ttft = r.get("ttft_mean")
         gen = r.get("gen_mean")
         
-        if not workload or not backend:
+        if not workload or not bm_key:
             continue
         if ttft is None and gen is None:
             continue
             
         if workload not in data:
             data[workload] = {}
-        if backend not in data[workload]:
-            data[workload][backend] = r
+        if bm_key not in data[workload]:
+            data[workload][bm_key] = r
     
     if not data:
         return '<p class="muted">No TTFT data available. Enable streaming mode for OpenAI to measure TTFT.</p>'
@@ -330,8 +350,8 @@ def generate_latency_breakdown_table(rows: List[Dict[str, Any]]) -> str:
     workloads = sorted(data.keys())
     backends = sorted(set(b for w in data.values() for b in w.keys()))
     
-    out = ['<h2>⏱️ Latency Breakdown (TTFT vs Generation)</h2>']
-    out.append('<p><small>Time-To-First-Token (TTFT) = prefill/prompt processing. Generation = token decoding. Only available for streaming backends.</small></p>')
+    out = ['<h2>Latency Breakdown: Prefill vs Decode</h2>']
+    out.append('<p style="color:#888; font-size:13px; margin-top:-8px;">TTFT (Time-To-First-Token) = prompt processing. Generation = token decoding. Only available for streaming backends.</p>')
     out.append('<table class="comparison-table">')
     out.append('<thead><tr><th>Workload</th><th>Backend</th><th>TTFT (ms)</th><th>Generation (ms)</th><th>Total (ms)</th><th>TTFT %</th></tr></thead><tbody>')
     
@@ -343,22 +363,16 @@ def generate_latency_breakdown_table(rows: List[Dict[str, Any]]) -> str:
                 gen = safe_float(r.get("gen_mean"))
                 total = safe_float(r.get("lat_mean"))
                 
-                ttft_str = f'{ttft:.0f}' if ttft else '-'
-                gen_str = f'{gen:.0f}' if gen else '-'
-                total_str = f'{total:.0f}' if total else '-'
+                def _fms(v):
+                    if not v:
+                        return '-'
+                    return f'{v/1000:.1f}s' if v >= 1000 else f'{v:.0f}ms'
                 
-                if ttft and gen:
-                    ttft_pct = (ttft / (ttft + gen)) * 100
-                    pct_str = f'{ttft_pct:.0f}%'
-                    # color based on TTFT proportion
-                    color = '#2ecc71' if ttft_pct < 30 else '#f39c12' if ttft_pct < 60 else '#e74c3c'
-                else:
-                    pct_str = '-'
-                    color = '#666'
+                pct_str = f'{(ttft / (ttft + gen)) * 100:.0f}%' if ttft and gen else '-'
                 
                 out.append(f'<tr><td>{html.escape(wl)}</td><td>{html.escape(b)}</td>')
-                out.append(f'<td>{ttft_str}</td><td>{gen_str}</td><td>{total_str}</td>')
-                out.append(f'<td style="color: {color}; font-weight: bold;">{pct_str}</td></tr>')
+                out.append(f'<td>{_fms(ttft)}</td><td>{_fms(gen)}</td><td>{_fms(total)}</td>')
+                out.append(f'<td>{pct_str}</td></tr>')
     
     out.append('</tbody></table>')
     return '\n'.join(out)
@@ -370,13 +384,13 @@ def generate_consistency_metrics_table(rows: List[Dict[str, Any]]) -> str:
     
     for r in rows:
         workload = r.get("workload", "")
-        backend = r.get("backend", "")
-        if not workload or not backend:
+        bm_key = _backend_model_key(r)
+        if not workload or not bm_key:
             continue
         if workload not in data:
             data[workload] = {}
-        if backend not in data[workload]:
-            data[workload][backend] = r
+        if bm_key not in data[workload]:
+            data[workload][bm_key] = r
     
     if not data:
         return ""
@@ -384,10 +398,10 @@ def generate_consistency_metrics_table(rows: List[Dict[str, Any]]) -> str:
     workloads = sorted(data.keys())
     backends = sorted(set(b for w in data.values() for b in w.keys()))
     
-    out = ['<h2>📊 Consistency Metrics (Latency Variance)</h2>']
-    out.append('<p><small>CV (Coefficient of Variation) = std/mean × 100%. Lower CV = more consistent performance.</small></p>')
+    out = ['<h2>Consistency Metrics</h2>']
+    out.append('<p style="color:#888; font-size:13px; margin-top:-8px;">How stable is response time across queries? CV (Coefficient of Variation) = std/mean. Lower = more consistent.</p>')
     out.append('<table class="comparison-table">')
-    out.append('<thead><tr><th>Workload</th><th>Backend</th><th>Mean (ms)</th><th>Std (ms)</th><th>Min (ms)</th><th>Max (ms)</th><th>CV (%)</th></tr></thead><tbody>')
+    out.append('<thead><tr><th>Workload</th><th>Backend</th><th>Mean</th><th>Std</th><th>Min</th><th>Max</th><th>CV</th></tr></thead><tbody>')
     
     for wl in workloads:
         for b in backends:
@@ -399,22 +413,17 @@ def generate_consistency_metrics_table(rows: List[Dict[str, Any]]) -> str:
                 lat_max = safe_float(r.get("lat_max"))
                 cv = safe_float(r.get("lat_cv"))
                 
-                mean_str = f'{mean:.0f}' if mean else '-'
-                std_str = f'{std:.0f}' if std else '-'
-                min_str = f'{lat_min:.0f}' if lat_min else '-'
-                max_str = f'{lat_max:.0f}' if lat_max else '-'
+                def _fmt_ms(v):
+                    if not v:
+                        return '-'
+                    return f'{v/1000:.1f}s' if v >= 1000 else f'{v:.0f}ms'
                 
-                if cv is not None:
-                    cv_str = f'{cv:.1f}%'
-                 
-                    color = '#2ecc71' if cv < 20 else '#f39c12' if cv < 50 else '#e74c3c'
-                else:
-                    cv_str = '-'
-                    color = '#666'
+                cv_str = f'{cv:.0f}%' if cv is not None else '-'
+                weight = 'font-weight:600' if cv and cv >= 50 else ''
                 
                 out.append(f'<tr><td>{html.escape(wl)}</td><td>{html.escape(b)}</td>')
-                out.append(f'<td>{mean_str}</td><td>{std_str}</td><td>{min_str}</td><td>{max_str}</td>')
-                out.append(f'<td style="color: {color}; font-weight: bold;">{cv_str}</td></tr>')
+                out.append(f'<td>{_fmt_ms(mean)}</td><td>{_fmt_ms(std)}</td><td>{_fmt_ms(lat_min)}</td><td>{_fmt_ms(lat_max)}</td>')
+                out.append(f'<td style="{weight}">{cv_str}</td></tr>')
     
     out.append('</tbody></table>')
     return '\n'.join(out)
@@ -427,14 +436,14 @@ def generate_cost_efficiency_table(rows: List[Dict[str, Any]]) -> str:
     
     for r in rows:
         workload = r.get("workload", "")
-        backend = r.get("backend", "")
-        if not workload or not backend:
+        bm_key = _backend_model_key(r)
+        if not workload or not bm_key:
             continue
         if workload not in data:
             data[workload] = {}
     
-        if backend not in data[workload]:
-            data[workload][backend] = r
+        if bm_key not in data[workload]:
+            data[workload][bm_key] = r
     
     if not data:
         return ""
@@ -442,8 +451,8 @@ def generate_cost_efficiency_table(rows: List[Dict[str, Any]]) -> str:
     workloads = sorted(data.keys())
     backends = sorted(set(b for w in data.values() for b in w.keys()))
     
-    out = ['<h2>Cost Efficiency ($ per correct answer)</h2>']
-    out.append('<p><small>Lower is better. Shows cost divided by number of correct answers. Only for OpenAI (local backends have no API cost).</small></p>')
+    out = ['<h2>Cost Efficiency</h2>']
+    out.append('<p style="color:#888; font-size:13px; margin-top:-8px;">Cost per correct answer. API cost for OpenAI, compute cost (electricity + HW) for local backends. Lower = better value.</p>')
     out.append('<table class="comparison-table">')
     out.append('<thead><tr><th>Workload</th>')
     for b in backends:
@@ -455,24 +464,21 @@ def generate_cost_efficiency_table(rows: List[Dict[str, Any]]) -> str:
         for b in backends:
             if b in data[wl]:
                 r = data[wl][b]
-                cost = safe_float(r.get("cost"))
+                api_cost = safe_float(r.get("cost")) or 0
+                compute_cost = safe_float(r.get("total_compute_cost_usd")) or 0
+                total_cost = api_cost if api_cost > 0 else compute_cost
                 acc_mean = r.get("accuracy_mean")
                 n = safe_float(r.get("n")) or 10
                 
-                if cost and cost > 0 and acc_mean is not None and acc_mean > 0:
+                if total_cost and total_cost > 0 and acc_mean is not None and acc_mean > 0:
                     correct_count = int(n * acc_mean)
-                    cost_per_correct = cost / correct_count if correct_count > 0 else None
+                    cost_per_correct = total_cost / correct_count if correct_count > 0 else None
                     if cost_per_correct is not None:
-                       
-                        color = "#2ecc71" if cost_per_correct < 0.001 else "#f39c12" if cost_per_correct < 0.01 else "#e74c3c"
-                        out.append(f'<td style="background: {color}22; color: {color}; font-weight: bold;">${cost_per_correct:.4f}</td>')
+                        out.append(f'<td>{fmt_cost(cost_per_correct)}</td>')
                     else:
-                        out.append('<td>-</td>')
-                elif b != "openai":
-                  
-                    out.append('<td style="color: #2ecc71;">$0 (local)</td>')
+                        out.append('<td style="color:#bbb;">-</td>')
                 else:
-                    out.append('<td>-</td>')
+                    out.append('<td style="color:#bbb;">-</td>')
             else:
                 out.append('<td>-</td>')
         out.append('</tr>')
@@ -490,22 +496,22 @@ def generate_cost_analysis_section(rows: List[Dict[str, Any]]) -> str:
     
     for r in rows:
         backend = r.get("backend", "")
-        cost = safe_float(r.get("cost"))
         workload = r.get("workload", "")
         acc = r.get("accuracy_mean")
         n = safe_float(r.get("n")) or 10
         lat = safe_float(r.get("lat_p50"))
         
-        if backend == "openai" and cost and cost > 0:
+        row_cost = safe_float(r.get("cost")) or 0
+        if backend == "openai" and row_cost > 0:
             openai_costs.append({
                 "workload": workload,
-                "cost": cost,
+                "cost": row_cost,
                 "accuracy": acc,
                 "n": n,
                 "latency": lat,
                 "total_tokens": r.get("total_tokens"),
             })
-        elif backend in ["ollama", "mlx", "vllm"]:
+        elif backend in ["ollama", "mlx", "vllm", "systemds"]:
             local_runs.append({
                 "backend": backend,
                 "workload": workload,
@@ -520,7 +526,8 @@ def generate_cost_analysis_section(rows: List[Dict[str, Any]]) -> str:
     if not openai_costs:
         return ""
     
-    out = ['<h2>💰 Cost Analysis: Cloud vs Local Inference</h2>']
+    out = ['<h2>Cost Analysis: Cloud vs Local Inference</h2>']
+    out.append('<p style="color:#888; font-size:13px; margin-top:-8px;">OpenAI API costs vs estimated electricity + hardware amortization for local GPU inference.</p>')
     
   
     total_openai_cost = sum(c["cost"] for c in openai_costs)
@@ -533,7 +540,7 @@ def generate_cost_analysis_section(rows: List[Dict[str, Any]]) -> str:
 
     out.append('''
     <div class="cost-card cloud">
-        <h3>☁️ Cloud (OpenAI API)</h3>
+        <h3>Cloud (OpenAI API)</h3>
         <div class="cost-stats">
     ''')
    
@@ -549,10 +556,10 @@ def generate_cost_analysis_section(rows: List[Dict[str, Any]]) -> str:
     out.append('''
         </div>
         <div class="pros-cons">
-            <div class="pros">✅ Highest accuracy</div>
-            <div class="pros">✅ No hardware needed</div>
-            <div class="cons">❌ Per-query costs</div>
-            <div class="cons">❌ Network latency</div>
+            <div class="pros">+ Highest accuracy</div>
+            <div class="pros">+ No hardware needed</div>
+            <div class="cons">- Per-query costs</div>
+            <div class="cons">- Network latency</div>
         </div>
     </div>
     ''')
@@ -560,10 +567,10 @@ def generate_cost_analysis_section(rows: List[Dict[str, Any]]) -> str:
  
     out.append('''
     <div class="cost-card local">
-        <h3>🖥️ Local Inference</h3>
+        <h3>Local Inference</h3>
         <div class="cost-stats">
     ''')
-    out.append(f'<div class="stat"><span class="label">API Cost:</span> <span class="value highlight">$0</span></div>')
+    out.append(f'<div class="stat"><span class="label">API Cost:</span> <span class="value">$0</span></div>')
     # compute total electricity and hardware costs from local runs' metrics
     local_electricity = 0.0
     local_hw_cost = 0.0
@@ -594,24 +601,33 @@ def generate_cost_analysis_section(rows: List[Dict[str, Any]]) -> str:
     out.append('</div>')  
     
   
-    out.append('<h3>📊 Cost Projection (1000 queries)</h3>')
+    out.append('<h3>Cost Projection (1,000 queries)</h3>')
     out.append('<table class="comparison-table">')
     out.append('<thead><tr><th>Backend</th><th>Est. Cost (1000 queries)</th><th>Notes</th></tr></thead>')
     out.append('<tbody>')
     
 
     projected_1k = cost_per_query * 1000
-    out.append(f'<tr><td>OpenAI (gpt-4.1-mini)</td><td style="color: #e74c3c; font-weight: bold;">${projected_1k:.2f}</td><td>Based on current usage</td></tr>')
+    out.append(f'<tr><td>OpenAI (gpt-4.1-mini)</td><td>${projected_1k:.2f}</td><td>Based on current usage (API cost)</td></tr>')
     
-
-    out.append('<tr><td>Ollama (local)</td><td style="color: #2ecc71; font-weight: bold;">~$0.01-0.05</td><td>Electricity (~50W) + HW amortization</td></tr>')
-    out.append('<tr><td>MLX (Apple Silicon)</td><td style="color: #2ecc71; font-weight: bold;">~$0.01-0.05</td><td>Electricity (~30W) + HW amortization</td></tr>')
-    out.append('<tr><td>vLLM (GPU server)</td><td style="color: #f39c12; font-weight: bold;">~$5-20</td><td>Cloud GPU: ~$2-3/hour (H100)</td></tr>')
+    local_backend_costs: Dict[str, List[float]] = {}
+    for r in local_runs:
+        b = r.get("backend", "unknown")
+        tc = safe_float(r.get("total_compute_cost_usd")) or 0
+        n = safe_float(r.get("n")) or 10
+        if tc > 0 and n > 0:
+            local_backend_costs.setdefault(b, []).append(tc / n)
+    
+    for b in sorted(local_backend_costs.keys()):
+        per_query_costs = local_backend_costs[b]
+        avg_per_query = sum(per_query_costs) / len(per_query_costs)
+        proj = avg_per_query * 1000
+        out.append(f'<tr><td>{html.escape(b)}</td><td>${proj:.2f}</td><td>Electricity + HW amortization</td></tr>')
 
     out.append('</tbody></table>')
 
-    out.append('<p class="muted"><small>Note: Local costs estimated using --power-draw-w and --hardware-cost flags. '
-               'Default estimates: MacBook ~50W, electricity ~$0.30/kWh (EU avg), HW amortized over 15000 hours.</small></p>')
+    out.append('<p class="muted"><small>Note: Projections based on actual measured compute costs per query from benchmark runs '
+               '(electricity + hardware amortization via --power-draw-w and --hardware-cost flags).</small></p>')
     
     return '\n'.join(out)
 
@@ -686,129 +702,71 @@ def generate_scatter_plot_svg(data: List[Tuple[float, float, str, str]],
 
 
 def generate_summary_section(rows: List[Dict[str, Any]]) -> str:
-    """Generate comprehensive summary statistics section."""
-  
-    backends = set(r.get("backend") for r in rows if r.get("backend"))
-    workloads = set(r.get("workload") for r in rows if r.get("workload"))
-    models = set(r.get("backend_model") for r in rows if r.get("backend_model"))
+    """Generate a clean, minimal summary overview."""
+
+    backends = sorted(set(r.get("backend") for r in rows if r.get("backend")))
+    workloads = sorted(set(r.get("workload") for r in rows if r.get("workload")))
+    models = sorted(set(str(m) for m in (r.get("backend_model") for r in rows) if m))
     total_runs = len(rows)
-    
 
-    costs = [safe_float(r.get("cost")) for r in rows if r.get("backend") == "openai" and safe_float(r.get("cost"))]
-    total_cost = sum(costs) if costs else 0
-    runs_with_cost = len(costs)
-    avg_cost = total_cost / runs_with_cost if runs_with_cost > 0 else 0
-    
-    latencies = [safe_float(r.get("lat_p50")) for r in rows if safe_float(r.get("lat_p50")) is not None]
-    avg_latency = sum(latencies) / len(latencies) if latencies else 0
-    min_latency = min(latencies) if latencies else 0
-    max_latency = max(latencies) if latencies else 0
-    
+    api_costs = [safe_float(r.get("cost")) for r in rows
+                 if r.get("backend") == "openai" and safe_float(r.get("cost"))]
+    total_api = sum(api_costs) if api_costs else 0
+    total_compute = sum(safe_float(r.get("total_compute_cost_usd")) or 0
+                        for r in rows if r.get("backend") != "openai")
 
-    acc_by_workload: Dict[str, List[float]] = {}
+    latencies = [safe_float(r.get("lat_p50")) for r in rows
+                 if safe_float(r.get("lat_p50")) is not None]
+    avg_lat = sum(latencies) / len(latencies) if latencies else 0
+
+    acc_by_wl: Dict[str, List[float]] = {}
     for r in rows:
         wl = r.get("workload", "")
         acc = r.get("accuracy_mean")
         if wl and acc is not None:
-            if wl not in acc_by_workload:
-                acc_by_workload[wl] = []
-            acc_by_workload[wl].append(acc * 100)
-    
-    best_workload = ""
-    worst_workload = ""
-    best_acc = 0
-    worst_acc = 100
-    for wl, accs in acc_by_workload.items():
-        avg = sum(accs) / len(accs)
-        if avg > best_acc:
-            best_acc = avg
-            best_workload = wl
-        if avg < worst_acc:
-            worst_acc = avg
-            worst_workload = wl
-    
-    out = ['<div class="summary-section">']
-    out.append('<h2>📊 Summary Statistics</h2>')
-    out.append('<div class="summary-grid">')
-    
-    
-    out.append('''
-    <div class="summary-card">
-        <div class="card-header">OVERVIEW</div>
-        <div class="card-content">
-    ''')
-    out.append(f'<div class="stat-row"><span class="stat-label">Total Runs:</span> <span class="stat-value">{total_runs}</span></div>')
-    out.append(f'<div class="stat-row"><span class="stat-label">Workloads:</span> <span class="stat-value">{", ".join(sorted(workloads))}</span></div>')
-    out.append(f'<div class="stat-row"><span class="stat-label">Models:</span> <span class="stat-value">{", ".join(sorted(str(m) for m in models if m))}</span></div>')
-    out.append(f'<div class="stat-row"><span class="stat-label">Backends:</span> <span class="stat-value">{", ".join(sorted(backends))}</span></div>')
-    out.append('</div></div>')
-    
+            acc_by_wl.setdefault(wl, []).append(acc * 100)
 
-    out.append('''
-    <div class="summary-card">
-        <div class="card-header">💰 COST</div>
-        <div class="card-content">
-    ''')
-    out.append(f'<div class="stat-row"><span class="stat-label">Total Cost:</span> <span class="stat-value">${total_cost:.4f}</span></div>')
-    out.append(f'<div class="stat-row"><span class="stat-label">Runs with Cost:</span> <span class="stat-value">{runs_with_cost}/{total_runs}</span></div>')
-    out.append(f'<div class="stat-row"><span class="stat-label">Avg Cost/Run:</span> <span class="stat-value">${avg_cost:.4f}</span></div>')
-    out.append('</div></div>')
-    
- 
-    out.append('''
-    <div class="summary-card">
-        <div class="card-header">🎯 ACCURACY</div>
-        <div class="card-content">
-    ''')
-    out.append(f'<div class="stat-row"><span class="stat-label">Best Workload:</span> <span class="stat-value">{best_workload} ({best_acc:.1f}%)</span></div>')
-    out.append(f'<div class="stat-row"><span class="stat-label">Hardest Workload:</span> <span class="stat-value">{worst_workload} ({worst_acc:.1f}%)</span></div>')
-    out.append('</div></div>')
-    
-    
-    out.append('''
-    <div class="summary-card">
-        <div class="card-header">⚡ LATENCY</div>
-        <div class="card-content">
-    ''')
-    out.append(f'<div class="stat-row"><span class="stat-label">Avg Latency:</span> <span class="stat-value">{avg_latency:.2f} ms</span></div>')
-    out.append(f'<div class="stat-row"><span class="stat-label">Min:</span> <span class="stat-value">{min_latency:.2f} ms</span></div>')
-    out.append(f'<div class="stat-row"><span class="stat-label">Max:</span> <span class="stat-value">{max_latency:.2f} ms</span></div>')
-    out.append('</div></div>')
-    
-    out.append('</div>') 
-    
-  
-    out.append('<h2>📈 Visualizations</h2>')
-    out.append('<div class="viz-grid">')
-    
-    
-    accuracy_bars = []
-    for wl, accs in sorted(acc_by_workload.items()):
-        avg = sum(accs) / len(accs)
-        color = WORKLOAD_COLORS.get(wl, "#999")
-        accuracy_bars.append((wl, avg, color))
-    
-    out.append('<div class="viz-container">')
-    out.append(generate_bar_chart_svg(accuracy_bars, "Accuracy by Workload", width=350, height=250, value_suffix="%"))
+    best_wl = max(acc_by_wl, key=lambda w: sum(acc_by_wl[w])/len(acc_by_wl[w]), default="")
+    worst_wl = min(acc_by_wl, key=lambda w: sum(acc_by_wl[w])/len(acc_by_wl[w]), default="")
+    best_pct = sum(acc_by_wl[best_wl])/len(acc_by_wl[best_wl]) if best_wl else 0
+    worst_pct = sum(acc_by_wl[worst_wl])/len(acc_by_wl[worst_wl]) if worst_wl else 0
+
+    def _fmt_lat(ms):
+        return f"{ms/1000:.1f}s" if ms >= 1000 else f"{ms:.0f}ms"
+
+    out = ['''
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px;">
+    ''']
+
+    cards = [
+        ("Runs", str(total_runs), f"{len(workloads)} workloads, {len(backends)} backends"),
+        ("Avg Latency", _fmt_lat(avg_lat), f"across all {total_runs} runs"),
+        ("Best Accuracy", f"{best_pct:.0f}%", best_wl),
+        ("Total Cost", f"${total_api + total_compute:.2f}", f"${total_api:.2f} API + ${total_compute:.2f} compute"),
+    ]
+
+    for title, value, subtitle in cards:
+        out.append(f'''
+        <div style="background: white; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+            <div style="font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">{title}</div>
+            <div style="font-size: 28px; font-weight: 700; color: #1a1a2e;">{value}</div>
+            <div style="font-size: 12px; color: #999; margin-top: 4px;">{subtitle}</div>
+        </div>
+        ''')
+
     out.append('</div>')
-    
-   
-    scatter_data = []
-    for r in rows:
-        cost = safe_float(r.get("cost"))
-        acc = r.get("accuracy_mean")
-        wl = r.get("workload", "")
-        if cost and cost > 0 and acc is not None and wl:
-            color = WORKLOAD_COLORS.get(wl, "#999")
-            scatter_data.append((cost, acc * 100, wl, color))
-    
-    out.append('<div class="viz-container">')
-    out.append(generate_scatter_plot_svg(scatter_data, "Cost vs Accuracy", "Cost ($)", "Accuracy (%)", width=450, height=250))
-    out.append('</div>')
-    
-    out.append('</div>')  
-    out.append('</div>') 
-    
+
+    # Compact metadata line
+    out.append(f'''
+    <div style="background: #f8f9fa; border-radius: 8px; padding: 14px 18px; margin-bottom: 28px; font-size: 13px; color: #555; line-height: 1.7;">
+        <b>Models:</b> {", ".join(models)}<br>
+        <b>Backends:</b> {", ".join(backends)}<br>
+        <b>Workloads:</b> {", ".join(workloads)}
+        &nbsp;&mdash;&nbsp; easiest: <b>{best_wl} ({best_pct:.0f}%)</b>,
+        hardest: <b>{worst_wl} ({worst_pct:.0f}%)</b>
+    </div>
+    ''')
+
     return '\n'.join(out)
 
 
@@ -818,55 +776,17 @@ def generate_summary_cards(rows: List[Dict[str, Any]]) -> str:
 
 
 def generate_charts_section(rows: List[Dict[str, Any]]) -> str:
-    """Generate all charts."""
-    out = ['<h2>Performance Charts</h2>', '<div class="charts-grid">']
-    
-    
+    """Generate a single throughput chart (accuracy/latency are already in comparison tables)."""
     latest: Dict[str, Dict[str, Dict[str, Any]]] = {}
     for r in rows:
         wl = r.get("workload", "")
-        be = r.get("backend", "")
+        be = _backend_model_key(r)
         if not wl or not be:
             continue
-        if wl not in latest:
-            latest[wl] = {}
-        latest[wl][be] = r
-    
-    
-    accuracy_data: Dict[str, Dict[str, float]] = {}
-    for wl, backends in latest.items():
-        accuracy_data[wl] = {}
-        for be, r in backends.items():
-            acc = r.get("accuracy_mean")
-            if acc is not None:
-                accuracy_data[wl][be] = acc * 100
-    
-    if accuracy_data:
-        out.append('<div class="chart-container">')
-        out.append(generate_grouped_bar_chart_svg(
-            accuracy_data, "Accuracy by Workload (%)", 
-            BACKEND_COLORS, value_suffix="%"
-        ))
-        out.append('</div>')
-    
-   
-    latency_data: Dict[str, Dict[str, float]] = {}
-    for wl, backends in latest.items():
-        latency_data[wl] = {}
-        for be, r in backends.items():
-            lat = safe_float(r.get("lat_p50"))
-            if lat is not None:
-                latency_data[wl][be] = lat / 1000 
-    
-    if latency_data:
-        out.append('<div class="chart-container">')
-        out.append(generate_grouped_bar_chart_svg(
-            latency_data, "Latency by Workload (p50, seconds)",
-            BACKEND_COLORS, value_suffix="s"
-        ))
-        out.append('</div>')
-    
-  
+        latest.setdefault(wl, {})
+        if be not in latest[wl]:
+            latest[wl][be] = r
+
     throughput_data: Dict[str, Dict[str, float]] = {}
     for wl, backends in latest.items():
         throughput_data[wl] = {}
@@ -874,25 +794,164 @@ def generate_charts_section(rows: List[Dict[str, Any]]) -> str:
             thr = safe_float(r.get("thr"))
             if thr is not None:
                 throughput_data[wl][be] = thr
-    
-    if throughput_data:
-        out.append('<div class="chart-container">')
-        out.append(generate_grouped_bar_chart_svg(
-            throughput_data, "Throughput by Workload (req/s)",
-            BACKEND_COLORS, value_suffix=" req/s"
-        ))
-        out.append('</div>')
-    
+
+    if not throughput_data:
+        return ""
+
+    out = ['<h2>Throughput</h2>']
+    out.append('<p style="color:#888; font-size:13px; margin-top:-8px;">Requests per second. Higher is better. Measures end-to-end query processing speed.</p>')
+    out.append('<div class="charts-grid">')
+    out.append('<div class="chart-container">')
+    out.append(generate_grouped_bar_chart_svg(
+        throughput_data, "Throughput by Workload (req/s)",
+        BACKEND_COLORS, value_suffix=" req/s"
+    ))
+    out.append('</div>')
     out.append('</div>')
     return '\n'.join(out)
 
 
+def generate_head_to_head_section(rows: List[Dict[str, Any]]) -> str:
+    """Generate minimal head-to-head comparison: vLLM vs SystemDS JMLC."""
+
+    by_model: Dict[str, Dict[Tuple[str, str], Dict[str, Any]]] = {}
+    for r in rows:
+        backend = r.get("backend", "")
+        model = r.get("backend_model", "")
+        wl = r.get("workload", "")
+        if backend not in ("vllm", "systemds") or not model or not wl:
+            continue
+        short = model.split("/")[-1]
+        for s in ["-Instruct-v0.3", "-Instruct"]:
+            short = short.replace(s, "")
+        by_model.setdefault(short, {})[(wl, backend)] = r
+
+    if not by_model:
+        return ""
+
+    out = []
+    out.append('''
+    <div style="margin: 32px 0;">
+    <h2 style="margin-bottom: 4px;">Framework Comparison: vLLM vs SystemDS JMLC</h2>
+    <p style="color: #666; margin-top: 0; font-size: 14px;">
+        Same model, same NVIDIA H100 GPU, same prompts.
+        Isolates the cost of the Py4J bridge in SystemDS.
+    </p>
+    ''')
+
+    for model_name in sorted(by_model.keys()):
+        combos = by_model[model_name]
+        workloads = sorted(set(wl for wl, _ in combos.keys()))
+
+        # Compute averages for the summary
+        overheads = []
+        for wl in workloads:
+            vr = combos.get((wl, "vllm"))
+            sr = combos.get((wl, "systemds"))
+            if vr and sr:
+                vl = safe_float(vr.get("lat_p50")) or 0
+                sl = safe_float(sr.get("lat_p50")) or 0
+                if vl > 0:
+                    overheads.append(sl / vl)
+        avg_overhead = sum(overheads) / len(overheads) if overheads else 0
+
+        # Find max latency for bar scaling
+        max_lat = 1
+        for wl in workloads:
+            for be in ("vllm", "systemds"):
+                r = combos.get((wl, be))
+                if r:
+                    v = safe_float(r.get("lat_p50")) or 0
+                    if v > max_lat:
+                        max_lat = v
+
+        out.append(f'''
+        <div style="background: #f8f9fa; border-radius: 10px; padding: 24px; margin: 16px 0;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px;">
+            <h3 style="margin: 0; font-size: 17px;">{html.escape(model_name)}</h3>
+            <span style="font-size: 24px; font-weight: 700; color: #444;">{avg_overhead:.1f}x
+                <span style="font-size: 12px; font-weight: 400; color: #999;">avg overhead</span>
+            </span>
+        </div>
+        ''')
+
+        out.append('''
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <thead>
+            <tr style="border-bottom: 1px solid #dee2e6; text-align: left;">
+                <th style="padding: 8px 12px; width: 130px; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.3px;">Workload</th>
+                <th style="padding: 8px 12px; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.3px;">Latency (p50)</th>
+                <th style="padding: 8px 6px; width: 70px; text-align: right; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.3px;">Overhead</th>
+                <th style="padding: 8px 6px; width: 110px; text-align: center; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.3px;">Accuracy</th>
+            </tr>
+        </thead>
+        <tbody>
+        ''')
+
+        for wl in workloads:
+            vr = combos.get((wl, "vllm"))
+            sr = combos.get((wl, "systemds"))
+            vl = safe_float(vr.get("lat_p50")) if vr else 0
+            sl = safe_float(sr.get("lat_p50")) if sr else 0
+            va = (vr.get("accuracy_mean") or 0) * 100 if vr else 0
+            sa = (sr.get("accuracy_mean") or 0) * 100 if sr else 0
+
+            def _fmt_lat(ms):
+                if not ms:
+                    return "-"
+                return f"{ms/1000:.1f}s" if ms >= 1000 else f"{ms:.0f}ms"
+
+            ratio = sl / vl if vl > 0 else 0
+
+            vl_pct = (vl / max_lat) * 100 if max_lat else 0
+            sl_pct = (sl / max_lat) * 100 if max_lat else 0
+
+            acc_html = f'{va:.0f}% vs {sa:.0f}%'
+
+            out.append(f'''
+            <tr style="border-bottom: 1px solid #f0f0f0;">
+                <td style="padding: 10px 12px; font-weight: 600;">{html.escape(wl)}</td>
+                <td style="padding: 10px 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                        <span style="width: 55px; font-size: 11px; color: #4E79A7; font-weight: 600;">vLLM</span>
+                        <div style="flex: 1; background: #e8eef4; border-radius: 3px; height: 12px;">
+                            <div style="width: {vl_pct:.1f}%; background: #4E79A7; border-radius: 3px; height: 12px;"></div>
+                        </div>
+                        <span style="width: 55px; font-size: 12px; text-align: right; color: #555;">{_fmt_lat(vl)}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="width: 55px; font-size: 11px; color: #E15759; font-weight: 600;">SystemDS</span>
+                        <div style="flex: 1; background: #fae8e8; border-radius: 3px; height: 12px;">
+                            <div style="width: {sl_pct:.1f}%; background: #E15759; border-radius: 3px; height: 12px;"></div>
+                        </div>
+                        <span style="width: 55px; font-size: 12px; text-align: right; color: #555;">{_fmt_lat(sl)}</span>
+                    </div>
+                </td>
+                <td style="padding: 10px 6px; text-align: right; font-size: 16px; font-weight: 700; color: #444;">{ratio:.1f}x</td>
+                <td style="padding: 10px 6px; text-align: center; font-size: 12px; color: #666;">{acc_html}</td>
+            </tr>
+            ''')
+
+        out.append('</tbody></table>')
+        out.append('</div>')  # card
+
+    out.append('''
+    <p style="color: #999; font-size: 12px; margin-top: 8px;">
+        <b>Overhead</b> = SystemDS latency / vLLM latency. Same model produces same accuracy;
+        small differences are from non-deterministic generation.
+        The overhead measures the Py4J Java-Python bridge cost that SystemDS adds
+        in exchange for Java ecosystem integration.
+    </p>
+    </div>
+    ''')
+
+    return '\n'.join(out)
+
 
 def fmt_cost_if_real(r: Dict[str, Any]) -> str:
-    cost = r.get("cost")
-    backend = r.get("backend", "")
-    if backend == "openai" and cost is not None:
-        return fmt_cost(cost)
+    api_cost = safe_float(r.get("cost")) or 0
+    if api_cost > 0:
+        return fmt_cost(api_cost)
     return "$0"
 
 def fmt_cost_per_1m_if_real(r: Dict[str, Any]) -> str:
@@ -1182,7 +1241,7 @@ def main() -> int:
     }}
     .container {{ max-width: 100%; margin: 0 auto; }}
     h1 {{ margin: 0 0 8px 0; color: #1a1a2e; }}
-    h2 {{ margin: 30px 0 15px 0; color: #1a1a2e; border-bottom: 2px solid #eee; padding-bottom: 8px; }}
+    h2 {{ margin: 36px 0 12px 0; color: #1a1a2e; border-bottom: 1px solid #e8e8e8; padding-bottom: 8px; font-size: 20px; }}
     h3 {{ margin: 20px 0 10px 0; color: #333; }}
     .meta {{ color: #666; margin-bottom: 24px; font-size: 14px; }}
     
@@ -1201,71 +1260,15 @@ def main() -> int:
     .card-value {{ font-size: 24px; font-weight: bold; color: #1a1a2e; }}
     .card-label {{ font-size: 12px; color: #666; margin-top: 4px; }}
     
-    /* Summary Section */
-    .summary-section {{
-        background: #1a1a2e;
-        padding: 24px;
-        border-radius: 12px;
-        margin-bottom: 30px;
-        color: white;
+    @media (max-width: 900px) {{
+        div[style*="grid-template-columns: repeat(4"] {{
+            grid-template-columns: repeat(2, 1fr) !important;
+        }}
     }}
-    .summary-section h2 {{
-        color: white;
-        border-bottom: 1px solid rgba(255,255,255,0.2);
-        margin: 0 0 20px 0;
-    }}
-    .summary-grid {{
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 16px;
-        margin-bottom: 30px;
-    }}
-    .summary-card {{
-        background: rgba(255,255,255,0.1);
-        padding: 16px;
-        border-radius: 8px;
-    }}
-    .card-header {{
-        font-size: 11px;
-        font-weight: 600;
-        color: rgba(255,255,255,0.7);
-        margin-bottom: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }}
-    .card-content {{
-        font-size: 12px;
-    }}
-    .stat-row {{
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 6px;
-    }}
-    .stat-label {{
-        color: rgba(255,255,255,0.8);
-    }}
-    .stat-value {{
-        font-weight: 600;
-        color: white;
-    }}
-    .viz-grid {{
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 24px;
-    }}
-    .viz-container {{
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        min-height: 280px;
-    }}
-    
-    @media (max-width: 1200px) {{
-        .summary-grid {{ grid-template-columns: repeat(2, 1fr); }}
-        .viz-grid {{ grid-template-columns: 1fr; }}
-    }}
-    @media (max-width: 768px) {{
-        .summary-grid {{ grid-template-columns: 1fr; }}
+    @media (max-width: 500px) {{
+        div[style*="grid-template-columns: repeat(4"] {{
+            grid-template-columns: 1fr !important;
+        }}
     }}
     
     .charts-grid {{
@@ -1287,21 +1290,28 @@ def main() -> int:
         background: white;
         border-radius: 8px;
         overflow: hidden;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
         margin-bottom: 24px;
+        font-size: 13px;
     }}
     .comparison-table th, .comparison-table td {{
-        padding: 12px 16px;
+        padding: 10px 14px;
         text-align: center;
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid #f0f0f0;
     }}
     .comparison-table th {{
-        background: #f8f9fa;
+        background: #fafbfc;
         font-weight: 600;
-        color: #1a1a2e;
+        color: #555;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
     }}
     .comparison-table td:first-child {{
         text-align: left;
+    }}
+    .comparison-table tbody tr:hover {{
+        background: #f8f9fa;
     }}
     
     /* Cost Analysis Section */
@@ -1314,44 +1324,39 @@ def main() -> int:
     .cost-card {{
         background: white;
         padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }}
-    .cost-card.cloud {{
-        border-left: 4px solid #3498db;
-    }}
-    .cost-card.local {{
-        border-left: 4px solid #2ecc71;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        border-left: 3px solid #dee2e6;
     }}
     .cost-card h3 {{
-        margin: 0 0 16px 0;
-        font-size: 16px;
+        margin: 0 0 14px 0;
+        font-size: 15px;
+        color: #333;
     }}
     .cost-stats {{
-        margin-bottom: 16px;
+        margin-bottom: 12px;
     }}
     .cost-stats .stat {{
         display: flex;
         justify-content: space-between;
-        padding: 6px 0;
-        border-bottom: 1px solid #f0f0f0;
+        padding: 5px 0;
+        border-bottom: 1px solid #f5f5f5;
+        font-size: 13px;
     }}
     .cost-stats .label {{
-        color: #666;
+        color: #888;
     }}
     .cost-stats .value {{
         font-weight: 600;
-        color: #1a1a2e;
-    }}
-    .cost-stats .value.highlight {{
-        color: #2ecc71;
-        font-size: 18px;
+        color: #333;
     }}
     .pros-cons {{
         font-size: 12px;
+        color: #888;
+        margin-top: 8px;
     }}
-    .pros {{ color: #2ecc71; margin: 4px 0; }}
-    .cons {{ color: #e74c3c; margin: 4px 0; }}
+    .pros {{ margin: 3px 0; }}
+    .cons {{ margin: 3px 0; }}
     
     @media (max-width: 768px) {{
         .cost-analysis-grid {{ grid-template-columns: 1fr; }}
@@ -1375,16 +1380,16 @@ def main() -> int:
         margin: 0;
     }}
     .btn-small {{
-        padding: 6px 12px;
-        background: #3498db;
-        color: white;
-        border: none;
+        padding: 5px 10px;
+        background: #e9ecef;
+        color: #555;
+        border: 1px solid #dee2e6;
         border-radius: 4px;
         cursor: pointer;
-        font-size: 11px;
-        margin-left: 8px;
+        font-size: 10px;
+        margin-left: 6px;
     }}
-    .btn-small:hover {{ background: #2980b9; }}
+    .btn-small:hover {{ background: #dee2e6; }}
     .full-table {{ 
         border-collapse: collapse; 
         width: max-content;
@@ -1406,7 +1411,7 @@ def main() -> int:
         font-size: 8px;
     }}
     .full-table tr:nth-child(even) {{ background: #fafafa; }}
-    .full-table tr:hover {{ background: #f0f7ff; }}
+    .full-table tr:hover {{ background: #f5f5f5; }}
     
     code {{ 
         background: #f1f3f4; 
@@ -1415,35 +1420,19 @@ def main() -> int:
         font-size: 10px;
     }}
     
-    /* Print/Export buttons */
-    .toolbar {{
-        display: flex;
-        gap: 10px;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
-    }}
     .btn {{
-        padding: 10px 20px;
-        background: #3498db;
-        color: white;
-        border: none;
-        border-radius: 6px;
+        padding: 6px 14px;
+        background: #e9ecef;
+        color: #555;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
         cursor: pointer;
-        font-size: 14px;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-        gap: 6px;
+        font-size: 12px;
     }}
-    .btn:hover {{ background: #2980b9; }}
-    .btn-green {{ background: #2ecc71; }}
-    .btn-green:hover {{ background: #27ae60; }}
-    .btn-purple {{ background: #9b59b6; }}
-    .btn-purple:hover {{ background: #8e44ad; }}
+    .btn:hover {{ background: #dee2e6; }}
     
-    /* Print styles for better screenshot/print */
     @media print {{
-        .toolbar {{ display: none !important; }}
+        div[style*="display: flex; gap: 8px"] {{ display: none !important; }}
         body {{ 
             padding: 10px; 
             background: white;
@@ -1515,16 +1504,16 @@ def main() -> int:
         border-left: 3px solid #ccc;
     }}
     .sample-item.correct {{
-        background: #e8f5e9;
-        border-left-color: #4caf50;
+        background: #f2f7f1;
+        border-left-color: #59A14F;
     }}
     .sample-item.incorrect {{
-        background: #ffebee;
-        border-left-color: #f44336;
+        background: #fdf2f2;
+        border-left-color: #E15759;
     }}
     .sample-item.unknown {{
-        background: #fff8e1;
-        border-left-color: #ff9800;
+        background: #fef8ef;
+        border-left-color: #F28E2B;
     }}
     .sample-header {{
         display: flex;
@@ -1556,25 +1545,22 @@ def main() -> int:
 </head>
 <body>
   <div class="container">
-    <h1>systemds-bench-gpt Benchmark Report</h1>
-    <div class="meta">Generated: {gen_ts} | Total Runs: {len(rows)}</div>
+    <h1 style="margin-bottom: 4px;">LLM Benchmark Report</h1>
+    <p style="color: #666; font-size: 14px; margin: 0 0 4px 0;">
+        Compares LLM inference backends (OpenAI API, Ollama, vLLM, SystemDS JMLC)
+        across accuracy, latency, throughput, and cost.
+    </p>
+    <div class="meta">Generated: {gen_ts} | {len(rows)} runs</div>
     
-    <div class="toolbar">
-      <button class="btn" onclick="window.print()">
-        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/><path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/></svg>
-        Print Report
-      </button>
-      <button class="btn btn-green" onclick="exportTableToCSV('all-runs', 'benchmark_all_runs.csv')">
-        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
-        Export CSV
-      </button>
-      <button class="btn btn-purple" onclick="copyTableToClipboard('all-runs')">
-        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
-        Copy Table
-      </button>
+    <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+      <button class="btn" onclick="window.print()" style="font-size:12px;">Print</button>
+      <button class="btn" onclick="exportTableToCSV('all-runs', 'benchmark_all_runs.csv')" style="font-size:12px;">Export CSV</button>
+      <button class="btn" onclick="copyTableToClipboard('all-runs')" style="font-size:12px;">Copy Table</button>
     </div>
     
     {generate_summary_cards(rows)}
+    
+    {generate_head_to_head_section(rows_sorted)}
     
     {generate_accuracy_comparison_table(rows_sorted)}
     

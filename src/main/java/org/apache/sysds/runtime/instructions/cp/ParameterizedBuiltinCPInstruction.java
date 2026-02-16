@@ -154,7 +154,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		}
 		else if(opcode.equals(Opcodes.TRANSFORMAPPLY.toString()) || opcode.equals(Opcodes.TRANSFORMDECODE.toString())
 			|| opcode.equalsIgnoreCase(Opcodes.CONTAINS.toString()) || opcode.equals(Opcodes.TRANSFORMCOLMAP.toString())
-			|| opcode.equals(Opcodes.TRANSFORMMETA.toString()) || opcode.equals(Opcodes.TOKENIZE.toString())
+			|| opcode.equals(Opcodes.TRANSFORMMETA.toString()) || opcode.equals(Opcodes.TOKENIZE.toString()) || opcode.equals(Opcodes.LLMPREDICT.toString())
 			|| opcode.equals(Opcodes.TOSTRING.toString()) || opcode.equals(Opcodes.NVLIST.toString()) || opcode.equals(Opcodes.AUTODIFF.toString())) {
 			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
 		}
@@ -324,6 +324,79 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			ec.setFrameOutput(output.getName(), fbout);
 			ec.releaseFrameInput(params.get("target"));
 		}
+
+		else if(opcode.equalsIgnoreCase(Opcodes.LLMPREDICT.toString())) {
+			FrameBlock prompts = ec.getFrameInput(params.get("target"));
+			String url = params.get("url");
+			int maxTokens = params.containsKey("max_tokens") ?
+				Integer.parseInt(params.get("max_tokens")) : 512;
+			double temperature = params.containsKey("temperature") ?
+				Double.parseDouble(params.get("temperature")) : 0.0;
+			double topP = params.containsKey("top_p") ?
+				Double.parseDouble(params.get("top_p")) : 0.9;
+
+			int n = prompts.getNumRows();
+			String[][] data = new String[n][5];
+			for(int i = 0; i < n; i++) {
+				String prompt = prompts.get(i, 0).toString();
+				long t0 = System.nanoTime();
+				try {
+					org.apache.wink.json4j.JSONObject req = new org.apache.wink.json4j.JSONObject();
+					req.put("prompt", prompt);
+					req.put("max_tokens", maxTokens);
+					req.put("temperature", temperature);
+					req.put("top_p", topP);
+
+					java.net.URL endpoint = new java.net.URI(url).toURL();
+					java.net.HttpURLConnection conn =
+						(java.net.HttpURLConnection) endpoint.openConnection();
+					conn.setRequestMethod("POST");
+					conn.setRequestProperty("Content-Type", "application/json");
+					conn.setDoOutput(true);
+					conn.getOutputStream().write(
+						req.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+					conn.getOutputStream().close();
+
+					if(conn.getResponseCode() != 200)
+						throw new DMLRuntimeException(
+							"LLM endpoint returned HTTP " + conn.getResponseCode());
+
+					String body = new String(conn.getInputStream().readAllBytes(),
+						java.nio.charset.StandardCharsets.UTF_8);
+					conn.disconnect();
+
+					org.apache.wink.json4j.JSONObject resp =
+						new org.apache.wink.json4j.JSONObject(body);
+					String text = resp.getJSONArray("choices")
+						.getJSONObject(0).getString("text");
+					long elapsed = (System.nanoTime() - t0) / 1_000_000;
+					int inTok = 0, outTok = 0;
+					if(resp.has("usage")) {
+						org.apache.wink.json4j.JSONObject usage = resp.getJSONObject("usage");
+						inTok = usage.has("prompt_tokens") ? usage.getInt("prompt_tokens") : 0;
+						outTok = usage.has("completion_tokens") ? usage.getInt("completion_tokens") : 0;
+					}
+					data[i] = new String[]{prompt, text,
+						String.valueOf(elapsed), String.valueOf(inTok), String.valueOf(outTok)};
+				}
+				catch(DMLRuntimeException e) { throw e; }
+				catch(Exception e) {
+					throw new DMLRuntimeException("llmPredict HTTP call failed: " + e.getMessage(), e);
+				}
+			}
+
+			ValueType[] schema = {ValueType.STRING, ValueType.STRING,
+				ValueType.INT64, ValueType.INT64, ValueType.INT64};
+			String[] colNames = {"prompt", "generated_text", "time_ms", "input_tokens", "output_tokens"};
+			FrameBlock fbout = new FrameBlock(schema, colNames);
+			for(String[] row : data)
+				fbout.appendRow(row);
+
+			ec.setFrameOutput(output.getName(), fbout);
+			ec.releaseFrameInput(params.get("target"));
+		}
+
+
 		else if(opcode.equalsIgnoreCase(Opcodes.TRANSFORMAPPLY.toString())) {
 			// acquire locks
 			FrameBlock data = ec.getFrameInput(params.get("target"));

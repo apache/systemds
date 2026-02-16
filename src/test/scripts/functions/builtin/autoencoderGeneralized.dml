@@ -1,4 +1,24 @@
 #-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+#-------------------------------------------------------------
 # Apache SystemDS - autoencoder wrapper
 # Prints stable BEFORE/AFTER objective lines for parsing
 # and optionally writes outputs (skips if /dev/null).
@@ -16,7 +36,7 @@ if(as.integer($H3) > 0)
   hidden_layers = append(hidden_layers, list(as.integer($H3)))
 
 # --------- compute objective BEFORE training ---------
-# NOTE: We compute it on a standardized + permuted copy, consistent with training.
+# I compute it on a standardized + permuted copy, consistent with training.
 # Create a fixed permutation seed via order_rand so both pre and training match.
 n = nrow(X)
 order_rand = Rand(rows=n, cols=1, min=0, max=1, pdf="uniform")
@@ -31,7 +51,7 @@ means = colSums(X_pre) / n
 stds  = sqrt((colSums(X_pre^2)/n - means*means) * n/(n-1)) + 1e-17
 X_pre = (X_pre - means) / stds
 
-# Initialize a model once (same initializer used by training)
+# Initialize a model once which same initializer used by training
 layer_sizes = ae::build_layer_sizes(ncol(X_pre), hidden_layers)
 [W_list0, b_list0, updW0, updb0] = ae::init_layers(layer_sizes)
 
@@ -80,7 +100,7 @@ for(i in 1:layer_count)
 obj_after = ae::obj(E1)
 print("WRAPPER FULL OBJ AFTER TRAIN  = " + obj_after)
 
-# --------- optional outputs (skip if /dev/null) ---------
+# --------- optional outputs skip if /dev/null ---------
 W1_out = as.matrix(model[1])
 Wlast_out = as.matrix(model[layer_count])
 hidden_out = hidden

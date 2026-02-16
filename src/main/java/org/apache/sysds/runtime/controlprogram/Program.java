@@ -182,6 +182,7 @@ public class Program
 	}
 
 	private static String normalizeNamespace(String namespace) {
+		// getNameSafe is not separator safe so i added this function to make sure that namespace is getting normalized without any conflicts
 		if (namespace == null)
 			return DMLProgram.DEFAULT_NAMESPACE;
 

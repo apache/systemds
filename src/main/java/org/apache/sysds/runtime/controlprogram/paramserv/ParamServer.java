@@ -395,6 +395,10 @@ public abstract class ParamServer
 				}
 				case ASP:
 					// Async model averaging:
+
+					//TODO: needs to be implement and expanded upon. I tried implementing it but it requires a much deeper scope of synchronization which i felt was beyond my current scope
+					// its running into deadlocks and race condition. Could be another open-source contribution
+
 					// Each push is interpreted as a worker "model" (list of matrices).
 					// We (1) weight by 1/numWorkers, (2) accumulate into _accModels, and
 					// (3) periodically "commit" the accumulated average as new global model.

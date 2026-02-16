@@ -28,11 +28,7 @@ import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -70,7 +66,6 @@ import org.apache.sysds.runtime.transform.TfUtils;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysds.runtime.util.CollectionUtils;
 import org.apache.sysds.runtime.util.DataConverter;
-import py4j.GatewayServer;
 
 /**
  * Interaction with SystemDS using the JMLC (Java Machine Learning Connector) API is initiated with
@@ -96,12 +91,6 @@ public class Connection implements Closeable
 	private final DMLConfig _dmlconf;
 	private final CompilerConfig _cconf;
 	private static FileSystem fs = null;
-	private Process _pythonProcess = null;
-	private py4j.GatewayServer _gatewayServer = null;
-	private LLMCallback _llmWorker = null;
-	private CountDownLatch _workerLatch = null;
-
-	private static final Log LOG = LogFactory.getLog(Connection.class.getName());
 	
 	/**
 	 * Connection constructor, the starting point for any other JMLC API calls.
@@ -298,137 +287,6 @@ public class Connection implements Closeable
 		//return newly create precompiled script 
 		return new PreparedScript(rtprog, inputs, outputs, _dmlconf, _cconf);
 	}
-
-	/**
-	 * Loads a HuggingFace model via Python worker for LLM inference.
-	 * Uses auto-detected available ports for Py4J communication.
-	 * 
-	 * @param modelName HuggingFace model name 
-	 * @param workerScriptPath path to the Python worker script 
-	 * @return LLMCallback interface to the Python worker
-	 */
-	public LLMCallback loadModel(String modelName, String workerScriptPath) {
-		//auto-find available ports
-		int javaPort = findAvailablePort();
-		int pythonPort = findAvailablePort();
-		return loadModel(modelName, workerScriptPath, javaPort, pythonPort);
-	}
-	
-	/**
-	 * Loads a HuggingFace model via Python worker for LLM inference.
-	 * Starts a Python subprocess and connects via Py4J.
-	 * 
-	 * @param modelName HuggingFace model name
-	 * @param workerScriptPath path to the Python worker script 
-	 * @param javaPort port for Java gateway server
-	 * @param pythonPort port for Python callback server
-	 * @return LLMCallback interface to the Python worker
-	 */
-	public LLMCallback loadModel(String modelName, String workerScriptPath, int javaPort, int pythonPort) {
-		if (_llmWorker != null)
-			return _llmWorker;
-		try {
-			//initialize latch for worker registration
-			_workerLatch = new CountDownLatch(1);
-			
-			//start Py4J gateway server with callback support
-			_gatewayServer = new GatewayServer.GatewayServerBuilder()
-				.entryPoint(this)
-				.javaPort(javaPort)
-				.callbackClient(pythonPort, java.net.InetAddress.getLoopbackAddress())
-				.build();
-			_gatewayServer.start();
-			
-			//give gateway time to start
-			Thread.sleep(500);
-			
-			//start python worker process with both ports
-			String pythonCmd = findPythonCommand();
-			LOG.info("Starting LLM worker with script: " + workerScriptPath + 
-				" (python=" + pythonCmd + ", javaPort=" + javaPort + ", pythonPort=" + pythonPort + ")");
-			_pythonProcess = new ProcessBuilder(
-				pythonCmd, workerScriptPath, modelName, 
-				String.valueOf(javaPort), String.valueOf(pythonPort)
-			).redirectErrorStream(true).start();
-			
-			//read python output in background thread
-			Thread outputReader = new Thread(() -> {
-				try (BufferedReader reader = new BufferedReader(
-						new InputStreamReader(_pythonProcess.getInputStream()))) {
-					String line;
-					while ((line = reader.readLine()) != null) {
-						LOG.info("[LLM Worker] " + line);
-					}
-				} catch (IOException e) {
-					LOG.error("Error reading LLM worker output", e);
-				}
-			});
-			outputReader.setName("llm-worker-output");
-			outputReader.setDaemon(true);
-			outputReader.start();
-			
-			//larger models (7B+) need more time to load weights into GPU memory
-			long deadlineNs = System.nanoTime() + TimeUnit.SECONDS.toNanos(300);
-			while (!_workerLatch.await(2, TimeUnit.SECONDS)) {
-				if (!_pythonProcess.isAlive()) {
-					int exitCode = _pythonProcess.exitValue();
-					throw new DMLException("LLM worker process died during startup (exit code " + exitCode + ")");
-				}
-				if (System.nanoTime() > deadlineNs) {
-					throw new DMLException("Timeout waiting for LLM worker to register (300s)");
-				}
-			}
-			
-		} catch (DMLException e) {
-			throw e;
-		} catch (Exception e) {
-			throw new DMLException("Failed to start LLM worker: " + e.getMessage());
-		}
-		return _llmWorker;
-	}
-	
-	/**
-	 * Finds the available Python command, trying python3 first then python.
-	 * @return python command name
-	 */
-	private static String findPythonCommand() {
-		for (String cmd : new String[]{"python3", "python"}) {
-			try {
-				Process p = new ProcessBuilder(cmd, "--version")
-					.redirectErrorStream(true).start();
-				int exitCode = p.waitFor();
-				if (exitCode == 0)
-					return cmd;
-			} catch (Exception e) {
-				//command not found, try next
-			}
-		}
-		throw new DMLException("No Python installation found (tried python3, python)");
-	}
-	
-	/**
-	 * Finds an available port on the local machine.
-	 * @return available port number
-	 */
-	private int findAvailablePort() {
-		try (java.net.ServerSocket socket = new java.net.ServerSocket(0)) {
-			socket.setReuseAddress(true);
-			return socket.getLocalPort();
-		} catch (IOException e) {
-			throw new DMLException("Failed to find available port: " + e.getMessage());
-		}
-	}
-	
-	/**
-	 * Called by Python worker to register itself via Py4J.
-	 */
-	public void registerWorker(LLMCallback worker) {
-		_llmWorker = worker;
-		if (_workerLatch != null) {
-			_workerLatch.countDown();
-		}
-		LOG.info("LLM worker registered successfully");
-	}
 	
 	/**
 	 * Close connection to SystemDS, which clears the
@@ -436,23 +294,6 @@ public class Connection implements Closeable
 	 */
 	@Override
 	public void close() {
-
-		//shutdown LLM worker if running
-		if (_pythonProcess != null) {
-			_pythonProcess.destroyForcibly();
-			try {
-				_pythonProcess.waitFor(5, TimeUnit.SECONDS);
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-			}
-			_pythonProcess = null;
-		}
-		if (_gatewayServer != null) {
-			_gatewayServer.shutdown();
-			_gatewayServer = null;
-		}
-		_llmWorker = null;
-		
 		//clear thread-local configurations
 		ConfigurationManager.clearLocalConfigs();
 		if( ConfigurationManager.isCodegenEnabled() )

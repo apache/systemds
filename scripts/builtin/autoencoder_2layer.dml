@@ -20,8 +20,7 @@
 #-------------------------------------------------------------
 
 # =============================================================================
-# Autoencoder (2-layer + generalized) with optional Parameter Server training
-# =============================================================================
+# Autoencoder 2-layer + generalized with Parameter Server training
 # Trains a 2-layer autoencoder with minibatch SGD and step-size decay.
 # If invoked with H1 > H2 then it becomes a 'bowtie' structured autoencoder
 # Weights are initialized using Glorot & Bengio (2010) AISTATS initialization.
@@ -39,13 +38,13 @@
 # full_obj      If TRUE, Computes objective function value (squared-loss)
 #               at the end of each epoch. Note that, computing the full
 #               objective can take a lot of time.
-# batch_size    Mini-batch size (training parameter)
-# step          Initial step size (training parameter)
-# decay         Decays step size after each epoch (training parameter)
-# mu            Momentum parameter (training parameter)
+# batch_size    Mini-batch size training parameter
+# step          Initial step size training parameter
+# decay         Decays step size after each epoch training parameter
+# mu            Momentum parameter training parameter
 # method        Training method: DEFAULTSERVER or PARAMSERVER
-# mode          Paramserv mode: LOCAL or DISTRIBUTED (REMOTE_SPARK)
-# utype         Paramserv update type (e.g., BSP, ASP, SSP)
+# mode          Paramserv mode: LOCAL or DISTRIBUTED (REMOTE_SPARK) # TODO: distributed needs to be implemented
+# utype         Paramserv update type (e.g., BSP, ASP) #TODO: Add support for ASP
 # freq          Paramserv update frequency (e.g., BATCH, EPOCH)
 # k             Number of workers
 # scheme        Data partitioning scheme for paramserv
@@ -80,7 +79,7 @@ m_autoencoder = function(Matrix[Double] X, list[unknown] hidden_layers, Integer 
   Matrix[Double] order_rand = matrix(0, rows=0, cols=0))
   return(list[unknown] model, Matrix[Double] reordered_H)
 {
-  # hidden_layers defines encoder sizes (e.g., list(128, 64)).
+  # hidden_layers defines encoder sizes e.g., list(128, 64).
   # Decoder mirrors encoder automatically.
   n = nrow(X)
   m = ncol(X)
@@ -123,7 +122,7 @@ m_autoencoder = function(Matrix[Double] X, list[unknown] hidden_layers, Integer 
 }
 
 # -----------------------------------------------------------------------------
-# Legacy 2-layer autoencoder entry point (kept for compatibility)
+# Legacy 2-layer autoencoder entry point
 # -----------------------------------------------------------------------------
 m_autoencoder_2layer = function(Matrix[Double] X, Integer num_hidden1, Integer num_hidden2, Integer max_epochs,
   Boolean full_obj = FALSE, Integer batch_size = 256, Double step = 1e-5, Double decay = 0.95, Double mu = 0.9,
@@ -183,7 +182,7 @@ m_autoencoder_2layer = function(Matrix[Double] X, Integer num_hidden1, Integer n
 }
 
 # -----------------------------------------------------------------------------
-# Activation function (default: tanh)
+# Activation function and default: tanh
 # -----------------------------------------------------------------------------
 # To use another activation, implement a DML-bodied function named 'func'
 # and comment out this one.
@@ -193,7 +192,7 @@ func = function(Matrix[Double] X) return(Matrix[Double] Y, Matrix[Double] Y_prim
 }
 
 # -----------------------------------------------------------------------------
-# Fixed 2-layer helpers (original path)
+# Fixed 2-layer helpers
 # -----------------------------------------------------------------------------
 forward_pass = function(Matrix[Double] X, Matrix[Double] W1, Matrix[Double] b1, Matrix[Double] W2, Matrix[Double] b2,
   Matrix[Double] W3, Matrix[Double] b3, Matrix[Double] W4, Matrix[Double] b4, Matrix[Double] Y)
@@ -243,7 +242,7 @@ obj = function(Matrix[Double] E) return(Double val){
 }
 
 # -----------------------------------------------------------------------------
-# Fixed 2-layer training (DEFAULTSERVER + PARAMSERVER)
+# Fixed 2-layer training = DEFAULTSERVER + PARAMSERVER
 # -----------------------------------------------------------------------------
 apply_update = function(Matrix[Double] W1, Matrix[Double] b1, Matrix[Double] W2, Matrix[Double] b2,
   Matrix[Double] W3, Matrix[Double] b3, Matrix[Double] W4, Matrix[Double] b4,
@@ -490,7 +489,7 @@ aggregation = function(list[unknown] model,
 }
 
 # -----------------------------------------------------------------------------
-# Generalized autoencoder helpers (variable depth)
+# Generalized autoencoder helpers to support variable depth
 # -----------------------------------------------------------------------------
 build_layer_sizes = function(Integer input_dim, list[unknown] hidden_layers)
   return(list[unknown] sizes)

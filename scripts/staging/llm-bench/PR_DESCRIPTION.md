@@ -188,15 +188,15 @@ SystemDS c=1 calls the same vLLM inference server. Per-prompt latency is compara
 
 ### Accuracy (% correct)
 
-| Workload | Ollama (llama3.2 3B) | OpenAI (gpt-4.1-mini) | vLLM Qwen 3B | vLLM Mistral 7B |
-|---|---|---|---|---|
-| math | 58% | 88% | 68% | 38% |
-| json_extraction | 74% | 84% | 52% | 50% |
-| reasoning | 44% | 70% | 60% | 68% |
-| summarization | 80% | 88% | 50% | 68% |
-| embeddings | 40% | 88% | 90% | 82% |
+| Workload | Ollama (llama3.2 3B) | OpenAI (gpt-4.1-mini) | vLLM Qwen 3B | SystemDS c=1 | SystemDS c=4 | vLLM Mistral 7B |
+|---|---|---|---|---|---|---|
+| math | 58% | 88% | 68% | 68% | 68% | 38% |
+| json_extraction | 74% | 84% | 52% | 52% | 52% | 50% |
+| reasoning | 44% | 70% | 60% | 60% | 64% | 68% |
+| summarization | 80% | 88% | 50% | 50% | 62% | 68% |
+| embeddings | 40% | 88% | 90% | 90% | 90% | 82% |
 
-SystemDS accuracy matches vLLM Qwen 3B (same model and same vLLM inference server).
+SystemDS c=1 matches vLLM Qwen 3B exactly (same model, same inference server). c=4 shows minor variation on reasoning and summarization due to vLLM server batching non-determinism with concurrent requests.
 
 ### SystemDS concurrency scaling (throughput)
 
@@ -209,16 +209,6 @@ SystemDS accuracy matches vLLM Qwen 3B (same model and same vLLM inference serve
 | embeddings | 20.07 | 46.34 | 2.31x | 50 | 22 |
 
 Throughput speedup via Java `ExecutorService` thread pool in the `llmPredict` CP instruction. Effective latency = 1000 / throughput.
-
-### Cost per query
-
-| Backend | Per query | Breakdown |
-|---------|-----------|-----------|
-| Ollama (llama3.2) | $0.00014 | Small model, fast inference |
-| OpenAI (gpt-4.1-mini) | $0.00032 | $0.00023 API + $0.00009 local compute |
-| vLLM (Qwen 3B) | $0.001 | Fast GPU inference |
-| SystemDS c=1 | ~$0.001 | Comparable to vLLM direct |
-| SystemDS c=4 | ~$0.0003 | Lower GPU time per query |
 
 ## Reproducibility
 
@@ -249,7 +239,7 @@ Environment variables for SystemDS:
 
 ## Conclusions
 
-- **Accuracy**: OpenAI leads on most tasks. Among local models, Qwen 3B is strongest on math (68%) and embeddings (90%). vLLM and SystemDS produce identical accuracy since they use the same model and inference server.
+- **Accuracy**: OpenAI leads on most tasks. Among local models, Qwen 3B is strongest on math (68%) and embeddings (90%). SystemDS c=1 matches vLLM Qwen 3B exactly; c=4 shows minor variation on reasoning and summarization due to vLLM batching non-determinism.
 - **`llmPredict` built-in works**: Real DML goes through the full SystemDS compilation pipeline. The instruction makes HTTP calls directly from Java with no Python dependency in the Java runtime.
 - **Concurrency improves throughput**: c=4 achieves 2.3–3.9x throughput speedup via Java `ExecutorService` in the CP instruction.
 - **vLLM is fastest for single-request latency**: PagedAttention, continuous batching, and custom CUDA kernels give it an edge for optimized serving.

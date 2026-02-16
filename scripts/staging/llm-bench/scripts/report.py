@@ -94,6 +94,7 @@ BACKEND_COLORS = {
     "vllm (Qwen2.5-3B)": "#956B8E",
     "systemds (Mistral-7B)": "#E15759",
     "systemds (Qwen2.5-3B)": "#C94D4F",
+    "systemds c=4 (Qwen2.5-3B)": "#FF8C8C",
 }
 
 
@@ -168,7 +169,7 @@ def generate_grouped_bar_chart_svg(data: Dict[str, Dict[str, float]], title: str
 
 
 def _backend_model_key(r: Dict[str, Any]) -> str:
-    """Create a display key like 'vllm (Qwen 3B)' or 'openai' for grouping."""
+    """Create a display key like 'vllm (Qwen 3B)' or 'systemds c=4 (Qwen2.5-3B)' for grouping."""
     backend = r.get("backend", "")
     model = r.get("backend_model", "")
     if not model or backend in ("openai", "ollama"):
@@ -176,6 +177,9 @@ def _backend_model_key(r: Dict[str, Any]) -> str:
     short = model.split("/")[-1]
     for suffix in ["-Instruct-v0.3", "-Instruct", "-Inst"]:
         short = short.replace(suffix, "")
+    conc = r.get("concurrency")
+    if conc and int(conc) > 1:
+        return f"{backend} c={int(conc)} ({short})"
     return f"{backend} ({short})"
 
 
@@ -217,8 +221,8 @@ def generate_accuracy_comparison_table(rows: List[Dict[str, Any]]) -> str:
                 n = int(safe_float(data[wl][b].get("n")) or 0)
                 if acc is not None:
                     pct = acc * 100
-                    correct = int(n * acc) if n else ""
-                    tip = f"{correct}/{n} correct" if n else ""
+                    acc_count = data[wl][b].get("accuracy_count", "")
+                    tip = f"{acc_count} correct" if acc_count else ""
                     weight = "600" if pct >= 80 else "400"
                     out.append(f'<td style="font-weight: {weight};" title="{tip}">{pct:.0f}%</td>')
                 else:
@@ -798,7 +802,7 @@ def generate_systemds_vs_vllm_summary(rows: List[Dict[str, Any]]) -> str:
 
     out.append('</tbody></table>')
 
-    out.append('<p style="color:#888; font-size:12px; margin-top:8px;">pp = percentage points. Latency overhead reflects the Py4J bridge cost. Accuracy deltas show SystemDS matches or slightly improves on reasoning/summarization tasks.</p>')
+    out.append('<p style="color:#888; font-size:12px; margin-top:8px;">pp = percentage points. Latency overhead reflects the JMLC overhead. Accuracy deltas show SystemDS matches or slightly improves on reasoning/summarization tasks.</p>')
 
     return '\n'.join(out)
 
@@ -928,7 +932,7 @@ def generate_head_to_head_section(rows: List[Dict[str, Any]]) -> str:
     <h2 style="margin-bottom: 4px;">Framework Comparison: vLLM vs SystemDS JMLC</h2>
     <p style="color: #666; margin-top: 0; font-size: 14px;">
         Same model, same NVIDIA H100 GPU, same prompts.
-        Isolates the cost of the Py4J bridge in SystemDS.
+        Compares native llmPredict built-in overhead vs direct vLLM.
     </p>
     ''')
 
@@ -1032,7 +1036,7 @@ def generate_head_to_head_section(rows: List[Dict[str, Any]]) -> str:
     <p style="color: #999; font-size: 12px; margin-top: 8px;">
         <b>Overhead</b> = SystemDS latency / vLLM latency. Same model produces same accuracy;
         small differences are from non-deterministic generation.
-        The overhead measures the Py4J Java-Python bridge cost that SystemDS adds
+        The overhead measures the overhead that the JMLC + llmPredict pipeline adds
         in exchange for Java ecosystem integration.
     </p>
     </div>

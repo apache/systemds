@@ -130,15 +130,15 @@ SystemDS c=1 calls the same vLLM inference server. Per-prompt latency is compara
 
 ### Accuracy comparison
 
-| Workload | Ollama (llama3.2 3B) | OpenAI (gpt-4.1-mini) | vLLM Qwen 3B | vLLM Mistral 7B |
-|---|---|---|---|---|
-| math | 58% (29/50) | 88% (44/50) | 68% (34/50) | 38% |
-| json_extraction | 74% (37/50) | 84% (42/50) | 52% (26/50) | 50% |
-| reasoning | 44% (22/50) | 70% (35/50) | 60% (30/50) | 68% |
-| summarization | 80% (40/50) | 88% (44/50) | 50% (25/50) | 68% |
-| embeddings | 40% (20/50) | 88% (44/50) | 90% (45/50) | 82% |
+| Workload | Ollama (llama3.2 3B) | OpenAI (gpt-4.1-mini) | vLLM Qwen 3B | SystemDS c=1 | SystemDS c=4 | vLLM Mistral 7B |
+|---|---|---|---|---|---|---|
+| math | 58% (29/50) | 88% (44/50) | 68% (34/50) | 68% (34/50) | 68% (34/50) | 38% |
+| json_extraction | 74% (37/50) | 84% (42/50) | 52% (26/50) | 52% (26/50) | 52% (26/50) | 50% |
+| reasoning | 44% (22/50) | 70% (35/50) | 60% (30/50) | 60% (30/50) | 64% (32/50) | 68% |
+| summarization | 80% (40/50) | 88% (44/50) | 50% (25/50) | 50% (25/50) | 62% (31/50) | 68% |
+| embeddings | 40% (20/50) | 88% (44/50) | 90% (45/50) | 90% (45/50) | 90% (45/50) | 82% |
 
-*SystemDS accuracy matches vLLM Qwen 3B (same model and inference server).*
+SystemDS c=1 matches vLLM Qwen 3B exactly (same model, same inference server). c=4 shows minor variation on reasoning and summarization due to vLLM server batching non-determinism with concurrent requests.
 
 ### SystemDS concurrency scaling
 
@@ -166,7 +166,7 @@ Effective latency = 1000 / throughput (time per prompt from the batch processing
 | SystemDS | Qwen 3B | H100 | 4 | JMLC + native `llmPredict` (concurrent) |
 
 **Key findings:**
-- **Accuracy is identical** across vLLM and SystemDS for the same model (both use the same vLLM inference server)
+- **SystemDS c=1 accuracy matches vLLM Qwen 3B** for all workloads (same model, same inference server). c=4 shows minor variation on reasoning (64% vs 60%) and summarization (62% vs 50%) due to vLLM batching non-determinism
 - **SystemDS with `llmPredict`** has minimal overhead vs vLLM direct, since inference goes through a native DML built-in that makes HTTP calls directly from Java
 - **Concurrency improves throughput**: c=4 achieves 2.3-3.9x throughput speedup via Java `ExecutorService` thread pool in the `llmPredict` instruction
 - **OpenAI** achieves highest accuracy but incurs API costs ($0.02-0.03 per 50 prompts)

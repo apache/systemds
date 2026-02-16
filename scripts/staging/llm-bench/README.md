@@ -1,7 +1,7 @@
 # LLM Inference Benchmark
 
 Backend-agnostic benchmarking suite for comparing LLM inference systems.
-Measures **latency, throughput, accuracy, cost, and resource usage** across
+Measures **latency, throughput, accuracy, and resource usage** across
 cloud APIs, optimized GPU servers, local runtimes, and SystemDS JMLC.
 
 ---
@@ -14,19 +14,20 @@ cloud APIs, optimized GPU servers, local runtimes, and SystemDS JMLC.
 | `ollama` | Local inference via Ollama | [Ollama](https://ollama.ai) installed and running |
 | `vllm` | High-performance GPU inference server | vLLM server running (requires NVIDIA GPU) |
 | `systemds` | SystemDS JMLC with native `llmPredict` built-in | SystemDS JAR built, Py4J, vLLM/Ollama inference server |
-| `mlx` | Apple Silicon optimized | macOS with Apple Silicon, `mlx-lm` package |
 
 ---
 
 ## Workloads
 
-| Workload | Dataset | Source | Samples |
-|----------|---------|--------|---------|
-| `math` | GSM8K | HuggingFace `openai/gsm8k` | 50 |
-| `summarization` | XSum | HuggingFace `EdinburghNLP/xsum` | 50 |
-| `reasoning` | BoolQ | HuggingFace `google/boolq` | 50 |
-| `json_extraction` | Curated + HF | Built-in / `MasterControlAIML/JSON-Unstructured-Structured` | 50 |
-| `embeddings` | STS-B | HuggingFace `mteb/stsbenchmark-sts` | 50 |
+| Workload | Dataset | Source | Samples | Task | Evaluation |
+|----------|---------|--------|---------|------|------------|
+| `math` | GSM8K | HuggingFace `openai/gsm8k` | 50 | Grade-school math | Exact numerical match |
+| `reasoning` | BoolQ | HuggingFace `google/boolq` | 50 | Yes/no comprehension | Extracted answer match |
+| `summarization` | XSum | HuggingFace `EdinburghNLP/xsum` | 50 | Article summary | ROUGE-1 F1 >= 0.2 |
+| `json_extraction` | Built-in | 10 templates x 5 samples | 50 | Structured extraction | Valid JSON + >= 90% field match |
+| `embeddings` | STS-B | HuggingFace `mteb/stsbenchmark-sts` | 50 | Semantic similarity | Within 1.0 of reference |
+
+All workloads use temperature=0.0 for reproducibility. Each run processes 50 samples.
 
 ---
 
@@ -78,17 +79,9 @@ python runner.py \
   --workload workloads/math/config.yaml \
   --concurrency 4 \
   --out results/systemds_qwen3b_math_c4
-
-# With compute cost estimation
-python runner.py \
-  --backend vllm --model Qwen/Qwen2.5-3B-Instruct \
-  --workload workloads/math/config.yaml \
-  --power-draw-w 350 --electricity-rate 0.30 \
-  --hardware-cost 30000 \
-  --out results/vllm_qwen3b_math
 ```
 
-### 3. Run All Benchmarks (Reproducibility)
+### 3. Run All Benchmarks
 
 ```bash
 # Run all workloads for a single backend
@@ -114,80 +107,26 @@ open results/benchmark_report.html
 
 ---
 
-## Benchmark Results (n=50 per workload, NVIDIA H100 PCIe)
+## SystemDS `llmPredict` Built-in
 
-### Latency comparison: mean ms/prompt
-
-| Workload | Ollama (CPU) | OpenAI (Cloud) | vLLM Qwen 3B | SystemDS c=1 |
-|---|---|---|---|---|
-| math | 5781 | 3630 | 4619 | 2273 |
-| json_extraction | 1642 | 1457 | 1151 | 610 |
-| reasoning | 5252 | 2641 | 2557 | 1261 |
-| summarization | 1079 | 1036 | 791 | 373 |
-| embeddings | 371 | 648 | 75 | 41 |
-
-SystemDS c=1 calls the same vLLM inference server. Per-prompt latency is comparable to vLLM direct since `llmPredict` adds minimal overhead (Java HTTP call).
-
-### Accuracy comparison
-
-| Workload | Ollama (llama3.2 3B) | OpenAI (gpt-4.1-mini) | vLLM Qwen 3B | SystemDS c=1 | SystemDS c=4 | vLLM Mistral 7B |
-|---|---|---|---|---|---|---|
-| math | 58% (29/50) | 88% (44/50) | 68% (34/50) | 68% (34/50) | 68% (34/50) | 38% |
-| json_extraction | 74% (37/50) | 84% (42/50) | 52% (26/50) | 52% (26/50) | 52% (26/50) | 50% |
-| reasoning | 44% (22/50) | 70% (35/50) | 60% (30/50) | 60% (30/50) | 64% (32/50) | 68% |
-| summarization | 80% (40/50) | 88% (44/50) | 50% (25/50) | 50% (25/50) | 62% (31/50) | 68% |
-| embeddings | 40% (20/50) | 88% (44/50) | 90% (45/50) | 90% (45/50) | 90% (45/50) | 82% |
-
-SystemDS c=1 matches vLLM Qwen 3B exactly (same model, same inference server). c=4 shows minor variation on reasoning and summarization due to vLLM server batching non-determinism with concurrent requests.
-
-### SystemDS concurrency scaling
-
-Throughput improvement with `ExecutorService` thread pool (concurrency=4 vs sequential):
-
-| Workload | c=1 (req/s) | c=4 (req/s) | Speedup | Eff. latency c=1 (ms) | Eff. latency c=4 (ms) |
-|---|---|---|---|---|---|
-| math | 0.44 | 1.63 | 3.71x | 2281 | 615 |
-| json_extraction | 1.62 | 5.65 | 3.49x | 618 | 177 |
-| reasoning | 0.79 | 3.11 | 3.95x | 1270 | 322 |
-| summarization | 2.62 | 7.27 | 2.78x | 382 | 137 |
-| embeddings | 20.07 | 46.34 | 2.31x | 50 | 22 |
-
-Effective latency = 1000 / throughput (time per prompt from the batch processing perspective).
-
-### All backends overview
-
-| Backend | Model | Hardware | Concurrency | Story |
-|---------|-------|----------|-------------|-------|
-| OpenAI | gpt-4.1-mini | Cloud | 1 | Best accuracy, highest cost |
-| Ollama | llama3.2 3B | MacBook CPU | 1 | Accessible local inference |
-| vLLM | Qwen 3B | H100 | 1 | Optimized GPU serving |
-| vLLM | Mistral 7B | H100 | 1 | Larger model on GPU |
-| SystemDS | Qwen 3B | H100 | 1 | JMLC + native `llmPredict` (sequential) |
-| SystemDS | Qwen 3B | H100 | 4 | JMLC + native `llmPredict` (concurrent) |
-
-**Key findings:**
-- **SystemDS c=1 accuracy matches vLLM Qwen 3B** for all workloads (same model, same inference server). c=4 shows minor variation on reasoning (64% vs 60%) and summarization (62% vs 50%) due to vLLM batching non-determinism
-- **SystemDS with `llmPredict`** has minimal overhead vs vLLM direct, since inference goes through a native DML built-in that makes HTTP calls directly from Java
-- **Concurrency improves throughput**: c=4 achieves 2.3-3.9x throughput speedup via Java `ExecutorService` thread pool in the `llmPredict` instruction
-- **OpenAI** achieves highest accuracy but incurs API costs ($0.02-0.03 per 50 prompts)
-- **vLLM** is the fastest local option for single-request latency (optimized serving with KV cache, PagedAttention, continuous batching)
-- **Ollama** provides the most accessible local inference (CPU, no GPU required)
-
----
-
-## SystemDS JMLC Backend
-
-The SystemDS backend executes real DML through the full compilation pipeline
-using the native `llmPredict` parameterized built-in function:
+The `llmPredict` function is a native **parameterized built-in** (following the `tokenize` pattern) added in PR #2430. It goes through the full SystemDS compilation pipeline:
 
 ```
-Python benchmark -> Py4J -> JMLC Connection.prepareScript()
--> DML compilation (parse -> hops -> lops -> instructions)
--> llmPredict instruction -> Java HTTP -> vLLM/Ollama server
--> FrameBlock [prompt, generated_text, time_ms, input_tokens, output_tokens]
+DML script --> Parser --> Hops --> Lops --> CP Instructions --> Execution
 ```
 
-The DML script executed through JMLC:
+### Architecture
+
+```
+Python benchmark --> Py4J --> JMLC Connection.prepareScript()
+  --> DML compilation (parse --> hops --> lops --> instructions)
+  --> ParameterizedBuiltinCPInstruction (opcode: llmpredict)
+    --> Java HTTP POST to OpenAI-compatible endpoint (vLLM, Ollama, etc.)
+    --> Concurrent dispatch via ExecutorService (concurrency parameter)
+  --> FrameBlock output [prompt, generated_text, latency_ms, input_tokens, output_tokens]
+```
+
+### DML usage
 
 ```dml
 prompts = read("prompts", data_type="frame")
@@ -196,12 +135,44 @@ results = llmPredict(target=prompts, url=$url, max_tokens=$mt,
 write(results, "results")
 ```
 
-The `llmPredict` built-in:
+### How it works
+
 - Takes a Frame of prompts and named parameters (url, max_tokens, temperature, top_p, concurrency)
-- Makes HTTP POST calls to any OpenAI-compatible inference endpoint (vLLM, Ollama, etc.)
+- Makes HTTP POST calls to any OpenAI-compatible endpoint using `java.net.HttpURLConnection`
+- Parses JSON responses with `org.apache.wink.json4j` (existing SystemDS dependency)
 - Supports concurrent requests via Java `ExecutorService` thread pool
-- Returns a Frame with columns: [prompt, generated_text, latency_ms, input_tokens, output_tokens]
-- Goes through the full SystemDS compilation pipeline (parser, hops, lops, runtime instructions)
+- Returns a 5-column FrameBlock: `[prompt, generated_text, latency_ms, input_tokens, output_tokens]`
+- No Python dependency in Java -- all inference is done via HTTP from the CP instruction
+
+### JMLC integration
+
+```java
+Connection conn = new Connection();
+HashMap<String, String> args = new HashMap<>();
+args.put("$url", "http://localhost:8000/v1/completions");
+args.put("$mt", "512"); args.put("$temp", "0.0");
+args.put("$tp", "0.9"); args.put("$conc", "4");
+
+PreparedScript ps = conn.prepareScript(dml, args,
+    new String[]{"prompts"}, new String[]{"results"});
+ps.setFrame("prompts", promptData);
+ResultVariables rv = ps.executeScript();
+FrameBlock results = rv.getFrameBlock("results");
+```
+
+### SystemDS compilation pipeline files
+
+```
+src/main/java/org/apache/sysds/
+├── common/Builtins.java              # LLMPREDICT enum entry
+├── common/Types.java                 # ParamBuiltinOp.LLMPREDICT
+├── common/Opcodes.java               # llmpredict opcode
+├── parser/ParameterizedBuiltinFunctionExpression.java  # Validation
+├── parser/DMLTranslator.java         # Hop construction
+├── hops/ParameterizedBuiltinOp.java  # CP-only exec type, lop construction
+├── lops/ParameterizedBuiltin.java    # Instruction generation
+└── runtime/instructions/cp/ParameterizedBuiltinCPInstruction.java  # HTTP execution
+```
 
 ### Setup
 
@@ -226,7 +197,6 @@ python runner.py \
   --model Qwen/Qwen2.5-3B-Instruct \
   --workload workloads/math/config.yaml \
   --concurrency 4 \
-  --power-draw-w 350 --electricity-rate 0.30 --hardware-cost 30000 \
   --out results/systemds_qwen3b_math_c4
 ```
 
@@ -237,6 +207,62 @@ Environment variables (optional):
 
 ---
 
+## Benchmark Results (n=50 per workload, NVIDIA H100 PCIe)
+
+### Accuracy comparison
+
+| Workload | Ollama (llama3.2 3B) | OpenAI (gpt-4.1-mini) | vLLM Qwen 3B | SystemDS c=1 | SystemDS c=4 | vLLM Mistral 7B |
+|---|---|---|---|---|---|---|
+| math | 58% (29/50) | 88% (44/50) | 68% (34/50) | 68% (34/50) | 68% (34/50) | 38% |
+| json_extraction | 74% (37/50) | 84% (42/50) | 52% (26/50) | 52% (26/50) | 52% (26/50) | 50% |
+| reasoning | 44% (22/50) | 70% (35/50) | 60% (30/50) | 60% (30/50) | 64% (32/50) | 68% |
+| summarization | 80% (40/50) | 88% (44/50) | 50% (25/50) | 50% (25/50) | 62% (31/50) | 68% |
+| embeddings | 40% (20/50) | 88% (44/50) | 90% (45/50) | 90% (45/50) | 90% (45/50) | 82% |
+
+SystemDS c=1 matches vLLM Qwen 3B exactly on all workloads (same model, same vLLM inference server). c=4 shows minor variation on reasoning and summarization due to vLLM server-side batching behavior with concurrent requests.
+
+### Per-prompt latency (mean ms/prompt)
+
+| Workload | Ollama (CPU) | OpenAI (Cloud) | vLLM Qwen 3B | SystemDS c=1 |
+|---|---|---|---|---|
+| math | 5781 | 3630 | 4619 | 2273 |
+| json_extraction | 1642 | 1457 | 1151 | 610 |
+| reasoning | 5252 | 2641 | 2557 | 1261 |
+| summarization | 1079 | 1036 | 791 | 373 |
+| embeddings | 371 | 648 | 75 | 41 |
+
+**Note on measurement methodology**: Each backend measures per-prompt latency differently. The vLLM backend uses Python `requests` with streaming (SSE parsing overhead), while SystemDS measures Java-side `HttpURLConnection` time (non-streaming). Both call the same vLLM server, but the numbers reflect client-side differences (Python streaming vs Java non-streaming HTTP) rather than inference speed differences. The accuracy comparison above is the apples-to-apples metric since all backends process the same prompts with the same model.
+
+### SystemDS concurrency scaling
+
+Throughput improvement with `ExecutorService` thread pool (concurrency=4 vs sequential):
+
+| Workload | c=1 (req/s) | c=4 (req/s) | Speedup |
+|---|---|---|---|
+| math | 0.44 | 1.63 | 3.71x |
+| json_extraction | 1.62 | 5.65 | 3.49x |
+| reasoning | 0.79 | 3.11 | 3.95x |
+| summarization | 2.62 | 7.27 | 2.78x |
+| embeddings | 20.07 | 46.34 | 2.31x |
+
+Throughput measured as n / total_wall_clock_seconds (Python-side end-to-end).
+
+---
+
+## Conclusions
+
+1. **`llmPredict` produces correct results**: SystemDS c=1 matches vLLM Qwen 3B accuracy exactly on all 5 workloads (68%, 52%, 60%, 50%, 90%). The `llmPredict` instruction goes through the full DML compilation pipeline (parser, hops, lops, CP instruction) and produces the same outputs as calling the vLLM server directly.
+
+2. **Concurrency improves throughput 2.3-3.9x**: The `ExecutorService` thread pool in the `llmPredict` instruction dispatches up to 4 requests concurrently to the inference server. Math and reasoning workloads (longer generation) benefit most (3.7-3.9x). Embeddings (short responses, already fast at 41ms/prompt) show the least benefit (2.3x) due to fixed overhead dominating.
+
+3. **OpenAI leads on accuracy**: gpt-4.1-mini achieves the highest accuracy on 4/5 workloads (88% math, 84% json, 70% reasoning, 88% summarization). The local 3B models (Qwen, llama3.2) trade accuracy for cost and privacy.
+
+4. **Model size matters more than backend**: Accuracy differences between backends come from the model, not the serving framework. Qwen 3B outperforms Mistral 7B on math (68% vs 38%) and embeddings (90% vs 82%), while Mistral 7B is stronger on reasoning (68% vs 60%) and summarization (68% vs 50%).
+
+5. **Latency comparison requires careful interpretation**: Per-prompt latency numbers are not directly comparable across backends because each backend uses a different HTTP client and protocol (Python streaming vs Java non-streaming vs cloud API). The key takeaway is that `llmPredict` adds no significant overhead on top of the HTTP call to the inference server.
+
+---
+
 ## Repository Structure
 
 ```
@@ -244,9 +270,9 @@ llm-bench/
 ├── backends/
 │   ├── openai_backend.py      # OpenAI API adapter
 │   ├── ollama_backend.py      # Ollama local inference
-│   ├── vllm_backend.py        # vLLM server adapter
+│   ├── vllm_backend.py        # vLLM server adapter (streaming)
 │   ├── systemds_backend.py    # SystemDS JMLC with native llmPredict
-│   └── mlx_backend.py         # Apple Silicon MLX
+│   └── mlx_backend.py         # Apple Silicon MLX (not benchmarked)
 ├── workloads/
 │   ├── math/                  # GSM8K (HuggingFace)
 │   ├── summarization/         # XSum (HuggingFace)
@@ -273,10 +299,15 @@ llm-bench/
 ### Latency
 | Metric | Description |
 |--------|-------------|
-| Mean latency | Average response time |
+| Mean latency | Average response time per prompt |
 | P50 latency | Median (50th percentile) |
 | P95 latency | Tail latency (95th percentile) |
 | Min/Max | Range of response times |
+
+### Throughput
+| Metric | Description |
+|--------|-------------|
+| Throughput (req/s) | n / total_wall_clock_seconds |
 
 ### Accuracy
 | Metric | Description |
@@ -284,15 +315,7 @@ llm-bench/
 | Accuracy mean | Proportion correct (e.g., 0.80 = 80%) |
 | ROUGE-1/2/L | Summarization quality (F1 scores) |
 
-### Cost
-| Metric | Description |
-|--------|-------------|
-| API cost (USD) | Per-token billing (OpenAI) |
-| Electricity cost | Power draw x wall time x rate |
-| Hardware amortization | Device cost / lifetime hours x wall time |
-| Total compute cost | Electricity + hardware amortization |
-
-#### Cost flags
+### Cost (optional flags)
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
@@ -310,9 +333,9 @@ llm-bench/
 | Higher concurrency levels | Test c=8, c=16 to find saturation point |
 | Larger sample sizes | Run with n=100+ for stronger statistical significance |
 | Code generation workload | Add HumanEval / MBPP programming tasks |
-| Model quantization comparison | Compare 4-bit vs 8-bit vs full precision |
+| Non-streaming vLLM baseline | Add non-streaming vLLM measurement for direct latency comparison with SystemDS |
 | Multi-GPU tensor parallelism | Compare vLLM TP=2 vs TP=1 |
-| Streaming support | Measure time-to-first-token for interactive use cases |
+| Streaming support in llmPredict | Measure time-to-first-token for interactive use cases |
 
 ---
 

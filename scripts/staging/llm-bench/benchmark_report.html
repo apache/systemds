@@ -17,20 +17,6 @@
     h3 { margin: 20px 0 10px 0; color: #333; }
     .meta { color: #666; margin-bottom: 24px; font-size: 14px; }
     
-    .summary-cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 16px;
-        margin-bottom: 30px;
-    }
-    .card {
-        background: white;
-        padding: 16px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .card-value { font-size: 24px; font-weight: bold; color: #1a1a2e; }
-    .card-label { font-size: 12px; color: #666; margin-top: 4px; }
     
     @media (max-width: 900px) {
         div[style*="grid-template-columns: repeat(4"] {
@@ -210,7 +196,7 @@
             background: white;
             font-size: 9px;
         }
-        .summary-cards, .charts-grid, .chart-container { 
+        .charts-grid, .chart-container { 
             break-inside: avoid; 
         }
         .table-wrapper {
@@ -236,7 +222,6 @@
     
     @media (max-width: 768px) {
         .charts-grid { grid-template-columns: 1fr; }
-        .summary-cards { grid-template-columns: repeat(2, 1fr); }
     }
     
     /* Per-Sample Results */
@@ -322,7 +307,7 @@
         Compares LLM inference backends (OpenAI API, Ollama, vLLM, SystemDS JMLC)
         across accuracy, latency, throughput, and cost.
     </p>
-    <div class="meta">Generated: 2026-02-16 01:31:39 UTC | 30 runs</div>
+    <div class="meta">Generated: 2026-02-16 01:50:48 UTC | 30 runs</div>
     
     <div style="display: flex; gap: 8px; margin-bottom: 20px;">
       <button class="btn" onclick="window.print()" style="font-size:12px;">Print</button>
@@ -1036,7 +1021,7 @@
 <table class="comparison-table">
 <thead><tr><th>Backend</th><th>Est. Cost (1000 queries)</th><th>Notes</th></tr></thead>
 <tbody>
-<tr><td>OpenAI (gpt-4.1-mini)</td><td>$0.23</td><td>Based on current usage (API cost)</td></tr>
+<tr><td>OpenAI (API)</td><td>$0.23</td><td>Based on current usage (API cost)</td></tr>
 <tr><td>ollama</td><td>$0.14</td><td>Electricity + HW amortization</td></tr>
 <tr><td>systemds</td><td>$3.60</td><td>Electricity + HW amortization</td></tr>
 <tr><td>vllm</td><td>$1.08</td><td>Electricity + HW amortization</td></tr>

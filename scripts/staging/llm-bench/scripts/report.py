@@ -96,52 +96,7 @@ BACKEND_COLORS = {
     "systemds (Qwen2.5-3B)": "#C94D4F",
 }
 
-WORKLOAD_COLORS = {
-    "math": "#4E79A7",
-    "reasoning": "#E15759",
-    "summarization": "#59A14F",
-    "json_extraction": "#F28E2B",
-    "embeddings": "#76B7B2",
-}
 
-
-def generate_bar_chart_svg(data: List[Tuple[str, float, str]], title: str, 
-                            width: int = 500, height: int = 300,
-                            value_suffix: str = "", show_values: bool = True) -> str:
-    """Generate SVG bar chart. data = [(label, value, color), ...]"""
-    if not data:
-        return ""
-    
-    max_val = max(d[1] for d in data) if data else 1
-    bar_height = 28
-    gap = 8
-    left_margin = 120
-    right_margin = 80
-    top_margin = 40
-    chart_width = width - left_margin - right_margin
-    chart_height = len(data) * (bar_height + gap)
-    total_height = chart_height + top_margin + 20
-    
-    svg = [f'<svg width="{width}" height="{total_height}" xmlns="http://www.w3.org/2000/svg">']
-    svg.append(f'<text x="{width//2}" y="20" text-anchor="middle" font-size="14" font-weight="bold">{html.escape(title)}</text>')
-    
-    for i, (label, value, color) in enumerate(data):
-        y = top_margin + i * (bar_height + gap)
-        bar_width = (value / max_val) * chart_width if max_val > 0 else 0
-        
-  
-        svg.append(f'<text x="{left_margin - 8}" y="{y + bar_height//2 + 4}" text-anchor="end" font-size="11">{html.escape(label[:15])}</text>')
-        
-     
-        svg.append(f'<rect x="{left_margin}" y="{y}" width="{bar_width}" height="{bar_height}" fill="{color}" rx="3"/>')
-        
-  
-        if show_values:
-            val_text = f"{value:.1f}{value_suffix}" if isinstance(value, float) else f"{value}{value_suffix}"
-            svg.append(f'<text x="{left_margin + bar_width + 5}" y="{y + bar_height//2 + 4}" font-size="11">{val_text}</text>')
-    
-    svg.append('</svg>')
-    return '\n'.join(svg)
 
 
 def generate_grouped_bar_chart_svg(data: Dict[str, Dict[str, float]], title: str,
@@ -608,7 +563,7 @@ def generate_cost_analysis_section(rows: List[Dict[str, Any]]) -> str:
     
 
     projected_1k = cost_per_query * 1000
-    out.append(f'<tr><td>OpenAI (gpt-4.1-mini)</td><td>${projected_1k:.2f}</td><td>Based on current usage (API cost)</td></tr>')
+    out.append(f'<tr><td>OpenAI (API)</td><td>${projected_1k:.2f}</td><td>Based on current usage (API cost)</td></tr>')
     
     local_backend_costs: Dict[str, List[float]] = {}
     for r in local_runs:
@@ -631,74 +586,6 @@ def generate_cost_analysis_section(rows: List[Dict[str, Any]]) -> str:
     
     return '\n'.join(out)
 
-
-def generate_scatter_plot_svg(data: List[Tuple[float, float, str, str]], 
-                               title: str, x_label: str, y_label: str,
-                               width: int = 400, height: int = 300) -> str:
-    """Generate SVG scatter plot. data = [(x, y, label, color), ...]"""
-    if not data:
-        return '<p class="muted">No data with both cost and accuracy</p>'
-    
-    
-    valid_data = [(x, y, l, c) for x, y, l, c in data if x > 0 and y is not None]
-    if not valid_data:
-        return '<p class="muted">No runs with cost data</p>'
-    
-    left_margin = 60
-    right_margin = 120
-    top_margin = 40
-    bottom_margin = 50
-    
-    chart_width = width - left_margin - right_margin
-    chart_height = height - top_margin - bottom_margin
-    
-    x_vals = [d[0] for d in valid_data]
-    y_vals = [d[1] for d in valid_data]
-    
-    x_min, x_max = 0, max(x_vals) * 1.1
-    y_min, y_max = 0, min(100, max(y_vals) * 1.1)
-    
-    def scale_x(v):
-        return left_margin + (v - x_min) / (x_max - x_min) * chart_width if x_max > x_min else left_margin
-    def scale_y(v):
-        return top_margin + chart_height - (v - y_min) / (y_max - y_min) * chart_height if y_max > y_min else top_margin + chart_height
-    
-    svg = [f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">']
-    svg.append(f'<text x="{width//2}" y="20" text-anchor="middle" font-size="14" font-weight="bold">{html.escape(title)}</text>')
-    
-  
-    svg.append(f'<line x1="{left_margin}" y1="{top_margin}" x2="{left_margin}" y2="{top_margin + chart_height}" stroke="#ccc" stroke-width="1"/>')
-    svg.append(f'<line x1="{left_margin}" y1="{top_margin + chart_height}" x2="{left_margin + chart_width}" y2="{top_margin + chart_height}" stroke="#ccc" stroke-width="1"/>')
-    
-
-    svg.append(f'<text x="{left_margin + chart_width//2}" y="{height - 10}" text-anchor="middle" font-size="11">{html.escape(x_label)}</text>')
-    svg.append(f'<text x="15" y="{top_margin + chart_height//2}" text-anchor="middle" font-size="11" transform="rotate(-90, 15, {top_margin + chart_height//2})">{html.escape(y_label)}</text>')
-    
-    
-    for pct in [25, 50, 75, 100]:
-        if pct <= y_max:
-            y = scale_y(pct)
-            svg.append(f'<line x1="{left_margin}" y1="{y}" x2="{left_margin + chart_width}" y2="{y}" stroke="#eee" stroke-width="1"/>')
-            svg.append(f'<text x="{left_margin - 5}" y="{y + 4}" text-anchor="end" font-size="9">{pct}%</text>')
-    
-    
-    seen_workloads = {}
-    for x, y, label, color in valid_data:
-        px, py = scale_x(x), scale_y(y)
-        svg.append(f'<circle cx="{px}" cy="{py}" r="8" fill="{color}" fill-opacity="0.7" stroke="{color}" stroke-width="2"/>')
-        if label not in seen_workloads:
-            seen_workloads[label] = color
-    
-    
-    legend_x = left_margin + chart_width + 15
-    legend_y = top_margin + 10
-    for i, (label, color) in enumerate(seen_workloads.items()):
-        y_pos = legend_y + i * 20
-        svg.append(f'<circle cx="{legend_x + 6}" cy="{y_pos}" r="6" fill="{color}"/>')
-        svg.append(f'<text x="{legend_x + 18}" y="{y_pos + 4}" font-size="10">{html.escape(label[:12])}</text>')
-    
-    svg.append('</svg>')
-    return '\n'.join(svg)
 
 
 def generate_summary_section(rows: List[Dict[str, Any]]) -> str:
@@ -1245,20 +1132,6 @@ def main() -> int:
     h3 {{ margin: 20px 0 10px 0; color: #333; }}
     .meta {{ color: #666; margin-bottom: 24px; font-size: 14px; }}
     
-    .summary-cards {{
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 16px;
-        margin-bottom: 30px;
-    }}
-    .card {{
-        background: white;
-        padding: 16px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }}
-    .card-value {{ font-size: 24px; font-weight: bold; color: #1a1a2e; }}
-    .card-label {{ font-size: 12px; color: #666; margin-top: 4px; }}
     
     @media (max-width: 900px) {{
         div[style*="grid-template-columns: repeat(4"] {{
@@ -1438,7 +1311,7 @@ def main() -> int:
             background: white;
             font-size: 9px;
         }}
-        .summary-cards, .charts-grid, .chart-container {{ 
+        .charts-grid, .chart-container {{ 
             break-inside: avoid; 
         }}
         .table-wrapper {{
@@ -1464,7 +1337,6 @@ def main() -> int:
     
     @media (max-width: 768px) {{
         .charts-grid {{ grid-template-columns: 1fr; }}
-        .summary-cards {{ grid-template-columns: repeat(2, 1fr); }}
     }}
     
     /* Per-Sample Results */

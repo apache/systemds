@@ -533,23 +533,27 @@ init_layers = function(list[unknown] sizes)
 forward_pass_layers = function(Matrix[Double] X, list[unknown] W_list, list[unknown] b_list, Matrix[Double] Y)
   return(list[unknown] activations, list[unknown] primes, Matrix[Double] Yhat, Matrix[Double] E)
 {
-  # Forward pass through variable number of layers.
-  # activations/primes store per-layer output and derivative of activation.
   activations = list()
-  primes = list()
+  primes      = list()
+
   A_prev = X
   for(i in 1:length(W_list)) {
     W = as.matrix(W_list[i])
     b = as.matrix(b_list[i])
+
     Z = t(W %*% t(A_prev) + b)
     [A, A_prime] = func(Z)
+
     activations = append(activations, list(A))
-    primes = append(primes, list(A_prime))
+    primes      = append(primes,      list(A_prime))
+
     A_prev = A
   }
+
   Yhat = A_prev
   E = Yhat - Y
 }
+
 
 backward_pass_layers = function(Matrix[Double] X, list[unknown] activations, list[unknown] primes,
   list[unknown] W_list, Matrix[Double] E)

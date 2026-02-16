@@ -238,26 +238,59 @@ public class PreparedScript implements ConfigurableAPI
 	 * @return FrameBlock with columns [prompt, generated_text, time_ms, input_tokens, output_tokens]
 	 */
 	public FrameBlock generateBatchWithMetrics(String[] prompts, int maxNewTokens, double temperature, double topP) {
+		return generateBatchWithMetrics(prompts, maxNewTokens, temperature, topP, true);
+	}
+
+	/**
+	 * Generates text for an array of prompts and returns a FrameBlock with columns
+	 * [prompt, generated_text, time_ms, input_tokens, output_tokens].
+	 *
+	 * @param prompts array of input prompts
+	 * @param maxNewTokens max tokens to generate per prompt
+	 * @param temperature sampling temperature
+	 * @param topP nucleus sampling threshold
+	 * @param batched if true, sends all prompts to the GPU in one call (faster);
+	 *                if false, processes prompts sequentially (original behavior)
+	 * @return FrameBlock with inference results
+	 */
+	public FrameBlock generateBatchWithMetrics(String[] prompts, int maxNewTokens, double temperature, double topP, boolean batched) {
 		if (_llmWorker == null) {
 			throw new DMLException("No LLM worker set. Call setLLMWorker() first.");
 		}
-		//batch all prompts in a single GPU call via the Python worker
 		String[][] data = new String[prompts.length][5];
-		try {
-			long start = System.nanoTime();
-			String jsonArray = _llmWorker.generateBatch(prompts, maxNewTokens, temperature, topP);
-			long totalElapsed = (System.nanoTime() - start) / 1_000_000;
-			org.apache.wink.json4j.JSONArray results = new org.apache.wink.json4j.JSONArray(jsonArray);
-			for (int i = 0; i < prompts.length; i++) {
-				org.apache.wink.json4j.JSONObject obj = results.getJSONObject(i);
-				data[i][0] = prompts[i];
-				data[i][1] = obj.getString("text");
-				data[i][2] = String.valueOf(obj.getInt("time_ms"));
-				data[i][3] = String.valueOf(obj.getInt("input_tokens"));
-				data[i][4] = String.valueOf(obj.getInt("output_tokens"));
+		if (batched) {
+			//GPU-batched: single call to Python worker for all prompts
+			try {
+				String jsonArray = _llmWorker.generateBatch(prompts, maxNewTokens, temperature, topP);
+				org.apache.wink.json4j.JSONArray results = new org.apache.wink.json4j.JSONArray(jsonArray);
+				for (int i = 0; i < prompts.length; i++) {
+					org.apache.wink.json4j.JSONObject obj = results.getJSONObject(i);
+					data[i][0] = prompts[i];
+					data[i][1] = obj.getString("text");
+					data[i][2] = String.valueOf(obj.getInt("time_ms"));
+					data[i][3] = String.valueOf(obj.getInt("input_tokens"));
+					data[i][4] = String.valueOf(obj.getInt("output_tokens"));
+				}
+			} catch (Exception e) {
+				throw new DMLException("Failed to parse batched LLM response: " + e.getMessage());
 			}
-		} catch (Exception e) {
-			throw new DMLException("Failed to parse batched LLM response: " + e.getMessage());
+		} else {
+			//sequential: one prompt at a time (original behavior)
+			for (int i = 0; i < prompts.length; i++) {
+				long start = System.nanoTime();
+				String json = _llmWorker.generateWithTokenCount(prompts[i], maxNewTokens, temperature, topP);
+				long elapsed = (System.nanoTime() - start) / 1_000_000;
+				try {
+					org.apache.wink.json4j.JSONObject obj = new org.apache.wink.json4j.JSONObject(json);
+					data[i][0] = prompts[i];
+					data[i][1] = obj.getString("text");
+					data[i][2] = String.valueOf(elapsed);
+					data[i][3] = String.valueOf(obj.getInt("input_tokens"));
+					data[i][4] = String.valueOf(obj.getInt("output_tokens"));
+				} catch (Exception e) {
+					throw new DMLException("Failed to parse LLM worker response: " + e.getMessage());
+				}
+			}
 		}
 		//create FrameBlock with schema
 		ValueType[] schema = new ValueType[]{

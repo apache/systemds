@@ -1,10 +1,19 @@
-"""SystemDS JMLC backend for the LLM benchmark runner.
+"""SystemDS JMLC backend -- routes inference through the full Java JMLC path.
 
 Data flow:
-  Python benchmark -> Py4J -> Java JMLC Connection
-  -> PreparedScript.generateBatchWithMetrics()
-  -> LLMCallback -> Python llm_worker.py (HuggingFace)
-  -> FrameBlock [prompt, generated_text, time_ms, input_tokens, output_tokens]
+  Python (benchmark runner)
+    -> Py4J -> Java JMLC Connection
+    -> PreparedScript.generateBatchWithMetrics()
+    -> LLMCallback (Py4J callback) -> Python llm_worker.py (HuggingFace)
+    -> results collected in a SystemDS FrameBlock
+    -> back to Python
+
+All prompts are submitted as a Java String[] and processed through
+PreparedScript.generateBatchWithMetrics(), which returns a typed
+FrameBlock with columns [prompt, generated_text, time_ms, input_tokens,
+output_tokens].  This is the SystemDS-native path: a unified Java API
+for managing LLM inference with structured, columnar results and
+built-in per-prompt metrics.
 """
 
 import logging
@@ -101,6 +110,7 @@ class SystemDSBackend:
         max_tokens = int(config.get("max_tokens", config.get("max_output_tokens", 512)))
         temperature = float(config.get("temperature", 0.0))
         top_p = float(config.get("top_p", 0.9))
+        batched = config.get("batched", True)
 
         n = len(prompts)
         java_prompts = self._gateway.new_array(self._jvm.java.lang.String, n)
@@ -109,7 +119,7 @@ class SystemDSBackend:
 
         t0 = time.perf_counter()
         frame_block = self._ps.generateBatchWithMetrics(
-            java_prompts, max_tokens, temperature, top_p
+            java_prompts, max_tokens, temperature, top_p, batched
         )
         t1 = time.perf_counter()
         batch_wall_ms = (t1 - t0) * 1000.0
@@ -133,9 +143,10 @@ class SystemDSBackend:
                 },
             })
 
+        mode = "batched" if batched else "sequential"
         logger.info(
-            "FrameBlock batch: %d prompts in %.1fms (%.1fms/prompt)",
-            n, batch_wall_ms, batch_wall_ms / n,
+            "FrameBlock %s: %d prompts in %.1fms (%.1fms/prompt)",
+            mode, n, batch_wall_ms, batch_wall_ms / n,
         )
         return results
 

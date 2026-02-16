@@ -157,3 +157,14 @@ docker/mountFolder/*.bin.mtd
 
 SEAL-*/
 
+# Local tool configs
+.claude/
+
+# Environment variables
+.env
+.env.*
+
+# Meeting notes
+meeting_notes/
+meeting_notes.*
+*meeting_notes*

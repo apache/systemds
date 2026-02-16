@@ -1,23 +1,8 @@
-# SYSTEMDS-BENCH-GPT
+# LLM Inference Benchmark
 
-Backend-agnostic benchmarking suite for Large Language Model (LLM) inference systems.
-
-SYSTEMDS-BENCH-GPT is a systems-oriented evaluation harness for comparing local LLM inference runtimes and hosted LLM APIs under controlled workloads, with a focus on **latency, throughput, accuracy, cost, and resource usage**.
-
----
-
-## Features
-
-- **Multiple Backends**: OpenAI API, Ollama (local), vLLM (GPU server), MLX (Apple Silicon)
-- **Real Datasets**: GSM8K (math), XSum (summarization), BoolQ (reasoning), CoNLL-2003 NER (JSON extraction)
-- **Comprehensive Metrics**: Latency (mean, p50, p95), throughput, accuracy, cost, tokens, TTFT
-- **ROUGE Scoring**: Real ROUGE-1/2/L evaluation for summarization (not just quality gates)
-- **Concurrent Testing**: Configurable request concurrency via `--concurrency N`
-- **GPU Profiling**: Automatic GPU memory/utilization tracking via pynvml (when available)
-- **HTML Reports**: Auto-generated reports with charts and visualizations
-- **Extensible**: Easy to add new backends and workloads
-- **Reproducible**: Shell scripts for easy benchmarking
-- **Tested**: Unit tests for all accuracy checkers, loaders, and metrics
+Backend-agnostic benchmarking suite for comparing LLM inference systems.
+Measures **latency, throughput, accuracy, cost, and resource usage** across
+cloud APIs, optimized GPU servers, local runtimes, and SystemDS JMLC.
 
 ---
 
@@ -25,22 +10,23 @@ SYSTEMDS-BENCH-GPT is a systems-oriented evaluation harness for comparing local 
 
 | Backend | Description | Requirements |
 |---------|-------------|--------------|
-| `openai` | OpenAI API (GPT-4, etc.) | `OPENAI_API_KEY` environment variable |
+| `openai` | OpenAI API (GPT-4.1-mini, etc.) | `OPENAI_API_KEY` environment variable |
 | `ollama` | Local inference via Ollama | [Ollama](https://ollama.ai) installed and running |
-| `vllm` | High-performance inference server | vLLM server running (requires GPU) |
+| `vllm` | High-performance GPU inference server | vLLM server running (requires NVIDIA GPU) |
+| `systemds` | SystemDS JMLC with FrameBlock batch API | SystemDS JAR built, Py4J, HuggingFace transformers |
 | `mlx` | Apple Silicon optimized | macOS with Apple Silicon, `mlx-lm` package |
 
 ---
 
 ## Workloads
 
-| Workload | Dataset | Description |
-|----------|---------|-------------|
-| `math` | GSM8K | Grade school math word problems |
-| `summarization` | XSum, CNN/DM | Text summarization |
-| `reasoning` | BoolQ, LogiQA | Logical reasoning / QA |
-| `json_extraction` | Curated toy | Structured JSON extraction |
-| `embeddings` | STS-B | Semantic similarity scoring (0-5 scale) |
+| Workload | Dataset | Source | Samples |
+|----------|---------|--------|---------|
+| `math` | GSM8K | HuggingFace `openai/gsm8k` | 50 |
+| `summarization` | XSum | HuggingFace `EdinburghNLP/xsum` | 50 |
+| `reasoning` | BoolQ | HuggingFace `google/boolq` | 50 |
+| `json_extraction` | Curated + HF | Built-in / `MasterControlAIML/JSON-Unstructured-Structured` | 50 |
+| `embeddings` | STS-B | HuggingFace `mteb/stsbenchmark-sts` | 50 |
 
 ---
 
@@ -49,17 +35,10 @@ SYSTEMDS-BENCH-GPT is a systems-oriented evaluation harness for comparing local 
 ### 1. Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/kubraaksux/systemds.git
-cd systemds
-git checkout llm-benchmark
 cd scripts/staging/llm-bench
 
-# Create virtual environment
 python -m venv .venv
 source .venv/bin/activate
-
-# Install dependencies
 pip install -r requirements.txt
 
 # For OpenAI backend
@@ -67,22 +46,6 @@ export OPENAI_API_KEY="your-key-here"
 ```
 
 ### 2. Run Benchmarks
-
-**Using shell scripts (recommended):**
-
-```bash
-# Run all workloads for a backend
-./scripts/run_all_benchmarks.sh openai   # OpenAI API
-./scripts/run_all_benchmarks.sh ollama   # Local Ollama
-./scripts/run_all_benchmarks.sh mlx      # Apple Silicon
-./scripts/run_all_benchmarks.sh all      # All backends
-./scripts/run_all_benchmarks.sh          # Local only (ollama + mlx)
-
-# For vLLM (requires GPU server running):
-./scripts/run_all_benchmarks.sh vllm meta-llama/Llama-3.1-8B
-```
-
-**Using Python directly:**
 
 ```bash
 # OpenAI API
@@ -92,436 +55,206 @@ python runner.py \
   --out results/openai_math
 
 # Ollama (local)
-ollama pull llama3.2
 python runner.py \
-  --backend ollama \
-  --model llama3.2 \
+  --backend ollama --model llama3.2 \
   --workload workloads/math/config.yaml \
   --out results/ollama_math
 
-# MLX (Apple Silicon)
+# vLLM (GPU server)
 python runner.py \
-  --backend mlx \
-  --model mlx-community/Phi-3-mini-4k-instruct-4bit \
-  --workload workloads/summarization/config.yaml \
-  --out results/mlx_summarization
-
-# vLLM (requires GPU server)
-python runner.py \
-  --backend vllm \
-  --model microsoft/phi-2 \
-  --workload workloads/reasoning/config.yaml \
-  --out results/vllm_reasoning
-
-# Concurrent requests (test throughput under load)
-python runner.py \
-  --backend openai \
+  --backend vllm --model Qwen/Qwen2.5-3B-Instruct \
   --workload workloads/math/config.yaml \
-  --concurrency 4 \
-  --out results/openai_math_concurrent
+  --out results/vllm_qwen3b_math
 
-# With GPU cost estimation
+# SystemDS JMLC
 python runner.py \
-  --backend vllm \
-  --model meta-llama/Llama-3.1-8B \
+  --backend systemds --model Qwen/Qwen2.5-3B-Instruct \
   --workload workloads/math/config.yaml \
-  --gpu-hour-cost 2.50 --gpu-count 1 \
-  --out results/vllm_math
+  --out results/systemds_qwen3b_math
+
+# With compute cost estimation
+python runner.py \
+  --backend vllm --model Qwen/Qwen2.5-3B-Instruct \
+  --workload workloads/math/config.yaml \
+  --power-draw-w 350 --electricity-rate 0.30 \
+  --hardware-cost 30000 \
+  --out results/vllm_qwen3b_math
 ```
 
 ### 3. Generate Report
 
 ```bash
-python scripts/report.py --out benchmark_report.html
-open benchmark_report.html
+python scripts/aggregate.py --results-dir results/ --out results/summary.csv
+python scripts/report.py --results-dir results/ --out results/benchmark_report.html
+open results/benchmark_report.html
 ```
+
+---
+
+## Benchmark Results (n=50 per workload, NVIDIA H100)
+
+### Same-model comparison: Qwen 3B on vLLM vs SystemDS JMLC
+
+| Workload | vLLM Acc | vLLM Lat | SystemDS Acc | SystemDS Lat | Slowdown |
+|---|---|---|---|---|---|
+| embeddings | 90% | 75ms | 88% | 195ms | 2.6x |
+| json_extraction | 52% | 1151ms | 52% | 3325ms | 2.9x |
+| math | 68% | 4619ms | 72% | 21479ms | 4.7x |
+| reasoning | 60% | 2557ms | 66% | 7425ms | 2.9x |
+| summarization | 50% | 791ms | 62% | 2175ms | 2.7x |
+
+### Same-model comparison: Mistral 7B on vLLM vs SystemDS JMLC
+
+| Workload | vLLM Acc | vLLM Lat | SystemDS Acc | SystemDS Lat | Slowdown |
+|---|---|---|---|---|---|
+| embeddings | 82% | 129ms | 82% | 412ms | 3.2x |
+| json_extraction | 50% | 1817ms | 52% | 5503ms | 3.0x |
+| math | 38% | 5053ms | 38% | 14180ms | 2.8x |
+| reasoning | 68% | 1570ms | 74% | 4566ms | 2.9x |
+| summarization | 68% | 782ms | 70% | 2253ms | 2.9x |
+
+### All backends overview
+
+| Backend | Model | Hardware | Workloads | Story |
+|---------|-------|----------|-----------|-------|
+| OpenAI | gpt-4.1-mini | Cloud | 5 | Best accuracy, highest cost |
+| Ollama | llama3.2 3B | MacBook CPU | 5 | Accessible local inference |
+| vLLM | Qwen 3B | H100 | 5 | Optimized GPU serving |
+| vLLM | Mistral 7B | H100 | 5 | Larger model on GPU |
+| SystemDS | Qwen 3B | H100 | 5 | JMLC integration (same model as vLLM) |
+| SystemDS | Mistral 7B | H100 | 5 | JMLC integration (same model as vLLM) |
+
+**Key findings:**
+- **Accuracy is identical** across vLLM and SystemDS for the same model (small differences are generation randomness)
+- **Latency is ~3x slower** for SystemDS JMLC vs vLLM, due to the Py4J bridge and lack of KV caching / CUDA graph optimizations in raw HuggingFace
+- **OpenAI** achieves highest accuracy but incurs API costs
+- **vLLM** is the fastest local option (optimized serving with KV cache, PagedAttention, continuous batching)
+- **SystemDS JMLC** provides Java ecosystem integration at the cost of inference speed
+
+---
+
+## SystemDS JMLC Backend
+
+The SystemDS backend routes inference through the full Java JMLC path:
+
+```
+Python benchmark -> Py4J -> Java JMLC Connection
+-> PreparedScript.generateBatchWithMetrics()
+-> LLMCallback -> Python llm_worker.py (HuggingFace)
+-> FrameBlock [prompt, generated_text, time_ms, input_tokens, output_tokens]
+```
+
+All prompts are submitted as a Java `String[]` and processed via
+`PreparedScript.generateBatchWithMetrics()`, which returns a typed
+`FrameBlock` with per-prompt timing and token metrics.
+
+### Setup
+
+```bash
+# Build SystemDS
+cd /path/to/systemds
+mvn package -DskipTests
+
+# Install Python dependencies
+pip install py4j torch transformers accelerate
+
+# Run benchmark
+python runner.py \
+  --backend systemds \
+  --model Qwen/Qwen2.5-3B-Instruct \
+  --workload workloads/math/config.yaml \
+  --power-draw-w 350 --electricity-rate 0.30 --hardware-cost 30000 \
+  --out results/systemds_qwen3b_math
+```
+
+Environment variables (optional):
+- `SYSTEMDS_JAR` - path to SystemDS.jar (default: `../../target/SystemDS.jar`)
+- `SYSTEMDS_LIB` - path to lib/ directory (default: `../../target/lib/`)
+- `LLM_WORKER_SCRIPT` - path to llm_worker.py (default: `../../src/main/python/llm_worker.py`)
 
 ---
 
 ## Repository Structure
 
 ```
-systemds-bench-gpt/
+llm-bench/
 ├── backends/
-│   ├── openai_backend.py   # OpenAI API adapter
-│   ├── ollama_backend.py   # Ollama local inference
-│   ├── vllm_backend.py     # vLLM server adapter
-│   └── mlx_backend.py      # Apple Silicon MLX
+│   ├── openai_backend.py      # OpenAI API adapter
+│   ├── ollama_backend.py      # Ollama local inference
+│   ├── vllm_backend.py        # vLLM server adapter
+│   ├── systemds_backend.py    # SystemDS JMLC with FrameBlock batch API
+│   └── mlx_backend.py         # Apple Silicon MLX
 ├── workloads/
-│   ├── math/               # GSM8K dataset (HuggingFace)
-│   ├── summarization/      # XSum dataset (HuggingFace)
-│   ├── reasoning/          # BoolQ dataset (HuggingFace)
-│   ├── json_extraction/    # Curated toy dataset (reliable ground truth)
-│   └── embeddings/         # STS-B semantic similarity (HuggingFace)
+│   ├── math/                  # GSM8K (HuggingFace)
+│   ├── summarization/         # XSum (HuggingFace)
+│   ├── reasoning/             # BoolQ (HuggingFace)
+│   ├── json_extraction/       # Curated + HuggingFace
+│   └── embeddings/            # STS-B (HuggingFace)
 ├── scripts/
-│   ├── aggregate.py        # CSV aggregation
-│   ├── report.py           # HTML report generation
-│   ├── utils.py            # Shared helpers (read_json, iter_run_dirs, etc.)
+│   ├── aggregate.py           # CSV aggregation
+│   ├── report.py              # HTML report generation
 │   └── run_all_benchmarks.sh  # Run all workloads for a backend
 ├── evaluation/
-│   └── perf.py             # Latency/throughput metric computation
-├── results/                # Benchmark outputs (gitignored)
-├── tests/                 # Unit tests
-│   ├── test_math_accuracy.py
-│   ├── test_reasoning_accuracy.py
-│   ├── test_json_extraction_accuracy.py
-│   ├── test_summarization_accuracy.py
-│   ├── test_embeddings_accuracy.py
-│   ├── test_perf_metrics.py
-│   └── test_runner.py
-├── runner.py               # Main benchmark runner
-├── __main__.py             # Entry point for python -m
-├── requirements.txt        # Python dependencies
-├── .gitignore              # Ignore results, cache, etc.
+│   └── perf.py                # Latency/throughput metrics
+├── results/                   # Benchmark outputs
+├── tests/                     # Unit tests
+├── runner.py                  # Main benchmark runner
+├── requirements.txt
 └── README.md
 ```
 
+---
 
-### Latency Metrics
+## Metrics
+
+### Latency
 | Metric | Description |
 |--------|-------------|
-| **Mean latency** | Average response time across all requests |
-| **P50 latency** | Median response time (50th percentile) |
-| **P95 latency** | Tail latency (95th percentile) |
-| **Min/Max** | Range of response times |
-
-### Latency Breakdown (Prefill vs Decode)
-| Metric | Description |
-|--------|-------------|
-| **TTFT** | Time-To-First-Token (prompt processing / prefill phase) |
-| **Generation time** | Token decoding time after first token |
-| **TTFT %** | Proportion of latency spent in prefill |
-
-### Consistency Metrics
-| Metric | Description |
-|--------|-------------|
-| **Latency std** | Standard deviation of response times |
-| **CV (Coefficient of Variation)** | std/mean × 100% - lower = more consistent |
-
-### Throughput
-| Metric | Description |
-|--------|-------------|
-| **Requests/sec** | How many requests can be handled per second |
-| **Tokens/sec** | Generation speed (output tokens per second) |
-| **ms/token** | Time per output token |
+| Mean latency | Average response time |
+| P50 latency | Median (50th percentile) |
+| P95 latency | Tail latency (95th percentile) |
+| Min/Max | Range of response times |
 
 ### Accuracy
 | Metric | Description |
 |--------|-------------|
-| **Accuracy mean** | Proportion correct (e.g., 0.80 = 80%) |
-| **Accuracy count** | e.g., "8/10" correct |
-| **ROUGE-1/2/L** | Summarization quality via ROUGE F1 scores (uses `rouge-score` package) |
+| Accuracy mean | Proportion correct (e.g., 0.80 = 80%) |
+| ROUGE-1/2/L | Summarization quality (F1 scores) |
 
-### Cost Analysis
+### Cost
 | Metric | Description |
 |--------|-------------|
-| **API cost (USD)** | Per-token billing for cloud backends (OpenAI) |
-| **Electricity cost** | Based on device power draw and wall time |
-| **Hardware amortization** | Device cost depreciated over useful lifetime |
-| **Total compute cost** | Electricity + hardware amortization + GPU-hour cost |
-| **Cost per query** | Average cost per inference request |
-| **Cost per 1M tokens** | Normalized cost comparison |
-| **Cost per correct answer** | Cost efficiency metric |
+| API cost (USD) | Per-token billing (OpenAI) |
+| Electricity cost | Power draw x wall time x rate |
+| Hardware amortization | Device cost / lifetime hours x wall time |
+| Total compute cost | Electricity + hardware amortization |
 
-#### Cost Model for Local Inference
-
-Local backends (Ollama, MLX) have no API billing, but real costs exist:
-
-```
-Total Compute Cost = Electricity Cost + Hardware Amortization
-
-Electricity Cost  = (power_draw_W / 1000) × (wall_time_h) × (electricity_rate_per_kWh)
-HW Amortization   = (hardware_price / lifetime_hours) × wall_time_h
-```
-
-**Example** (Ollama on MacBook, 5-minute math benchmark):
-- Electricity: 50W × 0.083h × $0.30/kWh = **$0.0012**
-- HW amortization: $2500 / 15000h × 0.083h = **$0.0136**
-- **Total: ~$0.015** (vs OpenAI API: ~$0.022)
-
-Use the `--power-draw-w` and `--hardware-cost` flags to enable:
-
-```bash
-python runner.py --backend ollama --model llama3.2 \
-  --workload workloads/math/config.yaml \
-  --power-draw-w 50 --electricity-rate 0.30 \
-  --hardware-cost 2500 --hardware-lifetime-hours 15000 \
-  --out results/ollama_math
-```
+#### Cost flags
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `--power-draw-w` | 0 | Device power in watts (MacBook: ~50W, H100: ~350W) |
-| `--electricity-rate` | 0.30 | $/kWh (EU avg ~0.30, US avg ~0.16) |
-| `--hardware-cost` | 0 | Purchase price in USD (MacBook: ~2500, H100: ~30000) |
-| `--hardware-lifetime-hours` | 15000 | Useful lifetime (~5 years at 8h/day) |
-| `--gpu-hour-cost` | 0 | Cloud GPU rental rate (H100: ~$2.50/h) |
-
-### Resource Utilization
-| Metric | Description |
-|--------|-------------|
-| **Memory peak (MB)** | Peak memory usage during inference |
-| **CPU usage (%)** | Average CPU utilization |
-
-### Token Accounting
-| Metric | Description |
-|--------|-------------|
-| **Input tokens** | Prompt tokens sent |
-| **Output tokens** | Tokens generated |
-| **Total tokens** | Sum of input + output |
-
----
-
-## Datasets
-
-| Workload | Dataset | Source | Samples |
-|----------|---------|--------|---------|
-| **Math** | GSM8K | HuggingFace `openai/gsm8k` | 50 (configurable) |
-| **Reasoning** | BoolQ | HuggingFace `google/boolq` | 50 (configurable) |
-| **Summarization** | XSum | HuggingFace `EdinburghNLP/xsum` | 50 (configurable) |
-| **JSON Extraction** | Curated toy | Built-in | 50 |
-| **Embeddings** | STS-B | HuggingFace `mteb/stsbenchmark-sts` | 50 (configurable) |
-
-**Why JSON extraction uses a toy dataset:**
-- Real JSON datasets (CoNLL-2003 NER, etc.) have inconsistent ground truth
-- Toy dataset has clean, verifiable field values for exact accuracy checking
-- Enables meaningful accuracy comparison between backends (OpenAI: 90%, local: 60-80%)
-- HuggingFace alternatives available via config: `source: ner` or `source: json_struct`
-
-**Fallback behavior:** All loaders include toy datasets as fallback if HuggingFace download fails.
-
----
-
-## Output Files
-
-Each run produces:
-
-| File | Description |
-|------|-------------|
-| `samples.jsonl` | Per-request outputs with predictions, latencies, tokens |
-| `metrics.json` | Aggregated performance metrics |
-| `run_config.json` | Exact configuration used |
-| `manifest.json` | Timestamp, environment, git hash |
-
----
-
-## Backend Setup
-
-### OpenAI
-```bash
-export OPENAI_API_KEY="sk-..."
-python runner.py --backend openai --workload workloads/math/config.yaml --out results/test
-```
-
-### Ollama
-```bash
-# Install from https://ollama.ai
-ollama pull llama3.2
-python runner.py --backend ollama --model llama3.2 --workload workloads/math/config.yaml --out results/test
-```
-
-### vLLM (requires GPU)
-
-vLLM is the industry-standard for LLM inference serving. It requires an NVIDIA GPU.
-
-```bash
-# 1. Install vLLM on the GPU server
-pip install vllm
-
-# 2. Start the vLLM server (in one terminal)
-python -m vllm.entrypoints.openai.api_server \
-  --model meta-llama/Llama-3.1-8B \
-  --host 0.0.0.0 --port 8000
-
-# 3. Run benchmarks (in another terminal)
-python runner.py --backend vllm --model meta-llama/Llama-3.1-8B \
-  --workload workloads/math/config.yaml --out results/test
-
-# For a remote server, set VLLM_BASE_URL:
-export VLLM_BASE_URL="http://your-server:8000"
-```
-
-### MLX (Apple Silicon only)
-```bash
-pip install mlx mlx-lm
-python runner.py --backend mlx --model mlx-community/Phi-3-mini-4k-instruct-4bit --workload workloads/math/config.yaml --out results/test
-```
-
----
-
-## Sample Results
-
-*Latest benchmark results (n=10 samples per workload):*
-
-| Backend | Model | Workload | Accuracy | Latency (p50) | Cost |
-|---------|-------|----------|----------|---------------|------|
-| OpenAI | gpt-4.1-mini | math | 100% (10/10) | 4.5s | $0.0044 |
-| OpenAI | gpt-4.1-mini | reasoning | 60% (6/10) | 4.0s | $0.0043 |
-| OpenAI | gpt-4.1-mini | summarization | 100% (10/10) | 1.3s | $0.0015 |
-| OpenAI | gpt-4.1-mini | json_extraction | 100% (10/10) | 1.6s | $0.0014 |
-| Ollama | llama3.2 | math | 50% (5/10) | 5.9s | $0 |
-| Ollama | llama3.2 | reasoning | 50% (5/10) | 4.9s | $0 |
-| Ollama | llama3.2 | summarization | 100% (10/10) | 1.0s | $0 |
-| Ollama | llama3.2 | json_extraction | 100% (10/10) | 1.5s | $0 |
-| vLLM | microsoft/phi-2 | math | 10% (1/10) | 14.8s | $0 |
-| vLLM | microsoft/phi-2 | reasoning | 70% (7/10) | 10.4s | $0 |
-| vLLM | microsoft/phi-2 | summarization | 90% (9/10) | 2.4s | $0 |
-| vLLM | microsoft/phi-2 | json_extraction | 90% (9/10) | 2.1s | $0 |
-| MLX | Phi-3-mini-4bit | math | 30% (3/10) | 10.0s | $0 |
-| MLX | Phi-3-mini-4bit | reasoning | 50% (5/10) | 10.7s | $0 |
-| MLX | Phi-3-mini-4bit | summarization | 100% (10/10) | 2.1s | $0 |
-| MLX | Phi-3-mini-4bit | json_extraction | 40% (4/10) | 5.5s | $0 |
-
-**Key Observations:**
-- **OpenAI** achieves highest accuracy but incurs API costs
-- **Local backends** (Ollama, MLX, vLLM) are free but have lower accuracy on complex tasks
-- **Math** is the hardest task for small models (requires multi-step reasoning)
-- **Summarization** is easiest (all backends achieve 90-100%)
-
----
-
-## Extending the Framework
-
-### Adding a New Backend
-
-Create `backends/mybackend_backend.py`:
-
-```python
-class MyBackend:
-    def __init__(self, model: str):
-        self.model = model
-    
-    def generate(self, prompts: list, config: dict) -> list:
-        results = []
-        for prompt in prompts:
-            # Your inference logic here
-            results.append({
-                "text": "generated text",
-                "latency_ms": 100.0,
-                "ttft_ms": 10.0,
-                "extra": {
-                    "usage": {"input_tokens": 50, "output_tokens": 100, "total_tokens": 150}
-                }
-            })
-        return results
-```
-
-### Adding a New Workload
-
-Create `workloads/myworkload/`:
-- `config.yaml` - Configuration
-- `loader.py` - `load_samples()` and `accuracy_check()` functions
-- `prompt.py` - `make_prompt()` function
-- `__init__.py`
-
----
-
-## Intended Use
-
-This benchmark is intended for:
-- Systems research and evaluation
-- Inference runtime comparison
-- Performance profiling under controlled workloads
-- Cost-benefit analysis of local vs. hosted inference
-
----
-
-## Key Design Decisions
-
-### Why These Backends?
-- **OpenAI API**: Cloud-based baseline with state-of-the-art accuracy
-- **vLLM**: Industry-standard GPU inference server (as recommended by Prof. Matthias)
-- **MLX**: Apple Silicon local inference (for Macs without NVIDIA GPU)
-- **Ollama**: Easy-to-use local inference for quick testing
-
-### Why These Datasets?
-All datasets are from HuggingFace for reproducibility:
-- **GSM8K**: Standard math reasoning benchmark (openai/gsm8k)
-- **BoolQ**: Binary reading comprehension (google/boolq)
-- **XSum**: News summarization benchmark (EdinburghNLP/xsum)
-- **JSON Extraction**: Toy dataset with clean ground truth
-
-### Metrics Philosophy
-Following the approach of existing benchmarks (MLPerf, etc.):
-- Measure both **accuracy** and **runtime** under controlled workloads
-- Report **multiple latency percentiles** (mean, p50, p95, min, max)
-- Track **resource usage** (memory, CPU) for local backends
-- Calculate **cost efficiency** for cloud APIs
-
----
-
-## SystemDS Integration (Planned)
-
-This benchmarking framework is designed to eventually evaluate **SystemDS LLM inference** capabilities when they become available. The current implementation uses existing inference systems (vLLM, Ollama, etc.) as baselines.
-
-### Integration Plan
-
-When SystemDS adds LLM inference support, integration will require:
-
-1. **Create `backends/systemds_backend.py`** implementing the standard interface:
-   ```python
-   class SystemDSBackend:
-       def generate(self, prompts: list, config: dict) -> list:
-           # Connect to SystemDS inference API
-           # Return results with latency, tokens, etc.
-   ```
-
-2. **Run comparative benchmarks** against existing baselines (OpenAI, vLLM)
-
-3. **Analyze performance trade-offs** in terms of:
-   - Inference latency vs. accuracy
-   - Memory efficiency
-   - Integration with SystemDS data pipelines
-
-This design ensures the benchmark is ready for SystemDS evaluation while providing immediate value through existing system comparisons.
+| `--electricity-rate` | 0.30 | $/kWh |
+| `--hardware-cost` | 0 | Purchase price in USD |
+| `--hardware-lifetime-hours` | 15000 | Useful lifetime hours |
 
 ---
 
 ## Future Work
 
-### Planned Enhancements
-
-| Feature | Description | Priority |
-|---------|-------------|----------|
-| **SystemDS Backend** | Integrate when SystemDS LLM inference is available | High |
-| **Larger Models for vLLM** | Test Llama-2-7B or Llama-3-8B for better accuracy (phi-2 is 2.7B) | High |
-| ~~**Embeddings Workload**~~ | ~~Add similarity/clustering tasks~~ (Done: STS-B) | ~~Medium~~ |
-| **Larger Sample Sizes** | Run benchmarks with n=100+ for statistical significance | Medium |
-| **HuggingFace JSON Datasets** | Switch JSON extraction from toy to CoNLL-2003 NER or larger datasets | Medium |
-| **More Backends** | Hugging Face TGI, llama.cpp, Anthropic Claude | Medium |
-| **Code Generation** | Add programming task benchmark (HumanEval, MBPP) | Medium |
-| **Model Quantization** | Compare 4-bit vs 8-bit vs full precision performance/accuracy | Medium |
-| **Batch Processing** | Compare batch vs. single request performance | Low |
-| **Prompt Optimization** | Test different prompt strategies for each workload | Low |
-
-### Metrics Coverage by Backend
-
-Some metrics are estimated rather than precisely measured:
-
-| Metric | OpenAI | Ollama | MLX | vLLM |
-|--------|--------|--------|-----|------|
-| Latency | ✅ Real | ✅ Real | ✅ Real | ✅ Real |
-| TTFT | ✅ Streaming | ✅ Streaming | ✅ Streaming | ✅ Streaming |
-| Token counts | ✅ API | ✅ API (eval_count) | ✅ Tokenizer | ✅ API |
-| API Cost | ✅ API pricing | $0 | $0 | $0 |
-| Compute Cost | N/A | ✅ Electricity + HW | ✅ Electricity + HW | ✅ GPU-hour + Electricity |
-| Memory/CPU | ✅ Local | ✅ Local | ✅ Local | ✅ Local |
-| GPU metrics | ❌ N/A | ✅ pynvml (optional) | ❌ N/A (Apple) | ✅ pynvml (optional) |
-
-### Known Limitations
-
-1. **Small Sample Sizes**: Default n=10 for quick testing. Production benchmarks should use n=100+ for reliable statistics.
-
-2. **Limited Model Variety**: Each backend tested with one model. More comprehensive would test multiple model sizes.
-
-3. **No Quantization Comparison**: Could compare 4-bit vs 8-bit vs full precision models.
-
-4. **Compute Cost Estimation**: Local backend costs are estimated from electricity and hardware amortization (use `--power-draw-w` and `--hardware-cost` flags). Actual power draw varies by workload.
+| Feature | Description |
+|---------|-------------|
+| KV cache support | Reduce latency gap between SystemDS and vLLM |
+| Direct CUDA integration | Bypass the Py4J roundtrip for model inference |
+| Continuous batching | Process multiple requests concurrently in SystemDS |
+| Larger sample sizes | Run with n=100+ for stronger statistical significance |
+| Code generation workload | Add HumanEval / MBPP programming tasks |
+| Model quantization comparison | Compare 4-bit vs 8-bit vs full precision |
 
 ---
 
 ## Contact
 
-- Student: Kübra Aksu
+- Student: Kubra Aksu
 - Supervisor: Prof. Dr. Matthias Boehm
-- Project: DIA Project - SystemDS Benchmark 
+- Project: DIA Project - SystemDS LLM Benchmark

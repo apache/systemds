@@ -75,7 +75,8 @@ class SystemDSBackend:
         max_tokens = int(config.get("max_tokens", config.get("max_output_tokens", 512)))
         temperature = float(config.get("temperature", 0.0))
         top_p = float(config.get("top_p", 0.9))
-        concurrency = int(os.environ.get("SYSTEMDS_CONCURRENCY", "1"))
+        concurrency = int(config.get("concurrency",
+            os.environ.get("SYSTEMDS_CONCURRENCY", "1")))
 
         jvm = self._jvm
 

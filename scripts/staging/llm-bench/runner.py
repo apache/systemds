@@ -326,7 +326,12 @@ def main():
 
     t0 = time.perf_counter()
     try:
-        if args.concurrency > 1:
+        if args.concurrency > 1 and args.backend == "systemds":
+            # SystemDS handles concurrency in Java via llmPredict
+            logger.info("Running %d prompts with Java-side concurrency=%d", len(prompts), args.concurrency)
+            backend_cfg["concurrency"] = args.concurrency
+            outputs = backend.generate(prompts, backend_cfg)
+        elif args.concurrency > 1:
             logger.info("Running %d prompts with concurrency=%d", len(prompts), args.concurrency)
             outputs = generate_concurrent(backend, prompts, backend_cfg, args.concurrency)
         else:

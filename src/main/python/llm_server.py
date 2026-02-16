@@ -1,14 +1,6 @@
-"""OpenAI-compatible HTTP server for local HuggingFace model inference.
+"""Simple /v1/completions server for local HuggingFace models.
 
-Serves the /v1/completions endpoint so that SystemDS llmPredict() and
-other OpenAI-compatible clients can call it directly.
-
-Usage:
-  python llm_server.py <model_name> [--port PORT]
-
-Examples:
-  python llm_server.py distilgpt2 --port 8080
-  python llm_server.py Qwen/Qwen2.5-3B-Instruct --port 8080
+Usage: python llm_server.py distilgpt2 --port 8080
 """
 
 import argparse

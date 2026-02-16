@@ -619,8 +619,11 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output.setDimensions(-1, -1);
 	}
 
-	private void validateLlmPredict(DataIdentifier output, boolean conditional) 
+	private void validateLlmPredict(DataIdentifier output, boolean conditional)
 	{
+		Set<String> valid = new HashSet<>(Arrays.asList(
+			"target", "url", "max_tokens", "temperature", "top_p"));
+		checkInvalidParameters(getOpCode(), getVarParams(), valid);
 		checkDataType(false, "llmPredict", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
 		checkStringParam(false, "llmPredict", "url", conditional);
 		output.setDataType(DataType.FRAME);

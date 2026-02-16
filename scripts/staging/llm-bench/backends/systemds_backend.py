@@ -1,18 +1,4 @@
-"""SystemDS JMLC backend -- routes inference through the full DML pipeline.
-
-Data flow:
-  Python (benchmark runner)
-    -> Py4J -> Java JMLC Connection
-    -> prepareScript() with real DML: llmPredict(target=X, url=..., ...)
-    -> SystemDS compiler pipeline: parser -> hops -> lops -> instructions
-    -> ParameterizedBuiltinCPInstruction executes HTTP POST to inference server
-    -> results collected in a SystemDS FrameBlock
-    -> back to Python
-
-The DML script uses the native llmPredict() parameterized built-in, which
-goes through the full SystemDS compilation pipeline.  The inference server
-can be any OpenAI-compatible endpoint (llm_server.py, vLLM, Ollama, etc.).
-"""
+"""SystemDS JMLC backend using the native llmPredict built-in."""
 
 import logging
 import os

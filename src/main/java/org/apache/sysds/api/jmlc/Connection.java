@@ -367,15 +367,15 @@ public class Connection implements Closeable
 			outputReader.setDaemon(true);
 			outputReader.start();
 			
-			//wait for worker to register, checking process liveness periodically
-			long deadlineNs = System.nanoTime() + TimeUnit.SECONDS.toNanos(60);
+			//larger models (7B+) need more time to load weights into GPU memory
+			long deadlineNs = System.nanoTime() + TimeUnit.SECONDS.toNanos(300);
 			while (!_workerLatch.await(2, TimeUnit.SECONDS)) {
 				if (!_pythonProcess.isAlive()) {
 					int exitCode = _pythonProcess.exitValue();
 					throw new DMLException("LLM worker process died during startup (exit code " + exitCode + ")");
 				}
 				if (System.nanoTime() > deadlineNs) {
-					throw new DMLException("Timeout waiting for LLM worker to register (60s)");
+					throw new DMLException("Timeout waiting for LLM worker to register (300s)");
 				}
 			}
 			

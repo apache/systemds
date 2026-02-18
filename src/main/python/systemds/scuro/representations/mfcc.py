@@ -65,12 +65,12 @@ class MFCC(UnimodalRepresentation):
         if sr is None:
             sr = 22050
         mfcc = librosa.feature.mfcc(
-                y=np.array(instance),
-                sr=sr,
-                n_mfcc=self.n_mfcc,
-                dct_type=self.dct_type,
-                hop_length=self.hop_length,
-                n_mels=self.n_mels,
-         )
+            y=np.array(instance),
+            sr=sr,
+            n_mfcc=self.n_mfcc,
+            dct_type=self.dct_type,
+            hop_length=self.hop_length,
+            n_mels=self.n_mels,
+        )
         mfcc = (mfcc - np.mean(mfcc)) / np.std(mfcc)
         return mfcc.T

@@ -18,6 +18,8 @@
 # under the License.
 #
 # -------------------------------------------------------------
+from dataclasses import dataclass
+import os
 from typing import List, Optional, Union
 
 import numpy as np
@@ -25,6 +27,14 @@ import numpy as np
 from systemds.scuro.dataloader.base_loader import BaseLoader
 import cv2
 from systemds.scuro.modality.type import ModalityType
+
+
+@dataclass
+class ImageStats:
+    max_width: int
+    max_height: int
+    max_channels: int
+    num_instances: int
 
 
 class ImageLoader(BaseLoader):
@@ -41,6 +51,7 @@ class ImageLoader(BaseLoader):
             source_path, indices, data_type, chunk_size, ModalityType.IMAGE, ext
         )
         self.load_data_from_file = load
+        self.stats = self.get_stats(source_path)
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
@@ -61,3 +72,19 @@ class ImageLoader(BaseLoader):
         )
 
         self.data.append(image)
+
+    def get_stats(self, source_path: str):
+        max_width = 0
+        max_height = 0
+        max_channels = 0
+        num_instances = 0
+        for file in os.listdir(source_path):
+            self.file_sanity_check(file)
+            image = cv2.imread(file, cv2.IMREAD_COLOR)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            height, width, channels = image.shape
+            max_width = max(max_width, width)
+            max_height = max(max_height, height)
+            max_channels = max(max_channels, channels)
+            num_instances += 1
+        return ImageStats(max_width, max_height, max_channels, num_instances)

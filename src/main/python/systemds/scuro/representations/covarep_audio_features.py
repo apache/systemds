@@ -76,6 +76,7 @@ class Spectral(UnimodalRepresentation):
 
         return transformed_modality
 
+
 @register_representation(ModalityType.AUDIO)
 class ZeroCrossing(UnimodalRepresentation):
     def __init__(self, hop_length=512, params=None):

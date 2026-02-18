@@ -18,6 +18,8 @@
 # under the License.
 #
 # -------------------------------------------------------------
+from dataclasses import dataclass
+import os
 from typing import List, Optional, Union
 
 import numpy as np
@@ -25,6 +27,16 @@ import numpy as np
 from systemds.scuro.dataloader.base_loader import BaseLoader
 import cv2
 from systemds.scuro.modality.type import ModalityType
+
+
+@dataclass
+class VideoStats:
+    fps: int
+    max_length: int
+    max_width: int
+    max_height: int
+    max_num_channels: int
+    num_instances: int
 
 
 class VideoLoader(BaseLoader):
@@ -42,6 +54,7 @@ class VideoLoader(BaseLoader):
         )
         self.load_data_from_file = load
         self.fps = fps
+        self.stats = self.get_stats(source_path)
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
@@ -80,3 +93,28 @@ class VideoLoader(BaseLoader):
             idx += 1
 
         self.data.append(np.stack(frames))
+
+    def get_stats(self, source_path: str):
+        self.file_sanity_check(source_path)
+        fps = 0
+        max_length = 0
+        max_width = 0
+        max_height = 0
+        max_num_channels = 0
+        num_instances = 0
+        for file in os.listdir(source_path):
+            self.file_sanity_check(file)
+            cap = cv2.VideoCapture(file)
+
+            length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            num_channels = 3
+            max_length = max(max_length, length)
+            max_width = max(max_width, width)
+            max_height = max(max_height, height)
+            max_num_channels = max(max_num_channels, num_channels)
+            num_instances += 1
+        return VideoStats(
+            fps, max_length, max_width, max_height, max_num_channels, num_instances
+        )

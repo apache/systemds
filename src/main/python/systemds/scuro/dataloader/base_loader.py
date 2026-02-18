@@ -55,7 +55,7 @@ class BaseLoader(ABC):
         self._chunk_size = None
         self._data_type = data_type
         self._ext = ext
-
+        self.stats = None
         if chunk_size:
             self.chunk_size = chunk_size
 

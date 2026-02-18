@@ -44,6 +44,7 @@ class UnimodalModality(Modality):
             data_loader.data_type,
         )
         self.data_loader = data_loader
+        self.stats = data_loader.stats
 
     def copy_from_instance(self):
         new_instance = type(self)(self.data_loader)

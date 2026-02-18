@@ -52,9 +52,9 @@ class Spectrogram(UnimodalRepresentation):
 
         transformed_modality.data = result
         return transformed_modality
-    
+
     def compute_feature(self, instance):
         spectrogram = librosa.stft(
-                y=np.array(np.abs(instance)), hop_length=self.hop_length, n_fft=self.n_fft
-            )
+            y=np.array(np.abs(instance)), hop_length=self.hop_length, n_fft=self.n_fft
+        )
         return librosa.amplitude_to_db(np.abs(spectrogram)).T

@@ -18,6 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
+from dataclasses import dataclass
 import json
 
 import numpy as np
@@ -25,6 +26,13 @@ import numpy as np
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.dataloader.base_loader import BaseLoader
 from typing import Optional, List, Union
+
+
+@dataclass
+class JSONStats:
+    num_instances: int
+    max_length: int
+    avg_length: float
 
 
 class JSONLoader(BaseLoader):
@@ -41,6 +49,7 @@ class JSONLoader(BaseLoader):
             source_path, indices, data_type, chunk_size, ModalityType.TEXT, ext
         )
         self.field = field
+        self.stats = self.get_stats(source_path)
 
     def extract(self, file: str, index: Optional[Union[str, List[str]]] = None):
         self.file_sanity_check(file)
@@ -58,3 +67,24 @@ class JSONLoader(BaseLoader):
                 text = " ".join(text) if isinstance(text, list) else text
                 self.data.append(text)
                 self.metadata[idx] = self.modality_type.create_metadata(len(text), text)
+
+    def get_stats(self, source_path: str):
+        self.file_sanity_check(source_path)
+        with open(source_path) as f:
+            json_file = json.load(f)
+            num_instances = 0
+            max_length = 0
+            avg_length = 0
+
+            for id in self.indices:
+                try:
+                    text = json_file[id][self.field]
+                except:
+                    text = json_file[self.field]
+
+                text = " ".join(text) if isinstance(text, list) else text
+                num_instances += 1
+                max_length = max(max_length, len(text))
+                avg_length += len(text)
+            avg_length /= num_instances
+        return JSONStats(num_instances, max_length, avg_length)

@@ -111,7 +111,6 @@ def _process_dag_group(
                 processed_count += 1
                 continue
             processed_count += 1
-            
 
             start = time.perf_counter()
             scores = task.run(representation.data)
@@ -903,10 +902,7 @@ class UnimodalResults:
         sorted_indices = sorted_indices[: self.k]
         task_cache = self.cache.get(modality.modality_id, {}).get(task.model.name, None)
         if not task_cache:
-            cache = [
-                results[i].dag.execute([modality])
-                for i in range(len(results))
-            ]
+            cache = [results[i].dag.execute([modality]) for i in range(len(results))]
         elif isinstance(task_cache, list):
             cache = task_cache
         else:

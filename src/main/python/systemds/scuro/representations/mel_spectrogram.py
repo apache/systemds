@@ -59,16 +59,14 @@ class MelSpectrogram(UnimodalRepresentation):
         transformed_modality.data = result
         return transformed_modality
 
-
     def compute_feature(self, instance, sr=None):
         if sr is None:
             sr = 22050
         S = librosa.feature.melspectrogram(
-                y=np.array(instance),
-                sr=sr,
-                n_mels=self.n_mels,
-                hop_length=self.hop_length,
-                n_fft=self.n_fft,
-            )
+            y=np.array(instance),
+            sr=sr,
+            n_mels=self.n_mels,
+            hop_length=self.hop_length,
+            n_fft=self.n_fft,
+        )
         return S.T
-    

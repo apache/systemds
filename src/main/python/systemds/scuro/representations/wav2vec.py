@@ -35,7 +35,7 @@ warnings.filterwarnings("ignore", message="Some weights of")
 
 @register_representation(ModalityType.AUDIO)
 class Wav2Vec(UnimodalRepresentation):
-    def __init__(self):
+    def __init__(self, params=None):
         super().__init__("Wav2Vec", ModalityType.TIMESERIES, {})
         self.processor = Wav2Vec2Processor.from_pretrained(
             "facebook/wav2vec2-base-960h"
@@ -44,7 +44,7 @@ class Wav2Vec(UnimodalRepresentation):
             "facebook/wav2vec2-base-960h"
         ).float()
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )

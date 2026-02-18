@@ -45,7 +45,7 @@ class MelSpectrogram(UnimodalRepresentation):
         self.hop_length = int(hop_length)
         self.n_fft = int(n_fft)
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )
@@ -53,15 +53,22 @@ class MelSpectrogram(UnimodalRepresentation):
 
         for i, sample in enumerate(modality.data):
             sr = list(modality.metadata.values())[i]["frequency"]
-            S = librosa.feature.melspectrogram(
-                y=np.array(sample),
+            computed_feature = self.compute_feature(sample, sr)
+            result.append(computed_feature)
+
+        transformed_modality.data = result
+        return transformed_modality
+
+
+    def compute_feature(self, instance, sr=None):
+        if sr is None:
+            sr = 22050
+        S = librosa.feature.melspectrogram(
+                y=np.array(instance),
                 sr=sr,
                 n_mels=self.n_mels,
                 hop_length=self.hop_length,
                 n_fft=self.n_fft,
-            ).astype(modality.data_type)
-
-            result.append(S.T)
-
-        transformed_modality.data = result
-        return transformed_modality
+            )
+        return S.T
+    

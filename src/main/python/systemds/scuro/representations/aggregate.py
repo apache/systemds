@@ -109,7 +109,7 @@ class Aggregation:
     def transform(self, modality):
         return self.execute(modality)
 
-    def aggregate_instance(self, instance):
+    def compute_feature(self, instance):
         return self._aggregation_func(instance)
 
     def get_aggregation_functions(self):

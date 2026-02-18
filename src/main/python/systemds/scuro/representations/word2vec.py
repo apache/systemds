@@ -41,7 +41,7 @@ def get_embedding(sentence, model):
 
 @register_representation(ModalityType.TEXT)
 class W2V(UnimodalRepresentation):
-    def __init__(self, vector_size=150, min_count=1, output_file=None):
+    def __init__(self, vector_size=150, min_count=1, output_file=None, params=None):
         parameters = {
             "vector_size": [50, 100, 150, 200],
             "min_count": [1, 2, 4, 8],
@@ -51,7 +51,7 @@ class W2V(UnimodalRepresentation):
         self.min_count = min_count
         self.output_file = output_file
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(modality, self)
         t = [list(tokenize(s.lower())) for s in modality.data]
         model = Word2Vec(

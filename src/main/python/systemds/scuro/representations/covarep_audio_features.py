@@ -31,17 +31,16 @@ from systemds.scuro.drsearch.operator_registry import (
 )
 
 
-@register_context_representation_operator(ModalityType.AUDIO)
 @register_representation(ModalityType.AUDIO)
 class Spectral(UnimodalRepresentation):
-    def __init__(self, hop_length=512):
+    def __init__(self, hop_length=512, params=None):
         parameters = {
             "hop_length": [256, 512, 1024, 2048],
         }  # TODO
         super().__init__("Spectral", ModalityType.EMBEDDING, parameters, False)
         self.hop_length = hop_length
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )
@@ -77,17 +76,16 @@ class Spectral(UnimodalRepresentation):
 
         return transformed_modality
 
-
 @register_representation(ModalityType.AUDIO)
 class ZeroCrossing(UnimodalRepresentation):
-    def __init__(self, hop_length=512):
+    def __init__(self, hop_length=512, params=None):
         parameters = {
             "hop_length": [256, 512, 1024, 2048],
         }  # TODO
         super().__init__("ZeroCrossing", ModalityType.EMBEDDING, parameters, False)
         self.hop_length = hop_length
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )
@@ -106,7 +104,7 @@ class ZeroCrossing(UnimodalRepresentation):
 
 @register_representation(ModalityType.AUDIO)
 class RMSE(UnimodalRepresentation):
-    def __init__(self, frame_length=1024, hop_length=512):
+    def __init__(self, frame_length=1024, hop_length=512, params=None):
         parameters = {
             "frame_length": [1024, 2048, 4096],
             "hop_length": [256, 512, 1024, 2048],
@@ -115,7 +113,7 @@ class RMSE(UnimodalRepresentation):
         self.hop_length = hop_length
         self.frame_length = frame_length
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )
@@ -133,14 +131,14 @@ class RMSE(UnimodalRepresentation):
 
 @register_representation(ModalityType.AUDIO)
 class Pitch(UnimodalRepresentation):
-    def __init__(self, hop_length=512):
+    def __init__(self, hop_length=512, params=None):
         parameters = {
             "hop_length": [256, 512, 1024, 2048],
         }  # TODO
         super().__init__("Pitch", ModalityType.EMBEDDING, parameters, False)
         self.hop_length = hop_length
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )

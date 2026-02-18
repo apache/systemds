@@ -19,7 +19,6 @@
 #
 # -------------------------------------------------------------
 import pickle
-import numpy as np
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
@@ -46,6 +45,7 @@ from systemds.scuro.drsearch.representation_dag import (
     RepresentationNode,
     CSEAwareDAGBuilder,
     group_dags_by_dependencies,
+    pushdown_aggregation,
 )
 from bisect import bisect_left
 from systemds.scuro.drsearch.representation_dag_visualizer import visualize_dag
@@ -68,7 +68,6 @@ def _process_dag_group(
     modality_pickle: bytes,
     tasks_pickle: bytes,
     rep_cache_pickle: Optional[bytes],
-    expected_dimensions: int,
     modality_id: int,
     debug: bool,
     dag_group_idx: int,
@@ -81,67 +80,63 @@ def _process_dag_group(
         resume=True,
     )
     results = []
+    if debug:
+        print(f"Processing modality {modality_id} with {dag_group_idx} dag group")
+
+    # dag_group = pushdown_aggregation(dag_group) # TODO: include this functionality in ther unimodal repreresentations
+
+    # Resume from checkpoint if available
+    skip_count = 0
+    loaded = checkpoint_manager.load_latest()
+    if loaded:
+        loaded_results, meta, _ = loaded
+        results = loaded_results
+        skip_count = len(loaded_results)
+        checkpoint_manager.eval_count = meta.get("eval_count", skip_count)
+        checkpoint_manager.counts_by_key = meta.get("eval_count_by_modality", {})
+        checkpoint_manager._last_checkpoint_eval_count = checkpoint_manager.eval_count
 
     dag_group = pickle.loads(dag_group_pickle)
     modality = pickle.loads(modality_pickle)
     tasks = pickle.loads(tasks_pickle)
 
-    group_cache = LRUCache(max_size=32)
-    id = 0
-    for dag in dag_group:
+    group_cache = LRUCache(max_size=6)
+    processed_count = 0
 
-        representations = dag.execute([modality], external_cache=group_cache)
-
-        node_id = list(representations.keys())[-1]
-        node = dag.get_node_by_id(node_id)
-        if node.operation is None:
-            continue
-
-        reps = []
-        if node.operation:
-            reps.append(node.operation)
-
-        reps = get_representation_chain(node, dag)
-        combination = next((op for op in reps if isinstance(op, Fusion)), None)
-
-        transformed_modality = representations[node_id]
+    for i, dag in enumerate(dag_group):
+        representation = dag.execute([modality], external_cache=group_cache)
 
         for task in tasks:
-            current_modality = transformed_modality
-            current_dag = dag
-
-            if expected_dimensions == 1 and get_shape(current_modality.metadata) > 1:
-                agg_operator = AggregatedRepresentation()
-                # rep_node_id = builder.create_operation_node(
-                #     agg_operator.__class__,
-                #     [current_dag.root_node_id],
-                #     agg_operator.get_current_parameters(),
-                # )
-                # current_dag = builder.build(rep_node_id)
-                current_modality = agg_operator.transform(current_modality)
+            if processed_count < skip_count:
+                processed_count += 1
+                continue
+            processed_count += 1
+            
 
             start = time.perf_counter()
-            scores = task.run(current_modality.data)
+            scores = task.run(representation.data)
             end = time.perf_counter()
 
             results.append(
                 {
                     "scores": scores,
-                    "transform_time": current_modality.transform_time,
+                    "transform_time": representation.transform_time,
                     "task_name": task.model.name,
                     "task_time": end - start,
-                    "combination": combination.name if combination else "",
-                    "dag": current_dag,
+                    "dag": dag,
                     "modality_id": modality_id,
                 }
             )
 
             checkpoint_manager.increment(modality_id, 1, dag_group_idx=dag_group_idx)
             checkpoint_manager.checkpoint_if_due(results, "eval_count_by_modality")
+        if debug:
+            print(
+                f"Processed {i} of {len(dag_group)} dag groups for modality {modality_id}"
+            )
 
-            if debug:
-                visualize_dag(current_dag)
-        id += 1
+        if debug:
+            visualize_dag(dag)
     return {"results": results}
 
 
@@ -182,7 +177,7 @@ class UnimodalOptimizer:
 
         self.operator_registry = Registry()
         self.operator_performance = UnimodalResults(
-            modalities, tasks, debug, True, k, metric_name
+            modalities, tasks, debug, True, k, self.metric_name
         )
 
         self._tasks_require_same_dims = True
@@ -331,10 +326,18 @@ class UnimodalOptimizer:
             try:
                 local_result = self._process_modality(
                     modality,
-                    self._checkpoint_manager.skip_remaining_by_key.get(
-                        modality.modality_id, 0
-                    )
-                    / len(self.tasks),
+                    (
+                        int(
+                            round(
+                                self._checkpoint_manager.skip_remaining_by_key.get(
+                                    modality.modality_id, 0
+                                )
+                                / len(self.tasks)
+                            )
+                        )
+                        if self.resume
+                        else 0
+                    ),
                 )
                 self._merge_results(local_result)
                 if self.save_all_results:
@@ -351,7 +354,11 @@ class UnimodalOptimizer:
 
     def _process_modality(self, modality, skip_remaining: int = 0):
         local_results = UnimodalResults(
-            [modality], self.tasks, debug=False, store_cache=False
+            [modality],
+            self.tasks,
+            debug=False,
+            store_cache=False,
+            metric_name=self.metric_name,
         )
 
         modality_specific_operators = self._get_modality_operators(
@@ -362,6 +369,20 @@ class UnimodalOptimizer:
         for operator in modality_specific_operators:
             dags.extend(self._build_modality_dag(modality, operator()))
             operators.append(operator())
+
+        if (
+            modality.modality_type == ModalityType.TIMESERIES
+            or modality.modality_type == ModalityType.AUDIO
+        ):
+            dags.extend(
+                self.temporal_context_operators(
+                    modality,
+                    self.builders[modality.modality_id],
+                    dags[0].get_leaf_node_id(),
+                )
+            )
+
+        dags = self.add_aggregation_operator(self.builders[modality.modality_id], dags)
 
         if skip_remaining > 0:
             dags = dags[skip_remaining:]
@@ -374,11 +395,11 @@ class UnimodalOptimizer:
 
         ctx = mp.get_context("spawn")
         max_workers = min(len(dag_groups), mp.cpu_count())
-
         modality_pickle = pickle.dumps(modality)
         tasks_pickle = pickle.dumps(self.tasks)
         rep_cache_pickle = pickle.dumps(rep_cache) if rep_cache else None
 
+        all_groups_succeeded = True
         with ProcessPoolExecutor(max_workers=max_workers, mp_context=ctx) as executor:
             future_to_group = {
                 executor.submit(
@@ -387,7 +408,6 @@ class UnimodalOptimizer:
                     modality_pickle,
                     tasks_pickle,
                     rep_cache_pickle,
-                    self.expected_dimensions,
                     modality.modality_id,
                     self.debug,
                     i,
@@ -407,16 +427,25 @@ class UnimodalOptimizer:
                             result_entry["transform_time"],
                             result_entry["task_name"],
                             result_entry["task_time"],
-                            result_entry["combination"],
                             result_entry["dag"],
                             modality.modality_id,
                         )
                 except Exception as e:
+                    all_groups_succeeded = False
                     print(
                         f"Error processing DAG group {group_idx} for modality {modality.modality_id}: {e}"
                     )
+                    import traceback
 
-        # TODO: merge checkpoints for this modality
+                    traceback.print_exc()
+
+        # Clean up individual group checkpoint files on success
+        if all_groups_succeeded:
+            checkpoint_dir = self.result_path or "."
+            CheckpointManager.cleanup_by_prefix(
+                checkpoint_dir,
+                f"unimodal_checkpoint_group_{modality.modality_id}_",
+            )
 
         self._checkpoint_manager.checkpoint_if_due(
             local_results.results[modality.modality_id], f"eval_count_by_modality"
@@ -435,19 +464,6 @@ class UnimodalOptimizer:
                 pickle.dump(local_results.results, f)
 
         return local_results
-
-    def get_independent_dag_groups(
-        self, modality: Modality
-    ) -> List[List[RepresentationDag]]:
-        modality_specific_operators = self._get_modality_operators(
-            modality.modality_type
-        )
-        dags = []
-        for operator in modality_specific_operators:
-            dags.extend(self._build_modality_dag(modality, operator()))
-
-        groups = group_dags_by_dependencies(dags)
-        return groups
 
     def _get_representation_chain(
         self, node: "RepresentationNode", dag: RepresentationDag
@@ -480,7 +496,6 @@ class UnimodalOptimizer:
         modality,
         local_results,
         dag,
-        combination=None,
         skip_remaining: int = 0,
         track_eval: bool = True,
         modality_id: Any = None,
@@ -511,7 +526,6 @@ class UnimodalOptimizer:
                         aggregated_modality.transform_time,
                         task.model.name,
                         end - start,
-                        combination,
                         dag,
                         modality.modality_id,
                         modality,
@@ -535,7 +549,6 @@ class UnimodalOptimizer:
                         modality.transform_time,
                         task.model.name,
                         end - start,
-                        combination,
                         dag,
                         modality.modality_id,
                         modality,
@@ -573,7 +586,6 @@ class UnimodalOptimizer:
                             modality.transform_time,
                             task.model.name,
                             end - start,
-                            combination,
                             dag,
                             modality.modality_id,
                             modality,
@@ -596,7 +608,6 @@ class UnimodalOptimizer:
                             modality.transform_time,
                             task.model.name,
                             end - start,
-                            combination,
                             dag,
                             modality.modality_id,
                             modality,
@@ -733,12 +744,26 @@ class UnimodalOptimizer:
                 )
             )
 
-        if (
-            modality.modality_type == ModalityType.TIMESERIES
-            or modality.modality_type == ModalityType.AUDIO
-        ):
-            dags.extend(self.temporal_context_operators(modality, builder, leaf_id))
         return dags
+
+    def add_aggregation_operator(self, builder, dags):
+        new_dags = []
+        if self._tasks_require_same_dims and self.expected_dimensions == 1:
+            aggregated_dags = []
+            for dag in dags:
+                agg_op = AggregatedRepresentation(
+                    target_dimensions=self.expected_dimensions
+                )
+                agg_node_id = builder.create_operation_node(
+                    agg_op.__class__,
+                    [dag.root_node_id],
+                    agg_op.get_current_parameters(),
+                )
+                aggregated_dags.append(builder.build(agg_node_id))
+            new_dags = aggregated_dags
+        else:
+            new_dags = dags
+        return new_dags
 
     def default_context_operators(
         self, modality, builder, leaf_id, rep_dag, apply_context_to_leaf=False
@@ -818,7 +843,6 @@ class UnimodalResults:
         transform_time,
         task_name,
         task_time,
-        combination,
         dag,
         modality_id,
         modality=None,
@@ -829,7 +853,6 @@ class UnimodalResults:
             test_score=scores[2].average_scores,
             representation_time=transform_time,
             task_time=task_time,
-            combination=combination.name if combination else "",
             dag=dag,
         )
 
@@ -881,7 +904,7 @@ class UnimodalResults:
         task_cache = self.cache.get(modality.modality_id, {}).get(task.model.name, None)
         if not task_cache:
             cache = [
-                list(results[i].dag.execute([modality]).values())[-1]
+                results[i].dag.execute([modality])
                 for i in range(len(results))
             ]
         elif isinstance(task_cache, list):
@@ -915,6 +938,5 @@ class ResultEntry:
     test_score: PerformanceMeasure = None
     representation_time: float = 0.0
     task_time: float = 0.0
-    combination: str = ""
     dag: RepresentationDag = None
     tradeoff_score: float = 0.0

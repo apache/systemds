@@ -85,7 +85,7 @@ class WordCountSplitIndices(Context):
         overlap (int): Number of overlapping words between chunks (default: 0)
     """
 
-    def __init__(self, max_words=55, overlap=0):
+    def __init__(self, max_words=55, overlap=0, params=None):
         parameters = {
             "max_words": [40, 50, 55, 60, 70, 250, 300, 350, 400, 450],
             "overlap": [0, 10, 20, 30],
@@ -144,7 +144,7 @@ class SentenceBoundarySplitIndices(Context):
         min_words (int): Minimum number of words per chunk before splitting (default: 10)
     """
 
-    def __init__(self, max_words=55, min_words=10, overlap=0.1):
+    def __init__(self, max_words=55, min_words=10, overlap=0.1, params=None):
         parameters = {
             "max_words": [40, 50, 55, 60, 70, 250, 300, 350, 400, 450],
             "min_words": [10, 20, 30],
@@ -240,7 +240,7 @@ class OverlappingSplitIndices(Context):
         stride (int, optional): Step size in words. If None, stride = max_words - overlap_words
     """
 
-    def __init__(self, max_words=55, overlap=0.5, stride=None):
+    def __init__(self, max_words=55, overlap=0.5, stride=None, params=None):
         overlap_words = int(max_words * overlap)
         if stride is None:
             stride = max_words - overlap_words

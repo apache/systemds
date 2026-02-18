@@ -31,15 +31,16 @@ from systemds.scuro.drsearch.operator_registry import (
 
 
 class TimeSeriesRepresentation(UnimodalRepresentation):
-    def __init__(self, name, parameters=None):
-        if parameters is None:
-            parameters = {}
-        super().__init__(name, ModalityType.EMBEDDING, parameters, False)
+    def __init__(self, name, params=None):
+        if params is None:
+            params = {}
+
+        super().__init__(name, ModalityType.EMBEDDING, params, False)
 
     def compute_feature(self, signal):
         raise NotImplementedError("Subclasses should implement this method.")
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )

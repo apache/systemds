@@ -30,14 +30,20 @@ import re
 import torchvision.models as models
 import numpy as np
 from systemds.scuro.modality.type import ModalityType
-from systemds.scuro.utils.static_variables import get_device
+from systemds.scuro.utils.static_variables import (
+    compute_batch_size,
+    get_device,
+    get_device_for_model,
+)
 
 
 @register_representation([ModalityType.IMAGE, ModalityType.VIDEO])
 class VGG19(UnimodalRepresentation):
-    def __init__(self, layer="classifier.0", output_file=None):
+    def __init__(self, layer="classifier.0", output_file=None, params=None):
         self.data_type = torch.bfloat16
-        self.model = models.vgg19(weights=models.VGG19_Weights.DEFAULT).to(get_device())
+        self.model = models.vgg19(weights=models.VGG19_Weights.DEFAULT)
+        self.device = get_device_for_model(self.model, memory_factor=1.5)
+        self.model = self.model.to(self.device)
         parameters = self._get_parameters()
         super().__init__("VGG19", ModalityType.EMBEDDING, parameters)
         self.output_file = output_file
@@ -64,12 +70,21 @@ class VGG19(UnimodalRepresentation):
 
         return parameters
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         self.data_type = torch.float32
         if next(self.model.parameters()).dtype != self.data_type:
             self.model = self.model.to(self.data_type)
 
-        dataset = CustomDataset(modality.data, self.data_type, get_device())
+        sample = modality.data[0] if modality.data else ""
+        self.batch_size = compute_batch_size(
+            model=self.model,
+            device=self.device,
+            sample_data=sample,
+            tokenizer=None,
+            max_seq_length=None,
+            max_batch_size=128,
+        )
+        dataset = CustomDataset(modality.data, self.data_type, self.device)
         embeddings = {}
         activations = {}
 

@@ -26,7 +26,11 @@ import numpy as np
 
 import warnings
 from systemds.scuro.modality.type import ModalityType
-from systemds.scuro.utils.static_variables import get_device
+from systemds.scuro.utils.static_variables import (
+    compute_batch_size,
+    get_device,
+    get_device_for_model,
+)
 from systemds.scuro.utils.utils import set_random_seeds
 from systemds.scuro.drsearch.operator_registry import (
     register_dimensionality_reduction_operator,
@@ -43,7 +47,7 @@ class MLPAveraging(DimensionalityReduction):
     This operator is used to reduce the dimensionality of a representation using a simple average pooling operation.
     """
 
-    def __init__(self, output_dim=512, batch_size=32):
+    def __init__(self, output_dim=512, batch_size=32, params=None):
         parameters = {
             "output_dim": [64, 128, 256, 512, 1024, 2048, 4096],
             "batch_size": [8, 16, 32, 64, 128],
@@ -51,6 +55,7 @@ class MLPAveraging(DimensionalityReduction):
         super().__init__("MLPAveraging", parameters)
         self.output_dim = output_dim
         self.batch_size = batch_size
+        self.device = None
 
     def execute(self, data):
         set_random_seeds(42)
@@ -63,8 +68,19 @@ class MLPAveraging(DimensionalityReduction):
             return data
 
         dim_reduction_model = AggregationMLP(input_dim, self.output_dim)
-        dim_reduction_model.to(get_device())
+        self.device = get_device_for_model(dim_reduction_model, memory_factor=1.5)
+        dim_reduction_model = dim_reduction_model.to(self.device)
         dim_reduction_model.eval()
+
+        # sample = data[0] if data else ""
+        # self.batch_size = compute_batch_size(
+        #     model=dim_reduction_model,
+        #     device=self.device,
+        #     sample_data=sample,
+        #     tokenizer=None,
+        #     max_seq_length=None,
+        #     max_batch_size=self.batch_size,
+        # )
 
         tensor_data = torch.from_numpy(data).float()
 
@@ -75,7 +91,7 @@ class MLPAveraging(DimensionalityReduction):
 
         with torch.no_grad():
             for (batch,) in dataloader:
-                batch_features = dim_reduction_model(batch.to(get_device()))
+                batch_features = dim_reduction_model(batch.to(self.device))
                 all_features.append(batch_features.cpu())
 
         all_features = torch.cat(all_features, dim=0)
@@ -87,7 +103,7 @@ class AggregationMLP(nn.Module):
         super(AggregationMLP, self).__init__()
         agg_size = input_dim // output_dim
         remainder = input_dim % output_dim
-        weight = torch.zeros(output_dim, input_dim).to(get_device())
+        weight = torch.zeros(output_dim, input_dim)
 
         start_idx = 0
         for i in range(output_dim):

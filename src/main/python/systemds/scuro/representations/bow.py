@@ -31,14 +31,14 @@ from systemds.scuro.drsearch.operator_registry import register_representation
 
 @register_representation(ModalityType.TEXT)
 class BoW(UnimodalRepresentation):
-    def __init__(self, ngram_range=2, min_df=2, output_file=None):
+    def __init__(self, ngram_range=2, min_df=2, output_file=None, params=None):
         parameters = {"ngram_range": [2, 3, 5, 10], "min_df": [1, 2, 4, 8]}
         super().__init__("BoW", ModalityType.EMBEDDING, parameters)
         self.ngram_range = int(ngram_range)
         self.min_df = int(min_df)
         self.output_file = output_file
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(modality, self)
         vectorizer = CountVectorizer(
             ngram_range=(1, self.ngram_range), min_df=self.min_df
@@ -52,4 +52,6 @@ class BoW(UnimodalRepresentation):
 
         transformed_modality.data_type = np.float32
         transformed_modality.data = X
+        if aggregation is not None:
+            transformed_modality.data = aggregation.execute(transformed_modality.data)
         return transformed_modality

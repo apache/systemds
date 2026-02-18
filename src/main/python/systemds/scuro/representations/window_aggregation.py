@@ -87,7 +87,17 @@ class Window(Context):
     [ModalityType.TIMESERIES, ModalityType.AUDIO, ModalityType.EMBEDDING]
 )
 class WindowAggregation(Window):
-    def __init__(self, aggregation_function="mean", window_size=10, pad=True):
+    def __init__(
+        self, aggregation_function="mean", window_size=10, pad=True, params=None
+    ):
+        if params is not None:
+            aggregation_function = params["aggregation_function"]
+            try:
+                aggregation_function = aggregation_function()
+            except:
+                pass
+            window_size = params["window_size"]
+            pad = True
         super().__init__("WindowAggregation", aggregation_function)
         self.parameters["window_size"] = [5, 10, 15, 25, 50, 100]
         self.window_size = int(window_size)
@@ -156,39 +166,25 @@ class WindowAggregation(Window):
 
         result = []
         for i in range(0, new_length):
-            if self.is_ts_rep:
-                result.append(
-                    self.aggregation_function.compute_feature(
-                        instance[
-                            i * self.window_size : i * self.window_size
-                            + self.window_size
-                        ]
-                    )
+            result.append(
+                self.aggregation_function.compute_feature(
+                    instance[
+                        i * self.window_size : i * self.window_size
+                        + self.window_size
+                    ]
                 )
-            else:
-                result.append(
-                    self.aggregation_function.aggregate_instance(
-                        instance[
-                            i * self.window_size : i * self.window_size
-                            + self.window_size
-                        ]
-                    )
-                )
-
+            )
+           
         return np.array(result)
 
     def window_aggregate_nested_level(self, instance, new_length):
         result = [[] for _ in range(0, new_length)]
         data = np.stack(copy.deepcopy(instance))
         for i in range(0, new_length):
-            if self.is_ts_rep:
-                result[i] = self.aggregation_function.compute_feature(
-                    data[i * self.window_size : i * self.window_size + self.window_size]
-                )
-            else:
-                result[i] = self.aggregation_function.aggregate_instance(
-                    data[i * self.window_size : i * self.window_size + self.window_size]
-                )
+            result[i] = self.aggregation_function.compute_feature(
+                data[i * self.window_size : i * self.window_size + self.window_size]
+            )
+        
 
         return np.array(result)
 
@@ -198,7 +194,7 @@ class WindowAggregation(Window):
 )
 class StaticWindow(Window):
     # TODO
-    def __init__(self, aggregation_function="mean", num_windows=100):
+    def __init__(self, aggregation_function="mean", num_windows=100, params=None):
         super().__init__("StaticWindow", aggregation_function)
         self.parameters["num_windows"] = [10, num_windows]
         self.num_windows = int(num_windows)
@@ -216,7 +212,7 @@ class StaticWindow(Window):
                 end = start + window_size + extra
                 window = copy.deepcopy(instance[start:end])
                 val = (
-                    self.aggregation_function.aggregate_instance(window)
+                    self.aggregation_function.compute_feature(window)
                     if len(window) > 0
                     else np.zeros_like(output[i - 1])
                 )
@@ -231,7 +227,7 @@ class StaticWindow(Window):
     [ModalityType.TIMESERIES, ModalityType.AUDIO, ModalityType.EMBEDDING]
 )
 class DynamicWindow(Window):
-    def __init__(self, aggregation_function="mean", num_windows=100):
+    def __init__(self, aggregation_function="mean", num_windows=100, params=None):
         super().__init__("DynamicWindow", aggregation_function)
         self.parameters["num_windows"] = [10, num_windows]
         self.num_windows = int(num_windows)
@@ -251,7 +247,7 @@ class DynamicWindow(Window):
             for end in indices:
                 window = copy.deepcopy(instance[start:end])
                 val = (
-                    self.aggregation_function.aggregate_instance(window)
+                    self.aggregation_function.compute_feature(window)
                     if len(window) > 0
                     else np.zeros_like(instance[0])
                 )

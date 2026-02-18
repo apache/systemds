@@ -34,25 +34,27 @@ from systemds.scuro.drsearch.operator_registry import (
 @register_representation(ModalityType.AUDIO)
 @register_context_representation_operator(ModalityType.AUDIO)
 class Spectrogram(UnimodalRepresentation):
-    def __init__(self, hop_length=512, n_fft=2048):
+    def __init__(self, hop_length=512, n_fft=2048, params=None):
         parameters = {"hop_length": [256, 512, 1024, 2048], "n_fft": [1024, 2048, 4096]}
         super().__init__("Spectrogram", ModalityType.TIMESERIES, parameters, False)
         self.hop_length = int(hop_length)
         self.n_fft = int(n_fft)
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )
         result = []
 
         for i, sample in enumerate(modality.data):
-            spectrogram = librosa.stft(
-                y=np.array(np.abs(sample)), hop_length=self.hop_length, n_fft=self.n_fft
-            )
-            S_dB = librosa.amplitude_to_db(np.abs(spectrogram))
-
-            result.append(S_dB.T)
+            computed_feature = self.compute_feature(sample)
+            result.append(computed_feature)
 
         transformed_modality.data = result
         return transformed_modality
+    
+    def compute_feature(self, instance):
+        spectrogram = librosa.stft(
+                y=np.array(np.abs(instance)), hop_length=self.hop_length, n_fft=self.n_fft
+            )
+        return librosa.amplitude_to_db(np.abs(spectrogram)).T

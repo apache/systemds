@@ -33,7 +33,7 @@ from systemds.scuro.drsearch.operator_registry import register_fusion_operator
 
 @register_fusion_operator()
 class Concatenation(Fusion):
-    def __init__(self):
+    def __init__(self, params=None):
         """
         Combines modalities using concatenation
         """

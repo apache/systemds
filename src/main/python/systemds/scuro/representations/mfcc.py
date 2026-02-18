@@ -47,7 +47,7 @@ class MFCC(UnimodalRepresentation):
         self.n_mels = int(n_mels)
         self.hop_length = int(hop_length)
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )
@@ -55,17 +55,22 @@ class MFCC(UnimodalRepresentation):
 
         for i, sample in enumerate(modality.data):
             sr = list(modality.metadata.values())[i]["frequency"]
-            mfcc = librosa.feature.mfcc(
-                y=np.array(sample),
+            computed_feature = self.compute_feature(sample, sr)
+            result.append(computed_feature)
+
+        transformed_modality.data = result
+        return transformed_modality
+
+    def compute_feature(self, instance, sr=None):
+        if sr is None:
+            sr = 22050
+        mfcc = librosa.feature.mfcc(
+                y=np.array(instance),
                 sr=sr,
                 n_mfcc=self.n_mfcc,
                 dct_type=self.dct_type,
                 hop_length=self.hop_length,
                 n_mels=self.n_mels,
-            ).astype(modality.data_type)
-            mfcc = (mfcc - np.mean(mfcc)) / np.std(mfcc)
-
-            result.append(mfcc.T)
-
-        transformed_modality.data = result
-        return transformed_modality
+         )
+        mfcc = (mfcc - np.mean(mfcc)) / np.std(mfcc)
+        return mfcc.T

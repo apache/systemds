@@ -117,3 +117,29 @@ class CheckpointManager:
         if self.eval_count % self.checkpoint_every == 0:
             self._last_checkpoint_eval_count = self.eval_count
             self.save_checkpoint(results, count_key, extra_meta or {})
+
+    def cleanup(self):
+        """Remove the checkpoint and meta files managed by this instance."""
+        checkpoint_path = self._checkpoint_path()
+        meta_path = self._meta_path(checkpoint_path)
+        for path in [checkpoint_path, meta_path]:
+            if os.path.isfile(path):
+                try:
+                    os.remove(path)
+                except OSError as e:
+                    print(f"Warning: Could not remove checkpoint file {path}: {e}")
+
+    @staticmethod
+    def cleanup_by_prefix(checkpoint_dir, prefix):
+        """Remove all checkpoint files whose name starts with the given prefix."""
+        checkpoint_dir = checkpoint_dir or "."
+        if not os.path.isdir(checkpoint_dir):
+            return
+        for filename in os.listdir(checkpoint_dir):
+            if filename.startswith(prefix):
+                filepath = os.path.join(checkpoint_dir, filename)
+                if os.path.isfile(filepath):
+                    try:
+                        os.remove(filepath)
+                    except OSError as e:
+                        print(f"Warning: Could not remove {filepath}: {e}")

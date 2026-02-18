@@ -29,12 +29,18 @@ import torch
 import torchvision.models as models
 import numpy as np
 from systemds.scuro.modality.type import ModalityType
-from systemds.scuro.utils.static_variables import get_device
+from systemds.scuro.utils.static_variables import (
+    compute_batch_size,
+    get_device,
+    get_device_for_model,
+)
 
 
 @register_representation([ModalityType.IMAGE, ModalityType.VIDEO])
 class ResNet(UnimodalRepresentation):
-    def __init__(self, model_name="ResNet18", layer="avgpool", output_file=None):
+    def __init__(
+        self, model_name="ResNet18", layer="avgpool", output_file=None, params=None
+    ):
         self.data_type = torch.bfloat16
         self.model_name = model_name
         parameters = self._get_parameters()
@@ -60,37 +66,33 @@ class ResNet(UnimodalRepresentation):
     def model_name(self, model_name):
         self._model_name = model_name
         if model_name == "ResNet18":
-            self.model = (
-                models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
-                .to(get_device())
-                .to(self.data_type)
-            )
+            model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
+            self.device = get_device_for_model(model, memory_factor=1.5)
+            self.model = model.to(self.device)
+            self.model = self.model.to(self.data_type)
 
         elif model_name == "ResNet34":
-            self.model = models.resnet34(weights=models.ResNet34_Weights.DEFAULT).to(
-                get_device()
-            )
+            model = models.resnet34(weights=models.ResNet34_Weights.DEFAULT)
+            self.device = get_device_for_model(model, memory_factor=1.5)
+            self.model = model.to(self.device)
             self.model = self.model.to(self.data_type)
         elif model_name == "ResNet50":
-            self.model = (
-                models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
-                .to(get_device())
-                .to(self.data_type)
-            )
+            model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
+            self.device = get_device_for_model(model, memory_factor=1.5)
+            self.model = model.to(self.device)
+            self.model = self.model.to(self.data_type)
 
         elif model_name == "ResNet101":
-            self.model = (
-                models.resnet101(weights=models.ResNet101_Weights.DEFAULT)
-                .to(get_device())
-                .to(self.data_type)
-            )
+            model = models.resnet101(weights=models.ResNet101_Weights.DEFAULT)
+            self.device = get_device_for_model(model, memory_factor=1.5)
+            self.model = model.to(self.device)
+            self.model = self.model.to(self.data_type)
 
         elif model_name == "ResNet152":
-            self.model = (
-                models.resnet152(weights=models.ResNet152_Weights.DEFAULT)
-                .to(get_device())
-                .to(self.data_type)
-            )
+            model = models.resnet152(weights=models.ResNet152_Weights.DEFAULT)
+            self.device = get_device_for_model(model, memory_factor=1.5)
+            self.model = model.to(self.device)
+            self.model = self.model.to(self.data_type)
         else:
             raise NotImplementedError
 
@@ -113,14 +115,22 @@ class ResNet(UnimodalRepresentation):
                 parameters["layer_name"].append(name)
         return parameters
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         self.data_type = torch.float32
         if next(self.model.parameters()).dtype != self.data_type:
             self.model = self.model.to(self.data_type)
 
-        dataset = CustomDataset(modality.data, self.data_type, get_device())
+        sample = modality.data[0] if modality.data else ""
+        self.batch_size = compute_batch_size(
+            model=self.model,
+            device=self.device,
+            sample_data=sample,
+            tokenizer=None,
+            max_seq_length=None,
+            max_batch_size=128,
+        )
         embeddings = {}
-
+        dataset = CustomDataset(modality.data, self.data_type, self.device)
         res5c_output = None
 
         def get_features(name_):

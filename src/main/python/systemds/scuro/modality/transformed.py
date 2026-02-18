@@ -62,27 +62,27 @@ class TransformedModality(Modality):
             if isinstance(transformation, TransformedModality)
             else True
         )
-        self.add_transformation(transformation, modality)
+        # self.add_transformation(transformation, modality)
 
         if modality.__class__.__name__ == "UnimodalModality":
             for k, v in self.metadata.items():
                 if "attention_masks" in v:
                     del self.metadata[k]["attention_masks"]
 
-    def add_transformation(self, transformation, modality):
-        if (
-            transformation.__class__.__bases__[0].__name__ == "Fusion"
-            and type(modality).__name__ == "TransformedModality"
-            and modality.transformation[0].__class__.__bases__[0].__name__ != "Fusion"
-        ):
-            self.transformation = []
-        else:
-            self.transformation = (
-                []
-                if type(modality).__name__ != "TransformedModality"
-                else copy.deepcopy(modality.transformation)
-            )
-        self.transformation.append(transformation)
+    # def add_transformation(self, transformation, modality):
+    #     if (
+    #         transformation.__class__.__bases__[0].__name__ == "Fusion"
+    #         and type(modality).__name__ == "TransformedModality"
+    #         and modality.transformation[0].__class__.__bases__[0].__name__ != "Fusion"
+    #     ):
+    #         self.transformation = []
+    #     else:
+    #         self.transformation = (
+    #             []
+    #             if type(modality).__name__ != "TransformedModality"
+    #             else copy.deepcopy(modality.transformation)
+    #         )
+    #     self.transformation.append(transformation)
 
     def copy_from_instance(self):
         return type(self)(self, self.transformation)

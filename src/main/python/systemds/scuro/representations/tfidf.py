@@ -31,13 +31,13 @@ from systemds.scuro.drsearch.operator_registry import register_representation
 
 @register_representation(ModalityType.TEXT)
 class TfIdf(UnimodalRepresentation):
-    def __init__(self, min_df=2, output_file=None):
+    def __init__(self, min_df=2, output_file=None, params=None):
         parameters = {"min_df": [min_df, 4, 8]}
         super().__init__("TF-IDF", ModalityType.EMBEDDING, parameters)
         self.min_df = int(min_df)
         self.output_file = output_file
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(modality, self)
 
         vectorizer = TfidfVectorizer(min_df=self.min_df)

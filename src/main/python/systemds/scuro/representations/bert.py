@@ -26,7 +26,10 @@ from transformers import AutoTokenizer, AutoModel
 from systemds.scuro.representations.utils import save_embeddings
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.operator_registry import register_representation
-from systemds.scuro.utils.static_variables import get_device
+from systemds.scuro.utils.static_variables import (
+    get_device_for_model,
+    compute_batch_size,
+)
 import os
 from torch.utils.data import DataLoader
 from systemds.scuro.utils.torch_dataset import TextDataset, TextSpanDataset
@@ -43,6 +46,7 @@ class BertFamily(UnimodalRepresentation):
         parameters={},
         output_file=None,
         max_seq_length=512,
+        params=None,
     ):
         self.model_name = model_name
         super().__init__(representation_name, ModalityType.EMBEDDING, parameters)
@@ -52,13 +56,17 @@ class BertFamily(UnimodalRepresentation):
         self.max_seq_length = max_seq_length
         self.needs_context = True
         self.initial_context_length = 350
+        self.device = None
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(modality, self)
         tokenizer = AutoTokenizer.from_pretrained(
             self.model_name, clean_up_tokenization_spaces=True
         )
-        self.model = AutoModel.from_pretrained(self.model_name).to(get_device())
+        self.model = AutoModel.from_pretrained(self.model_name)
+        self.device = get_device_for_model(self.model, memory_factor=1.5)
+        self.model = self.model.to(self.device)
+
         self.bert_output = None
 
         def get_activation(name):
@@ -77,10 +85,14 @@ class BertFamily(UnimodalRepresentation):
             dataset = TextSpanDataset(modality.data, modality.metadata)
             embeddings = []
             for text in dataset:
-                embedding = self.create_embeddings(text, self.model, tokenizer)
+                embedding = self.create_embeddings(
+                    text, self.model, tokenizer, aggregation
+                )
                 embeddings.append(embedding)
         else:
-            embeddings = self.create_embeddings(modality.data, self.model, tokenizer)
+            embeddings = self.create_embeddings(
+                modality.data, self.model, tokenizer, aggregation
+            )
 
         if self.output_file is not None:
             save_embeddings(embeddings, self.output_file)
@@ -89,7 +101,7 @@ class BertFamily(UnimodalRepresentation):
         transformed_modality.data = embeddings
         return transformed_modality
 
-    def create_embeddings(self, data, model, tokenizer):
+    def create_embeddings(self, data, model, tokenizer, aggregation=None):
         dataset = TextDataset(data)
         dataloader = DataLoader(dataset, batch_size=32, shuffle=False, collate_fn=None)
         cls_embeddings = []
@@ -101,10 +113,10 @@ class BertFamily(UnimodalRepresentation):
                 padding="max_length",
                 return_attention_mask=True,
                 truncation=True,
-                max_length=512,  # TODO: make this dynamic with parameter to tune
+                max_length=self.max_seq_length,  # TODO: make this dynamic with parameter to tune
             )
 
-            inputs.to(get_device())
+            inputs.to(self.device)
             # ModalityType.TEXT.add_field_for_instances(
             #     modality.metadata,
             #     "token_to_character_mapping",
@@ -123,7 +135,9 @@ class BertFamily(UnimodalRepresentation):
                 if self.layer_name == "cls":
                     cls_embedding = outputs.last_hidden_state.detach().cpu().numpy()
                 else:
-                    cls_embedding = self.bert_output
+                    cls_embedding = self.bert_output.cpu().numpy()
+                if aggregation is not None:
+                    cls_embedding = aggregation.execute(cls_embedding)
                 cls_embeddings.extend(cls_embedding)
 
         return cls_embeddings
@@ -131,7 +145,7 @@ class BertFamily(UnimodalRepresentation):
 
 @register_representation(ModalityType.TEXT)
 class Bert(BertFamily):
-    def __init__(self, layer="cls", output_file=None, max_seq_length=512):
+    def __init__(self, layer="cls", output_file=None, max_seq_length=512, params=None):
         parameters = {
             "layer_name": [
                 "cls",
@@ -158,7 +172,7 @@ class Bert(BertFamily):
 
 @register_representation(ModalityType.TEXT)
 class RoBERTa(BertFamily):
-    def __init__(self, layer="cls", output_file=None, max_seq_length=512):
+    def __init__(self, layer="cls", output_file=None, max_seq_length=512, params=None):
         parameters = {
             "layer_name": [
                 "cls",
@@ -185,7 +199,7 @@ class RoBERTa(BertFamily):
 
 @register_representation(ModalityType.TEXT)
 class DistillBERT(BertFamily):
-    def __init__(self, layer="cls", output_file=None, max_seq_length=512):
+    def __init__(self, layer="cls", output_file=None, max_seq_length=512, params=None):
         parameters = {
             "layer_name": [
                 "cls",
@@ -209,7 +223,7 @@ class DistillBERT(BertFamily):
 
 @register_representation(ModalityType.TEXT)
 class ALBERT(BertFamily):
-    def __init__(self, layer="cls", output_file=None, max_seq_length=512):
+    def __init__(self, layer="cls", output_file=None, max_seq_length=512, params=None):
         parameters = {"layer_name": ["cls", "encoder.albert_layer_groups.0", "pooler"]}
         super().__init__(
             "ALBERT", "albert-base-v2", layer, parameters, output_file, max_seq_length
@@ -218,7 +232,7 @@ class ALBERT(BertFamily):
 
 @register_representation(ModalityType.TEXT)
 class ELECTRA(BertFamily):
-    def __init__(self, layer="cls", output_file=None, max_seq_length=512):
+    def __init__(self, layer="cls", output_file=None, max_seq_length=512, params=None):
         parameters = {
             "layer_name": [
                 "cls",

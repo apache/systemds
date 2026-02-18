@@ -43,7 +43,7 @@ def load_glove_embeddings(file_path):
 
 @register_representation(ModalityType.TEXT)
 class GloVe(UnimodalRepresentation):
-    def __init__(self, output_file=None):
+    def __init__(self, output_file=None, params=None):
         super().__init__("GloVe", ModalityType.TEXT)
         file_path = hf_hub_download(
             repo_id="stanfordnlp/glove", filename="glove.6B.zip"
@@ -54,7 +54,7 @@ class GloVe(UnimodalRepresentation):
         self.glove_path = "./glove_extracted/glove.6B.100d.txt"
         self.output_file = output_file
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(modality, self)
         glove_embeddings = load_glove_embeddings(self.glove_path)
 

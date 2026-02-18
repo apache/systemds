@@ -42,11 +42,11 @@ else:
 
 # @register_representation([ModalityType.VIDEO])
 class OpticalFlow(UnimodalRepresentation):
-    def __init__(self):
+    def __init__(self, params=None):
         parameters = {}
         super().__init__("OpticalFlow", ModalityType.TIMESERIES, parameters)
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )

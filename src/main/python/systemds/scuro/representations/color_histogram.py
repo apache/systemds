@@ -37,6 +37,7 @@ class ColorHistogram(UnimodalRepresentation):
         normalize=False,
         aggregation="mean",
         output_file=None,
+        params=None,
     ):
         super().__init__(
             "ColorHistogram", ModalityType.EMBEDDING, self._get_parameters()
@@ -84,7 +85,7 @@ class ColorHistogram(UnimodalRepresentation):
                 hist /= hist_sum
         return hist.astype(np.float32)
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         if modality.modality_type == ModalityType.IMAGE:
             images = modality.data
             hist_list = [self.compute_histogram(img) for img in images]

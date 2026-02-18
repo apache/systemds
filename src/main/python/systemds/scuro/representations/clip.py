@@ -31,27 +31,45 @@ from transformers import CLIPProcessor, CLIPModel
 
 from systemds.scuro.utils.converter import numpy_dtype_to_torch_dtype
 from systemds.scuro.utils.static_variables import get_device
-from systemds.scuro.utils.torch_dataset import CustomDataset
+from systemds.scuro.utils.torch_dataset import (
+    CustomDataset,
+    TextDataset,
+    TextSpanDataset,
+)
+from systemds.scuro.utils.static_variables import (
+    get_device_for_model,
+    compute_batch_size,
+)
+from torch.utils.data import DataLoader
 
 
 @register_representation([ModalityType.VIDEO, ModalityType.IMAGE])
 class CLIPVisual(UnimodalRepresentation):
-    def __init__(self, output_file=None):
+    def __init__(self, output_file=None, params=None):
         parameters = {}
         super().__init__("CLIPVisual", ModalityType.EMBEDDING, parameters)
-        self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(
-            get_device()
-        )
+        self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
         self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
         self.output_file = output_file
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )
         self.data_type = torch.float32
         if next(self.model.parameters()).dtype != self.data_type:
             self.model = self.model.to(self.data_type)
+        self.device = get_device_for_model(self.model, memory_factor=1.5)
+        self.model = self.model.to(self.device)
+        sample = modality.data[0] if modality.data else ""
+        self.batch_size = compute_batch_size(
+            model=self.model,
+            device=self.device,
+            sample_data=sample,
+            tokenizer=self.processor,
+            max_seq_length=77,
+            max_batch_size=128,
+        )
 
         embeddings = self.create_visual_embeddings(modality)
 
@@ -73,7 +91,7 @@ class CLIPVisual(UnimodalRepresentation):
             ]
         )
         dataset = CustomDataset(
-            modality.data, self.data_type, get_device(), tf=clip_transform
+            modality.data, self.data_type, self.device, tf=clip_transform
         )
 
         embeddings = {}
@@ -81,7 +99,7 @@ class CLIPVisual(UnimodalRepresentation):
             id = int(instance["id"][0])
             frames = instance["data"][0]
             embeddings[id] = []
-            batch_size = 64
+            batch_size = self.batch_size
 
             for start_index in range(0, len(frames), batch_size):
                 end_index = min(start_index + batch_size, len(frames))
@@ -89,7 +107,7 @@ class CLIPVisual(UnimodalRepresentation):
                 frame_batch = frames[frame_ids_range]
 
                 inputs = self.processor(images=frame_batch, return_tensors="pt")
-                inputs.to(get_device())
+                inputs.to(self.device)
                 with torch.no_grad():
                     output = self.model.get_image_features(**inputs)
 
@@ -111,28 +129,44 @@ class CLIPVisual(UnimodalRepresentation):
 
 @register_representation(ModalityType.TEXT)
 class CLIPText(UnimodalRepresentation):
-    def __init__(self, output_file=None):
+    def __init__(self, output_file=None, params=None):
         parameters = {}
         super().__init__("CLIPText", ModalityType.EMBEDDING, parameters)
-        self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(
-            get_device()
-        )
+        self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
         self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
         self.output_file = output_file
         self.needs_context = True
         self.initial_context_length = 55
 
-    def transform(self, modality):
+    def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )
+        self.device = get_device_for_model(self.model, memory_factor=1.5)
+        self.model = self.model.to(self.device)
 
-        if isinstance(modality.data[0], list):
+        sample = modality.data[0] if modality.data else ""
+        self.batch_size = compute_batch_size(
+            model=self.model,
+            device=self.device,
+            sample_data=sample,
+            tokenizer=self.processor,
+            max_seq_length=77,
+            max_batch_size=128,
+        )
+
+        if ModalityType.TEXT.has_field(modality.metadata, "text_spans"):
+            dataset = TextSpanDataset(modality.data, modality.metadata)
             embeddings = []
-            for d in modality.data:
-                embeddings.append(self.create_text_embeddings(d, self.model))
+            for text_chunks in dataset:
+                embedding = self.create_text_embeddings(
+                    text_chunks, self.model, aggregation
+                )
+                embeddings.append(embedding)
         else:
-            embeddings = self.create_text_embeddings(modality.data, self.model)
+            embeddings = self.create_text_embeddings(
+                modality.data, self.model, aggregation
+            )
 
         if self.output_file is not None:
             save_embeddings(embeddings, self.output_file)
@@ -140,21 +174,28 @@ class CLIPText(UnimodalRepresentation):
         transformed_modality.data = embeddings
         return transformed_modality
 
-    def create_text_embeddings(self, data, model):
+    def create_text_embeddings(self, data, model, aggregation=None):
+        dataset = TextDataset(data)
+        dataloader = DataLoader(
+            dataset, batch_size=self.batch_size, shuffle=False, collate_fn=None
+        )
         embeddings = []
-        for d in data:
+        for batch in dataloader:
             inputs = self.processor(
-                text=d,
+                text=batch,
                 return_tensors="pt",
                 padding=True,
                 truncation=True,
                 max_length=77,
             )
-            inputs.to(get_device())
+            inputs.to(self.device)
             with torch.no_grad():
-                text_embedding = model.get_text_features(**inputs)
-                embeddings.append(
-                    text_embedding.squeeze().detach().cpu().numpy().reshape(1, -1)
-                )
+                text_features = model.get_text_features(**inputs)
+
+                batch_np = text_features.detach().cpu().float().numpy()
+                if aggregation is not None:
+                    batch_np = aggregation.execute(batch_np)
+
+                embeddings.extend(batch_np)
 
         return embeddings

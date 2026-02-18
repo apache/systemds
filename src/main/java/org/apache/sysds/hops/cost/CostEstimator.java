@@ -19,8 +19,6 @@
 
 package org.apache.sysds.hops.cost;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -54,6 +52,7 @@ import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
 import org.apache.sysds.runtime.matrix.operators.CMOperator.AggregateOperationTypes;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.utils.ParameterizedLogger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -61,7 +60,7 @@ import java.util.HashSet;
 
 public abstract class CostEstimator
 {
-	protected static final Log LOG = LogFactory.getLog(CostEstimator.class.getName());
+	protected static final ParameterizedLogger LOG = ParameterizedLogger.getLogger(CostEstimator.class);
 	
 	private static final int DEFAULT_NUMITER = 15;
 	
@@ -155,18 +154,16 @@ public abstract class CostEstimator
 						//awareness of recursive functions, missing program
 						if( !memoFunc.contains(fkey) && pb.getProgram()!=null ) 
 						{
-							if(LOG.isDebugEnabled())
-								LOG.debug("Begin Function "+fkey);
-							
+							LOG.debug("Begin Function {}", fkey);
+
 							memoFunc.add(fkey);
 							Program prog = pb.getProgram();
 							FunctionProgramBlock fpb = prog.getFunctionProgramBlock(
 								finst.getNamespace(), finst.getFunctionName());
 							ret += rGetTimeEstimate(fpb, stats, memoFunc, recursive);
 							memoFunc.remove(fkey);
-							
-							if(LOG.isDebugEnabled())
-								LOG.debug("End Function "+fkey);
+
+							LOG.debug("End Function {}", fkey);
 						}
 					}
 				}

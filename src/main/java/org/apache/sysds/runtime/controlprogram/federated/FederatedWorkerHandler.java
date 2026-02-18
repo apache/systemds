@@ -27,8 +27,6 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLScript;
@@ -75,6 +73,7 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
+import org.apache.sysds.utils.ParameterizedLogger;
 import org.apache.sysds.utils.Statistics;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 import org.apache.sysds.utils.stats.ParamServStatistics;
@@ -90,7 +89,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
  * execution contexts at the federated sites too
  */
 public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
-	private static final Log LOG = LogFactory.getLog(FederatedWorkerHandler.class.getName());
+	private static final ParameterizedLogger LOG = ParameterizedLogger.getLogger(FederatedWorkerHandler.class);
 
 	/** The Federated Lookup Table of the current Federated Worker. */
 	private final FederatedLookupTable _flt;
@@ -290,11 +289,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private static void logRequests(FederatedRequest request, int nrRequest, int totalRequests) {
-		if(LOG.isDebugEnabled()) {
-			LOG.debug("Executing command " + (nrRequest + 1) + "/" + totalRequests + ": " + request.getType().name());
-			if(LOG.isTraceEnabled()) 
-				LOG.trace("full command: " + request.toString());
-		}
+		LOG.debug("Executing command {}/{}: {}", nrRequest + 1, totalRequests, request.getType().name());
+		if(LOG.isTraceEnabled())
+			LOG.trace("full command: " + request);
 	}
 
 	private FederatedResponse executeCommand(FederatedRequest request, ExecutionContextMap ecm, EventStageModel eventStage)

@@ -28,8 +28,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.LongStream;
 
 import org.apache.commons.lang3.mutable.MutableBoolean;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
@@ -66,6 +64,7 @@ import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.ParameterizedLogger;
 import org.apache.sysds.utils.Statistics;
 import org.apache.sysds.utils.stats.InfrastructureAnalyzer;
 
@@ -85,7 +84,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	private static final long serialVersionUID = -413810592207212835L;
 
 	/** Global logging instance for all subclasses of CacheableData */
-	protected static final Log LOG = LogFactory.getLog(CacheableData.class.getName());
+	protected static final ParameterizedLogger LOG = ParameterizedLogger.getLogger(CacheableData.class);
 
 	// global constant configuration parameters
 	public static final long CACHING_THRESHOLD = (long)Math.max(4*1024, //obj not s.t. caching
@@ -902,15 +901,13 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	 * @param formatProperties file format properties
 	 */
 	public synchronized void exportData (String fName, String outputFormat, int replication, FileFormatProperties formatProperties) {
-		if( LOG.isTraceEnabled() )
-			LOG.trace("Export data "+hashCode()+" "+fName);
+		LOG.trace("Export data {} {}", hashCode(), fName);
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		//prevent concurrent modifications
 		if ( !isAvailableToRead() )
 			throw new DMLRuntimeException("MatrixObject not available to read.");
 
-		if( LOG.isTraceEnabled() )
-			LOG.trace("Exporting " + this.getDebugName() + " to " + fName + " in format " + outputFormat);
+		LOG.trace("Exporting {} to {} in format {}", this.getDebugName(), fName, outputFormat);
 		
 		if( DMLScript.USE_ACCELERATOR && _gpuObjects != null ) {
 			boolean copiedFromGPU = false;
@@ -1040,8 +1037,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 		else 
 		{
 			//CASE 4: data already in hdfs (do nothing, no need for export)
-			if( LOG.isTraceEnabled() )
-				LOG.trace(this.getDebugName() + ": Skip export to hdfs since data already exists.");
+			LOG.trace("{}: Skip export to hdfs since data already exists.", this.getDebugName());
 		}
 		
 		_hdfsFileExists = true;
@@ -1073,11 +1069,9 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	 */
 	protected void restoreBlobIntoMemory() {
 		String cacheFilePathAndName = getCacheFilePathAndName();
-		long begin = LOG.isTraceEnabled() ? System.currentTimeMillis() : 0;
+		long begin = LOG.currentTimeMillisIfTraceEnabled();
 		
-		if( LOG.isTraceEnabled() )
-			LOG.trace ("CACHE: Restoring matrix...  " + hashCode() + "  HDFS path: " + 
-						(_hdfsFileName == null ? "null" : _hdfsFileName) + ", Restore from path: " + cacheFilePathAndName);
+		LOG.trace ("CACHE: Restoring matrix...  {}  HDFS path: {} Restore from path: {}", hashCode(), _hdfsFileName, cacheFilePathAndName);
 				
 		if (_data != null)
 			throw new DMLRuntimeException(cacheFilePathAndName + " : Cannot restore on top of existing in-memory data.");
@@ -1093,8 +1087,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 		if (_data == null)
 			throw new DMLRuntimeException (cacheFilePathAndName + " : Restore failed.");
 		
-		if( LOG.isTraceEnabled() )
-			LOG.trace("Restoring matrix - COMPLETED ... " + (System.currentTimeMillis()-begin) + " msec.");
+		LOG.trace("Restoring matrix - COMPLETED ... {} msec.", LOG.currentTimeMillisIfTraceEnabled()-begin);
 	}
 
 	protected abstract T readBlobFromCache(String fname)
@@ -1107,10 +1100,8 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	 */
 	public final void freeEvictedBlob() {
 		String cacheFilePathAndName = getCacheFilePathAndName();
-		long begin = LOG.isTraceEnabled() ? System.currentTimeMillis() : 0;
-		if( LOG.isTraceEnabled() )
-			LOG.trace("CACHE: Freeing evicted matrix...  " + hashCode() + "  HDFS path: " + 
-				(_hdfsFileName == null ? "null" : _hdfsFileName) + " Eviction path: " + cacheFilePathAndName);
+		long begin = LOG.currentTimeMillisIfTraceEnabled();	
+		LOG.trace("CACHE: Freeing evicted matrix...  {}  HDFS path: {} Eviction path: {}", hashCode(), _hdfsFileName, cacheFilePathAndName);
 		
 		if(isCachingActive()) {
 			if (OptimizerUtils.isUMMEnabled())
@@ -1119,8 +1110,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 				LazyWriteBuffer.deleteBlock(cacheFilePathAndName);
 		}
 		
-		if( LOG.isTraceEnabled() )
-			LOG.trace("Freeing evicted matrix - COMPLETED ... " + (System.currentTimeMillis()-begin) + " msec.");
+		LOG.trace("Freeing evicted matrix - COMPLETED ... {} msec.", LOG.currentTimeMillisIfTraceEnabled()-begin);
 	}
 
 	protected boolean isBelowCachingThreshold() {
@@ -1172,8 +1162,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 
 	// Federated read
 	protected T readBlobFromFederated(FederationMap fedMap) throws IOException {
-		if( LOG.isDebugEnabled() ) //common if instructions keep federated outputs
-			LOG.debug("Pulling data from federated sites");
+		LOG.debug("Pulling data from federated sites");
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		DataCharacteristics dc = iimd.getDataCharacteristics();
 		return readBlobFromFederated(fedMap, dc.getDims());
@@ -1292,8 +1281,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 				throw new DMLRuntimeException("MODIFY-MODIFY not allowed.");
 		}
 
-		if( LOG.isTraceEnabled() )
-			LOG.trace("Acquired lock on " + getDebugName() + ", status: " + _cacheStatus.name() );
+		LOG.trace("Acquired lock on {} status: {}", getDebugName(), _cacheStatus.name());
 	}
 
 	
@@ -1328,8 +1316,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 				break;
 		}
 		
-		if( LOG.isTraceEnabled() )
-			LOG.trace("Released lock on " + getDebugName() + ", status: " + _cacheStatus.name());
+		LOG.trace("Released lock on {} status: {}", getDebugName(), _cacheStatus.name());
 		
 	}
 

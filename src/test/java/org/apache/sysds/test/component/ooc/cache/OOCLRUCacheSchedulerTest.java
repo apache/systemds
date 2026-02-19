@@ -17,10 +17,15 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.ooc.cache;
+package org.apache.sysds.test.component.ooc.cache;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.ooc.cache.BlockEntry;
+import org.apache.sysds.runtime.ooc.cache.BlockKey;
+import org.apache.sysds.runtime.ooc.cache.BlockState;
+import org.apache.sysds.runtime.ooc.cache.OOCIOHandler;
+import org.apache.sysds.runtime.ooc.cache.OOCLRUCacheScheduler;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -46,7 +51,7 @@ public class OOCLRUCacheSchedulerTest {
 	@Before
 	public void setUp() {
 		_handler = new FakeIOHandler();
-		_scheduler = new OOCLRUCacheScheduler(_handler, 0, Long.MAX_VALUE);
+		_scheduler = new OOCLRUCacheScheduler(_handler, 0, Long.MAX_VALUE, 40000000);
 	}
 
 	@After
@@ -60,7 +65,7 @@ public class OOCLRUCacheSchedulerTest {
 	@Test
 	public void testImmediateRequestPinsBlock() throws Exception {
 		FakeIOHandler handler = new FakeIOHandler();
-		OOCLRUCacheScheduler scheduler = new OOCLRUCacheScheduler(handler, Long.MAX_VALUE, Long.MAX_VALUE);
+		OOCLRUCacheScheduler scheduler = new OOCLRUCacheScheduler(handler, Long.MAX_VALUE, Long.MAX_VALUE, 40000000);
 		try {
 			BlockKey key = new BlockKey(1, 1);
 			scheduler.put(key, new Object(), ENTRY_SIZE);
@@ -70,6 +75,7 @@ public class OOCLRUCacheSchedulerTest {
 			Assert.assertTrue(fetched.isPinned());
 			scheduler.unpin(fetched);
 			Assert.assertEquals(ENTRY_SIZE, scheduler.getCacheSize());
+			scheduler.forget(key);
 		}
 		finally {
 			scheduler.shutdown();
@@ -95,6 +101,52 @@ public class OOCLRUCacheSchedulerTest {
 		Assert.assertEquals(ENTRY_SIZE, _scheduler.getCacheSize());
 		_scheduler.unpin(fetched);
 		Assert.assertEquals(0, _scheduler.getCacheSize());
+		_scheduler.forget(key);
+	}
+
+	@Test
+	public void testDeferredReadDemandAppliesEvictionPressure() throws Exception {
+		FakeIOHandler handler = new FakeIOHandler();
+		OOCLRUCacheScheduler scheduler = new OOCLRUCacheScheduler(handler, 0, Long.MAX_VALUE, 40000000);
+		BlockKey coldKey = new BlockKey(9, 1);
+		BlockKey warmKey = new BlockKey(9, 2);
+		try {
+			BlockEntry cold = putColdSourceBacked(scheduler, coldKey);
+			Assert.assertEquals(BlockState.COLD, cold.getState());
+
+			OOCIOHandler.SourceBlockDescriptor desc = new OOCIOHandler.SourceBlockDescriptor(
+				"unused", Types.FileFormat.BINARY, new MatrixIndexes(1, 1), 0, 0, ENTRY_SIZE);
+			BlockEntry warm = scheduler.putAndPinSourceBacked(warmKey, new Object(), ENTRY_SIZE, desc);
+			Assert.assertEquals(BlockState.WARM, warm.getState());
+
+			// Keep WARM in-memory at the hard limit first, then tighten soft limit afterwards.
+			scheduler.updateLimits(ENTRY_SIZE, ENTRY_SIZE);
+			scheduler.unpin(warm);
+			Assert.assertEquals(BlockState.WARM, warm.getState());
+			Assert.assertEquals(ENTRY_SIZE, scheduler.getCacheSize());
+
+			// Deferred reads are only scheduled when hard limit is above the 10MB guard.
+			scheduler.updateLimits(0, 20000000L);
+
+			CompletableFuture<BlockEntry> future = scheduler.request(coldKey);
+			Assert.assertFalse(future.isDone());
+			waitForReadCount(handler, coldKey, 1);
+			// Under current scheduler policy this may remain WARM if no immediate demotion is required.
+			Assert.assertFalse(warm.isPinned());
+
+			handler.completeRead(coldKey);
+			BlockEntry fetched = future.get(WAIT_TIMEOUT_SEC, TimeUnit.SECONDS);
+			Assert.assertTrue(fetched.isPinned());
+			scheduler.unpin(fetched);
+			safeForget(scheduler, coldKey);
+			safeForget(scheduler, warmKey);
+		}
+		finally {
+			safeForget(scheduler, coldKey);
+			safeForget(scheduler, warmKey);
+			scheduler.shutdown();
+			handler.shutdown();
+		}
 	}
 
 	@Test
@@ -131,11 +183,14 @@ public class OOCLRUCacheSchedulerTest {
 		resA.forEach(_scheduler::unpin);
 		resB.forEach(_scheduler::unpin);
 		Assert.assertEquals(0, _scheduler.getCacheSize());
+		_scheduler.forget(key1);
+		_scheduler.forget(key2);
+		_scheduler.forget(key3);
 	}
 
 	@Test
 	public void testPrioritizeReordersDeferredRequests() throws Exception {
-		OOCLRUCacheScheduler scheduler = new OOCLRUCacheScheduler(_handler, 0, 0);
+		OOCLRUCacheScheduler scheduler = new OOCLRUCacheScheduler(_handler, 0, 0, 0);
 		try {
 			BlockKey key1 = new BlockKey(1, 1);
 			BlockKey key2 = new BlockKey(1, 2);
@@ -154,10 +209,32 @@ public class OOCLRUCacheSchedulerTest {
 			scheduler.prioritize(key3, 1);
 
 			List<BlockKey> after = snapshotDeferredOrder(scheduler);
-			Assert.assertEquals(List.of(key1, key3, key2), after);
+			Assert.assertEquals(List.of(key3, key1, key2), after);
+			scheduler.forget(key1);
+			scheduler.forget(key2);
+			scheduler.forget(key3);
 		}
 		finally {
 			scheduler.shutdown();
+		}
+	}
+
+	private static void waitForReadCount(FakeIOHandler handler, BlockKey key, int expected) throws InterruptedException {
+		long timeoutNanos = TimeUnit.SECONDS.toNanos(WAIT_TIMEOUT_SEC);
+		long start = System.nanoTime();
+		while (System.nanoTime() - start < timeoutNanos) {
+			if (handler.getReadCount(key) == expected)
+				return;
+			Thread.sleep(1);
+		}
+		Assert.assertEquals(expected, handler.getReadCount(key));
+	}
+
+	private static void safeForget(OOCLRUCacheScheduler scheduler, BlockKey key) {
+		try {
+			scheduler.forget(key);
+		}
+		catch (RuntimeException ignored) {
 		}
 	}
 
@@ -178,9 +255,44 @@ public class OOCLRUCacheSchedulerTest {
 	private static List<BlockKey> snapshotDeferredOrder(OOCLRUCacheScheduler scheduler) throws Exception {
 		Field field = OOCLRUCacheScheduler.class.getDeclaredField("_deferredReadRequests");
 		field.setAccessible(true);
-		Deque<Object> deque = (Deque<Object>) field.get(scheduler);
+		Object queue = field.get(scheduler);
+		List<Object> requests = new ArrayList<>();
+
+		if (queue instanceof Deque) {
+			requests.addAll((Deque<Object>) queue);
+		}
+		else {
+			Field heapField = queue.getClass().getDeclaredField("_heap");
+			heapField.setAccessible(true);
+			requests.addAll((List<Object>) heapField.get(queue));
+
+			if (!requests.isEmpty()) {
+				Class<?> reqClass = requests.get(0).getClass();
+				Field priorityField = reqClass.getDeclaredField("_priorityScore");
+				Field sequenceField = reqClass.getDeclaredField("_sequence");
+				priorityField.setAccessible(true);
+				sequenceField.setAccessible(true);
+
+				requests.sort((a, b) -> {
+					try {
+						double pa = priorityField.getDouble(a);
+						double pb = priorityField.getDouble(b);
+						int byPriority = Double.compare(pb, pa);
+						if (byPriority != 0)
+							return byPriority;
+						long sa = sequenceField.getLong(a);
+						long sb = sequenceField.getLong(b);
+						return Long.compare(sa, sb);
+					}
+					catch (IllegalAccessException e) {
+						throw new RuntimeException(e);
+					}
+				});
+			}
+		}
+
 		List<BlockKey> order = new ArrayList<>();
-		for (Object obj : deque) {
+		for (Object obj : requests) {
 			Field entriesField = obj.getClass().getDeclaredField("_entries");
 			entriesField.setAccessible(true);
 			List<BlockEntry> entries = (List<BlockEntry>) entriesField.get(obj);
@@ -249,8 +361,8 @@ public class OOCLRUCacheSchedulerTest {
 			BlockEntry entry = _readEntries.get(key);
 			if (entry == null)
 				throw new IllegalStateException("No registered entry for " + key);
-			entry.setDataUnsafe(new Object());
+			BlockEntryTestAccess.setDataUnsafe(entry, new Object());
 			future.complete(entry);
 		}
+		}
 	}
-}

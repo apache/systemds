@@ -666,6 +666,7 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 				}
 			}
 			catch(IOException | InterruptedException ex) {
+				ex.printStackTrace();
 				throw new DMLRuntimeException(ex);
 			}
 			catch(Exception ignored) {

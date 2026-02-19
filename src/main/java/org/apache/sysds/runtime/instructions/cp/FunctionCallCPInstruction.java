@@ -220,19 +220,29 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			throw new DMLRuntimeException("error executing function " + fname, e);
 		}
 		long t1 = !ReuseCacheType.isNone()||DMLScript.LINEAGE_ESTIMATE ? System.nanoTime() : 0;
-		
-		// cleanup all returned variables w/o binding 
+
+		// cleanup all returned variables w/o binding
 		HashSet<String> expectRetVars = new HashSet<>();
 		for(DataIdentifier di : fpb.getOutputParams())
 			expectRetVars.add(di.getName());
-		
+
 		LocalVariableMap retVars = fn_ec.getVariables();
-		for( String varName : new ArrayList<>(retVars.keySet()) ) {
-			if( expectRetVars.contains(varName) )
-				continue;
-			//cleanup unexpected return values to avoid leaks
-			//(including OOC reference tracking for matrix streams)
-			VariableCPInstruction.processRmvarInstruction(fn_ec, varName);
+		if(DMLScript.USE_OOC) {
+			for( String varName : new ArrayList<>(retVars.keySet()) ) {
+				if( expectRetVars.contains(varName) )
+					continue;
+				// cleanup unexpected return values to avoid leaks
+				// (including OOC reference tracking for matrix streams)
+				VariableCPInstruction.processRmvarInstruction(fn_ec, varName);
+			}
+		}
+		else {
+			for( String varName : new ArrayList<>(retVars.keySet()) ) {
+				if( expectRetVars.contains(varName) )
+					continue;
+				// cleanup unexpected return values to avoid leaks
+				fn_ec.cleanupDataObject(fn_ec.removeVariable(varName));
+			}
 		}
 		
 		// Unpin the pinned variables
@@ -245,7 +255,8 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		for (int i=0; i< numOutputs; i++) {
 			String boundVarName = _boundOutputNames.get(i);
 			String retVarName = fpb.getOutputParams().get(i).getName();
-			Data boundValue = retVars.get(retVarName);
+			Data boundValue = DMLScript.USE_OOC ?
+				fn_ec.removeVariable(retVarName) : retVars.get(retVarName);
 			if (boundValue == null)
 				throw new DMLRuntimeException("fcall "+_functionName+": "
 					+boundVarName + " was not assigned a return value");
@@ -288,11 +299,17 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			//FIXME: send _boundOutputNames instead of fpb.getOutputParams as
 			//those are already replaced by boundoutput names in the lineage map.
 		}
+			
+		if(DMLScript.USE_OOC) {
+			// Cleanup any remaining unbound outputs in function scope.
+			for( String varName : new ArrayList<>(fn_ec.getVariables().keySet()) )
+				VariableCPInstruction.processRmvarInstruction(fn_ec, varName);
 
-		// cleanup declared outputs that are not bound at callsite
-		for (int i = numOutputs; i < fpb.getOutputParams().size(); i++) {
-			String retVarName = fpb.getOutputParams().get(i).getName();
-			VariableCPInstruction.processRmvarInstruction(fn_ec, retVarName);
+			// cleanup declared outputs that are not bound at callsite
+			for (int i = numOutputs; i < fpb.getOutputParams().size(); i++) {
+				String retVarName = fpb.getOutputParams().get(i).getName();
+				VariableCPInstruction.processRmvarInstruction(fn_ec, retVarName);
+			}
 		}
 	}
 

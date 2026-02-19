@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.ooc.cache;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -126,6 +127,16 @@ public interface OOCCacheScheduler {
 	long getCacheSize();
 
 	/**
+	 * Returns the number of pinned bytes in the cache.
+	 */
+	long getPinnedBytes();
+
+	/**
+	 * Returns the hard cache limit in bytes.
+	 */
+	long getHardLimit();
+
+	/**
 	 * Returns if the current cache size is within its defined memory limits.
 	 */
 	boolean isWithinLimits();
@@ -144,4 +155,10 @@ public interface OOCCacheScheduler {
 	 * Updates the cache limits.
 	 */
 	void updateLimits(long evictionLimit, long hardLimit);
+
+	/**
+	 * Creates a snapshot of the cache.
+	 * Should only be used for debugging or diagnoses.
+	 */
+	Collection<BlockEntry> snapshot();
 }

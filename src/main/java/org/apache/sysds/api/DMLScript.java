@@ -334,8 +334,8 @@ public class DMLScript
 			LineageCacheConfig.setCachePolicy(LINEAGE_POLICY);
 			LineageCacheConfig.setEstimator(LINEAGE_ESTIMATE);
 
-			if (dmlOptions.oocLogEvents)
-				OOCEventLog.setup(100000);
+			if(dmlOptions.oocLogEvents)
+				OOCEventLog.setup(1000000);
 
 			String dmlScriptStr = readDMLScript(isFile, fileOrScript);
 			Map<String, String> argVals = dmlOptions.argVals;

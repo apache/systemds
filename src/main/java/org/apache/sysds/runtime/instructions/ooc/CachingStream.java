@@ -134,7 +134,7 @@ public class CachingStream implements OOCStreamable<IndexedMatrixValue> {
 										mCallback = tmp.keepOpen();
 								}
 								else {
-									List<IndexedMatrixValue> values = new java.util.ArrayList<>(groupSize);
+									List<IndexedMatrixValue> values = new ArrayList<>(groupSize);
 									long totalSize = 0;
 									for(int gi = 0; gi < groupSize; gi++) {
 										OOCStream.QueueCallback<IndexedMatrixValue> sub = group.getCallback(gi);

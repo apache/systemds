@@ -27,6 +27,7 @@ public final class BlockEntry {
 	private volatile int _pinCount;
 	private volatile BlockState _state;
 	private Object _data;
+	private int _retainHintCount;
 
 	BlockEntry(BlockKey key, long size, Object data) {
 		this._key = key;
@@ -34,6 +35,7 @@ public final class BlockEntry {
 		this._pinCount = 0;
 		this._state = BlockState.HOT;
 		this._data = data;
+		this._retainHintCount = 0;
 	}
 
 	public BlockKey getKey() {
@@ -70,6 +72,30 @@ public final class BlockEntry {
 		_state = state;
 	}
 
+	public synchronized void addRetainHint(int cnt) {
+		_retainHintCount += cnt;
+	}
+
+	public synchronized void addRetainHint() {
+		_retainHintCount++;
+	}
+
+	public synchronized void removeRetainHint(int cnt) {
+		_retainHintCount -= cnt;
+		if(_retainHintCount < 0)
+			_retainHintCount = 0;
+	}
+
+	public synchronized void removeRetainHint() {
+		if (_retainHintCount <= 0)
+			return;
+		_retainHintCount--;
+	}
+
+	public synchronized int getRetainHintCount() {
+		return _retainHintCount;
+	}
+
 	/**
 	 * Tries to clear the underlying data if it is not pinned
 	 * @return the number of cleared bytes (or 0 if could not clear or data was already cleared)
@@ -80,6 +106,7 @@ public final class BlockEntry {
 		if (_data instanceof IndexedMatrixValue)
 			((IndexedMatrixValue)_data).setValue(null); // Explicitly clear
 		_data = null;
+		_retainHintCount = 0;
 		return _size;
 	}
 
@@ -103,5 +130,9 @@ public final class BlockEntry {
 			throw new IllegalStateException("Cannot unpin data if it was not pinned");
 		_pinCount--;
 		return _pinCount == 0;
+	}
+
+	public String toString() {
+		return "Entry" + _key.toString();
 	}
 }

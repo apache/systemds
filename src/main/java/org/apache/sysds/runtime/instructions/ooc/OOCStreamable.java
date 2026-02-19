@@ -19,10 +19,42 @@
 
 package org.apache.sysds.runtime.instructions.ooc;
 
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.ooc.stream.message.OOCStreamMessage;
+import org.apache.sysds.runtime.util.IndexRange;
+
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+
 public interface OOCStreamable<T> {
 	OOCStream<T> getReadStream();
 
 	OOCStream<T> getWriteStream();
 
 	boolean isProcessed();
+
+	DataCharacteristics getDataCharacteristics();
+
+	CacheableData<?> getData();
+
+	void setData(CacheableData<?> data);
+
+	void messageUpstream(OOCStreamMessage msg);
+
+	void messageDownstream(OOCStreamMessage msg);
+
+	void setUpstreamMessageRelay(Consumer<OOCStreamMessage> relay);
+
+	void setDownstreamMessageRelay(Consumer<OOCStreamMessage> relay);
+
+	void addUpstreamMessageRelay(Consumer<OOCStreamMessage> relay);
+
+	void addDownstreamMessageRelay(Consumer<OOCStreamMessage> relay);
+
+	void clearUpstreamMessageRelays();
+
+	void clearDownstreamMessageRelays();
+
+	void setIXTransform(BiFunction<Boolean, IndexRange, IndexRange> transform);
 }

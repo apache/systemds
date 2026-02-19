@@ -37,6 +37,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysds.runtime.ooc.stream.StreamContext;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class DataGenOOCInstruction extends UnaryOOCInstruction {
@@ -285,7 +286,7 @@ public class DataGenOOCInstruction extends UnaryOOCInstruction {
 				}
 
 				qOut.closeInput();
-			}, qOut);
+			}, new StreamContext().addOutStream(qOut));
 		}
 		else
 			throw new NotImplementedException();

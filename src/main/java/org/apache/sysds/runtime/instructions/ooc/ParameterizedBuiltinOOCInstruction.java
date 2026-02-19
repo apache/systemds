@@ -90,6 +90,9 @@ public class ParameterizedBuiltinOOCInstruction extends ComputationOOCInstructio
 				double pattern = Double.parseDouble(params.get("pattern"));
 				double replacement = Double.parseDouble(params.get("replacement"));
 
+				qIn.setDownstreamMessageRelay(qOut::messageDownstream);
+				qOut.setUpstreamMessageRelay(qIn::messageUpstream);
+
 				mapOOC(qIn, qOut, tmp -> new IndexedMatrixValue(tmp.getIndexes(), tmp.getValue().replaceOperations(new MatrixBlock(), pattern, replacement)));
 
 				ec.getMatrixObject(output).setStreamHandle(qOut);
@@ -114,12 +117,12 @@ public class ParameterizedBuiltinOOCInstruction extends ComputationOOCInstructio
 			CompletableFuture<Boolean> future = new CompletableFuture<>();
 
 			filterOOC(qIn, tmp -> {
-				boolean contains = ((MatrixBlock)tmp.getValue()).containsValue(((ScalarObject)finalPattern).getDoubleValue());
+					boolean contains = ((MatrixBlock)tmp.getValue()).containsValue(((ScalarObject)finalPattern).getDoubleValue());
 
-				if (contains)
-					future.complete(true);
-			}, tmp -> !future.isDone(), // Don't start a separate worker if result already known
-				() -> future.complete(false));     // Then the pattern was not found
+					if (contains)
+						future.complete(true);
+				}, tmp -> !future.isDone()) // Don't start a separate worker if result already known
+				.whenComplete((v, err) -> future.complete(false)); // Then the pattern was not found
 
 			boolean ret;
 			try {

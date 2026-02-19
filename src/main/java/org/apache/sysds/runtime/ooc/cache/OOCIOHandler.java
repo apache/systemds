@@ -29,6 +29,11 @@ public interface OOCIOHandler {
 
 	CompletableFuture<BlockEntry> scheduleRead(BlockEntry block);
 
+	/**
+	 * Increase priority for a pending scheduled read if it has not started yet.
+	 */
+	void prioritizeRead(BlockKey key, double priority);
+
 	CompletableFuture<Boolean> scheduleDeletion(BlockEntry block);
 
 	/**

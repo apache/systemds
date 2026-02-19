@@ -19,23 +19,31 @@
 
 package org.apache.sysds.runtime.ooc.stream;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.instructions.ooc.OOCInstruction;
 import org.apache.sysds.runtime.instructions.ooc.SubscribableTaskQueue;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
+import org.apache.sysds.runtime.ooc.cache.OOCCacheManager;
 import org.apache.sysds.runtime.ooc.cache.OOCIOHandler;
+import org.apache.sysds.runtime.ooc.stream.message.OOCStreamMessage;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.LockSupport;
 
-public class OOCSourceStream extends SubscribableTaskQueue<IndexedMatrixValue> {
+public class SourceOOCStream extends SubscribableTaskQueue<IndexedMatrixValue> {
 	private final ConcurrentHashMap<MatrixIndexes, OOCIOHandler.SourceBlockDescriptor> _idx;
+	private static final long BACKPRESSURE_PARK_NANOS = 1_000_000L;
+	private static final long MAX_BACKPRESSURE_PARK_NANOS = 2_000_000_000L;
 
-	public OOCSourceStream() {
+	public SourceOOCStream() {
 		this._idx = new ConcurrentHashMap<>();
 	}
 
 	public void enqueue(IndexedMatrixValue value, OOCIOHandler.SourceBlockDescriptor descriptor) {
 		if(descriptor == null)
 			throw new IllegalArgumentException("Source descriptor must not be null");
+		waitForBackpressure();
 		MatrixIndexes key = new MatrixIndexes(descriptor.indexes);
 		_idx.put(key, descriptor);
 		super.enqueue(value);
@@ -48,5 +56,26 @@ public class OOCSourceStream extends SubscribableTaskQueue<IndexedMatrixValue> {
 
 	public OOCIOHandler.SourceBlockDescriptor getDescriptor(MatrixIndexes indexes) {
 		return _idx.get(indexes);
+	}
+
+	private void waitForBackpressure() {
+		int limit = OOCInstruction.getComputeBackpressureThreshold();
+		if(limit <= 0)
+			return;
+		long parkNanos = BACKPRESSURE_PARK_NANOS;
+		while(!OOCCacheManager.canClaimMemory()) {
+			LockSupport.parkNanos(parkNanos);
+			if (Thread.interrupted())
+				throw new DMLRuntimeException(new InterruptedException());
+			if (parkNanos < MAX_BACKPRESSURE_PARK_NANOS)
+				parkNanos = Math.min(parkNanos * 2, MAX_BACKPRESSURE_PARK_NANOS);
+		}
+	}
+
+	@Override
+	public void messageUpstream(OOCStreamMessage msg) {
+		if(msg.isCancelled())
+			return;
+		super.messageUpstream(msg);
 	}
 }

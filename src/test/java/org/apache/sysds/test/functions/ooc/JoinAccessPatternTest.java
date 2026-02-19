@@ -19,32 +19,36 @@
 
 package org.apache.sysds.test.functions.ooc;
 
+import org.apache.sysds.common.Opcodes;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.io.MatrixWriter;
 import org.apache.sysds.runtime.io.MatrixWriterFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.ooc.cache.OOCCacheManager;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
 
-public class LmCGTest extends AutomatedTestBase {
-	private final static String TEST_NAME1 = "lmCG";
+public class JoinAccessPatternTest extends AutomatedTestBase {
+	private final static String TEST_NAME1 = "JoinAccessPattern";
 	private final static String TEST_DIR = "functions/ooc/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + LmCGTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + JoinAccessPatternTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-8;
 	private static final String INPUT_NAME_1 = "X";
-	private static final String INPUT_NAME_2 = "y";
+	private static final String INPUT_NAME_2 = "Y";
 	private static final String OUTPUT_NAME = "res";
 
-	private final static int rows = 10000;
-	private final static int cols = 1500;
-	private final static int maxVal = 2;
+	private final static int rows = 2000;
+	private final static int cols = 1000;
+	private final static int maxVal = 7;
 	private final static double sparsity1 = 1;
 	private final static double sparsity2 = 0.05;
 
@@ -56,17 +60,26 @@ public class LmCGTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testlmCGDense() {
-		runLmCGTest(false);
+	public void testBinaryMatrixMatrixDenseDense() {
+		runBinaryMatrixMatrixTest(false, false);
 	}
 
 	@Test
-	public void testLmCGSparse() {
-		runLmCGTest(true);
+	public void testBinaryMatrixMatrixDenseSparse() {
+		runBinaryMatrixMatrixTest(false, true);
 	}
 
-	// TODO codex resume 019bb84d-bac6-7fd1-bfb8-a149e715e5b5
-	private void runLmCGTest(boolean sparse) {
+	@Test
+	public void testBinaryMatrixMatrixSparseDense() {
+		runBinaryMatrixMatrixTest(true, false);
+	}
+
+	@Test
+	public void testBinaryMatrixMatrixSparseSparse() {
+		runBinaryMatrixMatrixTest(true, true);
+	}
+
+	private void runBinaryMatrixMatrixTest(boolean sparse1, boolean sparse2) {
 		Types.ExecMode platformOld = setExecMode(Types.ExecMode.SINGLE_NODE);
 
 		try {
@@ -74,34 +87,38 @@ public class LmCGTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-			programArgs = new String[] {"-explain", /*"hops",*/ "-stats", "-ooc", "-args", input(INPUT_NAME_1), input(INPUT_NAME_2), output(OUTPUT_NAME)};
+			programArgs = new String[] {"-explain", "-stats", "-ooc", "-args", input(INPUT_NAME_1), input(INPUT_NAME_2), output(OUTPUT_NAME)};
 
 			// 1. Generate the data in-memory as MatrixBlock objects
-			double[][] X_data = getRandomMatrix(rows, cols, 0, maxVal, sparse ? sparsity2 : sparsity1, 7);
-			double[][] y_data = getRandomMatrix(rows, 1, 0, 1, 1.0, 3);
+			double[][] X_data = getRandomMatrix(rows, cols, 1, maxVal, sparse1 ? sparsity2 : sparsity1, 7);
+			double[][] Y_data = getRandomMatrix(rows, cols, 0, 1, sparse2 ? sparsity2 : sparsity1, 8);
 
 			// 2. Convert the double arrays to MatrixBlock objects
 			MatrixBlock X_mb = DataConverter.convertToMatrixBlock(X_data);
-			MatrixBlock y_mb = DataConverter.convertToMatrixBlock(y_data);
+			MatrixBlock Y_mb = DataConverter.convertToMatrixBlock(Y_data);
 
 			// 3. Create a binary matrix writer
 			MatrixWriter writer = MatrixWriterFactory.createMatrixWriter(Types.FileFormat.BINARY);
 
 			// 4. Write matrix A to a binary SequenceFile
 			writer.writeMatrixToHDFS(X_mb, input(INPUT_NAME_1), rows, cols, 1000, X_mb.getNonZeros());
+			writer.writeMatrixToHDFS(Y_mb, input(INPUT_NAME_2), rows, cols, 1000, Y_mb.getNonZeros());
 			HDFSTool.writeMetaDataFile(input(INPUT_NAME_1 + ".mtd"), Types.ValueType.FP64,
 				new MatrixCharacteristics(rows, cols, 1000, X_mb.getNonZeros()), Types.FileFormat.BINARY);
-
-			// 5. Write vector x to a binary SequenceFile
-			writer.writeMatrixToHDFS(y_mb, input(INPUT_NAME_2), rows, 1, 1000, y_mb.getNonZeros());
 			HDFSTool.writeMetaDataFile(input(INPUT_NAME_2 + ".mtd"), Types.ValueType.FP64,
-				new MatrixCharacteristics(rows, 1, 1000, y_mb.getNonZeros()), Types.FileFormat.BINARY);
+				new MatrixCharacteristics(rows, cols, 1000, Y_mb.getNonZeros()), Types.FileFormat.BINARY);
 
+			X_data = null;
+			Y_data = null;
+			X_mb = null;
+			Y_mb = null;
+
+			OOCCacheManager.getCache().updateLimits(50000000, 100000000);
 			runTest(true, false, null, -1);
 
-			//check replace OOC op
-			/*Assert.assertTrue("OOC wasn't used for contains",
-				heavyHittersContainsString(Instruction.OOC_INST_PREFIX + Opcodes.CONTAINS));*/
+			//check tsmm OOC
+			Assert.assertTrue("OOC wasn't used for multiplication",
+				heavyHittersContainsString(Instruction.OOC_INST_PREFIX + Opcodes.MULT));
 
 			//compare results
 
@@ -111,9 +128,9 @@ public class LmCGTest extends AutomatedTestBase {
 
 			// compare matrices
 			MatrixBlock ret1 = DataConverter.readMatrixFromHDFS(output(OUTPUT_NAME),
-				Types.FileFormat.BINARY, cols, 1, 1000);
+				Types.FileFormat.BINARY, rows, cols, 1000);
 			MatrixBlock ret2 = DataConverter.readMatrixFromHDFS(output(OUTPUT_NAME + "_target"),
-				Types.FileFormat.BINARY, cols, 1, 1000);
+				Types.FileFormat.BINARY, rows, cols, 1000);
 			TestUtils.compareMatrices(ret1, ret2, eps);
 		}
 		catch(IOException e) {

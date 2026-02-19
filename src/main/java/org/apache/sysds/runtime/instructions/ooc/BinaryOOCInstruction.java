@@ -68,6 +68,12 @@ public class BinaryOOCInstruction extends ComputationOOCInstruction {
 		OOCStream<IndexedMatrixValue> qIn2 = m2.getStreamHandle();
 		OOCStream<IndexedMatrixValue> qOut = new SubscribableTaskQueue<>();
 		ec.getMatrixObject(output).setStreamHandle(qOut);
+		qIn1.setDownstreamMessageRelay(qOut::messageDownstream);
+		qIn2.setDownstreamMessageRelay(qOut::messageDownstream);
+		qOut.setUpstreamMessageRelay(msg -> {
+			qIn1.messageUpstream(msg.split());
+			qIn2.messageUpstream(msg.split());
+		});
 
 		if (m1.getNumRows() < 0 || m1.getNumColumns() < 0 || m2.getNumRows() < 0 || m2.getNumColumns() < 0)
 			throw new DMLRuntimeException("Cannot process (matrix, matrix) BinaryOOCInstruction with unknown dimensions.");
@@ -116,8 +122,6 @@ public class BinaryOOCInstruction extends ComputationOOCInstruction {
 				return tmpOut;
 			}, IndexedMatrixValue::getIndexes);
 		}
-
-
 	}
 
 	protected void processScalarMatrixInstruction(ExecutionContext ec) {
@@ -131,6 +135,8 @@ public class BinaryOOCInstruction extends ComputationOOCInstruction {
 		OOCStream<IndexedMatrixValue> qIn = min.getStreamHandle();
 		OOCStream<IndexedMatrixValue> qOut = createWritableStream();
 		ec.getMatrixObject(output).setStreamHandle(qOut);
+		qIn.setDownstreamMessageRelay(qOut::messageDownstream);
+		qOut.setUpstreamMessageRelay(qIn::messageUpstream);
 
 		mapOOC(qIn, qOut, tmp -> {
 			IndexedMatrixValue tmpOut = new IndexedMatrixValue();

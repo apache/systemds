@@ -82,7 +82,7 @@ public class BinaryOOCInstruction extends ComputationOOCInstruction {
 		boolean isRowBroadcast = m1.getNumRows() > 1 && m2.getNumRows() == 1;
 
 		if (isColBroadcast && !isRowBroadcast) {
-			final long maxProcessesPerBroadcast = m1.getNumColumns() / m1.getBlocksize();
+			final long maxProcessesPerBroadcast = (m1.getNumColumns() + m1.getBlocksize() - 1) / m1.getBlocksize();
 
 			broadcastJoinOOC(qIn1, qIn2, qOut, (tmp1, b) -> {
 				IndexedMatrixValue tmpOut = new IndexedMatrixValue();
@@ -96,7 +96,7 @@ public class BinaryOOCInstruction extends ComputationOOCInstruction {
 			}, tmp -> tmp.getIndexes().getRowIndex());
 		}
 		else if (isRowBroadcast && !isColBroadcast) {
-			final long maxProcessesPerBroadcast = m1.getNumRows() / m1.getBlocksize();
+			final long maxProcessesPerBroadcast = (m1.getNumRows() + m1.getBlocksize() - 1) / m1.getBlocksize();
 
 			broadcastJoinOOC(qIn1, qIn2, qOut, (tmp1, b) -> {
 				IndexedMatrixValue tmpOut = new IndexedMatrixValue();

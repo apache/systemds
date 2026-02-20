@@ -32,6 +32,10 @@ public interface OOCStreamable<T> {
 
 	OOCStream<T> getWriteStream();
 
+	boolean hasStreamCache();
+
+	CachingStream getStreamCache();
+
 	boolean isProcessed();
 
 	DataCharacteristics getDataCharacteristics();

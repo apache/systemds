@@ -111,6 +111,21 @@ public class SubscribableTaskQueue<T> extends LocalTaskQueue<T> implements OOCSt
 		onDeliveryFinished();
 	}
 
+	protected boolean tryDeliverCallback(QueueCallback<T> cb, int blockCount) {
+		Consumer<QueueCallback<T>> s = _subscriber;
+		if (s == null)
+			return false;
+		int cnt = _availableCtr.incrementAndGet();
+		if (cnt <= 1) { // Then the queue was already closed and we disallow further enqueues
+			_availableCtr.decrementAndGet(); // Undo increment
+			throw new DMLRuntimeException("Cannot enqueue into closed SubscribableTaskQueue");
+		}
+		_blockCount.addAndGet(blockCount);
+		s.accept(cb);
+		onDeliveryFinished();
+		return true;
+	}
+
 	@Override
 	public synchronized void enqueueTask(T t) {
 		enqueue(t);

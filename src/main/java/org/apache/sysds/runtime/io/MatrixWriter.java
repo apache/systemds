@@ -46,8 +46,8 @@ public abstract class MatrixWriter {
 		throws IOException;
 
 	/**
-	 * Consumes an out-of-core stream of matrix blocks and writes them to a single file.
-	 * This method must be implemented by writers that support OOC streaming output.
+	 * Consumes an out-of-core stream of matrix blocks and writes them to the target output path.
+	 * Implementations may choose single-file or multipart output depending on format and parallelism.
 	 *
 	 * @param fname The target output filename
 	 * @param stream The OOC stream of matrix blocks to consume

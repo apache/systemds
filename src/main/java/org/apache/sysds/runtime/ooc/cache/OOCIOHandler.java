@@ -19,6 +19,11 @@
 
 package org.apache.sysds.runtime.ooc.cache;
 
+import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.instructions.ooc.OOCStream;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.List;
 
@@ -58,18 +63,18 @@ public interface OOCIOHandler {
 
 	class SourceReadRequest {
 		public final String path;
-		public final org.apache.sysds.common.Types.FileFormat format;
+		public final Types.FileFormat format;
 		public final long rows;
 		public final long cols;
 		public final int blen;
 		public final long estNnz;
 		public final long maxBytesInFlight;
 		public final boolean keepOpenOnLimit;
-		public final org.apache.sysds.runtime.instructions.ooc.OOCStream<org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue> target;
+		public final OOCStream<IndexedMatrixValue> target;
 
-		public SourceReadRequest(String path, org.apache.sysds.common.Types.FileFormat format, long rows, long cols,
+		public SourceReadRequest(String path, Types.FileFormat format, long rows, long cols,
 			int blen, long estNnz, long maxBytesInFlight, boolean keepOpenOnLimit,
-			org.apache.sysds.runtime.instructions.ooc.OOCStream<org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue> target) {
+			OOCStream<IndexedMatrixValue> target) {
 			this.path = path;
 			this.format = format;
 			this.rows = rows;
@@ -99,14 +104,14 @@ public interface OOCIOHandler {
 
 	class SourceBlockDescriptor {
 		public final String path;
-		public final org.apache.sysds.common.Types.FileFormat format;
-		public final org.apache.sysds.runtime.matrix.data.MatrixIndexes indexes;
+		public final Types.FileFormat format;
+		public final MatrixIndexes indexes;
 		public final long offset;
 		public final int recordLength;
 		public final long serializedSize;
 
-		public SourceBlockDescriptor(String path, org.apache.sysds.common.Types.FileFormat format,
-			org.apache.sysds.runtime.matrix.data.MatrixIndexes indexes, long offset, int recordLength,
+		public SourceBlockDescriptor(String path, Types.FileFormat format,
+			MatrixIndexes indexes, long offset, int recordLength,
 			long serializedSize) {
 			this.path = path;
 			this.format = format;
@@ -114,6 +119,18 @@ public interface OOCIOHandler {
 			this.offset = offset;
 			this.recordLength = recordLength;
 			this.serializedSize = serializedSize;
+		}
+	}
+
+	class GroupSourceBlockDescriptor extends SourceBlockDescriptor {
+		public final List<SourceBlockDescriptor> blocks;
+		public final int count;
+
+		public GroupSourceBlockDescriptor(String path, Types.FileFormat format, MatrixIndexes indexes, long offset, int recordLength,
+			long serializedSize, List<SourceBlockDescriptor> blocks) {
+			super(path, format, indexes, offset, recordLength, serializedSize);
+			this.blocks = blocks;
+			this.count = blocks.size();
 		}
 	}
 }

@@ -71,6 +71,9 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 	private static final int READER_SIZE = 10;
 	private static final long OVERFLOW = 8192 * 1024;
 	private static final long MAX_PARTITION_SIZE = 8192 * 8192;
+	private static final long GROUP_TARGET_BYTES = 8L * 1024 * 1024;
+	private static final long GROUP_MAX_BYTES = 16L * 1024 * 1024;
+	private static final int GROUP_MAX_COUNT = 64;
 
 	private final String _spillDir;
 	private final ThreadPoolExecutor _writeExec;
@@ -364,7 +367,12 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 		AtomicLong bytesRead, long byteLimit, Object budgetLock, ConcurrentLinkedDeque<SourceBlockDescriptor> descriptors)
 		throws IOException {
 		MatrixIndexes key = new MatrixIndexes();
-		MatrixBlock value = new MatrixBlock();
+		List<IndexedMatrixValue> groupValues = new ArrayList<>();
+		List<SourceBlockDescriptor> groupDescs = new ArrayList<>();
+		long groupBytes = 0;
+		long groupSerialized = 0;
+		long groupStart = -1;
+		long groupEnd = -1;
 
 		try(SequenceFile.Reader reader = new SequenceFile.Reader(job, SequenceFile.Reader.file(path))) {
 			long pos = filePositions.get(fileIdx);
@@ -374,6 +382,7 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 			long ioStart = DMLScript.OOC_LOG_EVENTS ? System.nanoTime() : 0;
 			while(!stop.get()) {
 				long recordStart = reader.getPosition();
+				MatrixBlock value = new MatrixBlock();
 				if (!reader.next(key, value))
 					break;
 				long recordEnd = reader.getPosition();
@@ -392,17 +401,54 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 				}
 
 				MatrixIndexes outIdx = new MatrixIndexes(key);
-				MatrixBlock outBlk = new MatrixBlock(value);
-				IndexedMatrixValue imv = new IndexedMatrixValue(outIdx, outBlk);
+				IndexedMatrixValue imv = new IndexedMatrixValue(outIdx, value);
 				SourceBlockDescriptor descriptor = new SourceBlockDescriptor(path.toString(), request.format, outIdx,
 					recordStart, (int)(recordEnd - recordStart), blockSize);
 
-				if (request.target instanceof SourceOOCStream src)
-					src.enqueue(imv, descriptor);
-				else
-					request.target.enqueue(imv);
+				boolean small = blockSize <= GROUP_TARGET_BYTES;
+				boolean contiguous = groupValues.isEmpty() || recordStart == groupEnd;
+				boolean canAdd = small
+					&& contiguous
+					&& groupValues.size() < GROUP_MAX_COUNT
+					&& (groupBytes + (recordEnd - recordStart)) <= GROUP_MAX_BYTES;
 
-				descriptors.add(descriptor);
+				if (!canAdd && !groupValues.isEmpty()) {
+					flushSourceGroup(request, groupValues, groupDescs, groupStart, groupEnd, groupSerialized,
+						descriptors);
+					groupValues.clear();
+					groupDescs.clear();
+					groupBytes = 0;
+					groupSerialized = 0;
+					groupStart = -1;
+					groupEnd = -1;
+				}
+
+				if (small) {
+					if (groupValues.isEmpty())
+						groupStart = recordStart;
+					groupEnd = recordEnd;
+					groupValues.add(imv);
+					groupDescs.add(descriptor);
+					groupBytes += (recordEnd - recordStart);
+					groupSerialized += blockSize;
+					if (groupSerialized >= GROUP_TARGET_BYTES || groupBytes >= GROUP_MAX_BYTES || groupValues.size() >= GROUP_MAX_COUNT) {
+						flushSourceGroup(request, groupValues, groupDescs, groupStart, groupEnd, groupSerialized,
+							descriptors);
+						groupValues.clear();
+						groupDescs.clear();
+						groupBytes = 0;
+						groupSerialized = 0;
+						groupStart = -1;
+						groupEnd = -1;
+					}
+				}
+				else {
+					if (request.target instanceof SourceOOCStream src)
+						src.enqueue(imv, descriptor);
+					else
+						request.target.enqueue(imv);
+					descriptors.add(descriptor);
+				}
 				filePositions.set(fileIdx, reader.getPosition());
 
 				if (DMLScript.OOC_LOG_EVENTS) {
@@ -415,9 +461,32 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 					break; // Note that we knowingly go over limit, which could result in READER_SIZE*8MB overshoot
 			}
 
+			if (!groupValues.isEmpty()) {
+				flushSourceGroup(request, groupValues, groupDescs, groupStart, groupEnd, groupSerialized,
+					descriptors);
+			}
+
 			if (!stop.get())
 				completed.set(fileIdx, 1);
 		}
+	}
+
+	private void flushSourceGroup(SourceReadRequest request, List<IndexedMatrixValue> values,
+		List<SourceBlockDescriptor> descs, long start, long end, long totalSerialized,
+		ConcurrentLinkedDeque<SourceBlockDescriptor> descriptors) {
+		if (values.isEmpty())
+			return;
+		SourceBlockDescriptor first = descs.get(0);
+		OOCIOHandler.GroupSourceBlockDescriptor group =
+			new OOCIOHandler.GroupSourceBlockDescriptor(first.path, first.format, first.indexes, start,
+				(int)(end - start), totalSerialized, new ArrayList<>(descs));
+		if (request.target instanceof SourceOOCStream src)
+			src.enqueueGroup(new ArrayList<>(values), group);
+		else {
+			for (IndexedMatrixValue v : values)
+				request.target.enqueue(v);
+		}
+		descriptors.addAll(group.blocks);
 	}
 
 	private void closeTarget(org.apache.sysds.runtime.instructions.ooc.OOCStream<IndexedMatrixValue> target, boolean close) {
@@ -442,6 +511,7 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 			if (DMLScript.OOC_STATISTICS) {
 				Statistics.incrementOOCLoadFromDisk();
 				Statistics.accumulateOOCLoadFromDiskTime(System.nanoTime() - ioStart);
+				Statistics.accumulateOOCLoadFromDiskBytes(block.getSize());
 			}
 			return;
 		}
@@ -481,6 +551,7 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 		if (DMLScript.OOC_STATISTICS) {
 			Statistics.incrementOOCLoadFromDisk();
 			Statistics.accumulateOOCLoadFromDiskTime(ioDuration);
+			Statistics.accumulateOOCLoadFromDiskBytes(block.getSize());
 		}
 	}
 
@@ -491,19 +562,39 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path(src.path);
 
-		MatrixIndexes ix = new MatrixIndexes();
-		MatrixBlock mb = new MatrixBlock();
-
-		try(SequenceFile.Reader reader = new SequenceFile.Reader(job, SequenceFile.Reader.file(path))) {
-			reader.seek(src.offset);
-			if (!reader.next(ix, mb))
-				throw new DMLRuntimeException("Failed to read source block at offset " + src.offset + " in " + src.path);
+		if (src instanceof OOCIOHandler.GroupSourceBlockDescriptor gsrc) {
+			List<IndexedMatrixValue> values = new ArrayList<>(gsrc.count);
+			try(SequenceFile.Reader reader = new SequenceFile.Reader(job, SequenceFile.Reader.file(path))) {
+				reader.seek(gsrc.offset);
+				for (int i = 0; i < gsrc.blocks.size(); i++) {
+					SourceBlockDescriptor d = gsrc.blocks.get(i);
+					MatrixIndexes ix = new MatrixIndexes();
+					MatrixBlock mb = new MatrixBlock();
+					if (!reader.next(ix, mb))
+						throw new DMLRuntimeException("Failed to read source block at offset " + d.offset + " in " + d.path);
+					values.add(new IndexedMatrixValue(ix, mb));
+				}
+			}
+			catch(IOException e) {
+				throw new DMLRuntimeException(e);
+			}
+			block.setDataUnsafe(values);
 		}
-		catch(IOException e) {
-			throw new DMLRuntimeException(e);
-		}
+		else {
+			MatrixIndexes ix = new MatrixIndexes();
+			MatrixBlock mb = new MatrixBlock();
 
-		block.setDataUnsafe(new IndexedMatrixValue(ix, mb));
+			try(SequenceFile.Reader reader = new SequenceFile.Reader(job, SequenceFile.Reader.file(path))) {
+				reader.seek(src.offset);
+				if (!reader.next(ix, mb))
+					throw new DMLRuntimeException("Failed to read source block at offset " + src.offset + " in " + src.path);
+			}
+			catch(IOException e) {
+				throw new DMLRuntimeException(e);
+			}
+
+			block.setDataUnsafe(new IndexedMatrixValue(ix, mb));
+		}
 	}
 
 	private void evictTask(CloseableQueue<Tuple2<BlockEntry, CompletableFuture<Void>>> q) {
@@ -542,6 +633,7 @@ public class OOCMatrixIOHandler implements OOCIOHandler {
 					if(DMLScript.OOC_STATISTICS && wrote > 0) {
 						Statistics.incrementOOCEvictionWrite();
 						Statistics.accumulateOOCEvictionWriteTime(System.nanoTime() - ioStart);
+						Statistics.accumulateOOCEvictionWriteBytes(wrote);
 					}
 
 					byteCtr += wrote;

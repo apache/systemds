@@ -37,10 +37,12 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.ooc.TeeOOCInstruction;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageCache;
@@ -172,6 +174,8 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			
 			//set input parameter
 			functionVariables.put(currFormalParam.getName(), value);
+			if (DMLScript.USE_OOC && value instanceof MatrixObject)
+				TeeOOCInstruction.incrRef(((MatrixObject) value).getStreamable(), 1);
 			
 			//map lineage to function arguments
 			if( lineage != null ) {
@@ -227,7 +231,8 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			if( expectRetVars.contains(varName) )
 				continue;
 			//cleanup unexpected return values to avoid leaks
-			fn_ec.cleanupDataObject(fn_ec.removeVariable(varName));
+			//(including OOC reference tracking for matrix streams)
+			VariableCPInstruction.processRmvarInstruction(fn_ec, varName);
 		}
 		
 		// Unpin the pinned variables
@@ -247,10 +252,12 @@ public class FunctionCallCPInstruction extends CPInstruction {
 
 			// remove existing data bound to output variable name
 			Data exdata = ec.removeVariable(boundVarName);
+			if (DMLScript.USE_OOC && exdata instanceof MatrixObject && exdata != boundValue)
+				TeeOOCInstruction.incrRef(((MatrixObject) exdata).getStreamable(), -1);
 			// save old data for cleanup later
 			if (exdata != boundValue && !retVars.hasReferences(exdata))
 				toBeCleanedUp.add(exdata);
-				//FIXME: interferes with reuse. Removes broadcasts before materialization
+			//FIXME: interferes with reuse. Removes broadcasts before materialization
 
 			//add/replace data in symbol table
 			ec.setVariable(boundVarName, boundValue);
@@ -276,10 +283,16 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		//update lineage cache with the functions outputs
 		if ((DMLScript.LINEAGE && LineageCacheConfig.isMultiLevelReuse() && !fpb.isNondeterministic())
 			|| (LineageCacheConfig.isEstimator() && !fpb.isNondeterministic())) {
-			LineageCache.putValue(fpb.getOutputParams(), liInputs, 
+			LineageCache.putValue(fpb.getOutputParams(), liInputs,
 					getCacheFunctionName(_functionName, fpb), fn_ec, t1-t0);
-			//FIXME: send _boundOutputNames instead of fpb.getOutputParams as 
+			//FIXME: send _boundOutputNames instead of fpb.getOutputParams as
 			//those are already replaced by boundoutput names in the lineage map.
+		}
+
+		// cleanup declared outputs that are not bound at callsite
+		for (int i = numOutputs; i < fpb.getOutputParams().size(); i++) {
+			String retVarName = fpb.getOutputParams().get(i).getName();
+			VariableCPInstruction.processRmvarInstruction(fn_ec, retVarName);
 		}
 	}
 

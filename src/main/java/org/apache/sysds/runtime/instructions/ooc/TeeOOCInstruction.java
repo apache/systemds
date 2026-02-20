@@ -42,10 +42,11 @@ public class TeeOOCInstruction extends ComputationOOCInstruction {
 	 * Increments the reference counter of a stream by the set amount.
 	 */
 	public static void incrRef(OOCStreamable<IndexedMatrixValue> stream, int incr) {
-		if (!(stream instanceof CachingStream))
+		if (!stream.hasStreamCache())
 			return;
+		CachingStream cache = stream.getStreamCache();
 
-		Integer ref = refCtr.compute((CachingStream)stream, (k, v) -> {
+		Integer ref = refCtr.compute(cache, (k, v) -> {
 			if (v == null)
 				v = 0;
 			v += incr;
@@ -53,7 +54,7 @@ public class TeeOOCInstruction extends ComputationOOCInstruction {
 		});
 
 		if (ref == null)
-			((CachingStream)stream).scheduleDeletion();
+			cache.scheduleDeletion();
 	}
 
 	protected TeeOOCInstruction(OOCType type, CPOperand in1, CPOperand out, String opcode, String istr) {
@@ -69,20 +70,21 @@ public class TeeOOCInstruction extends ComputationOOCInstruction {
 		return new TeeOOCInstruction(OOCType.Tee, in1, out, opcode, str);
 	}
 
-	public void processInstruction( ExecutionContext ec ) {
+	public void processInstruction(ExecutionContext ec) {
 		//get input stream
 		MatrixObject min = ec.getMatrixObject(input1);
-		OOCStream<IndexedMatrixValue> qIn = min.getStreamHandle();
+		OOCStreamable<IndexedMatrixValue> streamable = min.getStreamable();
+		CachingStream handle;
 
-		CachingStream handle = qIn.hasStreamCache() ? qIn.getStreamCache() : new CachingStream(qIn);
-
-		if (!qIn.hasStreamCache()) {
-			// We also set the input stream handle
-			min.setStreamHandle(handle);
-			incrRef(handle, 2);
+		if(streamable.hasStreamCache()) {
+			handle = streamable.getStreamCache();
+			incrRef(handle, 1);
 		}
 		else {
-			incrRef(handle, 1);
+			// We also set the input stream handle
+			handle = new CachingStream(min.getStreamHandle());
+			min.setStreamHandle(handle);
+			incrRef(handle, 2);
 		}
 
 		//get output and create new resettable stream

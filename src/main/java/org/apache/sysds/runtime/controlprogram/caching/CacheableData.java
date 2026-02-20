@@ -63,6 +63,7 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
+import org.apache.sysds.runtime.ooc.stream.SourceOOCStreamable;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -496,7 +497,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 	}
 
 	public OOCStreamable<IndexedMatrixValue> getStreamable() {
-		return _streamHandle;
+		return _streamHandle == null ? new SourceOOCStreamable(this) : _streamHandle;
 	}
 	
 	/**

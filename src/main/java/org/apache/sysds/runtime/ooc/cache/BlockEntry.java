@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.ooc.cache;
 
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 
+import java.util.List;
+
 public final class BlockEntry {
 	private final BlockKey _key;
 	private final long _size;
@@ -52,11 +54,25 @@ public final class BlockEntry {
 		throw new IllegalStateException("Cannot get the data of an unpinned entry");
 	}
 
+	public int getGroupSize() {
+		if(_pinCount > 0)
+			return ((List<?>)_data).size();
+		throw new IllegalStateException("Cannot get the data of an unpinned entry");
+	}
+
+	public boolean isGrouped() {
+		if(_pinCount > 0)
+			return _data instanceof List;
+		throw new IllegalStateException("Cannot get the data of an unpinned entry");
+	}
+
 	Object getDataUnsafe() {
 		return _data;
 	}
 
 	void setDataUnsafe(Object data) {
+		if(data != null && _data != null)
+			throw new IllegalStateException("Cannot overwrite data");
 		_data = data;
 	}
 

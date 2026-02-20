@@ -31,6 +31,7 @@ import org.apache.sysds.utils.Statistics;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -187,7 +188,7 @@ public class OOCCacheManager {
 	public static CompletableFuture<List<OOCStream.QueueCallback<IndexedMatrixValue>>> requestManyBlocks(List<BlockKey> keys) {
 		return getCache().request(keys).thenApply(
 			l -> {
-				List<OOCStream.QueueCallback<IndexedMatrixValue>> out = new java.util.ArrayList<>(l.size());
+				List<OOCStream.QueueCallback<IndexedMatrixValue>> out = new ArrayList<>(l.size());
 				for (int i = 0; i < l.size(); i++)
 					out.add(toCallback(l.get(i), keys.get(i), null));
 				return out;
@@ -198,7 +199,7 @@ public class OOCCacheManager {
 		List<BlockEntry> entries = getCache().tryRequest(keys);
 		if(entries == null)
 			return null;
-		List<OOCStream.QueueCallback<IndexedMatrixValue>> out = new java.util.ArrayList<>(entries.size());
+		List<OOCStream.QueueCallback<IndexedMatrixValue>> out = new ArrayList<>(entries.size());
 		for (int i = 0; i < entries.size(); i++)
 			out.add(toCallback(entries.get(i), keys.get(i), null));
 		return out;
@@ -208,7 +209,7 @@ public class OOCCacheManager {
 		return getCache().requestAnyOf(keys, n, sel)
 			.thenApply(
 				l -> {
-					List<OOCStream.QueueCallback<IndexedMatrixValue>> out = new java.util.ArrayList<>(l.size());
+					List<OOCStream.QueueCallback<IndexedMatrixValue>> out = new ArrayList<>(l.size());
 					for (int i = 0; i < l.size(); i++) {
 						BlockKey key = sel.size() == l.size() ? sel.get(i) : keys.get(i);
 						out.add(toCallback(l.get(i), key, null));
@@ -218,7 +219,7 @@ public class OOCCacheManager {
 	}
 
 	private static OOCStream.QueueCallback<IndexedMatrixValue> toCallback(BlockEntry entry, BlockKey key, DMLRuntimeException failure) {
-		if (entry.getData() instanceof java.util.List<?>) {
+		if (entry.getData() instanceof List<?>) {
 			CachedGroupCallback<IndexedMatrixValue> group = new CachedGroupCallback<>(entry, failure);
 			if (key instanceof GroupedBlockKey gk) {
 				OOCStream.QueueCallback<IndexedMatrixValue> sub = group.getCallback(gk.getGroupIndex());

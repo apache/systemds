@@ -745,20 +745,29 @@ class UnimodalOptimizer:
 
         return dags
 
+    def _aggregation_needed(self, dag: RepresentationDag) -> bool:
+        last_stats = self.modalities[dag.nodes[0].modality_id].stats
+        for node in dag.nodes[1:]:
+            last_stats = node.operation().get_output_shape(last_stats)
+        return len(last_stats.output_shape) > 1
+
     def add_aggregation_operator(self, builder, dags):
         new_dags = []
         if self._tasks_require_same_dims and self.expected_dimensions == 1:
             aggregated_dags = []
             for dag in dags:
-                agg_op = AggregatedRepresentation(
-                    target_dimensions=self.expected_dimensions
-                )
-                agg_node_id = builder.create_operation_node(
-                    agg_op.__class__,
-                    [dag.root_node_id],
-                    agg_op.get_current_parameters(),
-                )
-                aggregated_dags.append(builder.build(agg_node_id))
+                if self._aggregation_needed(dag):
+                    agg_op = AggregatedRepresentation(
+                        target_dimensions=self.expected_dimensions
+                    )
+                    agg_node_id = builder.create_operation_node(
+                        agg_op.__class__,
+                        [dag.root_node_id],
+                        agg_op.get_current_parameters(),
+                    )
+                    aggregated_dags.append(builder.build(agg_node_id))
+                else:
+                    aggregated_dags.append(dag)
             new_dags = aggregated_dags
         else:
             new_dags = dags

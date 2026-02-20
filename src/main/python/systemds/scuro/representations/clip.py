@@ -147,9 +147,14 @@ class CLIPText(UnimodalRepresentation):
     def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
         return input_stats.num_instances * 512 * self.data_type.itemsize
 
-    def get_output_shape(self, input_stats: TextStats) -> RepresentationStats:
-        # TODO: add context information
-        return RepresentationStats(input_stats.num_instances, (512,))
+    def get_output_shape(self, input_stats) -> RepresentationStats:
+        if isinstance(input_stats, TextStats):
+            return RepresentationStats(input_stats.num_instances, (512,))
+        else:
+            return RepresentationStats(
+                input_stats.num_instances,
+                (input_stats.output_shape[0], self.max_seq_length, 512),
+            )
 
     def estimate_peak_memory_bytes(self, input_stats: TextStats) -> dict:
         output_bytes = self.estimate_output_memory_bytes(input_stats)

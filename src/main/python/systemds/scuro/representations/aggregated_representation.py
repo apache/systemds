@@ -45,12 +45,15 @@ class AggregatedRepresentation(Representation):
     def get_output_shape(self, input_stats: RepresentationStats) -> RepresentationStats:
         if len(input_stats.output_shape) == 1 or len(input_stats.output_shape) == 2:
             return RepresentationStats(
-                input_stats.num_instances, (input_stats.output_shape[0])
+                input_stats.num_instances, (input_stats.output_shape[0],)
             )
         elif len(input_stats.output_shape) == 3:
             return RepresentationStats(
                 input_stats.num_instances,
-                (input_stats.output_shape[0], input_stats.output_shape[1]),
+                (
+                    input_stats.output_shape[0],
+                    input_stats.output_shape[1],
+                ),
             )
         else:
             raise ValueError(f"Invalid output shape: {input_stats.output_shape}")

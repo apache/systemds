@@ -26,6 +26,7 @@ import numpy as np
 
 import warnings
 from systemds.scuro.modality.type import ModalityType
+from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.utils.static_variables import (
     compute_batch_size,
     get_device,
@@ -56,6 +57,23 @@ class MLPAveraging(DimensionalityReduction):
         self.output_dim = output_dim
         self.batch_size = batch_size
         self.device = None
+        self.data_type = np.float32
+
+    def get_output_shape(self, input_stats: RepresentationStats) -> RepresentationStats:
+        return RepresentationStats(input_stats.num_instances, (self.output_dim,))
+
+    def estimate_output_memory_bytes(self, input_stats: RepresentationStats) -> int:
+        return (
+            input_stats.num_instances
+            * self.output_dim
+            * np.dtype(self.data_type).itemsize
+        )
+
+    def estimate_peak_memory_bytes(self, input_stats: RepresentationStats) -> dict:
+        return {
+            "cpu_peak_bytes": self.estimate_output_memory_bytes(input_stats),
+            "gpu_peak_bytes": 0,
+        }
 
     def execute(self, data):
         set_random_seeds(42)

@@ -65,10 +65,15 @@ class BertFamily(UnimodalRepresentation):
         self.batch_size = batch_size
 
     def get_output_shape(self, input_stats) -> RepresentationStats:
-        print("TODO: add context information")
-        return RepresentationStats(
-            input_stats.num_instances, (self.max_seq_length, 768)
-        )
+        if isinstance(input_stats, TextStats):
+            return RepresentationStats(
+                input_stats.num_instances, (self.max_seq_length, 768)
+            )
+        else:
+            return RepresentationStats(
+                input_stats.num_instances,
+                (input_stats.output_shape[0], self.max_seq_length, 768),
+            )
 
     def estimate_output_memory_bytes(self, input_stats: TextStats):
         return input_stats.num_instances * self.max_seq_length * 768 * 4

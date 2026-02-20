@@ -390,12 +390,15 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 
 	@Override
 	public boolean isWithinSoftLimits() {
-		return _cacheSize < _evictionLimit;
+		return _cacheSize < (_evictionLimit + _hardLimit) / 2;
 	}
 
 	@Override
 	public synchronized void shutdown() {
 		this._running = false;
+		if(!_cache.isEmpty() || !_evictionCache.isEmpty()) {
+			System.out.println("[WARN] Cache still holds " + _cache.size() + " / " + _evictionCache.size() + " blocks");
+		}
 		_cache.clear();
 		_evictionCache.clear();
 		_processingReadRequests.clear();
@@ -624,7 +627,6 @@ public class OOCLRUCacheScheduler implements OOCCacheScheduler {
 					}
 					else {
 						LOG.error("Uncaught CacheError", t);
-						t.printStackTrace();
 					}
 					return;
 				}

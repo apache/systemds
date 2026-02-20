@@ -19,110 +19,53 @@
 
 package org.apache.sysds.runtime.ooc.stream;
 
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.instructions.ooc.CachingStream;
 import org.apache.sysds.runtime.instructions.ooc.OOCStream;
+import org.apache.sysds.runtime.instructions.ooc.OOCStreamable;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.ooc.stream.message.OOCStreamMessage;
 import org.apache.sysds.runtime.util.IndexRange;
 
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
-public class FilteredOOCStream<T> implements OOCStream<T> {
-	private final OOCStream<T> _sourceStream;
-	private final Function<T, Boolean> _predicate;
-	private CacheableData<?> _data;
+public class SourceOOCStreamable implements OOCStreamable<IndexedMatrixValue> {
+	private final CacheableData<?> _data;
 
-	public FilteredOOCStream(OOCStream<T> sourceStream, Function<T, Boolean> predicate) {
-		_sourceStream = sourceStream;
-		_predicate = predicate;
+	public SourceOOCStreamable(CacheableData<?> data) {
+		_data = data;
 	}
 
 	@Override
-	public void enqueue(T t) {
-		_sourceStream.enqueue(t);
+	public OOCStream<IndexedMatrixValue> getReadStream() {
+		return _data.getStreamHandle();
 	}
 
 	@Override
-	public synchronized T dequeue() {
-		T next;
-		while((next = _sourceStream.dequeue()) != null) {
-			if(_predicate.apply(next))
-				return next;
-		}
-		return null;
-	}
-
-	@Override
-	public void closeInput() {
-		_sourceStream.closeInput();
-	}
-
-	@Override
-	public void propagateFailure(DMLRuntimeException re) {
-		_sourceStream.propagateFailure(re);
+	public OOCStream<IndexedMatrixValue> getWriteStream() {
+		return _data.getStreamHandle();
 	}
 
 	@Override
 	public boolean hasStreamCache() {
-		return _sourceStream.hasStreamCache();
+		return false;
 	}
 
 	@Override
 	public CachingStream getStreamCache() {
-		return _sourceStream.getStreamCache();
-	}
-
-	@Override
-	public void setSubscriber(Consumer<QueueCallback<T>> subscriber) {
-		_sourceStream.setSubscriber(cb -> {
-			if(cb.isFailure() || cb.isEos()) {
-				subscriber.accept(cb);
-				return;
-			}
-
-			if(cb instanceof OOCStream.GroupQueueCallback<?>) {
-				@SuppressWarnings("unchecked")
-				OOCStream.GroupQueueCallback<T> group = (OOCStream.GroupQueueCallback<T>) cb;
-				for(int i = 0; i < group.size(); i++) {
-					QueueCallback<T> sub = group.getCallback(i);
-					boolean pass = sub.isFailure() || sub.isEos();
-					if(!pass)
-						pass = _predicate.apply(sub.get());
-					if(pass)
-						subscriber.accept(sub);
-					else
-						sub.close();
-				}
-				return;
-			}
-
-			if(_predicate.apply(cb.get()))
-				subscriber.accept(cb);
-		});
-	}
-
-	@Override
-	public OOCStream<T> getReadStream() {
-		return this;
-	}
-
-	@Override
-	public OOCStream<T> getWriteStream() {
-		return _sourceStream.getWriteStream();
+		return null;
 	}
 
 	@Override
 	public boolean isProcessed() {
-		return _sourceStream.isProcessed();
+		return false;
 	}
 
 	@Override
 	public DataCharacteristics getDataCharacteristics() {
-		return _data == null ? null : _data.getDataCharacteristics();
+		return _data.getDataCharacteristics();
 	}
 
 	@Override
@@ -132,51 +75,51 @@ public class FilteredOOCStream<T> implements OOCStream<T> {
 
 	@Override
 	public void setData(CacheableData<?> data) {
-		_data = data;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public void messageUpstream(OOCStreamMessage msg) {
-		_sourceStream.messageUpstream(msg);
+
 	}
 
 	@Override
 	public void messageDownstream(OOCStreamMessage msg) {
-		_sourceStream.messageDownstream(msg);
+
 	}
 
 	@Override
 	public void setUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		_sourceStream.setUpstreamMessageRelay(relay);
+
 	}
 
 	@Override
 	public void setDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		_sourceStream.setDownstreamMessageRelay(relay);
+
 	}
 
 	@Override
 	public void addUpstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		_sourceStream.addUpstreamMessageRelay(relay);
+
 	}
 
 	@Override
 	public void addDownstreamMessageRelay(Consumer<OOCStreamMessage> relay) {
-		_sourceStream.addDownstreamMessageRelay(relay);
+
 	}
 
 	@Override
 	public void clearUpstreamMessageRelays() {
-		_sourceStream.clearUpstreamMessageRelays();
+
 	}
 
 	@Override
 	public void clearDownstreamMessageRelays() {
-		_sourceStream.clearDownstreamMessageRelays();
+
 	}
 
 	@Override
 	public void setIXTransform(BiFunction<Boolean, IndexRange, IndexRange> transform) {
-		_sourceStream.setIXTransform(transform);
+
 	}
 }

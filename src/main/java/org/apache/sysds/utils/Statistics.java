@@ -229,8 +229,10 @@ public class Statistics
 	private static final LongAdder oocPutCalls = new LongAdder();
 	private static final LongAdder oocLoadFromDiskCalls = new LongAdder();
 	private static final LongAdder oocLoadFromDiskTimeNanos = new LongAdder();
+	private static final LongAdder oocLoadFromDiskBytesSize = new LongAdder();
 	private static final LongAdder oocEvictionWriteCalls = new LongAdder();
 	private static final LongAdder oocEvictionWriteTimeNanos = new LongAdder();
+	private static final LongAdder oocEvictionWriteBytesSize = new LongAdder();
 	private static final AtomicLong oocStatsStartTime = new AtomicLong(System.nanoTime());
 
 	public static long getNoOfExecutedSPInst() {
@@ -356,8 +358,10 @@ public class Statistics
 		oocPutCalls.reset();
 		oocLoadFromDiskCalls.reset();
 		oocLoadFromDiskTimeNanos.reset();
+		oocLoadFromDiskBytesSize.reset();
 		oocEvictionWriteCalls.reset();
 		oocEvictionWriteTimeNanos.reset();
+		oocEvictionWriteBytesSize.reset();
 		oocStatsStartTime.set(System.nanoTime());
 	}
 
@@ -465,8 +469,16 @@ public class Statistics
 		oocLoadFromDiskTimeNanos.add(nanos);
 	}
 
+	public static void accumulateOOCLoadFromDiskBytes(long bytes) {
+		oocLoadFromDiskBytesSize.add(bytes);
+	}
+
 	public static void accumulateOOCEvictionWriteTime(long nanos) {
 		oocEvictionWriteTimeNanos.add(nanos);
+	}
+
+	public static void accumulateOOCEvictionWriteBytes(long bytes) {
+		oocEvictionWriteBytesSize.add(bytes);
 	}
 
 	public static String displayOOCEvictionStats() {
@@ -483,10 +495,10 @@ public class Statistics
 			oocGetCalls.longValue(), getThroughput));
 		sb.append(String.format(Locale.US, "  put calls:\t\t%d (%.2f/sec)\n",
 			oocPutCalls.longValue(), putThroughput));
-		sb.append(String.format(Locale.US, "  loadFromDisk:\t\t%d (time %.3f sec)\n",
-			oocLoadFromDiskCalls.longValue(), oocLoadFromDiskTimeNanos.longValue() / 1e9));
-		sb.append(String.format(Locale.US, "  evict writes:\t\t%d (time %.3f sec)\n",
-			oocEvictionWriteCalls.longValue(), oocEvictionWriteTimeNanos.longValue() / 1e9));
+		sb.append(String.format(Locale.US, "  loadFromDisk:\t\t%d (time %.3f sec, %.3f GB)\n",
+			oocLoadFromDiskCalls.longValue(), oocLoadFromDiskTimeNanos.longValue() / 1e9, oocLoadFromDiskBytesSize.longValue() / 1e9));
+		sb.append(String.format(Locale.US, "  evict writes:\t\t%d (time %.3f sec, %.3f GB)\n",
+			oocEvictionWriteCalls.longValue(), oocEvictionWriteTimeNanos.longValue() / 1e9, oocEvictionWriteBytesSize.longValue() / 1e9));
 		return sb.toString();
 	}
 	

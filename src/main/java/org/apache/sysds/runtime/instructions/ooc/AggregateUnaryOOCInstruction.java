@@ -157,7 +157,7 @@ public class AggregateUnaryOOCInstruction extends ComputationOOCInstruction {
 		else {
 			OOCStream<MatrixBlock> qLocal = createWritableStream();
 
-			mapOOC(qIn, qLocal, tmp -> (MatrixBlock) ((MatrixBlock) tmp.getValue())
+			mapOOC(qIn, qLocal, tmp -> (MatrixBlock) tmp.getValue()
 				.aggregateUnaryOperations(aggun, new MatrixBlock(), blen, tmp.getIndexes()));
 
 			MatrixBlock ltmp;

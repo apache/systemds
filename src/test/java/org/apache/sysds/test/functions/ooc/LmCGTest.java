@@ -65,7 +65,6 @@ public class LmCGTest extends AutomatedTestBase {
 		runLmCGTest(true);
 	}
 
-	// TODO codex resume 019bb84d-bac6-7fd1-bfb8-a149e715e5b5
 	private void runLmCGTest(boolean sparse) {
 		Types.ExecMode platformOld = setExecMode(Types.ExecMode.SINGLE_NODE);
 

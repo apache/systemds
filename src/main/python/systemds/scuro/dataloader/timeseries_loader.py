@@ -138,13 +138,14 @@ class TimeseriesLoader(BaseLoader):
         return data
 
     def get_stats(self, source_path: str):
-        self.file_sanity_check(source_path)
-        max_length = 0
-        num_instances = 0
-        num_signals = 0
-        for file in os.listdir(source_path):
-            data = self._load_npy(file)
-            max_length = max(max_length, data.shape[0])
-            num_instances += 1
-            num_signals = max(num_signals, data.shape[1])
-        return TimeseriesStats(max_length, num_instances, num_signals)
+        pass # TODO: Implement this
+        # self.file_sanity_check(source_path)
+        # max_length = 0
+        # num_instances = 0
+        # num_signals = 0
+        # for file in os.listdir(source_path):
+        #     data = self._load_npy(source_path + file)
+        #     max_length = max(max_length, data.shape[0])
+        #     num_instances += 1
+        #     num_signals = max(num_signals, data.shape[1])
+        # return TimeseriesStats(max_length, num_instances, num_signals)

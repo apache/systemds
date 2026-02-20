@@ -19,6 +19,7 @@
 #
 # -------------------------------------------------------------
 import numpy as np
+from systemds.scuro.dataloader.text_loader import TextStats
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 import torch
@@ -26,9 +27,10 @@ from transformers import AutoTokenizer, AutoModel
 from systemds.scuro.representations.utils import save_embeddings
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.operator_registry import register_representation
-from systemds.scuro.utils.static_variables import (
+from systemds.scuro.utils.memory_utility import (
     get_device_for_model,
     compute_batch_size,
+    get_model_size_mb,
 )
 import os
 from torch.utils.data import DataLoader
@@ -57,6 +59,11 @@ class BertFamily(UnimodalRepresentation):
         self.needs_context = True
         self.initial_context_length = 350
         self.device = None
+        model = AutoModel.from_pretrained(self.model_name)
+        self.model_size_bytes = model.get_memory_footprint()
+    
+    def estimate_output_memory_bytes(self, input_stats: TextStats):
+        return input_stats.num_instances * self.max_seq_length * 768 * 4
 
     def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(modality, self)

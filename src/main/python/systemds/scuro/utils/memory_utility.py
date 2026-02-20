@@ -22,11 +22,6 @@ import numpy as np
 import torch
 from typing import Tuple
 
-global_rng = np.random.default_rng(42)
-
-
-def get_seed():
-    return global_rng.integers(0, 1024)
 
 def get_model_size_mb(model: torch.nn.Module) -> float:
     param_bytes = sum(p.numel() * p.element_size() for p in model.parameters())

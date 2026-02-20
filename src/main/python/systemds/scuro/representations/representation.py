@@ -44,3 +44,7 @@ class Representation:
     def set_parameters(self, parameters):
         for parameter in parameters:
             setattr(self, parameter, parameters[parameter])
+
+    def estimate_memory_bytes(self, input_stats):
+        output_memory_bytes = self.estimate_output_memory_bytes(input_stats)
+        return output_memory_bytes

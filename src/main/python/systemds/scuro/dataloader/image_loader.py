@@ -78,9 +78,10 @@ class ImageLoader(BaseLoader):
         max_height = 0
         max_channels = 0
         num_instances = 0
+        
         for file in os.listdir(source_path):
-            self.file_sanity_check(file)
-            image = cv2.imread(file, cv2.IMREAD_COLOR)
+            self.file_sanity_check(source_path + file)
+            image = cv2.imread(source_path + file, cv2.IMREAD_COLOR)
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             height, width, channels = image.shape
             max_width = max(max_width, width)

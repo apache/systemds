@@ -19,6 +19,7 @@
 #
 # -------------------------------------------------------------
 from dataclasses import dataclass
+import os
 from systemds.scuro.dataloader.base_loader import BaseLoader
 from typing import Optional, Pattern, List, Union
 from systemds.scuro.modality.type import ModalityType
@@ -57,19 +58,20 @@ class TextLoader(BaseLoader):
                 )
                 self.data.append(line)
 
-    def get_stats(self, file: str):
-        self.file_sanity_check(file)
+    def get_stats(self, source_path: str):
         num_instances = 0
         max_length = 0
         avg_length = 0
-        with open(file) as text_file:
-            for line in text_file:
-                if self.prefix:
-                    line = re.sub(self.prefix, "", line)
-                line = line.replace("\n", "")
-                length = len(line.split())
-                num_instances += 1
-                max_length = max(max_length, length)
-                avg_length += length
-        avg_length /= num_instances
+        for file in os.listdir(source_path):
+            self.file_sanity_check(source_path + file)
+            with open(source_path + file) as text_file:
+                for line in text_file:
+                    if self.prefix:
+                        line = re.sub(self.prefix, "", line)
+                    line = line.replace("\n", "")
+                    length = len(line.split())
+                    num_instances += 1
+                    max_length = max(max_length, length)
+                    avg_length += length
+            avg_length /= num_instances
         return TextStats(num_instances, max_length, avg_length)

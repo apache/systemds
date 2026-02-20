@@ -103,8 +103,8 @@ class VideoLoader(BaseLoader):
         max_num_channels = 0
         num_instances = 0
         for file in os.listdir(source_path):
-            self.file_sanity_check(file)
-            cap = cv2.VideoCapture(file)
+            self.file_sanity_check(source_path + file)
+            cap = cv2.VideoCapture(source_path + file)
 
             length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))

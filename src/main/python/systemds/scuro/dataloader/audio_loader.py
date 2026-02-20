@@ -77,8 +77,8 @@ class AudioLoader(BaseLoader):
         avg_length = 0
         num_instances = 0
         for file in os.listdir(source_path):
-            self.file_sanity_check(file)
-            audio, sr = librosa.load(file, dtype=self._data_type)
+            self.file_sanity_check(source_path + file)
+            audio, sr = librosa.load(source_path + file, dtype=self._data_type)
             num_instances += 1
             sampling_rate = max(sampling_rate, sr)
             max_length = max(max_length, audio.shape[0])

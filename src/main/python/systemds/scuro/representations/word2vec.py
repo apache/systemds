@@ -21,6 +21,7 @@
 import numpy as np
 from systemds.scuro.dataloader.text_loader import TextStats
 from systemds.scuro.modality.transformed import TransformedModality
+from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import save_embeddings
 from gensim.models import Word2Vec
@@ -52,6 +53,9 @@ class W2V(UnimodalRepresentation):
         self.min_count = min_count
         self.output_file = output_file
         self.data_type = np.float32
+
+    def get_output_shape(self, input_stats: TextStats) -> RepresentationStats:
+        return RepresentationStats(input_stats.num_instances, (self.vector_size,))
 
     def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
         return (

@@ -22,6 +22,7 @@ from dataclasses import dataclass
 import numpy as np
 from systemds.scuro.dataloader.text_loader import TextStats
 from systemds.scuro.modality.transformed import TransformedModality
+from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 import torch
 from transformers import AutoTokenizer, AutoModel
@@ -37,13 +38,6 @@ from torch.utils.data import DataLoader
 from systemds.scuro.utils.torch_dataset import TextDataset, TextSpanDataset
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
-
-@dataclass
-class BertStats:
-    output_dims: tuple
-    model_size_bytes: int
-    output_memory_bytes: int
 
 
 class BertFamily(UnimodalRepresentation):
@@ -69,6 +63,12 @@ class BertFamily(UnimodalRepresentation):
         self.initial_context_length = 350
         self.device = None
         self.batch_size = batch_size
+
+    def get_output_shape(self, input_stats) -> RepresentationStats:
+        print("TODO: add context information")
+        return RepresentationStats(
+            input_stats.num_instances, (self.max_seq_length, 768)
+        )
 
     def estimate_output_memory_bytes(self, input_stats: TextStats):
         return input_stats.num_instances * self.max_seq_length * 768 * 4

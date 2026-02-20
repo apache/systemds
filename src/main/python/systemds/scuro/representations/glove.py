@@ -25,6 +25,7 @@ from huggingface_hub import hf_hub_download
 
 from systemds.scuro.dataloader.text_loader import TextStats
 from systemds.scuro.modality.transformed import TransformedModality
+from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import save_embeddings
 from systemds.scuro.modality.type import ModalityType
@@ -55,12 +56,15 @@ class GloVe(UnimodalRepresentation):
         self.glove_path = "./glove_extracted/glove.6B.100d.txt"
         self.output_file = output_file
         self.data_type = np.float32
+        self.embedding_dim = 100
+
+    def get_output_shape(self, input_stats: TextStats) -> RepresentationStats:
+        return RepresentationStats(input_stats.num_instances, (self.embedding_dim,))
 
     def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
-        embedding_dim = 100
         return (
             input_stats.num_instances
-            * embedding_dim
+            * self.embedding_dim
             * np.dtype(self.data_type).itemsize
         )
 

@@ -23,6 +23,7 @@ from torchvision import transforms
 
 from systemds.scuro.dataloader.text_loader import TextStats
 from systemds.scuro.modality.transformed import TransformedModality
+from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 import torch
 from systemds.scuro.representations.utils import save_embeddings
@@ -136,8 +137,8 @@ class CLIPText(UnimodalRepresentation):
         parameters = {"batch_size": [1, 2, 4, 8, 16, 32, 64, 128]}
 
         super().__init__("CLIPText", ModalityType.EMBEDDING, parameters)
-        self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-        self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        self.model = None
+        self.processor = None
         self.output_file = output_file
         self.needs_context = True
         self.initial_context_length = 55
@@ -145,6 +146,10 @@ class CLIPText(UnimodalRepresentation):
 
     def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
         return input_stats.num_instances * 512 * self.data_type.itemsize
+
+    def get_output_shape(self, input_stats: TextStats) -> RepresentationStats:
+        # TODO: add context information
+        return RepresentationStats(input_stats.num_instances, (512,))
 
     def estimate_peak_memory_bytes(self, input_stats: TextStats) -> dict:
         output_bytes = self.estimate_output_memory_bytes(input_stats)
@@ -159,6 +164,8 @@ class CLIPText(UnimodalRepresentation):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )
+        self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
         self.device = get_device_for_model(self.model, memory_factor=1.5)
         self.model = self.model.to(self.device)
 

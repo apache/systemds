@@ -28,7 +28,10 @@ from systemds.scuro.modality.type import DataLayout, ModalityType
 from systemds.scuro.drsearch.operator_registry import register_context_operator
 from systemds.scuro.representations.aggregate import Aggregation
 from systemds.scuro.representations.context import Context
-from systemds.scuro.representations.representation import Representation
+from systemds.scuro.representations.representation import (
+    Representation,
+    RepresentationStats,
+)
 
 
 class Window(Context):
@@ -45,6 +48,7 @@ class Window(Context):
             )
 
         super().__init__(name, parameters)
+        self.data_type = np.float32
 
     def get_current_parameters(self):
         current_params = {}
@@ -82,6 +86,12 @@ class Window(Context):
         else:
             self._aggregation_function = Aggregation(value)
 
+    def estimate_output_memory_bytes(self, input_stats: RepresentationStats) -> int:
+        return None
+
+    def estimate_peak_memory_bytes(self, input_stats: RepresentationStats) -> dict:
+        return None
+
 
 @register_context_operator(
     [ModalityType.TIMESERIES, ModalityType.AUDIO, ModalityType.EMBEDDING]
@@ -102,6 +112,52 @@ class WindowAggregation(Window):
         self.parameters["window_size"] = [5, 10, 15, 25, 50, 100]
         self.window_size = int(window_size)
         self.pad = pad
+
+    def get_output_shape(self, input_stats: RepresentationStats) -> tuple:
+        if len(input_stats.output_shape) == 1:
+            return RepresentationStats(
+                input_stats.num_instances,
+                (input_stats.output_shape[0] / self.window_size,),
+            )
+        elif len(input_stats.output_shape) == 2:
+            return RepresentationStats(
+                input_stats.num_instances,
+                (
+                    input_stats.output_shape[0] / self.window_size,
+                    input_stats.output_shape[1],
+                ),
+            )
+        else:
+            raise ValueError(f"Invalid output shape: {input_stats.output_shape}")
+
+    def estimate_output_memory_bytes(self, input_stats: RepresentationStats) -> int:
+        seq_len = int(input_stats.output_shape[0])
+        feature_dim = (
+            int(input_stats.output_shape[1])
+            if len(input_stats.output_shape) == 2
+            else 1
+        )
+        new_len = math.ceil(seq_len / self.window_size)
+        return (
+            input_stats.num_instances
+            * new_len
+            * feature_dim
+            * np.dtype(self.data_type).itemsize
+        )
+
+    def estimate_peak_memory_bytes(self, input_stats: RepresentationStats) -> dict:
+        output_bytes = self.estimate_output_memory_bytes(input_stats)
+        seq_len = int(input_stats.output_shape[0])
+        feature_dim = (
+            int(input_stats.output_shape[1])
+            if len(input_stats.output_shape) == 2
+            else 1
+        )
+        one_instance_bytes = (
+            seq_len * feature_dim * np.dtype(self.data_type).itemsize
+        )  # because we copy the data
+        cpu_peak = output_bytes + one_instance_bytes
+        return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}
 
     def execute(self, modality):
         windowed_data = []
@@ -197,6 +253,9 @@ class StaticWindow(Window):
         self.parameters["num_windows"] = [10, num_windows]
         self.num_windows = int(num_windows)
 
+    def get_output_shape(self, input_stats: RepresentationStats) -> tuple:
+        return RepresentationStats(input_stats.num_instances, (self.num_windows,))
+
     def execute(self, modality):
         windowed_data = []
 
@@ -229,6 +288,34 @@ class DynamicWindow(Window):
         super().__init__("DynamicWindow", aggregation_function)
         self.parameters["num_windows"] = [10, num_windows]
         self.num_windows = int(num_windows)
+
+    def get_output_shape(self, input_stats: RepresentationStats) -> tuple:
+        return RepresentationStats(input_stats.num_instances, (self.num_windows,))
+
+    def estimate_output_memory_bytes(self, input_stats: RepresentationStats) -> int:
+        feature_dim = (
+            int(input_stats.output_shape[1])
+            if len(input_stats.output_shape) == 2
+            else 1
+        )
+        return (
+            input_stats.num_instances
+            * self.num_windows
+            * feature_dim
+            * np.dtype(self.data_type).itemsize
+        )
+
+    def estimate_peak_memory_bytes(self, input_stats: RepresentationStats) -> dict:
+        output_bytes = self.estimate_output_memory_bytes(input_stats)
+        seq_len = int(input_stats.output_shape[0])
+        feature_dim = (
+            int(input_stats.output_shape[1])
+            if len(input_stats.output_shape) == 2
+            else 1
+        )
+        one_instance_bytes = seq_len * feature_dim * np.dtype(self.data_type).itemsize
+        cpu_peak = output_bytes + one_instance_bytes
+        return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}
 
     def execute(self, modality):
         windowed_data = []

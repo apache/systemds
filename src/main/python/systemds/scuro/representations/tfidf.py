@@ -23,6 +23,7 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from systemds.scuro.dataloader.text_loader import TextStats
 from systemds.scuro.modality.transformed import TransformedModality
+from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import save_embeddings
 
@@ -39,13 +40,16 @@ class TfIdf(UnimodalRepresentation):
         self.output_file = output_file
         self.data_type = np.float32
 
-    def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
+    def get_output_shape(self, input_stats: TextStats) -> RepresentationStats:
         vocab_estimate = min(
             100_000, max(1000, input_stats.num_instances * input_stats.max_length)
         )
+        return RepresentationStats(input_stats.num_instances, (vocab_estimate,))
+
+    def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
         return (
             input_stats.num_instances
-            * vocab_estimate
+            * self.get_output_shape(input_stats).output_shape[0]
             * np.dtype(self.data_type).itemsize
         )
 

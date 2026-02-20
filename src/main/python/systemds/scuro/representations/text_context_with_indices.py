@@ -18,12 +18,15 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import math
 import re
 from typing import List, Any
-
+import numpy as np
+from systemds.scuro.dataloader.text_loader import TextStats
 from systemds.scuro.drsearch.operator_registry import register_context_operator
 from systemds.scuro.representations.context import Context
 from systemds.scuro.modality.type import ModalityType
+from systemds.scuro.representations.representation import RepresentationStats
 
 # TODO: Use this to get indices for text chunks based on different splitting strategies
 # To use this approach a differnt extration of text chunks is needed in either the TextModality or the Representations
@@ -154,6 +157,30 @@ class SentenceBoundarySplitIndices(Context):
         self.min_words = max(1, int(min_words))
         self.overlap = overlap
         self.stride = max(1, int(max_words * (1 - overlap)))
+        self.data_type = np.int32
+
+    def get_output_shape(self, input_stats: TextStats) -> RepresentationStats:
+        return RepresentationStats(
+            input_stats.num_instances,
+            (math.ceil(input_stats.max_length / self.max_words), self.max_words),
+        )
+
+    def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
+        output_memory_bytes = 1
+        output_shape = self.get_output_shape(input_stats).output_shape
+        for dim in output_shape:
+            output_memory_bytes *= dim
+        return (
+            input_stats.num_instances
+            * output_memory_bytes
+            * np.dtype(self.data_type).itemsize
+        )
+
+    def estimate_peak_memory_bytes(self, input_stats: TextStats) -> dict:
+        return {
+            "cpu_peak_bytes": self.estimate_output_memory_bytes(input_stats),
+            "gpu_peak_bytes": 0,
+        }
 
     def execute(self, modality):
         """
@@ -254,6 +281,32 @@ class OverlappingSplitIndices(Context):
         self.max_words = max_words
         self.overlap = overlap
         self.stride = stride
+
+    def get_output_shape(self, input_stats: TextStats) -> RepresentationStats:
+        return RepresentationStats(
+            input_stats.num_instances,
+            (
+                math.ceil(input_stats.max_length / (self.max_words - self.overlap)),
+                self.max_words,
+            ),
+        )
+
+    def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
+        output_memory_bytes = 1
+        output_shape = self.get_output_shape(input_stats).output_shape
+        for dim in output_shape:
+            output_memory_bytes *= dim
+        return (
+            input_stats.num_instances
+            * output_memory_bytes
+            * np.dtype(self.data_type).itemsize
+        )
+
+    def estimate_peak_memory_bytes(self, input_stats: TextStats) -> dict:
+        return {
+            "cpu_peak_bytes": self.estimate_output_memory_bytes(input_stats),
+            "gpu_peak_bytes": 0,
+        }
 
     def execute(self, modality):
         """

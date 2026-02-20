@@ -18,7 +18,15 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import abc
+from dataclasses import dataclass
 from systemds.scuro.utils.identifier import Identifier
+
+
+@dataclass
+class RepresentationStats:
+    num_instances: int
+    output_shape: tuple
 
 
 class Representation:
@@ -27,6 +35,7 @@ class Representation:
         self._parameters = parameters
         self.self_contained = True
         self.representation_id = Identifier().new_id()
+        self.stats = RepresentationStats(0, (0,))
 
     @property
     def parameters(self):
@@ -48,3 +57,9 @@ class Representation:
     def estimate_memory_bytes(self, input_stats):
         output_memory_bytes = self.estimate_output_memory_bytes(input_stats)
         return output_memory_bytes
+
+    @abc.abstractmethod
+    def get_output_shape(self, input_stats):
+        raise NotImplementedError(
+            f"get_output_shape is not implemented for {self.name}"
+        )

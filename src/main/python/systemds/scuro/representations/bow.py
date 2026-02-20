@@ -27,6 +27,7 @@ from systemds.scuro.representations.utils import save_embeddings
 
 from systemds.scuro.modality.type import ModalityType
 from systemds.scuro.drsearch.operator_registry import register_representation
+from systemds.scuro.dataloader.text_loader import TextStats
 
 
 @register_representation(ModalityType.TEXT)
@@ -37,6 +38,29 @@ class BoW(UnimodalRepresentation):
         self.ngram_range = int(ngram_range)
         self.min_df = int(min_df)
         self.output_file = output_file
+        self.data_type = np.float32
+
+    def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
+        vocab_estimate = min(
+            100_000,
+            max(
+                1000,
+                input_stats.num_instances * input_stats.max_length * self.ngram_range,
+            ),
+        )
+        return (
+            input_stats.num_instances
+            * vocab_estimate
+            * np.dtype(self.data_type).itemsize
+        )
+
+    def estimate_peak_memory_bytes(self, input_stats: TextStats) -> dict:
+        output_bytes = self.estimate_output_memory_bytes(input_stats)
+        vectorizer_overhead = 50 * 1024 * 1024
+        return {
+            "cpu_peak_bytes": output_bytes + vectorizer_overhead,
+            "gpu_peak_bytes": 0,
+        }
 
     def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(modality, self)
@@ -50,7 +74,7 @@ class BoW(UnimodalRepresentation):
         if self.output_file is not None:
             save_embeddings(X, self.output_file)
 
-        transformed_modality.data_type = np.float32
+        transformed_modality.data_type = self.data_type
         transformed_modality.data = X
         if aggregation is not None:
             transformed_modality.data = aggregation.execute(transformed_modality.data)

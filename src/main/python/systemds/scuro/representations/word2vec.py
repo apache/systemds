@@ -19,6 +19,7 @@
 #
 # -------------------------------------------------------------
 import numpy as np
+from systemds.scuro.dataloader.text_loader import TextStats
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import save_embeddings
@@ -50,8 +51,21 @@ class W2V(UnimodalRepresentation):
         self.vector_size = vector_size
         self.min_count = min_count
         self.output_file = output_file
+        self.data_type = np.float32
 
-    def transform(self, modality, aggregation=None):
+    def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
+        return (
+            input_stats.num_instances
+            * self.vector_size
+            * np.dtype(self.data_type).itemsize
+        )
+
+    def estimate_peak_memory_bytes(self, input_stats: TextStats) -> dict:
+        output_bytes = self.estimate_output_memory_bytes(input_stats)
+        model_estimate = 100 * 1024 * 1024
+        return {"cpu_peak_bytes": model_estimate + output_bytes, "gpu_peak_bytes": 0}
+
+    def transform(self, modality, params=None):
         transformed_modality = TransformedModality(modality, self)
         t = [list(tokenize(s.lower())) for s in modality.data]
         model = Word2Vec(
@@ -66,6 +80,6 @@ class W2V(UnimodalRepresentation):
 
         if self.output_file is not None:
             save_embeddings(np.array(embeddings), self.output_file)
-        transformed_modality.data_type = np.float32
+        transformed_modality.data_type = self.data_type
         transformed_modality.data = np.array(embeddings)
         return transformed_modality

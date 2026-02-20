@@ -18,6 +18,7 @@
 # under the License.
 #
 # -------------------------------------------------------------
+from dataclasses import dataclass
 import numpy as np
 from systemds.scuro.dataloader.text_loader import TextStats
 from systemds.scuro.modality.transformed import TransformedModality
@@ -30,13 +31,19 @@ from systemds.scuro.drsearch.operator_registry import register_representation
 from systemds.scuro.utils.memory_utility import (
     get_device_for_model,
     compute_batch_size,
-    get_model_size_mb,
 )
 import os
 from torch.utils.data import DataLoader
 from systemds.scuro.utils.torch_dataset import TextDataset, TextSpanDataset
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+
+@dataclass
+class BertStats:
+    output_dims: tuple
+    model_size_bytes: int
+    output_memory_bytes: int
 
 
 class BertFamily(UnimodalRepresentation):
@@ -48,8 +55,10 @@ class BertFamily(UnimodalRepresentation):
         parameters={},
         output_file=None,
         max_seq_length=512,
+        batch_size=32,
         params=None,
     ):
+        parameters = {"batch_size": [1, 2, 4, 8, 16, 32, 64, 128]}
         self.model_name = model_name
         super().__init__(representation_name, ModalityType.EMBEDDING, parameters)
 
@@ -59,11 +68,22 @@ class BertFamily(UnimodalRepresentation):
         self.needs_context = True
         self.initial_context_length = 350
         self.device = None
-        model = AutoModel.from_pretrained(self.model_name)
-        self.model_size_bytes = model.get_memory_footprint()
-    
+        self.batch_size = batch_size
+
     def estimate_output_memory_bytes(self, input_stats: TextStats):
         return input_stats.num_instances * self.max_seq_length * 768 * 4
+
+    def estimate_peak_memory_bytes(self, input_stats: TextStats):
+        output_bytes = self.estimate_output_memory_bytes(input_stats)
+        model_bytes = AutoModel.from_pretrained(self.model_name).get_memory_footprint()
+        tokenizer_bytes = 100 * 1024 * 1024  # This is a rough estimate
+        batch_peak_bytes = (
+            self.batch_size * self.max_seq_length * 3 * 8
+            + self.batch_size * self.max_seq_length * 768 * 4 * 4
+        )
+        cpu_peak = model_bytes + tokenizer_bytes + output_bytes
+        gpu_peak = model_bytes + batch_peak_bytes
+        return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": gpu_peak}
 
     def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(modality, self)
@@ -73,7 +93,6 @@ class BertFamily(UnimodalRepresentation):
         self.model = AutoModel.from_pretrained(self.model_name)
         self.device = get_device_for_model(self.model, memory_factor=1.5)
         self.model = self.model.to(self.device)
-
         self.bert_output = None
 
         def get_activation(name):
@@ -87,7 +106,6 @@ class BertFamily(UnimodalRepresentation):
                 if name == self.layer_name:
                     layer.register_forward_hook(get_activation(name))
                     break
-
         if ModalityType.TEXT.has_field(modality.metadata, "text_spans"):
             dataset = TextSpanDataset(modality.data, modality.metadata)
             embeddings = []
@@ -122,7 +140,6 @@ class BertFamily(UnimodalRepresentation):
                 truncation=True,
                 max_length=self.max_seq_length,  # TODO: make this dynamic with parameter to tune
             )
-
             inputs.to(self.device)
             # ModalityType.TEXT.add_field_for_instances(
             #     modality.metadata,

@@ -138,7 +138,7 @@ class TimeseriesLoader(BaseLoader):
         return data
 
     def get_stats(self, source_path: str):
-        pass # TODO: Implement this
+        pass  # TODO: Implement this
         # self.file_sanity_check(source_path)
         # max_length = 0
         # num_instances = 0

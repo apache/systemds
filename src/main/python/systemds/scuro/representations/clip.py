@@ -21,6 +21,7 @@
 import numpy as np
 from torchvision import transforms
 
+from systemds.scuro.dataloader.text_loader import TextStats
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 import torch
@@ -129,16 +130,32 @@ class CLIPVisual(UnimodalRepresentation):
 
 @register_representation(ModalityType.TEXT)
 class CLIPText(UnimodalRepresentation):
-    def __init__(self, output_file=None, params=None):
-        parameters = {}
+    def __init__(self, output_file=None, batch_size=32, params=None):
+        self.batch_size = batch_size
+        self.max_seq_length = 77
+        parameters = {"batch_size": [1, 2, 4, 8, 16, 32, 64, 128]}
+
         super().__init__("CLIPText", ModalityType.EMBEDDING, parameters)
         self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
         self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
         self.output_file = output_file
         self.needs_context = True
         self.initial_context_length = 55
+        self.data_type = torch.float32
 
-    def transform(self, modality, aggregation=None):
+    def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
+        return input_stats.num_instances * 512 * self.data_type.itemsize
+
+    def estimate_peak_memory_bytes(self, input_stats: TextStats) -> dict:
+        output_bytes = self.estimate_output_memory_bytes(input_stats)
+        batch_peak_bytes = (
+            self.batch_size * self.max_seq_length * 3 * 8 + self.batch_size * 512 * 4
+        )
+        cpu_peak = self.model.get_memory_footprint() + 50 * 1024 * 1024 + output_bytes
+        gpu_peak = self.model.get_memory_footprint() + batch_peak_bytes
+        return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": gpu_peak}
+
+    def transform(self, modality, params=None):
         transformed_modality = TransformedModality(
             modality, self, self.output_modality_type
         )
@@ -151,7 +168,7 @@ class CLIPText(UnimodalRepresentation):
             device=self.device,
             sample_data=sample,
             tokenizer=self.processor,
-            max_seq_length=77,
+            max_seq_length=self.max_seq_length,
             max_batch_size=128,
         )
 
@@ -160,13 +177,11 @@ class CLIPText(UnimodalRepresentation):
             embeddings = []
             for text_chunks in dataset:
                 embedding = self.create_text_embeddings(
-                    text_chunks, self.model, aggregation
+                    text_chunks, self.model, params  # TODO: add aggregation
                 )
                 embeddings.append(embedding)
         else:
-            embeddings = self.create_text_embeddings(
-                modality.data, self.model, aggregation
-            )
+            embeddings = self.create_text_embeddings(modality.data, self.model, params)
 
         if self.output_file is not None:
             save_embeddings(embeddings, self.output_file)

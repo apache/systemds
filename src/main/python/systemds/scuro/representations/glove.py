@@ -23,6 +23,7 @@ import numpy as np
 from gensim.utils import tokenize
 from huggingface_hub import hf_hub_download
 
+from systemds.scuro.dataloader.text_loader import TextStats
 from systemds.scuro.modality.transformed import TransformedModality
 from systemds.scuro.representations.unimodal import UnimodalRepresentation
 from systemds.scuro.representations.utils import save_embeddings
@@ -53,6 +54,20 @@ class GloVe(UnimodalRepresentation):
 
         self.glove_path = "./glove_extracted/glove.6B.100d.txt"
         self.output_file = output_file
+        self.data_type = np.float32
+
+    def estimate_output_memory_bytes(self, input_stats: TextStats) -> int:
+        embedding_dim = 100
+        return (
+            input_stats.num_instances
+            * embedding_dim
+            * np.dtype(self.data_type).itemsize
+        )
+
+    def estimate_peak_memory_bytes(self, input_stats: TextStats) -> dict:
+        output_bytes = self.estimate_output_memory_bytes(input_stats)
+        glove_dict_bytes = 200 * 1024 * 1024
+        return {"cpu_peak_bytes": glove_dict_bytes + output_bytes, "gpu_peak_bytes": 0}
 
     def transform(self, modality, aggregation=None):
         transformed_modality = TransformedModality(modality, self)
@@ -72,7 +87,7 @@ class GloVe(UnimodalRepresentation):
             if len(token_embeddings) > 0:
                 embeddings.append(np.mean(token_embeddings, axis=0))
             else:
-                embeddings.append(np.zeros(embedding_dim, dtype=np.float32))
+                embeddings.append(np.zeros(embedding_dim, dtype=self.data_type))
 
         if self.output_file is not None:
             save_embeddings(np.array(embeddings), self.output_file)

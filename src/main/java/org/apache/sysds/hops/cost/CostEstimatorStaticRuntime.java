@@ -85,8 +85,9 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 			}
 			vs[1]._inmem = true;
 		}
-		if(ltime != 0)
-			LOG.debug("Cost[{} - read] = {}", cpinst.getOpcode(), ltime);
+		if( LOG.isDebugEnabled() && ltime!=0 ) {
+			LOG.debug("Cost["+cpinst.getOpcode()+" - read] = "+ltime);
+		}		
 				
 		//exec time CP instruction
 		String opcode = (cpinst instanceof FunctionCallCPInstruction) ? InstructionUtils.getOpCode(cpinst.toString()) : cpinst.getOpcode();
@@ -98,8 +99,9 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		if( inst instanceof VariableCPInstruction && ((VariableCPInstruction)inst).getOpcode().equals(Opcodes.WRITE.toString()) )
 			wtime += getHDFSWriteTime(vs[2].getRows(), vs[2].getCols(), vs[2].getSparsity(), ((VariableCPInstruction)inst).getInput3().getName() );
 		
-		if(wtime != 0)
-			LOG.debug("Cost[{} - write] = {}", cpinst.getOpcode(), wtime);
+		if( LOG.isDebugEnabled() && wtime!=0 ) {
+			LOG.debug("Cost["+cpinst.getOpcode()+" - write] = "+wtime);
+		}
 		
 		//total costs
 		double costs = ltime + etime + wtime;
@@ -259,8 +261,8 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 		double nflops = getNFLOP(opcode, inMR, d1m, d1n, d1s, d2m, d2n, d2s, d3m, d3n, d3s, args);
 		double time = nflops / DEFAULT_FLOPS;
 		
-		LOG.debug("Cost[{}] = {}s, {} flops ({},{},{},{},{},{},{},{},{}).",
-			opcode, time, nflops, d1m, d1n, d1s, d2m, d2n, d2s, d3m, d3n, d3s);
+		if( LOG.isDebugEnabled() )
+			LOG.debug("Cost["+opcode+"] = "+time+"s, "+nflops+" flops ("+d1m+","+d1n+","+d1s+","+d2m+","+d2n+","+d2s+","+d3m+","+d3n+","+d3s+").");
 		
 		return time;
 	}

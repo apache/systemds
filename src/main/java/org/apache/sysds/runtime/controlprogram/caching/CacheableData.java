@@ -1072,7 +1072,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 		long begin = LOG.currentTimeMillisIfTraceEnabled();
 		
 		LOG.trace ("CACHE: Restoring matrix...  {}  HDFS path: {} Restore from path: {}",
-                hashCode(), _hdfsFileName, cacheFilePathAndName);
+			hashCode(), _hdfsFileName, cacheFilePathAndName);
 				
 		if (_data != null)
 			throw new DMLRuntimeException(cacheFilePathAndName + " : Cannot restore on top of existing in-memory data.");
@@ -1089,7 +1089,7 @@ public abstract class CacheableData<T extends CacheBlock<?>> extends Data
 			throw new DMLRuntimeException (cacheFilePathAndName + " : Restore failed.");
 		
 		LOG.trace("Restoring matrix - COMPLETED ... {} msec.",
-                LOG.currentTimeMillisIfTraceEnabled()-begin);
+		LOG.currentTimeMillisIfTraceEnabled()-begin);
 	}
 
 	protected abstract T readBlobFromCache(String fname)

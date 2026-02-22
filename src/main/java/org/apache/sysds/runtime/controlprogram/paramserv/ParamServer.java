@@ -227,8 +227,7 @@ public abstract class ParamServer
 						((_freq == Statement.PSFrequency.EPOCH && ((float) ++_syncCounter % _numWorkers) == 0) ||
 						(_freq == Statement.PSFrequency.BATCH && ((float) ++_syncCounter / _numWorkers) % _numBatchesPerEpoch == 0)) ||
 						(_freq == Statement.PSFrequency.NBATCHES)) {
-						if(LOG.isInfoEnabled())
-							LOG.info("[+] PARAMSERV: completed PSEUDO EPOCH (ASP) " + _epochCounter);
+						LOG.info("[+] PARAMSERV: completed PSEUDO EPOCH (ASP) {}", _epochCounter);
 
 						time_epoch();
 
@@ -280,8 +279,7 @@ public abstract class ParamServer
 		}
 
 		if(finishedEpoch()) {
-			if(LOG.isInfoEnabled())
-				LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
+			LOG.info("[+] PARAMSERV: completed EPOCH {}", _epochCounter);
 
 			time_epoch();
 
@@ -423,8 +421,7 @@ public abstract class ParamServer
 		if(_numBatchesPerEpoch != -1 && (_freq == Statement.PSFrequency.EPOCH ||
 			(_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0))) {
 
-			if(LOG.isInfoEnabled())
-				LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
+			LOG.info("[+] PARAMSERV: completed EPOCH {}", _epochCounter);
 			time_epoch();
 			if(_validationPossible) {
 				validate();
@@ -543,11 +540,10 @@ public abstract class ParamServer
 			double current_total_validation_time = ParamServStatistics.getValidationTime();
 			double time_to_epoch = current_total_execution_time - current_total_validation_time;
 
-			if (LOG.isInfoEnabled())
-				if(_validationPossible)
-					LOG.info("[+] PARAMSERV: epoch timer (excl. validation): " + time_to_epoch / 1000 + " secs.");
-				else
-					LOG.info("[+] PARAMSERV: epoch timer: " + time_to_epoch / 1000 + " secs.");
+			if(_validationPossible)
+				LOG.info("[+] PARAMSERV: epoch timer (excl. validation): {} secs.", time_to_epoch / 1000);
+			else
+				LOG.info("[+] PARAMSERV: epoch timer: {} secs.", time_to_epoch / 1000);
 		}
 	}
 
@@ -569,8 +565,7 @@ public abstract class ParamServer
 		ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
 
 		// Log validation results
-		if (LOG.isInfoEnabled())
-			LOG.info("[+] PARAMSERV: validation-loss: " + loss + " validation-accuracy: " + accuracy);
+		LOG.info("[+] PARAMSERV: validation-loss: {} validation-accuracy: {}", loss, accuracy);
 
 		if(tValidate != null)
 			ParamServStatistics.accValidationTime((long) tValidate.stop());

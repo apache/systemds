@@ -290,8 +290,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private static void logRequests(FederatedRequest request, int nrRequest, int totalRequests) {
 		LOG.debug("Executing command {}/{}: {}", nrRequest + 1, totalRequests, request.getType().name());
-		if(LOG.isTraceEnabled())
-			LOG.trace("full command: " + request);
+		LOG.trace("full command: ", request);
 	}
 
 	private FederatedResponse executeCommand(FederatedRequest request, ExecutionContextMap ecm, EventStageModel eventStage)

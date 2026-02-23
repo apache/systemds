@@ -177,8 +177,8 @@ class RepresentationDag:
         external_cache: Optional[LRUCache] = None,
         enable_cache=True,
         rep_cache: Dict[Any, TransformedModality] = None,
+        consumer_count: Dict[str, int] = None,
     ) -> Union[Dict[str, TransformedModality], TransformedModality]:
-        # node_signatures: Dict[str, Hashable] = {}
 
         def execute_node(node_id: str, task) -> TransformedModality:
             if external_cache is not None and external_cache.get(node_id) is not None:
@@ -190,24 +190,18 @@ class RepresentationDag:
                 modality = get_modality_by_id_and_instance_id(
                     modalities, int(node.modality_id), node.representation_index
                 )
-                # if external_cache is not None:
-                #     external_cache.put(node_id, modality)
-                # node_signatures[node_id] = self._compute_leaf_signature(node)
+
                 return modality
 
             input_mods = [execute_node(input_id, task) for input_id in node.inputs]
-            # input_signatures = tuple(
-            #     node_signatures[input_id] for input_id in node.inputs
-            # )
-            # node_signature = self._compute_node_signature(node, input_signatures)
             is_unimodal = len(input_mods) == 1
 
-            cached_result = None
-            if external_cache is not None and is_unimodal:
-                cached_result = external_cache.get(node_id)
-            if cached_result is not None:
-                result = cached_result
-
+            if (
+                external_cache is not None
+                and is_unimodal
+                and external_cache.get(node_id) is not None
+            ):
+                result = external_cache.get(node_id)
             else:
                 node_operation = node.operation(params=node.parameters)
                 if len(input_mods) == 1:
@@ -237,9 +231,13 @@ class RepresentationDag:
                     else:
                         result = input_mods[0].combine(input_mods[1:], fusion_op)
 
-            if enable_cache and external_cache is not None:
-                external_cache.put(node_id, result)
-            # node_signatures[node_id] = node_signature
+                if (
+                    enable_cache
+                    and external_cache is not None
+                    and is_unimodal
+                    and consumer_count[node_id] > 1
+                ):
+                    external_cache.put(node_id, result)
             return result
 
         result = execute_node(self.root_node_id, task)
@@ -349,6 +347,15 @@ class RepresentationDAGBuilder:
             if node.node_id == node_id:
                 return node
         return None
+
+
+def get_consumer_count(dags: List[RepresentationDag]) -> Dict[str, int]:
+    consumer_count: Dict[str, int] = defaultdict(int)
+    for dag in dags:
+        for node in dag.nodes:
+            for inp in node.inputs:
+                consumer_count[inp] += 1
+    return consumer_count
 
 
 def pushdown_aggregation(dag_group: List[RepresentationDag]) -> List[RepresentationDag]:

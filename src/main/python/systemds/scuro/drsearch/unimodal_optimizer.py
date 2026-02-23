@@ -26,6 +26,10 @@ import multiprocessing as mp
 from typing import List, Any, Optional, Dict
 from functools import lru_cache
 from systemds.scuro import ModalityType
+from systemds.scuro.drsearch.dag_group_scheduler import (
+    DAGGroupScheduler,
+    get_peak_memory_from_dag_group,
+)
 from systemds.scuro.drsearch.ranking import rank_by_tradeoff
 from systemds.scuro.drsearch.task import PerformanceMeasure
 from systemds.scuro.representations.fusion import Fusion
@@ -44,6 +48,7 @@ from systemds.scuro.drsearch.representation_dag import (
     RepresentationDag,
     RepresentationNode,
     CSEAwareDAGBuilder,
+    get_consumer_count,
     group_dags_by_dependencies,
     pushdown_aggregation,
 )
@@ -72,6 +77,7 @@ def _process_dag_group(
     debug: bool,
     dag_group_idx: int,
     checkpoint_path: str,
+    gpu_id: int,
 ) -> Dict[str, Any]:
     checkpoint_manager = CheckpointManager(
         checkpoint_path,
@@ -99,12 +105,18 @@ def _process_dag_group(
     dag_group = pickle.loads(dag_group_pickle)
     modality = pickle.loads(modality_pickle)
     tasks = pickle.loads(tasks_pickle)
+    consumer_count = get_consumer_count(dag_group)
 
     group_cache = LRUCache(max_size=6)
     processed_count = 0
 
     for i, dag in enumerate(dag_group):
-        representation = dag.execute([modality], external_cache=group_cache)
+        representation = dag.execute(
+            [modality],
+            enable_cache=True,
+            external_cache=group_cache,
+            consumer_count=consumer_count,
+        )
 
         for task in tasks:
             if processed_count < skip_count:
@@ -282,6 +294,11 @@ class UnimodalOptimizer:
         if n_workers is None:
             n_workers = min(len(self.modalities), mp.cpu_count())
 
+        manager = mp.Manager()
+        shared_state = manager.dict()
+        lock = manager.Lock()
+        scheduler = DAGGroupScheduler(shared_state=shared_state, lock=lock)
+
         ctx = mp.get_context("spawn")
         with ProcessPoolExecutor(max_workers=n_workers, mp_context=ctx) as executor:
             future_to_modality = {
@@ -292,6 +309,7 @@ class UnimodalOptimizer:
                         modality.modality_id, 0
                     )
                     / len(self.tasks),
+                    scheduler=scheduler,
                 ): modality
                 for modality in self.modalities
             }
@@ -351,7 +369,7 @@ class UnimodalOptimizer:
                 )
                 raise
 
-    def _process_modality(self, modality, skip_remaining: int = 0):
+    def _process_modality(self, modality, skip_remaining: int = 0, scheduler=None):
         local_results = UnimodalResults(
             [modality],
             self.tasks,
@@ -398,25 +416,51 @@ class UnimodalOptimizer:
         tasks_pickle = pickle.dumps(self.tasks)
         rep_cache_pickle = pickle.dumps(rep_cache) if rep_cache else None
 
+        group_resources = [
+            get_peak_memory_from_dag_group(dag_group, modality)
+            for dag_group in dag_groups
+        ]
+
+        if scheduler is None:
+            scheduler = DAGGroupScheduler()
+
+        pending_dag_groups = set(range(len(dag_groups)))
+        running_dag_groups = {}
         all_groups_succeeded = True
         with ProcessPoolExecutor(max_workers=max_workers, mp_context=ctx) as executor:
-            future_to_group = {
-                executor.submit(
-                    _process_dag_group,
-                    pickle.dumps(dag_group),
-                    modality_pickle,
-                    tasks_pickle,
-                    rep_cache_pickle,
-                    modality.modality_id,
-                    self.debug,
-                    i,
-                    self.result_path,
-                ): (i, dag_group)
-                for i, dag_group in enumerate(dag_groups)
-            }
+            while pending_dag_groups or running_dag_groups:
+                pending_resources = [
+                    (i, group_resources[i][0], group_resources[i][1])
+                    for i in pending_dag_groups
+                ]
+                ready_to_execute = scheduler.get_runnable(
+                    pending_resources, max_concurrent=max_workers
+                )
+                for group_id, gpu_id in ready_to_execute:
+                    pending_dag_groups.remove(group_id)
+                    dag_group = dag_groups[group_id]
+                    cpu_mem, gpu_mem = group_resources[group_id]
+                    future = executor.submit(
+                        _process_dag_group,
+                        pickle.dumps(dag_group),
+                        modality_pickle,
+                        tasks_pickle,
+                        rep_cache_pickle,
+                        modality.modality_id,
+                        self.debug,
+                        group_id,
+                        self.result_path,
+                        gpu_id,
+                    )
+                    running_dag_groups[future] = (group_id, cpu_mem, gpu_mem, gpu_id)
+                if not running_dag_groups:
+                    break
+                done = next(as_completed(running_dag_groups), None)
+                if done is None:
+                    break
+                group_id, cpu_mem, gpu_mem, gpu_id = running_dag_groups.pop(done)
+                scheduler.release(cpu_mem, gpu_mem, gpu_id)
 
-            for future in as_completed(future_to_group):
-                group_idx, dag_group = future_to_group[future]
                 try:
                     result_dict = future.result()
 
@@ -432,7 +476,7 @@ class UnimodalOptimizer:
                 except Exception as e:
                     all_groups_succeeded = False
                     print(
-                        f"Error processing DAG group {group_idx} for modality {modality.modality_id}: {e}"
+                        f"Error processing DAG group {group_id} for modality {modality.modality_id}: {e}"
                     )
                     import traceback
 

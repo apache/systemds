@@ -161,8 +161,9 @@ class CLIPText(UnimodalRepresentation):
         batch_peak_bytes = (
             self.batch_size * self.max_seq_length * 3 * 8 + self.batch_size * 512 * 4
         )
-        cpu_peak = self.model.get_memory_footprint() + 50 * 1024 * 1024 + output_bytes
-        gpu_peak = self.model.get_memory_footprint() + batch_peak_bytes
+        model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+        cpu_peak = model.get_memory_footprint() + 50 * 1024 * 1024 + output_bytes
+        gpu_peak = model.get_memory_footprint() + batch_peak_bytes
         return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": gpu_peak}
 
     def transform(self, modality, params=None):

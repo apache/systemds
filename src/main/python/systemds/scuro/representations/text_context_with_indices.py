@@ -281,6 +281,7 @@ class OverlappingSplitIndices(Context):
         self.max_words = max_words
         self.overlap = overlap
         self.stride = stride
+        self.data_type = np.int32
 
     def get_output_shape(self, input_stats: TextStats) -> RepresentationStats:
         return RepresentationStats(

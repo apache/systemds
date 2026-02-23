@@ -31,6 +31,7 @@ class TextStats:
     num_instances: int
     max_length: int
     avg_length: float
+    output_shape: tuple
 
 
 class TextLoader(BaseLoader):
@@ -74,4 +75,4 @@ class TextLoader(BaseLoader):
                     max_length = max(max_length, length)
                     avg_length += length
             avg_length /= num_instances
-        return TextStats(num_instances, max_length, avg_length)
+        return TextStats(num_instances, max_length, avg_length, (max_length,))

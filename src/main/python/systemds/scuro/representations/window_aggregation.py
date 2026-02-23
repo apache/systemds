@@ -256,6 +256,31 @@ class StaticWindow(Window):
     def get_output_shape(self, input_stats: RepresentationStats) -> tuple:
         return RepresentationStats(input_stats.num_instances, (self.num_windows,))
 
+    def estimate_output_memory_bytes(self, input_stats: RepresentationStats) -> int:
+        feature_dim = (
+            int(input_stats.output_shape[1])
+            if len(input_stats.output_shape) == 2
+            else 1
+        )
+        return (
+            input_stats.num_instances
+            * self.num_windows
+            * feature_dim
+            * np.dtype(self.data_type).itemsize
+        )
+
+    def estimate_peak_memory_bytes(self, input_stats: RepresentationStats) -> dict:
+        output_bytes = self.estimate_output_memory_bytes(input_stats)
+        seq_len = int(input_stats.output_shape[0])
+        feature_dim = (
+            int(input_stats.output_shape[1])
+            if len(input_stats.output_shape) == 2
+            else 1
+        )
+        one_instance_bytes = seq_len * feature_dim * np.dtype(self.data_type).itemsize
+        cpu_peak = output_bytes + one_instance_bytes
+        return {"cpu_peak_bytes": cpu_peak, "gpu_peak_bytes": 0}
+
     def execute(self, modality):
         windowed_data = []
 

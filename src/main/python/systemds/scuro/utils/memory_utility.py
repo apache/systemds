@@ -18,9 +18,11 @@
 # under the License.
 #
 # -------------------------------------------------------------
+import resource
 import numpy as np
 import torch
 from typing import Tuple
+import psutil
 
 
 def get_model_size_mb(model: torch.nn.Module) -> float:
@@ -126,3 +128,26 @@ def compute_batch_size(
 
 def get_device():
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def get_cpu_memory_mb():
+    rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    if __import__("sys").platform == "darwin":
+        rss /= 1024  # macOS reports bytes
+    return rss / 1024  # MB
+
+
+def get_gpu_memory_mb(device):
+    if not torch.cuda.is_available() or device.type == "cpu":
+        return 0.0
+    torch.cuda.synchronize(device)
+    return torch.cuda.memory_allocated(device) / (1024**2)
+
+
+def log_memory(operation_name: str, device: torch.device):
+    cpu_mb = get_cpu_memory_mb()
+    gpu_mb = get_gpu_memory_mb(device)
+    current_mb = psutil.Process().memory_info().rss / (1024**2)
+    print(
+        f"[mem] {operation_name}: CPU={cpu_mb:.1f} MB, GPU={gpu_mb:.1f} MB, Current={current_mb:.1f} MB"
+    )

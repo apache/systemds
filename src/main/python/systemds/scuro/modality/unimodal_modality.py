@@ -26,6 +26,7 @@ from systemds.scuro.dataloader.base_loader import BaseLoader
 from systemds.scuro.modality.modality import Modality
 from systemds.scuro.modality.joined import JoinedModality
 from systemds.scuro.modality.transformed import TransformedModality
+from systemds.scuro.representations.representation import RepresentationStats
 from systemds.scuro.utils.identifier import Identifier
 
 
@@ -59,6 +60,21 @@ class UnimodalModality(Modality):
             ]
 
         return self.metadata[self.dataIndex][position]
+
+    def get_stats(self):
+        return self.stats
+
+    def get_output_shape(self):
+        return RepresentationStats(self.stats.num_instances, self.stats.output_shape)
+
+    def estimate_memory_bytes(self):
+        memory_bytes = 1
+        for i in self.stats.output_shape:
+            memory_bytes *= i
+
+        return (
+            self.stats.num_instances * memory_bytes * 4
+        )  # TODO: check how to meausure str size
 
     def extract_raw_data(self):
         """

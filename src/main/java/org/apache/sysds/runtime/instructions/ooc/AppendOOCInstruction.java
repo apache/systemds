@@ -83,8 +83,9 @@ public class AppendOOCInstruction extends BinaryOOCInstruction {
 		int rem2 = (int) in2.getNumColumns()%blksize;
 		int cblk1 = (int) in1.getDataCharacteristics().getNumColBlocks();
 		int cblk2 = (int) in2.getDataCharacteristics().getNumColBlocks();
+		int cblkRes = (int) Math.ceil((double)(in1.getNumColumns()+in2.getNumColumns())/blksize);
 
-		if(rem1+rem2 == 0){
+		if(rem1==0){
 			// no shifting needed
 			OOCStream<IndexedMatrixValue> out = new SubscribableTaskQueue<>();
 			mapOOC(qIn2, out, imv -> new IndexedMatrixValue(
@@ -108,11 +109,12 @@ public class AppendOOCInstruction extends BinaryOOCInstruction {
 		SubscribableTaskQueue<IndexedMatrixValue> out = new SubscribableTaskQueue<>();
 		Function<IndexedMatrixValue, MatrixIndexes> rowKey = imv -> new MatrixIndexes(imv.getIndexes().getRowIndex(), 1);
 
+		int fullRem2 = rem2==0? blksize : rem2;
 		// combine cols both matrices
 		joinOOC(lastCol, firstColForCritical, out, (left, right) -> {
 			MatrixBlock lb = (MatrixBlock) left.getValue();
 			MatrixBlock rb = (MatrixBlock) right.getValue();
-			int stop = cblk2>1? blksize-rem1 : rem2;
+			int stop = cblk2==1 && blksize-rem1>fullRem2? fullRem2 : blksize-rem1;
 			MatrixBlock combined = cbindBlocks(lb, sliceCols(rb, 0, stop));
 			return new IndexedMatrixValue(
 				new MatrixIndexes(left.getIndexes().getRowIndex(), left.getIndexes().getColumnIndex()), combined);
@@ -134,7 +136,7 @@ public class AppendOOCInstruction extends BinaryOOCInstruction {
 			joinOOC(fst, sec, out, (left, right) -> {
 				MatrixBlock lb = (MatrixBlock) left.getValue();
 				MatrixBlock rb = (MatrixBlock) right.getValue();
-				int stop = finalI+2==cblk2 ? rem2 : blksize-rem1;
+				int stop = finalI+2==cblk2 && blksize-rem1>fullRem2? fullRem2 : blksize-rem1;
 				MatrixBlock combined = cbindBlocks(sliceCols(lb, blksize-rem1, blksize), sliceCols(rb, 0, stop));
 				return new IndexedMatrixValue(
 					new MatrixIndexes(left.getIndexes().getRowIndex(), cblk1 + left.getIndexes().getColumnIndex()),
@@ -145,13 +147,13 @@ public class AppendOOCInstruction extends BinaryOOCInstruction {
 			outStreams.add(out);
 		}
 
-		if(rem1+rem2 > blksize){
+		if(cblk1+cblk2==cblkRes){
 			// overflow
 			int remSize = (rem1+rem2)%blksize;
 			out = new SubscribableTaskQueue<>();
 			mapOOC(fst, out, imv -> new IndexedMatrixValue(
 				new MatrixIndexes(imv.getIndexes().getRowIndex(), cblk1+imv.getIndexes().getColumnIndex()), 
-				sliceCols((MatrixBlock) imv.getValue(), rem2-remSize, rem2)));
+				sliceCols((MatrixBlock) imv.getValue(), fullRem2-remSize, fullRem2)));
 
 			outStreams.add(out);
 		}

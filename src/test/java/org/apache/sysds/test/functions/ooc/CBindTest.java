@@ -54,6 +54,10 @@ public class CBindTest extends AutomatedTestBase {
 	@Test
 	public void testCBindAppendBlock() { runCBindTest(1000, 1000, 1000, 1000);}
 
+	// TODO: fix OOC internals
+	// @Test
+	public void testCBindAppendBlockTwoLeftBlocks() {runCBindTest(1000, 2000, 1000, 1000);}
+
 	@Test
 	public void testCBindPartialFillSingleRightBlock() { runCBindTest(1000, 1100, 1000, 100);}
 
@@ -74,6 +78,12 @@ public class CBindTest extends AutomatedTestBase {
 
 	@Test
 	public void testCBindOverflowMultipleRightBlocks() { runCBindTest(1000, 1600, 1000, 2600);}
+
+	@Test
+	public void testCBindOverflowTotalFilledSingleRightBlock() {runCBindTest(1000, 1100, 1000, 1000);}
+
+	@Test
+	public void testCBindOverflowTotalFilledTwoRightBlocks() {runCBindTest(1000, 1100, 1000, 2000);}
 
 	@Test
 	public void testCBindMultipleRows() { runCBindTest(2500, 1500, 2500, 1500);}

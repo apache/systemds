@@ -54,8 +54,7 @@ public class CBindTest extends AutomatedTestBase {
 	@Test
 	public void testCBindAppendBlock() { runCBindTest(1000, 1000, 1000, 1000);}
 
-	// TODO: fix OOC internals
-	// @Test
+	@Test
 	public void testCBindAppendBlockTwoLeftBlocks() {runCBindTest(1000, 2000, 1000, 1000);}
 
 	@Test
